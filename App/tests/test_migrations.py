@@ -238,3 +238,8 @@ def test_no_sqlite_only_insert_variants_or_bare_is_comparisons_remain():
         if path.name != "db.py" and re.search(r"[\w)] IS \?", text):
             offenders.append(f"{path.name}: x IS ? (use db.null_safe_eq)")
     assert offenders == []
+
+
+@pytest.mark.sqlite_only
+def test_python_runner_is_frozen():
+    assert max(v for v, _n, _p in db.migration_files()) == 33

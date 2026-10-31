@@ -29,7 +29,11 @@ def main(argv=None) -> int:
         if actual != args.expect_database:
             raise RuntimeError("Connected database does not match --expect-database.")
         if args.action == "plan":
-            print(f"PostgreSQL {actual}: schema version {db.expected_schema_version()} is planned; no changes made.")
+            pending = db.postgres_schema_status()["goose_pending"]
+            print(
+                f"PostgreSQL {actual}: schema version {db.expected_schema_version()} is planned; "
+                f"goose pending={pending or 'none'}; no changes made."
+            )
             return 0
         if args.action == "seal-authority":
             marker = config.seal_database_authority(args.expect_database)
@@ -39,11 +43,12 @@ def main(argv=None) -> int:
             status = db.apply_postgresql_schema()
         else:
             status = db.postgres_schema_status()
-            if not status["current"]:
+            if not status["current"] or status["goose_pending"]:
                 raise RuntimeError("PostgreSQL schema is not current; run the explicit apply command.")
+        highest = max((v for v, _n, _p in db.goose_files() if v not in status["goose_pending"]), default=0)
         print(
             f"PostgreSQL schema {args.action} OK: database={actual}, "
-            f"version={status['actual_version']}, tables={status['actual_tables']}."
+            f"version={status['actual_version']}, tables={status['actual_tables']}, goose={highest}."
         )
         return 0
     except Exception as exc:
