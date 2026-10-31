@@ -1484,6 +1484,17 @@ def _form_context(
     progress = reporting.reservation_progress(reservation)
     expected = progress["expected"]
     remaining = (expected - progress["filled"]) if expected is not None else None
+    # The action the save button offers, in this order: an existing guest is
+    # edited, an undeclared headcount is still collected, the final person
+    # submits the registration, anyone earlier saves and continues.
+    if guest is not None:
+        save_action_key = "guest_save_changes"
+    elif remaining is None:
+        save_action_key = "guest_save_details"
+    elif remaining <= 1:
+        save_action_key = "submit_registration"
+    else:
+        save_action_key = "save_continue_next"
     context = _shared(request, token, lang, apartment)
     # This context is also rendered from the POST handler when validation
     # fails, and request.url.path is then .../save - a URL that only answers
@@ -1544,6 +1555,10 @@ def _form_context(
             # Max-plan document scanning: flag, key, test list and plan gate in
             # one place, so the template only shows what the route accepts.
             "ocr_available": doc_ocr.available(apartment),
+            # The action the save button offers; see the calculation above.
+            "save_action_key": save_action_key,
+            # The previous guest's save sent us here; say so without a hub stop.
+            "just_saved": request.query_params.get("saved") == "1",
         }
     )
     return context
@@ -1903,8 +1918,33 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         )
     )
 
+    # The save above may have persisted a headcount the guest typed on the
+    # first form, so read the reservation again instead of trusting the row
+    # loaded before the write.
+    fresh_reservation = db.query_one(
+        "SELECT * FROM reservation WHERE id = ?", (reservation_id,)
+    )
+    progress_after_save = reporting.reservation_progress(fresh_reservation)
+    missing = progress_after_save["missing"]
+
+    # A newly completed guest advances directly while people remain.
+    # Editing an existing guest returns to the registration summary, where the
+    # guest can see who is still missing. A fresh reservation read that does
+    # not report a known positive missing count also returns to the summary.
+    # The URL is the same /new the Add-a-person link used, so the /new capacity
+    # re-check still stops an overshoot of the declared headcount.
+    continue_to_next = (
+        existing is None
+        and missing is not None
+        and missing > 0
+    )
+
+    destination = _guest_link(token, reservation_id)
+    if continue_to_next:
+        destination += "/new"
+
     response = RedirectResponse(
-        _guest_link(token, reservation_id) + _lang_q(lang, "&saved=1"), status_code=303
+        destination + _lang_q(lang, "&saved=1"), status_code=303
     )
     _remember_owned(response, _owned_ids(request) + [saved_id])
     return _with_lang(response, lang)

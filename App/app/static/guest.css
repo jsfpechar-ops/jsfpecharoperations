@@ -1060,6 +1060,60 @@ details.g-why .g-details {
 }
 .g-fold[open] > summary { margin-bottom: 11px; }
 
+/* Inline "?" help beside a label or under a field: the same round caret as
+   .g-fold's, small enough to sit in the flow. Keyboard and touch both toggle
+   it; a native <details> needs no script and no hover. */
+.g-claim-help > summary,
+.g-legal-text > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  list-style: none;
+  cursor: pointer;
+  min-height: 44px;
+  color: var(--g-accent);
+  font-size: 14px;
+  font-weight: 650;
+}
+.g-claim-help > summary::-webkit-details-marker,
+.g-legal-text > summary::-webkit-details-marker { display: none; }
+/* The summary text is the single visible question mark; the generated
+   marker would duplicate it. */
+.g-claim-help > summary {
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--g-line);
+  border-radius: 50%;
+}
+.g-claim-help[open] > summary { margin-bottom: 9px; }
+
+/* The legal fold on the signature step: a quiet one-liner, the full notice
+   opens under it. The acknowledgement below stays visible either way. */
+.g-legal-text > summary::before {
+  content: "\25B8";
+  display: inline-block;
+  width: 18px;
+  color: var(--g-muted);
+  font-size: 12px;
+}
+.g-legal-text[open] > summary::before { content: "\25BE"; }
+.g-legal-text > summary {
+  border-top: 1px solid var(--g-line);
+  margin-top: 16px;
+  padding-top: 13px;
+}
+
+/* The one-line confirmation between guests, no click required. */
+.g-saved-strip {
+  border: 1px solid var(--g-line);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 0 0 14px;
+  color: var(--g-muted);
+  background: #fff;
+}
+
 /* On the form the explainer keeps .g-fold's single-line shape. The caret is
    .g-fold's, so the explainer's own marker steps aside. */
 details.g-why.g-fold > summary.g-why-summary {

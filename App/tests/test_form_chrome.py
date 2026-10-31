@@ -131,8 +131,12 @@ def test_the_sticky_bar_names_the_step_it_is_on():
     assert 'data-step-title="Your details"' in page
     assert 'data-step-title="Permanent home address"' in page
     assert 'data-step-title="Passport or ID document"' in page
+    # The signature step is the last one; the legal notice and the
+    # acknowledgement live on it instead of a step of their own.
     assert 'data-step-title="Signature"' in page
-    assert 'data-step-title="Legal information"' in page
+    assert 'data-step-title="Legal information"' not in page
+    assert 'id="legal-notice"' in page
+    assert page.index('data-step-title="Signature"') < page.index('id="legal-notice"')
 
 
 def test_the_step_titles_come_from_the_page_language():

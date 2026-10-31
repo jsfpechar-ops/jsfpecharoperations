@@ -76,9 +76,12 @@ def test_the_hub_still_offers_a_clear_add_person_action():
             follow_redirects=False,
         )
         assert saved.status_code == 303
+        # Direct progression: the save lands on the next person's form,
+        # not on a hub that asks for another click first.
+        assert saved.headers["location"].endswith("/new?lang=en&saved=1")
         page = browser.get(saved.headers["location"]).text
-        assert "Add a person" in page
-        assert page.index("Add a person") < page.index('class="g-card g-summary"')
+        assert "previous guest saved" in page.lower()
+        assert 'id="first_name"' in page
     finally:
         _cleanup()
 

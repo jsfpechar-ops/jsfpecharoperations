@@ -466,11 +466,16 @@ def main(url=None):
     )
     if saved.status_code != 200:
         FAILURES.append(f"guest save: HTTP {saved.status_code}")
-    elif (
-        i18n.STRINGS["en"]["saved_title"] not in saved.text
-        and i18n.STRINGS["en"]["reported_title"] not in saved.text
-    ):
-        FAILURES.append("guest save: no confirmation shown")
+    else:
+        # A save either reaches the completed summary or, while people remain,
+        # the next person's form carrying the "previous guest saved" strip.
+        confirmations = (
+            i18n.STRINGS["en"]["saved_title"],
+            i18n.STRINGS["en"]["reported_title"],
+            i18n.STRINGS["en"]["person_saved"],
+        )
+        if not any(copy in saved.text for copy in confirmations):
+            FAILURES.append("guest save: no confirmation shown")
     # Read the expected copy out of the catalogue rather than repeating it here,
     # so a deliberate wording change cannot leave this script asserting copy
     # the app no longer ships.

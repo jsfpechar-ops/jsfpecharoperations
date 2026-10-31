@@ -35,16 +35,23 @@
              required inputmode="numeric" autocomplete="off"
              value="{{ claim.declared_guests or reservation.expected_guests_override or 1 }}">
       <div class="hint">{{ t('party_help') }}</div>
+      <details class="g-why" data-purpose-help="guest-count">
+        <summary class="g-why-summary">{{ t('guest_count_purpose_help_label') }}</summary>
+        <p class="g-intro">{{ t('guest_count_purpose_help') }}</p>
+      </details>
     </div>
     <div class="g-field">
       <label for="guest_email">{{ t('claim_email') }}</label>
       <input type="email" id="guest_email" name="guest_email" required autocomplete="email"
              maxlength="254">
       <div class="hint">{{ t('tw_email_short') }}</div>
-      <div class="hint">{{ t('claim_email_help') }}</div>
-      <div class="hint">{{ t('claim_cookie_help') }}
-        {% if privacy_url %}<a href="{{ privacy_url }}">{{ t('privacy_link') }}</a>{% endif %}
-      </div>
+      <details class="g-claim-help">
+        <summary aria-label="{{ t('email_help_label') }}">?</summary>
+        <div class="hint">{{ t('claim_email_help') }}</div>
+        <div class="hint">{{ t('claim_cookie_help') }}
+          {% if privacy_url %}<a href="{{ privacy_url }}">{{ t('privacy_link') }}</a>{% endif %}
+        </div>
+      </details>
     </div>
     {% if require_turnstile and turnstile_site_key %}
       <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-action="guest_claim"></div>
