@@ -37,7 +37,7 @@ Checked after the first draft. "Confirmed" means a repo, GitHub or public-source
 | `./run.sh` (staging + no-login) | app `/healthz` 200; mock `/healthz` 200 |
 | `POST /demo` with `x-csrf-token` | 303; 2 apartments, 18 reservations, 8 guests created |
 | `UBYHOST_ROLE=worker python -m app.worker` | scheduler starts, jobs registered, clean stop on SIGTERM |
-| Demo calendar feeds during `ical` job | **2 feed errors, reason not in the log.** Not investigated. |
+| Demo calendar feeds during `ical` job | 2 errors when `PUBLIC_BASE_URL` pointed at port 8080 while the app ran on 8095. Demo feeds are built from `PUBLIC_BASE_URL` (`App/app/demo.py:147-156`). With the matching URL: `sync_all` gives `errors=0`, both feeds fetched. |
 | `POST /demo` without CSRF header | 303 to `/login?notice=form_expired` (CSRF enforced) |
 
 **Still open (cannot be verified from the repo or public sources):** production env values (Q10, Q11, Q14, Q16, Q21), production NULL-owner rows (Q4), live Litestream bucket and region, server crontab state, the actual content of the last restore drill, the RETENTION/ROPA/vendor documents (Q20, Q24), and the erasure path (Q25). These need access to the Lightsail server, the AWS console, or the owner.
