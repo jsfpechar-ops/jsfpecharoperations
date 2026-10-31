@@ -28,3 +28,7 @@ Behaviour (from `docs/OPERATIONS.md`, consistent with the code paths listed):
 Code: `App/app/icalsync.py`, `App/app/feed_fetch.py`, `App/app/feed_url.py`
 (URL validation), `App/app/routes/` calendar-sync routes (`test_calendar_sync_ui.py`
 exists in `App/tests/`).
+
+## Official references
+
+- Feed format: RFC 5545 https://datatracker.ietf.org/doc/rfc5545/ (see [REFERENCES](REFERENCES.md)).

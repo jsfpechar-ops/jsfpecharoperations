@@ -15,3 +15,7 @@
 Stripe is used for billing of hosts and payment requests. It is **not** part of the
 police filing path. `⚠️ UNKNOWN`: whether Stripe is enabled in production
 (`UBYHOST_STRIPE_MODE` value is not in the repo; `docs/context/status.md` says billing is ON).
+
+## Official references
+
+- Official docs: https://docs.stripe.com/ (webhooks: https://docs.stripe.com/events/manage-webhook-endpoints)

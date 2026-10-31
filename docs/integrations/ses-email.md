@@ -18,3 +18,7 @@
 
 Operator-facing details: [docs/SES.md](../SES.md). Retention of outbox rows:
 purged after 14 days by the `mail` job (`docs/OPERATIONS.md` § Scheduled jobs).
+
+## Official references
+
+- Official docs: https://docs.aws.amazon.com/ses/latest/dg/send-email-api.html

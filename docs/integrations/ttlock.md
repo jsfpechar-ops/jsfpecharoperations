@@ -14,3 +14,7 @@
 
 Staging: door codes on Render staging with sync off until `UBYHOST_DOOR_CODES_LIVE=1`
 (`render.yaml`, comment block).
+
+## Official references
+
+- Official docs: https://euopen.ttlock.com/doc/api/v3/lock/list

@@ -17,3 +17,7 @@
 AI is used for the guest guide (translation, import) and Leon guest chat per
 migrations `0013`–`0022`. The model vendor is a subprocessor — check
 `App/app/subprocessors_i18n.py` (named in code; not read in this pass).
+
+## Official references
+
+- Official docs: Anthropic https://platform.claude.com/docs/en/api/http/beta/messages/create ; Mistral `⚠️ UNKNOWN` (see [REFERENCES](REFERENCES.md)).

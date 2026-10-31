@@ -118,7 +118,7 @@ Source: `git ls-files` (3,511 tracked files at this revision).
 - [Performance](docs/performance.md) — load, bottlenecks, scaling levers.
 - [Limitations](docs/limitations.md) — technical debt, deferred work, fragile areas.
 - [Migration to Go](docs/migration-to-go.md) — proposal only; not started.
-- Integrations: [UbyPort (Police)](docs/integrations/ubyport-police-api.md), [iCal feeds](docs/integrations/ical-feeds.md), [Amazon SES](docs/integrations/ses-email.md), [Stripe](docs/integrations/stripe.md), [TTLock](docs/integrations/ttlock.md), [AI models](docs/integrations/ai-models.md).
+- Official vendor links: [docs/integrations/REFERENCES.md](docs/integrations/REFERENCES.md). Integrations: [UbyPort (Police)](docs/integrations/ubyport-police-api.md), [iCal feeds](docs/integrations/ical-feeds.md), [Amazon SES](docs/integrations/ses-email.md), [Stripe](docs/integrations/stripe.md), [TTLock](docs/integrations/ttlock.md), [AI models](docs/integrations/ai-models.md).
 - Gap report: [docs/gap-report.md](docs/gap-report.md) — every `⚠️ UNKNOWN`, grouped by importance.
 - Existing repo docs (authoritative detail, kept in place): [OPERATIONS](docs/OPERATIONS.md), [LIGHTSAIL](docs/LIGHTSAIL.md), [DEPLOYMENT](docs/DEPLOYMENT.md), [ENVIRONMENT](docs/ENVIRONMENT.md), [SECURITY](docs/SECURITY.md), [UBYPORT_CORE](docs/UBYPORT_CORE.md), [SES](docs/SES.md), [TTLOCK](docs/TTLOCK.md), [privacy/RETENTION](docs/privacy/RETENTION.md), [privacy/ROPA](docs/privacy/ROPA.md).
 

@@ -77,3 +77,7 @@ failure leaves the guest `pending` and sets submission state `transport_error`
 ## Known risks (for the migration)
 - The real police service has **not** been characterised in tests; only the mock is exercised. NTLM acceptance, TLS chain, and WS-Addressing necessity are `⚠️ UNKNOWN` until tested against `test`.
 - Characterization tests for the SOAP field order and error mapping: `⚠️ UNKNOWN` — check `App/tests/` for `soap` / `ubyport` test files (not enumerated in this pass).
+
+## Official references
+
+- UbyPort official docs: `⚠️ UNKNOWN` (none public; see [REFERENCES](REFERENCES.md)).
