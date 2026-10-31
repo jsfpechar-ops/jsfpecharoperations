@@ -283,7 +283,15 @@ case "${verb}" in
     esac
     ./scripts/postgres-preflight.sh
     save_pre_cutover_settings
-    maintenance_on
+    if ! maintenance_on; then
+      # Phase is still idle and nothing was transferred, so leave nothing
+      # half-applied: put the public site back into normal service. Best effort:
+      # the error below is the actionable one.
+      set_env_value UBYHOST_MAINTENANCE 0
+      pg_compose up -d --no-deps --force-recreate caddy || true
+      echo "Maintenance could not be proven; reverted the maintenance page (phase stays idle)." >&2
+      exit 1
+    fi
     set_state maintenance
     ;;
   stop-writers)
