@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import hashlib
 import json
 import os
@@ -19,6 +20,57 @@ from app import config, db  # noqa: E402
 from app import db_postgres  # noqa: E402
 
 REPORT_VERSION = 1
+
+# Enough SQLSTATE context for an operator without echoing a psycopg message,
+# whose DETAIL may contain offending row values (for example a guest e-mail).
+_SQLSTATE_CATEGORIES = {
+    "23502": "not-null constraint violation",
+    "23503": "foreign-key constraint violation",
+    "23505": "unique constraint violation",
+    "23514": "check constraint violation",
+}
+_SQLSTATE_CLASSES = {
+    "08": "connection failure",
+    "22": "invalid data value",
+    "23": "integrity constraint violation",
+    "40": "transaction conflict",
+    "42": "SQL syntax or access rule violation",
+    "55": "object or lock not available",
+}
+
+
+def _target_failure(exc: BaseException, table: str | None = None) -> RuntimeError:
+    """A safe message: operation, table and SQLSTATE only.
+
+    psycopg embeds offending values in ``str(exc)`` (``DETAIL: Key (email)=...``),
+    so target-write failures are never surfaced verbatim.
+    """
+    sqlstate = getattr(exc, "sqlstate", None) or getattr(exc, "pgcode", None)
+    sqlstate = str(sqlstate) if sqlstate else ""
+    category = _SQLSTATE_CATEGORIES.get(sqlstate)
+    if category is None:
+        category = _SQLSTATE_CLASSES.get(sqlstate[:2], "database error") if sqlstate else "database error"
+    where = f"copying table {table}" if table else "writing the PostgreSQL target"
+    suffix = f" (sqlstate {sqlstate})" if sqlstate else ""
+    return RuntimeError(f"{where} failed: {category}{suffix}")
+
+
+@contextlib.contextmanager
+def _sanitized_target_errors(table: str | None = None):
+    """Re-raise target failures without psycopg messages or exception chaining."""
+    try:
+        yield
+    except (ValueError, RuntimeError):
+        raise
+    except Exception as exc:
+        raise _target_failure(exc, table) from None
+
+
+def _failure_text(exc: BaseException) -> str:
+    """A stderr-safe error text even if a psycopg error escaped a boundary."""
+    if getattr(exc, "sqlstate", None) or getattr(exc, "pgcode", None):
+        return str(_target_failure(exc))
+    return str(exc)
 
 
 def _source_protected_paths(path: Path) -> set[Path]:
@@ -184,14 +236,15 @@ def reconcile(source: sqlite3.Connection, target, tables: list[str]) -> dict[str
     for table in tables:
         columns = _table_columns(source, table)
         src_count, src_hash = table_digest(source, table, columns, postgres=False)
-        target_columns = [row["name"] for row in target.execute_native(
-            "SELECT column_name AS name FROM information_schema.columns "
-            "WHERE table_schema=current_schema() AND table_name=%s ORDER BY ordinal_position",
-            (table,),
-        ).fetchall()]
-        if columns != target_columns:
-            raise ValueError(f"column mismatch at {table}")
-        dst_count, dst_hash = table_digest(target, table, columns, postgres=True)
+        with _sanitized_target_errors(table):
+            target_columns = [row["name"] for row in target.execute_native(
+                "SELECT column_name AS name FROM information_schema.columns "
+                "WHERE table_schema=current_schema() AND table_name=%s ORDER BY ordinal_position",
+                (table,),
+            ).fetchall()]
+            if columns != target_columns:
+                raise ValueError(f"column mismatch at {table}")
+            dst_count, dst_hash = table_digest(target, table, columns, postgres=True)
         summary[table] = {"rows": src_count, "source_sha256": src_hash,
                           "target_rows": dst_count, "target_sha256": dst_hash,
                           "match": src_count == dst_count and src_hash == dst_hash}
@@ -219,20 +272,23 @@ def transfer(source_path: Path, report_path: Path, expected_database: str, verif
             _validate_pg_values(source, table, _table_columns(source, table))
         _expected_db(expected_database)
         target = db.connect()
-        target.acquire_writer_session_lock()
-        target.execute("BEGIN IMMEDIATE")
+        with _sanitized_target_errors():
+            target.acquire_writer_session_lock()
+            target.execute("BEGIN IMMEDIATE")
         try:
             if verify_only:
-                status = db.postgres_schema_status(target)
+                with _sanitized_target_errors():
+                    status = db.postgres_schema_status(target)
                 if not status["current"]:
                     raise ValueError("target schema is not current")
             else:
-                if not _postgres_empty(target):
-                    raise ValueError("destination is not an empty isolated target")
-                db.bootstrap_empty_postgresql_schema(target)
-                # Foreign keys are declared deferrable to support self-links;
-                # application unique constraints remain immediate for ON CONFLICT.
-                target.execute("SET CONSTRAINTS ALL DEFERRED")
+                with _sanitized_target_errors():
+                    if not _postgres_empty(target):
+                        raise ValueError("destination is not an empty isolated target")
+                    db.bootstrap_empty_postgresql_schema(target)
+                    # Foreign keys are declared deferrable to support self-links;
+                    # application unique constraints remain immediate for ON CONFLICT.
+                    target.execute("SET CONSTRAINTS ALL DEFERRED")
                 order = db.table_copy_order(source, tables)
                 for table in order:
                     columns = _table_columns(source, table)
@@ -240,23 +296,31 @@ def transfer(source_path: Path, report_path: Path, expected_database: str, verif
                     marks = ", ".join("?" for _ in columns)
                     sql = f'INSERT INTO "{table}" ({quoted}) VALUES ({marks})'
                     cursor = source.execute(f'SELECT {quoted} FROM "{table}"')
-                    while True:
-                        rows = cursor.fetchmany(500)
-                        if not rows:
-                            break
-                        target.executemany(sql, [tuple(row) for row in rows])
-                    db.restore_postgres_sequence(target, table, source)
-                db_postgres.install_pg_triggers(target)
-                db.validate_postgres_schema_connection(target)
+                    with _sanitized_target_errors(table):
+                        while True:
+                            rows = cursor.fetchmany(500)
+                            if not rows:
+                                break
+                            target.executemany(sql, [tuple(row) for row in rows])
+                        db.restore_postgres_sequence(target, table, source)
+                with _sanitized_target_errors():
+                    db_postgres.install_pg_triggers(target)
+                    db.validate_postgres_schema_connection(target)
             reconciliation = reconcile(source, target, tables)
-            target.execute("COMMIT")
+            with _sanitized_target_errors():
+                target.execute("COMMIT")
             committed = True
         except BaseException:
             if target.in_transaction:
                 target.execute("ROLLBACK")
             raise
         finally:
-            target.release_writer_session_lock()
+            try:
+                target.release_writer_session_lock()
+            except Exception:
+                # target.close() releases the session lock too; never replace
+                # the transfer error with a raw driver message here.
+                pass
         payload = {
             "report_version": REPORT_VERSION,
             "source_identity": {"path_name": source_path.name, "schema_version": actual_version},
@@ -288,14 +352,17 @@ def main(argv=None) -> int:
     try:
         payload = transfer(args.source, args.report, args.expect_database, args.verify_only)
     except RuntimeError as exc:
-        text = str(exc)
+        text = _failure_text(exc)
         if "committed" in text:
             print(text, file=sys.stderr)
             return 2
         print(f"SQLite to PostgreSQL transfer failed before commit: {text}", file=sys.stderr)
         return 1
     except Exception as exc:
-        print(f"SQLite to PostgreSQL transfer failed before commit: {exc}", file=sys.stderr)
+        print(
+            f"SQLite to PostgreSQL transfer failed before commit: {_failure_text(exc)}",
+            file=sys.stderr,
+        )
         return 1
     print(f"SQLite to PostgreSQL {payload['mode']} OK: tables={payload['table_count']}, report={args.report}")
     return 0
