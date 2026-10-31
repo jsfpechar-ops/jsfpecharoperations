@@ -13,7 +13,13 @@ Hosts are scoped by `host_id`/`user_id` columns and, for guests, a signed cookie
 2. For every hit, read the 15 lines above it and record: route path, HTTP method, table, the id's source (path, query, form, cookie), and whether an ownership check happens before or after (`host_id = ?`, `_owned_ids`, `owned_entity`, a role check).
 3. Classify: OK (scoped), ADMIN (admin-only route), LEAK (host-reachable, unscoped), WRITE-LEAK (same, for UPDATE/DELETE).
 4. For each LEAK/WRITE-LEAK: the exact fix in one line (add `AND host_id = ?` with the session host id, or route through an existing helper).
-## 5. Acceptance
+## 5. Do not touch
+Everything: read-only brief.
+## 6. Commands
+`grep -n "WHERE id = ?\|WHERE slug = ?\|WHERE token = ?" App/app/routes/*.py | wc -l` first; then per file.
+## 7. Acceptance
 One table in the report with every hit; counts per class; no file edited.
-## 6. Report
+## 8. Stop and ask
+Stop at 25 tool calls and report what is covered; the orchestrator splits the rest.
+## 9. Report
 `docs/tasks/0459-report.md`, under 150 lines.

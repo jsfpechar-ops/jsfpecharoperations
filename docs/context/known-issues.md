@@ -69,9 +69,7 @@
 | K-U05 | Med unverified | test_guest_browser_e2e.py | Local browser pass; CI pending | X |
 | K-U06 | Low open | apartment_form.html | Pills aligned; CI/staging pending | UI §3 |
 | K-U07 | Low decision | entities.html | Visible Delete/explanation; guard kept; CI | UI §4 |
-| K-U08 | Low open | invoice_form.html | Other-only input fixed; CI pending | UI §6 |
-| K-U09 | Low open | dashboard.html, host.css | Hover/focus fixed; CI pending | UI §9 |
-| K-U10 | Low open | app.js:copy | Copy feedback fixed; CI/staging pending | UI §12 |
+| K-U08-10 | Low open | invoice_form, dashboard, app.js copy | Fixed; CI pending | UI §6, §9, §12 |
 | K-U11 | Med open | host.css | Geometry checked locally; CI/staging pending | [0040](../tasks/0040-host-wide-geometry-audit.md) |
 | K-U12 | Med open | reservations.html, dashboard.html | 1280px overflow; mobile menu closes | [0041](../tasks/0041-host-stay-actions.md) |
 | K-U13 | Med review | browser tests | CI import 0042; UI fails | 0042 |
@@ -91,18 +89,11 @@
 | K-U15 | Med review | Host forms/navigation | Staging fixed; 0084 incl. K-U14; owner review | [plan](../plans/host-ux-combined-staging.md) |
 | K-T01 | Low open | Tests | Order-dependent tests (also 3 in test_host_i18n.py) | [0080](../tasks/0080-report.md) |
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
-| K-PG01 | Critical open | routes/*.py, ~63 bare `WHERE id = ?` | Host-reachable reads not scoped to the host; audit 0459, fix before any Go route | plan v4 |
-| K-PG02 | High open | .github/workflows/ci.yml | No Postgres service: `test_db_postgres.py` (45 tests) skips in CI | plan v4 |
-| K-PG03 | High open | PR #592 deploy/lightsail/scripts/postgres-*.sh | pgBackRest kit, cutover state machine and runbook never executed; decision D1 managed vs self-hosted | plan v4 |
-| K-PG04 | Med open | db_postgres.py:716 | Global `pg_advisory_xact_lock` on every write keeps the single-writer ceiling on Postgres | plan v4 |
-| K-S11 | High open | scheduler.py job_intervals | door_codes, push, guide_import every 1 min; 0457 | plan v4 |
+| K-PG01 | Critical open | routes/*.py | ~63 bare `WHERE id = ?`, host-scoping unproven; 0459 | plan v4 |
+| K-PG02 | High open | ci.yml, #592 ops kit | 45 PG tests skip in CI; cutover kit unrehearsed (D1) | plan v4 |
 
 - K-UI-CACHE: bump `?v=` on edits; 1y cache (0172).
-- K-NAV-418: 3 host_i18n tests fail.
-- K-CHECKIN: form alert fix #435; undeployed.
-- K-MORE: #436 undeployed.
+- K-NAV-418: 3 host_i18n tests fail. K-CHECKIN #435, K-MORE #436 undeployed.
 - K-PK0290: passkey fix open.
 - K-CF01: mid-session challenge: see CLOUDFLARE Rule 3.
 
-
-PG: 0455–0456 incomplete.

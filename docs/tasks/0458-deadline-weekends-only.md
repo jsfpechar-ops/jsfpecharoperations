@@ -13,7 +13,13 @@ Owner decision 2026-10-31: the 3-working-day UbyPort deadline skips weekends onl
 2. Update the 25 deadline tests: cases that landed on a holiday now expect the earlier date. Keep weekend cases unchanged.
 3. Edit the deadline sentence in `docs/UBYPORT_CORE.md`.
 4. Run the test-map row for `deadlines.py`.
-## 5. Acceptance
+## 5. Do not touch
+`reporting.py`, `ubyport/`, submit logic, any template sentence not about the deadline.
+## 6. Commands
+`cd App && .venv/bin/python -m pytest tests/test_deadlines.py -q --tb=short -x 2>&1 | tail -30`
+## 7. Acceptance
 Tests pass, 0 skipped. No remaining reference to holidays in `App/app`.
-## 6. Report
+## 8. Stop and ask
+Stop if another module imports the holiday helpers for a non-deadline purpose.
+## 9. Report
 `docs/tasks/0458-report.md`: diff summary, test tail, list of copy hits found.
