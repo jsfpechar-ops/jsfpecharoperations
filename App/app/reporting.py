@@ -31,7 +31,6 @@ import json
 import logging
 import re
 import secrets
-import sqlite3
 import time
 import zipfile
 from datetime import date, datetime, timedelta, timezone
@@ -544,7 +543,7 @@ def pending_reportable(guests: List[Any]) -> List[Any]:
 
 
 def dashboard_overview_candidate(
-    reservation: Mapping[str, Any] | sqlite3.Row,
+    reservation: Mapping[str, Any],
     progress: Dict[str, Any],
     urgency: str,
     today: date,

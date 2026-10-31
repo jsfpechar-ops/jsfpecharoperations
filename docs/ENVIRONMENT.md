@@ -286,6 +286,10 @@ Plans: [havel-support-assistant](plans/havel-support-assistant.md). Everything i
 | `UBYHOST_AI_PRICE_INPUT`, `UBYHOST_AI_PRICE_OUTPUT`, `UBYHOST_AI_PRICE_CACHE_READ`, `UBYHOST_AI_PRICE_CACHE_WRITE` | `0.10`, `0.50`, `0.01`, `0.125` | USD per million tokens, Anthropic table 2026-10-06. Update when the price changes. |
 | `UBYHOST_HAVEL_WEEKLY`, `UBYHOST_HAVEL_MONTHLY` | `8`, `15` | Havel messages per host per calendar week and month. |
 
+## Database (PostgreSQL, optional)
+
+`UBYHOST_DATABASE_URL` unset means SQLite (the default). Set it to use PostgreSQL; never set it together with `UBYHOST_DB`. A TCP URL must carry `sslmode=verify-full` (or `require`); a Unix-socket URL (`host=/absolute/dir`) needs no sslmode. The schema is applied only by `App/scripts/pg_schema.py apply`, never at startup.
+
 ## Development and test only
 
 | Variable | Default | Notes |

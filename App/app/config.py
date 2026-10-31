@@ -9,17 +9,184 @@ actually starting or actually signing something.
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import secrets
 from datetime import date
 from pathlib import Path
 from typing import List, Optional
+from urllib.parse import parse_qsl, unquote, urlsplit
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = BASE_DIR.parent
 DATA_DIR = Path(os.environ.get("UBYHOST_DATA_DIR", PROJECT_DIR / "data"))
 
-DB_PATH = Path(os.environ.get("UBYHOST_DB", DATA_DIR / "ubyhost.db"))
+_PG_SCHEMES = frozenset({"postgres", "postgresql"})
+_PG_DEFAULT_PORT = 5432
+
+
+def _postgres_target(url: str) -> dict:
+    """Parse and strictly validate a PostgreSQL URL; never returns credentials.
+
+    TCP URLs must set sslmode=verify-full or require. The local fixture contract also allows libpq's
+    unix-socket form, where the socket directory is a query parameter:
+    ``postgresql:///db?host=/absolute/socket/dir[&port=N][&user=...]`` and the
+    userinfo-only variant ``postgresql://user@/db?host=%2Ftmp%2Fsock&port=N``.
+    A relative ``host`` is refused, as is a URL with both a hostname and a
+    ``host`` parameter, a non-numeric or out-of-range port, a missing database
+    name, a fragment, or empty/duplicate query parameters. The socket directory
+    (or hostname) is part of the target identity; user and password never are.
+    """
+    try:
+        parts = urlsplit(url)
+        netloc_port = parts.port
+    except ValueError:
+        raise RuntimeError(
+            "UBYHOST_DATABASE_URL must be a valid PostgreSQL URL with a database name."
+        ) from None
+    if parts.scheme not in _PG_SCHEMES:
+        raise RuntimeError("UBYHOST_DATABASE_URL must use the postgres or postgresql scheme.")
+    if parts.fragment:
+        raise RuntimeError("UBYHOST_DATABASE_URL must not contain a fragment.")
+    database = unquote(parts.path.strip("/"))
+    if not database or "/" in database:
+        raise RuntimeError("UBYHOST_DATABASE_URL must name exactly one database.")
+    query: dict[str, str] = {}
+    for key, value in parse_qsl(parts.query, keep_blank_values=True):
+        if key in query:
+            raise RuntimeError("UBYHOST_DATABASE_URL has a duplicate query parameter.")
+        query[key] = value
+    hostname = (parts.hostname or "").lower()
+    socket_dir = query.get("host")
+    if socket_dir is not None:
+        socket_dir = os.path.normpath(socket_dir) if socket_dir.startswith("/") else ""
+        if not socket_dir or socket_dir == "/":
+            raise RuntimeError(
+                "UBYHOST_DATABASE_URL host parameter must be an absolute socket directory."
+            )
+    if hostname and socket_dir:
+        raise RuntimeError("UBYHOST_DATABASE_URL sets both a hostname and a host parameter.")
+    if not hostname and not socket_dir:
+        raise RuntimeError("UBYHOST_DATABASE_URL needs a hostname or an absolute host parameter.")
+    query_port = query.get("port")
+    if query_port is not None:
+        if not query_port.isdigit() or not 1 <= int(query_port) <= 65535:
+            raise RuntimeError("UBYHOST_DATABASE_URL port parameter must be numeric.")
+        query_port = int(query_port)
+    if netloc_port is not None and query_port is not None and netloc_port != query_port:
+        raise RuntimeError("UBYHOST_DATABASE_URL has contradictory port settings.")
+    # Loopback is exempt: a server on the same host (CI service container) has no TLS.
+    if hostname and hostname not in {"localhost", "127.0.0.1", "::1"} and query.get("sslmode") not in {"verify-full", "require"}:
+        raise RuntimeError("UBYHOST_DATABASE_URL over TCP needs sslmode=verify-full (or require)")
+    return {
+        "scheme": parts.scheme.lower(),
+        "hostname": hostname,
+        "socket_dir": socket_dir,
+        "port": netloc_port or query_port or _PG_DEFAULT_PORT,
+        "database": database,
+        "schema": "public",
+    }
+
+
+_db_path_setting = os.environ.get("UBYHOST_DB")
+_database_url_setting = os.environ.get("UBYHOST_DATABASE_URL")
+
+if _db_path_setting is not None and _database_url_setting is not None:
+    raise RuntimeError("Set only one of UBYHOST_DB or UBYHOST_DATABASE_URL.")
+if _db_path_setting is not None and not _db_path_setting.strip():
+    raise RuntimeError("UBYHOST_DB must not be empty.")
+if _database_url_setting is not None:
+    if not _database_url_setting.strip():
+        raise RuntimeError("UBYHOST_DATABASE_URL must not be empty.")
+    _DATABASE_TARGET = _postgres_target(_database_url_setting)
+    DB_BACKEND = "postgresql"
+    DATABASE_URL = _database_url_setting
+else:
+    _DATABASE_TARGET = None
+    DB_BACKEND = "sqlite"
+    DATABASE_URL = None
+
+DB_PATH = Path(_db_path_setting or DATA_DIR / "ubyhost.db")
+DATABASE_AUTHORITY_FILE = DATA_DIR / "database-authority.json"
+
+
+def _database_target_fingerprint(url: str) -> str:
+    """Hash the connection identity without any credential material."""
+    target = _postgres_target(url)
+    identity = {
+        "scheme": target["scheme"],
+        "host": target["hostname"] or target["socket_dir"],
+        "port": target["port"],
+        "database": target["database"],
+        "schema": target["schema"],
+    }
+    encoded = json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def assert_database_authority() -> None:
+    """Refuse fallback to SQLite after a durable PostgreSQL cutover fence exists."""
+    if not DATABASE_AUTHORITY_FILE.exists():
+        return
+    try:
+        marker = json.loads(DATABASE_AUTHORITY_FILE.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise RuntimeError("Database authority marker is unreadable; refusing startup.") from exc
+    if marker.get("format_version") != 1 or marker.get("backend") != "postgresql":
+        raise RuntimeError("Database authority marker is invalid; refusing startup.")
+    if DB_BACKEND != "postgresql" or not DATABASE_URL:
+        raise RuntimeError("PostgreSQL is the durable database; UBYHOST_DATABASE_URL is required.")
+    if marker.get("schema") != "public":
+        raise RuntimeError("Database authority marker has an unsupported schema.")
+    if marker.get("target_fingerprint") != _database_target_fingerprint(DATABASE_URL):
+        raise RuntimeError("UBYHOST_DATABASE_URL does not match the durable database authority marker.")
+
+
+def seal_database_authority(expected_database: str) -> dict:
+    """Create the no-secret shared-volume cutover fence; never replace another target."""
+    if DB_BACKEND != "postgresql" or not DATABASE_URL:
+        raise RuntimeError("Set UBYHOST_DATABASE_URL before sealing PostgreSQL authority.")
+    from . import db
+    actual_database = db.current_database_name()
+    if actual_database != expected_database:
+        raise RuntimeError("Connected database does not match --expect-database.")
+    marker = {
+        "format_version": 1,
+        "backend": "postgresql",
+        "database": actual_database,
+        "schema": "public",
+        "target_fingerprint": _database_target_fingerprint(DATABASE_URL),
+    }
+    DATABASE_AUTHORITY_FILE.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    payload = json.dumps(marker, sort_keys=True, separators=(",", ":")) + "\n"
+    fd, temporary = __import__("tempfile").mkstemp(dir=DATABASE_AUTHORITY_FILE.parent, prefix=".database-authority.")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            os.fchmod(stream.fileno(), 0o600)
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+        try:
+            os.link(temporary, DATABASE_AUTHORITY_FILE)
+        except FileExistsError:
+            existing = json.loads(DATABASE_AUTHORITY_FILE.read_text(encoding="utf-8"))
+            if existing != marker:
+                raise RuntimeError("A different database authority marker already exists.")
+        directory = os.open(DATABASE_AUTHORITY_FILE.parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+    finally:
+        os.unlink(temporary)
+    assert_database_authority()
+    return marker
+
+
+def database_label() -> str:
+    """A safe backend label for logs; never return a path or connection URL."""
+    return DB_BACKEND
 
 # The secret key signs session cookies. Until UBYHOST_DATA_KEYS is set it also
 # derives the key that encrypts data at rest (see data_keys() below).
@@ -470,3 +637,5 @@ def endpoint_for(env: str = None) -> str:
     if name not in UBYPORT_ENDPOINTS:
         raise ValueError(f"Unknown UbyPort environment {name!r} (use mock, test or prod).")
     return UBYPORT_ENDPOINTS[name]
+
+assert_database_authority()

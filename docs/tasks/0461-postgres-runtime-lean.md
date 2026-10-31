@@ -1,5 +1,5 @@
 # 0461: PostgreSQL runtime from #592, reviewed fixes, self-hosted kit removed
-Status: todo
+Status: done
 Depends on: none | Base commit: head of `feat/postgresql-runtime-and-cutover-kit` (PR #592) | Branch: task/0461-postgres-runtime-lean
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 80k tokens
 ## 1. Objective

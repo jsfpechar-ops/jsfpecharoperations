@@ -5,7 +5,7 @@ Status: review. One pull request for the remaining handoff content; no merge, de
 ## Scope and base
 
 Applies the remaining manifest content from
-`docs/plans/postgresql/ubyhost-handoff/current-files/` on top of current `main`
+the PostgreSQL handoff bundle (removed by 0461) on top of current `main`
 (`1f31d41a`). Bundle recorded base `8b5317d0` was verified present and all 48
 manifest SHA-256 hashes matched at source. The bundle was not applied wholesale:
 its guest changes are superseded by merged PR #583, and 0455/0456 PostgreSQL

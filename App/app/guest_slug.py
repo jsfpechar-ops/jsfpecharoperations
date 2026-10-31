@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import re
 import secrets
-import sqlite3
 import unicodedata
 from typing import Optional
 
@@ -190,7 +189,7 @@ def ensure(apartment) -> Optional[str]:
             return _insert_current(
                 cur, int(apartment["id"]), _generated_readable(apartment["internal_name"])
             )
-    except sqlite3.IntegrityError:
+    except db.integrity_errors():
         # Another request created it between our read and our write.
         return current(int(apartment["id"]))
 
@@ -231,7 +230,7 @@ def rename(apartment_id: int, readable: str) -> Optional[str]:
                     "VALUES (?, ?, 1, ?)",
                     (target, apartment_id, db.utcnow()),
                 )
-    except sqlite3.IntegrityError:
+    except db.integrity_errors():
         return None
     return target
 

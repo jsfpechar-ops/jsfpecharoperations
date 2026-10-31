@@ -23,10 +23,10 @@ TOKEN_PREFIX = "filingwatchdog"
 CONTACT = "watchdog-host@example.invalid"
 GUEST_SURNAME = "WATCHDOGSURNAME"
 
-# Monday 28.09.2026 is a public holiday (Den české státnosti). Holidays count
-# as working days, so Mon 28, Tue 29 and Wed 30 are the three working days:
-# the deadline is Wednesday 30.09.2026 23:59:59.
-MONDAY = date(2026, 9, 28)
+# Friday 25.09.2026. Monday 28.09. is a public holiday (Den české státnosti),
+# so the three working days are Fri 25, Tue 29 and Wed 30: the deadline is
+# Wednesday 30.09.2026 23:59:59, one day later than without the holiday.
+FRIDAY = date(2026, 9, 25)
 DEADLINE = datetime(2026, 9, 30, 23, 59, 59)
 
 
@@ -86,7 +86,7 @@ def world():
     )
     counter = {"n": 0}
 
-    def add_stay(guests, *, arrival=MONDAY, status="active"):
+    def add_stay(guests, *, arrival=FRIDAY, status="active"):
         counter["n"] += 1
         reservation_id = db.insert(
             "reservation",
@@ -129,16 +129,17 @@ def _mine(stays, ids):
 # --- at-risk detection ----------------------------------------------------------
 
 
-def test_a_public_holiday_arrival_counts_as_a_working_day(world):
+def test_a_friday_arrival_before_a_public_holiday_gets_the_extra_day(world):
     rid = world["add_stay"]([("DEU", "pending")])
 
-    # Tuesday noon: 36 hours are left, so the stay is not at risk yet.
+    # Tuesday noon: without the holiday the deadline would be tonight, so the
+    # stay would be at risk. With it, 36 hours are left.
     assert rid not in _mine(filing_watchdog.at_risk_stays(datetime(2026, 9, 29, 12, 0)), {rid})
 
     stays = _mine(filing_watchdog.at_risk_stays(datetime(2026, 9, 30, 8, 0)), {rid})
     assert rid in stays
     assert stays[rid]["deadline"] == DEADLINE
-    assert stays[rid]["arrival"] == MONDAY
+    assert stays[rid]["arrival"] == FRIDAY
     assert stays[rid]["overdue"] is False
 
     late = _mine(filing_watchdog.at_risk_stays(datetime(2026, 10, 2, 9, 0)), {rid})
@@ -218,7 +219,7 @@ def test_the_host_is_mailed_once_per_stay(world, monkeypatch):
     payload = json.loads(row["payload"])
     text = payload["text"]
     assert "Watchdog Loft" in row["subject"] and "30.09.2026 23:59" in row["subject"]
-    assert "28.09.2026" in text
+    assert "25.09.2026" in text
     assert "Guests not filed yet: 2" in text
     assert f"{config.PUBLIC_BASE_URL.rstrip('/')}/reservations/{rid}" in text
     assert host_i18n.translate("en", "mail.deadline_at_risk.manual") in text
@@ -240,7 +241,7 @@ def test_no_mail_is_marked_sent_while_mail_is_off(world, monkeypatch):
 @pytest.mark.parametrize("lang", ["en", "cs"])
 def test_the_host_mail_is_translated(lang):
     content = mail_notify.build_deadline_at_risk(
-        property_name="Loft", arrival="28.09.2026", deadline=DEADLINE, unfiled=2,
+        property_name="Loft", arrival="25.09.2026", deadline=DEADLINE, unfiled=2,
         stay_url="https://example.invalid/reservations/1", lang=lang,
     )
     assert "mail.deadline_at_risk" not in content["text"] + content["subject"] + content["html"]
@@ -268,7 +269,7 @@ def test_the_operator_digest_is_throttled_to_one_per_72_hours(world, monkeypatch
     assert {row["to_email"] for row in rows} == {"operator@example.invalid"}
     text = json.loads(rows[0]["payload"])["text"]
     assert USERNAME in text and "Watchdog Loft" in text
-    assert "28.09.2026" in text and "30.09.2026 23:59" in text
+    assert "25.09.2026" in text and "30.09.2026 23:59" in text
     assert GUEST_SURNAME not in text and "ANNA" not in text
 
 
@@ -376,7 +377,7 @@ def test_a_stay_without_guests_is_unknown_risk_once_the_guests_have_arrived(worl
 
     # Before the arrival nothing is due yet, whatever the deadline.
     assert rid not in unknown(datetime(2026, 9, 24, 23, 0))
-    # Tuesday noon: 36 hours left, not yet.
+    # Tuesday noon: 36 hours left (holiday on Monday), not yet.
     assert rid not in unknown(datetime(2026, 9, 29, 12, 0))
     found = unknown(datetime(2026, 9, 30, 8, 0))
     assert found[rid]["deadline"] == DEADLINE and found[rid]["no_guests"] is True
@@ -440,7 +441,7 @@ def test_the_host_gets_the_no_guest_details_mail_once(world, monkeypatch):
 @pytest.mark.parametrize("lang", ["en", "cs"])
 def test_the_no_guest_details_mail_is_translated(lang):
     content = mail_notify.build_deadline_at_risk(
-        property_name="Loft", arrival="28.09.2026", deadline=DEADLINE, unfiled=0,
+        property_name="Loft", arrival="25.09.2026", deadline=DEADLINE, unfiled=0,
         stay_url="https://example.invalid/reservations/1", lang=lang, no_guests=True,
     )
     blob = content["text"] + content["subject"] + content["html"]

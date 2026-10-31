@@ -126,7 +126,7 @@ async def lifespan(_app: FastAPI):
         )
         if config.DEPLOYMENT == "staging":
             log.warning("staging first administrator login link: %s", bootstrap_link)
-    log.info("database ready at %s", config.DB_PATH)
+    log.info("database ready (%s)", config.database_label())
     log.info(
         "deployment=%s ubyport=%s endpoint=%s",
         config.DEPLOYMENT,

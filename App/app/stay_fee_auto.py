@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import logging
-import sqlite3
 from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
@@ -73,7 +72,9 @@ def confirm(apartment, month, today) -> Optional[int]:
         filing_id = stay_fee_filing.save(apartment, group["first"], rate_czk=rate,
                                          collected=collected, issued_on=today,
                                          cadence=group["cadence"])
-    except (ValueError, sqlite3.IntegrityError):
+    except ValueError:
+        return None
+    except db.integrity_errors():
         return None
     db.audit("stay_fee_auto_finalize", f"apartment_id={apartment['id']} period={checked['key']}")
     return filing_id

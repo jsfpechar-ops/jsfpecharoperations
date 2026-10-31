@@ -16,3 +16,4 @@ boto3==1.43.118
 webauthn==3.0.1
 anthropic==2.3.0
 stripe==16.0.1
+psycopg[binary]==3.3.6
