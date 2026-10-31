@@ -29,6 +29,35 @@ if ! [[ "${RETENTION_DAYS}" =~ ^[1-9][0-9]{0,3}$ ]]; then
   exit 1
 fi
 
+# H1: retention may only prune old bundles when this run is proven to carry app
+# key material. Remote age archives cannot be inspected here (the identity is
+# offline by design), so the invariant is enforced at the source: either the
+# /data key files exist (the helper refuses symlinks and reports names only) or
+# .env defines the key. Without either, the last key-bearing bundle could age
+# out, so fail closed before anything is uploaded and before pruning.
+key_check="$(pg_compose run --rm --no-deps -T --entrypoint python ubyhost \
+  /app/scripts/postgres_key_bundle.py --check-only)" || {
+  echo "Could not inspect the app-side key files; refusing the key backup." >&2
+  exit 1
+}
+case "${key_check}" in
+  keys_found=*) key_files_found="${key_check#keys_found=}" ;;
+  *) echo "Unexpected app-key check output; refusing the key backup." >&2; exit 1 ;;
+esac
+if ! [[ "${key_files_found}" =~ ^[0-9]+$ ]]; then
+  echo "Unexpected app-key count '${key_files_found}'; refusing the key backup." >&2
+  exit 1
+fi
+env_carries_key=0
+if grep -qE '^(UBYHOST_SECRET_KEY|UBYHOST_DATA_KEYS)=.+' .env; then
+  env_carries_key=1
+fi
+if [ "${key_files_found}" -eq 0 ] && [ "${env_carries_key}" != 1 ]; then
+  echo "No app key material found: no /data key files and no UBYHOST_SECRET_KEY/UBYHOST_DATA_KEYS in .env." >&2
+  echo "Refusing to upload a keyless bundle and age out the last key-bearing one." >&2
+  exit 1
+fi
+
 # Build a relative path list without following symlinks or exposing contents.
 secret_paths=(
   "${UBYHOST_PG_SUPERUSER_PASSWORD_FILE}"
@@ -82,6 +111,10 @@ done
 
 # Keep complete timestamp pairs from the time window and always keep the newest
 # verified pair. Unknown names stop pruning instead of risking the last chain.
+# Pruning is also gated by the key-material proof above: this run's newest pair
+# carries keys (files or .env), so removing older pairs cannot delete the last
+# key-bearing bundle. The host bundle always contains .env; the data bundle
+# contains whichever key files the helper found.
 remote_files=()
 pair_seen=()
 while IFS= read -r file; do
@@ -126,6 +159,8 @@ if [ "${newest}" != "${STAMP}" ]; then
   echo "Newest remote key bundle did not match this verified run; refusing pruning." >&2
   exit 1
 fi
+printf 'App key backup verified: %s key file(s) in the data bundle, .env key present=%s; retention window %s days.\n' \
+  "${key_files_found}" "${env_carries_key}" "${RETENTION_DAYS}"
 cutoff_epoch="$(( $(date -u +%s) - RETENTION_DAYS * 86400 ))"
 for pair_stamp in "${pair_stamps[@]}"; do
   pair_epoch="$(date -u -j -f '%Y%m%dT%H%M%SZ' "${pair_stamp}" +%s 2>/dev/null || date -u -d "${pair_stamp:0:8} ${pair_stamp:9:2}:${pair_stamp:11:2}:${pair_stamp:13:2} UTC" +%s)"
