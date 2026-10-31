@@ -24,7 +24,7 @@
   </nav>
   {% if current_user %}
   <div class="host-rail-bottom">
-    <nav class="ui-nav ui-nav-bottom" aria-label="{{ t('nav.guide') }}">
+    <nav class="ui-nav ui-nav-bottom" aria-label="{{ t('nav.guide') }}{% if current_user.role == 'admin' %} / {{ t('nav.admin') }}{% endif %}">
       <a class="host-help" href="/guide">{{ icon('book-open', 20) }}<span>{{ t('nav.guide') }}</span></a>
       {% if current_user.role == 'admin' %}<a href="/admin" {% if nav == 'admin' %}aria-current="page"{% endif %}>{{ icon('shield', 20) }}<span>{{ t('nav.admin') }}</span></a>{% endif %}
     </nav>

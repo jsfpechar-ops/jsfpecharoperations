@@ -117,6 +117,28 @@ def test_every_host_page_passes_the_layout_guard(wide_host, wide_base):
     assert not findings, f"{len(findings)} layout findings {counts}\n" + "\n".join(lines)
 
 
+def test_entities_list_fits_at_supported_lanes_and_languages(wide_host, wide_base):
+    widths = (390, 820, 1024, 1180, 1280)
+    languages = ("en", "cs", "vi")
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        context = browser.new_context(viewport={"width": widths[0], "height": 1000})
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": wide_host["cookie"], "url": wide_base + "/"}])
+        page = context.new_page()
+        for width in widths:
+            page.set_viewport_size({"width": width, "height": 1000})
+            for lang in languages:
+                response = page.goto(f"{wide_base}/entities?lang={lang}")
+                assert response and response.status < 400, f"{lang}/{width}: entities page did not load"
+                _wait_for_host_layout(page)
+                panel = page.locator(".entities-page")
+                assert panel.count() == 1, f"{lang}/{width}: operator list missing"
+                widths_now = panel.evaluate("el => [el.scrollWidth, el.clientWidth]")
+                assert widths_now[0] <= widths_now[1] + 1, f"{lang}/{width}: horizontal overflow {widths_now}"
+        context.close()
+        browser.close()
+
+
 def test_admin_pages_pass_the_layout_guard(wide_host, wide_base):
     username = f"guard-admin-{secrets.token_hex(4)}"
     admin_id = auth.create_account(f"{username}@example.test", "Guard Admin", role="admin", username=username)
