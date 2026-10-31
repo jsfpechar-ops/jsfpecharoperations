@@ -93,7 +93,7 @@
 | K-PG02 | High open | ci.yml, #592 ops kit | 45 PG tests skip in CI; cutover kit unrehearsed (D1) | plan v4 |
 
 - K-UI-CACHE: bump `?v=` on edits; 1y cache (0172).
-- K-NAV-418: 3 host_i18n tests fail. K-CHECKIN #435, K-MORE #436 undeployed.
-- K-PK0290: passkey fix open.
-- K-CF01: mid-session challenge: see CLOUDFLARE Rule 3.
+- K-NAV-418: 3 host_i18n tests fail. #435, #436 undeployed.
+- K-CF01: see CLOUDFLARE Rule 3.
 
+- K-ADMIN-NAV: Funnel, Operations: no phone link ([0461](../tasks/0461-admin-section-tabs.md)).
