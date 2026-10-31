@@ -129,7 +129,7 @@ def runs_this_month() -> int:
 def _count_run() -> None:
     db.execute(
         "INSERT INTO lock_api_usage (month, provider, calls) VALUES (?, 'apify', 1) "
-        "ON CONFLICT (month, provider) DO UPDATE SET calls = calls + 1",
+        "ON CONFLICT (month, provider) DO UPDATE SET calls = lock_api_usage.calls + 1",
         (_month_key(),),
     )
 
