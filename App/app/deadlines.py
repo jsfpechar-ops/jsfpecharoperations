@@ -1,4 +1,4 @@
-"""Czech public holidays and the statutory three-working-day reporting deadline.
+"""The statutory three-working-day reporting deadline.
 
 Section 100(c) of Act 326/1999 requires the host to notify the police of a
 foreigner's accommodation within three working days of that accommodation
@@ -8,64 +8,12 @@ turns a list of bookings into a list of things that actually need attention.
 from __future__ import annotations
 
 from datetime import date, datetime, time, timedelta
-from typing import Dict, Optional, Set
+from typing import Optional
 from zoneinfo import ZoneInfo
 
 from . import config
 
 REPORTING_WORKING_DAYS = 3
-
-
-def easter_sunday(year: int) -> date:
-    """Anonymous Gregorian algorithm."""
-    a = year % 19
-    b = year // 100
-    c = year % 100
-    d = b // 4
-    e = b % 4
-    f = (b + 8) // 25
-    g = (b - f + 1) // 3
-    h = (19 * a + b - d - g + 15) % 30
-    i = c // 4
-    k = c % 4
-    l = (32 + 2 * e + 2 * i - h - k) % 7
-    m = (a + 11 * h + 22 * l) // 451
-    month = (h + l - 7 * m + 114) // 31
-    day = ((h + l - 7 * m + 114) % 31) + 1
-    return date(year, month, day)
-
-
-def public_holidays(year: int) -> Dict[date, str]:
-    """Czech public holidays (statni svatky and other days of rest)."""
-    easter = easter_sunday(year)
-    days = {
-        date(year, 1, 1): "Den obnovy samostatného českého státu",
-        easter - timedelta(days=2): "Velký pátek",
-        easter + timedelta(days=1): "Velikonoční pondělí",
-        date(year, 5, 1): "Svátek práce",
-        date(year, 5, 8): "Den vítězství",
-        date(year, 7, 5): "Den slovanských věrozvěstů Cyrila a Metoděje",
-        date(year, 7, 6): "Den upálení mistra Jana Husa",
-        date(year, 9, 28): "Den české státnosti",
-        date(year, 10, 28): "Den vzniku samostatného československého státu",
-        date(year, 11, 17): "Den boje za svobodu a demokracii",
-        date(year, 12, 24): "Štědrý den",
-        date(year, 12, 25): "1. svátek vánoční",
-        date(year, 12, 26): "2. svátek vánoční",
-    }
-    # Good Friday only became a public holiday in 2016.
-    if year < 2016:
-        days.pop(easter - timedelta(days=2), None)
-    return days
-
-
-_HOLIDAY_CACHE: Dict[int, Set[date]] = {}
-
-
-def holiday_set(year: int) -> Set[date]:
-    if year not in _HOLIDAY_CACHE:
-        _HOLIDAY_CACHE[year] = set(public_holidays(year))
-    return _HOLIDAY_CACHE[year]
 
 
 def is_working_day(day: date) -> bool:
@@ -77,7 +25,7 @@ def add_working_days(start: date, count: int) -> date:
 
     The day accommodation starts is the first working day when it is one, per
     decision D3: a Monday check-in gives a Wednesday deadline, not a Thursday
-    one. A check-in on a weekend or a public holiday opens the count on the next
+    one. A check-in on a weekend opens the count on the next
     working day, since a day that is not a working day cannot be counted.
     """
     current = start

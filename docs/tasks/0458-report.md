@@ -1,27 +1,29 @@
-# 0458 report: deadline counts weekends only (status: blocked)
+# 0458 report: deadline counts weekends only (status: review)
+
+## Decisions applied (owner, via coordinator)
+- Step 3 skipped: docs/UBYPORT_CORE.md has no deadline sentence (134 lines, no match for "working day", "days", "deadline", "three", "within").
+- Helpers deleted: `easter_sunday`, `public_holidays`, `_HOLIDAY_CACHE`, `holiday_set` in `App/app/deadlines.py`. `typing` import reduced to `Optional`.
+- Tests deleted: `test_easter_sunday_known_years`, `test_czech_public_holidays`, and `test_good_friday_only_from_2016` (it also called `public_holidays`). They were removed with the helpers.
+- Test renamed: `test_working_day_arithmetic_skips_public_holiday` to `test_working_day_arithmetic_counts_public_holidays`. Expectation 2026-11-18.
+- Copy changed, one key in three languages: `guide.reporting.deadline`:
+  - `App/app/guide_i18n.py` (en): "Weekends do not count."
+  - `App/app/guide_i18n.py` (cs): "Víkendy se nepočítají."
+  - `App/app/host_vi_i18n.py` (vi): "Cuối tuần không được tính."
+- `reporting.py` not touched (line 565 comment still says "weekend or holiday").
+- Also fixed: `deadlines.py` line 1 docstring, and the `add_working_days` docstring sentence "a weekend or a public holiday" (now "a weekend"), since it became false.
 
 ## Files changed
-- `App/app/deadlines.py`: `is_working_day()` now returns `day.weekday() < 5`. Helpers kept (see Deviations).
-- `App/tests/test_deadlines.py`: the one holiday case (`test_working_day_arithmetic_skips_public_holiday`) now expects 2026-11-18 (was 11-19), comment updated.
-- `docs/tasks/0458-deadline-weekends-only.md`: brief copied in from commit 2a8063b (not present on this branch); Status set to blocked.
-- `docs/tasks/0458-report.md`: this report.
+- `App/app/deadlines.py`
+- `App/tests/test_deadlines.py`
+- `App/app/guide_i18n.py`
+- `App/app/host_vi_i18n.py`
+- `docs/tasks/0458-deadline-weekends-only.md` (brief copied from commit 2a8063b, Status: review)
+- `docs/tasks/0458-report.md`
 
 ## Commands
-- `App/.venv/bin/python -m pytest tests/test_deadlines.py -q --tb=short -rs`: `25 passed in 2.05s`, 0 skipped. Run without -x for diagnosis; no failures.
-
-## Not done
-- Step 3 (deadline sentence in `docs/UBYPORT_CORE.md`): no such sentence. grep for "working day", "days", "deadline", "three", "within" returns nothing in the 134-line file.
-
-## Copy hits (holiday wording)
-- `App/app/guide_i18n.py:134` (`guide.reporting.deadline`): "Weekends and Czech public holidays do not count." Now false. Not a template, so not changed.
-- `App/app/reporting.py:565`: comment "a weekend or holiday". Brief says do not touch reporting.py; not changed.
-- `App/app/deadlines.py` line 1 docstring still says "Czech public holidays".
+- `App/.venv/bin/python -m pytest tests/test_deadlines.py -q --tb=short -rs`: `22 passed in 1.91s`, 0 skipped.
+- `App/.venv/bin/python -m pytest tests/test_guide*.py tests/test_guest_guide*.py -q --tb=short -rs`: `148 passed, 4 skipped`. The 4 skips are browser tests (`test_guide_browser.py:19`, `test_guest_browser_e2e.py:39` x2, `test_guest_guide_table_browser.py:13`): `playwright` is not installed in the venv. Under the 0 skipped rule this is NOT a pass for the browser part. CI or an environment with playwright needs to run them.
 
 ## Deviations
-- Helpers `public_holidays`, `holiday_set`, `easter_sunday` NOT deleted. `App/tests/test_deadlines.py` imports them (`test_easter_sunday_known_years`, `test_czech_public_holidays`, lines 25-26). Brief step 1 says delete only if nothing else imports them. Acceptance "no remaining reference to holidays in App/app" is therefore not met.
-- Test name `test_working_day_arithmetic_skips_public_holiday` kept, although it is now misleading.
-
-## Questions for owner
-1. Delete the helpers and the two helper tests, or keep them as dead code?
-2. Change the guest guide sentence in `guide_i18n.py:134` to "Weekends do not count."? It is false now.
-3. Where is the deadline described in docs? UBYPORT_CORE has no such sentence.
+- The 4 browser-test skips above (no playwright in this environment). Not fixed here.
+- The test-map has no row for `deadlines.py`. Ran `test_deadlines.py` directly, per the brief.

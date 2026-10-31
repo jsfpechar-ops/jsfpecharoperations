@@ -3,29 +3,6 @@ from datetime import date, datetime, timedelta, timezone
 from app import deadlines as d
 
 
-def test_easter_sunday_known_years():
-    assert d.easter_sunday(2024) == date(2024, 3, 31)
-    assert d.easter_sunday(2025) == date(2025, 4, 20)
-    assert d.easter_sunday(2026) == date(2026, 4, 5)
-
-
-def test_czech_public_holidays():
-    holidays = d.public_holidays(2026)
-    assert date(2026, 1, 1) in holidays
-    assert date(2026, 7, 5) in holidays
-    assert date(2026, 11, 17) in holidays
-    assert date(2026, 12, 26) in holidays
-    # Easter Monday 2026 follows Easter Sunday on 5 April.
-    assert date(2026, 4, 6) in holidays
-    # Good Friday.
-    assert date(2026, 4, 3) in holidays
-
-
-def test_good_friday_only_from_2016():
-    assert d.easter_sunday(2015) - __import__("datetime").timedelta(days=2) not in d.public_holidays(2015)
-    assert d.easter_sunday(2016) - __import__("datetime").timedelta(days=2) in d.public_holidays(2016)
-
-
 def test_weekends_are_not_working_days():
     assert not d.is_working_day(date(2026, 9, 12))  # Saturday
     assert not d.is_working_day(date(2026, 9, 13))  # Sunday
@@ -38,7 +15,7 @@ def test_working_day_arithmetic_skips_weekend():
     assert d.add_working_days(date(2026, 9, 10), 3) == date(2026, 9, 14)
 
 
-def test_working_day_arithmetic_skips_public_holiday():
+def test_working_day_arithmetic_counts_public_holidays():
     # 17 Nov 2026 is a public holiday (a Tuesday), but holidays now count as working days: 16, 17, 18.
     assert d.add_working_days(date(2026, 11, 16), 3) == date(2026, 11, 18)
 
