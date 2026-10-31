@@ -1,0 +1,10 @@
+<details class="g-card g-why" data-purpose-help="email">
+  <summary class="g-why-summary" id="email-help-label">{{ t('email_help_label') }}</summary>
+  <div class="g-details">
+    <p>{{ t('tw_email_short') }}</p>
+    <p>{{ t('claim_email_help') }}</p>
+    <p>{{ t('claim_cookie_help') }}
+      {% if privacy_url %}<a href="{{ privacy_url }}">{{ t('privacy_link') }}</a>{% endif %}
+    </p>
+  </div>
+</details>

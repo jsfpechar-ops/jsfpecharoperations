@@ -1,0 +1,818 @@
+diff --git a/docs/context/decisions.md b/docs/context/decisions.md
+index 31ede9c8..e5b706ae 100644
+--- a/docs/context/decisions.md
++++ b/docs/context/decisions.md
+@@ -73,3 +73,5 @@ Append-only.
+ - 2026-10-29 | Trials are extendable by the operator, 1-365 days | owner | 0448
+ - 2026-10-29 | Stripe Accounts v2; responsibilities immutable; company hosts via business_type | owner | 0437
+ - 2026-10-29 | Connect accounts: full Stripe Dashboard + Stripe collectors (Express+Stripe is preview-only; Express pairs with application liability, rejected) | owner | 0439
++
++- 2026-10-30 | [workflow] Owner permits Luna for #581–583 only; safeguards retained | [workflow](workflow.md)
+diff --git a/docs/context/known-issues.md b/docs/context/known-issues.md
+index 1e7770f7..b1c0cc25 100644
+--- a/docs/context/known-issues.md
++++ b/docs/context/known-issues.md
+@@ -1,19 +1,19 @@
+ # Known issues
+ 
+-Grep. **HR**: owner decides.
++**HR**: owner decides.
+ 
+ **Sources:** [map](known-issue-sources.md).
+ 
+ | ID | Sev/status | Where | Issue | Src |
+ |---|---|---|---|---|
+ | K-DOM01 | Pending | App URLs | CI + phone check | owner |
+-| K-F01 | High open | reporting.py:1356-1413, ubyport/client.py:166 | Non-401 4xx retried every sweep, no attempt cap | P A28-29 |
+-| K-F02 | High open HR | icalsync.py date-move UPDATE ~498 | Date move ignores submission_claim; can move a guest mid-send | P A24 |
++| K-F01 | High open | reporting.py:1356-1413, ubyport/client.py:166 | Non-401 4xx retried each sweep, uncapped | P A28-29 |
++| K-F02 | High open HR | icalsync.py date-move UPDATE ~498 | Date move ignores submission_claim; may move guest mid-send | P A24 |
+ | K-F03 | Med open HR | icalsync.py ~805-830 | Lone vanished future booking stays "suspect" forever | P A19 |
+-| K-F04 | Med open | icalsync.py | Same booking in two feeds makes two stays, one overdue forever | P A22 |
++| K-F04 | Med open | icalsync.py | Duplicate feeds create two stays; one overdue forever | P A22 |
+ | K-F05 | Med open | icalsync.py, routes/admin.py | Manual and scheduled sync clash on UNIQUE; loser marked error | P A23 |
+ | K-F06 | Med open | validation.py country_codes() | Some police country codes missing; Kosovo XKX unconfirmed | P A27 |
+-| K-F07 | Low open HR | routes/guest.py immediate mode | Guest save blocks on the UbyPort call (60 s+) | P A75 |
++| K-F07 | Low open HR | routes/guest.py immediate mode | Guest save waits for UbyPort (60 s+) | P A75 |
+ | K-F08 | Low open | icalsync.py:304 | DTEND ≤ DTSTART stored; those guests never validate | P A31 |
+ | K-F09 | Low open | routes/admin.py:1927 | Manual send inspects only the first batch | P A36 |
+ | K-F10 | Low open | routes/admin.py calendar delete | Deleted calendar's future stays stay active and alert | P A34 |
+@@ -99,3 +99,5 @@ Grep. **HR**: owner decides.
+ - K-PK0290: passkey fix open.
+ - K-CF01: mid-session challenge: see CLOUDFLARE Rule 3.
+ 
++
++K-UX583: see 0451-report.
+diff --git a/docs/context/prompts.md b/docs/context/prompts.md
+index 451ae332..b2680fb1 100644
+--- a/docs/context/prompts.md
++++ b/docs/context/prompts.md
+@@ -45,3 +45,7 @@ UbyHost monthly check. Read docs/context/README.md and docs/context/workflow.md#
+ ```
+ Before reporting, grep docs/context/known-issues.md for the file. Skip listed IDs. Report only new, concrete, reproducible bugs, and append them as K- rows in the same PR.
+ ```
++
++## Scoped Luna prompt for PRs #581–583
++
++For the owner-authorized 2026-10-30 task only, substitute Luna for Haiku in the executor prompt. Follow one verified brief and all normal safeguards. Return local diffs and evidence; do not merge or deploy. See [workflow](workflow.md#task-specific-luna-execution-2026-10-30).
+diff --git a/docs/context/rules.md b/docs/context/rules.md
+index 3af957b9..6b34d2e0 100644
+--- a/docs/context/rules.md
++++ b/docs/context/rules.md
+@@ -57,17 +57,15 @@ Playwright comes from `.cursor/install.sh` (or `pip install playwright==1.63.0 &
+ 
+ ## UX and interaction (host and admin)
+ 
+-Set 2026-10-30, owner decision. The rationale and work plan is [docs/plans/ux-smoothness-plan-20261030.md](../plans/ux-smoothness-plan-20261030.md). These rules bind every host-app and admin change; guest, marketing, auth and legal pages keep their own rules.
+-
+-- **Light mode only.** No dark mode, no theme toggle, no `prefers-color-scheme` switching.
+-- **One design system.** Colors, spacing, radii, shadows and type sizes exist only in `tokens.css`; component styles only in `components.css`; app layout in `host.css`. Do not add a new stylesheet or a new design generation. New UI is built from `ui_*` macros, and a component not shown on `dev_ui.html` does not exist.
+-- **One attention surface per page.** At most one banner above the first content section. Alerts, billing notices and environment warnings fold into the page's needs-you card or the topbar, never stack.
+-- **Density.** At most 4 `ui_stats` tiles per page; one page answers one question; every list has an `ui_empty` state.
+-- **Progressive enhancement.** Every flow works without JavaScript. JS layers (prefetch, view transitions, partial swaps) add smoothness on top and must respect `prefers-reduced-motion`. Vanilla ES modules only, no framework, no build step.
+-- **Instant-feel budget.** Perceived click-to-content under ~200 ms on the production host; no layout shift on navigation; no white flash on transitions.
+-- **Assets that never regress:** the command palette, keyboard navigation, undo toasts, skeleton screens, the offline page, PWA, screen-reader live regions and the three UI languages keep working in every change.
+-- **Admin is first-class.** Admin accounts see an Administrace nav group in the sidebar; no admin function is more than one click from the shell.
+-- Changed host/admin pages ship before/after 390 px screenshots in the PR and pass `App/tests/test_host_geometry.py`.
++Set 2026-10-30, owner direction. The staged plan is [docs/plans/ux-smoothness-plan-20261030.md](../plans/ux-smoothness-plan-20261030.md). These rules bind host-app and admin changes; guest, marketing, authentication and legal pages keep their own rules.
++
++- **Light mode and architecture.** Keep light mode, FastAPI, Jinja and progressive enhancement. Do not add a theme toggle or plan a SPA rewrite without a separately reviewed owner decision.
++- **Reuse and migrate safely.** Reuse existing tokens and components. Map callers and inspect cascade behavior before removing or moving styles. Legacy and justified page-owned styles may coexist during migration. Do not require global stylesheet consolidation or delete files to reach a stylesheet-count target.
++- **Attention and density.** Prefer one coherent attention area and at most four summary tiles where suitable; allow documented page-specific exceptions. Preserve warning severity, action, dismissal and visibility. A badge or collapsed area must not hide a blocking warning. Keep useful filters and empty states for the affected task.
++- **Progressive enhancement.** Preserve ordinary server forms without JavaScript, server authorization, core navigation and existing phone navigation. Prefetch, transitions and partial actions are separate pilots with verified source contracts and fallbacks. Respect reduced-motion preferences. Never blindly retry an uncertain mutation.
++- **Preserve established behavior.** Keep the command palette, keyboard navigation, server-supported undo, skeletons, offline page, PWA, screen-reader announcements and existing languages working for each affected flow.
++- **Measure, do not promise.** Record route, browser/device, viewport, network, cache state and sample count; measure cold, warm and back/forward navigation separately. A 200 ms warm-navigation result is aspirational, not a guarantee. Do not claim zero risk or guaranteed performance.
++- **Task scope and checks.** Follow the applicable component guidance and page add-on, including phone navigation. Update the component catalog when components change. Host/admin template and CSS changes require the applicable browser and geometry checks and the repository-required viewport screenshots in the report. Run only applicable test-map rows.
+ 
+ ## Copy
+ 
+diff --git a/docs/context/status.md b/docs/context/status.md
+index e9522d1e..13501b56 100644
+--- a/docs/context/status.md
++++ b/docs/context/status.md
+@@ -7,6 +7,7 @@ Updated: 2026-10-29.
+ - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
+ 
+ ## Now
++- #581–583 corrections: local plans revised; guest brief 0451 blocked on baseline mismatch; analytics 0452 blocked on script/test-fixture verification. [Bundle](../plans/ubyhost-corrections-20261030/README.md).
+ - Billing cockpit merged (#561). 0448 merged (#565): first plan to legacy hosts (immediate start, invoice now, no trial) + trial extension 1–365 days. Decisions 2026-10-29 in decisions.md.
+ - Billing ON in production (`UBYHOST_BILLING_ENABLED=1`, 2026-10-29; cockpit #561, 0448 #565). Deploy manual.
+ - 0429 payments UX (CI browser row pending). Next: 0435-36 rails, 0430-34 pages. Plan #551, rails #553, fix #554 merged.
+diff --git a/docs/context/workflow.md b/docs/context/workflow.md
+index 6ece0fec..0a0933da 100644
+--- a/docs/context/workflow.md
++++ b/docs/context/workflow.md
+@@ -20,6 +20,10 @@ This file is the single source of truth for how work is done. When the process c
+ 
+ Closed 2026-10-17. The Luna 6.0 and Cursor-executor exception is retired; Haiku 5.5 is the only executor. Never push main, bypass CI, merge for preview or deploy production. See [decision](ui-decisions.md).
+ 
++## Task-specific Luna execution (2026-10-30)
++
++For the owner-requested review of PRs #581–583 only, Luna may implement an orchestrator-approved, source-verified brief. The owner explicitly requested Luna in this chat. This exception does not authorize the orchestrator to edit `App/`, widen a brief, merge, deploy, or bypass checks. All other executor safeguards and session limits remain. Return local changes and a portable handoff; remote publication is not part of this exception.
++
+ ## Token budget (every AI, every session)
+ 
+ - **Every chat, orchestrator or Haiku:** checkpoint at 60k tokens, hard stop at 100k. Agents cannot count tokens exactly, so also count calls: an orchestrator stops after 25 tool calls and 5 file reads, Haiku after 30 tool calls. At the checkpoint, stop new work and hand over (see below). Orchestrators aim for 40k.
+diff --git a/docs/plans/business-metrics-and-database-plan-20261030.md b/docs/plans/business-metrics-and-database-plan-20261030.md
+index 4f9da1ec..3939fdd9 100644
+--- a/docs/plans/business-metrics-and-database-plan-20261030.md
++++ b/docs/plans/business-metrics-and-database-plan-20261030.md
+@@ -1,181 +1,95 @@
+-# Plan: business metrics now, Postgres later (analytics replica + a shelf-ready migration)
++# Business metrics and database direction
+ 
+-Status: plan for owner decision, 2026-10-30. Written at the owner's request ("be my CTO"). Supersedes the tool-neutral recommendation in [data-tool-research-20261029.md](data-tool-research-20261029.md).
++Status: staged plan, 2026-10-30. Production remains on SQLite and its current backup path. Metric definitions and source verification come before new analytics infrastructure. UX work and metric-contract work may proceed independently.
+ 
+-**Revision history (same day, four steers):**
+-1. **Rev 1:** Postgres on a managed DB ($15/mo) + Metabase.
+-2. **Rev 2:** owner relaxed privacy as a driver ("full in for efficiency"); options re-weighed.
+-3. **Rev 3:** owner noted the existing $44/mo 8 GB Lightsail bundle; production Postgres moved onto that box, $0/mo.
+-4. **Rev 4:** owner steer — "consider the migration for the next executive CTO." **Production stays SQLite.** The migration becomes a fully pre-analyzed playbook with explicit triggers (§4), owned by whoever holds the CTO seat when a trigger fires. Business metrics ship **now** through an analytics replica (§5) — the production database is untouched, so the BI blocker dies without a migration.
++## Owner direction and limits
+ 
+-5. **Rev 5 (this text):** the owner asked for the complete runway of pending steps to be part of the plan — everything that must be done, in gate order (§8), before anything new pushes further.
++The owner wants a system that can scale without frequent tool changes, prefers staying on a free tier where feasible and using the existing Lightsail capacity where suitable, and has asked that a production database migration be left for a future CTO unless a real need arises. Those preferences guide evaluation; they do not prove available capacity, zero incremental cost, zero risk, or a particular migration effort. Metabase OSS over a separate analytics copy remains a candidate, subject to the conditions below.
+ 
+-## 0. Owner constraints (2026-10-30, the owner's words)
++Do not change the production database, backups, scheduler, dependencies, containers or production configuration as part of defining metrics. Keep guest and contact data out of extracts unless a specific metric requires a field and that need is documented.
+ 
+-- "I want to be scalable into the future, don't want to keep changing apps, ideally want to stay with one as long as possible on free tier."
+-- "Don't worry about privacy or users data, lets go full in for efficiency."
+-- "I already have a Lightsail instance for 44 USD."
+-- "Consider the migration for the next executive CTO."
+-- PostHog already covers web analytics. Nothing covers business metrics (MRR, invoices, churn).
+-- Billing went live in production 2026-10-29; Stripe Connect rails (0435-0442) and property pages (0430-0434) are mid-flight.
+-- Solo operator: every hour must earn itself; risk belongs where the revenue is.
++## Metric contract required before implementation
+ 
+-## 1. The recommendation now
++Agree the metric meaning, grain, date rules, currency handling, source fields, exclusions and reconciliation checks before adding an extract or dashboard. Use integer minor units or exact decimals. Keep currencies separate until an FX policy is approved. Use `Europe/Prague` for business dates. Missing history is unavailable, not zero.
+ 
+-**Do nothing to the production database.** SQLite stays, Litestream stays, the four backup layers stay. Instead, one new scheduled job copies the money tables into a small **analytics Postgres container** on the existing 8 GB instance (a read-only copy by construction), and **self-hosted Metabase OSS** runs on top of that copy. Total: **$0/month, zero production risk, business metrics in one brief.** The SQLite-to-Postgres migration is fully pre-analyzed below (§6) and waits for its triggers (§4) — the next executive CTO (a future chat, a future hire, or the owner) executes a playbook that is already written, not a project that must be re-discovered.
+-
+-The anti-churn principle survives untouched: the Postgres-portable SQL rules (`ON CONFLICT`, `RETURNING`, no `lastrowid`) are the standing insurance that the migration, whenever it happens, is a project measured in sessions, not months.
+-
+-## 2. The strategic principle: anti-churn lives at the data layer
+-
+-The owner's stated fear is changing tools every year. Two mechanisms kill that churn:
+-
+-- **The portable-SQL rules** make the production database switchable at low cost at any time. That is why they exist; they stay verbatim.
+-- **The analytics replica** makes the BI layer independent of whatever the production database is. Metabase, Looker Studio, or any future tool points at the replica; switching BI tools is a weekend, and switching the production DB (§6) never re-triggers a BI change.
+-
+-Together: both layers are swappable, so nothing needs to be switched *now* to be safe *later*.
+-
+-## 3. Why deferral is the right call (the CTO reasoning)
+-
+-The original case for migrating now had three legs. Under the full-repo audit, two of them disappear and one gets a cheaper answer:
+-
+-1. **"BI needs a connectable database"** — true, but BI needs *a* database, not *the* database. The replica (§5) gives Metabase a real Postgres with zero production coupling. Cheaper and safer than migrating production to get the same dashboards.
+-2. **"Concurrency is arriving"** — not yet. The app is single-host, write volume is calendar-sync + filings + month-end billing; SQLite's single-writer model has not shown contention. The ceiling exists but there is no evidence we are near it. The rule "no logic may assume a single writer" already keeps the door open.
+-3. **"Backups get simpler"** — Litestream + the four layers (0421) work and are drilled. No reason to churn a working, drilled backup system while billing is days old.
+-
+-Risk timing: with billing live since yesterday and the payments rails mid-flight, the highest-risk week to churn the data layer is this one. Nothing about deferral is wasted: the audit numbers, the staging plan, the backup mapping and the escape hatches are all written down (§6) — that work is banked.
+-
+-## 4. Triggers: when the next executive CTO pulls the ripcord
+-
+-Execute the playbook (§6) when **any** of these fires:
+-
+-- **T1 — A second app server is needed** (scaling, zero-downtime deploys, split worker host). This is the original rules.md condition, restated.
+-- **T2 — Real write contention**: SQLite `SQLITE_BUSY`/lock timeouts show up in the logs or Grafana, or the month-end billing run visibly degrades the app.
+-- **T3 — The box is out of headroom** for app + worker + monitoring + replica + Metabase, and the bundle upgrade path is exhausted.
+-- **T4 — HA/managed-database requirements appear** (real paying scale, contractual uptime, multi-AZ) — at that point the playbook's RDS escape hatch is the target, not Lightsail managed DB (its daily-only backups regress today's ~10 s Litestream RPO).
+-- **T5 — The replica stops being enough**: sync lag becomes a decision problem (e.g. needing intraday MRR), or the money tables outgrow the nightly-copy pattern.
+-
+-Until a trigger fires, the playbook is dormant — reviewed when the owner's monthly check looks at spend and Grafana, not acted on.
+-
+-## 5. The interim build: analytics replica + Metabase (the only new thing)
+-
+-**What ships:** one brief, one PR.
+-
+-- **Sync job**: a new scheduled job in the existing `scheduler.py` pattern (like `retention` at 03:30) — e.g. `analytics_sync` nightly. It reads the money tables through `db.py` helpers and writes them into the analytics Postgres: `billing_month_snapshot`, `platform_invoice`, `billing_account` (plan, discount, trial state), stay-fee aggregates, host account counts, churn/trial-ending views. Money tables only, by design: business metrics need revenue, not guest data.
+-- **Compose**: a `postgres-analytics` service (digest-pinned, `mem_limit: 512m`, profile `analytics`, joins `ubyhost-web`, no published ports) plus the Metabase service (`mem_limit: 1g`, profile `analytics`). Both live inside the existing $44 instance's headroom.
+-- **Read-only by construction**: the replica cannot corrupt production because it is a copy, not a connection. No read-only-user discipline needed against the live DB.
+-- **Health**: the job raises a `job_failed` alert on failure (existing pattern) and gets a `UBYHOST_HEARTBEAT_BACKUP_URL`-style heartbeat ping (existing healthchecks.io pattern) so silent staleness is impossible.
+-- **First dashboards** (from the cockpit plan §12): MRR + movement waterfall, plan mix, churn watchlist (trials ending, overdue invoices), portfolio aging, fee vs. subscription revenue. **Alerts**: overdue invoice, trial ending without conversion, MRR drop — the morning checklist automated.
+-- **Fallback unchanged**: the 0446 export endpoint and `backup.sh`/restore drills keep working exactly as today; the replica adds, replaces nothing.
+-
+-If Looker Studio is ever preferred (co-equal per rev 2), it points at the replica's Postgres: publishing the replica endpoint (never the production DB) with a Google IP allowlist is an ops line item, acceptable per the owner's steer.
+-
+-## 6. The migration playbook (shelf-ready; owned by the next executive CTO)
+-
+-Pre-analyzed 2026-10-30 against the full repo. **Do not start until a §4 trigger fires.** Read §4 first, then this.
+-
+-**Audit numbers:** ~46 files use `db.immediate()`, ~51 `PRAGMA` references, one connection layer (`App/app/db.py`, 69 KB), 31+ migrations to replay (`0001` frozen `db.SCHEMA`), Litestream in the deploy path, filing path (ZapisUbytovane, SOAP, Doručenka PDFs) as the crown-jewel regression surface.
+-
+-**Target (rev 3 analysis stands):** Postgres container on the existing 8 GB instance, private network only, $0 marginal. Managed DB demoted (daily-only backups regress Litestream's ~10 s RPO); RDS is the HA escape hatch. Neon rejected for production (Free cannot disable scale-to-zero; 100 CU-hrs suspends under continuous load) but used for disposable branch rehearsals.
+-
+-**Backup mapping (0421 layers):** Litestream → WAL-G on the same S3 bucket (continuous WAL archiving, same RPO class); `backup.sh` `sqlite3 .backup` → `pg_dump` variant; Drive weekly and Lightsail instance snapshots unchanged.
+-
+-**Stages when executed:**
+-1. `db.py` Postgres connection branch behind `UBYHOST_DB_URL` (one documented `ENVIRONMENT.md` row); CI dual-database. SQLite stays default.
+-2. Staging rehearsal: migrations replayed on a Neon free branch or the host's staging compose profile; full suite + filing dry-run green, twice.
+-3. Data-migration rehearsal: row counts, billing totals in Kč reconciled to the cockpit, snapshots month-by-month.
+-4. Cutover morning: final Litestream restore point; migrate on-host; flip the env var; smoke host app, admin, billing run, one filing dry-run; Grafana watch. Rollback: flip back — the SQLite file is untouched.
+-5. Close out: rules.md Database section updated ("UbyHost runs on Postgres…"), LIGHTSAIL.md rows updated, Litestream decommissioned after two clean weeks, WAL-G joins the restore drill.
+-
+-**Hard gates:** filing path green before and after; HIGH RISK filing rule requires a written owner decision — the trigger + this playbook presented as that decision.
+-
+-## 7. PostHog and Grafana
+-
+-- **PostHog Cloud EU**: unchanged (web/product analytics, funnel). Host-app instrumentation is unlocked by the efficiency steer but waits for a real question to answer.
+-- **Grafana Cloud free**: ops only. Optional free additions: a postgres-exporter panel for the analytics DB; the existing `metrics.py` app job is the pattern.
+-
+-## 8. The runway: what must be done, in order
+-
+-**Nothing in a lower gate starts before the gates above it are closed.** Source of truth for each line: [status](../context/status.md) (updated 2026-10-29 — re-check it before executing; some rows may already be closed), plus this plan and the UX plan. Each gate lists its exit criterion.
+-
+-**Gate 0 — the owner queue (one batched morning: merges, deploys, staging checks, letters)**
+-
+-1. Merge the reviewed PRs with `scripts/merge-pr-on-green.sh`: Guide + Leon #465-468; the 0291-0302 buttons/fees/invoice line; #435 (passkey); TTLock #434 once its CI row is green.
+-2. Production deploy of everything merged since the last deploy (Actions → Deploy production, `force_confirm=DEPLOY`).
+-3. Add `uk` to `UBYHOST_GUEST_LANGS` and redeploy (0196 guest form).
+-4. Owner staging tests: TTLock change / calendar-stays / DST; door codes 0037-0038 owner steps; stay-fee e-mail 0220-0224; root login/calendar review (from #432).
+-5. Cloudflare rules 3-4 (0291-0302 row); passkey phone + iPad checks (0280-0283, 0290).
+-6. Credential letter to data box ybndqw9; verify `/healthz`.
+-7. 0403-0405 (guide import / Leon setup) reviews closed.
+-
+-*Exit: no reviewed-but-unmerged PR older than a week; production runs the merged main; staging rows in status are ticked.*
+-
+-**Gate 1 — the money path (the only code work that outranks this plan)**
+-
+-8. 0429 payments UX: close the pending CI browser row, merge the line (#553 rails and #554 fix are already merged).
+-9. 0435-0436 card and QR rails; 0430-0434 property pages; 0437-0442 Stripe Connect v2 port and fixes: review, merge, deploy each on green.
+-10. End-to-end money check in production: a host signs up, connects Stripe, a guest pays, an invoice exists, billing records it. 0448 (first plan to legacy hosts) is already merged and live.
+-11. OPS-2: after the next age-encrypted backup lands, purge the legacy plaintext backups from Lightsail/S3 per the backup runbook.
+-
+-*Exit: a host can be paid end-to-end without hand-holding; the backup layers are all encrypted.*
++| Metric | Required meaning |
++|---|---|
++| Subscription MRR | Effective recurring platform price, net of VAT and recurring discounts, normalized monthly. Exclude trials, one-off fees and guest/merchant payment volume. |
++| Issued invoices | Separate count and amount; define currency, tax, voids, credits and replacement invoices. |
++| Overdue invoices | Define due date, qualifying status and remaining-balance rules. |
++| Collections | Distinguish an invoice marked paid from cash actually collected or allocated. |
++| MRR movement | Opening + new + expansion − contraction − churn = closing. Define reactivation and require sufficient history. |
++| Account churn | Eligible paying accounts lost divided by eligible accounts at period start. Cancellation request is distinct from effective end. |
++| Trials and account counts | Define grain, eligibility and dates; prevent joins from multiplying accounts. |
+ 
+-**Gate 2 — parked decisions (cheap to make; each unblocks a row elsewhere)**
++## Source observations and verification gaps
+ 
+-12. Founder-price flag on the customer page vs discount-% only (status Blocked row).
+-13. Lawyer round: legal v1.7 signature, TDM §11 confirmation (0195), the Terms/DPA line from the file-retention plan, and the K-L rows.
+-14. HIGH RISK filing rows K-F02/K-F03/K-F07, stale signed dates K-F18, secret rotation K-S10: schedule each or explicitly park it with a date.
+-15. Support mailbox vendor choice (vendors.md open row).
++The supplied source review records the following observations for re-verification before implementation; they are not production reconciliation results or proof of historical completeness:
+ 
+-*Exit: every status Blocked row is either closed or has an owner and a date.*
++- `billing_analytics.py` `portfolio()` derives current portfolio values from quotes and includes `active`, `overdue` and `canceling` accounts.
++- Annual normalization uses whole-CZK rounding. Invoice aggregates sum `total_haler`, then truncate to whole CZK.
++- Paid aggregation uses invoice `paid_on`; this alone does not establish a cash-allocation ledger.
++- Existing-row trends do not prove a complete series of historical months. Snapshot helpers do not prove historical coverage or complete effective-state history.
++- Movement, reactivation and churn are not yet verified historical business metrics.
++- Portfolio queries include contact/name fields. Do not automatically include them in an extract.
++- The defining migrations for `billing_account`, `platform_invoice` and `billing_month_snapshot` still need to be identified and inspected.
+ 
+-**Gate 3 — this plan, Phase 1 (starts only when Gates 0-1 are closed; Gate 2 can run in parallel)**
++Before writing the extraction brief, inspect only relevant ranges and exact symbol matches in:
+ 
+-16. Brief: the `analytics_sync` scheduled job + `postgres-analytics` + Metabase compose services (§5), following the task system.
+-17. Build, review, merge on green; deploy with the `analytics` profile; wire the heartbeat (existing healthchecks.io pattern).
+-18. First dashboards and alerts (§5); tune against the cockpit plan §12.
++- `App/app/billing.py` for quote, discount, tax and effective cancellation semantics.
++- `App/app/migrations/` for the exact definitions of the three billing tables above; do not audit unrelated migrations.
++- Relevant payment, refund or allocation source if collections must mean cash collected.
++- Relevant scheduler and mutation call sites for snapshot timing and historical coverage.
++- `App/app/db.py` for the existing consistent-read contract.
++- Relevant billing tests for source semantics and fixture setup.
+ 
+-*Exit: MRR, plan mix, churn watchlist and overdue-invoice alerts exist outside the morning checklist.*
++Update each observation if current source differs. If a field, policy or history guarantee remains unverified, mark the metric unavailable and keep that gap explicit. Do not infer a cash claim from `paid_on`, zero-fill missing months, or publish movement/churn claims without adequate history.
+ 
+-**Gate 4 — the UX plan**
++## First implementation: bounded read-only extraction
+ 
+-19. PR #581 review and merge, then its workstreams W1-W5 per its own sequencing — after the money path, in parallel with Gate 3.
++After source contracts are verified, prepare a separate implementation brief for a small, read-only extraction of current portfolio values and invoice issue/paid aggregates. Keep the scope limited to the verified fields and definitions. Preserve existing billing-cockpit behavior unless a demonstrated defect requires a compatible correction.
+ 
+-*Exit: UX plan merged; its briefs enter the normal task queue.*
++The initial extraction excludes scheduler registration, new drivers or dependencies, schema migrations, containers, Metabase deployment, secrets, production queries and historical movement/churn claims. Use `db.py` helpers and a consistent read. Minimize fields; contact and name data do not enter by default.
+ 
+-**Gate 5 — dormant**
++Fixtures and reconciliation checks must cover trials, discounts, tax, effective cancellation, credits/refunds, replaced invoices, repeated extraction, date boundaries and missing history. Validate count and amount separately, currency by currency, and compare against the existing source outputs without claiming production reconciliation unless it was actually performed.
+ 
+-20. The Postgres playbook (§4-§6): read once at each monthly check; execute only when a trigger fires. Until then: nothing.
++## Later analytics architecture candidate
+ 
+-## 9. Costs
++Metabase OSS over a separate analytics copy is a candidate, conditional on verified metric contracts, measured capacity, recovery rehearsal, privacy review and operating cost. “No additional hosting subscription” is a target to evaluate, not a guarantee of zero cost or zero risk. Do not deploy it as part of the metric-definition or extraction work.
+ 
+-| Item | Monthly |
+-|---|---|
+-| Everything existing (Lightsail 8 GB, S3, PostHog, Grafana, SES…) | unchanged |
+-| Analytics Postgres container + Metabase on the existing instance | $0 |
+-| **Total new** | **$0** |
++If approved later, the data path should be:
+ 
+-## 10. Decisions needed from the owner
++```text
++Production source
++  -> consistent minimal snapshot
++  -> isolated analytics load
++  -> validated published generation
++  -> Metabase reporting
++```
+ 
+-- **D1 — Production database stays SQLite.** The migration is deferred to §4 triggers; this document is the written record of that decision and the playbook the next executive CTO executes.
+-- **D2 — $0 new monthly spend confirmed.**
+-- **D3 — Metabase OSS self-hosted confirmed as the BI tool**, pointing at the analytics replica. Looker Studio remains a co-equal alternative against the same replica.
+-- Lines in `docs/context/decisions.md` when the phase-1 PR lands.
++The implementation brief must define:
+ 
+-## 11. Non-goals
++- SQL through `db.py` helpers and a consistent extraction boundary.
++- A minimal field allowlist with a reason for every personal-data field.
++- Staging generations with run ID, schema version and source timestamp.
++- Validation before transactional publication, idempotent retries, and correction/deletion propagation.
++- Failed refresh behavior that retains the last successful generation and marks it visibly stale.
++- Last successful source time, expected refresh, and independent freshness/missed-heartbeat checks.
++- A read-only BI reporting role and private database networking.
++- Metabase’s persistent production application database for dashboards, users and configuration, separate from its reporting connection; do not use embedded H2 in production.
++- Off-host backups for configuration/application data and a demonstrated restoration of a dashboard and access settings.
++- Measured RAM, CPU, disk growth and I/O alongside the app, workers, monitoring and backups before choosing resource limits. Previously proposed Postgres and Metabase memory caps are unverified.
+ 
+-No production database change now, no managed database, no BigQuery, no warehouse, no per-seat BI, no Supabase, no Neon in production, no change to the backup layers, no change to PostHog or Grafana scopes, no change to guest pages.
++## Production database migration: deferred
+ 
+-## 12. What if we do nothing
++Reconsider PostgreSQL only for an actual requirement, such as another app/worker host, harmful write contention, or stronger availability obligations. A future migration plan must verify compatibility and filing/money behavior, define downtime and RPO/RTO, identify owners, and rehearse both data reconciliation and recovery.
+ 
+-Stated honestly: SQLite + the 0446 export endpoint + spreadsheets answers every business question at this scale for $0. The cost is the owner's morning checklist staying manual and the BI blocker surviving. Phase 1 costs one brief and closes it; the migration playbook costs nothing to keep.
++Before cutover, quiesce web mutations, workers, schedulers and callbacks, then perform a final reconciliation before destination writes. Rehearse post-write recovery and reconcile external side effects. An untouched SQLite file is not a sufficient rollback plan after PostgreSQL has accepted authoritative writes.
+ 
+-## 13. Repo assets this plan builds on (audit 2026-10-30)
++## Verification and deliverables
+ 
+-- **Restore drills are institutionalized** (`restore-drill.yml`): a future WAL-G path joins an existing habit.
+-- **The heartbeat pattern exists** (`UBYHOST_HEARTBEAT_FILING_URL`, `UBYHOST_HEARTBEAT_MONITORING_URL`): the sync job's health uses the same healthchecks.io pattern.
+-- **The scheduler pattern exists** (`retention` at 03:30, `photo_sweep`): `analytics_sync` is one more row in `OPERATIONS.md`'s jobs table.
+-- **The staging compose profile and mock UbyPort run on the host**: rehearsal environments already exist.
+-- **In-app analytics stay**: the funnel dashboard (0018, `admin_funnel.py`), `billing_analytics.py`, and the 0446 export endpoint keep their roles; Metabase is the operator layer on the money tables.
+-- **Env discipline exists** (`ENVIRONMENT.md`, `.env.example`, `env_guard.py`): new vars get documented rows.
+-- **No new subprocessors**: everything self-hosted; the vendor evidence file is unchanged.
+-- **Execution runs through the task system**: phase 1 is one or two `docs/tasks/NNNN-*.md` briefs, merged with `merge-pr-on-green.sh`, deployed by the owner.
++- Keep documentation and extraction work within the repository’s task and test-map rules.
++- A future extraction brief must list verified source fields, financial policies, exact file allowlist, fixtures and matching/reconciliation checks.
++- A future infrastructure brief must include capacity, failure, stale-publication, security, backup and restore criteria.
++- Run only applicable test-map rows when implementation is requested; documentation-only work does not imply application tests or production validation.
++- Record unresolved definitions and owner decisions as blockers instead of filling gaps with estimates.
+diff --git a/docs/plans/ux-smoothness-plan-20261030.md b/docs/plans/ux-smoothness-plan-20261030.md
+index e068b4f3..8a7cecd7 100644
+--- a/docs/plans/ux-smoothness-plan-20261030.md
++++ b/docs/plans/ux-smoothness-plan-20261030.md
+@@ -1,177 +1,60 @@
+-# Host app and admin: the Wolt-level smoothness plan
++# Host and admin UX improvement plan
+ 
+-Status: plan for the owner, accepted 2026-10-30. Written after comparing the app against the Wolt merchant portal (owner screenshots, 2026-10-30) and a code audit of `base.html`, `_shell_sidebar.html`, `_shell_topbar.html`, `dashboard.html`, `admin_home.html` and the ten host stylesheets. The binding rules from this plan are in `docs/context/rules.md` (section "UX and interaction"); this file is the rationale and the work plan.
++Status: owner-directed plan, 2026-10-30. This plan records product preferences and a staged way to improve host/admin workflows. It does not promise parity with another product, a delivery date, a particular navigation speed, or absence of production or filing risk. Guest, marketing, authentication and legal pages retain their own rules.
+ 
+-## Owner decisions (2026-10-30)
++## Owner preferences and scope
+ 
+-- **D1: No dark mode.** Light mode only, no theme toggle, no `prefers-color-scheme` switching. Non-negotiable.
+-- **D2: Progressive enhancement on the existing FastAPI + Jinja app ("turbo-MPA"). No SPA rewrite.** The owner asked for the most long-term-maintainable route to the Wolt feel; this is it (rationale in §1).
+-- **D3: Scope is the host app and the admin area.** Guest pages, marketing, auth and legal pages are out of scope except whatever the shared token system fixes for free.
+-- **D4: The assets UbyHost already does better than Wolt are frozen and must not regress:** the Ctrl+K command palette, keyboard navigation (`g d`, `j/k`), undo toasts, skeleton screens, the offline page, PWA install, screen-reader live regions, and the three UI languages.
++- Keep FastAPI, Jinja, light mode and progressive enhancement. Do not plan a SPA rewrite.
++- Preserve the command palette, keyboard navigation, server-supported undo, skeletons, offline page, PWA, screen-reader announcements, existing languages, core navigation, server authorization and phone navigation.
++- Improve the host and admin experience through small, page-specific work that can be reviewed and measured.
++- Do not make a complete stylesheet consolidation or unrelated backlog work a prerequisite for useful page improvements.
+ 
+-## 0. The diagnosis: what "clunky" is, in code terms
++These are scope and product preferences. They do not establish that the current app is “95% of Wolt,” that a SPA has a particular cost multiplier, or that any change can ship in a week or without risk.
+ 
+-| # | Cause | Evidence in the repo | Fixed by |
+-|---|---|---|---|
+-| 1 | **Every click is a full page load.** Wolt swaps content in place; UbyHost re-renders the page from the server on every action. | `base.html` is a classic MPA shell; skeletons soften but do not remove the round trip. | W3 |
+-| 2 | **Attention stacking.** The dashboard can show, stacked: env banner, workspace-deletion banner, billing banner, alert stack, welcome-back banner, onboarding banner, then the "What needs you" card. | `dashboard.html`, `_env_banner.html`, `_billing_banner.html`, `_host_alerts.html` | W2 |
+-| 3 | **Design-system accretion.** Ten stylesheets across four design generations render the same page: `tokens.css`, `app.css`, `components.css`, `host.css`, `host-controls.css`, `host-design0123.css`, `host2.css`, `workflow.css`, `wizard.css`, `cleaning.css`. Pages built in different eras subtly disagree on spacing, radius and button weight; the eye reads this as "clunky". | `base.html` stylesheet list | W1 |
+-| 4 | **Admin is hidden.** `/admin/*` links live inside the account `details` menu at the bottom of the sidebar; Wolt puts Faktury and Uživatelé directly in the sidebar. | `_shell_sidebar.html` | W4 |
++## Work sequence
+ 
+-What is *not* wrong: the shell bones are better than Wolt's (see D4), and `admin_home.html` already implements the Wolt home pattern (stat tiles + queue tables). The gap is discipline and motion, not capability.
++### 1. Demonstrate one useful improvement
+ 
+-## 1. Why not a SPA (D2, for whoever asks later)
++Choose one dashboard or desktop admin-navigation improvement after reviewing the named template, page add-on, component guidance and relevant browser fixtures. Describe the observed problem and its source anchor. Keep the implementation limited to the smallest set of templates, styles, scripts and tests needed for that improvement. Keep existing phone navigation and admin authorization intact.
+ 
+-| | Full SPA rewrite (React/Vite) | Turbo-MPA (this plan) |
+-|---|---|---|
+-| Feel achievable | Wolt-level | Wolt-level (§1.1 says exactly how much) |
+-| Lines of throwaway work | All 49 templates + routes become JSON APIs | None; each phase ships on top of current pages |
+-| Toolchains to maintain | Two (Python API + Node build, state mgmt, tokens/auth) | One (Python + a few small vanilla JS files, no build step) |
+-| Risk to the filing path | High (every route rewritten) | Zero (no `ubyport/`, `reporting.py` or deadline code touched) |
+-| Solo-operator maintainability | Worse: double review surface, double dependency churn | Same as today |
+-| Escape hatch if a SPA is ever truly needed | - | W1's token system + W3's partial endpoints are the migration path |
++Do not add dashboard severity aggregation to the template by default. Before selecting that work, verify the current producer and browser fixture. If the producer already sorts attention lines and the fixture covers that contract, choose another demonstrated improvement unless a current defect is shown.
+ 
+-**The feel budget (the definition of done for "smooth like Wolt"):**
++### 2. Continue with page-specific improvements
+ 
+-- Perceived click-to-content under ~200 ms on the production Lightsail host.
+-- Zero white flash on navigation.
+-- Zero cumulative layout shift on page swap.
+-- One design system rendering every pixel of the host and admin surfaces.
++Address attention, information density, filters, empty states and admin navigation in separate, reviewable tasks. Each task must name verified source anchors, a small file allowlist, exact changes, preservation rules and concrete acceptance checks. Do not require unrelated routes or backlog items to be completed first.
+ 
+-### 1.1 What "smooth" decomposes into (the honest ceiling)
++Prefer one coherent attention area and no more than four summary tiles where that fits the page. Allow a documented page-specific exception when it improves the task. Preserve warning severity, action, dismissal and visibility; moving a warning must not hide a blocking issue behind a badge or another interaction.
+ 
+-The Wolt feel is not one thing. Whoever executes this plan must know which parts of the feel each layer buys, and where the honest ceiling is. Checked against browser support as of 2026-10-30:
++### 3. Consolidate styles alongside affected components
+ 
+-| Feel component | Delivered by | Wolt-level? |
+-|---|---|---|
+-| 1. Pages appear instantly (~100 ms) | W3-L1 prefetch on pointerover/focus | **100%.** The single biggest contributor to the feel; browser-level, not architecture |
+-| 2. No white flash; content morphs | W3-L2 view transitions | **~95%.** Same-document transitions are Baseline (Chrome 111+, Safari 18+, Firefox 144+). Cross-document morphs ship in Chrome/Edge 126+ and Safari 18.2+ (desktop and iOS); Firefox does not ship cross-document transitions in a stable release and falls back to a fast, prefetched, non-animated navigation. The morph is always enhancement, never requirement |
+-| 3. Actions never reload the page | W3-L3 partial swaps + undo toasts | **100%** for the covered flows (the top 5 by frequency) |
+-| 4. Consistent visuals, low density | W1 + W2 | **100%.** Not architecture-dependent at all |
+-| 5. Client-side state lives in memory | URL state, sessionStorage, fragments | **~70-80%.** The one genuine residual gap; see §1.2 |
++Reuse existing tokens and components. Before removing or moving styles, map the callers and inspect cascade behavior for the affected page. Legacy and justified page-owned styles may coexist while work proceeds. Consolidate styles when a component or page change makes that safe and reviewable. Do not delete files just to reach a three-stylesheet target, and do not make a global CSS consolidation a gate for UX work.
+ 
+-### 1.2 The residual gap, named precisely
++Follow the applicable component guidance and page add-on. Update the component catalog when a component changes. Preserve guest, marketing, authentication and legal page-specific styling rules.
+ 
+-The only thing an MPA cannot fully replicate is client-side state living in memory: a filter kept perfectly across pages, a half-scrolled modal, wizard state, optimistic UI on every interaction. Mitigations that close most of it: URL state (`_list_filter.html` already does this), sessionStorage for drafts, fragment swaps for actions. The gap only matters on interaction-dense surfaces - drag-and-drop planning, real-time collaboration, offline-first editing - none of which exist in UbyHost today. The dominant interaction pattern (navigate, look, act, confirm) is fully covered by the plan.
++### 4. Treat interaction pilots as separate work
+ 
+-### 1.3 The price math
++Prefetch, view transitions and partial actions need their own source review, allowlist, implementation brief and measurements. They are optional pilots, not prerequisites for the dashboard or page-specific work.
+ 
+-Full SPA = 100% of the feel for roughly 5x the cost and ~10x the long-term maintenance (two toolchains, npm dependency churn, state management, API contract drift between FastAPI and frontend types, keyboard and screen-reader support re-implemented from scratch) - plus rewrite risk over the filing path, which rule 1 forbids taking lightly. Turbo-MPA = ~95% of the perceptible feel for roughly a week of executor sessions and zero architectural change, with one operator maintaining one toolchain. The last 5% costs more than the first 95%.
++For any performance comparison, record route, browser/device, viewport, network, cache state and sample count. Measure cold, warm and back/forward navigation separately. A 200 ms warm-navigation result is an aspirational measurement target, not a guarantee or acceptance promise. Record the observed results and regressions; do not weaken security policy to improve a result.
+ 
+-### 1.4 When this decision flips (the reversal triggers)
++**Prefetch:** allow only verified, side-effect-free same-origin GET destinations. Exclude sign-out, exports/downloads, token creation, action links, and payment or authentication destinations. Bound and deduplicate requests, respect cache policy and data-saving preferences, and verify logout, account switching and fresh-data visibility.
+ 
+-D2 is a decision with named exit conditions, not a dogma. Revisit it only if one of these happens, and record the trigger in the decision line:
++**Transitions:** cross-document transitions require same-origin CSS opt-in on both documents. `document.startViewTransition()` applies to a DOM update in the current document. Preserve reduced-motion behavior and a plain-navigation fallback for unsupported browsers. Do not rely on an unverified browser-support matrix.
+ 
+-- A drag-and-drop or real-time collaborative surface becomes a real planned feature (live calendar planning, co-editing).
+-- Offline-first field use becomes a requirement (hosts using the app without connectivity).
+-- A dedicated frontend engineer joins the project.
+-- After W1-W3 ship, the owner can **name specific daily interactions that still feel wrong** (for example "the filter resets when I go back"). Evidence beats prediction: use the app for two weeks post-ship and decide from named pain, not from a guess made before shipping.
++**Partial actions:** begin with one low-impact action whose server-supported reversal is verified. Specify CSRF and roles, duplicate submissions, uncertain mutation results, errors, expired sessions, focus and announcements. Keep the ordinary no-JS server form. Never blindly retry an uncertain mutation. Financial actions need separate durable-result, audit and compensating-action contracts; a toast does not reverse an issued invoice or external payment.
+ 
+-If reversed: do not start from zero. W1's token system is the design system a SPA needs; W3's `?fragment=` endpoints are proto-API endpoints; the SPA consumes both. The reversal is a continuation, not a rewrite.
++## Acceptance and verification
+ 
+-### 1.5 The insurance policy
++- Every task is based on current source inspection and has a bounded allowlist, exact patch intent, and checks for the changed page and preserved behavior.
++- Host/admin template or CSS changes follow repository browser and geometry requirements, including the required viewport screenshots in the task report.
++- Verify keyboard use, screen-reader announcements, authorization, core and phone navigation, warning behavior, and no-JS forms where the change can affect them.
++- Run only the applicable test-map rows for the change. Do not run the full suite by default.
++- Report measured performance and any unresolved risks; do not state guaranteed speed, zero risk or an unsupported percentage of another product.
+ 
+-The plan is deliberately the migration path to a SPA. Tokens (W1) and fragment endpoints (W3-L3) keep the option open at zero carrying cost. The owner pays for the SPA option only if a §1.4 trigger fires. Any executor proposing a SPA rewrite before a trigger fires should be pointed at this section.
++## Non-goals
+ 
+-## 2. Workstreams
+-
+-Each workstream is independently shippable. Suggested order: W1 → W2 → W3 → W4 → W5.
+-
+-### W1: One design system — Effort M · Risk MEDIUM (visual regressions)
+-
+-Goal: exactly three layers for host+admin: `tokens.css` (colors, spacing, radii, shadows, type scale), `components.css` (every `ui_*` macro's styles), `host.css` (app-surface layout). Guest and marketing stylesheets are untouched (D3).
+-
+-Tasks:
+-
+-1. Inventory every class used by the host/admin templates; map legacy classes (host-design0123, host2, host-controls) to `ui_*` equivalents. Output: a mapping table in the workstream's task file.
+-2. Fold `host-controls.css`, `host-design0123.css`, `host2.css` into `components.css`/`host.css`; feature styles (`workflow.css`, `wizard.css`, `cleaning.css`) are folded or kept only if a page genuinely owns them; delete what is folded.
+-3. Re-point `base.html` to the consolidated set; bump every `?v=` cache key.
+-4. Freeze the component inventory on `dev_ui.html`: every `ui_*` component in every state (default, hover, focus, disabled, empty, error) lives on that page. A component not on `dev_ui.html` does not exist.
+-
+-Acceptance:
+-
+-- No template or stylesheet references the deleted files (`grep -r` clean).
+-- `App/tests/test_host_geometry.py` passes; before/after 390 px screenshots of the 12 key pages (dashboard, stays, stay detail, reservations, cleaning, housebook, settings, predplatne, admin home, fakturace, customers, customer detail) reviewed by the owner.
+-- No visual change is *intended* in W1 — this is consolidation, not redesign. Where legacy layers disagreed, `components.css` wins.
+-
+-### W2: Density discipline — Effort S · Risk LOW
+-
+-Goal: one attention surface per page. The dashboard's "What needs you" card (comment 0241) becomes the app-wide pattern: the card is *the* place where attention demands live.
+-
+-Tasks:
+-
+-1. Banner inventory: list every `ui_banner` / stack currently reachable on each host page.
+-2. Env banner (`_env_banner.html`) becomes a topbar badge, not a page banner.
+-3. Billing banner (`_billing_banner.html`) and host alert stack (`_host_alerts.html`) fold into the page's needs-you card (or a topbar badge where no card exists).
+-4. Onboarding and welcome-back banners appear only in true empty states (no apartments / first visit), never on a working dashboard.
+-5. `ui_stats` is capped at 4 tiles per page; more than that becomes a second `ui_section` table.
+-
+-Acceptance: no host or admin page shows more than one banner above its first content section; the dashboard with data shows exactly one attention surface (the needs-you card).
+-
+-### W3: Instant feel (the motion layer) — Effort M · Risk MEDIUM
+-
+-Goal: Wolt's click feel without a rewrite. Three layers, each a separate task/PR, in this order. All JS is vanilla ES modules served from `App/app/static/`, no framework, no build step. Every layer is progressive enhancement: with JS off, the app behaves exactly as today.
+-
+-**L1 — Prefetch (Effort S).** On `pointerover`/`focusin` of a same-origin link, inject `<link rel="prefetch">`. After `requestIdleCallback`, prefetch the sidebar destinations. Respect `Save-Data` and never prefetch POST targets. Expected effect: most sidebar clicks render from cache in <100 ms. This is the single highest-leverage layer of the whole plan (§1.1, component 1).
+-
+-**L2 — View transitions (Effort S).** Wrap navigations in the View Transitions API (`document.startViewTransition` / cross-document `@view-transition` where supported). Shared-element classes on the shell (sidebar, topbar, page title, primary card) so the content area morphs instead of flashing. Honor `prefers-reduced-motion` (fall back to plain navigation). Fallback where unsupported: today's behavior - and remember the browser matrix in §1.1: Firefox users get the L1-fast navigation without the morph, which is acceptable.
+-
+-**L3 — Partial swaps (Effort M).** Extend the existing `data-toggle-panel` / `data-dashboard-refresh` patterns into one tiny helper (`App/app/static/app.js`, target ~150 lines): a `data-swap` action fetches the re-rendered fragment and swaps it in place, then posts the existing undo toast. Cover the top ~5 high-frequency flows first: archive/delete stay, mark cleaning done, admin mark-paid, admin storno, plan-change confirm. Server side: the route already re-renders the page; add a `?fragment=…` mode returning the relevant include. Skeleton screens (already built) cover the fetch. These `?fragment=` endpoints are also the proto-API of the §1.5 insurance policy - design their payloads so a future SPA could consume them.
+-
+-Acceptance (all of W3):
+-
+-- Playwright tests for the 5 flows assert the swap and the undo path.
+-- A no-JS walkthrough of the same flows completes them identically.
+-- Keyboard navigation and screen-reader live regions behave exactly as today through every swap (announce the swap region).
+-- Perf budget verified on staging: p95 perceived navigation < 200 ms, zero layout shift on L2 morphs.
+-
+-### W4: Admin surface, Wolt patterns — Effort M · Risk LOW
+-
+-Goal: the admin area becomes the Wolt portal the owner fell in love with. Content comes from the revenue cockpit plan (`docs/plans/billing-admin-revenue-cockpit-20261028.md`); this workstream supplies the *surface patterns*.
+-
+-Tasks:
+-
+-1. `_shell_sidebar.html`: an "Administrace" nav group, visible only to admin accounts: Fakturace, Customers, Funnel, Operations, Users. Remove the admin links from the account `details` menu. Nothing admin is more than one click from the shell.
+-2. Read-only card + "Upravit" pattern: every settings block and the admin customer money page render as summary cards with an edit affordance; editing opens a preview-then-confirm form (reuses the existing preview components). The principle already in the cockpit doc (§2.4) becomes the standard for all admin forms.
+-3. Per-row action menus (`row_menu` macro) on every admin table; status badges reuse the existing `ui_badge` tones.
+-4. Every admin list gets: the shared search/filter bar, a month/year selector where applicable (`_date_range.html` / the Wolt year dropdown pattern), a download menu (PDF/CSV/XLSX via existing exports), and a proper `ui_empty` state with icon and one-line guidance.
+-5. Motion: admin flows join L3 in the same order of priority (mark-paid and storno are in the first five).
+-
+-Acceptance: every admin page passes the same checklist as host pages (screenshots, geometry, no-JS); the owner can reach any admin function in one click from the sidebar; every admin list has an empty state.
+-
+-### W5: The standard, enforced — Effort S · Risk LOW
+-
+-1. The binding rules are already added to `docs/context/rules.md` (section "UX and interaction", same commit as this plan). That section is the single source of truth; this plan is the rationale.
+-2. Fold the overlapping design notes in `docs/DESIGN.md` to point at the rules section (one editing task, no rule changes beyond the pointer).
+-3. Add to `.github/PULL_REQUEST_TEMPLATE.md`: "UX and interaction rules checked (rules.md §UX): tokens-only styling, one banner, ui_* component, dev_ui.html updated if a component changed."
+-4. `dev_ui.html` is the acceptance surface for all component work; a PR that changes a component's look updates it in the same PR.
+-
+-## 3. Sequencing and effort
+-
+-| Phase | Ships | Effort | Risk |
+-|---|---|---|---|
+-| W1 design system | alone, first | M (2-3 sessions) | MEDIUM (visual) |
+-| W2 density | after W1 | S | LOW |
+-| W3 L1 + L2 | any time after W1 | S+S | MEDIUM (motion) |
+-| W3 L3 | after L1/L2 | M | MEDIUM |
+-| W4 admin surface | after W1 (parallel with W3) | M | LOW |
+-| W5 standard | last | S | LOW |
+-
+-Total: roughly a focused week of executor sessions spread over 2-3 weeks of owner review. No schema changes, no new dependencies, no new outbound requests, no guest-page changes.
+-
+-## 4. Non-goals
+-
+-- No dark mode (D1).
+-- No SPA rewrite, no JS framework, no build step (D2). The reversal conditions for D2 are in §1.4; until one fires, an executor proposing a SPA rewrite is off-plan.
+-- No changes to guest pages, marketing, auth or legal surfaces (D3).
+-- No new third-party scripts, fonts or CDNs (privacy rules unchanged).
+-- No regression of the D4 assets, ever.
+-- The filing path (`ubyport/`, `reporting.py`, deadlines) is not touched by any task in this plan.
+-
+-## 5. Verification (from the standing rules)
+-
+-- `.venv/bin/python -m pytest tests -q`
+-- `.venv/bin/python -m pytest tests/test_host_geometry.py -q -rs` — 0 skipped for host template/CSS changes
+-- Playwright browser tests for W3 flows and W4 admin pages (pattern exists in `test_guest_browser_e2e.py`)
+-- Before/after 390 px screenshots per changed page, in the PR
+-- Merge only via `scripts/merge-pr-on-green.sh`; a merge never deploys
++- Dark mode or a SPA rewrite.
++- Mandatory global stylesheet consolidation.
++- Changes to guest, marketing, authentication or legal pages without a separate scoped plan.
++- Third-party scripts, fonts or CDNs unless separately reviewed under privacy rules.
++- Changes to UbyPort filing behavior as part of a UX task.
+diff --git a/docs/tasks/0451-visible-guest-acknowledgement.md b/docs/tasks/0451-visible-guest-acknowledgement.md
+new file mode 100644
+index 00000000..0f8b63c6
+--- /dev/null
++++ b/docs/tasks/0451-visible-guest-acknowledgement.md
+@@ -0,0 +1,85 @@
++# 0451: Keep the guest acknowledgement visible
++
++Status: blocked
++Depends on: none | Base commit: 8b5317d0a49b840136fbfbcad7fb06af100f3575 | Branch: codex/ubyhost-corrections-20261030
++Executor: Luna (owner-scoped exception) | Fits one session: 30 tool calls
++
++## 1. Objective
++
++Keep the required acknowledgement visible when optional legal text is collapsed. Preserve legal wording, server validation and all guest save side effects.
++
++## 2. Context
++
++PR #583 reviewed SHA 69efd1a51212d2a2e20d96c62c8138a020496272 is locally available and included in the baseline. Source review found the wrapper below in guest/form.html. Verify it at the working baseline before mutation. Read the partial to establish that the checkbox is outside its own legal-text disclosure; if not, stop for a new exact brief.
++
++Existing anchor:
++```jinja2
++    <details class="g-legal-fold">
++      <summary>{{ t('legal_notice_title') }}</summary>
++      {% include "guest/_legal_notice.html" %}
++    </details>
++```
++
++Replacement:
++```jinja2
++    {% include "guest/_legal_notice.html" %}
++```
++
++## 3. Files
++
++| Path | Action | What |
++|---|---|---|
++| App/app/templates/guest/form.html | Edit | Replace exact wrapper above |
++| App/app/templates/guest/_legal_notice.html | Read only | Verify disclosure/checkbox boundaries |
++| App/tests/test_guest_browser_e2e.py | Edit | Add behavioral visibility regression using existing fixture |
++| App/tests/test_host_geometry.py | Read/test only | Required geometry check |
++| docs/tasks/0451-visible-guest-acknowledgement.md | Status only | Actual state |
++| docs/tasks/0451-report.md | Create | Evidence and remaining gaps |
++| docs/tasks/screenshots-0451/guest-acknowledgement-390.png | Create | Synthetic guest fixture screenshot |
++
++Read repository instructions and the relevant guest test-map row as required. Existing fixture definitions imported by the named tests may be read only; if a change outside this allowlist is needed, stop and report.
++
++## 4. Steps
++
++1. Confirm exact baseline and anchor; inspect the existing partial and browser fixtures. Stop if the acknowledgement already is visible or the wrapper differs materially.
++2. Apply only the exact replacement in section 2. Do not remove text or alter the partial.
++3. Extend the existing guest browser scenario after opening the form: assert .g-legal-text is closed, legal_ack is visible, its label is visible, and the field can be reached. Use the existing locator conventions and fixture; do not skip when the element is missing. Keep existing required-validation coverage; add a missing-ack submission assertion only if absent in this scenario. No string-only substitute.
++4. Run the focused commands in section 6. Record exit codes with pipefail. Diagnose failures, but do not change unrelated behavior. Stop after a second failure of the same test.
++5. Capture the synthetic guest acknowledgement view at 390 px with legal text closed. No real guest data.
++6. Write report; set review only if all mandatory evidence exists, otherwise blocked with exact outstanding checks. Do not mark done.
++
++## 5. Do not touch
++
++Legal wording, requiredness, retention, filing/reporting, routes, ownership, capacity, notifications, cookies, dependencies, CSS, production and all files outside section 3. No push, merge or deployment. No application commit required; root packages local changes.
++
++## 6. Commands
++
++From App, run with set -o pipefail:
++
++```bash
++.venv/bin/python -m pytest tests/test_guest_browser_e2e.py tests/test_host_geometry.py -q -rs --tb=short -x 2>&1 | tail -30
++```
++
++Run the other focused guest tests named by the current test-map row (test_guest_*.py); report exact expanded command, not the full suite. If tooling or fixtures are unavailable, report blocked. Required browser and geometry checks must pass with zero skipped.
++
++From root:
++```bash
++git diff --check 2>&1 | tail -30
++```
++
++## 7. Acceptance
++
++- [ ] Exact wrapper removed; legal content unchanged.
++- [ ] Browser sees checkbox and label while legal disclosure is closed.
++- [ ] Required acknowledgement remains enforced.
++- [ ] Required focused browser/geometry checks pass with zero skips.
++- [ ] Synthetic 390 px screenshot exists.
++- [ ] Full changed-file list and actual commands/results reported.
++
++## 8. Stop and ask
++
++Missing anchor, different partial structure, required external-file mutation, twice-failing test, missing tooling, new dependency, or session cap. Write the report and preserve partial local work. Do not weaken tests.
++
++## 9. Report
++
++State status, baseline, files changed, checks and exit codes, skips, screenshot path, remaining gaps and next exact action. Separate implemented code from verified behavior.
+diff --git a/docs/tasks/0451-report.md b/docs/tasks/0451-report.md
+new file mode 100644
+index 00000000..f3c60f79
+--- /dev/null
++++ b/docs/tasks/0451-report.md
+@@ -0,0 +1,13 @@
++# 0451 report
++
++Status: blocked before mutation.
++
++- Baseline checked: `8b5317d0a49b840136fbfbcad7fb06af100f3575` on the checked-out `main` branch.
++- The earlier read-only check confirmed the wrapper at PR #583 reviewed SHA `69efd1a51212d2a2e20d96c62c8138a020496272`; that SHA is locally available, but it is not the brief's current base source state.
++- `App/app/templates/guest/form.html:293` directly includes `guest/_legal_notice.html`; the brief's `g-legal-fold` wrapper anchor is absent.
++- `App/app/templates/guest/_legal_notice.html:1` starts the notice container and lines 30–36 contain the `legal_ack` checkbox and required label; there is no `.g-legal-text` disclosure.
++- This baseline already makes the acknowledgement visible, and it has no collapsed optional legal text state to assert. The brief requires stopping when the wrapper differs materially.
++- Files changed: this report and the brief status only. No application or test files changed.
++- Checks: source/anchor inspection only. Tests not run; screenshot not captured because the required source state does not exist.
++- Next verification under a new exact brief: inspect current `App/app/templates/guest/form.html`, `App/app/templates/guest/_legal_notice.html`, and the relevant scenario in `App/tests/test_guest_browser_e2e.py`; run the named `App/tests/test_host_geometry.py` check only if the revised change touches the guest page geometry.
++- No completion claim: the PR #583 wrapper finding applies only to its reviewed SHA, not to the current base source state.
+diff --git a/docs/tasks/0452-read-only-billing-extract.md b/docs/tasks/0452-read-only-billing-extract.md
+new file mode 100644
+index 00000000..a0993ab8
+--- /dev/null
++++ b/docs/tasks/0452-read-only-billing-extract.md
+@@ -0,0 +1,116 @@
++# 0452: Read-only legacy billing analytics extract
++
++Status: blocked
++Depends on: none | Base commit: verify at execution | Branch: task/0452-read-only-billing-extract
++Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
++
++## 1. Objective
++
++Add a small, read-only export that reports the existing quote-derived portfolio and non-void invoice totals for an explicit month range. This gives an auditable, privacy-minimized source copy while keeping legacy quote figures and invoice paid markers separate from approved finance KPIs.
++
++## 2. Context
++
++The source schema and relevant writers were verified. Apply these constraints:
++
++- `App/app/billing_analytics.py:38-82`: `portfolio()` queries plan-bearing billing accounts joined to user accounts, includes names/contact details, computes values through `billing.quote()`, adds `carry_czk`, and counts `active`, `overdue`, `canceling` in its MRR/ARR. Annual monthly normalization is per-account `round(net / 12)`. Do not call this function from the extract because it selects PII and uses separate helper queries.
++- `App/app/billing_analytics.py:86-101, 319-332`: invoice summaries use `total_haler`, `voided = 0`, `issue_date` or `paid_on`; paid-date totals are invoice totals marked paid, not payment allocations. Existing trend rows are incomplete as a calendar series. Reproduce only the bounded aggregate and label the paid-date measure precisely.
++- `App/app/billing.py:66-104`: `quote()` accepts apartment count, plan, interval, add-on flags, founder and discount percent. It returns whole-Kč list/discount/net values; do not relabel that legacy result as reconciled subscription MRR or add VAT assumptions.
++- `App/app/migrations/0023_billing.sql:14-40,42-68`: billing account and invoice fields. `total_haler` is integer; invoices include `kind`, `corrects_id`, `voided`, and `paid_on`. Keep source query semantics at `voided = 0`; do not silently remove storno/supplementary kinds.
++- `App/app/migrations/0031_billing_discount_snapshot.sql:1-29`: snapshot includes derived whole-Kč values and account/month primary key; it is not required by this export. Avoid it.
++- `App/app/scheduler.py:411-420`: current monthly snapshot refresh runs daily and upserts through `write_month_snapshot()`. `rg` also found snapshot calls in `routes/admin_customers.py:149,168,249`; do not invoke them. This extract must not change snapshot state.
++- `App/app/db.py:888-900,1354-1364`: `db.cursor()` supplies a deferred transaction; use one cursor for all SELECTs so both output sections share one read transaction. Use only parameterized SELECT statements.
++
++Output schema, version 1:
++
++1. `portfolio_quote.csv`: `as_of_date,status,plan_account_count,legacy_quote_monthly_czk,legacy_quote_annual_czk`. One row per status, including statuses with no rows only if convenient; omit zero-only rows for a simpler implementation. Counts include only `plan IS NOT NULL`. The legacy amounts sum each account's current quote net plus `carry_czk`; monthly plans use monthly net × 12 for annual amount; annual plans use per-account `round(net / 12)` for monthly and annual net for annual amount. Only `active`, `overdue`, and `canceling` contribute amounts. Name columns and export manifest must say “legacy quote”; do not assert VAT treatment.
++2. `invoice_month_totals.csv`: `month,basis,nonvoid_invoice_count,total_haler`. `basis` is `issue_date` or `paid_on`; each query includes only `voided = 0` rows in requested inclusive month range. `paid_on` rows must be labeled in manifest/report as **invoice totals marked paid by paid_on**, never cash collections. Keep integer minor-unit aggregate exact; no whole-Kč truncation.
++3. `manifest.json`: `schema_version`, UTC `generated_at`, `from_month`, `through_month`, and fixed text definitions for both metric groups. Do not include account IDs, invoice IDs/numbers, contact/name data, bank references, or free text.
++
++### Exact proposed code/diff
++
++Only add `App/scripts/export_billing_analytics.py` and `App/tests/test_billing_analytics_export.py`. Do not modify `billing_analytics.py`, database schema, scheduler, routes, retention records, config, dependencies, or production data.
++
++In the script:
++
++1. Add stdlib-only CLI arguments `--from-month YYYY-MM`, `--through-month YYYY-MM`, and `--output-dir PATH`. Validate month strings with `date.fromisoformat(f"{value}-01")`, reject invalid or reversed ranges, and create output dir only after validation. Write the three outputs to temporary sibling files and atomically replace target files after all extraction succeeds.
++2. Compute explicit Prague `as_of_date` with `datetime.now(ZoneInfo("Europe/Prague")).date()` and manifest `generated_at` in UTC. Use stdlib `zoneinfo`; add no dependency.
++3. Within `with db.cursor() as cur:`, query only these account fields, without IDs or user joins: `status, plan, billing_interval, apartments_billed, addon_ttlock, addon_whitelabel, founder, carry_czk, discount_percent` from `billing_account WHERE plan IS NOT NULL`. For each row call `billing.quote()` with those inputs, add `carry_czk` to returned `total`, reproduce the legacy per-account monthly/annual rounding and status inclusion rules above, and aggregate by status. Do not select `discount_reason`, pending changes, buyer/contact fields, trial dates, or payment method.
++4. In the same cursor transaction, run two separate bounded aggregates. For issue basis: `SELECT substr(issue_date,1,7) AS month, COUNT(*) AS n, COALESCE(SUM(total_haler),0) AS h FROM platform_invoice WHERE voided = 0 AND issue_date >= ? AND issue_date < ? GROUP BY substr(issue_date,1,7)`. For paid basis, substitute `paid_on` and add `paid_on IS NOT NULL`. Bind the first day of `from_month` and the first day after `through_month`; construct those dates using Python `date`, not SQL string interpolation. Keep results integer-valued.
++5. Emit stable UTF-8 CSV with headers above and JSON manifest. Use no account/invoice row export, no BI destination, no scheduler, no database writes, and no implicit broad date range.
++
++Exact path handles 
++
++- `App/scripts/`: add the standalone CLI.
++- `App/tests/test_billing_analytics_export.py`: add focused stdlib/pytest tests.
++
++## 3. Files
++
++| Path | Action | What |
++|---|---|---|
++| `App/scripts/export_billing_analytics.py` | Add | Bounded, read-only source extraction and local CSV/JSON output. |
++| `App/tests/test_billing_analytics_export.py` | Add | CLI validation, allowlist/query behavior, aggregation, privacy and labels. |
++
++No other file may change.
++
++## 4. Steps
++
++1. Inspect only the existing `App/scripts` naming conventions and the relevant billing test fixture helpers; use `rg` first. Confirm there is no conflicting script/test name. If a different existing pattern is required, stop and report before adding files.
++2. Add the script as specified in §2. Keep source queries inside one `db.cursor()` transaction and call `billing.quote()` directly. Do not invoke `portfolio()`, `write_month_snapshot()`, `movement()`, `funnel()`, routes, or scheduler jobs.
++3. Add tests with a temporary test database and explicit fixtures: exact MRR inclusion/exclusion for each status; monthly/yearly quote normalization and carry; query projections contain no PII/IDs; requested month bounds and empty periods; paid-date label/column; invalid/reversed month ranges fail before files are created; output contains no identifiers or free-text fields; source tables remain unchanged.
++4. Run only the §6 commands. Inspect the final diff and ensure only §3 files changed.
++
++## 5. Do not touch
++
++- No App routes, templates, scheduler, existing dashboard analytics, migrations, snapshot tables, invoices, payment/refund matching, retention, analytics infrastructure, containers, hosting, deployment or database files.
++- No raw account, invoice, payment, or user identifiers in output. Do not add a new personal-data field.
++- No cash collections, revenue, VAT-exclusive/inclusive, FX-normalized MRR, issued-invoice policy beyond current non-void totals, credits, churn, movement, history coverage, or forecast claims.
++- No third-party request, dependency, secrets, or production database access. Export target must be explicitly supplied by the operator.
++
++## 6. Commands
++
++From repo root, inspect only needed conventions before coding:
++
++```sh
++rg --files App/scripts App/tests | rg 'billing|export' | head -50
++```
++
++From `App/`, run the focused new test and existing source regression file:
++
++```sh
++.venv/bin/python -m pytest tests/test_billing_analytics_export.py tests/test_billing_analytics.py -q --tb=short -x 2>&1 | tail -30
++```
++
++From repo root:
++
++```sh
++python3 scripts/context_lint.py 2>&1 | tail -30
++```
++
++Do not run the full suite. Do not run the exporter against production. Tests must use a temporary database and temporary output directory.
++
++## 7. Acceptance
++
++- [ ] The extractor uses one read transaction and only the approved column projections and date-bounded aggregates.
++- [ ] The source database is unchanged after extraction; snapshots are not touched.
++- [ ] Portfolio columns and manifest call amounts `legacy_quote`; invoice paid-date totals are called invoice totals marked paid by `paid_on`.
++- [ ] No identifiers, contact fields, bank references, buyer fields, or free-text fields appear in outputs.
++- [ ] Integer `total_haler` sums remain exact; no currency conversion or tax assumptions are added.
++- [ ] Tests cover all cases in §4 and pass; context lint passes.
++- [ ] Diff contains only §3 files.
++
++## 8. Stop and ask
++
++This brief is blocked before implementation: standalone script import conventions and DB test fixture setup were not inspected, and those exact patterns are needed to provide a verified patch and executable fixture-specific tests. The metrics are intentionally limited to the labels in §2; finance-policy questions do not block this narrow extract, but any request to broaden its financial meaning does. Executor must inspect only the relevant script convention and billing test fixture helper, then replace this proposed implementation with an exact code diff and concrete tests/expected outputs before changing App files. Also stop if the source schema differs from cited migrations, a new dependency or file outside §3 is needed, or an output needs a financial label not supported here.
++
++## 9. Report
++
++Write `docs/tasks/0452-report.md` (600 tokens at most), set this brief to `Status: review`, and report files changed, exact commands and last five output lines, §7 checklist, deviations, questions, and owner steps. No owner action is required to review the local-only output; do not publish or deploy it.
++
++## Risk list (for the reviewer)
++
++Read both added files. Confirm no source table writes or unapproved fields, and verify the explicit legacy/paid-marked labels survive in CSV and manifest.
++
++## Owner steps
++
++1. Review the added script and focused tests.
++2. If approved, run it only against an explicitly chosen non-production/test database and output directory. Production use requires a separate owner decision and a controlled environment.

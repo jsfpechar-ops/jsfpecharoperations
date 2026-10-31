@@ -1,0 +1,158 @@
+{
+  "analytics-optout.js": {
+    "sha256": "9afc536f5842652fcfebd0fb30a88278f84f472b2874ad721a9984b72c01f9d5",
+    "v": "20261010a"
+  },
+  "app.css": {
+    "sha256": "e0d77c407de8feb5737ac28015f98ff2e964baf4aa8ec0babe5798179ffe6fcd",
+    "v": "20261027-signup-wrap"
+  },
+  "app.js": {
+    "sha256": "bad08e58325b355367e6301b10474934f5ddb417c3c6b7500c758acbc87ea45e",
+    "v": "20261025-0377"
+  },
+  "apple-touch-icon.png": {
+    "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
+    "v": "20261004a"
+  },
+  "auth.js": {
+    "sha256": "4e8f87ff689788f7f01049f8e55cd3bb37aba03c2f50b939ed6366ba1e9892da",
+    "v": "20260925a"
+  },
+  "claim.js": {
+    "sha256": "be07c1fa7a37b4207f0d6d7fd56238175a87579bd71b52d879ba0a81c91aa099",
+    "v": "20260918a"
+  },
+  "cleaning.css": {
+    "sha256": "c034f23c59ea844031d810d68e62d8433820cdfda6490bd593e42bde750e08d2",
+    "v": "20261024-0291"
+  },
+  "cleaning.js": {
+    "sha256": "8c430853292b8dd39b0922b26ad4307d6005f057f9ff670e1847b545de16c904",
+    "v": "20261016-0123c"
+  },
+  "components.css": {
+    "sha256": "844da27d439ab6086d6191474f2ac0f394e3b11d5c9367a9a9ebff04bde6d68c",
+    "v": "20261014-0102c"
+  },
+  "csrf.js": {
+    "sha256": "84efc595e531ca8b52ae2e7f7da35a40ed5a418624c27fe43b07847f16a11fe4",
+    "v": "20260915a"
+  },
+  "dashboard-calendar.css": {
+    "sha256": "be5112e17f37f97569ff6b0d7cb162ec69579d3d487ba019e0fb268da26dbe2a",
+    "v": "20261021-0199b"
+  },
+  "dashboard-calendar.js": {
+    "sha256": "e1351f2ff904dc05d5e2dde0d9bd57b8a75e5611d89b828f3ce49f37f4dc832a",
+    "v": "20261023-clean-url"
+  },
+  "docs/ubyport-ws-credential-sample.pdf": {
+    "sha256": "0c147cf9c5dd5326612bc4668c5bce853cf300171ca62e3a0bab688c09b75fe6",
+    "v": "20261004a"
+  },
+  "favicon.png": {
+    "sha256": "af1e1865b06ae0dcaecba51cae5e17440cdb97f8a393211ba98caac5e5779f4a",
+    "v": "20261004a"
+  },
+  "guest-enhancements.js": {
+    "sha256": "3a916b6481143037c7df5b9bb0bd1d125d29d7a95754d73a5d9f28d2744ec7ee",
+    "v": "20261003a"
+  },
+  "guest-leon.js": {
+    "sha256": "21852bc6e10f79fbe7db61806fdb9ce17ca5bf604ca3f383fa0cce1fe3a1c0cf",
+    "v": "20261025-0393b"
+  },
+  "guest.css": {
+    "sha256": "ecacbe6aa552c650a4dff7037ce975e66473daa606e1b2c8ad4ebec98ae6693f",
+    "v": "20261025-0390"
+  },
+  "havel.js": {
+    "sha256": "0179642cddc05d3c60af3d5c1621a5d0d698d0525199f9c9bf0b942092142117",
+    "v": "20261025-0395"
+  },
+  "host-controls.css": {
+    "sha256": "5f187fafa975e322becf8101dd749d862a5c166f03d74523a738f2fd55a2f93d",
+    "v": "20261014-0102d"
+  },
+  "host-design0123.css": {
+    "sha256": "721e8f1d421655356c824ae55bbe4713843e73fe9b0cc308ea9db085ba9c4572",
+    "v": "20261025-0380"
+  },
+  "host.css": {
+    "sha256": "8ffdd8b82a7127d47931499cfc9a3f16b8907715f4270f9a8573f08eb669ae71",
+    "v": "20261030-0454"
+  },
+  "host.js": {
+    "sha256": "9a1c690af6f4edb599cd51ba0d122957dafa94ac4d9572aba3f86fa668b14d6c",
+    "v": "20261026-door-lock-times"
+  },
+  "host2.css": {
+    "sha256": "280cf820010c649d9cb5b4cda430ba16b39f268fb47a2b80ebc43119ae881add",
+    "v": "20261029-0447"
+  },
+  "landing.css": {
+    "sha256": "1a6a6e254dbe0a643967f20a959c2af380f16f9866f062a88e52267acb857643",
+    "v": "20261027-pricing-v3"
+  },
+  "landing.js": {
+    "sha256": "0e8f2e973a4c2797dfe018fd1ce477669641ee7baa1fdd06c263702c01d972bf",
+    "v": "20260919a"
+  },
+  "leon-setup.js": {
+    "sha256": "2216365fed2b45ea19a081566f94a668209853064ef311edc44c945a49b981a1",
+    "v": "20261027-ai-usage"
+  },
+  "passkeys.js": {
+    "sha256": "a54da46300bec0b817fc47c7fffa811a2e21567e4c9e40748f1345b217ef5773",
+    "v": "20261023-passkey-recovery"
+  },
+  "pricing.js": {
+    "sha256": "4ebb282d09e55fcd782087dfd47c494c78f542f6c26648ddb55fc4390fe50b09",
+    "v": "20261028-ttlock-month"
+  },
+  "pwa.js": {
+    "sha256": "42c47bb36919fa186885e4e913823c5447a6ab8e0dd8709a74bd3a216a06a9ce",
+    "v": "20261021-0206"
+  },
+  "shell.js": {
+    "sha256": "17d08de32baf5dd03f38508a0f88f4cf09e47e54cea2a0a1dff0421d23e3989b",
+    "v": "20261025-0373"
+  },
+  "signature.js": {
+    "sha256": "9c4170dc81e8d3c61cb1df0417a5193110c5d4496e1281e73bc690f48deb043a",
+    "v": "20261021-0196"
+  },
+  "skeleton.css": {
+    "sha256": "4685a64e9b7d3fc56680e55c6772d6d8b6c9dcaf8c9b1655ec0d17cebe70d46f",
+    "v": "20261014-0102c"
+  },
+  "skeleton.js": {
+    "sha256": "9cf081b116df7de3765c42ce63592cc841730c16f77d201d0434b2e44458f382",
+    "v": "20261025-havel-skeleton"
+  },
+  "tokens.css": {
+    "sha256": "e9958ea817fb372a280ef8f647cad36b333a5cc9c32ea752bc8897cafc4407e4",
+    "v": "20261022-0284"
+  },
+  "ubyhost-logo-stacked.png": {
+    "sha256": "3f4a4fa5aae52cb2ea45c076ff4ecd26f86c76915852cff2664317d3f7fb50fa",
+    "v": "20261004a"
+  },
+  "ubyhost-logo.png": {
+    "sha256": "a4714f5a63d405b48db370f289a6e765554c7f873a7bbce6c10a60e3420419de",
+    "v": "20261004a"
+  },
+  "ubyhost-mark.png": {
+    "sha256": "ae71e0a3ab7231aceeadc761b7d98e66f50b97bae22413cbba65f89e17f53e60",
+    "v": "20261004a"
+  },
+  "wizard.css": {
+    "sha256": "8ef0c7ec0f178b1f896f690d7f529618175091604c67de3915c2c03f99cf3a83",
+    "v": "20261022-0274"
+  },
+  "workflow.css": {
+    "sha256": "c459966c81c8660e3039e1b0be2573f48755b402ac5e33266f4aae7f8ba9820f",
+    "v": "20261025-0375"
+  }
+}

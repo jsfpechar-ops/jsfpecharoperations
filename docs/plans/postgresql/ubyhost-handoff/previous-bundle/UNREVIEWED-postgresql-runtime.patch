@@ -1,0 +1,4280 @@
+--- a/App/app/alerts.py
++++ b/App/app/alerts.py
+@@ -17,7 +17,6 @@
+ from __future__ import annotations
+ 
+ import json
+-import sqlite3
+ from datetime import date
+ from typing import Any, Dict, List, Optional
+ 
+@@ -499,7 +498,7 @@
+                 "created_at": db.utcnow(),
+             },
+         )
+-    except sqlite3.IntegrityError:
++    except db.integrity_errors():
+         # Another thread raised the same open alert between our SELECT and
+         # INSERT (unique index idx_alert_dedupe). Refresh that one instead.
+         again = db.query_one(
+--- a/App/app/auth.py
++++ b/App/app/auth.py
+@@ -197,7 +197,7 @@
+     for _ in range(20):
+         candidate = f"{base}-{secrets.token_hex(2)}"
+         if username_is_valid(candidate) and not db.query_one(
+-            "SELECT id FROM user_account WHERE username = ?", (candidate,)
++            f"SELECT id FROM user_account WHERE {db.username_eq()}", (candidate,)
+         ):
+             return candidate
+     return f"host-{secrets.token_hex(6)}"
+@@ -218,7 +218,7 @@
+     if not name:
+         return None
+     return db.query_one(
+-        "SELECT * FROM user_account WHERE username = ? AND active = 1", (name,)
++        f"SELECT * FROM user_account WHERE {db.username_eq()} AND active = 1", (name,)
+     )
+ 
+ 
+--- a/App/app/config.py
++++ b/App/app/config.py
+@@ -9,17 +9,127 @@
+ """
+ from __future__ import annotations
+ 
++import hashlib
++import json
+ import os
+ import secrets
+ from datetime import date
+ from pathlib import Path
+ from typing import List, Optional
++from urllib.parse import unquote, urlsplit
+ 
+ BASE_DIR = Path(__file__).resolve().parent
+ PROJECT_DIR = BASE_DIR.parent
+ DATA_DIR = Path(os.environ.get("UBYHOST_DATA_DIR", PROJECT_DIR / "data"))
+ 
+-DB_PATH = Path(os.environ.get("UBYHOST_DB", DATA_DIR / "ubyhost.db"))
++_db_path_setting = os.environ.get("UBYHOST_DB")
++_database_url_setting = os.environ.get("UBYHOST_DATABASE_URL")
++if _db_path_setting is not None and _database_url_setting is not None:
++    raise RuntimeError("Set only one of UBYHOST_DB or UBYHOST_DATABASE_URL.")
++if _db_path_setting is not None and not _db_path_setting.strip():
++    raise RuntimeError("UBYHOST_DB must not be empty.")
++if _database_url_setting is not None:
++    if not _database_url_setting.strip():
++        raise RuntimeError("UBYHOST_DATABASE_URL must not be empty.")
++    try:
++        _database_url_parts = urlsplit(_database_url_setting)
++        _database_url_valid = (
++            _database_url_parts.scheme in {"postgres", "postgresql"}
++            and bool(_database_url_parts.hostname)
++            and bool(_database_url_parts.path.strip("/"))
++            and not _database_url_parts.fragment
++        )
++    except ValueError:
++        _database_url_valid = False
++    if not _database_url_valid:
++        raise RuntimeError(
++            "UBYHOST_DATABASE_URL must be a valid PostgreSQL URL with a database name."
++        )
++    DB_BACKEND = "postgresql"
++    DATABASE_URL = _database_url_setting
++else:
++    DB_BACKEND = "sqlite"
++    DATABASE_URL = None
++
++DB_PATH = Path(_db_path_setting or DATA_DIR / "ubyhost.db")
++DATABASE_AUTHORITY_FILE = DATA_DIR / "database-authority.json"
++
++
++def _database_target_fingerprint(url: str) -> str:
++    parts = urlsplit(url)
++    identity = {
++        "scheme": parts.scheme.lower(),
++        "host": (parts.hostname or "").lower(),
++        "port": parts.port or 5432,
++        "database": unquote(parts.path.strip("/")),
++        "schema": "public",
++    }
++    encoded = json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
++    return hashlib.sha256(encoded).hexdigest()
++
++
++def assert_database_authority() -> None:
++    """Refuse fallback to SQLite after a durable PostgreSQL cutover fence exists."""
++    if not DATABASE_AUTHORITY_FILE.exists():
++        return
++    try:
++        marker = json.loads(DATABASE_AUTHORITY_FILE.read_text(encoding="utf-8"))
++    except (OSError, ValueError) as exc:
++        raise RuntimeError("Database authority marker is unreadable; refusing startup.") from exc
++    if marker.get("format_version") != 1 or marker.get("backend") != "postgresql":
++        raise RuntimeError("Database authority marker is invalid; refusing startup.")
++    if DB_BACKEND != "postgresql" or not DATABASE_URL:
++        raise RuntimeError("PostgreSQL is the durable database; UBYHOST_DATABASE_URL is required.")
++    if marker.get("schema") != "public":
++        raise RuntimeError("Database authority marker has an unsupported schema.")
++    if marker.get("target_fingerprint") != _database_target_fingerprint(DATABASE_URL):
++        raise RuntimeError("UBYHOST_DATABASE_URL does not match the durable database authority marker.")
++
++
++def seal_database_authority(expected_database: str) -> dict:
++    """Create the no-secret shared-volume cutover fence; never replace another target."""
++    if DB_BACKEND != "postgresql" or not DATABASE_URL:
++        raise RuntimeError("Set UBYHOST_DATABASE_URL before sealing PostgreSQL authority.")
++    from . import db
++    actual_database = db.current_database_name()
++    if actual_database != expected_database:
++        raise RuntimeError("Connected database does not match --expect-database.")
++    marker = {
++        "format_version": 1,
++        "backend": "postgresql",
++        "database": actual_database,
++        "schema": "public",
++        "target_fingerprint": _database_target_fingerprint(DATABASE_URL),
++    }
++    DATABASE_AUTHORITY_FILE.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
++    payload = json.dumps(marker, sort_keys=True, separators=(",", ":")) + "\n"
++    fd, temporary = __import__("tempfile").mkstemp(dir=DATABASE_AUTHORITY_FILE.parent, prefix=".database-authority.")
++    try:
++        with os.fdopen(fd, "w", encoding="utf-8") as stream:
++            os.fchmod(stream.fileno(), 0o600)
++            stream.write(payload)
++            stream.flush()
++            os.fsync(stream.fileno())
++        try:
++            os.link(temporary, DATABASE_AUTHORITY_FILE)
++        except FileExistsError:
++            existing = json.loads(DATABASE_AUTHORITY_FILE.read_text(encoding="utf-8"))
++            if existing != marker:
++                raise RuntimeError("A different database authority marker already exists.")
++        directory = os.open(DATABASE_AUTHORITY_FILE.parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
++        try:
++            os.fsync(directory)
++        finally:
++            os.close(directory)
++    finally:
++        os.unlink(temporary)
++    assert_database_authority()
++    return marker
++
++
++def database_label() -> str:
++    """A safe backend label for logs; never return a path or connection URL."""
++    return DB_BACKEND
+ 
+ # The secret key signs session cookies. Until UBYHOST_DATA_KEYS is set it also
+ # derives the key that encrypts data at rest (see data_keys() below).
+@@ -470,3 +580,5 @@
+     if name not in UBYPORT_ENDPOINTS:
+         raise ValueError(f"Unknown UbyPort environment {name!r} (use mock, test or prod).")
+     return UBYPORT_ENDPOINTS[name]
++
++assert_database_authority()
+--- a/App/app/db.py
++++ b/App/app/db.py
+@@ -664,6 +664,14 @@
+ 
+ 
+ def _open(factory=sqlite3.Connection, check_same_thread: bool = True) -> sqlite3.Connection:
++    config.assert_database_authority()
++    if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
++        from . import db_postgres
++
++        conn = db_postgres.connect(config.DATABASE_URL)
++        if factory is _ThreadConnection or _request_stats.get() is not None:
++            conn.set_trace_callback(_count_statement)
++        return conn
+     conn = sqlite3.connect(
+         str(config.DB_PATH),
+         timeout=30,
+@@ -739,12 +747,21 @@
+     return (stat.st_dev, stat.st_ino)
+ 
+ 
++def _connection_key() -> tuple:
++    """A non-secret cache identity for the selected backend and database."""
++    if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
++        digest = hashlib.sha256(config.DATABASE_URL.encode("utf-8")).hexdigest()
++        return ("postgresql", digest)
++    path = str(config.DB_PATH)
++    return ("sqlite", path, _file_identity(path))
++
++
+ def _discard(conn: sqlite3.Connection) -> None:
+     with _registry_lock:
+         _registry.discard(conn)
+     try:
+         conn.close()
+-    except sqlite3.Error:
++    except Exception:
+         pass
+ 
+ 
+@@ -756,21 +773,20 @@
+ 
+ 
+ def _thread_conn() -> sqlite3.Connection:
+-    """This thread's connection to ``config.DB_PATH``, opened on first use.
++    """This thread's connection to the selected backend, opened on first use.
+ 
+     Keyed by the database path and the file behind it: a test (or a restore)
+     that points DB_PATH elsewhere, or replaces the file, gets a fresh
+     connection instead of one still reading the old file.
+     """
+-    path = str(config.DB_PATH)
++    config.assert_database_authority()
++    key = _connection_key()
+     cached = getattr(_local, "conn", None)
+     if cached is not None:
+-        conn, cached_path, identity, generation = cached
++        conn, cached_key, generation = cached
+         if (
+-            cached_path == path
++            cached_key == key
+             and generation == _generation
+-            and identity is not None
+-            and _file_identity(path) == identity
+         ):
+             if conn.in_transaction and not getattr(_local, "depth", 0):
+                 # Something left a transaction open outside a block. Never let
+@@ -783,7 +799,7 @@
+     conn = _open(factory=_ThreadConnection, check_same_thread=False)
+     with _registry_lock:
+         _registry.add(conn)
+-    _local.conn = (conn, path, _file_identity(path), _generation)
++    _local.conn = (conn, _connection_key(), _generation)
+     return conn
+ 
+ 
+@@ -792,7 +808,7 @@
+     try:
+         if conn.in_transaction:
+             conn.execute("ROLLBACK")
+-    except sqlite3.Error:
++    except Exception:
+         log.exception("db: rollback failed; dropping the connection")
+     if conn.in_transaction:
+         _drop_if_cached(conn)
+@@ -899,6 +915,21 @@
+     connection can chmod the database and change its persistent journal mode.
+     The configured database must already exist.
+     """
++    if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
++        conn = _open()
++        cur = conn.cursor()
++        try:
++            cur.execute("BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
++            yield cur
++            cur.execute("COMMIT")
++        except BaseException:
++            if conn.in_transaction:
++                cur.execute("ROLLBACK")
++            raise
++        finally:
++            cur.close()
++            conn.close()
++        return
+     uri = config.DB_PATH.resolve().as_uri() + "?mode=ro"
+     conn = sqlite3.connect(uri, uri=True, timeout=30, isolation_level=None)
+     conn.row_factory = sqlite3.Row
+@@ -937,7 +968,7 @@
+     for conn in conns:
+         try:
+             conn.close()
+-        except sqlite3.Error:
++        except Exception:
+             pass
+ 
+ 
+@@ -1083,7 +1114,7 @@
+         "UPDATE guest SET doc_type = NULL, fee_host_decision = NULL, fee_host_reason = NULL"
+     )
+     for table, column in _REVERTED_STAY_FEE_COLUMNS:
+-        present = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
++        present = _table_columns(conn, table)
+         if column in present:
+             conn.execute(f"UPDATE {table} SET {column} = NULL")
+     conn.execute("INSERT INTO settings (key, value) VALUES (?, '1')", (_STAY_FEE_RESET_KEY,))
+@@ -1100,10 +1131,284 @@
+     columns: Dict[str, set] = {}
+     for table, column, decl in ADDED_COLUMNS:
+         if table not in columns:
+-            columns[table] = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
++            columns[table] = _table_columns(conn, table)
+         if columns[table] and column not in columns[table]:
+-            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
++            statement = f"ALTER TABLE {table} ADD COLUMN {column} {decl}"
++            if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
++                from . import db_postgres
++
++                statement = db_postgres.render_ddl(statement)
++            conn.execute(statement)
+             columns[table].add(column)
++
++
++def _table_columns(conn, table: str) -> set[str]:
++    """Column names from the selected backend; table names are trusted source."""
++    if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
++        rows = conn.execute_native(
++            "SELECT column_name AS name FROM information_schema.columns "
++            "WHERE table_schema = current_schema() AND table_name = %s ORDER BY ordinal_position",
++            (table,),
++        ).fetchall()
++    else:
++        rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
++        return {row["name"] for row in rows}
++    return {row["name"] for row in rows}
++
++
++def column_names(table: str) -> list[str]:
++    """Return ordered column names for a trusted application table."""
++    with _helper_conn() as conn:
++        if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
++            rows = conn.execute_native(
++                "SELECT column_name AS name FROM information_schema.columns "
++                "WHERE table_schema = current_schema() AND table_name = %s "
++                "ORDER BY ordinal_position",
++                (table,),
++            ).fetchall()
++            return [row["name"] for row in rows]
++        return [row["name"] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()]
++
++
++def sqlite_date_expr(expression: str) -> str:
++    """Expression matching SQLite date() for the application's stored ISO dates."""
++    if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
++        from . import db_postgres
++
++        return db_postgres.sqlite_date_expr(expression)
++    return f"date({expression})"
++
++
++def _table_exists(conn, table: str) -> bool:
++    if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
++        return bool(conn.execute_native(
++            "SELECT 1 FROM information_schema.tables "
++            "WHERE table_schema = current_schema() AND table_name = %s",
++            (table,),
++        ).fetchone())
++    return bool(conn.execute(
++        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", (table,)
++    ).fetchone())
++
++
++def _execute_ddl(conn, statement: str) -> None:
++    """Execute one frozen SQLite DDL statement or its strict PostgreSQL rendering."""
++    if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
++        from . import db_postgres
++
++        statement = db_postgres.render_ddl(statement)
++        if statement is None:
++            return
++    conn.execute(statement)
++
++
++def current_postgres_schema_name() -> str:
++    if getattr(config, "DB_BACKEND", "sqlite") != "postgresql":
++        raise RuntimeError("PostgreSQL schema identity requires UBYHOST_DATABASE_URL.")
++    conn = connect()
++    try:
++        return conn.execute_native("SELECT current_schema() AS name").fetchone()["name"]
++    finally:
++        conn.close()
++
++
++def current_database_name() -> str:
++    """PostgreSQL database identity for an explicit local/owner target guard."""
++    if getattr(config, "DB_BACKEND", "sqlite") != "postgresql":
++        return str(config.DB_PATH.name)
++    with _helper_conn() as conn:
++        return str(conn.execute_native("SELECT current_database() AS name").fetchone()["name"])
++
++
++def expected_schema_version() -> int:
++    return max([BASELINE_VERSION, *(version for version, _name, _path in migration_files())])
++
++
++def _expected_sqlite_columns() -> Dict[str, List[tuple[str, str, int, int]]]:
++    """Build frozen expected column order/types in memory, never touching data."""
++    conn = sqlite3.connect(":memory:")
++    conn.row_factory = sqlite3.Row
++    try:
++        conn.executescript(SCHEMA)
++        for table, column, decl in ADDED_COLUMNS:
++            names = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
++            if column not in names:
++                conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
++        conn.executescript(_MIGRATIONS_TABLE)
++        for _version, _name, path in migration_files():
++            conn.executescript(path.read_text(encoding="utf-8"))
++        result: Dict[str, List[tuple[str, str, int, int]]] = {}
++        names = [row["name"] for row in conn.execute(
++            "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'"
++        )]
++        for table in names:
++            result[table] = [
++                (row["name"], (row["type"] or "").upper(), int(row["notnull"]), int(row["pk"]))
++                for row in conn.execute(f"PRAGMA table_info({table})")
++            ]
++        return result
++    finally:
++        conn.close()
++
++
++def postgres_schema_status(conn=None) -> Dict[str, Any]:
++    """Read-only schema/version/type/index/trigger compatibility summary."""
++    if getattr(config, "DB_BACKEND", "sqlite") != "postgresql":
++        raise RuntimeError("PostgreSQL schema status requires UBYHOST_DATABASE_URL.")
++    own = conn is None
++    conn = conn or connect()
++    try:
++        schema_row = conn.execute_native("SELECT current_schema() AS name").fetchone()
++        if not schema_row or schema_row["name"] != "public":
++            raise RuntimeError("PostgreSQL runtime requires the public schema search path.")
++        expected = _expected_sqlite_columns()
++        expected["schema_migrations"] = [
++            ("version", "INTEGER", 1, 1),
++            ("name", "TEXT", 1, 0),
++            ("applied_at", "TEXT", 1, 0),
++        ]
++        rows = conn.execute_native(
++            "SELECT table_name, column_name, data_type, is_nullable "
++            "FROM information_schema.columns WHERE table_schema = current_schema() "
++            "ORDER BY table_name, ordinal_position"
++        ).fetchall()
++        actual: Dict[str, list[tuple[str, str, str]]] = {}
++        for row in rows:
++            actual.setdefault(row["table_name"], []).append(
++                (row["column_name"], row["data_type"].lower(), row["is_nullable"])
++            )
++        expected_types = {
++            "INTEGER": "bigint", "REAL": "double precision", "BLOB": "bytea", "TEXT": "text"
++        }
++        column_mismatches = 0
++        for table in expected.keys() | actual.keys():
++            expected_cols = expected.get(table, [])
++            actual_cols = actual.get(table, [])
++            if len(expected_cols) != len(actual_cols):
++                column_mismatches += abs(len(expected_cols) - len(actual_cols)) or 1
++                continue
++            for (exp_name, exp_type, exp_notnull, exp_pk), (act_name, act_type, act_nullable) in zip(expected_cols, actual_cols):
++                target_type = expected_types.get(exp_type)
++                target_notnull = exp_notnull or exp_pk
++                if (exp_name != act_name or target_type != act_type
++                        or (target_notnull and act_nullable != "NO")
++                        or (not target_notnull and act_nullable != "YES")):
++                    column_mismatches += 1
++        expected_indexes = {"ubyhost_user_account_username_sqlite_nocase"}
++        for source in [SCHEMA, *(path.read_text(encoding="utf-8") for _v, _n, path in migration_files())]:
++            expected_indexes.update(re.findall(
++                r"\bCREATE\s+(?:UNIQUE\s+)?INDEX\s+(?:IF\s+NOT\s+EXISTS\s+)?([A-Za-z_][A-Za-z_0-9]*)",
++                _without_sql_comments(source),
++                re.I,
++            ))
++        index_rows = conn.execute_native(
++            "SELECT indexname AS name FROM pg_indexes WHERE schemaname = current_schema()"
++        ).fetchall()
++        actual_indexes = {row["name"] for row in index_rows}
++        missing_indexes = expected_indexes - actual_indexes
++        trigger_rows = conn.execute_native(
++            "SELECT t.tgname AS name FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid "
++            "JOIN pg_namespace n ON n.oid = c.relnamespace "
++            "WHERE n.nspname = current_schema() AND NOT t.tgisinternal"
++        ).fetchall()
++        expected_triggers = {
++            "invoice_issued_guard", "invoice_note_guard", "invoice_delete_guard",
++            "invoice_item_insert_guard", "invoice_item_update_guard", "invoice_item_delete_guard",
++        }
++        actual_triggers = {row["name"] for row in trigger_rows}
++        actual_version = schema_version(conn)
++        return {
++            "database": current_database_name() if own else None,
++            "expected_version": expected_schema_version(),
++            "actual_version": actual_version,
++            "expected_tables": len(expected),
++            "actual_tables": len(actual),
++            "missing_tables": len(expected.keys() - actual.keys()),
++            "extra_tables": len(actual.keys() - expected.keys()),
++            "column_mismatches": column_mismatches,
++            "missing_indexes": len(missing_indexes),
++            "missing_triggers": len(expected_triggers - actual_triggers),
++            "extra_triggers": len(actual_triggers - expected_triggers),
++            "current": (
++                expected_schema_version() == actual_version
++                and expected.keys() == actual.keys()
++                and column_mismatches == 0
++                and not missing_indexes
++                and expected_triggers == actual_triggers
++            ),
++        }
++    finally:
++        if own:
++            conn.close()
++
++
++def validate_postgres_schema_connection(conn) -> Dict[str, Any]:
++    """Check a caller-owned PostgreSQL transaction without opening a second connection."""
++    status = postgres_schema_status(conn)
++    if not status["current"]:
++        raise RuntimeError("PostgreSQL schema is absent, outdated, or incompatible.")
++    return status
++
++
++def table_copy_order(source: sqlite3.Connection, tables: Sequence[str]) -> list[str]:
++    """Topologically order real FK edges; self-FKs are deferred in transfer."""
++    names = set(tables)
++    parents: Dict[str, set[str]] = {}
++    for table in tables:
++        parents[table] = {
++            row[2] for row in source.execute(f'PRAGMA foreign_key_list("{table}")')
++            if row[2] in names and row[2] != table
++        }
++    ordered: list[str] = []
++    remaining = set(tables)
++    while remaining:
++        ready = sorted(table for table in remaining if parents[table].issubset(ordered))
++        if not ready:
++            raise RuntimeError("source contains a cross-table foreign-key cycle")
++        ordered.extend(ready)
++        remaining.difference_update(ready)
++    return ordered
++
++
++def restore_postgres_sequence(conn, table: str, source: sqlite3.Connection) -> None:
++    """Advance BIGINT identity state to the exact imported maximum (including empty)."""
++    from . import db_postgres
++    if not db_postgres.is_identity_table(table):
++        return
++    row = conn.execute_native(
++        "SELECT pg_get_serial_sequence(%s, 'id') AS sequence", (table,)
++    ).fetchone()
++    if not row or not row["sequence"]:
++        raise RuntimeError(f"missing identity sequence for {table}")
++    maximum = conn.execute_native(f'SELECT MAX(id) AS maximum FROM "{table}"').fetchone()["maximum"]
++    highwater_row = source.execute("SELECT seq FROM sqlite_sequence WHERE name = ?", (table,)).fetchone()
++    highwater = int(highwater_row[0]) if highwater_row else 0
++    next_value = max(int(maximum or 0), highwater)
++    if maximum is None and highwater == 0:
++        conn.execute_native("SELECT setval(%s, 1, false)", (row["sequence"],))
++    else:
++        conn.execute_native("SELECT setval(%s, %s, true)", (row["sequence"], next_value))
++
++
++def validate_postgres_schema() -> Dict[str, Any]:
++    config.assert_database_authority()
++    status = postgres_schema_status()
++    marker_path = getattr(config, "DATABASE_AUTHORITY_FILE", None)
++    if marker_path is not None and marker_path.exists():
++        marker = json.loads(marker_path.read_text(encoding="utf-8"))
++        if status.get("database") != marker.get("database") or marker.get("schema") != "public":
++            raise RuntimeError("Connected PostgreSQL database does not match the durable authority marker.")
++    if not status["current"]:
++        raise RuntimeError(
++            "PostgreSQL schema is absent, outdated, or incompatible; run "
++            "scripts/pg_schema.py plan/check/apply with the expected database name."
++        )
++    return status
++
++
++def _without_sql_comments(script: str) -> str:
++    """Comment-stripped DDL for extracting its explicitly named indexes."""
++    return re.sub(r"(?m)^\s*--.*$", "", script)
+ 
+ 
+ # Start-up work that must run in one process at a time (WP06): two uvicorn
+@@ -1116,30 +1421,49 @@
+ STARTUP_LOCK_NAME = "startup.lock"
+ _startup_guard = threading.RLock()
+ _startup_handle = None
++_startup_pg_conn = None
+ _startup_depth = 0
+ 
+ 
+ @contextmanager
+ def startup_lock():
+-    global _startup_handle, _startup_depth
++    global _startup_handle, _startup_pg_conn, _startup_depth
+     with _startup_guard:
+         if _startup_depth == 0:
+             config.ensure_data_dir()
+-            handle = open(config.DATA_DIR / STARTUP_LOCK_NAME, "a+")
+-            try:
+-                fcntl.flock(handle, fcntl.LOCK_EX)
+-            except BaseException:
+-                handle.close()
+-                raise
+-            _startup_handle = handle
++            if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
++                from . import db_postgres
++
++                conn = _open()
++                try:
++                    conn.acquire_startup_lock()
++                except BaseException:
++                    conn.close()
++                    raise
++                _startup_pg_conn = conn
++            else:
++                handle = open(config.DATA_DIR / STARTUP_LOCK_NAME, "a+")
++                try:
++                    fcntl.flock(handle, fcntl.LOCK_EX)
++                except BaseException:
++                    handle.close()
++                    raise
++                _startup_handle = handle
+         _startup_depth += 1
+         try:
+             yield
+         finally:
+             _startup_depth -= 1
+             if _startup_depth == 0:
+-                _startup_handle.close()  # closing the descriptor releases the flock
+-                _startup_handle = None
++                if _startup_pg_conn is not None:
++                    try:
++                        _startup_pg_conn.release_session_lock(db_postgres.STARTUP_LOCK_ID)
++                    finally:
++                        _startup_pg_conn.close()
++                        _startup_pg_conn = None
++                else:
++                    _startup_handle.close()  # closing the descriptor releases the flock
++                    _startup_handle = None
+ 
+ 
+ # --- numbered migrations -------------------------------------------------
+@@ -1211,10 +1535,7 @@
+     own = conn is None
+     conn = conn or connect()
+     try:
+-        exists = conn.execute(
+-            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'schema_migrations'"
+-        ).fetchone()
+-        if not exists:
++        if not _table_exists(conn, "schema_migrations"):
+             return 0
+         row = conn.execute("SELECT MAX(version) AS v FROM schema_migrations").fetchone()
+         return int(row["v"] or 0)
+@@ -1241,7 +1562,7 @@
+             ).fetchone()
+             if not done:
+                 for statement in _statements(script):
+-                    conn.execute(statement)
++                    _execute_ddl(conn, statement)
+                 conn.execute(
+                     "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)",
+                     (version, name, utcnow()),
+@@ -1255,14 +1576,19 @@
+ 
+ 
+ def init_db() -> None:
+-    # The data directory has to exist before sqlite opens the database inside
+-    # it, and creating it is no longer an import-time side effect of config.
++    # PostgreSQL DDL is explicit owner work. Normal app startup only verifies
++    # the completed schema; it never upgrades or seeds a PG target.
+     config.ensure_data_dir()
++    if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
++        validate_postgres_schema()
++        return
+     with startup_lock():
+         _init_db_locked()
+ 
+ 
+ def _init_db_locked() -> None:
++    if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
++        raise RuntimeError("Use apply_postgresql_schema() for explicit PostgreSQL DDL.")
+     conn = connect()
+     try:
+         # Migrate before the schema, because SCHEMA also creates indexes over
+@@ -1276,7 +1602,7 @@
+         _reset_reverted_stay_fee(conn)
+         _resolve_legacy_resign_alerts(conn)
+         # The baseline is reached; record it, then apply the numbered files.
+-        conn.execute(_MIGRATIONS_TABLE)
++        _execute_ddl(conn, _MIGRATIONS_TABLE)
+         conn.execute(
+             "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?) "
+             "ON CONFLICT (version) DO NOTHING",
+@@ -1291,6 +1617,84 @@
+         guest_slug.backfill(conn)
+     finally:
+         conn.close()
++
++
++def _postgres_schema_ddl(conn, *, record_history: bool, include_triggers: bool) -> None:
++    """Build the current PG schema on an already locked transaction."""
++    from . import db_postgres
++
++    statements = db_postgres.order_table_ddl(_statements(SCHEMA))
++    for statement in statements:
++        if re.match(r"\s*CREATE\s+TABLE\b", _without_sql_comments(statement), re.I):
++            _execute_ddl(conn, statement)
++    _add_missing_columns(conn)
++    _execute_ddl(conn, _MIGRATIONS_TABLE)
++    for statement in statements:
++        clean = _without_sql_comments(statement)
++        if re.match(r"\s*CREATE\s+TABLE\b", clean, re.I):
++            continue
++        if re.match(r"\s*CREATE\s+TRIGGER\b", clean, re.I):
++            continue  # exact PostgreSQL equivalents installed below
++        _execute_ddl(conn, statement)
++    if record_history:
++        conn.execute(
++            "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?) "
++            "ON CONFLICT (version) DO NOTHING",
++            (BASELINE_VERSION, "baseline", utcnow()),
++        )
++    for version, name, path in migration_files():
++        done = (
++            conn.execute("SELECT 1 FROM schema_migrations WHERE version = ?", (version,)).fetchone()
++            if record_history
++            else None
++        )
++        if done:
++            continue
++        for statement in db_postgres.order_table_ddl(_statements(path.read_text(encoding="utf-8"))):
++            _execute_ddl(conn, statement)
++        if record_history:
++            conn.execute(
++                "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)",
++                (version, name, utcnow()),
++            )
++    db_postgres.install_pg_support(conn, include_triggers=include_triggers)
++
++
++def apply_postgresql_schema() -> Dict[str, Any]:
++    """Owner-invoked, atomic PostgreSQL schema/migration command."""
++    if getattr(config, "DB_BACKEND", "sqlite") != "postgresql":
++        raise RuntimeError("PostgreSQL schema apply requires UBYHOST_DATABASE_URL.")
++    config.ensure_data_dir()
++    with startup_lock():
++        conn = connect()
++        conn.acquire_writer_session_lock()
++        try:
++            conn.execute("BEGIN IMMEDIATE")
++            try:
++                _postgres_schema_ddl(conn, record_history=True, include_triggers=True)
++                conn.execute("COMMIT")
++            except BaseException:
++                if conn.in_transaction:
++                    conn.execute("ROLLBACK")
++                raise
++        finally:
++            conn.release_writer_session_lock()
++            conn.close()
++    return validate_postgres_schema()
++
++
++def bootstrap_empty_postgresql_schema(conn) -> None:
++    """Create current DDL without app rows/history/triggers inside transfer tx.
++
++    Caller must hold an open target transaction and must already have proved
++    the selected schema contains no user objects. Transfer installs triggers
++    before committing copied raw data.
++    """
++    if getattr(config, "DB_BACKEND", "sqlite") != "postgresql":
++        raise RuntimeError("PostgreSQL transfer bootstrap requires UBYHOST_DATABASE_URL.")
++    if not conn.in_transaction:
++        raise RuntimeError("PostgreSQL transfer bootstrap requires an open target transaction.")
++    _postgres_schema_ddl(conn, record_history=False, include_triggers=False)
+ 
+ 
+ def _resolve_legacy_resign_alerts(conn: sqlite3.Connection) -> None:
+@@ -1441,13 +1845,37 @@
+ NULL_SAFE_EQ = "IS"
+ 
+ 
++def username_eq(column: str = "username") -> str:
++    """SQLite NOCASE equality for ASCII usernames on both supported backends."""
++    if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
++        return (
++            f"translate({column}, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz') "
++            "= translate(?, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"
++        )
++    return f"{column} = ?"
++
++
+ def null_safe_eq(column: str) -> str:
+     """``column`` compared null-safely with one ``?`` parameter.
+ 
+     ``column`` is trusted SQL (a column name written in the code), never input.
+     Use plain ``column = ?`` where the value can never be None.
+     """
+-    return f"{column} {NULL_SAFE_EQ} ?"
++    operator = (
++        "IS NOT DISTINCT FROM"
++        if getattr(config, "DB_BACKEND", "sqlite") == "postgresql"
++        else NULL_SAFE_EQ
++    )
++    return f"{column} {operator} ?"
++
++
++def integrity_errors() -> tuple[type[BaseException], ...]:
++    """Integrity-error types exposed by the selected DB-API backend."""
++    if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
++        from . import db_postgres
++
++        return (*db_postgres.integrity_error_types(), sqlite3.IntegrityError)
++    return (sqlite3.IntegrityError,)
+ 
+ 
+ def is_unique_violation(exc: BaseException) -> bool:
+--- /dev/null
++++ b/App/app/db_postgres.py
+@@ -0,0 +1,804 @@
++"""Small psycopg 3 adapter for the SQLite-shaped db.py call surface.
++
++This module is imported only when ``UBYHOST_DATABASE_URL`` selects PostgreSQL.
++Application SQL remains written with SQLite's ``?`` placeholders; the lexer
++below translates only placeholders outside SQL strings, identifiers and
++comments, and also preserves SQLite's ASCII-only LIKE case folding.
++"""
++from __future__ import annotations
++
++import re
++from typing import Any, Callable, Iterable, Optional, Sequence
++
++
++WRITER_LOCK_ID = 593217221
++STARTUP_LOCK_ID = 593217222
++LOCK_TIMEOUT = "30s"
++
++
++def _sql_words(sql: str) -> list[str]:
++    """SQL keyword-like words outside literals, identifiers and comments."""
++    words: list[str] = []
++    i = 0
++    while i < len(sql):
++        if sql.startswith("--", i):
++            end = sql.find("\n", i)
++            i = len(sql) if end < 0 else end + 1
++        elif sql.startswith("/*", i):
++            depth = 1
++            i += 2
++            while i < len(sql) and depth:
++                if sql.startswith("/*", i):
++                    depth += 1
++                    i += 2
++                elif sql.startswith("*/", i):
++                    depth -= 1
++                    i += 2
++                else:
++                    i += 1
++        elif sql[i] in ("'", '"'):
++            quote = sql[i]
++            i += 1
++            while i < len(sql):
++                if sql[i] == quote:
++                    if i + 1 < len(sql) and sql[i + 1] == quote:
++                        i += 2
++                    else:
++                        i += 1
++                        break
++                else:
++                    i += 1
++        elif sql[i].isalpha() or sql[i] == "_":
++            match = re.match(r"[A-Za-z_][A-Za-z_0-9]*", sql[i:])
++            words.append(match.group(0).upper())
++            i += len(match.group(0))
++        else:
++            i += 1
++    return words
++
++
++def _first_word(sql: str) -> str:
++    """Return the first SQL command, ignoring leading whitespace/comments."""
++    words = _sql_words(sql)
++    return words[0] if words else ""
++
++
++def _is_write(sql: str) -> bool:
++    """Conservatively serialize every non-read/control statement."""
++    first = _first_word(sql)
++    if first in {"SELECT", "SHOW", "EXPLAIN", "VALUES", "BEGIN", "COMMIT", "END", "ROLLBACK", "ABORT", "SET", "RESET", "SAVEPOINT", "RELEASE", "DISCARD"}:
++        return False
++    if first == "WITH":
++        # Application CTEs are reads today; recognize DML CTEs conservatively.
++        return any(word in {"INSERT", "UPDATE", "DELETE", "MERGE"} for word in _sql_words(sql)[1:])
++    return True
++
++
++class PostgresRow:
++    """A row with sqlite3.Row name/position/indexing behavior."""
++
++    __slots__ = ("_names", "_values", "_first")
++
++    def __init__(self, names: Sequence[str], values: Sequence[Any]) -> None:
++        self._names = tuple(names)
++        self._values = tuple(values)
++        first = {}
++        for index, name in enumerate(self._names):
++            first.setdefault(name.lower(), index)
++        self._first = first
++
++    def __getitem__(self, key: Any) -> Any:
++        if isinstance(key, (int, slice)):
++            return self._values[key]
++        if not isinstance(key, str):
++            raise TypeError("row indices must be integers, slices, or column names")
++        try:
++            return self._values[self._first[key.lower()]]
++        except KeyError:
++            raise KeyError(key) from None
++
++    def keys(self) -> tuple[str, ...]:
++        return self._names
++
++    def __iter__(self):
++        return iter(self._values)
++
++    def __len__(self) -> int:
++        return len(self._values)
++
++    def get(self, key: str, default: Any = None) -> Any:
++        try:
++            return self[key]
++        except KeyError:
++            return default
++
++
++def adapt_sql(sql: str, params: Optional[Sequence[Any]] = ()) -> tuple[str, Optional[Sequence[Any]]]:
++    """Convert bound markers and SQLite LIKE outside quoted/comment regions.
++
++    Psycopg treats percent signs in a query passed with parameters as its
++    placeholder grammar even when those signs are inside SQL literals or
++    comments. Each literal percent is therefore escaped for psycopg while
++    existing SQLite question marks remain literal unless they are real binds.
++    """
++    if params is None:
++        return sql, None
++    out: list[str] = []
++    i = 0
++    binds = 0
++    n = len(sql)
++    while i < n:
++        ch = sql[i]
++        if sql.startswith("--", i):
++            end = sql.find("\n", i)
++            end = n if end < 0 else end
++            out.append(sql[i:end].replace("%", "%%"))
++            i = end
++            continue
++        if sql.startswith("/*", i):
++            depth = 1
++            j = i + 2
++            while j < n and depth:
++                if sql.startswith("/*", j):
++                    depth += 1
++                    j += 2
++                elif sql.startswith("*/", j):
++                    depth -= 1
++                    j += 2
++                else:
++                    j += 1
++            out.append(sql[i:j].replace("%", "%%"))
++            i = j
++            continue
++        if ch in ("'", '"'):
++            quote = ch
++            j = i + 1
++            while j < n:
++                if sql[j] == quote:
++                    if j + 1 < n and sql[j + 1] == quote:
++                        j += 2
++                        continue
++                    j += 1
++                    break
++                j += 1
++            out.append(sql[i:j].replace("%", "%%"))
++            i = j
++            continue
++        if ch == "$":
++            match = re.match(r"\$[A-Za-z_][A-Za-z_0-9]*\$|\$\$", sql[i:])
++            if match:
++                tag = match.group(0)
++                end = sql.find(tag, i + len(tag))
++                end = n if end < 0 else end + len(tag)
++                out.append(sql[i:end].replace("%", "%%"))
++                i = end
++                continue
++        if ch == "?":
++            # PostgreSQL cannot infer the type of ``%s IS NULL`` for a None
++            # parameter. A text cast preserves the predicate for every
++            # supported scalar value and keeps None a NULL.
++            suffix = sql[i + 1 :]
++            out.append("%s::text" if re.match(r"\s+IS\s+NULL\b", suffix, re.I) else "%s")
++            binds += 1
++            i += 1
++            continue
++        if ch == "%":
++            out.append("%%")
++            i += 1
++            continue
++        if ch.isalpha() or ch == "_":
++            j = i + 1
++            while j < n and (sql[j].isalnum() or sql[j] in "_$"):
++                j += 1
++            word = sql[i:j]
++            out.append("ILIKE" if word.upper() == "LIKE" else word)
++            i = j
++            continue
++        out.append(ch)
++        i += 1
++    if binds != len(params):
++        raise ValueError(f"SQL has {binds} bind markers but {len(params)} values were supplied")
++    return "".join(out), tuple(params)
++
++
++def render_ddl(sql: str) -> Optional[str]:
++    """Translate the frozen SQLite DDL subset; reject unknown SQLite syntax.
++
++    ``None`` means one of the six SQLite invoice triggers, whose equivalent
++    PostgreSQL definitions are installed separately.
++    """
++    visible = sql
++    while True:
++        visible = visible.lstrip()
++        if visible.startswith("--"):
++            end = visible.find("\n")
++            visible = "" if end < 0 else visible[end + 1 :]
++        elif visible.startswith("/*"):
++            end = visible.find("*/", 2)
++            if end < 0:
++                raise ValueError("unterminated SQL block comment")
++            visible = visible[end + 2 :]
++        else:
++            break
++    if re.match(r"CREATE\s+TRIGGER\b", visible, re.I):
++        match = re.match(r"CREATE\s+TRIGGER\s+(?:IF\s+NOT\s+EXISTS\s+)?([A-Za-z_][A-Za-z_0-9]*)", visible, re.I)
++        if not match or match.group(1) not in PG_TRIGGER_NAMES:
++            raise ValueError("unsupported SQLite trigger in schema source")
++        return None
++    is_create_table = bool(re.match(r"CREATE\s+TABLE\b", visible, re.I))
++    is_alter_add_column = bool(re.match(r"ALTER\s+TABLE\b", visible, re.I))
++
++    # The input DDL comes only from SCHEMA, ADDED_COLUMNS and numbered
++    # migrations. Lex the normal tokens and preserve comments/quoted strings.
++    out: list[str] = []
++    tokens: list[tuple[str, str]] = []
++    paren_depth = 0
++    i = 0
++    n = len(sql)
++    while i < n:
++        ch = sql[i]
++        if sql.startswith("--", i):
++            end = sql.find("\n", i)
++            end = n if end < 0 else end
++            out.append(sql[i:end])
++            i = end
++            continue
++        if ch in ("'", '"'):
++            quote = ch
++            j = i + 1
++            while j < n:
++                if sql[j] == quote:
++                    if j + 1 < n and sql[j + 1] == quote:
++                        j += 2
++                        continue
++                    j += 1
++                    break
++                j += 1
++            out.append(sql[i:j])
++            tokens.append(("literal", ""))
++            i = j
++            continue
++        if ch.isalpha() or ch == "_":
++            j = i + 1
++            while j < n and (sql[j].isalnum() or sql[j] == "_"):
++                j += 1
++            word = sql[i:j]
++            upper = word.upper()
++            type_position = (
++                is_create_table and paren_depth == 1 and bool(tokens)
++                and tokens[-1][0] == "word"
++            ) or (
++                is_alter_add_column
++                and bool(re.search(r"\bADD\s+COLUMN\s+[A-Za-z_][A-Za-z_0-9]*\s+$", sql[:i], re.I))
++            )
++            if upper == "AUTOINCREMENT" and type_position:
++                raise ValueError("AUTOINCREMENT must follow an INTEGER PRIMARY KEY")
++            if upper == "INTEGER" and type_position:
++                # The three tokens are recognized before individual type
++                # translation so identity syntax stays in PostgreSQL order.
++                tail = re.match(r"(\s+PRIMARY\s+KEY\s+)AUTOINCREMENT\b", sql[j:], re.I)
++                if tail:
++                    out.append("BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY")
++                    consumed = len(tail.group(0))
++                    tokens.extend((("word", "INTEGER"), ("word", "PRIMARY"), ("word", "KEY")))
++                    i = j + consumed
++                    continue
++                out.append("BIGINT")
++                tokens.append(("word", upper))
++                i = j
++                continue
++            if upper == "BLOB" and type_position:
++                out.append("BYTEA")
++                tokens.append(("word", upper))
++                i = j
++                continue
++            if upper == "REAL" and type_position:
++                out.append("DOUBLE PRECISION")
++                tokens.append(("word", upper))
++                i = j
++                continue
++            if upper == "NOCASE":
++                # Remove only the collation token; the following UNIQUE is
++                # retained and an ASCII-only expression index is added later.
++                if tokens and tokens[-1] == ("word", "COLLATE"):
++                    while out and out[-1].isspace():
++                        out.pop()
++                    if not out or out[-1].strip().upper() != "COLLATE":
++                        raise ValueError("unsupported NOCASE collation position")
++                    out.pop()
++                    tokens.pop()
++                    i = j
++                    continue
++                raise ValueError("unsupported NOCASE token outside COLLATE")
++            if upper == "TEXT" and type_position:
++                out.append('TEXT COLLATE "C"')
++            else:
++                out.append(word)
++            tokens.append(("word", upper))
++            i = j
++            continue
++        out.append(ch)
++        if not ch.isspace():
++            tokens.append(("punct", ch))
++        if ch == "(":
++            paren_depth += 1
++        elif ch == ")":
++            paren_depth -= 1
++        i += 1
++    rendered = "".join(out)
++    if re.search(r"\bWITHOUT\s+ROWID\b|\bVIRTUAL\s+TABLE\b|\bRAISE\s*\(", rendered, re.I):
++        raise ValueError("unsupported SQLite-only DDL construct")
++    # Transfer may defer only FK constraints to preserve SQLite's ability to
++    # import self-referencing rows. Unique constraints stay immediate.
++    rendered = re.sub(
++        r"(\bREFERENCES\s+[A-Za-z_][A-Za-z_0-9]*\s*\([^)]*\)(?:\s+ON\s+(?:DELETE|UPDATE)\s+(?:CASCADE|RESTRICT|NO\s+ACTION|SET\s+NULL|SET\s+DEFAULT))*)",
++        r"\1 DEFERRABLE INITIALLY IMMEDIATE", rendered, flags=re.I,
++    )
++    return rendered
++
++
++def _without_comments(sql: str) -> str:
++    """Remove SQL comments while preserving literals and statement layout."""
++    out: list[str] = []
++    i = 0
++    while i < len(sql):
++        if sql.startswith("--", i):
++            end = sql.find("\n", i)
++            if end < 0:
++                break
++            out.append("\n")
++            i = end + 1
++        elif sql.startswith("/*", i):
++            depth = 1
++            j = i + 2
++            while j < len(sql) and depth:
++                if sql.startswith("/*", j):
++                    depth += 1
++                    j += 2
++                elif sql.startswith("*/", j):
++                    depth -= 1
++                    j += 2
++                else:
++                    j += 1
++            out.append(" ")
++            i = j
++        elif sql[i] in ("'", '"'):
++            quote = sql[i]
++            j = i + 1
++            while j < len(sql):
++                if sql[j] == quote:
++                    if j + 1 < len(sql) and sql[j + 1] == quote:
++                        j += 2
++                        continue
++                    j += 1
++                    break
++                j += 1
++            out.append(sql[i:j])
++            i = j
++        else:
++            out.append(sql[i])
++            i += 1
++    return "".join(out)
++
++
++def order_table_ddl(statements: Sequence[str]) -> list[str]:
++    """Create all tables in FK dependency order, then retain other DDL order.
++
++    The only forward FK in the frozen baseline is ``guest.submission_id``;
++    the ordering is derived from the actual SQL rather than a handwritten
++    exception. Cross-table cycles fail closed. Self-references are allowed.
++    """
++    table_rows: list[tuple[str, set[str], str]] = []
++    others: list[str] = []
++    for statement in statements:
++        clean = _without_comments(statement)
++        match = re.search(
++            r"\bCREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+([A-Za-z_][A-Za-z_0-9]*)\s*\(",
++            clean,
++            re.I,
++        )
++        if not match:
++            others.append(statement)
++            continue
++        table = match.group(1).lower()
++        parents = {
++            name.lower()
++            for name in re.findall(r"\bREFERENCES\s+([A-Za-z_][A-Za-z_0-9]*)\s*\(", clean, re.I)
++            if name.lower() != table
++        }
++        table_rows.append((table, parents, statement))
++    table_names = {table for table, _parents, _statement in table_rows}
++    pending = list(table_rows)
++    ordered: list[str] = []
++    created: set[str] = set()
++    while pending:
++        ready_index = next(
++            (i for i, (_table, parents, _statement) in enumerate(pending)
++             if parents <= (created | (parents - table_names))),
++            None,
++        )
++        if ready_index is None:
++            raise ValueError("PostgreSQL DDL contains a cross-table foreign-key cycle")
++        table, _parents, statement = pending.pop(ready_index)
++        ordered.append(statement)
++        created.add(table)
++    return ordered + others
++
++
++PG_TRIGGER_NAMES = frozenset({
++    "invoice_issued_guard", "invoice_note_guard", "invoice_delete_guard",
++    "invoice_item_insert_guard", "invoice_item_update_guard", "invoice_item_delete_guard",
++})
++
++PG_TRIGGERS = (
++    """CREATE OR REPLACE FUNCTION ubyhost_invoice_issued_guard() RETURNS trigger
++LANGUAGE plpgsql AS $$ BEGIN
++  IF OLD.issued_at IS NOT NULL THEN
++    RAISE EXCEPTION USING ERRCODE = 'integrity_constraint_violation', MESSAGE = 'invoice is issued and immutable';
++  END IF;
++  RETURN NEW;
++END $$""",
++    """CREATE OR REPLACE FUNCTION ubyhost_invoice_note_guard() RETURNS trigger
++LANGUAGE plpgsql AS $$ BEGIN
++  IF OLD.issued_at IS NOT NULL THEN
++    RAISE EXCEPTION USING ERRCODE = 'integrity_constraint_violation', MESSAGE = 'invoice is issued and immutable';
++  END IF;
++  RETURN NEW;
++END $$""",
++    """CREATE OR REPLACE FUNCTION ubyhost_invoice_delete_guard() RETURNS trigger
++LANGUAGE plpgsql AS $$ BEGIN
++  IF OLD.issued_at IS NOT NULL AND COALESCE((SELECT value FROM settings WHERE key = 'invoice_purge_unlock'), '') <> '1' THEN
++    RAISE EXCEPTION USING ERRCODE = 'integrity_constraint_violation', MESSAGE = 'invoice is issued and immutable';
++  END IF;
++  RETURN OLD;
++END $$""",
++    """CREATE OR REPLACE FUNCTION ubyhost_invoice_item_insert_guard() RETURNS trigger
++LANGUAGE plpgsql AS $$ BEGIN
++  IF (SELECT issued_at FROM invoice WHERE id = NEW.invoice_id) IS NOT NULL THEN
++    RAISE EXCEPTION USING ERRCODE = 'integrity_constraint_violation', MESSAGE = 'invoice is issued and immutable';
++  END IF;
++  RETURN NEW;
++END $$""",
++    """CREATE OR REPLACE FUNCTION ubyhost_invoice_item_update_guard() RETURNS trigger
++LANGUAGE plpgsql AS $$ BEGIN
++  IF (SELECT issued_at FROM invoice WHERE id = OLD.invoice_id) IS NOT NULL THEN
++    RAISE EXCEPTION USING ERRCODE = 'integrity_constraint_violation', MESSAGE = 'invoice is issued and immutable';
++  END IF;
++  RETURN NEW;
++END $$""",
++    """CREATE OR REPLACE FUNCTION ubyhost_invoice_item_delete_guard() RETURNS trigger
++LANGUAGE plpgsql AS $$ BEGIN
++  IF (SELECT issued_at FROM invoice WHERE id = OLD.invoice_id) IS NOT NULL
++     AND COALESCE((SELECT value FROM settings WHERE key = 'invoice_purge_unlock'), '') <> '1' THEN
++    RAISE EXCEPTION USING ERRCODE = 'integrity_constraint_violation', MESSAGE = 'invoice is issued and immutable';
++  END IF;
++  RETURN OLD;
++END $$""",
++)
++
++PG_TRIGGER_DDL = (
++    ("invoice_issued_guard", "invoice", "BEFORE UPDATE OF legal_entity_id, apartment_id, kind, corrects_invoice_id, correction_reason, correction_date, seq_year, seq_no, number, vs, lang, currency, vat_status, issue_date, duzp, due_date, paid_on, paid_via, seller_name, seller_seat, seller_ico, seller_dic, seller_registry, seller_bank_account, seller_iban, seller_bic, seller_email, seller_phone, buyer_name, buyer_street, buyer_city, buyer_zip, buyer_country, buyer_ico, buyer_dic, buyer_email, stay_from, stay_to, stay_label, total_base_haler, total_vat_haler, total_haler, pdf_blob, pdf_sha256, issued_at, issued_by", "ubyhost_invoice_issued_guard"),
++    ("invoice_note_guard", "invoice", "BEFORE UPDATE OF note", "ubyhost_invoice_note_guard"),
++    ("invoice_delete_guard", "invoice", "BEFORE DELETE", "ubyhost_invoice_delete_guard"),
++    ("invoice_item_insert_guard", "invoice_item", "BEFORE INSERT", "ubyhost_invoice_item_insert_guard"),
++    ("invoice_item_update_guard", "invoice_item", "BEFORE UPDATE", "ubyhost_invoice_item_update_guard"),
++    ("invoice_item_delete_guard", "invoice_item", "BEFORE DELETE", "ubyhost_invoice_item_delete_guard"),
++)
++
++PG_SQLITE_DATE_FUNCTION = r"""CREATE OR REPLACE FUNCTION ubyhost_sqlite_date(value text)
++RETURNS text LANGUAGE plpgsql STABLE STRICT AS $$
++DECLARE parsed timestamptz;
++        parsed_local timestamp without time zone;
++BEGIN
++  IF value !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}([ T][0-9]{2}:[0-9]{2}(:[0-9]{2}(\.[0-9]{1,6})?)?(Z|[+-][0-9]{2}:[0-9]{2})?)?$' THEN
++    RETURN NULL;
++  END IF;
++  IF value ~ '(Z|[+-][0-9]{2}:[0-9]{2})$' THEN
++    parsed := value::timestamptz;
++    RETURN to_char(parsed AT TIME ZONE 'UTC', 'YYYY-MM-DD');
++  END IF;
++  parsed_local := value::timestamp without time zone;
++  RETURN to_char(parsed_local, 'YYYY-MM-DD');
++EXCEPTION WHEN OTHERS THEN
++  RETURN NULL;
++END $$"""
++
++
++def sqlite_date_expr(expression: str) -> str:
++    """A trusted SQL expression that matches SQLite date() for app ISO dates."""
++    return f"ubyhost_sqlite_date({expression})"
++
++
++def install_pg_support(connection: "PostgresConnection", *, include_triggers: bool = True) -> None:
++    """Install backend-only date/collation objects and optionally invoice guards."""
++    connection.execute(PG_SQLITE_DATE_FUNCTION)
++    connection.execute(
++        "CREATE UNIQUE INDEX IF NOT EXISTS ubyhost_user_account_username_sqlite_nocase "
++        "ON user_account (translate(username, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'))"
++    )
++    if include_triggers:
++        install_pg_triggers(connection)
++
++
++def install_pg_triggers(connection: "PostgresConnection") -> None:
++    """Install the six frozen invoice immutability guards exactly once per schema."""
++    for definition in PG_TRIGGERS:
++        connection.execute(definition)
++    for name, table, event, function in PG_TRIGGER_DDL:
++        connection.execute(f"DROP TRIGGER IF EXISTS {name} ON {table}")
++        connection.execute(
++            f"CREATE TRIGGER {name} {event} ON {table} "
++            f"FOR EACH ROW EXECUTE FUNCTION {function}()"
++        )
++
++
++class PostgresCursor:
++    def __init__(self, connection: "PostgresConnection", raw: Any) -> None:
++        self._connection = connection
++        self._raw = raw
++
++    @property
++    def rowcount(self) -> int:
++        return self._raw.rowcount
++
++    @property
++    def description(self):
++        return self._raw.description
++
++    def execute(self, sql: str, params: Optional[Iterable[Any]] = ()) -> "PostgresCursor":
++        values = None if params is None else tuple(params)
++        command = sql.strip().upper()
++        if command == "BEGIN IMMEDIATE":
++            self._connection._raw.execute("BEGIN")
++            self._connection._begin_immediate()
++            self._connection._trace(sql)
++            return self
++        if command in {"BEGIN", "START TRANSACTION"}:
++            self._connection._raw.execute(sql)
++            self._connection._writer_lock_held = False
++            self._connection._trace(sql)
++            return self
++        if command in {"COMMIT", "END", "ROLLBACK", "ABORT"}:
++            self._connection._raw.execute(sql)
++            self._connection._writer_lock_held = False
++            self._connection._trace(sql)
++            return self
++        converted, adapted_values = adapt_sql(sql, values)
++        self._connection._trace(sql)
++        write = _is_write(sql)
++        owns_transaction = write and not self._connection.in_transaction
++        savepoint = None
++        if owns_transaction:
++            self._connection._raw.execute("BEGIN")
++            self._connection._transaction_lock_reset()
++            self._connection._ensure_writer_lock()
++        elif write:
++            self._connection._ensure_writer_lock()
++            savepoint = self._connection._next_savepoint()
++            self._connection._raw.execute(f"SAVEPOINT {savepoint}")
++        try:
++            if adapted_values is None:
++                self._raw.execute(converted)
++            else:
++                self._raw.execute(converted, adapted_values)
++        except BaseException:
++            if savepoint:
++                self._connection._raw.execute(f"ROLLBACK TO SAVEPOINT {savepoint}")
++                self._connection._raw.execute(f"RELEASE SAVEPOINT {savepoint}")
++            elif owns_transaction:
++                self._connection._raw.rollback()
++                self._connection._writer_lock_held = False
++            raise
++        else:
++            if savepoint:
++                self._connection._raw.execute(f"RELEASE SAVEPOINT {savepoint}")
++            elif owns_transaction:
++                self._connection._raw.commit()
++                self._connection._writer_lock_held = False
++        return self
++
++    def executemany(self, sql: str, params: Iterable[Iterable[Any]]) -> "PostgresCursor":
++        batches = [tuple(row) for row in params]
++        if not batches:
++            return self
++        converted, _ = adapt_sql(sql, batches[0])
++        self._connection._trace(sql)
++        write = _is_write(sql)
++        owns_transaction = write and not self._connection.in_transaction
++        savepoint = None
++        if owns_transaction:
++            self._connection._raw.execute("BEGIN")
++            self._connection._transaction_lock_reset()
++            self._connection._ensure_writer_lock()
++        elif write:
++            self._connection._ensure_writer_lock()
++            savepoint = self._connection._next_savepoint()
++            self._connection._raw.execute(f"SAVEPOINT {savepoint}")
++        try:
++            self._raw.executemany(converted, batches)
++        except BaseException:
++            if savepoint:
++                self._connection._raw.execute(f"ROLLBACK TO SAVEPOINT {savepoint}")
++                self._connection._raw.execute(f"RELEASE SAVEPOINT {savepoint}")
++            elif owns_transaction:
++                self._connection._raw.rollback()
++                self._connection._transaction_lock_reset()
++            raise
++        else:
++            if savepoint:
++                self._connection._raw.execute(f"RELEASE SAVEPOINT {savepoint}")
++            elif owns_transaction:
++                self._connection._raw.commit()
++                self._connection._transaction_lock_reset()
++        return self
++
++    def _row(self, values: Any) -> Any:
++        if values is None:
++            return None
++        names = tuple(col.name for col in (self._raw.description or ()))
++        if isinstance(values, dict):
++            return PostgresRow(tuple(values.keys()), tuple(values.values()))
++        return PostgresRow(names, values)
++
++    def fetchone(self) -> Any:
++        return self._row(self._raw.fetchone())
++
++    def fetchall(self) -> list[Any]:
++        return [self._row(row) for row in self._raw.fetchall()]
++
++    def fetchmany(self, size: Optional[int] = None) -> list[Any]:
++        rows = self._raw.fetchmany() if size is None else self._raw.fetchmany(size)
++        return [self._row(row) for row in rows]
++
++    def __iter__(self):
++        for row in self._raw:
++            yield self._row(row)
++
++    def close(self) -> None:
++        self._raw.close()
++
++    def __enter__(self) -> "PostgresCursor":
++        return self
++
++    def __exit__(self, exc_type, exc, tb) -> None:
++        self.close()
++
++
++class PostgresConnection:
++    """Connection facade exposing the helper subset used by db.py."""
++
++    def __init__(self, raw: Any) -> None:
++        self._raw = raw
++        self._trace_callback: Optional[Callable[[str], None]] = None
++        self._writer_lock_held = False
++        self._writer_session_lock_held = False
++        self._savepoint_counter = 0
++
++    @property
++    def in_transaction(self) -> bool:
++        return self._raw.info.transaction_status.name != "IDLE"
++
++    def _trace(self, sql: str) -> None:
++        if self._trace_callback is not None:
++            self._trace_callback(sql)
++
++    def set_trace_callback(self, callback: Optional[Callable[[str], None]]) -> None:
++        self._trace_callback = callback
++
++    def _begin_immediate(self) -> None:
++        self._ensure_writer_lock()
++
++    def _ensure_writer_lock(self) -> None:
++        if self._writer_lock_held or self._writer_session_lock_held:
++            return
++        self._raw.execute(f"SET LOCAL lock_timeout = '{LOCK_TIMEOUT}'")
++        self._raw.execute("SELECT pg_advisory_xact_lock(%s)", (WRITER_LOCK_ID,))
++        self._writer_lock_held = True
++
++    def _transaction_lock_reset(self) -> None:
++        self._writer_lock_held = False
++
++    def acquire_session_lock(self, lock_id: int) -> None:
++        self._raw.execute(f"SET lock_timeout = '{LOCK_TIMEOUT}'")
++        self._raw.execute("SELECT pg_advisory_lock(%s)", (lock_id,))
++        # End psycopg's implicit transaction without releasing the session lock.
++        self._raw.commit()
++
++    def release_session_lock(self, lock_id: int) -> None:
++        self._raw.execute("SELECT pg_advisory_unlock(%s)", (lock_id,))
++        self._raw.commit()
++
++    def acquire_startup_lock(self) -> None:
++        self.acquire_session_lock(STARTUP_LOCK_ID)
++
++    def acquire_writer_session_lock(self) -> None:
++        self.acquire_session_lock(WRITER_LOCK_ID)
++        self._writer_session_lock_held = True
++
++    def release_writer_session_lock(self) -> None:
++        if self._writer_session_lock_held:
++            self.release_session_lock(WRITER_LOCK_ID)
++            self._writer_session_lock_held = False
++
++    def _next_savepoint(self) -> str:
++        self._savepoint_counter += 1
++        return f"ubyhost_stmt_{self._savepoint_counter}"
++
++    def cursor(self) -> PostgresCursor:
++        return PostgresCursor(self, self._raw.cursor())
++
++    def execute(self, sql: str, params: Optional[Iterable[Any]] = ()) -> PostgresCursor:
++        return self.cursor().execute(sql, params)
++
++    def executemany(self, sql: str, params: Iterable[Iterable[Any]]) -> PostgresCursor:
++        return self.cursor().executemany(sql, params)
++
++    def execute_native(self, sql: str, params: Optional[Iterable[Any]] = None) -> PostgresCursor:
++        """Execute adapter-owned psycopg SQL using native ``%s`` markers."""
++        self._trace(sql)
++        raw = self._raw.cursor()
++        if params is None:
++            raw.execute(sql)
++        else:
++            raw.execute(sql, tuple(params))
++        return PostgresCursor(self, raw)
++
++    def executescript(self, script: str) -> None:
++        raise NotImplementedError("PostgreSQL schema scripts must use db.py's strict DDL renderer")
++
++    def commit(self) -> None:
++        self._raw.commit()
++
++    def rollback(self) -> None:
++        self._raw.rollback()
++        self._writer_lock_held = False
++
++    def close(self) -> None:
++        self._raw.close()
++        self._writer_lock_held = False
++
++
++def is_identity_table(table: str) -> bool:
++    """Whether an application table uses SQLite AUTOINCREMENT for id."""
++    from . import db as app_db
++    import sqlite3
++    conn = sqlite3.connect(":memory:")
++    try:
++        conn.executescript(app_db.SCHEMA)
++        for version, _name, path in app_db.migration_files():
++            conn.executescript(path.read_text(encoding="utf-8"))
++        row = conn.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name=?", (table,)).fetchone()
++        return bool(row and re.search(r"\bid\s+INTEGER\s+PRIMARY\s+KEY\s+AUTOINCREMENT\b", row[0], re.I))
++    finally:
++        conn.close()
++
++
++def connect(conninfo: str) -> PostgresConnection:
++    try:
++        import psycopg
++        from psycopg.rows import tuple_row
++    except ImportError:
++        raise RuntimeError("PostgreSQL was selected but the approved psycopg 3 driver is not installed") from None
++    try:
++        raw = psycopg.connect(conninfo, autocommit=True, row_factory=tuple_row)
++        raw.execute("SET TIME ZONE 'UTC'")
++        raw.execute("SET search_path TO public")
++        encoding = raw.execute("SHOW server_encoding").fetchone()[0]
++        if str(encoding).upper() != "UTF8":
++            raw.close()
++            raise RuntimeError("PostgreSQL server encoding is not UTF8")
++        return PostgresConnection(raw)
++    except Exception:
++        raise ConnectionError("Unable to connect to the configured PostgreSQL database") from None
++
++
++def integrity_error_types() -> tuple[type[BaseException], ...]:
++    try:
++        from psycopg import IntegrityError
++    except ImportError:
++        raise RuntimeError("PostgreSQL was selected but the approved psycopg 3 driver is not installed") from None
++    return (IntegrityError,)
++
++
++def current_schema() -> str:
++    return "current_schema()"
+--- a/App/app/dsr.py
++++ b/App/app/dsr.py
+@@ -156,7 +156,7 @@
+     horizon = (today + timedelta(days=DUE_SOON_DAYS)).isoformat()
+     rows = db.query(
+         "SELECT * FROM data_subject_request "
+-        "WHERE status IN ('open','extended') AND date(due_at) <= ?",
++        f"WHERE status IN ('open','extended') AND {db.sqlite_date_expr('due_at')} <= ?",
+         (horizon,),
+     )
+     for row in rows:
+--- a/App/app/guest_slug.py
++++ b/App/app/guest_slug.py
+@@ -20,7 +20,6 @@
+ 
+ import re
+ import secrets
+-import sqlite3
+ import unicodedata
+ from typing import Optional
+ 
+@@ -190,7 +189,7 @@
+             return _insert_current(
+                 cur, int(apartment["id"]), _generated_readable(apartment["internal_name"])
+             )
+-    except sqlite3.IntegrityError:
++    except db.integrity_errors():
+         # Another request created it between our read and our write.
+         return current(int(apartment["id"]))
+ 
+@@ -231,7 +230,7 @@
+                     "VALUES (?, ?, 1, ?)",
+                     (target, apartment_id, db.utcnow()),
+                 )
+-    except sqlite3.IntegrityError:
++    except db.integrity_errors():
+         return None
+     return target
+ 
+--- a/App/app/housebook.py
++++ b/App/app/housebook.py
+@@ -470,7 +470,7 @@
+     rows = db.query(
+         "SELECT g.id AS id FROM guest g JOIN reservation r ON r.id = g.reservation_id "
+         "JOIN apartment a ON a.id = r.apartment_id "
+-        "WHERE COALESCE(date(g.stay_to), date(r.date_to)) < ? "
++        f"WHERE COALESCE({db.sqlite_date_expr('g.stay_to')}, {db.sqlite_date_expr('r.date_to')}) < ? "
+         "AND (? IS NULL OR a.owner_user_id = ?)",
+         (retention_cutoff(today).isoformat(), owner_user_id, owner_user_id),
+     )
+@@ -488,8 +488,8 @@
+     rows = db.query(
+         "SELECT g.id AS id FROM guest g JOIN reservation r ON r.id = g.reservation_id "
+         "JOIN apartment a ON a.id = r.apartment_id "
+-        "WHERE COALESCE(date(g.stay_to), date(r.date_to)) >= ? "
+-        "AND COALESCE(date(g.stay_to), date(r.date_to)) < ? "
++        f"WHERE COALESCE({db.sqlite_date_expr('g.stay_to')}, {db.sqlite_date_expr('r.date_to')}) >= ? "
++        f"AND COALESCE({db.sqlite_date_expr('g.stay_to')}, {db.sqlite_date_expr('r.date_to')}) < ? "
+         "AND (? IS NULL OR a.owner_user_id = ?)",
+         (start, end, owner_user_id, owner_user_id),
+     )
+@@ -504,8 +504,8 @@
+         "SELECT a.owner_user_id AS owner, COUNT(*) AS n FROM guest g "
+         "JOIN reservation r ON r.id = g.reservation_id "
+         "JOIN apartment a ON a.id = r.apartment_id "
+-        "WHERE COALESCE(date(g.stay_to), date(r.date_to)) >= ? "
+-        "AND COALESCE(date(g.stay_to), date(r.date_to)) < ? "
++        f"WHERE COALESCE({db.sqlite_date_expr('g.stay_to')}, {db.sqlite_date_expr('r.date_to')}) >= ? "
++        f"AND COALESCE({db.sqlite_date_expr('g.stay_to')}, {db.sqlite_date_expr('r.date_to')}) < ? "
+         "GROUP BY a.owner_user_id",
+         (start, end),
+     )
+--- a/App/app/invoices.py
++++ b/App/app/invoices.py
+@@ -1,846 +1,983 @@
+-"""Invoice building, numbering and issuing (host tool).
+-
+-A new invoice belongs to one stay: line 1 is the accommodation, built from the
+-stay; up to three extras come from a fixed list (``EXTRA_KINDS``). Amounts are
+-integers in haléře. An issued invoice is immutable; a correction is a new paper.
+-Drafts built without a stay (corrections, older tests) keep the free-form path.
++"""Host-only invoice tool: every new invoice belongs to one stay.
++
++Included in main.py after admin.router.
+ """
+ from __future__ import annotations
+ 
+-import hashlib
+ from datetime import date, timedelta
+-from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
++from functools import lru_cache
+ from typing import Any, Dict, List, Optional
+ 
+-from . import db, invoice_pdf, payments, validation
+-
+-VAT_RATES = (0, 12, 21)
+-# The one-page PDF fits four two-line items with VAT detail and the QR block.
+-MAX_ITEMS = 4
+-# Ten million CZK per figure: anything larger is a typo, not an invoice.
+-MAX_AMOUNT = Decimal("10000000")
+-# Invoices belong to one stay (docs/plans/stay-only-invoices.md).
+-STAY_PAST_DAYS = 400
+-STAY_FUTURE_DAYS = 365
+-STAY_MAX_INVOICES = 3
+-EXTRA_MAX_QUANTITY = 99
+-OTHER_MAX_CHARS = 60
+-# All extras together may equal the accommodation line; "Other" alone 30 % of it.
+-EXTRAS_MAX_SHARE = Decimal("1.00")
+-OTHER_MAX_SHARE = Decimal("0.30")
+-EXTRA_KINDS = (
+-    "cleaning", "stay_fee", "breakfast", "parking", "pet", "extra_bed", "late_checkout", "other",
++from fastapi import APIRouter, Depends, Request
++from fastapi.responses import RedirectResponse, Response
++
++from .. import (
++    access,
++    ares,
++    auth,
++    claim,
++    codelists,
++    config,
++    db,
++    host_i18n,
++    invoice_links,
++    invoices,
++    list_filter,
++    mail,
++    mail_notify,
++    payments,
++    rate_limit,
++    reporting,
++    security,
++    stay_fee,
++    validation,
++    vat_register,
+ )
+-EXTRA_LABELS = {
+-    "cs": {
+-        "cleaning": "Úklid", "stay_fee": "Poplatek z pobytu", "breakfast": "Snídaně",
+-        "parking": "Parkování", "pet": "Domácí zvíře", "extra_bed": "Přistýlka",
+-        "late_checkout": "Pozdní odjezd",
+-    },
+-    "en": {
+-        "cleaning": "Cleaning", "stay_fee": "Local stay fee", "breakfast": "Breakfast",
+-        "parking": "Parking", "pet": "Pet", "extra_bed": "Extra bed",
+-        "late_checkout": "Late check-out",
+-    },
+-}
+-STAY_LINE_PREFIX = {"cs": "Ubytování", "en": "Accommodation"}
+-PAID_VIA_LABELS = {
+-    "airbnb": "Airbnb",
+-    "booking": "Booking.com",
+-    "direct_transfer": "Převodem",
+-    "cash": "Hotově",
+-    "other": "Jinak",
+-}
+-
+-
+-def _form_str(form, key: str, default: str = "") -> str:
+-    value = form.get(key)
+-    if value is None:
+-        return default
+-    return str(value).strip()
+-
+-
+-def _getlist(form, key: str) -> list:
+-    getter = getattr(form, "getlist", None)
+-    if callable(getter):
+-        return list(getter(key))
+-    value = form.get(key)
+-    if value is None:
+-        return []
+-    return value if isinstance(value, list) else [value]
+-
+-
+-def _at(values: list, index: int, default: str = "") -> str:
+-    return str(values[index]) if index < len(values) else default
+-
+-
+-def _parse_decimal(text: str) -> Optional[Decimal]:
+-    """The amount, or None when it is not a finite number within MAX_AMOUNT."""
+-    cleaned = (text or "").replace(" ", "").replace("\u00a0", "")
+-    if "," in cleaned:
+-        # Czech style "1.000,50": the dot groups thousands, the comma is decimal.
+-        cleaned = cleaned.replace(".", "").replace(",", ".")
+-    try:
+-        value = Decimal(cleaned)
+-    except (InvalidOperation, ValueError):
++
++VAT_STATUSES = ("non_payer", "identified", "payer")
++from ..templating import render
++from .admin_helpers import back as _back
++from .admin_helpers import flash as _flash
++from .admin_helpers import form_str as _form_str
++
++router = APIRouter(dependencies=[Depends(security.protect_host_post)])
++
++
++def _lang(request: Request) -> str:
++    return host_i18n.lang_from_request(request)
++
++
++@lru_cache(maxsize=1)
++def _invoice_columns() -> str:
++    """Every invoice column except the stored PDF, which only downloads read."""
++    names = [row["name"] for row in db.query("PRAGMA table_info(invoice)")]
++    return ", ".join(name for name in names if name != "pdf_blob")
++
++
++def _load_invoice(request: Request, invoice_id: int):
++    return db.query_one(
++        f"SELECT {_invoice_columns()} FROM invoice WHERE id = ? AND {db.null_safe_eq('owner_user_id')}",
++        (invoice_id, access.owner_id(request)),
++    )
++
++
++def _entities(request: Request):
++    return db.query(
++        f"SELECT * FROM legal_entity WHERE archived_at IS NULL AND {db.null_safe_eq('owner_user_id')} "
++        "ORDER BY name",
++        (access.owner_id(request),),
++    )
++
++
++def _chosen_entity(request, entities, form=None):
++    wanted = ""
++    if form is not None:
++        wanted = _form_str(form, "legal_entity_id")
++    if not wanted:
++        wanted = (request.query_params.get("entity") or "").strip()
++    if wanted.isdigit():
++        for entity in entities:
++            if str(entity["id"]) == wanted:
++                return entity
++    return entities[0] if entities else None
++
++
++def owned_entity(entities, wanted) -> Optional[Dict[str, Any]]:
++    """0076: the host's active operator with this id, else None (never a fallback)."""
++    text = str(wanted or "").strip()
++    if text.isdigit():
++        for entity in entities:
++            if str(entity["id"]) == text:
++                return entity
++    return None
++
++
++def builder_path(entity_id) -> str:
++    """The invoice builder for one operator: the old invoice-settings default return."""
++    return f"/invoices/new?entity={entity_id}"
++
++
++def _stay_for(request: Request, raw_id) -> Optional[Dict[str, Any]]:
++    """The host's own stay, shaped for invoices.build_draft, or None."""
++    text = str(raw_id or "").strip()
++    if not text.isdigit():
+         return None
+-    if not value.is_finite() or abs(value) > MAX_AMOUNT:
++    row = access.reservation(
++        request,
++        int(text),
++        columns="r.*, a.legal_entity_id AS apartment_entity_id, a.internal_name, a.uby_name",
++    )
++    if not row:
+         return None
+-    return value
+-
+-
+-def _to_decimal(text: str) -> Decimal:
+-    value = _parse_decimal(text)
+-    return Decimal(0) if value is None else value
+-
+-
+-def _to_int(text: str, default: int = 1) -> int:
+-    value = _to_decimal(text)
+-    try:
+-        return int(value.to_integral_value(rounding=ROUND_HALF_UP))
+-    except (ValueError, InvalidOperation):
+-        return default
+-
+-
+-def _to_rate(text: str) -> int:
+-    value = _to_int(text, default=12)
+-    return value if value in VAT_RATES else 12
+-
+-
+-def vat_parts(quantity: int, unit_price: Decimal, rate: int) -> tuple:
+-    """(base_haler, vat_haler, gross_haler) computed up from the net unit price."""
+-    base = int((unit_price * quantity * 100).to_integral_value(rounding=ROUND_HALF_UP))
+-    vat = int((Decimal(base) * rate / 100).to_integral_value(rounding=ROUND_HALF_UP))
+-    return base, vat, base + vat
+-
+-
+-def _items_from_form(form, vat_status: str) -> List[Dict[str, Any]]:
+-    descs = _getlist(form, "item_description")
+-    qtys = _getlist(form, "item_quantity")
+-    units = _getlist(form, "item_unit")
+-    prices = _getlist(form, "item_unit_price")
+-    rates = _getlist(form, "item_vat_rate")
+-    count = max(len(descs), len(qtys), len(units), len(prices), len(rates))
+-    items: List[Dict[str, Any]] = []
+-    for i in range(count):
+-        description = _at(descs, i).strip()
+-        if not description:
+-            continue
+-        quantity = max(_to_int(_at(qtys, i, "1"), default=1), 1)
+-        unit = _at(units, i).strip()[:20]
+-        raw_price = _at(prices, i, "0")
+-        price = _to_decimal(raw_price)
+-        if vat_status == "payer":
+-            rate = _to_rate(_at(rates, i))
+-            base, vat, gross = vat_parts(quantity, price, rate)
+-        else:
+-            rate = None
+-            base = vat = None
+-            gross = int((price * quantity * 100).to_integral_value(rounding=ROUND_HALF_UP))
+-        items.append(
+-            {
+-                "kind": "other",
+-                "description": description[:150],
+-                "quantity": quantity,
+-                "unit": unit,
+-                "vat_rate": rate,
+-                "base_haler": base,
+-                "vat_haler": vat,
+-                "gross_haler": gross,
+-                # A typed price that is not a number must not become 0 Kč.
+-                "price_invalid": bool(raw_price.strip()) and _parse_decimal(raw_price) is None,
+-            }
+-        )
+-    return items
+-
+-
+-def seller_snapshot(entity, form) -> Dict[str, Any]:
+-    """The seller block for a draft: explicit presence checks, not defaults.
+-
+-    A field the form carries is used verbatim — including a deliberate blank,
+-    which is not the same as a field the form never sent. Any posted bank
+-    number goes through the shared payments helper so the format printed on
+-    the document and used for the QR code is always the same. Fields the form
+-    does not carry fall back to the operator's stored details.
+-    """
+-    def pick(key: str) -> str:
+-        form_key = f"seller_{key}"
+-        if form_key in form:
+-            return _form_str(form, form_key)
+-        entity_key = {
+-            "registry": "registry_entry",
+-            "email": "contact_email",
+-            "phone": "contact_phone",
+-        }.get(key, key)
+-        if entity and entity_key in entity.keys():
+-            return entity[entity_key] or ""
++    name = (row["internal_name"] or "").strip() or (row["uby_name"] or "").strip()
++    return {"reservation": row, "property_name": name, "entity_id": row["apartment_entity_id"]}
++
++
++def _entity_for_stay(request, entities, stay, form=None):
++    """The property's operator when it has one; otherwise the host's pick."""
++    if stay and stay["entity_id"]:
++        for entity in entities:
++            if entity["id"] == stay["entity_id"]:
++                return entity
++    return _chosen_entity(request, entities, form)
++
++
++def _stay_options(request: Request):
++    """Stays the host can invoice, newest check-in first, for the picker."""
++    today = claim.prague_today()
++    rows = db.query(
++        "SELECT r.id, r.date_from, r.date_to, a.internal_name, a.uby_name "
++        "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
++        f"WHERE {db.null_safe_eq('a.owner_user_id')} AND r.status != 'cancelled' "
++        "AND COALESCE(r.source, '') != 'demo' "  # 0100: the setup guide's demo stay
++        "AND r.date_to > r.date_from AND r.date_to >= ? AND r.date_from <= ? "
++        "ORDER BY r.date_from DESC, r.id DESC LIMIT 200",
++        (
++            access.owner_id(request),
++            (today - timedelta(days=invoices.STAY_PAST_DAYS)).isoformat(),
++            (today + timedelta(days=invoices.STAY_FUTURE_DAYS)).isoformat(),
++        ),
++    )
++    options = []
++    for row in rows:
++        name = (row["internal_name"] or "").strip() or (row["uby_name"] or "").strip()
++        dates = validation.fmt_date_range(row["date_from"], row["date_to"])
++        options.append({"id": row["id"], "label": f"{name}, {dates}"})
++    return options
++
++
++def _lead_guest(reservation) -> Optional[Dict[str, Any]]:
++    """Lowest-id complete guest on the stay, or None."""
++    rows = db.query(
++        "SELECT * FROM guest WHERE reservation_id = ? AND archived_at IS NULL ORDER BY id ASC",
++        (reservation["id"],),
++    )
++    for row in rows:
++        if reporting.guest_is_complete(row, reservation):
++            return row
++    return None
++
++
++def _guest_buyer_values(guest) -> Dict[str, str]:
++    first = (guest.get("first_name") or "").strip()
++    last = (guest.get("surname") or "").strip()
++    name = f"{first} {last}".strip()
++    return {
++        "buyer_name": name,
++        "buyer_street": (guest.get("res_street") or "").strip(),
++        "buyer_city": (guest.get("res_city") or "").strip(),
++        "buyer_country": (guest.get("res_country") or "").strip(),
++    }
++
++
++def _merge_guest_fill(state: Dict[str, Any], guest) -> None:
++    """Copy guest address fields into blank buyer slots only."""
++    for key, value in _guest_buyer_values(guest).items():
++        if value and not (state.get(key) or "").strip():
++            state[key] = value
++
++
++def _last_stay_price_hint(request: Request, apartment_id: int) -> str:
++    """Last issued accommodation unit price on this property, for a placeholder."""
++    row = db.query_one(
++        "SELECT ii.gross_haler, ii.quantity FROM invoice i "
++        "JOIN invoice_item ii ON ii.invoice_id = i.id "
++        f"WHERE i.apartment_id = ? AND {db.null_safe_eq('i.owner_user_id')} "
++        "AND i.kind = 'invoice' AND ii.kind = 'accommodation' "
++        "ORDER BY i.issue_date DESC, i.id DESC LIMIT 1",
++        (apartment_id, access.owner_id(request)),
++    )
++    if not row or not row["gross_haler"]:
+         return ""
+-
+-    seller = {
+-        "name": pick("name"),
+-        "seat": pick("seat"),
+-        "ico": pick("ico"),
+-        "dic": pick("dic"),
+-        "registry": pick("registry"),
+-        "bank_account": pick("bank_account"),
+-        "iban": pick("iban"),
+-        "bic": pick("bic"),
+-        "email": pick("email"),
+-        "phone": pick("phone"),
++    qty = row["quantity"] or 1
++    amount = row["gross_haler"] / (100 * qty)
++    if amount == int(amount):
++        return str(int(amount))
++    return f"{amount:.2f}".rstrip("0").rstrip(".")
++
++
++def _form_state(request, form, entity) -> Dict[str, Any]:
++    """Reshape a failed POST so the 422 render loses nothing the host typed."""
++    state = {key: _form_str(form, key) for key in (
++        "stay_price", "stay_vat_rate", "reservation_id",
++        "buyer_name", "buyer_street", "buyer_city", "buyer_zip", "buyer_country",
++        "buyer_ico", "buyer_dic", "buyer_email", "paid_via", "paid_via_custom",
++        "due_date", "duzp", "note",
++        "legal_entity_id",
++    )}
++    state["already_paid"] = "1" if form.get("already_paid") else "0"
++    state["lang"] = _form_str(form, "lang")
++    state["item_rows"] = [
++        {key: row[key] for key in (
++            "kind", "description", "quantity", "unit", "unit_price", "vat_rate"
++        )}
++        for row in invoices.form_item_rows(form)
++    ]
++    return state
++
++
++def _form_context(request, entities, entity, *, errors=None, values=None, stay=None):
++    values = dict(values or {})
++    if stay and not values and stay["reservation"]["guest_email"]:
++        values["buyer_email"] = stay["reservation"]["guest_email"]
++    lang = "cs" if _lang(request) == "cs" else "en"
++    lead_guest = _lead_guest(stay["reservation"]) if stay else None
++    price_hint = ""
++    if stay:
++        price_hint = _last_stay_price_hint(request, stay["reservation"]["apartment_id"])
++    return {
++        "nav": "invoices",
++        "entities": entities,
++        "entity": entity,
++        "next_number": invoices.preview_number(entity) if entity else "",
++        "errors": errors or [],
++        "values": values,
++        "countries": codelists.nationality_options(_lang(request)),
++        "stay": stay,
++        "stay_label": invoices.stay_label(stay["property_name"], stay["reservation"], lang) if stay else "",
++        "extra_kinds": invoices.EXTRA_KINDS,
++        "show_fill_guest": bool(lead_guest),
++        "stay_price_hint": price_hint,
+     }
+-    if "seller_bank_account" in form:
+-        form_bank = _form_str(form, "seller_bank_account")
+-        if form_bank:
+-            try:
+-                seller["bank_account"], seller["iban"] = payments.normalise_account(
+-                    form_bank
+-                )
+-            except ValueError:
+-                # A bank number the helper rejects is never printed; the
+-                # operator's stored account stays on the document.
+-                seller["bank_account"] = entity["bank_account"] if entity else ""
+-                seller["iban"] = entity["iban"] if entity else ""
+-        else:
+-            seller["bank_account"] = ""
+-            seller["iban"] = ""
+-    return seller
+-
+-
+-def form_item_rows(form) -> List[Dict[str, str]]:
+-    """Raw item rows the browser posted, aligned per column index.
+-
+-    Used only to rebuild the form for a 422 rerender, so trailing blank rows
+-    (a cloned template row) are dropped but a part-typed row survives.
+-    """
+-    descs = _getlist(form, "item_description")
+-    kinds = _getlist(form, "item_kind")
+-    qtys = _getlist(form, "item_quantity")
+-    units = _getlist(form, "item_unit")
+-    prices = _getlist(form, "item_unit_price")
+-    rates = _getlist(form, "item_vat_rate")
+-    rows: List[Dict[str, str]] = []
+-    for i in range(max(len(kinds), len(descs), len(qtys), len(units), len(prices), len(rates))):
+-        row = {
+-            "kind": _at(kinds, i),
+-            "description": _at(descs, i),
+-            "quantity": _at(qtys, i, "1"),
+-            "unit": _at(units, i),
+-            "unit_price": _at(prices, i),
+-            "vat_rate": _at(rates, i, "21"),
+-        }
+-        if not (row["kind"].strip() or row["description"].strip() or row["unit_price"].strip()):
+-            continue
+-        rows.append(row)
+-    return rows
+-
+-
+-def stay_nights(reservation) -> int:
+-    """Nights between check-in and check-out; 0 when a date is unreadable."""
+-    try:
+-        start = date.fromisoformat(str(reservation["date_from"])[:10])
+-        end = date.fromisoformat(str(reservation["date_to"])[:10])
+-    except ValueError:
+-        return 0
+-    return (end - start).days
+-
+-
+-def stay_problem(reservation, today: date) -> Optional[str]:
+-    """None when an invoice may be issued for this stay, else an i18n key."""
+-    if reservation is None:
+-        return "invoice.err.no_stay"
+-    from . import demo
+-
+-    # 0100: the setup guide's demo stay is not a real stay to bill.
+-    if demo.is_demo_stay(reservation):
+-        return "invoice.err.demo_stay"
+-    if (reservation["status"] or "") == "cancelled":
+-        return "invoice.err.stay_cancelled"
+-    if stay_nights(reservation) < 1:
+-        return "invoice.err.stay_dates"
+-    if str(reservation["date_to"])[:10] < (today - timedelta(days=STAY_PAST_DAYS)).isoformat():
+-        return "invoice.err.stay_too_old"
+-    if str(reservation["date_from"])[:10] > (today + timedelta(days=STAY_FUTURE_DAYS)).isoformat():
+-        return "invoice.err.stay_too_far"
+-    return None
+-
+-
+-def _nights_text(nights: int, lang: str) -> str:
+-    if lang == "cs":
+-        word = "noc" if nights == 1 else ("noci" if 2 <= nights <= 4 else "nocí")
+-    else:
+-        word = "night" if nights == 1 else "nights"
+-    return f"{nights} {word}"
+-
+-
+-def stay_label(property_name: str, reservation, lang: str) -> str:
+-    """'Chata, 12.10.2026 – 15.10.2026 (3 noci)': the PDF prints it under the header."""
+-    dates = validation.fmt_date_range(reservation["date_from"], reservation["date_to"])
+-    return f"{property_name}, {dates} ({_nights_text(stay_nights(reservation), lang)})"
+-
+-
+-def _price_invalid(raw_price: str, price: Decimal) -> bool:
+-    return (not raw_price) or _parse_decimal(raw_price) is None or price <= 0
+-
+-
+-def _stay_item(form, vat_status: str, label: str, lang: str) -> Dict[str, Any]:
+-    """Line 1. Only the price (and, for payers, the rate) comes from the form."""
+-    raw_price = _form_str(form, "stay_price")
+-    price = _to_decimal(raw_price)
+-    if vat_status == "payer":
+-        rate = _to_rate(_form_str(form, "stay_vat_rate") or "12")
+-        base, vat, gross = vat_parts(1, price, rate)
+-    else:
+-        rate = None
+-        base = vat = None
+-        gross = int((price * 100).to_integral_value(rounding=ROUND_HALF_UP))
+-    return {
+-        "kind": "accommodation",
+-        "extra_kind": "stay",
+-        "description": f"{STAY_LINE_PREFIX[lang]} – {label}"[:150],
+-        "quantity": 1,
+-        "unit": "pobyt" if lang == "cs" else "stay",
+-        "vat_rate": rate,
+-        "base_haler": base,
+-        "vat_haler": vat,
+-        "gross_haler": gross,
+-        "price_invalid": _price_invalid(raw_price, price),
+-    }
+-
+-
+-def _extras_from_form(form, vat_status: str, lang: str) -> List[Dict[str, Any]]:
+-    """Lines 2-4. The wording comes from EXTRA_LABELS; only "other" takes typed text."""
+-    kinds = _getlist(form, "item_kind")
+-    descs = _getlist(form, "item_description")
+-    qtys = _getlist(form, "item_quantity")
+-    units = _getlist(form, "item_unit")
+-    prices = _getlist(form, "item_unit_price")
+-    rates = _getlist(form, "item_vat_rate")
+-    count = max(len(kinds), len(descs), len(qtys), len(units), len(prices), len(rates))
+-    items: List[Dict[str, Any]] = []
+-    for i in range(count):
+-        kind = _at(kinds, i).strip()
+-        text = _at(descs, i).strip()
+-        raw_price = _at(prices, i).strip()
+-        if not (kind or text or raw_price):
+-            continue  # an untouched blank row
+-        if not kind:
+-            kind = "other"  # no kind picked: typed text is an "Other" line
+-        # "stay" is the accommodation line only; a forged extra must not use it.
+-        if kind == "stay":
+-            kind = "invalid"
+-        quantity = _to_int(_at(qtys, i, "1"), default=1)
+-        price = _to_decimal(raw_price)
+-        if kind == "other":
+-            description = text[:OTHER_MAX_CHARS]
+-        else:
+-            description = EXTRA_LABELS[lang].get(kind, "")
+-        if vat_status == "payer":
+-            # The local stay fee is a municipal fee outside VAT (owner, 2026-10-08).
+-            rate = 0 if kind == "stay_fee" else _to_rate(_at(rates, i))
+-            base, vat, gross = vat_parts(quantity, price, rate)
+-        else:
+-            rate = None
+-            base = vat = None
+-            gross = int((price * quantity * 100).to_integral_value(rounding=ROUND_HALF_UP))
+-        items.append(
+-            {
+-                "kind": "stay_fee" if kind == "stay_fee" else "other",
+-                "extra_kind": kind,
+-                "description": description,
+-                "quantity": quantity,
+-                "unit": _at(units, i).strip()[:20],
+-                "vat_rate": rate,
+-                "base_haler": base,
+-                "vat_haler": vat,
+-                "gross_haler": gross,
+-                "price_invalid": _price_invalid(raw_price, price),
+-            }
+-        )
+-    return items
+-
+-
+-def build_draft(entity, form, lang: str, *, today: date, stay: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+-    """Snapshot the free-form issue form into a draft. Pure except for reads."""
+-    vat_status = (entity["vat_status"] or "non_payer") if entity else "non_payer"
+-    doc_lang = "cs" if _form_str(form, "lang") == "cs" else "en"
+-    label = ""
+-    if stay is not None:
+-        # stay = {"reservation": row, "property_name": str}; the route checked ownership.
+-        label = stay_label(stay["property_name"], stay["reservation"], doc_lang)
+-        items = [_stay_item(form, vat_status, label, doc_lang)]
+-        items += _extras_from_form(form, vat_status, doc_lang)
+-    else:
+-        items = _items_from_form(form, vat_status)
+-    if vat_status == "payer":
+-        total_base = sum(i["base_haler"] or 0 for i in items)
+-        total_vat = sum(i["vat_haler"] or 0 for i in items)
+-    else:
+-        total_base = None
+-        total_vat = None
+-    total_haler = sum(i["gross_haler"] for i in items)
+-
+-    # The payment row is a radio pair ("already paid" = "1", "payment
+-    # requested" = "0"); older clients post a checkbox that appears only
+-    # when ticked, so both spellings land on the same decision.
+-    already_paid = _form_str(form, "already_paid") in ("1", "on")
+-    due_days = entity["invoice_due_days"] if entity and entity["invoice_due_days"] is not None else 14
+-    due_date = _form_str(form, "due_date")
+-    if not due_date and not already_paid:
+-        due_date = (today + timedelta(days=due_days)).isoformat()
+-    paid_via = _form_str(form, "paid_via") if already_paid else ""
+-    if paid_via == "custom":
+-        # "Paid via" offered a free-text field: the host's own wording is what
+-        # the invoice should print, exactly as typed (minus the edges).
+-        paid_via = _form_str(form, "paid_via_custom")[:60]
+-
+-    draft = {
+-        "kind": "invoice",
+-        "lang": "cs" if _form_str(form, "lang") == "cs" else "en",
+-        "vat_status": vat_status,
+-        "issue_date": today.isoformat(),
+-        "duzp": _form_str(form, "duzp") or None,
+-        "due_date": due_date or None,
+-        "paid_on": today.isoformat() if already_paid else None,
+-        "paid_via": paid_via or None,
+-        "seller": seller_snapshot(entity, form),
+-        "buyer": {
+-            "name": _form_str(form, "buyer_name"),
+-            "street": _form_str(form, "buyer_street"),
+-            "city": _form_str(form, "buyer_city"),
+-            "zip": _form_str(form, "buyer_zip"),
+-            "country": _form_str(form, "buyer_country") or "CZE",
+-            "ico": _form_str(form, "buyer_ico"),
+-            "dic": _form_str(form, "buyer_dic"),
+-            "email": _form_str(form, "buyer_email"),
+-        },
+-        "note": _form_str(form, "note")[:300],
+-        "items": items,
+-        "total_base_haler": total_base,
+-        "total_vat_haler": total_vat,
+-        "total_haler": total_haler,
+-    }
+-    if stay is not None:
+-        reservation = stay["reservation"]
+-        stay_to = str(reservation["date_to"])[:10]
+-        draft.update(
+-            {
+-                "reservation_id": reservation["id"],
+-                "apartment_id": reservation["apartment_id"],
+-                "stay_from": str(reservation["date_from"])[:10],
+-                "stay_to": stay_to,
+-                "stay_label": label,
+-                # Tax point: the check-out day, never in the future.
+-                "duzp": draft["duzp"] or min(stay_to, today.isoformat()),
+-            }
+-        )
++
++
++def _draft(request, entity, form, stay=None):
++    draft = invoices.build_draft(
++        entity, form, _lang(request), today=claim.prague_today(), stay=stay
++    )
++    draft.update({"legal_entity_id": entity["id"], "owner_user_id": access.owner_id(request)})
+     return draft
+ 
+ 
+-def custom_paid_via_label(paid_via: Optional[str]) -> str:
+-    """The printed payment-method label.
+-
+-    Listed options translate through ``PAID_VIA_LABELS``; anything else is the
+-    host's own "Paid via" text captured verbatim on the form.
+-    """
+-    if not paid_via:
+-        return ""
+-    return PAID_VIA_LABELS.get(paid_via, paid_via)
+-
+-
+-def _stay_issues(draft: Dict[str, Any]) -> List[validation.Issue]:
+-    items = draft["items"]
+-    issues: List[validation.Issue] = []
+-    # Line 1 must be the stay line; everything after it is an extra. Filtering by
+-    # extra_kind == "stay" would let a forged form row with kind "stay" skip the caps.
+-    if not items or items[0].get("extra_kind") != "stay":
+-        issues.append(validation.Issue("items", "invoice.err.extra_kind"))
+-        return issues
+-    stay_gross = items[0]["gross_haler"] or 0
+-    extras = items[1:]
+-    if any(i.get("extra_kind") not in EXTRA_KINDS or not i["description"] for i in extras):
+-        issues.append(validation.Issue("items", "invoice.err.extra_kind"))
+-    if sum(1 for i in extras if i.get("extra_kind") == "other") > 1:
+-        issues.append(validation.Issue("items", "invoice.err.one_other"))
+-    if any(not 1 <= i["quantity"] <= EXTRA_MAX_QUANTITY for i in extras):
+-        issues.append(validation.Issue("items", "invoice.err.extra_quantity"))
+-    # Skip noisy caps when the stay price is already invalid (amount error covers it).
+-    if items[0].get("price_invalid") or stay_gross <= 0:
+-        return issues
+-    extras_gross = sum(i["gross_haler"] for i in extras)
+-    other_gross = sum(i["gross_haler"] for i in extras if i.get("extra_kind") == "other")
+-    if extras_gross > stay_gross * EXTRAS_MAX_SHARE:
+-        issues.append(validation.Issue("items", "invoice.err.extras_cap"))
+-    if other_gross > stay_gross * OTHER_MAX_SHARE:
+-        issues.append(validation.Issue("items", "invoice.err.other_cap"))
+-    return issues
+-
+-
+-def validate_for_issue(draft: Dict[str, Any]) -> List[validation.Issue]:
+-    """The legal minimum for this document, as issue keys for the route to translate."""
+-    seller = draft["seller"]
+-    buyer = draft["buyer"]
+-    issues: List[validation.Issue] = []
+-    if not seller["name"]:
+-        issues.append(validation.Issue("seller_name", "invoice.err.seller_name"))
+-    if not seller["seat"]:
+-        issues.append(validation.Issue("seller_seat", "invoice.err.seller_seat"))
+-    if not seller["registry"]:
+-        issues.append(validation.Issue("seller_registry", "invoice.err.registry"))
+-    if draft["vat_status"] == "payer" and not seller["dic"]:
+-        issues.append(validation.Issue("seller_dic", "invoice.err.seller_dic"))
+-    if not buyer["name"]:
+-        issues.append(validation.Issue("buyer_name", "invoice.buyer.required"))
+-    if not draft["items"]:
+-        issues.append(validation.Issue("items", "invoice.err.no_items"))
+-    elif len(draft["items"]) > MAX_ITEMS:
+-        issues.append(validation.Issue("items", "invoice.err.too_many_items"))
+-    if draft["total_haler"] <= 0 or any(i.get("price_invalid") for i in draft["items"]):
+-        issues.append(validation.Issue("price_czk", "invoice.err.amount"))
+-    if draft.get("kind") == "invoice" and draft.get("reservation_id"):
+-        issues.extend(_stay_issues(draft))
+-    return issues
+-
+-def preview_number(entity) -> str:
+-    """The next number as a hint for the form; not the allocated one."""
+-    year = date.today().year
+-    row = db.query_one(
+-        "SELECT last_no FROM invoice_sequence WHERE legal_entity_id = ? AND year = ?",
+-        (entity["id"], year),
+-    )
+-    last = row["last_no"] if row else 0
+-    seq = last + 1
+-    width = max(4, len(str(seq)))
+-    return f"{entity['invoice_prefix'] or ''}{year}-{seq:0{width}d}"
+-
+-
+-def allocate_number(cur, entity, issue_year: int) -> tuple:
+-    """(year, seq, number, vs). Caller holds the write lock (db.immediate)."""
+-    row = cur.execute(
+-        "SELECT last_no FROM invoice_sequence WHERE legal_entity_id = ? AND year = ?",
+-        (entity["id"], issue_year),
+-    ).fetchone()
+-    last = row["last_no"] if row else 0
+-    if entity["invoice_next_number"] and entity["invoice_next_number_year"] == issue_year:
+-        last = max(last, entity["invoice_next_number"] - 1)
+-        cur.execute(
+-            "UPDATE legal_entity SET invoice_next_number = NULL, invoice_next_number_year = NULL "
+-            "WHERE id = ?",
+-            (entity["id"],),
+-        )
+-    seq = last + 1
+-    cur.execute(
+-        "INSERT INTO invoice_sequence (legal_entity_id, year, last_no) VALUES (?, ?, ?) "
+-        "ON CONFLICT(legal_entity_id, year) DO UPDATE SET last_no = excluded.last_no",
+-        (entity["id"], issue_year, seq),
+-    )
+-    width = max(4, len(str(seq)))
+-    number = f"{entity['invoice_prefix'] or ''}{issue_year}-{seq:0{width}d}"
+-    vs = f"{issue_year}{seq:0{width}d}"
+-    return issue_year, seq, number, vs
+-
+-
+-def _invoice_columns(draft: Dict[str, Any], number: str, vs: str, seq_year: int, seq_no: int) -> Dict[str, Any]:
++def _preview_view(draft) -> dict:
+     seller = draft["seller"]
+     buyer = draft["buyer"]
+     return {
+-        "legal_entity_id": draft["legal_entity_id"],
+-        "apartment_id": draft.get("apartment_id"),
+-        "reservation_id": draft.get("reservation_id"),
++        "number": "—",
++        "vs": "—",
+         "kind": draft["kind"],
+-        "corrects_invoice_id": draft.get("corrects_invoice_id"),
+-        "correction_reason": draft.get("correction_reason"),
+-        "correction_date": draft.get("correction_date"),
+-        "seq_year": seq_year,
+-        "seq_no": seq_no,
+-        "number": number,
+-        "vs": vs,
+-        "lang": draft["lang"],
+-        "currency": "CZK",
+         "vat_status": draft["vat_status"],
+         "issue_date": draft["issue_date"],
+         "duzp": draft.get("duzp"),
+         "due_date": draft.get("due_date"),
+         "paid_on": draft.get("paid_on"),
+-        "paid_via": draft.get("paid_via"),
+-        "note": draft.get("note") or None,
++        "paid_via_label": invoices.custom_paid_via_label(draft.get("paid_via")),
++        "note": draft.get("note"),
+         "seller_name": seller["name"],
+         "seller_seat": seller["seat"],
+-        "seller_ico": seller["ico"] or None,
+-        "seller_dic": seller["dic"] or None,
+-        "seller_registry": seller["registry"] or None,
+-        "seller_bank_account": seller["bank_account"] or None,
+-        "seller_iban": seller["iban"] or None,
+-        "seller_bic": seller["bic"] or None,
+-        "seller_email": seller["email"] or None,
+-        "seller_phone": seller["phone"] or None,
++        "seller_ico": seller["ico"],
++        "seller_dic": seller["dic"],
++        "seller_registry": seller["registry"],
++        "seller_bank_account": seller["bank_account"],
++        "seller_iban": seller["iban"],
++        "seller_bic": seller["bic"],
++        "seller_email": seller["email"],
++        "seller_phone": seller["phone"],
+         "buyer_name": buyer["name"],
+-        "buyer_street": buyer["street"] or None,
+-        "buyer_city": buyer["city"] or None,
+-        "buyer_zip": buyer["zip"] or None,
+-        "buyer_country": buyer["country"] or None,
+-        "buyer_ico": buyer["ico"] or None,
+-        "buyer_dic": buyer["dic"] or None,
+-        "buyer_email": buyer["email"] or None,
+-        "stay_from": draft.get("stay_from"),
+-        "stay_to": draft.get("stay_to"),
+-        "stay_label": draft.get("stay_label") or None,
+-        "total_base_haler": draft.get("total_base_haler"),
+-        "total_vat_haler": draft.get("total_vat_haler"),
++        "buyer_street": buyer["street"],
++        "buyer_city": buyer["city"],
++        "buyer_zip": buyer["zip"],
++        "buyer_country": buyer["country"],
++        "buyer_country_name": "",
++        "buyer_ico": buyer["ico"],
++        "buyer_dic": buyer["dic"],
++        "buyer_email": buyer["email"],
++        "stay_label": draft.get("stay_label"),
+         "total_haler": draft["total_haler"],
+-        "owner_user_id": draft.get("owner_user_id"),
+-        "created_at": db.utcnow(),
++        "corrects_number": None,
++        "correction_reason": None,
++        "correction_date": None,
+     }
+ 
+ 
+-def pdf_view_row(cur, invoice_id: int) -> Dict[str, Any]:
+-    """The invoice row plus the view-only fields invoice_pdf.render expects."""
+-    raw = cur.execute("SELECT * FROM invoice WHERE id = ?", (invoice_id,)).fetchone()
+-    row = dict(raw)
+-    country = row.get("buyer_country") or ""
+-    row["buyer_country_name"] = (
+-        "" if not country or country == "CZE" else validation.country_name(country, "cs")
+-    )
+-    row["paid_via_label"] = custom_paid_via_label(row.get("paid_via"))
+-    row["corrects_number"] = None
+-    if row.get("corrects_invoice_id"):
+-        src = cur.execute(
+-            "SELECT number FROM invoice WHERE id = ?", (row["corrects_invoice_id"],)
+-        ).fetchone()
+-        row["corrects_number"] = src["number"] if src else None
++INVOICE_STATUSES = (
++    ("unpaid", "invoice.state.unpaid"),
++    ("paid", "invoice.state.paid"),
++    ("correction", "invoices.filter.corrections"),
++)
++_CANCELLED = (
++    "EXISTS (SELECT 1 FROM invoice c WHERE c.corrects_invoice_id = invoice.id "
++    "AND c.kind = 'storno')"
++)
++_PAID = "(paid_on IS NOT NULL OR marked_paid_at IS NOT NULL)"
++_STATUS_SQL = {
++    "unpaid": f"kind = 'invoice' AND NOT {_PAID} AND NOT {_CANCELLED}",
++    "paid": f"kind = 'invoice' AND {_PAID}",
++    "correction": "kind IN ('storno', 'corrective')",
++}
++
++
++@router.get("/invoices")
++def invoices_list(request: Request):
++    guard = auth.require_login(request)
++    if guard:
++        return guard
++    today = claim.prague_today()
++    owner_id = access.owner_id(request)
++    properties = db.query(
++        f"SELECT id, internal_name FROM apartment WHERE {db.null_safe_eq('owner_user_id')} AND archived_at IS NULL "
++        "ORDER BY internal_name, id",
++        (owner_id,),
++    )
++    view = list_filter.parse(
++        request.query_params,
++        today=today,
++        statuses=_STATUS_SQL,
++        default_month=None,
++        apartment_ids=[row["id"] for row in properties],
++    )
++    page_size = 50
++    try:
++        page_no = max(int(request.query_params.get("page") or "1"), 1)
++    except ValueError:
++        page_no = 1
++    where, params = [f"{db.null_safe_eq('owner_user_id')}"], [owner_id]
++    if view.month:
++        first, last = stay_fee.period_bounds("monthly", view.month)
++        where.append("issue_date >= ? AND issue_date <= ?")
++        params += [first.isoformat(), last.isoformat()]
++    if view.apartment_id is not None:
++        where.append("apartment_id = ?")
++        params.append(view.apartment_id)
++    if view.status:
++        where.append(_STATUS_SQL[view.status])
++    if view.q:
++        where.append("(instr(lower(number), ?) > 0 OR instr(lower(buyer_name), ?) > 0)")
++        params += [view.q.lower(), view.q.lower()]
++    clause = " AND ".join(where)
++    total = int(db.query_one(f"SELECT COUNT(*) AS n FROM invoice WHERE {clause}", params)["n"])
++    rows = db.query(
++        "SELECT id, number, issue_date, buyer_name, kind, total_haler, "
++        f"CASE WHEN kind != 'invoice' THEN 'correction' WHEN {_PAID} THEN 'paid' "
++        f"WHEN {_CANCELLED} THEN 'cancelled' ELSE 'unpaid' END AS state "
++        f"FROM invoice WHERE {clause} ORDER BY issue_date DESC, id DESC LIMIT ? OFFSET ?",
++        (*params, page_size, (page_no - 1) * page_size),
++    )
++    pages = max((total + page_size - 1) // page_size, 1)
++    query = view.query()
++    page_href = "/invoices?" + (query + "&" if query else "") + "page="
++    return render(
++        request,
++        "invoices.html",
++        {
++            "nav": "invoices",
++            "invoices": rows,
++            "invoice_page": page_no,
++            "invoice_pages": pages,
++            "page_href": page_href,
++            **list_filter.context(
++                view,
++                action="/invoices",
++                today=today,
++                period_label_key="invoices.filter.period",
++                properties=properties,
++                statuses=INVOICE_STATUSES,
++                search=True,
++            ),
++        },
++    )
++
++
++@router.get("/invoices/new")
++def invoice_new(request: Request):
++    guard = auth.require_login(request)
++    if guard:
++        return guard
++    raw_stay = request.query_params.get("reservation_id")
++    if not raw_stay:
++        return render(
++            request,
++            "invoice_stay_picker.html",
++            {
++                "nav": "invoices",
++                "stays": _stay_options(request),
++                "invoice_details_url": access.invoice_details_url(request),
++            },
++        )
++    stay = _stay_for(request, raw_stay)
++    if not stay:
++        return _back("/invoices/new", err=_flash(request, "invoice.err.no_stay"))
++    problem = invoices.stay_problem(stay["reservation"], claim.prague_today())
++    if problem:
++        return _back("/invoices/new", err=_flash(request, problem))
++    reservation_id = stay["reservation"]["id"]
++    active = invoices.active_invoice_for_stay(reservation_id)
++    if active:
++        return _back(f"/invoices/{active['id']}", err=_flash(request, "invoice.err.stay_has_invoice"))
++    entities = _entities(request)
++    entity = _entity_for_stay(request, entities, stay)
++    if entity and request.query_params.get("entity") != str(entity["id"]):
++        # Pin the operator in the URL once, so the details page returns here.
++        return RedirectResponse(
++            f"/invoices/new?reservation_id={reservation_id}&entity={entity['id']}", status_code=303
++        )
++    if entity and stay["entity_id"] == entity["id"]:
++        entities = [entity]  # the property names its operator: no other choice
++    context = _form_context(request, entities, entity, stay=stay)
++    if not entity:
++        context["errors"] = [host_i18n.translate(_lang(request), "invoice.err.no_entity")]
++    return render(request, "invoice_form.html", context)
++
++
++# --- 0076: invoice details of one operator -------------------------------
++# The canonical editor is the shared business editor (/entities?edit={id},
++# Invoice details), rendered by routes/admin.py. The save, lookup and
++# normalisation live here, so admin imports invoices and never the reverse.
++
++
++def invoice_bank_view(entity: Dict[str, Any]) -> Dict[str, Any]:
++    """The stored account as editor parts, and whether the BIC is the derived one."""
++    account = entity.get("bank_account") or entity.get("iban") or ""
++    derived_bic = payments.bic_for_account(account)
++    stored_bic = (entity.get("bic") or "").strip().upper()
++    return {
++        "bank_parts": payments.czech_account_parts(entity.get("bank_account") or ""),
++        "bic_from_bank": bool(derived_bic and stored_bic == derived_bic),
++    }
++
++
++def save_invoice_details(request: Request, form, entity: Dict[str, Any]) -> Optional[Dict[str, Any]]:
++    """Save the invoice details a POST carried for ``entity`` (already authorised).
++
++    Returns None when saved. On a refused account it saves nothing and returns
++    the rerender state (every typed value, the error) for a 422 page. Issued
++    invoices keep their own snapshot; only ``legal_entity`` changes.
++    """
++    detail = invoice_detail_payload(form)
++    if not apply_account_payload(detail, form, entity, accept_parts=True):
++        return {
++            "entity": _settings_entity_from_form(entity, form),
++            "bank_parts": _typed_bank_parts(form, entity),
++            "bic_from_bank": False,
++            "account_error": host_i18n.translate(_lang(request), "entities.bank.invalid"),
++        }
++    derive_missing_bic(detail, form, entity)
++    db.update("legal_entity", entity["id"], detail)
++    db.audit("entity_invoice_details_saved", f"id={entity['id']}",
++             owner_user_id=access.owner_id(request))
++    return None
++
++
++_SETTINGS_ARES_FIELDS = ("registry_entry",)
++
++
++def _settings_entity_from_form(entity: Dict[str, Any], form) -> Dict[str, Any]:
++    row = dict(entity)
++    for key in (
++        "ico",
++        "bic",
++        "vat_status",
++        "registry_entry",
++        "invoice_prefix",
++        "invoice_next_number",
++        "invoice_due_days",
++    ):
++        if key in form:
++            row[key] = _form_str(form, key)
+     return row
+ 
+ 
+-class StayLimit(ValueError):
+-    """The stay already has its invoice, or its last allowed one."""
+-
+-    def __init__(self, key: str, invoice_id: Optional[int] = None):
+-        super().__init__(key)
+-        self.key = key
+-        self.invoice_id = invoice_id
+-
+-
+-_ACTIVE_FOR_STAY_SQL = (
+-    "SELECT i.id, i.number FROM invoice i WHERE i.reservation_id = ? AND i.kind = 'invoice' "
+-    "AND NOT EXISTS (SELECT 1 FROM invoice c WHERE c.corrects_invoice_id = i.id) "
+-    "ORDER BY i.id DESC LIMIT 1"
+-)
+-
+-
+-def active_invoice_for_stay(reservation_id: int):
+-    """The stay's invoice that has no storno/ODD yet, or None."""
+-    return db.query_one(_ACTIVE_FOR_STAY_SQL, (reservation_id,))
+-
+-
+-def _check_stay_limit(cur, reservation_id: int) -> None:
+-    """Runs inside the write lock, so a double click cannot slip a second one in."""
+-    active = cur.execute(_ACTIVE_FOR_STAY_SQL, (reservation_id,)).fetchone()
+-    if active:
+-        raise StayLimit("invoice.err.stay_has_invoice", int(active["id"]))
+-    total = cur.execute(
+-        "SELECT COUNT(*) FROM invoice WHERE reservation_id = ? AND kind = 'invoice'",
+-        (reservation_id,),
+-    ).fetchone()[0]
+-    if total >= STAY_MAX_INVOICES:
+-        raise StayLimit("invoice.err.stay_limit")
+-
+-
+-def _write_issued(draft: Dict[str, Any], actor_user_id: Optional[int]) -> tuple:
+-    """Write an issued document inside one write lock. Returns (id, number)."""
+-    year = int(draft["issue_date"][:4])
+-    with db.immediate() as cur:
+-        entity = cur.execute(
+-            "SELECT * FROM legal_entity WHERE id = ?", (draft["legal_entity_id"],)
+-        ).fetchone()
+-        if draft["kind"] == "invoice" and draft.get("reservation_id"):
+-            _check_stay_limit(cur, draft["reservation_id"])
+-        seq_year, seq_no, number, vs = allocate_number(cur, entity, year)
+-        columns = _invoice_columns(draft, number, vs, seq_year, seq_no)
+-        cur.execute(
+-            f"INSERT INTO invoice ({', '.join(columns)}) VALUES ({', '.join('?' for _ in columns)}) "
+-            "RETURNING id",
+-            list(columns.values()),
++def lookup_invoice_details(request: Request, form, entity: Dict[str, Any]) -> Dict[str, Any]:
++    """The click-only register lookup of the invoice details; saves nothing.
++
++    The IČO here is lookup-only (0075 policy, kept by 0076): it fills a blank
++    registry entry and proposes VAT payer, but is never stored from this form.
++    0394: the MFČR VAT register adds the published bank account and VAT status.
++    """
++    owner_id = access.owner_id(request)
++    lang = _lang(request)
++    row = _settings_entity_from_form(entity, form)
++    bank_parts = _typed_bank_parts(form, entity)
++    state: Dict[str, Any] = {
++        "entity": row,
++        "bank_parts": bank_parts,
++        "bic_from_bank": False,
++        "ares_error": None,
++        "ares_note": None,
++        "ares_vat_found": False,
++        "ares_source": "ares.source_note",
++        "register_accounts": [],
++        "vat_needs_dic": False,
++        "vat_unreliable": False,
++    }
++    ico = (_form_str(form, "ico") or row.get("ico") or "").strip()
++    row["ico"] = ico
++    data, state["ares_error"] = register_lookup(owner_id, lang, ico)
++    if not data:
++        return state
++    filled = ares.merge_blank(row, data, _SETTINGS_ARES_FIELDS)
++    current = _form_str(form, "vat_status") or entity.get("vat_status") or "non_payer"
++    dic = data.get("dic") or entity.get("dic") or ""
++    vat = vat_register.lookup(dic) if vat_register.dic_digits(dic) else None
++    vat_status = vat["vat_status"] if vat else ("payer" if data.get("vat_payer") else "")
++    state["ares_vat_found"] = vat_status == "payer"
++    if vat_status and current == "non_payer":
++        row["vat_status"] = vat_status
++        filled.append("vat_status")
++    if vat:
++        state["ares_source"] = "vat_register.source_note"
++        state["vat_unreliable"] = vat["unreliable"]
++        filled += _fill_register_account(form, row, state, vat["accounts"])
++    elif not vat_register.dic_digits(dic):
++        state["vat_needs_dic"] = not payments.compose_czech_account(
++            bank_parts["prefix"], bank_parts["number"], bank_parts["bank"]
+         )
+-        invoice_id = int(cur.fetchall()[0][0])
+-        for position, item in enumerate(draft["items"], start=1):
+-            cur.execute(
+-                "INSERT INTO invoice_item (invoice_id, position, kind, description, quantity, "
+-                "unit, vat_rate, base_haler, vat_haler, gross_haler) VALUES (?,?,?,?,?,?,?,?,?,?)",
+-                (
+-                    invoice_id, position, item["kind"], item["description"], item["quantity"],
+-                    item["unit"], item["vat_rate"], item["base_haler"], item["vat_haler"],
+-                    item["gross_haler"],
+-                ),
+-            )
+-        view = pdf_view_row(cur, invoice_id)
+-        items = [
+-            dict(r)
+-            for r in cur.execute(
+-                "SELECT * FROM invoice_item WHERE invoice_id = ? ORDER BY position", (invoice_id,)
+-            ).fetchall()
+-        ]
+-        pdf = invoice_pdf.render(view, items, draft["lang"])
+-        digest = hashlib.sha256(pdf).hexdigest()
+-        cur.execute(
+-            "UPDATE invoice SET pdf_blob = ?, pdf_sha256 = ?, issued_at = ?, issued_by = ? WHERE id = ?",
+-            (pdf, digest, db.utcnow(), actor_user_id, invoice_id),
++    state["ares_note"] = register_filled_note(lang, filled)
++    return state
++
++
++def _fill_register_account(form, row: Dict[str, Any], state: Dict[str, Any], accounts: List[str]) -> List[str]:
++    """0394: put a published account into empty account fields, or the one the host picked.
++
++    A typed account is never replaced; the other published accounts become
++    "Use …" buttons. Only accounts the register lists are accepted.
++    """
++    filled: List[str] = []
++    parts = state["bank_parts"]
++    typed = payments.compose_czech_account(parts["prefix"], parts["number"], parts["bank"])
++    picked = _form_str(form, "use_register_account")
++    choice = picked if picked in accounts else ("" if typed else (accounts[0] if accounts else ""))
++    if choice and choice != typed:
++        new_parts = payments.czech_account_parts(choice)
++        new_parts["iban"] = ""
++        state["bank_parts"] = new_parts
++        typed = choice
++        filled.append("bank_account")
++        if not str(row.get("bic") or "").strip():
++            bic = payments.bic_for_account(choice)
++            if bic:
++                row["bic"] = bic
++                state["bic_from_bank"] = True
++                filled.append("bic")
++    state["register_accounts"] = [account for account in accounts if account != typed]
++    return filled
++
++
++def _typed_bank_parts(form, entity: Dict[str, Any]) -> Dict[str, str]:
++    """The account editor's values on a rerender: what was typed, else what is stored."""
++    if not any(key in form for key in ACCOUNT_PART_FIELDS):
++        return payments.czech_account_parts(entity.get("bank_account") or "")
++    parts = {key.split("_", 1)[1]: _form_str(form, key) for key in ACCOUNT_PART_FIELDS}
++    parts["iban"] = ""
++    if not payments.compose_czech_account(parts["prefix"], parts["number"], parts["bank"]):
++        existing = entity.get("bank_account") or entity.get("iban") or ""
++        parts["iban"] = payments.czech_account_parts(existing).get("iban", "")
++    return parts
++
++
++_BUYER_ARES_MAP = {
++    "buyer_name": "name",
++    "buyer_street": "street",
++    "buyer_city": "city",
++    "buyer_zip": "zip",
++    "buyer_country": "country",
++    "buyer_dic": "dic",
++}
++
++
++def _buyer_ares_fill(request: Request, form, values: Dict[str, Any]) -> Dict[str, Any]:
++    owner_id = access.owner_id(request)
++    lang = _lang(request)
++    meta = {"ares_error": None, "ares_note": None}
++    ico = (_form_str(form, "buyer_ico") or values.get("buyer_ico") or "").strip()
++    if ares.rate_limited(owner_id):
++        meta["ares_error"] = host_i18n.translate(lang, "ares.rate_limited")
++        return meta
++    if not validation.ico_ok(ico):
++        meta["ares_error"] = host_i18n.translate(lang, "ares.failure")
++        return meta
++    ares.record_lookup(owner_id)
++    data = ares.lookup(ico)
++    if not data:
++        meta["ares_error"] = host_i18n.translate(lang, "ares.failure")
++        return meta
++    filled: list[str] = []
++    for form_field, ares_key in _BUYER_ARES_MAP.items():
++        if str(values.get(form_field) or "").strip():
++            continue
++        value = data.get(ares_key)
++        if value is None or not str(value).strip():
++            continue
++        values[form_field] = value
++        filled.append(form_field)
++    if filled:
++        labels = ", ".join(
++            host_i18n.translate(lang, f"ares.field.{field}") for field in filled
+         )
+-    return invoice_id, number
+-
+-
+-def issue(draft: Dict[str, Any], actor_user_id: Optional[int]) -> int:
+-    """Allocate a number, write the invoice + items and its PDF, atomically."""
+-    issues = validate_for_issue(draft)
++        meta["ares_note"] = host_i18n.translate(lang, "ares.filled", fields=labels)
++    return meta
++
++
++# --- 0075: invoice-default normalisation and register lookup -------------
++# The one implementation behind the entity editor's Invoice details
++# (routes/admin.py). Each caller states its policy explicitly: only invoice
++# settings composes the three account fields and derives a missing BIC.
++
++ACCOUNT_PART_FIELDS = ("account_prefix", "account_number", "account_bank")
++
++
++def invoice_detail_payload(form) -> Dict[str, Any]:
++    """Presence-checked invoice details: sent = update (blank clears), absent = keep.
++
++    ``bank_account`` stays raw here; ``apply_account_payload`` validates it.
++    """
++    detail: Dict[str, Any] = {}
++    if "bank_account" in form:
++        detail["bank_account"] = _form_str(form, "bank_account")
++    if "bic" in form:
++        detail["bic"] = _form_str(form, "bic").replace(" ", "").upper() or None
++    if "vat_status" in form:
++        vat = _form_str(form, "vat_status")
++        detail["vat_status"] = vat if vat in VAT_STATUSES else "non_payer"
++    if "registry_entry" in form:
++        detail["registry_entry"] = _form_str(form, "registry_entry") or None
++    if "invoice_prefix" in form:
++        prefix = (
++            "".join(ch for ch in _form_str(form, "invoice_prefix").upper() if ch.isalnum())
++        )[:6]
++        detail["invoice_prefix"] = prefix or None
++    if "invoice_next_number" in form:
++        next_no = _form_str(form, "invoice_next_number").strip()
++        if next_no.isdigit() and int(next_no) > 0:
++            detail["invoice_next_number"] = int(next_no)
++            detail["invoice_next_number_year"] = date.today().year
++        else:
++            detail["invoice_next_number"] = None
++            detail["invoice_next_number_year"] = None
++    if "invoice_due_days" in form:
++        due_raw = _form_str(form, "invoice_due_days")
++        due = int(due_raw) if due_raw.isdigit() else 14
++        detail["invoice_due_days"] = max(0, min(due, 365))
++    return detail
++
++
++def apply_account_payload(
++    detail: Dict[str, Any],
++    form,
++    entity: Optional[Dict[str, Any]] = None,
++    *,
++    accept_parts: bool,
++) -> bool:
++    """Validate the account in ``detail`` into ``bank_account`` and ``iban``.
++
++    With ``accept_parts`` the three domestic fields are composed first, except
++    that an all-empty set never wipes a stored IBAN-only account. A sent blank
++    clears both columns. Returns False for an invalid account (nothing set).
++    """
++    if accept_parts and any(key in form for key in ACCOUNT_PART_FIELDS):
++        prefix, number, bank = (_form_str(form, key) for key in ACCOUNT_PART_FIELDS)
++        existing = ((entity or {}).get("bank_account") or (entity or {}).get("iban") or "")
++        if not payments.preserve_iban_only_account(existing, prefix, number, bank):
++            detail["bank_account"] = payments.compose_czech_account(prefix, number, bank)
++    if "bank_account" not in detail:
++        return True
++    account = detail["bank_account"]
++    if not account:
++        detail["bank_account"] = None
++        detail["iban"] = None
++        return True
++    try:
++        detail["bank_account"], detail["iban"] = payments.normalise_account(account)
++    except ValueError:
++        detail.pop("bank_account", None)
++        detail.pop("iban", None)
++        return False
++    return True
++
++
++def derive_missing_bic(detail: Dict[str, Any], form, entity: Dict[str, Any]) -> None:
++    """Invoice-settings policy: an absent BIC with none stored comes from the bank code.
++
++    A posted BIC (even blank) and a stored BIC always win.
++    """
++    if "bic" in form or (entity.get("bic") or "").strip():
++        return
++    account = detail.get("bank_account", entity.get("bank_account")) or ""
++    iban = detail.get("iban", entity.get("iban")) or ""
++    derived = payments.bic_for_account(account or iban or "")
++    if derived:
++        detail["bic"] = derived
++
++
++def register_lookup(owner_id, lang: str, ico: str):
++    """One click-only ARES lookup under the existing per-owner limit and cache.
++
++    Returns ``(data, None)`` or ``(None, translated_error)``.
++    """
++    if ares.rate_limited(owner_id):
++        return None, host_i18n.translate(lang, "ares.rate_limited")
++    if not validation.ico_ok(ico):
++        return None, host_i18n.translate(lang, "ares.failure")
++    ares.record_lookup(owner_id)
++    data = ares.lookup(ico)
++    if not data:
++        return None, host_i18n.translate(lang, "ares.failure")
++    return data, None
++
++
++def register_filled_note(lang: str, filled) -> Optional[str]:
++    """The "filled from ARES: …" note for the fields a lookup filled, or None."""
++    if not filled:
++        return None
++    labels = ", ".join(host_i18n.translate(lang, f"ares.field.{field}") for field in filled)
++    return host_i18n.translate(lang, "ares.filled", fields=labels)
++
++
++@router.post("/invoices/preview")
++async def invoice_preview(request: Request):
++    guard = auth.require_login(request)
++    if guard:
++        return guard
++    entities = _entities(request)
++    form = await request.form()
++    stay = _stay_for(request, _form_str(form, "reservation_id"))
++    if not stay or invoices.stay_problem(stay["reservation"], claim.prague_today()):
++        return _back("/invoices/new", err=_flash(request, "invoice.err.no_stay"))
++    entity = _entity_for_stay(request, entities, stay, form)
++    if not entity:
++        return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
++    draft = _draft(request, entity, form, stay)
++    pdf = invoices.invoice_pdf.render(
++        _preview_view(draft), draft["items"], draft["lang"], preview=True
++    )
++    return Response(
++        pdf,
++        media_type="application/pdf",
++        headers={"Content-Disposition": 'inline; filename="nahled-faktura.pdf"'},
++    )
++
++
++@router.post("/invoices")
++async def invoice_issue(request: Request):
++    guard = auth.require_login(request)
++    if guard:
++        return guard
++    entities = _entities(request)
++    form = await request.form()
++    stay = _stay_for(request, _form_str(form, "reservation_id"))
++    if not stay:
++        return _back("/invoices/new", err=_flash(request, "invoice.err.no_stay"))
++    problem = invoices.stay_problem(stay["reservation"], claim.prague_today())
++    if problem:
++        return _back("/invoices/new", err=_flash(request, problem))
++    entity = _entity_for_stay(request, entities, stay, form)
++    if not entity:
++        return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
++    if form.get("fill_buyer_from_register"):
++        values = _form_state(request, form, entity)
++        meta = _buyer_ares_fill(request, form, values)
++        context = _form_context(request, entities, entity, values=values, stay=stay)
++        context.update(meta)
++        return render(request, "invoice_form.html", context)
++    if form.get("fill_from_guest"):
++        guest = _lead_guest(stay["reservation"])
++        state = _form_state(request, form, entity)
++        if guest:
++            _merge_guest_fill(state, guest)
++        context = _form_context(request, entities, entity, values=state, stay=stay)
++        if not guest:
++            context["errors"] = [
++                host_i18n.translate(_lang(request), "invoice.fill_guest.none")
++            ]
++        return render(request, "invoice_form.html", context)
++    if any(str(key).startswith("fill_") for key in form):
++        context = _form_context(
++            request,
++            entities,
++            entity,
++            values=_form_state(request, form, entity),
++            stay=stay,
++        )
++        return render(request, "invoice_form.html", context)
++    draft = _draft(request, entity, form, stay)
++    issues = invoices.validate_for_issue(draft)
++    if not issues and invoices.invoice_pdf.too_long(_preview_view(draft), draft["items"], draft["lang"]):
++        issues = [invoices.validation.Issue("note", "invoice.err.too_long")]
+     if issues:
+-        raise ValueError(issues[0].message)
+-    invoice_id, number = _write_issued(draft, actor_user_id)
+-    db.audit(
+-        "invoice_issued",
+-        f"id={invoice_id} number={number} entity={draft['legal_entity_id']} total={draft['total_haler']}",
+-        owner_user_id=draft.get("owner_user_id"),
+-    )
+-    return invoice_id
+-
+-
+-def _draft_from_original(original, items, kind, reason, correction_date, today: date) -> Dict[str, Any]:
+-    neg = -1
+-    new_items = [
+-        {
+-            "kind": item["kind"],
+-            "description": item["description"],
+-            "quantity": item["quantity"],
+-            "unit": item["unit"],
+-            "vat_rate": item["vat_rate"],
+-            "base_haler": (item["base_haler"] * neg) if item["base_haler"] is not None else None,
+-            "vat_haler": (item["vat_haler"] * neg) if item["vat_haler"] is not None else None,
+-            "gross_haler": item["gross_haler"] * neg,
+-        }
+-        for item in items
+-    ]
+-    return {
+-        "legal_entity_id": original["legal_entity_id"],
+-        "apartment_id": original["apartment_id"],
+-        "reservation_id": original["reservation_id"],
+-        "kind": kind,
+-        "corrects_invoice_id": original["id"],
+-        "correction_reason": reason,
+-        "correction_date": correction_date if kind == "corrective" else None,
+-        "lang": original["lang"],
+-        "vat_status": original["vat_status"],
+-        "issue_date": today.isoformat(),
+-        "duzp": None,
+-        "due_date": None,
+-        "paid_on": today.isoformat() if original["paid_on"] else None,
+-        "paid_via": original["paid_via"],
+-        "seller": {
+-            "name": original["seller_name"], "seat": original["seller_seat"],
+-            "ico": original["seller_ico"] or "", "dic": original["seller_dic"] or "",
+-            "registry": original["seller_registry"] or "",
+-            "bank_account": original["seller_bank_account"] or "",
+-            "iban": original["seller_iban"] or "", "bic": original["seller_bic"] or "",
+-            "email": original["seller_email"] or "", "phone": original["seller_phone"] or "",
++        lang = _lang(request)
++        context = _form_context(
++            request,
++            entities,
++            entity,
++            errors=[host_i18n.translate(lang, issue.message) for issue in issues],
++            values=_form_state(request, form, entity),
++            stay=stay,
++        )
++        return render(request, "invoice_form.html", context, status_code=422)
++    try:
++        invoice_id = invoices.issue(draft, access.owner_id(request))
++    except invoices.StayLimit as limit:
++        if limit.invoice_id:
++            return _back(f"/invoices/{limit.invoice_id}", err=_flash(request, limit.key))
++        return _back(f"/reservations/{stay['reservation']['id']}", err=_flash(request, limit.key))
++    number = db.query_one("SELECT number FROM invoice WHERE id = ?", (invoice_id,))["number"]
++    return _back(f"/invoices/{invoice_id}", msg=_flash(request, "invoice.issued_flash", number=number))
++
++
++@router.get("/invoices/{invoice_id}.pdf")
++def invoice_pdf_download(invoice_id: int, request: Request):
++    guard = auth.require_login(request)
++    if guard:
++        return guard
++    invoice = _load_invoice(request, invoice_id)
++    if not invoice:
++        return _back("/invoices", err=_flash(request, "flash.error.no_such_invoice"))
++    pdf = invoices.download_pdf(invoice_id)
++    return Response(
++        pdf,
++        media_type="application/pdf",
++        headers={
++            "Content-Disposition": f'attachment; filename="faktura-{invoice["number"]}.pdf"',
++            "Cache-Control": "no-store",
+         },
+-        "buyer": {
+-            "name": original["buyer_name"], "street": original["buyer_street"] or "",
+-            "city": original["buyer_city"] or "", "zip": original["buyer_zip"] or "",
+-            "country": original["buyer_country"] or "CZE",
+-            "ico": original["buyer_ico"] or "", "dic": original["buyer_dic"] or "",
+-            "email": original["buyer_email"] or "",
+-        },
+-        "stay_from": original["stay_from"], "stay_to": original["stay_to"],
+-        "stay_label": original["stay_label"] or "",
+-        "items": new_items,
+-        "total_base_haler": (original["total_base_haler"] * neg) if original["total_base_haler"] is not None else None,
+-        "total_vat_haler": (original["total_vat_haler"] * neg) if original["total_vat_haler"] is not None else None,
+-        "total_haler": original["total_haler"] * neg,
+-        "owner_user_id": original["owner_user_id"],
+-    }
+-
+-
+-def cancel(invoice_id: int, reason: str, correction_date: Optional[str], actor_user_id: Optional[int], *, today: date) -> int:
+-    """Issue a storno (non-payer) or ODD (payer) reversing an issued invoice."""
+-    original = db.query_one("SELECT * FROM invoice WHERE id = ?", (invoice_id,))
+-    if not original or original["kind"] != "invoice":
+-        raise ValueError("not_cancellable")
+-    if not reason or len(reason.strip()) < 5:
+-        raise ValueError("reason_required")
+-    if db.query_one("SELECT id FROM invoice WHERE corrects_invoice_id = ?", (invoice_id,)):
+-        raise ValueError("already_corrected")
++    )
++
++
++@router.get("/invoices/{invoice_id:int}")  # 0101: a non-number path is a 404, not a 422
++def invoice_detail(invoice_id: int, request: Request):
++    guard = auth.require_login(request)
++    if guard:
++        return guard
++    invoice = _load_invoice(request, invoice_id)
++    if not invoice:
++        return _back("/invoices", err=_flash(request, "flash.error.no_such_invoice"))
+     items = db.query(
+         "SELECT * FROM invoice_item WHERE invoice_id = ? ORDER BY position", (invoice_id,)
+     )
+-    kind = "corrective" if original["vat_status"] == "payer" else "storno"
+-    date_text = correction_date or today.isoformat()
+-    draft = _draft_from_original(original, items, kind, reason.strip(), date_text, today)
+-    new_id, _number = _write_issued(draft, actor_user_id)
+-    db.audit(
+-        "invoice_corrected",
+-        f"orig={invoice_id} new={new_id} kind={kind} reason={reason.strip()}",
+-        owner_user_id=original["owner_user_id"],
+-    )
+-    return new_id
+-
+-
+-def retention_cutoff(today: date) -> date:
+-    """Issued before this date means the 10 years have run (§ 35 zákon 235/2004 Sb.).
+-
+-    Ten years from the end of the calendar year of issue: a 2015 invoice is
+-    kept through 31 December 2025 and goes from 1 January 2026.
++    return render(
++        request,
++        "invoice_detail.html",
++        {
++            "nav": "invoices",
++            "invoice": invoice,
++            "items": items,
++            "vat_totals": db.query_one(
++                "SELECT COALESCE(SUM(base_haler), 0) AS base, "
++                "COALESCE(SUM(vat_haler), 0) AS vat "
++                "FROM invoice_item WHERE invoice_id = ?",
++                (invoice_id,),
++            ),
++        },
++    )
++
++
++@router.post("/invoices/{invoice_id}/paid")
++async def invoice_mark_paid(invoice_id: int, request: Request):
++    guard = auth.require_login(request)
++    if guard:
++        return guard
++    invoice = _load_invoice(request, invoice_id)
++    if not invoice:
++        return _back("/invoices", err=_flash(request, "flash.error.no_such_invoice"))
++    db.update("invoice", invoice_id, {"marked_paid_at": db.utcnow()})
++    db.audit("invoice_marked_paid", f"id={invoice_id}", owner_user_id=access.owner_id(request))
++    return _back(f"/invoices/{invoice_id}", msg=_flash(request, "invoice.marked_paid_flash"))
++
++
++def _stay_property_name(invoice) -> str:
++    """The guest-facing name of the property of the stay this invoice is for.
++
++    Empty when the invoice is not linked to a stay. Same order as the guest
++    pages: the host's own name, then the police-register name.
+     """
+-    return date(today.year - 10, 1, 1)
+-
+-
+-def expired_ids(today: date, owner_user_id: Optional[int] = None) -> List[int]:
+-    """Issued documents past the 10-year rule; ``None`` means every workspace.
+-
+-    An original whose correction is still inside its own ten years stays: the
+-    correction points at it and has to remain readable. Corrections come first
+-    in the list so a batch that holds both deletes them in a valid order.
+-    """
+-    cutoff = retention_cutoff(today).isoformat()
+-    return [
+-        r["id"]
+-        for r in db.query(
+-            "SELECT id FROM invoice WHERE issue_date < ? "
+-            "AND (? IS NULL OR owner_user_id = ?) "
+-            "AND NOT EXISTS (SELECT 1 FROM invoice c "
+-            "                WHERE c.corrects_invoice_id = invoice.id AND c.issue_date >= ?) "
+-            "ORDER BY CASE WHEN corrects_invoice_id IS NULL THEN 1 ELSE 0 END, id",
+-            (cutoff, owner_user_id, owner_user_id, cutoff),
++    if not invoice["reservation_id"]:
++        return ""
++    row = db.query_one(
++        "SELECT a.internal_name, a.uby_name FROM reservation r "
++        "JOIN apartment a ON a.id = r.apartment_id WHERE r.id = ?",
++        (invoice["reservation_id"],),
++    )
++    if not row:
++        return ""
++    return (row["internal_name"] or "").strip() or (row["uby_name"] or "").strip()
++
++
++@router.post("/invoices/{invoice_id}/send")
++async def invoice_send(invoice_id: int, request: Request):
++    guard = auth.require_login(request)
++    if guard:
++        return guard
++    invoice = _load_invoice(request, invoice_id)
++    if not invoice:
++        return _back("/invoices", err=_flash(request, "flash.error.no_such_invoice"))
++    if not invoice["buyer_email"]:
++        return _back(f"/invoices/{invoice_id}", err=_flash(request, "invoice.err.no_email"))
++    entity = access.entity(request, invoice["legal_entity_id"])
++    token = invoice_links.download_token(invoice_id, invoice["pdf_sha256"] or "")
++    url = f"{config.PUBLIC_BASE_URL}/invoice/d/{mail.CLAIM_SECRET_MARKER}"
++    content = mail_notify.build_invoice_issued(
++        lang=invoice["lang"],
++        property_name=entity["name"] if entity else "UbyHost",
++        number=invoice["number"],
++        total=invoices.invoice_pdf.money(invoice["total_haler"]),
++        download_url=url,
++        host=mail_notify.host_details(invoice["legal_entity_id"]),
++        stay_property=_stay_property_name(invoice),
++    )
++    payload = mail_notify.guest_payload(
++        {"legal_entity_id": invoice["legal_entity_id"]}, content, invoice["lang"]
++    )
++    payload[mail.CLAIM_SECRET_KEY] = db.encrypt_field(token)
++    sent_before = db.query_one(
++        "SELECT COUNT(*) AS n FROM email_outbox WHERE idempotency_key LIKE ?",
++        (f"invoice_issued:{invoice_id}:%",),
++    )["n"]
++    mail.enqueue(
++        kind="invoice_issued",
++        idempotency_key=f"invoice_issued:{invoice_id}:{sent_before}",
++        to_email=invoice["buyer_email"],
++        subject=content["subject"],
++        payload=payload,
++        owner_user_id=access.owner_id(request),
++    )
++    db.update("invoice", invoice_id, {"emailed_at": db.utcnow()})
++    db.audit("invoice_sent", f"id={invoice_id}", owner_user_id=access.owner_id(request))
++    return _back(f"/invoices/{invoice_id}", msg=_flash(request, "invoice.sent_flash"))
++
++
++@router.post("/invoices/{invoice_id}/cancel")
++async def invoice_cancel(invoice_id: int, request: Request):
++    guard = auth.require_login(request)
++    if guard:
++        return guard
++    invoice = _load_invoice(request, invoice_id)
++    if not invoice:
++        return _back("/invoices", err=_flash(request, "flash.error.no_such_invoice"))
++    form = await request.form()
++    reason = _form_str(form, "reason")
++    correction_date = _form_str(form, "correction_date") or None
++    try:
++        new_id = invoices.cancel(
++            invoice_id, reason, correction_date, access.owner_id(request),
++            today=claim.prague_today(),
+         )
+-    ]
+-
+-
+-def purge_expired(today: date, owner_user_id: Optional[int] = None) -> int:
+-    """Delete issued documents past the 10-year rule, with the unlock flag."""
+-    ids = expired_ids(today, owner_user_id)
+-    if not ids:
+-        return 0
+-    db.execute(
+-        "INSERT INTO settings (key, value) VALUES ('invoice_purge_unlock', '1') "
+-        "ON CONFLICT(key) DO UPDATE SET value = '1'"
+-    )
+-    try:
+-        for invoice_id in ids:
+-            db.execute("DELETE FROM invoice_item WHERE invoice_id = ?", (invoice_id,))
+-            db.execute("DELETE FROM invoice WHERE id = ?", (invoice_id,))
+-    finally:
+-        db.execute(
+-            "INSERT INTO settings (key, value) VALUES ('invoice_purge_unlock', '') "
+-            "ON CONFLICT(key) DO UPDATE SET value = ''"
++    except ValueError as exc:
++        key = str(exc)
++        message = host_i18n.translate(
++            _lang(request),
++            "invoice.err.reason_required" if key == "reason_required" else "invoice.err.not_cancellable",
+         )
+-    db.audit("invoice_retention_purge", f"deleted={len(ids)}")
+-    return len(ids)
+-
+-
+-def download_pdf(invoice_id: int) -> bytes:
+-    """Always the stored bytes; an issued document is never re-rendered."""
+-    row = db.query_one("SELECT * FROM invoice WHERE id = ?", (invoice_id,))
+-    if not row or not row["pdf_blob"]:
+-        raise ValueError("invoice_pdf_missing")
+-    blob = row["pdf_blob"]
+-    if isinstance(blob, str):
+-        blob = blob.encode("latin-1")
+-    digest = hashlib.sha256(blob).hexdigest()
+-    if row["pdf_sha256"] and digest != row["pdf_sha256"]:
+-        raise ValueError("invoice_pdf_mismatch")
+-    return blob
++        return _back(f"/invoices/{invoice_id}", err=message)
++    return _back(f"/invoices/{new_id}", msg=_flash(request, "invoice.cancelled_flash"))
++
++
++@router.get("/invoice/d/{token}")
++def invoice_download(token: str, request: Request):
++    """Public: the token in the e-mail is the only credential the recipient has."""
++    key = rate_limit.client_key(request, "invoice_download")
++    if rate_limit.blocked("invoice_download", key, 30, 3600):
++        return Response("Too many requests", status_code=429)
++    rate_limit.record("invoice_download", key)
++    invoice_id = invoice_links.read_download_token(token)
++    if not invoice_id:
++        return Response("Not found", status_code=404)
++    pdf = invoices.download_pdf(invoice_id)
++    return Response(
++        pdf,
++        media_type="application/pdf",
++        headers={
++            "Content-Disposition": "attachment",
++            "Cache-Control": "no-store",
++            "X-Robots-Tag": "noindex",
++        },
++    )
+--- a/App/app/main.py
++++ b/App/app/main.py
+@@ -126,7 +126,7 @@
+         )
+         if config.DEPLOYMENT == "staging":
+             log.warning("staging first administrator login link: %s", bootstrap_link)
+-    log.info("database ready at %s", config.DB_PATH)
++    log.info("database ready (%s)", config.database_label())
+     log.info(
+         "deployment=%s ubyport=%s endpoint=%s",
+         config.DEPLOYMENT,
+--- a/App/app/reporting.py
++++ b/App/app/reporting.py
+@@ -31,7 +31,6 @@
+ import logging
+ import re
+ import secrets
+-import sqlite3
+ import time
+ import zipfile
+ from datetime import date, datetime, timedelta, timezone
+@@ -544,7 +543,7 @@
+ 
+ 
+ def dashboard_overview_candidate(
+-    reservation: Mapping[str, Any] | sqlite3.Row,
++    reservation: Mapping[str, Any],
+     progress: Dict[str, Any],
+     urgency: str,
+     today: date,
+--- a/App/app/routes/invoices.py
++++ b/App/app/routes/invoices.py
+@@ -50,7 +50,7 @@
+ @lru_cache(maxsize=1)
+ def _invoice_columns() -> str:
+     """Every invoice column except the stored PDF, which only downloads read."""
+-    names = [row["name"] for row in db.query("PRAGMA table_info(invoice)")]
++    names = db.column_names("invoice")
+     return ", ".join(name for name in names if name != "pdf_blob")
+ 
+ 
+--- a/App/app/stay_fee_auto.py
++++ b/App/app/stay_fee_auto.py
+@@ -5,7 +5,6 @@
+ from __future__ import annotations
+ 
+ import logging
+-import sqlite3
+ from datetime import date, datetime, timedelta, timezone
+ from typing import Optional
+ 
+@@ -73,7 +72,9 @@
+         filing_id = stay_fee_filing.save(apartment, group["first"], rate_czk=rate,
+                                          collected=collected, issued_on=today,
+                                          cadence=group["cadence"])
+-    except (ValueError, sqlite3.IntegrityError):
++    except ValueError:
++        return None
++    except db.integrity_errors():
+         return None
+     db.audit("stay_fee_auto_finalize", f"apartment_id={apartment['id']} period={checked['key']}")
+     return filing_id
+--- a/App/app/stripe_connect.py
++++ b/App/app/stripe_connect.py
+@@ -16,7 +16,6 @@
+ from __future__ import annotations
+ 
+ import json
+-import sqlite3
+ from typing import Any, Dict, Optional
+ 
+ import stripe
+@@ -358,7 +357,7 @@
+                 "created_at": db.utcnow(),
+             },
+         )
+-    except sqlite3.IntegrityError:
++    except db.integrity_errors():
+         return False
+     return True
+ 
+--- a/App/requirements.lock
++++ b/App/requirements.lock
+@@ -1016,6 +1016,78 @@
+     --hash=sha256:904552145e8bfed22162c09dab1c2b9b54fefa7b23ba780f4f26ca0316b0f0d9 \
+     --hash=sha256:a20a594dabeaa385725aa239d5244871c143ecb356add8a20fcf23773a6c3a35
+     # via uvicorn
++psycopg==3.3.6 \
++    --hash=sha256:a1db9f7148b06a28606767efaca51fa6f9398c5c0a3810519be69d7000bdb631 \
++    --hash=sha256:c081f2250df751a943036e42db6df4571c66cd0aabe8291a7a506512b12007d2
++    # via -r requirements.txt
++psycopg-binary==3.3.6 \
++    --hash=sha256:05a83ac9fd52b9bca7cb5ab04b3691163170bd16f53defa27216ea3aa07ee781 \
++    --hash=sha256:0a52991594ac4db888c7d39bccef331797e30cb31a95cae02cf2607f83a42dc2 \
++    --hash=sha256:0bf08b749cc144f33b44a91b78e3f71c60eb07963746a0df5a100b36ce3d7475 \
++    --hash=sha256:0ebfad5d131de9f892ae9e70cc7616207768b6714b66a52d4612b8ceaf78b372 \
++    --hash=sha256:1679a1cb93fbe5a6d1fd58d82cbddcc6fcb8c61446ba7cae6eb2a7b19bc585de \
++    --hash=sha256:198a48e68cc99ccac03ba95ac857e73aa66f3bf6be77019fafb0832a05f7ad03 \
++    --hash=sha256:1fbd30e537dab22cafdf080608f10148fe2a5f3a61294ddb5113caac8a623840 \
++    --hash=sha256:289aadd6a00e151203c081f708348ec89f1e483c9b510ef4ac3981f847f01f79 \
++    --hash=sha256:2f122603f36050937982abf9668d8bc4769a79f7c93a65013b1c49f1cab7b56b \
++    --hash=sha256:303732e798fe6729f8e12021b9c96107df8e95ecec4dd487c67b98ec2a59435e \
++    --hash=sha256:31cd942c23f613276b81a6e6598cefa12960058b0f46e1e874b540c793f6aca5 \
++    --hash=sha256:366db6e97e66b37211475f20c4c1324a2dc0dd825e46d4e87f9d599304d276f9 \
++    --hash=sha256:373704aea331d3f3e3402c125a1543f5875e2986ebb54f97d1647942161f803f \
++    --hash=sha256:37d40450659401600e6d043ff586c89a71a69f33cbb8bcdba6cdb2569beecdbe \
++    --hash=sha256:37e517c146b185f9c0c6e8d0a0ebbdeeeb67896af28466e032bc810d0c7dc7a7 \
++    --hash=sha256:3af90f92769d8cc10f94515ee7a0aef36ea85ca733a0ce22858f6e0953f41138 \
++    --hash=sha256:3c9e663b2e800e3218994cf948c11bcc2844e6491b34aa80d089baf6531827bf \
++    --hash=sha256:3f84dab25e0385692ee13274c68678377e0b1a70ab9d14e56264cbf61f60c62d \
++    --hash=sha256:4690cf67738f0e0e49a32aeec99bf0e4595cc2b4f1af984a4345394b1dcff91a \
++    --hash=sha256:566dd827f17728efdf7d88a5b066f815170f6fdad13967ae952842d90e6aaa9f \
++    --hash=sha256:5927b7ba63153cd8e9862987290a2b783a5c590daf2a4ef981700cc3569166d4 \
++    --hash=sha256:5ad8f35e67cc16d1fad1fa8c88972dc9b3a3141ea67897399904edab96a301b6 \
++    --hash=sha256:5ea8beeb5541780b4b50b462eeacbc4f594ce3b911dc20c81c75f267876f71d2 \
++    --hash=sha256:5f598f19fa9a91540b5cee17932ffd227b7b53a481605bcc4573c0eafa647300 \
++    --hash=sha256:612382ac3ed13651c7fa44b5fee9fbf7baaa2ddbc6f500391672682c5f1df9e0 \
++    --hash=sha256:6ff05561e4a067d35507dc5c90f1deb2ec1c9703ac5cccc1bc26e08a197f9c5a \
++    --hash=sha256:7308c93cf0b19bbaf8e6ff0a6ad50d3c442385739245fe15a8d593bf841734a6 \
++    --hash=sha256:79a2a1c3449f6c3409427078ed1cec10de79f3023cb5f2504f0597d350ad46c7 \
++    --hash=sha256:7beb3e41c9a1e509f3ed85263386588cbe3e975aa67be21f79f44fd35ffaeefc \
++    --hash=sha256:86147cb5d140341c3363fb5bacce31f8d5543902a46699d3c536b101bbceaf9e \
++    --hash=sha256:889e42acec10450185e0cdfb396f375e2c1a8d7737c114830a7fde4654f59e30 \
++    --hash=sha256:910ace140e3e7b7596898d083f37a8fe90c5c40684252ad4e682364b2cd3deba \
++    --hash=sha256:955e3dd94da361e052d2e49acf591017158dc8f8ed2c8a42c2e3943403c39dc2 \
++    --hash=sha256:9892188bb15e5803beb51afe8a25add6b56be391a53058e8bca03b74e1e6bf22 \
++    --hash=sha256:98c02090d88f2ebc0ec1e8da538f77d225ce0fffecf372aa39262e62a1b054ef \
++    --hash=sha256:9b2f11794e017ce340934e35de46181c46ef71ec75ea3d85dd75cd836761c01e \
++    --hash=sha256:a2e44a342d2aee40508e28a563d8961c39d9bbd8cae36d8578f0a3c6658aab0f \
++    --hash=sha256:a4ee3bdd5468a725f2a4d9aab8a74b6d0279f768c8b5d3aeb102c5307ff3d59c \
++    --hash=sha256:a5165300324efd5a772c48a88ab3a928513ab3979fca76553e62ee815f7b2b9c \
++    --hash=sha256:a9348c5b43a3bb5ef8c2e89d5237c9c87eeafb01d338c84a7aebbc5cd0313299 \
++    --hash=sha256:aa73160077345ec21b3f51e8e24b3de2e99586217e497629326eb9b2ea88c52e \
++    --hash=sha256:ad1c785e784cfd87e8436c6b7702f2d321fc39601bbaf29bc63a41a867091638 \
++    --hash=sha256:b3f75dee0f9afafabe4edc52c4842f1e1878ed2069bd05b22d6fe961e97e4dba \
++    --hash=sha256:b599defe9190b17e9907c8b4d114c181e702c87efcd1b8a0ad40971cdcc4634a \
++    --hash=sha256:b82491019b884d62318b5f30706c3d7e6d4e5a6cb7eabcb3edc0c1b0fdaceae9 \
++    --hash=sha256:b8ece331509f7a975b90501f41e83ad905e4141753fedf3f2711b2bc70a8efbc \
++    --hash=sha256:b979a42815410432420275412633960807178b1ce26591a16ce06e78a5bd4bb2 \
++    --hash=sha256:be4f9b3c9338ac5dd217c5847e21521b396c8117f78dc420d495a5c49bbef874 \
++    --hash=sha256:bf8c8481d026b85dd70c5fa7dde85b2333aed0b32a2602bcd38a900cbd78a49c \
++    --hash=sha256:c61617eaae0112ca154da87ffb99b73af2c74067acac28dfb9a4455b019dff2e \
++    --hash=sha256:c6d19cb4999d03231e8730a5f66c8f5068bc3b532677eb39dab0f600bff3e312 \
++    --hash=sha256:c7753871eb57e6a5f4646f6168590c6653073dea5e9e720b201c8875332df4c8 \
++    --hash=sha256:c7f92daa0d2a1c76f07264abddf8cbabd30152a2f09c3270e50f0c7efdf5dcac \
++    --hash=sha256:cbd5f73073ed19c378d4c35499db1e3e703a5b1a324e521204065967bfaa7a18 \
++    --hash=sha256:cec5ea900390897d0b46130f60bc2883bf19c314f9044235217c8be88b0ef269 \
++    --hash=sha256:d636338c8f21b0df2f84657b00bc34f9313f826ef93f1155bc743607e4a0c5eb \
++    --hash=sha256:dc75da5a20951049f7b773145f998f69d181adad9c58a0ff36e0cf1d73c10e10 \
++    --hash=sha256:e23a66a763fbe83fcc210bc77c27e5a5ea380ebf091c06f34d8561b695e5a40f \
++    --hash=sha256:e8cbb54454dbf1bbf2ff08dd7693e8d94ac94b1a20f70f4b3b813d52ecb5cbc1 \
++    --hash=sha256:ee2c4728c691245e24501fcd7a97b5b381236b9985bc445bba88cdce7d1b5784 \
++    --hash=sha256:f0535693ce476a722b718b002d5d2c27d47e71ca945276ac194409c98e74c492 \
++    --hash=sha256:f19cc87343eaa55255e76b31259a570072ac95d6ae82c92dd34b97691f5e49dc \
++    --hash=sha256:f21d057f3e5f5491067e5b292498073b73847d48799b099803fef100775fcc52 \
++    --hash=sha256:f87dbdc42e78ee0f7ea180c03f8c78e80a949e373066629bd90fefff10552dff \
++    --hash=sha256:fa34eb47969297471db7b7f193622c7e3ee839ec05abd05f1fe104d5b1b1dcf4 \
++    --hash=sha256:fdccb3a0e184b03e9baa673b15a809cf36c339c85dbda0ebc25a698846dfbee8
++    # via psycopg
+ python-multipart==0.0.32 \
+     --hash=sha256:be54b7f3fa167bb83e4fcd936b887b708f4e57fe75911c02aebf53efaf8d938e \
+     --hash=sha256:ff6d3f776f16878c894e52e107296ffc890e913c611b1a4ec6c44e2821fe2e23
+--- a/App/requirements.txt
++++ b/App/requirements.txt
+@@ -16,3 +16,4 @@
+ webauthn==3.0.1
+ anthropic==2.3.0
+ stripe==16.0.1
++psycopg[binary]==3.3.6
+--- /dev/null
++++ b/App/scripts/pg_schema.py
+@@ -0,0 +1,154 @@
++#!/usr/bin/env python3
++"""Inspect or explicitly apply the PostgreSQL schema; never migrate at app startup."""
++from __future__ import annotations
++
++import argparse
++import json
++import os
++import sys
++import tempfile
++from datetime import datetime, timezone
++from pathlib import Path
++
++from app import config, db
++
++
++def _record_backup_receipt(raw: str, stanza: str, database: str) -> dict:
++    """Validate pgBackRest info JSON and atomically publish a secret-free receipt."""
++    try:
++        payload = json.loads(raw)
++    except (TypeError, ValueError) as exc:
++        raise RuntimeError("pgBackRest info JSON is invalid.") from exc
++    if not isinstance(payload, list):
++        raise RuntimeError("pgBackRest info JSON has an unsupported shape.")
++    matches = [item for item in payload if isinstance(item, dict) and item.get("name") == stanza]
++    if len(matches) != 1:
++        raise RuntimeError("pgBackRest info does not contain exactly the requested stanza.")
++    item = matches[0]
++    if not _status_ok(item.get("status")):
++        raise RuntimeError("pgBackRest stanza status is not successful.")
++    backups = []
++    for repo in item.get("repo", []):
++        if not isinstance(repo, dict) or not _status_ok(repo.get("status")):
++            raise RuntimeError("pgBackRest repository status is not successful.")
++        for backup in repo.get("backup", []):
++            if not isinstance(backup, dict):
++                continue
++            stamp = backup.get("timestamp") or {}
++            start, stop = stamp.get("start"), stamp.get("stop")
++            if isinstance(start, (int, float)) and isinstance(stop, (int, float)) and stop > 0:
++                backups.append((float(stop), backup))
++    if not backups:
++        raise RuntimeError("pgBackRest info contains no completed backup.")
++    _stop, latest = max(backups, key=lambda pair: pair[0])
++    label = latest.get("label")
++    kind = latest.get("type")
++    if not isinstance(label, str) or not label or kind not in {"full", "diff", "incr"}:
++        raise RuntimeError("latest pgBackRest backup record is incomplete.")
++    stamp = latest["timestamp"]
++    start = datetime.fromtimestamp(stamp["start"], timezone.utc)
++    stop = datetime.fromtimestamp(stamp["stop"], timezone.utc)
++    verified = datetime.now(timezone.utc)
++    receipt = {
++        "format_version": 1,
++        "database": database,
++        "target_fingerprint": config._database_target_fingerprint(config.DATABASE_URL),
++        "stanza": stanza,
++        "backup_label": label,
++        "backup_type": kind,
++        "started_at_utc": start.isoformat(timespec="seconds"),
++        "stopped_at_utc": stop.isoformat(timespec="seconds"),
++        "verified_at_utc": verified.isoformat(timespec="seconds"),
++        "backup_ok": True,
++        "check_ok": True,
++        "info_ok": True,
++    }
++    output = config.DATA_DIR / "backups" / "postgresql" / "latest-verified.json"
++    output.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
++    try:
++        output.parent.chmod(0o700)
++    except OSError:
++        pass
++    if output.is_symlink():
++        raise RuntimeError("PostgreSQL backup receipt path must not be a symlink.")
++    fd, temp_name = tempfile.mkstemp(dir=output.parent, prefix=".latest-verified.", suffix=".tmp")
++    temp = Path(temp_name)
++    try:
++        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as stream:
++            os.fchmod(stream.fileno(), 0o600)
++            json.dump(receipt, stream, sort_keys=True, separators=(",", ":"))
++            stream.write("\n")
++            stream.flush()
++            os.fsync(stream.fileno())
++        os.replace(temp, output)
++        try:
++            descriptor = os.open(output.parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
++            try:
++                os.fsync(descriptor)
++            finally:
++                os.close(descriptor)
++        except OSError:
++            raise RuntimeError("Backup receipt was published but directory durability failed.") from None
++    finally:
++        temp.unlink(missing_ok=True)
++    return receipt
++
++
++def _status_ok(status) -> bool:
++    return isinstance(status, dict) and status.get("code") == 0
++
++
++def main(argv=None) -> int:
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("action", choices=("plan", "check", "apply", "seal-authority", "record-backup"))
++    parser.add_argument("--expect-database", required=True)
++    parser.add_argument("--stanza")
++    args = parser.parse_args(argv)
++    try:
++        if config.DB_BACKEND != "postgresql":
++            raise RuntimeError("Set UBYHOST_DATABASE_URL to select PostgreSQL.")
++        actual = db.current_database_name()
++        marker_path = config.DATABASE_AUTHORITY_FILE
++        if marker_path.exists():
++            marker = __import__("json").loads(marker_path.read_text(encoding="utf-8"))
++            if marker.get("database") != actual or marker.get("schema") != "public":
++                raise RuntimeError("Connected PostgreSQL target does not match the durable authority marker.")
++        if actual != args.expect_database:
++            raise RuntimeError("Connected database does not match --expect-database.")
++        if args.action == "plan":
++            print(f"PostgreSQL {actual}: schema version {db.expected_schema_version()} is planned; no changes made.")
++            return 0
++        if args.action == "seal-authority":
++            marker = config.seal_database_authority(args.expect_database)
++            print(f"PostgreSQL authority sealed for database={actual}; marker_format={marker['format_version']}.")
++            return 0
++        if args.action == "record-backup":
++            if not args.stanza:
++                raise RuntimeError("record-backup requires --stanza.")
++            raw = sys.stdin.read(1_000_001)
++            if len(raw) > 1_000_000:
++                raise RuntimeError("pgBackRest info input exceeds the supported size.")
++            receipt = _record_backup_receipt(raw, args.stanza, actual)
++            print(
++                f"Verified PostgreSQL backup receipt written: database={actual}, "
++                f"stanza={receipt['stanza']}, label={receipt['backup_label']}."
++            )
++            return 0
++        if args.action == "apply":
++            status = db.apply_postgresql_schema()
++        else:
++            status = db.postgres_schema_status()
++            if not status["current"]:
++                raise RuntimeError("PostgreSQL schema is not current; run the explicit apply command.")
++        print(
++            f"PostgreSQL schema {args.action} OK: database={actual}, "
++            f"version={status['actual_version']}, tables={status['actual_tables']}."
++        )
++        return 0
++    except Exception as exc:
++        print(f"PostgreSQL schema {args.action} failed: {exc}", file=sys.stderr)
++        return 1
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+--- a/App/scripts/reencrypt.py
++++ b/App/scripts/reencrypt.py
+@@ -47,6 +47,7 @@
+ import sys
+ import time
+ from dataclasses import dataclass, field
++from datetime import datetime
+ from pathlib import Path
+ from typing import Any, Dict, Iterable, List, Optional, Tuple
+ 
+@@ -139,24 +140,73 @@
+     path: Optional[str],
+     max_age_hours: float = DEFAULT_MAX_BACKUP_AGE_HOURS,
+     now: Optional[float] = None,
++    backup_reference: Optional[str] = None,
+ ) -> Path:
+     """The backup file, or SystemExit saying why it is not good enough."""
++    if config.DB_BACKEND == "postgresql":
++        if path:
++            raise SystemExit("Refusing to write on PostgreSQL: use --backup-reference, not --backup.")
++        if not backup_reference:
++            raise SystemExit("Refusing to write on PostgreSQL: pass the verified pgBackRest --backup-reference.")
++        backup = Path(backup_reference).expanduser()
++        if backup.is_symlink() or not backup.is_file():
++            raise SystemExit("Refusing to write: PostgreSQL backup reference must be a regular non-symlink file.")
++        try:
++            receipt = json.loads(backup.read_text(encoding="utf-8"))
++            expected = {
++                "format_version", "database", "target_fingerprint", "stanza", "backup_label",
++                "backup_type", "started_at_utc", "stopped_at_utc", "verified_at_utc",
++                "backup_ok", "check_ok", "info_ok",
++            }
++            if set(receipt) != expected or receipt["format_version"] != 1:
++                raise ValueError("unsupported receipt shape")
++            if not all(receipt[key] is True for key in ("backup_ok", "check_ok", "info_ok")):
++                raise ValueError("backup verification did not succeed")
++            if not receipt["stanza"] or not receipt["backup_label"]:
++                raise ValueError("missing backup identity")
++            if receipt["database"] != db.current_database_name():
++                raise ValueError("backup is for a different database")
++            if receipt["target_fingerprint"] != config._database_target_fingerprint(config.DATABASE_URL):
++                raise ValueError("backup is for a different PostgreSQL target")
++            times = [datetime.fromisoformat(receipt[key].replace("Z", "+00:00")) for key in
++                     ("started_at_utc", "stopped_at_utc", "verified_at_utc")]
++            if any(value.tzinfo is None or value.utcoffset() is None for value in times):
++                raise ValueError("timestamps must include UTC offsets")
++            start, stop, verified = times
++            if not start <= stop <= verified:
++                raise ValueError("backup timestamps are out of order")
++            age_hours = ((now if now is not None else time.time()) - verified.timestamp()) / 3600
++            if age_hours < 0 or age_hours > max_age_hours:
++                raise ValueError("verified backup is outside the freshness window")
++        except Exception as exc:
++            raise SystemExit(f"Refusing to write: invalid PostgreSQL backup reference ({type(exc).__name__}).") from None
++        return backup
++    if backup_reference:
++        raise SystemExit("Refusing to write on SQLite: use the existing --backup path.")
+     if not path:
+         raise SystemExit(
+             "Refusing to write: pass --backup with the path of a backup taken just now "
+             "(for example the ubyhost.db or the .tar/.tar.age from scripts/backup_data.sh)."
+         )
+     backup = Path(path).expanduser()
+-    if not backup.is_file():
+-        raise SystemExit(f"Refusing to write: backup {backup} does not exist or is not a file.")
+-    if backup.stat().st_size == 0:
++    if not backup.exists() or not (backup.is_file() or backup.is_dir()):
++        raise SystemExit(f"Refusing to write: backup {backup} does not exist or is not a file/directory.")
++    if backup.is_dir():
++        artifacts = [item for item in backup.rglob("*") if item.is_file()]
++        size = sum(item.stat().st_size for item in artifacts)
++        modified = max((item.stat().st_mtime for item in artifacts), default=backup.stat().st_mtime)
++    else:
++        size = backup.stat().st_size
++        modified = backup.stat().st_mtime
++    if size == 0:
+         raise SystemExit(f"Refusing to write: backup {backup} is empty.")
+-    try:
+-        if backup.resolve() == Path(config.DB_PATH).resolve():
+-            raise SystemExit("Refusing to write: --backup points at the live database.")
+-    except OSError:
+-        pass
+-    age_hours = ((now if now is not None else time.time()) - backup.stat().st_mtime) / 3600
++    if config.DB_BACKEND == "sqlite":
++        try:
++            if backup.resolve() == Path(config.DB_PATH).resolve():
++                raise SystemExit("Refusing to write: --backup points at the live database.")
++        except OSError:
++            pass
++    age_hours = ((now if now is not None else time.time()) - modified) / 3600
+     if age_hours > max_age_hours:
+         raise SystemExit(
+             f"Refusing to write: backup {backup} is {age_hours:.1f} hours old; take a new "
+@@ -187,15 +237,16 @@
+ 
+ 
+ def open_database() -> None:
+-    """Make sure UBYHOST_DB is an existing UbyHost database, then add new columns."""
+-    path = Path(config.DB_PATH)
+-    if not path.exists():
+-        raise SystemExit(f"No database at {path}. Point UBYHOST_DB at the file the app uses.")
+-    found = db.query_one(
+-        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'guest'"
+-    )
+-    if not found:
+-        raise SystemExit(f"{path} does not look like a UbyHost database.")
++    """Validate the selected UbyHost backend before rotating any data keys."""
++    if config.DB_BACKEND == "sqlite":
++        path = Path(config.DB_PATH)
++        if not path.exists():
++            raise SystemExit(f"No database at {path}. Point UBYHOST_DB at the file the app uses.")
++    try:
++        if not db.column_names("guest"):
++            raise SystemExit("Selected database does not look like a UbyHost database.")
++    except Exception as exc:
++        raise SystemExit("Selected database is not a valid UbyHost database.") from exc
+     db.init_db()
+ 
+ 
+@@ -385,7 +436,7 @@
+     rotate_outbox(report, batch_size)
+     rotate_photos(report)
+     blanked = sum(c.encrypted + c.blanked for c in report.targets.values())
+-    if vacuum and blanked and not dry_run:
++    if vacuum and blanked and not dry_run and config.DB_BACKEND == "sqlite":
+         # secure_delete overwrites freed pages, but VACUUM is what makes sure
+         # the old plaintext and the old ciphertext are not left in the file.
+         db.execute("VACUUM")
+@@ -425,7 +476,8 @@
+     parser = argparse.ArgumentParser(
+         description="Re-encrypt stored data under the first key in UBYHOST_DATA_KEYS."
+     )
+-    parser.add_argument("--backup", help="path of a backup taken just before this run")
++    parser.add_argument("--backup", help="SQLite backup file/directory taken just before this run")
++    parser.add_argument("--backup-reference", help="verified pgBackRest receipt JSON for PostgreSQL")
+     parser.add_argument("--dry-run", action="store_true", help="count, write nothing")
+     parser.add_argument(
+         "--check",
+@@ -448,7 +500,7 @@
+ 
+     read_only = args.dry_run or args.check
+     if not read_only:
+-        check_backup(args.backup, args.max_backup_age_hours)
++        check_backup(args.backup, args.max_backup_age_hours, backup_reference=args.backup_reference)
+     require_keys(writing=not read_only and not args.rollback_new_fields)
+     open_database()
+ 
+@@ -460,6 +512,8 @@
+         )
+     for line in report.lines():
+         print(line)
++    if config.DB_BACKEND == "postgresql" and not read_only and not args.no_vacuum:
++        print("PostgreSQL key rotation committed; VACUUM is not a secure erase of old tuples or WAL copies.")
+     if read_only:
+         print("Dry run: nothing was written.")
+     if report.unreadable:
+--- /dev/null
++++ b/App/scripts/sqlite_to_postgres.py
+@@ -0,0 +1,303 @@
++#!/usr/bin/env python3
++"""Copy a read-only SQLite snapshot into an isolated empty PostgreSQL database."""
++from __future__ import annotations
++
++import argparse
++import hashlib
++import json
++import os
++import sqlite3
++import sys
++import tempfile
++from datetime import date, datetime, timezone
++from pathlib import Path
++from typing import Any
++
++from app import config, db
++from app import db_postgres
++
++REPORT_VERSION = 1
++
++
++def _source_protected_paths(path: Path) -> set[Path]:
++    resolved = path.expanduser().resolve(strict=False)
++    return {p.resolve(strict=False) for base in (path.expanduser(), resolved)
++            for p in (base, *(Path(f"{base}{suffix}") for suffix in ("-wal", "-shm", "-journal")))}
++
++
++def validate_report_path(report: Path, source: Path) -> Path:
++    target = report.expanduser().resolve(strict=False)
++    for protected in _source_protected_paths(source):
++        if target == protected:
++            raise ValueError("report path conflicts with the SQLite source or sidecar")
++        if target.exists() and source.exists() and os.path.samefile(target, source):
++            raise ValueError("report path aliases the SQLite source")
++    return target
++
++
++def snapshot_connection(path: Path) -> sqlite3.Connection:
++    if not path.is_file():
++        raise ValueError("source snapshot must be an existing SQLite file")
++    uri = path.resolve().as_uri() + "?mode=ro"
++    conn = sqlite3.connect(uri, uri=True, isolation_level=None)
++    conn.row_factory = sqlite3.Row
++    conn.execute("PRAGMA query_only=ON")
++    conn.execute("BEGIN")
++    conn.execute("SELECT name FROM sqlite_master ORDER BY name").fetchall()  # pins snapshot
++    if conn.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
++        raise ValueError("source SQLite integrity check failed")
++    if conn.execute("PRAGMA foreign_key_check").fetchone() is not None:
++        raise ValueError("source SQLite foreign-key check failed")
++    return conn
++
++
++def app_tables(source: sqlite3.Connection) -> list[str]:
++    return [r[0] for r in source.execute(
++        "SELECT name FROM sqlite_master WHERE type='table' "
++        "AND name NOT LIKE 'sqlite_%' ORDER BY name"
++    )]
++
++
++def typed_value(value: Any) -> bytes:
++    if value is None:
++        return b"N"
++    if isinstance(value, bool):
++        value = int(value)
++    if isinstance(value, int):
++        return b"I" + str(value).encode("ascii") + b";"
++    if isinstance(value, float):
++        return b"F" + value.hex().encode("ascii") + b";"
++    if isinstance(value, str):
++        return b"T" + value.encode("utf-8") + b"\0"
++    if isinstance(value, (bytes, bytearray, memoryview)):
++        raw = bytes(value)
++        return b"B" + str(len(raw)).encode("ascii") + b":" + raw
++    raise TypeError(f"unsupported SQLite value type: {type(value).__name__}")
++
++
++def table_digest(conn, table: str, columns: list[str], *, postgres: bool) -> tuple[int, str]:
++    quoted = ", ".join('"' + c.replace('"', '""') + '"' for c in columns)
++    order = ", ".join('"' + c.replace('"', '""') + '"' for c in columns)
++    sql = f'SELECT {quoted} FROM "{table}" ORDER BY {order}'
++    rows = conn.execute_native(sql).fetchall() if postgres else conn.execute(sql).fetchall()
++    digest = hashlib.sha256()
++    for row in rows:
++        digest.update(b"R")
++        for value in row:
++            item = typed_value(value)
++            digest.update(len(item).to_bytes(8, "big"))
++            digest.update(item)
++    return len(rows), digest.hexdigest()
++
++
++def schema_version(source: sqlite3.Connection) -> int:
++    names = {r[0] for r in source.execute("SELECT name FROM sqlite_master WHERE type='table'")}
++    if "schema_migrations" not in names:
++        raise ValueError("source schema has no migration history")
++    rows = source.execute("SELECT version FROM schema_migrations").fetchall()
++    return max((int(r[0]) for r in rows), default=0)
++
++
++def _table_columns(source: sqlite3.Connection, table: str) -> list[str]:
++    return [r[1] for r in source.execute(f'PRAGMA table_info("{table}")')]
++
++
++def _postgres_empty(conn) -> bool:
++    return not conn.execute_native(
++        "SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace "
++        "WHERE n.nspname=current_schema() LIMIT 1"
++    ).fetchone()
++
++
++def _preflight_values(source: sqlite3.Connection, table: str) -> None:
++    for info in source.execute(f'PRAGMA table_info("{table}")'):
++        name, decl = info[1], info[2]
++        kind = (decl or "").upper().split("(", 1)[0].strip()
++        # SQLite's dynamic typing is retained only where PostgreSQL can accept
++        # the exact stored representation. Never stringify/coerce bad values.
++        expected = {"INTEGER": "integer", "REAL": ("integer", "real"), "TEXT": "text", "BLOB": "blob"}.get(kind)
++        if expected is None:
++            continue
++        allowed = (expected,) if isinstance(expected, str) else expected
++        for (value,) in source.execute(
++            f'SELECT "{name}" FROM "{table}" WHERE "{name}" IS NOT NULL'
++        ):
++            actual = ("integer" if isinstance(value, int) else "real" if isinstance(value, float)
++                      else "text" if isinstance(value, str) else "blob" if isinstance(value, bytes)
++                      else "unsupported")
++            if actual not in allowed:
++                raise ValueError(f"source type drift at {table}.{name} ({actual})")
++
++
++def _typed_column_kinds(source: sqlite3.Connection, table: str) -> dict[str, str]:
++    return {r[1]: ((r[2] or "").upper().split("(", 1)[0].strip())
++            for r in source.execute(f'PRAGMA table_info("{table}")')}
++
++
++def _validate_pg_values(source: sqlite3.Connection, table: str, columns: list[str]) -> None:
++    # Narrow source SQLite values before sending them to strict PostgreSQL types.
++    _preflight_values(source, table)
++
++
++def _write_report(payload: dict[str, Any], path: Path, source: Path) -> None:
++    path = validate_report_path(path, source)
++    path.parent.mkdir(parents=True, exist_ok=True)
++    fd, name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
++    temp = Path(name)
++    replaced = False
++    try:
++        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as stream:
++            json.dump(payload, stream, sort_keys=True, separators=(",", ":"))
++            stream.write("\n")
++            stream.flush()
++            os.fsync(stream.fileno())
++        os.replace(temp, path)
++        replaced = True
++        directory = os.open(path.parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
++        try:
++            os.fsync(directory)
++        finally:
++            os.close(directory)
++    finally:
++        if not replaced:
++            temp.unlink(missing_ok=True)
++
++
++def _expected_db(name: str) -> None:
++    if config.DB_BACKEND != "postgresql":
++        raise RuntimeError("Set UBYHOST_DATABASE_URL to select PostgreSQL.")
++    if db.current_database_name() != name:
++        raise RuntimeError("Connected database does not match --expect-database.")
++    if db.current_postgres_schema_name() != "public":
++        raise RuntimeError("PostgreSQL transfer requires the public schema.")
++    marker_path = config.DATABASE_AUTHORITY_FILE
++    if marker_path.exists():
++        marker = json.loads(marker_path.read_text(encoding="utf-8"))
++        if marker.get("database") != name or marker.get("schema") != "public":
++            raise RuntimeError("PostgreSQL target does not match the durable authority marker.")
++
++
++def reconcile(source: sqlite3.Connection, target, tables: list[str]) -> dict[str, Any]:
++    summary = {}
++    for table in tables:
++        columns = _table_columns(source, table)
++        src_count, src_hash = table_digest(source, table, columns, postgres=False)
++        target_columns = [row["name"] for row in target.execute_native(
++            "SELECT column_name AS name FROM information_schema.columns "
++            "WHERE table_schema=current_schema() AND table_name=%s ORDER BY ordinal_position",
++            (table,),
++        ).fetchall()]
++        if columns != target_columns:
++            raise ValueError(f"column mismatch at {table}")
++        dst_count, dst_hash = table_digest(target, table, columns, postgres=True)
++        summary[table] = {"rows": src_count, "source_sha256": src_hash,
++                          "target_rows": dst_count, "target_sha256": dst_hash,
++                          "match": src_count == dst_count and src_hash == dst_hash}
++        if not summary[table]["match"]:
++            raise ValueError(f"typed hash mismatch at {table}")
++    return summary
++
++
++def transfer(source_path: Path, report_path: Path, expected_database: str, verify_only: bool) -> dict[str, Any]:
++    report_path = validate_report_path(report_path, source_path)
++    source = snapshot_connection(source_path)
++    target = None
++    committed = False
++    try:
++        actual_version = schema_version(source)
++        if actual_version != db.expected_schema_version():
++            raise ValueError("source schema version is unsupported")
++        tables = app_tables(source)
++        expected = db._expected_sqlite_columns()
++        if set(tables) != set(expected):
++            raise ValueError("source table set differs from the supported application schema")
++        for table in tables:
++            if _table_columns(source, table) != [c[0] for c in expected[table]]:
++                raise ValueError(f"source schema drift at {table}")
++            _validate_pg_values(source, table, _table_columns(source, table))
++        _expected_db(expected_database)
++        target = db.connect()
++        target.acquire_writer_session_lock()
++        target.execute("BEGIN IMMEDIATE")
++        try:
++            if verify_only:
++                status = db.postgres_schema_status(target)
++                if not status["current"]:
++                    raise ValueError("target schema is not current")
++            else:
++                if not _postgres_empty(target):
++                    raise ValueError("destination is not an empty isolated target")
++                db.bootstrap_empty_postgresql_schema(target)
++                # Foreign keys are declared deferrable to support self-links;
++                # application unique constraints remain immediate for ON CONFLICT.
++                target.execute("SET CONSTRAINTS ALL DEFERRED")
++                order = db.table_copy_order(source, tables)
++                for table in order:
++                    columns = _table_columns(source, table)
++                    quoted = ", ".join('"' + c.replace('"', '""') + '"' for c in columns)
++                    marks = ", ".join("?" for _ in columns)
++                    sql = f'INSERT INTO "{table}" ({quoted}) VALUES ({marks})'
++                    cursor = source.execute(f'SELECT {quoted} FROM "{table}"')
++                    while True:
++                        rows = cursor.fetchmany(500)
++                        if not rows:
++                            break
++                        target.executemany(sql, [tuple(row) for row in rows])
++                    db.restore_postgres_sequence(target, table, source)
++                db_postgres.install_pg_triggers(target)
++                db.validate_postgres_schema_connection(target)
++            reconciliation = reconcile(source, target, tables)
++            target.execute("COMMIT")
++            committed = True
++        except BaseException:
++            if target.in_transaction:
++                target.execute("ROLLBACK")
++            raise
++        finally:
++            target.release_writer_session_lock()
++        payload = {
++            "report_version": REPORT_VERSION,
++            "source_identity": {"path_name": source_path.name, "schema_version": actual_version},
++            "target_database": expected_database,
++            "verified_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
++            "mode": "verify-only" if verify_only else "copied-and-verified",
++            "table_count": len(tables), "tables": reconciliation,
++        }
++        try:
++            _write_report(payload, report_path, source_path)
++        except Exception as exc:
++            if committed:
++                raise RuntimeError("target transaction committed, but report publication failed; run --verify-only to regenerate reconciliation") from exc
++            raise
++        return payload
++    finally:
++        source.close()
++        if target is not None:
++            target.close()
++
++
++def main(argv=None) -> int:
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--source", required=True, type=Path)
++    parser.add_argument("--report", required=True, type=Path)
++    parser.add_argument("--expect-database", required=True)
++    parser.add_argument("--verify-only", action="store_true")
++    args = parser.parse_args(argv)
++    try:
++        payload = transfer(args.source, args.report, args.expect_database, args.verify_only)
++    except RuntimeError as exc:
++        text = str(exc)
++        if "committed" in text:
++            print(text, file=sys.stderr)
++            return 2
++        print(f"SQLite to PostgreSQL transfer failed before commit: {text}", file=sys.stderr)
++        return 1
++    except Exception as exc:
++        print(f"SQLite to PostgreSQL transfer failed before commit: {exc}", file=sys.stderr)
++        return 1
++    print(f"SQLite to PostgreSQL {payload['mode']} OK: tables={payload['table_count']}, report={args.report}")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())

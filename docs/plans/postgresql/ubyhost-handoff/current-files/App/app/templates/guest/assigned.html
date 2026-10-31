@@ -1,0 +1,51 @@
+{% extends "guest/base.html" %}
+{% block content %}
+{% if can_pick_other %}
+<a class="g-back" href="/l/{{ token }}?lang={{ lang }}">{{ t('back_to_stays') }}</a>
+{% endif %}
+
+<div class="g-card g-assigned-stay">
+  <p class="g-question-kicker">{{ t('assigned_stay_label') }}</p>
+  <h2>{{ property_name }}</h2>
+  {% if apartment.city_en %}<p class="g-assigned-location">{{ apartment.city_en }}</p>{% endif %}
+  <p class="g-assigned-dates">
+    <strong>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</strong>
+    <span>{{ nights_label(reservation.date_from, reservation.date_to) }}</span>
+  </p>
+</div>
+
+{% if claim_error %}
+  <div class="g-err">{{ t('claim_error_' + claim_error) if claim_error in ['bad_email','bad_party','held','already_claimed','rate','cooldown','recipient_rate','bot'] else t('error_party_size') }}</div>
+{% endif %}
+
+<div class="g-card">
+  <h2>{{ t('assigned_title') }}</h2>
+  <p class="g-intro">{{ t('assigned_body') }}</p>
+  <div class="g-private-link-note">
+    <strong>{{ claim.email_masked or '' }}</strong>
+    {% if claim_last_sent_at %}
+      <small>{{ t('assigned_last_sent', date=claim_last_sent_at | date_cz) }}</small>
+    {% endif %}
+  </div>
+  <form method="post" action="/l/{{ token }}/{{ reservation.id }}/party?lang={{ lang }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <input type="hidden" name="resend" value="1">
+    <input type="hidden" name="party_size" value="{{ claim.declared_guests or 1 }}">
+    <div class="g-field">
+      <label for="guest_email_resend">{{ t('claim_email') }}</label>
+      <input type="email" id="guest_email_resend" name="guest_email" required autocomplete="email">
+      {% include "guest/_email_purpose_help.html" %}
+    </div>
+    {% if require_turnstile and turnstile_site_key %}
+      <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-action="guest_claim"></div>
+    {% endif %}
+    <button class="g-btn" type="submit">{{ t('assigned_resend') }}</button>
+  </form>
+</div>
+{% if can_pick_other %}
+<a class="g-btn ghost" href="/l/{{ token }}?lang={{ lang }}">{{ t('assigned_not_mine') }}</a>
+{% endif %}
+{% if require_turnstile and turnstile_site_key %}
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,293 @@
+{
+  "base_commit": "8b5317d0a49b840136fbfbcad7fb06af100f3575",
+  "files": [
+    {
+      "path": "App/app/db.py",
+      "archive": "current-files/App/app/db.py",
+      "sha256": "8dcda839ae2f27147530c64d0961b4ade6d216ad013bae660b7450c9a30650a6",
+      "mode": "0o644"
+    },
+    {
+      "path": "App/app/guest_uk_i18n.py",
+      "archive": "current-files/App/app/guest_uk_i18n.py",
+      "sha256": "ac30afb9a93241daae5343396bccd3e4b3fa96e2f4eb7d1080eb1925905cb69c",
+      "mode": "0o644"
+    },
+    {
+      "path": "App/app/i18n.py",
+      "archive": "current-files/App/app/i18n.py",
+      "sha256": "5f664ab3bf977219e8fb3f194f6009395cc0973210390d542ad2cadf5bbba6ed",
+      "mode": "0o644"
+    },
+    {
+      "path": "App/app/routes/guest.py",
+      "archive": "current-files/App/app/routes/guest.py",
+      "sha256": "f928d592ea4054df707ddddd2c2ae88769405d78fb309b08ce980415ccd09bf6",
+      "mode": "0o644"
+    },
+    {
+      "path": "App/app/static/host.css",
+      "archive": "current-files/App/app/static/host.css",
+      "sha256": "8ffdd8b82a7127d47931499cfc9a3f16b8907715f4270f9a8573f08eb669ae71",
+      "mode": "0o644"
+    },
+    {
+      "path": "App/app/templates/_shell_sidebar.html",
+      "archive": "current-files/App/app/templates/_shell_sidebar.html",
+      "sha256": "9e370287b9e3491478f8c3a03314180ebed0362de3bafabe29b9044d3c02f169",
+      "mode": "0o644"
+    },
+    {
+      "path": "App/app/templates/base.html",
+      "archive": "current-files/App/app/templates/base.html",
+      "sha256": "916a9d35e4ac9f0d16a529628e52b860b3165d695c6b001733ec28cbcea0fb49",
+      "mode": "0o644"
+    },
+    {
+      "path": "App/app/templates/guest/_email_purpose_help.html",
+      "archive": "current-files/App/app/templates/guest/_email_purpose_help.html",
+      "sha256": "a7eee461d901d7089d06b0794a3000a02e871bcdf7246914104510913caa496e",
+      "mode": "0o644"
+    },
+    {
+      "path": "App/app/templates/guest/_legal_notice.html",
+      "archive": "current-files/App/app/templates/guest/_legal_notice.html",
+      "sha256": "0003b21be2db090a521fc1b63e324d0692bcfe7e0abe331153fdd02947252552",
+      "mode": "0o644"
+    },
+    {
+      "path": "App/app/templates/guest/assigned.html",
+      "archive": "current-files/App/app/templates/guest/assigned.html",
+      "sha256": "c8f5a87ab9069e3acc96aa2ce9a87ee0608cbfaa7329b2429dcd0ba20922d3dc",
+      "mode": "0o644"
+    },
+    {
+      "path": "App/app/templates/guest/claim.html",
+      "archive": "current-files/App/app/templates/guest/claim.html",
+      "sha256": "67f0e1e3c1bfd6dcb1faa32687e3dfb4fee321f573d06f994da6878582650310",
+      "mode": "0o644"
+    },
+    {
+      "path": "App/app/templates/guest/form.html",
+      "archive": "current-files/App/app/templates/guest/form.html",
+      "sha256": "076a9a6d7cb435ca09501f2515f138f9c68e5061a714c794d64f0a7843ff0fdf",
+      "mode": "0o644"
+    },
+    {
+      "path": "App/scripts/export_billing_analytics.py",
+      "archive": "current-files/App/scripts/export_billing_analytics.py",
+      "sha256": "835051ac457c605c67e002ed8da09cc1dcab96165462b2ff9c2f6d5349ed2fd3",
+      "mode": "0o644"
+    },
+    {
+      "path": "App/tests/static_versions.json",
+      "archive": "current-files/App/tests/static_versions.json",
+      "sha256": "fc38550a879d649cbebc2fcc723555450505653f437d04cebb6affa4fa79e95d",
+      "mode": "0o644"
+    },
+    {
+      "path": "App/tests/test_billing_analytics_export.py",
+      "archive": "current-files/App/tests/test_billing_analytics_export.py",
+      "sha256": "23d5a59194cd79e658fa7d794f9e54984644b0fb968773db704b70bc33e1898a",
+      "mode": "0o644"
+    },
+    {
+      "path": "App/tests/test_db_readonly_cursor.py",
+      "archive": "current-files/App/tests/test_db_readonly_cursor.py",
+      "sha256": "e455ab0e1e48eb346f082967cf29238e940495a9e3f5c716389f961107654331",
+      "mode": "0o644"
+    },
+    {
+      "path": "App/tests/test_design_guardrails_browser.py",
+      "archive": "current-files/App/tests/test_design_guardrails_browser.py",
+      "sha256": "c2b2d63dd6045f99d174a770007e64ac0e3589039838df1b3a38434f82e58972",
+      "mode": "0o644"
+    },
+    {
+      "path": "App/tests/test_guest_browser_e2e.py",
+      "archive": "current-files/App/tests/test_guest_browser_e2e.py",
+      "sha256": "790ede031b04986d27b05fd54950798e58e891d9594c29c9987c8a1c093a6159",
+      "mode": "0o644"
+    },
+    {
+      "path": "App/tests/test_guest_navigation.py",
+      "archive": "current-files/App/tests/test_guest_navigation.py",
+      "sha256": "61aafb1ec8dc38bd49865c1c2ec8a5469d46e9258f6dc70095c2b4f6495e2f7a",
+      "mode": "0o644"
+    },
+    {
+      "path": "App/tests/test_host_account_navigation.py",
+      "archive": "current-files/App/tests/test_host_account_navigation.py",
+      "sha256": "5d5ca1b270091323b975c254895a06fbd054020df145f95688d10edfc1143458",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/context/decisions.md",
+      "archive": "current-files/docs/context/decisions.md",
+      "sha256": "2c518e9bb8849946a12311475811e939d80f5c28bd9a62571df74e6b99ca92a1",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/context/known-issues.md",
+      "archive": "current-files/docs/context/known-issues.md",
+      "sha256": "3c6bf4529b3670299403b6788302931230d62107d66b8a02a54f64f723a6a7a9",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/context/prompts.md",
+      "archive": "current-files/docs/context/prompts.md",
+      "sha256": "4e967994e9d4e480edaa0edc00557af4142d68fc9db0d2c357628ca057a4514b",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/context/rules.md",
+      "archive": "current-files/docs/context/rules.md",
+      "sha256": "99f4af88cae62dba1a9a73ba3de0d64f9b7e83682512c11eefb4c6e3919b1af7",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/context/status.md",
+      "archive": "current-files/docs/context/status.md",
+      "sha256": "ac6e3500114c822cf9733687705d9a65e574863f8b15cf5202141fae1a8f0a0e",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/context/workflow.md",
+      "archive": "current-files/docs/context/workflow.md",
+      "sha256": "8a1f339345d39617ff540a7f78330367c2b4334fb39db90b3bb5d4c84a863f84",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/plans/business-metrics-and-database-plan-20261030.md",
+      "archive": "current-files/docs/plans/business-metrics-and-database-plan-20261030.md",
+      "sha256": "c3154db4b652f2c65e0992c90e052fac9b9526276959ad226cd4878968ca76d0",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/plans/ux-smoothness-plan-20261030.md",
+      "archive": "current-files/docs/plans/ux-smoothness-plan-20261030.md",
+      "sha256": "cf2294926083abd3a822671a7d90908ffe0fb2f73e2c662a3e94396b927f740d",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/tasks/0451-report.md",
+      "archive": "current-files/docs/tasks/0451-report.md",
+      "sha256": "ca4454318f9741239d4bd1e3a2b0dc898dcb25bf51d0daf60f778ea7c0bfd04a",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/tasks/0451-visible-guest-acknowledgement.md",
+      "archive": "current-files/docs/tasks/0451-visible-guest-acknowledgement.md",
+      "sha256": "aad3a1b106b3261391f3e82858e5fb8475febc5209c605199322bfb1f3e6dd53",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/tasks/0452-read-only-billing-extract.md",
+      "archive": "current-files/docs/tasks/0452-read-only-billing-extract.md",
+      "sha256": "320bad0c986b32fcc5e467093c9c9ae7dcc4fec1aebc5db7da1e4e468a31b470",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/tasks/0452-report.md",
+      "archive": "current-files/docs/tasks/0452-report.md",
+      "sha256": "b93a24f9f205bee2475a3c9553fc44bfdff4cb40cd173864931fa49876ba6e94",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/tasks/0453-contextual-guest-help.md",
+      "archive": "current-files/docs/tasks/0453-contextual-guest-help.md",
+      "sha256": "fe48ee8a33e275db0965d17d67f0675e7cf5e60512c816fe8a67fad815eec351",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/tasks/0453-report.md",
+      "archive": "current-files/docs/tasks/0453-report.md",
+      "sha256": "21cf7dd37f4f58490ddd5e77c34ba565d49166fc8bc0e9f36a01413a124a821b",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/tasks/0454-admin-settings-390.png",
+      "archive": "current-files/docs/tasks/0454-admin-settings-390.png",
+      "sha256": "6d6f9b1d16d05359896a5f20bcb7291f67acdb5597dea30be7cf9032b20ba645",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/tasks/0454-entities-390.png",
+      "archive": "current-files/docs/tasks/0454-entities-390.png",
+      "sha256": "a0b057dfb290f70ac9d122f4afc454c943bb0720fa2d87b817e0f4b42a9bd574",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/tasks/0454-host-ux-improvement.md",
+      "archive": "current-files/docs/tasks/0454-host-ux-improvement.md",
+      "sha256": "2273f1d767b2c49dc5c925aa673269a53dc17cd0f3941ddff874f03cdaf9d76a",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/tasks/0454-report.md",
+      "archive": "current-files/docs/tasks/0454-report.md",
+      "sha256": "8cd4d6e1fe3e521d1c345dcbec5ebb8ab022abc006de6f960b7761bd70b13bf6",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/tasks/0455-postgresql-runtime-and-transfer.md",
+      "archive": "current-files/docs/tasks/0455-postgresql-runtime-and-transfer.md",
+      "sha256": "7dcfd58445fe6f9a8fcaf349a1300889fd97a4bb7db6b8de0d7a527bb0be1cb2",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/tasks/0456-postgresql-cutover-and-recovery.md",
+      "archive": "current-files/docs/tasks/0456-postgresql-cutover-and-recovery.md",
+      "sha256": "bcae5eaf9e394ae7f5f12df54375ce99129a7bc5171141282ecad34b7f80b808",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/tasks/screenshots-0451/acknowledgement-390.png",
+      "archive": "current-files/docs/tasks/screenshots-0451/acknowledgement-390.png",
+      "sha256": "5bc3d644ed50e5e6038a19b7504555e94b7b07b4c5e6656084a34a9866a41cbc",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/tasks/screenshots-0451/completion-summary-390.png",
+      "archive": "current-files/docs/tasks/screenshots-0451/completion-summary-390.png",
+      "sha256": "ca2becec1951a4fc17a8c2de2d7ab196c28093598f825f867c8e4edabdd11a96",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/tasks/screenshots-0451/next-guest-390.png",
+      "archive": "current-files/docs/tasks/screenshots-0451/next-guest-390.png",
+      "sha256": "3604e8c1cdb075e8679256334507f97724a8588096e56e54048e39097c6c1b3d",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/tasks/screenshots-0453/acknowledgement-390.png",
+      "archive": "current-files/docs/tasks/screenshots-0453/acknowledgement-390.png",
+      "sha256": "5bc3d644ed50e5e6038a19b7504555e94b7b07b4c5e6656084a34a9866a41cbc",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/tasks/screenshots-0453/claim-email-390.png",
+      "archive": "current-files/docs/tasks/screenshots-0453/claim-email-390.png",
+      "sha256": "0e66f0b6453608ca9ee07ac28c10f9bd593343f32e9b032e20ce8a06e8057300",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/tasks/screenshots-0453/completion-summary-390.png",
+      "archive": "current-files/docs/tasks/screenshots-0453/completion-summary-390.png",
+      "sha256": "ca2becec1951a4fc17a8c2de2d7ab196c28093598f825f867c8e4edabdd11a96",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/tasks/screenshots-0453/guest-form-390.png",
+      "archive": "current-files/docs/tasks/screenshots-0453/guest-form-390.png",
+      "sha256": "8c9028202ebf707c29fe42d5fe58056424a67bf85c6175740aead4ebaa5a32b2",
+      "mode": "0o644"
+    },
+    {
+      "path": "docs/tasks/screenshots-0453/next-guest-390.png",
+      "archive": "current-files/docs/tasks/screenshots-0453/next-guest-390.png",
+      "sha256": "3604e8c1cdb075e8679256334507f97724a8588096e56e54048e39097c6c1b3d",
+      "mode": "0o644"
+    }
+  ]
+}
