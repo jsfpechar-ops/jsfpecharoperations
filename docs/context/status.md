@@ -7,6 +7,7 @@ Updated: 2026-10-31.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
+- Admin phone nav bug: briefs [0461](../tasks/0461-admin-section-tabs.md), [0462](../tasks/0462-admin-console-polish.md); not run yet.
 - 2026-10-31: PostgreSQL now, Go port now, D1–D4 decided. Plan [migration-plan-v4](../plans/postgresql/migration-plan-v4.md). Wave 1 draft PRs: #594 docs, #593 intervals + deadline (other thread), #596 PG in CI, #597 tenancy audit (no leak). Next: #592 runtime review brief (step 5). **Owner:** review and merge #593, #594, #596, #597.
 - #583 merged: guest save-and-continue, visible acknowledgement, contextual help. #587 open: 0452 read-only billing extract + 0454 host UX + handoff documentation.
 - Billing cockpit merged (#561). 0448 merged (#565): first plan to legacy hosts (immediate start, invoice now, no trial) + trial extension 1–365 days. Decisions 2026-10-29 in decisions.md.
@@ -20,7 +21,7 @@ Updated: 2026-10-31.
 
 ## Next
 - Door codes 0037 and 0038 are on main. Next: those owner steps on staging.
-- Merged 0067 (#371), 0068 (#372). Next: [0069](../tasks/0069-same-period-shared-pin.md) (K-D04). TTLock staging: issue/delete work; untested: change, calendar stays, DST.
+- Next: [0069](../tasks/0069-same-period-shared-pin.md) (K-D04). TTLock staging: issue/delete work; untested: change, calendar stays, DST.
 - Plan [file-retention](../plans/file-retention.md): decided, no build now. Lawyer round: Terms/DPA line, not the host's statutory archive.
 - TTLock briefs 0008–0016: [plan](../plans/ttlock-door-codes.md) §11 order. Test first; live after §12 + lawyer (K-L).
 
