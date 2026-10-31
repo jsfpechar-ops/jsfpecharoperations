@@ -212,6 +212,7 @@ All from `deploy/lightsail/`:
 | `./scripts/logs.sh ubyhost` | App logs only |
 | `./scripts/backup.sh` | Age-encrypted snapshot with time-based retention |
 | `./scripts/restore.sh <stamp>` | Stop app, replace DB from a volume snapshot, start, wait for health |
+| `AGE_IDENTITY_FILE=… ./scripts/pg-restore.sh <stamp>` | Stop app and worker, restore the age-encrypted PostgreSQL dump from a snapshot, start (refuses while on SQLite) |
 | `./scripts/pg-cutover.sh rehearse` | Copy the SQLite data into a throwaway PostgreSQL database, verify it, drop it |
 | `./scripts/pg-cutover.sh cutover` | Stop the app, copy and verify into PostgreSQL, switch `.env`, start; any failure returns to SQLite |
 | `./scripts/pg-cutover.sh rollback` | Switch `.env` back to SQLite (type ROLLBACK to confirm) |
@@ -234,6 +235,8 @@ Weekly off-site (Sunday 04:00 UTC) after `rclone config` remote **`gdrive`**:
 ```
 
 `backup.sh` runs `sqlite3 … '.backup'` **inside the running container**, so a concurrent write is snapshotted consistently (SQLite hot backup). A raw `cp ubyhost.db` while the app is up can capture a torn file — do not do that.
+
+**PostgreSQL:** the nightly dump (`ubyhost-pg.dump.age`) is written into the same daily snapshot folder, so the S3/Drive copies and the Lightsail snapshots cover it.
 
 **Retention:** snapshots are age-encrypted (`ubyhost-backup.tar.age`) with time-based retention; see `deploy/lightsail/README.md`. Older points exist only if you copied them off-site (Drive/S3) **before** they aged out. Drive uploads do not prune.
 

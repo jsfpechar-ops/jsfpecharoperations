@@ -25,6 +25,7 @@ chmod +x scripts/*.sh
 
 Useful later: `./scripts/status.sh`, `./scripts/backup.sh`, `./scripts/restore.sh`, `./scripts/restore_test.sh`, `./scripts/smoke-remote.sh`.
 PostgreSQL cutover (0463, owner runs it once): `./scripts/pg-cutover.sh rehearse`, then `cutover`; `rollback` returns `.env` to SQLite.
+After cutover, `AGE_IDENTITY_FILE=/root/ubyhost-backup.agekey ./scripts/pg-restore.sh <stamp>` restores the PostgreSQL dump (`ubyhost-pg.dump.age`) that each snapshot folder carries; it refuses while `.env` still has `UBYHOST_DB`.
 
 
 ## Encrypted backups (OPS-1)
