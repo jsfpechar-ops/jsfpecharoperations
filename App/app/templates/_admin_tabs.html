@@ -1,0 +1,13 @@
+{#- 0461: the one admin tab strip (MASTER 5.2). Each admin page calls admin_tabs('<key>'). -#}
+{% from "_ui_layout.html" import ui_tabs with context %}
+{% macro admin_tabs(active) -%}
+{% set items = [
+  ('/admin', t('home.admin.title'), active == 'console'),
+  ('/admin/customers', t('customers.title'), active == 'customers'),
+  ('/admin/fakturace', t('billing.admin.title'), active == 'billing'),
+  ('/admin/users', t('nav.users'), active == 'users'),
+  ('/admin/incidents', t('incidents.title'), active == 'incidents'),
+  ('/admin/operations', t('ops.title'), active == 'operations'),
+  ('/admin/funnel', t('funnel.title'), active == 'funnel'),
+] %}{{ ui_tabs(items) }}
+{%- endmacro %}
