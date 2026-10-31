@@ -557,6 +557,8 @@ tell you:
   `at`, `encrypted`, `bytes`, `retention_days`. Nothing in the app reads it yet
   (GDPR plan FE-3); monitor backups with `UBYHOST_BACKUP_PING_URL`.
 
+- **PostgreSQL dump (0464).** `backup.sh` writes `ubyhost-pg.dump.age` (`pg_dump -Fc`, age-encrypted, never plaintext) into the newest snapshot folder when the `postgres` service runs. Restore with `pg-restore.sh <stamp>`; the rehearsal (`pg-cutover.sh rehearse`) dumps, restores into `ubyhost_restoretest` and verifies it against SQLite.
+
 ### Purging pre-OPS-1 plaintext backups (operator, one-time)
 
 Before OPS-1, every snapshot carried the database **and** the key in the clear.
