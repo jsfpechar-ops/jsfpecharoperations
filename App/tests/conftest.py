@@ -175,6 +175,30 @@ def login_as(client, username, *, url="/login", remember=False, follow_redirects
     )
 
 
+@pytest.fixture(scope="module", autouse=True)
+def postgresql_schema_reset():
+    """On PostgreSQL, start the session from an empty ``public`` schema (brief 0462).
+
+    SQLite gets a fresh temporary file for every run; PostgreSQL gets the same
+    starting point by dropping and re-creating ``public`` and applying the
+    current schema through the owner command. The SQLite path only yields.
+    """
+    from app import config
+
+    if getattr(config, "DB_BACKEND", "sqlite") != "postgresql":
+        yield
+        return
+    import psycopg
+
+    with psycopg.connect(os.environ["UBYHOST_DATABASE_URL"], autocommit=True) as raw:
+        raw.execute("DROP SCHEMA IF EXISTS public CASCADE")
+        raw.execute("CREATE SCHEMA public")
+    from app import db
+
+    db.apply_postgresql_schema()
+    yield
+
+
 @pytest.fixture(autouse=True)
 def fresh_login_link_budgets():
     """Every test starts with the e-mail login budgets unspent (task 0003).
