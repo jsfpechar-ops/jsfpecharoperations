@@ -386,13 +386,16 @@ def test_cleaning_card_facts_line_up_across_cards(wide_host, wide_base):
             if REQUIRE_BROWSER:
                 raise
             pytest.skip("Chromium is required for the cleaning facts test")
+        # The calendar script replaces this list with its own date window after
+        # load; at a month boundary that window can hold one card. The rule
+        # under test is the card CSS, so read the server-rendered list (the same
+        # markup the script starts from) without letting it be replaced.
         context = browser.new_context(viewport={"width": 1280, "height": 1000})
         context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": wide_base + "/"}])
         page = context.new_page()
+        page.route("**/static/cleaning.js*", lambda route: route.abort())
         response = page.goto(f"{wide_base}/cleaning?lang=en")
         assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
-        _wait_for_host_layout(page)
-        _dismiss_optional_security_prompt(page)
         page.wait_for_selector(".cleaning-card .cleaning-facts > div", timeout=5000)
         lefts = page.evaluate(
             """() => Array.from(document.querySelectorAll('.cleaning-card')).map(card =>

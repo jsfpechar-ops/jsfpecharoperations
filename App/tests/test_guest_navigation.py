@@ -1247,3 +1247,53 @@ def test_a_one_person_booking_offers_submit_registration():
         assert i18n.STRINGS["en"]["save_continue_next"] not in page.text
     finally:
         _cleanup()
+
+
+def test_the_form_explains_why_each_group_is_collected():
+    """0453: purpose help sits at its matching step, reusing approved copy."""
+    token, wrong, _right = _make_apartment_with_stays()
+    try:
+        browser = TestClient(app)
+        browser.cookies.set(guest.LANG_COOKIE, "en")
+        complete_guest_claim(browser, token, wrong, party_size=1)
+        page = browser.get(f"/l/{token}/{wrong}/new?lang=en")
+        assert page.status_code == 200
+        for marker, label_key, body_key in (
+            ("identity", "identity_purpose_help_label", "identity_purpose_help"),
+            ("address-stay", "address_purpose_help_label", "address_purpose_help"),
+            ("signature", "signature_purpose_help_label", "signature_purpose_help"),
+        ):
+            assert f'data-purpose-help="{marker}"' in page.text, marker
+            assert i18n.STRINGS["en"][label_key] in page.text, label_key
+            assert i18n.STRINGS["en"][body_key] in page.text, body_key
+        # The image explanation only exists on properties that ask for the image.
+        assert 'data-purpose-help="passport-photo"' not in page.text
+        apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (token,))
+        db.update("apartment", apartment["id"], {"passport_photo_policy": "required_foreign"})
+        with_photo = browser.get(f"/l/{token}/{wrong}/new?lang=en")
+        assert 'data-purpose-help="passport-photo"' in with_photo.text
+        assert i18n.STRINGS["en"]["passport_photo_purpose_help"] in with_photo.text
+        # Legal wording and the required acknowledgement are unchanged.
+        assert i18n.STRINGS["en"]["legal_notice_duty_body"] in page.text
+        assert 'id="legal_ack"' in page.text
+        assert "required" in page.text.split('id="legal_ack"', 1)[1].split(">", 1)[0]
+    finally:
+        _cleanup()
+
+
+def test_the_claim_email_help_has_its_own_accessible_label():
+    """0453 B: the email disclosure says why, and shows one question mark."""
+    token, wrong, _right = _make_apartment_with_stays()
+    try:
+        browser = TestClient(app)
+        browser.cookies.set(guest.LANG_COOKIE, "en")
+        page = browser.get(f"/l/{token}/{wrong}?lang=en")
+        assert page.status_code == 200
+        assert "claim_email_help" not in page.text  # the app renders copy, not keys
+        assert i18n.STRINGS["en"]["email_help_label"] in page.text
+        assert 'aria-label="%s"' % i18n.STRINGS["en"]["email_help_label"] in page.text
+        assert i18n.STRINGS["en"]["tw_email_more"] not in page.text
+        assert 'data-purpose-help="guest-count"' in page.text
+        assert i18n.STRINGS["en"]["guest_count_purpose_help"] in page.text
+    finally:
+        _cleanup()

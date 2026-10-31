@@ -81,6 +81,10 @@
         <span class="g-chip">{{ t('person') }} {{ person_number }}</span>
       {% endif %}
     </h2>
+    <details class="g-card g-why" data-purpose-help="identity">
+      <summary class="g-why-summary">{{ t('identity_purpose_help_label') }}</summary>
+      <p class="g-intro">{{ t('identity_purpose_help') }}</p>
+    </details>
 
     {% if ask_party_size %}
       <div class="g-field" data-guest-stepper data-less-label="{{ t('tw_fewer') }}" data-more-label="{{ t('tw_more') }}">
@@ -89,6 +93,10 @@
                inputmode="numeric" autocomplete="off"
                value="{{ values.get('party_size') or 1 }}">
         <div class="hint">{{ t('party_help') }}</div>
+        <details class="g-why" data-purpose-help="guest-count">
+          <summary class="g-why-summary">{{ t('guest_count_purpose_help_label') }}</summary>
+          <p class="g-intro">{{ t('guest_count_purpose_help') }}</p>
+        </details>
         {{ err_for('party_size') }}
       </div>
     {% endif %}
@@ -189,6 +197,10 @@
   <div class="g-card" data-guest-step data-step-title="{{ t('residence_title') }}">
     <h2>{{ t('residence_title') }}</h2>
     <p class="g-intro">{{ t('residence_help') }}</p>
+    <details class="g-card g-why" data-purpose-help="address-stay">
+      <summary class="g-why-summary">{{ t('address_purpose_help_label') }}</summary>
+      <p class="g-intro">{{ t('address_purpose_help') }}</p>
+    </details>
     {% if residence_copied_from %}
       <p class="hint" role="status">{{ t('residence_copied', name=residence_copied_from) }}</p>
     {% endif %}
@@ -232,6 +244,10 @@
        data-has-existing="{{ '1' if has_existing_passport_photo else '0' }}">
     <h2>{{ t('passport_photo_title') }}</h2>
     <p class="g-intro">{{ t('passport_photo_help') }}</p>
+    <details class="g-card g-why" data-purpose-help="passport-photo">
+      <summary class="g-why-summary">{{ t('passport_photo_purpose_help_label') }}</summary>
+      <p class="g-intro">{{ t('passport_photo_purpose_help') }}</p>
+    </details>
     <p class="hint" id="passport-photo-pending" hidden>{{ t('passport_photo_pending_nat') }}</p>
     <p class="hint" id="passport-photo-czech" hidden>{{ t('passport_photo_not_required') }}</p>
     <div class="g-field" id="passport-photo-upload">
@@ -270,6 +286,10 @@
   <div class="g-card" data-guest-step data-step-title="{{ t('signature') }}">
     <h2>{{ t('signature') }}</h2>
     <p class="g-intro" id="sig-help">{{ t('signature_help') }}</p>
+    <details class="g-card g-why" data-purpose-help="signature">
+      <summary class="g-why-summary">{{ t('signature_purpose_help_label') }}</summary>
+      <p class="g-intro">{{ t('signature_purpose_help') }}</p>
+    </details>
     <div class="g-sign">
       <canvas id="sig-canvas" tabindex="0" role="img" aria-label="{{ t('signature') }}"
               aria-describedby="sig-help sig-status"></canvas>

@@ -274,7 +274,12 @@ def test_only_the_signed_in_host_reaches_the_demo_stay_from_the_guest_link(world
 def test_the_demo_stay_is_left_out_of_fees_invoices_house_book_and_exports(world):
     apartment_id = world["apartment_id"]
     demo_stay, demo_guest = _demo_stay(apartment_id)
-    real_stay, real_guest = _stay(apartment_id, source="manual", surname="Feereal")
+    # A control stay that has already started: arriving today on the last
+    # day of a month leaves no counted night in that month's period, so
+    # this test would pass or fail by calendar date.
+    real_stay, real_guest = _stay(
+        apartment_id, source="manual", surname="Feereal", arrived_days_ago=1
+    )
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
     period = stay_fee.property_period(apartment, date.today(), live_only=True)
     charged = {line["reservation_id"] for line in period["lines"]}

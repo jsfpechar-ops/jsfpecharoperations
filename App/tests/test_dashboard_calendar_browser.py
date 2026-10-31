@@ -625,9 +625,10 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
         form.locator("#cal-departure").fill(departure)
         form.locator("#cal-guests").fill("2")
         form.locator("#cal-label").fill("Refresh retry stay")
-        overlap = form.locator('input[name="allow_overlap"]')
-        if overlap.count() and overlap.is_visible():
-            overlap.check()
+        # This test is about the save-retry flow, not overlap rules. Date fills reset the
+        # checkbox, so allow the overlap here, after the dates are set. The server still
+        # checks overlaps; the client may not know about every stay on today's date.
+        form.locator('input[name="allow_overlap"]').evaluate("el => { el.checked = true; }")
         with page.expect_response(lambda response: response.request.method == "POST" and
                                   response.url.split("?")[0].endswith("/reservations")) as result:
             page.locator("[data-cal-save]").click()

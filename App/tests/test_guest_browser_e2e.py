@@ -288,6 +288,7 @@ class Guest:
         page = self.page
         t = i18n.translator(self.lang)
         self.check_layout(f"guest {number}, details (empty)")
+        assert page.locator('[data-purpose-help="identity"]').is_visible()
         page.fill("#first_name", first)
         # A phone keyboard opening shrinks the viewport and fires resize while
         # the signature step is still hidden. That is what left the pad 0 x 0.
@@ -302,12 +303,14 @@ class Guest:
         page.fill("#doc_number", document)
         self.check_layout(f"guest {number}, details")
         self.next()
+        assert page.locator('[data-purpose-help="address-stay"]').is_visible()
         if not page.input_value("#res_street"):
             page.fill("#res_street", "Hauptstraße 12")
             page.fill("#res_city", "Berlin")
             self.pick_country("res_country", "DEU")
         self.check_layout(f"guest {number}, home")
         self.next()
+        assert page.locator('[data-purpose-help="signature"]').is_visible()
         self.sign()
         self.check_layout(f"guest {number}, signature")
         # The legal notice moved onto the signature step and is collapsed by
@@ -400,11 +403,19 @@ def _register_a_group_of_three(live_server, browser, width, token, readable, lan
         assert note.is_visible()
         assert note.locator("summary").count() == 0
         assert "complete host note" in note.inner_text()
-        assert page.locator(".g-why").bounding_box()["y"] > page.locator(".g-arrival-choice").bounding_box()["y"]
+        assert page.locator(".g-why:not([data-purpose-help])").bounding_box()["y"] > page.locator(".g-arrival-choice").bounding_box()["y"]
         page.locator(f"a[href*='/l/{key}/{stay}']").first.click()
         page.wait_for_load_state()
         guest.check_layout("claim")
         _shot(page, "claim-390.png")
+        assert page.locator('[data-purpose-help="guest-count"]').is_visible()
+        email_help = page.locator("details.g-claim-help")
+        assert email_help.count() == 1
+        assert email_help.locator("summary").get_attribute("aria-label") == i18n.translator(lang)("email_help_label")
+        assert email_help.locator("summary").inner_text().strip() == "?"
+        assert email_help.locator("summary").evaluate(
+            "el => getComputedStyle(el, '::before').content"
+        ) in ("none", "normal")
 
         # The group size never starts empty on the claim screen.
         assert page.input_value("#party_size") == "1"
@@ -419,10 +430,10 @@ def _register_a_group_of_three(live_server, browser, width, token, readable, lan
         page.wait_for_load_state()
 
         assert page.locator(".g-host-message, .g-arrival-message").count() == 0
-        why = page.locator(".g-why")
+        why = page.locator(".g-why:not([data-purpose-help])")
         assert not why.evaluate("el => el.open")
         assert why.evaluate("el => el.getBoundingClientRect().top") >= page.locator("form[data-guest-wizard]").evaluate("el => el.getBoundingClientRect().bottom")
-        assert page.locator(".g-why-summary").evaluate("el => getComputedStyle(el, '::after').content") == '"?"'
+        assert why.locator(".g-why-summary").evaluate("el => getComputedStyle(el, '::after').content") == '"?"'
         why.locator("summary").click()
         assert why.evaluate("el => el.open")
         why.locator("summary").click()
