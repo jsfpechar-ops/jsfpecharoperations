@@ -201,10 +201,10 @@ def postgresql_schema_reset():
 
 @pytest.fixture(scope="session", autouse=True)
 def postgresql_init_db_reset():
-    """On PostgreSQL, a changed DB_PATH in init_db means a fresh database.
+    """On PostgreSQL, a DB_PATH not seen before in the session means a fresh database.
 
     SQLite tests point config.DB_PATH at a new temp file before db.init_db().
-    PostgreSQL ignores DB_PATH, so the same moment truncates the data instead.
+    PostgreSQL ignores DB_PATH, so a new path truncates the data; a known path keeps it.
     """
     from app import config, db
 
@@ -215,11 +215,11 @@ def postgresql_init_db_reset():
     from psycopg import sql
 
     original = db.init_db
-    last_path = [None]
+    seen = set()
 
     def init_db_with_reset():
         path = str(config.DB_PATH)
-        if last_path[0] is not None and path != last_path[0]:
+        if seen and path not in seen:
             with psycopg.connect(os.environ["UBYHOST_DATABASE_URL"], autocommit=True) as raw:
                 names = [
                     row[0]
@@ -236,7 +236,7 @@ def postgresql_init_db_reset():
                         )
                     )
             db.apply_postgresql_schema()
-        last_path[0] = path
+        seen.add(path)
         original()
 
     db.init_db = init_db_with_reset
