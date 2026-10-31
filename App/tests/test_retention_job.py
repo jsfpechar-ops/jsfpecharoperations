@@ -41,6 +41,7 @@ def _purge():
         db.execute("DELETE FROM apartment WHERE id = ?", (row["id"],))
     db.execute("DELETE FROM legal_entity WHERE name = 'RetJob'")
     for row in db.query("SELECT id FROM user_account WHERE username LIKE 'retjob-%'"):
+        db.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (row["id"],))
         db.execute("DELETE FROM alert WHERE owner_user_id = ?", (row["id"],))
         db.execute("DELETE FROM audit WHERE owner_user_id = ?", (row["id"],))
         db.execute("DELETE FROM user_account WHERE id = ?", (row["id"],))

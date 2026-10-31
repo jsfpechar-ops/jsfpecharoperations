@@ -1,7 +1,6 @@
 """Task 0008: door-code schema, config defaults and PIN retention step."""
 from __future__ import annotations
 
-import sqlite3
 from datetime import date, datetime, timedelta, timezone
 
 import pytest
@@ -103,6 +102,7 @@ def _table_columns(table: str) -> set[str]:
     return {r["name"] for r in rows}
 
 
+@pytest.mark.sqlite_only
 def test_migration_creates_door_code_tables_and_columns():
     db.init_db()
     apt_cols = _table_columns("apartment")
@@ -126,7 +126,7 @@ def test_one_door_code_per_reservation():
             "updated_at": now,
         },
     )
-    with pytest.raises(sqlite3.IntegrityError):
+    with pytest.raises(db.integrity_errors()):
         db.insert(
             "door_code",
             {

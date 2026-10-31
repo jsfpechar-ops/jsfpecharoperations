@@ -188,6 +188,7 @@ def test_sync_all_counts_and_logs_the_outcomes(feed, monkeypatch, caplog):
     assert "ical_sync_run feeds=1 not_modified=0 unchanged=1 changed=0 errors=0" in caplog.text
 
 
+@pytest.mark.sqlite_only
 def test_a_legacy_feed_table_gets_the_new_columns(monkeypatch, tmp_path):
     database = tmp_path / "legacy-feed.sqlite3"
     conn = sqlite3.connect(database)

@@ -190,6 +190,7 @@ def test_legacy_off_without_any_data_key_is_refused(keys):
 
 # --- newly encrypted fields --------------------------------------------------
 
+@pytest.mark.sqlite_only
 def test_birth_date_address_and_request_xml_are_stored_encrypted(scratch_db):
     ids = _seed()
     raw_guest = _raw("SELECT * FROM guest WHERE id = ?", (ids["guest"],))
@@ -216,6 +217,7 @@ def test_a_row_saved_before_wp16_still_reads_from_its_plaintext_column(scratch_d
     assert guest["birth_date"] == BIRTH
 
 
+@pytest.mark.sqlite_only
 def test_stay_fee_age_rule_is_unchanged_with_an_encrypted_birth_date(scratch_db):
     """A child exempt by age stays exempt when the birth date comes from *_enc."""
     ids = _seed()
@@ -242,6 +244,7 @@ def test_stay_fee_age_rule_is_unchanged_with_an_encrypted_birth_date(scratch_db)
     assert stay_fee.guest_period(adult, reservation, first, last)["liable_nights"] == 4
 
 
+@pytest.mark.sqlite_only
 def test_the_payload_purge_clears_the_encrypted_envelope(scratch_db):
     from app import reporting
 
@@ -272,6 +275,7 @@ def _photo(guest_id: int, token: bytes) -> Path:
     return path
 
 
+@pytest.mark.sqlite_only
 def test_reencrypt_moves_everything_to_the_new_key_and_values_stay_equal(scratch_db, keys):
     tool = _tool()
     ids = _seed()
@@ -309,6 +313,7 @@ def test_reencrypt_moves_everything_to_the_new_key_and_values_stay_equal(scratch
     assert tool.main(["--check"]) == 0
 
 
+@pytest.mark.sqlite_only
 def test_reencrypt_is_resumable_and_a_second_run_changes_nothing(scratch_db, keys):
     tool = _tool()
     ids = _seed()
@@ -323,6 +328,7 @@ def test_reencrypt_is_resumable_and_a_second_run_changes_nothing(scratch_db, key
     assert before == after, "a value already under the current key is not rewritten"
 
 
+@pytest.mark.sqlite_only
 def test_reencrypt_dry_run_counts_and_writes_nothing(scratch_db, keys):
     tool = _tool()
     ids = _seed()
@@ -337,6 +343,7 @@ def test_reencrypt_dry_run_counts_and_writes_nothing(scratch_db, keys):
     assert tuple(before) == tuple(after)
 
 
+@pytest.mark.sqlite_only
 def test_reencrypt_refuses_to_write_without_a_fresh_backup(scratch_db, keys):
     tool = _tool()
     keys.setenv("UBYHOST_DATA_KEYS", NEW_KEY)
@@ -350,12 +357,14 @@ def test_reencrypt_refuses_to_write_without_a_fresh_backup(scratch_db, keys):
         tool.main(["--backup", str(config.DB_PATH)])
 
 
+@pytest.mark.sqlite_only
 def test_reencrypt_refuses_to_write_without_a_new_key(scratch_db, keys):
     tool = _tool()
     with pytest.raises(SystemExit, match="UBYHOST_DATA_KEYS is not set"):
         tool.main(["--backup", str(_backup(scratch_db))])
 
 
+@pytest.mark.sqlite_only
 def test_reencrypt_leaves_an_unreadable_value_alone_and_fails(scratch_db, keys):
     tool = _tool()
     ids = _seed()
@@ -366,6 +375,7 @@ def test_reencrypt_leaves_an_unreadable_value_alone_and_fails(scratch_db, keys):
     assert _raw("SELECT visa_number_enc FROM guest WHERE id = ?", (ids["guest"],))[0] == stranger
 
 
+@pytest.mark.sqlite_only
 def test_rollback_new_fields_puts_them_back_in_plaintext(scratch_db, keys):
     tool = _tool()
     ids = _seed()

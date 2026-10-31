@@ -59,7 +59,7 @@ def _count_call() -> None:
     month = _month_key()
     db.execute(
         "INSERT INTO lock_api_usage (month, provider, calls) VALUES (?, 'stripe', 1) "
-        "ON CONFLICT(month, provider) DO UPDATE SET calls = calls + 1",
+        "ON CONFLICT(month, provider) DO UPDATE SET calls = lock_api_usage.calls + 1",
         (month,),
     )
 

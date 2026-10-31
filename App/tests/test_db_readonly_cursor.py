@@ -23,6 +23,7 @@ def isolated_database(tmp_path, monkeypatch):
     db.close_connections()
 
 
+@pytest.mark.sqlite_only
 def test_readonly_cursor_is_read_only_without_open_side_effects(
     isolated_database, monkeypatch
 ):
@@ -46,6 +47,7 @@ def test_readonly_cursor_is_read_only_without_open_side_effects(
     assert stat.S_IMODE(path.stat().st_mode) == before_mode
 
 
+@pytest.mark.sqlite_only
 def test_readonly_cursor_keeps_one_wal_snapshot(isolated_database):
     db.execute("PRAGMA journal_mode = WAL")
     db.close_connections()

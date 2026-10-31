@@ -112,6 +112,13 @@ class PostgresRow:
         except KeyError:
             return default
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, PostgresRow):
+            return NotImplemented
+        return self._names == other._names and self._values == other._values
+
+    __hash__ = None  # rows compare by value, as sqlite3.Row does
+
 
 def adapt_sql(sql: str, params: Optional[Sequence[Any]] = ()) -> tuple[str, Optional[Sequence[Any]]]:
     """Convert bound markers and SQLite LIKE outside quoted/comment regions.

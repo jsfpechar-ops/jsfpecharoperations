@@ -175,6 +175,77 @@ def login_as(client, username, *, url="/login", remember=False, follow_redirects
     )
 
 
+@pytest.fixture(scope="module", autouse=True)
+def postgresql_schema_reset():
+    """On PostgreSQL, start the session from an empty ``public`` schema (brief 0462).
+
+    SQLite gets a fresh temporary file for every run; PostgreSQL gets the same
+    starting point by dropping and re-creating ``public`` and applying the
+    current schema through the owner command. The SQLite path only yields.
+    """
+    from app import config
+
+    if getattr(config, "DB_BACKEND", "sqlite") != "postgresql":
+        yield
+        return
+    import psycopg
+
+    with psycopg.connect(os.environ["UBYHOST_DATABASE_URL"], autocommit=True) as raw:
+        raw.execute("DROP SCHEMA IF EXISTS public CASCADE")
+        raw.execute("CREATE SCHEMA public")
+    from app import db
+
+    db.apply_postgresql_schema()
+    yield
+
+
+@pytest.fixture(scope="session", autouse=True)
+def postgresql_init_db_reset():
+    """On PostgreSQL, a DB_PATH not seen before in the session means a fresh database.
+
+    SQLite tests point config.DB_PATH at a new temp file before db.init_db().
+    PostgreSQL ignores DB_PATH, so a new path truncates the data; a known path keeps it.
+    """
+    from app import config, db
+
+    if getattr(config, "DB_BACKEND", "sqlite") != "postgresql":
+        yield
+        return
+    import psycopg
+    from psycopg import sql
+
+    original = db.init_db
+    seen = set()
+
+    def init_db_with_reset():
+        path = str(config.DB_PATH)
+        if seen and path not in seen:
+            with psycopg.connect(os.environ["UBYHOST_DATABASE_URL"], autocommit=True) as raw:
+                names = [
+                    row[0]
+                    for row in raw.execute(
+                        "SELECT table_name FROM information_schema.tables "
+                        "WHERE table_schema = 'public' AND table_type = 'BASE TABLE' "
+                        "AND table_name <> 'schema_migrations'"
+                    ).fetchall()
+                ]
+                if names:
+                    raw.execute(
+                        sql.SQL("TRUNCATE {} RESTART IDENTITY CASCADE").format(
+                            sql.SQL(", ").join(sql.Identifier(name) for name in names)
+                        )
+                    )
+            db.apply_postgresql_schema()
+        seen.add(path)
+        original()
+
+    db.init_db = init_db_with_reset
+    try:
+        yield
+    finally:
+        db.init_db = original
+
+
 @pytest.fixture(autouse=True)
 def fresh_login_link_budgets():
     """Every test starts with the e-mail login budgets unspent (task 0003).
@@ -324,3 +395,15 @@ if _httpx2 is not None:
         _cookies_set(self, name, value, domain, path)
 
     _httpx2.Cookies.set = _replacing_cookies_set
+
+
+def pytest_collection_modifyitems(config, items):
+    """On PostgreSQL, skip the sqlite_only tests (SQLite file, migration runner, PRAGMA)."""
+    from app import config as app_config
+
+    if app_config.DB_BACKEND != "postgresql":
+        return
+    skip = pytest.mark.skip(reason="sqlite_only")
+    for item in items:
+        if item.get_closest_marker("sqlite_only"):
+            item.add_marker(skip)

@@ -1,5 +1,5 @@
 # 0462: Run the whole test suite against PostgreSQL in CI
-Status: blocked
+Status: review
 Depends on: 0461 merged | Base commit: main after 0461 | Branch: task/0462-full-suite-on-postgres
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 80k tokens (expect several sessions: one per batch of dialect failures)
 ## 1. Objective
@@ -23,3 +23,12 @@ From `App/`: `.venv/bin/python -m pytest <failing files> -q --tb=short -x 2>&1 |
 Stop if a failure needs a schema change (new migration) or touches the UbyPort submit path (`reporting.py`, `ubyport/`): report it, the orchestrator decides.
 ## 9. Report
 `docs/tasks/0462-report.md`: failure count per batch, each dialect cause once, final green run link.
+
+## Batch E (CI run 2079 on 5f9fc25: 4479 passed, 1 error)
+
+`tests/test_retention_job.py::test_log_and_acceptance_retention` errors at teardown on PostgreSQL:
+`_purge()` deletes `user_account` rows named `retjob-%` while `legal_acceptance` still references them (`legal_acceptance_user_account_id_fkey`). On SQLite the test swaps `config.DB_PATH` to a temp file, so the teardown purge never sees those rows; on PostgreSQL there is one database.
+
+Fix, in `_purge()` only: before `DELETE FROM alert WHERE owner_user_id = ?` add
+`db.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (row["id"],))`.
+Nothing else changes. Verify from `App/` with `UBYHOST_DATABASE_URL=postgresql://postgres:ubyhost@127.0.0.1:5432/ubyhost_test .venv/bin/python -m pytest tests/test_retention_job.py -q --tb=short 2>&1 | tail -5` and then the same file without the env var (SQLite). Both must pass with 0 failed. Commit on this branch with message `0462: retention purge removes legal_acceptance before the user (PostgreSQL FK)` and push with `git push -u origin task/0462-full-suite-on-postgres`.

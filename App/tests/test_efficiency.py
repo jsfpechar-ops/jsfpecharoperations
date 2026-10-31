@@ -56,6 +56,7 @@ class _CountingConnection:
 # --- item 1: the schema check is no longer on the query path --------------
 
 
+@pytest.mark.sqlite_only
 def test_connect_no_longer_migrates_the_schema(monkeypatch, tmp_path):
     """Opening a connection must not rewrite the schema any more."""
     # The shared database is left initialised for the module cleanup below.
@@ -87,6 +88,7 @@ def test_connect_no_longer_migrates_the_schema(monkeypatch, tmp_path):
     monkeypatch.undo()
 
 
+@pytest.mark.sqlite_only
 def test_the_schema_check_pragmas_each_table_once():
     db.init_db()
     conn = db.connect()
@@ -106,6 +108,7 @@ def test_the_schema_check_pragmas_each_table_once():
 # --- item 3: the indexes --------------------------------------------------
 
 
+@pytest.mark.sqlite_only
 def test_the_queue_indexes_exist_and_the_dead_one_is_gone():
     db.init_db()
     names = {

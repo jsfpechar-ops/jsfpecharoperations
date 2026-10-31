@@ -147,10 +147,10 @@ def _usd(row: Any) -> float:
         return 0.0
     price = config.AI_PRICE_USD_PER_MTOK
     return (
-        (row["input_tokens"] or 0) * price["input"]
-        + (row["cache_write_tokens"] or 0) * price["cache_write"]
-        + (row["cache_read_tokens"] or 0) * price["cache_read"]
-        + (row["output_tokens"] or 0) * price["output"]
+        int(row["input_tokens"] or 0) * price["input"]
+        + int(row["cache_write_tokens"] or 0) * price["cache_write"]
+        + int(row["cache_read_tokens"] or 0) * price["cache_read"]
+        + int(row["output_tokens"] or 0) * price["output"]
     ) / 1_000_000
 
 
