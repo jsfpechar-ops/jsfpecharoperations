@@ -1,6 +1,6 @@
 # 0461: Admin section tabs (fixes "can't reach Funnel and Operations on phone")
 
-Status: todo
+Status: review
 Depends on: none | Base commit: main | Branch: task/0461-admin-section-tabs
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
@@ -35,7 +35,7 @@ Browser checks must show 0 skipped. From the repo root: `python3 scripts/context
 
 ## 7. Acceptance
 - All 7 admin pages show the same strip; every tab link returns 200 as admin.
-- At 390 px the strip scrolls sideways, no page overflow, the active tab visible; tap targets 44 px.
+- At 390 px the strip wraps onto 2-3 rows (existing `host2.css:135` rule for all tabs below 1024 px; owner accepted 2026-10-31), no page overflow, the active tab visible; tap targets 44 px.
 - Tests above pass, 0 skipped. Light mode, works without JavaScript (plain links).
 - One 390 px screenshot per changed page (8) in the report.
 

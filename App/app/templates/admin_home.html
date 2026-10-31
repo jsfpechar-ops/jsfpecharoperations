@@ -1,5 +1,6 @@
 {% extends "host_page.html" %}
 {% set nav = 'admin' %}
+{% block tabs %}{% from "_admin_tabs.html" import admin_tabs with context %}{{ admin_tabs("console") }}{% endblock %}
 {% set body_kind = 'list' %}
 {% block title %}{{ t('home.admin.title') }}{% endblock %}
 {% block meta %}{{ t('home.admin.meta', date=today) }}{% endblock %}
@@ -41,7 +42,7 @@
 <tr class="ui-row">
   <td class="ui-cell-first" data-card="primary"><a href="/admin/customers/{{ row.owner_user_id }}">{{ row.display_name or row.owner_user_id }}</a></td>
   <td data-card="secondary">{{ fmt_date(row.trial_ends_at) }}</td>
-  <td data-card="meta"><a href="/admin/customers/{{ row.owner_user_id }}/">{{ t('home.admin.open') }}</a></td>
+  <td data-card="meta"><a href="/admin/customers/{{ row.owner_user_id }}">{{ t('home.admin.open') }}</a></td>
 </tr>
 {% endfor %}
 {{ ui_table_end() }}

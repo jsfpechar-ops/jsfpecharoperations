@@ -11,7 +11,7 @@ Master version: 2.0.0.
 ## Header
 - primary action: none
 - secondary actions: customers.payments -> existing billing page
-- tabs: none
+- tabs: the admin tab strip, `admin_tabs('customers')` from `App/app/templates/_admin_tabs.html` (0461)
 
 ## Toolbar
 - search: workspace, email and username; literal substring
