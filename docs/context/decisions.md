@@ -5,11 +5,6 @@ Append-only.
 - 2026-10-03 | Signup off in production until owner chooses | invited hosts | ENVIRONMENT
 - 2026-10-05 | Legal texts 1.6 shipped; counsel review open | real hosts | K-L
 - 2026-10-05 | Admin preview: full workspace, reason, 24 h | owner support | PR #280
-- 2026-10-06 | [workflow] Context: AGENTS L0, context L1, plans L2; audits archived | [workflow](workflow.md)
-- 2026-10-06 | [workflow] WP series closed at WP33/0034; tasks use NNNN | [workflow](workflow.md)
-- 2026-10-06 | [workflow] At most one council per plan, only for HIGH RISK (filing, deletion, legal); never per PR | 3 councils in a day, same findings | [workflow](workflow.md)
-- 2026-10-06 | [workflow] 0001 merged before review; post-merge review OK | [report](../tasks/0001-report.md)
-- 2026-10-06 | [workflow] Context rollout: flat files, MANIFEST at root | place_files | TEMPLATE.md
 - 2026-10-06 | [workflow] Every chat AI orchestrates within the token budget (executor: see 2026-10-17)
 - 2026-10-06 | [deps] `webauthn==3.0.1` hash-pinned | no hand-rolled passkeys | 0004
 - 2026-10-06 | Login is e-mail link only; TOTP/passkeys optional | owner | 0003, 0004
@@ -75,3 +70,4 @@ Append-only.
 - 2026-10-29 | Connect accounts: full Stripe Dashboard + Stripe collectors (Express+Stripe is preview-only; Express pairs with application liability, rejected) | owner | 0439
 
 - 2026-10-30 | [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; Haiku-only execution; manual cutover | 0455–0456
+- 2026-10-31 | Approval gates waived for the whole PostgreSQL and Go migration, cutover included; the bar stays (verified backup, rehearsal on a production copy, per-table counts and hashes, suite green on PG, SQLite as rollback, automatic rollback). Owner acts only where his hands are needed | owner | 0463

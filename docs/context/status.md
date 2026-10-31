@@ -7,7 +7,7 @@ Updated: 2026-10-31.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
-- 2026-10-31: PostgreSQL now, Go port now, D1–D4 decided. Plan [migration-plan-v4](../plans/postgresql/migration-plan-v4.md). Wave 1 draft PRs: #594 docs, #593 intervals + deadline (other thread), #596 PG in CI, #597 tenancy audit (no leak). Next: #592 runtime review brief (step 5). **Owner:** review and merge #593, #594, #596, #597.
+- 2026-10-31: PostgreSQL + Go, plan [migration-plan-v4](../plans/postgresql/migration-plan-v4.md). Merged: #593 intervals/deadline, #594 docs, #596 PG CI, #597 tenancy (no leak), #600 docs, #601 PG runtime (flag off in prod). Running: 0462 full suite on PG. Next: 0463 cutover script. Approvals waived by owner. **Owner:** [owner-steps-cutover](../plans/postgresql/owner-steps-cutover.md) A–B now.
 - #583 merged: guest save-and-continue, visible acknowledgement, contextual help. #587 open: 0452 read-only billing extract + 0454 host UX + handoff documentation.
 - Billing cockpit merged (#561). 0448 merged (#565): first plan to legacy hosts (immediate start, invoice now, no trial) + trial extension 1–365 days. Decisions 2026-10-29 in decisions.md.
 - Billing ON in production (`UBYHOST_BILLING_ENABLED=1`, 2026-10-29; cockpit #561, 0448 #565). Deploy manual.
@@ -25,7 +25,7 @@ Updated: 2026-10-31.
 - TTLock briefs 0008–0016: [plan](../plans/ttlock-door-codes.md) §11 order. Test first; live after §12 + lawyer (K-L).
 
 ## Blocked: needs owner, lawyer or council
-- PostgreSQL #592: unreviewed; D1 managed vs self-hosted blocks step 6.
+- PostgreSQL cutover: needs the Lightsail database and `UBYHOST_PG_URL` from the owner (owner-steps A–B).
 - Lawyer review of legal texts (0005 and K-L rows in [known-issues](known-issues.md)).
 - Stale signed dates (K-F18). HIGH RISK filing: K-F02, K-F03, K-F07; secret rotation K-S10.
 - Decide with owner: founder-price flag on the customer page or discount-% only.
