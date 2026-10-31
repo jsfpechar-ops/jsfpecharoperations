@@ -83,19 +83,27 @@ def portfolio(today: Optional[date] = None) -> Dict[str, Any]:
             "by_status": by_status, "today": day}
 
 
+def next_month_start(day: date) -> str:
+    """First day of the month after ``day``; the portable month boundary."""
+    if day.month == 12:
+        return date(day.year + 1, 1, 1).isoformat()
+    return date(day.year, day.month + 1, 1).isoformat()
+
+
 def revenue_totals(today: Optional[date] = None) -> Dict[str, Any]:
     """Billed vs collected this month (separate figures, never summed)."""
     day = today or date.today()
     month_start = f"{day:%Y-%m}-01"
+    month_end = next_month_start(day)
     billed = db.query_one(
         "SELECT COALESCE(SUM(total_haler), 0) AS h FROM platform_invoice "
-        "WHERE voided = 0 AND issue_date >= ? AND issue_date < date(?, '+1 month')",
-        (month_start, month_start),
+        "WHERE voided = 0 AND issue_date >= ? AND issue_date < ?",
+        (month_start, month_end),
     )
     collected = db.query_one(
         "SELECT COALESCE(SUM(total_haler), 0) AS h FROM platform_invoice "
-        "WHERE voided = 0 AND paid_on >= ? AND paid_on < date(?, '+1 month')",
-        (month_start, month_start),
+        "WHERE voided = 0 AND paid_on >= ? AND paid_on < ?",
+        (month_start, month_end),
     )
     return {"billed_czk": int(billed["h"]) // 100, "collected_czk": int(collected["h"]) // 100}
 

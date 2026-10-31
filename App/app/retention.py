@@ -81,7 +81,7 @@ def _claim_email_step(today: date, dry_run: bool, owner_user_id: Optional[int]) 
     cutoff = (today - timedelta(days=CLAIM_EMAIL_GRACE_DAYS)).isoformat()
     inner = (
         "SELECT r.id FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
-        f"WHERE date(r.date_to) < ? AND {_OWNER_SCOPE}"
+        f"WHERE {db.sqlite_date_expr('r.date_to')} < ? AND {_OWNER_SCOPE}"
     )
     params = (cutoff, owner_user_id, owner_user_id)
     where = f"email IS NOT NULL AND reservation_id IN ({inner})"
@@ -101,7 +101,7 @@ def _reservation_contact_step(today: date, dry_run: bool, owner_user_id: Optiona
     params = (cutoff, owner_user_id, owner_user_id)
     where = (
         "(guest_email IS NOT NULL OR phone_last4 IS NOT NULL) "
-        f"AND date(date_to) < ? AND apartment_id IN ({inner})"
+        f"AND {db.sqlite_date_expr('date_to')} < ? AND apartment_id IN ({inner})"
     )
     count = _scalar(f"SELECT COUNT(*) AS n FROM reservation WHERE {where}", params)
     if not dry_run and count:
@@ -120,8 +120,8 @@ def _submitter_ip_step(today: date, dry_run: bool, owner_user_id: Optional[int])
     params = (cutoff, owner_user_id, owner_user_id)
     where = (
         "filled_ip IS NOT NULL AND "
-        "COALESCE(date(stay_to), (SELECT date(date_to) FROM reservation r2 "
-        "WHERE r2.id = guest.reservation_id)) < ? "
+        f"COALESCE({db.sqlite_date_expr('stay_to')}, (SELECT {db.sqlite_date_expr('date_to')} FROM reservation r2 "
+        f"WHERE r2.id = guest.reservation_id)) < ? "
         f"AND reservation_id IN ({inner})"
     )
     count = _scalar(f"SELECT COUNT(*) AS n FROM guest WHERE {where}", params)
@@ -136,7 +136,7 @@ def _empty_reservation_step(today: date, dry_run: bool, owner_user_id: Optional[
     inner = "SELECT id FROM apartment a WHERE (? IS NULL OR a.owner_user_id = ?)"
     params = (cutoff, owner_user_id, owner_user_id)
     where = (
-        "date(date_to) < ? AND NOT EXISTS "
+        f"{db.sqlite_date_expr('date_to')} < ? AND NOT EXISTS "
         "(SELECT 1 FROM guest g WHERE g.reservation_id = reservation.id) "
         f"AND apartment_id IN ({inner})"
     )
