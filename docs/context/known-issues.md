@@ -96,4 +96,4 @@
 - K-NAV-418: 3 host_i18n tests fail. #435, #436 undeployed.
 - K-CF01: see CLOUDFLARE Rule 3.
 
-- K-ADMIN-NAV: Admin pages Funnel and Operations unreachable on phone: fixed by 0461 (admin tab strip).
+- K-ADMIN-NAV: Funnel, Operations unreachable on phone: fixed by 0461.
