@@ -892,6 +892,31 @@ def cursor():
 
 
 @contextmanager
+def readonly_cursor():
+    """A consistent read transaction opened with SQLite's read-only mode.
+
+    Unlike ``cursor()``, this does not use ``_open()``: opening a regular
+    connection can chmod the database and change its persistent journal mode.
+    The configured database must already exist.
+    """
+    uri = config.DB_PATH.resolve().as_uri() + "?mode=ro"
+    conn = sqlite3.connect(uri, uri=True, timeout=30, isolation_level=None)
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    try:
+        cur.execute("BEGIN")
+        yield cur
+        cur.execute("COMMIT")
+    except BaseException:
+        if conn.in_transaction:
+            cur.execute("ROLLBACK")
+        raise
+    finally:
+        cur.close()
+        conn.close()
+
+
+@contextmanager
 def immediate():
     """Like cursor(), but takes the write lock before the first read."""
     with _transaction("BEGIN IMMEDIATE") as cur:

@@ -990,6 +990,7 @@ body.host-workspace {
    container, the sidebar state changes its width, and a list that no longer fits
    as a table becomes compact labelled cards instead of sliding sideways. */
 .host-workspace .panel.list-cards { container-name: list-cards; container-type: inline-size; }
+.host-workspace .entities-page td.row-actions { white-space: normal; }
 /* Measured min-content table widths (EN/CS, synthetic rows) + ~40px margin give
    each list its own switch point, so a 1280px laptop (panel ~994px, rail
    expanded) keeps tables: Properties 800, Invoices 830, Reports 850, Stay fees

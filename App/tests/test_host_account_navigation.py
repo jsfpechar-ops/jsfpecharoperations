@@ -97,6 +97,19 @@ def test_admin_sees_team_and_incidents_in_account_group(admin):
     assert 'href="/admin/incidents"' in account
 
 
+@pytest.mark.parametrize("role", ("host", "admin"))
+@pytest.mark.parametrize("lang", ("en", "cs", "vi"))
+def test_secondary_navigation_landmark_matches_visible_links(role, lang, request):
+    client = request.getfixturevalue(role)
+    html = client.get(f"/settings?lang={lang}").text
+    nav = re.search(r'<nav class="ui-nav ui-nav-bottom" aria-label="([^"]+)">', html)
+    assert nav is not None
+    expected = STRINGS[lang]["nav.guide"]
+    if role == "admin":
+        expected += f" / {STRINGS[lang]['nav.admin']}"
+    assert nav.group(1) == expected
+
+
 def test_email_change_is_a_visible_form_not_a_disclosure(host):
     html = host.get("/settings?lang=en").text
     start = html.index('id="settings-login-email"')

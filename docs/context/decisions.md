@@ -73,3 +73,5 @@ Append-only.
 - 2026-10-29 | Trials are extendable by the operator, 1-365 days | owner | 0448
 - 2026-10-29 | Stripe Accounts v2; responsibilities immutable; company hosts via business_type | owner | 0437
 - 2026-10-29 | Connect accounts: full Stripe Dashboard + Stripe collectors (Express+Stripe is preview-only; Express pairs with application liability, rejected) | owner | 0439
+
+- 2026-10-30 | [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; Haiku-only execution; manual cutover | 0455–0456

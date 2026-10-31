@@ -1,19 +1,19 @@
 # Known issues
 
-Grep. **HR**: owner decides.
+**HR**: owner decides.
 
 **Sources:** [map](known-issue-sources.md).
 
 | ID | Sev/status | Where | Issue | Src |
 |---|---|---|---|---|
 | K-DOM01 | Pending | App URLs | CI + phone check | owner |
-| K-F01 | High open | reporting.py:1356-1413, ubyport/client.py:166 | Non-401 4xx retried every sweep, no attempt cap | P A28-29 |
-| K-F02 | High open HR | icalsync.py date-move UPDATE ~498 | Date move ignores submission_claim; can move a guest mid-send | P A24 |
+| K-F01 | High open | reporting.py:1356-1413, ubyport/client.py:166 | Non-401 4xx retried each sweep, uncapped | P A28-29 |
+| K-F02 | High open HR | icalsync.py date-move UPDATE ~498 | Date move ignores submission_claim; may move guest mid-send | P A24 |
 | K-F03 | Med open HR | icalsync.py ~805-830 | Lone vanished future booking stays "suspect" forever | P A19 |
-| K-F04 | Med open | icalsync.py | Same booking in two feeds makes two stays, one overdue forever | P A22 |
+| K-F04 | Med open | icalsync.py | Duplicate feeds create two stays; one overdue forever | P A22 |
 | K-F05 | Med open | icalsync.py, routes/admin.py | Manual and scheduled sync clash on UNIQUE; loser marked error | P A23 |
 | K-F06 | Med open | validation.py country_codes() | Some police country codes missing; Kosovo XKX unconfirmed | P A27 |
-| K-F07 | Low open HR | routes/guest.py immediate mode | Guest save blocks on the UbyPort call (60 s+) | P A75 |
+| K-F07 | Low open HR | routes/guest.py immediate mode | Guest save waits for UbyPort (60 s+) | P A75 |
 | K-F08 | Low open | icalsync.py:304 | DTEND ≤ DTSTART stored; those guests never validate | P A31 |
 | K-F09 | Low open | routes/admin.py:1927 | Manual send inspects only the first batch | P A36 |
 | K-F10 | Low open | routes/admin.py calendar delete | Deleted calendar's future stays stay active and alert | P A34 |
@@ -99,3 +99,5 @@ Grep. **HR**: owner decides.
 - K-PK0290: passkey fix open.
 - K-CF01: mid-session challenge: see CLOUDFLARE Rule 3.
 
+
+PG: 0455–0456 incomplete.
