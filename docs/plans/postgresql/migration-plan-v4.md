@@ -67,3 +67,17 @@ Steps 1, 2, 3, 4 start now, in parallel. Steps 11 and 12 can run while G1–G2 a
 ## 5. Risks kept from v3.0, renumbered
 
 R-03 tenancy (critical, step 3), R-05 police transport retry (G5), R-08 deploy gate (D2), R-12 unrehearsed backups (6, 9), R-14 two migration authorities (10), R-15 PG tests skip (4), R-16 crypto conformance (14), R-18 dual job ownership (12, 16), R-19 one-minute jobs (1), R-21 `ical changed=8` every run (check in step 11; likely the feed hash is not stored). Closed: R-04 (police confirmed), R-07 (holidays computed, then dropped), R-01 (advisory lock reproduces it; handled in 11).
+
+## 6. Load facts (production export 2026-10-31, 37 min, 7 apartments)
+
+| Measured | Value | At 2000 apartments (×286, linear) |
+|---|---|---|
+| Real page requests | 6 in 37 min; `/metrics` 73 | ~1,700/37 min, still trivial for 4 uvicorn workers |
+| `db_ms`, `lock_ms` | 0 on every request; WAL segments 0.2–7.9 KB | Write volume is not the problem on either database |
+| `door_codes` sweep | every 60 s, 80–180 ms, all counters 0 | 25–50 s per run if the scan is O(total): the worker would spend most of each minute on nothing. Step 1 (interval) and step 11 (`EXPLAIN`, indexes) fix this |
+| `ical` | 8 feeds in 1.8 s at startup; `changed=8` with `created=updated=cancelled=0`, `not_modified=0` | ~2,300 feeds ≈ 9 min per hourly run if sequential. Feed hash/ETag caching does not work (R-21); fix in step 11, concurrency comes with the queue (step 12) |
+| `submit` sweep | every 10 min, `apartments=7 submitted=0 failed=0` | Normal: filing happens at guest submit; the sweep is the retry net |
+| `push`, `guide_import` | every 60 s, zero work | Pure waste; 0457 |
+| cAdvisor | ~7 error lines/min for stale container ids | Noise only; not a plan step |
+
+Conclusion: nothing in the measured load needs Postgres or Go for throughput. The ceilings are the single worker loop (R-02) and query shape, which steps 1, 11 and 12 remove. Postgres is for backups, tenancy and multi-instance; Go is the owner's maintainability choice.
