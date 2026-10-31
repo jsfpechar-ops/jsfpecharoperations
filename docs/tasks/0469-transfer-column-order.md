@@ -1,5 +1,5 @@
 # 0469: the SQLite→PostgreSQL transfer accepts any column order
-Status: todo
+Status: review
 Depends on: 0468 (same branch) | Base commit: origin/task/0468-transfer-litestream-tables | Branch: task/0468-transfer-litestream-tables
 Executor: Haiku 5.5 | Fits one session: 15 tool calls, 40k tokens
 ## 1. Objective

@@ -1289,7 +1289,7 @@ def test_transfer_refuses_source_schema_drift(transfer_workspace):
     report = root / "drift-report.json"
     result = _run_transfer(drifted, report)
     assert result.returncode == 1
-    assert "source schema drift at settings" in result.stderr
+    assert "source schema drift at settings (extra: ['drift_column'], missing: [])" in result.stderr
     assert not report.exists()
     # The populated target is untouched.
     verify = _run_transfer(
@@ -1320,6 +1320,33 @@ def test_transfer_skips_litestream_tables(transfer_workspace):
     with _psycopg_connect(_PG_URL) as conn:
         row = conn.execute("SELECT to_regclass('public._litestream_seq')").fetchone()
     assert row[0] is None
+
+
+def test_transfer_accepts_a_different_column_order(transfer_workspace):
+    root = transfer_workspace["root"]
+    source = root / "column-order-source.sqlite"
+    shutil.copy2(transfer_workspace["source"], source)
+    connection = sqlite3.connect(source)
+    try:
+        saved = connection.execute("SELECT id, guest_message FROM apartment").fetchall()
+        connection.execute("ALTER TABLE apartment DROP COLUMN guest_message")
+        connection.execute("ALTER TABLE apartment ADD COLUMN guest_message TEXT")
+        connection.executemany(
+            "UPDATE apartment SET guest_message = ? WHERE id = ?",
+            [(message, row_id) for row_id, message in saved],
+        )
+        connection.commit()
+        names = [row[1] for row in connection.execute("PRAGMA table_info(apartment)")]
+    finally:
+        connection.close()
+    assert names[-1] == "guest_message"
+    _reset_public_schema()
+    report = root / "column-order-report.json"
+    copy = _run_transfer(source, report)
+    assert copy.returncode == 0, copy.stderr[-2000:]
+    assert "copied-and-verified OK" in copy.stdout
+    payload = json.loads(report.read_text(encoding="utf-8"))
+    assert payload["tables"]["apartment"]["match"] is True
 
 
 def test_transfer_names_an_unknown_table(transfer_workspace):

@@ -231,16 +231,16 @@ def reconcile(source: sqlite3.Connection, target, tables: list[str]) -> dict[str
     summary = {}
     for table in tables:
         columns = _table_columns(source, table)
-        src_count, src_hash = table_digest(source, table, columns, postgres=False)
         with _sanitized_target_errors(table):
             target_columns = [row["name"] for row in target.execute_native(
                 "SELECT column_name AS name FROM information_schema.columns "
                 "WHERE table_schema=current_schema() AND table_name=%s ORDER BY ordinal_position",
                 (table,),
             ).fetchall()]
-            if columns != target_columns:
+            if sorted(columns) != sorted(target_columns):
                 raise ValueError(f"column mismatch at {table}")
-            dst_count, dst_hash = table_digest(target, table, columns, postgres=True)
+            src_count, src_hash = table_digest(source, table, target_columns, postgres=False)
+            dst_count, dst_hash = table_digest(target, table, target_columns, postgres=True)
         summary[table] = {"rows": src_count, "source_sha256": src_hash,
                           "target_rows": dst_count, "target_sha256": dst_hash,
                           "match": src_count == dst_count and src_hash == dst_hash}
@@ -267,8 +267,10 @@ def transfer(source_path: Path, report_path: Path, expected_database: str, verif
                 f"missing: {sorted(set(expected) - set(tables))})"
             )
         for table in tables:
-            if _table_columns(source, table) != [c[0] for c in expected[table]]:
-                raise ValueError(f"source schema drift at {table}")
+            have, want = set(_table_columns(source, table)), {c[0] for c in expected[table]}
+            if have != want:
+                raise ValueError(f"source schema drift at {table} "
+                                 f"(extra: {sorted(have - want)}, missing: {sorted(want - have)})")
             _validate_pg_values(source, table)
         _expected_db(expected_database)
         target = db.connect()
