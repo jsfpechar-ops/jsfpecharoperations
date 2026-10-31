@@ -1,5 +1,6 @@
 {% extends "host_page.html" %}
 {% set nav = 'users' %}
+{% block tabs %}{% from "_admin_tabs.html" import admin_tabs with context %}{{ admin_tabs("customers") }}{% endblock %}
 {% set body_kind = 'detail' %}
 {% block title %}{{ customer.display_name or customer.username }}{% endblock %}
 {% block meta %}{{ t('customers.state.' ~ customer.customer_state) }}{% endblock %}

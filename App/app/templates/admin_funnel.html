@@ -4,7 +4,7 @@
 {% from "_ui_layout.html" import ui_section, ui_section_tabs with context %}
 {% from "_ui.html" import ui_button with context %}
 {% block title %}{{ t('funnel.title') }}{% endblock %}
-{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
+{% block tabs %}{% from "_admin_tabs.html" import admin_tabs with context %}{{ admin_tabs("funnel") }}{% endblock %}
 {% block body %}
 {% call ui_section(t('funnel.posthog.title'), id='funnel-posthog') %}
   <p class="ui-sub">{{ t('funnel.posthog_body') }}</p>

@@ -4,7 +4,7 @@
 {% from "_ui_layout.html" import ui_section_tabs with context %}
 {% block title %}{{ t('incidents.title') }}{% endblock %}
 {% block meta %}{{ t('incidents.lede') }}{% endblock %}
-{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
+{% block tabs %}{% from "_admin_tabs.html" import admin_tabs with context %}{{ admin_tabs("incidents") }}{% endblock %}
 {% block body %}
 
 {% if review_alerts %}

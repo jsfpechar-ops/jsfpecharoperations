@@ -1,5 +1,6 @@
 {% extends "host_page.html" %}
 {% set nav = 'admin' %}
+{% block tabs %}{% from "_admin_tabs.html" import admin_tabs with context %}{{ admin_tabs("console") }}{% endblock %}
 {% set body_kind = 'list' %}
 {% block title %}{{ t('home.admin.title') }}{% endblock %}
 {% block meta %}{{ t('home.admin.meta', date=today) }}{% endblock %}

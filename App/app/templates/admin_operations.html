@@ -4,7 +4,7 @@
 {% from "_ui_layout.html" import ui_section_tabs with context %}
 {% block title %}{{ t('ops.title') }}{% endblock %}
 {% block meta %}{{ t('ops.lede') }}{% endblock %}
-{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
+{% block tabs %}{% from "_admin_tabs.html" import admin_tabs with context %}{{ admin_tabs("operations") }}{% endblock %}
 {% block body %}
 {% macro age(minutes) -%}
   {%- if minutes is none -%}{{ t('ops.age.never') }}

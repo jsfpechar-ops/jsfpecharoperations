@@ -6,7 +6,7 @@
 {% from "_ui_layout.html" import ui_section_tabs with context %}
 {% block title %}{{ t('billing.admin.title') }}{% endblock %}
 {% block meta %}{{ t('billing.admin.lede') }}{% endblock %}
-{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
+{% block tabs %}{% from "_admin_tabs.html" import admin_tabs with context %}{{ admin_tabs("billing") }}{% endblock %}
 {% block body %}
 {% set states = ['trial_pending', 'trialing', 'active', 'overdue', 'canceling', 'paused'] %}
 {% call ui_section(t('billing.admin.revenue.title'), id='revenue') %}
