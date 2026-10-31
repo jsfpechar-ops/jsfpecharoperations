@@ -289,6 +289,7 @@ Plans: [havel-support-assistant](plans/havel-support-assistant.md). Everything i
 ## Database (PostgreSQL, optional)
 
 `UBYHOST_DATABASE_URL` unset means SQLite (the default). Set it to use PostgreSQL; never set it together with `UBYHOST_DB`. A TCP URL must carry `sslmode=verify-full` (or `require`); a Unix-socket URL (`host=/absolute/dir`) needs no sslmode. The schema is applied only by `App/scripts/pg_schema.py apply`, never at startup.
+`UBYHOST_PG_PASSWORD`: password of the `ubyhost` role for the `postgres` Compose service (`deploy/lightsail/.env`); the app reaches PostgreSQL over the socket and never reads it.
 
 ## Development and test only
 

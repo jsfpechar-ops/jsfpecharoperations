@@ -1,5 +1,5 @@
 # 0463: PostgreSQL in Compose and the cutover script: rehearse, cutover, rollback
-Status: todo
+Status: in-progress
 Depends on: 0462 green on main | Base commit: main | Branch: task/0463-postgres-cutover-tooling
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 80k tokens
 ## 1. Objective
