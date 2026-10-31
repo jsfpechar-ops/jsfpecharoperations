@@ -89,8 +89,7 @@
 | K-U15 | Med review | Host forms/navigation | Staging fixed; 0084 incl. K-U14; owner review | [plan](../plans/host-ux-combined-staging.md) |
 | K-T01 | Low open | Tests | Order-dependent tests (also 3 in test_host_i18n.py) | [0080](../tasks/0080-report.md) |
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
-| K-PG01 | Closed | routes/*.py | 0459: all host lookups owner-scoped via access.py | 0459 |
-| K-PG02 | Med open | ci.yml | Full app suite on PG not yet green (0462); cutover tooling 0463 not on main | plan v4 |
+| K-PG02 | Med open | tests/conftest.py | Full app suite on PG not green (0462): tests swap `config.DB_PATH` for a fresh SQLite file; PG needs a truncate at that moment (conftest only) | plan v4 |
 
 - K-UI-CACHE: bump `?v=` on edits; 1y cache (0172).
 - K-NAV-418: 3 host_i18n tests fail. K-CHECKIN #435, K-MORE #436 undeployed.
