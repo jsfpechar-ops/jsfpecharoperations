@@ -549,8 +549,15 @@ class PostgresCursor:
         values = None if params is None else tuple(params)
         command = sql.strip().upper()
         if command == "BEGIN IMMEDIATE":
-            self._connection._raw.execute("BEGIN")
-            self._connection._begin_immediate()
+            try:
+                self._connection._raw.execute("BEGIN")
+                self._connection._begin_immediate()
+            except BaseException:
+                # A lock timeout (55P03) aborts the just-opened transaction;
+                # roll it back so the original psycopg error propagates and the
+                # connection stays reusable.
+                self._connection._abort_transaction()
+                raise
             self._connection._trace(sql)
             return self
         if command in {"BEGIN", "START TRANSACTION"}:
@@ -569,9 +576,16 @@ class PostgresCursor:
         owns_transaction = write and not self._connection.in_transaction
         savepoint = None
         if owns_transaction:
-            self._connection._raw.execute("BEGIN")
-            self._connection._transaction_lock_reset()
-            self._connection._ensure_writer_lock()
+            try:
+                self._connection._raw.execute("BEGIN")
+                self._connection._transaction_lock_reset()
+                self._connection._ensure_writer_lock()
+            except BaseException:
+                # Lock acquisition failed before the statement ran: roll back
+                # the transaction this adapter opened and re-raise the psycopg
+                # error unchanged (do not retry an ambiguous write).
+                self._connection._abort_transaction()
+                raise
         elif write:
             self._connection._ensure_writer_lock()
             savepoint = self._connection._next_savepoint()
@@ -607,9 +621,16 @@ class PostgresCursor:
         owns_transaction = write and not self._connection.in_transaction
         savepoint = None
         if owns_transaction:
-            self._connection._raw.execute("BEGIN")
-            self._connection._transaction_lock_reset()
-            self._connection._ensure_writer_lock()
+            try:
+                self._connection._raw.execute("BEGIN")
+                self._connection._transaction_lock_reset()
+                self._connection._ensure_writer_lock()
+            except BaseException:
+                # Lock acquisition failed before the statement ran: roll back
+                # the transaction this adapter opened and re-raise the psycopg
+                # error unchanged (do not retry an ambiguous write).
+                self._connection._abort_transaction()
+                raise
         elif write:
             self._connection._ensure_writer_lock()
             savepoint = self._connection._next_savepoint()
@@ -697,6 +718,23 @@ class PostgresConnection:
 
     def _transaction_lock_reset(self) -> None:
         self._writer_lock_held = False
+
+    def _abort_transaction(self) -> None:
+        """Roll back a transaction this adapter opened when its setup failed.
+
+        A writer-lock timeout (``55P03``) during ``BEGIN IMMEDIATE``/``BEGIN`` or
+        advisory-lock acquisition leaves psycopg in an aborted transaction. The
+        rollback keeps the connection reusable and never masks the original
+        psycopg error (the caller re-raises it unchanged).
+        """
+        self._writer_lock_held = False
+        try:
+            if self.in_transaction:
+                self._raw.rollback()
+        except Exception:
+            # A broken connection is discarded by its owner; the original
+            # psycopg error is the one that must reach the caller.
+            pass
 
     def acquire_session_lock(self, lock_id: int) -> None:
         self._raw.execute(f"SET lock_timeout = '{LOCK_TIMEOUT}'")
