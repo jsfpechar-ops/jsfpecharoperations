@@ -11,6 +11,11 @@
 #   UBYHOST_BACKUP_RETENTION_DAYS  time-based retention window (default 30)
 #   UBYHOST_DEPLOYMENT             production makes the recipient mandatory
 set -euo pipefail
+
+if [ -n "${UBYHOST_DATABASE_URL:-}" ]; then
+  echo "SQLite backup_data.sh is disabled for PostgreSQL." >&2
+  exit 1
+fi
 umask 077
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
