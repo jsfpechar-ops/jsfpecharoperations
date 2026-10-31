@@ -7,7 +7,7 @@ Updated: 2026-10-31.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
-- #583 merged: guest save-and-continue, visible acknowledgement, contextual help. #587 merged: 0452 read-only billing extract + 0454 host UX + handoff documentation. PostgreSQL 0455 PR open ([report](../tasks/0455-review-report.md)); 0456 blocked. Production unchanged. [Handoff](../plans/postgresql/ubyhost-handoff/handoff/POSTGRESQL-HANDOFF.md).
+- #583 merged: guest save-and-continue, visible acknowledgement, contextual help. #587 merged: 0452 read-only billing extract + 0454 host UX + handoff documentation. PostgreSQL 0455+0456 combined PR open ([0455](../tasks/0455-review-report.md), [0456](../tasks/0456-review-report.md)); 0456 unrehearsed. Prod unchanged. [Handoff](../plans/postgresql/ubyhost-handoff/handoff/POSTGRESQL-HANDOFF.md).
 - Billing cockpit merged (#561). 0448 merged (#565): first plan to legacy hosts (immediate start, invoice now, no trial) + trial extension 1–365 days. Decisions 2026-10-29 in decisions.md.
 - Billing ON in production (`UBYHOST_BILLING_ENABLED=1`, 2026-10-29; cockpit #561, 0448 #565). Deploy manual.
 - 0429 payments UX (CI browser row pending). Next: 0435-36 rails, 0430-34 pages. Plan #551, rails #553, fix #554 merged.
@@ -27,7 +27,7 @@ Updated: 2026-10-31.
 - TTLock briefs 0008–0016: [plan](../plans/ttlock-door-codes.md) §11 order. Test first; live after §12 + lawyer (K-L).
 
 ## Blocked: needs owner, lawyer or council
-- PostgreSQL 0456 operations kit: blocked, not applied.
+- PostgreSQL 0456 kit: applied, rehearsal pending.
 - Lawyer review of legal texts (0005 and K-L rows in [known-issues](known-issues.md)).
 - Stale signed dates (K-F18). HIGH RISK filing: K-F02, K-F03, K-F07; secret rotation K-S10.
 - Decide with owner: founder-price flag on the customer page or discount-% only.
