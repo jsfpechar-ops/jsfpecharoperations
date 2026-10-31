@@ -1,5 +1,5 @@
 # 0468: the SQLite→PostgreSQL transfer ignores Litestream's bookkeeping tables and names any other difference
-Status: todo
+Status: review
 Depends on: nothing | Base commit: main | Branch: task/0468-transfer-litestream-tables
 Executor: Haiku 5.5 | Fits one session: 15 tool calls, 40k tokens
 ## 1. Objective

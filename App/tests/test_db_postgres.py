@@ -1298,6 +1298,47 @@ def test_transfer_refuses_source_schema_drift(transfer_workspace):
     assert verify.returncode == 0, verify.stderr[-1000:]
 
 
+def test_transfer_skips_litestream_tables(transfer_workspace):
+    root = transfer_workspace["root"]
+    source = root / "litestream-source.sqlite"
+    shutil.copy2(transfer_workspace["source"], source)
+    connection = sqlite3.connect(source)
+    try:
+        connection.execute("CREATE TABLE _litestream_seq (id INTEGER PRIMARY KEY, seq INTEGER)")
+        connection.execute("INSERT INTO _litestream_seq (id, seq) VALUES (1, 42)")
+        connection.execute("CREATE TABLE _litestream_lock (id INTEGER)")
+        connection.commit()
+    finally:
+        connection.close()
+    _reset_public_schema()
+    report = root / "litestream-report.json"
+    copy = _run_transfer(source, report)
+    assert copy.returncode == 0, copy.stderr[-2000:]
+    assert "copied-and-verified OK: tables=67" in copy.stdout
+    payload = json.loads(report.read_text(encoding="utf-8"))
+    assert not [name for name in payload["tables"] if name.startswith("_litestream")]
+    with _psycopg_connect(_PG_URL) as conn:
+        row = conn.execute("SELECT to_regclass('public._litestream_seq')").fetchone()
+    assert row[0] is None
+
+
+def test_transfer_names_an_unknown_table(transfer_workspace):
+    root = transfer_workspace["root"]
+    unknown = root / "unknown-source.sqlite"
+    shutil.copy2(transfer_workspace["source"], unknown)
+    connection = sqlite3.connect(unknown)
+    try:
+        connection.execute("CREATE TABLE legacy_stuff (id INTEGER)")
+        connection.commit()
+    finally:
+        connection.close()
+    report = root / "unknown-report.json"
+    result = _run_transfer(unknown, report)
+    assert result.returncode == 1
+    assert "extra: ['legacy_stuff']" in result.stderr
+    assert not report.exists()
+
+
 def test_transfer_refuses_an_unsupported_source_schema_version(transfer_workspace):
     root = transfer_workspace["root"]
     stale = root / "stale-source.sqlite"
