@@ -31,7 +31,14 @@ def _free_port() -> int:
 MOCK_PORT = _free_port()
 
 os.environ.setdefault("UBYHOST_DATA_DIR", str(_TMP))
-os.environ.setdefault("UBYHOST_DB", str(_TMP / "test.db"))
+# A PostgreSQL test process sets UBYHOST_DATABASE_URL before app import and must
+# leave UBYHOST_DB unset: ``app.config`` rejects both settings at once. The
+# SQLite default stays exactly as it was for every other run; the PostgreSQL
+# module (``test_db_postgres.py``) skips when neither variable is present.
+if not os.environ.get("UBYHOST_DATABASE_URL") and not os.environ.get(
+    "UBYHOST_TEST_DATABASE_URL"
+):
+    os.environ.setdefault("UBYHOST_DB", str(_TMP / "test.db"))
 os.environ.setdefault("UBYHOST_SECRET_KEY", "test-secret-key-not-for-real-use")
 os.environ.setdefault("UBYHOST_ENABLE_SCHEDULER", "0")
 os.environ.setdefault("UBYHOST_ICAL_OPEN_SYNC_MINUTES", "0")
