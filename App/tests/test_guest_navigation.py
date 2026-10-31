@@ -1086,3 +1086,164 @@ def test_only_the_claimants_device_may_change_the_headcount():
         assert after == before
     finally:
         _cleanup()
+
+
+def test_the_legal_acknowledgement_sits_outside_the_collapsed_notice():
+    """The required checkbox must not be hidden behind a second disclosure.
+
+    The PR wrapped the whole partial in an outer <details>, so the checkbox
+    was invisible until two folds were opened. The partial now owns the only
+    disclosure and keeps the acknowledgement visible beneath it.
+    """
+    token, wrong, _right = _make_apartment_with_stays()
+    try:
+        browser = TestClient(app)
+        browser.cookies.set(guest.LANG_COOKIE, "en")
+        complete_guest_claim(browser, token, wrong, party_size=1)
+        page = browser.get(f"/l/{token}/{wrong}/new?lang=en")
+        assert page.status_code == 200
+        assert 'class="g-legal-fold"' not in page.text
+        assert '<details class="g-legal-text">' in page.text
+        details = page.text.split('<details class="g-legal-text">', 1)[1]
+        closed = details.split("</details>", 1)
+        assert len(closed) == 2, "the legal notice disclosure is not closed"
+        visible_part = closed[1]
+        assert 'id="legal_ack"' in visible_part
+        assert 'name="legal_ack"' in visible_part
+        assert "required" in visible_part.split('id="legal_ack"', 1)[1].split(">", 1)[0]
+    finally:
+        _cleanup()
+
+
+def test_the_save_action_names_what_the_save_will_do():
+    token, wrong, _right = _make_apartment_with_stays()
+    try:
+        browser = TestClient(app)
+        browser.cookies.set(guest.LANG_COOKIE, "en")
+        complete_guest_claim(browser, token, wrong, party_size=3)
+        first = browser.get(f"/l/{token}/{wrong}/new?lang=en")
+        assert i18n.STRINGS["en"]["save_continue_next"] in first.text
+        assert i18n.STRINGS["en"]["submit_registration"] not in first.text
+
+        saved = browser.post(
+            f"/l/{token}/{wrong}/save",
+            data=_form(party_size="3"),
+            files=_passport_files(),
+            follow_redirects=False,
+        )
+        assert saved.status_code == 303
+        assert saved.headers["location"].split("?")[0].endswith(f"/{wrong}/new")
+        second = browser.get(saved.headers["location"])
+        # Still one more person after this one: the same "save and continue".
+        assert i18n.STRINGS["en"]["person_saved"] in second.text
+        assert i18n.STRINGS["en"]["save_continue_next"] in second.text
+
+        saved = browser.post(
+            f"/l/{token}/{wrong}/save",
+            data=_form(party_size="3"),
+            files=_passport_files(),
+            follow_redirects=False,
+        )
+        assert saved.status_code == 303
+        assert saved.headers["location"].split("?")[0].endswith(f"/{wrong}/new")
+        third = browser.get(saved.headers["location"])
+        # One person left: this save submits the registration.
+        assert i18n.STRINGS["en"]["submit_registration"] in third.text
+        assert i18n.STRINGS["en"]["save_continue_next"] not in third.text
+
+        saved = browser.post(
+            f"/l/{token}/{wrong}/save",
+            data=_form(party_size="3"),
+            files=_passport_files(),
+            follow_redirects=False,
+        )
+        assert saved.status_code == 303
+        assert saved.headers["location"].split("?")[0].endswith(f"/l/{token}/{wrong}")
+        done = browser.get(saved.headers["location"])
+        # The final save reaches the completed registration summary.
+        assert i18n.STRINGS["en"]["all_done_title"] in done.text
+    finally:
+        _cleanup()
+
+
+def test_an_edit_says_save_changes_and_returns_to_the_summary():
+    token, wrong, _right = _make_apartment_with_stays()
+    try:
+        browser = TestClient(app)
+        browser.cookies.set(guest.LANG_COOKIE, "en")
+        complete_guest_claim(browser, token, wrong, party_size=3)
+        saved = browser.post(
+            f"/l/{token}/{wrong}/save",
+            data=_form(party_size="3"),
+            files=_passport_files(),
+            follow_redirects=False,
+        )
+        assert saved.status_code == 303
+        row = db.query_one("SELECT * FROM guest WHERE reservation_id = ?", (wrong,))
+        # A signed complete form is locked; make the saved guest eligible for
+        # editing the way an incomplete/imported row is, then reopen it.
+        db.update("guest", row["id"], {"signature_png": ""})
+        edit = browser.get(f"/l/{token}/{wrong}/edit/{row['id']}?lang=en")
+        assert edit.status_code == 200
+        assert i18n.STRINGS["en"]["guest_save_changes"] in edit.text
+
+        changed = browser.post(
+            f"/l/{token}/{wrong}/save",
+            data=_form(party_size="3", guest_id=str(row["id"]), surname="Smith-Jones"),
+            files=_passport_files(),
+            follow_redirects=False,
+        )
+        assert changed.status_code == 303
+        # An edit returns to the summary, never straight to the next person.
+        assert changed.headers["location"].split("?")[0].endswith(f"/l/{token}/{wrong}")
+        assert db.query_one("SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ?", (wrong,))["n"] == 1
+        surname = db.query_one("SELECT surname FROM guest WHERE id = ?", (row["id"],))["surname"]
+        assert surname == "SMITH-JONES"  # the police register wants upper case
+    finally:
+        _cleanup()
+
+
+def test_an_unknown_headcount_offers_a_neutral_save_details_action():
+    token, wrong, _right = _make_apartment_with_stays()
+    try:
+        browser = TestClient(app)
+        browser.cookies.set(guest.LANG_COOKIE, "en")
+        complete_guest_claim(browser, token, wrong, party_size=2)
+        db.execute(
+            "UPDATE reservation SET declared_guests = NULL, expected_guests_override = NULL WHERE id = ?",
+            (wrong,),
+        )
+        page = browser.get(f"/l/{token}/{wrong}/new?lang=en")
+        assert page.status_code == 200
+        assert i18n.STRINGS["en"]["guest_save_details"] in page.text
+        assert i18n.STRINGS["en"]["submit_registration"] not in page.text
+        assert i18n.STRINGS["en"]["save_continue_next"] not in page.text
+
+        # The headcount typed on this first form is persisted by the save, and
+        # the refresh then decides whether the next form opens.
+        saved = browser.post(
+            f"/l/{token}/{wrong}/save",
+            data=_form(party_size="3"),
+            files=_passport_files(),
+            follow_redirects=False,
+        )
+        assert saved.status_code == 303
+        assert saved.headers["location"].split("?")[0].endswith(f"/{wrong}/new")
+        next_form = browser.get(saved.headers["location"])
+        assert i18n.STRINGS["en"]["save_continue_next"] in next_form.text
+        assert db.query_one("SELECT declared_guests FROM reservation WHERE id = ?", (wrong,))["declared_guests"] == 3
+    finally:
+        _cleanup()
+
+
+def test_a_one_person_booking_offers_submit_registration():
+    token, wrong, _right = _make_apartment_with_stays()
+    try:
+        browser = TestClient(app)
+        browser.cookies.set(guest.LANG_COOKIE, "en")
+        complete_guest_claim(browser, token, wrong, party_size=1)
+        page = browser.get(f"/l/{token}/{wrong}/new?lang=en")
+        assert i18n.STRINGS["en"]["submit_registration"] in page.text
+        assert i18n.STRINGS["en"]["save_continue_next"] not in page.text
+    finally:
+        _cleanup()

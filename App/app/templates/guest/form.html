@@ -291,14 +291,11 @@
       <dl class="g-summary-list g-review-list"></dl>
     </div>
 
-    <details class="g-legal-fold">
-      <summary>{{ t('legal_notice_title') }}</summary>
-      {% include "guest/_legal_notice.html" %}
-    </details>
+    {% include "guest/_legal_notice.html" %}
 
-    {# The final outstanding guest submits; everyone before them saves and
-     goes straight to the next person's empty form (no hub stop). #}
-    <button class="g-btn" type="submit">{{ t('submit_registration') if is_last_outstanding else t('save_continue_next') }}</button>
+    <button class="g-btn" type="submit">
+      {{ t(save_action_key) }}
+    </button>
   </div>
 </form>
 {% include "guest/_why.html" %}

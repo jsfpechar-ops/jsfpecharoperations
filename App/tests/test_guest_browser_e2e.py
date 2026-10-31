@@ -26,6 +26,7 @@ import socket
 import threading
 import time
 from datetime import timedelta
+from pathlib import Path
 
 import pytest
 
@@ -222,6 +223,19 @@ def _claim_link(base: str, reservation_id: int) -> str:
     raise AssertionError("no claim e-mail was sent")
 
 
+SHOTS_0451 = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0451"
+
+
+def _shot(page, name: str, full_page: bool = True) -> None:
+    """0401/0451 evidence: keep a 390 px screenshot only when asked to."""
+    if os.environ.get("UBYHOST_0451_SHOTS") != "1":
+        return
+    if page.viewport_size and page.viewport_size["width"] != 390:
+        return
+    SHOTS_0451.mkdir(parents=True, exist_ok=True)
+    page.screenshot(path=str(SHOTS_0451 / name), full_page=full_page)
+
+
 class Guest:
     def __init__(self, page, width, lang="en"):
         self.page = page
@@ -272,6 +286,7 @@ class Guest:
     def fill_form(self, number: int, total: int, person):
         first, surname, birth, document = person
         page = self.page
+        t = i18n.translator(self.lang)
         self.check_layout(f"guest {number}, details (empty)")
         page.fill("#first_name", first)
         # A phone keyboard opening shrinks the viewport and fires resize while
@@ -295,13 +310,49 @@ class Guest:
         self.next()
         self.sign()
         self.check_layout(f"guest {number}, signature")
-        self.next()
-        self.check_layout(f"guest {number}, check")
-        for box in page.locator("[data-guest-step]:not([hidden]) input[type=checkbox][required]").all():
-            box.check()
+        # The legal notice moved onto the signature step and is collapsed by
+        # default; the acknowledgement must stay visible outside that fold.
+        legal = page.locator("details.g-legal-text")
+        assert legal.count() == 1
+        assert not legal.evaluate("el => el.open")
+        page.locator("#legal_ack").scroll_into_view_if_needed()
+        page.wait_for_timeout(100)
+        ack_box = page.locator("#legal_ack").bounding_box()
+        ack_center = (ack_box["x"] + ack_box["width"] / 2, ack_box["y"] + ack_box["height"] / 2)
+        assert page.evaluate(
+            """([x, y]) => {
+                const el = document.elementFromPoint(x, y);
+                return !!(el && (el.id === 'legal_ack'
+                    || el.closest('label[for=legal_ack]')
+                    || el.closest('.legal-ack')));
+            }""",
+            list(ack_center),
+        ), "the sticky submit button overlaps the required acknowledgement"
+        assert page.locator("label[for=legal_ack]").is_visible()
+        assert page.locator("button[type=submit]").last.is_visible()
+        self.check_layout(f"guest {number}, acknowledgement")
+        # A viewport shot: the sticky submit button is pinned to the bottom of
+        # the screen, so a full-page capture would draw it over the review list.
+        _shot(page, "acknowledgement-390.png", full_page=False)
+        ack = page.locator("#legal_ack")
+        assert not ack.is_checked()
+        # Native required keeps an unsigned acknowledgement on the page.
+        page.locator("[data-guest-step]:not([hidden]) button[type=submit]").last.click()
+        assert "/save" not in page.url
+        ack.check()
         page.locator("[data-guest-step]:not([hidden]) button[type=submit]").last.click()
         page.wait_for_load_state()
         assert "/save" not in page.url, page.inner_text(".g-err") if page.locator(".g-err").count() else page.url
+        if number < total:
+            # Direct progression: the next person's empty form opens at once.
+            assert page.url.split("?")[0].endswith("/new"), page.url
+            strip = page.locator(".g-saved-strip")
+            assert strip.count() == 1 and strip.is_visible()
+            assert t("person_saved") in strip.inner_text()
+            assert page.input_value("#first_name") == ""
+            assert page.eval_on_selector("#signature", "e => e.value") == ""
+            assert not page.locator("#legal_ack").is_checked()
+            _shot(page, "next-guest-390.png")
 
 
 # WP26: German, Spanish and French run the whole flow too, at the narrow
@@ -309,7 +360,7 @@ class Guest:
 # They arrive with no ?lang= at all: the browser's own locale is what sends
 # Accept-Language, so this also proves the language is picked automatically.
 _LOCALES = {"en": "en-GB", "de": "de-AT", "es": "es-MX", "fr": "fr-CA"}
-_RUNS = [("en", width) for width in (320, 375, 1280)] + [
+_RUNS = [("en", width) for width in (320, 375, 390, 1280)] + [
     (lang, width) for lang in ("de", "es", "fr") for width in (320, 360, 390)
 ]
 
@@ -353,6 +404,7 @@ def _register_a_group_of_three(live_server, browser, width, token, readable, lan
         page.locator(f"a[href*='/l/{key}/{stay}']").first.click()
         page.wait_for_load_state()
         guest.check_layout("claim")
+        _shot(page, "claim-390.png")
 
         # The group size never starts empty on the claim screen.
         assert page.input_value("#party_size") == "1"
@@ -376,11 +428,11 @@ def _register_a_group_of_three(live_server, browser, width, token, readable, lan
         why.locator("summary").click()
         for number, person in enumerate(PEOPLE, start=1):
             if number > 1:
-                link = page.get_by_role("link", name=i18n.translator(lang)("add_person"))
-                assert link.count() == 1
-                guest.check_layout(f"saved, before guest {number}")
-                link.click()
-                page.wait_for_load_state()
+                # No Saved / Add a person page between people: the previous
+                # save already opened this empty form.
+                assert page.url.split("?")[0].endswith("/new"), page.url
+                assert page.get_by_role("link", name=i18n.translator(lang)("add_person")).count() == 0
+                guest.check_layout(f"next guest {number}")
             guest.fill_form(number, 3, person)
 
         stored = db.query("SELECT * FROM guest WHERE reservation_id = ?", (stay,))
@@ -388,6 +440,7 @@ def _register_a_group_of_three(live_server, browser, width, token, readable, lan
         assert all(row["signature_png"].startswith("data:image/png;base64,") for row in stored)
         assert i18n.translator(lang)("all_done_title") in page.inner_text("body")
         guest.check_layout("done")
+        _shot(page, "completion-summary-390.png")
         # The privacy notice is the longest text a guest gets; it must fit too.
         page.goto(f"{live_server}/l/{token}/privacy")
         assert page.get_attribute("html", "lang") == lang

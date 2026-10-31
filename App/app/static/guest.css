@@ -1077,12 +1077,12 @@ details.g-why .g-details {
 }
 .g-claim-help > summary::-webkit-details-marker,
 .g-legal-text > summary::-webkit-details-marker { display: none; }
-.g-claim-help > summary::before {
-  content: "?";
-  display: inline-grid;
-  place-items: center;
-  flex: 0 0 26px;
-  height: 26px;
+/* The summary text is the single visible question mark; the generated
+   marker would duplicate it. */
+.g-claim-help > summary {
+  justify-content: center;
+  width: 44px;
+  height: 44px;
   border: 1px solid var(--g-line);
   border-radius: 50%;
 }
