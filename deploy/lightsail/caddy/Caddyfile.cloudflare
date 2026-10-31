@@ -28,6 +28,19 @@
 	# 0427 prep: the app's Prometheus metrics stay compose-internal (alloy
 	# scrapes ubyhost:8080 directly). Never served to the internet.
 	respond @metrics 404
+	# 0456: visible maintenance window for the PostgreSQL cutover. Compose passes
+	# UBYHOST_MAINTENANCE and the cutover script recreates this container when
+	# the value changes; the placeholder is expanded while Caddy loads the file,
+	# so the expression becomes `1 == 1` during maintenance and `0 == 1`
+	# otherwise. `abort` sorts before `respond` in Caddy's fixed directive order,
+	# so the 0421 not-Cloudflare guard still runs first: a request straight to
+	# the server IP is aborted, never served this page. ACME HTTP-01 challenges
+	# are handled by Caddy before site routes, so certificate renewal is
+	# unaffected. The cutover script proves the running container carries the
+	# flag; seeing the page through Cloudflare is an explicit owner step.
+	@maintenance `{$UBYHOST_MAINTENANCE:0} == 1`
+	header @maintenance Retry-After 300
+	respond @maintenance "UbyHost is in a short maintenance window for a database upgrade. Please retry in a few minutes." 503
 	# The guest form posts its signature and its passport upload as one
 	# multipart body, so this must stay above passport_photos.MAX_PDF_BYTES
 	# (15 MB). 20 MB admits every legitimate body and rejects an unbounded one
