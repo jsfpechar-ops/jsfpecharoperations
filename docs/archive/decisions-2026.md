@@ -22,3 +22,8 @@ Moved from docs/context/decisions.md during compaction.
 - 2026-10-21 PWA + push for 4 critical alerts only, no pywebpush (owner, 0219, 0225-0229).
 - 2026-10-21 Stay-fee email: auto-confirm clean; PDF+QR on 2nd; Settings switch | owner, [plan](../plans/stay-fee-monthly-email.md)
 - 2026-10-22 One needs-you card on `/`; unopened-link reminder once/stay; no new host emails | owner.
+- 2026-10-06 | [workflow] Context: AGENTS L0, context L1, plans L2; audits archived | [workflow](workflow.md)
+- 2026-10-06 | [workflow] WP series closed at WP33/0034; tasks use NNNN | [workflow](workflow.md)
+- 2026-10-06 | [workflow] At most one council per plan, only for HIGH RISK (filing, deletion, legal); never per PR | 3 councils in a day, same findings | [workflow](workflow.md)
+- 2026-10-06 | [workflow] 0001 merged before review; post-merge review OK | [report](../tasks/0001-report.md)
+- 2026-10-06 | [workflow] Context rollout: flat files, MANIFEST at root | place_files | TEMPLATE.md
