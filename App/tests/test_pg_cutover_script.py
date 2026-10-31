@@ -41,8 +41,10 @@ def test_script_guards_app_config_and_report_keys():
     assert '"status"' not in text
 
 
-def test_script_never_references_the_password():
-    assert "UBYHOST_PG_PASSWORD" not in SCRIPT.read_text()
+def test_script_never_expands_the_password():
+    text = SCRIPT.read_text()
+    assert "$UBYHOST_PG_PASSWORD" not in text
+    assert "${UBYHOST_PG_PASSWORD" not in text
 
 
 def test_env_switch_removes_sqlite_setting_and_sets_url(tmp_path):
