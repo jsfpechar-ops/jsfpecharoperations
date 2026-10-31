@@ -55,7 +55,7 @@ Sizes: S = one Haiku chat, M = 2–3 Haiku chats, L = a Fable brief plus several
 | 17 | G5: UbyPort submit path. Before touching it: a snapshot test of the current request XML (golden file from the mock, no `ws_uby_test` run). Port with batch 32, timeout 60 s, transport retry with idempotency on `submission_claim` | Filing correctness beats every feature (rule 1). Golden file guards the rewrite | L | Fable brief, Haiku | 15, 16 |
 | 18 | G6: retire the Python web and worker, remove SQLite code paths, final docs | Done state | M | Haiku | 17 |
 
-Steps 1, 2, 3, 4 start now, in parallel. Steps 11 and 12 can run while G1–G2 are built. Everything not in this table is out: load test, Lightsail resizing, ARES/VAT cleanup, log-noise tuning, Rust or Node.
+Steps 1, 2, 3, 4 start now, in parallel. Steps 11 and 12 can run while G1–G2 are built. Everything not in this table is out: load test, Lightsail resizing, log-noise tuning, Rust or Node. Owner rule: no dead code; dead code found on the way is removed in its own small PR (first: [0461](../../tasks/0461-remove-dead-vat-register.md), `vat_register.py`; ARES is live, v3.0 was wrong about it). With D1 (managed Postgres) the self-hosted pgBackRest half of #592 is dead weight and is stripped in step 6 before merge.
 
 ## 4. Decisions (owner, 2026-10-31: all four taken as recommended)
 
