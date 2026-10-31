@@ -16,7 +16,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 from cryptography.fernet import Fernet, InvalidToken, MultiFernet
 
@@ -664,6 +664,14 @@ def utcnow() -> str:
 
 
 def _open(factory=sqlite3.Connection, check_same_thread: bool = True) -> sqlite3.Connection:
+    config.assert_database_authority()
+    if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
+        from . import db_postgres
+
+        conn = db_postgres.connect(config.DATABASE_URL)
+        if factory is _ThreadConnection or _request_stats.get() is not None:
+            conn.set_trace_callback(_count_statement)
+        return conn
     conn = sqlite3.connect(
         str(config.DB_PATH),
         timeout=30,
@@ -739,12 +747,21 @@ def _file_identity(path: str) -> Optional[tuple]:
     return (stat.st_dev, stat.st_ino)
 
 
+def _connection_key() -> tuple:
+    """A non-secret cache identity for the selected backend and database."""
+    if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
+        digest = hashlib.sha256(config.DATABASE_URL.encode("utf-8")).hexdigest()
+        return ("postgresql", digest)
+    path = str(config.DB_PATH)
+    return ("sqlite", path, _file_identity(path))
+
+
 def _discard(conn: sqlite3.Connection) -> None:
     with _registry_lock:
         _registry.discard(conn)
     try:
         conn.close()
-    except sqlite3.Error:
+    except Exception:
         pass
 
 
@@ -756,21 +773,20 @@ def _drop_thread_conn() -> None:
 
 
 def _thread_conn() -> sqlite3.Connection:
-    """This thread's connection to ``config.DB_PATH``, opened on first use.
+    """This thread's connection to the selected backend, opened on first use.
 
     Keyed by the database path and the file behind it: a test (or a restore)
     that points DB_PATH elsewhere, or replaces the file, gets a fresh
     connection instead of one still reading the old file.
     """
-    path = str(config.DB_PATH)
+    config.assert_database_authority()
+    key = _connection_key()
     cached = getattr(_local, "conn", None)
     if cached is not None:
-        conn, cached_path, identity, generation = cached
+        conn, cached_key, generation = cached
         if (
-            cached_path == path
+            cached_key == key
             and generation == _generation
-            and identity is not None
-            and _file_identity(path) == identity
         ):
             if conn.in_transaction and not getattr(_local, "depth", 0):
                 # Something left a transaction open outside a block. Never let
@@ -783,7 +799,7 @@ def _thread_conn() -> sqlite3.Connection:
     conn = _open(factory=_ThreadConnection, check_same_thread=False)
     with _registry_lock:
         _registry.add(conn)
-    _local.conn = (conn, path, _file_identity(path), _generation)
+    _local.conn = (conn, _connection_key(), _generation)
     return conn
 
 
@@ -792,7 +808,7 @@ def _rollback(conn: sqlite3.Connection) -> bool:
     try:
         if conn.in_transaction:
             conn.execute("ROLLBACK")
-    except sqlite3.Error:
+    except Exception:
         log.exception("db: rollback failed; dropping the connection")
     if conn.in_transaction:
         _drop_if_cached(conn)
@@ -899,6 +915,21 @@ def readonly_cursor():
     connection can chmod the database and change its persistent journal mode.
     The configured database must already exist.
     """
+    if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
+        conn = _open()
+        cur = conn.cursor()
+        try:
+            cur.execute("BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
+            yield cur
+            cur.execute("COMMIT")
+        except BaseException:
+            if conn.in_transaction:
+                cur.execute("ROLLBACK")
+            raise
+        finally:
+            cur.close()
+            conn.close()
+        return
     uri = config.DB_PATH.resolve().as_uri() + "?mode=ro"
     conn = sqlite3.connect(uri, uri=True, timeout=30, isolation_level=None)
     conn.row_factory = sqlite3.Row
@@ -937,7 +968,7 @@ def close_connections() -> None:
     for conn in conns:
         try:
             conn.close()
-        except sqlite3.Error:
+        except Exception:
             pass
 
 
@@ -1083,7 +1114,7 @@ def _reset_reverted_stay_fee(conn: sqlite3.Connection) -> None:
         "UPDATE guest SET doc_type = NULL, fee_host_decision = NULL, fee_host_reason = NULL"
     )
     for table, column in _REVERTED_STAY_FEE_COLUMNS:
-        present = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+        present = _table_columns(conn, table)
         if column in present:
             conn.execute(f"UPDATE {table} SET {column} = NULL")
     conn.execute("INSERT INTO settings (key, value) VALUES (?, '1')", (_STAY_FEE_RESET_KEY,))
@@ -1100,10 +1131,296 @@ def _add_missing_columns(conn: sqlite3.Connection) -> None:
     columns: Dict[str, set] = {}
     for table, column, decl in ADDED_COLUMNS:
         if table not in columns:
-            columns[table] = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+            columns[table] = _table_columns(conn, table)
         if columns[table] and column not in columns[table]:
-            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
+            statement = f"ALTER TABLE {table} ADD COLUMN {column} {decl}"
+            if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
+                from . import db_postgres
+
+                statement = db_postgres.render_ddl(statement)
+            conn.execute(statement)
             columns[table].add(column)
+
+
+def _table_columns(conn, table: str) -> set[str]:
+    """Column names from the selected backend; table names are trusted source."""
+    if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
+        rows = conn.execute_native(
+            "SELECT column_name AS name FROM information_schema.columns "
+            "WHERE table_schema = current_schema() AND table_name = %s ORDER BY ordinal_position",
+            (table,),
+        ).fetchall()
+    else:
+        rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
+        return {row["name"] for row in rows}
+    return {row["name"] for row in rows}
+
+
+def column_names(table: str) -> list[str]:
+    """Return ordered column names for a trusted application table."""
+    with _helper_conn() as conn:
+        if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
+            rows = conn.execute_native(
+                "SELECT column_name AS name FROM information_schema.columns "
+                "WHERE table_schema = current_schema() AND table_name = %s "
+                "ORDER BY ordinal_position",
+                (table,),
+            ).fetchall()
+            return [row["name"] for row in rows]
+        return [row["name"] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()]
+
+
+def sqlite_date_expr(expression: str) -> str:
+    """Expression matching SQLite date() for the application's stored ISO dates."""
+    if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
+        from . import db_postgres
+
+        return db_postgres.sqlite_date_expr(expression)
+    return f"date({expression})"
+
+
+def substring_pos(expression: str) -> str:
+    """Position (1-based, 0 absent) of one bound substring, as SQLite instr().
+
+    ``expression`` is trusted SQL written in the code, never user input; the
+    searched-for value is the single ``?`` parameter. PostgreSQL spells the
+    function ``strpos`` and has no ``instr``.
+    """
+    if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
+        return f"strpos({expression}, ?)"
+    return f"instr({expression}, ?)"
+
+
+def _table_exists(conn, table: str) -> bool:
+    if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
+        return bool(conn.execute_native(
+            "SELECT 1 FROM information_schema.tables "
+            "WHERE table_schema = current_schema() AND table_name = %s",
+            (table,),
+        ).fetchone())
+    return bool(conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", (table,)
+    ).fetchone())
+
+
+def _execute_ddl(conn, statement: str) -> None:
+    """Execute one frozen SQLite DDL statement or its strict PostgreSQL rendering."""
+    if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
+        from . import db_postgres
+
+        statement = db_postgres.render_ddl(statement)
+        if statement is None:
+            return
+    conn.execute(statement)
+
+
+def current_postgres_schema_name() -> str:
+    if getattr(config, "DB_BACKEND", "sqlite") != "postgresql":
+        raise RuntimeError("PostgreSQL schema identity requires UBYHOST_DATABASE_URL.")
+    conn = connect()
+    try:
+        return conn.execute_native("SELECT current_schema() AS name").fetchone()["name"]
+    finally:
+        conn.close()
+
+
+def current_database_name() -> str:
+    """PostgreSQL database identity for an explicit local/owner target guard."""
+    if getattr(config, "DB_BACKEND", "sqlite") != "postgresql":
+        return str(config.DB_PATH.name)
+    with _helper_conn() as conn:
+        return str(conn.execute_native("SELECT current_database() AS name").fetchone()["name"])
+
+
+def expected_schema_version() -> int:
+    return max([BASELINE_VERSION, *(version for version, _name, _path in migration_files())])
+
+
+def _expected_sqlite_columns() -> Dict[str, List[tuple[str, str, int, int]]]:
+    """Build frozen expected column order/types in memory, never touching data."""
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    try:
+        conn.executescript(SCHEMA)
+        for table, column, decl in ADDED_COLUMNS:
+            names = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+            if column not in names:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
+        conn.executescript(_MIGRATIONS_TABLE)
+        for _version, _name, path in migration_files():
+            conn.executescript(path.read_text(encoding="utf-8"))
+        result: Dict[str, List[tuple[str, str, int, int]]] = {}
+        names = [row["name"] for row in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'"
+        )]
+        for table in names:
+            result[table] = [
+                (row["name"], (row["type"] or "").upper(), int(row["notnull"]), int(row["pk"]))
+                for row in conn.execute(f"PRAGMA table_info({table})")
+            ]
+        return result
+    finally:
+        conn.close()
+
+
+def postgres_schema_status(conn=None) -> Dict[str, Any]:
+    """Read-only schema/version/type/index/trigger compatibility summary."""
+    if getattr(config, "DB_BACKEND", "sqlite") != "postgresql":
+        raise RuntimeError("PostgreSQL schema status requires UBYHOST_DATABASE_URL.")
+    own = conn is None
+    conn = conn or connect()
+    try:
+        schema_row = conn.execute_native("SELECT current_schema() AS name").fetchone()
+        if not schema_row or schema_row["name"] != "public":
+            raise RuntimeError("PostgreSQL runtime requires the public schema search path.")
+        expected = _expected_sqlite_columns()
+        expected["schema_migrations"] = [
+            ("version", "INTEGER", 1, 1),
+            ("name", "TEXT", 1, 0),
+            ("applied_at", "TEXT", 1, 0),
+        ]
+        rows = conn.execute_native(
+            "SELECT table_name, column_name, data_type, is_nullable "
+            "FROM information_schema.columns WHERE table_schema = current_schema() "
+            "ORDER BY table_name, ordinal_position"
+        ).fetchall()
+        actual: Dict[str, list[tuple[str, str, str]]] = {}
+        for row in rows:
+            actual.setdefault(row["table_name"], []).append(
+                (row["column_name"], row["data_type"].lower(), row["is_nullable"])
+            )
+        expected_types = {
+            "INTEGER": "bigint", "REAL": "double precision", "BLOB": "bytea", "TEXT": "text"
+        }
+        column_mismatches = 0
+        for table in expected.keys() | actual.keys():
+            expected_cols = expected.get(table, [])
+            actual_cols = actual.get(table, [])
+            if len(expected_cols) != len(actual_cols):
+                column_mismatches += abs(len(expected_cols) - len(actual_cols)) or 1
+                continue
+            for (exp_name, exp_type, exp_notnull, exp_pk), (act_name, act_type, act_nullable) in zip(expected_cols, actual_cols):
+                target_type = expected_types.get(exp_type)
+                target_notnull = exp_notnull or exp_pk
+                if (exp_name != act_name or target_type != act_type
+                        or (target_notnull and act_nullable != "NO")
+                        or (not target_notnull and act_nullable != "YES")):
+                    column_mismatches += 1
+        expected_indexes = {"ubyhost_user_account_username_sqlite_nocase"}
+        for source in [SCHEMA, *(path.read_text(encoding="utf-8") for _v, _n, path in migration_files())]:
+            expected_indexes.update(re.findall(
+                r"\bCREATE\s+(?:UNIQUE\s+)?INDEX\s+(?:IF\s+NOT\s+EXISTS\s+)?([A-Za-z_][A-Za-z_0-9]*)",
+                _without_sql_comments(source),
+                re.I,
+            ))
+        index_rows = conn.execute_native(
+            "SELECT indexname AS name FROM pg_indexes WHERE schemaname = current_schema()"
+        ).fetchall()
+        actual_indexes = {row["name"] for row in index_rows}
+        missing_indexes = expected_indexes - actual_indexes
+        trigger_rows = conn.execute_native(
+            "SELECT t.tgname AS name FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid "
+            "JOIN pg_namespace n ON n.oid = c.relnamespace "
+            "WHERE n.nspname = current_schema() AND NOT t.tgisinternal"
+        ).fetchall()
+        expected_triggers = {
+            "invoice_issued_guard", "invoice_note_guard", "invoice_delete_guard",
+            "invoice_item_insert_guard", "invoice_item_update_guard", "invoice_item_delete_guard",
+        }
+        actual_triggers = {row["name"] for row in trigger_rows}
+        actual_version = schema_version(conn)
+        return {
+            "database": current_database_name() if own else None,
+            "expected_version": expected_schema_version(),
+            "actual_version": actual_version,
+            "expected_tables": len(expected),
+            "actual_tables": len(actual),
+            "missing_tables": len(expected.keys() - actual.keys()),
+            "extra_tables": len(actual.keys() - expected.keys()),
+            "column_mismatches": column_mismatches,
+            "missing_indexes": len(missing_indexes),
+            "missing_triggers": len(expected_triggers - actual_triggers),
+            "extra_triggers": len(actual_triggers - expected_triggers),
+            "current": (
+                expected_schema_version() == actual_version
+                and expected.keys() == actual.keys()
+                and column_mismatches == 0
+                and not missing_indexes
+                and expected_triggers == actual_triggers
+            ),
+        }
+    finally:
+        if own:
+            conn.close()
+
+
+def validate_postgres_schema_connection(conn) -> Dict[str, Any]:
+    """Check a caller-owned PostgreSQL transaction without opening a second connection."""
+    status = postgres_schema_status(conn)
+    if not status["current"]:
+        raise RuntimeError("PostgreSQL schema is absent, outdated, or incompatible.")
+    return status
+
+
+def table_copy_order(source: sqlite3.Connection, tables: Sequence[str]) -> list[str]:
+    """Topologically order real FK edges; self-FKs are deferred in transfer."""
+    names = set(tables)
+    parents: Dict[str, set[str]] = {}
+    for table in tables:
+        parents[table] = {
+            row[2] for row in source.execute(f'PRAGMA foreign_key_list("{table}")')
+            if row[2] in names and row[2] != table
+        }
+    ordered: list[str] = []
+    remaining = set(tables)
+    while remaining:
+        ready = sorted(table for table in remaining if parents[table].issubset(ordered))
+        if not ready:
+            raise RuntimeError("source contains a cross-table foreign-key cycle")
+        ordered.extend(ready)
+        remaining.difference_update(ready)
+    return ordered
+
+
+def restore_postgres_sequence(conn, table: str, source: sqlite3.Connection) -> None:
+    """Advance BIGINT identity state to the exact imported maximum (including empty)."""
+    from . import db_postgres
+    if not db_postgres.is_identity_table(table):
+        return
+    row = conn.execute_native(
+        "SELECT pg_get_serial_sequence(%s, 'id') AS sequence", (table,)
+    ).fetchone()
+    if not row or not row["sequence"]:
+        raise RuntimeError(f"missing identity sequence for {table}")
+    maximum = conn.execute_native(f'SELECT MAX(id) AS maximum FROM "{table}"').fetchone()["maximum"]
+    highwater_row = source.execute("SELECT seq FROM sqlite_sequence WHERE name = ?", (table,)).fetchone()
+    highwater = int(highwater_row[0]) if highwater_row else 0
+    next_value = max(int(maximum or 0), highwater)
+    if maximum is None and highwater == 0:
+        conn.execute_native("SELECT setval(%s, 1, false)", (row["sequence"],))
+    else:
+        conn.execute_native("SELECT setval(%s, %s, true)", (row["sequence"], next_value))
+
+
+def validate_postgres_schema() -> Dict[str, Any]:
+    config.assert_database_authority()
+    status = postgres_schema_status()
+    marker_path = getattr(config, "DATABASE_AUTHORITY_FILE", None)
+    if marker_path is not None and marker_path.exists():
+        marker = json.loads(marker_path.read_text(encoding="utf-8"))
+        if status.get("database") != marker.get("database") or marker.get("schema") != "public":
+            raise RuntimeError("Connected PostgreSQL database does not match the durable authority marker.")
+    if not status["current"]:
+        raise RuntimeError(
+            "PostgreSQL schema is absent, outdated, or incompatible; run "
+            "scripts/pg_schema.py plan/check/apply with the expected database name."
+        )
+    return status
+
+
+def _without_sql_comments(script: str) -> str:
+    """Comment-stripped DDL for extracting its explicitly named indexes."""
+    return re.sub(r"(?m)^\s*--.*$", "", script)
 
 
 # Start-up work that must run in one process at a time (WP06): two uvicorn
@@ -1116,30 +1433,49 @@ def _add_missing_columns(conn: sqlite3.Connection) -> None:
 STARTUP_LOCK_NAME = "startup.lock"
 _startup_guard = threading.RLock()
 _startup_handle = None
+_startup_pg_conn = None
 _startup_depth = 0
 
 
 @contextmanager
 def startup_lock():
-    global _startup_handle, _startup_depth
+    global _startup_handle, _startup_pg_conn, _startup_depth
     with _startup_guard:
         if _startup_depth == 0:
             config.ensure_data_dir()
-            handle = open(config.DATA_DIR / STARTUP_LOCK_NAME, "a+")
-            try:
-                fcntl.flock(handle, fcntl.LOCK_EX)
-            except BaseException:
-                handle.close()
-                raise
-            _startup_handle = handle
+            if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
+                from . import db_postgres
+
+                conn = _open()
+                try:
+                    conn.acquire_startup_lock()
+                except BaseException:
+                    conn.close()
+                    raise
+                _startup_pg_conn = conn
+            else:
+                handle = open(config.DATA_DIR / STARTUP_LOCK_NAME, "a+")
+                try:
+                    fcntl.flock(handle, fcntl.LOCK_EX)
+                except BaseException:
+                    handle.close()
+                    raise
+                _startup_handle = handle
         _startup_depth += 1
         try:
             yield
         finally:
             _startup_depth -= 1
             if _startup_depth == 0:
-                _startup_handle.close()  # closing the descriptor releases the flock
-                _startup_handle = None
+                if _startup_pg_conn is not None:
+                    try:
+                        _startup_pg_conn.release_session_lock(db_postgres.STARTUP_LOCK_ID)
+                    finally:
+                        _startup_pg_conn.close()
+                        _startup_pg_conn = None
+                else:
+                    _startup_handle.close()  # closing the descriptor releases the flock
+                    _startup_handle = None
 
 
 # --- numbered migrations -------------------------------------------------
@@ -1211,10 +1547,7 @@ def schema_version(conn: Optional[sqlite3.Connection] = None) -> int:
     own = conn is None
     conn = conn or connect()
     try:
-        exists = conn.execute(
-            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'schema_migrations'"
-        ).fetchone()
-        if not exists:
+        if not _table_exists(conn, "schema_migrations"):
             return 0
         row = conn.execute("SELECT MAX(version) AS v FROM schema_migrations").fetchone()
         return int(row["v"] or 0)
@@ -1241,7 +1574,7 @@ def apply_migrations(conn: sqlite3.Connection, directory: Optional[Path] = None)
             ).fetchone()
             if not done:
                 for statement in _statements(script):
-                    conn.execute(statement)
+                    _execute_ddl(conn, statement)
                 conn.execute(
                     "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)",
                     (version, name, utcnow()),
@@ -1255,14 +1588,19 @@ def apply_migrations(conn: sqlite3.Connection, directory: Optional[Path] = None)
 
 
 def init_db() -> None:
-    # The data directory has to exist before sqlite opens the database inside
-    # it, and creating it is no longer an import-time side effect of config.
+    # PostgreSQL DDL is explicit owner work. Normal app startup only verifies
+    # the completed schema; it never upgrades or seeds a PG target.
     config.ensure_data_dir()
+    if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
+        validate_postgres_schema()
+        return
     with startup_lock():
         _init_db_locked()
 
 
 def _init_db_locked() -> None:
+    if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
+        raise RuntimeError("Use apply_postgresql_schema() for explicit PostgreSQL DDL.")
     conn = connect()
     try:
         # Migrate before the schema, because SCHEMA also creates indexes over
@@ -1276,7 +1614,7 @@ def _init_db_locked() -> None:
         _reset_reverted_stay_fee(conn)
         _resolve_legacy_resign_alerts(conn)
         # The baseline is reached; record it, then apply the numbered files.
-        conn.execute(_MIGRATIONS_TABLE)
+        _execute_ddl(conn, _MIGRATIONS_TABLE)
         conn.execute(
             "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?) "
             "ON CONFLICT (version) DO NOTHING",
@@ -1291,6 +1629,84 @@ def _init_db_locked() -> None:
         guest_slug.backfill(conn)
     finally:
         conn.close()
+
+
+def _postgres_schema_ddl(conn, *, record_history: bool, include_triggers: bool) -> None:
+    """Build the current PG schema on an already locked transaction."""
+    from . import db_postgres
+
+    statements = db_postgres.order_table_ddl(_statements(SCHEMA))
+    for statement in statements:
+        if re.match(r"\s*CREATE\s+TABLE\b", _without_sql_comments(statement), re.I):
+            _execute_ddl(conn, statement)
+    _add_missing_columns(conn)
+    _execute_ddl(conn, _MIGRATIONS_TABLE)
+    for statement in statements:
+        clean = _without_sql_comments(statement)
+        if re.match(r"\s*CREATE\s+TABLE\b", clean, re.I):
+            continue
+        if re.match(r"\s*CREATE\s+TRIGGER\b", clean, re.I):
+            continue  # exact PostgreSQL equivalents installed below
+        _execute_ddl(conn, statement)
+    if record_history:
+        conn.execute(
+            "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?) "
+            "ON CONFLICT (version) DO NOTHING",
+            (BASELINE_VERSION, "baseline", utcnow()),
+        )
+    for version, name, path in migration_files():
+        done = (
+            conn.execute("SELECT 1 FROM schema_migrations WHERE version = ?", (version,)).fetchone()
+            if record_history
+            else None
+        )
+        if done:
+            continue
+        for statement in db_postgres.order_table_ddl(_statements(path.read_text(encoding="utf-8"))):
+            _execute_ddl(conn, statement)
+        if record_history:
+            conn.execute(
+                "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)",
+                (version, name, utcnow()),
+            )
+    db_postgres.install_pg_support(conn, include_triggers=include_triggers)
+
+
+def apply_postgresql_schema() -> Dict[str, Any]:
+    """Owner-invoked, atomic PostgreSQL schema/migration command."""
+    if getattr(config, "DB_BACKEND", "sqlite") != "postgresql":
+        raise RuntimeError("PostgreSQL schema apply requires UBYHOST_DATABASE_URL.")
+    config.ensure_data_dir()
+    with startup_lock():
+        conn = connect()
+        conn.acquire_writer_session_lock()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            try:
+                _postgres_schema_ddl(conn, record_history=True, include_triggers=True)
+                conn.execute("COMMIT")
+            except BaseException:
+                if conn.in_transaction:
+                    conn.execute("ROLLBACK")
+                raise
+        finally:
+            conn.release_writer_session_lock()
+            conn.close()
+    return validate_postgres_schema()
+
+
+def bootstrap_empty_postgresql_schema(conn) -> None:
+    """Create current DDL without app rows/history/triggers inside transfer tx.
+
+    Caller must hold an open target transaction and must already have proved
+    the selected schema contains no user objects. Transfer installs triggers
+    before committing copied raw data.
+    """
+    if getattr(config, "DB_BACKEND", "sqlite") != "postgresql":
+        raise RuntimeError("PostgreSQL transfer bootstrap requires UBYHOST_DATABASE_URL.")
+    if not conn.in_transaction:
+        raise RuntimeError("PostgreSQL transfer bootstrap requires an open target transaction.")
+    _postgres_schema_ddl(conn, record_history=False, include_triggers=False)
 
 
 def _resolve_legacy_resign_alerts(conn: sqlite3.Connection) -> None:
@@ -1441,13 +1857,37 @@ def insert(table: str, values: Dict[str, Any]) -> Optional[int]:
 NULL_SAFE_EQ = "IS"
 
 
+def username_eq(column: str = "username") -> str:
+    """SQLite NOCASE equality for ASCII usernames on both supported backends."""
+    if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
+        return (
+            f"translate({column}, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz') "
+            "= translate(?, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"
+        )
+    return f"{column} = ?"
+
+
 def null_safe_eq(column: str) -> str:
     """``column`` compared null-safely with one ``?`` parameter.
 
     ``column`` is trusted SQL (a column name written in the code), never input.
     Use plain ``column = ?`` where the value can never be None.
     """
-    return f"{column} {NULL_SAFE_EQ} ?"
+    operator = (
+        "IS NOT DISTINCT FROM"
+        if getattr(config, "DB_BACKEND", "sqlite") == "postgresql"
+        else NULL_SAFE_EQ
+    )
+    return f"{column} {operator} ?"
+
+
+def integrity_errors() -> tuple[type[BaseException], ...]:
+    """Integrity-error types exposed by the selected DB-API backend."""
+    if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
+        from . import db_postgres
+
+        return (*db_postgres.integrity_error_types(), sqlite3.IntegrityError)
+    return (sqlite3.IntegrityError,)
 
 
 def is_unique_violation(exc: BaseException) -> bool:
