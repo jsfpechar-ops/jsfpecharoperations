@@ -140,49 +140,10 @@ def check_backup(
     path: Optional[str],
     max_age_hours: float = DEFAULT_MAX_BACKUP_AGE_HOURS,
     now: Optional[float] = None,
-    backup_reference: Optional[str] = None,
 ) -> Path:
     """The backup file, or SystemExit saying why it is not good enough."""
     if config.DB_BACKEND == "postgresql":
-        if path:
-            raise SystemExit("Refusing to write on PostgreSQL: use --backup-reference, not --backup.")
-        if not backup_reference:
-            raise SystemExit("Refusing to write on PostgreSQL: pass the verified pgBackRest --backup-reference.")
-        backup = Path(backup_reference).expanduser()
-        if backup.is_symlink() or not backup.is_file():
-            raise SystemExit("Refusing to write: PostgreSQL backup reference must be a regular non-symlink file.")
-        try:
-            receipt = json.loads(backup.read_text(encoding="utf-8"))
-            expected = {
-                "format_version", "database", "target_fingerprint", "stanza", "backup_label",
-                "backup_type", "started_at_utc", "stopped_at_utc", "verified_at_utc",
-                "backup_ok", "check_ok", "info_ok",
-            }
-            if set(receipt) != expected or receipt["format_version"] != 1:
-                raise ValueError("unsupported receipt shape")
-            if not all(receipt[key] is True for key in ("backup_ok", "check_ok", "info_ok")):
-                raise ValueError("backup verification did not succeed")
-            if not receipt["stanza"] or not receipt["backup_label"]:
-                raise ValueError("missing backup identity")
-            if receipt["database"] != db.current_database_name():
-                raise ValueError("backup is for a different database")
-            if receipt["target_fingerprint"] != config._database_target_fingerprint(config.DATABASE_URL):
-                raise ValueError("backup is for a different PostgreSQL target")
-            times = [datetime.fromisoformat(receipt[key].replace("Z", "+00:00")) for key in
-                     ("started_at_utc", "stopped_at_utc", "verified_at_utc")]
-            if any(value.tzinfo is None or value.utcoffset() is None for value in times):
-                raise ValueError("timestamps must include UTC offsets")
-            start, stop, verified = times
-            if not start <= stop <= verified:
-                raise ValueError("backup timestamps are out of order")
-            age_hours = ((now if now is not None else time.time()) - verified.timestamp()) / 3600
-            if age_hours < 0 or age_hours > max_age_hours:
-                raise ValueError("verified backup is outside the freshness window")
-        except Exception as exc:
-            raise SystemExit(f"Refusing to write: invalid PostgreSQL backup reference ({type(exc).__name__}).") from None
-        return backup
-    if backup_reference:
-        raise SystemExit("Refusing to write on SQLite: use the existing --backup path.")
+        raise SystemExit("Refusing to write on PostgreSQL: no verified backup source exists yet.")
     if not path:
         raise SystemExit(
             "Refusing to write: pass --backup with the path of a backup taken just now "
@@ -477,7 +438,6 @@ def main(argv: Optional[List[str]] = None) -> int:
         description="Re-encrypt stored data under the first key in UBYHOST_DATA_KEYS."
     )
     parser.add_argument("--backup", help="SQLite backup file/directory taken just before this run")
-    parser.add_argument("--backup-reference", help="verified pgBackRest receipt JSON for PostgreSQL")
     parser.add_argument("--dry-run", action="store_true", help="count, write nothing")
     parser.add_argument(
         "--check",
@@ -500,7 +460,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     read_only = args.dry_run or args.check
     if not read_only:
-        check_backup(args.backup, args.max_backup_age_hours, backup_reference=args.backup_reference)
+        check_backup(args.backup, args.max_backup_age_hours)
     require_keys(writing=not read_only and not args.rollback_new_fields)
     open_database()
 

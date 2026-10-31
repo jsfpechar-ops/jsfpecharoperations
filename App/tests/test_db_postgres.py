@@ -1450,11 +1450,15 @@ def test_tcp_url_contract_is_unchanged_and_fingerprint_excludes_credentials():
 
 
 @pytest.mark.parametrize("query", ["", "?sslmode=disable", "?sslmode=prefer"])
-def test_tcp_url_without_verified_tls_is_rejected(query):
-    database = TARGET["database"]
-    result = _probe_with_url(f"postgresql://ubyhost@127.0.0.1:55432/{database}{query}")
+def test_remote_tcp_url_without_verified_tls_is_rejected(query):
+    result = _probe_with_url(f"postgresql://postgres:x@db.example.com/ubyhost{query}")
     assert result.returncode != 0
     assert "sslmode=verify-full (or require)" in result.stderr
+
+
+def test_loopback_tcp_url_without_tls_is_accepted():
+    result = _probe_with_url("postgresql://postgres:x@localhost:5432/ubyhost_test")
+    assert result.returncode == 0, result.stderr[-1000:]
 
 
 def test_connect_sets_timeouts_and_keeps_url_options(monkeypatch):

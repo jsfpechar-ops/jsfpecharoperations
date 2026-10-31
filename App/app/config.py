@@ -76,7 +76,8 @@ def _postgres_target(url: str) -> dict:
         query_port = int(query_port)
     if netloc_port is not None and query_port is not None and netloc_port != query_port:
         raise RuntimeError("UBYHOST_DATABASE_URL has contradictory port settings.")
-    if hostname and query.get("sslmode") not in {"verify-full", "require"}:
+    # Loopback is exempt: a server on the same host (CI service container) has no TLS.
+    if hostname and hostname not in {"localhost", "127.0.0.1", "::1"} and query.get("sslmode") not in {"verify-full", "require"}:
         raise RuntimeError("UBYHOST_DATABASE_URL over TCP needs sslmode=verify-full (or require)")
     return {
         "scheme": parts.scheme.lower(),
