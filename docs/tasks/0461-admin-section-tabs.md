@@ -1,6 +1,6 @@
 # 0461: Admin section tabs (fixes "can't reach Funnel and Operations on phone")
 
-Status: todo
+Status: blocked
 Depends on: none | Base commit: main | Branch: task/0461-admin-section-tabs
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
