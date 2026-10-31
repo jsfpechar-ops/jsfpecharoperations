@@ -3,4 +3,3 @@ caddy-data/
 caddy-config/
 caddy/certs/*.pem
 caddy/Caddyfile.active
-.postgres-cutover-state/

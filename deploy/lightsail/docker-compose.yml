@@ -175,7 +175,6 @@ services:
       UBYHOST_DOMAIN: ${UBYHOST_DOMAIN}
       UBYHOST_APP_DOMAIN: ${UBYHOST_APP_DOMAIN:-}
       ACME_EMAIL: ${ACME_EMAIL}
-      UBYHOST_MAINTENANCE: ${UBYHOST_MAINTENANCE:-0}
     volumes:
       - ./caddy/Caddyfile.active:/etc/caddy/Caddyfile:ro
       - ./caddy/certs:/etc/caddy/certs:ro

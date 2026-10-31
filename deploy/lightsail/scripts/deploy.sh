@@ -16,14 +16,6 @@ set -a
 source .env
 set +a
 
-PG_BACKEND=0
-if [ -n "${UBYHOST_DATABASE_URL:-}" ]; then
-  # shellcheck disable=SC1091
-  source "$(dirname "$0")/postgres-compose-env.sh"
-  configure_postgres_compose
-  PG_BACKEND=1
-fi
-
 # shellcheck disable=SC1091
 source "$(dirname "$0")/litestream_env.sh"
 if [ "${litestream_enabled}" = "1" ]; then
@@ -87,16 +79,9 @@ chmod +x scripts/*.sh
 # every active account has one (admin > Users shows them).
 # UBYHOST_ALLOW_MISSING_EMAIL=1 deploys anyway.
 if docker compose ps --status running --services 2>/dev/null | grep -qx ubyhost; then
-  if [ "${PG_BACKEND}" = "1" ]; then
-    MISSING_EMAIL="$(docker compose exec -T postgres psql -X -qAt \
-      -U "${UBYHOST_PG_SUPERUSER}" -d "${UBYHOST_PG_DATABASE}" \
-      -c "SELECT COUNT(*) FROM user_account WHERE active IS TRUE AND (email IS NULL OR email = '');" \
-      2>/dev/null || echo "?")"
-  else
-    MISSING_EMAIL="$(docker compose exec -T ubyhost sqlite3 /data/ubyhost.db \
-      "SELECT COUNT(*) FROM user_account WHERE active = 1 AND (email IS NULL OR email = '');" \
-      2>/dev/null || echo "?")"
-  fi
+  MISSING_EMAIL="$(docker compose exec -T ubyhost sqlite3 /data/ubyhost.db \
+    "SELECT COUNT(*) FROM user_account WHERE active = 1 AND (email IS NULL OR email = '');" \
+    2>/dev/null || echo "?")"
   if [ "${MISSING_EMAIL}" != "0" ] && [ "${UBYHOST_ALLOW_MISSING_EMAIL:-0}" != "1" ]; then
     echo "Active accounts without a login e-mail: ${MISSING_EMAIL}. Add one to each in admin > Users, then deploy again." >&2
     exit 1
@@ -108,21 +93,13 @@ TABLES=(user_account legal_entity apartment reservation guest submission)
 declare -A BEFORE_COUNTS
 if docker compose ps --status running --services 2>/dev/null | grep -qx ubyhost; then
   echo "==> Mandatory pre-deploy backup"
-  if [ "${PG_BACKEND}" = "1" ]; then
-    ./scripts/postgres-backup.sh diff
-    BACKUP_STAMP="postgres-diff-verified"
-  else
-    ./scripts/backup.sh
-    BACKUP_STAMP="$(docker compose exec -T ubyhost sh -c \
-      'ls -1 /data/backups 2>/dev/null | sort -r | sed -n "1p"')"
-  fi
+  ./scripts/backup.sh
+  BACKUP_STAMP="$(docker compose exec -T ubyhost sh -c \
+    'ls -1 /data/backups 2>/dev/null | sort -r | sed -n "1p"')"
   if [ -z "${BACKUP_STAMP}" ]; then
     echo "No backup stamp found after backup — refusing deployment." >&2
     exit 1
   fi
-  if [ "${PG_BACKEND}" = "1" ]; then
-    echo "PostgreSQL differential backup completed; exact lag is reported separately."
-  else
   # The production snapshot is age-encrypted and cannot be opened here (the
   # identity is kept off the server). Check that it exists and really is an
   # age file (or, outside production, a non-empty plaintext copy), then
@@ -146,7 +123,6 @@ if docker compose ps --status running --services 2>/dev/null | grep -qx ubyhost;
       /data/ubyhost.db "SELECT COUNT(*) FROM ${table};")"
   done
   echo "Backup ${BACKUP_STAMP} is valid; live row counts recorded."
-  fi
 fi
 
 if docker image inspect ubyhost:local >/dev/null 2>&1; then
@@ -171,31 +147,17 @@ else
 fi
 
 if [ -n "${BACKUP_STAMP}" ]; then
-  if [ "${PG_BACKEND}" = "1" ]; then
-    echo "==> Read-only PostgreSQL schema/version preflight"
-    docker compose run --rm --no-deps --entrypoint python ubyhost \
-      scripts/pg_schema.py check --expect-database "${UBYHOST_PG_DATABASE}"
-  else
-    echo "==> Dry-running database migration against a copy of the live database"
-    if ! docker compose run --rm --no-deps \
-      -e "UBYHOST_DB=${PREFLIGHT_DB}" \
-      --entrypoint python ubyhost -c \
-      "from app import db; db.init_db(); assert db.query_one('PRAGMA integrity_check')[0] == 'ok'; required={'guest_message','passport_photo_policy'}; apartment={r['name'] for r in db.query('PRAGMA table_info(apartment)')}; reservation={r['name'] for r in db.query('PRAGMA table_info(reservation)')}; claim={r['name'] for r in db.query('PRAGMA table_info(reservation_claim)')}; assert required <= apartment; assert 'registration_completed_at' in reservation; assert 'guest_access_reopened_at' in claim"; then
-      docker compose exec -T ubyhost rm -f "${PREFLIGHT_DB}"
-      echo "Migration dry-run failed." >&2
-      exit 1
-    fi
+  echo "==> Dry-running database migration against a copy of the live database"
+  if ! docker compose run --rm --no-deps \
+    -e "UBYHOST_DB=${PREFLIGHT_DB}" \
+    --entrypoint python ubyhost -c \
+    "from app import db; db.init_db(); assert db.query_one('PRAGMA integrity_check')[0] == 'ok'; required={'guest_message','passport_photo_policy'}; apartment={r['name'] for r in db.query('PRAGMA table_info(apartment)')}; reservation={r['name'] for r in db.query('PRAGMA table_info(reservation)')}; claim={r['name'] for r in db.query('PRAGMA table_info(reservation_claim)')}; assert required <= apartment; assert 'registration_completed_at' in reservation; assert 'guest_access_reopened_at' in claim"; then
     docker compose exec -T ubyhost rm -f "${PREFLIGHT_DB}"
-    echo "Migration dry-run passed."
-  fi
-fi
-
-if [ "${PG_BACKEND}" = "1" ]; then
-  state_dir="${UBYHOST_PG_CUTOVER_STATE_DIR:-${ROOT}/.postgres-cutover-state}"
-  if [ ! -s "${state_dir}/postgres-writers-enabled" ]; then
-    echo "PostgreSQL is configured but the durable owner writer marker is absent; refusing to start web/worker." >&2
+    echo "Migration dry-run failed." >&2
     exit 1
   fi
+  docker compose exec -T ubyhost rm -f "${PREFLIGHT_DB}"
+  echo "Migration dry-run passed."
 fi
 
 echo "==> Starting stack"
@@ -288,48 +250,36 @@ if ! docker compose exec -T ubyhost python scripts/backfill_legal_acceptance.py;
   exit 1
 fi
 
-# BE-11: SQLite retains its historical deploy-time backfill. PostgreSQL is
-# schema-check-only here; any required data migration is an explicit owner step.
-echo "==> Document-number encryption check"
-if [ "${PG_BACKEND}" = "1" ]; then
-  if ! docker compose exec -T ubyhost python scripts/migrate_encrypt_doc_fields.py --check; then
-    echo "PostgreSQL contains pending document-number data migration; use the owner migration procedure before deployment." >&2
-    exit 1
-  fi
-else
-  docker compose exec -T ubyhost python scripts/migrate_encrypt_doc_fields.py --check || true
-  if ! docker compose exec -T ubyhost python scripts/migrate_encrypt_doc_fields.py; then
-    echo "Document-number backfill failed." >&2
-    exit 1
-  fi
-  if ! docker compose exec -T ubyhost python scripts/migrate_encrypt_doc_fields.py --check; then
-    echo "Plaintext document numbers remain after the backfill." >&2
-    exit 1
-  fi
+# BE-11: encrypt any travel-document numbers still sitting in the plaintext
+# columns. Idempotent; logs a count only. The --check before it is
+# informational, the one after it is the assertion the deploy must pass.
+echo "==> Document-number backfill (counts only)"
+docker compose exec -T ubyhost python scripts/migrate_encrypt_doc_fields.py --check || true
+if ! docker compose exec -T ubyhost python scripts/migrate_encrypt_doc_fields.py; then
+  echo "Document-number backfill failed." >&2
+  exit 1
+fi
+if ! docker compose exec -T ubyhost python scripts/migrate_encrypt_doc_fields.py --check; then
+  echo "Plaintext document numbers remain after the backfill." >&2
+  exit 1
 fi
 if [ -n "${BACKUP_STAMP}" ]; then
-  if [ "${PG_BACKEND}" = "1" ]; then
-    echo "Post-deploy PostgreSQL WAL archive check and lag:" 
-    docker compose exec -T postgres /usr/local/bin/pgbackrest-runner --stanza=ubyhost check
-    ./scripts/postgres-status.sh
-  else
-    echo ""
-    echo "Post-deploy database integrity and row-count checks:"
-    LIVE_OK="$(docker compose exec -T ubyhost sqlite3 /data/ubyhost.db "PRAGMA integrity_check;")"
-    if [ "${LIVE_OK}" != "ok" ]; then
-      echo "Live database integrity check failed: ${LIVE_OK}" >&2
+  echo ""
+  echo "Post-deploy database integrity and row-count checks:"
+  LIVE_OK="$(docker compose exec -T ubyhost sqlite3 /data/ubyhost.db "PRAGMA integrity_check;")"
+  if [ "${LIVE_OK}" != "ok" ]; then
+    echo "Live database integrity check failed: ${LIVE_OK}" >&2
+    exit 1
+  fi
+  for table in "${TABLES[@]}"; do
+    after="$(docker compose exec -T ubyhost sqlite3 /data/ubyhost.db \
+      "SELECT COUNT(*) FROM ${table};")"
+    if [ "${after}" -lt "${BEFORE_COUNTS[${table}]}" ]; then
+      echo "${table} row count fell from ${BEFORE_COUNTS[${table}]} to ${after}." >&2
       exit 1
     fi
-    for table in "${TABLES[@]}"; do
-      after="$(docker compose exec -T ubyhost sqlite3 /data/ubyhost.db \
-        "SELECT COUNT(*) FROM ${table};")"
-      if [ "${after}" -lt "${BEFORE_COUNTS[${table}]}" ]; then
-        echo "${table} row count fell from ${BEFORE_COUNTS[${table}]} to ${after}." >&2
-        exit 1
-      fi
-      echo "  ${table}: ${BEFORE_COUNTS[${table}]} -> ${after}"
-    done
-  fi
+    echo "  ${table}: ${BEFORE_COUNTS[${table}]} -> ${after}"
+  done
 fi
 echo ""
 echo "Public URL: ${UBYHOST_PUBLIC_BASE_URL}"

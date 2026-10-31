@@ -17,16 +17,6 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "${ROOT}"
-if [ -f .env ]; then
-  set -a
-  # shellcheck disable=SC1091
-  source .env
-  set +a
-fi
-if [ -n "${UBYHOST_DATABASE_URL:-}" ]; then
-  echo "SQLite restore.sh is disabled for PostgreSQL; use scripts/postgres-restore.sh with a new isolated volume." >&2
-  exit 1
-fi
 
 if [ ! -f .env ]; then
   echo "Missing .env in ${ROOT}" >&2

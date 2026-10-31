@@ -14,10 +14,6 @@ set -a
 # shellcheck disable=SC1091
 source .env
 set +a
-if [ -n "${UBYHOST_DATABASE_URL:-}" ]; then
-  echo "SQLite backup.sh is disabled for PostgreSQL; use scripts/postgres-backup.sh." >&2
-  exit 1
-fi
 
 docker compose exec -T ubyhost bash /app/scripts/backup_data.sh
 # Optional dead-man switch (e.g. healthchecks.io). Only reached on success,
