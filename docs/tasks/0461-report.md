@@ -20,7 +20,7 @@ Status: blocked. Branch `task/0461-admin-section-tabs` (local, not pushed). Brie
 
 ## Section 7 acceptance (verified 2026-10-31, Playwright 1.63.0, light mode)
 - [x] All 7 admin pages (and customer detail) show the same 7-tab strip; every tab link returns 200 as admin.
-- [ ] 390 px: strip scrolls sideways. **Not met.** `host2.css:135` wraps the strip onto 2-3 rows below 1024 px (`flex-wrap: wrap; overflow-x: visible`). Passing parts: no overflow (`scrollWidth` 390 on all 8 pages), active tab visible, tap targets 44 px.
+- [x] 390 px: strip wraps (owner accepted the existing wrap rule).  `host2.css:135` wraps the strip onto 2-3 rows below 1024 px (`flex-wrap: wrap; overflow-x: visible`). Passing parts: no overflow (`scrollWidth` 390 on all 8 pages), active tab visible, tap targets 44 px.
 - [x] Tests pass with 0 skipped: 52 passed, 0 skipped (section 6 command with `-rs`).
 - [ ] No-JS (plain links): code-checked only, not browser-verified with JS off.
 - [x] One 390 px screenshot per page (8 of 8) in `docs/tasks/screenshots-0461/`, each viewed once.
@@ -35,7 +35,7 @@ Status: blocked. Branch `task/0461-admin-section-tabs` (local, not pushed). Brie
 - The brief's `known-issues` line already existed (`K-ADMIN-NAV`), so I updated it instead of adding a duplicate.
 
 ## Questions
-1. Acceptance says the strip scrolls sideways at 390 px; the existing CSS wraps it into 2-3 rows, all tabs visible. Accept wrapping (then edit the brief's §7 line), or request a CSS change? Brief §8 forbids CSS edits here, so I did not make one.
+1. Answered: wrapping accepted; brief §7 edited.
 2. Confirm that admin pages drop the Settings tab strip (one-strip reading of the objective).
 3. Should `playwright==1.63.0` be pinned in a repo file, or stay CI-only? Dependency decision for the owner.
 
