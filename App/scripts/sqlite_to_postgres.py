@@ -108,7 +108,8 @@ def snapshot_connection(path: Path) -> sqlite3.Connection:
 def app_tables(source: sqlite3.Connection) -> list[str]:
     return [r[0] for r in source.execute(
         "SELECT name FROM sqlite_master WHERE type='table' "
-        "AND name NOT LIKE 'sqlite_%' ORDER BY name"
+        "AND name NOT LIKE 'sqlite_%' "
+        "AND name NOT LIKE '\\_litestream\\_%' ESCAPE '\\' ORDER BY name"
     )]
 
 
@@ -260,7 +261,11 @@ def transfer(source_path: Path, report_path: Path, expected_database: str, verif
         tables = app_tables(source)
         expected = db._expected_sqlite_columns()
         if set(tables) != set(expected):
-            raise ValueError("source table set differs from the supported application schema")
+            raise ValueError(
+                "source table set differs from the supported application schema "
+                f"(extra: {sorted(set(tables) - set(expected))}, "
+                f"missing: {sorted(set(expected) - set(tables))})"
+            )
         for table in tables:
             if _table_columns(source, table) != [c[0] for c in expected[table]]:
                 raise ValueError(f"source schema drift at {table}")
