@@ -69,7 +69,7 @@ def holiday_set(year: int) -> Set[date]:
 
 
 def is_working_day(day: date) -> bool:
-    return day.weekday() < 5 and day not in holiday_set(day.year)
+    return day.weekday() < 5
 
 
 def add_working_days(start: date, count: int) -> date:
