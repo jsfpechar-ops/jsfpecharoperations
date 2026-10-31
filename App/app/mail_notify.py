@@ -198,7 +198,7 @@ def stays_for_submission(submission_id: Optional[int]) -> List[Dict[str, Any]]:
             "JOIN reservation r ON r.id = g.reservation_id "
             "JOIN apartment a ON a.id = r.apartment_id "
             f"WHERE g.id IN ({marks}) "
-            "GROUP BY r.id "
+            "GROUP BY r.id, a.id, a.internal_name "
             "ORDER BY r.date_from, r.id",
             list(guest_ids),
         )

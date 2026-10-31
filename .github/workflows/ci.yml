@@ -184,7 +184,7 @@ jobs:
         env:
           UBYHOST_DATABASE_URL: postgresql://postgres:ubyhost@localhost:5432/ubyhost_test
         run: |
-          python -m pytest tests --ignore=tests/test_db_postgres.py -q -o faulthandler_timeout=120 --junitxml=pg-full.xml
+          python -m pytest tests -m "not sqlite_only" --ignore=tests/test_db_postgres.py -q -o faulthandler_timeout=120 --junitxml=pg-full.xml
 
       - name: Upload junit XML
         if: always()

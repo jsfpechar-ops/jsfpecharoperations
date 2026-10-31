@@ -395,3 +395,15 @@ if _httpx2 is not None:
         _cookies_set(self, name, value, domain, path)
 
     _httpx2.Cookies.set = _replacing_cookies_set
+
+
+def pytest_collection_modifyitems(config, items):
+    """On PostgreSQL, skip the sqlite_only tests (SQLite file, migration runner, PRAGMA)."""
+    from app import config as app_config
+
+    if app_config.DB_BACKEND != "postgresql":
+        return
+    skip = pytest.mark.skip(reason="sqlite_only")
+    for item in items:
+        if item.get_closest_marker("sqlite_only"):
+            item.add_marker(skip)

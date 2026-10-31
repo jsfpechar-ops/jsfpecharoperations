@@ -70,6 +70,7 @@ def _pre_wp18_database(path: Path) -> None:
         conn.close()
 
 
+@pytest.mark.sqlite_only
 def test_an_empty_database_is_created_at_the_baseline(fresh):
     db.init_db()
     assert db.schema_version() == LATEST
@@ -82,6 +83,7 @@ def test_an_empty_database_is_created_at_the_baseline(fresh):
     ]
 
 
+@pytest.mark.sqlite_only
 def test_an_existing_database_is_marked_at_the_current_version_unchanged(fresh):
     current = fresh / "fresh.db"
     _pre_wp18_database(current)
@@ -103,6 +105,7 @@ def test_an_existing_database_is_marked_at_the_current_version_unchanged(fresh):
     assert db.query_one("SELECT username FROM user_account WHERE username = 'pre-wp18'")
 
 
+@pytest.mark.sqlite_only
 def test_an_empty_and_an_upgraded_database_end_with_the_same_schema(fresh, tmp_path, monkeypatch):
     db.init_db()
     created = _schema(config.DB_PATH)
@@ -112,6 +115,7 @@ def test_an_empty_and_an_upgraded_database_end_with_the_same_schema(fresh, tmp_p
     assert _schema(config.DB_PATH) == created
 
 
+@pytest.mark.sqlite_only
 def test_a_numbered_migration_is_applied_once_and_recorded(fresh):
     (fresh / "migrations" / f"{NEXT}_demo_column.sql").write_text(
         "-- a demo migration\n"
@@ -127,6 +131,7 @@ def test_a_numbered_migration_is_applied_once_and_recorded(fresh):
     assert row["name"] == "demo_column"
 
 
+@pytest.mark.sqlite_only
 def test_an_existing_database_gets_later_migrations_on_top_of_the_baseline(fresh):
     _pre_wp18_database(config.DB_PATH)
     (fresh / "migrations" / f"{NEXT}_demo_column.sql").write_text(
@@ -137,6 +142,7 @@ def test_an_existing_database_gets_later_migrations_on_top_of_the_baseline(fresh
     assert db.query_one("SELECT username FROM user_account WHERE username = 'pre-wp18'")
 
 
+@pytest.mark.sqlite_only
 def test_a_failing_migration_leaves_nothing_behind_and_is_not_recorded(fresh):
     db.init_db()
     (fresh / "migrations" / f"{NEXT}_broken.sql").write_text(
@@ -156,6 +162,7 @@ def test_a_migration_numbered_inside_the_baseline_is_refused(fresh):
         db.init_db()
 
 
+@pytest.mark.sqlite_only
 def test_files_that_are_not_migrations_are_ignored(fresh):
     (fresh / "migrations" / ".gitkeep").write_text("")
     (fresh / "migrations" / "notes.txt").write_text("not sql")
@@ -177,6 +184,7 @@ def test_insert_returns_the_new_id_and_execute_the_row_count(fresh):
     assert db.execute("UPDATE user_account SET display_name = 'x'") == 2
 
 
+@pytest.mark.sqlite_only
 def test_the_send_claim_still_refuses_a_second_holder(fresh):
     db.init_db()
     sql = (
@@ -206,6 +214,7 @@ def test_the_codelist_upsert_keeps_one_row_with_the_latest_values(fresh, monkeyp
     assert [(row["code"], row["text_en"]) for row in stored] == [("CZE", "Czechia")]
 
 
+@pytest.mark.sqlite_only
 def test_null_safe_eq_matches_null_the_way_is_did(fresh):
     db.init_db()
     now = db.utcnow()

@@ -149,7 +149,8 @@ def test_invalid_ranges_fail_before_database_access(source_db, tmp_path, monkeyp
     assert not output.parent.exists()
 
 
-@pytest.mark.parametrize("alias_kind", ["db", "wal", "shm", "journal", "symlink", "hardlink"])
+@pytest.mark.parametrize("alias_kind", ["db", "wal", "shm", "journal", "symlink",
+                          pytest.param("hardlink", marks=pytest.mark.sqlite_only)])
 def test_output_aliases_are_rejected_before_extract(source_db, tmp_path, monkeypatch, alias_kind):
     database = source_db["database"]
     if alias_kind == "db":
