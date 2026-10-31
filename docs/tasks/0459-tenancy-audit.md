@@ -1,5 +1,5 @@
 # 0459: Tenancy audit of host-facing routes (read-only)
-Status: todo
+Status: review
 Depends on: none | Base commit: main | Branch: task/0459-tenancy-audit
 Executor: Haiku 5.5 | Fits one session: 25 tool calls, 60k tokens
 ## 1. Objective
