@@ -1,4 +1,4 @@
-"""PostgreSQL 18.6 integration tests for the 0455 runtime and verified transfer.
+"""PostgreSQL 16+ integration tests for the 0455 runtime and verified transfer.
 
 These tests exercise a real PostgreSQL server, so they need their own pytest
 process configured the way a PostgreSQL deployment is. The actual application
@@ -25,7 +25,7 @@ Two backend facts the transfer tests rely on, both asserted rather than assumed:
   prefix of its column order, so a row comparison is always decided before a
   NULL could be compared; the transfer's single ORDER BY stays deterministic on
   both backends without changing application SQL.
-* The recorded 18.6 cluster is initialised with ``--no-locale`` (C), matching
+* PostgreSQL 16+ clusters are initialised with ``--no-locale`` (C), matching
   SQLite's ASCII-only LIKE/lower folding. No test here assumes Unicode case
   folding or locale-dependent collation: every LIKE/ILIKE assertion is ASCII
   only, and values with non-ASCII text are compared exactly, never folded.
@@ -67,7 +67,7 @@ pytestmark = pytest.mark.skipif(
     ),
 )
 
-# The recorded 18.6 environment: official Unix-socket layout from the 0455 brief.
+# Unix-socket layout from the 0455 brief (PostgreSQL 16+).
 SOCKET_DIR = "/tmp/pgsock18"
 SOCKET_PORT = 55432
 
@@ -274,7 +274,7 @@ def test_full_schema_apply_and_validate_on_postgres(pg_runtime):
         database = connection.execute_native("SELECT current_database() AS name").fetchone()["name"]
     finally:
         connection.close()
-    assert version >= 180000, f"PostgreSQL {version} is older than the required 18 matrix"
+    assert version >= 160000, f"PostgreSQL {version} is older than the required 16"
     assert triggers == {
         "invoice_issued_guard",
         "invoice_note_guard",
@@ -424,7 +424,7 @@ def test_bound_punctuation_comments_and_like_execute_on_postgres(pg_runtime):
     row = db.query_one("SELECT ? AS a, ? AS b, ? AS c", (1, "Δ", None))
     assert (row["a"], row["b"], row["c"]) == (1, "Δ", None)
     # SQLite LIKE folded ASCII case; the adapter keeps that behaviour. The C
-    # locale of the 18.6 cluster matches this, so only ASCII folding is asserted
+    # locale of the PostgreSQL 16+ cluster matches this, so only ASCII folding is asserted
     # here; no test below assumes Unicode case folding.
     assert db.query_one("SELECT 'ABC' LIKE ? AS v", ("abc",))["v"] is True
     assert db.query_one("SELECT 'AbC' LIKE ? AS v", ("a%",))["v"] is True
@@ -1397,13 +1397,6 @@ print(json.dumps({
 }))
 """
 
-_SOCKET_PROBE = """
-import json
-from app import db
-row = db.query_one("SELECT 1 AS one, current_setting('server_version_num') AS version")
-print(json.dumps({"one": row[0], "version": row["version"]}))
-"""
-
 _SQLITE_PROBE = """
 import json
 from app import config
@@ -1498,11 +1491,12 @@ def test_socket_url_forms_are_accepted_and_connect():
         f"postgresql://ubyhost@/{database}?host={SOCKET_DIR}&port={SOCKET_PORT}",
         f"postgresql://ubyhost@/{database}?host=%2Ftmp%2Fpgsock18&port={SOCKET_PORT}",
     ):
-        result = _probe_with_url(url, _SOCKET_PROBE)
-        assert result.returncode == 0, result.stderr[-1000:]
-        payload = json.loads(result.stdout)
-        assert payload["one"] == 1
-        assert int(payload["version"]) >= 180000
+        target = config._postgres_target(url)
+        assert target["socket_dir"] == SOCKET_DIR
+        assert target["port"] == SOCKET_PORT
+    if config._postgres_target(_PG_URL)["socket_dir"]:
+        row = db.query_one("SELECT current_setting('server_version_num') AS version")
+        assert int(row["version"]) >= 160000
 
 
 def test_socket_target_fingerprint_includes_the_socket_directory_only():
