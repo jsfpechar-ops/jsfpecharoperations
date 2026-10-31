@@ -242,3 +242,14 @@ def test_only_one_process_can_hold_the_scheduler_lock(monkeypatch, tmp_path):
     assert scheduler._acquire_single_instance_lock() is True
     scheduler._lock_handle.close()
     scheduler._lock_handle = None
+
+
+def test_worker_job_intervals_match_their_reasons():
+    # docs/context/job-ownership.md explains each value. push drains the alert
+    # outbox and must stay at one minute.
+    from app import scheduler
+
+    minutes = scheduler.job_intervals()
+    assert minutes["door_codes"] == 5
+    assert minutes["guide_import"] == 60
+    assert minutes["push"] == 1
