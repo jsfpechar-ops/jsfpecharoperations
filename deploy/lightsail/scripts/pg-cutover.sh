@@ -16,6 +16,7 @@ cd "${ROOT}"
 
 PG_URL='postgresql://ubyhost@/ubyhost?host=/var/run/postgresql'
 REHEARSAL_URL='postgresql://ubyhost@/ubyhost_rehearsal?host=/var/run/postgresql'
+RESTORETEST_URL='postgresql://ubyhost@/ubyhost_restoretest?host=/var/run/postgresql'
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 PG_TOUCHED=0
 ENV_SWITCHED=0
@@ -129,8 +130,20 @@ PY
   docker compose run --rm --no-deps -T --entrypoint python ubyhost -c "${py}" "$1" 2>&1 | tail -60
 }
 
-rehearsal_cleanup() {  # on exit: drop the rehearsal database and the SQLite copy
+restore_test() {  # <stamp>: dump the rehearsal database, restore it into ubyhost_restoretest, verify that copy
+  pg_sql postgres "DROP DATABASE IF EXISTS ubyhost_restoretest" >/dev/null
+  pg_sql postgres "CREATE DATABASE ubyhost_restoretest" >/dev/null
+  docker compose exec -T postgres pg_dump -U ubyhost -Fc ubyhost_rehearsal \
+    | docker compose exec -T postgres pg_restore -U ubyhost -d ubyhost_restoretest --single-transaction \
+    || die "restore test: pg_dump or pg_restore failed"
+  pg_transfer "${RESTORETEST_URL}" ubyhost_restoretest "/data/pg-cutover/restoretest-${1}.verify.json" --verify-only \
+    || die "restore test failed: the restored copy differs from the SQLite source"
+  echo "RESTORE TEST OK"
+}
+
+rehearsal_cleanup() {  # on exit: drop the rehearsal and restore-test databases and the SQLite copy
   pg_sql postgres "DROP DATABASE IF EXISTS ubyhost_rehearsal" >/dev/null 2>&1 || true
+  pg_sql postgres "DROP DATABASE IF EXISTS ubyhost_restoretest" >/dev/null 2>&1 || true
   remove_source_copy
 }
 
@@ -159,6 +172,7 @@ rehearse() {
   pg_transfer "${REHEARSAL_URL}" ubyhost_rehearsal "${report}" || die "rehearsal transfer failed"
   pg_transfer "${REHEARSAL_URL}" ubyhost_rehearsal "${report%.json}.verify.json" --verify-only \
     || die "rehearsal verify failed"
+  restore_test "${STAMP}"
   print_report_tables "${report}"
   echo "REHEARSAL OK"
 }
