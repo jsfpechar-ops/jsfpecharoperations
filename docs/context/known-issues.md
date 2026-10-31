@@ -90,7 +90,7 @@
 | K-T01 | Low open | Tests | Order-dependent tests (also 3 in test_host_i18n.py) | [0080](../tasks/0080-report.md) |
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
 | K-PG01 | Closed | routes/*.py | 0459: all host lookups owner-scoped via access.py | 0459 |
-| K-PG02 | High open | ci.yml, #592 ops kit | 45 PG tests skip in CI; cutover kit unrehearsed (D1) | plan v4 |
+| K-PG02 | Med open | #592 runtime | TLS not enforced, no timeouts, no full-suite run on PG; 0461, 0462 | 0461-review |
 
 - K-UI-CACHE: bump `?v=` on edits; 1y cache (0172).
 - K-NAV-418: 3 host_i18n tests fail. K-CHECKIN #435, K-MORE #436 undeployed.
