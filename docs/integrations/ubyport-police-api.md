@@ -22,6 +22,13 @@ lookups. The critical path for legal compliance. Read first:
 | TLS | verify on; redirects disallowed | `App/app/ubyport/client.py:131-138` |
 | Sandbox | **Yes**: the `test` environment (`ws_uby_test`). Mock server: `App/mock_ubyport/server.py` (FastAPI, no NTLM check, state in `mock_state.json`) | `config.py:135`, `server.py:261-262` |
 
+## Official references (fetched 2026-10-31; re-check, content can change)
+
+- Overview, published by Policie ČR: https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/co-to-je-ubyport — describes UbyPort as the web application for electronic reporting of accommodated foreigners, with the app at https://ubyport.pcr.cz/ubyport, over HTTPS.
+- Submission channels: https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/jake-jsou-moznosti-zasilani-dat-aplikaci-ubyport — three modules: UbyPortForm (manual web form), UbyPortUpLoad (UNL file), UbyPortWs (web service, "requires the programmer of your system"). UbyHost uses UbyPortWs.
+- **Fit question:** the same page recommends the manual form for small accommodation (a few guests a week, no electronic register) and the web service for large facilities (tens to hundreds of guests a week, with an evidence programme). UbyHost targets short-term rental hosts. The owner should confirm that the web-service use is accepted for this profile. See [gap report](../gap-report.md) Q41.
+- Technical contract: the code cites two appendices of the UbyPort operating rules: appendix 3 (UNL format, "Popis položek ubytovacího zařízení, cizince a formát UNL souboru") and appendix 5 (web-service description, section 10.5 on checks at first save). See `App/app/validation.py:1-10`. Neither appendix is in the repo or on the public page. See Q42.
+
 ## Rate limits
 No rate limit is documented in the repo or implemented client-side beyond the
 sequential sweep and the batch size. `⚠️ UNKNOWN — needs human input`: the

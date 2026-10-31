@@ -21,7 +21,7 @@ Each link was checked only by appearing in search results, not fetched.
 | TTLock Open Platform (API v3) | https://euopen.ttlock.com/doc/api/v3/lock/list | search | Base URL `https://euapi.ttlock.com` (`App/app/config.py:169`) |
 | ARES (Czech business register) — service catalogue | https://www.mfcr.cz/assets/attachments/2023-08-01_ARES-Technicka-dokumentace-Katalog-verejnych-sluzeb.pdf | search | Catalogue PDF, dated 2023-08-01; service `EkonomickéSubjekty` |
 | ADIS (VAT register, SOAP) | `⚠️ UNKNOWN` — no official ADIS page confirmed by search. The `mfcr.ezak.cz` "CRS komunikační rozhraní" document appeared but is unconfirmed as ADIS. | — | Code: `adisrws.mfcr.cz` (`App/app/vat_register.py`) |
-| UbyPort (Police WS) | `⚠️ UNKNOWN` — no public documentation found. Relevant internal docs: `docs/UBYPORT_CORE.md`. | — | Ask the owner for the WSDL/contract |
+| UbyPort (Police WS) | Overview: https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/co-to-je-ubyport ; channels: https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/jake-jsou-moznosti-zasilani-dat-aplikaci-ubyport ; app: https://ubyport.pcr.cz/ubyport | fetched 2026-10-31 (policie.gov.cz) | WSDL and operating-rules appendices 3 and 5 are not public: see Q42 |
 | Litestream (config reference) | https://litestream.io/v0.3/reference/config/ | search (v0.3 path) | Repo uses Litestream 0.5.17 — find the current-version page before relying on it |
 | Web Push protocol | https://datatracker.ietf.org/doc/rfc8030/ | canonical | |
 | VAPID for Web Push | https://datatracker.ietf.org/doc/rfc8292/ | canonical | |

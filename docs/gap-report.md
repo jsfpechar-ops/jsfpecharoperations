@@ -40,6 +40,14 @@ Checked after the first draft. "Confirmed" means a repo, GitHub or public-source
 | Demo calendar feeds during `ical` job | 2 errors when `PUBLIC_BASE_URL` pointed at port 8080 while the app ran on 8095. Demo feeds are built from `PUBLIC_BASE_URL` (`App/app/demo.py:147-156`). With the matching URL: `sync_all` gives `errors=0`, both feeds fetched. |
 | `POST /demo` without CSRF header | 303 to `/login?notice=form_expired` (CSRF enforced) |
 
+### UbyPort official page (policie.gov.cz, fetched 2026-10-31)
+
+New questions raised by the official material. Answer from the owner or from Policie ČR:
+
+41. **Is the web-service channel (UbyPortWs) accepted for a short-term rental host profile?** The police page recommends the manual form for small accommodation and the web service for large facilities with an evidence programme (`https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/jake-jsou-moznosti-zasilani-dat-aplikaci-ubyport`). Has UbyHost been registered or approved for UbyPortWs use, and under which category?
+42. **Can the owner supply the UbyPort operating-rules appendices 3 (UNL format) and 5 (web-service description), and the WSDL?** The code is built on them (`App/app/validation.py:1-10`), but they are not in the repo. Store them only where the licence and confidentiality terms allow, and link them from `docs/vendors/`.
+43. **Does UbyHost need the UNL file format?** The police page lists UNL upload as a channel. The repo mentions UNL only in `App/app/validation.py`. Is UNL export a supported feature, or only a reference to the spec?
+
 **Still open (cannot be verified from the repo or public sources):** production env values (Q10, Q11, Q14, Q16, Q21), production NULL-owner rows (Q4), live Litestream bucket and region, server crontab state, the actual content of the last restore drill, the RETENTION/ROPA/vendor documents (Q20, Q24), and the erasure path (Q25). These need access to the Lightsail server, the AWS console, or the owner.
 
 ## A. Blocks the migration (answer before any port)
