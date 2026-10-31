@@ -20,6 +20,17 @@ from app import config, db  # noqa: E402
 from app import db_postgres  # noqa: E402
 
 REPORT_VERSION = 1
+# Columns left by an old stay-fee build (see docs/tasks/0470-transfer-retired-stay-fee-columns.md).
+# The tuple lists the allowed non-NULL values; any other value refuses the transfer.
+RETIRED_COLUMNS = {
+    ("apartment", "stay_fee_cash"): (1,),
+    ("apartment", "stay_fee_payment_link"): (),
+    ("apartment", "stay_fee_policy"): ("on",),
+    ("guest", "fee_claim"): (),
+    ("reservation", "stay_fee_paid_amount_czk"): (),
+    ("reservation", "stay_fee_paid_at"): (),
+    ("reservation", "stay_fee_rate_czk"): (),
+}
 
 # Enough SQLSTATE context for an operator without echoing a psycopg message,
 # whose DETAIL may contain offending row values (for example a guest e-mail).
@@ -108,7 +119,8 @@ def snapshot_connection(path: Path) -> sqlite3.Connection:
 def app_tables(source: sqlite3.Connection) -> list[str]:
     return [r[0] for r in source.execute(
         "SELECT name FROM sqlite_master WHERE type='table' "
-        "AND name NOT LIKE 'sqlite_%' ORDER BY name"
+        "AND name NOT LIKE 'sqlite_%' "
+        "AND name NOT LIKE '\\_litestream\\_%' ESCAPE '\\' ORDER BY name"
     )]
 
 
@@ -153,7 +165,21 @@ def schema_version(source: sqlite3.Connection) -> int:
 
 
 def _table_columns(source: sqlite3.Connection, table: str) -> list[str]:
-    return [r[1] for r in source.execute(f'PRAGMA table_info("{table}")')]
+    return [r[1] for r in source.execute(f'PRAGMA table_info("{table}")')
+            if (table, r[1]) not in RETIRED_COLUMNS]
+
+
+def _check_retired_columns(source: sqlite3.Connection) -> None:
+    for (table, col), allowed in RETIRED_COLUMNS.items():
+        if col not in {r[1] for r in source.execute(f'PRAGMA table_info("{table}")')}:
+            continue
+        sql = f'SELECT COUNT(*) FROM "{table}" WHERE "{col}" IS NOT NULL'
+        params: tuple = ()
+        if allowed:
+            sql += f' AND "{col}" NOT IN ({", ".join("?" for _ in allowed)})'
+            params = tuple(allowed)
+        if source.execute(sql, params).fetchone()[0] > 0:
+            raise ValueError(f"retired column {table}.{col} holds data")
 
 
 def _postgres_empty(conn) -> bool:
@@ -230,16 +256,16 @@ def reconcile(source: sqlite3.Connection, target, tables: list[str]) -> dict[str
     summary = {}
     for table in tables:
         columns = _table_columns(source, table)
-        src_count, src_hash = table_digest(source, table, columns, postgres=False)
         with _sanitized_target_errors(table):
             target_columns = [row["name"] for row in target.execute_native(
                 "SELECT column_name AS name FROM information_schema.columns "
                 "WHERE table_schema=current_schema() AND table_name=%s ORDER BY ordinal_position",
                 (table,),
             ).fetchall()]
-            if columns != target_columns:
+            if sorted(columns) != sorted(target_columns):
                 raise ValueError(f"column mismatch at {table}")
-            dst_count, dst_hash = table_digest(target, table, columns, postgres=True)
+            src_count, src_hash = table_digest(source, table, target_columns, postgres=False)
+            dst_count, dst_hash = table_digest(target, table, target_columns, postgres=True)
         summary[table] = {"rows": src_count, "source_sha256": src_hash,
                           "target_rows": dst_count, "target_sha256": dst_hash,
                           "match": src_count == dst_count and src_hash == dst_hash}
@@ -260,10 +286,17 @@ def transfer(source_path: Path, report_path: Path, expected_database: str, verif
         tables = app_tables(source)
         expected = db._expected_sqlite_columns()
         if set(tables) != set(expected):
-            raise ValueError("source table set differs from the supported application schema")
+            raise ValueError(
+                "source table set differs from the supported application schema "
+                f"(extra: {sorted(set(tables) - set(expected))}, "
+                f"missing: {sorted(set(expected) - set(tables))})"
+            )
+        _check_retired_columns(source)
         for table in tables:
-            if _table_columns(source, table) != [c[0] for c in expected[table]]:
-                raise ValueError(f"source schema drift at {table}")
+            have, want = set(_table_columns(source, table)), {c[0] for c in expected[table]}
+            if have != want:
+                raise ValueError(f"source schema drift at {table} "
+                                 f"(extra: {sorted(have - want)}, missing: {sorted(want - have)})")
             _validate_pg_values(source, table)
         _expected_db(expected_database)
         target = db.connect()

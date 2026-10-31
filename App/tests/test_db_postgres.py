@@ -1289,13 +1289,131 @@ def test_transfer_refuses_source_schema_drift(transfer_workspace):
     report = root / "drift-report.json"
     result = _run_transfer(drifted, report)
     assert result.returncode == 1
-    assert "source schema drift at settings" in result.stderr
+    assert "source schema drift at settings (extra: ['drift_column'], missing: [])" in result.stderr
     assert not report.exists()
     # The populated target is untouched.
     verify = _run_transfer(
         transfer_workspace["source"], root / "after-drift-verify.json", verify_only=True
     )
     assert verify.returncode == 0, verify.stderr[-1000:]
+
+
+def test_transfer_skips_litestream_tables(transfer_workspace):
+    root = transfer_workspace["root"]
+    source = root / "litestream-source.sqlite"
+    shutil.copy2(transfer_workspace["source"], source)
+    connection = sqlite3.connect(source)
+    try:
+        connection.execute("CREATE TABLE _litestream_seq (id INTEGER PRIMARY KEY, seq INTEGER)")
+        connection.execute("INSERT INTO _litestream_seq (id, seq) VALUES (1, 42)")
+        connection.execute("CREATE TABLE _litestream_lock (id INTEGER)")
+        connection.commit()
+    finally:
+        connection.close()
+    _reset_public_schema()
+    report = root / "litestream-report.json"
+    copy = _run_transfer(source, report)
+    assert copy.returncode == 0, copy.stderr[-2000:]
+    assert "copied-and-verified OK: tables=67" in copy.stdout
+    payload = json.loads(report.read_text(encoding="utf-8"))
+    assert not [name for name in payload["tables"] if name.startswith("_litestream")]
+    with _psycopg_connect(_PG_URL) as conn:
+        row = conn.execute("SELECT to_regclass('public._litestream_seq')").fetchone()
+    assert row[0] is None
+
+
+def test_transfer_accepts_a_different_column_order(transfer_workspace):
+    root = transfer_workspace["root"]
+    source = root / "column-order-source.sqlite"
+    shutil.copy2(transfer_workspace["source"], source)
+    connection = sqlite3.connect(source)
+    try:
+        saved = connection.execute("SELECT id, guest_message FROM apartment").fetchall()
+        connection.execute("ALTER TABLE apartment DROP COLUMN guest_message")
+        connection.execute("ALTER TABLE apartment ADD COLUMN guest_message TEXT")
+        connection.executemany(
+            "UPDATE apartment SET guest_message = ? WHERE id = ?",
+            [(message, row_id) for row_id, message in saved],
+        )
+        connection.commit()
+        names = [row[1] for row in connection.execute("PRAGMA table_info(apartment)")]
+    finally:
+        connection.close()
+    assert names[-1] == "guest_message"
+    _reset_public_schema()
+    report = root / "column-order-report.json"
+    copy = _run_transfer(source, report)
+    assert copy.returncode == 0, copy.stderr[-2000:]
+    assert "copied-and-verified OK" in copy.stdout
+    payload = json.loads(report.read_text(encoding="utf-8"))
+    assert payload["tables"]["apartment"]["match"] is True
+
+
+def test_transfer_names_an_unknown_table(transfer_workspace):
+    root = transfer_workspace["root"]
+    unknown = root / "unknown-source.sqlite"
+    shutil.copy2(transfer_workspace["source"], unknown)
+    connection = sqlite3.connect(unknown)
+    try:
+        connection.execute("CREATE TABLE legacy_stuff (id INTEGER)")
+        connection.commit()
+    finally:
+        connection.close()
+    report = root / "unknown-report.json"
+    result = _run_transfer(unknown, report)
+    assert result.returncode == 1
+    assert "extra: ['legacy_stuff']" in result.stderr
+    assert not report.exists()
+
+
+def _add_retired_stay_fee_columns(source: Path) -> None:
+    connection = sqlite3.connect(source)
+    try:
+        connection.execute("ALTER TABLE apartment ADD COLUMN stay_fee_cash INTEGER NOT NULL DEFAULT 1")
+        connection.execute("ALTER TABLE apartment ADD COLUMN stay_fee_payment_link TEXT")
+        connection.execute("ALTER TABLE apartment ADD COLUMN stay_fee_policy TEXT NOT NULL DEFAULT 'on'")
+        connection.execute("ALTER TABLE guest ADD COLUMN fee_claim TEXT")
+        connection.execute("ALTER TABLE reservation ADD COLUMN stay_fee_paid_amount_czk INTEGER")
+        connection.execute("ALTER TABLE reservation ADD COLUMN stay_fee_paid_at TEXT")
+        connection.execute("ALTER TABLE reservation ADD COLUMN stay_fee_rate_czk INTEGER")
+        connection.commit()
+    finally:
+        connection.close()
+
+
+def test_transfer_skips_retired_columns_with_defaults(transfer_workspace):
+    root = transfer_workspace["root"]
+    source = root / "retired-defaults-source.sqlite"
+    shutil.copy2(transfer_workspace["source"], source)
+    _add_retired_stay_fee_columns(source)
+    _reset_public_schema()
+    report = root / "retired-defaults-report.json"
+    copy = _run_transfer(source, report)
+    assert copy.returncode == 0, copy.stderr[-2000:]
+    assert "copied-and-verified OK" in copy.stdout
+    assert report.exists()
+
+
+def test_transfer_refuses_a_retired_column_with_data(transfer_workspace):
+    root = transfer_workspace["root"]
+    source = root / "retired-data-source.sqlite"
+    shutil.copy2(transfer_workspace["source"], source)
+    _add_retired_stay_fee_columns(source)
+    connection = sqlite3.connect(source)
+    try:
+        apartment_id = connection.execute("SELECT id FROM apartment ORDER BY id LIMIT 1").fetchone()[0]
+        connection.execute(
+            "UPDATE apartment SET stay_fee_payment_link = ? WHERE id = ?",
+            ("https://x", apartment_id),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+    report = root / "retired-data-report.json"
+    result = _run_transfer(source, report)
+    assert result.returncode == 1
+    assert "retired column apartment.stay_fee_payment_link holds data" in result.stderr
+    assert not report.exists()
 
 
 def test_transfer_refuses_an_unsupported_source_schema_version(transfer_workspace):
