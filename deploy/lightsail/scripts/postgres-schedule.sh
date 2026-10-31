@@ -7,7 +7,7 @@ umask 077
 source "$(dirname "$0")/postgres-lib.sh"
 load_private_env
 
-STATE_DIR="${UBYHOST_PG_CUTOVER_STATE_DIR:-${HOME}/.local/state/ubyhost/postgres-cutover}"
+STATE_DIR="${UBYHOST_PG_CUTOVER_STATE_DIR:-${PG_OPS_ROOT}/.postgres-cutover-state}"
 SAVED_SQLITE="${STATE_DIR}/sqlite-backup-cron.txt"
 mkdir -p "${STATE_DIR}"
 chmod 700 "${STATE_DIR}"

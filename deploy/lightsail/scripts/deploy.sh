@@ -191,7 +191,7 @@ if [ -n "${BACKUP_STAMP}" ]; then
 fi
 
 if [ "${PG_BACKEND}" = "1" ]; then
-  state_dir="${UBYHOST_PG_CUTOVER_STATE_DIR:-${HOME}/.local/state/ubyhost/postgres-cutover}"
+  state_dir="${UBYHOST_PG_CUTOVER_STATE_DIR:-${ROOT}/.postgres-cutover-state}"
   if [ ! -s "${state_dir}/postgres-writers-enabled" ]; then
     echo "PostgreSQL is configured but the durable owner writer marker is absent; refusing to start web/worker." >&2
     exit 1
