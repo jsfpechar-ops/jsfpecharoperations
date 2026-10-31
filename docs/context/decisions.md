@@ -47,8 +47,6 @@ Append-only.
 - 2026-10-28 | Booking widget: Airbnb-style interaction built from our own calendar/fee logic, no-JS form, Stripe checkout on the host account; no dark patterns, no tracking | owner | plan property-pages, 0434
 - 2026-10-28 | Listing pages are English-only; no per-listing translation, no per-language variants (OTA copy verbatim) | owner | plan property-pages, 0431/0433
 - 2026-10-29 | OCR: local Tesseract in the image (no AI, photo stays on the server), MRZ check digits required, prefill only, Max plan only, guest tickbox | owner | test_doc_ocr
-- 2026-10-29 | 0448: legacy hosts get an immediate plan start with the first invoice issued now, no trial | owner | 0448
-- 2026-10-29 | Discounts reissue an unpaid invoice with the discount applied | owner | 0448
 - 2026-10-29 | Trials are extendable by the operator, 1-365 days | owner | 0448
 - 2026-10-29 | Stripe Accounts v2; responsibilities immutable; company hosts via business_type | owner | 0437
 - 2026-10-29 | Connect accounts: full Stripe Dashboard + Stripe collectors (Express+Stripe is preview-only; Express pairs with application liability, rejected) | owner | 0439
@@ -59,3 +57,4 @@ Append-only.
 - 2026-10-31 | Approval gates waived for the whole PostgreSQL and Go migration, cutover included; the bar stays (verified backup, rehearsal on a production copy, per-table counts and hashes, suite green on PG, SQLite as rollback, automatic rollback). Owner acts only where his hands are needed | owner | 0463
 - 2026-10-31 | D2 required reviewer on `production`; D3 goose (step 10); D4 Postgres job table with `SKIP LOCKED`. D1 first managed, then changed: PostgreSQL self-hosted as a Compose service on the current 8 GB Lightsail server (socket, no port, 1 GB cap), not managed; nightly encrypted `pg_dump` in the existing backup, restore proven at every rehearsal; no pgBackRest | owner | 0463, 0464
 - 2026-10-31 | PostgreSQL container has no password and no network (`network_mode: none`, Unix socket volume, trust auth); the cutover needs no secret, so a deploy never waits on one. A Haiku commit from a stale worktree (c935c55) reverted main through #601; repaired in #606. [workflow] Before every merge: `git diff --stat origin/main <branch>` against the brief's Files; one fresh worktree per Haiku | owner, orchestrator | 0463, #606
+- 2026-10-31 | [workflow] `test-postgres-full` (app suite on PG 17) gates every merge; SQLite-file tests carry `sqlite_only` | orchestrator | 0462

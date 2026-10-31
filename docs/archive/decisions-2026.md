@@ -47,3 +47,5 @@ Moved from docs/context/decisions.md during compaction.
 - 2026-10-24 1 primary/group; soft Open (owner).
 - 2026-10-24 [Guest guide](../plans/guest-guide.md) 0341+; Fable critical briefs (owner).
 - 2026-10-24 Guide Quick answers screen (owner).
+- 2026-10-29 | 0448: legacy hosts get an immediate plan start with the first invoice issued now, no trial | owner | 0448
+- 2026-10-29 | Discounts reissue an unpaid invoice with the discount applied | owner | 0448
