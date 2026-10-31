@@ -38,7 +38,7 @@ Sizes: S = one Haiku chat, M = 2–3 Haiku chats, L = a Fable brief plus several
 |---|---|---|---|---|---|
 | 1 | Job intervals: `door_codes` 5 min, `guide_import` 60 min, `push` after checking what it sends ([0457](../../tasks/0457-job-intervals.md)) | ~4,300 empty runs/day, hides real errors, costs nothing to fix | S | Haiku | none |
 | 2 | Deadline rule: 3 working days, weekends only ([0458](../../tasks/0458-deadline-weekends-only.md)) | Owner decision; shortens deadlines on holiday weeks, never lengthens | S | Haiku | none |
-| 3 | Tenancy audit and fix ([0459](../../tasks/0459-tenancy-audit.md), then fix briefs) | Cross-host data read is a legal and reputational risk today, with any database. Must be fixed before any route is ported to Go, or the port copies the bug | L | Fable brief, Haiku | none |
+| 3 | Tenancy audit ([0459](../../tasks/0459-tenancy-audit.md)): **done 2026-10-31, no leak found.** Scoping is centralised in `App/app/access.py` (`owner_user_id IS ?`, 72 uses), `require_login` runs first so a NULL owner never reaches a query, legacy NULL rows are claimed at first login (`auth.py:779`), and #592 maps `IS` to `IS NOT DISTINCT FROM` on Postgres. R-03 downgraded to Low. The Go port must reproduce `access.py` as one helper package, nothing else | S (done) | Fable verified | none |
 | 4 | Postgres service in CI so `test_db_postgres.py` runs with 0 skipped ([0460](../../tasks/0460-postgres-tests-in-ci.md)) | 45 tests that never run in CI are not tests. Merge gate for #592 | S | Haiku | none |
 | 5 | Independent review of #592 runtime half (`db.py`, `db_postgres.py`, `config.py`, `pg_schema.py`, `sqlite_to_postgres.py`) | HIGH RISK database code, 0 reviews so far | M | Fable brief, Haiku fixes | 4 |
 | 6 | Decide D1 (managed vs self-hosted Postgres). If managed: strip the pgBackRest/Docker half of #592 to a cutover script plus runbook. If self-hosted: rehearse the full kit on a disposable VM (build image, encrypted backup, restore, PITR, every abort path) | The unrehearsed half is the biggest single risk; a managed database removes most of it | M (managed) / L (self-hosted) | Fable brief, Haiku; owner runs the rehearsal | 5, D1 |
@@ -66,7 +66,7 @@ Steps 1, 2, 3, 4 start now, in parallel. Steps 11 and 12 can run while G1–G2 a
 
 ## 5. Risks kept from v3.0, renumbered
 
-R-03 tenancy (critical, step 3), R-05 police transport retry (G5), R-08 deploy gate (D2), R-12 unrehearsed backups (6, 9), R-14 two migration authorities (10), R-15 PG tests skip (4), R-16 crypto conformance (14), R-18 dual job ownership (12, 16), R-19 one-minute jobs (1), R-21 `ical changed=8` every run (check in step 11; likely the feed hash is not stored). Closed: R-04 (police confirmed), R-07 (holidays computed, then dropped), R-01 (advisory lock reproduces it; handled in 11).
+R-03 tenancy (Low after audit, step 3), R-05 police transport retry (G5), R-08 deploy gate (D2), R-12 unrehearsed backups (6, 9), R-14 two migration authorities (10), R-15 PG tests skip (4), R-16 crypto conformance (14), R-18 dual job ownership (12, 16), R-19 one-minute jobs (1), R-21 `ical changed=8` every run (check in step 11; likely the feed hash is not stored). Closed: R-04 (police confirmed), R-07 (holidays computed, then dropped), R-01 (advisory lock reproduces it; handled in 11).
 
 ## 6. Load facts (production export 2026-10-31, 37 min, 7 apartments)
 

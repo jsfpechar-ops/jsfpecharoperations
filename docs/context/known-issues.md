@@ -89,7 +89,7 @@
 | K-U15 | Med review | Host forms/navigation | Staging fixed; 0084 incl. K-U14; owner review | [plan](../plans/host-ux-combined-staging.md) |
 | K-T01 | Low open | Tests | Order-dependent tests (also 3 in test_host_i18n.py) | [0080](../tasks/0080-report.md) |
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
-| K-PG01 | Critical open | routes/*.py | ~63 bare `WHERE id = ?`, host-scoping unproven; 0459 | plan v4 |
+| K-PG01 | Low closed | routes/*.py | 0459 audit: 30 host-facing lookups all owner-scoped via access.py; keep access.py the only tenancy path in Go | 0459 |
 | K-PG02 | High open | ci.yml, #592 ops kit | 45 PG tests skip in CI; cutover kit unrehearsed (D1) | plan v4 |
 
 - K-UI-CACHE: bump `?v=` on edits; 1y cache (0172).
