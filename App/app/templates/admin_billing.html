@@ -1,7 +1,7 @@
 {#- 0419: the operator's billing page /admin/fakturace. Admins only, works without JavaScript.
     Data: routes/admin_billing.py, app/billing_admin.py, app/bank_import.py. -#}
 {% extends "host_page.html" %}
-{% set nav = 'billing_admin' %}
+{% set nav = 'admin' %}
 {% set body_kind = 'detail' %}
 {% from "_ui_layout.html" import ui_section_tabs with context %}
 {% block title %}{{ t('billing.admin.title') }}{% endblock %}
