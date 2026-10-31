@@ -1,5 +1,5 @@
 # 0465: goose becomes the only PostgreSQL migration authority; the Python runner is frozen at 0033
-Status: todo
+Status: review
 Depends on: 0463 merged (cutover script on main) | Base commit: main | Branch: task/0465a-goose-baseline, then task/0465b-goose-ci
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 80k tokens (per part; two parts, two sessions, two PRs)
 ## 1. Objective
