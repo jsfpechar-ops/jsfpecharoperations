@@ -15,6 +15,20 @@ skips with an explicit reason; that is the only backend-only skip in the DB row.
 
 No assertion, report or error message may contain a DSN, a password or a real
 guest value: the fixtures are synthetic and the reports are checked for it.
+
+Two backend facts the transfer tests rely on, both asserted rather than assumed:
+
+* Typed digests order rows with ``ORDER BY`` on every column. SQLite sorts NULLs
+  FIRST and PostgreSQL sorts them LAST, which would be backend-dependent for
+  nullable leading columns. ``test_transfer_digest_order_is_null_stable_across_backends``
+  proves that every frozen-schema table's primary key is a leading, NOT NULL
+  prefix of its column order, so a row comparison is always decided before a
+  NULL could be compared; the transfer's single ORDER BY stays deterministic on
+  both backends without changing application SQL.
+* The recorded 18.6 cluster is initialised with ``--no-locale`` (C), matching
+  SQLite's ASCII-only LIKE/lower folding. No test here assumes Unicode case
+  folding or locale-dependent collation: every LIKE/ILIKE assertion is ASCII
+  only, and values with non-ASCII text are compared exactly, never folded.
 """
 from __future__ import annotations
 
@@ -409,7 +423,9 @@ def test_bound_punctuation_comments_and_like_execute_on_postgres(pg_runtime):
     assert db.query_one("SELECT /* outer ? % /* nested ? */ still */ 6 AS v")["v"] == 6
     row = db.query_one("SELECT ? AS a, ? AS b, ? AS c", (1, "Δ", None))
     assert (row["a"], row["b"], row["c"]) == (1, "Δ", None)
-    # SQLite LIKE folded ASCII case; the adapter keeps that behaviour.
+    # SQLite LIKE folded ASCII case; the adapter keeps that behaviour. The C
+    # locale of the 18.6 cluster matches this, so only ASCII folding is asserted
+    # here; no test below assumes Unicode case folding.
     assert db.query_one("SELECT 'ABC' LIKE ? AS v", ("abc",))["v"] is True
     assert db.query_one("SELECT 'AbC' LIKE ? AS v", ("a%",))["v"] is True
     assert db.query_one("SELECT 'abc' ILIKE ? AS v", ("ABC",))["v"] is True
@@ -973,6 +989,70 @@ def test_transfer_verify_only_reconciles_typed_hashes(transfer_workspace):
         assert entry["target_sha256"] == copy_payload["tables"][table]["source_sha256"]
     for forbidden in FORBIDDEN_IN_REPORT:
         assert forbidden not in report.read_text(encoding="utf-8")
+
+
+def test_transfer_digest_order_is_null_stable_across_backends(pg_runtime):
+    """The transfer's typed digest is deterministic despite NULL ordering.
+
+    ``sqlite_to_postgres.table_digest`` hashes rows read with ``ORDER BY`` every
+    column on the source and on the target. SQLite orders NULLs FIRST on ASC
+    while PostgreSQL orders them LAST, so a nullable leading column would make
+    the two machines hash the same rows in a different order. The frozen schema
+    avoids that: this test proves every table's primary key is a leading,
+    NOT NULL prefix of its column order, so distinct rows are always compared on
+    a unique key before any nullable tie-breaker. Application SQL is unchanged.
+    """
+    null_order_sqlite = [
+        row[0]
+        for row in sqlite3.connect(":memory:").execute(
+            "SELECT 1 AS v UNION ALL SELECT NULL ORDER BY v"
+        )
+    ]
+    null_order_postgres = [
+        row[0] for row in db.query("SELECT * FROM (VALUES (1), (NULL)) AS t(v) ORDER BY v")
+    ]
+    assert null_order_sqlite == [None, 1]
+    assert null_order_postgres == [1, None]
+    assert null_order_sqlite != null_order_postgres, (
+        "backend NULL placement still differs; the schema prefix invariant is load-bearing"
+    )
+
+    connection = sqlite3.connect(":memory:")
+    try:
+        connection.executescript(db.SCHEMA)
+        for table, column, declaration in db.ADDED_COLUMNS:
+            names = {
+                row[1] for row in connection.execute(f'PRAGMA table_info("{table}")')
+            }
+            if column not in names:
+                connection.execute(
+                    f'ALTER TABLE "{table}" ADD COLUMN {column} {declaration}'
+                )
+        connection.executescript(db._MIGRATIONS_TABLE)
+        for _version, _name, path in db.migration_files():
+            connection.executescript(path.read_text(encoding="utf-8"))
+        tables = [
+            row[0]
+            for row in connection.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name NOT LIKE 'sqlite_%' ORDER BY name"
+            )
+        ]
+        assert len(tables) == 67
+        for table in tables:
+            info = list(connection.execute(f'PRAGMA table_info("{table}")'))
+            ordered = [row[1] for row in info]
+            key = [row[1] for row in info if row[5]]
+            assert key, f"{table} has no primary key to order by"
+            assert ordered[: len(key)] == key, (
+                f"{table}: primary key {key} is not the leading ORDER BY prefix "
+                f"{ordered[: len(key)]}"
+            )
+            assert all(row[3] or row[5] for row in info[: len(key)]), (
+                f"{table}: a nullable column sits in the leading key prefix"
+            )
+    finally:
+        connection.close()
 
 
 def test_transfer_restores_sequences_above_imported_ids(transfer_workspace):
