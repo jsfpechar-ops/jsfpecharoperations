@@ -9,6 +9,33 @@ import sys
 from pathlib import Path
 
 
+def _copy_snapshot(source: Path, destination: Path, *, read_only: bool) -> None:
+    """Copy the source into a new snapshot file.
+
+    A read-only connection is tried first so the source really is untouched.
+    After an unclean stop SQLite may need to recover a hot -wal before it will
+    read consistently in read-only mode; the caller then falls back to a
+    write-capable connection for the recovery only (the backup API itself never
+    writes application data). A failed attempt never leaves a partial snapshot.
+    """
+    mode = "ro" if read_only else "rw"
+    source_uri = f"{source.as_uri()}?mode={mode}"
+    src = sqlite3.connect(source_uri, uri=True)
+    dst = sqlite3.connect(destination)
+    try:
+        src.backup(dst)
+        integrity = dst.execute("PRAGMA integrity_check").fetchone()
+        if integrity != ("ok",):
+            raise RuntimeError("snapshot failed integrity_check")
+        foreign_keys = dst.execute("PRAGMA foreign_key_check").fetchone()
+        if foreign_keys is not None:
+            raise RuntimeError("snapshot failed foreign_key_check")
+        dst.commit()
+    finally:
+        dst.close()
+        src.close()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", default="/data/ubyhost.db")
@@ -31,23 +58,27 @@ def main() -> int:
         print("tmpfs space is below the measured SQLite size plus 64 MiB safety margin.", file=sys.stderr)
         return 1
 
-    source_uri = f"file:{source}?mode=ro"
-    src = sqlite3.connect(source_uri, uri=True)
-    dst = sqlite3.connect(destination)
     try:
-        src.backup(dst)
-        integrity = dst.execute("PRAGMA integrity_check").fetchone()
-        if integrity != ("ok",):
-            print("SQLite cutover snapshot failed integrity_check.", file=sys.stderr)
+        _copy_snapshot(source, destination, read_only=True)
+    except sqlite3.Error as exc:
+        destination.unlink(missing_ok=True)
+        print(
+            "Read-only snapshot failed ("
+            f"{type(exc).__name__}: {exc}); retrying with a write-capable connection so "
+            "SQLite can recover a hot WAL. No application writes are issued.",
+            file=sys.stderr,
+        )
+        try:
+            _copy_snapshot(source, destination, read_only=False)
+        except (sqlite3.Error, RuntimeError) as retry_exc:
+            destination.unlink(missing_ok=True)
+            print(f"SQLite cutover snapshot failed: {retry_exc}", file=sys.stderr)
             return 1
-        foreign_keys = dst.execute("PRAGMA foreign_key_check").fetchone()
-        if foreign_keys is not None:
-            print("SQLite cutover snapshot failed foreign_key_check.", file=sys.stderr)
-            return 1
-        dst.commit()
-    finally:
-        dst.close()
-        src.close()
+    except RuntimeError as exc:
+        destination.unlink(missing_ok=True)
+        print(f"SQLite cutover snapshot failed: {exc}", file=sys.stderr)
+        return 1
+
     os.chmod(destination, 0o600)
     print("SQLite snapshot integrity and foreign-key checks passed.")
     return 0
