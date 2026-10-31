@@ -2492,7 +2492,7 @@ STRINGS: Dict[str, str] = {
     "guide.reporting.scheduled_detail": "Gửi sau một số giờ bạn chọn (0 đến 48) kể từ khi biểu mẫu hoàn tất, và không bao giờ muộn hơn sáu giờ trước hạn chót.",
     "guide.reporting.manual": "Thủ công",
     "guide.reporting.manual_detail": "Không gửi gì cho đến khi bạn bấm Gửi lượt lưu trú này hoặc Gửi mọi lượt lưu trú đã sẵn sàng.",
-    "guide.reporting.deadline": "Hạn chót là cuối ngày làm việc thứ ba, tính cả ngày đến nếu đó là ngày làm việc. Cuối tuần và ngày lễ của Séc không được tính.",
+    "guide.reporting.deadline": "Hạn chót là cuối ngày làm việc thứ ba, tính cả ngày đến nếu đó là ngày làm việc. Cuối tuần không được tính.",
     "guide.reporting.filed": "Sau khi lượt lưu trú được khai báo, ô hạn chót hiện thời điểm đã khai báo, hoặc trễ bao lâu nếu khai báo sau hạn.",
     "guide.reporting.failure": "Nếu UbyPort ngừng hoạt động, UbyHost tự thử lại và cảnh báo bạn. Nếu UbyPort từ chối đăng nhập, việc tự động gửi cho chỗ ở đó tạm dừng cho đến khi bạn lưu hoặc kiểm tra thông tin đăng nhập mới. Nếu một lần gửi không có phản hồi rõ ràng, bạn nhận cảnh báo và UbyHost tự gửi lại lô đó một lần ở lần kiểm tra tự động tiếp theo. Khách mà cảnh sát đã có được tính là đã khai báo, nên không có gì bị khai báo hai lần.",
     "guide.reporting.receipts": "Khai báo cảnh sát liệt kê mọi lần khai báo kèm biên nhận Doručenka. Bạn có thể tải từng biên nhận hoặc tải tệp ZIP theo khoảng ngày.",

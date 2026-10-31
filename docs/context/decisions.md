@@ -2,14 +2,6 @@
 
 Append-only.
 
-- 2026-10-03 | Signup off in production until owner chooses | invited hosts | ENVIRONMENT
-- 2026-10-05 | Legal texts 1.6 shipped; counsel review open | real hosts | K-L
-- 2026-10-05 | Admin preview: full workspace, reason, 24 h | owner support | PR #280
-- 2026-10-06 | [workflow] Every chat AI orchestrates within the token budget (executor: see 2026-10-17)
-- 2026-10-06 | [deps] `webauthn==3.0.1` hash-pinned | no hand-rolled passkeys | 0004
-- 2026-10-06 | Login is e-mail link only; TOTP/passkeys optional | owner | 0003, 0004
-- 2026-10-06 | Downloads skip the nav skeleton; template scan test pins it | PDF blanked page | skeleton.js
-- 2026-10-06 | Stay-fee PDF: bed-day adjustments fold into the facility row; CSV one neutral line | office confusion | stay_fee.py
 - 2026-10-06 | UbyPort: 0-2 accepted, 4-6 not; 112 = late = accepted | police A1-A5 | OPERATIONS
 - 2026-10-06 | Sweep: one send per refused record, then host fix | police B2-B3 | OPERATIONS
 - 2026-10-06 | Staging may use the police test env; creds only in staging | police B4 | LIGHTSAIL
@@ -70,5 +62,7 @@ Append-only.
 - 2026-10-29 | Connect accounts: full Stripe Dashboard + Stripe collectors (Express+Stripe is preview-only; Express pairs with application liability, rejected) | owner | 0439
 
 - 2026-10-30 | [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; Haiku-only execution; manual cutover | 0455–0456
+- 2026-10-31 | Postgres now (#592), Go port G1–G6 now after cutover + tenancy, per-feature rollback, no load-test gate. Deadline: 3 working days, weekends only. `ws_uby_test` and golden files dropped; XML snapshot test before G5. [workflow] Fable briefs critical items, Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
+- 2026-10-31 | Every change lean: no dead code, no extras; dead code found on the way is removed in its own small commit or PR | owner | plan v4
 - 2026-10-31 | Approval gates waived for the whole PostgreSQL and Go migration, cutover included; the bar stays (verified backup, rehearsal on a production copy, per-table counts and hashes, suite green on PG, SQLite as rollback, automatic rollback). Owner acts only where his hands are needed | owner | 0463
-- 2026-10-31 | D1 changed: PostgreSQL self-hosted as a Compose service on the current 8 GB Lightsail server (socket, no port, 1 GB cap), not managed; nightly encrypted `pg_dump` in the existing backup, restore proven at every rehearsal; no pgBackRest | owner | 0463, 0464
+- 2026-10-31 | D2 required reviewer on `production`; D3 goose (step 10); D4 Postgres job table with `SKIP LOCKED`. D1 first managed, then changed: PostgreSQL self-hosted as a Compose service on the current 8 GB Lightsail server (socket, no port, 1 GB cap), not managed; nightly encrypted `pg_dump` in the existing backup, restore proven at every rehearsal; no pgBackRest | owner | 0463, 0464
