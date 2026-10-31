@@ -1,5 +1,5 @@
+# 0462: Run the whole test suite against PostgreSQL in CI
 Status: review
-Status: in-progress
 Depends on: 0461 merged | Base commit: main after 0461 | Branch: task/0462-full-suite-on-postgres
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 80k tokens (expect several sessions: one per batch of dialect failures)
 ## 1. Objective
