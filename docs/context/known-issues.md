@@ -91,6 +91,11 @@
 | K-U15 | Med review | Host forms/navigation | Staging fixed; 0084 incl. K-U14; owner review | [plan](../plans/host-ux-combined-staging.md) |
 | K-T01 | Low open | Tests | Order-dependent tests (also 3 in test_host_i18n.py) | [0080](../tasks/0080-report.md) |
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
+| K-PG01 | Critical open | routes/*.py, ~63 bare `WHERE id = ?` | Host-reachable reads not scoped to the host; audit 0459, fix before any Go route | plan v4 |
+| K-PG02 | High open | .github/workflows/ci.yml | No Postgres service: `test_db_postgres.py` (45 tests) skips in CI | plan v4 |
+| K-PG03 | High open | PR #592 deploy/lightsail/scripts/postgres-*.sh | pgBackRest kit, cutover state machine and runbook never executed; decision D1 managed vs self-hosted | plan v4 |
+| K-PG04 | Med open | db_postgres.py:716 | Global `pg_advisory_xact_lock` on every write keeps the single-writer ceiling on Postgres | plan v4 |
+| K-S11 | High open | scheduler.py job_intervals | door_codes, push, guide_import every 1 min; 0457 | plan v4 |
 
 - K-UI-CACHE: bump `?v=` on edits; 1y cache (0172).
 - K-NAV-418: 3 host_i18n tests fail.

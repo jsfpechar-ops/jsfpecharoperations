@@ -75,3 +75,8 @@ Append-only.
 - 2026-10-29 | Connect accounts: full Stripe Dashboard + Stripe collectors (Express+Stripe is preview-only; Express pairs with application liability, rejected) | owner | 0439
 
 - 2026-10-30 | [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; Haiku-only execution; manual cutover | 0455–0456
+- 2026-10-31 | PostgreSQL migration goes ahead now (PR #592 path); SQLite is not an end state | owner | plan v4
+- 2026-10-31 | Go port (G1–G6) is in scope now, sequenced after cutover and the tenancy fix, per-feature rollback; the load test measures, it does not gate | owner | plan v4
+- 2026-10-31 | Police deadline: 3 working days skipping weekends only; holidays count as working days (earlier deadline, safe side) | owner | 0458
+- 2026-10-31 | `ws_uby_test` run and SOAP golden files dropped: filing confirmed by the police. One request-XML snapshot test returns before the Go submit port (G5) | owner | plan v4
+- 2026-10-31 | [workflow] Fable writes briefs for tenancy, the #592 review, cutover/backup, queue and every Go phase; Haiku implements everything | owner | plan v4
