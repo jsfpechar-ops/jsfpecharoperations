@@ -26,6 +26,20 @@ Checked after the first draft. "Confirmed" means a repo, GitHub or public-source
 | Apify use (Q22) | **Confirmed**: guest guide import, billed per run, usage tracked under provider `apify`. Data sent and DPA still open. | `App/app/guest_guide_import.py:26, 124` |
 | Undocumented env names (I-5) | `GOOGLE_EXPORT_DAYS`: in 2 code files, purpose not read. `UBYHOST_SIGNUP_ENABLED`: in 4 code files, not in `docs/ENVIRONMENT.md`. `UBYHOST_META_GRAPH_VERSION`: in code, not documented. `UBYHOST_LITESTREAM_ENABLED`: no hits in `App/app`; not checked in `deploy/`. `UBYHOST_ADMIN_PASSWORD`: documented, **no code hit** (drift confirmed). | grep over `App/app` and `docs/ENVIRONMENT.md` |
 
+### Runtime verification (2026-10-31, scratch worktree, PR commit)
+
+| Check | Result |
+|---|---|
+| `pip install -r requirements.txt -r requirements-dev.txt` (py3.12) | ok |
+| `db.init_db()` on empty DB | 68 tables; `schema_migrations` 33 rows (baseline + 0002–0033) |
+| `pytest tests/test_deadlines.py` | 25 passed |
+| `UBYHOST_ROLE=web uvicorn app.main:app` | `/healthz` 200 |
+| `./run.sh` (staging + no-login) | app `/healthz` 200; mock `/healthz` 200 |
+| `POST /demo` with `x-csrf-token` | 303; 2 apartments, 18 reservations, 8 guests created |
+| `UBYHOST_ROLE=worker python -m app.worker` | scheduler starts, jobs registered, clean stop on SIGTERM |
+| Demo calendar feeds during `ical` job | **2 feed errors, reason not in the log.** Not investigated. |
+| `POST /demo` without CSRF header | 303 to `/login?notice=form_expired` (CSRF enforced) |
+
 **Still open (cannot be verified from the repo or public sources):** production env values (Q10, Q11, Q14, Q16, Q21), production NULL-owner rows (Q4), live Litestream bucket and region, server crontab state, the actual content of the last restore drill, the RETENTION/ROPA/vendor documents (Q20, Q24), and the erasure path (Q25). These need access to the Lightsail server, the AWS console, or the owner.
 
 ## A. Blocks the migration (answer before any port)

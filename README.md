@@ -28,15 +28,14 @@ outbox, poll iCal feeds, and submit to UbyPort. Details and diagram:
 
 ## Quickstart (local)
 
-Verified against `App/run.sh`, `App/requirements*.txt`, `App/tools/smoke.py`,
-and `App/app/config.py`. Run from the repo root unless noted.
+Run from the repo root unless noted. **Executed on this commit in a scratch worktree** (2026-10-31): steps 2, 3, 4, 6 and 7 ran, and step 5 ran through the UI route. Local `run.sh` and the worker both start and stop cleanly. Steps 1 and 8 are from code reading.
 
 1. Clone: `git clone https://github.com/jsfpechar-ops/jsfpecharoperations.git && cd jsfpecharoperations`
 2. Create the environment: `cd App && python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt -r requirements-dev.txt`. `requirements-dev.txt` holds only test-time packages (`App/requirements-dev.txt`: pytest, httpx, pdfplumber); runtime deps are in `requirements.txt`. CI installs the hashed `requirements.lock` instead (`.github/workflows/ci.yml`); whether to do the same locally is `⚠️ UNKNOWN`.
 3. Configure: copy [`.env.example`](.env.example) to `App/.env` (or export the variables). Local defaults are safe: `UBYHOST_UBYPORT_ENV=mock`, `UBYHOST_DEPLOYMENT=local`, `UBYHOST_MAIL_BACKEND=disabled`.
 4. Migrate: migrations run automatically at start-up under a file lock (`App/app/db.py:1098`, `:1236`). There is no separate migrate command — `⚠️ UNKNOWN` whether one exists outside `db.py`.
-5. Seed (optional demo data): `App/app/demo.py` and `App/app/sample_calendar.py` exist; the exact command is `⚠️ UNKNOWN` — check `App/app/demo.py` entry point.
-6. Run the app (web + scheduler in one process): `cd App && ./run.sh` (sets `UBYHOST_ROLE=all`, `App/run.sh:31-40`).
+5. Seed (optional demo data). There is no command. Sign in, then trigger the demo action, which is `POST /demo` (`App/app/routes/onboarding.py:22`). It seeds only when `UBYHOST_DEPLOYMENT=staging` (`App/app/demo.py:543`; otherwise the route shows `flash.error.demo_staging_only`). Verified: 2 apartments, 18 reservations and 8 guests were created. The request needs the page's `csrf-token` meta value sent as the `x-csrf-token` header.
+6. Run the app (web + scheduler in one process): `cd App && ./run.sh` (sets `UBYHOST_ROLE=all`, `App/run.sh:31-40`). Verified: `/healthz` returns 200 on `PORT` (default 8080) and the mock UbyPort starts on 8081. For local sign-in without e-mail, set `UBYHOST_DEPLOYMENT=staging` and `UBYHOST_STAGING_NO_LOGIN=1` (`App/app/auth.py:283-301`). Staging mode does not apply to production.
 7. Run the worker separately (production topology): `cd App && UBYHOST_ROLE=worker .venv/bin/python -m app.worker` (`App/app/worker.py`). Web and worker must not both hold the scheduler lock on the same `DATA_DIR`.
 
 > ⚠️ UNKNOWN — needs human input: whether `App/run.sh` or `App/tools/smoke.py` is the owner-recommended local start path, and the minimum Python version tested (Dockerfile pins 3.12; `App/.venv` is 3.12).
