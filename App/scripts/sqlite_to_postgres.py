@@ -20,6 +20,17 @@ from app import config, db  # noqa: E402
 from app import db_postgres  # noqa: E402
 
 REPORT_VERSION = 1
+# Columns left by an old stay-fee build (see docs/tasks/0470-transfer-retired-stay-fee-columns.md).
+# The tuple lists the allowed non-NULL values; any other value refuses the transfer.
+RETIRED_COLUMNS = {
+    ("apartment", "stay_fee_cash"): (1,),
+    ("apartment", "stay_fee_payment_link"): (),
+    ("apartment", "stay_fee_policy"): ("on",),
+    ("guest", "fee_claim"): (),
+    ("reservation", "stay_fee_paid_amount_czk"): (),
+    ("reservation", "stay_fee_paid_at"): (),
+    ("reservation", "stay_fee_rate_czk"): (),
+}
 
 # Enough SQLSTATE context for an operator without echoing a psycopg message,
 # whose DETAIL may contain offending row values (for example a guest e-mail).
@@ -154,7 +165,21 @@ def schema_version(source: sqlite3.Connection) -> int:
 
 
 def _table_columns(source: sqlite3.Connection, table: str) -> list[str]:
-    return [r[1] for r in source.execute(f'PRAGMA table_info("{table}")')]
+    return [r[1] for r in source.execute(f'PRAGMA table_info("{table}")')
+            if (table, r[1]) not in RETIRED_COLUMNS]
+
+
+def _check_retired_columns(source: sqlite3.Connection) -> None:
+    for (table, col), allowed in RETIRED_COLUMNS.items():
+        if col not in {r[1] for r in source.execute(f'PRAGMA table_info("{table}")')}:
+            continue
+        sql = f'SELECT COUNT(*) FROM "{table}" WHERE "{col}" IS NOT NULL'
+        params: tuple = ()
+        if allowed:
+            sql += f' AND "{col}" NOT IN ({", ".join("?" for _ in allowed)})'
+            params = tuple(allowed)
+        if source.execute(sql, params).fetchone()[0] > 0:
+            raise ValueError(f"retired column {table}.{col} holds data")
 
 
 def _postgres_empty(conn) -> bool:
@@ -266,6 +291,7 @@ def transfer(source_path: Path, report_path: Path, expected_database: str, verif
                 f"(extra: {sorted(set(tables) - set(expected))}, "
                 f"missing: {sorted(set(expected) - set(tables))})"
             )
+        _check_retired_columns(source)
         for table in tables:
             have, want = set(_table_columns(source, table)), {c[0] for c in expected[table]}
             if have != want:
