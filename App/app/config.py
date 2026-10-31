@@ -29,7 +29,7 @@ _PG_DEFAULT_PORT = 5432
 def _postgres_target(url: str) -> dict:
     """Parse and strictly validate a PostgreSQL URL; never returns credentials.
 
-    TCP URLs are unchanged. The local fixture contract also allows libpq's
+    TCP URLs must set sslmode=verify-full or require. The local fixture contract also allows libpq's
     unix-socket form, where the socket directory is a query parameter:
     ``postgresql:///db?host=/absolute/socket/dir[&port=N][&user=...]`` and the
     userinfo-only variant ``postgresql://user@/db?host=%2Ftmp%2Fsock&port=N``.
@@ -76,6 +76,8 @@ def _postgres_target(url: str) -> dict:
         query_port = int(query_port)
     if netloc_port is not None and query_port is not None and netloc_port != query_port:
         raise RuntimeError("UBYHOST_DATABASE_URL has contradictory port settings.")
+    if hostname and query.get("sslmode") not in {"verify-full", "require"}:
+        raise RuntimeError("UBYHOST_DATABASE_URL over TCP needs sslmode=verify-full (or require)")
     return {
         "scheme": parts.scheme.lower(),
         "hostname": hostname,

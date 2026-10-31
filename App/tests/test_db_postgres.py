@@ -4,7 +4,7 @@ These tests exercise a real PostgreSQL server, so they need their own pytest
 process configured the way a PostgreSQL deployment is. The actual application
 setting is used, as the app reads it once at import time::
 
-    UBYHOST_DATABASE_URL='postgresql://ubyhost@127.0.0.1:55432/ubyhost_test' \
+    UBYHOST_DATABASE_URL='postgresql://ubyhost@127.0.0.1:55432/ubyhost_test?sslmode=require' \
         .venv/bin/python -m pytest tests/test_db_postgres.py -q --tb=short -x
 
 The session fixture refuses to touch any target that is not loopback/Unix
@@ -1425,7 +1425,7 @@ def test_tcp_url_contract_is_unchanged_and_fingerprint_excludes_credentials():
     database = TARGET["database"]
     parsed = _parse_target(_PG_URL)
     port = parsed["port"] or 5432
-    first = _probe_with_url(f"postgresql://ubyhost:supersecretpw@127.0.0.1:{port}/{database}")
+    first = _probe_with_url(f"postgresql://ubyhost:supersecretpw@127.0.0.1:{port}/{database}?sslmode=verify-full")
     assert first.returncode == 0, first.stderr[-1000:]
     payload = json.loads(first.stdout)
     assert payload["backend"] == "postgresql"
@@ -1440,13 +1440,52 @@ def test_tcp_url_contract_is_unchanged_and_fingerprint_excludes_credentials():
     }
     assert "supersecretpw" not in first.stdout + first.stderr
 
-    second = _probe_with_url(f"postgresql://someone:anotherpw@127.0.0.1:{port}/{database}")
+    second = _probe_with_url(f"postgresql://someone:anotherpw@127.0.0.1:{port}/{database}?sslmode=verify-full")
     assert second.returncode == 0
     other = json.loads(second.stdout)
     assert other["fingerprint"] == payload["fingerprint"], (
         "credentials must not change the database target fingerprint"
     )
     assert other["target"]["hostname"] == "127.0.0.1"
+
+
+@pytest.mark.parametrize("query", ["", "?sslmode=disable", "?sslmode=prefer"])
+def test_tcp_url_without_verified_tls_is_rejected(query):
+    database = TARGET["database"]
+    result = _probe_with_url(f"postgresql://ubyhost@127.0.0.1:55432/{database}{query}")
+    assert result.returncode != 0
+    assert "sslmode=verify-full (or require)" in result.stderr
+
+
+def test_connect_sets_timeouts_and_keeps_url_options(monkeypatch):
+    import psycopg
+
+    from app import db_postgres
+
+    seen = {}
+
+    class _Cursor:
+        def fetchone(self):
+            return ("UTF8",)
+
+    class _Raw:
+        def execute(self, *args, **kwargs):
+            return _Cursor()
+
+        def close(self):
+            pass
+
+    def fake_connect(conninfo, **kwargs):
+        seen.update(kwargs)
+        return _Raw()
+
+    monkeypatch.setattr(psycopg, "connect", fake_connect)
+    db_postgres.connect(
+        f"postgresql://ubyhost@127.0.0.1:55432/{TARGET['database']}"
+        "?sslmode=verify-full&options=-c%20search_path%3Dapp"
+    )
+    assert seen["connect_timeout"] == 10
+    assert seen["options"] == "-c search_path=app -c statement_timeout=60000"
 
 
 def test_socket_url_forms_are_accepted_and_connect():

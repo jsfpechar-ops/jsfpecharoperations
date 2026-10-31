@@ -667,10 +667,6 @@ class PostgresCursor:
     def fetchall(self) -> list[Any]:
         return [self._row(row) for row in self._raw.fetchall()]
 
-    def fetchmany(self, size: Optional[int] = None) -> list[Any]:
-        rows = self._raw.fetchmany() if size is None else self._raw.fetchmany(size)
-        return [self._row(row) for row in rows]
-
     def __iter__(self):
         for row in self._raw:
             yield self._row(row)
@@ -818,7 +814,13 @@ def connect(conninfo: str) -> PostgresConnection:
     except ImportError:
         raise RuntimeError("PostgreSQL was selected but the approved psycopg 3 driver is not installed") from None
     try:
-        raw = psycopg.connect(conninfo, autocommit=True, row_factory=tuple_row)
+        from urllib.parse import parse_qsl, urlsplit
+
+        url_options = dict(parse_qsl(urlsplit(conninfo).query)).get("options")
+        options = " ".join(filter(None, [url_options, "-c statement_timeout=60000"]))
+        raw = psycopg.connect(
+            conninfo, autocommit=True, row_factory=tuple_row, connect_timeout=10, options=options
+        )
         raw.execute("SET TIME ZONE 'UTC'")
         raw.execute("SET search_path TO public")
         encoding = raw.execute("SHOW server_encoding").fetchone()[0]
@@ -837,6 +839,3 @@ def integrity_error_types() -> tuple[type[BaseException], ...]:
         raise RuntimeError("PostgreSQL was selected but the approved psycopg 3 driver is not installed") from None
     return (IntegrityError,)
 
-
-def current_schema() -> str:
-    return "current_schema()"

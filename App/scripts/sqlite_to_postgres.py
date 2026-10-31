@@ -183,12 +183,7 @@ def _preflight_values(source: sqlite3.Connection, table: str) -> None:
                 raise ValueError(f"source type drift at {table}.{name} ({actual})")
 
 
-def _typed_column_kinds(source: sqlite3.Connection, table: str) -> dict[str, str]:
-    return {r[1]: ((r[2] or "").upper().split("(", 1)[0].strip())
-            for r in source.execute(f'PRAGMA table_info("{table}")')}
-
-
-def _validate_pg_values(source: sqlite3.Connection, table: str, columns: list[str]) -> None:
+def _validate_pg_values(source: sqlite3.Connection, table: str) -> None:
     # Narrow source SQLite values before sending them to strict PostgreSQL types.
     _preflight_values(source, table)
 
@@ -269,7 +264,7 @@ def transfer(source_path: Path, report_path: Path, expected_database: str, verif
         for table in tables:
             if _table_columns(source, table) != [c[0] for c in expected[table]]:
                 raise ValueError(f"source schema drift at {table}")
-            _validate_pg_values(source, table, _table_columns(source, table))
+            _validate_pg_values(source, table)
         _expected_db(expected_database)
         target = db.connect()
         with _sanitized_target_errors():

@@ -2,7 +2,7 @@
 
 Status: **review gate closed locally; PR open for owner review. Not merged, not
 deployed, no production access.** Supersedes the blocked review-only report on
-`feat/0455-postgresql-runtime-review` (PR #588). 0456 stays blocked.
+`feat/0455-postgresql-runtime-review` (PR #588). 0456 stays blocked; ops half: 0461.
 
 ## Branch
 
