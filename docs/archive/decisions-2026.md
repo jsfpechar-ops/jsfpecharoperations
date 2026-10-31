@@ -39,3 +39,11 @@ Moved from docs/context/decisions.md during compaction.
 - 2026-10-06 | Login is e-mail link only; TOTP/passkeys optional | owner | 0003, 0004
 - 2026-10-06 | Downloads skip the nav skeleton; template scan test pins it | PDF blanked page | skeleton.js
 - 2026-10-06 | Stay-fee PDF: bed-day adjustments fold into the facility row; CSV one neutral line | office confusion | stay_fee.py
+- 2026-10-22 Open cue on clickable rows; phone tabs wrap | owner
+- 2026-10-22 Wizard coral bar OK
+- 2026-10-22 Alerts: short line + fix link (owner).
+- 2026-10-23 Skips loader; no on-track count (owner).
+- 2026-10-23 Subdomain: same RP ID; #435 alerts resolve live+worker (owner).
+- 2026-10-24 1 primary/group; soft Open (owner).
+- 2026-10-24 [Guest guide](../plans/guest-guide.md) 0341+; Fable critical briefs (owner).
+- 2026-10-24 Guide Quick answers screen (owner).

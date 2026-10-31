@@ -31,17 +31,9 @@ Append-only.
 
 - 2026-10-19 [workflow] `test_static_versions.py --write` refuses a changed file under an old `?v=` key (0172).
 - 2026-10-19 Accessibility: WCAG 2.2 AA, `a11y_guard.js`; no statement page (owner).
-- 2026-10-22 Open cue on clickable rows; phone tabs wrap | owner
 
-- 2026-10-22 Wizard coral bar OK
-- 2026-10-22 Alerts: short line + fix link (owner).
 - 2026-10-22 [deps] Signature font: self-hosted Dancing Script (OFL) (owner).
-- 2026-10-23 Skips loader; no on-track count (owner).
-- 2026-10-23 Subdomain: same RP ID; #435 alerts resolve live+worker (owner).
-- 2026-10-24 1 primary/group; soft Open (owner).
 - 2026-10-24 | [deps] `anthropic` 2.3.0 pinned+hashed; model `claude-haiku-5-5`; every call through `App/app/ai.py`, per-feature switch and budget | Havel + guest assistant; one module to swap providers | plan havel-support-assistant, task 0310
-- 2026-10-24 [Guest guide](../plans/guest-guide.md) 0341+; Fable critical briefs (owner).
-- 2026-10-24 Guide Quick answers screen (owner).
 - 2026-10-25 | Invoice "Fill from register" also asks the MFČR VAT register (CRPDPH SOAP); sends DIČ digits only; 24 h cache; no new dependency | owner | [0394](../tasks/0394-vat-register-bank-account.md)
 - 2026-10-26 | Billing phase 1: invoices only, no gateway yet | owner | 0411
 - 2026-10-26 | Unpaid = read-only, filing never blocked | owner | 0415
@@ -66,3 +58,4 @@ Append-only.
 - 2026-10-31 | Every change lean: no dead code, no extras; dead code found on the way is removed in its own small commit or PR | owner | plan v4
 - 2026-10-31 | Approval gates waived for the whole PostgreSQL and Go migration, cutover included; the bar stays (verified backup, rehearsal on a production copy, per-table counts and hashes, suite green on PG, SQLite as rollback, automatic rollback). Owner acts only where his hands are needed | owner | 0463
 - 2026-10-31 | D2 required reviewer on `production`; D3 goose (step 10); D4 Postgres job table with `SKIP LOCKED`. D1 first managed, then changed: PostgreSQL self-hosted as a Compose service on the current 8 GB Lightsail server (socket, no port, 1 GB cap), not managed; nightly encrypted `pg_dump` in the existing backup, restore proven at every rehearsal; no pgBackRest | owner | 0463, 0464
+- 2026-10-31 | PostgreSQL container has no password and no network (`network_mode: none`, Unix socket volume, trust auth); the cutover needs no secret, so a deploy never waits on one. A Haiku commit from a stale worktree (c935c55) reverted main through #601; repaired in #606. [workflow] Before every merge: `git diff --stat origin/main <branch>` against the brief's Files; one fresh worktree per Haiku | owner, orchestrator | 0463, #606

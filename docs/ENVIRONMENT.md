@@ -289,6 +289,7 @@ Plans: [havel-support-assistant](plans/havel-support-assistant.md). Everything i
 ## Database (PostgreSQL, optional)
 
 `UBYHOST_DATABASE_URL` unset means SQLite (the default). Set it to use PostgreSQL; never set it together with `UBYHOST_DB`. A TCP URL must carry `sslmode=verify-full` (or `require`); a Unix-socket URL (`host=/absolute/dir`) needs no sslmode. The schema is applied only by `App/scripts/pg_schema.py apply`, never at startup.
+The `postgres` Compose service has no password and no network; it is reached over the `ubyhost-pgsock` socket volume only.
 
 ## Development and test only
 
