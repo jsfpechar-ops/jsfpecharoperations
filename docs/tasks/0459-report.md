@@ -3,7 +3,7 @@
 Branch: `task/0459-tenancy-audit` (base `main`). No file under `App/` was edited.
 Scope: `App/app/routes/*.py` except `admin*.py` and `signup.py`. Grep: `WHERE id = ?`, `WHERE id=?`, `WHERE slug = ?`, `WHERE token = ?`.
 Hits in scope: 30 (cleaning 1, exports 4, guest 8, guest_guide 3, invoices 2, mail_unsubscribe 1, passkeys 2, payments 3, property_page 2, stay_fees 4).
-Classes: OK 29, ADMIN 0, LEAK 0, WRITE-LEAK 1.
+Classes: OK 30, ADMIN 0, LEAK 0, WRITE-LEAK 0.
 
 Notes on the classes:
 - "Host" rows are reached with a host session (`auth.require_login`). "Guest" rows are reached through `/l/{token}` with a PIN, claim session and `_owned_ids` cookie. "Public" rows need no login.
@@ -14,7 +14,7 @@ Notes on the classes:
 
 | # | file:line | route | method | table | id source | ownership check | class | fix (leaks only) |
 |---|---|---|---|---|---|---|---|---|
-| 1 | cleaning.py:323 | /cleaning/shares/{share_id}/revoke | POST | cleaning_share | path share_id | login only, none before UPDATE | WRITE-LEAK | Add `AND owner_user_id = ?` to the UPDATE and pass `access.owner_id(request)` as the last param. |
+| 1 | cleaning.py:323 | /cleaning/shares/{share_id}/revoke | POST | cleaning_share | path share_id | `AND {db.null_safe_eq('owner_user_id')}` on the continuation line, `access.owner_id(request)` as 3rd param | OK | |
 | 2 | exports.py:247 | /submissions/{submission_id}/receipt.pdf | GET | submission | path | `access.submission()` at 246 gates the query | OK | |
 | 3 | exports.py:265 | /submissions/{submission_id}/errors.pdf | GET | submission | path | `access.submission()` at 264 | OK | |
 | 4 | exports.py:291 | /submissions/{submission_id}/{which}.xml | GET | submission | path | `access.submission()` at 285, 404 if not owned | OK | |
@@ -49,16 +49,20 @@ Notes on the classes:
 
 | class | count |
 |---|---|
-| OK | 29 |
+| OK | 30 |
 | ADMIN | 0 |
 | LEAK | 0 |
-| WRITE-LEAK | 1 |
+| WRITE-LEAK | 0 |
 | total | 30 |
 
 ## Findings
 
-- WRITE-LEAK, row 1: any logged-in host can revoke another host's cleaning share by enumerating `share_id`. The fix is one clause in the UPDATE (see table). Impact is integrity (revocation), not disclosure.
-- No host-reachable read leaks were found in scope.
+- Row 1 (cleaning.py:323) was first reported as WRITE-LEAK. That was a false positive: the UPDATE continues on the next line with `AND {db.null_safe_eq('owner_user_id')}` and binds `access.owner_id(request)`. Reclassified as OK.
+- No host-reachable read or write leaks were found in scope.
+
+## Method note
+
+Hits were `WHERE id = ?`, `WHERE slug = ?` and `WHERE token = ?` in host-facing routes. A second scan by the orchestrator for `WHERE <alias>.id = ?`, `WHERE id IN`, `public_id` and `key` found one more read, invoices.py:887, reached only from an already owner-scoped invoice: OK. Tenancy is centralised in `App/app/access.py` with `owner_user_id IS ?`. Legacy NULL-owner rows are claimed at first login (`App/app/auth.py:779-782`).
 
 ## Coverage gaps (not covered by this brief's grep)
 
