@@ -8,7 +8,6 @@
 #
 # The SQLite file is only read: a .backup copy is what gets transferred.
 # A failure in cutover ends with the app up on SQLite and a non-zero exit.
-# Needs UBYHOST_PG_PASSWORD in .env (preflight.sh checks it).
 # Set PG_CUTOVER_LIB=1 to source the functions without running a command.
 set -euo pipefail
 

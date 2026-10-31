@@ -41,10 +41,17 @@ def test_script_guards_app_config_and_report_keys():
     assert '"status"' not in text
 
 
-def test_script_never_expands_the_password():
-    text = SCRIPT.read_text()
-    assert "$UBYHOST_PG_PASSWORD" not in text
-    assert "${UBYHOST_PG_PASSWORD" not in text
+def test_postgres_has_no_network_and_no_password_anywhere():
+    services = yaml.safe_load(COMPOSE.read_text())["services"]
+    pg = services["postgres"]
+    assert pg["network_mode"] == "none"
+    assert "ports" not in pg
+    assert any("listen_addresses=" in part for part in pg["command"])
+    assert "POSTGRES_PASSWORD" not in pg["environment"]
+    for path in (ROOT / "deploy/lightsail").rglob("*"):
+        if path.is_file():
+            assert "UBYHOST_PG_PASSWORD" not in path.read_text(errors="ignore"), path
+    assert "UBYHOST_PG_PASSWORD" not in SCRIPT.read_text()
 
 
 def test_env_switch_removes_sqlite_setting_and_sets_url(tmp_path):
@@ -90,7 +97,6 @@ def test_compose_postgres_is_private_and_limited():
     assert "ports" not in pg
     assert pg["mem_limit"] == "1g"
     assert pg["image"].startswith("postgres:16-alpine@sha256:")
-    assert pg["environment"]["POSTGRES_PASSWORD"] == "${UBYHOST_PG_PASSWORD}"
     for name in ("ubyhost", "worker"):
         assert "ubyhost-pgsock:/var/run/postgresql" in services[name]["volumes"]
     assert {"ubyhost-pgdata", "ubyhost-pgsock"} <= set(data["volumes"])

@@ -43,3 +43,6 @@
 - The script header says it needs `UBYHOST_PG_PASSWORD`.
 - `deploy/lightsail/.gitignore` ignores `.env.sqlite-*`.
 - New test: the script contains `unset UBYHOST_DB` and no `"status"`.
+
+## Change: no password
+The owner cannot set a password soon, so the `postgres` service has none. It runs with `network_mode: none` and `listen_addresses=` (no TCP listener), and it trusts local socket connections (`POSTGRES_HOST_AUTH_METHOD: trust`). Only containers that mount the `ubyhost-pgsock` volume can reach it, the same trust boundary as the SQLite file. `preflight.sh` and `.env.example` are back at origin/main, `UBYHOST_PG_PASSWORD` is gone from the repo, and the header of `pg-cutover.sh` no longer names it.
