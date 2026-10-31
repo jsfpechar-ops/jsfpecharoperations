@@ -1,5 +1,5 @@
 # 0458: Police deadline counts holidays as working days
-Status: todo
+Status: blocked
 Depends on: none | Base commit: main | Branch: task/0458-deadline-weekends-only
 Executor: Haiku 5.5 | Fits one session: 15 tool calls, 30k tokens
 ## 1. Objective
