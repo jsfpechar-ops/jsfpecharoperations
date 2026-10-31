@@ -104,19 +104,29 @@ def test_pg_restore_rejects_bad_stamp(tmp_path):
 
 @pytest.mark.parametrize("running", [1, 0])
 def test_backup_dumps_postgres_only_when_running(tmp_path, running):
-    root, bindir, log = make_tree(tmp_path, "UBYHOST_BACKUP_AGE_RECIPIENT=age1testrecipient\n")
+    root, bindir, log = make_tree(
+        tmp_path, "UBYHOST_BACKUP_AGE_RECIPIENT=age1testrecipient\n" + PG_ENV)
     result = run_script("backup.sh", root, bindir, log, extra_env={"PG_RUNNING": str(running)})
     assert result.returncode == 0, result.stderr
     recorded = calls(log)
     if running:
         assert "pg_dump -U ubyhost -Fc ubyhost" in recorded
         assert "cat > /data/backups/20260101T000000Z/ubyhost-pg.dump.age" in recorded
+        assert "ubyhost-pg.dump.age.tmp && mv" in recorded
     else:
         assert "pg_dump" not in recorded
 
 
+def test_backup_skips_dump_before_cutover(tmp_path):
+    # postgres runs, but the app is still on SQLite: no dump may be taken
+    root, bindir, log = make_tree(tmp_path, "UBYHOST_BACKUP_AGE_RECIPIENT=age1testrecipient\n")
+    result = run_script("backup.sh", root, bindir, log, extra_env={"PG_RUNNING": "1"})
+    assert result.returncode == 0, result.stderr
+    assert "pg_dump" not in calls(log)
+
+
 def test_backup_refuses_plaintext_dump_in_production(tmp_path):
-    root, bindir, log = make_tree(tmp_path, "UBYHOST_DEPLOYMENT=production\n")
+    root, bindir, log = make_tree(tmp_path, "UBYHOST_DEPLOYMENT=production\n" + PG_ENV)
     result = run_script("backup.sh", root, bindir, log, extra_env={"PG_RUNNING": "1"})
     assert result.returncode == 1
     assert "pg_dump" not in calls(log)

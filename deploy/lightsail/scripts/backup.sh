@@ -18,7 +18,8 @@ set +a
 docker compose exec -T ubyhost bash /app/scripts/backup_data.sh
 
 # PostgreSQL dump (brief 0464): into the newest snapshot folder, age-encrypted, never plaintext.
-if [ -n "$(docker compose ps -q --status running postgres 2>/dev/null)" ]; then
+# Runs only once the app runs on PostgreSQL (UBYHOST_DATABASE_URL set), not before the cutover.
+if [ -n "${UBYHOST_DATABASE_URL:-}" ] && [ -n "$(docker compose ps -q --status running postgres 2>/dev/null)" ]; then
   RECIPIENT="${UBYHOST_BACKUP_AGE_RECIPIENT:-}"
   if [ -z "${RECIPIENT}" ]; then
     if [ "${UBYHOST_DEPLOYMENT:-}" = "production" ]; then
@@ -31,9 +32,11 @@ if [ -n "$(docker compose ps -q --status running postgres 2>/dev/null)" ]; then
     command -v age >/dev/null 2>&1 || { echo "The 'age' binary is missing on the host." >&2; exit 1; }
     NEWEST="$(docker compose exec -T ubyhost sh -c 'ls -1 /data/backups | sort | tail -1')"
     [ -n "${NEWEST}" ] || { echo "No snapshot folder to hold the PostgreSQL dump." >&2; exit 1; }
+    docker compose exec -T ubyhost sh -c "rm -f /data/backups/${NEWEST}/ubyhost-pg.dump.age.tmp"
+    # Written as .tmp and renamed only after the whole pipeline succeeded (pipefail), so no truncated .age is left.
     docker compose exec -T postgres pg_dump -U ubyhost -Fc ubyhost \
       | age -r "${RECIPIENT}" \
-      | docker compose exec -T ubyhost sh -c "cat > /data/backups/${NEWEST}/ubyhost-pg.dump.age"
+      | docker compose exec -T ubyhost sh -c "cat > /data/backups/${NEWEST}/ubyhost-pg.dump.age.tmp && mv /data/backups/${NEWEST}/ubyhost-pg.dump.age.tmp /data/backups/${NEWEST}/ubyhost-pg.dump.age"
     echo "PostgreSQL dump bytes: $(docker compose exec -T ubyhost sh -c "wc -c < /data/backups/${NEWEST}/ubyhost-pg.dump.age" | tr -d '\r')"
   fi
 fi

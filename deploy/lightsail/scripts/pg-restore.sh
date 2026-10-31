@@ -47,6 +47,8 @@ trap 'rm -rf "${TMP}"' EXIT
 
 echo "==> Stopping worker and ubyhost"
 docker compose stop worker ubyhost
+# From here on, any failure brings the app back up (a no-op after the explicit start below).
+trap 'rm -rf "${TMP}"; docker compose up -d ubyhost worker >/dev/null 2>&1 || true' EXIT
 
 echo "==> Pulling ${STAMP} and restoring it into PostgreSQL"
 docker cp "${CONTAINER}:/data/backups/${STAMP}/ubyhost-pg.dump.age" "${TMP}/ubyhost-pg.dump.age"
