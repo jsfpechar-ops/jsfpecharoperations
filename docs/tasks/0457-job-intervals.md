@@ -1,5 +1,5 @@
 # 0457: Sane scheduler intervals for door_codes, guide_import and push
-Status: todo
+Status: replaced
 Depends on: none | Base commit: main | Branch: task/0457-job-intervals
 Executor: Haiku 5.5 | Fits one session: 15 tool calls, 30k tokens
 ## 1. Objective

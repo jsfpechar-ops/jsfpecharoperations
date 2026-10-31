@@ -36,8 +36,8 @@ Sizes: S = one Haiku chat, M = 2–3 Haiku chats, L = a Fable brief plus several
 
 | # | Step | Why | Size | Model | Depends on |
 |---|---|---|---|---|---|
-| 1 | Job intervals: `door_codes` 5 min, `guide_import` 60 min, `push` after checking what it sends ([0457](../../tasks/0457-job-intervals.md)) | ~4,300 empty runs/day, hides real errors, costs nothing to fix | S | Haiku | none |
-| 2 | Deadline rule: 3 working days, weekends only ([0458](../../tasks/0458-deadline-weekends-only.md)) | Owner decision; shortens deadlines on holiday weeks, never lengthens | S | Haiku | none |
+| 1 | Job intervals: `door_codes` 5 min, `guide_import` 60 min, `push` after checking what it sends (done in PR #593; brief 0457 replaced) | ~4,300 empty runs/day, hides real errors, costs nothing to fix | S | Haiku | none |
+| 2 | Deadline rule: 3 working days, weekends only (done in PR #593; brief 0458 replaced) | Owner decision; shortens deadlines on holiday weeks, never lengthens | S | Haiku | none |
 | 3 | Tenancy audit ([0459](../../tasks/0459-tenancy-audit.md)): **done 2026-10-31, no leak found.** Scoping is centralised in `App/app/access.py` (`owner_user_id IS ?`, 72 uses), `require_login` runs first so a NULL owner never reaches a query, legacy NULL rows are claimed at first login (`auth.py:779`), and #592 maps `IS` to `IS NOT DISTINCT FROM` on Postgres. R-03 downgraded to Low. The Go port must reproduce `access.py` as one helper package, nothing else | S (done) | Fable verified | none |
 | 4 | Postgres service in CI so `test_db_postgres.py` runs with 0 skipped ([0460](../../tasks/0460-postgres-tests-in-ci.md)) | 45 tests that never run in CI are not tests. Merge gate for #592 | S | Haiku | none |
 | 5 | Independent review of #592 runtime half (`db.py`, `db_postgres.py`, `config.py`, `pg_schema.py`, `sqlite_to_postgres.py`) | HIGH RISK database code, 0 reviews so far | M | Fable brief, Haiku fixes | 4 |

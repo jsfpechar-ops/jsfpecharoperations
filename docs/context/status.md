@@ -7,7 +7,7 @@ Updated: 2026-10-31.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
-- 2026-10-31: PostgreSQL now, Go port now, D1–D4 decided. Plan [migration-plan-v4](../plans/postgresql/migration-plan-v4.md). Wave 1 draft PRs: #594 docs, #595 intervals, #596 PG in CI, #597 tenancy audit (no leak), #598 deadline. Next: #592 runtime review brief (step 5). **Owner:** review and merge #594–#598.
+- 2026-10-31: PostgreSQL now, Go port now, D1–D4 decided. Plan [migration-plan-v4](../plans/postgresql/migration-plan-v4.md). Wave 1 draft PRs: #594 docs, #593 intervals + deadline (other thread), #596 PG in CI, #597 tenancy audit (no leak). Next: #592 runtime review brief (step 5). **Owner:** review and merge #593, #594, #596, #597.
 - #583 merged: guest save-and-continue, visible acknowledgement, contextual help. #587 open: 0452 read-only billing extract + 0454 host UX + handoff documentation.
 - Billing cockpit merged (#561). 0448 merged (#565): first plan to legacy hosts (immediate start, invoice now, no trial) + trial extension 1–365 days. Decisions 2026-10-29 in decisions.md.
 - Billing ON in production (`UBYHOST_BILLING_ENABLED=1`, 2026-10-29; cockpit #561, 0448 #565). Deploy manual.
