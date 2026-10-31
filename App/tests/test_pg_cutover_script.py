@@ -35,6 +35,12 @@ def test_script_parses_and_is_strict():
     assert "set -euo pipefail" in SCRIPT.read_text()
 
 
+def test_script_guards_app_config_and_report_keys():
+    text = SCRIPT.read_text()
+    assert "unset UBYHOST_DB" in text
+    assert '"status"' not in text
+
+
 def test_script_never_references_the_password():
     assert "UBYHOST_PG_PASSWORD" not in SCRIPT.read_text()
 

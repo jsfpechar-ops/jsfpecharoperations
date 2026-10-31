@@ -8,6 +8,7 @@
 #
 # The SQLite file is only read: a .backup copy is what gets transferred.
 # A failure in cutover ends with the app up on SQLite and a non-zero exit.
+# Needs UBYHOST_PG_PASSWORD in .env (preflight.sh checks it).
 # Set PG_CUTOVER_LIB=1 to source the functions without running a command.
 set -euo pipefail
 
@@ -94,12 +95,12 @@ remove_source_copy() {
 # pg_transfer <url> <database> <report> [--verify-only]: sqlite_to_postgres.py in a one-off container
 pg_transfer() {
   local url="$1" db="$2" report="$3"; shift 3
-  docker compose run --rm --no-deps -T -e "UBYHOST_DATABASE_URL=${url}" --entrypoint python ubyhost \
-    /app/scripts/sqlite_to_postgres.py --source /data/pg-cutover/source.db \
-    --report "${report}" --expect-database "${db}" "$@" 2>&1 | tail -30
+  docker compose run --rm --no-deps -T -e "UBYHOST_DATABASE_URL=${url}" --entrypoint sh ubyhost \
+    -c 'unset UBYHOST_DB; exec python /app/scripts/sqlite_to_postgres.py "$@"' sh \
+    --source /data/pg-cutover/source.db --report "${report}" --expect-database "${db}" "$@" 2>&1 | tail -30
 }
 
-fresh_rehearsal() {  # exit 0 when the newest rehearsal verify report says ok and is under 24 h old
+fresh_rehearsal() {  # exit 0 when the newest rehearsal verify report is under 24 h old, verify-only, all tables match
   local py
   py="$(cat <<'PY'
 import glob, json, os, sys, time
@@ -107,8 +108,12 @@ reports = sorted(glob.glob("/data/pg-cutover/rehearsal-*.verify.json"), key=os.p
 if not reports:
     sys.exit(1)
 newest = reports[-1]
+r = json.load(open(newest))
 fresh = time.time() - os.path.getmtime(newest) < 86400
-sys.exit(0 if fresh and json.load(open(newest)).get("status") == "ok" else 1)
+tables = r.get("tables") or {}
+ok = (fresh and r.get("mode") == "verify-only" and r.get("target_database") == "ubyhost_rehearsal"
+      and bool(tables) and all(t.get("match") is True for t in tables.values()))
+sys.exit(0 if ok else 1)
 PY
 )"
   docker compose run --rm --no-deps -T --entrypoint python ubyhost -c "${py}" >/dev/null 2>&1
@@ -131,6 +136,7 @@ rehearsal_cleanup() {  # on exit: drop the rehearsal database and the SQLite cop
 }
 
 fail_cutover() {  # <reason>: undo what was done, start the app on SQLite, exit 1
+  trap - ERR
   echo "CUTOVER FAILED: $1. SQLite was not written; the app goes back to SQLite." >&2
   if [ "${PG_TOUCHED}" = 1 ]; then
     pg_sql ubyhost "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" >/dev/null \
@@ -168,6 +174,7 @@ cutover() {
   cp -p .env "${ENV_COPY}"
   down_from="${SECONDS}"
   docker compose stop worker ubyhost
+  trap 'fail_cutover "unexpected error at line ${LINENO}"' ERR
   copy_source || fail_cutover "SQLite copy failed its integrity check"
   PG_TOUCHED=1
   pg_transfer "${PG_URL}" ubyhost "${report}" || fail_cutover "transfer into PostgreSQL failed"
@@ -179,6 +186,7 @@ cutover() {
   docker compose up -d ubyhost worker
   wait_until 30 healthz_ok || fail_cutover "ubyhost did not become healthy on PostgreSQL"
   wait_until 30 login_ok || fail_cutover "/login did not return 200 on PostgreSQL"
+  trap - ERR
   echo "Downtime: $((SECONDS - down_from)) s"
   echo "SQLite file kept on the volume: /data/ubyhost.db; .env copy: ${ENV_COPY}"
   echo "CUTOVER OK"

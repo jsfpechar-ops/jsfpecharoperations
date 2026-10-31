@@ -35,3 +35,11 @@
 ## Owner steps left
 - Not read: `docs/plans/postgresql/owner-steps-cutover.md`.
 - Owner: set `UBYHOST_PG_PASSWORD` in `deploy/lightsail/.env`, run `./scripts/pg-cutover.sh rehearse`, then `./scripts/pg-cutover.sh cutover` after a clean rehearsal. `rollback` is the way back.
+
+## Review fixes
+- `fresh_rehearsal` now reads the real verify report keys (`mode`, `target_database`, `tables[*].match`) and no longer looks for `status`.
+- The transfer runs the app script with `UBYHOST_DB` unset, so an `.env` that still sets it does not crash the run.
+- An `ERR` trap around the downtime window calls `fail_cutover`, so an unexpected error after the stop still restarts the app. `fail_cutover` clears the trap first to avoid recursion.
+- The script header says it needs `UBYHOST_PG_PASSWORD`.
+- `deploy/lightsail/.gitignore` ignores `.env.sqlite-*`.
+- New test: the script contains `unset UBYHOST_DB` and no `"status"`.
