@@ -1,5 +1,5 @@
 # 0460: Run the PostgreSQL test module in CI
-Status: todo
+Status: review
 Depends on: none (no-op until #592 lands `App/tests/test_db_postgres.py`) | Base commit: main | Branch: task/0460-postgres-tests-in-ci
 Executor: Haiku 5.5 | Fits one session: 15 tool calls, 30k tokens
 ## 1. Objective
