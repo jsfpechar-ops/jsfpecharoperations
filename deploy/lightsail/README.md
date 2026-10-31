@@ -24,6 +24,7 @@ chmod +x scripts/*.sh
 ```
 
 Useful later: `./scripts/status.sh`, `./scripts/backup.sh`, `./scripts/restore.sh`, `./scripts/restore_test.sh`, `./scripts/smoke-remote.sh`.
+PostgreSQL cutover (0463, owner runs it once): `./scripts/pg-cutover.sh rehearse`, then `cutover`; `rollback` returns `.env` to SQLite.
 
 
 ## Encrypted backups (OPS-1)
