@@ -147,6 +147,7 @@ def test_a_drawn_signature_is_written_encrypted_and_reads_back():
     assert reporting.guest_has_signature(guest) is True
 
 
+@pytest.mark.sqlite_only
 def test_the_migration_encrypts_existing_signatures_and_files():
     migration = _migration()
 

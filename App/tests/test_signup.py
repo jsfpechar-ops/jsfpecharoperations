@@ -487,6 +487,7 @@ def test_without_the_opt_out_box_the_setup_tips_are_allowed():
     assert not lifecycle_mail.is_opted_out(_account(email)["id"])
 
 
+@pytest.mark.sqlite_only
 def test_the_opt_out_columns_are_added_if_missing():
     names = {row["name"] for row in db.query("PRAGMA table_info(user_account)")}
     assert {"onboarding_emails_opt_out", "onboarding_emails_opt_out_at"} <= names

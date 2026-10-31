@@ -144,6 +144,7 @@ def test_the_code_uses_the_token_alphabet_and_six_characters(flat):
     assert set(code) <= set(auth.PERMALINK_ALPHABET)
 
 
+@pytest.mark.sqlite_only
 def test_the_migration_gives_every_property_a_slug(flat):
     db.execute("DELETE FROM apartment_slug WHERE apartment_id = ?", (flat["id"],))
     db.init_db()

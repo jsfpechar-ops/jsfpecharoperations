@@ -81,6 +81,7 @@ def test_start_request_stats_replaces_the_previous_counter():
     assert second.db_seconds > 0
 
 
+@pytest.mark.sqlite_only
 def test_lock_wait_is_measured_on_begin_immediate():
     db.init_db()
     holder_ready = threading.Event()
