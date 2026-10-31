@@ -39,8 +39,8 @@ def test_working_day_arithmetic_skips_weekend():
 
 
 def test_working_day_arithmetic_skips_public_holiday():
-    # 17 Nov 2026 is a public holiday (a Tuesday), so it does not count.
-    assert d.add_working_days(date(2026, 11, 16), 3) == date(2026, 11, 19)
+    # 17 Nov 2026 is a public holiday (a Tuesday), but holidays now count as working days: 16, 17, 18.
+    assert d.add_working_days(date(2026, 11, 16), 3) == date(2026, 11, 18)
 
 
 def test_a_weekend_arrival_opens_the_count_on_the_next_working_day():
