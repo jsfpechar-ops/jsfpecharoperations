@@ -709,6 +709,108 @@ def test_writer_lock_wait_is_bounded_and_recovers(pg_runtime, monkeypatch):
     db.execute("DELETE FROM settings WHERE key = ?", ("writer-lock-timeout-probe",))
 
 
+def test_writer_lock_timeout_surfaces_as_lock_not_available_through_every_helper(
+    pg_runtime, monkeypatch
+):
+    """Regression for 0455: a 55P03 lock timeout must not be masked by db.py.
+
+    The adapter opens a transaction before taking the writer advisory lock. If
+    lock acquisition fails, that transaction used to be left open, so
+    ``db._helper_conn`` replaced psycopg's ``LockNotAvailable`` with its own
+    "left a transaction open" RuntimeError. The adapter now rolls back and
+    re-raises the driver error unchanged; this test pins that for the helper
+    path, ``executemany``, a cursor-level ``BEGIN IMMEDIATE`` and
+    ``db.immediate()``, and proves the connections stay reusable.
+    """
+    from psycopg import errors as pg_errors
+
+    from app import db_postgres
+
+    monkeypatch.setattr(db_postgres, "LOCK_TIMEOUT", "250ms")
+    probe_key = "lock-not-available-probe"
+    db.execute("DELETE FROM settings WHERE key = ?", (probe_key,))
+    holder = db.connect()
+    holder.acquire_writer_session_lock()
+
+    def expect_lock_timeout(call):
+        started = time.monotonic()
+        with pytest.raises(pg_errors.LockNotAvailable) as info:
+            call()
+        elapsed = time.monotonic() - started
+        assert getattr(info.value, "sqlstate", None) == "55P03"
+        # Never db.py's "a database helper left a transaction open" RuntimeError.
+        assert not isinstance(info.value, RuntimeError)
+        assert "left a transaction open" not in str(info.value)
+        assert elapsed < 10, f"lock wait was not bounded ({elapsed:.2f}s)"
+        return info.value
+
+    try:
+        # db.execute: the original psycopg error must reach the caller.
+        expect_lock_timeout(
+            lambda: db.execute(
+                "INSERT INTO settings (key, value) VALUES (?, ?)",
+                (probe_key, "execute"),
+            )
+        )
+        assert db._thread_conn().in_transaction is False
+        assert db.get_setting(probe_key) is None
+
+        # Connection-level executemany.
+        many_connection = db.connect()
+        try:
+            expect_lock_timeout(
+                lambda: many_connection.executemany(
+                    "INSERT INTO settings (key, value) VALUES (?, ?)",
+                    [(probe_key, "many")],
+                )
+            )
+            assert many_connection.in_transaction is False
+            assert (
+                many_connection.execute(
+                    "SELECT COUNT(*) AS n FROM settings WHERE key = ?", (probe_key,)
+                ).fetchone()["n"]
+                == 0
+            )
+        finally:
+            many_connection.close()
+
+        # Cursor-level BEGIN IMMEDIATE, the building block of db.immediate().
+        begin_connection = db.connect()
+        try:
+            cursor = begin_connection.cursor()
+            try:
+                expect_lock_timeout(lambda: cursor.execute("BEGIN IMMEDIATE"))
+                assert begin_connection.in_transaction is False
+            finally:
+                cursor.close()
+        finally:
+            begin_connection.close()
+
+        # db.immediate() keeps raising LockNotAvailable as before.
+        def immediate_write():
+            with db.immediate() as cur:
+                cur.execute(
+                    "INSERT INTO settings (key, value) VALUES (?, ?)",
+                    (probe_key, "immediate"),
+                )
+
+        expect_lock_timeout(immediate_write)
+        assert db._thread_conn().in_transaction is False
+        assert db.get_setting(probe_key) is None
+    finally:
+        holder.release_writer_session_lock()
+        holder.close()
+
+    # After the lock is released every path works again; no blind retry is needed.
+    db.execute(
+        "INSERT INTO settings (key, value) VALUES (?, ?)", (probe_key, "retry")
+    )
+    try:
+        assert db.get_setting(probe_key) == "retry"
+    finally:
+        db.execute("DELETE FROM settings WHERE key = ?", (probe_key,))
+
+
 # --- g/h. SQLite -> PostgreSQL transfer and reconciliation ------------------
 
 
@@ -1238,9 +1340,22 @@ def test_constraint_violation_rolls_back_and_target_is_reusable(transfer_workspa
     assert _public_relation_count() == 0
     result = _run_transfer(duplicate, root / "constraint-report.json")
     assert result.returncode == 1
-    lowered = result.stderr.lower()
-    assert "unique constraint" in lowered or "duplicate key" in lowered
-    assert "PASSPORT-SENTINEL" not in result.stderr
+    # Sanitised target-failure text: operation/table plus category and SQLSTATE,
+    # never the offending value psycopg puts in its DETAIL.
+    assert "copying table user_account" in result.stderr
+    assert "unique constraint violation (sqlstate 23505)" in result.stderr
+    for leaked in (
+        "transfer-a@example.test",
+        "dup-email-user",
+        "Key (email)",
+        "DETAIL",
+        "duplicate key value violates unique constraint",
+        "postgresql://",
+        "ubyhost@127.0.0.1",
+        "PASSPORT-SENTINEL",
+    ):
+        assert leaked not in result.stderr, f"transfer stderr leaked {leaked!r}"
+    assert not (root / "constraint-report.json").exists()
     # A failed transfer rolls back its schema and rows and stays reusable.
     assert _public_relation_count() == 0
     retry = _run_transfer(transfer_workspace["source"], root / "retry-report.json")
@@ -1249,6 +1364,11 @@ def test_constraint_violation_rolls_back_and_target_is_reusable(transfer_workspa
         transfer_workspace["source"], root / "retry-verify.json", verify_only=True
     )
     assert verify.returncode == 0, verify.stderr[-1000:]
+    # The successful report published after recovery is value-free too.
+    success_text = (root / "retry-report.json").read_text(encoding="utf-8")
+    for forbidden in FORBIDDEN_IN_REPORT:
+        assert forbidden not in success_text, f"success report leaked {forbidden!r}"
+    assert "transfer-a@example.test" not in success_text
 
 
 def test_transfer_refuses_report_path_collisions(transfer_workspace):
