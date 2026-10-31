@@ -199,6 +199,53 @@ def postgresql_schema_reset():
     yield
 
 
+@pytest.fixture(scope="session", autouse=True)
+def postgresql_init_db_reset():
+    """On PostgreSQL, a changed DB_PATH in init_db means a fresh database.
+
+    SQLite tests point config.DB_PATH at a new temp file before db.init_db().
+    PostgreSQL ignores DB_PATH, so the same moment truncates the data instead.
+    """
+    from app import config, db
+
+    if getattr(config, "DB_BACKEND", "sqlite") != "postgresql":
+        yield
+        return
+    import psycopg
+    from psycopg import sql
+
+    original = db.init_db
+    last_path = [None]
+
+    def init_db_with_reset():
+        path = str(config.DB_PATH)
+        if last_path[0] is not None and path != last_path[0]:
+            with psycopg.connect(os.environ["UBYHOST_DATABASE_URL"], autocommit=True) as raw:
+                names = [
+                    row[0]
+                    for row in raw.execute(
+                        "SELECT table_name FROM information_schema.tables "
+                        "WHERE table_schema = 'public' AND table_type = 'BASE TABLE' "
+                        "AND table_name <> 'schema_migrations'"
+                    ).fetchall()
+                ]
+                if names:
+                    raw.execute(
+                        sql.SQL("TRUNCATE {} RESTART IDENTITY CASCADE").format(
+                            sql.SQL(", ").join(sql.Identifier(name) for name in names)
+                        )
+                    )
+            db.apply_postgresql_schema()
+        last_path[0] = path
+        original()
+
+    db.init_db = init_db_with_reset
+    try:
+        yield
+    finally:
+        db.init_db = original
+
+
 @pytest.fixture(autouse=True)
 def fresh_login_link_budgets():
     """Every test starts with the e-mail login budgets unspent (task 0003).
