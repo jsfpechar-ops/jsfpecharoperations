@@ -16,7 +16,6 @@ provider 'stripe'), the same guard pattern as TTLock.
 from __future__ import annotations
 
 import json
-import sqlite3
 from typing import Any, Dict, Optional
 
 import stripe
@@ -358,7 +357,7 @@ def _record_event(event: Dict[str, Any]) -> bool:
                 "created_at": db.utcnow(),
             },
         )
-    except sqlite3.IntegrityError:
+    except db.integrity_errors():
         return False
     return True
 
