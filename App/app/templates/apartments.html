@@ -3,7 +3,7 @@
 {% set nav = 'apartments' %}
 {% set how_key = 'properties' %}
 {% set body_kind = 'list' %}
-{% from "_components.html" import onboarding_banner, empty_state, row_menu_begin, row_menu_end, property_identity with context %}
+{% from "_components.html" import onboarding_banner, empty_state, row_menu_begin, row_menu_end, property_identity, copy_button with context %}
 {% from "_icons.html" import icon with context %}
 {% block title %}{{ t('apartments.title') }}{% endblock %}
 {% block page_title %}{% endblock %}
@@ -42,7 +42,7 @@
           {% endfor %}
           </div>
         </td>
-        <td class="nowrap" data-label="{{ t('common.copy_link') }}">{% if row.link_url %}<input class="sr-only" type="text" id="guest-url-{{ apartment.id }}" readonly value="{{ row.link_url }}" tabindex="-1" aria-hidden="true"><button class="btn sm ghost" type="button" data-copy="guest-url-{{ apartment.id }}" data-copy-label="{{ t('common.copy_link') }}" data-copied-label="{{ t('common.copied') }}">{{ t('common.copy_link') }}</button>{% endif %}</td>
+        <td class="nowrap" data-label="{{ t('common.copy_link') }}">{% if row.link_url %}<input class="sr-only" type="text" id="guest-url-{{ apartment.id }}" readonly value="{{ row.link_url }}" tabindex="-1" aria-hidden="true">{{ copy_button('guest-url-' ~ apartment.id, t('common.copy_link')) }}{% endif %}</td>
         <td class="nowrap row-actions dots" data-label="">
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="{{ base_url }}" role="menuitem">{{ t('common.open') }}</a>
