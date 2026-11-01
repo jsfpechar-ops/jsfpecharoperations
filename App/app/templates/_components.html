@@ -301,10 +301,10 @@
 
 {% macro copy_button(target_id, label='', primary=false) %}
   {% if v2 | default(false) %}
-  {# 0536: no data-copy-label-slot here. app.js puts the copied text into that slot on load, which showed "Zkopírováno" first. A bare text node lets app.js build the default/confirmed stack. #}
+  {# 0536: app.js writes the copied text into the slot when it loads, so the default label sits in its own span. CSS shows the slot only while copied. #}
   <button class="btn sm{% if not primary %} ghost{% endif %} copy-btn" type="button" data-copy="{{ target_id }}"
           data-copy-label="{{ label or t('common.copy') }}" data-copied-label="{{ t('common.copied') }}"
-          aria-label="{{ label or t('common.copy') }}">{{ label or t('common.copy') }}</button>
+          aria-label="{{ label or t('common.copy') }}"><span class="copy-label-default">{{ label or t('common.copy') }}</span><span class="btn-icon-label" data-copy-label-slot></span></button>
   {% else %}
   <button class="ui-btn ui-btn-secondary ui-btn-icon ui-btn-compact copy-btn" type="button" data-copy="{{ target_id }}"
           data-copy-label="{{ label or t('common.copy') }}" data-copied-label="{{ t('common.copied') }}"

@@ -45,6 +45,30 @@ def test_sections_are_details_in_order(host):
     assert names == ["basics", "archive", "messages", "lock", "police", "fee", "calendars"]
 
 
+def test_0536_setup_continue_is_the_first_aside_card(host):
+    client, apartment_id = host
+    html = _page(client, apartment_id)
+    start = html.index('<aside class="preview"')
+    aside = html[start:html.index("</aside>", start)]
+    assert "setup-continue-card" in aside
+    assert aside.index('class="pv setup-continue-card"') < aside.index('class="pv"')
+
+
+def test_0536_guest_card_copy_is_coral_and_has_no_copied_slot(host):
+    client, apartment_id = host
+    html = _page(client, apartment_id)
+    start = html.index('class="card guest-card"')
+    card = html[start:html.index("</section>", start)]
+    assert 'class="btn sm copy-btn"' in card
+    assert 'class="copy-label-default"' in card
+
+
+def test_0536_lock_section_is_always_rendered(host):
+    client, apartment_id = host
+    html = _page(client, apartment_id)
+    assert 'id="sec-lock"' in html
+
+
 def test_no_view_opens_basics_only(host):
     client, apartment_id = host
     assert _opened(client, apartment_id) == ["basics"]

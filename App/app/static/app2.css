@@ -374,6 +374,10 @@ body.v2 details input{min-height:24px}
   body.v2 .property-settings-form input,body.v2 .property-settings-form select,body.v2 .property-settings-form textarea{min-width:0;max-width:100%}
 }
 /* 0535 step 3b: the guest-link copy icon (injected by app.js, unstyled on v2) took ~77 px in flow and pushed the button past 1024 px. Hidden until copied, absolute inside the button. */
+body.v2 .copy-btn .copy-label-default{display:inline}
+body.v2 .copy-btn [data-copy-label-slot]{display:none}
+body.v2 .copy-btn.copied [data-copy-label-slot]{display:inline}
+body.v2 .copy-btn.copied .copy-label-default{display:none}
 body.v2 .guest-card .copy-btn{position:relative;overflow:hidden}
 body.v2 .guest-card .copy-btn [data-copy-state-icon]{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none}
 body.v2 .guest-card .copy-btn.copied [data-copy-state-icon]{opacity:1}
