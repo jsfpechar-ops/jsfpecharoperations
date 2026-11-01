@@ -250,16 +250,18 @@ def _requirements_json(requirements: Dict[str, Any]) -> Optional[str]:
 
 
 def _mirror(owner_user_id: int, account: Dict[str, Any]) -> None:
-    """Upsert the account state mirror; audit every state transition."""
+    """Upsert the account state mirror on every call (requirements and the
+    charges/payouts flags can change while the state name stays the same,
+    0623); audit only real state transitions."""
     row = account_for_owner(owner_user_id)
     if row is None or row["stripe_account_id"] != account.get("id"):
         return
     state = _onboarding_state(account)
     requirements = account.get("requirements") or {}
-    changed = db.execute_rowcount(
+    db.execute(
         "UPDATE stripe_account SET onboarding_state = ?, charges_enabled = ?,"
         " payouts_enabled = ?, requirements_json = ?, updated_at = ?"
-        " WHERE owner_user_id = ? AND mode = ? AND onboarding_state != ?",
+        " WHERE owner_user_id = ? AND mode = ?",
         (
             state,
             1 if account.get("charges_enabled") else 0,
@@ -268,10 +270,9 @@ def _mirror(owner_user_id: int, account: Dict[str, Any]) -> None:
             db.utcnow(),
             owner_user_id,
             config.STRIPE_MODE,
-            state,
         ),
     )
-    if changed:
+    if row["onboarding_state"] != state:
         db.audit(
             "stripe_account_state",
             f"acct={account.get('id')} state={state}"
