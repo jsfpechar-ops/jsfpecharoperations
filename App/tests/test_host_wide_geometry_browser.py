@@ -35,7 +35,7 @@ MOBILE_ROUTE_KEYS = {
     "property-detail-configured", "fee-setup", "fee-detail", "stay-detail",
 }
 CAPTURE_ROUTES = {
-    "dashboard": ("/", ".needs-you"),
+    "dashboard": ("/", "#needs-action"),  # 0720c: v2 lane; `.needs-you` is the old shell
     "stays": ("/reservations", ".stays-view, .ui-empty"),
     "properties": ("/apartments", ".panel.tight.scroll-x, .panel.empty"),
     "operators": ("/entities", ".entities-page, .panel.empty"),
@@ -310,8 +310,8 @@ def _capture_geometry(page, result_selector):
           return {
             viewport: {width: innerWidth, scrollWidth: document.documentElement.scrollWidth},
             hostLane,
-            title: box('.page-header-main h1, .ui-ph-main h1, .host-today-head h1'),
-            pageHeader: box('.page-header, .ui-ph, .host-today-head'),
+            title: box('.page-header-main h1, .ui-ph-main h1, .host-today-head h1, .head h1'),
+            pageHeader: box('.page-header, .ui-ph, .host-today-head, .head'),
             directBacklink: box('main.wrap.with-sidebar > a.back-link'),
             headerMain: box('.page-header-main, .ui-ph-main, .host-today-head'),
             headerActions: box('.page-actions, .ui-ph-acts, .dashboard-actions'),
@@ -506,7 +506,7 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                     assert feedback_region, f"feedback region missing on {name}/{lang}/{width}"
                     if name == "dashboard":
                         # 0241: on the dashboard the alert is a line in "What needs you".
-                        card_alert = page.locator('.needs-you [data-needs-you="alert"]')
+                        card_alert = page.locator('#needs-action [data-needs-you="alert"]')
                         assert card_alert.count() >= 1, f"date-change alert missing from the card at {lang}/{width}"
                         assert card_alert.first.locator("[data-notification-dismiss]").count() == 0, (
                             "dates_changed_resign alerts are filing gates and must remain non-dismissible"
@@ -810,7 +810,8 @@ def test_collapsed_sidebar_keeps_dashboard_and_stays_lanes_aligned(wide_host, wi
             }])
             page = context.new_page()
             for key, path, selector in (
-                ("dashboard", "/", ".needs-you"),
+                # 0720c: v2 `/` has no sidebar collapse button; the collapse case runs on /settings (old shell).
+                ("settings", "/settings", ".host-property-grid"),
                 ("stays", "/reservations", ".stays-view"),
             ):
                 response = page.goto(f"{wide_base}{path}?lang={lang}")
@@ -867,22 +868,25 @@ def test_dashboard_760_header_and_actions_remain_in_the_shared_lane(wide_host, w
             page.wait_for_load_state("networkidle")
             _dismiss_optional_security_prompt(page)
             page.evaluate("window.scrollTo(0, 0)")
-            geometry = _capture_geometry(page, ".needs-you")
-            assert abs(geometry["pageHeader"]["left"] - geometry["result"]["left"]) <= 2, geometry
-            assert abs(geometry["pageHeader"]["right"] - geometry["result"]["right"]) <= 2, geometry
-            assert abs(geometry["title"]["left"] - geometry["result"]["left"]) <= 2, geometry
-            actions = geometry["headerActions"]
-            assert actions and actions["left"] >= geometry["pageHeader"]["left"] - 1
-            assert actions["right"] <= geometry["pageHeader"]["right"] + 1
-            title = geometry["title"]
-            overlaps_x = min(actions["right"], title["right"]) > max(actions["left"], title["left"])
-            overlaps_y = min(actions["bottom"], title["bottom"]) > max(actions["top"], title["top"])
-            assert not (overlaps_x and overlaps_y), {
-                "title": title, "actions": actions,
-            }
+            # 0720c: v2 dashboard. The header is `.head`, the lane is `#needs-action`, the lines are `.card.need`.
+            geometry = _capture_geometry(page, "#needs-action")
+            v2 = page.evaluate("""() => {
+              const rect = el => { if (!el) return null; const r = el.getBoundingClientRect(); return {left: r.left, right: r.right, top: r.top, bottom: r.bottom}; };
+              return {main: rect(document.querySelector('main')), head: rect(document.querySelector('.head')),
+                title: rect(document.querySelector('.head h1')), ovTop: rect(document.querySelector('.ov-top')),
+                lane: rect(document.querySelector('#needs-action')),
+                overflow: document.documentElement.scrollWidth - innerWidth,
+                alertStack: !!document.querySelector('.notification-stack')};
+            }""")
+            assert v2["lane"] and v2["head"] and v2["title"] and v2["ovTop"], v2
+            assert v2["overflow"] <= 1, v2
+            assert not v2["alertStack"], v2
+            for edge in ("left", "right"):
+                assert abs(v2["head"][edge] - v2["lane"][edge]) <= 2, v2
+                assert abs(v2["ovTop"][edge] - v2["lane"][edge]) <= 2, v2
+            assert abs(v2["title"]["left"] - v2["lane"]["left"]) <= 2, v2
             # 0241: the alert is a line in "What needs you", never a second stack.
-            assert geometry["alertStack"] is None, geometry["alertStack"]
-            card_alert = page.locator('.needs-you [data-needs-you="alert"]')
+            card_alert = page.locator('#needs-action [data-needs-you="alert"]')
             assert card_alert.count() >= 1, page.locator("body").inner_text()[:500]
             assert card_alert.first.locator("[data-notification-dismiss]").count() == 0
             page.screenshot(path=str(output_dir / f"after-dashboard-{lang}-760.png"), full_page=True)
@@ -936,7 +940,8 @@ def _rail_context(browser, wide_host, wide_base, width, collapsed, **options):
     return context
 
 
-def _rail_page(context, wide_base, path="/"):
+# 0720c: the rail cases run on /settings (old shell, no `v2` set); v2 `/` has no `button[data-sidebar-collapse]`.
+def _rail_page(context, wide_base, path="/settings"):
     page = context.new_page()
     response = page.goto(f"{wide_base}{path}")
     assert response and response.status == 200
