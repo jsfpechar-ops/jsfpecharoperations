@@ -1,13 +1,13 @@
 # Status
 
-Updated: 2026-10-31.
+Updated: 2026-11-01.
 
 ## Production
 - Magic-link 1–2 done; checked; access log off.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
-- 2026-10-31: PostgreSQL + Go, plan [migration-plan-v4](../plans/postgresql/migration-plan-v4.md). Merged #593–#607 (PG runtime, PG 16 in Compose + `pg-cutover.sh`, encrypted `pg_dump` + restore, c935c55 repair, briefs 0465–0467); deployed 17:01Z, postgres up, app on SQLite. 0462 merged (#609): full suite green on PG, `test-postgres-full` gates every merge. Next: 0465 goose. **Owner:** [owner-steps](../plans/postgresql/owner-steps-cutover.md): `rehearse`, then `cutover`.
+- 2026-11-01: **Production on PostgreSQL** since 2026-10-31 23:56Z (39 s downtime; SQLite kept at `/data/ubyhost.db`, rollback `./scripts/pg-cutover.sh rollback`). deploy.sh is PG-aware and applies goose before start (#618); deployed: goose 2 poll indexes + iCal digest (#620), no global writer lock (#619). Merged: job queue opt-in (#622), Go G1a skeleton + crypto conformance (#621). Open: Go G1b container behind compose profile `go` (#624), 0467b (#625). Next: G2 read-only routes, then G3–G6 ([plan v4](../plans/postgresql/migration-plan-v4.md)).
 - #583 merged: guest save-and-continue, visible acknowledgement, contextual help. #587 open: 0452 read-only billing extract + 0454 host UX + handoff documentation.
 - Billing cockpit merged (#561). 0448 merged (#565): first plan to legacy hosts (immediate start, invoice now, no trial) + trial extension 1–365 days. Decisions 2026-10-29 in decisions.md.
 - Billing ON in production (`UBYHOST_BILLING_ENABLED=1`, 2026-10-29; cockpit #561, 0448 #565). Deploy manual.
@@ -25,7 +25,6 @@ Updated: 2026-10-31.
 - TTLock briefs 0008–0016: [plan](../plans/ttlock-door-codes.md) §11 order. Test first; live after §12 + lawyer (K-L).
 
 ## Blocked: needs owner, lawyer or council
-- PostgreSQL cutover: owner runs `pg-cutover.sh rehearse` then `cutover` on the server (tooling is deployed).
 - Lawyer review of legal texts (0005 and K-L rows in [known-issues](known-issues.md)).
 - Stale signed dates (K-F18). HIGH RISK filing: K-F02, K-F03, K-F07; secret rotation K-S10.
 - Decide with owner: founder-price flag on the customer page or discount-% only.
