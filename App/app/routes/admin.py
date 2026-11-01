@@ -525,7 +525,7 @@ def dashboard(request: Request):
             # 0706: 14-day grid for the overview calendar, built server-side.
             "cal_days": [today + timedelta(days=i) for i in range(14)],
             "cal_rows": _overview_calendar_rows(owner_user_id, apartments, today),
-            "cal_view": bool(request.query_params.get("cal_view")),
+            "cal_view": any(k.startswith("cal_") for k in request.query_params),
             # 0520: stays that arrive or leave today, for the "Today" table.
             "today_rows": [
                 dict(row, nights=_today_nights(row["reservation"]))
