@@ -11,7 +11,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 	_ "time/tzdata" // the Prague zone must exist even on a bare container
@@ -272,7 +271,7 @@ func decryptOrPlain(dec FieldDecrypter, token, plain string) (string, error) {
 	}
 	v, err := dec(token)
 	if err != nil {
-		return "", fmt.Errorf("collect: stored guest document field could not be decrypted: %w", err)
+		return "", guestUnreadable{err: err}
 	}
 	return v, nil
 }

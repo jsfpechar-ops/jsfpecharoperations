@@ -564,3 +564,12 @@ func ValidateApartment(ap map[string]string) []Issue {
 	}
 	return issues
 }
+
+// IssuesToText is validation.issues_to_text: "field: message" joined with "; ".
+func IssuesToText(issues []Issue) string {
+	parts := make([]string, 0, len(issues))
+	for _, issue := range issues {
+		parts = append(parts, issue.Field+": "+issue.Message)
+	}
+	return strings.Join(parts, "; ")
+}
