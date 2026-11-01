@@ -67,7 +67,7 @@ def test_sidebar_link_still_navigates_with_prefetch_rules(base):
             errors = []
             page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
             page.goto(f"{base}/?lang=en")
-            page.locator('.ui-sidebar a[href="/reservations"]').first.click()
+            page.locator('#app-sidebar a[href="/reservations"]').first.click()
             page.wait_for_url("**/reservations**", timeout=15000)
             assert "/reservations" in page.url
             blocked = [e for e in errors if "Content Security Policy" in e or "speculation" in e.lower()]

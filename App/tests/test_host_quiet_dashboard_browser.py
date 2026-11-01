@@ -181,24 +181,25 @@ TONE_RANK = {"red": 0, "amber": 1, "grey": 2}
 
 # 0243: every visible line of "What needs you", measured in one pass.
 CARD_JS = """() => {
-  const card = document.querySelector('.needs-you');
+  const card = document.querySelector('#needs-action');
   if (!card) return null;
   const rect = el => { const b = el.getBoundingClientRect(); return {l: b.left, r: b.right, t: b.top, b: b.bottom, w: b.width, h: b.height}; };
   const style = el => getComputedStyle(el);
   const shown = el => el.offsetParent !== null;
-  const items = [...card.querySelectorAll('.needs-you-item')].filter(shown).map(li => {
-    const copy = li.querySelector('.needs-you-copy');
+  const items = [...card.querySelectorAll('.card.need')].filter(shown).map(li => {
+    const copy = li.querySelector('.h');
     const buttons = [...li.querySelectorAll('.needs-you-actions a, .needs-you-actions button')].filter(shown);
     return {
       kind: li.dataset.needsYou, tone: li.dataset.tone, text: copy.textContent.trim().slice(0, 80), box: rect(li),
       border: [style(li).borderTopStyle, parseFloat(style(li).borderTopWidth), parseFloat(style(li).borderLeftWidth), style(li).borderLeftColor],
-      icon: style(li.querySelector('.needs-you-icon')).backgroundColor, iconBox: rect(li.querySelector('.needs-you-icon')),
+      radius: parseFloat(style(li).borderTopLeftRadius), shadow: style(li).boxShadow,
+      icon: style(li.querySelector('.ic')).backgroundColor, iconBox: rect(li.querySelector('.ic')),
       copy: rect(copy), copyOverflow: copy.scrollWidth > copy.clientWidth + 1,
       buttons: buttons.map(b => Object.assign(rect(b), {text: b.innerText.trim(), clipped: b.scrollWidth > b.clientWidth + 1})),
     };
   });
   return {card: rect(card), cardBorder: [style(card).borderTopStyle, parseFloat(style(card).borderTopWidth)], items,
-          header: rect(document.querySelector('.ui-ph')),
+          header: rect(document.querySelector('.ov-top').offsetParent !== null ? document.querySelector('.ov-top') : document.querySelector('.ov-head')),
           calendar: document.querySelector('#calendar') ? rect(document.querySelector('#calendar')) : null,
           scroll: document.documentElement.scrollWidth - innerWidth,
           stack: !!document.querySelector('.notification-stack')};
@@ -232,7 +233,11 @@ def _check_card(geo, width, label):
         # 0701: at computer width the box has no frame; each line is a card instead.
         assert geo["cardBorder"][1] == 0, (label, "card still framed at computer width", geo["cardBorder"])
     else:
-        assert geo["cardBorder"][0] == "solid" and geo["cardBorder"][1] >= 1, (label, geo["cardBorder"])
+        # v2 (0720c): the lane has no frame below 768; each `.card.need` is its own card.
+        for item in geo["items"]:
+            assert item["radius"] > 0, (label, "need card without radius", item["text"])
+            assert item["shadow"] != "none" or item["border"][1] >= 1, (label, "need card without shadow or border", item["text"], item["border"])
+            assert item["box"]["l"] >= -0.5 and item["box"]["r"] <= width + 0.5, (label, "need card outside viewport", item["text"], item["box"])
     for edge in ("l", "r"):
         assert abs(card[edge] - geo["header"][edge]) <= 2, (label, "lane", card, geo["header"])
         if geo["calendar"]:
@@ -248,11 +253,17 @@ def _check_card(geo, width, label):
         if width >= 768:
             # 0701: a card with a 44 px tinted tile; no coloured left edge, the tone is the tile.
             assert item["border"][2] <= 1.0, where + (item["border"],)
-            assert abs(item["iconBox"]["w"] - 44) <= 0.5 and abs(item["iconBox"]["h"] - 44) <= 0.5, where + (item["iconBox"],)
-            tone_colours.setdefault(item["tone"], set()).add(item["icon"])
         else:
-            assert item["border"][2] >= 3.5, where + (item["border"],)
-            tone_colours.setdefault(item["tone"], set()).add(item["border"][3])
+            # v2 (0720c): no coloured left stripe below 768 either; the tone is the tile, as at computer width.
+            assert item["border"][2] <= 1.0, where + (item["border"],)
+        # Same icon-tile check at every width: square, inside the card. The v2 tile measures 48 px
+        # at 360 and 1280 (the old 44 px figure is stale), so the size only has to sit in 40-52 px.
+        icon = item["iconBox"]
+        assert 40 <= icon["w"] <= 52 and 40 <= icon["h"] <= 52, where + (icon,)
+        assert abs(icon["w"] - icon["h"]) <= 1, where + (icon,)
+        assert icon["l"] >= box["l"] - 0.5 and icon["r"] <= box["r"] + 0.5, where + (icon,)
+        assert icon["t"] >= box["t"] - 0.5 and icon["b"] <= box["b"] + 0.5, where + (icon,)
+        tone_colours.setdefault(item["tone"], set()).add(item["icon"])
         assert not item["copyOverflow"], where
         assert copy["l"] >= box["l"] - 0.5 and copy["r"] <= box["r"] + 0.5, where
         assert 1 <= len(item["buttons"]) <= 2, where + (item["buttons"],)
@@ -274,7 +285,7 @@ def _check_card(geo, width, label):
 
 def _check_focus(page, label):
     page.keyboard.press("Tab")
-    button = page.locator(".needs-you > .needs-you-list .needs-you-actions .ui-btn").first
+    button = page.locator("#needs-action .todo .needs-you-actions .btn").first
     button.focus()
     ring = button.evaluate("el => [getComputedStyle(el).outlineStyle, parseFloat(getComputedStyle(el).outlineWidth)]")
     assert ring[0] != "none" and ring[1] >= 2, (label, ring)
@@ -293,12 +304,13 @@ def test_dashboard_single_stay_needs_you_card(dashboard_host, base):
                 context, page, errors = _open(browser, base, cookie, locale, width)
                 assert "has-js" in (page.locator("html").get_attribute("class") or "")
                 assert not errors, (label, errors)
-                assert page.locator("[data-calendar]").count() == 1
-                assert page.locator(".dashboard-stats, .dashboard-row:not(.dashboard-today .dashboard-row), .ui-banner-attention").count() == 0, label
-                line = page.locator(f'.needs-you-item[data-needs-you-stay="{stay_id}"]')
+                assert page.locator(".card.cal").count() == 1
+                # v2 Overview: today rows live in the .ov-table card, the only place stay rows may appear.
+                assert page.locator(".dashboard-stats, .dashboard-row:not(.ov-table .dashboard-row), .ui-banner-attention").count() == 0, label
+                line = page.locator(f'.card.need[data-needs-you-stay="{stay_id}"]')
                 assert line.count() == 1, label
                 assert line.get_attribute("data-tone") == "amber", label
-                link = line.locator(".needs-you-actions .ui-btn")
+                link = line.locator(".needs-you-actions .btn")
                 assert link.count() == 1, label
                 assert link.get_attribute("href") == f"/reservations/{stay_id}?return_to=/#now", label
                 _check_card(page.evaluate(CARD_JS), width, label)
@@ -333,40 +345,44 @@ def test_dashboard_rich_needs_you_order_cap_and_geometry(dashboard_rich_host, ba
                     assert not errors, (label, errors)
 
                     # Order: red first, then amber, then grey, across every line (shown or behind "Show more").
-                    tones = page.locator(".needs-you-item").evaluate_all("nodes => nodes.map(node => node.dataset.tone)")
+                    tones = page.locator(".card.need").evaluate_all("nodes => nodes.map(node => node.dataset.tone)")
                     assert tones, label
                     ranks = [TONE_RANK[tone] for tone in tones]
                     assert ranks == sorted(ranks), (label, tones)
-                    first = page.locator(".needs-you > .needs-you-list > .needs-you-item").first
+                    first = page.locator("#needs-action > .todo > .card.need").first
                     assert first.get_attribute("data-needs-you-stay") == str(overdue), label
                     assert first.get_attribute("data-tone") == "red", label
-                    ready_line = page.locator(f'.needs-you-item[data-needs-you-stay="{ready}"]')
+                    ready_line = page.locator(f'.card.need[data-needs-you-stay="{ready}"]')
                     assert ready_line.count() == 1 and ready_line.get_attribute("data-tone") == "amber", label
-                    assert ready_line.locator(".ui-btn").get_attribute("href") == f"/reservations/{ready}?return_to=/#now"
+                    assert ready_line.locator(".needs-you-actions a.btn").get_attribute("href") == f"/reservations/{ready}?return_to=/#now"
                     for later in dashboard_rich_host["incomplete"]:
-                        assert page.locator(f'.needs-you-item[data-needs-you-stay="{later}"]').count() == 0, label
+                        assert page.locator(f'.card.need[data-needs-you-stay="{later}"]').count() == 0, label
 
                     # At most five lines open; the rest behind one "Show N more".
-                    shown = page.locator(".needs-you > .needs-you-list > .needs-you-item").count()
+                    shown = page.locator("#needs-action > .todo > .card.need").count()
                     total = len(tones)
-                    assert shown == min(total, 5), (label, shown, total)
+                    assert shown == min(total, 4), (label, shown, total)  # v2: dashboard.html shows ny_lines[:4]
                     more = page.locator(".needs-you-more:not([data-paste-check]) > summary")
-                    assert more.count() == (1 if total > 5 else 0), label
-                    if total > 5:
-                        assert str(total - 5) in more.inner_text(), (label, more.inner_text())
-                    paste_line = page.locator('.needs-you-item[data-needs-you="paste"]')
+                    assert more.count() == (1 if total > 4 else 0), label
+                    if total > 4:
+                        assert str(total - 4) in more.inner_text(), (label, more.inner_text())
+                    paste_line = page.locator('.card.need[data-needs-you="paste"]')
                     if paste_line.count() and paste_line.first.is_visible():
                         how = paste_line.first.locator("[data-paste-check] > summary")
                         assert how.is_visible(), label
-                        how_box, copy_box = how.bounding_box(), paste_line.first.locator(".needs-you-copy").bounding_box()
+                        how_box, copy_box = how.bounding_box(), paste_line.first.locator(".h").bounding_box()
                         assert how_box["y"] >= copy_box["y"] + copy_box["height"] - 1, (label, how_box, copy_box)
-                    assert page.locator('.needs-you-item[data-needs-you="setup"]', has_text="(demo)").count() == 0, label
+                    assert page.locator('.card.need[data-needs-you="setup"]', has_text="(demo)").count() == 0, label
 
                     # Header: one primary action, no overflow menu (0520).
-                    header_buttons = page.locator(".ui-ph-acts .ui-btn:not(.ui-ph-menu)")
+                    # v2 below 1024: the phone header action is the "+" link in the top row.
+                    header_buttons = page.locator(".top a.round")
                     visible_buttons = [button for button in header_buttons.all() if button.is_visible()]
                     if width < 1024:
                         assert len(visible_buttons) == 1, label
+                        plus = visible_buttons[0].bounding_box()
+                        assert plus["width"] >= 44 and plus["height"] >= 44, (label, plus)
+                        assert plus["x"] >= -0.5 and plus["x"] + plus["width"] <= width + 0.5, (label, plus)
                         assert page.locator(".ui-ph-menu").count() == 0, label
                     header_boxes = [button.bounding_box() for button in visible_buttons]
                     assert all(abs(box["height"] - (44 if width <= 767 else 40)) <= 1 for box in header_boxes), label
@@ -382,7 +398,7 @@ def test_dashboard_rich_needs_you_order_cap_and_geometry(dashboard_rich_host, ba
                     if total > 5:
                         more.click()
                         _check_card(page.evaluate(CARD_JS), width, label + "/more")
-                        hidden_lines = page.locator(".needs-you-more .needs-you-item")
+                        hidden_lines = page.locator(".needs-you-more .card.need")
                         assert all(line.is_visible() for line in hidden_lines.all()), label
                     context.close()
         browser.close()

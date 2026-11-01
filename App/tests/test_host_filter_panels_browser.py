@@ -437,6 +437,7 @@ def test_filter_geometry_and_popovers_stay_inside_the_viewport_in_english_and_cz
                     if route == "/invoices":
                         month_control = page.locator(".month-control.is-empty")
                         trigger = page.locator("[data-month-trigger]")
+                        settle_motion(page)  # 0720: measure after the filter panel motion lands
                         control_box = month_control.bounding_box()
                         trigger_box = trigger.bounding_box()
                         assert control_box and trigger_box and trigger.is_visible(), (

@@ -3748,6 +3748,12 @@ STRINGS.update({
 # 0240 (idea N): "What needs you".
 STRINGS.update({
     "needs_you.title": "Việc cần bạn",
+        "needs_you.short.failed": "Báo cáo cảnh sát thất bại",
+        "needs_you.short.overdue": "Đã quá hạn báo cáo cảnh sát",
+        "needs_you.short.ready": "Chưa gửi báo cáo cảnh sát",
+        "needs_you.short.forms": "Khách chưa đăng ký",
+        "needs_you.short.setup": "Thiếu thông tin cảnh sát",
+        "needs_you.short.paste": "Khách chưa dùng liên kết",
     "needs_you.calm": "Hôm nay không có việc gì cần bạn.",
     "needs_you.on_track": "%(count)s lượt lưu trú đang đúng kế hoạch.",
     "needs_you.on_track.one": "1 lượt lưu trú đang đúng kế hoạch.",

@@ -320,6 +320,196 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
 /* 0719: phone head is a block so the title and date take the full screen width (mockup) */
 @media (max-width:1023px){body.v2 .head{display:block}body.v2 .head h1:after{content:none}body.v2 .hs .who>div:not(.av){min-width:0;flex:1}body.v2 .head h1{margin:2px 0 4px}body.v2 .need b{margin-bottom:0}}
 
+/* 0720 step 0: Overview desktop and header regressions (0719 screenshots) */
+@media (min-width:1024px){
+  body.v2 .card.needs-you-card-item{display:block}
+  body.v2 .needs-you-card-item .h{display:flex;gap:14px;align-items:flex-start}
+  body.v2 .needs-you-card-item .h > .ic{width:48px;height:48px;flex:none}
+  body.v2 .needs-you-card-item .h > div:not(.ic){min-width:0;flex:1}
+  body.v2 .needs-you-actions{margin:12px 0 0 62px}
+}
+body.v2 .ov-head .ov-links{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;margin:0}
+body.v2 .ov-head .ov-links > *{margin:0}
+body.v2 .ov-head .ov-inline{display:inline-flex}
+body.v2 .ov-how > summary{list-style:none}
+body.v2 .ov-how > summary::-webkit-details-marker{display:none}
+
+/* v2 shared: Havel (copied from host2.css; delete the host2 copy when the old shell is retired) */
+body.v2{--tabbar-safe:env(safe-area-inset-bottom,0px)}
+@media (max-width:1023px){body.v2{--tabbar-h:84px}}
+body.v2 .havel-thread{display: flex; flex-direction: column; gap: var(--space-3);}
+body.v2 .havel-msg{display: flex; flex-direction: column; max-width: 85%;}
+body.v2 .havel-msg-host{align-self: flex-end; align-items: flex-end;}
+body.v2 .havel-msg-havel{align-self: flex-start; align-items: flex-start;}
+body.v2 .havel-msg:focus{outline: none;}
+body.v2 .havel-msg:focus-visible .havel-bubble{box-shadow: var(--focus-ring-2);}
+body.v2 .havel-who{display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-1); color: var(--ink-2); font-size: var(--size-13); font-weight: 600;}
+body.v2 .havel-avatar{display: inline-flex; align-items: center; justify-content: center; width: var(--space-6); height: var(--space-6); border-radius: var(--radius-pill); background: var(--accent-soft); color: var(--accent-ink);}
+body.v2 .havel-bubble{padding: var(--space-3) var(--space-4); border-radius: var(--radius-4); font-size: var(--size-15); line-height: 1.5; color: var(--ink);}
+body.v2 .havel-msg-host .havel-bubble{background: var(--surface-2); border-bottom-right-radius: var(--radius-1);}
+body.v2 .havel-msg-havel .havel-bubble{background: var(--surface); border: 1px solid var(--line); border-bottom-left-radius: var(--radius-1);}
+body.v2 .havel-bubble p{margin: 0;}
+body.v2 .havel-bubble p + p, body.v2 .havel-bubble p + ol, body.v2 .havel-bubble ol + p{margin-top: var(--space-2);}
+body.v2 .havel-bubble ol{margin: 0; padding-left: var(--space-5);}
+body.v2 .havel-bubble li + li{margin-top: var(--space-1);}
+body.v2 .havel-links{display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2);}
+body.v2 .havel-composer{display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--line);}
+body.v2 .havel-composer textarea{width: 100%; box-sizing: border-box; min-height: calc(var(--control-h) * 2); padding: var(--space-3); border: 1px solid var(--input-border); border-radius: var(--input-radius); font: inherit; font-size: var(--size-15); color: var(--ink); background: var(--surface); resize: vertical;}
+body.v2 .havel-composer textarea:focus-visible{outline: 0; border-color: var(--accent); box-shadow: var(--focus-ring-2);}
+body.v2 .havel-actions{display: flex; align-items: center; justify-content: flex-end; gap: var(--space-2); flex-wrap: wrap;}
+body.v2 .havel-actions .havel-meta{margin: 0 auto 0 0;}
+body.v2 .havel-meta{margin: 0; font-size: var(--size-13); color: var(--ink-3);}
+body.v2 .havel-note{font-size: var(--size-12);}
+body.v2 .havel-error{margin: 0; font-size: var(--size-13); color: var(--danger);}
+body.v2 .havel-topics{display: flex; flex-direction: column; gap: var(--space-2);}
+body.v2 .havel-topics .ui-btn-quiet{align-self: flex-start;}
+body.v2 .havel-answer-title{margin: 0; font-size: var(--size-15); font-weight: 600; color: var(--ink);}
+body.v2 .havel-topic{min-height: var(--control-h);}
+body.v2 .havel-topics .havel-answer{max-width: none;}
+body.v2 .havel-ask{align-self: flex-start;}
+body.v2 .havel-topics .ui-menu-panel{position: static; display: flex; min-width: 0; box-shadow: none; border-radius: var(--card-radius); padding: var(--space-2); z-index: auto;}
+body.v2 .havel-topic .grow{flex: 1 1 auto;}
+body.v2 .havel-launcher span{white-space: nowrap;}
+body.v2 .havel-dialog{--havel-w: 400px; --havel-h: 680px; z-index: var(--z-popover);}
+@media (min-width: 768px){
+body.v2 .havel-dialog{position: fixed; inset: auto var(--space-6) var(--space-6) auto; margin: 0; width: min(var(--havel-w), calc(100vw - var(--space-12)));}
+body.v2 .havel-dialog .ui-sheet{height: min(var(--havel-h), calc(100dvh - var(--space-12)));}
+}
+body.v2 .havel-dialog .ui-sheet{display: flex; flex-direction: column; padding: var(--space-4) var(--space-4) var(--space-3); overflow: hidden;}
+body.v2 .havel-dialog .havel-thread{flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: var(--space-2) var(--space-1);}
+body.v2 .havel-dialog .havel-composer{margin-top: var(--space-2); padding-bottom: env(safe-area-inset-bottom);}
+body.v2 .havel-head{display: flex; align-items: center; gap: var(--space-3); padding-bottom: var(--space-3); border-bottom: 1px solid var(--line);}
+body.v2 .havel-head .havel-avatar{width: var(--space-6); height: var(--space-6);}
+body.v2 .havel-head-text{flex: 1 1 auto; min-width: 0;}
+body.v2 .havel-dialog .havel-head h2{margin: 0; font-size: var(--size-16); font-weight: 600; line-height: 1.3;}
+body.v2 .havel-head-text p{margin: 0; font-size: var(--size-13); color: var(--ink-3);}
+body.v2 .havel-head h2[tabindex="-1"]:focus{outline: none;}
+body.v2 .havel-writing .havel-bubble{padding: var(--space-3) var(--space-4);}
+body.v2 .havel-dots{display: inline-flex; gap: var(--space-1);}
+body.v2 .havel-dots i{width: var(--space-2); height: var(--space-2); border-radius: var(--radius-pill); background: var(--ink-3); animation: havel-blink 1.2s infinite ease-in-out;}
+body.v2 .havel-dots i:nth-child(2){animation-delay: 0.2s;}
+body.v2 .havel-dots i:nth-child(3){animation-delay: 0.4s;}
+@keyframes havel-blink{ 0%, 80%, 100% { opacity: 0.3; } 40% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce){
+body.v2 .havel-dots i{animation: none; opacity: 0.6;}
+}
+body.v2 .havel-fab{position: fixed; right: var(--space-6); bottom: var(--space-6); z-index: var(--z-drawer); width: calc(var(--control-h) + var(--space-3)); height: calc(var(--control-h) + var(--space-3)); display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-pill); background: var(--accent); color: var(--accent-on, var(--surface)); box-shadow: var(--shadow-2); text-decoration: none;}
+body.v2 .havel-fab:hover{background: var(--accent-hover);}
+body.v2 .havel-fab:focus-visible{box-shadow: var(--focus-ring-2); outline: 0;}
+body.v2 .havel-fab[data-unread]::after{content: ""; position: absolute; top: var(--space-1); right: var(--space-1); width: var(--space-3); height: var(--space-3); border-radius: var(--radius-pill); background: var(--danger); border: 2px solid var(--surface);}
+body.v2 .havel-fab[hidden]{display: none;}
+body.v2 .havel-composer[hidden]{display: none;}
+@media (min-width: 1024px){
+html:has(.havel-fab:not([hidden])){scroll-padding-bottom: calc(var(--control-h) + var(--space-3) + var(--space-12));}
+body.v2:has(.havel-fab) .wrap.with-sidebar{padding-bottom: calc(var(--control-h) + var(--space-3) + var(--space-12));}
+}
+body.v2 .havel-greeting{margin-bottom: var(--space-2);}
+@media (max-width: 767px){
+body.v2 .havel-dialog{position: fixed; inset: auto 0 calc(var(--tabbar-h) + var(--tabbar-safe)) 0; margin: 0; width: 100%; max-width: 100%; box-shadow: var(--shadow-2);}
+body.v2 .havel-dialog .ui-sheet{max-height: 70dvh; height: 70dvh;}
+body.v2 .havel-fab{right: var(--space-4); bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--space-4));}
+body.v2:has(.ui-sticky-actions) .havel-fab{bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--control-h) + var(--space-8));}
+}
+body.v2 .havel-card{margin-top: var(--space-2); max-width: 100%;}
+body.v2 .havel-card-title{margin: 0 0 var(--space-2); font-size: var(--size-15); font-weight: 600; color: var(--ink);}
+body.v2 .havel-card-facts{display: flex; flex-direction: column; gap: var(--space-1); margin: 0;}
+body.v2 .havel-card-facts div{display: flex; gap: var(--space-2); align-items: baseline;}
+body.v2 .havel-card-facts dt{font-size: var(--size-13); color: var(--ink-3);}
+body.v2 .havel-card-facts dd{margin: 0; font-size: var(--size-15); color: var(--ink); overflow-wrap: anywhere;}
+body.v2 .havel-card-link{display: flex; align-items: center; gap: var(--space-1); font-family: var(--font-mono); font-size: var(--size-13);}
+body.v2 .havel-card-pin{font-family: var(--font-mono); font-size: var(--size-18); font-weight: 600; letter-spacing: 0.08em;}
+body.v2 .havel-card-warning{display: flex; gap: var(--space-2); align-items: flex-start; margin: var(--space-2) 0 0; font-size: var(--size-13); color: var(--ink-2);}
+body.v2 .havel-card-danger{color: var(--danger);}
+body.v2 .havel-card-change{margin-top: var(--space-2);}
+body.v2 .havel-card-change summary{list-style: none; display: inline-flex;}
+body.v2 .havel-card-change summary::-webkit-details-marker{display: none;}
+body.v2 .havel-card-change[open] summary{margin-bottom: var(--space-2);}
+body.v2 .havel-card-change .ui-field{margin-bottom: var(--space-2);}
+body.v2 .havel-card-actions{display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-3); flex-wrap: wrap;}
+.havel-links .havel-support{flex-basis: 100%; display: grid; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--card-radius); background: var(--surface);}
+.havel-support-title{margin: 0; font-size: var(--size-16);}
+.havel-links > .havel-meta{flex-basis: 100%;}
+.havel-next{display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2);}
+.havel-next .havel-meta{flex-basis: 100%; margin: 0;}
+.havel-next .ui-btn{max-width: 100%; white-space: normal; text-align: left;}
+body.v2 .havel-head h2[tabindex="-1"]:focus-visible, body.v2 .havel-msg[tabindex="-1"]:focus-visible, body.v2 .havel-answer[tabindex="-1"]:focus-visible{outline: none !important; box-shadow: none;}
+body.v2 .havel-head .havel-avatar{width: calc(var(--space-8) + var(--space-1)); height: calc(var(--space-8) + var(--space-1)); background: var(--accent); color: var(--on-accent);}
+body.v2 .havel-head{border-bottom-color: var(--line); padding-bottom: var(--space-3);}
+body.v2 .havel-msg-havel .havel-bubble{background: var(--sand-150); border: 0;}
+body.v2 .havel-msg-host .havel-bubble{background: var(--accent); color: var(--on-accent);}
+body.v2 .havel-chips{gap: var(--space-2);}
+body.v2 .havel-chip{display: inline-flex; align-items: center; height: auto; min-height: var(--control-h); padding: var(--space-2) var(--space-4); background: var(--surface); color: var(--accent-ink); border: 1px solid var(--coral-200); font-weight: 600; text-align: left; white-space: normal;}
+body.v2 .havel-chip:hover{background: var(--accent-soft); color: var(--accent-ink);}
+body.v2 .havel-chip-back{align-self: flex-start; background: transparent; color: var(--ink-2); padding-left: var(--space-2);}
+body.v2 .havel-next .havel-chips, body.v2 .havel-topics .havel-chips{margin-top: var(--space-1);}
+body.v2 .havel-composer{gap: var(--space-2); padding-top: var(--space-3);}
+body.v2 .havel-input{display: flex; align-items: flex-end; gap: var(--space-2); padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4); border-radius: var(--radius-pill); background: var(--sand-150);}
+body.v2 .havel-input:focus-within{box-shadow: var(--focus-ring-2);}
+body.v2 .havel-input textarea#havel-message{flex: 1 1 auto; min-height: 0; height: var(--control-h); padding: var(--space-2) 0; border: 0; border-radius: 0; background: transparent; resize: none; line-height: 1.5;}
+body.v2 .havel-input textarea#havel-message:focus, body.v2 .havel-input textarea#havel-message:focus-visible{outline: none !important; box-shadow: none;}
+body.v2 .havel-send{flex: none; width: var(--control-h); height: var(--control-h); border-radius: var(--radius-pill);}
+body.v2 .havel-actions{justify-content: flex-start;}
+body.v2 .havel-note{text-align: center;}
+body.v2 .havel-status{text-align: center;}
+body.v2 .havel-support-open{width: 100%; justify-content: center; border-radius: var(--radius-pill); min-height: var(--control-h-phone);}
+@media (max-width: 767px){
+body.v2 .havel-dialog{inset: var(--space-12) 0 0 0; height: auto; padding: 0; border: 0;}
+body.v2 .havel-dialog .ui-sheet{height: calc(100dvh - var(--space-12)); max-height: none; padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom));}
+body.v2 .havel-composer textarea{font-size: var(--size-16);}
+}
+body.v2 .havel-topics > .havel-chip{align-self: flex-start;}
+
+/* v2 shared: onboarding intro logo (width rules from app.css, which v2 does not load) */
+body.v2 .onboarding-intro .onboarding-logo{width: 64px; height: auto; max-width: 100%; margin: 0;}
+@media (max-width:640px){body.v2 .onboarding-intro .onboarding-logo{width: 48px;}}
+
+/* v2 shared: motion (copied from host2.css; scoped body.v2; rail and tab-bar view transitions stay on the old shell only) */
+@media (scripting: enabled) {
+  :root:has(body.v2) { interpolate-size: allow-keywords; }
+
+  /* Dialogs fade and rise in, fade out; phone sheets slide up from the bottom edge. */
+  body.v2 dialog { transition: opacity var(--motion-2) var(--ease-standard), translate var(--motion-2) var(--ease-standard), display var(--motion-2) allow-discrete, overlay var(--motion-2) allow-discrete; }
+  body.v2 dialog:not([open]) { opacity: 0; translate: 0 var(--space-2); }
+  body.v2 dialog[open] { opacity: 1; translate: 0 0; }
+  @starting-style { body.v2 dialog[open] { opacity: 0; translate: 0 var(--space-2); } }
+  body.v2 dialog::backdrop { transition: opacity var(--motion-2) var(--ease-standard), display var(--motion-2) allow-discrete, overlay var(--motion-2) allow-discrete; }
+  body.v2 dialog:not([open])::backdrop { opacity: 0; }
+  @starting-style { body.v2 dialog[open]::backdrop { opacity: 0; } }
+  @media (max-width: 767px) {
+    body.v2 .ui-dialog { transition-duration: var(--motion-3); }
+    body.v2 .ui-dialog:not([open]) { opacity: 1; translate: 0 100%; }
+    @starting-style { body.v2 .ui-dialog[open] { opacity: 1; translate: 0 100%; } }
+  }
+
+  /* Fold-outs (help, sections, "more"): the body slides open and shut. Menus that float stay instant. */
+  body.v2 details:not(.host-account)::details-content { block-size: 0; overflow: clip; overflow-clip-margin: var(--space-1); transition: block-size var(--motion-3) var(--ease-standard), content-visibility var(--motion-3) allow-discrete; }
+  body.v2 details:not(.host-account)[open]::details-content { block-size: auto; }
+
+  /* Floating menus and the Stays filter panel fade in. */
+  body.v2 :is(.ui-menu-panel, .host-account-menu, .host-filter-panel) { transition: opacity var(--motion-2) var(--ease-standard), translate var(--motion-2) var(--ease-standard); }
+  @starting-style {
+    body.v2 :is(.ui-menu-panel.is-open, .ui-menu-panel:not([hidden]), .host-account[open] .host-account-menu, .host-filter-panel:not(.is-collapsed)) { opacity: 0; translate: 0 calc(var(--space-1) * -1); }
+  }
+
+  /* Page to page: a short cross-fade; the rail, top bar and tab bar hold still. */
+  @view-transition { navigation: auto; }
+  ::view-transition-group(*) { animation-duration: var(--motion-2); animation-timing-function: var(--ease-standard); }
+  @media (prefers-reduced-motion: reduce) {
+    @view-transition { navigation: none; }
+    ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+  }
+@media (prefers-reduced-motion: reduce) { body.v2 *, body.v2 *::before, body.v2 *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
+/* 0722: phone-only hides (below 1024 px); desktop unchanged. */
+@media (max-width:1023px){body.v2 .ph-hide{display:none !important}}
+@media (min-width:1024px){.env-banner .env-more{display:none}}
+@media (max-width:1023px){.env-banner .env-body{display:none}}
+/* 0722: phone shows 2 needs-you cards; the rest open from one toggle. */
+@media (max-width:1023px){#needs-action > .todo > .needs-you-card-item:nth-child(n+3){display:none}#needs-action:has(> details[open]) > .todo > .needs-you-card-item:nth-child(n+3){display:block}#needs-action .ny-sum-desk{display:none}}
+@media (min-width:1024px){#needs-action .ny-sum-phone{display:none}#needs-action .ny-phone-only{display:none}}
+/* 0722: on phone the month line goes last, after Dnes (mockup order). */
+@media (max-width:1023px){body.v2 .ui-body:has(> .ov-month){display:flex;flex-direction:column}body.v2 .ov-month{order:1}}
+/* 0722: phone action buttons keep the 44 px touch target of the mockup. */
+@media (max-width:1023px){body.v2 .needs-you-actions .btn{min-height:44px}}
 /* cleaning (0542) */
 body.v2 .cleaning-page{width:100%;max-width:1080px;min-width:0;margin:0 auto;color:var(--ink)}
 body.v2 .cleaning-skip{display:inline-flex;align-items:center;min-height:44px;margin-bottom:12px;font-size:1.0625rem}
