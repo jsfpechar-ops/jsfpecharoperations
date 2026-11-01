@@ -175,3 +175,12 @@ From the repo root: `python3 scripts/design_lint.py | tail -5` and `python3 scri
 ## 9. Report
 
 Write `docs/tasks/0729-phone-v2-today-report.md` with: Status line, changed files, last lines of each command, every BOX_OVERRIDES entry you added with its measured value, deviations, and the two screenshot paths.
+
+## 10. Follow-up (orchestrator answers to the first run)
+
+1. The `/menu` failures in test_0710 (menu-320/390/768) come from the shared `.card` change and the old `.card.me` comparison. Leave them: brief 0735 replaces the Menu. Do not add overrides for them.
+2. Confirmed: update these phone assertions of `/`, below 1024 px only, keep every desktop assertion as is:
+   - `test_host_quiet_dashboard_browser.py` (around line 375): the phone header "+" link (`.top a.round`) is gone on purpose. Below 1024 assert instead that `.ph-top .seg a` count is 2, each is at least 44 px tall and inside the viewport; keep the `.ui-ph-menu` count 0 check. Keep the `header_boxes` height assertion for widths >= 1024 only.
+   - `test_dashboard_single_stay_needs_you_card`: read the failure; if it depends on the removed "+", heading badge, calendar link or the old `.need b`, repoint to the new markup (`.need .t`, `.need small`, `.needs-you-actions .btn`). If a needs-you button is really not visible on phone, that is a CSS bug: fix the CSS, not the test.
+   - `test_host_wide_geometry_browser.py` `test_host_wide_lanes_align` at 360 and `test_dashboard_760_header_and_actions_remain_in_the_shared_lane`: `.head` is hidden below 1024 on `/` on purpose. For `/` below 1024 measure `.ph-top` (the lane: its left/right must equal the cards' left/right ±1) instead of `.head`; skip only the `.head`-specific part, never the whole test.
+3. Then step 11 (screenshots) and step 12: amend the WIP commit into one clean commit with the brief's message (`git commit --amend`), and finish the report (Status: review).
