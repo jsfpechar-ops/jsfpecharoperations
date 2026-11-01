@@ -360,7 +360,7 @@ def test_guest_card_facts_share_four_column_lines(wide_host, wide_base):
 
 
 def test_table_rows_have_their_own_border_on_desktop(wide_host, wide_base):
-    """0181: on desktop each table row is its own bordered card, with a gap between rows."""
+    """0181: on desktop each table row is separated from the next by a 1px line (mockup --line)."""
     cookie = wide_host["cookie"]
     with sync_api.sync_playwright() as playwright:
         try:
@@ -376,23 +376,21 @@ def test_table_rows_have_their_own_border_on_desktop(wide_host, wide_base):
         assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
         _wait_for_host_layout(page)
         _dismiss_optional_security_prompt(page)
-        page.wait_for_selector(".host-workspace .ui-table tbody tr:nth-child(2) td", timeout=5000)
+        page.wait_for_selector(".host-workspace .stays-desk tbody tr:nth-child(2) td", timeout=5000)
         facts = page.evaluate(
             """() => {
-                const rows = document.querySelectorAll('.host-workspace .ui-table tbody tr');
+                const rows = document.querySelectorAll('.host-workspace .stays-desk tbody tr');
                 const first = rows[0].querySelector('td');
                 const style = getComputedStyle(first);
                 return {
-                    top: style.borderTopWidth,
-                    left: style.borderLeftWidth,
+                    bottom: style.borderBottomWidth,
                     gap: rows[1].getBoundingClientRect().top - rows[0].getBoundingClientRect().bottom,
                 };
             }"""
         )
         print(f"table row border measured: {facts}")
-        assert facts["top"] == "1px", f"row top border is {facts['top']}, not 1px"
-        assert facts["left"] == "1px", f"first cell left border is {facts['left']}, not 1px"
-        assert facts["gap"] >= 4, f"rows are only {facts['gap']}px apart"
+        assert facts["bottom"] == "1px", f"row bottom border is {facts['bottom']}, not 1px"
+        assert facts["gap"] <= 1, f"rows are {facts['gap']}px apart, not separated by a 1px line"
         context.close()
         browser.close()
 
