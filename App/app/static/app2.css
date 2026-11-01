@@ -400,14 +400,14 @@ body.v2 .havel-fab[data-unread]::after{content: ""; position: absolute; top: var
 body.v2 .havel-fab[hidden]{display: none;}
 @media (min-width: 1024px){
 html:has(.havel-fab:not([hidden])){scroll-padding-bottom: calc(var(--control-h) + var(--space-3) + var(--space-12));}
-bodybody.v2:has(.havel-fab) .wrap.with-sidebar{padding-bottom: calc(var(--control-h) + var(--space-3) + var(--space-12));}
+body.v2:has(.havel-fab) .wrap.with-sidebar{padding-bottom: calc(var(--control-h) + var(--space-3) + var(--space-12));}
 }
 body.v2 .havel-greeting{margin-bottom: var(--space-2);}
 @media (max-width: 767px){
 body.v2 .havel-dialog{position: fixed; inset: auto 0 calc(var(--tabbar-h) + var(--tabbar-safe)) 0; margin: 0; width: 100%; max-width: 100%; box-shadow: var(--shadow-2);}
 body.v2 .havel-dialog .ui-sheet{max-height: 70dvh; height: 70dvh;}
 body.v2 .havel-fab{right: var(--space-4); bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--space-4));}
-bodybody.v2:has(.ui-sticky-actions) .havel-fab{bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--control-h) + var(--space-8));}
+body.v2:has(.ui-sticky-actions) .havel-fab{bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--control-h) + var(--space-8));}
 }
 body.v2 .havel-card{margin-top: var(--space-2); max-width: 100%;}
 body.v2 .havel-card-title{margin: 0 0 var(--space-2); font-size: var(--size-15); font-weight: 600; color: var(--ink);}
@@ -437,7 +437,7 @@ body.v2 .havel-head{border-bottom-color: var(--line); padding-bottom: var(--spac
 body.v2 .havel-msg-havel .havel-bubble{background: var(--sand-150); border: 0;}
 body.v2 .havel-msg-host .havel-bubble{background: var(--accent); color: var(--on-accent);}
 body.v2 .havel-chips{gap: var(--space-2);}
-body.v2 .havel-chip{height: auto; min-height: var(--control-h); padding: var(--space-2) var(--space-4); background: var(--surface); color: var(--accent-ink); border: 1px solid var(--coral-200); font-weight: 600; text-align: left; white-space: normal;}
+body.v2 .havel-chip{display: inline-flex; align-items: center; height: auto; min-height: var(--control-h); padding: var(--space-2) var(--space-4); background: var(--surface); color: var(--accent-ink); border: 1px solid var(--coral-200); font-weight: 600; text-align: left; white-space: normal;}
 body.v2 .havel-chip:hover{background: var(--accent-soft); color: var(--accent-ink);}
 body.v2 .havel-chip-back{align-self: flex-start; background: transparent; color: var(--ink-2); padding-left: var(--space-2);}
 body.v2 .havel-next .havel-chips, body.v2 .havel-topics .havel-chips{margin-top: var(--space-1);}
@@ -457,3 +457,7 @@ body.v2 .havel-dialog .ui-sheet{height: calc(100dvh - var(--space-12)); max-heig
 body.v2 .havel-composer textarea{font-size: var(--size-16);}
 }
 body.v2 .havel-topics > .havel-chip{align-self: flex-start;}
+
+/* v2 shared: onboarding intro logo (width rules from app.css, which v2 does not load) */
+body.v2 .onboarding-intro .onboarding-logo{width: 64px; height: auto; max-width: 100%; margin: 0;}
+@media (max-width:640px){body.v2 .onboarding-intro .onboarding-logo{width: 48px;}}
