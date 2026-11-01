@@ -29,6 +29,8 @@ SELECTOR_OVERRIDES = {
     ".tab": {"font-size": "12px"},
     ".tab:not(.on)": {"font-size": "12px"},
     ".tab.on": {"font-size": "12px"},
+    # mockup's 30 px bottom padding is home-indicator room in the phone frame; the app's action bar sits above the tab bar
+    ".actbar": {"padding-bottom": "12px", "height": "ACTBAR_HEIGHT"},
 }
 # style-compared only at computer width (phone design pending)
 DESKTOP_ONLY = {".side", ".side .nav", ".side .nav.on"}
@@ -37,7 +39,7 @@ TAP_EXEMPT_BELOW_DESKTOP = {".cal .bar": "dense 14-day timeline; 28 px meets WCA
 
 
 # app selector -> mockup selector at phone widths (the phone mockup calls the action bar .bar)
-SELECTOR_ALIASES = {".actbar": ".bar"}
+SELECTOR_ALIASES = {".actbar": ".bar", ".actbar .btn": ".bar .btn"}
 BOX_PROPS = ("width", "height", "margin-top", "margin-right", "margin-bottom", "margin-left")
 
 
