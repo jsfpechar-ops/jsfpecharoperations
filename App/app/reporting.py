@@ -1693,7 +1693,6 @@ def submit_batch(
     failed_count = plan["failed"]
     blocked_count = plan["blocked"]
     first_accepts = plan["first_accepts"]
-    duplicate_accepts = plan["duplicate_accepts"]
     guest_writes = plan["guest_writes"]
     exhausted = plan["exhausted"]
 
