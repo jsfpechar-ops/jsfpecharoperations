@@ -179,7 +179,7 @@ On **Render `ubyhost-staging`**, keep `UBYHOST_UBYPORT_ENV=mock`, set
 | `UBYHOST_STRIPE_SECRET_KEY` | unset | Secret key (`sk_test_...` or `sk_live_...`) matching `UBYHOST_STRIPE_MODE`. Set in Lightsail `.env` or Render Environment only, never in git. Unset means the feature is off even if `UBYHOST_STRIPE_MODE` is set. |
 | `UBYHOST_STRIPE_WEBHOOK_SECRET` | unset | Signing secret (`whsec_...`) for the platform webhook endpoint. Unset means webhooks are logged-and-ignored in tests; in `test`/`live` mode an unset value fails verification loudly. |
 | `UBYHOST_STRIPE_MONTHLY_API_CALLS` | `50000` | Shared monthly cap on Stripe API calls (all hosts), same guard pattern as `UBYHOST_TTLOCK_MONTHLY_CALLS`. `0` removes the cap. |
-| `UBYHOST_GO_PATHS` | unset | Space-separated paths Caddy sends to the Go service (`ubyhost-go`). Unset or empty keeps all traffic on Python. Add `/webhooks/stripe` only after the owner has checked the Go webhook. |
+| `UBYHOST_GO_PATHS` | unset | Space-separated paths Caddy sends to the Go service (`ubyhost-go`). Unset keeps all traffic on Python (compose sets `/__go_off__`). Never set it to an empty value: Caddy will not start. Add `/webhooks/stripe` only after the owner has checked the Go webhook. |
 | `UBYHOST_STRIPE_WEBHOOK_SECRET` (Go service too) | unset | `ubyhost-go` reads the same two Stripe variables as the app (`UBYHOST_STRIPE_MODE`, `UBYHOST_STRIPE_WEBHOOK_SECRET`); set the same values for both services. |
 
 ## Guest guide imports (Apify)

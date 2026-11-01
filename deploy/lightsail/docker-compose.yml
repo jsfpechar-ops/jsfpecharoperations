@@ -243,7 +243,7 @@ services:
       UBYHOST_DOMAIN: ${UBYHOST_DOMAIN}
       UBYHOST_APP_DOMAIN: ${UBYHOST_APP_DOMAIN:-}
       ACME_EMAIL: ${ACME_EMAIL}
-      UBYHOST_GO_PATHS: ${UBYHOST_GO_PATHS:-}
+      UBYHOST_GO_PATHS: ${UBYHOST_GO_PATHS:-/__go_off__}
     volumes:
       - ./caddy/Caddyfile.active:/etc/caddy/Caddyfile:ro
       - ./caddy/certs:/etc/caddy/certs:ro

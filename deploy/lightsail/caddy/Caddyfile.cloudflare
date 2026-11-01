@@ -37,7 +37,7 @@
 	}
 	encode zstd gzip
 	header Strict-Transport-Security "max-age=31536000"
-	# UBYHOST_GO_PATHS: space-separated paths for the Go service (ubyhost-go); empty = all traffic to Python.
+	# UBYHOST_GO_PATHS: space-separated paths for the Go service (ubyhost-go); unset = all traffic to Python (compose defaults it to /__go_off__; an empty value breaks Caddy).
 	# Unset or empty keeps every request on Python, so this changes nothing until the owner sets it.
 	@go path {$UBYHOST_GO_PATHS:/__go_off__}
 	handle @go {
