@@ -55,7 +55,7 @@ def test_hover_changes_every_clickable_thing(base):
         ("/apartments", ".props-card table tbody tr.clickable-row"),
         ("/reservations?range=all", "tbody tr.clickable-row"),
         ("/", "[data-needs-you-go]"),
-        (f"/apartments/{flat}?view=overview", "a.host-property-card"),
+        (f"/apartments/{flat}?view=overview", "aside.preview .pv .r"),
         ("/reservations?range=all", "a.ui-chip:not([aria-current])"),
     ]
     problems = []
