@@ -397,6 +397,25 @@
 </div>
 <aside class="preview" aria-labelledby="property-preview-title">
   <h3 id="property-preview-title">{{ t('property_page.preview.title') }}</h3>
+{% if setup_progress and not setup_progress.hidden %}
+<section class="pv setup-continue-card" aria-label="{{ t('wizard.continue_card_aria') }}">
+  <p>{{ t('wizard.continue_card', done=setup_progress.done, total=setup_progress.total) }}
+    {% if setup_progress.reporting_waiting %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ t('setup_guide.reporting.waiting_item') }}</span>{% endif %}
+  </p>
+  <div class="actions">
+    <a class="ui-btn ui-btn-primary" href="{{ setup_progress.continue_url }}">{{ t('wizard.continue') }}</a>
+    <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <button class="ui-btn ui-btn-quiet" type="submit" name="action" value="hide" formnovalidate>{{ t('setup_guide.hide') }}</button>
+    </form>
+  </div>
+</section>
+{% elif setup_hidden %}
+<form method="post" action="/apartments/{{ apartment.id }}/setup" class="property-setup-show">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <button class="link-button" type="submit" name="action" value="show">{{ t('setup_guide.show') }}</button>
+</form>
+{% endif %}
   {%- set feeds_count = (feeds or []) | length -%}
   {%- set calendar_errors = (feeds or []) | selectattr('last_status', 'equalto', 'error') | list | length -%}
   {%- set police_ok = (health or []) | selectattr('key', 'equalto', 'police') | selectattr('state', 'equalto', 'ok') | list | length -%}

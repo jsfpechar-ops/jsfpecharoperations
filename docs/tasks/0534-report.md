@@ -287,3 +287,32 @@ Step 6 (screenshots, `docs/tasks/screenshots-0535/`):
 - No other tracked PNG was rewritten.
 
 Owner steps left: none. Questions: none.
+
+## 0536
+
+Status: blocked (executor ran out of its tool-call budget after step 1)
+
+Done (step 1, items 1 to 7 in part):
+- 1. Help toggle: `.ov-how` in app2.css is a small card (radius 12px, summary padding 6px 12px). Markup unchanged. Still shows the two-chevron look check; not screenshot-verified.
+- 2. Setup-continue block moved from `apartment_form.html` into the `aside.preview` of `_property_editor.html` as first `section.pv.setup-continue-card`. Form and hide/show POST kept. Button is still `ui-btn-primary` (sized by CSS), not `btn sm`.
+- 3. `.required-legend` is visually hidden on v2 (CSS, kept for screen readers).
+- 4. Inner `#basics > h3` (duplicate of summary) visually hidden on v2; `.property-section-title` 14px/600.
+- 5. `.fields-wrap` padding 0 16px 16px; from 1024 px `.property-section` is a 2-column grid, `textarea` fields and headings span full width. Not screenshot-verified.
+- 6. `.help-tip-btn` hidden on v2 in details; `.help-tip-body` shown inline as 12px `--ink3` text. Hint text kept. Not screenshot-verified.
+- 7. `.savebar` right = control-h + space-3 + space-6 (min-width 601 px), buttons `white-space:nowrap; width:auto`. Not screenshot-verified.
+
+Not done: items 8 (copy button label and coral style), 9 (lock section always rendered), 10 (sidebar background check). Step 4 (full section 6 run beyond the listed files), step 5 (screenshots at 1280 and 1024) not done.
+
+Tests (from App/, 0536 step 1):
+- `pytest tests/test_0534_property_page_v2.py tests/test_static_versions.py tests/test_0710_v2_mockup_match_browser.py tests/test_0531_property_page.py tests/test_property_hub.py tests/test_property_readiness.py tests/test_validation_i18n.py -q` : 87 passed.
+- `pytest tests/test_0710_v2_mockup_match_browser.py tests/test_design_guardrails_browser.py` before the changes: 2 failed (`test_every_host_page_passes_the_layout_guard`, `test_setup_checklist_is_a_padded_card`), same failures without this change (checked with git stash). Shared known failures.
+- Not run yet: test_host_ux_acceptance, test_page_help_0277, test_ui_consistency, test_0300_copy_button, test_design_guardrails_browser (full), ruff, design_lint, context_lint.
+
+Deviations:
+- Key bump `app2.css?v=20261101-0536-step1c` in templates; manifest rewritten with `tests/test_static_versions.py --write`.
+- Item 1 kept the generic details card radius and padding (the 0710 mockup comparison checks the first `details`).
+
+Done: steps 1 to 1 (items 1 to 7 in CSS and template). Left: items 8, 9, 10; screenshots at 1280 and 1024 into docs/tasks/screenshots-0536/; remaining tests in section 6; ruff; design_lint; context_lint.
+
+Questions:
+- Item 6: the hint text is shown inline with `display:block` on `.help-tip-body`. Confirm this is the intended form.
