@@ -70,3 +70,7 @@ Section "0736" at the end of `docs/tasks/0536-report.md`. Stage by name, never `
 
 ## 14. Run 4 scope
 Do these in order, commit after each: (a) section 12; (b) the a11y heading findings: print the 12 `heading-level-skipped` findings (selector and levels) and fix them in our property templates (headings must go 1, 2, 3 without skips; a section summary title is h2, a heading inside a section is h3); (c) the guest-card overflow at 360/390 on `?view=settings&section=guests`: probe with one `page.evaluate` that lists every element whose `getBoundingClientRect().right > innerWidth` (tag, class, id, width), then fix the widest one in the page CSS; (d) section 13; (e) items 7, 8 and section 6. Revert any screenshot PNG a test rewrites outside `docs/tasks/screenshots-0736/` (`git checkout -- <path>`); never commit those.
+
+## 15. Run 5 scope (after run 4: a, b done)
+- (c) The failing cases are the `javascript=False` ones (`[False-360-en]`): the page overflows only with JS off. Probe in a context with `java_script_enabled=False` at 360 on `/apartments/<id>?view=settings&section=guests&lang=en`, list the elements past `innerWidth`, fix the widest in the page CSS (it must not rely on JS-set classes or `scripting: enabled`). Then run the wizard file with `-k "wizard_polish or review_fixes"`.
+- Then section 13, items 7 and 8, section 6, and the two screenshots. Same PNG rule as section 14.
