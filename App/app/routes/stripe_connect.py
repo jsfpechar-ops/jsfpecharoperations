@@ -21,6 +21,8 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import PlainTextResponse, RedirectResponse, Response
 
 from .. import auth, config, payments_consent, rate_limit, security, stripe_connect
+from .admin_helpers import back as _back
+from .admin_helpers import flash as _flash
 
 log = logging.getLogger("ubyhost.stripe")
 
@@ -63,6 +65,9 @@ async def connect_start(request: Request):
     if not payments_consent.accepted(owner_id):
         # 0624: the one-time plain-language consent comes before Stripe.
         return RedirectResponse("/payments/consent", status_code=303)
+    if stripe_connect.legal_entity_for_owner(owner_id) is None:
+        # 0729: say what is missing instead of a silent bounce to "/".
+        return _back("/payments", err=_flash(request, "payments.err.no_entity"))
     try:
         # Deterministic https base (config.app_base_url(): the env-configured
         # public URL). request.base_url behind the TLS-terminating proxy is
@@ -71,7 +76,7 @@ async def connect_start(request: Request):
         url = stripe_connect.onboarding_link(owner_id, base_url=config.app_base_url())
     except (stripe_connect.StripeOff, ValueError) as exc:
         log.warning("connect start failed: %s", exc)
-        return RedirectResponse("/", status_code=303)
+        return _back("/payments", err=_flash(request, "payments.err.stripe_start"))
     return RedirectResponse(url, status_code=303)
 
 
@@ -92,14 +97,17 @@ async def connect_return(request: Request):
     owner_id = _workspace(request)
     if owner_id is None:
         return RedirectResponse("/", status_code=303)
+    state = ""
     try:
-        stripe_connect.handle_return(owner_id)
+        state = stripe_connect.handle_return(owner_id)
     except (stripe_connect.StripeOff, ValueError, KeyError) as exc:
         log.warning("connect return failed: %s", exc)
-    # The dashboard reads the state from the mirror; the visible copy and the
-    # ? popover explaining "return is not verified" arrive with the payments
-    # dashboard (plan P1.5).
-    return RedirectResponse("/", status_code=303)
+    # Return is not verified: the message follows the mirrored state (0729).
+    key = {
+        "complete": "payments.connect.flash_complete",
+        "action_required": "payments.connect.flash_action",
+    }.get(state, "payments.connect.flash_pending")
+    return _back("/payments", msg=_flash(request, key))
 
 
 @router.post("/webhooks/stripe")
