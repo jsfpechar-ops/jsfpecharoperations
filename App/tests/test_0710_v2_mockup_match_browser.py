@@ -40,7 +40,9 @@ __all__ = ["base", "dashboard_host", "dashboard_rich_host"]
 CASES = [(spec, width) for spec in PAGES for width in WIDTHS]
 IDS = [f"{spec['name']}-{width}" for spec, width in CASES]
 # desktop style checks need a desktop mockup screen; phone checks run at PHONE_WIDTHS for pages with a phone_view
-STYLE_CASES = [(spec, width) for spec, width in CASES if spec["view"] is not None or (width in PHONE_WIDTHS and "phone_view" in spec)]
+# below 1024 px the phone design is the design: at 768 the style test compares phone_selectors against the phone mockup (styles only, no box metrics)
+STYLE_PHONE_WIDTHS = (*PHONE_WIDTHS, 768)
+STYLE_CASES = [(spec, width) for spec, width in CASES if spec["view"] is not None or (width in STYLE_PHONE_WIDTHS and "phone_view" in spec)]
 STYLE_IDS = [f"{spec['name']}-{width}" for spec, width in STYLE_CASES]
 SHOTS_DIR = Path(__file__).resolve().parents[2] / "docs/tasks/screenshots-0710"
 
@@ -82,7 +84,7 @@ def test_v2_page_matches_mockup_styles(spec, width, base, dashboard_rich_host):
     cookie = dashboard_rich_host["client"].cookies.get(auth.SESSION_COOKIE)
     assert cookie
     diffs = []
-    phone = width in PHONE_WIDTHS and "phone_view" in spec
+    phone = width in STYLE_PHONE_WIDTHS and "phone_view" in spec
     with sync_api.sync_playwright() as playwright:
         browser = _launch(playwright)
         app_ctx, app_page = _open_app(browser, base, cookie, spec["path"], width)
@@ -110,7 +112,7 @@ def test_v2_page_matches_mockup_styles(spec, width, base, dashboard_rich_host):
                 mock_value = expected_value(selector, prop, mock_styles[prop])
                 if not same_value(prop, app_value, mock_value):
                     diffs.append(f"{selector} {prop}: app={app_value} mockup={mock_value}")
-            if phone:
+            if phone and width in PHONE_WIDTHS:
                 diffs += box_diffs(selector, computed(app_page, selector, BOX_PROPS), computed(mock_page, mock_selector, BOX_PROPS), width)
         app_ctx.close()
         mock_ctx.close()
