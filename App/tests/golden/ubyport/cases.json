@@ -11,9 +11,9 @@
     "guests": [
       {
         "stay_from": "2026-09-10", "stay_to": "2026-09-15", "surname": "SAMPLEGUEST",
-        "first_name": "JOHN", "birth_date": "01011990", "nationality": "sk",
+        "first_name": "JOHN", "birth_date": "01011990", "nationality": "SVK",
         "doc_number": "SK1234567", "visa_number": "", "res_street": "Example Street 1",
-        "res_city": "Bratislava", "res_country": "sk", "purpose": "10", "note": "Late arrival"
+        "res_city": "Bratislava", "res_country": "SVK", "purpose": "10", "note": "Late arrival"
       }
     ],
     "wsa": false
@@ -30,9 +30,9 @@
     "guests": [
       {
         "stay_from": "2026-09-10", "stay_to": "2026-09-15", "surname": "EXAMPLOV",
-        "first_name": "IVAN", "birth_date": "02021985", "nationality": "ua",
+        "first_name": "IVAN", "birth_date": "02021985", "nationality": "ukr",
         "doc_number": "UA987654", "visa_number": "V-123456", "res_street": "Test Road 5",
-        "res_city": "Kyiv", "res_country": "ua", "purpose": "20", "note": ""
+        "res_city": "Kyiv", "res_country": "ukr", "purpose": "20", "note": ""
       }
     ],
     "wsa": false
@@ -51,9 +51,9 @@
     "guests": [
       {
         "stay_from": "2026-09-10", "stay_to": "2026-09-15", "surname": "O\"Brien & <Co> 'x'",
-        "first_name": "Řehoř", "birth_date": "03031980", "nationality": "cz",
+        "first_name": "Řehoř", "birth_date": "03031980", "nationality": "CZE",
         "doc_number": "AB1234567", "visa_number": "", "res_street": "Ulice & <Test> \"1\"",
-        "res_city": "Brno", "res_country": "cz", "purpose": "10",
+        "res_city": "Brno", "res_country": "CZE", "purpose": "10",
         "note": "A & B <note> \"quoted\" 'single'"
       }
     ],
@@ -71,9 +71,9 @@
     "guests": [
       {
         "stay_from": "", "stay_to": "", "surname": "FALLBACKOV", "first_name": "PETRA",
-        "birth_date": "04041992", "nationality": "pl", "doc_number": "PL7654321",
+        "birth_date": "04041992", "nationality": "POL", "doc_number": "PL7654321",
         "visa_number": "", "res_street": "Example Street 9", "res_city": "Krakow",
-        "res_country": "pl", "purpose": "abc", "note": ""
+        "res_country": "POL", "purpose": "abc", "note": ""
       }
     ],
     "wsa": false
@@ -90,21 +90,21 @@
     "guests": [
       {
         "stay_from": "2026-11-01", "stay_to": "2026-11-03", "surname": "ONEGUEST",
-        "first_name": "ANNA", "birth_date": "05051970", "nationality": "de",
+        "first_name": "ANNA", "birth_date": "05051970", "nationality": "DEU",
         "doc_number": "DE1111111", "visa_number": "", "res_street": "Musterweg 1",
-        "res_city": "Berlin", "res_country": "de", "purpose": "10", "note": ""
+        "res_city": "Berlin", "res_country": "DEU", "purpose": "10", "note": ""
       },
       {
         "stay_from": "2026-11-01", "stay_to": "2026-11-03", "surname": "TWOGUEST",
-        "first_name": "BORIS", "birth_date": "06061975", "nationality": "fr",
+        "first_name": "BORIS", "birth_date": "06061975", "nationality": "FRA",
         "doc_number": "FR2222222", "visa_number": "", "res_street": "Rue Test 2",
-        "res_city": "Paris", "res_country": "fr", "purpose": "10", "note": ""
+        "res_city": "Paris", "res_country": "FRA", "purpose": "10", "note": ""
       },
       {
         "stay_from": "2026-11-02", "stay_to": "2026-11-03", "surname": "THREEGUEST",
-        "first_name": "CLARA", "birth_date": "07071988", "nationality": "it",
+        "first_name": "CLARA", "birth_date": "07071988", "nationality": "ITA",
         "doc_number": "IT3333333", "visa_number": "", "res_street": "Via Prova 3",
-        "res_city": "Roma", "res_country": "it", "purpose": "30", "note": ""
+        "res_city": "Roma", "res_country": "ITA", "purpose": "30", "note": ""
       }
     ],
     "wsa": false
@@ -121,9 +121,9 @@
     "guests": [
       {
         "stay_from": "2026-09-10", "stay_to": "2026-09-15", "surname": "SAMPLEGUEST",
-        "first_name": "JOHN", "birth_date": "01011990", "nationality": "sk",
+        "first_name": "JOHN", "birth_date": "01011990", "nationality": "SVK",
         "doc_number": "SK1234567", "visa_number": "", "res_street": "Example Street 1",
-        "res_city": "Bratislava", "res_country": "sk", "purpose": "10", "note": "Late arrival"
+        "res_city": "Bratislava", "res_country": "SVK", "purpose": "10", "note": "Late arrival"
       }
     ],
     "wsa": true

@@ -33,6 +33,5 @@ None.
 None. Orchestrator opens the PR.
 
 ## Observations in the current XML (not changed)
-- Nationality is sent as the 2-letter code (`eu_single` gives `<d:cNati>SK</d:cNati>`). The existing fixture in tests/test_ubyport_dorucenka.py uses 3-letter `GBR`. Check which the spec wants.
-- `cResi` renders the country as 2-letter code twice: `..., Brno, CZ-CZ`. Appendix 3 (per the docstring of `compose_residence`) says three-letter code, hyphen, country name.
+- Resolved: the golden inputs used 2-letter country codes. They now use 3-letter codes (CZE, SVK, DEU, FRA, ITA, POL), so `cNati` and `cResi` carry the 3-letter code. The Ukrainian case is `ukr` in lower case on purpose, so the upper-casing stays pinned (`cNati` UKR, `cResi` ending `UKR-Ukrajina`).
 - `header_from_apartment` on an empty `addr_obec_cast` gives `<d:uObCa i:nil="true" />` (nil, not empty). Expected, but worth confirming with the spec.
