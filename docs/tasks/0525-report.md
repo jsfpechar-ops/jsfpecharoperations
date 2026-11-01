@@ -1,22 +1,25 @@
 # 0525 report
 Status: blocked
-Deviations: Done: steps 1 to 3. Left: steps 4 to 5 (test_0525_stay_detail.py, static version bump, screenshots at 1280 and 390 px) and the section 6 pytest and browser runs. Stopped at the 25-call checkpoint before step 4.
+Deviations: Done: steps 1 to 4, and step 5 up to the version bump. Left: step 5 screenshots (1280 and 390 px, `?lang=cs`), and the section 6 runs (pytest set, browser set with `-rs`, design_lint and context_lint tails). Stopped at the 25-call checkpoint.
 
-Commits on task/0525-stay-detail-style after aee53c8: step 1, step 2, step 3, this report.
+Commits on task/0525-stay-detail-style after aee53c8: step 1, step 2, step 3, step 3b, step 4, step 5, this report.
 
-Diff stat (aee53c8 to HEAD, before this report):
- 3 files changed, 18 insertions(+), 2 deletions(-)
+Diff stat (aee53c8 to HEAD, before this report): 8 files changed, 156 insertions(+), 14 deletions(-) (includes the brief edit and the earlier report). Code and test files: host2.css, base.html, reservation_detail.html, static_versions.json, catalog.json, tests/test_0525_stay_detail.py (new, 6 tests, all pass).
 
-Step 1: reservation_detail.html, `guest-card-doc` span added to guest cards and to the placeholder card (`—`). Anchors found; no command in the step.
-Step 2: host2.css, block appended inside `@media (min-width: 1024px)` (guest-cards card, guest-card rows, 4-column head grid, door card). No command in the step.
-Step 3: `python3 scripts/design_lint.py 2>&1 | tail -5` -> `design lint: OK`.
+Step 3b: resend form moved from the guests claim line into `secondary_actions`, after the copy button. Class `ui-btn-compact` dropped. Grid for `.guest-card-head` is now 3 tracks.
+
+Step 4 test run: `tests/test_0525_stay_detail.py -q --tb=short -x -rs` -> `6 passed in 1.62s`, 0 skipped.
+
+Step 5: `host2.css?v=20261101-0525a`; `tests/test_static_versions.py --write` -> `wrote .../static_versions.json (40 files)`.
+
+Edited assertions in existing tests: none.
 
 Deviations:
-- Step 2: bare px is forbidden by the S2 lint, so 16 px is `var(--space-4)` and 18 px is `var(--text-lg)`.
-- Step 2: the head grid has 4 tracks but 3 children. The menu sits inside `guest-card-state`, so the 4th track is empty. No `guest-card-doc` style rule was added (not in the brief).
-- Step 2: placeholder cards keep their dashed look from host.css.
-- Step 3: the new classes went into `classes` (the list lint reads) and their descriptions into `class_notes`. `data-stay-header-copy` was not added: lint does not check data attributes.
-- Browser geometry not yet run for the step-2 CSS. Section 8 assertion edits: none so far.
+- Step 4 (g) Send button test: not written. `tests/test_design_stay_detail.py` has no existing send test to copy.
+- Step 4 (d): door code state comes from a monkeypatched `door_codes.view` returning an issued dict; no real TTLock setup.
+- Step 4 (e): the doc number check is scoped to the card head (up to `class="guest-facts"`). The existing guest-facts list below still prints the document number. Not changed, since the brief keeps the template to step 1.
+- Step 4 (f): no `permalink_token` UPDATE needed; the header copy button renders for the seeded active stay.
+- Step 4 (a): the lead guest name is "MINH NGUYEN" (seed data), not the "First Surname" wording of the brief.
 
-Questions: none.
+Questions: whether the doc number in guest-facts (the expanded detail list) should also be hidden on the stay page. Brief does not say.
 Owner steps left: none yet.
