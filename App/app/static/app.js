@@ -2167,22 +2167,25 @@
   function initUnsavedForms() {
     var forms = Array.prototype.slice.call(document.querySelectorAll("form[data-unsaved-guard]"));
     if (!forms.length) return;
-    var submitting = null;
     forms.forEach(function (form) {
+      if (!claimNode(form, "initUnsavedForms")) return;
       var mark = function () { form.setAttribute("data-dirty", "1"); };
       form.addEventListener("input", mark);
       form.addEventListener("change", mark);
-      form.addEventListener("submit", function () { submitting = form; });
+      form.addEventListener("submit", function () { form._ubySubmitting = true; });
     });
-    window.addEventListener("beforeunload", function (event) {
-      var unsaved = forms.some(function (form) {
-        return form !== submitting && form.getAttribute("data-dirty") === "1";
+    if (claimNode(window, "initUnsavedForms")) {
+      window.addEventListener("beforeunload", function (event) {
+        var current = Array.prototype.slice.call(document.querySelectorAll("form[data-unsaved-guard]"));
+        var unsaved = current.some(function (form) {
+          return form.getAttribute("data-dirty") === "1" && form._ubySubmitting !== true;
+        });
+        current.forEach(function (form) { form._ubySubmitting = false; });
+        if (!unsaved) return;
+        event.preventDefault();
+        event.returnValue = "";
       });
-      submitting = null;
-      if (!unsaved) return;
-      event.preventDefault();
-      event.returnValue = "";
-    });
+    }
   }
 
   /* ---- 0084 O1: unsaved changes, in-app Save / Discard / Stay ----------------
