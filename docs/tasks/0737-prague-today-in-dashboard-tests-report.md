@@ -18,7 +18,7 @@ After (commit `33136afc`):
 - `TZ=Pacific/Pago_Pago pytest ... -q`: `18 passed in 2.19s`
 - `pytest ... -q -rs` (default TZ): `18 passed in 2.18s`, 0 skipped
 - `ruff check ... --select E9,F63,F7,F82,F401,F841`: `All checks passed!`
-- `python3 scripts/context_lint.py | tail -2`: see Deviations / result below
+- `python3 scripts/context_lint.py | tail -2`: `context lint: OK`
 
 ## Acceptance (brief §7)
 
