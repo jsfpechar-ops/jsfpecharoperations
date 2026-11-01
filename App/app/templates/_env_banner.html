@@ -5,6 +5,7 @@
   {% set production_mock = deployment_tier == 'production' %}
   <aside class="env-banner mock" role="alert">
     <strong>{{ t('env.mock_production_title') if production_mock else t('env.mock_title') }}</strong>
-    <span>{{ t('env.mock_production_body') if production_mock else t('env.mock_body') }}</span>
+    <span class="env-body">{{ t('env.mock_production_body') if production_mock else t('env.mock_body') }}</span>
+    <details class="env-more"><summary>{{ t('how.toggle') }}</summary><span>{{ t('env.mock_production_body') if production_mock else t('env.mock_body') }}</span></details>
   </aside>
 {% endif %}
