@@ -37,8 +37,7 @@ def test_lock_tab_save_without_times_stays_on_the_lock_tab(two_properties):
     page = response.text
     assert 'id="door-code-times-error" role="alert"' in page
     assert "Set them first." in page
-    assert re.search(r'data-settings-group="lock" id="settings-lock"', page)
-    assert re.search(r'class="property-settings-group is-active" data-settings-group="lock"', page)
+    assert re.search(r'<details class="prop-sec" id="sec-lock"[^>]*\bopen\b', page)
     switch = re.search(r'<input type="checkbox" role="switch" id="door_codes"[^>]*>', page).group(0)
     assert "checked" in switch
     option = re.search(r'<option value="%s"[^>]*>' % LOCK["lock_id"], page).group(0)

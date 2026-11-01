@@ -135,6 +135,7 @@
             <input type="text" id="permalink" readonly value="{{ permalink }}">
             {{ copy_button('permalink') }}
             <a class="ui-btn ui-btn-quiet ui-btn-compact" href="/l/{{ link_key }}" target="_blank" rel="noopener">{{ t('guest_links.preview') }}</a>
+            <a class="ui-btn ui-btn-quiet ui-btn-compact" href="/apartments/{{ apartment.id }}/guide">{{ t('leon_page.guide_link') }}</a>
           </div>
         </div>
         <div class="field guest-link-pin">
@@ -410,9 +411,10 @@
   <div class="pv">
     <h4>{{ t('property_page.preview.connections') }}</h4>
     <a class="r" href="#sec-police"><span>{{ t('apartments.chip.police') }}</span><b class="pv-state" data-state="{{ 'ok' if police_ok else 'bad' }}">{{ t('property_nav.report_ready') if police_ok else tp('property_nav.report_missing', report_missing) }}</b></a>
-    <a class="r" href="#sec-calendars"><span>{{ t('property_page.sec.calendars.title') }}</span><b{% if calendar_errors %} class="is-bad"{% endif %}>{{ feeds_count }}</b></a>
+    <a class="r" href="#sec-calendars"><span>{{ t('property_page.sec.calendars.title') }}</span><small{% if calendar_errors %} class="is-bad"{% endif %}>{{ tp('apartment.form.calendars_count', feeds_count) }}</small></a>
     <a class="r" href="#sec-lock"><span>{{ t('apartments.chip.lock') }}</span>{{ t('property_nav.switch_enabled') if door_code and door_code.enabled else t('property_nav.switch_off') }}</a>
     <a class="r" href="#sec-fee"><span>{{ t('apartments.chip.fee') }}</span>{% if apartment.stay_fee_rate_czk %}{{ apartment.stay_fee_rate_czk }} Kč{% else %}{{ t('apartments.chip_state.off') }}{% endif %}</a>
+    {% if leon_card %}<a class="r" href="{{ base_url }}/leon{% if leon_card != 'on' %}/setup{% endif %}" data-leon-card="{{ leon_card }}"><span>{{ t('leon_page.title') }}</span>{{ t('leon_page.card.' ~ leon_card) }}</a>{% endif %}
   </div>
   {% if readiness and not wizard_active %}<div class="pv">
 {%- set wizard_active = setup_progress and not setup_progress.hidden -%}

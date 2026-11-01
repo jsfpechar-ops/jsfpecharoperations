@@ -142,3 +142,22 @@ Deviations:
 
 Owner steps: none.
 Next executor: step 5 (add `property` to PAGES in `App/tests/v2_mockup.py` with `{first_property}`, placeholder in `test_0710_v2_mockup_match_browser.py`, run 0710, fix page-own CSS diffs at 1024/1280/1440), then step 6 (screenshots), then design_lint and the report's remaining tails.
+
+## 0535 CI old-markup (executor, 42 CI failures)
+
+Status: blocked. Classified all 42; fixed 9 of 39 of ours. Left: 31 ours (below), needs the next session.
+
+Shared (fail on `origin/claude/project-thread-50hyv5` too, not touched): `tests/test_0705_v2_shell_browser.py` (3 tests: `test_app2_css_has_the_phone_top_bar_rule_and_no_font_picker`, `test_non_v2_dashboard_still_loads_the_old_stylesheets_and_sidebar`, `test_v2_branch_is_wired_in_base_html_and_the_v2_shell_exists`). The other 39 pass on the shared base, so they are ours.
+
+Fixed here:
+- Leon row added to the aside Napojení card (`_property_editor.html`), same href, `data-leon-card` and `leon_page.card.*` text as the old overview card. Fixes `test_0396_leon_opt_in` (2), `test_0404_leon_setup` (1), `test_billing_leon` (1).
+- Guide link added to the messages section (guest links block) with the old `leon_page.guide_link` text. Fixes `test_guest_guide_pages::test_property_page_links_to_the_guide`.
+- Aside calendar count now uses `apartment.form.calendars_count` (the old "1 calendar" format) in `<small>`. Fixes `test_wp28_ui_sweep` counts test.
+- Section 8 (assertion only): `test_stay_fee_property_panel` (`#stay-fee-settings` nav link to `href="#sec-fee"`; `data-settings-group="reporting"` to `id="sec-fee"`); `test_door_code_missing_times_0397` (settings-group lock asserts to `<details id="sec-lock" open>`); `test_entity_editor_navigation` line ~284 (overview link without `next`).
+- No test deleted.
+
+Left, ours, markup (section 8 candidates, not yet changed): `test_0286_health_cards` (2), `test_0291_open_buttons` (1), `test_0375_needs_you_and_open` (1), `test_design_properties` (2), `test_entity_editor_navigation` line ~300 operator-picker link and `test_property_without_a_business_links_to_its_own_settings`, `test_properties_table_chips` (2, CTA class `btn` and count), `test_property_form_nav` (4, the section nav is gone: delete candidate, but check the Czech copy test first), `test_property_health_0244` (overview health check: delete candidate), `test_stay_fee_property_panel::test_edit_page_has_stay_fee_panel_and_create_page_does_not`, `test_ui_consistency::test_the_copy_button_keeps_its_icon_when_it_confirms` (copy button now has no `<svg>`: the 0535 step 3b icon is injected by JS, the test wants it in markup), `test_page_help_0277` (3, properties list help).
+
+Left, other pages (section 8 stop rule: do not touch in this thread, owner to decide): `test_dashboard_empty` (2), `test_dashboard_missing_banner` (3), `test_dashboard_order` (3), `test_signed_in_chrome` (1), `test_navigation_prefetch` (1, `/admin/*` prefetch exclusion missing from the shell), `test_design_admin::test_smart_locks...` (1, `style=` on body).
+
+Checks: `tests/test_0534_property_page_v2.py tests/test_property_hub.py tests/test_static_versions.py`: `24 passed in 2.16s`. ruff (E9,F63,F7,F82,F401,F841): `All checks passed!`. context_lint: `context lint: OK`. design_lint: not run.

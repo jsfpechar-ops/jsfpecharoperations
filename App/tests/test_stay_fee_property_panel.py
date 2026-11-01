@@ -115,7 +115,7 @@ def test_edit_page_has_stay_fee_panel_and_create_page_does_not(host):
     assert edit.status_code == 200
     # 0094: an ordinary visible section in Settings → Reporting & fees.
     assert '<section class="panel property-section ui-section" id="stay-fee-settings"' in edit.text
-    assert '#stay-fee-settings"' in edit.text
+    assert 'href="#sec-fee"' in edit.text
     assert 'Optional stay fee' in edit.text
     assert create.status_code == 200
     assert 'id="stay-fee-settings"' not in create.text
@@ -187,7 +187,7 @@ def test_account_is_normalised_and_invalid_account_saves_nothing(host):
     assert "This account number does not add up." in invalid.text  # 0208 copy
     assert 'id="stay-fee-account-error"' in invalid.text
     assert 'id="stay-fee-settings"' in invalid.text
-    assert 'data-settings-group="reporting"' in invalid.text
+    assert 'id="sec-fee"' in invalid.text
     assert 'value="Changed office"' in invalid.text
     assert 'value="9876"' in invalid.text
     unchanged = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
