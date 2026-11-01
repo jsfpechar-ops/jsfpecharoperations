@@ -71,6 +71,14 @@ tbody tr .btn.sm.ghost{opacity:0;transition:opacity .15s}tbody tr:hover .btn.sm.
   .main{padding:16px}
   .todo{grid-template-columns:1fr}
 }
+/* 0709 phone (390 px): the v2 Overview fits without a sideways page scroll */
+@media (max-width: 767px){
+  body.v2 .side .me,body.v2 .side .side-bottom,body.v2 .side .search{display:none}
+  body.v2 .head{flex-wrap:wrap}
+  body.v2 .head .btn{width:100%}
+  body.v2 .cal{overflow-x:auto}
+  body.v2 .card > table th:nth-child(2),body.v2 .card > table td:nth-child(2),body.v2 .card > table th:nth-child(3),body.v2 .card > table td:nth-child(3){display:none}
+}
 
 /* Sidebar parts that are not in the mockup: the nav lists, the logout button. */
 .side-nav{display:flex;flex-direction:column;gap:2px}
