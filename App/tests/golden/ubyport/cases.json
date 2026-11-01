@@ -1,0 +1,131 @@
+[
+  {
+    "name": "eu_single",
+    "apartment": {
+      "uby_idub": "100227887600", "uby_mark": "abcde", "uby_name": "Example Apartment",
+      "uby_contact": "host@example.com", "addr_okres": "Praha", "addr_obec": "Praha",
+      "addr_obec_cast": "Vinohrady", "addr_street": "Example Street", "addr_house_no": "1234",
+      "addr_orient_no": "12", "addr_zip": "12000"
+    },
+    "reservation": {"date_from": "2026-09-10", "date_to": "2026-09-15"},
+    "guests": [
+      {
+        "stay_from": "2026-09-10", "stay_to": "2026-09-15", "surname": "SAMPLEGUEST",
+        "first_name": "JOHN", "birth_date": "01011990", "nationality": "sk",
+        "doc_number": "SK1234567", "visa_number": "", "res_street": "Example Street 1",
+        "res_city": "Bratislava", "res_country": "sk", "purpose": "10", "note": "Late arrival"
+      }
+    ],
+    "wsa": false
+  },
+  {
+    "name": "non_eu_visa",
+    "apartment": {
+      "uby_idub": "100227887600", "uby_mark": "abcde", "uby_name": "Example Apartment",
+      "uby_contact": "host@example.com", "addr_okres": "Praha", "addr_obec": "Praha",
+      "addr_obec_cast": "Vinohrady", "addr_street": "Example Street", "addr_house_no": "1234",
+      "addr_orient_no": "12", "addr_zip": "12000"
+    },
+    "reservation": {"date_from": "2026-09-10", "date_to": "2026-09-15"},
+    "guests": [
+      {
+        "stay_from": "2026-09-10", "stay_to": "2026-09-15", "surname": "EXAMPLOV",
+        "first_name": "IVAN", "birth_date": "02021985", "nationality": "ua",
+        "doc_number": "UA987654", "visa_number": "V-123456", "res_street": "Test Road 5",
+        "res_city": "Kyiv", "res_country": "ua", "purpose": "20", "note": ""
+      }
+    ],
+    "wsa": false
+  },
+  {
+    "name": "escaping",
+    "apartment": {
+      "uby_idub": "100227887600", "uby_mark": "abcde",
+      "uby_name": "Apartment Riverside Long Name Over Thirty Five",
+      "uby_contact": "host.contact.very.long.address.example@example.com.test",
+      "addr_okres": "Praha", "addr_obec": "Praha", "addr_obec_cast": "Vinohrady",
+      "addr_street": "Example Street", "addr_house_no": "1234", "addr_orient_no": "12",
+      "addr_zip": "12000"
+    },
+    "reservation": {"date_from": "2026-09-10", "date_to": "2026-09-15"},
+    "guests": [
+      {
+        "stay_from": "2026-09-10", "stay_to": "2026-09-15", "surname": "O\"Brien & <Co> 'x'",
+        "first_name": "Řehoř", "birth_date": "03031980", "nationality": "cz",
+        "doc_number": "AB1234567", "visa_number": "", "res_street": "Ulice & <Test> \"1\"",
+        "res_city": "Brno", "res_country": "cz", "purpose": "10",
+        "note": "A & B <note> \"quoted\" 'single'"
+      }
+    ],
+    "wsa": false
+  },
+  {
+    "name": "fallback_dates",
+    "apartment": {
+      "uby_idub": "100227887600", "uby_mark": "abcde", "uby_name": "Example Apartment",
+      "uby_contact": "host@example.com", "addr_okres": "Praha", "addr_obec": "Praha",
+      "addr_obec_cast": "Vinohrady", "addr_street": "Example Street", "addr_house_no": "1234",
+      "addr_orient_no": "12", "addr_zip": "12000"
+    },
+    "reservation": {"date_from": "2026-10-01", "date_to": "2026-10-04"},
+    "guests": [
+      {
+        "stay_from": "", "stay_to": "", "surname": "FALLBACKOV", "first_name": "PETRA",
+        "birth_date": "04041992", "nationality": "pl", "doc_number": "PL7654321",
+        "visa_number": "", "res_street": "Example Street 9", "res_city": "Krakow",
+        "res_country": "pl", "purpose": "abc", "note": ""
+      }
+    ],
+    "wsa": false
+  },
+  {
+    "name": "batch_three",
+    "apartment": {
+      "uby_idub": "100227887600", "uby_mark": "abcde", "uby_name": "Example Apartment",
+      "uby_contact": "host@example.com", "addr_okres": "Praha", "addr_obec": "Praha",
+      "addr_obec_cast": "", "addr_street": "Example Street", "addr_house_no": "1234",
+      "addr_orient_no": "12", "addr_zip": "110 00"
+    },
+    "reservation": {"date_from": "2026-11-01", "date_to": "2026-11-03"},
+    "guests": [
+      {
+        "stay_from": "2026-11-01", "stay_to": "2026-11-03", "surname": "ONEGUEST",
+        "first_name": "ANNA", "birth_date": "05051970", "nationality": "de",
+        "doc_number": "DE1111111", "visa_number": "", "res_street": "Musterweg 1",
+        "res_city": "Berlin", "res_country": "de", "purpose": "10", "note": ""
+      },
+      {
+        "stay_from": "2026-11-01", "stay_to": "2026-11-03", "surname": "TWOGUEST",
+        "first_name": "BORIS", "birth_date": "06061975", "nationality": "fr",
+        "doc_number": "FR2222222", "visa_number": "", "res_street": "Rue Test 2",
+        "res_city": "Paris", "res_country": "fr", "purpose": "10", "note": ""
+      },
+      {
+        "stay_from": "2026-11-02", "stay_to": "2026-11-03", "surname": "THREEGUEST",
+        "first_name": "CLARA", "birth_date": "07071988", "nationality": "it",
+        "doc_number": "IT3333333", "visa_number": "", "res_street": "Via Prova 3",
+        "res_city": "Roma", "res_country": "it", "purpose": "30", "note": ""
+      }
+    ],
+    "wsa": false
+  },
+  {
+    "name": "wsa_header",
+    "apartment": {
+      "uby_idub": "100227887600", "uby_mark": "abcde", "uby_name": "Example Apartment",
+      "uby_contact": "host@example.com", "addr_okres": "Praha", "addr_obec": "Praha",
+      "addr_obec_cast": "Vinohrady", "addr_street": "Example Street", "addr_house_no": "1234",
+      "addr_orient_no": "12", "addr_zip": "12000"
+    },
+    "reservation": {"date_from": "2026-09-10", "date_to": "2026-09-15"},
+    "guests": [
+      {
+        "stay_from": "2026-09-10", "stay_to": "2026-09-15", "surname": "SAMPLEGUEST",
+        "first_name": "JOHN", "birth_date": "01011990", "nationality": "sk",
+        "doc_number": "SK1234567", "visa_number": "", "res_street": "Example Street 1",
+        "res_city": "Bratislava", "res_country": "sk", "purpose": "10", "note": "Late arrival"
+      }
+    ],
+    "wsa": true
+  }
+]
