@@ -82,7 +82,7 @@ PAGES = [
         "phone_view": "pobyt",
         "selectors": [
             ".crumb", ".head h1", ".head .sub", ".head .btn", ".head .btn.ghost", "main h2", "main .card",
-            "main table th", "main table td", "main .pill", ".code",
+            "main table th", "main table td", "main .pill",
         ],
         "phone_selectors": [
             ".tabs", ".top .round", ".big", ".sub", ".facts", ".facts b", ".facts small", "h2.sec",
