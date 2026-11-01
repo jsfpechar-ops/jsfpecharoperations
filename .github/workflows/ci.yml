@@ -512,7 +512,8 @@ jobs:
           for f in caddy/Caddyfile.acme caddy/Caddyfile.cloudflare; do
             for app in "" app.ubyhost.example; do
               echo "==> ${f} (UBYHOST_APP_DOMAIN='${app}')"
-              UBYHOST_APP_DOMAIN="${app}" ./scripts/caddy-validate.sh "${f}"
+              cp "${f}" caddy/Caddyfile.active
+              UBYHOST_APP_DOMAIN="${app}" ./scripts/caddy-validate.sh
             done
           done
 

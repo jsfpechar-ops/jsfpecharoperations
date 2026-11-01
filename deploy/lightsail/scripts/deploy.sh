@@ -105,7 +105,7 @@ fi
 # file takes the site down. Test it with the production caddy service before
 # anything restarts.
 echo "==> Validating the Caddyfile"
-if ! bash ./scripts/caddy-validate.sh caddy/Caddyfile.active; then
+if ! bash ./scripts/caddy-validate.sh; then
   if [ -f caddy/Caddyfile.previous ]; then
     cp caddy/Caddyfile.previous caddy/Caddyfile.active
   fi
