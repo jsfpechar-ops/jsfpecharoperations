@@ -476,7 +476,7 @@ STRINGS: Dict[str, str] = {
     "menu.tile.guests": "Khách",
     "menu.tile.police": "Khai báo công an",
     "menu.tile.when": "Tháng này",
-    "menu.add_property_sub": "Chuẩn bị cho khách",
+    "menu.add_stay_sub": "Cho đặt phòng trực tiếp với bạn",
     "menu.help": "Trợ giúp",
     "nav.support_help": "Cần trợ giúp về UbyHost? %(email)s",
     "nav.administrator": "Quản trị viên",
