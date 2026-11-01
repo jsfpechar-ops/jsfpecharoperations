@@ -1,0 +1,19 @@
+UbyHost could not deliver the guest report for Byt Beta to UbyPort. Nothing from this attempt reached the register, so these guests are not declared yet.
+
+What happened:
+The connection to UbyPort failed before the report was delivered.
+
+What to do next:
+Nothing to do now: UbyHost sends it again on the next run. If you get this e-mail again tomorrow, open the stay and send the report by hand.
+
+An interrupted connection clears itself when the report is sent again. If the same record fails twice, check the data before sending again.
+
+Stays in this report:
+- Direct (01.05.2026 - 03.05.2026): https://app.example.test/reservations/201
+
+Open the report receipt (Doručenka): https://app.example.test/submissions/8
+
+--
+UbyHost
+You are receiving this because a guest report for Byt Beta was not accepted.
+Questions about UbyHost itself: support@ubyhost.com

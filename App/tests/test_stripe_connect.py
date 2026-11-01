@@ -104,7 +104,7 @@ def _account_dict(*, charges: bool, payouts: bool, due: list, errors: list = Non
             "currently_due": due,
             "past_due": [],
             "eventually_due": [],
-            "disabled_reason": None,
+            "disabled_reason": "platform_paused" if disabled else None,
             "errors": errors or [],
             "alternative": {"booleans": ["individual.verification.document"]},
         },
@@ -349,6 +349,30 @@ def test_process_event_records_unknown_types(fake_stripe):
     stripe_connect.process_event({"id": "evt_test_002", "type": "checkout.session.completed", "data": {}})
     rows = db.query("SELECT * FROM stripe_webhook_event WHERE event_id = ?", ("evt_test_002",))
     assert rows and rows[0]["event_type"] == "checkout.session.completed"
+
+
+def test_mirror_updates_requirements_when_state_unchanged(fake_stripe):
+    oid = _owner_id()
+    stripe_connect.create_or_get_account(oid)
+    first = _account_dict(charges=False, payouts=False, due=["individual.id_number"])
+    stripe_connect._mirror(oid, first)
+    second = _account_dict(charges=False, payouts=False, due=["individual.dob.day"])
+    stripe_connect._mirror(oid, second)
+    row = stripe_connect.account_for_owner(oid)
+    assert row["onboarding_state"] == "action_required"
+    assert json.loads(row["requirements_json"])["currently_due"] == ["individual.dob.day"]
+
+
+def test_process_event_failure_leaves_event_unrecorded(fake_stripe, monkeypatch):
+    def boom(account, mode):
+        raise RuntimeError("handler failed")
+
+    monkeypatch.setattr(stripe_connect, "mirror_by_account_id", boom)
+    event = _account_updated_event(_account_dict(charges=True, payouts=True, due=[]))
+    event["id"] = "evt_test_fail"
+    with pytest.raises(RuntimeError):
+        stripe_connect.process_event(event)
+    assert not stripe_connect.event_seen(event["id"])
 
 
 # --- routes ------------------------------------------------------------------
