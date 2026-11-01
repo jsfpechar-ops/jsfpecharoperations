@@ -13,17 +13,23 @@ from tests.test_host_quiet_dashboard_browser import (  # the quiet overview's fi
     sync_api,
 )
 from tests.v2_mockup import (
+    BOX_PROPS,
     DESKTOP,
     DESKTOP_ONLY,
-    expected_value,
     PAGES,
+    PHONE_WIDTHS,
+    SELECTOR_ALIASES,
     STYLE_PROPS,
     WIDTHS,
+    box_diffs,
     computed,
+    expected_value,
     geometry_findings,
     mockup_url,
+    phone_url,
     route_offline,
     same_value,
+    show_phone_screen,
     show_view,
 )
 
@@ -33,6 +39,9 @@ __all__ = ["base", "dashboard_host", "dashboard_rich_host"]
 
 CASES = [(spec, width) for spec in PAGES for width in WIDTHS]
 IDS = [f"{spec['name']}-{width}" for spec, width in CASES]
+# desktop style checks need a desktop mockup screen; phone checks run at PHONE_WIDTHS for pages with a phone_view
+STYLE_CASES = [(spec, width) for spec, width in CASES if spec["view"] is not None or (width in PHONE_WIDTHS and "phone_view" in spec)]
+STYLE_IDS = [f"{spec['name']}-{width}" for spec, width in STYLE_CASES]
 SHOTS_DIR = Path(__file__).resolve().parents[2] / "docs/tasks/screenshots-0710"
 
 
@@ -50,6 +59,15 @@ def _open_app(browser, base_url, cookie, path, width):
     return context, page
 
 
+def _open_phone(browser, key, width):
+    context = browser.new_context(viewport={"width": width, "height": 1000}, reduced_motion="reduce")
+    page = context.new_page()
+    route_offline(page)
+    page.goto(phone_url())
+    show_phone_screen(page, key)
+    return context, page
+
+
 def _open_mockup(browser, view, width):
     context = browser.new_context(viewport={"width": width, "height": 1000}, reduced_motion="reduce")
     page = context.new_page()
@@ -59,21 +77,28 @@ def _open_mockup(browser, view, width):
     return context, page
 
 
-@pytest.mark.parametrize("spec,width", CASES, ids=IDS)
+@pytest.mark.parametrize("spec,width", STYLE_CASES, ids=STYLE_IDS)
 def test_v2_page_matches_mockup_styles(spec, width, base, dashboard_rich_host):
     cookie = dashboard_rich_host["client"].cookies.get(auth.SESSION_COOKIE)
     assert cookie
     diffs = []
+    phone = width in PHONE_WIDTHS and "phone_view" in spec
     with sync_api.sync_playwright() as playwright:
         browser = _launch(playwright)
         app_ctx, app_page = _open_app(browser, base, cookie, spec["path"], width)
-        mock_ctx, mock_page = _open_mockup(browser, spec["view"], width)
-        for selector in spec["selectors"]:
+        if phone:
+            mock_ctx, mock_page = _open_phone(browser, spec["phone_view"], width)
+            selectors, view_name = spec["phone_selectors"], f"phone screen {spec['phone_view']}"
+        else:
+            mock_ctx, mock_page = _open_mockup(browser, spec["view"], width)
+            selectors, view_name = spec["selectors"], spec["view"]
+        for selector in selectors:
             if selector in DESKTOP_ONLY and width < DESKTOP:
                 continue
-            mock_styles = computed(mock_page, selector)
+            mock_selector = SELECTOR_ALIASES.get(selector, selector) if phone else selector
+            mock_styles = computed(mock_page, mock_selector)
             if mock_styles is None:
-                diffs.append(f"{selector}: missing in mockup view {spec['view']}")
+                diffs.append(f"{selector}: missing in mockup {view_name}")
                 continue
             app_styles = computed(app_page, selector)
             if app_styles is None:
@@ -85,6 +110,8 @@ def test_v2_page_matches_mockup_styles(spec, width, base, dashboard_rich_host):
                 mock_value = expected_value(selector, prop, mock_styles[prop])
                 if not same_value(prop, app_value, mock_value):
                     diffs.append(f"{selector} {prop}: app={app_value} mockup={mock_value}")
+            if phone:
+                diffs += box_diffs(selector, computed(app_page, selector, BOX_PROPS), computed(mock_page, mock_selector, BOX_PROPS), width)
         app_ctx.close()
         mock_ctx.close()
         browser.close()
