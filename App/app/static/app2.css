@@ -4,6 +4,7 @@ font-family:var(--font-sans);color:var(--ink);font-size:14px}
 *{box-sizing:border-box}body{margin:0;background:var(--bg)}
 .app{display:flex;min-height:100vh}
 .side{width:220px;background:var(--side);border-right:1px solid var(--line);color:var(--ink2);display:flex;flex-direction:column;padding:16px 10px;position:sticky;top:0;height:100vh;flex:none}
+@media (min-width:1024px){.app{background:linear-gradient(90deg,var(--side) 0 219px,var(--line) 219px 220px,transparent 220px)}}
 .logo{color:var(--ink);font-weight:800;font-size:18px;padding:2px 10px 14px;letter-spacing:-.01em}
 .org{display:flex;align-items:center;gap:10px;background:var(--side2);border-radius:10px;padding:8px 10px;margin-bottom:14px;color:var(--ink);font-size:13px}
 .org i{width:26px;height:26px;border-radius:7px;background:#e4e4df;display:grid;place-items:center;font-style:normal;font-weight:700}
@@ -245,6 +246,8 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
   body.v2 .allgood{margin:0 0 12px;padding:16px 18px;border-radius:18px;background:var(--oks);color:var(--ok);font-weight:700;display:flex;gap:10px;align-items:center}
   body.v2 .hs{display:flex;gap:12px;overflow-x:auto;margin:0 -20px;padding:4px 20px 16px;scroll-snap-type:x mandatory;scrollbar-width:none}body.v2 .hs::-webkit-scrollbar{display:none}
   body.v2 .hs .card{margin:0;flex:0 0 272px;scroll-snap-align:start;display:flex;flex-direction:column;gap:10px}
+  body.v2 .hs .card:only-child{flex:1 1 auto}
+  body.v2 .hs:has(> .card:only-child){margin-left:0;margin-right:0;padding-left:0;padding-right:0}
   body.v2 .kind{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}body.v2 .kind.in{color:var(--ok)}body.v2 .kind.out{color:var(--ink2)}
   body.v2 .hs .nm{font-size:20px;font-weight:800;letter-spacing:-.01em}body.v2 .hs .meta{color:var(--ink3);font-size:14px}
   body.v2 .av{width:48px;height:48px;border-radius:50%;background:var(--accs);color:var(--acc-text);display:grid;place-items:center;font-weight:800;font-size:18px;flex:none}
@@ -495,6 +498,8 @@ body.v2 .host-stay-detail table th,body.v2 .host-stay-detail table td,body.v2 .h
 }
 body.v2 .ov-head .ov-links{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;margin:0}
 body.v2 .ov-head .ov-links > *{margin:0}
+body.v2 .ov-head .ov-quiet{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center}
+body.v2 .ov-head .ov-quiet > *{margin:0}
 body.v2 .ov-head .ov-inline{display:inline-flex}
 body.v2 .ov-how > summary{list-style:none}
 body.v2 .ov-how > summary::-webkit-details-marker{display:none}
@@ -502,6 +507,7 @@ body.v2 .ov-how > summary::-webkit-details-marker{display:none}
 /* v2 shared: Havel (copied from host2.css; delete the host2 copy when the old shell is retired) */
 body.v2{--tabbar-safe:env(safe-area-inset-bottom,0px)}
 @media (max-width:1023px){body.v2{--tabbar-h:84px}}
+@media (max-width:1023px){html:has(body.v2){scroll-padding-bottom:84px}}
 body.v2 .havel-thread{display: flex; flex-direction: column; gap: var(--space-3);}
 body.v2 .havel-msg{display: flex; flex-direction: column; max-width: 85%;}
 body.v2 .havel-msg-host{align-self: flex-end; align-items: flex-end;}
@@ -673,7 +679,10 @@ body.v2 .onboarding-intro .onboarding-logo{width: 64px; height: auto; max-width:
 @media (min-width:1024px){#needs-action .ny-sum-phone{display:none}#needs-action .ny-phone-only{display:none}}
 /* 0722: on phone the month line goes last, after Dnes (mockup order). */
 @media (max-width:1023px){body.v2 .ui-body:has(> .ov-month){display:flex;flex-direction:column}body.v2 .ov-month{order:1}}
+@media (max-width:1023px){body.v2 .ui-body:has(> .ov-month) > :not(h2.sec){margin-top:0;margin-bottom:0}body.v2 #needs-action .todo{gap:0}body.v2 #needs-action .needs-you-card-item{margin-bottom:12px}body.v2 details.needs-you-more{margin:0}}
 /* 0722: phone action buttons keep the 44 px touch target of the mockup. */
 @media (max-width:1023px){body.v2 .needs-you-actions .btn{min-height:44px}}
 /* 0529 tests: the desk rows are clickable (data-href), so they show the pointer */
 body.v2 tr[data-href]{cursor:pointer}
+
+@media (max-width:767px){body.v2 .cal-day-number{min-width:44px}}

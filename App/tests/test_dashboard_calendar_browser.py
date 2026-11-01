@@ -316,8 +316,14 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                         const r = document.querySelector(selector).getBoundingClientRect();
                         return {top:r.top, bottom:r.bottom, left:r.left, right:r.right, height:r.height};
                     })""")
-                    assert 0 <= boxes[2]["top"] - boxes[1]["bottom"] <= 44, boxes
-                    for box in boxes[1:]:
+                    # 0723: .ov-cal-more is display:none below 1024 px, so its box is all zeros there.
+                    if boxes[1]["height"] == 0:
+                        assert 0 <= boxes[2]["top"] - boxes[0]["bottom"] <= 44, boxes
+                        aligned = [boxes[0], boxes[2]]
+                    else:
+                        assert 0 <= boxes[2]["top"] - boxes[1]["bottom"] <= 44, boxes
+                        aligned = boxes[1:]
+                    for box in aligned:
                         assert abs(box["left"] - boxes[0]["left"]) <= 2, boxes
                         assert abs(box["right"] - boxes[0]["right"]) <= 2, boxes
                     if width >= 768:
