@@ -443,6 +443,8 @@ body.v2 .guest-card .copy-btn [data-copy-state-icon] svg{width:16px;height:16px;
 }
 body.v2 .ov-head .ov-links{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;margin:0}
 body.v2 .ov-head .ov-links > *{margin:0}
+body.v2 .ov-head .ov-quiet{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center}
+body.v2 .ov-head .ov-quiet > *{margin:0}
 body.v2 .ov-head .ov-inline{display:inline-flex}
 body.v2 .ov-how > summary{list-style:none}
 body.v2 .ov-how > summary::-webkit-details-marker{display:none}
@@ -452,6 +454,7 @@ body.v2 .ov-how .ui-how-more{display:inline-flex;align-items:center;min-height:4
 /* v2 shared: Havel (copied from host2.css; delete the host2 copy when the old shell is retired) */
 body.v2{--tabbar-safe:env(safe-area-inset-bottom,0px)}
 @media (max-width:1023px){body.v2{--tabbar-h:84px}}
+@media (max-width:1023px){html:has(body.v2){scroll-padding-bottom:84px}}
 body.v2 .havel-thread{display: flex; flex-direction: column; gap: var(--space-3);}
 body.v2 .havel-msg{display: flex; flex-direction: column; max-width: 85%;}
 body.v2 .havel-msg-host{align-self: flex-end; align-items: flex-end;}
@@ -623,13 +626,15 @@ body.v2 .onboarding-intro .onboarding-logo{width: 64px; height: auto; max-width:
 @media (min-width:1024px){#needs-action .ny-sum-phone{display:none}#needs-action .ny-phone-only{display:none}}
 /* 0722: on phone the month line goes last, after Dnes (mockup order). */
 @media (max-width:1023px){body.v2 .ui-body:has(> .ov-month){display:flex;flex-direction:column}body.v2 .ov-month{order:1}}
+@media (max-width:1023px){body.v2 .ui-body:has(> .ov-month) > :not(h2.sec){margin-top:0;margin-bottom:0}body.v2 #needs-action .todo{gap:0}body.v2 #needs-action .needs-you-card-item{margin-bottom:12px}body.v2 details.needs-you-more{margin:0}}
 /* 0722: phone action buttons keep the 44 px touch target of the mockup. */
 @media (max-width:1023px){body.v2 .needs-you-actions .btn{min-height:44px}}
 
+@media (max-width:767px){body.v2 .cal-day-number{min-width:44px}}
 /* 0536 items 1-7: desktop polish of the property page (mockup prop) */
-body.v2 .ov-how{background:none;border:0;margin:0 0 8px;display:inline-block}
-body.v2 .ov-how > summary{padding:0;display:inline-flex;gap:6px;justify-content:flex-start;min-height:24px;color:var(--ink2);font-size:13px}
-body.v2 .ov-how > summary:after{display:none}
+body.v2 .ov-how[data-how="property"]{background:none;border:0;margin:0 0 8px;display:inline-block}
+body.v2 .ov-how[data-how="property"] > summary{padding:0;display:inline-flex;gap:6px;justify-content:flex-start;min-height:24px;color:var(--ink2);font-size:13px}
+body.v2 .ov-how[data-how="property"] > summary:after{display:none}
 body.v2 #sec-basics > .fields-wrap > .property-section > h3:first-child,body.v2 #basics > h3:first-child{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 body.v2 .required-legend{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 body.v2 .property-section-title{font-size:14px;font-weight:600}
@@ -648,8 +653,8 @@ body.v2 .savebar .ui-btn,body.v2 .savebar .btn{width:auto;white-space:nowrap}
   body.v2 .property-section .field:has(textarea){grid-column:1/-1}
 }
 /* 0536 item 1 (second pass): the help toggle is a small pill card, so the generic details card look stays (0710 mockup match) */
-body.v2 .ov-how{background:var(--s);border:1px solid var(--line);border-radius:999px;padding:0 12px;margin:0 0 8px;display:inline-block}
-body.v2 .ov-how > summary{padding:6px 0;min-height:32px}
+body.v2 .ov-how[data-how="property"]{background:var(--s);border:1px solid var(--line);border-radius:999px;padding:0 12px;margin:0 0 8px;display:inline-block}
+body.v2 .ov-how[data-how="property"] > summary{padding:6px 0;min-height:32px}
 /* 0536 item 1 (third pass): card radius and no details padding, as the generic details card (mockup match); the padding sits on the summary */
-body.v2 .ov-how{border-radius:12px;padding:0}
-body.v2 .ov-how > summary{padding:6px 12px;min-height:32px}
+body.v2 .ov-how[data-how="property"]{border-radius:12px;padding:0}
+body.v2 .ov-how[data-how="property"] > summary{padding:6px 12px;min-height:32px}
