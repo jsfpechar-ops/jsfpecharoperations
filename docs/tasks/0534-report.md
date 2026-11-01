@@ -25,3 +25,40 @@ Test tails (from `App/`, env `UBYHOST_REQUIRE_BROWSER=1 PLAYWRIGHT_BROWSERS_PATH
 - `python3 scripts/context_lint.py`: `context lint: OK`
 
 Owner steps left: none for 0534a.
+
+## 0534b (steps 1, 2, 4; step 5 partial; step 6 not in this session)
+
+Status: blocked. Remaining work listed below needs an orchestrator decision.
+
+Commits (branch claude/project-thread-819gyo, not pushed):
+- `5d500e1` 0534 step 1: one-page property template (crumb, h1, guest card, details sections, savebar; tabs, views and settings groups removed). Setup card copied from `_property_overview.html`.
+- `6891977` 0534 step 2: unused `property_nav.*` and `guest_guide.tab` keys removed (en, cs, vi).
+- `0534 step 4` commit: `test_0534_property_page_v2.py` (7 tests), savebar media query (<=600 px), app2 key `20261101-0534c`, `static_versions.json`, catalog legacy classes for `apartment_form.html`, two `test_0531` assertions, the bookings open rule fix.
+
+Test tails:
+- `test_property_hub.py`: 10 passed.
+- `test_host_i18n`, `test_validation_i18n`, `test_public_copy_i18n`, `test_property_hub`: 3 failed (the known `test_host_i18n` cookie/Vietnamese failures, "no such table: apartment", same on HEAD), 33 passed.
+- `test_0534`, `test_0531`, `test_static_versions`, `test_no_dead_internal_links`: 26 passed.
+- `test_0534`, `test_property_hub`, `test_static_versions`: 21 passed.
+- `design_lint.py`: OK. `context_lint.py`: OK.
+
+Section 8 changes (assertions only, no test deleted):
+1. `tests/test_validation_i18n.py`: the two banner tests (Czech and English) now assert the readiness banner text is absent. The banner left the property page; 0535 moves it to the aside. Restore the positive asserts in 0535.
+2. `tests/test_0531_property_page.py`: `class="property-guest-link"` changed to `class="card guest-card"`; the save-row regex changed to `<div class="savebar">`.
+
+Remaining failures (not fixed):
+- `tests/test_property_readiness.py`: 8 fail (checklist, invite list, reporting list, Czech copy, validation reason). They assert the readiness block that 0534 drops from this page. Decision: move them to 0535 or change them to absence now.
+- `tests/test_host_ux_acceptance.py`: 4 fail. `test_without_javascript_tabs...`, `test_keyboard_reaches_rail_tabs...`, `test_page_families_through_rail...` click the removed `.property-tabs`; they need the one-page markup. `test_every_page_family_fits...` still reports 28 buttons past the right edge at 360 px on property-overview. `test_issued_invoice_snapshot...` (line 478) looks for the operator name from the removed overview; not re-run after the fixes.
+- `test_0710` property entry: not added (step 5). `v2_mockup.PAGES` paths are concrete; there is no seeded-id placeholder. Needs a decision.
+- Known, not ours: `test_0710` overview-768, properties-768, menu-320.
+
+Deviations:
+- DOM order is basics, archive, messages, police (ubyport + automation), fee, calendars, then lock and lock-account (door codes only). The brief order puts archive last; archive lives in the property group, so it comes second.
+- Crumb and h1 use `apartment.internal_name`; `apartment.name` does not exist on the model.
+- Open rules: `?section=reporting` opens police and fee; `?view=bookings` opens only calendars; no view opens basics only. `lock` open rule is not tested (fixture has no door codes); `#door-code` not checked.
+- `_property_overview.html` is no longer included; kept on disk for 0535.
+- `apartment_form` is v2 only when editing; the create page is unchanged.
+- Kept `property_nav.report_missing.one/.few`, `lock_intro`, `setup_complete` (possible dynamic use).
+- Catalog legacy list for `apartment_form.html` got `card`, `sub`, `actions`, `panel`, `setup-continue-card`, `property-setup-show`, `link-button`.
+
+Owner steps left: none.

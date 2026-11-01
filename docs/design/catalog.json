@@ -717,7 +717,14 @@
     "App/app/templates/apartment_form.html": [
       "property-tabs",
       "property-view",
-      "property-views"
+      "property-views",
+      "property-setup-show",
+      "link-button",
+      "actions",
+      "card",
+      "panel",
+      "setup-continue-card",
+      "sub"
     ],
     "App/app/templates/entities.html": [
       "actions",

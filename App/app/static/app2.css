@@ -329,4 +329,5 @@ body.v2 summary:after{content:"\2304";color:var(--ink3);font-size:18px}
 body.v2 details[open] summary:after{transform:rotate(180deg)}
 body.v2 .fields{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
 body.v2 .savebar{position:fixed;right:24px;bottom:20px;display:flex;gap:8px}
+@media (max-width:600px){body.v2 .savebar{left:12px;right:12px;bottom:12px;flex-wrap:wrap;justify-content:flex-end}}
 @media (prefers-reduced-motion:no-preference){@keyframes v2-fields-in{from{opacity:0}to{opacity:1}}body.v2 details .fields{animation:v2-fields-in .18s ease-out}}

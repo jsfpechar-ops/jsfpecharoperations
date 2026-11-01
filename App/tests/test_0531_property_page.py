@@ -10,7 +10,7 @@ from tests.test_property_hub import host, two_properties  # noqa: F401  (fixture
 def test_property_page_has_guest_link_card_with_one_copy_button(host):
     client, apartment_id = host
     text = client.get(f"/apartments/{apartment_id}?lang=en").text
-    assert 'class="property-guest-link"' in text
+    assert 'class="card guest-card"' in text
     assert text.count('data-copy="property-guest-url"') == 1
 
 
@@ -24,9 +24,9 @@ def test_settings_save_row_is_a_save_bar_with_save_last(host):
     client, apartment_id = host
     text = client.get(f"/apartments/{apartment_id}?view=settings&lang=en").text
     match = re.search(
-        r'<div class="actions host-property-save property-savebar">(.*?)</div>', text, re.S
+        r'<div class="savebar">(.*?)</div>', text, re.S
     )
-    assert match, "settings save row must carry property-savebar"
+    assert match, "settings save row must carry savebar"
     tags = re.findall(r"<(?:button|a)\b[^>]*>", match.group(1))
     assert tags, "save bar has no buttons"
     assert 'type="submit"' in tags[-1], "Save must be the last button in the save bar"

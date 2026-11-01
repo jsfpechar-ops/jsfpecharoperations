@@ -41,7 +41,7 @@
   <button type="submit" hidden tabindex="-1" aria-hidden="true"></button>
 
   {# ---- Property information ---------------------------------------- #}
-<details class="prop-sec" id="sec-basics"{% if settings_section == 'property' or (not settings_section and property_view != 'bookings') %} open{% endif %}><summary><div><b>{{ t('property_page.sec.basics.title') }}</b><small>{{ t('property_page.sec.basics.sub') }}</small></div></summary>
+<details class="prop-sec" id="sec-basics"{% if property_view != 'bookings' and (not settings_section or settings_section == 'property') %} open{% endif %}><summary><div><b>{{ t('property_page.sec.basics.title') }}</b><small>{{ t('property_page.sec.basics.sub') }}</small></div></summary>
   <div class="fields-wrap">
     <section class="panel property-section ui-section" id="basics">
       <h3 class="property-section-title">{{ t('apartment.form.basics.title') }}</h3>
