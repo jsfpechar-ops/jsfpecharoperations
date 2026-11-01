@@ -1,4 +1,5 @@
 {% from "_components.html" import row_open with context %}
+<div class="cleaning-desk">
 {% for key, items in sections %}
 <section class="cleaning-section" aria-labelledby="cleaning-section-{{ key }}">
   <h2 id="cleaning-section-{{ key }}">{{ ct('section_' ~ key) }}</h2>
@@ -24,3 +25,30 @@
 {% else %}
 <div class="card"><table><tbody><tr><td>{{ ct('today_empty') }}</td></tr></tbody></table></div>
 {% endfor %}
+</div>
+<div class="cleaning-phone">
+{% for key, items in sections %}
+<div class="grp">{{ ct('section_' ~ key) }}</div>
+{% if key == 'today' %}
+  {% for item in items %}
+  <a class="card cleaning-today" href="/cleaning/events/{{ item.eventId }}/edit">
+    <b>{{ item.property }}</b>
+    <div class="cleaning-meta">{% if item.startTime and item.endTime %}{{ item.startTime }}–{{ item.endTime }}{% elif item.checkoutTime and item.checkinTime %}{{ item.checkoutTime }}–{{ item.checkinTime }}{% else %}{{ ct('time_missing') }}{% endif %} · {% if item.nextArrival %}{{ ct('next_arrival_short') }} {{ cleaning_short(item.nextArrival) }} {{ item.checkinTime or ct('time_missing') }}{% else %}{{ ct('no_arrival') }}{% endif %}</div>
+    <div class="cleaning-pillrow">{% if item.conflict %}<span class="pill p-warn">{{ ct('status_conflict') }}</span>{% elif item.timingUnavailable %}<span class="pill p-warn">{{ ct('status_hours') }}</span>{% else %}<span class="pill p-ok">{{ ct('status_scheduled') }}</span>{% endif %}</div>
+  </a>
+  {% else %}
+  <div class="card">{{ ct('today_empty') }}</div>
+  {% endfor %}
+{% else %}
+  {% if items %}
+  <div class="list">
+  {% for item in items %}
+    <a class="row" href="/cleaning/events/{{ item.eventId }}/edit"><div class="t"><b>{{ item.property }}</b><small>{{ cleaning_day(item.date) }} · {% if item.nextArrival %}{{ ct('next_arrival_short') }} {{ cleaning_short(item.nextArrival) }} {{ item.checkinTime or ct('time_missing') }}{% else %}{{ ct('no_arrival') }}{% endif %}</small>{% if item.conflict %}<span class="pill p-warn">{{ ct('status_conflict') }}</span>{% elif item.timingUnavailable %}<span class="pill p-warn">{{ ct('status_hours') }}</span>{% else %}<span class="pill p-ok">{{ ct('status_scheduled') }}</span>{% endif %}</div></a>
+  {% endfor %}
+  </div>
+  {% else %}
+  <div class="card">{{ ct('today_empty') }}</div>
+  {% endif %}
+{% endif %}
+{% endfor %}
+</div>

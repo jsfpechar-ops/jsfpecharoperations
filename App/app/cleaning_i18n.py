@@ -355,7 +355,8 @@ WORDS = {
     "status_scheduled": ["Scheduled", "Naplánováno"],
     "status_conflict": ["Check the time", "Zkontrolujte čas"],
     "status_hours": ["Hours missing", "Chybí časy"],
-    "share_cleaner": ["Share schedule with cleaner", "Sdílet rozpis s uklízečkou"]
+    "share_cleaner": ["Share schedule with cleaner", "Sdílet rozpis s uklízečkou"],
+    "next_arrival_short": ["next check-in", "další příjezd"]
 }
 
 def translator(lang: str):
