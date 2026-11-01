@@ -116,6 +116,8 @@ body.v2 .row-menu-item svg{width:16px;height:16px;vertical-align:middle}
 body.v2 .row-menu-panel.is-open{position:fixed}
 body.v2 .row-menu-item[hidden]{display:none}
 @media (max-width:1023px){body.v2 .ui-menu-panel.is-open,body.v2 .row-menu-panel.is-open{position:fixed;left:8px;right:8px;bottom:8px;top:auto;min-width:0}body.v2 .row-menu-item{min-height:44px}}
+body.v2 .onboarding-banner-setup-link{display:inline-flex;align-items:center;justify-content:center;background:var(--acc);color:#fff;font-weight:600;font-size:13px;padding:8px 16px;border-radius:999px;text-decoration:none}
+@media (max-width:1023px){body.v2 .onboarding-banner-setup-link{min-height:44px}}
 body.v2 .crow{grid-auto-rows:44px}
 
 /* 0709 Overview: named classes instead of inline styles (design lint T1) */
