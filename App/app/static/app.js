@@ -2110,6 +2110,7 @@
   /* ---- end 0084 O1 ---------------------------------------------------------- */
 
   function initPage() {
+    initPhoneDefaultClosed();
     initCopy();
     initUnsavedForms();
     initUnsavedDialog();
@@ -2137,7 +2138,6 @@
     initPowerTools();
     initSavedViews();
     initInlineEdit();
-    initPhoneDefaultClosed();
   }
   window.UbyHost = window.UbyHost || {};
   window.UbyHost.initPage = initPage;
