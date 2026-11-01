@@ -1,0 +1,6 @@
+{% if payload.properties %}
+<div class="cleaning-legend"><span class="cleaning-legend-booking">{{ ct('booking') }}</span><span class="cleaning-legend-event">{{ ct('title') }}</span></div>
+{% include "_dashboard_calendar.html" %}
+{% else %}
+<p class="cleaning-empty">{{ ct('no_properties') }}</p>
+{% endif %}
