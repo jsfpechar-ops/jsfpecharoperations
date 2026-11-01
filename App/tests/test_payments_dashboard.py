@@ -7,7 +7,7 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, config, db, payment_request
+from app import auth, config, db, payment_request, payments_consent
 from app.main import app
 from tests.conftest import login_as
 
@@ -66,6 +66,15 @@ def _set_state(oid: int, state: str):
     )
 
 
+def _ready(oid: int):
+    """Consent given and a business entity on file: the Stripe step is next."""
+    payments_consent.record(oid)
+    db.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (oid,))
+    db.insert("legal_entity", {"owner_user_id": oid, "name": "Pay Host s.r.o.",
+                               "contact_email": f"{OWNER}@example.test",
+                               "created_at": db.utcnow()})
+
+
 # --- connect card ------------------------------------------------------------
 
 
@@ -95,6 +104,7 @@ def test_every_state_renders_its_copy(client, owner, monkeypatch):
 
 def test_button_only_in_pending_or_action_required(client, owner, monkeypatch):
     monkeypatch.setattr(config, "STRIPE_MODE", "test")
+    _ready(owner)
     for state, has_button in (
         ("none", True),
         ("pending", True),
@@ -105,7 +115,7 @@ def test_button_only_in_pending_or_action_required(client, owner, monkeypatch):
     ):
         _set_state(owner, state)
         response = client.get("/payments")
-        assert ("Open Stripe" in response.text) == has_button, state
+        assert ('href="/payments/connect/start"' in response.text) == has_button, state
 
 
 # --- request form ------------------------------------------------------------
@@ -187,15 +197,52 @@ def test_anonymous_redirected_to_login(owner):
     assert "/login" in response.headers["location"]
 
 
-def test_connect_button_is_a_plain_link(client, monkeypatch):
+def test_connect_button_is_a_plain_link(client, owner, monkeypatch):
     """0442: the Open Stripe button is an anchor to the GET route (plain link
     navigation — the path that works with the PWA layer), never a form POST
     (which hangs on the skeleton loader)."""
     monkeypatch.setattr(config, "STRIPE_MODE", "test")
     monkeypatch.setattr(config, "STRIPE_SECRET_KEY", "sk_test_x")
+    _ready(owner)
     response = client.get("/payments")
     html = response.text
     assert 'href="/payments/connect/start"' in html
     assert 'target="_blank"' in html
     assert 'rel="noopener"' in html
     assert '<form method="post" action="/payments/connect/start"' not in html
+
+
+# --- guided setup (0711) -------------------------------------------------------
+
+
+def test_setup_button_always_points_at_the_next_step(client, owner, monkeypatch):
+    monkeypatch.setattr(config, "STRIPE_MODE", "test")
+    _set_state(owner, "none")
+    html = client.get("/payments").text
+    assert "Read how payments work" in html
+    assert 'href="/payments/consent"' in html
+    assert 'href="/payments/connect/start"' not in html
+    payments_consent.record(owner)
+    html = client.get("/payments").text
+    assert "Add your business details first" in html
+    assert 'href="/entities"' in html
+    assert 'href="/payments/connect/start"' not in html
+    _ready(owner)
+    html = client.get("/payments").text
+    assert "Pay Host s.r.o." in html
+    assert "Open Stripe" in html
+    _set_state(owner, "action_required")
+    html = client.get("/payments").text
+    assert "Continue in Stripe" in html
+    assert "Stripe needs you" in html
+
+
+def test_start_without_details_explains_instead_of_bouncing(client, owner, monkeypatch):
+    monkeypatch.setattr(config, "STRIPE_MODE", "test")
+    monkeypatch.setattr(config, "STRIPE_SECRET_KEY", "sk_test_x")
+    payments_consent.record(owner)
+    db.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (owner,))
+    response = client.get("/payments/connect/start", follow_redirects=False)
+    assert response.status_code == 303
+    assert response.headers["location"].startswith("/payments?")
+    assert "err=" in response.headers["location"]
