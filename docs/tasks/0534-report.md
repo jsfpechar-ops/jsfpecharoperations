@@ -208,3 +208,32 @@ Still failing, not changed:
 - test_ui_consistency::test_the_copy_button_keeps_its_icon_when_it_confirms: the first `<button` before `data-copy-label-slot` is the v2 `btn-icon-label` copy button. Planned fix: if `btn-icon-label` in button, assert `<svg` not in button; else keep the icon assert.
 - §8 items not yet done: test_0291, test_design_properties (2), test_entity_editor_navigation (2), test_properties_table_chips (2), test_stay_fee_property_panel edit-page panel, test_design_admin smart-locks `style=`.
 - test_0705_v2_shell_browser: left alone (shared).
+
+## 0535 remaining CI tests (executor)
+
+Status: review. All §8 items done; no test deleted in this step.
+
+Commit: `0535: remaining property tests on the new markup`.
+
+§8 changes (assertion or selector only):
+- `test_ui_consistency::test_the_copy_button_keeps_its_icon_when_it_confirms`: v2 `btn-icon-label` copy button is text only (mockup): asserts no `<svg`; the non-v2 branch keeps the icon assert.
+- `test_design_admin::test_smart_locks...`: `style=` was not in the page. The failing parts were `class="btn"` (the v2 primary, now at most one per state; legacy `pill` still banned) and `aria-current` on `/apartments`, which sits in the shell outside `main`, so the check reads the whole page.
+- `test_design_properties::test_properties_list_header_tabs_and_icon`: `data-sub-tabs` assert removed. `apartments.html` has an empty `tabs` block, so the list has no sub-tabs. Deliberate v2 change in our branch; owner to confirm. The primary count now checks `class="btn"`.
+- `test_design_properties::test_property_page_keeps_local_tabs...`: `property-tabs` nav and `data-property-tab` count replaced by `#sec-basics` and `.crumb` (`ui-ph-back` is not on the v2 detail page).
+- `test_properties_table_chips`: first add CTA match is the phone `round` button (`class="round"`); header CTA count checks `<a class="btn" href="/apartments/new">`.
+- `test_stay_fee_property_panel::test_edit_page...`: `Optional stay fee` to `Stay fee` (section title).
+
+Template restores (lost links, not assertions):
+- `test_entity_editor_navigation`: `apartments.html` row menu gets a Business item (`/entities?edit=<id>&next=/apartments`) when the property has a business. `_property_editor.html` business hint with no business links to `/apartments/<id>?view=settings&section=property#operator-picker` (was `/entities`).
+- `test_0291_open_buttons`: `row_open(base_url)` cue restored in the property list row.
+
+Other:
+- Onboarding "all steps" link: inline `style` replaced by `.onb-more` (`app2.css`, 0535 block). Key bumped to `20261101-0535i-tabs` in `base.html`, manifest rewritten (`tests/static_versions.json`, 41 files).
+- `docs/design/catalog.json`: `ov-how` added (design_lint T3).
+
+Removed earlier (not this step): `test_0286_health_cards` (renamed), `test_property_form_nav` (4 tests), `test_property_health_0244` (1 test). `test_0705_v2_shell_browser` shared, not touched.
+
+Checks:
+- §8 failing list (32 ids) plus `test_0534_property_page_v2`, `test_property_hub`, `test_static_versions`, `test_page_help_0277`: `57 passed`, 0 skipped, 0 failed.
+- ruff (E9,F63,F7,F82,F401,F841) on app tests tools: `All checks passed!`
+- design_lint and context_lint: see commit log.

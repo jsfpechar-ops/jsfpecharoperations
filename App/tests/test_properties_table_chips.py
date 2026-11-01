@@ -168,7 +168,7 @@ def _add_cta(page: str) -> str:
 def test_the_add_property_cta_carries_the_property_icon(host):
     cta = _add_cta(host.get("/apartments?lang=en").text)
 
-    assert 'class="btn"' in cta
+    assert 'class="round"' in cta
     assert host_i18n.STRINGS["en"]["apartments.add"] in cta
 
 
@@ -206,4 +206,4 @@ def test_the_header_cta_is_hidden_while_the_list_is_empty(empty_host):
 def test_the_header_cta_is_back_once_there_is_a_property(host):
     page = host.get("/apartments?lang=en").text
 
-    assert page.count('href="/apartments/new"') == 1
+    assert page.count('<a class="btn" href="/apartments/new"') == 1

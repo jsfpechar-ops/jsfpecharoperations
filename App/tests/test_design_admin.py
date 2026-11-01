@@ -28,8 +28,9 @@ def test_smart_locks_has_the_v2_shell_and_one_primary_in_every_state(hosts, flat
     for index, page in enumerate(states):
         main = _main(page)
         assert main.count("<h1") == 1, index
-        assert 'style="' not in main and not re.search(r'class="(btn|pill)[ "]', main), index
-        assert 'href="/apartments" aria-current="page"' in main, index
+        # v2 primary is the mockup `.btn`: one per state; the legacy pill stays banned.
+        assert 'style="' not in main and main.count('class="btn"') <= 1 and not re.search(r'class="pill[ "]', main), index
+        assert 'href="/apartments" aria-current="page"' in page, index
     # 0195: the lock panel lives on the property's Door lock tab, not on /apartments.
     lock_tab = client.get(f"/apartments/{flats[0]}?view=settings&section=lock&lang=en").text
     assert 'action="/smart-locks/remove"' in lock_tab and "data-confirm" in lock_tab

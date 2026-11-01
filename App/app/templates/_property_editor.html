@@ -50,7 +50,7 @@
       {% include "_property_identity_fields.html" %}
       {% set operator_current = apartment.legal_entity_id %}
       {% include "_property_operator.html" %}
-      {% if entities %}<div class="hint property-operator-hint"><a href="/entities{{ '?edit=' ~ apartment.legal_entity_id if apartment.legal_entity_id else '' }}">{{ t('host.business') }} </a> {{ help_tip('legal_entity_id-help', t('apartment.form.entity.hint')) }}</div>{% endif %}
+      {% if entities %}<div class="hint property-operator-hint"><a href="{% if apartment.legal_entity_id %}/entities?edit={{ apartment.legal_entity_id }}{% else %}/apartments/{{ apartment.id }}?view=settings&amp;section=property#operator-picker{% endif %}">{{ t('host.business') }} </a> {{ help_tip('legal_entity_id-help', t('apartment.form.entity.hint')) }}</div>{% endif %}
       {% set controller_current = apartment.data_controller_entity_id %}
       <div class="field" style="max-width:420px" id="alternate-controller">
         <label for="data_controller_entity_id">{{ t('apartment.form.controller.alternate_label') }}</label>
