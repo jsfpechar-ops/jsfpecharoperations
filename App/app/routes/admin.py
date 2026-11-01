@@ -524,11 +524,22 @@ def dashboard(request: Request):
             "month_summary": reporting.month_summary(owner_user_id, today),
             # 0520: stays that arrive or leave today, for the "Today" table.
             "today_rows": [
-                row for row in rows
+                dict(row, nights=_today_nights(row["reservation"]))
+                for row in rows
                 if today.isoformat() in (str(row["reservation"]["date_from"])[:10], str(row["reservation"]["date_to"])[:10])
             ],
         },
     ))
+
+
+def _today_nights(reservation) -> int:
+    """0701: nights of a stay on the Today table (0 when a date is unreadable)."""
+    try:
+        start = date.fromisoformat(str(reservation["date_from"])[:10])
+        end = date.fromisoformat(str(reservation["date_to"])[:10])
+    except ValueError:
+        return 0
+    return max((end - start).days, 0)
 
 
 @router.get("/guide")

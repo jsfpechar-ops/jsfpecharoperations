@@ -8511,6 +8511,11 @@ _WELCOME_0275_STRINGS = {
         "dashboard.month.reported.few": "reported to the police",
         "dashboard.today.title": "Today",
         "dashboard.today.empty": "No arrivals or departures today.",
+        "dashboard.today.guests": "%(count)s guests",
+        "dashboard.today.guests.one": "1 guest",
+        "dashboard.today.guests.few": "%(count)s guests",
+        "dashboard.today.nights": "%(count)s nights",
+        "dashboard.today.nights.one": "1 night",
     },
     "cs": {
         "welcome_back.title": "Vítejte zpět! Od %(date)s:",
@@ -8533,6 +8538,12 @@ _WELCOME_0275_STRINGS = {
         "dashboard.month.reported.few": "nahlášeni policii",
         "dashboard.today.title": "Dnes",
         "dashboard.today.empty": "Dnes nikdo nepřijíždí ani neodjíždí.",
+        "dashboard.today.guests": "%(count)s hostů",
+        "dashboard.today.guests.one": "1 host",
+        "dashboard.today.guests.few": "%(count)s hosté",
+        "dashboard.today.nights": "%(count)s nocí",
+        "dashboard.today.nights.one": "1 noc",
+        "dashboard.today.nights.few": "%(count)s noci",
     },
 }
 for _lang, _strings in _WELCOME_0275_STRINGS.items():

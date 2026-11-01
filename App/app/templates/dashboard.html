@@ -15,17 +15,17 @@
   {% if demo_loaded %}<form method="post" action="/demo/reset" class="inline" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">{{ ui_button(t('demo.clear'), 'quiet', type='submit') }}</form>{% endif %}
 {% endif %}{% endblock %}
 
-{% macro dashboard_rows(items, empty_key, caption_key='dashboard.section.needs_action', mark_today=false) %}
+{% macro dashboard_rows(items, empty_key) %}
 {% if items %}
 <div class="ui-table-wrap">
-{{ ui_table_begin([(t('host.stay_dates'), ''), (t('stays.table.apartment'), ''), (t('stays.table.guests'), 'r'), (t('dashboard.stat.action'), ''), ('', '')], t(caption_key, count=items | length)) }}
+{{ ui_table_begin([(t('host.stay_dates'), ''), (t('stays.table.apartment'), ''), (t('stays.table.guests'), 'r'), (t('dashboard.stat.action'), ''), ('', '')], t('dashboard.section.needs_action', count=items | length)) }}
 {% for row in items %}
   {% set reservation = row.reservation %}{% set progress = row.progress %}{% set cell = row.deadline_cell %}
   {% set stay_label = reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else reservation.internal_name %}
   <tr class="ui-row dashboard-row clickable-row{{ ' is-overdue' if cell.level == 'overdue' }}" data-stay-id="{{ reservation.id }}" data-href="/reservations/{{ reservation.id }}?return_to=/" tabindex="0" role="link"
       aria-label="{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }} · {{ reservation.internal_name }}">
     <td class="ui-cell-first dashboard-row-copy" data-card="primary"><a class="dashboard-row-property" href="/reservations/{{ reservation.id }}?return_to=/">{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</a>
-      <span class="ui-sub dashboard-row-dates">{% if row.deadline and cell.state == 'countdown' and cell.level != 'future' %}{{ t('dashboard.table.deadline_by', when=row.deadline.strftime('%d.%m. %H:%M')) }}{% elif mark_today %}{{ t('calendar.arrival') if (reservation.date_from | string)[:10] == today.isoformat() else t('calendar.departure') }}{% endif %}</span></td>
+      <span class="ui-sub dashboard-row-dates">{% if row.deadline and cell.state == 'countdown' and cell.level != 'future' %}{{ t('dashboard.table.deadline_by', when=row.deadline.strftime('%d.%m. %H:%M')) }}{% endif %}</span></td>
     <td data-card="secondary">{{ property_identity(reservation.apartment_id, stay_label, true) }}</td>
     <td class="ui-cell-r ui-num" data-card="meta">{{ guest_count(progress) }}</td>
     <td class="dashboard-row-task" data-card="badge">
@@ -55,6 +55,50 @@
 {{ ui_table_end() }}
 </div>
 {% else %}{{ ui_empty(t(empty_key)) }}{% endif %}
+{% endmacro %}
+
+{#- 0701: "Today" as a plain table: guest, property, dates, status. Same badges and row menu as the other lists. -#}
+{% macro today_rows_table(items) %}
+{% if items %}
+<div class="ui-table-wrap">
+{{ ui_table_begin([(t('archive.col.guest'), ''), (t('stay_fees.col.property'), ''), (t('host.stay_dates'), ''), (t('filter.status'), ''), ('', '')], t('dashboard.today.title')) }}
+{% for row in items %}
+  {% set reservation = row.reservation %}{% set progress = row.progress %}{% set cell = row.deadline_cell %}
+  {% set stay_label = reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else reservation.internal_name %}
+  {% set arriving = (reservation.date_from | string)[:10] == today.isoformat() %}
+  <tr class="ui-row dashboard-row clickable-row{{ ' is-overdue' if cell.level == 'overdue' }}" data-stay-id="{{ reservation.id }}" data-href="/reservations/{{ reservation.id }}?return_to=/" tabindex="0" role="link"
+      aria-label="{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }} · {{ reservation.internal_name }}">
+    <td class="ui-cell-first dashboard-row-copy" data-card="primary"><a class="dashboard-row-property" href="/reservations/{{ reservation.id }}?return_to=/">{{ stay_label }}</a>
+      <span class="ui-sub">{{ tp('dashboard.today.guests', progress.expected if progress.expected is not none else (progress.guests | length)) }}</span></td>
+    <td data-card="secondary">{{ property_identity(reservation.apartment_id, stay_label, true) }}</td>
+    <td data-card="meta">{% if arriving %}{{ t('calendar.arrival') }} · {{ tp('dashboard.today.nights', row.nights) }}{% else %}{{ t('calendar.departure') }}{% endif %}</td>
+    <td class="dashboard-row-task" data-card="badge">
+      {% if cell.level == 'overdue' %}{{ deadline_badge(cell) }}
+      {% elif progress.status == 'failed' %}{{ progress_pill(progress.status, reservation.automation_mode) }}
+      {% elif progress.not_registered %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ tp('host.missing', progress.not_registered) }}</span>
+      {% elif cell.state in ('filed_on_time', 'filed_late') %}{{ deadline_badge(cell) }}
+      {% elif progress.status in ('reported', 'not_required') %}{{ next_action(progress, reservation) }}
+      {% elif progress.status == 'awaiting_guest' %}{# Routine waiting is shown as occupancy, not a task. #}
+      {% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo=('(demo)' in reservation.internal_name or reservation.source == 'demo')) }}{% endif %}
+    </td>
+    <td class="ui-cell-acts dashboard-row-actions" data-card="actions">
+      {{ row_menu_begin() }}
+        <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to=/" role="menuitem">{{ t('common.open') }}</a>
+        <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">{{ t('dashboard.row.add_guest') }}</a>
+        {% if reservation.permalink_token %}
+        <a class="row-menu-item" href="/l/{{ reservation.permalink_slug or reservation.permalink_token }}/{{ reservation.id }}" target="_blank" rel="noopener" role="menuitem">{{ t('dashboard.row.open_guest_form') }}</a>
+        {{ copy_inline('dashboard-stay-link-' ~ reservation.id, public_base_url ~ '/l/' ~ (reservation.permalink_slug or reservation.permalink_token) ~ '/' ~ reservation.id, t('host.copy_guest_form_link'), 'menuitem') }}
+        {% endif %}
+        <form method="post" action="/reservations/{{ reservation.id }}/archive" class="row-menu-form" data-confirm data-confirm-message="{{ t('host.delete_to_archived.confirm') }}">
+          <input type="hidden" name="return_to" value="/"><button class="row-menu-item" type="submit" role="menuitem">{{ t('host.delete') }}</button>
+        </form>
+      {{ row_menu_end() }}
+    </td>
+  </tr>
+{% endfor %}
+{{ ui_table_end() }}
+</div>
+{% else %}{{ ui_empty(t('dashboard.today.empty')) }}{% endif %}
 {% endmacro %}
 
 {#- 0241 (idea N): one line of "What needs you": subject, one sentence, one button. -#}
@@ -113,7 +157,7 @@
   {% endif %}
   </div>
   {% include "_dashboard_calendar.html" %}
-  <section class="dashboard-today" aria-labelledby="dashboard-today-title"><h2 id="dashboard-today-title">{{ t('dashboard.today.title') }}</h2>{{ dashboard_rows(today_rows, 'dashboard.today.empty', 'dashboard.today.title', true) }}</section>
+  <section class="dashboard-today" aria-labelledby="dashboard-today-title"><h2 id="dashboard-today-title">{{ t('dashboard.today.title') }}</h2>{{ today_rows_table(today_rows) }}</section>
   <div data-dashboard-refresh="work">
   {% set focus_is_urgent = focus and focus.urgency in ('overdue', 'urgent') %}
   {% set finish_card_showing = onboarding and onboarding.finished and onboarding.finish and not onboarding.dismissed %}
