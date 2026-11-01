@@ -153,7 +153,7 @@ def test_the_setup_pill_survives(host):
     """One coloured chip column stays: the one that is a status."""
     page = host.get("/apartments?lang=en").text
 
-    assert re.search(r'<span class="ui-badge ui-badge-(?:action|done)" data-tone="(amber|green|red)">', page)
+    assert re.search(r'data-setup-chip="police" data-state="(ok|bad|off)"', page)
 
 
 # --- the add-property CTA --------------------------------------------------------------
