@@ -223,6 +223,39 @@ jobs:
           path: App/pg-full.xml
           if-no-files-found: warn
 
+  go:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: ubyhost
+          POSTGRES_DB: ubyhost_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Go version
+        run: go version
+
+      - name: Format, vet, test and build the Go module
+        working-directory: go
+        env:
+          UBYHOST_TEST_DATABASE_URL: postgresql://postgres:ubyhost@127.0.0.1:5432/ubyhost_test
+        run: |
+          test -z "$(gofmt -l .)"
+          go vet ./...
+          go test ./... -count=1
+          go build ./cmd/ubyhost-web
 
   smoke:
     runs-on: ubuntu-latest
