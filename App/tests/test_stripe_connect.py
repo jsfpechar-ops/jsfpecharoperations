@@ -416,6 +416,7 @@ def test_return_mirrors_state(client, owner, stripe_env, fake_stripe):
     fake_stripe.account.state = _account_dict(charges=True, payouts=True, due=[])
     response = client.get("/payments/connect/return", follow_redirects=False)
     assert response.status_code == 303
+    assert response.headers["location"].startswith("/payments?msg=")
     assert stripe_connect.account_for_owner(_owner_id())["onboarding_state"] == "complete"
 
 
