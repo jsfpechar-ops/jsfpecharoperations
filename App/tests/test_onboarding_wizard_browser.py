@@ -1328,11 +1328,17 @@ def test_wizard_polish_and_overview_cards(host, base_url, monkeypatch, lang, wid
         )
         assert max(heights) - min(heights) <= 1, heights
         guest_card = overview.locator(".host-property-card-static")
-        assert guest_card.locator("button[data-copy]").is_visible()
-        label_box = guest_card.locator("strong").bounding_box()
-        copy_box = guest_card.locator("button[data-copy]").bounding_box()
+        assert guest_card.locator("button[data-copy]").count() == 0
+        link_card = page.locator(".property-guest-link")
+        assert link_card.locator("button[data-copy]").is_visible()
+        label_box = link_card.locator("h2").bounding_box()
+        copy_box = link_card.locator("button[data-copy]").bounding_box()
         assert label_box and copy_box
-        assert label_box["x"] + label_box["width"] <= copy_box["x"]
+        # Label left of the button; when the button wraps, the label sits above it.
+        assert (
+            label_box["x"] + label_box["width"] <= copy_box["x"]
+            or label_box["y"] + label_box["height"] <= copy_box["y"]
+        )
         assert page.evaluate(_overflow_js())
         _shot(page, f"26-overview-cards-{tag}.png")
         browser.close()
