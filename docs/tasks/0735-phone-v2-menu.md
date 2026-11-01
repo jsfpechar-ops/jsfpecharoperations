@@ -180,3 +180,8 @@ From the repo root: `python3 scripts/design_lint.py | tail -5`, `python3 scripts
 ## 9. Report
 
 Write `docs/tasks/0735-phone-v2-menu-report.md`: Status line, changed files, command tails, every override added with its value, deviations, screenshot paths.
+
+## 10. Follow-up (orchestrator answers to the first run)
+
+1. `.mh .big` width: the app renders the self-hosted Manrope, the mockup copy falls back to system-ui (it loads no web fonts), so title text widths differ. Add `".mh .big@320": {"width": "<app value>"}` and `"@390"` the same, under the text-dependent comment. Width only, nothing else.
+2. Then do steps 8, 9 and 10 and finish the report (Status: review). Commit as a new commit "0735: Menu geometry tests and screenshots".
