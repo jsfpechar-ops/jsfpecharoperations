@@ -99,9 +99,9 @@ def assert_covered(page, selectors):
         assert page.locator(selector).count() > 0, selector
 
 
-# initUnsavedForms and initPropertyViews still re-bind; brief 0504 makes this zero.
+# initPropertyViews still re-binds; brief 0505 makes this zero.
 GUARD = "form[data-unsaved-guard]"
-GUARD_KNOWN_EVENTS = ["change", "input", "invalid", "submit"]
+GUARD_KNOWN_EVENTS = ["invalid"]
 
 
 def assert_second_run_adds_nothing(page):
