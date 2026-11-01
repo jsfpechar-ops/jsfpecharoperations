@@ -133,3 +133,12 @@ func TestRecoverStaleBatches(t *testing.T) {
 		t.Fatalf("second run: n=%d err=%v", n, err)
 	}
 }
+
+// TestReportingTodayIsUTCDate pins the day the completeness checks use: 23:30 UTC
+// is already the next day in Prague, but the UTC date is the one that counts.
+func TestReportingTodayIsUTCDate(t *testing.T) {
+	late := time.Date(2026, 11, 1, 23, 30, 0, 0, time.UTC)
+	if got := reportingToday(late); !got.Equal(time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC)) {
+		t.Fatalf("reportingToday(23:30 UTC) = %v", got)
+	}
+}

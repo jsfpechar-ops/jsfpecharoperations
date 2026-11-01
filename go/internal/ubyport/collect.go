@@ -154,12 +154,7 @@ func CollectSendable(ctx context.Context, pool *pgxpool.Pool, aptID int64, o Col
 	if o.IgnoreSchedule != nil {
 		ignoreSchedule = *o.IgnoreSchedule
 	}
-	loc, err := time.LoadLocation(pragueZone)
-	if err != nil {
-		return nil, fmt.Errorf("collect: local zone unavailable: %w", err)
-	}
-	local := now.In(loc)
-	today := time.Date(local.Year(), local.Month(), local.Day(), 0, 0, 0, 0, time.UTC)
+	today := reportingToday(now)
 
 	stays := map[int64]collectStay{}
 	rrows, err := pool.Query(ctx,
@@ -183,75 +178,8 @@ func CollectSendable(ctx context.Context, pool *pgxpool.Pool, aptID int64, o Col
 		return nil, err
 	}
 
-	query := `SELECT g.id, g.reservation_id, COALESCE(g.nationality,''), COALESCE(g.submit_state,''),
-		g.submission_id, COALESCE(g.last_errors,''), g.submit_attempts, COALESCE(g.manual_filed_at,''),
-		COALESCE(g.restricted_at,''), COALESCE(g.stay_from,''), COALESCE(g.stay_to,''),
-		COALESCE(g.surname,''), COALESCE(g.first_name,''), COALESCE(g.res_country,''),
-		COALESCE(g.purpose,''), COALESCE(g.note,''),
-		COALESCE(g.doc_number,''), COALESCE(g.doc_number_enc,''),
-		COALESCE(g.visa_number,''), COALESCE(g.visa_number_enc,''),
-		COALESCE(g.birth_date,''), COALESCE(g.birth_date_enc,''),
-		COALESCE(g.res_street,''), COALESCE(g.res_street_enc,''),
-		COALESCE(g.res_city,''), COALESCE(g.res_city_enc,''),
-		COALESCE(g.signature_png,''), COALESCE(g.signature_png_enc,''),
-		g.submitted_at, g.receipt_submission_id
-		FROM guest g JOIN reservation r ON r.id = g.reservation_id
-		WHERE r.apartment_id = $1 AND r.status = 'active' AND r.archived_at IS NULL AND g.archived_at IS NULL`
-	args := []any{aptID}
-	if len(o.OnlyGuestIDs) > 0 {
-		query += ` AND g.id = ANY($2)`
-		args = append(args, o.OnlyGuestIDs)
-	}
-	query += ` ORDER BY r.date_from, g.id`
-
-	grows, err := pool.Query(ctx, query, args...)
+	guests, err := LoadGuests(ctx, pool, GuestScope{ApartmentID: aptID, OnlyGuestIDs: o.OnlyGuestIDs}, o.Decrypt)
 	if err != nil {
-		return nil, err
-	}
-	var guests []collectGuest
-	for grows.Next() {
-		var c collectGuest
-		var surname, first, resCountry, purpose, note string
-		var docP, docE, visaP, visaE, birthP, birthE, streetP, streetE, cityP, cityE, sigP, sigE string
-		if err := grows.Scan(&c.id, &c.resID, &c.nationality, &c.submitState, &c.submissionID,
-			&c.lastErrors, &c.attempts, &c.manualFiled, &c.restrictedAt, &c.stayFrom, &c.stayTo,
-			&surname, &first, &resCountry, &purpose, &note,
-			&docP, &docE, &visaP, &visaE, &birthP, &birthE, &streetP, &streetE, &cityP, &cityE,
-			&sigP, &sigE, &c.submittedAt, &c.receiptID); err != nil {
-			grows.Close()
-			return nil, err
-		}
-		fields := []struct {
-			plain, enc string
-			dst        *string
-		}{
-			{docP, docE, new(string)}, {visaP, visaE, new(string)}, {birthP, birthE, new(string)},
-			{streetP, streetE, new(string)}, {cityP, cityE, new(string)}, {sigP, sigE, new(string)},
-		}
-		for _, f := range fields {
-			v, err := decryptOrPlain(o.Decrypt, f.enc, f.plain)
-			if err != nil {
-				grows.Close()
-				return nil, err
-			}
-			*f.dst = v
-		}
-		c.guest = Guest{
-			StayFrom: c.stayFrom, StayTo: c.stayTo, Surname: surname, FirstName: first,
-			BirthDate: *fields[2].dst, Nationality: c.nationality, DocNumber: *fields[0].dst,
-			VisaNumber: *fields[1].dst, ResStreet: *fields[3].dst, ResCity: *fields[4].dst,
-			ResCountry: resCountry, Purpose: purpose, Note: note,
-		}
-		c.row = validation.GuestRow{
-			Surname: surname, FirstName: first, BirthDate: *fields[2].dst, Nationality: c.nationality,
-			DocNumber: *fields[0].dst, VisaNumber: *fields[1].dst, ResStreet: *fields[3].dst,
-			ResCity: *fields[4].dst, ResCountry: resCountry, Purpose: purpose, Note: note,
-			StayFrom: c.stayFrom, StayTo: c.stayTo, SignaturePNG: *fields[5].dst,
-		}
-		guests = append(guests, c)
-	}
-	grows.Close()
-	if err := grows.Err(); err != nil {
 		return nil, err
 	}
 
@@ -480,4 +408,105 @@ func parseStoredUTC(v string) (time.Time, bool) {
 		}
 	}
 	return time.Time{}, false
+}
+
+// GuestScope picks the guests LoadGuests reads. ReservationID set: every live
+// guest of that stay. Otherwise: the guests of ApartmentID's active stays,
+// limited to OnlyGuestIDs when given.
+type GuestScope struct {
+	ApartmentID   int64
+	ReservationID int64
+	OnlyGuestIDs  []int64
+}
+
+// LoadGuests reads the guests of a scope with their encrypted document fields
+// decrypted. The apartment scope is the query collect_sendable has always run
+// (stay start, then guest id); the stay scope is reservation_progress's guest
+// list (live guests, by id).
+func LoadGuests(ctx context.Context, pool *pgxpool.Pool, scope GuestScope, decrypt FieldDecrypter) ([]collectGuest, error) {
+	query := `SELECT g.id, g.reservation_id, COALESCE(g.nationality,''), COALESCE(g.submit_state,''),
+		g.submission_id, COALESCE(g.last_errors,''), g.submit_attempts, COALESCE(g.manual_filed_at,''),
+		COALESCE(g.restricted_at,''), COALESCE(g.stay_from,''), COALESCE(g.stay_to,''),
+		COALESCE(g.surname,''), COALESCE(g.first_name,''), COALESCE(g.res_country,''),
+		COALESCE(g.purpose,''), COALESCE(g.note,''),
+		COALESCE(g.doc_number,''), COALESCE(g.doc_number_enc,''),
+		COALESCE(g.visa_number,''), COALESCE(g.visa_number_enc,''),
+		COALESCE(g.birth_date,''), COALESCE(g.birth_date_enc,''),
+		COALESCE(g.res_street,''), COALESCE(g.res_street_enc,''),
+		COALESCE(g.res_city,''), COALESCE(g.res_city_enc,''),
+		COALESCE(g.signature_png,''), COALESCE(g.signature_png_enc,''),
+		g.submitted_at, g.receipt_submission_id
+		FROM guest g JOIN reservation r ON r.id = g.reservation_id`
+	var args []any
+	if scope.ReservationID != 0 {
+		query += ` WHERE g.reservation_id = $1 AND g.archived_at IS NULL ORDER BY g.id`
+		args = []any{scope.ReservationID}
+	} else {
+		query += ` WHERE r.apartment_id = $1 AND r.status = 'active' AND r.archived_at IS NULL AND g.archived_at IS NULL`
+		args = []any{scope.ApartmentID}
+		if len(scope.OnlyGuestIDs) > 0 {
+			query += ` AND g.id = ANY($2)`
+			args = append(args, scope.OnlyGuestIDs)
+		}
+		query += ` ORDER BY r.date_from, g.id`
+	}
+
+	grows, err := pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	var guests []collectGuest
+	for grows.Next() {
+		var c collectGuest
+		var surname, first, resCountry, purpose, note string
+		var docP, docE, visaP, visaE, birthP, birthE, streetP, streetE, cityP, cityE, sigP, sigE string
+		if err := grows.Scan(&c.id, &c.resID, &c.nationality, &c.submitState, &c.submissionID,
+			&c.lastErrors, &c.attempts, &c.manualFiled, &c.restrictedAt, &c.stayFrom, &c.stayTo,
+			&surname, &first, &resCountry, &purpose, &note,
+			&docP, &docE, &visaP, &visaE, &birthP, &birthE, &streetP, &streetE, &cityP, &cityE,
+			&sigP, &sigE, &c.submittedAt, &c.receiptID); err != nil {
+			grows.Close()
+			return nil, err
+		}
+		fields := []struct {
+			plain, enc string
+			dst        *string
+		}{
+			{docP, docE, new(string)}, {visaP, visaE, new(string)}, {birthP, birthE, new(string)},
+			{streetP, streetE, new(string)}, {cityP, cityE, new(string)}, {sigP, sigE, new(string)},
+		}
+		for _, f := range fields {
+			v, err := decryptOrPlain(decrypt, f.enc, f.plain)
+			if err != nil {
+				grows.Close()
+				return nil, err
+			}
+			*f.dst = v
+		}
+		c.guest = Guest{
+			StayFrom: c.stayFrom, StayTo: c.stayTo, Surname: surname, FirstName: first,
+			BirthDate: *fields[2].dst, Nationality: c.nationality, DocNumber: *fields[0].dst,
+			VisaNumber: *fields[1].dst, ResStreet: *fields[3].dst, ResCity: *fields[4].dst,
+			ResCountry: resCountry, Purpose: purpose, Note: note,
+		}
+		c.row = validation.GuestRow{
+			Surname: surname, FirstName: first, BirthDate: *fields[2].dst, Nationality: c.nationality,
+			DocNumber: *fields[0].dst, VisaNumber: *fields[1].dst, ResStreet: *fields[3].dst,
+			ResCity: *fields[4].dst, ResCountry: resCountry, Purpose: purpose, Note: note,
+			StayFrom: c.stayFrom, StayTo: c.stayTo, SignaturePNG: *fields[5].dst,
+		}
+		guests = append(guests, c)
+	}
+	grows.Close()
+	if err := grows.Err(); err != nil {
+		return nil, err
+	}
+	return guests, nil
+}
+
+// reportingToday is the calendar day the completeness checks use: the UTC date
+// of now, as Python's date.today() gives in the UTC container.
+func reportingToday(now time.Time) time.Time {
+	u := now.UTC()
+	return time.Date(u.Year(), u.Month(), u.Day(), 0, 0, 0, 0, time.UTC)
 }
