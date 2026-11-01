@@ -288,3 +288,8 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
 .host-stay-detail .guest-table small{display:block;color:var(--ink3);font-size:13px}
 .host-stay-detail .guest-list{display:none}
 @media (max-width:1023px){.host-stay-detail .guest-table{display:none}.host-stay-detail .guest-list{display:block}}
+.host-stay-detail .police-card{margin-left:0;margin-right:0}
+.host-stay-detail .police-deadline{color:var(--ink3);font-size:14px;margin-top:4px}
+.host-stay-detail .police-card.police-failed{background:var(--bads);border-color:var(--bads);box-shadow:none}
+.host-stay-detail .police-card.police-failed>b{color:var(--bad)}
+.host-stay-detail .code{font-size:28px;font-weight:800;letter-spacing:.08em}

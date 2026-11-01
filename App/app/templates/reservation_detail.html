@@ -263,19 +263,16 @@
 
 {# --- 4. Police reporting ----------------------------------------------- #}
 <section class="ui-section" id="reports">
-  <div class="ui-section-h"><h2>{{ t('host.reporting') }}</h2></div>
+  <h2 class="sec">{{ t('host.reporting') }}</h2>
+  {# 0529: police card. The text is the old "Now" note; the deadline sits under it. #}
+  <div class="card police-card{% if progress.status == 'failed' %} police-failed{% endif %}">
+    <b>{% if progress.status == 'failed' %}{{ t('hint.failed') }}{% elif send_controls.send_enabled %}{{ tp('stay.detail.ready_count', send_controls.pending_count) }}{% elif progress.not_registered %}{{ tp('host.missing', progress.not_registered) }}{% else %}{{ t(send_controls.send_hint_key, filled=progress.filled, expected=progress.expected) }}{% endif %}</b>
+    {% if not stay_inactive and cell.state != 'none' %}
+    <div class="police-deadline">{{ deadline_badge(cell) }}{% if deadline %} · {{ t('stay.detail.metric.deadline_note', when=deadline.strftime('%d.%m.%Y %H:%M')) }}{% endif %}</div>
+    {% endif %}
+  </div>
   <div class="panel tight">
   <div class="stay-metrics detail-hero{% if stay_inactive %} inactive{% endif %}">
-    {% set cell = deadline_cell(progress, check_in) %}
-    {% if not stay_inactive and cell.state != 'none' %}
-    <div class="detail-metric">
-      <div class="metric-label">{{ t('stay.detail.metric.deadline') }}</div>
-      {{ deadline_badge(cell, tag='div', extra_class='metric-value') }}
-      {% if deadline %}
-        <div class="metric-note">{{ t('stay.detail.metric.deadline_note', when=deadline.strftime('%d.%m.%Y %H:%M')) }}</div>
-      {% endif %}
-    </div>
-    {% endif %}
     <div class="detail-metric">
       <div class="metric-label">{{ t('stay.detail.metric.reporting') }}</div>
       {# A cancelled or archived stay sends nothing, so "Waiting for guest"
@@ -347,13 +344,14 @@
 {# One panel owns both the quick edit and the full settings form, so the
    #stay-quick-edit anchor keeps working and the page ends on a single
    collapsed group instead of two stacked ones. #}
-{% if door_code %}<section class="ui-section" id="door-code"><div class="ui-section-h"><h2>{{ t('stay.detail.door_code.title') }}</h2></div><div class="ui-card stay-door-card"><p id="door-code-line">
-  {% if door_code.state == 'issued' %}{{ t('stay.detail.door_code.issued', pin=door_code.pin, start=door_code.works_from, end=door_code.works_until) }}
-  {% elif door_code.state == 'failed' %}{{ t('stay.detail.door_code.failed') }}
-  {% elif door_code.state == 'delayed' %}{{ t('stay.detail.door_code.delayed') }}
-  {% elif door_code.state == 'preparing' %}{{ t('stay.detail.door_code.preparing') }}
-  {% else %}{{ t('stay.detail.door_code.waiting') }}{% endif %}
-</p></div></section>{% endif %}
+{% if progress.status == 'reported' and not send_controls.send_enabled %}<div class="allgood">{{ t('hint.all_reported') }}</div>{% endif %}
+{% if door_code %}<section id="door-code"><h2 class="sec">{{ t('stay.detail.door_code.title') }}</h2>
+<div class="card stay-door-card">
+  {% if door_code.state == 'issued' %}<div class="code">{{ door_code.pin }}</div><small id="door-code-line">{{ door_code.works_from }} – {{ door_code.works_until }}</small>
+  {% else %}<p id="door-code-line">{% if door_code.state == 'failed' %}{{ t('stay.detail.door_code.failed') }}{% elif door_code.state == 'delayed' %}{{ t('stay.detail.door_code.delayed') }}{% elif door_code.state == 'preparing' %}{{ t('stay.detail.door_code.preparing') }}{% else %}{{ t('stay.detail.door_code.waiting') }}{% endif %}</p>{% endif %}
+  <div class="ic acc" aria-hidden="true"></div>
+</div></section>{% endif %}
+{% if not stay_inactive %}<div class="list"><a class="link" href="/payments?reservation_id={{ reservation.id }}#new-request">{{ t('stays.row.request_payment') }}<svg class="i chev"><use href="#i-chev"/></svg></a></div>{% endif %}
 <section class="ui-section stay-settings" id="stay-quick-edit">
   <div class="ui-section-h"><h2>{{ t('stay.detail.settings.title') }}</h2></div>
   <p class="ui-sub">{{ t('stay.detail.settings.lede') }} <a href="/apartments/{{ reservation.apartment_id }}?view=settings&amp;section=guests#communication">{{ t('stay.detail.settings.guest_links') }}</a>.</p>
