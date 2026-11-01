@@ -362,3 +362,12 @@ Test result line: not run (the test is in its committed Run 11 state, failing on
 
 Questions: the save at the lock section needs address and lock-hour data to be valid, otherwise the server refuses it (400). Owner or orchestrator to decide whether the test should seed a valid property or assert the refusal path.
 Not pushed.
+
+## Run 14 (three small fixes, executor)
+
+- Step 1 (`06fab87`): `initPropertyPage` in `App/app/static/app.js` records `lastOpened` only for `details.prop-sec`. `base.html` key `20261101-0737`, `static_versions.json` rewritten. Kept the uncommitted fresh-page submit checks in `test_0541_property_page_phone_browser.py` and committed them with this step.
+- Step 2 (`9b52b1c`): `test_host_property_controls_browser.py` asserts `.ui-tabs` count 0 on /apartments; the aria-current check is removed. Property-page asserts kept. The comment above the assert was reworded to match.
+- Step 3 (`b330ecd`): `body.v2 .ui-btn.copy-btn:focus-visible` added in `App/app/static/app2.css` (same outline as the `.btn` rule). `app2.css` key `20261101-2411`, `static_versions.json` rewritten.
+- Known flakiness, not fixed: `test_0541` fails about 1 run in 2 when run alone (`section=lock` assert at line 99, or the police assert at line 106). Instrumented once, it passed. Likely a race: the `toggle` event is async and the synthetic submit runs right after the summary click. Not changed; owner or orchestrator to decide.
+- Test: `pytest test_0541 test_host_property_controls test_a11y_guard test_static_versions test_0503 test_0504 -k "not webkit" -rs` gives `16 passed in 101.10s`, 0 skipped. Ruff `--select E9,F63,F7,F82,F401,F841` on tests: `All checks passed!`.
+- Not pushed.
