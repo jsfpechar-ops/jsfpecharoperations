@@ -277,7 +277,9 @@
     "stays-head",
     "stays-desk",
     "stays-phone",
-    "stays-phone-only"
+    "stays-phone-only",
+    "pill",
+    "p-n"
   ],
   "hooks": [
     "sr-only",
