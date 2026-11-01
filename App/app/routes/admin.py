@@ -4561,6 +4561,18 @@ SUPPORT_AUDIT_ACTIONS = (
 )
 
 
+@router.get("/menu")
+def menu_view(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    return render(
+        request,
+        "menu.html",
+        {"apartments": access.apartments(request, "id, internal_name")},
+    )
+
+
 @router.get("/settings")
 def settings_view(request: Request):
     guard = auth.require_login(request)

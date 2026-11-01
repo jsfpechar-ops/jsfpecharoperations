@@ -1,0 +1,25 @@
+{% extends "host_page.html" %}
+{% set v2 = true %}
+{% set nav = 'menu' %}
+{% block title %}{{ t('nav.menu') }}{% endblock %}
+{% block page_title %}{{ t('nav.menu') }}{% endblock %}
+{% block body %}
+<section class="card me" aria-label="{{ t('nav.account') }}">
+  <a class="me-link" href="/settings">
+    <i>{{ (workspace_user.display_name or workspace_user.username)[:1] | upper }}</i>
+    <div><b>{{ workspace_user.display_name or workspace_user.username }}</b>
+      <small>{{ tp('nav.property_count', apartments | length) }}</small></div>
+  </a>
+</section>
+<nav class="list" aria-label="{{ t('nav.menu') }}">
+  <a class="row" href="/cleaning"><span class="t"><b>{{ t('nav.cleaning') }}</b></span></a>
+  <a class="row" href="/stay-fees"><span class="t"><b>{{ t('nav.stay_fees') }}</b></span></a>
+  <a class="row" href="/payments"><span class="t"><b>{{ t('nav.payments') }}</b></span></a>
+  <a class="row" href="/settings"><span class="t"><b>{{ t('nav.settings') }}</b></span></a>
+  <a class="row" href="/guide"><span class="t"><b>{{ t('nav.guide') }}</b></span></a>
+  {% if current_user.role == 'admin' %}<a class="row" href="/admin"><span class="t"><b>{{ t('nav.admin') }}</b></span></a>{% endif %}
+</nav>
+<form method="post" action="/logout" class="menu-logout">
+  <button class="ui-btn ui-btn-quiet" type="submit">{{ t('nav.logout') }}</button>
+</form>
+{% endblock %}
