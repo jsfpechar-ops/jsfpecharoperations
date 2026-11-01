@@ -33,3 +33,14 @@ Stop if matching the mockup would hide the police deadline or a filing action, o
 
 ## 9. Report
 `docs/tasks/0527-report.md`: status, test tails, edited/deleted assertions, screenshot paths, remaining visual differences.
+
+## 10. Orchestrator fix list after screenshots (do first, in order)
+Screenshots `docs/tasks/screenshots-0710/stays-1280.png` / `stays-390.png` show:
+1. The add-stay panel and the filter panel are open on load, and the `hidden` "Filtry" chip shows. Cause: app2.css has no rule for the old `.hidden` class and `.chip{display:…}` beats the `[hidden]` attribute. Add two shared utilities at the end of the shell section (the shell thread agreed generic utilities live on our branch): `body.v2 [hidden]{display:none!important}` and `body.v2 .hidden{display:none!important}`. Check app.js toggles them as before (open/close the panel in a quick Playwright check).
+2. Phone: the `.top` row (+ button) renders under the title. Put the `.top` markup before the `.head` in the template.
+3. Add-stay panel and filter panel: style as the mockup's form look: the panel is a `.card` with padding 16px; a `<h2>` title row with the close link as `.btn ghost sm`; fields in a 2-column grid from 1024 (1 column below), each `label` 12px `--ink2` above its control; controls with the mockup `.in` look (1px #dcdcd7 border, radius 8px, padding 9px 10px, width 100%, min-height 44px below 1024 / 36px from 1024); submit as `.btn`, cancel/reset as `.btn ghost`. Page-level classes only (`body.v2 .stays-panel …`, `.stays-filter …`).
+4. Pagination "Další Strana 1 z 2 Předchozí Další": a stray duplicate "Další" shows first; render once as `<nav class="stays-pager">` with `Strana 1 z 2` text and two `.btn ghost sm` links (disabled one as a `span` with `aria-disabled`), right-aligned from 1024.
+5. The "Zobrazeno 1–5 z 6 pobytů" line: style as `.sub` (13px, --ink3).
+6. Bottom links: "Stáhnout domovní knihu" appears both in the header and in the bottom list on desktop; show the bottom house-book row only below 1024 (phone has no header button).
+7. Desktop table "Otevřít" column header: make it an empty `th` with an sr-only label, like the mockup's last column.
+Then rerun `-k stays`, retake screenshots (`UBYHOST_SHOTS_V2=1 ... -k screenshots`), Read stays-1280 and stays-390 once, then step 2 (old tests, one file at a time with `--tb=short`) and step 3.
