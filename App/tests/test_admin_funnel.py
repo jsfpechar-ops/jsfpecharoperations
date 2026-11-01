@@ -209,8 +209,10 @@ def test_overview_cards_and_bars():
         assert 0 <= bar["width"] <= 100
         if bar["count"] == 0:
             assert bar["width"] == 0
-    first_nonzero = next(bar for bar in view["bars"] if bar["count"])
-    assert first_nonzero["width"] == 100
+    # Other test files leave hosts behind, so the largest bar is not always the
+    # first non-zero one: the largest count is the one that fills the row.
+    largest = max(view["bars"], key=lambda bar: bar["count"])
+    assert largest["width"] == 100
 
 
 def test_weekly_buckets_hosts_in_window():

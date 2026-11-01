@@ -8,12 +8,12 @@
     "v": "20261027-signup-wrap"
   },
   "app.js": {
-    "sha256": "a4924267905a40c8f0d358ce8547f6dd164445986a5463e28efe9adb14948bfe",
-    "v": "20261101-0503"
+    "sha256": "1984dc5aa2a5b0ec2565923e538b74c1f9a97621dadc8d6f9db6e20b7bf24789",
+    "v": "20261101-0504"
   },
   "app2.css": {
-    "sha256": "30c2ee8772b59f3268aa84de828ba5fe75ce3cb87d9b4a307412bb73f6e91c73",
-    "v": "20261101-0532u"
+    "sha256": "8b67c905f2ec90d6ca9d63ee024d7de4e8a0eff5a9778febc64eef591f26dd59",
+    "v": "20261101-0532v-0718"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",

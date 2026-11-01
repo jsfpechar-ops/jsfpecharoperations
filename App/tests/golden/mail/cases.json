@@ -1,0 +1,110 @@
+[
+  {
+    "name": "rejected_two_stays",
+    "property_name": "Byt Alfa",
+    "state": "rejected",
+    "reason": "<b>&\"'</b> chybí PSČ",
+    "transport": false,
+    "stays": [
+      {
+        "id": 101,
+        "property_name": "Byt Alfa",
+        "date_from": "2026-03-01",
+        "date_to": "2026-03-04",
+        "summary": "Booking <A>"
+      },
+      {
+        "id": 102,
+        "property_name": "Byt Alfa",
+        "date_from": "2026-04-10",
+        "date_to": "2026-04-12",
+        "summary": ""
+      }
+    ],
+    "submission_id": 7
+  },
+  {
+    "name": "transport",
+    "property_name": "Byt Beta",
+    "state": "submitted",
+    "reason": "",
+    "transport": true,
+    "stays": [
+      {
+        "id": 201,
+        "property_name": "Byt Beta",
+        "date_from": "2026-05-01",
+        "date_to": "2026-05-03",
+        "summary": "Direct"
+      }
+    ],
+    "submission_id": 8
+  },
+  {
+    "name": "no_reason_no_stays",
+    "property_name": "Byt Gamma",
+    "state": "rejected",
+    "reason": "",
+    "transport": false,
+    "stays": [],
+    "submission_id": 0
+  },
+  {
+    "name": "long_reason",
+    "property_name": "Byt Delta",
+    "state": "rejected",
+    "reason": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa                    bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "transport": false,
+    "stays": [
+      {
+        "id": 401,
+        "property_name": "Byt Delta",
+        "date_from": "2026-06-01",
+        "date_to": "2026-06-02",
+        "summary": "Long"
+      }
+    ],
+    "submission_id": 9
+  },
+  {
+    "name": "odd_date",
+    "property_name": "Byt Epsilon",
+    "state": "rejected",
+    "reason": "Datum nesedí",
+    "transport": false,
+    "stays": [
+      {
+        "id": 501,
+        "property_name": "Byt Epsilon",
+        "date_from": "2026-02-30",
+        "date_to": "not-a-date",
+        "summary": "Odd"
+      },
+      {
+        "id": 502,
+        "property_name": "Byt Epsilon",
+        "date_from": "2026-07-10",
+        "date_to": "2026-07-12",
+        "summary": ""
+      }
+    ],
+    "submission_id": 10
+  },
+  {
+    "name": "unicode",
+    "property_name": "Byt Žižkov á",
+    "state": "rejected",
+    "reason": "Špatné PSČ 🙂",
+    "transport": false,
+    "stays": [
+      {
+        "id": 601,
+        "property_name": "Byt Žižkov á",
+        "date_from": "2026-08-01",
+        "date_to": "2026-08-05",
+        "summary": "Host 🎉 Žluťoučký"
+      }
+    ],
+    "submission_id": 11
+  }
+]

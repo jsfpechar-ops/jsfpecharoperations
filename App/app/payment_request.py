@@ -24,8 +24,10 @@ _TRANSITIONS = {
     "sent": {"awaiting_payment", "paid", "expired", "cancelled"},
     "awaiting_payment": {"paid", "expired", "cancelled"},
     "paid": set(),
-    "expired": set(),
-    "cancelled": set(),
+    # A guest can still pay an old link after expiry or cancel; the money
+    # has arrived, so paid is the truth (0623). The host refunds if needed.
+    "expired": {"paid"},
+    "cancelled": {"paid"},
 }
 
 

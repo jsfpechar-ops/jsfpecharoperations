@@ -37,7 +37,9 @@ td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
 tr:last-child td{border-bottom:0}tbody tr:hover{background:#fafaf8;cursor:pointer}
 td small{display:block;color:var(--ink3);font-size:12px;margin-top:2px}
 .pill{font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap;display:inline-block}
-.p-ok{background:var(--oks);color:var(--ok)}.p-warn{background:var(--warns);color:var(--warn)}.p-bad{background:var(--bads);color:var(--bad)}
+.p-ok{background:var(--oks);color:var(--ok)}.p-warn{background:var(--warns);color:var(--warn)}.p-bad{background:var(--bads);color:var(--bad)}.p-n{background:#efefeb;color:var(--ink2)}
+/* 0715: a Stav pill may wrap a status badge; the pill carries the colour */
+.dashboard-row-task .pill>.ui-badge{background:none;border:0;padding:0;color:inherit}
 .todo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .todo .card{display:flex;gap:14px;padding:16px;align-items:flex-start}
 .todo .ic{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;flex:none;font-weight:800}
@@ -73,17 +75,20 @@ tbody tr .btn.sm.ghost{opacity:0;transition:opacity .15s}tbody tr:hover .btn.sm.
   .side .me{flex:none;margin-top:0;padding:4px 8px}
   .side .me small{display:none}
   .main{padding:16px}
-  .todo{grid-template-columns:1fr}
 }
+/* 0715: the two "What needs you" cards are cramped next to the 220 px sidebar below 1024 px */
+@media (max-width:1023px){.todo{grid-template-columns:1fr}}
+@media (max-width:359px){body.v2 main table{table-layout:fixed}}
 /* 0709 phone (390 px): the v2 Overview fits without a sideways page scroll */
 @media (max-width: 767px){
   body.v2 .side .org,body.v2 .side .me,body.v2 .side .side-bottom,body.v2 .side .search{display:none}
   body.v2 .head{flex-wrap:wrap}
   body.v2 .head .btn{width:100%}
   body.v2 .cal{overflow-x:auto}
+  body.v2 .dashboard-calendar{padding-inline:4px}
   body.v2 .side .nav{min-height:44px;display:flex;align-items:center}
   body.v2 .dashboard-row-actions .ui-btn{min-width:44px;min-height:44px}
-  body.v2 .card > table th:nth-child(2),body.v2 .card > table td:nth-child(2),body.v2 .card > table th:nth-child(3),body.v2 .card > table td:nth-child(3){display:none}
+  body.v2 .card[data-dashboard-refresh="work"] > table th:nth-child(2),body.v2 .card[data-dashboard-refresh="work"] > table td:nth-child(2),body.v2 .card[data-dashboard-refresh="work"] > table th:nth-child(3),body.v2 .card[data-dashboard-refresh="work"] > table td:nth-child(3){display:none}
 }
 
 /* Sidebar parts that are not in the mockup: the nav lists, the logout button. */
@@ -125,16 +130,20 @@ body.v2 .crow{grid-auto-rows:44px}
 
 /* 0709 Overview: named classes instead of inline styles (design lint T1) */
 .ov-head{margin-bottom:6px}
-.ov-links{font-size:13px;color:var(--ink3);margin:4px 0 0}
+.ov-links{font-size:13px;color:var(--ink3);margin:4px 0 0;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center}
+.ov-link,.ov-inline .ui-btn-quiet{display:inline-flex;align-items:center}
+@media (max-width:1023px){.ov-link{min-height:44px}}
+@media (min-width:1024px){.ov-link{min-height:24px}}
+.ov-month{flex-wrap:wrap}.ov-mi{white-space:nowrap}
 .ov-link{color:var(--ink3)}
 .ov-inline{display:inline}
 .ov-section{margin-bottom:28px}
 .ov-more{margin-top:12px}
 .ov-cal-more{margin:-16px 0 28px}
 .ov-cal-link{color:var(--ink3);font-size:13px}
-.ic-red{background:var(--bads);color:var(--bad)}
-.ic-amber{background:var(--warns);color:var(--warn)}
-.ic-neutral{background:#efefeb;color:var(--ink2)}
+.ic-red,.ic[data-ic=red]{background:var(--bads);color:var(--bad)}
+.ic-amber,.ic[data-ic=amber]{background:var(--warns);color:var(--warn)}
+.ic-neutral,.ic[data-ic=neutral]{background:#efefeb;color:var(--ink2)}
 .cal .bar[data-overdue]{background:var(--bads);color:var(--bad)}
 .cal .bar[data-c1="2"]{grid-column-start:2}.cal .bar[data-c2="2"]{grid-column-end:2}
 .cal .bar[data-c1="3"]{grid-column-start:3}.cal .bar[data-c2="3"]{grid-column-end:3}
@@ -192,6 +201,81 @@ body.v2 .ui-btn-quiet{background:none;border:0;box-shadow:none;padding:0 2px;col
 @media (max-width:1023px){body.v2 .ui-btn-quiet{min-height:44px}body.v2 .search{min-height:44px}}
 body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
 @media (min-width:1024px){body.v2 .row-menu-trigger{min-width:24px;min-height:24px}}
+/* 0716 v2 shell parity: env badge under the logo, quiet support link in the bottom block */
+.side .env-badge{display:inline-block;margin:0 8px;padding:0 8px;border-radius:999px;font-size:12px;line-height:16px;color:var(--ink2);background:var(--side2)}
+.side .support-link{display:block;font-size:12px}
+.side .support-link small{display:block;font-size:12px;color:var(--ink3)}
+/* 0717: closed help on the v2 Overview header: body hidden until opened, link is a 44 px tap target. */
+.ov-head details.ui-how{display:block;margin:4px 0}
+.ov-head details.ui-how:not([open]) .ui-how-body{display:none}
+.ov-head .ui-how-more{display:inline-block;min-height:44px;line-height:44px}
+
+/* 0718 phone shell: bottom tab bar replaces the sidebar below 1024 px */
+.tabs{display:none}
+@media (max-width:1023px){
+  body.v2 .side{display:none}
+  body.v2 .tabs{display:flex;position:fixed;left:0;right:0;bottom:0;height:84px;background:#fff;border-top:1px solid var(--line);padding:6px 4px 22px;padding-bottom:calc(22px + env(safe-area-inset-bottom));z-index:5}
+  body.v2 .tabs .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12px;font-weight:700;color:var(--ink3);position:relative;min-height:56px;text-decoration:none}
+  body.v2 .tabs .tab svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  body.v2 .tabs .tab.on{color:var(--acc-text)}body.v2 .tabs .tab.on svg{stroke-width:2.2}
+  body.v2 .tabs .tab .n{position:absolute;top:2px;left:calc(50% + 6px);background:var(--acc);color:#fff;font-size:10px;border-radius:999px;padding:1px 6px}
+  body.v2 main{padding-bottom:104px;padding-left:0;padding-right:0}
+}
+
+/* 0718 phone classes: values copied from docs/design/mockup/ubyhost-phone-v1.html (below 1024 px only) */
+@media (max-width:1023px){
+  body.v2 .top{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;min-height:56px}
+  body.v2 .round{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#fff;border:1px solid var(--line)}
+  body.v2 .round.solid{background:var(--acc);border-color:var(--acc);color:#fff}
+  body.v2 .big,body.v2 .head h1{font-size:32px;font-weight:800;letter-spacing:-.025em;margin:2px 20px 4px;line-height:1.15}
+  body.v2 .sub,body.v2 .head .sub{color:var(--ink3);margin:0 20px 8px;font-size:15px}
+  body.v2 h2.sec{font-size:20px;font-weight:800;letter-spacing:-.015em;margin:28px 20px 12px;display:flex;justify-content:space-between;align-items:baseline}
+  body.v2 h2.sec a{font-size:14px;font-weight:700;color:var(--ink);text-decoration:underline}
+  body.v2 .card{margin:0 20px 12px;background:#fff;border-radius:18px;padding:18px;box-shadow:0 1px 2px rgba(0,0,0,.05),0 6px 20px rgba(0,0,0,.07);border:1px solid #f1f0ec}
+  body.v2 .ic{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;flex:none;font-weight:800;font-size:18px}
+  body.v2 .ic.bad{background:var(--bads);color:var(--bad)}body.v2 .ic.warn{background:var(--warns);color:var(--warn)}body.v2 .ic.ok{background:var(--oks);color:var(--ok)}body.v2 .ic.acc{background:var(--accs);color:var(--acc-text)}
+  body.v2 .need b{display:block;font-size:17px;line-height:1.3}body.v2 .need small{display:block;color:var(--ink3);font-size:14px;margin-top:3px}
+  body.v2 .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;border-radius:12px;background:var(--acc);color:#fff;font-weight:700;font-size:16px}
+  body.v2 .btn:active{transform:scale(.98)}
+  body.v2 .btn:not(.line):not(.soft):not(.ghost),body.v2 a.btn:not(.line):not(.soft):not(.ghost){color:#fff}
+  body.v2 .btn.ghost{background:#efefeb;color:var(--ink)}
+  body.v2 .card[data-dashboard-refresh="work"]{margin-left:0;margin-right:0;overflow-x:auto}
+  body.v2 .btn.line{background:#fff;color:var(--ink);border:1.5px solid var(--ink)}
+  body.v2 .btn.soft{background:#f6f6f4;color:var(--ink)}
+  body.v2 .allgood{margin:0 20px 12px;padding:16px 18px;border-radius:18px;background:var(--oks);color:var(--ok);font-weight:700;display:flex;gap:10px;align-items:center}
+  body.v2 .hs{display:flex;gap:12px;overflow-x:auto;padding:4px 20px 16px;scroll-snap-type:x mandatory;scrollbar-width:none}body.v2 .hs::-webkit-scrollbar{display:none}
+  body.v2 .hs .card{margin:0;flex:0 0 272px;scroll-snap-align:start;display:flex;flex-direction:column;gap:10px}
+  body.v2 .kind{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}body.v2 .kind.in{color:var(--ok)}body.v2 .kind.out{color:var(--ink2)}
+  body.v2 .hs .nm{font-size:20px;font-weight:800;letter-spacing:-.01em}body.v2 .hs .meta{color:var(--ink3);font-size:14px}
+  body.v2 .av{width:48px;height:48px;border-radius:50%;background:var(--accs);color:var(--acc-text);display:grid;place-items:center;font-weight:800;font-size:18px;flex:none}
+  body.v2 .pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:5px 10px;border-radius:999px;width:max-content}
+  body.v2 .pill:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+  body.v2 .p-ok{background:var(--oks);color:var(--ok)}body.v2 .p-warn{background:var(--warns);color:var(--warn)}body.v2 .p-bad{background:var(--bads);color:var(--bad)}body.v2 .p-n{background:#f6f6f4;color:var(--ink3)}
+  body.v2 .chips{display:flex;gap:8px;overflow-x:auto;padding:6px 20px 14px;scrollbar-width:none}body.v2 .chips::-webkit-scrollbar{display:none}
+  body.v2 .chip{min-height:44px;padding:0 18px;border-radius:999px;border:1px solid #d9d9d4;font-weight:700;font-size:14px;white-space:nowrap;background:#fff}
+  body.v2 .chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  body.v2 .list{margin:0 20px}
+  body.v2 .row{display:flex;align-items:center;gap:14px;min-height:76px;padding:12px 0;border-bottom:1px solid var(--line);width:100%;text-align:left}
+  body.v2 .row:last-child{border-bottom:0}
+  body.v2 .row .t{flex:1;min-width:0}body.v2 .row .t b{display:block;font-size:16px}body.v2 .row .t small{display:block;color:var(--ink3);font-size:14px;margin-top:2px}
+  body.v2 .row .t .pill{margin-top:6px}
+  body.v2 .chev{color:#b4b4ae}
+  body.v2 .grp{font-size:13px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin:22px 20px 2px}
+  body.v2 .facts{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:16px 20px 0;border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  body.v2 .facts div{padding:14px 16px}body.v2 .facts div:nth-child(odd){border-right:1px solid var(--line)}body.v2 .facts div:nth-child(n+3){border-top:1px solid var(--line)}
+  body.v2 .facts small{display:block;color:var(--ink3);font-size:13px}body.v2 .facts b{font-size:16px}
+  body.v2 .link{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;font-weight:700;width:100%;text-align:left}
+  body.v2 .link small{display:block;font-weight:500;color:var(--ink3);font-size:13px}
+  body.v2 .actbar{position:fixed;left:0;right:0;bottom:calc(84px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--line);padding:12px 20px;display:flex;gap:10px;align-items:center;z-index:4}
+  body.v2 .actbar .btn{flex:1}
+  body.v2 .actbar .hint{font-size:13px;color:var(--ink3)}
+  body.v2 .me{display:flex;gap:14px;align-items:center}
+  body.v2 .me .av{width:60px;height:60px;font-size:24px}
+  body.v2 .card.me{margin-top:12px;font-size:15px}body.v2 .card.me small{font-size:14px}body.v2 .card.me b{display:block;font-size:18px;line-height:1.2}body.v2 .me-link{display:flex;gap:14px;align-items:center;color:inherit;text-decoration:none}body.v2 .me-link .who{flex:1;min-width:0;line-height:1.2}
+  body.v2 .menu-list .row .t{flex:1}
+  body.v2 .badge{background:var(--acc);color:#fff;font-size:12px;font-weight:800;border-radius:999px;padding:2px 8px}
+}
+@media (min-width:1024px){body.v2 .menu-list .row{display:flex;align-items:center;gap:14px;min-height:48px;padding:12px 0;border-bottom:1px solid var(--line)}}
 /* 0532: setup chips on the properties list (mockup .setup / .st) */
 .setup{display:flex;gap:6px;flex-wrap:wrap}
 .st{font-size:12px;font-weight:600;padding:3px 9px 3px 7px;border-radius:999px;display:inline-flex;align-items:center;gap:5px;text-decoration:none;min-height:24px;box-sizing:border-box}

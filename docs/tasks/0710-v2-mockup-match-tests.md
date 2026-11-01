@@ -35,7 +35,7 @@ One shared browser test that every redesigned (v2) page uses. For each registere
   - `test_v2_page_geometry[page-width]`: `assert not geometry_findings(...)`, full list in the message.
   - `test_v2_screenshots`: only when `UBYHOST_SHOTS_V2=1`; for each page and width save `docs/tasks/screenshots-0710/<name>-<width>.png` (full page) and `docs/tasks/screenshots-0710/mockup-<view>-<width>.png`.
 - Test-map: add one row in `docs/context/test-map.md` "v2 pages (any page with `{% set v2 = true %}`) | `tests/test_0710_v2_mockup_match_browser.py`", next to the existing browser rows.
-- Report `docs/tasks/0710-report.md`.
+- Report `docs/tasks/0710-v2-mockup-match-report.md`.
 
 ## 4. Steps
 1. Read the 0709 shots test, `app2.css` (first 40 lines) and `_shell_v2.html`. Write `v2_mockup.py`. Commit `0710 step 1: v2 mockup helper`.
@@ -56,4 +56,4 @@ Both tests run for all 6 widths with 0 skipped. The report lists every remaining
 Stop if a selector matches nothing in the mockup's `today` view (a typo in this brief), or if a check gives more than 200 findings at one width (the check is probably wrong; report a sample of 10).
 
 ## 9. Report
-`docs/tasks/0710-report.md`: status, test tails, every finding by width marked fix-in-0711 or test-bug-fixed, screenshots, deviations.
+`docs/tasks/0710-v2-mockup-match-report.md`: status, test tails, every finding by width marked fix-in-0711 or test-bug-fixed, screenshots, deviations.

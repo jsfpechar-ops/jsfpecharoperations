@@ -7,6 +7,8 @@ from pathlib import Path
 MOCKUP = Path(__file__).resolve().parents[2] / "docs/design/mockup/ubyhost-redesign-v2.html"
 WIDTHS = (320, 390, 768, 1024, 1280, 1440)
 DESKTOP = 1024  # box-layout checks only at widths >= DESKTOP; the phone mockup is not approved yet
+PHONE_MOCKUP = Path(__file__).resolve().parents[2] / "docs/design/mockup/ubyhost-phone-v1.html"
+PHONE_WIDTHS = (320, 390)
 
 STYLE_PROPS = (
     "font-size", "font-weight", "color", "background-color", "border-top-left-radius",
@@ -23,11 +25,20 @@ SELECTOR_OVERRIDES = {
     ".cal .cd": {"font-size": "12px", "color": "rgb(184, 61, 40)", "border-bottom-color": "rgb(184, 61, 40)"},
     # demo Dnes table has one row, which is also the last row: the app draws no bottom border (tr:last-child rule), 2026-11-01
     "main tbody tr:first-child td": {"border-bottom-color": "rgb(28, 28, 26)"},
+    # phone tab labels: the 12 px minimum text rule wins over the mockup's 11 px (orchestrator decision, 0718)
+    ".tab": {"font-size": "12px"},
+    ".tab:not(.on)": {"font-size": "12px"},
+    ".tab.on": {"font-size": "12px"},
 }
 # style-compared only at computer width (phone design pending)
 DESKTOP_ONLY = {".side", ".side .nav", ".side .nav.on"}
 # calendar bars are 28 px tall: a dense 14-day timeline; WCAG 2.5.8 needs 24 px, and every stay is also a full-size row in the Dnes table and the stays list
 TAP_EXEMPT_BELOW_DESKTOP = {".cal .bar": "dense 14-day timeline; 28 px meets WCAG 2.5.8 (24 px); every stay is also a full-size row in the Dnes table and the stays list"}
+
+
+# app selector -> mockup selector at phone widths (the phone mockup calls the action bar .bar)
+SELECTOR_ALIASES = {".actbar": ".bar"}
+BOX_PROPS = ("width", "height", "margin-top", "margin-right", "margin-bottom", "margin-left")
 
 
 def expected_value(selector: str, prop: str, mock_value: str) -> str:
@@ -42,15 +53,17 @@ PAGES = [
         "name": "overview",
         "path": "/",
         "view": "today",
+        "phone_view": "dnes",
+        "phone_selectors": [".tabs", ".tab", ".tab.on"],
         "selectors": [
             ".side", ".side .nav", ".side .nav.on", ".head h1", ".head .sub", ".head .btn",
             "main h2", ".todo .card", ".todo .ic", ".todo .t", ".todo p", ".quiet", ".card.cal",
             ".cal .cd", ".cal .cn", ".cal .bar.b-ok", ".cal .bar.b-warn", "main table th", "main tbody tr:first-child td", "main td small",
-            "main .pill",
+            "main .pill.p-ok", "main .pill.p-warn",
         ],
         "missing_ok": {
             ".cal .bar.b-ok": "demo data has no confirmed stay in the 14-day window; the tone follows the data",
-            "main .pill": "the p-warn pill renders only for a stay awaiting the guest with immediate automation; demo data has none",
+            "main .pill.p-ok": "tone depends on data: the demo overview has no reported stay",
         },
     },
     {
@@ -62,6 +75,15 @@ PAGES = [
             "main table th", "main table td", ".setup .st.g", ".setup .st.r", "tbody tr .btn.sm.ghost",
         ],
         "missing_ok": {},
+    },
+    {
+        "name": "menu",
+        "path": "/menu",
+        "view": None,  # no desktop mockup screen: the Menu page is compared at phone widths only
+        "selectors": [],
+        "phone_view": "menu",
+        "phone_selectors": [".tabs", ".tab:not(.on)", ".tab.on", ".big", ".card.me", ".list .row", ".row .t b", ".row .t small"],
+        "missing_ok": {".row .t small": "menu rows have no subtitle yet: the mockup subtitles are demo copy and no approved menu copy exists (owner decision, 0718)"},
     },
 ]
 
@@ -195,22 +217,47 @@ _GEOMETRY_JS = r"""
   const h1s = [...document.querySelectorAll('h1')].filter(vis).length;
   if (h1s !== 1) out.push(`expected one h1, found ${h1s}`);
 
-  // 7. sidebar: 220 px column at computer width, top bar at phone width
+  // 7. sidebar: 220 px column at computer width; below 1024 px the bottom tab bar replaces it (0718)
   const side = document.querySelector('.side');
-  if (!side || !vis(side)) {
-    out.push('.side is not visible');
+  if (width >= 1024) {
+    if (!side || !vis(side)) {
+      out.push('.side is not visible');
+    } else {
+      const r = side.getBoundingClientRect();
+      if (Math.abs(r.width - 220) > 1) out.push(`.side is ${r.width.toFixed(0)} px wide, expected 220`);
+    }
   } else {
-    const r = side.getBoundingClientRect();
-    if (width >= 1024 && Math.abs(r.width - 220) > 1) out.push(`.side is ${r.width.toFixed(0)} px wide, expected 220`);
-    if (width < 768 && r.height > 72) out.push(`.side is ${r.height.toFixed(0)} px tall at phone width, max 72`);
+    if (side && vis(side)) out.push('.side is visible below 1024 px, expected the tab bar');
+    const tabs = document.querySelector('.tabs');
+    const tabList = tabs ? [...tabs.querySelectorAll('.tab')] : [];
+    if (!tabs || !vis(tabs)) {
+      out.push('.tabs is not visible below 1024 px');
+    } else {
+      const tr = tabs.getBoundingClientRect();
+      if (Math.abs(tr.bottom - window.innerHeight) > 1) out.push(`.tabs bottom ${tr.bottom.toFixed(0)} is not the viewport bottom ${window.innerHeight}`);
+      if (tabList.length !== 5) out.push(`.tabs has ${tabList.length} tabs, expected 5`);
+      for (const t of tabList) {
+        const r = t.getBoundingClientRect();
+        if (r.width < 44 || r.height < 44) out.push(`tab ${r.width.toFixed(0)}x${r.height.toFixed(0)} (min 44): "${t.textContent.trim().slice(0, 24)}"`);
+      }
+      // scrolled to the bottom, no content of main may sit under the tab bar
+      const mainEl = document.querySelector('main');
+      if (mainEl) {
+        window.scrollTo(0, 1e9);
+        const bottoms = [...mainEl.querySelectorAll('*')].filter(vis).map(e => e.getBoundingClientRect().bottom);
+        const lowest = bottoms.length ? Math.max(...bottoms) : 0;
+        if (lowest > tr.top + 1) out.push(`main content ends at ${lowest.toFixed(0)} under the tab bar (top ${tr.top.toFixed(0)})`);
+        window.scrollTo(0, 0);
+      }
+    }
   }
 
-  // 8. todo: two columns at computer width, one column at phone width
+  // 8. todo: two columns at computer width (>= 1024 px), one column below 1024 px
   const cards = [...document.querySelectorAll('.todo .card')].filter(vis);
-  if (cards.length >= 2 && (width >= 1024 || width < 768)) {
+  if (cards.length >= 2) {
     const two = Math.abs(cards[1].getBoundingClientRect().left - cards[0].getBoundingClientRect().left) > 1;
     if (width >= 1024 && !two) out.push('.todo has one column at computer width, expected two');
-    if (width < 768 && two) out.push('.todo has two columns at phone width, expected one');
+    if (width < 1024 && two) out.push('.todo has two columns below 1024 px, expected one');
   }
 
   // 9. last table row menu opens inside the viewport
@@ -260,3 +307,28 @@ def same_value(prop: str, app: str, mock: str) -> bool:
         return False
     fa, fm = _num(app), _num(mock)
     return fa is not None and fm is not None and abs(fa - fm) <= 1
+
+
+def phone_url() -> str:
+    return PHONE_MOCKUP.resolve().as_uri()
+
+
+def show_phone_screen(page, key: str) -> None:
+    """Shows one screen of the phone mockup (its screens are section.scr with data-s keys)."""
+    page.evaluate(
+        "k => document.querySelectorAll('.scr').forEach(s => s.classList.toggle('on', s.dataset.s === k))",
+        key,
+    )
+
+
+def box_diffs(selector: str, app: dict, mock: dict, width: int) -> list[str]:
+    """Phone box metrics: width within 2 px, height and margins within 1 px. Values that are not px are skipped."""
+    out = []
+    for prop in BOX_PROPS:
+        a, m = _num(app[prop]), _num(mock[prop])
+        if a is None or m is None:
+            continue
+        tol = 2 if prop == "width" else 1
+        if abs(a - m) > tol:
+            out.append(f"{selector} {prop} at {width} px: app={app[prop]} mockup={mock[prop]}")
+    return out

@@ -1,0 +1,14 @@
+UbyPort did not take the guest report for Byt Gamma. Nothing from this attempt reached the register, so these guests are not declared yet.
+
+What UbyPort reported:
+rejected
+
+What to do next:
+Open the stay, check the guest's nationality, date of birth and document number against their travel document, then send the report again.
+
+An interrupted connection clears itself when the report is sent again. If the same record fails twice, check the data before sending again.
+
+--
+UbyHost
+You are receiving this because a guest report for Byt Gamma was not accepted.
+Questions about UbyHost itself: support@ubyhost.com

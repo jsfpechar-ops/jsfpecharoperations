@@ -6,7 +6,7 @@ from tests.test_signed_in_chrome import host_with_property  # noqa: F401  (fixtu
 
 
 def test_signed_in_pages_carry_the_v2_shell_and_not_the_drawer(host_with_property):
-    page = host_with_property.get("/?lang=en").text
+    page = host_with_property.get("/reservations?lang=en").text
     assert 'class="ui-sidebar" id="app-sidebar"' in page
     assert 'class="ui-topbar"' not in page
     assert 'class="ui-menu-item" type="button" data-command-open' in page
@@ -17,10 +17,14 @@ def test_signed_in_pages_carry_the_v2_shell_and_not_the_drawer(host_with_propert
     assert '<dialog id="more-sheet" class="ui-dialog"' in page
     for href in ("/stay-fees", "/settings", "/guide", "/settings/archived", "/privacy-requests"):
         assert f'class="ui-menu-item" href="{href}"' in page, href
+    home = host_with_property.get("/?lang=en").text
+    home_sidebar = re.search(r'<aside class="side" id="app-sidebar".*?</aside>', home, re.S).group(0)
+    for href in ("/", "/reservations", "/apartments", "/stay-fees", "/cleaning", "/payments", "/settings"):
+        assert f'href="{href}"' in home_sidebar, href
 
 
 def test_the_sidebar_lists_every_destination_with_a_lucide_icon(host_with_property):
-    page = host_with_property.get("/?lang=en").text
+    page = host_with_property.get("/reservations?lang=en").text
     sidebar = re.search(r'<aside class="ui-sidebar".*?</aside>', page, re.S).group(0)
     for href, icon in (("/", "layout-dashboard"), ("/reservations", "calendar-days"), ("/apartments", "house"), ("/stay-fees", "invoice-slip"),
                        ("/cleaning", "brush-cleaning"), ("/settings", "settings"), ("/guide", "book-open")):

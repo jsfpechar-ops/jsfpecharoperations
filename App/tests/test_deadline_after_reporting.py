@@ -225,8 +225,8 @@ def one_day_window(monkeypatch):
 
 
 def _pages(client, reservation_id):
+    # 0706: the v2 Overview lists only today's stays; the stays list and detail carry the badge
     return {
-        "dashboard": client.get("/").text,
         "stays list": client.get("/reservations?range=all").text,
         "stay page": client.get(f"/reservations/{reservation_id}").text,
     }
@@ -247,9 +247,6 @@ def test_a_reported_stay_past_its_deadline_shows_no_overdue(one_day_window):
         assert ("done", expected) in badges, f"{name}: {badges}"
         assert not any(level == "overdue" for level, _ in badges), name
         assert "overdue by" not in page, name
-        if name == "dashboard":
-            task = re.search(r'<td class="dashboard-row-task"[^>]*>(.*?)</td>', page, re.S)
-            assert not task or host_i18n.STRINGS["en"]["action.reported"] not in task.group(1)
 
 
 def test_a_stay_filed_after_its_deadline_reads_late(one_day_window):
@@ -263,20 +260,17 @@ def test_a_stay_filed_after_its_deadline_reads_late(one_day_window):
         badges = _badges(page)
         assert ("neutral", "Reported 6 h late") in badges, f"{name}: {badges}"
         assert "overdue by" not in page, name
-        if name == "dashboard":
-            task = re.search(r'<td class="dashboard-row-task"[^>]*>(.*?)</td>', page, re.S)
-            assert not task or host_i18n.STRINGS["en"]["action.reported"] not in task.group(1)
 
 
 def test_a_stay_not_reported_past_its_deadline_is_still_critical(one_day_window):
     client, reservation_id, _ = _seed(nationality="VNM", sent=False, filed=None)
 
+    # 0241: the dashboard says it as a red line in "What needs you".
+    dashboard = client.get("/").text
+    assert f'data-tone="red" data-needs-you="stay" data-needs-you-stay="{reservation_id}"' in dashboard
+    assert host_i18n.STRINGS["en"]["needs_you.stay.overdue"] in dashboard
+
     for name, page in _pages(client, reservation_id).items():
-        if name == "dashboard":
-            # 0241: the dashboard says it as a red line in "What needs you".
-            assert f'data-tone="red" data-needs-you="stay" data-needs-you-stay="{reservation_id}"' in page, name
-            assert host_i18n.STRINGS["en"]["needs_you.stay.overdue"] in page, name
-            continue
         badges = _badges(page)
         assert any(level == "overdue" and "overdue by" in text for level, text in badges), (
             f"{name}: {badges}"
@@ -293,4 +287,3 @@ def test_a_czech_only_stay_shows_no_deadline(one_day_window):
     pages = _pages(client, reservation_id)
     assert _badges(pages["stays list"]) == []
     assert _badges(pages["stay page"]) == []
-    assert _badges(pages["dashboard"]) == []
