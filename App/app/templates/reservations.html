@@ -14,8 +14,8 @@
 {% block primary_action %}{% endblock %}
 {% block secondary_actions %}{% endblock %}
 {% block tabs %}{% endblock %}
-{% if apartments %}
 {% set stay_property = namespace(label=t('host.filter.all_properties')) %}
+{% if apartments %}
 {% for property in apartments %}
   {% if apartment_id and property.id|string == apartment_id|string %}{% set stay_property.label = property.internal_name %}{% endif %}
 {% endfor %}
