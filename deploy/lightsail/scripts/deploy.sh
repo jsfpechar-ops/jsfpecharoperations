@@ -269,6 +269,14 @@ echo "Health (internal):"
 docker compose exec -T ubyhost python -c \
   "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8080/healthz').read().decode())"
 
+# Go port (G1b): report only. This block never exits non-zero.
+if docker compose ps --status running --services | grep -qx ubyhost-go; then
+  echo "Go service (internal, no traffic yet):"
+  docker compose exec -T ubyhost-go wget -qO- http://127.0.0.1:8081/healthz || echo "not healthy (does not affect the app)"
+else
+  echo "Go service: not enabled (COMPOSE_PROFILES has no go)"
+fi
+
 # BE-1: turn legacy login acceptance lines into legal_acceptance rows. The
 # script is idempotent and prints a count only. A failure aborts the deploy
 # loudly rather than leaving acceptance evidence half-migrated.
