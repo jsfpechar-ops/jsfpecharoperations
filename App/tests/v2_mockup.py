@@ -133,6 +133,7 @@ _GEOMETRY_JS = r"""
     if (!vis(el)) continue;
     if (el.tagName === 'A' && el.closest('p')) continue;  // inline link inside a sentence
     const r = el.getBoundingClientRect();
+    if (r.width <= 1 || r.height <= 1) continue;  // visually hidden (e.g. skip link), not a tap target
     if (r.width < minT || r.height < minT) {
       out.push(`tap target ${r.width.toFixed(0)}x${r.height.toFixed(0)} (min ${minT}): ${label(el)} "${(el.textContent || '').trim().slice(0, 24)}"`);
     }
