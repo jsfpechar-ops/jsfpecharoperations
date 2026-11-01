@@ -164,3 +164,6 @@ body.v2 .skip-link:focus{top:8px}
 .st:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
 .st.g{background:var(--oks);color:var(--ok)}.st.r{background:var(--bads);color:var(--bad)}.st.n{background:#efefeb;color:var(--ink3)}
 @media (max-width:640px){body.v2 tbody .btn.sm{min-height:44px;display:inline-flex;align-items:center}}
+
+/* 0532: the properties table scrolls inside its card on phones instead of widening the page */
+.props-card{overflow-x:auto}

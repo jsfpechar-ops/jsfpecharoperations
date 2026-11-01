@@ -90,12 +90,14 @@ def test_no_business_and_no_property_states_stay_distinct(host):
     # business there is no Business & legal details tab yet.
     assert 'href="/entities?edit=' not in empty
     assert "Add operator" in empty
-    entity_id = _entity()
+    _entity()
     ready = host.get("/apartments?lang=en").text
     assert 'href="/apartments/new"' in ready
     assert 'id="property-summaries"' not in ready
-    # The one shared business is linked once, in its own editor scope.
-    assert ready.count(f'href="/entities?edit={entity_id}&amp;next=/apartments"') == 1
+    # v2 list (0532): operator exists but no property yet, so the empty
+    # state asks for the first property and no longer offers Add operator.
+    assert "No properties yet." in ready
+    assert "Add operator" not in ready
 
 
 def test_list_rows_show_setup_calendars_and_open_inside_the_menu(host):
