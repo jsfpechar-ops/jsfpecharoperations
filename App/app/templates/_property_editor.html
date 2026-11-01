@@ -29,12 +29,6 @@
 </div>
 {% endif %}
 
-<div class="property-settings">
-<nav class="property-settings-nav" aria-label="{{ t('property_nav.settings_aria') }}">
-  {% for key, label in groups %}
-  <a href="{{ base_url }}?view=settings&amp;section={{ key }}" data-property-section-link="{{ key }}"{% if key == settings_section %} aria-current="true"{% endif %}>{{ label }}</a>
-  {% endfor %}
-</nav>
 
 <form method="post" action="{{ base_url }}" enctype="multipart/form-data" class="property-settings-form" id="property-settings-form" data-property-settings-form data-unsaved-guard>
   <p class="required-legend">{{ t('common.required_legend') }}</p>
@@ -47,8 +41,8 @@
   <button type="submit" hidden tabindex="-1" aria-hidden="true"></button>
 
   {# ---- Property information ---------------------------------------- #}
-  <div class="property-settings-group{% if settings_section == 'property' %} is-active{% endif %}" data-settings-group="property" id="settings-property">
-    <h2 class="property-group-title">{{ t('property_nav.group.property') }}</h2>
+<details class="prop-sec" id="sec-basics"{% if settings_section == 'property' or (not settings_section and property_view != 'bookings') %} open{% endif %}><summary><div><b>{{ t('property_page.sec.basics.title') }}</b><small>{{ t('property_page.sec.basics.sub') }}</small></div></summary>
+  <div class="fields-wrap">
     <section class="panel property-section ui-section" id="basics">
       <h3 class="property-section-title">{{ t('apartment.form.basics.title') }}</h3>
       {% include "_property_identity_fields.html" %}
@@ -97,6 +91,10 @@
       </div>
     </section>
 
+  </div>
+  </details>
+<details class="prop-sec" id="sec-archive"><summary><div><b>{{ t('property_page.sec.archive.title') }}</b><small>{{ t('property_page.sec.archive.sub') }}</small></div></summary>
+  <div class="fields-wrap">
     <section class="panel property-section ui-section property-archive" id="archive">
       {% if apartment.archived_at %}
       <div class="setup-item">
@@ -120,10 +118,11 @@
       {% endif %}
     </section>
   </div>
+  </details>
 
   {# ---- Guest experience ---------------------------------------------- #}
-  <div class="property-settings-group{% if settings_section == 'guests' %} is-active{% endif %}" data-settings-group="guests" id="settings-guests">
-    <h2 class="property-group-title">{{ t('property_nav.group.guests') }}</h2>
+<details class="prop-sec" id="sec-messages"{% if settings_section == 'guests' %} open{% endif %}><summary><div><b>{{ t('property_page.sec.messages.title') }}</b><small>{{ t('property_page.sec.messages.sub') }}</small></div></summary>
+  <div class="fields-wrap">
     <section class="panel property-section ui-section" id="communication">
       <div class="field-label-row"><h3 class="property-section-title">{{ t('nav.guest_links') }}</h3>{{ help_tip('communication-help', t('guest_links.lede') ~ ' ' ~ t('apartment.form.guest_link.message_help'), '/guide#guests') }}</div>
       <p class="ui-sub">{{ t('why.guest_link') }}</p>
@@ -190,11 +189,12 @@
     </section>
 
   </div>
+  </details>
 
   {# ---- Door lock (0096: its own group; optional) ---------------------- #}
   {% if door_code %}
-  <div class="property-settings-group{% if settings_section == 'lock' %} is-active{% endif %}" data-settings-group="lock" id="settings-lock">
-    <h2 class="property-group-title">{{ t('property_nav.group.lock') }}</h2>
+<details class="prop-sec" id="sec-lock"{% if settings_section == 'lock' %} open{% endif %}><summary><div><b>{{ t('property_page.sec.lock.title') }}</b><small>{{ t('property_page.sec.lock.sub') }}</small></div></summary>
+  <div class="fields-wrap">
     <p class="property-group-intro">{{ t('why.door_lock') }}</p>
     {% include "_door_code_window.html" %}
     {% if door_code.account and door_code.locks %}
@@ -237,11 +237,12 @@
     {% endif %}
     <input type="hidden" name="door_code_section" value="1">
   </div>
+  </details>
   {% endif %}
 
   {# ---- Reporting & fees ---------------------------------------------- #}
-  <div class="property-settings-group{% if settings_section == 'reporting' %} is-active{% endif %}" data-settings-group="reporting" id="settings-reporting">
-    <h2 class="property-group-title">{{ t('property_nav.group.reporting') }}</h2>
+<details class="prop-sec" id="sec-police"{% if settings_section in ['reporting', 'automation'] %} open{% endif %}><summary><div><b>{{ t('property_page.sec.police.title') }}</b><small>{{ t('property_page.sec.police.sub') }}</small></div></summary>
+  <div class="fields-wrap">
     <section class="panel property-section ui-section" id="ubyport">
       <div class="field-label-row police-section-head"><h3 class="property-section-title">{{ t('host.reporting') }}</h3>{{ help_tip('ubyport-help', t('apartment.form.ubyport.credentials_help_heading'), '/guide#ubyport-credentials') }}
         <a class="ui-btn ui-btn-secondary ui-btn-compact police-sample-link" id="police-sample-link" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.sample_link') }}</a></div>
@@ -281,6 +282,42 @@
       </div>
     </section>
 
+    <section class="panel property-section ui-section" id="automation">
+      <div class="field-label-row"><h3 class="property-section-title">{{ t('automation.timing_title') }}</h3>{{ help_tip('automation-help', t('automation.timing_help'), '/guide#reporting') }}</div>
+      <p class="ui-sub">{{ t('why.automation') }}</p>
+      <div class="grid two">
+        <div class="field">
+          <label for="automation_mode">{{ t('automation.timing_label') }}</label>
+          <select id="automation_mode" name="automation_mode"
+                  data-automation-mode data-hours-target="submit_after_hours">
+            <option value="manual" {% if apartment.automation_mode == 'manual' %}selected{% endif %}>
+              {{ t('automation.mode.manual') }}</option>
+            <option value="scheduled" {% if apartment.automation_mode == 'scheduled' %}selected{% endif %}>
+              {{ t('automation.mode.scheduled') }}</option>
+            <option value="immediate" {% if apartment.automation_mode == 'immediate' %}selected{% endif %}>
+              {{ t('automation.mode.immediate') }}</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="submit_after_hours">{{ t('automation.hours') }}</label>
+          <input type="number" id="submit_after_hours" name="submit_after_hours"
+                 min="0" max="48" value="{{ apartment.submit_after_hours }}">
+        </div>
+      </div>
+      <div class="field" style="max-width:320px">
+        <label for="default_purpose">{{ t('automation.default_purpose') }}</label>
+        <select id="default_purpose" name="default_purpose">
+          {% for purpose in purposes %}
+            <option value="{{ purpose.code }}"
+              {% if apartment.default_purpose == purpose.code %}selected{% endif %}>{{ purpose.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </section>
+  </div>
+  </details>
+<details class="prop-sec" id="sec-fee"{% if settings_section == 'reporting' %} open{% endif %}><summary><div><b>{{ t('property_page.sec.fee.title') }}</b><small>{{ t('property_page.sec.fee.sub') }}</small></div></summary>
+  <div class="fields-wrap">
     <section class="panel property-section ui-section" id="stay-fee-settings">
       <div class="field-label-row"><h3 class="property-section-title">{{ t('apartment.form.stay_fee.heading') }}</h3>{{ help_tip('stay-fee-help', t('apartment.form.stay_fee.lede')) }}</div>
       <p class="ui-sub">{{ t('why.stay_fee') }}</p>
@@ -324,52 +361,24 @@
       {% endif %}
     </section>
   </div>
+  </details>
 
   {# ---- Automation ---------------------------------------------------- #}
-  <div class="property-settings-group{% if settings_section == 'automation' %} is-active{% endif %}" data-settings-group="automation" id="settings-automation">
-    <h2 class="property-group-title">{{ t('property_nav.group.automation') }}</h2>
-    <section class="panel property-section ui-section" id="automation">
-      <div class="field-label-row"><h3 class="property-section-title">{{ t('automation.timing_title') }}</h3>{{ help_tip('automation-help', t('automation.timing_help'), '/guide#reporting') }}</div>
-      <p class="ui-sub">{{ t('why.automation') }}</p>
-      <div class="grid two">
-        <div class="field">
-          <label for="automation_mode">{{ t('automation.timing_label') }}</label>
-          <select id="automation_mode" name="automation_mode"
-                  data-automation-mode data-hours-target="submit_after_hours">
-            <option value="manual" {% if apartment.automation_mode == 'manual' %}selected{% endif %}>
-              {{ t('automation.mode.manual') }}</option>
-            <option value="scheduled" {% if apartment.automation_mode == 'scheduled' %}selected{% endif %}>
-              {{ t('automation.mode.scheduled') }}</option>
-            <option value="immediate" {% if apartment.automation_mode == 'immediate' %}selected{% endif %}>
-              {{ t('automation.mode.immediate') }}</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="submit_after_hours">{{ t('automation.hours') }}</label>
-          <input type="number" id="submit_after_hours" name="submit_after_hours"
-                 min="0" max="48" value="{{ apartment.submit_after_hours }}">
-        </div>
-      </div>
-      <div class="field" style="max-width:320px">
-        <label for="default_purpose">{{ t('automation.default_purpose') }}</label>
-        <select id="default_purpose" name="default_purpose">
-          {% for purpose in purposes %}
-            <option value="{{ purpose.code }}"
-              {% if apartment.default_purpose == purpose.code %}selected{% endif %}>{{ purpose.label }}</option>
-          {% endfor %}
-        </select>
-      </div>
-    </section>
-  </div>
 
-  <div class="actions host-property-save property-savebar">
-    <a class="ui-btn ui-btn-secondary" href="/apartments">{{ t('common.cancel') }}</a>
-    <button class="ui-btn ui-btn-secondary" type="button" data-unsaved-reset hidden>{{ t('unsaved.discard_changes') }}</button>
-    <button class="ui-btn ui-btn-primary" type="submit">{{ t('common.save_changes') }}</button>
+  <div class="savebar">
+    <a class="btn ghost" href="/apartments">{{ t('common.cancel') }}</a>
+    <button class="btn ghost" type="button" data-unsaved-reset hidden>{{ t('unsaved.discard_changes') }}</button>
+    <button class="btn" type="submit">{{ t('common.save_changes') }}</button>
   </div>
 </form>
+<details class="prop-sec" id="sec-calendars"{% if property_view == 'bookings' %} open{% endif %}><summary><div><b>{{ t('property_page.sec.calendars.title') }}</b><small>{{ t('property_page.sec.calendars.sub') }}</small></div></summary>
+  <div class="fields-wrap">
+{% include "_property_calendars.html" %}
+  </div>
+</details>
 {% if door_code and lock_panel and lock_panel.smart_locks_enabled %}
-<div class="property-settings-group{% if settings_section == 'lock' %} is-active{% endif %}" data-settings-group="lock" id="settings-lock-account">
+<details class="prop-sec" id="sec-lock-account"{% if settings_section == 'lock' %} open{% endif %}><summary><div><b>{{ t('property_page.sec.lock.title') }}</b><small>{{ t('property_page.sec.lock.sub') }}</small></div></summary>
+  <div class="fields-wrap">
   <section class="panel property-section ui-section" id="{% if door_code.account and door_code.locks %}smart-locks{% else %}door-code{% endif %}">
     {% if not (door_code.account and door_code.locks) %}
     <h3 class="property-section-title">{{ t('smart_locks.title') }}</h3>
@@ -379,6 +388,6 @@
     {% include "_smart_locks_panel.html" %}
     {% endwith %}
   </section>
-</div>
+  </div>
+</details>
 {% endif %}
-</div>

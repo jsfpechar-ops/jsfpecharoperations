@@ -1,14 +1,14 @@
 {% extends "host_page.html" %}
+{% set editing = apartment is not none %}
+{% set v2 = editing %}
 {% set nav = 'apartments' %}
 {% set how_key = 'property' %}
-{% set editing = apartment is not none %}
 {% set body_kind = 'detail' if editing else 'form' %}
 {% block title %}{{ apartment.internal_name if editing else t('property_create.title') }}{% endblock %}
-
-
-{% block meta %}{{ (apartment.city_en or apartment.addr_obec or '') if editing else t('property_create.lede') }}{% endblock %}
-{% block back_url %}/apartments{% endblock %}
-{% block back_label %}{{ t('apartment.form.back') if editing else t('nav.properties') }}{% endblock %}
+{% block page_title %}{% if not editing %}{{ self.title() }}{% endif %}{% endblock %}
+{% block meta %}{% if not editing %}{{ t('property_create.lede') }}{% endif %}{% endblock %}
+{% block back_url %}{% if not editing %}/apartments{% endif %}{% endblock %}
+{% block back_label %}{% if not editing %}{{ t('nav.properties') }}{% endif %}{% endblock %}
 {% block body %}
 {% from "_components.html" import copy_button, source_badge, field_label, help_tip, sync_calendars_button with context %}
 {% from "_icons.html" import icon with context %}
@@ -18,28 +18,30 @@
 {% if not editing %}
 {% include "_property_create.html" %}
 {% else %}
-
-{# 0094: Overview / Bookings & calendars / Settings. All three views are in the
-   page once; ?view= picks the one shown without JavaScript, app.js switches them
-   in place (initPropertyViews) so the settings draft is never re-rendered. #}
 {% set base_url = '/apartments/' ~ apartment.id %}
-{% if permalink %}<section class="property-guest-link" aria-labelledby="property-guest-link-title"><div><h2 id="property-guest-link-title">{{ t('property_page.guest_link.title') }}</h2><p class="ui-sub">{{ permalink }}</p></div><input class="sr-only" type="text" id="property-guest-url" readonly value="{{ permalink }}" tabindex="-1" aria-hidden="true">{{ copy_button('property-guest-url', t('common.copy_link')) }}</section>{% endif %}
-<nav class="ui-tabs property-tabs" aria-label="{{ t('property_nav.tabs_aria') }}">
-  {% for key, label in [('overview', t('property_nav.overview')), ('bookings', t('property_nav.bookings')), ('settings', t('property_nav.settings'))] %}
-  <a class="ui-tab" href="{{ base_url }}?view={{ key }}" data-property-tab="{{ key }}"{% if key == property_view %} aria-current="page"{% endif %}>{{ label }}</a>
-  {% endfor %}
-  <a class="ui-tab" href="{{ base_url }}/guide">{{ t('guest_guide.tab') }}</a>
-</nav>
-<div class="property-views" data-property-views data-property-base="{{ base_url }}">
-  <section class="property-view{% if property_view == 'overview' %} is-active{% endif %}" data-property-view="overview" id="property-overview" aria-label="{{ t('property_nav.overview') }}">
-    {% include "_property_overview.html" %}
-  </section>
-  <section class="property-view{% if property_view == 'bookings' %} is-active{% endif %}" data-property-view="bookings" id="property-bookings" aria-label="{{ t('property_nav.bookings') }}">
-    {% include "_property_calendars.html" %}
-  </section>
-  <section class="property-view{% if property_view == 'settings' %} is-active{% endif %}" data-property-view="settings" id="property-settings" aria-label="{{ t('property_nav.settings') }}">
-    {% include "_property_editor.html" %}
-  </section>
-</div>
+{# 0534: one scroll page, no tabs. Each section is a plain details; ?view= and ?section= pick what is open without JavaScript. #}
+<div class="crumb"><a href="/apartments">{{ t('nav.properties') }}</a> › {{ apartment.internal_name }}</div>
+<h1>{{ apartment.internal_name }}</h1>
+{% if permalink %}<section class="card guest-card" aria-labelledby="property-guest-link-title"><div><b id="property-guest-link-title">{{ t('property_page.guest_link.title') }}</b><div class="sub">{{ permalink }}</div></div><input class="sr-only" type="text" id="property-guest-url" readonly value="{{ permalink }}" tabindex="-1" aria-hidden="true">{{ copy_button('property-guest-url', t('common.copy_link')) }}</section>{% endif %}
+{% if setup_progress and not setup_progress.hidden %}
+<section class="panel setup-continue-card" aria-label="{{ t('wizard.continue_card_aria') }}">
+  <p>{{ t('wizard.continue_card', done=setup_progress.done, total=setup_progress.total) }}
+    {% if setup_progress.reporting_waiting %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ t('setup_guide.reporting.waiting_item') }}</span>{% endif %}
+  </p>
+  <div class="actions">
+    <a class="ui-btn ui-btn-primary" href="{{ setup_progress.continue_url }}">{{ t('wizard.continue') }}</a>
+    <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <button class="ui-btn ui-btn-quiet" type="submit" name="action" value="hide" formnovalidate>{{ t('setup_guide.hide') }}</button>
+    </form>
+  </div>
+</section>
+{% elif setup_hidden %}
+<form method="post" action="/apartments/{{ apartment.id }}/setup" class="property-setup-show">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <button class="link-button" type="submit" name="action" value="show">{{ t('setup_guide.show') }}</button>
+</form>
+{% endif %}
+{% include "_property_editor.html" %}
 {% endif %}
 {% endblock %}
