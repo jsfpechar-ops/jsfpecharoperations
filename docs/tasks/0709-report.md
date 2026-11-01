@@ -1,39 +1,44 @@
 # 0709 report
 
-Status: blocked (steps 1 to 5 done, tests failing; owner or coordinator decision needed)
+Status: blocked (brief acceptance not fully met: 2 failing tests, both on `/` and both reported below)
 
-## Commits (branch task/0709-v2-cleanup, not pushed)
-- 0709 step 1: drop the global restyle (restores, deletes, app2 literals, JS line, dashboard-quiet class removed)
-- 0709 step 2: catalog and design lint skip v2 templates
-- 0709 step 3 and fix: base.html versions back to origin/main, dashboard-calendar keys, static versions written
-- 0709 step 4 and fix: phone CSS, Stav pill, app2.css key bumped to 20261101-0709b
-- 0709 report (this file)
+## Commits (task/0709-v2-cleanup, not pushed)
+- f81122e 0709 step 1: drop the global restyle
+- 7b83895 0709 step 2: catalog and design lint skip v2 templates
+- fa40fcb, 8cb8551 0709 step 3 (+ fix): base.html versions back to origin/main, calendar keys, static versions
+- bc1504c, e7158d3 0709 step 4 (+ fix): phone CSS, Stav pill, app2 key
+- 42b5dfd 0709 report (first pass)
+- 2efdc8d 0709 fix: named classes for Overview styles, v2 test updates, phone account card, focus ring, skip link, Stav fallback
+- this commit: report update
 
-## Commands and tails
-- `.venv/bin/python -m pytest <brief §6 list> -q --tb=line -rfE`: 18 failed, 66 passed, 57 skipped (skips are `browser not required` in test_onboarding_wizard_browser.py; browser-only tests ran).
-- `python3 scripts/design_lint.py`: FAIL, `DESIGN App/app/templates/dashboard.html: T1 style attribute` (lines 19 to 84 use inline style=; the brief skips only T3).
+## Commands and results
+- `python3 scripts/design_lint.py`: OK (T1 on dashboard.html fixed by named classes; no T1 skip added).
 - `python3 scripts/context_lint.py`: OK.
-- Acceptance diff of the restore list vs origin/main: empty.
+- Brief §6 list plus test_0709_v2_overview_shots_browser.py, run with `UBYHOST_REQUIRE_BROWSER=1` and `UBYHOST_SHOTS_V2` set: 139 passed, 2 failed, 0 skipped.
+- Without `UBYHOST_REQUIRE_BROWSER=1`: 82 passed, 57 skipped (browser tests skipped by the gate). The gate is the same on origin/main (`test_onboarding_wizard_browser.py`: 9 "browser not required" lines there too). Changed nothing.
 
-## Failing tests (18)
-- test_signed_in_chrome.py (7): sidebar footer, support line, one-h1 and what-needs-you checks. The restored test expects the origin/main sidebar and footer; the HEAD v2 shell does not render them. Also `getComputedStyle` TypeError in helpers.
-- test_design_guardrails_browser.py (2), test_0284_states_browser.py (2), test_shell_lane_browser.py (4): same root cause (restored origin/main expectations vs v2 shell).
-- test_a11y_guard_browser.py (3): focus-not-visible on dashboard 1280 (27 findings, e.g. `a#:UbyHost`, `button#:More actions`); under-rail on `a.skip-link` at 320 and 640 px. These are the a11y findings on `/` the brief asks to report.
+## Still failing
+1. `test_design_guardrails_browser.py::test_every_host_page_passes_the_layout_guard`: 5 `menu-off-screen` findings on `/` (dashboard, 390 open, 1280 open/collapsed, 2000 open/collapsed). The row menu opens below the document bottom. Not fixed: needs the menu markup or positioning change.
+2. `test_a11y_guard_browser.py::test_every_page_passes_the_page_checks`: 108 `contrast` and 2 `target-size-24` findings on `/`. Reported per brief. Mostly the muted ink colours (`--ink3`) on white; a palette change is an owner decision.
 
-## Screenshots (docs/tasks/screenshots-0709/)
-- overview-cs-1280.png: clean.
-- overview-cs-390.png: the Dnes table shows Host and Stav only (phone hiding works), the calendar scrolls inside its card, no sideways page scroll (test_0709 passes). Two issues: the account card (`Quiet Dashboard Review`, 2 nemovitosti) still shows in the top bar, so my `body.v2 .side .me` selector does not match the real markup; and the Stav cell of the Review Flat row is empty.
+## What changed in this pass
+- Design lint T1: dashboard.html inline styles replaced by classes in app2.css (`ov-*`, `ic-red|amber|neutral`). Calendar bars now use `data-c1`, `data-c2`, `data-row` and `data-overdue`, built in `App/app/routes/admin.py` (no `style=` left).
+- Zero-state heading: dashboard keeps the page `<h1>`. The compact welcome title in `onboarding_welcome` (`_components.html`) is now `<h2>` when `compact=True`, so one h1 per page.
+- Phone (390 px): the top account card `.org` is hidden (screenshot checked). The Stav cell for awaiting-guest rows now always shows the `progress_pill` (it showed "Čeká na hosta", a plain text pill, not empty).
+- Focus: `:focus-visible` outline 2px #d0452d offset 2px for links, buttons, inputs, selects, textareas, summaries, table rows. The skip link is `position:fixed; z-index:1000` at top-left when focused.
+- Tests moved to the v2 shell: signed_in_chrome (support and sidebar tests use `/reservations`; needs-you and stay tests use the v2 `.needs-you-card-item` markup; zero-state test asserts the page h1 is still present); 0284 (v2 selectors, the card-level hover target removed, the button hover added); shell_lane (`/` removed from PAGES, which are the old-shell checks); design_guardrails sidebar-search test uses `/reservations`.
+- Stav pill fallback and the screenshot test are in the commits above.
+
+## Screenshots (docs/tasks/screenshots-0709/, not yet committed)
+- overview-cs-1280.png and overview-cs-390.png, regenerated by the last run. The 390 page has no sideways scroll, the account card is hidden, the calendar scrolls inside its card, and the Dnes table shows Host and Stav.
 
 ## Deviations
-- Coordinator decision applied: workflow.css restored fully, `class="quiet"` in dashboard.html, dashboard-quiet and dashboard-today removed from catalog.json.
-- Phone CSS prefixed with `body.v2`; the Dnes table hiding is scoped to `body.v2 .card > table` so other pages are untouched.
-- Commit attribution: harness line (Claude Haiku 5.5), per coordinator decision 3.
-- Step 3 and 4 each needed a fix commit: static versions refused a changed file under an old key.
-
-## Questions
-1. Design lint T1 on dashboard.html: move the inline styles to app2.css, or skip T1 for the v2 templates too?
-2. The 18 failing tests: update the restored origin/main expectations for the v2 shell, or keep the old tests and change the v2 shell? This is outside the brief.
-3. Account card on the 390 px top bar: which selector is the card? I can fix it in one pass once the markup is known.
+- Coordinator decisions applied (workflow.css restored, dashboard-quiet and dashboard-today removed, harness attribution).
+- Phone CSS and the focus and skip-link rules are scoped to `body.v2` where they touch v2 shells only.
+- The Dnes table columns are hidden with `body.v2 .card > table` selectors.
+- The Stav fallback is the existing `progress_pill` (plain-text pill), not a new neutral pill style.
+- Two test assertions were rewritten to v2 markup rather than moved, as the coordinator asked.
 
 ## Owner steps left
-None until the questions are answered.
+- Decide on the contrast palette (`--ink3`) for the a11y finding, and on the row-menu placement for the layout guard.
+- Nothing to deploy from this branch; it is not pushed.
