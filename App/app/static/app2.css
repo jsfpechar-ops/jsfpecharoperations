@@ -305,7 +305,7 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
 /* 0532: the property name link in the list has a 24 px tap target (geometry guard) */
 body.v2 .props-card .row-primary-link{display:inline-block;min-height:24px;padding-block:3px;box-sizing:border-box}
 /* 0532: copy-link button in each list row shows on hover from 1024 px (mockup); always visible on touch and below 1024 px */
-@media (hover:hover) and (min-width:1024px){body.v2 .props-card tbody tr .btn.sm.ghost{opacity:0;transition:opacity .15s}body.v2 .props-card tbody tr:hover .btn.sm.ghost,body.v2 .props-card tbody tr:focus-within .btn.sm.ghost{opacity:1}}
+@media (hover:hover) and (min-width:1024px){body.v2 .props-card tbody tr .btn.sm.ghost{opacity:0;transition:opacity .15s}body.v2 .props-card tbody tr:hover .btn.sm.ghost{opacity:1}body.v2 .props-card tbody tr:focus-within .btn.sm.ghost{opacity:1;transition:none}}
 /* 0532: a list row opens on click, so it shows the pointer */
 body.v2 .props-card tbody tr.clickable-row{cursor:pointer}
 /* 0533: below 1024 px the rows are the mockup cards (.props-phone) and the table is hidden; from 1024 px the cards are hidden */
