@@ -64,23 +64,37 @@ def client(owner):
 
 
 class _FakePaymentLink:
-    """Strict SDK-16 shape: params dict only."""
+    """Strict SDK-16 shape: params dict, connected account in options (0622)."""
 
     def __init__(self) -> None:
         self.created: List[Dict[str, Any]] = []
+        self.options: List[Dict[str, Any]] = []
+        self.retrieved: List[str] = []
+        self.active = True
 
     def create(self, params=None, options=None):
         assert params is not None, "payment_links.create must pass params="
+        assert "stripe_account" not in params, "stripe_account belongs in options="
+        assert options and options.get("stripe_account"), "connected account missing"
         self.created.append(params)
+        self.options.append(options)
         return {"id": "plink_test_1", "url": "https://buy.stripe.com/test_1"}
+
+    def retrieve(self, link_id, options=None):
+        assert options and options.get("stripe_account"), "connected account missing"
+        self.retrieved.append(link_id)
+        return {"id": link_id, "url": "https://buy.stripe.com/test_1", "active": self.active}
 
 
 @pytest.fixture
 def fake_link(monkeypatch, stripe_env):
     link = _FakePaymentLink()
 
-    class _Client:
+    class _V1:
         payment_links = link
+
+    class _Client:
+        v1 = _V1()
 
     monkeypatch.setattr(stripe_connect, "_client", lambda: _Client())
     return link
