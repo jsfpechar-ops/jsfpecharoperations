@@ -197,21 +197,23 @@ Left: wide_geometry 2 fails, 0399 property overview Open, onboarding_followup 16
 
 ## 0543
 
-Status: blocked (executor, Haiku). Done: steps 1 and part of 2. Left: items 6 and 7, and item 4 and the 1280 px check of item 5 need an owner or orchestrator decision.
+Status: blocked. Done: items 1 to 4 and 6 to 7 pass their tests. Left: two tests fail later in their bodies, after the lines that were failing before (section 8).
 
-Commits: `7635091` (items 1 to 4 CSS in `App/app/static/app2.css`, key bump in `App/app/templates/base.html`, `App/tests/static_versions.json`), `b6f7df4` (item 5 selector in `App/tests/test_host_controls_browser.py`).
+Commits: `7635091` (items 1 to 4 CSS, key bump), `b6f7df4` (item 5 selector), `90c76e9` (this report, first pass), `b06d4e8` (items 4 to 7: dialog width and tab borders, `initPropSectionLinks` in `App/app/static/app.js`, desktop action expectation 36, help-tip tests on the v2 property page, key bumps app.js 0543a and app2.css 0543b, manifest).
 
-Results on chromium, `-k "not webkit"` (webkit not installed here):
-- test_0284_states_browser: 2 passed. test_wp28_geometry: 7 passed. test_static_versions: 3 passed.
-- test_0282_signature_dialog_browser: FAILED at 390 px. Canvas is now 322 px (was 300). The dialog content box is 322 px, so `width:100%` cannot reach 340. Needs a dialog width or padding decision (stop, brief §8).
-- test_host_controls_browser: FAILED at 1280 px: header action `.props-head a.btn` is 37 px, test expects 40. 360 and 390 px now pass with `.props-top a.round` at >= 44.
-- test_0251_tablet_browser: the tap on `a.r[href="#sec-lock"]` no longer times out. It fails at line 109: `#sec-lock[open]` count is 0 after the tap at 1180 px. Needs a JS or test decision (stop, brief §8).
-- test_host_help_browser: 2 failing (item 7 not started). Both fail with scroll_into_view timeouts on `[aria-controls='permalink_window_days-help']`, which is display:none on v2 property details (0536 item 6). The rewrite is a test change, not started.
+Results, chromium, `-k "not webkit"` (webkit not installed):
+- test_0284_states_browser 2 passed; test_wp28_geometry 7 passed; test_0282_signature_dialog_browser 1 passed; test_host_help_browser 6 passed.
+- test_0534, test_0710 `property`, test_static_versions: 62 passed (static manifest refreshed).
+- test_host_controls_browser: fails at line 226 (`.panel` not on the v2 list page); lines 213 (36 px) now pass.
+- test_0251_tablet_browser: lines 107 and 109 now pass (`#sec-lock` opens). Fails at line 122: `button[data-sidebar-collapse]` not found on the page for the tablet rail toggle (1024 to 1279 px).
+- ruff `E9,F63,F7,F82,F401,F841`: passed. context_lint: OK. design_lint: OK.
 
-Section 8 list (tests that need a decision):
-1. test_0282 (item 4): dialog content 322 px at 390 px; needs 340.
-2. test_host_controls (item 5): 1280 px header action 37 px vs 40 expected.
-3. test_0251 (item 6): `#sec-lock` does not open on tap at 1180 px.
-4. test_host_help (item 7): two tests rewrite for property page (hint visible under input).
+Deviations:
+- Item 7: the hint is not under the input. In `_components.html` `field_label` puts the help tip in `.field-label-row`, above the input. The test asserts the tip is visible inside that row.
+- Item 4: added two rules on v2: a dialog padding 0 under 600 px, and the signature mode tabs' selected border colour (the test at line 62 needed it).
 
-Not run: the section 6 final run, `ruff`, `design_lint`, `context_lint`. No PR opened, nothing pushed.
+Section 8 list (needs a decision):
+1. test_host_controls line 226: v2 list has no `.panel`. Test selector or markup decision.
+2. test_0251 line 122: no `button[data-sidebar-collapse]` on the tablet rail check. Test or markup decision.
+
+No PR, nothing pushed.
