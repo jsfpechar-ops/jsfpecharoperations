@@ -22,6 +22,8 @@ USERNAME = "dashboard-queue-admin"
 
 REPORTED_KEY = "action.reported"
 NOT_REQUIRED_KEY = "action.not_required"
+# v2 Overview: the Stav cell shows one pill for reported and not_required stays.
+V2_PILL_KEY = "status.reported"
 
 
 def _ensure_admin() -> int:
@@ -176,7 +178,8 @@ def _next_action_for(page_text: str, stay_id: int) -> str:
     assert row, f"stay {stay_id} has no row on the work queue"
     action = re.search(r'<td class="dashboard-row-task"[^>]*>(.*?)</td>', row.group(1), re.S)
     assert action, f"stay {stay_id} has no next-action line"
-    return " ".join(action.group(1).split())
+    text = re.sub(r"<[^>]+>", "", action.group(1))
+    return " ".join(text.split())
 
 
 def _needs_action_section(page_text: str) -> str:
@@ -246,14 +249,14 @@ def test_the_new_action_keys_are_at_parity():
 def test_a_reported_stay_says_nothing_is_left_to_do(seeded):
     page = _page("en")
     assert _next_action_for(page, seeded["reported"]) == (
-        host_i18n.translate("en", REPORTED_KEY)
+        host_i18n.translate("en", V2_PILL_KEY)
     )
 
 
 def test_a_stay_of_only_czech_guests_says_nothing_goes_to_the_police(seeded):
     page = _page("en")
     assert _next_action_for(page, seeded["not_required"]) == (
-        host_i18n.translate("en", NOT_REQUIRED_KEY)
+        host_i18n.translate("en", V2_PILL_KEY)
     )
 
 
@@ -266,10 +269,10 @@ def test_a_finished_stay_never_falls_back_to_check_what_is_missing(seeded):
 
 def test_a_czech_host_reads_the_new_next_actions_in_czech(seeded):
     page = _page("cs")
-    english = host_i18n.translate("en", REPORTED_KEY)
+    english = host_i18n.translate("en", V2_PILL_KEY)
     for stay, key in (
-        ("reported", REPORTED_KEY),
-        ("not_required", NOT_REQUIRED_KEY),
+        ("reported", V2_PILL_KEY),
+        ("not_required", V2_PILL_KEY),
     ):
         line = _next_action_for(page, seeded[stay])
         assert line == host_i18n.translate("cs", key)
