@@ -26,3 +26,6 @@ Also in this commit: this report.
 ## Owner steps left
 - Install Playwright for Python in App/.venv (or run the three browser tests in CI), confirm 0 skipped.
 - Screenshots and a second look at the coral budget (MASTER 4 budget unchanged, not measured).
+
+## Orchestrator follow-up (browser tests and screenshots)
+Playwright 1.63.0 matches the installed Chromium. `test_host_geometry.py test_host_feedback_browser.py test_design_guardrails_browser.py`: 14 passed, 0 skipped. Title underline selector fixed to `.ui-ph h1::after` (the first selector matched nothing). Screenshots in `docs/tasks/screenshots-0495/` (dashboard, stays, properties in Vietnamese; 1280 and 390 px).

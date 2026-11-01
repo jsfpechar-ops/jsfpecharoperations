@@ -72,7 +72,7 @@
 .host-workspace .ui-chip:hover { background: var(--surface-3); color: var(--ink); }
 .host-workspace .ui-chip[aria-pressed="true"], .host-workspace .ui-chip[aria-current="true"] { background: var(--accent); color: var(--on-accent); }
 /* 0495: coral shell. Page title underline (MASTER 5.1) and table row hover tint (MASTER 4.2 j, k). */
-.host-workspace .page-header-main h1::after { content: ""; display: block; width: 28px; height: 3px; margin-top: var(--space-2); border-radius: var(--radius-pill); background: var(--accent); }
+.host-workspace .ui-ph h1::after { content: ""; display: block; width: 28px; height: 3px; margin-top: var(--space-2); border-radius: var(--radius-pill); background: var(--accent); }
 .host-workspace .ui-table tr:hover td { background: color-mix(in srgb, var(--accent-soft) 40%, transparent); }
 
 /* ---- 7.8 menu ---- */
