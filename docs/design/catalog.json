@@ -259,7 +259,8 @@
     "havel-card-actions",
     "havel-card-form",
     "havel-card-change",
-    "havel-card-danger"
+    "havel-card-danger",
+    "property-setup-chips"
   ],
   "hooks": [
     "sr-only",
@@ -1017,6 +1018,7 @@
     "quick-choice": "0355 Quick answers: one yes/no question, a fieldset whose legend is a ui-label.",
     "quick-choice-options": "0355 the row of three answer chips, full width.",
     "quick-choice-option": "0355 one answer: a label holding a native radio and its chip text; the checked chip is filled like a pressed ui-chip.",
-    "havel-*": "0312-0314: Havel (AI) support assistant: thread, bubbles, composer, cards, topics, panel (plan section 17)."
+    "havel-*": "0312-0314: Havel (AI) support assistant: thread, bubbles, composer, cards, topics, panel (plan section 17).",
+    "property-setup-chips": "Properties list: the Setup cell, four chips (police, calendar, lock, stay fee) that link to the setting that fixes each one."
   }
 }

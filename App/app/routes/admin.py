@@ -1188,6 +1188,7 @@ def apartments_list(request: Request):
     rows = db.query(
         "SELECT a.*, e.name AS entity_name, "
         "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds, "
+        "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1 AND f.last_status = 'error') AS feed_errors, "
         "  (SELECT COUNT(*) FROM reservation r WHERE r.apartment_id = a.id AND r.status = 'active') AS reservations "
         "FROM apartment a LEFT JOIN legal_entity e ON e.id = a.legal_entity_id "
         f"WHERE a.archived_at IS NULL AND {db.null_safe_eq('a.owner_user_id')} ORDER BY a.internal_name",
@@ -1216,6 +1217,50 @@ def apartments_list(request: Request):
         item["link_url"] = (
             f"{config.PUBLIC_BASE_URL}/l/{item['link_key']}" if item["link_key"] else ""
         )
+    # 0530: four setup chips per property (police, calendar, lock, stay fee).
+    auth_failed = {
+        int(alert["apartment_id"])
+        for alert in db.query(
+            "SELECT apartment_id FROM alert WHERE owner_user_id = ? "
+            "AND kind = 'ubyport_auth_failed' AND resolved_at IS NULL",
+            (access.owner_id(request),),
+        )
+        if alert["apartment_id"] is not None
+    }
+    for item in enriched:
+        apartment = item["apartment"]
+        apartment_id = int(apartment["id"])
+        base = f"/apartments/{apartment_id}"
+        has_feeds = int(apartment["feeds"] or 0) > 0
+        feed_error = int(apartment["feed_errors"] or 0) > 0
+        police_bad = bool(item["issues"]) or apartment_id in auth_failed
+        lock_ok = bool(apartment["lock_id"])
+        item["chips"] = [
+            {
+                "key": "police",
+                "state": "bad" if police_bad else "ok",
+                "href": f"{base}?view=settings&section=reporting#ubyport",
+            },
+            {
+                "key": "calendar",
+                "state": "ok" if has_feeds and not feed_error else "bad",
+                "href": f"{base}?view=bookings#calendars",
+            },
+            {
+                "key": "lock",
+                "state": "ok" if lock_ok else "off",
+                "href": (
+                    f"{base}?view=settings&section=lock#door-code"
+                    if lock_ok
+                    else f"{base}?view=settings&section=property#basics"
+                ),
+            },
+            {
+                "key": "fee",
+                "state": "ok" if stay_fee.is_active(apartment) else "off",
+                "href": f"{base}?view=settings&section=reporting#stay-fee-settings",
+            },
+        ]
     archived_rows = [
         {"apartment": row, "issues": validation.errors_only(_apartment_issues(row))} for row in archived
     ]

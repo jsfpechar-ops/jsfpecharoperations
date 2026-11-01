@@ -1132,3 +1132,5 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .ui-choice-card:has(input:checked) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .host-workspace .ui-choice-card input:focus-visible { outline: none !important; }
 .ui-choice-card:has(input:focus-visible) { outline: 2px solid var(--coral-600); outline-offset: 2px; }
+.host-workspace .property-setup-chips{display:flex;flex-wrap:wrap;gap:.375rem}
+.host-workspace .property-setup-chips .ui-badge{text-decoration:none;margin:0}

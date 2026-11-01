@@ -368,14 +368,8 @@ def test_guest_link_automation_and_fee_have_no_copied_editor(acc):
     # The fee list only links to the one editor (Set up for the rate-0 property);
     # the report's forms are decisions and manual records, never fee configuration.
     assert f"/apartments/{acc['p2']}?view=settings&amp;section=reporting" in pages["fees"]
-    # 0098: the Properties summary posts only to the scoped timing route and
-    # the existing regenerate-pin route; no other editor lives there.
-    listing = pages["properties"]
-    start = listing.index('id="property-summaries"')
-    summary = listing[start:listing.index("</section>", start)]
-    actions = set(re.findall(r'<form[^>]*action="/apartments/\d+/([a-z-]+)"', summary))
-    assert actions == {"automation-timing", "regenerate-pin"}, actions
-    assert "<textarea" not in summary and len(re.findall(r"<form", summary)) == 2 * summary.count("data-summary-row")
+    # 0530: the Properties page has no summary section, so no editor lives there.
+    assert 'id="property-summaries"' not in pages["properties"]
 
 
 def test_one_shared_entity_editor_owns_business_and_invoice_fields(acc):
@@ -432,9 +426,7 @@ def test_one_many_no_and_archived_properties_on_hubs_and_search(acc):
     listing = many.get("/apartments?lang=en").text
     assert f'/apartments/{acc["p3"]}/unarchive' not in listing
     assert f'/apartments/{acc["p3"]}/unarchive' in many.get("/settings/archived?lang=en").text
-    summary = listing[listing.index('id="property-summaries"'):]
-    summary = summary[:summary.index("</section>")]
-    assert "Archived Gamma" not in summary and "Studio Beta" in summary
+    assert 'id="property-summaries"' not in listing
     empty = none.get("/apartments?lang=en").text
     # No business yet: the empty state points at the business first (0078), no summary.
     assert "/entities" in empty and 'id="property-summaries"' not in empty
