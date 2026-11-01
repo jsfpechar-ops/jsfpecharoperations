@@ -262,7 +262,6 @@
     "havel-card-danger",
     "stay-col-departure",
     "stay-col-property",
-    "guest-card-doc",
     "stay-door-card"
   ],
   "hooks": [
@@ -454,17 +453,7 @@
       "empty",
       "err-text",
       "eyebrow",
-      "fact-extra",
-      "fact-wide",
       "field-label-row",
-      "guest-card",
-      "guest-card-action",
-      "guest-card-head",
-      "guest-card-note",
-      "guest-card-state",
-      "guest-card-who",
-      "guest-cards",
-      "guest-facts",
       "guest-facts-identity",
       "guest-facts-stay",
       "host-stay-detail",
@@ -1020,7 +1009,6 @@
     "havel-*": "0312-0314: Havel (AI) support assistant: thread, bubbles, composer, cards, topics, panel (plan section 17).",
     "stay-col-departure": "Stays list: the departure date column, shown beside the arrival column on computer width.",
     "stay-col-property": "Stays list: the property name column on computer width.",
-    "guest-card-doc": "Guest row cell on the stay page that shows the guest document type label (desktop table column).",
     "stay-door-card": "Stay page door code card; the code line is set large on desktop."
   }
 }
