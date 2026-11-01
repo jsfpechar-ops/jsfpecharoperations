@@ -17,7 +17,14 @@
 
 {% if rows %}
 <div class="top props-top"><span></span><a class="round" href="/apartments/new" aria-label="{{ t('apartments.add') }}">{{ icon('plus', 22) }}</a></div>
-<div class="head props-head"><div><h1>{{ t('apartments.title') }}</h1><p class="sub">{{ t('apartments.sub') }}</p></div><a class="btn" href="/apartments/new">{{ t('apartments.add') }}</a></div>
+<div class="head props-head"><div><h1>{{ t('apartments.title') }}</h1><p class="sub">{{ t('apartments.sub') }}</p>
+    <details class="ui-how ov-how" data-how="properties">
+      <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
+      <div class="ui-how-body">
+        <ol class="ui-how-steps">{% for n in (1, 2, 3) %}<li>{{ t('how.properties.' ~ n) }}</li>{% endfor %}</ol>
+        <a class="ui-how-more" href="/guide#overview">{{ t('how.more') }}</a>
+      </div>
+    </details></div><a class="btn" href="/apartments/new">{{ t('apartments.add') }}</a></div>
 <div class="card props-card"><table>
     <thead>
       <tr><th>{{ t('apartments.table.property') }}</th><th>{{ t('apartments.table.address') }}</th><th>{{ t('apartments.table.setup') }}</th>

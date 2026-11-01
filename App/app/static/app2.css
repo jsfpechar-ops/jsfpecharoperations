@@ -433,6 +433,8 @@ body.v2 .ov-head .ov-links > *{margin:0}
 body.v2 .ov-head .ov-inline{display:inline-flex}
 body.v2 .ov-how > summary{list-style:none}
 body.v2 .ov-how > summary::-webkit-details-marker{display:none}
+/* how-help blocks on the property pages are computer-only (owner, 0535) */
+@media (max-width:1023px){body.v2 .ov-how{display:none}}
 
 /* v2 shared: Havel (copied from host2.css; delete the host2 copy when the old shell is retired) */
 body.v2{--tabbar-safe:env(safe-area-inset-bottom,0px)}

@@ -193,3 +193,18 @@ Checks: CI list plus `test_0534_property_page_v2`, `test_property_hub`, `test_st
 Part C (owner, 19:09 pills): not started. Needs the `app2.css` 0533 block change, override entry, key bump, `--write`, screenshot `docs/tasks/screenshots-0533/app-390.png`, commit `0533: smaller phone pills (owner)`.
 
 Owner steps left: decide the `test_0705` and `test_design_admin` items; answer the help-block question.
+
+## 0535 last CI tests + pills (executor, blocked)
+
+Status: blocked (call budget reached after Part C and the help block).
+
+Commits: `679f0b0` 0533: smaller phone pills (owner). Help block commit: this step (`0535 step: help block on property pages`).
+
+Part C: app2.css 0533 phone `.st` now 12px / 600 / 3px 9px 3px 7px / gap 5px, dot 6px. Overrides added in `App/tests/v2_mockup.py` (SELECTOR_OVERRIDES: longhand padding, column/row gap; BOX_OVERRIDES: height 23px), reason "owner 2026-11-01 19:09: smaller pills than the phone mockup". Key `20261101-0535h-help`, manifest rewritten (41 files). `test_0710_v2_mockup_match_browser.py -k properties`: `12 passed in 16.17s` (0 skipped, 390/320/768). Screenshot `docs/tasks/screenshots-0533/app-390.png` retaken (/apartments?lang=cs, full page, 390 px).
+
+test_page_help_0277: closed `ov-how` block (data-how="properties" on /apartments after `.sub`; data-how="property" on the property page after the h1; existing how.properties.* / how.property.* keys). Phone hide: `@media (max-width:1023px){body.v2 .ov-how{display:none}}` (no `ph-hide` class exists). Result: `test_page_help_0277.py` passes (3 cs/en/vi cases). Empty-state branch of /apartments has no help block.
+
+Still failing, not changed:
+- test_ui_consistency::test_the_copy_button_keeps_its_icon_when_it_confirms: the first `<button` before `data-copy-label-slot` is the v2 `btn-icon-label` copy button. Planned fix: if `btn-icon-label` in button, assert `<svg` not in button; else keep the icon assert.
+- §8 items not yet done: test_0291, test_design_properties (2), test_entity_editor_navigation (2), test_properties_table_chips (2), test_stay_fee_property_panel edit-page panel, test_design_admin smart-locks `style=`.
+- test_0705_v2_shell_browser: left alone (shared).

@@ -22,6 +22,13 @@
 {# 0534: one scroll page, no tabs. Each section is a plain details; ?view= and ?section= pick what is open without JavaScript. #}
 <div class="crumb"><a href="/apartments">{{ t('nav.properties') }}</a> › {{ apartment.internal_name }}</div>
 <h1>{{ apartment.internal_name }}</h1>
+<details class="ui-how ov-how" data-how="property">
+  <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
+  <div class="ui-how-body">
+    <ol class="ui-how-steps">{% for n in (1, 2, 3) %}<li>{{ t('how.property.' ~ n) }}</li>{% endfor %}</ol>
+    <a class="ui-how-more" href="/guide#overview">{{ t('how.more') }}</a>
+  </div>
+</details>
 {% if permalink %}<section class="card guest-card" aria-labelledby="property-guest-link-title"><div><b id="property-guest-link-title">{{ t('property_page.guest_link.title') }}</b><div class="sub">{{ permalink }}</div></div><input class="sr-only" type="text" id="property-guest-url" readonly value="{{ permalink }}" tabindex="-1" aria-hidden="true">{{ copy_button('property-guest-url', t('common.copy_link')) }}</section>{% endif %}
 {% if setup_progress and not setup_progress.hidden %}
 <section class="panel setup-continue-card" aria-label="{{ t('wizard.continue_card_aria') }}">
