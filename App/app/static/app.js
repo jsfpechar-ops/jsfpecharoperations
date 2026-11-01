@@ -1979,7 +1979,8 @@
      Only a section opened by default (no ?section=) is closed; a requested one stays open. */
   function initPhoneDefaultClosed() {
     if (!window.matchMedia("(max-width: 1023px)").matches) return;
-    document.querySelectorAll("details[data-default-open]").forEach(function (node) {
+    if (/[?&](section|view)=/.test(window.location.search) || window.location.hash) return;
+    document.querySelectorAll("details#sec-basics").forEach(function (node) {
       if (!claimNode(node, "initPhoneDefaultClosed")) return;
       node.removeAttribute("open");
     });

@@ -49,7 +49,7 @@
 
   {# ---- Property information ---------------------------------------- #}
 <h2 class="sec prop-phone-only">{{ t('nav.settings') }}</h2>
-<details class="prop-sec" id="sec-basics"{% if property_view != 'bookings' and (not settings_section or settings_section == 'property') %} open{% if not settings_section %} data-default-open{% endif %}{% endif %}><summary><span class="dot {{ 'g' if address_text else 'r' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.basics.title') }}</b><small>{{ t('property_page.sec.basics.sub') }}</small></div><small class="sec-state">{{ address_text or t('property_nav.address_missing') }}</small></summary>
+<details class="prop-sec" id="sec-basics"{% if property_view != 'bookings' and (not settings_section or settings_section == 'property') %} open{% endif %}><summary><span class="dot {{ 'g' if address_text else 'r' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.basics.title') }}</b><small>{{ t('property_page.sec.basics.sub') }}</small></div><small class="sec-state">{{ address_text or t('property_nav.address_missing') }}</small></summary>
   <div class="fields-wrap">
     <section class="panel property-section ui-section" id="basics">
       <h3 class="property-section-title">{{ t('apartment.form.basics.title') }}</h3>
