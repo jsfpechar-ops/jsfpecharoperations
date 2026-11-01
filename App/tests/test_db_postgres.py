@@ -682,11 +682,13 @@ def test_writer_lock_wait_is_bounded_and_recovers(pg_runtime, monkeypatch):
 
     monkeypatch.setattr(db_postgres, "LOCK_TIMEOUT", "250ms")
     holder = db.connect()
-    holder.acquire_writer_session_lock()
+    holder.execute("BEGIN IMMEDIATE")
+    holder.execute_native("SELECT pg_advisory_xact_lock(hashtext('guest'), 1)")
     started = time.monotonic()
     try:
         with pytest.raises(Exception) as info:
             with db.immediate() as cur:
+                db.lock_key(cur, "guest", 1)
                 cur.execute(
                     "INSERT INTO settings (key, value) VALUES (?, ?)",
                     ("writer-lock-timeout-probe", "x"),
@@ -698,7 +700,7 @@ def test_writer_lock_wait_is_bounded_and_recovers(pg_runtime, monkeypatch):
         # The refused write left nothing behind.
         assert db.get_setting("writer-lock-timeout-probe") is None
     finally:
-        holder.release_writer_session_lock()
+        holder.execute("ROLLBACK")
         holder.close()
     # A later write after the holder released succeeds (no blind retry by the app).
     db.execute(
@@ -730,7 +732,8 @@ def test_writer_lock_timeout_surfaces_as_lock_not_available_through_every_helper
     probe_key = "lock-not-available-probe"
     db.execute("DELETE FROM settings WHERE key = ?", (probe_key,))
     holder = db.connect()
-    holder.acquire_writer_session_lock()
+    holder.execute("BEGIN IMMEDIATE")
+    holder.execute_native("SELECT pg_advisory_xact_lock(hashtext('guest'), 1)")
 
     def expect_lock_timeout(call):
         started = time.monotonic()
@@ -789,6 +792,7 @@ def test_writer_lock_timeout_surfaces_as_lock_not_available_through_every_helper
         # db.immediate() keeps raising LockNotAvailable as before.
         def immediate_write():
             with db.immediate() as cur:
+                db.lock_key(cur, "guest", 1)
                 cur.execute(
                     "INSERT INTO settings (key, value) VALUES (?, ?)",
                     (probe_key, "immediate"),
@@ -798,7 +802,7 @@ def test_writer_lock_timeout_surfaces_as_lock_not_available_through_every_helper
         assert db._thread_conn().in_transaction is False
         assert db.get_setting(probe_key) is None
     finally:
-        holder.release_writer_session_lock()
+        holder.execute("ROLLBACK")
         holder.close()
 
     # After the lock is released every path works again; no blind retry is needed.

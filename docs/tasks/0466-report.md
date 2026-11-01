@@ -1,13 +1,15 @@
 # 0466 report: part b (row locks)
 
 Status: blocked
-Done: steps 6 to 9. Left: steps 10 to 12, then the §6 part b test runs (with and without UBYHOST_TEST_DATABASE_URL).
-Reason: executor checkpoint reached (25 tool calls) before the tests. Part b tests were NOT run.
+Done: steps 6 to 12 and the §6 part b test runs (both backends). Red on the PostgreSQL row: one test, see Questions.
 
 ## Files changed
-- `App/app/db.py`: `lock_key(cur, name, key)` added after `immediate()` (step 6). Commit 32caad7.
-- `App/app/db_postgres.py`: `BEGIN IMMEDIATE` now runs `BEGIN` plus `SET LOCAL lock_timeout`; advisory writer lock removed from autocommit and savepoint branches; `_begin_immediate`, `_ensure_writer_lock`, `_transaction_lock_reset`, `_writer_lock_held` deleted (step 7 and 8). `grep -c pg_advisory_xact_lock app/db_postgres.py` = 0. Commit f11855d.
-- Step 9 call sites: `reporting.py`, `invoices.py`, `billing.py`, `guest_slug.py`, `cleaning_codes.py`, `stay_fee_filing.py`. Commit after f11855d.
+- `App/app/db.py`: `lock_key(cur, name, key)` after `immediate()` (step 6). Commit 32caad7.
+- `App/app/db_postgres.py`: `BEGIN IMMEDIATE` runs plain `BEGIN` plus `SET LOCAL lock_timeout`; advisory writer lock removed from autocommit and savepoint branches; `_begin_immediate`, `_ensure_writer_lock`, `_transaction_lock_reset`, `_writer_lock_held` deleted (steps 7 and 8). `grep -c pg_advisory_xact_lock app/db_postgres.py` = 0. Commit f11855d.
+- Step 9 call sites: `reporting.py`, `invoices.py`, `billing.py`, `guest_slug.py`, `cleaning_codes.py`, `stay_fee_filing.py`. Commit 72c8ae0 range.
+- Step 10: `App/tests/test_pg_row_locks.py` (new). Tests (a) and (b) are PostgreSQL only; (c) runs on SQLite with a sqlite3 trace callback and passes on both rows.
+- Step 11: `App/tests/test_db_postgres.py`: holders at the two tests now take `BEGIN IMMEDIATE` plus `pg_advisory_xact_lock(hashtext('guest'), 1)` and release with `ROLLBACK`; the waiting `db.immediate()` blocks call `db.lock_key(cur, "guest", 1)` first.
+- Step 12: `docs/context/rules.md` Database section, one sentence replaced.
 
 ## Step 9 final line numbers
 - reporting.claim_sendable: 1347 (after the DELETE at 1344)
@@ -22,18 +24,33 @@ Reason: executor checkpoint reached (25 tool calls) before the tests. Part b tes
 - stay_fee_filing.save: 129
 
 ## Greps
-- Step 8: `grep -n "_ensure_writer_lock\|_writer_lock_held\|_begin_immediate\|_transaction_lock_reset" app/ tests/ scripts/ -r` shows one hit: `tests/test_perf_logging.py:85`, a test name `test_lock_wait_is_measured_on_begin_immediate` (sqlite_only). It does not call the removed code. Not changed (outside the brief).
+- Step 8: one hit left, `tests/test_perf_logging.py:85`, a test name `test_lock_wait_is_measured_on_begin_immediate` (sqlite_only). It does not call removed code. Not changed (outside the brief).
 - `grep -rn "with db.cursor()" app | wc -l` = 6 (door_codes.py:538, reporting.py:1342, claim.py:649, lifecycle_mail.py:237, codelists.py:69, routes/admin.py:701).
-- §8 last item: the db.cursor() blocks outside step 9 (door_codes 538, claim 649, lifecycle_mail 237, codelists 69, admin 701) do not read submit_state, submission_claim or invoice_sequence. List is empty.
+- §8 last item: the db.cursor() blocks outside step 9 do not read submit_state, submission_claim or invoice_sequence. List is empty.
+
+## Test tails (§6 part b, same file list)
+SQLite row (no UBYHOST_TEST_DATABASE_URL), run with `-x`:
+```
+240 passed, 60 skipped in 17.89s
+```
+The skips are the PostgreSQL-only tests and the Playwright files (`test_cleaning_browser.py`, `test_host_ux_acceptance.py`, `test_stay_fee_send_panel.py`: `playwright` is not installed in `App/.venv`). Those browser tests did not run here.
+
+PostgreSQL row (UBYHOST_TEST_DATABASE_URL set to the local ubyhost_test database), run with `-x`:
+```
+1 failed, 15 passed, 3 skipped in 7.38s
+FAILED tests/test_db_postgres.py::test_writer_lock_timeout_surfaces_as_lock_not_available_through_every_helper
+E   Failed: DID NOT RAISE LockNotAvailable
+```
+Same row without `-x`: `1 failed, 294 passed, 5 skipped in 96.55s`. The 5 skips: the 3 Playwright files above, plus `test_guest_slugs.py:147` and `test_stay_fee.py:392` (both `sqlite_only`). The new tests (a), (b) and the rest of `test_db_postgres.py` (57 tests) pass.
 
 ## Deviations
 - Step 9 `claim_sendable`: followed the table (lock after the DELETE, before the loop), not the intro's "first statement".
-- Step 9 `lock_key` loops written as one-liners, as the brief text gives them.
-- Step 8 leftover name hit above (not a code reference).
-- Commit trailer: the reminder gives Claude Haiku 5.5 as the co-author (the model running this session), not the Opus 5.5 the task message asked for. Haiku 5.5 was used.
+- Step 10 test (c) is a standalone test (no fixture), so it runs on the SQLite row. (a) and (b) import `pg_runtime` only when the PostgreSQL URL is set, so the autouse session fixture does not break the SQLite row.
+- Commit trailer: the system attribution gives Claude Haiku 5.5 as co-author (the model running this session). The task message asked for Opus 5.5. Haiku 5.5 was used, as in the earlier commits.
 
 ## Questions
-- None.
+- Stop question (brief §8, not a fixable step): `test_writer_lock_timeout_surfaces_as_lock_not_available_through_every_helper` (`test_db_postgres.py:712`) probes `db.execute`, `executemany` and cursor-level `BEGIN IMMEDIATE` on the `settings` table. Those are autocommit helpers, and no `db.lock_key` can hold them, so after step 7 they no longer wait on the guest lock and the test fails with DID NOT RAISE. The brief says the holder and the `db.immediate()` waiter change and the assertions stay, which does not cover these three probes. Options for the orchestrator: (1) drop those three probes and keep only the `db.immediate()` + `lock_key` path, or (2) re-scope the test to the 55P03 path of `lock_key` alone. Not changed without a decision.
+- Playwright is missing in `App/.venv`, so the browser tests in the §6 list are skipped. The brief's "0 skipped" needs the owner or orchestrator to decide whether to install it (no new dependency is added by the repo itself).
 
 ## Owner steps left
-- None yet. Next session: steps 10 to 12, then §6 part b with and without UBYHOST_TEST_DATABASE_URL (local server on 127.0.0.1:5432).
+- None yet. Next: decide the Questions above, then rerun the PostgreSQL row.
