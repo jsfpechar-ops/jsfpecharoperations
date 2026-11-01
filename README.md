@@ -73,7 +73,7 @@ Versions from `App/requirements.txt` and `App/requirements.lock`:
 | Storage/mail | boto3 (SES only) | 1.43.118 | `App/requirements.txt`, `App/app/mail.py` |
 | Backups | Litestream | 0.5.17 | `deploy/lightsail/docker-compose.yml` |
 | Proxy | Caddy | 2 (alpine, digest-pinned) | `deploy/lightsail/docker-compose.yml` |
-| Monitoring | Grafana Alloy, node-exporter, cAdvisor | v1.10.1 / v1.9.1 / v0.52.1 | `deploy/lightsail/docker-compose.yml` |
+| Monitoring | Grafana Alloy, node-exporter, cAdvisor | v1.10.1 / v1.9.1 / v0.55.1 | `deploy/lightsail/docker-compose.yml` |
 | Migrations | Custom SQL runner (not Alembic) | — | `App/app/db.py:1124-1260`, `App/app/migrations/` |
 
 ## Repository layout
