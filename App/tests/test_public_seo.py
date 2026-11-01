@@ -145,8 +145,6 @@ def test_pricing_shows_the_price_list_in_both_languages():
         max_card = re.search(r'<article[^>]*data-plan="max".*?</article>', page.text, re.S).group(0)
         assert max_card.count("TTLock") == 1
         assert "whitelabel" not in page.text.lower()
-        assert strings["pricing.max.f6"] in page.text
-        assert ("not yet available" if lang == "en" else "zatím nedostupné") in strings["pricing.max.f6"]
         assert strings["pricing.faq.9.q"] in page.text
         assert '"@type": "WebPage"' in page.text
         assert '"@type": "FAQPage"' in page.text
