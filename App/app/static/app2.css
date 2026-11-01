@@ -453,7 +453,7 @@ body.v2 .havel-note{text-align: center;}
 body.v2 .havel-status{text-align: center;}
 body.v2 .havel-support-open{width: 100%; justify-content: center; border-radius: var(--radius-pill); min-height: var(--control-h-phone);}
 @media (max-width: 767px){
-body.v2 .havel-dialog{inset: var(--space-12) 0 0 0; height: auto;}
+body.v2 .havel-dialog{inset: var(--space-12) 0 0 0; height: auto; padding: 0; border: 0;}
 body.v2 .havel-dialog .ui-sheet{height: calc(100dvh - var(--space-12)); max-height: none; padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom));}
 body.v2 .havel-composer textarea{font-size: var(--size-16);}
 }
