@@ -226,3 +226,8 @@ body.v2 .cleaning-page [data-cal-scale]{min-width:44px;min-height:44px}
 body.v2 .row-open{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;box-sizing:border-box;border:1px solid var(--ink3);border-radius:999px;color:var(--ink);background:var(--s);vertical-align:middle;flex:0 0 auto}
 body.v2 .row-open-text{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 body.v2 .visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+
+/* 0544 geometry: calendar tap targets and text floor (cleaning page only) */
+@media (min-width: 768px) and (max-width: 1023px){body.v2 .cleaning-page #calendar button,body.v2 .cleaning-page #calendar select,body.v2 .cleaning-page #calendar a{min-width:44px;min-height:44px}}
+@media (min-width: 1024px){body.v2 .cleaning-page #calendar button,body.v2 .cleaning-page #calendar select,body.v2 .cleaning-page #calendar a{min-width:24px;min-height:24px}}
+body.v2 .cleaning-page #calendar *{font-size:max(12px,1em)}
