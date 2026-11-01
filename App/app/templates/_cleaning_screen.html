@@ -7,9 +7,9 @@
 <p class="cleaning-empty">{{ ct('no_properties') }}</p>
 {% endif %}
 <section id="cleaning-list" class="cleaning-list" aria-labelledby="cleaning-list-title" tabindex="-1">
-  <h2 id="cleaning-list-title">{{ ct('list') }}</h2>
+  <h2 id="cleaning-list-title"{% if not read_only %} class="visually-hidden"{% endif %}>{{ ct('list') }}</h2>
   <p class="cleaning-list-error" data-cleaning-error role="alert" hidden></p>
-  <div data-cleaning-list>{% include "_cleaning_list.html" %}</div>
+  <div data-cleaning-list>{% include ("_cleaning_list.html" if read_only else "_cleaning_table.html") %}</div>
 </section>
 <script type="application/json" data-cleaning-labels>{{ cleaning_labels | tojson }}</script>
 <script src="/static/cleaning.js?v=20261016-0123c" defer></script>
