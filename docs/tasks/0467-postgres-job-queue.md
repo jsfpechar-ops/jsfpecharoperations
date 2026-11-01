@@ -1,5 +1,5 @@
 # 0467: PostgreSQL job queue (`job` table, SKIP LOCKED) consumed by the Python worker, one kind at a time
-Status: todo
+Status: review
 Depends on: 0465 part a and 0466 part b merged | Base commit: main | Branch: task/0467a-job-queue, then task/0467b-drop-scheduler-lock
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 80k tokens (per part; two parts, two sessions, two PRs)
 ## 1. Objective

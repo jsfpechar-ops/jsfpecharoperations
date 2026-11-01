@@ -36,3 +36,41 @@ Done: steps 1 to 7 (4b first). Left: part b (steps 8 to 10).
 
 ## Owner steps left
 - Step 7 (ENVIRONMENT row and cutover step) is written. Nothing to run yet.
+
+# 0467 report, part b
+
+Status: review
+
+## Files changed
+- `App/app/scheduler.py`: `start()` takes `_acquire_single_instance_lock()` only when not every job kind is queued on PostgreSQL (step 8).
+- `App/app/worker.py`: docstring sentence on the lock skip (step 9).
+- `App/tests/test_job_queue.py`: two PostgreSQL tests, 15 kinds queued (lock never taken) and 14 kinds (lock taken once) (step 10).
+- Commits: `0467 step 8`, `0467 step 9`, `0467 step 10`, then this report.
+
+## Commands
+- PostgreSQL, both URLs set (`ubyhost_test`): `tests/test_job_queue.py tests/test_scheduler.py tests/test_worker.py tests/test_goose_migrations.py -q --tb=short -x -rs`
+  ```
+  SKIPPED [1] tests/test_job_queue.py:60: SQLite registration rules
+  SKIPPED [1] tests/test_job_queue.py:69: SQLite registration rules
+  SKIPPED [1] tests/test_job_queue.py:78: SQLite registration rules
+  41 passed, 3 skipped in 21.14s
+  ```
+- Neither URL set: `tests/` same four files, `-q --tb=short -x -rs`
+  ```
+  31 passed, 13 skipped in 4.40s
+  ```
+  The 13 skips are the PostgreSQL-only tests (9 in `test_job_queue.py`, 4 in `test_goose_migrations.py`).
+- `python3 scripts/context_lint.py | tail -3`: `context lint: OK`.
+
+## Checklist (§7, part b)
+- [x] Lock skipped only with all 15 ids on PostgreSQL (test 10, 15-kind case; 14-kind case takes it once)
+- [x] SQLite tests unchanged and green
+- [x] Part a acceptance unchanged: unset setting registration test green
+
+## Deviations
+- The 3 "SQLite registration rules" tests skip on PostgreSQL by design (they are existing part a tests), so the PostgreSQL run is `3 skipped`, not `0 skipped`. All new part b tests run on PostgreSQL and pass.
+- Commit trailer: the brief asked for `Co-Authored-By: Claude Opus 5.5`. The executor is Haiku 5.5, so the commits carry `Co-Authored-By: Claude Haiku 5.5` as the session attribution instructed. Owner or orchestrator can amend if Opus was intended.
+- Done: steps 8 to 10. Left: nothing in part b.
+
+## Owner steps left
+- Part b changes nothing to deploy. Step 7 cutover order still applies (see part a).

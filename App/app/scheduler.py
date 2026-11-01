@@ -569,7 +569,9 @@ def start() -> bool:
         )
     if config.JOB_QUEUE_KINDS and config.DB_BACKEND != "postgresql":
         raise RuntimeError("UBYHOST_JOB_QUEUE_KINDS needs PostgreSQL")
-    if not _acquire_single_instance_lock():
+    if config.DB_BACKEND == "postgresql" and set(JOB_KINDS) <= config.JOB_QUEUE_KINDS:
+        log.info("every job is on the queue; scheduler.lock not taken")
+    elif not _acquire_single_instance_lock():
         log.warning("another process holds the scheduler lock; not starting a scheduler here")
         return False
     _scheduler = BackgroundScheduler(timezone=config.TIMEZONE)

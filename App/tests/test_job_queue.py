@@ -204,3 +204,45 @@ def test_go_kind_outside_the_python_queue_refuses_to_start(monkeypatch):
     monkeypatch.setattr(config, "GO_JOB_KINDS", frozenset({"billing_snapshot"}))
     with pytest.raises(RuntimeError, match="UBYHOST_GO_JOB_KINDS"):
         scheduler.start()
+
+
+# --- PostgreSQL: the scheduler lock is skipped only when every kind is queued ---
+
+
+def _start_with_lock_spy(monkeypatch, kinds):
+    calls = []
+
+    def spy():
+        calls.append(1)
+        return True
+
+    monkeypatch.setattr(config, "ENABLE_SCHEDULER", True)
+    monkeypatch.setattr(config, "JOB_QUEUE_KINDS", frozenset(kinds))
+    monkeypatch.setattr(scheduler, "_acquire_single_instance_lock", spy)
+    return calls
+
+
+@needs_postgres
+def test_all_fifteen_kinds_queued_never_takes_the_scheduler_lock(job_db, monkeypatch):
+    def must_not_be_called():
+        raise AssertionError("scheduler.lock taken with every kind on the queue")
+
+    monkeypatch.setattr(config, "ENABLE_SCHEDULER", True)
+    monkeypatch.setattr(config, "JOB_QUEUE_KINDS", frozenset(scheduler.JOB_KINDS))
+    monkeypatch.setattr(scheduler, "_acquire_single_instance_lock", must_not_be_called)
+    assert len(scheduler.JOB_KINDS) == 15
+    assert scheduler.start() is True
+    try:
+        assert "job_queue" in {j.id for j in scheduler._scheduler.get_jobs()}
+    finally:
+        scheduler.shutdown()
+
+
+@needs_postgres
+def test_fourteen_kinds_queued_still_takes_the_scheduler_lock_once(job_db, monkeypatch):
+    calls = _start_with_lock_spy(monkeypatch, set(scheduler.JOB_KINDS) - {"push"})
+    assert scheduler.start() is True
+    try:
+        assert calls == [1]
+    finally:
+        scheduler.shutdown()
