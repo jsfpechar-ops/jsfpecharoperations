@@ -98,3 +98,30 @@ Deleted tests: none. Deleted assertions: the save-view steps inside `test_filter
 
 Deviations: 1) pill ban removed from `test_design_stays.py` (not in the orchestrator list; the pill is a v2 class, see above). 2) Step count exceeded: this session stopped at the 25-call checkpoint.
 Owner steps left: none. Not pushed. No PR.
+
+## Session 6 (Haiku executor)
+Status: blocked
+Commits: 9b999a0c `0527 step 2` (v2 date-range popover port, filter toggle heights, month row, wide_base readiness, key 0527k; manifest rewritten).
+
+Orchestrator answers applied: key bumped by hand to `20261101-0527g`, then `0527h`..`0527k` because `--write` refuses an unchanged key after app2.css changes (deviation: key value differs from the answer). Popover: the host.css popover base rules (fixed position, panel box, calendar grid, day states) were missing on v2 (v2 does not load host.css), so the phone rule alone could not work; ported the base and phone rules into app2.css scoped `body.v2`. `wide_base` readiness now `'data-host-alerts' in text or ' v2"' in text`.
+
+Test results (`--tb=short -rs`):
+- `test_static_versions.py`: 3 passed.
+- `test_host_filter_panels_browser.py`: 7 passed, 0 skipped (the 360 px popover test now passes). Added `body.v2 [data-filter-toggle]` min-height 40px (44px at <=600px) because the toggle measured 32px.
+- `test_a11y_guard_browser.py`: 4 passed.
+- `test_0199_phone_geometry_browser.py`: 3 passed.
+- `test_host_wide_geometry_browser.py`: 2 passed, 8 FAILED. Dashboard lane `.needs-you` missing at 1024; `assert 0 >= 4` at line 670; click timeout at 871; `getComputedStyle` on null at several places. Old markup, not triaged further.
+- `test_design_guardrails_browser.py`: 9 passed, 2 FAILED: `.host-workspace .ui-search-row` not found (old markup).
+- `test_host_list_layouts_browser.py`: 2 FAILED: 0 stays rows found (`.list .row` / table rows selectors are old markup).
+- `test_host_list_page_layout_browser.py`: 2 passed, 3 FAILED: no nav link for `/reservations` (tabs removed in 0526), stays "missing block" in expanded row check, stays "no clickable row" (old `row-open` markup).
+- `test_0710_v2_mockup_match_browser.py -k stays`: 3 FAILED (21 deselected). Real mismatches at 390 and 768 (copy values from mockup, not done): `.top .round` font-size 13.33 vs 15px and colour; `.list .row` height 101 vs 103.2px; `.row .pill.p-warn` width 122 vs 161px; at 768: `.head h1` 32px vs 24px; `.head .btn`, `.head .btn.ghost` missing in app; `.chip` padding 0/18px vs 6/12px and weight 700 vs 400; `main table th/td` missing; `.pill.p-warn` weight/padding.
+- `scripts/context_lint.py`: OK.
+- `scripts/design_lint.py`: FAIL (tail: DESIGN App/app/templates/reservations.html: T3 class not in catalog: stays-count
+DESIGN App/app/templates/reservations.html: T3 class not in catalog: stays-pager
+DESIGN App/app/templates/reservations.html: T3 class not in catalog: stays-pager-label
+design lint: FAIL).
+
+Not done: step 2 for the list-layout and wide-geometry files beyond the triage above (their assertions still use removed markup); step 3 screenshots (not started). Orchestrator fix list item 3 (panel styling) and item 4 (pager), 5-7 are part of the mockup mismatches above.
+
+Deleted tests: none. Deleted assertions: none this session.
+Owner steps left: none. Not pushed. No PR.
