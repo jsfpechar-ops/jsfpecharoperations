@@ -15,27 +15,30 @@
 {#- 0706: one "Potřebuje vás" card per needs-you line (mockup .todo). -#}
 {% macro overview_card(line, first=False) %}
 {% set ic_tone = 'red' if line.tone == 'red' else ('amber' if line.tone == 'amber' else 'neutral') %}
-<div class="card needs-you-card-item" data-tone="{{ line.tone }}" data-needs-you="{{ line.kind }}"{% if line.stay_id %} data-needs-you-stay="{{ line.stay_id }}"{% endif %}{% if line.dismiss_id %} data-notification{% endif %}>
-  <div class="ic" data-ic="{{ ic_tone }}" aria-hidden="true">{{ '!' if line.tone in ('red', 'amber') else 'i' }}</div>
-  <div>
-    <div class="t">{{ line.subject }}</div>
-    {% if line.text %}<p>{{ line.text }}</p>{% endif %}
-    {% if line.kind == 'paste' %}
-    <details class="needs-you-more" data-paste-check><summary>{{ t('workflow.paste.how') }}</summary>
-      <ul class="needs-you-how">
-        <li>{{ t('workflow.paste.airbnb') }}</li>
-        <li>{{ t('workflow.paste.booking') }}</li>
-        <li>{{ t('workflow.paste.direct') }}</li>
-      </ul>
-    </details>
-    {% endif %}
-    {% if line.href or line.dismiss_id %}
-    <div class="needs-you-actions">
-      {% if line.href %}<a class="btn sm{{ '' if first else ' ghost' }}" href="{{ line.href }}" data-needs-you-go>{{ line.action }}</a>{% endif %}
-      {% if line.dismiss_id %}<form method="post" action="/alerts/{{ line.dismiss_id }}/dismiss" class="needs-you-dismiss" data-notification-dismiss><button type="submit" class="link-btn" aria-label="{{ t('a11y.dismiss_notification') }}">×</button></form>{% endif %}
+{% set ph_tone = 'bad' if line.tone == 'red' else ('warn' if line.tone == 'amber' else 'acc') %}
+<div class="card needs-you-card-item need" data-tone="{{ line.tone }}" data-needs-you="{{ line.kind }}"{% if line.stay_id %} data-needs-you-stay="{{ line.stay_id }}"{% endif %}{% if line.dismiss_id %} data-notification{% endif %}>
+  <div class="h">
+    <div class="ic {{ ph_tone }}" data-ic="{{ ic_tone }}" aria-hidden="true">{{ '!' if line.tone in ('red', 'amber') else 'i' }}</div>
+    <div>
+      <b class="t">{{ line.subject }}</b>
+      {% if line.text %}<small>{{ line.text }}</small>{% endif %}
+      {% if line.kind == 'paste' %}
+      <details class="needs-you-more" data-paste-check><summary>{{ t('workflow.paste.how') }}</summary>
+        <ul class="needs-you-how">
+          <li>{{ t('workflow.paste.airbnb') }}</li>
+          <li>{{ t('workflow.paste.booking') }}</li>
+          <li>{{ t('workflow.paste.direct') }}</li>
+        </ul>
+      </details>
+      {% endif %}
     </div>
-    {% endif %}
   </div>
+  {% if line.href or line.dismiss_id %}
+  <div class="needs-you-actions">
+    {% if line.href %}<a class="btn sm{{ '' if first else ' ghost line' }}" href="{{ line.href }}" data-needs-you-go>{{ line.action }}</a>{% endif %}
+    {% if line.dismiss_id %}<form method="post" action="/alerts/{{ line.dismiss_id }}/dismiss" class="needs-you-dismiss" data-notification-dismiss><button type="submit" class="link-btn" aria-label="{{ t('a11y.dismiss_notification') }}">×</button></form>{% endif %}
+  </div>
+  {% endif %}
 </div>
 {% endmacro %}
 
@@ -50,6 +53,7 @@
   {% set needs_you = needs_you_build(rows, needs_you_queue, open_alerts, missing_report_rows, link_unused, lang, today) %}
   {% set ny_lines = (needs_you.lines | rejectattr('kind', 'equalto', 'setup') | list) if banner_showing else needs_you.lines %}
 
+  <div class="top ov-top"><span></span><a class="round" href="/reservations?new=1" aria-label="{{ t('stays.add_stay') }}">{{ icon('plus', 20) }}</a></div>
   <div class="head ov-head"><div>
     <h1>{{ t('dashboard.title') }}</h1>
     <p class="sub">{{ today.isoformat() | date_long(lang) }}</p>
@@ -73,12 +77,12 @@
   {% with open_alerts = open_alerts | rejectattr('reservation_id', 'in', ny_stay_ids) | rejectattr('id', 'in', ny_alert_ids) | list, alerts_expanded = true %}{% include "_host_alerts.html" %}{% endwith %}
   {{ onboarding_banner(onboarding) }}
   <section id="needs-action" data-needs-you-card data-dashboard-refresh="stats" aria-labelledby="needs-you-title">
-    <h2 id="needs-you-title">{{ t('needs_you.title') }}</h2>
+    <h2 id="needs-you-title" class="sec">{{ t('needs_you.title') }}{% if ny_lines %} <span class="badge ph-only">{{ ny_lines | length }}</span>{% endif %}</h2>
     <div class="todo ov-section">
     {% if ny_lines %}
       {% for line in ny_lines[:4] %}{{ overview_card(line, loop.first) }}{% endfor %}
     {% else %}
-      <div class="card needs-you-calm"><p>{{ icon('check', 20) }} <strong>{{ t('needs_you.calm') }}</strong></p></div>
+      <div class="card needs-you-calm allgood"><p>{{ icon('check', 20) }} <strong>{{ t('needs_you.calm') }}</strong></p></div>
     {% endif %}
     </div>
     {% if ny_lines | length > 4 %}
@@ -105,7 +109,7 @@
   <p class="ov-cal-more"><a href="/?cal_view=calendar" class="ov-cal-link">{{ t('dashboard.calendar.full') }}</a></p>
   {% if cal_view %}{% include "_dashboard_calendar.html" %}{% endif %}
 
-  <h2>{{ t('dashboard.today.title') }}</h2>
+  <h2 class="sec">{{ t('dashboard.today.title') }} <a class="ph-only" href="/?cal_view=calendar">{{ t('calendar.calendar') }}</a></h2>
   <div class="card" data-dashboard-refresh="work"><table><thead><tr><th>{{ t('archive.col.guest') }}</th><th>{{ t('stay_fees.col.property') }}</th><th>{{ t('host.stay_dates') }}</th><th>{{ t('filter.status') }}</th><th></th></tr></thead><tbody>
   {% for row in today_rows %}
     {% set reservation = row.reservation %}{% set progress = row.progress %}{% set cell = row.deadline_cell %}
