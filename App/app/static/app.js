@@ -647,6 +647,7 @@
 
   function initControllerFields() {
     document.querySelectorAll("[data-controller-same-toggle]").forEach(function (checkbox) {
+      if (!claimNode(checkbox, "initControllerFields")) return;
       var panel = document.getElementById(checkbox.getAttribute("data-controller-target"));
       if (!panel) return;
       var select = panel.querySelector("select");
@@ -666,6 +667,7 @@
     var source = document.getElementById("fee-copy-source");
     var button = document.getElementById("fee-copy-apply");
     if (!source || !button) return;
+    if (!claimNode(button, "initFeeTemplateCopy")) return;
     button.addEventListener("click", function () {
       var option = source.options[source.selectedIndex];
       if (!option || !option.value) return;
@@ -701,8 +703,10 @@
   function initHousebookPdfExport() {
     var dialog = document.getElementById("housebook-pdf-dialog");
     if (!dialog) return;
+    if (!claimNode(dialog, "initHousebookPdfExport")) return;
     var form = document.getElementById("housebook-pdf-form");
     document.querySelectorAll("[data-housebook-pdf-export]").forEach(function (button) {
+      if (!claimNode(button, "initHousebookPdfExport")) return;
       button.addEventListener("click", function (event) {
         event.preventDefault();
         var pageFrom = document.getElementById("from");
@@ -730,11 +734,13 @@
   function initCsvExport() {
     var dialog = document.getElementById("csv-export-dialog");
     if (!dialog) return;
+    if (!claimNode(dialog, "initCsvExport")) return;
     var form = document.getElementById("csv-export-form");
     var pending = { base: "", params: "", scopeLabel: "" };
     var scope = dialog.querySelector("[data-csv-scope-label]");
 
     document.querySelectorAll("[data-csv-export]").forEach(function (button) {
+      if (!claimNode(button, "initCsvExport")) return;
       button.addEventListener("click", function (event) {
         event.preventDefault();
         pending.base = button.getAttribute("data-csv-export") || "";
