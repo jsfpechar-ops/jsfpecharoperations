@@ -464,6 +464,7 @@
     }
 
     document.querySelectorAll("[data-birth-date]").forEach(function (input) {
+      if (!claimNode(input, "initBirthDateInputs")) return;
       function apply(value) {
         var digits = String(value || "").replace(/\D/g, "").slice(0, 8);
         var formatted = formatDigits(digits);
@@ -575,6 +576,7 @@
 
   function initAutomationFields() {
     document.querySelectorAll("[data-automation-mode]").forEach(function (select) {
+      if (!claimNode(select, "initAutomationFields")) return;
       syncAutomationHours(select);
       select.addEventListener("change", function () { syncAutomationHours(select); });
     });
@@ -585,6 +587,7 @@
   // visible Save button sends without JS; shows "Saved" or the server's error.
   function initInlineTiming() {
     document.querySelectorAll("form[data-inline-timing]").forEach(function (form) {
+      if (!claimNode(form, "initInlineTiming")) return;
       if (!window.fetch || !window.FormData) return;
       var select = form.querySelector("[data-timing-mode]");
       var hours = form.querySelector("[data-timing-hours-input]");
@@ -914,6 +917,7 @@
 
   function initTogglePanels() {
     document.querySelectorAll("[data-toggle-panel]").forEach(function (button) {
+      if (!claimNode(button, "initTogglePanels")) return;
       button.addEventListener("click", function () {
         var panelId = button.getAttribute("data-toggle-panel");
         var panel = document.getElementById(panelId);
@@ -931,6 +935,7 @@
       });
     });
     document.querySelectorAll("[data-close-panel]").forEach(function (button) {
+      if (!claimNode(button, "initTogglePanels")) return;
       button.addEventListener("click", function () {
         var panel = button.closest(".action-panel");
         if (panel) panel.classList.add("hidden");
@@ -938,7 +943,7 @@
     });
     if (new URLSearchParams(window.location.search).get("new") === "1") {
       var addPanel = document.getElementById("add-stay-panel");
-      if (addPanel) {
+      if (addPanel && claimNode(addPanel, "initTogglePanels")) {
         addPanel.classList.remove("hidden");
         var first = addPanel.querySelector("input, select, textarea");
         if (first) first.focus();
@@ -982,6 +987,7 @@
 
   function initNotifications() {
     document.querySelectorAll("form[data-notification-dismiss]").forEach(function (form) {
+      if (!claimNode(form, "initNotifications")) return;
       form.addEventListener("submit", function (event) {
         event.preventDefault();
         var notification = form.closest("[data-notification]");
