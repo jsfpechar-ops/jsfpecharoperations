@@ -1056,6 +1056,7 @@
     });
     var signatures = new Set();
     toasts.forEach(function (toast, index) {
+      if (!claimNode(toast, "initToasts")) return;
       var kind = toastKind(toast);
       var messageNode = toast.querySelector(".grow");
       var message = messageNode ? messageNode.textContent.trim() : toast.textContent.trim();
@@ -1438,6 +1439,7 @@
     var body = document.getElementById("confirm-body");
     var proceed = shell && shell.querySelector("[data-confirm-proceed]");
     if (!dialog || !shell) return;
+    if (!claimNode(shell, "initConfirmDialog")) return;
     var pendingForm = null;
     var pendingButton = null;
 
@@ -1832,6 +1834,7 @@
     var key = "ubyhost-saved-stay-views";
     var container = document.querySelector("[data-saved-views]");
     var button = document.querySelector("[data-save-view]");
+    if (button && !claimNode(button, "initSavedViews")) return;
     var views = [];
     try { views = JSON.parse(localStorage.getItem(key) || "[]"); } catch (error) { views = []; }
 
@@ -1870,6 +1873,7 @@
 
   function initInlineEdit() {
     document.querySelectorAll("form[data-inline-edit]").forEach(function (form) {
+      if (!claimNode(form, "initInlineEdit")) return;
       var status = form.querySelector(".inline-edit-status");
       form.addEventListener("submit", function (event) {
         event.preventDefault();
