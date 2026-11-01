@@ -7,8 +7,10 @@
 {% block primary_action %}{% endblock %}
 {% block secondary_actions %}{% endblock %}
 {% block body %}
-<div class="head cleaning-head"><div><h1>{{ ct('title') }}</h1><p class="sub">{{ ct('subtitle') }}</p><p class="ov-links"><a class="ov-link" href="/cleaning/new" data-calendar-add data-cal-create-type="cleaning">+ {{ ct('add') }}</a><span aria-hidden="true"> · </span><a class="ov-link" href="/cleaning/properties">{{ ct('settings') }}</a></p></div><a class="btn" href="/cleaning/shares">{{ ct('share_cleaner') }}</a></div>
+<div class="top cleaning-phone"><a class="round" href="/menu" aria-label="{{ t('common.back') }}">{{ icon('arrow-left', 20) }}</a><span></span></div>
+<div class="head cleaning-head"><div><h1 class="big">{{ ct('title') }}</h1><p class="sub">{{ ct('subtitle') }}</p><p class="ov-links"><a class="ov-link" href="/cleaning/new" data-calendar-add data-cal-create-type="cleaning">+ {{ ct('add') }}</a><span aria-hidden="true"> · </span><a class="ov-link" href="/cleaning/properties">{{ ct('settings') }}</a></p></div><a class="btn" href="/cleaning/shares">{{ ct('share_cleaner') }}</a></div>
 <div class="cleaning-page">
   {% include "_cleaning_screen.html" %}
 </div>
+<div class="actbar cleaning-phone"><a class="btn" href="/cleaning/shares">{{ ct('share_cleaner') }}</a></div>
 {% endblock %}
