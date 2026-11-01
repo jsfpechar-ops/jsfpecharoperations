@@ -23,6 +23,8 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/jobs"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/payments"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/schema"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 )
 
 const version = "go-dev"
@@ -211,7 +213,7 @@ func run() int {
 }
 
 // goIntervals are the schedule intervals (minutes) that cap a retry backoff.
-var goIntervals = map[string]int{"billing_snapshot": 24 * 60, "stripe_sweep": 24 * 60}
+var goIntervals = map[string]int{"billing_snapshot": 24 * 60, "stripe_sweep": 24 * 60, "submit": 10}
 
 // goHandlers maps each Go-owned job kind to its handler.
 func goHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
@@ -222,6 +224,21 @@ func goHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
 		"stripe_sweep": func(ctx context.Context) (int, error) {
 			expired, deleted, err := payments.Sweep(ctx, pool, time.Now().UTC(), jobs.Now(0))
 			return expired + deleted, err
+		},
+		"submit": func(ctx context.Context) (int, error) {
+			keys, err := secure.LoadDataKeys(os.Getenv)
+			if err != nil {
+				return 0, err
+			}
+			d, err := ubyport.NewSweepDeps(ctx, pool, keys, os.Getenv)
+			if err != nil {
+				return 0, err
+			}
+			summary, err := ubyport.Sweep(ctx, d, nil)
+			if summary.Submitted > 0 || summary.Failed > 0 {
+				slog.Info("ubyport sweep", "apartments", summary.Apartments, "submitted", summary.Submitted, "failed", summary.Failed)
+			}
+			return summary.Submitted, err
 		},
 	}
 }
