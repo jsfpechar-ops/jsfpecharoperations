@@ -1346,6 +1346,7 @@
   /* Legacy auto-submit remains available only to forms that explicitly opt in. */
   function initAutoFilters() {
     document.querySelectorAll("form[data-auto-submit]").forEach(function (form) {
+      if (!claimNode(form, "initAutoFilters")) return;
       form.querySelectorAll("select, input[type=date], input[type=month]").forEach(function (input) {
         input.addEventListener("change", function () {
           if (input.type === "date") {
@@ -1384,10 +1385,12 @@
 
   function initGeneratedPasswords() {
     document.querySelectorAll("[data-generated-password]").forEach(function (input) {
+      if (!claimNode(input, "initGeneratedPasswords")) return;
       if (!input.value) fillGeneratedPassword(input);
     });
 
     document.querySelectorAll("[data-generate-password]").forEach(function (button) {
+      if (!claimNode(button, "initGeneratedPasswords")) return;
       button.addEventListener("click", function () {
         var field = button.closest(".password-generate");
         if (!field) return;
@@ -1406,6 +1409,7 @@
     var form = document.getElementById("reset-password-form");
     var label = document.getElementById("reset-password-label");
     if (!dialog || !form || !label) return;
+    if (!claimNode(dialog, "initResetPasswordDialog")) return;
 
     document.querySelectorAll("[data-reset-password]").forEach(function (button) {
       button.addEventListener("click", function () {
@@ -2233,6 +2237,7 @@
     }
 
     forms.forEach(function (form) {
+      if (!claimNode(form, "initUnsavedDialog")) return;
       form.addEventListener("input", syncResetButtons);
       form.addEventListener("change", syncResetButtons);
       form.querySelectorAll("[data-unsaved-reset]").forEach(function (button) {
@@ -2246,9 +2251,10 @@
     });
     syncResetButtons();
     // Back/Forward may restore typed values without input events.
-    window.addEventListener("pageshow", syncResetButtons);
+    if (claimNode(window, "initUnsavedDialog")) window.addEventListener("pageshow", syncResetButtons);
 
     if (!dialog || typeof dialog.showModal !== "function") return;
+    if (!claimNode(dialog, "initUnsavedDialog")) return;
     var stay = dialog.querySelector("[data-unsaved-stay]");
     var discardBtn = dialog.querySelector("[data-unsaved-discard]");
     var save = dialog.querySelector("[data-unsaved-save]");
