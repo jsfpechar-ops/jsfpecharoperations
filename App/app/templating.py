@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any, Dict, Optional
 from zoneinfo import ZoneInfo
@@ -571,6 +571,7 @@ templates.env.globals.update(
 # Pages that are themselves about setting up a second way in; the prompt would
 # only get in the way there.
 _NO_SECURITY_PROMPT = ("/account/2fa", "/settings", "/account/accept")
+SECURITY_PROMPT_DELAY_DAYS = 7  # a new self-signup host sets up first, then secures the account
 
 
 def _security_prompt(request: Request, account, workspace):
@@ -588,6 +589,13 @@ def _security_prompt(request: Request, account, workspace):
             return None  # an admin previewing a host's workspace
         if request.url.path.startswith(_NO_SECURITY_PROMPT):
             return None
+        signup_at = account["signup_at"] if "signup_at" in account.keys() else None
+        if signup_at:
+            started = datetime.fromisoformat(str(signup_at))
+            if started.tzinfo is None:
+                started = started.replace(tzinfo=timezone.utc)
+            if datetime.now(timezone.utc) - started < timedelta(days=SECURITY_PROMPT_DELAY_DAYS):
+                return None
         if not db.update_if(
             "user_account", int(account["id"]), {"two_factor_prompted_at": db.utcnow()},
             {"two_factor_prompted_at": None},
