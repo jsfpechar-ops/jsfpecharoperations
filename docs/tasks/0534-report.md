@@ -62,3 +62,27 @@ Deviations:
 - Catalog legacy list for `apartment_form.html` got `card`, `sub`, `actions`, `panel`, `setup-continue-card`, `property-setup-show`, `link-button`.
 
 Owner steps left: none.
+
+## 0535 (steps 0-1; steps 2-6 not started)
+
+Status: blocked. Done: steps 0 and 1. Left: steps 2 to 6 (aside, phone overflow, tests, PAGES entry, screenshots).
+
+Commits (branch claude/project-thread-819gyo, not pushed):
+- `0c2aaee` 0535 step 0: box overrides for property cards
+- `3332e41` 0535 step 1: section order CSS (`order` on each `#sec-*`), key bump
+- `de98c78` 0535 step 1b: settings form wrapped in `<div class="form">` in `_property_editor.html` (the `.form` column did not exist, so step 1 had no effect until this)
+
+Test tails (from `App/`, env `UBYHOST_REQUIRE_BROWSER=1 PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`):
+- step 0: `tests/test_0710_v2_mockup_match_browser.py -k properties`: `12 passed, 22 deselected`
+- step 1: `tests/test_0534_property_page_v2.py tests/test_static_versions.py`: `11 passed`
+- step 1b: `tests/test_0534_property_page_v2.py tests/test_0531_property_page.py tests/test_static_versions.py tests/test_property_hub.py`: `25 passed`
+
+Section 8: none (no assertion changed).
+
+Deviations:
+- Step 0: the 0719 phone mechanism is `BOX_OVERRIDES`, not `SELECTOR_OVERRIDES`; the keys added there are `.big, .head h1` and `.card.prop` (the brief's `.big, .head h1` is one phone_selectors string, which the alias map does not cover).
+- Step 1: archive was already its own `details#sec-archive` (not inside basics), so no template change for it. Order is CSS only (`body.v2 .form` flex column, `.property-settings-form{display:contents}`); tab order still follows the DOM (calendars last-but-two), as the brief allows.
+- Step 1b: the brief assumed a `.form` wrapper existed; it did not. Added `<div class="form">` around the settings form plus the calendars and lock-account sections in `_property_editor.html`.
+- Step 1b: app2 key is `20261101-0535b`.
+
+Owner steps left: none.
