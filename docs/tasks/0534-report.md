@@ -347,9 +347,12 @@ Left to do (not done):
 
 ## 0539
 
-Status: blocked at step 2 (tests). Steps 1 and 2 committed; step 3 (screenshot) not run.
+Status: review. Steps 1, 2 and 3 done; owner decision on tests applied (orchestrator answer).
 
 - Step 1: app2.css 0536 block gains two-column `.grid` from 1024 px, only-child and textarea spans, `max-width` override. base.html app2.css key `20261101-0539`. Commit 59a91eb.
 - Step 2: removed `initPropertyViews` and `initInlineTiming` plus their calls and the 0098 comment. The markup they read (`data-property-views`, `form[data-inline-timing]`) is rendered by no template. base.html app.js key `20261101-0539b`. Commit 7b3cee4.
-- Blocker: `tests/test_0503_page_inits_once_browser.py::test_second_init_page_run_binds_nothing_on_real_pages` and `tests/test_0504_mixed_inits_once_browser.py::test_mixed_inits_bind_nothing_on_second_run` fail. They expect one `invalid` listener re-bind per `form[data-unsaved-guard]`, which `initPropertyViews` caused. Now the count is 0. Their comments say "brief 0505 makes this zero". Owner decision needed: change those expectations to zero, or keep the rebind.
-- Other tests in the brief set pass (72 passed).
+- Tests 0503 and 0504: the `invalid` guard-event expectation is now `[]` (0539 removed initPropertyViews). Both files: 4 passed.
+- Brief set before the test fix: 72 passed, 1 failed (test_0503, now fixed).
+- Screenshot: docs/tasks/screenshots-0539/app-1280.png (1280 px, full page, apartment page `?lang=cs`, temp test removed).
+- ruff (E9,F63,F7,F82,F401,F841): one pre-existing F841 in tests/test_door_code_window_browser.py:198 (not touched, not fixed). context_lint OK, design_lint OK.
+- Not done: 390 px screenshot and the 1024 px no-horizontal-scroll check. The screenshot was not inspected by eye.
