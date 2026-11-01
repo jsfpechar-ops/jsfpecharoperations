@@ -481,6 +481,7 @@
     });
   }
 
+  var rowMenuLastOpenAt = 0;
   function initRowMenus() {
     function focusOutsideMenu(trigger, backwards) {
       var selector = "a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex='-1'])";
@@ -493,8 +494,6 @@
       if (next) { next.focus(); return true; }
       return false;
     }
-
-    var lastOpenAt = 0;
 
     function closeAll() {
       document.querySelectorAll(".row-menu-panel").forEach(closeRowMenu);
@@ -509,7 +508,7 @@
         var wasOpen = panel.classList.contains("is-open");
         closeAll();
         if (!wasOpen) {
-          lastOpenAt = Date.now();
+          rowMenuLastOpenAt = Date.now();
           positionRowMenu(trigger, panel);
           trigger.setAttribute("aria-expanded", "true");
           var firstItem = panel.querySelector('[role="menuitem"]');
@@ -542,25 +541,27 @@
       });
     });
 
-    document.addEventListener("click", function (event) {
-      if (event.target.closest(".row-menu, .row-menu-panel")) return;
-      closeAll();
-    });
+    if (claimNode(document, "initRowMenus")) {
+      document.addEventListener("click", function (event) {
+        if (event.target.closest(".row-menu, .row-menu-panel")) return;
+        closeAll();
+      });
 
-    document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape") closeAll();
-    });
-    window.addEventListener("resize", closeAll);
-    window.addEventListener("scroll", function () {
-      // Opening a menu can scroll the page (focus, scroll-into-view); keep it open and follow the trigger.
-      if (Date.now() - lastOpenAt < 400) {
-        var open = document.querySelector(".row-menu-panel.is-open");
-        var openTrigger = open ? rowMenuTrigger(open) : null;
-        if (openTrigger) positionRowMenu(openTrigger, open);
-        return;
-      }
-      closeAll();
-    }, true);
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") closeAll();
+      });
+      window.addEventListener("resize", closeAll);
+      window.addEventListener("scroll", function () {
+        // Opening a menu can scroll the page (focus, scroll-into-view); keep it open and follow the trigger.
+        if (Date.now() - rowMenuLastOpenAt < 400) {
+          var open = document.querySelector(".row-menu-panel.is-open");
+          var openTrigger = open ? rowMenuTrigger(open) : null;
+          if (openTrigger) positionRowMenu(openTrigger, open);
+          return;
+        }
+        closeAll();
+      }, true);
+    }
   }
 
   function syncAutomationHours(select) {
