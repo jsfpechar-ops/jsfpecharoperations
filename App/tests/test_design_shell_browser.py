@@ -176,6 +176,22 @@ def _assert_content_is_not_loading(page):
     "/?lang=en", "/reservations?lang=en", "/apartments/new?lang=en", "/settings?lang=en",
 ])
 def test_more_preserves_each_page_kind_and_sheet_links_work(base, engine, width, path):
+    if path == "/?lang=en":
+        # 0720c: v2 `/` has no More sheet on phone and tablet; the Menu tab (/menu) holds the links.
+        with sync_api.sync_playwright() as playwright:
+            browser, page = _open(playwright, base, width, path, engine)
+            try:
+                menu_tab = page.locator('.tabs a.tab[href="/menu"]')
+                assert menu_tab.is_visible(), "v2 Menu tab missing on /"
+                menu_tab.click()
+                page.wait_for_url("**/menu**")
+                for href in ("/cleaning", "/payments", "/settings"):
+                    assert page.locator(f'a[href^="{href}"]').count() >= 1, href
+                    response = page.request.get(base.rstrip("/") + href)
+                    assert response.status < 400, (href, response.status)
+            finally:
+                browser.close()
+        return
     with sync_api.sync_playwright() as playwright:
         browser, page = _open(playwright, base, width, path, engine)
         try:
