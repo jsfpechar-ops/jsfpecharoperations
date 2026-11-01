@@ -418,7 +418,7 @@ body.v2 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;ov
 .host-stay-detail .crumb{color:var(--ink3);font-size:12px;margin-bottom:4px}
 .host-stay-detail .stay-head-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .host-stay-detail .stay-head-actions form{margin:0}
-.host-stay-detail .stay-pill-line{margin:0 20px}
+.host-stay-detail .stay-pill-line{margin:0}
 .host-stay-detail .stay-sep{margin-left:8px}
 @media (max-width:1023px){.host-stay-detail .head .crumb,.host-stay-detail .head>div:first-child>.sub{display:none}.host-stay-detail{display:flex;flex-direction:column}.host-stay-detail>.stay-top{order:-3}.host-stay-detail>.head{order:-2}.host-stay-detail>.head>div:first-child{flex:1 1 100%;min-width:0}}
 @media (min-width:1024px){.host-stay-detail .top,.host-stay-detail .sub-phone,.host-stay-detail .facts{display:none}}

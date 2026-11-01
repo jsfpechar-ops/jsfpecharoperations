@@ -233,7 +233,7 @@
     {% set ok = guest.submit_state in ('sent', 'not_required') %}
     <a class="row" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">
       <div class="ic {{ 'ok' if ok else 'warn' }}">{% if ok %}<svg class="i"><use href="#i-check"/></svg>{% else %}?{% endif %}</div>
-      <div class="t"><b>{{ guest.surname or '—' }} {{ guest.first_name or '' }}</b><small>{{ t('guest.doc_type.' ~ guest.doc_type) if guest.doc_type else '—' }} · {{ guest_state(guest, row) }}</small></div>
+      <div class="t"><b>{{ guest.surname or '—' }} {{ guest.first_name or '' }}</b><small>{% if guest.doc_type %}{{ t('guest.doc_type.' ~ guest.doc_type) }} · {% endif %}{{ guest_state(guest, row) }}</small></div>
       {{ icon('chevron-right', 20) }}
     </a>
   {% endfor %}
