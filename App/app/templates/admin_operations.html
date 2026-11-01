@@ -13,11 +13,11 @@
   {%- else -%}{{ t('ops.age.days', n=minutes // 1440) }}{%- endif -%}
 {%- endmacro %}
 {% macro workspace_link(row) -%}
-  {%- if row.owner_user_id -%}<a href="/admin/users#user-{{ row.owner_user_id }}">{{ row.workspace or row.owner_user_id }}</a>{%- else -%}<span class="ui-sub">{{ t('ops.no_workspace') }}</span>{%- endif -%}
+  {%- if row.owner_user_id -%}<a href="/admin/customers/{{ row.owner_user_id }}">{{ row.workspace or row.owner_user_id }}</a>{%- else -%}<span class="ui-sub">{{ t('ops.no_workspace') }}</span>{%- endif -%}
 {%- endmacro %}
 
-<section class="ui-section" id="ops-filings">
-  <h2>{{ t('ops.filings.title') }} <span class="ui-badge {{ 'ui-badge-action' if ops.filings.count else 'ui-badge-done' }}">{{ ops.filings.count }}</span></h2>
+<details class="ui-section" id="ops-filings"{% if ops.filings.count or ops.stuck.count %} open{% endif %}>
+  <summary><h2>{{ t('ops.filings.title') }} <span class="ui-badge {{ 'ui-badge-action' if ops.filings.count else 'ui-badge-done' }}">{{ ops.filings.count }}</span></h2></summary>
   <p class="ui-sub">{{ t('ops.filings.help') }}</p>
   {% if ops.filings.rows %}
   <table class="ui-table ui-table-stack">
@@ -51,10 +51,10 @@
     </tbody>
   </table>
   {% endif %}
-</section>
+</details>
 
-<section class="ui-section" id="ops-feeds">
-  <h2>{{ t('ops.feeds.title') }} <span class="ui-badge {{ 'ui-badge-attention' if ops.feeds.count else 'ui-badge-done' }}">{{ ops.feeds.count }}</span></h2>
+<details class="ui-section" id="ops-feeds"{% if ops.feeds.count %} open{% endif %}>
+  <summary><h2>{{ t('ops.feeds.title') }} <span class="ui-badge {{ 'ui-badge-attention' if ops.feeds.count else 'ui-badge-done' }}">{{ ops.feeds.count }}</span></h2></summary>
   <p class="ui-sub">{{ t('ops.feeds.help') }}</p>
   {% if ops.feeds.rows %}
   <table class="ui-table ui-table-stack">
@@ -72,10 +72,10 @@
     </tbody>
   </table>
   {% else %}<p class="ui-sub">{{ t('ops.none') }}</p>{% endif %}
-</section>
+</details>
 
-<section class="ui-section" id="ops-jobs">
-  <h2>{{ t('ops.jobs.title') }} <span class="ui-badge {{ 'ui-badge-action' if ops.jobs.count else 'ui-badge-done' }}">{{ ops.jobs.count }}</span></h2>
+<details class="ui-section" id="ops-jobs"{% if ops.jobs.count %} open{% endif %}>
+  <summary><h2>{{ t('ops.jobs.title') }} <span class="ui-badge {{ 'ui-badge-action' if ops.jobs.count else 'ui-badge-done' }}">{{ ops.jobs.count }}</span></h2></summary>
   <p class="ui-sub">{{ t('ops.jobs.help') }}</p>
   <table class="ui-table ui-table-stack">
     <thead><tr><th>{{ t('ops.col.job') }}</th><th>{{ t('ops.col.interval') }}</th><th>{{ t('ops.col.last_ok') }}</th><th>{{ t('ops.col.state') }}</th></tr></thead>
@@ -94,10 +94,10 @@
     {% endfor %}
     </tbody>
   </table>
-</section>
+</details>
 
-<section class="ui-section" id="ops-mail">
-  <h2>{{ t('ops.mail.title') }} <span class="ui-badge {{ 'ui-badge-attention' if ops.mail.count else 'ui-badge-done' }}">{{ ops.mail.count }}</span></h2>
+<details class="ui-section" id="ops-mail"{% if ops.mail.count %} open{% endif %}>
+  <summary><h2>{{ t('ops.mail.title') }} <span class="ui-badge {{ 'ui-badge-attention' if ops.mail.count else 'ui-badge-done' }}">{{ ops.mail.count }}</span></h2></summary>
   <p class="ui-sub">{{ t('ops.mail.help') }}</p>
   {% if ops.mail.rows %}
   <table class="ui-table ui-table-stack">
@@ -115,18 +115,18 @@
     </tbody>
   </table>
   {% else %}<p class="ui-sub">{{ t('ops.none') }}</p>{% endif %}
-</section>
+</details>
 
 {% if ops.ttlock.enabled %}
-<section class="ui-section" id="ops-ttlock">
-  <h2>{{ t('ops.ttlock.title') }} <span class="ui-badge {{ 'ui-badge-attention' if ops.ttlock.used >= ops.ttlock.limit * 0.8 else 'ui-badge-done' }}">{{ ops.ttlock.used }} / {{ ops.ttlock.limit }}</span></h2>
+<details class="ui-section" id="ops-ttlock"{% if ops.ttlock.failed or ops.ttlock.used >= ops.ttlock.limit * 0.8 %} open{% endif %}>
+  <summary><h2>{{ t('ops.ttlock.title') }} <span class="ui-badge {{ 'ui-badge-attention' if ops.ttlock.used >= ops.ttlock.limit * 0.8 else 'ui-badge-done' }}">{{ ops.ttlock.used }} / {{ ops.ttlock.limit }}</span></h2></summary>
   <p class="ui-sub">{{ t('ops.ttlock.help') }}</p>
   <p class="ui-sub">{{ t('ops.ttlock.counts', issued=ops.ttlock.issued, failed=ops.ttlock.failed) }} · {{ t('ops.ttlock.live') if ops.ttlock.live else t('ops.ttlock.test_mode') }}</p>
-</section>
+</details>
 {% endif %}
 
-<section class="ui-section" id="ops-alerts">
-  <h2>{{ t('ops.alerts.title') }} <span class="ui-badge {{ 'ui-badge-attention' if ops.alerts.count else 'ui-badge-done' }}">{{ ops.alerts.count }}</span></h2>
+<details class="ui-section" id="ops-alerts"{% if ops.alerts.count %} open{% endif %}>
+  <summary><h2>{{ t('ops.alerts.title') }} <span class="ui-badge {{ 'ui-badge-attention' if ops.alerts.count else 'ui-badge-done' }}">{{ ops.alerts.count }}</span></h2></summary>
   <p class="ui-sub">{{ t('ops.alerts.help') }}</p>
   {% if ops.alerts.rows %}
   <table class="ui-table ui-table-stack">
@@ -143,9 +143,9 @@
     </tbody>
   </table>
   {% else %}<p class="ui-sub">{{ t('ops.none') }}</p>{% endif %}
-</section>
-<section class="ui-section" id="ops-havel">
-  <h2>{{ t('ops.havel.title') }}</h2>
+</details>
+<details class="ui-section" id="ops-havel"{% if havel_ops.gaps %} open{% endif %}>
+  <summary><h2>{{ t('ops.havel.title') }}</h2></summary>
   <p class="ui-sub">{{ t('ops.havel.help') }}</p>
   <p class="ui-sub">{{ t('ops.havel.spend', spent=havel_ops.spent, cap=havel_ops.cap, percent=havel_ops.percent) }}{% if not havel_ops.enabled %} · {{ t('ops.havel.off') }}{% endif %}</p>
   <h3>{{ t('ops.havel.how_title') }}</h3>
@@ -180,5 +180,93 @@
     </tbody>
   </table>
   {% endif %}
-</section>
+</details>
+<div id="incidents">
+<h2>{{ t('incidents.title') }}</h2>
+
+
+{% if review_alerts %}
+<div class="ui-section">
+  <h2>{{ t('incidents.review_title') }}</h2>
+  <p class="ui-sub">{{ t('incidents.review_help') }}</p>
+  <ul>
+    {% for alert in review_alerts %}
+    <li>{{ alert.message }} <span class="ui-sub">{{ alert.detail }}</span></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<details class="ui-section" {% if not rows %}open{% endif %}>
+  <summary>{{ t('incidents.create_title') }}</summary>
+  <form method="post" action="/admin/incidents">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <div class="ui-pair">
+      <div class="ui-field"><label for="summary">{{ t('incidents.summary') }}</label>
+        <input id="summary" name="summary" required></div>
+      <div class="ui-field"><label for="detected_at">{{ t('incidents.detected_at') }}</label>
+        <input id="detected_at" name="detected_at" placeholder="2026-01-01T00:00:00+00:00"></div>
+      <div class="ui-field"><label for="reported_by">{{ t('incidents.reported_by') }}</label>
+        <input id="reported_by" name="reported_by"></div>
+      <div class="ui-field"><label for="data_categories">{{ t('incidents.data_categories') }}</label>
+        <input id="data_categories" name="data_categories"></div>
+      <div class="ui-field"><label for="approx_subjects">{{ t('incidents.approx_subjects') }}</label>
+        <input id="approx_subjects" name="approx_subjects" inputmode="numeric"></div>
+      <div class="ui-field"><label for="risk_level">{{ t('incidents.risk') }}</label>
+        <select id="risk_level" name="risk_level">
+          <option value="none">{{ t('incidents.risk.none') }}</option>
+          <option value="low">{{ t('incidents.risk.low') }}</option>
+          <option value="high">{{ t('incidents.risk.high') }}</option>
+        </select>
+      </div>
+      <div class="ui-field"><label for="notes">{{ t('incidents.notes') }}</label>
+        <input id="notes" name="notes"></div>
+    </div>
+    <div class="ui-field">
+      <label>{{ t('incidents.affected') }}</label>
+      {% for owner in owners %}
+      <label class="checkline"><input type="checkbox" name="owner_ids" value="{{ owner.id }}"> {{ owner.username }}</label>
+      {% endfor %}
+    </div>
+    <div class="ui-btn-group"><button class="ui-btn ui-btn-primary" type="submit">{{ t('incidents.create') }}</button></div>
+  </form>
+</details>
+
+{% for row in rows %}
+<div class="ui-section">
+  <h2>{{ row.incident.summary }}</h2>
+  <p class="ui-sub">
+    {{ t('incidents.detected_at') }}: {{ row.incident.detected_at }}
+    &middot; {{ t('incidents.risk') }}: {{ t('incidents.risk.' ~ (row.incident.risk_level or 'none')) }}
+  </p>
+  <form method="post" action="/admin/incidents/{{ row.incident.id }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <div class="ui-pair">
+      {% for field, label in [
+        ('contained_at', 'incidents.contained'),
+        ('controllers_notified_at', 'incidents.controllers_notified'),
+        ('authority_notified_at', 'incidents.authority_notified'),
+        ('subjects_notified_at', 'incidents.subjects_notified'),
+        ('closed_at', 'incidents.closed'),
+      ] %}
+      <div class="ui-field">
+        <label>{{ t(label) }}</label>
+        <button class="ui-btn ui-btn-quiet" type="submit" name="action" value="{{ field }}" {% if row.incident[field] %}disabled{% endif %}>
+          {% if row.incident[field] %}{{ row.incident[field] }}{% else %}{{ t('incidents.mark') }}{% endif %}
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="ui-btn-group"><button class="ui-btn ui-btn-secondary" type="submit">{{ t('incidents.save') }}</button></div>
+  </form>
+  <details>
+    <summary>{{ t('incidents.draft_title') }}</summary>
+    <p class="ui-sub">{{ t('incidents.draft_help') }}</p>
+    <pre class="ui-sub">{{ row.draft }}</pre>
+  </details>
+</div>
+{% else %}
+<p class="ui-sub">{{ t('incidents.empty') }}</p>
+{% endfor %}
+</div>
 {% endblock %}
