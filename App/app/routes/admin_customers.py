@@ -204,8 +204,8 @@ async def customer_extend_trial(request: Request, user_id: int):
 
 @router.post(PAGE + "/{user_id}/aktivovat")
 async def customer_toggle_active(request: Request, user_id: int):
-    """0438: the toggle surface on the customer page, delegating to the
-    existing /admin/users/{id}/toggle logic (one code path)."""
+    """0438: the toggle surface on the customer page. The users-page toggle
+    route it replaced is gone (0480)."""
     account, guard = _require_admin(request)
     if guard:
         return guard

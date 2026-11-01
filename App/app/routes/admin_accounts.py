@@ -702,7 +702,7 @@ def _send_invite(request: Request, target) -> None:
     mail.send_now(outbox_id)
 
 
-@router.post("/admin/customers")
+@router.post("/admin/users")
 async def user_create(request: Request):
     account, guard = _require_admin(request)
     if guard:
@@ -838,34 +838,6 @@ async def user_impersonate(user_id: int, request: Request):
         owner_user_id=user_id,
     )
     return response
-
-
-@router.post("/admin/users/{user_id}/toggle")
-def user_toggle(user_id: int, request: Request):
-    account, guard = _require_admin(request)
-    target = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
-    if guard or not target:
-        return guard or Response(_flash(request, "auth.error.admins_only"), status_code=403)
-    if user_id == account["id"]:
-        return _back(f"/admin/customers/{user_id}", err=_flash(request, "auth.error.own_disable"))
-    active = 0 if target["active"] else 1
-    db.execute(
-        "UPDATE user_account SET active = ?, session_version = session_version + 1 WHERE id = ?",
-        (active, user_id),
-    )
-    db.audit(
-        "user_enabled" if active else "user_disabled",
-        actor=account["username"],
-        owner_user_id=user_id,
-    )
-    return _back(
-        f"/admin/customers/{user_id}",
-        msg=_flash(
-            request,
-            "flash.accounts.enabled" if active else "flash.accounts.disabled",
-            username=target["username"],
-        ),
-    )
 
 
 @router.post("/admin/stop-impersonating")

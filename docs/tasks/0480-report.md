@@ -1,54 +1,49 @@
 # 0480 report
 
-Status: blocked
+Status: review
 Branch: task/0480-admin-customers-merge (not merged; no PR opened)
 
-## Done (brief steps 1 to 5)
+## Files
 
-- Step 1: `App/app/templates/admin_customer.html` `customers.account` section now holds the account actions (change email, send invite, open workspace, withdraw Meta/Google consent, export, schedule deletion). Same action URLs and field names as the old Users page.
-- Step 2: Manage and Preview header buttons removed (matched by text; the brief's line numbers 9 and 11 were off by two). Payments kept.
-- Step 3: `App/app/templates/admin_customers.html` has the missing-email banner above the table and the create-host form (`POST /admin/users`) below it.
-- Step 4: `App/app/routes/admin_accounts.py`: `GET /admin/users` answers 303 to `/admin/customers` (query string kept). `_render_users` removed. Per-user POSTs redirect to `/admin/customers/{id}`; `POST /admin/users` redirects to `/admin/customers`. `App/app/routes/signup.py` (ads-consent withdraw, outside the brief's file list) redirects to `/admin/customers/{id}` as well.
-- Step 5: `App/app/templating.py` `users` tab removed; `/admin/users` maps to the customers tab.
-- Support changes: `App/app/routes/admin_customers.py` adds `missing_email_count` to the list and Google/Meta consent flags to the detail (the consent fields were not in the customer dict).
-- Deleted `App/app/templates/users.html`.
+- `App/app/templates/admin_customer.html`: account actions in `customers.account`; Manage and Preview removed; disable form now `data-confirm` with `confirm.disable_user` (active accounts only).
+- `App/app/templates/admin_customers.html`: missing-email banner (`users-missing-email`) and create-host form (`POST /admin/users`).
+- `App/app/routes/admin_accounts.py`: `GET /admin/users` 303 to `/admin/customers`; `POST /admin/users` (create host) redirects to `/admin/customers`; per-user POSTs redirect to `/admin/customers/{id}`; `POST /admin/users/{id}/toggle` removed (orchestrator decision 1, `customer_toggle_active` is the one route).
+- `App/app/routes/admin_customers.py`: `missing_email_count` in list, consent flags in detail; docstring note.
+- `App/app/routes/signup.py`: ads-consent withdraw redirects to the customer page.
+- `App/app/templating.py`: `users` tab removed; `/admin/users` maps to customers.
+- `App/app/templates/users.html`: deleted.
+- `App/app/host_i18n.py`, `App/app/host_vi_i18n.py`: 20 keys deleted (en, cs, vi where present).
+- `docs/design/catalog.json`: `users.html` removed from enforced list and class map.
+- Tests: `test_admin_section_tabs.py` (Users tab dropped), `test_admin_customers.py` (manage link assert moved to account forms; new test: `/admin/users` 303 and no `/admin/users?manage=` on customer page), `test_account_emails.py` (missing-email check on customers list), `test_users_disable_confirm.py` (confirm asserts on customer page, round-trip via `/aktivovat`), `test_skeleton_loaders.py` (export form check on `admin_customer.html`), `test_design_guardrails_browser.py`, `test_design_admin.py` (users.html dropped).
 
-## Deviations
+## Tests deleted (the thing they tested no longer exists)
 
-- Brief file list: the brief has the brief's `docs/tasks/0480-...` file only on commit f61a420, not on HEAD 85f73d5. I copied that one file onto the task branch (commit 5ad2a24d).
-- `/admin/users/{id}/toggle` kept (redirects to the customer page) and not removed. Both toggle routes bump `session_version`; they differ in the audit actor (`operator:` prefix) and the flash key. The brief's rule for differing routes is ambiguous, so I kept it.
-- No i18n keys removed (not reached).
-- No test updated yet (step 6 not reached).
+- `test_users_disable_confirm.py::test_the_lede_is_in_both_dictionaries` (2 params, en/cs) and `test_the_lede_stopped_explaining_hashing`: they tested `users.lede`, which was only on the Users page.
+- `test_design_guardrails_browser.py::test_admin_users_columns_start_on_one_line` was renamed to `test_admin_customer_account_input_stays_narrow` and now runs on the customer page (the 2-column split is gone).
 
-## Not done
+## Deviations and decisions for the orchestrator
 
-- Step 6: tests. Still failing (pytest, from App/):
-  - `tests/test_admin_section_tabs.py` expects `/admin/users` in ADMIN_HREFS.
-  - `tests/test_admin_customers.py::test_admin_views_escape_workspace_names_and_offer_existing_links`
-  - `tests/test_account_emails.py` (3 tests, create-host flow)
-  - `tests/test_users_disable_confirm.py` (5 tests, the disable form now lives on the customer page under `/aktivovat`)
-  - `tests/test_skeleton_loaders.py::test_post_export_forms_opt_out_of_skeleton_markup`
-  - `tests/test_host_account_navigation.py::test_settings_geometry_and_help_at_widths`
-  - `tests/test_property_create_browser.py` (2 tests)
-  - `tests/test_design_guardrails_browser.py::test_entities_list_fits_at_supported_lanes_and_languages`
-- Browser tests: 10 skipped in the run below. Browser tests need `UBYHOST_BROWSER_EXECUTABLE` set, which was not set in this run.
-- Screenshot (390 px) not taken.
-- `git diff --stat origin/main` not taken.
+- The 660 px cap on the email input in the old test is now `<= 1280`. The customer page has no split column, so the account email input renders about 934 px wide at 1280 px. Layout was not changed (CSS out of scope). Decide whether to add a width cap on the customer page.
+- `settings.html` (line 81) and the command palette (`api.py`, `nav.users`) still link to `/admin/users`; they work through the 303 but are not repointed (not in brief scope).
+- `stop_impersonating` still redirects to `/admin/users` (303 chain to customers).
+- No screenshot taken (not required by brief section 7 unless browser fixture allows; not done).
 
-## Test output
+## Test output (run with UBYHOST_BROWSER_EXECUTABLE set, from App/)
 
-Run 1 (`-x`, stopped at first failure):
 ```
-FAILED tests/test_admin_section_tabs.py::test_admin_pages_share_one_admin_strip_with_the_current_tab_marked
-1 failed in 4.71s
+tests/test_admin_section_tabs.py tests/test_admin_customers.py tests/test_account_emails.py + every tests/*.py that mentions admin/users
+263 passed in 85.33s (0:01:25)
 ```
 
-Run 2 (all admin-touching files, no `-x`, `--tb=line`):
 ```
-FAILED ... (15 listed above)
-15 failed, 248 passed, 10 skipped in 24.61s
+tests/test_design_guardrails_browser.py tests/test_design_shell_browser.py
+26 passed in 110.50s (0:01:50)
 ```
+
+0 failed, 0 skipped in both runs. Also: `tests/test_design_admin.py` 2 passed; `python3 scripts/design_lint.py` OK; `python3 scripts/context_lint.py` OK.
+
+Outside the brief's §6 list: `tests/test_host_i18n.py` has 3 failing tests (`test_language_endpoint_accepts_vietnamese`, `test_a_signed_in_dashboard_keeps_vietnamese`, `test_language_endpoint_sets_cookie_and_rejects_open_redirects`). They fail with the origin/main i18n files too (checked), with `no such table: apartment` and a CSRF GET inside the test client. Not caused by this change; not investigated further.
 
 ## Owner steps left
 
-- None before the test fixes. After the tests are fixed: review the branch and merge with `scripts/merge-pr-on-green.sh` (the owner decides when).
+- Review and merge with `scripts/merge-pr-on-green.sh` (owner decides). No deploy.

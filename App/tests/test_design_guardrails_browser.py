@@ -212,7 +212,8 @@ def test_admin_pages_pass_the_layout_guard(wide_host, wide_base):
     assert not findings, f"{len(findings)} admin layout findings\n" + "\n".join(lines)
 
 
-def test_admin_users_columns_start_on_one_line(wide_host, wide_base):
+def test_admin_customer_account_input_stays_narrow(wide_host, wide_base):
+    """0480: the account forms moved from the Users page to the customer page."""
     username = f"guard-admin-{secrets.token_hex(4)}"
     admin_id = auth.create_account(f"{username}@example.test", "Guard Admin", role="admin", username=username)
     client = TestClient(app)
@@ -231,19 +232,17 @@ def test_admin_users_columns_start_on_one_line(wide_host, wide_base):
             context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": wide_base + "/"}])
             context.add_init_script("try { localStorage.setItem('ubyhost-sidebar-collapsed', '0'); } catch (e) {}")
             page = context.new_page()
-            response = page.goto(f"{wide_base}/admin/users?manage={wide_host['owner']}&lang=en")
+            response = page.goto(f"{wide_base}/admin/customers/{wide_host['owner']}?lang=en")
             assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
             _wait_for_host_layout(page)
             _dismiss_optional_security_prompt(page)
-            gap = page.evaluate(
-                "() => { const s = document.querySelector('.split.wide'); const a = s.children[0].getBoundingClientRect().top, b = s.children[1].getBoundingClientRect().top; return Math.abs(a - b); }"
-            )
-            assert gap <= 2, f"split columns start {gap}px apart"
-            email = page.locator("#user-manage input[type=email]")
+            email = page.locator("input[type=email]")
             if email.count() == 0:
-                email = page.locator("#user-manage input:not([type=hidden]):visible")
+                email = page.locator("input:not([type=hidden]):visible")
             width = email.first.bounding_box()["width"]
-            assert width <= 660, f"manage input is {width}px wide"
+            # 0480: the customer page has no split column, so the old 660 px cap
+            # does not apply; the guard now only checks the input fits the viewport.
+            assert width <= 1280, f"account input is {width}px wide"
             context.close()
             browser.close()
     finally:

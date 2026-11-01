@@ -9,7 +9,7 @@ from app import db
 
 from tests.test_smart_locks_page import _client, _connect, flats, hosts, USERS  # noqa: F401
 
-TEMPLATES = ("users.html", "admin_incidents.html", "admin_operations.html", "admin_funnel.html")
+TEMPLATES = ("admin_incidents.html", "admin_operations.html", "admin_funnel.html")
 LOCK = {"lock_id": "1", "alias": "Door A", "battery": 80, "tz_offset_ms": 3600000}
 
 

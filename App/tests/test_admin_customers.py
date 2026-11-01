@@ -131,7 +131,8 @@ def test_admin_views_escape_workspace_names_and_offer_existing_links(accounts, m
     assert page.status_code == 200
     assert "<script>alert(1)</script>" not in page.text
     assert "Legacy free" in page.text and "Billing is switched off" in page.text
-    assert f"/admin/users?manage={owner}#user-manage" in page.text
+    assert f"/admin/users/{owner}/email" in page.text
+    assert "/admin/users?manage=" not in page.text
     assert "/admin/fakturace" in page.text
     assert "password_hash" not in page.text and "signup_verify_nonce" not in page.text
     assert client.get(f"/admin/customers/{_admin}").status_code == 404
@@ -146,3 +147,19 @@ def test_bad_filters_and_cursors_do_not_change_the_query_contract(accounts):
     client = TestClient(app)
     login_as(client, username, url="/login?lang=en")
     assert client.get("/admin/customers?after=999999999999999999999999&before=-1").status_code == 200
+
+
+def test_old_users_url_redirects_to_customers_and_customer_page_has_no_manage_link(accounts, monkeypatch):
+    """0480: the Users page is gone; its URL answers 303 to the customers list."""
+    create, prefix = accounts
+    owner, _ = create(prefix + " manage-link")
+    _admin, username = create(role="admin")
+    client = TestClient(app)
+    login_as(client, username, url="/login?lang=en")
+    monkeypatch.setattr(config, "BILLING_ENABLED", False)
+    old = client.get(f"/admin/users?q={prefix}", follow_redirects=False)
+    assert old.status_code == 303
+    assert old.headers["location"] == f"/admin/customers?q={prefix}"
+    page = client.get(f"/admin/customers/{owner}?lang=en")
+    assert page.status_code == 200
+    assert "/admin/users?manage=" not in page.text

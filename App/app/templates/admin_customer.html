@@ -188,7 +188,7 @@
 {% endif %}
 {% call ui_section(t('customers.ops.title'), id='operator-actions-card') %}
 <div class="ui-form-actions">
-  <form method="post" action="/admin/customers/{{ customer.id }}/aktivovat" data-customer-toggle>
+  <form method="post" action="/admin/customers/{{ customer.id }}/aktivovat" data-customer-toggle{% if customer.active %} data-confirm data-confirm-message="{{ t('confirm.disable_user', name=customer.display_name or customer.username) }}"{% endif %}>
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     {{ ui_button(t('customers.ops.enable' if not customer.active else 'customers.ops.disable'),
                  'secondary', type='submit') }}
