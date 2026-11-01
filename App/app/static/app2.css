@@ -85,7 +85,7 @@ tbody tr .btn.sm.ghost{opacity:0;transition:opacity .15s}tbody tr:hover .btn.sm.
   body.v2 .dashboard-calendar{padding-inline:4px}
   body.v2 .side .nav{min-height:44px;display:flex;align-items:center}
   body.v2 .dashboard-row-actions .ui-btn{min-width:44px;min-height:44px}
-  body.v2 .card > table th:nth-child(2),body.v2 .card > table td:nth-child(2),body.v2 .card > table th:nth-child(3),body.v2 .card > table td:nth-child(3){display:none}
+  body.v2 .card[data-dashboard-refresh="work"] > table th:nth-child(2),body.v2 .card[data-dashboard-refresh="work"] > table td:nth-child(2),body.v2 .card[data-dashboard-refresh="work"] > table th:nth-child(3),body.v2 .card[data-dashboard-refresh="work"] > table td:nth-child(3){display:none}
 }
 
 /* Sidebar parts that are not in the mockup: the nav lists, the logout button. */
@@ -198,3 +198,7 @@ body.v2 .ui-btn-quiet{background:none;border:0;box-shadow:none;padding:0 2px;col
 @media (max-width:1023px){body.v2 .ui-btn-quiet{min-height:44px}body.v2 .search{min-height:44px}}
 body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
 @media (min-width:1024px){body.v2 .row-menu-trigger{min-width:24px;min-height:24px}}
+/* 0716 v2 shell parity: env badge under the logo, quiet support link in the bottom block */
+.side .env-badge{display:inline-block;margin:0 8px;padding:0 8px;border-radius:999px;font-size:12px;line-height:16px;color:var(--ink2);background:var(--side2)}
+.side .support-link{display:block;font-size:12px}
+.side .support-link small{display:block;font-size:12px;color:var(--ink3)}
