@@ -1,5 +1,5 @@
 # 0641: Go iCal: safe feed download (SSRF guard, pinning, validators) like Python
-Status: ready
+Status: review
 Depends on: none | Base commit: origin/main | Branch: task/0641-go-ical-fetch
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 90k tokens
 ## 1. Objective
