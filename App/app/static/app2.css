@@ -711,7 +711,8 @@ body.v2 .guest-btns{display:contents}
 @media (max-width:1023px){
   body.v2 .guest-pin{display:block;margin-top:8px;color:var(--ink3);font-size:14px}
   body.v2 .guest-pin-value{display:block;font-family:var(--mono,ui-monospace,monospace);font-size:16px;font-weight:700;color:var(--ink);letter-spacing:.08em}
-  body.v2 .guest-btns{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+  body.v2 .guest-btns{display:grid;grid-template-columns:1fr;gap:8px}
+  body.v2 .guest-btns > .btn,body.v2 .guest-pin-copy > .btn{width:100%;justify-content:center}
   body.v2 .guest-pin-copy{display:block}
 }
 /* 0543: CI browser fixes on the property page and its dialogs */
