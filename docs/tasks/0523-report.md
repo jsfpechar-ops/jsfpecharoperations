@@ -65,3 +65,32 @@ None. No existing test was edited. The browser failures above are the layout gua
 
 ## Owner steps left
 - None until the geometry decision above is made.
+
+## Session 3 (executor): request payment moved into the row menu
+Status: blocked
+Done: steps 1 to 7. The only open failure is one browser assertion (below). No push, no PR.
+
+Commits: `06393f4 0523 fix: request payment in row menu` (template, host2.css, base.html `?v=20261101-0523b`, static_versions.json, test, catalog.json). Screenshots recaptured with `UBYHOST_CAPTURE_0523=1` and committed in the next commit.
+
+Command tails:
+- `design_lint.py`: `design lint: OK`
+- `tests/test_static_versions.py --write`: `wrote .../static_versions.json (40 files)`
+- Server set: `25 passed in 5.03s`
+- Browser set (`-rs`): `1 failed, 35 passed in 370.93s (0:06:10)`. Skipped: none.
+  - FAILED `test_stays_pills_and_deadlines_stay_on_one_line` (tests/test_host_list_layouts_browser.py:112): `('en', 1280, {'pill': True, 'deadline': True, 'height': 128.75, ...})`, `assert 128.75 <= 100`.
+
+Findings:
+- The layout-guard failures from session 2 are gone: no `page-scroll` or `past-right-edge` findings on `/reservations` at 1280 px, and `test_stays_fit_lane_at_every_width_and_sidebar_state` passes.
+- The remaining failure is a row height on `/reservations` at 1280 px in English, where the pill and deadline sit on one line but the row is 128.75 px against a 100 px maximum. The row is likely taller because the "Request payment" button no longer sits in the actions cell, or because the pill and deadline wrap. I did not check which. Widths were not changed, as the brief says.
+- Screenshot `reservations-cs-390.png` (card layout, read once): the request-payment link is not visible at 390 px, as intended, since it now lives in the row menu. Dates in some cards appear to overlap their "noci" text, and the fixed bottom nav covers one card. Neither is in the brief scope; not fixed.
+
+## Deviations
+- Done: steps 1 to 7. Left: the failing row-height assertion above (decision needed: raise `SHORT_ROW_MAX` for stays rows, or fix the pill/deadline wrap at 1280 px English).
+- The payment-link test was changed to check the link is a `row-menu-item` (same href). No test asserts the `stay-col-pay` column any more.
+
+## Questions
+- Should `SHORT_ROW_MAX` apply to the stays list at 1280 px, or should the pill and deadline wrap be fixed?
+- Is the date overlap in the 390 px card screenshot pre-existing?
+
+## Owner steps left
+- None until the row-height decision above is made.
