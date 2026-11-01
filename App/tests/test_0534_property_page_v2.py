@@ -152,3 +152,32 @@ def test_0541_every_section_row_has_a_dot_and_a_state(host):
     assert rows
     for row in rows:
         assert 'class="dot ' in row and 'sec-state' in row
+
+
+def _guest_card(html):
+    start = html.index('class="card guest-card"')
+    return html[start:html.index("</section>", start)]
+
+
+def test_0545_guest_card_shows_pin_and_copy_button(host):
+    client, apartment_id = host
+    db.update("apartment", apartment_id, {"permalink_pin": "482915"})
+    card = _guest_card(_page(client, apartment_id))
+    assert 'id="property-guest-pin"' in card
+    assert 'value="482915"' in card
+    assert "guest-pin-value" in card
+    assert "copy_button" not in card
+    assert card.count('class="btn sm copy-btn"') == 2
+
+
+def test_0545_guest_card_has_no_pin_when_property_has_none(host, monkeypatch):
+    from app.routes import admin
+
+    client, apartment_id = host
+    # the page backfills a PIN on every load; patch that out to reach the empty state
+    monkeypatch.setattr(admin, "_ensure_apartment_pin", lambda apartment: apartment)
+    db.update("apartment", apartment_id, {"permalink_pin": None})
+    card = _guest_card(_page(client, apartment_id))
+    assert "property-guest-pin" not in card
+    assert "guest-pin" not in card
+    assert card.count('class="btn sm copy-btn"') == 1
