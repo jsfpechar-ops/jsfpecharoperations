@@ -47,7 +47,7 @@ def _set_sidebar(page, collapsed: bool) -> bool:
     if now != collapsed:
         toggle.first.click()
         page.wait_for_function(
-            f"document.body.classList.contains('sidebar-collapsed') === {str(collapsed).lower()}"
+            f"() => document.body.classList.contains('sidebar-collapsed') === {str(collapsed).lower()}"
         )
     return True
 

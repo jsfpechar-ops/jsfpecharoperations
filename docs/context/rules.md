@@ -44,6 +44,8 @@ Production stays on SQLite pending owner cutover. PostgreSQL migration code is o
 - PostgreSQL schema changes are goose files `App/migrations_pg/NNNNN_name.sql` (next number = highest + 1), applied by `scripts/pg_schema.py apply`; the app will not start while one is pending. `App/app/migrations/` is frozen at 0033. A change SQLite also needs (a column the Python code reads) adds the matching `App/app/migrations` file in the same PR until G6; `db.SCHEMA` and `db.ADDED_COLUMNS` never change.
 - Keep `with db.immediate()` blocks small. Never call UbyPort or fetch a feed inside a transaction. No logic may assume a single writer: a block that reads, decides and writes takes `db.lock_key(cur, name, id)` first (ascending ids when several).
 
+- Goose files in `App/migrations_pg/` must be additive: the previous image must keep working on the migrated schema, so the healthz rollback stays valid.
+
 ## Guest pages
 
 This covers `App/app/templates/guest/`, `guest*.css` and `signature.js`. Markup tests alone shipped broken pages before (Ticket Wallet v2). Before calling a change done:

@@ -90,10 +90,14 @@ def test_a_table_outside_the_baseline_keeps_the_schema_current(pg_goose):
 @PG_ONLY
 def test_a_current_schema_without_goose_table_adopts_baseline(pg_goose):
     _run("DROP TABLE goose_db_version")
-    status = db.validate_postgres_schema()
-    assert status["goose_pending"] == []
+    # 00002 (poll indexes) is pending after adoption: the app refuses to start until it is applied.
+    with pytest.raises(RuntimeError, match="goose migrations 2 are not applied"):
+        db.validate_postgres_schema()
     conn = db.connect()
     try:
-        assert 1 in db.goose_applied(conn)
+        applied = db.goose_applied(conn)
     finally:
         conn.close()
+    assert 1 in applied and 2 not in applied
+    db.apply_postgresql_schema()
+    assert db.validate_postgres_schema()["goose_pending"] == []
