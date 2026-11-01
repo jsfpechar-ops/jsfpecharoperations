@@ -117,7 +117,7 @@ def test_calendar_and_large_list_geometry_and_filtering(workspace, origin, width
         assert page.locator("#cleaning-list input[type=checkbox]").count() == 0
         assert page.locator("#cleaning-list").bounding_box()["y"] < page.locator("#calendar").bounding_box()["y"]
         assert page.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth")
-        assert page.locator('.sidebar-nav a[href="/cleaning"] svg').count() == 1
+        assert page.locator('a.nav[href="/cleaning"] svg').count() == 1
         shot(page, f"host-{lang}-{width}")
         page.locator("[data-cal-property]").select_option(str(workspace["homes"][1]))
         page.wait_for_function("() => document.querySelectorAll('.cleaning-section tr[id^=cleaning-]').length === 1")
@@ -420,7 +420,7 @@ def test_host_crud_and_drag_change_cleanings_without_moving_bookings(workspace, 
                      if item["eventId"] == first["eventId"])
         assert str(moved["date"])[:10] == "2026-10-22"
         assert page.locator(f'.cleaning-section tr#cleaning-{first["eventId"]}').count() == 1
-        page.get_by_role("link", name="Add cleaning", exact=True).click()
+        page.get_by_role("link", name="+ Add cleaning", exact=True).click()
         create = page.locator("[data-cal-create]")
         assert create.is_visible()
         assert page.locator('[data-cal-type-choice="cleaning"]').get_attribute("aria-pressed") == "true"
