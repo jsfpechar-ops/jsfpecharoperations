@@ -15,6 +15,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
 )
@@ -104,9 +105,9 @@ func TestConnectExpiredTextsMatchPython(t *testing.T) {
 		src  []byte
 		want string
 	}{
-		"en": {en, connectExpiredTexts["en"]},
-		"cs": {en, connectExpiredTexts["cs"]},
-		"vi": {vi, connectExpiredTexts["vi"]},
+		"en": {en, hostweb.ExpiredTexts["en"]},
+		"cs": {en, hostweb.ExpiredTexts["cs"]},
+		"vi": {vi, hostweb.ExpiredTexts["vi"]},
 	}
 	for lang, c := range checks {
 		if !strings.Contains(string(c.src), `"impersonation.expired": "`+c.want+`"`) {
@@ -240,7 +241,7 @@ func TestConnectDatabase(t *testing.T) {
 	t.Run("expired impersonation writes two rows and a plain cookie", func(t *testing.T) {
 		h := ConnectReturnHandler(pool, connectEnv("test", nil), connectNow, fake)
 		rec := connectDo(h, http.MethodGet, "/payments/connect/return", adminCookies, nil)
-		want := "/admin/customers?msg=" + url.PathEscape(connectExpiredTexts["en"])
+		want := "/admin/customers?msg=" + url.PathEscape(hostweb.ExpiredTexts["en"])
 		if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != want {
 			t.Errorf("expired: %d %q", rec.Code, rec.Header().Get("Location"))
 		}
