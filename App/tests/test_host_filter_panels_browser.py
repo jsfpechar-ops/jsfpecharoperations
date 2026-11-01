@@ -421,7 +421,11 @@ def test_filter_geometry_and_popovers_stay_inside_the_viewport_in_english_and_cz
                     assert not geometry["overflow"], f"{width}px {lang} {route}: filter lane overflow"
                     assert geometry["summaryInside"], f"{width}px {lang} {route}: summary overflow"
                     assert not geometry["clipped"], f"{width}px {lang} {route}: clipped toolbar label"
-                    if width <= 600:
+                    if width < 1024 and route.startswith("/reservations"):
+                        # compact phone rule: the stays list shows the mockup's four chips; filters are on desktop
+                        assert geometry["triggerHeight"] == 0
+                        continue
+                    elif width <= 600:
                         assert geometry["triggerHeight"] >= 44
                     else:
                         assert geometry["triggerHeight"] >= 40

@@ -36,10 +36,14 @@ def test_stay_detail_groups_facts_and_wraps(stay_actions_host, stay_actions_base
                     page.wait_for_load_state("networkidle")
                     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"), (key, width)
                     # One ordered page, mockup order: guests, reporting, settings; nothing folded.
+                    # below 1024 the settings card is hidden (compact phone rule, still on desktop)
+                    order_ids = ['guests', 'reports', 'stay-quick-edit'] if width >= 1024 else ['guests', 'reports']
                     order = page.evaluate(
-                        "['guests','reports','stay-quick-edit'].map(i => document.getElementById(i).getBoundingClientRect().top)"
+                        "ids => ids.map(i => document.getElementById(i).getBoundingClientRect().top)", order_ids
                     )
                     assert order == sorted(order), order
+                    if width < 1024:
+                        assert page.locator("#stay-quick-edit").is_hidden()
                     assert page.locator("#stay-quick-edit").evaluate("e => e.tagName") == "DETAILS"
                     # 0525 standing rule: the jump tabs were removed in 0524, so the nav geometry
                     # checks no longer apply; the page must have none.
