@@ -1209,6 +1209,148 @@ def clear_stuck_alert_if_recovered(reservation_id: int) -> None:
         alerts.resolve(f"submission_stuck:{reservation_id}")
 
 
+def plan_outcome(
+    pairs,
+    result,
+    submission_id,
+    now,
+    codebook,
+    severities,
+    receipt_lookup=receipt_submission_id,
+) -> Dict[str, Any]:
+    """Decide each guest's new values and the batch state from a UbyPort answer.
+
+    Pure: no database, no network. submit_batch writes the result.
+    """
+    per_record = result.record_errors
+    accepted_count = 0
+    failed_count = 0
+    blocked_count = 0
+    # Records the register refused because it already held them. This is the
+    # causal fact behind "ok_duplicate", so the state is keyed on it rather than
+    # on the absence of a receipt, which is only a proxy and would misfire on a
+    # first-time accept that came back without a confirmation document.
+    duplicate_accepts = 0
+    # Records the service accepted outright, with no error codes at all. This is
+    # what separates a real filing from a batch that only confirmed records the
+    # register already had: accepted_count also counts the latter, because a
+    # duplicate does move a guest to sent for the first time.
+    first_accepts = 0
+    # (guest, reservation) pairs that just crossed the automatic retry bound on
+    # this attempt. Each one has stopped being offered to the sweep, which the
+    # host has to be told or the stop is silent.
+    exhausted: List[Any] = []
+    guest_writes: List[Tuple[int, Dict[str, Any]]] = []
+
+    for index, (guest, _reservation) in enumerate(pairs):
+        record_error = per_record[index] if index < len(per_record) else ""
+        state, messages = uby_errors.classify(
+            result.header_errors, record_error, codebook, severities=severities
+        )
+        if state == "accepted":
+            guest_writes.append(
+                (
+                    guest["id"],
+                    {
+                        "submit_state": SENT,
+                        "submitted_at": now,
+                        # The current pointer, moved on every send - it is not the
+                        # batch record, which lives in submission.guest_ids.
+                        "submission_id": submission_id,
+                        # Keep pointing at the last submission that actually holds
+                        # a Dorucenka when this attempt returned none, so a resend
+                        # without a receipt request does not lose the link.
+                        "receipt_submission_id": (
+                            submission_id if result.receipt_pdf else guest["receipt_submission_id"]
+                        ),
+                        "last_errors": None,
+                        # The register took it, so the count of refusals restarts.
+                        "submit_attempts": 0,
+                        "updated_at": now,
+                    },
+                )
+            )
+            accepted_count += 1
+            first_accepts += 1
+        else:
+            new_state = BLOCKED if state == "not_correctable" else ERROR
+            # A duplicate response proves the register already has this guest.
+            # This also covers an earlier accept whose HTTP response was lost.
+            # Only this record's own duplicate code proves the register holds
+            # it: 150, or a code the police code book itself names
+            # "Duplicitní záznam". Free prose and header-level messages must
+            # not: a false "sent" is a guest who was never filed. The police
+            # confirmed (letter of 24 September 2026, C2) that a duplicate
+            # answer is proof the register accepted the record earlier.
+            duplicate = uby_errors.record_is_duplicate(record_error, codebook)
+            if duplicate:
+                new_state = SENT
+                duplicate_accepts += 1
+            # A refusal counts against the automatic retry budget, a duplicate
+            # does not: the register holding the record is an answer, not a
+            # failure, so it restarts the count the same way an accept does.
+            attempts = 0 if new_state == SENT else auto_attempts(guest) + 1
+            if new_state == ERROR and attempts >= SUBMISSION_MAX_AUTO_ATTEMPTS:
+                exhausted.append((guest, _reservation))
+            update_values = {
+                "submit_state": new_state,
+                "submission_id": submission_id,
+                "last_errors": " | ".join(messages),
+                "submit_attempts": attempts,
+                "updated_at": now,
+            }
+            if new_state == SENT:
+                update_values["submitted_at"] = guest["submitted_at"] or now
+                # The confirmation for this record, if there is one, is on the
+                # submission that carried it before this one. A pointer already
+                # on file wins: it names the submission that first filed the
+                # guest, and deriving again from submission_id - which moves on
+                # every send - would drop the link as soon as one duplicate
+                # without a confirmation came back.
+                update_values["receipt_submission_id"] = (
+                    guest["receipt_submission_id"]
+                    or receipt_lookup(guest["submission_id"])
+                )
+            guest_writes.append((guest["id"], update_values))
+            if new_state == SENT:
+                # A duplicate for a guest we already had as sent means the
+                # register confirms it holds the record. Nothing was refused and
+                # nothing is left to do, so it counts as neither accepted nor
+                # blocked: duplicate_accepts already records it, and counting it
+                # as blocked would raise a critical rejection - and tell the
+                # host "were rejected" - for a filing that succeeded.
+                if guest["submit_state"] != SENT:
+                    accepted_count += 1
+            elif new_state == ERROR:
+                failed_count += 1
+            else:
+                blocked_count += 1
+
+    if failed_count or blocked_count:
+        state = "partial" if accepted_count else "error"
+    elif first_accepts:
+        # Something was filed for the first time, so this is a plain success even
+        # if other records in the same batch came back as duplicates.
+        state = "ok"
+    elif duplicate_accepts:
+        # Nothing new was filed: the register already held every record, so no
+        # Dorucenka came back for this attempt. That is a success, but not the
+        # same thing as a first-time accept with a confirmation behind it.
+        state = "ok_duplicate"
+    else:
+        state = "ok"
+    return {
+        "state": state,
+        "accepted": accepted_count,
+        "failed": failed_count,
+        "blocked": blocked_count,
+        "first_accepts": first_accepts,
+        "duplicate_accepts": duplicate_accepts,
+        "guest_writes": guest_writes,
+        "exhausted": exhausted,
+    }
+
+
 def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = None,
                      ignore_automation: bool = False, allow_resend: bool = False,
                      ignore_schedule: Optional[bool] = None
@@ -1545,123 +1687,14 @@ def submit_batch(
     codebook = codelists.error_codebook()
     severities = codelists.error_severities()
     now = db.utcnow()
-    per_record = result.record_errors
-    accepted_count = 0
-    failed_count = 0
-    blocked_count = 0
-    # Records the register refused because it already held them. This is the
-    # causal fact behind "ok_duplicate", so the state is keyed on it rather than
-    # on the absence of a receipt, which is only a proxy and would misfire on a
-    # first-time accept that came back without a confirmation document.
-    duplicate_accepts = 0
-    # Records the service accepted outright, with no error codes at all. This is
-    # what separates a real filing from a batch that only confirmed records the
-    # register already had: accepted_count also counts the latter, because a
-    # duplicate does move a guest to sent for the first time.
-    first_accepts = 0
-    # (guest, reservation) pairs that just crossed the automatic retry bound on
-    # this attempt. Each one has stopped being offered to the sweep, which the
-    # host has to be told or the stop is silent.
-    exhausted: List[Any] = []
-    guest_writes: List[Tuple[int, Dict[str, Any]]] = []
-
-    for index, (guest, _reservation) in enumerate(pairs):
-        record_error = per_record[index] if index < len(per_record) else ""
-        state, messages = uby_errors.classify(
-            result.header_errors, record_error, codebook, severities=severities
-        )
-        if state == "accepted":
-            guest_writes.append(
-                (
-                    guest["id"],
-                    {
-                        "submit_state": SENT,
-                        "submitted_at": now,
-                        # The current pointer, moved on every send - it is not the
-                        # batch record, which lives in submission.guest_ids.
-                        "submission_id": submission_id,
-                        # Keep pointing at the last submission that actually holds
-                        # a Dorucenka when this attempt returned none, so a resend
-                        # without a receipt request does not lose the link.
-                        "receipt_submission_id": (
-                            submission_id if result.receipt_pdf else guest["receipt_submission_id"]
-                        ),
-                        "last_errors": None,
-                        # The register took it, so the count of refusals restarts.
-                        "submit_attempts": 0,
-                        "updated_at": now,
-                    },
-                )
-            )
-            accepted_count += 1
-            first_accepts += 1
-        else:
-            new_state = BLOCKED if state == "not_correctable" else ERROR
-            # A duplicate response proves the register already has this guest.
-            # This also covers an earlier accept whose HTTP response was lost.
-            # Only this record's own duplicate code proves the register holds
-            # it: 150, or a code the police code book itself names
-            # "Duplicitní záznam". Free prose and header-level messages must
-            # not: a false "sent" is a guest who was never filed. The police
-            # confirmed (letter of 24 September 2026, C2) that a duplicate
-            # answer is proof the register accepted the record earlier.
-            duplicate = uby_errors.record_is_duplicate(record_error, codebook)
-            if duplicate:
-                new_state = SENT
-                duplicate_accepts += 1
-            # A refusal counts against the automatic retry budget, a duplicate
-            # does not: the register holding the record is an answer, not a
-            # failure, so it restarts the count the same way an accept does.
-            attempts = 0 if new_state == SENT else auto_attempts(guest) + 1
-            if new_state == ERROR and attempts >= SUBMISSION_MAX_AUTO_ATTEMPTS:
-                exhausted.append((guest, _reservation))
-            update_values = {
-                "submit_state": new_state,
-                "submission_id": submission_id,
-                "last_errors": " | ".join(messages),
-                "submit_attempts": attempts,
-                "updated_at": now,
-            }
-            if new_state == SENT:
-                update_values["submitted_at"] = guest["submitted_at"] or now
-                # The confirmation for this record, if there is one, is on the
-                # submission that carried it before this one. A pointer already
-                # on file wins: it names the submission that first filed the
-                # guest, and deriving again from submission_id - which moves on
-                # every send - would drop the link as soon as one duplicate
-                # without a confirmation came back.
-                update_values["receipt_submission_id"] = (
-                    guest["receipt_submission_id"]
-                    or receipt_submission_id(guest["submission_id"])
-                )
-            guest_writes.append((guest["id"], update_values))
-            if new_state == SENT:
-                # A duplicate for a guest we already had as sent means the
-                # register confirms it holds the record. Nothing was refused and
-                # nothing is left to do, so it counts as neither accepted nor
-                # blocked: duplicate_accepts already records it, and counting it
-                # as blocked would raise a critical rejection - and tell the
-                # host "were rejected" - for a filing that succeeded.
-                if guest["submit_state"] != SENT:
-                    accepted_count += 1
-            elif new_state == ERROR:
-                failed_count += 1
-            else:
-                blocked_count += 1
-
-    if failed_count or blocked_count:
-        state = "partial" if accepted_count else "error"
-    elif first_accepts:
-        # Something was filed for the first time, so this is a plain success even
-        # if other records in the same batch came back as duplicates.
-        state = "ok"
-    elif duplicate_accepts:
-        # Nothing new was filed: the register already held every record, so no
-        # Dorucenka came back for this attempt. That is a success, but not the
-        # same thing as a first-time accept with a confirmation behind it.
-        state = "ok_duplicate"
-    else:
-        state = "ok"
+    plan = plan_outcome(pairs, result, submission_id, now, codebook, severities)
+    state = plan["state"]
+    accepted_count = plan["accepted"]
+    failed_count = plan["failed"]
+    blocked_count = plan["blocked"]
+    first_accepts = plan["first_accepts"]
+    guest_writes = plan["guest_writes"]
+    exhausted = plan["exhausted"]
 
     # The answer and the Dorucenka are written together with every guest's
     # new state, or not at all. Anything that can fail afterwards (alerts,
