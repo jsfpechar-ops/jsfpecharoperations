@@ -2114,7 +2114,7 @@
         button.addEventListener("click", function () {
           discard(form);
           syncResetButtons();
-          var save = form.querySelector(".host-property-save [type=submit]") || form.querySelector(".actions [type=submit]");
+          var save = form.querySelector(".savebar [type=submit]") || form.querySelector(".actions [type=submit]");
           if (save) save.focus();
         });
       });
