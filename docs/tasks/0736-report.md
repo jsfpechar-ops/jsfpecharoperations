@@ -67,3 +67,32 @@ Done: items 2 (1de31cd), 1 (partly), 6. Left: items 1 (focus assertion, JS), 3, 
 
 ## Owner steps left
 - None. No push, no PR.
+
+## Run 3 (section 11 first, then items 3 to 5; commits b6235d7, step 2)
+Status: blocked
+Done: section 11 item 1 (focus selector `.savebar [type=submit]` first, dead `.host-property-save` dropped, app.js key 0736). Item 3 CSS and heading (h2 in `_property_editor.html`), item 4 CSS, item 5 test change. Left: item 3 a11y still fails, item 4 still fails, item 6 list test, items 7, 8, section 6 remainder, screenshots.
+
+### Test results (chromium, UBYHOST_REQUIRE_BROWSER=1, -k "not webkit"; webkit not installed)
+- tests/test_host_unsaved_changes_browser.py: `15 passed in 20.75s` (0 skipped)
+- tests/test_0252_touch_sweep_browser.py: `1 passed in 34.20s`
+- tests/test_static_versions.py: written with `App/tests/test_static_versions.py --write` (41 files); pytest flag `--write` is not accepted by pytest.
+- tests/test_a11y_guard_browser.py: `2 failed, 2 passed in 78.70s`. `test_every_page_passes_the_page_checks`: `12 findings {'heading-level-skipped': 12}` after the h2 change. `test_keyboard_focus_is_visible_and_not_covered`: `focus-not-visible` on `properties 1280 button#:Copy link`. Not analysed further.
+- tests/test_onboarding_wizard_browser.py: `4 failed, 81 passed in 175.79s`. `test_wizard_polish_and_overview_cards[False-360-en|360-cs|390-cs]` still overflow on `/apartments/1?view=settings&section=guests`, so the item 4 CSS did not fix it. `test_review_fixes_in_the_browser` also fails (not in brief, not triaged).
+
+### Item 5 change
+- No cue in the mockup props view (rows have only a `.dots` cell). Test change only: in `test_0252_touch_sweep_browser.py` the noCue probe skips `tr.clickable-row` inside `.props-card` (the v2 list row is role=link). Scoped to the v2 list, not all pages.
+
+### Not checked
+- Setup-continue contrast: `color:#fff` on `var(--coral-600)` (#ad4942), computed about 5.5:1 by hand; not measured in the browser.
+- Screenshots (`docs/tasks/screenshots-0736/`): none taken.
+
+## Deviations
+- Done: section 11 item 1; items 3 (partial), 5; item 4 (CSS only, test still failing). Left: a11y heading findings and focus finding; onboarding 360/390 overflow; item 6 list test; items 7, 8; section 6 remainder; screenshots.
+- The brief file `docs/tasks/0736-property-page-last-ci-fixes.md` has the orchestrator's sections 10 and 11 uncommitted in the working tree; not staged by the executor.
+
+## Questions
+1. Heading: which heading is skipped now (12 findings)? Needs a look at the page-check output with the h2 change.
+2. Onboarding guests at 360: what element is wider than the viewport on the guests section (probe needed)?
+
+## Owner steps left
+- None. No push, no PR.
