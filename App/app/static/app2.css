@@ -159,3 +159,16 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 body.v2 [data-needs-you-go]:hover{background:#b83a24}
 body.v2 .skip-link{position:fixed;z-index:1000;left:8px;top:-100px}
 body.v2 .skip-link:focus{top:8px}
+
+/* 0711 tap targets: 44 px below 1024 px, 24 px from 1024 px up */
+@media (max-width: 1023px){
+  body.v2 .btn,body.v2 .btn.sm,body.v2 .logo,body.v2 summary,body.v2 .row-menu-trigger{min-width:44px;min-height:44px;box-sizing:border-box}
+}
+@media (min-width: 1024px){
+  body.v2 .row-menu-trigger,body.v2 summary,body.v2 form[action="/demo/reset"] button{min-height:24px}
+  body.v2 .dashboard-row-property{display:inline-block;min-height:24px;line-height:24px}
+}
+/* 0711 needs-you card: the text column may shrink, the actions wrap below the text */
+body.v2 .card.needs-you-card-item{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start}
+body.v2 .needs-you-card-item > div:not(.ic){min-width:0}
+body.v2 .needs-you-actions{display:flex;flex-wrap:wrap;gap:8px}
