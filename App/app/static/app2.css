@@ -651,6 +651,11 @@ body.v2 .savebar .ui-btn,body.v2 .savebar .btn{width:auto;white-space:nowrap}
   body.v2 .property-section{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
   body.v2 .property-section > :is(h3,p,.hint,.grid,.field-label-row,.actions,.preview-hint){grid-column:1/-1}
   body.v2 .property-section .field:has(textarea){grid-column:1/-1}
+  body.v2 .property-section .grid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+  body.v2 .property-section .grid > .field{margin:0}
+  body.v2 .property-section .grid > .field:only-child{grid-column:1/-1}
+  body.v2 .property-section .grid > .field:has(textarea){grid-column:1/-1}
+  body.v2 .property-section .field[style*="max-width"]{max-width:none}
 }
 /* 0536 item 1 (second pass): the help toggle is a small pill card, so the generic details card look stays (0710 mockup match) */
 body.v2 .ov-how[data-how="property"]{background:var(--s);border:1px solid var(--line);border-radius:999px;padding:0 12px;margin:0 0 8px;display:inline-block}
