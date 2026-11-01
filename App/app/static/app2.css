@@ -280,15 +280,6 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
 .host-stay-detail .stay-head-actions form{margin:0}
 .host-stay-detail .stay-pill-line{margin:0 20px}
 .host-stay-detail .stay-sep{margin-left:8px}
-.host-stay-detail .top{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;min-height:56px}
-.host-stay-detail .round{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#fff;border:1px solid var(--line)}
-.host-stay-detail .big{font-size:32px;font-weight:800;letter-spacing:-.025em;margin:2px 20px 4px;line-height:1.15}
-.host-stay-detail .facts{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:16px 20px 0;border:1px solid var(--line);border-radius:16px;overflow:hidden}
-.host-stay-detail .facts div{padding:14px 16px}
-.host-stay-detail .facts div:nth-child(odd){border-right:1px solid var(--line)}
-.host-stay-detail .facts div:nth-child(n+3){border-top:1px solid var(--line)}
-.host-stay-detail .facts small{display:block;color:var(--ink3);font-size:13px}
-.host-stay-detail .facts b{font-size:16px}
 @media (max-width:1023px){.host-stay-detail .head>div:first-child{display:none}}
 @media (min-width:1024px){.host-stay-detail .top,.host-stay-detail .big,.host-stay-detail .sub-phone,.host-stay-detail .facts{display:none}}
 .host-stay-detail .stay-guests-h{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
