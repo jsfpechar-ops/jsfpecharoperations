@@ -1138,7 +1138,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
   .host-workspace .guest-cards { gap: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--card-radius); }
   .host-workspace .guest-card { border: 0; border-bottom: 1px solid var(--line); border-radius: 0; }
   .host-workspace .guest-card:last-child { border-bottom: 0; }
-  .host-workspace .guest-card-head { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto auto; align-items: center; }
+  .host-workspace .guest-card-head { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto; align-items: center; }
   .host-workspace .stay-door-card { padding: var(--space-4); }
   .host-workspace .stay-door-card #door-code-line { font-size: var(--text-lg); font-weight: 700; }
 }

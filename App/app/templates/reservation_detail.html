@@ -13,7 +13,7 @@
 {% block back_label %}{{ t('stay.detail.back') }}{% endblock %}
 {% set stay_lede %}{{ (reservation.date_from | date_cz) ~ ' – ' ~ (reservation.date_to | date_cz) ~ ' · ' ~ tp('stays.table.nights', nights(reservation.date_from, reservation.date_to)) ~ ' · ' }}{{ source_badge(reservation.source, source_label(reservation)) }}{% endset %}
 {% block meta %}{% if reservation.status != 'active' %}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('stays.filter.state.' ~ reservation.status) }}</span>{% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo=('(demo)' in reservation.internal_name or reservation.source == 'demo'), step=journey_step(progress.status)) }}{% endif %} · <a href="/apartments/{{ reservation.apartment_id }}">{{ reservation.internal_name }}</a> · {{ stay_lede }}{% endblock %}
-{% block secondary_actions %}{% if reservation.permalink_token and not (reservation.status != 'active' or reservation.archived_at) %}<button class="ui-btn ui-btn-secondary" type="button" data-copy="stay-link" data-copied-label="{{ t('stay.detail.link_copied') }}" data-stay-header-copy>{{ t('host.copy_guest_form_link') }}</button>{% endif %}{% endblock %}
+{% block secondary_actions %}{% if reservation.permalink_token and not (reservation.status != 'active' or reservation.archived_at) %}<button class="ui-btn ui-btn-secondary" type="button" data-copy="stay-link" data-copied-label="{{ t('stay.detail.link_copied') }}" data-stay-header-copy>{{ t('host.copy_guest_form_link') }}</button>{% endif %}{% if claim_resend.enabled %}<form method="post" action="/reservations/{{ reservation.id }}/resend-claim" class="inline"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="ui-btn ui-btn-secondary" type="submit" data-resend-claim title="{{ t('stay.claim.resend_help') }}">{{ t('stay.claim.resend') }}</button></form>{% endif %}{% endblock %}
 {% block body %}
 <input class="sr-only" type="text" id="stay-link" readonly value="{{ guest_link }}" tabindex="-1" aria-hidden="true">
 
@@ -174,13 +174,6 @@
   </p>
   {% if stay_claim.state != 'unclaimed' %}
   <div class="stay-command-actions">
-    {% if claim_resend.enabled %}
-    <form method="post" action="/reservations/{{ reservation.id }}/resend-claim" class="inline">
-      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-      <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" data-resend-claim
-              title="{{ t('stay.claim.resend_help') }}">{{ t('stay.claim.resend') }}</button>
-    </form>
-    {% endif %}
     <form method="post" action="/reservations/{{ reservation.id }}/release-claim" class="inline"
           data-confirm data-confirm-message="{{ t('stay.claim.release_confirm') }}">
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
