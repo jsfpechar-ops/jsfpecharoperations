@@ -84,6 +84,7 @@
   const rowCtl = [...ws.querySelectorAll(btnSel + ',' + fieldSel)].filter((e) => vis(e) && !e.closest('[role=menu],dialog:not([open])') && !inScroller(e));
   for (let i = 0; i < rowCtl.length; i++) for (let j = i + 1; j < rowCtl.length; j++) {
     const a = rowCtl[i], b = rowCtl[j];
+    if ([a, b].some((e) => { for (let p = e; p; p = p.parentElement) if (['fixed', 'sticky'].includes(getComputedStyle(p).position)) return true; return false; })) continue; // fixed savebar and sidebar are never in a field row
     if (a.matches(fieldSel) === b.matches(fieldSel)) continue;
     if (a.tagName === 'TEXTAREA' || b.tagName === 'TEXTAREA') continue;
     const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
