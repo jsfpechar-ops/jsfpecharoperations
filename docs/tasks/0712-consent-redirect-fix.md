@@ -1,6 +1,6 @@
 # 0712: Consent "Continue to Stripe" hangs on a blank page (CSP form-action)
 
-Status: todo
+Status: in-progress
 Depends on: none | Base commit: 02ebb6eb | Branch: task/0712-consent-redirect-fix (already exists, check it out)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
