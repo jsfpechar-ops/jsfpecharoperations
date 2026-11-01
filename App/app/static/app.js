@@ -7,26 +7,30 @@
   /* 0099: every clickable list row, table or dashboard card. */
   var ROW_SELECTOR = "tr[data-href], .clickable-row[data-href]";
 
-  function bindHostNodes(selector, attach) {
-    var seen = new WeakSet();
-    function visit(root) {
-      if (!root || !root.querySelectorAll) return;
-      if (root.matches && root.matches(selector) && !seen.has(root)) {
-        seen.add(root);
-        attach(root);
-      }
-      root.querySelectorAll(selector).forEach(function (node) {
-        if (seen.has(node)) return;
-        seen.add(node);
-        attach(node);
-      });
-    }
-    visit(document);
-    document.addEventListener("ubyhost:content-updated", function (event) {
-      var root = event.detail && event.detail.root;
-      if (root && root.isConnected) visit(root);
+  var hostBindings = {};
+  function claimNode(node, key) {
+    var keys = node._ubyBound || (node._ubyBound = {});
+    if (keys[key]) return false;
+    keys[key] = true;
+    return true;
+  }
+  function visitBinding(root, selector) {
+    if (!root || !root.querySelectorAll) return;
+    var attach = hostBindings[selector];
+    if (root.matches && root.matches(selector) && claimNode(root, selector)) attach(root);
+    root.querySelectorAll(selector).forEach(function (node) {
+      if (claimNode(node, selector)) attach(node);
     });
   }
+  function bindHostNodes(selector, attach) {
+    hostBindings[selector] = attach;
+    visitBinding(document, selector);
+  }
+  document.addEventListener("ubyhost:content-updated", function (event) {
+    var root = event.detail && event.detail.root;
+    if (!root || !root.isConnected) return;
+    Object.keys(hostBindings).forEach(function (selector) { visitBinding(root, selector); });
+  });
 
   document.documentElement.classList.add("has-js");
 
