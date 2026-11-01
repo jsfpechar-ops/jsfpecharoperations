@@ -1,4 +1,4 @@
-# 0481 report: Money page leads with the two jobs
+# 0491 report: Money page leads with the two jobs
 
 Status: review
 
@@ -19,4 +19,4 @@ Status: review
 
 ## Open
 - 390 px screenshot of /admin/fakturace not taken (rule 7).
-- Brief file docs/tasks/0481-admin-money-page.md is not on this branch; its Status line could not be set here.
+- Brief file docs/tasks/0491-admin-money-page.md is not on this branch; its Status line could not be set here.

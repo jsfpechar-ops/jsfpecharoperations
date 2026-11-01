@@ -963,7 +963,7 @@ def operations_admin(request: Request):
 
 @router.get("/admin/funnel")
 def funnel_admin(request: Request):
-    """The funnel moved into Reports on the billing page (brief 0481)."""
+    """The funnel moved into Reports on the billing page (brief 0491)."""
     account, guard = _require_admin(request)
     if guard:
         return guard
