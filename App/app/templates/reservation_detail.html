@@ -146,6 +146,18 @@
   {%- else %}<span class="pill">{{ t('stay.detail.guests.ready') }}</span>
   {%- endif %}
 {%- endmacro %}
+{# phone guest rows: plain state text, as the mockup's row subtitle #}
+{% macro guest_state_text(guest, row) -%}
+  {%- if guest.restricted_at %}{{ t('guest.restricted_badge') }} · {% endif -%}
+  {%- if guest.submit_state == 'sent' and guest.manual_filed_at %}{{ t('stay.detail.guests.filed_by_hand') }}
+  {%- elif guest.submit_state == 'sent' %}{{ t('stay.detail.guests.reported') }}
+  {%- elif guest.submit_state == 'not_required' %}{{ t('stay.detail.guests.exempt') }}
+  {%- elif guest.submit_state == 'error' %}{{ t('stay.detail.guests.rejected') }}
+  {%- elif guest.submit_state == 'blocked' %}{{ t('stay.detail.guests.rejected_final') }}
+  {%- elif not row.complete %}{{ t('stay.detail.guests.incomplete') }}
+  {%- else %}{{ t('stay.detail.guests.ready') }}
+  {%- endif %}
+{%- endmacro %}
 {# --- 2. Guests (0528: computer table, phone list below 1024 px) -------- #}
 {% set ns = namespace(count_edit=false) %}
 {% if progress.status == 'failed' or send_controls.send_enabled %}{% elif progress.not_registered or send_controls.send_hint_key == 'hint.missing_guests' %}{% set ns.count_edit = true %}{% endif %}
@@ -230,18 +242,16 @@
 <div class="list guest-list">
   {% for row in guest_rows %}
     {% set guest = row.guest %}
-    {% set ok = guest.submit_state in ('sent', 'not_required') %}
+    {% set ok = guest.submit_state in ('sent', 'not_required') or (row.complete and guest.submit_state not in ('error', 'blocked')) %}
     <a class="row" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">
       <div class="ic {{ 'ok' if ok else 'warn' }}">{% if ok %}<svg class="i"><use href="#i-check"/></svg>{% else %}?{% endif %}</div>
-      <div class="t"><b>{{ guest.surname or '—' }} {{ guest.first_name or '' }}</b><small>{% if guest.doc_type %}{{ t('guest.doc_type.' ~ guest.doc_type) }} · {% endif %}{{ guest_state(guest, row) }}</small></div>
-      {{ icon('chevron-right', 20) }}
+      <div class="t"><b>{{ guest.surname or '—' }} {{ guest.first_name or '' }}</b><small>{% if guest.doc_type %}{{ t('guest.doc_type.' ~ guest.doc_type) }} · {% endif %}{{ guest_state_text(guest, row) }}</small></div>
     </a>
   {% endfor %}
   {% for n in range(progress.guests | length + 1, (progress.expected or 0) + 1) %}
     <a class="row" href="/reservations/{{ reservation.id }}/guests/new">
       <div class="ic warn">?</div>
       <div class="t"><b>{{ t('stay.detail.guests.placeholder', n=n) }}</b><small>{{ t('stay.detail.guests.add_by_hand') }}</small></div>
-      {{ icon('chevron-right', 20) }}
     </a>
   {% endfor %}
 </div>

@@ -71,6 +71,19 @@ BOX_OVERRIDES = {
     ".need small@390": {"height": "19px"},
     ".hs .card@390": {"height": "152px"},
     ".meta@390": {"height": "19px"},
+    # stays/stay (0529): text- and data-dependent; fixture copy vs mockup demo copy
+    # pill width follows its label ("Chybí 1 host" vs "Čeká na 2 ze 3 hostů")
+    ".row .pill.p-warn@320": {"width": "121.891px"},
+    ".row .pill.p-warn@390": {"width": "121.891px"},
+    # fixture property has no check-in/out time, so the facts grid has no time line
+    ".facts@320": {"height": "139px"},
+    ".facts@390": {"height": "139px"},
+    # police card text follows the stay state (fixture: ready to send; mockup: waiting for guests)
+    ".card@320": {"height": "76px"},
+    ".card@390": {"height": "76px"},
+    # stays rows are 2 px shorter: the fixture pill label is one short line ("Chybí 1 host"), the mockup's wraps differently
+    ".grp + .list .row:not(:last-child)@320": {"height": "101px"},
+    ".grp + .list .row:not(:last-child)@390": {"height": "101px"},
 }
 
 
@@ -135,7 +148,8 @@ PAGES = [
         ],
         "phone_selectors": [
             ".tabs", ".tab.on", ".top .round", ".big", ".chips .chip", ".chip.on", ".grp",
-            ".list .row", ".row .av", ".row .t b", ".row .t small", ".row .pill.p-ok", ".row .pill.p-warn", ".list .link",
+            # a row that is not the last of its group, so it draws the row line (the fixture's Dnes group has one stay)
+            ".grp + .list .row:not(:last-child)", ".row .av", ".row .t b", ".row .t small", ".row .pill.p-ok", ".row .pill.p-warn", ".list .link",
         ],
         "missing_ok": {
             "main .pill.p-ok": "tone depends on data: the test fixture has no reported stay",
