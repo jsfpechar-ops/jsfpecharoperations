@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
 from app import db
 from tests.test_property_hub import host  # noqa: F401  (fixture)
@@ -89,3 +90,31 @@ def test_settings_form_still_saves_a_field(host):
     assert response.status_code in (302, 303)
     row = db.query_one("SELECT internal_name FROM apartment WHERE id = ?", (apartment_id,))
     assert row["internal_name"] == "Renamed Flat"
+
+
+# 0535: the mockup order is CSS only (DOM order stays); the aside links to the sections.
+MOCKUP_ORDER = {"basics": 1, "police": 2, "calendars": 3, "messages": 4, "lock": 5, "fee": 6, "archive": 7, "lock-account": 8}
+APP2_CSS = Path(__file__).resolve().parents[1] / "app" / "static" / "app2.css"
+
+
+def test_css_order_is_the_mockup_order():
+    css = APP2_CSS.read_text(encoding="utf-8")
+    for key, rank in MOCKUP_ORDER.items():
+        assert re.search(r"body\.v2 #sec-%s\{order:%d\}" % (re.escape(key), rank), css), key
+
+
+def test_rendered_sections_show_in_mockup_order(host):
+    client, apartment_id = host
+    names = [name for name, _ in _sections(_page(client, apartment_id))]
+    visible = sorted(names, key=lambda name: MOCKUP_ORDER[name])
+    assert visible == ["basics", "police", "calendars", "messages", "fee", "archive"]
+
+
+def test_aside_has_cards_and_links_to_each_section(host):
+    client, apartment_id = host
+    html = _page(client, apartment_id)
+    start = html.index('<aside class="preview"')
+    aside = html[start:html.index("</aside>", start)]
+    assert aside.count('class="pv"') >= 2
+    for key in ("basics", "police", "calendars", "lock", "fee"):
+        assert f'href="#sec-{key}"' in aside, key

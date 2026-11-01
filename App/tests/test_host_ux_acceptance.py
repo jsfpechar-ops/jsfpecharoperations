@@ -475,7 +475,8 @@ def test_issued_invoice_snapshot_survives_a_shared_business_edit(acc):
         # Both properties point at the one shared business editor.
         for pid in (acc["p1"], acc["p2"]):
             page = client.get(f"/apartments/{pid}?lang=en").text
-            assert LONG_ENTITY in page and f"/entities?edit={e1}&amp;next=/apartments/{pid}" in page, pid
+            # 0535: the operator name is the selected option; the business link has no next.
+            assert f'selected>{LONG_ENTITY}</option>' in page and f'href="/entities?edit={e1}"' in page, pid
     finally:
         db.execute("UPDATE legal_entity SET seat = ?, contact_phone = ? WHERE id = ?",
                    (entity["seat"], entity["contact_phone"], e1))
@@ -629,21 +630,18 @@ def test_page_families_through_rail_cards_search_and_back(acc, base):
             page.locator(f'a.row-primary-link[href^="/apartments/{p1}"]').first.click()
             page.wait_for_url(re.compile(rf"/apartments/{p1}"))
             _settle(page)
-            assert page.locator(".property-tabs").is_visible()
-            # Tabs in place, then the business card opens the one entity editor.
-            page.locator('.property-tabs a[data-property-tab="settings"]').click()
-            page.locator('[data-property-view="settings"].is-active').wait_for()
-            page.locator('.property-tabs a[data-property-tab="overview"]').click()
-            page.locator(f'[data-property-view="overview"] a[href^="/entities?edit={e1}"]').first.click()
+            assert page.locator("details#sec-basics[open]").count() == 1
+            # One page: the business link in the operator block opens the one entity editor.
+            page.locator(f'a[href^="/entities?edit={e1}"]').first.click()
             page.wait_for_url(re.compile(rf"/entities\?edit={e1}"))
             assert page.locator("#entity-business").is_visible()
             # Back returns to the property overview.
             page.go_back()
             page.wait_for_url(re.compile(rf"/apartments/{p1}"))
             _settle(page)
-            assert page.locator('[data-property-view="overview"]').is_visible()
+            assert page.locator("details#sec-basics").is_visible()
             # Search -> Stay fees -> report period -> Back.
-            page.locator(".ui-search-row[data-command-open]").click()
+            page.locator("[data-command-open]:visible").first.click()
             page.locator("[data-command-input]").fill(search_term)
             page.wait_for_timeout(150)
             page.keyboard.press("Enter")
@@ -699,14 +697,14 @@ def test_keyboard_reaches_rail_tabs_and_editor_with_visible_focus(acc, base):
             if not (info["ring"] and info["inView"]):
                 unseen_focus.append(info)
         assert {"/", "/reservations", "/apartments", "/stay-fees"} <= seen, seen
-        for view in ("overview", "bookings", "settings"):
-            assert f"/apartments/{acc['p1']}?view={view}" in seen, (view, seen)
+        assert {"#sec-basics", "#sec-lock"} <= seen, seen
         assert {"permalink_pin", "guest_message"} <= seen, seen
         assert not unseen_focus, unseen_focus[:5]
         # 0096: the door-code switch is in its own Door lock group, one sub-nav link away.
-        assert f"/apartments/{acc['p1']}?view=settings&section=lock" in seen, seen
+        assert "#sec-lock" in seen, seen
         page.goto(f"{base}/apartments/{acc['p1']}?view=settings&section=lock&lang=cs")
         _settle(page)
+        assert page.locator("details#sec-lock[open]").count() == 1
         _dismiss_prompt(page)
         page.add_style_tag(content="*, *::before, *::after { transition: none !important; }")
         page.evaluate("() => { document.activeElement && document.activeElement.blur(); window.scrollTo(0, 0); }")
@@ -722,12 +720,12 @@ def test_keyboard_reaches_rail_tabs_and_editor_with_visible_focus(acc, base):
                 break
         assert reached and reached["id"] == "door_codes" and reached["inView"] and reached["ring"], reached
         # Search opens from the keyboard and Escape returns focus to the trigger.
-        page.locator(".ui-search-row[data-command-open]").focus()
+        page.locator("[data-command-open]:visible").first.focus()
         page.keyboard.press("Enter")
         page.locator("#command-dialog[open]").wait_for()
         page.keyboard.press("Escape")
         page.wait_for_function("() => !document.getElementById('command-dialog').open")
-        assert page.evaluate("() => document.activeElement.classList.contains('ui-search-row')")
+        assert page.evaluate("() => document.activeElement.hasAttribute('data-command-open')")
         browser.close()
 
 
@@ -739,8 +737,7 @@ def test_without_javascript_tabs_reload_and_the_shared_editors_save(acc, base):
         context = _context(browser, base, acc["cookie"], java_script_enabled=False)
         page = context.new_page()
         page.goto(f"{base}/apartments/{p1}?lang=en")
-        page.locator('.property-tabs a[data-property-tab="settings"]').click()
-        page.wait_for_url(re.compile(r"view=settings"))
+        assert page.locator("details#sec-basics[open]").count() == 1
         assert page.locator("#internal_name").is_visible()
         # 0101: links carry ?view=&section=; the hash only scrolls.
         page.goto(f"{base}/apartments/{p1}?view=settings&section=reporting&lang=en#ubyport")
