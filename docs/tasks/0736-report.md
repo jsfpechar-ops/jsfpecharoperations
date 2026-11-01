@@ -250,7 +250,7 @@ Done: step 1 (commit 3e6857d), step 3 partly (commit after 3e6857d). Step 2 not 
 
 ## Run 9 (section 19: layout guard only)
 
-Status: review (pending the test lines below)
+Status: blocked
 
 ### Step 1: probe at 1280, sidebar open (temporary test, deleted)
 
@@ -268,3 +268,24 @@ Common ancestor is the nearest element containing both controls. Its `display` a
 | all 1280 routes | Copy vs Preview (buttons-misaligned) | `div.copyrow` | block (not flex), children inline | inline baseline alignment: fixable |
 
 The "Add signature" button sits in `fieldset.signature-block`, a direct child of the stay-fee grid. The databox and authority-name inputs sit in `div#stay-fee-council`, the other direct child.
+
+### Step 2: fixes by cause (commit after 3036ad6)
+- `App/app/static/app2.css`, after the `.copyrow > .btn.sm` rule: `body.v2 .fields-wrap .copyrow > .btn.sm{vertical-align:middle}` (the `.copyrow` is block, so its inline Copy and Preview were baseline-aligned; this centres them) and `body.v2 section#stay-fee-settings > fieldset.signature-block{grid-column:1/-1}` (the signature block shares a two-column grid with the council block; it now takes its own row).
+- Key bumped in `App/app/templates/base.html` to `20261101-2410`; `tests/test_static_versions.py --write` rewrote `App/tests/static_versions.json` (41 files).
+- Result: `buttons-misaligned` is gone. The databox and authority-name vs "Add signature" pairs are gone.
+- Not fixed: the other field-button pairs. Each is between controls in different panels (table above), so the brief's stop rule applies.
+
+### Test results
+- `tests/test_design_guardrails_browser.py -k passes_the_layout_guard` (UBYHOST_REQUIRE_BROWSER=1): `1 failed, 10 deselected in 40.00s`. 28 findings, all `field-button-misaligned`, all cross-panel: guest-links 1280 and 2000 (checkout_hour vs Copy/Preview, addr_zip vs "Generate a new link"), fee-setup, property-detail, configured and automation (Generate a new PIN vs stay_fee_cadence, -25 now, was -10).
+- `tests/test_0710_v2_mockup_match_browser.py tests/test_static_versions.py -k "property or static"`: `15 passed, 34 deselected in 17.25s`. 0 skipped.
+
+### Deviations
+- Done: steps 1 and 2 (run 9 section 19 items 1 and 2, partly: the copy-row fix uses vertical-align, not a flex row, because `.copyrow` computes to `display: block`). Step 3: the 0710 property tests pass at 1280 and 1440; the guard test fails on the cross-panel pairs.
+- Status is blocked, not review: the layout guard test still fails.
+- Left: the cross-panel field-button pairs (28 findings). Items 7, 8, section 6 and the screenshots remain for run 10.
+
+### Questions
+1. For pairs in different panels that sit side by side (e.g. "Generate a new PIN" in Messages vs the stay-fee cadence select), should the guard tolerate them, or should the layout move so the pairs do not share a row? The brief says to stop here; I did not change the layout.
+
+### Owner steps left
+- Decide question 1. No push, no PR.
