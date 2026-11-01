@@ -18,6 +18,6 @@ def test_needs_you_template_uses_icon_and_primary_only_on_first_line():
     html = (APP / "templates" / "dashboard.html").read_text(encoding="utf-8")
     # 0706: the v2 Overview renders each line with overview_card (mockup .todo)
     assert "overview_card(line, loop.first)" in html
-    assert 'class="ic"' in html
+    assert 'class="ic {{ ph_tone }}"' in html
     assert "if first else ' ghost'" in html
     assert "ui_button(line.action, 'open'" not in html
