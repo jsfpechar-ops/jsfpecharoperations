@@ -111,3 +111,16 @@ def test_shared_view_keeps_cards_and_has_no_sections(workspace):
     assert page.status_code == 200
     assert "cleaning-card" in page.text
     assert "cleaning-section" not in page.text
+
+
+def test_phone_week_shows_three_rows_then_show_more_for_the_rest(workspace):
+    ws = workspace
+    for end in ["2026-10-17", "2026-10-18", "2026-10-19", "2026-10-20", "2026-10-21", "2026-10-22"]:
+        stay(ws["home"], "2026-10-10", end)
+    stay(ws["home"], "2026-10-25", "2026-10-30")
+    html = ws["client"].get("/cleaning?lang=cs").text
+    phone = html.split('<div class="cleaning-phone">')[1]
+    before_more = phone.split('<details class="cleaning-more"')[0]
+    assert before_more.count('class="row"') == 3
+    assert '<details class="cleaning-more"' in phone
+    assert "Zobrazit další (4)" in phone

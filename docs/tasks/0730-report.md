@@ -22,6 +22,7 @@ Status: review
 - Steps 3 sets green: yes. Lint OK: yes. Screenshot shows today + 3 week rows + "Show 4 more" above the share bar: yes.
 
 ## Deviations
+- The step 3 test was lost: a temporary `git checkout` of an older tree for the failure check reverted the uncommitted test file. It is re-added in commit "0730 step 3b" (the earlier report line claiming it was in step 3 was wrong).
 - Step 1 commit was amended once (missing comma in cleaning_i18n.py caught by an import check; unpushed).
 - Step 2: added a second CSS rule `.cleaning-more:not([open])>:not(summary){display:none}`. Without it the browser geometry check (`tests/v2_mockup.py`) counted rows inside the closed details and failed at 320/390/768 px ("main content ends under the tab bar"). The check passes with it.
 - Key bumped to `0730b` after that fix.
