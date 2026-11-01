@@ -45,3 +45,18 @@ Looked at cleaning-390.png once: the today card is a proper box with its text in
 ## Owner steps left
 - Decide on the 390 residual diffs above.
 - Push when ready: `git push origin claude/project-thread-c1h7ok` (not done by the executor).
+
+## Addendum 0549b
+
+Before (cleaning, overview, menu; 3 failed, 30 passed):
+```
+.actbar .btn padding-top/right/bottom/left differ at 320, 390, 768
+3 failed, 30 passed, 1 deselected in 47.51s
+```
+
+After (cleaning, overview, menu):
+```
+33 passed, 1 deselected in 47.71s
+```
+
+Status: review
