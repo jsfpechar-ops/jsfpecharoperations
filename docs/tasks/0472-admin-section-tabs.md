@@ -1,5 +1,5 @@
 # 0472: Admin section tabs (owner can't reach Users or Operations from the Admin icon)
-Status: todo
+Status: review
 Depends on: none | Base commit: main 0ee0152 | Branch: claude/project-thread-sq91vx
 Executor: Haiku 5.5 | Fits one session: 25 tool calls, 60k tokens
 Replaces: 0461 in stale PR #599 (number taken on main; its 0462 "console polish" is dropped as extra).
