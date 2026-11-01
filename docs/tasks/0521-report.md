@@ -16,7 +16,7 @@ Status: blocked
   - test_dashboard_calendar_browser.py: test_auto_view_threshold_filter_and_manual_override, test_drag_nights_create_persist_and_open_details, test_keyboard_selection_cancel_and_overlap_confirmation, test_reverse_gantt_drag_prefills_the_property_without_saving, test_calendar_geometry_locales_and_screenshots, test_calendar_week_boundary_clips_fractional_checkout_with_continuation_edges, test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place, test_default_calendar_url_is_clean_and_specific_views_survive_reload, test_explicit_auto_view_survives_reload_over_a_saved_manual_preference
   - test_dashboard_phone_browser.py: test_phone_dashboard_compact (expects `.cal-view-segment`)
 - `open_page()` in the browser test waits for `.cal-week` on `/?cal_date=2026-10-01`, so most of these fail in the helper.
-- `python3 scripts/context_lint.py`: output in the report run (see above).
+- `python3 scripts/context_lint.py`: `context lint: OK` (warnings only, none from this change).
 
 ## git diff --stat origin/main
 Includes the branch's brief commits (`docs/tasks/0520-*`, `docs/tasks/0521-*`), which are not mine. My files: `App/app/static/dashboard-calendar.js`, `App/app/templates/_dashboard_calendar.html`, `App/tests/static_versions.json`, `App/tests/test_0521_overview_14_days_browser.py`, `docs/tasks/screenshots-0521/`.
