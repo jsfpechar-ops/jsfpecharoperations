@@ -1,5 +1,5 @@
 # 0482: Go G5d-1: the per-guest outcome of a UbyPort answer decided in Go, matching Python
-Status: blocked
+Status: done
 Depends on: 0481 (#640) | Base commit: main | Branch: claude/project-thread-aidacp
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 90k tokens
 ## 1. Objective
