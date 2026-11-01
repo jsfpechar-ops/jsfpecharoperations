@@ -153,7 +153,7 @@
       <tr class="ui-row clickable-row" data-href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}"
           tabindex="0" role="link"
           aria-label="{{ stay_label }} · {{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}">
-        <td class="ui-cell-first stay-col-stay" data-card="primary" data-label="{{ t('stays.table.stay') }}">
+        <td class="ui-cell-first stay-col-stay" data-card="primary" data-label="{{ t('stays.table.guest') }}">
           {{ property_identity(reservation.apartment_id, '') }}<a class="row-primary-link stay-identity-link" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}">{{ lead_name or (reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else t('stays.row.no_name')) }}</a>
           <div class="ui-sub stay-col-source">{{ guest_count(progress, placeholder=true) }} &middot; {{ source_badge(reservation.source, source_label(reservation)) }}</div>
         </td>
