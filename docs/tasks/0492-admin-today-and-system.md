@@ -1,5 +1,5 @@
 # 0492: Admin redesign 3+4/4: Today shows system problems; System page folds in Incidents; four tabs
-Status: blocked
+Status: review
 Depends on: 0490 and 0491 merged (they edit the same tab list) | Base commit: main after both | Branch: task/0492-admin-today-system
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 70k tokens
 Plan: [admin-portal-review](../plans/admin-portal-review.md), approved by the owner 2026-11-01.
