@@ -59,7 +59,7 @@ PAGES = [
         "view": "props",
         "selectors": [
             ".side .nav.on", ".head h1", ".head .sub", ".head .btn",
-            "main table th", "main table td", ".setup .st", "tbody tr .btn.sm.ghost",
+            "main table th", "main table td", ".setup .st.g", ".setup .st.r", "tbody tr .btn.sm.ghost",
         ],
         "missing_ok": {},
     },

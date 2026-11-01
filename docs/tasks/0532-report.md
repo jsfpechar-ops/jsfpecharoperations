@@ -90,3 +90,17 @@ Remaining for the owner or orchestrator:
 2. Diagnose `.setup .st` missing at 320/390 px in the 0710 comparison.
 3. Shared row-menu trigger width at 768 px (navigation fit test).
 4. Capture the three cs screenshots for step 4, then set status to review.
+
+## Executor pass 5 (brief 0532, steps 1-6, Haiku)
+Status: **blocked** (group 2 below). Step 3 set is green; lints green.
+
+CSS now in app2.css (0532 block): the `(max-width:1023px)` column-2 hide, the `(max-width:767px)` column-3 show, and a `(max-width:1023px)` fixed-table block (copy col 96 px, menu col 44 px, Name and Setup share the rest, `.nowrap` cells and `.btn` may wrap, `.st` wraps and is 44 px high, `.row-primary-link` 44 px). Key deviation: the key was bumped more than once because each CSS edit needs a new key; final key `20261101-0532l`, not `0532f`.
+
+Tests (from App/):
+- Step 3 set (`0710 -k properties`, `test_host_properties_navigation`, `test_0530`, `test_static_versions`, `test_host_ux_acceptance`): `26 passed, 27 deselected in 19.95s`, 0 skipped.
+- Group 2: `10 failed, 100 passed in 346.84s`. Failing: `test_design_guardrails_browser::test_every_host_page_passes_the_layout_guard`; `test_host_list_page_layout_browser` x3; `test_0285_rows_browser::test_properties_rows_match_stays_rows`; `test_0284_states_browser::test_hover_changes_every_clickable_thing`; `test_0385_phone_card_open_browser::test_phone_card_open_has_its_own_line` x4. Cause: they wait for `table.properties-table tbody tr.clickable-row` (old markup). Needs the section 8 assertion update to v2 markup, not done.
+- `design_lint.py`: OK. `context_lint.py`: OK.
+
+Screenshots (`docs/tasks/screenshots-0532/`): app-390, app-768, app-1280, mockup-390, mockup-768, mockup-1280 (copied from the 0710 screenshot test, `/apartments` without `?lang=cs`; not re-taken with cs). The 0710 tracked PNGs rewritten by the test were restored with `git checkout`.
+
+Not done: group 2 section 8 updates; cs screenshots; 320 px and 1024 px screenshots; no visual look at the PNGs in this pass.
