@@ -29,7 +29,7 @@
 </div>
 <div class="big">{{ lead_name or reservation.internal_name }}</div>
 <div class="sub sub-phone">{{ reservation.internal_name }} · {{ source_label(reservation) }}</div>
-<div class="sub-phone" style="margin:0 20px">{% if stay_inactive %}<span class="pill">{{ t('stays.filter.state.' ~ reservation.status) if reservation.status != 'active' else t('archive.col.when') }}</span>{% else %}{{ v2_status_pill(cell, progress, reservation) }}{% endif %}</div>
+<div class="sub-phone stay-pill-line">{% if stay_inactive %}<span class="pill">{{ t('stays.filter.state.' ~ reservation.status) if reservation.status != 'active' else t('archive.col.when') }}</span>{% else %}{{ v2_status_pill(cell, progress, reservation) }}{% endif %}</div>
 <div class="facts sub-phone">
   <div><small>{{ t('stays.table.arrival') }}</small><b>{{ reservation.date_from | weekday }} {{ reservation.date_from | date_short }}</b></div>
   <div><small>{{ t('stays.table.departure') }}</small><b>{{ reservation.date_to | weekday }} {{ reservation.date_to | date_short }}</b></div>
@@ -39,7 +39,7 @@
 <div class="head"><div>
   <div class="crumb"><a href="{{ return_to }}">{{ t('stays.title') }}</a> › {{ lead_name or reservation.internal_name }}</div>
   <h1>{{ lead_name or reservation.internal_name }}</h1>
-  <p class="sub">{% if stay_inactive %}<span class="pill">{{ t('stays.filter.state.' ~ reservation.status) if reservation.status != 'active' else t('archive.col.when') }}</span>{% else %}{{ v2_status_pill(cell, progress, reservation) }}{% endif %}<span style="margin-left:8px"><a href="/apartments/{{ reservation.apartment_id }}">{{ reservation.internal_name }}</a> · {{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</span></p>
+  <p class="sub">{% if stay_inactive %}<span class="pill">{{ t('stays.filter.state.' ~ reservation.status) if reservation.status != 'active' else t('archive.col.when') }}</span>{% else %}{{ v2_status_pill(cell, progress, reservation) }}{% endif %}<span class="stay-sep"><a href="/apartments/{{ reservation.apartment_id }}">{{ reservation.internal_name }}</a> · {{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</span></p>
 </div>
 <div class="stay-head-actions">
   {% if send_controls.send_enabled %}
