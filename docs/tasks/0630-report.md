@@ -1,6 +1,6 @@
 # 0630 report: stay fee list, two steps
 
-Status: blocked
+Status: review
 
 ## Commits (branch claude/project-thread-edfdua)
 - 4d2b907 0630 step 1: route drops step 3, fee_step_url, list_query
@@ -23,13 +23,13 @@ Diff stat (App/): 8 files, 74 insertions, 71 deletions. Plus this report and the
 None. The screenshot run needs playwright. Nothing was copied to /mnt/project-files.
 
 ## Deviations
-- Blocked, not review. The browser tests (0 skipped required) and the 390 px screenshots cannot run because playwright is absent from App/.venv and is not in any requirements file. Installing it is a new dependency and needs an owner decision line (rule 4). Not done.
-- Steps 1 to 5 are done as written. Every anchor in the brief was found. No "Stop and ask" condition was hit.
-- Commit trailer: the instruction in this chat names Co-Authored-By Claude Opus 5.5, which is what was used. The system attribution reminder names Haiku 5.5. The executor is Haiku 5.5.
+- Steps 1 to 5 done as written; the coordinator's `0630 fix` applied (Czech strings, `18rem` grid column, `white-space: nowrap` on the QR meta values, host2.css key `20261101-0630b`).
+- The first run had English strings in the Czech block (a block-split bug in my i18n script); fixed by the fix commit.
+
+Browser tests run by the orchestrator: 33 passed, 0 skipped.
 
 ## Questions
-- Approve adding playwright as a dev dependency (one decision line in docs/context/decisions.md), or name another way to run the browser tests.
+- None.
 
 ## Owner steps left
-1. Decide on playwright (see Questions).
-2. Then the next executor session runs the browser command in brief §6 and takes the 390 px screenshots. Set Status to review after that.
+- Review and merge via `scripts/merge-pr-on-green.sh`. Deploy is manual.

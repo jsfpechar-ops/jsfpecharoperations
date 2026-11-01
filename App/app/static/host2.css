@@ -853,7 +853,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .fee-figures-total dd { font-size: var(--size-22); }
 .host-workspace .fee-step-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: var(--space-3) 0 0; }
 .host-workspace .fee-qr-amount { font-size: var(--size-22); font-weight: 600; }
-.host-workspace .fee-send-pay { display: grid; grid-template-columns: minmax(0, 1fr) 16rem; gap: var(--space-6); align-items: start; }
+.host-workspace .fee-send-pay { display: grid; grid-template-columns: minmax(0, 1fr) 18rem; gap: var(--space-6); align-items: start; }
 .host-workspace .fee-tasks { margin: 0; padding: 0; list-style: none; counter-reset: fee-task; display: grid; gap: var(--space-5); }
 .host-workspace .fee-tasks li { counter-increment: fee-task; position: relative; padding-left: 2.5rem; min-width: 0; }
 .host-workspace .fee-tasks li::before { content: counter(fee-task); position: absolute; left: 0; top: 0; width: 1.75rem; height: 1.75rem; border-radius: 50%; background: var(--accent-soft); color: var(--accent-ink); font-weight: 700; display: flex; align-items: center; justify-content: center; }
@@ -866,7 +866,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .fee-qr-meta { margin: var(--space-3) 0 0; display: grid; gap: var(--space-1); text-align: left; font-size: var(--size-13); }
 .host-workspace .fee-qr-meta div { display: flex; justify-content: space-between; gap: var(--space-3); }
 .host-workspace .fee-qr-meta dt { color: var(--ink-3); }
-.host-workspace .fee-qr-meta dd { margin: 0; overflow-wrap: anywhere; }
+.host-workspace .fee-qr-meta dd { margin: 0; white-space: nowrap; }
 @media (max-width: 639px) {
   .host-workspace .fee-step-actions { flex-direction: column; align-items: stretch; }
   .host-workspace .fee-stepper-label { font-size: var(--size-12); }
