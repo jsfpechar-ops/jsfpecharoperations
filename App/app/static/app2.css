@@ -319,3 +319,17 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
 
 /* 0719: phone head is a block so the title and date take the full screen width (mockup) */
 @media (max-width:1023px){body.v2 .head{display:block}body.v2 .head h1:after{content:none}body.v2 .hs .who>div:not(.av){min-width:0;flex:1}body.v2 .head h1{margin:2px 0 4px}body.v2 .need b{margin-bottom:0}}
+
+/* 0720 step 0: Overview desktop and header regressions (0719 screenshots) */
+@media (min-width:1024px){
+  body.v2 .card.needs-you-card-item{display:block}
+  body.v2 .needs-you-card-item .h{display:flex;gap:14px;align-items:flex-start}
+  body.v2 .needs-you-card-item .h > .ic{width:48px;height:48px;flex:none}
+  body.v2 .needs-you-card-item .h > div:not(.ic){min-width:0;flex:1}
+  body.v2 .needs-you-actions{margin:12px 0 0 62px}
+}
+body.v2 .ov-head .ov-links{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;margin:0}
+body.v2 .ov-head .ov-links > *{margin:0}
+body.v2 .ov-head .ov-inline{display:inline-flex}
+body.v2 .ov-how > summary{list-style:none}
+body.v2 .ov-how > summary::-webkit-details-marker{display:none}
