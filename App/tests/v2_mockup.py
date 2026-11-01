@@ -77,6 +77,12 @@ PAGES = [
             "main table th", "main table td", ".setup .st.g", ".setup .st.r", "tbody tr .btn.sm.ghost",
         ],
         "missing_ok": {".prop .in small": "0710 demo property has no address line; the phone card shows the address when one is stored"},
+        "phone_box_skip": {
+            ".card.prop .st.g": (["width"], "chip label comes from the property's state"),
+            ".card.prop .st.r": (["width"], "chip label comes from the property's state"),
+            ".cover .ini": (["width"], "initials come from the property name"),
+            ".card.prop": (["height"], "card height follows how the chips wrap"),
+        },
     },
     {
         "name": "menu",
@@ -323,10 +329,17 @@ def show_phone_screen(page, key: str) -> None:
     )
 
 
-def box_diffs(selector: str, app: dict, mock: dict, width: int) -> list[str]:
-    """Phone box metrics: width within 2 px, height and margins within 1 px. Values that are not px are skipped."""
+def box_diffs(selector: str, app: dict, mock: dict, width: int, skip=None) -> list[str]:
+    """Phone box metrics: width within 2 px, height and margins within 1 px. Values that are not px are skipped.
+    skip: optional (["width"] or ["height"] or both, reason) from PAGES phone_box_skip; only width and height may be skipped."""
     out = []
+    skipped, reason = skip if skip else ([], "")
+    if set(skipped) - {"width", "height"}:
+        raise ValueError(f"phone_box_skip for {selector} may only skip width or height, got {skipped}")
     for prop in BOX_PROPS:
+        if prop in skipped:
+            print(f"phone_box_skip {selector} {prop} at {width} px: {reason}")
+            continue
         a, m = _num(app[prop]), _num(mock[prop])
         if a is None or m is None:
             continue
