@@ -116,13 +116,13 @@ def test_help_and_support_is_a_labelled_action_in_both_languages():
 
 def test_the_old_support_sentence_is_not_the_account_action(host_with_property):
     """The account menu is a Help & support action, not a sentence about needing help."""
-    page = host_with_property.get("/?lang=en").text
+    page = host_with_property.get("/reservations?lang=en").text
     assert "Need help with UbyHost?" not in page
     assert "Help &amp; support" in page
 
 
 def test_the_support_line_names_the_configured_operator_address(host_with_property):
-    page = host_with_property.get("/?lang=en").text
+    page = host_with_property.get("/reservations?lang=en").text
 
     assert config.OPERATOR_EMAIL in page
     assert f'href="mailto:{config.OPERATOR_EMAIL}"' in page
@@ -130,7 +130,7 @@ def test_the_support_line_names_the_configured_operator_address(host_with_proper
 
 
 def test_the_support_line_is_not_part_of_the_legal_link_row(host_with_property):
-    footer = _sidebar(host_with_property.get("/?lang=en").text)
+    footer = _sidebar(host_with_property.get("/reservations?lang=en").text)
     # Support lives in the account disclosure, keeping the default rail short.
     account = re.search(r'<details class="host-account".*?</details>', footer, re.S).group(0)
     assert 'mailto:' in account
@@ -138,7 +138,7 @@ def test_the_support_line_is_not_part_of_the_legal_link_row(host_with_property):
 
 
 def test_the_support_line_translates(host_with_property):
-    page = host_with_property.get("/?lang=cs").text
+    page = host_with_property.get("/reservations?lang=cs").text
 
     assert "Nápověda a podpora" in page
     assert "Potřebujete pomoc s UbyHostem?" not in page
@@ -154,7 +154,7 @@ def test_the_czech_language_button_says_cs_in_both_catalogues():
 
 
 def test_the_sidebar_switcher_offers_the_cs_label(host_with_property):
-    page = host_with_property.get("/?lang=en").text
+    page = host_with_property.get("/reservations?lang=en").text
 
     assert 'name="lang" value="cs" class="">CS</button>' in page
 
@@ -170,14 +170,14 @@ def _command_input(page: str) -> str:
 
 
 def test_the_command_input_has_an_accessible_name(host_with_property):
-    field = _command_input(host_with_property.get("/?lang=en").text)
+    field = _command_input(host_with_property.get("/reservations?lang=en").text)
 
     assert 'aria-label="Search or jump to…"' in field
     assert "placeholder=" in field
 
 
 def test_the_command_input_label_translates(host_with_property):
-    field = _command_input(host_with_property.get("/?lang=cs").text)
+    field = _command_input(host_with_property.get("/reservations?lang=cs").text)
 
     assert 'aria-label="Hledat nebo přejít…"' in field
 
@@ -190,7 +190,7 @@ def test_the_zero_state_overview_has_one_h1(empty_host):
 
     assert page.count("<h1") == 1
     assert host_i18n.STRINGS["en"]["onboarding.welcome_title"] in page
-    assert f"<h1>{host_i18n.STRINGS['en']['dashboard.title']}</h1>" not in page
+    assert f"<h1>{host_i18n.STRINGS['en']['dashboard.title']}</h1>" in page  # the page title stays the h1; the welcome title is h2
 
 
 def test_the_zero_state_overview_still_renders_the_welcome_card(empty_host):
@@ -212,7 +212,7 @@ def test_dashboard_opens_with_the_what_needs_you_card(host_with_property):
     assert 'id="needs-action"' in page
     assert host_i18n.STRINGS["en"]["needs_you.title"] in page
     assert 'class="dashboard-stat' not in page
-    assert page.index('id="needs-action"') < page.index('id="calendar"')
+    assert page.index('id="needs-action"') < page.index('class="card cal')
 
 
 
@@ -229,11 +229,11 @@ def test_a_stay_that_needs_the_host_gets_one_line_with_one_button(host_with_prop
     try:
         page = host_with_property.get("/?lang=en").text
         line = re.search(
-            rf'<li class="needs-you-item"[^>]*data-needs-you-stay="{reservation_id}"[^>]*>(.*?)</li>', page, re.S
+            rf'<div class="card needs-you-card-item"[^>]*data-needs-you-stay="{reservation_id}"[^>]*>(.*?)(?=<div class="card needs-you-card-item"|<section|</main>)', page, re.S
         )
         assert line, "the stay arriving tomorrow has no line"
         assert "The guest arrives tomorrow and has not filled in the guest form." in line.group(1)
-        assert line.group(1).count('class="ui-btn') == 1
+        assert line.group(1).count('data-needs-you-go') == 1
         assert f'href="/reservations/{reservation_id}?return_to=/#now"' in line.group(1)
     finally:
         db.execute("DELETE FROM reservation WHERE id = ?", (reservation_id,))

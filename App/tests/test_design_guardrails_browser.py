@@ -443,7 +443,7 @@ def test_sidebar_search_has_a_border(wide_host, wide_base):
         context = browser.new_context(viewport={"width": 1280, "height": 1000})
         context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": wide_base + "/"}])
         page = context.new_page()
-        response = page.goto(f"{wide_base}/?lang=en")
+        response = page.goto(f"{wide_base}/reservations?lang=en")
         assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
         _wait_for_host_layout(page)
         _dismiss_optional_security_prompt(page)

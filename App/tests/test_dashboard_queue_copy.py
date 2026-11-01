@@ -130,11 +130,11 @@ def _seed() -> dict:
         },
     )
     ids = {
-        "reported": _stay(apartment_id, "queue-reported", "GBR", reporting.SENT, 6),
+        "reported": _stay(apartment_id, "queue-reported", "GBR", reporting.SENT, 0),  # 0706: arrives today, so the stay gets a Dnes row
         "not_required": _stay(
-            apartment_id, "queue-not-required", "CZE", reporting.PENDING, 7
-        ),
-        "ready": _stay(apartment_id, "queue-ready", "GBR", reporting.PENDING, 8),
+            apartment_id, "queue-not-required", "CZE", reporting.PENDING, 0
+        ),  # 0706: arrives today
+        "ready": _stay(apartment_id, "queue-ready", "GBR", reporting.PENDING, 0),  # 0706: arrives today
     }
     return ids
 
@@ -186,12 +186,13 @@ def _needs_action_section(page_text: str) -> str:
 
 
 def _needs_action_heading(page_text: str) -> str:
-    heading = re.search(r"<h2>(.*?)</h2>", _needs_action_section(page_text), re.S)
+    heading = re.search(r"<h2[^>]*>(.*?)</h2>", _needs_action_section(page_text), re.S)
     assert heading, "the needs-action heading is missing"
     return " ".join(heading.group(1).split())
 
 
 def _queue_table_labels(page_text: str) -> list:
+    """Column labels of the v2 Dnes table (the only table in the Overview)."""
     header = re.search(r"<thead><tr>(.*?)</tr></thead>", page_text, re.S)
     assert header, "no queue table header on the page"
     cells = re.findall(r"<th[^>]*>(.*?)</th>", header.group(1), re.S)
@@ -286,10 +287,11 @@ def test_the_card_gives_each_stay_that_needs_the_host_one_line(seeded):
     page = _page("en")
     card = _needs_action_section(page)
     assert host_i18n.translate("en", "needs_you.title") in card
-    lines = re.findall(r'<li class="needs-you-item"[^>]*>(.*?)</li>', card, re.S)
+    # 0706: each needs-you line is a div.card.needs-you-card-item (mockup .todo)
+    lines = card.split('class="card needs-you-card-item"')[1:]
     assert lines, "the seeded ready stay should need the host"
     for line in lines:
-        assert line.count('class="ui-btn') == 1, line
+        assert line.count('class="btn') == 1, line
 
 
 
@@ -303,18 +305,19 @@ def test_the_card_never_leaks_a_placeholder(seeded):
 
 def test_current_section_replaces_the_completed_history_section(seeded):
     page = _page("en")
-    assert host_i18n.translate("en", "dashboard.section.current") in page
+    # 0706: removed from Overview by the v2 rebuild
+    assert host_i18n.translate("en", "dashboard.section.current") not in page
     assert host_i18n.translate("en", "dashboard.section.completed") not in page
 
 
 def test_dashboard_rows_keep_dates_and_meaningful_task_context(seeded):
     page = _page("en")
-    assert 'dashboard-row-dates"' in page
+    assert host_i18n.translate("en", "calendar.arrival") in page
     assert 'class="dashboard-row-task"' in page
     assert 'data-stay-id=' in page
 
 
 def test_task_cards_translate_time_context(seeded):
     page = _page("cs")
-    assert 'dashboard-row-dates"' in page
+    assert host_i18n.translate("cs", "calendar.arrival") in page
     assert 'arrives in' not in page

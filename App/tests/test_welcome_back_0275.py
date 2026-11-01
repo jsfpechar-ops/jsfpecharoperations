@@ -43,11 +43,8 @@ def test_dashboard_shows_and_dismiss_clears(host):
     _set_seen(owner, (date.today() - timedelta(days=20)).isoformat())
     page = client.get("/?lang=en")
     assert page.status_code == 200
-    assert "data-welcome-back" in page.text and "Welcome back!" in page.text
-    token = re.search(r'name="_csrf" value="([^"]+)"', page.text).group(1)
-    resp = client.post("/welcome-back/dismiss", data={"_csrf": token}, follow_redirects=False)
-    assert resp.status_code == 303
-    assert "data-welcome-back" not in client.get("/?lang=en").text
+    # 0706: removed from Overview by the v2 rebuild. The line and its dismiss form are not on /.
+    assert "data-welcome-back" not in page.text and "Welcome back!" not in page.text
 
 
 def test_counts_skip_demo(host):
