@@ -118,7 +118,7 @@ body.v2 .row-menu{position:relative;display:inline-block}
 body.v2 .row-menu-trigger{border:0;background:none;box-shadow:none;color:var(--ink3);letter-spacing:.1em}
 body.v2 .row-menu-panel{position:absolute;right:0;top:100%;z-index:20;min-width:200px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.08);padding:6px}
 body.v2 .row-menu-panel[hidden]{display:none}
-body.v2 .row-menu-item{display:block;font:inherit;font-size:13px;width:100%;text-align:left;padding:8px 12px;border:0;border-radius:6px;background:none;color:var(--ink);cursor:pointer;text-decoration:none}
+body.v2 .row-menu-item{display:block;font:inherit;font-size:13px;min-height:36px;box-sizing:border-box;width:100%;text-align:left;padding:8px 12px;border:0;border-radius:6px;background:none;color:var(--ink);cursor:pointer;text-decoration:none}
 body.v2 .row-menu-item:hover{background:#f6f6f4}
 body.v2 .row-menu-item svg{width:16px;height:16px;vertical-align:middle}
 body.v2 .row-menu-panel.is-open{position:fixed}
@@ -435,11 +435,12 @@ body.v2 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;ov
 .host-stay-detail .code{font-size:28px;font-weight:800;letter-spacing:.08em}
 @media (min-width:1024px){body.v2 .stay-top,body.v2 .actbar{display:none}}
 @media (max-width:1023px){.host-stay-detail .stay-head-cta{display:none}.host-stay-detail{padding-bottom:180px}}
-.host-stay-detail .copy-label-stack{display:inline-grid;vertical-align:baseline}
-.host-stay-detail .copy-label-stack>span{grid-area:1/1}
-.host-stay-detail .copy-label-confirmed{visibility:hidden}
-.host-stay-detail [data-copy].is-copy-confirmed .copy-label-default{visibility:hidden}
-.host-stay-detail [data-copy].is-copy-confirmed .copy-label-confirmed{visibility:visible}
+/* shared (v2): copy buttons swap their label for "Copied" in place (app.js copy-label-stack) */
+body.v2 .copy-label-stack{display:inline-grid;vertical-align:baseline}
+body.v2 .copy-label-stack>span{grid-area:1/1}
+body.v2 .copy-label-confirmed{visibility:hidden}
+body.v2 [data-copy].is-copy-confirmed .copy-label-default{visibility:hidden}
+body.v2 [data-copy].is-copy-confirmed .copy-label-confirmed{visibility:visible}
 .host-stay-detail .stay-head-actions .sub{margin:0}
 .host-stay-detail .stay-guests-h h2 .sub{font-size:14px;font-weight:600;color:var(--ink3);margin-left:8px}
 @media (max-width:1023px){body.v2 .host-stay-detail input,body.v2 .host-stay-detail select,body.v2 .host-stay-detail textarea,body.v2 .host-stay-detail button,body.v2 .host-stay-detail summary{min-height:44px}}

@@ -36,7 +36,7 @@ MOBILE_ROUTE_KEYS = {
 }
 CAPTURE_ROUTES = {
     "dashboard": ("/", "#needs-action"),  # 0720c: v2 lane; `.needs-you` is the old shell
-    "stays": ("/reservations", ".stays-desk, .ui-empty"),
+    "stays": ("/reservations", ".stays-desk, .stays-phone, .ui-empty"),
     "properties": ("/apartments", ".panel.tight.scroll-x, .panel.empty"),
     "operators": ("/entities", ".entities-page, .panel.empty"),
     "operator-add": ("/entities?new=1", ".entity-add"),
@@ -53,7 +53,7 @@ CAPTURE_ROUTES = {
     "invoice-settings": ("/entities?edit={entity_id}&next=/invoices", ".entity-form"),
     "invoice-detail": ("/invoices/{invoice_id}", ".invoice-workspace"),
     "property-new": ("/apartments/new", ".property-create-lane"),  # 0092: form + follow-up panel
-    "stay-detail": ("/reservations/{reservation_id}", ".reservation-detail, .panel"),
+    "stay-detail": ("/reservations/{reservation_id}", ".host-stay-detail, .reservation-detail, .panel"),
     "stays-archive": ("/reservations?range=archive", ".stays-desk, .ui-empty"),
     "property-detail": ("/apartments/{property_id}", ".property-detail, .panel"),
     "property-detail-configured": ("/apartments/{configured_apartment}", ".property-detail, .panel"),
@@ -206,7 +206,9 @@ def _capture_geometry(page, result_selector):
     return page.evaluate(
         """(resultSelector) => {
           const box = (selector) => {
-            const element = selector && document.querySelector(selector);
+            // first rendered match: v2 pages keep a desk and a phone layout and hide one by width
+            const element = selector && ([...document.querySelectorAll(selector)].find(e => e.getClientRects().length > 0)
+              || document.querySelector(selector));
             if (!element) return null;
             const rect = element.getBoundingClientRect();
             return Object.fromEntries(['left','right','top','bottom','width','height']
@@ -220,7 +222,8 @@ def _capture_geometry(page, result_selector):
             const innerLeft = rect.left + parseFloat(style.paddingLeft);
             const innerWidth = main.clientWidth - parseFloat(style.paddingLeft)
               - parseFloat(style.paddingRight);
-            const width = Math.min(1080, innerWidth);
+            // v2 pages (body.v2 main.main) use the full content box of main; the old shell caps its lane at 1080 px
+            const width = main.matches('main.main') ? innerWidth : Math.min(1080, innerWidth);
             const left = innerLeft + Math.max(0, (innerWidth - width) / 2);
             return {left: Math.round(left * 100) / 100,
               right: Math.round((left + width) * 100) / 100, width};
@@ -391,7 +394,7 @@ def _assert_stay_menu_copy_geometry(page, width, row_index, locale, *, keyboard=
     assert trigger.is_visible()
     assert trigger.get_attribute("aria-label")
     trigger_box = trigger.bounding_box()
-    assert trigger_box and trigger_box["height"] >= (44 if width <= 760 else 39), trigger_box
+    assert trigger_box and trigger_box["height"] >= (44 if width < 1024 else 24), trigger_box  # v2 desk "···" menu: WCAG 2.5.8 minimum
 
     if keyboard:
         trigger.focus()
@@ -527,7 +530,9 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                                 mismatches.append({"route": name, "locale": lang, "width": width,
                                     "lane": f"alertStack.{edge}", "result": geometry["hostLane"],
                                     "candidate": alert_stack})
-                        assert alert_stack["bottom"] <= feedback_region["top"] + 1, (
+                        # v2 pages render the alert inside the page, below the (empty) feedback region; either order is fine, overlap is not
+                        assert (alert_stack["bottom"] <= feedback_region["top"] + 1
+                                or alert_stack["top"] >= feedback_region["top"] + feedback_region.get("height", 0) - 1), (
                             f"persistent alert overlaps feedback region on {name}/{lang}/{width}: "
                             f"alert={alert_stack}, feedback={feedback_region}"
                         )
@@ -568,12 +573,12 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                     if name == "stays":
                         _assert_stay_track_content(geometry, max_date_lines=2 if width >= 721 else None)
                         status_text = "\n".join(page.locator(
-                            ".stays-desk .stay-col-reporting"
+                            ".stays-desk td[data-card='badge']"
                         ).all_inner_texts())
                         state_labels = (
-                            ("Ready (scheduled)", "Waiting for guest", "Incomplete")
+                            ("Ready (scheduled)", "Waiting for guest", "1 guest missing")
                             if lang == "en"
-                            else ("Připraveno (naplánováno)", "Čeká na hosta", "Neúplné")
+                            else ("Připraveno (naplánováno)", "Čeká na hosta", "Chybí 1 host")
                         )
                         for state_label in state_labels:
                             assert state_label in status_text, (
@@ -584,43 +589,51 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                             f"legacy portal shortcut must stay absent: {geometry['portalLinks']}"
                         )
                         assert page.locator(".stays-desk .stay-portal-link").count() == 0
-                        stay_rows = page.locator(".stays-desk tbody tr")
-                        assert stay_rows.count() >= 4
-                        for row_index in range(stay_rows.count()):
-                            row = stay_rows.nth(row_index)
-                            date_link = row.locator("td.stay-col-dates a")
-                            assert date_link.is_visible()
-                            assert date_link.get_attribute("href").startswith("/reservations/")
-                            more = row.locator("button.row-menu-trigger")
-                            assert more.is_visible() and more.get_attribute("aria-label")
-                            assert more.get_attribute("aria-expanded") == "false"
+                        if width >= 1024:  # v2: the desk table is the computer layout; phones get the grouped row list
+                            stay_rows = page.locator(".stays-desk tbody tr")
+                            assert stay_rows.count() >= 4
+                            for row_index in range(stay_rows.count()):
+                                row = stay_rows.nth(row_index)
+                                date_link = row.locator("td a.stay-identity-link")
+                                assert date_link.is_visible()
+                                assert date_link.get_attribute("href").startswith("/reservations/")
+                                more = row.locator("button.row-menu-trigger")
+                                assert more.is_visible() and more.get_attribute("aria-label")
+                                assert more.get_attribute("aria-expanded") == "false"
 
-                        visible_actions = [item for item in geometry["rowActions"] if item["visible"]]
-                        more_controls = [item for item in visible_actions if item["isMenu"]]
-                        assert len(more_controls) == stay_rows.count(), (
-                            f"More controls do not match rendered stays at {lang}/{width}: {geometry['rowActions']}"
-                        )
-                        assert len(visible_actions) >= stay_rows.count(), geometry["rowActions"]
-                        if width >= 1280:
-                            hidden = [item for item in visible_actions if not item["fullyVisible"]]
-                            assert not hidden, (
-                                f"stay row actions clipped by visible list panel at {lang}/{width}: {hidden}"
+                            visible_actions = [item for item in geometry["rowActions"] if item["visible"]]
+                            more_controls = [item for item in visible_actions if item["isMenu"]]
+                            assert len(more_controls) == stay_rows.count(), (
+                                f"More controls do not match rendered stays at {lang}/{width}: {geometry['rowActions']}"
                             )
-                        expected_action_height = 44 if width in MOBILE_WIDTHS else 40
-                        for group in {item["rowGroup"] for item in visible_actions}:
-                            grouped = [item for item in visible_actions if item["rowGroup"] == group]
-                            menus = [item for item in grouped if item["isMenu"]]
-                            assert menus, f"stay row has no visible More control: {grouped}"
-                            more = menus[0]
-                            for control in grouped:
-                                same_row = abs(control["top"] - more["top"]) <= 2
-                                wrapped = control["bottom"] <= more["top"] + 1 or control["top"] >= more["bottom"] - 1
-                                assert same_row or wrapped, (control, more)
-                                assert control["height"] >= expected_action_height - 1, (control, more)
-                                if not control["isCopy"]:
-                                    assert abs(control["height"] - expected_action_height) <= 1, (control, more)
-                        _assert_stay_menu_copy_geometry(page, width, 0, lang, keyboard=True)
-                        _assert_stay_menu_copy_geometry(page, width, 1, lang)
+                            assert len(visible_actions) >= stay_rows.count(), geometry["rowActions"]
+                            if width >= 1280:
+                                hidden = [item for item in visible_actions if not item["fullyVisible"]]
+                                assert not hidden, (
+                                    f"stay row actions clipped by visible list panel at {lang}/{width}: {hidden}"
+                                )
+                            expected_action_height = 44 if width in MOBILE_WIDTHS else 40
+                            for group in {item["rowGroup"] for item in visible_actions}:
+                                grouped = [item for item in visible_actions if item["rowGroup"] == group]
+                                menus = [item for item in grouped if item["isMenu"]]
+                                assert menus, f"stay row has no visible More control: {grouped}"
+                                more = menus[0]
+                                for control in grouped:
+                                    same_row = abs(control["top"] - more["top"]) <= 2
+                                    wrapped = control["bottom"] <= more["top"] + 1 or control["top"] >= more["bottom"] - 1
+                                    assert same_row or wrapped, (control, more)
+                                    assert control["height"] >= (24 if width >= 1024 else expected_action_height - 1), (control, more)  # v2 desk "···" menu: WCAG 2.5.8 minimum
+                                    if not control["isCopy"] and width < 1024:
+                                        assert abs(control["height"] - expected_action_height) <= 1, (control, more)
+                            _assert_stay_menu_copy_geometry(page, width, 0, lang, keyboard=True)
+                            _assert_stay_menu_copy_geometry(page, width, 1, lang)
+                        else:
+                            phone_rows = page.locator(".stays-phone .list a.row")
+                            assert phone_rows.count() >= 4
+                            for row_index in range(phone_rows.count()):
+                                phone_row = phone_rows.nth(row_index)
+                                assert phone_row.is_visible() and phone_row.get_attribute("href").startswith("/reservations/")
+                                assert phone_row.bounding_box()["height"] >= 44
                     visible_text = page.locator("body").inner_text()
                     raw_keys = [line.strip() for line in visible_text.splitlines()
                                 if re.fullmatch(r"(?:common|confirm|host)\.[a-z0-9_.-]+", line.strip(), re.IGNORECASE)]
@@ -678,7 +691,7 @@ def test_stay_row_actions_fit_midwidth_lanes(wide_host, wide_base):
                 assert page.locator(".stays-desk .stay-portal-link").count() == 0
                 for row_index in range(rows.count()):
                     row = rows.nth(row_index)
-                    date_link = row.locator("td.stay-col-dates a")
+                    date_link = row.locator("td a.stay-identity-link")
                     assert date_link.is_visible()
                     assert date_link.get_attribute("href").startswith("/reservations/")
                     more = row.locator("button.row-menu-trigger")
@@ -690,9 +703,8 @@ def test_stay_row_actions_fit_midwidth_lanes(wide_host, wide_base):
                         same_row = abs(control["top"] - more["top"]) <= 2
                         wrapped = control["bottom"] <= more["top"] + 1 or control["top"] >= more["bottom"] - 1
                         assert same_row or wrapped, (control, more)
-                        assert control["height"] >= 39, (control, more)
-                        if not control["isCopy"]:
-                            assert abs(control["height"] - 40) <= 1, (control, more)
+                        # v2 desk rows (approved mockup) use a quiet "···" menu: WCAG 2.5.8 minimum target (24 px) at computer widths
+                        assert control["height"] >= 24, (control, more)
                 _assert_stay_menu_copy_geometry(page, width, 0, lang, keyboard=True)
                 _assert_stay_menu_copy_geometry(page, width, 1, lang)
                 overflow_cells = [cell for cell in geometry["compactCells"]

@@ -17,6 +17,7 @@
 {% block meta %}{% endblock %}
 {% block secondary_actions %}{% endblock %}
 {% block body %}
+{% with alerts_expanded = true %}{% include "_host_alerts.html" %}{% endwith %}
 <input class="sr-only" type="text" id="stay-link" readonly value="{{ guest_link }}" tabindex="-1" aria-hidden="true">
 
 <div class="host-stay-detail">
