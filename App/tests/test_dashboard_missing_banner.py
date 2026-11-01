@@ -82,11 +82,11 @@ def _insert_apartment(internal_name: str, **overrides) -> int:
 
 
 def _setup_lines(text: str) -> list[str]:
-    """Body of each setup card. 0706: a line is div.card.needs-you-card-item (mockup .todo)."""
+    """Body of each setup card. 0706: a line is div.card.needs-you-card-item (mockup .todo); 0719 adds the `need` modifier."""
     lines = []
-    for match in re.finditer(r'<div class="card needs-you-card-item"[^>]*data-needs-you="setup"[^>]*>', text):
+    for match in re.finditer(r'<div class="card needs-you-card-item[^"]*"[^>]*data-needs-you="setup"[^>]*>', text):
         stops = [i for i in (
-            text.find('class="card needs-you-card-item"', match.end()),
+            text.find('class="card needs-you-card-item', match.end()),
             text.find("</section>", match.end()),
         ) if i != -1]
         lines.append(text[match.end(): min(stops) if stops else len(text)])

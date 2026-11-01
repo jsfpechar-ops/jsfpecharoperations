@@ -3,7 +3,7 @@
 {% set nav = 'dashboard' %}
 {% set how_key = 'dashboard' %}
 {% set body_kind = 'detail' %}
-{% from "_components.html" import progress_pill, copy_inline, row_menu_begin, row_menu_end, onboarding_welcome, next_action, deadline_badge, property_identity, guest_count, onboarding_banner, onboarding_finish, v2_status_pill with context %}
+{% from "_components.html" import progress_pill, copy_inline, row_menu_begin, row_menu_end, onboarding_welcome, next_action, deadline_badge, property_identity, guest_count, onboarding_banner, onboarding_finish, onboarding_finish_strip, v2_status_pill with context %}
 {% from "_icons.html" import icon with context %}
 {% set show_welcome = not apartments and not onboarding.dismissed %}
 {% block title %}{{ t('dashboard.title') }}{% endblock %}
@@ -76,7 +76,10 @@
   {% set ny_alert_ids = needs_you.lines | selectattr('dismiss_id') | map(attribute='dismiss_id') | list %}
   {% with open_alerts = open_alerts | rejectattr('reservation_id', 'in', ny_stay_ids) | rejectattr('id', 'in', ny_alert_ids) | list, alerts_expanded = true %}{% include "_host_alerts.html" %}{% endwith %}
   {{ onboarding_banner(onboarding) }}
-  <section id="needs-action" data-needs-you-card data-dashboard-refresh="stats" aria-labelledby="needs-you-title">
+  {% if not rows and feed_count %}{{ ui_empty(t('dashboard.empty.no_stays')) }}
+  {% elif not rows %}{{ ui_empty(t('dashboard.empty.no_feed'), '', t('dashboard.empty.connect_calendar'), '/apartments/' ~ apartments[0].id ~ '?view=bookings#calendars', primary=false) }}
+  {% endif %}
+  <section id="needs-action"data-needs-you-card data-dashboard-refresh="stats" aria-labelledby="needs-you-title">
     <h2 id="needs-you-title" class="sec">{{ t('needs_you.title') }}{% if ny_lines %} <span class="badge ph-only">{{ ny_lines | length }}</span>{% endif %}</h2>
     <div class="todo ov-section">
     {% if ny_lines %}
@@ -91,7 +94,10 @@
     </details>
     {% endif %}
   </section>
-  {% if onboarding and onboarding.finished and onboarding.finish and not onboarding.dismissed %}{{ onboarding_finish(onboarding) }}{% endif %}
+  {% set focus_is_urgent = focus and focus.urgency in ('overdue', 'urgent') %}
+  {% set finish_card_showing = onboarding and onboarding.finished and onboarding.finish and not onboarding.dismissed %}
+  {% if finish_card_showing and focus_is_urgent %}{{ onboarding_finish_strip(onboarding) }}{% endif %}
+  {% if finish_card_showing and not focus_is_urgent %}{{ onboarding_finish(onboarding) }}{% endif %}
   {% if month_summary %}
   <div class="quiet ov-month" data-dashboard-month><span>{{ t('dashboard.month.label') }}</span> <span class="ov-mi"><b>{{ month_summary.guests }}</b> {{ tp('dashboard.month.guests', month_summary.guests) }}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{ month_summary.nights }}</b> {{ tp('dashboard.month.nights', month_summary.nights) }}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{ month_summary.reported }}</b> {{ tp('dashboard.month.reported', month_summary.reported) }}</span></div>
   {% endif %}
