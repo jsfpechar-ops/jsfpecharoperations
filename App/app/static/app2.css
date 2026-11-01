@@ -329,3 +329,9 @@ body.v2 .stays-desk .sr-only{position:absolute;width:1px;height:1px;overflow:hid
 /* 0527: the collapsed filter panel on v2 pages (the .host-workspace rule in host.css does not apply here) */
 body.v2 .stays-filter.is-collapsed{display:none}
 @media (min-width:1024px){body.v2 .stays-phone-only{display:none}}
+
+/* 0527 stays calendar: 44px day and date targets on phone (the range popover is shared; v2 pages only) */
+@media (max-width:1023px){
+  body.v2 .range-day{min-width:44px;min-height:44px}
+  body.v2 .range-draft-fields input[type=date]{min-height:44px}
+}

@@ -76,3 +76,25 @@ Step 2 triage, one file at a time, `--tb=short -rs`, no test edited yet:
 Next session: start with `test_0523_stays_list.py` (update the `</tr>` helper and `.stays-view` assertion to `.stays-phone`/`a.row`), then the two template assertions, then the rest. Commit after each 2-3 files as `0527 step 2`.
 
 Not pushed. No PR opened (brief says do not push; owner decides).
+
+## Session 5 (Haiku executor)
+Status: blocked
+Commits: cf78aa36 `0527 step 2` (0523 + design_stays); next commit `0527 step 2` (filter panels, empty workspace, app2 calendar CSS, key bump).
+
+Step 2 results, `--tb=short -rs`, 0 skipped:
+- `test_0523_stays_list.py`: 8 passed. Edited: `_row` helper now finds `data-href="/reservations/<id>?return_to="` inside `<tr>`; header check counts 6 `<th>` and reads labels from `<th>`; property regex uses `data-card="meta"`; deadline check uses `data-deadline=`; capture test counts `.stays-desk`.
+- `test_design_stays.py`: 3 passed. Edited: `ui-toolbar` assert replaced by `<div class="chips">`; add-stay panel assert now `class="action-panel hidden stays-panel"`; template check keeps the no-`style="` assert, drops the `class="btn` and `class="pill` bans (the pill is the v2 `.pill` class).
+- `test_stays_empty_workspace.py`: 14 passed. `data-list-toolbar` assert replaced by `.chips`.
+- `test_host_filter_panels_browser.py`: 3 passed, 1 FAILED. Edited: save-view steps deleted from `test_filter_draft_calendar_and_month_grid_commit_once` (the rest of that test kept); `.stays-view tbody tr` to `.stays-desk tbody tr`; `.chips .chip.on` replaces the `ui-chip` selector; geometry test uses `.chips` as the lane on /reservations and exempts the lane's internal scroll for `.chips` only (mockup chips scroll sideways by design).
+- `test_static_versions.py`: see the run line below.
+
+CSS added (app2.css, end of file): `body.v2 .range-day` and `body.v2 .range-draft-fields input[type=date]` at 44px under 1023 px (the host.css phone rule does not apply on v2).
+
+Still failing: `test_filter_geometry_and_popovers_stay_inside_the_viewport_in_english_and_czech`, 360 px en /reservations: the date-range popover measures y 706.8 + height 481 = 1187 > 1001 (viewport 1000). Shared date-range component (`_date_range.html`), not stays CSS. Question for the orchestrator: fix the popover placement (open upward, or scroll it into view on open) or allow the test to scroll the popover first? I did not loosen the assertion.
+
+Not started: `test_host_wide_geometry_browser.py`, `test_design_guardrails_browser.py`, `test_a11y_guard_browser.py` (setup errors; decided fixture change: `wide_base` readiness to `[data-host-alerts], body.v2`, line ~199, not applied yet); `test_host_list_layouts_browser.py`, `test_host_list_page_layout_browser.py`, `test_0199_phone_geometry_browser.py` (3 passed earlier, not re-run), the `-k stays` shared test, and step 3 (screenshots, not started). Also pending: the reservations.html inline-style check passes (0 `style=`), no change needed there.
+
+Deleted tests: none. Deleted assertions: the save-view steps inside `test_filter_draft_calendar_and_month_grid_commit_once` (button dropped in 0526, owner's decision).
+
+Deviations: 1) pill ban removed from `test_design_stays.py` (not in the orchestrator list; the pill is a v2 class, see above). 2) Step count exceeded: this session stopped at the 25-call checkpoint.
+Owner steps left: none. Not pushed. No PR.
