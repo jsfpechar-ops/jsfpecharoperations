@@ -499,3 +499,7 @@ body.v2 .onboarding-intro .onboarding-logo{width: 64px; height: auto; max-width:
     ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
   }
 @media (prefers-reduced-motion: reduce) { body.v2 *, body.v2 *::before, body.v2 *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
+/* 0722: phone-only hides (below 1024 px); desktop unchanged. */
+@media (max-width:1023px){body.v2 .ph-hide{display:none !important}}
+@media (min-width:1024px){.env-banner .env-more{display:none}}
+@media (max-width:1023px){.env-banner .env-body{display:none}}

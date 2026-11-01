@@ -57,14 +57,14 @@
   <div class="head ov-head"><div>
     <h1>{{ t('dashboard.title') }}</h1>
     <p class="sub">{{ today.isoformat() | date_long(lang) }}</p>
-    <details class="ui-how ov-how" data-how="dashboard">
+    <details class="ui-how ov-how ph-hide" data-how="dashboard">
       <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
       <div class="ui-how-body">
         <ol class="ui-how-steps">{% for n in (1, 2, 3) %}<li>{{ t('how.dashboard.' ~ n) }}</li>{% endfor %}</ol>
         <a class="ui-how-more" href="/guide#overview">{{ t('how.more') }}</a>
       </div>
     </details>
-    <p class="ov-links">
+    <p class="ov-links ph-hide">
       <a href="/cleaning/new" class="ov-link">+ {{ t('nav.cleaning') }}</a>
       {% if demo_loaded %}<form method="post" action="/demo/reset" class="inline ov-inline" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">{{ ui_button(t('demo.clear'), 'quiet', type='submit') }}</form>{% endif %}
     </p>
@@ -74,8 +74,8 @@
   {#- 0717: alerts with no todo card of their own; a stay's alert stays hidden when its line is already here. -#}
   {% set ny_stay_ids = needs_you.lines | selectattr('stay_id') | map(attribute='stay_id') | list %}
   {% set ny_alert_ids = needs_you.lines | selectattr('dismiss_id') | map(attribute='dismiss_id') | list %}
-  {% with open_alerts = open_alerts | rejectattr('reservation_id', 'in', ny_stay_ids) | rejectattr('id', 'in', ny_alert_ids) | list, alerts_expanded = true %}{% include "_host_alerts.html" %}{% endwith %}
-  {{ onboarding_banner(onboarding) }}
+  {% with open_alerts = open_alerts | rejectattr('reservation_id', 'in', ny_stay_ids) | rejectattr('id', 'in', ny_alert_ids) | list, alerts_expanded = true, ph_hide_pin = true %}{% include "_host_alerts.html" %}{% endwith %}
+  <div class="ph-hide">{{ onboarding_banner(onboarding) }}</div>
   {% if not rows and feed_count %}{{ ui_empty(t('dashboard.empty.no_stays')) }}
   {% elif not rows %}{{ ui_empty(t('dashboard.empty.no_feed'), '', t('dashboard.empty.connect_calendar'), '/apartments/' ~ apartments[0].id ~ '?view=bookings#calendars', primary=false) }}
   {% endif %}
@@ -97,7 +97,7 @@
   {% set focus_is_urgent = focus and focus.urgency in ('overdue', 'urgent') %}
   {% set finish_card_showing = onboarding and onboarding.finished and onboarding.finish and not onboarding.dismissed %}
   {% if finish_card_showing and focus_is_urgent %}{{ onboarding_finish_strip(onboarding) }}{% endif %}
-  {% if finish_card_showing and not focus_is_urgent %}{{ onboarding_finish(onboarding) }}{% endif %}
+  {% if finish_card_showing and not focus_is_urgent %}<div class="ph-hide">{{ onboarding_finish(onboarding) }}</div>{% endif %}
   {% if month_summary %}
   <div class="quiet ov-month" data-dashboard-month><span>{{ t('dashboard.month.label') }}</span> <span class="ov-mi"><b>{{ month_summary.guests }}</b> {{ tp('dashboard.month.guests', month_summary.guests) }}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{ month_summary.nights }}</b> {{ tp('dashboard.month.nights', month_summary.nights) }}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{ month_summary.reported }}</b> {{ tp('dashboard.month.reported', month_summary.reported) }}</span></div>
   {% endif %}
