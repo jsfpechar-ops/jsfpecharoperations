@@ -187,6 +187,7 @@
   }
   function syncControls() {
     const currentView = view(), [start, end] = range();
+    root.classList.toggle("is-fixed-days", Boolean(state.fixed) && view() === "gantt");
     $$("[data-cal-view]").forEach(button => button.setAttribute("aria-pressed", String(!state.fixed && button.dataset.calView === currentView)));
     $$("[data-cal-days]").forEach(button => button.setAttribute("aria-pressed", String(state.fixed)));
     $$("[data-cal-scale]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.calScale === state.scale)));
