@@ -1,5 +1,6 @@
 {% extends "host_page.html" %}
 {% set v2 = true %}
+{% from "_icons.html" import icon with context %}
 {% set nav = 'reservations' %}
 {% set how_key = 'stay' %}
 {% set body_kind = 'detail' %}
@@ -36,12 +37,7 @@
   <div><small>{{ t('stays.table.guests') }}</small><b>{{ progress.expected if progress.expected is not none else (progress.guests | length) }}</b></div>
   <div><small>{{ t('stay.detail.facts.nights') }}</small><b>{{ nights(reservation.date_from, reservation.date_to) }}</b></div>
 </div>
-<div class="head"><div>
-  <div class="crumb"><a href="{{ return_to }}">{{ t('stays.title') }}</a> › {{ lead_name or reservation.internal_name }}</div>
-  <h1>{{ lead_name or reservation.internal_name }}</h1>
-  <p class="sub">{% if stay_inactive %}<span class="pill">{{ t('stays.filter.state.' ~ reservation.status) if reservation.status != 'active' else t('archive.col.when') }}</span>{% else %}{{ v2_status_pill(cell, progress, reservation) }}{% endif %}<span class="stay-sep"><a href="/apartments/{{ reservation.apartment_id }}">{{ reservation.internal_name }}</a> · {{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</span></p>
-</div>
-<div class="stay-head-actions">
+{% macro stay_cta() %}
   {% if send_controls.send_enabled %}
     {% if progress.status == 'failed' %}
       <a class="btn" href="#guests">{{ t('stay.detail.cta.fix') }}</a>
@@ -63,6 +59,14 @@
       <a class="btn" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
     {% endif %}
   {% endif %}
+{% endmacro %}
+<div class="head"><div>
+  <div class="crumb"><a href="{{ return_to }}">{{ t('stays.title') }}</a> › {{ lead_name or reservation.internal_name }}</div>
+  <h1>{{ lead_name or reservation.internal_name }}</h1>
+  <p class="sub">{% if stay_inactive %}<span class="pill">{{ t('stays.filter.state.' ~ reservation.status) if reservation.status != 'active' else t('archive.col.when') }}</span>{% else %}{{ v2_status_pill(cell, progress, reservation) }}{% endif %}<span class="stay-sep"><a href="/apartments/{{ reservation.apartment_id }}">{{ reservation.internal_name }}</a> · {{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</span></p>
+</div>
+<div class="stay-head-actions">
+  {{ stay_cta() }}
   {% if reservation.permalink_token and not stay_inactive %}<button class="btn{{ ' ghost' if has_cta }}" type="button" data-copy="stay-link" data-copied-label="{{ t('stay.detail.link_copied') }}" data-stay-header-copy>{{ t('host.copy_guest_form_link') }}</button>{% endif %}
   {% if claim_resend.enabled %}<form method="post" action="/reservations/{{ reservation.id }}/resend-claim" class="inline"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="btn ghost" type="submit" data-resend-claim title="{{ t('stay.claim.resend_help') }}">{{ t('stay.claim.resend') }}</button></form>{% endif %}
       {{ row_menu_begin() }}
@@ -268,7 +272,7 @@
   <div class="card police-card{% if progress.status == 'failed' %} police-failed{% endif %}">
     <b>{% if progress.status == 'failed' %}{{ t('hint.failed') }}{% elif send_controls.send_enabled %}{{ tp('stay.detail.ready_count', send_controls.pending_count) }}{% elif progress.not_registered %}{{ tp('host.missing', progress.not_registered) }}{% else %}{{ t(send_controls.send_hint_key, filled=progress.filled, expected=progress.expected) }}{% endif %}</b>
     {% if not stay_inactive and cell.state != 'none' %}
-    <div class="police-deadline">{{ deadline_badge(cell) }}{% if deadline %} · {{ t('stay.detail.metric.deadline_note', when=deadline.strftime('%d.%m.%Y %H:%M')) }}{% endif %}</div>
+    <small class="police-deadline">{{ t('stay.detail.metric.deadline') }} {{ deadline_badge(cell) }}{% if deadline %} · {{ t('stay.detail.metric.deadline_note', when=deadline.strftime('%d.%m.%Y %H:%M')) }}{% endif %}</small>
     {% endif %}
   </div>
   <div class="panel tight">
@@ -297,7 +301,7 @@
   </div>
   {% endif %}
   {% if hand_filing.candidates and not stay_inactive %}
-  <details class="ui-section ui-card" id="file-by-hand">
+  <div class="card"><details class="ui-section ui-card" id="file-by-hand">
     <summary>{{ t('stay.hand_filing.open') }}</summary>
     <p class="ui-sub">{{ t('stay.hand_filing.lede') }} <a href="/guide#manual-filing">{{ t('guide.reporting.manual_filing_title') }}</a></p>
     <form method="post" action="/reservations/{{ reservation.id }}/filed-by-hand" class="settings-grid">
@@ -312,10 +316,10 @@
       <p class="ui-sub">{{ t('stay.hand_filing.covers', count=hand_filing.candidates) }}</p>
       <div class="ui-form-actions"><button class="ui-btn ui-btn-secondary" type="submit">{{ t('stay.hand_filing.confirm') }}</button></div>
     </form>
-  </details>
+  </details></div>
   {% endif %}
   {% if submissions %}
-  <div class="panel tight scroll-x">
+  <div class="card"><div class="panel tight scroll-x">
     <table class="ui-table ui-table-stack">
       <thead><tr><th>{{ t('stay.detail.reports.when') }}</th><th>{{ t('stay.detail.reports.outcome') }}</th><th>{{ t('stay.detail.reports.stamp') }}</th><th></th></tr></thead>
       <tbody>
@@ -336,7 +340,7 @@
       {% endfor %}
       </tbody>
     </table>
-  </div>
+  </div></div>
 {% endif %}
 </section>
 
@@ -349,7 +353,7 @@
 <div class="card stay-door-card">
   {% if door_code.state == 'issued' %}<div class="code">{{ door_code.pin }}</div><small id="door-code-line">{{ door_code.works_from }} – {{ door_code.works_until }}</small>
   {% else %}<p id="door-code-line">{% if door_code.state == 'failed' %}{{ t('stay.detail.door_code.failed') }}{% elif door_code.state == 'delayed' %}{{ t('stay.detail.door_code.delayed') }}{% elif door_code.state == 'preparing' %}{{ t('stay.detail.door_code.preparing') }}{% else %}{{ t('stay.detail.door_code.waiting') }}{% endif %}</p>{% endif %}
-  <div class="ic acc" aria-hidden="true"></div>
+  <div class="ic acc" aria-hidden="true">{{ icon('key-round', 22) }}</div>
 </div></section>{% endif %}
 {% if not stay_inactive %}<div class="list"><a class="link" href="/payments?reservation_id={{ reservation.id }}#new-request">{{ t('stays.row.request_payment') }}<svg class="i chev"><use href="#i-chev"/></svg></a></div>{% endif %}
 <details class="card stay-settings" id="stay-quick-edit">
@@ -396,4 +400,5 @@
   </form>
 </details>
 </div>
+{% if has_cta %}<div class="actbar">{{ stay_cta() }}</div>{% endif %}
 {% endblock %}
