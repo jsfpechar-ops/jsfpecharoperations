@@ -115,7 +115,7 @@ def test_calendar_and_large_list_geometry_and_filtering(workspace, origin, width
             assert ("Cleaning" if lang == "en" else "Úklid") in marker.get_attribute("aria-label")
         assert page.locator(".cleaning-pin").count() == 0
         assert page.locator("#cleaning-list input[type=checkbox]").count() == 0
-        assert page.locator("#cleaning-list").bounding_box()["y"] < page.locator("#calendar").bounding_box()["y"]
+        assert page.locator("#calendar").bounding_box()["y"] < page.locator("#cleaning-list").bounding_box()["y"]
         assert page.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth")
         assert page.locator('a.nav[href="/cleaning"] svg').count() == 1
         shot(page, f"host-{lang}-{width}")

@@ -55,12 +55,12 @@ def test_header_has_no_add_stay_link(workspace):
     assert "/reservations?new=1" not in response.text
 
 
-def test_host_page_shows_tables_before_calendar(workspace):
+def test_host_page_shows_calendar_before_tables(workspace):
     stay(workspace["home"])
     response = workspace["client"].get("/cleaning?lang=en")
     assert response.status_code == 200
     assert 'class="cleaning-skip"' not in response.text
-    assert response.text.index("cleaning-section") < response.text.index('id="calendar"')
+    assert response.text.index('id="calendar"') < response.text.index("cleaning-section")
 
 
 def test_shared_view_shows_calendar_before_list_with_skip_link(workspace):

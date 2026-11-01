@@ -232,3 +232,4 @@ body.v2 .visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin
 @media (min-width: 768px) and (max-width: 1023px){body.v2 .cleaning-page #calendar button,body.v2 .cleaning-page #calendar select,body.v2 .cleaning-page #calendar a{min-width:44px;min-height:44px}}
 @media (min-width: 1024px){body.v2 .cleaning-page #calendar button,body.v2 .cleaning-page #calendar select,body.v2 .cleaning-page #calendar a{min-width:24px;min-height:24px}}
 body.v2 .cleaning-page #calendar *{font-size:max(12px,1em)}
+body.v2 .cleaning-page #calendar-title{font-size:16px;font-weight:700}
