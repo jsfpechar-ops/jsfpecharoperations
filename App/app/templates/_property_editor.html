@@ -30,6 +30,7 @@
 {% endif %}
 
 
+<div class="form">
 <form method="post" action="{{ base_url }}" enctype="multipart/form-data" class="property-settings-form" id="property-settings-form" data-property-settings-form data-unsaved-guard>
   <p class="required-legend">{{ t('common.required_legend') }}</p>
   <input type="hidden" name="return_to" value="{{ base_url }}?view=settings&amp;section={{ settings_section }}" data-property-return>
@@ -391,3 +392,4 @@
   </div>
 </details>
 {% endif %}
+</div>

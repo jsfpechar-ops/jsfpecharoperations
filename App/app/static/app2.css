@@ -331,7 +331,7 @@ body.v2 .fields{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;g
 body.v2 .savebar{position:fixed;right:24px;bottom:20px;display:flex;gap:8px}
 @media (max-width:600px){body.v2 .savebar{left:12px;right:12px;bottom:12px;flex-wrap:wrap;justify-content:flex-end}}
 /* 0535: mockup section order on the property page (CSS only; DOM order stays) */
-body.v2 .form:has(> .property-settings-form){display:flex;flex-direction:column;gap:20px}
+body.v2 .form{display:flex;flex-direction:column;gap:20px}
 body.v2 .property-settings-form{display:contents}
 body.v2 #sec-basics{order:1}
 body.v2 #sec-police{order:2}
