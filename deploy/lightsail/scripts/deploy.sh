@@ -82,6 +82,11 @@ if [ "${UBYHOST_PUBLIC_BASE_URL#https://}" = "${UBYHOST_PUBLIC_BASE_URL}" ]; the
   echo "WARNING: UBYHOST_PUBLIC_BASE_URL should use https:// in production." >&2
 fi
 
+# 0710: keep the running Caddyfile for rollback.
+if [ -f caddy/Caddyfile.active ]; then
+  cp caddy/Caddyfile.active caddy/Caddyfile.previous
+fi
+
 if [ "${CLOUDFLARE_PROXY:-0}" = "1" ]; then
   echo "==> Cloudflare proxy mode (origin certificate)"
   for cert in caddy/certs/origin.pem caddy/certs/origin-key.pem; do
@@ -94,6 +99,18 @@ if [ "${CLOUDFLARE_PROXY:-0}" = "1" ]; then
 else
   echo "==> Direct TLS mode (Let's Encrypt via Caddy)"
   cp caddy/Caddyfile.acme caddy/Caddyfile.active
+fi
+
+# 0710: a recreated Caddy container does not keep its old config, so a broken
+# file takes the site down. Test it with the production caddy service before
+# anything restarts.
+echo "==> Validating the Caddyfile"
+if ! bash ./scripts/caddy-validate.sh caddy/Caddyfile.active; then
+  if [ -f caddy/Caddyfile.previous ]; then
+    cp caddy/Caddyfile.previous caddy/Caddyfile.active
+  fi
+  echo "The new Caddyfile is invalid; nothing was restarted." >&2
+  exit 1
 fi
 
 if [ -z "${UBYHOST_SECRET_KEY:-}" ] && docker compose run --rm --no-deps -T --entrypoint sh ubyhost \
