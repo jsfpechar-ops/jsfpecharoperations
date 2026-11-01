@@ -194,3 +194,24 @@ Section 8 list (test changes):
 Not ours: test_0282_signature_dialog_browser.py; test_host_controls_browser.py (stylesheet link, decision needed); test_onboarding_followup_browser.py (not investigated, needs its own pass).
 
 Left: wide_geometry 2 fails, 0399 property overview Open, onboarding_followup 16 fails, host_controls decision, ruff result, 390 px screenshots not taken (no template or CSS change, so not required).
+
+## 0543
+
+Status: blocked (executor, Haiku). Done: steps 1 and part of 2. Left: items 6 and 7, and item 4 and the 1280 px check of item 5 need an owner or orchestrator decision.
+
+Commits: `7635091` (items 1 to 4 CSS in `App/app/static/app2.css`, key bump in `App/app/templates/base.html`, `App/tests/static_versions.json`), `b6f7df4` (item 5 selector in `App/tests/test_host_controls_browser.py`).
+
+Results on chromium, `-k "not webkit"` (webkit not installed here):
+- test_0284_states_browser: 2 passed. test_wp28_geometry: 7 passed. test_static_versions: 3 passed.
+- test_0282_signature_dialog_browser: FAILED at 390 px. Canvas is now 322 px (was 300). The dialog content box is 322 px, so `width:100%` cannot reach 340. Needs a dialog width or padding decision (stop, brief §8).
+- test_host_controls_browser: FAILED at 1280 px: header action `.props-head a.btn` is 37 px, test expects 40. 360 and 390 px now pass with `.props-top a.round` at >= 44.
+- test_0251_tablet_browser: the tap on `a.r[href="#sec-lock"]` no longer times out. It fails at line 109: `#sec-lock[open]` count is 0 after the tap at 1180 px. Needs a JS or test decision (stop, brief §8).
+- test_host_help_browser: 2 failing (item 7 not started). Both fail with scroll_into_view timeouts on `[aria-controls='permalink_window_days-help']`, which is display:none on v2 property details (0536 item 6). The rewrite is a test change, not started.
+
+Section 8 list (tests that need a decision):
+1. test_0282 (item 4): dialog content 322 px at 390 px; needs 340.
+2. test_host_controls (item 5): 1280 px header action 37 px vs 40 expected.
+3. test_0251 (item 6): `#sec-lock` does not open on tap at 1180 px.
+4. test_host_help (item 7): two tests rewrite for property page (hint visible under input).
+
+Not run: the section 6 final run, `ruff`, `design_lint`, `context_lint`. No PR opened, nothing pushed.
