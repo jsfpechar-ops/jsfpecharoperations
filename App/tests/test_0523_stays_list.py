@@ -1,16 +1,23 @@
 """0523: the stays list columns, the guest name, the deadline badge, the payment preselect and the housebook link."""
 from __future__ import annotations
 
+import os
 import re
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
 from app import auth, db
 from app.main import app
 from tests.conftest import login_as
+from tests.test_host_stay_actions_browser import (  # noqa: F401  (fixtures)
+    _browser, stay_actions_base, stay_actions_host,
+)
 from tests.test_signed_in_chrome import USERNAME, empty_host, host_with_property  # noqa: F401
 
 _OTHER = "0523-other-owner"
+EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0523"
+CAPTURE = os.environ.get("UBYHOST_CAPTURE_0523") == "1"
 
 
 def _owner_id() -> int:
@@ -169,3 +176,28 @@ def test_the_header_housebook_link_points_at_the_csv(host_with_property):
     _reservation(_apartment_id(), "0523-housebook", "2026-10-28", "2026-10-29")
     page = host_with_property.get("/reservations?range=all&lang=en").text
     assert re.search(r'<a [^>]*href="/housebook\.csv\?[^"]*"[^>]*data-stays-housebook', page)
+
+
+def test_capture_stays_list_screenshots(stay_actions_host, stay_actions_base):
+    """Writes docs/tasks/screenshots-0523 only when UBYHOST_CAPTURE_0523=1; overflow is checked by the layout tests."""
+    from playwright.sync_api import sync_playwright
+
+    cookie = stay_actions_host["client"].cookies.get(auth.SESSION_COOKIE)
+    with sync_playwright() as playwright:
+        browser = _browser(playwright)
+        for width in (1280, 390):
+            context = browser.new_context(viewport={"width": width, "height": 900})
+            context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": stay_actions_base + "/"}])
+            page = context.new_page()
+            page.goto(f"{stay_actions_base}/reservations?range=all&lang=cs")
+            page.wait_for_load_state("networkidle")
+            later = page.locator("#security-prompt [data-security-prompt-later]")
+            if later.is_visible():
+                later.click()
+            assert page.locator(".stays-view").count() == 1, width
+            if CAPTURE:
+                EVIDENCE.mkdir(parents=True, exist_ok=True)
+                page.evaluate("window.scrollTo(0, 0)")
+                page.screenshot(path=str(EVIDENCE / f"reservations-cs-{width}.png"), full_page=True)
+            context.close()
+        browser.close()
