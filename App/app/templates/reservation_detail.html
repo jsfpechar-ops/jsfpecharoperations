@@ -72,13 +72,6 @@
           {% endif %}
         {% endif %}
       </p>
-      {% if door_code %}<p class="ui-sub" id="door-code-line">
-        {% if door_code.state == 'issued' %}{{ t('stay.detail.door_code.issued', pin=door_code.pin, start=door_code.works_from, end=door_code.works_until) }}
-        {% elif door_code.state == 'failed' %}{{ t('stay.detail.door_code.failed') }}
-        {% elif door_code.state == 'delayed' %}{{ t('stay.detail.door_code.delayed') }}
-        {% elif door_code.state == 'preparing' %}{{ t('stay.detail.door_code.preparing') }}
-        {% else %}{{ t('stay.detail.door_code.waiting') }}{% endif %}
-      </p>{% endif %}
       {% set lw = link_window(reservation) if progress.status in ('awaiting_guest', 'incomplete') else none %}
       {% if lw %}<p class="ui-sub link-window-line" data-link-window="{{ lw.state }}"><span class="link-window{{ ' is-later' if lw.state == 'from' }}">{{ t('workflow.link.now') if lw.state == 'now' else t('workflow.link.from', date=lw.opens.isoformat() | date_short) }}</span>{% if lw.state == 'from' %}{{ help_tip('link-window-help', t('workflow.link.why')) }}{% endif %}</p>{% endif %}
     </div>
@@ -421,6 +414,13 @@
 {# One panel owns both the quick edit and the full settings form, so the
    #stay-quick-edit anchor keeps working and the page ends on a single
    collapsed group instead of two stacked ones. #}
+{% if door_code %}<section class="ui-section" id="door-code"><div class="ui-section-h"><h2>{{ t('stay.detail.door_code.title') }}</h2></div><div class="ui-card stay-door-card"><p id="door-code-line">
+  {% if door_code.state == 'issued' %}{{ t('stay.detail.door_code.issued', pin=door_code.pin, start=door_code.works_from, end=door_code.works_until) }}
+  {% elif door_code.state == 'failed' %}{{ t('stay.detail.door_code.failed') }}
+  {% elif door_code.state == 'delayed' %}{{ t('stay.detail.door_code.delayed') }}
+  {% elif door_code.state == 'preparing' %}{{ t('stay.detail.door_code.preparing') }}
+  {% else %}{{ t('stay.detail.door_code.waiting') }}{% endif %}
+</p></div></section>{% endif %}
 <section class="ui-section stay-settings" id="stay-quick-edit">
   <div class="ui-section-h"><h2>{{ t('stay.detail.settings.title') }}</h2></div>
   <p class="ui-sub">{{ t('stay.detail.settings.lede') }} <a href="/apartments/{{ reservation.apartment_id }}?view=settings&amp;section=guests#communication">{{ t('stay.detail.settings.guest_links') }}</a>.</p>

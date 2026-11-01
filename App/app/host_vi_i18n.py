@@ -1245,6 +1245,7 @@ STRINGS: Dict[str, str] = {
     "stays.empty.no_apartments": "Chưa có chỗ ở nào nên chưa có gì để hiển thị.",
     "stays.empty.add_first": "Thêm chỗ ở đầu tiên",
     "stay.detail.back": "Quay lại danh sách lưu trú",
+    "stay.detail.door_code.title": "Mã cửa",
     "stay.detail.banner.cancelled": "Lượt lưu trú này đã bị hủy. UbyHost không gửi gì cho lượt này. Nếu nhầm, hãy đặt lại Đang hoạt động trong Cài đặt lượt lưu trú.",
     "stay.detail.banner.ignored": "Đã đánh dấu không phải lượt lưu trú của khách và ẩn khỏi công việc hằng ngày.",
     "stay.detail.banner.archived": "Đã lưu trữ và ẩn khỏi công việc hằng ngày. Nếu nhầm, hãy khôi phục từ menu ⋯.",
