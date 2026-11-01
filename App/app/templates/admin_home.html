@@ -1,8 +1,10 @@
 {% extends "host_page.html" %}
 {% set nav = 'admin' %}
 {% set body_kind = 'list' %}
+{% from "_ui_layout.html" import ui_section_tabs with context %}
 {% block title %}{{ t('home.admin.title') }}{% endblock %}
 {% block meta %}{{ t('home.admin.meta', date=today) }}{% endblock %}
+{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
 {% block secondary_actions %}
 {{ ui_button(t('customers.title'), 'secondary', href='/admin/customers') }}
 {{ ui_button(t('customers.payments'), 'secondary', href='/admin/fakturace') }}
@@ -41,7 +43,7 @@
 <tr class="ui-row">
   <td class="ui-cell-first" data-card="primary"><a href="/admin/customers/{{ row.owner_user_id }}">{{ row.display_name or row.owner_user_id }}</a></td>
   <td data-card="secondary">{{ fmt_date(row.trial_ends_at) }}</td>
-  <td data-card="meta"><a href="/admin/customers/{{ row.owner_user_id }}/">{{ t('home.admin.open') }}</a></td>
+  <td data-card="meta"><a href="/admin/customers/{{ row.owner_user_id }}">{{ t('home.admin.open') }}</a></td>
 </tr>
 {% endfor %}
 {{ ui_table_end() }}

@@ -126,6 +126,36 @@ jobs:
       - name: Install dependencies
         run: pip install --require-hashes -r requirements.lock && pip install -r requirements-dev.txt
 
+      - name: Install goose v3.29.0 (pinned by SHA-256)
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/bin"
+          curl -fsSLo "$RUNNER_TEMP/bin/goose" https://github.com/pressly/goose/releases/download/v3.29.0/goose_linux_x86_64
+          echo "cc56e2f75532a4dd52f5ef2d31db0121e91079a9c2617bc0ad4e04e2d41c228b  $RUNNER_TEMP/bin/goose" | sha256sum -c -
+          chmod +x "$RUNNER_TEMP/bin/goose"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+
+      - name: goose builds the baseline
+        env:
+          PGPASSWORD: ubyhost
+          URL_GOOSE: postgresql://postgres:ubyhost@localhost:5432/ubyhost_goose_test
+          URL: postgresql://postgres:ubyhost@localhost:5432/ubyhost_test
+        run: |
+          set -euo pipefail
+          # goose builds the schema from migrations_pg and Python checks it
+          createdb -h localhost -U postgres ubyhost_goose_test
+          goose -dir migrations_pg postgres "$URL_GOOSE" up
+          UBYHOST_DATABASE_URL="$URL_GOOSE" python scripts/pg_schema.py check --expect-database ubyhost_goose_test
+          # Python builds the schema on a fresh database and records it; goose must read that as applied
+          psql -h localhost -U postgres -d ubyhost_test -v ON_ERROR_STOP=1 -q -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
+          UBYHOST_DATABASE_URL="$URL" python scripts/pg_schema.py apply --expect-database ubyhost_test
+          status=$(goose -dir migrations_pg postgres "$URL" status 2>&1)
+          echo "$status"
+          if grep -q Pending <<<"$status"; then echo "goose sees pending files after Python apply"; exit 1; fi
+          out=$(goose -dir migrations_pg postgres "$URL" up 2>&1)
+          echo "$out"
+          grep -q "no migrations to run" <<<"$out"
+
       - name: Run PostgreSQL tests
         if: hashFiles('App/tests/test_db_postgres.py') != ''
         env:

@@ -11,7 +11,7 @@ Master version: 2.0.0.
 ## Header
 - primary action: none
 - secondary actions: customers.payments -> existing billing page
-- tabs: none
+- tabs: the admin tab strip (Console, Customers, Billing, Users, Incidents, Operations, Funnel).
 
 ## Toolbar
 - search: workspace, email and username; literal substring

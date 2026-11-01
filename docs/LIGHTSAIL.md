@@ -217,6 +217,7 @@ All from `deploy/lightsail/`:
 | `./scripts/pg-cutover.sh cutover` | Stop the app, copy and verify into PostgreSQL, switch `.env`, start; any failure returns to SQLite |
 | `./scripts/pg-cutover.sh rollback` | Switch `.env` back to SQLite (type ROLLBACK to confirm) |
 | `./scripts/backup-gdrive.sh` | Snapshot + rclone copy newest folder to Google Drive |
+| `docker compose run --rm --no-deps ubyhost python scripts/pg_schema.py apply --expect-database ubyhost` | Apply pending PostgreSQL goose migrations (`App/migrations_pg/`) after a deploy whose notes mention a goose file; the app will not start while one is pending |
 
 Public `GET /healthz` in **production** returns `status`, `version`, `data_dir_writable` only (no env labels). Confirm `ubyport_env` with `./scripts/status.sh` or Settings.
 
