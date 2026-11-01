@@ -75,6 +75,24 @@ PAGES = [
         "phone_selectors": [".tabs", ".tab:not(.on)", ".tab.on", ".big", ".card.me", ".list .row", ".row .t b", ".row .t small"],
         "missing_ok": {".row .t small": "menu rows have no subtitle yet: the mockup subtitles are demo copy and no approved menu copy exists (owner decision, 0718)"},
     },
+    {
+        "name": "stays",
+        "path": "/reservations?range=upcoming&lang=cs",
+        "view": "stays",
+        "phone_view": "pobyty",
+        "selectors": [
+            ".head h1", ".head .btn", ".head .btn.ghost", ".chip", ".chip.on",
+            "main table th", "main table td", "main td small", "main .pill.p-ok", "main .pill.p-warn",
+        ],
+        "phone_selectors": [
+            ".tabs", ".tab.on", ".top .round", ".big", ".chips .chip", ".chip.on", ".grp",
+            ".list .row", ".row .av", ".row .t b", ".row .t small", ".row .pill.p-ok", ".row .pill.p-warn", ".list .link",
+        ],
+        "missing_ok": {
+            "main .pill.p-ok": "tone depends on data: the test fixture has no reported stay",
+            ".row .pill.p-ok": "tone depends on data: the test fixture has no reported stay",
+        },
+    },
 ]
 
 

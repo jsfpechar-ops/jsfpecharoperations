@@ -3089,7 +3089,7 @@ async def refresh_codelists(apartment_id: int, request: Request):
 RESERVATION_PAGE_SIZE = 5
 
 # Presets are what a host actually asks for; the two date boxes cover the rest.
-RESERVATION_RANGES = ("upcoming", "past", "all")
+RESERVATION_RANGES = ("upcoming", "current", "past", "all")
 
 
 def _overdue_unfinished_ids(request: Request) -> List[int]:
@@ -3127,6 +3127,9 @@ def reservations_list(request: Request):
     elif date_range == "past":
         # Departed stays only — a guest checking in today still belongs under Upcoming.
         date_from, date_to = "", (date.today() - timedelta(days=1)).isoformat()
+    elif date_range == "current":
+        # In the flat today: arrived on or before today and leaving on or after it.
+        date_from = date_to = today
     elif date_range == "all" or date_range == "archive":
         date_from = date_to = ""
 
@@ -3171,6 +3174,11 @@ def reservations_list(request: Request):
         else:
             sql += " AND r.date_from <= ?"
         params.append(date_to)
+    report = request.query_params.get("report", "")
+    if report == "failed":
+        # Stays with a guest whose police report was refused or blocked.
+        sql += (" AND EXISTS (SELECT 1 FROM guest g WHERE g.reservation_id = r.id"
+                " AND g.submit_state IN ('error', 'blocked'))")
     total = int(db.query_one(f"SELECT COUNT(*) AS n FROM ({sql})", params)["n"])
     page_count = max(1, (total + RESERVATION_PAGE_SIZE - 1) // RESERVATION_PAGE_SIZE)
     page = max(1, min(_query_int(request, "page") or 1, page_count))
@@ -3219,6 +3227,7 @@ def reservations_list(request: Request):
             "ready_send_count": ready_send_count,
             "manual_send": manual_send,
             "status": status,
+            "report": report,
             "apartments": access.apartments(request, "id, internal_name"),
             "apartment_id": apartment_id,
             "date_from": date_from,

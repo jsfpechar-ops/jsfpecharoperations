@@ -73,13 +73,8 @@ def _clean_other_owner() -> None:
     db.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
 
 
-def _header_classes(page: str) -> list[str]:
-    thead = page[page.index("<thead>") : page.index("</thead>")]
-    return re.findall(r'<th class="(stay-col-[a-z]+)"', thead)
-
-
 def _row(page: str, reservation_id: int) -> str:
-    start = page.index(f"/reservations/{reservation_id}?return_to=")
+    start = page.index(f'data-href="/reservations/{reservation_id}?return_to=')
     start = page.rfind("<tr", 0, start)
     return page[start : page.index("</tr>", start)]
 
@@ -88,16 +83,9 @@ def test_the_headers_are_in_order_guest_property_arrival_departure_reporting(hos
     stay = _reservation(_apartment_id(), "0523-order", "2026-09-20", "2026-09-22")
     _guest(stay, "Sofia", "Costa")
     page = host_with_property.get("/reservations?range=all&lang=en").text
-    assert _header_classes(page) == [
-        "stay-col-stay",
-        "stay-col-property",
-        "stay-col-dates",
-        "stay-col-departure",
-        "stay-col-reporting",
-        "stay-col-actions",
-    ]
     thead = page[page.index("<thead>") : page.index("</thead>")]
-    assert [x.strip() for x in re.findall(r"<th\s[^>]*>(?:<span[^>]*>)?([^<]*)", thead)][:5] == [
+    assert len(re.findall(r"<th[\s>]", thead)) == 6
+    assert [x.strip() for x in re.findall(r"<th>(?:<span[^>]*>)?([^<]*)", thead)][:5] == [
         "Guest",
         "Property",
         "Arrival",
@@ -112,7 +100,7 @@ def test_a_row_shows_the_lead_guest_and_the_property_column(host_with_property):
     page = host_with_property.get("/reservations?range=all&lang=en").text
     row = _row(page, stay)
     assert "Sofia Costa" in row
-    assert re.search(r'<td class="stay-col-property"[^>]*>\s*Chrome Flat\s*</td>', row)
+    assert re.search(r'<td data-card="meta"[^>]*>\s*Chrome Flat\s*</td>', row)
 
 
 def test_a_stay_without_guests_shows_the_no_name_text(host_with_property):
@@ -124,7 +112,7 @@ def test_a_stay_without_guests_shows_the_no_name_text(host_with_property):
 def test_an_active_stay_still_shows_the_deadline_badge(host_with_property):
     stay = _reservation(_apartment_id(), "0523-deadline", "2026-10-10", "2026-10-12")
     page = host_with_property.get("/reservations?range=all&lang=en").text
-    assert "stay-report-deadline" in _row(page, stay)
+    assert "data-deadline=" in _row(page, stay)
 
 
 def test_the_payment_link_preselects_the_stay(host_with_property):
@@ -193,7 +181,7 @@ def test_capture_stays_list_screenshots(stay_actions_host, stay_actions_base):
             later = page.locator("#security-prompt [data-security-prompt-later]")
             if later.is_visible():
                 later.click()
-            assert page.locator(".stays-view").count() == 1, width
+            assert page.locator(".stays-desk").count() == 1, width
             if CAPTURE:
                 EVIDENCE.mkdir(parents=True, exist_ok=True)
                 page.evaluate("window.scrollTo(0, 0)")

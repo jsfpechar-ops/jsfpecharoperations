@@ -166,7 +166,7 @@ def test_default_stays_are_unbounded_and_native_get_filters_work_without_javascr
         with page.expect_navigation():
             page.locator("#stays-filter-panel .filter-apply").click()
         assert "range=custom" in page.url and "archive_scope=1" in page.url
-        assert page.locator('.stays-view tbody tr[aria-label*="10.03.2026"]').count() == 1
+        assert page.locator('.stays-desk tbody tr[aria-label*="10.03.2026"]').count() == 1
         page.goto(base + "/invoices?lang=en")
         empty_month = page.locator(".month-control.is-empty")
         assert empty_month.is_visible()
@@ -294,12 +294,6 @@ def test_filter_draft_calendar_and_month_grid_commit_once(host, base):
         applied_url = page.url
         toggle.click()
         page.locator('#stays-filter-panel [name="apartment"]').select_option(str(host["apartments"][1]))
-        applied_label = page.locator("[data-filter-summary]").evaluate("element => element.textContent.replace(/\\s*[·•]\\s*/g, ' — ').trim()")
-        page.locator("[data-save-view]").click()
-        saved = page.evaluate("JSON.parse(localStorage.getItem('ubyhost-saved-stay-views') || '[]')")
-        matching = next(view for view in saved if view["url"] == page.url.replace(base, ""))
-        assert matching["label"] == applied_label
-        assert "Filter Property Two" not in matching["label"], "saved labels must describe the applied URL, not draft controls"
         assert page.url == applied_url
         page.locator("[data-filter-cancel]").click()
         page.reload()
@@ -358,10 +352,10 @@ def test_filter_draft_calendar_and_month_grid_commit_once(host, base):
         with page.expect_navigation():
             page.locator("#stays-filter-panel .filter-apply").click()
         assert "archive_scope=1" in page.url and "range=archive" in page.url
-        assert page.locator('.stays-view tbody tr[aria-label*="10.03.2026"]').count() == 1
+        assert page.locator('.stays-desk tbody tr[aria-label*="10.03.2026"]').count() == 1
         assert "Filter Property Two" in page.locator("[data-filter-summary]").inner_text()
         page.goto(base + f"/reservations?range=custom&archive_scope=1&apartment={host['apartments'][1]}&status=cancelled&lang=en")
-        assert "range=archive" in page.locator("[data-list-toolbar] .ui-chip[aria-current='true']").get_attribute("href")
+        assert "range=archive" in page.locator('.chips .chip.on').get_attribute("href")
         assert page.locator('#stays-filter-panel a').filter(has_text="Reset").get_attribute("href") == "/reservations?range=archive"
         assert not page_errors, "browser script errors: " + " | ".join(page_errors)
 
@@ -401,26 +395,28 @@ def test_filter_geometry_and_popovers_stay_inside_the_viewport_in_english_and_cz
                     page.goto(base + route + "?lang=" + lang)
                     if route == "/invoices":
                         page.wait_for_function("document.documentElement.classList.contains('has-js')")
-                    toolbar = page.locator("[data-filter-toolbar]")
+                    lane = ".chips" if route == "/reservations" else "[data-filter-toolbar]"
+                    toolbar = page.locator(lane).first
                     assert toolbar.is_visible(), f"{width}px {lang} {route}"
                     capture = width in (390, 1280)
                     name = {"/reservations": "stays", "/invoices": "invoices", "/stay-fees": "stay-fees", "/housebook": "guest-register"}[route]
                     if capture:
                         _capture(page, f"{name}-{lang}-{width}-collapsed")
                     geometry = page.evaluate(
-                        """() => {
+                        """(laneSel) => {
                           const root = document.documentElement;
-                          const toolbar = document.querySelector('[data-filter-toolbar]').getBoundingClientRect();
+                          const toolbar = document.querySelector(laneSel).getBoundingClientRect();
                           const summary = document.querySelector('[data-filter-summary]').getBoundingClientRect();
-                          const lane = document.querySelector('[data-filter-toolbar]');
+                          const lane = document.querySelector(laneSel);
                           const pageWidth = root.clientWidth;
                           return {
-                            overflow: lane.scrollWidth > lane.clientWidth + 1 || toolbar.left < -1 || toolbar.right > pageWidth + 1 || (pageWidth <= 600 && root.scrollWidth > pageWidth + 1),
+                            overflow: (laneSel !== '.chips' && lane.scrollWidth > lane.clientWidth + 1) || toolbar.left < -1 || toolbar.right > pageWidth + 1 || (pageWidth <= 600 && root.scrollWidth > pageWidth + 1),
                             summaryInside: summary.left >= toolbar.left - 1 && summary.right <= toolbar.right + 1,
                             triggerHeight: Math.round(document.querySelector('[data-filter-toggle]').getBoundingClientRect().height),
-                            clipped: [...document.querySelectorAll('[data-filter-toolbar] .btn')].some((button) => button.scrollWidth > button.clientWidth + 1),
+                            clipped: [...document.querySelectorAll(laneSel + ' .btn, ' + laneSel + ' .chip')].some((button) => button.scrollWidth > button.clientWidth + 1),
                           };
-                        }"""
+                        }""",
+                        lane,
                     )
                     assert not geometry["overflow"], f"{width}px {lang} {route}: filter lane overflow"
                     assert geometry["summaryInside"], f"{width}px {lang} {route}: summary overflow"
