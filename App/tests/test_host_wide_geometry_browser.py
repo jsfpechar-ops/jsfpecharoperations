@@ -213,7 +213,7 @@ def _capture_geometry(page, result_selector):
               .map(key => [key, Math.round(rect[key] * 100) / 100]));
           };
           const hostLane = (() => {
-            const main = document.querySelector('main.wrap.with-sidebar');
+            const main = document.querySelector('main.wrap.with-sidebar') || document.querySelector('body.v2 main.main');
             if (!main) return null;
             const rect = main.getBoundingClientRect();
             const style = getComputedStyle(main);
@@ -298,7 +298,8 @@ def _capture_geometry(page, result_selector):
                 width: rect.width, height: rect.height};
             }));
           const alertCard = document.querySelector('.notification-stack [data-notification]');
-          const laneChildren = [...document.querySelectorAll('main.wrap.with-sidebar > *')]
+          const laneMain = document.querySelector('main.wrap.with-sidebar') || document.querySelector('body.v2 main.main');
+          const laneChildren = [...(laneMain ? laneMain.querySelectorAll(':scope > *') : [])]
             .filter(element => getComputedStyle(element).display !== 'none')
             .map(element => ({className: element.className?.toString() || element.tagName,
               rect: boxFrom(element)}));
