@@ -70,6 +70,8 @@ PAGES = [
         "name": "properties",
         "path": "/apartments",
         "view": "props",
+        "phone_view": "nemovitosti",
+        "phone_selectors": [".big, .head h1", ".card.prop", ".cover", ".cover .ini", ".prop .in b", ".prop .in small", ".props-phone .st.g", ".props-phone .st.r"],
         "selectors": [
             ".side .nav.on", ".head h1", ".head .sub", ".head .btn",
             "main table th", "main table td", ".setup .st.g", ".setup .st.r", "tbody tr .btn.sm.ghost",

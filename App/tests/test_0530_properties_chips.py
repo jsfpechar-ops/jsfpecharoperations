@@ -122,3 +122,17 @@ def test_open_auth_alert_marks_police_missing(clean):
 def test_feed_error_marks_calendar_missing(clean):
     chips = _chips(_page(lock=True, fee=True, feed_status="error"))
     assert chips["calendar"][0] == "bad"
+
+
+PHONE_CARD = re.compile(r'<a class="card prop" href="([^"]+)">(.*?)</a>', re.S)
+
+
+def test_phone_cards_one_per_property_with_four_chips(clean):
+    # 0533: below 1024 px each property is one mockup card (a link) with the four setup chips
+    page = _page()
+    cards = PHONE_CARD.findall(page)
+    assert len(cards) == 1
+    href, body = cards[0]
+    assert href.startswith("/apartments/")
+    assert f'data-href="{href}"' in page
+    assert len(re.findall(r'<span class="st (?:g|r|n)" data-setup-chip="\w+" data-state="\w+">', body)) == 4
