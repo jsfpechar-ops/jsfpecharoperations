@@ -22,7 +22,7 @@ Three layers, all CSS custom properties in `App/app/static/tokens.css`. Template
 ### 2.1 Primitive layer
 
 ```
-/* coral (brand) */        --coral-50:#fbf0ee; --coral-100:#f9e9e7; --coral-200:#f0c9c4; --coral-500:#c85a52; --coral-600:#ad4942; --coral-700:#963e38;
+/* coral (brand) */        --coral-50:#fef5f3; --coral-100:#fdece8; --coral-200:#f6c6bc; --coral-500:#e0644e; --coral-600:#d0452d; --coral-700:#b83a24;
 /* sand (warm neutrals) */ --sand-0:#ffffff; --sand-50:#fbfaf8; --sand-100:#f7f7f5; --sand-150:#f1f1ef; --sand-200:#ececea; --sand-300:#deded9; --sand-400:#c9c9c2;
 /* ink */                  --ink-900:#20201e; --ink-700:#50504c; --ink-500:#6b6b66; --ink-400:#92928c;
 /* state hues */           --amber-700:#6b3a00; --amber-100:#fde9c2; --amber-300:#eec27a;
@@ -37,7 +37,7 @@ Three layers, all CSS custom properties in `App/app/static/tokens.css`. Template
 /* motion */               --motion-1:120ms; --motion-2:180ms; --motion-3:240ms; --ease:cubic-bezier(.2,0,0,1);
 ```
 
-Contrast (on `--sand-0` / `--sand-100`): `--ink-900` 15.8 / 14.6, `--ink-700` 7.6 / 7.0, `--ink-500` 5.1 / 4.7, `--coral-600` 5.6 / 5.2, `--coral-700` 7.1, `--amber-700` on `--amber-100` 7.9, `--green-700` on `--green-100` 6.9. `--ink-400` is decorative only (dividers, placeholder glyphs), never text.
+Contrast (on `--sand-0` / `--sand-100`): `--ink-900` 15.8 / 14.6, `--ink-700` 7.6 / 7.0, `--ink-500` 5.1 / 4.7, `--coral-600` 4.6 on white (white text on coral-600 4.6; fills and large text only on the canvas), `--coral-700` 5.7 (coral text, active nav ink), `--amber-700` on `--amber-100` 7.9, `--green-700` on `--green-100` 6.9. `--ink-400` is decorative only (dividers, placeholder glyphs), never text.
 
 ### 2.2 Semantic layer
 
