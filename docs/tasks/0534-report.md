@@ -237,3 +237,25 @@ Checks:
 - §8 failing list (32 ids) plus `test_0534_property_page_v2`, `test_property_hub`, `test_static_versions`, `test_page_help_0277`: `57 passed`, 0 skipped, 0 failed.
 - ruff (E9,F63,F7,F82,F401,F841) on app tests tools: `All checks passed!`
 - design_lint and context_lint: see commit log.
+
+## 0535 merge 0722
+
+Status: review (executor, Haiku 5.5)
+
+Commits: `77b5075` merge of `origin/claude/project-thread-50hyv5`; `718f8df` `0535: no row-open cue on v2 list, shared ph-hide`.
+
+- Merge: conflicts in `base.html` (take theirs, app2 key `20261101-0535l-0722`), `static_versions.json` (`--write`), `catalog.json` (union). No conflict markers left.
+- `apartments.html`: removed `row_open(base_url)` call and its import. Test `test_0291_open_buttons.py` no longer asserts the `row-open` presence (the arrow-icon check stays).
+- Phone hide: our `@media (max-width:1023px){body.v2 .ov-how{display:none}}` deleted. `ph-hide` added to the help blocks in `apartments.html` and `apartment_form.html` (property page), as dashboard does.
+- Added `body.v2 .ov-how .ui-how-more{display:inline-flex;align-items:center;min-height:44px}` in `app2.css` (ours: help link was 19 px, failed the 0710 tap-target check on `properties`). Key bumped to `20261101-0535l-0722`.
+
+Commands (from `App/`):
+- Non-browser group (0291, page_help_0277, 0534, property_hub, static_versions, 0530 chips, 0710, host_ux_acceptance): 0710 `properties` failed 3/3 before the tap-target rule; after it `-k properties` passed 12/12. Earlier full group: `3 failed, 82 passed`, all three `properties` geometry.
+- CI list `/tmp/ci-failed-0535.txt` (42 node ids): about 25 node ids no longer exist in the tree (`not found`), so they were run by file: `1 failed, 172 passed`.
+- Remaining failure: `tests/test_signed_in_chrome.py::test_a_stay_that_needs_the_host_gets_one_line_with_one_button` (expects "The guest arrives tomorrow and has not filled in the guest form."; dashboard shows "Send the guest link"). Shared, not ours: `git diff origin/claude/project-thread-50hyv5 HEAD` is empty for `needs_you.py`, `test_signed_in_chrome.py` and `dashboard.html`.
+- ruff `--select E9,F63,F7,F82,F401,F841` on app, tests, tools: All checks passed.
+- `scripts/context_lint.py`: OK. `scripts/design_lint.py`: OK.
+
+Section 8 tests changed: `test_0291_open_buttons.py::test_row_open_cue_has_no_arrow_icon` (presence assert removed for v2 `/apartments`).
+
+Not done: no push. Screenshots for the CSS change not taken (step 6 not in this task).
