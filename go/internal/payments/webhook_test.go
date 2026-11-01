@@ -53,16 +53,22 @@ func TestVerifySignature(t *testing.T) {
 }
 
 func TestOnboardingState(t *testing.T) {
-	cases := map[string]map[string]any{
-		"disabled":        {"disabled": true},
-		"rejected":        {"requirements": map[string]any{"errors": []any{map[string]any{"code": "verification_rejected_fraud"}}}},
-		"complete":        {"charges_enabled": true, "requirements": map[string]any{}},
-		"action_required": {"charges_enabled": true, "requirements": map[string]any{"currently_due": []any{"x"}}},
-		"pending":         {"requirements": map[string]any{}},
+	cases := []struct {
+		want string
+		acct map[string]any
+	}{
+		{"disabled", map[string]any{"requirements": map[string]any{"disabled_reason": "under_review"}}},
+		{"rejected", map[string]any{"requirements": map[string]any{"disabled_reason": "rejected.fraud"}}},
+		{"rejected", map[string]any{"requirements": map[string]any{"errors": []any{map[string]any{"code": "verification_rejected_fraud"}}}}},
+		{"action_required", map[string]any{"requirements": map[string]any{"disabled_reason": "requirements.past_due", "past_due": []any{"x"}}}},
+		{"pending", map[string]any{"disabled": true}},
+		{"complete", map[string]any{"charges_enabled": true, "requirements": map[string]any{}}},
+		{"action_required", map[string]any{"charges_enabled": true, "requirements": map[string]any{"currently_due": []any{"x"}}}},
+		{"pending", map[string]any{"requirements": map[string]any{}}},
 	}
-	for want, acct := range cases {
-		if got := onboardingState(acct); got != want {
-			t.Errorf("state %s: got %s", want, got)
+	for _, c := range cases {
+		if got := onboardingState(c.acct); got != c.want {
+			t.Errorf("state %s: got %s", c.want, got)
 		}
 	}
 }
@@ -131,6 +137,15 @@ func count(t *testing.T, pool *pgxpool.Pool, q string, args ...any) int {
 	return n
 }
 
+func containsDetail(details []string, want string) bool {
+	for _, d := range details {
+		if d == want {
+			return true
+		}
+	}
+	return false
+}
+
 func seedHost(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	ctx := context.Background()
@@ -145,12 +160,12 @@ func seedHost(t *testing.T, pool *pgxpool.Pool) {
 	}
 }
 
-func seedRequest(t *testing.T, pool *pgxpool.Pool, id int, status string) {
+func seedRequest(t *testing.T, pool *pgxpool.Pool, id int, status, link string) {
 	t.Helper()
 	const ts = "2026-10-01T00:00:00+00:00"
 	if _, err := pool.Exec(context.Background(), `INSERT INTO payment_request (id, owner_user_id, reason,
 		amount_czk, rail, status, expires_at, created_at, updated_at, stripe_payment_link_id)
-		VALUES ($1, 1, 'custom', 100, 'card', $2, '2026-12-31', '`+ts+`', '`+ts+`', 'plink_1')`, id, status); err != nil {
+		VALUES ($1, 1, 'custom', 100, 'card', $2, '2026-12-31', '`+ts+`', '`+ts+`', $3)`, id, status, link); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -197,17 +212,26 @@ func TestWebhookDatabase(t *testing.T) {
 	if n := count(t, pool, `SELECT COUNT(*) FROM stripe_account WHERE onboarding_state = 'complete'`); n != 1 {
 		t.Errorf("account not mirrored to complete")
 	}
-	// Same state again under a new event id: no second audit.
+	// Same state again under a new event id, one minute later, with new
+	// requirements: the row is updated (requirements_json, updated_at), no audit.
+	later := testNow.Add(time.Minute)
 	again := []byte(`{"id":"evt_acct2","type":"account.updated","data":{"object":{"id":"acct_1",` +
-		`"charges_enabled":true,"payouts_enabled":true,"requirements":{"currently_due":[]}}}}`)
-	signedPost(t, h, again)
+		`"charges_enabled":true,"payouts_enabled":true,"requirements":{"currently_due":[],"eventually_due":["tos_acceptance.date"]}}}}`)
+	later2 := WebhookHandler(pool, webhookEnv("test", "whsec_test"), func() time.Time { return later })
+	if got := post(t, later2, again, fmt.Sprintf("t=%d,v1=%s", testNow.Unix(), signFor("whsec_test", testNow.Unix(), again))); got != 200 {
+		t.Fatalf("same state again: %d", got)
+	}
+	if n := count(t, pool, `SELECT COUNT(*) FROM stripe_account WHERE requirements_json = '{"eventually_due": ["tos_acceptance.date"]}' AND updated_at = $1`, stampAt(later)); n != 1 {
+		t.Errorf("same state not mirrored (requirements_json or updated_at)")
+	}
 	if n := len(auditDetails(t, pool, "stripe_account_state")); n != 1 {
 		t.Errorf("same state audited again: %d", n)
 	}
 
-	// payment_link.paid from draft: sent, paid, then the paid audit.
-	seedRequest(t, pool, 1, "draft")
-	paid := []byte(`{"id":"evt_paid","type":"payment_link.paid","data":{"object":{"id":"plink_1"}}}`)
+	// checkout.session.completed with payment_status paid, from draft: sent,
+	// paid, then the paid audit.
+	seedRequest(t, pool, 1, "draft", "plink_1")
+	paid := []byte(`{"id":"evt_paid","type":"checkout.session.completed","data":{"object":{"payment_status":"paid","payment_link":"plink_1"}}}`)
 	if got := signedPost(t, h, paid); got != 200 {
 		t.Fatalf("paid: %d", got)
 	}
@@ -221,9 +245,46 @@ func TestWebhookDatabase(t *testing.T) {
 		t.Errorf("paid audit: %v", d)
 	}
 	// Already paid: untouched.
-	signedPost(t, h, []byte(`{"id":"evt_paid2","type":"payment_link.paid","data":{"object":{"id":"plink_1"}}}`))
+	signedPost(t, h, []byte(`{"id":"evt_paid2","type":"checkout.session.completed","data":{"object":{"payment_status":"paid","payment_link":"plink_1"}}}`))
 	if n := len(auditDetails(t, pool, "payment_request_paid")); n != 1 {
 		t.Errorf("already paid was audited again")
+	}
+
+	// Old type payment_link.paid is recorded only, even with an object.id.
+	seedRequest(t, pool, 2, "sent", "plink_2")
+	signedPost(t, h, []byte(`{"id":"evt_old","type":"payment_link.paid","data":{"object":{"payment_status":"paid","id":"plink_2"}}}`))
+	if n := count(t, pool, `SELECT COUNT(*) FROM payment_request WHERE id = 2 AND status = 'sent'`); n != 1 {
+		t.Errorf("payment_link.paid changed the request")
+	}
+	if n := count(t, pool, `SELECT COUNT(*) FROM stripe_webhook_event WHERE event_id = 'evt_old'`); n != 1 {
+		t.Errorf("payment_link.paid not recorded")
+	}
+
+	// payment_status unpaid writes nothing.
+	seedRequest(t, pool, 3, "sent", "plink_3")
+	signedPost(t, h, []byte(`{"id":"evt_unpaid","type":"checkout.session.completed","data":{"object":{"payment_status":"unpaid","payment_link":"plink_3"}}}`))
+	if n := count(t, pool, `SELECT COUNT(*) FROM payment_request WHERE id = 3 AND status = 'sent'`); n != 1 {
+		t.Errorf("unpaid checkout changed the request")
+	}
+
+	// A bank method settles later: async_payment_succeeded pays.
+	seedRequest(t, pool, 4, "sent", "plink_4")
+	signedPost(t, h, []byte(`{"id":"evt_async","type":"checkout.session.async_payment_succeeded","data":{"object":{"payment_status":"paid","payment_link":"plink_4"}}}`))
+	if n := count(t, pool, `SELECT COUNT(*) FROM payment_request WHERE id = 4 AND status = 'paid'`); n != 1 {
+		t.Errorf("async_payment_succeeded did not pay")
+	}
+
+	// An expired row paid late: expired->paid audit, then the paid audit.
+	seedRequest(t, pool, 5, "expired", "plink_5")
+	signedPost(t, h, []byte(`{"id":"evt_late","type":"checkout.session.completed","data":{"object":{"payment_status":"paid","payment_link":"plink_5"}}}`))
+	if n := count(t, pool, `SELECT COUNT(*) FROM payment_request WHERE id = 5 AND status = 'paid' AND paid_at IS NOT NULL`); n != 1 {
+		t.Errorf("expired request not paid late")
+	}
+	if d := auditDetails(t, pool, "payment_request_status"); !containsDetail(d, "id=5 expired->paid") {
+		t.Errorf("late payment status audit missing: %v", d)
+	}
+	if d := auditDetails(t, pool, "payment_request_paid"); !containsDetail(d, "id=5 via=stripe_webhook amount=100 CZK") {
+		t.Errorf("late payment paid audit missing: %v", d)
 	}
 	// Unknown type: recorded only.
 	signedPost(t, h, []byte(`{"id":"evt_other","type":"customer.created","data":{"object":{}}}`))

@@ -1,10 +1,10 @@
 // Package payments: webhook.go is the Go port of the Stripe webhook route
-// (App/app/routes/stripe_connect.py stripe_webhook, lines 101-129) and of the
-// helpers it calls: stripe_connect.py verify_event 326, _record_event 348,
-// process_event 381, mirror_by_account_id 275, _mirror 243, _onboarding_state
-// 218, _requirements_json 235; payment_links.py on_paid 64; payment_request.py
-// set_status 105 and mark_paid 129; rate_limit.py _count, record, blocked and
-// client_key. It writes the same rows and audit lines as Python.
+// (App/app/routes/stripe_connect.py stripe_webhook) and of the helpers it
+// calls: stripe_connect.py verify_event, _record_event, process_event,
+// mirror_by_account_id, _mirror, _onboarding_state, _requirements_json;
+// payment_links.py on_paid; payment_request.py set_status and mark_paid;
+// rate_limit.py _count, record, blocked and client_key. It writes the same
+// rows and audit lines as Python.
 package payments
 
 import (
@@ -54,10 +54,10 @@ const (
 	insertEventSQL = `INSERT INTO stripe_webhook_event (event_id, event_type, mode, created_at)
 		VALUES ($1, $2, $3, $4)`
 
-	ownerByAccountSQL = `SELECT owner_user_id FROM stripe_account WHERE stripe_account_id = $1 AND mode = $2`
+	ownerByAccountSQL = `SELECT owner_user_id, onboarding_state FROM stripe_account WHERE stripe_account_id = $1 AND mode = $2`
 	mirrorSQL         = `UPDATE stripe_account SET onboarding_state = $1, charges_enabled = $2,
 		payouts_enabled = $3, requirements_json = $4, updated_at = $5
-		WHERE owner_user_id = $6 AND mode = $7 AND onboarding_state != $8`
+		WHERE owner_user_id = $6 AND mode = $7`
 
 	requestByLinkSQL = `SELECT id, status, owner_user_id, amount_czk FROM payment_request
 		WHERE stripe_payment_link_id = $1`
@@ -262,7 +262,7 @@ func processEvent(ctx context.Context, pool *pgxpool.Pool, ev stripeEvent, mode,
 	switch ev.Type {
 	case "account.updated":
 		err = mirrorAccount(ctx, tx, ev.Data.Object, mode, stamp)
-	case "payment_link.paid", "checkout.session.completed":
+	case "checkout.session.completed", "checkout.session.async_payment_succeeded":
 		err = onPaid(ctx, tx, ev.Data.Object, stamp)
 	}
 	if err != nil {
@@ -271,12 +271,14 @@ func processEvent(ctx context.Context, pool *pgxpool.Pool, ev stripeEvent, mode,
 	return tx.Commit(ctx)
 }
 
-// mirrorAccount is _mirror_by_account_id plus _mirror: update only when the row
-// exists and the state changes, audit only when a row changed.
+// mirrorAccount is _mirror_by_account_id plus _mirror: the row is updated on
+// every event when it exists (requirements and the charges/payouts flags can
+// change while the state stays the same); audit only when the state changes.
 func mirrorAccount(ctx context.Context, q dbtx, acct map[string]any, mode, stamp string) error {
 	id, _ := acct["id"].(string)
 	var owner int64
-	err := q.QueryRow(ctx, ownerByAccountSQL, id, mode).Scan(&owner)
+	var old string
+	err := q.QueryRow(ctx, ownerByAccountSQL, id, mode).Scan(&owner, &old)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil
 	}
@@ -287,11 +289,10 @@ func mirrorAccount(ctx context.Context, q dbtx, acct map[string]any, mode, stamp
 	req, _ := acct["requirements"].(map[string]any)
 	charges := boolInt(truthy(acct["charges_enabled"]))
 	payouts := boolInt(truthy(acct["payouts_enabled"]))
-	tag, err := q.Exec(ctx, mirrorSQL, state, charges, payouts, requirementsJSON(req), stamp, owner, mode, state)
-	if err != nil {
+	if _, err := q.Exec(ctx, mirrorSQL, state, charges, payouts, requirementsJSON(req), stamp, owner, mode); err != nil {
 		return err
 	}
-	if tag.RowsAffected() == 0 {
+	if old == state {
 		return nil
 	}
 	detail := fmt.Sprintf("acct=%s state=%s charges=%d payouts=%d", id, state, charges, payouts)
@@ -301,7 +302,14 @@ func mirrorAccount(ctx context.Context, q dbtx, acct map[string]any, mode, stamp
 // onboardingState maps Stripe's account onto the five mirror states.
 func onboardingState(acct map[string]any) string {
 	req, _ := acct["requirements"].(map[string]any)
-	if truthy(acct["disabled"]) {
+	// v1 accounts carry no top-level "disabled"; Stripe says why an account is
+	// switched off in requirements.disabled_reason.
+	reason, _ := req["disabled_reason"].(string)
+	if strings.HasPrefix(reason, "rejected") {
+		return "rejected"
+	}
+	switch reason {
+	case "platform_paused", "under_review", "listed", "other": // _DISABLED_REASONS
 		return "disabled"
 	}
 	if errs, ok := req["errors"].([]any); ok {
@@ -350,13 +358,16 @@ func requirementsJSON(req map[string]any) *string {
 	return &s
 }
 
-// onPaid is payment_links.on_paid: link id = object.payment_link or object.id.
-// Statuses other than draft, sent, awaiting_payment and paid write nothing.
+// onPaid is payment_links.on_paid: only payment_status "paid" counts (bank
+// methods finish unpaid and settle later through async_payment_succeeded). The
+// link id is object.payment_link only. Statuses other than draft, sent,
+// awaiting_payment, expired and cancelled write nothing; expired and cancelled
+// are paid late, because the money has arrived.
 func onPaid(ctx context.Context, q dbtx, obj map[string]any, stamp string) error {
-	linkID, _ := obj["payment_link"].(string)
-	if linkID == "" {
-		linkID, _ = obj["id"].(string)
+	if ps, _ := obj["payment_status"].(string); ps != "paid" {
+		return nil
 	}
+	linkID, _ := obj["payment_link"].(string)
 	if linkID == "" {
 		return nil
 	}
@@ -370,9 +381,7 @@ func onPaid(ctx context.Context, q dbtx, obj map[string]any, stamp string) error
 		return err
 	}
 	switch status {
-	case "paid":
-		return nil
-	case "draft", "sent", "awaiting_payment":
+	case "draft", "sent", "awaiting_payment", "expired", "cancelled":
 	default:
 		return nil
 	}
