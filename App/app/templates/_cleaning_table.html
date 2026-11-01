@@ -33,7 +33,7 @@
   {% for item in items %}
   <a class="card cleaning-today" href="/cleaning/events/{{ item.eventId }}/edit">
     <b>{{ item.property }}</b>
-    <div class="cleaning-meta">{% if item.startTime and item.endTime %}{{ item.startTime }}–{{ item.endTime }}{% elif item.checkoutTime and item.checkinTime %}{{ item.checkoutTime }}–{{ item.checkinTime }}{% else %}{{ ct('time_missing') }}{% endif %} · {% if item.nextArrival %}{{ ct('next_arrival_short') }} {{ cleaning_short(item.nextArrival) }} {{ item.checkinTime or ct('time_missing') }}{% else %}{{ ct('no_arrival') }}{% endif %}</div>
+    <div class="cleaning-meta">{% if item.startTime and item.endTime %}{{ item.startTime }}–{{ item.endTime }}{% elif item.checkoutTime and item.checkinTime %}{{ item.checkoutTime }}–{{ item.checkinTime }}{% else %}{{ ct('time_missing') }}{% endif %} · {% if item.nextArrival %}{{ ct('next_arrival_short') }} {{ cleaning_short(item.nextArrival) }} {% if item.checkinTime %} {{ item.checkinTime }}{% endif %}{% else %}{{ ct('no_arrival') }}{% endif %}</div>
     <div class="cleaning-pillrow">{% if item.conflict %}<span class="pill p-warn">{{ ct('status_conflict') }}</span>{% elif item.timingUnavailable %}<span class="pill p-warn">{{ ct('status_hours') }}</span>{% else %}<span class="pill p-ok">{{ ct('status_scheduled') }}</span>{% endif %}</div>
   </a>
   {% else %}
@@ -43,7 +43,7 @@
   {% if items %}
   <div class="list">
   {% for item in items %}
-    <a class="row" href="/cleaning/events/{{ item.eventId }}/edit"><div class="t"><b>{{ item.property }}</b><small>{{ cleaning_day(item.date) }} · {% if item.nextArrival %}{{ ct('next_arrival_short') }} {{ cleaning_short(item.nextArrival) }} {{ item.checkinTime or ct('time_missing') }}{% else %}{{ ct('no_arrival') }}{% endif %}</small>{% if item.conflict %}<span class="pill p-warn">{{ ct('status_conflict') }}</span>{% elif item.timingUnavailable %}<span class="pill p-warn">{{ ct('status_hours') }}</span>{% else %}<span class="pill p-ok">{{ ct('status_scheduled') }}</span>{% endif %}</div></a>
+    <a class="row" href="/cleaning/events/{{ item.eventId }}/edit"><div class="t"><b>{{ item.property }}</b><small>{{ cleaning_day(item.date) }} · {% if item.nextArrival %}{{ ct('next_arrival_short') }} {{ cleaning_short(item.nextArrival) }} {% if item.checkinTime %} {{ item.checkinTime }}{% endif %}{% else %}{{ ct('no_arrival') }}{% endif %}</small>{% if item.conflict %}<span class="pill p-warn">{{ ct('status_conflict') }}</span>{% elif item.timingUnavailable %}<span class="pill p-warn">{{ ct('status_hours') }}</span>{% else %}<span class="pill p-ok">{{ ct('status_scheduled') }}</span>{% endif %}</div></a>
   {% endfor %}
   </div>
   {% else %}
