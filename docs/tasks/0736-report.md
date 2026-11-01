@@ -371,3 +371,4 @@ Not pushed.
 - Known flakiness, not fixed: `test_0541` fails about 1 run in 2 when run alone (`section=lock` assert at line 99, or the police assert at line 106). Instrumented once, it passed. Likely a race: the `toggle` event is async and the synthetic submit runs right after the summary click. Not changed; owner or orchestrator to decide.
 - Test: `pytest test_0541 test_host_property_controls test_a11y_guard test_static_versions test_0503 test_0504 -k "not webkit" -rs` gives `16 passed in 101.10s`, 0 skipped. Ruff `--select E9,F63,F7,F82,F401,F841` on tests: `All checks passed!`.
 - Not pushed.
+Run 15: toggle wait in test_0541, 5/5 passes

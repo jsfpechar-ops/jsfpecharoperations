@@ -93,14 +93,19 @@ def test_0547_phone_property_switch_invalid_field_calendar_and_return(base, dash
             }"""
             page.goto(f"{base}{apartment}?lang=en")
             page.wait_for_load_state("networkidle")
+            arm_toggle = "id => { window.__toggled = new Promise(r => document.getElementById(id).addEventListener('toggle', r, {once: true})); }"
+            page.evaluate(arm_toggle, "sec-lock")
             page.locator("#sec-lock > summary").click()
+            page.evaluate("() => window.__toggled")
             page.evaluate(submit_js)
             return_value = page.locator("input[data-property-return]").input_value()
             assert "section=lock" in return_value, return_value
 
             page.goto(f"{base}{apartment}?lang=en")
             page.wait_for_load_state("networkidle")
+            page.evaluate(arm_toggle, "sec-police")
             page.locator("#sec-police > summary").click()
+            page.evaluate("() => window.__toggled")
             page.evaluate(submit_js)
             return_value = page.locator("input[data-property-return]").input_value()
             assert "section=reporting" in return_value, return_value
