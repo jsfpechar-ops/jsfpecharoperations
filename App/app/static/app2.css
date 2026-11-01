@@ -589,6 +589,19 @@ body.v2 .onboarding-intro .onboarding-logo{width: 64px; height: auto; max-width:
 /* v2 shared: motion (copied from host2.css; scoped body.v2; rail and tab-bar view transitions stay on the old shell only) */
 /* 0547: the sticky preview aside is above the save bar without JS unless the bar has a z-index (literal 20 = --z-sticky; host pages do not load tokens.css). */
 @media (min-width:1024px){body.v2 .savebar{z-index:20}}
+/* 0545: phone guest card also shows the access PIN and its copy button (below 1024 px only) */
+body.v2 .guest-pin,body.v2 .guest-pin-copy{display:none}
+body.v2 .guest-btns{display:contents}
+@media (max-width:1023px){
+  body.v2 .guest-pin{display:block;margin-top:8px;color:var(--ink3);font-size:14px}
+  body.v2 .guest-pin-value{display:block;font-family:var(--mono,ui-monospace,monospace);font-size:16px;font-weight:700;color:var(--ink);letter-spacing:.08em}
+  body.v2 .guest-btns{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+  body.v2 .guest-btns > .btn,body.v2 .guest-pin-copy > .btn{width:100%;justify-content:center}
+  body.v2 .guest-pin-copy{display:block}
+}
+/* 0736 item 4: below 1024 px the guest buttons wrap inside the card instead of pushing it past the viewport (no-JS copy buttons) */
+@media (max-width:1023px){body.v2 .guest-btns > *,body.v2 .guest-pin-copy{min-width:0}body.v2 .guest-btns .btn,body.v2 .guest-pin-copy > .btn{max-width:100%;white-space:normal;overflow-wrap:anywhere}}
+
 @media (scripting: enabled) {
   :root:has(body.v2) { interpolate-size: allow-keywords; }
 
@@ -712,16 +725,6 @@ body.v2 .dot.n{background:#c9c9c3}
   body.v2 .property-settings-form .savebar .btn[type="submit"]{flex-basis:0}
   body.v2 .property-settings-form .savebar:has([data-unsaved-reset]:not([hidden])) .btn.ghost:not([data-unsaved-reset]){display:none}
 }
-/* 0545: phone guest card also shows the access PIN and its copy button (below 1024 px only) */
-body.v2 .guest-pin,body.v2 .guest-pin-copy{display:none}
-body.v2 .guest-btns{display:contents}
-@media (max-width:1023px){
-  body.v2 .guest-pin{display:block;margin-top:8px;color:var(--ink3);font-size:14px}
-  body.v2 .guest-pin-value{display:block;font-family:var(--mono,ui-monospace,monospace);font-size:16px;font-weight:700;color:var(--ink);letter-spacing:.08em}
-  body.v2 .guest-btns{display:grid;grid-template-columns:1fr;gap:8px}
-  body.v2 .guest-btns > .btn,body.v2 .guest-pin-copy > .btn{width:100%;justify-content:center}
-  body.v2 .guest-pin-copy{display:block}
-}
 /* 0543: CI browser fixes on the property page and its dialogs */
 body.v2 aside.preview .pv a.r:hover,body.v2 aside.preview .pv a.r:focus-visible{background:#f6f6f4;border-radius:8px}
 body.v2 .scroll-x:has(.feed-table){overflow-x:auto}
@@ -738,5 +741,3 @@ body.v2 .calendar-add-form:has(#label option[value="other"]:not(:checked)) .cale
 /* 0736 item 3: the continue button reads white on coral-600 (5.5:1); toast close is at least 24 px on desktop (phone keeps 44 px) */
 body.v2 .setup-continue-card .ui-btn-primary{color:#fff;background:var(--coral-600);border-color:var(--coral-600)}
 @media (min-width:768px){body.v2 .toast-stack .toast > [data-toast-close]{min-width:24px;min-height:24px}}
-/* 0736 item 4: below 1024 px the guest buttons wrap inside the card instead of pushing it past the viewport (no-JS copy buttons) */
-@media (max-width:1023px){body.v2 .guest-btns > *,body.v2 .guest-pin-copy{min-width:0}body.v2 .guest-btns .btn,body.v2 .guest-pin-copy > .btn{max-width:100%;white-space:normal;overflow-wrap:anywhere}}
