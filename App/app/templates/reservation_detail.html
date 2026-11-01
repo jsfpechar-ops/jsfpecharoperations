@@ -11,12 +11,6 @@
 {% block page_title %}{{ lead_name or reservation.internal_name }}{% endblock %}
 {% block back_url %}{{ return_to }}{% endblock %}
 {% block back_label %}{{ t('stay.detail.back') }}{% endblock %}
-{# 0080: in-page jump links so the four groups are reachable without folding any; 0135: styled as tabs. #}
-{% macro stay_jump_nav(items) %}
-<nav class="ui-tabs stay-jump" aria-label="{{ t('stay.detail.nav.label') }}">
-  {% for href, label in items %}<a class="ui-tab" href="{{ href }}">{{ label }}</a>{% endfor %}
-</nav>
-{% endmacro %}
 {% set stay_lede %}{{ (reservation.date_from | date_cz) ~ ' – ' ~ (reservation.date_to | date_cz) ~ ' · ' ~ tp('stays.table.nights', nights(reservation.date_from, reservation.date_to)) ~ ' · ' }}{{ source_badge(reservation.source, source_label(reservation)) }}{% endset %}
 {% block meta %}{% if reservation.status != 'active' %}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('stays.filter.state.' ~ reservation.status) }}</span>{% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo=('(demo)' in reservation.internal_name or reservation.source == 'demo'), step=journey_step(progress.status)) }}{% endif %} · <a href="/apartments/{{ reservation.apartment_id }}">{{ reservation.internal_name }}</a> · {{ stay_lede }}{% endblock %}
 {% block body %}
@@ -24,12 +18,6 @@
 
 <div class="host-stay-detail">
 {% set stay_inactive = reservation.status != 'active' or reservation.archived_at %}
-{{ stay_jump_nav([
-  ('#now', t('stay.detail.next_step')),
-  ('#guests', t('stay.detail.guests.title')),
-  ('#reports', t('host.reporting')),
-  ('#stay-quick-edit', t('stay.detail.settings.title')),
-]) }}
 {% if reservation.status == 'cancelled' %}
 <div class="ui-banner ui-banner-attention">
   <div class="grow">{{ t('stay.detail.banner.cancelled') }}</div>
