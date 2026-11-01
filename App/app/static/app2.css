@@ -356,6 +356,17 @@ body.v2 .pv-state[data-state="bad"]{background:var(--bads);color:var(--bad)}
   body.v2 .form{display:grid;grid-template-columns:minmax(0,1fr) 300px;align-items:start}
   body.v2 .preview{position:sticky;top:24px}
 }
+/* 0535 step 3: no sideways scroll at 320-1023 px (generic control fixes, property page) */
+@media (max-width:1023px){
+  body.v2 details *{min-width:0}
+  body.v2 details{overflow-wrap:anywhere}
+  body.v2 details div{flex-wrap:wrap}
+  body.v2 details .ui-btn{max-width:100%;white-space:normal}
+  body.v2 .property-settings-form input,body.v2 .property-settings-form select,body.v2 .property-settings-form textarea{min-width:0;max-width:100%}
+}
+@media (max-width:639px){
+  body.v2 .fields{grid-template-columns:minmax(0,1fr)}
+}
 @media (prefers-reduced-motion:no-preference){@keyframes v2-fields-in{from{opacity:0}to{opacity:1}}body.v2 details .fields{animation:v2-fields-in .18s ease-out}}
 
 /* 0719 overview phone: Potřebuje vás cards, Dnes cards, top row (phone only unless noted) */
