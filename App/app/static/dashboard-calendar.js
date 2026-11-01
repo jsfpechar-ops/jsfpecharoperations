@@ -421,7 +421,7 @@
     body.append(grid);
   }
   function renderGantt() {
-    const [start, end] = cleaningMode ? range() : [monthStart(state.date), moveMonth(state.date, 1)];
+    const [start, end] = cleaningMode || fixedDays ? range() : [monthStart(state.date), moveMonth(state.date, 1)];
     const number = distance(start, end);
     const scroll = el("div", "cal-gantt-scroll"), timeline = el("div", "cal-gantt-timeline");
     timeline.style.setProperty("--days", String(number));
@@ -429,7 +429,7 @@
     heading.append(el("span", "cal-gantt-name", labels.property));
     for (let index = 0; index < number; index++) {
       const day = addDays(start, index), cell = el("span", day === root.dataset.today ? "is-today" : "");
-      cell.append(el("span", "", weekday(day)), el("br"), el("span", "", String(cleaningMode ? dateValue(day).getUTCDate() : index + 1)));
+      cell.append(el("span", "", weekday(day)), el("br"), el("span", "", String(cleaningMode || fixedDays ? dateValue(day).getUTCDate() : index + 1)));
       heading.append(cell);
     }
     timeline.append(heading);
