@@ -50,10 +50,10 @@ BOX_OVERRIDES = {
     # text-dependent: app copy vs phone v2 mockup demo copy (0735)
     ".mh .big@320": {"width": "79.3594px"},
     ".mh .big@390": {"width": "79.3594px"},
-    ".promo@320": {"height": "80px"},
+    ".promo@320": {"height": "97px"},
     ".promo@390": {"height": "80px"},
-    ".promo b@320": {"width": "143.25px"},
-    ".promo b@390": {"width": "143.25px"},
+    ".promo b@320": {"width": "186px"},
+    ".promo b@390": {"width": "229.625px"},
     ".tile .v@320": {"margin-top": "29px"},
     ".tile .v@390": {"margin-top": "29px"},
     ".card.need@320": {"height": "180.188px"},
