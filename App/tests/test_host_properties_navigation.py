@@ -81,11 +81,6 @@ def _property(name, entity_id, owner=None, **over) -> int:
     return db.insert("apartment", values)
 
 
-def _summary(page):
-    start = page.index('id="property-summaries"')
-    return page[start:page.index("</section>", start)]
-
-
 # --- one / many / none / archived ------------------------------------------------
 
 def test_no_business_and_no_property_states_stay_distinct(host):
@@ -117,10 +112,11 @@ def test_list_rows_show_setup_calendars_and_open_inside_the_menu(host):
         assert f'href="/apartments/{apartment_id}?view=settings&amp;section=automation#automation"' in table
     # 0098 (owner): no police/UbyPort value under the name (address, facility
     # name, IDUB, mark, login); the row shows the avatar and the name only.
-    assert "property-location" not in table and ">Brno<" not in table
+    # The address is its own column now; the old under-name location line is gone.
+    assert "property-location" not in table and ">Brno<" in table
     for police in ("UBY-FACILITY", "123456789012", "UBYX", "ws-login-x"):
         assert police not in page, police
-    assert re.search(r'<span class="ui-badge ui-badge-(?:action|done)" data-tone="(amber|green)">', table)
+    assert re.search(r'<a class="ui-badge [^"]*" data-setup-chip="[^"]+" data-state="[^"]+"', table)
     # Old hashes that pointed at the wrong group are gone.
     assert "#ubyport\" role=\"menuitem\"" not in table
     # Two businesses: the shared link opens the list, never an arbitrary one.
@@ -128,29 +124,16 @@ def test_list_rows_show_setup_calendars_and_open_inside_the_menu(host):
     assert '<a class="ui-tab" href="/entities">Business &amp; legal details</a>' in host.get("/apartments").text
 
 
-def test_summary_is_visible_read_only_and_links_to_each_editor(host):
+def test_summary_section_is_gone_and_archived_stays_off_the_list(host):
     entity_id = _entity()
-    first = _property("Byt Alfa", entity_id)
-    second = _property("Chata Beta", entity_id, automation_mode="scheduled", submit_after_hours=6)
+    _property("Byt Alfa", entity_id)
+    _property("Chata Beta", entity_id, automation_mode="scheduled", submit_after_hours=6)
     archived = _property("Starý byt", entity_id, archived_at=db.utcnow())
     page = host.get("/apartments?lang=en").text
-    summary = _summary(page)
-    assert "<details" not in page[page.index('data-sub-tabs'):]
-    assert "Guest links and reporting timing" in summary
-    # 0098 (owner): the summary now carries the inline timing control and the
-    # New PIN form; it posts only to the scoped timing route and regenerate-pin.
-    actions = set(re.findall(r'<form[^>]*action="([^"]+)"', summary))
-    assert actions == {f"/apartments/{i}/{route}" for i in (first, second)
-                       for route in ("regenerate-pin", "automation-timing")}
-    assert "<textarea" not in summary and 'name="default_purpose"' not in summary
-    for apartment_id in (first, second):
-        assert f'href="/apartments/{apartment_id}"' in summary
-    token = db.query_one("SELECT permalink_token FROM apartment WHERE id = ?", (first,))["permalink_token"]
-    assert f"/l/{token}" in summary
-    assert '<option value="manual" selected>Only when I press send' in summary
-    assert '<option value="scheduled" selected>Automatically, after a delay' in summary
-    assert 'value="6" data-timing-hours-input' in summary
-    assert "Starý byt" not in summary
+    # 0530/0531 (owner): the property summaries section is removed on purpose.
+    assert 'id="property-summaries"' not in page
+    assert "Guest links and reporting timing" not in page
+    assert "Starý byt" not in page
     # Archived properties are off the working list; Restore lives in
     # Settings › Data & archive › Archived (owner, 2026-10-13).
     assert f'action="/apartments/{archived}/unarchive"' not in page
@@ -173,7 +156,7 @@ def test_czech_labels_render(host):
     entity_id = _entity()
     _property("Byt Alfa", entity_id)
     page = host.get("/apartments?lang=cs").text
-    assert "Odkazy pro hosty a načasování hlášení" in _summary(page)
+    assert 'id="property-summaries"' not in page
     assert ">Otevřít</a>" in page
     assert not re.search(r">\s*properties\.[a-z_.]+\s*<", page)
 

@@ -203,11 +203,11 @@ def test_the_navigation_says_it_in_czech(host):
     assert "Právnické osoby" not in page.text
 
 
-def test_the_properties_table_has_an_operator_column(host_with_property):
+def test_the_properties_table_has_no_operator_column(host_with_property):
     page = host_with_property.get("/apartments?lang=en")
     assert page.status_code == 200, page.text
-    assert "<th>Legal operator</th>" in page.text
-    assert ENTITY_NAME in page.text
+    # 0530 (owner): the Legal operator column is gone from the one table.
+    assert "<th>Legal operator</th>" not in page.text
 
 
 def test_the_operators_page_is_named_and_explained(host):
