@@ -247,3 +247,24 @@ Done: step 1 (commit 3e6857d), step 3 partly (commit after 3e6857d). Step 2 not 
 
 ### Owner steps left
 - None. No push, no PR.
+
+## Run 9 (section 19: layout guard only)
+
+Status: review (pending the test lines below)
+
+### Step 1: probe at 1280, sidebar open (temporary test, deleted)
+
+Common ancestor is the nearest element containing both controls. Its `display` and `grid-template-columns` are shown; `align-items` is `start` for the stay-fee grid, `normal` elsewhere. The form is `display: contents`, so for pairs whose ancestor is the form, the controls sit in different panels.
+
+| Route | Pair (dBottom px) | Common ancestor | display / columns | Verdict |
+|---|---|---|---|---|
+| property-detail, configured | Preview as a guest (`#communication`) vs `uby_ws_password` (`#ubyport`) (14) | `form#property-settings-form` | contents | different sections side by side |
+| property-detail, configured, fee-setup, automation | Generate a new PIN (`#communication`) vs `stay_fee_cadence` (`#stay-fee-settings`) (-10) | `form#property-settings-form` | contents | different sections side by side |
+| configured | Generate a new PIN vs `stay_fee_vs` (`#stay-fee-payment`) (9) | `form#property-settings-form` | contents | different sections side by side |
+| guest-links | `checkout_hour` (`#arrival-departure`) vs Copy (5), vs Preview (-10) | `form#property-settings-form` | contents | different sections side by side |
+| guest-links | `addr_house_no` (`#address`) vs Copy (10) | `form#property-settings-form` | contents | different sections side by side |
+| fee-setup, property-detail, guest-links, automation | `stay_fee_authority_databox` vs "Add signature" (-20) | `section#stay-fee-settings` | grid, `307px 307px`, align-items start | same panel, two-column grid: fixable |
+| configured | `stay_fee_authority_name` vs "Add signature" (10) | `section#stay-fee-settings` | grid, `307px 307px`, align-items start | same panel, two-column grid: fixable |
+| all 1280 routes | Copy vs Preview (buttons-misaligned) | `div.copyrow` | block (not flex), children inline | inline baseline alignment: fixable |
+
+The "Add signature" button sits in `fieldset.signature-block`, a direct child of the stay-fee grid. The databox and authority-name inputs sit in `div#stay-fee-council`, the other direct child.
