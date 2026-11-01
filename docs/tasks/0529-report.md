@@ -45,3 +45,25 @@ Status: blocked. Done: steps 0 to 2 (step 2 complete). Left: step 3 (PAGES entry
 - Manifest: `tests/test_static_versions.py --write` run.
 
 Open question for step 3: the PAGES path needs a seeded active stay id (`/reservations/{id}`), but `PAGES` is static and `_open_app` takes `spec["path"]`. Owner or orchestrator decision: resolve the id in the shared test from a fixture (a change to `test_0710_v2_mockup_match_browser.py`), or seed a fixed id. Not decided by the executor.
+
+## Continuation (executor, session 3)
+Status: blocked. Done: steps 0 to 2; step 3 partial (PAGES entry and path helper committed, old-marker asserts updated). Left: step 3 blockers below, step 4 (screenshots, §6 commands, report tails).
+
+- Commit b1844468 "0529 step 3": `tests/test_0710_v2_mockup_match_browser.py` resolves `{stay_id}` from `dashboard_rich_host["ready"]` (active stay, one guest of that host; no new DB query needed). `tests/v2_mockup.py` PAGES entry `stay` (view `stay`, phone `pobyt`, selectors per brief, data-dependent ones in `missing_ok`). Overview and menu paths are unchanged.
+- Shared test `-k stay`: 12 failed, 21 deselected. Style checks fail at all six widths; geometry fails at all six. Not fixed (no mockup-value fix applies):
+  1. Phone (320, 390): the `.actbar` (fixed, bottom calc(84px)) and the phone tab bar cover the security prompt's "Not now" button, so the harness cannot dismiss the prompt. Decision needed: z-index or hide the bar while the prompt is open (shell/prompt, brief §8).
+  2. Desktop (1024 to 1440): horizontal page scroll (1408 > 1280, 1568 > 1440) and tap targets under 24 px: `Stays` nav link (31x17), settings inputs and Save buttons, help-tip `?` (23x21), `Request payment` link (19 px), `Mark as filed by hand` (21 px). Shell nav link is shell scope (brief §8).
+  3. Style diffs were not reviewed in detail; `.chip.on` and `button.round` were not reported yet.
+- Pre-existing, not from this change: `overview-768` (21 style differences) and `menu-320` (1 style difference) fail on this branch.
+- Old-test updates (commit pending, see git log): `id="now"` to `police-card`; `Next step` and `stay-command-panel` to `police-card`; `ui-ph-back` to `crumb`; `stay-settings` class dropped; `ui-btn-primary`, `ui-table-stack` and `class="btn"`/`class="pill"` asserts dropped or relaxed (`class="btn"` count <= 2).
+- Tails: `tests/test_0525_stay_detail.py tests/test_design_stay_detail.py tests/test_overhaul.py -q --tb=line -rs`: 3 failed, 31 passed, 0 skipped.
+  - test_0525:79 guest-card-doc: `guest-card` markup is gone in the v2 list. Decision: which v2 element carries the doc-type label and must not show the document number.
+  - test_design:15 and test_overhaul:413: the police card is after Guests in the DOM (13133 > 10405). The old intent is Now, then Guests. Decision: move the police card above Guests, or change the ordering assert to the mockup order.
+- `tests/test_host_stay_detail_layout_browser.py` not updated: `.guest-card` and `#now` (line 37 and below). It also fails the 360 px horizontal-overflow check on the ready stay (scrollWidth > innerWidth). Layout bug, needs a fix before the test can pass.
+- Screenshots, §6 commands (the other stay test files, design_lint, context_lint), manifest rerun: not done.
+
+## Owner or orchestrator decisions needed
+1. Phone security prompt is covered by the action bar and tab bar (see 1 above).
+2. Desktop overflow and tap targets in the stay page and shell nav (see 2 above).
+3. Police card order: before or after Guests.
+4. Guest doc-type label location in the v2 list (test_0525:79).

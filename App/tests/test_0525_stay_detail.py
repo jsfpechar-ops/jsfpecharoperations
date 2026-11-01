@@ -65,7 +65,7 @@ def test_door_code_is_in_its_own_section_not_in_the_now_panel(host, monkeypatch)
     door = page[page.index('id="door-code"'):]
     door = door[:door.index("</section>")]
     assert 'id="door-code-line"' in door
-    now = _section(page, 'id="now"', 'id="guests"')
+    now = _section(page, 'police-card', 'id="guests"')
     assert "door-code-line" not in now
 
 
@@ -86,7 +86,7 @@ def test_header_copy_link_only_for_an_active_stay(host):
     client, _, reservation_id = host
     active = client.get(f"/reservations/{reservation_id}?lang=en").text
     assert active.count("data-stay-header-copy") == 1
-    assert active.index("data-stay-header-copy") < active.index('id="now"')
+    assert active.index("data-stay-header-copy") < active.index('police-card')
 
     db.execute(
         "UPDATE reservation SET archived_at = ? WHERE id = ?", (db.utcnow(), reservation_id)
