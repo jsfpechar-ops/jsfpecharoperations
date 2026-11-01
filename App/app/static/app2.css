@@ -34,7 +34,9 @@ td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
 tr:last-child td{border-bottom:0}tbody tr:hover{background:#fafaf8;cursor:pointer}
 td small{display:block;color:var(--ink3);font-size:12px;margin-top:2px}
 .pill{font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap;display:inline-block}
-.p-ok{background:var(--oks);color:var(--ok)}.p-warn{background:var(--warns);color:var(--warn)}.p-bad{background:var(--bads);color:var(--bad)}
+.p-ok{background:var(--oks);color:var(--ok)}.p-warn{background:var(--warns);color:var(--warn)}.p-bad{background:var(--bads);color:var(--bad)}.p-n{background:#efefeb;color:var(--ink2)}
+/* 0715: a Stav pill may wrap a status badge; the pill carries the colour */
+.dashboard-row-task .pill>.ui-badge{background:none;border:0;padding:0;color:inherit}
 .todo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .todo .card{display:flex;gap:14px;padding:16px;align-items:flex-start}
 .todo .ic{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;flex:none;font-weight:800}
@@ -123,7 +125,11 @@ body.v2 .crow{grid-auto-rows:44px}
 
 /* 0709 Overview: named classes instead of inline styles (design lint T1) */
 .ov-head{margin-bottom:6px}
-.ov-links{font-size:13px;color:var(--ink3);margin:4px 0 0}
+.ov-links{font-size:13px;color:var(--ink3);margin:4px 0 0;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center}
+.ov-link,.ov-inline .ui-btn-quiet{display:inline-flex;align-items:center}
+@media (max-width:1023px){.ov-link{min-height:44px}}
+@media (min-width:1024px){.ov-link{min-height:24px}}
+.ov-month{flex-wrap:wrap}.ov-mi{white-space:nowrap}
 .ov-link{color:var(--ink3)}
 .ov-inline{display:inline}
 .ov-section{margin-bottom:28px}
