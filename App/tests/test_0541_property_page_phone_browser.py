@@ -1,10 +1,8 @@
 """0541: on a phone the property page opens with the basics section closed."""
 from __future__ import annotations
 
-from playwright import sync_api
-
 from app import auth
-from tests.test_host_quiet_dashboard_browser import _launch, base, dashboard_host  # noqa: F401  (0541 browser fixtures)
+from tests.test_host_quiet_dashboard_browser import _launch, base, dashboard_host, sync_api  # noqa: F401  (0541 browser fixtures)
 from tests.test_0710_v2_mockup_match_browser import _open_app, _path, dashboard_rich_host  # noqa: F401  (0541 browser fixtures)
 from tests.v2_mockup import PAGES
 
