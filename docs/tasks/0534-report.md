@@ -259,3 +259,31 @@ Commands (from `App/`):
 Section 8 tests changed: `test_0291_open_buttons.py::test_row_open_cue_has_no_arrow_icon` (presence assert removed for v2 `/apartments`).
 
 Not done: no push. Screenshots for the CSS change not taken (step 6 not in this task).
+
+## 0535 steps 5-6
+
+Status: blocked (executor, Haiku 5.5). Step 5 done; step 6 (screenshots) not started: the 25-call limit was reached.
+
+Commit: `d7759b6` "0535 step 5: property page in the mockup test" (amended before push; not pushed).
+
+Step 5 changes:
+- `App/tests/v2_mockup.py`: PAGES entry `property`, path `/apartments/{first_property}`, view `prop`. Selectors are the brief list without `.guest-card`. `SELECTOR_OVERRIDES["summary small"]` font-size 12px (mockup 11.67 px; geometry guard needs 12 px).
+- `App/tests/test_0710_v2_mockup_match_browser.py`: `_placeholders(host)` gives `first_property` (lowest apartment id of the seeded owner, from the rich host's `ready` reservation); `_path(spec, host)` is the only URL builder, used in all three tests. CASES skip widths below 1024 for entries without `phone_view` (desktop-only until 0536).
+- `App/app/static/app2.css`: block "0535 step 5" (crumb link, `details` help-tip buttons, links, inputs at 24 px min; `details small` and `.preview small` at 12 px). `App/app/templates/base.html` key `20261101-0535m-step5`. `App/tests/static_versions.json` rewritten by `--write`.
+- Deviation: `.guest-card` (permalink card, shown only when a permalink exists) has no mockup counterpart, so it is not compared.
+
+Section 8 tests: none changed in this step.
+
+Commands (from `App/`):
+- `0710 -k "property and not properties"`: `6 passed, 34 deselected in 9.14s` (1024, 1280, 1440; style and geometry). Phone widths are not run for this entry.
+- `0710` full file: `40 passed in 50.65s`, 0 skipped.
+- `test_0534_property_page_v2.py test_property_hub.py test_static_versions.py`: `24 passed in 2.50s`.
+- ruff `--select E9,F63,F7,F82,F401,F841` on app tests tools: `All checks passed!`
+- `scripts/design_lint.py`: `design lint: OK`. `scripts/context_lint.py`: `context lint: OK`.
+
+Not done (step 6, for the next session):
+- App `/apartments/<first property id>?lang=cs` at 1280 and 1024, full page, into `docs/tasks/screenshots-0535/`.
+- Mockup `prop` view at 1280 and 1024 (reduced motion, 800 ms wait, remove `.fontpick` before the shot), same folder.
+- Commit as `0535 step 6: screenshots`.
+
+Owner steps left: none. Questions: none.
