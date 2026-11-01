@@ -21,6 +21,7 @@ Finish the stay page from 0528 1:1 with the mockups (computer `data-v="stay"`, p
 `App/app/templates/reservation_detail.html`, `App/app/static/app2.css`, `App/app/templates/base.html` (key), `App/tests/static_versions.json`, `docs/design/catalog.json`, `App/tests/v2_mockup.py`, stay-page tests named in section 6, screenshots `docs/tasks/screenshots-0529/` (app at 320, 390, 768, 1024, 1280, 1440; mockup stay 1280, pobyt 390), report `docs/tasks/0529-report.md`.
 
 ## 4. Steps
+0. Check the `/* 0528 stay page */` block in app2.css: delete any rule that re-declares a shared 0718 phone class (`.top`, `.round`, `.big`, `.sub`, `h2.sec`, `.card`, `.list`, `.row`, `.ic`, `.facts`, `.link`, `.actbar`, `.pill`, `.btn`; see `grep -n 'body.v2 \.' App/app/static/app2.css`). Keep only page show/hide rules and classes 0718 lacks, as `body.v2 …`. Commit.
 1. Police card, door code, allgood, payment link. Commit.
 2. Action bar, settings details, dead CSS removal, key, manifest. Commit.
 3. PAGES entry, shared test green, old tests updated. Commit.
