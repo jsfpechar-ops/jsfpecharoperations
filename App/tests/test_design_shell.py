@@ -1,4 +1,4 @@
-"""Design v2 shell (MASTER 6): sidebar, top bar, tab bar, More sheet."""
+"""Design v2 shell (MASTER 6): sidebar, tab bar, More sheet."""
 import re
 
 from app import host_i18n
@@ -8,7 +8,8 @@ from tests.test_signed_in_chrome import host_with_property  # noqa: F401  (fixtu
 def test_signed_in_pages_carry_the_v2_shell_and_not_the_drawer(host_with_property):
     page = host_with_property.get("/?lang=en").text
     assert 'class="ui-sidebar" id="app-sidebar"' in page
-    assert 'class="ui-topbar"' in page
+    assert 'class="ui-topbar"' not in page
+    assert 'class="ui-menu-item" type="button" data-command-open' in page
     assert "data-nav-toggle" not in page and 'class="appbar"' not in page and "nav-backdrop" not in page
     tabbar = re.search(r'<nav class="ui-tabbar".*?</nav>', page, re.S).group(0)
     assert tabbar.count("<a ") == 5

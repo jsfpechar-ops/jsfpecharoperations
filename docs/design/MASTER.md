@@ -29,7 +29,7 @@ Three layers, all CSS custom properties in `App/app/static/tokens.css`. Template
                            --green-700:#1f5f3b; --green-100:#e6f5ec; --green-300:#bfe0cb;
                            --red-700:#b42318;   --red-100:#fcebea;
                            --blue-700:#245cb5;  --teal-700:#08736b; --purple-700:#7840a2;   /* property identity only */
-/* type */                 --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; --font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+/* type */                 --font-sans:Manrope,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; --font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
 /* scale */                --size-12:0.75rem; --size-13:0.8125rem; --size-14:0.875rem; --size-15:0.9375rem; --size-16:1rem; --size-18:1.125rem; --size-22:1.375rem; --size-26:1.625rem;
 /* space (4 px grid) */    --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px; --space-8:32px; --space-10:40px; --space-12:48px; --space-16:64px;
 /* radius */               --radius-1:6px; --radius-2:8px; --radius-3:12px; --radius-4:16px; --radius-pill:999px;
@@ -86,7 +86,7 @@ Legacy aliases (`--bg`, `--muted`, `--line-2`, `--brand*`, `--status-critical-*`
 Measured on reference screens (method and table in `design-reset/fable/direction.md`): Airbnb host screens use brand colour on about 1 to 1.5 % of pixels and leave about 62 to 68 % empty; Notion under 0.5 % and about 72 % empty; Stripe about 1 % and 55 % empty. UbyHost today is about 6 to 8 % coral and 45 % empty.
 
 1. **Budget:** coral (any `--coral-*` or `--accent*` value) covers at most **3 % of the viewport at 1280 px** and **6 % at 390 px**. Empty surface (canvas or surface pixels with no ink) covers at least 55 % at 1280 and 50 % at 390. CI measures both (section 11.2).
-2. **Coral may appear only as:** (a) the one primary button; (b) the active navigation item (tint plus icon); (c) a status-action badge or dot; (d) the focus ring; (e) a text link inside a sentence; (f) the count badge on the Dashboard tab; (g) the checked state of a checkbox, radio or toggle; (h) the current day marker in a calendar.
+2. **Coral may appear only as:** (a) the one primary button; (b) the active navigation item (tint plus icon); (c) a status-action badge or dot; (d) the focus ring; (e) a text link inside a sentence; (f) the count badge on the Dashboard tab; (g) the checked state of a checkbox, radio or toggle; (h) the current day marker in a calendar; (i) the 28 by 3 px underline under a page title (5.1); (j) the fill of a selected filter chip (7.7); (k) the row hover tint on desktop tables (40 % `--accent-soft`).
 3. **Coral never appears as:** page or section backgrounds; card, panel or rail fills; borders used as decoration; headings; icons that are not the active nav item; progress bars; table header rows; more than one filled button in one viewport; a full-width banner (banners use attention amber or neutral grey).
 4. A second solid coral button in one button group is a lint failure; a group of two or more buttons with no primary is a review failure. Row `Open` buttons are the plain `open` variant and do not count.
 5. Space is created by: hairlines instead of boxes (a list is rows separated by `--line`, not cards in a card); one level of containment (a page never nests a panel inside a panel); the gaps in section 3; empty states that are text and one button, not an illustration.
@@ -165,7 +165,7 @@ Rules: shown only if the response is slower than 300 ms, then kept at least 400 
 2. Each tab: 44 px minimum touch, icon 24 px stroke 1.75 above an 11/500 label; inactive `--ink-2`; active is tint only: a 44×28 px `--accent-soft` pill behind the icon, icon stroke 2.25 in `--accent`, label `--accent-ink` 600. No bar: one rule for phone and desktop, and it keeps coral under budget.
 3. Badge: Dashboard carries a 16 px coral count badge (white 11/600 text, max "9+") for needs-action rows; no other tab shows a badge.
 4. More opens a bottom sheet: Search, Invoices, Stay fees, Smart locks, Settings, Guide, Admin (admin only), Privacy requests, Archived, Language, Sign out; each a 48 px row with icon. Active page inside More marks the More tab active.
-5. The slide-out sidebar is removed on phone. The top bar stays at 52 px: logo mark left, environment badge, search icon-button right (44 px target). Pages scroll under it; it is not sticky.
+5. The slide-out sidebar and the top bar are removed on phone (0495). Search is the first row of the More sheet.
 6. Main content gets `padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 24px)`. A form page's sticky action bar sits above the tab bar.
 
 ### 6.3 Desktop: sidebar (1024 px and up)
@@ -225,7 +225,7 @@ Kinds and meanings are fixed: `action` (coral: host must act), `attention` (ambe
 
 ### 7.6 Tabs: `tabs(items)` (section 5.2)
 
-### 7.7 Filter bar: `toolbar(search, chips, filters, actions)` (section 5.3). Chips: 32 px pill, `--surface-2`, 14/500; selected `--ink` fill with white text (not coral); removable chips carry an `x` 16 px.
+### 7.7 Filter bar: `toolbar(search, chips, filters, actions)` (section 5.3). Chips: 32 px pill, `--surface-2`, 14/500; selected `--accent` fill with `--on-accent` (white) text (coral, 0495; section 4 item 2 j); removable chips carry an `x` 16 px.
 
 ### 7.8 Menu: `menu(trigger, items)`
 
