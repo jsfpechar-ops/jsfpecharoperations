@@ -42,3 +42,28 @@ None.
 
 ## Owner steps left
 Fresh session to finish step 5 and section 6, then the orchestrator opens the PR.
+
+## Run 2 (executor, step 5 and section 6)
+Status: blocked. Stopped on the section 8 rule: an existing test that is not an assertion on the moved copy button, the "Back to list" label or the save-row order now fails.
+
+### Section 6 test tails
+- Core set (`test_0531_property_page`, `test_property_hub`, `test_host_ux_acceptance`, `test_no_dead_internal_links`, `test_static_versions`): `40 passed in 140.76s`
+- Browser set, `-x -rs`: stopped at `test_0251_tablet_browser.py::test_overview_cards_and_tablet_menu_on_touch`
+  `AssertionError: (1180, {'text': 'Digital door lock EnabledO', 'centre': False, 'corner': True, 'pill': False})`
+- Browser set without `-x`: `1 failed, 8 passed` (only the 0251 test fails; 0199 passed earlier in the -x run).
+- Baseline check: the same test passes on a clean `origin/main` copy (`1 passed`), so the regression comes from this branch. The branch changes in `_property_overview.html` and `_property_editor.html` are the likely cause; not diagnosed further.
+- `python3 scripts/design_lint.py`: `FAIL`. `DESIGN App/app/templates/apartment_form.html: T3 class not in catalog: panel` and `... : mono`. These classes come from the step 1 guest-link markup; the catalog step (step 3 list) does not cover them.
+- `python3 scripts/context_lint.py`: `context lint: OK` (warnings only).
+
+### Screenshots (step 5, `/apartments/<id>?lang=cs`, host fixture data)
+- docs/tasks/screenshots-0531/overview-1280.png
+- docs/tasks/screenshots-0531/overview-390.png
+- docs/tasks/screenshots-0531/settings-1280.png
+- docs/tasks/screenshots-0531/settings-390.png
+Sticky save bar at 390 px, scrolled to the bottom: no input or select overlaps the bar (last field bottom 434 px, bar top 642 px of an 844 px viewport). The bar is 122 px tall at 390 px because the buttons wrap; the brief did not require this.
+
+### Not done / open
+- Failing tablet test (above) needs an owner or orchestrator decision before the PR. Per the brief, the fix is not made here.
+- design_lint FAIL needs the two classes added to the catalog or the markup changed.
+- Temporary screenshot test was created and deleted; it is not in the commit.
+- `App/.venv` shows in `git diff --stat origin/main` as a 1-line change. It is not staged and must not be committed.
