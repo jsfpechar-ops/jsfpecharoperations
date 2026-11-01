@@ -42,3 +42,14 @@ If an existing test asserts the old month timeline or the view switch on `/` at 
 
 ## 9. Report
 `docs/tasks/0521-report.md`: Status, test and lint tails, `git diff --stat origin/main`, screenshot paths, updated assertions, deviations.
+
+## 10. Follow-up 0521b (orchestrator, after the first run)
+The first run forced the 14-day timeline whenever `data-days` is set, which removed the month calendar from the app (Overview is its only stay calendar) and broke 10 existing tests that open `/?cal_date=...`. Change it so the 14 days are the **default** on Overview and the month calendar stays one click away:
+1. Replace the constant gate with state: keep `const fixedDays = Number(root.dataset.days) || 0;` and add `state.fixed = Boolean(fixedDays) && !query.has("cal_view") && !query.has("cal_scale") && !query.has("cal_date");`. Every `fixedDays &&` condition added in the first run becomes `state.fixed &&` (in `view()`, `range()`, `syncControls()`, `renderGantt()`, the prev/next handler, the start date, `savePreferences()`). In the start date use the same three-parameter check.
+2. `syncControls()` in fixed mode: do NOT hide `.cal-view-segment` any more; hide the scales group and the month and year selects; set `aria-pressed="true"` on the new 14-day button and `"false"` on the other view buttons. Outside fixed mode the new button has `aria-pressed="false"`.
+3. Template `_dashboard_calendar.html`: inside `.cal-view-segment`, before the existing two buttons, only when `nav == 'dashboard'`: `<button type="button" data-cal-days aria-pressed="true"><span>{{ t('calendar.days14') }}</span></button>`. Copy: en "14 days", cs "14 dní", vi "14 ngày" (in `App/app/host_i18n.py` and `App/app/host_vi_i18n.py`, next to the other `calendar.` keys).
+4. Click handling, next to the existing `[data-cal-view]` handler: clicking `[data-cal-days]` sets `state.fixed = true; state.date = root.dataset.today;` then `load()`. Clicking any `[data-cal-view]` button first sets `state.fixed = false` and `state.date = root.dataset.today` if it was in fixed mode, then does what it does today.
+5. Bump the script `?v=` to `20261101-0521c`, `--write` the static versions.
+6. Tests: the 10 failing tests must pass unchanged, except `test_default_calendar_url_is_clean_and_specific_views_survive_reload` and any test that opens `/` with no `cal_` parameter at computer width, which you may update to the new default (14-day timeline on `/`; list each edit). Extend `test_0521_overview_14_days_browser.py`: on `/` the 14-day button is pressed and the scale switch hidden; clicking "Kalendář" shows the month grid (`.cal-week`); clicking "14 dní" brings the 14 columns back; `/?cal_date=2026-10-01` opens the old month view.
+7. Retake the 1280 px screenshot. Run section 6 commands, 0 skipped. Update the report.
+Files allowed in addition to section 3: `App/app/host_i18n.py`, `App/app/host_vi_i18n.py`, `App/tests/test_dashboard_calendar_browser.py` (only the edits in point 6).
