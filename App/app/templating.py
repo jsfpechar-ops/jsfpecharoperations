@@ -446,7 +446,6 @@ def _template_section_tabs(request: Request, section: str, current: str = "") ->
             ("console", "/admin", "home.admin.title"),
             ("customers", "/admin/customers", "customers.title"),
             ("billing", "/admin/fakturace", "billing.admin.title"),
-            ("users", "/admin/users", "nav.users"),
             ("incidents", "/admin/incidents", "users.incidents_link"),
             ("operations", "/admin/operations", "ops.title"),
             ("funnel", "/admin/funnel", "funnel.title"),
@@ -482,7 +481,7 @@ def _template_page_tabs(context) -> list:
     if path == "/admin" or path.startswith("/admin/"):
         segment = path.split("/")[2] if path.count("/") >= 2 else ""
         current = {
-            "": "console", "fakturace": "billing", "customers": "customers", "users": "users",
+            "": "console", "fakturace": "billing", "customers": "customers", "users": "customers",
             "incidents": "incidents", "operations": "operations", "funnel": "funnel",
         }.get(segment, "")
         return _template_section_tabs(request, "admin", current)
