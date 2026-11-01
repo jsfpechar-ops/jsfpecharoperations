@@ -1,5 +1,5 @@
 # 0710: Caddy config checked in CI and before restart; deploy rolls back when the public site is down
-Status: ready
+Status: review
 Depends on: none | Base commit: origin/main (f00b979) | Branch: claude/project-thread-qjrmqz
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 ## 1. Objective
