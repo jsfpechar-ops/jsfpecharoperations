@@ -1,7 +1,7 @@
 /* 0123 host workspace: white working surfaces, warm rail, real existing controls.
    Scope stays signed-in only; shared guest/public tokens are untouched. */
 body.host-workspace {
-  --canvas:#fff; --surface:#fff; --surface-hover:#faf9f7;
+  --surface:#fff; --surface-hover:#faf9f7;
   --ink:#20201e; --ink-primary:#20201e; --ink-secondary:#62625d; --ink-muted:#62625d; --muted:#62625d;
   --line:#e6e4e0; --border:#e6e4e0; --border-strong:#d4d1cc;
   --brand:#c85a52; --brand-strong:#b94d46; --focus-ring:#c85a52;
