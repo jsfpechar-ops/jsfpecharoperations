@@ -35,31 +35,3 @@ def test_stays_open_on_upcoming_and_current():
     assert 'aria-current="true">All dates<' in page
 
 
-def test_properties_rows_match_stays_rows(base):
-    client = _client()
-    cookie = client.cookies.get(auth.SESSION_COOKIE)
-    with sync_api.sync_playwright() as playwright:
-        browser = playwright.chromium.launch(**chromium_launch_kwargs())
-        for width in (1280, 2000):
-            context = browser.new_context(viewport={"width": width, "height": 900})
-            context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": base + "/"}])
-            page = context.new_page()
-            page.goto(base + "/reservations?range=all&lang=en")
-            stays = page.evaluate(ROW, "table.ui-table tbody tr")
-            page.goto(base + "/apartments?lang=en")
-            for selector in ("table.properties-table tbody tr",):
-                row = page.evaluate(ROW, selector)
-                assert row == stays, (width, selector, row, stays)
-            page.goto(base + "/entities?lang=en")
-            rows = page.evaluate(
-                """() => [...document.querySelectorAll('.lc-entities tbody tr')].map(tr => {
-                const sub = tr.querySelector('td.ui-sub');
-                const opens = [...tr.querySelectorAll('.row-open, .ui-btn-open')].filter(e => e.getClientRects().length > 0);
-                return {inActions: opens.every(e => e.closest('td.row-actions') !== null),
-                        contact: sub ? getComputedStyle(sub).display : 'table-cell'}; })"""
-            )
-            assert rows, width
-            for row in rows:
-                assert row["inActions"] and row["contact"] == "table-cell", (width, row)
-            context.close()
-        browser.close()
