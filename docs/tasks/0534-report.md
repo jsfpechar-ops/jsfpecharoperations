@@ -433,3 +433,13 @@ Still failing:
 - test_0503_page_inits_once_browser.py: skipped per orchestrator (fixed on main by 0539).
 
 Left: 0251 tap; host_help rewrite; onboarding overview (overview-cards part only); wp28 listed as not ours.
+
+## 0541
+Status: blocked (executor, session 1). Done: steps 1 to 3. Left: step 4 (screenshots), item 3 root cause, 0710 property at 320/390/768.
+- Item 1 (copy label): CSS in the 1023 px block (`.guest-card .copy-btn .sr-only` shown). Not visually verified.
+- Item 2 (help toggle): `display:none` below 1024 px.
+- Item 3 (basics open on load): NOT fixed. `initPhoneDefaultClosed` moved to the top of `initPage`, but the markup never gets `data-default-open`: `admin.py` (line 1771) sets `settings_section` to "property" when no section is requested, so `{% if not settings_section %}` in `_property_editor.html` line 52 is false. Fix needs a route flag (for example `section_requested`), which the brief excludes. Owner or orchestrator decision.
+- Item 4 (rows): card border, radius and background removed on `.property-settings-form details.prop-sec` below 1024 px; last row has no bottom border.
+- Item 5 (save bar): `body.v2 .savebar [hidden]{display:none}`; phone bar kept in one row (flex 1 1 0). Reset-hides-Zrušit uses `.btn.ghost` (not verified).
+- Item 6 (sub line): template guard now `prop_addr and prop_addr.strip()`.
+- Tests: test_0534 and test_0531 and test_static_versions pass; 0710 `property` fails at 320, 390, 768 (style and geometry: tap targets under 44 px, main content under tab bar). Not fixed.
