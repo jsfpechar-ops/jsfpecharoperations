@@ -1,4 +1,4 @@
-# 0490: cAdvisor v0.55.1 for Docker 29 (containerd image store)
+# 0495: cAdvisor v0.55.1 for Docker 29 (containerd image store)
 Status: review
 Depends on: none | Base commit: main | Branch: claude/project-thread-gksvyw
 Executor: Haiku 5.5 | Fits one session: 10 tool calls, 20k tokens
@@ -10,7 +10,7 @@ Production runs Docker 29.8.0, which stores images in containerd. cAdvisor v0.52
 - v0.55.1 manifest-list digest (read from gcr.io 2026-11-01, has linux/amd64): `sha256:3de2bd5203120b866d74a9b283b2ffb8ec382fbf9dc321814700c6ea6f44ec57`.
 - `deploy.sh` runs `docker compose up -d`, which pulls the new image and recreates only cadvisor. App, worker and database are untouched.
 ## 3. Files
-Edit the two lines above. Write `docs/tasks/0490-report.md`.
+Edit the two lines above. Write `docs/tasks/0495-report.md`.
 ## 4. Steps
 1. Line 320 becomes `image: gcr.io/cadvisor/cadvisor:v0.55.1@sha256:3de2bd5203120b866d74a9b283b2ffb8ec382fbf9dc321814700c6ea6f44ec57`. Keep the `# Pinned by digest.` comment, flags and mounts.
 2. README row: `v0.52.1` becomes `v0.55.1`.
@@ -24,4 +24,4 @@ Compose config parses, lint passes. Owner check after deploy: `cd /opt/ubyhost/d
 ## 8. Stop and ask
 If the digest or tag does not resolve, or compose config fails.
 ## 9. Report
-`docs/tasks/0490-report.md`: diff summary, command tails, owner step.
+`docs/tasks/0495-report.md`: diff summary, command tails, owner step.
