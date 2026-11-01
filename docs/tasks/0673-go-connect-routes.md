@@ -1,5 +1,5 @@
 # 0673: Go Stripe Connect start/return routes (guards only, Stripe injected)
-Status: todo
+Status: review
 Depends on: 0672 (#673) | Base commit: origin/main | Branch: claude/project-thread-qv0fs6
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 ## 1. Objective
