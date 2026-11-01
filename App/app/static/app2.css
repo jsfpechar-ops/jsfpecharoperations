@@ -297,3 +297,8 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
   body.v2 .needs-you-card-item b.t{display:block;font-weight:inherit}
   body.v2 .needs-you-card-item small{display:block;font-size:inherit;color:inherit;margin:0}
 }
+
+/* 0719: the Dnes cards scroll inside their row and never widen the page */
+@media (max-width:1023px){
+  body.v2 .hs{min-width:0;max-width:100%}
+}
