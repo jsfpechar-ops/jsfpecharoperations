@@ -345,6 +345,15 @@
       document.querySelectorAll('[data-lock-times] select').forEach(function (select) {
         select.required = event.target.checked;
       });
+      // 0544: the switch's status text follows the switch, also after Discard (form.reset + change).
+      var doorStatus = document.getElementById('door_codes-status');
+      if (doorStatus) {
+        var doorSaved = event.target.getAttribute('data-switch-saved') === '1';
+        var doorDirty = event.target.checked !== doorSaved;
+        doorStatus.classList.toggle('is-unsaved', doorDirty);
+        doorStatus.classList.toggle('is-on', !doorDirty && doorSaved);
+        doorStatus.textContent = doorDirty ? doorStatus.dataset.unsaved : (doorSaved ? doorStatus.dataset.on : doorStatus.dataset.off);
+      }
     }
   });
   updateDoorCodeWindows();

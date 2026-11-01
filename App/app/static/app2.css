@@ -647,6 +647,8 @@ body.v2 details .help-tip-btn{display:none}
 body.v2 details .help-tip{display:block}
 body.v2 details .help-tip-body{position:static;display:block;max-width:none;margin:2px 0 0;padding:0;background:none;border:0;box-shadow:none;font-size:12px;color:var(--ink3)}
 @media (min-width:601px){body.v2 .savebar{right:calc(var(--control-h) + var(--space-3) + var(--space-6));white-space:nowrap}}
+/* 0544: above the sticky preview aside from 1024 px; the Havel FAB (z 40) and dialog (z 60) stay above the bar. */
+@media (min-width:1024px){body.v2 .savebar{z-index:var(--z-sticky)}}
 body.v2 .savebar .ui-btn,body.v2 .savebar .btn{width:auto;white-space:nowrap}
 @media (min-width:1024px){
   body.v2 .property-section{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
