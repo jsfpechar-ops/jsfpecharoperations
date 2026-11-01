@@ -17,7 +17,7 @@
 {% block meta %}{% endblock %}
 {% block secondary_actions %}{% endblock %}
 {% block body %}
-{% with alerts_expanded = true %}{% include "_host_alerts.html" %}{% endwith %}
+{% include "_host_alerts.html" %}
 <input class="sr-only" type="text" id="stay-link" readonly value="{{ guest_link }}" tabindex="-1" aria-hidden="true">
 
 <div class="host-stay-detail">
@@ -63,6 +63,13 @@
 <div class="head"><div>
   <div class="crumb"><a href="{{ return_to }}">{{ t('stays.title') }}</a> › {{ lead_name or reservation.internal_name }}</div>
   <h1 class="big">{{ lead_name or reservation.internal_name }}</h1>
+  <details class="ui-how stays-how ph-hide" data-how="stay">
+    <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
+    <div class="ui-how-body">
+      <ol class="ui-how-steps">{% for n in (1, 2, 3) %}<li>{{ t('how.stay.' ~ n) }}</li>{% endfor %}</ol>
+      <a class="ui-how-more" href="/guide#guests">{{ t('how.more') }}</a>
+    </div>
+  </details>
   <p class="sub">{% if stay_inactive %}<span class="pill">{{ t('stays.filter.state.' ~ reservation.status) if reservation.status != 'active' else t('archive.col.when') }}</span>{% else %}{{ v2_status_pill(cell, progress, reservation) }}{% endif %}<span class="stay-sep"><a href="/apartments/{{ reservation.apartment_id }}">{{ reservation.internal_name }}</a> · {{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</span></p>
 </div>
 <div class="stay-head-actions">
@@ -206,6 +213,7 @@
       <td>
         <b>{{ guest.surname or '—' }} {{ guest.first_name or '' }}</b>{% if guest.is_lead %} <span class="pill">{{ t('stay.detail.guests.lead') }}</span>{% endif %}
         {% if guest.note %}<small>{{ t('stay.detail.guests.note', text=guest.note) }}</small>{% endif %}
+        {% if guest.entered_by %}<small>{{ t('stay.detail.guests.entered_by') }}: <span>{{ entered_by_label(guest.entered_by) }}</span></small>{% endif %}
         {% for issue in row.issues %}
           <small class="{{ 'err-text' if issue.is_error else 'warn-text' }}">{{ validation_message(issue.message) }}</small>
         {% endfor %}
@@ -234,7 +242,7 @@
       <td><b>{{ t('stay.detail.guests.placeholder', n=n) }}</b></td>
       <td>—</td>
       <td></td>
-      <td><a class="btn ghost" href="/reservations/{{ reservation.id }}/guests/new">{{ t('stay.detail.guests.add_by_hand') }}</a></td>
+      <td><a href="/reservations/{{ reservation.id }}/guests/new">{{ t('stay.detail.guests.add_by_hand') }}</a></td>
     </tr>
   {% endfor %}
   </tbody>
@@ -288,7 +296,7 @@
   </div>
   {# WP23: the host filed this stay in the UbyPort web application. #}
   {% if hand_filing.count %}
-  <div class="ui-section ui-card ph-hide" id="filed-by-hand">
+  <div class="card stay-filing ph-hide" id="filed-by-hand">
     <p><strong>{{ t('stay.hand_filing.done', when=hand_filing.filed_at.strftime('%d.%m.%Y %H:%M')) }}</strong></p>
     {% if hand_filing.reference %}<p class="ui-sub">{{ t('stay.hand_filing.done_reference', reference=hand_filing.reference) }}</p>{% endif %}
     {% if hand_filing.can_undo %}
@@ -301,7 +309,7 @@
   </div>
   {% endif %}
   {% if hand_filing.candidates and not stay_inactive %}
-  <details class="stay-section ui-card ph-hide" id="file-by-hand">
+  <details class="card stay-filing ph-hide" id="file-by-hand">
     <summary>{{ t('stay.hand_filing.open') }}</summary>
     <p class="ui-sub">{{ t('stay.hand_filing.lede') }} <a href="/guide#manual-filing">{{ t('guide.reporting.manual_filing_title') }}</a></p>
     <form method="post" action="/reservations/{{ reservation.id }}/filed-by-hand" class="settings-grid">

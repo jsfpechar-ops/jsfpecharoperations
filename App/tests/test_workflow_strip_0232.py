@@ -32,12 +32,5 @@ def test_the_guide_opens_with_the_strip(host):  # noqa: F811
     assert "data-workflow-strip" in page.text
 
 
-def test_a_waiting_stay_shows_step_2_of_5(host):  # noqa: F811
-    reservation_id = _stay(_apartment_id())
-    page = host.get(f"/reservations/{reservation_id}?lang=en")
-    assert "data-journey" in page.text
-    assert 'aria-current="step"' in page.text
-    assert "Step 2 of 5: Guest form" in page.text
-    listing = host.get("/reservations?lang=en")
-    assert 'data-journey-step="2"' in listing.text
-    assert "Step 2 of 5 · " in listing.text  # 0241: never a bare count next to the guest count
+# 0528/0526: the v2 stays pages (approved mockup) show the status pill and deadline instead of the
+# five-step journey strip, so the per-stay "Step 2 of 5" checks were removed; the guide keeps the strip.

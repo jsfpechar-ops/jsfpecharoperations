@@ -86,12 +86,12 @@ def test_dashboard_actions_share_height_and_gap(base):
             [{"name": auth.SESSION_COOKIE, "value": session, "url": base + "/"}]
         )
         page = context.new_page()
-        # v2 Overview has no page-header action row; the row lives on /reservations.
+        # v2 Overview has no page-header action row; the row lives in the v2 stays header.
         page.goto(base + "/reservations?lang=en")
-        page.wait_for_selector(".ui-ph-acts", timeout=30000)
-        measured = page.locator(".ui-ph-acts").evaluate(
+        page.wait_for_selector(".stays-head-actions", timeout=30000)
+        measured = page.locator(".stays-head-actions").evaluate(
             """(group) => {
-              const buttons = [...group.querySelectorAll('.ui-btn')].filter((button) => button.offsetParent !== null);
+              const buttons = [...group.querySelectorAll('.btn')].filter((button) => button.offsetParent !== null);
               const boxes = buttons.map((button) => {
                 const box = button.getBoundingClientRect();
                 return { top: box.top, right: box.right, bottom: box.bottom, left: box.left,
@@ -106,7 +106,7 @@ def test_dashboard_actions_share_height_and_gap(base):
     assert measured["gap"] == "8px"
     assert boxes
     assert len({box["height"] for box in boxes}) == 1
-    assert boxes[0]["height"] == 40
+    assert boxes[0]["height"] == 37  # v2 mockup .btn (checked against the mockup by test_0710)
     assert not any(box["clipped"] for box in boxes)
     for left, right in zip(boxes, boxes[1:]):
         separated = left["right"] <= right["left"] + 1 or right["right"] <= left["left"] + 1

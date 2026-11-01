@@ -333,6 +333,14 @@ body.v2 .stays-more{display:none}
 .stays-phone{display:none}
 .stays-phone-only{display:none}
 .stays-head-actions{display:flex;gap:8px}
+/* stay page: hand-filing cards (desktop only) */
+.host-stay-detail .stay-filing{padding:16px;margin-top:12px}
+/* stays + stay page help (one closed "How it works", desktop only like the Overview's) */
+body.v2 details.stays-how{display:block;margin:4px 0}
+body.v2 details.stays-how:not([open]) .ui-how-body{display:none}
+body.v2 .stays-how .ui-how-more{display:inline-block;min-height:44px;line-height:44px}
+body.v2 .stays-how > summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;min-height:44px;color:var(--ink3);font-size:14px}
+body.v2 .stays-how > summary::-webkit-details-marker{display:none}
 .stays-links{margin-top:12px}
 .stays-desk .stay-identity-link{display:inline-block;min-height:24px}
 body.v2 .stays-filter select,body.v2 .stays-filter input:not([type=hidden]){border:1px solid #dcdcd7;border-radius:8px;padding:9px 10px}

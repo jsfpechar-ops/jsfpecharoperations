@@ -210,7 +210,9 @@ def test_the_summary_is_in_czech(host):
 
 def test_notifications_render_in_host_content_flow_with_reachable_stay_link(host):
     _alert("dates_changed_resign", "critical", 9501, "Dates changed")
-    response = host.get("/reservations?lang=en")
+    # old-shell layout check: v2 pages (/, /reservations) render the stack inside the page body,
+    # which test_host_wide_geometry_browser checks; /settings still uses the old shell
+    response = host.get("/settings?lang=en")
     assert response.status_code == 200, response.text
 
     tree = _TreeParser()

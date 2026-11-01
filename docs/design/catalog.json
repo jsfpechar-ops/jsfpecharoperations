@@ -325,12 +325,13 @@
     "police-card",
     "police-failed",
     "police-deadline",
-    "stay-section",
     "allgood",
     "code",
     "acc",
     "sm",
-    "stays-more"
+    "stays-more",
+    "stays-how",
+    "stay-filing"
   ],
   "hooks": [
     "sr-only",
@@ -1091,11 +1092,12 @@
     "police-card": "Mockup v2 class used on the stay page.",
     "police-failed": "Mockup v2 class used on the stay page.",
     "police-deadline": "Mockup v2 class used on the stay page.",
-    "stay-section": "Mockup v2 class used on the stay page.",
     "allgood": "Mockup v2 class used on the stay page.",
     "code": "Mockup v2 class used on the stay page.",
     "acc": "Mockup v2 class used on the stay page.",
     "sm": "Small button size from the v2 mockup (.btn.sm).",
-    "stays-more": "Phone-only \"Show more\" link on the stays list (0529 compact)."
+    "stays-more": "Phone-only \"Show more\" link on the stays list (0529 compact).",
+    "stays-how": "Stays list page help (\"How it works\"), desktop only.",
+    "stay-filing": "Stay page hand-filing cards (file by hand / filed by hand), desktop only."
   }
 }

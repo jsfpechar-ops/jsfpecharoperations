@@ -145,14 +145,14 @@ def test_stay_page_cards_hold_their_buttons(base, world, browser):
     context, page = _page(browser, base, world, 1280)
     try:
         page.goto(f"{base}/reservations/{world['stay']}?lang=en")
-        page.wait_for_selector(".guest-card.placeholder")
+        page.wait_for_selector("tr.placeholder")  # v2 guest table: one row per missing guest
         measured = page.evaluate(
             """() => {
               const R = el => el.getBoundingClientRect();
               const out = {placeholders: [], filing: null};
-              document.querySelectorAll('.guest-card.placeholder').forEach(card => {
+              document.querySelectorAll('tr.placeholder').forEach(card => {
                 const c = R(card);
-                const worst = Math.max(...[...card.querySelectorAll('.ui-btn')].map(b => R(b).bottom));
+                const worst = Math.max(...[...card.querySelectorAll('.btn')].map(b => R(b).bottom));
                 out.placeholders.push(Math.round(c.bottom - worst));
               });
               const filing = document.querySelector('#file-by-hand');

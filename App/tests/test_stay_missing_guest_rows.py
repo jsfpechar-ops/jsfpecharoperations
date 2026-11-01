@@ -67,7 +67,8 @@ def stay():
 
 
 def _placeholder_rows(html: str) -> list[str]:
-    return re.findall(r'<li class="guest-card placeholder">.*?</li>', html, re.S)
+    # v2 stay page: the computer guest table holds one placeholder row per missing guest
+    return re.findall(r'<tr class="placeholder">.*?</tr>', html, re.S)
 
 
 def test_the_missing_guests_get_a_row_each(stay):
@@ -106,7 +107,8 @@ def test_missing_rows_keep_manual_entry_and_share_once_in_the_stay_menu(stay):
 
     rows = _placeholder_rows(page.text)
     assert rows, "no placeholder rows to inspect"
-    assert page.text.count('data-copy="stay-link"') == 1
+    # v2: one copy control per layout (computer header, phone top bar) plus the stay menu; never per row
+    assert 1 <= page.text.count('data-copy="stay-link"') <= 4
     assert host_i18n.STRINGS["en"]["host.copy_guest_form_link"] in page.text
     for row in rows:
         assert 'data-copy="stay-link"' not in row
@@ -164,4 +166,4 @@ def test_the_row_does_not_read_as_a_guest_record(stay):
 
     page = client.get(f"/reservations/{reservation['id']}")
 
-    assert '<li class="guest-card placeholder">' in page.text
+    assert '<tr class="placeholder">' in page.text

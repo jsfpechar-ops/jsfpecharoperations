@@ -22,9 +22,16 @@
 {% endif %}
 {% block toolbar %}{% endblock %}
 {% block body %}
-{% with alerts_expanded = true %}{% include "_host_alerts.html" %}{% endwith %}
+{% include "_host_alerts.html" %}
 <div class="stays-phone"><div class="top"><span></span>{% if apartments %}<button class="round" type="button" data-toggle-panel="add-stay-panel" aria-label="{{ t('stays.add_stay') }}">{{ icon('plus', 20) }}</button>{% endif %}</div></div>
-<div class="head stays-head"><div><h1 class="big">{{ t('stays.title') }}</h1></div>{% if apartments %}<div class="stays-head-actions">{% if manual_send %}<form method="post" action="/reservations/submit-ready" class="inline send-all-form"><input type="hidden" name="return_to" value="{{ return_to }}"><button class="btn ghost send-all" type="submit"{% if not ready_send_count %} disabled{% endif %} title="{{ t('send.all_ready_hint') }}">{{ icon('send', 16) }}<span>{{ t('send.all_ready') }}{% if ready_send_count %} ({{ ready_send_count }}){% endif %}</span></button></form>{% endif %}<a class="btn ghost" href="/housebook.csv?{{ csv_export_params }}" data-stays-housebook>{{ t('stays.housebook_download') }}</a><button class="btn" type="button" data-toggle-panel="add-stay-panel">{{ t('stays.add_stay') }}</button></div>{% endif %}</div>
+<div class="head stays-head"><div><h1 class="big">{{ t('stays.title') }}</h1>
+<details class="ui-how stays-how ph-hide" data-how="stays">
+  <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
+  <div class="ui-how-body">
+    <ol class="ui-how-steps">{% for n in (1, 2, 3) %}<li>{{ t('how.stays.' ~ n) }}</li>{% endfor %}</ol>
+    <a class="ui-how-more" href="/guide#stays">{{ t('how.more') }}</a>
+  </div>
+</details></div>{% if apartments %}<div class="stays-head-actions">{% if manual_send %}<form method="post" action="/reservations/submit-ready" class="inline send-all-form"><input type="hidden" name="return_to" value="{{ return_to }}"><button class="btn ghost send-all" type="submit"{% if not ready_send_count %} disabled{% endif %} title="{{ t('send.all_ready_hint') }}">{{ icon('send', 16) }}<span>{{ t('send.all_ready') }}{% if ready_send_count %} ({{ ready_send_count }}){% endif %}</span></button></form>{% endif %}<a class="btn ghost" href="/housebook.csv?{{ csv_export_params }}" data-stays-housebook>{{ t('stays.housebook_download') }}</a><button class="btn" type="button" data-toggle-panel="add-stay-panel">{{ t('stays.add_stay') }}</button></div>{% endif %}</div>
 {{ onboarding_banner(onboarding) }}
 
 {% if apartments %}
