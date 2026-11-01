@@ -133,6 +133,8 @@ CLEANING_WORDS: Dict[str, str] = {
     "status_scheduled": "Đã lên lịch",
     "status_conflict": "Kiểm tra giờ",
     "status_hours": "Thiếu giờ",
+    "share_cleaner": "Chia sẻ lịch với người dọn",
+    "subtitle": "Lịch dọn tự tạo từ ngày khách trả phòng. Người dọn xem lịch qua một đường liên kết.",
 }
 
 # validation_i18n.CS_MESSAGES key (the English sentence) -> Vietnamese.

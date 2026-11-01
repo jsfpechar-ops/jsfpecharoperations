@@ -10,8 +10,8 @@ WORDS = {
         "Úklid"
     ],
     "subtitle": [
-        "Upcoming turnovers, door codes and property instructions in one place.",
-        "Nadcházející úklidy, kódy ke dveřím a pokyny na jednom místě."
+        "Cleanings are created from departures. Your cleaner sees the schedule through a link.",
+        "Úklidy vznikají samy z odjezdů. Uklízečka vidí svůj rozpis přes odkaz."
     ],
     "schedule": [
         "Cleaning calendar",
@@ -354,7 +354,8 @@ WORDS = {
     "col_status": ["Status", "Stav"],
     "status_scheduled": ["Scheduled", "Naplánováno"],
     "status_conflict": ["Check the time", "Zkontrolujte čas"],
-    "status_hours": ["Hours missing", "Chybí časy"]
+    "status_hours": ["Hours missing", "Chybí časy"],
+    "share_cleaner": ["Share schedule with cleaner", "Sdílet rozpis s uklízečkou"]
 }
 
 def translator(lang: str):
