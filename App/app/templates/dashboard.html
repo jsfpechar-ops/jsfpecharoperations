@@ -3,7 +3,7 @@
 {% set nav = 'dashboard' %}
 {% set how_key = 'dashboard' %}
 {% set body_kind = 'detail' %}
-{% from "_components.html" import progress_pill, copy_inline, row_menu_begin, row_menu_end, onboarding_welcome, next_action, deadline_badge, property_identity, guest_count with context %}
+{% from "_components.html" import progress_pill, copy_inline, row_menu_begin, row_menu_end, onboarding_welcome, next_action, deadline_badge, property_identity, guest_count, onboarding_banner, onboarding_finish, v2_status_pill with context %}
 {% from "_icons.html" import icon with context %}
 {% set show_welcome = not apartments and not onboarding.dismissed %}
 {% block title %}{{ t('dashboard.title') }}{% endblock %}
@@ -16,7 +16,7 @@
 {% macro overview_card(line, first=False) %}
 {% set ic_tone = 'red' if line.tone == 'red' else ('amber' if line.tone == 'amber' else 'neutral') %}
 <div class="card needs-you-card-item" data-tone="{{ line.tone }}" data-needs-you="{{ line.kind }}"{% if line.stay_id %} data-needs-you-stay="{{ line.stay_id }}"{% endif %}{% if line.dismiss_id %} data-notification{% endif %}>
-  <div class="ic ic-{{ ic_tone }}" aria-hidden="true">{{ '!' if line.tone in ('red', 'amber') else 'i' }}</div>
+  <div class="ic" data-ic="{{ ic_tone }}" aria-hidden="true">{{ '!' if line.tone in ('red', 'amber') else 'i' }}</div>
   <div>
     <div class="t">{{ line.subject }}</div>
     {% if line.text %}<p>{{ line.text }}</p>{% endif %}
@@ -41,6 +41,7 @@
 
 {% block body %}
 {% if not apartments %}
+  {% with alerts_expanded = true %}{% include "_host_alerts.html" %}{% endwith %}
   <div class="head"><div><h1>{{ t('dashboard.title') }}</h1><p class="sub">{{ today.isoformat() | date_long(lang) }}</p></div></div>
   {% if not onboarding.dismissed %}{{ onboarding_welcome(onboarding, compact=True) }}
   {% else %}{% call ui_empty(t('onboarding.skipped_title'), t('onboarding.skipped_body'), t('apartments.add'), '/apartments/new') %}{{ ui_button(t('onboarding.open_checklist'), 'secondary', href='/onboarding') }}{% endcall %}{% endif %}
@@ -52,15 +53,26 @@
   <div class="head ov-head"><div>
     <h1>{{ t('dashboard.title') }}</h1>
     <p class="sub">{{ today.isoformat() | date_long(lang) }}</p>
+    <details class="ui-how ov-how" data-how="dashboard">
+      <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
+      <div class="ui-how-body">
+        <ol class="ui-how-steps">{% for n in (1, 2, 3) %}<li>{{ t('how.dashboard.' ~ n) }}</li>{% endfor %}</ol>
+        <a class="ui-how-more" href="/guide#overview">{{ t('how.more') }}</a>
+      </div>
+    </details>
     <p class="ov-links">
-      <a href="/guide" class="ov-link">{{ t('how.toggle') }}</a>
       <a href="/cleaning/new" class="ov-link">+ {{ t('nav.cleaning') }}</a>
       {% if demo_loaded %}<form method="post" action="/demo/reset" class="inline ov-inline" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">{{ ui_button(t('demo.clear'), 'quiet', type='submit') }}</form>{% endif %}
     </p>
   </div>
   <a class="btn" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">{{ t('stays.add_stay') }}</a></div>
 
-  <section id="needs-action" data-needs-you-card data-dashboard-refresh="stats" aria-labelledby="needs-you-title">
+  {#- 0717: alerts with no todo card of their own; a stay's alert stays hidden when its line is already here. -#}
+  {% set ny_stay_ids = needs_you.lines | selectattr('stay_id') | map(attribute='stay_id') | list %}
+  {% set ny_alert_ids = needs_you.lines | selectattr('dismiss_id') | map(attribute='dismiss_id') | list %}
+  {% with open_alerts = open_alerts | rejectattr('reservation_id', 'in', ny_stay_ids) | rejectattr('id', 'in', ny_alert_ids) | list, alerts_expanded = true %}{% include "_host_alerts.html" %}{% endwith %}
+  {{ onboarding_banner(onboarding) }}
+  <section id="needs-action" data-needs-you-card aria-labelledby="needs-you-title">
     <h2 id="needs-you-title">{{ t('needs_you.title') }}</h2>
     <div class="todo ov-section">
     {% if ny_lines %}
@@ -75,23 +87,26 @@
     </details>
     {% endif %}
   </section>
+  {% if onboarding and onboarding.finished and onboarding.finish and not onboarding.dismissed %}{{ onboarding_finish(onboarding) }}{% endif %}
   {% if month_summary %}
   <div class="quiet ov-month" data-dashboard-month><span>{{ t('dashboard.month.label') }}</span> <span class="ov-mi"><b>{{ month_summary.guests }}</b> {{ tp('dashboard.month.guests', month_summary.guests) }}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{ month_summary.nights }}</b> {{ tp('dashboard.month.nights', month_summary.nights) }}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{ month_summary.reported }}</b> {{ tp('dashboard.month.reported', month_summary.reported) }}</span></div>
   {% endif %}
 
   <h2>{{ t('calendar.calendar') }}</h2>
   {% set wd = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'] if lang == 'cs' else ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'] %}
+  <div class="scroll-x">
   <div class="card cal ov-section">
     <div class="cgrid"><div></div>{% for d in cal_days %}<div class="cd{{ ' today' if loop.first }}">{{ wd[d.weekday()] }} {{ d.day }}</div>{% endfor %}</div>
     {% for row in cal_rows %}
     <div class="cgrid crow"><div class="cn">{{ row.name }}</div>{% for bar in row.bars %}<a class="bar {{ bar.css }}" data-c1="{{ bar.col_start }}" data-c2="{{ bar.col_end }}" data-row="{{ bar.row }}"{% if bar.overdue %} data-overdue{% endif %} href="{{ bar.url }}">{{ bar.label }}</a>{% endfor %}</div>
     {% endfor %}
   </div>
+  </div>
   <p class="ov-cal-more"><a href="/?cal_view=calendar" class="ov-cal-link">{{ t('dashboard.calendar.full') }}</a></p>
   {% if cal_view %}{% include "_dashboard_calendar.html" %}{% endif %}
 
   <h2>{{ t('dashboard.today.title') }}</h2>
-  <div class="card" data-dashboard-refresh="work"><table><thead><tr><th>{{ t('archive.col.guest') }}</th><th>{{ t('stay_fees.col.property') }}</th><th>{{ t('host.stay_dates') }}</th><th>{{ t('filter.status') }}</th><th></th></tr></thead><tbody>
+  <div class="card"><table><thead><tr><th>{{ t('archive.col.guest') }}</th><th>{{ t('stay_fees.col.property') }}</th><th>{{ t('host.stay_dates') }}</th><th>{{ t('filter.status') }}</th><th></th></tr></thead><tbody>
   {% for row in today_rows %}
     {% set reservation = row.reservation %}{% set progress = row.progress %}{% set cell = row.deadline_cell %}
     {% set stay_label = reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else reservation.internal_name %}
@@ -104,14 +119,7 @@
       <td>{% if arriving %}{{ t('calendar.arrival') }} · {{ tp('dashboard.today.nights', row.nights) }}{% else %}{{ t('calendar.departure') }}{% endif %}</td>
       <td class="dashboard-row-task">
         {# 0715: every Stav state is a pill. Tones: ok = done, warn = waiting or ready to send, bad = failed or overdue, n = neutral. #}
-        {% if cell.level == 'overdue' %}<span class="pill p-bad">{{ deadline_badge(cell) }}</span>
-        {% elif progress.status == 'failed' %}<span class="pill p-bad">{{ progress_pill(progress.status, reservation.automation_mode) }}</span>
-        {% elif progress.not_registered %}<span class="pill p-warn"><span class="ui-badge ui-badge-action" data-tone="amber">{{ tp('host.missing', progress.not_registered) }}</span></span>
-        {% elif cell.state == 'filed_on_time' %}<span class="pill p-ok">{{ deadline_badge(cell) }}</span>
-        {% elif cell.state == 'filed_late' %}<span class="pill p-warn">{{ deadline_badge(cell) }}</span>
-        {% elif progress.status in ('awaiting_guest', 'incomplete') and reservation.automation_mode == 'immediate' %}<span class="pill p-warn">{{ t('status.waiting_guest') }}</span>
-        {% elif progress.status in ('reported', 'not_required') %}<span class="pill p-ok">{{ t('status.reported') }}</span>
-        {% else %}{% set demo_row = '(demo)' in reservation.internal_name or reservation.source == 'demo' %}<span class="pill {{ 'p-n' if demo_row and progress.status in ('ready', 'awaiting_verification') else ('p-warn' if progress.status in ('ready', 'awaiting_verification', 'awaiting_guest', 'incomplete') else 'p-n') }}">{{ progress_pill(progress.status, reservation.automation_mode, is_demo=demo_row) }}</span>{% endif %}
+        {{ v2_status_pill(cell, progress, reservation) }}
       </td>
       <td class="dots dashboard-row-actions">
         {{ row_menu_begin() }}

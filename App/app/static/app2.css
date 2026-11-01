@@ -138,9 +138,9 @@ body.v2 .crow{grid-auto-rows:44px}
 .ov-more{margin-top:12px}
 .ov-cal-more{margin:-16px 0 28px}
 .ov-cal-link{color:var(--ink3);font-size:13px}
-.ic-red{background:var(--bads);color:var(--bad)}
-.ic-amber{background:var(--warns);color:var(--warn)}
-.ic-neutral{background:#efefeb;color:var(--ink2)}
+.ic-red,.ic[data-ic=red]{background:var(--bads);color:var(--bad)}
+.ic-amber,.ic[data-ic=amber]{background:var(--warns);color:var(--warn)}
+.ic-neutral,.ic[data-ic=neutral]{background:#efefeb;color:var(--ink2)}
 .cal .bar[data-overdue]{background:var(--bads);color:var(--bad)}
 .cal .bar[data-c1="2"]{grid-column-start:2}.cal .bar[data-c2="2"]{grid-column-end:2}
 .cal .bar[data-c1="3"]{grid-column-start:3}.cal .bar[data-c2="3"]{grid-column-end:3}
@@ -202,3 +202,7 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
 .side .env-badge{display:inline-block;margin:0 8px;padding:0 8px;border-radius:999px;font-size:12px;line-height:16px;color:var(--ink2);background:var(--side2)}
 .side .support-link{display:block;font-size:12px}
 .side .support-link small{display:block;font-size:12px;color:var(--ink3)}
+/* 0717: closed help on the v2 Overview header: body hidden until opened, link is a 44 px tap target. */
+.ov-head details.ui-how{display:block;margin:4px 0}
+.ov-head details.ui-how:not([open]) .ui-how-body{display:none}
+.ov-head .ui-how-more{display:inline-block;min-height:44px;line-height:44px}

@@ -141,7 +141,8 @@ def test_lines_past_the_fifth_wait_behind_show_more(host):
 
     assert len(_setup_lines(page.text)) == 6
     assert "Show 2 more" in page.text  # 0706: the v2 Overview shows 4 cards before "show more"
-    before_more = page.text.split('class="needs-you-more"', 1)[0]
+    # 0717: the "show more" details carries ov-section too, so split on the shared prefix.
+    before_more = page.text.split('class="needs-you-more', 1)[0]
     assert len(_setup_lines(before_more)) == 4
 
 
