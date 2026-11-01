@@ -1254,6 +1254,7 @@ STRINGS: Dict[str, str] = {
     "stays.pagination.showing_plural": "Hiển thị %(from)s–%(to)s trong %(total)s lượt lưu trú.",
     "stays.pagination.prev": "Trước",
     "stays.pagination.next": "Sau",
+    "stays.more": "Xem thêm",
     "stays.pagination.label": "Trang %(page)s/%(pages)s",
     "stays.empty.archive": "Không có lượt lưu trú nào đã lưu trữ. Bạn có thể lưu trữ mục nhầm từ bất kỳ dòng lưu trú nào.",
     "stays.empty.filter": "Không có lượt lưu trú nào khớp bộ lọc.",

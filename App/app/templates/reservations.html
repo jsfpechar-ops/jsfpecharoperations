@@ -33,7 +33,7 @@
       <h2>{{ t('stays.add_panel.title') }}</h2>
       <button class="ui-btn ui-btn-quiet ui-btn-compact" type="button" data-close-panel>{{ t('common.close') }}</button>
     </div>
-    <p class="ui-sub">{{ t('stays.add_panel.lede') }}</p>
+    <p class="sub">{{ t('stays.add_panel.lede') }}</p>
     <form method="post" action="/reservations">
       <div class="grid">
         <div class="ui-field">
@@ -91,14 +91,14 @@
   <a class="chip{{ ' on' if date_range == value and report != 'failed' }}" href="/reservations?range={{ value }}&status={{ status }}&apartment={{ apartment_id or '' }}">{{ t(label_key) }}</a>
   {% endfor %}
   <a class="chip{{ ' on' if report == 'failed' }}" href="/reservations?report=failed&status={{ status }}&apartment={{ apartment_id or '' }}">{{ t('stays.chip.failed') }}</a>
-  <a class="chip{{ ' on' if show_archive }}" href="/reservations?range=archive&status={{ status }}&apartment={{ apartment_id or '' }}">{{ t('stays.chip.archive') }}</a>
-  <button class="chip" type="button" data-filter-toggle aria-expanded="true" aria-controls="stays-filter-panel" hidden>{{ t('host.filter.filters') }}</button>
+  <a class="chip ph-hide{{ ' on' if show_archive }}" href="/reservations?range=archive&status={{ status }}&apartment={{ apartment_id or '' }}">{{ t('stays.chip.archive') }}</a>
+  <button class="chip ph-hide" type="button" data-filter-toggle aria-expanded="true" aria-controls="stays-filter-panel" hidden>{{ t('host.filter.filters') }}</button>
 </div>
-<p class="ui-sub" data-filter-summary>{{ stay_summary }}</p>
+<p class="sub ph-hide" data-filter-summary>{{ stay_summary }}</p>
 <div class="saved-views" data-saved-views data-label="{{ t('stays.filter.saved_views') }}"></div>
 
 {% if show_archive %}
-<p class="ui-sub">{{ t('stays.archive_note') }}</p>
+<p class="sub ph-hide">{{ t('stays.archive_note') }}</p>
 {% endif %}
 <form id="stays-filter-panel" method="get" action="/reservations" class="filters ui-section host-filter-panel stays-filter" data-filter-panel data-filter-route="stays" data-original-range="{{ date_range }}">
   <div class="filter-fields">
@@ -255,7 +255,7 @@
     </tbody>
   </table>
 </div>
-<p class="ui-sub stays-count">
+<p class="sub stays-count ph-hide">
   {% if total == 1 %}
     {{ t('stays.pagination.showing', from=((page - 1) * page_size) + 1, to=[page * page_size, total] | min, total=total) }}
   {% else %}
@@ -263,7 +263,8 @@
   {% endif %}
 </p>
 {% if page_count > 1 %}
-  <nav class="stays-pager" aria-label="{{ t('stays.title') }}">{% if previous_page_url %}<a class="ui-btn ui-btn-quiet ui-btn-compact" href="{{ previous_page_url }}" rel="prev">{{ t('stays.pagination.prev') }}</a>{% else %}<span class="ui-btn ui-btn-quiet ui-btn-compact" aria-disabled="true">{{ t('stays.pagination.prev') }}</span>{% endif %}<span class="stays-pager-label">{{ t('stays.pagination.label', page=page, pages=page_count) }}</span>{% if next_page_url %}<a class="ui-btn ui-btn-quiet ui-btn-compact" href="{{ next_page_url }}" rel="next">{{ t('stays.pagination.next') }}</a>{% else %}<span class="ui-btn ui-btn-quiet ui-btn-compact" aria-disabled="true">{{ t('stays.pagination.next') }}</span>{% endif %}</nav>
+  <nav class="stays-pager ph-hide" aria-label="{{ t('stays.title') }}">{% if previous_page_url %}<a class="btn ghost sm" href="{{ previous_page_url }}" rel="prev">{{ t('stays.pagination.prev') }}</a>{% else %}<span class="btn ghost sm" aria-disabled="true">{{ t('stays.pagination.prev') }}</span>{% endif %}<span class="stays-pager-label">{{ t('stays.pagination.label', page=page, pages=page_count) }}</span>{% if next_page_url %}<a class="btn ghost sm" href="{{ next_page_url }}" rel="next">{{ t('stays.pagination.next') }}</a>{% else %}<span class="btn ghost sm" aria-disabled="true">{{ t('stays.pagination.next') }}</span>{% endif %}</nav>
+  {% if next_page_url %}<div class="list stays-more"><a class="link" href="{{ next_page_url }}" rel="next"><span>{{ t('stays.more') }}</span>{{ icon('chevron-right', 16) }}</a></div>{% endif %}
 {% endif %}
 {% elif show_archive %}
   {{ empty_state('', t('stays.empty.archive')) }}
@@ -280,16 +281,16 @@
   {% call empty_state('', t('stays.empty.no_apartments'), '/apartments/new', t('stays.empty.add_first')) %}
     <form method="post" action="/demo" class="empty-state-extra">
       <button class="ui-btn ui-btn-secondary" type="submit">{{ t('demo.load') }}</button>
-      <p class="ui-sub">{{ t('demo.load_detail') }}</p>
+      <p class="sub">{{ t('demo.load_detail') }}</p>
     </form>
   {% endcall %}
 {% else %}
   {{ empty_state('', t('stays.empty.no_apartments'), '/apartments/new', t('stays.empty.add_first')) }}
 {% endif %}
 <div class="list stays-links">
-  <a class="link" href="/submissions"><span>{{ t('tabs.stays.reports') }}</span>{{ icon('chevron-right', 16) }}</a>
-  <a class="link" href="/housebook"><span>{{ t('tabs.stays.register') }}</span>{{ icon('chevron-right', 16) }}</a>
-  <a class="link" href="/reservations.csv?{{ csv_export_params }}"><span>{{ t('csv.export_stays') }}</span>{{ icon('download', 16) }}</a>
+  <a class="link ph-hide" href="/submissions"><span>{{ t('tabs.stays.reports') }}</span>{{ icon('chevron-right', 16) }}</a>
+  <a class="link ph-hide" href="/housebook"><span>{{ t('tabs.stays.register') }}</span>{{ icon('chevron-right', 16) }}</a>
+  <a class="link ph-hide" href="/reservations.csv?{{ csv_export_params }}"><span>{{ t('csv.export_stays') }}</span>{{ icon('download', 16) }}</a>
   <a class="link stays-phone-only" href="/housebook.csv?{{ csv_export_params }}" data-stays-housebook-phone><span>{{ t('stays.housebook_download') }}<small>{{ t('stays.housebook_hint') }}</small></span>{{ icon('download', 16) }}</a>
 </div>
 {% endblock %}
