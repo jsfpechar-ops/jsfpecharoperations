@@ -224,12 +224,21 @@ Status: blocked. Done: steps 1 to 2. Left: step 3 (screenshots app-390.png, app-
 - Owner/orchestrator: take the 320 and 390 px screenshots and check no sideways scroll.
 
 ## 0547
-Status: blocked (executor, Haiku 5.5). Done: step 1 (commit 151d29f). Left: step 2 (bug B), step 3 (tests, section 6 result below).
-- Step 1: app.js `initPropertyPage` (switch status, invalid reveal, return section, calendar connect); host.js 0544 hunk reverted; keys 0547a in base.html; static_versions.json rewritten.
-- Section 6 run: `1 failed, 32 passed, 6 deselected`. Failure: `test_0504_mixed_inits_once_browser.py:90` `AssertionError: ['hashchange']`. Not yet explained; brief §8 says stop.
-- Bug B: `tests/test_host_unsaved_changes_browser.py::test_without_javascript_nothing_changes` fails before any click: `.host-property-save .ui-btn-primary` does not exist in the templates (the test predates the one-page layout). The brief's `.savebar button[type=submit]` intercept was not reproduced, so the elementFromPoint check was not run.
-- Question for the owner: is the 0504 hashchange count expected to change, and should the stale test in test_host_unsaved_changes_browser.py be updated (out of brief scope)?
-
+Status: blocked (executor, Haiku 5.5). Done: steps 1 and 2. Left: step 3 (browser asserts 1 to 4 in test_0541 not written yet), and the failures below.
+- Step 1: app.js `initPropertyPage` (switch status, invalid reveal, return section, calendar connect); host.js 0544 hunk reverted; keys 0547a. Commit 151d29f.
+- Step 1b: `initPropSectionLinks` binds window hashchange once (`claimNode(window, ...)`), which fixes 0504 (`['hashchange']`). Keys 0547b. 0503 and 0504 pass.
+- Step 2: bug B. Cause: the savebar z-index rule sat inside `@media (scripting: enabled)` (app2.css line 586 block), so with JS off it never applied and `aside.preview` covered the button. Also `var(--z-sticky)` is undefined on host pages (tokens.css not loaded). Fix: top-level `@media (min-width:1024px){body.v2 .savebar{z-index:20}}` placed before the scripting block. Keys 0547c. `test_without_javascript_nothing_changes` passes.
+- Section 6 tails (chromium, `-k "not webkit"`):
+  - test_host_unsaved_changes_browser: `4 failed, 11 passed`. Failing: `test_save_bar_discard_changes_button` x4, line 283 `assert 'Zapnuto' == ''`: discard still does not restore the door-code status text (the change handler is not reached for that switch). Not fixed.
+  - test_property_navigation_browser: `1 failed, 11 passed`. Line 464: after save the test expects `section=automation`, the page returns `section=reporting`. This follows the brief mapping (sec-police/sec-fee to reporting), so the test looks stale. Question for the owner or orchestrator; not changed.
+  - test_onboarding_followup_browser: `16 passed` (includes the uncommitted phone-row edit, now committed).
+  - test_0541_property_page_phone_browser: `1 passed` (no step-3 asserts yet).
+  - test_0503_page_inits_once_browser: `2 passed`. test_0504_mixed_inits_once_browser: `2 passed`.
+  - test_static_versions: `3 passed` (after `--write`).
+  - ruff `--select E9,F63,F7,F82,F401,F841`: App `app tests tools` clean. The design_lint/scripts run printed `Found 1 error.` and was not triaged. context_lint: OK.
+- Commits: 1b (hashchange), step 2 (savebar), followup test commit. PNGs restored, none committed.
+Deviations: none to the brief's JS. Test expectations in test_host_unsaved_changes_browser and test_property_navigation_browser conflict with the brief (see above).
+Left: step 3 (test_0541 asserts 1 to 4, door-code seed); discard door-code status (line 283); navigation test section expectation (line 464); the design_lint ruff error.
 
 ## 0544
 
