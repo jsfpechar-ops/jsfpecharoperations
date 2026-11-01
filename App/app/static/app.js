@@ -1975,6 +1975,15 @@
     }
   }
 
+  /* 0540: on the phone the property page opens with every section closed, as the mockup.
+     Only a section opened by default (no ?section=) is closed; a requested one stays open. */
+  function initPhoneDefaultClosed() {
+    if (!window.matchMedia("(max-width: 1023px)").matches) return;
+    document.querySelectorAll("details[data-default-open]").forEach(function (node) {
+      if (!claimNode(node, "initPhoneDefaultClosed")) return;
+      node.removeAttribute("open");
+    });
+  }
   /* ---- 0084 O1: unsaved changes, in-app Save / Discard / Stay ----------------
      A form with data-unsaved-guard that holds changes (data-dirty, set by
      initUnsavedForms) asks before an in-app link leaves it:
@@ -1983,17 +1992,14 @@
                refused save must stay on its error page).
        Discard restores the loaded values, then follows the link.
        Stay    (also Esc) keeps the edits and returns focus to the link.
-     Links that keep the draft on screen (property Settings sub-nav, cards and
-     anchors into Settings, in-page #anchors) do not ask. Tab close, reload and
+     Links that keep the draft on screen (cards and anchors into
+     Settings, in-page #anchors) do not ask. Tab close, reload and
      other sites keep the browser's own prompt. Without JavaScript nothing here
      runs and the forms post as before. */
   function initUnsavedDialog() {
     var forms = Array.prototype.slice.call(document.querySelectorAll("form[data-unsaved-guard]"));
     var dialog = document.getElementById("unsaved-dialog");
     if (!forms.length) return;
-    var property = document.querySelector("[data-property-views]");
-    var propertyBase = property && property.getAttribute("data-property-base");
-    var SETTINGS_SECTIONS = ["property", "guests", "reporting", "lock", "automation"];
     var pendingLink = null;
 
     function isDirty(form) { return form.getAttribute("data-dirty") === "1"; }
@@ -2021,18 +2027,6 @@
     // True when following this link keeps the draft on screen.
     function keepsDraft(url) {
       var here = window.location;
-      if (property && propertyBase && url.pathname === propertyBase) {
-        var target = null;
-        if (url.hash.length > 1) {
-          try { target = document.getElementById(decodeURIComponent(url.hash.slice(1))); } catch (_) { target = null; }
-        }
-        var panel = target && target.closest("[data-property-view]");
-        if (panel) return panel.getAttribute("data-property-view") === "settings";
-        var view = url.searchParams.get("view");
-        if (view) return view === "settings";
-        if (SETTINGS_SECTIONS.indexOf(url.searchParams.get("section")) >= 0) return true;
-        return url.search === here.search && !!url.hash;
-      }
       return url.pathname === here.pathname && url.search === here.search && !!url.hash;
     }
 
@@ -2143,6 +2137,7 @@
     initPowerTools();
     initSavedViews();
     initInlineEdit();
+    initPhoneDefaultClosed();
   }
   window.UbyHost = window.UbyHost || {};
   window.UbyHost.initPage = initPage;
