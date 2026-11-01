@@ -24,18 +24,8 @@
 	}
 	encode zstd gzip
 	header Strict-Transport-Security "max-age=31536000"
-	# UBYHOST_GO_PATHS: space-separated paths for the Go service (ubyhost-go); empty = all traffic to Python.
-	# Unset or empty keeps every request on Python, so this changes nothing until the owner sets it.
-	@go path {$UBYHOST_GO_PATHS:/__go_off__}
-	handle @go {
-		reverse_proxy ubyhost-go:8081 {
-			header_up CF-Connecting-IP {remote_host}
-		}
-	}
-	handle {
-		reverse_proxy ubyhost:8080 {
-			# No Cloudflare in front: the TCP peer is the client.
-			header_up CF-Connecting-IP {remote_host}
-		}
+	reverse_proxy ubyhost:8080 {
+		# No Cloudflare in front: the TCP peer is the client.
+		header_up CF-Connecting-IP {remote_host}
 	}
 }
