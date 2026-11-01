@@ -127,3 +127,30 @@ Done: steps (a) and (b). Left: (c) guest-card overflow at 360/390, (d) section 1
 
 ### Owner steps left
 - None. No push, no PR.
+
+## Run 5 (section 15; commit 644b8e8 step c)
+Status: blocked
+Done: step (c). Left: section 13 (setup checklist test, button heights, field-button-misaligned), items 7 and 8, section 6, the two screenshots. Tool-call cap reached.
+
+### Step (c): guest-card overflow at 360 with JS off (commit 644b8e8)
+- Probe (temporary edit to the test, reverted): at 360, `java_script_enabled=False`, the widest overflow is `.guest-btns` and its `button.btn.sm.copy-btn` at right=367 (innerWidth 360).
+- Cause: `app2.css` has an unclosed `@media (scripting: enabled) {` at line 592. Every rule after it, including the 0545 guest-button block and the 0736 item 4 rule, sits inside it, so with JS off `.guest-btns` stayed `display:block`.
+- Change: moved the 0545 guest-pin/guest-btns block and the 0736 item 4 rule above the scripting block (top level). Grid track changed to `minmax(0,1fr)`.
+- `base.html` app2.css key 20261101-2210 to 20261101-2330; `tests/static_versions.json` rewritten with `--write` (41 files).
+- Tests:
+  - `tests/test_static_versions.py`: `3 passed in 0.12s`
+  - `-k "wizard_polish"` (12 cases, browser required): `12 passed, 73 deselected in 45.61s`, 0 skipped. The four `[False-360/390-*]` cases now pass.
+  - `-k "wizard_polish or review_fixes"`: `1 failed, 12 passed, 72 deselected in 48.36s`. The failure is `test_review_fixes_in_the_browser` (line 995, `a[href*='section=guests']` count 0 on `/apartments/2?view=overview`). It failed before this step too and is not triaged.
+- Screenshots: none this run.
+- PNGs rewritten by test runs under `docs/tasks/0102-evidence/` were reverted with `git checkout --`; none committed.
+
+### Deviations
+- The unclosed scripting block is not fixed. Closing it would change which no-JS rules apply across all of `app2.css`, so it needs an owner or orchestrator decision.
+- Done: step (c). Left: section 13, items 7 and 8, section 6, screenshots.
+
+### Questions
+1. Should the missing `}` for `@media (scripting: enabled)` in `App/app/static/app2.css` (line 592) be found and fixed? Every rule after it is currently JS-gated.
+2. `test_review_fixes_in_the_browser` fails on `a[href*='section=guests']`: is this in scope for run 6?
+
+### Owner steps left
+- None. No push, no PR.
