@@ -141,7 +141,8 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
     assert empty_page.status_code == 200
 
     pages = [
-        ("dashboard", "/"),
+        # 0720: "/" is the v2 dashboard, which does not load host-controls.css. Old-shell page instead.
+        ("settings", "/settings"),
         ("stays", "/reservations"),
         ("stay-detail", reservation_url),
         ("properties", "/apartments"),
@@ -200,7 +201,8 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
         # focus context; static panels do not acquire a pointer cursor.
         for width, expected_height in ((360, 44), (390, 44), (1280, 40)):
             page.set_viewport_size({"width": width, "height": 900})
-            page.goto(f"{base}/?lang=en")
+            # 0720: .ui-ph-acts is the old-shell page header (host_page.html); "/" is v2 and has none.
+            page.goto(f"{base}/apartments?lang=en")
             heights = page.locator(".ui-ph-acts .ui-btn-primary").evaluate_all(
                 "els => els.map(el => el.getBoundingClientRect().height)"
             )
