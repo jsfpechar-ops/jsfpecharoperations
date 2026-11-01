@@ -452,3 +452,33 @@ Status: review-ready for steps 1 to 4, with the open items below.
 - test_0534, test_0531, test_static_versions, test_0710 (-k "property or not v2_page"): 36 passed, 0 skipped.
 - Screenshots: app-390, app-390-open, app-320, mockup-390 in docs/tasks/screenshots-0540/. Viewed: app-390 shows the label, closed basics, list rows; app-390-open shows one-row Cancel and Save; the copy icon is not visible; the app is in English (the capture uses ?lang=en), the brief expects Kopírovat odkaz.
 - Left: the Calendars row keeps a card border in the screenshot (not traced). The copy-button colour fix needs a root-cause check (`!important` is a workaround). The 0710 phone entry compares only the h1, h2.sec and dot; guest card and rows are not compared against the mockup.
+
+## 0538 part B
+
+Status: blocked (tool-call cap reached; part B not finished). Executor: Haiku 5.5, branch wt-0538b.
+
+Commits: `0538 step 1` (ea4034b, amended to include the geometry file; message lost its body), `0538 step 2`.
+
+Per file (`--tb=line -rfs`, from App/):
+- test_host_list_cards_browser.py: fixed. Properties use `.props-card` from 1024 px and `.props-phone` with `a.card.prop` below. Expected cards = width < 1024 for properties. Result: 1 passed.
+- test_host_wide_geometry_browser.py: 8 passed, 2 failed.
+  - Fixed: properties lane `.props-card, .props-phone, .panel.empty`; fee-setup section `section=fee` and lane `details.prop-sec#sec-fee`; header box `.head, h1`; v2 properties asserts alertStack None.
+  - Left: test_host_wide_lanes_align (fee-setup at 1024: "page header is missing", the v2 property page has no `.ui-ph`/`.head`). test_direct_fee_backlinks_align_with_page_lane (`#stay-fee-settings` has width 0 at y 2311: hidden inside a closed `details`; needs the section opened or the test to open it).
+- test_onboarding_followup_browser.py: NOT investigated, 16 failed (first run, 424 s). Seen: rows_hover[2048-cs], current_property_name_demo_label[390-en/cs, 1280-en/cs], native_record_links_without_javascript[390, 1920]. The other 9 names were not captured.
+- test_0201_tabbar_safe_area_browser.py: 13 passed.
+- test_0399_open_buttons_click_browser.py: 1 passed, 2 failed. Fixed: /apartments now finds its open targets (a.card.prop, tr.clickable-row a.row-primary-link). Left: "no visible Open on the property overview" at 390 and 1280 (the v2 aside Guest links row, line ~93).
+- test_0282_signature_dialog_browser.py: 1 failed (dialog box at 390 px, `x 34, y 306.5, w 300, h 150`). Not a list or property markup change. Not ours.
+- test_dashboard_calendar_browser.py: 14 passed.
+- test_host_controls_browser.py: 1 failed, `link[href*="host-controls.css"]` count 0 on /apartments (assert 0 == 1, line 171). Stylesheet question, not selector. Decision needed: does the v2 list load host-controls.css? Not ours until the owner or orchestrator says.
+
+Ruff (`E9,F63,F7,F82,F401,F841`): run, output in the commit step.
+
+Section 8 list (test changes):
+- test_host_list_cards_browser.py: selectors and cards expectation for properties (viewport rule), labels check skipped for phone cards.
+- test_host_wide_geometry_browser.py: properties lane selector, fee-setup section key and lane, header box, v2 alertStack None.
+- test_0399_open_buttons_click_browser.py: FIRST_OPEN and click locator widened.
+- No test deleted. No save/POST test touched. No layout bug found on the list page at 760/1024/1280/1440.
+
+Not ours: test_0282_signature_dialog_browser.py; test_host_controls_browser.py (stylesheet link, decision needed); test_onboarding_followup_browser.py (not investigated, needs its own pass).
+
+Left: wide_geometry 2 fails, 0399 property overview Open, onboarding_followup 16 fails, host_controls decision, ruff result, 390 px screenshots not taken (no template or CSS change, so not required).
