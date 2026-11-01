@@ -1514,6 +1514,7 @@ STRINGS: Dict[str, str] = {
     "apartments.title": "Chỗ ở",
     "apartments.entities_link": "Đơn vị vận hành",
     "apartments.add": "Thêm chỗ ở",
+    "apartments.sub": "Xanh: xong · đỏ: thiếu · xám: không dùng. Bấm vào một dòng.",
     "apartments.table.property": "Chỗ ở",
     "apartments.table.entity": "Đơn vị vận hành pháp lý",
     "apartments.table.idub": "IDUB",
