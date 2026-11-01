@@ -115,3 +115,23 @@ Step 2, file by file (one pytest process per file, `--tb=line -rs`):
 - Shell base check: not yet run. Our branch touches `reservations.html`, `reservation_detail.html` and app2.css; the failing list tests use stays-list selectors, so none are "fails on the shell base too" so far.
 Screenshots: `docs/tasks/screenshots-0529-final/` holds stays-390/1280, stay-390/1280 (app) and mockup-stays-390/1280, mockup-stay-390/1280. Not yet viewed.
 Left for next run: step 2 fixes above; view the four app shots once and list differences; rerun the §6 list.
+
+## Old tests
+
+Run B-continuation (executor, branch task/0529-tests). Status: blocked, 25-call checkpoint.
+
+| File | Result | Commit |
+|---|---|---|
+| test_host_list_layouts_browser | pass (earlier run) | 334a1326 |
+| test_overhaul | pass (earlier run) | 1bb65f66 |
+| test_design_guardrails_browser | border test passes (row line now td border-bottom 1px; card left-border check removed) | b696cbbc |
+| test_host_list_page_layout_browser | 4 of 5 pass; `test_tabs_are_links_that_mark_the_open_page` still asserts a sub-tab strip on /reservations (not in the owner's list, left open) | b53338ad |
+| app2.css row pointer rule (`body.v2 tr[data-href]`), key 20261101-0529j | n/a | 4ce24aba |
+| test_host_wide_geometry_browser | 2 pass, 8 fail; stale `.stays-view` swapped to `.stays-desk` | 3b32740e (partial) |
+| test_host_stay_actions_browser | 1 fail: pill selector `.stay-col-reporting` replaced with `td[data-card='badge']`, still 0 pills found; not committed | unstaged |
+| test_onboarding_followup_browser | 4 pass, 12 fail (hover/compact-menu row test x10, no-JS record links x2); not touched | none |
+
+Left open (not fixed, need an owner or orchestrator decision):
+- Wide geometry: dashboard `.needs-you` lane missing at 1024; sidebar collapse button `[data-sidebar-collapse]` null on some pages (sidebar tests); 760 header lane; `.stay-col-reporting` markup gone.
+- Onboarding follow-up: hover row test and no-JS record link test fail on the new markup.
+- Stay actions: status pill is not in the badge cell at the tested widths, or the row lookup differs; needs a look at the desk markup.
