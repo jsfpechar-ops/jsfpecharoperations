@@ -42,3 +42,18 @@ Left to do:
 3. Groups B and C, all other files in the brief list. Not started.
 4. test_0201 is WebKit-only locally (brief §2, leave alone).
 5. Final run, ruff, design_lint, context_lint. Not run yet.
+
+## Session 3 (executor, group A, 25-call cap; partial, not pushed)
+
+Part 3 (group A)
+- 39cd8c1 step 1: Havel phone sheet. Cause: the `#havel-sheet` dialog kept its 14 px padding and 3 px border, so the sheet was 356 px at left 17. The phone rule in app2.css now sets `padding: 0; border: 0`. The More-menu tail of test_phone_launcher_and_sheet now runs on /settings (v2 phone has no More sheet; the Menu tab replaces it).
+  - tests/test_havel_browser.py: 8 passed, 0 skipped.
+- Step 2 motion (commit below): app2.css block "v2 shared: motion" copied from host2.css lines 1082-1119 and the reduced-motion line 618, scoped to body.v2. The rail and tab-bar view-transition lines are left out (group C).
+  - test_motion_browser.py: 3 passed, 1 failing. Old-shell cases moved to /settings: the 390 more-sheet case, the account-menu fold-out case, and the host-rail case.
+  - Failing: test_page_changes_cross_fade_with_the_rail_held_still at `.ui-nav a[href="/reservations"]` on /settings. Group C (rail); not investigated further.
+
+Left to do
+1. test_motion_browser.py: the cross-fade case above (group C rail, or confirm /settings markup).
+2. test_host_feedback_browser.py, test_host_filter_panels_browser.py, test_host_controls_browser.py: not started.
+3. Groups B and C: other executor.
+4. Key bump 20261101-0720c in base.html, test_static_versions.py --write, ruff: not started.

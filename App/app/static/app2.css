@@ -462,3 +462,40 @@ body.v2 .havel-topics > .havel-chip{align-self: flex-start;}
 /* v2 shared: onboarding intro logo (width rules from app.css, which v2 does not load) */
 body.v2 .onboarding-intro .onboarding-logo{width: 64px; height: auto; max-width: 100%; margin: 0;}
 @media (max-width:640px){body.v2 .onboarding-intro .onboarding-logo{width: 48px;}}
+
+/* v2 shared: motion (copied from host2.css; scoped body.v2; rail and tab-bar view transitions stay on the old shell only) */
+@media (scripting: enabled) {
+  :root:has(body.v2) { interpolate-size: allow-keywords; }
+
+  /* Dialogs fade and rise in, fade out; phone sheets slide up from the bottom edge. */
+  body.v2 dialog { transition: opacity var(--motion-2) var(--ease-standard), translate var(--motion-2) var(--ease-standard), display var(--motion-2) allow-discrete, overlay var(--motion-2) allow-discrete; }
+  body.v2 dialog:not([open]) { opacity: 0; translate: 0 var(--space-2); }
+  body.v2 dialog[open] { opacity: 1; translate: 0 0; }
+  @starting-style { body.v2 dialog[open] { opacity: 0; translate: 0 var(--space-2); } }
+  body.v2 dialog::backdrop { transition: opacity var(--motion-2) var(--ease-standard), display var(--motion-2) allow-discrete, overlay var(--motion-2) allow-discrete; }
+  body.v2 dialog:not([open])::backdrop { opacity: 0; }
+  @starting-style { body.v2 dialog[open]::backdrop { opacity: 0; } }
+  @media (max-width: 767px) {
+    body.v2 .ui-dialog { transition-duration: var(--motion-3); }
+    body.v2 .ui-dialog:not([open]) { opacity: 1; translate: 0 100%; }
+    @starting-style { body.v2 .ui-dialog[open] { opacity: 1; translate: 0 100%; } }
+  }
+
+  /* Fold-outs (help, sections, "more"): the body slides open and shut. Menus that float stay instant. */
+  body.v2 details:not(.host-account)::details-content { block-size: 0; overflow: clip; overflow-clip-margin: var(--space-1); transition: block-size var(--motion-3) var(--ease-standard), content-visibility var(--motion-3) allow-discrete; }
+  body.v2 details:not(.host-account)[open]::details-content { block-size: auto; }
+
+  /* Floating menus and the Stays filter panel fade in. */
+  body.v2 :is(.ui-menu-panel, .host-account-menu, .host-filter-panel) { transition: opacity var(--motion-2) var(--ease-standard), translate var(--motion-2) var(--ease-standard); }
+  @starting-style {
+    body.v2 :is(.ui-menu-panel.is-open, .ui-menu-panel:not([hidden]), .host-account[open] .host-account-menu, .host-filter-panel:not(.is-collapsed)) { opacity: 0; translate: 0 calc(var(--space-1) * -1); }
+  }
+
+  /* Page to page: a short cross-fade; the rail, top bar and tab bar hold still. */
+  @view-transition { navigation: auto; }
+  ::view-transition-group(*) { animation-duration: var(--motion-2); animation-timing-function: var(--ease-standard); }
+  @media (prefers-reduced-motion: reduce) {
+    @view-transition { navigation: none; }
+    ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+  }
+@media (prefers-reduced-motion: reduce) { body.v2 *, body.v2 *::before, body.v2 *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
