@@ -24,6 +24,7 @@
 
 | Area | Files |
 |---|---|
+| Go port (G1) | `go/cmd/ubyhost-web/` (healthz, metrics, goose check at start), `go/internal/secure/` (Fernet, itsdangerous signer, digests; conformance with Python fixtures), `go/internal/schema/` (goose files and pending state) |
 | App + routes | `App/app/main.py` (routers), `App/app/routes/` (guest, admin, admin_accounts, admin_customers, invoices, stay_fees, exports, signup, legal, privacy_requests, onboarding, onboarding_wizard, api, mail_unsubscribe) |
 | Police filing | `App/app/ubyport/` (SOAP client, errors), `App/app/reporting.py` (batches, sweep, state), `App/app/deadlines.py`, `App/app/filing_watchdog.py` |
 | Stays and guests | `App/app/icalsync.py` (feeds), `App/app/claim.py` (guest claim), `App/app/housebook.py`, `App/app/validation.py`, `App/app/passport_photos.py` |

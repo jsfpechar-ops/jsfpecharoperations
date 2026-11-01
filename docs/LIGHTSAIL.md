@@ -53,6 +53,10 @@ Internet → :443 Caddy (auto TLS) → ubyhost:8080 (FastAPI)
                               (ubyhost.db, photos, backups)
 ```
 
+Optional `ubyhost-go` (Go port, G1b, profile `go`) serves no traffic until a Caddy route exists (G2).
+
+Owner step: add `go` to `COMPOSE_PROFILES` in `.env` (for example `COMPOSE_PROFILES=go`, or append `,go`), then deploy. It serves nothing until G2.
+
 ## One-time setup
 
 ### 1. Create the instance
@@ -217,6 +221,7 @@ All from `deploy/lightsail/`:
 | `./scripts/pg-cutover.sh cutover` | Stop the app, copy and verify into PostgreSQL, switch `.env`, start; any failure returns to SQLite |
 | `./scripts/pg-cutover.sh rollback` | Switch `.env` back to SQLite (type ROLLBACK to confirm) |
 | `./scripts/backup-gdrive.sh` | Snapshot + rclone copy newest folder to Google Drive |
+| `docker compose run --rm --no-deps ubyhost python scripts/pg_schema.py apply --expect-database ubyhost` | Apply pending PostgreSQL goose migrations (`App/migrations_pg/`) after a deploy whose notes mention a goose file; the app will not start while one is pending |
 
 Public `GET /healthz` in **production** returns `status`, `version`, `data_dir_writable` only (no env labels). Confirm `ubyport_env` with `./scripts/status.sh` or Settings.
 

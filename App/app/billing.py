@@ -169,6 +169,7 @@ def set_status(owner_user_id: int, new: str, *, actor: str = "system") -> bool:
     if new not in STATUSES:
         raise ValueError(f"unknown status: {new}")
     with db.immediate() as cur:
+        db.lock_key(cur, "billing_account", owner_user_id)
         cur.execute("SELECT status FROM billing_account WHERE owner_user_id = ?", (owner_user_id,))
         row = cur.fetchone()
         if row is None or new not in TRANSITIONS[row["status"]]:
@@ -361,6 +362,7 @@ def founder_slots_left() -> int:
 def claim_founder_slot(owner_user_id: int) -> Optional[int]:
     """The host's founder slot number, claiming the next one; None when all are gone."""
     with db.immediate() as cur:
+        db.lock_key(cur, "founder_slot", 0)
         cur.execute("SELECT slot FROM founder_slot WHERE owner_user_id = ?", (owner_user_id,))
         mine = cur.fetchone()
         if mine is not None:

@@ -248,8 +248,8 @@ def test_full_schema_apply_and_validate_on_postgres(pg_runtime):
     status = db.postgres_schema_status()
     assert status["current"] is True
     assert status["actual_version"] == db.expected_schema_version() == 33
-    assert status["expected_tables"] == status["actual_tables"] == 67
-    assert status["missing_tables"] == status["extra_tables"] == 0
+    assert status["expected_tables"] == 67 and status["actual_tables"] == 68  # + job (goose 00003, PostgreSQL only)
+    assert status["missing_tables"] == 0 and status["extra_tables"] == 1  # job
     assert status["column_mismatches"] == 0
     assert status["missing_indexes"] == 0
     assert status["missing_triggers"] == status["extra_triggers"] == 0
@@ -342,7 +342,7 @@ def test_pg_schema_cli_reports_and_applies_the_current_schema(pg_runtime, tmp_pa
         timeout=180,
     )
     assert apply.returncode == 0, apply.stderr[-1000:]
-    assert "version=33" in apply.stdout and "tables=67" in apply.stdout
+    assert "version=33" in apply.stdout and "tables=68" in apply.stdout
 
     wrong = subprocess.run(
         [*base, "check", "--expect-database", "definitely-not-this-database"],
@@ -681,12 +681,15 @@ def test_writer_lock_wait_is_bounded_and_recovers(pg_runtime, monkeypatch):
     from app import db_postgres
 
     monkeypatch.setattr(db_postgres, "LOCK_TIMEOUT", "250ms")
+    db.close_connections()  # reconnect with the short lock_timeout
     holder = db.connect()
-    holder.acquire_writer_session_lock()
+    holder.execute("BEGIN IMMEDIATE")
+    holder.execute_native("SELECT pg_advisory_xact_lock(hashtext('guest'), 1)")
     started = time.monotonic()
     try:
         with pytest.raises(Exception) as info:
             with db.immediate() as cur:
+                db.lock_key(cur, "guest", 1)
                 cur.execute(
                     "INSERT INTO settings (key, value) VALUES (?, ?)",
                     ("writer-lock-timeout-probe", "x"),
@@ -698,7 +701,7 @@ def test_writer_lock_wait_is_bounded_and_recovers(pg_runtime, monkeypatch):
         # The refused write left nothing behind.
         assert db.get_setting("writer-lock-timeout-probe") is None
     finally:
-        holder.release_writer_session_lock()
+        holder.execute("ROLLBACK")
         holder.close()
     # A later write after the holder released succeeds (no blind retry by the app).
     db.execute(
@@ -714,23 +717,25 @@ def test_writer_lock_timeout_surfaces_as_lock_not_available_through_every_helper
 ):
     """Regression for 0455: a 55P03 lock timeout must not be masked by db.py.
 
-    The adapter opens a transaction before taking the writer advisory lock. If
-    lock acquisition fails, that transaction used to be left open, so
-    ``db._helper_conn`` replaced psycopg's ``LockNotAvailable`` with its own
-    "left a transaction open" RuntimeError. The adapter now rolls back and
-    re-raises the driver error unchanged; this test pins that for the helper
-    path, ``executemany``, a cursor-level ``BEGIN IMMEDIATE`` and
-    ``db.immediate()``, and proves the connections stay reusable.
+    A write that waits on another transaction's row or ``db.lock_key`` past
+    ``lock_timeout`` must reach the caller as psycopg's ``LockNotAvailable``,
+    never as db.py's "left a transaction open" RuntimeError. Pinned for the
+    helper path, ``executemany`` and ``db.immediate()``; the connections stay
+    reusable.
     """
     from psycopg import errors as pg_errors
 
     from app import db_postgres
 
     monkeypatch.setattr(db_postgres, "LOCK_TIMEOUT", "250ms")
+    db.close_connections()  # reconnect with the short lock_timeout
     probe_key = "lock-not-available-probe"
     db.execute("DELETE FROM settings WHERE key = ?", (probe_key,))
     holder = db.connect()
-    holder.acquire_writer_session_lock()
+    holder.execute("BEGIN IMMEDIATE")
+    holder.execute_native("SELECT pg_advisory_xact_lock(hashtext('guest'), 1)")
+    # An uncommitted row with the probe key: every other insert of it waits.
+    holder.execute("INSERT INTO settings (key, value) VALUES (?, ?)", (probe_key, "holder"))
 
     def expect_lock_timeout(call):
         started = time.monotonic()
@@ -774,21 +779,10 @@ def test_writer_lock_timeout_surfaces_as_lock_not_available_through_every_helper
         finally:
             many_connection.close()
 
-        # Cursor-level BEGIN IMMEDIATE, the building block of db.immediate().
-        begin_connection = db.connect()
-        try:
-            cursor = begin_connection.cursor()
-            try:
-                expect_lock_timeout(lambda: cursor.execute("BEGIN IMMEDIATE"))
-                assert begin_connection.in_transaction is False
-            finally:
-                cursor.close()
-        finally:
-            begin_connection.close()
-
         # db.immediate() keeps raising LockNotAvailable as before.
         def immediate_write():
             with db.immediate() as cur:
+                db.lock_key(cur, "guest", 1)
                 cur.execute(
                     "INSERT INTO settings (key, value) VALUES (?, ?)",
                     (probe_key, "immediate"),
@@ -798,7 +792,7 @@ def test_writer_lock_timeout_surfaces_as_lock_not_available_through_every_helper
         assert db._thread_conn().in_transaction is False
         assert db.get_setting(probe_key) is None
     finally:
-        holder.release_writer_session_lock()
+        holder.execute("ROLLBACK")
         holder.close()
 
     # After the lock is released every path works again; no blind retry is needed.
@@ -1600,7 +1594,7 @@ def test_connect_sets_timeouts_and_keeps_url_options(monkeypatch):
         "?sslmode=verify-full&options=-c%20search_path%3Dapp"
     )
     assert seen["connect_timeout"] == 10
-    assert seen["options"] == "-c search_path=app -c statement_timeout=60000"
+    assert seen["options"] == "-c search_path=app -c statement_timeout=60000 -c lock_timeout=30s"
 
 
 def test_socket_url_forms_are_accepted_and_connect():

@@ -34,6 +34,9 @@ _OWNER_SCOPE = "(? IS NULL OR a.owner_user_id = ?)"
 # Needed to resume verified signup on another device; removed with the account,
 # including the existing seven-day purge of unverified signups. No ad identifiers.
 
+# job.error: exception class and message (300 chars max), may name an address;
+# purged with the row 7 days after done/dead (jobqueue.purge).
+
 # 0421: payment_request.guest_email / guest_note are the guest's address a
 # request was sent to and the host's short note. Kept while the request is
 # useful (paid/expired requests are the host's money trail); deleted with the

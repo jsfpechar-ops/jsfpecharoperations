@@ -1,5 +1,5 @@
 # 0467: PostgreSQL job queue (`job` table, SKIP LOCKED) consumed by the Python worker, one kind at a time
-Status: todo
+Status: review
 Depends on: 0465 part a and 0466 part b merged | Base commit: main | Branch: task/0467a-job-queue, then task/0467b-drop-scheduler-lock
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 80k tokens (per part; two parts, two sessions, two PRs)
 ## 1. Objective
@@ -12,7 +12,7 @@ On PostgreSQL, each scheduled job kind can move, by one env setting, from "APSch
 - Semantics kept from APScheduler: at most one open job per kind (`max_instances=1` + `coalesce=True`) is a unique partial index; kinds run in parallel with each other as today (consumer `max_instances=4`).
 - Local PostgreSQL: [0465 §2](0465-goose-migrations.md#2-context).
 ## 3. Files
-Part a. New: `App/migrations_pg/00003_job.sql`, `App/app/jobqueue.py`, `App/tests/test_job_queue.py`. Edit: `App/app/scheduler.py`, `App/app/config.py` (one setting), `App/app/retention.py` (one comment block), `docs/ENVIRONMENT.md` (Scheduler section, one row), `docs/plans/postgresql/owner-steps-cutover.md` (one step).
+Part a. New: `App/migrations_pg/00003_job.sql`, `App/app/jobqueue.py`, `App/tests/test_job_queue.py`. Edit: `App/app/scheduler.py`, `App/app/host_i18n.py` (step 4b), `App/app/config.py` (one setting), `App/app/retention.py` (one comment block), `docs/ENVIRONMENT.md` (Scheduler section, one row), `docs/plans/postgresql/owner-steps-cutover.md` (one step).
 Part b. Edit: `App/app/scheduler.py` (`start()` only), `App/app/worker.py` (docstring only), `App/tests/test_job_queue.py`.
 ## 4. Steps
 ### Part a
@@ -37,7 +37,7 @@ CREATE INDEX job_due ON job (run_at, id) WHERE done_at IS NULL AND dead_at IS NU
 -- +goose Down
 DROP TABLE job;
 ```
-   Apply locally with `scripts/pg_schema.py apply`; `check` stays OK (0465 lets PostgreSQL-only tables exist).
+   Orchestrator decision 2026-11-01: write `CREATE TABLE IF NOT EXISTS` and `CREATE ... INDEX IF NOT EXISTS`, and `DROP TABLE IF EXISTS job` in Down, like 00002 (the test harness truncates `goose_db_version` and re-applies). Apply locally with `scripts/pg_schema.py apply`; `check` stays OK (0465 lets PostgreSQL-only tables exist).
 2. `App/app/config.py`, below `ENABLE_SCHEDULER` (line 374): `JOB_QUEUE_KINDS = frozenset(k.strip() for k in os.environ.get("UBYHOST_JOB_QUEUE_KINDS", "").split(",") if k.strip())`. Validation is in step 4 (config cannot import scheduler).
 3. `App/app/jobqueue.py` (every public function raises `RuntimeError("the job queue needs PostgreSQL")` when `config.DB_BACKEND != "postgresql"`):
    - constants `LEASE_MINUTES = 60`, `MAX_ATTEMPTS = 5`, `BACKOFF_MINUTES = (1, 5, 15, 60)`, `KEEP_DONE_DAYS = 7`, `WORKER_ID = f"{socket.gethostname()}:{os.getpid()}"`.
@@ -68,6 +68,7 @@ RETURNING id, kind, payload, attempts
    - When any kind is queued, add one more job: `_scheduler.add_job(_job_queue, "interval", seconds=15, id="job_queue", max_instances=4, coalesce=True, next_run_time=_soon())`, where `_job_queue()` calls `jobqueue.drain(lambda kind: JOB_KINDS[kind](), _stopping)` and, once per hour (module-level timestamp), `jobqueue.purge()`; exceptions are logged and raise the `job_failed:job_queue` alert like the other wrappers.
    - `shutdown()`: `_stopping.set()` before `_scheduler.shutdown(wait=True)`; `_stopping.clear()` after.
    - `job_intervals()` is unchanged; `fail` gets the interval from it (`None` for `billing`).
+4b. Orchestrator decision 2026-11-01 (pre-existing bug, its own commit first): `scheduler._JOB_LEVELS` lacks `posthog`, `billing`, `billing_snapshot` and `stripe_sweep`, whose wrappers already call `_job_failed` (KeyError inside the except). Add them and `job_queue`, all `"warning"`. In `App/app/host_i18n.py` add `notification.job_name.<id>` in English and Czech next to the existing ones for `billing` ("billing" / "fakturace"), `billing_snapshot` ("billing snapshot" / "snímek fakturace"), `stripe_sweep` ("payment check" / "kontrola plateb") and `job_queue` ("job queue" / "fronta úloh"). Add a test in `tests/test_job_queue.py` that every id in `JOB_KINDS` plus `job_queue` is in `_JOB_LEVELS`.
 5. `App/app/retention.py`, next to the other comment blocks (around line 33): `# job.error: exception class and message (300 chars max), may name an address; purged with the row 7 days after done/dead (jobqueue.purge).`
 6. `App/tests/test_job_queue.py`: SQLite, always run: `start()` with `UBYHOST_JOB_QUEUE_KINDS` set raises on SQLite; unset → every registered callable is the wrapper (inspect `_scheduler.get_jobs()`; stop it after). PostgreSQL (skip guard and `pg_runtime` fixture from `test_db_postgres.py`, imported): (a) `enqueue("push")` twice → one open row; (b) two threads call `claim()` at once with one due row → exactly one gets it; (c) a run that raises → `attempts == 1`, lease cleared, `run_at` moved by 1 minute; after 5 failures `dead_at` set and the `job_failed:push` alert raised; then `enqueue("push")` adds a new row; (d) a lease older than 60 min is claimed again by another worker id; (e) `finish` with a foreign `locked_by` changes nothing; (f) `drain` stops when `stop` is set; (g) `purge` removes a done row 8 days old and keeps one 6 days old.
 7. `docs/ENVIRONMENT.md`, Scheduler section: one row `UBYHOST_JOB_QUEUE_KINDS | empty | PostgreSQL only. Comma list of scheduler job ids that go through the job table instead of running directly; unknown ids stop the worker.` `owner-steps-cutover.md`: one step "after the cutover, move jobs to the queue one line at a time in `deploy/lightsail/.env`, restarting the worker and checking `docker compose logs worker | grep job= | tail -20` after each: `push,guide_import,posthog,meta_capi` → `+photo_sweep,mail,stay_fee_mail` → `+door_codes,deadlines,ical` → `+retention,stripe_sweep,billing,billing_snapshot` → `+submit` last. To undo a kind, remove it from the line and restart."

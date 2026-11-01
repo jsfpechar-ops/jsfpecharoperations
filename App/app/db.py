@@ -954,6 +954,17 @@ def immediate():
         yield cur
 
 
+def lock_key(cur, name: str, key: int) -> None:
+    """Serialise writers of one row (name, key) until this transaction ends.
+
+    PostgreSQL only; on SQLite BEGIN IMMEDIATE already holds the one write lock.
+    Take several keys in ascending order to rule out deadlocks.
+    """
+    if getattr(config, "DB_BACKEND", "sqlite") != "postgresql":
+        return
+    cur.execute("SELECT pg_advisory_xact_lock(hashtext(?), ?)", (name, int(key)))
+
+
 def close_connections() -> None:
     """Close every shared connection (shutdown, and between tests).
 
@@ -1282,6 +1293,7 @@ def postgres_schema_status(conn=None) -> Dict[str, Any]:
         rows = conn.execute_native(
             "SELECT table_name, column_name, data_type, is_nullable "
             "FROM information_schema.columns WHERE table_schema = current_schema() "
+            "AND table_name <> 'goose_db_version' "
             "ORDER BY table_name, ordinal_position"
         ).fetchall()
         actual: Dict[str, list[tuple[str, str, str]]] = {}
@@ -1293,7 +1305,7 @@ def postgres_schema_status(conn=None) -> Dict[str, Any]:
             "INTEGER": "bigint", "REAL": "double precision", "BLOB": "bytea", "TEXT": "text"
         }
         column_mismatches = 0
-        for table in expected.keys() | actual.keys():
+        for table in expected.keys():
             expected_cols = expected.get(table, [])
             actual_cols = actual.get(table, [])
             if len(expected_cols) != len(actual_cols):
@@ -1338,12 +1350,13 @@ def postgres_schema_status(conn=None) -> Dict[str, Any]:
             "missing_tables": len(expected.keys() - actual.keys()),
             "extra_tables": len(actual.keys() - expected.keys()),
             "column_mismatches": column_mismatches,
+            "goose_pending": goose_pending(conn),
             "missing_indexes": len(missing_indexes),
             "missing_triggers": len(expected_triggers - actual_triggers),
             "extra_triggers": len(actual_triggers - expected_triggers),
             "current": (
                 expected_schema_version() == actual_version
-                and expected.keys() == actual.keys()
+                and expected.keys() <= actual.keys()
                 and column_mismatches == 0
                 and not missing_indexes
                 and expected_triggers == actual_triggers
@@ -1414,6 +1427,15 @@ def validate_postgres_schema() -> Dict[str, Any]:
         raise RuntimeError(
             "PostgreSQL schema is absent, outdated, or incompatible; run "
             "scripts/pg_schema.py plan/check/apply with the expected database name."
+        )
+    if status["current"] and 1 in status["goose_pending"]:
+        _goose_adopt_baseline()
+        status = postgres_schema_status()
+    if status["goose_pending"]:
+        raise RuntimeError(
+            "PostgreSQL schema is behind: goose migrations "
+            + ", ".join(map(str, status["goose_pending"]))
+            + " are not applied; run scripts/pg_schema.py apply."
         )
     return status
 
@@ -1491,6 +1513,9 @@ def startup_lock():
 
 MIGRATIONS_DIR = Path(__file__).resolve().parent / "migrations"
 BASELINE_VERSION = 1
+GOOSE_DIR = Path(__file__).resolve().parent.parent / "migrations_pg"
+GOOSE_TABLE = "goose_db_version"
+_GOOSE_NAME = re.compile(r"^(\d{5})_([a-z0-9_]+)\.sql$")
 _MIGRATION_NAME = re.compile(r"^(\d{4})_([a-z0-9_]+)\.sql$")
 
 _MIGRATIONS_TABLE = """
@@ -1523,6 +1548,115 @@ def migration_files(directory: Optional[Path] = None) -> List[tuple]:
     if len(versions) != len(set(versions)):
         raise RuntimeError("two migration files share a version number")
     return found
+
+
+def _goose_only() -> None:
+    if getattr(config, "DB_BACKEND", "sqlite") != "postgresql":
+        raise RuntimeError("goose migrations are PostgreSQL only.")
+
+
+def goose_files() -> List[tuple]:
+    """``(version, name, path)`` for every goose file in ``App/migrations_pg``, in version order."""
+    if not GOOSE_DIR.is_dir():
+        return []
+    found: List[tuple] = []
+    for path in GOOSE_DIR.glob("*.sql"):
+        match = _GOOSE_NAME.match(path.name)
+        if not match:
+            raise RuntimeError(f"goose file {path.name} must be NNNNN_name.sql")
+        found.append((int(match.group(1)), match.group(2), path))
+    found.sort()
+    versions = [version for version, _name, _path in found]
+    if len(versions) != len(set(versions)):
+        raise RuntimeError("two goose files share a version number")
+    return found
+
+
+def _plain_goose_statements(script: str) -> List[str]:
+    return [s for s in _statements(script) if re.sub(r"(?m)^\s*--.*$", "", s).strip()]
+
+
+def _goose_up_statements(text: str) -> List[str]:
+    """Up statements of one goose file; a StatementBegin..StatementEnd block is one statement."""
+    statements: List[str] = []
+    plain = ""
+    block: Optional[List[str]] = None
+    up = False
+    for line in text.splitlines(keepends=True):
+        marker = line.strip()
+        if block is not None:
+            if marker == "-- +goose StatementEnd":
+                statements.append("".join(block).strip())
+                block = None
+            else:
+                block.append(line)
+        elif marker == "-- +goose Up":
+            up = True
+        elif marker == "-- +goose Down":
+            break
+        elif not up:
+            continue
+        elif marker == "-- +goose StatementBegin":
+            statements.extend(_plain_goose_statements(plain))
+            plain = ""
+            block = []
+        else:
+            plain += line
+    if not up:
+        raise RuntimeError("goose file has no '-- +goose Up' line")
+    if block is not None:
+        raise RuntimeError("goose file ends inside a StatementBegin block")
+    statements.extend(_plain_goose_statements(plain))
+    return statements
+
+
+def goose_applied(conn) -> set:
+    """Versions whose newest goose_db_version row is applied. Version 0 is goose's own marker."""
+    _goose_only()
+    if conn.execute_native(f"SELECT to_regclass('public.{GOOSE_TABLE}') AS name").fetchone()["name"] is None:
+        return set()
+    rows = conn.execute_native(
+        "SELECT DISTINCT ON (version_id) version_id, is_applied FROM goose_db_version "
+        "ORDER BY version_id, id DESC"
+    ).fetchall()
+    return {int(row["version_id"]) for row in rows if row["is_applied"] and row["version_id"] != 0}
+
+
+def _goose_ensure_table(conn) -> None:
+    conn.execute_native(
+        "CREATE TABLE IF NOT EXISTS goose_db_version (id integer PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY, "
+        "version_id bigint NOT NULL, is_applied boolean NOT NULL, tstamp timestamp NOT NULL DEFAULT now())"
+    )
+    if conn.execute_native("SELECT count(*) AS n FROM goose_db_version").fetchone()["n"] == 0:
+        conn.execute_native("INSERT INTO goose_db_version (version_id, is_applied) VALUES (0, true)")
+
+
+def goose_pending(conn) -> List[int]:
+    applied = goose_applied(conn)
+    return [version for version, _name, _path in goose_files() if version not in applied]
+
+
+def _goose_adopt_baseline() -> None:
+    """A current PostgreSQL schema with no goose table is goose baseline 1; recorded once."""
+    _goose_only()
+    conn = connect()
+    try:
+        conn.acquire_writer_session_lock()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            try:
+                if conn.execute_native(f"SELECT to_regclass('public.{GOOSE_TABLE}') AS name").fetchone()["name"] is None:
+                    _goose_ensure_table(conn)
+                    conn.execute_native("INSERT INTO goose_db_version (version_id, is_applied) VALUES (1, true)")
+                conn.execute("COMMIT")
+            except BaseException:
+                if conn.in_transaction:
+                    conn.execute("ROLLBACK")
+                raise
+        finally:
+            conn.release_writer_session_lock()
+    finally:
+        conn.close()
 
 
 def _statements(script: str) -> List[str]:
@@ -1684,6 +1818,18 @@ def apply_postgresql_schema() -> Dict[str, Any]:
             conn.execute("BEGIN IMMEDIATE")
             try:
                 _postgres_schema_ddl(conn, record_history=True, include_triggers=True)
+                _goose_ensure_table(conn)
+                if 1 not in goose_applied(conn):
+                    conn.execute_native("INSERT INTO goose_db_version (version_id, is_applied) VALUES (1, true)")
+                applied = goose_applied(conn)
+                for version, _name, path in goose_files():
+                    if version == 1 or version in applied:
+                        continue
+                    for statement in _goose_up_statements(path.read_text(encoding="utf-8")):
+                        conn.execute_native(statement)
+                    conn.execute_native(
+                        "INSERT INTO goose_db_version (version_id, is_applied) VALUES (%s, true)", (version,)
+                    )
                 conn.execute("COMMIT")
             except BaseException:
                 if conn.in_transaction:

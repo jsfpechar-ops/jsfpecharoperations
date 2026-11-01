@@ -16,6 +16,12 @@ set -a
 source .env
 set +a
 
+# PostgreSQL mode: the same test scripts/backup.sh uses.
+PG_MODE=0
+if [ -n "${UBYHOST_DATABASE_URL:-}" ]; then
+  PG_MODE=1
+fi
+
 # shellcheck disable=SC1091
 source "$(dirname "$0")/litestream_env.sh"
 if [ "${litestream_enabled}" = "1" ]; then
@@ -79,8 +85,8 @@ chmod +x scripts/*.sh
 # every active account has one (admin > Users shows them).
 # UBYHOST_ALLOW_MISSING_EMAIL=1 deploys anyway.
 if docker compose ps --status running --services 2>/dev/null | grep -qx ubyhost; then
-  MISSING_EMAIL="$(docker compose exec -T ubyhost sqlite3 /data/ubyhost.db \
-    "SELECT COUNT(*) FROM user_account WHERE active = 1 AND (email IS NULL OR email = '');" \
+  MISSING_EMAIL="$(docker compose exec -T ubyhost python -c \
+    "from app import db; print(db.query_one(\"SELECT COUNT(*) AS n FROM user_account WHERE active = 1 AND (email IS NULL OR email = '')\")['n'])" \
     2>/dev/null || echo "?")"
   if [ "${MISSING_EMAIL}" != "0" ] && [ "${UBYHOST_ALLOW_MISSING_EMAIL:-0}" != "1" ]; then
     echo "Active accounts without a login e-mail: ${MISSING_EMAIL}. Add one to each in admin > Users, then deploy again." >&2
@@ -104,23 +110,35 @@ if docker compose ps --status running --services 2>/dev/null | grep -qx ubyhost;
   # identity is kept off the server). Check that it exists and really is an
   # age file (or, outside production, a non-empty plaintext copy), then
   # integrity-check a fresh copy of the live database.
-  if ! docker compose exec -T ubyhost sh -c \
-    "f=/data/backups/${BACKUP_STAMP}/ubyhost-backup.tar.age; p=/data/backups/${BACKUP_STAMP}/ubyhost.db; if [ -s \"\$f\" ]; then head -c 21 \"\$f\" | grep -q 'age-encryption.org/v1'; else [ -s \"\$p\" ]; fi"; then
-    echo "Backup ${BACKUP_STAMP} is missing, empty or not an age file - refusing deployment." >&2
-    exit 1
-  fi
-  PREFLIGHT_DB="/data/.preflight-${BACKUP_STAMP}.db"
-  docker compose exec -T ubyhost sqlite3 /data/ubyhost.db ".backup '${PREFLIGHT_DB}'"
-  BACKUP_OK="$(docker compose exec -T ubyhost sh -c \
-    "[ -s '${PREFLIGHT_DB}' ] && sqlite3 '${PREFLIGHT_DB}' 'PRAGMA integrity_check;'")" || BACKUP_OK="missing"
-  if [ "${BACKUP_OK}" != "ok" ]; then
-    echo "Live database copy failed its integrity check: ${BACKUP_OK}" >&2
-    docker compose exec -T ubyhost rm -f "${PREFLIGHT_DB}"
-    exit 1
+  if [ "${PG_MODE}" = "1" ]; then
+    # PostgreSQL: backup.sh writes an age-encrypted pg_dump. The SQLite copy
+    # and integrity check below do not apply to it.
+    PG_DUMP="/data/backups/${BACKUP_STAMP}/ubyhost-pg.dump.age"
+    if ! docker compose exec -T ubyhost sh -c \
+      "[ -s '${PG_DUMP}' ] && head -c 21 '${PG_DUMP}' | grep -q 'age-encryption.org/v1'"; then
+      echo "PostgreSQL backup ${BACKUP_STAMP} is missing, empty or not an age file - refusing deployment." >&2
+      exit 1
+    fi
+    echo "PostgreSQL backup ${BACKUP_STAMP} is valid."
+  else
+    if ! docker compose exec -T ubyhost sh -c \
+      "f=/data/backups/${BACKUP_STAMP}/ubyhost-backup.tar.age; p=/data/backups/${BACKUP_STAMP}/ubyhost.db; if [ -s \"\$f\" ]; then head -c 21 \"\$f\" | grep -q 'age-encryption.org/v1'; else [ -s \"\$p\" ]; fi"; then
+      echo "Backup ${BACKUP_STAMP} is missing, empty or not an age file - refusing deployment." >&2
+      exit 1
+    fi
+    PREFLIGHT_DB="/data/.preflight-${BACKUP_STAMP}.db"
+    docker compose exec -T ubyhost sqlite3 /data/ubyhost.db ".backup '${PREFLIGHT_DB}'"
+    BACKUP_OK="$(docker compose exec -T ubyhost sh -c \
+      "[ -s '${PREFLIGHT_DB}' ] && sqlite3 '${PREFLIGHT_DB}' 'PRAGMA integrity_check;'")" || BACKUP_OK="missing"
+    if [ "${BACKUP_OK}" != "ok" ]; then
+      echo "Live database copy failed its integrity check: ${BACKUP_OK}" >&2
+      docker compose exec -T ubyhost rm -f "${PREFLIGHT_DB}"
+      exit 1
+    fi
   fi
   for table in "${TABLES[@]}"; do
-    BEFORE_COUNTS["${table}"]="$(docker compose exec -T ubyhost sqlite3 \
-      /data/ubyhost.db "SELECT COUNT(*) FROM ${table};")"
+    BEFORE_COUNTS["${table}"]="$(docker compose exec -T ubyhost python -c \
+      "from app import db; print(db.query_one('SELECT COUNT(*) AS n FROM ${table}')['n'])")"
   done
   echo "Backup ${BACKUP_STAMP} is valid; live row counts recorded."
 fi
@@ -146,7 +164,17 @@ else
   docker compose build --pull
 fi
 
-if [ -n "${BACKUP_STAMP}" ]; then
+if [ "${PG_MODE}" = "1" ]; then
+  # PostgreSQL: apply pending goose files with the new image, before the stack
+  # starts. A failure exits here, before `up` touches the running stack.
+  echo "==> Applying PostgreSQL goose migrations (new image)"
+  if ! docker compose run --rm --no-deps -T --entrypoint python ubyhost \
+    scripts/pg_schema.py apply --expect-database ubyhost; then
+    echo "Goose apply failed." >&2
+    exit 1
+  fi
+  echo "Goose migrations applied."
+elif [ -n "${BACKUP_STAMP}" ]; then
   echo "==> Dry-running database migration against a copy of the live database"
   if ! docker compose run --rm --no-deps \
     -e "UBYHOST_DB=${PREFLIGHT_DB}" \
@@ -241,6 +269,14 @@ echo "Health (internal):"
 docker compose exec -T ubyhost python -c \
   "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8080/healthz').read().decode())"
 
+# Go port (G1b): report only. This block never exits non-zero.
+if docker compose ps --status running --services | grep -qx ubyhost-go; then
+  echo "Go service (internal, no traffic yet):"
+  docker compose exec -T ubyhost-go wget -qO- http://127.0.0.1:8081/healthz || echo "not healthy (does not affect the app)"
+else
+  echo "Go service: not enabled (COMPOSE_PROFILES has no go)"
+fi
+
 # BE-1: turn legacy login acceptance lines into legal_acceptance rows. The
 # script is idempotent and prints a count only. A failure aborts the deploy
 # loudly rather than leaving acceptance evidence half-migrated.
@@ -266,14 +302,16 @@ fi
 if [ -n "${BACKUP_STAMP}" ]; then
   echo ""
   echo "Post-deploy database integrity and row-count checks:"
-  LIVE_OK="$(docker compose exec -T ubyhost sqlite3 /data/ubyhost.db "PRAGMA integrity_check;")"
-  if [ "${LIVE_OK}" != "ok" ]; then
-    echo "Live database integrity check failed: ${LIVE_OK}" >&2
-    exit 1
+  if [ "${PG_MODE}" != "1" ]; then
+    LIVE_OK="$(docker compose exec -T ubyhost sqlite3 /data/ubyhost.db "PRAGMA integrity_check;")"
+    if [ "${LIVE_OK}" != "ok" ]; then
+      echo "Live database integrity check failed: ${LIVE_OK}" >&2
+      exit 1
+    fi
   fi
   for table in "${TABLES[@]}"; do
-    after="$(docker compose exec -T ubyhost sqlite3 /data/ubyhost.db \
-      "SELECT COUNT(*) FROM ${table};")"
+    after="$(docker compose exec -T ubyhost python -c \
+      "from app import db; print(db.query_one('SELECT COUNT(*) AS n FROM ${table}')['n'])")"
     if [ "${after}" -lt "${BEFORE_COUNTS[${table}]}" ]; then
       echo "${table} row count fell from ${BEFORE_COUNTS[${table}]} to ${after}." >&2
       exit 1

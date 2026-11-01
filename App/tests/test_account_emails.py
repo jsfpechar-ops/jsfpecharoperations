@@ -33,7 +33,7 @@ def test_admin_sets_a_first_login_email_without_a_reason_and_no_mail():
     client, _admin = _admin_client()
     host_id = auth.create_account("acctmail-host@example.test", "Host", username="acctmail-host")
     _without_email(host_id)
-    page = client.get("/admin/users")
+    page = client.get("/admin/customers")
     assert "users-missing-email" in page.text
     response = client.post(
         f"/admin/users/{host_id}/email",

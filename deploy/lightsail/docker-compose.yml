@@ -128,6 +128,42 @@ services:
     networks:
       - web
 
+  # Go port of the web app (plan v4 G1b). Serves no traffic until a Caddy route
+  # is added (G2). Off unless COMPOSE_PROFILES contains "go" (needs PostgreSQL).
+  ubyhost-go:
+    build:
+      context: ../..
+      dockerfile: go/Dockerfile
+    image: ubyhost-go:local
+    restart: unless-stopped
+    stop_grace_period: 15s
+    profiles: ["go"]
+    environment:
+      UBYHOST_DATABASE_URL: ${UBYHOST_DATABASE_URL:-}
+      UBYHOST_GO_JOB_KINDS: ${UBYHOST_GO_JOB_KINDS:-}
+    volumes:
+      - ubyhost-pgsock:/var/run/postgresql
+    expose:
+      - "8081"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8081/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    mem_limit: ${UBYHOST_GO_MEM:-128m}
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    # goose runs in the web service first; the Go service starts after it.
+    depends_on:
+      ubyhost:
+        condition: service_healthy
+    networks:
+      - web
+
   # WP05: continuous replication of the SQLite database to S3. Runs as the
   # app's uid on the same volume, so it can read the database and write its
   # .ubyhost.db-litestream metadata next to it. Only the variables it needs are

@@ -100,6 +100,12 @@ pg_transfer() {
     --source /data/pg-cutover/source.db --report "${report}" --expect-database "${db}" "$@" 2>&1 | tail -30
 }
 
+pg_schema_apply() {  # <url> <database>: goose-aware schema apply after the data verify, same one-off container style
+  local url="$1" db="$2"
+  docker compose run --rm --no-deps -T -e "UBYHOST_DATABASE_URL=${url}" --entrypoint sh ubyhost \
+    -c 'unset UBYHOST_DB; exec python /app/scripts/pg_schema.py apply --expect-database "$1"' sh "${db}" 2>&1
+}
+
 fresh_rehearsal() {  # exit 0 when the newest rehearsal verify report is under 24 h old, verify-only, all tables match
   local py
   py="$(cat <<'PY'
@@ -172,6 +178,7 @@ rehearse() {
   pg_transfer "${REHEARSAL_URL}" ubyhost_rehearsal "${report}" || die "rehearsal transfer failed"
   pg_transfer "${REHEARSAL_URL}" ubyhost_rehearsal "${report%.json}.verify.json" --verify-only \
     || die "rehearsal verify failed"
+  pg_schema_apply "${REHEARSAL_URL}" ubyhost_rehearsal || die "rehearsal goose apply failed"
   restore_test "${STAMP}"
   print_report_tables "${report}"
   echo "REHEARSAL OK"
@@ -193,6 +200,7 @@ cutover() {
   pg_transfer "${PG_URL}" ubyhost "${report}" || fail_cutover "transfer into PostgreSQL failed"
   pg_transfer "${PG_URL}" ubyhost "${report%.json}.verify.json" --verify-only \
     || fail_cutover "verification in PostgreSQL failed"
+  pg_schema_apply "${PG_URL}" ubyhost || fail_cutover "goose schema apply failed"
   remove_source_copy
   env-switch .env "${PG_URL}"
   ENV_SWITCHED=1

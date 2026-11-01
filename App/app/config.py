@@ -372,6 +372,9 @@ def app_base_url() -> str:
 
 
 ENABLE_SCHEDULER = os.environ.get("UBYHOST_ENABLE_SCHEDULER", "1") not in ("0", "false", "no")
+JOB_QUEUE_KINDS = frozenset(k.strip() for k in os.environ.get("UBYHOST_JOB_QUEUE_KINDS", "").split(",") if k.strip())
+# Kinds the Go service runs instead of Python (0476). Each must also be in JOB_QUEUE_KINDS.
+GO_JOB_KINDS = frozenset(k.strip() for k in os.environ.get("UBYHOST_GO_JOB_KINDS", "").split(",") if k.strip())
 
 # WP06: what this process runs. "web" serves HTTP and never starts the
 # scheduler (production runs two uvicorn workers); "worker" runs only the

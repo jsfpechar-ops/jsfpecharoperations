@@ -355,7 +355,7 @@ def _dismiss_optional_security_prompt(page):
 def _wait_for_host_layout(page):
     """Wait for the host script and two paint frames without network-idle delay."""
     page.wait_for_function(
-        "document.readyState === 'complete' && document.documentElement.classList.contains('has-js')"
+        "() => document.readyState === 'complete' && document.documentElement.classList.contains('has-js')"
     )
     page.evaluate("() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))")
 

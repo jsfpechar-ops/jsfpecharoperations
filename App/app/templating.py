@@ -441,6 +441,15 @@ def _template_section_tabs(request: Request, section: str, current: str = "") ->
             ("archive", "/settings/archived", "settings.nav.archive"),
             ("privacy", "/privacy-requests", "nav.privacy_requests"),
         ]
+    elif section == "admin":
+        items = [
+            ("console", "/admin", "home.admin.title"),
+            ("customers", "/admin/customers", "customers.title"),
+            ("billing", "/admin/fakturace", "billing.admin.title"),
+            ("incidents", "/admin/incidents", "users.incidents_link"),
+            ("operations", "/admin/operations", "ops.title"),
+            ("funnel", "/admin/funnel", "funnel.title"),
+        ]
     else:
         return []
     return [(href, key, name == current) for name, href, key in items]
@@ -469,7 +478,14 @@ def _template_page_tabs(context) -> list:
         if str(context.get("next_path") or "").startswith("/invoices"):
             return _template_section_tabs(request, "invoices", "settings")
         return _template_section_tabs(request, "properties", "business")
-    if nav in ("settings", "privacy_requests", "users", "incidents", "operations", "funnel", "billing_admin"):
+    if path == "/admin" or path.startswith("/admin/"):
+        segment = path.split("/")[2] if path.count("/") >= 2 else ""
+        current = {
+            "": "console", "fakturace": "billing", "customers": "customers", "users": "customers",
+            "incidents": "incidents", "operations": "operations", "funnel": "funnel",
+        }.get(segment, "")
+        return _template_section_tabs(request, "admin", current)
+    if nav in ("settings", "privacy_requests"):
         current = (
             "settings" if nav == "settings" and path == "/settings"
             else "archive" if path == "/settings/archived"

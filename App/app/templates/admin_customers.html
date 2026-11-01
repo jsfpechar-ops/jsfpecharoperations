@@ -1,8 +1,10 @@
 {% extends "host_page.html" %}
 {% set nav = 'users' %}
 {% set body_kind = 'list' %}
+{% from "_ui_layout.html" import ui_section_tabs with context %}
 {% block title %}{{ t('customers.title') }}{% endblock %}
 {% block meta %}{{ t('customers.meta') }}{% endblock %}
+{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
 {% block secondary_actions %}{{ ui_button(t('customers.payments'), 'secondary', href='/admin/fakturace') }}{% endblock %}
 {% block toolbar %}
 <form method="get" action="/admin/customers" class="ui-section">
@@ -19,6 +21,11 @@
 </form>
 {% endblock %}
 {% block body %}
+{% if missing_email_count %}
+<div class="ui-section" role="status" id="users-missing-email">
+  <p class="ui-sub"><strong>{{ t('users.email.missing_banner', count=missing_email_count) }}</strong></p>
+</div>
+{% endif %}
 {% if not billing_enabled %}{{ ui_banner('neutral', t('customers.billing_off')) }}{% endif %}
 {% set stats = [] %}
 {% for value in ['legacy', 'unverified', 'trialing', 'ending', 'active', 'overdue'] %}
@@ -44,5 +51,23 @@
 {% if newer_url %}{{ ui_button(t('customers.newer'), 'secondary', href=newer_url) }}{% endif %}
 {% if older_url %}{{ ui_button(t('customers.older'), 'secondary', href=older_url) }}{% endif %}
 {% if newer_url or older_url %}{{ ui_button(t('customers.reset'), 'quiet', href=href()) }}{% endif %}
+
+<section class="ui-section" id="create-host">
+  <h2>{{ t('users.create.title') }}</h2>
+  <p class="ui-sub">{{ t('users.create.lede') }}</p>
+  <form method="post" action="/admin/users">
+    <div class="ui-field">
+      <label for="display_name">{{ t('users.create.name') }}</label>
+      <input type="text" id="display_name" name="display_name" autocomplete="off">
+    </div>
+    <div class="ui-field">
+      <label for="email">{{ t('users.email.label') }}</label>
+      <input type="email" id="email" name="email" required maxlength="254" autocomplete="off"
+             autocapitalize="none" spellcheck="false">
+      <div class="ui-help">{{ t('users.email.create_hint') }}</div>
+    </div>
+    <button class="ui-btn ui-btn-primary" type="submit">{{ t('users.create.submit') }}</button>
+  </form>
+</section>
 </nav>
 {% endblock %}
