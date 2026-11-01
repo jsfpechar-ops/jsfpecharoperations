@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from app import db, property_health, property_setup
+from app import property_health
 from tests.test_guest_links_bilingual import _apartment_id, host  # noqa: F401
 
 APARTMENT = {"id": 7, "internal_name": "Flat", "active": 1}
