@@ -344,3 +344,12 @@ Left to do (not done):
 - Wizard overview cards (`test_onboarding_wizard_browser.py::test_wizard_polish_and_overview_cards`): not started.
 - Screenshots (step 5): not taken.
 - Open question for the owner: the door-code titleSize 14 vs 16 failure is a real type size on a v2 page; decide whether the CSS or the test threshold is wrong.
+
+## 0539
+
+Status: blocked at step 2 (tests). Steps 1 and 2 committed; step 3 (screenshot) not run.
+
+- Step 1: app2.css 0536 block gains two-column `.grid` from 1024 px, only-child and textarea spans, `max-width` override. base.html app2.css key `20261101-0539`. Commit 59a91eb.
+- Step 2: removed `initPropertyViews` and `initInlineTiming` plus their calls and the 0098 comment. The markup they read (`data-property-views`, `form[data-inline-timing]`) is rendered by no template. base.html app.js key `20261101-0539b`. Commit 7b3cee4.
+- Blocker: `tests/test_0503_page_inits_once_browser.py::test_second_init_page_run_binds_nothing_on_real_pages` and `tests/test_0504_mixed_inits_once_browser.py::test_mixed_inits_bind_nothing_on_second_run` fail. They expect one `invalid` listener re-bind per `form[data-unsaved-guard]`, which `initPropertyViews` caused. Now the count is 0. Their comments say "brief 0505 makes this zero". Owner decision needed: change those expectations to zero, or keep the rebind.
+- Other tests in the brief set pass (72 passed).
