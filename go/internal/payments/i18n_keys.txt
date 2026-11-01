@@ -13,3 +13,8 @@ payments.reason.late_checkout
 payments.reason.cleaning
 payments.reason.damage
 payments.reason.custom
+payments.err.no_entity
+payments.err.stripe_start
+payments.connect.flash_complete
+payments.connect.flash_action
+payments.connect.flash_pending
