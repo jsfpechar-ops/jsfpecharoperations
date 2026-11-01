@@ -50,12 +50,14 @@ FOCUS_JS = """() => {
     const labelRing = !!ls && (parseFloat(ls.outlineWidth) >= 2 || ls.boxShadow !== 'none');
     return {label: label, visible: true, outlineStyle: cs.outlineStyle, outlineWidth: cs.outlineWidth,
             boxShadow: cs.boxShadow, cls: el.className, body: document.body.className,
+            w: Math.round(r.width), h: Math.round(r.height), clip: cs.clip, op: cs.opacity, hiddenBranch: true,
             notVisible: !labelRing, obscured: false};
   }
   const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
   const obscured = !!hit && hit !== el && !el.contains(hit) && !hit.contains(el);
   return {label: label, visible: true, outlineStyle: cs.outlineStyle, outlineWidth: cs.outlineWidth,
           boxShadow: cs.boxShadow, cls: el.className, body: document.body.className,
+          w: Math.round(r.width), h: Math.round(r.height), clip: cs.clip, op: cs.opacity, hiddenBranch: false,
           notVisible: !outlineOk && !shadowOk, obscured: obscured};
 }"""
 
@@ -148,7 +150,7 @@ def test_keyboard_focus_is_visible_and_not_covered(wide_host, wide_base):
                 if not info["visible"]:
                     continue
                 if info["notVisible"]:
-                    findings.append((name, 1280, ["focus-not-visible", info["label"], info.get("outlineStyle"), info.get("outlineWidth"), info.get("boxShadow"), info.get("cls"), info.get("body")]))
+                    findings.append((name, 1280, ["focus-not-visible", info["label"], info.get("outlineStyle"), info.get("outlineWidth"), info.get("boxShadow"), info.get("cls"), info.get("body"), info.get("w"), info.get("h"), info.get("clip"), info.get("op"), info.get("hiddenBranch")]))
                 if info["obscured"]:
                     findings.append((name, 1280, ["focus-obscured", info["label"]]))
         context.close()
