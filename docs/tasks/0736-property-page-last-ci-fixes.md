@@ -74,3 +74,9 @@ Do these in order, commit after each: (a) section 12; (b) the a11y heading findi
 ## 15. Run 5 scope (after run 4: a, b done)
 - (c) The failing cases are the `javascript=False` ones (`[False-360-en]`): the page overflows only with JS off. Probe in a context with `java_script_enabled=False` at 360 on `/apartments/<id>?view=settings&section=guests&lang=en`, list the elements past `innerWidth`, fix the widest in the page CSS (it must not rely on JS-set classes or `scripting: enabled`). Then run the wizard file with `-k "wizard_polish or review_fixes"`.
 - Then section 13, items 7 and 8, section 6, and the two screenshots. Same PNG rule as section 14.
+
+## 16. Run 6 scope (after run 5: c done)
+1. Close the `@media (scripting: enabled) {` block in `App/app/static/app2.css`. It came from main (Overview, brief 0700s) and never closes, so every later rule only applies with JS on. Its last inner rule is the `@media (prefers-reduced-motion: reduce) { @view-transition ...; ::view-transition-group ... }` block; add the single `}` right after that inner block's `}` and before the next top-level `@media (prefers-reduced-motion: reduce) { body.v2 *, ...` line. Check with a brace count that depth is 0 at the end of the file. Key bump, `--write`. Then run `tests/test_0710_v2_mockup_match_browser.py tests/test_0541_property_page_phone_browser.py tests/test_onboarding_wizard_browser.py -k "not webkit and (wizard_polish or 0710 or 0541 or overview or property)"`, and say which no-JS rules now apply that did not before (any 0700-0729 Overview rule that changes no-JS layout: list it, do not change it).
+2. `tests/test_onboarding_wizard_browser.py:995` (`test_review_fixes_in_the_browser`, `a[href*='section=guests']` count 0 on `?view=overview`): the v2 overview rows link to `#sec-messages`. Count `a[href="#sec-messages"]` instead (keep the check that it exists).
+3. Section 13.
+Then stop and report; items 7, 8, section 6 and the screenshots are run 7.
