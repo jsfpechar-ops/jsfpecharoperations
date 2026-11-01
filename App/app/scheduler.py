@@ -52,6 +52,11 @@ _JOB_LEVELS = {
     "push": "warning",
     "stay_fee_mail": "warning",
     "guide_import": "warning",
+    "posthog": "warning",
+    "billing": "warning",
+    "billing_snapshot": "warning",
+    "stripe_sweep": "warning",
+    "job_queue": "warning",
 }
 
 
