@@ -1,53 +1,49 @@
-# 0624 report (executor: Haiku 5.5, session 2 checkpoint)
+# 0624 report (executor: Haiku 5.5, session 3 final)
 
-Status: blocked
+Status: review
 
-Done: steps 1 to 12. Left: step 13 (create App/tests/test_payments_consent.py and the 390 px screenshot), then the §6 commands and §7.
+Done: steps 1 to 13, §6 commands, §7. Brief Status line was already `in-progress`.
 
-Stopped at the executor tool-call cap (Haiku 30). Per workflow.md "When Haiku reaches the cap": continuation brief needed for steps 13 to the end.
+## Files changed (this session)
 
-## Commits (branch task/0624-payments-consent, local only)
+- `App/tests/test_payments_consent.py`: new, step 13 exactly as written.
+- `docs/tasks/screenshots-0624/consent-390.png`: created by the step 13 browser test.
+- `docs/tasks/0624-report.md`: this report.
 
-- 78957afb step 1: App/app/payments_consent.py
-- 87ae04e4 step 2: App/app/retention.py
-- ca4014e6 step 3: App/app/host_i18n.py, EN and CS keys (steps 3 and 4 together)
-- 76391280 step 5: App/app/templates/payments_consent.html
-- 5ff71373 step 8: App/app/routes/payments.py (steps 6 to 8 together)
-- 268d803f step 10: App/app/routes/stripe_connect.py (steps 9 and 10 together)
-- 17e78375 step 12: App/tests/test_stripe_connect.py (steps 11 and 12 together)
-- 61253437 and 560186e8 are earlier commits from session 1 and the orchestrator's brief update.
+Earlier commits from sessions 1 and 2 are unchanged (see the list in the session 2 report, now overwritten; branch `task/0624-payments-consent`).
 
-## Commands
+## Step 12 check
 
-- Step 1 and 2 `python -c "import app.main"`: no output.
-- Step 4 `pytest tests/test_host_i18n.py -k same_keys -q --tb=short -x`:
-  ```
-  .                                                                        [100%]
-  1 passed, 13 deselected in 0.70s
-  ```
-- Step 8, 10 `python -c "import app.main"`: no output.
-- Step 12: helper `_owner_id()` exists at tests/test_stripe_connect.py line 225. Test not yet run.
-- Steps 5 to 12 applied with the brief's anchors (all found). No deviation.
+`pytest tests/test_stripe_connect.py -q --tb=short -x`: `28 passed in 1.30s`.
 
-## §6 commands
+## §6 commands (last lines of each)
 
-Not run (cap reached).
+1. `tests/test_payments_dashboard.py tests/test_payment_request_model.py tests/test_stripe_connect.py tests/test_payment_rails.py tests/test_migrations.py`:
+   ```
+   ........................................................................ [ 90%]
+   ........                                                                 [100%]
+   80 passed in 4.14s
+   ```
+2. `tests/test_payments_consent.py tests/test_design_guardrails_browser.py` (browser, `-rs`): `17 passed in 57.72s`, 0 skipped.
+3. `design_lint.py`: `design lint: OK`
+4. `context_lint.py`: `context lint: OK` (with WARN lines: catalog.json and RETENTION.md named by other open briefs; 18 App/ commits since status.md update. Non-blocking.)
 
 ## §7 acceptance
 
-- [ ] Not reached.
-- [ ] Not reached.
-- [ ] Not reached.
-- [ ] Not reached.
+- [x] Host without consent on `/payments/connect/start` lands on `/payments/consent` (test).
+- [x] Ticking records one `payments_terms_accepted` audit row and continues to `/payments/connect/start` (test).
+- [x] `consent-390.png` shows the Czech page at 390 px; the test asserts no horizontal overflow.
+- [x] All §6 commands pass, 0 skipped.
 
 ## Deviations
 
-- Step grouping in commits (see above).
+- Step 13 and the report are one commit, as the owner asked ("0624 step 13 and report").
 
 ## Questions
 
-- Step 12 calls `payments_consent.record(_owner_id())`, which exists in the file. Not yet tested.
+- Screenshot is full-page. The fixed bottom nav overlaps list point 4, and a "Přidat druhý způsob přihlášení?" panel appears at the bottom. Both look like full-page capture artifacts (fixed or base-template elements), not consent-page content. The 390 px overflow check passes. Reviewer: confirm the overlap is only a capture artifact.
 
 ## Owner steps left
 
-- None yet.
+- Merge when CI is green: `scripts/merge-pr-on-green.sh <pr>`, then deploy.
+- On the Platby page click "Otevřít Stripe": "Jak fungují platby" should appear first; tick the box and continue to Stripe.
