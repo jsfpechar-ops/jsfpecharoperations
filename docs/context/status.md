@@ -17,7 +17,7 @@ Updated: 2026-11-01.
 - Foolproof 0230-0278, reset 0165-0183 (#405); phone app + alerts (0219, 0225-0229, #421). **Owner:** deploy, phone.
 - Langs 0196: vi host app, uk guest form. **Owner:** add `uk` to `UBYHOST_GUEST_LANGS`; deploy.
 - AI crawler block 0195: Terms §11 TDM v1.7, lawyer to confirm. Cleaning 0104: #396 CI/staging review.
-- Data-box credential letter. **LAWYER REVIEW** legal v1.7 (0005).
+- Data-box credential letter. **LAWYER REVIEW** legal v1.7.
 
 ## Next
 - Door codes 0037 and 0038 are on main. Next: those owner steps on staging.
