@@ -57,3 +57,24 @@ Left to do
 2. test_host_feedback_browser.py, test_host_filter_panels_browser.py, test_host_controls_browser.py: not started.
 3. Groups B and C: other executor.
 4. Key bump 20261101-0720c in base.html, test_static_versions.py --write, ruff: not started.
+
+## Session 4 (executor, group A, 25-call cap; partial, not pushed)
+
+Status: blocked. Done: steps 1 and 2 (motion, feedback). Left: filter panels (failing), controls, key bump and manifest, ruff.
+
+- 7dd38d0 step 2b: test_motion_browser.py. Old-shell cases that were on `/` now run on old-shell pages. The cross-fade case passes on /settings. The reduced-motion case now runs on /settings. The no-JS case runs on /stay-fees, because /settings has no `how_key` and so no `details.ui-how`.
+  - test_motion_browser.py: 5 passed, 0 skipped (`-rs`).
+- 891a5cb step 2c: test_host_feedback_browser.py. Both copy cases now run on /settings with a comment. The cause is the `[data-copy-state-icon]` span that app.js appends to `[data-copy]` buttons. It has no v2 styles in app2.css, and the button grows by about 19 px (after 121 vs 140, and a document-y shift). The stays thread adds those styles, so the cases point at the old shell instead.
+  - test_host_feedback_browser.py: 1 passed, 0 skipped.
+- No app2.css change in this session, so the key bump (step 3) is still not done.
+
+Still failing, not fixed:
+- test_host_filter_panels_browser.py::test_filter_geometry_and_popovers_stay_inside_the_viewport_in_english_and_czech, line 446. At 390 px (en) the wrapper is at y 689.10 and the trigger at y 690.43, so the offset is 1.33 px against the 1 px tolerance. The page is `/`, so this may be a v2 layout gap in app2.css, or a wrapper/trigger alignment that differs on v2. Not investigated. Tolerance not changed. Next: read the test setup around line 420 and the wrapper CSS on v2.
+- Not started: test_host_controls_browser.py, the key bump in base.html (20261101-0720c), `test_static_versions.py --write`, and ruff.
+
+Test tails:
+```
+test_motion_browser.py: 5 passed
+test_host_feedback_browser.py: 1 passed
+test_host_filter_panels_browser.py: 1 failed, 3 passed (stopped at -x on line 446)
+```
