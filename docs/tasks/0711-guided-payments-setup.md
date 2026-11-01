@@ -1,7 +1,7 @@
-# 0625: Guided 4-step payments setup around Stripe's hosted onboarding
+# 0711: Guided 4-step payments setup around Stripe's hosted onboarding
 
 Status: todo
-Depends on: 0624 (merged, #668) | Base commit: 7b4109f2 | Branch: task/0625-guided-payments-setup (already exists, check it out)
+Depends on: 0624 (merged, #668) | Base commit: 7b4109f2 | Branch: task/0711-guided-payments-setup (already exists, check it out)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -68,20 +68,20 @@ On `/payments`, until card payments are on, replace the single "Open Stripe" but
 | App/tests/test_payments_dashboard.py | edit | helper + updated button test + 2 new tests |
 | App/tests/test_stripe_connect.py | edit | one assert in `test_return_mirrors_state` |
 | App/tests/test_payments_setup_browser.py | new | 390 px geometry + screenshot |
-| docs/tasks/screenshots-0625/payments-setup-390.png | new | made by the browser test |
-| docs/tasks/0625-report.md | new | report |
-| docs/tasks/0625-guided-payments-setup.md | edit | Status line only |
+| docs/tasks/screenshots-0711/payments-setup-390.png | new | made by the browser test |
+| docs/tasks/0711-report.md | new | report |
+| docs/tasks/0711-guided-payments-setup.md | edit | Status line only |
 
 No other file may change.
 
 ## 4. Steps
 
-1. `git checkout task/0625-guided-payments-setup`. Set this brief's line 3 to `Status: in-progress`. Commit `0625 start`.
+1. `git checkout task/0711-guided-payments-setup`. Set this brief's line 3 to `Status: in-progress`. Commit `0711 start`.
 
 2. `App/app/stripe_connect.py`: directly above `def create_or_get_account`, add:
    ```python
    def legal_entity_for_owner(owner_user_id: int) -> Optional[Dict[str, Any]]:
-       """The business entity whose details go to Stripe (0625: the host sees
+       """The business entity whose details go to Stripe (0711: the host sees
        them on /payments before opening Stripe)."""
        row = db.query_one(
            "SELECT * FROM legal_entity WHERE owner_user_id = ? AND archived_at IS NULL"
@@ -100,7 +100,7 @@ No other file may change.
    b. In `connect_start`, directly before its `    try:` line, add:
    ```python
        if stripe_connect.legal_entity_for_owner(owner_id) is None:
-           # 0625: say what is missing instead of a silent bounce to "/".
+           # 0711: say what is missing instead of a silent bounce to "/".
            return _back("/payments", err=_flash(request, "payments.err.no_entity"))
    ```
    c. In the same function, replace `        return RedirectResponse("/", status_code=303)` inside the `except (stripe_connect.StripeOff, ValueError)` block with `        return _back("/payments", err=_flash(request, "payments.err.stripe_start"))`.
@@ -111,7 +111,7 @@ No other file may change.
            state = stripe_connect.handle_return(owner_id)
        except (stripe_connect.StripeOff, ValueError, KeyError) as exc:
            log.warning("connect return failed: %s", exc)
-       # Return is not verified: the message follows the mirrored state (0625).
+       # Return is not verified: the message follows the mirrored state (0711).
        key = {
            "complete": "payments.connect.flash_complete",
            "action_required": "payments.connect.flash_action",
@@ -122,7 +122,7 @@ No other file may change.
 4. `App/app/routes/payments.py`: directly above `@router.get("/payments")` add:
    ```python
    def _setup(owner_id: int, state: Dict[str, Any]) -> Dict[str, Any]:
-       """The 4 guided setup steps (0625) and which one the primary button opens."""
+       """The 4 guided setup steps (0711) and which one the primary button opens."""
        consent = payments_consent.accepted(owner_id)
        entity = stripe_connect.legal_entity_for_owner(owner_id)
        has_details = bool(entity and (entity.get("name") or "").strip())
@@ -261,7 +261,7 @@ No other file may change.
    d. In `test_connect_button_is_a_plain_link`, add `owner` to its arguments (`def test_connect_button_is_a_plain_link(client, owner, monkeypatch):`) and add `    _ready(owner)` before `    response = client.get("/payments")`.
    e. At the end of the file add:
    ```python
-   # --- guided setup (0625) -------------------------------------------------------
+   # --- guided setup (0711) -------------------------------------------------------
 
 
    def test_setup_button_always_points_at_the_next_step(client, owner, monkeypatch):
@@ -301,13 +301,13 @@ No other file may change.
 8. `App/tests/test_stripe_connect.py`, in `test_return_mirrors_state`, under `    assert response.status_code == 303` add `    assert response.headers["location"].startswith("/payments?msg=")`. Run step 2's command again. Expected: all pass.
 
 9. Create `App/tests/test_payments_setup_browser.py`. Copy the browser part of `App/tests/test_payments_consent.py` (from `REQUIRE_BROWSER = …` to the end) together with that file's imports, `_cleanup`, `owner` and `stripe_env` fixtures, with these changes only:
-   - module docstring `"""0625: guided payments setup fits a phone."""`; `OWNER = "paysetup"`; `SHOTS = … / "screenshots-0625"`.
+   - module docstring `"""0711: guided payments setup fits a phone."""`; `OWNER = "paysetup"`; `SHOTS = … / "screenshots-0711"`.
    - `_cleanup` also runs `db.execute("DELETE FROM stripe_account WHERE owner_user_id = ?", (oid,))` before deleting the user.
    - the `owner` fixture also calls `payments_consent.record(oid)` after inserting the legal entity.
    - rename the test to `test_payments_setup_fits_a_phone`; it opens `/payments?lang=cs`, asserts `page.locator("[data-payments-setup] li").count() == 4` and no horizontal overflow, and saves `payments-setup-390.png`.
    Run: `cd App && UBYHOST_REQUIRE_BROWSER=1 UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium .venv/bin/python -m pytest tests/test_payments_setup_browser.py -q --tb=short -x -rs 2>&1 | tail -10`. Expected: 1 passed, 0 skipped, and the PNG exists. Open the PNG and check that the 4 cards and the button show in Czech.
 
-10. Commit after each of steps 2 to 9 (`0625 step N`).
+10. Commit after each of steps 2 to 9 (`0711 step N`).
 
 ## 5. Do not touch
 
@@ -327,7 +327,7 @@ From the repo root: 4. `python3 scripts/context_lint.py 2>&1 | tail -5` → `con
 - [ ] The details card shows the entity name and e-mail with an Edit link.
 - [ ] `/payments/connect/start` without an entity returns to `/payments` with an error message.
 - [ ] `/payments/connect/return` lands on `/payments` with a message that matches the state.
-- [ ] §6 commands pass; screenshot `docs/tasks/screenshots-0625/payments-setup-390.png` shows the 4 Czech cards.
+- [ ] §6 commands pass; screenshot `docs/tasks/screenshots-0711/payments-setup-390.png` shows the 4 Czech cards.
 
 ## 8. Stop and ask
 
@@ -335,7 +335,7 @@ As in the TEMPLATE: an excerpt not found, a test failing twice, 25 tool calls or
 
 ## 9. Report
 
-Write `docs/tasks/0625-report.md` (600 tokens at most) per the TEMPLATE and set this brief's `Status: review`. Do not push.
+Write `docs/tasks/0711-report.md` (600 tokens at most) per the TEMPLATE and set this brief's `Status: review`. Do not push.
 
 ## Risk list (for the reviewer)
 
