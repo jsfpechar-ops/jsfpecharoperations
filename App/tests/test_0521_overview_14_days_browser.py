@@ -25,7 +25,8 @@ def test_overview_shows_fourteen_days_from_today_and_moves_by_fourteen(calendar_
         start = date.fromisoformat(today)
         expected = [(start + timedelta(days=index)).isoformat() for index in range(14)]
         assert slot_dates(page) == expected
-        assert page.locator(".cal-view-segment").is_hidden()
+        assert page.locator("[data-cal-days]").get_attribute("aria-pressed") == "true"
+        assert page.locator("[data-cal-scales]").is_hidden()
         assert page.locator("[data-cal-month]").is_hidden()
         assert page.locator("[data-cal-year]").is_hidden()
         shot(page, "overview-14-days-cs-1280")
@@ -45,6 +46,34 @@ def test_overview_shows_fourteen_days_from_today_and_moves_by_fourteen(calendar_
         context.close()
         browser.close()
 
+
+def test_month_view_is_one_click_away_and_fourteen_days_comes_back(calendar_workspace, calendar_origin):
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=1280)
+        page.goto(calendar_origin + "/?lang=cs")
+        page.wait_for_selector(".cal-gantt-row")
+        wait_loaded(page)
+        today = page.get_attribute("[data-calendar]", "data-today")
+        expected = [(date.fromisoformat(today) + timedelta(days=index)).isoformat() for index in range(14)]
+        assert page.locator('[data-cal-view="calendar"]').get_attribute("aria-pressed") == "false"
+        page.locator('[data-cal-view="calendar"]').click()
+        page.wait_for_selector(".cal-week")
+        wait_loaded(page)
+        assert page.locator('[data-cal-view="calendar"]').get_attribute("aria-pressed") == "true"
+        assert page.locator("[data-cal-days]").get_attribute("aria-pressed") == "false"
+        page.locator("[data-cal-days]").click()
+        page.wait_for_selector(".cal-gantt-row")
+        wait_loaded(page)
+        assert slot_dates(page) == expected
+        assert page.locator("[data-cal-days]").get_attribute("aria-pressed") == "true"
+        page.goto(calendar_origin + "/?lang=cs&cal_date=2026-10-01")
+        page.wait_for_selector(".cal-week")
+        wait_loaded(page)
+        assert page.locator("[data-cal-days]").get_attribute("aria-pressed") == "false"
+        assert page.locator("[data-cal-scales]").is_visible()
+        context.close()
+        browser.close()
 
 def test_cleaning_timeline_keeps_thirty_days(calendar_workspace, calendar_origin):
     with sync_api.sync_playwright() as playwright:
