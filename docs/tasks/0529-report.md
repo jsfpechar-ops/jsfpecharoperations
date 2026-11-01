@@ -103,12 +103,15 @@ Left:
 - Sidebar and dashboard geometry (test_host_wide_geometry_browser): check on 0528 base.
 - Not pushed; no PR opened.
 
-## Final pass (section 11, executor run)
-Status: blocked (cap reached after step 1; steps 2 to 5 left).
-Done: steps 1 to 1 (partly). Stay table and phone row borders now use `--line` (page-scoped rule in the `0529 final` block of app2.css); key `20261101-0529f`; manifest written; obsolete `.actbar .btn` missing_ok removed, then restored because the phone action bar has no CTA for the seeded stay (state-dependent, deviation from §11.1). Stay test at 1024, 1280, 1440 and stays test at 1024 and wider pass.
-Left, from the last run of the stays and stay test (320/390/768):
-- stays list: `.chips .chip` and `.chip.on` border-bottom accent vs ink; `.list .row` border ink vs `--line`; `.grp` side margins 0 vs 20 px at phone.
-- stay phone: `.sub`, `.facts`, `.card` and `h2.sec` side margins 0 vs 20 px (mockup puts 20 px on each element, app relies on main padding). Owner decision: change main padding for this page or the test.
-- stay phone: `.row .ic` tone (fixture stay is waiting, mockup finished): data, owner decision.
-- stay phone: `.row .t` widths, `.facts` height, `.card` height, `h2.sec` height, `.list .row` height.
-- Steps 2 to 5 not run: 0527 and 0529 §6 files, screenshots, design_lint (`police-failed` missing from docs/design/catalog.json), report sign-off.
+## Final pass (section 11, executor run 2)
+Status: blocked (tool-call cap; stays list fixes left).
+Done: steps 1 (partly, shell items untouched), 2 (run, not fixed), 3 (filing forms = 12), 4 (screenshots copied), 5 (police-failed already in catalog classes and class_notes; design_lint OK; context_lint OK; static versions OK after key bump).
+Orchestrator fixes done (commit 7f864756): `.sub`, `.facts`, `.card`, `.grp` margin-left/right 0 in `BOX_OVERRIDES` (tests/v2_mockup.py); `.chip.on` border-color `!important` in app2.css; app2 key bumped to `20261101-0529g`.
+Stays 0710 (`-k "stays or stay"`): 6 failed. Chip and margin items pass now. Left (shell or data owned): `.row .ic` tone (fixture waiting vs mockup finished); `.sub` margin-bottom 8 vs 10; `.facts` height 139 vs 158; `h2.sec` height 33 vs 28; `.list .row` height 82 vs 76; `.row .t` widths; `.card` height 95 vs 102 at 390.
+Step 2, file by file (one pytest process per file, `--tb=line -rs`):
+- Pass: test_0523_stays_list (8), test_design_stays (3), test_archive_stays_on_page (10), test_stays_empty_workspace (14), test_0199_phone_geometry_browser (3), test_a11y_guard_browser (4), test_static_versions (3), test_0525_stay_detail (6), test_design_stay_detail (2), test_wp25_reported_bugs (29), test_host_stay_detail_layout_browser (1), test_host_filter_panels_browser (4 on rerun; one failure in the first run, not reproduced).
+- Fails, stays list (our branch rewrote `reservations.html`; old classes gone): test_host_list_layouts_browser (2: `.stay-col-reporting`, `.stay-report-deadline`), test_host_list_page_layout_browser (3: `.row-primary-link` missing, "no clickable row"), test_host_wide_geometry_browser (8: `.stays-view .stay-col-reporting`, `.stay-col-stay`, `.stay-report-deadline` missing), test_design_guardrails_browser (2: sidebar search border and table row border selectors), test_host_stay_actions_browser (1: `td.stay-col-reporting [data-tone]`), test_onboarding_followup_browser (12: `tr[data-href^="/reservations/1?"] .row-primary-link`; new markup uses `.stay-identity-link`), test_overhaul (3: `test_reservations_sorted_earliest_first` (0 date cells), `test_the_stay_page_reads_as_one_ordered_grammar` (order), `test_the_receipt_download_moves_into_the_report_row_menu` (section id `reports` not found on stay page)).
+- Not fixed: these selectors encode the old stays-list markup; converting them is a test-selector rewrite plus possible layout checks, not done in this run. They are stays-related, so ours to fix in the next run.
+- Shell base check: not yet run. Our branch touches `reservations.html`, `reservation_detail.html` and app2.css; the failing list tests use stays-list selectors, so none are "fails on the shell base too" so far.
+Screenshots: `docs/tasks/screenshots-0529-final/` holds stays-390/1280, stay-390/1280 (app) and mockup-stays-390/1280, mockup-stay-390/1280. Not yet viewed.
+Left for next run: step 2 fixes above; view the four app shots once and list differences; rerun the §6 list.
