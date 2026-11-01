@@ -141,6 +141,8 @@ services:
     environment:
       UBYHOST_DATABASE_URL: ${UBYHOST_DATABASE_URL:-}
       UBYHOST_GO_JOB_KINDS: ${UBYHOST_GO_JOB_KINDS:-}
+      UBYHOST_STRIPE_MODE: ${UBYHOST_STRIPE_MODE:-off}
+      UBYHOST_STRIPE_WEBHOOK_SECRET: ${UBYHOST_STRIPE_WEBHOOK_SECRET:-}
     volumes:
       - ubyhost-pgsock:/var/run/postgresql
     expose:
@@ -241,6 +243,7 @@ services:
       UBYHOST_DOMAIN: ${UBYHOST_DOMAIN}
       UBYHOST_APP_DOMAIN: ${UBYHOST_APP_DOMAIN:-}
       ACME_EMAIL: ${ACME_EMAIL}
+      UBYHOST_GO_PATHS: ${UBYHOST_GO_PATHS:-/__go_off__}
     volumes:
       - ./caddy/Caddyfile.active:/etc/caddy/Caddyfile:ro
       - ./caddy/certs:/etc/caddy/certs:ro

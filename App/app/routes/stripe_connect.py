@@ -20,7 +20,7 @@ import logging
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import PlainTextResponse, RedirectResponse, Response
 
-from .. import auth, config, rate_limit, security, stripe_connect
+from .. import auth, config, payments_consent, rate_limit, security, stripe_connect
 
 log = logging.getLogger("ubyhost.stripe")
 
@@ -60,6 +60,9 @@ async def connect_start(request: Request):
     owner_id = _workspace(request)
     if owner_id is None:
         return RedirectResponse("/", status_code=303)
+    if not payments_consent.accepted(owner_id):
+        # 0624: the one-time plain-language consent comes before Stripe.
+        return RedirectResponse("/payments/consent", status_code=303)
     try:
         # Deterministic https base (config.app_base_url(): the env-configured
         # public URL). request.base_url behind the TLS-terminating proxy is

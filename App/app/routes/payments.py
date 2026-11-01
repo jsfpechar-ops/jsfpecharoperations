@@ -13,9 +13,9 @@ from typing import Any, Dict, List
 import json
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import Response
+from fastapi.responses import RedirectResponse, Response
 
-from .. import access, auth, config, db, host_i18n, i18n, mail, payment_links, payment_request, security, stripe_connect
+from .. import access, auth, config, db, host_i18n, i18n, mail, payment_links, payment_request, payments_consent, security, stripe_connect
 from ..templating import render
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
@@ -325,3 +325,35 @@ async def property_page_photo_delete(request: Request, apartment_id: int):
 
     pp.delete_photo(apartment_id, str(form.get("path") or ""))
     return _back(f"/apartments/{apartment_id}/page", msg=_flash(request, "payments.page.saved"))
+
+
+# --- one-time payments consent (0624) ------------------------------------------
+
+
+@router.get("/payments/consent")
+def payments_consent_page(request: Request):
+    """The plain-language summary a host accepts once before Stripe."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    if _off():
+        return Response(status_code=404)
+    return render(request, "payments_consent.html", {"nav": "payments", "how_key": "payments"})
+
+
+@router.post("/payments/consent")
+async def payments_consent_accept(request: Request):
+    """Record the tick, then go straight on to Stripe onboarding."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    if _off():
+        return Response(status_code=404)
+    workspace = auth.workspace_user(request)
+    if not workspace:
+        return RedirectResponse("/", status_code=303)
+    form = await request.form()
+    if str(form.get("agree") or "") != "1":
+        return _back("/payments/consent", err=_flash(request, "payments.err.consent"))
+    payments_consent.record(int(workspace["id"]))
+    return RedirectResponse("/payments/connect/start", status_code=303)

@@ -15,14 +15,12 @@
   </a>
 </section>
 <nav class="list menu-list" aria-label="{{ t('nav.menu') }}">
-  <a class="row" href="/cleaning"><span class="ic acc" aria-hidden="true">{{ icon('brush-cleaning', 22) }}</span><span class="t"><b>{{ t('nav.cleaning') }}</b></span>{{ icon('chevron-right', 24, 'chev') }}</a>
-  <a class="row" href="/stay-fees"><span class="ic acc" aria-hidden="true">{{ icon('receipt', 22) }}</span><span class="t"><b>{{ t('nav.stay_fees') }}</b></span>{{ icon('chevron-right', 24, 'chev') }}</a>
-  <a class="row" href="/payments"><span class="ic acc" aria-hidden="true">{{ icon('credit-card', 22) }}</span><span class="t"><b>{{ t('nav.payments') }}</b></span>{{ icon('chevron-right', 24, 'chev') }}</a>
-  <a class="row" href="/settings"><span class="ic acc" aria-hidden="true">{{ icon('settings', 22) }}</span><span class="t"><b>{{ t('nav.settings') }}</b></span>{{ icon('chevron-right', 24, 'chev') }}</a>
-  <a class="row" href="/guide"><span class="ic acc" aria-hidden="true">{{ icon('book-open', 22) }}</span><span class="t"><b>{{ t('nav.guide') }}</b></span>{{ icon('chevron-right', 24, 'chev') }}</a>
-  {% if current_user.role == 'admin' %}<a class="row" href="/admin"><span class="ic acc" aria-hidden="true">{{ icon('shield', 22) }}</span><span class="t"><b>{{ t('nav.admin') }}</b></span>{{ icon('chevron-right', 24, 'chev') }}</a>{% endif %}
+  <a class="row" href="/cleaning"><span class="ic acc" aria-hidden="true">{{ icon('brush-cleaning', 22) }}</span><span class="t"><b>{{ t('nav.cleaning') }}</b>{% if cleaning_week is not none %}<small>{% if cleaning_week %}{{ t('menu.sub.cleaning_live', today=cleaning_today, week=cleaning_week) }}{% else %}{{ t('menu.sub.cleaning_none') }}{% endif %}</small>{% endif %}</span>{% if cleaning_today %}<span class="badge">{{ cleaning_today }}</span>{% endif %}{{ icon('chevron-right', 24, 'chev') }}</a>
+  <a class="row" href="/stay-fees"><span class="ic acc" aria-hidden="true">{{ icon('receipt', 22) }}</span><span class="t"><b>{{ t('nav.stay_fees') }}</b><small>{{ t('menu.sub.stay_fees') }}</small></span>{{ icon('chevron-right', 24, 'chev') }}</a>
+  <a class="row" href="/payments"><span class="ic acc" aria-hidden="true">{{ icon('credit-card', 22) }}</span><span class="t"><b>{{ t('nav.payments') }}</b><small>{{ t('menu.sub.payments') }}</small></span>{{ icon('chevron-right', 24, 'chev') }}</a>
+  <a class="row" href="/settings"><span class="ic acc" aria-hidden="true">{{ icon('settings', 22) }}</span><span class="t"><b>{{ t('nav.settings') }}</b><small>{{ t('menu.sub.settings') }}</small></span>{{ icon('chevron-right', 24, 'chev') }}</a>
+  <a class="row" href="/guide"><span class="ic acc" aria-hidden="true">{{ icon('book-open', 22) }}</span><span class="t"><b>{{ t('nav.guide') }}</b><small>{{ t('menu.sub.guide') }}</small></span>{{ icon('chevron-right', 24, 'chev') }}</a>
+  {% if current_user.role == 'admin' %}<a class="row" href="/admin"><span class="ic acc" aria-hidden="true">{{ icon('shield', 22) }}</span><span class="t"><b>{{ t('nav.admin') }}</b><small>{{ t('menu.sub.admin') }}</small></span>{{ icon('chevron-right', 24, 'chev') }}</a>{% endif %}
 </nav>
-<form method="post" action="/logout" class="menu-logout">
-  <button class="ui-btn ui-btn-quiet" type="submit">{{ t('nav.logout') }}</button>
-</form>
+<form method="post" action="/logout" class="list menu-logout"><button class="row" type="submit"><span class="ic" aria-hidden="true">{{ icon('log-out', 22) }}</span><span class="t"><b>{{ t('nav.logout') }}</b></span></button></form>
 {% endblock %}

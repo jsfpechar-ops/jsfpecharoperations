@@ -260,7 +260,7 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
   body.v2 .list{margin:0}
   body.v2 .row{display:flex;align-items:center;gap:14px;min-height:76px;padding:12px 0;border-bottom:1px solid var(--line);width:100%;text-align:left}
   body.v2 .row:last-child{border-bottom:0}
-  body.v2 .row .t{flex:1;min-width:0}body.v2 .row .t b{display:block;font-size:16px}body.v2 .row .t small{display:block;color:var(--ink3);font-size:14px;margin-top:2px}
+  body.v2 .row .t{flex:1;min-width:0}body.v2 .row .t b{display:block;font-size:16px}body.v2 .row .t small{display:block;color:var(--ink3);font-size:14px;margin-top:2px}body.v2 .menu-logout{margin-top:16px}body.v2 .menu-logout .row{width:100%;border:0;background:none;font:inherit;text-align:left;cursor:pointer}body.v2 .menu-logout .ic{background:#efefeb;color:var(--ink2)}
   body.v2 .row .t .pill{margin-top:6px}
   body.v2 .chev{color:#b4b4ae}
   body.v2 .grp{font-size:13px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin:22px 0 2px}
@@ -686,3 +686,4 @@ body.v2 .onboarding-intro .onboarding-logo{width: 64px; height: auto; max-width:
 body.v2 tr[data-href]{cursor:pointer}
 
 @media (max-width:767px){body.v2 .cal-day-number{min-width:44px}}
+body.v2 .menu-list .row .t small{display:block;color:var(--ink3);font-size:14px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
