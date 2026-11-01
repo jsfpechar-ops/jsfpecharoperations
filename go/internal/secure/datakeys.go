@@ -85,3 +85,8 @@ func loadSecret(getenv func(string) string) (string, error) {
 	}
 	return stored, nil
 }
+
+// LoadSecret exposes loadSecret to the host session reader (go/internal/session).
+func LoadSecret(getenv func(string) string) (string, error) {
+	return loadSecret(getenv)
+}

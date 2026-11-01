@@ -1,0 +1,5 @@
+Stay from 01.06.2026 with guest forms left the calendar.
+
+Nothing will be reported for it. If the booking only moved, set the stay back to Active.
+
+Open stay: https://app.example.test/reservations/202

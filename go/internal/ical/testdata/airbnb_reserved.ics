@@ -1,0 +1,13 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Example Hosting//Calendar//EN
+METHOD:PUBLISH
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20260910
+DTEND;VALUE=DATE:20260913
+UID:res-1@airbnb.example
+SUMMARY:Reserved
+DESCRIPTION:Phone Number (Last 4 Digits): 0431\nView your reservation: https://www.airbnb.example/hosting/reservations/details/HMTEST01.
+URL:https://www.airbnb.example/hosting/reservations/details/HMTEST01
+END:VEVENT
+END:VCALENDAR

@@ -1,0 +1,16 @@
+[
+  {
+    "date_from": "2027-01-05",
+    "date_to": "2027-01-07",
+    "description": "",
+    "guest_email": null,
+    "is_block": false,
+    "is_cancelled": false,
+    "name_hint": "Kateřina Dvořáková-Nováčková, Jiří Šťastný a Michaela Hájková s celou rodinou, d",
+    "phone_last4": null,
+    "recurring": false,
+    "reservation_url": null,
+    "summary": "Kateřina Dvořáková-Nováčková, Jiří Šťastný a Michaela Hájková s celou rodinou, dětmi a přáteli z Brna",
+    "uid": "cz-1@example.test"
+  }
+]
