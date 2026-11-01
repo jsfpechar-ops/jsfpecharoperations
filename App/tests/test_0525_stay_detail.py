@@ -75,7 +75,7 @@ def test_guest_row_shows_the_doc_type_label_and_never_the_document_number(host):
         "UPDATE guest SET doc_type = ? WHERE reservation_id = ?", ("P", reservation_id)
     )
     page = client.get(f"/reservations/{reservation_id}?lang=en").text
-    match = re.search(r'class="guest-card-doc">([^<]*)</span>', page)
+    match = re.search(r'class="guest-doc">([^<]*)</td>', page)
     assert match and match.group(1).strip() not in ("", "—")
     # The card head only: the existing guest-facts list below it is unchanged by this brief.
     head = page[page.index('class="guest-card-head"'):page.index('class="guest-facts"')]

@@ -35,12 +35,12 @@ def test_stay_detail_groups_facts_and_wraps(stay_actions_host, stay_actions_base
                     page.goto(f"{stay_actions_base}/reservations/{ids[key]}?lang={locale}")
                     page.wait_for_load_state("networkidle")
                     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"), (key, width)
-                    # One ordered page: next step, guests, reporting, settings; nothing folded.
+                    # One ordered page, mockup order: guests, reporting, settings; nothing folded.
                     order = page.evaluate(
-                        "['now','guests','reports','stay-quick-edit'].map(i => document.getElementById(i).getBoundingClientRect().top)"
+                        "['guests','reports','stay-quick-edit'].map(i => document.getElementById(i).getBoundingClientRect().top)"
                     )
                     assert order == sorted(order), order
-                    assert page.locator("#stay-quick-edit").evaluate("e => e.tagName") == "SECTION"
+                    assert page.locator("#stay-quick-edit").evaluate("e => e.tagName") == "DETAILS"
                     # 0525 standing rule: the jump tabs were removed in 0524, so the nav geometry
                     # checks no longer apply; the page must have none.
                     assert page.locator("nav.stay-jump a").count() == 0
