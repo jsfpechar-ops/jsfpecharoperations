@@ -181,7 +181,7 @@ def _seed_receipt_for(stay_id: int) -> int:
 def _stay_dates(html: str) -> list[str]:
     """Read arrival dates from each row's aria-label (the column prints short `d. m.` dates)."""
     return re.findall(
-        r'<tr class="ui-row clickable-row"[^>]*?aria-label="[^"]*?(\d{2}\.\d{2}\.\d{4})',
+        r'<tr class="clickable-row"[^>]*?aria-label="[^"]*?(\d{2}\.\d{2}\.\d{4})',
         html,
     )
 
@@ -409,12 +409,12 @@ def test_the_stay_page_reads_as_one_ordered_grammar():
         page = _browser().get(f"/reservations/{stays[0]}")
         assert page.status_code == 200
         body = page.text
-        positions = [body.index(marker) for marker in ('police-card', 'id="guests"', 'id="stay-quick-edit"')]
+        positions = [body.index(marker) for marker in ('id="guests"', 'police-card', 'id="stay-quick-edit"')]
         assert positions == sorted(positions)
         # Reporting facts now live after Guests, in the Police report section.
         assert 'police-card' in body
-        assert 'class="stay-metrics detail-hero' in body
-        assert body.index('id="guests"') < body.index('id="reports"') < body.index('class="stay-metrics detail-hero')
+        assert 'class="facts' in body
+        assert body.index('id="guests"') < body.index('police-card')
         assert 'class="panel tight detail-hero' not in body
         # The guest-assignment line moved into the Guests group.
         assert 'id="stay-claim"' not in body
@@ -440,7 +440,7 @@ def test_the_payments_group_ships_no_heading_until_a_panel_joins_it():
         source = (TEMPLATES / "reservation_detail.html").read_text(encoding="utf-8")
         assert "{% if money_panels %}" in source
         assert source.index('id="guests"') < source.index('id="money"')
-        assert source.index('id="money"') < source.index('id="reports"')
+        assert source.index('id="money"') < source.index('id="police-card"')
     finally:
         _cleanup()
 
@@ -466,7 +466,7 @@ def test_the_receipt_download_moves_into_the_report_row_menu():
     try:
         submission_id = _seed_receipt_for(stays[0])
         body = _browser().get(f"/reservations/{stays[0]}").text
-        assert '<section class="ui-section" id="reports">' in body
+        assert 'id="police-card"' in body
         assert f'class="row-menu-item" href="/submissions/{submission_id}/receipt.pdf"' in body
         assert ">Receipt (Doručenka)</a>" in body
         assert f'class="btn small primary" href="/submissions/{submission_id}/receipt.pdf"' not in body
