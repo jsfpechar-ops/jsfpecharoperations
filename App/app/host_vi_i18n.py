@@ -460,6 +460,7 @@ STRINGS: Dict[str, str] = {
     "nav.properties": "Chỗ ở",
     "nav.properties_more": "Thêm %(count)s chỗ ở. Mở tìm kiếm",
     "nav.property_count": "%(count)s chỗ ở",
+    "nav.property_count.few": "%(count)s chỗ ở",
     "nav.all_properties": "Mọi chỗ ở",
     "nav.per_property": "Đặt theo từng chỗ ở",
     "nav.account": "Tài khoản",

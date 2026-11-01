@@ -222,6 +222,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "nav.properties_more": "%(count)s more properties. Open search",
         "nav.property_count": "%(count)s properties",
         "nav.property_count.one": "1 property",
+        "nav.property_count.few": "%(count)s properties",
         "nav.all_properties": "All properties",
         "nav.per_property": "Set per property",
         "nav.account": "Account",
