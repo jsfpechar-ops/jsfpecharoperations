@@ -46,10 +46,11 @@ PAGES = [
             ".side", ".side .nav", ".side .nav.on", ".head h1", ".head .sub", ".head .btn",
             "main h2", ".todo .card", ".todo .ic", ".todo .t", ".todo p", ".quiet", ".card.cal",
             ".cal .cd", ".cal .cn", ".cal .bar.b-ok", ".cal .bar.b-warn", "main table th", "main tbody tr:first-child td", "main td small",
-            "main .pill",
+            "main .pill.p-ok", "main .pill.p-warn",
         ],
         "missing_ok": {
             ".cal .bar.b-ok": "demo data has no confirmed stay in the 14-day window; the tone follows the data",
+            "main .pill.p-ok": "tone depends on data: the demo overview has no reported stay",
         },
     },
 ]

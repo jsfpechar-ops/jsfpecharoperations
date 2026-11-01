@@ -75,6 +75,7 @@ tbody tr .btn.sm.ghost{opacity:0;transition:opacity .15s}tbody tr:hover .btn.sm.
 }
 /* 0715: the two "What needs you" cards are cramped next to the 220 px sidebar below 1024 px */
 @media (max-width:1023px){.todo{grid-template-columns:1fr}}
+@media (max-width:359px){body.v2 main table{table-layout:fixed}}
 /* 0709 phone (390 px): the v2 Overview fits without a sideways page scroll */
 @media (max-width: 767px){
   body.v2 .side .org,body.v2 .side .me,body.v2 .side .side-bottom,body.v2 .side .search{display:none}
