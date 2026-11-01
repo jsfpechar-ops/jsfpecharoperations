@@ -55,6 +55,10 @@
     "sha256": "af1e1865b06ae0dcaecba51cae5e17440cdb97f8a393211ba98caac5e5779f4a",
     "v": "20261004a"
   },
+  "fonts/Manrope-latin.woff2": {
+    "sha256": "a30ddcd349703aff7464c34bef3fffdff405ee50c113440d7c8693c02d210972",
+    "v": "20261101-0495"
+  },
   "guest-enhancements.js": {
     "sha256": "3a916b6481143037c7df5b9bb0bd1d125d29d7a95754d73a5d9f28d2744ec7ee",
     "v": "20261003a"
@@ -88,8 +92,8 @@
     "v": "20261026-door-lock-times"
   },
   "host2.css": {
-    "sha256": "280cf820010c649d9cb5b4cda430ba16b39f268fb47a2b80ebc43119ae881add",
-    "v": "20261029-0447"
+    "sha256": "53b30b450cf5da470bef0b3e0c4acf5bc84d3926c50b5474e229f11cc1655dcc",
+    "v": "20261101-0495b"
   },
   "landing.css": {
     "sha256": "1a6a6e254dbe0a643967f20a959c2af380f16f9866f062a88e52267acb857643",
@@ -132,8 +136,8 @@
     "v": "20261025-havel-skeleton"
   },
   "tokens.css": {
-    "sha256": "e9958ea817fb372a280ef8f647cad36b333a5cc9c32ea752bc8897cafc4407e4",
-    "v": "20261022-0284"
+    "sha256": "f2ff6d6ad651558d60bc7312d74aca175c9782a27234e9e4505dd7a1f4841961",
+    "v": "20261101-0495"
   },
   "ubyhost-logo-stacked.png": {
     "sha256": "3f4a4fa5aae52cb2ea45c076ff4ecd26f86c76915852cff2664317d3f7fb50fa",
