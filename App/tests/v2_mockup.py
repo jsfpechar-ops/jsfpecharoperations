@@ -46,11 +46,11 @@ SELECTOR_ALIASES = {".actbar": ".bar", ".actbar .btn": ".bar .btn", ".head h1": 
 BOX_PROPS = ("width", "height", "margin-top", "margin-right", "margin-bottom", "margin-left")
 # phone box departure: the 20 px side room comes from body.v2 .main padding, so phone cards have no side margin (2026-11-01)
 BOX_OVERRIDES = {
-    ".card.me": {"margin-left": "0px", "margin-right": "0px"},
-    ".big": {"margin-left": "0px", "margin-right": "0px"},
-    # the mockup name wraps at 320 px; the app keeps it on one line with ellipsis (0719 brief, left over from 0718)
-    ".card.me@320": {"height": "98px"},
     # text-dependent: fixture copy vs phone v2 mockup demo copy (0729)
+    # text-dependent: app copy vs phone v2 mockup demo copy (0735)
+    ".promo@320": {"height": "80px"},
+    ".promo b@320": {"width": "143.25px"},
+    ".tile .v@320": {"margin-top": "29px"},
     ".card.need@320": {"height": "180.188px"},
     ".need .t@320": {"width": "236px"},
     ".need small@320": {"width": "236px", "height": "52px"},
@@ -115,9 +115,10 @@ PAGES = [
         "path": "/menu",
         "view": None,  # no desktop mockup screen: the Menu page is compared at phone widths only
         "selectors": [],
+        "phone_mockup": PHONE_MOCKUP_V2,
         "phone_view": "menu",
-        "phone_selectors": [".tabs", ".tab:not(.on)", ".tab.on", ".big", ".card.me", ".list .row", ".row .t b", ".row .t small"],
-        "missing_ok": {".row .t small": "menu rows have no subtitle yet: the mockup subtitles are demo copy and no approved menu copy exists (owner decision, 0718)"},
+        "phone_selectors": [".tabs", ".tab:not(.on)", ".tab.on", ".mh .big", ".me-av", ".tile", ".tile b", ".tile small", ".tile .v", ".promo", ".promo .pi", ".promo b", ".promo small", ".list.plain .row", ".list.plain .badge", ".menu-logout"],
+        "missing_ok": {".list.plain .badge": "the Cleaning badge shows only when a cleaning is planned for today"},
     },
 ]
 
