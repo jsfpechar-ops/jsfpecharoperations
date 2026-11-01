@@ -75,6 +75,7 @@
   const root = document.querySelector("[data-calendar]");
   if (!root) return;
   const cleaningMode = root.dataset.cleaning === "true";
+  const fixedDays = Number(root.dataset.days) || 0;
   const readOnly = root.dataset.readonly === "true";
   const cleaningLabels = JSON.parse(document.querySelector("[data-cleaning-labels]")?.textContent || "{}");
   const $ = selector => root.querySelector(selector);
@@ -106,7 +107,7 @@
   const state = {
     mode: validMode(queryMode) ? queryMode : (validMode(preferences.mode) ? preferences.mode : "auto"),
     scale: ["month", "week", "year"].includes(query.get("cal_scale")) ? query.get("cal_scale") : "month",
-    date: validDate(queryDate) ? queryDate : (root.dataset.calendarDate || root.dataset.today),
+    date: validDate(queryDate) ? queryDate : (fixedDays ? root.dataset.today : (root.dataset.calendarDate || root.dataset.today)),
     property: properties.some(item => String(item.id) === query.get("cal_property")) ? query.get("cal_property") : "",
     properties, events: [], loading: false,
     display: { property: preferences.property !== false, label: preferences.label !== false, guests: preferences.guests !== false }
@@ -123,14 +124,15 @@
   }
   function savePreferences() {
     try {
-      preferences = { mode: state.mode, ...state.display };
+      preferences = { mode: fixedDays ? preferences.mode : state.mode, ...state.display };
       const displaySettings = JSON.stringify(preferences);
       if (cleaningMode) localStorage.setItem(cleaningPreferencesKey, displaySettings);
       else localStorage.setItem(preferencesKey, displaySettings);
     } catch (_) { /* Optional. */ }
   }
-  function view() { return phoneDots() ? "calendar" : autoView(state.mode, state.property ? 1 : state.properties.length); }
+  function view() { if (fixedDays && !phoneDots()) return "gantt"; return phoneDots() ? "calendar" : autoView(state.mode, state.property ? 1 : state.properties.length); }
   function range() {
+    if (fixedDays && view() === "gantt") return [state.date, addDays(state.date, fixedDays)];
     if (view() === "gantt" && cleaningMode) return [state.date,
       state.date === root.dataset.rangeFrom && root.dataset.rangeTo ? root.dataset.rangeTo : addDays(state.date, 30)];
     if (view() === "gantt") return [monthStart(state.date), moveMonth(state.date, 1)];
@@ -197,6 +199,12 @@
     $("[data-cal-auto]").checked = state.mode === "auto";
     $$("[data-cal-display]").forEach(input => { input.checked = state.display[input.dataset.calDisplay]; });
     if (cleaningMode && currentView === "gantt") $("[data-cal-period]").textContent = shortDate(start) + " – " + fullDate(addDays(end, -1));
+    if (fixedDays && currentView === "gantt") {
+      $("[data-cal-period]").textContent = shortDate(start) + " – " + fullDate(addDays(end, -1));
+      $(".cal-view-segment").hidden = true;
+      $("[data-cal-month]").hidden = true;
+      $("[data-cal-year]").hidden = true;
+    }
     fillProperties($("[data-cal-property]"), true);
     $$("[data-calendar-add]").forEach(link => { link.setAttribute("aria-haspopup", "dialog"); });
   }
@@ -748,7 +756,8 @@
     const movement = target.closest("[data-cal-prev], [data-cal-next]");
     if (movement) {
       const sign = movement.hasAttribute("data-cal-prev") ? -1 : 1;
-      const next = view() === "calendar" && state.scale === "week" ? addDays(state.date, sign * 7) :
+      const next = fixedDays && view() === "gantt" ? addDays(state.date, sign * fixedDays) :
+        view() === "calendar" && state.scale === "week" ? addDays(state.date, sign * 7) :
         moveMonth(state.date, sign * (view() === "calendar" && state.scale === "year" ? 12 : 1));
       state.date = next < "1900-01-01" ? "1900-01-01" : next > "2100-12-01" ? "2100-12-01" : next;
       load(); return;
