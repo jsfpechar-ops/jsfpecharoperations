@@ -352,8 +352,8 @@
   <div class="ic acc" aria-hidden="true"></div>
 </div></section>{% endif %}
 {% if not stay_inactive %}<div class="list"><a class="link" href="/payments?reservation_id={{ reservation.id }}#new-request">{{ t('stays.row.request_payment') }}<svg class="i chev"><use href="#i-chev"/></svg></a></div>{% endif %}
-<section class="ui-section stay-settings" id="stay-quick-edit">
-  <div class="ui-section-h"><h2>{{ t('stay.detail.settings.title') }}</h2></div>
+<details class="card stay-settings" id="stay-quick-edit">
+  <summary><b>{{ t('stay.detail.settings.title') }}</b></summary>
   <p class="ui-sub">{{ t('stay.detail.settings.lede') }} <a href="/apartments/{{ reservation.apartment_id }}?view=settings&amp;section=guests#communication">{{ t('stay.detail.settings.guest_links') }}</a>.</p>
   <h3 class="inline-edit-title">{{ t('stay.detail.inline.title') }}</h3>
   <form class="inline-edit-bar" method="post" action="/reservations/{{ reservation.id }}/quick-edit"
@@ -394,6 +394,6 @@
     </div>
     <div class="ui-form-actions"><button class="ui-btn ui-btn-secondary" type="submit">{{ t('common.save') }}</button></div>
   </form>
-</section>
+</details>
 </div>
 {% endblock %}
