@@ -31,3 +31,27 @@ Old stays tests run once in this session: the run was cut at the 120 s tool limi
 - Shell (Overview thread): approve `.top .round`, `.chip.on` !important, and `.head h1` / `.head .btn` below 1024.
 - Copy: approve chip and pill label length (owner).
 - Confirm `range=upcoming` as the stays test fixture.
+
+## Session 3 (section 10 fix list)
+Status: blocked (budget). Commits: 9ec057d7 (items 1 to 5, 7), 389e83de (filter panel collapse, key 20261101-0527e, manifest 41 files).
+
+Done:
+- Item 1: `body.v2 [hidden]` and `body.v2 .hidden` set to `display:none!important` (app2.css, shell section). Filter panel also collapsed (`body.v2 .stays-filter.is-collapsed`), because the existing rule lives under `.host-workspace` and does not apply on v2.
+- Item 2: `.stays-phone` top row (+ button) moved before the `.head` in reservations.html. Screenshot at 390 shows the + button first.
+- Item 3: page-scoped panel CSS (padding 16px, label 12px --ink2, `.in`-style controls, 2-column grid from 1024). Panel buttons still use `ui-btn` classes (not `.btn ghost sm`).
+- Item 4: pager replaced by one `<nav class="stays-pager">` with "Strana 1 z 2" and two links (disabled one is a span with aria-disabled). Verified at 390: "Předchozí  Strana 1 z 2  Další".
+- Item 5: count line has class `stays-count` (13px, --ink3).
+- Item 7: the header th already held an sr-only span. Added `body.v2 .stays-desk .sr-only` clip rule.
+
+Test runs (App/, browser env set):
+- `tests/test_0710_v2_mockup_match_browser.py -k stays`: 3 failed, 9 passed, 0 skipped. Failures at 320, 390, 768 are the shell-owned ones (`.top .round`, `.chip.on`, `.head h1` and `.head .btn` at 768) plus the known `.row` height, `.row .t` width and pill width. The 768 list also has `.chip` padding (0718 phone class applies up to 1023 px), which is not in the brief's list.
+- `-k screenshots` (UBYHOST_SHOTS_V2=1): 1 passed. Output went to `docs/tasks/screenshots-0710/` (test hard-codes SHOTS_DIR), overwriting the untracked 0710 files there. Not committed.
+- `tests/test_static_versions.py`: 3 passed.
+
+Left:
+- Item 6 NOT fixed. The bottom "Stáhnout domovní knihu" row still shows at 1280. Cause: `.link{display:flex}` in the `min-width:1024` block (app2.css, around line 305) overrides `.stays-phone-only{display:none}`. Fix: add `@media (min-width:1024px){body.v2 .stays-phone-only{display:none}}` at the end of app2.css, then bump the key and `--write`.
+- Step 2 (old tests) not started.
+- Step 3 (screenshots into docs/tasks/screenshots-0527/ with app-<w>.png names, cs locale, mockup pairs) not started. Current shots are in the 0710 folder, en locale.
+- Visual differences seen at 1280 and 390: the table header "Otevřít" column is no longer visible; the filter panel is now collapsed behind the "Filtry" chip. Re-check after the item 6 fix.
+
+Deviations: no new subagents, no push. Untracked `docs/tasks/screenshots-0710/*` is not committed.
