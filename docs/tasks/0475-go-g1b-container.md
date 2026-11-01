@@ -1,5 +1,5 @@
 # 0475: Go G1b: the Go service runs in production as an internal container, serving no traffic yet
-Status: blocked
+Status: review
 Depends on: 0474 (merged) | Base commit: main | Branch: task/0475-go-g1b
 Executor: Haiku 5.5 | Fits one session: 25 tool calls, 70k tokens
 ## 1. Objective
