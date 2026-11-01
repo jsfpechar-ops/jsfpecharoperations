@@ -1,6 +1,6 @@
 # 0711: Guided 4-step payments setup around Stripe's hosted onboarding
 
-Status: in-progress
+Status: review
 Depends on: 0624 (merged, #668) | Base commit: 7b4109f2 | Branch: task/0711-guided-payments-setup (already exists, check it out)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
