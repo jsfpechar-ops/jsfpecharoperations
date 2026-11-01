@@ -184,7 +184,23 @@ func TestConnectDatabase(t *testing.T) {
 		}
 	})
 
-	t.Run("no entity goes back to payments with a flash", func(t *testing.T) {
+	t.Run("no entity goes back to payments with a flash before any Stripe call", func(t *testing.T) {
+		if _, err := pool.Exec(context.Background(), `UPDATE legal_entity SET archived_at = '2026-01-02T00:00:00+00:00' WHERE id = 1`); err != nil {
+			t.Fatal(err)
+		}
+		defer pool.Exec(context.Background(), `UPDATE legal_entity SET archived_at = NULL WHERE id = 1`)
+		fake.base = ""
+		rec := connectDo(start("test", nil), http.MethodGet, startPath, hostCookies, nil)
+		want := "/payments?err=" + strings.ReplaceAll("Add your business details first.", " ", "%20")
+		if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != want {
+			t.Errorf("no entity: %d %q", rec.Code, rec.Header().Get("Location"))
+		}
+		if fake.base != "" {
+			t.Errorf("Stripe was called without an entity")
+		}
+	})
+
+	t.Run("ErrNoEntity from Stripe onboarding goes back with the start flash", func(t *testing.T) {
 		fake.err = ErrNoEntity
 		defer func() { fake.err = nil }()
 		rec := connectDo(start("test", nil), http.MethodGet, startPath, hostCookies, nil)
@@ -336,6 +352,8 @@ func connectSeed(t *testing.T, pool *pgxpool.Pool) {
 			(1, 1, 'terms', 't1', NOW(), 'clickwrap'), (2, 1, 'privacy', 'p1', NOW(), 'clickwrap'), (3, 1, 'dpa', 'd1', NOW(), 'clickwrap'),
 			(4, 2, 'terms', 't1', NOW(), 'clickwrap'), (5, 2, 'privacy', 'p1', NOW(), 'clickwrap'), (6, 2, 'dpa', 'd1', NOW(), 'clickwrap'),
 			(7, 4, 'terms', 't1', NOW(), 'clickwrap'), (8, 4, 'privacy', 'p1', NOW(), 'clickwrap'), (9, 4, 'dpa', 'd1', NOW(), 'clickwrap')`,
+		`INSERT INTO legal_entity (id, owner_user_id, name, business_type, created_at, contact_email, vat_status, invoice_due_days)
+			VALUES (1, 1, 'Test Company s.r.o.', 'company', '2026-01-01T00:00:00+00:00', NULL, 'none', 14)`,
 	}
 	for _, q := range stmts {
 		if _, err := pool.Exec(ctx, q); err != nil {

@@ -86,15 +86,22 @@ func ConnectStartHandler(pool *pgxpool.Pool, getenv func(string) string, now fun
 			http.Redirect(w, r, "/payments/consent", http.StatusSeeOther)
 			return
 		}
+		// 0729: legal_entity_for_owner before any Stripe call (stripe_connect.py connect_start).
+		var hasEntity bool
+		if err := pool.QueryRow(ctx, connectEntitySQL, owner).Scan(&hasEntity); err != nil {
+			connectFail(w, err)
+			return
+		}
+		if !hasEntity {
+			hostweb.Back(w, r, "/payments", hostweb.Flash{}, requestFlash(hostweb.Lang(r), "payments.err.no_entity"))
+			return
+		}
 		link, err := c.OnboardingLink(ctx, owner, hostweb.AppBase(getenv))
 		switch {
 		case err == nil:
 			http.Redirect(w, r, link, http.StatusSeeOther)
-		case errors.Is(err, ErrNoEntity):
-			// 0729: say what is missing instead of a silent bounce to "/".
-			log.Printf("connect start failed: %v", err)
-			hostweb.Back(w, r, "/payments", hostweb.Flash{}, requestFlash(hostweb.Lang(r), "payments.err.no_entity"))
-		case errors.Is(err, ErrStripeOff):
+		case errors.Is(err, ErrStripeOff), errors.Is(err, ErrNoEntity):
+			// Python catches StripeOff and ValueError here.
 			log.Printf("connect start failed: %v", err)
 			hostweb.Back(w, r, "/payments", hostweb.Flash{}, requestFlash(hostweb.Lang(r), "payments.err.stripe_start"))
 		default:
@@ -148,6 +155,9 @@ func connectReturnKey(state string) string {
 	}
 	return "payments.connect.flash_pending"
 }
+
+// connectEntitySQL is stripe_connect.legal_entity_for_owner, as a yes/no.
+const connectEntitySQL = `SELECT EXISTS (SELECT 1 FROM legal_entity WHERE owner_user_id = $1 AND archived_at IS NULL)`
 
 func connectConsented(ctx context.Context, pool *pgxpool.Pool, owner int64) (bool, error) {
 	var ok bool
