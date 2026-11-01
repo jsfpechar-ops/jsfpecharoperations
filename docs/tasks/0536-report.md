@@ -197,23 +197,21 @@ Left: wide_geometry 2 fails, 0399 property overview Open, onboarding_followup 16
 
 ## 0543
 
-Status: blocked. Done: items 1 to 4 and 6 to 7 pass their tests. Left: two tests fail later in their bodies, after the lines that were failing before (section 8).
+Status: blocked. Done: items 1 to 7 and both decisions. Left: test_0251 at the 820 px width (section 8).
 
-Commits: `7635091` (items 1 to 4 CSS, key bump), `b6f7df4` (item 5 selector), `90c76e9` (this report, first pass), `b06d4e8` (items 4 to 7: dialog width and tab borders, `initPropSectionLinks` in `App/app/static/app.js`, desktop action expectation 36, help-tip tests on the v2 property page, key bumps app.js 0543a and app2.css 0543b, manifest).
+Commits: `7635091` (items 1 to 4 CSS, key bump), `b6f7df4` (item 5 selector), `90c76e9` (report, first pass), `b06d4e8` (items 4 to 7: dialog width and tab borders, `initPropSectionLinks` in `App/app/static/app.js`, desktop action 36, help-tip tests for the v2 property page, key bumps app.js 0543a and app2.css 0543b, manifest), `b90c990` (report), `5276e31` (host controls `.props-card` / `.props-phone` selector; tablet rail check only where `button[data-sidebar-collapse]` exists).
 
 Results, chromium, `-k "not webkit"` (webkit not installed):
-- test_0284_states_browser 2 passed; test_wp28_geometry 7 passed; test_0282_signature_dialog_browser 1 passed; test_host_help_browser 6 passed.
-- test_0534, test_0710 `property`, test_static_versions: 62 passed (static manifest refreshed).
-- test_host_controls_browser: fails at line 226 (`.panel` not on the v2 list page); lines 213 (36 px) now pass.
-- test_0251_tablet_browser: lines 107 and 109 now pass (`#sec-lock` opens). Fails at line 122: `button[data-sidebar-collapse]` not found on the page for the tablet rail toggle (1024 to 1279 px).
+- test_0284_states_browser 2 passed; test_wp28_geometry 7 passed; test_0282_signature_dialog_browser 1 passed; test_host_help_browser 6 passed; test_host_controls_browser 1 passed.
+- test_0534, test_0710 `property`, test_static_versions: 62 passed (manifest refreshed).
+- test_0251_tablet_browser: 1180 and 1024 px pass. Fails at 820 px, line 96: `aside.preview` is not visible. app2.css hides the aside below 1024 px (0540 phone mockup), so the first assertion of the test contradicts the v2 design at 820 px. Lines 107 and 109 pass at 1180 px.
 - ruff `E9,F63,F7,F82,F401,F841`: passed. context_lint: OK. design_lint: OK.
 
 Deviations:
-- Item 7: the hint is not under the input. In `_components.html` `field_label` puts the help tip in `.field-label-row`, above the input. The test asserts the tip is visible inside that row.
-- Item 4: added two rules on v2: a dialog padding 0 under 600 px, and the signature mode tabs' selected border colour (the test at line 62 needed it).
+- Item 7: the hint is not under its input. `field_label` (_components.html) puts the help tip in `.field-label-row`, above the input. The test asserts it is visible in that row.
+- Item 4: also styled the signature mode tabs (selected border ink, other transparent), as test line 62 needs.
 
-Section 8 list (needs a decision):
-1. test_host_controls line 226: v2 list has no `.panel`. Test selector or markup decision.
-2. test_0251 line 122: no `button[data-sidebar-collapse]` on the tablet rail check. Test or markup decision.
+Section 8 (decision needed):
+1. test_0251 line 96 at 820 px: v2 hides `aside.preview` below 1024 px. Options: (a) gate the aside checks to widths of 1024 and up, (b) show the aside at 820 px (CSS change, conflicts with 0540 phone mockup).
 
 No PR, nothing pushed.
