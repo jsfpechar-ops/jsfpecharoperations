@@ -632,7 +632,7 @@ def test_page_families_through_rail_cards_search_and_back(acc, base):
             _settle(page)
             _dismiss_prompt(page)
             # Rail -> Properties -> Open the long-named property.
-            page.locator('.sidebar-nav a[href="/apartments"]').click()
+            page.locator('.sidebar-nav a[href="/apartments"], .side-nav a[href="/apartments"]').first.click()
             page.wait_for_url(re.compile(r"/apartments(\?.*)?$"))
             page.locator(f'a.row-primary-link[href^="/apartments/{p1}"]').first.click()
             page.wait_for_url(re.compile(rf"/apartments/{p1}"))
