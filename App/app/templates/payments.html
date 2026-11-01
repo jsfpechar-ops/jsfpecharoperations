@@ -36,7 +36,7 @@
       <span>{{ t('payments.field.stay') }}</span>
       <select name="reservation_id" class="ui-input">
         <option value="">{{ t('payments.field.no_stay') }}</option>
-        {% for s in stays %}<option value="{{ s.id }}">{{ s.label }}</option>{% endfor %}
+        {% for s in stays %}<option value="{{ s.id }}"{% if selected_reservation_id == s.id %} selected{% endif %}>{{ s.label }}</option>{% endfor %}
       </select>
     </label>
     <label class="ui-field">
