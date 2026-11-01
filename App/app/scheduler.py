@@ -24,6 +24,7 @@ from . import (
     guide_photos,
     host_i18n,
     icalsync,
+    jobqueue,
     lifecycle_mail,
     mail,
     meta_capi,
@@ -37,8 +38,6 @@ from . import (
 )
 
 log = logging.getLogger("ubyhost.scheduler")
-from . import jobqueue
-
 _scheduler = None
 _lock_handle = None
 

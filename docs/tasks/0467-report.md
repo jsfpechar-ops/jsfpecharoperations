@@ -1,6 +1,6 @@
 # 0467 report, part a
 
-Status: blocked
+Status: review
 
 ## Files changed
 - `App/migrations_pg/00003_job.sql` (step 1: IF NOT EXISTS, DROP IF EXISTS)
@@ -30,8 +30,9 @@ Commits: `0467 step 1: ...`, `0467 step 4b`, `0467 step 4`, `0467 step 5`, `0467
 ## Deviations
 Done: steps 1 to 7 (4b first). Left: part b (steps 8 to 10).
 
-## Questions (stop)
-1. Should `test_goose_migrations.py:94` change its regex to `goose migrations 2, 3 are not applied` (or `goose migrations 2`)? The message is correct now that 00003 exists. The file is not named in the brief, so I did not edit it.
+## Orchestrator resolution
+- `test_goose_migrations.py` adoption test now matches `goose migrations 2(, \d+)* are not applied`, so a later goose file does not break it again. `scheduler.py` imports `jobqueue` in its import block. Reruns: PostgreSQL 39 passed, 3 skipped (SQLite-only registration tests); SQLite 29 passed, 7 skipped.
+- Note for part b: the `_job_*` wrappers catch their own exceptions, so on the queue a failing job still alerts through its wrapper and the row is marked done; `fail`/backoff covers crashes outside the wrappers.
 
 ## Owner steps left
 - Step 7 (ENVIRONMENT row and cutover step) is written. Nothing to run yet.

@@ -90,8 +90,8 @@ def test_a_table_outside_the_baseline_keeps_the_schema_current(pg_goose):
 @PG_ONLY
 def test_a_current_schema_without_goose_table_adopts_baseline(pg_goose):
     _run("DROP TABLE goose_db_version")
-    # 00002 (poll indexes) is pending after adoption: the app refuses to start until it is applied.
-    with pytest.raises(RuntimeError, match="goose migrations 2 are not applied"):
+    # Every file after the baseline is pending after adoption: the app refuses to start until applied.
+    with pytest.raises(RuntimeError, match=r"goose migrations 2(, \d+)* are not applied"):
         db.validate_postgres_schema()
     conn = db.connect()
     try:
