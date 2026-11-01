@@ -7,7 +7,7 @@ Updated: 2026-11-01.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
-- 2026-11-01: **Production on PostgreSQL** since 2026-10-31 23:56Z (39 s downtime; SQLite kept at `/data/ubyhost.db`, rollback `./scripts/pg-cutover.sh rollback`). Deployed: goose in deploy.sh (#618), indexes (#620), no writer lock (#619), job queue (#622), Go G1a (#621), Go container behind profile `go` (#624), 0467b (#625). Open: G3a Go billing_snapshot job (#631). Next: G3, G5, G4 after the redesign, G6 ([plan v4](../plans/postgresql/migration-plan-v4.md)).
+- 2026-11-01: **Production on PostgreSQL** since 2026-10-31 23:56Z (39 s downtime; SQLite kept at `/data/ubyhost.db`, rollback `./scripts/pg-cutover.sh rollback`). Go port merged, all off in prod until `go` is in `COMPOSE_PROFILES` and a kind is in `UBYHOST_GO_JOB_KINDS`: G1a (#621), container (#624), G3a billing_snapshot job + billing quote port (#631), UbyPort request golden files (#632), G5a request builder byte-identical (#634), G3b stripe_sweep (#633). Next: G5b response parse and classification (0480), G5c submit transport and claim, more G3 jobs, G2, G4 after the redesign, G6 ([plan v4](../plans/postgresql/migration-plan-v4.md)).
 - #583 merged: guest save-and-continue, visible acknowledgement, contextual help. #587 open: 0452 read-only billing extract + 0454 host UX + handoff documentation.
 - Billing cockpit merged (#561). 0448 merged (#565): first plan to legacy hosts (immediate start, invoice now, no trial) + trial extension 1–365 days. Decisions 2026-10-29 in decisions.md.
 - Billing ON in production (`UBYHOST_BILLING_ENABLED=1`, 2026-10-29; cockpit #561, 0448 #565). Deploy manual.
