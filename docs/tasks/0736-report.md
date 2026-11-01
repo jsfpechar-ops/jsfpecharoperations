@@ -289,3 +289,31 @@ The "Add signature" button sits in `fieldset.signature-block`, a direct child of
 
 ### Owner steps left
 - Decide question 1. No push, no PR.
+
+## Run 10 (section 20: guard pairing, item 8, section 6, screenshots)
+
+Status: review
+
+### Step 1: layout guard pairing (commit a3b806f)
+- `App/tests/design_guard.js` 4b: one line skips a field/button pair when `a.closest('section,fieldset,.card,.panel')` and `b.closest(...)` are different non-null elements.
+- `tests/test_design_guardrails_browser.py -k passes_the_layout_guard`: `1 passed, 10 deselected in 40.72s`. 0 skipped.
+
+### Step 2: item 8 and section 6
+- `python3 scripts/design_lint.py`: `design lint: OK` (no errors on our files, no changes needed).
+- `ruff --select E9,F63,F7,F82,F401,F841` on `App/tests`: `All checks passed!`
+- `python3 scripts/context_lint.py`: `context lint: OK` (warnings only, pre-existing).
+- Browser and static tests (chromium, `-k "not webkit"`, UBYHOST_REQUIRE_BROWSER=1): `81 passed in 122.68s`. Files: test_0534_property_page_v2, test_static_versions, test_0710_v2_mockup_match_browser, test_0503_page_inits_once_browser, test_0504_mixed_inits_once_browser, test_design_guardrails_browser. 0 skipped.
+- No file changes in this step, so no commit.
+
+### Step 3: screenshots (temp test, deleted; `docs/tasks/screenshots-0736/`, full page, `?lang=cs`)
+- `property-390.png`: phone property page, Základní údaje, Cizinecká policie and other sections as collapsed rows with status dots; looks intact.
+- `property-1280.png`: desktop property page with sidebar, form in one column, Náhled card on the right, collapsed sections below. Looks intact. Minor: the "Adresa ubytovacího zařízení" and "Soukromé poznámky" headings sit close to the field above them. Not changed.
+- `list-390.png`: phone `/apartments` as cards with status chips; looks intact.
+- `list-1280.png`: desktop `/apartments` table with status chips; looks intact.
+
+### Deviations
+- Step 3 screenshots were taken with the property seed from `_placeholders` (Review Flat), not a specific id.
+- Item 7 is run 11 (not done here).
+
+### Owner steps left
+- Review the PR; no push done by the executor.
