@@ -30,6 +30,10 @@ _REQUIREMENT_KEYS = ("currently_due", "past_due", "eventually_due", "disabled_re
 # the requirement field names themselves; see _mirror).
 _REJECT_CODES = ("rejected", "listed", "fraudulent")
 
+# disabled_reason values that mean Stripe or the platform switched the
+# account off for a reason the host cannot fix in onboarding (0623).
+_DISABLED_REASONS = ("platform_paused", "under_review", "listed", "other")
+
 
 def enabled() -> bool:
     """Direct payments are on only in test/live mode with a secret key set."""
