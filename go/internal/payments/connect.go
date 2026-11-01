@@ -39,7 +39,7 @@ var (
 // Onboarder is the Stripe side of the Connect routes.
 type Onboarder interface {
 	OnboardingLink(ctx context.Context, owner int64, baseURL string) (string, error)
-	HandleReturn(ctx context.Context, owner int64) error
+	HandleReturn(ctx context.Context, owner int64) (string, error)
 }
 
 // payments_consent.ACTION.
@@ -124,15 +124,29 @@ func ConnectReturnHandler(pool *pgxpool.Pool, getenv func(string) string, now fu
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		if err := c.HandleReturn(r.Context(), h.Workspace.ID); err != nil {
+		// Return is not verification: the flash follows the mirrored state (0729).
+		state, err := c.HandleReturn(r.Context(), h.Workspace.ID)
+		if err != nil {
 			if !errors.Is(err, ErrStripeOff) && !errors.Is(err, ErrNoAccount) {
 				connectFail(w, err)
 				return
 			}
 			log.Printf("connect return failed: %v", err)
 		}
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		hostweb.Back(w, r, "/payments", requestFlash(hostweb.Lang(r), connectReturnKey(state)), hostweb.Flash{})
 	}
+}
+
+// connectReturnKey is the return flash for a mirrored onboarding state. Any
+// other state, and no state at all after an error, gets the pending text.
+func connectReturnKey(state string) string {
+	switch state {
+	case "complete":
+		return "payments.connect.flash_complete"
+	case "action_required":
+		return "payments.connect.flash_action"
+	}
+	return "payments.connect.flash_pending"
 }
 
 func connectConsented(ctx context.Context, pool *pgxpool.Pool, owner int64) (bool, error) {

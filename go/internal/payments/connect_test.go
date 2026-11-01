@@ -26,6 +26,7 @@ type fakeOnboarder struct {
 	url     string
 	err     error
 	retErr  error
+	state   string
 	links   int
 	base    string
 	returns int
@@ -37,12 +38,26 @@ func (f *fakeOnboarder) OnboardingLink(_ context.Context, _ int64, base string) 
 	return f.url, f.err
 }
 
-func (f *fakeOnboarder) HandleReturn(_ context.Context, _ int64) error {
+func (f *fakeOnboarder) HandleReturn(_ context.Context, _ int64) (string, error) {
 	f.returns++
-	return f.retErr
+	return f.state, f.retErr
 }
 
 func connectNow() time.Time { return testNow }
+
+func TestConnectReturnKey(t *testing.T) {
+	cases := map[string]string{
+		"complete":        "payments.connect.flash_complete",
+		"action_required": "payments.connect.flash_action",
+		"pending":         "payments.connect.flash_pending",
+		"":                "payments.connect.flash_pending",
+	}
+	for state, want := range cases {
+		if got := connectReturnKey(state); got != want {
+			t.Errorf("state %q: got %s, want %s", state, got, want)
+		}
+	}
+}
 
 func connectEnv(mode string, extra map[string]string) func(string) string {
 	env := map[string]string{
@@ -196,18 +211,30 @@ func TestConnectDatabase(t *testing.T) {
 		}
 	})
 
-	t.Run("return calls HandleReturn and goes home", func(t *testing.T) {
+	t.Run("return calls HandleReturn and flashes on /payments", func(t *testing.T) {
 		h := ConnectReturnHandler(pool, connectEnv("test", nil), connectNow, fake)
 		before := fake.returns
+		fake.state = "complete"
 		rec := connectDo(h, http.MethodGet, "/payments/connect/return", hostCookies, nil)
-		if rec.Header().Get("Location") != "/" || fake.returns != before+1 {
+		fake.state = ""
+		if !strings.HasPrefix(rec.Header().Get("Location"), "/payments?msg=") || fake.returns != before+1 {
 			t.Errorf("return: %q, calls %d", rec.Header().Get("Location"), fake.returns-before)
 		}
 		fake.retErr = ErrNoAccount
 		rec = connectDo(h, http.MethodGet, "/payments/connect/return", hostCookies, nil)
 		fake.retErr = nil
-		if rec.Header().Get("Location") != "/" {
+		if !strings.HasPrefix(rec.Header().Get("Location"), "/payments?msg=") {
 			t.Errorf("return with no account: %q", rec.Header().Get("Location"))
+		}
+	})
+
+	t.Run("return with a Stripe error is 500", func(t *testing.T) {
+		h := ConnectReturnHandler(pool, connectEnv("test", nil), connectNow, fake)
+		fake.retErr = errors.New("boom")
+		rec := connectDo(h, http.MethodGet, "/payments/connect/return", hostCookies, nil)
+		fake.retErr = nil
+		if rec.Code != http.StatusInternalServerError {
+			t.Errorf("return error: %d", rec.Code)
 		}
 	})
 

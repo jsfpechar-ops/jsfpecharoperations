@@ -39,6 +39,7 @@ const (
 	stripeCountSQL = `INSERT INTO lock_api_usage (month, provider, calls) VALUES ($1, 'stripe', 1)
 		ON CONFLICT(month, provider) DO UPDATE SET calls = lock_api_usage.calls + 1`
 	stripeAccountSQL = `SELECT stripe_account_id FROM stripe_account WHERE owner_user_id = $1 AND mode = $2`
+	stripeStateSQL   = `SELECT onboarding_state FROM stripe_account WHERE owner_user_id = $1 AND mode = $2`
 	stripeEntitySQL  = `SELECT name, COALESCE(contact_email, ''), COALESCE(business_type, '')
 		FROM legal_entity WHERE owner_user_id = $1`
 	stripeInsertSQL = `INSERT INTO stripe_account (owner_user_id, stripe_account_id, mode, onboarding_state,
@@ -280,24 +281,30 @@ func (s *StripeOnboarder) OnboardingLink(ctx context.Context, owner int64, baseU
 	return u, nil
 }
 
-// HandleReturn is handle_return (315-326): re-retrieve the account and mirror it.
-func (s *StripeOnboarder) HandleReturn(ctx context.Context, owner int64) error {
+// HandleReturn is handle_return (315-326): re-retrieve the account, mirror it,
+// and return the mirrored onboarding state.
+func (s *StripeOnboarder) HandleReturn(ctx context.Context, owner int64) (string, error) {
 	id, err := s.existingAccount(ctx, owner)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if id == "" {
-		return ErrNoAccount
+		return "", ErrNoAccount
 	}
 	key, stamp, err := s.guard(ctx)
 	if err != nil {
-		return err
+		return "", err
 	}
 	var acct map[string]any
 	if err := s.call(ctx, key, http.MethodGet, "/v1/accounts/"+url.PathEscape(id), "", nil, &acct); err != nil {
-		return err
+		return "", err
 	}
-	return mirrorAccount(ctx, s.Pool, acct, s.mode(), stamp)
+	if err := mirrorAccount(ctx, s.Pool, acct, s.mode(), stamp); err != nil {
+		return "", err
+	}
+	var state string
+	err = s.Pool.QueryRow(ctx, stripeStateSQL, owner, s.mode()).Scan(&state)
+	return state, err
 }
 
 var _ Onboarder = (*StripeOnboarder)(nil)
