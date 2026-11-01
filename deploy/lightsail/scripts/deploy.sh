@@ -392,3 +392,6 @@ if [ "${SKIP_PUBLIC_SMOKE:-0}" != "1" ]; then
     exit 1
   fi
 fi
+
+# 0710: this commit is now the rollback target.
+git rev-parse HEAD > .deployed-sha
