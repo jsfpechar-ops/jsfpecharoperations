@@ -853,10 +853,26 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .fee-figures-total dd { font-size: var(--size-22); }
 .host-workspace .fee-step-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: var(--space-3) 0 0; }
 .host-workspace .fee-qr-amount { font-size: var(--size-22); font-weight: 600; }
-.host-workspace .fee-send-line { margin: var(--space-4) 0 0; }
+.host-workspace .fee-send-pay { display: grid; grid-template-columns: minmax(0, 1fr) 18rem; gap: var(--space-6); align-items: start; }
+.host-workspace .fee-tasks { margin: 0; padding: 0; list-style: none; counter-reset: fee-task; display: grid; gap: var(--space-5); }
+.host-workspace .fee-tasks li { counter-increment: fee-task; position: relative; padding-left: 2.5rem; min-width: 0; }
+.host-workspace .fee-tasks li::before { content: counter(fee-task); position: absolute; left: 0; top: 0; width: 1.75rem; height: 1.75rem; border-radius: 50%; background: var(--accent-soft); color: var(--accent-ink); font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.host-workspace .fee-tasks strong { display: block; }
+.host-workspace .fee-tasks p { margin: var(--space-1) 0 var(--space-2); overflow-wrap: anywhere; }
+.host-workspace .fee-tasks .ui-btn { margin-top: var(--space-2); }
+.host-workspace .fee-qr-panel { background: var(--accent-soft); border-radius: var(--radius-3); padding: var(--space-4); text-align: center; min-width: 0; }
+.host-workspace .fee-qr-panel img { background: var(--surface); border-radius: var(--radius-2); padding: var(--space-2); max-width: 100%; height: auto; }
+.host-workspace .fee-qr-panel p { margin: var(--space-2) 0 0; }
+.host-workspace .fee-qr-meta { margin: var(--space-3) 0 0; display: grid; gap: var(--space-1); text-align: left; font-size: var(--size-13); }
+.host-workspace .fee-qr-meta div { display: flex; justify-content: space-between; gap: var(--space-3); }
+.host-workspace .fee-qr-meta dt { color: var(--ink-3); }
+.host-workspace .fee-qr-meta dd { margin: 0; white-space: nowrap; }
 @media (max-width: 639px) {
   .host-workspace .fee-step-actions { flex-direction: column; align-items: stretch; }
   .host-workspace .fee-stepper-label { font-size: var(--size-12); }
+  .host-workspace .fee-send-pay { grid-template-columns: minmax(0, 1fr); }
+  .host-workspace .fee-qr-panel { order: -1; }
+  .host-workspace .fee-tasks .ui-btn { display: flex; justify-content: center; }
 }
 
 /* 0293: invoice builder (owner 2026-10-24): the IČO lookup comes first, the
