@@ -3868,6 +3868,10 @@ STRINGS.update({
     "dashboard.today.empty": "Hôm nay không có khách đến hoặc đi.",
     "dashboard.today.guests": "%(count)s khách",
     "dashboard.today.nights": "%(count)s đêm",
+    "dashboard.today.nights.one": "1 đêm",
+    "dashboard.today.nights.few": "%(count)s đêm",
+    "dashboard.today.guests.one": "1 khách",
+    "dashboard.today.guests.few": "%(count)s khách",
 })
 
 # 0277: "How does this work?" (Vietnamese).

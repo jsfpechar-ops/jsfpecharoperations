@@ -8516,6 +8516,7 @@ _WELCOME_0275_STRINGS = {
         "dashboard.today.guests.few": "%(count)s guests",
         "dashboard.today.nights": "%(count)s nights",
         "dashboard.today.nights.one": "1 night",
+        "dashboard.today.nights.few": "%(count)s nights",
     },
     "cs": {
         "welcome_back.title": "Vítejte zpět! Od %(date)s:",
