@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns1="urn:example:ubyport:golden"><soap:Body><ns1:ZapisUbytovaneResponse><ns1:ZapisUbytovaneResult>
+<ns1:ChybyHlavicky xsi:nil="true"/>
+<ns1:ChybyZaznamu><ns1:string/><ns1:string></ns1:string></ns1:ChybyZaznamu>
+<ns1:DokumentPotvrzeni>  JVBERi0xLjQg
+   Z29sZGVu IHJlY2VpcHQgb25l  </ns1:DokumentPotvrzeni>
+<ns1:DokumentChybyPotvrzeni xsi:nil="true"/>
+<ns1:PseudoRazitko>GOLDEN-STAMP-1</ns1:PseudoRazitko>
+</ns1:ZapisUbytovaneResult></ns1:ZapisUbytovaneResponse></soap:Body></soap:Envelope>
