@@ -1,5 +1,5 @@
 # 0675: Go card rail, create or reuse a Stripe Payment Link (payment_links.send)
-Status: todo
+Status: review
 Depends on: 0674 (#675, 2b4a919) | Base commit: origin/main | Branch: claude/project-thread-ach4z4
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 ## 1. Objective
