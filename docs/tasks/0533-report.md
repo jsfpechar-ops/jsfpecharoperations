@@ -48,3 +48,13 @@ Status: review (all green except the known items below)
 - Not done: the 0530 test addition from brief section 3 (phone cards render one a.card.prop per property). Still open.
 - Screenshots were taken with a temporary pytest file (deleted), since the 0710 screenshot helper has no phone view support.
 - Owner steps left: none; no push (branch is local only).
+
+## Pass 3: round add button on phone as in mockup
+- Markup: `apartments.html` adds `<div class="top props-top">` with an empty span and `a.round` (aria-label "Přidat nemovitost" via `apartments.add`, icon `icon('plus', 22)` from `_icons.html`; no `#i-plus` sprite exists in v2). The `.head` gets class `props-head`.
+- CSS (`app2.css`, 0533 block): below 1024 px `body.v2 .props-head .btn` is hidden on this page; from 1024 px `.props-top` is hidden. `.top`/`.round` come from the 0718 block.
+- Key bumped to `20261101-0533p3-0718` in `base.html`; `static_versions.json` rewritten with `--write`; catalog gets `props-top`, `props-head`; design_lint OK.
+- `v2_mockup.py` properties `phone_selectors` gains `.top .round`. Comparison logic unchanged.
+- Tests (from App/, UBYHOST_REQUIRE_BROWSER=1, PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers, -p no:cacheprovider): `3 failed, 81 passed in 228.97s`, 0 skipped. Failures are the known ones only: overview-768, properties-768, menu-320. properties-390 and properties-320 pass.
+- context_lint: OK (warning only: commits touched App/ after status.md update).
+- Screenshots: `app-390.png` and `app-320.png` retaken (`/apartments?lang=cs`, full page) with a temporary test file (deleted after the run). Mockup PNGs unchanged.
+- Status: review
