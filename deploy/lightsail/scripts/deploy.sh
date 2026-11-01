@@ -285,11 +285,14 @@ for _ in $(seq 1 30); do
 done
 if [ "${HEALTHY}" != "1" ]; then
   echo "New release never became healthy." >&2
-  if docker image inspect ubyhost:previous >/dev/null 2>&1; then
-    echo "==> Rolling back to ubyhost:previous" >&2
-    docker tag ubyhost:previous ubyhost:local
-    docker compose up -d --no-build ubyhost worker
-  fi
+  rollback
+  exit 1
+fi
+
+echo "==> Checking the public site (Cloudflare, Caddy, app)"
+if ! public_ok; then
+  echo "The public site does not answer after the restart." >&2
+  rollback
   exit 1
 fi
 
