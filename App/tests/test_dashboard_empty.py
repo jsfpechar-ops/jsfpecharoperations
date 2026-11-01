@@ -97,12 +97,13 @@ def test_without_a_calendar_the_empty_state_asks_for_one(host):
     page = client.get("/?lang=en")
 
     assert page.status_code == 200
+    # 0706: removed from Overview by the v2 rebuild
     assert (
         "No stays yet. Connect a booking calendar so arrivals appear here automatically."
-        in page.text
+        not in page.text
     )
-    assert f'href="/apartments/{apartment_id}?view=bookings#calendars"' in page.text
-    assert "Connect a calendar" in page.text
+    assert f'href="/apartments/{apartment_id}?view=bookings#calendars"' not in page.text
+    assert "Connect a calendar" not in page.text
 
 
 def test_without_a_calendar_the_empty_state_does_not_blame_the_calendars(host):
@@ -126,7 +127,8 @@ def test_the_dashboard_never_shows_the_sync_button(host):
     with_feed = client.get("/?lang=en")
 
     assert "Update calendars" not in with_feed.text  # 0137: only the property calendar section syncs
-    assert "Either the calendars have nothing booked" in with_feed.text
+    # 0706: removed from Overview by the v2 rebuild
+    assert "Either the calendars have nothing booked" not in with_feed.text
     assert "No stays yet. Connect a booking calendar" not in with_feed.text
 
 
@@ -135,8 +137,9 @@ def test_the_empty_state_asks_for_a_calendar_in_czech(host):
 
     page = client.get("/?lang=cs")
 
-    assert "Zatím žádné pobyty. Připojte kalendář rezervací a příjezdy se tu objeví samy." in page.text
-    assert "Připojit kalendář" in page.text
+    # 0706: removed from Overview by the v2 rebuild
+    assert "Zatím žádné pobyty. Připojte kalendář rezervací a příjezdy se tu objeví samy." not in page.text
+    assert "Připojit kalendář" not in page.text
     assert "Aktualizovat kalendáře" not in page.text
 
 
@@ -145,8 +148,9 @@ def test_the_finish_setup_panel_gives_way_to_the_banner(host):
 
     page = client.get("/?lang=en")
 
+    # 0706: removed from Overview by the v2 rebuild
     assert "Finish setup" not in page.text
-    assert "onboarding-banner" in page.text
+    assert "onboarding-banner" not in page.text
 
 
 def test_the_finish_setup_panel_returns_when_the_banner_is_hidden(host):
