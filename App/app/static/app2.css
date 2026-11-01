@@ -227,12 +227,12 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
   body.v2 .round.solid{background:var(--acc);border-color:var(--acc);color:#fff}
   body.v2 .big,body.v2 .head h1{font-size:32px;font-weight:800;letter-spacing:-.025em;margin:2px 20px 4px;line-height:1.15}
   body.v2 .sub,body.v2 .head .sub{color:var(--ink3);margin:0 0 8px;font-size:15px}
-  body.v2 h2.sec{font-size:20px;font-weight:800;letter-spacing:-.015em;margin:28px 0 12px;display:flex;justify-content:space-between;align-items:baseline}
+  body.v2 h2.sec{font-size:13px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin:26px 0 12px;display:flex;justify-content:center;align-items:baseline}
   body.v2 h2.sec a{font-size:14px;font-weight:700;color:var(--ink);text-decoration:underline}
-  body.v2 .card{margin:0 0 12px;background:#fff;border-radius:18px;padding:18px;box-shadow:0 1px 2px rgba(0,0,0,.05),0 6px 20px rgba(0,0,0,.07);border:1px solid #f1f0ec}
+  body.v2 .card{margin:0 0 16px;background:#fff;border-radius:24px;padding:22px;box-shadow:0 6px 24px rgba(0,0,0,.08),0 0 0 1px rgba(0,0,0,.03);border:0}
   body.v2 .ic{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;flex:none;font-weight:800;font-size:18px}
   body.v2 .ic.bad{background:var(--bads);color:var(--bad)}body.v2 .ic.warn{background:var(--warns);color:var(--warn)}body.v2 .ic.ok{background:var(--oks);color:var(--ok)}body.v2 .ic.acc{background:var(--accs);color:var(--acc-text)}
-  body.v2 .need b{display:block;font-size:17px;line-height:1.3}body.v2 .need small{display:block;color:var(--ink3);font-size:14px;margin-top:3px}
+  body.v2 .need .t{display:block;font-size:13px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;line-height:1.4}body.v2 .need[data-tone="red"] .t{color:var(--acc-text)}body.v2 .need[data-tone="amber"] .t{color:var(--warn)}body.v2 .need small{display:block;font-size:20px;font-weight:800;letter-spacing:-.01em;color:var(--ink);line-height:1.3;margin-top:2px}body.v2 .need .ic{display:none}
   body.v2 .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;border-radius:12px;background:var(--acc);color:#fff;font-weight:700;font-size:16px}
   body.v2 .btn:active{transform:scale(.98)}
   body.v2 .btn:not(.line):not(.soft):not(.ghost),body.v2 a.btn:not(.line):not(.soft):not(.ghost){color:#fff}
@@ -279,7 +279,6 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
 
 /* 0719 overview phone: Potřebuje vás cards, Dnes cards, top row (phone only unless noted) */
 @media (max-width:1023px){
-  body.v2 .ov-head > .btn{display:none}
   body.v2 .needs-you-card-item{display:block}
   body.v2 .needs-you-card-item .h{display:flex;gap:14px;align-items:center}
   body.v2 .needs-you-card-item .h > div:last-child{min-width:0;flex:1}
@@ -300,7 +299,7 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
   body.v2 .needs-you-actions{width:100%}
 }
 @media (min-width:1024px){
-  body.v2 .ov-top,body.v2 .ph-only{display:none}
+  body.v2 .ph-only{display:none}
   body.v2 .needs-you-card-item .h{display:contents}
   body.v2 .needs-you-card-item b.t{display:block;font-weight:700}
   body.v2 .needs-you-card-item small{display:block;font-size:inherit;color:inherit;margin:0}
@@ -317,7 +316,7 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
   body.v2 .chip{font-family:inherit;font-size:14px;font-weight:700;line-height:1.2;color:var(--ink);padding:0 18px}
   body.v2 .round{font:inherit;color:inherit;padding:0}
 }
-@media (max-width:1023px){body.v2 h2.sec a.ph-only{display:inline-flex;align-items:center;min-height:44px}body.v2 .big{margin:2px 0 4px}}
+@media (max-width:1023px){body.v2 .big{margin:2px 0 4px}}
 @media (max-width:1023px){body.v2 #security-prompt{z-index:10}}
 
 /* 0719: phone head is a block so the title and date take the full screen width (mockup) */
@@ -514,9 +513,27 @@ body.v2 .onboarding-intro .onboarding-logo{width: 64px; height: auto; max-width:
 @media (min-width:1024px){#needs-action .ny-sum-phone{display:none}#needs-action .ny-phone-only{display:none}}
 /* 0722: on phone the month line goes last, after Dnes (mockup order). */
 @media (max-width:1023px){body.v2 .ui-body:has(> .ov-month){display:flex;flex-direction:column}body.v2 .ov-month{order:1}}
-@media (max-width:1023px){body.v2 .ui-body:has(> .ov-month) > :not(h2.sec){margin-top:0;margin-bottom:0}body.v2 #needs-action .todo{gap:0}body.v2 #needs-action .needs-you-card-item{margin-bottom:12px}body.v2 details.needs-you-more{margin:0}}
+@media (max-width:1023px){body.v2 .ui-body:has(> .ov-month) > :not(h2.sec){margin-top:0;margin-bottom:0}body.v2 #needs-action .todo{gap:0}body.v2 #needs-action .needs-you-card-item{margin-bottom:16px}body.v2 details.needs-you-more{margin:0}}
 /* 0722: phone action buttons keep the 44 px touch target of the mockup. */
 @media (max-width:1023px){body.v2 .needs-you-actions .btn{min-height:44px}}
 
 @media (max-width:767px){body.v2 .cal-day-number{min-width:44px}}
 body.v2 .menu-list .row .t small{display:block;color:var(--ink3);font-size:14px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 0729 phone v2 (Airbnb style, approved 2026-11-01 21:15): shared phone parts; values from docs/design/mockup/ubyhost-phone-v2.html */
+@media (max-width:1023px){
+  body.v2 .ph-top{padding-top:8px}
+  body.v2 .seg{display:flex;gap:10px;justify-content:center;margin:0 0 28px}
+  body.v2 .seg a{display:inline-flex;align-items:center;min-height:44px;padding:0 20px;border-radius:999px;background:#f4f3ef;color:var(--ink);font-weight:600;font-size:15px;text-decoration:none}
+  body.v2 .seg a.on{background:var(--ink);color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+  body.v2 .hl{font-size:30px;line-height:1.15;font-weight:800;letter-spacing:-.02em;text-align:center;margin:0 8px 28px}
+  body.v2 .hl.done{margin-top:120px}
+  body.v2 .hl-sub{text-align:center;color:var(--ink3);font-size:16px;margin:-16px 0 28px}
+  body.v2 .needs-you-actions{margin-top:14px}
+  body.v2 .hs .card{align-items:center;text-align:center;padding:26px 22px 28px;gap:0}
+  body.v2 .hs .kind{font-size:15px;font-weight:600;text-transform:none;letter-spacing:0}
+  body.v2 .hs .who{flex-direction:column;align-items:center;gap:0}
+  body.v2 .hs .av{width:72px;height:72px;font-size:26px;border:3px solid #fff;margin:18px 0 16px}
+  body.v2 .hs .nm{font-size:22px}
+  body.v2 .hs .meta{font-size:15px;margin-top:4px}
+  body.v2 .hs .pill{margin-top:14px}
+}

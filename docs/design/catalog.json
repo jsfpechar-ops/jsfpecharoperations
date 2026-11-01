@@ -265,7 +265,12 @@
     "havel-card-actions",
     "havel-card-form",
     "havel-card-change",
-    "havel-card-danger"
+    "havel-card-danger",
+    "ph-top",
+    "seg",
+    "hl",
+    "hl-sub",
+    "done"
   ],
   "hooks": [
     "sr-only",
@@ -980,6 +985,11 @@
     "App/app/static/wizard.css"
   ],
   "class_notes": {
+    "ph-top": "phone v2 top block (0729)",
+    "seg": "phone v2 pill switch",
+    "hl": "phone v2 centred headline",
+    "hl-sub": "line under the phone headline",
+    "done": "headline state when nothing needs the host",
     "ui-section-plain": "Guide page section: a section with no border or fill, only spacing and a heading (MASTER 3, section rhythm).",
     "ui-section-row": "Smart locks panel section laid out as a row of label and control (MASTER 7.3 row pattern).",
     "required-legend": "One line above a form: fields marked * are required (0204; the star comes from the required attribute in host2.css).",

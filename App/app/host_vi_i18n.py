@@ -3880,6 +3880,12 @@ STRINGS.update({
     "dashboard.today.nights": "%(count)s đêm",
     "dashboard.today.nights.one": "1 đêm",
     "dashboard.today.nights.few": "%(count)s đêm",
+    "dashboard.ph.upcoming": "Sắp tới",
+    "dashboard.ph.need": "%(count)s việc cần bạn hôm nay",
+    "dashboard.ph.need.one": "1 việc cần bạn hôm nay",
+    "dashboard.ph.need.few": "%(count)s việc cần bạn hôm nay",
+    "dashboard.ph.done": "Xong hết. Hôm nay không có việc gì.",
+    "dashboard.ph.next": "Khách đến tiếp theo: %(when)s, %(place)s",
     "dashboard.today.guests.one": "1 khách",
     "dashboard.today.guests.few": "%(count)s khách",
 })

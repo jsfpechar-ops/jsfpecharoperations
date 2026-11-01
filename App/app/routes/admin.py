@@ -532,6 +532,12 @@ def dashboard(request: Request):
                 for row in rows
                 if today.isoformat() in (str(row["reservation"]["date_from"])[:10], str(row["reservation"]["date_to"])[:10])
             ],
+            # 0729: phone "All done" line names the next arrival after today.
+            "next_arrival": min(
+                (row["reservation"] for row in rows if str(row["reservation"]["date_from"])[:10] > today.isoformat()),
+                key=lambda r: str(r["date_from"])[:10],
+                default=None,
+            ),
         },
     ))
 
