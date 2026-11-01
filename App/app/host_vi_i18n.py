@@ -3302,6 +3302,7 @@ STRINGS: Dict[str, str] = {
     "calendar.title": "Đặt phòng",
     "calendar.calendar": "Lịch",
     "calendar.gantt": "Gantt",
+    "calendar.days14": "14 ngày",
     "calendar.month": "Tháng",
     "calendar.week": "Tuần",
     "calendar.year": "Năm",
