@@ -114,7 +114,8 @@ def test_reduced_motion_keeps_pages_and_dialogs_still(wide_host, wide_base):
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = _rail_context(browser, wide_host, wide_base, 1280, collapsed=False, reduced_motion="reduce")
         context.add_init_script(PAGE_SWAP_RECORDER)
-        page = _rail_page(context, wide_base)
+        # 0720: / is the v2 shell; the old-shell rail link is checked on /settings.
+        page = _rail_page(context, wide_base, "/settings")
         page.evaluate(OPEN_DIALOG, "command-dialog")
         duration = page.evaluate("() => getComputedStyle(document.getElementById('command-dialog')).transitionDuration")
         seconds = [float(p[:-2]) / 1000 if p.endswith("ms") else float(p[:-1]) for p in duration.split(", ")]
@@ -133,7 +134,8 @@ def test_pages_without_javascript_stay_still(wide_host, wide_base):
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = _rail_context(browser, wide_host, wide_base, 1280, collapsed=False, java_script_enabled=False)
-        page = _rail_page(context, wide_base)
+        # 0720: old-shell sidebar and help block (/settings has no how_key), so this runs on /stay-fees (v2 is /).
+        page = _rail_page(context, wide_base, "/stay-fees")
         page.locator("details.ui-how summary").click()
         assert page.locator(".ui-how-body").is_visible()
         page.locator('.ui-nav a[href="/reservations"]').click()
