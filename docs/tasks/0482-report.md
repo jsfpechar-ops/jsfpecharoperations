@@ -1,26 +1,24 @@
 # 0482 report (executor: Haiku 5.5)
-Status: blocked
+Status: done
 
-Done: steps 1 to 4. Left: steps 5 and 6 (`go/internal/ubyport/outcome.go`, `outcome_test.go`), not started.
+Done: steps 1 to 6. No PR opened (push only, as instructed).
 
-## Files changed
-- `App/app/reporting.py`: step 1, outcome block moved verbatim into `plan_outcome` (only `receipt_submission_id(` became `receipt_lookup(`, plus the return dict). `submit_batch` unpacks the result into the old local names.
-- `App/scripts/ubyport_golden_outcome.py` (new), `App/tests/golden/ubyport/outcome/cases.json` (15 invented cases), `expected.json` (generated).
-- `App/tests/test_ubyport_golden_outcome.py` (new, 2 tests).
-- `docs/tasks/0482-go-g5d1-outcome-plan.md` (Status only), this report.
+## Files changed (steps 4b, 5, 6 in this session)
+- `App/tests/test_submission_retry_cap.py`: step 4b. The terminal-state source test reads `plan_outcome` too; the assert message says `the batch path never writes`.
+- `go/internal/ubyport/outcome.go` (new): `PlanOutcome`, `OutcomeGuest`, `OutcomePlan`, `GuestWrite` (marshals as `[id, values]`), `SubmissionMaxAutoAttempts = 1`.
+- `go/internal/ubyport/outcome_test.go` (new): replays all 15 cases in `cases.json` and compares with `expected.json`.
 
-## Commands
-- `python3 scripts/ubyport_golden_outcome.py --out /tmp/g && diff ... && echo SAME` gives `SAME` (15 cases).
-- pytest, 4 files with `-x`: `1 failed, 18 passed`. The 2 golden tests pass.
-- pytest, `test_submission_retry_cap.py test_duplicate_guard.py test_stale_submission.py` without `-x`: `1 failed, 53 passed`.
-
-## Blocker
-`tests/test_submission_retry_cap.py::test_every_state_submit_batch_can_write_is_terminal` fails: `AssertionError: submit_batch never writes 'partial'`. The test reads the source of `submit_batch` and looks for each terminal state literal. Step 1 moved those literals into `plan_outcome`, as the brief asks. Fixing it means editing that test (outside brief section 3) or adding a dead literal to `submit_batch`. Not done; owner or orchestrator to decide.
+## Commands (last lines)
+- `gofmt -l`, `go vet ./...`, `go test ./internal/ubyport/ -count=1`: `ok  github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport 0.324s`, exit 0.
+- Oracle: `wrote 15 cases to /tmp/g482/expected.json`, then `SAME`.
+- pytest, 4 files, `-x`, `python3 -m pytest`: `56 passed in 2.81s`, exit 0.
+- `python3 scripts/context_lint.py`: `context lint: OK`.
 
 ## Deviations
-- App/.venv does not exist. The oracle needed `python3 -m pip install -r App/requirements.txt` (fastapi was missing; installed the declared requirements, not a new dependency). Also installed pytest.
-- Go steps not written. Notes for the next session: `exhausted` and `guest_writes` must be `[]` not `null` in JSON; `GuestWrite` needs `MarshalJSON` as `[id, values]`; `auto_attempts` is `max(0, x or 0)`; receipt pointer uses Python `or` semantics (0 and nil both fall through to the lookup).
-- No PR opened (blocked).
+- `go.mod` asks for go 1.25.0; the container has 1.24.7, and the toolchain 1.25.14 was downloaded automatically. Build and tests ran.
+- The brief file (`0482-go-g5d1-outcome-plan.md`) still says `Status: blocked`. Not changed.
+- Lint warns that 5 commits touched `App/` after the last `status.md` update. The orchestrator updates status at review.
+- Go and Python differ in no way beyond brief section 2. `OutcomeGuest` carries `reservation_id`, which the decision does not use.
 
 ## Owner steps left
-- Decide how to handle the retry_cap source-text test (see Blocker), then the executor or orchestrator finishes steps 5 and 6.
+- Open a PR from `claude/project-thread-aidacp` when ready, then merge with `scripts/merge-pr-on-green.sh`.
