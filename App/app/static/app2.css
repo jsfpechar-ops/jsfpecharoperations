@@ -303,3 +303,5 @@ body.v2 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;ov
 .host-stay-detail [data-copy].is-copy-confirmed .copy-label-confirmed{visibility:visible}
 .host-stay-detail .stay-head-actions .sub{margin:0}
 .host-stay-detail .stay-guests-h h2 .sub{font-size:14px;font-weight:600;color:var(--ink3);margin-left:8px}
+@media (max-width:1023px){body.v2 .host-stay-detail input,body.v2 .host-stay-detail select,body.v2 .host-stay-detail textarea,body.v2 .host-stay-detail button,body.v2 .host-stay-detail summary{min-height:44px}}
+@media (min-width:1024px){body.v2 .host-stay-detail input,body.v2 .host-stay-detail select,body.v2 .host-stay-detail textarea,body.v2 .host-stay-detail button,body.v2 .host-stay-detail summary{min-height:36px}}
