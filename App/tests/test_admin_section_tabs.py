@@ -19,7 +19,6 @@ ADMIN_HREFS = [
     "/admin",
     "/admin/customers",
     "/admin/fakturace",
-    "/admin/users",
     "/admin/incidents",
     "/admin/operations",
 ]
@@ -28,7 +27,6 @@ ADMIN_PAGES = {
     "/admin": "/admin",
     "/admin/customers": "/admin/customers",
     "/admin/fakturace": "/admin/fakturace",
-    "/admin/users": "/admin/users",
     "/admin/incidents": "/admin/incidents",
     "/admin/operations": "/admin/operations",
 }

@@ -2,15 +2,14 @@
 {% set nav = 'users' %}
 {% set body_kind = 'detail' %}
 {% from "_ui_layout.html" import ui_section_tabs with context %}
+{% from "_ui.html" import ui_button, ui_field with context %}
 {% block title %}{{ customer.display_name or customer.username }}{% endblock %}
 {% block meta %}{{ t('customers.state.' ~ customer.customer_state) }}{% endblock %}
 {% block tabs %}{{ ui_section_tabs() }}{% endblock %}
 {% block back_url %}/admin/customers{% endblock %}
 {% block back_label %}{{ t('customers.title') }}{% endblock %}
 {% block secondary_actions %}
-{{ ui_button(t('customers.manage'), 'secondary', href='/admin/users?manage=' ~ customer.id ~ '#user-manage') }}
 {{ ui_button(t('customers.payments'), 'secondary', href='/admin/fakturace') }}
-{{ ui_button(t('customers.ops.preview'), 'secondary', href='/admin/users?manage=' ~ customer.id ~ '#user-manage') }}
 {% endblock %}
 {% block body %}
 {% if not billing_enabled %}{{ ui_banner('neutral', t('customers.billing_off')) }}{% endif %}
@@ -23,6 +22,43 @@
 (t('customers.last_login'), fmt_date(customer.last_login_at) if customer.last_login_at else t('customers.not_recorded')),
 (t('customers.properties'), customer.active_properties)
 ]) }}
+<form method="post" action="/admin/users/{{ customer.id }}/email">
+  {{ ui_field('user-email-' ~ customer.id, t('users.email.label'), name='email', value=customer.email or '', type='email', attrs='required maxlength="254" autocomplete="off" autocapitalize="none" spellcheck="false"') }}
+  {% if customer.email %}
+  {{ ui_field('user-email-reason-' ~ customer.id, t('users.email.reason'), name='reason', attrs='required minlength="5" maxlength="300"') }}
+  {% endif %}
+  {{ ui_button(t('users.email.change') if customer.email else t('users.email.set'), 'secondary', type='submit') }}
+</form>
+{% if customer.id != current_user.id %}
+{% if customer.active and customer.email %}
+<form method="post" action="/admin/users/{{ customer.id }}/invite">
+  {{ ui_button(t('users.menu.send_invite'), 'secondary', type='submit') }}
+</form>
+{% endif %}
+<form method="post" action="/admin/users/{{ customer.id }}/impersonate">
+  {{ ui_field('support-reason-' ~ customer.id, t('users.menu.open_workspace_reason'), name='reason', placeholder=t('users.menu.open_workspace_reason_optional'), attrs='maxlength="300"') }}
+  {{ ui_button(t('users.menu.open_workspace'), 'secondary', type='submit') }}
+</form>
+{% if customer.meta_consent %}
+<form method="post" action="/admin/users/{{ customer.id }}/ads-consent/withdraw">
+  <input type="hidden" name="platform" value="meta">
+  {{ ui_button(t('users.menu.withdraw_meta_consent'), 'secondary', type='submit') }}
+</form>
+{% endif %}
+{% if customer.google_consent %}
+<form method="post" action="/admin/users/{{ customer.id }}/ads-consent/withdraw">
+  <input type="hidden" name="platform" value="google">
+  {{ ui_button(t('users.menu.withdraw_ads_consent'), 'secondary', type='submit') }}
+</form>
+{% endif %}
+<form method="post" action="/admin/users/{{ customer.id }}/export" data-no-skeleton>
+  {{ ui_button(t('users.menu.export'), 'secondary', type='submit') }}
+</form>
+<form method="post" action="/admin/users/{{ customer.id }}/schedule-deletion">
+  {{ ui_field('user-delete-confirm-' ~ customer.id, t('users.menu.schedule_deletion_confirm', username=customer.username), name='confirm', attrs='required') }}
+  {{ ui_button(t('users.menu.schedule_deletion'), 'secondary', type='submit') }}
+</form>
+{% endif %}
 {% endcall %}
 {% call ui_section(t('customers.billing')) %}
 {{ ui_facts([
@@ -152,7 +188,7 @@
 {% endif %}
 {% call ui_section(t('customers.ops.title'), id='operator-actions-card') %}
 <div class="ui-form-actions">
-  <form method="post" action="/admin/customers/{{ customer.id }}/aktivovat" data-customer-toggle>
+  <form method="post" action="/admin/customers/{{ customer.id }}/aktivovat" data-customer-toggle{% if customer.active %} data-confirm data-confirm-message="{{ t('confirm.disable_user', name=customer.display_name or customer.username) }}"{% endif %}>
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     {{ ui_button(t('customers.ops.enable' if not customer.active else 'customers.ops.disable'),
                  'secondary', type='submit') }}

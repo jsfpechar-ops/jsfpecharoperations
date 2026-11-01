@@ -684,37 +684,8 @@ def _require_admin(request: Request):
 
 @router.get("/admin/users")
 def users_admin(request: Request):
-    account, guard = _require_admin(request)
-    if guard:
-        return guard
-    return _render_users(request)
-
-
-def _render_users(request: Request, **extra):
-    users = db.query(
-        "SELECT u.id, u.username, u.display_name, u.role, u.active, "
-        "u.created_at, u.last_login_at, "
-        "u.email, u.email_verified_at, u.signup_at, u.signup_source, "
-        "(SELECT COUNT(*) FROM ad_click c WHERE c.user_account_id = u.id "
-        "AND c.platform = 'google' AND c.withdrawn_at IS NULL) AS google_consent, "
-        "(SELECT COUNT(*) FROM ad_click c WHERE c.user_account_id = u.id "
-        "AND c.platform = 'meta' AND c.withdrawn_at IS NULL) AS meta_consent, "
-        "(SELECT COUNT(*) FROM apartment a WHERE a.owner_user_id = u.id "
-        "AND a.archived_at IS NULL) AS apartment_count FROM user_account u ORDER BY u.username"
-    )
-    return render(
-        request,
-        "users.html",
-        {
-            "users": users,
-            "missing_email_count": sum(
-                1 for user in users if user["active"] and not (user["email"] or "").strip()
-            ),
-            "signup_enabled": config.SIGNUP_ENABLED,
-            "ads_export_days": signup.GOOGLE_EXPORT_DAYS,
-            **extra,
-        },
-    )
+    query = request.url.query
+    return RedirectResponse("/admin/customers" + (f"?{query}" if query else ""), status_code=303)
 
 
 def _send_invite(request: Request, target) -> None:
@@ -738,25 +709,25 @@ async def user_create(request: Request):
     form = await request.form()
     email = mail.normalise_email(_form_str(form, "email"))
     if not email:
-        return _back("/admin/users", err=_flash(request, "users.email.error.invalid"))
+        return _back("/admin/customers", err=_flash(request, "users.email.error.invalid"))
     if auth.email_taken(email):
-        return _back("/admin/users", err=_flash(request, "users.email.error.taken"))
+        return _back("/admin/customers", err=_flash(request, "users.email.error.taken"))
     try:
         user_id = auth.create_account(email, _form_str(form, "display_name"), role="host")
     except ValueError as exc:
         # ``auth`` raises catalogue keys, so the message travels as a key and is
         # resolved in the language the host is reading the page in.
-        return _back("/admin/users", err=_flash(request, str(exc)))
+        return _back("/admin/customers", err=_flash(request, str(exc)))
     except Exception as exc:
         if db.is_unique_violation(exc):
-            return _back("/admin/users", err=_flash(request, "users.email.error.taken"))
+            return _back("/admin/customers", err=_flash(request, "users.email.error.taken"))
         raise
     db.audit(
         "user_created", f"user={user_id}", actor=account["username"], owner_user_id=user_id
     )
     target = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
     _send_invite(request, target)
-    return _back("/admin/users", msg=_flash(request, "users.invite.sent", email=email))
+    return _back("/admin/customers", msg=_flash(request, "users.invite.sent", email=email))
 
 
 @router.post("/admin/users/{user_id}/invite")
@@ -767,10 +738,10 @@ def user_invite(user_id: int, request: Request):
         return guard
     target = db.query_one("SELECT * FROM user_account WHERE id = ? AND active = 1", (user_id,))
     if not target or not (target["email"] or "").strip():
-        return _back("/admin/users", err=_flash(request, "users.invite.no_email"))
+        return _back(f"/admin/customers/{user_id}", err=_flash(request, "users.invite.no_email"))
     _send_invite(request, target)
     db.audit("invite_sent", actor=account["username"], owner_user_id=user_id)
-    return _back("/admin/users", msg=_flash(request, "users.invite.sent", email=target["email"]))
+    return _back(f"/admin/customers/{user_id}", msg=_flash(request, "users.invite.sent", email=target["email"]))
 
 
 @router.post("/admin/users/{user_id}/email")
@@ -786,26 +757,26 @@ async def user_email_set(user_id: int, request: Request):
         return guard
     target = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
     if not target:
-        return _back("/admin/users", err=_flash(request, "users.email.error.not_found"))
+        return _back(f"/admin/customers/{user_id}", err=_flash(request, "users.email.error.not_found"))
     form = await request.form()
     email = mail.normalise_email(_form_str(form, "email"))
     if not email:
-        return _back("/admin/users", err=_flash(request, "users.email.error.invalid"))
+        return _back(f"/admin/customers/{user_id}", err=_flash(request, "users.email.error.invalid"))
     old_email = (target["email"] or "").strip().lower()
     if email == old_email:
-        return _back("/admin/users", msg=_flash(request, "users.email.unchanged"))
+        return _back(f"/admin/customers/{user_id}", msg=_flash(request, "users.email.unchanged"))
     reason = ""
     if old_email:
         reason = auth.support_reason(_form_str(form, "reason")) or ""
         if not reason:
-            return _back("/admin/users", err=_flash(request, "users.email.error.reason"))
+            return _back(f"/admin/customers/{user_id}", err=_flash(request, "users.email.error.reason"))
     if auth.email_taken(email, except_user_id=user_id):
-        return _back("/admin/users", err=_flash(request, "users.email.error.taken"))
+        return _back(f"/admin/customers/{user_id}", err=_flash(request, "users.email.error.taken"))
     try:
         auth.set_account_email(user_id, email)
     except Exception as exc:
         if db.is_unique_violation(exc):
-            return _back("/admin/users", err=_flash(request, "users.email.error.taken"))
+            return _back(f"/admin/customers/{user_id}", err=_flash(request, "users.email.error.taken"))
         raise
     detail = f"to={mail.mask_email(email)}"
     if old_email:
@@ -820,7 +791,7 @@ async def user_email_set(user_id: int, request: Request):
         mail_notify.email_changed(
             user_id=user_id, old_email=old_email, new_email=email, stamp=db.utcnow()
         )
-    response = _back("/admin/users", msg=_flash(request, "users.email.saved"))
+    response = _back(f"/admin/customers/{user_id}", msg=_flash(request, "users.email.saved"))
     if old_email and user_id == account["id"]:
         # The change ended every session of this account, the admin's own
         # included; hand this browser a fresh one.
@@ -866,34 +837,6 @@ async def user_impersonate(user_id: int, request: Request):
         owner_user_id=user_id,
     )
     return response
-
-
-@router.post("/admin/users/{user_id}/toggle")
-def user_toggle(user_id: int, request: Request):
-    account, guard = _require_admin(request)
-    target = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
-    if guard or not target:
-        return guard or Response(_flash(request, "auth.error.admins_only"), status_code=403)
-    if user_id == account["id"]:
-        return _back("/admin/users", err=_flash(request, "auth.error.own_disable"))
-    active = 0 if target["active"] else 1
-    db.execute(
-        "UPDATE user_account SET active = ?, session_version = session_version + 1 WHERE id = ?",
-        (active, user_id),
-    )
-    db.audit(
-        "user_enabled" if active else "user_disabled",
-        actor=account["username"],
-        owner_user_id=user_id,
-    )
-    return _back(
-        "/admin/users",
-        msg=_flash(
-            request,
-            "flash.accounts.enabled" if active else "flash.accounts.disabled",
-            username=target["username"],
-        ),
-    )
 
 
 @router.post("/admin/stop-impersonating")
@@ -1031,7 +974,7 @@ def user_workspace_export(user_id: int, request: Request):
         return guard
     target = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
     if not target:
-        return _back("/admin/users", err=_flash(request, "flash.error.no_such_user"))
+        return _back(f"/admin/customers/{user_id}", err=_flash(request, "flash.error.no_such_user"))
     if not access.identity_visible(request):
         # Inside a host's workspace the ZIP is as blocked here as in Settings.
         return _back("/", err=_flash(request, "flash.error.identity_hidden_export"))
@@ -1058,10 +1001,10 @@ async def user_schedule_deletion(user_id: int, request: Request):
         return guard
     target = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
     if not target:
-        return _back("/admin/users", err=_flash(request, "flash.error.no_such_user"))
+        return _back(f"/admin/customers/{user_id}", err=_flash(request, "flash.error.no_such_user"))
     form = await request.form()
     if _form_str(form, "confirm") != target["username"]:
-        return _back("/admin/users", err=_flash(request, "flash.error.confirm_username"))
+        return _back(f"/admin/customers/{user_id}", err=_flash(request, "flash.error.confirm_username"))
     due = (
         datetime.now(timezone.utc) + timedelta(days=WORKSPACE_DELETION_DAYS)
     ).replace(microsecond=0).isoformat()
@@ -1074,6 +1017,6 @@ async def user_schedule_deletion(user_id: int, request: Request):
         owner_user_id=user_id,
     )
     return _back(
-        "/admin/users",
+        f"/admin/customers/{user_id}",
         msg=_flash(request, "flash.users.deletion_scheduled", date=due),
     )
