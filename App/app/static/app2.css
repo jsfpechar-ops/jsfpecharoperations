@@ -519,4 +519,4 @@ body.v2 .onboarding-intro .onboarding-logo{width: 64px; height: auto; max-width:
 @media (max-width:1023px){body.v2 .needs-you-actions .btn{min-height:44px}}
 
 @media (max-width:767px){body.v2 .cal-day-number{min-width:44px}}
-body.v2 .menu-list .row .t small{display:block;color:var(--ink3);font-size:14px;margin-top:2px}
+body.v2 .menu-list .row .t small{display:block;color:var(--ink3);font-size:14px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
