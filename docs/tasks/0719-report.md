@@ -1,6 +1,6 @@
 # 0719 report (executor)
 
-Status: blocked. Stopped at the call limit with browser failures open. Not pushed.
+Status: blocked (partial). Second executor session: page-scroll fixed, Menu tab fixed; steps 2b to 7 not done. Not pushed.
 
 ## Commits (branch task/0719-v2-overview-phone)
 - fac1d49 step 1: top row, badge, need cards (class `need`, `b.t`, `small`), phone margins removed, main padding 20 px below 1024 px.
@@ -33,3 +33,11 @@ Status: blocked. Stopped at the call limit with browser failures open. Not pushe
 
 ## Owner steps left
 None.
+
+
+## Second session (continued at the call limit)
+- Commit c6c1410 (step 1): page width. Cause at 390 px: `.card.needs-you-card-item` stayed `display:grid` (desktop rule has higher specificity), so `.needs-you-actions` got a 0 px column and its nowrap button overflowed. Fixed with phone rules `body.v2 .card.needs-you-card-item{display:block}` and `.needs-you-actions{width:100%}`. Menu at 320: `.me-link` and `.who` had no min-width:0; name ellipsis added (`.who b` block). Probe (temporary, removed): document scrollWidth now equals the viewport at 320, 390 and 640 on `/` and `/menu`. `.hs` scrolls inside itself (312/280 at 320).
+- Commit 090ba69 (step 2a): `_shell_v2.html` Menu tab is on for nav in menu, cleaning, stay_fees, payments, settings.
+- Not run in this session: the brief §6 test set, test_0718_menu_page, ruff. The first session's last full run was 15 failed (all page-scroll and card-box cases); the scroll cases should now pass, the card-box case is not re-checked.
+- Left: step 2b (v2_mockup.py: `.actbar .btn` alias to `.bar .btn`, `.actbar` padding-bottom and height override with the reason); step 3 (overview phone_selectors and missing_ok, the 768 style-only rule in test_0710); step 4 (tests and ruff); step 5 (app2.css key 20261101-0719c in base.html, `tests/test_static_versions.py --write`); step 6 (screenshots in docs/tasks/screenshots-0719/ and the lints); step 7 (this report's test tails).
+- Owner steps left: none.
