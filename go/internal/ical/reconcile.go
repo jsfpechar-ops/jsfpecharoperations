@@ -22,15 +22,22 @@ import (
 
 // Feed is the part of an ical_feed row the reconcile helpers read.
 type Feed struct {
-	ID          int64
-	ApartmentID int64
-	OwnName     *string
-	Label       *string
+	ID           int64
+	ApartmentID  int64
+	URL          string
+	OwnName      *string
+	Label        *string
+	LastStatus   *string
+	BodySHA256   *string
+	ETag         *string
+	LastModified *string
 }
 
-// SyncStats counts what one sync did. Only Cancelled is ported so far.
+// SyncStats counts what one sync did. Outcome is changed, unchanged or not_modified;
+// Error is set when the feed could not be read.
 type SyncStats struct {
-	Cancelled int
+	Created, Updated, Cancelled, BlocksSkipped int
+	Outcome, Error                             string
 }
 
 // reservationRow holds the reservation columns the sync reads.
