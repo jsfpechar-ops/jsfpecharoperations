@@ -21,7 +21,6 @@ ADMIN_HREFS = [
     "/admin/fakturace",
     "/admin/incidents",
     "/admin/operations",
-    "/admin/funnel",
 ]
 
 ADMIN_PAGES = {
@@ -30,7 +29,6 @@ ADMIN_PAGES = {
     "/admin/fakturace": "/admin/fakturace",
     "/admin/incidents": "/admin/incidents",
     "/admin/operations": "/admin/operations",
-    "/admin/funnel": "/admin/funnel",
 }
 
 

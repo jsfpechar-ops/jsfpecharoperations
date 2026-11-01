@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import Response
 from starlette.datastructures import UploadFile
 
-from .. import bank_import, billing_admin, billing_analytics, billing_invoices, security, validation
+from .. import analytics, bank_import, billing_admin, billing_analytics, billing_invoices, config, security, signup, validation
 from ..templating import render
 from .admin_accounts import _require_admin
 from .admin_helpers import back as _back
@@ -57,6 +57,9 @@ def billing_admin_page(request: Request, mesic: str = "", q: str = "", state: st
         "movement": billing_analytics.movement(month),
         "funnel_counts": billing_analytics.funnel(),
         "discounts": billing_analytics.discount_overview(),
+        "posthog_url": config.POSTHOG_APP_URL if analytics.enabled() else "",
+        "signup_enabled": config.SIGNUP_ENABLED,
+        "ads_export_days": signup.GOOGLE_EXPORT_DAYS,
     })
 
 

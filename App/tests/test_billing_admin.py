@@ -83,6 +83,14 @@ def test_the_page_lists_the_unpaid_invoice(setup):
     assert "Nahrát výpis" in page.text
 
 
+def test_the_page_opens_on_unpaid_then_month_and_reports_stay_closed(setup):
+    text = _admin(setup).get("/admin/fakturace?lang=en").text
+    unpaid, month, reports = text.index("Unpaid invoices"), text.index("Invoices by month"), text.index('id="reports"')
+    assert unpaid < month < reports
+    tag = text[text.rindex("<", 0, reports):text.index(">", reports) + 1]
+    assert tag.startswith("<details") and " open" not in tag
+
+
 def test_an_uploaded_statement_marks_the_invoice_paid(setup):
     inv = setup["invoice"]
     client = _admin(setup)

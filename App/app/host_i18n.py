@@ -5459,6 +5459,7 @@ _SIGNUP_STRINGS = {
         "billing.admin.movement.churn": "Churn",
         "billing.admin.movement.help": "Decomposed from the monthly snapshot; the sum explains the month-over-month change.",
         "billing.admin.funnel.title": "Trial funnel",
+        "billing.admin.reports": "Reports",
         "billing.admin.funnel.hosts": "Host accounts",
         "billing.admin.funnel.verified": "Verified",
         "billing.admin.funnel.trialed": "Trial started",
@@ -5822,7 +5823,8 @@ _SIGNUP_STRINGS = {
         "billing.admin.movement.contraction": "Pokles",
         "billing.admin.movement.churn": "Odchod",
         "billing.admin.movement.help": "Rozloženo z měsíčního snímku; součet vysvětluje změnu mezi měsíci.",
-        "billing.admin.funnel.title": "Tryskový trychtýř",
+        "billing.admin.funnel.title": "Trychtýř zkušebních období",
+        "billing.admin.reports": "Přehledy",
         "billing.admin.funnel.hosts": "Účty hostů",
         "billing.admin.funnel.verified": "Ověřeno",
         "billing.admin.funnel.trialed": "Zkušební doba",
@@ -6318,14 +6320,12 @@ for _lang, _strings in _ADMIN_OPERATIONS_STRINGS.items():
 # WP11: the admin funnel page. Platform administrators only.
 _ADMIN_FUNNEL_STRINGS = {
     "en": {
-        "funnel.title": "Funnel",
         "funnel.posthog_body": "Host and campaign figures are in PostHog.",
         "funnel.posthog_link": "Open PostHog",
         "funnel.posthog.title": "Host funnel",
         "funnel.ads.title": "Google Ads conversions",
     },
     "cs": {
-        "funnel.title": "Trychtýř",
         "funnel.posthog_body": "Údaje o hostitelích a kampaních jsou v PostHogu.",
         "funnel.posthog_link": "Otevřít PostHog",
         "funnel.posthog.title": "Trychtýř hostitelů",
