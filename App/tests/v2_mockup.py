@@ -100,6 +100,15 @@ _GEOMETRY_JS = r"""
     return false;
   };
   const leafText = (e) => [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim() !== '');
+  // visually hidden (sr-only, clipped, or 1 px absolute): not a tap target and not visible text
+  const hiddenVisually = (e) => {
+    if (e.classList.contains('sr-only') || (e.closest && e.closest('.sr-only'))) return true;
+    const s = getComputedStyle(e);
+    const r = e.getBoundingClientRect();
+    if (s.clipPath && s.clipPath.startsWith('inset(50%')) return true;
+    if (s.clip && s.clip !== 'auto' && /rect\(\s*0px/.test(s.clip)) return true;
+    return s.position === 'absolute' && (r.width <= 1 || r.height <= 1);
+  };
 
   // 1. horizontal page scroll
   const de = document.documentElement;
@@ -146,6 +155,7 @@ _GEOMETRY_JS = r"""
     if (el.tagName === 'A' && el.closest('p')) continue;  // inline link inside a sentence
     const r = el.getBoundingClientRect();
     if (r.width <= 1 || r.height <= 1) continue;  // visually hidden (e.g. skip link), not a tap target
+    if (hiddenVisually(el)) continue;
     if (r.width < minT || r.height < minT) {
       out.push(`tap target ${r.width.toFixed(0)}x${r.height.toFixed(0)} (min ${minT}): ${label(el)} "${(el.textContent || '').trim().slice(0, 24)}"`);
     }
@@ -153,7 +163,7 @@ _GEOMETRY_JS = r"""
 
   // 5. text smaller than 12 px
   for (const el of document.querySelectorAll('body *')) {
-    if (!leafText(el) || !vis(el)) continue;
+    if (!leafText(el) || !vis(el) || hiddenVisually(el)) continue;
     const fs = parseFloat(getComputedStyle(el).fontSize);
     if (fs < 12) out.push(`text ${fs}px: ${label(el)} "${el.textContent.trim().slice(0, 24)}"`);
   }

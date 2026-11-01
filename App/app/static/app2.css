@@ -45,7 +45,6 @@ td small{display:block;color:var(--ink3);font-size:12px;margin-top:2px}
 .cd{font-size:12px;color:var(--ink3);text-align:center;padding:8px 0}.cd.today{color:var(--acc);font-weight:700}
 .crow{border-top:1px solid var(--line);height:44px}.cn{font-size:13px;font-weight:600;grid-column:1}
 .cal{padding:6px 14px 10px;overflow-x:auto}
-body.v2 kbd{font-size:12px}
 .crow .bar{grid-row:1;height:28px;border-radius:999px;font-size:12px;font-weight:600;display:flex;align-items:center;padding:0 10px;margin:0 2px;white-space:nowrap;overflow:hidden}
 .b-ok{background:var(--oks);color:var(--ok)}.b-warn{background:var(--warns);color:var(--warn)}.b-grey{background:#efefeb;color:var(--ink2)}
 .note{background:var(--info);border-radius:10px;padding:10px 14px;color:#1d4f9e;font-size:13px;margin-bottom:16px;display:flex;justify-content:space-between}
@@ -172,3 +171,8 @@ body.v2 .skip-link:focus{top:8px}
 body.v2 .card.needs-you-card-item{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start}
 body.v2 .needs-you-card-item > div:not(.ic){min-width:0}
 body.v2 .needs-you-actions{display:flex;flex-wrap:wrap;gap:8px}
+/* 0711 tap targets below 1024 px: sidebar links and the property link in table rows */
+@media (max-width: 1023px){
+  body.v2 .side .nav,body.v2 .dashboard-row-property{min-height:44px;display:inline-flex;align-items:center}
+}
+body.v2 kbd{font-size:12px!important}
