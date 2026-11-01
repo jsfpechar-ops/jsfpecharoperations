@@ -14,7 +14,7 @@ Status: blocked (partial). Not pushed.
 - Screenshots not taken, no 390 px screenshot.
 
 ## Per test
-- Group A Havel (test_havel_browser, test_0386, test_0391, test_0395, test_havel_launcher_skeleton): NOT FIXED. A run was started in the background (pid 26222) and its output was not read before the cap. Result unknown.
+- Group A Havel (test_havel_browser, test_0386, test_0391, test_0395, test_havel_launcher_skeleton): NOT FIXED. Run result: 19 failed (of the five files, 532 s). Failures include test_0395 test_stale_start_screen_not_restored, test_0395 test_phone_panel_above_tabbar, test_havel_launcher_skeleton test_havel_launcher_does_not_arm_the_navigation_skeleton. Full list: the run output file in the session task directory (bfsdbupep).
 - Havel CSS facts for the next executor: .havel-fab and #havel-sheet styles are not in host.css (no matches). The Havel styles live in App/app/static/host2.css (about 112 rules under `.host-workspace`, using host2 tokens). app2.css has no havel rules yet. The brief's pointer to host.css is wrong. Decide whether to copy from host2.css, or stop and ask (brief section 8).
 - Dialog motion (test_motion_browser): not started.
 - Copy feedback / filters / controls (test_host_feedback, test_host_filter_panels, test_host_controls): not started.
