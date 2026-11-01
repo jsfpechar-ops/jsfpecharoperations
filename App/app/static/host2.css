@@ -1132,3 +1132,14 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .ui-choice-card:has(input:checked) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .host-workspace .ui-choice-card input:focus-visible { outline: none !important; }
 .ui-choice-card:has(input:focus-visible) { outline: 2px solid var(--coral-600); outline-offset: 2px; }
+/* 0523: stays list at computer width: quiet grey header, guest column widest, pay and actions shrink to content. */
+@media (min-width: 1024px) {
+  .host-workspace .stays-view .ui-table th { background: var(--surface-2); }
+  .host-workspace .stays-view .ui-table :is(th, td).stay-col-actions { width: 1%; white-space: nowrap; }
+}
+/* 0523: phone stays card: arrival stays in column 1, departure sits on the same line in column 2 (the two dates no longer print on top of each other). */
+@media (max-width: 1023.98px) {
+  .host-workspace .stays-view .ui-table td.stay-col-dates { grid-column: 1; }
+  .host-workspace .stays-view .ui-table td.stay-col-departure { grid-row: 2; grid-column: 2; justify-self: start; }
+  .host-workspace .stays-view .ui-table td.stay-col-departure::before { content: "– "; }
+}

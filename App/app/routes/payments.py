@@ -66,6 +66,8 @@ def payments_page(request: Request):
         return guard
     owner_id = access.owner_id(request)
     state = _connect_state(owner_id)
+    raw_stay = str(request.query_params.get("reservation_id") or "")
+    selected_reservation_id = int(raw_stay) if raw_stay.isdigit() else None
     return render(
         request,
         "payments.html",
@@ -79,6 +81,7 @@ def payments_page(request: Request):
             "stays": [
                 {"id": s["id"], "label": _stay_label(s)} for s in _stays(owner_id)
             ],
+            "selected_reservation_id": selected_reservation_id,
         },
     )
 
