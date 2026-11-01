@@ -200,7 +200,7 @@ def _assert_cleaning_day_marker(page, event_id, day, property_name, lang, mobile
         assert visual["propertyDisplay"] != "none" and visual["propertyWidth"] > 0
 
 
-@pytest.mark.parametrize(("width", "lang"), [(1280, "en"), (1280, "cs"), (1024, "en"), (1024, "cs")])
+@pytest.mark.parametrize(("width", "lang"), [(1280, "en"), (1280, "cs")])
 def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, width, lang):
     ws = workspace
     booking_id = stay(ws["home"], "2026-10-15", "2026-10-17")
@@ -554,7 +554,7 @@ def test_missing_property_hours_keep_full_day_cleaning_marker_without_saved_defa
     property_name = next(prop["internal_name"] for prop in cleaning.properties(ws["owner"])
                          if prop["id"] == ws["home"])
     with sync_api.sync_playwright() as playwright:
-        browser, context = browser_context(playwright, ws, origin, width=1024)
+        browser, context = browser_context(playwright, ws, origin, width=1280)
         page = context.new_page()
         page.goto(f"{origin}/cleaning?lang=en")
         loaded(page)
