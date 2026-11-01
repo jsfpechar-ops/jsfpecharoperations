@@ -889,8 +889,8 @@ def test_dashboard_760_header_and_actions_remain_in_the_shared_lane(wide_host, w
                 assert abs(v2["head"][edge] - v2["lane"][edge]) <= 2, v2
                 if v2["ovTop"]:
                     assert abs(v2["ovTop"][edge] - v2["lane"][edge]) <= 2, v2
-            if v2["title"]:
-                assert abs(v2["title"]["left"] - v2["lane"]["left"]) <= 2, v2
+            if v2["title"]:  # 0729: the phone headline is centred inside the lane (8px side margin)
+                assert abs((v2["title"]["left"] + v2["title"]["right"]) / 2 - (v2["lane"]["left"] + v2["lane"]["right"]) / 2) <= 2, v2
             # 0241: the alert is a line in "What needs you", never a second stack.
             card_alert = page.locator('#needs-action [data-needs-you="alert"]')
             assert card_alert.count() >= 1, page.locator("body").inner_text()[:500]

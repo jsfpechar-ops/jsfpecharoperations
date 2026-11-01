@@ -76,7 +76,7 @@
     </p>
     </div>
   </div>
-  <a class="btn ph-hide" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">{{ t('stays.add_stay') }}</a></div>
+  <a class="btn" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">{{ t('stays.add_stay') }}</a></div>
 
   {#- 0717: alerts with no todo card of their own; a stay's alert stays hidden when its line is already here. -#}
   {% set ny_stay_ids = needs_you.lines | selectattr('stay_id') | map(attribute='stay_id') | list %}

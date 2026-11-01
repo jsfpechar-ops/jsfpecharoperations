@@ -517,6 +517,7 @@ body.v2 .onboarding-intro .onboarding-logo{width: 64px; height: auto; max-width:
   body.v2 .head h1.hl{font-size:30px;line-height:1.15;font-weight:800;letter-spacing:-.02em;text-align:center;margin:0 8px 28px}
   body.v2 .head h1.hl.done{margin-top:120px}
   body.v2 .ov-head{display:block;margin:0;padding:0}
+  body.v2 .ov-head > .btn{display:none}
   body.v2 .hl-sub{text-align:center;color:var(--ink3);font-size:16px;margin:-16px 0 28px}
   body.v2 .needs-you-actions{margin-top:14px}
   body.v2 .hs .card{align-items:center;text-align:center;padding:26px 22px 28px;gap:0}
