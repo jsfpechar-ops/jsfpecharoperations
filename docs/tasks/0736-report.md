@@ -339,3 +339,26 @@ Deviations: Done: steps 1 to 1 (item 7, three of four asserts). Left: the save-r
 Questions: is the save return to `section=lock` expected for a save with no changes? Test mistake or app behaviour: needs an orchestrator decision.
 Screenshots: none (test-only change). PNG tests: not touched.
 Not pushed.
+
+## Run 12 (Run 11 save-return assert, diagnosis only)
+
+Status: blocked
+
+Files: none changed in the product. The probe in `App/tests/test_0541_property_page_phone_browser.py` was removed (file restored from HEAD).
+
+Probe output (before the save click, the test as in Run 11):
+- `#sec-lock` inside `form#property-settings-form`: yes, count 1. Save button `.savebar [type=submit]`: 1, belongs to `property-settings-form`.
+- `input[data-property-return]` before submit: `/apartments/2?view=settings&section=property` (template default, expected before submit).
+- Toggle events: `sec-lock:true`, `#sec-lock` open, `#sec-basics` closed. The toggle reaches the form.
+- Native click: no POST at all. URL stays `/apartments/2?lang=en`. Cause: HTML5 constraint validation blocks the submit. Invalid fields: `addr_house_no`, `addr_zip`, `addr_obec` (empty, in closed `#sec-basics`), `lock_checkin_hour` and `lock_checkout_hour` (visible, no option selected). This is the fixture property, not app behaviour.
+- With `form.noValidate = true`: POST fires. Server answers 400 (refusal re-render at `/apartments/2`, no redirect). Posted `return_to` = `/apartments/2?view=settings&section=property`, so app.js did not rewrite it.
+- Synthetic `submit` event dispatched on the form (no navigation): `return_to` unchanged. No `pageerror` or console exception in the page.
+
+Diagnosis so far: the app.js rewrite is not effective even though the toggle fires. Either `lastOpened` is null in the handler or `returnInput` is null (both would make it return early). Not yet isolated. Also, a valid save is needed for the redirect: a refused save (400) re-renders at `/apartments/2`, so fixing return_to alone will not satisfy the assert.
+
+Deviations: Done: diagnosis (probe output above). Left: (1) find why the form-level submit handler at `App/app/static/app.js` ~2017-2025 leaves `return_to` unchanged (next probe: after a synthetic `toggle` on `#sec-lock`, print `lastOpened` path via a second synthetic submit, and count `form` nodes with that id); (2) fix the app.js or route cause; (3) make the test fixture valid before save (fill the three address fields and the two lock-hour selects) or assert on the refusal; (4) bump `?v=` in `App/app/templates/base.html` and run `tests/test_static_versions.py --write`; (5) run the Run 12 pytest command.
+
+Test result line: not run (the test is in its committed Run 11 state, failing on the last assert as before).
+
+Questions: the save at the lock section needs address and lock-hour data to be valid, otherwise the server refuses it (400). Owner or orchestrator to decide whether the test should seed a valid property or assert the refusal path.
+Not pushed.
