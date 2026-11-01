@@ -222,3 +222,10 @@ Status: blocked. Done: steps 1 to 2. Left: step 3 (screenshots app-390.png, app-
 - Deviation: the page backfills a PIN on every load (`_ensure_apartment_pin`), so the no-PIN test patches that function.
 - §6 tails: browser set `35 passed, 34 deselected` with `-rs`, no skips; ruff E9/F63/F7/F82/F401/F841 `All checks passed!`; design_lint `OK`; context_lint `OK`.
 - Owner/orchestrator: take the 320 and 390 px screenshots and check no sideways scroll.
+
+## 0547
+Status: blocked (executor, Haiku 5.5). Done: step 1 (commit 151d29f). Left: step 2 (bug B), step 3 (tests, section 6 result below).
+- Step 1: app.js `initPropertyPage` (switch status, invalid reveal, return section, calendar connect); host.js 0544 hunk reverted; keys 0547a in base.html; static_versions.json rewritten.
+- Section 6 run: `1 failed, 32 passed, 6 deselected`. Failure: `test_0504_mixed_inits_once_browser.py:90` `AssertionError: ['hashchange']`. Not yet explained; brief §8 says stop.
+- Bug B: `tests/test_host_unsaved_changes_browser.py::test_without_javascript_nothing_changes` fails before any click: `.host-property-save .ui-btn-primary` does not exist in the templates (the test predates the one-page layout). The brief's `.savebar button[type=submit]` intercept was not reproduced, so the elementFromPoint check was not run.
+- Question for the owner: is the 0504 hashchange count expected to change, and should the stale test in test_host_unsaved_changes_browser.py be updated (out of brief scope)?
