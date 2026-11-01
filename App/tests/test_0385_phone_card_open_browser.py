@@ -16,7 +16,7 @@ from tests.test_property_navigation_browser import base, chromium_launch_kwargs,
 CARDS = """() => {
   const visible = el => el.getClientRects().length > 0;
   const hit = (a, b) => a.left < b.right - 1 && a.right > b.left + 1 && a.top < b.bottom - 1 && a.bottom > b.top + 1;
-  return [...document.querySelectorAll('table.properties-table tbody tr.clickable-row')].filter(tr => {
+  return [...document.querySelectorAll('.props-card table tbody tr.clickable-row')].filter(tr => {
     const thead = tr.closest('table').querySelector('thead');
     return visible(tr) && thead && getComputedStyle(thead).display === 'none';
   }).map(tr => {
@@ -60,7 +60,7 @@ def test_phone_card_open_has_its_own_line(base, width, lang):
         context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": base + "/"}])
         page = context.new_page()
         page.goto(base + f"/apartments?lang={lang}")
-        page.wait_for_selector("table.properties-table tbody tr.clickable-row", state="attached")
+        page.wait_for_selector(".props-card table tbody tr.clickable-row", state="attached")
         rows = page.evaluate(CARDS)
         context.close()
         browser.close()

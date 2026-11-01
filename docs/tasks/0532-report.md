@@ -104,3 +104,27 @@ Tests (from App/):
 Screenshots (`docs/tasks/screenshots-0532/`): app-390, app-768, app-1280, mockup-390, mockup-768, mockup-1280 (copied from the 0710 screenshot test, `/apartments` without `?lang=cs`; not re-taken with cs). The 0710 tracked PNGs rewritten by the test were restored with `git checkout`.
 
 Not done: group 2 section 8 updates; cs screenshots; 320 px and 1024 px screenshots; no visual look at the PNGs in this pass.
+
+## Executor pass 6 (brief 0532, sections 5, 6, 8; orchestrator fix list)
+Status: **blocked**. Two stop cases (below). Committed as the working state so the owner can see it; nothing pushed.
+
+Changes:
+- `app2.css`: `body.v2 .sr-only` visually-hidden rule placed in the shared section near the top (after the reset rules), per coordinator message. Copy-column width rule now `th/td:nth-child(4){width:44px}` (menu column); 96 px rule removed. Key bumped `20261101-0532m`; `static_versions.json` regenerated.
+- `apartments.html`: Copy link `<th>` and `<td>` removed; `copy_button` removed from the import.
+- `_components.html`: `copy_button` v2 branch removed (no template with `v2 = true` calls it any more; the `dashboard.html` v2 page does not). No `.copy-btn` rule in app2.css to remove (`host2.css` `.host-workspace .copy-btn` is another shell, left alone).
+- Section 8 selector/assertion updates: `test_host_list_page_layout_browser.py` (properties entry), `test_0285_rows_browser.py` (selector), `test_0284_states_browser.py` (selector), `test_0385_phone_card_open_browser.py` (2 selectors), `test_0300_copy_button.py` (`copy-btn` now `not in` the /apartments page).
+
+Test tails:
+- Group 1: `7 failed, 115 passed in 154.65s`. Six are `test_0710 properties` at 320/390/768/1024/1280/1440: `tbody tr .btn.sm.ghost: missing in app`. Plus `test_0300` (fixed to the no-column assertion in this pass; the run above was before that edit).
+- Group 2: `9 failed, 103 passed in 229.37s` (run after the test_0300 edit, which is in the same command as group 2).
+  - `test_0385_phone_card_open_has_its_own_line` x4: `rows == []` (selector now `.props-card table tbody tr.clickable-row`; rows exist, see `apartments.html` line 30, so the remaining cause is not diagnosed).
+  - `test_design_guardrails_browser::test_every_host_page_passes_the_layout_guard`: 6 `tap-target-small` findings on property pages (fee-setup, property-detail x2, guest-links, automation at 390 px: the copy-link button 32 px; smart-locks: "x" button 24 px). None on /apartments. Another page: STOP case.
+  - `test_host_list_page_layout_browser::test_tabs_are_links_that_mark_the_open_page`: `/apartments` has no `ui-tabs` / `sub-tabs` nav on v2 (`assert nav` fails). STOP case: the assertion has no v2 counterpart; not changed.
+  - `test_host_list_page_layout_browser::test_list_pages_share_order_edges_and_rhythm` and `test_every_row_opens_on_click_and_enter_and_inner_controls_do_not`: failing, not diagnosed in this pass.
+  - `test_0285_rows_browser::test_properties_rows_match_stays_rows`: compares the `/apartments` row computed style to the `/reservations` stays rows: v2 rows have `borders none / radius 0 / spacing 2px`, stays rows `solid / 12 / 0px 8px`. This is the STOP case from brief section 8 (a comparison to another page's old markup that cannot hold on v2). Not skipped, not changed.
+
+STOP 1 (mockup contradicts the orchestrator's premise): `docs/design/mockup/ubyhost-redesign-v2.html` props rows DO have a fourth cell with a `<button class="btn sm ghost">Kopírovat odkaz</button>` (line 174 etc.), under an unlabelled `<th>`. The header is `Název | Adresa | Nastavení | (empty) | (empty)`. So the mockup has a copy-link button in each row. Removing the column is what made the six 0710 `.btn.sm.ghost` failures. Decision needed: restore the copy column in `apartments.html` (keep the sr-only rule, keep the v2 copy_button branch), or change the mockup.
+STOP 2: the 0285 stays-row comparison and the `/apartments` tabs assertion (above).
+
+Not done: screenshots (step 6), lints, cs capture. Not run since blocked: `design_lint.py`, `context_lint.py`.
+Owner or orchestrator next: decide STOP 1; decide how STOP 2 items should be asserted for v2; diagnose the 0385 empty rows and the tap-target findings on property pages.
