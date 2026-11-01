@@ -39,3 +39,6 @@ Status: review
 ## Owner steps left
 - Push and open the PR yourself (executor did not push).
 - Decide the two questions above.
+
+## Screenshot notes (390 px)
+- The 390 px page overflows: the calendar grid runs past the viewport, and the header shows the desktop sidebar's nav as a row that is cut off. This is outside the brief (no mobile fix asked). Needs its own brief.
