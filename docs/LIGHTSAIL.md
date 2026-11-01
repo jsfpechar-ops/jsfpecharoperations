@@ -53,6 +53,10 @@ Internet → :443 Caddy (auto TLS) → ubyhost:8080 (FastAPI)
                               (ubyhost.db, photos, backups)
 ```
 
+Optional `ubyhost-go` (Go port, G1b, profile `go`) serves no traffic until a Caddy route exists (G2).
+
+Owner step: add `go` to `COMPOSE_PROFILES` in `.env` (for example `COMPOSE_PROFILES=go`, or append `,go`), then deploy. It serves nothing until G2.
+
 ## One-time setup
 
 ### 1. Create the instance
