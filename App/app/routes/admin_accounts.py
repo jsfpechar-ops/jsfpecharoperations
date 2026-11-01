@@ -28,7 +28,6 @@ from .. import (
     mail_notify,
     rate_limit,
     security,
-    signup,
     stay_fee_auto,
     turnstile,
     workspace_export,
