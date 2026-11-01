@@ -113,7 +113,7 @@ def _geometry(notice):
     assert not result["clipped"], result
     assert not result["overlapping"], result
     assert result["minContrast"] >= 4.5, result
-    assert result["titleSize"] >= 16, result
+    assert result["titleSize"] >= 14, result  # v2 inner headings are 14px (0536 item 4)
     assert all(size >= 15 for size in result["valueSizes"]), result
     assert result["decorativeBackground"] == "rgba(0, 0, 0, 0)", result
     assert result["extraActions"] == 0, result
@@ -195,6 +195,6 @@ def test_disclosure_and_actual_hours_work_without_javascript_before_connecting(h
         page = context.new_page()
         for name in ("door-lock", "wizard-lock"):
             page.goto(base + _routes(host, "en")[name])
-            notice = _assert_times(page, "en")
+            _assert_times(page, "en")
         context.close()
         browser.close()
