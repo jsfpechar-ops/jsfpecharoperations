@@ -1157,10 +1157,14 @@ body.host-workspace main#main-content { background: var(--canvas); }
   body.host-workspace .ui-sidebar .host-account-name { font-size: var(--size-14); font-weight: 600; }
   body.host-workspace .ui-sidebar .host-account-name small { font-size: var(--size-11); color: var(--ink-3); }
   body.host-workspace:not(.sidebar-collapsed) .ui-sidebar .host-account-menu { top: calc(100% + var(--space-2)); bottom: auto; }
+  body.host-workspace .setup-wizard-exit .ui-btn, body.host-workspace .setup-wizard-foot .ui-btn { border-radius: var(--radius-pill); }
 }
 @media (min-width: 1024px) {
   body.host-workspace .ui-table tr.ui-row { border: 0; border-radius: 0; margin: 0; box-shadow: none; }
   body.host-workspace .ui-table { border-spacing: 0; }
   body.host-workspace .ui-table tbody tr, body.host-workspace .ui-table tr.ui-row { border: 0; border-radius: 0; box-shadow: none; margin: 0; }
   body.host-workspace .ui-table td:first-child, body.host-workspace .ui-table td:last-child { border-radius: 0; }
+  body.host-workspace table.properties-table, body.host-workspace table.property-summary-table { border-spacing: 0; }
+  body.host-workspace table.properties-table tbody tr, body.host-workspace table.property-summary-table tbody tr { border: 0; border-radius: 0; box-shadow: none; margin: 0; }
+  body.host-workspace table.properties-table td:first-child, body.host-workspace table.properties-table td:last-child, body.host-workspace table.property-summary-table td:first-child, body.host-workspace table.property-summary-table td:last-child { border-radius: 0; }
 }

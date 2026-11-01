@@ -130,9 +130,10 @@ def test_the_support_line_names_the_configured_operator_address(host_with_proper
 
 
 def test_the_support_line_is_not_part_of_the_legal_link_row(host_with_property):
-    footer = _sidebar(host_with_property.get("/?lang=en").text)
+    page = host_with_property.get("/?lang=en").text
     # Support lives in the account disclosure, keeping the default rail short.
-    account = re.search(r'<details class="host-account".*?</details>', footer, re.S).group(0)
+    # 0703 moved the account block to the top of the sidebar, so search the page.
+    account = re.search(r'<details class="host-account".*?</details>', page, re.S).group(0)
     assert 'mailto:' in account
     assert 'href="/settings"' in account
 
