@@ -314,3 +314,4 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
   body.v2 .chip{font-family:inherit;font-size:14px;font-weight:700;line-height:1.2;color:var(--ink);padding:0 18px}
   body.v2 .round{font:inherit;color:inherit;padding:0}
 }
+@media (max-width:1023px){body.v2 h2.sec a.ph-only{display:inline-flex;align-items:center;min-height:44px}body.v2 .big{margin:2px 0 4px}}

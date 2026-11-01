@@ -30,7 +30,7 @@ SELECTOR_OVERRIDES = {
     ".tab:not(.on)": {"font-size": "12px"},
     ".tab.on": {"font-size": "12px"},
     # mockup's 30 px bottom padding is home-indicator room in the phone frame; the app's action bar sits above the tab bar
-    ".actbar": {"padding-bottom": "12px", "height": "ACTBAR_HEIGHT"},
+    ".actbar": {"padding-bottom": "12px"},
 }
 # style-compared only at computer width (phone design pending)
 DESKTOP_ONLY = {".side", ".side .nav", ".side .nav.on"}
@@ -41,6 +41,8 @@ TAP_EXEMPT_BELOW_DESKTOP = {".cal .bar": "dense 14-day timeline; 28 px meets WCA
 # app selector -> mockup selector at phone widths (the phone mockup calls the action bar .bar)
 SELECTOR_ALIASES = {".actbar": ".bar", ".actbar .btn": ".bar .btn"}
 BOX_PROPS = ("width", "height", "margin-top", "margin-right", "margin-bottom", "margin-left")
+# phone box departure: the 20 px side room comes from body.v2 .main padding, so phone cards have no side margin (2026-11-01)
+BOX_OVERRIDES = {".card.me": {"margin-left": "0px", "margin-right": "0px"}}
 
 
 def expected_value(selector: str, prop: str, mock_value: str) -> str:
@@ -332,7 +334,7 @@ def box_diffs(selector: str, app: dict, mock: dict, width: int) -> list[str]:
     """Phone box metrics: width within 2 px, height and margins within 1 px. Values that are not px are skipped."""
     out = []
     for prop in BOX_PROPS:
-        a, m = _num(app[prop]), _num(mock[prop])
+        a, m = _num(app[prop]), _num(BOX_OVERRIDES.get(selector, {}).get(prop, mock[prop]))
         if a is None or m is None:
             continue
         tol = 2 if prop == "width" else 1
