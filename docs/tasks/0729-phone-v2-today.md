@@ -184,3 +184,26 @@ Write `docs/tasks/0729-phone-v2-today-report.md` with: Status line, changed file
    - `test_dashboard_single_stay_needs_you_card`: read the failure; if it depends on the removed "+", heading badge, calendar link or the old `.need b`, repoint to the new markup (`.need .t`, `.need small`, `.needs-you-actions .btn`). If a needs-you button is really not visible on phone, that is a CSS bug: fix the CSS, not the test.
    - `test_host_wide_geometry_browser.py` `test_host_wide_lanes_align` at 360 and `test_dashboard_760_header_and_actions_remain_in_the_shared_lane`: `.head` is hidden below 1024 on `/` on purpose. For `/` below 1024 measure `.ph-top` (the lane: its left/right must equal the cards' left/right ±1) instead of `.head`; skip only the `.head`-specific part, never the whole test.
 3. Then step 11 (screenshots) and step 12: amend the WIP commit into one clean commit with the brief's message (`git commit --amend`), and finish the report (Status: review).
+
+## 11. Follow-up 2: one h1 on Overview (CI `test` job)
+
+CI requires exactly one `<h1` in the HTML of `/` (test_host_redesign, test_design_dashboard) and exactly one visible h1 at every width (v2_mockup geometry rule 6). So the page keeps ONE h1: the `.ov-head` title. On desktop it reads "Overview"; on phone it shows the headline in the `.hl` style. Do not change the v2_mockup h1 rule.
+
+1. `App/tests/test_0520_overview_today.py` line ~170 is already edited (uncommitted): `'<h2 class="sec'`. Keep it.
+2. `App/app/templates/dashboard.html`:
+   a. In the `<div class="ph-top ph-only">` block delete the two lines starting `{% if ny_lines %}<h1 class="hl">` and `{% else %}<h1 class="hl done">` so the block only holds the `<nav class="seg" ...>` line.
+   b. Change `<div class="head ov-head ph-hide"><div>` to `<div class="head ov-head"><div>`.
+   c. Replace the line `    <h1>{{ t('dashboard.title') }}</h1>` with:
+   ```jinja
+    {#- 0729: the page's one h1: "Overview" on desktop, the headline on phone. -#}
+    <h1 class="hl{{ ' done' if not ny_lines }}"><span class="ph-hide">{{ t('dashboard.title') }}</span><span class="ph-only">{% if ny_lines %}{{ tp('dashboard.ph.need', ny_lines | length) }}{% else %}{{ t('dashboard.ph.done') }}{% endif %}</span></h1>
+    {% if not ny_lines and next_arrival %}<p class="hl-sub ph-only">{{ t('dashboard.ph.next', when=(next_arrival.date_from | string)[:10] | date_long(lang), place=next_arrival.internal_name) }}</p>{% endif %}
+   ```
+   d. `    <p class="sub">{{ today.isoformat() | date_long(lang) }}</p>` becomes `    <p class="sub ph-hide">{{ today.isoformat() | date_long(lang) }}</p>`.
+   e. `    <div class="ov-quiet">` becomes `    <div class="ov-quiet ph-hide">`.
+   f. The header button line `  <a class="btn" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">{{ t('stays.add_stay') }}</a></div>` becomes `  <a class="btn ph-hide" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">{{ t('stays.add_stay') }}</a></div>`.
+3. `App/app/static/app2.css`, in the 0729 block at the end, change the selectors so they beat the 0718 `.head h1` rule: `body.v2 .hl{` becomes `body.v2 .head h1.hl{` and `body.v2 .hl.done{` becomes `body.v2 .head h1.hl.done{`. Also add inside the same block: `body.v2 .ov-head{display:block;margin:0;padding:0}` (the head shows only the title on phone). Desktop rules for `.head h1` stay as they are: the h1 on desktop has no `.hl` styling because the 0729 block is inside the phone media query.
+4. `App/tests/test_0729_phone_today_geometry_browser.py` and the section 10 edits in `test_host_quiet_dashboard_browser.py` / `test_host_wide_geometry_browser.py`: where they assert `.ov-head` is NOT visible on phone, change to: `.ov-head .sub`, `.ov-head .ov-quiet` and `.ov-head > .btn` are not visible, and `.ov-head h1.hl` is visible, centred and 30px. Where a lane check picks "the first shown of .ov-top, .ov-head, .ph-top", leave it if it passes.
+5. `.hl` in v2_mockup.py phone_selectors stays `.hl` (it now matches `h1.hl` in both the app and the mockup). If the mockup-match test reports a text-size or box difference on `.hl` caused by the `span` inside the h1, report it; do not add a style override.
+6. Run, from App/: the three non-browser files (`tests/test_0520_overview_today.py tests/test_design_dashboard.py tests/test_host_redesign.py`), then the browser set `tests/test_0710_v2_mockup_match_browser.py tests/test_0729_phone_today_geometry_browser.py tests/test_host_quiet_dashboard_browser.py tests/test_host_wide_geometry_browser.py tests/test_0728_menu_geometry_browser.py` with the browser env vars. All pass, 0 skipped.
+7. Commit "0729: one h1 on Overview (phone headline is the page title)" with the usual trailers and push: `git push origin phone-v2:claude/project-thread-50hyv5`.
