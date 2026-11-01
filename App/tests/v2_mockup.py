@@ -48,6 +48,11 @@ BOX_OVERRIDES = {
     ".card.me": {"margin-left": "0px", "margin-right": "0px"},
     ".big": {"margin-left": "0px", "margin-right": "0px"},
     "h2.sec": {"margin-left": "0px", "margin-right": "0px"},
+    # phone gutter is main padding, see 0719
+    ".sub": {"margin-left": "0px", "margin-right": "0px"},
+    ".facts": {"margin-left": "0px", "margin-right": "0px"},
+    ".card": {"margin-left": "0px", "margin-right": "0px"},
+    ".grp": {"margin-left": "0px", "margin-right": "0px"},
     ".card.need": {"margin-left": "0px", "margin-right": "0px"},
     ".head .sub": {"margin-left": "0px", "margin-right": "0px"},
     # the mockup name wraps at 320 px; the app keeps it on one line with ellipsis (0719 brief, left over from 0718)
