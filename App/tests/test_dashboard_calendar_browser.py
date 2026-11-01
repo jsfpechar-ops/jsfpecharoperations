@@ -311,13 +311,19 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                         page.locator(f'[data-cal-view="{mode}"]').click()
                     page.wait_for_selector(".cal-gantt-row" if mode == "gantt" else ".cal-week")
                     wait_loaded(page)
-                    # Summary -> calendar -> detailed action queue, in the same lane.
-                    boxes = page.evaluate("""() => ['.needs-you', '#calendar'].map(selector => {
+                    # Summary (needs you + month line) -> calendar -> detailed action queue, in the same lane.
+                    boxes = page.evaluate("""() => ['[data-dashboard-refresh="stats"]', '.ov-cal-more', '#calendar'].map(selector => {
                         const r = document.querySelector(selector).getBoundingClientRect();
                         return {top:r.top, bottom:r.bottom, left:r.left, right:r.right, height:r.height};
                     })""")
-                    assert 0 <= boxes[1]["top"] - boxes[0]["bottom"] <= 44, boxes
-                    for box in boxes[1:]:
+                    # 0723: .ov-cal-more is display:none below 1024 px, so its box is all zeros there.
+                    if boxes[1]["height"] == 0:
+                        assert 0 <= boxes[2]["top"] - boxes[0]["bottom"] <= 44, boxes
+                        aligned = [boxes[0], boxes[2]]
+                    else:
+                        assert 0 <= boxes[2]["top"] - boxes[1]["bottom"] <= 44, boxes
+                        aligned = boxes[1:]
+                    for box in aligned:
                         assert abs(box["left"] - boxes[0]["left"]) <= 2, boxes
                         assert abs(box["right"] - boxes[0]["right"]) <= 2, boxes
                     if width >= 768:
@@ -428,7 +434,8 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         shot(page, "dashboard-stay-popup-en")
         page.locator("[data-cal-create] .cal-close").click()
 
-        page.locator('[data-calendar-add][data-cal-create-type="cleaning"]').click()
+        page.locator("[data-cal-day]:visible").first.click()
+        page.locator('[data-cal-type-choice="cleaning"]').click()
         assert page.locator('[data-cal-type-choice="cleaning"]').get_attribute("aria-pressed") == "true"
         page.locator("#cal-property").select_option(str(ws["properties"][0]))
         page.locator("#cal-clean-date").fill("2026-10-27")
@@ -515,11 +522,11 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         assert page.evaluate("location.pathname") == pathname
         # 0241: the new stay arrives today with no guest form, so "What needs you" gains its line.
         line = page.locator(
-            f'[data-dashboard-refresh="stats"] .needs-you-item[data-needs-you-stay="{created_stay["id"]}"]'
+            f'[data-dashboard-refresh="stats"] .todo .card[data-needs-you-stay="{created_stay["id"]}"]'
         )
         line.wait_for(state="attached")
         assert "Popup row refresh" in line.text_content()
-        line_button = line.locator(".ui-btn")
+        line_button = line.locator("[data-needs-you-go]")
         assert line_button.count() == 1
         assert line_button.get_attribute("href").startswith(f"/reservations/{created_stay['id']}?")
         # Re-delivering the scoped update must not double-bind imported controls.
@@ -591,7 +598,7 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
             const normalize = value => (value || "").replace(/\\s+/g, " ").trim();
             return {
                 stats: normalize(document.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
-                rows: [...document.querySelectorAll('[data-dashboard-refresh="stats"] .needs-you-item[data-needs-you="stay"]')].map(row => ({
+                rows: [...document.querySelectorAll('[data-dashboard-refresh="stats"] .todo .card[data-needs-you="stay"]')].map(row => ({
                     id: row.getAttribute("data-needs-you-stay"),
                     text: normalize(row.textContent)
                 }))
@@ -659,7 +666,7 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
             const normalize = value => (value || "").replace(/\\s+/g, " ").trim(); const rowText = row => { const c = row.cloneNode(true); c.querySelectorAll("[data-copy]").forEach(n => n.remove()); return (c.textContent || "").replace(/\\s+/g, " ").trim(); };
             return {
                 stats: normalize(doc.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
-                rows: [...doc.querySelectorAll('[data-dashboard-refresh="stats"] .needs-you-item[data-needs-you="stay"]')].map(row => ({
+                rows: [...doc.querySelectorAll('[data-dashboard-refresh="stats"] .todo .card[data-needs-you="stay"]')].map(row => ({
                     id: row.getAttribute("data-needs-you-stay"),
                     text: rowText(row)
                 }))
@@ -674,7 +681,7 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
             const normalize = value => (value || "").replace(/\\s+/g, " ").trim(); const rowText = row => { const c = row.cloneNode(true); c.querySelectorAll("[data-copy]").forEach(n => n.remove()); return (c.textContent || "").replace(/\\s+/g, " ").trim(); };
             const actual = {
                 stats: normalize(document.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
-                rows: [...document.querySelectorAll('[data-dashboard-refresh="stats"] .needs-you-item[data-needs-you="stay"]')].map(row => ({
+                rows: [...document.querySelectorAll('[data-dashboard-refresh="stats"] .todo .card[data-needs-you="stay"]')].map(row => ({
                     id: row.getAttribute("data-needs-you-stay"),
                     text: rowText(row)
                 }))
@@ -697,10 +704,10 @@ def test_default_calendar_url_is_clean_and_specific_views_survive_reload(
     with sync_api.sync_playwright() as playwright:
         browser = launch(playwright)
         context, page = open_page(browser, calendar_workspace, calendar_origin, width=390)
-        page.goto(calendar_origin + "/")
+        page.goto(calendar_origin + "/?cal_view=calendar")
         page.wait_for_selector(".cal-week")
         wait_loaded(page)
-        assert urlsplit(page.url).query == ""
+        assert urlsplit(page.url).query == "cal_view=calendar"
         today = page.locator("[data-calendar]").get_attribute("data-today")
         shot(page, "clean-url-dashboard-390")
         page.set_viewport_size({"width": 1280, "height": 1000})

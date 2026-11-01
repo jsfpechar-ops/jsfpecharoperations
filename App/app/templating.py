@@ -59,6 +59,31 @@ def _weekday(value: Optional[str]) -> str:
     return parsed.strftime("%a") if parsed else ""
 
 
+_LONG_MONTHS_CS = (
+    "ledna", "února", "března", "dubna", "května", "června",
+    "července", "srpna", "září", "října", "listopadu", "prosince",
+)
+_LONG_MONTHS_EN = (
+    "January", "February", "March", "April", "May", "June", "July",
+    "August", "September", "October", "November", "December",
+)
+_LONG_WEEKDAYS_CS = ("pondělí", "úterý", "středa", "čtvrtek", "pátek", "sobota", "neděle")
+_LONG_WEEKDAYS_EN = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+_LONG_WEEKDAYS_VI = ("Thứ hai", "Thứ ba", "Thứ tư", "Thứ năm", "Thứ sáu", "Thứ bảy", "Chủ nhật")
+
+
+def date_long(value: Optional[str], lang: str) -> str:
+    """The date in words for the Overview header: "neděle 1. listopadu", "Sunday 1 November", "Chủ nhật, 1 tháng 11"."""
+    parsed = validation.parse_iso_date(value)
+    if not parsed:
+        return ""
+    if lang == "cs":
+        return f"{_LONG_WEEKDAYS_CS[parsed.weekday()]} {parsed.day}. {_LONG_MONTHS_CS[parsed.month - 1]}"
+    if lang == "vi":
+        return f"{_LONG_WEEKDAYS_VI[parsed.weekday()]}, {parsed.day} tháng {parsed.month}"
+    return f"{_LONG_WEEKDAYS_EN[parsed.weekday()]} {parsed.day} {_LONG_MONTHS_EN[parsed.month - 1]}"
+
+
 def _nights(date_from: Optional[str], date_to: Optional[str]) -> int:
     start, end = validation.parse_iso_date(date_from), validation.parse_iso_date(date_to)
     return (end - start).days if start and end else 0
@@ -384,6 +409,7 @@ templates.env.filters["date_cz"] = _fmt_date
 templates.env.filters["date_short"] = validation.fmt_date_short
 templates.env.filters["money_czk"] = _money_czk
 templates.env.filters["weekday"] = _weekday
+templates.env.filters["date_long"] = date_long
 templates.env.globals["havel_topics_for"] = havel_topics.ordered  # 0324: topics for the panel in base.html
 templates.env.filters["datetime_local"] = _datetime_local
 templates.env.filters["from_json"] = _from_json

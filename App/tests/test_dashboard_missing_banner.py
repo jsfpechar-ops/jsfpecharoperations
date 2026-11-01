@@ -82,7 +82,15 @@ def _insert_apartment(internal_name: str, **overrides) -> int:
 
 
 def _setup_lines(text: str) -> list[str]:
-    return re.findall(r'<li class="needs-you-item"[^>]*data-needs-you="setup"[^>]*>(.*?)</li>', text, re.S)
+    """Body of each setup card. 0706: a line is div.card.needs-you-card-item (mockup .todo); 0719 adds the `need` modifier."""
+    lines = []
+    for match in re.finditer(r'<div class="card needs-you-card-item[^"]*"[^>]*data-needs-you="setup"[^>]*>', text):
+        stops = [i for i in (
+            text.find('class="card needs-you-card-item', match.end()),
+            text.find("</section>", match.end()),
+        ) if i != -1]
+        lines.append(text[match.end(): min(stops) if stops else len(text)])
+    return lines
 
 
 @pytest.fixture
@@ -109,11 +117,11 @@ def test_one_short_line_opens_the_first_missing_police_field(host):
     assert len(lines) == 1
     line = lines[0]
     assert "Order Flat" in line
-    assert host_i18n.STRINGS["en"]["needs_you.setup"] in line
+    assert host_i18n.STRINGS["en"]["needs_you.short.setup"] in line
     assert f'href="/apartments/{apartment_id}?view=settings&amp;section=reporting#ubyport"' in line
     # The owner asked for no field-by-field list on the dashboard.
     assert "IDUB" not in line and "Password" not in line
-    assert line.count('class="ui-btn') == 1
+    assert line.count('class="btn') == 1
 
 
 def test_no_line_when_reporting_is_ready(host):
@@ -132,9 +140,10 @@ def test_lines_past_the_fifth_wait_behind_show_more(host):
     page = host.get("/?lang=en")
 
     assert len(_setup_lines(page.text)) == 6
-    assert "Show 1 more" in page.text
-    before_more = page.text.split('class="needs-you-more"', 1)[0]
-    assert len(_setup_lines(before_more)) == 5
+    assert "Show 2 more" in page.text  # 0706: the v2 Overview shows 4 cards before "show more"
+    # 0717: the "show more" details carries ov-section too, so split on the shared prefix.
+    before_more = page.text.split('class="needs-you-more', 1)[0]
+    assert len(_setup_lines(before_more)) == 4
 
 
 def test_inactive_properties_are_omitted(host):
@@ -151,5 +160,5 @@ def test_the_setup_line_is_in_czech(host):
     page = host.get("/?lang=cs")
 
     line = _setup_lines(page.text)[0]
-    assert host_i18n.STRINGS["cs"]["needs_you.setup"] in line
+    assert host_i18n.STRINGS["cs"]["needs_you.short.setup"] in line
     assert host_i18n.STRINGS["cs"]["needs_you.action.setup"] in line
