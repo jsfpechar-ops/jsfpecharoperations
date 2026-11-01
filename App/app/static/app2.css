@@ -732,3 +732,5 @@ body.v2 .signature-modes .ui-tab[aria-selected="true"]{border-bottom-color:var(-
 body.v2 .savebar [hidden]{display:none}
 @media (max-width:1023px){body.v2 details.prop-sec input:not([type=checkbox]):not([type=radio]),body.v2 details.prop-sec select,body.v2 details.prop-sec textarea{min-height:44px;box-sizing:border-box}body.v2 details.prop-sec a{min-height:44px;display:inline-flex;align-items:center}body.v2:has(.property-settings-form) main{padding-bottom:calc(var(--tabbar-h) + var(--tabbar-safe) + 88px)}body.v2 details.prop-sec:not([open]) > :not(summary){display:none}}
 body.v2 .menu-list .row .t small{display:block;color:var(--ink3);font-size:14px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 0736 item 6: the "other platform" name shows only when "other" is picked (host.css rule, which v2 does not load) */
+body.v2 .calendar-add-form:has(#label option[value="other"]:not(:checked)) .calendar-other-platform{display:none}

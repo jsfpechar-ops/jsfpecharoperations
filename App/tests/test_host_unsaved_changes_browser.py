@@ -266,21 +266,23 @@ def test_save_bar_discard_changes_button(browser, base, host, lang, width, heigh
     page.goto(f"{url}?view=settings&section=guests&lang={lang}")
     reset = page.locator(".savebar [data-unsaved-reset]")
     status = page.locator("#door_codes-status")
-    loaded_status = status.inner_text()
     loaded_message = page.input_value("#guest_message")
     assert not reset.is_visible()
     page.fill("#guest_message", "Typed welcome to discard")
     # 0096: the door-code switch lives in its own Door lock group.
+    # 0736: inner_text() is "" inside a closed <details>, so read the status
+    # after the section opens and use text_content(), which holds the saved text.
     page.locator("#sec-lock > summary").click()
+    loaded_status = status.text_content().strip()
     page.locator("#door_codes").click()
-    assert status.inner_text() != loaded_status
+    assert status.text_content().strip() != loaded_status
     assert reset.is_visible()
     box = reset.bounding_box()
     assert box["x"] >= 0 and box["x"] + box["width"] <= width + 1
     _shot(page, f"property-discard-button-{lang}-{width}")
     reset.click()
     assert page.input_value("#guest_message") == loaded_message
-    assert status.inner_text() == loaded_status
+    assert status.text_content().strip() == loaded_status
     assert not reset.is_visible()
     assert _focused(page) in (TEXT[lang]["save"], "Save changes", "Uložit změny")
     page.locator("#sec-calendars > summary").click()
