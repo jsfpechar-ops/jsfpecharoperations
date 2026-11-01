@@ -341,3 +341,5 @@ body.v2 [data-copy].copied { color: #bf4f40; border-color: #ef6b58; }
 @media (max-width:1023px){body.v2 .host-stay-detail{position:relative}body.v2 .host-stay-detail .stay-head-actions .row-menu{position:absolute;top:6px;right:64px;z-index:6}body.v2 .host-stay-detail .stay-head-actions .row-menu-trigger{width:44px;height:44px;border-radius:50%;background:#fff;border:1px solid var(--line);padding:0}}
 /* 0529: phone guests heading takes the full row; the stay title keeps the mockup line height */
 @media (max-width:1023px){body.v2 .host-stay-detail .stay-guests-h h2.sec{flex:1 1 100%}body.v2 .host-stay-detail .head h1.big{line-height:1.15}}
+/* 0529: the phone action bar is the header CTA placed at the bottom by CSS (one form, one render) */
+@media (max-width:1023px){body.v2 .host-stay-detail .stay-head-cta{display:block;position:fixed;left:0;right:0;bottom:calc(84px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--line);padding:12px 20px;z-index:4}body.v2 .host-stay-detail .stay-head-cta form{display:block}body.v2 .host-stay-detail .stay-head-cta .btn{width:100%}}

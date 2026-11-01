@@ -265,7 +265,7 @@
 {% endif %}
 
 {# --- 4. Police reporting ----------------------------------------------- #}
-<section class="ui-section" id="reports">
+<section class="stay-reports" id="reports">
   <h2 class="sec">{{ t('host.reporting') }}</h2>
   {# 0529: police card. The text is the old "Now" note; the deadline sits under it. #}
   <div id="police-card" class="card police-card{% if progress.status == 'failed' %} police-failed{% endif %}">
@@ -289,7 +289,7 @@
   </div>
   {% endif %}
   {% if hand_filing.candidates and not stay_inactive %}
-  <details class="ui-section ui-card" id="file-by-hand">
+  <details class="stay-section ui-card" id="file-by-hand">
     <summary>{{ t('stay.hand_filing.open') }}</summary>
     <p class="ui-sub">{{ t('stay.hand_filing.lede') }} <a href="/guide#manual-filing">{{ t('guide.reporting.manual_filing_title') }}</a></p>
     <form method="post" action="/reservations/{{ reservation.id }}/filed-by-hand" class="settings-grid">
@@ -388,5 +388,5 @@
   </form>
 </details>
 </div>
-{% if has_cta %}<div class="actbar">{{ stay_cta() }}</div>{% endif %}
+
 {% endblock %}

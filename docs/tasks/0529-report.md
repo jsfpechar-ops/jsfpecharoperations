@@ -1,6 +1,6 @@
 # 0529 report (continuation 2, executor)
 
-Status: blocked (all 6 stay geometry tests pass; 6 style tests still fail against the mockup; items 9 and 11 not done)
+Status: blocked (continuation 4: fixes 1 to 4 done; 25-call checkpoint reached)
 Branch: task/0529-v2-stay-detail-rest (not pushed)
 
 ## Done
@@ -60,3 +60,45 @@ Left (not run or not fixed):
 - Read of stay-1280 and stay-390 after this change.
 - Pobyt mockup pair: copied `mockup-None-320/390.png` as the pobyt pair; confirm the naming.
 - Sidebar "Stays" nav: shell-owned, not fixed.
+
+
+## Continuation 4 (executor, orchestrator fixes 1 to 4)
+
+Done (commits on task/0529-v2-stay-detail-rest, not pushed):
+- Fix 1: copy badge rules moved from host.css (385-406, reduced motion) to app2.css, scoped `body.v2`, plus `@keyframes host-copy-check`. `.host-stay-detail{overflow-x:clip}` removed; shared geometry tests still pass without it.
+- Fix 2 and 3: the single row menu (`row_menu_begin/end`, one render) is placed by CSS: at 1023 px and below, absolute at top 6 px, right 64 px, next to the copy round button. Visual check still needed.
+- Fix 4: phone action bar is the header CTA (one form, one render); `.stay-head-cta` is placed at the bottom by CSS below 1024 px; the duplicate `.actbar` markup was removed. Key `20261101-0529g`, manifest written (41 files).
+- Phone guests h2 full row; phone h1 line height 1.15.
+- Screenshots: stay-*.png copied to docs/tasks/screenshots-0529/ and mockup-stay-1280/390/320 copied; mockup-None-* deleted. These were taken BEFORE the CTA move: retake.
+
+Test tails (last lines):
+- test_0710 -k stay: 6 failed, 6 passed. Geometry tests pass. Style: 1024/1280/1440 only `main table td border-bottom-color` (shell-owned). 320/390: 14 diffs (`.big` height, `.sub` margin, `.facts` height, `h2.sec` height, `.list .row` border (shell-owned), `.row .ic` state colour (data), `.row .t` widths, `.card` height, `.actbar .btn` missing in mockup because the mockup calls it `.bar`). 768 compares the desktop mockup (test design, shell).
+- test_0525_stay_detail.py: 6 passed.
+- test_design_stay_detail.py: 2 passed.
+- test_design_guardrails_browser.py: 11 passed.
+- test_host_stay_detail_layout_browser.py + test_host_stay_actions_browser.py: 2 passed.
+- test_0199_phone_geometry_browser.py: 3 passed.
+- test_a11y_guard_browser.py: 3 passed.
+- test_static_versions.py: 3 passed.
+- test_host_wide_geometry_browser.py: 7 failed, 3 passed (sidebar and dashboard tests, not the stay page; not checked against the base commit).
+- test_onboarding_followup_browser.py: killed at the 300 s limit; not finished.
+- design_lint.py: FAIL, `T3 class not in catalog: police-failed` (docs/design/catalog.json not updated).
+- context_lint.py: OK.
+
+Edited assertions (intent kept):
+- test_design_stay_detail: order is now guests, reports, police card, quick edit (mockup order).
+- test_0525: the doc number check is scoped to the guest row (`guest-card-head` is gone).
+- test_host_stay_detail_layout_browser: the fact grid is now `#guests` table or list (visible one); content check is the name only (the table no longer shows the birth year or document number); geometry check kept.
+- test_design_guardrails_browser: the guest fact check uses the table row cells; `ui-section` removed from `#reports` (class `stay-reports`) and `#file-by-hand` (class `stay-section`) because they are containers, not panels. Please review this one.
+
+Deviations:
+- Menu placement and CTA placement are CSS-only; the copy is in the DOM once.
+- `missing_ok` for `.actbar .btn` did not stop the mockup mismatch; the stay style test still fails on it.
+
+Left:
+- design_lint: add `police-failed` to docs/design/catalog.json.
+- Retake stay screenshots at 320/390 after the CTA move; Read stay-1280 and stay-390 once.
+- Phone style diffs listed above: owner decision on the `.sub` margin and `.facts` height (shell-owned or data).
+- Run test_onboarding_followup_browser.py with a longer timeout.
+- Sidebar and dashboard geometry (test_host_wide_geometry_browser): check on 0528 base.
+- Not pushed; no PR opened.

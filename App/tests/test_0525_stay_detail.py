@@ -77,9 +77,9 @@ def test_guest_row_shows_the_doc_type_label_and_never_the_document_number(host):
     page = client.get(f"/reservations/{reservation_id}?lang=en").text
     match = re.search(r'class="guest-doc">([^<]*)</td>', page)
     assert match and match.group(1).strip() not in ("", "—")
-    # The card head only: the existing guest-facts list below it is unchanged by this brief.
-    head = page[page.index('class="guest-card-head"'):page.index('class="guest-facts"')]
-    assert "P9988771" not in head
+    # The guest row only: the doc type sits in its own cell and the number is never shown in the row.
+    row = page[page.rindex('<tr', 0, match.start()):page.index('</tr>', match.start())]
+    assert "P9988771" not in row
 
 
 def test_header_copy_link_only_for_an_active_stay(host):

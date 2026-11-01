@@ -12,7 +12,7 @@ def test_stay_detail_has_the_v2_header_jump_tabs_and_one_coral_button(host):
     assert 'class="ui-tabs stay-jump"' not in page and 'class="ui-tab"' not in page
     assert page.count('class="ui-btn ui-btn-primary"') <= 1
     assert 'class="card police-card' in page
-    assert page.index('police-card') < page.index('id="guests"') < page.index('id="reports"') < page.index('id="stay-quick-edit"')
+    assert page.index('id="guests"') < page.index('id="reports"') < page.index('police-card') < page.index('id="stay-quick-edit"')
     # Scoped to <main>: base.html's shared confirm/unsaved dialogs sit after </main> and are not this page's markup.
     main = page[page.index('id="main-content"'):page.index('</main>')]
     assert 'class="page-header' not in main and main.count('class="btn"') <= 2
