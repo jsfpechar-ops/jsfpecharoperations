@@ -259,7 +259,17 @@
     "havel-card-actions",
     "havel-card-form",
     "havel-card-change",
-    "havel-card-danger"
+    "havel-card-danger",
+    "props-phone",
+    "prop",
+    "cover",
+    "ini",
+    "in",
+    "c0",
+    "c1",
+    "c2",
+    "setup",
+    "st"
   ],
   "hooks": [
     "sr-only",
