@@ -95,6 +95,7 @@ PAGES = [
             "main table td": "the submissions table shows only after a submission; the seeded stay has none yet",
             ".code": "the door-code PIN shows only once a code is issued; the seeded stay has none yet",
             ".row .t small": "payment rows have no subtitle in the current copy; the mockup subtitles are demo copy",
+            ".actbar .btn": "the mockup names its action bar .bar; the app keeps the 0718 shared name .actbar",
         },
     },
 ]
