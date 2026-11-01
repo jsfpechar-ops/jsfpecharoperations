@@ -287,7 +287,12 @@
     "head",
     "t",
     "stays-head-actions",
-    "stays-links"
+    "stays-links",
+    "stays-pager",
+    "stays-pager-label",
+    "stays-panel",
+    "stays-filter",
+    "stays-count"
   ],
   "hooks": [
     "sr-only",
@@ -1045,6 +1050,11 @@
     "stay-col-departure": "Stays list: the departure date column, shown beside the arrival column on computer width.",
     "stay-col-property": "Stays list: the property name column on computer width.",
     "guest-card-doc": "Guest row cell on the stay page that shows the guest document type label (desktop table column).",
-    "stay-door-card": "Stay page door code card; the code line is set large on desktop."
+    "stay-door-card": "Stay page door code card; the code line is set large on desktop.",
+    "stays-pager": "Stays list pagination row (v2).",
+    "stays-pager-label": "Stays list \"page x of y\" text (v2).",
+    "stays-panel": "Stays pages v2 page class.",
+    "stays-filter": "Stays pages v2 page class.",
+    "stays-count": "Stays pages v2 page class."
   }
 }
