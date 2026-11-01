@@ -92,13 +92,17 @@ def test_rows_hover_as_one_surface_and_use_compact_menus(stay_actions_host, stay
         page.goto(f"{base}/apartments?lang={lang}")
 
         _ready(page)
-        property_row = page.locator(".props-card tbody .clickable-row").first
-        assert property_row.locator(".row-actions > a.btn").count() == 0
-        property_row.locator(".row-menu-trigger").click()
-        menu = page.locator(".row-menu-panel.is-open")
-        assert menu.get_by_role("menuitem", name=_t(lang, "common.open"), exact=True).is_visible()
-        page.keyboard.press("Escape")
-        property_row.locator(".row-primary-link").click()
+        if width >= 1024:
+            property_row = page.locator(".props-card tbody .clickable-row").first
+            assert property_row.locator(".row-actions > a.btn").count() == 0
+            property_row.locator(".row-menu-trigger").click()
+            menu = page.locator(".row-menu-panel.is-open")
+            assert menu.get_by_role("menuitem", name=_t(lang, "common.open"), exact=True).is_visible()
+            page.keyboard.press("Escape")
+            property_row.locator(".row-primary-link").click()
+        else:
+            # 0533: below 1024 px the table is hidden; the phone card is the whole link, and the phone mockup has no row menu.
+            page.locator(".props-phone a.card.prop").first.click()
         page.wait_for_url("**/apartments/*")
 
         page.goto(f"{base}/?lang={lang}")
@@ -207,7 +211,10 @@ def test_native_record_links_still_work_without_javascript(stay_actions_host, st
         page.wait_for_url(f"**/reservations/{stay_id}?**")
         page.goto(f"{base}/apartments?lang=en")
         _ready(page)
-        page.locator(".props-card .row-primary-link").first.click()
+        if width >= 1024:
+            page.locator(".props-card .row-primary-link").first.click()
+        else:
+            page.locator(".props-phone a.card.prop").first.click()
         page.wait_for_url("**/apartments/*")
         context.close()
         browser.close()
