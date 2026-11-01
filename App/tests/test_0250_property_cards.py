@@ -4,10 +4,8 @@ from tests.test_property_navigation_browser import host  # noqa: F401
 
 
 def _pill(text):
-    return (
-        '<span class="host-property-card-open" aria-hidden="true">'
-        f'<span class="host-property-card-open-text">{text}</span>'
-    )
+    # 0706: the Guest links card renders its pill as an <a>, so match the text span only.
+    return f'<span class="host-property-card-open-text">{text}</span>'
 
 
 def _overview(host, lang):

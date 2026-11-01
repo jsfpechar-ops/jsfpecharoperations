@@ -30,6 +30,8 @@ PX_PROPS = re.compile(
     r"\b(margin|padding|gap|border-radius|font-size|row-gap|column-gap)(-[a-z]+)?\s*:\s*([^;]+);"
 )
 BARE_PX = re.compile(r"(?<![\w-])(\d*\.?\d+)px")
+# v2 pages are styled by app2.css copied from the approved mockup (2026-11-01); their classes are not in the catalog
+V2_TEMPLATES = {"App/app/templates/dashboard.html", "App/app/templates/_shell_v2.html"}
 
 
 def _findings_template(path: Path, text: str, catalog: dict) -> list[str]:
@@ -47,7 +49,7 @@ def _findings_template(path: Path, text: str, catalog: dict) -> list[str]:
     allowed = set(catalog["classes"]) | set(catalog["hooks"]) | set(catalog.get("legacy", {}).get(str(rel), []))
     for m in CLASS_ATTR.finditer(plain):
         for token in m.group(1).split():
-            if token and token not in allowed:
+            if token and token not in allowed and rel.as_posix() not in V2_TEMPLATES:
                 out.append(f"{rel}: T3 class not in catalog: {token}")
     # T4 (0291, owner 2026-10-24): one primary per button group. Two primaries
     # are in one group when no container tag opens or closes between them.

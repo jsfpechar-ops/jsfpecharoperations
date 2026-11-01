@@ -521,8 +521,80 @@ def dashboard(request: Request):
             # 0233: remind until a real guest has used the guest link.
             "link_unused": workflow.link_unused(apartments),
             "welcome_back": welcome,
+            "month_summary": reporting.month_summary(owner_user_id, today),
+            # 0706: 14-day grid for the overview calendar, built server-side.
+            "cal_days": [today + timedelta(days=i) for i in range(14)],
+            "cal_rows": _overview_calendar_rows(owner_user_id, apartments, today),
+            "cal_view": bool(request.query_params.get("cal_view")),
+            # 0520: stays that arrive or leave today, for the "Today" table.
+            "today_rows": [
+                dict(row, nights=_today_nights(row["reservation"]))
+                for row in rows
+                if today.isoformat() in (str(row["reservation"]["date_from"])[:10], str(row["reservation"]["date_to"])[:10])
+            ],
         },
     ))
+
+
+_OVERVIEW_SOURCE_NAMES = {"airbnb": "Airbnb", "booking": "Booking"}
+
+
+def _overview_calendar_rows(owner_user_id, apartments, today) -> list:
+    """0706: one row per active apartment for the overview's 14-day grid (grid columns 2-15)."""
+    events = dashboard_calendar.events(owner_user_id, today, today + timedelta(days=14))
+    rows = []
+    for apartment in apartments:
+        if not apartment["active"]:
+            continue
+        bars = []
+        placed = []
+        for event in events:
+            if event["propertyId"] != apartment["id"]:
+                continue
+            start = date.fromisoformat(str(event["start"])[:10])
+            stop = date.fromisoformat(str(event["end"])[:10])
+            col_start = 2 + max(0, (start - today).days)
+            col_end = 2 + min(14, (stop - today).days)
+            if col_end <= col_start:
+                continue
+            tone = event["tone"]
+            if tone == "done":
+                css = "b-ok"
+            elif tone in ("action", "ready", "overdue"):
+                css = "b-warn"
+            else:
+                css = "b-grey"
+            overdue = tone == "overdue"
+            source = str(event["source"] or "").lower()
+            label = event["label"] or _OVERVIEW_SOURCE_NAMES.get(source) or "Pobyt"
+            guests = int(event.get("guests") or 0)
+            if guests > 0:
+                label += f" · {guests}"
+            placed.append((col_start, col_end, {"css": css, "col_start": col_start, "col_end": col_end, "overdue": overdue, "label": label, "url": event["url"]}))
+        # 0707: greedy lanes, so stays that overlap in one property row do not overlap visually.
+        lane_ends: list[int] = []
+        for col_start, col_end, bar in sorted(placed, key=lambda item: item[0]):
+            for lane, lane_end in enumerate(lane_ends):
+                if lane_end <= col_start:
+                    lane_ends[lane] = col_end
+                    break
+            else:
+                lane_ends.append(col_end)
+                lane = len(lane_ends) - 1
+            bar["row"] = lane + 1
+            bars.append(bar)
+        rows.append({"name": apartment["internal_name"], "bars": bars})
+    return rows
+
+
+def _today_nights(reservation) -> int:
+    """0701: nights of a stay on the Today table (0 when a date is unreadable)."""
+    try:
+        start = date.fromisoformat(str(reservation["date_from"])[:10])
+        end = date.fromisoformat(str(reservation["date_to"])[:10])
+    except ValueError:
+        return 0
+    return max((end - start).days, 0)
 
 
 @router.get("/guide")

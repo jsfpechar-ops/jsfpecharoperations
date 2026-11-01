@@ -189,6 +189,7 @@ CARD_JS = """() => {
     return {
       kind: li.dataset.needsYou, tone: li.dataset.tone, text: copy.textContent.trim().slice(0, 80), box: rect(li),
       border: [style(li).borderTopStyle, parseFloat(style(li).borderTopWidth), parseFloat(style(li).borderLeftWidth), style(li).borderLeftColor],
+      icon: style(li.querySelector('.needs-you-icon')).backgroundColor, iconBox: rect(li.querySelector('.needs-you-icon')),
       copy: rect(copy), copyOverflow: copy.scrollWidth > copy.clientWidth + 1,
       buttons: buttons.map(b => Object.assign(rect(b), {text: b.innerText.trim(), clipped: b.scrollWidth > b.clientWidth + 1})),
     };
@@ -224,7 +225,11 @@ def _check_card(geo, width, label):
     assert geo["scroll"] <= 1, (label, "horizontal scroll", geo["scroll"])
     assert not geo["stack"], f"{label}: the alert stack is shown next to the card"
     card = geo["card"]
-    assert geo["cardBorder"][0] == "solid" and geo["cardBorder"][1] >= 1, (label, geo["cardBorder"])
+    if width >= 768:
+        # 0701: at computer width the box has no frame; each line is a card instead.
+        assert geo["cardBorder"][1] == 0, (label, "card still framed at computer width", geo["cardBorder"])
+    else:
+        assert geo["cardBorder"][0] == "solid" and geo["cardBorder"][1] >= 1, (label, geo["cardBorder"])
     for edge in ("l", "r"):
         assert abs(card[edge] - geo["header"][edge]) <= 2, (label, "lane", card, geo["header"])
         if geo["calendar"]:
@@ -237,13 +242,20 @@ def _check_card(geo, width, label):
         box, copy = item["box"], item["copy"]
         assert box["l"] >= card["l"] - 0.5 and box["r"] <= card["r"] + 0.5, where
         assert item["border"][0] == "solid" and item["border"][1] >= 1, where + (item["border"],)
-        assert item["border"][2] >= 3.5, where + (item["border"],)
-        tone_colours.setdefault(item["tone"], set()).add(item["border"][3])
+        if width >= 768:
+            # 0701: a card with a 44 px tinted tile; no coloured left edge, the tone is the tile.
+            assert item["border"][2] <= 1.0, where + (item["border"],)
+            assert abs(item["iconBox"]["w"] - 44) <= 0.5 and abs(item["iconBox"]["h"] - 44) <= 0.5, where + (item["iconBox"],)
+            tone_colours.setdefault(item["tone"], set()).add(item["icon"])
+        else:
+            assert item["border"][2] >= 3.5, where + (item["border"],)
+            tone_colours.setdefault(item["tone"], set()).add(item["border"][3])
         assert not item["copyOverflow"], where
         assert copy["l"] >= box["l"] - 0.5 and copy["r"] <= box["r"] + 0.5, where
         assert 1 <= len(item["buttons"]) <= 2, where + (item["buttons"],)
         for button in item["buttons"]:
-            assert button["h"] >= 43.5, where + (button,)
+            # 0701: the computer-width buttons are the small size (6px 12px padding, 13px text).
+            assert button["h"] >= (28 if width >= 768 else 43.5), where + (button,)
             assert button["w"] >= (43.5 if width <= 767 else 39.5), where + (button,)
             assert not button["clipped"], where + (button,)
             assert button["l"] >= box["l"] - 0.5 and button["r"] <= box["r"] + 0.5, where + (button,)
@@ -279,7 +291,7 @@ def test_dashboard_single_stay_needs_you_card(dashboard_host, base):
                 assert "has-js" in (page.locator("html").get_attribute("class") or "")
                 assert not errors, (label, errors)
                 assert page.locator("[data-calendar]").count() == 1
-                assert page.locator(".dashboard-stats, .dashboard-row, .ui-banner-attention").count() == 0, label
+                assert page.locator(".dashboard-stats, .dashboard-row:not(.dashboard-today .dashboard-row), .ui-banner-attention").count() == 0, label
                 line = page.locator(f'.needs-you-item[data-needs-you-stay="{stay_id}"]')
                 assert line.count() == 1, label
                 assert line.get_attribute("data-tone") == "amber", label
@@ -347,12 +359,12 @@ def test_dashboard_rich_needs_you_order_cap_and_geometry(dashboard_rich_host, ba
                         assert how_box["y"] >= copy_box["y"] + copy_box["height"] - 1, (label, how_box, copy_box)
                     assert page.locator('.needs-you-item[data-needs-you="setup"]', has_text="(demo)").count() == 0, label
 
-                    # Header: one primary action; below 1024 px the rest sit in the overflow menu.
+                    # Header: one primary action, no overflow menu (0520).
                     header_buttons = page.locator(".ui-ph-acts .ui-btn:not(.ui-ph-menu)")
                     visible_buttons = [button for button in header_buttons.all() if button.is_visible()]
                     if width < 1024:
                         assert len(visible_buttons) == 1, label
-                        assert page.locator(".ui-ph-menu").is_visible(), label
+                        assert page.locator(".ui-ph-menu").count() == 0, label
                     header_boxes = [button.bounding_box() for button in visible_buttons]
                     assert all(abs(box["height"] - (44 if width <= 767 else 40)) <= 1 for box in header_boxes), label
 

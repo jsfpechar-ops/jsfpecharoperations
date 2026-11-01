@@ -16,6 +16,10 @@
   <meta name="apple-mobile-web-app-title" content="UbyHost">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="preload" href="/static/fonts/Manrope-latin.woff2?v=20261101-0495" as="font" type="font/woff2" crossorigin>
+  {% if v2 | default(false) %}
+  <link rel="stylesheet" href="/static/tokens.css?v=20261101-0495">
+  <link rel="stylesheet" href="/static/app2.css?v=20261101-0709f">
+  {% else %}
   <link rel="stylesheet" href="/static/tokens.css?v=20261101-0495">
   <link rel="stylesheet" href="/static/app.css?v=20261027-signup-wrap">
   <link rel="stylesheet" href="/static/components.css?v=20261014-0102c">
@@ -29,16 +33,25 @@
   <link rel="stylesheet" href="/static/wizard.css?v=20261022-0274">
   {% endif %}
   <link rel="stylesheet" href="/static/skeleton.css?v=20261014-0102c">
+  {% endif %}
   {% block head_extra %}{% endblock %}
 </head>
-<body class="layout-host {{ 'host-workspace' if show_nav | default(true) }} {{ 'no-nav' if not (show_nav | default(true)) }}">
+<body class="layout-host {{ 'host-workspace' if show_nav | default(true) }} {{ 'no-nav' if not (show_nav | default(true)) }}{% if v2 | default(false) %} v2{% endif %}">
 <a class="skip-link" href="#main-content">{{ t('a11y.skip_to_content') }}</a>
 {% from "_components.html" import nav_icon with context %}
+{% if v2 | default(false) %}
+<div class="app">
+{% if show_nav | default(true) %}
+{% include "_shell_v2.html" %}
+{% endif %}
+<main id="main-content" class="main">
+{% else %}
 {% if show_nav | default(true) %}
 {% include "_shell_sidebar.html" %}
 {% endif %}
 
 <main id="main-content" class="wrap {{ wrap_class | default('') }} {{ 'with-sidebar' if show_nav | default(true) }}">
+{% endif %}
   {% if show_nav | default(true) %}
     {% include "_env_banner.html" %}
     {% if workspace_user and workspace_user.deletion_due_at %}
@@ -133,6 +146,7 @@
   </div>
   {% endblock %}
 </main>
+{% if v2 | default(false) %}</div>{% endif %}
 
 <dialog id="confirm-dialog" class="admin-dialog">
   <form method="post" id="confirm-form" class="admin-dialog-form">
@@ -244,7 +258,7 @@
 
 <script src="/static/csrf.js?v=20260915a"></script>
 <script src="/static/skeleton.js?v=20261025-havel-skeleton"></script>
-<script src="/static/app.js?v=20261101-0502"></script>
+<script src="/static/app.js?v=20261101-0503"></script>
 {% if show_nav | default(true) %}<script src="/static/host.js?v=20261026-door-lock-times" defer></script>{% endif %}
 {% if show_nav | default(true) %}<script src="/static/pwa.js?v=20261021-0206" defer></script>{% endif %}
 {% if (show_nav | default(true)) and passkeys_enabled() %}<script src="/static/passkeys.js?v=20261023-passkey-recovery" defer></script>{% endif %}

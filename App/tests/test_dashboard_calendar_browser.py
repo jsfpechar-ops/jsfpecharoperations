@@ -311,8 +311,8 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                         page.locator(f'[data-cal-view="{mode}"]').click()
                     page.wait_for_selector(".cal-gantt-row" if mode == "gantt" else ".cal-week")
                     wait_loaded(page)
-                    # Summary -> calendar -> detailed action queue, in the same lane.
-                    boxes = page.evaluate("""() => ['.needs-you', '#calendar'].map(selector => {
+                    # Summary (needs you + month line) -> calendar -> detailed action queue, in the same lane.
+                    boxes = page.evaluate("""() => ['[data-dashboard-refresh="stats"]', '#calendar'].map(selector => {
                         const r = document.querySelector(selector).getBoundingClientRect();
                         return {top:r.top, bottom:r.bottom, left:r.left, right:r.right, height:r.height};
                     })""")
@@ -428,7 +428,8 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         shot(page, "dashboard-stay-popup-en")
         page.locator("[data-cal-create] .cal-close").click()
 
-        page.locator('[data-calendar-add][data-cal-create-type="cleaning"]').click()
+        page.locator("[data-cal-day]:visible").first.click()
+        page.locator('[data-cal-type-choice="cleaning"]').click()
         assert page.locator('[data-cal-type-choice="cleaning"]').get_attribute("aria-pressed") == "true"
         page.locator("#cal-property").select_option(str(ws["properties"][0]))
         page.locator("#cal-clean-date").fill("2026-10-27")
