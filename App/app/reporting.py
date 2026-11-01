@@ -1344,6 +1344,7 @@ def claim_sendable(
             "DELETE FROM submission_claim WHERE claimed_at < ?",
             (time.time() - SUBMISSION_CLAIM_TTL_SECONDS,),
         )
+        for guest_id in sorted({g["id"] for g, _r in pairs}): db.lock_key(cur, "guest", guest_id)
         for guest, _reservation in pairs:
             cur.execute(
                 "SELECT submit_state, archived_at, manual_filed_at FROM guest WHERE id = ?",
@@ -1825,6 +1826,7 @@ def recover_stale_submissions(apartment_id: int) -> int:
     reason = STALE_SUBMISSION_REASON
     candidates: List[Tuple[int, List[int]]] = []
     with db.immediate() as cur:
+        db.lock_key(cur, "submit_apartment", apartment_id)
         cur.execute(
             "SELECT id, guest_ids FROM submission WHERE apartment_id = ? AND state = 'running'",
             (apartment_id,),
@@ -1845,6 +1847,7 @@ def recover_stale_submissions(apartment_id: int) -> int:
     stale: List[int] = []
     for submission_id, guest_ids in candidates:
         with db.immediate() as cur:
+            db.lock_key(cur, "submit_apartment", apartment_id)
             db.update_in(
                 cur, "submission", submission_id,
                 {"state": "outcome_unknown", "finished_at": db.utcnow(), "error_text": reason},
@@ -1902,6 +1905,7 @@ def _retry_outcome_unknown_batches(apartment_id: int) -> int:
     for row in pending:
         guest_ids = json.loads(row["guest_ids"] or "[]")
         with db.immediate() as cur:
+            db.lock_key(cur, "submit_apartment", apartment_id)
             db.update_in(cur, "submission", row["id"], {"retried_at": now})
             for guest_id in guest_ids:
                 cur.execute(
@@ -2137,6 +2141,8 @@ def mark_filed_by_hand(
     marked: List[int] = []
     busy = 0
     with db.immediate() as cur:
+        cur.execute("SELECT id FROM guest WHERE reservation_id = ? ORDER BY id", (reservation_id,))
+        for locked in cur.fetchall(): db.lock_key(cur, "guest", locked["id"])
         cur.execute(
             "SELECT id, submit_state, nationality FROM guest "
             "WHERE reservation_id = ? AND archived_at IS NULL ORDER BY id",
@@ -2176,6 +2182,8 @@ def undo_filed_by_hand(reservation_id: int, now: Optional[datetime] = None) -> L
     current = datetime.now(timezone.utc) if now is None else now.astimezone(timezone.utc)
     undone: List[int] = []
     with db.immediate() as cur:
+        cur.execute("SELECT id FROM guest WHERE reservation_id = ? ORDER BY id", (reservation_id,))
+        for locked in cur.fetchall(): db.lock_key(cur, "guest", locked["id"])
         cur.execute(
             "SELECT id, submit_state, manual_filed_at, manual_marked_at, manual_prev_state "
             "FROM guest WHERE reservation_id = ? AND submit_state = ? "
