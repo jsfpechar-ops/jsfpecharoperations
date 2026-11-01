@@ -67,7 +67,7 @@
     </details>
     <p class="ov-links ph-hide">
       <a href="/cleaning/new" class="ov-link">+ {{ t('nav.cleaning') }}</a>
-      {% if demo_loaded %}<form method="post" action="/demo/reset" class="inline ov-inline" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">{{ ui_button(t('demo.clear'), 'quiet', type='submit') }}</form>{% endif %}
+      {% if demo_loaded %}<form method="post" action="/demo/reset" class="inline ov-inline ph-hide" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">{{ ui_button(t('demo.clear'), 'quiet', type='submit') }}</form>{% endif %}
     </p>
     </div>
   </div>
