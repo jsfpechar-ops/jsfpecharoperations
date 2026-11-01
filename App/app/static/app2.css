@@ -71,3 +71,15 @@ tbody tr .btn.sm.ghost{opacity:0;transition:opacity .15s}tbody tr:hover .btn.sm.
   .main{padding:16px}
   .todo{grid-template-columns:1fr}
 }
+
+/* Sidebar parts that are not in the mockup: the nav lists, the logout button. */
+.side-nav{display:flex;flex-direction:column;gap:2px}
+.side-bottom{margin-top:auto}
+.side .side-bottom{margin-top:auto}
+.side button.nav{border:0;background:none;font:inherit;width:100%;text-align:left;cursor:pointer}
+.side .me{margin-top:0}
+.side-logout{margin:0}
+@media (max-width: 767px){
+  .side .side-nav{flex-direction:row;flex:none;align-items:center}
+  .side .side-bottom{margin-top:0}
+}
