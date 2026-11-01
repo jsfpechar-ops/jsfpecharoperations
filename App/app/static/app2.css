@@ -35,6 +35,9 @@ tr:last-child td{border-bottom:0}tbody tr:hover{background:#fafaf8;cursor:pointe
 td small{display:block;color:var(--ink3);font-size:12px;margin-top:2px}
 .pill{font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap;display:inline-block}
 .p-ok{background:var(--oks);color:var(--ok)}.p-warn{background:var(--warns);color:var(--warn)}.p-bad{background:var(--bads);color:var(--bad)}.p-n{background:#efefeb;color:var(--ink2)}
+/* 0527: [hidden] and the old .hidden class win over display rules such as .chip{display:…} */
+body.v2 [hidden]{display:none!important}
+body.v2 .hidden{display:none!important}
 /* 0715: a Stav pill may wrap a status badge; the pill carries the colour */
 .dashboard-row-task .pill>.ui-badge{background:none;border:0;padding:0;color:inherit}
 .todo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -304,4 +307,21 @@ body.v2 .stays-filter select,body.v2 .stays-filter input:not([type=hidden]){bord
   .list{margin:0 20px}
   .link{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;font-weight:700;width:100%;text-align:left}
   .link small{display:block;color:var(--ink3);font-size:14px;font-weight:400;margin-top:2px}
+}
+/* 0527 stays page: panels, pager, count line and table sr-only label follow the mockup (page-only selectors) */
+body.v2 .stays-panel,body.v2 .stays-filter{padding:16px}
+body.v2 .stays-panel .ui-section-h{display:flex;align-items:center;justify-content:space-between;gap:12px}
+body.v2 .stays-panel .ui-section-h h2{margin:0}
+body.v2 .stays-panel .grid,body.v2 .stays-filter .grid{display:grid;grid-template-columns:1fr;gap:12px}
+body.v2 .stays-panel label,body.v2 .stays-filter label{display:block;font-size:12px;color:var(--ink2);margin-bottom:4px}
+body.v2 .stays-panel input:not([type=hidden]),body.v2 .stays-panel select,body.v2 .stays-filter input:not([type=hidden]),body.v2 .stays-filter select{width:100%;box-sizing:border-box;border:1px solid #dcdcd7;border-radius:8px;padding:9px 10px}
+body.v2 .stays-panel .ui-form-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+body.v2 .stays-pager{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px}
+body.v2 .stays-pager-label{font-size:13px;color:var(--ink3)}
+body.v2 .stays-pager [aria-disabled=true]{opacity:.45}
+body.v2 p.stays-count{font-size:13px;color:var(--ink3)}
+body.v2 .stays-desk .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (min-width:1024px){
+  body.v2 .stays-pager{justify-content:flex-end}
+  body.v2 .stays-panel .grid,body.v2 .stays-filter .grid{grid-template-columns:1fr 1fr}
 }
