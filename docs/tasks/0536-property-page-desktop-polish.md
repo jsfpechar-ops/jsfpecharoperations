@@ -6,7 +6,8 @@ Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 ## 1. Objective
 The orchestrator compared `docs/tasks/screenshots-0535/app-1280.png` with `mockup-1280.png` (mockup view `prop`). The structure is right; the look is not. Fix the differences below so the page reads like the mockup: one clean column of cards with a 2-column field grid, short labels, no clutter, the "Náhled" aside on the right, the save bar bottom right.
 
-## 2. Differences to fix (each is page CSS in the 0534/0535 blocks of `App/app/static/app2.css`, or a small template change in `apartment_form.html` / `_property_editor.html`)
+## 2. Context
+Differences to fix (each is page CSS in the 0534/0535 blocks of `App/app/static/app2.css`, or a small template change in `apartment_form.html` / `_property_editor.html`)
 1. Help toggle "Jak to funguje?" renders as a full-width bar with two chevrons. Make it the dashboard's compact form: read how `dashboard.html` + app2.css style `.ov-how` on the v2 dashboard and use the identical markup/classes; it must sit under the h1 as a small quiet link-like toggle, one chevron.
 2. Setup-continue block ("Pokračovat v nastavení · 3 z 8 hotovo", coral button, underlined "Skrýt průvodce nastavením") is unstyled above the form. Move it into the aside as the first `.pv` card (title line + `btn sm` + quiet link), keep its form/inputs and behaviour.
 3. "Pole označená * jsou povinná." line above the sections: on v2 give it `sr-only` (kept for screen readers, not shown).
