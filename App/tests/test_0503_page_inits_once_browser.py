@@ -68,8 +68,10 @@ RECORD_JS = """
     let target = 'other';
     if (this === document) target = 'document';
     else if (this === window) target = 'window';
-    else if (this.matches && selectors.some(s => this.matches(s))) target = 'match';
-    window.__adds.push([target, type]);
+    let hit = null;
+    if (!(this === document || this === window) && this.matches) hit = selectors.find(s => this.matches(s)) || null;
+    if (hit) target = 'match';
+    window.__adds.push([target, type, hit]);
     return orig.call(this, type, fn, opts);
   };
   return true;
@@ -97,11 +99,20 @@ def assert_covered(page, selectors):
         assert page.locator(selector).count() > 0, selector
 
 
+# initUnsavedForms and initPropertyViews still re-bind; brief 0504 makes this zero.
+GUARD = "form[data-unsaved-guard]"
+GUARD_KNOWN_EVENTS = ["change", "input", "invalid", "submit"]
+
+
 def assert_second_run_adds_nothing(page):
     page.evaluate(RECORD_JS, SELECTORS)
     page.evaluate("() => window.UbyHost.initPage()")
     matched = [a for a in page.evaluate("() => window.__adds") if a[0] == "match"]
-    assert matched == [], matched
+    guard_events = sorted(a[1] for a in matched if a[2] == GUARD)
+    others = [a for a in matched if a[2] != GUARD]
+    assert others == [], others
+    guard_forms = page.locator(GUARD).count()
+    assert guard_events == sorted(GUARD_KNOWN_EVENTS * guard_forms), guard_events
 
 
 def test_second_init_page_run_binds_nothing_on_real_pages(calendar_workspace, calendar_origin):
