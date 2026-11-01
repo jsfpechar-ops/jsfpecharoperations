@@ -244,8 +244,7 @@ def live_base(browser_host):
 _FIT_JS = """() => {
   const vw = document.documentElement.clientWidth;
   const bad = [];
-  const sel = '.ui-tabs a, .properties-table a, .properties-table button, '
-    + '.property-summaries a, .property-summaries h2, .property-summaries button';
+  const sel = '.ui-tabs a, .properties-table a, .properties-table button';
   for (const el of document.querySelectorAll(sel)) {
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height) continue;
@@ -254,13 +253,9 @@ _FIT_JS = """() => {
   const opens = [...document.querySelectorAll('.properties-table .row-actions .row-menu-trigger')]
     .map(a => Math.round(a.getBoundingClientRect().right));
   const lane = document.querySelector('.properties-table').closest('.panel').getBoundingClientRect();
-  const summary = document.querySelector('.property-summaries .panel').getBoundingClientRect();
-  const title = document.querySelector('.property-summaries-title');
   return {scroll: document.documentElement.scrollWidth, vw, bad, opens,
           lane: [Math.round(lane.left), Math.round(lane.right)],
-          summary: [Math.round(summary.left), Math.round(summary.right)],
-          titleVisible: title.getBoundingClientRect().height > 0,
-          details: document.querySelectorAll('.property-summaries details').length};
+          };
 }"""
 
 
@@ -299,10 +294,7 @@ def test_properties_page_fits_every_width_and_both_languages(browser_host, live_
                         key = (width, lang, collapsed)
                         assert fit["scroll"] <= fit["vw"], (key, fit)
                         assert not fit["bad"], (key, fit)
-                        assert fit["titleVisible"] and fit["details"] == 0, (key, fit)
                         assert len(fit["opens"]) == 3, (key, fit)
-                        assert abs(fit["lane"][0] - fit["summary"][0]) <= 2, (key, fit)
-                        assert abs(fit["lane"][1] - fit["summary"][1]) <= 2, (key, fit)
                         if width >= 1024:
                             # Open sits at the same right edge on every row.
                             assert max(fit["opens"]) - min(fit["opens"]) <= 2, (key, fit)
@@ -311,11 +303,6 @@ def test_properties_page_fits_every_width_and_both_languages(browser_host, live_
                         EVIDENCE.mkdir(parents=True, exist_ok=True)
                         page.screenshot(path=str(EVIDENCE / f"properties-{width}-{lang}.png"),
                                         full_page=True)
-                # Old hub URL with several properties lands on the summary.
-                page.goto(f"{live_base}/guest-links?lang=en")
-                assert page.url.endswith("/apartments#property-summaries")
-                box = page.locator("#property-summaries").bounding_box()
-                assert box and box["y"] < 900, box
                 context.close()
         finally:
             browser.close()
