@@ -194,7 +194,8 @@ def _audit_retention_step(today: date, dry_run: bool, owner_user_id: Optional[in
     """
     cutoff = _days_ago_iso(config.AUDIT_RETENTION_DAYS)
     where = (
-        "at < ? AND action NOT IN ('legal_accepted', 'door_code_terms_accepted', 'leon_terms_accepted') "
+        "at < ? AND action NOT IN ('legal_accepted', 'door_code_terms_accepted', 'leon_terms_accepted',"
+        " 'payments_terms_accepted') "
         "AND (? IS NULL OR owner_user_id = ?)"
     )
     params = (cutoff, owner_user_id, owner_user_id)
