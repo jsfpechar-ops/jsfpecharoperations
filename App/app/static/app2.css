@@ -325,3 +325,6 @@ body.v2 .stays-desk .sr-only{position:absolute;width:1px;height:1px;overflow:hid
   body.v2 .stays-pager{justify-content:flex-end}
   body.v2 .stays-panel .grid,body.v2 .stays-filter .grid{grid-template-columns:1fr 1fr}
 }
+
+/* 0527: the collapsed filter panel on v2 pages (the .host-workspace rule in host.css does not apply here) */
+body.v2 .stays-filter.is-collapsed{display:none}
