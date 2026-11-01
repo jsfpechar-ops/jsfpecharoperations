@@ -1,31 +1,27 @@
 # 0717 report: v2 Overview feature parity
 
-Status: blocked
-Done: steps 1 to 3 (all sections 2 items except the deadline tests). Left: test_deadline_after_reporting.py (2 tests), and a final single run of the section 6 command.
+Status: review
+Done: steps 1 to 4 and the deadline tests (brief 0717b, orchestrator decisions 1 to 3). Left: nothing for the executor. Owner: review and merge.
 
-## Commits (branch task/0717-v2-overview-parity, not pushed)
-- 0717 step 1: help block, onboarding banner and finish card, v2_status_pill macro, icon tone attribute, CSS key 20261101-0717, manifest.
-- 0717 step 2: alerts without a todo card are shown on the v2 Overview (also on the zero-state page).
-- 0717 step 3: calendar scroll wrapper; banner test split marker.
-- Last edits (calendar wrapper, help CSS, key 20261101-0717b, manifest) are committed with this report.
+## Commits (branch task/0717b-v2-parity-fixes, not pushed)
+- 0717 step 1 to 3: help block, onboarding banner, finish card, v2_status_pill, alerts on the v2 Overview, calendar scroll wrapper, banner test split marker.
+- 0717 step 4: calendar wrapper, help CSS, key 20261101-0717b, manifest; report (blocked).
+- 0717b: refresh hooks restored on dashboard.html (`data-dashboard-refresh="stats"` on #needs-action, `="work"` on the Dnes card); test_design_dashboard asserts they are present; test_deadline_after_reporting drops "dashboard" from the helper pages (the v2 Overview lists only today's stays); report.
 
-## Counts
-- Baseline section 6: 14 failed, 78 passed.
-- Full section 6 run before the last 3 fixes: 9 failed, 83 passed, 0 skipped.
-- After the last fixes, the files that had failed were rerun: test_0520, test_0252, test_0710, test_design_dashboard, test_p1_review: 30 passed. test_page_help, test_static_versions, test_onboarding, test_0375, test_host_language, test_needs_you_dashboard_0241: passed.
-- Expected final: 2 failed (deadline), 90 passed, 0 skipped. Not verified by one full run.
+## Counts (brief section 6, one run, from App/)
+- `test_p1_review ... test_static_versions` (14 files): 92 passed, 0 failed, 0 skipped.
+- `tests/test_dashboard_calendar_browser.py`: 14 passed, 0 failed, 0 skipped.
+- `python3 scripts/design_lint.py`: OK. `python3 scripts/context_lint.py`: OK.
 
 ## Still failing
-- tests/test_deadline_after_reporting.py::test_a_reported_stay_past_its_deadline_shows_no_overdue: `dashboard: []`. The helper reads badges from pages that show today's stays only; the v2 Overview lists no such row.
-- tests/test_deadline_after_reporting.py::test_a_stay_filed_after_its_deadline_reads_late: same cause (`dashboard: []`).
+- None.
 
 ## Deviations
-- test_dashboard_missing_banner: split marker changed to `class="needs-you-more` (the v2 details has `ov-section` too). Count 4 unchanged.
-- Calendar card wrapped in `<div class="scroll-x">` (not the card class) for the touch sweep.
-- `data-dashboard-refresh` attributes removed from the Overview because test_design_dashboard asserts they are absent. dashboard-calendar.js still references this hook, so the calendar/stats refresh may no longer run. Owner to decide.
-- _host_alerts.html: new `alerts_expanded` flag shows every uncovered alert, not the "N more" summary, on the Overview.
-- Other v2 pages still hide the alert stack (base.html guard unchanged); only the Overview shows uncovered alerts.
+- app2.css rule `body.v2 .card[data-dashboard-refresh="work"] > table` matches again now that the Dnes card has the attribute (no CSS change).
+- test_deadline_after_reporting: the Overview red-line check (0241) moved out of the loop into a direct `client.get("/")` call, so that coverage is kept.
+- Alerts: `alerts_expanded` flag in _host_alerts.html shows every uncovered alert on the Overview (step 2).
+- Other v2 pages still hide the alert stack (base.html guard unchanged).
 - Not run: test_endtoend, test_demo_seed, test_reporting_help_0097 (not in section 6).
 
 ## Questions
-- Refresh hook removal (above): keep or restore and move the test?
+- None open. Refresh hooks restored per orchestrator decision 1.
