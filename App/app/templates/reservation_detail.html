@@ -18,14 +18,12 @@
 </nav>
 {% endmacro %}
 {% set stay_lede %}{{ (reservation.date_from | date_cz) ~ ' – ' ~ (reservation.date_to | date_cz) ~ ' · ' ~ tp('stays.table.nights', nights(reservation.date_from, reservation.date_to)) ~ ' · ' }}{{ source_badge(reservation.source, source_label(reservation)) }}{% endset %}
-{% block meta %}{{ stay_lede }}{% endblock %}
+{% block meta %}{% if reservation.status != 'active' %}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('stays.filter.state.' ~ reservation.status) }}</span>{% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo=('(demo)' in reservation.internal_name or reservation.source == 'demo'), step=journey_step(progress.status)) }}{% endif %} · <a href="/apartments/{{ reservation.apartment_id }}">{{ reservation.internal_name }}</a> · {{ stay_lede }}{% endblock %}
 {% block body %}
 <input class="sr-only" type="text" id="stay-link" readonly value="{{ guest_link }}" tabindex="-1" aria-hidden="true">
 
 <div class="host-stay-detail">
 {% set stay_inactive = reservation.status != 'active' or reservation.archived_at %}
-<p class="stay-property-line"><span class="ui-sub">{{ t('stay.detail.property') }}</span>
-  <a href="/apartments/{{ reservation.apartment_id }}">{{ reservation.internal_name }}</a></p>
 {{ stay_jump_nav([
   ('#now', t('stay.detail.next_step')),
   ('#guests', t('stay.detail.guests.title')),
