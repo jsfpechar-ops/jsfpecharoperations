@@ -52,7 +52,7 @@
 <details class="prop-sec" id="sec-basics"{% if property_view != 'bookings' and (not settings_section or settings_section == 'property') %} open{% endif %}><summary><span class="dot {{ 'g' if address_text else 'r' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.basics.title') }}</b><small>{{ t('property_page.sec.basics.sub') }}</small></div><small class="sec-state">{{ address_text or t('property_nav.address_missing') }}</small></summary>
   <div class="fields-wrap">
     <section class="panel property-section ui-section" id="basics">
-      <h3 class="property-section-title">{{ t('apartment.form.basics.title') }}</h3>
+      <h2 class="property-section-title">{{ t('apartment.form.basics.title') }}</h2>
       {% include "_property_identity_fields.html" %}
       {% set operator_current = apartment.legal_entity_id %}
       {% include "_property_operator.html" %}
@@ -71,7 +71,7 @@
     </section>
 
     <section class="panel property-section ui-section" id="arrival-departure">
-      <h3 class="property-section-title">{{ t('apartment.form.door_code.checkin') }} / {{ t('apartment.form.door_code.checkout') }}</h3>
+      <h2 class="property-section-title">{{ t('apartment.form.door_code.checkin') }} / {{ t('apartment.form.door_code.checkout') }}</h2>
       <p class="ui-sub">{{ t('why.times') }}</p>
       {% if shared_time_error %}<p class="err-text" role="alert">{{ t(shared_time_error) }}</p>{% endif %}
       <div class="grid two">
@@ -86,13 +86,13 @@
     </section>
 
     <section class="panel property-section ui-section" id="address">
-      <h3 class="property-section-title">{{ t('apartment.form.address.title') }}</h3>
+      <h2 class="property-section-title">{{ t('apartment.form.address.title') }}</h2>
       <p class="ui-sub">{{ t('why.address') }}</p>
       {% include "_property_address_fields.html" %}
     </section>
 
     <section class="panel property-section ui-section" id="notes-section">
-      <h3 class="property-section-title">{{ t('apartment.form.notes.title') }}</h3>
+      <h2 class="property-section-title">{{ t('apartment.form.notes.title') }}</h2>
       <div class="field">
         {{ field_label('notes', t('apartment.form.notes.label'), t('apartment.form.notes.hint')) }}
         <textarea id="notes" name="notes" aria-describedby="notes-help">{{ apartment.notes or '' }}</textarea>
@@ -132,7 +132,7 @@
 <details class="prop-sec" id="sec-messages"{% if settings_section == 'guests' %} open{% endif %}><summary><span class="dot {{ 'n' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.messages.title') }}</b><small>{{ t('property_page.sec.messages.sub') }}</small></div><small class="sec-state">{{ t('property_page.sec.messages.sub') }}</small></summary>
   <div class="fields-wrap">
     <section class="panel property-section ui-section" id="communication">
-      <div class="field-label-row"><h3 class="property-section-title">{{ t('nav.guest_links') }}</h3>{{ help_tip('communication-help', t('guest_links.lede') ~ ' ' ~ t('apartment.form.guest_link.message_help'), '/guide#guests') }}</div>
+      <div class="field-label-row"><h2 class="property-section-title">{{ t('nav.guest_links') }}</h2>{{ help_tip('communication-help', t('guest_links.lede') ~ ' ' ~ t('apartment.form.guest_link.message_help'), '/guide#guests') }}</div>
       <p class="ui-sub">{{ t('why.guest_link') }}</p>
       <div class="guest-link-top">
         <div class="field guest-link-url">
@@ -220,7 +220,7 @@
           </select></div>
         {% endfor %}
       </div>
-      <div class="field-label-row"><h3 class="property-section-title">{{ t('host.door_code') }}</h3>{{ help_tip('door-code-help', t('apartment.form.door_code.lede') ~ ' ' ~ t('apartment.form.door_code.manual'), '/guide#door-codes') }}</div>
+      <div class="field-label-row"><h2 class="property-section-title">{{ t('host.door_code') }}</h2>{{ help_tip('door-code-help', t('apartment.form.door_code.lede') ~ ' ' ~ t('apartment.form.door_code.manual'), '/guide#door-codes') }}</div>
         {% if door_code.test_mode %}<p class="ui-sub"><strong>{{ t('apartment.form.door_code.test_mode') }}</strong></p>{% endif %}
         <input type="hidden" name="door_codes_fields" value="1">
         <div class="feature-switch-row">
@@ -261,7 +261,7 @@
 <details class="prop-sec" id="sec-police"{% if settings_section in ['reporting', 'automation'] %} open{% endif %}><summary><span class="dot {{ 'g' if police_ok else 'r' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.police.title') }}</b><small>{{ t('property_page.sec.police.sub') }}</small></div><small class="sec-state">{{ t('property_nav.report_ready') if police_ok else tp('property_nav.report_missing', report_missing) }}</small></summary>
   <div class="fields-wrap">
     <section class="panel property-section ui-section" id="ubyport">
-      <div class="field-label-row police-section-head"><h3 class="property-section-title">{{ t('host.reporting') }}</h3>{{ help_tip('ubyport-help', t('apartment.form.ubyport.credentials_help_heading'), '/guide#ubyport-credentials') }}
+      <div class="field-label-row police-section-head"><h2 class="property-section-title">{{ t('host.reporting') }}</h2>{{ help_tip('ubyport-help', t('apartment.form.ubyport.credentials_help_heading'), '/guide#ubyport-credentials') }}
         <a class="ui-btn ui-btn-secondary ui-btn-compact police-sample-link" id="police-sample-link" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.sample_link') }}</a></div>
       <p class="ui-sub">{{ t('why.police') }}</p>
       <p class="ui-sub"><a href="{{ base_url }}?view=settings&amp;section=automation#automation">{{ t('automation.timing_title') }} </a></p>
@@ -300,7 +300,7 @@
     </section>
 
     <section class="panel property-section ui-section" id="automation">
-      <div class="field-label-row"><h3 class="property-section-title">{{ t('automation.timing_title') }}</h3>{{ help_tip('automation-help', t('automation.timing_help'), '/guide#reporting') }}</div>
+      <div class="field-label-row"><h2 class="property-section-title">{{ t('automation.timing_title') }}</h2>{{ help_tip('automation-help', t('automation.timing_help'), '/guide#reporting') }}</div>
       <p class="ui-sub">{{ t('why.automation') }}</p>
       <div class="grid two">
         <div class="field">
@@ -336,7 +336,7 @@
 <details class="prop-sec" id="sec-fee"{% if settings_section == 'reporting' %} open{% endif %}><summary><span class="dot {{ 'g' if apartment.stay_fee_rate_czk else 'n' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.fee.title') }}</b><small>{{ t('property_page.sec.fee.sub') }}</small></div><small class="sec-state">{{ apartment.stay_fee_rate_czk ~ ' Kč' if apartment.stay_fee_rate_czk else t('apartments.chip_state.off') }}</small></summary>
   <div class="fields-wrap">
     <section class="panel property-section ui-section" id="stay-fee-settings">
-      <div class="field-label-row"><h3 class="property-section-title">{{ t('apartment.form.stay_fee.heading') }}</h3>{{ help_tip('stay-fee-help', t('apartment.form.stay_fee.lede')) }}</div>
+      <div class="field-label-row"><h2 class="property-section-title">{{ t('apartment.form.stay_fee.heading') }}</h2>{{ help_tip('stay-fee-help', t('apartment.form.stay_fee.lede')) }}</div>
       <p class="ui-sub">{{ t('why.stay_fee') }}</p>
       {% if fee_return_to %}
       <p class="small fee-return-note"><a href="{{ fee_return_to }}"> {{ t('stay_fees.setup.back_to_report') }}</a></p>
@@ -398,7 +398,7 @@
   <div class="fields-wrap">
   <section class="panel property-section ui-section" id="{% if door_code.account and door_code.locks %}smart-locks{% else %}door-code{% endif %}">
     {% if not (door_code.account and door_code.locks) %}
-    <h3 class="property-section-title">{{ t('smart_locks.title') }}</h3>
+    <h2 class="property-section-title">{{ t('smart_locks.title') }}</h2>
     <p class="ui-sub">{{ t('smart_locks.lede') }}</p>
     {% endif %}
     {% with account=lock_panel.account, receiver=lock_panel.receiver, locks=lock_panel.locks, fetched_at=lock_panel.fetched_at, reauth=lock_panel.reauth, return_to=lock_panel.return_to, properties_using=lock_panel.properties_using %}

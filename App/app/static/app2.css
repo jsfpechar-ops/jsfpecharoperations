@@ -734,3 +734,8 @@ body.v2 .savebar [hidden]{display:none}
 body.v2 .menu-list .row .t small{display:block;color:var(--ink3);font-size:14px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* 0736 item 6: the "other platform" name shows only when "other" is picked (host.css rule, which v2 does not load) */
 body.v2 .calendar-add-form:has(#label option[value="other"]:not(:checked)) .calendar-other-platform{display:none}
+/* 0736 item 3: the continue button reads white on coral-600 (5.5:1); toast close is at least 24 px on desktop (phone keeps 44 px) */
+body.v2 .setup-continue-card .ui-btn-primary{color:#fff;background:var(--coral-600);border-color:var(--coral-600)}
+@media (min-width:768px){body.v2 .toast-stack .toast > [data-toast-close]{min-width:24px;min-height:24px}}
+/* 0736 item 4: below 1024 px the guest buttons wrap inside the card instead of pushing it past the viewport (no-JS copy buttons) */
+@media (max-width:1023px){body.v2 .guest-btns > *,body.v2 .guest-pin-copy{min-width:0}body.v2 .guest-btns .btn,body.v2 .guest-pin-copy > .btn{max-width:100%;white-space:normal;overflow-wrap:anywhere}}
