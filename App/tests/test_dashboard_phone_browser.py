@@ -67,8 +67,8 @@ def test_phone_dashboard_compact(calendar_workspace, calendar_origin):
                 setup_lines = page.locator('[data-needs-you-card] [data-needs-you="setup"]')
                 assert setup_lines.count() == 3
                 for index in range(3):
-                    assert setup_lines.nth(index).locator(".ui-btn").count() == 1
-                    assert "Police details are missing" in setup_lines.nth(index).text_content()
+                    assert setup_lines.nth(index).locator(".btn").count() == 1
+                    assert "Police details missing" in setup_lines.nth(index).text_content()
                 if not pin_lines.first.is_visible():
                     page.locator(".needs-you-more > summary").first.click()
                 shot(page, "phone-390-alert")
