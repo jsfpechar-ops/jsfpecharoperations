@@ -353,6 +353,11 @@ func requirementsJSON(req map[string]any) *string {
 // onPaid is payment_links.on_paid: link id = object.payment_link or object.id.
 // Statuses other than draft, sent, awaiting_payment and paid write nothing.
 func onPaid(ctx context.Context, q dbtx, obj map[string]any, stamp string) error {
+	// checkout.session.* carries payment_status; bank redirects finish as
+	// "unpaid" on completed and settle later. payment_link.paid has no field.
+	if ps, ok := obj["payment_status"].(string); ok && ps != "paid" {
+		return nil
+	}
 	linkID, _ := obj["payment_link"].(string)
 	if linkID == "" {
 		linkID, _ = obj["id"].(string)

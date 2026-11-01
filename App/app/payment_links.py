@@ -113,6 +113,11 @@ def on_paid(event: Dict[str, Any]) -> None:
         return
     from . import payment_request as model
 
+    if row["status"] not in ("draft", "sent", "awaiting_payment"):
+        # 0623 will allow expired/cancelled → paid; until then ignore quietly
+        # (Go onPaid does the same) so a late payment does not 500 the webhook.
+        return
+
     # The webhook can beat the host's own Send click (or arrive while the row
     # is still a draft): paid is a legal jump from draft/sent/awaiting alike,
     # so walk through sent when the row has not been sent yet. Expired and
