@@ -21,6 +21,7 @@ import (
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/billing"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/jobs"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/payments"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/schema"
 )
 
@@ -210,7 +211,7 @@ func run() int {
 }
 
 // goIntervals are the schedule intervals (minutes) that cap a retry backoff.
-var goIntervals = map[string]int{"billing_snapshot": 24 * 60}
+var goIntervals = map[string]int{"billing_snapshot": 24 * 60, "stripe_sweep": 24 * 60}
 
 // goHandlers maps each Go-owned job kind to its handler.
 func goHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
@@ -218,19 +219,29 @@ func goHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
 		"billing_snapshot": func(ctx context.Context) (int, error) {
 			return billing.WriteMonthSnapshot(ctx, pool, time.Now().UTC().Format("2006-01"), jobs.Now(0))
 		},
+		"stripe_sweep": func(ctx context.Context) (int, error) {
+			expired, deleted, err := payments.Sweep(ctx, pool, time.Now().UTC(), jobs.Now(0))
+			return expired + deleted, err
+		},
 	}
 }
 
-// parseGoKinds reads UBYHOST_GO_JOB_KINDS. Only billing_snapshot is supported.
+// parseGoKinds reads UBYHOST_GO_JOB_KINDS. Only the kinds in goHandlers are supported.
 func parseGoKinds(raw string) ([]string, error) {
+	handlers := goHandlers(nil)
 	var kinds []string
 	for _, k := range strings.Split(raw, ",") {
 		k = strings.TrimSpace(k)
 		if k == "" {
 			continue
 		}
-		if k != "billing_snapshot" {
-			return nil, fmt.Errorf("UBYHOST_GO_JOB_KINDS has an unsupported kind: %s", k)
+		if _, ok := handlers[k]; !ok {
+			supported := make([]string, 0, len(handlers))
+			for name := range handlers {
+				supported = append(supported, name)
+			}
+			sort.Strings(supported)
+			return nil, fmt.Errorf("UBYHOST_GO_JOB_KINDS has an unsupported kind: %s (supported: %s)", k, strings.Join(supported, ", "))
 		}
 		kinds = append(kinds, k)
 	}
