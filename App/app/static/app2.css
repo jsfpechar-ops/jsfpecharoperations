@@ -691,4 +691,14 @@ body.v2 .dot.n{background:#c9c9c3}
   body.v2 .property-settings-form .savebar .btn{flex:1 1 30%;white-space:normal;text-align:center;justify-content:center}
   body.v2 .property-settings-form .savebar .btn[type="submit"]{flex-basis:100%}
   body.v2:has(.property-settings-form details.prop-sec[open]) .havel-fab{display:none}
+  body.v2 .ov-how[data-how="property"]{display:none}
+  body.v2 .guest-card .copy-btn{min-height:44px;height:auto;padding:10px 16px;gap:8px;white-space:normal}
+  body.v2 .guest-card .copy-btn .sr-only{position:static;width:auto;height:auto;margin:0;overflow:visible;clip:auto;white-space:nowrap}
+  body.v2 .property-settings-form details.prop-sec{border:0;border-radius:0;box-shadow:none;background:transparent;padding:0;margin:0}
+  body.v2 .property-settings-form details.prop-sec:last-of-type > summary{border-bottom:0}
+  body.v2 .property-settings-form .savebar{flex-wrap:nowrap}
+  body.v2 .property-settings-form .savebar .btn{flex:1 1 0;min-width:0;width:auto}
+  body.v2 .property-settings-form .savebar .btn[type="submit"]{flex-basis:0}
+  body.v2 .property-settings-form .savebar:has([data-unsaved-reset]:not([hidden])) .btn.ghost:not([data-unsaved-reset]){display:none}
 }
+body.v2 .savebar [hidden]{display:none}

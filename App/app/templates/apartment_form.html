@@ -24,7 +24,7 @@
 <div class="top prop-phone-top"><a class="round" href="/apartments" aria-label="{{ t('common.back') }}">{{ icon('chevron-left', 22) }}</a></div>
 <h1>{{ apartment.internal_name }}</h1>
 {% set prop_addr = [((apartment.addr_street or '') ~ ' ' ~ (apartment.addr_house_no or '')) | trim, apartment.addr_obec or ''] | select | join(', ') %}
-{% if prop_addr %}<div class="sub prop-phone-sub">{{ prop_addr }}</div>{% endif %}
+{% if prop_addr and prop_addr.strip() %}<div class="sub prop-phone-sub">{{ prop_addr }}</div>{% endif %}
 <details class="ui-how ov-how ph-hide" data-how="property">
   <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
   <div class="ui-how-body">
