@@ -9,8 +9,8 @@ def test_dashboard_with_a_property_has_the_v2_header_one_primary_and_refresh_hoo
     assert page.count('class="btn" href="/reservations?new=1"') == 1  # 0706: the v2 header button
     assert "ui-ph-menu" not in page
     assert "dashboard-more" not in page
-    # 0706: removed from Overview by the v2 rebuild
-    assert 'data-dashboard-refresh="stats"' not in page and 'data-dashboard-refresh="work"' not in page
+    # 0714: the calendar refreshes these in place
+    assert 'data-dashboard-refresh="stats"' in page and 'data-dashboard-refresh="work"' in page
     # 0241: the count tiles gave way to the "What needs you" card.
     assert 'data-needs-you-card' in page and 'class="ui-stats' not in page
     assert "page-toolbar" not in page
