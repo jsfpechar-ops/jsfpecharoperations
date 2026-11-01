@@ -1,7 +1,6 @@
 """0718: the Menu page (/menu) that the phone tab bar links to."""
 import secrets
 
-import pytest
 from fastapi.testclient import TestClient
 
 from app import auth, db

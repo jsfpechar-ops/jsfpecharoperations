@@ -29,6 +29,10 @@ SELECTOR_OVERRIDES = {
     ".tab": {"font-size": "12px"},
     ".tab:not(.on)": {"font-size": "12px"},
     ".tab.on": {"font-size": "12px"},
+    # mockup's 30 px bottom padding is home-indicator room in the phone frame; the app's action bar sits above the tab bar
+    ".actbar": {"padding-bottom": "12px"},
+    # tone follows the stay state (0715 mapping); fixture stay is waiting, mockup shows a finished one (0719)
+    ".hs .pill": {"color": "rgb(138, 82, 0)", "background-color": "rgb(255, 244, 214)", "border-bottom-color": "rgb(138, 82, 0)"},
 }
 # style-compared only at computer width (phone design pending)
 DESKTOP_ONLY = {".side", ".side .nav", ".side .nav.on"}
@@ -37,8 +41,30 @@ TAP_EXEMPT_BELOW_DESKTOP = {".cal .bar": "dense 14-day timeline; 28 px meets WCA
 
 
 # app selector -> mockup selector at phone widths (the phone mockup calls the action bar .bar)
-SELECTOR_ALIASES = {".actbar": ".bar"}
+SELECTOR_ALIASES = {".actbar": ".bar", ".actbar .btn": ".bar .btn", ".head h1": ".big", ".head .sub": ".sub"}
 BOX_PROPS = ("width", "height", "margin-top", "margin-right", "margin-bottom", "margin-left")
+# phone box departure: the 20 px side room comes from body.v2 .main padding, so phone cards have no side margin (2026-11-01)
+BOX_OVERRIDES = {
+    ".card.me": {"margin-left": "0px", "margin-right": "0px"},
+    ".big": {"margin-left": "0px", "margin-right": "0px"},
+    "h2.sec": {"margin-left": "0px", "margin-right": "0px"},
+    ".card.need": {"margin-left": "0px", "margin-right": "0px"},
+    ".head .sub": {"margin-left": "0px", "margin-right": "0px"},
+    # the mockup name wraps at 320 px; the app keeps it on one line with ellipsis (0719 brief, left over from 0718)
+    ".card.me@320": {"height": "98px"},
+    ".head h1": {"margin-left": "0px", "margin-right": "0px"},
+    # the fixture needs-you and stay cards have longer titles and a different line count than the mockup demo copy (0719); heights are per width
+    ".card.need@320": {"height": "209.28px"},
+    ".need b@320": {"height": "66.28px"},
+    ".need small@320": {"height": "38px"},
+    ".hs .card@320": {"height": "152px"},
+    ".meta@320": {"height": "19px"},
+    ".card.need@390": {"height": "168.19px"},
+    ".need b@390": {"height": "44.19px"},
+    ".need small@390": {"height": "19px"},
+    ".hs .card@390": {"height": "152px"},
+    ".meta@390": {"height": "19px"},
+}
 
 
 def expected_value(selector: str, prop: str, mock_value: str) -> str:
@@ -54,7 +80,11 @@ PAGES = [
         "path": "/",
         "view": "today",
         "phone_view": "dnes",
-        "phone_selectors": [".tabs", ".tab", ".tab.on"],
+        "phone_selectors": [
+            ".tabs", ".tab", ".tab.on", ".top .round", ".head h1", ".head .sub", "h2.sec",
+            ".card.need", ".need .ic", ".need b", ".need small", ".card.need .btn",
+            ".hs .card", ".kind", ".av", ".nm", ".meta", ".hs .pill",
+        ],
         "selectors": [
             ".side", ".side .nav", ".side .nav.on", ".head h1", ".head .sub", ".head .btn",
             "main h2", ".todo .card", ".todo .ic", ".todo .t", ".todo p", ".quiet", ".card.cal",
@@ -64,6 +94,18 @@ PAGES = [
         "missing_ok": {
             ".cal .bar.b-ok": "demo data has no confirmed stay in the 14-day window; the tone follows the data",
             "main .pill.p-ok": "tone depends on data: the demo overview has no reported stay",
+            ".todo p": "the needs-you line is a small element at every width (one markup for phone and desktop, 0719)",
+            ".card.need": "needs-you cards exist only while the account has an open to-do; the phone mockup shows demo cards",
+            ".need .ic": "needs-you cards exist only while the account has an open to-do; the phone mockup shows demo cards",
+            ".need b": "needs-you cards exist only while the account has an open to-do; the phone mockup shows demo cards",
+            ".need small": "needs-you cards exist only while the account has an open to-do; the phone mockup shows demo cards",
+            ".card.need .btn": "needs-you cards exist only while the account has an open to-do; the phone mockup shows demo cards",
+            ".hs .card": "today's stay cards exist only when a stay is due today; the phone mockup shows demo stays",
+            ".kind": "today's stay cards exist only when a stay is due today; the phone mockup shows demo stays",
+            ".av": "today's stay cards exist only when a stay is due today; the phone mockup shows demo stays",
+            ".nm": "today's stay cards exist only when a stay is due today; the phone mockup shows demo stays",
+            ".meta": "today's stay cards exist only when a stay is due today; the phone mockup shows demo stays",
+            ".hs .pill": "today's stay cards exist only when a stay is due today; the phone mockup shows demo stays",
         },
     },
     {"name": "cleaning", "path": "/cleaning", "view": "clean", "selectors": [".side .nav.on", ".head h1", ".head .sub", ".head .btn", "main h2", "main .card", "main table th", "main table td"], "phone_view": "uklid", "phone_selectors": [".tabs", ".tab.on", ".top .round", ".big", ".sub", ".grp", ".card", ".list .row:has(.p-ok)", ".row .t b", ".row .t small", ".row .t .pill.p-ok", ".actbar", ".actbar .btn"], "missing_ok": {"main table th": "below 1024 px the phone layout replaces the tables (0546)", "main table td": "below 1024 px the phone layout replaces the tables (0546)"}},  # pills follow the approved phone mockup (2026-11-01): scheduled green, the desktop mockup shows amber
@@ -316,7 +358,8 @@ def box_diffs(selector: str, app: dict, mock: dict, width: int) -> list[str]:
     """Phone box metrics: width within 2 px, height and margins within 1 px. Values that are not px are skipped."""
     out = []
     for prop in BOX_PROPS:
-        a, m = _num(app[prop]), _num(mock[prop])
+        override = {**BOX_OVERRIDES.get(selector, {}), **BOX_OVERRIDES.get(f"{selector}@{width}", {})}
+        a, m = _num(app[prop]), _num(override.get(prop, mock[prop]))
         if a is None or m is None:
             continue
         tol = 2 if prop == "width" else 1
