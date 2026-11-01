@@ -192,6 +192,8 @@ func run() int {
 	mux.Handle("GET /payments/connect/start", m.wrap("/payments/connect/start", payments.ConnectStartHandler(pool, os.Getenv, time.Now, onboarder)))
 	mux.Handle("POST /payments/connect/start", m.wrap("/payments/connect/start", payments.ConnectStartHandler(pool, os.Getenv, time.Now, onboarder)))
 	mux.Handle("GET /payments/connect/return", m.wrap("/payments/connect/return", payments.ConnectReturnHandler(pool, os.Getenv, time.Now, onboarder)))
+	mux.Handle("POST /payments/requests/new", m.wrap("/payments/requests/new", payments.RequestNewHandler(pool, os.Getenv, time.Now)))
+	mux.Handle("POST /payments/requests/{id}/send", m.wrap("/payments/requests/{id}/send", payments.RequestSendHandler(pool, os.Getenv, time.Now, onboarder)))
 	mux.Handle("/", m.wrap("/", notFound))
 
 	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}

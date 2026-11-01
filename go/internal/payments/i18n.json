@@ -1,0 +1,35 @@
+{
+ "cs": {
+  "payments.draft_saved": "Koncept uložen.",
+  "payments.err.amount": "Zadejte celé číslo korun.",
+  "payments.err.cannot_send": "Tuhle žádost už nelze odeslat.",
+  "payments.err.invalid": "Tohle uložit nejde. Zkontrolujte formulář.",
+  "payments.err.no_email": "Nejdříve doplňte e-mail hosta.",
+  "payments.err.not_ready": "Nejdříve připojte Stripe a pak odesílejte.",
+  "payments.err.stripe_off": "Platby kartou jsou na tomto serveru vypnuté.",
+  "payments.reason.cleaning": "Úklid",
+  "payments.reason.custom": "Vlastní",
+  "payments.reason.damage": "Škoda",
+  "payments.reason.extra_guest": "Další host",
+  "payments.reason.late_checkout": "Pozdní odjezd",
+  "payments.reason.repair": "Příspěvek na opravu",
+  "payments.sent": "Odesláno hostovi."
+ },
+ "en": {
+  "payments.draft_saved": "Draft saved.",
+  "payments.err.amount": "Enter a whole number of CZK.",
+  "payments.err.cannot_send": "This request can no longer be sent.",
+  "payments.err.invalid": "That cannot be saved. Check the form.",
+  "payments.err.no_email": "Add the guest e-mail first.",
+  "payments.err.not_ready": "Connect Stripe first, then send.",
+  "payments.err.stripe_off": "Card payments are off on this server.",
+  "payments.reason.cleaning": "Cleaning",
+  "payments.reason.custom": "Custom",
+  "payments.reason.damage": "Damage",
+  "payments.reason.extra_guest": "Extra guest",
+  "payments.reason.late_checkout": "Late checkout",
+  "payments.reason.repair": "Repair contribution",
+  "payments.sent": "Sent to the guest."
+ },
+ "vi": {}
+}
