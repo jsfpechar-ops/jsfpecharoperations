@@ -9,7 +9,7 @@
 {% set hide_alert_stack = (apartments or []) | length > 0 %}
 {% block title %}{{ t('dashboard.title') }}{% endblock %}
 {% block page_title %}{% if not show_welcome %}{{ t('dashboard.title') }}{% endif %}{% endblock %}
-{% block meta %}{{ today.isoformat() | date_cz }}{% if last_sync %} · {{ t('dashboard.last_synced', when=last_sync | datetime_local) }}{% endif %}{% endblock %}
+{% block meta %}{{ today.isoformat() | date_long(lang) }}{% if last_sync %} · {{ t('dashboard.last_synced', when=last_sync | datetime_local) }}{% endif %}{% endblock %}
 {% block primary_action %}{% if not show_welcome %}{{ ui_button('+ ' ~ t('stays.add_stay'), 'primary', href='/reservations?new=1', attrs='data-calendar-add data-cal-create-type="stay"') }}{% endif %}{% endblock %}
 {% block secondary_actions %}{% if not show_welcome %}
   {% if demo_loaded %}<form method="post" action="/demo/reset" class="inline" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">{{ ui_button(t('demo.clear'), 'quiet', type='submit') }}</form>{% endif %}
