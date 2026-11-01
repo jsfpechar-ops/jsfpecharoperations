@@ -16,6 +16,18 @@ STYLE_PROPS = (
 
 # accessibility: mockup coral and --ink3 fail WCAG AA; app uses darker shades (2026-11-01)
 COLOR_OVERRIDES = {"rgb(212, 71, 47)": "rgb(208, 69, 45)", "rgb(138, 138, 132)": "rgb(107, 107, 101)"}
+# accessibility (AA contrast, 12 px minimum), 2026-11-01
+SELECTOR_OVERRIDES = {".side .nav.on": {"color": "rgb(184, 61, 40)"}, ".cal .cd": {"font-size": "12px"}}
+# style-compared only at computer width (phone design pending)
+DESKTOP_ONLY = {".side", ".side .nav", ".side .nav.on"}
+
+
+def expected_value(selector: str, prop: str, mock_value: str) -> str:
+    """Value the app must have: the override when the selector and property are listed, else the mockup value."""
+    override = SELECTOR_OVERRIDES.get(selector, {}).get(prop)
+    if override is not None:
+        return override
+    return COLOR_OVERRIDES.get(mock_value, mock_value)
 
 PAGES = [
     {
@@ -25,7 +37,7 @@ PAGES = [
         "selectors": [
             ".side", ".side .nav", ".side .nav.on", ".head h1", ".head .sub", ".head .btn",
             "main h2", ".todo .card", ".todo .ic", ".todo .t", ".todo p", ".quiet", ".card.cal",
-            ".cal .cd", ".cal .cn", ".cal .bar", "main table th", "main table td", "main td small",
+            ".cal .cd", ".cal .cn", ".cal .bar.b-ok", ".cal .bar.b-warn", "main table th", "main table td", "main td small",
             "main .pill",
         ],
         "missing_ok": {},
