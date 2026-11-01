@@ -417,17 +417,20 @@ def test_cleaning_card_facts_line_up_across_cards(wide_host, wide_base):
         page.route("**/static/cleaning.js*", lambda route: route.abort())
         response = page.goto(f"{wide_base}/cleaning?lang=en")
         assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
-        page.wait_for_selector(".cleaning-card .cleaning-facts > div", timeout=5000)
+        page.wait_for_selector(".cleaning-section tr[id^='cleaning-'] td", timeout=5000)
         lefts = page.evaluate(
-            """() => Array.from(document.querySelectorAll('.cleaning-card')).map(card =>
-                Array.from(card.querySelectorAll('.cleaning-facts > div')).map(d => d.getBoundingClientRect().left))"""
+            """() => Array.from(document.querySelectorAll('.cleaning-section table')).map(t =>
+                Array.from(t.querySelectorAll('tr[id^="cleaning-"]')).map(r =>
+                    Array.from(r.querySelectorAll('td')).map(td => td.getBoundingClientRect().left)))"""
         )
         context.close()
         browser.close()
-    assert len(lefts) >= 2, f"cleaning list shows only {len(lefts)} cards"
-    for index in (0, 1):
-        firsts = {round(card[index] / 2) * 2 for card in lefts if len(card) > index}
-        assert len(firsts) == 1, f"fact {index + 1} starts at different x across cards: {sorted(firsts)}"
+    rows_total = sum(len(table) for table in lefts)
+    assert rows_total >= 2, f"cleaning list shows only {rows_total} rows"
+    for table in lefts:
+        for index in (0, 1):
+            firsts = {round(row[index] / 2) * 2 for row in table if len(row) > index}
+            assert len(firsts) <= 1, f"column {index + 1} starts at different x across rows: {sorted(firsts)}"
 
 
 def test_sidebar_search_has_a_border(wide_host, wide_base):

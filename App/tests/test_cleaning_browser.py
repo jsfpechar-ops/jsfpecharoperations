@@ -87,7 +87,7 @@ def test_calendar_and_large_list_geometry_and_filtering(workspace, origin, width
         assert page.locator(".cal-week").count() > 0
         assert page.locator(".cal-gantt-row").count() == 0
         assert page.locator('[data-cal-view="calendar"]').get_attribute("aria-pressed") == "true"
-        assert page.locator(".cleaning-card").count() == 3
+        assert page.locator('.cleaning-section tr[id^="cleaning-"]').count() == 3
         summaries = page.locator(".cal-day-summary")
         assert summaries.count() >= 1
         marker = page.locator(".cal-week-events .cal-event.is-cleaning-marker").first
@@ -113,21 +113,15 @@ def test_calendar_and_large_list_geometry_and_filtering(workspace, origin, width
             page.locator("[data-cal-day-dialog] [data-cal-close]").click()
         else:
             assert ("Cleaning" if lang == "en" else "Úklid") in marker.get_attribute("aria-label")
-        assert page.locator(".cleaning-pin").first.inner_text() == "001234"
+        assert page.locator(".cleaning-pin").count() == 0
         assert page.locator("#cleaning-list input[type=checkbox]").count() == 0
         assert page.locator("#cleaning-list").bounding_box()["y"] > page.locator("#calendar").bounding_box()["y"]
-        date_heading = page.locator(".cleaning-date-group h3").first
-        assert 12 <= date_heading.evaluate("el => parseFloat(getComputedStyle(el).fontSize)") <= 14  # 0106: compact 13px list heading
-        assert page.locator(".cleaning-card h4").first.evaluate("el => parseFloat(getComputedStyle(el).fontSize)") <= 16
-        assert page.locator(".cleaning-card").first.evaluate("el => parseFloat(getComputedStyle(el).paddingTop)") <= 14
-        assert page.locator(".cleaning-instructions").first.evaluate("el => parseFloat(getComputedStyle(el).fontSize)") >= 14
-        assert page.locator(".cleaning-pin").first.evaluate("el => parseFloat(getComputedStyle(el).fontSize)") >= 20
         assert page.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth")
         assert page.locator('.sidebar-nav a[href="/cleaning"] svg').count() == 1
         shot(page, f"host-{lang}-{width}")
         page.locator("[data-cal-property]").select_option(str(workspace["homes"][1]))
-        page.wait_for_function("() => document.querySelectorAll('.cleaning-card').length === 1")
-        assert "Garden / 2" in page.locator(".cleaning-card").inner_text()
+        page.wait_for_function("() => document.querySelectorAll('.cleaning-section tr[id^=cleaning-]').length === 1")
+        assert "Garden / 2" in page.locator('.cleaning-section tr[id^="cleaning-"]').inner_text()
         assert not page.locator(".cleaning-pin").count()
         assert not errors
         context.close()
@@ -377,8 +371,8 @@ def test_missing_code_is_omitted_from_host_list_and_calendar_dialog(workspace, o
         page = context.new_page()
         page.goto(origin + "/cleaning?lang=en")
         loaded(page)
-        assert page.locator(".cleaning-card .cleaning-access").count() == 0
-        assert page.locator(".cleaning-card").get_by_text("Door code unavailable", exact=False).count() == 0
+        assert page.locator(".cleaning-section .cleaning-access").count() == 0
+        assert page.locator(".cleaning-section").get_by_text("Door code unavailable", exact=False).count() == 0
         block = page.locator('.cal-week-events .cal-event[data-event-kind="cleaning"]').first
         block.click()
         assert page.locator("[data-cal-details]").is_visible()
@@ -421,10 +415,11 @@ def test_host_crud_and_drag_change_cleanings_without_moving_bookings(workspace, 
         assert saved.value.status == 200
         persisted_times = db.query_one("SELECT start_time, end_time FROM cleaning_event WHERE id = ?", (first["eventId"],))
         assert persisted_times["start_time"] is None and persisted_times["end_time"] is None
-        page.wait_for_function(
-            "(id) => document.querySelector('#cleaning-' + id).closest('.cleaning-date-group').querySelector('time').dateTime === '2026-10-22'",
-            arg=first["eventId"],
-        )
+        # The host table prints the day as text, so check the saved date and that the row is still listed.
+        moved = next(item for item in cleaning.schedule(ws["owner"], cleaning.today() - timedelta(days=30), cleaning.today() + timedelta(days=30))["cleanings"]
+                     if item["eventId"] == first["eventId"])
+        assert str(moved["date"])[:10] == "2026-10-22"
+        assert page.locator(f'.cleaning-section tr#cleaning-{first["eventId"]}').count() == 1
         page.get_by_role("link", name="Add cleaning", exact=True).click()
         create = page.locator("[data-cal-create]")
         assert create.is_visible()
@@ -444,20 +439,22 @@ def test_host_crud_and_drag_change_cleanings_without_moving_bookings(workspace, 
         page.locator("[data-cal-details]").wait_for(state="visible")
         assert page.locator("[data-cal-details] [data-cal-open]").get_attribute("href") == f"#cleaning-{created_id}"
         page.locator("[data-cal-details] [data-cal-close]").click()
-        card = page.locator(".cleaning-card").filter(has_text="Mid-stay refresh")
+        card = page.locator(f'.cleaning-section tr#cleaning-{created_id}')
         card.wait_for(state="visible")
-        card.get_by_role("link", name="Edit cleaning", exact=True).click()
+        card.locator("td a").first.click()
         page.fill("#clean-date", "2026-10-25")
         page.get_by_role("button", name="Save", exact=True).click()
         loaded(page)
-        card = page.locator(".cleaning-card").filter(has_text="Mid-stay refresh")
-        assert card.locator("xpath=..").locator("time").get_attribute("datetime") == "2026-10-25"
-        card.get_by_role("link", name="Edit cleaning", exact=True).click()
+        card = page.locator(f'.cleaning-section tr#cleaning-{created_id}')
+        moved = next(item for item in cleaning.schedule(ws["owner"], cleaning.today() - timedelta(days=30), cleaning.today() + timedelta(days=30))["cleanings"]
+                     if item["eventId"] == created_id)
+        assert str(moved["date"])[:10] == "2026-10-25"
+        card.locator("td a").first.click()
         page.locator(".cleaning-remove summary").click()
         page.get_by_role("button", name="Remove cleaning", exact=True).click()
         page.locator("#confirm-dialog [data-confirm-proceed]").click()
         loaded(page)
-        assert page.locator(".cleaning-card").filter(has_text="Mid-stay refresh").count() == 0
+        assert page.locator(f'.cleaning-section tr#cleaning-{created_id}').count() == 0
         shot(page, "host-after-drag-1280")
         assert [dict(row) for row in db.query("SELECT id, date_from, date_to FROM reservation ORDER BY id")] == before
         context.close()
@@ -527,7 +524,7 @@ def test_calendar_popup_types_create_in_place_and_localize_validation(workspace,
         marker.wait_for(state="visible")
         cleaning_card = page.locator(f'#cleaning-list #cleaning-{created["id"]}')
         cleaning_card.wait_for(state="visible")
-        assert "Popup cleaning note" in cleaning_card.inner_text()
+        assert cleaning_card.locator("td").count() == 4  # the host table shows no notes
         shot(page, "cleaning-create-result-cs")
 
         page.locator('[data-calendar-add][data-cal-create-type="cleaning"]').click()

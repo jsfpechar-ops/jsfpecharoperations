@@ -1,29 +1,26 @@
 # 0540 report
-Status: blocked
-Done: steps 1 to 5. Left: step 6 (old host-page assertions). Stopped at brief section 8 and addendum: the addendum's expectation for `/cleaning` does not match the new table.
+Status: review
+Done: steps 1 to 6 and addendum 1 and 2.
 
-Commits: 97d8d65 (step 1), f9c1220 (step 2), f284668 (step 3), 9666920 (step 4), ca1bd61 (step 5). Step 6 is not committed.
+Commits: 97d8d65 (step 1), f9c1220 (step 2), f284668 (step 3), 9666920 (step 4), ca1bd61 (step 5), step 6 (this commit, see git log).
 
-Uncommitted (working tree): App/tests/test_cleaning.py, lines 223-229. The 001234, &lt;script&gt; and script-not-in checks moved to GET /cleaning/properties/{home}?lang=en (per addendum). The 11:00/15:00 check is still on /cleaning and fails.
-
-Tests:
-- Set 1 (after the edit): 1 failed, 59 passed. Failing: tests/test_cleaning.py::test_readable_list_and_settings_escape_host_text_and_show_leading_zero_code, line 224, `assert "11:00" in response.text and "15:00" in response.text` on /cleaning.
-- Set 2 (-x): 1 failed at tests/test_cleaning_browser.py:90, `.cleaning-card` count 0 (expected 3) on /cleaning?lang=en, 360 px. Host-page assertions in section 6 not yet updated.
+Tests (final):
+- Set 1 (`tests/test_0540_cleaning_tables.py tests/test_cleaning.py tests/test_design_cleaning.py tests/test_copy_cleanup.py tests/test_no_em_dashes.py`): 60 passed.
+- Set 2 (`tests/test_cleaning_browser.py tests/test_design_guardrails_browser.py -rs`): 37 passed, 0 skipped.
 - design_lint: OK.
-- context_lint: OK (warnings only, unrelated to this change).
+- context_lint: OK (warnings only, unrelated).
 
-Cause of the 11:00/15:00 failure: the new table time cell shows startTime-endTime or checkoutTime-checkinTime per event, and the arrival cell shows checkinTime. The 11:00/15:00 values come from the property `*_hour` fields via cleaning._hour(), which the table does not render. Question for the orchestrator: move the 11:00/15:00 check to the settings page, or drop it?
+Assertions changed (existing tests):
+- tests/test_cleaning.py::test_readable_list_and_settings_escape_host_text_and_show_leading_zero_code: host checks for 001234, &lt;script&gt; and script-not-in moved to GET /cleaning/properties/{home}?lang=en. On /cleaning only "15:00" is checked (addendum 2). The 11:00 check is dropped there; the _hour checkout assert below covers it.
+- tests/test_cleaning_browser.py, host page only (test_calendar_and_large_list_geometry_and_filtering): .cleaning-card count goes to .cleaning-section tr[id^=cleaning-]; date heading .cleaning-date-group h3 goes to .cleaning-section h2 and its 12-14 px size check is removed; h4 size and card padding checks removed; .cleaning-pin is now asserted absent on the host list (no door code, per addendum); the .cleaning-instructions and .cleaning-pin font-size checks are removed (no instructions on host list); the garden filter check now reads the row.
+- tests/test_cleaning_browser.py, host-side zero-count checks in test_missing_code_is_omitted_from_host_list_and_calendar_dialog: scoped to .cleaning-section. The shared-view lines are unchanged.
+- tests/test_cleaning_browser.py::test_host_crud_and_drag_change_cleanings_without_moving_bookings: rows are found by #cleaning-<id> (created_id). The wait for the drag date and the "Edit cleaning" link are replaced by reading the saved date from cleaning.schedule() and clicking the row's first link. The host table has no time element, so the saved date is checked from data, not DOM.
+- tests/test_cleaning_browser.py::test_calendar_popup_types_create_in_place_and_localize_validation: the note text check is replaced by a 4-cell row check, because the host table shows no notes.
+- tests/test_design_guardrails_browser.py (cleaning facts test): reads the column left positions of table rows per section instead of .cleaning-facts. The test name is unchanged.
+- Shared-view lines (cleaner page, .cleaning-card count 2, Door code checks at the shared-view URL) are not changed.
 
-git diff --stat origin/main (committed state, excluding the uncommitted test edit):
- App/app/cleaning_i18n.py | 13 ++-
- App/app/host_vi_i18n.py | 11 +++
- App/app/routes/cleaning.py | 21 ++++-
- App/app/templates/_cleaning_screen.html | 4 +-
- App/app/templates/_cleaning_table.html | 24 +++++
- App/tests/test_0540_cleaning_tables.py | 113 ++++++++++++++++++++++++
+Deviations: the schedule-based date checks are a substitute for DOM time attributes the table does not render; the owner may want a time element in the day cell instead.
 
-Assertions changed: test_cleaning.py::test_readable_list_and_settings_escape_host_text_and_show_leading_zero_code. Host-page checks moved to the settings URL (001234, &lt;script&gt;, script not in). The 11:00/15:00 check is still on /cleaning and fails; not resolved.
+git diff --stat origin/main: run at the review step; the commit set is the six App/ files above plus App/tests/test_cleaning_browser.py, App/tests/test_design_guardrails_browser.py, App/tests/test_cleaning.py and this report.
 
-Deviations: step 6 not finished. The browser set has host-page `.cleaning-card` assertions still to update (test_cleaning_browser.py lines 90, 119-130, 447-482; test_design_guardrails_browser.py 420-423). Shared-view lines were not touched. Commit trailer uses Claude Opus 5.5 as the run note asks.
-
-Owner steps left: decide the 11:00/15:00 question, then the orchestrator or a new run finishes step 6. No push, no PR.
+Owner steps left: review the PR; no deploy. Branch not pushed.
