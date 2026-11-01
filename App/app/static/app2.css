@@ -330,6 +330,17 @@ body.v2 details[open] summary:after{transform:rotate(180deg)}
 body.v2 .fields{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
 body.v2 .savebar{position:fixed;right:24px;bottom:20px;display:flex;gap:8px}
 @media (max-width:600px){body.v2 .savebar{left:12px;right:12px;bottom:12px;flex-wrap:wrap;justify-content:flex-end}}
+/* 0535: mockup section order on the property page (CSS only; DOM order stays) */
+body.v2 .form:has(> .property-settings-form){display:flex;flex-direction:column;gap:20px}
+body.v2 .property-settings-form{display:contents}
+body.v2 #sec-basics{order:1}
+body.v2 #sec-police{order:2}
+body.v2 #sec-calendars{order:3}
+body.v2 #sec-messages{order:4}
+body.v2 #sec-lock{order:5}
+body.v2 #sec-fee{order:6}
+body.v2 #sec-archive{order:7}
+body.v2 #sec-lock-account{order:8}
 @media (prefers-reduced-motion:no-preference){@keyframes v2-fields-in{from{opacity:0}to{opacity:1}}body.v2 details .fields{animation:v2-fields-in .18s ease-out}}
 
 /* 0719 overview phone: Potřebuje vás cards, Dnes cards, top row (phone only unless noted) */
