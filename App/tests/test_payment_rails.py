@@ -5,6 +5,7 @@ local code. The mail kind is real, enqueued into email_outbox.
 """
 from __future__ import annotations
 
+from datetime import date
 from typing import Any, Dict, List
 
 import pytest
@@ -140,6 +141,7 @@ def test_send_creates_payment_link_on_connected_account(owner, fake_link):
     assert fake_link.options[0] == {"stripe_account": "acct_rails"}
     assert params["restrictions"] == {"completed_sessions": {"limit": 1}}
     assert params["metadata"] == {"payment_request_id": str(rid)}
+    assert params["payment_intent_data"] == {"metadata": {"payment_request_id": str(rid)}}
     assert item["price_data"]["product_data"]["name"] == f"Úklid (žádost č. {rid})"
     row = payment_request.get(rid)
     assert row["stripe_payment_link_id"] == "plink_test_1"
@@ -196,6 +198,46 @@ def test_webhook_unpaid_checkout_does_not_flip(owner, stripe_env, fake_link):
         "data": {"object": {"payment_link": "plink_test_1", "payment_status": "unpaid"}},
     })
     assert payment_request.get(rid)["status"] == "draft"
+
+
+def test_webhook_paid_from_sent_skips_draft_intermediate(owner, stripe_env, fake_link):
+    """When the row is already sent, on_paid must not walk draft→sent again."""
+    _complete_account(owner)
+    rid = _draft(owner, rail="card")
+    payment_links.send(rid)
+    payment_request.set_status(rid, "sent", today=date.fromisoformat("2026-11-01"))
+    before = len(db.query(
+        "SELECT id FROM audit WHERE action = 'payment_request_status' AND detail LIKE ?",
+        (f"id={rid} %",),
+    ))
+    stripe_connect.process_event({
+        "id": "evt_rail_sent",
+        "type": "checkout.session.completed",
+        "data": {"object": {"payment_link": "plink_test_1", "payment_status": "paid"}},
+    })
+    row = payment_request.get(rid)
+    assert row["status"] == "paid"
+    audits = db.query(
+        "SELECT detail FROM audit WHERE action = 'payment_request_status' AND detail LIKE ? ORDER BY id",
+        (f"id={rid} %",),
+    )
+    assert len(audits) == before + 1
+    assert audits[-1]["detail"] == f"id={rid} sent->paid"
+
+
+def test_webhook_does_not_flip_expired_request(owner, stripe_env, fake_link):
+    """Until 0623, expired is terminal; a late payment must not throw or flip status."""
+    _complete_account(owner)
+    rid = _draft(owner, rail="card")
+    payment_links.send(rid)
+    payment_request.set_status(rid, "sent", today=date.fromisoformat("2026-11-01"))
+    payment_request.set_status(rid, "expired", today=date.fromisoformat("2026-11-02"))
+    stripe_connect.process_event({
+        "id": "evt_rail_expired",
+        "type": "checkout.session.completed",
+        "data": {"object": {"payment_link": "plink_test_1", "payment_status": "paid"}},
+    })
+    assert payment_request.get(rid)["status"] == "expired"
 
 
 def test_route_send_mails_the_link_once(owner, client, stripe_env, fake_link):

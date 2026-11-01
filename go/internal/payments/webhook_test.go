@@ -225,6 +225,31 @@ func TestWebhookDatabase(t *testing.T) {
 	if n := len(auditDetails(t, pool, "payment_request_paid")); n != 1 {
 		t.Errorf("already paid was audited again")
 	}
+
+	// checkout.session.completed with payment_status unpaid: no flip (0622 Python parity).
+	seedRequest(t, pool, 2, "draft")
+	unpaid := []byte(`{"id":"evt_unpaid","type":"checkout.session.completed","data":{"object":{` +
+		`"payment_link":"plink_1","payment_status":"unpaid"}}}`)
+	if got := signedPost(t, h, unpaid); got != 200 {
+		t.Fatalf("unpaid checkout: %d", got)
+	}
+	if n := count(t, pool, `SELECT COUNT(*) FROM payment_request WHERE id = 2 AND status = 'draft'`); n != 1 {
+		t.Errorf("unpaid checkout flipped request 2")
+	}
+	// checkout.session.completed paid from sent: one status audit, not draft→sent→paid.
+	seedRequest(t, pool, 3, "sent")
+	checkoutPaid := []byte(`{"id":"evt_checkout_paid","type":"checkout.session.completed","data":{"object":{` +
+		`"payment_link":"plink_1","payment_status":"paid"}}}`)
+	if got := signedPost(t, h, checkoutPaid); got != 200 {
+		t.Fatalf("checkout paid: %d", got)
+	}
+	if n := count(t, pool, `SELECT COUNT(*) FROM payment_request WHERE id = 3 AND status = 'paid'`); n != 1 {
+		t.Errorf("sent request not paid via checkout.session.completed")
+	}
+	if n := count(t, pool, `SELECT COUNT(*) FROM audit WHERE action = 'payment_request_status' AND detail = 'id=3 sent->paid'`); n != 1 {
+		t.Errorf("expected one sent->paid audit for request 3")
+	}
+
 	// Unknown type: recorded only.
 	signedPost(t, h, []byte(`{"id":"evt_other","type":"customer.created","data":{"object":{}}}`))
 	if n := count(t, pool, `SELECT COUNT(*) FROM stripe_webhook_event WHERE event_id = 'evt_other'`); n != 1 {
