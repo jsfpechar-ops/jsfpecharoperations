@@ -64,23 +64,37 @@ def client(owner):
 
 
 class _FakePaymentLink:
-    """Strict SDK-16 shape: params dict only."""
+    """Strict SDK-16 shape: params dict, connected account in options (0622)."""
 
     def __init__(self) -> None:
         self.created: List[Dict[str, Any]] = []
+        self.options: List[Dict[str, Any]] = []
+        self.retrieved: List[str] = []
+        self.active = True
 
     def create(self, params=None, options=None):
         assert params is not None, "payment_links.create must pass params="
+        assert "stripe_account" not in params, "stripe_account belongs in options="
+        assert options and options.get("stripe_account"), "connected account missing"
         self.created.append(params)
+        self.options.append(options)
         return {"id": "plink_test_1", "url": "https://buy.stripe.com/test_1"}
+
+    def retrieve(self, link_id, options=None):
+        assert options and options.get("stripe_account"), "connected account missing"
+        self.retrieved.append(link_id)
+        return {"id": link_id, "url": "https://buy.stripe.com/test_1", "active": self.active}
 
 
 @pytest.fixture
 def fake_link(monkeypatch, stripe_env):
     link = _FakePaymentLink()
 
-    class _Client:
+    class _V1:
         payment_links = link
+
+    class _Client:
+        v1 = _V1()
 
     monkeypatch.setattr(stripe_connect, "_client", lambda: _Client())
     return link
@@ -123,9 +137,31 @@ def test_send_creates_payment_link_on_connected_account(owner, fake_link):
     item = params["line_items"][0]
     assert item["price_data"]["currency"] == "czk"
     assert item["price_data"]["unit_amount"] == 80000
-    assert params["stripe_account"] == "acct_rails"
+    assert fake_link.options[0] == {"stripe_account": "acct_rails"}
+    assert params["restrictions"] == {"completed_sessions": {"limit": 1}}
+    assert params["metadata"] == {"payment_request_id": str(rid)}
+    assert item["price_data"]["product_data"]["name"] == f"Úklid (žádost č. {rid})"
     row = payment_request.get(rid)
     assert row["stripe_payment_link_id"] == "plink_test_1"
+
+
+def test_resend_reuses_the_active_link(owner, fake_link):
+    _complete_account(owner)
+    rid = _draft(owner, rail="card")
+    first = payment_links.send(rid)
+    second = payment_links.send(rid)
+    assert first == second
+    assert len(fake_link.created) == 1
+    assert fake_link.retrieved == ["plink_test_1"]
+
+
+def test_resend_creates_new_link_when_old_inactive(owner, fake_link):
+    _complete_account(owner)
+    rid = _draft(owner, rail="card")
+    payment_links.send(rid)
+    fake_link.active = False
+    payment_links.send(rid)
+    assert len(fake_link.created) == 2
 
 
 def test_send_refused_without_complete_account(owner, stripe_env):
@@ -139,8 +175,8 @@ def test_webhook_paid_flips_request(owner, stripe_env, fake_link):
     payment_links.send(rid)
     event = {
         "id": "evt_rail_1",
-        "type": "payment_link.paid",
-        "data": {"object": {"payment_link": "plink_test_1"}},
+        "type": "checkout.session.completed",
+        "data": {"object": {"payment_link": "plink_test_1", "payment_status": "paid"}},
     }
     stripe_connect.process_event(event)
     assert payment_request.get(rid)["status"] == "paid"
@@ -148,6 +184,18 @@ def test_webhook_paid_flips_request(owner, stripe_env, fake_link):
     stripe_connect.process_event(event)
     row = db.query_one("SELECT id FROM stripe_webhook_event WHERE event_id = ?", ("evt_rail_1",))
     assert row is not None
+
+
+def test_webhook_unpaid_checkout_does_not_flip(owner, stripe_env, fake_link):
+    _complete_account(owner)
+    rid = _draft(owner, rail="card")
+    payment_links.send(rid)
+    stripe_connect.process_event({
+        "id": "evt_rail_unpaid",
+        "type": "checkout.session.completed",
+        "data": {"object": {"payment_link": "plink_test_1", "payment_status": "unpaid"}},
+    })
+    assert payment_request.get(rid)["status"] == "draft"
 
 
 def test_route_send_mails_the_link_once(owner, client, stripe_env, fake_link):

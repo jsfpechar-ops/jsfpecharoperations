@@ -179,6 +179,12 @@ def test_more_preserves_each_page_kind_and_sheet_links_work(base, engine, width,
     with sync_api.sync_playwright() as playwright:
         browser, page = _open(playwright, base, width, path, engine)
         try:
+            requests, responses, console, errors, navs = [], [], [], [], []
+            page.on("request", lambda r: requests.append(r.method + " " + r.url) if "/stay-fees" in r.url else None)
+            page.on("response", lambda r: responses.append(str(r.status) + " " + r.url) if "/stay-fees" in r.url else None)
+            page.on("console", lambda m: console.append(m.type + ": " + m.text))
+            page.on("pageerror", lambda e: errors.append(str(e)))
+            page.on("framenavigated", lambda f: navs.append(f.url) if f == page.main_frame else None)
             original_url = page.url
             for close_method in ("button", "escape", "search"):
                 page.locator('[data-sheet-open="more-sheet"] svg').click()
@@ -207,7 +213,29 @@ def test_more_preserves_each_page_kind_and_sheet_links_work(base, engine, width,
             # The opt-out belongs to the trigger, so destinations in the sheet still work.
             page.locator('[data-sheet-open="more-sheet"]').click()
             page.locator('#more-sheet a[href="/stay-fees"]').click()
-            page.wait_for_url("**/stay-fees**")
+            try:
+                page.wait_for_url("**/stay-fees**")
+            except Exception as exc:
+                def probe(fn):
+                    try:
+                        return fn()
+                    except Exception as inner:
+                        return "failed: " + str(inner)
+                lines = [
+                    f"SHELL-DIAG engine={engine} width={width} path={path}",
+                    "error: " + str(exc),
+                    "page.url: " + probe(lambda: page.url),
+                    "readyState: " + str(probe(lambda: page.evaluate("document.readyState"))),
+                    "more-sheet open: " + str(probe(lambda: page.locator("#more-sheet").evaluate("(d) => d.open"))),
+                    "main aria-busy: " + str(probe(lambda: page.locator("#main-content").get_attribute("aria-busy"))),
+                    "requests: " + repr(requests),
+                    "responses: " + repr(responses),
+                    "console: " + repr(console),
+                    "pageerrors: " + repr(errors),
+                    "framenavigated: " + repr(navs),
+                ]
+                print("\n".join(lines), flush=True)
+                raise
             assert page.locator("#main-content").is_visible()
         finally:
             browser.close()

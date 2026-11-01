@@ -464,6 +464,7 @@
     }
 
     document.querySelectorAll("[data-birth-date]").forEach(function (input) {
+      if (!claimNode(input, "initBirthDateInputs")) return;
       function apply(value) {
         var digits = String(value || "").replace(/\D/g, "").slice(0, 8);
         var formatted = formatDigits(digits);
@@ -575,6 +576,7 @@
 
   function initAutomationFields() {
     document.querySelectorAll("[data-automation-mode]").forEach(function (select) {
+      if (!claimNode(select, "initAutomationFields")) return;
       syncAutomationHours(select);
       select.addEventListener("change", function () { syncAutomationHours(select); });
     });
@@ -585,6 +587,7 @@
   // visible Save button sends without JS; shows "Saved" or the server's error.
   function initInlineTiming() {
     document.querySelectorAll("form[data-inline-timing]").forEach(function (form) {
+      if (!claimNode(form, "initInlineTiming")) return;
       if (!window.fetch || !window.FormData) return;
       var select = form.querySelector("[data-timing-mode]");
       var hours = form.querySelector("[data-timing-hours-input]");
@@ -644,6 +647,7 @@
 
   function initControllerFields() {
     document.querySelectorAll("[data-controller-same-toggle]").forEach(function (checkbox) {
+      if (!claimNode(checkbox, "initControllerFields")) return;
       var panel = document.getElementById(checkbox.getAttribute("data-controller-target"));
       if (!panel) return;
       var select = panel.querySelector("select");
@@ -663,6 +667,7 @@
     var source = document.getElementById("fee-copy-source");
     var button = document.getElementById("fee-copy-apply");
     if (!source || !button) return;
+    if (!claimNode(button, "initFeeTemplateCopy")) return;
     button.addEventListener("click", function () {
       var option = source.options[source.selectedIndex];
       if (!option || !option.value) return;
@@ -698,8 +703,10 @@
   function initHousebookPdfExport() {
     var dialog = document.getElementById("housebook-pdf-dialog");
     if (!dialog) return;
+    if (!claimNode(dialog, "initHousebookPdfExport")) return;
     var form = document.getElementById("housebook-pdf-form");
     document.querySelectorAll("[data-housebook-pdf-export]").forEach(function (button) {
+      if (!claimNode(button, "initHousebookPdfExport")) return;
       button.addEventListener("click", function (event) {
         event.preventDefault();
         var pageFrom = document.getElementById("from");
@@ -727,11 +734,13 @@
   function initCsvExport() {
     var dialog = document.getElementById("csv-export-dialog");
     if (!dialog) return;
+    if (!claimNode(dialog, "initCsvExport")) return;
     var form = document.getElementById("csv-export-form");
     var pending = { base: "", params: "", scopeLabel: "" };
     var scope = dialog.querySelector("[data-csv-scope-label]");
 
     document.querySelectorAll("[data-csv-export]").forEach(function (button) {
+      if (!claimNode(button, "initCsvExport")) return;
       button.addEventListener("click", function (event) {
         event.preventDefault();
         pending.base = button.getAttribute("data-csv-export") || "";
@@ -914,6 +923,7 @@
 
   function initTogglePanels() {
     document.querySelectorAll("[data-toggle-panel]").forEach(function (button) {
+      if (!claimNode(button, "initTogglePanels")) return;
       button.addEventListener("click", function () {
         var panelId = button.getAttribute("data-toggle-panel");
         var panel = document.getElementById(panelId);
@@ -931,6 +941,7 @@
       });
     });
     document.querySelectorAll("[data-close-panel]").forEach(function (button) {
+      if (!claimNode(button, "initTogglePanels")) return;
       button.addEventListener("click", function () {
         var panel = button.closest(".action-panel");
         if (panel) panel.classList.add("hidden");
@@ -938,7 +949,7 @@
     });
     if (new URLSearchParams(window.location.search).get("new") === "1") {
       var addPanel = document.getElementById("add-stay-panel");
-      if (addPanel) {
+      if (addPanel && claimNode(addPanel, "initTogglePanels")) {
         addPanel.classList.remove("hidden");
         var first = addPanel.querySelector("input, select, textarea");
         if (first) first.focus();
@@ -982,6 +993,7 @@
 
   function initNotifications() {
     document.querySelectorAll("form[data-notification-dismiss]").forEach(function (form) {
+      if (!claimNode(form, "initNotifications")) return;
       form.addEventListener("submit", function (event) {
         event.preventDefault();
         var notification = form.closest("[data-notification]");
