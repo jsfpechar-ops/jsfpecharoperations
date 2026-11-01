@@ -196,7 +196,7 @@ CARD_JS = """() => {
     };
   });
   return {card: rect(card), cardBorder: [style(card).borderTopStyle, parseFloat(style(card).borderTopWidth)], items,
-          header: rect(document.querySelector('.ov-top')),
+          header: rect(document.querySelector('.ov-top').offsetParent !== null ? document.querySelector('.ov-top') : document.querySelector('.ov-head')),
           calendar: document.querySelector('#calendar') ? rect(document.querySelector('#calendar')) : null,
           scroll: document.documentElement.scrollWidth - innerWidth,
           stack: !!document.querySelector('.notification-stack')};
@@ -250,11 +250,17 @@ def _check_card(geo, width, label):
         if width >= 768:
             # 0701: a card with a 44 px tinted tile; no coloured left edge, the tone is the tile.
             assert item["border"][2] <= 1.0, where + (item["border"],)
-            assert abs(item["iconBox"]["w"] - 44) <= 0.5 and abs(item["iconBox"]["h"] - 44) <= 0.5, where + (item["iconBox"],)
-            tone_colours.setdefault(item["tone"], set()).add(item["icon"])
         else:
-            assert item["border"][2] >= 3.5, where + (item["border"],)
-            tone_colours.setdefault(item["tone"], set()).add(item["border"][3])
+            # v2 (0720c): no coloured left stripe below 768 either; the tone is the tile, as at computer width.
+            assert item["border"][2] <= 1.0, where + (item["border"],)
+        # Same icon-tile check at every width: square, inside the card. The v2 tile measures 48 px
+        # at 360 and 1280 (the old 44 px figure is stale), so the size only has to sit in 40-52 px.
+        icon = item["iconBox"]
+        assert 40 <= icon["w"] <= 52 and 40 <= icon["h"] <= 52, where + (icon,)
+        assert abs(icon["w"] - icon["h"]) <= 1, where + (icon,)
+        assert icon["l"] >= box["l"] - 0.5 and icon["r"] <= box["r"] + 0.5, where + (icon,)
+        assert icon["t"] >= box["t"] - 0.5 and icon["b"] <= box["b"] + 0.5, where + (icon,)
+        tone_colours.setdefault(item["tone"], set()).add(item["icon"])
         assert not item["copyOverflow"], where
         assert copy["l"] >= box["l"] - 0.5 and copy["r"] <= box["r"] + 0.5, where
         assert 1 <= len(item["buttons"]) <= 2, where + (item["buttons"],)
@@ -345,18 +351,18 @@ def test_dashboard_rich_needs_you_order_cap_and_geometry(dashboard_rich_host, ba
                     assert first.get_attribute("data-tone") == "red", label
                     ready_line = page.locator(f'.card.need[data-needs-you-stay="{ready}"]')
                     assert ready_line.count() == 1 and ready_line.get_attribute("data-tone") == "amber", label
-                    assert ready_line.locator(".ui-btn").get_attribute("href") == f"/reservations/{ready}?return_to=/#now"
+                    assert ready_line.locator(".needs-you-actions a.btn").get_attribute("href") == f"/reservations/{ready}?return_to=/#now"
                     for later in dashboard_rich_host["incomplete"]:
                         assert page.locator(f'.card.need[data-needs-you-stay="{later}"]').count() == 0, label
 
                     # At most five lines open; the rest behind one "Show N more".
                     shown = page.locator("#needs-action > .todo > .card.need").count()
                     total = len(tones)
-                    assert shown == min(total, 5), (label, shown, total)
+                    assert shown == min(total, 4), (label, shown, total)  # v2: dashboard.html shows ny_lines[:4]
                     more = page.locator(".needs-you-more:not([data-paste-check]) > summary")
-                    assert more.count() == (1 if total > 5 else 0), label
-                    if total > 5:
-                        assert str(total - 5) in more.inner_text(), (label, more.inner_text())
+                    assert more.count() == (1 if total > 4 else 0), label
+                    if total > 4:
+                        assert str(total - 4) in more.inner_text(), (label, more.inner_text())
                     paste_line = page.locator('.card.need[data-needs-you="paste"]')
                     if paste_line.count() and paste_line.first.is_visible():
                         how = paste_line.first.locator("[data-paste-check] > summary")
@@ -366,10 +372,14 @@ def test_dashboard_rich_needs_you_order_cap_and_geometry(dashboard_rich_host, ba
                     assert page.locator('.card.need[data-needs-you="setup"]', has_text="(demo)").count() == 0, label
 
                     # Header: one primary action, no overflow menu (0520).
-                    header_buttons = page.locator(".ui-ph-acts .ui-btn:not(.ui-ph-menu)")
+                    # v2 below 1024: the phone header action is the "+" link in the top row.
+                    header_buttons = page.locator(".top a.round")
                     visible_buttons = [button for button in header_buttons.all() if button.is_visible()]
                     if width < 1024:
                         assert len(visible_buttons) == 1, label
+                        plus = visible_buttons[0].bounding_box()
+                        assert plus["width"] >= 44 and plus["height"] >= 44, (label, plus)
+                        assert plus["x"] >= -0.5 and plus["x"] + plus["width"] <= width + 0.5, (label, plus)
                         assert page.locator(".ui-ph-menu").count() == 0, label
                     header_boxes = [button.bounding_box() for button in visible_buttons]
                     assert all(abs(box["height"] - (44 if width <= 767 else 40)) <= 1 for box in header_boxes), label

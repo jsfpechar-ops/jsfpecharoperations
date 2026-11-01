@@ -58,3 +58,9 @@ Commits: c1c61f1 (design shell, green), then the quiet dashboard and wide geomet
 - Ruff (App/app App/tests App/tools, E9,F63,F7,F82,F401,F841): `All checks passed!` after removing an unused `geometry` assignment in the 760 test.
 
 Left to do: (1) quiet dashboard stripe check (decision); (2) rail width 64.08 on /settings (decision); (3) test_dashboard_phone_browser.py and test_onboarding/test_navigation/test_0705 (not in session 3 scope, see sessions 1-2); (4) test_door_code_window_browser.py: WebKit only locally.
+
+## Session 4
+
+- Quiet dashboard browser test: v2 tile check (square, 40-52 px, inside card) at every width; lane header falls back to .ov-head when .ov-top is hidden; rich test uses .needs-you-actions a.btn, Show-more cap of 4 (dashboard ny_lines[:4]), and the phone header action .top a.round (44 px square, inside viewport).
+- Wide geometry test: sidebar rail width within 1 px of 64 (sub-pixel rounding on /settings; rail token is 64 px).
+- Ruff (E9,F63,F7,F82,F401,F841): all checks passed.

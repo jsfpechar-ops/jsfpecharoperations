@@ -974,9 +974,10 @@ def test_sidebar_click_slides_the_rail_and_flips_the_toggle(wide_host, wide_base
             assert "width" in sample["transitions"], sample
             assert "margin-left" in sample["mainTransitions"], sample
             shut = _settled(page)
-            assert shut["width"] == 64 and shut["marginLeft"] == 64, shut
+            # sub-pixel rounding on /settings (measured 64.08 and 64.64); the rail token is 64 px
+            assert abs(shut["width"] - 64) <= 1 and abs(shut["marginLeft"] - 64) <= 1, shut
             assert shut["iconFlipped"], shut
-            assert 0 <= shut["toggle"]["left"] and shut["toggle"]["right"] <= 64, shut
+            assert 0 <= shut["toggle"]["left"] and shut["toggle"]["right"] <= round(shut["width"]), shut
             # Icons keep their x through the slide, so only the edge moves.
             assert abs(shut["navIcon"]["left"] - open_facts["navIcon"]["left"]) <= 3, (open_facts, shut)
             assert page.evaluate("localStorage.getItem('ubyhost-sidebar-collapsed')") == "1"
