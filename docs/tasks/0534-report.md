@@ -112,3 +112,33 @@ Deviations:
 
 Owner steps: none. Next executor: diagnose the 1024 px cs overflow (list elements with right edge over 1024, include the fixed `.savebar`), then steps 4 to 6.
 
+
+### 0535 steps 3b-4 (executor report)
+
+Status: blocked. Done: step 3b (1024 px fits), step 4. Left: step 5 (0710 `property` PAGES entry and placeholder), step 6 (screenshots), the design_lint run, and the 0710 run from brief §6.
+
+Commits: `29fa01e` 0535 step 3b: fits at 1024. `715b7d4` 0535 step 4: property page tests on the one-page markup. This commit: this report section.
+
+Step 3b cause: the probe (every element with right > 1024, cs, rail expanded) found only the injected `copy-state-icon` span and its svg inside the guest-card copy button (`body.v2 .guest-card .copy-btn`), about 77 px in flow. The `.form` grid and `.savebar` were not offenders. Fix: the icon is absolute and hidden until `.copied`, in the 0535 step 3 block of app2.css. Key bumped to `20261101-0535e`, manifest written.
+- `tests/test_host_ux_acceptance.py -k fits`: 1 passed, 0 skipped (101 s).
+
+Step 4 tails:
+- `tests/test_0534_property_page_v2.py tests/test_0531_property_page.py tests/test_property_hub.py tests/test_property_readiness.py tests/test_validation_i18n.py tests/test_host_ux_acceptance.py tests/test_no_dead_internal_links.py tests/test_static_versions.py`: 70 passed, 0 skipped (112 s).
+- `ruff check app tests tools --select E9,F63,F7,F82,F401,F841`: All checks passed.
+- `scripts/context_lint.py`: OK.
+- design_lint: not run (out of calls).
+
+Section 8 (tests changed):
+- `tests/test_host_ux_acceptance.py` `test_page_families_through_rail_cards_search_and_back`: `.property-tabs` clicks replaced by `details#sec-basics[open]` and the `/entities?edit=` link in the operator block. The search trigger is `[data-command-open]:visible` (v2 shell `button.search`; `.ui-search-row` is the old sidebar).
+- `test_keyboard_reaches_rail_tabs_and_editor_with_visible_focus`: the `?view=overview|bookings|settings` loop replaced by `#sec-basics` and `#sec-lock` anchors in the tab-order set; `details#sec-lock[open]` asserted after the old `?view=settings&section=lock` link; search trigger selector as above.
+- `test_without_javascript_tabs_reload_and_the_shared_editors_save`: tab click replaced by a `details#sec-basics[open]` assert (no JS needed).
+- `test_issued_invoice_snapshot_survives_a_shared_business_edit` (operator name): asserts the selected `<option>` carries the entity name and the hint link is `/entities?edit=<id>` (no `next`).
+- `tests/test_0534_property_page_v2.py`: added `test_css_order_is_the_mockup_order`, `test_rendered_sections_show_in_mockup_order`, `test_aside_has_cards_and_links_to_each_section`.
+
+Deviations:
+- The 1024 px cause was the guest-card copy icon, not the grid or savebar as the brief guessed.
+- The DOM order test (`test_sections_are_details_in_order`) is unchanged: order is CSS only, so DOM order still lists archive second.
+- The keyboard test's tab-order loop (60 tabs) still reached `#sec-basics` and `#sec-lock` in the aside.
+
+Owner steps: none.
+Next executor: step 5 (add `property` to PAGES in `App/tests/v2_mockup.py` with `{first_property}`, placeholder in `test_0710_v2_mockup_match_browser.py`, run 0710, fix page-own CSS diffs at 1024/1280/1440), then step 6 (screenshots), then design_lint and the report's remaining tails.
