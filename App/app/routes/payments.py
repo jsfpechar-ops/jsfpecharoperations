@@ -353,4 +353,7 @@ async def payments_consent_accept(request: Request):
     if str(form.get("agree") or "") != "1":
         return _back("/payments/consent", err=_flash(request, "payments.err.consent"))
     payments_consent.record(int(workspace["id"]))
-    return RedirectResponse("/payments/connect/start", status_code=303)
+    # 0712: never redirect a form POST to Stripe. The CSP form-action 'self'
+    # blocks a form whose redirect chain leaves our origin (blank page). Back
+    # to /payments, where "Open Stripe" is a plain link.
+    return _back("/payments", msg=_flash(request, "payments.consent.saved"))
