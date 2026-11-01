@@ -27,6 +27,6 @@ From `App/`: `.venv/bin/python -m pytest tests/test_admin_operations.py tests/te
 ## 7. Acceptance
 Four tabs on every admin page; Today lists only problems or says All clear; System blocks collapsed unless failing; Incidents works inside System; tests pass, 0 skipped.
 ## 8. Stop and ask
-Stop if 0480 or 0481 is not on main, or a test outside §3 fails.
+Stop if 0490 or 0491 is not on main, or a test outside §3 fails.
 ## 9. Report
 `docs/tasks/0492-report.md`, under 60 lines: files, both pytest tails, `git diff --stat origin/main`.
