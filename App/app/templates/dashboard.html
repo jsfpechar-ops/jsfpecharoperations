@@ -60,7 +60,7 @@
   </div>
   <a class="btn" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">{{ t('stays.add_stay') }}</a></div>
 
-  <section id="needs-action" data-needs-you-card aria-labelledby="needs-you-title">
+  <section id="needs-action" data-needs-you-card data-dashboard-refresh="stats" aria-labelledby="needs-you-title">
     <h2 id="needs-you-title">{{ t('needs_you.title') }}</h2>
     <div class="todo ov-section">
     {% if ny_lines %}
@@ -91,7 +91,7 @@
   {% if cal_view %}{% include "_dashboard_calendar.html" %}{% endif %}
 
   <h2>{{ t('dashboard.today.title') }}</h2>
-  <div class="card"><table><thead><tr><th>{{ t('archive.col.guest') }}</th><th>{{ t('stay_fees.col.property') }}</th><th>{{ t('host.stay_dates') }}</th><th>{{ t('filter.status') }}</th><th></th></tr></thead><tbody>
+  <div class="card" data-dashboard-refresh="work"><table><thead><tr><th>{{ t('archive.col.guest') }}</th><th>{{ t('stay_fees.col.property') }}</th><th>{{ t('host.stay_dates') }}</th><th>{{ t('filter.status') }}</th><th></th></tr></thead><tbody>
   {% for row in today_rows %}
     {% set reservation = row.reservation %}{% set progress = row.progress %}{% set cell = row.deadline_cell %}
     {% set stay_label = reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else reservation.internal_name %}
