@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>UbyHost phone v2 (approved 2026-11-01)</title>
+<!--
+  Repo copy of the phone v2 design Josef approved on 2026-11-01 21:15 ("Airbnb style", app-wide).
+  Source: ux-redesign/phone-v2/today-menu-v2.html in the project files.
+  Class names are the app's, so the 0710 mockup-match test compares like with like.
+  Departures from the draft (orchestrator, 0729): 20 px side gutter (the app's), no bell (no notifications page),
+  one avatar per stay (no "+1"), no third detail line on need cards (needs-you lines carry a status and a stay name).
+  No web fonts or third-party requests: Manrope falls back to system-ui here, as in ubyhost-phone-v1.html.
+-->
+<style>
+:root{--acc:#d0452d;--acc2:#b83d28;--accs:#fdece8;--ink:#1c1c1a;--ink2:#55554f;--ink3:#6b6b65;--line:#ebebe7;--soft:#f4f3ef;--ok:#167044;--oks:#e6f5ec;--warn:#8a5200;--warns:#fff4d6;--bad:#b42318;--bads:#fdecea}
+*{box-sizing:border-box}
+body{margin:0;background:#efeee9;font-family:Manrope,system-ui,sans-serif;color:var(--ink);font-size:15px;line-height:1.4}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+svg.i{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* frame */
+.stage{display:flex;justify-content:center;padding:24px}
+.phone{position:relative;width:390px;height:844px;background:#fff;border-radius:44px;overflow:hidden;box-shadow:0 0 0 10px #1c1c1a,0 24px 60px rgba(0,0,0,.25)}
+.scr{position:absolute;inset:44px 0 0;display:none;flex-direction:column}
+.scr.on{display:flex}
+.body{flex:1;overflow-y:auto;padding:0 20px 110px}
+@media (max-width:480px){body{background:#fff}.stage{padding:0}.phone{width:100vw;height:100dvh;border-radius:0;box-shadow:none}.scr{inset:0}}
+
+/* shared phone v2 parts */
+.ph-top{padding-top:8px}
+.seg{display:flex;gap:10px;justify-content:center;margin:0 0 28px}
+.seg a{display:inline-flex;align-items:center;min-height:44px;padding:0 20px;border-radius:999px;background:var(--soft);color:var(--ink);font-weight:600;font-size:15px}
+.seg a.on{background:var(--ink);color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+.hl{font-size:30px;line-height:1.15;font-weight:800;letter-spacing:-.02em;text-align:center;margin:0 8px 28px}
+.hl.done{margin-top:120px}
+.hl-sub{text-align:center;color:var(--ink3);font-size:16px;margin:-16px 0 28px}
+h2.sec{font-size:13px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin:26px 0 12px;display:flex;justify-content:center;align-items:baseline}
+.card{margin:0 0 16px;background:#fff;border-radius:24px;padding:22px;box-shadow:0 6px 24px rgba(0,0,0,.08),0 0 0 1px rgba(0,0,0,.03);border:0}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;border-radius:12px;background:var(--acc);color:#fff;font-weight:700;font-size:16px}
+.btn.line{background:#fff;color:var(--ink);border:1.5px solid var(--ink)}
+
+/* need card: a tone label first, then the name in bold, then one full-width button */
+.need .h{display:flex}
+.need .t{display:block;font-size:13px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;line-height:1.4}
+.need[data-tone="red"] .t{color:var(--acc2)}.need[data-tone="amber"] .t{color:var(--warn)}
+.need small{display:block;font-size:20px;font-weight:800;letter-spacing:-.01em;color:var(--ink);line-height:1.3;margin-top:2px}
+.needs-you-actions{margin-top:14px}
+
+/* stay card: centred, one big avatar */
+.hs{display:flex;gap:12px}
+.hs .card{flex:1 1 auto;margin:0;display:flex;flex-direction:column;align-items:center;text-align:center;padding:26px 22px 28px}
+.kind{font-size:15px;font-weight:600}.kind.in{color:var(--ok)}.kind.out{color:var(--ink2)}
+.who{display:flex;flex-direction:column;align-items:center}
+.av{width:72px;height:72px;border-radius:50%;background:var(--accs);color:var(--acc2);display:grid;place-items:center;font-weight:800;font-size:26px;border:3px solid #fff;margin:18px 0 16px}
+.nm{font-size:22px;font-weight:800;letter-spacing:-.01em}
+.meta{color:var(--ink3);font-size:15px;margin-top:4px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:5px 10px;border-radius:999px;width:max-content;margin-top:14px}
+.pill:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.p-warn{background:var(--warns);color:var(--warn)}
+
+/* menu */
+.mh{display:flex;align-items:center;justify-content:space-between;margin:6px 0 24px}
+.mh .big{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.15;margin:0}
+.me-av{width:44px;height:44px;border-radius:50%;background:var(--accs);color:var(--acc2);display:grid;place-items:center;font-weight:800}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.tile{background:#fff;border-radius:20px;box-shadow:0 6px 24px rgba(0,0,0,.08),0 0 0 1px rgba(0,0,0,.03);padding:16px 16px 18px;height:150px;display:flex;flex-direction:column}
+.tile b{font-size:16px}.tile small{color:var(--ink3);font-size:14px;margin-top:2px}
+.tile .v{margin-top:auto;font-size:32px;font-weight:800;letter-spacing:-.02em}
+.promo{background:var(--soft);border-radius:20px;padding:18px;display:flex;gap:14px;align-items:center;margin-bottom:10px}
+.promo .pi{width:44px;height:44px;border-radius:12px;background:#fff;display:grid;place-items:center;color:var(--acc);flex:none}
+.promo b{font-size:17px;display:block}.promo small{color:var(--ink3);font-size:14px}
+.list.plain .row{display:flex;align-items:center;gap:18px;min-height:56px;padding:15px 0;font-size:17px;font-weight:500;width:100%;text-align:left}
+.list.plain .row > svg.i:first-child{width:26px;height:26px;stroke-width:1.6}
+.list.plain .row .t{flex:1;min-width:0}
+.list.plain .badge{background:var(--acc);color:#fff;font-size:12px;font-weight:800;border-radius:999px;min-width:22px;height:22px;display:grid;place-items:center;padding:0 6px}
+.list.plain .chev{width:20px;height:20px;color:var(--ink3)}
+.menu-logout{margin-top:8px;border-top:1px solid var(--line);padding-top:8px}
+
+/* tab bar (unchanged from ubyhost-phone-v1.html) */
+.tabs{position:absolute;left:0;right:0;bottom:0;height:84px;background:#fff;border-top:1px solid var(--line);display:flex;padding:6px 4px 22px;z-index:5}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:700;color:var(--ink3);position:relative;min-height:56px}
+.tab.on{color:var(--acc2)}.tab.on svg.i{stroke-width:2.2}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-today" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></symbol>
+  <symbol id="i-stays" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.8c1.6.8 2.6 2.6 3 5.2"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-brush" viewBox="0 0 24 24"><path d="M14 3 8 13M6 13h9l2 8H4z"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6"/></symbol>
+  <symbol id="i-card" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14M12 17.5v.5"/></symbol>
+  <symbol id="i-out" viewBox="0 0 24 24"><path d="m16 17 5-5-5-5M21 12H9M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></symbol>
+</defs></svg>
+
+<div class="stage"><div class="phone">
+
+<section class="scr on" data-s="dnes"><div class="body">
+  <div class="ph-top">
+    <nav class="seg"><a class="on" href="#">Today</a><a href="#">Upcoming</a></nav>
+    <h1 class="hl">2 things need you today</h1>
+  </div>
+  <div class="card need" data-tone="red"><div class="h"><div><b class="t">Police deadline passed</b><small>Vinohrady Flat</small></div></div>
+    <div class="needs-you-actions"><a class="btn" href="#">Send the report</a></div></div>
+  <div class="card need" data-tone="amber"><div class="h"><div><b class="t">Guest form missing</b><small>River Studio</small></div></div>
+    <div class="needs-you-actions"><a class="btn line" href="#">Send the guest link</a></div></div>
+  <h2 class="sec">Today</h2>
+  <div class="hs"><a class="card" href="#"><span class="kind in">Arrival</span>
+    <div class="who"><div class="av">M</div><div><div class="nm">Meyer</div><div class="meta">3 nights · 2 guests</div></div></div>
+    <span class="pill p-warn">Waiting for guests</span></a></div>
+</div></section>
+
+<section class="scr" data-s="empty"><div class="body">
+  <div class="ph-top">
+    <nav class="seg"><a class="on" href="#">Today</a><a href="#">Upcoming</a></nav>
+    <h1 class="hl done">All done. Nothing needs you today.</h1>
+    <p class="hl-sub">Next arrival: Friday 7 November 2026, River Studio</p>
+  </div>
+</div></section>
+
+<section class="scr" data-s="menu"><div class="body">
+  <div class="mh"><h1 class="big">Menu</h1><a class="me-av" href="#">J</a></div>
+  <div class="tiles">
+    <a class="tile" href="#"><b>Guests</b><small>This month</small><span class="v">14</span></a>
+    <a class="tile" href="#"><b>Police reports</b><small>This month</small><span class="v">14</span></a>
+  </div>
+  <a class="promo" href="#"><span class="pi"><svg class="i"><use href="#i-plus"/></svg></span><span><b>Add a property</b><small>Get it ready for guests</small></span></a>
+  <nav class="list plain">
+    <a class="row" href="#"><svg class="i"><use href="#i-brush"/></svg><span class="t">Cleaning</span><span class="badge">1</span><svg class="i chev"><use href="#i-chev"/></svg></a>
+    <a class="row" href="#"><svg class="i"><use href="#i-receipt"/></svg><span class="t">Stay fees</span><svg class="i chev"><use href="#i-chev"/></svg></a>
+    <a class="row" href="#"><svg class="i"><use href="#i-card"/></svg><span class="t">Payments</span><svg class="i chev"><use href="#i-chev"/></svg></a>
+    <a class="row" href="#"><svg class="i"><use href="#i-gear"/></svg><span class="t">Settings</span><svg class="i chev"><use href="#i-chev"/></svg></a>
+    <a class="row" href="#"><svg class="i"><use href="#i-help"/></svg><span class="t">Get help</span><svg class="i chev"><use href="#i-chev"/></svg></a>
+  </nav>
+  <form class="list plain menu-logout"><button class="row" type="button"><svg class="i"><use href="#i-out"/></svg><span class="t">Log out</span></button></form>
+</div></section>
+
+<nav class="tabs" aria-label="Main menu">
+  <a class="tab on" href="#"><svg class="i"><use href="#i-today"/></svg>Today</a>
+  <a class="tab" href="#"><svg class="i"><use href="#i-cal"/></svg>Calendar</a>
+  <a class="tab" href="#"><svg class="i"><use href="#i-stays"/></svg>Stays</a>
+  <a class="tab" href="#"><svg class="i"><use href="#i-home"/></svg>Properties</a>
+  <a class="tab" href="#"><svg class="i"><use href="#i-menu"/></svg>Menu</a>
+</nav>
+</div></div>
+</body>
+</html>
