@@ -262,7 +262,7 @@ Not done: no push. Screenshots for the CSS change not taken (step 6 not in this 
 
 ## 0535 steps 5-6
 
-Status: blocked (executor, Haiku 5.5). Step 5 done; step 6 (screenshots) not started: the 25-call limit was reached.
+Status: review (executor, Haiku 5.5). Steps 5-6 done; step 6 screenshots are in `docs/tasks/screenshots-0535/`.
 
 Commit: `d7759b6` "0535 step 5: property page in the mockup test" (amended before push; not pushed).
 
@@ -281,9 +281,9 @@ Commands (from `App/`):
 - ruff `--select E9,F63,F7,F82,F401,F841` on app tests tools: `All checks passed!`
 - `scripts/design_lint.py`: `design lint: OK`. `scripts/context_lint.py`: `context lint: OK`.
 
-Not done (step 6, for the next session):
-- App `/apartments/<first property id>?lang=cs` at 1280 and 1024, full page, into `docs/tasks/screenshots-0535/`.
-- Mockup `prop` view at 1280 and 1024 (reduced motion, 800 ms wait, remove `.fontpick` before the shot), same folder.
-- Commit as `0535 step 6: screenshots`.
+Step 6 (screenshots, `docs/tasks/screenshots-0535/`):
+- `app-1280.png`, `app-1024.png`, `app-390.png`: `/apartments/<first property id>?lang=cs`, full page, via a temporary pytest file (deleted), 0710 seed and login, `_path()` for the id.
+- `mockup-1280.png`, `mockup-1024.png`: mockup view `prop`, reduced motion, 800 ms wait after the view switch, `.fontpick` removed from the DOM. The mockup shot is 1000 px tall, which is the whole view (checked by eye).
+- No other tracked PNG was rewritten.
 
 Owner steps left: none. Questions: none.
