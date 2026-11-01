@@ -91,3 +91,26 @@ def test_cleaning_page_never_gets_fixed_days(calendar_workspace, calendar_origin
         assert FIXED not in root_classes(page)
         context.close()
         browser.close()
+
+
+def test_overview_card_screenshot_with_several_stays(calendar_workspace, calendar_origin):
+    import os
+    from pathlib import Path
+    today = date.today()
+    properties = calendar_workspace["properties"]
+    for index, (first, last) in enumerate(((0, 2), (3, 6), (7, 10), (11, 13))):
+        make_stay(properties[index % len(properties)], (today + timedelta(days=first)).isoformat(),
+                  (today + timedelta(days=last)).isoformat())
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=1280)
+        page.goto(calendar_origin + "/?lang=cs")
+        page.wait_for_selector(".cal-event")
+        wait_loaded(page)
+        assert FIXED in root_classes(page)
+        directory = os.environ.get("UBYHOST_SHOTS_DIR")
+        if directory:
+            Path(directory).mkdir(parents=True, exist_ok=True)
+            page.locator(ROOT).screenshot(path=str(Path(directory) / "overview-0702-cs-1280-calendar.png"))
+        context.close()
+        browser.close()
