@@ -237,7 +237,7 @@ func QueueSubmissionProblemMail(ctx context.Context, pool *pgxpool.Pool, getenv 
 	}
 	return EnqueueMail(ctx, pool, OutboxMail{
 		Kind: "submission_problem", Key: key, ReservationID: reservationID,
-		ApartmentID: apt.ID, OwnerUserID: apt.OwnerUserID, To: to,
+		ApartmentID: &apt.ID, OwnerUserID: apt.OwnerUserID, To: to,
 		Subject: content.Subject, Text: content.Text, HTML: content.HTML,
 	})
 }
@@ -277,12 +277,14 @@ type OutboxMail struct {
 	Kind          string
 	Key           string
 	ReservationID *int64
-	ApartmentID   int64
+	ApartmentID   *int64
 	OwnerUserID   *int64
 	To            string
 	Subject       string
 	Text          string
 	HTML          string
+	// Payload, when set, is the encoded payload column and replaces Text and HTML.
+	Payload string
 }
 
 // EnqueueMail is mail.enqueue for one row. An existing idempotency key returns
@@ -305,7 +307,7 @@ func EnqueueMail(ctx context.Context, pool *pgxpool.Pool, m OutboxMail) (int64, 
 		 VALUES ($1, $2, $3, $4, $5, $6, NULL, $7, $8, 'queued', 0, $9, $9, $9)
 		 RETURNING id`,
 		m.Key, m.Kind, m.ReservationID, m.ApartmentID, m.OwnerUserID, m.To,
-		cutRunes(m.Subject, mailSubjectMax), mailPayload(m.Text, m.HTML), ts,
+		cutRunes(m.Subject, mailSubjectMax), m.payloadJSON(), ts,
 	).Scan(&id)
 	if err == nil {
 		return id, nil
@@ -368,3 +370,22 @@ func QueuePush(ctx context.Context, pool *pgxpool.Pool, getenv func(string) stri
 	}
 	return queued, nil
 }
+
+// payloadJSON is the payload column: Payload when set, else the text and html form.
+func (m OutboxMail) payloadJSON() string {
+	if m.Payload != "" {
+		return m.Payload
+	}
+	return mailPayload(m.Text, m.HTML)
+}
+
+// PyString is writePyString for callers outside this package: a Python str as
+// json.dumps writes it (ensure_ascii, double quotes).
+func PyString(s string) string {
+	var b strings.Builder
+	writePyString(&b, s)
+	return b.String()
+}
+
+// NormaliseEmail is mail.normalise_email for callers outside this package.
+func NormaliseEmail(raw string) string { return normaliseEmail(raw) }

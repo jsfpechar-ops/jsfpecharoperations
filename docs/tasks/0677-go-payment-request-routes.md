@@ -1,5 +1,5 @@
 # 0677: Go routes to create and send a payment request
-Status: todo
+Status: review
 Depends on: 0676 (hostweb), 0675 (`SendPaymentLink`) | Base commit: task/0676-go-hostweb | Branch: task/0677-go-payment-requests
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 70k tokens
 ## 1. Objective
