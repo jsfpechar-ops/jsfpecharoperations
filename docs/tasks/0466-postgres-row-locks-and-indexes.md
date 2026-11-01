@@ -1,5 +1,5 @@
 # 0466: PostgreSQL without the global writer lock: keyed row locks where the code needs them, poll-query indexes, iCal digest
-Status: todo
+Status: review
 Depends on: 0465 part a merged (goose files apply) | Base commit: main | Branch: task/0466a-poll-indexes-ical, then task/0466b-row-locks
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 80k tokens (per part; two parts, two sessions, two PRs)
 ## 1. Objective

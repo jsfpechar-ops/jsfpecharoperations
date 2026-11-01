@@ -954,6 +954,17 @@ def immediate():
         yield cur
 
 
+def lock_key(cur, name: str, key: int) -> None:
+    """Serialise writers of one row (name, key) until this transaction ends.
+
+    PostgreSQL only; on SQLite BEGIN IMMEDIATE already holds the one write lock.
+    Take several keys in ascending order to rule out deadlocks.
+    """
+    if getattr(config, "DB_BACKEND", "sqlite") != "postgresql":
+        return
+    cur.execute("SELECT pg_advisory_xact_lock(hashtext(?), ?)", (name, int(key)))
+
+
 def close_connections() -> None:
     """Close every shared connection (shutdown, and between tests).
 

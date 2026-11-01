@@ -73,6 +73,7 @@ def save_manual(apartment_id: int, value: str) -> None:
         raise ValueError("code")
     cleaning.ensure_property(apartment_id)
     with db.immediate() as cur:
+        db.lock_key(cur, "cleaning_property", apartment_id)
         pending = cur.execute(
             "SELECT c.* FROM cleaning_property p JOIN cleaning_code c ON c.id = p.pending_code_id "
             "WHERE p.apartment_id = ?", (apartment_id,),
@@ -105,6 +106,7 @@ def queue_permanent(home: dict, owner_id: int | None) -> int:
         raise ValueError("lock_setup")
     cleaning.ensure_property(home["id"])
     with db.immediate() as cur:
+        db.lock_key(cur, "cleaning_property", home["id"])
         prop = cur.execute(
             "SELECT pending_code_id FROM cleaning_property WHERE apartment_id = ?", (home["id"],),
         ).fetchone()
@@ -249,6 +251,7 @@ def process_queue() -> int:
 def remove(apartment_id: int) -> None:
     cleaning.ensure_property(apartment_id)
     with db.immediate() as cur:
+        db.lock_key(cur, "cleaning_property", apartment_id)
         prop = cur.execute("SELECT * FROM cleaning_property WHERE apartment_id = ?", (apartment_id,)).fetchone()
         for code_id in (prop["code_id"], prop["pending_code_id"]):
             if not code_id:
