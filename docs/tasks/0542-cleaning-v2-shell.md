@@ -34,3 +34,9 @@ Assertions in step 4 may be updated; list each. Stop if a shared-view test fails
 
 ## 9. Report
 `docs/tasks/0542-report.md`: Status, test and lint tails, diff stat, assertions changed, deviations.
+
+## 10. Addendum (orchestrator, after the first run)
+Steps 1-4 are committed. The design lint is fixed by the orchestrator (cleaning templates added to `V2_TEMPLATES` in `scripts/design_lint.py`). Left:
+1. Find which browser failures are this brief's: `git stash -u` is NOT allowed; instead create a worktree of the pre-0542 commit: `git worktree add /tmp/wt-pre 9e9f491 && ln -s /tmp/venv /tmp/wt-pre/App/.venv`, run there `.venv/bin/python -m pytest tests/test_dashboard_calendar_browser.py tests/test_cleaning_browser.py tests/test_host_language.py -q --tb=line -rfE 2>&1 | tail -30`, then the same in the main checkout. A test failing in both is not this brief's: list it in the report and leave it. Remove the worktree after (`git worktree remove --force /tmp/wt-pre`).
+2. Fix each failure that appears only in the main checkout, inside the section 3 files (likely: calendar markup or CSS on the v2 cleaning page). If the fix needs a file outside section 3, stop and report.
+3. Rerun section 6 in full and write `docs/tasks/0542-report.md`. Commit `0542 step 5`.
