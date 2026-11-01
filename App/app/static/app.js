@@ -481,6 +481,7 @@
     });
   }
 
+  var rowMenuLastOpenAt = 0;
   function initRowMenus() {
     function focusOutsideMenu(trigger, backwards) {
       var selector = "a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex='-1'])";
@@ -493,8 +494,6 @@
       if (next) { next.focus(); return true; }
       return false;
     }
-
-    var lastOpenAt = 0;
 
     function closeAll() {
       document.querySelectorAll(".row-menu-panel").forEach(closeRowMenu);
@@ -509,7 +508,7 @@
         var wasOpen = panel.classList.contains("is-open");
         closeAll();
         if (!wasOpen) {
-          lastOpenAt = Date.now();
+          rowMenuLastOpenAt = Date.now();
           positionRowMenu(trigger, panel);
           trigger.setAttribute("aria-expanded", "true");
           var firstItem = panel.querySelector('[role="menuitem"]');
@@ -542,25 +541,27 @@
       });
     });
 
-    document.addEventListener("click", function (event) {
-      if (event.target.closest(".row-menu, .row-menu-panel")) return;
-      closeAll();
-    });
+    if (claimNode(document, "initRowMenus")) {
+      document.addEventListener("click", function (event) {
+        if (event.target.closest(".row-menu, .row-menu-panel")) return;
+        closeAll();
+      });
 
-    document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape") closeAll();
-    });
-    window.addEventListener("resize", closeAll);
-    window.addEventListener("scroll", function () {
-      // Opening a menu can scroll the page (focus, scroll-into-view); keep it open and follow the trigger.
-      if (Date.now() - lastOpenAt < 400) {
-        var open = document.querySelector(".row-menu-panel.is-open");
-        var openTrigger = open ? rowMenuTrigger(open) : null;
-        if (openTrigger) positionRowMenu(openTrigger, open);
-        return;
-      }
-      closeAll();
-    }, true);
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") closeAll();
+      });
+      window.addEventListener("resize", closeAll);
+      window.addEventListener("scroll", function () {
+        // Opening a menu can scroll the page (focus, scroll-into-view); keep it open and follow the trigger.
+        if (Date.now() - rowMenuLastOpenAt < 400) {
+          var open = document.querySelector(".row-menu-panel.is-open");
+          var openTrigger = open ? rowMenuTrigger(open) : null;
+          if (openTrigger) positionRowMenu(openTrigger, open);
+          return;
+        }
+        closeAll();
+      }, true);
+    }
   }
 
   function syncAutomationHours(select) {
@@ -1866,11 +1867,10 @@
   }
 
   /* 0093 help: contextual "?" tips (macro help_tip). Hover/focus/tap open, Esc and outside click close. */
+  var helpTipState = { current: null, timer: null };
   function initHelpTips() {
     var tips = Array.prototype.slice.call(document.querySelectorAll("[data-help-tip]"));
     if (!tips.length) return;
-    var current = null;
-    var timer = null;
 
     function place(tip) {
       var btn = tip.querySelector(".help-tip-btn");
@@ -1893,25 +1893,26 @@
       tip.classList.remove("is-open");
       tip.removeAttribute("data-pinned");
       tip.querySelector(".help-tip-btn").setAttribute("aria-expanded", "false");
-      if (current === tip) current = null;
+      if (helpTipState.current === tip) helpTipState.current = null;
     }
     function open(tip, pinned) {
-      if (current && current !== tip) close(current);
-      window.clearTimeout(timer);
-      current = tip;
+      if (helpTipState.current && helpTipState.current !== tip) close(helpTipState.current);
+      window.clearTimeout(helpTipState.timer);
+      helpTipState.current = tip;
       tip.classList.add("is-open");
       tip.querySelector(".help-tip-btn").setAttribute("aria-expanded", "true");
       if (pinned) tip.setAttribute("data-pinned", "1");
       place(tip);
     }
     function closeSoon(tip) {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(function () {
+      window.clearTimeout(helpTipState.timer);
+      helpTipState.timer = window.setTimeout(function () {
         if (!tip.hasAttribute("data-pinned") && !tip.contains(document.activeElement)) close(tip);
       }, 150);
     }
 
     tips.forEach(function (tip) {
+      if (!claimNode(tip, "initHelpTips")) return;
       var btn = tip.querySelector(".help-tip-btn");
       tip.setAttribute("data-js", "1");
       tip.addEventListener("pointerenter", function (e) {
@@ -1933,18 +1934,20 @@
         else open(tip, true);
       });
     });
-    document.addEventListener("keydown", function (e) {
-      if (e.key !== "Escape" || !current) return;
-      var tip = current;
-      close(tip);
-      tip.querySelector(".help-tip-btn").focus();
-    });
-    document.addEventListener("click", function (e) {
-      if (current && !current.contains(e.target)) close(current);
-    });
-    function reflow() { if (current) place(current); }
-    window.addEventListener("resize", reflow);
-    window.addEventListener("scroll", reflow, true);
+    if (claimNode(document, "initHelpTips")) {
+      document.addEventListener("keydown", function (e) {
+        if (e.key !== "Escape" || !helpTipState.current) return;
+        var tip = helpTipState.current;
+        close(tip);
+        tip.querySelector(".help-tip-btn").focus();
+      });
+      document.addEventListener("click", function (e) {
+        if (helpTipState.current && !helpTipState.current.contains(e.target)) close(helpTipState.current);
+      });
+      function reflow() { if (helpTipState.current) place(helpTipState.current); }
+      window.addEventListener("resize", reflow);
+      window.addEventListener("scroll", reflow, true);
+    }
   }
 
 

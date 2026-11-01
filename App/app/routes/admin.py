@@ -4611,10 +4611,25 @@ def menu_view(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    from .. import claim, cleaning
+
+    cleaning_today = cleaning_week = None
+    try:
+        today = claim.prague_today()
+        events = cleaning.schedule(access.owner_id(request), today, today + timedelta(days=6))["events"]
+        cleaned = [e for e in events if e.get("kind") == "cleaning"]
+        cleaning_today = sum(1 for e in cleaned if str(e.get("start", ""))[:10] == today.isoformat())
+        cleaning_week = len(cleaned)
+    except Exception:
+        cleaning_today = cleaning_week = None
     return render(
         request,
         "menu.html",
-        {"apartments": access.apartments(request, "id, internal_name")},
+        {
+            "apartments": access.apartments(request, "id, internal_name"),
+            "cleaning_today": cleaning_today,
+            "cleaning_week": cleaning_week,
+        },
     )
 
 
