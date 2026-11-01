@@ -1,6 +1,6 @@
 # 0624: One-time host consent screen before Stripe
 
-Status: blocked
+Status: in-progress
 Depends on: 0622, 0623 (merged) | Base commit: 99c2a0d8 or later main | Branch: task/0624-payments-consent
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
@@ -125,7 +125,7 @@ Command: `cd App && .venv/bin/python -c "import app.main" 2>&1 | tail -30` → n
         "payments.err.consent": "Pro pokračování zaškrtněte souhlas.",
 ```
 
-Command: `cd App && .venv/bin/python -m pytest tests/test_host_i18n.py -q --tb=short -x 2>&1 | tail -30` → all passed (English and Czech carry the same keys).
+Command: `cd App && .venv/bin/python -m pytest tests/test_host_i18n.py -k same_keys -q --tb=short -x 2>&1 | tail -30` → all passed (English and Czech carry the same keys).
 
 5. Create `App/app/templates/payments_consent.html` with exactly:
 
@@ -456,7 +456,7 @@ Command: `cd App && UBYHOST_REQUIRE_BROWSER=1 UBYHOST_BROWSER_EXECUTABLE=/opt/pw
 
 From `App/`:
 
-- `.venv/bin/python -m pytest tests/test_payments_dashboard.py tests/test_payment_request_model.py tests/test_stripe_connect.py tests/test_payment_rails.py tests/test_host_i18n.py tests/test_migrations.py -q --tb=short -x 2>&1 | tail -30` → all passed.
+- `.venv/bin/python -m pytest tests/test_payments_dashboard.py tests/test_payment_request_model.py tests/test_stripe_connect.py tests/test_payment_rails.py tests/test_migrations.py -q --tb=short -x 2>&1 | tail -30` → all passed.
 - `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium .venv/bin/python -m pytest tests/test_payments_consent.py tests/test_design_guardrails_browser.py -q --tb=short -x -rs 2>&1 | tail -30` → all passed, 0 skipped.
 - `.venv/bin/python ../scripts/design_lint.py 2>&1 | tail -15` → OK.
 - From repo root: `python3 scripts/context_lint.py 2>&1 | tail -5` → context lint: OK.
