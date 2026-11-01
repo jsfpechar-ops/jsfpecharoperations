@@ -168,7 +168,9 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
                 for name, path in pages:
                     response = page.goto(f"{base}{path}?lang={lang}")
                     assert response and response.status == 200, f"{path} ({lang}) failed"
-                    assert page.locator('link[href*="host-controls.css"]').count() == 1
+                    # 0538: v2 property pages load only tokens.css and app2.css on purpose; old pages keep host-controls.css
+                    v2_page = path.split('?')[0] in ('/apartments',) or path.startswith('/apartments/')
+                    assert page.locator('link[href*="host-controls.css"]').count() == (0 if v2_page else 1)
                     size = page.evaluate("""() => ({
                       width: innerWidth,
                       scrollWidth: document.documentElement.scrollWidth,
