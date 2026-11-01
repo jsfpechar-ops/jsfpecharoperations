@@ -75,6 +75,28 @@ PAGES = [
         "phone_selectors": [".tabs", ".tab:not(.on)", ".tab.on", ".big", ".card.me", ".list .row", ".row .t b", ".row .t small"],
         "missing_ok": {".row .t small": "menu rows have no subtitle yet: the mockup subtitles are demo copy and no approved menu copy exists (owner decision, 0718)"},
     },
+    {
+        "name": "stay",
+        "path": "/reservations/{stay_id}",  # resolved in the test: an active stay with one guest of the rich host
+        "view": "stay",
+        "phone_view": "pobyt",
+        "selectors": [
+            ".crumb", ".head h1", ".head .sub", ".head .btn", ".head .btn.ghost", "main h2", "main .card",
+            "main table th", "main table td", "main .pill", ".code",
+        ],
+        "phone_selectors": [
+            ".tabs", ".top .round", ".big", ".sub", ".facts", ".facts b", ".facts small", "h2.sec",
+            ".list .row", ".row .ic", ".row .t b", ".row .t small", ".card", ".code", ".list .link", ".actbar .btn",
+        ],
+        "missing_ok": {
+            ".head .btn.ghost": "the ghost button shows only when a second action applies; depends on the stay's state",
+            "main .pill": "the pill follows the stay's submission state; the seeded stay has none yet",
+            "main table th": "the submissions table shows only after a submission; the seeded stay has none yet",
+            "main table td": "the submissions table shows only after a submission; the seeded stay has none yet",
+            ".code": "the door-code PIN shows only once a code is issued; the seeded stay has none yet",
+            ".row .t small": "payment rows have no subtitle in the current copy; the mockup subtitles are demo copy",
+        },
+    },
 ]
 
 
