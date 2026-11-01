@@ -514,3 +514,5 @@ body.v2 .onboarding-intro .onboarding-logo{width: 64px; height: auto; max-width:
 @media (max-width:1023px){body.v2 .ui-body:has(> .ov-month) > :not(h2.sec){margin-top:0;margin-bottom:0}body.v2 #needs-action .todo{gap:0}body.v2 #needs-action .needs-you-card-item{margin-bottom:12px}body.v2 details.needs-you-more{margin:0}}
 /* 0722: phone action buttons keep the 44 px touch target of the mockup. */
 @media (max-width:1023px){body.v2 .needs-you-actions .btn{min-height:44px}}
+
+@media (max-width:767px){body.v2 .cal-day-number{min-width:44px}}
