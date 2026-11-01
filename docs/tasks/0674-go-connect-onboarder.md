@@ -1,5 +1,5 @@
 # 0674: Go Stripe Connect Onboarder (Stripe calls, call budget) and route wiring
-Status: todo
+Status: review
 Depends on: 0673 (#674, 9af7ee6) | Base commit: origin/main | Branch: claude/project-thread-em2htb
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 ## 1. Objective
