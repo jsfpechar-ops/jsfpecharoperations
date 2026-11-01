@@ -289,6 +289,7 @@
 <div class="list stays-links">
   <a class="link" href="/submissions"><span>{{ t('tabs.stays.reports') }}</span>{{ icon('chevron-right', 16) }}</a>
   <a class="link" href="/housebook"><span>{{ t('tabs.stays.register') }}</span>{{ icon('chevron-right', 16) }}</a>
+  <a class="link" href="/reservations.csv?{{ csv_export_params }}"><span>{{ t('csv.export_stays') }}</span>{{ icon('download', 16) }}</a>
   <a class="link stays-phone-only" href="/housebook.csv?{{ csv_export_params }}" data-stays-housebook-phone><span>{{ t('stays.housebook_download') }}<small>{{ t('stays.housebook_hint') }}</small></span>{{ icon('download', 16) }}</a>
 </div>
 {% endblock %}
