@@ -81,14 +81,17 @@ PAGES = [
         "view": "stays",
         "phone_view": "pobyty",
         "selectors": [
-            ".head h1", ".head .btn", ".head .btn.ghost", ".chips .chip", ".chip.on",
-            "main table th", "main table td", "main td small", "main .pill",
+            ".head h1", ".head .btn", ".head .btn.ghost", ".chip", ".chip.on",
+            "main table th", "main table td", "main td small", "main .pill.p-ok", "main .pill.p-warn",
         ],
         "phone_selectors": [
             ".tabs", ".tab.on", ".top .round", ".big", ".chips .chip", ".chip.on", ".grp",
-            ".list .row", ".row .av", ".row .t b", ".row .t small", ".row .pill", ".list .link",
+            ".list .row", ".row .av", ".row .t b", ".row .t small", ".row .pill.p-ok", ".row .pill.p-warn", ".list .link",
         ],
-        "missing_ok": {},
+        "missing_ok": {
+            "main .pill.p-ok": "tone depends on data: the test fixture has no reported stay",
+            ".row .pill.p-ok": "tone depends on data: the test fixture has no reported stay",
+        },
     },
 ]
 

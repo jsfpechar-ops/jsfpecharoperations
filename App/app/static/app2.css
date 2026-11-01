@@ -278,11 +278,24 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
 .stays-phone-only{display:none}
 .stays-head-actions{display:flex;gap:8px}
 .stays-links{margin-top:12px}
+.stays-desk .stay-identity-link{display:inline-block;min-height:24px}
+body.v2 .stays-filter select,body.v2 .stays-filter input:not([type=hidden]){border:1px solid #dcdcd7;border-radius:8px;padding:9px 10px}
 @media (max-width:1023px){
   .stays-head{display:none}
   .stays-desk{display:none}
   .stays-phone{display:block}
   .stays-phone-only{display:flex}
+}
+@media (max-width:1023px){
+  body.v2 .stays-filter select,body.v2 .stays-filter input:not([type=hidden]),body.v2 .stays-filter .ui-btn,body.v2 .stays-panel .ui-btn,body.v2 .stays-pager .ui-btn{min-height:44px;min-width:44px}
+  body.v2 .stays-pager .ui-btn{display:inline-flex;align-items:center}
+  body.v2 .stays-panel select,body.v2 .stays-panel input:not([type=hidden]){min-height:44px}
+  .stays-desk .stay-identity-link{min-height:44px}
+}
+@media (min-width:1024px){
+  body.v2 .stays-filter select,body.v2 .stays-filter input:not([type=hidden]),body.v2 .stays-filter .ui-btn,body.v2 .stays-panel .ui-btn,body.v2 .stays-pager .ui-btn{min-height:36px}
+  body.v2 .stays-pager .ui-btn{display:inline-flex;align-items:center}
+  body.v2 .stays-panel select,body.v2 .stays-panel input:not([type=hidden]){min-height:36px}
 }
 @media (min-width:1024px){
   .chips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}

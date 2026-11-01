@@ -23,11 +23,11 @@
 {% block toolbar %}{% endblock %}
 {% block body %}
 <div class="head stays-head"><div><h1>{{ t('stays.title') }}</h1></div>{% if apartments %}<div class="stays-head-actions">{% if manual_send %}<form method="post" action="/reservations/submit-ready" class="inline send-all-form"><input type="hidden" name="return_to" value="{{ return_to }}"><button class="btn ghost send-all" type="submit"{% if not ready_send_count %} disabled{% endif %} title="{{ t('send.all_ready_hint') }}">{{ icon('send', 16) }}<span>{{ t('send.all_ready') }}{% if ready_send_count %} ({{ ready_send_count }}){% endif %}</span></button></form>{% endif %}<a class="btn ghost" href="/housebook.csv?{{ csv_export_params }}" data-stays-housebook>{{ t('stays.housebook_download') }}</a><button class="btn" type="button" data-toggle-panel="add-stay-panel">{{ t('stays.add_stay') }}</button></div>{% endif %}</div>
-<div class="stays-phone"><div class="top"><span></span>{% if apartments %}<button class="round" type="button" data-toggle-panel="add-stay-panel" aria-label="{{ t('stays.add_stay') }}">{{ icon('plus', 20) }}</button>{% endif %}</div><div class="big">{{ t('stays.title') }}</div></div>
+<div class="stays-phone"><div class="top"><span></span>{% if apartments %}<button class="round" type="button" data-toggle-panel="add-stay-panel" aria-label="{{ t('stays.add_stay') }}">{{ icon('plus', 20) }}</button>{% endif %}</div><h1 class="big">{{ t('stays.title') }}</h1></div>
 {{ onboarding_banner(onboarding) }}
 
 {% if apartments %}
-<div id="add-stay-panel" class="action-panel hidden">
+<div id="add-stay-panel" class="action-panel hidden stays-panel">
   <div class="ui-section">
     <div class="ui-section-h">
       <h2>{{ t('stays.add_panel.title') }}</h2>
@@ -100,7 +100,7 @@
 {% if show_archive %}
 <p class="ui-sub">{{ t('stays.archive_note') }}</p>
 {% endif %}
-<form id="stays-filter-panel" method="get" action="/reservations" class="filters ui-section host-filter-panel" data-filter-panel data-filter-route="stays" data-original-range="{{ date_range }}">
+<form id="stays-filter-panel" method="get" action="/reservations" class="filters ui-section host-filter-panel stays-filter" data-filter-panel data-filter-route="stays" data-original-range="{{ date_range }}">
   <div class="filter-fields">
     <div class="ui-field">
       <label for="apartment">{{ t('stays.filter.apartment') }}</label>
@@ -263,7 +263,7 @@
   {% endif %}
 </p>
 {% if page_count > 1 %}
-  {{ ui_pagination(page, page_count, prev_url=previous_page_url or '', next_url=next_page_url or '', label=t('stays.title'), more_label=t('stays.pagination.next'), prev_label=t('stays.pagination.prev'), next_label=t('stays.pagination.next'), page_label=t('stays.pagination.label', page=page, pages=page_count)) }}
+  <div class="stays-pager">{{ ui_pagination(page, page_count, prev_url=previous_page_url or '', next_url=next_page_url or '', label=t('stays.title'), more_label=t('stays.pagination.next'), prev_label=t('stays.pagination.prev'), next_label=t('stays.pagination.next'), page_label=t('stays.pagination.label', page=page, pages=page_count)) }}</div>
 {% endif %}
 {% elif show_archive %}
   {{ empty_state('', t('stays.empty.archive')) }}
