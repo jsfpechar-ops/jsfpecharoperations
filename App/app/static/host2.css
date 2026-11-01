@@ -1134,7 +1134,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .ui-choice-card:has(input:focus-visible) { outline: 2px solid var(--coral-600); outline-offset: 2px; }
 
 /* 0700 shared look (mockup v2) */
-body.host-workspace main { background: var(--canvas); }
+body.host-workspace main#main-content { background: var(--canvas); }
 @media (min-width: 768px) {
   body.host-workspace .ui-ph { border-bottom: 0; }
   body.host-workspace .ui-ph h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.01em; }
@@ -1154,4 +1154,5 @@ body.host-workspace main { background: var(--canvas); }
 }
 @media (min-width: 1024px) {
   body.host-workspace .ui-table tr.ui-row { border: 0; border-radius: 0; margin: 0; box-shadow: none; }
+  body.host-workspace .ui-table { border-spacing: 0; }
 }
