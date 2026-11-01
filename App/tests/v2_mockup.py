@@ -30,6 +30,7 @@ PAGES = [
         ],
         "missing_ok": {},
     },
+    {"name": "cleaning", "path": "/cleaning", "view": "clean", "selectors": [".side .nav.on", ".head h1", ".head .sub", ".head .btn", "main h2", "main .card", "main table th", "main table td", "main .pill"], "missing_ok": {}},
 ]
 
 
