@@ -449,7 +449,6 @@ def _template_section_tabs(request: Request, section: str, current: str = "") ->
             ("users", "/admin/users", "nav.users"),
             ("incidents", "/admin/incidents", "users.incidents_link"),
             ("operations", "/admin/operations", "ops.title"),
-            ("funnel", "/admin/funnel", "funnel.title"),
         ]
     else:
         return []
@@ -483,7 +482,7 @@ def _template_page_tabs(context) -> list:
         segment = path.split("/")[2] if path.count("/") >= 2 else ""
         current = {
             "": "console", "fakturace": "billing", "customers": "customers", "users": "users",
-            "incidents": "incidents", "operations": "operations", "funnel": "funnel",
+            "incidents": "incidents", "operations": "operations", "funnel": "billing",
         }.get(segment, "")
         return _template_section_tabs(request, "admin", current)
     if nav in ("settings", "privacy_requests"):
