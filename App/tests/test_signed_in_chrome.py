@@ -232,7 +232,7 @@ def test_a_stay_that_needs_the_host_gets_one_line_with_one_button(host_with_prop
             rf'<div class="card needs-you-card-item[^"]*"[^>]*data-needs-you-stay="{reservation_id}"[^>]*>(.*?)(?=<div class="card needs-you-card-item[^"]*"|<section|</main>)', page, re.S
         )
         assert line, "the stay arriving tomorrow has no line"
-        assert "The guest arrives tomorrow and has not filled in the guest form." in line.group(1)
+        assert host_i18n.STRINGS["en"]["needs_you.short.forms"] in line.group(1)
         assert line.group(1).count('data-needs-you-go') == 1
         assert f'href="/reservations/{reservation_id}?return_to=/#now"' in line.group(1)
     finally:

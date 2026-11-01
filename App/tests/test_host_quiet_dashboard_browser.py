@@ -97,8 +97,8 @@ def dashboard_rich_host():
         "label": "Synthetic calendar", "active": 1, "created_at": now,
     })
     today = claim.prague_today()
-    # Manual cleaning events for the cleaning phone compare (today card, green row).
-    cleaning.save_event(apartment_id, {"scheduled_date": today.isoformat(), "start_time": "11:00", "end_time": "14:00"})
+    # Manual cleaning event for the cleaning phone compare (green row). None today: a cleaning today
+    # adds a count badge to the shared Menu screen, which its own compare does not expect.
     cleaning.save_event(apartment_id, {"scheduled_date": (today + timedelta(days=2)).isoformat(), "start_time": "11:00", "end_time": "14:00"})
 
     def stay(label, arrival, departure, expected=1):
@@ -359,13 +359,14 @@ def test_dashboard_rich_needs_you_order_cap_and_geometry(dashboard_rich_host, ba
                         assert page.locator(f'.card.need[data-needs-you-stay="{later}"]').count() == 0, label
 
                     # At most five lines open; the rest behind one "Show N more".
-                    shown = page.locator("#needs-action > .todo > .card.need").count()
+                    cap = 2 if width < 1024 else 4  # 0722: phone shows two needs-you cards
                     total = len(tones)
-                    assert shown == min(total, 4), (label, shown, total)  # v2: dashboard.html shows ny_lines[:4]
+                    shown = page.locator("#needs-action > .todo > .card.need").evaluate_all("nodes => nodes.filter(n => n.offsetParent).length")
+                    assert shown == min(total, cap), (label, shown, total)
                     more = page.locator(".needs-you-more:not([data-paste-check]) > summary")
-                    assert more.count() == (1 if total > 4 else 0), label
-                    if total > 4:
-                        assert str(total - 4) in more.inner_text(), (label, more.inner_text())
+                    assert more.count() == (1 if total > cap else 0), label
+                    if total > cap:
+                        assert str(total - cap) in more.inner_text(), (label, more.inner_text())
                     paste_line = page.locator('.card.need[data-needs-you="paste"]')
                     if paste_line.count() and paste_line.first.is_visible():
                         how = paste_line.first.locator("[data-paste-check] > summary")

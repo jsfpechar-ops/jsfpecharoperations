@@ -41,7 +41,7 @@
     <div class="cleaning-pillrow">{% if item.conflict %}<span class="pill p-warn">{{ ct('status_conflict') }}</span>{% elif item.timingUnavailable %}<span class="pill p-warn">{{ ct('status_hours') }}</span>{% else %}<span class="pill p-ok">{{ ct('status_scheduled') }}</span>{% endif %}</div>
   </a>
   {% else %}
-  <div class="card">{{ ct('today_empty') }}</div>
+  <div class="card cleaning-today">{{ ct('today_empty') }}</div>
   {% endfor %}
 {% else %}
   {% if items %}
@@ -52,7 +52,7 @@
   {% endfor %}
   </div>
   {% else %}
-  <div class="card">{{ ct('today_empty') }}</div>
+  <div class="card cleaning-today">{{ ct('today_empty') }}</div>
   {% endif %}
 {% endif %}
 {% endfor %}

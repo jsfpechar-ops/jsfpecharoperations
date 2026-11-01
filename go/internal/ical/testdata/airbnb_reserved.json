@@ -1,0 +1,16 @@
+[
+  {
+    "date_from": "2026-09-10",
+    "date_to": "2026-09-13",
+    "description": "Phone Number (Last 4 Digits): 0431\nView your reservation: https://www.airbnb.example/hosting/reservations/details/HMTEST01.",
+    "guest_email": null,
+    "is_block": false,
+    "is_cancelled": false,
+    "name_hint": "",
+    "phone_last4": "0431",
+    "recurring": false,
+    "reservation_url": "https://www.airbnb.example/hosting/reservations/details/HMTEST01",
+    "summary": "Reserved",
+    "uid": "res-1@airbnb.example"
+  }
+]

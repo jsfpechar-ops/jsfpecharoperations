@@ -1,5 +1,5 @@
 # 0723: Overview polish after 0722 (phone gaps, demo link, quiet links row, dead keys)
-Status: todo
+Status: done
 Depends on: 0722 | Base commit: claude/project-thread-50hyv5 | Branch: task/0723-v2-overview-polish
 Executor: Haiku 5.5 | Fits one session: 20 tool calls
 

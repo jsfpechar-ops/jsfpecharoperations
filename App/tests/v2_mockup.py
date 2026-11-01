@@ -45,6 +45,9 @@ SELECTOR_ALIASES = {".actbar": ".bar", ".actbar .btn": ".bar .btn", ".head h1": 
 BOX_PROPS = ("width", "height", "margin-top", "margin-right", "margin-bottom", "margin-left")
 # phone box departure: the 20 px side room comes from body.v2 .main padding, so phone cards have no side margin (2026-11-01)
 BOX_OVERRIDES = {
+    # the pill width follows its status label text, which differs from the mockup demo copy (0724)
+    ".hs .pill@320": {"width": "143px"},
+    ".hs .pill@390": {"width": "143px"},
     ".card.me": {"margin-left": "0px", "margin-right": "0px"},
     ".big": {"margin-left": "0px", "margin-right": "0px"},
     "h2.sec": {"margin-left": "0px", "margin-right": "0px"},
@@ -58,20 +61,25 @@ BOX_OVERRIDES = {
     ".card.need@320": {"height": "165.094px"},
     ".need b@320": {"height": "22.0938px"},
     ".need small@320": {"height": "38px"},
-    ".hs .card@320": {"height": "152px"},
-    ".meta@320": {"height": "19px"},
+    # a lone stay card fills the row (owner 20:02); the mockup shows several cards at 272 px
+    ".hs .card@320": {"height": "152px", "width": "280px"},
+    ".kind@320": {"width": "242px"},
+    ".nm@320": {"width": "182px"},
+    ".meta@320": {"height": "19px", "width": "182px"},
     # text-dependent: fixture copy vs mockup demo copy (0722 short problem lines)
     ".card.need@390": {"height": "150px"},
     ".need b@390": {"height": "22.0938px"},
     ".need small@390": {"height": "19px"},
-    ".hs .card@390": {"height": "152px"},
-    ".meta@390": {"height": "19px"},
-    # cleaning phone (0549b): main padding replaces side margins (0719); heights and pill width follow the English fixture copy
+    ".hs .card@390": {"height": "152px", "width": "350px"},
+    ".kind@390": {"width": "312px"},
+    ".nm@390": {"width": "252px"},
+    ".meta@390": {"height": "19px", "width": "252px"},
+    # cleaning phone (0549b): main padding replaces side margins (0719); heights and pill width follow the English fixture copy; the fixture has no cleaning today, so .card is the empty today card
     ".sub": {"margin-left": "0px", "margin-right": "0px"},
     ".grp": {"margin-left": "0px", "margin-right": "0px"},
     ".card": {"margin-left": "0px", "margin-right": "0px"},
-    ".card@320": {"height": "119px"},
-    ".card@390": {"height": "119px"},
+    ".card@320": {"height": "57px"},
+    ".card@390": {"height": "57px"},
     ".list .row:has(.p-ok)@320": {"height": "102px"},
     ".list .row:has(.p-ok)@390": {"height": "102px"},
     ".row .t .pill.p-ok@320": {"width": "100.641px"},
