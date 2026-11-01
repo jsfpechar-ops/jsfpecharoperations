@@ -86,7 +86,8 @@ def test_six_groups_in_order_and_index_links_each(host):
 
 def test_ordinary_user_sees_no_admin_controls(host):
     html = host.get("/settings?lang=en").text
-    assert "/admin/" not in html
+    # The speculation-rules JSON excludes "/admin/*" for everyone; that is not a control.
+    assert 'href="/admin' not in html
     assert STRINGS["en"]["settings.account.users"] not in html
 
 

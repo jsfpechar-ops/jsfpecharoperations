@@ -21,9 +21,10 @@ def test_the_empty_dashboard_tells_the_whole_story_with_the_hosts_own_option(hos
     _apartment_id()  # automation_mode manual
     page = host.get("/?lang=en")
     assert page.status_code == 200
-    assert "data-workflow-strip" in page.text
-    assert 'data-workflow-step="paste"' in page.text
-    assert 'data-workflow-step="police_manual"' in page.text
+    # 0706: removed from Overview by the v2 rebuild (the strip stays on /guide, see below)
+    assert "data-workflow-strip" not in page.text
+    assert 'data-workflow-step="paste"' not in page.text
+    assert 'data-workflow-step="police_manual"' not in page.text
 
 
 def test_the_guide_opens_with_the_strip(host):  # noqa: F811

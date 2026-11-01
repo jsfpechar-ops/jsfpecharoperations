@@ -52,7 +52,8 @@ def test_dialogs_fade_in_and_phone_sheets_slide_up(wide_host, wide_base):
         context.close()
 
         context = _rail_context(browser, wide_host, wide_base, 390, collapsed=False)
-        page = _rail_page(context, wide_base)
+        # 0720: v2 phone has no More sheet (Menu tab replaces it); the old shell's more-sheet is checked on /settings.
+        page = _rail_page(context, wide_base, "/settings")
         page.click('[data-sheet-open="more-sheet"]')
         start = page.evaluate("() => getComputedStyle(document.getElementById('more-sheet')).translate")
         assert start not in ("none", "0px"), start
@@ -66,7 +67,7 @@ def test_fold_outs_slide_open_and_floating_menus_are_not_clipped(wide_host, wide
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = _rail_context(browser, wide_host, wide_base, 1280, collapsed=False)
-        page = _rail_page(context, wide_base)
+        page = _rail_page(context, wide_base, "/")
         heights = page.evaluate(FOLD_OUT_HEIGHTS, "details.ui-how")
         full = page.evaluate("() => document.querySelector('.ui-how-body').getBoundingClientRect().height")
         assert heights[0] < full, heights
@@ -75,6 +76,9 @@ def test_fold_outs_slide_open_and_floating_menus_are_not_clipped(wide_host, wide
         assert page.evaluate("() => getComputedStyle(document.querySelector('details.ui-how'), '::details-content').overflow") == "clip"
 
         # The account menu floats above its trigger, so its fold-out must never clip it.
+        # 0720: v2 has no details.host-account menu; this old-shell case is checked on /settings.
+        page.goto(f"{wide_base}/settings")
+        page.wait_for_load_state("networkidle")
         page.locator("details.host-account summary").click()
         menu = page.locator(".host-account-menu")
         menu.wait_for(state="visible")
@@ -91,7 +95,8 @@ def test_page_changes_cross_fade_with_the_rail_held_still(wide_host, wide_base):
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = _rail_context(browser, wide_host, wide_base, 1280, collapsed=False)
         context.add_init_script(PAGE_SWAP_RECORDER)
-        page = _rail_page(context, wide_base)
+        # 0720: the host-rail view transition is old-shell only (group C); checked on /settings.
+        page = _rail_page(context, wide_base, "/settings")
         assert page.evaluate("getComputedStyle(document.getElementById('app-sidebar')).viewTransitionName") == "host-rail"
         assert page.evaluate(OPTS_IN) is True
         page.locator('.ui-nav a[href="/reservations"]').click()
@@ -109,7 +114,8 @@ def test_reduced_motion_keeps_pages_and_dialogs_still(wide_host, wide_base):
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = _rail_context(browser, wide_host, wide_base, 1280, collapsed=False, reduced_motion="reduce")
         context.add_init_script(PAGE_SWAP_RECORDER)
-        page = _rail_page(context, wide_base)
+        # 0720: / is the v2 shell; the old-shell rail link is checked on /settings.
+        page = _rail_page(context, wide_base, "/settings")
         page.evaluate(OPEN_DIALOG, "command-dialog")
         duration = page.evaluate("() => getComputedStyle(document.getElementById('command-dialog')).transitionDuration")
         seconds = [float(p[:-2]) / 1000 if p.endswith("ms") else float(p[:-1]) for p in duration.split(", ")]
@@ -128,7 +134,8 @@ def test_pages_without_javascript_stay_still(wide_host, wide_base):
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = _rail_context(browser, wide_host, wide_base, 1280, collapsed=False, java_script_enabled=False)
-        page = _rail_page(context, wide_base)
+        # 0720: old-shell sidebar and help block (/settings has no how_key), so this runs on /stay-fees (v2 is /).
+        page = _rail_page(context, wide_base, "/stay-fees")
         page.locator("details.ui-how summary").click()
         assert page.locator(".ui-how-body").is_visible()
         page.locator('.ui-nav a[href="/reservations"]').click()

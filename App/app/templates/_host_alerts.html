@@ -6,10 +6,10 @@
 {% set rest = open_alerts | rejectattr('level', 'equalto', 'critical') | list %}
 {% set rest_pin = rest | selectattr('kind', 'equalto', 'guest_pin_rotated') | list %}
 {% set rest_count = (rest | rejectattr('kind', 'equalto', 'guest_pin_rotated') | list | length) + (1 if rest_pin else 0) %}
-{% set lines = red + (rest if rest_count == 1 else []) %}
-<aside class="notification-stack" data-host-alerts aria-label="{{ t('a11y.notifications') }}" aria-live="polite">
+{% set lines = red + (rest if (rest_count == 1 or alerts_expanded | default(false)) else []) %}
+<aside class="notification-stack{{ ' ph-hide' if ph_hide_pin | default(false) and (lines | rejectattr('kind', 'equalto', 'guest_pin_rotated') | list | length == 0) else '' }}" data-host-alerts aria-label="{{ t('a11y.notifications') }}" aria-live="polite">
   {% for alert in lines if alert.kind != 'guest_pin_rotated' or alert.id == (rest_pin[0].id if rest_pin else alert.id) %}
-    <article class="notification-bubble {{ alert.level }}" data-notification>
+    <article class="notification-bubble {{ alert.level }}{{ ' ph-hide' if ph_hide_pin | default(false) and alert.kind == 'guest_pin_rotated' else '' }}" data-notification>
       {% if alert.action_href %}<a class="notification-link" href="{{ alert.action_href }}">{% else %}<div class="notification-link">{% endif %}
         <span class="notification-icon" aria-hidden="true">!</span>
         <span class="grow">
@@ -25,7 +25,7 @@
       {% endif %}
     </article>
   {% endfor %}
-  {% if rest_count > 1 %}
+  {% if rest_count > 1 and not (alerts_expanded | default(false)) %}
     <article class="notification-bubble {{ rest[0].level }}" data-notification-summary>
       <a class="notification-link" href="/#needs-action">
         <span class="notification-icon" aria-hidden="true">!</span>
