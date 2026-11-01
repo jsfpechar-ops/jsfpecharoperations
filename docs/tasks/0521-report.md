@@ -34,3 +34,31 @@ Includes the branch's brief commits (`docs/tasks/0520-*`, `docs/tasks/0521-*`), 
 ## Owner steps left
 - Decide on the questions above, then rerun the battery.
 - No push or PR made (executor rules).
+
+## 0521b (follow-up, section 10)
+
+Status: review
+
+What changed: the 14-day timeline is the default on Overview (`/`). A new "14 dni / 14 days" button (`data-cal-days`, dashboard only) sits in the view segment. Clicking "Kalendář" or "Gantt" leaves the 14-day mode and shows the month view. `/?cal_date=`, `/?cal_view=`, `/?cal_scale=` open the month view directly. The cleaning calendar is unchanged (30 days).
+
+Commits: `0521b step 1` (JS, template, i18n), `0521b step 2` (static versions), `0521b step 3` (tests). Script version `20261101-0521c`.
+
+Test tails (from `App/`, `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`):
+- `pytest tests/test_0521_overview_14_days_browser.py tests/test_dashboard_calendar_browser.py tests/test_dashboard_calendar.py tests/test_dashboard_phone_browser.py tests/test_static_versions.py tests/test_cleaning_browser.py -q --tb=short -x -rs`: `82 passed in 95.97s`, 0 skipped.
+- `python3 scripts/context_lint.py`: `context lint: OK`.
+
+Edited existing assertions:
+- `App/tests/test_0521_overview_14_days_browser.py` (first-run test, my own file): `.cal-view-segment is_hidden` replaced by `[data-cal-days]` aria-pressed "true" and `[data-cal-scales]` hidden.
+- The 10 existing tests in `test_dashboard_calendar_browser.py` were not edited. They pass unchanged.
+- New test `test_month_view_is_one_click_away_and_fourteen_days_comes_back` added.
+
+Diff stat (since `a0aa0ee`): 7 files, 53 insertions, 14 deletions (`host_i18n.py`, `host_vi_i18n.py`, `dashboard-calendar.js`, `_dashboard_calendar.html`, `static_versions.json`, `test_0521_overview_14_days_browser.py`, the 1280 screenshot).
+
+Screenshots: `docs/tasks/screenshots-0521/calendar-overview-14-days-cs-1280.png` (retaken, checked: 14 columns, "14 dní" pressed, scale switch hidden). `calendar-overview-14-days-cs-390.png` unchanged (phone dots, layout not changed).
+
+Deviations:
+- `popstate` handler also recomputes `state.fixed` from the URL (one line). Without it, Back/Forward between `/` and `/?cal_view=...` would keep the wrong mode. Not in the brief's list.
+- The month-view check on `/?cal_date=2026-10-01` asserts the month grid (`.cal-week`) and not 31 gantt slots. The browser context keeps the saved "calendar" preference, so the page opens in calendar mode.
+- Start-date check uses the same three-parameter expression inline (no separate `state.fixed` reference, since it is read while `state` is being built).
+
+Owner steps left: none. No push, no PR.
