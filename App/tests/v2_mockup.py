@@ -61,14 +61,19 @@ BOX_OVERRIDES = {
     ".card.need@320": {"height": "165.094px"},
     ".need b@320": {"height": "22.0938px"},
     ".need small@320": {"height": "38px"},
-    ".hs .card@320": {"height": "152px"},
-    ".meta@320": {"height": "19px"},
+    # a lone stay card fills the row (owner 20:02); the mockup shows several cards at 272 px
+    ".hs .card@320": {"height": "152px", "width": "280px"},
+    ".kind@320": {"width": "242px"},
+    ".nm@320": {"width": "182px"},
+    ".meta@320": {"height": "19px", "width": "182px"},
     # text-dependent: fixture copy vs mockup demo copy (0722 short problem lines)
     ".card.need@390": {"height": "150px"},
     ".need b@390": {"height": "22.0938px"},
     ".need small@390": {"height": "19px"},
-    ".hs .card@390": {"height": "152px"},
-    ".meta@390": {"height": "19px"},
+    ".hs .card@390": {"height": "152px", "width": "350px"},
+    ".kind@390": {"width": "312px"},
+    ".nm@390": {"width": "252px"},
+    ".meta@390": {"height": "19px", "width": "252px"},
 }
 
 
