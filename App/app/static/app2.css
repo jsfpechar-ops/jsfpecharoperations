@@ -264,7 +264,7 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
   body.v2 .link{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;font-weight:700;width:100%;text-align:left}
   body.v2 .link small{display:block;font-weight:500;color:var(--ink3);font-size:13px}
   body.v2 .actbar{position:fixed;left:0;right:0;bottom:calc(84px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--line);padding:12px 20px;display:flex;gap:10px;align-items:center;z-index:4}
-  body.v2 .actbar .btn{flex:1}
+  body.v2 .actbar .btn{flex:1;padding:0}
   body.v2 .actbar .hint{font-size:13px;color:var(--ink3)}
   body.v2 .me{display:flex;gap:14px;align-items:center}
   body.v2 .me .av{width:60px;height:60px;font-size:24px}

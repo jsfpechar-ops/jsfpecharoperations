@@ -30,7 +30,7 @@ SELECTOR_OVERRIDES = {
     ".tab:not(.on)": {"font-size": "12px"},
     ".tab.on": {"font-size": "12px"},
     # mockup's 30 px bottom padding is home-indicator room in the phone frame; the app's action bar sits above the tab bar
-    ".actbar": {"padding-bottom": "12px"},
+    ".actbar": {"padding-bottom": "12px", "height": "75px"},
     # tone follows the stay state (0715 mapping); fixture stay is waiting, mockup shows a finished one (0719)
     ".hs .pill": {"color": "rgb(138, 82, 0)", "background-color": "rgb(255, 244, 214)", "border-bottom-color": "rgb(138, 82, 0)"},
 }
@@ -64,6 +64,18 @@ BOX_OVERRIDES = {
     ".need small@390": {"height": "19px"},
     ".hs .card@390": {"height": "152px"},
     ".meta@390": {"height": "19px"},
+    # cleaning phone (0549b): main padding replaces side margins (0719); heights and pill width follow the English fixture copy
+    ".sub": {"margin-left": "0px", "margin-right": "0px"},
+    ".grp": {"margin-left": "0px", "margin-right": "0px"},
+    ".card": {"margin-left": "0px", "margin-right": "0px"},
+    ".card@320": {"height": "119px"},
+    ".card@390": {"height": "119px"},
+    ".list .row:has(.p-ok)@320": {"height": "102px"},
+    ".list .row:has(.p-ok)@390": {"height": "102px"},
+    ".row .t .pill.p-ok@320": {"width": "100.641px"},
+    ".row .t .pill.p-ok@390": {"width": "100.641px"},
+    ".actbar@320": {"height": "75px"},
+    ".actbar@390": {"height": "75px"},
 }
 
 
