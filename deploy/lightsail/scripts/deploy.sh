@@ -22,6 +22,44 @@ if [ -n "${UBYHOST_DATABASE_URL:-}" ]; then
   PG_MODE=1
 fi
 
+# 0710: rollback target. .deployed-sha is written only when a deploy finished;
+# before the first one, ORIG_HEAD is the commit the workflow reset away from.
+PREV_SHA="$(cat .deployed-sha 2>/dev/null || git rev-parse -q --verify ORIG_HEAD 2>/dev/null || true)"
+
+# 0710: the site as visitors reach it (Cloudflare, Caddy, app). About 60 s.
+public_ok() {
+  for _ in $(seq 1 12); do
+    if curl -fsS --max-time 10 -o /dev/null "${UBYHOST_PUBLIC_BASE_URL%/}/healthz"; then
+      return 0
+    fi
+    sleep 5
+  done
+  return 1
+}
+
+# 0710: put back the last good compose file, Caddyfile and app image. Database
+# migrations are not undone (goose files are additive). The working tree stays
+# modified until the next deploy's git reset.
+rollback() {
+  echo "==> Rolling back to ${PREV_SHA:-the previous image and Caddyfile}" >&2
+  if [ -n "${PREV_SHA}" ]; then
+    git checkout "${PREV_SHA}" -- docker-compose.yml caddy/Caddyfile.acme caddy/Caddyfile.cloudflare || true
+  fi
+  if [ -f caddy/Caddyfile.previous ]; then
+    cp caddy/Caddyfile.previous caddy/Caddyfile.active
+  fi
+  if docker image inspect ubyhost:previous >/dev/null 2>&1; then
+    docker tag ubyhost:previous ubyhost:local
+  fi
+  docker compose up -d --no-build --remove-orphans || true
+  docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile || true
+  if public_ok; then
+    echo "Rollback done: the public site answers again. The new release is NOT live." >&2
+  else
+    echo "ROLLBACK DID NOT BRING THE SITE BACK. Run: docker compose ps; docker compose logs --tail=50 caddy" >&2
+  fi
+}
+
 # shellcheck disable=SC1091
 source "$(dirname "$0")/litestream_env.sh"
 if [ "${litestream_enabled}" = "1" ]; then
@@ -44,6 +82,11 @@ if [ "${UBYHOST_PUBLIC_BASE_URL#https://}" = "${UBYHOST_PUBLIC_BASE_URL}" ]; the
   echo "WARNING: UBYHOST_PUBLIC_BASE_URL should use https:// in production." >&2
 fi
 
+# 0710: keep the running Caddyfile for rollback.
+if [ -f caddy/Caddyfile.active ]; then
+  cp caddy/Caddyfile.active caddy/Caddyfile.previous
+fi
+
 if [ "${CLOUDFLARE_PROXY:-0}" = "1" ]; then
   echo "==> Cloudflare proxy mode (origin certificate)"
   for cert in caddy/certs/origin.pem caddy/certs/origin-key.pem; do
@@ -56,6 +99,18 @@ if [ "${CLOUDFLARE_PROXY:-0}" = "1" ]; then
 else
   echo "==> Direct TLS mode (Let's Encrypt via Caddy)"
   cp caddy/Caddyfile.acme caddy/Caddyfile.active
+fi
+
+# 0710: a recreated Caddy container does not keep its old config, so a broken
+# file takes the site down. Test it with the production caddy service before
+# anything restarts.
+echo "==> Validating the Caddyfile"
+if ! bash ./scripts/caddy-validate.sh; then
+  if [ -f caddy/Caddyfile.previous ]; then
+    cp caddy/Caddyfile.previous caddy/Caddyfile.active
+  fi
+  echo "The new Caddyfile is invalid; nothing was restarted." >&2
+  exit 1
 fi
 
 if [ -z "${UBYHOST_SECRET_KEY:-}" ] && docker compose run --rm --no-deps -T --entrypoint sh ubyhost \
@@ -207,12 +262,13 @@ docker compose up -d --remove-orphans
 # `caddy reload` is a graceful, zero-downtime config swap over the admin API
 # (localhost:2019 inside the container, enabled by default) — unlike
 # `docker compose restart caddy`, it does not drop live connections. Caddy
-# validates the new config before applying it and keeps the running config if
-# validation fails, so aborting here on a bad config is safe.
+# validates the new config before applying it, but a container that `up -d`
+# recreated has no running config to keep, so a failure here rolls back.
 echo "==> Reloading Caddy"
 if ! docker compose exec -T caddy caddy reload \
   --config /etc/caddy/Caddyfile --adapter caddyfile; then
-  echo "Caddy reload failed — the deployed Caddyfile is NOT active." >&2
+  echo "Caddy reload failed." >&2
+  rollback
   exit 1
 fi
 
@@ -229,11 +285,14 @@ for _ in $(seq 1 30); do
 done
 if [ "${HEALTHY}" != "1" ]; then
   echo "New release never became healthy." >&2
-  if docker image inspect ubyhost:previous >/dev/null 2>&1; then
-    echo "==> Rolling back to ubyhost:previous" >&2
-    docker tag ubyhost:previous ubyhost:local
-    docker compose up -d --no-build ubyhost worker
-  fi
+  rollback
+  exit 1
+fi
+
+echo "==> Checking the public site (Cloudflare, Caddy, app)"
+if ! public_ok; then
+  echo "The public site does not answer after the restart." >&2
+  rollback
   exit 1
 fi
 
@@ -333,3 +392,6 @@ if [ "${SKIP_PUBLIC_SMOKE:-0}" != "1" ]; then
     exit 1
   fi
 fi
+
+# 0710: this commit is now the rollback target.
+git rev-parse HEAD > .deployed-sha
