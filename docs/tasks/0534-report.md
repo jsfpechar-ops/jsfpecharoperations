@@ -356,3 +356,34 @@ Status: review. Steps 1, 2 and 3 done; owner decision on tests applied (orchestr
 - Screenshot: docs/tasks/screenshots-0539/app-1280.png (1280 px, full page, apartment page `?lang=cs`, temp test removed).
 - ruff (E9,F63,F7,F82,F401,F841): one pre-existing F841 in tests/test_door_code_window_browser.py:198 (not touched, not fixed). context_lint OK, design_lint OK.
 - Not done: 390 px screenshot and the 1024 px no-horizontal-scroll check. The screenshot was not inspected by eye.
+
+## 0540
+
+Status: blocked (executor ran out of the planned steps; stopped at the section 8 rule for failing save tests).
+
+Done: steps 1 to 3. Commits: `9bbdf08` (step 1, markup: back link, address line, summary dots and states, `data-default-open`), `d66bab3` (step 2, CSS block at the end of `app2.css`, Nastavení heading, catalog `dot`/`sec-state`, key bump 0540), `40094e7` (step 3, `initPhoneDefaultClosed`, dead property-views branch removed from `initUnsavedDialog`, `app.js` key bump), plus the catalog fix commit (classes `prop-phone-top`, `prop-phone-sub`, `prop-phone-only`, `round`, `top`, for design lint).
+
+Tails:
+- Section 6 set (10 files): `104 passed, 11 failed, 534.92s`. All 11 are in `tests/test_host_unsaved_changes_browser.py`: `test_property_settings_save_discard_stay` (x4), `test_property_rail_and_back_links_ask_and_cards_into_settings_do_not`, `test_save_bar_discard_changes_button` (x4), `test_keyboard_only_flow`, `test_without_javascript_nothing_changes`. Last error: `Locator.click: Timeout 30000ms exceeded ... waiting for locator(".host-property-save .ui-btn-primary")`. Not checked against the pre-0540 commit.
+- `scripts/context_lint.py`: `context lint: OK`.
+- `scripts/design_lint.py`: after the catalog commit, last line: `DESIGN` output above (see commit).
+- ruff (E9,F63,F7,F82,F401,F841): one F841 at `tests/test_door_code_window_browser.py:198`, pre-existing, not touched.
+
+Deviations from the brief:
+- `data-default-open` markup went in step 1 (with the summaries), not step 3.
+- Setup-continue card: not moved. It sits inside `aside.preview`, which is hidden below 1024 px, so the wizard continue link is not on the phone page. Owner decision needed.
+- Havel bubble: hidden on phone while a section is open (CSS), so the save bar does not cover it. Not visually checked.
+- Save bar on phone: hidden until a section is open, then fixed above the tab bar (`--tabbar-h` plus safe area plus 8 px), buttons wrap.
+- Computed values (`feeds_count`, `calendar_errors`, `police_ok`, `report_missing`, `address_text`) moved to the top of `_property_editor.html`, because summaries use them before the aside. Logic unchanged.
+- Archive and messages summaries show a grey dot (`n`).
+- No new i18n keys. `nav.settings` gives "Nastavení"; state texts reuse the aside keys.
+
+Section 8 (stop rule: a save test fails). Not changed, needs a decision:
+- `tests/test_host_unsaved_changes_browser.py`: the tests use the pre-0534 tab markup (`.property-tabs a[data-property-tab=...]`, `[data-property-view]`, `.host-property-save`). The tabs were removed in 0534, so these flows need rewriting as section flows, not selector swaps.
+- The save bar is now hidden on phone until a section opens, so the Save click at 360 px needs a section opened first.
+
+Left, not done:
+- Step 4: test entry `phone_view: "nemovitost"` in `App/tests/v2_mockup.py` and the asserts in `App/tests/test_0534_property_page_v2.py` (dots, states, `data-default-open` only on default-opened basics).
+- Step 5: screenshots in `docs/tasks/screenshots-0540/` (`app-390.png`, `app-320.png`, mockup `nemovitost` at 390, `app-390-open.png`). None taken.
+- 1024 px check, and visual review of the phone layout (nothing was rendered).
+- No push, no PR (the brief says do not push).
