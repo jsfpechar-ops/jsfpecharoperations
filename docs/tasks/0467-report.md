@@ -3,29 +3,35 @@
 Status: blocked
 
 ## Files changed
-- `App/migrations_pg/00003_job.sql` (new, step 1)
-- `App/app/config.py` (`JOB_QUEUE_KINDS`, step 2)
-- `App/app/jobqueue.py` (new, step 3)
+- `App/migrations_pg/00003_job.sql` (step 1: IF NOT EXISTS, DROP IF EXISTS)
+- `App/app/scheduler.py` (step 4b levels; step 4 queue targets, `job_queue` consumer, shutdown stop)
+- `App/app/host_i18n.py` (step 4b job names, en and cs)
+- `App/app/retention.py` (step 5 comment)
+- `docs/ENVIRONMENT.md`, `docs/plans/postgresql/owner-steps-cutover.md` (step 7)
+- `App/tests/test_job_queue.py` (step 6, new)
+- Earlier: `App/migrations_pg/00003_job.sql`, `App/app/config.py`, `App/app/jobqueue.py` (steps 1 to 3)
 
-Commits: `0467 step 1`, `0467 step 2`, `0467 step 3`.
+Commits: `0467 step 1: ...`, `0467 step 4b`, `0467 step 4`, `0467 step 5`, `0467 step 7`, `0467 step 6`.
 
 ## Commands
-- `scripts/pg_schema.py plan|apply|check --expect-database ubyhost_test` (local, step 1): apply OK, version 33, goose=3, check OK.
-- `pytest tests/test_scheduler.py tests/test_worker.py tests/test_goose_migrations.py` with `UBYHOST_TEST_DATABASE_URL` only: 27 passed, 1 error (goose test needs `UBYHOST_DATABASE_URL`).
-- Same with both URLs set: `1 failed, 1 passed`. Second test fails with `relation "job" already exists`.
-- Without URLs: 27 passed, 4 skipped.
+- PostgreSQL, both URLs set: `tests/test_job_queue.py tests/test_scheduler.py tests/test_worker.py tests/test_goose_migrations.py`: 38 passed, 1 failed, 3 skipped. The 3 skips are the SQLite-only registration tests, skipped by design on PostgreSQL. All 7 PostgreSQL lifecycle tests (a) to (g) pass.
+  - Failure: `test_goose_migrations.py:94` expects `goose migrations 2 are not applied`; actual is `goose migrations 2, 3 are not applied`. Caused by the new 00003 file.
+- Without URLs: 31 passed, 11 skipped (PostgreSQL-only tests).
 - `python3 scripts/context_lint.py | tail -3`: lint OK.
-- `tests/test_job_queue.py` does not exist yet (step 6), so it is not in the run.
+- `tests/test_host_i18n.py` alone: 3 failures, identical at the commit before step 4b (pre-existing, `no such table: apartment` when run alone). Not in §6.
 
 ## Checklist (§7)
-Not ticked. Steps 4 to 7 not done.
+- [x] With the setting unset, registration is unchanged (test_unset_setting_registers_the_wrappers_unchanged)
+- [x] PostgreSQL tests (a) to (g) green, 0 skipped
+- [x] SQLite tests green
+- [ ] No job runs inside the claim transaction: true by drain's design, not tested separately
+- [ ] Part b: not started
 
 ## Deviations
-Done: steps 1 to 3. Left: steps 4 to 7.
+Done: steps 1 to 7 (4b first). Left: part b (steps 8 to 10).
 
 ## Questions (stop)
-1. Migration 00003 is not idempotent. `CREATE TABLE job` and `CREATE UNIQUE INDEX` / `CREATE INDEX` fail when the table exists. The test harness (`App/tests/conftest.py`, around line 225 to 238) truncates all tables including `goose_db_version`, then calls `db.apply_postgresql_schema()`, which re-runs goose files not recorded as applied. Existing `00002_poll_indexes.sql` uses `IF NOT EXISTS`. Brief §4 step 1 gives the exact SQL without it. Should 00003 use `CREATE TABLE IF NOT EXISTS job` and `IF NOT EXISTS` on both indexes? Or should the harness be changed? The local `ubyhost_test` DB currently has `job` and goose version 3 from my manual apply.
-2. `scheduler._job_failed` looks up `_JOB_LEVELS[job_id]` (`App/app/scheduler.py` line 62). That map has no entry for `billing`, `billing_snapshot`, `stripe_sweep` or `job_queue`. The dead-letter path in `jobqueue.fail` would raise KeyError for those kinds, and step 4's `job_failed:job_queue` alert would too. Should I add `"job_queue": "warning"` and the three missing kinds to `_JOB_LEVELS`? The brief does not name that edit.
+1. Should `test_goose_migrations.py:94` change its regex to `goose migrations 2, 3 are not applied` (or `goose migrations 2`)? The message is correct now that 00003 exists. The file is not named in the brief, so I did not edit it.
 
 ## Owner steps left
-None yet for part a.
+- Step 7 (ENVIRONMENT row and cutover step) is written. Nothing to run yet.
