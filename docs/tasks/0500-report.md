@@ -4,7 +4,8 @@ Status: review
 
 ## Files changed
 - `App/app/templates/base.html`: one `<script type="speculationrules">` added inside the existing `{% if show_nav %}` condition, next to the `shell.js` include. No `?v=` bump (no static file changed).
-- `App/tests/test_navigation_prefetch.py` (new): 2 render tests plus 1 browser test.
+- `App/tests/test_navigation_prefetch.py` (new): 2 HTML tests (rules present with exclusions on the signed-in shell; absent on /login).
+- `App/tests/test_navigation_prefetch_browser.py` (new): 1 real-Chromium test (sidebar link to /reservations still navigates, no CSP or speculation console errors). Uses the feedback browser pattern (UBYHOST_REQUIRE_BROWSER, chromium_launch_kwargs).
 
 ## Rules JSON (rendered only when show_nav is true)
 ```
@@ -16,13 +17,13 @@ Exclusions: `[data-no-prefetch]`, `[target=_blank]`, `[download]`, `/logout*`, `
 ## Checks
 - Mutating GET routes (step 3 stop check): none that the shell links to. `/account/email/confirm` GET only peeks a token; the POST consumes it. `/smart-locks` GET redirects. `/logout`, `/language` and the other lang/logout forms are POST only.
 - Shell templates (`_shell_sidebar.html`, `_shell_tabbar.html`): no download or action link that the path rules miss, so no `data-no-prefetch` was added.
-- Browser test: sidebar link `/reservations` navigates, no CSP or speculation console errors. Not skipped.
+- Browser test: sidebar link `/reservations` navigates, no CSP or speculation console errors. Not skipped (run with UBYHOST_REQUIRE_BROWSER=1).
 
 ## Commands
-`cd App && PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers .venv/bin/python -m pytest tests/test_navigation_prefetch.py tests/test_design_shell.py tests/test_static_versions.py tests/test_privacy_first.py -q --tb=short -rs -x 2>&1 | tail -30`
+`cd App && PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_navigation_prefetch.py tests/test_navigation_prefetch_browser.py tests/test_design_shell.py tests/test_static_versions.py -q --tb=short -rs -x 2>&1 | tail -30`
 ```
-..............                                                           [100%]
-14 passed in 13.94s
+.........                                                                [100%]
+9 passed in 6.38s
 ```
 
 `.venv/bin/python ../scripts/design_lint.py 2>&1 | tail -15`
@@ -32,9 +33,6 @@ design lint: OK
 
 `python3 scripts/context_lint.py 2>&1 | tail -10` (warnings are pre-existing briefs naming shared files, not from this change)
 ```
-WARN  docs/privacy/RETENTION.md is named by open briefs 0347-guide-import-fetch.md, 0350-leon-core.md; say which goes first
-WARN  2 commit(s) touched App/ after the last status.md update. Orchestrator: update docs/context/status.md at review.
-next free: task 0622 | migration 0034
 context lint: OK
 ```
 
