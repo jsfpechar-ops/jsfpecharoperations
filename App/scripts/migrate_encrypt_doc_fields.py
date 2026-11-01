@@ -70,6 +70,12 @@ def require_the_app_key() -> None:
         ) from exc
 
 
+def _vacuum(conn) -> None:
+    """Rewrite the SQLite file so freed plaintext is gone. PostgreSQL has no such file."""
+    if getattr(db.config, "DB_BACKEND", "sqlite") != "postgresql":
+        conn.execute("VACUUM")
+
+
 def open_database() -> sqlite3.Connection:
     """Open the app's database, adding the columns this release needs.
 
@@ -79,23 +85,31 @@ def open_database() -> sqlite3.Connection:
     against the wrong path it would otherwise create an empty database there and
     report a successful migration.
     """
-    path = Path(db.config.DB_PATH)
-    if not path.exists():
-        raise SystemExit(
-            f"No database at {path}. Point UBYHOST_DB at the file the app uses."
-        )
-    conn = db.connect()
-    try:
-        found = conn.execute(
-            "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'guest'"
-        ).fetchone()
-    finally:
-        conn.close()
-    if not found:
-        raise SystemExit(
-            f"{path} does not look like a UbyHost database. Point UBYHOST_DB at "
-            "the right file."
-        )
+    if getattr(db.config, "DB_BACKEND", "sqlite") == "postgresql":
+        # No file to check on PostgreSQL: ask the server through the db layer.
+        if db.query_one("SELECT to_regclass('public.guest') AS t")["t"] is None:
+            raise SystemExit(
+                "The PostgreSQL database has no guest table. Point "
+                "UBYHOST_DATABASE_URL at the right database."
+            )
+    else:
+        path = Path(db.config.DB_PATH)
+        if not path.exists():
+            raise SystemExit(
+                f"No database at {path}. Point UBYHOST_DB at the file the app uses."
+            )
+        conn = db.connect()
+        try:
+            found = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'guest'"
+            ).fetchone()
+        finally:
+            conn.close()
+        if not found:
+            raise SystemExit(
+                f"{path} does not look like a UbyHost database. Point UBYHOST_DB at "
+                "the right file."
+            )
     db.init_db()
     return db.connect()
 
@@ -131,7 +145,7 @@ def migrate(dry_run: bool = False) -> Dict[str, int]:
             # still as long as it ever was and the pages may sit in the WAL.
             # VACUUM rewrites it so the plaintext is not recoverable by reading
             # the raw file.
-            conn.execute("VACUUM")
+            _vacuum(conn)
             counts["vacuumed"] = 1
     finally:
         conn.close()
@@ -169,7 +183,7 @@ def rollback(dry_run: bool = False) -> Dict[str, int]:
                 [*updates.values(), row["id"]],
             )
         if counts["cleared"] and not dry_run:
-            conn.execute("VACUUM")
+            _vacuum(conn)
     finally:
         conn.close()
     return counts
