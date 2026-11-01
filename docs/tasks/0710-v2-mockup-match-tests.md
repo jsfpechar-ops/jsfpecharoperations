@@ -54,3 +54,6 @@ Both tests run for all 6 widths with 0 skipped. The report lists every remaining
 
 ## 8. Stop and ask
 Stop if a selector matches nothing in the mockup's `today` view (a typo in this brief), or if a check gives more than 200 findings at one width (the check is probably wrong; report a sample of 10).
+
+## 9. Report
+`docs/tasks/0710-report.md`: status, test tails, every finding by width marked fix-in-0711 or test-bug-fixed, screenshots, deviations.
