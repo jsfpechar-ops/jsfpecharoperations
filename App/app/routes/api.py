@@ -60,7 +60,7 @@ def command_palette(request: Request):
         destinations.append(("properties.shared.lock", "/smart-locks", "ttlock door lock code"))
     if auth.current_user(request)["role"] == "admin":
         destinations.extend([
-            ("nav.users", "/admin/users", "team accounts roles"),
+            ("nav.users", "/admin/customers", "team accounts roles"),
             ("users.incidents_link", "/admin/incidents", "incidents"),
         ])
     items.extend({"label": t(key), "group": t("command.group.pages"), "url": url,

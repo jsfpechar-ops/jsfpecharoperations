@@ -868,27 +868,20 @@ def stop_impersonating(request: Request):
     return response
 
 
+def _back_incidents(msg: str = "", err: str = "") -> RedirectResponse:
+    """0492: the incident forms answer on System, at the incidents block."""
+    response = _back("/admin/operations", msg=msg, err=err)
+    response.headers["location"] = response.headers["location"] + "#incidents"
+    return response
+
+
 @router.get("/admin/incidents")
 def incidents_admin(request: Request):
-    """The platform-admin security incident register (BE-13)."""
-    account, guard = _require_admin(request)
+    """The security incident register moved into System (brief 0492)."""
+    _account, guard = _require_admin(request)
     if guard:
         return guard
-    rows = [
-        {"incident": incident, "draft": incidents.controller_notification_draft(incident)}
-        for incident in incidents.list_all()
-    ]
-    return render(
-        request,
-        "admin_incidents.html",
-        {
-            "rows": rows,
-            "review_alerts": incidents.open_review_alerts(),
-            "owners": db.query(
-                "SELECT id, username FROM user_account ORDER BY username"
-            ),
-        },
-    )
+    return RedirectResponse("/admin/operations#incidents", status_code=303)
 
 
 @router.get("/admin/operations")
@@ -896,11 +889,21 @@ def operations_admin(request: Request):
     """Read-only cross-workspace health: filings, calendars, jobs, mail (WP10).
 
     No guest field is read, so nothing on the page identifies a guest.
+    The incident register is the last block (``#incidents``, brief 0492).
     """
     account, guard = _require_admin(request)
     if guard:
         return guard
-    return render(request, "admin_operations.html", {"ops": admin_ops.overview(), "havel_ops": havel.admin_overview()})
+    return render(request, "admin_operations.html", {
+        "ops": admin_ops.overview(),
+        "havel_ops": havel.admin_overview(),
+        "rows": [
+            {"incident": incident, "draft": incidents.controller_notification_draft(incident)}
+            for incident in incidents.list_all()
+        ],
+        "review_alerts": incidents.open_review_alerts(),
+        "owners": db.query("SELECT id, username FROM user_account ORDER BY username"),
+    })
 
 
 @router.get("/admin/funnel")
@@ -920,7 +923,7 @@ async def incident_create(request: Request):
     form = await request.form()
     summary = _form_str(form, "summary").strip()
     if not summary:
-        return _back("/admin/incidents", err=_flash(request, "flash.error.incident_summary"))
+        return _back_incidents(err=_flash(request, "flash.error.incident_summary"))
     approx = _form_str(form, "approx_subjects").strip()
     incident_id = incidents.create(
         detected_at=_form_str(form, "detected_at") or db.utcnow(),
@@ -933,7 +936,7 @@ async def incident_create(request: Request):
         notes=_form_str(form, "notes"),
     )
     db.audit("incident_created", f"incident={incident_id}", actor=account["username"])
-    return _back("/admin/incidents", msg=_flash(request, "flash.incidents.created"))
+    return _back_incidents(msg=_flash(request, "flash.incidents.created"))
 
 
 @router.post("/admin/incidents/{incident_id}")
@@ -942,7 +945,7 @@ async def incident_update(incident_id: int, request: Request):
     if guard:
         return guard
     if not incidents.get(incident_id):
-        return _back("/admin/incidents", err=_flash(request, "flash.error.no_such_incident"))
+        return _back_incidents(err=_flash(request, "flash.error.no_such_incident"))
     form = await request.form()
     action = _form_str(form, "action")
     if action in incidents.TIMESTAMP_FIELDS:
@@ -957,7 +960,7 @@ async def incident_update(incident_id: int, request: Request):
     if values:
         incidents.update(incident_id, values)
     db.audit("incident_updated", f"incident={incident_id}", actor=account["username"])
-    return _back("/admin/incidents", msg=_flash(request, "flash.incidents.saved"))
+    return _back_incidents(msg=_flash(request, "flash.incidents.saved"))
 
 
 # G-D11: return a ZIP on request and delete 30 days after termination, once the

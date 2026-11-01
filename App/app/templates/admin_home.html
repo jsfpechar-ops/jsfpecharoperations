@@ -5,11 +5,17 @@
 {% block title %}{{ t('home.admin.title') }}{% endblock %}
 {% block meta %}{{ t('home.admin.meta', date=today) }}{% endblock %}
 {% block tabs %}{{ ui_section_tabs() }}{% endblock %}
-{% block secondary_actions %}
-{{ ui_button(t('customers.title'), 'secondary', href='/admin/customers') }}
-{{ ui_button(t('customers.payments'), 'secondary', href='/admin/fakturace') }}
-{% endblock %}
 {% block body %}
+{% set problems = [
+  {'anchor': 'ops-filings', 'count': ops.filings.count, 'title': t('ops.filings.title')},
+  {'anchor': 'ops-filings', 'count': ops.stuck.count, 'title': t('ops.stuck.title')},
+  {'anchor': 'ops-feeds', 'count': ops.feeds.count, 'title': t('ops.feeds.title')},
+  {'anchor': 'ops-jobs', 'count': ops.jobs.count, 'title': t('ops.jobs.title')},
+  {'anchor': 'ops-mail', 'count': ops.mail.count, 'title': t('ops.mail.title')},
+  {'anchor': 'ops-alerts', 'count': ops.alerts.count, 'title': t('ops.alerts.title')},
+  {'anchor': 'incidents', 'count': review_alerts | length, 'title': t('incidents.review_title')},
+] | selectattr('count') | list %}
+{% set queues_empty = not (queue.overdue or queue.trials_ending or queue.unverified or queue.ending) %}
 {% if not billing_enabled %}{{ ui_banner('neutral', t('customers.billing_off')) }}{% endif %}
 
 {% if billing_enabled and portfolio %}
@@ -19,6 +25,20 @@
 ('/admin/customers?state=overdue', summary.get('overdue', 0), t('customers.state.overdue')),
 ('/admin/customers?state=trialing', summary.get('trialing', 0), t('home.admin.trialing'))
 ]) }}
+{% endif %}
+
+{% if not problems and queues_empty %}
+{{ ui_empty(t('admin.today.clear')) }}
+{% else %}
+{% if problems %}
+<section class="ui-section" id="today-system">
+  <h2>{{ t('admin.today.system') }}</h2>
+  <ul>
+  {% for row in problems %}
+    <li><a href="/admin/operations#{{ row.anchor }}">{{ row.title }}</a> <span class="ui-badge ui-badge-action">{{ row.count }}</span></li>
+  {% endfor %}
+  </ul>
+</section>
 {% endif %}
 
 {% call ui_section(t('home.admin.queue.overdue'), id='queue-overdue') %}
@@ -76,4 +96,5 @@
 {{ ui_table_end() }}
 {% else %}<p class="ui-sub">{{ t('home.admin.queue.none') }}</p>{% endif %}
 {% endcall %}
+{% endif %}
 {% endblock %}

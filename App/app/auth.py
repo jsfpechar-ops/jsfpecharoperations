@@ -450,7 +450,7 @@ def end_expired_impersonation(request: Request) -> Optional[RedirectResponse]:
         host_i18n.lang_from_request(request), "impersonation.expired"
     )
     response = RedirectResponse(
-        f"/admin/users?msg={quote(notice)}", status_code=303
+        f"/admin/customers?msg={quote(notice)}", status_code=303
     )
     attach_session(
         response,
