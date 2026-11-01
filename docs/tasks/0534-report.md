@@ -443,3 +443,12 @@ Status: blocked (executor, session 1). Done: steps 1 to 3. Left: step 4 (screens
 - Item 5 (save bar): `body.v2 .savebar [hidden]{display:none}`; phone bar kept in one row (flex 1 1 0). Reset-hides-Zrušit uses `.btn.ghost` (not verified).
 - Item 6 (sub line): template guard now `prop_addr and prop_addr.strip()`.
 - Tests: test_0534 and test_0531 and test_static_versions pass; 0710 `property` fails at 320, 390, 768 (style and geometry: tap targets under 44 px, main content under tab bar). Not fixed.
+
+### 0541 session 2 (update)
+Status: review-ready for steps 1 to 4, with the open items below.
+- Item 3: JS fallback in `initPhoneDefaultClosed` (no section=, view= or hash: `#sec-basics` closed once). Browser assert at 390 px in test_0534. Template `data-default-open` removed.
+- Items 1, 2, 4, 5, 6: copy button now shows its label (colour forced, `#1c1c1a !important`, root cause not found); help toggle hidden; rows without card; save bar `[hidden]` rule and one row; address guard.
+- 0710 property at 320, 390, 768: all pass (geometry: closed rows no longer hold layout; main padding above the tab bar; inputs and links 44 px in prop-sec below 1024).
+- test_0534, test_0531, test_static_versions, test_0710 (-k "property or not v2_page"): 36 passed, 0 skipped.
+- Screenshots: app-390, app-390-open, app-320, mockup-390 in docs/tasks/screenshots-0540/. Viewed: app-390 shows the label, closed basics, list rows; app-390-open shows one-row Cancel and Save; the copy icon is not visible; the app is in English (the capture uses ?lang=en), the brief expects Kopírovat odkaz.
+- Left: the Calendars row keeps a card border in the screenshot (not traced). The copy-button colour fix needs a root-cause check (`!important` is a workaround). The 0710 phone entry compares only the h1, h2.sec and dot; guest card and rows are not compared against the mockup.
