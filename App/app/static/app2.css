@@ -398,6 +398,7 @@ body.v2 .havel-fab:hover{background: var(--accent-hover);}
 body.v2 .havel-fab:focus-visible{box-shadow: var(--focus-ring-2); outline: 0;}
 body.v2 .havel-fab[data-unread]::after{content: ""; position: absolute; top: var(--space-1); right: var(--space-1); width: var(--space-3); height: var(--space-3); border-radius: var(--radius-pill); background: var(--danger); border: 2px solid var(--surface);}
 body.v2 .havel-fab[hidden]{display: none;}
+body.v2 .havel-composer[hidden]{display: none;}
 @media (min-width: 1024px){
 html:has(.havel-fab:not([hidden])){scroll-padding-bottom: calc(var(--control-h) + var(--space-3) + var(--space-12));}
 body.v2:has(.havel-fab) .wrap.with-sidebar{padding-bottom: calc(var(--control-h) + var(--space-3) + var(--space-12));}
