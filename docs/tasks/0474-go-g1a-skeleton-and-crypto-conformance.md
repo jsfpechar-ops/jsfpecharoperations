@@ -19,12 +19,12 @@ Start the Go port (plan v4 step 13, G1). Add a Go module in `go/` with a web bin
   - Token = `payload.timestamp.signature`.
   - `loads` with `max_age` refuses an age above max_age.
 - Fernet spec: version byte 0x80, 8-byte big-endian time, 16-byte IV, AES-128-CBC with PKCS7 (key bytes 16–31), HMAC-SHA256 (key bytes 0–15) over everything before it, URL-safe base64 with padding. In Python, `Fernet(key)._encrypt_from_parts(data, current_time, iv)` gives a deterministic token for the fixtures.
-- Go 1.24 is installed locally (`go version`). The module proxy works. In CI the runner's preinstalled Go downloads the pinned toolchain through `toolchain go1.24.7` in `go.mod` (checksums verified by sum.golang.org), so no setup action is needed.
-- Dependencies: the Go standard library plus `github.com/jackc/pgx/v5` v5.7.6 (PostgreSQL driver), nothing else. The decision line is in §4 step 9.
+- Go 1.24 is installed locally (`go version`). The module proxy works. In CI the runner's preinstalled Go downloads the pinned toolchain through `toolchain go1.25.14` in `go.mod` (checksums verified by sum.golang.org), so no setup action is needed.
+- Dependencies: the Go standard library plus `github.com/jackc/pgx/v5` v5.12.0 (PostgreSQL driver), nothing else. The decision line is in §4 step 9.
 ## 3. Files
 New: `go/go.mod`, `go/go.sum`, `go/cmd/ubyhost-web/main.go`, `go/internal/secure/fernet.go`, `go/internal/secure/signer.go`, `go/internal/secure/digest.go`, `go/internal/secure/secure_test.go`, `go/internal/secure/testdata/fixtures.json`, `go/internal/schema/goose.go`, `go/internal/schema/goose_test.go`, `App/scripts/crypto_fixtures.py`, `App/tests/test_crypto_fixtures.py`. Edit: `.github/workflows/ci.yml` (one new job `go`), `docs/context/decisions.md` (one line), `docs/context/architecture.md` (one line, where code lives). Write `docs/tasks/0474-report.md`.
 ## 4. Steps
-1. `go/go.mod`: `module github.com/jsfpechar-ops/jsfpecharoperations/go`, `go 1.24`, `toolchain go1.24.7`, require pgx v5.7.6 (`go get`, then `go mod tidy`).
+1. `go/go.mod`: `module github.com/jsfpechar-ops/jsfpecharoperations/go`, `go 1.25.0`, `toolchain go1.25.14`, require pgx v5.12.0 (`go get`, then `go mod tidy`).
 2. `App/scripts/crypto_fixtures.py`: deterministic, test keys only, never reads `.env` or config. Inputs: secret `"fixture-secret-0123456789abcdef0123456789"` and two data keys from `Fernet.generate_key()` written once as literals in the script. Write `go/internal/secure/testdata/fixtures.json` (sorted keys, indent 2) with:
    - (a) `fernet`: for plaintexts `""`, `"Jana Nováková"`, 1,000 × `"x"` and bytes 0–255 (hex in JSON): token from key 1, from key 2, and from the legacy key of the secret, each with `current_time=1767225600` and IV = bytes 0..15.
    - (b) `multifernet`: the key list `[key1, key2, legacy]` and one token per key that MultiFernet must decrypt.

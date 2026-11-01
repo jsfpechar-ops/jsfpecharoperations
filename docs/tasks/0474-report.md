@@ -9,7 +9,7 @@ Executor: Haiku 5.5. Branch task/0474-go-g1a, not pushed.
 - Step 7: go/cmd/ubyhost-web/main.go (healthz, metrics, goose check, SIGTERM shutdown, slog, URL redacted).
 - Step 8: `go` job in .github/workflows/ci.yml, placed before `smoke`.
 - Step 9: decisions.md line and architecture.md row.
-- go.mod: `go mod tidy` alone chose pgx v5.12.0 and go 1.25.0. Pinned by hand to pgx v5.7.6, go 1.24, toolchain go1.24.7; tidy then kept x/text v0.24.0 (indirect).
+- go.mod: `go mod tidy` alone chose pgx v5.12.0 and go 1.25.0. Pinned by hand to pgx v5.12.0, go 1.24, toolchain go1.25.14; tidy then kept x/text v0.24.0 (indirect).
 - Fixture count: 19 (`fixtures written: 19`). Drift check: committed fixtures unchanged.
 
 ## Commands (tails)
@@ -62,3 +62,4 @@ go/go.mod, go/go.sum, go/internal/secure/secure_test.go, go/internal/schema/goos
 ## Orchestrator resolution
 - Lint stop: the decisions line was shortened (and the 0465b line trimmed by four words); `context lint: OK`. decisions.md sits at the cap: the next orchestrator compacts it before appending.
 - Known gap for G4: Go's JSON encoder escapes U+2028/U+2029 and formats floats differently from Python; session payloads hold ints, bools and short ASCII strings only, so G1 is unaffected. G4 re-checks any payload it adds.
+- pgx 5.7.6 failed dependency-review (GHSA-9jj7-4m8r-rfcm, GHSA-xgrm-4fwx-7qm8, critical); moved to pgx v5.12.0, which needs Go 1.25: toolchain go1.25.14.
