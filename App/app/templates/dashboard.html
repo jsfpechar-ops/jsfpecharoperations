@@ -108,6 +108,9 @@
     <p class="needs-you-calm">{{ icon('check', 20) }}<strong>{{ t('needs_you.calm') }}</strong></p>
     {% endif %}
   </section>
+  {% if month_summary %}
+  <p class="dashboard-quiet" data-dashboard-month>{{ t('dashboard.month.label') }} <b>{{ month_summary.guests }}</b> {{ tp('dashboard.month.guests', month_summary.guests) }}<i aria-hidden="true">·</i><b>{{ month_summary.nights }}</b> {{ tp('dashboard.month.nights', month_summary.nights) }}<i aria-hidden="true">·</i><b>{{ month_summary.reported }}</b> {{ tp('dashboard.month.reported', month_summary.reported) }}</p>
+  {% endif %}
   </div>
   {% include "_dashboard_calendar.html" %}
   <div data-dashboard-refresh="work">

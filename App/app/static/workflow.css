@@ -68,6 +68,9 @@
 .needs-you { margin: 0 0 var(--space-5); padding: var(--space-4); border: 1px solid var(--border-strong); border-radius: var(--radius-lg); background: var(--surface); }
 .needs-you > h2 { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); margin: 0 0 var(--space-3); font-size: var(--text-md); line-height: 1.3; }
 .needs-you-list { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.dashboard-quiet { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; margin: 4px 0 24px; color: var(--ink-2); font-size: 14px; }
+.dashboard-quiet b { color: var(--ink); font-size: 15px; font-weight: 700; }
+.dashboard-quiet i { font-style: normal; }
 .needs-you-item { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: var(--space-2); min-width: 0; padding: var(--space-3); border: 1px solid var(--border); border-left: 4px solid var(--amber); border-radius: var(--radius-md); background: var(--surface); }
 .needs-you-item[data-tone="red"] { border-left-color: var(--red); }
 .needs-you-item[data-tone="grey"] { border-left-color: var(--border-strong); }

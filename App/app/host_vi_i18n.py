@@ -3853,6 +3853,16 @@ STRINGS.update({
     "welcome_back.reported.one": "Đã khai báo 1 khách cho cảnh sát.",
     "welcome_back.reported.few": "Đã khai báo %(count)s khách cho cảnh sát.",
     "welcome_back.quiet": "Không có gì mới.",
+    "dashboard.month.label": "Tháng này",
+    "dashboard.month.guests": "khách",
+    "dashboard.month.guests.one": "khách",
+    "dashboard.month.guests.few": "khách",
+    "dashboard.month.nights": "đêm",
+    "dashboard.month.nights.one": "đêm",
+    "dashboard.month.nights.few": "đêm",
+    "dashboard.month.reported": "đã khai báo công an",
+    "dashboard.month.reported.one": "đã khai báo công an",
+    "dashboard.month.reported.few": "đã khai báo công an",
 })
 
 # 0277: "How does this work?" (Vietnamese).
