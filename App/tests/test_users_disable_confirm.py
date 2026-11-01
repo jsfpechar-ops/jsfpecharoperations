@@ -2,7 +2,7 @@
 
 Disable was the only destructive control in the admin app that fired on a single
 click -- every archive, purge and link regeneration elsewhere already confirms.
-0480: the disable control lives on the customer page now (the Users page is gone),
+0490: the disable control lives on the customer page now (the Users page is gone),
 so the confirm is asserted there. The lede went with the Users page.
 """
 from __future__ import annotations

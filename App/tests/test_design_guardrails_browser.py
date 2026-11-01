@@ -213,7 +213,7 @@ def test_admin_pages_pass_the_layout_guard(wide_host, wide_base):
 
 
 def test_admin_customer_account_input_stays_narrow(wide_host, wide_base):
-    """0480: the account forms moved from the Users page to the customer page."""
+    """0490: the account forms moved from the Users page to the customer page."""
     username = f"guard-admin-{secrets.token_hex(4)}"
     admin_id = auth.create_account(f"{username}@example.test", "Guard Admin", role="admin", username=username)
     client = TestClient(app)
@@ -240,7 +240,7 @@ def test_admin_customer_account_input_stays_narrow(wide_host, wide_base):
             if email.count() == 0:
                 email = page.locator("input:not([type=hidden]):visible")
             width = email.first.bounding_box()["width"]
-            # 0480: the customer page has no split column, so the old 660 px cap
+            # 0490: the customer page has no split column, so the old 660 px cap
             # does not apply; the guard now only checks the input fits the viewport.
             assert width <= 1280, f"account input is {width}px wide"
             context.close()

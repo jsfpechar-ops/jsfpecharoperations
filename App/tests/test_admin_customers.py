@@ -150,7 +150,7 @@ def test_bad_filters_and_cursors_do_not_change_the_query_contract(accounts):
 
 
 def test_old_users_url_redirects_to_customers_and_customer_page_has_no_manage_link(accounts, monkeypatch):
-    """0480: the Users page is gone; its URL answers 303 to the customers list."""
+    """0490: the Users page is gone; its URL answers 303 to the customers list."""
     create, prefix = accounts
     owner, _ = create(prefix + " manage-link")
     _admin, username = create(role="admin")
