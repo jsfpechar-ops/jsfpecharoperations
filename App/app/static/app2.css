@@ -742,3 +742,5 @@ body.v2 .calendar-add-form:has(#label option[value="other"]:not(:checked)) .cale
 /* 0736 item 3: the continue button reads white on coral-600 (5.5:1); toast close is at least 24 px on desktop (phone keeps 44 px) */
 body.v2 .setup-continue-card .ui-btn-primary{color:#fff;background:var(--coral-600);border-color:var(--coral-600)}
 @media (min-width:768px){body.v2 .toast-stack .toast > [data-toast-close]{min-width:24px;min-height:24px}}
+/* 0736 run 8 step 3: buttons and links in a field row share the copy button height (48 px); the copy button itself is unchanged */
+body.v2 .fields-wrap .copyrow > .btn.sm{min-height:48px}
