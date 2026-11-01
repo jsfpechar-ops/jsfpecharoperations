@@ -1,5 +1,5 @@
 # 0471: remove the phone top bar; the bottom tab bar is the only phone chrome
-Status: on hold until the Go migration is done (owner, 2026-11-01); re-check paths against the Go templates before running
+Status: blocked (on hold until the Go migration is done, owner 2026-11-01; re-check paths against the Go templates before running)
 Depends on: none | Base commit: main 0ee0152 | Branch: claude/project-thread-hm2s1w
 Executor: Haiku 5.5 | Fits one session: 25 tool calls, 60k tokens
 ## 1. Objective
