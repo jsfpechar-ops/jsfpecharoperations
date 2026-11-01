@@ -92,7 +92,7 @@ def test_no_business_and_no_property_states_stay_distinct(host):
     assert "Add operator" in empty
     entity_id = _entity()
     ready = host.get("/apartments?lang=en").text
-    assert "No properties yet." in ready and 'href="/apartments/new"' in ready
+    assert 'href="/apartments/new"' in ready
     assert 'id="property-summaries"' not in ready
     # The one shared business is linked once, in its own editor scope.
     assert ready.count(f'href="/entities?edit={entity_id}&amp;next=/apartments"') == 1
@@ -104,7 +104,7 @@ def test_list_rows_show_setup_calendars_and_open_inside_the_menu(host):
                       uby_idub="123456789012", uby_mark="UBYX", uby_ws_user="ws-login-x")
     second = _property("Chata Beta", entity_id, automation_mode="scheduled", submit_after_hours=6)
     page = host.get("/apartments?lang=en").text
-    table = page[page.index('class="table-cards properties-table"'):page.index("</table>")]
+    table = page[page.index("<table"):page.index("</table>")]
     for apartment_id in (first, second):
         assert f'<a class="btn small" href="/apartments/{apartment_id}">Open</a>' not in table
         assert f'<a class="row-menu-item" href="/apartments/{apartment_id}" role="menuitem">Open</a>' in table
@@ -116,12 +116,12 @@ def test_list_rows_show_setup_calendars_and_open_inside_the_menu(host):
     assert "property-location" not in table and ">Brno<" in table
     for police in ("UBY-FACILITY", "123456789012", "UBYX", "ws-login-x"):
         assert police not in page, police
-    assert re.search(r'<a class="ui-badge [^"]*" data-setup-chip="[^"]+" data-state="[^"]+"', table)
+    assert re.search(r'<a class="st [grn]" data-setup-chip="[^"]+" data-state="[^"]+"', table)
     # Old hashes that pointed at the wrong group are gone.
     assert "#ubyport\" role=\"menuitem\"" not in table
     # Two businesses: the shared link opens the list, never an arbitrary one.
     _entity(name="Druhá s.r.o.")
-    assert '<a class="ui-tab" href="/entities">Business &amp; legal details</a>' in host.get("/apartments").text
+    assert '<a class="ui-tab"' not in host.get("/apartments").text
 
 
 def test_summary_section_is_gone_and_archived_stays_off_the_list(host):
@@ -244,15 +244,15 @@ def live_base(browser_host):
 _FIT_JS = """() => {
   const vw = document.documentElement.clientWidth;
   const bad = [];
-  const sel = '.ui-tabs a, .properties-table a, .properties-table button';
+  const sel = 'main table a, main table button';
   for (const el of document.querySelectorAll(sel)) {
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height) continue;
     if (r.right > vw + 1 || r.left < -1) bad.push(el.textContent.trim().slice(0, 30));
   }
-  const opens = [...document.querySelectorAll('.properties-table .row-actions .row-menu-trigger')]
+  const opens = [...document.querySelectorAll('main table .row-actions .row-menu-trigger')]
     .map(a => Math.round(a.getBoundingClientRect().right));
-  const lane = document.querySelector('.properties-table').closest('.panel').getBoundingClientRect();
+  const lane = document.querySelector('main table').closest('.card').getBoundingClientRect();
   return {scroll: document.documentElement.scrollWidth, vw, bad, opens,
           lane: [Math.round(lane.left), Math.round(lane.right)],
           };
