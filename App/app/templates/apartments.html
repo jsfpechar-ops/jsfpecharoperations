@@ -2,7 +2,7 @@
 {% set nav = 'apartments' %}
 {% set how_key = 'properties' %}
 {% set body_kind = 'list' %}
-{% from "_components.html" import onboarding_banner, empty_state, row_menu_begin, row_menu_end, row_open, property_identity, help_tip, copy_icon, copy_button with context %}
+{% from "_components.html" import onboarding_banner, empty_state, row_menu_begin, row_menu_end, row_open, property_identity, help_tip, copy_icon, copy_button, copy_inline with context %}
 {% from "_ui.html" import ui_button with context %}
 {% from "_ui_layout.html" import ui_toolbar, ui_section_tabs with context %}
 {% from "_icons.html" import icon with context %}
@@ -20,27 +20,30 @@
 <div class="panel tight scroll-x list-cards lc-properties">
   <table class="table-cards properties-table">
     <thead>
-      <tr><th>{{ t('apartments.table.property') }}</th><th>{{ t('apartments.table.entity') }}</th><th>{{ t('apartments.table.calendars') }}</th>
-        <th>{{ t('apartments.table.stays') }}</th><th>{{ t('apartments.table.setup') }}</th><th><span class="sr-only">{{ t('common.actions') }}</span></th></tr>
+      <tr><th>{{ t('apartments.table.property') }}</th><th>{{ t('apartments.table.address') }}</th><th>{{ t('apartments.table.setup') }}</th>
+        <th><span class="sr-only">{{ t('common.copy_link') }}</span></th><th><span class="sr-only">{{ t('common.actions') }}</span></th></tr>
     </thead>
     <tbody>
     {% for row in rows %}
       {% set apartment = row.apartment %}
       {% set base_url = '/apartments/' ~ apartment.id %}
+      {% set address_text = [((apartment.addr_street or '') ~ ' ' ~ (apartment.addr_house_no or '')) | trim, apartment.addr_obec or ''] | select | join(', ') %}
       <tr class="clickable-row" data-href="{{ base_url }}" tabindex="0" role="link"
           aria-label="{{ apartment.internal_name }}">
         <td data-label="{{ t('apartments.table.property') }}">
           <a class="row-primary-link" href="{{ base_url }}">{{ property_identity(apartment.id, apartment.internal_name) }}</a>
           {% if not apartment.active %}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('apartments.inactive') }}</span>{% endif %}
         </td>
-        <td data-label="{{ t('apartments.table.entity') }}">{% if apartment.legal_entity_id %}<a href="/entities?edit={{ apartment.legal_entity_id }}&amp;next=/apartments">{{ row.apartment.entity_name or '—' }}</a>{% else %}<a href="{{ base_url }}?view=settings&amp;section=property#operator-picker">{{ t('properties.choose_business') }}</a>{% endif %}</td>
-        <td class="num" data-label="{{ t('apartments.table.calendars') }}">{{ apartment.feeds }}</td>
-        <td class="num" data-label="{{ t('apartments.table.stays') }}">{{ apartment.reservations }}</td>
+        <td data-label="{{ t('apartments.table.address') }}">{{ address_text }}</td>
         <td data-label="{{ t('apartments.table.setup') }}">
-          {% if row.issues %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ t('apartments.setup.fix', count=row.issues | length) }}</span>
-          {% elif not apartment.feeds %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ t('apartments.setup.calendar') }}</span>
-          {% else %}<span class="ui-badge ui-badge-done" data-tone="green">{{ t('apartments.setup.ready') }}</span>{% endif %}
+          <div class="property-setup-chips">
+          {% for chip in row.chips %}
+            {% set tone = {'ok': 'done', 'bad': 'attention', 'off': 'neutral'}[chip.state] %}
+            <a class="ui-badge ui-badge-{{ tone }}" data-setup-chip="{{ chip.key }}" data-state="{{ chip.state }}" href="{{ chip.href }}">{{ t('apartments.chip.' ~ chip.key) }}<span class="sr-only">: {{ t('apartments.chip_state.' ~ chip.state) }}</span></a>
+          {% endfor %}
+          </div>
         </td>
+        <td class="nowrap" data-label="{{ t('common.copy_link') }}">{% if row.link_url %}{{ copy_inline('guest-url-' ~ apartment.id, row.link_url, t('common.copy_link')) }}{% endif %}</td>
         <td class="nowrap row-actions" data-label="">{{ row_open(base_url) }}
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="{{ base_url }}" role="menuitem">{{ t('common.open') }}</a>
@@ -59,84 +62,6 @@
     </tbody>
   </table>
 </div>
-
-{#- 0078/0098: cross-property guest links and reporting timing, visible, never
-    folded. Same row design as the Properties table above. Per row: the full
-    guest link and the PIN with icon actions, and the inline "When to send to
-    UbyPort" control. That control posts to the scoped automation-timing route,
-    which uses the Automation save's own normaliser (one rule, two entry points).
-    New PIN posts to the existing regenerate-pin route. Works without JS. -#}
-<section class="property-summaries" id="property-summaries" aria-labelledby="property-summaries-title">
-  <div class="heading-with-tip list-section-heading property-summaries-head">
-    <h2 class="property-summaries-title" id="property-summaries-title">{{ t('properties.summary.title') }}</h2>
-    {{ help_tip('property-summaries-help', t('properties.summary.help')) }}
-  </div>
-  <div class="panel tight scroll-x list-cards lc-properties property-summary-panel">
-    <table class="table-cards property-summary-table">
-      <thead><tr><th>{{ t('apartments.table.property') }}</th><th>{{ t('property_nav.guest_link') }}</th><th>{{ t('guest_links.pin') }}</th><th>{{ t('automation.timing_title') }}</th><th><span class="sr-only">{{ t('common.actions') }}</span></th></tr></thead>
-      <tbody>
-      {% for row in rows %}
-        {% set apartment = row.apartment %}
-        {% set base_url = '/apartments/' ~ apartment.id %}
-        {% set mode = apartment.automation_mode if apartment.automation_mode in ('manual', 'scheduled', 'immediate') else 'manual' %}
-        <tr class="clickable-row" data-summary-row="{{ apartment.id }}" data-href="{{ base_url }}" tabindex="0" role="link" aria-label="{{ apartment.internal_name }}">
-          <td data-label="{{ t('apartments.table.property') }}">
-            <a class="row-primary-link" href="{{ base_url }}">{{ property_identity(apartment.id, apartment.internal_name) }}</a>
-          </td>
-          <td class="property-inline-link" data-label="{{ t('property_nav.guest_link') }}">
-            {% if row.link_url %}
-            <div class="property-inline-value">
-              <code class="mono property-inline-url" id="guest-url-{{ apartment.id }}" title="{{ row.link_url }}">{{ row.link_url }}</code>
-              <span class="property-inline-icons">
-                {{ copy_button('guest-url-' ~ apartment.id, t('common.copy_link')) }}
-                <a class="btn-icon" href="/l/{{ row.link_key }}" target="_blank" rel="noopener" aria-label="{{ t('guest_links.preview') }}">{{ icon('external-link', 16) }}<span class="sr-only">{{ t('guest_links.preview') }}</span></a>
-              </span>
-            </div>
-            {% else %}—{% endif %}
-          </td>
-          <td class="property-inline-pin" data-label="{{ t('guest_links.pin') }}">
-            <div class="property-inline-value">
-              <code class="mono property-inline-pin-value" id="guest-pin-{{ apartment.id }}">{{ apartment.permalink_pin or '—' }}</code>
-              <span class="property-inline-icons">
-                {% if apartment.permalink_pin %}{{ copy_button('guest-pin-' ~ apartment.id, t('properties.inline.copy_pin')) }}{% endif %}
-                <form method="post" action="{{ base_url }}/regenerate-pin" class="property-inline-form"
-                      data-confirm data-confirm-message="{{ t('properties.inline.new_pin_confirm', name=apartment.internal_name) }}">
-                  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-                  <input type="hidden" name="return_to" value="/apartments#property-summaries">
-                  <button class="btn-icon" type="submit" aria-label="{{ t('guest_links.new_pin') }}">{{ icon('refresh-cw', 16) }}<span class="sr-only">{{ t('guest_links.new_pin') }}</span></button>
-                </form>
-              </span>
-            </div>
-          </td>
-          <td class="property-inline-timing" data-label="{{ t('automation.timing_title') }}">
-            <form method="post" action="{{ base_url }}/automation-timing" class="property-timing-form" data-inline-timing
-                  data-saving="{{ t('properties.inline.saving') }}" data-saved="{{ t('properties.inline.saved') }}"
-                  data-failed="{{ t('properties.inline.save_failed') }}">
-              <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-              <input type="hidden" name="return_to" value="/apartments#property-summaries">
-              <label class="sr-only" for="timing-mode-{{ apartment.id }}">{{ t('automation.timing_label') }}: {{ apartment.internal_name }}</label>
-              <select id="timing-mode-{{ apartment.id }}" name="automation_mode" data-timing-mode>
-                {% for value in ('manual', 'scheduled', 'immediate') %}
-                <option value="{{ value }}"{% if mode == value %} selected{% endif %}>{{ t('automation.mode_short.' ~ value) }}</option>
-                {% endfor %}
-              </select>
-              <span class="property-timing-hours" data-timing-hours>
-                <label class="sr-only" for="timing-hours-{{ apartment.id }}">{{ t('automation.hours') }}</label>
-                <input type="number" id="timing-hours-{{ apartment.id }}" name="submit_after_hours"
-                       min="1" max="48" step="1" inputmode="numeric" value="{{ apartment.submit_after_hours }}" data-timing-hours-input>
-                <span aria-hidden="true">{{ t('properties.inline.hours_unit') }}</span>
-              </span>
-              <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" data-timing-save>{{ t('common.save') }}</button>
-              <span class="small property-timing-status" role="status" aria-live="polite" data-timing-status></span>
-            </form>
-          </td>
-          <td class="nowrap row-actions" data-label="">{{ row_open(base_url) }}</td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</section>
 {% else %}
   {% if has_operator %}
     {{ empty_state('', t('apartments.empty.lede_ready'), '/apartments/new', t('apartments.empty.add')) }}
