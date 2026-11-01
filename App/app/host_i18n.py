@@ -8269,6 +8269,12 @@ for _lang, _strings in _PLAIN_FIXES_0239_STRINGS.items():
 _NEEDS_YOU_0240_STRINGS = {
     "en": {
         "needs_you.title": "What needs you",
+        "needs_you.short.failed": "Police report failed",
+        "needs_you.short.overdue": "Police overdue",
+        "needs_you.short.ready": "Police report not sent",
+        "needs_you.short.forms": "Guests not registered",
+        "needs_you.short.setup": "Police details missing",
+        "needs_you.short.paste": "No guest has used the link",
         "needs_you.calm": "Nothing needs you today.",
         "needs_you.on_track": "%(count)s stays are on track.",
         "needs_you.on_track.one": "1 stay is on track.",
@@ -8294,6 +8300,12 @@ _NEEDS_YOU_0240_STRINGS = {
     },
     "cs": {
         "needs_you.title": "Co na vás čeká",
+        "needs_you.short.failed": "Hlášení policii selhalo",
+        "needs_you.short.overdue": "Lhůta policie uplynula",
+        "needs_you.short.ready": "Hlášení policii neodešlo",
+        "needs_you.short.forms": "Hosté se neregistrovali",
+        "needs_you.short.setup": "Chybí údaje pro policii",
+        "needs_you.short.paste": "Host ještě nepoužil odkaz",
         "needs_you.calm": "Dnes na vás nic nečeká.",
         "needs_you.on_track": "%(count)s pobytů běží podle plánu.",
         "needs_you.on_track.one": "1 pobyt běží podle plánu.",

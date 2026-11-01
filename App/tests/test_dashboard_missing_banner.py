@@ -117,7 +117,7 @@ def test_one_short_line_opens_the_first_missing_police_field(host):
     assert len(lines) == 1
     line = lines[0]
     assert "Order Flat" in line
-    assert host_i18n.STRINGS["en"]["needs_you.setup"] in line
+    assert host_i18n.STRINGS["en"]["needs_you.short.setup"] in line
     assert f'href="/apartments/{apartment_id}?view=settings&amp;section=reporting#ubyport"' in line
     # The owner asked for no field-by-field list on the dashboard.
     assert "IDUB" not in line and "Password" not in line
@@ -160,5 +160,5 @@ def test_the_setup_line_is_in_czech(host):
     page = host.get("/?lang=cs")
 
     line = _setup_lines(page.text)[0]
-    assert host_i18n.STRINGS["cs"]["needs_you.setup"] in line
+    assert host_i18n.STRINGS["cs"]["needs_you.short.setup"] in line
     assert host_i18n.STRINGS["cs"]["needs_you.action.setup"] in line

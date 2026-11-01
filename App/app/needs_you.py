@@ -73,18 +73,18 @@ def stay_line(row: Dict[str, Any], lang: str, today: date) -> Optional[Dict[str,
     subject = _stay_name(reservation)
     base = f"/reservations/{stay_id}?return_to=/"
     if status == "failed":
-        return _line("stay", "red", subject, t("needs_you.stay.failed"), t("needs_you.action.fix"), base + "#guests", stay_id=stay_id)
+        return _line("stay", "red", subject, t("needs_you.short.failed"), t("needs_you.action.fix"), base + "#guests", stay_id=stay_id)
     if row.get("urgency") == "overdue":
         if status in _SEND:
-            return _line("stay", "red", subject, t("needs_you.stay.overdue"), t("needs_you.action.send"), base + "#now", stay_id=stay_id)
-        return _line("stay", "red", subject, t("needs_you.stay.overdue"), t("needs_you.action.open"), base, stay_id=stay_id)
+            return _line("stay", "red", subject, t("needs_you.short.overdue"), t("needs_you.action.send"), base + "#now", stay_id=stay_id)
+        return _line("stay", "red", subject, t("needs_you.short.overdue"), t("needs_you.action.open"), base, stay_id=stay_id)
     if demo.is_demo_stay(reservation):
         return None
     if status in _SEND:
         # Automatic and scheduled reporting send by themselves: on track.
         if _get(reservation, "automation_mode", "manual") != "manual":
             return None
-        return _line("stay", "amber", subject, t("needs_you.stay.ready"), t("needs_you.action.send"), base + "#now", stay_id=stay_id)
+        return _line("stay", "amber", subject, t("needs_you.short.ready"), t("needs_you.action.send"), base + "#now", stay_id=stay_id)
     arrival = validation.parse_iso_date(_get(reservation, "date_from", ""))
     if status in _GUEST and arrival is not None and arrival <= today + timedelta(days=1):
         if arrival < today:
@@ -93,8 +93,7 @@ def stay_line(row: Dict[str, Any], lang: str, today: date) -> Optional[Dict[str,
             when = t("needs_you.when.today")
         else:
             when = t("needs_you.when.tomorrow")
-        started = bool(row["progress"].get("guests"))
-        key = "needs_you.stay.forms_missing" if started else "needs_you.stay.no_form"
+        key = "needs_you.short.forms"
         return _line("stay", "amber", subject, t(key, when=when), t("needs_you.action.send_link"), base + "#now", stay_id=stay_id)
     return None
 
@@ -163,14 +162,14 @@ def build(
         first = row["missing"][0]["anchor"]
         lines.append(_line(
             "setup", "amber", apartment["internal_name"] or "",
-            t("needs_you.setup"), t("needs_you.action.setup"),
+            t("needs_you.short.setup"), t("needs_you.action.setup"),
             f"/apartments/{apartment['id']}?{_SETUP_QUERY.get(first, 'view=settings')}#{first}",
             apartment_id=apartment["id"],
         ))
     for apartment in link_unused or []:
         lines.append(_line(
             "paste", "amber", apartment["internal_name"] or "",
-            t("needs_you.paste"), t("workflow.paste.open"),
+            t("needs_you.short.paste"), t("workflow.paste.open"),
             f"/apartments/{apartment['id']}?view=settings&section=guests#communication",
             apartment_id=apartment["id"],
         ))
