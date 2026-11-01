@@ -347,12 +347,12 @@ def test_dashboard_rich_needs_you_order_cap_and_geometry(dashboard_rich_host, ba
                         assert how_box["y"] >= copy_box["y"] + copy_box["height"] - 1, (label, how_box, copy_box)
                     assert page.locator('.needs-you-item[data-needs-you="setup"]', has_text="(demo)").count() == 0, label
 
-                    # Header: one primary action; below 1024 px the rest sit in the overflow menu.
+                    # Header: one primary action, no overflow menu (0520).
                     header_buttons = page.locator(".ui-ph-acts .ui-btn:not(.ui-ph-menu)")
                     visible_buttons = [button for button in header_buttons.all() if button.is_visible()]
                     if width < 1024:
                         assert len(visible_buttons) == 1, label
-                        assert page.locator(".ui-ph-menu").is_visible(), label
+                        assert page.locator(".ui-ph-menu").count() == 0, label
                     header_boxes = [button.bounding_box() for button in visible_buttons]
                     assert all(abs(box["height"] - (44 if width <= 767 else 40)) <= 1 for box in header_boxes), label
 
