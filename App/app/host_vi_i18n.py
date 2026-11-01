@@ -2881,7 +2881,6 @@ STRINGS: Dict[str, str] = {
     "ops.havel.reason.escalate": "Havel không biết",
     "ops.havel.reason.not_helped": "Chủ nhà nói câu trả lời không giúp được",
     "ops.havel.reason.fail": "Một bước kiểm tra an toàn đã chặn câu trả lời",
-    "funnel.title": "Phễu",
     "funnel.posthog_body": "Số liệu chủ nhà và chiến dịch nằm trong PostHog.",
     "funnel.posthog_link": "Mở PostHog",
     "funnel.posthog.title": "Phễu chủ nhà",

@@ -16,7 +16,6 @@ from .. import (
     acceptance,
     access,
     admin_ops,
-    analytics,
     auth,
     config,
     db,
