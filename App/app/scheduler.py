@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import fcntl
+import functools
 import logging
+import threading
 import time
 
 import requests
@@ -35,6 +37,8 @@ from . import (
 )
 
 log = logging.getLogger("ubyhost.scheduler")
+from . import jobqueue
+
 _scheduler = None
 _lock_handle = None
 
@@ -497,6 +501,52 @@ def _acquire_single_instance_lock() -> bool:
     return True
 
 
+JOB_KINDS = {
+    "ical": _job_sync_calendars,
+    "submit": _job_submit,
+    "deadlines": _job_deadlines,
+    "mail": _job_mail,
+    "photo_sweep": _job_photo_sweep,
+    "meta_capi": _job_meta_capi,
+    "retention": _job_retention,
+    "stay_fee_mail": _job_stay_fee_mail,
+    "stripe_sweep": _job_stripe_sweep,
+    "billing": _job_billing,
+    "billing_snapshot": _job_billing_snapshot,
+    "door_codes": _job_door_codes,
+    "posthog": _job_posthog,
+    "push": _job_push,
+    "guide_import": _job_guide_import,
+}
+_stopping = threading.Event()
+_last_purge = 0.0
+
+
+def _queued(kind: str) -> bool:
+    """True when this kind goes through the job table (PostgreSQL only)."""
+    return config.DB_BACKEND == "postgresql" and kind in config.JOB_QUEUE_KINDS
+
+
+def _target(kind: str):
+    """The callable APScheduler runs for kind: enqueue a row, or the job itself."""
+    if _queued(kind):
+        return functools.partial(jobqueue.enqueue, kind)
+    return JOB_KINDS[kind]
+
+
+def _job_queue() -> None:
+    """Run due queued jobs and purge old rows hourly. Never raises."""
+    global _last_purge
+    try:
+        jobqueue.drain(lambda kind: JOB_KINDS[kind](), _stopping)
+        if time.monotonic() - _last_purge > 3600:
+            jobqueue.purge()
+            _last_purge = time.monotonic()
+    except Exception:
+        log.exception("job queue run failed")
+        _job_failed("job_queue")
+
+
 def start() -> bool:
     """Start the background jobs here; True when this process now runs them.
 
@@ -508,70 +558,82 @@ def start() -> bool:
         return True
     if not config.ENABLE_SCHEDULER:
         return False
+    unknown = config.JOB_QUEUE_KINDS - set(JOB_KINDS)
+    if unknown:
+        raise RuntimeError(
+            "UBYHOST_JOB_QUEUE_KINDS has unknown kinds: " + ", ".join(sorted(unknown))
+        )
+    if config.JOB_QUEUE_KINDS and config.DB_BACKEND != "postgresql":
+        raise RuntimeError("UBYHOST_JOB_QUEUE_KINDS needs PostgreSQL")
     if not _acquire_single_instance_lock():
         log.warning("another process holds the scheduler lock; not starting a scheduler here")
         return False
     _scheduler = BackgroundScheduler(timezone=config.TIMEZONE)
     minutes = job_intervals()
     _scheduler.add_job(
-        _job_sync_calendars, "interval", minutes=minutes["ical"],
+        _target("ical"), "interval", minutes=minutes["ical"],
         id="ical", max_instances=1, coalesce=True, next_run_time=_soon(),
     )
     _scheduler.add_job(
-        _job_submit, "interval", minutes=minutes["submit"],
+        _target("submit"), "interval", minutes=minutes["submit"],
         id="submit", max_instances=1, coalesce=True,
     )
     _scheduler.add_job(
-        _job_deadlines, "interval", minutes=minutes["deadlines"], id="deadlines",
+        _target("deadlines"), "interval", minutes=minutes["deadlines"], id="deadlines",
         max_instances=1, coalesce=True,
     )
     _scheduler.add_job(
-        _job_mail, "interval", minutes=minutes["mail"], id="mail", max_instances=1, coalesce=True,
+        _target("mail"), "interval", minutes=minutes["mail"], id="mail", max_instances=1, coalesce=True,
     )
     _scheduler.add_job(
-        _job_photo_sweep, "interval", minutes=minutes["photo_sweep"], id="photo_sweep",
+        _target("photo_sweep"), "interval", minutes=minutes["photo_sweep"], id="photo_sweep",
         max_instances=1, coalesce=True, next_run_time=_soon(),
     )
     _scheduler.add_job(
-        _job_meta_capi, "interval", minutes=minutes["meta_capi"], id="meta_capi",
+        _target("meta_capi"), "interval", minutes=minutes["meta_capi"], id="meta_capi",
         max_instances=1, coalesce=True,
     )
     _scheduler.add_job(
-        _job_retention, "cron", hour=3, minute=30, id="retention",
+        _target("retention"), "cron", hour=3, minute=30, id="retention",
         max_instances=1, coalesce=True,
     )
     _scheduler.add_job(
-        _job_stay_fee_mail, "cron", hour=7, minute=0, id="stay_fee_mail",
+        _target("stay_fee_mail"), "cron", hour=7, minute=0, id="stay_fee_mail",
         max_instances=1, coalesce=True,
     )
     _scheduler.add_job(
-        _job_stripe_sweep, "cron", hour=4, minute=15, id="stripe_sweep",
+        _target("stripe_sweep"), "cron", hour=4, minute=15, id="stripe_sweep",
         max_instances=1, coalesce=True,
     )
     _scheduler.add_job(
-        _job_billing, "cron", hour=6, minute=0, id="billing",
+        _target("billing"), "cron", hour=6, minute=0, id="billing",
         max_instances=1, coalesce=True,
     )
     _scheduler.add_job(
-        _job_billing_snapshot, "cron", hour=6, minute=15, id="billing_snapshot",
+        _target("billing_snapshot"), "cron", hour=6, minute=15, id="billing_snapshot",
         max_instances=1, coalesce=True,
     )
     _scheduler.add_job(
-        _job_door_codes, "interval", minutes=minutes["door_codes"],
+        _target("door_codes"), "interval", minutes=minutes["door_codes"],
         id="door_codes", max_instances=1, coalesce=True,
     )
     _scheduler.add_job(
-        _job_posthog, "interval", minutes=minutes["posthog"],
+        _target("posthog"), "interval", minutes=minutes["posthog"],
         id="posthog", max_instances=1, coalesce=True,
     )
     _scheduler.add_job(
-        _job_push, "interval", minutes=minutes["push"],
+        _target("push"), "interval", minutes=minutes["push"],
         id="push", max_instances=1, coalesce=True,
     )
     _scheduler.add_job(
-        _job_guide_import, "interval", minutes=minutes["guide_import"],
+        _target("guide_import"), "interval", minutes=minutes["guide_import"],
         id="guide_import", max_instances=1, coalesce=True,
     )
+    if any(_queued(kind) for kind in JOB_KINDS):
+        _scheduler.add_job(
+            _job_queue, "interval", seconds=15, id="job_queue",
+            max_instances=4, coalesce=True, next_run_time=_soon(),
+        )
     _scheduler.start()
     log.info(
         "scheduler started (ical every %s min, submit every %s min)",
@@ -596,8 +658,10 @@ def _soon():
 def shutdown() -> None:
     global _scheduler, _lock_handle
     if _scheduler:
+        _stopping.set()
         # wait=True: a batch already on the wire must record its answer (compose stop_grace_period is 90 s).
         _scheduler.shutdown(wait=True)
+        _stopping.clear()
         _scheduler = None
     if _lock_handle:
         _lock_handle.close()
