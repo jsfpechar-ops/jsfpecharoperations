@@ -10,7 +10,7 @@
 {% block back_url %}/apartments{% endblock %}
 {% block back_label %}{{ t('apartment.form.back') if editing else t('nav.properties') }}{% endblock %}
 {% block body %}
-{% from "_components.html" import copy_button, copy_inline, source_badge, field_label, help_tip, sync_calendars_button with context %}
+{% from "_components.html" import copy_button, source_badge, field_label, help_tip, sync_calendars_button with context %}
 {% from "_icons.html" import icon with context %}
 {% set property_prefill = property_prefill or {} %}
 {% set draft = draft or {} %}
@@ -23,7 +23,7 @@
    page once; ?view= picks the one shown without JavaScript, app.js switches them
    in place (initPropertyViews) so the settings draft is never re-rendered. #}
 {% set base_url = '/apartments/' ~ apartment.id %}
-{% if permalink %}<section class="property-guest-link" aria-labelledby="property-guest-link-title"><div><h2 id="property-guest-link-title">{{ t('property_page.guest_link.title') }}</h2><p class="ui-sub">{{ permalink }}</p></div>{{ copy_inline('property-guest-url', permalink, t('common.copy_link')) }}</section>{% endif %}
+{% if permalink %}<section class="property-guest-link" aria-labelledby="property-guest-link-title"><div><h2 id="property-guest-link-title">{{ t('property_page.guest_link.title') }}</h2><p class="ui-sub">{{ permalink }}</p></div><input class="sr-only" type="text" id="property-guest-url" readonly value="{{ permalink }}" tabindex="-1" aria-hidden="true">{{ copy_button('property-guest-url', t('common.copy_link')) }}</section>{% endif %}
 <nav class="ui-tabs property-tabs" aria-label="{{ t('property_nav.tabs_aria') }}">
   {% for key, label in [('overview', t('property_nav.overview')), ('bookings', t('property_nav.bookings')), ('settings', t('property_nav.settings'))] %}
   <a class="ui-tab" href="{{ base_url }}?view={{ key }}" data-property-tab="{{ key }}"{% if key == property_view %} aria-current="page"{% endif %}>{{ label }}</a>
