@@ -1,5 +1,5 @@
 # 0550: Go G5d-2: the database writes of a UbyPort submission, in Go, matching Python
-Status: todo
+Status: review
 Depends on: 0482 (#642) | Base commit: main | Branch: claude/project-thread-4fdmo3
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 90k tokens
 ## 1. Objective
