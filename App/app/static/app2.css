@@ -244,6 +244,7 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
   body.v2 .hs{display:flex;gap:12px;overflow-x:auto;margin:0 -20px;padding:4px 20px 16px;scroll-snap-type:x mandatory;scrollbar-width:none}body.v2 .hs::-webkit-scrollbar{display:none}
   body.v2 .hs .card{margin:0;flex:0 0 272px;scroll-snap-align:start;display:flex;flex-direction:column;gap:10px}
   body.v2 .hs .card:only-child{flex:1 1 auto}
+  body.v2 .hs:has(> .card:only-child){margin-left:0;margin-right:0;padding-left:0;padding-right:0}
   body.v2 .kind{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}body.v2 .kind.in{color:var(--ok)}body.v2 .kind.out{color:var(--ink2)}
   body.v2 .hs .nm{font-size:20px;font-weight:800;letter-spacing:-.01em}body.v2 .hs .meta{color:var(--ink3);font-size:14px}
   body.v2 .av{width:48px;height:48px;border-radius:50%;background:var(--accs);color:var(--acc-text);display:grid;place-items:center;font-weight:800;font-size:18px;flex:none}
