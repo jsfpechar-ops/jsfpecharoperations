@@ -75,6 +75,21 @@ PAGES = [
         "phone_selectors": [".tabs", ".tab:not(.on)", ".tab.on", ".big", ".card.me", ".list .row", ".row .t b", ".row .t small"],
         "missing_ok": {".row .t small": "menu rows have no subtitle yet: the mockup subtitles are demo copy and no approved menu copy exists (owner decision, 0718)"},
     },
+    {
+        "name": "stays",
+        "path": "/reservations?range=all",
+        "view": "stays",
+        "phone_view": "pobyty",
+        "selectors": [
+            ".head h1", ".head .btn", ".head .btn.ghost", ".chips .chip", ".chip.on",
+            "main table th", "main table td", "main td small", "main .pill",
+        ],
+        "phone_selectors": [
+            ".tabs", ".tab.on", ".top .round", ".big", ".chips .chip", ".chip.on", ".grp",
+            ".list .row", ".row .av", ".row .t b", ".row .t small", ".row .pill", ".list .link",
+        ],
+        "missing_ok": {},
+    },
 ]
 
 
