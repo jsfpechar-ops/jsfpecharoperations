@@ -323,7 +323,9 @@
     "allgood",
     "code",
     "acc",
-    "ph-hide"
+    "ph-hide",
+    "sm",
+    "stays-more"
   ],
   "hooks": [
     "sr-only",
@@ -1087,6 +1089,8 @@
     "stay-section": "Mockup v2 class used on the stay page.",
     "allgood": "Mockup v2 class used on the stay page.",
     "code": "Mockup v2 class used on the stay page.",
-    "acc": "Mockup v2 class used on the stay page."
+    "acc": "Mockup v2 class used on the stay page.",
+    "sm": "Small button size from the v2 mockup (.btn.sm).",
+    "stays-more": "Phone-only \"Show more\" link on the stays list (0529 compact)."
   }
 }
