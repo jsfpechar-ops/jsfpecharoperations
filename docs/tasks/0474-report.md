@@ -4,42 +4,57 @@ Status: blocked
 Executor: Haiku 5.5. Branch task/0474-go-g1a, not pushed.
 
 ## Done
-- Steps 1 to 4 done: `go/go.mod` (+ `go/go.sum`, pgx v5.7.6 added by go get; note go.mod has no require line yet because no file imports pgx), `App/scripts/crypto_fixtures.py`, `go/internal/secure/testdata/fixtures.json`, `App/tests/test_crypto_fixtures.py`, `go/internal/secure/{fernet,signer,digest}.go`.
-- Step 5: `go/internal/secure/secure_test.go` written; one failure (below).
-- Steps 6 to 9 not started: schema/goose, cmd/ubyhost-web, ci.yml `go` job, decisions/architecture lines.
+- Step 5 per the 2026-11-01 decision: compressed cases load the Python token; Go Dumps round-trips through Go Loads, carries the Python timestamp, its signature is HMAC-SHA1 (django-concat key) over Go's signed string, and its decompressed JSON bytes equal Python's. Uncompressed cases stay byte-identical. Negative tests pass.
+- Step 6: go/internal/schema/goose.go and goose_test.go. Pending reads unqualified `to_regclass('goose_db_version')` so the test schema works (Python uses `public.`).
+- Step 7: go/cmd/ubyhost-web/main.go (healthz, metrics, goose check, SIGTERM shutdown, slog, URL redacted).
+- Step 8: `go` job in .github/workflows/ci.yml, placed before `smoke`.
+- Step 9: decisions.md line and architecture.md row.
+- go.mod: `go mod tidy` alone chose pgx v5.12.0 and go 1.25.0. Pinned by hand to pgx v5.7.6, go 1.24, toolchain go1.24.7; tidy then kept x/text v0.24.0 (indirect).
+- Fixture count: 19 (`fixtures written: 19`). Drift check: committed fixtures unchanged.
 
 ## Commands (tails)
-- `python scripts/crypto_fixtures.py`: `fixtures written: 19` (4 fernet plaintexts, 1 multifernet, 12 signer, 2 digest).
-- `pytest tests/test_crypto_fixtures.py -q`: `2 passed in 0.37s`.
-- `go vet ./internal/secure`: no output (clean).
-- `go test ./internal/secure -count=1`: FAIL `TestSignerFixtures`: `ubyhost-session/long: first differing byte 4`, got `.eJyKNtAx...`, want `.eJyLNtAx...`. All other tests PASS (Fernet, MultiFernet, digest, legacy key, negative cases).
-- Probe (temporary test, deleted): small and unicode signer tokens match Python byte for byte for all 4 salts. All 4 `long` tokens differ at byte 4.
+- gofmt -l: empty. go vet: empty.
+- go test ./... with UBYHOST_TEST_DATABASE_URL: `ok internal/schema 0.028s`, `ok internal/secure 0.009s`, cmd has no test files.
+- go build ./cmd/ubyhost-web: ok.
+- crypto_fixtures.py: `fixtures written: 19`. pytest test_crypto_fixtures.py: `2 passed in 0.22s`.
+- Pending probe: DB had goose 1 pending, so apply ran: `PostgreSQL schema apply OK: database=ubyhost_test, version=33, tables=67, goose=1.` After that, extra file 99999_probe.sql: `goose files pending: [99999]`, rc=1.
+- context_lint.py: FAIL (see Questions).
 
-## Stop (brief section 8)
-Go cannot reproduce the compressed signer token byte for byte. The differing part is the zlib-compressed payload only (timestamp and signature logic match, and Go loads every Python token). Go's `compress/zlib` (flate) is not zlib's deflate, so its bytes differ.
-
-Question for the owner: choose one.
-1. Port zlib's deflate (level 6) to Go so the compressed bytes match (large new code, not in the brief).
-2. Relax the conformance: Go verifies and loads all Python tokens, but Dumps only uncompressed payloads, and the test checks only uncompressed cases byte for byte. Python still loads Go tokens, since itsdangerous accepts both forms.
-3. Other (for example, a cgo zlib binding; needs a dependency decision).
+## Smoke (built binary, /tmp/wt0474-ubyhost-web)
+- GET /healthz: `{"status":"ok","version":"go-dev","data_dir_writable":true,"database_ok":true}`
+- GET /metrics: `# TYPE ubyhost_go_up gauge` / `ubyhost_go_up 1` / `ubyhost_go_http_requests_total{route="/healthz",code="200"} 1`
+- GET /nope: 404. SIGTERM: shutdown rc=0, log `stopped`.
 
 ## Deviations
-- Done: steps 1 to 4, and the step 5 test. Left: step 5 fix (depends on the answer above), steps 6 to 9.
-- Commit trailer: the brief asked for Co-Authored-By Opus 5.5; I used the Haiku 5.5 trailer from the session attribution, since the executor is Haiku 5.5.
-- Brief Status set to `blocked`; no PR opened (blocked, and no push was requested).
+- The smoke ran the built binary instead of `go run`, so the kill reaches the server itself.
+- Commit trailer is Co-Authored-By Opus 5.5, as the orchestrator asked.
+- The CI `go` job is not run (no push). Owner: after push, confirm it is green.
+
+## Questions
+- context_lint FAILS: docs/context/decisions.md is about 2240 tokens, cap 2200, after my appended 0474 line. I did not measure the file before the edit. Choose: (a) the orchestrator compacts decisions.md (the brief does not cover this), then I rerun the lint; (b) raise the cap. I did not compact.
+
+## Owner steps left
+- Push the branch, check the `go` CI job is green, then merge via scripts/merge-pr-on-green.sh.
 
 ## Files
-go/go.mod, go/go.sum, go/internal/secure/fernet.go, signer.go, digest.go, secure_test.go, testdata/fixtures.json; App/scripts/crypto_fixtures.py, App/tests/test_crypto_fixtures.py; docs/tasks/0474-go-g1a-skeleton-and-crypto-conformance.md (Status), docs/tasks/0474-report.md.
+go/go.mod, go/go.sum, go/internal/secure/secure_test.go, go/internal/schema/goose.go, go/internal/schema/goose_test.go, go/cmd/ubyhost-web/main.go, .github/workflows/ci.yml, docs/context/decisions.md, docs/context/architecture.md, docs/tasks/0474-go-g1a-skeleton-and-crypto-conformance.md, docs/tasks/0474-report.md.
 
 ## Diff stat (origin/main)
+ .github/workflows/ci.yml                           |  33 +
  App/scripts/crypto_fixtures.py                     | 135 +++
  App/tests/test_crypto_fixtures.py                  |  48 +
+ docs/context/architecture.md                       |   1 +
+ docs/context/decisions.md                          |   1 +
  .../0474-go-g1a-skeleton-and-crypto-conformance.md |  69 ++
- go/go.mod                                          |   5 +
- go/go.sum                                          |   0
+ docs/tasks/0474-report.md                          |  45 +
+ go/cmd/ubyhost-web/main.go                         | 193 ++++
+ go/go.mod                                          |  16 +
+ go/go.sum                                          |  28 +
+ go/internal/schema/goose.go                        |  98 +++
+ go/internal/schema/goose_test.go                   | 101 +++
  go/internal/secure/digest.go                       |  27 +
  go/internal/secure/fernet.go                       | 173 ++++
- go/internal/secure/secure_test.go                  | 231 +++++
+ go/internal/secure/secure_test.go                  | 289 ++++++
  go/internal/secure/signer.go                       | 135 +++
  go/internal/secure/testdata/fixtures.json          | 970 +++++++++++++++++++++
- 10 files changed, 1793 insertions(+)
+ 17 files changed, 2362 insertions(+)
