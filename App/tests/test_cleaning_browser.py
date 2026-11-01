@@ -495,16 +495,16 @@ def test_calendar_popup_types_create_in_place_and_localize_validation(workspace,
         loaded(page)
         pathname = page.evaluate("location.pathname")
 
-        page.locator('[data-calendar-add][data-cal-create-type="stay"]').click()
+        page.locator('[data-calendar-add][data-cal-create-type="cleaning"]').click()
         dialog = page.locator("[data-cal-create]")
         assert dialog.is_visible()
-        assert page.locator('[data-cal-type-choice="stay"]').get_attribute("aria-pressed") == "true"
-        shot(page, "cleaning-stay-popup-cs")
-        stay_date = page.locator("#cal-arrival").input_value()
-        page.locator('[data-cal-type-choice="cleaning"]').click()
-        assert page.locator("#cal-clean-date").input_value() == stay_date
+        assert page.locator('[data-cal-type-choice="cleaning"]').get_attribute("aria-pressed") == "true"
+        clean_date = page.locator("#cal-clean-date").input_value()
         page.locator('[data-cal-type-choice="stay"]').click()
-        assert page.locator("#cal-arrival").input_value() == stay_date
+        assert page.locator("#cal-arrival").input_value() == clean_date
+        shot(page, "cleaning-stay-popup-cs")
+        page.locator('[data-cal-type-choice="cleaning"]').click()
+        assert page.locator("#cal-clean-date").input_value() == clean_date
         page.locator("[data-cal-create] .cal-close").click()
 
         page.locator('[data-calendar-add][data-cal-create-type="cleaning"]').click()
@@ -582,7 +582,8 @@ def test_cleaning_calendar_can_create_stay_and_refresh_turnover_in_place(workspa
         page.goto(f"{origin}/cleaning?lang=en")
         loaded(page)
         pathname = page.evaluate("location.pathname")
-        page.locator('[data-calendar-add][data-cal-create-type="stay"]').click()
+        page.locator('[data-calendar-add][data-cal-create-type="cleaning"]').click()
+        page.locator('[data-cal-type-choice="stay"]').click()
         form = page.locator("[data-cal-form]")
         assert page.locator('[data-cal-type-choice="stay"]').get_attribute("aria-pressed") == "true"
         form.locator("#cal-property").select_option(str(ws["homes"][1]))
@@ -617,6 +618,11 @@ CREATE_CENTRE_JS = """() => {
 
 
 def _open_create_dialog(page, kind):
+    if kind == "stay":
+        # The header has no "add stay" button; stay opens from the cleaning dialog's type switch.
+        _open_create_dialog(page, "cleaning")
+        page.locator('[data-cal-type-choice="stay"]').click()
+        return
     controls = page.locator(f'[data-calendar-add][data-cal-create-type="{kind}"]')
     for index in range(controls.count()):
         if controls.nth(index).is_visible():
