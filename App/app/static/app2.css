@@ -219,8 +219,9 @@ body.v2 .cleaning-head .sub{color:rgb(107,107,101)}
 body.v2 .cleaning-head .btn{min-height:44px}
 body.v2 .cleaning-list h2{font-weight:700}
 body.v2 .cleaning-page th{color:rgb(107,107,101)}
-body.v2 .cleaning-page td a{display:inline-flex;align-items:center;min-height:44px}
-body.v2 .cleaning-page .row-open{width:44px;height:44px}
+body.v2 .cleaning-page td a{display:inline-flex;align-items:center}
+@media (max-width:1023px){body.v2 .cleaning-page td a{min-height:44px}body.v2 .cleaning-page .row-open{width:44px;height:44px}}
+@media (min-width:1024px){body.v2 .cleaning-page td a{min-height:24px}body.v2 .cleaning-page .row-open{width:24px;height:24px;border:0;color:var(--ink3)}body.v2 .cleaning-page .row-open::after{content:"›";font-size:18px;line-height:1}body.v2 .cleaning-page td.dots{width:40px;text-align:right}}
 body.v2 .cleaning-page td.dots{padding-left:0;padding-right:0}
 body.v2 .cleaning-page [data-cal-scale]{min-width:44px;min-height:44px}
 body.v2 .row-open{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;box-sizing:border-box;border:1px solid var(--ink3);border-radius:999px;color:var(--ink);background:var(--s);vertical-align:middle;flex:0 0 auto}
