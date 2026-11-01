@@ -102,3 +102,13 @@ Left:
 - Run test_onboarding_followup_browser.py with a longer timeout.
 - Sidebar and dashboard geometry (test_host_wide_geometry_browser): check on 0528 base.
 - Not pushed; no PR opened.
+
+## Final pass (section 11, executor run)
+Status: blocked (cap reached after step 1; steps 2 to 5 left).
+Done: steps 1 to 1 (partly). Stay table and phone row borders now use `--line` (page-scoped rule in the `0529 final` block of app2.css); key `20261101-0529f`; manifest written; obsolete `.actbar .btn` missing_ok removed, then restored because the phone action bar has no CTA for the seeded stay (state-dependent, deviation from §11.1). Stay test at 1024, 1280, 1440 and stays test at 1024 and wider pass.
+Left, from the last run of the stays and stay test (320/390/768):
+- stays list: `.chips .chip` and `.chip.on` border-bottom accent vs ink; `.list .row` border ink vs `--line`; `.grp` side margins 0 vs 20 px at phone.
+- stay phone: `.sub`, `.facts`, `.card` and `h2.sec` side margins 0 vs 20 px (mockup puts 20 px on each element, app relies on main padding). Owner decision: change main padding for this page or the test.
+- stay phone: `.row .ic` tone (fixture stay is waiting, mockup finished): data, owner decision.
+- stay phone: `.row .t` widths, `.facts` height, `.card` height, `h2.sec` height, `.list .row` height.
+- Steps 2 to 5 not run: 0527 and 0529 §6 files, screenshots, design_lint (`police-failed` missing from docs/design/catalog.json), report sign-off.

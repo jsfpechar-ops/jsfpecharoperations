@@ -154,6 +154,7 @@ PAGES = [
             "main table th": "the submissions table shows only after a submission; the seeded stay has none yet",
             "main table td": "the submissions table shows only after a submission; the seeded stay has none yet",
             ".code": "the door-code PIN shows only once a code is issued; the seeded stay has none yet",
+            ".actbar .btn": "the phone action bar shows only when an action applies; the seeded stay has none yet",
             ".row .t small": "payment rows have no subtitle in the current copy; the mockup subtitles are demo copy",
         },
     },
