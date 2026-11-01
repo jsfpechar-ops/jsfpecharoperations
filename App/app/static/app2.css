@@ -138,9 +138,9 @@ body.v2 .crow{grid-auto-rows:44px}
 .ov-more{margin-top:12px}
 .ov-cal-more{margin:-16px 0 28px}
 .ov-cal-link{color:var(--ink3);font-size:13px}
-.ic-red{background:var(--bads);color:var(--bad)}
-.ic-amber{background:var(--warns);color:var(--warn)}
-.ic-neutral{background:#efefeb;color:var(--ink2)}
+.ic-red,.ic[data-ic=red]{background:var(--bads);color:var(--bad)}
+.ic-amber,.ic[data-ic=amber]{background:var(--warns);color:var(--warn)}
+.ic-neutral,.ic[data-ic=neutral]{background:#efefeb;color:var(--ink2)}
 .cal .bar[data-overdue]{background:var(--bads);color:var(--bad)}
 .cal .bar[data-c1="2"]{grid-column-start:2}.cal .bar[data-c2="2"]{grid-column-end:2}
 .cal .bar[data-c1="3"]{grid-column-start:3}.cal .bar[data-c2="3"]{grid-column-end:3}
