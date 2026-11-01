@@ -60,7 +60,7 @@ def _stay_label(stay: Dict[str, Any]) -> str:
 
 
 def _setup(owner_id: int, state: Dict[str, Any]) -> Dict[str, Any]:
-    """The 4 guided setup steps (0711) and which one the primary button opens."""
+    """The 4 guided setup steps (0729) and which one the primary button opens."""
     consent = payments_consent.accepted(owner_id)
     entity = stripe_connect.legal_entity_for_owner(owner_id)
     has_details = bool(entity and (entity.get("name") or "").strip())

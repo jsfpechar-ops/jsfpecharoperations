@@ -176,7 +176,7 @@ def account_for_owner(owner_user_id: int) -> Optional[Dict[str, Any]]:
 
 
 def legal_entity_for_owner(owner_user_id: int) -> Optional[Dict[str, Any]]:
-    """The business entity whose details go to Stripe (0711: the host sees
+    """The business entity whose details go to Stripe (0729: the host sees
     them on /payments before opening Stripe)."""
     row = db.query_one(
         "SELECT * FROM legal_entity WHERE owner_user_id = ? AND archived_at IS NULL"

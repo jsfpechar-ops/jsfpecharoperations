@@ -212,7 +212,7 @@ def test_connect_button_is_a_plain_link(client, owner, monkeypatch):
     assert '<form method="post" action="/payments/connect/start"' not in html
 
 
-# --- guided setup (0711) -------------------------------------------------------
+# --- guided setup (0729) -------------------------------------------------------
 
 
 def test_setup_button_always_points_at_the_next_step(client, owner, monkeypatch):

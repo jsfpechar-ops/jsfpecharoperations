@@ -14,7 +14,7 @@ Master version: 2.0.0. This file adds; it never overrides MASTER.md. Keep it und
 - tabs: none
 
 ## Body
-- section 1, `payments.connect.title`: while Stripe is not complete, the guided setup (0711). One lead line (state copy), then 4 step cards in the existing `setup-wizard-checklist host-property-grid` list with `host-property-card host-property-card-static setup-summary-card` (same markup as the setup wizard summary, no new CSS):
+- section 1, `payments.connect.title`: while Stripe is not complete, the guided setup (0729). One lead line (state copy), then 4 step cards in the existing `setup-wizard-checklist host-property-grid` list with `host-property-card host-property-card-static setup-summary-card` (same markup as the setup wizard summary, no new CSS):
   1. `payments.setup.step.consent` (done when the 0624 consent is recorded)
   2. `payments.setup.step.details` (done when a business entity exists; shows the name and e-mail we send to Stripe, link to `/entities`)
   3. `payments.setup.step.stripe` (todo, Stripe is checking, or needs you)
@@ -29,4 +29,4 @@ Master version: 2.0.0. This file adds; it never overrides MASTER.md. Keep it und
 - request list: `payments.list.empty_title`, `payments.list.empty`, no action
 
 ## Tests
-- test-map row "Payments dashboard + rails" plus the design row; screenshot 390 of the setup card (`docs/tasks/screenshots-0711/`).
+- test-map row "Payments dashboard + rails" plus the design row; screenshot 390 of the setup card (`docs/tasks/screenshots-0729/`).

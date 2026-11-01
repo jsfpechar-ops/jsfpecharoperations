@@ -66,7 +66,7 @@ async def connect_start(request: Request):
         # 0624: the one-time plain-language consent comes before Stripe.
         return RedirectResponse("/payments/consent", status_code=303)
     if stripe_connect.legal_entity_for_owner(owner_id) is None:
-        # 0711: say what is missing instead of a silent bounce to "/".
+        # 0729: say what is missing instead of a silent bounce to "/".
         return _back("/payments", err=_flash(request, "payments.err.no_entity"))
     try:
         # Deterministic https base (config.app_base_url(): the env-configured
@@ -102,7 +102,7 @@ async def connect_return(request: Request):
         state = stripe_connect.handle_return(owner_id)
     except (stripe_connect.StripeOff, ValueError, KeyError) as exc:
         log.warning("connect return failed: %s", exc)
-    # Return is not verified: the message follows the mirrored state (0711).
+    # Return is not verified: the message follows the mirrored state (0729).
     key = {
         "complete": "payments.connect.flash_complete",
         "action_required": "payments.connect.flash_action",

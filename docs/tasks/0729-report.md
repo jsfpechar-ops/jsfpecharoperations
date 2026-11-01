@@ -1,4 +1,4 @@
-# 0711 report
+# 0729 report
 
 Status: review
 
@@ -9,8 +9,8 @@ Status: review
 - App/app/templates/payments.html: step cards and one primary button
 - App/app/host_i18n.py: 21 en + 21 cs keys
 - App/tests/test_payments_dashboard.py, App/tests/test_stripe_connect.py: updated and new tests
-- App/tests/test_payments_setup_browser.py (new), docs/tasks/screenshots-0711/payments-setup-390.png (new)
-- docs/tasks/0711-guided-payments-setup.md: Status line only
+- App/tests/test_payments_setup_browser.py (new), docs/tasks/screenshots-0729/payments-setup-390.png (new)
+- docs/tasks/0729-guided-payments-setup.md: Status line only
 
 ## Commands (last lines)
 1. Dashboard, request model, Stripe connect, consent (4 files, run without the 2 missing names): `.............` then `60 passed in 3.72s`. Extra: test_payments.py and test_payment_rails.py: `25 passed in 1.31s`.
@@ -19,7 +19,7 @@ Status: review
 4. `context_lint.py`: WARN lines (catalog.json, RETENTION.md, 27 commits after status.md), `next free: task 0712 | migration 0034`, `context lint: OK`.
 
 ## Steps
-Steps 1 to 9 done, one commit each (`0711 start`, `0711 step 2` to `0711 step 9`). Test-only steps 2, 6, 7, 8 passed; steps 3, 4, 5 have no test in the brief and are covered by the §6 runs.
+Steps 1 to 9 done, one commit each (`0729 start`, `0729 step 2` to `0729 step 9`). Test-only steps 2, 6, 7, 8 passed; steps 3, 4, 5 have no test in the brief and are covered by the §6 runs.
 
 ## Acceptance (§7)
 - Screenshot shows 4 Czech cards and the button "Otevřít Stripe" (state none, consent and entity present). Browser test checks 4 cards and no horizontal overflow at 390 px.

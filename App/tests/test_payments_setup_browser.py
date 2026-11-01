@@ -1,4 +1,4 @@
-"""0711: guided payments setup fits a phone."""
+"""0729: guided payments setup fits a phone."""
 from __future__ import annotations
 
 import os
@@ -17,7 +17,7 @@ from tests.browser_support import chromium_launch_kwargs
 from tests.conftest import login_as
 
 OWNER = "paysetup"
-SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0711"
+SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0729"
 
 
 def _cleanup():
