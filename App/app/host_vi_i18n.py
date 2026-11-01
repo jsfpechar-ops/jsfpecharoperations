@@ -3867,6 +3867,7 @@ STRINGS.update({
     "dashboard.month.reported.few": "đã khai báo công an",
     "dashboard.today.title": "Hôm nay",
     "dashboard.today.empty": "Hôm nay không có khách đến hoặc đi.",
+    "dashboard.calendar.full": "Xem lịch đầy đủ →",
     "dashboard.today.guests": "%(count)s khách",
     "dashboard.today.nights": "%(count)s đêm",
     "dashboard.today.nights.one": "1 đêm",

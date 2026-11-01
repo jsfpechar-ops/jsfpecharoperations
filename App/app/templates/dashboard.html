@@ -1,176 +1,133 @@
 {% extends "host_page.html" %}
+{% set v2 = true %}
 {% set nav = 'dashboard' %}
 {% set how_key = 'dashboard' %}
 {% set body_kind = 'detail' %}
-{% from "_components.html" import progress_pill, copy_inline, row_menu_begin, row_menu_end, onboarding_banner, onboarding_finish, onboarding_finish_strip, onboarding_welcome, next_action, deadline_badge, property_identity, guest_count with context %}
+{% from "_components.html" import progress_pill, copy_inline, row_menu_begin, row_menu_end, onboarding_welcome, next_action, deadline_badge, property_identity, guest_count with context %}
 {% from "_icons.html" import icon with context %}
 {% set show_welcome = not apartments and not onboarding.dismissed %}
-{# 0241: the "What needs you" card carries the alerts here, so the stack is not shown twice. #}
-{% set hide_alert_stack = (apartments or []) | length > 0 %}
 {% block title %}{{ t('dashboard.title') }}{% endblock %}
-{% block page_title %}{% if not show_welcome %}{{ t('dashboard.title') }}{% endif %}{% endblock %}
-{% block meta %}{{ today.isoformat() | date_long(lang) }}{% if last_sync %} · {{ t('dashboard.last_synced', when=last_sync | datetime_local) }}{% endif %}{% endblock %}
-{% block primary_action %}{% if not show_welcome %}{{ ui_button('+ ' ~ t('stays.add_stay'), 'primary', href='/reservations?new=1', attrs='data-calendar-add data-cal-create-type="stay"') }}{% endif %}{% endblock %}
-{% block secondary_actions %}{% if not show_welcome %}
-  {% if demo_loaded %}<form method="post" action="/demo/reset" class="inline" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">{{ ui_button(t('demo.clear'), 'quiet', type='submit') }}</form>{% endif %}
-{% endif %}{% endblock %}
+{% block page_title %}{% endblock %}
+{% block meta %}{% endblock %}
+{% block primary_action %}{% endblock %}
+{% block secondary_actions %}{% endblock %}
 
-{% macro dashboard_rows(items, empty_key) %}
-{% if items %}
-<div class="ui-table-wrap">
-{{ ui_table_begin([(t('host.stay_dates'), ''), (t('stays.table.apartment'), ''), (t('stays.table.guests'), 'r'), (t('dashboard.stat.action'), ''), ('', '')], t('dashboard.section.needs_action', count=items | length)) }}
-{% for row in items %}
-  {% set reservation = row.reservation %}{% set progress = row.progress %}{% set cell = row.deadline_cell %}
-  {% set stay_label = reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else reservation.internal_name %}
-  <tr class="ui-row dashboard-row clickable-row{{ ' is-overdue' if cell.level == 'overdue' }}" data-stay-id="{{ reservation.id }}" data-href="/reservations/{{ reservation.id }}?return_to=/" tabindex="0" role="link"
-      aria-label="{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }} · {{ reservation.internal_name }}">
-    <td class="ui-cell-first dashboard-row-copy" data-card="primary"><a class="dashboard-row-property" href="/reservations/{{ reservation.id }}?return_to=/">{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</a>
-      <span class="ui-sub dashboard-row-dates">{% if row.deadline and cell.state == 'countdown' and cell.level != 'future' %}{{ t('dashboard.table.deadline_by', when=row.deadline.strftime('%d.%m. %H:%M')) }}{% endif %}</span></td>
-    <td data-card="secondary">{{ property_identity(reservation.apartment_id, stay_label, true) }}</td>
-    <td class="ui-cell-r ui-num" data-card="meta">{{ guest_count(progress) }}</td>
-    <td class="dashboard-row-task" data-card="badge">
-      {% if cell.level == 'overdue' %}{{ deadline_badge(cell) }}
-      {% elif progress.status == 'failed' %}{{ progress_pill(progress.status, reservation.automation_mode) }}
-      {% elif progress.not_registered %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ tp('host.missing', progress.not_registered) }}</span>
-      {% elif cell.state in ('filed_on_time', 'filed_late') %}{{ deadline_badge(cell) }}
-      {% elif progress.status in ('reported', 'not_required') %}{{ next_action(progress, reservation) }}
-      {% elif progress.status == 'awaiting_guest' %}{# Routine waiting is shown as occupancy, not a task. #}
-      {% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo=('(demo)' in reservation.internal_name or reservation.source == 'demo')) }}{% endif %}
-    </td>
-    <td class="ui-cell-acts dashboard-row-actions" data-card="actions">
-      {{ row_menu_begin() }}
-        <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to=/" role="menuitem">{{ t('common.open') }}</a>
-        <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">{{ t('dashboard.row.add_guest') }}</a>
-        {% if reservation.permalink_token %}
-        <a class="row-menu-item" href="/l/{{ reservation.permalink_slug or reservation.permalink_token }}/{{ reservation.id }}" target="_blank" rel="noopener" role="menuitem">{{ t('dashboard.row.open_guest_form') }}</a>
-        {{ copy_inline('dashboard-stay-link-' ~ reservation.id, public_base_url ~ '/l/' ~ (reservation.permalink_slug or reservation.permalink_token) ~ '/' ~ reservation.id, t('host.copy_guest_form_link'), 'menuitem') }}
-        {% endif %}
-        <form method="post" action="/reservations/{{ reservation.id }}/archive" class="row-menu-form" data-confirm data-confirm-message="{{ t('host.delete_to_archived.confirm') }}">
-          <input type="hidden" name="return_to" value="/"><button class="row-menu-item" type="submit" role="menuitem">{{ t('host.delete') }}</button>
-        </form>
-      {{ row_menu_end() }}
-    </td>
-  </tr>
-{% endfor %}
-{{ ui_table_end() }}
-</div>
-{% else %}{{ ui_empty(t(empty_key)) }}{% endif %}
-{% endmacro %}
-
-{#- 0701: "Today" as a plain table: guest, property, dates, status. Same badges and row menu as the other lists. -#}
-{% macro today_rows_table(items) %}
-{% if items %}
-<div class="ui-table-wrap">
-{{ ui_table_begin([(t('archive.col.guest'), ''), (t('stay_fees.col.property'), ''), (t('host.stay_dates'), ''), (t('filter.status'), ''), ('', '')], t('dashboard.today.title')) }}
-{% for row in items %}
-  {% set reservation = row.reservation %}{% set progress = row.progress %}{% set cell = row.deadline_cell %}
-  {% set stay_label = reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else reservation.internal_name %}
-  {% set arriving = (reservation.date_from | string)[:10] == today.isoformat() %}
-  <tr class="ui-row dashboard-row clickable-row{{ ' is-overdue' if cell.level == 'overdue' }}" data-stay-id="{{ reservation.id }}" data-href="/reservations/{{ reservation.id }}?return_to=/" tabindex="0" role="link"
-      aria-label="{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }} · {{ reservation.internal_name }}">
-    <td class="ui-cell-first dashboard-row-copy" data-card="primary"><a class="dashboard-row-property" href="/reservations/{{ reservation.id }}?return_to=/">{{ stay_label }}</a>
-      <span class="ui-sub">{{ tp('dashboard.today.guests', progress.expected if progress.expected is not none else (progress.guests | length)) }}</span></td>
-    <td data-card="secondary">{{ property_identity(reservation.apartment_id, stay_label, true) }}</td>
-    <td data-card="meta">{% if arriving %}{{ t('calendar.arrival') }} · {{ tp('dashboard.today.nights', row.nights) }}{% else %}{{ t('calendar.departure') }}{% endif %}</td>
-    <td class="dashboard-row-task" data-card="badge">
-      {% if cell.level == 'overdue' %}{{ deadline_badge(cell) }}
-      {% elif progress.status == 'failed' %}{{ progress_pill(progress.status, reservation.automation_mode) }}
-      {% elif progress.not_registered %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ tp('host.missing', progress.not_registered) }}</span>
-      {% elif cell.state in ('filed_on_time', 'filed_late') %}{{ deadline_badge(cell) }}
-      {% elif progress.status in ('reported', 'not_required') %}{{ next_action(progress, reservation) }}
-      {% elif progress.status == 'awaiting_guest' %}{# Routine waiting is shown as occupancy, not a task. #}
-      {% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo=('(demo)' in reservation.internal_name or reservation.source == 'demo')) }}{% endif %}
-    </td>
-    <td class="ui-cell-acts dashboard-row-actions" data-card="actions">
-      {{ row_menu_begin() }}
-        <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to=/" role="menuitem">{{ t('common.open') }}</a>
-        <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">{{ t('dashboard.row.add_guest') }}</a>
-        {% if reservation.permalink_token %}
-        <a class="row-menu-item" href="/l/{{ reservation.permalink_slug or reservation.permalink_token }}/{{ reservation.id }}" target="_blank" rel="noopener" role="menuitem">{{ t('dashboard.row.open_guest_form') }}</a>
-        {{ copy_inline('dashboard-stay-link-' ~ reservation.id, public_base_url ~ '/l/' ~ (reservation.permalink_slug or reservation.permalink_token) ~ '/' ~ reservation.id, t('host.copy_guest_form_link'), 'menuitem') }}
-        {% endif %}
-        <form method="post" action="/reservations/{{ reservation.id }}/archive" class="row-menu-form" data-confirm data-confirm-message="{{ t('host.delete_to_archived.confirm') }}">
-          <input type="hidden" name="return_to" value="/"><button class="row-menu-item" type="submit" role="menuitem">{{ t('host.delete') }}</button>
-        </form>
-      {{ row_menu_end() }}
-    </td>
-  </tr>
-{% endfor %}
-{{ ui_table_end() }}
-</div>
-{% else %}{{ ui_empty(t('dashboard.today.empty')) }}{% endif %}
-{% endmacro %}
-
-{#- 0241 (idea N): one line of "What needs you": subject, one sentence, one button. -#}
-{% macro needs_you_line(line, first=False) %}
-<li class="needs-you-item" data-tone="{{ line.tone }}" data-needs-you="{{ line.kind }}"{% if line.stay_id %} data-needs-you-stay="{{ line.stay_id }}"{% endif %}{% if line.dismiss_id %} data-notification{% endif %}>
-  <span class="needs-you-icon" aria-hidden="true">{{ icon('triangle-alert' if line.tone == 'red' else 'info', 18) }}</span>
-  <div class="needs-you-copy"><strong>{{ line.subject }}</strong>{% if line.text %}<span>{{ line.text }}</span>{% endif %}</div>
-  {% if line.kind == 'paste' %}
-  <details class="needs-you-more" data-paste-check><summary>{{ t('workflow.paste.how') }}</summary>
-    <ul class="needs-you-how">
-      <li>{{ t('workflow.paste.airbnb') }}</li>
-      <li>{{ t('workflow.paste.booking') }}</li>
-      <li>{{ t('workflow.paste.direct') }}</li>
-    </ul>
-  </details>
-  {% endif %}
-  {% if line.href or line.dismiss_id %}
-  <div class="needs-you-actions">
-    {% if line.href %}{{ ui_button(line.action, ('primary' if first else 'secondary'), href=line.href, attrs='data-needs-you-go') }}{% endif %}
-    {% if line.dismiss_id %}<form method="post" action="/alerts/{{ line.dismiss_id }}/dismiss" class="needs-you-dismiss" data-notification-dismiss>{{ ui_icon_button(t('a11y.dismiss_notification'), 'x', type='submit') }}</form>{% endif %}
+{#- 0706: one "Potřebuje vás" card per needs-you line (mockup .todo). -#}
+{% macro overview_card(line, first=False) %}
+{% set ic_style = 'background:var(--bads);color:var(--bad)' if line.tone == 'red' else ('background:var(--warns);color:var(--warn)' if line.tone == 'amber' else 'background:#efefeb;color:var(--ink2)') %}
+<div class="card needs-you-card-item" data-tone="{{ line.tone }}" data-needs-you="{{ line.kind }}"{% if line.stay_id %} data-needs-you-stay="{{ line.stay_id }}"{% endif %}{% if line.dismiss_id %} data-notification{% endif %}>
+  <div class="ic" style="{{ ic_style }}" aria-hidden="true">{{ '!' if line.tone in ('red', 'amber') else 'i' }}</div>
+  <div>
+    <div class="t">{{ line.subject }}</div>
+    {% if line.text %}<p>{{ line.text }}</p>{% endif %}
+    {% if line.kind == 'paste' %}
+    <details class="needs-you-more" data-paste-check><summary>{{ t('workflow.paste.how') }}</summary>
+      <ul class="needs-you-how">
+        <li>{{ t('workflow.paste.airbnb') }}</li>
+        <li>{{ t('workflow.paste.booking') }}</li>
+        <li>{{ t('workflow.paste.direct') }}</li>
+      </ul>
+    </details>
+    {% endif %}
+    {% if line.href or line.dismiss_id %}
+    <div class="needs-you-actions">
+      {% if line.href %}<a class="btn sm{{ '' if first else ' ghost' }}" href="{{ line.href }}" data-needs-you-go>{{ line.action }}</a>{% endif %}
+      {% if line.dismiss_id %}<form method="post" action="/alerts/{{ line.dismiss_id }}/dismiss" class="needs-you-dismiss" data-notification-dismiss><button type="submit" class="link-btn" aria-label="{{ t('a11y.dismiss_notification') }}">×</button></form>{% endif %}
+    </div>
+    {% endif %}
   </div>
-  {% endif %}
-</li>
+</div>
 {% endmacro %}
 
 {% block body %}
 {% if not apartments %}
+  <div class="head"><div><h1>{{ t('dashboard.title') }}</h1><p class="sub">{{ today.isoformat() | date_long(lang) }}</p></div></div>
   {% if not onboarding.dismissed %}{{ onboarding_welcome(onboarding, compact=True) }}
   {% else %}{% call ui_empty(t('onboarding.skipped_title'), t('onboarding.skipped_body'), t('apartments.add'), '/apartments/new') %}{{ ui_button(t('onboarding.open_checklist'), 'secondary', href='/onboarding') }}{% endcall %}{% endif %}
 {% else %}
   {% set banner_showing = onboarding and onboarding.current and not onboarding.finished and not onboarding.dismissed %}
   {% set needs_you = needs_you_build(rows, needs_you_queue, open_alerts, missing_report_rows, link_unused, lang, today) %}
   {% set ny_lines = (needs_you.lines | rejectattr('kind', 'equalto', 'setup') | list) if banner_showing else needs_you.lines %}
-  {% if welcome_back %}
-  <div class="ui-banner ui-banner-neutral" role="status" data-welcome-back>
-    <div class="grow"><strong>{{ t('welcome_back.title', date=welcome_back.since | date_short) }}</strong> {% if welcome_back.stays or welcome_back.reported %}{{ tp('welcome_back.stays', welcome_back.stays) }} {{ tp('welcome_back.reported', welcome_back.reported) }}{% else %}{{ t('welcome_back.quiet') }}{% endif %}</div>
-    <form method="post" action="/welcome-back/dismiss" data-welcome-back-dismiss><input type="hidden" name="_csrf" value="{{ csrf_token }}">{{ ui_icon_button(t('a11y.dismiss_notification'), 'x', type='submit') }}</form>
+
+  <div class="head" style="margin-bottom:6px"><div>
+    <h1>{{ t('dashboard.title') }}</h1>
+    <p class="sub">{{ today.isoformat() | date_long(lang) }}</p>
+    <p class="ov-links" style="font-size:13px;color:var(--ink3);margin:4px 0 0">
+      <a href="/guide" style="color:var(--ink3)">{{ t('how.toggle') }}</a>
+      <span aria-hidden="true"> · </span><a href="/cleaning/new" style="color:var(--ink3)">+ {{ t('nav.cleaning') }}</a>
+      {% if demo_loaded %}<span aria-hidden="true"> · </span><form method="post" action="/demo/reset" class="inline" style="display:inline" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">{{ ui_button(t('demo.clear'), 'quiet', type='submit') }}</form>{% endif %}
+    </p>
   </div>
-  {% endif %}
-  <div data-dashboard-refresh="stats">
-  <section class="needs-you" id="needs-action" data-needs-you-card aria-labelledby="needs-you-title">
-    <h2 id="needs-you-title">{{ t('needs_you.title') }}{% if ny_lines %} <span class="ui-badge ui-badge-action" data-tone="{{ 'red' if ny_lines[0].tone == 'red' else 'amber' }}">{{ ny_lines | length }}</span>{% endif %}</h2>
+  <a class="btn" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">{{ t('stays.add_stay') }}</a></div>
+
+  <section id="needs-action" data-needs-you-card aria-labelledby="needs-you-title">
+    <h2 id="needs-you-title">{{ t('needs_you.title') }}</h2>
+    <div class="todo" style="margin-bottom:28px">
     {% if ny_lines %}
-    <ul class="needs-you-list">{% for line in ny_lines[:5] %}{{ needs_you_line(line, loop.first) }}{% endfor %}</ul>
-    {% if ny_lines | length > 5 %}
-    <details class="needs-you-more"><summary>{{ tp('needs_you.more', ny_lines | length - 5) }}</summary>
-      <ul class="needs-you-list">{% for line in ny_lines[5:] %}{{ needs_you_line(line) }}{% endfor %}</ul>
-    </details>
-    {% endif %}
+      {% for line in ny_lines[:4] %}{{ overview_card(line, loop.first) }}{% endfor %}
     {% else %}
-    <p class="needs-you-calm">{{ icon('check', 20) }}<strong>{{ t('needs_you.calm') }}</strong></p>
+      <div class="card needs-you-calm"><p>{{ icon('check', 20) }} <strong>{{ t('needs_you.calm') }}</strong></p></div>
+    {% endif %}
+    </div>
+    {% if ny_lines | length > 4 %}
+    <details class="needs-you-more" style="margin-bottom:28px"><summary>{{ tp('needs_you.more', ny_lines | length - 4) }}</summary>
+      <div class="todo" style="margin-top:12px">{% for line in ny_lines[4:] %}{{ overview_card(line) }}{% endfor %}</div>
+    </details>
     {% endif %}
   </section>
   {% if month_summary %}
-  <p class="dashboard-quiet" data-dashboard-month>{{ t('dashboard.month.label') }} <b>{{ month_summary.guests }}</b> {{ tp('dashboard.month.guests', month_summary.guests) }}<i aria-hidden="true">·</i><b>{{ month_summary.nights }}</b> {{ tp('dashboard.month.nights', month_summary.nights) }}<i aria-hidden="true">·</i><b>{{ month_summary.reported }}</b> {{ tp('dashboard.month.reported', month_summary.reported) }}</p>
+  <div class="quiet dashboard-quiet" data-dashboard-month><span>{{ t('dashboard.month.label') }}</span> <b>{{ month_summary.guests }}</b> {{ tp('dashboard.month.guests', month_summary.guests) }}<i aria-hidden="true">·</i><b>{{ month_summary.nights }}</b> {{ tp('dashboard.month.nights', month_summary.nights) }}<i aria-hidden="true">·</i><b>{{ month_summary.reported }}</b> {{ tp('dashboard.month.reported', month_summary.reported) }}</div>
   {% endif %}
+
+  <h2>{{ t('calendar.calendar') }}</h2>
+  {% set wd = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'] if lang == 'cs' else ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'] %}
+  <div class="card cal" style="margin-bottom:28px">
+    <div class="cgrid"><div></div>{% for d in cal_days %}<div class="cd{{ ' today' if loop.first }}">{{ wd[d.weekday()] }} {{ d.day }}</div>{% endfor %}</div>
+    {% for row in cal_rows %}
+    <div class="cgrid crow"><div class="cn">{{ row.name }}</div>{% for bar in row.bars %}<a class="bar {{ bar.css }}" style="{{ bar.style }}" href="{{ bar.url }}">{{ bar.label }}</a>{% endfor %}</div>
+    {% endfor %}
   </div>
-  {% include "_dashboard_calendar.html" %}
-  <section class="dashboard-today" aria-labelledby="dashboard-today-title"><h2 id="dashboard-today-title">{{ t('dashboard.today.title') }}</h2>{{ today_rows_table(today_rows) }}</section>
-  <div data-dashboard-refresh="work">
-  {% set focus_is_urgent = focus and focus.urgency in ('overdue', 'urgent') %}
-  {% set finish_card_showing = onboarding and onboarding.finished and onboarding.finish and not onboarding.dismissed %}
-  {% if finish_card_showing and focus_is_urgent %}{{ onboarding_finish_strip(onboarding) }}{% endif %}
-  {{ onboarding_banner(onboarding) }}
-  {% if not rows %}{% from "_workflow.html" import workflow_strip with context %}{{ workflow_strip(apartments[0] if apartments | length == 1 else none) }}{% endif %}
-  {% if not rows and feed_count %}{{ ui_empty(t('dashboard.empty.no_stays')) }}
-  {% elif not rows %}{{ ui_empty(t('dashboard.empty.no_feed'), '', t('dashboard.empty.connect_calendar'), '/apartments/' ~ apartments[0].id ~ '?view=bookings#calendars', primary=false) }}
-  {% endif %}
-  <noscript>
-    {% if queue_groups.current %}{% call ui_section(t('dashboard.section.current'), actions='<a href="/reservations">' ~ t('dashboard.section.view_stays') ~ '</a>', id='current') %}{{ dashboard_rows(queue_groups.current, 'dashboard.queue.empty.waiting') }}{% endcall %}{% endif %}
-  </noscript>
-  {% if finish_card_showing and not focus_is_urgent %}{{ onboarding_finish(onboarding) }}{% endif %}
-  </div>
+  <p style="margin:-16px 0 28px"><a href="/?cal_view=calendar" style="color:var(--ink3);font-size:13px">{{ t('dashboard.calendar.full') }}</a></p>
+  {% if cal_view %}{% include "_dashboard_calendar.html" %}{% endif %}
+
+  <h2>{{ t('dashboard.today.title') }}</h2>
+  <div class="card"><table><thead><tr><th>{{ t('archive.col.guest') }}</th><th>{{ t('stay_fees.col.property') }}</th><th>{{ t('host.stay_dates') }}</th><th>{{ t('filter.status') }}</th><th></th></tr></thead><tbody>
+  {% for row in today_rows %}
+    {% set reservation = row.reservation %}{% set progress = row.progress %}{% set cell = row.deadline_cell %}
+    {% set stay_label = reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else reservation.internal_name %}
+    {% set arriving = (reservation.date_from | string)[:10] == today.isoformat() %}
+    <tr class="dashboard-row clickable-row{{ ' is-overdue' if cell.level == 'overdue' }}" data-stay-id="{{ reservation.id }}" data-href="/reservations/{{ reservation.id }}?return_to=/" tabindex="0" role="link"
+        aria-label="{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }} · {{ reservation.internal_name }}">
+      <td class="dashboard-row-copy"><a class="dashboard-row-property" href="/reservations/{{ reservation.id }}?return_to=/">{{ stay_label }}</a>
+        <small>{{ tp('dashboard.today.guests', progress.expected if progress.expected is not none else (progress.guests | length)) }}</small></td>
+      <td>{{ property_identity(reservation.apartment_id, stay_label, true) }}</td>
+      <td>{% if arriving %}{{ t('calendar.arrival') }} · {{ tp('dashboard.today.nights', row.nights) }}{% else %}{{ t('calendar.departure') }}{% endif %}</td>
+      <td class="dashboard-row-task">
+        {% if cell.level == 'overdue' %}{{ deadline_badge(cell) }}
+        {% elif progress.status == 'failed' %}{{ progress_pill(progress.status, reservation.automation_mode) }}
+        {% elif progress.not_registered %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ tp('host.missing', progress.not_registered) }}</span>
+        {% elif cell.state in ('filed_on_time', 'filed_late') %}{{ deadline_badge(cell) }}
+        {% elif progress.status in ('reported', 'not_required') %}{{ next_action(progress, reservation) }}
+        {% elif progress.status == 'awaiting_guest' %}{# Routine waiting is shown as occupancy, not a task. #}
+        {% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo=('(demo)' in reservation.internal_name or reservation.source == 'demo')) }}{% endif %}
+      </td>
+      <td class="dots dashboard-row-actions">
+        {{ row_menu_begin() }}
+          <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to=/" role="menuitem">{{ t('common.open') }}</a>
+          <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">{{ t('dashboard.row.add_guest') }}</a>
+          {% if reservation.permalink_token %}
+          <a class="row-menu-item" href="/l/{{ reservation.permalink_slug or reservation.permalink_token }}/{{ reservation.id }}" target="_blank" rel="noopener" role="menuitem">{{ t('dashboard.row.open_guest_form') }}</a>
+          {{ copy_inline('dashboard-stay-link-' ~ reservation.id, public_base_url ~ '/l/' ~ (reservation.permalink_slug or reservation.permalink_token) ~ '/' ~ reservation.id, t('host.copy_guest_form_link'), 'menuitem') }}
+          {% endif %}
+          <form method="post" action="/reservations/{{ reservation.id }}/archive" class="row-menu-form" data-confirm data-confirm-message="{{ t('host.delete_to_archived.confirm') }}">
+            <input type="hidden" name="return_to" value="/"><button class="row-menu-item" type="submit" role="menuitem">{{ t('host.delete') }}</button>
+          </form>
+        {{ row_menu_end() }}
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="5">{{ t('dashboard.today.empty') }}</td></tr>
+  {% endfor %}
+  </tbody></table></div>
 {% endif %}
 {% endblock %}

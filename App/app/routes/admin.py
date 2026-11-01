@@ -522,6 +522,10 @@ def dashboard(request: Request):
             "link_unused": workflow.link_unused(apartments),
             "welcome_back": welcome,
             "month_summary": reporting.month_summary(owner_user_id, today),
+            # 0706: 14-day grid for the overview calendar, built server-side.
+            "cal_days": [today + timedelta(days=i) for i in range(14)],
+            "cal_rows": _overview_calendar_rows(owner_user_id, apartments, today),
+            "cal_view": bool(request.query_params.get("cal_view")),
             # 0520: stays that arrive or leave today, for the "Today" table.
             "today_rows": [
                 dict(row, nights=_today_nights(row["reservation"]))
@@ -530,6 +534,42 @@ def dashboard(request: Request):
             ],
         },
     ))
+
+
+_OVERVIEW_SOURCE_NAMES = {"airbnb": "Airbnb", "booking": "Booking"}
+
+
+def _overview_calendar_rows(owner_user_id, apartments, today) -> list:
+    """0706: one row per active apartment for the overview's 14-day grid (grid columns 2-15)."""
+    events = dashboard_calendar.events(owner_user_id, today, today + timedelta(days=14))
+    rows = []
+    for apartment in apartments:
+        if not apartment["active"]:
+            continue
+        bars = []
+        for event in events:
+            if event["propertyId"] != apartment["id"]:
+                continue
+            start = date.fromisoformat(str(event["start"])[:10])
+            stop = date.fromisoformat(str(event["end"])[:10])
+            col_start = 2 + max(0, (start - today).days)
+            col_end = 2 + min(14, (stop - today).days)
+            if col_end <= col_start:
+                continue
+            tone = event["tone"]
+            if tone == "done":
+                css = "b-ok"
+            elif tone in ("action", "ready", "overdue"):
+                css = "b-warn"
+            else:
+                css = "b-grey"
+            style = f"grid-column:{col_start}/{col_end}"
+            if tone == "overdue":
+                style += ";background:var(--bads);color:var(--bad)"
+            label = event["label"] or _OVERVIEW_SOURCE_NAMES.get(str(event["source"] or "").lower(), "")
+            bars.append({"css": css, "style": style, "label": label, "url": event["url"]})
+        rows.append({"name": apartment["internal_name"], "bars": bars})
+    return rows
 
 
 def _today_nights(reservation) -> int:
