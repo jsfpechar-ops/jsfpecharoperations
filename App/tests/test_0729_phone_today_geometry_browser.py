@@ -48,7 +48,8 @@ MEASURE = """() => {
     scrollWidth: document.documentElement.scrollWidth, innerWidth: W,
     seg: segOn ? box(seg) : null, links: links,
     hl: hlOn ? {box: box(hl), align: hlCs.textAlign, size: hlCs.fontSize} : null,
-    ovHead: hidden('.ov-head'), ovMonth: hidden('.ov-month'), needsTitle: hidden('#needs-you-title'),
+    ovSub: hidden('.ov-head .sub'), ovQuiet: hidden('.ov-head .ov-quiet'), ovBtn: hidden('.ov-head > .btn'),
+    ovH1Hidden: hidden('.ov-head h1.hl'), ovMonth: hidden('.ov-month'), needsTitle: hidden('#needs-you-title'),
     ovTopCount: document.querySelectorAll('.ov-top').length,
     needs: needs, icVisible: icVisible, stays: stays,
     mainBottom: mainBottom, tabTop: tabs && vis(tabs) ? tabs.getBoundingClientRect().top : null,
@@ -92,9 +93,11 @@ def test_today_phone_geometry(width, base, dashboard_rich_host):
             problems.append(f"headline font-size {hl['size']} (want 30px)")
         if hl["box"]["r"] > W + 0.5:
             problems.append(f"headline overflows: right {hl['box']['r']:.1f} > {W}")
-    for key, label in (("ovHead", ".ov-head"), ("ovMonth", ".ov-month"), ("needsTitle", "#needs-you-title")):
+    for key, label in (("ovSub", ".ov-head .sub"), ("ovQuiet", ".ov-head .ov-quiet"), ("ovBtn", ".ov-head > .btn"), ("ovMonth", ".ov-month"), ("needsTitle", "#needs-you-title")):
         if not measured[key]:
             problems.append(f"{label} is visible on phone")
+    if measured["ovH1Hidden"]:
+        problems.append(".ov-head h1.hl is not visible on phone")
     if measured["ovTopCount"]:
         problems.append(".ov-top is in the phone markup")
     for index, card in enumerate(measured["needs"]):
