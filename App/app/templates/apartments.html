@@ -1,24 +1,23 @@
 {% extends "host_page.html" %}
+{% set v2 = true %}
 {% set nav = 'apartments' %}
 {% set how_key = 'properties' %}
 {% set body_kind = 'list' %}
-{% from "_components.html" import onboarding_banner, empty_state, row_menu_begin, row_menu_end, row_open, property_identity, help_tip, copy_icon, copy_button with context %}
-{% from "_ui.html" import ui_button with context %}
-{% from "_ui_layout.html" import ui_toolbar, ui_section_tabs with context %}
+{% from "_components.html" import onboarding_banner, empty_state, row_menu_begin, row_menu_end, property_identity with context %}
 {% from "_icons.html" import icon with context %}
 {% block title %}{{ t('apartments.title') }}{% endblock %}
-{% block meta %}{% if last_sync %}{{ t('dashboard.last_synced', when=last_sync | datetime_local) }}{% endif %}{% endblock %}
-{% block primary_action %}{% if rows %}{{ ui_button(t('apartments.add'), 'primary', href='/apartments/new', icon_name='house') }}{% endif %}{% endblock %}
-{#- 0099: the shared records (Business & legal details, Door lock account)
-    are this section's sub-page tabs under the title (0078 shared scope). -#}
-{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
-{% block toolbar %}{% if rows %}{{ ui_toolbar(actions='<span class="ui-sub">' ~ tp('properties.list.count', rows | length) ~ '</span>') }}{% endif %}{% endblock %}
+{% block page_title %}{% endblock %}
+{% block meta %}{% endblock %}
+{% block primary_action %}{% endblock %}
+{% block secondary_actions %}{% endblock %}
+{% block tabs %}{% endblock %}
+{% block toolbar %}{% endblock %}
 {% block body %}
 {{ onboarding_banner(onboarding) }}
 
 {% if rows %}
-<div class="panel tight scroll-x list-cards lc-properties">
-  <table class="table-cards properties-table">
+<div class="head"><div><h1>{{ t('apartments.title') }}</h1><p class="sub">{{ t('apartments.sub') }}</p></div><a class="btn" href="/apartments/new">{{ t('apartments.add') }}</a></div>
+<div class="card"><table>
     <thead>
       <tr><th>{{ t('apartments.table.property') }}</th><th>{{ t('apartments.table.address') }}</th><th>{{ t('apartments.table.setup') }}</th>
         <th><span class="sr-only">{{ t('common.copy_link') }}</span></th><th><span class="sr-only">{{ t('common.actions') }}</span></th></tr>
@@ -32,19 +31,19 @@
           aria-label="{{ apartment.internal_name }}">
         <td data-label="{{ t('apartments.table.property') }}">
           <a class="row-primary-link" href="{{ base_url }}">{{ property_identity(apartment.id, apartment.internal_name) }}</a>
-          {% if not apartment.active %}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('apartments.inactive') }}</span>{% endif %}
+          {% if not apartment.active %}<small>{{ t('apartments.inactive') }}</small>{% endif %}
         </td>
         <td data-label="{{ t('apartments.table.address') }}">{{ address_text }}</td>
         <td data-label="{{ t('apartments.table.setup') }}">
-          <div class="property-setup-chips">
+          <div class="setup">
           {% for chip in row.chips %}
-            {% set tone = {'ok': 'ui-badge-done', 'bad': 'ui-badge-action', 'off': 'ui-badge-neutral'}[chip.state] %}
-            <a class="ui-badge {{ tone }}" data-setup-chip="{{ chip.key }}" data-state="{{ chip.state }}" href="{{ chip.href }}">{{ t('apartments.chip.' ~ chip.key) }}<span class="sr-only">: {{ t('apartments.chip_state.' ~ chip.state) }}</span></a>
+            {% set tone = {'ok': 'g', 'bad': 'r', 'off': 'n'}[chip.state] %}
+            <a class="st {{ tone }}" data-setup-chip="{{ chip.key }}" data-state="{{ chip.state }}" href="{{ chip.href }}">{{ t('apartments.chip.' ~ chip.key) }}<span class="sr-only">: {{ t('apartments.chip_state.' ~ chip.state) }}</span></a>
           {% endfor %}
           </div>
         </td>
-        <td class="nowrap" data-label="{{ t('common.copy_link') }}">{% if row.link_url %}<input class="sr-only" type="text" id="guest-url-{{ apartment.id }}" readonly value="{{ row.link_url }}" tabindex="-1" aria-hidden="true">{{ copy_button('guest-url-' ~ apartment.id, t('common.copy_link')) }}{% endif %}</td>
-        <td class="nowrap row-actions" data-label="">{{ row_open(base_url) }}
+        <td class="nowrap" data-label="{{ t('common.copy_link') }}">{% if row.link_url %}<input class="sr-only" type="text" id="guest-url-{{ apartment.id }}" readonly value="{{ row.link_url }}" tabindex="-1" aria-hidden="true"><button class="btn sm ghost" type="button" data-copy="guest-url-{{ apartment.id }}" data-copy-label="{{ t('common.copy_link') }}" data-copied-label="{{ t('common.copied') }}">{{ t('common.copy_link') }}</button>{% endif %}</td>
+        <td class="nowrap row-actions dots" data-label="">
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="{{ base_url }}" role="menuitem">{{ t('common.open') }}</a>
             <a class="row-menu-item" href="{{ base_url }}?view=settings&amp;section=property#basics" role="menuitem">{{ t('apartments.row.edit') }}</a>
@@ -60,8 +59,7 @@
       </tr>
     {% endfor %}
     </tbody>
-  </table>
-</div>
+</table></div>
 {% else %}
   {% if has_operator %}
     {{ empty_state('', t('apartments.empty.lede_ready'), '/apartments/new', t('apartments.empty.add')) }}
