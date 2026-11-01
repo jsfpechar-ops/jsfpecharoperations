@@ -133,6 +133,8 @@ def test_phone_launcher_and_sheet(origin):
         assert page.evaluate("document.documentElement.scrollWidth") <= 390
         page.screenshot(path=str(SHOTS / "panel-open-390.png"))
         dialog.locator("[data-sheet-close]").click()
+        # Wait for the close to finish before leaving the page, or Havel reopens on /settings.
+        page.wait_for_selector("#havel-sheet[open]", state="detached")
         # 0720: v2 phone has no More sheet (the Menu tab replaces it); this tail checks the old shell's More menu on /settings.
         page.goto(origin[0] + "/settings")
         page.locator("[data-sheet-open='more-sheet']").click()
