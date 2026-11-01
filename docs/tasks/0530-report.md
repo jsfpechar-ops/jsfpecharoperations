@@ -48,6 +48,7 @@ Context lint (repo root): `context lint: OK` (WARN lines only: names of open bri
 - Section 8 edits and one deleted test file, listed above. No other existing test changed.
 - Kept keys `apartments.table.entity` and `apartments.table.calendars`: still used, correct.
 - Commit `61b2334` message was later reworded; its content is the deletion of `test_properties_inline_controls_browser.py` plus the rows-test selector change.
+- Orchestrator follow-up: red chips use ui-badge-action; fee without a rate is grey (optional fee)
 
 ## Questions
 None.

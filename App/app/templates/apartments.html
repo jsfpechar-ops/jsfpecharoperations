@@ -38,7 +38,7 @@
         <td data-label="{{ t('apartments.table.setup') }}">
           <div class="property-setup-chips">
           {% for chip in row.chips %}
-            {% set tone = {'ok': 'ui-badge-done', 'bad': 'ui-badge-attention', 'off': 'ui-badge-neutral'}[chip.state] %}
+            {% set tone = {'ok': 'ui-badge-done', 'bad': 'ui-badge-action', 'off': 'ui-badge-neutral'}[chip.state] %}
             <a class="ui-badge {{ tone }}" data-setup-chip="{{ chip.key }}" data-state="{{ chip.state }}" href="{{ chip.href }}">{{ t('apartments.chip.' ~ chip.key) }}<span class="sr-only">: {{ t('apartments.chip_state.' ~ chip.state) }}</span></a>
           {% endfor %}
           </div>

@@ -93,7 +93,7 @@ def test_bare_property_shows_missing_and_unused_chips(clean):
     assert chips["police"][0] == "bad"
     assert chips["calendar"][0] == "bad"
     assert chips["lock"][0] == "off"
-    assert chips["fee"][0] == "bad"
+    assert chips["fee"][0] == "off"
     assert chips["police"][1].endswith("#ubyport")
     assert chips["calendar"][1].endswith("#calendars")
     assert chips["lock"][1].endswith("#basics")

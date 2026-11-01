@@ -1257,7 +1257,7 @@ def apartments_list(request: Request):
             },
             {
                 "key": "fee",
-                "state": "ok" if stay_fee.is_active(apartment) else "bad",
+                "state": "ok" if stay_fee.is_active(apartment) else "off",
                 "href": f"{base}?view=settings&section=reporting#stay-fee-settings",
             },
         ]
