@@ -8,8 +8,8 @@
     "v": "20261027-signup-wrap"
   },
   "app.js": {
-    "sha256": "f7bf860583bc7046bc767db85721e9d18815f64595d5fc44f010d6345e5bed75",
-    "v": "20261101-0547a"
+    "sha256": "b9b1978b6296fe6b2dc907ef5d2a95caebfab68545064385d2300d55542beb11",
+    "v": "20261101-0547b"
   },
   "app2.css": {
     "sha256": "6775bef7cde45633490c6ecbff954e6203d005bda3c2571c94f57d8e171fc51c",
@@ -93,7 +93,7 @@
   },
   "host.js": {
     "sha256": "9a1c690af6f4edb599cd51ba0d122957dafa94ac4d9572aba3f86fa668b14d6c",
-    "v": "20261101-0547a"
+    "v": "20261101-0547b"
   },
   "host2.css": {
     "sha256": "53b30b450cf5da470bef0b3e0c4acf5bc84d3926c50b5474e229f11cc1655dcc",

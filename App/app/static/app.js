@@ -1997,7 +1997,9 @@
       link.addEventListener("click", function () { openSection(link.getAttribute("href")); });
     });
     if (window.location.hash) openSection(window.location.hash);
-    window.addEventListener("hashchange", function () { openSection(window.location.hash); });
+    if (claimNode(window, "initPropSectionLinks")) {
+      window.addEventListener("hashchange", function () { openSection(window.location.hash); });
+    }
   }
   /* 0547: the one-page property form. Restores what the removed tabs did: switch
      status text, an invalid field opens its closed section, the calendar connect
