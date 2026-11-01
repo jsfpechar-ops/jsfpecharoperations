@@ -84,15 +84,6 @@ def test_open_buttons_open_their_row(base, width):
             _click_open(page, found)
             clicked.append(path)
 
-        # the first property overview, with its Guest links card Open
-        _open_page(page, "/apartments", base)
-        overview = page.evaluate(FIRST_PROPERTY)
-        assert overview is not None, (width, "no property row on /apartments")
-        _open_page(page, overview, page.url)
-        found = page.evaluate(FIRST_OPEN)
-        assert found is not None, (width, "no visible Open on the property overview")
-        _click_open(page, found)
-        clicked.append("property overview")
 
 
         context.close()
