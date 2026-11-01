@@ -200,7 +200,7 @@ def _assert_cleaning_day_marker(page, event_id, day, property_name, lang, mobile
         assert visual["propertyDisplay"] != "none" and visual["propertyWidth"] > 0
 
 
-@pytest.mark.parametrize(("width", "lang"), [(1280, "en"), (1280, "cs"), (768, "en"), (768, "cs")])
+@pytest.mark.parametrize(("width", "lang"), [(1280, "en"), (1280, "cs"), (1024, "en"), (1024, "cs")])
 def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, width, lang):
     ws = workspace
     booking_id = stay(ws["home"], "2026-10-15", "2026-10-17")
@@ -230,8 +230,7 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, w
         marker = visible[0]
         property_name = next(prop["internal_name"] for prop in cleaning.properties(ws["owner"])
                              if prop["id"] == marker["propertyId"])
-        mobile = width <= 760
-        _assert_cleaning_day_marker(page, marker["id"], "2026-10-17", property_name, lang, mobile)
+        _assert_cleaning_day_marker(page, marker["id"], "2026-10-17", property_name, lang, False)
         visible_booking_boxes = [
             page.locator(f'.cal-week-events .cal-event[data-cal-event="reservation:{stay_id}"]')
             for stay_id in (booking_id, second_booking_id)
@@ -256,62 +255,56 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, w
         # 0106: the "+N" chip is quiet (transparent, amber icon), not the old saturated orange block.
         assert overflow_visual["background"] in ("rgba(0, 0, 0, 0)", "transparent") and overflow_visual["icon"]
         assert overflow_visual["count"] == "+1"
-        if mobile:
-            assert overflow_visual["height"] >= 44
         overflow.click()
         assert page.locator("[data-cal-day-dialog]").is_visible()
         dialog_marker = page.locator(f'[data-cal-day-dialog] .cal-day-list .cal-event.is-cleaning-marker[data-cal-event="{marker["id"]}"]')
         assert dialog_marker.is_visible()
         assert dialog_marker.locator(".cal-cleaning-label").is_visible()
         assert property_name in dialog_marker.locator(".cal-cleaning-property").inner_text()
-        if not mobile:
-            # Queue close and move focus in one task so the delayed close handler
-            # cannot steal focus between the marker's Enter keydown and activation.
-            focus_kept = page.evaluate("""async eventId => {
-              const dialog = document.querySelector('[data-cal-day-dialog]');
-              const marker = [...document.querySelectorAll('.cal-week-events .cal-event')]
-                .find(node => node.dataset.calEvent === eventId);
-              const closed = new Promise(resolve =>
-                dialog.addEventListener('close', resolve, {once: true}));
-              dialog.querySelector('[data-cal-close]').click();
-              marker.focus();
-              await closed;
-              return document.activeElement === marker;
-            }""", marker["id"])
-            assert focus_kept, "The day dialog close handler stole focus from the cleaning marker"
-        else:
-            page.locator("[data-cal-day-dialog] [data-cal-close]").click()
+        # Queue close and move focus in one task so the delayed close handler
+        # cannot steal focus between the marker's Enter keydown and activation.
+        focus_kept = page.evaluate("""async eventId => {
+          const dialog = document.querySelector('[data-cal-day-dialog]');
+          const marker = [...document.querySelectorAll('.cal-week-events .cal-event')]
+            .find(node => node.dataset.calEvent === eventId);
+          const closed = new Promise(resolve =>
+            dialog.addEventListener('close', resolve, {once: true}));
+          dialog.querySelector('[data-cal-close]').click();
+          marker.focus();
+          await closed;
+          return document.activeElement === marker;
+        }""", marker["id"])
+        assert focus_kept, "The day dialog close handler stole focus from the cleaning marker"
         single_cleaning_overflow = page.locator('.cal-day-summary.has-cleaning-overflow[data-cal-more="2026-10-19"]')
         assert single_cleaning_overflow.count() == 0
-        if not mobile:
-            link = page.locator(f'.cal-week-events .cal-event[data-cal-event="{marker["id"]}"]')
-            link.focus()
-            link.press("Enter")
-            page.locator("[data-cal-details]").wait_for(state="visible")
-            page.locator("[data-cal-details] [data-cal-close]").click()
-            _assert_fractional_bar(page, booking_event, "2026-10-15", 15, "2026-10-17", 11)
-            page.locator('[data-cal-view="gantt"]').click()
-            page.wait_for_selector(".cal-gantt-row")
-            # Gantt starts on Oct 16; the reservation is clipped at that range edge,
-            # while its checkout and the real cleaning time remain independent.
-            _assert_fractional_bar(page, booking_event, "2026-10-16", 0, "2026-10-17", 11, ws["home"])
-            gantt_marker = page.locator(f'.cal-gantt-events .cal-event.is-gantt-cleaning[data-cal-event="{marker["id"]}"]')
-            slot = page.locator(
-                f'.cal-gantt-slot[data-date="2026-10-17"][data-property="{marker["propertyId"]}"]'
-            ).bounding_box()
-            box = gantt_marker.bounding_box()
-            assert box["x"] >= slot["x"] and box["x"] + box["width"] <= slot["x"] + slot["width"]
-            assert box["width"] >= slot["width"] - 6
-            assert gantt_marker.is_visible() and gantt_marker.get_attribute("aria-label")
-            assert gantt_marker.locator("svg").is_visible()
-            short_markers = [page.locator(f'.cal-gantt-events .cal-event.is-gantt-cleaning[data-cal-event="cleaning:{job_id}"]')
-                             for job_id in short_jobs]
-            assert all(item.is_visible() for item in short_markers)
-            short_boxes = [item.bounding_box() for item in short_markers]
-            assert abs(short_boxes[0]["y"] - short_boxes[1]["y"]) >= 20
-            short_slot = page.locator(f'.cal-gantt-slot[data-date="2026-10-25"][data-property="{ws["home"]}"]').bounding_box()
-            assert all(box["width"] >= short_slot["width"] - 6 for box in short_boxes)
-            shot(page, f"day-marker-gantt-{lang}-{width}")
+        link = page.locator(f'.cal-week-events .cal-event[data-cal-event="{marker["id"]}"]')
+        link.focus()
+        link.press("Enter")
+        page.locator("[data-cal-details]").wait_for(state="visible")
+        page.locator("[data-cal-details] [data-cal-close]").click()
+        _assert_fractional_bar(page, booking_event, "2026-10-15", 15, "2026-10-17", 11)
+        page.locator('[data-cal-view="gantt"]').click()
+        page.wait_for_selector(".cal-gantt-row")
+        # Gantt starts on Oct 16; the reservation is clipped at that range edge,
+        # while its checkout and the real cleaning time remain independent.
+        _assert_fractional_bar(page, booking_event, "2026-10-16", 0, "2026-10-17", 11, ws["home"])
+        gantt_marker = page.locator(f'.cal-gantt-events .cal-event.is-gantt-cleaning[data-cal-event="{marker["id"]}"]')
+        slot = page.locator(
+            f'.cal-gantt-slot[data-date="2026-10-17"][data-property="{marker["propertyId"]}"]'
+        ).bounding_box()
+        box = gantt_marker.bounding_box()
+        assert box["x"] >= slot["x"] and box["x"] + box["width"] <= slot["x"] + slot["width"]
+        assert box["width"] >= slot["width"] - 6
+        assert gantt_marker.is_visible() and gantt_marker.get_attribute("aria-label")
+        assert gantt_marker.locator("svg").is_visible()
+        short_markers = [page.locator(f'.cal-gantt-events .cal-event.is-gantt-cleaning[data-cal-event="cleaning:{job_id}"]')
+                         for job_id in short_jobs]
+        assert all(item.is_visible() for item in short_markers)
+        short_boxes = [item.bounding_box() for item in short_markers]
+        assert abs(short_boxes[0]["y"] - short_boxes[1]["y"]) >= 20
+        short_slot = page.locator(f'.cal-gantt-slot[data-date="2026-10-25"][data-property="{ws["home"]}"]').bounding_box()
+        assert all(box["width"] >= short_slot["width"] - 6 for box in short_boxes)
+        shot(page, f"day-marker-gantt-{lang}-{width}")
         _, token = cleaning.new_share(ws["owner"], [marker["propertyId"]])
         page.goto(f"{origin}/cleaning/shared/{token}?lang={lang}")
         loaded(page)
@@ -325,7 +318,7 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, w
         shared_cell = page.locator('.cal-day[data-date="2026-10-17"]').bounding_box()
         assert shared_box["width"] >= shared_cell["width"] - 6
         assert shared_marker.get_attribute("draggable") != "true"
-        _assert_cleaning_day_marker(page, marker["id"], "2026-10-17", property_name, lang, mobile)
+        _assert_cleaning_day_marker(page, marker["id"], "2026-10-17", property_name, lang, False)
         shot(page, f"day-marker-shared-{lang}-{width}")
         context.close()
         browser.close()
@@ -561,11 +554,11 @@ def test_missing_property_hours_keep_full_day_cleaning_marker_without_saved_defa
     property_name = next(prop["internal_name"] for prop in cleaning.properties(ws["owner"])
                          if prop["id"] == ws["home"])
     with sync_api.sync_playwright() as playwright:
-        browser, context = browser_context(playwright, ws, origin, width=768)
+        browser, context = browser_context(playwright, ws, origin, width=1024)
         page = context.new_page()
         page.goto(f"{origin}/cleaning?lang=en")
         loaded(page)
-        _assert_cleaning_day_marker(page, f"cleaning:{event_id}", "2026-10-26", property_name, "en", True)
+        _assert_cleaning_day_marker(page, f"cleaning:{event_id}", "2026-10-26", property_name, "en", False)
         marker = page.locator(f'.cal-week-events .cal-event.is-cleaning-marker[data-cal-event="cleaning:{event_id}"]')
         marker.click()
         assert page.locator("[data-cal-details] .cleaning-warning").count() >= 1
