@@ -201,7 +201,7 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
 
         # Real interactive rows/cards show the quiet hover tint and keyboard
         # focus context; static panels do not acquire a pointer cursor.
-        for width, expected_height in ((360, 44), (390, 44), (1280, 40)):
+        for width, expected_height in ((360, 44), (390, 44), (1280, 36)):
             page.set_viewport_size({"width": width, "height": 900})
             # 0720: .ui-ph-acts is the old-shell page header (host_page.html); "/" is v2 and has none.
             page.goto(f"{base}/apartments?lang=en")

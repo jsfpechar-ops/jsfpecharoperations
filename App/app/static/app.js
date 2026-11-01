@@ -1985,6 +1985,20 @@
       node.removeAttribute("open");
     });
   }
+  /* 0543: an aside link to a property section (#sec-*) opens that section; a #sec-* hash opens it on load */
+  function initPropSectionLinks() {
+    function openSection(hash) {
+      if (!/^#sec-/.test(hash || "")) return;
+      var node = document.getElementById(hash.slice(1));
+      if (node && node.tagName === "DETAILS" && node.classList.contains("prop-sec")) node.open = true;
+    }
+    document.querySelectorAll('a[href^="#sec-"]').forEach(function (link) {
+      if (!claimNode(link, "initPropSectionLinks")) return;
+      link.addEventListener("click", function () { openSection(link.getAttribute("href")); });
+    });
+    if (window.location.hash) openSection(window.location.hash);
+    window.addEventListener("hashchange", function () { openSection(window.location.hash); });
+  }
   /* ---- 0084 O1: unsaved changes, in-app Save / Discard / Stay ----------------
      A form with data-unsaved-guard that holds changes (data-dirty, set by
      initUnsavedForms) asks before an in-app link leaves it:
@@ -2112,6 +2126,7 @@
 
   function initPage() {
     initPhoneDefaultClosed();
+    initPropSectionLinks();
     initCopy();
     initUnsavedForms();
     initUnsavedDialog();
