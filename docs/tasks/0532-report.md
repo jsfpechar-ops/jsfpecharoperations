@@ -66,3 +66,27 @@ Tails:
 ## Deviations (this pass)
 - The copy-button macro v2 and non-v2 branches are now separate `{% if %}` blocks, so non-v2 whitespace differs; markup and data attributes are the same.
 - The navigation test's ready-state assertion was changed to the v2 empty state (section 8 rule).
+
+## Executor pass (brief 0532, steps 1-4, Haiku, final)
+Status: **blocked**. Lint and tap-target geometry are green; the 0710 style comparison and two shared tests still fail.
+
+Commits: `8fed5cf` step 1 (design_lint allow-list covers apartments.html, same as dashboard.html); `a6aa258` steps 2-3 (`.props-card .row-primary-link` 24 px min height; `@media (max-width:1023px) .props-card .st{min-height:44px}`; key `20261101-0532e`; manifest rewritten).
+
+Results:
+- `design_lint.py`: OK. `context_lint.py`: OK.
+- 0710 `-k properties` geometry: 6 passed at all widths.
+- 0710 `-k properties` style: 6 failed.
+  - 320 and 390 px: `.setup .st: missing in app`. The chips exist in the template and the CSS rules are in app2.css; the first visible `.st` is not found by the comparison at phone widths. Not diagnosed further (no phone rule hides it in the CSS files searched).
+  - 768 to 1440 px: `.setup .st` colour and background differ (app red, mockup green). The first chip of the first row is "Police", which is `bad` in the rich-host seed (`dashboard_rich_host`, which has open UbyPort issues) and `ok` in the mockup. Data difference, not CSS. Fix needs an owner decision on the seed (the fixture is shared with `test_host_quiet_dashboard_browser.py`) or a mockup change.
+- Section 6 group 1 (`test_0530`, `test_properties_table_chips`, `test_host_properties_navigation`, `test_host_ux_acceptance`, `test_operator_naming`, `test_status_colours`, `test_0300`, `test_no_dead_internal_links`, `test_static_versions`): 113 passed, 9 failed. Failures:
+  - 6 x `test_0710` style (above, page data).
+  - `test_host_properties_navigation::test_properties_page_fits_every_width_and_both_languages`: row-menu trigger past the right edge at 768 px. Shared: already listed in the 0532 pass; needs the shared row-menu/table width rule (0711 or 0713 scope).
+  - `test_static_versions` x2: fixed in `a6aa258` (now 3 passed).
+- Section 6 group 2: not re-run in this pass (earlier pass: 22 failed, all listed as shared in the previous section). Not re-run because of the call budget.
+- Screenshots `docs/tasks/screenshots-0532/`: NOT taken. `test_v2_screenshots` writes to `docs/tasks/screenshots-0710` only (env `UBYHOST_SHOTS_V2=1`), so a dedicated 390/768/1280 capture for `/apartments?lang=cs` is still needed.
+
+Remaining for the owner or orchestrator:
+1. Decide the Police chip state in the 0710 seed (or mockup) for the properties style comparison.
+2. Diagnose `.setup .st` missing at 320/390 px in the 0710 comparison.
+3. Shared row-menu trigger width at 768 px (navigation fit test).
+4. Capture the three cs screenshots for step 4, then set status to review.
