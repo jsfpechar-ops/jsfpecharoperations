@@ -279,7 +279,7 @@ def test_dashboard_single_stay_needs_you_card(dashboard_host, base):
                 assert "has-js" in (page.locator("html").get_attribute("class") or "")
                 assert not errors, (label, errors)
                 assert page.locator("[data-calendar]").count() == 1
-                assert page.locator(".dashboard-stats, .dashboard-row, .ui-banner-attention").count() == 0, label
+                assert page.locator(".dashboard-stats, .dashboard-row:not(.dashboard-today .dashboard-row), .ui-banner-attention").count() == 0, label
                 line = page.locator(f'.needs-you-item[data-needs-you-stay="{stay_id}"]')
                 assert line.count() == 1, label
                 assert line.get_attribute("data-tone") == "amber", label

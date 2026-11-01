@@ -7,8 +7,8 @@ def test_dashboard_with_a_property_has_the_v2_header_one_primary_and_refresh_hoo
     page = host_with_property.get("/?lang=en").text
     assert page.count("<h1") == 1 and 'data-body-kind="detail"' in page
     assert page.count('class="ui-btn ui-btn-primary"') == 1
-    assert page.count('class="ui-btn ui-btn-quiet ui-btn-icon ui-ph-menu"') == 1
-    assert ' class="ui-btn' not in page.split("ui-ph-menu", 1)[1].split(">", 1)[0]
+    assert "ui-ph-menu" not in page
+    assert "dashboard-more" not in page
     assert 'data-dashboard-refresh="stats"' in page and 'data-dashboard-refresh="work"' in page
     # 0241: the count tiles gave way to the "What needs you" card.
     assert 'class="needs-you"' in page and 'class="ui-stats' not in page
