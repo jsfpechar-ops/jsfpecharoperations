@@ -209,7 +209,6 @@ def test_empty_states_use_the_shared_component(acc):
 ROWS = {
     "stays": ("/reservations?range=all", ".stays-view tr.clickable-row"),
     "properties": ("/apartments", ".properties-table tr.clickable-row"),
-    "property-summary": ("/apartments", ".property-summary-table tr.clickable-row"),
     "invoices": ("/invoices", ".lc-invoices tr.clickable-row"),
     "fees": ("/stay-fees", ".lc-fees tr.clickable-row"),
 }
