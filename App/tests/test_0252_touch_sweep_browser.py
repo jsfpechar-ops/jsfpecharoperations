@@ -36,7 +36,7 @@ PROBE = r"""() => {
     if (!shown(e) || e.closest('.cal-scroll, [data-dashboard-calendar], .notification-stack')) continue;
     const r = e.getBoundingClientRect();
     if (r.right > vw + 1 || r.left < -1) {
-      if (e.closest('.scroll-x')) continue;
+      if (e.closest('.scroll-x, .hs')) continue;  // .hs is the phone today-card row: it scrolls inside itself
       out.outside.push((e.textContent || e.name || e.tagName).trim().slice(0, 30));
     }
   }
