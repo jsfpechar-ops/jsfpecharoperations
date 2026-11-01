@@ -1,5 +1,5 @@
 # 0725: finish 0724 (motion test, calendar cell, screenshots, report)
-Status: todo
+Status: done
 Depends on: 0724 steps 1-5 (committed) | Branch: task/0723-v2-overview-polish (worktree /tmp/wt0723)
 Executor: Haiku 5.5 | Fits one session: 25 tool calls
 

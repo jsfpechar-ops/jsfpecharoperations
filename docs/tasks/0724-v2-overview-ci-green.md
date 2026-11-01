@@ -1,5 +1,5 @@
 # 0724: Overview phone spacing done right, CI green
-Status: todo
+Status: done
 Depends on: 0723 | Branch: task/0723-v2-overview-polish (worktree /tmp/wt0723, continue there)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls
 
