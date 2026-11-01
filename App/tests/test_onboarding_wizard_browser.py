@@ -659,13 +659,16 @@ def test_try_it_open_skip_moves_on(host):
 
 
 def test_overview_guest_link_card_links_to_settings(host):
-    """Fix 9: the status line does not repeat the copy button, and settings are linked."""
+    """Fix 9: the guest link card shows the copy button once, and does not repeat a status line.
+
+    0544: the overview card is gone; the guest card (section.guest-card) sits on the property page.
+    """
     flat = _create(host)
-    page = host["client"].get(f"/apartments/{flat['id']}?view=overview&lang=en").text
+    page = host["client"].get(f"/apartments/{flat['id']}?lang=en").text
     assert "Ready · Copy link" not in page
-    assert _t("en", "wizard.guest_link.ready") in page
-    assert _t("en", "wizard.guest_link.copy_link") in page
-    assert f"/apartments/{flat['id']}?view=settings&amp;section=guests#communication" in page
+    assert 'id="property-guest-link-title"' in page
+    assert 'data-copy="property-guest-url"' in page
+    assert _t("en", "common.copy_link") in page
 
 
 def test_police_saved_without_password_stays_on_police(host):
