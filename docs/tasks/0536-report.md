@@ -229,3 +229,26 @@ Status: blocked (executor, Haiku 5.5). Done: step 1 (commit 151d29f). Left: step
 - Section 6 run: `1 failed, 32 passed, 6 deselected`. Failure: `test_0504_mixed_inits_once_browser.py:90` `AssertionError: ['hashchange']`. Not yet explained; brief §8 says stop.
 - Bug B: `tests/test_host_unsaved_changes_browser.py::test_without_javascript_nothing_changes` fails before any click: `.host-property-save .ui-btn-primary` does not exist in the templates (the test predates the one-page layout). The brief's `.savebar button[type=submit]` intercept was not reproduced, so the elementFromPoint check was not run.
 - Question for the owner: is the 0504 hashchange count expected to change, and should the stale test in test_host_unsaved_changes_browser.py be updated (out of brief scope)?
+
+## 0544
+
+Status: blocked (step 1 of 5 done; the rest left for separate sessions, one file per session).
+
+Changed: `App/tests/test_host_unsaved_changes_browser.py` only.
+- Bookings tab replaced by the crumb link `.crumb a[href="/apartments"]` (leaves the page, asks).
+- Focus after Stay asserted with selector matching (`document.activeElement.matches('.crumb a')`), no new data key.
+- `_view()` replaced by `_open_sections()` (ids of `details.prop-sec[open]`).
+- Save bar selectors: `.savebar`, `.savebar button[type=submit]`. In-page links use `#sec-* > summary` (the aside rows are hidden at 360 px).
+- Rail test leaving link is `.sidebar-nav a[href="/settings"]` (the `/reservations` link renders only when the stays nav is on).
+- Save-after-dialog flow no longer asserts the return URL; it asserts the stored value only.
+
+Run (chromium, file alone, `-k "not webkit"`): 5 passed (keyboard flow, business editor x4), 10 failed. Webkit not installed here.
+
+Failures that are real findings on the new page (stopped, not weakened):
+1. Dialog buttons 37 px high, test minimum 40 px (`base.html` unsaved dialog). Hits `test_property_settings_save_discard_stay[en-1280-900]` and `[cs-1280-900]` at line 168.
+2. Discard does not restore the door-code status text: after `reset.click()` the `#door_codes-status` text stays `Enabled` / `Zapnuto` (loaded value ""). Hits `test_save_bar_discard_changes_button` x4 at line 282.
+3. The crumb `.crumb a` is hidden at 360 px, so the dialog test cannot open the dialog there. Hits `test_property_settings_save_discard_stay[en-360-780]`, `[cs-360-780]` at line 195.
+4. No-JS test: the Save button is covered by `aside.preview` (intercepts pointer events) at 1280 px.
+5. Rail test: `.sidebar-nav a[href="/settings"]` not found at 1280 px. Not yet checked why (possible layout or nav condition).
+
+Open questions for the orchestrator: which leaving link to use at 360 px (item 3); whether item 2 is a bug or the test's assumption; whether item 4 is a layout bug; the cause of item 5.
