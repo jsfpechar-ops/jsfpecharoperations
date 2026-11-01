@@ -107,7 +107,8 @@
   const state = {
     mode: validMode(queryMode) ? queryMode : (validMode(preferences.mode) ? preferences.mode : "auto"),
     scale: ["month", "week", "year"].includes(query.get("cal_scale")) ? query.get("cal_scale") : "month",
-    date: validDate(queryDate) ? queryDate : (fixedDays ? root.dataset.today : (root.dataset.calendarDate || root.dataset.today)),
+    fixed: Boolean(fixedDays) && !query.has("cal_view") && !query.has("cal_scale") && !query.has("cal_date"),
+    date: validDate(queryDate) ? queryDate : (fixedDays && !query.has("cal_view") && !query.has("cal_scale") && !query.has("cal_date") ? root.dataset.today : (root.dataset.calendarDate || root.dataset.today)),
     property: properties.some(item => String(item.id) === query.get("cal_property")) ? query.get("cal_property") : "",
     properties, events: [], loading: false,
     display: { property: preferences.property !== false, label: preferences.label !== false, guests: preferences.guests !== false }
@@ -124,15 +125,15 @@
   }
   function savePreferences() {
     try {
-      preferences = { mode: fixedDays ? preferences.mode : state.mode, ...state.display };
+      preferences = { mode: state.fixed ? preferences.mode : state.mode, ...state.display };
       const displaySettings = JSON.stringify(preferences);
       if (cleaningMode) localStorage.setItem(cleaningPreferencesKey, displaySettings);
       else localStorage.setItem(preferencesKey, displaySettings);
     } catch (_) { /* Optional. */ }
   }
-  function view() { if (fixedDays && !phoneDots()) return "gantt"; return phoneDots() ? "calendar" : autoView(state.mode, state.property ? 1 : state.properties.length); }
+  function view() { if (state.fixed && !phoneDots()) return "gantt"; return phoneDots() ? "calendar" : autoView(state.mode, state.property ? 1 : state.properties.length); }
   function range() {
-    if (fixedDays && view() === "gantt") return [state.date, addDays(state.date, fixedDays)];
+    if (state.fixed && view() === "gantt") return [state.date, addDays(state.date, fixedDays)];
     if (view() === "gantt" && cleaningMode) return [state.date,
       state.date === root.dataset.rangeFrom && root.dataset.rangeTo ? root.dataset.rangeTo : addDays(state.date, 30)];
     if (view() === "gantt") return [monthStart(state.date), moveMonth(state.date, 1)];
@@ -186,7 +187,8 @@
   }
   function syncControls() {
     const currentView = view(), [start, end] = range();
-    $$("[data-cal-view]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.calView === currentView)));
+    $$("[data-cal-view]").forEach(button => button.setAttribute("aria-pressed", String(!state.fixed && button.dataset.calView === currentView)));
+    $$("[data-cal-days]").forEach(button => button.setAttribute("aria-pressed", String(state.fixed)));
     $$("[data-cal-scale]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.calScale === state.scale)));
     $("[data-cal-scales]").hidden = currentView === "gantt";
     $("[data-cal-month]").value = state.date.slice(5, 7);
@@ -199,9 +201,8 @@
     $("[data-cal-auto]").checked = state.mode === "auto";
     $$("[data-cal-display]").forEach(input => { input.checked = state.display[input.dataset.calDisplay]; });
     if (cleaningMode && currentView === "gantt") $("[data-cal-period]").textContent = shortDate(start) + " – " + fullDate(addDays(end, -1));
-    if (fixedDays && currentView === "gantt") {
+    if (state.fixed && currentView === "gantt") {
       $("[data-cal-period]").textContent = shortDate(start) + " – " + fullDate(addDays(end, -1));
-      $(".cal-view-segment").hidden = true;
       $("[data-cal-month]").hidden = true;
       $("[data-cal-year]").hidden = true;
     }
@@ -421,7 +422,7 @@
     body.append(grid);
   }
   function renderGantt() {
-    const [start, end] = cleaningMode || fixedDays ? range() : [monthStart(state.date), moveMonth(state.date, 1)];
+    const [start, end] = cleaningMode || state.fixed ? range() : [monthStart(state.date), moveMonth(state.date, 1)];
     const number = distance(start, end);
     const scroll = el("div", "cal-gantt-scroll"), timeline = el("div", "cal-gantt-timeline");
     timeline.style.setProperty("--days", String(number));
@@ -429,7 +430,7 @@
     heading.append(el("span", "cal-gantt-name", labels.property));
     for (let index = 0; index < number; index++) {
       const day = addDays(start, index), cell = el("span", day === root.dataset.today ? "is-today" : "");
-      cell.append(el("span", "", weekday(day)), el("br"), el("span", "", String(cleaningMode || fixedDays ? dateValue(day).getUTCDate() : index + 1)));
+      cell.append(el("span", "", weekday(day)), el("br"), el("span", "", String(cleaningMode || state.fixed ? dateValue(day).getUTCDate() : index + 1)));
       heading.append(cell);
     }
     timeline.append(heading);
@@ -756,7 +757,7 @@
     const movement = target.closest("[data-cal-prev], [data-cal-next]");
     if (movement) {
       const sign = movement.hasAttribute("data-cal-prev") ? -1 : 1;
-      const next = fixedDays && view() === "gantt" ? addDays(state.date, sign * fixedDays) :
+      const next = state.fixed && view() === "gantt" ? addDays(state.date, sign * fixedDays) :
         view() === "calendar" && state.scale === "week" ? addDays(state.date, sign * 7) :
         moveMonth(state.date, sign * (view() === "calendar" && state.scale === "year" ? 12 : 1));
       state.date = next < "1900-01-01" ? "1900-01-01" : next > "2100-12-01" ? "2100-12-01" : next;
@@ -783,8 +784,12 @@
   $("[data-cal-month]").addEventListener("change", changePeriod);
   $("[data-cal-year]").addEventListener("change", changePeriod);
   $$("[data-cal-view]").forEach(button => button.addEventListener("click", () => {
+    if (state.fixed) { state.fixed = false; state.date = root.dataset.today; }
     state.mode = button.dataset.calView;
     savePreferences(); load();
+  }));
+  $$("[data-cal-days]").forEach(button => button.addEventListener("click", () => {
+    state.fixed = true; state.date = root.dataset.today; load();
   }));
   $$("[data-cal-scale]").forEach(button => button.addEventListener("click", () => {
     state.mode = "calendar"; state.scale = button.dataset.calScale;
@@ -893,6 +898,7 @@
     if (validDate(params.get("cal_date"))) state.date = params.get("cal_date");
     state.property = state.properties.some(item => String(item.id) === params.get("cal_property")) ? params.get("cal_property") : "";
     state.scale = ["month", "week", "year"].includes(params.get("cal_scale")) ? params.get("cal_scale") : "month";
+    state.fixed = Boolean(fixedDays) && !params.has("cal_view") && !params.has("cal_scale") && !params.has("cal_date");
     load();
   });
   $$(".cal-enhanced").forEach(node => { node.hidden = false; });
