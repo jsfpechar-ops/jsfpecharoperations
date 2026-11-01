@@ -101,20 +101,16 @@ func lockAccountExists(ctx context.Context, pool pgxPool, owner *int64) (bool, e
 }
 
 // linkKey is guest_slug.link_key for an apartment with a permalink token: the
-// current slug, else the permanent token.
-// TODO(0679): Python's ensure() creates a slug when none exists; that write is
-// not ported yet, so such an apartment gets its permanent token instead.
+// current slug (created by ensure if missing), else the permanent token.
 func linkKey(ctx context.Context, pool pgxPool, a apartment) (string, error) {
-	var slug string
-	err := pool.QueryRow(ctx,
-		`SELECT slug FROM apartment_slug WHERE apartment_id = $1 AND is_current = 1`, a.id).Scan(&slug)
-	if err == pgx.ErrNoRows {
-		return a.permalinkToken, nil
-	}
+	slug, err := ensure(ctx, pool, a)
 	if err != nil {
 		return "", err
 	}
-	return slug, nil
+	if slug != "" {
+		return slug, nil
+	}
+	return a.permalinkToken, nil
 }
 
 // stayRows is the palette's stays query: 80 newest non-archived reservations.
