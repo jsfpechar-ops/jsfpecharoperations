@@ -1560,7 +1560,6 @@ body.host-workspace {
 .host-workspace .property-guest-link{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px;margin-bottom:12px;border-radius:12px;background:var(--surface, #fff);border:1px solid var(--border, #ebebe7)}
 .host-workspace .property-guest-link h2{font-size:15px;margin:0}
 .host-workspace .property-guest-link .ui-sub{margin:2px 0 0;overflow-wrap:anywhere;font-family:ui-monospace,monospace}
-/* 0532 guardrail: the guest-link copy button is 44 px tall on phones (tap target) */
 /* 0532 guardrail: tap targets 44 px on phones (copy-link button, toast close) */
 @media (max-width:767px){.copy-btn.ui-btn-icon.ui-btn-compact{width:44px;min-width:44px;min-height:44px;height:44px}.toast-stack .toast > [data-toast-close]{width:44px;min-width:44px;min-height:44px}}
 .host-workspace .property-savebar{position:sticky;bottom:0;display:flex;justify-content:flex-end;gap:8px;padding:12px 0;background:var(--surface-page, #f6f6f4);border-top:1px solid var(--border, #ebebe7);z-index:5}

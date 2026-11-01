@@ -125,3 +125,25 @@ Test tails:
 
 Not done: screenshots (`docs/tasks/screenshots-0532/`, step 6) not taken; the 0532 cs capture is still missing.
 Next: fix the smart-locks × tap target; re-run group 1; take the screenshots; then set status to review.
+
+## Executor pass 8 (brief 0532, smart-locks close button)
+Status: **review**. Groups 1 and 2 pass with 0 skipped, both lints OK.
+
+The × element: `button "×"` (24 x 21) is the sticky error toast close on the smart-locks page (`<button type="button" data-toast-close aria-label="Dismiss notification">×</button>` in `<div class="toast err" data-toast data-toast-kind="error" data-toast-sticky>` inside `.toast-stack`). Its computed min-width and min-height are 0px: no host.css rule applied. Cause: the smart-locks page renders the v2 shell, which loads `app2.css` only (base.html, `v2` branch), not `host.css`. The 0531 rule in host.css therefore never reaches it.
+
+Changes:
+- `app2.css` (0532 block, key `0532p`): `@media (max-width:767px){.toast-stack .toast > [data-toast-close]{width:44px;min-width:44px;min-height:44px}}`. This is a deviation from the brief, which asked for the host.css 0531/0532 block: a host.css rule cannot fix a v2 page.
+- `host.css` (key `0531g`): deleted the duplicate "0532 guardrail" comment (copy-button line). The toast rule in the 0531 block is unchanged.
+- `host2.css` (key `0530c`): removed `.host-workspace .property-setup-chips` and `.property-setup-chips .ui-badge` (dead since 0530).
+- `docs/design/catalog.json`: removed the `property-setup-chips` entry from the class list and from the descriptions. JSON validated.
+- `base.html` keys bumped; `App/tests/static_versions.json` rewritten with `test_static_versions.py --write`.
+- `docs/tasks/screenshots-0532/`: app-390/768/1280.png (`/apartments?lang=cs`, full page) and mockup-390/768/1280.png (mockup `props` view, full page), overwritten. Taken with a temporary test file, deleted after the run. Not visually re-checked in this pass.
+
+Test tails:
+- Group 1: `122 passed in 155.19s (0:02:35)`, no failures, no skips.
+- Group 2: `105 passed in 228.88s (0:03:48)`, no failures, no skips. Run without `tests/test_0385_phone_card_open_browser.py`, which pass 7 deleted; the command in brief §6 needs that path removed.
+- `design_lint.py`: OK. `context_lint.py`: OK (warning only: 130 commits touched App/ since the last status.md update; orchestrator to update status at review).
+
+Stray tracked PNGs in `docs/tasks/screenshots-0410/` were rewritten by the group run and restored with `git checkout --`.
+
+Owner steps left: none for this pass. Next: orchestrator review, then merge via `scripts/merge-pr-on-green.sh`.
