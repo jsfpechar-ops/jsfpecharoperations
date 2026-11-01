@@ -1,6 +1,6 @@
 # 0624: One-time host consent screen before Stripe
 
-Status: in-progress
+Status: review
 Depends on: 0622, 0623 (merged) | Base commit: 99c2a0d8 or later main | Branch: task/0624-payments-consent
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
