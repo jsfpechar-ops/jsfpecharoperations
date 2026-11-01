@@ -349,7 +349,6 @@ STRINGS: Dict[str, str] = {
     "dashboard.stat.waiting": "Chờ khách",
     "dashboard.stat.ready": "Sẵn sàng gửi",
     "dashboard.stat.overdue": "Quá hạn",
-    "dashboard.section.current": "Lưu trú hiện tại và 30 ngày tới",
     "dashboard.action.more": "Thêm",
     "dashboard.more_action": "Còn %(count)s mục cần xử lý",
     "entity.signature.heading": "Chữ ký trên báo cáo phí lưu trú",
