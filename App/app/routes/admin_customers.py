@@ -58,6 +58,9 @@ def customer_list(request: Request, q: str = "", state: str = "", plan: str = ""
         "summary": admin_customers.summary(day), "href": href,
         "older_url": href(after=customers[-1]["id"]) if rows["older"] else "",
         "newer_url": href(before=customers[0]["id"]) if rows["newer"] else "",
+        "missing_email_count": db.query_one(
+            "SELECT COUNT(*) AS n FROM user_account WHERE active = 1 "
+            "AND (email IS NULL OR TRIM(email) = '')")["n"],
         "today": day.isoformat(), "billing_enabled": billing.enabled(),
     })
 
@@ -70,6 +73,15 @@ def customer_detail(request: Request, user_id: int):
     customer = admin_customers.detail(user_id)
     if customer is None:
         raise HTTPException(status_code=404)
+    consent = db.query_one(
+        "SELECT (SELECT COUNT(*) FROM ad_click c WHERE c.user_account_id = ? "
+        "AND c.platform = 'google' AND c.withdrawn_at IS NULL) AS google_consent, "
+        "(SELECT COUNT(*) FROM ad_click c WHERE c.user_account_id = ? "
+        "AND c.platform = 'meta' AND c.withdrawn_at IS NULL) AS meta_consent",
+        (user_id, user_id),
+    )
+    customer["google_consent"] = consent["google_consent"]
+    customer["meta_consent"] = consent["meta_consent"]
     return render(request, "admin_customer.html", {
         "customer": customer, "fmt_date": validation.fmt_date,
         "billing_enabled": billing.enabled(),
