@@ -1110,7 +1110,6 @@ a { color: inherit; }
 .pricing-button { align-self: start; box-sizing: border-box; text-align: center; }
 .pricing-price { overflow-wrap: anywhere; }
 .pricing-features { align-content: start; }
-.pricing-coming-soon { color: var(--ink-muted); }
 .pricing-features .pricing-option { display: block; padding-top: 8px; border-top: 1px solid var(--border); font-size: var(--text-sm); }
 .pricing-option [data-addon], [data-ttlock-selected] { display: block; }
 .pricing-ttlock[hidden], .pricing-option-fallback[hidden], [data-ttlock-selected][hidden] { display: none; }
