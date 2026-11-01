@@ -1132,3 +1132,13 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .ui-choice-card:has(input:checked) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .host-workspace .ui-choice-card input:focus-visible { outline: none !important; }
 .ui-choice-card:has(input:focus-visible) { outline: 2px solid var(--coral-600); outline-offset: 2px; }
+
+/* 0525: stay page on desktop: guests are table rows in one white card; the door code is large. */
+@media (min-width: 1024px) {
+  .host-workspace .guest-cards { gap: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--card-radius); }
+  .host-workspace .guest-card { border: 0; border-bottom: 1px solid var(--line); border-radius: 0; }
+  .host-workspace .guest-card:last-child { border-bottom: 0; }
+  .host-workspace .guest-card-head { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto auto; align-items: center; }
+  .host-workspace .stay-door-card { padding: 16px; }
+  .host-workspace .stay-door-card #door-code-line { font-size: 18px; font-weight: 700; }
+}
