@@ -147,3 +147,40 @@ Test tails:
 Stray tracked PNGs in `docs/tasks/screenshots-0410/` were rewritten by the group run and restored with `git checkout --`.
 
 Owner steps left: none for this pass. Next: orchestrator review, then merge via `scripts/merge-pr-on-green.sh`.
+
+## Executor pass 9 (brief 0532, list row height, Haiku)
+Status: **blocked**. Done: step A (row height). Left: step B (retake the mockup and app 390/768/1280 screenshots after animations end, hide the font picker), most of step C (the test groups, design_lint, context_lint), and step D's test tails. Tool-call cap reached.
+
+Cause: at 1024 to 1440 px the row was driven by three cells, not one.
+- Copy-link cell: `button.copy-btn` was 60 px tall because its SVG rendered at 44 px.
+- Setup chips: the four chips wrapped to two lines (`.setup` 54 px) because the cell was too narrow.
+- Name and address cells: the name wrapped to two lines (44 px link), and the address (74 px wide) wrapped to two or three lines.
+
+Heights before and after (`/apartments?lang=en`, first row; mockup `props` view row at 1280 is 53 px):
+
+| Width | Before (row) | After (row) |
+|---|---|---|
+| 1024 | 88 | 53 |
+| 1280 | 85 | 53 |
+| 1440 | 85 | 53 |
+
+Changes (App/app/static/app2.css, 0532 block, `@media (min-width:1024px)` only; below 1024 px nothing changed):
+- `.setup` stays on one line (`flex-wrap:nowrap`) and chips are 24 px tall.
+- `.copy-btn` is 28 px tall, its SVG 16 px.
+- The property name is one line, ellipsis when long.
+- The address cell is one line, ellipsis (`max-width:0` trick, so columns share the width).
+
+Key bumped to `0532r` in base.html; `App/tests/static_versions.json` rewritten with `--write`.
+
+Deviations:
+- The name and address are truncated with an ellipsis from 1024 px. This was needed to reach 53 px. Full text is in the row's aria-label and the property page.
+- The commit message omits "clean screenshots": step B was not done.
+- docs/tasks/0533-phone-properties-cards.md was already modified in the working tree before this pass; it is not staged or committed here.
+- Temporary measurement tests in App/tests were created and deleted; nothing left behind.
+
+Test tail, `0710 -k properties`:
+=========================== short test summary info ============================
+FAILED tests/test_0710_v2_mockup_match_browser.py::test_v2_page_matches_mockup_styles[properties-1024]
+FAILED tests/test_0710_v2_mockup_match_browser.py::test_v2_page_matches_mockup_styles[properties-1280]
+FAILED tests/test_0710_v2_mockup_match_browser.py::test_v2_page_matches_mockup_styles[properties-1440]
+3 failed, 9 passed, 13 deselected in 16.69s
