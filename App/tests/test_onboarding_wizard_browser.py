@@ -990,7 +990,7 @@ def test_review_fixes_in_the_browser(host, base_url):
         page.wait_for_url("**view=overview**")
         assert page.locator("[data-setup-status]").is_visible()
         _shot(page, "12-overview-hidden-en-1280.png")
-        page.locator(".host-property-card-static").scroll_into_view_if_needed()
+        page.locator("section.guest-card").first.scroll_into_view_if_needed()
         _shot(page, "13-overview-guest-link-en-1280.png")
         assert page.locator("a[href*='section=guests']").count() >= 1
         browser.close()

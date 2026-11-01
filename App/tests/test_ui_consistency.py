@@ -102,11 +102,7 @@ def test_the_copy_button_keeps_its_icon_when_it_confirms(host):
     assert "data-copy-label-slot" in page.text
     # The confirmation goes in the slot; the icon stays where it is.
     button = page.text.split("data-copy-label-slot", 1)[0].rsplit("<button", 1)[1]
-    if "btn-icon-label" in button:
-        # v2 copy button is text only (mockup): no icon.
-        assert "<svg" not in button
-    else:
-        assert "<svg" in button
+    assert "<svg" in button
 
 
 def test_the_guest_form_names_the_apartment_the_host_chose(host):

@@ -184,6 +184,7 @@ body.v2 .crow{grid-auto-rows:44px}
 .cal .bar[data-row="8"]{grid-row:8}
 /* 0709 focus: one visible ring for every control */
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible,tr:focus-visible{outline:2px solid #d0452d;outline-offset:2px}
+body.v2 .btn.copy-btn:focus-visible{outline:2px solid #d0452d;outline-offset:2px}
 .clickable-row:focus-within{outline:2px solid #d0452d;outline-offset:-2px}
 body.v2 [data-needs-you-go]:hover{background:#b83a24}
 body.v2 .skip-link{position:fixed;z-index:1000;left:8px;top:-100px}
