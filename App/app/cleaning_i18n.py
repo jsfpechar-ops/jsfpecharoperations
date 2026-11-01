@@ -343,7 +343,18 @@ WORDS = {
     "auto_help": [
         "Checkout changes update automatic cleanings. A date you change stays as you set it.",
         "Změna odjezdu upraví automatický úklid. Vámi upravený termín zůstane zachovaný."
-    ]
+    ],
+    "section_today": ["Today", "Dnes"],
+    "section_week": ["This week", "Tento týden"],
+    "section_later": ["Later", "Později"],
+    "today_empty": ["No cleaning today.", "Dnes žádný úklid."],
+    "col_property": ["Property", "Nemovitost"],
+    "col_time": ["Time", "Čas"],
+    "col_day": ["Day", "Den"],
+    "col_status": ["Status", "Stav"],
+    "status_scheduled": ["Scheduled", "Naplánováno"],
+    "status_conflict": ["Check the time", "Zkontrolujte čas"],
+    "status_hours": ["Hours missing", "Chybí časy"]
 }
 
 def translator(lang: str):
