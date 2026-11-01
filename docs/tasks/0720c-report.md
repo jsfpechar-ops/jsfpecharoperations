@@ -30,3 +30,20 @@ Status: blocked (25-call cap). Not pushed. Branch task/0720c-old-shell-tests.
 ## Group A findings
 - Duplicate PIN alert on v2 phone dashboard (see 4).
 - Possible missing calendar on v2 default Overview (see 5), pending decision.
+
+## Session 2 (cap reached at 25 calls, not pushed)
+
+Commits: 75f54e2 (step 3d, partial).
+
+- 4. test_dashboard_phone_browser.py: unchanged. Duplicate PIN alert is fixed by 0721 (orchestrator decision).
+- 5. test_host_quiet_dashboard_browser.py: PARTIAL, still failing. Changed to v2: calendar check is `.card.cal` (the v2 server-rendered grid); `.needs-you` to `#needs-action`; `.needs-you-item` to `.card.need`; `.needs-you-copy` to `.h`; `.needs-you-icon` to `.ic`; `.needs-you-list` to `.todo`; `.ui-btn` to `.btn`; `.ui-ph` to `.ov-top`; stray-row check now excludes `.ov-table` (today table). Remaining failure: `cardBorder` on `#needs-action` expects a 1 px solid frame at widths under 768. v2 has no frame on the lane. GROUP A: needs a decision. Tolerances unchanged.
+- 6. test_design_shell_browser.py: 13 passed, 2 failed. `test_more_preserves_each_page_kind_and_sheet_links_work[/?lang=en-390]` and `[/?lang=en-820]`: `[data-sheet-open="more-sheet"]` is not on v2 `/` (v2 `.tabs` has a Menu link to /menu, no sheet). GROUP A/B decision: either the sheet is missing on v2, or the sheet part should point at /settings (old shell). Not changed.
+- 7. test_door_code_window_browser.py: 8 chromium passed (`-k "not webkit"`). 6 webkit cases fail locally: WebKit binary not installed (`/opt/pw-browsers/webkit-2359`). Same as 0201; CI has WebKit. No change.
+- 8. test_host_wide_geometry_browser.py: 3 passed, 7 failed. Failures are `getComputedStyle(null)` / null clicks on `main.wrap.with-sidebar`, `.notification-stack` and rail toggles, which v2 `/` does not render. These are group B/C rail cases (point at /settings). NOT STARTED in session 2 (cap). Not changed.
+
+Ruff (App/app App/tests App/tools, E9,F63,F7,F82,F401,F841):
+```
+All checks passed!
+```
+
+Status: blocked. Left: file 5 lane frame (group A), file 6 more-sheet (decision), file 8 (apply B/C rail rule). Files 7 done locally except WebKit.
