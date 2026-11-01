@@ -261,3 +261,35 @@ Failing on real app bugs, left failing on purpose (asserts not weakened):
 
 Not ours: none in this file.
 Left: the other six files (test_property_navigation_browser.py, test_onboarding_wizard_browser.py overview part, test_onboarding_followup_browser.py, test_0252_touch_sweep_browser.py, test_a11y_guard_browser.py, test_host_property_controls_browser.py), one per session.
+
+## 0735
+
+Status: review. Merge of origin/main (273026f, #657) into claude/project-thread-819gyo, commit 1a1bc48 (two parents). Not pushed.
+
+Per file:
+- App/app/routes/admin.py: theirs for the one conflict block (the `/menu` view with the cleaning counts). Ours kept everywhere else, including the 0530 setup-chip code. The brief's literal `git checkout --theirs` dropped that code and failed 6 properties-page tests; redone with `git merge-file` against the merge base.
+- App/app/templates/menu.html: theirs (no merge base for this file, so the brief's rule applies).
+- App/tests/test_host_controls_browser.py, App/tests/test_host_wide_geometry_browser.py: ours in the conflict block (/apartments selectors); non-conflicting changes kept.
+- scripts/design_lint.py: ours (V2_TEMPLATES includes apartments.html).
+- docs/design/catalog.json: both sides; keeps "ov-how" (ours). Valid JSON.
+- App/app/static/app2.css: 7 hunks as the brief says. Hunk 1: ours plus theirs' `.app` gradient line (no duplicate `.app`/`.side`). Hunk 3 (.row .t small): theirs. Hunks 2, 4-7: as listed. The brace count (768/767) is already off by one on HEAD.
+- App/tests/v2_mockup.py: ours for hunks 1-3, 6, 7 (properties and property entries, box_diffs with skip); theirs for the two Overview stay-card hunks (@320, @390), which are supersets of ours. `.big` kept once.
+- App/tests/test_0710_v2_mockup_match_browser.py: ours in all 7 hunks (_placeholders/_path and skip plumbing).
+- App/app/templates/base.html: app2.css and app.js `?v=20261101-0735`; host.js `0547b` (ours).
+- App/tests/static_versions.json: theirs, then regenerated with `tests/test_static_versions.py --write` (41 files).
+- app.js: no conflict; `initPropertyViews` / `initInlineTiming` not present.
+
+Checks:
+- No conflict markers in App, scripts, docs/design.
+- Brief section 5 pytest (6 files, `-k "not webkit"`, UBYHOST_REQUIRE_BROWSER=1): `71 passed in 67.99s`, 0 skipped.
+- Ruff `--select E9,F63,F7,F82,F401,F841` on App/tests: `All checks passed!`. Also on App/app/routes/admin.py: passed.
+- `python3 scripts/design_lint.py`: `design lint: OK`.
+- `python3 scripts/context_lint.py`: `context lint: FAIL`, `ERROR docs/tasks/0736-property-page-last-ci-fixes.md: missing section '## 2. Context'`. The file is untracked in the working tree, not on HEAD or origin/main, and not part of this merge. Not committed, not touched. Owner: remove or fix it, then rerun the lint.
+
+Deviations:
+- Brief section 4 step 3 asked for one commit per step; git refuses partial commits during a merge, so the only commit is the merge.
+- Brief's literal `git checkout --theirs` for admin.py was wrong (see above); corrected.
+- Report section appended here as the brief asks; this section was committed separately from the merge.
+
+Questions: none.
+Left: the context lint failure above (owner or the 0736 author). Untracked docs/tasks/0735 brief not committed.
