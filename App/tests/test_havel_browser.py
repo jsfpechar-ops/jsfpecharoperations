@@ -118,7 +118,7 @@ def test_phone_launcher_and_sheet(origin):
         assert fab.is_visible()
         fb = fab.bounding_box()
         assert fb["width"] >= 44 and fb["height"] >= 44
-        tabbar = page.locator(".ui-tabbar").bounding_box()
+        tabbar = page.locator(".tabs").bounding_box()  # 0720: v2 phone tab bar is nav.tabs (old shell: .ui-tabbar)
         assert fb["y"] + fb["height"] <= tabbar["y"]
         page.screenshot(path=str(SHOTS / "fab-dashboard-390.png"))
         fab.click()

@@ -24,3 +24,21 @@ Status: blocked (partial). Not pushed.
 1. Read the Havel run output, then decide on the host2.css approach (see above).
 2. Groups A (rest), B, C, file by file, with -x -q --tb=line.
 3. Final run of all listed files, ruff, design_lint, context_lint.
+
+## Session 2 (executor, 25-call cap reached; partial, not pushed)
+
+Commits: 3c9c5df step 1 (Havel block copied from host2.css, see below), step 1b (chip inline-flex, onboarding logo width), step 1c (composer `[hidden]`), then the key bump commit.
+
+Group A Havel: block `/* v2 shared: Havel ... */` at the end of app2.css, extracted by a script (117 rule blocks; only `--accent-on` undefined, as the brief says).
+- test_havel_launcher_skeleton_browser.py: 1 passed.
+- test_0395_havel_panel_layer_browser.py: 3 passed.
+- test_0386_havel_phone_look_browser.py: 5 passed (fixes: `.havel-chip` display inline-flex, since `min-height` does nothing on inline; onboarding-logo width rules added in a separate app2.css block, because app.css is not loaded on v2 and the 512 px logo overflowed the phone).
+- test_0391_havel_topics_first_browser.py: 2 passed (fix: `.havel-composer[hidden]{display:none}`; the composer's display:flex beat the hidden attribute).
+- test_havel_browser.py: NOT DONE. Failed at test_phone_launcher_and_sheet. Group B edit: `.ui-tabbar` -> `.tabs` (v2 nav). Remaining failure: `sheet["width"] == 390` gets 356 on the phone. Likely the v2 sheet/dialog width or inset differs from the old shell; not investigated. Other tests in this file not run.
+
+Left to do:
+1. test_havel_browser.py: sheet width on 390 (356 vs 390), then the other tests in the file.
+2. Group A motion (test_motion_browser.py), feedback, filters, controls.
+3. Groups B and C, all other files in the brief list. Not started.
+4. test_0201 is WebKit-only locally (brief §2, leave alone).
+5. Final run, ruff, design_lint, context_lint. Not run yet.
