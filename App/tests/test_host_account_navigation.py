@@ -93,7 +93,7 @@ def test_ordinary_user_sees_no_admin_controls(host):
 def test_admin_sees_team_and_incidents_in_account_group(admin):
     html = admin.get("/settings?lang=en").text
     account = html[html.index('id="settings-group-account"'): html.index('id="settings-group-security"')]
-    assert 'href="/admin/users"' in account
+    assert 'href="/admin/customers"' in account
     assert 'href="/admin/incidents"' in account
 
 
@@ -166,7 +166,7 @@ def test_search_reaches_settings_groups_and_help(host, admin):
     assert {"/settings", "/guide", "/settings#settings-group-security", "/settings#settings-group-data"} <= urls
     assert "/admin/users" not in urls
     admin_urls = {item.get("url") for item in admin.get("/api/command-palette").json()["items"]}
-    assert {"/admin/users", "/admin/incidents"} <= admin_urls
+    assert {"/admin/customers", "/admin/incidents"} <= admin_urls
 
 
 def test_group_strings_in_step():

@@ -1,4 +1,4 @@
-# 0490: Ceník: one name per plan, clearer bands, no OCR row, no "10+ write to us"
+# 0620: Ceník: one name per plan, clearer bands, no OCR row, no "10+ write to us"
 
 Status: todo
 
@@ -53,7 +53,7 @@ From `App/`:
 ## 7. Acceptance
 
 - [ ] /cenik shows "Standard" and "Max", bands "od 5." / "od 10.", no OCR row, no "Napište nám" line, in CS and EN.
-- [ ] §6 green, 0 skipped. One 390 px screenshot of /cenik (CS) in `docs/tasks/screenshots-0490/`.
+- [ ] §6 green, 0 skipped. One 390 px screenshot of /cenik (CS) in `docs/tasks/screenshots-0620/`.
 
 ## 8. Stop and ask
 
@@ -61,4 +61,4 @@ An anchor is missing, or a test fails for a reason other than the changed copy.
 
 ## 9. Report
 
-`docs/tasks/0490-report.md`.
+`docs/tasks/0620-report.md`.

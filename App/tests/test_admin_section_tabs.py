@@ -19,20 +19,14 @@ ADMIN_HREFS = [
     "/admin",
     "/admin/customers",
     "/admin/fakturace",
-    "/admin/users",
-    "/admin/incidents",
     "/admin/operations",
-    "/admin/funnel",
 ]
 
 ADMIN_PAGES = {
     "/admin": "/admin",
     "/admin/customers": "/admin/customers",
     "/admin/fakturace": "/admin/fakturace",
-    "/admin/users": "/admin/users",
-    "/admin/incidents": "/admin/incidents",
     "/admin/operations": "/admin/operations",
-    "/admin/funnel": "/admin/funnel",
 }
 
 
@@ -92,3 +86,55 @@ def test_a_host_cannot_open_the_admin_only_pages():
     for path in ("/admin/users", "/admin/operations"):
         response = client.get(path, follow_redirects=False)
         assert response.status_code in (302, 303, 403, 404), (path, response.status_code)
+
+
+def _quiet_ops(monkeypatch, late_job: bool = False) -> None:
+    """0492: stub the health data so the Today and System checks are deterministic."""
+    from app import admin_ops, billing_analytics, incidents
+
+    real = admin_ops.overview
+
+    def overview():
+        data = real()
+        for key in ("filings", "stuck", "feeds", "jobs", "mail", "alerts"):
+            data[key] = {**data[key], "count": 0, "rows": []}
+        if late_job:
+            data["jobs"] = {**data["jobs"], "count": 1}
+        return data
+
+    monkeypatch.setattr(admin_ops, "overview", overview)
+    monkeypatch.setattr(incidents, "open_review_alerts", lambda: [])
+    monkeypatch.setattr(
+        billing_analytics,
+        "operator_queue",
+        lambda day: {"overdue": [], "trials_ending": [], "unverified": [], "ending": []},
+    )
+
+
+def test_today_says_all_clear_when_nothing_needs_the_owner(monkeypatch):
+    _quiet_ops(monkeypatch)
+    _account("today-clear", "admin")
+    html = _login("today-clear").get("/admin?lang=en").text
+    assert "All clear. Nothing needs you today." in html
+    assert "System problems" not in html
+
+
+def test_today_lists_a_late_job_as_a_system_problem(monkeypatch):
+    _quiet_ops(monkeypatch, late_job=True)
+    _account("today-late", "admin")
+    html = _login("today-late").get("/admin?lang=en").text
+    assert "System problems" in html
+    assert 'href="/admin/operations#ops-jobs"' in html
+    assert "All clear" not in html
+
+
+def test_system_blocks_stay_collapsed_and_incidents_live_inside_system(monkeypatch):
+    _quiet_ops(monkeypatch)
+    _account("system-quiet", "admin")
+    client = _login("system-quiet")
+    html = client.get("/admin/operations?lang=en").text
+    assert '<details class="ui-section" id="ops-feeds">' in html
+    assert 'id="incidents"' in html
+    old = client.get("/admin/incidents", follow_redirects=False)
+    assert old.status_code == 303
+    assert old.headers["location"] == "/admin/operations#incidents"

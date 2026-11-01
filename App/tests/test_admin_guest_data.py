@@ -237,7 +237,7 @@ def test_after_sixty_minutes_the_next_request_ends_the_impersonation(seeded, mon
     response = client.get(f"/reservations/{seeded['reservation']}", follow_redirects=False)
     assert response.status_code == 303
     location = unquote(response.headers["location"])
-    assert location.startswith("/admin/users?msg=")
+    assert location.startswith("/admin/customers?msg=")
     assert host_i18n.translate("en", "impersonation.expired") in location
 
     host_rows = _audit(seeded["owner"], "impersonation_stopped")

@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, HTTPException, Request
 
-from .. import admin_customers, billing, billing_analytics, billing_order, config, db, validation
+from .. import admin_customers, admin_ops, billing, billing_analytics, billing_order, config, db, incidents, validation
 from ..templating import render
 from .admin_accounts import _require_admin
 from .admin_helpers import back as _back
@@ -36,6 +36,7 @@ def admin_home(request: Request):
         "queue": queue, "summary": summary, "portfolio": portfolio,
         "today": day.isoformat(), "billing_enabled": billing.enabled(),
         "fmt_date": validation.fmt_date, "kc": _kc,
+        "ops": admin_ops.overview(), "review_alerts": incidents.open_review_alerts(),
     })
 
 
@@ -58,6 +59,9 @@ def customer_list(request: Request, q: str = "", state: str = "", plan: str = ""
         "summary": admin_customers.summary(day), "href": href,
         "older_url": href(after=customers[-1]["id"]) if rows["older"] else "",
         "newer_url": href(before=customers[0]["id"]) if rows["newer"] else "",
+        "missing_email_count": db.query_one(
+            "SELECT COUNT(*) AS n FROM user_account WHERE active = 1 "
+            "AND (email IS NULL OR TRIM(email) = '')")["n"],
         "today": day.isoformat(), "billing_enabled": billing.enabled(),
     })
 
@@ -70,6 +74,15 @@ def customer_detail(request: Request, user_id: int):
     customer = admin_customers.detail(user_id)
     if customer is None:
         raise HTTPException(status_code=404)
+    consent = db.query_one(
+        "SELECT (SELECT COUNT(*) FROM ad_click c WHERE c.user_account_id = ? "
+        "AND c.platform = 'google' AND c.withdrawn_at IS NULL) AS google_consent, "
+        "(SELECT COUNT(*) FROM ad_click c WHERE c.user_account_id = ? "
+        "AND c.platform = 'meta' AND c.withdrawn_at IS NULL) AS meta_consent",
+        (user_id, user_id),
+    )
+    customer["google_consent"] = consent["google_consent"]
+    customer["meta_consent"] = consent["meta_consent"]
     return render(request, "admin_customer.html", {
         "customer": customer, "fmt_date": validation.fmt_date,
         "billing_enabled": billing.enabled(),
@@ -192,8 +205,8 @@ async def customer_extend_trial(request: Request, user_id: int):
 
 @router.post(PAGE + "/{user_id}/aktivovat")
 async def customer_toggle_active(request: Request, user_id: int):
-    """0438: the toggle surface on the customer page, delegating to the
-    existing /admin/users/{id}/toggle logic (one code path)."""
+    """0438: the toggle surface on the customer page. The users-page toggle
+    route it replaced is gone (0490)."""
     account, guard = _require_admin(request)
     if guard:
         return guard

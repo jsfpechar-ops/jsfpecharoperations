@@ -149,17 +149,19 @@ def test_host_cannot_open_the_funnel():
 def test_funnel_page_points_to_posthog_and_csv_is_gone(monkeypatch):
     _account("admin", role="admin")
     client = _login("admin")
-    page = client.get("/admin/funnel?lang=en")
+    moved = client.get("/admin/funnel", follow_redirects=False)
+    assert moved.status_code == 303
+    assert moved.headers["location"] == "/admin/fakturace#reports"
+    page = client.get("/admin/fakturace?lang=en")
     assert page.status_code == 200
     assert "Host and campaign figures are in PostHog." in page.text
-    assert "<table" not in page.text
     assert client.get("/admin/funnel.csv").status_code == 404
     assert client.get("/reservations", follow_redirects=False).status_code in (200, 303)
 
     monkeypatch.setattr(config, "POSTHOG_PROJECT_API_KEY", "phc_test")
     monkeypatch.setattr(config, "POSTHOG_HOST", "https://analytics.example.invalid")
     monkeypatch.setattr(config, "POSTHOG_ASSETS_HOST", "https://assets.example.invalid")
-    linked = _login("admin").get("/admin/funnel?lang=en")
+    linked = _login("admin").get("/admin/fakturace?lang=en")
     assert 'href="https://eu.posthog.com"' in linked.text
 
 
@@ -239,7 +241,7 @@ def test_weekly_buckets_hosts_in_window():
 
 def test_funnel_template_has_no_script():
     _account("admin", role="admin")
-    template = open("app/templates/admin_funnel.html", encoding="utf-8").read()
+    template = open("app/templates/admin_billing.html", encoding="utf-8").read()
     assert "<script" not in template.lower()
-    czech = _login("admin").get("/admin/funnel?lang=cs").text
+    czech = _login("admin").get("/admin/fakturace?lang=cs").text
     assert "Údaje o hostitelích a kampaních jsou v PostHogu." in czech

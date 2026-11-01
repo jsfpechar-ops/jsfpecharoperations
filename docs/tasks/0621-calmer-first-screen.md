@@ -1,4 +1,4 @@
-# 0491: Calmer first screen after signup
+# 0621: Calmer first screen after signup
 
 Status: todo
 
@@ -50,7 +50,7 @@ From `App/`:
 
 - [ ] Verify lands on `/`; `/onboarding` has no Předplatné card; `/predplatne` still preselects the saved plan.
 - [ ] No security pop-up in the first 7 days after self-signup; unchanged for operator-created accounts (`signup_at` NULL).
-- [ ] §6 green, 0 skipped. One 390 px screenshot of `/onboarding` in `docs/tasks/screenshots-0491/`.
+- [ ] §6 green, 0 skipped. One 390 px screenshot of `/onboarding` in `docs/tasks/screenshots-0621/`.
 
 ## 8. Stop and ask
 
@@ -58,4 +58,4 @@ An anchor is missing, `account` is not a row with `.keys()`, or a test outside t
 
 ## 9. Report
 
-`docs/tasks/0491-report.md`.
+`docs/tasks/0621-report.md`.

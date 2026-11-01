@@ -195,7 +195,7 @@ async def ads_consent_withdraw(user_id: int, request: Request):
     if platform not in signup.PLATFORMS:
         raise HTTPException(status_code=400)
     signup.withdraw_consent(user_id, platform, actor=account["username"])
-    return _back("/admin/users", msg=_flash(request, f"flash.signup.consent_withdrawn.{platform}"))
+    return _back(f"/admin/customers/{user_id}", msg=_flash(request, f"flash.signup.consent_withdrawn.{platform}"))
 
 
 @router.post("/settings/privacy/ad-consent")
