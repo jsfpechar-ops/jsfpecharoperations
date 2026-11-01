@@ -1999,6 +1999,62 @@
     if (window.location.hash) openSection(window.location.hash);
     window.addEventListener("hashchange", function () { openSection(window.location.hash); });
   }
+  /* 0547: the one-page property form. Restores what the removed tabs did: switch
+     status text, an invalid field opens its closed section, the calendar connect
+     panel opens for ?add_calendar=1 or its hash, and Save returns to the last
+     opened section. */
+  var PROPERTY_RETURN_SECTION = { "sec-basics": "property", "sec-police": "reporting", "sec-fee": "reporting", "sec-messages": "guests", "sec-lock": "lock" };
+  function initPropertyPage() {
+    var form = document.querySelector("form#property-settings-form");
+    if (form && claimNode(form, "initPropertyPage")) {
+      var lastOpened = null;
+      var returnInput = form.querySelector("input[data-property-return]");
+      form.addEventListener("toggle", function (event) {
+        var node = event.target;
+        if (node.tagName === "DETAILS" && node.open && node.id) lastOpened = node.id;
+      }, true);
+      form.addEventListener("submit", function () {
+        var group = PROPERTY_RETURN_SECTION[lastOpened];
+        if (!group || !returnInput) return;
+        returnInput.value = returnInput.value.replace(/([?&]section=)[^&#]*/, "$1" + group);
+      });
+      // A switch says "Not saved yet" until the form is saved; never "Enabled".
+      form.querySelectorAll("input[data-switch-saved]").forEach(function (input) {
+        var status = document.getElementById((input.getAttribute("aria-describedby") || "").split(" ")[0]);
+        if (!status) return;
+        input.addEventListener("change", function () {
+          var saved = input.getAttribute("data-switch-saved") === "1";
+          var text = input.checked === saved
+            ? status.getAttribute(input.checked ? "data-on" : "data-off")
+            : status.getAttribute("data-unsaved");
+          status.textContent = text;
+          status.classList.toggle("is-on", input.checked && input.checked === saved);
+          status.classList.toggle("is-unsaved", input.checked !== saved);
+        });
+      });
+      // A field the browser refuses may sit in a closed section: open it first,
+      // so the browser can focus the field and say what is wrong.
+      var revealing = false;
+      form.addEventListener("invalid", function (event) {
+        if (revealing) return;
+        revealing = true;
+        window.setTimeout(function () { revealing = false; }, 0);
+        var sec = event.target.closest && event.target.closest("details.prop-sec");
+        if (sec) sec.open = true;
+      }, true);
+    }
+    var connect = document.getElementById("calendar-connect");
+    if (!connect || !claimNode(connect, "initPropertyPage")) return;
+    var hash = window.location.hash;
+    var target = null;
+    try { target = hash.length > 1 ? document.getElementById(decodeURIComponent(hash.slice(1))) : null; } catch (_) { target = null; }
+    var wanted = new URLSearchParams(window.location.search).get("add_calendar") === "1"
+      || !!target && (target === connect || connect.contains(target));
+    if (!wanted) return;
+    connect.classList.remove("is-collapsed");
+    var calendars = document.getElementById("sec-calendars");
+    if (calendars && calendars.tagName === "DETAILS") calendars.open = true;
+  }
   /* ---- 0084 O1: unsaved changes, in-app Save / Discard / Stay ----------------
      A form with data-unsaved-guard that holds changes (data-dirty, set by
      initUnsavedForms) asks before an in-app link leaves it:
@@ -2127,6 +2183,7 @@
   function initPage() {
     initPhoneDefaultClosed();
     initPropSectionLinks();
+    initPropertyPage();
     initCopy();
     initUnsavedForms();
     initUnsavedDialog();
