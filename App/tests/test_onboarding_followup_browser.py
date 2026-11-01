@@ -164,26 +164,28 @@ def test_current_property_name_demo_label_and_distinct_setup_status(wizard_host,
         assert page.locator("#demo-message-heading .ui-badge").is_visible()
         _shot(page, f"39-labeled-demo-message-{lang}-{width}.png")
         property_setup.finish(apartment_id)
-        page.goto(f"{base}?view=overview&lang={lang}")
+        page.goto(f"{base}?lang={lang}")
         _ready(page)
-        status = page.locator("[data-setup-status]")
-        assert status.is_visible()
-        # 0286: the health check lives on the overview cards: a dot per checked card, no separate box.
-        cards = page.locator(".host-property-grid [data-health-check]")
-        assert cards.count() >= 4
+        # 0286 and 0544: the health check is aside rows from 1024 px; below that, the section summaries.
+        if width >= 1024:
+            rows = page.locator("aside.preview .pv .r")
+            assert rows.count() >= 5
+            assert page.locator("aside.preview a.r[href='#sec-police']").count() == 1
+            assert page.locator("aside.preview a.r[href='#sec-calendars']").count() == 1
+            status = page.locator("[data-setup-status]")
+            assert status.is_visible()
+            assert not status.evaluate("el => el.open")
+            status.locator("summary").click()
+            status.locator(".readiness").wait_for(state="visible")  # 0401: the fold-out slides open
+            status.locator("summary").click()
+        else:
+            rows = page.locator("details.prop-sec > summary")
+            assert rows.count() >= 4
+            for index in range(rows.count()):
+                row = rows.nth(index)
+                assert row.locator(".dot").is_visible()
+                assert row.locator("small.sec-state").is_visible()
         assert page.locator(".host-checklist, .health-row").count() == 0
-        assert not status.evaluate("el => el.open")
-        for index in range(cards.count()):
-            card = cards.nth(index)
-            assert card.locator(".host-property-card-dot").is_visible(), card.get_attribute("data-health-check")
-            assert card.evaluate("el => getComputedStyle(el).borderTopStyle") == "solid"
-            assert card.bounding_box()["height"] >= 43.5
-        police = page.locator('.host-property-grid [data-health-check="police"]')
-        assert police.count() == 1
-        assert page.locator(".host-property-grid > a.host-property-card").count() >= 5
-        status.locator("summary").click()
-        status.locator(".readiness").wait_for(state="visible")  # 0401: the fold-out slides open
-        status.locator("summary").click()
         _fits(page)
         _shot(page, f"40-overview-health-{lang}-{width}.png")
         context.close()
