@@ -236,7 +236,7 @@ def test_property_and_operator_controls_render_and_work_in_browser(host, base):
         assert page.locator(".host-tools").count() == 0
         assert page.locator(".host-local-nav").count() == 0
         assert page.locator('.ui-tabs a[href="/apartments"]').count() == 0  # no Properties section tab on a property page
-        assert page.locator('[data-copy="overview-guest-url"]').count() > 0
+        assert page.locator('[data-copy="property-guest-url"]').count() > 0
         browser.close()
 
 

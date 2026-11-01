@@ -221,7 +221,7 @@ def test_placement_of_guest_link_actions_archive_and_switch(host):
     assert communication.index('id="permalink_pin"') < communication.index("/regenerate-pin")
     prop = html[html.index('id="settings-property"'):html.index('id="settings-guests"')]
     assert "/archive" in prop and "/archive" not in guests
-    assert html.index('id="archive"') < html.index('class="actions host-property-save"')
+    assert html.index('id="archive"') < html.index('host-property-save')
     door = html[html.index('id="settings-lock"'):html.index('id="settings-reporting"')]
     assert 'id="door-code"' in door and 'id="door-code"' not in guests
     assert 'role="switch"' in door and "Automatic door codes" in door
