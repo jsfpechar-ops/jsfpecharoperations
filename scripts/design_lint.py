@@ -31,7 +31,7 @@ PX_PROPS = re.compile(
 )
 BARE_PX = re.compile(r"(?<![\w-])(\d*\.?\d+)px")
 # v2 pages are styled by app2.css copied from the approved mockup (2026-11-01); their classes are not in the catalog
-V2_TEMPLATES = {"App/app/templates/dashboard.html", "App/app/templates/_shell_v2.html", "App/app/templates/cleaning.html", "App/app/templates/_cleaning_table.html"}
+V2_TEMPLATES = {"App/app/templates/menu.html", "App/app/templates/dashboard.html", "App/app/templates/_shell_v2.html", "App/app/templates/cleaning.html", "App/app/templates/_cleaning_table.html"}
 
 
 def _findings_template(path: Path, text: str, catalog: dict) -> list[str]:

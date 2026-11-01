@@ -534,3 +534,15 @@
     {% if help_text %}{{ help_tip('settings-' ~ key ~ '-help', help_text, guide_href) }}{% endif %}
   </div>
 {% endmacro %}
+
+{#- 0717: Stav pill of one stay row on the v2 Overview (mapping moved out of dashboard.html). -#}
+{% macro v2_status_pill(cell, progress, reservation) %}
+{% if cell.level == 'overdue' %}<span class="pill p-bad">{{ deadline_badge(cell) }}</span>
+{% elif progress.status == 'failed' %}<span class="pill p-bad">{{ progress_pill(progress.status, reservation.automation_mode) }}</span>
+{% elif progress.not_registered %}<span class="pill p-warn"><span class="ui-badge ui-badge-action" data-tone="amber">{{ tp('host.missing', progress.not_registered) }}</span></span>
+{% elif cell.state == 'filed_on_time' %}<span class="pill p-ok">{{ deadline_badge(cell) }}</span>
+{% elif cell.state == 'filed_late' %}<span class="pill p-warn">{{ deadline_badge(cell) }}</span>
+{% elif progress.status in ('awaiting_guest', 'incomplete') and reservation.automation_mode == 'immediate' %}<span class="pill p-warn">{{ t('status.waiting_guest') }}</span>
+{% elif progress.status in ('reported', 'not_required') %}<span class="pill p-ok">{{ t('status.reported') }}</span>
+{% else %}{% set demo_row = '(demo)' in reservation.internal_name or reservation.source == 'demo' %}<span class="pill {{ 'p-n' if demo_row and progress.status in ('ready', 'awaiting_verification') else ('p-warn' if progress.status in ('ready', 'awaiting_verification', 'awaiting_guest', 'incomplete') else 'p-n') }}">{{ progress_pill(progress.status, reservation.automation_mode, is_demo=demo_row) }}</span>{% endif %}
+{% endmacro %}
