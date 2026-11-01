@@ -1,8 +1,10 @@
 {% extends "host_page.html" %}
 {% set nav = 'users' %}
 {% set body_kind = 'detail' %}
+{% from "_ui_layout.html" import ui_section_tabs with context %}
 {% block title %}{{ customer.display_name or customer.username }}{% endblock %}
 {% block meta %}{{ t('customers.state.' ~ customer.customer_state) }}{% endblock %}
+{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
 {% block back_url %}/admin/customers{% endblock %}
 {% block back_label %}{{ t('customers.title') }}{% endblock %}
 {% block secondary_actions %}

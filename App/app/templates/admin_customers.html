@@ -1,8 +1,10 @@
 {% extends "host_page.html" %}
 {% set nav = 'users' %}
 {% set body_kind = 'list' %}
+{% from "_ui_layout.html" import ui_section_tabs with context %}
 {% block title %}{{ t('customers.title') }}{% endblock %}
 {% block meta %}{{ t('customers.meta') }}{% endblock %}
+{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
 {% block secondary_actions %}{{ ui_button(t('customers.payments'), 'secondary', href='/admin/fakturace') }}{% endblock %}
 {% block toolbar %}
 <form method="get" action="/admin/customers" class="ui-section">
