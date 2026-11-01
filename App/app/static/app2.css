@@ -78,6 +78,7 @@ tbody tr .btn.sm.ghost{opacity:0;transition:opacity .15s}tbody tr:hover .btn.sm.
   body.v2 .head{flex-wrap:wrap}
   body.v2 .head .btn{width:100%}
   body.v2 .cal{overflow-x:auto}
+  body.v2 .dashboard-calendar{padding-inline:4px}
   body.v2 .side .nav{min-height:44px;display:flex;align-items:center}
   body.v2 .dashboard-row-actions .ui-btn{min-width:44px;min-height:44px}
   body.v2 .card > table th:nth-child(2),body.v2 .card > table td:nth-child(2),body.v2 .card > table th:nth-child(3),body.v2 .card > table td:nth-child(3){display:none}
