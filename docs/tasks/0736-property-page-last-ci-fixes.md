@@ -91,3 +91,10 @@ Then stop and report; items 7, 8, section 6 and the screenshots are run 8.
 2. Field-button pairs at 1280 "open": in the 2-column field grid from 1024 px, a lone action button (Generate a new PIN, Add signature, Generate a new link, the Copy next to `checkout_hour`) sits in a grid cell beside a field. Read the markup of each and, in the page block, make that button's wrapper span the full grid row (`grid-column:1/-1`) so it sits under its fields, left-aligned. Check that 0710 `property` still passes at 1280 and 1440.
 3. Button heights: measure why the Copy button is 48 px (`getComputedStyle` min-height, padding). Make `.btn.sm` buttons and links in the same row the same height, using the copy button's value; do not shrink the copy button below 44 px on phone.
 Then stop and report; items 7, 8, section 6 and the screenshots are run 9.
+
+## 19. Run 9 scope: the layout guard only
+The guard (`App/tests/design_guard.js` 4 and 4b) flags two controls that share a row but whose centres differ by more than 2 px. These are real on our page; fix them in the page CSS.
+1. Probe once (temporary test, deleted after) at 1280 on the guard's failing routes: for each reported pair, print the closest common ancestor (tag, class, id), its `display`, `grid-template-columns`, `align-items`, and for each control its own parent chain up to that ancestor with `margin-top`/`margin-bottom`. Write the table in the report.
+2. Fix by the cause you see: if the common ancestor is a 2-column field grid, make the child that holds the button span `grid-column:1/-1`; if it is a flex row (`.copyrow`), use `align-items:center` and zero the vertical margins of its children. If the two controls are in different sections that happen to sit side by side, say so and stop.
+3. Run `tests/test_design_guardrails_browser.py -k passes_the_layout_guard` and 0710 `property` at 1280 and 1440. Key bump, `--write`.
+Items 7, 8, section 6 and the screenshots are run 10.
