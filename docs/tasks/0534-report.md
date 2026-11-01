@@ -290,29 +290,27 @@ Owner steps left: none. Questions: none.
 
 ## 0536
 
-Status: blocked (executor ran out of its tool-call budget after step 1)
+Status: blocked (executor, Haiku 5.5). Steps 1 to 4 done. Step 5 (screenshots) not done.
 
-Done (step 1, items 1 to 7 in part):
-- 1. Help toggle: `.ov-how` in app2.css is a small card (radius 12px, summary padding 6px 12px). Markup unchanged. Still shows the two-chevron look check; not screenshot-verified.
-- 2. Setup-continue block moved from `apartment_form.html` into the `aside.preview` of `_property_editor.html` as first `section.pv.setup-continue-card`. Form and hide/show POST kept. Button is still `ui-btn-primary` (sized by CSS), not `btn sm`.
-- 3. `.required-legend` is visually hidden on v2 (CSS, kept for screen readers).
-- 4. Inner `#basics > h3` (duplicate of summary) visually hidden on v2; `.property-section-title` 14px/600.
-- 5. `.fields-wrap` padding 0 16px 16px; from 1024 px `.property-section` is a 2-column grid, `textarea` fields and headings span full width. Not screenshot-verified.
-- 6. `.help-tip-btn` hidden on v2 in details; `.help-tip-body` shown inline as 12px `--ink3` text. Hint text kept. Not screenshot-verified.
-- 7. `.savebar` right = control-h + space-3 + space-6 (min-width 601 px), buttons `white-space:nowrap; width:auto`. Not screenshot-verified.
+Commits: `42afaf2` (steps 1 to 2, items 1 to 7), `7e46fa5` (step 3: items 8 and 9), `805d32e` (step 4: copy label CSS, tests for items 2, 8, 9). Not pushed.
 
-Not done: items 8 (copy button label and coral style), 9 (lock section always rendered), 10 (sidebar background check). Step 4 (full section 6 run beyond the listed files), step 5 (screenshots at 1280 and 1024) not done.
+Done:
+- 8. Copy button (v2 branch of `copy_button` in `_components.html`): the default label is now its own `copy-label-default` span; the slot stays for the confirmed text. `app.js` writes "Zkopírováno" into the slot on load, so the CSS in the 0534 block (`body.v2 .copy-btn ...`) shows the slot only while `.copied`. Guest card uses `primary=true` (coral `btn sm`). List-row buttons stay ghost. Visible guest-card text is "Kopírovat odkaz", not the mockup's "Kopírovat": `test_property_readiness` asserts aria-label "Copy link".
+- 9. Lock section always rendered: `_property_editor.html` `{% else %}` branch gives `#sec-lock` with the existing `why.door_lock` and `smart_locks.lede` copy and no controls. Still needs the owner to decide the connect text.
+- 10. Root cause: `.side` in `app2.css` line 21 is `position:sticky; height:100vh`, so the background covers one viewport. It is a shared rule, so it also hits the v2 dashboard. Reported, not fixed. Dashboard long page not checked.
+- Tests: `test_0534_property_page_v2.py` got asserts for items 2, 8, 9. The two existing order asserts now include `lock`, since the section always renders.
 
-Tests (from App/, 0536 step 1):
-- `pytest tests/test_0534_property_page_v2.py tests/test_static_versions.py tests/test_0710_v2_mockup_match_browser.py tests/test_0531_property_page.py tests/test_property_hub.py tests/test_property_readiness.py tests/test_validation_i18n.py -q` : 87 passed.
-- `pytest tests/test_0710_v2_mockup_match_browser.py tests/test_design_guardrails_browser.py` before the changes: 2 failed (`test_every_host_page_passes_the_layout_guard`, `test_setup_checklist_is_a_padded_card`), same failures without this change (checked with git stash). Shared known failures.
-- Not run yet: test_host_ux_acceptance, test_page_help_0277, test_ui_consistency, test_0300_copy_button, test_design_guardrails_browser (full), ruff, design_lint, context_lint.
+Tests (from `App/`, section 6 list): `123 passed, 2 failed`, 0 skipped.
+- `test_every_host_page_passes_the_layout_guard` and `test_setup_checklist_is_a_padded_card`: shared, listed as failing on base. The layout guard output lists `property-detail` 390 px inputs as `tap-target-small` (39 px high). Not checked against base.
+- `ruff --select E9,F63,F7,F82,F401,F841`: All checks passed.
+- `design_lint.py`: OK. `context_lint.py`: OK.
 
 Deviations:
-- Key bump `app2.css?v=20261101-0536-step1c` in templates; manifest rewritten with `tests/test_static_versions.py --write`.
-- Item 1 kept the generic details card radius and padding (the 0710 mockup comparison checks the first `details`).
+- CSS key is `20261101-0536-step3` in `base.html`; manifest rewritten with `--write`.
+- Item 6 kept as the inline grey block hint (owner question answered as intended).
 
-Done: steps 1 to 1 (items 1 to 7 in CSS and template). Left: items 8, 9, 10; screenshots at 1280 and 1024 into docs/tasks/screenshots-0536/; remaining tests in section 6; ruff; design_lint; context_lint.
-
-Questions:
-- Item 6: the hint text is shown inline with `display:block` on `.help-tip-body`. Confirm this is the intended form.
+Left:
+- Step 5: screenshots `docs/tasks/screenshots-0536/app-1280.png` and `app-1024.png` are NOT taken. A temp capture test (0710 fixtures, `dashboard_rich_host` plus `dashboard_host`) errored in fixture setup. The temp file was deleted. Use the 0535 method with a fixed fixture setup.
+- Item 10 dashboard long-page check.
+- Owner: pick the connect text for the placeholder lock section; decide on the "Kopírovat odkaz" vs "Kopírovat" label.
+- Not pushed. No PR opened.
