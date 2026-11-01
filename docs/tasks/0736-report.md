@@ -154,3 +154,30 @@ Done: step (c). Left: section 13 (setup checklist test, button heights, field-bu
 
 ### Owner steps left
 - None. No push, no PR.
+
+## Run 6 (section 16 in order; commit 83956b6 step 1)
+Status: blocked
+Done: step 1. Left: step 2 (premise does not match the templates, see Questions), step 3 (section 13). Steps 1 to 2 are in order, so step 3 was not started.
+
+### Step 1: close the scripting media block (commit 83956b6)
+- `App/app/static/app2.css`: added one `}` after the inner reduced-motion block (old line 638) and before the top-level `@media (prefers-reduced-motion: reduce) { body.v2 *` line. Brace depth is 0 at the end of the file.
+- `App/app/templates/base.html` app2.css key 20261101-2330 to 20261101-2345; `App/tests/static_versions.json` rewritten with `--write` (41 files).
+- Tests:
+  - `tests/test_static_versions.py`: `3 passed in 0.11s`
+  - `-k "not webkit and (wizard_polish or 0710 or 0541 or overview or property)"` on the three files, with `UBYHOST_REQUIRE_BROWSER=1`: `64 passed, 68 deselected in 106.38s`, 0 skipped. Without the env var, 12 were skipped ("browser not required"), so the env var is needed.
+- No-JS rules that now apply (were JS-gated, not changed): app2.css lines 641 to 651 (0722 phone-only hides, `.ov-month` order on phone, needs-action card gaps, phone action buttons at 44 px), lines 656 to 658 (`.ov-how[data-how="property"]` inline-block and summary layout), lines 683 to 687 (help toggle pill card, 0536 item 1), line 716 (`.ov-how[data-how="property"]{display:none}`). Everything after line 639 to the end of the file is now active without JS.
+
+### Step 2: not done (stopped, test edit reverted)
+- Tried `a[href*='section=guests']` to `a[href='#sec-messages']` at `App/tests/test_onboarding_wizard_browser.py:995`. Result: `1 failed, 12 passed, 72 deselected in 50.43s`, `assert 0 >= 1`.
+- No template emits `href="#sec-messages"`. `#sec-messages` is only the id of the `details` at `App/app/templates/_property_editor.html:132`. The overview rows link to `#sec-basics`, `#sec-police`, `#sec-calendars`, `#sec-lock`, `#sec-fee` (lines 437 to 445).
+- The test file is back to the step 1 state.
+
+### Step 3: not started
+- Section 13 (setup checklist test, button heights, field-button-misaligned) is left for the next run.
+
+### Questions
+1. Step 2: should the check count `a[href^='#sec-']` (any section link on overview), or should the overview guest row get a `#sec-messages` link (a template change the brief does not name)?
+2. Is `test_review_fixes_in_the_browser` still expected to pass after step 2 is settled? It also fails on the `section=guests` count, which was 0 before run 6.
+
+### Owner steps left
+- None. No push, no PR.
