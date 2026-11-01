@@ -1,0 +1,159 @@
+[
+ {
+  "name": "first_accept_with_receipt",
+  "guests": [
+   {"id": 1, "reservation_id": 11, "submit_state": "pending", "submitted_at": null, "submission_id": null, "receipt_submission_id": null, "submit_attempts": 2}
+  ],
+  "result": {"header_errors": "", "record_errors": [""], "receipt_pdf": "JVBERi0="},
+  "codebook": null,
+  "severities": null,
+  "receipts_held": []
+ },
+ {
+  "name": "first_accept_no_receipt_keeps_old_pointer",
+  "guests": [
+   {"id": 2, "reservation_id": 12, "submit_state": "pending", "submitted_at": null, "submission_id": 500, "receipt_submission_id": 450, "submit_attempts": 1}
+  ],
+  "result": {"header_errors": "", "record_errors": [""], "receipt_pdf": ""},
+  "codebook": null,
+  "severities": null,
+  "receipts_held": []
+ },
+ {
+  "name": "dup_150_pending_prior_has_receipt",
+  "guests": [
+   {"id": 3, "reservation_id": 13, "submit_state": "pending", "submitted_at": null, "submission_id": 501, "receipt_submission_id": null, "submit_attempts": 0}
+  ],
+  "result": {"header_errors": "", "record_errors": ["150;"], "receipt_pdf": ""},
+  "codebook": {},
+  "severities": {},
+  "receipts_held": [501]
+ },
+ {
+  "name": "dup_150_pending_prior_has_no_receipt",
+  "guests": [
+   {"id": 4, "reservation_id": 14, "submit_state": "pending", "submitted_at": null, "submission_id": 502, "receipt_submission_id": null, "submit_attempts": 0}
+  ],
+  "result": {"header_errors": "", "record_errors": ["150;"], "receipt_pdf": ""},
+  "codebook": {},
+  "severities": {},
+  "receipts_held": []
+ },
+ {
+  "name": "dup_150_pointer_already_set_wins",
+  "guests": [
+   {"id": 5, "reservation_id": 15, "submit_state": "pending", "submitted_at": null, "submission_id": 503, "receipt_submission_id": 480, "submit_attempts": 0}
+  ],
+  "result": {"header_errors": "", "record_errors": ["150;"], "receipt_pdf": ""},
+  "codebook": {},
+  "severities": {},
+  "receipts_held": [503]
+ },
+ {
+  "name": "dup_150_already_sent_alone",
+  "guests": [
+   {"id": 6, "reservation_id": 16, "submit_state": "sent", "submitted_at": "2026-10-01T08:00:00+00:00", "submission_id": 504, "receipt_submission_id": null, "submit_attempts": 0}
+  ],
+  "result": {"header_errors": "", "record_errors": ["150;"], "receipt_pdf": ""},
+  "codebook": {},
+  "severities": {},
+  "receipts_held": []
+ },
+ {
+  "name": "dup_150_already_sent_with_first_accept",
+  "guests": [
+   {"id": 7, "reservation_id": 17, "submit_state": "sent", "submitted_at": "2026-10-01T08:00:00+00:00", "submission_id": 505, "receipt_submission_id": null, "submit_attempts": 0},
+   {"id": 8, "reservation_id": 18, "submit_state": "pending", "submitted_at": null, "submission_id": null, "receipt_submission_id": null, "submit_attempts": 0}
+  ],
+  "result": {"header_errors": "", "record_errors": ["150;", ""], "receipt_pdf": ""},
+  "codebook": {},
+  "severities": {},
+  "receipts_held": []
+ },
+ {
+  "name": "dup_submitted_at_empty_string",
+  "guests": [
+   {"id": 9, "reservation_id": 19, "submit_state": "pending", "submitted_at": "", "submission_id": 506, "receipt_submission_id": null, "submit_attempts": 0}
+  ],
+  "result": {"header_errors": "", "record_errors": ["150;"], "receipt_pdf": ""},
+  "codebook": {},
+  "severities": {},
+  "receipts_held": []
+ },
+ {
+  "name": "refusal_106_attempts_zero_null_negative",
+  "guests": [
+   {"id": 10, "reservation_id": 20, "submit_state": "pending", "submitted_at": null, "submission_id": null, "receipt_submission_id": null, "submit_attempts": 0},
+   {"id": 11, "reservation_id": 21, "submit_state": "pending", "submitted_at": null, "submission_id": null, "receipt_submission_id": null, "submit_attempts": null},
+   {"id": 12, "reservation_id": 22, "submit_state": "pending", "submitted_at": null, "submission_id": null, "receipt_submission_id": null, "submit_attempts": -3}
+  ],
+  "result": {"header_errors": "", "record_errors": ["106;", "106;", "106;"], "receipt_pdf": ""},
+  "codebook": {},
+  "severities": {},
+  "receipts_held": []
+ },
+ {
+  "name": "not_correctable_late_notice",
+  "guests": [
+   {"id": 13, "reservation_id": 23, "submit_state": "pending", "submitted_at": null, "submission_id": null, "receipt_submission_id": null, "submit_attempts": 0}
+  ],
+  "result": {"header_errors": "", "record_errors": ["107;"], "receipt_pdf": ""},
+  "codebook": {"ERR_CZE_107": "Oznámeno pozdě"},
+  "severities": {},
+  "receipts_held": []
+ },
+ {
+  "name": "header_5_two_guests",
+  "guests": [
+   {"id": 14, "reservation_id": 24, "submit_state": "pending", "submitted_at": null, "submission_id": null, "receipt_submission_id": null, "submit_attempts": 0},
+   {"id": 15, "reservation_id": 25, "submit_state": "pending", "submitted_at": null, "submission_id": null, "receipt_submission_id": null, "submit_attempts": 1}
+  ],
+  "result": {"header_errors": "5;", "record_errors": ["", ""], "receipt_pdf": ""},
+  "codebook": null,
+  "severities": null,
+  "receipts_held": []
+ },
+ {
+  "name": "mixed_accept_and_error_partial",
+  "guests": [
+   {"id": 16, "reservation_id": 26, "submit_state": "pending", "submitted_at": null, "submission_id": null, "receipt_submission_id": null, "submit_attempts": 0},
+   {"id": 17, "reservation_id": 27, "submit_state": "pending", "submitted_at": null, "submission_id": null, "receipt_submission_id": null, "submit_attempts": 0}
+  ],
+  "result": {"header_errors": "", "record_errors": ["", "106;"], "receipt_pdf": ""},
+  "codebook": {},
+  "severities": {},
+  "receipts_held": []
+ },
+ {
+  "name": "record_errors_shorter_than_guests",
+  "guests": [
+   {"id": 18, "reservation_id": 28, "submit_state": "pending", "submitted_at": null, "submission_id": 507, "receipt_submission_id": null, "submit_attempts": 0},
+   {"id": 19, "reservation_id": 29, "submit_state": "pending", "submitted_at": null, "submission_id": null, "receipt_submission_id": null, "submit_attempts": 0},
+   {"id": 20, "reservation_id": 30, "submit_state": "pending", "submitted_at": null, "submission_id": null, "receipt_submission_id": null, "submit_attempts": 0}
+  ],
+  "result": {"header_errors": "", "record_errors": ["150;"], "receipt_pdf": ""},
+  "codebook": {},
+  "severities": {},
+  "receipts_held": [507]
+ },
+ {
+  "name": "severity_150_is_accepted",
+  "guests": [
+   {"id": 21, "reservation_id": 31, "submit_state": "pending", "submitted_at": null, "submission_id": null, "receipt_submission_id": null, "submit_attempts": 0}
+  ],
+  "result": {"header_errors": "", "record_errors": ["150;"], "receipt_pdf": ""},
+  "codebook": {},
+  "severities": {"150": 2},
+  "receipts_held": []
+ },
+ {
+  "name": "dup_by_codebook_151",
+  "guests": [
+   {"id": 22, "reservation_id": 32, "submit_state": "pending", "submitted_at": null, "submission_id": 508, "receipt_submission_id": null, "submit_attempts": 0}
+  ],
+  "result": {"header_errors": "", "record_errors": ["151;"], "receipt_pdf": ""},
+  "codebook": {"ERR_CZE_151": "Duplicitní záznam"},
+  "severities": {},
+  "receipts_held": [508]
+ }
+]

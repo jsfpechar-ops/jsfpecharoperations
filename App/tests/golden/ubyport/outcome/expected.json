@@ -1,0 +1,426 @@
+{
+ "dup_150_already_sent_alone": {
+  "accepted": 0,
+  "blocked": 0,
+  "duplicate_accepts": 1,
+  "exhausted": [],
+  "failed": 0,
+  "first_accepts": 0,
+  "guest_writes": [
+   [
+    6,
+    {
+     "last_errors": "150: Duplicate record - the register already holds it",
+     "receipt_submission_id": null,
+     "submission_id": 900,
+     "submit_attempts": 0,
+     "submit_state": "sent",
+     "submitted_at": "2026-10-01T08:00:00+00:00",
+     "updated_at": "2026-11-01T10:00:00+00:00"
+    }
+   ]
+  ],
+  "state": "ok_duplicate"
+ },
+ "dup_150_already_sent_with_first_accept": {
+  "accepted": 1,
+  "blocked": 0,
+  "duplicate_accepts": 1,
+  "exhausted": [],
+  "failed": 0,
+  "first_accepts": 1,
+  "guest_writes": [
+   [
+    7,
+    {
+     "last_errors": "150: Duplicate record - the register already holds it",
+     "receipt_submission_id": null,
+     "submission_id": 900,
+     "submit_attempts": 0,
+     "submit_state": "sent",
+     "submitted_at": "2026-10-01T08:00:00+00:00",
+     "updated_at": "2026-11-01T10:00:00+00:00"
+    }
+   ],
+   [
+    8,
+    {
+     "last_errors": null,
+     "receipt_submission_id": null,
+     "submission_id": 900,
+     "submit_attempts": 0,
+     "submit_state": "sent",
+     "submitted_at": "2026-11-01T10:00:00+00:00",
+     "updated_at": "2026-11-01T10:00:00+00:00"
+    }
+   ]
+  ],
+  "state": "ok"
+ },
+ "dup_150_pending_prior_has_no_receipt": {
+  "accepted": 1,
+  "blocked": 0,
+  "duplicate_accepts": 1,
+  "exhausted": [],
+  "failed": 0,
+  "first_accepts": 0,
+  "guest_writes": [
+   [
+    4,
+    {
+     "last_errors": "150: Duplicate record - the register already holds it",
+     "receipt_submission_id": null,
+     "submission_id": 900,
+     "submit_attempts": 0,
+     "submit_state": "sent",
+     "submitted_at": "2026-11-01T10:00:00+00:00",
+     "updated_at": "2026-11-01T10:00:00+00:00"
+    }
+   ]
+  ],
+  "state": "ok_duplicate"
+ },
+ "dup_150_pending_prior_has_receipt": {
+  "accepted": 1,
+  "blocked": 0,
+  "duplicate_accepts": 1,
+  "exhausted": [],
+  "failed": 0,
+  "first_accepts": 0,
+  "guest_writes": [
+   [
+    3,
+    {
+     "last_errors": "150: Duplicate record - the register already holds it",
+     "receipt_submission_id": 501,
+     "submission_id": 900,
+     "submit_attempts": 0,
+     "submit_state": "sent",
+     "submitted_at": "2026-11-01T10:00:00+00:00",
+     "updated_at": "2026-11-01T10:00:00+00:00"
+    }
+   ]
+  ],
+  "state": "ok_duplicate"
+ },
+ "dup_150_pointer_already_set_wins": {
+  "accepted": 1,
+  "blocked": 0,
+  "duplicate_accepts": 1,
+  "exhausted": [],
+  "failed": 0,
+  "first_accepts": 0,
+  "guest_writes": [
+   [
+    5,
+    {
+     "last_errors": "150: Duplicate record - the register already holds it",
+     "receipt_submission_id": 480,
+     "submission_id": 900,
+     "submit_attempts": 0,
+     "submit_state": "sent",
+     "submitted_at": "2026-11-01T10:00:00+00:00",
+     "updated_at": "2026-11-01T10:00:00+00:00"
+    }
+   ]
+  ],
+  "state": "ok_duplicate"
+ },
+ "dup_by_codebook_151": {
+  "accepted": 1,
+  "blocked": 0,
+  "duplicate_accepts": 1,
+  "exhausted": [],
+  "failed": 0,
+  "first_accepts": 0,
+  "guest_writes": [
+   [
+    22,
+    {
+     "last_errors": "151: Duplicitní záznam",
+     "receipt_submission_id": 508,
+     "submission_id": 900,
+     "submit_attempts": 0,
+     "submit_state": "sent",
+     "submitted_at": "2026-11-01T10:00:00+00:00",
+     "updated_at": "2026-11-01T10:00:00+00:00"
+    }
+   ]
+  ],
+  "state": "ok_duplicate"
+ },
+ "dup_submitted_at_empty_string": {
+  "accepted": 1,
+  "blocked": 0,
+  "duplicate_accepts": 1,
+  "exhausted": [],
+  "failed": 0,
+  "first_accepts": 0,
+  "guest_writes": [
+   [
+    9,
+    {
+     "last_errors": "150: Duplicate record - the register already holds it",
+     "receipt_submission_id": null,
+     "submission_id": 900,
+     "submit_attempts": 0,
+     "submit_state": "sent",
+     "submitted_at": "2026-11-01T10:00:00+00:00",
+     "updated_at": "2026-11-01T10:00:00+00:00"
+    }
+   ]
+  ],
+  "state": "ok_duplicate"
+ },
+ "first_accept_no_receipt_keeps_old_pointer": {
+  "accepted": 1,
+  "blocked": 0,
+  "duplicate_accepts": 0,
+  "exhausted": [],
+  "failed": 0,
+  "first_accepts": 1,
+  "guest_writes": [
+   [
+    2,
+    {
+     "last_errors": null,
+     "receipt_submission_id": 450,
+     "submission_id": 900,
+     "submit_attempts": 0,
+     "submit_state": "sent",
+     "submitted_at": "2026-11-01T10:00:00+00:00",
+     "updated_at": "2026-11-01T10:00:00+00:00"
+    }
+   ]
+  ],
+  "state": "ok"
+ },
+ "first_accept_with_receipt": {
+  "accepted": 1,
+  "blocked": 0,
+  "duplicate_accepts": 0,
+  "exhausted": [],
+  "failed": 0,
+  "first_accepts": 1,
+  "guest_writes": [
+   [
+    1,
+    {
+     "last_errors": null,
+     "receipt_submission_id": 900,
+     "submission_id": 900,
+     "submit_attempts": 0,
+     "submit_state": "sent",
+     "submitted_at": "2026-11-01T10:00:00+00:00",
+     "updated_at": "2026-11-01T10:00:00+00:00"
+    }
+   ]
+  ],
+  "state": "ok"
+ },
+ "header_5_two_guests": {
+  "accepted": 0,
+  "blocked": 0,
+  "duplicate_accepts": 0,
+  "exhausted": [
+   14,
+   15
+  ],
+  "failed": 2,
+  "first_accepts": 0,
+  "guest_writes": [
+   [
+    14,
+    {
+     "last_errors": "5: UbyPort error 5 — refresh code lists on the property page to see the explanation.",
+     "submission_id": 900,
+     "submit_attempts": 1,
+     "submit_state": "error",
+     "updated_at": "2026-11-01T10:00:00+00:00"
+    }
+   ],
+   [
+    15,
+    {
+     "last_errors": "5: UbyPort error 5 — refresh code lists on the property page to see the explanation.",
+     "submission_id": 900,
+     "submit_attempts": 2,
+     "submit_state": "error",
+     "updated_at": "2026-11-01T10:00:00+00:00"
+    }
+   ]
+  ],
+  "state": "error"
+ },
+ "mixed_accept_and_error_partial": {
+  "accepted": 1,
+  "blocked": 0,
+  "duplicate_accepts": 0,
+  "exhausted": [
+   17
+  ],
+  "failed": 1,
+  "first_accepts": 1,
+  "guest_writes": [
+   [
+    16,
+    {
+     "last_errors": null,
+     "receipt_submission_id": null,
+     "submission_id": 900,
+     "submit_attempts": 0,
+     "submit_state": "sent",
+     "submitted_at": "2026-11-01T10:00:00+00:00",
+     "updated_at": "2026-11-01T10:00:00+00:00"
+    }
+   ],
+   [
+    17,
+    {
+     "last_errors": "106: Invalid value in a guest field",
+     "submission_id": 900,
+     "submit_attempts": 1,
+     "submit_state": "error",
+     "updated_at": "2026-11-01T10:00:00+00:00"
+    }
+   ]
+  ],
+  "state": "partial"
+ },
+ "not_correctable_late_notice": {
+  "accepted": 0,
+  "blocked": 1,
+  "duplicate_accepts": 0,
+  "exhausted": [],
+  "failed": 0,
+  "first_accepts": 0,
+  "guest_writes": [
+   [
+    13,
+    {
+     "last_errors": "107: Oznámeno pozdě",
+     "submission_id": 900,
+     "submit_attempts": 1,
+     "submit_state": "blocked",
+     "updated_at": "2026-11-01T10:00:00+00:00"
+    }
+   ]
+  ],
+  "state": "error"
+ },
+ "record_errors_shorter_than_guests": {
+  "accepted": 3,
+  "blocked": 0,
+  "duplicate_accepts": 1,
+  "exhausted": [],
+  "failed": 0,
+  "first_accepts": 2,
+  "guest_writes": [
+   [
+    18,
+    {
+     "last_errors": "150: Duplicate record - the register already holds it",
+     "receipt_submission_id": 507,
+     "submission_id": 900,
+     "submit_attempts": 0,
+     "submit_state": "sent",
+     "submitted_at": "2026-11-01T10:00:00+00:00",
+     "updated_at": "2026-11-01T10:00:00+00:00"
+    }
+   ],
+   [
+    19,
+    {
+     "last_errors": null,
+     "receipt_submission_id": null,
+     "submission_id": 900,
+     "submit_attempts": 0,
+     "submit_state": "sent",
+     "submitted_at": "2026-11-01T10:00:00+00:00",
+     "updated_at": "2026-11-01T10:00:00+00:00"
+    }
+   ],
+   [
+    20,
+    {
+     "last_errors": null,
+     "receipt_submission_id": null,
+     "submission_id": 900,
+     "submit_attempts": 0,
+     "submit_state": "sent",
+     "submitted_at": "2026-11-01T10:00:00+00:00",
+     "updated_at": "2026-11-01T10:00:00+00:00"
+    }
+   ]
+  ],
+  "state": "ok"
+ },
+ "refusal_106_attempts_zero_null_negative": {
+  "accepted": 0,
+  "blocked": 0,
+  "duplicate_accepts": 0,
+  "exhausted": [
+   10,
+   11,
+   12
+  ],
+  "failed": 3,
+  "first_accepts": 0,
+  "guest_writes": [
+   [
+    10,
+    {
+     "last_errors": "106: Invalid value in a guest field",
+     "submission_id": 900,
+     "submit_attempts": 1,
+     "submit_state": "error",
+     "updated_at": "2026-11-01T10:00:00+00:00"
+    }
+   ],
+   [
+    11,
+    {
+     "last_errors": "106: Invalid value in a guest field",
+     "submission_id": 900,
+     "submit_attempts": 1,
+     "submit_state": "error",
+     "updated_at": "2026-11-01T10:00:00+00:00"
+    }
+   ],
+   [
+    12,
+    {
+     "last_errors": "106: Invalid value in a guest field",
+     "submission_id": 900,
+     "submit_attempts": 1,
+     "submit_state": "error",
+     "updated_at": "2026-11-01T10:00:00+00:00"
+    }
+   ]
+  ],
+  "state": "error"
+ },
+ "severity_150_is_accepted": {
+  "accepted": 1,
+  "blocked": 0,
+  "duplicate_accepts": 0,
+  "exhausted": [],
+  "failed": 0,
+  "first_accepts": 1,
+  "guest_writes": [
+   [
+    21,
+    {
+     "last_errors": null,
+     "receipt_submission_id": null,
+     "submission_id": 900,
+     "submit_attempts": 0,
+     "submit_state": "sent",
+     "submitted_at": "2026-11-01T10:00:00+00:00",
+     "updated_at": "2026-11-01T10:00:00+00:00"
+    }
+   ]
+  ],
+  "state": "ok"
+ }
+}
