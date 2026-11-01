@@ -71,12 +71,12 @@ PAGES = [
         "path": "/apartments",
         "view": "props",
         "phone_view": "nemovitosti",
-        "phone_selectors": [".big, .head h1", ".card.prop", ".cover", ".cover .ini", ".prop .in b", ".prop .in small", ".props-phone .st.g", ".props-phone .st.r"],
+        "phone_selectors": [".big, .head h1", ".card.prop", ".cover", ".cover .ini", ".prop .in b", ".prop .in small", ".card.prop .st.g", ".card.prop .st.r"],
         "selectors": [
             ".side .nav.on", ".head h1", ".head .sub", ".head .btn",
             "main table th", "main table td", ".setup .st.g", ".setup .st.r", "tbody tr .btn.sm.ghost",
         ],
-        "missing_ok": {},
+        "missing_ok": {".prop .in small": "0710 demo property has no address line; the phone card shows the address when one is stored"},
     },
     {
         "name": "menu",
