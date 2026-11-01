@@ -61,4 +61,3 @@ Append-only.
 - 2026-11-01 | Host redesign: add vendored Hotwire Turbo (MIT, ~25 KB) for page-body swaps; redesign needs owner OK of mockups before build or merge | owner | #614
 - 2026-10-31 | D3 detail: goose v3.29.0, asset goose_linux_x86_64, SHA-256 cc56e2f75532a4dd52f5ef2d31db0121e91079a9c2617bc0ad4e04e2d41c228b | owner | 0465b
 - 2026-11-01 | Go: module go/, stdlib, pgx v5, go-ntlmssp v0.1.1; crypto via Python fixtures | owner (waiver) | 0474, 0481
-- 2026-11-01 | Stripe gateway work approved: platform fee 0%; host booking site = instant book, full payment at booking, non-refundable default with Flexible/Moderate presets (guest self-cancel, automatic Stripe refund); Airbnb-style advance notice (same day cutoff default 18:00); no deposit; city tax paid on site; guest terms CZ+EN; one-time host payments consent before Stripe; overbooking = auto full refund, host absorbs Stripe fee | owner | 0622, 0623
