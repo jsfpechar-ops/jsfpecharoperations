@@ -23,6 +23,7 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/billing"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ical"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/jobs"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/palette"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/payments"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/pushweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/schema"
@@ -197,6 +198,7 @@ func run() int {
 	mux.Handle("POST /account/push/refresh", m.wrap("/account/push/refresh", pushweb.RefreshHandler(pool, os.Getenv, time.Now)))
 	mux.Handle("POST /account/push/unsubscribe", m.wrap("/account/push/unsubscribe", pushweb.UnsubscribeHandler(pool, os.Getenv, time.Now)))
 	mux.Handle("POST /account/push/devices/{id}/delete", m.wrap("/account/push/devices/{id}/delete", pushweb.DeviceDeleteHandler(pool, os.Getenv, time.Now)))
+	mux.Handle("GET /api/command-palette", m.wrap("/api/command-palette", palette.Handler(pool, os.Getenv, time.Now)))
 	mux.Handle("/", m.wrap("/", notFound))
 
 	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
