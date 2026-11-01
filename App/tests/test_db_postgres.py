@@ -248,8 +248,8 @@ def test_full_schema_apply_and_validate_on_postgres(pg_runtime):
     status = db.postgres_schema_status()
     assert status["current"] is True
     assert status["actual_version"] == db.expected_schema_version() == 33
-    assert status["expected_tables"] == status["actual_tables"] == 67
-    assert status["missing_tables"] == status["extra_tables"] == 0
+    assert status["expected_tables"] == 67 and status["actual_tables"] == 68  # + job (goose 00003, PostgreSQL only)
+    assert status["missing_tables"] == 0 and status["extra_tables"] == 1  # job
     assert status["column_mismatches"] == 0
     assert status["missing_indexes"] == 0
     assert status["missing_triggers"] == status["extra_triggers"] == 0
@@ -342,7 +342,7 @@ def test_pg_schema_cli_reports_and_applies_the_current_schema(pg_runtime, tmp_pa
         timeout=180,
     )
     assert apply.returncode == 0, apply.stderr[-1000:]
-    assert "version=33" in apply.stdout and "tables=67" in apply.stdout
+    assert "version=33" in apply.stdout and "tables=68" in apply.stdout
 
     wrong = subprocess.run(
         [*base, "check", "--expect-database", "definitely-not-this-database"],
