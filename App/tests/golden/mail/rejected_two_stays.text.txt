@@ -1,0 +1,20 @@
+UbyPort did not take the guest report for Byt Alfa. Nothing from this attempt reached the register, so these guests are not declared yet.
+
+What UbyPort reported:
+<b>&"'</b> chybí PSČ
+
+What to do next:
+Open the stay, check the guest's nationality, date of birth and document number against their travel document, then send the report again.
+
+An interrupted connection clears itself when the report is sent again. If the same record fails twice, check the data before sending again.
+
+Stays in this report:
+- Booking <A> (01.03.2026 - 04.03.2026): https://app.example.test/reservations/101
+- 10.04.2026 - 12.04.2026: https://app.example.test/reservations/102
+
+Open the report receipt (Doručenka): https://app.example.test/submissions/7
+
+--
+UbyHost
+You are receiving this because a guest report for Byt Alfa was not accepted.
+Questions about UbyHost itself: support@ubyhost.com
