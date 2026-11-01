@@ -314,3 +314,33 @@ Left:
 - Item 10 dashboard long-page check.
 - Owner: pick the connect text for the placeholder lock section; decide on the "Kopírovat odkaz" vs "Kopírovat" label.
 - Not pushed. No PR opened.
+
+## 0537
+
+Status: blocked (executor ran out of tool calls; steps 1 to 2 partly done, steps 3 to 5 not done). Branch claude/project-thread-819gyo, not pushed.
+
+Commits:
+- `90dbb40` 0537 step 1: door-code tests. Dropped the two "not inside details" asserts; `folded` now checks `details:not([open])`. Still failing: `_geometry` asserts `titleSize >= 16` and gets 14 on the v2 door-code window (`test_disclosure_design_and_geometry_on_every_changed_page`, `test_live_preview_all_hours_missing_values_and_reflow`, all 6 parametrizations each). Real layout/type size on a new page: stopped per section 8, not changed.
+- commit `0537 step 2`: `test_0281_card_borders_browser.py` now probes `.props-phone .card.prop`. Passes.
+
+Test tails:
+- door-code: `12 failed, 2 passed` (titleSize 14 >= 16, see above).
+- help: `test_help_tip_interactions_aria_and_fit` and `test_help_tip_target_size_and_no_js_reachability` fail. `_open_page` waits for `.help-tip-btn` on the property page, but `body.v2 details .help-tip-btn{display:none}` (app2.css:645) hides it. Needs a rewrite to assert the inline hint text, not done.
+- list/geometry group (11 files): `13 failed, 21 passed`. Passing after edits: 0281.
+- `test_host_list_cards_browser.py`: v2 `.props-card` does not follow the panel width (`layout does not follow the panel width`, `no visible row action` at 760 px). Looks like a real layout issue on the new list. Stopped, edit reverted.
+- `test_host_wide_geometry_browser.py`: `synthetic persistent date-change alert not rendered on properties/en/1024`, plus a fee-lane `bounding_box` timeout. Selector edit for the properties lane was reverted (not committed).
+
+Section 8 list (edits so far): door-code `test_door_code_window_browser.py` (removed 2 asserts, changed `folded` selector); `test_0281_card_borders_browser.py` (row selector).
+
+Not ours / not started (listed, not touched):
+- `test_0710_v2_mockup_match_browser.py` (overview-320/390), `test_design_guardrails_browser.py`, `test_0705_v2_shell_browser`.
+- Shard 2 (added by coordinator, not started): `test_onboarding_followup_browser.py` (16), `test_0201_tabbar_safe_area_browser.py` (6), `test_0399_open_buttons_click_browser.py` (2), `test_0282_signature_dialog_browser.py`, `test_dashboard_calendar_browser.py`, `test_host_controls_browser.py`.
+
+Left to do (not done):
+- Help tests: rewrite the two property-page tests to assert the hint text visible under the input (section 2 rule).
+- `test_0199_phone_geometry_browser.py::test_lock` KeyError 'E' (the E chip metrics), `test_0396_leon_opt_in_browser.py` (2: `a.host-property-card`, `.host-property-grid`; Leon state is an aside `.pv .r` row).
+- `test_0284_states_browser.py`, `test_0251_tablet_browser.py` ("no overview cards at 1180px", `a.host-property-card`), `test_lock_navigation_browser.py::test_lock_setup_flow_keeps_its_place`, `test_wp28_geometry.py` (calendar remove button, operator signature `groove` vs `solid`), `test_0503_page_inits_once_browser.py` (2).
+- `test_host_list_cards_browser.py`, `test_host_wide_geometry_browser.py`: see stop notes above.
+- Wizard overview cards (`test_onboarding_wizard_browser.py::test_wizard_polish_and_overview_cards`): not started.
+- Screenshots (step 5): not taken.
+- Open question for the owner: the door-code titleSize 14 vs 16 failure is a real type size on a v2 page; decide whether the CSS or the test threshold is wrong.
