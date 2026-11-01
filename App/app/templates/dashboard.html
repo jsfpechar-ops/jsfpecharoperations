@@ -56,13 +56,13 @@
   {#- 0729: phone v2 top (Airbnb style): Today/Upcoming switch and one headline. -#}
   <div class="ph-top ph-only">
     <nav class="seg" aria-label="{{ t('dashboard.title') }}"><a class="on" href="/" aria-current="page">{{ t('nav.today') }}</a><a href="/reservations">{{ t('dashboard.ph.upcoming') }}</a></nav>
-    {% if ny_lines %}<h1 class="hl">{{ tp('dashboard.ph.need', ny_lines | length) }}</h1>
-    {% else %}<h1 class="hl done">{{ t('dashboard.ph.done') }}</h1>{% if next_arrival %}<p class="hl-sub">{{ t('dashboard.ph.next', when=(next_arrival.date_from | string)[:10] | date_long(lang), place=next_arrival.internal_name) }}</p>{% endif %}{% endif %}
   </div>
-  <div class="head ov-head ph-hide"><div>
-    <h1>{{ t('dashboard.title') }}</h1>
-    <p class="sub">{{ today.isoformat() | date_long(lang) }}</p>
-    <div class="ov-quiet">
+  <div class="head ov-head"><div>
+    {#- 0729: the page's one h1: "Overview" on desktop, the headline on phone. -#}
+    <h1 class="hl{{ ' done' if not ny_lines }}"><span class="ph-hide">{{ t('dashboard.title') }}</span><span class="ph-only">{% if ny_lines %}{{ tp('dashboard.ph.need', ny_lines | length) }}{% else %}{{ t('dashboard.ph.done') }}{% endif %}</span></h1>
+    {% if not ny_lines and next_arrival %}<p class="hl-sub ph-only">{{ t('dashboard.ph.next', when=(next_arrival.date_from | string)[:10] | date_long(lang), place=next_arrival.internal_name) }}</p>{% endif %}
+    <p class="sub ph-hide">{{ today.isoformat() | date_long(lang) }}</p>
+    <div class="ov-quiet ph-hide">
     <details class="ui-how ov-how ph-hide" data-how="dashboard">
       <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
       <div class="ui-how-body">
@@ -76,7 +76,7 @@
     </p>
     </div>
   </div>
-  <a class="btn" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">{{ t('stays.add_stay') }}</a></div>
+  <a class="btn ph-hide" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">{{ t('stays.add_stay') }}</a></div>
 
   {#- 0717: alerts with no todo card of their own; a stay's alert stays hidden when its line is already here. -#}
   {% set ny_stay_ids = needs_you.lines | selectattr('stay_id') | map(attribute='stay_id') | list %}
