@@ -19,7 +19,7 @@ else:
 import uvicorn
 from fastapi.testclient import TestClient
 
-from app import auth, claim, db, demo, onboarding
+from app import auth, claim, cleaning, db, demo, onboarding
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
 from tests.conftest import login_as
@@ -97,6 +97,9 @@ def dashboard_rich_host():
         "label": "Synthetic calendar", "active": 1, "created_at": now,
     })
     today = claim.prague_today()
+    # Manual cleaning events for the cleaning phone compare (today card, green row).
+    cleaning.save_event(apartment_id, {"scheduled_date": today.isoformat(), "start_time": "11:00", "end_time": "14:00"})
+    cleaning.save_event(apartment_id, {"scheduled_date": (today + timedelta(days=2)).isoformat(), "start_time": "11:00", "end_time": "14:00"})
 
     def stay(label, arrival, departure, expected=1):
         return db.insert("reservation", {
