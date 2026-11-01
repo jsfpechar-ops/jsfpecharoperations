@@ -94,3 +94,23 @@ Findings:
 
 ## Owner steps left
 - None until the row-height decision above is made.
+
+## Executor run: date cells on phone, row height
+
+Status: blocked
+
+Done: step A (phone date cells, `host2.css` end block, `@media (max-width: 1023.98px)`). Left: step B (desktop row height).
+
+- `.../screenshots-0523/reservations-cs-390.png` reads "02.11.2026 – 04.11.2026 2 noci" on one line. Looked at once.
+- `pytest tests/test_0523_stays_list.py tests/test_static_versions.py`: 11 passed.
+- Browser set (7 files): 2 failed, 34 passed, 0 skipped.
+  - `test_host_list_layouts_browser.py::test_stays_pills_and_deadlines_stay_on_one_line`: still fails (cs 1280 row 128.75 at the last run, and 106 before the revert).
+  - One geometry failure: "stay content escapes .stay-col-dates > a cell" (cell width 0, text 72 px). Probably from the phone rule; not resolved.
+
+Deviations:
+- Tallest cell at en/cs 1280 is `td.stay-col-stay` (name link wraps) and, in cs, `td.stay-col-property` (4 lines at 132 px). Not the source line.
+- `white-space: nowrap` on `.stay-col-stay` and `.stay-col-property` (desktop, min-width 1024) fixed the row but pushed the table past 1280 px (5 geometry failures, page scroll). Reverted. `nowrap` on `.stay-col-source` alone gave 109 px. Not kept.
+- Version is `20261101-0523d`, not `0523c`: the static guard refused a rewrite under the same key after the CSS changed.
+- Commit is a checkpoint with the phone rule only; desktop row height is open.
+
+Next: fix the desktop row height at 1280 cs (try a width cap or a smaller property cell wrap, not nowrap), then the width-0 `.stay-col-dates` failure at phone.
