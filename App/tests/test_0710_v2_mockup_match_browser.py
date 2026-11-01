@@ -47,6 +47,13 @@ STYLE_IDS = [f"{spec['name']}-{width}" for spec, width in STYLE_CASES]
 SHOTS_DIR = Path(__file__).resolve().parents[2] / "docs/tasks/screenshots-0710"
 
 
+def _page_path(spec, rich_host):
+    """Paths with {stay_id} use the rich host's ready stay: active, non-archived, one guest of that host."""
+    if "{stay_id}" in spec["path"]:
+        return spec["path"].format(stay_id=rich_host["ready"])
+    return spec["path"]
+
+
 def _open_app(browser, base_url, cookie, path, width):
     context = browser.new_context(viewport={"width": width, "height": 1000}, reduced_motion="reduce")
     context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": base_url + "/"}])
@@ -87,7 +94,7 @@ def test_v2_page_matches_mockup_styles(spec, width, base, dashboard_rich_host):
     phone = width in STYLE_PHONE_WIDTHS and "phone_view" in spec
     with sync_api.sync_playwright() as playwright:
         browser = _launch(playwright)
-        app_ctx, app_page = _open_app(browser, base, cookie, spec["path"], width)
+        app_ctx, app_page = _open_app(browser, base, cookie, _page_path(spec, dashboard_rich_host), width)
         if phone:
             mock_ctx, mock_page = _open_phone(browser, spec["phone_view"], width)
             selectors, view_name = spec["phone_selectors"], f"phone screen {spec['phone_view']}"
@@ -126,7 +133,7 @@ def test_v2_page_geometry(spec, width, base, dashboard_rich_host):
     assert cookie
     with sync_api.sync_playwright() as playwright:
         browser = _launch(playwright)
-        context, page = _open_app(browser, base, cookie, spec["path"], width)
+        context, page = _open_app(browser, base, cookie, _page_path(spec, dashboard_rich_host), width)
         findings = geometry_findings(page, width)
         context.close()
         browser.close()
@@ -144,7 +151,7 @@ def test_v2_screenshots(base, dashboard_rich_host):
         browser = _launch(playwright)
         for spec in PAGES:
             for width in WIDTHS:
-                context, page = _open_app(browser, base, cookie, spec["path"], width)
+                context, page = _open_app(browser, base, cookie, _page_path(spec, dashboard_rich_host), width)
                 page.screenshot(path=str(SHOTS_DIR / f"{spec['name']}-{width}.png"), full_page=True)
                 context.close()
                 mock_ctx, mock_page = _open_mockup(browser, spec["view"], width)

@@ -35,21 +35,21 @@ def test_stay_detail_groups_facts_and_wraps(stay_actions_host, stay_actions_base
                     page.goto(f"{stay_actions_base}/reservations/{ids[key]}?lang={locale}")
                     page.wait_for_load_state("networkidle")
                     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"), (key, width)
-                    # One ordered page: next step, guests, reporting, settings; nothing folded.
+                    # One ordered page, mockup order: guests, reporting, settings; nothing folded.
                     order = page.evaluate(
-                        "['now','guests','reports','stay-quick-edit'].map(i => document.getElementById(i).getBoundingClientRect().top)"
+                        "['guests','reports','stay-quick-edit'].map(i => document.getElementById(i).getBoundingClientRect().top)"
                     )
                     assert order == sorted(order), order
-                    assert page.locator("#stay-quick-edit").evaluate("e => e.tagName") == "SECTION"
+                    assert page.locator("#stay-quick-edit").evaluate("e => e.tagName") == "DETAILS"
                     # 0525 standing rule: the jump tabs were removed in 0524, so the nav geometry
                     # checks no longer apply; the page must have none.
                     assert page.locator("nav.stay-jump a").count() == 0
                     if key != "incomplete":
                         # One fact grid (0179), visible on the page itself.
-                        assert page.locator(".guest-card .guest-facts").count() == 1
-                        text = page.locator(".guest-card").first.inner_text()
-                        assert "P-" in text and "1990" in text
-                        for dd in page.locator(".guest-card dd").all():
+                        assert page.locator("#guests .guest-table:visible, #guests .guest-list:visible").count() == 1
+                        text = page.locator("#guests .guest-table:visible, #guests .guest-list:visible").first.inner_text()
+                        assert "SAMPLE" in text.upper()  # 0529: the table shows name, document type and state; the old fact grid is gone
+                        for dd in page.locator("#guests .guest-list:visible .row, #guests .guest-table:visible td").all():
                             box = dd.bounding_box()
                             assert box["x"] + box["width"] <= width + 1
                     if key == "ready":

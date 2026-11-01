@@ -65,7 +65,7 @@ def test_door_code_is_in_its_own_section_not_in_the_now_panel(host, monkeypatch)
     door = page[page.index('id="door-code"'):]
     door = door[:door.index("</section>")]
     assert 'id="door-code-line"' in door
-    now = _section(page, 'id="now"', 'id="guests"')
+    now = _section(page, 'police-card', 'id="guests"')
     assert "door-code-line" not in now
 
 
@@ -75,18 +75,18 @@ def test_guest_row_shows_the_doc_type_label_and_never_the_document_number(host):
         "UPDATE guest SET doc_type = ? WHERE reservation_id = ?", ("P", reservation_id)
     )
     page = client.get(f"/reservations/{reservation_id}?lang=en").text
-    match = re.search(r'class="guest-card-doc">([^<]*)</span>', page)
+    match = re.search(r'class="guest-doc">([^<]*)</td>', page)
     assert match and match.group(1).strip() not in ("", "—")
-    # The card head only: the existing guest-facts list below it is unchanged by this brief.
-    head = page[page.index('class="guest-card-head"'):page.index('class="guest-facts"')]
-    assert "P9988771" not in head
+    # The guest row only: the doc type sits in its own cell and the number is never shown in the row.
+    row = page[page.rindex('<tr', 0, match.start()):page.index('</tr>', match.start())]
+    assert "P9988771" not in row
 
 
 def test_header_copy_link_only_for_an_active_stay(host):
     client, _, reservation_id = host
     active = client.get(f"/reservations/{reservation_id}?lang=en").text
     assert active.count("data-stay-header-copy") == 1
-    assert active.index("data-stay-header-copy") < active.index('id="now"')
+    assert active.index("data-stay-header-copy") < active.index('police-card')
 
     db.execute(
         "UPDATE reservation SET archived_at = ? WHERE id = ?", (db.utcnow(), reservation_id)

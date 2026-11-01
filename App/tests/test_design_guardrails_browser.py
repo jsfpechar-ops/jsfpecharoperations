@@ -346,9 +346,9 @@ def test_guest_card_facts_share_four_column_lines(wide_host, wide_base):
         assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
         _wait_for_host_layout(page)
         _dismiss_optional_security_prompt(page)
-        page.wait_for_selector(".guest-card .guest-facts dt", timeout=5000)
+        page.wait_for_selector("#guests .guest-table tbody td", timeout=5000)
         lefts = page.evaluate(
-            """() => Array.from(document.querySelector('.guest-card').querySelectorAll('.guest-facts dt'))
+            """() => Array.from(document.querySelector('#guests .guest-table tbody tr').querySelectorAll('td'))
                 .map(dt => dt.getBoundingClientRect().left)"""
         )
         context.close()

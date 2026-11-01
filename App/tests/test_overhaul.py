@@ -328,9 +328,9 @@ def test_reservation_detail_shows_direct_guest_link():
         # The copied stay link is the readable one (WP19).
         assert f"/l/{guest_slug.current(apartment_id)}/{stays[0]}" in page.text
         assert "Copy guest form link" in page.text
-        assert "Next step" in page.text
+        assert "police-card" in page.text
         assert "Edit stay details" in page.text
-        assert 'class="panel stay-command-panel"' in page.text
+        assert 'police-card' in page.text
         assert page.text.count('name="expected_guests_override"') == 1
         assert f'href="/apartments/{apartment_id}?view=settings&amp;section=guests#communication"' in page.text
     finally:
@@ -409,10 +409,10 @@ def test_the_stay_page_reads_as_one_ordered_grammar():
         page = _browser().get(f"/reservations/{stays[0]}")
         assert page.status_code == 200
         body = page.text
-        positions = [body.index(marker) for marker in ('id="now"', 'id="guests"', 'id="stay-quick-edit"')]
+        positions = [body.index(marker) for marker in ('police-card', 'id="guests"', 'id="stay-quick-edit"')]
         assert positions == sorted(positions)
         # Reporting facts now live after Guests, in the Police report section.
-        assert 'class="panel stay-command-panel" id="now"' in body
+        assert 'police-card' in body
         assert 'class="stay-metrics detail-hero' in body
         assert body.index('id="guests"') < body.index('id="reports"') < body.index('class="stay-metrics detail-hero')
         assert 'class="panel tight detail-hero' not in body
@@ -450,7 +450,7 @@ def test_stay_settings_and_the_quick_edit_share_one_panel():
     _apartment_id, stays, _past = _seed_stays()
     try:
         body = _browser().get(f"/reservations/{stays[0]}").text
-        assert 'class="ui-section stay-settings" id="stay-quick-edit"' in body
+        assert 'id="stay-quick-edit"' in body
         panel = body.split('id="stay-quick-edit"', 1)[1].split("</details>", 1)[0]
         assert "data-inline-edit" in panel
         assert 'name="expected_guests_override"' in panel

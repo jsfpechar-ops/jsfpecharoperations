@@ -1305,6 +1305,7 @@ STRINGS: Dict[str, str] = {
     "stay.detail.note.immediate": "ngay khi mọi biểu mẫu đã khai đều hoàn tất",
     "stay.detail.note.scheduled": "%(hours)s giờ sau khi mọi biểu mẫu đã khai đều hoàn tất",
     "stay.detail.note.manual": "chỉ thủ công",
+    "stay.detail.facts.nights": "Đêm",
     "stay.detail.guests.title": "Khách",
     "stay.detail.guests.lead": "khách chính",
     "stay.detail.guests.reported": "Đã khai báo",

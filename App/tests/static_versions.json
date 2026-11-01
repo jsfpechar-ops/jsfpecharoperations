@@ -12,8 +12,8 @@
     "v": "20261101-0504"
   },
   "app2.css": {
-    "sha256": "9ccbaf74173b00ff5adc7cb45d5f984a25a4b3708ccd1c93f0d808b951b19eee",
-    "v": "20261101-0526m"
+    "sha256": "21db2779076a7bf465aaacb93c030319d0eedfb5a58146cb77f51b5ff27f5925",
+    "v": "20261101-0529m"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -96,8 +96,8 @@
     "v": "20261026-door-lock-times"
   },
   "host2.css": {
-    "sha256": "67624ec5933ef187a3a089ee2697717a0101b072ff8a171491325f9d20c4810a",
-    "v": "20261101-0526"
+    "sha256": "0da4f0319b193b4c1ee74c1d5dded14abc11266fef0096b3e61a4af7d6d2b31b",
+    "v": "20261101-0528"
   },
   "landing.css": {
     "sha256": "9910e555ae69914d71e920a5c00947adaf3759221c53d9e6234c5731c21b142b",
