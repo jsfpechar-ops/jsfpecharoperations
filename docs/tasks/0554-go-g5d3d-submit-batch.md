@@ -1,5 +1,5 @@
 # 0554: Go G5d-3d: SubmitBatch, the whole send of one batch, matching Python
-Status: todo
+Status: review
 Depends on: 0550, 0551, 0552, 0553 | Base commit: main | Branch: claude/project-thread-bhyvh5
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 90k tokens
 ## 1. Objective
