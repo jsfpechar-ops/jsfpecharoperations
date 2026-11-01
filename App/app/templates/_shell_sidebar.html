@@ -10,24 +10,7 @@
   </div>
   <span class="env-badge ui-env {{ ubyport_env }}" title="{{ t('env.where_reports_go') }}">{{ t('env.' ~ ubyport_env) }}</span>
   <button class="ui-search-row" type="button" data-command-open>{{ icon('search', 16) }}<span>{{ t('host.search') }}</span><kbd data-command-shortcut>Ctrl K</kbd></button>
-  <nav class="ui-nav sidebar-nav" aria-label="{{ t('a11y.main_navigation') }}">
-    {% for href, icon_name, label, active in [
-        ('/', 'layout-dashboard', t('nav.overview'), nav == 'dashboard'),
-        ('/reservations', 'calendar-days', t('nav.stays'), stays_nav),
-        ('/apartments', 'house', t('nav.properties'), properties_nav),
-        ('/stay-fees', 'invoice-slip', t('nav.stay_fees'), nav == 'stay_fees'),
-        ('/cleaning', 'brush-cleaning', t('nav.cleaning'), nav == 'cleaning'),
-        ('/payments', 'credit-card', t('nav.payments'), nav == 'payments')] %}
-    <a href="{{ href }}" title="{{ label }}" {% if active %}aria-current="page"{% endif %}>{{ icon(icon_name, 20) }}<span>{{ label }}</span>{% if href == '/' and nav_action_count is defined and nav_action_count %}<span class="ui-nav-count">{{ nav_action_count if nav_action_count < 10 else '9+' }}</span>{% endif %}</a>
-    {% endfor %}
-    <a href="/settings" title="{{ t('nav.settings') }}" {% if nav == 'settings' %}aria-current="page"{% endif %}>{{ icon('settings', 20) }}<span>{{ t('nav.settings') }}</span></a>
-  </nav>
   {% if current_user %}
-  <div class="host-rail-bottom">
-    <nav class="ui-nav ui-nav-bottom" aria-label="{{ t('nav.guide') }}{% if current_user.role == 'admin' %} / {{ t('nav.admin') }}{% endif %}">
-      <a class="host-help" href="/guide">{{ icon('book-open', 20) }}<span>{{ t('nav.guide') }}</span></a>
-      {% if current_user.role == 'admin' %}<a href="/admin" {% if nav == 'admin' %}aria-current="page"{% endif %}>{{ icon('shield', 20) }}<span>{{ t('nav.admin') }}</span></a>{% endif %}
-    </nav>
     <details class="host-account" data-host-account>
       <summary aria-label="{{ t('nav.account') }}: {{ workspace_user.display_name or workspace_user.username }}">
         <span class="sidebar-user-avatar" aria-hidden="true">{{ (workspace_user.display_name or workspace_user.username)[:1] | upper }}</span>
@@ -52,6 +35,25 @@
         <form method="post" action="/logout"><button class="nav-button" type="submit">{{ t('nav.logout') }}</button></form>
       </div>
     </details>
+  {% endif %}
+  <nav class="ui-nav sidebar-nav" aria-label="{{ t('a11y.main_navigation') }}">
+    {% for href, icon_name, label, active in [
+        ('/', 'layout-dashboard', t('nav.overview'), nav == 'dashboard'),
+        ('/reservations', 'calendar-days', t('nav.stays'), stays_nav),
+        ('/apartments', 'house', t('nav.properties'), properties_nav),
+        ('/stay-fees', 'invoice-slip', t('nav.stay_fees'), nav == 'stay_fees'),
+        ('/cleaning', 'brush-cleaning', t('nav.cleaning'), nav == 'cleaning'),
+        ('/payments', 'credit-card', t('nav.payments'), nav == 'payments')] %}
+    <a href="{{ href }}" title="{{ label }}" {% if active %}aria-current="page"{% endif %}>{{ icon(icon_name, 20) }}<span>{{ label }}</span>{% if href == '/' and nav_action_count is defined and nav_action_count %}<span class="ui-nav-count">{{ nav_action_count if nav_action_count < 10 else '9+' }}</span>{% endif %}</a>
+    {% endfor %}
+    <a href="/settings" title="{{ t('nav.settings') }}" {% if nav == 'settings' %}aria-current="page"{% endif %}>{{ icon('settings', 20) }}<span>{{ t('nav.settings') }}</span></a>
+  </nav>
+  {% if current_user %}
+  <div class="host-rail-bottom">
+    <nav class="ui-nav ui-nav-bottom" aria-label="{{ t('nav.guide') }}{% if current_user.role == 'admin' %} / {{ t('nav.admin') }}{% endif %}">
+      <a class="host-help" href="/guide">{{ icon('book-open', 20) }}<span>{{ t('nav.guide') }}</span></a>
+      {% if current_user.role == 'admin' %}<a href="/admin" {% if nav == 'admin' %}aria-current="page"{% endif %}>{{ icon('shield', 20) }}<span>{{ t('nav.admin') }}</span></a>{% endif %}
+    </nav>
   </div>
   {% endif %}
 </aside>
