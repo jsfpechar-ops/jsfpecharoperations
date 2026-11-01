@@ -86,3 +86,29 @@ Deviations:
 - Step 1b: app2 key is `20261101-0535b`.
 
 Owner steps left: none.
+### 0535 steps 2-3 (executor report)
+
+Status: blocked. Done: steps 2 and step 3 at 360 px. Left: step 3 at 1024 px (cs), steps 4 to 6.
+
+Commits: `e31cee0` 0535 step 2: preview aside. `bffab0a` 0535 step 3: no sideways scroll (partial). This commit: test_copy_cleanup list and this report.
+
+Tails:
+- `tests/test_0534_property_page_v2.py tests/test_property_hub.py tests/test_property_readiness.py tests/test_validation_i18n.py`: 37 passed, 0 skipped.
+- `tests/test_host_ux_acceptance.py -k fits`: 1 failed. 360 px en failures are gone. 1024 px cs fails on property-overview, bookings, settings, guests, reporting, automation (scrollWidth 1036 > 1024). The offender list is empty, so the element is not identified yet.
+- `tests/test_copy_cleanup.py`: 9 passed after the list fix.
+- `ruff check app tests tools --select E9,F63,F7,F82,F401,F841`: All checks passed. design_lint: OK. context_lint: OK.
+
+Section 8 (tests changed):
+- `tests/test_validation_i18n.py`: the two readiness tests flipped from negative to positive asserts (`Bez IDUB nelze nic nahlásit.` in cs, `IDUB is required before anything can be reported.` in en).
+- `tests/test_copy_cleanup.py` line 151: `_property_overview.html` removed from the file list (file deleted).
+
+Deviations:
+- The readiness block is shown whenever `readiness and not wizard_active`, as it was in the overview. Gating on "something missing" failed `test_a_complete_property_says_you_can_send_the_guest_link`.
+- No "Co chybí" heading. The moved block keeps its summary text (`wizard.overview.details`). No new key for it.
+- New i18n keys: `property_page.preview.title`, `property_page.preview.connections` (en, cs, vi). No keys deleted: each overview key is still used by another template or a test.
+- `_property_overview.html` had no includes, so nothing rendered from it. Its setup card and host-property-grid went with the file.
+- Step 3 CSS is in the 0534 block (not the shared v2 block): below 1024 px, details descendants `min-width:0`, `.ui-btn` wraps, flex rows in details wrap, `.fields` one column below 640 px.
+- The 360 px failure was the calendar delete button (`ui-btn-danger` in `_property_calendars.html`).
+
+Owner steps: none. Next executor: diagnose the 1024 px cs overflow (list elements with right edge over 1024, include the fixed `.savebar`), then steps 4 to 6.
+
