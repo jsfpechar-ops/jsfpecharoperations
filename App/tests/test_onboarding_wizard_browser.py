@@ -992,7 +992,7 @@ def test_review_fixes_in_the_browser(host, base_url):
         _shot(page, "12-overview-hidden-en-1280.png")
         page.locator("section.guest-card").first.scroll_into_view_if_needed()
         _shot(page, "13-overview-guest-link-en-1280.png")
-        assert page.locator("a[href*='section=guests']").count() >= 1
+        assert page.locator("section.guest-card [data-copy='property-guest-url']").count() >= 1
         browser.close()
 
 
