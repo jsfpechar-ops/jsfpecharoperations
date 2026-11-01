@@ -78,3 +78,21 @@ test_motion_browser.py: 5 passed
 test_host_feedback_browser.py: 1 passed
 test_host_filter_panels_browser.py: 1 failed, 3 passed (stopped at -x on line 446)
 ```
+
+## Session 5 (executor, group A, finished)
+
+Status: review. Done: steps 1 to 5. Left: nothing in group A.
+
+- b9b9389 step 1: test_host_filter_panels_browser.py. The failing case is `/invoices` (the month control, `.month-control.is-empty` vs `[data-month-trigger]`), not `/`. At rest both boxes match (x, y, width, height). The 1.33 px offset was measured mid-motion, right after the filter panel opened. Fix: `settle_motion(page)` before the measurement, as the popover check already does. No app2.css change (a `align-self` probe did not move the offset and was reverted).
+  - test_host_filter_panels_browser.py: 4 passed, 0 skipped.
+- 8efb016 step 2: test_host_controls_browser.py. Not a v2 feature gap. host-controls.css exists only on the old shell, and `.ui-ph-acts` is rendered only by host_page.html. The `/` entry is replaced by `/settings`, and the header-action check runs on `/apartments`. Both have comments.
+  - test_host_controls_browser.py: 1 passed, 0 skipped.
+- fe6e505 step 3: base.html app2.css key 20261101-0720c. `test_static_versions.py --write` regenerated static_versions.json (41 files; 4 lines changed). The brief's `test_static_versions.py -q` form prints usage and exits 0 (no -q flag); the check was run with `-m pytest tests/test_static_versions.py -q`: 3 passed.
+- Step 4 runs (one file at a time, 0 skipped):
+  - test_0710_v2_mockup_match_browser.py: 22 passed
+  - test_havel_browser.py: 8 passed
+  - test_motion_browser.py: 5 passed
+- ruff E9,F63,F7,F82,F401,F841: All checks passed!
+- design_lint: OK. context_lint: OK.
+
+Deviations: step 1 fix is in the test, not app2.css (the layout is already correct at rest). Step 2 changes the case targets, not the feature.
