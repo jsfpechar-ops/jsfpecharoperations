@@ -1203,6 +1203,8 @@ STRINGS: Dict[str, str] = {
     "stays.chip.past": "Đã qua",
     "stays.chip.all": "Mọi ngày",
     "stays.chip.archive": "Đã lưu trữ",
+    "stays.chip.current": "Đang ở",
+    "stays.chip.failed": "Khai báo lỗi",
     "stays.archive_note": "Lượt lưu trú đã lưu trữ được ẩn khỏi công việc hằng ngày nhưng vẫn được giữ để tham khảo. Hãy khôi phục mục bạn lỡ lưu trữ.",
     "stays.filter.apartment": "Chỗ ở",
     "stays.filter.all_apartments": "Tất cả",
