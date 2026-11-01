@@ -558,7 +558,7 @@ class PostgresCursor:
         if command == "BEGIN IMMEDIATE":
             try:
                 self._connection._raw.execute("BEGIN")
-                self._connection._begin_immediate()
+                self._connection._raw.execute(f"SET LOCAL lock_timeout = '{LOCK_TIMEOUT}'")
             except BaseException:
                 # A lock timeout (55P03) aborts the just-opened transaction;
                 # roll it back so the original psycopg error propagates and the
@@ -569,12 +569,10 @@ class PostgresCursor:
             return self
         if command in {"BEGIN", "START TRANSACTION"}:
             self._connection._raw.execute(sql)
-            self._connection._writer_lock_held = False
             self._connection._trace(sql)
             return self
         if command in {"COMMIT", "END", "ROLLBACK", "ABORT"}:
             self._connection._raw.execute(sql)
-            self._connection._writer_lock_held = False
             self._connection._trace(sql)
             return self
         converted, adapted_values = adapt_sql(sql, values)
@@ -585,8 +583,6 @@ class PostgresCursor:
         if owns_transaction:
             try:
                 self._connection._raw.execute("BEGIN")
-                self._connection._transaction_lock_reset()
-                self._connection._ensure_writer_lock()
             except BaseException:
                 # Lock acquisition failed before the statement ran: roll back
                 # the transaction this adapter opened and re-raise the psycopg
@@ -594,7 +590,6 @@ class PostgresCursor:
                 self._connection._abort_transaction()
                 raise
         elif write:
-            self._connection._ensure_writer_lock()
             savepoint = self._connection._next_savepoint()
             self._connection._raw.execute(f"SAVEPOINT {savepoint}")
         try:
@@ -608,14 +603,12 @@ class PostgresCursor:
                 self._connection._raw.execute(f"RELEASE SAVEPOINT {savepoint}")
             elif owns_transaction:
                 self._connection._raw.rollback()
-                self._connection._writer_lock_held = False
             raise
         else:
             if savepoint:
                 self._connection._raw.execute(f"RELEASE SAVEPOINT {savepoint}")
             elif owns_transaction:
                 self._connection._raw.commit()
-                self._connection._writer_lock_held = False
         return self
 
     def executemany(self, sql: str, params: Iterable[Iterable[Any]]) -> "PostgresCursor":
@@ -630,8 +623,6 @@ class PostgresCursor:
         if owns_transaction:
             try:
                 self._connection._raw.execute("BEGIN")
-                self._connection._transaction_lock_reset()
-                self._connection._ensure_writer_lock()
             except BaseException:
                 # Lock acquisition failed before the statement ran: roll back
                 # the transaction this adapter opened and re-raise the psycopg
@@ -639,7 +630,6 @@ class PostgresCursor:
                 self._connection._abort_transaction()
                 raise
         elif write:
-            self._connection._ensure_writer_lock()
             savepoint = self._connection._next_savepoint()
             self._connection._raw.execute(f"SAVEPOINT {savepoint}")
         try:
@@ -650,14 +640,12 @@ class PostgresCursor:
                 self._connection._raw.execute(f"RELEASE SAVEPOINT {savepoint}")
             elif owns_transaction:
                 self._connection._raw.rollback()
-                self._connection._transaction_lock_reset()
             raise
         else:
             if savepoint:
                 self._connection._raw.execute(f"RELEASE SAVEPOINT {savepoint}")
             elif owns_transaction:
                 self._connection._raw.commit()
-                self._connection._transaction_lock_reset()
         return self
 
     def _row(self, values: Any) -> Any:
@@ -694,7 +682,6 @@ class PostgresConnection:
     def __init__(self, raw: Any) -> None:
         self._raw = raw
         self._trace_callback: Optional[Callable[[str], None]] = None
-        self._writer_lock_held = False
         self._writer_session_lock_held = False
         self._savepoint_counter = 0
 
@@ -709,19 +696,6 @@ class PostgresConnection:
     def set_trace_callback(self, callback: Optional[Callable[[str], None]]) -> None:
         self._trace_callback = callback
 
-    def _begin_immediate(self) -> None:
-        self._ensure_writer_lock()
-
-    def _ensure_writer_lock(self) -> None:
-        if self._writer_lock_held or self._writer_session_lock_held:
-            return
-        self._raw.execute(f"SET LOCAL lock_timeout = '{LOCK_TIMEOUT}'")
-        self._raw.execute("SELECT pg_advisory_xact_lock(%s)", (WRITER_LOCK_ID,))
-        self._writer_lock_held = True
-
-    def _transaction_lock_reset(self) -> None:
-        self._writer_lock_held = False
-
     def _abort_transaction(self) -> None:
         """Roll back a transaction this adapter opened when its setup failed.
 
@@ -730,7 +704,6 @@ class PostgresConnection:
         rollback keeps the connection reusable and never masks the original
         psycopg error (the caller re-raises it unchanged).
         """
-        self._writer_lock_held = False
         try:
             if self.in_transaction:
                 self._raw.rollback()
@@ -792,11 +765,9 @@ class PostgresConnection:
 
     def rollback(self) -> None:
         self._raw.rollback()
-        self._writer_lock_held = False
 
     def close(self) -> None:
         self._raw.close()
-        self._writer_lock_held = False
 
 
 def is_identity_table(table: str) -> bool:
