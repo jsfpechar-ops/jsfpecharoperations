@@ -45,7 +45,7 @@ CAPTURE_ROUTES = {
     "fees-unset": ("/stay-fees?apartment={unconfigured_apartment}", ".panel.tight.scroll-x, .panel.empty"),
     "fees-configured": ("/stay-fees?apartment={configured_apartment}", ".panel.tight.scroll-x, .panel.empty"),
     # 0077/0101: the fee editor is property Settings -> Reporting & fees -> Stay fee.
-    "fee-setup": ("/apartments/{unconfigured_apartment}?view=settings&section=fee", ".property-settings, details.prop-sec#sec-fee"),  # v2 (0538)
+    "fee-setup": ("/apartments/{unconfigured_apartment}?view=settings&section=reporting", ".property-settings, details.prop-sec#sec-fee"),  # v2 (0538)
     "fee-detail": ("/stay-fees/{configured_apartment}", ".ui-body-detail, .ui-section"),
     "invoice-new-picker": ("/invoices/new", ".ui-section"),
     "invoice-new-selected": ("/invoices/new?entity={entity_id}&reservation_id={reservation_id}", ".invoice-workspace, .invoice-stay-picker"),
@@ -311,7 +311,7 @@ def _capture_geometry(page, result_selector):
             viewport: {width: innerWidth, scrollWidth: document.documentElement.scrollWidth},
             hostLane,
             title: box('.page-header-main h1, .ui-ph-main h1, .host-today-head h1, .head h1'),
-            pageHeader: box('.page-header, .ui-ph, .host-today-head, .head'),
+            pageHeader: box('.page-header, .ui-ph, .host-today-head, .head, .crumb, main h1'),
             directBacklink: box('main.wrap.with-sidebar > a.back-link'),
             headerMain: box('.page-header-main, .ui-ph-main, .host-today-head'),
             headerActions: box('.page-actions, .ui-ph-acts, .dashboard-actions'),
@@ -512,7 +512,7 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                             "dates_changed_resign alerts are filing gates and must remain non-dismissible"
                         )
                         assert geometry["alertStack"] is None, geometry["alertStack"]
-                    elif name == "properties":
+                    elif name in ("properties", "fee-setup"):
                         # 0538: the v2 shell does not render the alert stack (base.html), as on the dashboard
                         assert geometry["alertStack"] is None, geometry["alertStack"]
                     else:
@@ -715,7 +715,7 @@ def test_direct_fee_backlinks_align_with_page_lane(wide_host, wide_base):
     routes = (
         f"/stay-fees/{wide_host['configured_apartment']}",
     )
-    setup = f"/apartments/{wide_host['unconfigured_apartment']}?view=settings&section=fee"
+    setup = f"/apartments/{wide_host['unconfigured_apartment']}?view=settings&section=reporting"
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = browser.new_context(viewport={"width": 1920, "height": 1000})
@@ -744,8 +744,8 @@ def test_direct_fee_backlinks_align_with_page_lane(wide_host, wide_base):
                 response = page.goto(f"{wide_base}{setup}&lang={lang}")
                 assert response and response.status == 200
                 page.wait_for_load_state("networkidle")
-                assert f"/apartments/{wide_host['unconfigured_apartment']}?view=settings&section=fee" in page.url
-                header = page.locator(".page-header, .ui-ph, .head, h1").first.bounding_box()
+                assert f"/apartments/{wide_host['unconfigured_apartment']}?view=settings&section=reporting" in page.url
+                header = page.locator(".page-header, .ui-ph, .head, .crumb, main h1").first.bounding_box()
                 section = page.locator("#stay-fee-settings").bounding_box()
                 assert header and section and section["width"] > 0
                 assert section["x"] >= header["x"] - 2
