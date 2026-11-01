@@ -9,6 +9,7 @@ sync_api = pytest.importorskip("playwright.sync_api")
 
 from app import config  # noqa: E402
 from tests import test_havel_browser as hb  # noqa: E402
+from tests.browser_support import settle_motion  # noqa: E402
 from tests.test_submission_retry_cap import host  # noqa: E402,F401
 
 origin = hb.origin
@@ -24,6 +25,8 @@ def _open_sheet(page):
     # The first-open fetch replaces the topic nodes before filling this wrapper.
     # Wait for that swap, including the AI-off state, before measuring the chips.
     sheet.locator("[data-havel-form-wrap] > *").first.wait_for(state="attached")
+    # The sheet opens with a transform; measuring mid-animation reads a chip at 39.99 px.
+    settle_motion(page)
     return sheet
 
 

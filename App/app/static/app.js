@@ -464,6 +464,7 @@
     }
 
     document.querySelectorAll("[data-birth-date]").forEach(function (input) {
+      if (!claimNode(input, "initBirthDateInputs")) return;
       function apply(value) {
         var digits = String(value || "").replace(/\D/g, "").slice(0, 8);
         var formatted = formatDigits(digits);
@@ -575,6 +576,7 @@
 
   function initAutomationFields() {
     document.querySelectorAll("[data-automation-mode]").forEach(function (select) {
+      if (!claimNode(select, "initAutomationFields")) return;
       syncAutomationHours(select);
       select.addEventListener("change", function () { syncAutomationHours(select); });
     });
@@ -585,6 +587,7 @@
   // visible Save button sends without JS; shows "Saved" or the server's error.
   function initInlineTiming() {
     document.querySelectorAll("form[data-inline-timing]").forEach(function (form) {
+      if (!claimNode(form, "initInlineTiming")) return;
       if (!window.fetch || !window.FormData) return;
       var select = form.querySelector("[data-timing-mode]");
       var hours = form.querySelector("[data-timing-hours-input]");
@@ -644,6 +647,7 @@
 
   function initControllerFields() {
     document.querySelectorAll("[data-controller-same-toggle]").forEach(function (checkbox) {
+      if (!claimNode(checkbox, "initControllerFields")) return;
       var panel = document.getElementById(checkbox.getAttribute("data-controller-target"));
       if (!panel) return;
       var select = panel.querySelector("select");
@@ -663,6 +667,7 @@
     var source = document.getElementById("fee-copy-source");
     var button = document.getElementById("fee-copy-apply");
     if (!source || !button) return;
+    if (!claimNode(button, "initFeeTemplateCopy")) return;
     button.addEventListener("click", function () {
       var option = source.options[source.selectedIndex];
       if (!option || !option.value) return;
@@ -698,8 +703,10 @@
   function initHousebookPdfExport() {
     var dialog = document.getElementById("housebook-pdf-dialog");
     if (!dialog) return;
+    if (!claimNode(dialog, "initHousebookPdfExport")) return;
     var form = document.getElementById("housebook-pdf-form");
     document.querySelectorAll("[data-housebook-pdf-export]").forEach(function (button) {
+      if (!claimNode(button, "initHousebookPdfExport")) return;
       button.addEventListener("click", function (event) {
         event.preventDefault();
         var pageFrom = document.getElementById("from");
@@ -727,11 +734,13 @@
   function initCsvExport() {
     var dialog = document.getElementById("csv-export-dialog");
     if (!dialog) return;
+    if (!claimNode(dialog, "initCsvExport")) return;
     var form = document.getElementById("csv-export-form");
     var pending = { base: "", params: "", scopeLabel: "" };
     var scope = dialog.querySelector("[data-csv-scope-label]");
 
     document.querySelectorAll("[data-csv-export]").forEach(function (button) {
+      if (!claimNode(button, "initCsvExport")) return;
       button.addEventListener("click", function (event) {
         event.preventDefault();
         pending.base = button.getAttribute("data-csv-export") || "";
@@ -914,6 +923,7 @@
 
   function initTogglePanels() {
     document.querySelectorAll("[data-toggle-panel]").forEach(function (button) {
+      if (!claimNode(button, "initTogglePanels")) return;
       button.addEventListener("click", function () {
         var panelId = button.getAttribute("data-toggle-panel");
         var panel = document.getElementById(panelId);
@@ -931,6 +941,7 @@
       });
     });
     document.querySelectorAll("[data-close-panel]").forEach(function (button) {
+      if (!claimNode(button, "initTogglePanels")) return;
       button.addEventListener("click", function () {
         var panel = button.closest(".action-panel");
         if (panel) panel.classList.add("hidden");
@@ -938,7 +949,7 @@
     });
     if (new URLSearchParams(window.location.search).get("new") === "1") {
       var addPanel = document.getElementById("add-stay-panel");
-      if (addPanel) {
+      if (addPanel && claimNode(addPanel, "initTogglePanels")) {
         addPanel.classList.remove("hidden");
         var first = addPanel.querySelector("input, select, textarea");
         if (first) first.focus();
@@ -965,9 +976,12 @@
       });
     }
     document.querySelectorAll("[data-open-details]").forEach(function (link) {
+      if (!claimNode(link, "initDetailsLinks")) return;
       link.addEventListener("click", function () { openTarget(link.hash); });
     });
-    window.addEventListener("hashchange", function () { openTarget(window.location.hash); });
+    if (claimNode(window, "initDetailsLinks")) {
+      window.addEventListener("hashchange", function () { openTarget(window.location.hash); });
+    }
     openTarget(window.location.hash);
   }
 
@@ -982,6 +996,7 @@
 
   function initNotifications() {
     document.querySelectorAll("form[data-notification-dismiss]").forEach(function (form) {
+      if (!claimNode(form, "initNotifications")) return;
       form.addEventListener("submit", function (event) {
         event.preventDefault();
         var notification = form.closest("[data-notification]");
@@ -1044,6 +1059,7 @@
     });
     var signatures = new Set();
     toasts.forEach(function (toast, index) {
+      if (!claimNode(toast, "initToasts")) return;
       var kind = toastKind(toast);
       var messageNode = toast.querySelector(".grow");
       var message = messageNode ? messageNode.textContent.trim() : toast.textContent.trim();
@@ -1334,6 +1350,7 @@
   /* Legacy auto-submit remains available only to forms that explicitly opt in. */
   function initAutoFilters() {
     document.querySelectorAll("form[data-auto-submit]").forEach(function (form) {
+      if (!claimNode(form, "initAutoFilters")) return;
       form.querySelectorAll("select, input[type=date], input[type=month]").forEach(function (input) {
         input.addEventListener("change", function () {
           if (input.type === "date") {
@@ -1372,10 +1389,12 @@
 
   function initGeneratedPasswords() {
     document.querySelectorAll("[data-generated-password]").forEach(function (input) {
+      if (!claimNode(input, "initGeneratedPasswords")) return;
       if (!input.value) fillGeneratedPassword(input);
     });
 
     document.querySelectorAll("[data-generate-password]").forEach(function (button) {
+      if (!claimNode(button, "initGeneratedPasswords")) return;
       button.addEventListener("click", function () {
         var field = button.closest(".password-generate");
         if (!field) return;
@@ -1394,6 +1413,7 @@
     var form = document.getElementById("reset-password-form");
     var label = document.getElementById("reset-password-label");
     if (!dialog || !form || !label) return;
+    if (!claimNode(dialog, "initResetPasswordDialog")) return;
 
     document.querySelectorAll("[data-reset-password]").forEach(function (button) {
       button.addEventListener("click", function () {
@@ -1422,6 +1442,7 @@
     var body = document.getElementById("confirm-body");
     var proceed = shell && shell.querySelector("[data-confirm-proceed]");
     if (!dialog || !shell) return;
+    if (!claimNode(shell, "initConfirmDialog")) return;
     var pendingForm = null;
     var pendingButton = null;
 
@@ -1816,6 +1837,7 @@
     var key = "ubyhost-saved-stay-views";
     var container = document.querySelector("[data-saved-views]");
     var button = document.querySelector("[data-save-view]");
+    if (button && !claimNode(button, "initSavedViews")) return;
     var views = [];
     try { views = JSON.parse(localStorage.getItem(key) || "[]"); } catch (error) { views = []; }
 
@@ -1854,6 +1876,7 @@
 
   function initInlineEdit() {
     document.querySelectorAll("form[data-inline-edit]").forEach(function (form) {
+      if (!claimNode(form, "initInlineEdit")) return;
       var status = form.querySelector(".inline-edit-status");
       form.addEventListener("submit", function (event) {
         event.preventDefault();
@@ -1882,6 +1905,7 @@
     // request died on the UNIQUE index with a 500. The uid is collision proof
     // now; this is the visible half of the fix, so a click has one effect.
     document.querySelectorAll(".action-panel form").forEach(function (form) {
+      if (!claimNode(form, "initSubmitGuard")) return;
       form.addEventListener("submit", function (event) {
         // A confirm dialog or a fetch handler owns this submit and may hand it
         // back, so never disable a button for a submission that did not start.
@@ -1894,12 +1918,14 @@
     });
     // Coming back with the browser's back button restores the button's own
     // disabled state, so clear ours on every restore.
-    window.addEventListener("pageshow", function () {
-      document.querySelectorAll("[data-submit-guard]").forEach(function (button) {
-        button.disabled = false;
-        button.removeAttribute("data-submit-guard");
+    if (claimNode(window, "initSubmitGuard")) {
+      window.addEventListener("pageshow", function () {
+        document.querySelectorAll("[data-submit-guard]").forEach(function (button) {
+          button.disabled = false;
+          button.removeAttribute("data-submit-guard");
+        });
       });
-    });
+    }
   }
 
   /* 0093 help: contextual "?" tips (macro help_tip). Hover/focus/tap open, Esc and outside click close. */
@@ -2141,22 +2167,25 @@
   function initUnsavedForms() {
     var forms = Array.prototype.slice.call(document.querySelectorAll("form[data-unsaved-guard]"));
     if (!forms.length) return;
-    var submitting = null;
     forms.forEach(function (form) {
+      if (!claimNode(form, "initUnsavedForms")) return;
       var mark = function () { form.setAttribute("data-dirty", "1"); };
       form.addEventListener("input", mark);
       form.addEventListener("change", mark);
-      form.addEventListener("submit", function () { submitting = form; });
+      form.addEventListener("submit", function () { form._ubySubmitting = true; });
     });
-    window.addEventListener("beforeunload", function (event) {
-      var unsaved = forms.some(function (form) {
-        return form !== submitting && form.getAttribute("data-dirty") === "1";
+    if (claimNode(window, "initUnsavedForms")) {
+      window.addEventListener("beforeunload", function (event) {
+        var current = Array.prototype.slice.call(document.querySelectorAll("form[data-unsaved-guard]"));
+        var unsaved = current.some(function (form) {
+          return form.getAttribute("data-dirty") === "1" && form._ubySubmitting !== true;
+        });
+        current.forEach(function (form) { form._ubySubmitting = false; });
+        if (!unsaved) return;
+        event.preventDefault();
+        event.returnValue = "";
       });
-      submitting = null;
-      if (!unsaved) return;
-      event.preventDefault();
-      event.returnValue = "";
-    });
+    }
   }
 
   /* ---- 0084 O1: unsaved changes, in-app Save / Discard / Stay ----------------
@@ -2221,6 +2250,7 @@
     }
 
     forms.forEach(function (form) {
+      if (!claimNode(form, "initUnsavedDialog")) return;
       form.addEventListener("input", syncResetButtons);
       form.addEventListener("change", syncResetButtons);
       form.querySelectorAll("[data-unsaved-reset]").forEach(function (button) {
@@ -2234,9 +2264,10 @@
     });
     syncResetButtons();
     // Back/Forward may restore typed values without input events.
-    window.addEventListener("pageshow", syncResetButtons);
+    if (claimNode(window, "initUnsavedDialog")) window.addEventListener("pageshow", syncResetButtons);
 
     if (!dialog || typeof dialog.showModal !== "function") return;
+    if (!claimNode(dialog, "initUnsavedDialog")) return;
     var stay = dialog.querySelector("[data-unsaved-stay]");
     var discardBtn = dialog.querySelector("[data-unsaved-discard]");
     var save = dialog.querySelector("[data-unsaved-save]");
