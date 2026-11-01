@@ -189,6 +189,7 @@ CARD_JS = """() => {
     return {
       kind: li.dataset.needsYou, tone: li.dataset.tone, text: copy.textContent.trim().slice(0, 80), box: rect(li),
       border: [style(li).borderTopStyle, parseFloat(style(li).borderTopWidth), parseFloat(style(li).borderLeftWidth), style(li).borderLeftColor],
+      icon: style(li.querySelector('.needs-you-icon')).backgroundColor, iconBox: rect(li.querySelector('.needs-you-icon')),
       copy: rect(copy), copyOverflow: copy.scrollWidth > copy.clientWidth + 1,
       buttons: buttons.map(b => Object.assign(rect(b), {text: b.innerText.trim(), clipped: b.scrollWidth > b.clientWidth + 1})),
     };
@@ -224,7 +225,11 @@ def _check_card(geo, width, label):
     assert geo["scroll"] <= 1, (label, "horizontal scroll", geo["scroll"])
     assert not geo["stack"], f"{label}: the alert stack is shown next to the card"
     card = geo["card"]
-    assert geo["cardBorder"][0] == "solid" and geo["cardBorder"][1] >= 1, (label, geo["cardBorder"])
+    if width >= 768:
+        # 0701: at computer width the box has no frame; each line is a card instead.
+        assert geo["cardBorder"][1] == 0, (label, "card still framed at computer width", geo["cardBorder"])
+    else:
+        assert geo["cardBorder"][0] == "solid" and geo["cardBorder"][1] >= 1, (label, geo["cardBorder"])
     for edge in ("l", "r"):
         assert abs(card[edge] - geo["header"][edge]) <= 2, (label, "lane", card, geo["header"])
         if geo["calendar"]:
@@ -237,13 +242,20 @@ def _check_card(geo, width, label):
         box, copy = item["box"], item["copy"]
         assert box["l"] >= card["l"] - 0.5 and box["r"] <= card["r"] + 0.5, where
         assert item["border"][0] == "solid" and item["border"][1] >= 1, where + (item["border"],)
-        assert item["border"][2] >= 3.5, where + (item["border"],)
-        tone_colours.setdefault(item["tone"], set()).add(item["border"][3])
+        if width >= 768:
+            # 0701: a card with a 44 px tinted tile; no coloured left edge, the tone is the tile.
+            assert item["border"][2] <= 1.0, where + (item["border"],)
+            assert abs(item["iconBox"]["w"] - 44) <= 0.5 and abs(item["iconBox"]["h"] - 44) <= 0.5, where + (item["iconBox"],)
+            tone_colours.setdefault(item["tone"], set()).add(item["icon"])
+        else:
+            assert item["border"][2] >= 3.5, where + (item["border"],)
+            tone_colours.setdefault(item["tone"], set()).add(item["border"][3])
         assert not item["copyOverflow"], where
         assert copy["l"] >= box["l"] - 0.5 and copy["r"] <= box["r"] + 0.5, where
         assert 1 <= len(item["buttons"]) <= 2, where + (item["buttons"],)
         for button in item["buttons"]:
-            assert button["h"] >= 43.5, where + (button,)
+            # 0701: the computer-width buttons are the small size (6px 12px padding, 13px text).
+            assert button["h"] >= (28 if width >= 768 else 43.5), where + (button,)
             assert button["w"] >= (43.5 if width <= 767 else 39.5), where + (button,)
             assert not button["clipped"], where + (button,)
             assert button["l"] >= box["l"] - 0.5 and button["r"] <= box["r"] + 0.5, where + (button,)
