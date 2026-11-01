@@ -268,7 +268,7 @@ def test_a_stay_not_reported_past_its_deadline_is_still_critical(one_day_window)
     # 0241: the dashboard says it as a red line in "What needs you".
     dashboard = client.get("/").text
     assert f'data-tone="red" data-needs-you="stay" data-needs-you-stay="{reservation_id}"' in dashboard
-    assert host_i18n.STRINGS["en"]["needs_you.stay.overdue"] in dashboard
+    assert host_i18n.STRINGS["en"]["needs_you.short.overdue"] in dashboard
 
     for name, page in _pages(client, reservation_id).items():
         badges = _badges(page)

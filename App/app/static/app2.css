@@ -330,6 +330,8 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
 }
 body.v2 .ov-head .ov-links{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;margin:0}
 body.v2 .ov-head .ov-links > *{margin:0}
+body.v2 .ov-head .ov-quiet{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center}
+body.v2 .ov-head .ov-quiet > *{margin:0}
 body.v2 .ov-head .ov-inline{display:inline-flex}
 body.v2 .ov-how > summary{list-style:none}
 body.v2 .ov-how > summary::-webkit-details-marker{display:none}
@@ -337,6 +339,7 @@ body.v2 .ov-how > summary::-webkit-details-marker{display:none}
 /* v2 shared: Havel (copied from host2.css; delete the host2 copy when the old shell is retired) */
 body.v2{--tabbar-safe:env(safe-area-inset-bottom,0px)}
 @media (max-width:1023px){body.v2{--tabbar-h:84px}}
+@media (max-width:1023px){html:has(body.v2){scroll-padding-bottom:84px}}
 body.v2 .havel-thread{display: flex; flex-direction: column; gap: var(--space-3);}
 body.v2 .havel-msg{display: flex; flex-direction: column; max-width: 85%;}
 body.v2 .havel-msg-host{align-self: flex-end; align-items: flex-end;}
@@ -508,5 +511,8 @@ body.v2 .onboarding-intro .onboarding-logo{width: 64px; height: auto; max-width:
 @media (min-width:1024px){#needs-action .ny-sum-phone{display:none}#needs-action .ny-phone-only{display:none}}
 /* 0722: on phone the month line goes last, after Dnes (mockup order). */
 @media (max-width:1023px){body.v2 .ui-body:has(> .ov-month){display:flex;flex-direction:column}body.v2 .ov-month{order:1}}
+@media (max-width:1023px){body.v2 .ui-body:has(> .ov-month) > :not(h2.sec){margin-top:0;margin-bottom:0}body.v2 #needs-action .todo{gap:0}body.v2 #needs-action .needs-you-card-item{margin-bottom:12px}body.v2 details.needs-you-more{margin:0}}
 /* 0722: phone action buttons keep the 44 px touch target of the mockup. */
 @media (max-width:1023px){body.v2 .needs-you-actions .btn{min-height:44px}}
+
+@media (max-width:767px){body.v2 .cal-day-number{min-width:44px}}

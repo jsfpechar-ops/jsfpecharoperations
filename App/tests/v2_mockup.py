@@ -45,6 +45,9 @@ SELECTOR_ALIASES = {".actbar": ".bar", ".actbar .btn": ".bar .btn", ".head h1": 
 BOX_PROPS = ("width", "height", "margin-top", "margin-right", "margin-bottom", "margin-left")
 # phone box departure: the 20 px side room comes from body.v2 .main padding, so phone cards have no side margin (2026-11-01)
 BOX_OVERRIDES = {
+    # the pill width follows its status label text, which differs from the mockup demo copy (0724)
+    ".hs .pill@320": {"width": "143px"},
+    ".hs .pill@390": {"width": "143px"},
     ".card.me": {"margin-left": "0px", "margin-right": "0px"},
     ".big": {"margin-left": "0px", "margin-right": "0px"},
     "h2.sec": {"margin-left": "0px", "margin-right": "0px"},
