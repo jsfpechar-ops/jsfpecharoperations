@@ -7,7 +7,7 @@ Updated: 2026-11-01.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
-- 2026-11-01: signup review ([doc](https://claude.ai/artifact/TvJg7LuxPKaAviufqsCU8u)). 0490 Ceník copy (Standard/Max, bands, no OCR row, no 10+ mailto), 0491 calmer first screen (verify to /, no saved-plan card, 2FA pop-up after 7 days). Owner kept monthly and yearly.
+- 2026-11-01: signup review: 0490 Ceník copy, 0491 calmer first screen. Monthly and yearly both stay (owner).
 - 2026-11-01: **Production on PostgreSQL** since 2026-10-31 23:56Z (39 s downtime; SQLite kept at `/data/ubyhost.db`, rollback `./scripts/pg-cutover.sh rollback`). Deployed: goose in deploy.sh (#618), indexes (#620), no writer lock (#619), job queue (#622), Go G1a (#621), Go container behind profile `go` (#624), 0467b (#625). Open: G3a Go billing_snapshot job (#631). Next: G3, G5, G4 after the redesign, G6 ([plan v4](../plans/postgresql/migration-plan-v4.md)).
 - #583 merged: guest save-and-continue, visible acknowledgement, contextual help. #587 open: 0452 read-only billing extract + 0454 host UX + handoff documentation.
 - Billing cockpit merged (#561). 0448 merged (#565): first plan to legacy hosts (immediate start, invoice now, no trial) + trial extension 1–365 days. Decisions 2026-10-29 in decisions.md.
@@ -15,7 +15,7 @@ Updated: 2026-11-01.
 - 0429 payments UX: next 0435-36 rails, 0430-34 pages (#551, #553, #554 merged).
 - 0290 passkey CI/phone; #435 merge; TTLock #434 CI pending. #432 subdomain live; root login/calendar review pending.
 - Foolproof 0230-0278, reset 0165-0183 (#405); phone app + alerts (0219, 0225-0229, #421). **Owner:** deploy, phone.
-- Langs 0196: vi host app, uk guest form. **Owner:** add `uk` to `UBYHOST_GUEST_LANGS`; deploy.
+- Langs 0196: **Owner:** add `uk` to `UBYHOST_GUEST_LANGS`.
 - AI crawler block 0195: Terms §11 TDM v1.7, lawyer to confirm. Cleaning 0104: #396 CI/staging review.
 - Credential letter to data box ybndqw9. **LAWYER REVIEW** legal v1.7 (0005), if unsigned.
 
