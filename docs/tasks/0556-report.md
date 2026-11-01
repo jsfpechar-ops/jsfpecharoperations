@@ -1,6 +1,6 @@
 # 0556 report: Go collect_sendable
 
-Status: blocked
+Status: review
 
 ## Files
 - `go/internal/ubyport/collect.go` (new): LoadApartment, CollectOptions, CollectSendable, DueForAutomaticSend, ReportingDeadline, decrypt helper.
@@ -9,10 +9,13 @@ Status: blocked
 
 ## Commands
 - `gofmt -l ./internal/ubyport/` empty; `go vet ./internal/ubyport/` clean.
-- `go test ./internal/ubyport/ -run 'Collect|ReportingDeadline' -count=1 -v`: TestReportingDeadline PASS. All DB tests FAIL at connect: `admin connect failed`.
-- Cause: `psql` with the brief URL (`postgres://postgres:ubyhost@127.0.0.1/ubyhost_test`) and with `/postgres` both return `password authentication failed for user "postgres"`. Postgres is accepting connections on 5432. `UBYHOST_TEST_DATABASE_URL` is not set in the environment. I did not look for other credentials.
-- Skip count: not measured; the DB tests need the URL to run. Must be 0 before merge.
-- `python3 scripts/context_lint.py`: not run (not reached).
+- `go test ./internal/ubyport/ -count=1 -v` with `UBYHOST_TEST_DATABASE_URL=postgres://postgres:ubyhost@127.0.0.1/postgres`: all pass, 0 skipped.
+  Tail:
+  ```
+  ok  	github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport	22.624s
+  ```
+- Fixture fix: reservation inserts now set date_from and date_to (NOT NULL).
+- `python3 scripts/context_lint.py`: OK.
 
 ## Deviations from the brief
 - No GuestMeta struct. Claim and batch fields are already in OutcomeGuest and BatchPair; the filter-only fields stay in an internal struct.
@@ -23,6 +26,3 @@ Status: blocked
 - The stale-signature warning log line is not ported.
 - The brief's "blocked duplicate" case uses the sample text "duplicate record".
 
-## Owner step
-Give the executor a working `UBYHOST_TEST_DATABASE_URL`, then rerun:
-`cd go && UBYHOST_TEST_DATABASE_URL=<url> go test ./internal/ubyport/ -count=1 -v 2>&1 | tail -30`

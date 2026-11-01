@@ -83,7 +83,7 @@ func collectAddStay(t *testing.T, pool *pgxpool.Pool, aptID int64, res, guest ma
 	var resID, guestID int64
 	uid := fmt.Sprintf("uid-%d", time.Now().UnixNano())
 	if err := pool.QueryRow(ctx,
-		`INSERT INTO reservation (apartment_id, uid, created_at, updated_at) VALUES ($1, $2, $3, $3) RETURNING id`,
+		`INSERT INTO reservation (apartment_id, uid, date_from, date_to, created_at, updated_at) VALUES ($1, $2, '2026-12-01', '2026-12-03', $3, $3) RETURNING id`,
 		aptID, uid, ts).Scan(&resID); err != nil {
 		t.Fatal(err)
 	}
