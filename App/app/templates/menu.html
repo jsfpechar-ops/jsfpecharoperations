@@ -11,7 +11,7 @@
   <a class="tile" href="/reservations"><b>{{ t('menu.tile.guests') }}</b><small>{{ t('menu.tile.when') }}</small><span class="v">{{ month.guests }}</span></a>
   <a class="tile" href="/submissions"><b>{{ t('menu.tile.police') }}</b><small>{{ t('menu.tile.when') }}</small><span class="v">{{ month.reported }}</span></a>
 </div>
-<a class="promo" href="/apartments/new"><span class="pi" aria-hidden="true">{{ icon('plus', 24) }}</span><span><b>{{ t('apartments.add') }}</b><small>{{ t('menu.add_property_sub') }}</small></span></a>
+<a class="promo" href="/reservations?new=1"><span class="pi" aria-hidden="true">{{ icon('plus', 24) }}</span><span><b>{{ t('stays.add_stay') }}</b><small>{{ t('menu.add_stay_sub') }}</small></span></a>
 <nav class="list plain" aria-label="{{ t('nav.menu') }}">
   <a class="row" href="/cleaning">{{ icon('brush-cleaning', 26) }}<span class="t">{{ t('nav.cleaning') }}</span>{% if cleaning_today %}<span class="badge">{{ cleaning_today }}</span>{% endif %}{{ icon('chevron-right', 20, 'chev') }}</a>
   <a class="row" href="/stay-fees">{{ icon('receipt', 26) }}<span class="t">{{ t('nav.stay_fees') }}</span>{{ icon('chevron-right', 20, 'chev') }}</a>
