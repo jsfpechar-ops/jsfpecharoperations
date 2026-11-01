@@ -1,6 +1,6 @@
 # 0623: Stripe webhook hardening and account mirror fixes
 
-Status: in-progress
+Status: review
 Depends on: 0622 (uses `payment_links.PAID_EVENTS`) | Base commit: after 0622 merged | Branch: task/0623-stripe-webhook-hardening
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
