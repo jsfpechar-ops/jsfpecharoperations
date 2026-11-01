@@ -11,7 +11,7 @@ Status: blocked
 - `gofmt -l .` empty; `go vet ./...` clean.
 - `go test ./internal/ubyport/ -count=1 -v -run Recover`: PASS (TestRecoverLiveClaimLeftAlone, TestRecoverStaleBatches).
 - `go test ./internal/ubyport/ -count=1`: `ok ... 23.694s`. Skip count: 0.
-- `python3 scripts/context_lint.py`: not run (stopped before the lint step).
+- `python3 scripts/context_lint.py`: "context lint: OK" (warning only: status.md is behind, for the orchestrator).
 
 ## Checklist (brief section 4)
 - [x] Step 1, part: RecoverStaleSubmissions
