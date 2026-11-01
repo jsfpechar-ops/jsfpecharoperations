@@ -359,6 +359,12 @@ body.v2 .pv-state[data-state="bad"]{background:var(--bads);color:var(--bad)}
   body.v2 .form{display:grid;grid-template-columns:minmax(0,1fr) 300px;align-items:start}
   body.v2 .preview{position:sticky;top:24px}
 }
+/* 0535 step 5: desktop tap targets and text size on the property page (0710 geometry guard) */
+body.v2 .crumb a{display:inline-block;min-height:24px;line-height:24px}
+body.v2 details .help-tip-btn{min-width:24px;min-height:24px;box-sizing:border-box}
+body.v2 details a{display:inline-block;min-height:24px;line-height:24px}
+body.v2 details small,body.v2 .preview small{font-size:12px}
+body.v2 details input{min-height:24px}
 /* 0535 step 3: no sideways scroll at 320-1023 px (generic control fixes, property page) */
 @media (max-width:1023px){
   body.v2 details *{min-width:0}

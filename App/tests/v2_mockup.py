@@ -20,6 +20,8 @@ STYLE_PROPS = (
 COLOR_OVERRIDES = {"rgb(212, 71, 47)": "rgb(208, 69, 45)", "rgb(138, 138, 132)": "rgb(107, 107, 101)"}
 # accessibility (AA contrast, 12 px minimum), 2026-11-01
 SELECTOR_OVERRIDES = {
+    # 0535: property page summary text is 12 px (geometry guard: no text under 12 px); the mockup uses 11.67 px
+    "summary small": {"font-size": "12px"},
     ".side .nav": {"color": "rgb(184, 61, 40)", "border-bottom-color": "rgb(184, 61, 40)"},
     ".side .nav.on": {"color": "rgb(184, 61, 40)", "border-bottom-color": "rgb(184, 61, 40)"},
     ".cal .cd": {"font-size": "12px", "color": "rgb(184, 61, 40)", "border-bottom-color": "rgb(184, 61, 40)"},
@@ -135,6 +137,16 @@ PAGES = [
             ".cover .ini": (["width"], "initials come from the property name"),
             ".card.prop": (["height"], "card height follows how the chips wrap"),
         },
+    },
+    {
+        "name": "property",
+        "path": "/apartments/{first_property}",  # filled per test by _path() in test_0710 (0535)
+        "view": "prop",
+        "selectors": [  # .guest-card (permalink card) has no mockup counterpart: not compared (0535)
+            ".crumb", "main h1", "details", "summary b", "summary small",
+            ".preview h3", ".pv", ".pv .r", ".savebar .btn",
+        ],
+        "missing_ok": {},
     },
     {
         "name": "menu",
