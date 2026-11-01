@@ -7188,7 +7188,6 @@ for _lang, _strings in _PROPERTY_CREATE_0092_STRINGS.items():
 # 0094: property tabs, Settings groups and the door-code switch.
 _PROPERTY_NAV_0094_STRINGS = {
     "en": {
-        "property_nav.tabs_aria": "Property",
         "property_page.guest_link.title": "Guest link",
         "property_page.sec.basics.title": "Basic details",
         "property_page.sec.basics.sub": "Name and address of the property",
@@ -7204,10 +7203,6 @@ _PROPERTY_NAV_0094_STRINGS = {
         "property_page.sec.archive.sub": "Hide the property from the list",
         "property_page.sec.calendars.title": "Calendars",
         "property_page.sec.calendars.sub": "Airbnb and Booking",
-        "property_nav.overview": "Overview",
-        "property_nav.bookings": "Bookings & calendars",
-        "property_nav.settings": "Settings",
-        "property_nav.settings_aria": "Settings sections",
         "property_nav.group.property": "Property information",
         "property_nav.group.guests": "Guest experience",
         "property_nav.group.reporting": "Reporting & fees",
@@ -7225,7 +7220,6 @@ _PROPERTY_NAV_0094_STRINGS = {
         "property_nav.address_missing": "Address not added yet",
     },
     "cs": {
-        "property_nav.tabs_aria": "Ubytování",
         "property_page.guest_link.title": "Odkaz pro hosty",
         "property_page.sec.basics.title": "Základní údaje",
         "property_page.sec.basics.sub": "Název a adresa nemovitosti",
@@ -7241,10 +7235,6 @@ _PROPERTY_NAV_0094_STRINGS = {
         "property_page.sec.archive.sub": "Skrýt nemovitost ze seznamu",
         "property_page.sec.calendars.title": "Kalendáře",
         "property_page.sec.calendars.sub": "Airbnb a Booking",
-        "property_nav.overview": "Přehled",
-        "property_nav.bookings": "Rezervace a kalendáře",
-        "property_nav.settings": "Nastavení",
-        "property_nav.settings_aria": "Části nastavení",
         "property_nav.group.property": "Údaje o ubytování",
         "property_nav.group.guests": "Pro hosty",
         "property_nav.group.reporting": "Hlášení a poplatky",
@@ -8749,7 +8739,6 @@ for _lang, _strings in _DOOR_CODE_WINDOW_STRINGS.items():
 _GUEST_GUIDE_STRINGS = {
     "en": {
         "guest_guide.title": "Guest guide",
-        "guest_guide.tab": "Guest guide",
         "guest_guide.progress": "%(answered)s of %(total)s cards answered",
         "guest_guide.progress_live": "%(answered)s of %(total)s cards answered, guide is live",
         "guest_guide.continue": "Continue",
@@ -8988,7 +8977,6 @@ _GUEST_GUIDE_STRINGS = {
     },
     "cs": {
         "guest_guide.title": "Průvodce pro hosty",
-        "guest_guide.tab": "Průvodce pro hosty",
         "guest_guide.progress": "Vyřízeno %(answered)s z %(total)s karet",
         "guest_guide.progress_live": "Vyřízeno %(answered)s z %(total)s karet, průvodce je zveřejněný",
         "guest_guide.continue": "Pokračovat",
