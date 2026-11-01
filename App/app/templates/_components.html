@@ -300,9 +300,15 @@
 {% endmacro %}
 
 {% macro copy_button(target_id, label='') %}
+  {% if v2 | default(false) %}
+  <button class="btn ghost sm copy-btn" type="button" data-copy="{{ target_id }}"
+          data-copy-label="{{ label or t('common.copy') }}" data-copied-label="{{ t('common.copied') }}"
+          aria-label="{{ label or t('common.copy') }}"><span class="btn-icon-label" data-copy-label-slot>{{ label or t('common.copy') }}</span></button>
+  {% else %}
   <button class="ui-btn ui-btn-secondary ui-btn-icon ui-btn-compact copy-btn" type="button" data-copy="{{ target_id }}"
           data-copy-label="{{ label or t('common.copy') }}" data-copied-label="{{ t('common.copied') }}"
           aria-label="{{ label or t('common.copy') }}">{{ icon('copy', 16) }}<span class="btn-icon-label" data-copy-label-slot hidden></span><span class="sr-only">{{ label or t('common.copy') }}</span></button>
+  {% endif %}
 {% endmacro %}
 
 {# Copy a value straight from a list row, so chasing a guest is one click. #}

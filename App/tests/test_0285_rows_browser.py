@@ -47,7 +47,7 @@ def test_properties_rows_match_stays_rows(base):
             page.goto(base + "/reservations?range=all&lang=en")
             stays = page.evaluate(ROW, "table.ui-table tbody tr")
             page.goto(base + "/apartments?lang=en")
-            for selector in (".props-card table tbody tr",):
+            for selector in ("table.properties-table tbody tr",):
                 row = page.evaluate(ROW, selector)
                 assert row == stays, (width, selector, row, stays)
             page.goto(base + "/entities?lang=en")

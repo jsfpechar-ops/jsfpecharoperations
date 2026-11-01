@@ -8,7 +8,7 @@ TEMPLATES = Path(__file__).resolve().parent.parent / "app" / "templates"
 def test_apartments_copy_buttons_use_the_one_copy_button_component(host_with_property):
     page = host_with_property.get("/apartments?lang=en").text
     assert page.count('class="btn-icon" type="button" data-copy=') == 0
-    assert "copy-btn" not in page  # 0532: the Copy link column is gone from /apartments
+    assert "copy-btn" in page
 
 
 def test_copy_button_macro_has_no_quiet_badge_variant():
