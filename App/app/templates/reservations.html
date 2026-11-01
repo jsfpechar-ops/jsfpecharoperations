@@ -132,9 +132,8 @@
   <table class="ui-table ui-table-stack">
     <thead>
       <tr>
-        <th class="stay-col-stay">{{ t('stays.table.stay') }}</th>
+        <th class="stay-col-stay">{{ t('stays.table.guest') }}</th>
         <th class="stay-col-dates">{{ t('host.stay_dates') }}</th>
-        <th class="stay-col-guests">{{ t('stays.table.guests') }}</th>
         <th class="stay-col-reporting">{{ t('stays.table.reporting') }}</th>
         <th class="stay-col-actions"><span class="sr-only">{{ t('common.open') }}</span></th>
       </tr>
@@ -143,6 +142,8 @@
     {% for row in rows %}
       {% set reservation = row.reservation %}
       {% set progress = row.progress %}
+      {% set lead = (progress.guests | selectattr('is_lead') | first) or (progress.guests | first) %}
+      {% set lead_name = ((lead.first_name or '') ~ ' ' ~ (lead.surname or '')) | trim if lead else '' %}
       {% set check_in = deadline_anchor(reservation, progress.guests) %}
       {% set check_out = parse_iso_date(reservation.date_to) %}
       {% set stay_label = reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else reservation.internal_name %}
@@ -150,9 +151,8 @@
           tabindex="0" role="link"
           aria-label="{{ stay_label }} · {{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}">
         <td class="ui-cell-first stay-col-stay" data-card="primary" data-label="{{ t('stays.table.stay') }}">
-          {{ property_identity(reservation.apartment_id, '') }}<a class="row-primary-link stay-identity-link" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}">{{ stay_label }}</a>
-          <div class="ui-sub stay-col-source">{{ source_badge(reservation.source, source_label(reservation)) }}</div>
-          {% if stay_label != reservation.internal_name %}<div class="ui-sub">{{ reservation.internal_name }}</div>{% endif %}
+          {{ property_identity(reservation.apartment_id, '') }}<a class="row-primary-link stay-identity-link" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}">{{ lead_name or (reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else t('stays.row.no_name')) }}</a>
+          <div class="ui-sub stay-col-source">{{ guest_count(progress, placeholder=true) }} &middot; {{ source_badge(reservation.source, source_label(reservation)) }}</div>
         </td>
         <td class="nowrap stay-col-dates" data-card="secondary" data-label="{{ t('host.stay_dates') }}">
           <a class="stay-date-link" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}">{{ reservation.date_from | date_short }} – {{ reservation.date_to | date_short }}</a>
@@ -163,7 +163,6 @@
             {%- endif %}
           </div>
         </td>
-        <td class="num stay-col-guests" data-card="meta" data-label="{{ t('stays.table.guests') }}">{{ guest_count(progress, placeholder=true) }}</td>
         <td class="stay-col-reporting" data-card="badge" data-label="{{ t('stays.table.reporting') }}">
           {% if reservation.status != 'active' %}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('stays.filter.state.' ~ reservation.status) }}</span>
           {% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo=('(demo)' in reservation.internal_name or reservation.source == 'demo'), step=journey_step(progress.status)) }}{% endif %}

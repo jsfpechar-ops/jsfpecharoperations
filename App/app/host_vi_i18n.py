@@ -1223,6 +1223,8 @@ STRINGS: Dict[str, str] = {
     "stays.table.guests": "Khách",
     "stays.table.reporting": "Khai báo",
     "stays.housebook_download": "Tải sổ lưu trú",
+    "stays.table.guest": "Khách",
+    "stays.row.no_name": "Chưa có tên",
     "stays.table.deadline": "Hạn chót",
     "stays.table.nights": "%(count)s đêm",
     "stays.table.nights.one": "%(count)s đêm",
