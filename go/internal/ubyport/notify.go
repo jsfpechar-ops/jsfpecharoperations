@@ -235,36 +235,11 @@ func QueueSubmissionProblemMail(ctx context.Context, pool *pgxpool.Pool, getenv 
 		id := stays[0].ID
 		reservationID = &id
 	}
-	var existing int64
-	err = pool.QueryRow(ctx, `SELECT id FROM email_outbox WHERE idempotency_key = $1`, key).Scan(&existing)
-	if err == nil {
-		return existing, nil
-	}
-	if !errors.Is(err, pgx.ErrNoRows) {
-		return 0, errNotifyMail
-	}
-	ts := UTCNow()
-	var id int64
-	err = pool.QueryRow(ctx,
-		`INSERT INTO email_outbox (idempotency_key, kind, reservation_id, apartment_id, owner_user_id,
-		   to_email, cc_email, subject, payload, state, attempts, next_attempt_at, created_at, updated_at)
-		 VALUES ($1, 'submission_problem', $2, $3, $4, $5, NULL, $6, $7, 'queued', 0, $8, $8, $8)
-		 RETURNING id`,
-		key, reservationID, apt.ID, apt.OwnerUserID, to,
-		cutRunes(content.Subject, mailSubjectMax), mailPayload(content.Text, content.HTML), ts,
-	).Scan(&id)
-	if err == nil {
-		return id, nil
-	}
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-		// Lost a race with another worker: the row exists, return its id.
-		if err := pool.QueryRow(ctx, `SELECT id FROM email_outbox WHERE idempotency_key = $1`, key).Scan(&id); err != nil {
-			return 0, errNotifyMail
-		}
-		return id, nil
-	}
-	return 0, errNotifyMail
+	return EnqueueMail(ctx, pool, OutboxMail{
+		Kind: "submission_problem", Key: key, ReservationID: reservationID,
+		ApartmentID: apt.ID, OwnerUserID: apt.OwnerUserID, To: to,
+		Subject: content.Subject, Text: content.Text, HTML: content.HTML,
+	})
 }
 
 // QueueFilingProblemPush is push.filing_problem: one alert per device of the
@@ -291,11 +266,76 @@ func QueueFilingProblemPush(ctx context.Context, pool *pgxpool.Pool, getenv func
 	if len(stays) == 1 {
 		url = fmt.Sprintf("/reservations/%d", stays[0].ID)
 	}
-	params, err := pyJSONParams(AlertParams{"property": cutRunes(apt.InternalName, pushParamMax)})
-	if err != nil || params == nil {
+	return QueuePush(ctx, pool, getenv, owner, "filing_problem", key, url,
+		AlertParams{"property": cutRunes(apt.InternalName, pushParamMax)})
+}
+
+// OutboxMail is one email_outbox row to queue. A nil ReservationID is NULL.
+// To must already be normalised; Text and HTML are the bodies, Subject is cut
+// to 200 runes by EnqueueMail.
+type OutboxMail struct {
+	Kind          string
+	Key           string
+	ReservationID *int64
+	ApartmentID   int64
+	OwnerUserID   *int64
+	To            string
+	Subject       string
+	Text          string
+	HTML          string
+}
+
+// EnqueueMail is mail.enqueue for one row. An existing idempotency key returns
+// its id; a unique-violation race returns the winner's id. Errors carry no
+// address, text or key.
+func EnqueueMail(ctx context.Context, pool *pgxpool.Pool, m OutboxMail) (int64, error) {
+	var existing int64
+	err := pool.QueryRow(ctx, `SELECT id FROM email_outbox WHERE idempotency_key = $1`, m.Key).Scan(&existing)
+	if err == nil {
+		return existing, nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return 0, errNotifyMail
+	}
+	ts := UTCNow()
+	var id int64
+	err = pool.QueryRow(ctx,
+		`INSERT INTO email_outbox (idempotency_key, kind, reservation_id, apartment_id, owner_user_id,
+		   to_email, cc_email, subject, payload, state, attempts, next_attempt_at, created_at, updated_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, NULL, $7, $8, 'queued', 0, $9, $9, $9)
+		 RETURNING id`,
+		m.Key, m.Kind, m.ReservationID, m.ApartmentID, m.OwnerUserID, m.To,
+		cutRunes(m.Subject, mailSubjectMax), mailPayload(m.Text, m.HTML), ts,
+	).Scan(&id)
+	if err == nil {
+		return id, nil
+	}
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		// Lost a race with another worker: the row exists, return its id.
+		if err := pool.QueryRow(ctx, `SELECT id FROM email_outbox WHERE idempotency_key = $1`, m.Key).Scan(&id); err != nil {
+			return 0, errNotifyMail
+		}
+		return id, nil
+	}
+	return 0, errNotifyMail
+}
+
+// QueuePush is push.notify: one push_outbox row per device of ownerUserID, key
+// <kind>:<key>:<subscription id>, so the same event never reaches a device twice.
+// The caller cuts the param values. It returns how many rows were inserted (0
+// when push is off or there is no owner). Params are written with sorted keys
+// (pyJSONParams); see the report for the difference from Python's key order.
+func QueuePush(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string,
+	ownerUserID int64, kind, key, url string, params AlertParams) (int, error) {
+	if !pushEnabled(getenv) || ownerUserID == 0 {
+		return 0, nil
+	}
+	stored, err := pyJSONParams(params)
+	if err != nil || stored == nil {
 		return 0, errNotifyPush
 	}
-	rows, err := pool.Query(ctx, `SELECT id FROM push_subscription WHERE user_account_id = $1`, owner)
+	rows, err := pool.Query(ctx, `SELECT id FROM push_subscription WHERE user_account_id = $1`, ownerUserID)
 	if err != nil {
 		return 0, errNotifyPush
 	}
@@ -318,9 +358,9 @@ func QueueFilingProblemPush(ctx context.Context, pool *pgxpool.Pool, getenv func
 		tag, err := pool.Exec(ctx,
 			`INSERT INTO push_outbox (idempotency_key, subscription_id, user_account_id, kind, params, url,
 			   state, attempts, next_attempt_at, created_at)
-			 VALUES ($1, $2, $3, 'filing_problem', $4, $5, 'queued', 0, $6, $6)
+			 VALUES ($1, $2, $3, $4, $5, $6, 'queued', 0, $7, $7)
 			 ON CONFLICT(idempotency_key) DO NOTHING`,
-			fmt.Sprintf("filing_problem:%s:%d", key, device), device, owner, *params, url, ts)
+			fmt.Sprintf("%s:%s:%d", kind, key, device), device, ownerUserID, kind, *stored, url, ts)
 		if err != nil {
 			return queued, errNotifyPush
 		}
