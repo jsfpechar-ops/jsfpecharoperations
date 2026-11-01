@@ -478,3 +478,6 @@ body.v2 [data-copy].copied { color: #bf4f40; border-color: #ef6b58; }
 @media (max-width:1023px){body.v2 .host-stay-detail .stay-head-cta{display:block;position:fixed;left:0;right:0;bottom:calc(84px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--line);padding:12px 20px;z-index:4}body.v2 .host-stay-detail .stay-head-cta form{display:block}body.v2 .host-stay-detail .stay-head-cta .btn{width:100%}}
 /* 0529 final: stay page table and phone row rules take the mockup line colour (--line), not ink */
 body.v2 .host-stay-detail table th,body.v2 .host-stay-detail table td,body.v2 .host-stay-detail .list .row{border-bottom-color:var(--line)}
+
+/* 0529 tests: the desk rows are clickable (data-href), so they show the pointer */
+body.v2 tr[data-href]{cursor:pointer}
