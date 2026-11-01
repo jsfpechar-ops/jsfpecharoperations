@@ -36,3 +36,9 @@ If an existing test asserts the old header buttons (add stay, "Share schedule", 
 
 ## 9. Report
 `docs/tasks/0541-report.md`: Status, test and lint tails, diff stat, screenshot paths, assertions changed, deviations.
+
+## 10. Addendum (orchestrator, after the first run hit the cap)
+Steps 1-5 and one browser assertion are committed. Left:
+1. `App/tests/test_cleaning_browser.py::test_calendar_popup_types_create_in_place_and_localize_validation` clicks the removed "add stay" header button. Open the dialog with `[data-calendar-add][data-cal-create-type="cleaning"]` instead; assert `[data-cal-type-choice="cleaning"]` is `aria-pressed="true"`; keep the `cleaning-stay-popup-cs` shot after switching to stay; check the date carries both ways (cleaning date to `#cal-arrival`, then back to `#cal-clean-date`); close. Leave the rest of the test as is.
+2. Rerun the browser set of section 6 with `-rs` (0 skipped). Fix only host `/cleaning` assertions about header buttons or list/calendar order (section 8); stop on anything else.
+3. Step 6 screenshots, the report `docs/tasks/0541-report.md`, commit `0541 step 6`.
