@@ -217,3 +217,33 @@ Done: step 1 (section 17 item 1). Step 2 (section 13) partly done. Left: setup c
 
 ### Owner steps left
 - None. No push, no PR.
+
+## Run 8 (section 18: setup checklist, field-button pairs, button heights)
+
+Status: blocked
+Done: step 1 (commit 3e6857d), step 3 partly (commit after 3e6857d). Step 2 not done (no change kept). Left: step 2 field-button pairs; step 3 Copy vs Preview alignment; items 7, 8, section 6 and screenshots (run 9).
+
+### Step 1: setup checklist (commit 3e6857d)
+- `App/tests/test_design_guardrails_browser.py` (setup checklist test): dots now `details.prop-sec > summary .dot`; details check now `details.setup-readiness-help[data-setup-status]` without `.host-workspace`. The box check is unchanged.
+- Test: `tests/test_design_guardrails_browser.py -k setup_checklist`: `1 passed, 10 deselected in 2.54s`.
+
+### Step 2: field-button pairs at 1280 (not done, reverted)
+- Tried `body.v2 .fields-wrap .guest-link-actions, body.v2 .fields-wrap .action-group{grid-column:1/-1}`. The pair findings did not change (PIN vs `stay_fee_cadence` still -22), so it was reverted.
+- Markup facts: `.guest-link-top` is a one-column grid (`App/app/static/host.css:913`), so the PIN and link actions already sit on their own row. The -22 px pair is not the case the brief assumed. "Add signature" is `button.ui-btn` in `App/app/templates/_entity_business_fields.html:85`, inside `.action-group`. The "Copy" next to `checkout_hour` was not found in the templates (`copy_button` macro is `App/app/templates/_components.html:302`).
+- Needs a decision: the pairs listed in run 7 may be a guard false positive, or they need a measured fix.
+
+### Step 3: button heights (commit after 3e6857d)
+- Measured: the Copy button is 48 px, the Preview link 36 px. Rule added to `App/app/static/app2.css`: `body.v2 .fields-wrap .copyrow > .btn.sm{min-height:48px}`. Copy stays 48 px.
+- Key bumped in `App/app/templates/base.html` to `20261101-2355`; `tests/static_versions.json` rewritten with `--write`.
+- Result: `button-heights-differ` is gone. A new `buttons-misaligned` (Copy vs Preview, tops differ) is reported on 10 rows. Trying `.copyrow{align-items:stretch}` did not clear it, so it was reverted.
+
+### Test results
+- `tests/test_static_versions.py tests/test_0710_v2_mockup_match_browser.py -k "static or property"`: `15 passed, 34 deselected in 17.32s`. The 0710 property tests at 1280 and 1440 pass.
+- `tests/test_design_guardrails_browser.py -k passes_the_layout_guard`: `test_every_host_page_passes_the_layout_guard` still FAILS. Remaining findings: `buttons-misaligned` (Copy vs Preview), and `field-button-misaligned` for PIN vs `stay_fee_cadence` (-10 after step 3), `stay_fee_authority_databox` vs "Add signature" (-20), `uby_ws_password` vs Preview (14), `checkout_hour` vs Copy (5), `addr_house_no` vs Copy (10), `stay_fee_authority_name` vs "Add signature" (10).
+
+### Questions
+1. Step 2: are the stay-fee and guest-link pairs real layout bugs to fix (with a measured CSS change), or should the guard tolerate them?
+2. Step 3: should Copy and Preview be top-aligned, or centred? The guard's rule for `buttons-misaligned` is not clear from the output.
+
+### Owner steps left
+- None. No push, no PR.
