@@ -95,4 +95,4 @@
 - K-NAV-418: 3 host_i18n tests fail. K-CHECKIN #435, K-MORE #436 undeployed.
 - K-PK0290: passkey fix open.
 - K-CF01: mid-session challenge: see CLOUDFLARE Rule 3.
-- K-PG-ORDER: goose tests fail after icalsync tests locally; CI OK.
+- K-PG-ORDER: goose tests fail after icalsync locally; CI OK.
