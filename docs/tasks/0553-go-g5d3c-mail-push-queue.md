@@ -1,5 +1,5 @@
 # 0553: Go G5d-3c: queue the submission_problem mail and the filing_problem push, matching Python
-Status: todo
+Status: review
 Depends on: 0552 (Go renderer `mail.BuildSubmissionProblem`) | Base commit: main | Branch: claude/project-thread-bhyvh5
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 90k tokens
 ## 1. Objective
