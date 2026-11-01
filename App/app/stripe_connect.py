@@ -222,7 +222,12 @@ def create_or_get_account(owner_user_id: int) -> Dict[str, Any]:
 def _onboarding_state(account: Dict[str, Any]) -> str:
     """Map Stripe's account state onto our five mirror states."""
     requirements = account.get("requirements") or {}
-    if account.get("disabled"):
+    # v1 accounts carry no top-level "disabled"; Stripe says why an account
+    # is switched off in requirements.disabled_reason (0623).
+    reason = requirements.get("disabled_reason") or ""
+    if reason.startswith("rejected"):
+        return "rejected"
+    if reason in _DISABLED_REASONS:
         return "disabled"
     due = requirements.get("currently_due") or []
     past = requirements.get("past_due") or []
