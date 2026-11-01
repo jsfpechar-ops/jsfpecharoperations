@@ -744,3 +744,5 @@ body.v2 .setup-continue-card .ui-btn-primary{color:#fff;background:var(--coral-6
 @media (min-width:768px){body.v2 .toast-stack .toast > [data-toast-close]{min-width:24px;min-height:24px}}
 /* 0736 run 8 step 3: buttons and links in a field row share the copy button height (48 px); the copy button itself is unchanged */
 body.v2 .fields-wrap .copyrow > .btn.sm{min-height:48px}
+body.v2 .fields-wrap .copyrow > .btn.sm{vertical-align:middle}
+body.v2 section#stay-fee-settings > fieldset.signature-block{grid-column:1/-1}
