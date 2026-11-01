@@ -202,3 +202,17 @@ Group 2 tail: `105 passed in 225.12s`, 0 skipped. 0385 left out (file deleted).
 design_lint: OK. context_lint: OK.
 
 Deviations: browser runs rewrote unrelated tracked PNGs (docs/tasks/0102-evidence, screenshots-0410); restored with git checkout.
+
+## Executor pass 11 (brief 0532, orchestrator decision: chips wrap when needed, no sideways scroll)
+Status: **review**. Done: all steps. The sideways scroll from pass 10 is fixed.
+
+Change (App/app/static/app2.css, 1024 px block): removed `body.v2 .props-card .setup{flex-wrap:nowrap}`, so chips wrap when they do not fit. The name cell (`td:nth-child(1)`) now has the address cell's one-line rule (max-width:0, nowrap, ellipsis). The name link is `display:block; max-width:100%; min-width:0; overflow:hidden` at 1024 px, so it stays inside its cell and keeps its tap target. Pass 9 comment updated. Key bumped to `0532u` in base.html; `static_versions.json` rewritten with `--write`.
+
+Commands (from App/, browser env set):
+- `tests/test_host_properties_navigation.py tests/test_host_ux_acceptance.py tests/test_0710_v2_mockup_match_browser.py tests/test_static_versions.py tests/test_design_guardrails_browser.py -q --tb=short -rfs`: `59 passed in 210.51s`, 0 skipped.
+- `python3 scripts/design_lint.py`: `design lint: OK`
+- `python3 scripts/context_lint.py`: `context lint: OK`
+
+Screenshots: `docs/tasks/screenshots-0532/app-1280.png` and `app-768.png` retaken from the 0710 test's `test_v2_screenshots` (UBYHOST_SHOTS_V2=1, `properties-{width}.png`). Other screenshots not retaken. The generated files in screenshots-0710 were restored and not committed.
+
+Deviations: none. The 0710 test passes for `properties` at all six widths (inside the 59 passed).
