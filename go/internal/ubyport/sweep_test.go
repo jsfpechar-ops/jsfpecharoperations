@@ -2,6 +2,7 @@ package ubyport
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -129,4 +130,158 @@ func sweepFixtureApartment(t *testing.T, pool *pgxpool.Pool, contact *string) Ap
 		"uby_mark": "AAKLI", "uby_name": "Penzion U Lesa", "uby_ws_user": "UBY-WS_AAKLI",
 	})
 	return ref
+}
+
+// failSecondSender answers batch 2 with a transport error and the other batches with success.
+type failSecondSender struct {
+	calls int
+}
+
+func (f *failSecondSender) Submit(ctx context.Context, header map[string]*string, guests []map[string]any) (SubmitResult, error) {
+	f.calls++
+	if f.calls == 2 {
+		return SubmitResult{}, &Error{Kind: ErrTransport, Msg: "connection refused"}
+	}
+	return SubmitResult{}, nil
+}
+
+func TestSweepReleasesClaimsWhenABatchFails(t *testing.T) {
+	ctx := context.Background()
+	pool := claimTestPool(t)
+	ref := sweepFixtureApartment(t, pool, ptrString("host@example.test"))
+	var guests []int64
+	for i := 0; i < 70; i++ {
+		guests = append(guests, collectAddStay(t, pool, ref.ID, nil, nil))
+	}
+	s := &failSecondSender{}
+	// The error is contained per batch; the claims must go either way.
+	_, _ = SubmitForApartment(ctx, sweepDeps(t, pool, "pw", s), ref.ID, CollectOptions{}, sweepMode)
+	if s.calls < 2 {
+		t.Fatalf("batches sent = %d, want at least the failing batch 2", s.calls)
+	}
+	for _, id := range guests {
+		if n := claimCount(t, pool, id); n != 0 {
+			t.Fatalf("guest %d still holds %d claim rows after a failed batch", id, n)
+		}
+	}
+}
+
+// staleBatch stores an outcome_unknown batch for the given guests, as a crash leaves it,
+// and points those guests at it.
+func staleBatch(t *testing.T, pool *pgxpool.Pool, aptID int64, guests []int64, mode any, retried any, reason string) int64 {
+	t.Helper()
+	ctx := context.Background()
+	raw, err := json.Marshal(guests)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var sub int64
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO submission (apartment_id, created_at, state, guest_ids, error_text, mode, retried_at)
+		 VALUES ($1, $2, 'outcome_unknown', $3, $4, $5, $6) RETURNING id`,
+		aptID, time.Date(2026, 11, 1, 9, 0, 0, 0, time.UTC), string(raw), reason, mode, retried).Scan(&sub); err != nil {
+		t.Fatal(err)
+	}
+	if len(guests) > 0 {
+		if _, err := pool.Exec(ctx, `UPDATE guest SET submission_id = $1 WHERE id = ANY($2)`, sub, guests); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return sub
+}
+
+func retriedAtSet(t *testing.T, pool *pgxpool.Pool, submissionID int64) bool {
+	t.Helper()
+	var set bool
+	if err := pool.QueryRow(context.Background(),
+		`SELECT retried_at IS NOT NULL FROM submission WHERE id = $1`, submissionID).Scan(&set); err != nil {
+		t.Fatal(err)
+	}
+	return set
+}
+
+func TestRetryResendsOnlyStaleBatchGuests(t *testing.T) {
+	ctx := context.Background()
+	pool := claimTestPool(t)
+	ref := sweepFixtureApartment(t, pool, ptrString("host@example.test"))
+	var guests []int64
+	for i := 0; i < 3; i++ {
+		guests = append(guests, collectAddStay(t, pool, ref.ID, nil, nil))
+	}
+	// The stale batch holds only the first two guests; the third is not in it.
+	stale := staleBatch(t, pool, ref.ID, guests[:2], nil, nil, staleSubmissionReason)
+
+	s := &sweepSender{}
+	n, err := RetryOutcomeUnknownBatches(ctx, sweepDeps(t, pool, "pw", s), ref.ID)
+	if err != nil || n != 1 {
+		t.Fatalf("retried=%d err=%v, want 1 and no error", n, err)
+	}
+	if fmt.Sprint(s.sizes) != fmt.Sprint([]int{2}) {
+		t.Fatalf("sent=%v, want one resend of 2 guests", s.sizes)
+	}
+	if !retriedAtSet(t, pool, stale) {
+		t.Fatal("stale batch retried_at not set")
+	}
+	for _, id := range guests[:2] {
+		var sid *int64
+		if err := pool.QueryRow(ctx, `SELECT submission_id FROM guest WHERE id = $1`, id).Scan(&sid); err != nil {
+			t.Fatal(err)
+		}
+		if sid != nil && *sid == stale {
+			t.Fatalf("guest %d still points at the stale batch", id)
+		}
+	}
+	var resent int
+	if err := pool.QueryRow(ctx,
+		`SELECT count(*) FROM submission WHERE apartment_id = $1 AND mode = 'auto_resend'`, ref.ID).Scan(&resent); err != nil {
+		t.Fatal(err)
+	}
+	if resent != 1 {
+		t.Fatalf("auto_resend submissions = %d, want 1", resent)
+	}
+}
+
+func TestRetrySkipsAndGuards(t *testing.T) {
+	ctx := context.Background()
+	pool := claimTestPool(t)
+	cases := []struct {
+		name        string
+		mode        any
+		retried     any
+		empty       bool
+		alert       bool
+		wantRetried bool
+	}{
+		{"auto_resend mode is not retried again", "auto_resend", nil, false, false, false},
+		{"retried_at already set is not retried", nil, time.Date(2026, 11, 1, 9, 30, 0, 0, time.UTC), false, false, true},
+		{"empty guest list is marked and not sent", nil, nil, true, false, true},
+		{"open ubyport_auth_failed alert blocks the retry", nil, nil, false, true, false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			ref := sweepFixtureApartment(t, pool, ptrString("host@example.test"))
+			guests := []int64{}
+			if !c.empty {
+				guests = append(guests, collectAddStay(t, pool, ref.ID, nil, nil))
+			}
+			stale := staleBatch(t, pool, ref.ID, guests, c.mode, c.retried, staleSubmissionReason)
+			if c.alert {
+				if err := RaiseAlert(ctx, pool, "critical", "ubyport_auth_failed", "login refused", "",
+					fmt.Sprintf("ubyport_auth_failed:%d", ref.ID), &ref.ID, nil, nil, nil); err != nil {
+					t.Fatal(err)
+				}
+			}
+			s := &sweepSender{}
+			n, err := RetryOutcomeUnknownBatches(ctx, sweepDeps(t, pool, "pw", s), ref.ID)
+			if err != nil || n != 0 {
+				t.Fatalf("retried=%d err=%v, want 0 and no error", n, err)
+			}
+			if len(s.sizes) != 0 {
+				t.Fatalf("sent=%v, want nothing", s.sizes)
+			}
+			if got := retriedAtSet(t, pool, stale); got != c.wantRetried {
+				t.Fatalf("retried_at set = %v, want %v", got, c.wantRetried)
+			}
+		})
+	}
 }
