@@ -374,6 +374,7 @@ body.v2 details input{min-height:24px}
   body.v2 .property-settings-form input,body.v2 .property-settings-form select,body.v2 .property-settings-form textarea{min-width:0;max-width:100%}
 }
 /* 0535 step 3b: the guest-link copy icon (injected by app.js, unstyled on v2) took ~77 px in flow and pushed the button past 1024 px. Hidden until copied, absolute inside the button. */
+body.v2 .copy-btn > svg{display:none}
 body.v2 .copy-btn .copy-label-default{display:inline}
 body.v2 .copy-btn [data-copy-label-slot]{display:none}
 body.v2 .copy-btn.copied [data-copy-label-slot]{display:inline}
@@ -693,10 +694,12 @@ body.v2 .dot.n{background:#c9c9c3}
   body.v2:has(.property-settings-form details.prop-sec[open]) .havel-fab{display:none}
   body.v2 .ov-how[data-how="property"]{display:none}
   body.v2 .guest-card .copy-btn{min-height:44px;height:auto;padding:10px 16px;gap:8px;white-space:normal}
-  body.v2 .guest-card .btn.copy-btn{color:#1c1c1a !important;background:#fff;border:1.5px solid var(--ink)}
+  /* 0542: the guest-card button is a primary v2 .btn, so the white text rule (0,5,1) applies; (0,6,1) beats it without !important */
+  body.v2 .guest-card .btn.copy-btn:not(.soft):not(.ghost){color:#1c1c1a;background:#fff;border:1.5px solid var(--ink)}
+  body.v2 .guest-card .copy-btn > svg{display:block;width:18px;height:18px;flex:0 0 18px}
   body.v2 .guest-card .copy-btn .sr-only{position:static;width:auto;height:auto;margin:0;overflow:visible;clip:auto;white-space:nowrap}
-  body.v2 .property-settings-form details.prop-sec{border:0;border-radius:0;box-shadow:none;background:transparent;padding:0;margin:0}
-  body.v2 .property-settings-form details.prop-sec:last-of-type > summary{border-bottom:0}
+  body.v2 details.prop-sec{border:0;border-radius:0;box-shadow:none;background:transparent;padding:0;margin:0}
+  body.v2 #sec-archive > summary{border-bottom:0}
   body.v2 .property-settings-form .savebar{flex-wrap:nowrap}
   body.v2 .property-settings-form .savebar .btn{flex:1 1 0;min-width:0;width:auto}
   body.v2 .property-settings-form .savebar .btn[type="submit"]{flex-basis:0}
