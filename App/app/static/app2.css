@@ -504,7 +504,9 @@ body.v2 .onboarding-intro .onboarding-logo{width: 64px; height: auto; max-width:
 @media (min-width:1024px){.env-banner .env-more{display:none}}
 @media (max-width:1023px){.env-banner .env-body{display:none}}
 /* 0722: phone shows 2 needs-you cards; the rest open from one toggle. */
-@media (max-width:1023px){#needs-action .ny-extra{display:none}#needs-action:has(> details[open]) .ny-extra{display:block}#needs-action .ny-sum-desk{display:none}}
+@media (max-width:1023px){#needs-action > .todo > .needs-you-card-item:nth-child(n+3){display:none}#needs-action:has(> details[open]) > .todo > .needs-you-card-item:nth-child(n+3){display:block}#needs-action .ny-sum-desk{display:none}}
 @media (min-width:1024px){#needs-action .ny-sum-phone{display:none}#needs-action .ny-phone-only{display:none}}
 /* 0722: on phone the month line goes last, after Dnes (mockup order). */
 @media (max-width:1023px){body.v2 .ui-body:has(> .ov-month){display:flex;flex-direction:column}body.v2 .ov-month{order:1}}
+/* 0722: phone action buttons keep the 44 px touch target of the mockup. */
+@media (max-width:1023px){body.v2 .needs-you-actions .btn{min-height:44px}}
