@@ -22,6 +22,44 @@ if [ -n "${UBYHOST_DATABASE_URL:-}" ]; then
   PG_MODE=1
 fi
 
+# 0710: rollback target. .deployed-sha is written only when a deploy finished;
+# before the first one, ORIG_HEAD is the commit the workflow reset away from.
+PREV_SHA="$(cat .deployed-sha 2>/dev/null || git rev-parse -q --verify ORIG_HEAD 2>/dev/null || true)"
+
+# 0710: the site as visitors reach it (Cloudflare, Caddy, app). About 60 s.
+public_ok() {
+  for _ in $(seq 1 12); do
+    if curl -fsS --max-time 10 -o /dev/null "${UBYHOST_PUBLIC_BASE_URL%/}/healthz"; then
+      return 0
+    fi
+    sleep 5
+  done
+  return 1
+}
+
+# 0710: put back the last good compose file, Caddyfile and app image. Database
+# migrations are not undone (goose files are additive). The working tree stays
+# modified until the next deploy's git reset.
+rollback() {
+  echo "==> Rolling back to ${PREV_SHA:-the previous image and Caddyfile}" >&2
+  if [ -n "${PREV_SHA}" ]; then
+    git checkout "${PREV_SHA}" -- docker-compose.yml caddy/Caddyfile.acme caddy/Caddyfile.cloudflare || true
+  fi
+  if [ -f caddy/Caddyfile.previous ]; then
+    cp caddy/Caddyfile.previous caddy/Caddyfile.active
+  fi
+  if docker image inspect ubyhost:previous >/dev/null 2>&1; then
+    docker tag ubyhost:previous ubyhost:local
+  fi
+  docker compose up -d --no-build --remove-orphans || true
+  docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile || true
+  if public_ok; then
+    echo "Rollback done: the public site answers again. The new release is NOT live." >&2
+  else
+    echo "ROLLBACK DID NOT BRING THE SITE BACK. Run: docker compose ps; docker compose logs --tail=50 caddy" >&2
+  fi
+}
+
 # shellcheck disable=SC1091
 source "$(dirname "$0")/litestream_env.sh"
 if [ "${litestream_enabled}" = "1" ]; then
