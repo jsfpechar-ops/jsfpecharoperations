@@ -1,29 +1,37 @@
-# 0529 report (continuation, executor)
+# 0529 report (continuation 2, executor)
 
-Status: blocked (shared stay test still fails: horizontal page scroll at 1024, 1280, 1440 px and the shell-owned Stays link)
+Status: blocked (all 6 stay geometry tests pass; 6 style tests still fail against the mockup; items 9 and 11 not done)
 Branch: task/0529-v2-stay-detail-rest (not pushed)
 
 ## Done
-- Section 10 items 1 to 8 applied in reservation_detail.html and app2.css (sr-only utility, phone top and actbar hidden from 1024 px, copy label rules, icons arrow-left and copy, guest count without duplicate label, police leftover metric block removed, request payment chevron via icon()).
-- Item 10 partly: tap-target min-heights for stay-page controls (44 px below 1024, 36 px from 1024) and desktop help-tip and payment link sizes.
-- Key bumped to 20261101-0529c in base.html (last CSS edit); manifest written.
-- Filing forms: `grep -c 'action="/reservations/'` = 12, unchanged.
+- Section 10 items 1 to 8 (earlier sessions).
+- Horizontal scroll fixed: culprit was `[data-copy-state-icon]` (absolute badge) escaping the copy button. Fix: `.host-stay-detail{overflow-x:clip}`, `.host-stay-detail [data-copy]{position:relative}`.
+- Crumb "Stays" link: `.host-stay-detail .crumb a{display:inline-block;min-height:24px;line-height:24px}`. Passes.
+- Phone `<h1>`: the phone title `div.big` is now `<h1 class="big">` (only one visible h1 per width).
+- Closed settings and file-by-hand details: `.host-stay-detail details:not([open])>:not(summary){display:none}`. Their hidden content had been pushing the lowest-content check to 1243 px.
+- Help-tip `?` min-width 44 px below 1024.
+- Key `20261101-0529d` in base.html, manifest written (41 files).
+- Filing forms: `grep -c 'action="/reservations/'` = 12, unchanged (not re-checked after this session's edits; no form markup changed).
 
 ## Deviations
 - Item 4: the app has no share-2 icon; the round copy button uses icon('copy', 20).
-- Item 3: the header menu already uses row_menu_begin(); no menu-caret markup was found in reservation_detail.html. Not verified in a screenshot.
-- Item 6: the header CTA and copy button are wrapped in .stay-head-cta (hidden below 1024 px); the z-index of the security prompt was not checked.
-- Item 6: the .actbar bottom padding is applied as 180 px on .host-stay-detail below 1024 px.
+- Item 3: no menu-caret markup in reservation_detail.html; not verified in a screenshot.
+- Item 6: the z-index of the security prompt was not checked. Probes that clicked its "later" button timed out once at 390 px, so it may be flaky. Not investigated.
 
-## Done/Left
-Done: steps 1 to 8 of section 10, parts of item 10.
-Left: item 9 (empty wrapper under file-by-hand), item 10 remainder (sidebar Stays link is shell-owned, list only), item 11 (ordering test, #police-card, guest-doc class, test_host_stay_detail_layout_browser.py update, 360 px overflow fix), 1280/1440 horizontal page scroll (scrollWidth 1333 and 1493), screenshots, the §6 non-browser test run, and the rest of the shared stay test failures.
+## Left
+- Item 9: the empty `<div class="card">` wrapper around `details#file-by-hand` (line 293) still renders. Render it only with submissions.
+- Item 11: ordering test, `#police-card`, `guest-doc` class, update of test_host_stay_detail_layout_browser.py, 360 px check. Not started.
+- PAGES entry `stay` (brief §2) needs selector fixes: `.code` is not in the desktop mockup stay view; `.head h1`, `.head .sub`, `.crumb` are missing in the app at phone widths (desktop-only selectors); desktop table td border colour differs (app rgb(28,28,26), mockup rgb(235,235,231)); `main h2`, `main .card`, `main .pill` differ at 768 px.
+- Screenshots (`UBYHOST_SHOTS_V2=1 ... -k screenshots`), Read of stay-1280 and stay-390, §6 non-browser run.
+- Sidebar "Stays" nav: shell-owned, not fixed.
+- Untracked, not committed: App/.venv (never commit), docs/tasks/screenshots-0710/menu-*.png.
 
-## Test tail (shared test -k stay)
+## Test tail (shared test -k stay, after this session's fixes)
 ```
-      horizontal page scroll: scrollWidth 1493 > innerWidth 1440
-      tap target 31x17 (min 24): <a class=""> "Stays"
-    assert not ['horizontal page scroll: scrollWidth 1493 > innerWidth 1440', 'tap target 31x17 (min 24): <a class=""> "Stays"']
-/tmp/wt0529/App/tests/test_0710_v2_mockup_match_browser.py:138: AssertionError: stay at 1440 px: 2 findings
-12 failed, 21 deselected in 47.51s
+      main table td border-bottom-color: app=rgb(28, 28, 26) mockup=rgb(235, 235, 231)
+      .code: missing in mockup stay
+    assert not ['main table td border-bottom-color: app=rgb(28, 28, 26) mockup=rgb(235, 235, 231)', '.code: missing in mockup stay']
+/tmp/wt0529/App/tests/test_0710_v2_mockup_match_browser.py:125: AssertionError: stay at 1440 px: 2 style differences
+6 failed, 6 passed, 21 deselected in 47.49s
 ```
+Failing: test_v2_page_matches_mockup_styles[stay-320, -390, -768, -1024, -1280, -1440]. All test_v2_page_geometry[stay-*] pass.
