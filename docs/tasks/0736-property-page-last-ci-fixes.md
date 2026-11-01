@@ -80,3 +80,8 @@ Do these in order, commit after each: (a) section 12; (b) the a11y heading findi
 2. `tests/test_onboarding_wizard_browser.py:995` (`test_review_fixes_in_the_browser`, `a[href*='section=guests']` count 0 on `?view=overview`): the v2 overview rows link to `#sec-messages`. Count `a[href="#sec-messages"]` instead (keep the check that it exists).
 3. Section 13.
 Then stop and report; items 7, 8, section 6 and the screenshots are run 7.
+
+## 17. Run 7 scope (after run 6: brace closed)
+1. Line 995: the check means "the overview shows the guest link". On v2 that is the guest card's copy button. Assert `page.locator("section.guest-card [data-copy='property-guest-url']").count() >= 1`. Run `-k "review_fixes"`.
+2. Section 13.
+Then stop and report; items 7, 8, section 6 and the screenshots are run 8.
