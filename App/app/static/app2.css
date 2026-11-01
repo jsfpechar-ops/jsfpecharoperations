@@ -339,6 +339,7 @@ body.v2 .ov-how > summary::-webkit-details-marker{display:none}
 /* v2 shared: Havel (copied from host2.css; delete the host2 copy when the old shell is retired) */
 body.v2{--tabbar-safe:env(safe-area-inset-bottom,0px)}
 @media (max-width:1023px){body.v2{--tabbar-h:84px}}
+@media (max-width:1023px){html:has(body.v2){scroll-padding-bottom:84px}}
 body.v2 .havel-thread{display: flex; flex-direction: column; gap: var(--space-3);}
 body.v2 .havel-msg{display: flex; flex-direction: column; max-width: 85%;}
 body.v2 .havel-msg-host{align-self: flex-end; align-items: flex-end;}
