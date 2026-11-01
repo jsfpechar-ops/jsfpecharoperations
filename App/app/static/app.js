@@ -464,6 +464,7 @@
     }
 
     document.querySelectorAll("[data-birth-date]").forEach(function (input) {
+      if (!claimNode(input, "initBirthDateInputs")) return;
       function apply(value) {
         var digits = String(value || "").replace(/\D/g, "").slice(0, 8);
         var formatted = formatDigits(digits);
@@ -575,6 +576,7 @@
 
   function initAutomationFields() {
     document.querySelectorAll("[data-automation-mode]").forEach(function (select) {
+      if (!claimNode(select, "initAutomationFields")) return;
       syncAutomationHours(select);
       select.addEventListener("change", function () { syncAutomationHours(select); });
     });
@@ -585,6 +587,7 @@
   // visible Save button sends without JS; shows "Saved" or the server's error.
   function initInlineTiming() {
     document.querySelectorAll("form[data-inline-timing]").forEach(function (form) {
+      if (!claimNode(form, "initInlineTiming")) return;
       if (!window.fetch || !window.FormData) return;
       var select = form.querySelector("[data-timing-mode]");
       var hours = form.querySelector("[data-timing-hours-input]");
@@ -644,6 +647,7 @@
 
   function initControllerFields() {
     document.querySelectorAll("[data-controller-same-toggle]").forEach(function (checkbox) {
+      if (!claimNode(checkbox, "initControllerFields")) return;
       var panel = document.getElementById(checkbox.getAttribute("data-controller-target"));
       if (!panel) return;
       var select = panel.querySelector("select");
@@ -663,6 +667,7 @@
     var source = document.getElementById("fee-copy-source");
     var button = document.getElementById("fee-copy-apply");
     if (!source || !button) return;
+    if (!claimNode(button, "initFeeTemplateCopy")) return;
     button.addEventListener("click", function () {
       var option = source.options[source.selectedIndex];
       if (!option || !option.value) return;
@@ -698,8 +703,10 @@
   function initHousebookPdfExport() {
     var dialog = document.getElementById("housebook-pdf-dialog");
     if (!dialog) return;
+    if (!claimNode(dialog, "initHousebookPdfExport")) return;
     var form = document.getElementById("housebook-pdf-form");
     document.querySelectorAll("[data-housebook-pdf-export]").forEach(function (button) {
+      if (!claimNode(button, "initHousebookPdfExport")) return;
       button.addEventListener("click", function (event) {
         event.preventDefault();
         var pageFrom = document.getElementById("from");
@@ -727,11 +734,13 @@
   function initCsvExport() {
     var dialog = document.getElementById("csv-export-dialog");
     if (!dialog) return;
+    if (!claimNode(dialog, "initCsvExport")) return;
     var form = document.getElementById("csv-export-form");
     var pending = { base: "", params: "", scopeLabel: "" };
     var scope = dialog.querySelector("[data-csv-scope-label]");
 
     document.querySelectorAll("[data-csv-export]").forEach(function (button) {
+      if (!claimNode(button, "initCsvExport")) return;
       button.addEventListener("click", function (event) {
         event.preventDefault();
         pending.base = button.getAttribute("data-csv-export") || "";
@@ -914,6 +923,7 @@
 
   function initTogglePanels() {
     document.querySelectorAll("[data-toggle-panel]").forEach(function (button) {
+      if (!claimNode(button, "initTogglePanels")) return;
       button.addEventListener("click", function () {
         var panelId = button.getAttribute("data-toggle-panel");
         var panel = document.getElementById(panelId);
@@ -931,6 +941,7 @@
       });
     });
     document.querySelectorAll("[data-close-panel]").forEach(function (button) {
+      if (!claimNode(button, "initTogglePanels")) return;
       button.addEventListener("click", function () {
         var panel = button.closest(".action-panel");
         if (panel) panel.classList.add("hidden");
@@ -938,7 +949,7 @@
     });
     if (new URLSearchParams(window.location.search).get("new") === "1") {
       var addPanel = document.getElementById("add-stay-panel");
-      if (addPanel) {
+      if (addPanel && claimNode(addPanel, "initTogglePanels")) {
         addPanel.classList.remove("hidden");
         var first = addPanel.querySelector("input, select, textarea");
         if (first) first.focus();
@@ -982,6 +993,7 @@
 
   function initNotifications() {
     document.querySelectorAll("form[data-notification-dismiss]").forEach(function (form) {
+      if (!claimNode(form, "initNotifications")) return;
       form.addEventListener("submit", function (event) {
         event.preventDefault();
         var notification = form.closest("[data-notification]");
@@ -1044,6 +1056,7 @@
     });
     var signatures = new Set();
     toasts.forEach(function (toast, index) {
+      if (!claimNode(toast, "initToasts")) return;
       var kind = toastKind(toast);
       var messageNode = toast.querySelector(".grow");
       var message = messageNode ? messageNode.textContent.trim() : toast.textContent.trim();
@@ -1334,6 +1347,7 @@
   /* Legacy auto-submit remains available only to forms that explicitly opt in. */
   function initAutoFilters() {
     document.querySelectorAll("form[data-auto-submit]").forEach(function (form) {
+      if (!claimNode(form, "initAutoFilters")) return;
       form.querySelectorAll("select, input[type=date], input[type=month]").forEach(function (input) {
         input.addEventListener("change", function () {
           if (input.type === "date") {
@@ -1372,10 +1386,12 @@
 
   function initGeneratedPasswords() {
     document.querySelectorAll("[data-generated-password]").forEach(function (input) {
+      if (!claimNode(input, "initGeneratedPasswords")) return;
       if (!input.value) fillGeneratedPassword(input);
     });
 
     document.querySelectorAll("[data-generate-password]").forEach(function (button) {
+      if (!claimNode(button, "initGeneratedPasswords")) return;
       button.addEventListener("click", function () {
         var field = button.closest(".password-generate");
         if (!field) return;
@@ -1394,6 +1410,7 @@
     var form = document.getElementById("reset-password-form");
     var label = document.getElementById("reset-password-label");
     if (!dialog || !form || !label) return;
+    if (!claimNode(dialog, "initResetPasswordDialog")) return;
 
     document.querySelectorAll("[data-reset-password]").forEach(function (button) {
       button.addEventListener("click", function () {
@@ -1422,6 +1439,7 @@
     var body = document.getElementById("confirm-body");
     var proceed = shell && shell.querySelector("[data-confirm-proceed]");
     if (!dialog || !shell) return;
+    if (!claimNode(shell, "initConfirmDialog")) return;
     var pendingForm = null;
     var pendingButton = null;
 
@@ -1816,6 +1834,7 @@
     var key = "ubyhost-saved-stay-views";
     var container = document.querySelector("[data-saved-views]");
     var button = document.querySelector("[data-save-view]");
+    if (button && !claimNode(button, "initSavedViews")) return;
     var views = [];
     try { views = JSON.parse(localStorage.getItem(key) || "[]"); } catch (error) { views = []; }
 
@@ -1854,6 +1873,7 @@
 
   function initInlineEdit() {
     document.querySelectorAll("form[data-inline-edit]").forEach(function (form) {
+      if (!claimNode(form, "initInlineEdit")) return;
       var status = form.querySelector(".inline-edit-status");
       form.addEventListener("submit", function (event) {
         event.preventDefault();
@@ -2221,6 +2241,7 @@
     }
 
     forms.forEach(function (form) {
+      if (!claimNode(form, "initUnsavedDialog")) return;
       form.addEventListener("input", syncResetButtons);
       form.addEventListener("change", syncResetButtons);
       form.querySelectorAll("[data-unsaved-reset]").forEach(function (button) {
@@ -2234,9 +2255,10 @@
     });
     syncResetButtons();
     // Back/Forward may restore typed values without input events.
-    window.addEventListener("pageshow", syncResetButtons);
+    if (claimNode(window, "initUnsavedDialog")) window.addEventListener("pageshow", syncResetButtons);
 
     if (!dialog || typeof dialog.showModal !== "function") return;
+    if (!claimNode(dialog, "initUnsavedDialog")) return;
     var stay = dialog.querySelector("[data-unsaved-stay]");
     var discardBtn = dialog.querySelector("[data-unsaved-discard]");
     var save = dialog.querySelector("[data-unsaved-save]");
