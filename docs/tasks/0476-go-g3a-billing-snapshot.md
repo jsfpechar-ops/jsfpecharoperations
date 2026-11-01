@@ -1,5 +1,5 @@
 # 0476: Go G3a: the Go service can own a queued job, starting with billing_snapshot
-Status: ready
+Status: todo
 Depends on: 0475 (#624), 0467a (#622) | Base commit: main | Branch: task/0476-go-g3a-billing-snapshot
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 90k tokens
 ## 1. Objective
