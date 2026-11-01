@@ -262,12 +262,13 @@ docker compose up -d --remove-orphans
 # `caddy reload` is a graceful, zero-downtime config swap over the admin API
 # (localhost:2019 inside the container, enabled by default) — unlike
 # `docker compose restart caddy`, it does not drop live connections. Caddy
-# validates the new config before applying it and keeps the running config if
-# validation fails, so aborting here on a bad config is safe.
+# validates the new config before applying it, but a container that `up -d`
+# recreated has no running config to keep, so a failure here rolls back.
 echo "==> Reloading Caddy"
 if ! docker compose exec -T caddy caddy reload \
   --config /etc/caddy/Caddyfile --adapter caddyfile; then
-  echo "Caddy reload failed — the deployed Caddyfile is NOT active." >&2
+  echo "Caddy reload failed." >&2
+  rollback
   exit 1
 fi
 
