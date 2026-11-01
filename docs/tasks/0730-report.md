@@ -1,4 +1,4 @@
-# 0712 report
+# 0730 report
 
 Status: review
 
@@ -7,8 +7,8 @@ Status: review
 - App/app/routes/payments.py: consent POST returns `_back("/payments", msg=...)` instead of 303 to /payments/connect/start.
 - App/app/host_i18n.py: new `payments.consent.saved` (en, cs); `payments.consent.continue` relabelled "Agree and continue" / "Souhlasím a pokračuji".
 - App/tests/test_payments_consent.py: test renamed to `test_post_with_tick_records_and_returns_to_payments`, asserts `/payments?msg=`; new `test_consent_post_never_redirects_off_site`.
-- docs/tasks/0712-consent-redirect-fix.md: Status line only.
-- docs/tasks/0712-report.md: this file.
+- docs/tasks/0730-consent-redirect-fix.md: Status line only.
+- docs/tasks/0730-report.md: this file.
 
 CSP in App/app/main.py not changed.
 

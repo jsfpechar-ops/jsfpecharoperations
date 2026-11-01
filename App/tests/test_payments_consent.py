@@ -99,7 +99,7 @@ def test_consent_hidden_when_payments_off(client, monkeypatch):
 
 
 def test_consent_post_never_redirects_off_site(client, owner):
-    """0712: CSP form-action 'self' blocks a POST whose redirects leave our origin."""
+    """0730: CSP form-action 'self' blocks a POST whose redirects leave our origin."""
     response = client.post("/payments/consent", data={"agree": "1"}, follow_redirects=False)
     location = response.headers["location"]
     assert location.startswith("/") and not location.startswith("//")

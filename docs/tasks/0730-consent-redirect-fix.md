@@ -1,7 +1,7 @@
-# 0712: Consent "Continue to Stripe" hangs on a blank page (CSP form-action)
+# 0730: Consent "Continue to Stripe" hangs on a blank page (CSP form-action)
 
 Status: review
-Depends on: none | Base commit: 02ebb6eb | Branch: task/0712-consent-redirect-fix (already exists, check it out)
+Depends on: none | Base commit: 02ebb6eb | Branch: task/0730-consent-redirect-fix (already exists, check it out)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -28,17 +28,17 @@ Production bug (owner, 1 Nov 2026, 21:12): ticking the consent box on `/payments
 | App/app/routes/payments.py | edit | redirect to /payments with a message |
 | App/app/host_i18n.py | edit | `payments.consent.saved` en + cs; button label |
 | App/tests/test_payments_consent.py | edit | expected location |
-| docs/tasks/0712-report.md | new | report |
-| docs/tasks/0712-consent-redirect-fix.md | edit | Status line only |
+| docs/tasks/0730-report.md | new | report |
+| docs/tasks/0730-consent-redirect-fix.md | edit | Status line only |
 
 No other file may change.
 
 ## 4. Steps
 
-1. `git checkout task/0712-consent-redirect-fix`. Set line 3 to `Status: in-progress`, commit `0712 start`.
+1. `git checkout task/0730-consent-redirect-fix`. Set line 3 to `Status: in-progress`, commit `0730 start`.
 2. `App/app/routes/payments.py`: replace the `return RedirectResponse("/payments/connect/start", status_code=303)` line in `payments_consent_accept` with:
    ```python
-       # 0712: never redirect a form POST to Stripe. The CSP form-action 'self'
+       # 0730: never redirect a form POST to Stripe. The CSP form-action 'self'
        # blocks a form whose redirect chain leaves our origin (blank page). Back
        # to /payments, where "Open Stripe" is a plain link.
        return _back("/payments", msg=_flash(request, "payments.consent.saved"))
@@ -47,13 +47,13 @@ No other file may change.
 4. `App/tests/test_payments_consent.py`: replace the `== "/payments/connect/start"` assert with `    assert response.headers["location"].startswith("/payments?msg=")`. Rename the test to `test_post_with_tick_records_and_returns_to_payments`. Add this test at the end of the non-browser tests (before the `# --- browser` line):
    ```python
    def test_consent_post_never_redirects_off_site(client, owner):
-       """0712: CSP form-action 'self' blocks a POST whose redirects leave our origin."""
+       """0730: CSP form-action 'self' blocks a POST whose redirects leave our origin."""
        response = client.post("/payments/consent", data={"agree": "1"}, follow_redirects=False)
        location = response.headers["location"]
        assert location.startswith("/") and not location.startswith("//")
        assert "connect/start" not in location
    ```
-5. Commit after each of steps 2 to 4 (`0712 step N`).
+5. Commit after each of steps 2 to 4 (`0730 step N`).
 
 ## 5. Do not touch
 
@@ -77,7 +77,7 @@ As in the TEMPLATE.
 
 ## 9. Report
 
-Write `docs/tasks/0712-report.md` (400 tokens at most), set `Status: review`. Do not push.
+Write `docs/tasks/0730-report.md` (400 tokens at most), set `Status: review`. Do not push.
 
 ## Risk list (for the reviewer)
 
