@@ -1,6 +1,6 @@
 # 0531 report
 
-Status: blocked
+Status: review
 
 ## Files changed
 App/app/templates/apartment_form.html, App/app/templates/_property_overview.html, App/app/templates/_property_editor.html, App/app/host_i18n.py, App/app/host_vi_i18n.py, App/app/static/host.css, App/app/templates/base.html (host.css?v= only), App/tests/static_versions.json, docs/design/catalog.json, App/tests/test_0531_property_page.py (new), docs/tasks/0531-report.md.
@@ -67,3 +67,23 @@ Sticky save bar at 390 px, scrolled to the bottom: no input or select overlaps t
 - design_lint FAIL needs the two classes added to the catalog or the markup changed.
 - Temporary screenshot test was created and deleted; it is not in the commit.
 - `App/.venv` shows in `git diff --stat origin/main` as a 1-line change. It is not staged and must not be committed.
+
+## Run 3 (executor, design lint and tablet test fix)
+Status: review. Approved by the coordinator: test_0531 assertion changed to `class="property-guest-link"` (Fix 1 removed `panel`).
+
+Changes: `panel` removed from the guest-link section and `mono` from its `<p>` (apartment_form.html); guest-link card gets background and border tokens and the `.ui-sub` rule gets a monospace font (host.css); host.css version key bumped to 20261101-0531a (base.html) and static_versions.json rewritten; `card.scrollIntoView({block: 'center'})` added as the first line of the CARD_JS map callback (test_0251); test_0531 line 13 assertion updated.
+
+design_lint: `design lint: OK`
+
+Tests, first set (`.venv/bin/python -m pytest tests/test_0251_tablet_browser.py tests/test_0531_property_page.py tests/test_static_versions.py -q --tb=short -rs`):
+```
+........                                                                 [100%]
+8 passed in 7.18s
+```
+
+Tests, browser set (`ls tests/*browser*.py | xargs grep -l "/apartments/" | head -8 | xargs .venv/bin/python -m pytest -q --tb=short -rs`):
+```
+............                                                             [100%]
+12 passed in 110.98s (0:01:50)
+```
+0 skipped in both runs. Screenshot PNGs rewritten by the run were restored with `git checkout`.

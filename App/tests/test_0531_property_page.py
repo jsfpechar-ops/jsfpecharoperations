@@ -10,7 +10,7 @@ from tests.test_property_hub import host, two_properties  # noqa: F401  (fixture
 def test_property_page_has_guest_link_card_with_one_copy_button(host):
     client, apartment_id = host
     text = client.get(f"/apartments/{apartment_id}?lang=en").text
-    assert 'class="panel property-guest-link"' in text
+    assert 'class="property-guest-link"' in text
     assert text.count('data-copy="property-guest-url"') == 1
 
 

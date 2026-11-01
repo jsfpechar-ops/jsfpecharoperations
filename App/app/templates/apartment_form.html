@@ -23,7 +23,7 @@
    page once; ?view= picks the one shown without JavaScript, app.js switches them
    in place (initPropertyViews) so the settings draft is never re-rendered. #}
 {% set base_url = '/apartments/' ~ apartment.id %}
-{% if permalink %}<section class="panel property-guest-link" aria-labelledby="property-guest-link-title"><div><h2 id="property-guest-link-title">{{ t('property_page.guest_link.title') }}</h2><p class="ui-sub mono">{{ permalink }}</p></div>{{ copy_inline('property-guest-url', permalink, t('common.copy_link')) }}</section>{% endif %}
+{% if permalink %}<section class="property-guest-link" aria-labelledby="property-guest-link-title"><div><h2 id="property-guest-link-title">{{ t('property_page.guest_link.title') }}</h2><p class="ui-sub">{{ permalink }}</p></div>{{ copy_inline('property-guest-url', permalink, t('common.copy_link')) }}</section>{% endif %}
 <nav class="ui-tabs property-tabs" aria-label="{{ t('property_nav.tabs_aria') }}">
   {% for key, label in [('overview', t('property_nav.overview')), ('bookings', t('property_nav.bookings')), ('settings', t('property_nav.settings'))] %}
   <a class="ui-tab" href="{{ base_url }}?view={{ key }}" data-property-tab="{{ key }}"{% if key == property_view %} aria-current="page"{% endif %}>{{ label }}</a>

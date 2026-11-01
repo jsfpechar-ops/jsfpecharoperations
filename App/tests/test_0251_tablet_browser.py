@@ -30,6 +30,7 @@ CARD_JS = """() => {
     return !!(el && el.closest('a, .host-property-card-actions'));
   };
   return [...document.querySelectorAll('.host-property-card')].map(card => {
+    card.scrollIntoView({block: 'center'});
     const r = card.getBoundingClientRect();
     const pill = card.querySelector('.host-property-card-open');
     const p = pill ? pill.getBoundingClientRect() : r;
