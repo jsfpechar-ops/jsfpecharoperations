@@ -389,13 +389,20 @@ def sweep_webhook_events(today) -> int:
 
 
 def process_event(event: Dict[str, Any]) -> None:
-    """Dedupe by event id, then dispatch. Only account.updated is handled in
-    0428; the card/QR rail events arrive in later briefs and are recorded."""
-    if not _record_event(event):
+    """Skip a replay, dispatch, then record the event id (0623).
+
+    The id is recorded only after the handler returned, so a handler that
+    raises leaves the event unrecorded and Stripe's retry runs it again.
+    Both handlers are idempotent (mirror upserts; on_paid skips paid rows),
+    so a concurrent duplicate delivery is harmless.
+    """
+    if event_seen(str(event.get("id"))):
         return
+    from . import payment_links
+
     etype = event.get("type")
     if etype == "account.updated":
         mirror_by_account_id(dict(event["data"]["object"]), config.STRIPE_MODE)
-    elif etype in ("payment_link.paid", "checkout.session.completed"):
-        from . import payment_links
+    elif etype in payment_links.PAID_EVENTS:
         payment_links.on_paid(event)
+    _record_event(event)
