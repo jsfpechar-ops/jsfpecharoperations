@@ -1,5 +1,5 @@
 # 0474: Go G1a: service skeleton (healthz, metrics, goose check) and crypto conformance with the Python app
-Status: blocked
+Status: review
 Depends on: 0465 (goose, merged) | Base commit: main | Branch: task/0474-go-g1a
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 80k tokens
 ## 1. Objective

@@ -1,6 +1,6 @@
 # 0474 report (Go G1a)
 
-Status: blocked
+Status: review
 Executor: Haiku 5.5. Branch task/0474-go-g1a, not pushed.
 
 ## Done
@@ -58,3 +58,7 @@ go/go.mod, go/go.sum, go/internal/secure/secure_test.go, go/internal/schema/goos
  go/internal/secure/signer.go                       | 135 +++
  go/internal/secure/testdata/fixtures.json          | 970 +++++++++++++++++++++
  17 files changed, 2362 insertions(+)
+
+## Orchestrator resolution
+- Lint stop: the decisions line was shortened (and the 0465b line trimmed by four words); `context lint: OK`. decisions.md sits at the cap: the next orchestrator compacts it before appending.
+- Known gap for G4: Go's JSON encoder escapes U+2028/U+2029 and formats floats differently from Python; session payloads hold ints, bools and short ASCII strings only, so G1 is unaffected. G4 re-checks any payload it adds.
