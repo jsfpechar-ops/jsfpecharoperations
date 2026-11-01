@@ -59,4 +59,4 @@ Append-only.
 - 2026-10-31 | PostgreSQL container has no password and no network (`network_mode: none`, Unix socket volume, trust auth); the cutover needs no secret, so a deploy never waits on one. A Haiku commit from a stale worktree (c935c55) reverted main through #601; repaired in #606. [workflow] Before every merge: `git diff --stat origin/main <branch>` against the brief's Files; one fresh worktree per Haiku | owner, orchestrator | 0463, #606
 - 2026-10-31 | [workflow] `test-postgres-full` (app suite on PG 17) gates every merge; SQLite-file tests carry `sqlite_only` | orchestrator | 0462
 - 2026-10-31 | D3 detail: goose v3.29.0, asset goose_linux_x86_64, SHA-256 cc56e2f75532a4dd52f5ef2d31db0121e91079a9c2617bc0ad4e04e2d41c228b | owner | 0465b
-- 2026-11-01 | Go: module go/, stdlib + pgx v5; crypto checked by Python fixtures | owner (waiver) | 0474
+- 2026-11-01 | Go: module go/, stdlib + pgx v5 + Azure/go-ntlmssp v0.1.1 (UbyPort NTLM, MIT, no deps, Basic off); crypto checked by Python fixtures | owner (waiver) | 0474, 0481
