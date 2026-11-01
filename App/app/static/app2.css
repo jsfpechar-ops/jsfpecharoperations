@@ -323,6 +323,8 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
 
 /* 0719: phone head is a block so the title and date take the full screen width (mockup) */
 @media (max-width:1023px){body.v2 .head{display:block}body.v2 .head h1:after{content:none}body.v2 .hs .who>div:not(.av){min-width:0;flex:1}body.v2 .head h1{margin:2px 0 4px}body.v2 .need b{margin-bottom:0}}
+/* shared: same rule as 0722, keep one on rebase */
+@media (max-width:1023px){body.v2 .ph-hide{display:none!important}}
 /* 0526 stays list: page-only rules; shared phone classes (.top, .round, .big, .grp, .av, .list, .row, .link, .chips, .chev) come from the 0718 block above */
 .stays-phone{display:none}
 .stays-phone-only{display:none}

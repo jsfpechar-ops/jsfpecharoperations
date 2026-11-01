@@ -322,7 +322,8 @@
     "stay-section",
     "allgood",
     "code",
-    "acc"
+    "acc",
+    "ph-hide"
   ],
   "hooks": [
     "sr-only",
