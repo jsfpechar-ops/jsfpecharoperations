@@ -702,3 +702,4 @@ body.v2 .dot.n{background:#c9c9c3}
   body.v2 .property-settings-form .savebar:has([data-unsaved-reset]:not([hidden])) .btn.ghost:not([data-unsaved-reset]){display:none}
 }
 body.v2 .savebar [hidden]{display:none}
+@media (max-width:1023px){body.v2 .property-settings-form input:not([type=checkbox]):not([type=radio]),body.v2 .property-settings-form select,body.v2 .property-settings-form textarea{min-height:44px}}

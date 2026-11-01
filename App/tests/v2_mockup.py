@@ -145,6 +145,8 @@ PAGES = [
         "name": "property",
         "path": "/apartments/{first_property}",  # filled per test by _path() in test_0710 (0535)
         "view": "prop",
+        "phone_view": "nemovitost",  # 0541: phone property screen (0540 section 2)
+        "phone_selectors": [".big, .head h1", ".guest-card", ".guest-card .btn", "h2.sec", "summary", ".dot"],
         "selectors": [  # .guest-card (permalink card) has no mockup counterpart: not compared (0535)
             ".crumb", "main h1", "details", "summary b", "summary small",
             ".preview h3", ".pv", ".pv .r", ".savebar .btn",

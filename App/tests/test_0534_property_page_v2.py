@@ -143,3 +143,13 @@ def test_aside_has_cards_and_links_to_each_section(host):
     assert aside.count('class="pv"') >= 2
     for key in ("basics", "police", "calendars", "lock", "fee"):
         assert f'href="#sec-{key}"' in aside, key
+
+
+def test_0541_every_section_row_has_a_dot_and_a_state(host):
+    client, apartment_id = host
+    html = _page(client, apartment_id)
+    rows = re.findall(r'<details class="prop-sec"[^>]*>(.*?)</summary>', html, re.S)
+    assert rows
+    for row in rows:
+        assert 'class="dot ' in row and 'sec-state' in row
+
