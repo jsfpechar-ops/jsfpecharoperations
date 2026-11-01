@@ -56,7 +56,11 @@ PAGES = [
         "path": "/",
         "view": "today",
         "phone_view": "dnes",
-        "phone_selectors": [".tabs", ".tab", ".tab.on"],
+        "phone_selectors": [
+            ".tabs", ".tab", ".tab.on", ".top .round", ".head h1", ".head .sub", "h2.sec",
+            ".card.need", ".need .ic", ".need b", ".need small", ".card.need .btn",
+            ".hs .card", ".kind", ".av", ".nm", ".meta", ".hs .pill",
+        ],
         "selectors": [
             ".side", ".side .nav", ".side .nav.on", ".head h1", ".head .sub", ".head .btn",
             "main h2", ".todo .card", ".todo .ic", ".todo .t", ".todo p", ".quiet", ".card.cal",
@@ -66,6 +70,17 @@ PAGES = [
         "missing_ok": {
             ".cal .bar.b-ok": "demo data has no confirmed stay in the 14-day window; the tone follows the data",
             "main .pill.p-ok": "tone depends on data: the demo overview has no reported stay",
+            ".card.need": "needs-you cards exist only while the account has an open to-do; the phone mockup shows demo cards",
+            ".need .ic": "needs-you cards exist only while the account has an open to-do; the phone mockup shows demo cards",
+            ".need b": "needs-you cards exist only while the account has an open to-do; the phone mockup shows demo cards",
+            ".need small": "needs-you cards exist only while the account has an open to-do; the phone mockup shows demo cards",
+            ".card.need .btn": "needs-you cards exist only while the account has an open to-do; the phone mockup shows demo cards",
+            ".hs .card": "today's stay cards exist only when a stay is due today; the phone mockup shows demo stays",
+            ".kind": "today's stay cards exist only when a stay is due today; the phone mockup shows demo stays",
+            ".av": "today's stay cards exist only when a stay is due today; the phone mockup shows demo stays",
+            ".nm": "today's stay cards exist only when a stay is due today; the phone mockup shows demo stays",
+            ".meta": "today's stay cards exist only when a stay is due today; the phone mockup shows demo stays",
+            ".hs .pill": "today's stay cards exist only when a stay is due today; the phone mockup shows demo stays",
         },
     },
     {
