@@ -1,12 +1,12 @@
 # 0529 report (continuation, executor)
 
-Status: blocked
+Status: blocked (shared stay test still fails: horizontal page scroll at 1024, 1280, 1440 px and the shell-owned Stays link)
 Branch: task/0529-v2-stay-detail-rest (not pushed)
 
 ## Done
 - Section 10 items 1 to 8 applied in reservation_detail.html and app2.css (sr-only utility, phone top and actbar hidden from 1024 px, copy label rules, icons arrow-left and copy, guest count without duplicate label, police leftover metric block removed, request payment chevron via icon()).
 - Item 10 partly: tap-target min-heights for stay-page controls (44 px below 1024, 36 px from 1024) and desktop help-tip and payment link sizes.
-- Key bumped to 20261101-0529b in base.html; manifest written (41 files).
+- Key bumped to 20261101-0529c in base.html (last CSS edit); manifest written.
 - Filing forms: `grep -c 'action="/reservations/'` = 12, unchanged.
 
 ## Deviations
