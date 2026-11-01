@@ -157,3 +157,10 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 body.v2 [data-needs-you-go]:hover{background:#b83a24}
 body.v2 .skip-link{position:fixed;z-index:1000;left:8px;top:-100px}
 body.v2 .skip-link:focus{top:8px}
+
+/* 0532: setup chips on the properties list (mockup .setup / .st) */
+.setup{display:flex;gap:6px;flex-wrap:wrap}
+.st{font-size:12px;font-weight:600;padding:3px 9px 3px 7px;border-radius:999px;display:inline-flex;align-items:center;gap:5px;text-decoration:none}
+.st:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.st.g{background:var(--oks);color:var(--ok)}.st.r{background:var(--bads);color:var(--bad)}.st.n{background:#efefeb;color:var(--ink3)}
+@media (max-width:640px){body.v2 tbody .btn.sm{min-height:44px;display:inline-flex;align-items:center}}
