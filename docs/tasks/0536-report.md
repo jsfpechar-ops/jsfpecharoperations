@@ -212,3 +212,13 @@ Deviations:
 - Test 0251: below 1024 px the aside and the card hit checks do not apply (v2 phone layout); the phone rows are checked instead (orchestrator option a).
 
 No PR, nothing pushed.
+
+## 0545
+
+Status: blocked. Done: steps 1 to 2. Left: step 3 (screenshots app-390.png, app-320.png, not taken).
+
+- Step 1 (commit 38833c8): phone guest card shows the PIN line and a PIN copy button below 1024 px. Key bumped to `20261101-0545b`; static manifest rewritten. `pin` was already in the render context (`admin.py`), so no move was needed.
+- Step 2: 4 tests in `App/tests/test_0534_property_page_v2.py` (`-k 0545`) pass. Catalog gained `guest-btns`, `guest-pin`, `guest-pin-copy`, `guest-pin-label`, `guest-pin-value`.
+- Deviation: the page backfills a PIN on every load (`_ensure_apartment_pin`), so the no-PIN test patches that function.
+- §6 tails: browser set `35 passed, 34 deselected` with `-rs`, no skips; ruff E9/F63/F7/F82/F401/F841 `All checks passed!`; design_lint `OK`; context_lint `OK`.
+- Owner/orchestrator: take the 320 and 390 px screenshots and check no sideways scroll.
