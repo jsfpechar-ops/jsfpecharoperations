@@ -1,6 +1,6 @@
 # 0622: Card rail fix: connected account in options, one payment per link
 
-Status: in-progress
+Status: review
 Depends on: none | Base commit: e925378 | Branch: task/0622-card-rail-fix
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
