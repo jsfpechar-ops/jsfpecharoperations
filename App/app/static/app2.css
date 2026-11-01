@@ -198,3 +198,6 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
 
 /* 0532: the properties table scrolls inside its card on phones instead of widening the page */
 .props-card{overflow-x:auto}
+/* 0532: the property name link in the list has a 24 px tap target (geometry guard) */
+body.v2 .props-card .row-primary-link{display:inline-block;min-height:24px;padding-block:3px;box-sizing:border-box}
+@media (max-width:1023px){body.v2 .props-card .st{min-height:44px}}
