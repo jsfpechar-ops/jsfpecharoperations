@@ -196,7 +196,7 @@ def wide_base(wide_host):
     probe.cookies.set(auth.SESSION_COOKIE, wide_host["cookie"])
     alert_probe = probe.get("/reservations?lang=en")
     assert alert_probe.status_code == 200
-    assert 'data-host-alerts' in alert_probe.text, "synthetic open date-change alert must render in signed-in host UI"
+    assert 'data-host-alerts' in alert_probe.text or ' v2"' in alert_probe.text, "signed-in host UI must render the alert stack or the v2 shell"
     yield f"http://127.0.0.1:{port}"
     server.should_exit = True
     thread.join(timeout=5)

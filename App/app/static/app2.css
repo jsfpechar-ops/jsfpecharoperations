@@ -330,8 +330,32 @@ body.v2 .stays-desk .sr-only{position:absolute;width:1px;height:1px;overflow:hid
 body.v2 .stays-filter.is-collapsed{display:none}
 @media (min-width:1024px){body.v2 .stays-phone-only{display:none}}
 
-/* 0527 stays calendar: 44px day and date targets on phone (the range popover is shared; v2 pages only) */
+/* 0527: the shared date-range popover and month grid, ported from host.css (v2 pages do not load host.css) */
+body.v2 .date-range-popover,body.v2 .month-grid-panel{position:fixed;z-index:100;width:min(360px,calc(100vw - 16px));padding:12px;border:1px solid var(--line);border-radius:12px;background:white;box-shadow:var(--shadow-popover)}
+body.v2 .range-calendar-head,body.v2 .month-year-row{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:8px;margin-bottom:8px;text-align:center}
+body.v2 .range-step,body.v2 .year-step{width:44px;min-width:44px;height:44px;padding:0;justify-content:center;font-size:19px}
+body.v2 .range-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+body.v2 .range-draft-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+body.v2 .range-draft-fields .field{min-width:0;margin:0}
+body.v2 .range-draft-fields label{display:block;margin:0 0 4px;color:var(--ink2);font-size:12px;font-weight:650}
+body.v2 .range-draft-fields input[type=date]{width:100%;min-width:0;height:42px}
+body.v2 .range-weekday{display:grid;min-height:26px;place-items:center;color:var(--ink3);font-size:11px;font-weight:700}
+body.v2 .range-day{min-width:0;min-height:40px;padding:0;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--ink)}
+body.v2 .range-day:hover,body.v2 .range-day:focus-visible{border-color:var(--brand-action);outline:2px solid color-mix(in srgb,var(--brand-action) 24%,transparent);outline-offset:1px}
+body.v2 .range-day.outside-month{color:var(--ink3)}
+body.v2 .range-day.in-range{border-radius:0;background:var(--brand-soft)}
+body.v2 .range-day.selected{border-color:var(--brand-action);border-radius:8px;background:var(--brand-action);color:white;font-weight:750}
+body.v2 .date-range-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px}
+body.v2 .month-row{display:flex;align-items:center;gap:8px}
+body.v2 .month-control{position:relative;display:flex;align-items:center;flex:1 1 auto;min-width:0}
+/* 0527: 44px day and date targets on phone; the popover stays inside a 360 px viewport */
 @media (max-width:1023px){
   body.v2 .range-day{min-width:44px;min-height:44px}
   body.v2 .range-draft-fields input[type=date]{min-height:44px}
+  body.v2 .date-range-popover,body.v2 .month-grid-panel{width:min(360px,calc(100vw - 8px));padding:8px}
+  body.v2 .date-range-actions .btn{min-height:44px}
+  body.v2 .range-calendar-grid{gap:2px}
+  body.v2 .month-choice{min-height:44px}
 }
+body.v2 [data-filter-toggle]{min-height:40px}
+@media (max-width:600px){body.v2 [data-filter-toggle]{min-height:44px}}
