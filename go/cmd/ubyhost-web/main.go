@@ -24,6 +24,7 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ical"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/jobs"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/payments"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/pushweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/schema"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
@@ -192,6 +193,10 @@ func run() int {
 	mux.Handle("GET /payments/connect/start", m.wrap("/payments/connect/start", payments.ConnectStartHandler(pool, os.Getenv, time.Now, onboarder)))
 	mux.Handle("POST /payments/connect/start", m.wrap("/payments/connect/start", payments.ConnectStartHandler(pool, os.Getenv, time.Now, onboarder)))
 	mux.Handle("GET /payments/connect/return", m.wrap("/payments/connect/return", payments.ConnectReturnHandler(pool, os.Getenv, time.Now, onboarder)))
+	mux.Handle("POST /account/push/subscribe", m.wrap("/account/push/subscribe", pushweb.SubscribeHandler(pool, os.Getenv, time.Now)))
+	mux.Handle("POST /account/push/refresh", m.wrap("/account/push/refresh", pushweb.RefreshHandler(pool, os.Getenv, time.Now)))
+	mux.Handle("POST /account/push/unsubscribe", m.wrap("/account/push/unsubscribe", pushweb.UnsubscribeHandler(pool, os.Getenv, time.Now)))
+	mux.Handle("POST /account/push/devices/{id}/delete", m.wrap("/account/push/devices/{id}/delete", pushweb.DeviceDeleteHandler(pool, os.Getenv, time.Now)))
 	mux.Handle("/", m.wrap("/", notFound))
 
 	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}

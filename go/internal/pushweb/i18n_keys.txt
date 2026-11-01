@@ -1,0 +1,7 @@
+# Host strings read by go/internal/pushweb (push.py device routes)
+push.error.failed
+push.error.too_many
+push.error.signed_out
+flash.push.signed_out
+flash.push.device_removed
+passkeys.default_name
