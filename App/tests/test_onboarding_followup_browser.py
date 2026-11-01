@@ -92,7 +92,7 @@ def test_rows_hover_as_one_surface_and_use_compact_menus(stay_actions_host, stay
         page.goto(f"{base}/apartments?lang={lang}")
 
         _ready(page)
-        property_row = page.locator(".properties-table tbody .clickable-row").first
+        property_row = page.locator(".props-card tbody .clickable-row").first
         assert property_row.locator(".row-actions > a.btn").count() == 0
         property_row.locator(".row-menu-trigger").click()
         menu = page.locator(".row-menu-panel.is-open")
@@ -205,7 +205,7 @@ def test_native_record_links_still_work_without_javascript(stay_actions_host, st
         page.wait_for_url(f"**/reservations/{stay_id}?**")
         page.goto(f"{base}/apartments?lang=en")
         _ready(page)
-        page.locator(".properties-table .row-primary-link").first.click()
+        page.locator(".props-card .row-primary-link").first.click()
         page.wait_for_url("**/apartments/*")
         context.close()
         browser.close()
