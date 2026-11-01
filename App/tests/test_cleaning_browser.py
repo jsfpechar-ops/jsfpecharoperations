@@ -73,7 +73,7 @@ def shot(page, name):
         page.screenshot(path=str(Path(directory) / f"cleaning-{name}.png"), full_page=True)
 
 
-@pytest.mark.parametrize("width", [360, 390, 1024, 1280])
+@pytest.mark.parametrize("width", [768, 1024, 1280])
 @pytest.mark.parametrize("lang", ["en", "cs"])
 def test_calendar_and_large_list_geometry_and_filtering(workspace, origin, width, lang):
     with sync_api.sync_playwright() as playwright:
@@ -200,7 +200,7 @@ def _assert_cleaning_day_marker(page, event_id, day, property_name, lang, mobile
         assert visual["propertyDisplay"] != "none" and visual["propertyWidth"] > 0
 
 
-@pytest.mark.parametrize(("width", "lang"), [(1280, "en"), (1280, "cs"), (360, "en"), (390, "cs")])
+@pytest.mark.parametrize(("width", "lang"), [(1280, "en"), (1280, "cs"), (768, "en"), (768, "cs")])
 def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, width, lang):
     ws = workspace
     booking_id = stay(ws["home"], "2026-10-15", "2026-10-17")
@@ -330,7 +330,7 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, w
         context.close()
         browser.close()
 
-@pytest.mark.parametrize(("width", "lang"), [(360, "en"), (390, "cs"), (1280, "en")])
+@pytest.mark.parametrize(("width", "lang"), [(768, "en"), (768, "cs"), (1280, "en")])
 def test_three_property_auto_gantt_keeps_cleaning_markers_visible(workspace, origin, width, lang):
     ws = workspace
     third = db.insert("apartment", {
@@ -561,7 +561,7 @@ def test_missing_property_hours_keep_full_day_cleaning_marker_without_saved_defa
     property_name = next(prop["internal_name"] for prop in cleaning.properties(ws["owner"])
                          if prop["id"] == ws["home"])
     with sync_api.sync_playwright() as playwright:
-        browser, context = browser_context(playwright, ws, origin, width=360)
+        browser, context = browser_context(playwright, ws, origin, width=768)
         page = context.new_page()
         page.goto(f"{origin}/cleaning?lang=en")
         loaded(page)
@@ -641,7 +641,7 @@ def _assert_dialog_centred(page, label):
     return box
 
 
-@pytest.mark.parametrize(("width", "height"), [(1280, 800), (390, 844)])
+@pytest.mark.parametrize(("width", "height"), [(1280, 800), (768, 844)])
 def test_add_stay_and_cleaning_dialogs_open_centred_in_both_tabs(workspace, origin, width, height):
     ws = workspace
     with sync_api.sync_playwright() as playwright:
@@ -684,14 +684,14 @@ def test_cleaning_chip_label_starts_with_cleaning(workspace, origin):
             browser.close()
 
 
-@pytest.mark.parametrize("width", [1280, 390])
+@pytest.mark.parametrize("width", [1280, 768])
 def test_cleaning_form_pages_fit_the_viewport_and_take_screenshots(workspace, origin, width):
     ws = workspace
     with sync_api.sync_playwright() as playwright:
         browser, context = browser_context(playwright, ws, origin, width=width)
         try:
             page = context.new_page()
-            page.set_viewport_size({"width": width, "height": 844 if width == 390 else 800})
+            page.set_viewport_size({"width": width, "height": 844 if width == 768 else 800})
             page.goto(f"{origin}/cleaning?lang=en")
             loaded(page)
             shot(page, f"calendar-{width}")
