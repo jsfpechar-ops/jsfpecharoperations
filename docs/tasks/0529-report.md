@@ -33,3 +33,15 @@ Branch: task/0529-v2-stay-detail-rest. Commits: 1086612f (step 0), step 1 commit
 
 ## Owner steps left
 - None until the PR. Merge only with `scripts/merge-pr-on-green.sh`.
+
+## Continuation (executor, session 2)
+Status: blocked. Done: steps 0 to 2 (step 2 complete). Left: step 3 (PAGES entry `stay`, old test updates) and step 4 (screenshots, final commands, report).
+
+- Step 2 commit f73d9c2e: action bar. Jinja macro `stay_cta()` holds the send/fix/receipt/view-reports chain; it is called in `.head` and in `<div class="actbar">` at the end of the page (shown when `has_cta`). Source `grep -c 'action="/reservations/'` = 12 (the macro is one line). Rendered, the submit form appears twice when the send button shows; both copies come from the same macro, so they are identical. Resend-claim is not in the actbar (deviation: no CTA means no actbar, so the resend fallback stays in the header only).
+- Police deadline label: `<small class="police-deadline">` starts with `stay.detail.metric.deadline`, so "Reporting deadline" is on the page again.
+- Door code: `icon('key-round', 22)` in the `.ic.acc` (imported in the template).
+- Submissions table and file-by-hand details: each wrapped in `<div class="card">`, inside unchanged.
+- Dead CSS sweep: every selector in the `/* 0528 stay page */` block is used by the template; nothing removed.
+- Manifest: `tests/test_static_versions.py --write` run.
+
+Open question for step 3: the PAGES path needs a seeded active stay id (`/reservations/{id}`), but `PAGES` is static and `_open_app` takes `spec["path"]`. Owner or orchestrator decision: resolve the id in the shared test from a fixture (a change to `test_0710_v2_mockup_match_browser.py`), or seed a fixed id. Not decided by the executor.
