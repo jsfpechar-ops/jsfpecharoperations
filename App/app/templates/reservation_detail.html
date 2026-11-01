@@ -5,8 +5,10 @@
 {% from "_components.html" import field_label, help_tip, progress_pill, submission_pill, row_menu_begin, row_menu_end, row_open, guest_count, deadline_badge, source_badge with context %}
 {# The UbyPort step is the page's one coral button; the branches below are exclusive. #}
 {% set cta = 'ui-btn ui-btn-primary' %}
+{% set lead_row = (guest_rows | selectattr('guest.is_lead') | first) or (guest_rows | first) %}
+{% set lead_name = ((lead_row.guest.first_name or '') ~ ' ' ~ (lead_row.guest.surname or '')) | trim if lead_row else '' %}
 {% block title %}{{ reservation.internal_name }} · {{ reservation.date_from | date_cz }}{% endblock %}
-{% block page_title %}{{ reservation.internal_name }}{% endblock %}
+{% block page_title %}{{ lead_name or reservation.internal_name }}{% endblock %}
 {% block back_url %}{{ return_to }}{% endblock %}
 {% block back_label %}{{ t('stay.detail.back') }}{% endblock %}
 {# 0080: in-page jump links so the four groups are reachable without folding any; 0135: styled as tabs. #}
