@@ -1,30 +1,32 @@
-# 0718 report (executor)
+# 0718 report (executor, session 2)
 
-Status: blocked. Session stopped at the 25-call checkpoint after steps 1-3 and part of step 5. Steps 4 and the screenshots are left.
+Status: blocked. Stopped at the 25-call limit. Two checks still fail (below). Screenshots were taken but not yet read.
 
 ## Commits (branch task/0718-v2-phone-shell, not pushed)
-- 97fbd69, ee410ad: steps 1 and 2 (tab bar, Menu route and template, test_0718_menu_page.py)
-- 2667fd9: step 3 (phone classes below 1024 px)
-- 7b5ac9d: merge of the Overview work (0717)
-- 86a6a9b: step 3 fix. Removed the phone-block variable redefinitions. The undefined variables --acc2, --soft and --accent now use the app2 :root values (--acc-text, #f6f6f4, --acc). Phone `.btn` colour is pinned to #fff. `.btn.ghost` gets its own #efefeb background (the phone accent background leaked onto it, which caused the 3.72 contrast finding). The dashboard work card has margin 0 and overflow-x:auto below 1024 px.
-- Step 5 part (this commit): app2.css key bumped to 20261101-0718 in base.html, static_versions.json regenerated, menu.html added to V2_TEMPLATES in scripts/design_lint.py.
+- 8d38f89: tab labels 12 px (orchestrator decision), app2.css key 20261101-0718b.
+- eab367c: step 4, phone checks in v2_mockup.py and the 0710 test (phone screens, box metrics, tab-bar geometry, menu entry).
+- Commit of this report: menu markup and CSS, key 20261101-0718e, screenshots.
 
-## Test results
-- test_a11y_guard_browser.py: 4 passed, 0 skipped. The 3.72 contrast finding is gone.
-- Brief section 6 set, run once before the key bump: 8 failed, 46 passed, 0 skipped. Only the tail was visible. Failures seen:
-  - test_0710_v2_mockup_match_browser.py, overview at 390 and 768: `text 11px: <a class="tab on"> "Today"` (also Calendar, Stays, Properties, Menu) and `.side is not visible` (the old check that step 4 replaces).
-  - test_static_versions.py: `app2.css changed but still has ?v=20261101-0717c`. Fixed by the key bump; test_static_versions.py now passes (3 passed).
-- The full section 6 set was not re-run after the key bump.
+## Test tails
+- Full brief set, before the last menu CSS fixes: `2 failed, 60 passed in 187.61s`, 0 skipped. Failures: overview-768 and menu-320.
+- Menu and static tests after the last fix: `1 failed, 7 passed`. Failure: menu-320 (see below). test_static_versions.py passes.
 - design_lint.py: OK. context_lint.py: OK.
 
-## Left for the next session
-- Step 4 (test helper): PHONE_MOCKUP, PHONE_WIDTHS, phone_view/phone_selectors, SELECTOR_ALIASES, the box-metric comparison, the menu PAGES entry, the overview phone entry, and the new below-1024 geometry checks in App/tests/v2_mockup.py and App/tests/test_0710_v2_mockup_match_browser.py. Not started.
-- Tab labels are 11 px and fail the 12 px text rule. Decide: 12 px tab labels, or a missing_ok entry with a reason. Owner or orchestrator decision.
-- Step 5 screenshots (menu-390, overview-390, overview-768) in docs/tasks/screenshots-0718/, then Read them. Not started.
-- Dashboard table at 390 px: the card scrolls inside itself now. Brief 0719 replaces the table.
+## Open failures
+1. overview-768 (style): 21 differences on Dnes-page selectors (.head h1, .todo .card, .head .btn). The phone block applies below 1024 px, so 768 gets the phone classes while the test compares it with the desktop mockup. Left for brief 0719, as the brief allows. Not skipped.
+2. menu-320 (style): `.card.me` height 117 px vs 108 px in the mockup. The fixture name wraps to more lines than the mockup's demo name. Not fixed.
 
-## Deviations (listed by the previous session, not verified by this session)
-- nav_badge is never set.
-- The nav.today key is used.
-- Kalendar is never marked on.
-- The Help row goes to /guide.
+## Deviations
+- Tab labels 12 px instead of 11 px (orchestrator decision). Overrides for `.tab`, `.tab:not(.on)`, `.tab.on` font-size.
+- Menu page: page title is `h1.big` (no host header), icon rows with chevrons (from _icons.html), `.card.me` with the mockup's avatar layout.
+- Menu rows have no subtitle (`.row .t small` in missing_ok). The mockup subtitles are demo copy. Owner decision needed.
+- Phone pages: desktop style checks are skipped at phone widths when the page has a phone_view. Phone checks compare phone_selectors only.
+- Box width compared in px (±2 px), not as a fraction of the viewport.
+- main has no horizontal padding below 1024 px (cards 20 px from the edge, as in the mockup).
+- Menu desktop rows get min-height 48 px (tap target at 1024+).
+
+## Screenshots
+docs/tasks/screenshots-0718/: menu-390.png, overview-390.png, overview-768.png (full page). Not yet read.
+
+## Owner steps left
+None. Decisions needed: menu subtitles (copy); overview-768 wait for 0719 or accept the phone design at 768.

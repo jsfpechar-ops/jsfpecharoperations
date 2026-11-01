@@ -27,6 +27,8 @@ SELECTOR_OVERRIDES = {
     "main tbody tr:first-child td": {"border-bottom-color": "rgb(28, 28, 26)"},
     # phone tab labels: the 12 px minimum text rule wins over the mockup's 11 px (orchestrator decision, 0718)
     ".tab": {"font-size": "12px"},
+    ".tab:not(.on)": {"font-size": "12px"},
+    ".tab.on": {"font-size": "12px"},
 }
 # style-compared only at computer width (phone design pending)
 DESKTOP_ONLY = {".side", ".side .nav", ".side .nav.on"}
@@ -69,9 +71,9 @@ PAGES = [
         "path": "/menu",
         "view": None,  # no desktop mockup screen: the Menu page is compared at phone widths only
         "selectors": [],
-        "missing_ok": {},
         "phone_view": "menu",
-        "phone_selectors": [".tabs", ".tab", ".tab.on", ".big", ".card.me", ".list .row", ".row .t b", ".row .t small"],
+        "phone_selectors": [".tabs", ".tab:not(.on)", ".tab.on", ".big", ".card.me", ".list .row", ".row .t b", ".row .t small"],
+        "missing_ok": {".row .t small": "menu rows have no subtitle yet: the mockup subtitles are demo copy and no approved menu copy exists (owner decision, 0718)"},
     },
 ]
 
