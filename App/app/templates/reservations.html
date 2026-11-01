@@ -3,7 +3,7 @@
 {% set nav = 'reservations' %}
 {% set how_key = 'stays' %}
 {% set body_kind = 'list' %}
-{% from "_components.html" import empty_state, progress_pill, row_menu_begin, row_menu_end, row_open, bulk_send_ready, csv_actions_menu, copy_inline, property_identity, guest_count, deadline_badge, source_badge, onboarding_banner with context %}
+{% from "_components.html" import empty_state, progress_pill, row_menu_begin, row_menu_end, row_open, bulk_send_ready, csv_actions_menu, copy_inline, property_identity, guest_count, deadline_badge, source_badge, onboarding_banner, v2_status_pill with context %}
 {% from "_ui.html" import ui_button, ui_pagination with context %}
 {% from "_icons.html" import icon with context %}
 {% set csv_export_params = 'apartment=' ~ (apartment_id or '') %}
@@ -19,6 +19,7 @@
 {% for property in apartments %}
   {% if apartment_id and property.id|string == apartment_id|string %}{% set stay_property.label = property.internal_name %}{% endif %}
 {% endfor %}
+{% endif %}
 {% block toolbar %}{% endblock %}
 {% block body %}
 <div class="head"><div><h1>{{ t('stays.title') }}</h1></div>{% if apartments %}<div style="display:flex;gap:8px">{% if manual_send %}<form method="post" action="/reservations/submit-ready" class="inline send-all-form"><input type="hidden" name="return_to" value="{{ return_to }}"><button class="btn ghost send-all" type="submit"{% if not ready_send_count %} disabled{% endif %} title="{{ t('send.all_ready_hint') }}">{{ icon('send', 16) }}<span>{{ t('send.all_ready') }}{% if ready_send_count %} ({{ ready_send_count }}){% endif %}</span></button></form>{% endif %}<a class="btn ghost" href="/housebook.csv?{{ csv_export_params }}" data-stays-housebook>{{ t('stays.housebook_download') }}</a><button class="btn" type="button" data-toggle-panel="add-stay-panel">{{ t('stays.add_stay') }}</button></div>{% endif %}</div>
@@ -132,16 +133,16 @@
 {% endif %}
 
 {% if rows %}
-<div class="stays-view">
-  <table class="ui-table ui-table-stack">
+<div class="card">
+  <table>
     <thead>
       <tr>
-        <th class="stay-col-stay">{{ t('stays.table.guest') }}</th>
-        <th class="stay-col-property">{{ t('stays.table.property') }}</th>
-        <th class="stay-col-dates">{{ t('stays.table.arrival') }}</th>
-        <th class="stay-col-departure">{{ t('stays.table.departure') }}</th>
-        <th class="stay-col-reporting">{{ t('stays.table.reporting') }}</th>
-        <th class="stay-col-actions"><span class="sr-only">{{ t('common.open') }}</span></th>
+        <th>{{ t('stays.table.guest') }}</th>
+        <th>{{ t('stays.table.property') }}</th>
+        <th>{{ t('stays.table.arrival') }}</th>
+        <th>{{ t('stays.table.departure') }}</th>
+        <th>{{ t('stays.table.reporting') }}</th>
+        <th><span class="sr-only">{{ t('common.open') }}</span></th>
       </tr>
     </thead>
     <tbody>
@@ -152,35 +153,33 @@
       {% set lead_name = ((lead.first_name or '') ~ ' ' ~ (lead.surname or '')) | trim if lead else '' %}
       {% set check_in = deadline_anchor(reservation, progress.guests) %}
       {% set check_out = parse_iso_date(reservation.date_to) %}
+      {% set cell = deadline_cell(progress, check_in) if check_in else none %}
       {% set stay_label = reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else reservation.internal_name %}
-      <tr class="ui-row clickable-row" data-href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}"
-          tabindex="0" role="link"
+      {% set stay_href = '/reservations/' ~ reservation.id ~ '?return_to=' ~ (return_to | urlencode) %}
+      <tr class="clickable-row" data-href="{{ stay_href }}" tabindex="0" role="link"
           aria-label="{{ stay_label }} · {{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}">
-        <td class="ui-cell-first stay-col-stay" data-card="primary" data-label="{{ t('stays.table.guest') }}">
-          {{ property_identity(reservation.apartment_id, '') }}<a class="row-primary-link stay-identity-link" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}">{{ lead_name or (reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else t('stays.row.no_name')) }}</a>
-          <div class="ui-sub stay-col-source">{{ guest_count(progress, placeholder=true) }} &middot; {{ source_badge(reservation.source, source_label(reservation)) }}</div>
+        <td data-card="primary" data-label="{{ t('stays.table.guest') }}">
+          <a class="stay-identity-link" href="{{ stay_href }}">{{ lead_name or (reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else t('stays.row.no_name')) }}</a>
+          <small>{{ guest_count(progress, placeholder=true) }} &middot; {{ source_badge(reservation.source, source_label(reservation)) }}</small>
         </td>
-        <td class="stay-col-property" data-card="meta" data-label="{{ t('stays.table.property') }}">{{ reservation.internal_name }}</td>
-        <td class="nowrap stay-col-dates" data-card="secondary" data-label="{{ t('stays.table.arrival') }}">
-          <a class="stay-date-link" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}">{{ reservation.date_from | date_cz }}</a>
-        </td>
-        <td class="nowrap stay-col-departure" data-card="secondary" data-label="{{ t('stays.table.departure') }}">
+        <td data-card="meta" data-label="{{ t('stays.table.property') }}">{{ reservation.internal_name }}</td>
+        <td class="nowrap" data-card="secondary" data-label="{{ t('stays.table.arrival') }}">{{ reservation.date_from | date_cz }}</td>
+        <td class="nowrap" data-card="secondary" data-label="{{ t('stays.table.departure') }}">
           {{ reservation.date_to | date_cz }}
-          <div class="ui-sub">
+          <small>
             {{ tp('stays.table.nights', nights(reservation.date_from, reservation.date_to)) }}
             {%- if check_in and check_out and check_in <= today() <= check_out %}
               &middot; <span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('stays.table.in_house') }}</span>
             {%- endif %}
-          </div>
+          </small>
         </td>
-        <td class="stay-col-reporting" data-card="badge" data-label="{{ t('stays.table.reporting') }}">
-          {% if reservation.status != 'active' %}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('stays.filter.state.' ~ reservation.status) }}</span>
+        <td data-card="badge" data-label="{{ t('stays.table.reporting') }}">
+          {% if reservation.status != 'active' %}<span class="pill p-n">{{ t('stays.filter.state.' ~ reservation.status) }}</span>
+          {% elif cell %}{{ v2_status_pill(cell, progress, reservation) }}
+            {% if cell.level != 'overdue' and cell.state not in ('filed_on_time', 'filed_late') %}<small>{{ deadline_badge(cell) }}</small>{% endif %}
           {% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo=('(demo)' in reservation.internal_name or reservation.source == 'demo'), step=journey_step(progress.status)) }}{% endif %}
-          {% if check_in and reservation.status == 'active' %}
-            <div class="stay-report-deadline">{{ deadline_badge(deadline_cell(progress, check_in)) }}</div>
-          {% endif %}
         </td>
-        <td class="ui-cell-acts row-actions stay-col-actions" data-card="actions" data-label="">{{ row_open('/reservations/' ~ reservation.id ~ '?return_to=' ~ (return_to | urlencode)) }}
+        <td class="row-actions" data-card="actions" data-label="">
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}" role="menuitem">{{ t('common.open') }}</a>
             {% if not show_archive and reservation.status == 'active' %}<a class="row-menu-item" href="/payments?reservation_id={{ reservation.id }}#new-request" role="menuitem">{{ t('stays.row.request_payment') }}</a>{% endif %}
