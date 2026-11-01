@@ -33,3 +33,9 @@ Stop if a fix needs a shared rule or a file outside section 3.
 
 ## 9. Report
 `docs/tasks/0549-report.md`: Status, tails, screenshot paths.
+
+## Addendum 0549b (after merging Overview 0719)
+Status: todo. Same executor rules, cap 10 tool calls.
+1. In `App/tests/v2_mockup.py` `BOX_OVERRIDES`, add, under one comment `# cleaning phone (0549b): main padding replaces side margins (0719); heights and pill width follow the English fixture copy`: `".sub": {"margin-left": "0px", "margin-right": "0px"}`, `".grp": {"margin-left": "0px", "margin-right": "0px"}`, `".card": {"margin-left": "0px", "margin-right": "0px"}`, and for each of `@320` and `@390` the app's measured `height` of `.card` and `.list .row:has(.p-ok)` and `width` of `.row .t .pill.p-ok` (read the values from the test output). Do not add anything for `.actbar` or `.actbar .btn` (Overview thread owns those).
+2. Run `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py -k "cleaning or overview or menu" -q --tb=line 2>&1 | tail -25`. Only `.actbar` / `.actbar .btn` differences may remain in cleaning; overview and menu results must not get worse than before your change (run once before too).
+3. Commit `0549b`, append the tails to `docs/tasks/0549-report.md`, commit. Do not push.
