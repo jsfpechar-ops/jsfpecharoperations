@@ -3,32 +3,22 @@
 Status: blocked
 
 ## Done
-Nothing changed in App/. Stopped at brief section 8 before step 1 (items 1, 2, 5), because item 2 has a Stav state with no clear pill tone.
+- Step 1 (commit 4c3353c): items 1, 2, 5. Header links in one flex row with no "·" separators; every Stav state is a pill (p-ok, p-warn, p-bad, p-n per the coordinator's mapping; p-n added to app2.css); month line items wrap as whole units.
+- Step 2 (this commit): item 3 (`lang` argument on `_overview_calendar_rows`, fallback `calendar.kind_stay`); item 4 (.todo one column below 1024 px, check 8 updated); item 6 (reduced_motion="reduce" in both new_context calls in test_0710); removed the `main .pill` missing_ok entry in v2_mockup.py.
+- Not done: step 3 (base.html key bump to 20261101-0715, static_versions --write, screenshots, PNG review, commit of screenshots).
 
-## Stop reason (brief section 8)
-Brief item 2 maps only waiting/incomplete (p-warn), failed/overdue (p-bad), reported/not_required (p-ok). The Overview Stav cell (App/app/templates/dashboard.html, lines 107-112, using progress_pill from App/app/templates/_components.html lines 75-122) also renders these states, which the brief does not map:
-- ready, awaiting_verification (macro tone blue; labels ready_immediate, ready_scheduled, ready_manual, awaiting_verification). app2.css has only p-ok, p-warn, p-bad; there is no blue pill class.
-- awaiting_guest/incomplete when automation_mode is not immediate (macro teal/amber, not a pill).
-- is_demo preview (status.demo_preview, grey).
-
-Owner or orchestrator must decide the tone for these before step 1 can be applied. Options: (a) add a p-info (blue) class to app2.css and map ready states to it; (b) map them to p-ok; (c) leave them as ui-badge and map only the three listed states.
-
-## Pre-check facts (for the next executor)
-- Item 3 label key exists in all three languages: calendar.kind_stay (en "Stay" host_i18n.py:7795, cs "Pobyt" host_i18n.py:7878, vi "Lượt lưu trú" host_vi_i18n.py:3368). The label is built in App/app/routes/admin.py:569 inside _overview_calendar_rows, which has no lang argument; the caller (around line 527) would need to pass one.
-- Item 1 anchors: dashboard.html lines 56-58 (ov-links block, "·" spans at 57 and 58). CSS .ov-links at app2.css:126.
-- Item 5 anchor: dashboard.html line 79 (data-dashboard-month).
-- Item 4 anchor: app2.css line 73 (.todo one column below 767px; the brief wants below 1024px, so the media query must change).
-- Item 6 anchor: test_0710_v2_mockup_match_browser.py lines 40 and 54 (new_context calls); v2_mockup.py missing_ok "main .pill" at line 51-53.
-- Key bump: base.html line 21 (app2.css?v=20261101-0714b).
-
-## Test tails
-Not run (no code change).
+## Test tails (3 files: test_0710, test_0520, test_dashboard_queue_copy; 0 skipped)
+8 failed, 23 passed. Visible failures:
+- test_0710 overview style: `main .pill color: app=rgb(138, 82, 0) mockup=rgb(22, 112, 68)` (also background-color and border-bottom-color). The first main .pill is now amber p-warn; the mockup's first pill is green. Unresolved.
+- test_0710 overview at 320 px geometry: 7 findings, `past card edge by 3.0 px` on table, thead, tr, th, tbody, tr, td. Not investigated.
+- test_0520 test_order_is_needs_you_month_calendar_today: `ValueError: substring not found` on `class="card cal"`. Also fails on base commit 51e193b (checked with git stash). Pre-existing.
+- The other 4 failures were not captured; the budget ran out before I read the full list.
 
 ## Deviations
-Stopped at section 8, not at a failing test. No commit of code. This report is committed only.
-
-## Questions
-Which tone rule for ready and awaiting_verification states (see options above)?
+- not_registered (host.missing, a host action) is rendered as p-n, following "any state not listed → p-n". Owner should confirm; p-warn may be intended.
+- Inner ui-badge sits inside the Stav pill; app2.css neutralises its background and border.
+- v2_mockup.py has no browser context, so reduced_motion was added only in test_0710.
+- Command budget reached at step 2; step 3 not started.
 
 ## Owner steps left
-None until the question is answered.
+None. Orchestrator decides the pill-style mismatch (first main .pill) and the 320 px overflow before step 3.

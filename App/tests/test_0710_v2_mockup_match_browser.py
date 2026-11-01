@@ -37,7 +37,7 @@ SHOTS_DIR = Path(__file__).resolve().parents[2] / "docs/tasks/screenshots-0710"
 
 
 def _open_app(browser, base_url, cookie, path, width):
-    context = browser.new_context(viewport={"width": width, "height": 1000})
+    context = browser.new_context(viewport={"width": width, "height": 1000}, reduced_motion="reduce")
     context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": base_url + "/"}])
     context.add_init_script("try { localStorage.setItem('ubyhost-sidebar-collapsed', '0'); } catch (e) {}")
     page = context.new_page()
@@ -51,7 +51,7 @@ def _open_app(browser, base_url, cookie, path, width):
 
 
 def _open_mockup(browser, view, width):
-    context = browser.new_context(viewport={"width": width, "height": 1000})
+    context = browser.new_context(viewport={"width": width, "height": 1000}, reduced_motion="reduce")
     page = context.new_page()
     route_offline(page)
     page.goto(mockup_url())

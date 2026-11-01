@@ -50,7 +50,6 @@ PAGES = [
         ],
         "missing_ok": {
             ".cal .bar.b-ok": "demo data has no confirmed stay in the 14-day window; the tone follows the data",
-            "main .pill": "the p-warn pill renders only for a stay awaiting the guest with immediate automation; demo data has none",
         },
     },
 ]
@@ -195,12 +194,12 @@ _GEOMETRY_JS = r"""
     if (width < 768 && r.height > 72) out.push(`.side is ${r.height.toFixed(0)} px tall at phone width, max 72`);
   }
 
-  // 8. todo: two columns at computer width, one column at phone width
+  // 8. todo: two columns at computer width (>= 1024 px), one column below 1024 px
   const cards = [...document.querySelectorAll('.todo .card')].filter(vis);
-  if (cards.length >= 2 && (width >= 1024 || width < 768)) {
+  if (cards.length >= 2) {
     const two = Math.abs(cards[1].getBoundingClientRect().left - cards[0].getBoundingClientRect().left) > 1;
     if (width >= 1024 && !two) out.push('.todo has one column at computer width, expected two');
-    if (width < 768 && two) out.push('.todo has two columns at phone width, expected one');
+    if (width < 1024 && two) out.push('.todo has two columns below 1024 px, expected one');
   }
 
   // 9. last table row menu opens inside the viewport

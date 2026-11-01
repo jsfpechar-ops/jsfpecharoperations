@@ -524,7 +524,7 @@ def dashboard(request: Request):
             "month_summary": reporting.month_summary(owner_user_id, today),
             # 0706: 14-day grid for the overview calendar, built server-side.
             "cal_days": [today + timedelta(days=i) for i in range(14)],
-            "cal_rows": _overview_calendar_rows(owner_user_id, apartments, today),
+            "cal_rows": _overview_calendar_rows(owner_user_id, apartments, today, host_i18n.lang_from_request(request)),
             "cal_view": any(k.startswith("cal_") for k in request.query_params),
             # 0520: stays that arrive or leave today, for the "Today" table.
             "today_rows": [
@@ -539,7 +539,7 @@ def dashboard(request: Request):
 _OVERVIEW_SOURCE_NAMES = {"airbnb": "Airbnb", "booking": "Booking"}
 
 
-def _overview_calendar_rows(owner_user_id, apartments, today) -> list:
+def _overview_calendar_rows(owner_user_id, apartments, today, lang) -> list:
     """0706: one row per active apartment for the overview's 14-day grid (grid columns 2-15)."""
     events = dashboard_calendar.events(owner_user_id, today, today + timedelta(days=14))
     rows = []
@@ -566,7 +566,7 @@ def _overview_calendar_rows(owner_user_id, apartments, today) -> list:
                 css = "b-grey"
             overdue = tone == "overdue"
             source = str(event["source"] or "").lower()
-            label = event["label"] or _OVERVIEW_SOURCE_NAMES.get(source) or "Pobyt"
+            label = event["label"] or _OVERVIEW_SOURCE_NAMES.get(source) or host_i18n.translate(lang, "calendar.kind_stay")
             guests = int(event.get("guests") or 0)
             if guests > 0:
                 label += f" · {guests}"
