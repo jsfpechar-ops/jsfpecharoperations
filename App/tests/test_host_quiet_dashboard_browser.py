@@ -189,6 +189,7 @@ CARD_JS = """() => {
     return {
       kind: li.dataset.needsYou, tone: li.dataset.tone, text: copy.textContent.trim().slice(0, 80), box: rect(li),
       border: [style(li).borderTopStyle, parseFloat(style(li).borderTopWidth), parseFloat(style(li).borderLeftWidth), style(li).borderLeftColor],
+      radius: parseFloat(style(li).borderTopLeftRadius), shadow: style(li).boxShadow,
       icon: style(li.querySelector('.ic')).backgroundColor, iconBox: rect(li.querySelector('.ic')),
       copy: rect(copy), copyOverflow: copy.scrollWidth > copy.clientWidth + 1,
       buttons: buttons.map(b => Object.assign(rect(b), {text: b.innerText.trim(), clipped: b.scrollWidth > b.clientWidth + 1})),
@@ -229,7 +230,11 @@ def _check_card(geo, width, label):
         # 0701: at computer width the box has no frame; each line is a card instead.
         assert geo["cardBorder"][1] == 0, (label, "card still framed at computer width", geo["cardBorder"])
     else:
-        assert geo["cardBorder"][0] == "solid" and geo["cardBorder"][1] >= 1, (label, geo["cardBorder"])
+        # v2 (0720c): the lane has no frame below 768; each `.card.need` is its own card.
+        for item in geo["items"]:
+            assert item["radius"] > 0, (label, "need card without radius", item["text"])
+            assert item["shadow"] != "none" or item["border"][1] >= 1, (label, "need card without shadow or border", item["text"], item["border"])
+            assert item["box"]["l"] >= -0.5 and item["box"]["r"] <= width + 0.5, (label, "need card outside viewport", item["text"], item["box"])
     for edge in ("l", "r"):
         assert abs(card[edge] - geo["header"][edge]) <= 2, (label, "lane", card, geo["header"])
         if geo["calendar"]:
