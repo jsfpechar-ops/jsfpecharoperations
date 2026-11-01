@@ -112,7 +112,7 @@ func Fail(ctx context.Context, pool *pgxpool.Pool, j *Job, cause error, interval
 	return false, err
 }
 
-var jobNames = map[string]string{"billing_snapshot": "billing snapshot", "stripe_sweep": "payment check"}
+var jobNames = map[string]string{"billing_snapshot": "billing snapshot", "stripe_sweep": "payment check", "ical": "calendar sync"}
 
 // RaiseFailed opens the job_failed alert with the English copy of host_i18n,
 // refreshing it when it is already open. Owner and apartment stay empty: it

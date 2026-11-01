@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -20,6 +21,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/billing"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ical"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/jobs"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/payments"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/schema"
@@ -218,7 +220,7 @@ func run() int {
 }
 
 // goIntervals are the schedule intervals (minutes) that cap a retry backoff.
-var goIntervals = map[string]int{"billing_snapshot": 24 * 60, "stripe_sweep": 24 * 60, "submit": 10}
+var goIntervals = map[string]int{"billing_snapshot": 24 * 60, "stripe_sweep": 24 * 60, "submit": 10, "ical": 60}
 
 // goHandlers maps each Go-owned job kind to its handler.
 func goHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
@@ -229,6 +231,13 @@ func goHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
 		"stripe_sweep": func(ctx context.Context) (int, error) {
 			expired, deleted, err := payments.Sweep(ctx, pool, time.Now().UTC(), jobs.Now(0))
 			return expired + deleted, err
+		},
+		"ical": func(ctx context.Context) (int, error) {
+			totals, err := ical.SyncAll(ctx, pool, os.Getenv, ical.FetchOptions{
+				Resolver:     net.DefaultResolver,
+				AllowPrivate: ical.AllowPrivate(os.Getenv),
+			})
+			return totals.Feeds, err
 		},
 		"submit": func(ctx context.Context) (int, error) {
 			keys, err := secure.LoadDataKeys(os.Getenv)
