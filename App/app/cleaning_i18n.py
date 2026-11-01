@@ -357,7 +357,8 @@ WORDS = {
     "status_hours": ["Hours missing", "Chybí časy"],
     "share_cleaner": ["Share schedule with cleaner", "Sdílet rozpis s uklízečkou"],
     "next_arrival_short": ["next check-in", "další příjezd"],
-    "subtitle_short": ["Created from departures.", "Vzniká sám z odjezdů."]
+    "subtitle_short": ["Created from departures.", "Vzniká sám z odjezdů."],
+    "show_more": ["Show %(count)s more", "Zobrazit další (%(count)s)"],
 }
 
 def translator(lang: str):

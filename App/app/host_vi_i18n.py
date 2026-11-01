@@ -137,6 +137,7 @@ CLEANING_WORDS: Dict[str, str] = {
     "next_arrival_short": "Khách đến tiếp",
     "subtitle": "Lịch dọn tự tạo từ ngày khách trả phòng. Người dọn xem lịch qua một đường liên kết.",
     "subtitle_short": "Tự tạo từ lượt trả phòng.",
+    "show_more": "Xem thêm %(count)s",
 }
 
 # validation_i18n.CS_MESSAGES key (the English sentence) -> Vietnamese.

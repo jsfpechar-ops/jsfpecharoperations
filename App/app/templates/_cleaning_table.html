@@ -27,7 +27,11 @@
 {% endfor %}
 </div>
 <div class="cleaning-phone">
+{% set ns = namespace(week=[], later=[], open=false) %}
+{% for key, items in sections %}{% if key == 'week' %}{% set ns.week = items %}{% elif key == 'later' %}{% set ns.later = items %}{% endif %}{% endfor %}
+{% set hidden = [ns.week|length - 3, 0]|max + ns.later|length %}
 {% for key, items in sections %}
+{% if key == 'later' and hidden and not ns.open %}<details class="cleaning-more"><summary class="btn ghost">{{ ct('show_more')|format(count=hidden) }}</summary>{% set ns.open = true %}{% endif %}
 <div class="grp">{{ ct('section_' ~ key) }}</div>
 {% if key == 'today' %}
   {% for item in items %}
@@ -43,6 +47,7 @@
   {% if items %}
   <div class="list">
   {% for item in items %}
+    {% if key == 'week' and loop.index == 4 %}</div><details class="cleaning-more"><summary class="btn ghost">{{ ct('show_more')|format(count=hidden) }}</summary><div class="list">{% set ns.open = true %}{% endif %}
     <a class="row" href="/cleaning/events/{{ item.eventId }}/edit"><div class="t"><b>{{ item.property }}</b><small>{{ cleaning_day(item.date) }} · {% if item.nextArrival %}{{ ct('next_arrival_short') }} {{ cleaning_short(item.nextArrival) }} {% if item.checkinTime %} {{ item.checkinTime }}{% endif %}{% else %}{{ ct('no_arrival') }}{% endif %}</small>{% if item.conflict %}<span class="pill p-warn">{{ ct('status_conflict') }}</span>{% elif item.timingUnavailable %}<span class="pill p-warn">{{ ct('status_hours') }}</span>{% else %}<span class="pill p-ok">{{ ct('status_scheduled') }}</span>{% endif %}</div></a>
   {% endfor %}
   </div>
@@ -51,4 +56,5 @@
   {% endif %}
 {% endif %}
 {% endfor %}
+{% if ns.open %}</details>{% endif %}
 </div>
