@@ -1,5 +1,5 @@
 # 0726: v2 sidebar background reaches the bottom of long pages
-Status: todo
+Status: done
 Depends on: 0725 | Branch: task/0726-v2-sidebar-full-height (worktree /tmp/wt0726)
 Executor: Haiku 5.5 | Fits one session: 12 tool calls
 
