@@ -115,3 +115,11 @@ Step 2, file by file (one pytest process per file, `--tb=line -rs`):
 - Shell base check: not yet run. Our branch touches `reservations.html`, `reservation_detail.html` and app2.css; the failing list tests use stays-list selectors, so none are "fails on the shell base too" so far.
 Screenshots: `docs/tasks/screenshots-0529-final/` holds stays-390/1280, stay-390/1280 (app) and mockup-stays-390/1280, mockup-stay-390/1280. Not yet viewed.
 Left for next run: step 2 fixes above; view the four app shots once and list differences; rerun the §6 list.
+
+## Compact phone
+
+- Steps 0 and 1 done earlier (79dda864, 56a611f1). Step 2 (193644d5): pobyt phone hides, add guest moved into the header row menu. Step 3 (94b37762): pill margin 0, guest row shows doc type only when set. Step 4 (14421341): key 20261101-0529h and manifest; screenshots in `docs/tasks/screenshots-0529-compact/` (745dc455).
+- Filing forms on the stay page: 12.
+- `test_0710_v2_mockup_match_browser.py -k "stays or stay"`: 6 failed, 18 passed (same count as before this step). Stay list, detail, design and static tests: 22 passed, 0 skipped.
+- `design_lint.py`: FAIL on `reservations.html` (`sm` and `stays-more` not in `docs/design/catalog.json`, from step 1). Not fixed here. `context_lint.py`: OK.
+- Open: the phone mockup screen (`data-s="pobyt"`) was not compared pixel by pixel; the test's mockup shot at 390 renders the desktop mockup.
