@@ -90,9 +90,13 @@ func ConnectStartHandler(pool *pgxpool.Pool, getenv func(string) string, now fun
 		switch {
 		case err == nil:
 			http.Redirect(w, r, link, http.StatusSeeOther)
-		case errors.Is(err, ErrStripeOff), errors.Is(err, ErrNoEntity):
+		case errors.Is(err, ErrNoEntity):
+			// 0729: say what is missing instead of a silent bounce to "/".
 			log.Printf("connect start failed: %v", err)
-			http.Redirect(w, r, "/", http.StatusSeeOther)
+			hostweb.Back(w, r, "/payments", hostweb.Flash{}, requestFlash(hostweb.Lang(r), "payments.err.no_entity"))
+		case errors.Is(err, ErrStripeOff):
+			log.Printf("connect start failed: %v", err)
+			hostweb.Back(w, r, "/payments", hostweb.Flash{}, requestFlash(hostweb.Lang(r), "payments.err.stripe_start"))
 		default:
 			connectFail(w, err)
 		}

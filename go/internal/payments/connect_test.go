@@ -169,12 +169,21 @@ func TestConnectDatabase(t *testing.T) {
 		}
 	})
 
-	t.Run("no entity goes home", func(t *testing.T) {
+	t.Run("no entity goes back to payments with a flash", func(t *testing.T) {
 		fake.err = ErrNoEntity
 		defer func() { fake.err = nil }()
 		rec := connectDo(start("test", nil), http.MethodGet, startPath, hostCookies, nil)
-		if rec.Header().Get("Location") != "/" {
-			t.Errorf("no entity: %q", rec.Header().Get("Location"))
+		if rec.Code != http.StatusSeeOther || !strings.HasPrefix(rec.Header().Get("Location"), "/payments?err=") {
+			t.Errorf("no entity: %d %q", rec.Code, rec.Header().Get("Location"))
+		}
+	})
+
+	t.Run("stripe off goes back to payments with a flash", func(t *testing.T) {
+		fake.err = ErrStripeOff
+		defer func() { fake.err = nil }()
+		rec := connectDo(start("test", nil), http.MethodGet, startPath, hostCookies, nil)
+		if rec.Code != http.StatusSeeOther || !strings.HasPrefix(rec.Header().Get("Location"), "/payments?err=") {
+			t.Errorf("stripe off: %d %q", rec.Code, rec.Header().Get("Location"))
 		}
 	})
 
