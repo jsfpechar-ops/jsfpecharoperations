@@ -415,3 +415,21 @@ Not ours:
 - test_0503 init-once `invalid` expectation (unclear, needs owner or orchestrator read).
 
 Left: everything above except the door-code title fix. Next step: decide the dd value size threshold for v2, then the property-page markup selectors (overview cards to aside.preview .pv rows), then help-tip rewrites, then the save step in lock navigation (stop: save/POST).
+
+### 0538 part A, update (status: blocked)
+
+Passing now (chromium only, webkit build missing in /opt/pw-browsers, so webkit deselected with -k "not webkit"):
+- test_door_code_window_browser.py: 8 passed (title 14, value size 14).
+- test_lock_navigation_browser.py: 3 passed (save selector `.savebar button[type=submit]`, help-tip body visible).
+- test_0199_phone_geometry_browser.py: 3 passed (E and F checks guarded with `if "E" in m` / `if "F" in m`; v2 has no tab chips).
+- test_0396_leon_opt_in_browser.py: 2 passed (`a.r[data-leon-card="off"]`, `aside.preview`).
+
+Still failing:
+- test_0284_states_browser.py: 1 failed. Selector now `aside.preview .pv .r`; hover test shows no colour change on the v2 preview row (before and after both rgb(28,28,26)). CSS, not ours.
+- test_0251_tablet_browser.py: 1 failed. Card list now `aside.preview .pv .r`; the 1180 assert is the aside visible. Guest tap moved to `a.r[href="#sec-lock"]`, police tap to `a.r[href="#sec-police"]`; a tap times out (line 107 or 109, not diagnosed).
+- test_host_help_browser.py: 2 failed, not touched (help-tip button tests; brief 0536 item 6 says rewrite to hint-body-visible).
+- test_onboarding_wizard_browser.py: 14 failed, not touched (overview grid at 1324 uses `.host-property-grid`; calendars text `wizard.overview.calendars` is gone from the v2 aside).
+- test_wp28_geometry.py: 2 failed, not ours (CSS): calendar remove button overflow 'visible' vs 'auto' (line 136); signature block border 'groove' vs 'solid' (line 220).
+- test_0503_page_inits_once_browser.py: skipped per orchestrator (fixed on main by 0539).
+
+Left: 0251 tap; host_help rewrite; onboarding overview (overview-cards part only); wp28 listed as not ours.
