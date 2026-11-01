@@ -80,10 +80,10 @@ def test_post_without_tick_stays_on_consent(client, owner):
     assert not payments_consent.accepted(owner)
 
 
-def test_post_with_tick_records_and_continues_to_stripe(client, owner):
+def test_post_with_tick_records_and_returns_to_payments(client, owner):
     response = client.post("/payments/consent", data={"agree": "1"}, follow_redirects=False)
     assert response.status_code == 303
-    assert response.headers["location"] == "/payments/connect/start"
+    assert response.headers["location"].startswith("/payments?msg=")
     assert payments_consent.accepted(owner)
     payments_consent.record(owner)  # idempotent
     rows = db.query(
@@ -96,6 +96,14 @@ def test_post_with_tick_records_and_continues_to_stripe(client, owner):
 def test_consent_hidden_when_payments_off(client, monkeypatch):
     monkeypatch.setattr(config, "STRIPE_MODE", "off")
     assert client.get("/payments/consent").status_code == 404
+
+
+def test_consent_post_never_redirects_off_site(client, owner):
+    """0712: CSP form-action 'self' blocks a POST whose redirects leave our origin."""
+    response = client.post("/payments/consent", data={"agree": "1"}, follow_redirects=False)
+    location = response.headers["location"]
+    assert location.startswith("/") and not location.startswith("//")
+    assert "connect/start" not in location
 
 
 # --- browser: 390 px geometry + screenshot (rule 7) ----------------------------
