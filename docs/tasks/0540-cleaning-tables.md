@@ -37,3 +37,6 @@ Assertions described in step 6 may be updated; list each in the report. Stop if 
 
 ## 9. Report
 `docs/tasks/0540-report.md`: Status, test and lint tails, `git diff --stat origin/main`, the assertions changed, deviations.
+
+## 10. Addendum (orchestrator, after the first run stopped at step 6)
+Steps 1-5 are committed. Do only step 6, plus this: the host table follows the mockup and shows no door code and no instructions (they stay on the property settings page and the cleaner's shared view). In `tests/test_cleaning.py::test_readable_list_and_settings_escape_host_text_and_show_leading_zero_code`, keep `href="/cleaning"` and the `11:00`/`15:00` checks on `/cleaning`, and move the `001234`, `&lt;script&gt;` and `<script>alert(1)</script> not in` checks to `GET /cleaning/properties/{ws['home']}?lang=en`. If that page does not show the code or the instructions, stop and report. Then run section 6 in full, update the report, and commit `0540 step 6`.
