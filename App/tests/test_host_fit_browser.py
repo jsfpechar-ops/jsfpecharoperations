@@ -15,10 +15,11 @@ EVIDENCE_WIDTHS = (360, 390, 760, 1024, 1280, 1440, 1920)
 EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0091-evidence"
 
 MEASURE = """() => {
-  const view = document.querySelector('.stays-view');
+  // v2 (0528): the computer table from 1024 px, the phone list below it.
+  const view = innerWidth >= 1024 ? document.querySelector('.stays-desk') : [...document.querySelectorAll('.stays-phone')].pop();
   const v = view.getBoundingClientRect();
-  const rows = [...view.querySelectorAll('tbody tr')].map(tr => {
-    const items = [...tr.querySelectorAll('td, td a, td button, td .pill, td .deadline')]
+  const rows = [...view.querySelectorAll('tbody tr, a.row')].map(tr => {
+    const items = [...tr.querySelectorAll('td, td a, td button, td .pill, td .deadline, a.row > *, a.row .pill')]
       .filter(el => el.offsetParent !== null && el.getBoundingClientRect().width > 0 && !el.closest('.row-menu-panel') && !el.classList.contains('sr-only'));
     const rects = items.map(el => { const r = el.getBoundingClientRect();
       return {tag: el.tagName, cls: el.className, left: r.left, right: r.right, top: r.top, bottom: r.bottom,
@@ -30,9 +31,9 @@ MEASURE = """() => {
   });
   const sc = document.documentElement;
   return {viewLeft: v.left, viewRight: v.right, viewScroll: view.scrollWidth, viewClient: view.clientWidth,
-          docScroll: sc.scrollWidth, tableScroll: view.querySelector('table').scrollWidth,
+          docScroll: sc.scrollWidth, tableScroll: view.querySelector('table') ? view.querySelector('table').scrollWidth : 0,
           overflow: getComputedStyle(view).overflowX, rows,
-          header: getComputedStyle(view.querySelector('thead')).display !== 'none'};
+          header: !!view.querySelector('thead') && getComputedStyle(view.querySelector('thead')).display !== 'none'};
 }"""
 
 
@@ -75,7 +76,7 @@ def test_stays_fit_lane_at_every_width_and_sidebar_state(stay_actions_host, stay
                     if capture and width in EVIDENCE_WIDTHS:
                         EVIDENCE.mkdir(parents=True, exist_ok=True)
                         name = f"stays-{width}-{locale}-{'collapsed' if collapsed else 'expanded'}.png"
-                        page.locator(".stays-view").first.screenshot(path=str(EVIDENCE / name))
+                        page.locator(".stays-desk" if width >= 1024 else ".stays-phone").last.screenshot(path=str(EVIDENCE / name))
                     state = f"{locale}/{width}/{'collapsed' if collapsed else 'expanded'}"
                     lane = round(m["viewClient"])
                     matrix.append({"locale": locale, "width": width,
@@ -94,12 +95,11 @@ def test_stays_fit_lane_at_every_width_and_sidebar_state(stay_actions_host, stay
                     assert m["header"] == (width >= 1024), (state, lane)
                     heights = sorted(r["height"] for r in m["rows"])
                     median = heights[(len(heights) - 1) // 2]  # lower median: Send rows may wrap in CS
-                    # Roomy rows (0191): --row-h 80px plus 16px cell padding gives a one-line stay row of 98px
-                    # (old budget: 72px for a 64px row, the same 8px slack above the measured height).
-                    assert median <= (106 if m["header"] else (160 if lane >= 600 else 200)), (state, lane, heights)
+                    # v2 rows follow the mockup (exact heights are checked by test_0710); here only a sane budget.
+                    assert median <= (106 if m["header"] else 120), (state, lane, heights)
                     if m["header"]:
                         assert heights[-1] <= 125, (state, heights)
-                        assert heights[0] >= 80, (state, heights)  # never shorter than the --row-h token
+                        assert heights[0] >= 44, (state, heights)  # touch-size floor
                     for row in m["rows"]:
                         for r in row["rects"]:
                             assert r["left"] >= m["viewLeft"] - 1 and r["right"] <= m["viewRight"] + 1, (state, r)

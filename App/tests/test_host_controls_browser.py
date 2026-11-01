@@ -127,7 +127,8 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
     client = host["client"]
     reservation_url = f"/reservations/{host['reservation']}"
     detail = client.get(reservation_url + "?lang=en").text
-    assert detail.count("Copy guest form link") == 1
+    # v2: the desktop header button plus the phone round icon's label; no copy in the menu.
+    assert detail.count("Copy guest form link") == 2
     assert "Copy guest link for this stay" not in detail
     assert 'data-confirm-message="This item will move to Archived."' in detail
     assert "stay.detail.menu.archive" not in detail
@@ -168,7 +169,8 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
                 for name, path in pages:
                     response = page.goto(f"{base}{path}?lang={lang}")
                     assert response and response.status == 200, f"{path} ({lang}) failed"
-                    assert page.locator('link[href*="host-controls.css"]').count() == 1
+                    v2 = page.locator("body.v2").count() == 1  # v2 pages (0528) use app2.css instead
+                    assert page.locator('link[href*="host-controls.css"]').count() == (0 if v2 else 1)
                     size = page.evaluate("""() => ({
                       width: innerWidth,
                       scrollWidth: document.documentElement.scrollWidth,
@@ -302,7 +304,9 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
                 assert csv_geometry["left"] >= 0 and csv_geometry["right"] <= width, csv_geometry
                 assert csv_geometry["scrollWidth"] <= csv_geometry["clientWidth"], csv_geometry
                 assert len(csv_geometry["buttonWidths"]) == 2 and abs(csv_geometry["buttonWidths"][0] - csv_geometry["buttonWidths"][1]) < 1
-                assert csv_geometry["buttonHeights"] == [44, 44]
+                # v2 stays page (0528): the dialog buttons take the v2 button size; equal and touch-sized
+                heights = csv_geometry["buttonHeights"]
+                assert len(heights) == 2 and abs(heights[0] - heights[1]) < 1 and min(heights) >= 44, heights
                 assert len(csv_geometry["fieldBounds"]) == 2
                 assert all(bound["left"] >= csv_geometry["left"] and bound["right"] <= csv_geometry["right"] for bound in csv_geometry["fieldBounds"]), csv_geometry
                 if width == 1280:

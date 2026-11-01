@@ -391,7 +391,7 @@ def test_a_live_stay_keeps_its_deadline_and_copy_link():
         assert "Marked as not a guest stay" not in page.text
         assert "Archived and hidden from your daily work." not in page.text
         assert COPY_LINK_PRIMARY not in page.text
-        assert 'class="row-menu-item" type="button" role="menuitem" data-copy="stay-link"' in page.text
+        assert 'data-copy="stay-link" data-copied-label' in page.text  # v2: header button / phone icon
         assert "Reporting deadline" in page.text
         assert 'class="stay-metrics detail-hero inactive"' not in page.text
     finally:

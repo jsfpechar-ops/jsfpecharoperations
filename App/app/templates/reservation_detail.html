@@ -60,7 +60,7 @@
     {% endif %}
   {% endif %}
 {% endmacro %}
-<div class="head"><div>
+<div class="head" id="now"><div>
   <div class="crumb"><a href="{{ return_to }}">{{ t('stays.title') }}</a> › {{ lead_name or reservation.internal_name }}</div>
   <h1 class="big">{{ lead_name or reservation.internal_name }}</h1>
   <details class="ui-how stays-how ph-hide" data-how="stay">
@@ -79,7 +79,6 @@
       {{ row_menu_begin() }}
         <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">{{ t('stay.detail.cta.add_guest') }}</a>
         {% if stay_invoice %}<a class="row-menu-item" href="/invoices/{{ stay_invoice.id }}" role="menuitem">{{ t('invoice.stay.open', number=stay_invoice.number) }}</a>{% else %}<a class="row-menu-item" href="/invoices/new?reservation_id={{ reservation.id }}" role="menuitem">{{ t('invoice.new') }}</a>{% endif %}
-        <button class="row-menu-item" type="button" role="menuitem" data-copy="stay-link" data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('host.copy_guest_form_link') }}</button>
         {% if reservation.permalink_token %}
         <a class="row-menu-item" href="{{ guest_link }}" target="_blank" rel="noopener" role="menuitem">{{ t('stay.detail.menu.open_guest_form') }}</a>
         {% endif %}
@@ -167,12 +166,10 @@
   {%- endif %}
 {%- endmacro %}
 {# --- 2. Guests (0528: computer table, phone list below 1024 px) -------- #}
-{% set ns = namespace(count_edit=false) %}
-{% if progress.status == 'failed' or send_controls.send_enabled %}{% elif progress.not_registered or send_controls.send_hint_key == 'hint.missing_guests' %}{% set ns.count_edit = true %}{% endif %}
 {% set lw = link_window(reservation) if progress.status in ('awaiting_guest', 'incomplete') else none %}
 <section class="stay-guests" id="guests">
 <div class="stay-guests-h"><h2 class="sec">{{ t('stay.detail.guests.title') }}<span class="sub ph-hide">{% if progress.expected is not none %}{{ progress.filled }} / {{ progress.expected }}{% elif progress.guests %}{{ progress.guests | length }}{% else %}–{% endif %}</span></h2>
-  <div class="stay-guests-actions ph-hide">{% if ns.count_edit %}<a class="btn ghost" href="#stay-quick-edit" data-open-details>{{ t('host.edit_count') }}</a>{% endif %}<a class="btn ghost" href="/reservations/{{ reservation.id }}/guests/new">+ {{ t('stay.detail.cta.add_guest') }}</a></div>
+  <div class="stay-guests-actions ph-hide"><a class="btn ghost" href="#stay-quick-edit" data-open-details>{{ t('host.edit_count') }}</a><a class="btn ghost" href="/reservations/{{ reservation.id }}/guests/new">+ {{ t('stay.detail.cta.add_guest') }}</a></div>
 </div>
 {% if lw %}<p class="sub link-window-line ph-hide" data-link-window="{{ lw.state }}"><span class="link-window{{ ' is-later' if lw.state == 'from' }}">{{ t('workflow.link.now') if lw.state == 'now' else t('workflow.link.from', date=lw.opens.isoformat() | date_short) }}</span>{% if lw.state == 'from' %}{{ help_tip('link-window-help', t('workflow.link.why')) }} <button class="btn ghost" type="button" data-copy="stay-link" data-copy-label="{{ t('workflow.link.copy_own') }}" data-copied-label="{{ t('stay.detail.link_copied') }}" data-copy-own-link>{{ t('workflow.link.copy_own') }}</button>{% endif %}</p>{% endif %}
 

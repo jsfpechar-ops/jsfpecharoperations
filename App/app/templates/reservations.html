@@ -96,10 +96,10 @@
 {% endset %}
 <div class="chips">
   {% for value, label_key in [('upcoming', 'stays.chip.upcoming'), ('current', 'stays.chip.current'), ('past', 'stays.chip.past')] %}
-  <a class="chip{{ ' on' if date_range == value and report != 'failed' }}" href="/reservations?range={{ value }}&status={{ status }}&apartment={{ apartment_id or '' }}">{{ t(label_key) }}</a>
+  <a class="chip{{ ' on' if date_range == value and report != 'failed' }}" href="/reservations?range={{ value }}&status={{ status }}&apartment={{ apartment_id or '' }}"{% if date_range == value and report != 'failed' %} aria-current="true"{% endif %}>{{ t(label_key) }}</a>
   {% endfor %}
-  <a class="chip{{ ' on' if report == 'failed' }}" href="/reservations?report=failed&status={{ status }}&apartment={{ apartment_id or '' }}">{{ t('stays.chip.failed') }}</a>
-  <a class="chip ph-hide{{ ' on' if show_archive }}" href="/reservations?range=archive&status={{ status }}&apartment={{ apartment_id or '' }}">{{ t('stays.chip.archive') }}</a>
+  <a class="chip{{ ' on' if report == 'failed' }}" href="/reservations?report=failed&status={{ status }}&apartment={{ apartment_id or '' }}"{% if report == 'failed' %} aria-current="true"{% endif %}>{{ t('stays.chip.failed') }}</a>
+  <a class="chip ph-hide{{ ' on' if show_archive }}" href="/reservations?range=archive&status={{ status }}&apartment={{ apartment_id or '' }}"{% if show_archive %} aria-current="true"{% endif %}>{{ t('stays.chip.archive') }}</a>
   <button class="chip ph-hide" type="button" data-filter-toggle aria-expanded="true" aria-controls="stays-filter-panel" hidden>{{ t('host.filter.filters') }}</button>
 </div>
 <p class="sub ph-hide" data-filter-summary>{{ stay_summary }}</p>
@@ -298,7 +298,7 @@
 <div class="list stays-links">
   <a class="link ph-hide" href="/submissions"><span>{{ t('tabs.stays.reports') }}</span>{{ icon('chevron-right', 16) }}</a>
   <a class="link ph-hide" href="/housebook"><span>{{ t('tabs.stays.register') }}</span>{{ icon('chevron-right', 16) }}</a>
-  <a class="link ph-hide" href="/reservations.csv?{{ csv_export_params }}"><span>{{ t('csv.export_stays') }}</span>{{ icon('download', 16) }}</a>
+  <a class="link ph-hide" href="/reservations.csv?{{ csv_export_params }}" data-csv-export="/reservations.csv" data-csv-params="{{ csv_export_params }}" data-csv-scope-label="{{ stay_property.label }}"><span>{{ t('csv.export_stays') }}</span>{{ icon('download', 16) }}</a>
   <a class="link stays-phone-only" href="/housebook.csv?{{ csv_export_params }}" data-stays-housebook-phone><span>{{ t('stays.housebook_download') }}<small>{{ t('stays.housebook_hint') }}</small></span>{{ icon('download', 16) }}</a>
 </div>
 {% endblock %}

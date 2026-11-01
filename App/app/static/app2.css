@@ -692,6 +692,15 @@ body.v2 .onboarding-intro .onboarding-logo{width: 64px; height: auto; max-width:
 @media (max-width:1023px){body.v2 .needs-you-actions .btn{min-height:44px}}
 /* 0529 tests: the desk rows are clickable (data-href), so they show the pointer */
 body.v2 tr[data-href]{cursor:pointer}
+body.v2 a.chip:not(.on):hover{background:#f4f4f1}
+/* 0529: the shared CSV export dialog (base.html) on v2 pages, which do not load host-controls.css */
+body.v2 .csv-export-dialog{width:min(520px,calc(100vw - 24px));max-width:520px;max-height:calc(100vh - 24px);overflow:auto}
+body.v2 .csv-export-dialog form{padding:clamp(18px,4vw,24px)}
+body.v2 .csv-export-dialog .grid.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+body.v2 .csv-export-dialog .field>label{display:block;margin:0 0 6px;font-size:13px;font-weight:650}
+body.v2 .csv-export-dialog input[type="date"]{width:100%;min-width:0;min-height:44px}
+body.v2 .csv-export-dialog .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+body.v2 .csv-export-dialog .actions .btn{width:100%;min-width:0;min-height:44px;white-space:normal;text-align:center}
 
 @media (max-width:767px){body.v2 .cal-day-number{min-width:44px}}
 body.v2 .menu-list .row .t small{display:block;color:var(--ink3);font-size:14px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

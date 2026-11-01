@@ -56,7 +56,7 @@ def test_hover_changes_every_clickable_thing(base):
         ("/reservations?range=all", "tbody tr.clickable-row"),
         ("/", "[data-needs-you-go]"),
         (f"/apartments/{flat}?view=overview", "a.host-property-card"),
-        ("/reservations?range=all", "a.ui-chip:not([aria-current])"),
+        ("/reservations?range=all", "a.chip:not([aria-current])"),
     ]
     problems = []
     with sync_api.sync_playwright() as playwright:
