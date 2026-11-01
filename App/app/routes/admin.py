@@ -521,6 +521,7 @@ def dashboard(request: Request):
             # 0233: remind until a real guest has used the guest link.
             "link_unused": workflow.link_unused(apartments),
             "welcome_back": welcome,
+            "month_summary": reporting.month_summary(owner_user_id, today),
         },
     ))
 
