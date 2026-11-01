@@ -183,6 +183,7 @@ func run() int {
 	mux := http.NewServeMux()
 	mux.Handle("GET /healthz", m.wrap("/healthz", healthz(pool)))
 	mux.Handle("GET /metrics", m.wrap("/metrics", m.serve))
+	mux.Handle("POST /webhooks/stripe", m.wrap("/webhooks/stripe", payments.WebhookHandler(pool, os.Getenv, time.Now)))
 	mux.Handle("/", m.wrap("/", notFound))
 
 	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
