@@ -524,7 +524,7 @@ def test_calendar_popup_types_create_in_place_and_localize_validation(workspace,
         marker.wait_for(state="visible")
         cleaning_card = page.locator(f'#cleaning-list #cleaning-{created["id"]}')
         cleaning_card.wait_for(state="visible")
-        assert cleaning_card.locator("td").count() == 4  # the host table shows no notes
+        assert cleaning_card.locator("td").count() == 5  # the host table shows no notes
         shot(page, "cleaning-create-result-cs")
 
         page.locator('[data-calendar-add][data-cal-create-type="cleaning"]').click()

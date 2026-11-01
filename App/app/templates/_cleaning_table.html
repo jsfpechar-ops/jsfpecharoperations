@@ -1,4 +1,4 @@
-{% from "_ui.html" import ui_badge with context %}{% from "_ui_layout.html" import ui_table_begin, ui_table_end with context %}
+{% from "_components.html" import row_open with context %}{% from "_ui.html" import ui_badge with context %}{% from "_ui_layout.html" import ui_table_begin, ui_table_end with context %}
 {% for key, items in sections %}
 <section class="cleaning-section" aria-labelledby="cleaning-section-{{ key }}">
   <h2 id="cleaning-section-{{ key }}">{{ ct('section_' ~ key) }}</h2>
@@ -6,13 +6,14 @@
   <p class="cleaning-empty">{{ ct('today_empty') }}</p>
   {% else %}
   <div class="ui-table-wrap">
-  {{ ui_table_begin([(ct('col_property'), ''), (ct('col_time') if key == 'today' else ct('col_day'), ''), (ct('arrival'), ''), (ct('col_status'), '')], ct('section_' ~ key)) }}
+  {{ ui_table_begin([(ct('col_property'), ''), (ct('col_time') if key == 'today' else ct('col_day'), ''), (ct('arrival'), ''), (ct('col_status'), ''), ('', '')], ct('section_' ~ key)) }}
   {% for item in items %}
     <tr class="ui-row clickable-row" id="cleaning-{{ item.eventId }}" data-href="/cleaning/events/{{ item.eventId }}/edit" tabindex="0" role="link">
       <td class="ui-cell-first" data-card="primary"><a href="/cleaning/events/{{ item.eventId }}/edit">{{ item.property }}</a></td>
       <td data-card="secondary">{% if key == 'today' %}{% if item.startTime and item.endTime %}{{ item.startTime }}–{{ item.endTime }}{% elif item.checkoutTime and item.checkinTime %}{{ item.checkoutTime }}–{{ item.checkinTime }}{% else %}{{ ct('time_missing') }}{% endif %}{% else %}{{ cleaning_date(item.date) }}{% endif %}</td>
       <td data-card="meta">{% if item.nextArrival %}{{ cleaning_date(item.nextArrival) }} · {{ item.checkinTime or ct('time_missing') }}{% else %}{{ ct('no_arrival') }}{% endif %}</td>
       <td data-card="badge">{% if item.conflict %}{{ ui_badge('action', ct('status_conflict')) }}{% elif item.timingUnavailable %}{{ ui_badge('attention', ct('status_hours')) }}{% else %}{{ ui_badge('neutral', ct('status_scheduled')) }}{% endif %}</td>
+      <td class="nowrap row-actions" data-label="">{{ row_open('/cleaning/events/' ~ item.eventId ~ '/edit') }}</td>
     </tr>
   {% endfor %}
   {{ ui_table_end() }}
