@@ -105,10 +105,13 @@ def test_rows_hover_as_one_surface_and_use_compact_menus(stay_actions_host, stay
         page.goto(f"{base}/?lang={lang}")
 
         _ready(page)
-        assert page.locator(".needs-you").is_visible()
+        assert page.locator("#needs-action").is_visible()
         _fits(page)
 
         if width >= 1440:
+            # Old shell: the collapsible sidebar account lives on /settings; v2 Overview has no sidebar account.
+            page.goto(f"{base}/settings?lang={lang}")
+            _ready(page)
             page.evaluate("document.body.classList.add('sidebar-collapsed')")
             account = page.locator("[data-host-account] > summary")
             avatar = account.locator(".sidebar-user-avatar")

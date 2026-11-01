@@ -59,13 +59,15 @@ BOX_OVERRIDES = {
     ".card.me@320": {"height": "98px"},
     ".head h1": {"margin-left": "0px", "margin-right": "0px"},
     # the fixture needs-you and stay cards have longer titles and a different line count than the mockup demo copy (0719); heights are per width
-    ".card.need@320": {"height": "209.28px"},
-    ".need b@320": {"height": "66.28px"},
+    # text-dependent: fixture copy vs mockup demo copy (0722 short problem lines)
+    ".card.need@320": {"height": "165.094px"},
+    ".need b@320": {"height": "22.0938px"},
     ".need small@320": {"height": "38px"},
     ".hs .card@320": {"height": "152px"},
     ".meta@320": {"height": "19px"},
-    ".card.need@390": {"height": "168.19px"},
-    ".need b@390": {"height": "44.19px"},
+    # text-dependent: fixture copy vs mockup demo copy (0722 short problem lines)
+    ".card.need@390": {"height": "150px"},
+    ".need b@390": {"height": "22.0938px"},
     ".need small@390": {"height": "19px"},
     ".hs .card@390": {"height": "152px"},
     ".meta@390": {"height": "19px"},

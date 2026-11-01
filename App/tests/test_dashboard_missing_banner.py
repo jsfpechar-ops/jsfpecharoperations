@@ -82,11 +82,11 @@ def _insert_apartment(internal_name: str, **overrides) -> int:
 
 
 def _setup_lines(text: str) -> list[str]:
-    """Body of each setup card. 0706: a line is div.card.needs-you-card-item (mockup .todo)."""
+    """Body of each setup card. 0706: a line is div.card.needs-you-card-item (mockup .todo); 0719 adds the `need` modifier."""
     lines = []
-    for match in re.finditer(r'<div class="card needs-you-card-item"[^>]*data-needs-you="setup"[^>]*>', text):
+    for match in re.finditer(r'<div class="card needs-you-card-item[^"]*"[^>]*data-needs-you="setup"[^>]*>', text):
         stops = [i for i in (
-            text.find('class="card needs-you-card-item"', match.end()),
+            text.find('class="card needs-you-card-item', match.end()),
             text.find("</section>", match.end()),
         ) if i != -1]
         lines.append(text[match.end(): min(stops) if stops else len(text)])
@@ -117,7 +117,7 @@ def test_one_short_line_opens_the_first_missing_police_field(host):
     assert len(lines) == 1
     line = lines[0]
     assert "Order Flat" in line
-    assert host_i18n.STRINGS["en"]["needs_you.setup"] in line
+    assert host_i18n.STRINGS["en"]["needs_you.short.setup"] in line
     assert f'href="/apartments/{apartment_id}?view=settings&amp;section=reporting#ubyport"' in line
     # The owner asked for no field-by-field list on the dashboard.
     assert "IDUB" not in line and "Password" not in line
@@ -160,5 +160,5 @@ def test_the_setup_line_is_in_czech(host):
     page = host.get("/?lang=cs")
 
     line = _setup_lines(page.text)[0]
-    assert host_i18n.STRINGS["cs"]["needs_you.setup"] in line
+    assert host_i18n.STRINGS["cs"]["needs_you.short.setup"] in line
     assert host_i18n.STRINGS["cs"]["needs_you.action.setup"] in line
