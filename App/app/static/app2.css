@@ -102,3 +102,4 @@ body.v2 .row-menu-panel[hidden]{display:none}
 body.v2 .row-menu-item{display:block;font:inherit;font-size:13px;width:100%;text-align:left;padding:8px 12px;border:0;border-radius:6px;background:none;color:var(--ink);cursor:pointer;text-decoration:none}
 body.v2 .row-menu-item:hover{background:#f6f6f4}
 body.v2 .row-menu-panel.is-open{position:fixed}
+body.v2 .crow{grid-auto-rows:44px}
