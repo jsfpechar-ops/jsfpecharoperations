@@ -96,9 +96,9 @@
   <div class="quiet ov-month" data-dashboard-month><span>{{ t('dashboard.month.label') }}</span> <span class="ov-mi"><b>{{ month_summary.guests }}</b> {{ tp('dashboard.month.guests', month_summary.guests) }}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{ month_summary.nights }}</b> {{ tp('dashboard.month.nights', month_summary.nights) }}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{ month_summary.reported }}</b> {{ tp('dashboard.month.reported', month_summary.reported) }}</span></div>
   {% endif %}
 
-  <h2>{{ t('calendar.calendar') }}</h2>
+  <h2 class="ov-cal-block">{{ t('calendar.calendar') }}</h2>
   {% set wd = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'] if lang == 'cs' else ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'] %}
-  <div class="scroll-x">
+  <div class="scroll-x ov-cal-block">
   <div class="card cal ov-section">
     <div class="cgrid"><div></div>{% for d in cal_days %}<div class="cd{{ ' today' if loop.first }}">{{ wd[d.weekday()] }} {{ d.day }}</div>{% endfor %}</div>
     {% for row in cal_rows %}
@@ -106,11 +106,23 @@
     {% endfor %}
   </div>
   </div>
-  <p class="ov-cal-more"><a href="/?cal_view=calendar" class="ov-cal-link">{{ t('dashboard.calendar.full') }}</a></p>
+  <p class="ov-cal-more ov-cal-block"><a href="/?cal_view=calendar" class="ov-cal-link">{{ t('dashboard.calendar.full') }}</a></p>
   {% if cal_view %}{% include "_dashboard_calendar.html" %}{% endif %}
 
   <h2 class="sec">{{ t('dashboard.today.title') }} <a class="ph-only" href="/?cal_view=calendar">{{ t('calendar.calendar') }}</a></h2>
-  <div class="card" data-dashboard-refresh="work"><table><thead><tr><th>{{ t('archive.col.guest') }}</th><th>{{ t('stay_fees.col.property') }}</th><th>{{ t('host.stay_dates') }}</th><th>{{ t('filter.status') }}</th><th></th></tr></thead><tbody>
+  <div class="hs ph-only">
+  {% for row in today_rows %}
+    {% set reservation = row.reservation %}{% set progress = row.progress %}{% set cell = row.deadline_cell %}
+    {% set stay_label = reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else reservation.internal_name %}
+    {% set arriving = (reservation.date_from | string)[:10] == today.isoformat() %}
+    <a class="card" href="/reservations/{{ reservation.id }}?return_to=/" data-stay-id="{{ reservation.id }}">
+      <span class="kind {{ 'in' if arriving else 'out' }}">{{ t('calendar.arrival') if arriving else t('calendar.departure') }}</span>
+      <div class="who"><div class="av">{{ stay_label[:1] | upper }}</div><div><div class="nm">{{ stay_label }}</div><div class="meta">{{ tp('dashboard.today.nights', row.nights) }} · {{ tp('dashboard.today.guests', progress.expected if progress.expected is not none else (progress.guests | length)) }}</div></div></div>
+      {{ v2_status_pill(cell, progress, reservation) }}
+    </a>
+  {% endfor %}
+  </div>
+  <div class="card ov-table" data-dashboard-refresh="work"><table><thead><tr><th>{{ t('archive.col.guest') }}</th><th>{{ t('stay_fees.col.property') }}</th><th>{{ t('host.stay_dates') }}</th><th>{{ t('filter.status') }}</th><th></th></tr></thead><tbody>
   {% for row in today_rows %}
     {% set reservation = row.reservation %}{% set progress = row.progress %}{% set cell = row.deadline_cell %}
     {% set stay_label = reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else reservation.internal_name %}

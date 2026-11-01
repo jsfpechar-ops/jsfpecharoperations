@@ -287,6 +287,7 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
   body.v2 .ov-table{display:none}
   body.v2 .ov-cal-block{display:none}
   body.v2 .hs .card{text-decoration:none;color:inherit}
+  body.v2 .hs .who{display:flex;gap:12px;align-items:center}
   body.v2 .card.me .me-link > div:not(.av){min-width:0;flex:1}
   body.v2 .card.me b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 }
