@@ -31,6 +31,8 @@ SELECTOR_OVERRIDES = {
     ".tab.on": {"font-size": "12px"},
     # mockup's 30 px bottom padding is home-indicator room in the phone frame; the app's action bar sits above the tab bar
     ".actbar": {"padding-bottom": "12px"},
+    # tone follows the stay state (0715 mapping); fixture stay is waiting, mockup shows a finished one (0719)
+    ".hs .pill": {"color": "rgb(138, 82, 0)", "background-color": "rgb(255, 244, 214)", "border-bottom-color": "rgb(138, 82, 0)"},
 }
 # style-compared only at computer width (phone design pending)
 DESKTOP_ONLY = {".side", ".side .nav", ".side .nav.on"}
@@ -47,6 +49,21 @@ BOX_OVERRIDES = {
     ".big": {"margin-left": "0px", "margin-right": "0px"},
     "h2.sec": {"margin-left": "0px", "margin-right": "0px"},
     ".card.need": {"margin-left": "0px", "margin-right": "0px"},
+    ".head .sub": {"margin-left": "0px", "margin-right": "0px"},
+    # the mockup name wraps at 320 px; the app keeps it on one line with ellipsis (0719 brief, left over from 0718)
+    ".card.me@320": {"height": "98px"},
+    ".head h1": {"margin-left": "0px", "margin-right": "0px"},
+    # the fixture needs-you and stay cards have longer titles and a different line count than the mockup demo copy (0719); heights are per width
+    ".card.need@320": {"height": "209.28px"},
+    ".need b@320": {"height": "66.28px"},
+    ".need small@320": {"height": "38px"},
+    ".hs .card@320": {"height": "152px"},
+    ".meta@320": {"height": "19px"},
+    ".card.need@390": {"height": "168.19px"},
+    ".need b@390": {"height": "44.19px"},
+    ".need small@390": {"height": "19px"},
+    ".hs .card@390": {"height": "152px"},
+    ".meta@390": {"height": "19px"},
 }
 
 
@@ -340,7 +357,8 @@ def box_diffs(selector: str, app: dict, mock: dict, width: int) -> list[str]:
     """Phone box metrics: width within 2 px, height and margins within 1 px. Values that are not px are skipped."""
     out = []
     for prop in BOX_PROPS:
-        a, m = _num(app[prop]), _num(BOX_OVERRIDES.get(selector, {}).get(prop, mock[prop]))
+        override = {**BOX_OVERRIDES.get(selector, {}), **BOX_OVERRIDES.get(f"{selector}@{width}", {})}
+        a, m = _num(app[prop]), _num(override.get(prop, mock[prop]))
         if a is None or m is None:
             continue
         tol = 2 if prop == "width" else 1

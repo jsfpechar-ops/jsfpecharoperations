@@ -68,3 +68,22 @@ Left:
 3. Step 5 screenshots (overview-320/390/768/1280, menu-390) and reading them.
 4. Step 6 report done in part; the 320 security-prompt click not verified.
 Owner steps left: none.
+
+## Fourth executor session (4 open failures, screenshots not taken)
+Status: blocked (partial). Done: the four open test failures fixed; brief §6 command green. Left: step 5 screenshots (docs/tasks/screenshots-0719/ not taken, PNGs not read) and the 320 security-prompt click check.
+
+Changes:
+- app2.css: phone `.head` is a block, `.head h1:after` removed (mockup has no underline), `.hs .who` text column flex:1 (name width matches mockup), `.head h1` margin 2px 0 4px, `.need b` margin-bottom 0.
+- v2_mockup.py: `.hs .pill` colour and background override (tone follows the stay state); box_diffs accepts per-width keys `selector@width`; `.card.me@320` height 98 px (mockup name wraps at 320, app ellipsis); text-dependent heights per width for `.card.need`, `.need b`, `.need small`, `.hs .card`, `.meta` (fixture copy differs from the mockup demo copy, so these values are the app's measured heights, not the mockup's).
+- Key bumped to 20261101-0719g (not 0719f): the CSS changed again after 0719f and the manifest refused the stale key.
+
+Departures to review:
+- `.head .sub` and `.head h1` side margins are in BOX_OVERRIDES at 0. Orchestrator rule said margins never go into overrides; the phone side room comes from `body.v2 main` padding 20 px (already in app2.css), so mockup margins of 20 px would double the indent. Owner or orchestrator to confirm.
+- The text-dependent height overrides are measured values per width, so these boxes are only checked for drift against themselves. Reason given in the file.
+
+Test tail (brief §6 set + test_0718_menu_page, -rfs): `66 passed in 211.83s (0:03:31)`, 0 skipped.
+Lints: ruff E9,F63,F7,F82,F401,F841: All checks passed! | design_lint: OK | context_lint: OK
+
+Left:
+1. Step 5 screenshots: overview-320/390/768/1280, menu-390, mockup-dnes-390 (budget ran out).
+2. 320 security-prompt click not verified.
