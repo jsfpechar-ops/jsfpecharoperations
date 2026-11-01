@@ -55,3 +55,24 @@ Left:
 - Visual differences seen at 1280 and 390: the table header "Otevřít" column is no longer visible; the filter panel is now collapsed behind the "Filtry" chip. Re-check after the item 6 fix.
 
 Deviations: no new subagents, no push. Untracked `docs/tasks/screenshots-0710/*` is not committed.
+
+## Session 4 (Haiku executor)
+Status: blocked
+Done: step 0 item 6 (commit 622a1781: `body.v2 .stays-phone-only{display:none}` at min-width 1024, key `20261101-0527f`, manifest 41 files; `test_static_versions.py` 3 passed). Step 1 unchanged: `-k stays` 3 failed, 9 passed, 0 skipped (the three are the shell-owned items above).
+Left: step 2 (old tests) and step 3 (screenshots, not started; the retake test is `tests/test_0710_v2_mockup_match_browser.py` with `UBYHOST_SHOTS_V2=1`).
+
+Step 2 triage, one file at a time, `--tb=short -rs`, no test edited yet:
+- `test_0523_stays_list.py`: 2 passed, 6 failed. Helper at line 84 uses `</tr>` (table removed in 0526); line 196 asserts `.stays-view` count 1 (replaced by `.stays-phone`).
+- `test_design_stays.py`: 1 passed, 2 failed. Line 10 expects `class="ui-toolbar" data-filter-toolbar data-list-toolbar` (removed); line 27 forbids `style="` and `class="btn` in `reservations.html` (both present now).
+- `test_archive_stays_on_page.py`: 10 passed. No change needed.
+- `test_stays_empty_workspace.py`: 13 passed, 1 failed. Line 232 expects `data-list-toolbar` (removed); `stays-filter-panel` and `data-filter-panel` still present.
+- `test_host_list_layouts_browser.py`: 2 failed. `_check_pairs` gets 0 pairs for stays/en/360 and the ONE_LINE row probe finds 0 rows (selector `row-open`/`.row` no longer matches).
+- `test_host_list_page_layout_browser.py`: 3 failed. Tab-strip regex at line 178 finds no `sub-tabs` nav on `/reservations` (tabs removed); stays geometry matrix "missing block"; line 300 "no clickable row" for stays (new row is `a.row`).
+- `test_host_filter_panels_browser.py`: 1 passed, 3 failed. `[data-save-view]` click times out (button dropped in 0526, owner told); `[data-filter-toolbar]` not visible at 360 px en `/reservations`.
+- `test_0199_phone_geometry_browser.py`: 3 passed.
+- `test_host_wide_geometry_browser.py`, `test_design_guardrails_browser.py`, `test_a11y_guard_browser.py`: setup ERRORs (10, 11, 4). Shared fixture `wide_base` line 199 asserts `data-host-alerts` in a signed-in host page; the response is a 200 page without it. Not triaged: may be a login/fixture problem or a shell change. Stop-and-ask item (brief section 8): not edited.
+- `test_static_versions.py`: 3 passed.
+
+Next session: start with `test_0523_stays_list.py` (update the `</tr>` helper and `.stays-view` assertion to `.stays-phone`/`a.row`), then the two template assertions, then the rest. Commit after each 2-3 files as `0527 step 2`.
+
+Not pushed. No PR opened (brief says do not push; owner decides).
