@@ -592,7 +592,7 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
   .dashboard-calendar.is-fixed-days .cal-toolbar h3,
   .dashboard-calendar.is-fixed-days .cal-toolbar-options,
   .dashboard-calendar.is-fixed-days [data-cal-property],
-  .dashboard-calendar.is-fixed-days [data-cal-settings] { display:none; }
+  .host-workspace .dashboard-calendar.is-fixed-days .cal-heading [data-cal-settings] { display:none; }
   .dashboard-calendar.is-fixed-days .cal-gantt-scroll { border:1px solid var(--sand-200); border-radius:12px; background:var(--surface); }
   .dashboard-calendar.is-fixed-days .cal-gantt-header { background:var(--surface); border-bottom:1px solid var(--sand-200); }
   .dashboard-calendar.is-fixed-days .cal-gantt-header > span { font-size:11px; color:var(--ink-3); border-right:0; padding:8px 2px; }
