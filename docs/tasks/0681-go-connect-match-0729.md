@@ -1,5 +1,5 @@
 # 0681: Go Connect routes follow 0729/0730 (flash redirects to /payments)
-Status: todo
+Status: review
 Depends on: 0676 | Base commit: claude/project-thread-iwyawc | Branch: claude/project-thread-iwyawc
 Executor: Haiku 5.5 | Fits one session: 20 tool calls, 50k tokens
 ## 1. Objective
