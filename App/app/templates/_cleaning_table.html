@@ -1,4 +1,4 @@
-{% from "_ui.html" import ui_badge %}{% from "_ui_layout.html" import ui_table_begin, ui_table_end %}
+{% from "_ui.html" import ui_badge with context %}{% from "_ui_layout.html" import ui_table_begin, ui_table_end with context %}
 {% for key, items in sections %}
 <section class="cleaning-section" aria-labelledby="cleaning-section-{{ key }}">
   <h2 id="cleaning-section-{{ key }}">{{ ct('section_' ~ key) }}</h2>
