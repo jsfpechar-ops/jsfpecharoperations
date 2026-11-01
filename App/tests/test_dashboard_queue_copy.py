@@ -287,7 +287,7 @@ def test_the_card_gives_each_stay_that_needs_the_host_one_line(seeded):
     card = _needs_action_section(page)
     assert host_i18n.translate("en", "needs_you.title") in card
     # 0706: each needs-you line is a div.card.needs-you-card-item (mockup .todo)
-    lines = card.split('class="card needs-you-card-item"')[1:]
+    lines = card.split('class="card needs-you-card-item need"')[1:]
     assert lines, "the seeded ready stay should need the host"
     for line in lines:
         assert line.count('class="btn') == 1, line
