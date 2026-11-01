@@ -14,9 +14,9 @@
 
 {#- 0706: one "Potřebuje vás" card per needs-you line (mockup .todo). -#}
 {% macro overview_card(line, first=False) %}
-{% set ic_style = 'background:var(--bads);color:var(--bad)' if line.tone == 'red' else ('background:var(--warns);color:var(--warn)' if line.tone == 'amber' else 'background:#efefeb;color:var(--ink2)') %}
+{% set ic_tone = 'red' if line.tone == 'red' else ('amber' if line.tone == 'amber' else 'neutral') %}
 <div class="card needs-you-card-item" data-tone="{{ line.tone }}" data-needs-you="{{ line.kind }}"{% if line.stay_id %} data-needs-you-stay="{{ line.stay_id }}"{% endif %}{% if line.dismiss_id %} data-notification{% endif %}>
-  <div class="ic" style="{{ ic_style }}" aria-hidden="true">{{ '!' if line.tone in ('red', 'amber') else 'i' }}</div>
+  <div class="ic ic-{{ ic_tone }}" aria-hidden="true">{{ '!' if line.tone in ('red', 'amber') else 'i' }}</div>
   <div>
     <div class="t">{{ line.subject }}</div>
     {% if line.text %}<p>{{ line.text }}</p>{% endif %}
@@ -49,20 +49,20 @@
   {% set needs_you = needs_you_build(rows, needs_you_queue, open_alerts, missing_report_rows, link_unused, lang, today) %}
   {% set ny_lines = (needs_you.lines | rejectattr('kind', 'equalto', 'setup') | list) if banner_showing else needs_you.lines %}
 
-  <div class="head" style="margin-bottom:6px"><div>
+  <div class="head ov-head"><div>
     <h1>{{ t('dashboard.title') }}</h1>
     <p class="sub">{{ today.isoformat() | date_long(lang) }}</p>
-    <p class="ov-links" style="font-size:13px;color:var(--ink3);margin:4px 0 0">
-      <a href="/guide" style="color:var(--ink3)">{{ t('how.toggle') }}</a>
-      <span aria-hidden="true"> · </span><a href="/cleaning/new" style="color:var(--ink3)">+ {{ t('nav.cleaning') }}</a>
-      {% if demo_loaded %}<span aria-hidden="true"> · </span><form method="post" action="/demo/reset" class="inline" style="display:inline" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">{{ ui_button(t('demo.clear'), 'quiet', type='submit') }}</form>{% endif %}
+    <p class="ov-links">
+      <a href="/guide" class="ov-link">{{ t('how.toggle') }}</a>
+      <span aria-hidden="true"> · </span><a href="/cleaning/new" class="ov-link">+ {{ t('nav.cleaning') }}</a>
+      {% if demo_loaded %}<span aria-hidden="true"> · </span><form method="post" action="/demo/reset" class="inline ov-inline" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">{{ ui_button(t('demo.clear'), 'quiet', type='submit') }}</form>{% endif %}
     </p>
   </div>
   <a class="btn" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">{{ t('stays.add_stay') }}</a></div>
 
   <section id="needs-action" data-needs-you-card aria-labelledby="needs-you-title">
     <h2 id="needs-you-title">{{ t('needs_you.title') }}</h2>
-    <div class="todo" style="margin-bottom:28px">
+    <div class="todo ov-section">
     {% if ny_lines %}
       {% for line in ny_lines[:4] %}{{ overview_card(line, loop.first) }}{% endfor %}
     {% else %}
@@ -70,8 +70,8 @@
     {% endif %}
     </div>
     {% if ny_lines | length > 4 %}
-    <details class="needs-you-more" style="margin-bottom:28px"><summary>{{ tp('needs_you.more', ny_lines | length - 4) }}</summary>
-      <div class="todo" style="margin-top:12px">{% for line in ny_lines[4:] %}{{ overview_card(line) }}{% endfor %}</div>
+    <details class="needs-you-more ov-section"><summary>{{ tp('needs_you.more', ny_lines | length - 4) }}</summary>
+      <div class="todo ov-more">{% for line in ny_lines[4:] %}{{ overview_card(line) }}{% endfor %}</div>
     </details>
     {% endif %}
   </section>
@@ -81,13 +81,13 @@
 
   <h2>{{ t('calendar.calendar') }}</h2>
   {% set wd = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'] if lang == 'cs' else ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'] %}
-  <div class="card cal" style="margin-bottom:28px">
+  <div class="card cal ov-section">
     <div class="cgrid"><div></div>{% for d in cal_days %}<div class="cd{{ ' today' if loop.first }}">{{ wd[d.weekday()] }} {{ d.day }}</div>{% endfor %}</div>
     {% for row in cal_rows %}
-    <div class="cgrid crow"><div class="cn">{{ row.name }}</div>{% for bar in row.bars %}<a class="bar {{ bar.css }}" style="{{ bar.style }}" href="{{ bar.url }}">{{ bar.label }}</a>{% endfor %}</div>
+    <div class="cgrid crow"><div class="cn">{{ row.name }}</div>{% for bar in row.bars %}<a class="bar {{ bar.css }}" data-c1="{{ bar.col_start }}" data-c2="{{ bar.col_end }}" data-row="{{ bar.row }}"{% if bar.overdue %} data-overdue{% endif %} href="{{ bar.url }}">{{ bar.label }}</a>{% endfor %}</div>
     {% endfor %}
   </div>
-  <p style="margin:-16px 0 28px"><a href="/?cal_view=calendar" style="color:var(--ink3);font-size:13px">{{ t('dashboard.calendar.full') }}</a></p>
+  <p class="ov-cal-more"><a href="/?cal_view=calendar" class="ov-cal-link">{{ t('dashboard.calendar.full') }}</a></p>
   {% if cal_view %}{% include "_dashboard_calendar.html" %}{% endif %}
 
   <h2>{{ t('dashboard.today.title') }}</h2>
@@ -108,7 +108,6 @@
         {% elif progress.not_registered %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ tp('host.missing', progress.not_registered) }}</span>
         {% elif cell.state in ('filed_on_time', 'filed_late') %}{{ deadline_badge(cell) }}
         {% elif progress.status in ('reported', 'not_required') %}<span class="pill p-ok">{{ t('status.reported') }}</span>
-        {% elif progress.status == 'awaiting_guest' %}{# Routine waiting is shown as occupancy, not a task. #}{% if progress.not_registered %}<span class="pill p-warn">{{ tp('host.missing', progress.not_registered) }}</span>{% endif %}
         {% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo=('(demo)' in reservation.internal_name or reservation.source == 'demo')) }}{% endif %}
       </td>
       <td class="dots dashboard-row-actions">

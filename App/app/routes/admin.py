@@ -564,15 +564,13 @@ def _overview_calendar_rows(owner_user_id, apartments, today) -> list:
                 css = "b-warn"
             else:
                 css = "b-grey"
-            style = f"grid-column:{col_start}/{col_end}"
-            if tone == "overdue":
-                style += ";background:var(--bads);color:var(--bad)"
+            overdue = tone == "overdue"
             source = str(event["source"] or "").lower()
             label = event["label"] or _OVERVIEW_SOURCE_NAMES.get(source) or "Pobyt"
             guests = int(event.get("guests") or 0)
             if guests > 0:
                 label += f" · {guests}"
-            placed.append((col_start, col_end, {"css": css, "style": style, "label": label, "url": event["url"]}))
+            placed.append((col_start, col_end, {"css": css, "col_start": col_start, "col_end": col_end, "overdue": overdue, "label": label, "url": event["url"]}))
         # 0707: greedy lanes, so stays that overlap in one property row do not overlap visually.
         lane_ends: list[int] = []
         for col_start, col_end, bar in sorted(placed, key=lambda item: item[0]):
@@ -583,7 +581,7 @@ def _overview_calendar_rows(owner_user_id, apartments, today) -> list:
             else:
                 lane_ends.append(col_end)
                 lane = len(lane_ends) - 1
-            bar["style"] += f";grid-row:{lane + 1}"
+            bar["row"] = lane + 1
             bars.append(bar)
         rows.append({"name": apartment["internal_name"], "bars": bars})
     return rows
