@@ -161,3 +161,35 @@ Left, ours, markup (section 8 candidates, not yet changed): `test_0286_health_ca
 Left, other pages (section 8 stop rule: do not touch in this thread, owner to decide): `test_dashboard_empty` (2), `test_dashboard_missing_banner` (3), `test_dashboard_order` (3), `test_signed_in_chrome` (1), `test_navigation_prefetch` (1, `/admin/*` prefetch exclusion missing from the shell), `test_design_admin::test_smart_locks...` (1, `style=` on body).
 
 Checks: `tests/test_0534_property_page_v2.py tests/test_property_hub.py tests/test_static_versions.py`: `24 passed in 2.16s`. ruff (E9,F63,F7,F82,F401,F841): `All checks passed!`. context_lint: `context lint: OK`. design_lint: not run.
+
+## 0535 merge + CI tests (executor)
+
+Status: blocked. Part A done, Part B partly done (9 of 21 CI property failures fixed or removed). Part C not started.
+
+Commits: `56ee002` merge of `origin/claude/project-thread-50hyv5` (base.html: their file, app2 `20261101-0535f-merge`, host `0531g`, host2 `0530c`; static_versions regenerated). `a49aacb` step 5 (nav/health deletions, 0286 rewrite). `9a8fae0` step 5b (unused imports). The commit `0535: property tests on the one-page markup` is not made; the steps above are the commits.
+
+Merge check: `test_dashboard_empty`, `test_dashboard_missing_banner`, `test_dashboard_order`, `test_signed_in_chrome`, `test_navigation_prefetch`, `test_static_versions`: all pass.
+
+Still failing after the merge, not touched (brief §8 stop rule, owner to decide): `test_0705_v2_shell_browser` (3, shared base), `test_design_admin::test_smart_locks...` (1, `style=` on body).
+
+§8 changes (assertion or selector only):
+- `test_0286_health_cards`: rewritten to the aside `.pv` rows (`#sec-calendars`, `#sec-police`). The problem test now sets `last_status='error'` (was `active=0`) so the row carries `is-bad`. Gap: the aside calendar row shows only a count, not the "No calendar connected" text.
+
+Deletions:
+- `test_property_form_nav.py`: 4 nav tests (`third_nav_link`, `no_longer_sends_you_off_the_form`, `czech_nav`, `nav_numbers`). File kept: 10 other tests pass.
+- `test_property_health_0244.py`: `test_the_overview_shows_the_health_check`. File kept: 3 module tests pass. Unused imports removed.
+
+Remaining failures (12, not yet changed):
+- `test_0291_open_buttons::test_row_open_cue_has_no_arrow_icon`
+- `test_design_properties` (2): list header tabs and icon; local property tabs.
+- `test_entity_editor_navigation` (2): `/entities?edit=` links on overview and list; `#operator-picker` link.
+- `test_properties_table_chips` (2): add-CTA `class="btn"` and `href="/apartments/new"` count.
+- `test_stay_fee_property_panel::test_edit_page_has_stay_fee_panel...`: likely the 'Optional stay fee' text.
+- `test_ui_consistency::test_the_copy_button_keeps_its_icon_when_it_confirms`: needs the v2 vs non-v2 button split.
+- `test_page_help_0277` (3): `/apartments` and the v2 property page have no `data-how` block. The dashboard has one (`dashboard.html:60`). Question: add the block to those pages (template change, outside §8), or skip them in the test?
+
+Checks: CI list plus `test_0534_property_page_v2`, `test_property_hub`, `test_static_versions`: 181 passed, 16 failed (12 above, 4 shared or owner items). ruff (E9,F63,F7,F82,F401,F841): clean after fix. context_lint: OK. design_lint: OK.
+
+Part C (owner, 19:09 pills): not started. Needs the `app2.css` 0533 block change, override entry, key bump, `--write`, screenshot `docs/tasks/screenshots-0533/app-390.png`, commit `0533: smaller phone pills (owner)`.
+
+Owner steps left: decide the `test_0705` and `test_design_admin` items; answer the help-block question.
