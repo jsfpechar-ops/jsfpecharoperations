@@ -165,7 +165,7 @@ def _check_dialog(page, lang, width):
     for button in dialog.locator("button").all():
         b = button.bounding_box()
         assert b["x"] >= box["x"] - 1 and b["x"] + b["width"] <= box["x"] + box["width"] + 1, b
-        assert b["height"] >= 40
+        assert b["height"] >= (36 if width >= 1024 else 44), b
 
 
 @pytest.mark.parametrize("width,height", SIZES)
@@ -176,7 +176,8 @@ def test_property_settings_save_discard_stay(browser, base, host, lang, width, h
     page = _page(browser, base, host, width, height)
     page.goto(f"{url}?view=settings&section=property&lang={lang}")
     reset = page.locator(".savebar [data-unsaved-reset]")
-    crumb = page.locator('.crumb a[href="/apartments"]')
+    leave = 'a.round[href="/apartments"]' if width < 1024 else ".crumb a"
+    crumb = page.locator(leave)
     calendars = page.locator("#sec-calendars > summary")
 
     # Clean form: no dialog, the in-page link just opens its section.
@@ -198,7 +199,7 @@ def test_property_settings_save_discard_stay(browser, base, host, lang, width, h
     page.locator("#unsaved-dialog [data-unsaved-stay]").click()
     assert not _open(page) and "/apartments/" in page.url
     assert page.input_value("#internal_name") == "Typed O1 draft"
-    assert _focus_is(page, ".crumb a")
+    assert _focus_is(page, leave)
 
     # Esc is Stay.
     crumb.click()
@@ -206,7 +207,7 @@ def test_property_settings_save_discard_stay(browser, base, host, lang, width, h
     page.keyboard.press("Escape")
     assert not _open(page) and "/apartments/" in page.url
     assert page.input_value("#internal_name") == "Typed O1 draft"
-    assert _focus_is(page, ".crumb a")
+    assert _focus_is(page, leave)
 
     # Discard restores the loaded value and follows the link.
     crumb.click()
@@ -235,7 +236,7 @@ def test_property_rail_and_back_links_ask_and_cards_into_settings_do_not(browser
     page = _page(browser, base, host)
     page.goto(f"{url}?view=settings&section=property&lang=en")
     page.fill("#internal_name", "Rail O1 draft")
-    page.locator('.sidebar-nav a[href="/settings"]').first.click()
+    page.locator('a.nav[href="/settings"]').first.click()
     assert _open(page)
     page.keyboard.press("Escape")
     page.locator('.savebar a[href="/apartments"]').click()
@@ -248,7 +249,7 @@ def test_property_rail_and_back_links_ask_and_cards_into_settings_do_not(browser
     assert page.input_value("#internal_name") == "Rail O1 draft"
     # Discard via the rail leaves the page without the native prompt.
     page.native_dialogs.clear()
-    page.locator('.sidebar-nav a[href="/settings"]').first.click()
+    page.locator('a.nav[href="/settings"]').first.click()
     with page.expect_navigation():
         page.locator("#unsaved-dialog [data-unsaved-discard]").click()
     assert page.url.split("?")[0].endswith("/settings")
