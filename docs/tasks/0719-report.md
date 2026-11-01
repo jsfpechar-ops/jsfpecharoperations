@@ -41,3 +41,30 @@ None.
 - Not run in this session: the brief §6 test set, test_0718_menu_page, ruff. The first session's last full run was 15 failed (all page-scroll and card-box cases); the scroll cases should now pass, the card-box case is not re-checked.
 - Left: step 2b (v2_mockup.py: `.actbar .btn` alias to `.bar .btn`, `.actbar` padding-bottom and height override with the reason); step 3 (overview phone_selectors and missing_ok, the 768 style-only rule in test_0710); step 4 (tests and ruff); step 5 (app2.css key 20261101-0719c in base.html, `tests/test_static_versions.py --write`); step 6 (screenshots in docs/tasks/screenshots-0719/ and the lints); step 7 (this report's test tails).
 - Owner steps left: none.
+
+## Third executor session (steps 2b to 4c, call limit reached)
+Status: blocked (partial). Done: steps 2b, 2, 3, 4 (test edits, CSS fixes, ruff). Not done: step 5 (screenshots in docs/tasks/screenshots-0719/ not taken, PNGs not read), step 4 test green.
+
+Commits: dc86dda (2b), b8e11c1 (2), e495d5c (3), 93e5ca9 (4a), 03abde8 (4b), 7f98386 (4c, security prompt z-index).
+
+Test tail (brief set + test_0718_menu_page, -rf): `4 failed, 62 passed in 226.37s`, 0 skipped. ruff E9,F63,F7,F82,F401,F841: All checks passed.
+Failing: overview-320, overview-390, overview-768 (style vs phone mockup: `.h2.sec`/card/need/`.need b`/`.need small`/`.hs .card`/`.nm`/`.meta` box sizes, `.hs .pill` tone colours from a warn fixture stay vs mockup green), menu-320 (`.card.me` height 98 vs 108 px at 320 only).
+
+Lints: design_lint: design lint: OK | context_lint: context lint: OK
+
+Departures (new in this session):
+- Phone side room comes from `body.v2 .main` padding: `BOX_OVERRIDES` in v2_mockup.py for `.card.me`, `.big`, `h2.sec`, `.card.need` side margins (mockup 20 px, app 0).
+- `.actbar` override is padding-bottom 12 px only. The height override was dropped: no phone page lists `.actbar` in phone_selectors, so it cannot be measured here.
+- `.head h1` aliased to mockup `.big`, `.head .sub` to `.sub` (mockup has no `.head`).
+- Needs-you line is `small` (not `p`) at every width; `.todo p` in missing_ok.
+- Desktop needs-you title weight restored to 700 (step 1 had set it to inherit, which changed the desktop look).
+- Touch-sweep probe exempts `.hs` (the phone today-card row scrolls inside itself).
+- Phone `#security-prompt` gets z-index 10 (coordinator request). The dialog has no fixed position in CSS (UA absolute), so the bottom lift was not applied. Click at 320 px not verified.
+- Kalendar link min-height 44 px (tap target was 19 px).
+
+Left:
+1. Overview phone style diffs listed above (layout of .need and .hs cards vs mockup, and the warn pill tone is data-dependent: decide whether to accept as departure).
+2. menu-320 card height (10 px short at 320 only).
+3. Step 5 screenshots (overview-320/390/768/1280, menu-390) and reading them.
+4. Step 6 report done in part; the 320 security-prompt click not verified.
+Owner steps left: none.
