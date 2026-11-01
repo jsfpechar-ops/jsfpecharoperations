@@ -5,11 +5,8 @@ import os
 import re
 from pathlib import Path
 
-from fastapi.testclient import TestClient
 
 from app import auth, db
-from app.main import app
-from tests.conftest import login_as
 from tests.test_host_stay_actions_browser import (  # noqa: F401  (fixtures)
     _browser, stay_actions_base, stay_actions_host,
 )
