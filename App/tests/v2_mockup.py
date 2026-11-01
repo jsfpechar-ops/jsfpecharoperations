@@ -53,7 +53,7 @@ PAGES = [
             "main .pill.p-ok": "tone depends on data: the demo overview has no reported stay",
         },
     },
-    {"name": "cleaning", "path": "/cleaning", "view": "clean", "selectors": [".side .nav.on", ".head h1", ".head .sub", ".head .btn", "main h2", "main .card", "main table th", "main table td", "main .pill"], "missing_ok": {}},
+    {"name": "cleaning", "path": "/cleaning", "view": "clean", "selectors": [".side .nav.on", ".head h1", ".head .sub", ".head .btn", "main h2", "main .card", "main table th", "main table td"], "missing_ok": {}},  # pills follow the approved phone mockup (2026-11-01): scheduled green, the desktop mockup shows amber
 ]
 
 

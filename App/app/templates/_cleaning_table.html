@@ -13,7 +13,7 @@
       <td><a href="/cleaning/events/{{ item.eventId }}/edit">{{ item.property }}</a></td>
       <td>{% if key == 'today' %}{% if item.startTime and item.endTime %}{{ item.startTime }}–{{ item.endTime }}{% elif item.checkoutTime and item.checkinTime %}{{ item.checkoutTime }}–{{ item.checkinTime }}{% else %}{{ ct('time_missing') }}{% endif %}{% else %}{{ cleaning_date(item.date) }}{% endif %}</td>
       <td>{% if item.nextArrival %}{{ cleaning_date(item.nextArrival) }} · {{ item.checkinTime or ct('time_missing') }}{% else %}{{ ct('no_arrival') }}{% endif %}</td>
-      <td>{% if item.conflict %}<span class="pill p-bad">{{ ct('status_conflict') }}</span>{% elif item.timingUnavailable %}<span class="pill p-bad">{{ ct('status_hours') }}</span>{% else %}<span class="pill p-warn">{{ ct('status_scheduled') }}</span>{% endif %}</td>
+      <td>{% if item.conflict %}<span class="pill p-warn">{{ ct('status_conflict') }}</span>{% elif item.timingUnavailable %}<span class="pill p-warn">{{ ct('status_hours') }}</span>{% else %}<span class="pill p-ok">{{ ct('status_scheduled') }}</span>{% endif %}</td>
       <td class="dots">{{ row_open('/cleaning/events/' ~ item.eventId ~ '/edit') }}</td>
     </tr>
   {% endfor %}
