@@ -227,10 +227,8 @@ def test_property_and_operator_controls_render_and_work_in_browser(host, base):
 
         page.set_viewport_size({"width": 1280, "height": 1000})
         page.goto(f"{base}/apartments?lang=en")
-        # 0099: the list shows the Properties section tabs (one component),
-        # with the list itself as the open tab; property pages show none.
-        assert page.locator(".ui-tabs").count() == 1  # the v2 shell renders the section tabs as .ui-tabs
-        assert page.locator('.ui-tabs a[aria-current="page"]').inner_text() == "Properties"
+        # 0099: the v2 properties list has no section tabs (the mockup has none).
+        assert page.locator(".ui-tabs").count() == 0
         assert page.locator(".host-tools").count() == 0
         page.goto(f"{base}/apartments/{host['apartment']}?lang=en")
         assert page.locator(".host-tools").count() == 0
