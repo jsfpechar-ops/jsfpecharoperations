@@ -9,7 +9,7 @@
 {% set view_query = 'range=' ~ date_range ~ '&status=' ~ status ~ '&apartment=' ~ (apartment_id or '') ~ '&from=' ~ (date_from or '') ~ '&to=' ~ (date_to or '') %}
 {% block title %}{{ t('stays.title') }}{% endblock %}
 {% block primary_action %}{% if apartments %}{{ ui_button(t('stays.add_stay'), 'primary', attrs='data-toggle-panel="add-stay-panel"') }}{% endif %}{% endblock %}
-{% block secondary_actions %}{% if manual_send %}{{ bulk_send_ready(ready_send_count, return_to) }}{% endif %}{% endblock %}
+{% block secondary_actions %}{% if manual_send %}{{ bulk_send_ready(ready_send_count, return_to) }}{% endif %}{% if apartments %}<a class="ui-btn ui-btn-secondary" href="/housebook.csv?{{ csv_export_params }}" data-stays-housebook>{{ t('stays.housebook_download') }}</a>{% endif %}{% endblock %}
 {% block tabs %}{{ ui_section_tabs() }}{% endblock %}
 {% if apartments %}
 {% set stay_property = namespace(label=t('host.filter.all_properties')) %}
