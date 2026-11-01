@@ -261,7 +261,9 @@
     "havel-card-change",
     "havel-card-danger",
     "stay-col-departure",
-    "stay-col-property"
+    "stay-col-property",
+    "guest-card-doc",
+    "stay-door-card"
   ],
   "hooks": [
     "sr-only",
@@ -1017,6 +1019,8 @@
     "quick-choice-option": "0355 one answer: a label holding a native radio and its chip text; the checked chip is filled like a pressed ui-chip.",
     "havel-*": "0312-0314: Havel (AI) support assistant: thread, bubbles, composer, cards, topics, panel (plan section 17).",
     "stay-col-departure": "Stays list: the departure date column, shown beside the arrival column on computer width.",
-    "stay-col-property": "Stays list: the property name column on computer width."
+    "stay-col-property": "Stays list: the property name column on computer width.",
+    "guest-card-doc": "Guest row cell on the stay page that shows the guest document type label (desktop table column).",
+    "stay-door-card": "Stay page door code card; the code line is set large on desktop."
   }
 }

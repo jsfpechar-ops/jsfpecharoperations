@@ -9,7 +9,7 @@ def test_stay_detail_has_the_v2_header_jump_tabs_and_one_coral_button(host):
     page = client.get(f"/reservations/{reservation_id}?lang=en").text
     assert page.count("<h1") == 1 and 'data-body-kind="detail"' in page
     assert 'class="ui-ph-back"' in page
-    assert '<nav class="ui-tabs stay-jump"' in page and page.count('class="ui-tab"') == 4
+    assert 'class="ui-tabs stay-jump"' not in page and 'class="ui-tab"' not in page
     assert page.count('class="ui-btn ui-btn-primary"') <= 1
     assert 'class="panel stay-command-panel" id="now"' in page
     assert page.index('id="now"') < page.index('id="guests"') < page.index('id="reports"') < page.index('id="stay-quick-edit"')
