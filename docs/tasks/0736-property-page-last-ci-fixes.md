@@ -85,3 +85,9 @@ Then stop and report; items 7, 8, section 6 and the screenshots are run 7.
 1. Line 995: the check means "the overview shows the guest link". On v2 that is the guest card's copy button. Assert `page.locator("section.guest-card [data-copy='property-guest-url']").count() >= 1`. Run `-k "review_fixes"`.
 2. Section 13.
 Then stop and report; items 7, 8, section 6 and the screenshots are run 8.
+
+## 18. Run 8 scope (after run 7)
+1. Setup checklist test (`test_design_guardrails_browser.py:325`): on v2 the setup health is the green/red `.dot` on each section summary (owner: setup shown as green/red statuses). Count `details.prop-sec > summary .dot` (at least 4). Keep the other two asserts, pointed at the v2 elements.
+2. Field-button pairs at 1280 "open": in the 2-column field grid from 1024 px, a lone action button (Generate a new PIN, Add signature, Generate a new link, the Copy next to `checkout_hour`) sits in a grid cell beside a field. Read the markup of each and, in the page block, make that button's wrapper span the full grid row (`grid-column:1/-1`) so it sits under its fields, left-aligned. Check that 0710 `property` still passes at 1280 and 1440.
+3. Button heights: measure why the Copy button is 48 px (`getComputedStyle` min-height, padding). Make `.btn.sm` buttons and links in the same row the same height, using the copy button's value; do not shrink the copy button below 44 px on phone.
+Then stop and report; items 7, 8, section 6 and the screenshots are run 9.
