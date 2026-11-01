@@ -122,7 +122,7 @@ func (s *StripeOnboarder) guard(ctx context.Context) (string, string, error) {
 
 // call sends one Stripe request. A non-2xx reply becomes an error naming the
 // status and Stripe's error message and code only, never the body or the key.
-func (s *StripeOnboarder) call(ctx context.Context, key, method, path, contentType string, body []byte, out any) error {
+func (s *StripeOnboarder) call(ctx context.Context, key, method, path, contentType string, body []byte, out any, stripeAccount ...string) error {
 	req, err := http.NewRequestWithContext(ctx, method, s.base()+path, bytes.NewReader(body))
 	if err != nil {
 		return err
@@ -131,6 +131,10 @@ func (s *StripeOnboarder) call(ctx context.Context, key, method, path, contentTy
 	req.Header.Set("Stripe-Version", stripeVersion)
 	if contentType != "" {
 		req.Header.Set("Content-Type", contentType)
+	}
+	// The optional connected account goes in the Stripe-Account header.
+	if len(stripeAccount) > 0 && stripeAccount[0] != "" {
+		req.Header.Set("Stripe-Account", stripeAccount[0])
 	}
 	resp, err := s.client().Do(req)
 	if err != nil {
