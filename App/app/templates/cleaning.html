@@ -1,12 +1,14 @@
 {% extends "host_page.html" %}
+{% set v2 = true %}
 {% set body_kind = 'list' %}
 {% from "_ui.html" import ui_button with context %}
 {% block title %}{{ ct('title') }} · UbyHost{% endblock %}
-{% block page_title %}{{ ct('title') }}{% endblock %}
-{% block meta %}{{ ct('subtitle') }}{% endblock %}
-{% block primary_action %}{{ ui_button(ct('share_cleaner'), 'primary', href='/cleaning/shares') }}{% endblock %}
-{% block secondary_actions %}{{ ui_button(ct('add'), 'secondary', href='/cleaning/new', icon_name='plus', attrs='data-calendar-add data-cal-create-type="cleaning"') }}{{ ui_button(ct('settings'), 'secondary', href='/cleaning/properties') }}{% endblock %}
+{% block page_title %}{% endblock %}
+{% block meta %}{% endblock %}
+{% block primary_action %}{% endblock %}
+{% block secondary_actions %}{% endblock %}
 {% block body %}
+<div class="head"><div><h1>{{ ct('title') }}</h1><p class="sub">{{ ct('subtitle') }}</p><p class="ov-links"><a class="ov-link" href="/cleaning/new" data-calendar-add data-cal-create-type="cleaning">+ {{ ct('add') }}</a><span aria-hidden="true"> · </span><a class="ov-link" href="/cleaning/properties">{{ ct('settings') }}</a></p></div><a class="btn" href="/cleaning/shares">{{ ct('share_cleaner') }}</a></div>
 <div class="cleaning-page">
   {% include "_cleaning_screen.html" %}
 </div>
