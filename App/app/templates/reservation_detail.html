@@ -28,7 +28,7 @@
   <a class="round" href="{{ return_to }}" aria-label="{{ t('stay.detail.back') }}">{{ icon('arrow-left', 20) }}</a>
   {% if reservation.permalink_token and not stay_inactive %}<button class="round" type="button" data-copy="stay-link" data-copied-label="{{ t('stay.detail.link_copied') }}" aria-label="{{ t('host.copy_guest_form_link') }}">{{ icon('copy', 20) }}</button>{% endif %}
 </div>
-<div class="big">{{ lead_name or reservation.internal_name }}</div>
+<h1 class="big">{{ lead_name or reservation.internal_name }}</h1>
 <div class="sub sub-phone">{{ reservation.internal_name }} · {{ source_label(reservation) }}</div>
 <div class="sub-phone stay-pill-line">{% if stay_inactive %}<span class="pill">{{ t('stays.filter.state.' ~ reservation.status) if reservation.status != 'active' else t('archive.col.when') }}</span>{% else %}{{ v2_status_pill(cell, progress, reservation) }}{% endif %}</div>
 <div class="facts sub-phone">
