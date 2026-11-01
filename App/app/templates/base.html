@@ -262,7 +262,7 @@
 {% if show_nav | default(true) %}<script src="/static/host.js?v=20261026-door-lock-times" defer></script>{% endif %}
 {% if show_nav | default(true) %}<script src="/static/pwa.js?v=20261021-0206" defer></script>{% endif %}
 {% if (show_nav | default(true)) and passkeys_enabled() %}<script src="/static/passkeys.js?v=20261023-passkey-recovery" defer></script>{% endif %}
-{% if show_nav | default(true) %}{% include "_shell_tabbar.html" %}<script type="speculationrules">{"prefetch": [{"where": {"and": [{"href_matches": "/*"}, {"not": {"or": [{"selector_matches": "[data-no-prefetch], [target=_blank], [download]"}, {"href_matches": "/logout*"}, {"href_matches": "/lang*"}, {"href_matches": "/api/*"}, {% if current_user and current_user.role == 'admin' %}{"href_matches": "/admin/*"}, {% endif %}{"href_matches": "/*export*"}, {"href_matches": "/*.pdf*"}, {"href_matches": "/*/pdf*"}, {"href_matches": "/*.zip*"}]}}]}, "eagerness": "moderate"}]}</script><script src="/static/shell.js?v=20261025-0373" defer></script>{% endif %}
+{% if show_nav | default(true) %}{% include "_shell_tabbar.html" %}<script type="speculationrules">{"prefetch": [{"where": {"and": [{"href_matches": "/*"}, {"not": {"or": [{"selector_matches": "[data-no-prefetch], [target=_blank], [download]"}, {"href_matches": "/logout*"}, {"href_matches": "/lang*"}, {"href_matches": "/api/*"}, {"href_matches": "/admin/*"}, {"href_matches": "/*export*"}, {"href_matches": "/*.pdf*"}, {"href_matches": "/*/pdf*"}, {"href_matches": "/*.zip*"}]}}]}, "eagerness": "moderate"}]}</script><script src="/static/shell.js?v=20261025-0373" defer></script>{% endif %}
 {% if (show_nav | default(true)) and current_user %}<script src="/static/havel.js?v=20261025-0395" defer></script>{% endif %}
 </body>
 </html>
