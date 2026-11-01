@@ -95,5 +95,5 @@
 - K-NAV-418: 3 host_i18n tests fail. K-CHECKIN #435, K-MORE #436 undeployed.
 - K-PK0290: passkey fix open.
 - K-CF01: mid-session challenge: see CLOUDFLARE Rule 3.
-- Admin Users/Operations/Incidents/Funnel unreachable from the Admin icon (phone: no link at all): fixed by 0472.
+- Admin Users/Operations unreachable: fixed by 0472.
 
