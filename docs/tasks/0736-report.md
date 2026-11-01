@@ -372,3 +372,10 @@ Not pushed.
 - Test: `pytest test_0541 test_host_property_controls test_a11y_guard test_static_versions test_0503 test_0504 -k "not webkit" -rs` gives `16 passed in 101.10s`, 0 skipped. Ruff `--select E9,F63,F7,F82,F401,F841` on tests: `All checks passed!`.
 - Not pushed.
 Run 15: toggle wait in test_0541, 5/5 passes
+
+## Run 16 (focus ring on Copy link, executor)
+
+- Probe at 1280 on `properties` and `smart-locks` (scratch file, deleted): Tab reaches the Copy link button at press 7 on both routes. The focused button has `outline-style: solid; outline-width: 2px`, matched by `body.v2 .btn.copy-btn:focus-visible` in `app2.css` `?v=20261101-2411`. No later `outline: none|0` rule matches it (checked `app.css`, `host.css`, `host2.css`, `app2.css`).
+- The failing CI runs (`41345517516`, `41348096016`) ran commits `af5c848` and `b66885f`, both before the ring commit `b330ecd`. Current HEAD `9d6c0d9` CI run `41360282640` was still in progress with no focus findings at the time of this run.
+- No CSS change in this run. `test_a11y_guard_browser.py` and `test_static_versions.py` at HEAD: `7 passed in 80.99s`, 0 skipped.
+- Not pushed.
