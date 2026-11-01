@@ -13,7 +13,9 @@ from tests.test_host_quiet_dashboard_browser import (  # the quiet overview's fi
     sync_api,
 )
 from tests.v2_mockup import (
-    COLOR_OVERRIDES,
+    DESKTOP,
+    DESKTOP_ONLY,
+    expected_value,
     PAGES,
     STYLE_PROPS,
     WIDTHS,
@@ -35,7 +37,7 @@ SHOTS_DIR = Path(__file__).resolve().parents[2] / "docs/tasks/screenshots-0710"
 
 
 def _open_app(browser, base_url, cookie, path, width):
-    context = browser.new_context(viewport={"width": width, "height": 1000})
+    context = browser.new_context(viewport={"width": width, "height": 1000}, reduced_motion="reduce")
     context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": base_url + "/"}])
     context.add_init_script("try { localStorage.setItem('ubyhost-sidebar-collapsed', '0'); } catch (e) {}")
     page = context.new_page()
@@ -49,7 +51,7 @@ def _open_app(browser, base_url, cookie, path, width):
 
 
 def _open_mockup(browser, view, width):
-    context = browser.new_context(viewport={"width": width, "height": 1000})
+    context = browser.new_context(viewport={"width": width, "height": 1000}, reduced_motion="reduce")
     page = context.new_page()
     route_offline(page)
     page.goto(mockup_url())
@@ -67,6 +69,8 @@ def test_v2_page_matches_mockup_styles(spec, width, base, dashboard_rich_host):
         app_ctx, app_page = _open_app(browser, base, cookie, spec["path"], width)
         mock_ctx, mock_page = _open_mockup(browser, spec["view"], width)
         for selector in spec["selectors"]:
+            if selector in DESKTOP_ONLY and width < DESKTOP:
+                continue
             mock_styles = computed(mock_page, selector)
             if mock_styles is None:
                 diffs.append(f"{selector}: missing in mockup view {spec['view']}")
@@ -78,7 +82,7 @@ def test_v2_page_matches_mockup_styles(spec, width, base, dashboard_rich_host):
                 continue
             for prop in STYLE_PROPS:
                 app_value = app_styles[prop]
-                mock_value = COLOR_OVERRIDES.get(mock_styles[prop], mock_styles[prop])
+                mock_value = expected_value(selector, prop, mock_styles[prop])
                 if not same_value(prop, app_value, mock_value):
                     diffs.append(f"{selector} {prop}: app={app_value} mockup={mock_value}")
         app_ctx.close()

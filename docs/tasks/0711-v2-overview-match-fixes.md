@@ -4,7 +4,7 @@ Depends on: 0710 | Base commit: task/0710-v2-match-tests | Branch: task/0711-v2-
 Executor: Haiku 5.5 | Fits one session: 30 tool calls
 
 ## 1. Objective
-`tests/test_0710_v2_mockup_match_browser.py` passes for Overview at 320, 390, 768, 1024, 1280 and 1440 px with 0 skipped. Read `docs/tasks/0710-report.md` first: it lists every finding.
+`tests/test_0710_v2_mockup_match_browser.py` passes for Overview at 320, 390, 768, 1024, 1280 and 1440 px with 0 skipped. Read `docs/tasks/0710-v2-mockup-match-report.md` first: it lists every finding.
 
 ## 2. Context and decisions (orchestrator, 2026-11-01)
 - Phone layout: the owner wants a separate Airbnb-style phone design (another thread is drawing it). Below 1024 px keep only the basics: no sideways scroll, tap targets, readable text. Do not restyle the phone top bar beyond that.

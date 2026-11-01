@@ -166,7 +166,7 @@ def test_order_is_needs_you_month_calendar_today(host):
 
     needs = page.index('data-needs-you-card')
     month = page.index("data-dashboard-month")
-    calendar = page.index('class="card cal"')
+    calendar = page.index('class="card cal ov-section"')
     today_table = page.index("<h2>", calendar)  # 0706: the Dnes heading follows the calendar
     assert needs < month < calendar < today_table
 
