@@ -1,6 +1,6 @@
 # 0466 report: part b (row locks)
 
-Status: blocked
+Status: review
 Done: steps 6 to 12 and the §6 part b test runs (both backends). Red on the PostgreSQL row: one test, see Questions.
 
 ## Files changed
@@ -48,9 +48,6 @@ Same row without `-x`: `1 failed, 294 passed, 5 skipped in 96.55s`. The 5 skips:
 - Step 10 test (c) is a standalone test (no fixture), so it runs on the SQLite row. (a) and (b) import `pg_runtime` only when the PostgreSQL URL is set, so the autouse session fixture does not break the SQLite row.
 - Commit trailer: the system attribution gives Claude Haiku 5.5 as co-author (the model running this session). The task message asked for Opus 5.5. Haiku 5.5 was used, as in the earlier commits.
 
-## Questions
-- Stop question (brief §8, not a fixable step): `test_writer_lock_timeout_surfaces_as_lock_not_available_through_every_helper` (`test_db_postgres.py:712`) probes `db.execute`, `executemany` and cursor-level `BEGIN IMMEDIATE` on the `settings` table. Those are autocommit helpers, and no `db.lock_key` can hold them, so after step 7 they no longer wait on the guest lock and the test fails with DID NOT RAISE. The brief says the holder and the `db.immediate()` waiter change and the assertions stay, which does not cover these three probes. Options for the orchestrator: (1) drop those three probes and keep only the `db.immediate()` + `lock_key` path, or (2) re-scope the test to the 55P03 path of `lock_key` alone. Not changed without a decision.
-- Playwright is missing in `App/.venv`, so the browser tests in the §6 list are skipped. The brief's "0 skipped" needs the owner or orchestrator to decide whether to install it (no new dependency is added by the repo itself).
-
-## Owner steps left
-- None yet. Next: decide the Questions above, then rerun the PostgreSQL row.
+## Orchestrator resolution
+- The 55P03 test probed autocommit writes that only waited on the removed global lock. Fix: `lock_timeout` is now a connection option (`-c lock_timeout=30s`, beside `statement_timeout`), so every write wait stays bounded, as before, without the global lock; the redundant `SET LOCAL` in `BEGIN IMMEDIATE` is gone. The test holder now also holds an uncommitted insert of the probe key, so the helper and `executemany` probes wait on a real row lock; the cursor-level `BEGIN IMMEDIATE` probe is dropped (it takes no lock any more). Both lock tests reconnect after shortening the timeout.
+- Final runs (browser files left out, CI runs them): PostgreSQL `456 passed, 4 skipped` (sqlite_only); SQLite `402 passed, 58 skipped` (PostgreSQL-only).

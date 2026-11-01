@@ -556,15 +556,8 @@ class PostgresCursor:
         values = None if params is None else tuple(params)
         command = sql.strip().upper()
         if command == "BEGIN IMMEDIATE":
-            try:
-                self._connection._raw.execute("BEGIN")
-                self._connection._raw.execute(f"SET LOCAL lock_timeout = '{LOCK_TIMEOUT}'")
-            except BaseException:
-                # A lock timeout (55P03) aborts the just-opened transaction;
-                # roll it back so the original psycopg error propagates and the
-                # connection stays reusable.
-                self._connection._abort_transaction()
-                raise
+            # No global lock: blocks that read, decide and write take db.lock_key.
+            self._connection._raw.execute("BEGIN")
             self._connection._trace(sql)
             return self
         if command in {"BEGIN", "START TRANSACTION"}:
@@ -795,7 +788,7 @@ def connect(conninfo: str) -> PostgresConnection:
         from urllib.parse import parse_qsl, urlsplit
 
         url_options = dict(parse_qsl(urlsplit(conninfo).query)).get("options")
-        options = " ".join(filter(None, [url_options, "-c statement_timeout=60000"]))
+        options = " ".join(filter(None, [url_options, "-c statement_timeout=60000", f"-c lock_timeout={LOCK_TIMEOUT}"]))
         raw = psycopg.connect(
             conninfo, autocommit=True, row_factory=tuple_row, connect_timeout=10, options=options
         )
