@@ -34,6 +34,7 @@ Run only the row for the area you changed, from `App/`, always ending `-q --tb=s
 | Payments dashboard + rails | `test_payments_dashboard.py test_payment_request_model.py test_stripe_connect.py test_payment_links.py test_payment_qr.py`, design row when templates change |
 | Public property pages | `test_property_slug.py test_property_page.py test_property_page_photos.py test_property_page_meta.py` (+ browser/geometry row when templates land) |
 | Page booking widget | `test_booking_widget.py test_property_page.py test_stripe_connect.py test_payment_request_model.py` |
+| Deploy scripts, Caddyfile, compose | `shellcheck -S error deploy/lightsail/scripts/*.sh`; CI job `caddy` validates both Caddyfiles with the compose caddy service |
 | A module with no row | `tests/test_<module name>*.py`; none exists: `-k <module name>` |
 
 A row missing or wrong: the orchestrator fixes this table in the same brief.
