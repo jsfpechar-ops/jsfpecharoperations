@@ -70,7 +70,8 @@ def test_rows_hover_as_one_surface_and_use_compact_menus(stay_actions_host, stay
         page.wait_for_url(f"**/reservations/{stay_id}?**")
         _fits(page)
         # Every direct child retains the same centered content lane on wide screens.
-        boxes = [page.locator(selector).bounding_box() for selector in (".ui-ph", ".stay-property-line", ".stay-jump", "#now")]
+        # 0525 standing rule: .stay-property-line and .stay-jump were removed in 0524; the lane check keeps the rest.
+        boxes = [page.locator(selector).bounding_box() for selector in (".ui-ph", "#now")]
         assert all(boxes)
         assert max(box["x"] for box in boxes) - min(box["x"] for box in boxes) <= 1
         assert max(box["x"] + box["width"] for box in boxes) - min(box["x"] + box["width"] for box in boxes) <= 1
