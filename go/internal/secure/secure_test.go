@@ -1,10 +1,17 @@
 package secure
 
 import (
+	"bytes"
+	"compress/zlib"
+	"crypto/hmac"
+	"crypto/sha1"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"io"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 )
@@ -151,12 +158,14 @@ func TestSignerFixtures(t *testing.T) {
 		if err := s.Loads(c.Token, NoMaxAge, now, &got); err != nil || !reflect.DeepEqual(got, want) {
 			t.Fatalf("%s/%s: loads failed: %v", c.Salt, c.Name, err)
 		}
-		if c.Name == "long" && len(c.Token) > 0 && c.Token[0] == '.' {
-			compressedSeen = true
-		}
 		enc, err := s.Dumps(valueFor(c.Name), now)
 		if err != nil {
 			t.Fatal(err)
+		}
+		if strings.HasPrefix(c.Token, ".") {
+			compressedSeen = true
+			checkCompressedDumps(t, s, c.Salt, f.Secret, enc, c.Token, now, want)
+			continue
 		}
 		if enc != c.Token {
 			t.Fatalf("%s/%s: first differing byte %d\n got  %s\n want %s", c.Salt, c.Name, firstDiff(enc, c.Token), enc, c.Token)
@@ -165,6 +174,55 @@ func TestSignerFixtures(t *testing.T) {
 	if !compressedSeen {
 		t.Fatal("the long payload was not compressed in the fixtures")
 	}
+}
+
+// checkCompressedDumps: zlib output differs from Go's deflate, so for a
+// compressed Python token Go's Dumps must round-trip through Go Loads, carry
+// the same timestamp as Python, carry a signature that HMAC-SHA1 over Go's
+// signed string produces with the django-concat key, and decompress to the
+// same JSON bytes as the Python payload.
+func checkCompressedDumps(t *testing.T, s *TimedSerializer, salt, secret, enc, pyToken string, now time.Time, want any) {
+	t.Helper()
+	var got any
+	if err := s.Loads(enc, NoMaxAge, now, &got); err != nil || !reflect.DeepEqual(got, want) {
+		t.Fatalf("%s: Go Dumps token does not load back: %v", salt, err)
+	}
+	cut := strings.LastIndex(enc, ".")
+	signed, sig := enc[:cut], enc[cut+1:]
+	pySigned := pyToken[:strings.LastIndex(pyToken, ".")]
+	if signed[strings.LastIndex(signed, ".")+1:] != pySigned[strings.LastIndex(pySigned, ".")+1:] {
+		t.Fatalf("%s: timestamp differs from Python", salt)
+	}
+	key := sha1.Sum([]byte(salt + "signer" + secret))
+	mac := hmac.New(sha1.New, key[:])
+	mac.Write([]byte(signed))
+	if base64.RawURLEncoding.EncodeToString(mac.Sum(nil)) != sig {
+		t.Fatalf("%s: signature is not the itsdangerous signature over the Go payload", salt)
+	}
+	goRaw := decompressPayload(t, signed)
+	pyRaw := decompressPayload(t, pySigned)
+	if !bytes.Equal(goRaw, pyRaw) {
+		t.Fatalf("%s: decompressed Go JSON %s differs from Python JSON %s", salt, goRaw, pyRaw)
+	}
+}
+
+// decompressPayload returns the JSON inside a signed string whose payload is zlib-compressed.
+func decompressPayload(t *testing.T, signed string) []byte {
+	t.Helper()
+	value := strings.TrimPrefix(signed[:strings.LastIndex(signed, ".")], ".")
+	raw, err := base64.RawURLEncoding.DecodeString(value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, err := zlib.NewReader(bytes.NewReader(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	out, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return out
 }
 
 func firstDiff(a, b string) int {
