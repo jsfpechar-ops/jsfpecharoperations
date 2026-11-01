@@ -931,6 +931,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "redirects to."
         ),
         "common.back": "Back",
+        "common.cancel": "Cancel",
         "common.close": "Close",
         "common.apply": "Apply",
         "common.clear": "Clear",
@@ -2703,6 +2704,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "cílovou adresu."
         ),
         "common.back": "Zpět",
+        "common.cancel": "Zrušit",
         "common.close": "Zavřít",
         "common.apply": "Použít",
         "common.clear": "Vymazat",
@@ -7167,6 +7169,7 @@ for _lang, _strings in _PROPERTY_CREATE_0092_STRINGS.items():
 _PROPERTY_NAV_0094_STRINGS = {
     "en": {
         "property_nav.tabs_aria": "Property",
+        "property_page.guest_link.title": "Guest link",
         "property_nav.overview": "Overview",
         "property_nav.bookings": "Bookings & calendars",
         "property_nav.settings": "Settings",
@@ -7189,6 +7192,7 @@ _PROPERTY_NAV_0094_STRINGS = {
     },
     "cs": {
         "property_nav.tabs_aria": "Ubytování",
+        "property_page.guest_link.title": "Odkaz pro hosty",
         "property_nav.overview": "Přehled",
         "property_nav.bookings": "Rezervace a kalendáře",
         "property_nav.settings": "Nastavení",

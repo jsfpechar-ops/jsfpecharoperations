@@ -292,6 +292,8 @@
     "csv-in-filter",
     "btn-icon-label",
     "property-identity",
+    "property-guest-link",
+    "property-savebar",
     "truncate",
     "guest-count",
     "inline",
@@ -975,6 +977,8 @@
   ],
   "class_notes": {
     "ui-section-plain": "Guide page section: a section with no border or fill, only spacing and a heading (MASTER 3, section rhythm).",
+    "property-guest-link": "Properties page guest-link card above the tabs: the guest link and one Copy button (0531).",
+    "property-savebar": "Property settings save bar, sticky at the bottom: Cancel, discard, then Save (0531).",
     "ui-section-row": "Smart locks panel section laid out as a row of label and control (MASTER 7.3 row pattern).",
     "required-legend": "One line above a form: fields marked * are required (0204; the star comes from the required attribute in host2.css).",
     "setup-wizard-celebrate": "Setup wizard finish banner, green, holds the one-time confetti (0203).",
