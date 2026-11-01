@@ -241,6 +241,14 @@
     <input type="hidden" name="door_code_section" value="1">
   </div>
   </details>
+  {% else %}
+  {# 0536: the mockup always shows the lock section. Without a lock account it has no controls, only the connect text. #}
+  <details class="prop-sec" id="sec-lock"{% if settings_section == 'lock' %} open{% endif %}><summary><div><b>{{ t('property_page.sec.lock.title') }}</b><small>{{ t('property_page.sec.lock.sub') }}</small></div></summary>
+  <div class="fields-wrap">
+    <p class="property-group-intro">{{ t('why.door_lock') }}</p>
+    <p class="ui-sub">{{ t('smart_locks.lede') }}</p>
+  </div>
+  </details>
   {% endif %}
 
   {# ---- Reporting & fees ---------------------------------------------- #}

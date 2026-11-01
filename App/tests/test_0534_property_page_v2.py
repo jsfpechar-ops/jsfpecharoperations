@@ -40,8 +40,9 @@ def test_page_is_one_scroll_page_without_tabs(host):
 def test_sections_are_details_in_order(host):
     client, apartment_id = host
     names = [name for name, _ in _sections(_page(client, apartment_id))]
-    # The fixture has no door codes, so the lock section is not rendered.
-    assert names == ["basics", "archive", "messages", "police", "fee", "calendars"]
+    # 0536: the fixture has no door codes, but the lock section is always rendered
+    # (connect text only). DOM order; v2 CSS puts them in mockup order.
+    assert names == ["basics", "archive", "messages", "lock", "police", "fee", "calendars"]
 
 
 def test_no_view_opens_basics_only(host):
@@ -107,7 +108,7 @@ def test_rendered_sections_show_in_mockup_order(host):
     client, apartment_id = host
     names = [name for name, _ in _sections(_page(client, apartment_id))]
     visible = sorted(names, key=lambda name: MOCKUP_ORDER[name])
-    assert visible == ["basics", "police", "calendars", "messages", "fee", "archive"]
+    assert visible == ["basics", "police", "calendars", "messages", "lock", "fee", "archive"]
 
 
 def test_aside_has_cards_and_links_to_each_section(host):

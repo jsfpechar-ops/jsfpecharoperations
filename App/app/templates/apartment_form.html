@@ -29,7 +29,7 @@
     <a class="ui-how-more" href="/guide#overview">{{ t('how.more') }}</a>
   </div>
 </details>
-{% if permalink %}<section class="card guest-card" aria-labelledby="property-guest-link-title"><div><b id="property-guest-link-title">{{ t('property_page.guest_link.title') }}</b><div class="sub">{{ permalink }}</div></div><input class="sr-only" type="text" id="property-guest-url" readonly value="{{ permalink }}" tabindex="-1" aria-hidden="true">{{ copy_button('property-guest-url', t('common.copy_link')) }}</section>{% endif %}
+{% if permalink %}<section class="card guest-card" aria-labelledby="property-guest-link-title"><div><b id="property-guest-link-title">{{ t('property_page.guest_link.title') }}</b><div class="sub">{{ permalink }}</div></div><input class="sr-only" type="text" id="property-guest-url" readonly value="{{ permalink }}" tabindex="-1" aria-hidden="true">{{ copy_button('property-guest-url', '', true) }}</section>{% endif %}
 {% include "_property_editor.html" %}
 {% endif %}
 {% endblock %}
