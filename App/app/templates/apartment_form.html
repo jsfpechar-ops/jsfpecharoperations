@@ -22,7 +22,7 @@
 {# 0534: one scroll page, no tabs. Each section is a plain details; ?view= and ?section= pick what is open without JavaScript. #}
 <div class="crumb"><a href="/apartments">{{ t('nav.properties') }}</a> › {{ apartment.internal_name }}</div>
 <h1>{{ apartment.internal_name }}</h1>
-<details class="ui-how ov-how" data-how="property">
+<details class="ui-how ov-how ph-hide" data-how="property">
   <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
   <div class="ui-how-body">
     <ol class="ui-how-steps">{% for n in (1, 2, 3) %}<li>{{ t('how.property.' ~ n) }}</li>{% endfor %}</ol>

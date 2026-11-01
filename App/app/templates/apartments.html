@@ -3,7 +3,7 @@
 {% set nav = 'apartments' %}
 {% set how_key = 'properties' %}
 {% set body_kind = 'list' %}
-{% from "_components.html" import onboarding_banner, empty_state, row_menu_begin, row_menu_end, row_open, property_identity, copy_button with context %}
+{% from "_components.html" import onboarding_banner, empty_state, row_menu_begin, row_menu_end, property_identity, copy_button with context %}
 {% from "_icons.html" import icon with context %}
 {% block title %}{{ t('apartments.title') }}{% endblock %}
 {% block page_title %}{% endblock %}
@@ -18,7 +18,7 @@
 {% if rows %}
 <div class="top props-top"><span></span><a class="round" href="/apartments/new" aria-label="{{ t('apartments.add') }}">{{ icon('plus', 22) }}</a></div>
 <div class="head props-head"><div><h1>{{ t('apartments.title') }}</h1><p class="sub">{{ t('apartments.sub') }}</p>
-    <details class="ui-how ov-how" data-how="properties">
+    <details class="ui-how ov-how ph-hide" data-how="properties">
       <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
       <div class="ui-how-body">
         <ol class="ui-how-steps">{% for n in (1, 2, 3) %}<li>{{ t('how.properties.' ~ n) }}</li>{% endfor %}</ol>
@@ -52,7 +52,6 @@
         </td>
         <td class="nowrap" data-label="{{ t('common.copy_link') }}">{% if row.link_url %}<input class="sr-only" type="text" id="guest-url-{{ apartment.id }}" readonly value="{{ row.link_url }}" tabindex="-1" aria-hidden="true">{{ copy_button('guest-url-' ~ apartment.id, t('common.copy_link')) }}{% endif %}</td>
         <td class="nowrap row-actions dots" data-label="">
-          {{ row_open(base_url) }}
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="{{ base_url }}" role="menuitem">{{ t('common.open') }}</a>
             {% if apartment.legal_entity_id %}<a class="row-menu-item" href="/entities?edit={{ apartment.legal_entity_id }}&amp;next=/apartments" role="menuitem">{{ t('host.business') }}</a>{% endif %}

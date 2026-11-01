@@ -8,8 +8,8 @@ APP = Path(__file__).resolve().parents[1]
 
 
 def test_row_open_cue_has_no_arrow_icon(host_with_property):
+    # v2 list follows the mockup: the whole row is the link, no "Open" cue.
     page = host_with_property.get("/apartments?lang=en").text
-    assert 'class="row-open"' in page
     for chunk in page.split('class="row-open"')[1:]:
         assert "chevron-right" not in chunk[:200]
 
