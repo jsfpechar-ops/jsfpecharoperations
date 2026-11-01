@@ -18,7 +18,8 @@ Edit: `admin_home.html`, `routes/admin_customers.py` (admin_home context), `admi
 3. `admin_operations.html`: wrap each health block in `<details class="ui-section" id="ops-...">` with its heading and badge in `<summary>`; add `open` when its count > 0 (ttlock: when failed > 0 or used ≥ 80 % of limit; havel: when gaps exist). Keep ids and inner markup. `workspace_link` points to `/admin/customers/<owner_user_id>`.
 4. Move the incidents list, create form and review alerts from `admin_incidents.html` into a last section `id="incidents"` on the operations page (operations route also passes `rows` and `review_alerts`, built as in `incidents_admin`). `GET /admin/incidents` becomes a 303 to `/admin/operations#incidents`; incident POSTs redirect there too. Delete `admin_incidents.html` and keys used only by its page header.
 5. `admin_home.html` header: drop the Customers and Payments buttons (the tabs carry them).
-6. Tests: section-tabs test expects the four tabs and current tab per path; operations test asserts blocks are `<details>`, open only with problems; incident tests follow the redirect; one test that `/admin` shows the clear state with no data and a system line when a job is late.
+6. Stale links after 0480: `settings.html` (~line 81), the command palette entry (`grep -n '/admin/users' App/app/api.py`) and `stop_impersonating`'s redirect point to `/admin/customers` (or `/admin/customers/<id>` where an id is known) instead of `/admin/users`.
+7. Tests: section-tabs test expects the four tabs and current tab per path; operations test asserts blocks are `<details>`, open only with problems; incident tests follow the redirect; one test that `/admin` shows the clear state with no data and a system line when a job is late.
 ## 5. Do not touch
 `admin_ops.py` queries, billing, migrations, CSS, JS, `_shell_*.html`.
 ## 6. Commands
