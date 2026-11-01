@@ -861,7 +861,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .fee-tasks p { margin: var(--space-1) 0 var(--space-2); overflow-wrap: anywhere; }
 .host-workspace .fee-tasks .ui-btn { margin-top: var(--space-2); }
 .host-workspace .fee-qr-panel { background: var(--accent-soft); border-radius: var(--radius-3); padding: var(--space-4); text-align: center; min-width: 0; }
-.host-workspace .fee-qr-panel img { background: #fff; border-radius: var(--radius-2); padding: var(--space-2); max-width: 100%; height: auto; }
+.host-workspace .fee-qr-panel img { background: var(--surface); border-radius: var(--radius-2); padding: var(--space-2); max-width: 100%; height: auto; }
 .host-workspace .fee-qr-panel p { margin: var(--space-2) 0 0; }
 .host-workspace .fee-qr-meta { margin: var(--space-3) 0 0; display: grid; gap: var(--space-1); text-align: left; font-size: var(--size-13); }
 .host-workspace .fee-qr-meta div { display: flex; justify-content: space-between; gap: var(--space-3); }
