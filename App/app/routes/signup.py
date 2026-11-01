@@ -149,7 +149,7 @@ async def signup_verify_submit(request: Request):
         login_link.record_consume_failure(ip_key)
         return render(request, "signup_verify.html", {"expired": True}, status_code=410)
     refreshed = db.query_one("SELECT * FROM user_account WHERE id = ?", (account["id"],))
-    destination = "/onboarding" if signup_selection.for_owner(refreshed["id"]) else "/"
+    destination = "/"
     response = RedirectResponse(destination, status_code=303)
     auth.attach_session(
         response, auth.issue_session(refreshed["id"], refreshed["session_version"])
