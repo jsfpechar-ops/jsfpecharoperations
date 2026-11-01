@@ -58,21 +58,29 @@ def claim() -> Optional[dict]:
     """Lease one due job for this worker; None when nothing is due or leased."""
     _require_postgres()
     now = db.utcnow()
+    params = [now, WORKER_ID, now, _stamp(-timedelta(minutes=LEASE_MINUTES))]
+    # Kinds the Go service runs are left to it (UBYHOST_GO_JOB_KINDS); the
+    # clause is absent when that set is empty, so the SQL is unchanged then.
+    go_clause = ""
+    if config.GO_JOB_KINDS:
+        go_clause = "AND NOT (kind = ANY(?)) "
+        params.append(sorted(config.GO_JOB_KINDS))
     with db.cursor() as cur:
         cur.execute(
-            """
+            f"""
             UPDATE job SET locked_at = ?, locked_by = ?, attempts = attempts + 1
             WHERE id = (
                 SELECT id FROM job
                 WHERE done_at IS NULL AND dead_at IS NULL AND run_at <= ?
                   AND (locked_at IS NULL OR locked_at < ?)
+                  {go_clause}
                 ORDER BY run_at, id
                 FOR UPDATE SKIP LOCKED
                 LIMIT 1
             )
             RETURNING id, kind, payload, attempts
             """,
-            (now, WORKER_ID, now, _stamp(-timedelta(minutes=LEASE_MINUTES))),
+            tuple(params),
         )
         row = cur.fetchone()
     if row is None:

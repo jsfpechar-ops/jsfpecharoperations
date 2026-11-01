@@ -562,6 +562,11 @@ def start() -> bool:
         raise RuntimeError(
             "UBYHOST_JOB_QUEUE_KINDS has unknown kinds: " + ", ".join(sorted(unknown))
         )
+    go_outside = config.GO_JOB_KINDS - config.JOB_QUEUE_KINDS
+    if go_outside:
+        raise RuntimeError(
+            "UBYHOST_GO_JOB_KINDS must also be in UBYHOST_JOB_QUEUE_KINDS: " + ", ".join(sorted(go_outside))
+        )
     if config.JOB_QUEUE_KINDS and config.DB_BACKEND != "postgresql":
         raise RuntimeError("UBYHOST_JOB_QUEUE_KINDS needs PostgreSQL")
     if config.DB_BACKEND == "postgresql" and set(JOB_KINDS) <= config.JOB_QUEUE_KINDS:

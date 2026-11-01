@@ -187,6 +187,25 @@ def test_purge_removes_only_rows_older_than_seven_days(job_db):
     assert len(_rows("mail")) == 1
 
 
+@needs_postgres
+def test_go_kinds_are_left_to_the_go_consumer(job_db, monkeypatch):
+    monkeypatch.setattr(config, "GO_JOB_KINDS", frozenset({"billing_snapshot"}))
+    _insert("billing_snapshot")
+    _insert("push")
+    job = jobqueue.claim()
+    assert job is not None and job["kind"] == "push"
+    assert jobqueue.claim() is None
+    assert _rows("billing_snapshot")[0]["locked_at"] is None
+
+
+def test_go_kind_outside_the_python_queue_refuses_to_start(monkeypatch):
+    monkeypatch.setattr(config, "ENABLE_SCHEDULER", True)
+    monkeypatch.setattr(config, "JOB_QUEUE_KINDS", frozenset({"push"}))
+    monkeypatch.setattr(config, "GO_JOB_KINDS", frozenset({"billing_snapshot"}))
+    with pytest.raises(RuntimeError, match="UBYHOST_GO_JOB_KINDS"):
+        scheduler.start()
+
+
 # --- PostgreSQL: the scheduler lock is skipped only when every kind is queued ---
 
 

@@ -19,6 +19,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/billing"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/jobs"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/schema"
 )
 
@@ -129,6 +131,11 @@ func run() int {
 	redact := func(err error) string {
 		return strings.ReplaceAll(err.Error(), dbURL, "<redacted>")
 	}
+	goKinds, err := parseGoKinds(os.Getenv("UBYHOST_GO_JOB_KINDS"))
+	if err != nil {
+		slog.Error(err.Error())
+		return 1
+	}
 	addr := getenv("UBYHOST_GO_ADDR", "127.0.0.1:8081")
 	migrations := getenv("UBYHOST_MIGRATIONS_DIR", "App/migrations_pg")
 
@@ -160,6 +167,16 @@ func run() int {
 		return 1
 	}
 	defer pool.Close()
+	jobCtx, cancelJobs := context.WithCancel(ctx)
+	var jobsDone sync.WaitGroup
+	defer func() { cancelJobs(); jobsDone.Wait() }()
+	if len(goKinds) > 0 {
+		jobsDone.Add(1)
+		go func() {
+			defer jobsDone.Done()
+			jobs.Run(jobCtx, pool, goKinds, goHandlers(pool), goIntervals)
+		}()
+	}
 
 	m := &metrics{counts: map[key]int64{}}
 	mux := http.NewServeMux()
@@ -190,4 +207,32 @@ func run() int {
 	}
 	slog.Info("stopped")
 	return 0
+}
+
+// goIntervals are the schedule intervals (minutes) that cap a retry backoff.
+var goIntervals = map[string]int{"billing_snapshot": 24 * 60}
+
+// goHandlers maps each Go-owned job kind to its handler.
+func goHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
+	return map[string]jobs.Handler{
+		"billing_snapshot": func(ctx context.Context) (int, error) {
+			return billing.WriteMonthSnapshot(ctx, pool, time.Now().UTC().Format("2006-01"), jobs.Now(0))
+		},
+	}
+}
+
+// parseGoKinds reads UBYHOST_GO_JOB_KINDS. Only billing_snapshot is supported.
+func parseGoKinds(raw string) ([]string, error) {
+	var kinds []string
+	for _, k := range strings.Split(raw, ",") {
+		k = strings.TrimSpace(k)
+		if k == "" {
+			continue
+		}
+		if k != "billing_snapshot" {
+			return nil, fmt.Errorf("UBYHOST_GO_JOB_KINDS has an unsupported kind: %s", k)
+		}
+		kinds = append(kinds, k)
+	}
+	return kinds, nil
 }
