@@ -10,12 +10,15 @@ package ubyport
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 )
 
 // staleSubmissionReason is STALE_SUBMISSION_REASON (reporting.py 64).
@@ -152,4 +155,109 @@ func RecoverStaleSubmissions(ctx context.Context, pool *pgxpool.Pool, aptID int6
 	}
 	log.Printf("ubyport_submission_stale apartment_id=%d submissions=%v", aptID, stale)
 	return len(stale), nil
+}
+
+// RefreshRegistrationCompletedAt is reporting.refresh_registration_completed_at
+// (reporting.py 923-972). A stay is complete when its declared headcount is
+// filled, or when every form on file is complete and no form was touched for
+// 12 hours. The first such instant is stored; a stay with an incomplete form
+// loses a stored stamp. A guest filed by hand counts as complete. It returns the
+// stored stamp, nil for none.
+func RefreshRegistrationCompletedAt(ctx context.Context, pool *pgxpool.Pool, reservationID int64, decrypt FieldDecrypter, now func() time.Time) (*string, error) {
+	var dateFrom, dateTo string
+	var existing *string
+	var override, declared *int64
+	err := pool.QueryRow(ctx,
+		`SELECT COALESCE(date_from,''), COALESCE(date_to,''), registration_completed_at,
+		        expected_guests_override, declared_guests
+		   FROM reservation WHERE id = $1`, reservationID,
+	).Scan(&dateFrom, &dateTo, &existing, &override, &declared)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if existing != nil && *existing == "" {
+		existing = nil
+	}
+	// expected_guest_count: the host override wins when it is truthy.
+	expected := declared
+	if override != nil && *override != 0 {
+		expected = override
+	}
+
+	guests, err := LoadGuests(ctx, pool, GuestScope{ReservationID: reservationID}, decrypt)
+	if err != nil {
+		return nil, err
+	}
+	today := reportingToday(now())
+	filled := 0
+	allComplete := true
+	for _, c := range guests {
+		if (c.submitState == collectGuestSent && c.manualFiled != "") ||
+			validation.GuestIsComplete(c.row, dateFrom, dateTo, today) {
+			filled++
+		} else {
+			allComplete = false
+		}
+	}
+	declaredFilled := expected != nil && int64(filled) >= *expected && allComplete
+
+	// _forms_quiet_for: the newest guest stamp (updated_at, else created_at),
+	// compared as stored text, then read as UTC; quiet for 12 hours.
+	quiet := false
+	if len(guests) > 0 && allComplete {
+		rows, err := pool.Query(ctx,
+			`SELECT COALESCE(NULLIF(updated_at,''), NULLIF(created_at,''))
+			   FROM guest WHERE reservation_id = $1 AND archived_at IS NULL`, reservationID)
+		if err != nil {
+			return nil, err
+		}
+		var newest string
+		for rows.Next() {
+			var stamp *string
+			if err := rows.Scan(&stamp); err != nil {
+				rows.Close()
+				return nil, err
+			}
+			if stamp != nil && *stamp > newest {
+				newest = *stamp
+			}
+		}
+		rows.Close()
+		if err := rows.Err(); err != nil {
+			return nil, err
+		}
+		if newest != "" {
+			if t, ok := parseStoredUTC(newest); ok {
+				quiet = now().Sub(t) >= 12*time.Hour
+			}
+		}
+	}
+	formsSettled := len(guests) > 0 && allComplete && quiet
+	complete := declaredFilled || formsSettled
+
+	if complete && existing == nil {
+		if _, err := pool.Exec(ctx,
+			`UPDATE reservation SET registration_completed_at = $1, updated_at = $2
+			  WHERE id = $3 AND registration_completed_at IS NULL`,
+			UTCNow(), UTCNow(), reservationID); err != nil {
+			return nil, err
+		}
+		if err := pool.QueryRow(ctx,
+			`SELECT registration_completed_at FROM reservation WHERE id = $1`, reservationID,
+		).Scan(&existing); err != nil {
+			return nil, err
+		}
+	} else if !complete && existing != nil && !allComplete {
+		// Only a form that is actually missing un-completes a stay.
+		if _, err := pool.Exec(ctx,
+			`UPDATE reservation SET registration_completed_at = NULL, updated_at = $1 WHERE id = $2`,
+			UTCNow(), reservationID); err != nil {
+			return nil, err
+		}
+		existing = nil
+	}
+	return existing, nil
 }

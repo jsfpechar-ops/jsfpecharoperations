@@ -142,3 +142,84 @@ func TestReportingTodayIsUTCDate(t *testing.T) {
 		t.Fatalf("reportingToday(23:30 UTC) = %v", got)
 	}
 }
+
+// refreshFixture makes a stay with filed hand-filed guests and blank (reportable,
+// incomplete) guests, the declared headcount, the guests' stamp and a stored stamp.
+func refreshFixture(t *testing.T, pool *pgxpool.Pool, declared any, filed, blank int, updated string, existing any) int64 {
+	t.Helper()
+	ctx := context.Background()
+	first := seedGuest(t, pool)
+	var res int64
+	if err := pool.QueryRow(ctx, `SELECT reservation_id FROM guest WHERE id = $1`, first).Scan(&res); err != nil {
+		t.Fatal(err)
+	}
+	guests := []int64{first}
+	for i := 1; i < filed+blank; i++ {
+		guests = append(guests, addGuestLike(t, pool, first))
+	}
+	for i, g := range guests {
+		if i < filed {
+			if _, err := pool.Exec(ctx,
+				`UPDATE guest SET submit_state = 'sent', manual_filed_at = $2, updated_at = $3 WHERE id = $1`,
+				g, recoverStamp, updated); err != nil {
+				t.Fatal(err)
+			}
+		} else if _, err := pool.Exec(ctx,
+			`UPDATE guest SET nationality = 'DE', updated_at = $2 WHERE id = $1`, g, updated); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := pool.Exec(ctx,
+		`UPDATE reservation SET declared_guests = $2, registration_completed_at = $3 WHERE id = $1`,
+		res, declared, existing); err != nil {
+		t.Fatal(err)
+	}
+	return res
+}
+
+func TestRefreshRegistrationCompletedAt(t *testing.T) {
+	const (
+		quiet  = "2026-10-31T23:00:00+00:00" // 13 hours before the pinned clock
+		recent = "2026-11-01T11:00:00+00:00" // 1 hour before it
+		old    = "2026-10-30T10:00:00+00:00"
+	)
+	cases := []struct {
+		name         string
+		declared     any
+		filed, blank int
+		updated      string
+		existing     any
+		want         string // "" nil, "new" any new stamp, else that stored value
+	}{
+		{"declared count reached", 2, 2, 0, recent, nil, "new"},
+		{"quiet after 12 hours", nil, 2, 0, quiet, nil, "new"},
+		{"not yet quiet", nil, 2, 0, recent, nil, ""},
+		{"incomplete guest clears stamp", 2, 1, 1, recent, old, ""},
+		{"complete stay keeps stamp", 2, 2, 0, recent, old, old},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			pool := claimTestPool(t)
+			res := refreshFixture(t, pool, c.declared, c.filed, c.blank, c.updated, c.existing)
+			got, err := RefreshRegistrationCompletedAt(context.Background(), pool, res, nil, recoverNow)
+			if err != nil {
+				t.Fatal(err)
+			}
+			col := storeRead(t, pool, "reservation", res, "registration_completed_at")["registration_completed_at"]
+			switch c.want {
+			case "":
+				if got != nil || col != "<nil>" {
+					t.Fatalf("want no stamp, got %v, column %q", got, col)
+				}
+			case "new":
+				if got == nil || *got == "" || col != *got {
+					t.Fatalf("want a new stamp, got %v, column %q", got, col)
+				}
+			default:
+				if got == nil || *got != c.want || col != c.want {
+					t.Fatalf("want %q kept, got %v, column %q", c.want, got, col)
+				}
+			}
+		})
+	}
+}
