@@ -869,7 +869,6 @@ def test_dashboard_760_header_and_actions_remain_in_the_shared_lane(wide_host, w
             _dismiss_optional_security_prompt(page)
             page.evaluate("window.scrollTo(0, 0)")
             # 0720c: v2 dashboard. The header is `.head`, the lane is `#needs-action`, the lines are `.card.need`.
-            geometry = _capture_geometry(page, "#needs-action")
             v2 = page.evaluate("""() => {
               const rect = el => { if (!el) return null; const r = el.getBoundingClientRect(); return {left: r.left, right: r.right, top: r.top, bottom: r.bottom}; };
               return {main: rect(document.querySelector('main')), head: rect(document.querySelector('.head')),
