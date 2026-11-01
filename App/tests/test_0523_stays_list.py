@@ -94,7 +94,6 @@ def test_the_headers_are_in_order_guest_property_arrival_departure_reporting(hos
         "stay-col-dates",
         "stay-col-departure",
         "stay-col-reporting",
-        "stay-col-pay",
         "stay-col-actions",
     ]
     thead = page[page.index("<thead>") : page.index("</thead>")]
@@ -131,7 +130,7 @@ def test_an_active_stay_still_shows_the_deadline_badge(host_with_property):
 def test_the_payment_link_preselects_the_stay(host_with_property):
     stay = _reservation(_apartment_id(), "0523-pay", "2026-10-20", "2026-10-22")
     page = host_with_property.get("/reservations?range=all&lang=en").text
-    assert f'href="/payments?reservation_id={stay}#new-request"' in _row(page, stay)
+    assert re.search(rf'<a class="row-menu-item" href="/payments\?reservation_id={stay}#new-request" role="menuitem">', _row(page, stay))
 
     payments = host_with_property.get(f"/payments?reservation_id={stay}&lang=en").text
     assert re.search(rf'<option value="{stay}"\s+selected>', payments)

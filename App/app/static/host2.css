@@ -1135,10 +1135,5 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 /* 0523: stays list at computer width: quiet grey header, guest column widest, pay and actions shrink to content. */
 @media (min-width: 1024px) {
   .host-workspace .stays-view .ui-table th { background: var(--surface-2); }
-  .host-workspace .stays-view .ui-table th.stay-col-stay { width: 32%; }
-  .host-workspace .stays-view .ui-table :is(th, td).stay-col-pay,
   .host-workspace .stays-view .ui-table :is(th, td).stay-col-actions { width: 1%; white-space: nowrap; }
-}
-@media (max-width: 1023.98px) {
-  .host-workspace .stays-view .ui-table th.stay-col-pay { display: none; }
 }
