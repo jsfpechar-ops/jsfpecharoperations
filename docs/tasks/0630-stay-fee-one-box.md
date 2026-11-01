@@ -1,5 +1,5 @@
 # 0630: Stay fee list: two steps, PDF + data box + QR in one box
-Status: todo
+Status: blocked
 Depends on: none | Base commit: main | Branch: claude/project-thread-edfdua
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 90k tokens
 
