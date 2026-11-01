@@ -89,9 +89,9 @@ def test_conflict_missing_hours_and_normal_give_three_badges(workspace, monkeypa
 
     monkeypatch.setattr(cleaning, "schedule", flagged)
     html = ws["client"].get("/cleaning?lang=en").text
-    assert 'ui-badge ui-badge-action">Check the time' in html
-    assert 'ui-badge ui-badge-attention">Hours missing' in html
-    assert 'ui-badge ui-badge-neutral">Scheduled' in html
+    assert 'pill p-bad">Check the time' in html
+    assert 'pill p-bad">Hours missing' in html
+    assert 'pill p-warn">Scheduled' in html
 
 
 def test_schedule_json_list_html_uses_tables(workspace):
