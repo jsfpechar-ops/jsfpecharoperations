@@ -22,7 +22,7 @@ Status: review
 - goIntervals uses 10 (config default). Go does not read UBYHOST_SUBMIT_SWEEP_MINUTES.
 - UBYHOST_UBYPORT_ENV set but empty is read as mock (Python would raise).
 - Unknown UBYHOST_UBYPORT_ENV: SubmitForApartment returns an error before collecting (sweep_failed), instead of Python's ValueError inside submit_batch.
-- Not covered by a test: claim release after a batch error, the retry resend itself, and the legal-entity demo check. The code has them (defer, markBatchRetried, isDemoApartment).
+- Not covered by a test: the legal-entity demo check (isDemoApartment). Claim release after a failed batch is covered by TestSweepReleasesClaimsWhenABatchFails; the retry resend and its guards by TestRetryResendsOnlyStaleBatchGuests and TestRetrySkipsAndGuards.
 - Test fixture sweepFixtureApartment adds the valid UbyPort fields to notifyApartment.
 
 ## Questions
