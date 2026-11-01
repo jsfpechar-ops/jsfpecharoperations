@@ -15,7 +15,7 @@ from typing import Any, Dict, List
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, config, db, stripe_connect
+from app import auth, config, db, payments_consent, stripe_connect
 from app.main import app
 from tests.conftest import login_as
 
@@ -383,6 +383,7 @@ def client(owner):
     client = TestClient(app)
     response = login_as(client, OWNER, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
+    payments_consent.record(_owner_id())  # 0624: consent comes before Stripe
     return client
 
 
