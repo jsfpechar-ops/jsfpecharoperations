@@ -92,8 +92,11 @@ def test_overview_cards_and_tablet_menu_on_touch(host, base):
             page.wait_for_timeout(50)
 
             # 1. Every card can be hit at its centre, corner and Open pill.
-            cards = page.evaluate(CARD_JS)
-            assert page.locator("aside.preview").first.is_visible(), width  # v2: the preview aside replaces the cards (0536)
+            cards = page.evaluate(CARD_JS) if width >= 1024 else []  # 0543: v2 phone rows have no cards to hit
+            # 0543: from 1024 px the v2 aside is the nav; below it the phone rows (details.prop-sec) are.
+            desktop = width >= 1024
+            if desktop:
+                assert page.locator("aside.preview").first.is_visible(), width  # v2: the preview aside replaces the cards (0536)
             for card in cards:
                 assert card["centre"] and card["corner"] and card["pill"], (width, card)
             fits = page.evaluate(
@@ -104,14 +107,20 @@ def test_overview_cards_and_tablet_menu_on_touch(host, base):
 
             # 2. Tapping the guest card opens the guests group; police reporting
             #    opens the reporting group.
-            page.locator('aside.preview a.r[href="#sec-lock"]').tap(position={"x": 8, "y": 8})
-            page.wait_for_url("**#sec-lock**")
+            if desktop:
+                page.locator('aside.preview a.r[href="#sec-lock"]').tap(position={"x": 8, "y": 8})
+                page.wait_for_url("**#sec-lock**")
+            else:
+                page.locator("#sec-lock > summary").tap()
             assert page.locator("#sec-lock[open]").count() == 1, width  # v2: guest-facing row is the lock section (0536)
 
             page.goto(url)
             page.wait_for_timeout(50)
-            page.locator('aside.preview a.r[href="#sec-police"]').tap(position={"x": 8, "y": 8})
-            page.wait_for_url("**#sec-police**")
+            if desktop:
+                page.locator('aside.preview a.r[href="#sec-police"]').tap(position={"x": 8, "y": 8})
+                page.wait_for_url("**#sec-police**")
+            else:
+                page.locator("#sec-police > summary").tap()
             assert page.locator("#sec-police[open]").count() == 1, width
 
             # 3. Only in the tablet rail range: the toggle opens and closes the full menu.
