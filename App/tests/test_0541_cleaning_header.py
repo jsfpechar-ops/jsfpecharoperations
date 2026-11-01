@@ -43,8 +43,11 @@ def stay(home, start="2026-10-17", end="2026-10-20", **extra):
 def test_header_has_one_primary_share_button_in_czech(workspace):
     response = workspace["client"].get("/cleaning?lang=cs")
     assert response.status_code == 200
-    assert response.text.count('<a class="btn" href="/cleaning/shares"') == 1
-    tag = re.search(r'<a class="btn" href="/cleaning/shares">.*?</a>', response.text, re.S)
+    # 0548: one share link in the desktop head, one in the phone .actbar (exactly one is visible per width).
+    assert response.text.count('<a class="btn" href="/cleaning/shares"') == 2
+    head = response.text[response.text.index('class="head cleaning-head"'):response.text.index('class="actbar cleaning-phone"')]
+    assert head.count('<a class="btn" href="/cleaning/shares"') == 1
+    tag = re.search(r'<a class="btn" href="/cleaning/shares">.*?</a>', head, re.S)
     assert tag is not None
     assert 'href="/cleaning/shares"' in tag.group(0)
     assert "Sdílet rozpis s uklízečkou" in tag.group(0)

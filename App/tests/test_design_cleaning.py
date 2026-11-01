@@ -22,7 +22,7 @@ def test_cleaning_pages_have_the_v2_shell_and_one_stylesheet(host_with_property)
         if path == "/cleaning":
             # 0542: the host cleaning page is on the v2 shell (tokens.css + app2.css only)
             assert page.count("/static/cleaning.css") == 0 and "/static/host2.css" not in page, path
-            assert page.count('class="head cleaning-head"') == 1 and page.count('<a class="btn" href="/cleaning/shares"') == 1, path
+            assert page.count('class="head cleaning-head"') == 1 and page.count('<a class="btn" href="/cleaning/shares"') == 2 and page.count('class="actbar cleaning-phone"') == 1, path
             continue
         assert page.count("/static/cleaning.css") == 1, path
         assert page.index("/static/cleaning.css") < page.index("/static/host2.css"), path
