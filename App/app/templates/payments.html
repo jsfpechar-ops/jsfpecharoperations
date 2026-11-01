@@ -21,12 +21,47 @@
   <p>{{ t('payments.connect.support') }}</p>
   {% else %}
   <p>{{ t('payments.connect.' ~ connect_state.onboarding_state) }}</p>
+  <p>{{ t('payments.setup.lead') }}</p>
+  <ul class="setup-wizard-checklist host-property-grid" data-payments-setup>
+    {% for step in setup.steps %}
+    <li class="is-{{ step.status }}" data-payments-step="{{ step.key }}">
+      <div class="host-property-card host-property-card-static setup-summary-card">
+        <span class="setup-summary-icon" aria-hidden="true">{{ loop.index }}</span>
+        <div class="setup-summary-copy">
+          <strong>{{ t('payments.setup.step.' ~ step.key) }}</strong>
+          <span class="ui-badge ui-badge-{{ 'done' if step.status == 'done' else 'attention' if step.status == 'attention' else 'neutral' }}" data-tone="{{ 'green' if step.status == 'done' else 'amber' if step.status == 'attention' else 'grey' }}">
+            {% if step.status == 'done' %}<span aria-hidden="true">✓</span>{% endif %}
+            {{ t('payments.setup.badge.' ~ step.status) }}
+          </span>
+          {% if step.key == 'details' %}
+            {% if setup.entity %}
+            <span class="ui-sub">{{ setup.entity.name }}{% if setup.entity.contact_email %} · {{ setup.entity.contact_email }}{% endif %}</span>
+            <a class="setup-summary-action" href="{{ step.href }}">{{ t('payments.setup.details_edit') }}</a>
+            {% else %}
+            <span class="ui-sub">{{ t('payments.setup.details_missing') }}</span>
+            {% endif %}
+          {% elif step.key == 'stripe' %}
+            <span class="ui-sub">{{ t('payments.setup.stripe_help') }}</span>
+          {% elif step.key == 'live' %}
+            <span class="ui-sub">{{ t('payments.setup.live_help') }}</span>
+          {% endif %}
+        </div>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% if setup.next == 'consent' %}
+  {{ ui_button(t('payments.setup.continue'), 'primary', href='/payments/consent') }}
+  {% elif setup.next == 'details' %}
+  {{ ui_button(t('payments.setup.details_add'), 'primary', href='/entities') }}
+  {% else %}
   {#- A plain link, not a form POST: the same-origin POST/303 navigation is
       eaten by the PWA submit handling (live-observed hang on the skeleton);
       link navigation works everywhere, and target=_blank keeps the dashboard
-      open behind the single-use Stripe onboarding. -#}
-  {{ ui_button(t('payments.connect.open_stripe'), 'primary',
+      open behind the single-use Stripe onboarding (and out of prefetch). -#}
+  {{ ui_button(t('payments.connect.open_stripe') if connect_state.onboarding_state == 'none' else t('payments.connect.continue_stripe'), 'primary',
                href='/payments/connect/start', attrs='target="_blank" rel="noopener"') }}
+  {% endif %}
   {% endif %}
 </div>
 <div class="ui-section">
