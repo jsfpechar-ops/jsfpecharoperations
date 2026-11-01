@@ -112,7 +112,10 @@ body.v2 .row-menu-panel{position:absolute;right:0;top:100%;z-index:20;min-width:
 body.v2 .row-menu-panel[hidden]{display:none}
 body.v2 .row-menu-item{display:block;font:inherit;font-size:13px;width:100%;text-align:left;padding:8px 12px;border:0;border-radius:6px;background:none;color:var(--ink);cursor:pointer;text-decoration:none}
 body.v2 .row-menu-item:hover{background:#f6f6f4}
+body.v2 .row-menu-item svg{width:16px;height:16px;vertical-align:middle}
 body.v2 .row-menu-panel.is-open{position:fixed}
+body.v2 .row-menu-item[hidden]{display:none}
+@media (max-width:1023px){body.v2 .ui-menu-panel.is-open,body.v2 .row-menu-panel.is-open{position:fixed;left:8px;right:8px;bottom:8px;top:auto;min-width:0}body.v2 .row-menu-item{min-height:44px}}
 body.v2 .crow{grid-auto-rows:44px}
 
 /* 0709 Overview: named classes instead of inline styles (design lint T1) */
