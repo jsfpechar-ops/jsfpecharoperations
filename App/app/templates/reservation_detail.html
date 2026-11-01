@@ -201,6 +201,7 @@
           <h3>{{ guest.surname or '—' }} {{ guest.first_name or '' }}</h3>
           {% if guest.is_lead %}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('stay.detail.guests.lead') }}</span>{% endif %}
         </div>
+        <span class="guest-card-doc">{{ t('guest.doc_type.' ~ guest.doc_type) if guest.doc_type else '—' }}</span>
         <div class="guest-card-state">
           {% if guest.restricted_at %}
             <span class="ui-badge ui-badge-action" data-tone="amber">{{ t('guest.restricted_badge') }}</span>
@@ -300,6 +301,7 @@
         <div class="guest-card-who">
           <h3>{{ t('stay.detail.guests.placeholder', n=n) }}</h3>
         </div>
+        <span class="guest-card-doc">—</span>
         <div class="guest-card-state">
           
           <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/reservations/{{ reservation.id }}/guests/new">{{ t('stay.detail.guests.add_by_hand') }}</a>
