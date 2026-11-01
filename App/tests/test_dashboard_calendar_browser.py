@@ -479,7 +479,9 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
             f'.cal-week-events .cal-event[data-cal-event="{cleaning_event_id}"]'
         )
         cleaning_marker.wait_for(state="visible")
-        assert "Calendar popup" in cleaning_page.locator(f'#cleaning-{created_cleaning["id"]}').inner_text()
+        cleaning_row = cleaning_page.locator(f'#cleaning-{created_cleaning["id"]}')
+        cleaning_row.wait_for(state="visible")
+        assert "27.10.2026" in cleaning_row.inner_text()
         shot(cleaning_page, "cleaning-calendar-created-marker-en")
         cleaning_page.close()
 

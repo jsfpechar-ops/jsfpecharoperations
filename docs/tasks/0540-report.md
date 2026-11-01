@@ -17,6 +17,7 @@ Assertions changed (existing tests):
 - tests/test_cleaning_browser.py::test_host_crud_and_drag_change_cleanings_without_moving_bookings: rows are found by #cleaning-<id> (created_id). The wait for the drag date and the "Edit cleaning" link are replaced by reading the saved date from cleaning.schedule() and clicking the row's first link. The host table has no time element, so the saved date is checked from data, not DOM.
 - tests/test_cleaning_browser.py::test_calendar_popup_types_create_in_place_and_localize_validation: the note text check is replaced by a 4-cell row check, because the host table shows no notes.
 - tests/test_design_guardrails_browser.py (cleaning facts test): reads the column left positions of table rows per section instead of .cleaning-facts. The test name is unchanged.
+- tests/test_dashboard_calendar_browser.py (cleaning calendar popup check, the line that asserted "Calendar popup" in the host row): now waits for the row #cleaning-<id> to be visible and asserts "27.10.2026" in it, because the host table shows no notes.
 - Shared-view lines (cleaner page, .cleaning-card count 2, Door code checks at the shared-view URL) are not changed.
 
 Deviations: the schedule-based date checks are a substitute for DOM time attributes the table does not render; the owner may want a time element in the day cell instead.
