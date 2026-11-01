@@ -1,5 +1,5 @@
 # 0473: deploy.sh works when production runs on PostgreSQL, and applies goose migrations before start
-Status: todo
+Status: review
 Depends on: 0465a (merged) | Base commit: main | Branch: claude/0473-deploy-on-postgres
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 80k tokens
 ## 1. Objective
