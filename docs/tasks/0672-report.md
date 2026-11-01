@@ -37,8 +37,9 @@ ok  	github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure	0.016s
 - A non-integer `as` is ignored. Python would flag the session as expired.
 - One commit, with the brief's message, instead of per-step commits.
 
-## Questions
-- Python compresses a payload when zlib's output is shorter. Go's stdlib deflate gives different bytes and sometimes a different decision (impersonating: Python compresses, Go does not). Byte-identical compressed output needs a zlib-compatible deflate, which is a new dependency or cgo. Options: (a) accept valid but non-identical cookies from Go, since Python verifies them, or (b) approve a dependency. Decision needed.
+## Review (orchestrator)
+- Compressed cookies: option (a), no new dependency. Go's zlib stream differs from Python's but is valid zlib, Python's itsdangerous loads it, and the session only needs verification to match. Uncompressed tokens reproduce byte for byte.
+- Empty `UBYHOST_IMPERSONATION_MAX_HOURS` keeps the 24 h limit in Go (stricter than Python); production leaves it unset.
 
 ## Owner steps left
 None.

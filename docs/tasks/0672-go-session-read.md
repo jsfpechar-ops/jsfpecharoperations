@@ -1,5 +1,5 @@
 # 0672: Go reads the Python host session cookie
-Status: todo
+Status: review
 Depends on: 0671 (#669) | Base commit: origin/main | Branch: claude/project-thread-m85z82
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 ## 1. Objective
