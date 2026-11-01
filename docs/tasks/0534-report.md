@@ -387,3 +387,31 @@ Left, not done:
 - Step 5: screenshots in `docs/tasks/screenshots-0540/` (`app-390.png`, `app-320.png`, mockup `nemovitost` at 390, `app-390-open.png`). None taken.
 - 1024 px check, and visual review of the phone layout (nothing was rendered).
 - No push, no PR (the brief says do not push).
+
+## 0538 part A
+
+Status: blocked (executor ran out of checkpoint; part A not finished)
+
+Commits: 4907363 "0538 step 1 door-code window" (title threshold 16 to 14 px, unused `notice` removed for ruff F841). Lock-navigation edit reverted (see below).
+
+Tails (last lines, per file, run alone with --tb=line -rfs):
+- test_door_code_window_browser.py: chromium still fails 6 (value size assert `>= 15` on dd, v2 value size not decided); webkit fails 6 because /opt/pw-browsers has no webkit build.
+- test_host_help_browser.py: 2 failed, 4 passed (help tip button not visible in details, scroll timeout). Not touched.
+- test_lock_navigation_browser.py: 1 failed, 2 passed. Help-tip assert swapped to hint body; next failure is the save step (`.host-property-save button[type=submit]` not found). Save/POST, so stopped (section 8). Edit reverted.
+- test_0199_phone_geometry_browser.py: KeyError 'E' in _check_lock (lock measurement has no E key). Not touched.
+- test_0396_leon_opt_in_browser.py: 2 failed (a.host-property-card missing, old markup). Not touched.
+- test_0284_states_browser.py: 1 failed (a.host-property-card missing). Not touched.
+- test_0251_tablet_browser.py: 1 failed (no overview cards at 1180px). Not touched.
+- test_onboarding_wizard_browser.py: 14 failed of 85 (`.host-property-grid` gone, Connected calendars text). Not touched.
+- test_0503_page_inits_once_browser.py: 1 failed (`[] == ['invalid']`). Not touched.
+- test_wp28_geometry.py: 2 failed (calendar remove button overflow 'visible' vs 'auto'; signature block border 'groove' vs 'solid'). Not touched.
+
+Section 8 list (test edits made):
+- test_door_code_window_browser.py: title threshold 16 to 14 (line ~116), unused `notice` assignment removed (F841, coordinator request).
+
+Not ours:
+- webkit browser missing in /opt/pw-browsers (env, affects every file's webkit param).
+- test_wp28 signature block border style (likely CSS, not a test selector).
+- test_0503 init-once `invalid` expectation (unclear, needs owner or orchestrator read).
+
+Left: everything above except the door-code title fix. Next step: decide the dd value size threshold for v2, then the property-page markup selectors (overview cards to aside.preview .pv rows), then help-tip rewrites, then the save step in lock navigation (stop: save/POST).
