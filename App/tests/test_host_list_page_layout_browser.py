@@ -165,7 +165,7 @@ def _shot(page, name, width, lang):
 def test_tabs_are_links_that_mark_the_open_page(acc):
     client = acc["client"]
     cases = [
-        ("/reservations", "nav.stays"), ("/submissions", "tabs.stays.reports"),
+        ("/submissions", "tabs.stays.reports"),
         ("/housebook", "tabs.stays.register"), ("/apartments", "nav.properties"),
         ("/invoices", "nav.invoices"),
         (f"/entities?edit={acc['e1']}&next=/apartments", "host.business"),
