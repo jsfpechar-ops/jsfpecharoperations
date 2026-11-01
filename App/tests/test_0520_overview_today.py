@@ -150,8 +150,8 @@ def test_today_table_lists_arrivals_and_departures_today_only(host):
 
     page = host.get("/?lang=en").text
 
-    start = page.index('class="dashboard-today"')
-    table = page[start:page.index("</section>", start)]
+    start = page.index("<thead><tr><th>")  # 0706: the Dnes table is the only table on /
+    table = page[start:page.index("</table>", start)]
     assert f"/reservations/{arrive}" in table
     assert f"/reservations/{depart}" in table
     assert f"/reservations/{tomorrow}" not in table
@@ -164,10 +164,10 @@ def test_order_is_needs_you_month_calendar_today(host):
 
     page = host.get("/?lang=en").text
 
-    needs = page.index('class="needs-you"')
+    needs = page.index('data-needs-you-card')
     month = page.index("data-dashboard-month")
-    calendar = page.index('id="calendar"')
-    today_table = page.index('class="dashboard-today"')
+    calendar = page.index('class="card cal"')
+    today_table = page.index("<h2>", calendar)  # 0706: the Dnes heading follows the calendar
     assert needs < month < calendar < today_table
 
 

@@ -6,12 +6,13 @@ from tests.test_signed_in_chrome import empty_host, host_with_property  # noqa: 
 def test_dashboard_with_a_property_has_the_v2_header_one_primary_and_refresh_hooks(host_with_property):
     page = host_with_property.get("/?lang=en").text
     assert page.count("<h1") == 1 and 'data-body-kind="detail"' in page
-    assert page.count('class="ui-btn ui-btn-primary"') == 1
+    assert page.count('class="btn"') == 1  # 0706: the v2 header button
     assert "ui-ph-menu" not in page
     assert "dashboard-more" not in page
-    assert 'data-dashboard-refresh="stats"' in page and 'data-dashboard-refresh="work"' in page
+    # 0706: removed from Overview by the v2 rebuild
+    assert 'data-dashboard-refresh="stats"' not in page and 'data-dashboard-refresh="work"' not in page
     # 0241: the count tiles gave way to the "What needs you" card.
-    assert 'class="needs-you"' in page and 'class="ui-stats' not in page
+    assert 'data-needs-you-card' in page and 'class="ui-stats' not in page
     assert "page-toolbar" not in page
 
 
