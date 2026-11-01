@@ -22,7 +22,8 @@
 {% endif %}
 {% block toolbar %}{% endblock %}
 {% block body %}
-<div class="head"><div><h1>{{ t('stays.title') }}</h1></div>{% if apartments %}<div style="display:flex;gap:8px">{% if manual_send %}<form method="post" action="/reservations/submit-ready" class="inline send-all-form"><input type="hidden" name="return_to" value="{{ return_to }}"><button class="btn ghost send-all" type="submit"{% if not ready_send_count %} disabled{% endif %} title="{{ t('send.all_ready_hint') }}">{{ icon('send', 16) }}<span>{{ t('send.all_ready') }}{% if ready_send_count %} ({{ ready_send_count }}){% endif %}</span></button></form>{% endif %}<a class="btn ghost" href="/housebook.csv?{{ csv_export_params }}" data-stays-housebook>{{ t('stays.housebook_download') }}</a><button class="btn" type="button" data-toggle-panel="add-stay-panel">{{ t('stays.add_stay') }}</button></div>{% endif %}</div>
+<div class="head stays-head"><div><h1>{{ t('stays.title') }}</h1></div>{% if apartments %}<div style="display:flex;gap:8px">{% if manual_send %}<form method="post" action="/reservations/submit-ready" class="inline send-all-form"><input type="hidden" name="return_to" value="{{ return_to }}"><button class="btn ghost send-all" type="submit"{% if not ready_send_count %} disabled{% endif %} title="{{ t('send.all_ready_hint') }}">{{ icon('send', 16) }}<span>{{ t('send.all_ready') }}{% if ready_send_count %} ({{ ready_send_count }}){% endif %}</span></button></form>{% endif %}<a class="btn ghost" href="/housebook.csv?{{ csv_export_params }}" data-stays-housebook>{{ t('stays.housebook_download') }}</a><button class="btn" type="button" data-toggle-panel="add-stay-panel">{{ t('stays.add_stay') }}</button></div>{% endif %}</div>
+<div class="stays-phone"><div class="top"><span></span>{% if apartments %}<button class="round" type="button" data-toggle-panel="add-stay-panel" aria-label="{{ t('stays.add_stay') }}">{{ icon('plus', 20) }}</button>{% endif %}</div><div class="big">{{ t('stays.title') }}</div></div>
 {{ onboarding_banner(onboarding) }}
 
 {% if apartments %}
@@ -91,7 +92,7 @@
   {% endfor %}
   <a class="chip{{ ' on' if report == 'failed' }}" href="/reservations?report=failed&status={{ status }}&apartment={{ apartment_id or '' }}">{{ t('stays.chip.failed') }}</a>
   <a class="chip{{ ' on' if show_archive }}" href="/reservations?range=archive&status={{ status }}&apartment={{ apartment_id or '' }}">{{ t('stays.chip.archive') }}</a>
-  <button class="chip dashed" type="button" data-filter-toggle aria-expanded="true" aria-controls="stays-filter-panel" hidden>{{ t('host.filter.filters') }}</button>
+  <button class="chip" type="button" data-filter-toggle aria-expanded="true" aria-controls="stays-filter-panel" hidden>{{ t('host.filter.filters') }}</button>
 </div>
 <p class="ui-sub" data-filter-summary>{{ stay_summary }}</p>
 <div class="saved-views" data-saved-views data-label="{{ t('stays.filter.saved_views') }}"></div>
@@ -132,8 +133,50 @@
 </form>
 {% endif %}
 
+{% macro stay_group(reservation) -%}
+  {%- set now = today() -%}
+  {%- set d_from = parse_iso_date(reservation.date_from) -%}
+  {%- set d_to = parse_iso_date(reservation.date_to) -%}
+  {%- if d_to and d_to < now -%}earlier
+  {%- elif d_from and d_from <= now -%}today
+  {%- elif d_from and (d_from - now).days <= 7 -%}week
+  {%- else -%}later
+  {%- endif -%}
+{%- endmacro %}
 {% if rows %}
-<div class="card">
+<div class="stays-phone">
+{% for key, label_key in [('today', 'stays.grp.today'), ('week', 'stays.grp.week'), ('later', 'stays.grp.later'), ('earlier', 'stays.grp.earlier')] %}
+  {% set group_rows = [] %}
+  {% for row in rows if stay_group(row.reservation) | trim == key %}{% set _ = group_rows.append(row) %}{% endfor %}
+  {% if group_rows %}
+  <div class="grp">{{ t(label_key) }}</div>
+  <div class="list">
+    {% for row in group_rows %}
+      {% set reservation = row.reservation %}
+      {% set progress = row.progress %}
+      {% set lead = (progress.guests | selectattr('is_lead') | first) or (progress.guests | first) %}
+      {% set lead_name = ((lead.first_name or '') ~ ' ' ~ (lead.surname or '')) | trim if lead else '' %}
+      {% set shown = lead_name or (reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else t('stays.row.no_name')) %}
+      {% set check_in = deadline_anchor(reservation, progress.guests) %}
+      {% set cell = deadline_cell(progress, check_in) if check_in else none %}
+      {% set d_from = parse_iso_date(reservation.date_from) %}
+      {% set d_to = parse_iso_date(reservation.date_to) %}
+      <a class="row" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}">
+        <div class="av">{{ shown[:1] | upper }}</div>
+        <div class="t"><b>{{ shown }}</b>
+          <small>{{ reservation.internal_name }} &middot; {{ d_from.day }}.{% if d_from.month != d_to.month %} {{ d_from.month }}.{% endif %}&ndash;{{ d_to.day }}. {{ d_to.month }}.</small>
+          {% if reservation.status != 'active' %}<span class="pill p-n">{{ t('stays.filter.state.' ~ reservation.status) }}</span>
+          {% elif cell %}{{ v2_status_pill(cell, progress, reservation) }}
+          {% else %}{{ progress_pill(progress.status, reservation.automation_mode) }}{% endif %}
+        </div>
+        {{ icon('chevron-right', 16, 'chev') }}
+      </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endfor %}
+</div>
+<div class="card stays-desk">
   <table>
     <thead>
       <tr>
@@ -246,5 +289,6 @@
 <div class="list" style="margin-top:12px">
   <a class="link" href="/submissions"><span>{{ t('tabs.stays.reports') }}</span>{{ icon('chevron-right', 16) }}</a>
   <a class="link" href="/housebook"><span>{{ t('tabs.stays.register') }}</span>{{ icon('chevron-right', 16) }}</a>
+  <a class="link stays-phone-only" href="/housebook.csv?{{ csv_export_params }}" data-stays-housebook-phone><span>{{ t('stays.housebook_download') }}<small>{{ t('stays.housebook_hint') }}</small></span>{{ icon('download', 16) }}</a>
 </div>
 {% endblock %}

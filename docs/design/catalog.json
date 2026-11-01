@@ -263,7 +263,21 @@
     "stay-col-departure",
     "stay-col-property",
     "guest-card-doc",
-    "stay-door-card"
+    "stay-door-card",
+    "top",
+    "round",
+    "big",
+    "grp",
+    "av",
+    "list",
+    "row",
+    "chev",
+    "link",
+    "chips",
+    "stays-head",
+    "stays-desk",
+    "stays-phone",
+    "stays-phone-only"
   ],
   "hooks": [
     "sr-only",
