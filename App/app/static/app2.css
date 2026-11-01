@@ -705,6 +705,15 @@ body.v2 .dot.n{background:#c9c9c3}
   body.v2 .property-settings-form .savebar .btn[type="submit"]{flex-basis:0}
   body.v2 .property-settings-form .savebar:has([data-unsaved-reset]:not([hidden])) .btn.ghost:not([data-unsaved-reset]){display:none}
 }
+/* 0545: phone guest card also shows the access PIN and its copy button (below 1024 px only) */
+body.v2 .guest-pin,body.v2 .guest-pin-copy{display:none}
+body.v2 .guest-btns{display:contents}
+@media (max-width:1023px){
+  body.v2 .guest-pin{display:block;margin-top:8px;color:var(--ink3);font-size:14px}
+  body.v2 .guest-pin-value{display:block;font-family:var(--mono,ui-monospace,monospace);font-size:16px;font-weight:700;color:var(--ink);letter-spacing:.08em}
+  body.v2 .guest-btns{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+  body.v2 .guest-pin-copy{display:block}
+}
 /* 0543: CI browser fixes on the property page and its dialogs */
 body.v2 aside.preview .pv a.r:hover,body.v2 aside.preview .pv a.r:focus-visible{background:#f6f6f4;border-radius:8px}
 body.v2 .scroll-x:has(.feed-table){overflow-x:auto}
