@@ -1,5 +1,5 @@
 # 0644: Go: sync one iCal feed into the reservation table
-Status: todo
+Status: review
 Depends on: 0643 (PR #677) | Base commit: task/0643-go-ical-sync-helpers | Branch: task/0644-go-ical-sync-feed
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 90k tokens
 ## 1. Objective
