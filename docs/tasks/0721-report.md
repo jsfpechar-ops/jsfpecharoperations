@@ -64,3 +64,26 @@ Status: blocked (dashboard finish-card question needs an owner or orchestrator d
 
 ### Owner steps
 - Decide the finish-card question above. Nothing pushed.
+
+## Session 3
+
+Status: review (steps 1-3 and 5-6 done; step 4 left)
+
+### Commits
+- `0721 step 1` (3622bea): test_dashboard_order.py and test_dashboard_empty.py restored to origin/main (`git checkout origin/main --`). Every diff hunk was a 0706 edit, so nothing else was lost.
+- `0721 step 2` (c4c209a): dashboard.html keeps the finish card. An urgent `focus` gives the one-line strip (`onboarding_finish_strip`, after the needs-action section); otherwise the tall `onboarding_finish` card. The 0717 handoff is the same macro, so there is no duplicate block. The empty state from main (`dashboard.empty.no_stays` / `no_feed` with the calendar link) is back after the banner.
+- `0721 step 3` (7300848): test_signed_in_chrome.py line regex accepts the 0719 `need` modifier (`class="card needs-you-card-item[^"]*"`). The template and needs-you data already render the "arrives tomorrow" line; only the regex was stale. Test-only change.
+
+### Tails
+- `pytest tests/test_dashboard_order.py tests/test_dashboard_empty.py tests/test_onboarding.py tests/test_needs_you_dashboard_0241.py tests/test_design_dashboard.py -q`: `32 passed in 2.74s`
+- `pytest tests/test_signed_in_chrome.py::test_a_stay_that_needs_the_host_gets_one_line_with_one_button -q`: `1 passed in 1.43s`
+- `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=1 pytest tests/test_0710_v2_mockup_match_browser.py -q`: `22 passed in 35.43s` (0 skipped)
+- `ruff check app tests tools --select E9,F63,F7,F82,F401,F841`: `All checks passed!`
+
+### Left
+- Step 4 (duplicate PIN alert): not started, budget spent on steps 1-3.
+- test_signed_in_chrome.py as a whole, test_dashboard_missing_banner.py, test_havel_palette (fails on origin/main too, pre-existing): not re-run this session.
+- No 390 px screenshots taken (no new page; dashboard.html change is covered by the 0710 browser test).
+
+### Owner steps
+- None. Nothing pushed.
