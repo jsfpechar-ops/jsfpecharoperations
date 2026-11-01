@@ -42,3 +42,28 @@ Stop if a fix needs a route or JS change, or a save/POST does not save.
 
 ## 9. Report
 Section "0736" at the end of `docs/tasks/0536-report.md`. Stage by name, never `git add -A`; never commit `App/.venv`. Do not push. Hand back with SubagentHandback; never post to the user.
+
+## 10. Orchestrator answers after run 1 (1de31cd: item 2 done)
+- Report file: keep `docs/tasks/0736-report.md`.
+- Item 1: the test host has the door code enabled (the JS sets "Enabled" after reset, which is right). The open question is why `#door_codes-status` reads '' at load even with `#sec-lock` open. Diagnose first with one `page.evaluate` after the summary click: `document.querySelectorAll('#door_codes-status').length`, the element's `outerHTML`, `getComputedStyle(el).display` and `visibility`, and `el.closest('details')?.open`. Then: if the server text is there but the element is not rendered (for example a second `#sec-lock` or a closed parent), fix the cause in the template or the page CSS; if the status was meant to stay hidden while it equals the saved state, compare with `text_content().strip()` instead. Write what you found in the report.
+- Item 6: `#label_other` must be hidden until "other" is picked. Find how the old page hid it: `git grep -n label_other App/app/static App/app/templates`, and `git show 7b3cee4 -- App/app/static/app.js | grep -n -i 'other' | head`. If the code that toggles it was removed in 0539, put that part back in `initPropertyPage` (a JS change is allowed for this one item only). If it uses `hidden` or a class that v2 does not style, add the page CSS. Then triage `test_property_and_operator_controls_render_and_work_in_browser` with `--tb=short`: fix it if it is our markup or flow; list it as not ours otherwise.
+- Then continue with items 3, 4, 5, 7, 8 and section 6.
+
+## 11. Orchestrator answers after run 2 (bec40cd, 181f2cd)
+- Item 1 focus: this is a real bug. In `App/app/static/app.js` (~2111), add `.savebar [type=submit]` to the selector that gets focus after discard (keep the old selectors only if another page still uses them: `git grep -n 'host-property-save\|class="actions"' App/app/templates | head`; drop the dead one). JS change allowed for this line only; bump the app.js key in `base.html` and `--write`.
+- Item 6 line ~232: the v2 properties list has no section tabs (the computer mockup `props` view has none). Change the test: on `/apartments` assert `.ui-tabs` count is 0 and drop the `aria-current` line. Keep the property page asserts below it.
+- Then items 3, 4, 5, 7, 8, section 6, screenshots.
+
+## 12. More CI failures (run on 0681ce3), orchestrator decisions
+- `tests/test_ui_consistency.py::test_the_copy_button_keeps_its_icon_when_it_confirms`: since 0542 the v2 copy button keeps its copy icon (phone mockup). Assert `<svg` is in the button in both branches; drop the v2 "text only" comment.
+- `tests/test_a11y_guard_browser.py::test_keyboard_focus_is_visible_and_not_covered`: `focus-not-visible` on `button "Copy link"` at properties 1280 (4 findings). Give `body.v2 .btn.copy-btn:focus-visible` a visible outline in the page block (`outline:2px solid #d0452d;outline-offset:2px`, as the v2 form controls use).
+- `tests/test_0396_leon_opt_in_browser.py:40` (`test_overview_card_and_leon_page_at_390px`): the aside `a.r[data-leon-card="off"]` is hidden below 1024 by design. Check the card at 1280 (set the viewport before that part), keep the 390 checks of the Leon page itself.
+- `tests/test_onboarding_wizard_browser.py:993`: `.host-property-card-static` is gone; scroll `section.guest-card` instead.
+- `tests/test_havel_browser.py:138` (`test_phone_launcher_and_sheet`, `/settings` `[data-sheet-open='more-sheet']` click times out): passes on main. Run it on this branch with `--tb=short`, find what covers or hides the button (our CSS or the merge), fix that; if it is not ours, list it.
+
+## 13. Shard 4 failures (0681ce3), orchestrator decisions
+- `tests/test_design_guardrails_browser.py:325` (`test_setup_checklist_is_a_padded_card`): the overview cards are now the aside rows. Count `aside.preview .pv .r .dot` (at least 4) instead of `.host-property-grid ... .host-property-card-dot`. Keep the "no separate box" assert; point the `details` check at whatever now carries `[data-setup-status]` on the v2 page (read the template), and say what you chose.
+- `test_every_host_page_passes_the_layout_guard` (174 findings, all on the property page at 1280 "open"):
+  - `button-heights-differ`: the guest-link card row has `button.btn.sm.ghost` Copy (49 px) next to `a.ui-btn.ui-btn-quiet.ui-btn-compact` "Preview as a guest" (24 px, unstyled on v2). In the property templates, give that link the v2 classes the Copy button uses (`btn sm ghost`), so both are the same height.
+  - `field-button-misaligned`: find the guard (`grep -rn field-button-misaligned App/tests | head -3`) and read how it pairs a field with a button. If the pairs are a field and a button of the fixed `.savebar` or the sidebar (`button.nav "Log out"`), that is a false pair: those are fixed and never share a row with a field. Make the guard skip elements inside `position:fixed` or `sticky` ancestors only if the guard has no such rule yet and the change is one line; otherwise list each real pair with its two selectors and stop.
+- `test_every_host_page_on_phone_ipad_and_desktop` is item 5 (noCue on `/apartments`).
