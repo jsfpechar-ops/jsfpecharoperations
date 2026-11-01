@@ -397,7 +397,7 @@
       <img class="onboarding-logo" src="/static/ubyhost-mark.png?v=20261004a" alt="">
       <div>
         <p class="onboarding-kicker">{{ t('onboarding.kicker') }}</p>
-        <h1>{{ t('onboarding.welcome_title') }}</h1>
+        {% if compact %}<h2>{{ t('onboarding.welcome_title') }}</h2>{% else %}<h1>{{ t('onboarding.welcome_title') }}</h1>{% endif %}
       </div>
       <div class="onboarding-meter" aria-label="{{ t('onboarding.progress', done=onboarding.completed, total=onboarding.total) }}">
         <strong>{{ onboarding.percent }}%</strong>

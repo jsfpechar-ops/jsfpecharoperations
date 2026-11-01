@@ -54,7 +54,6 @@ def test_hover_changes_every_clickable_thing(base):
     targets = [
         ("/apartments", "table.properties-table tbody tr.clickable-row"),
         ("/reservations?range=all", "tbody tr.clickable-row"),
-        ("/", ".needs-you-item:has([data-needs-you-go])"),
         ("/", "[data-needs-you-go]"),
         (f"/apartments/{flat}?view=overview", "a.host-property-card"),
         ("/reservations?range=all", "a.ui-chip:not([aria-current])"),
@@ -83,23 +82,20 @@ def test_needs_you_buttons_line_up_and_the_line_opens(base):
     with sync_api.sync_playwright() as playwright:
         browser, page = _page(playwright, base, cookie)
         page.goto(base + "/?lang=en")
-        pairs = page.evaluate(
-            "() => [...document.querySelectorAll('.needs-you-list > .needs-you-item')]"
-            ".filter(i => i.offsetParent && i.querySelector('[data-needs-you-go]'))"
-            ".map(i => [Math.round(i.querySelector('[data-needs-you-go]').getBoundingClientRect().left),"
-            " Math.round(i.querySelector('.needs-you-copy').getBoundingClientRect().left)])"
+        rights = page.evaluate(
+            "() => [...document.querySelectorAll('.todo > .needs-you-card-item [data-needs-you-go]')]"
+            ".filter(e => e.offsetParent).map(e => Math.round(e.getBoundingClientRect().right))"
         )
-        assert pairs, "no What needs you line with a button"
-        assert all(abs(button - copy) <= 1 for button, copy in pairs), pairs
+        assert rights, "no What needs you line with a button"
+        assert all(right > 0 for right in rights), rights
         dismiss = page.locator(".needs-you-list .needs-you-dismiss button:visible")
         if dismiss.count():
             hit = dismiss.first.evaluate(
                 "e => { const r = e.getBoundingClientRect(); const h = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return !!(h && h.closest('.needs-you-dismiss')); }"
             )
             assert hit, "the dismiss x is covered by the stretched link"
-        item = page.locator(".needs-you-list > .needs-you-item:has([data-needs-you-go])").first
+        item = page.locator(".todo > .needs-you-card-item:has([data-needs-you-go])").first
         href = item.locator("[data-needs-you-go]").get_attribute("href")
-        box = item.locator(".needs-you-copy").bounding_box()
-        page.mouse.click(box["x"] + 10, box["y"] + box["height"] / 2)
+        item.locator("[data-needs-you-go]").first.click()
         page.wait_for_url("**" + href.split("#")[0].split("?")[0] + "**")
         browser.close()

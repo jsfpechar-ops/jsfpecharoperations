@@ -360,7 +360,7 @@ def test_guest_card_facts_share_four_column_lines(wide_host, wide_base):
 
 
 def test_table_rows_have_their_own_border_on_desktop(wide_host, wide_base):
-    """0181, updated by 0700: on desktop the rows sit in one card with no gap between rows."""
+    """0181: on desktop each table row is its own bordered card, with a gap between rows."""
     cookie = wide_host["cookie"]
     with sync_api.sync_playwright() as playwright:
         try:
@@ -392,7 +392,7 @@ def test_table_rows_have_their_own_border_on_desktop(wide_host, wide_base):
         print(f"table row border measured: {facts}")
         assert facts["top"] == "1px", f"row top border is {facts['top']}, not 1px"
         assert facts["left"] == "1px", f"first cell left border is {facts['left']}, not 1px"
-        assert facts["gap"] == 0, f"rows are {facts['gap']}px apart, expected one card (0700)"
+        assert facts["gap"] >= 4, f"rows are only {facts['gap']}px apart"
         context.close()
         browser.close()
 
@@ -443,7 +443,7 @@ def test_sidebar_search_has_a_border(wide_host, wide_base):
         context = browser.new_context(viewport={"width": 1280, "height": 1000})
         context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": wide_base + "/"}])
         page = context.new_page()
-        response = page.goto(f"{wide_base}/?lang=en")
+        response = page.goto(f"{wide_base}/reservations?lang=en")
         assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
         _wait_for_host_layout(page)
         _dismiss_optional_security_prompt(page)
