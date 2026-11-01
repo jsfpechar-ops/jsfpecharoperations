@@ -964,16 +964,11 @@ def operations_admin(request: Request):
 
 @router.get("/admin/funnel")
 def funnel_admin(request: Request):
-    """Host funnel figures live in PostHog; this page links there when configured."""
+    """The funnel moved into Reports on the billing page (brief 0481)."""
     account, guard = _require_admin(request)
     if guard:
         return guard
-    posthog_url = config.POSTHOG_APP_URL if analytics.enabled() else ""
-    return render(
-        request,
-        "admin_funnel.html",
-        {"posthog_url": posthog_url, "signup_enabled": config.SIGNUP_ENABLED, "ads_export_days": signup.GOOGLE_EXPORT_DAYS},
-    )
+    return RedirectResponse("/admin/fakturace#reports", status_code=303)
 
 
 @router.post("/admin/incidents")
