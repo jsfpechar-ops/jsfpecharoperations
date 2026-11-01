@@ -84,13 +84,26 @@ def test_0547_phone_property_switch_invalid_field_calendar_and_return(base, dash
             assert page.locator("#calendar-connect").count() == 1
             assert "is-collapsed" not in page.locator("#calendar-connect").get_attribute("class").split()
 
-            # 0547: saving from the opened lock section returns to section=lock.
+            # 0547: saving from an opened section returns to that section. Fresh page per section;
+            # the submit is dispatched synthetically so browser validation on the fixture cannot block it.
+            submit_js = """() => {
+                const form = document.getElementById('property-settings-form');
+                form.addEventListener('submit', e => e.preventDefault());
+                form.dispatchEvent(new Event('submit', {cancelable: true}));
+            }"""
             page.goto(f"{base}{apartment}?lang=en")
             page.wait_for_load_state("networkidle")
             page.locator("#sec-lock > summary").click()
-            page.locator(".savebar button[type=submit]").click()
-            page.wait_for_load_state()
-            assert "section=lock" in page.url, page.url
+            page.evaluate(submit_js)
+            return_value = page.locator("input[data-property-return]").input_value()
+            assert "section=lock" in return_value, return_value
+
+            page.goto(f"{base}{apartment}?lang=en")
+            page.wait_for_load_state("networkidle")
+            page.locator("#sec-police > summary").click()
+            page.evaluate(submit_js)
+            return_value = page.locator("input[data-property-return]").input_value()
+            assert "section=reporting" in return_value, return_value
         finally:
             context.close()
             browser.close()

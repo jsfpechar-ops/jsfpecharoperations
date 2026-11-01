@@ -2016,7 +2016,7 @@
       var returnInput = form.querySelector("input[data-property-return]");
       form.addEventListener("toggle", function (event) {
         var node = event.target;
-        if (node.tagName === "DETAILS" && node.open && node.id) lastOpened = node.id;
+        if (node.tagName === "DETAILS" && node.open && node.id && node.matches("details.prop-sec")) lastOpened = node.id;
       }, true);
       form.addEventListener("submit", function () {
         var group = PROPERTY_RETURN_SECTION[lastOpened];
