@@ -22,8 +22,8 @@
 {% endif %}
 {% block toolbar %}{% endblock %}
 {% block body %}
-<div class="head stays-head"><div><h1>{{ t('stays.title') }}</h1></div>{% if apartments %}<div class="stays-head-actions">{% if manual_send %}<form method="post" action="/reservations/submit-ready" class="inline send-all-form"><input type="hidden" name="return_to" value="{{ return_to }}"><button class="btn ghost send-all" type="submit"{% if not ready_send_count %} disabled{% endif %} title="{{ t('send.all_ready_hint') }}">{{ icon('send', 16) }}<span>{{ t('send.all_ready') }}{% if ready_send_count %} ({{ ready_send_count }}){% endif %}</span></button></form>{% endif %}<a class="btn ghost" href="/housebook.csv?{{ csv_export_params }}" data-stays-housebook>{{ t('stays.housebook_download') }}</a><button class="btn" type="button" data-toggle-panel="add-stay-panel">{{ t('stays.add_stay') }}</button></div>{% endif %}</div>
-<div class="stays-phone"><div class="top"><span></span>{% if apartments %}<button class="round" type="button" data-toggle-panel="add-stay-panel" aria-label="{{ t('stays.add_stay') }}">{{ icon('plus', 20) }}</button>{% endif %}</div><h1 class="big">{{ t('stays.title') }}</h1></div>
+<div class="head stays-head"><div><h1 class="big">{{ t('stays.title') }}</h1></div>{% if apartments %}<div class="stays-head-actions">{% if manual_send %}<form method="post" action="/reservations/submit-ready" class="inline send-all-form"><input type="hidden" name="return_to" value="{{ return_to }}"><button class="btn ghost send-all" type="submit"{% if not ready_send_count %} disabled{% endif %} title="{{ t('send.all_ready_hint') }}">{{ icon('send', 16) }}<span>{{ t('send.all_ready') }}{% if ready_send_count %} ({{ ready_send_count }}){% endif %}</span></button></form>{% endif %}<a class="btn ghost" href="/housebook.csv?{{ csv_export_params }}" data-stays-housebook>{{ t('stays.housebook_download') }}</a><button class="btn" type="button" data-toggle-panel="add-stay-panel">{{ t('stays.add_stay') }}</button></div>{% endif %}</div>
+<div class="stays-phone"><div class="top"><span></span>{% if apartments %}<button class="round" type="button" data-toggle-panel="add-stay-panel" aria-label="{{ t('stays.add_stay') }}">{{ icon('plus', 20) }}</button>{% endif %}</div></div>
 {{ onboarding_banner(onboarding) }}
 
 {% if apartments %}
@@ -169,7 +169,7 @@
           {% elif cell %}{{ v2_status_pill(cell, progress, reservation) }}
           {% else %}{{ progress_pill(progress.status, reservation.automation_mode) }}{% endif %}
         </div>
-        {{ icon('chevron-right', 16, 'chev') }}
+        {{ icon('chevron-right', 20, 'chev') }}
       </a>
     {% endfor %}
   </div>

@@ -77,7 +77,7 @@ PAGES = [
     },
     {
         "name": "stays",
-        "path": "/reservations?range=all",
+        "path": "/reservations?range=upcoming&lang=cs",
         "view": "stays",
         "phone_view": "pobyty",
         "selectors": [

@@ -281,7 +281,9 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
 .stays-desk .stay-identity-link{display:inline-block;min-height:24px}
 body.v2 .stays-filter select,body.v2 .stays-filter input:not([type=hidden]){border:1px solid #dcdcd7;border-radius:8px;padding:9px 10px}
 @media (max-width:1023px){
-  .stays-head{display:none}
+  .stays-head{display:block}
+  .stays-head h1:after{display:none}
+  .stays-head-actions{display:none}
   .stays-desk{display:none}
   .stays-phone{display:block}
   .stays-phone-only{display:flex}
