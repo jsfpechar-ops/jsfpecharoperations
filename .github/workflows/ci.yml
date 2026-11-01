@@ -477,6 +477,10 @@ jobs:
           persist-credentials: false
       - name: Build image
         run: docker build -t ubyhost:ci .
+      - name: Go image builds and refuses to start without a database URL
+        run: |
+          docker build -f go/Dockerfile -t ubyhost-go:ci .
+          out=$(docker run --rm ubyhost-go:ci 2>&1) && { echo "expected failure"; exit 1; }; echo "$out" | grep -q UBYHOST_DATABASE_URL
       - name: Start container and wait for healthz
         run: |
           docker run -d --name ubyhost-ci -p 18081:8080 \
