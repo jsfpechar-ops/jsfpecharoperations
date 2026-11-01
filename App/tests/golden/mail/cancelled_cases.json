@@ -1,0 +1,16 @@
+[
+  {
+    "name": "cancelled_with_guests_cancelled",
+    "variant": "cancelled",
+    "property_name": "Byt Alfa",
+    "date_from": "2026-05-06",
+    "reservation_id": 201
+  },
+  {
+    "name": "cancelled_with_guests_disappeared",
+    "variant": "disappeared",
+    "property_name": "Byt <Čtyři> & \"B\"",
+    "date_from": "2026-06-01",
+    "reservation_id": 202
+  }
+]

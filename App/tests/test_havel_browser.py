@@ -118,7 +118,7 @@ def test_phone_launcher_and_sheet(origin):
         assert fab.is_visible()
         fb = fab.bounding_box()
         assert fb["width"] >= 44 and fb["height"] >= 44
-        tabbar = page.locator(".ui-tabbar").bounding_box()
+        tabbar = page.locator(".tabs").bounding_box()  # 0720: v2 phone tab bar is nav.tabs (old shell: .ui-tabbar)
         assert fb["y"] + fb["height"] <= tabbar["y"]
         page.screenshot(path=str(SHOTS / "fab-dashboard-390.png"))
         fab.click()
@@ -133,6 +133,8 @@ def test_phone_launcher_and_sheet(origin):
         assert page.evaluate("document.documentElement.scrollWidth") <= 390
         page.screenshot(path=str(SHOTS / "panel-open-390.png"))
         dialog.locator("[data-sheet-close]").click()
+        # 0720: v2 phone has no More sheet (the Menu tab replaces it); this tail checks the old shell's More menu on /settings.
+        page.goto(origin[0] + "/settings")
         page.locator("[data-sheet-open='more-sheet']").click()
         page.locator("#more-sheet[open] [data-havel-more]").click()
         page.locator("#havel-sheet[open]").wait_for()

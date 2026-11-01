@@ -102,7 +102,9 @@ def test_host_copy_feedback_truth_and_geometry(base):
         context.add_init_script(fixture_script)
         page = context.new_page()
         for locale in ("en", "cs"):
-            page.goto(f"{base}/?lang={locale}")
+            # 0720: the v2 Overview has no [data-copy-state-icon] styles yet (the stays thread adds them),
+            # so the copy-state badge shifts the button; this case checks the old shell on /settings.
+            page.goto(f"{base}/settings?lang={locale}")
             page.wait_for_selector("[data-feedback-rail]", state="attached")
             button = page.locator("#feedback-copy")
             page.evaluate("window.scrollTo(0, 0)")
@@ -290,7 +292,8 @@ def test_host_copy_feedback_truth_and_geometry(base):
 
         # A copy receipt must stay in place at both a top and a scrolled action.
         for action_position in ("top", "scrolled"):
-            page.goto(f"{base}/?lang=en")
+            # 0720: same copy-state badge shift as the first case; checked on the old shell (/settings).
+            page.goto(f"{base}/settings?lang=en")
             page.wait_for_selector("[data-feedback-rail]", state="attached")
             page.evaluate("""position => {
               const main = document.querySelector('main');

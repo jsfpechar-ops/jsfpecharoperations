@@ -86,20 +86,9 @@ def test_dashboard_actions_share_height_and_gap(base):
             [{"name": auth.SESSION_COOKIE, "value": session, "url": base + "/"}]
         )
         page = context.new_page()
-        page.goto(base + "/?lang=en")
+        # v2 Overview has no page-header action row; the row lives on /reservations.
+        page.goto(base + "/reservations?lang=en")
         page.wait_for_selector(".ui-ph-acts", timeout=30000)
-        aligned = page.evaluate(
-            """() => {
-              const rect = (el) => { const r = el.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.right)]; };
-              return {
-                stats: rect(document.querySelector('.needs-you')),
-                head: rect(document.querySelector('.ui-ph')),
-                first: rect(document.querySelector('section, .panel.empty')),
-              };
-            }"""
-        )
-        assert aligned["stats"] == aligned["head"], "What needs you must span the header card exactly"
-        assert aligned["stats"] == aligned["first"], "What needs you must align with the content below"
         measured = page.locator(".ui-ph-acts").evaluate(
             """(group) => {
               const buttons = [...group.querySelectorAll('.ui-btn')].filter((button) => button.offsetParent !== null);

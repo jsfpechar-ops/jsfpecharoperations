@@ -33,6 +33,7 @@ Run only the row for the area you changed, from `App/`, always ending `-q --tb=s
 | Direct payments, Stripe Connect | `test_payment_request_model.py test_stripe_connect.py` |
 | Payments dashboard + rails | `test_payments_dashboard.py test_payment_request_model.py test_stripe_connect.py test_payment_links.py test_payment_qr.py`, design row when templates change |
 | Public property pages | `test_property_slug.py test_property_page.py test_property_page_photos.py test_property_page_meta.py` (+ browser/geometry row when templates land) |
+| v2 pages (any page with `{% set v2 = true %}`) | `tests/test_0710_v2_mockup_match_browser.py` (browser, 0 skipped; styles vs mockup and geometry at 320-1440 px) |
 | Page booking widget | `test_booking_widget.py test_property_page.py test_stripe_connect.py test_payment_request_model.py` |
 | Deploy scripts, Caddyfile, compose | `shellcheck -S error deploy/lightsail/scripts/*.sh`; CI job `caddy` validates both Caddyfiles with the compose caddy service |
 | A module with no row | `tests/test_<module name>*.py`; none exists: `-k <module name>` |
