@@ -522,6 +522,11 @@ def dashboard(request: Request):
             "link_unused": workflow.link_unused(apartments),
             "welcome_back": welcome,
             "month_summary": reporting.month_summary(owner_user_id, today),
+            # 0520: stays that arrive or leave today, for the "Today" table.
+            "today_rows": [
+                row for row in rows
+                if today.isoformat() in (str(row["reservation"]["date_from"])[:10], str(row["reservation"]["date_to"])[:10])
+            ],
         },
     ))
 

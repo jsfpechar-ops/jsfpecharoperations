@@ -15,17 +15,17 @@
   {% if demo_loaded %}<form method="post" action="/demo/reset" class="inline" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">{{ ui_button(t('demo.clear'), 'quiet', type='submit') }}</form>{% endif %}
 {% endif %}{% endblock %}
 
-{% macro dashboard_rows(items, empty_key) %}
+{% macro dashboard_rows(items, empty_key, caption_key='dashboard.section.needs_action', mark_today=false) %}
 {% if items %}
 <div class="ui-table-wrap">
-{{ ui_table_begin([(t('host.stay_dates'), ''), (t('stays.table.apartment'), ''), (t('stays.table.guests'), 'r'), (t('dashboard.stat.action'), ''), ('', '')], t('dashboard.section.needs_action', count=items | length)) }}
+{{ ui_table_begin([(t('host.stay_dates'), ''), (t('stays.table.apartment'), ''), (t('stays.table.guests'), 'r'), (t('dashboard.stat.action'), ''), ('', '')], t(caption_key, count=items | length)) }}
 {% for row in items %}
   {% set reservation = row.reservation %}{% set progress = row.progress %}{% set cell = row.deadline_cell %}
   {% set stay_label = reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else reservation.internal_name %}
   <tr class="ui-row dashboard-row clickable-row{{ ' is-overdue' if cell.level == 'overdue' }}" data-stay-id="{{ reservation.id }}" data-href="/reservations/{{ reservation.id }}?return_to=/" tabindex="0" role="link"
       aria-label="{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }} · {{ reservation.internal_name }}">
     <td class="ui-cell-first dashboard-row-copy" data-card="primary"><a class="dashboard-row-property" href="/reservations/{{ reservation.id }}?return_to=/">{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</a>
-      <span class="ui-sub dashboard-row-dates">{% if row.deadline and cell.state == 'countdown' and cell.level != 'future' %}{{ t('dashboard.table.deadline_by', when=row.deadline.strftime('%d.%m. %H:%M')) }}{% endif %}</span></td>
+      <span class="ui-sub dashboard-row-dates">{% if row.deadline and cell.state == 'countdown' and cell.level != 'future' %}{{ t('dashboard.table.deadline_by', when=row.deadline.strftime('%d.%m. %H:%M')) }}{% elif mark_today %}{{ t('calendar.arrival') if (reservation.date_from | string)[:10] == today.isoformat() else t('calendar.departure') }}{% endif %}</span></td>
     <td data-card="secondary">{{ property_identity(reservation.apartment_id, stay_label, true) }}</td>
     <td class="ui-cell-r ui-num" data-card="meta">{{ guest_count(progress) }}</td>
     <td class="dashboard-row-task" data-card="badge">
@@ -113,6 +113,7 @@
   {% endif %}
   </div>
   {% include "_dashboard_calendar.html" %}
+  <section class="dashboard-today" aria-labelledby="dashboard-today-title"><h2 id="dashboard-today-title">{{ t('dashboard.today.title') }}</h2>{{ dashboard_rows(today_rows, 'dashboard.today.empty', 'dashboard.today.title', true) }}</section>
   <div data-dashboard-refresh="work">
   {% set focus_is_urgent = focus and focus.urgency in ('overdue', 'urgent') %}
   {% set finish_card_showing = onboarding and onboarding.finished and onboarding.finish and not onboarding.dismissed %}

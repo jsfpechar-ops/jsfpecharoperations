@@ -8507,6 +8507,8 @@ _WELCOME_0275_STRINGS = {
         "dashboard.month.reported": "reported to the police",
         "dashboard.month.reported.one": "reported to the police",
         "dashboard.month.reported.few": "reported to the police",
+        "dashboard.today.title": "Today",
+        "dashboard.today.empty": "No arrivals or departures today.",
     },
     "cs": {
         "welcome_back.title": "Vítejte zpět! Od %(date)s:",
@@ -8527,6 +8529,8 @@ _WELCOME_0275_STRINGS = {
         "dashboard.month.reported": "nahlášeno policii",
         "dashboard.month.reported.one": "nahlášen policii",
         "dashboard.month.reported.few": "nahlášeni policii",
+        "dashboard.today.title": "Dnes",
+        "dashboard.today.empty": "Dnes nikdo nepřijíždí ani neodjíždí.",
     },
 }
 for _lang, _strings in _WELCOME_0275_STRINGS.items():
