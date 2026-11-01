@@ -1,0 +1,72 @@
+[
+  {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "description": "Guest note: invented",
+    "guest_email": null,
+    "is_block": false,
+    "is_cancelled": false,
+    "name_hint": "",
+    "phone_last4": null,
+    "recurring": false,
+    "reservation_url": null,
+    "summary": "Reserved",
+    "uid": "synthetic-999156db868e685d-2026-11-10"
+  },
+  {
+    "date_from": "2026-11-15",
+    "date_to": "2026-11-17",
+    "description": "Guest note: invented",
+    "guest_email": null,
+    "is_block": false,
+    "is_cancelled": false,
+    "name_hint": "",
+    "phone_last4": null,
+    "recurring": false,
+    "reservation_url": null,
+    "summary": "Reserved",
+    "uid": "synthetic-999156db868e685d-2026-11-15"
+  },
+  {
+    "date_from": "2026-11-20",
+    "date_to": "2026-11-22",
+    "description": "Guest note: other",
+    "guest_email": null,
+    "is_block": false,
+    "is_cancelled": false,
+    "name_hint": "Solo stay",
+    "phone_last4": null,
+    "recurring": false,
+    "reservation_url": null,
+    "summary": "Solo stay",
+    "uid": "synthetic-209f37ae9e81d119"
+  },
+  {
+    "date_from": "2026-11-25",
+    "date_to": "2026-11-26",
+    "description": "",
+    "guest_email": null,
+    "is_block": false,
+    "is_cancelled": false,
+    "name_hint": "Zero sequence",
+    "phone_last4": null,
+    "recurring": false,
+    "reservation_url": null,
+    "summary": "Zero sequence",
+    "uid": "synthetic-beb47d0f4c95823c"
+  },
+  {
+    "date_from": "2026-11-30",
+    "date_to": "2026-12-01",
+    "description": "",
+    "guest_email": null,
+    "is_block": false,
+    "is_cancelled": false,
+    "name_hint": "Bad sequence",
+    "phone_last4": null,
+    "recurring": false,
+    "reservation_url": null,
+    "summary": "Bad sequence",
+    "uid": "synthetic-8f1a190ed44c4b4a"
+  }
+]
