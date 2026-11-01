@@ -46,6 +46,8 @@ BOX_PROPS = ("width", "height", "margin-top", "margin-right", "margin-bottom", "
 # phone box departure: the 20 px side room comes from body.v2 .main padding, so phone cards have no side margin (2026-11-01)
 BOX_OVERRIDES = {
     ".card.me": {"margin-left": "0px", "margin-right": "0px"},
+    ".big, .head h1": {"margin-left": "0px", "margin-right": "0px"},
+    ".card.prop": {"margin-left": "0px", "margin-right": "0px"},
     ".big": {"margin-left": "0px", "margin-right": "0px"},
     "h2.sec": {"margin-left": "0px", "margin-right": "0px"},
     ".card.need": {"margin-left": "0px", "margin-right": "0px"},
