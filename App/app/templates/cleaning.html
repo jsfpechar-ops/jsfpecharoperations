@@ -4,8 +4,8 @@
 {% block title %}{{ ct('title') }} · UbyHost{% endblock %}
 {% block page_title %}{{ ct('title') }}{% endblock %}
 {% block meta %}{{ ct('subtitle') }}{% endblock %}
-{% block primary_action %}{{ ui_button(ct('add'), 'primary', href='/cleaning/new', icon_name='plus', attrs='data-calendar-add data-cal-create-type="cleaning"') }}{% endblock %}
-{% block secondary_actions %}{{ ui_button(t('calendar.add_stay'), 'secondary', href='/reservations?new=1', attrs='data-calendar-add data-cal-create-type="stay"') }}{{ ui_button(ct('settings'), 'secondary', href='/cleaning/properties') }}{{ ui_button(ct('share'), 'secondary', href='/cleaning/shares') }}{% endblock %}
+{% block primary_action %}{{ ui_button(ct('share_cleaner'), 'primary', href='/cleaning/shares') }}{% endblock %}
+{% block secondary_actions %}{{ ui_button(ct('add'), 'secondary', href='/cleaning/new', icon_name='plus', attrs='data-calendar-add data-cal-create-type="cleaning"') }}{{ ui_button(ct('settings'), 'secondary', href='/cleaning/properties') }}{% endblock %}
 {% block body %}
 <div class="cleaning-page">
   {% include "_cleaning_screen.html" %}
