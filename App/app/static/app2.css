@@ -330,6 +330,8 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
 }
 body.v2 .ov-head .ov-links{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;margin:0}
 body.v2 .ov-head .ov-links > *{margin:0}
+body.v2 .ov-head .ov-quiet{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center}
+body.v2 .ov-head .ov-quiet > *{margin:0}
 body.v2 .ov-head .ov-inline{display:inline-flex}
 body.v2 .ov-how > summary{list-style:none}
 body.v2 .ov-how > summary::-webkit-details-marker{display:none}

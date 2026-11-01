@@ -57,6 +57,7 @@
   <div class="head ov-head"><div>
     <h1>{{ t('dashboard.title') }}</h1>
     <p class="sub">{{ today.isoformat() | date_long(lang) }}</p>
+    <div class="ov-quiet">
     <details class="ui-how ov-how ph-hide" data-how="dashboard">
       <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
       <div class="ui-how-body">
@@ -68,6 +69,7 @@
       <a href="/cleaning/new" class="ov-link">+ {{ t('nav.cleaning') }}</a>
       {% if demo_loaded %}<form method="post" action="/demo/reset" class="inline ov-inline" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">{{ ui_button(t('demo.clear'), 'quiet', type='submit') }}</form>{% endif %}
     </p>
+    </div>
   </div>
   <a class="btn" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">{{ t('stays.add_stay') }}</a></div>
 
