@@ -184,3 +184,21 @@ FAILED tests/test_0710_v2_mockup_match_browser.py::test_v2_page_matches_mockup_s
 FAILED tests/test_0710_v2_mockup_match_browser.py::test_v2_page_matches_mockup_styles[properties-1280]
 FAILED tests/test_0710_v2_mockup_match_browser.py::test_v2_page_matches_mockup_styles[properties-1440]
 3 failed, 9 passed, 13 deselected in 16.69s
+
+## Executor pass 10 (brief 0532, desktop style match, clean screenshots, Haiku)
+Status: **blocked**. Done: step 1 (0710 `-k properties` green at 1024, 1280, 1440), step 2 (screenshots), step 3 group 2 green and both lints OK. Left: 2 failures in group 1 (geometry, see below).
+
+What differed (0710, `tbody tr .btn.sm.ghost`): padding-top and padding-bottom were app 0px, mockup 6px at 1024, 1280, 1440. Fix: `.copy-btn` padding-block 0 to 6px in the 0532 pass 9 block of App/app/static/app2.css (min-width:1024px). The v2 `copy_button` branch in `_components.html` now uses classes `btn sm ghost copy-btn` (text only, same data-copy attributes). Key bumped to `0532s` in base.html; `App/tests/static_versions.json` rewritten with `--write`.
+
+Screenshots: docs/tasks/screenshots-0532/ app and mockup at 390, 768, 1280 (full page, `/apartments?lang=cs`, mockup `props`). Mockup: reduced motion, 800 ms wait, `.fontpick` removed from the DOM. Mockup file not edited. Temporary test deleted.
+
+Group 1 tail (`2 failed, 120 passed in 149.64s`):
+FAILED tests/test_host_properties_navigation.py::test_properties_page_fits_every_width_and_both_languages
+FAILED tests/test_host_ux_acceptance.py::test_every_page_family_fits_every_width_language_and_rail_state
+
+Cause (not fixed): the page scrolls sideways (scroll width 1294 px at 1024 and 1280 px viewports), and the actions cell reaches x=1358. Pass 9 did not run these tests. The likely cause is pass 9's min-width:1024 rules (`.setup` nowrap, one-line name and address), not the copy button. Not confirmed. Owner or orchestrator: decide whether the chip row may wrap, or the widths need a new rule; then rerun these two tests.
+
+Group 2 tail: `105 passed in 225.12s`, 0 skipped. 0385 left out (file deleted).
+design_lint: OK. context_lint: OK.
+
+Deviations: browser runs rewrote unrelated tracked PNGs (docs/tasks/0102-evidence, screenshots-0410); restored with git checkout.

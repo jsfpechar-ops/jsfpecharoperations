@@ -301,7 +301,7 @@
 
 {% macro copy_button(target_id, label='') %}
   {% if v2 | default(false) %}
-  <button class="btn ghost sm copy-btn" type="button" data-copy="{{ target_id }}"
+  <button class="btn sm ghost copy-btn" type="button" data-copy="{{ target_id }}"
           data-copy-label="{{ label or t('common.copy') }}" data-copied-label="{{ t('common.copied') }}"
           aria-label="{{ label or t('common.copy') }}"><span class="btn-icon-label" data-copy-label-slot>{{ label or t('common.copy') }}</span></button>
   {% else %}
