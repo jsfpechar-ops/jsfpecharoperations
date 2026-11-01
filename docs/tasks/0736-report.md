@@ -96,3 +96,34 @@ Done: section 11 item 1 (focus selector `.savebar [type=submit]` first, dead `.h
 
 ## Owner steps left
 - None. No push, no PR.
+
+## Run 4 (section 14 in order; commits 0aa41e1 step a, ddf7a08 step b)
+Status: blocked
+Done: steps (a) and (b). Left: (c) guest-card overflow at 360/390, (d) section 13, (e) items 7, 8 and section 6, screenshots.
+
+### Step (a): section 12 (commit 0aa41e1)
+- `test_ui_consistency.py::test_the_copy_button_keeps_its_icon_when_it_confirms`: asserts `<svg` in the button in all cases; v2 "text only" comment dropped.
+- `app2.css`: `body.v2 .btn.copy-btn:focus-visible` outline 2px #d0452d, offset 2px. Placed after the global focus-visible rule (the property-page block was not located).
+- `test_0396_leon_opt_in_browser.py`: the overview card check runs at 1280 (own context, screenshot `overview-card-1280.png`); the Leon page checks stay at 390.
+- `test_onboarding_wizard_browser.py`: scrolls `section.guest-card` (`.first`) instead of `.host-property-card-static`.
+- `base.html` app2.css key 20261101-0737 to 20261101-2210; `tests/static_versions.json` rewritten with `--write` (41 files).
+- Tests: `4 passed in 22.81s` (copy icon, focus, Leon 390, havel `test_phone_launcher_and_sheet`), 0 skipped. Havel passed without a code change.
+
+### Step (b): heading-level-skipped (commit ddf7a08)
+- Findings were 12 x `h4.property-subsection-title "1. Calculation"` (EN) / `"1. Výpočet"` (CS), levels 2 to 4. Cause: `_property_editor.html` includes `_stay_fee_fields.html` with the default `h4`; the wizard sets `h3`.
+- Fix: `{% set fee_heading = 'h3' %}` before the include in `_property_editor.html`.
+- Test: `tests/test_a11y_guard_browser.py` `4 passed in 78.40s`, 0 skipped.
+- Not checked: visual change of the subsection titles (h3 default styles); no screenshot yet.
+
+### Step (c): not done
+- Probe (temporary test, deleted, not committed): `?view=settings&section=guests&lang=en` on a freshly created property at 360 and 390 lists no element with `right > innerWidth`. The overflow in `test_wizard_polish_and_overview_cards[...-360/390-...]` appears only after the full wizard walk (filled data), so the probe needs that state. Not reproduced; `test_review_fixes_in_the_browser` also still fails (not triaged).
+
+### Deviations
+- Work tree before the run was clean. Test runs rewrote unrelated PNGs (`docs/tasks/0102-evidence`, `screenshots-0410`); reverted with `git checkout --`; the untracked `screenshots-0396/overview-card-1280.png` was deleted, not committed.
+- Step (c) needs the walked wizard state; the probe on a fresh property shows nothing.
+
+### Questions
+1. Step (c): should the probe run after `walk_to` (the state of the failing test), or is the long guest-link text the expected cause?
+
+### Owner steps left
+- None. No push, no PR.
