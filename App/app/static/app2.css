@@ -337,3 +337,5 @@ body.v2 [data-copy].copied [data-copy-state-icon] svg { animation: host-copy-che
 body.v2 [data-copy].copied { color: #bf4f40; border-color: #ef6b58; }
 @media (prefers-reduced-motion: reduce){body.v2 [data-copy-state-icon],body.v2 [data-copy-state-icon] svg{animation:none !important;transition:none !important}}
 @keyframes host-copy-check{to{stroke-dashoffset:0}}
+/* 0529: phone ⋮ menu sits in the top row (right, next to the copy round button); one render, placed by CSS */
+@media (max-width:1023px){body.v2 .host-stay-detail{position:relative}body.v2 .host-stay-detail .stay-head-actions .row-menu{position:absolute;top:6px;right:64px;z-index:6}body.v2 .host-stay-detail .stay-head-actions .row-menu-trigger{width:44px;height:44px;border-radius:50%;background:#fff;border:1px solid var(--line);padding:0}}
