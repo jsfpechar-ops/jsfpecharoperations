@@ -298,3 +298,5 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
   .chips{flex-wrap:nowrap;overflow-x:auto;padding:6px 20px 14px;scrollbar-width:none}
   .chips::-webkit-scrollbar{display:none}
 }
+.stays-head-actions{display:flex;gap:8px}
+.stays-links{margin-top:12px}

@@ -279,7 +279,15 @@
     "stays-phone",
     "stays-phone-only",
     "pill",
-    "p-n"
+    "p-n",
+    "btn",
+    "card",
+    "chip",
+    "ghost",
+    "head",
+    "t",
+    "stays-head-actions",
+    "stays-links"
   ],
   "hooks": [
     "sr-only",
