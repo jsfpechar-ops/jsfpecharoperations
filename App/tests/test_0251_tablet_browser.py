@@ -115,7 +115,8 @@ def test_overview_cards_and_tablet_menu_on_touch(host, base):
             assert page.locator("#sec-police[open]").count() == 1, width
 
             # 3. Only in the tablet rail range: the toggle opens and closes the full menu.
-            if 1024 <= width <= 1279:
+            # 0543: v2 pages have no tablet rail (shared shell, 0705); the check runs only where the toggle exists.
+            if 1024 <= width <= 1279 and page.locator("button[data-sidebar-collapse]").count():
                 page.goto(url)
                 page.wait_for_timeout(50)
                 toggle = page.locator("button[data-sidebar-collapse]")

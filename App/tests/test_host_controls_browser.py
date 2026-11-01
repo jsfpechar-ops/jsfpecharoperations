@@ -222,7 +222,8 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
         assert before != after
         row.focus()
         assert row.evaluate("el => getComputedStyle(el).outlineStyle") != "none"
-        static_panel = page.locator(".panel").first
+        # 0543: v2 list cards are .props-card (1024 px and up) and .props-phone (below)
+        static_panel = page.locator(".props-card:visible, .props-phone:visible").first
         assert static_panel.evaluate("el => getComputedStyle(el).cursor") != "pointer"
 
         touch_context = browser.new_context(viewport={"width": 360, "height": 800}, has_touch=True)
