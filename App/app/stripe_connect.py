@@ -175,14 +175,23 @@ def account_for_owner(owner_user_id: int) -> Optional[Dict[str, Any]]:
     return dict(row) if row else None
 
 
+def legal_entity_for_owner(owner_user_id: int) -> Optional[Dict[str, Any]]:
+    """The business entity whose details go to Stripe (0729: the host sees
+    them on /payments before opening Stripe)."""
+    row = db.query_one(
+        "SELECT * FROM legal_entity WHERE owner_user_id = ? AND archived_at IS NULL"
+        " ORDER BY id",
+        (owner_user_id,),
+    )
+    return dict(row) if row else None
+
+
 def create_or_get_account(owner_user_id: int) -> Dict[str, Any]:
     """The mirror row for this owner, creating the Stripe account once."""
     row = account_for_owner(owner_user_id)
     if row is not None:
         return row
-    entity = db.query_one(
-        "SELECT * FROM legal_entity WHERE owner_user_id = ?", (owner_user_id,)
-    )
+    entity = legal_entity_for_owner(owner_user_id)
     if entity is None:
         raise ValueError("host has no legal entity; connect needs the business profile")
     # v2 service methods take one params dict (SDK 16.x), not kwargs.
