@@ -39,10 +39,15 @@ TAP_EXEMPT_BELOW_DESKTOP = {".cal .bar": "dense 14-day timeline; 28 px meets WCA
 
 
 # app selector -> mockup selector at phone widths (the phone mockup calls the action bar .bar)
-SELECTOR_ALIASES = {".actbar": ".bar", ".actbar .btn": ".bar .btn"}
+SELECTOR_ALIASES = {".actbar": ".bar", ".actbar .btn": ".bar .btn", ".head h1": ".big", ".head .sub": ".sub"}
 BOX_PROPS = ("width", "height", "margin-top", "margin-right", "margin-bottom", "margin-left")
 # phone box departure: the 20 px side room comes from body.v2 .main padding, so phone cards have no side margin (2026-11-01)
-BOX_OVERRIDES = {".card.me": {"margin-left": "0px", "margin-right": "0px"}}
+BOX_OVERRIDES = {
+    ".card.me": {"margin-left": "0px", "margin-right": "0px"},
+    ".big": {"margin-left": "0px", "margin-right": "0px"},
+    "h2.sec": {"margin-left": "0px", "margin-right": "0px"},
+    ".card.need": {"margin-left": "0px", "margin-right": "0px"},
+}
 
 
 def expected_value(selector: str, prop: str, mock_value: str) -> str:
@@ -72,6 +77,7 @@ PAGES = [
         "missing_ok": {
             ".cal .bar.b-ok": "demo data has no confirmed stay in the 14-day window; the tone follows the data",
             "main .pill.p-ok": "tone depends on data: the demo overview has no reported stay",
+            ".todo p": "the needs-you line is a small element at every width (one markup for phone and desktop, 0719)",
             ".card.need": "needs-you cards exist only while the account has an open to-do; the phone mockup shows demo cards",
             ".need .ic": "needs-you cards exist only while the account has an open to-do; the phone mockup shows demo cards",
             ".need b": "needs-you cards exist only while the account has an open to-do; the phone mockup shows demo cards",

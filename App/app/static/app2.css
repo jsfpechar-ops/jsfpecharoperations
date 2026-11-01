@@ -299,7 +299,7 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
 @media (min-width:1024px){
   body.v2 .ov-top,body.v2 .ph-only{display:none}
   body.v2 .needs-you-card-item .h{display:contents}
-  body.v2 .needs-you-card-item b.t{display:block;font-weight:inherit}
+  body.v2 .needs-you-card-item b.t{display:block;font-weight:700}
   body.v2 .needs-you-card-item small{display:block;font-size:inherit;color:inherit;margin:0}
 }
 
