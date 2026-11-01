@@ -2297,7 +2297,7 @@
   }
   /* ---- end 0084 O1 ---------------------------------------------------------- */
 
-  document.addEventListener("DOMContentLoaded", function () {
+  function initPage() {
     initCopy();
     initUnsavedForms();
     initUnsavedDialog();
@@ -2327,5 +2327,8 @@
     initPowerTools();
     initSavedViews();
     initInlineEdit();
-  });
+  }
+  window.UbyHost = window.UbyHost || {};
+  window.UbyHost.initPage = initPage;
+  document.addEventListener("DOMContentLoaded", initPage);
 })();
