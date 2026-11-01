@@ -898,40 +898,39 @@ def month_summary(owner_user_id: Optional[int], today: date) -> Dict[str, int]:
     """0520: guests, nights and police reports for the calendar month of today.
 
     Non-demo stays of the owner's non-archived properties. Dates are compared as
-    ISO strings; nights are added up in Python.
+    ISO strings; nights are added up in Python. One query (dashboard query budget).
     """
     start = today.replace(day=1)
     end = (start + timedelta(days=32)).replace(day=1)
     scope = db.null_safe_eq("a.owner_user_id")
-    stay_where = (
-        "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
-        f"WHERE {scope} AND a.archived_at IS NULL AND COALESCE(r.source, '') != 'demo' "
-        "AND r.date_from >= ? AND r.date_from < ?"
-    )
-    bounds = (owner_user_id, start.isoformat(), end.isoformat())
-    guests = db.query_one(
-        "SELECT COUNT(*) AS n FROM guest g JOIN reservation r ON r.id = g.reservation_id "
+    owned = (
         "JOIN apartment a ON a.id = r.apartment_id "
         f"WHERE {scope} AND a.archived_at IS NULL AND COALESCE(r.source, '') != 'demo' "
-        "AND r.date_from >= ? AND r.date_from < ?",
-        bounds,
-    )["n"]
-    nights = 0
-    for row in db.query(f"SELECT r.date_from, r.date_to {stay_where}", bounds):
+    )
+    rows = db.query(
+        "SELECT 'stay' AS kind, r.date_from AS date_from, r.date_to AS date_to, "
+        "(SELECT COUNT(*) FROM guest g WHERE g.reservation_id = r.id) AS n "
+        f"FROM reservation r {owned}AND r.date_from >= ? AND r.date_from < ? "
+        "UNION ALL "
+        "SELECT 'sent' AS kind, NULL, NULL, COUNT(*) "
+        f"FROM guest g JOIN reservation r ON r.id = g.reservation_id {owned}"
+        "AND g.submit_state = ? AND g.submitted_at >= ? AND g.submitted_at < ?",
+        (owner_user_id, start.isoformat(), end.isoformat(),
+         owner_user_id, SENT, start.isoformat(), end.isoformat()),
+    )
+    guests = nights = reported = 0
+    for row in rows:
+        if row["kind"] == "sent":
+            reported = int(row["n"])
+            continue
+        guests += int(row["n"])
         arrive, leave = row["date_from"], row["date_to"]
         if not isinstance(arrive, date):
             arrive = date.fromisoformat(str(arrive)[:10])
         if not isinstance(leave, date):
             leave = date.fromisoformat(str(leave)[:10])
         nights += max(0, (leave - arrive).days)
-    reported = db.query_one(
-        "SELECT COUNT(*) AS n FROM guest g JOIN reservation r ON r.id = g.reservation_id "
-        "JOIN apartment a ON a.id = r.apartment_id "
-        f"WHERE {scope} AND a.archived_at IS NULL AND COALESCE(r.source, '') != 'demo' "
-        "AND g.submit_state = ? AND g.submitted_at >= ? AND g.submitted_at < ?",
-        (owner_user_id, SENT, start.isoformat(), end.isoformat()),
-    )["n"]
-    return {"guests": int(guests), "nights": int(nights), "reported": int(reported)}
+    return {"guests": guests, "nights": nights, "reported": reported}
 
 
 def _as_utc(value) -> Optional[datetime]:
