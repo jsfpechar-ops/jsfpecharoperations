@@ -212,7 +212,7 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
 @media (max-width:1023px){
   body.v2 .side{display:none}
   body.v2 .tabs{display:flex;position:fixed;left:0;right:0;bottom:0;height:84px;background:#fff;border-top:1px solid var(--line);padding:6px 4px 22px;padding-bottom:calc(22px + env(safe-area-inset-bottom));z-index:5}
-  body.v2 .tabs .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:700;color:var(--ink3);position:relative;min-height:56px;text-decoration:none}
+  body.v2 .tabs .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12px;font-weight:700;color:var(--ink3);position:relative;min-height:56px;text-decoration:none}
   body.v2 .tabs .tab svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   body.v2 .tabs .tab.on{color:var(--acc-text)}body.v2 .tabs .tab.on svg{stroke-width:2.2}
   body.v2 .tabs .tab .n{position:absolute;top:2px;left:calc(50% + 6px);background:var(--acc);color:#fff;font-size:10px;border-radius:999px;padding:1px 6px}
