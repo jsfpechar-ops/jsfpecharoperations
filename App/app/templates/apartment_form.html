@@ -22,7 +22,7 @@
 {# 0534: one scroll page, no tabs. Each section is a plain details; ?view= and ?section= pick what is open without JavaScript. #}
 <div class="crumb"><a href="/apartments">{{ t('nav.properties') }}</a> › {{ apartment.internal_name }}</div>
 <div class="top prop-phone-top"><a class="round" href="/apartments" aria-label="{{ t('common.back') }}">{{ icon('chevron-left', 22) }}</a></div>
-<h1>{{ apartment.internal_name }}</h1>
+<h1 class="big">{{ apartment.internal_name }}</h1>
 {% set prop_addr = [((apartment.addr_street or '') ~ ' ' ~ (apartment.addr_house_no or '')) | trim, apartment.addr_obec or ''] | select | join(', ') %}
 {% if prop_addr and prop_addr.strip() %}<div class="sub prop-phone-sub">{{ prop_addr }}</div>{% endif %}
 <details class="ui-how ov-how ph-hide" data-how="property">

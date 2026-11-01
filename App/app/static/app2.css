@@ -702,4 +702,4 @@ body.v2 .dot.n{background:#c9c9c3}
   body.v2 .property-settings-form .savebar:has([data-unsaved-reset]:not([hidden])) .btn.ghost:not([data-unsaved-reset]){display:none}
 }
 body.v2 .savebar [hidden]{display:none}
-@media (max-width:1023px){body.v2 .property-settings-form input:not([type=checkbox]):not([type=radio]),body.v2 .property-settings-form select,body.v2 .property-settings-form textarea{min-height:44px}}
+@media (max-width:1023px){body.v2 details.prop-sec input:not([type=checkbox]):not([type=radio]),body.v2 details.prop-sec select,body.v2 details.prop-sec textarea{min-height:44px;box-sizing:border-box}body.v2 details.prop-sec a{min-height:44px;display:inline-flex;align-items:center}body.v2:has(.property-settings-form) main{padding-bottom:calc(var(--tabbar-h) + var(--tabbar-safe) + 88px)}body.v2 details.prop-sec:not([open]) > :not(summary){display:none}}

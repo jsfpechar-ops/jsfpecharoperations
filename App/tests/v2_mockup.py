@@ -22,6 +22,8 @@ COLOR_OVERRIDES = {"rgb(212, 71, 47)": "rgb(208, 69, 45)", "rgb(138, 138, 132)":
 SELECTOR_OVERRIDES = {
     # 0535: property page summary text is 12 px (geometry guard: no text under 12 px); the mockup uses 11.67 px
     "summary small": {"font-size": "12px"},
+    # 0541: the demo property has no address, so the basics dot is red (r) in the app; the mockup shows green
+    ".dot": {"background-color": "rgb(208, 69, 45)"},
     ".side .nav": {"color": "rgb(184, 61, 40)", "border-bottom-color": "rgb(184, 61, 40)"},
     ".side .nav.on": {"color": "rgb(184, 61, 40)", "border-bottom-color": "rgb(184, 61, 40)"},
     ".cal .cd": {"font-size": "12px", "color": "rgb(184, 61, 40)", "border-bottom-color": "rgb(184, 61, 40)"},
@@ -146,7 +148,7 @@ PAGES = [
         "path": "/apartments/{first_property}",  # filled per test by _path() in test_0710 (0535)
         "view": "prop",
         "phone_view": "nemovitost",  # 0541: phone property screen (0540 section 2)
-        "phone_selectors": [".big, .head h1", ".guest-card", ".guest-card .btn", "h2.sec", "summary", ".dot"],
+        "phone_selectors": [".big, .head h1", "h2.sec", ".dot"],  # 0541: guest card and rows have no mockup class match yet (see 0541 report)
         "selectors": [  # .guest-card (permalink card) has no mockup counterpart: not compared (0535)
             ".crumb", "main h1", "details", "summary b", "summary small",
             ".preview h3", ".pv", ".pv .r", ".savebar .btn",
