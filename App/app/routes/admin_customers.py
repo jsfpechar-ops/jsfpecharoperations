@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, HTTPException, Request
 
-from .. import admin_customers, billing, billing_analytics, billing_order, config, db, validation
+from .. import admin_customers, admin_ops, billing, billing_analytics, billing_order, config, db, incidents, validation
 from ..templating import render
 from .admin_accounts import _require_admin
 from .admin_helpers import back as _back
@@ -36,6 +36,7 @@ def admin_home(request: Request):
         "queue": queue, "summary": summary, "portfolio": portfolio,
         "today": day.isoformat(), "billing_enabled": billing.enabled(),
         "fmt_date": validation.fmt_date, "kc": _kc,
+        "ops": admin_ops.overview(), "review_alerts": incidents.open_review_alerts(),
     })
 
 

@@ -54,7 +54,10 @@ def test_the_billing_admin_page_fits(calendar_workspace, calendar_origin, monkey
                 settle_motion(page)
                 page.evaluate("window.scrollTo(0, 0)")
                 assert page.locator(f'[data-billing-admin-unpaid="{number}"]').count() == 1, width
-                assert page.locator("[data-billing-admin-statement]").is_visible(), width
+                assert page.locator("#reports").evaluate("el => el.tagName === 'DETAILS' && !el.open"), width
+                page.locator("#reports > summary").click()
+                page.wait_for_function("document.getElementById('reports').open")
+                sync_api.expect(page.locator("[data-billing-admin-statement]")).to_be_visible()
                 for section in ("#revenue", "#trend", "#movement", "#funnel", "#discounts",
                                "#watch", "#portfolio", "#accounts"):
                     assert page.locator(section).count() == 1, f"{section} missing at {width}"

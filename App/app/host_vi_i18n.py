@@ -185,6 +185,7 @@ VALIDATION: Dict[str, str] = {
 VALIDATION_PATTERNS: Tuple[str, ...] = ("“{code}” không phải mã quốc gia ba chữ cái hợp lệ (ví dụ GBR, USA, DEU).", "Tối đa {limit} ký tự.")
 
 STRINGS: Dict[str, str] = {
+    "billing.admin.reports": "Báo cáo",
     "guest_guide.leon.title": "Leon (AI) cho khách của bạn",
     "guest_guide.leon.help": "Leon trả lời câu hỏi của khách dựa trên các thẻ đã đánh dấu Xong và chuyển cho bạn những gì anh ấy không biết. Leon sẽ tắt cho đến khi bạn bật.",
     "flash.guest_guide.leon_on": "Leon (AI) đã bật cho chỗ nghỉ này.",
@@ -1911,6 +1912,11 @@ STRINGS: Dict[str, str] = {
     "users.status.temporary_password": "Mật khẩu tạm thời",
     "users.incidents_link": "Sự cố bảo mật",
     "incidents.title": "Sự cố bảo mật",
+    "admin.tab.today": "Hôm nay",
+    "admin.tab.money": "Tiền",
+    "admin.tab.system": "Hệ thống",
+    "admin.today.system": "Sự cố hệ thống",
+    "admin.today.clear": "Mọi thứ ổn. Hôm nay không có việc gì.",
     "incidents.lede": "Sổ ghi vi phạm dữ liệu (Điều 33(5) GDPR): phát hiện gì, ảnh hưởng gì, và khi nào đã báo cho bên kiểm soát và cơ quan chức năng. Chỉ dành cho quản trị viên nền tảng.",
     "incidents.review_title": "Dấu hiệu sự cố có thể xảy ra",
     "incidents.review_help": "Liên kết cho khách bị giới hạn truy cập nhiều lần. Hãy mở một sự cố ở trên nếu cần xem xét.",
@@ -2861,7 +2867,6 @@ STRINGS: Dict[str, str] = {
     "ops.havel.reason.escalate": "Havel không biết",
     "ops.havel.reason.not_helped": "Chủ nhà nói câu trả lời không giúp được",
     "ops.havel.reason.fail": "Một bước kiểm tra an toàn đã chặn câu trả lời",
-    "funnel.title": "Phễu",
     "funnel.posthog_body": "Số liệu chủ nhà và chiến dịch nằm trong PostHog.",
     "funnel.posthog_link": "Mở PostHog",
     "funnel.posthog.title": "Phễu chủ nhà",
