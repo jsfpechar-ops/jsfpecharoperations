@@ -60,6 +60,26 @@
     {% endfor %}
     </tbody>
 </table></div>
+{# 0533: below 1024 px the same rows show as mockup cards (ubyhost-phone-v1 nemovitosti); the table is hidden there #}
+<div class="props-phone">
+{% for row in rows %}
+  {% set apartment = row.apartment %}
+  {% set address_text = [((apartment.addr_street or '') ~ ' ' ~ (apartment.addr_house_no or '')) | trim, apartment.addr_obec or ''] | select | join(', ') %}
+  {% set initials = (apartment.internal_name or '').split()[:2] | map('first') | map('upper') | join %}
+  {% set gradients = ['linear-gradient(135deg,#d0452d,#e9836f)', 'linear-gradient(135deg,#3f6f8f,#7fa8c2)', 'linear-gradient(135deg,#5c7a4f,#9db58c)'] %}
+  <a class="card prop" href="/apartments/{{ apartment.id }}">
+    <div class="cover" style="background:{{ gradients[apartment.id % 3] }}"><span class="ini">{{ initials }}</span></div>
+    <div class="in"><b>{{ apartment.internal_name }}</b><small>{{ address_text }}</small>
+      <div class="setup">
+      {% for chip in row.chips %}
+        {% set tone = {'ok': 'g', 'bad': 'r', 'off': 'n'}[chip.state] %}
+        <span class="st {{ tone }}" data-setup-chip="{{ chip.key }}" data-state="{{ chip.state }}">{{ t('apartments.chip.' ~ chip.key) }}<span class="sr-only">: {{ t('apartments.chip_state.' ~ chip.state) }}</span></span>
+      {% endfor %}
+      </div>
+    </div>
+  </a>
+{% endfor %}
+</div>
 {% else %}
   {% if has_operator %}
     {{ empty_state('', t('apartments.empty.lede_ready'), '/apartments/new', t('apartments.empty.add')) }}
