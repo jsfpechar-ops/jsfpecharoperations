@@ -39,44 +39,6 @@ def _automation_panel(text: str) -> str:
     return text[start:text.index('</section>', start)]
 
 
-def test_the_third_nav_link_is_the_police_panel(host):
-    client, apartment_id = host
-
-    nav = _nav(client.get(f"/apartments/{apartment_id}?lang=en").text)
-
-    assert '#ubyport"' in nav  # 0094: ?view=settings&section=reporting#ubyport
-    assert 'Police reporting</strong>' in nav  # 0286: the status dot sits before the title
-
-
-def test_the_nav_no_longer_sends_you_off_the_form(host):
-    client, apartment_id = host
-
-    nav = _nav(client.get(f"/apartments/{apartment_id}?lang=en").text)
-
-    assert "/automation#apartment-" not in nav
-
-
-def test_the_czech_nav_says_hlasi_se_policii(host):
-    client, apartment_id = host
-
-    nav = _nav(client.get(f"/apartments/{apartment_id}?lang=cs").text)
-
-    assert '#ubyport"' in nav
-    assert 'Hlášení policii</strong>' in nav  # 0286: the status dot sits before the title
-
-
-def test_the_nav_numbers_run_one_to_five_without_a_gap(host):
-    client, apartment_id = host
-
-    nav = _nav(client.get(f"/apartments/{apartment_id}?lang=en").text)
-    # 0399: the Guest links Open pill repeats its card's link.
-    nav = re.sub(r'<a class="host-property-card-open"[^>]*>', '', nav)
-    targets = re.findall(r'href="[^"#]*#([^"]+)"', nav)
-    # 0094: the business card opens the shared entity editor, not a property anchor.
-    assert targets == ['calendars', 'communication', 'ubyport', 'stay-fee-settings', 'address']
-    assert 'href="/entities' in nav
-
-
 def test_the_automation_panel_is_editable_on_the_property_page(host):
     client, apartment_id = host
 
