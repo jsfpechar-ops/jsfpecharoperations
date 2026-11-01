@@ -1,5 +1,5 @@
 /* v2 shell (brief 0705). Copied from ubyhost-redesign-v2.html; loaded only by pages that set v2. */
-:root{--bg:#f6f6f4;--s:#fff;--ink:#1c1c1a;--ink2:#55554f;--ink3:#8a8a84;--line:#ebebe7;--side:#fff;--side2:#f1f1ee;--acc:var(--coral-600);--accs:var(--coral-100);--ok:#167044;--oks:#e6f5ec;--warn:#8a5200;--warns:#fff4d6;--bad:#b42318;--bads:#fdecea;--info:#eaf3fb;
+:root{--bg:#f6f6f4;--s:#fff;--ink:#1c1c1a;--ink2:#55554f;--ink3:#8a8a84;--line:#ebebe7;--side:#fff;--side2:#f1f1ee;--acc:#d0452d;--accs:#fdece8;--ok:#167044;--oks:#e6f5ec;--warn:#8a5200;--warns:#fff4d6;--bad:#b42318;--bads:#fdecea;--info:#eaf3fb;
 font-family:var(--font-sans);color:var(--ink);font-size:14px}
 *{box-sizing:border-box}body{margin:0;background:var(--bg)}
 .app{display:flex;min-height:100vh}

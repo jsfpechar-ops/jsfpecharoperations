@@ -2,7 +2,7 @@
    This layer deliberately scopes the shared primitives to host-workspace:
    login, marketing, guest forms, PDFs and email retain their own presentation. */
 .host-workspace {
-  --canvas-subtle: #f5e8e1; --surface-hover: #f8ece6;
+  --canvas: #faf1ec; --canvas-subtle: #f5e8e1; --surface-hover: #f8ece6;
   --ink: #241d1a; --ink-secondary: #5d4f49; --ink-muted: #7a6a63;
   --border: #ecdcd4; --border-strong: #d8c2b7; --sidebar-width: 216px;
   --brand-soft: #faebe8; --radius-lg: 15px;

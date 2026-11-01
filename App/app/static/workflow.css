@@ -68,9 +68,6 @@
 .needs-you { margin: 0 0 var(--space-5); padding: var(--space-4); border: 1px solid var(--border-strong); border-radius: var(--radius-lg); background: var(--surface); }
 .needs-you > h2 { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); margin: 0 0 var(--space-3); font-size: var(--text-md); line-height: 1.3; }
 .needs-you-list { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
-.dashboard-quiet { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; margin: 4px 0 24px; color: var(--ink-2); font-size: 14px; }
-.dashboard-quiet b { color: var(--ink); font-size: 15px; font-weight: 700; }
-.dashboard-quiet i { font-style: normal; }
 .needs-you-item { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: var(--space-2); min-width: 0; padding: var(--space-3); border: 1px solid var(--border); border-left: 4px solid var(--amber); border-radius: var(--radius-md); background: var(--surface); }
 .needs-you-item[data-tone="red"] { border-left-color: var(--red); }
 .needs-you-item[data-tone="grey"] { border-left-color: var(--border-strong); }
@@ -165,19 +162,4 @@
   .needs-you-item { grid-template-columns: auto minmax(0, 1fr) auto; }
   .needs-you-item > .needs-you-actions { grid-column: 3; grid-row: 1; }
   .needs-you-actions > .ui-btn { width: auto; min-width: 14rem; }
-}
-
-/* 0701 (overview look): "What needs you" as cards at computer width. The box loses its frame; each line is a card with a tinted 44 px tile on the left, the copy beside it and the actions under the copy. No coloured left edge. Phones keep the stack above. */
-@media (min-width: 768px) {
-  .needs-you { margin: 0 0 var(--space-5); padding: 0; border: 0; background: transparent; }
-  .needs-you > h2 { margin: 0 0 12px; font-size: 16px; font-weight: 700; }
-  .needs-you-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-  .needs-you-item[data-tone] { grid-template-columns: 44px minmax(0, 1fr); column-gap: 14px; row-gap: 10px; padding: 16px; border: 1px solid #ebebe7; border-radius: 12px; background: #fff; }
-  .needs-you-copy span { font-size: 13px; color: #55554f; }
-  .needs-you-icon, .needs-you-item[data-tone] .needs-you-icon { width: 44px; height: 44px; border-radius: 10px; font-weight: 700; background: #fff4d6; color: #8a5200; }
-  .needs-you-item[data-tone="red"] .needs-you-icon { background: #fdecea; color: #b42318; }
-  .needs-you-item[data-tone="grey"] .needs-you-icon { background: #efefeb; color: #55554f; }
-  .needs-you-item > .needs-you-more { grid-column: 2; grid-row: auto; margin-top: 0; }
-  .needs-you-item > .needs-you-actions { grid-column: 2; grid-row: auto; display: flex; flex-wrap: wrap; justify-content: flex-start; align-items: center; gap: 8px; }
-  .needs-you-actions > .ui-btn { width: auto; min-width: 0; min-height: 0; padding: 6px 12px; font-size: 13px; }
 }

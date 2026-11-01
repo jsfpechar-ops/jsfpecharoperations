@@ -29,8 +29,8 @@ def test_every_v2_token_is_defined_once():
 
 
 def test_primitive_values_are_what_master_says():
-    assert "--coral-600: #d0452d" in TOKENS
-    assert "--coral-500: #e0644e" in TOKENS
+    assert "--coral-600: #ad4942" in TOKENS
+    assert "--coral-500: #c85a52" in TOKENS
     assert "--ink-900: #20201e" in TOKENS
     assert "--body-size: var(--size-16)" in TOKENS
 

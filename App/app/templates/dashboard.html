@@ -76,7 +76,7 @@
     {% endif %}
   </section>
   {% if month_summary %}
-  <div class="quiet dashboard-quiet" data-dashboard-month><span>{{ t('dashboard.month.label') }}</span> <b>{{ month_summary.guests }}</b> {{ tp('dashboard.month.guests', month_summary.guests) }}<i aria-hidden="true">·</i><b>{{ month_summary.nights }}</b> {{ tp('dashboard.month.nights', month_summary.nights) }}<i aria-hidden="true">·</i><b>{{ month_summary.reported }}</b> {{ tp('dashboard.month.reported', month_summary.reported) }}</div>
+  <div class="quiet" data-dashboard-month><span>{{ t('dashboard.month.label') }}</span> <b>{{ month_summary.guests }}</b> {{ tp('dashboard.month.guests', month_summary.guests) }}<i aria-hidden="true">·</i><b>{{ month_summary.nights }}</b> {{ tp('dashboard.month.nights', month_summary.nights) }}<i aria-hidden="true">·</i><b>{{ month_summary.reported }}</b> {{ tp('dashboard.month.reported', month_summary.reported) }}</div>
   {% endif %}
 
   <h2>{{ t('calendar.calendar') }}</h2>

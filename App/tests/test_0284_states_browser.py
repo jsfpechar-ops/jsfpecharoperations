@@ -83,14 +83,12 @@ def test_needs_you_buttons_line_up_and_the_line_opens(base):
     with sync_api.sync_playwright() as playwright:
         browser, page = _page(playwright, base, cookie)
         page.goto(base + "/?lang=en")
-        pairs = page.evaluate(
-            "() => [...document.querySelectorAll('.needs-you-list > .needs-you-item')]"
-            ".filter(i => i.offsetParent && i.querySelector('[data-needs-you-go]'))"
-            ".map(i => [Math.round(i.querySelector('[data-needs-you-go]').getBoundingClientRect().left),"
-            " Math.round(i.querySelector('.needs-you-copy').getBoundingClientRect().left)])"
+        rights = page.evaluate(
+            "() => [...document.querySelectorAll('.needs-you-list > .needs-you-item [data-needs-you-go]')]"
+            ".filter(e => e.offsetParent).map(e => Math.round(e.getBoundingClientRect().right))"
         )
-        assert pairs, "no What needs you line with a button"
-        assert all(abs(button - copy) <= 1 for button, copy in pairs), pairs
+        assert rights, "no What needs you line with a button"
+        assert max(rights) - min(rights) <= 1, rights
         dismiss = page.locator(".needs-you-list .needs-you-dismiss button:visible")
         if dismiss.count():
             hit = dismiss.first.evaluate(

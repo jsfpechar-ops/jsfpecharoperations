@@ -10,7 +10,7 @@
   color-scheme: light;
 
   /* Neutral canvas and ink */
-  --canvas: #f6f6f4;
+  --canvas: #f7f7f5;
   --canvas-subtle: #f1f1ef;
   --surface: #ffffff;
   --surface-raised: #ffffff;
@@ -123,7 +123,7 @@
 
   /* ---- Design v2 (docs/design/MASTER.md section 2). Three layers. ---- */
   /* 2.1 primitive: used only inside this file */
-  --coral-50: #fef5f3; --coral-100: #fdece8; --coral-200: #f6c6bc; --coral-500: #e0644e; --coral-600: #d0452d; --coral-700: #b83a24;
+  --coral-50: #fbf0ee; --coral-100: #f9e9e7; --coral-200: #f0c9c4; --coral-500: #c85a52; --coral-600: #ad4942; --coral-700: #963e38;
   --sand-0: #ffffff; --sand-50: #fbfaf8; --sand-100: #f7f7f5; --sand-150: #f1f1ef; --sand-200: #ececea; --sand-300: #deded9; --sand-400: #c9c9c2;
   --ink-900: #20201e; --ink-700: #50504c; --ink-500: #6b6b66; --ink-400: #92928c;
   --amber-700: #6b3a00; --amber-100: #fde9c2; --amber-300: #eec27a; --amber-dot: #c27a00;
@@ -136,7 +136,7 @@
   --motion-1: 120ms; --motion-2: 180ms; --motion-3: 240ms;
   /* 2.2 semantic */
   --canvas-2: var(--sand-100); --surface-2: var(--sand-150); --surface-3: var(--sand-200);
-  --state-hover: var(--sand-100); --state-press: var(--sand-200); --state-ink: var(--coral-700);
+  --state-hover: var(--sand-100); --state-press: var(--sand-200); --state-ink: var(--coral-600);
   --ink-2: var(--ink-700); --ink-3: var(--ink-500); --line-1: var(--sand-300); --line-strong: var(--sand-400);
   --accent: var(--coral-600); --accent-hover: var(--coral-700); --accent-pressed: var(--coral-700); --accent-soft: var(--coral-100); --accent-ink: var(--coral-700); --on-accent: #ffffff;
   --focus-ring-2: 0 0 0 1px var(--sand-0), 0 0 0 4px rgba(200, 90, 82, 0.32);

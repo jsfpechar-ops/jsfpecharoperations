@@ -581,36 +581,3 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
 @media (max-width: 760px) {
   .cleaning-page .dashboard-calendar .cal-navigation .btn { border-radius: 8px; }
 }
-
-/* 0702 Overview 14-day card (mockup v2) */
-@media (min-width:768px) {
-  .dashboard-calendar.is-fixed-days { display:grid; grid-template-columns:minmax(0,1fr) auto; column-gap:12px; align-items:center; padding:0; border:0; background:transparent; }
-  .dashboard-calendar.is-fixed-days > .cal-heading { grid-column:1; grid-row:1; margin-bottom:12px; }
-  .dashboard-calendar.is-fixed-days > .cal-toolbar { grid-column:2; grid-row:1; display:flex; justify-content:flex-end; margin-bottom:12px; }
-  .dashboard-calendar.is-fixed-days > :not(.cal-heading):not(.cal-toolbar) { grid-column:1 / -1; }
-  .dashboard-calendar.is-fixed-days > [hidden] { display:none; }
-  .dashboard-calendar.is-fixed-days .cal-toolbar h3,
-  .dashboard-calendar.is-fixed-days .cal-toolbar-options,
-  .dashboard-calendar.is-fixed-days [data-cal-property],
-  .host-workspace .dashboard-calendar.is-fixed-days .cal-heading [data-cal-settings] { display:none; }
-  .dashboard-calendar.is-fixed-days .cal-gantt-scroll { border:1px solid var(--sand-200); border-radius:12px; background:var(--surface); }
-  .dashboard-calendar.is-fixed-days .cal-gantt-header { background:var(--surface); border-bottom:1px solid var(--sand-200); }
-  .dashboard-calendar.is-fixed-days .cal-gantt-header > span { font-size:11px; color:var(--ink-3); border-right:0; padding:8px 2px; }
-  .dashboard-calendar.is-fixed-days .cal-gantt-header > span.is-today { background:var(--coral-50); color:var(--coral-600); font-weight:650; }
-  .dashboard-calendar.is-fixed-days .cal-gantt-header > .cal-gantt-name { background:var(--surface); font-size:13px; font-weight:600; }
-  .dashboard-calendar.is-fixed-days .cal-gantt-name { background:var(--surface); border-right:0; font-size:13px; font-weight:600; }
-  .dashboard-calendar.is-fixed-days .cal-gantt-row { border-bottom:1px solid var(--sand-200); }
-  .dashboard-calendar.is-fixed-days .cal-gantt-days { min-height:calc(16px + var(--lanes,1) * 28px); }
-  .dashboard-calendar.is-fixed-days .cal-gantt-slot { min-height:44px; border-right:1px solid var(--sand-200); background:var(--surface); }
-  .dashboard-calendar.is-fixed-days .cal-gantt-slot.is-weekend { background:var(--surface); }
-  .dashboard-calendar.is-fixed-days .cal-gantt-slot.is-today { background:var(--coral-50); }
-  .dashboard-calendar.is-fixed-days .cal-gantt-events { inset:8px 0; grid-auto-rows:28px; gap:0; }
-  .dashboard-calendar.is-fixed-days .cal-event { height:28px; min-height:28px; box-sizing:border-box; padding:0 10px; border:0; border-radius:14px; font-size:12px; font-weight:600; line-height:16px; }
-  .dashboard-calendar.is-fixed-days .cal-event.continues-start,
-  .dashboard-calendar.is-fixed-days .cal-event.continues-end { border-radius:14px; }
-  .dashboard-calendar.is-fixed-days .cal-event.is-done { background:var(--green-bg); color:var(--green); }
-  .dashboard-calendar.is-fixed-days .cal-event.is-action,
-  .dashboard-calendar.is-fixed-days .cal-event.is-ready { background:var(--amber-bg); color:var(--amber); }
-  .dashboard-calendar.is-fixed-days .cal-event.is-overdue { background:var(--red-bg); color:var(--red); }
-  .dashboard-calendar.is-fixed-days .cal-event.is-neutral { background:var(--sand-200); color:var(--ink-500); }
-}
