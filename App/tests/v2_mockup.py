@@ -33,6 +33,9 @@ SELECTOR_OVERRIDES = {
     ".actbar": {"padding-bottom": "12px"},
     # tone follows the stay state (0715 mapping); fixture stay is waiting, mockup shows a finished one (0719)
     ".hs .pill": {"color": "rgb(138, 82, 0)", "background-color": "rgb(255, 244, 214)", "border-bottom-color": "rgb(138, 82, 0)"},
+    # owner 2026-11-01 19:09: smaller pills than the phone mockup
+    ".card.prop .st.g": {"font-size": "12px", "font-weight": "600", "padding-top": "3px", "padding-bottom": "3px", "padding-left": "7px", "padding-right": "9px", "column-gap": "5px", "row-gap": "5px"},
+    ".card.prop .st.r": {"font-size": "12px", "font-weight": "600", "padding-top": "3px", "padding-bottom": "3px", "padding-left": "7px", "padding-right": "9px", "column-gap": "5px", "row-gap": "5px"},
 }
 # style-compared only at computer width (phone design pending)
 DESKTOP_ONLY = {".side", ".side .nav", ".side .nav.on"}
@@ -48,7 +51,10 @@ BOX_OVERRIDES = {
     ".card.me": {"margin-left": "0px", "margin-right": "0px"},
     ".big, .head h1": {"margin-left": "0px", "margin-right": "0px"},
     ".card.prop": {"margin-left": "0px", "margin-right": "0px"},
-    ".big": {"margin-left": "0px", "margin-right": "0px"},
+    # owner 2026-11-01 19:09: smaller pills than the phone mockup (one line at 390 px)
+    ".card.prop .st.g": {"height": "23px"},
+    ".card.prop .st.r": {"height": "23px"},
+    ".big":{"margin-left": "0px", "margin-right": "0px"},
     "h2.sec": {"margin-left": "0px", "margin-right": "0px"},
     ".card.need": {"margin-left": "0px", "margin-right": "0px"},
     ".head .sub": {"margin-left": "0px", "margin-right": "0px"},
