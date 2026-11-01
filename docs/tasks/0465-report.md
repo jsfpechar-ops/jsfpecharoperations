@@ -29,3 +29,9 @@ Part a only. Part b (goose binary in CI, `test-postgres` goose step, LIGHTSAIL a
 ## Questions and owner steps
 - Question: does the Docker image copy `App/migrations_pg/`? The Dockerfile was not checked in this part.
 - Owner steps left for part a: none.
+
+## Part b (branch claude/0465b-goose-ci)
+- Edited: `.github/workflows/ci.yml` (two steps in `test-postgres`, before "Run PostgreSQL tests": goose v3.29.0 install with SHA-256 check, "goose builds the baseline"), `docs/context/decisions.md` (D3 detail line), `docs/LIGHTSAIL.md` (one row in the day-to-day table), `docs/plans/postgresql/owner-steps-cutover.md` (standing step 6), this report.
+- Not run locally: GitHub Actions cannot run here. `python3 -c "import yaml ..."` parses ci.yml, and the job lists its steps in the expected order. actionlint is not installed.
+- CI run link: pending until the PR's `test-postgres` job runs. Check the log for `no migrations to run` in the "goose builds the baseline" step.
+- Owner steps left: none before merge. After a deploy whose notes mention a goose file, run the step 6 command in `docs/plans/postgresql/owner-steps-cutover.md`.
