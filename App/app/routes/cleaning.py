@@ -28,9 +28,29 @@ def _context(request: Request, **values) -> dict:
         day = date.fromisoformat(value)
         return f"{weekdays[day.weekday()]} {day.day}.{day.month}.{day.year}"
 
+    short_days = {"en": ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"), "vi": ("T2", "T3", "T4", "T5", "T6", "T7", "CN"),
+                  "cs": ("Po", "Út", "St", "Čt", "Pá", "So", "Ne")}[lang if lang in ("en", "vi") else "cs"]
+    months = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+    def cleaning_short(value):
+        day = date.fromisoformat(value)
+        if lang == "en":
+            return f"{day.day} {months[day.month - 1]}"
+        if lang == "vi":
+            return f"{day.day}/{day.month}"
+        return f"{day.day}. {day.month}."
+
+    def cleaning_day(value):
+        day = date.fromisoformat(value)
+        if lang == "en":
+            return f"{short_days[day.weekday()]} {day.day} {months[day.month - 1]}"
+        if lang == "vi":
+            return f"{short_days[day.weekday()]} {day.day}/{day.month}"
+        return f"{short_days[day.weekday()]} {day.day}. {day.month}."
+
     return {"cleaning_labels": {key: (host_vi_i18n.CLEANING_WORDS.get(key) or pair[0]) if lang == "vi" else pair[1 if lang == "cs" else 0] for key, pair in cleaning_i18n.WORDS.items()},
             "nav": "cleaning", "ct": cleaning_i18n.translator(lang),
-            "cleaning_date": full_date, "lang": lang, **values}
+            "cleaning_date": full_date, "cleaning_day": cleaning_day, "cleaning_short": cleaning_short, "lang": lang, **values}
 
 
 def _groups(payload: dict) -> list:
