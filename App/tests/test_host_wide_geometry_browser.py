@@ -36,7 +36,7 @@ MOBILE_ROUTE_KEYS = {
 }
 CAPTURE_ROUTES = {
     "dashboard": ("/", ".needs-you"),
-    "stays": ("/reservations", ".stays-view, .ui-empty"),
+    "stays": ("/reservations", ".stays-desk, .ui-empty"),
     "properties": ("/apartments", ".panel.tight.scroll-x, .panel.empty"),
     "operators": ("/entities", ".entities-page, .panel.empty"),
     "operator-add": ("/entities?new=1", ".entity-add"),
@@ -54,7 +54,7 @@ CAPTURE_ROUTES = {
     "invoice-detail": ("/invoices/{invoice_id}", ".invoice-workspace"),
     "property-new": ("/apartments/new", ".property-create-lane"),  # 0092: form + follow-up panel
     "stay-detail": ("/reservations/{reservation_id}", ".reservation-detail, .panel"),
-    "stays-archive": ("/reservations?range=archive", ".stays-view, .ui-empty"),
+    "stays-archive": ("/reservations?range=archive", ".stays-desk, .ui-empty"),
     "property-detail": ("/apartments/{property_id}", ".property-detail, .panel"),
     "property-detail-configured": ("/apartments/{configured_apartment}", ".property-detail, .panel"),
     "housebook": ("/housebook?apartment={unconfigured_apartment}&from={today}&to={housebook_end}", ".housebook-page, .panel"),
@@ -227,11 +227,11 @@ def _capture_geometry(page, result_selector):
           })();
           const table = document.querySelector('.panel.tight.scroll-x table');
           const staysPanel = document.querySelector(
-            '.stays-view .panel.tight.scroll-x, .stays-view'
+            '.stays-desk .panel.tight.scroll-x, .stays-desk'
           );
           // 0399: the Open cue (a.row-open) is a compact link cue, not a row-menu control.
           const rowActions = [...document.querySelectorAll(
-            '.stays-view td.row-actions a:not(.row-open), .stays-view td.row-actions button'
+            '.stays-desk td.row-actions a:not(.row-open), .stays-desk td.row-actions button'
           )].map(element => {
             const r = element.getBoundingClientRect();
             const panel = staysPanel?.getBoundingClientRect();
@@ -241,7 +241,7 @@ def _capture_geometry(page, result_selector):
               className: element.className?.toString() || '', tagName: element.tagName,
               isCopy: element.hasAttribute('data-copy'),
               isMenu: element.classList.contains('row-menu-trigger'),
-              rowGroup: cell ? [...document.querySelectorAll('.stays-view td.row-actions')].indexOf(cell) : -1,
+              rowGroup: cell ? [...document.querySelectorAll('.stays-desk td.row-actions')].indexOf(cell) : -1,
               left: r.left, right: r.right, top: r.top, bottom: r.bottom,
               width: r.width, height: r.height,
               panelLeft: panel?.left ?? null, panelRight: panel?.right ?? null,
@@ -249,7 +249,7 @@ def _capture_geometry(page, result_selector):
                 && r.right <= panel.right + 1};
           });
           const compactCells = [...document.querySelectorAll(
-            '.stays-view .stay-col-reporting'
+            '.stays-desk .stay-col-reporting'
           )].map(cell => {
             const r = cell.getBoundingClientRect();
             const range = document.createRange();
@@ -258,7 +258,7 @@ def _capture_geometry(page, result_selector):
               width: r.width, scrollWidth: cell.scrollWidth, clientWidth: cell.clientWidth,
               height: r.height, lineRects: range.getClientRects().length};
           });
-          const stayTracks = [...document.querySelectorAll('.stays-view tbody tr')].flatMap((row, rowIndex) =>
+          const stayTracks = [...document.querySelectorAll('.stays-desk tbody tr')].flatMap((row, rowIndex) =>
             ['.stay-col-stay .stay-identity-link', '.stay-col-dates > a',
              '.stay-col-stay .stay-col-source',
              '.stay-col-guests', '.stay-col-reporting', '.stay-report-deadline'].flatMap(selector => {
@@ -288,7 +288,7 @@ def _capture_geometry(page, result_selector):
             '.page-actions .btn', '.ui-ph-acts .ui-btn', '.dashboard-actions .btn',
             '.dashboard-row-actions .btn', '.filter-panel-actions .btn',
             '.host-property-save .btn', '.invoice-form button[type=submit]',
-            '.stays-view td.row-actions a:not(.row-open)', '.stays-view td.row-actions button'
+            '.stays-desk td.row-actions a:not(.row-open)', '.stays-desk td.row-actions button'
           ];
           const actions = actionSelectors.flatMap(selector =>
             [...document.querySelectorAll(selector)].map(element => {
@@ -327,7 +327,7 @@ def _capture_geometry(page, result_selector):
             result: box(resultSelector), table: box('.panel.tight.scroll-x'),
             staysPanel: staysPanel ? {...boxFrom(staysPanel), clientWidth: staysPanel.clientWidth,
               scrollWidth: staysPanel.scrollWidth, scrollLeft: staysPanel.scrollLeft} : null,
-            portalLinks: [...document.querySelectorAll('.stays-view .stay-portal-link')].map(link => {
+            portalLinks: [...document.querySelectorAll('.stays-desk .stay-portal-link')].map(link => {
               const r = link.getBoundingClientRect();
               return {text: link.innerText.trim(), left: r.left, right: r.right,
                 width: r.width, height: r.height, whiteSpace: getComputedStyle(link).whiteSpace};
@@ -385,7 +385,7 @@ def _output_dir():
 
 def _assert_stay_menu_copy_geometry(page, width, row_index, locale, *, keyboard=False):
     """Open a real synthetic stay menu and check its link action remains usable."""
-    row = page.locator(".stays-view tbody tr").nth(row_index)
+    row = page.locator(".stays-desk tbody tr").nth(row_index)
     trigger = row.locator("button.row-menu-trigger")
     assert trigger.is_visible()
     assert trigger.get_attribute("aria-label")
@@ -567,7 +567,7 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                     if name == "stays":
                         _assert_stay_track_content(geometry, max_date_lines=2 if width >= 721 else None)
                         status_text = "\n".join(page.locator(
-                            ".stays-view .stay-col-reporting"
+                            ".stays-desk .stay-col-reporting"
                         ).all_inner_texts())
                         state_labels = (
                             ("Ready (scheduled)", "Waiting for guest", "Incomplete")
@@ -582,8 +582,8 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                         assert geometry["portalLinks"] == [], (
                             f"legacy portal shortcut must stay absent: {geometry['portalLinks']}"
                         )
-                        assert page.locator(".stays-view .stay-portal-link").count() == 0
-                        stay_rows = page.locator(".stays-view tbody tr")
+                        assert page.locator(".stays-desk .stay-portal-link").count() == 0
+                        stay_rows = page.locator(".stays-desk tbody tr")
                         assert stay_rows.count() >= 4
                         for row_index in range(stay_rows.count()):
                             row = stay_rows.nth(row_index)
@@ -653,7 +653,7 @@ def test_stay_row_actions_fit_midwidth_lanes(wide_host, wide_base):
                 page.wait_for_load_state("networkidle")
                 _dismiss_optional_security_prompt(page)
                 page.evaluate("window.scrollTo(0, 0)")
-                geometry = _capture_geometry(page, ".stays-view")
+                geometry = _capture_geometry(page, ".stays-desk")
                 (output_dir / f"midwidth-rectangles-{lang}-{width}.json").write_text(json.dumps(
                     {"width": width, "locale": lang, **geometry}, indent=2, ensure_ascii=False
                 ) + "\n")
@@ -666,7 +666,7 @@ def test_stay_row_actions_fit_midwidth_lanes(wide_host, wide_base):
                     width:r.width, scrollWidth:e.scrollWidth, clientWidth:e.clientWidth};
                 }).filter(x => x.right > innerWidth + 1 || x.left < -1).slice(0,25)""")
                 assert geometry["viewport"]["scrollWidth"] <= width, (geometry["viewport"], offenders)
-                rows = page.locator(".stays-view tbody tr")
+                rows = page.locator(".stays-desk tbody tr")
                 assert rows.count() >= 4
                 visible_actions = [item for item in geometry["rowActions"] if item["visible"]]
                 more_controls = [item for item in visible_actions if item["isMenu"]]
@@ -674,7 +674,7 @@ def test_stay_row_actions_fit_midwidth_lanes(wide_host, wide_base):
                 assert len(visible_actions) >= rows.count(), geometry["rowActions"]
                 assert all(item["fullyVisible"] for item in visible_actions), geometry["rowActions"]
                 assert geometry["portalLinks"] == [], "legacy portal shortcut must stay absent"
-                assert page.locator(".stays-view .stay-portal-link").count() == 0
+                assert page.locator(".stays-desk .stay-portal-link").count() == 0
                 for row_index in range(rows.count()):
                     row = rows.nth(row_index)
                     date_link = row.locator("td.stay-col-dates a")
@@ -811,7 +811,7 @@ def test_collapsed_sidebar_keeps_dashboard_and_stays_lanes_aligned(wide_host, wi
             page = context.new_page()
             for key, path, selector in (
                 ("dashboard", "/", ".needs-you"),
-                ("stays", "/reservations", ".stays-view"),
+                ("stays", "/reservations", ".stays-desk"),
             ):
                 response = page.goto(f"{wide_base}{path}?lang={lang}")
                 assert response and response.status == 200
