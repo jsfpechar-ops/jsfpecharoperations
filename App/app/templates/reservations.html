@@ -137,6 +137,7 @@
         <th class="stay-col-dates">{{ t('stays.table.arrival') }}</th>
         <th class="stay-col-departure">{{ t('stays.table.departure') }}</th>
         <th class="stay-col-reporting">{{ t('stays.table.reporting') }}</th>
+        <th class="stay-col-pay"><span class="sr-only">{{ t('stays.row.request_payment') }}</span></th>
         <th class="stay-col-actions"><span class="sr-only">{{ t('common.open') }}</span></th>
       </tr>
     </thead>
@@ -176,6 +177,7 @@
             <div class="stay-report-deadline">{{ deadline_badge(deadline_cell(progress, check_in)) }}</div>
           {% endif %}
         </td>
+        <td class="stay-col-pay" data-card="actions" data-label="">{% if not show_archive and reservation.status == 'active' %}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="/payments?reservation_id={{ reservation.id }}#new-request">{{ t('stays.row.request_payment') }}</a>{% endif %}</td>
         <td class="ui-cell-acts row-actions stay-col-actions" data-card="actions" data-label="">{{ row_open('/reservations/' ~ reservation.id ~ '?return_to=' ~ (return_to | urlencode)) }}
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}" role="menuitem">{{ t('common.open') }}</a>
