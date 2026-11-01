@@ -1,6 +1,11 @@
 {
   "master_version": "2.0.0",
   "classes": [
+    "form",
+    "crumb",
+    "fields",
+    "savebar",
+    "guest-card",
     "ui-how",
     "ui-how-toggle",
     "ui-how-chevron",

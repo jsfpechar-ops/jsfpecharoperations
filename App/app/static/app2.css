@@ -3,6 +3,18 @@
 font-family:var(--font-sans);color:var(--ink);font-size:14px}
 *{box-sizing:border-box}body{margin:0;background:var(--bg)}
 body.v2 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* v2 form controls (shared, generic) */
+:where(body.v2 label){display:block;font-size:13px;color:var(--ink2)}
+:where(body.v2 input[type=text],body.v2 input[type=number],body.v2 input[type=email],body.v2 input[type=password],body.v2 input[type=tel],body.v2 input[type=url],body.v2 input[type=date],body.v2 input[type=time],body.v2 input[type=search],body.v2 select,body.v2 textarea){margin-top:4px;border:1px solid #dcdcd7;border-radius:8px;padding:9px 10px;background:var(--s);color:var(--ink);font:inherit;width:100%;box-sizing:border-box}
+:where(body.v2 .hint){font-size:12px;color:var(--ink3)}
+:where(body.v2 .err-text){color:var(--bad)}
+:where(body.v2 .field){display:block;margin-bottom:12px}
+:where(body.v2 input[type=checkbox],body.v2 [role=switch]){width:20px;height:20px;accent-color:var(--acc)}
+:where(body.v2 input[type=checkbox]:focus-visible,body.v2 [role=switch]:focus-visible){outline:2px solid #d0452d;outline-offset:2px}
+:where(body.v2 .ui-btn){border:0;background:var(--acc);color:#fff;font:inherit;font-weight:600;padding:9px 16px;border-radius:999px;cursor:pointer;white-space:nowrap}
+:where(body.v2 .ui-btn-secondary,body.v2 .ui-btn-quiet){background:#efefeb;color:var(--ink)}
+:where(body.v2 .ui-btn-compact){padding:6px 12px;font-size:13px}
+@media (max-width:1023px){:where(body.v2 input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=submit]),body.v2 select,body.v2 textarea,body.v2 .ui-btn){min-height:44px}}
 /* 0532: the toast close is a 44 px tap target on phones (v2 pages load app2.css only, not host.css) */
 @media (max-width:767px){.toast-stack .toast > [data-toast-close]{width:44px;min-width:44px;min-height:44px}}
 .app{display:flex;min-height:100vh}
@@ -303,3 +315,18 @@ body.v2 .props-phone .cover.c2{background:linear-gradient(135deg,#5c7a4f,#9db58c
 @media (min-width:1024px){body.v2 .props-card .setup .st{height:24px}body.v2 .props-card .copy-btn{height:28px;min-height:28px;padding-block:6px}body.v2 .props-card .copy-btn svg{width:16px;height:16px}body.v2 .props-card .row-primary-link .property-identity > span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}body.v2 .props-card > table td:nth-child(1),body.v2 .props-card > table td:nth-child(2){max-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
 @media (min-width:1024px){body.v2 .props-card > table td:nth-child(1) .row-primary-link{display:block;max-width:100%;min-width:0;overflow:hidden}}
 @media (min-width:1024px){body.v2 .props-card > table th:nth-child(1),body.v2 .props-card > table td:nth-child(1){width:22%}body.v2 .props-card > table th:nth-child(2),body.v2 .props-card > table td:nth-child(2){width:26%}}
+
+/* 0534 property page */
+body.v2 .form{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;max-width:980px;margin:0 auto}
+body.v2 .crumb{color:var(--ink3);font-size:12px;margin-bottom:4px}
+body.v2 .guest-card{padding:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+body.v2 details{background:var(--s);border:1px solid var(--line);border-radius:12px;margin-bottom:10px}
+body.v2 summary{list-style:none;padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+body.v2 summary::-webkit-details-marker{display:none}
+body.v2 summary b{display:block}
+body.v2 summary small{color:var(--ink3)}
+body.v2 summary:after{content:"\2304";color:var(--ink3);font-size:18px}
+body.v2 details[open] summary:after{transform:rotate(180deg)}
+body.v2 .fields{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+body.v2 .savebar{position:fixed;right:24px;bottom:20px;display:flex;gap:8px}
+@media (prefers-reduced-motion:no-preference){@keyframes v2-fields-in{from{opacity:0}to{opacity:1}}body.v2 details .fields{animation:v2-fields-in .18s ease-out}}
