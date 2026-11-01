@@ -364,6 +364,11 @@ body.v2 .pv-state[data-state="bad"]{background:var(--bads);color:var(--bad)}
   body.v2 details .ui-btn{max-width:100%;white-space:normal}
   body.v2 .property-settings-form input,body.v2 .property-settings-form select,body.v2 .property-settings-form textarea{min-width:0;max-width:100%}
 }
+/* 0535 step 3b: the guest-link copy icon (injected by app.js, unstyled on v2) took ~77 px in flow and pushed the button past 1024 px. Hidden until copied, absolute inside the button. */
+body.v2 .guest-card .copy-btn{position:relative;overflow:hidden}
+body.v2 .guest-card .copy-btn [data-copy-state-icon]{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none}
+body.v2 .guest-card .copy-btn.copied [data-copy-state-icon]{opacity:1}
+body.v2 .guest-card .copy-btn [data-copy-state-icon] svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 @media (max-width:639px){
   body.v2 .fields{grid-template-columns:minmax(0,1fr)}
 }
