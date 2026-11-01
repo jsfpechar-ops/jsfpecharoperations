@@ -51,3 +51,18 @@ FAILED tests/test_host_quiet_dashboard_browser.py::test_dashboard_single_stay_ne
 ## Owner steps left
 
 None yet. Steps 5 and 6 and the full section 6 test sets must run in a new session after the questions above are answered.
+
+## Run 2 (executor, after step 4b)
+
+Status: blocked
+
+Done: step 4b committed as `0520 step 4b` (commit 8476389): `test_design_dashboard.py` now asserts `ui-ph-menu` and `dashboard-more` are absent; `test_host_quiet_dashboard_browser.py` Today-table selector changed as ordered. `test_design_dashboard.py` passes.
+Left: steps 5 and 6, and the full section 6 test sets.
+
+Blocker (new, not in the orchestrator decisions): `App/tests/test_host_quiet_dashboard_browser.py` line 351-355 (`test_dashboard_rich_needs_you_order_cap_and_geometry`, `rich/en/360/open`) asserts `page.locator(".ui-ph-menu").is_visible()` when the header overflows at 360 px. Step 1 removed that button, so the assertion fails:
+```
+E   AssertionError: rich/en/360/open
+E   assert False  (.ui-ph-menu is_visible)
+1 failed, 1 passed in 12.14s
+```
+Brief section 8 says stop when another existing test changes result. Not changed. Decision needed: remove or rewrite lines 351-355 (for example, assert the header has no `.ui-ph-menu`), or keep them.
