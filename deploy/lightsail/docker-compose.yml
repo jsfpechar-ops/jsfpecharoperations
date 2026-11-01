@@ -140,6 +140,7 @@ services:
     profiles: ["go"]
     environment:
       UBYHOST_DATABASE_URL: ${UBYHOST_DATABASE_URL:-}
+      UBYHOST_GO_JOB_KINDS: ${UBYHOST_GO_JOB_KINDS:-}
     volumes:
       - ubyhost-pgsock:/var/run/postgresql
     expose:
