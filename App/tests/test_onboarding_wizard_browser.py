@@ -1320,19 +1320,24 @@ def test_wizard_polish_and_overview_cards(host, base_url, monkeypatch, lang, wid
             page.locator(".setup-wizard-foot .ui-btn-primary").click()
         # 0274 (M): police is still waiting, so the finish button opens that step.
         assert f"/apartments/{flat['id']}/setup/police" in page.url, page.url
-        page.goto(f"{base_url}/apartments/{flat['id']}?view=overview&lang={lang}")
-        overview = page.locator(".host-property-grid").first
-        assert overview.get_by_text(_t(lang, "wizard.overview.calendars"), exact=True).is_visible()
-        heights = overview.locator(".host-property-card").evaluate_all(
-            "cards => cards.map(card => card.getBoundingClientRect().height)"
-        )
-        assert max(heights) - min(heights) <= 1, heights
-        guest_card = overview.locator(".host-property-card-static")
-        assert guest_card.locator("button[data-copy]").count() == 0
-        link_card = page.locator(".property-guest-link")
-        assert link_card.locator("button[data-copy]").is_visible()
-        label_box = link_card.locator("h2").bounding_box()
-        copy_box = link_card.locator("button[data-copy]").bounding_box()
+        # 0541: the overview cards are aside rows; the guest link sits in the messages section.
+        page.goto(f"{base_url}/apartments/{flat['id']}?view=settings&section=guests&lang={lang}")
+        calendars_title = _t(lang, "property_page.sec.calendars.title")
+        if width >= 1024:
+            aside = page.locator("aside.preview")
+            calendars_row = aside.locator('a.r[href="#sec-calendars"]')
+            assert calendars_row.locator("span").inner_text() == calendars_title
+            assert aside.locator(".pv .r").count() >= 4
+            assert aside.locator("button[data-copy]").count() == 0
+        else:
+            calendars_summary = page.locator("details#sec-calendars > summary")
+            assert calendars_summary.is_visible()
+            assert calendars_summary.locator("b").inner_text() == calendars_title
+        link_card = page.locator("section.guest-card")
+        copy_button = link_card.locator('button[data-copy="property-guest-url"]')
+        assert copy_button.is_visible()
+        label_box = link_card.locator("#property-guest-link-title").bounding_box()
+        copy_box = copy_button.bounding_box()
         assert label_box and copy_box
         # Label left of the button; when the button wraps, the label sits above it.
         assert (
