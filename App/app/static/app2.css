@@ -328,3 +328,4 @@ body.v2 .stays-desk .sr-only{position:absolute;width:1px;height:1px;overflow:hid
 
 /* 0527: the collapsed filter panel on v2 pages (the .host-workspace rule in host.css does not apply here) */
 body.v2 .stays-filter.is-collapsed{display:none}
+@media (min-width:1024px){body.v2 .stays-phone-only{display:none}}
