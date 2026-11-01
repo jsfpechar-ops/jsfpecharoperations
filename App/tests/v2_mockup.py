@@ -48,9 +48,14 @@ BOX_PROPS = ("width", "height", "margin-top", "margin-right", "margin-bottom", "
 BOX_OVERRIDES = {
     # text-dependent: fixture copy vs phone v2 mockup demo copy (0729)
     # text-dependent: app copy vs phone v2 mockup demo copy (0735)
+    ".mh .big@320": {"width": "79.3594px"},
+    ".mh .big@390": {"width": "79.3594px"},
     ".promo@320": {"height": "80px"},
+    ".promo@390": {"height": "80px"},
     ".promo b@320": {"width": "143.25px"},
+    ".promo b@390": {"width": "143.25px"},
     ".tile .v@320": {"margin-top": "29px"},
+    ".tile .v@390": {"margin-top": "29px"},
     ".card.need@320": {"height": "180.188px"},
     ".need .t@320": {"width": "236px"},
     ".need small@320": {"width": "236px", "height": "52px"},
