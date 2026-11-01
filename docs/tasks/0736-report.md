@@ -181,3 +181,39 @@ Done: step 1. Left: step 2 (premise does not match the templates, see Questions)
 
 ### Owner steps left
 - None. No push, no PR.
+
+## Run 7 (section 17: item 1, then section 13)
+
+Status: blocked
+Done: step 1 (section 17 item 1). Step 2 (section 13) partly done. Left: setup checklist test, button heights, field-button pairs (see Deviations).
+
+### Step 1: review_fixes guest copy button (commit d4e3d3c)
+- `App/tests/test_onboarding_wizard_browser.py:995` now asserts `section.guest-card [data-copy='property-guest-url']` count >= 1. This resolves the run 6 question: the guest card copy button is the check.
+- Tests: `tests/test_onboarding_wizard_browser.py -k "review_fixes"` ran the whole file because the second `-k "not webkit"` overrode it: `85 passed in 142.90s`, no skips (`-rfs` printed none).
+
+### Step 2: section 13 (commit c7228b4, partial)
+- `App/app/templates/_property_editor.html:143`: the "Preview as a guest" link now has classes `btn sm ghost` instead of `ui-btn ui-btn-quiet ui-btn-compact`. Its height went from 24 px to 36 px. The Copy button is 48 px, so the heights still differ.
+- `App/tests/design_guard.js` (field-button pairing, line ~88): skips elements inside a `position: fixed` or `sticky` ancestor. This removes the false pairs `button.nav "Log out"` and `button.btn "Save changes"` against `input#own_name`.
+- Tests: `tests/test_design_guardrails_browser.py -k "passes_the_layout_guard or setup_checklist"`: `2 failed, 9 deselected in 39.45s`.
+  - `test_every_host_page_passes_the_layout_guard` still fails. Remaining real findings are listed in Deviations.
+  - `test_setup_checklist_is_a_padded_card` fails with `only 0 cards carry a health dot`.
+
+### Deviations (step 2, not done)
+- Setup checklist (`test_design_guardrails_browser.py:325`): the brief says to count `aside.preview .pv .r .dot`. The overview rows (`_property_editor.html` lines 435 to 445) have no `.dot`. The only `.dot` spans are the `summary` markers of the `details.prop-sec` sections. Not changed: this needs an owner or orchestrator decision on what counts as a health dot (for example `aside.preview .pv .r` with `.pv-state` or `data-state`).
+- Button heights: the Copy button (48 px) and the Preview link (36 px) differ. The Copy button's copied-label slot seems to set the height. Not changed.
+- Field-button pairs still reported at 1280 (real, not fixed):
+  - `button "Generate a new PIN"` vs `select#stay_fee_cadence` (-22 px)
+  - `button "Add signature"` vs `input#stay_fee_authority_databox` (-20 px)
+  - `button "Add signature"` vs `input#stay_fee_authority_name` (10 px)
+  - `button "Add signature"` vs `input#permalink_window_days` (18 px)
+  - `a.btn.sm.ghost "Preview as a guest"` vs `input#uby_ws_password` (2 px)
+  - `button "Generate a new link"` vs `input#addr_zip` (11 px)
+  - `select#checkout_hour` vs `button.btn.sm.ghost "Copy"` (5 px)
+- Steps 7, 8, section 6 and the screenshots are run 8, as the brief says.
+
+### Questions
+1. Setup checklist: which element is the health dot on the v2 overview? Or should the test count the `.pv .r` rows instead?
+2. Are the real field-button pairs above layout bugs to fix (the stay-fee and guest-link rows), or should the guard tolerate them?
+
+### Owner steps left
+- None. No push, no PR.
