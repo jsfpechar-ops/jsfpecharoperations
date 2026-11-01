@@ -83,3 +83,22 @@ tbody tr .btn.sm.ghost{opacity:0;transition:opacity .15s}tbody tr:hover .btn.sm.
   .side .side-nav{flex-direction:row;flex:none;align-items:center}
   .side .side-bottom{margin-top:0}
 }
+/* 0707 polish: browser defaults off in the v2 shell */
+body.v2 a{color:inherit;text-decoration:none}
+body.v2 .quiet a,body.v2 a.quiet{color:var(--ink3);text-decoration:none}
+body.v2 .quiet a:hover,body.v2 a.quiet:hover{text-decoration:underline}
+body.v2 a.btn{color:#fff}
+body.v2 a.btn.ghost{color:var(--ink)}
+body.v2 .skip-link{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
+body.v2 .skip-link:focus{left:8px;top:8px;width:auto;height:auto;overflow:visible;background:#fff;color:var(--ink);padding:8px 12px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.08);z-index:100}
+body.v2 .env-banner{background:var(--warns);color:var(--warn);border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:16px}
+body.v2 .ui-tabbar,body.v2 .havel-fab{display:none}
+body.v2 form[action="/demo/reset"] button{background:none;border:0;padding:0;box-shadow:none;font:inherit;font-size:13px;color:var(--ink3);text-decoration:none;cursor:pointer}
+body.v2 form[action="/demo/reset"] button:hover{text-decoration:underline}
+body.v2 .row-menu{position:relative;display:inline-block}
+body.v2 .row-menu-trigger{border:0;background:none;box-shadow:none;color:var(--ink3);letter-spacing:.1em}
+body.v2 .row-menu-panel{position:absolute;right:0;top:100%;z-index:20;min-width:200px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.08);padding:6px}
+body.v2 .row-menu-panel[hidden]{display:none}
+body.v2 .row-menu-item{display:block;font:inherit;font-size:13px;width:100%;text-align:left;padding:8px 12px;border:0;border-radius:6px;background:none;color:var(--ink);cursor:pointer;text-decoration:none}
+body.v2 .row-menu-item:hover{background:#f6f6f4}
+body.v2 .row-menu-panel.is-open{position:fixed}
