@@ -317,3 +317,25 @@ Status: review
 
 ### Owner steps left
 - Review the PR; no push done by the executor.
+
+## Run 11 (item 7, executor)
+
+Status: blocked
+
+Files: `App/tests/test_0541_property_page_phone_browser.py` (new test `test_0547_phone_property_switch_invalid_field_calendar_and_return`; seeds one ttlock door-code lock on the first property and cleans it up).
+
+Commands:
+- `cd App && .venv/bin/python -m pytest tests/test_0541_property_page_phone_browser.py -k "not webkit" -q --tb=short -rs -p no:cacheprovider`: `1 failed, 1 passed in 7.20s`
+- `ruff check` on that file: `All checks passed!`
+
+Asserts:
+- switch status text changes to "Not saved yet" on toggle and returns on toggle back: passes (text_content().strip()).
+- invalid required field (`#permalink_pin`, in closed `#sec-messages`) opens that section on submit: passes. On a phone the save bar is display:none unless a `details.prop-sec` is open, so the test opens `#sec-basics` first.
+- `?add_calendar=1` shows `#calendar-connect` without `is-collapsed`: passes.
+- after save from opened `#sec-lock`, URL has `section=lock`: FAILS. The URL after save is `/apartments/2?lang=en`.
+
+Deviations: Done: steps 1 to 1 (item 7, three of four asserts). Left: the save-return assert. Not known whether the save redirect ignores the section (app behaviour) or the save did not submit (test). The brief said `test_door_code_window_browser.py` seeds a lock; it does not, so the seed copies the host fixture in `test_property_navigation_browser.py`.
+
+Questions: is the save return to `section=lock` expected for a save with no changes? Test mistake or app behaviour: needs an orchestrator decision.
+Screenshots: none (test-only change). PNG tests: not touched.
+Not pushed.
