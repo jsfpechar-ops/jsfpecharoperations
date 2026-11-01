@@ -22,7 +22,16 @@ def clean():
     _cleanup()
 
 
-def _seed(*, lock=False, fee=False, feed_status=None, auth_alert=False) -> None:
+COMPLETE_UBY = {
+    "uby_idub": "123456789012",
+    "uby_mark": "AAKLI",
+    "uby_name": "Vinohrady Flat",
+    "uby_ws_user": "uby-ws1a2b3c",
+    "uby_ws_password_enc": db.encrypt_secret("ws-secret"),
+}
+
+
+def _seed(*, lock=False, fee=False, feed_status=None, auth_alert=False, police=False) -> None:
     auth.create_account(f"{USERNAME}@example.test", "Properties Host", username=USERNAME)
     owner_id = db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))["id"]
     entity_id = db.insert(
@@ -42,6 +51,7 @@ def _seed(*, lock=False, fee=False, feed_status=None, auth_alert=False) -> None:
             "submit_after_hours": 24, "active": 1, "created_at": db.utcnow(),
             "lock_id": "lock-0530" if lock else None,
             "stay_fee_rate_czk": 50 if fee else 0,
+            **(COMPLETE_UBY if police else {}),
         },
     )
     if feed_status is not None:
@@ -97,6 +107,11 @@ def test_configured_property_shows_done_chips(clean):
     assert chips["lock"][0] == "ok"
     assert chips["fee"][0] == "ok"
     assert chips["lock"][1].endswith("#door-code")
+
+
+def test_complete_ubyport_and_address_mark_police_done(clean):
+    chips = _chips(_page(police=True))
+    assert chips["police"][0] == "ok"
 
 
 def test_open_auth_alert_marks_police_missing(clean):
