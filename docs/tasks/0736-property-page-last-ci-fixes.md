@@ -98,3 +98,9 @@ The guard (`App/tests/design_guard.js` 4 and 4b) flags two controls that share a
 2. Fix by the cause you see: if the common ancestor is a 2-column field grid, make the child that holds the button span `grid-column:1/-1`; if it is a flex row (`.copyrow`), use `align-items:center` and zero the vertical margins of its children. If the two controls are in different sections that happen to sit side by side, say so and stop.
 3. Run `tests/test_design_guardrails_browser.py -k passes_the_layout_guard` and 0710 `property` at 1280 and 1440. Key bump, `--write`.
 Items 7, 8, section 6 and the screenshots are run 10.
+
+## 20. Run 10 scope (after run 9)
+1. Orchestrator decision: a field and a button in two different panels that sit side by side are not "one row of controls"; the guard should not pair them. In `App/tests/design_guard.js` 4b, add one line: skip the pair when `a.closest('section,fieldset,.card,.panel')` and `b.closest(...)` are different elements (both non-null). Keep the comment short. Run the layout guard test; it must pass. If any pair is left inside one panel, fix it the run-9 way.
+2. Item 8 (design_lint), then section 6 in full (ruff, design_lint, context_lint and the listed tests).
+3. Screenshots: `docs/tasks/screenshots-0736/property-390.png` and `property-1280.png` (`?lang=cs`, the property page) and `list-390.png`, `list-1280.png` (`/apartments`), with the temp-test method from the 0539/0541 reports. Look at them; say if anything looks broken.
+Item 7 is run 11.
