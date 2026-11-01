@@ -976,9 +976,12 @@
       });
     }
     document.querySelectorAll("[data-open-details]").forEach(function (link) {
+      if (!claimNode(link, "initDetailsLinks")) return;
       link.addEventListener("click", function () { openTarget(link.hash); });
     });
-    window.addEventListener("hashchange", function () { openTarget(window.location.hash); });
+    if (claimNode(window, "initDetailsLinks")) {
+      window.addEventListener("hashchange", function () { openTarget(window.location.hash); });
+    }
     openTarget(window.location.hash);
   }
 
@@ -1902,6 +1905,7 @@
     // request died on the UNIQUE index with a 500. The uid is collision proof
     // now; this is the visible half of the fix, so a click has one effect.
     document.querySelectorAll(".action-panel form").forEach(function (form) {
+      if (!claimNode(form, "initSubmitGuard")) return;
       form.addEventListener("submit", function (event) {
         // A confirm dialog or a fetch handler owns this submit and may hand it
         // back, so never disable a button for a submission that did not start.
@@ -1914,12 +1918,14 @@
     });
     // Coming back with the browser's back button restores the button's own
     // disabled state, so clear ours on every restore.
-    window.addEventListener("pageshow", function () {
-      document.querySelectorAll("[data-submit-guard]").forEach(function (button) {
-        button.disabled = false;
-        button.removeAttribute("data-submit-guard");
+    if (claimNode(window, "initSubmitGuard")) {
+      window.addEventListener("pageshow", function () {
+        document.querySelectorAll("[data-submit-guard]").forEach(function (button) {
+          button.disabled = false;
+          button.removeAttribute("data-submit-guard");
+        });
       });
-    });
+    }
   }
 
   /* 0093 help: contextual "?" tips (macro help_tip). Hover/focus/tap open, Esc and outside click close. */
