@@ -312,5 +312,5 @@ body.v2 .cleaning-page #calendar-title{font-size:16px;font-weight:700}
 
 /* 0546 phone layout: /cleaning is the phone mockup's Uklid screen below 1024 px */
 body.v2 .cleaning-phone{display:none}
-@media (max-width:1023px){body.v2 .cleaning-phone{display:block}body.v2 .top.cleaning-phone{display:flex}body.v2 .actbar.cleaning-phone{display:flex}body.v2 .cleaning-desk,body.v2 .cleaning-head .btn,body.v2 .cleaning-head .ov-links{display:none}body.v2 .cleaning-today b{display:block;font-size:18px}body.v2 .cleaning-meta{color:var(--ink3);font-size:14px}body.v2 .cleaning-pillrow{margin-top:10px}body.v2 .cleaning-page{padding-bottom:96px}body.v2 .cleaning-desk-only{display:none}}
+@media (max-width:1023px){body.v2 .cleaning-phone{display:block}body.v2 .top.cleaning-phone{display:flex}body.v2 .actbar.cleaning-phone{display:flex}body.v2 .cleaning-desk,body.v2 .cleaning-head .btn,body.v2 .cleaning-head .ov-links{display:none}body.v2 .cleaning-today b{display:block;font-size:18px}body.v2 .cleaning-meta{color:var(--ink3);font-size:14px}body.v2 .cleaning-pillrow{margin-top:10px}body.v2 .cleaning-page{padding-bottom:96px}body.v2 .cleaning-desk-only{display:none}body.v2 .cleaning-head h1:after{display:none}}
 @media (max-width:767px){body.v2 .cleaning-page .cleaning-legend,body.v2 .cleaning-page #calendar{display:none}}
