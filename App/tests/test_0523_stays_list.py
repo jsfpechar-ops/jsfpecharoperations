@@ -1,0 +1,171 @@
+"""0523: the stays list columns, the guest name, the deadline badge, the payment preselect and the housebook link."""
+from __future__ import annotations
+
+import re
+
+from fastapi.testclient import TestClient
+
+from app import auth, db
+from app.main import app
+from tests.conftest import login_as
+from tests.test_signed_in_chrome import USERNAME, empty_host, host_with_property  # noqa: F401
+
+_OTHER = "0523-other-owner"
+
+
+def _owner_id() -> int:
+    return db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))["id"]
+
+
+def _apartment_id() -> int:
+    return db.query_one(
+        "SELECT id FROM apartment WHERE owner_user_id = ? AND internal_name = ?",
+        (_owner_id(), "Chrome Flat"),
+    )["id"]
+
+
+def _reservation(apartment_id: int, uid: str, date_from: str, date_to: str, status: str = "active") -> int:
+    return db.insert(
+        "reservation",
+        {
+            "apartment_id": apartment_id,
+            "source": "manual",
+            "uid": uid,
+            "date_from": date_from,
+            "date_to": date_to,
+            "status": status,
+            "created_at": db.utcnow(),
+            "updated_at": db.utcnow(),
+        },
+    )
+
+
+def _guest(reservation_id: int, first_name: str, surname: str) -> None:
+    now = db.utcnow()
+    db.insert(
+        "guest",
+        {
+            "reservation_id": reservation_id,
+            "is_lead": 1,
+            "first_name": first_name,
+            "surname": surname,
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+
+
+def _clean_other_owner() -> None:
+    row = db.query_one("SELECT id FROM user_account WHERE username = ?", (_OTHER,))
+    if not row:
+        return
+    owner_id = row["id"]
+    db.execute("DELETE FROM reservation WHERE apartment_id IN (SELECT id FROM apartment WHERE owner_user_id = ?)", (owner_id,))
+    db.execute("DELETE FROM apartment WHERE owner_user_id = ?", (owner_id,))
+    db.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (owner_id,))
+    db.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
+
+
+def _header_classes(page: str) -> list[str]:
+    thead = page[page.index("<thead>") : page.index("</thead>")]
+    return re.findall(r'<th class="(stay-col-[a-z]+)"', thead)
+
+
+def _row(page: str, reservation_id: int) -> str:
+    start = page.index(f"/reservations/{reservation_id}?return_to=")
+    start = page.rfind("<tr", 0, start)
+    return page[start : page.index("</tr>", start)]
+
+
+def test_the_headers_are_in_order_guest_property_arrival_departure_reporting(host_with_property):
+    stay = _reservation(_apartment_id(), "0523-order", "2026-09-20", "2026-09-22")
+    _guest(stay, "Sofia", "Costa")
+    page = host_with_property.get("/reservations?range=all&lang=en").text
+    assert _header_classes(page) == [
+        "stay-col-stay",
+        "stay-col-property",
+        "stay-col-dates",
+        "stay-col-departure",
+        "stay-col-reporting",
+        "stay-col-pay",
+        "stay-col-actions",
+    ]
+    thead = page[page.index("<thead>") : page.index("</thead>")]
+    assert [x.strip() for x in re.findall(r"<th\s[^>]*>(?:<span[^>]*>)?([^<]*)", thead)][:5] == [
+        "Guest",
+        "Property",
+        "Arrival",
+        "Departure",
+        "Reporting",
+    ]
+
+
+def test_a_row_shows_the_lead_guest_and_the_property_column(host_with_property):
+    stay = _reservation(_apartment_id(), "0523-lead", "2026-09-20", "2026-09-22")
+    _guest(stay, "Sofia", "Costa")
+    page = host_with_property.get("/reservations?range=all&lang=en").text
+    row = _row(page, stay)
+    assert "Sofia Costa" in row
+    assert re.search(r'<td class="stay-col-property"[^>]*>\s*Chrome Flat\s*</td>', row)
+
+
+def test_a_stay_without_guests_shows_the_no_name_text(host_with_property):
+    stay = _reservation(_apartment_id(), "0523-noname", "2026-10-03", "2026-10-05")
+    page = host_with_property.get("/reservations?range=all&lang=en").text
+    assert "No name yet" in _row(page, stay)
+
+
+def test_an_active_stay_still_shows_the_deadline_badge(host_with_property):
+    stay = _reservation(_apartment_id(), "0523-deadline", "2026-10-10", "2026-10-12")
+    page = host_with_property.get("/reservations?range=all&lang=en").text
+    assert "stay-report-deadline" in _row(page, stay)
+
+
+def test_the_payment_link_preselects_the_stay(host_with_property):
+    stay = _reservation(_apartment_id(), "0523-pay", "2026-10-20", "2026-10-22")
+    page = host_with_property.get("/reservations?range=all&lang=en").text
+    assert f'href="/payments?reservation_id={stay}#new-request"' in _row(page, stay)
+
+    payments = host_with_property.get(f"/payments?reservation_id={stay}&lang=en").text
+    assert re.search(rf'<option value="{stay}"\s+selected>', payments)
+
+
+def test_another_owners_stay_preselects_nothing(host_with_property):
+    _clean_other_owner()
+    try:
+        other_id = auth.create_account(f"{_OTHER}@example.test", "Other Host", role="host", username=_OTHER)
+        entity = db.insert(
+            "legal_entity",
+            {"name": "Other entity", "owner_user_id": other_id, "created_at": db.utcnow()},
+        )
+        other_apartment = db.insert(
+            "apartment",
+            {
+                "legal_entity_id": entity,
+                "owner_user_id": other_id,
+                "internal_name": "Other flat",
+                "permalink_token": "0523-other-flat",
+                "permalink_pin": "1234",
+                "automation_mode": "manual",
+                "submit_after_hours": 24,
+                "permalink_window_days": 3,
+                "default_purpose": "10",
+                "active": 1,
+                "created_at": db.utcnow(),
+            },
+        )
+        foreign = _reservation(other_apartment, "0523-foreign", "2026-10-25", "2026-10-26")
+        payments = host_with_property.get(f"/payments?reservation_id={foreign}&lang=en").text
+        assert not re.search(rf'<option value="{foreign}"[^>]*selected', payments)
+        assert "selected" not in payments.split('name="reservation_id"', 1)[1].split("</select>", 1)[0]
+        # A non-numeric value is ignored too.
+        odd = host_with_property.get("/payments?reservation_id=abc&lang=en").text
+        assert "selected" not in odd.split('name="reservation_id"', 1)[1].split("</select>", 1)[0]
+    finally:
+        _clean_other_owner()
+
+
+def test_the_header_housebook_link_points_at_the_csv(host_with_property):
+    _reservation(_apartment_id(), "0523-housebook", "2026-10-28", "2026-10-29")
+    page = host_with_property.get("/reservations?range=all&lang=en").text
+    assert re.search(r'<a [^>]*href="/housebook\.csv\?[^"]*"[^>]*data-stays-housebook', page)
