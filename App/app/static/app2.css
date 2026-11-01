@@ -310,5 +310,30 @@ body.v2 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;ov
 .host-stay-detail .crumb a{display:inline-block;min-height:24px;line-height:24px}
 .host-stay-detail [data-copy]{position:relative}
 .host-stay-detail details:not([open])>:not(summary){display:none}
-.host-stay-detail{overflow-x:clip}
 @media (max-width:1023px){body.v2 .host-stay-detail .help-tip-btn{min-width:44px}}
+/* 0529: copy confirmation badge (shared; was scoped to .host-workspace only) */
+body.v2 [data-copy]{position:relative}
+body.v2 [data-copy-state-icon] {
+  position: absolute;
+  z-index: 1;
+  top: 2px;
+  right: 2px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #ef6b58;
+  color: #fff;
+  opacity: 0;
+  transform: scale(.72);
+  transition: opacity .14s ease, transform .14s ease;
+  pointer-events: none;
+}
+body.v2 [data-copy-state-icon] svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 20; stroke-dashoffset: 20; }
+body.v2 [data-copy].copied [data-copy-state-icon] { opacity: 1; transform: scale(1); }
+body.v2 [data-copy].copied [data-copy-state-icon] svg { animation: host-copy-check .3s ease forwards; }
+body.v2 [data-copy].copied { color: #bf4f40; border-color: #ef6b58; }
+@media (prefers-reduced-motion: reduce){body.v2 [data-copy-state-icon],body.v2 [data-copy-state-icon] svg{animation:none !important;transition:none !important}}
+@keyframes host-copy-check{to{stroke-dashoffset:0}}
