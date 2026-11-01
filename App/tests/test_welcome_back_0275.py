@@ -1,7 +1,6 @@
 """0275: the welcome-back line after 14 days away (dates only)."""
 from __future__ import annotations
 
-import re
 from datetime import date, timedelta
 
 from app import db, welcome_back

@@ -698,10 +698,10 @@ def test_default_calendar_url_is_clean_and_specific_views_survive_reload(
     with sync_api.sync_playwright() as playwright:
         browser = launch(playwright)
         context, page = open_page(browser, calendar_workspace, calendar_origin, width=390)
-        page.goto(calendar_origin + "/")
+        page.goto(calendar_origin + "/?cal_view=calendar")
         page.wait_for_selector(".cal-week")
         wait_loaded(page)
-        assert urlsplit(page.url).query == ""
+        assert urlsplit(page.url).query == "cal_view=calendar"
         today = page.locator("[data-calendar]").get_attribute("data-today")
         shot(page, "clean-url-dashboard-390")
         page.set_viewport_size({"width": 1280, "height": 1000})

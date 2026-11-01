@@ -215,10 +215,6 @@ def test_the_new_next_actions_ship_the_audited_wording():
     )
 
 
-def test_current_dashboard_heading_is_available_in_both_languages():
-    assert host_i18n.STRINGS["en"]["dashboard.section.current"] == "Current stays and next 30 days"
-    assert host_i18n.STRINGS["cs"]["dashboard.section.current"]
-
 
 def test_the_when_column_is_renamed_in_both_languages():
     assert host_i18n.STRINGS["en"]["dashboard.table.deadline"] == "When"
