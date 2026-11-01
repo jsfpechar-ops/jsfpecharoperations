@@ -25,6 +25,8 @@ Status: review (committed locally on claude/project-thread-dwlrdj, not pushed)
 - Stored values are strings; a Python int 0 for legal_entity_id would be truthy in Go. Golden uses strings only.
 - Venv created at App/.venv (git-ignored) with requirements.txt.
 
+- Follow-up (orchestrator decision): countries.json moved to `go/internal/countries/` with `countries.Name`; ubyport.CountryName delegates to it; validation imports `countries`, not `ubyport`, so no cycle when 0558 lands.
+
 ## Questions (stop-and-ask)
 1. Country membership (nationality, res_country) uses `ubyport.CountryName(code, "en") != code`, which imports `go/internal/ubyport` from the new package. go:embed cannot reach countries.json from a sibling package, and copying the file is forbidden. Owner decision needed: accept this import (risk: a future ubyport -> validation import would be a cycle), or move countries.json into a shared package.
 

@@ -31,7 +31,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/countries"
 )
 
 // Issue is validation.Issue: Severity is "error" (blocks submission) or "warning".
@@ -151,11 +151,10 @@ func pyIsDigit(s string) bool {
 	return true
 }
 
-// knownCountry reports whether code is in countries.json. The list is the one
-// embedded by ubyport (go:embed cannot reach a sibling package), read through
-// CountryName, which returns the code unchanged when it is unknown.
+// knownCountry reports whether code is in countries.json. The list is
+// internal/countries, read through Name, which returns the code unchanged when it is unknown.
 func knownCountry(code string) bool {
-	return code != "" && ubyport.CountryName(code, "en") != code
+	return code != "" && countries.Name(code, "en") != code
 }
 
 // roundTrip builds a UTC date and reports whether it is a real calendar date.
