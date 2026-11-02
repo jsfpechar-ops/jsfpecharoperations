@@ -134,6 +134,7 @@ PAGES = [
     },
     {"name": "cleaning", "path": "/cleaning", "view": "clean", "selectors": [".side .nav.on", ".head h1", ".head .sub", ".head .btn", "main h2", "main .card", "main table th", "main table td"], "phone_mockup": PHONE_MOCKUP_V2, "phone_view": "uklid",
         "phone_box_skip": {
+            ".hs .pill.p-ok": (["width"], "same label; CI's Manrope renders it 101 px, the mockup's font 98.75 px"),
             ".kind": (["width"], "today's cleaning window text comes from the fixture"),
             ".nm": (["width"], "shrink-to-fit width follows the fixture's property name"),
             ".meta": (["width"], "shrink-to-fit width follows the fixture's next check-in text"),
