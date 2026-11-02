@@ -48,6 +48,7 @@ SELECTOR_OVERRIDES = {
     ".guest-card": {"border-top-left-radius": "12px", "border-bottom-color": "rgb(229, 229, 229)"},
     ".stay-dates": {"border-top-left-radius": "12px", "padding-top": "16px", "padding-right": "20px", "padding-bottom": "16px", "padding-left": "20px", "border-bottom-color": "rgb(229, 229, 229)"},
     # PR #725: Airbnb redesign, per page (the same selector differs between mockup views)
+    "stay_fees:main .card": {"padding-top": "16px", "padding-right": "16px", "padding-bottom": "16px", "padding-left": "16px"},  # PR #725: Airbnb card padding
     "stay:main .card": {"padding-top": "16px", "padding-right": "20px", "padding-bottom": "16px", "padding-left": "20px", "border-bottom-color": "rgb(229, 229, 229)"},
     "properties:main table th": {"padding-left": "16px"},
     "properties:main table td": {"padding-left": "16px", "border-bottom-color": "rgb(229, 229, 229)"},
@@ -83,7 +84,10 @@ BOX_OVERRIDES = {
     "housebook:.mh .big, .head h1@390": {"width": "167.469px"},
     "housebook:.stay .in b@320": {"width": "119.422px"},
     "housebook:.stay .in b@390": {"width": "119.422px"},
-    "housebook:.stay .in small@390": {"width": "210px"},
+    "housebook:.card.stay@320": {"height": "135.984px"},
+    "housebook:.card.stay@390": {"height": "116.984px"},
+    "housebook:.stay .in small@320": {"height": "57px"},
+    "housebook:.stay .in small@390": {"width": "208px", "height": "38px"},  # PR #725: the housebook row text wraps
     # text-dependent: app copy vs phone v2 mockup demo copy (0740)
     ".prop .in b@320": {"width": "93.0469px"},
     ".prop .in b@390": {"width": "93.0469px"},

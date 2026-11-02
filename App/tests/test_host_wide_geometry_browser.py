@@ -832,8 +832,8 @@ def test_collapsed_sidebar_keeps_dashboard_and_stays_lanes_aligned(wide_host, wi
             }])
             page = context.new_page()
             for key, path, selector in (
-                # 0720c: v2 `/` has no sidebar collapse button; the collapse case runs on /invoices (old shell, 0785a).
-                ("invoices", "/invoices", ".ui-table-wrap, .ui-empty"),
+                # 0720c/0852: /guide is the old shell with a collapse button; it has no centred lane, so only overflow is checked there.
+                ("guide", "/guide", "main"),
                 ("stays", "/reservations", ".stays-desk"),
             ):
                 response = page.goto(f"{wide_base}{path}?lang={lang}")
@@ -858,6 +858,8 @@ def test_collapsed_sidebar_keeps_dashboard_and_stays_lanes_aligned(wide_host, wi
                         page.evaluate("window.scrollTo(0, 0)")
                 geometry = _capture_geometry(page, selector)
                 assert geometry["viewport"]["scrollWidth"] <= 1920, geometry["viewport"]
+                if key == "guide":
+                    continue
                 for edge in ("left", "right"):
                     assert abs(geometry["pageHeader"][edge] - geometry["result"][edge]) <= 2, geometry
                 assert abs(geometry["title"]["left"] - geometry["result"]["left"]) <= 2, geometry
@@ -965,8 +967,8 @@ def _rail_context(browser, wide_host, wide_base, width, collapsed, **options):
     return context
 
 
-# 0720c: the rail cases run on /invoices (old shell, no `v2` set, 0785a); v2 `/` has no `button[data-sidebar-collapse]`.
-def _rail_page(context, wide_base, path="/invoices"):
+# 0720c: the rail cases run on /guide (old shell, no `v2` set, 0785a); v2 `/` has no `button[data-sidebar-collapse]`.
+def _rail_page(context, wide_base, path="/guide"):
     page = context.new_page()
     response = page.goto(f"{wide_base}{path}")
     assert response and response.status == 200
