@@ -108,8 +108,7 @@ def _order(html: str, *ids: str) -> list[int]:
 
 def test_list_has_status_column_and_open_report_link(fee_host):
     page = fee_host["client"].get(f"/stay-fees?month={MONTH}").text
-    assert 'id="fee-list-summary"' in page
-    assert "2 of 3 properties set up" in page
+    assert 'id="fee-list-summary"' not in page
     assert f'href="/stay-fees/{fee_host["full"]}?month={MONTH}"' in page
     assert "Open report" in page
     # Not set up shows a state and an action instead of blank totals; setup stays one
