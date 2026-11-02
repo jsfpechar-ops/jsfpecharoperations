@@ -392,6 +392,8 @@
     "set-row-v",
     "settings-action-row",
     "settings-move-form",
+    "settings-help-line",
+    "settings-toggle-form",
     "pr-lane",
     "entity-form",
     "entity-add",
