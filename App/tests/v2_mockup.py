@@ -8,6 +8,7 @@ MOCKUP = Path(__file__).resolve().parents[2] / "docs/design/mockup/ubyhost-redes
 WIDTHS = (320, 390, 768, 1024, 1280, 1440)
 DESKTOP = 1024  # box-layout checks only at widths >= DESKTOP; the phone mockup is not approved yet
 PHONE_MOCKUP = Path(__file__).resolve().parents[2] / "docs/design/mockup/ubyhost-phone-v1.html"
+PHONE_MOCKUP_V2 = Path(__file__).resolve().parents[2] / "docs/design/mockup/ubyhost-phone-v2.html"
 PHONE_WIDTHS = (320, 390)
 
 STYLE_PROPS = (
@@ -52,46 +53,41 @@ SELECTOR_ALIASES = {".actbar": ".bar", ".actbar .btn": ".bar .btn", ".head h1": 
 BOX_PROPS = ("width", "height", "margin-top", "margin-right", "margin-bottom", "margin-left")
 # phone box departure: the 20 px side room comes from body.v2 .main padding, so phone cards have no side margin (2026-11-01)
 BOX_OVERRIDES = {
-    # the pill width follows its status label text, which differs from the mockup demo copy (0724)
-    ".hs .pill@320": {"width": "143px"},
-    ".hs .pill@390": {"width": "143px"},
-    ".card.me": {"margin-left": "0px", "margin-right": "0px"},
+    # text-dependent: fixture copy vs phone v2 mockup demo copy (0729)
+    # text-dependent: app copy vs phone v2 mockup demo copy (0735)
+    ".mh .big@320": {"width": "79.3594px"},
+    ".mh .big@390": {"width": "79.3594px"},
+    ".promo@390": {"height": "80px"},
+    ".tile .v@320": {"margin-top": "29px"},
+    ".tile .v@390": {"margin-top": "29px"},
+    ".card.need@320": {"height": "180.188px"},
+    ".need .t@320": {"width": "236px"},
+    ".need small@320": {"width": "236px", "height": "52px"},
+    ".hs .pill@320": {"width": "141.359px"},
+    ".kind@320": {"width": "64.5625px"},
+    ".nm@320": {"width": "125.5px"},
+    ".meta@320": {"width": "125.5px"},
+    ".hl@390": {"height": "69px"},
+    ".card.need@390": {"height": "180.188px"},
+    ".need .t@390": {"width": "306px"},
+    ".need small@390": {"width": "306px", "height": "52px"},
+    ".hs .pill@390": {"width": "141.359px"},
+    ".kind@390": {"width": "64.5625px"},
+    ".nm@390": {"width": "125.5px"},
+    ".meta@390": {"width": "125.5px"},
     ".big, .head h1": {"margin-left": "0px", "margin-right": "0px"},
+    ".big": {"margin-left": "0px", "margin-right": "0px"},
+    "h2.sec": {"margin-left": "0px", "margin-right": "0px"},
     ".card.prop": {"margin-left": "0px", "margin-right": "0px"},
     # owner 2026-11-01 19:09: smaller pills than the phone mockup (one line at 390 px)
     ".card.prop .st.g": {"height": "23px"},
     ".card.prop .st.r": {"height": "23px"},
-    ".big":{"margin-left": "0px", "margin-right": "0px"},
-    "h2.sec": {"margin-left": "0px", "margin-right": "0px"},
-    ".card.need": {"margin-left": "0px", "margin-right": "0px"},
-    ".head .sub": {"margin-left": "0px", "margin-right": "0px"},
-    # the mockup name wraps at 320 px; the app keeps it on one line with ellipsis (0719 brief, left over from 0718)
-    ".card.me@320": {"height": "98px"},
-    ".head h1": {"margin-left": "0px", "margin-right": "0px"},
-    # the fixture needs-you and stay cards have longer titles and a different line count than the mockup demo copy (0719); heights are per width
-    # text-dependent: fixture copy vs mockup demo copy (0722 short problem lines)
-    ".card.need@320": {"height": "165.094px"},
-    ".need b@320": {"height": "22.0938px"},
-    ".need small@320": {"height": "38px"},
-    # a lone stay card fills the row (owner 20:02); the mockup shows several cards at 272 px
-    ".hs .card@320": {"height": "152px", "width": "280px"},
-    ".kind@320": {"width": "242px"},
-    ".nm@320": {"width": "182px"},
-    ".meta@320": {"height": "19px", "width": "182px"},
-    # text-dependent: fixture copy vs mockup demo copy (0722 short problem lines)
-    ".card.need@390": {"height": "150px"},
-    ".need b@390": {"height": "22.0938px"},
-    ".need small@390": {"height": "19px"},
-    ".hs .card@390": {"height": "152px", "width": "350px"},
-    ".kind@390": {"width": "312px"},
-    ".nm@390": {"width": "252px"},
-    ".meta@390": {"height": "19px", "width": "252px"},
     # cleaning phone (0549b): main padding replaces side margins (0719); heights and pill width follow the English fixture copy; the fixture has no cleaning today, so .card is the empty today card
     ".sub": {"margin-left": "0px", "margin-right": "0px"},
     ".grp": {"margin-left": "0px", "margin-right": "0px"},
     ".card": {"margin-left": "0px", "margin-right": "0px"},
-    ".card@320": {"height": "57px"},
-    ".card@390": {"height": "57px"},
+    ".card@320": {"height": "63px"},
+    ".card@390": {"height": "63px"},
     ".list .row:has(.p-ok)@320": {"height": "102px"},
     ".list .row:has(.p-ok)@390": {"height": "102px"},
     ".row .t .pill.p-ok@320": {"width": "100.641px"},
@@ -114,9 +110,9 @@ PAGES = [
         "path": "/",
         "view": "today",
         "phone_view": "dnes",
+        "phone_mockup": PHONE_MOCKUP_V2,
         "phone_selectors": [
-            ".tabs", ".tab", ".tab.on", ".top .round", ".head h1", ".head .sub", "h2.sec",
-            ".card.need", ".need .ic", ".need b", ".need small", ".card.need .btn",
+            ".tabs", ".tab", ".tab.on", ".seg a.on", ".hl", "h2.sec", ".card.need", ".need .t", ".need small", ".card.need .btn",
             ".hs .card", ".kind", ".av", ".nm", ".meta", ".hs .pill",
         ],
         "selectors": [
@@ -130,8 +126,8 @@ PAGES = [
             "main .pill.p-ok": "tone depends on data: the demo overview has no reported stay",
             ".todo p": "the needs-you line is a small element at every width (one markup for phone and desktop, 0719)",
             ".card.need": "needs-you cards exist only while the account has an open to-do; the phone mockup shows demo cards",
-            ".need .ic": "needs-you cards exist only while the account has an open to-do; the phone mockup shows demo cards",
-            ".need b": "needs-you cards exist only while the account has an open to-do; the phone mockup shows demo cards",
+            ".need .t": "needs-you cards exist only while the account has an open to-do; the phone mockup shows demo cards",
+            "h2.sec": "the Today label shows only when a stay arrives or leaves today",
             ".need small": "needs-you cards exist only while the account has an open to-do; the phone mockup shows demo cards",
             ".card.need .btn": "needs-you cards exist only while the account has an open to-do; the phone mockup shows demo cards",
             ".hs .card": "today's stay cards exist only when a stay is due today; the phone mockup shows demo stays",
@@ -178,9 +174,10 @@ PAGES = [
         "path": "/menu",
         "view": None,  # no desktop mockup screen: the Menu page is compared at phone widths only
         "selectors": [],
+        "phone_mockup": PHONE_MOCKUP_V2,
         "phone_view": "menu",
-        "phone_selectors": [".tabs", ".tab:not(.on)", ".tab.on", ".big", ".card.me", ".list .row", ".row .t b", ".row .t small"],
-        "missing_ok": {".row .t small": "menu rows have no subtitle yet: the mockup subtitles are demo copy and no approved menu copy exists (owner decision, 0718)"},
+        "phone_selectors": [".tabs", ".tab:not(.on)", ".tab.on", ".mh .big", ".me-av", ".tile", ".tile b", ".tile small", ".tile .v", ".promo", ".promo .pi", ".promo b", ".promo small", ".list.plain .row", ".list.plain .badge", ".menu-logout"],
+        "missing_ok": {".list.plain .badge": "the Cleaning badge shows only when a cleaning is planned for today"},
     },
 ]
 
@@ -406,8 +403,8 @@ def same_value(prop: str, app: str, mock: str) -> bool:
     return fa is not None and fm is not None and abs(fa - fm) <= 1
 
 
-def phone_url() -> str:
-    return PHONE_MOCKUP.resolve().as_uri()
+def phone_url(mockup: Path = PHONE_MOCKUP) -> str:
+    return Path(mockup).resolve().as_uri()
 
 
 def show_phone_screen(page, key: str) -> None:
