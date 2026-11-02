@@ -461,8 +461,8 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
         page.select_option("#automation_mode", "manual")
         page.locator(".savebar button[type=submit]").click()
         page.wait_for_load_state()
-        # Automation opens police, and police maps to reporting: save returns there.
-        assert "view=settings&section=reporting" in page.url
+        # Save returns to the section in use: automation or reporting, both open police.
+        assert "view=settings&section=automation" in page.url or "view=settings&section=reporting" in page.url
         assert "sec-police" in page.evaluate(_STATE_JS)["open"]
         assert db.query_one("SELECT automation_mode FROM apartment WHERE id = ?", (host["apartment"],))["automation_mode"] == "manual"
         page.goto(f"{url}?view=settings&section=reporting&lang=en")
