@@ -1,8 +1,12 @@
 package calendar
 
 import (
+	"encoding/json"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 )
 
 func TestParseRange(t *testing.T) {
@@ -103,5 +107,93 @@ func TestDeadlineCell(t *testing.T) {
 	}
 	if c := deadlineCell("not_required", "", true, nil, &due, false); c.State != "none" {
 		t.Errorf("not required: %+v", c)
+	}
+}
+
+func TestUrgencyBuckets(t *testing.T) {
+	checkIn := time.Date(2026, 11, 2, 0, 0, 0, 0, time.UTC)
+	deadline := reportingDeadlineNaive(checkIn)
+	cases := []struct {
+		name string
+		now  time.Time
+		want string
+	}{
+		{"future", time.Date(2026, 11, 1, 12, 0, 0, 0, time.UTC), "future"},
+		{"urgent", deadline.Add(-1 * time.Hour), "urgent"},
+		{"soon", deadline.Add(-30 * time.Hour), "soon"},
+		{"ok", deadline.Add(-60 * time.Hour), "ok"},
+		{"overdue", deadline.Add(time.Hour), "overdue"},
+	}
+	for _, c := range cases {
+		if got := urgency(checkIn, c.now); got != c.want {
+			t.Errorf("%s: got %q want %q", c.name, got, c.want)
+		}
+	}
+}
+
+func TestAnchorDate(t *testing.T) {
+	stay := stayRow{dateFrom: "2026-11-02", dateTo: "2026-11-04"}
+	guests := []guestRow{
+		{row: validation.GuestRow{StayFrom: "2026-11-05"}},
+		{row: validation.GuestRow{StayFrom: "2026-11-03"}},
+		{row: validation.GuestRow{StayFrom: "bogus"}},
+	}
+	if got, ok := anchorDate(stay, guests); !ok || got.Format("2006-01-02") != "2026-11-03" {
+		t.Errorf("earliest guest stay_from: got %v %v", got, ok)
+	}
+	if got, ok := anchorDate(stay, nil); !ok || got.Format("2006-01-02") != "2026-11-02" {
+		t.Errorf("date_from fallback: got %v %v", got, ok)
+	}
+}
+
+func TestProgressStatuses(t *testing.T) {
+	stay := stayRow{dateFrom: "2026-11-02", dateTo: "2026-11-04"}
+	one, two := int64(1), int64(2)
+	stayWith := func(declared *int64) stayRow { s := stay; s.declared = declared; return s }
+	yes := func(guestRow) bool { return true }
+	no := func(guestRow) bool { return false }
+	sentByHand := guestRow{nationality: "DE", submitState: "sent", manualFiledAt: "2026-11-01T10:00:00", identityVerifiedAt: "x"}
+	cases := []struct {
+		name     string
+		stay     stayRow
+		guests   []guestRow
+		complete func(guestRow) bool
+		want     string
+	}{
+		{"failed", stayWith(&one), []guestRow{{nationality: "DE", submitState: "error"}}, no, "failed"},
+		{"awaiting_guest", stayWith(nil), nil, no, "awaiting_guest"},
+		{"incomplete via missing", stayWith(&two), []guestRow{{nationality: "DE", identityVerifiedAt: "x"}}, yes, "incomplete"},
+		{"incomplete via unfinished guest", stayWith(&one), []guestRow{{nationality: "DE"}}, no, "incomplete"},
+		{"awaiting_verification", stayWith(&one), []guestRow{{nationality: "DE"}}, yes, "awaiting_verification"},
+		{"ready", stayWith(&one), []guestRow{{nationality: "DE", identityVerifiedAt: "x"}}, yes, "ready"},
+		{"reported", stayWith(&one), []guestRow{sentByHand}, no, "reported"},
+		{"not_required", stayWith(&one), []guestRow{{nationality: "CZ"}}, yes, "not_required"},
+	}
+	for _, c := range cases {
+		if got := progressWith(c.stay, c.guests, c.complete).status; got != c.want {
+			t.Errorf("%s: got %q want %q", c.name, got, c.want)
+		}
+	}
+	override := int64(3)
+	s := stayWith(&one)
+	s.override = &override
+	if got := expectedCount(s); got == nil || *got != 3 {
+		t.Errorf("override wins: got %v", got)
+	}
+}
+
+func TestEventKeyOrder(t *testing.T) {
+	b, err := json.Marshal(eventOut{ID: 1, PropertyID: 2, Property: "A", URL: "/x"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	keys := []string{`"id"`, `"propertyId"`, `"property"`, `"label"`, `"start"`, `"end"`, `"displayStart"`, `"displayEnd"`, `"timingFallback"`, `"guests"`, `"complete"`, `"expected"`, `"status"`, `"tone"`, `"preview"`, `"source"`, `"url"`}
+	last := -1
+	for _, k := range keys {
+		i := strings.Index(string(b), k)
+		if i <= last {
+			t.Fatalf("key %s out of order in %s", k, b)
+		}
+		last = i
 	}
 }
