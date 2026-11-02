@@ -84,6 +84,12 @@ def _confirm(booking: Dict[str, Any], payment_intent: str) -> None:
     db.audit("site_booking_paid", f"id={booking['id']} reservation={reservation_id}",
              owner_user_id=int(booking["owner_user_id"]))
     _mail_confirmed(booking_site.get(int(booking["id"])) or booking, int(reservation_id))
+    try:  # best effort: the booking is already confirmed and mailed
+        from . import booking_invoice
+
+        booking_invoice.ensure(int(booking["id"]))
+    except Exception:
+        log.exception("site booking %s: invoice failed", booking["id"])
 
 
 def _refund_clash(booking: Dict[str, Any], payment_intent: str) -> None:
@@ -150,6 +156,8 @@ def _mail_confirmed(booking: Dict[str, Any], reservation_id: int) -> None:
     text = host_i18n.translate(lang, "site_booking.mail.guest_text", **facts)
     if link:
         text += "\n\n" + host_i18n.translate(lang, "site_booking.mail.guest_register", link=link)
+    text += "\n\n" + host_i18n.translate(
+        lang, "site_booking.mail.guest_manage", link=booking_site.manage_url(booking))
     if booking["guest_email"]:
         mail.enqueue(
             kind="site_booking_confirmed",
