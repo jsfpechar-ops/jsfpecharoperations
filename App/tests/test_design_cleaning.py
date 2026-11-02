@@ -19,6 +19,11 @@ def test_cleaning_pages_have_the_v2_shell_and_one_stylesheet(host_with_property)
         assert response.status_code == 200, path
         page = response.text
         assert page.count("<h1") == 1, path
+        if path == "/cleaning":
+            # 0542: the host cleaning page is on the v2 shell (tokens.css + app2.css only)
+            assert page.count("/static/cleaning.css") == 0 and "/static/host2.css" not in page, path
+            assert page.count('class="head cleaning-head"') == 1 and page.count('<a class="btn" href="/cleaning/shares"') == 2 and page.count('class="actbar cleaning-phone"') == 1, path
+            continue
         assert page.count("/static/cleaning.css") == 1, path
         assert page.index("/static/cleaning.css") < page.index("/static/host2.css"), path
         header = page[page.index('<header class="ui-ph"'):]
@@ -31,7 +36,8 @@ def test_cleaning_pages_have_the_v2_shell_and_one_stylesheet(host_with_property)
 def test_host_cleaning_templates_use_only_v2_buttons_and_no_own_stylesheet():
     for name in HOST_TEMPLATES:
         text = (TEMPLATES / name).read_text(encoding="utf-8")
-        assert 'class="btn' not in text and 'class="field"' not in text and "<link" not in text, name
+        # 0542: cleaning.html is the v2 page, its header button is the v2 .btn
+        assert (name == "cleaning.html" or 'class="btn' not in text) and 'class="field"' not in text and "<link" not in text, name
 
 
 def test_other_host_pages_do_not_load_cleaning_css(host_with_property):
