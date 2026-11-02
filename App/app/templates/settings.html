@@ -437,10 +437,11 @@
     <details class="ui-section technical" open id="settings-audit">
       <summary>{{ t('settings.nav.audit') }}</summary>
             <h2>{{ t('settings.audit.recent', count=audit_count) }}</h2>
-      <div class="host-audit-filters" data-audit-filter role="group" aria-label="{{ t('settings.audit.filter_label') }}">
-        <a class="host-audit-filter {{ 'is-active' if not audit_filter }}" href="/settings/technical#settings-audit" {% if not audit_filter %}aria-current="page"{% endif %}>{{ t('settings.audit.filter_all') }}</a>
-        <a class="host-audit-filter {{ 'is-active' if audit_filter == 'support' }}" href="/settings/technical?audit=support#settings-audit" {% if audit_filter == 'support' %}aria-current="page"{% endif %}>{{ t('settings.audit.filter_support') }}</a>
-      </div>
+      {% set audit_pills = [
+        {'label': t('settings.audit.filter_all'), 'href': '/settings/technical#settings-audit', 'current': not audit_filter},
+        {'label': t('settings.audit.filter_support'), 'href': '/settings/technical?audit=support#settings-audit', 'current': audit_filter == 'support'}
+      ] %}
+      {% with pills=audit_pills, aria_label=t('settings.audit.filter_label') %}{% include "partials/settings_pills.html" %}{% endwith %}
       <div class="scroll-x">
         <table class="ui-table ui-table-stack">
           <thead><tr><th>{{ t('settings.audit.when') }}</th><th>{{ t('settings.audit.who') }}</th><th>{{ t('settings.audit.action') }}</th><th>{{ t('settings.audit.detail') }}</th></tr></thead>

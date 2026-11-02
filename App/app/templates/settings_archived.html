@@ -13,19 +13,14 @@
 {% with href='/settings', title=t('archive.title') %}{% include "partials/settings_back_header.html" %}{% endwith %}
 <div class="settings-help-line">{{ help_tip('archive-retention-help', t('archive.retention_note')) }}</div>
 
-<div class="chips archive-type-filters" role="group" aria-label="{{ t('archive.title') }}">
-  {% for value, label_key in [
-    ('all', 'archive.chip.all_count'),
-    ('stays', 'archive.chip.stays_count'),
-    ('properties', 'archive.chip.properties_count'),
-    ('housebook', 'archive.chip.housebook_count'),
-    ('entities', 'archive.chip.entities_count')
-  ] %}
-    <a class="chip ui-chip" href="/settings/archived?type={{ value }}"{% if item_type == value %} aria-current="true"{% endif %}>
-      {{ t(label_key, count=counts[value]) }}
-    </a>
-  {% endfor %}
-</div>
+{% set pills = [
+  {'label': t('archive.chip.all_count', count=counts['all']), 'href': '/settings/archived?type=all', 'current': item_type == 'all'},
+  {'label': t('archive.chip.stays_count', count=counts['stays']), 'href': '/settings/archived?type=stays', 'current': item_type == 'stays'},
+  {'label': t('archive.chip.properties_count', count=counts['properties']), 'href': '/settings/archived?type=properties', 'current': item_type == 'properties'},
+  {'label': t('archive.chip.housebook_count', count=counts['housebook']), 'href': '/settings/archived?type=housebook', 'current': item_type == 'housebook'},
+  {'label': t('archive.chip.entities_count', count=counts['entities']), 'href': '/settings/archived?type=entities', 'current': item_type == 'entities'}
+] %}
+{% with pills=pills, aria_label=t('archive.title') %}{% include "partials/settings_pills.html" %}{% endwith %}
 
 {% if counts.all == 0 %}
   <div class="ui-empty">
