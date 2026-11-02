@@ -148,7 +148,7 @@ def test_app2_phone_missing_status_uses_bad_token_not_brand():
     css = (Path(__file__).resolve().parents[1] / "app" / "static" / "app2.css").read_text(encoding="utf-8")
     rule = re.search(r"body\.v2 \.props-phone \.st\.r\{([^}]*)\}", css)
     assert rule is not None
-    assert "var(--bad)" in rule.group(1)
+    assert "var(--warn)" in rule.group(1)
     assert "var(--acc-text)" not in rule.group(1)
 
 
