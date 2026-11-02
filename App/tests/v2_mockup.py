@@ -58,9 +58,16 @@ BOX_OVERRIDES = {
     # text-dependent: app copy vs phone v2 mockup demo copy (0740)
     ".prop .in b@320": {"width": "93.0469px"},
     ".prop .in b@390": {"width": "93.0469px"},
-    # 0740: same title text as the mockup, app title box is wider (font metrics), kept as measured
-    ".big, .head h1@320": {"width": "150.547px"},
-    ".big, .head h1@390": {"width": "150.547px"},
+    # text-dependent: app PIN and permalink vs phone v2 mockup demo copy (0741)
+    ".guest-pin-value@320": {"width": "95.3125px"},
+    ".guest-pin-value@390": {"width": "95.3125px"},
+    ".guest-card .sub@320": {"height": "46px"},
+    ".guest-card .sub@390": {"height": "46px"},
+    ".guest-card@320": {"height": "299.8px"},
+    ".guest-card@390": {"height": "299.8px"},
+    # 0741: phone title is centred with the mockup's 8 px side margins; the 0px general entry is desktop only
+    ".big, .head h1@320": {"margin-left": "8px", "margin-right": "8px"},
+    ".big, .head h1@390": {"margin-left": "8px", "margin-right": "8px"},
     ".card.prop .st.r@320": {"height": "33.7812px"},
     ".promo@390": {"height": "80px"},
     ".tile .v@320": {"margin-top": "29px"},
@@ -169,12 +176,13 @@ PAGES = [
         "path": "/apartments/{first_property}",  # filled per test by _path() in test_0710 (0535)
         "view": "prop",
         "phone_view": "nemovitost",  # 0541: phone property screen (0540 section 2)
-        "phone_selectors": [".big, .head h1", "h2.sec", ".dot"],  # 0541: guest card and rows have no mockup class match yet (see 0541 report)
+        "phone_mockup": PHONE_MOCKUP_V2,  # 0741: phone v2 property page (Airbnb style)
+        "phone_selectors": [".tabs", ".tab.on", ".prop-phone-top .round", ".big, .head h1", ".prop-phone-sub", ".guest-card", ".guest-card b", ".guest-card .sub", ".guest-pin-value", ".guest-btns .btn", "h2.sec", ".prop-sec > summary", ".prop-sec summary b", ".sec-state", ".dot"],
         "selectors": [  # .guest-card (permalink card) has no mockup counterpart: not compared (0535)
             ".crumb", "main h1", "details", "summary b", "summary small",
             ".preview h3", ".pv", ".pv .r", ".savebar .btn",
         ],
-        "missing_ok": {},
+        "missing_ok": {".prop-phone-sub": "0741: the demo property has no street address, so the address line is not rendered"},
     },
     {
         "name": "menu",
