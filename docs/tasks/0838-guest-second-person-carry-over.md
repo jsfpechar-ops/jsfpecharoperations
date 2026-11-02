@@ -1,6 +1,6 @@
 # 0838: Guest form, 2nd person: carry over surname and stay dates too
 
-Status: todo
+Status: done
 Depends on: 0841 (baseline first) | Base commit: b8c87df | Branch: task/0838-guest-carry-over
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
