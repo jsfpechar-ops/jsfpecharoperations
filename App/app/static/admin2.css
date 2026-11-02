@@ -32,6 +32,8 @@ body.v2 :has(>table.ui-table){overflow-x:auto;max-width:100%}
 /* 0893 fix: tap targets 44 px high (buttons, compact Open, filter inputs) */
 @media (max-width:1023.98px){body.v2 a.ui-btn{display:inline-flex;align-items:center;vertical-align:middle}body.v2 a.ui-btn,body.v2 button.ui-btn,body.v2 input.ui-input,body.v2 select.ui-select{min-height:44px!important;height:auto}}
 body.v2 .ui-pair{align-items:end}
+/* 0893 fix: at least 12 px between header buttons (inline-flex buttons were 4 px apart on phones) */
+body.v2 .ui-ph-acts{gap:12px}
 /* 0893 fix: 18 px visible help mark with a 44 px invisible hit area (same idea as host.css help-tip-btn::after) */
 body.v2 button.help-tip-btn{width:18px;height:18px;min-width:18px;min-height:18px;padding:0;box-sizing:border-box;font-size:12px;line-height:1;position:relative}
 body.v2 button.help-tip-btn::after{content:"";position:absolute;inset:-13px}
