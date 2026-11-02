@@ -89,9 +89,9 @@ None. Commit is the orchestrator's job.
 
 ## 0812
 
-Brief: docs/tasks/0812-v2-help-tip-shared.md. Only `App/app/static/app2.css` changed. Not committed (owner asked for no commit from this run).
+Brief: docs/tasks/0870-v2-help-tip-shared.md. Only `App/app/static/app2.css` changed. Not committed (owner asked for no commit from this run).
 
-Rules added (end of app2.css, block `/* 0812 help tip (v2) */`): `body.v2 .help-tip` (inline-flex, relative, margin-left 6px); `body.v2 .help-tip-btn` (24 px, 44 px below 1024 px); `body.v2 .heading-with-tip, body.v2 .havel-name-tip` (flex, gap 6px); `body.v2 .help-tip-body` hidden; popover shown on `.is-open` or `:not([data-js]):focus-within`.
+Rules added (end of app2.css, block `/* 0870 help tip (v2) */`): `body.v2 .help-tip` (inline-flex, relative, margin-left 6px); `body.v2 .help-tip-btn` (24 px, 44 px below 1024 px); `body.v2 .heading-with-tip, body.v2 .havel-name-tip` (flex, gap 6px); `body.v2 .help-tip-body` hidden; popover shown on `.is-open` or `:not([data-js]):focus-within`.
 
 Rules removed: prop-name-tip and havel-name-tip help-tip-btn sizes (692-695); wiz-page help-tip-btn (1189, 1236); prop-new help-tip-btn selectors in the 1270-1271 blocks (fragment only, the rest of those lines kept); onboarding-welcome help-tip-btn (1292-1293); the `:is(.prop-new,.wiz-page)` help-tip, help-tip-btn, help-tip-body and popover rules (1299-1302). Kept: stay-detail (602/606), details (385, 943-945).
 
@@ -108,7 +108,7 @@ Left for the owner / next brief: onboarding geometry (above); design lint catalo
 
 ## 0812 round 2
 
-Brief: docs/tasks/0812-v2-help-tip-shared.md section 10 (steps d, e, f). Only `App/app/static/app2.css` changed. Not committed.
+Brief: docs/tasks/0870-v2-help-tip-shared.md section 10 (steps d, e, f). Only `App/app/static/app2.css` changed. Not committed.
 
 Culprit (step d): on /onboarding, the closed "Learn why" / Help `<details>` in each onboarding step. Chrome's `host2.css` fold-out rule (`details::details-content` with `block-size: 0; overflow: clip`, host-workspace only) clips the closed body, but its children still have layout rects and do not count toward the document scroll height. At 390 px the lowest such node was the `a` "Help" inside a closed details (bottom 1149 vs tab bar top 916). Same cause at 320 and 768.
 

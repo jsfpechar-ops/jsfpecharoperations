@@ -90,7 +90,7 @@ def test_check_computes_total(owner, monkeypatch):
     _complete_account(owner, monkeypatch)
     client = _client()
     response = client.post(f"/p/{_slug(owner)}/book",
-                           data={"date_from": "2026-12-01", "date_to": "2026-12-04"})
+                           data={"date_from": "2026-12-01", "date_to": "2026-12-04", "guests": "2"})
     assert response.status_code == 200
     assert "3 nights" in response.text
     assert "1200" in response.text
@@ -107,7 +107,7 @@ def test_taken_dates_refused(owner, monkeypatch):
     )
     client = _client()
     response = client.post(f"/p/{_slug(owner)}/book",
-                           data={"date_from": "2026-12-02", "date_to": "2026-12-05"},
+                           data={"date_from": "2026-12-02", "date_to": "2026-12-05", "guests": "2"},
                            follow_redirects=False)
     assert response.status_code == 303
     assert "book=taken" in response.headers["location"]
@@ -122,17 +122,11 @@ def test_hold_blocks_and_sweeps(owner):
     assert property_page.dates_available(owner, "2026-12-02", "2026-12-03")
 
 
-def test_request_creates_draft_for_host(owner, monkeypatch):
+def test_request_route_is_gone(owner, monkeypatch):
+    """0815: instant book replaced request-to-book (owner decision 1 Nov)."""
     _complete_account(owner, monkeypatch)
     client = _client()
     response = client.post(f"/p/{_slug(owner)}/request",
                            data={"date_from": "2026-12-01", "date_to": "2026-12-04",
                                  "guest_email": "guest@example.test"})
-    assert response.status_code == 200
-    assert "Request sent" in response.text
-    rows = db.query(
-        "SELECT * FROM payment_request WHERE guest_email = ? AND status = 'draft'",
-        ("guest@example.test",),
-    )
-    assert len(rows) == 1
-    assert rows[0]["amount_czk"] == 3600
+    assert response.status_code in (404, 405)

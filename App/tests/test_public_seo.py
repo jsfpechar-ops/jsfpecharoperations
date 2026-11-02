@@ -157,14 +157,14 @@ def test_without_javascript_the_page_shows_one_apartment_billed_yearly():
     """The server renders the default (1 apartment, yearly, shown per month); JS only updates it."""
     cs = _client().get("/cenik?lang=cs").text
     assert "<strong data-total>99</strong>" in cs
-    assert "<strong data-total>159</strong>" in cs
+    assert "<strong data-total>147</strong>" in cs
     assert "Platíte 1 190 Kč jednou ročně" in cs
-    assert "Platíte 1 908 Kč jednou ročně" in cs
+    assert "Platíte 1 760 Kč jednou ročně" in cs
     assert "1 apartmán" in cs
     assert "data-pricing-calc hidden" in cs
     en = _client().get("/cenik?lang=en").text
     assert "Billed 1,190 CZK once a year" in en
-    assert "+40 CZK / apartment / month" in en
+    assert "+39 CZK / apartment / month" in en
     assert "5,660" not in en and "whitelabel" not in en.lower()
     assert "Leon Lite" in en and "Havel" in en
     assert "save 33%" not in en

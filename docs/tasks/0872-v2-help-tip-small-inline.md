@@ -1,4 +1,4 @@
-# 0814 brief: small, minimal help "?" on the same line as its title
+# 0872 brief: small, minimal help "?" on the same line as its title
 
 Status: todo
 Executor: Haiku 5.5, alone, in /home/claude/jsfpecharoperations on branch claude/project-thread-a41o7b (checked out; App/.venv exists). Do not commit, push, checkout, reset, stash or restore: the orchestrator commits.
@@ -7,14 +7,14 @@ Executor: Haiku 5.5, alone, in /home/claude/jsfpecharoperations on branch claude
 Josef (2026-11-02 14:47): the help "?" buttons sit under the headers instead of next to them, and they are huge. He wants them minimalistic. See `docs/tasks/screenshots-0800/property-new-390.png`: 44 px grey circles, and under "After you create it" each "?" is on its own line below the title. Target on every page of `App/tests/test_0800_v2_remaining_pages_browser.py`, all widths: the "?" is a plain round icon, 18 px visible (1px `var(--line)` border, `var(--ink3)` glyph, 12 px font, no fill, no shadow), placed inline 6 px after the last word of its heading/label, vertically centred on that line, never alone on a new line.
 
 ## 2. Context
-The shared rule is the `/* 0812 help tip (v2) */` block at the end of `App/app/static/app2.css` (24 px desktop, 44 px phone min size: that is the "huge"). Phone tap target stays 44 px but invisible: give `.help-tip-btn` `position:relative` and a `::before{content:"";position:absolute;inset:-13px}` hit area, so layout size stays 18 px. Wrappers from 0809: `.heading-with-tip`, `.prop-name-tip`, `.havel-name-tip`; the new-property "After you create it" list (`App/app/templates/_property_create.html`) puts title and tip in a column.
+The shared rule is the `/* 0870 help tip (v2) */` block at the end of `App/app/static/app2.css` (24 px desktop, 44 px phone min size: that is the "huge"). Phone tap target stays 44 px but invisible: give `.help-tip-btn` `position:relative` and a `::before{content:"";position:absolute;inset:-13px}` hit area, so layout size stays 18 px. Wrappers from 0809: `.heading-with-tip`, `.prop-name-tip`, `.havel-name-tip`; the new-property "After you create it" list (`App/app/templates/_property_create.html`) puts title and tip in a column.
 
 ## 3. Files
-`App/app/static/app2.css` (0812 block, plus deleting conflicting help-tip size rules in other 0800-0809 blocks), `App/app/templates/_property_create.html` (markup order only if CSS cannot do it), `App/tests/test_0800_v2_remaining_pages_browser.py`.
+`App/app/static/app2.css` (0870 block, plus deleting conflicting help-tip size rules in other 0800-0809 blocks), `App/app/templates/_property_create.html` (markup order only if CSS cannot do it), `App/tests/test_0800_v2_remaining_pages_browser.py`.
 
 ## 4. Steps
 Env (from App/): `export PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=1`.
-a. Rewrite the 0812 block: `.help-tip` inline-flex, vertical-align middle, margin-left 6px, flex none; `.help-tip-btn` width/height 18px (all widths), min-width/min-height 0, padding 0, border 1px solid var(--line), border-radius 50%, background transparent, color var(--ink3), font-size 12px, line-height 1, plus the invisible `::before` hit area (inset -13px below 1024 px, -3px above). Wrappers (`.heading-with-tip`, `.prop-name-tip`, `.havel-name-tip`, the create-next item title row): `display:flex;flex-wrap:nowrap;align-items:center;gap:6px`, the heading text `min-width:0`.
+a. Rewrite the 0870 block: `.help-tip` inline-flex, vertical-align middle, margin-left 6px, flex none; `.help-tip-btn` width/height 18px (all widths), min-width/min-height 0, padding 0, border 1px solid var(--line), border-radius 50%, background transparent, color var(--ink3), font-size 12px, line-height 1, plus the invisible `::before` hit area (inset -13px below 1024 px, -3px above). Wrappers (`.heading-with-tip`, `.prop-name-tip`, `.havel-name-tip`, the create-next item title row): `display:flex;flex-wrap:nowrap;align-items:center;gap:6px`, the heading text `min-width:0`.
 b. Remove the 44 px/24 px help-tip size rules elsewhere in app2.css that beat this (grep `help-tip-btn`; keep the stay-detail and `details` rules outside these pages).
 c. Test: for every visible `.help-tip-btn` in `main` on each page and width: visible box <= 20 x 20 px; its vertical centre is within the line box of the text it follows (the previous sibling or the wrapper's heading: |centre difference| <= 4 px); its left edge is >= that text's right edge and <= right edge + 12 px. Fail with page, width and the label text. The check must fail on the current screenshot state (run it before the CSS fix to confirm).
 d. Update any older assertion that requires 44 px help buttons on these pages to check the hit area instead (element bounding box of the `::before` cannot be measured; assert the computed `inset` or use `elementFromPoint` 10 px outside the visible circle).
@@ -36,19 +36,19 @@ Section 6 green; property-new-390 and havel-1280 screenshots show a small "?" ri
 Stop at 30 tool calls, or if a template change beyond markup order is needed.
 
 ## 9. Report
-`docs/tasks/0814-report.md`: rules changed/removed, test added, final tails.
+`docs/tasks/0872-report.md`: rules changed/removed, test added, final tails.
 
 ## 10. Added scope: Add property (/apartments/new), Josef 15:23
 h. Phone: the "Copy from another property" button floats on its own line offset right, not aligned with the "How does this work?" help pill. Put the two on one row, left-aligned, vertically centred, 12 px apart (wrap to two left-aligned lines only below 360 px).
 i. Remove fine print: the "Start with the basics…" subtitle and the "Fields marked * are required." line (move into the page-title help "?" if not already there; keep the translation keys).
-j. Desktop 1024/1280/1440: the Cancel link sits 8 px from the create card (0813 neighbour check fails). Find the real cause with a computed-style probe (which element's margin/gap sets the 8 px) and make it >= 12 px.
+j. Desktop 1024/1280/1440: the Cancel link sits 8 px from the create card (0871 neighbour check fails). Find the real cause with a computed-style probe (which element's margin/gap sets the 8 px) and make it >= 12 px.
 k. Remove the subtitle under the "Help & guide" h1 on /guide the same way (i).
 Files for 10: `App/app/templates/apartment_form.html`, `App/app/templates/_property_create.html`, `App/app/templates/guide.html` (subtitle only), app2.css 0800 block. Another executor is editing guide.html/guide.js at the same time: touch only the subtitle line there and re-read before editing.
 
 ## 11. Round 2 decisions (orchestrator)
 - Long labels at 320 px: the "?" must ride on the LAST line of the text, right after the last word, never on a line of its own. So wrappers are not flex: `.heading-with-tip`, `.prop-name-tip`, `.havel-name-tip` and label rows become `display:block` (heading inline: `h1,h2,h3,label{display:inline}` inside the wrapper, or the tip placed inside the heading element), and `.help-tip` stays `display:inline-flex;vertical-align:middle;margin-left:6px;white-space:nowrap`. Glue the last word to the tip if needed with a non-breaking structure (the tip inline right after the text node, no whitespace that allows a break is not required: the 24 px tip fits after any last word at 320 px).
 - Update `test_help_tip_is_small_and_inline`: compare the tip with the last line box of the label text (Range over the text node, `getClientRects()`, take the last rect): |centre diff| <= 4 px and left gap 0-12 px. Havel 1024 5.5 px offset: align with `vertical-align:middle` against the h1's line, or give the h1 wrapper `align-items:center` if it stays flex there.
-- Onboarding choice_card[390-False-*] card-edge click: check on the commit before 0814 (`git stash` is forbidden: use `git worktree add /tmp/wt0814 HEAD~1` read-only and run that one test there, then `git worktree remove /tmp/wt0814`); if it passes there, fix it.
+- Onboarding choice_card[390-False-*] card-edge click: check on the commit before 0872 (`git stash` is forbidden: use `git worktree add /tmp/wt0814 HEAD~1` read-only and run that one test there, then `git worktree remove /tmp/wt0814`); if it passes there, fix it.
 - Then section 10 (h-k).
 
 ## 12. Round 3 decisions (orchestrator, from "Round 2 (tip wrapping)" in the report)
@@ -83,25 +83,25 @@ Files: `App/app/templates/_property_editor.html`, `App/app/templates/setup_wizar
 Tests (from App/, env as §4): `.venv/bin/python -m pytest tests/test_0800_v2_remaining_pages_browser.py -k small_and_inline -q --tb=line -p no:cacheprovider 2>&1 | tail -8` → 0 failed; then `.venv/bin/python -m pytest tests/test_onboarding_wizard_browser.py tests/test_property_create_browser.py -q --tb=line -p no:cacheprovider 2>&1 | tail -5`.
 
 ### 15B. Popover overflow and endtoend check
-Files: `App/app/static/app2.css` (the 0812 help-tip block only), `App/app/static/app.js` (help-tip open function near line 1950 only).
+Files: `App/app/static/app2.css` (the 0870 help-tip block only), `App/app/static/app.js` (help-tip open function near line 1950 only).
 - Below 1024 px: open `.help-tip-body` is `position:fixed;left:16px;right:16px;width:auto;top:auto` (vertical position stays under the tip).
 - At >=1024 px: in app.js, when a tip opens, toggle class `help-tip-end` on the tip if `tip.getBoundingClientRect().left > window.innerWidth / 2`. CSS: `body.v2 .help-tip-end>.help-tip-body{left:auto;right:0}`.
 - Tests: `.venv/bin/python -m pytest tests/test_host_help_browser.py -q --tb=line -p no:cacheprovider 2>&1 | tail -6` → 0 failed.
 - endtoend test_26: run `.venv/bin/python -m pytest tests/test_endtoend.py -k test_26 -q --tb=short -p no:cacheprovider 2>&1 | tail -15`. If it fails, report the traceback only; do not fix (orchestrator checks main).
-Report: append "## Round 5A" or "## Round 5B" to `docs/tasks/0814-report.md` (changed, final tails, deviations).
+Report: append "## Round 5A" or "## Round 5B" to `docs/tasks/0872-report.md` (changed, final tails, deviations).
 
 ## 16. Round 6 decisions (orchestrator, 2026-11-02 17:10)
 After 5A+5B: the four-file run is `8 failed, 217 passed`. Remaining reds and decisions (one executor, all files below allowed):
 a. setup-* (all five): `App/app/templates/setup_wizard/_layout.html` line ~38: move `{% block wizard_help %}{% endblock %}` inside the `<h2 class="setup-wizard-question">`, right after the text.
-b. guest-guide at 320 px: the tip wraps alone onto the next line of the h2 (gap -237 px). First: make the `help_tip` macro in `_components.html` emit no leading/trailing whitespace (`{%- ... -%}` trims) and add `white-space:nowrap` to `body.v2 .help-tip` in the 0812 block. If it still wraps, add to the 0812 block: `body.v2 :is(h1,h2,label):has(>.help-tip){display:flex;align-items:last baseline;gap:6px}` with `body.v2 :is(h1,h2,label):has(>.help-tip)>.help-tip{margin-left:0}` and check the other pages stay green.
+b. guest-guide at 320 px: the tip wraps alone onto the next line of the h2 (gap -237 px). First: make the `help_tip` macro in `_components.html` emit no leading/trailing whitespace (`{%- ... -%}` trims) and add `white-space:nowrap` to `body.v2 .help-tip` in the 0870 block. If it still wraps, add to the 0870 block: `body.v2 :is(h1,h2,label):has(>.help-tip){display:flex;align-items:last baseline;gap:6px}` with `body.v2 :is(h1,h2,label):has(>.help-tip)>.help-tip{margin-left:0}` and check the other pages stay green.
 c. property-new: one tip reports `(no label)`. Print all findings for property-new (call `_HELP_TIP_SIZE_JS` in a scratch run) to find it, then move that tip inside its heading/label like §15A. Do not change the test.
 d. `tests/test_host_help_browser.py[1280]` property-create `addr_house_no-help`: popover box x=1234.8 overflows. Find why the 5B `help-tip-end`/`place()` logic does not keep it inside the viewport at 1280 and fix it in app.js/app2.css. Do not change the test.
 e. `guest_guide.html` import section: replace the now-empty `{% if not import_on %}` / `{% else %}` pair with `{% if import_on %}` (same `{% endif %}`).
-Commands (from App/, env §4): `.venv/bin/python -m pytest tests/test_0800_v2_remaining_pages_browser.py tests/test_onboarding_wizard_browser.py tests/test_property_create_browser.py tests/test_host_help_browser.py tests/test_guest_guide*.py -q --tb=line -p no:cacheprovider 2>&1 | tail -10` → 0 failed. Report: "## Round 6" in 0814-report.md.
+Commands (from App/, env §4): `.venv/bin/python -m pytest tests/test_0800_v2_remaining_pages_browser.py tests/test_onboarding_wizard_browser.py tests/test_property_create_browser.py tests/test_host_help_browser.py tests/test_guest_guide*.py -q --tb=line -p no:cacheprovider 2>&1 | tail -10` → 0 failed. Report: "## Round 6" in 0872-report.md.
 
 ## 17. Round 7 decisions (orchestrator, 2026-11-02 17:45)
 Round 6 left one red (guest-guide 320 px, gap 174 px) and an unverified broad rule. Decisions:
-a. Delete the two `:is(h1,h2,label):has(>.help-tip)` flex lines that round 6 added to the 0812 block in app2.css (too broad, not run against the full set).
-b. `ui_section` in `_ui_layout.html`: when `tip` is set, keep the tip glued to the last word: `{% set parts = title.rsplit(' ', 1) %}<h2>{% if parts|length == 2 %}{{ parts[0] }} {% endif %}<span class="tip-nowrap">{{ parts[-1] }}{{ tip }}</span></h2>`; without a tip render as before. CSS in the 0812 block: `body.v2 .tip-nowrap{white-space:nowrap}` and `body.v2 .tip-nowrap .help-tip-body{white-space:normal}`.
+a. Delete the two `:is(h1,h2,label):has(>.help-tip)` flex lines that round 6 added to the 0870 block in app2.css (too broad, not run against the full set).
+b. `ui_section` in `_ui_layout.html`: when `tip` is set, keep the tip glued to the last word: `{% set parts = title.rsplit(' ', 1) %}<h2>{% if parts|length == 2 %}{{ parts[0] }} {% endif %}<span class="tip-nowrap">{{ parts[-1] }}{{ tip }}</span></h2>`; without a tip render as before. CSS in the 0870 block: `body.v2 .tip-nowrap{white-space:nowrap}` and `body.v2 .tip-nowrap .help-tip-body{white-space:normal}`.
 c. Run the §16 command → 0 failed. Then `.venv/bin/python -m pytest tests -q -k "wizard_polish or label or help_tip or field" --tb=line -p no:cacheprovider 2>&1 | tail -8` (test_endtoend test_26 is a known pre-existing red on main).
-d. Orchestrator after green: bump the app2.css key in base.html, `.venv/bin/python tests/test_static_versions.py --write`, commit only App/ + docs/tasks/0814* (never the rewritten evidence PNGs), push to BOTH a41o7b and r3es5m, screenshots to Josef.
+d. Orchestrator after green: bump the app2.css key in base.html, `.venv/bin/python tests/test_static_versions.py --write`, commit only App/ + docs/tasks/0872* (never the rewritten evidence PNGs), push to BOTH a41o7b and r3es5m, screenshots to Josef.

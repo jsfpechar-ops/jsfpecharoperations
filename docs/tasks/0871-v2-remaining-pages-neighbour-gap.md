@@ -1,4 +1,4 @@
-# 0813 brief: no element touches its neighbour on the 0800-0804 pages
+# 0871 brief: no element touches its neighbour on the 0800-0804 pages
 
 Status: todo
 Executor: Haiku 5.5, alone, in /home/claude/jsfpecharoperations on branch claude/project-thread-a41o7b (checked out; App/.venv exists). Do not commit, push, checkout, reset, stash or restore: the orchestrator commits.
@@ -10,7 +10,7 @@ Owner rule (Josef, 2026-11-02 14:38): no element may crowd its neighbour (his ex
 The shared sidebar/top bar (mock tag, search pill, workspace card) is being fixed in another thread: exclude `.side`, `.tabs`, the top bar and the mock banner from this check. Help "?" buttons sit 6 px after their label on purpose (0808 step a): exclude a `.help-tip` from its own label/heading.
 
 ## 3. Files
-`App/tests/test_0800_v2_remaining_pages_browser.py`, `App/app/static/app2.css` (blocks 0800-0804, 0808, 0812 only).
+`App/tests/test_0800_v2_remaining_pages_browser.py`, `App/app/static/app2.css` (blocks 0800-0804, 0808, 0870 only).
 
 ## 4. Steps
 Env (from App/): `export PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=1`.
@@ -35,4 +35,4 @@ Section 6 green; the new check is in the 0800 test file.
 Stop at 30 tool calls, or if a fix needs a template change.
 
 ## 9. Report
-`docs/tasks/0813-report.md`: findings (page, width, pair, gap), rules changed, final tails.
+`docs/tasks/0871-report.md`: findings (page, width, pair, gap), rules changed, final tails.

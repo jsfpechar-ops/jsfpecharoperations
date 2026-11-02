@@ -107,7 +107,7 @@ _NEIGHBOUR_JS = """() => {
 
 
 def neighbour_findings(page) -> list[str]:
-    """0813: controls and cards inside main keep 12 px from each other (sidebar, tabs, header, help tips excluded)."""
+    """0871: controls and cards inside main keep 12 px from each other (sidebar, tabs, header, help tips excluded)."""
     pairs = page.evaluate(_NEIGHBOUR_JS)
     return [f"too close: {p['a']} and {p['b']} gap {p['gap']} px (need 12)" for p in pairs[:20]]
 
@@ -145,7 +145,7 @@ _HELP_TIP_JS = """() => {
     const b = btn.getBoundingClientRect();
     if (!label || !b.width) continue;
     const rg = document.createRange();
-    // 0814 round 4: the tip now sits inside the label, so measure the label's own text node, not the tip.
+    // 0872 round 4: the tip now sits inside the label, so measure the label's own text node, not the tip.
     const ownText = [...label.childNodes].find(n => n.nodeType === 3 && n.textContent.trim());
     rg.selectNodeContents(ownText || label);
     const t = rg.getBoundingClientRect();
@@ -166,7 +166,7 @@ def test_help_tip_sits_beside_its_label(name, width, base, dashboard_rich_host):
     assert not bad, f"{name} at {width} px: help tip not beside its label: {bad}"
 
 
-# 0814 c: every visible "?" in main is a small round icon (18 px circle drawn by ::after), on its label's line,
+# 0872 c: every visible "?" in main is a small round icon (18 px circle drawn by ::after), on its label's line,
 # 6 px after the label text (at most 12 px). The tap target is the 24 px (desktop) or 44 px (phone) button box.
 _HELP_TIP_SIZE_JS = """() => {
   const out = [];
@@ -177,7 +177,7 @@ _HELP_TIP_SIZE_JS = """() => {
     const tip = btn.closest('.help-tip');
     const wrap = tip && tip.parentElement;
     let ref = tip && tip.previousElementSibling;
-    // 0814 round 3: a tip inside its label or heading (after the text) is measured against that element.
+    // 0872 round 3: a tip inside its label or heading (after the text) is measured against that element.
     if (!ref && wrap && /^(LABEL|H1|H2)$/.test(wrap.tagName)) ref = wrap;
     if (!ref && wrap) ref = wrap.previousElementSibling || [...wrap.children].find(el => el !== tip) || null;
     const label = ref ? ref.textContent.trim().slice(0, 40) : '(no label)';
@@ -185,21 +185,21 @@ _HELP_TIP_SIZE_JS = """() => {
     const after = getComputedStyle(btn, '::after');
     const cw = parseFloat(after.width), ch = parseFloat(after.height);
     if (!(cw <= 20 && ch <= 20)) why.push(`visible circle ${cw}x${ch}`);
-    // 0814 round 4: the visible circle, from the ::after offset (phone: left 0, top 13px; desktop: centred by translate).
+    // 0872 round 4: the visible circle, from the ::after offset (phone: left 0, top 13px; desktop: centred by translate).
     const tr = after.transform === 'none' ? [0, 0, 0, 0, 0, 0] : after.transform.slice(7, -1).split(',').map(Number);
     const cx = b.left + parseFloat(after.left) + tr[4] + cw / 2, cy = b.top + parseFloat(after.top) + tr[5] + ch / 2;
     const left = cx - cw / 2;
     if (!ref) {
       why.push('no label before it');
     } else if (ref.matches('button, .ui-btn')) {
-      // 0814 round 3: a "?" after a button is measured against the button box (centre, 6-12 px gap).
+      // 0872 round 3: a "?" after a button is measured against the button box (centre, 6-12 px gap).
       const rb = ref.getBoundingClientRect();
       const dy = Math.abs(cy - (rb.top + rb.bottom) / 2);
       const dx = left - rb.right;
       if (dy > 4) why.push(`vertical offset ${dy.toFixed(1)}px`);
       if (dx < 6 || dx > 12) why.push(`gap after button ${dx.toFixed(1)}px`);
     } else {
-      // 0814 round 2: measure the last visible text node of the label (not boxes of inputs or the tip itself).
+      // 0872 round 2: measure the last visible text node of the label (not boxes of inputs or the tip itself).
       const tw = document.createTreeWalker(ref, NodeFilter.SHOW_TEXT);
       let last = null;
       for (let tn = tw.nextNode(); tn; tn = tw.nextNode()) {

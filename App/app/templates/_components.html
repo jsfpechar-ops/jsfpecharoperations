@@ -12,6 +12,11 @@
     <button type="button" class="help-tip-btn" aria-label="{{ t('help.tip.label') }}" aria-expanded="false" aria-controls="{{ id }}">?</button>
     <span class="help-tip-body" id="{{ id }}" role="tooltip">{{ text }}{% if guide_href %} <a href="{{ guide_href }}" aria-label="{{ t('help.tip.more') }}: {{ text | striptags | truncate(50) }}">{{ t('help.tip.more') }}</a>{% endif %}</span>
   </span>
+{% endmacro %}
+{#- Label text with its "?" tip kept on the last word, so the tip never wraps alone to a new line. -#}
+{% macro tip_label(text, id, help, tag='strong') -%}
+{%- set words = text.rsplit(' ', 1) -%}
+<{{ tag }} class="tip-label">{% if words | length > 1 %}{{ words[0] }} {% endif %}<span class="tip-nowrap">{{ words[-1] }}{{ help_tip(id, help) }}</span></{{ tag }}>
 {%- endmacro %}
 {#- 0410: one option card. The label is stretched over the whole bordered card, so a
     tap anywhere selects; the "?" and any extra field (call block) sit above it. No JS. -#}
@@ -529,8 +534,8 @@
 {# 0083: a visible settings group with an ordinary header bar. #}
 {% macro settings_group(key, title) %}
   <section class="settings-group" id="settings-group-{{ key }}" aria-labelledby="settings-group-{{ key }}-title">
-    <h2 class="settings-group-title" id="settings-group-{{ key }}-title">{{ title }}</h2>
-    {{ caller() }}
+    <h2 class="settings-group-title sec" id="settings-group-{{ key }}-title">{{ title }}</h2>
+    <div class="card settings-card">{{ caller() }}</div>
   </section>
 {% endmacro %}
 

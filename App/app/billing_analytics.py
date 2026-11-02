@@ -44,7 +44,7 @@ def portfolio(today: Optional[date] = None) -> Dict[str, Any]:
     day = today or date.today()
     rows = [dict(r) for r in db.query(
         "SELECT b.owner_user_id, b.status, b.plan, b.billing_interval, b.apartments_billed, "
-        "b.addon_ttlock, b.addon_whitelabel, b.founder, b.carry_czk, b.cancel_at_period_end, "
+        "b.addon_ttlock, b.addon_whitelabel, b.carry_czk, b.cancel_at_period_end, "
         "b.discount_percent, b.discount_reason, "
         "b.trial_ends_at, b.period_start, b.period_end, "
         "u.display_name, u.email, u.username "
@@ -58,7 +58,6 @@ def portfolio(today: Optional[date] = None) -> Dict[str, Any]:
         q = billing.quote(
             r["apartments_billed"], r["plan"], r["billing_interval"],
             ttlock=bool(r["addon_ttlock"]), whitelabel=bool(r["addon_whitelabel"]),
-            founder=bool(r["founder"]),
             discount_percent=int(r["discount_percent"] or 0),
         )
         net = q["total"] + int(r["carry_czk"] or 0)
@@ -254,19 +253,19 @@ def write_month_snapshot(month: Optional[str] = None, *, today: Optional[date] =
     for c in data["customers"]:
         db.execute(
             "INSERT INTO billing_month_snapshot (owner_user_id, month, status, plan, "
-            "billing_interval, apartments, addon_ttlock, addon_whitelabel, founder, "
+            "billing_interval, apartments, addon_ttlock, addon_whitelabel, "
             "discount_percent, list_czk, net_czk, monthly_czk, created_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
             "ON CONFLICT(owner_user_id, month) DO UPDATE SET "
             "status = excluded.status, plan = excluded.plan, "
             "billing_interval = excluded.billing_interval, apartments = excluded.apartments, "
             "addon_ttlock = excluded.addon_ttlock, addon_whitelabel = excluded.addon_whitelabel, "
-            "founder = excluded.founder, discount_percent = excluded.discount_percent, "
+            "discount_percent = excluded.discount_percent, "
             "list_czk = excluded.list_czk, net_czk = excluded.net_czk, "
             "monthly_czk = excluded.monthly_czk, created_at = excluded.created_at",
             (c["owner_user_id"], month, c["status"], c["plan"], c["billing_interval"],
              c["apartments_billed"], int(bool(c["addon_ttlock"])), int(bool(c["addon_whitelabel"])),
-             int(bool(c["founder"])), int(c["discount_percent"] or 0),
+             int(c["discount_percent"] or 0),
              c["quote"]["list"], c["net_czk"], c["monthly_czk"], now),
         )
     return len(data["customers"])
