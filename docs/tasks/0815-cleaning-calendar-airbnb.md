@@ -1,7 +1,7 @@
 # 0815: Cleaning (Úklid) page uses the Airbnb calendar, cleaning tags only
 
 Status: todo
-Depends on: 0814 and 0816 (same branch, committed first) | Branch: claude/project-thread-vnnr9p
+Depends on: 0814 and 0816 (same branch, committed first) | Branch: claude/project-thread-6aeyrs
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -35,6 +35,8 @@ Turnover logic (cleaning timing from bookings) stays on the server; the events s
 | `App/tests/test_cleaning_browser.py` | update assertions that need the list or booking bars on the host page; add tests (section 6) |
 | `docs/tasks/screenshots-0814/` | add `cleaning-390.png`, `cleaning-range-390.png`, `cleaning-768.png`, `cleaning-1280.png`, `cleaning-range-1280.png` |
 | `docs/tasks/0815-report.md` | create |
+
+Update 17:40Z: another executor (0832) works in parallel on the same checkout in `dashboard.html`, the `/* 0832 */` CSS block and `test_dashboard_calendar_browser.py`; do not touch those. Do NOT bump `?v=` and do NOT regenerate `static_versions.json` (the orchestrator does it after both briefs); skip `test_static_versions.py`. Never stage or commit; never touch `docs/tasks/screenshots-0387/`.
 
 ## 4. Steps
 
