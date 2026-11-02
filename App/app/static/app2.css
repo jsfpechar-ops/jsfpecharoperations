@@ -1106,7 +1106,7 @@ body.v2 .settings-action-row > div > strong{width:auto}
 body.v2 h2 > .help-tip,body.v2 h3 > .help-tip{margin-left:8px;vertical-align:middle}
 body.v2 .settings-heading{display:flex;align-items:last baseline;flex-wrap:nowrap;gap:8px}
 body.v2 .settings-heading h3{min-width:0}
-body.v2 div:has(> label.checkline + .help-tip){display:flex;align-items:center;flex-wrap:nowrap;gap:8px}
+body.v2 div:has(> label.checkline + .help-tip){display:flex;align-items:last baseline;flex-wrap:nowrap;gap:8px}
 body.v2 div:has(> label.checkline + .help-tip) > label.checkline{min-width:0}
 body.v2 .field-label-row{display:flex;align-items:last baseline;flex-wrap:nowrap;gap:8px}
 body.v2 .field-label-row > label{min-width:0}
