@@ -229,7 +229,7 @@ def test_with_a_calendar_the_empty_state_keeps_its_quiet_link(host_with_property
 def test_the_toolbar_and_filters_return_with_a_property(host_with_property):
     page = host_with_property.get("/reservations")
 
-    assert 'data-list-toolbar' in page.text
+    assert '<div class="chips">' in page.text
     assert 'id="stays-filter-panel"' in page.text
     assert 'data-filter-panel' in page.text
     assert 'action="/reservations/submit-ready"' in page.text

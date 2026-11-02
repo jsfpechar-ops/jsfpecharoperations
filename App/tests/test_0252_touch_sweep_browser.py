@@ -36,14 +36,15 @@ PROBE = r"""() => {
     if (!shown(e) || e.closest('.cal-scroll, [data-dashboard-calendar], .notification-stack')) continue;
     const r = e.getBoundingClientRect();
     if (r.right > vw + 1 || r.left < -1) {
-      if (e.closest('.scroll-x, .hs')) continue;  // .hs is the phone today-card row: it scrolls inside itself
+      if (e.closest('.scroll-x, .hs, body.v2 .chips')) continue;  // .hs (phone today cards) and v2 chips scroll inside themselves
       out.outside.push((e.textContent || e.name || e.tagName).trim().slice(0, 30));
     }
   }
   for (const e of main.querySelectorAll('tr.clickable-row:not(.dashboard-row), a.host-property-card')) {
     if (!shown(e)) continue;
     const v2Row = e.matches('tr.clickable-row') && e.closest('.props-card');  // v2 property list: no cue in the mockup props view; the row is a link (role=link)
-    if (!v2Row && !e.querySelector('.row-open, .host-property-card-open, .ui-btn-open')) out.noCue.push(name(e));
+    // v2 stays (0528): the guest name link is the row's open cue (mockup has no Open button)
+    if (!v2Row && !e.querySelector('.row-open, .host-property-card-open, .ui-btn-open, .stay-identity-link')) out.noCue.push(name(e));
     const r = e.getBoundingClientRect();
     const x = r.left + Math.min(r.width / 2, 120), y = r.top + Math.min(r.height / 2, 24);
     if (y > 0 && y < innerHeight && x < vw) {

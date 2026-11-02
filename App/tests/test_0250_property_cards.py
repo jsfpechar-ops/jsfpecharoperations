@@ -1,4 +1,4 @@
-"""0250: facility name example on the property page (the overview Open-pill cards were removed by the one-scroll property page, #659)."""
+"""0250: facility name example. The overview "Open" pills went away with the one-page property view (0535)."""
 
 from tests.property_host_fixture import host  # noqa: F401
 

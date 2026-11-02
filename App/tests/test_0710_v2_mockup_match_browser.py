@@ -50,13 +50,14 @@ SHOTS_DIR = Path(__file__).resolve().parents[2] / "docs/tasks/screenshots-0710"
 
 
 def _placeholders(host):
-    """Values for the {placeholders} in PAGES paths (0535). first_property: lowest apartment id of the seeded host."""
+    """Values for the {placeholders} in PAGES paths (0535). first_property: lowest apartment id of the seeded host;
+    stay_id: the rich host's ready stay (active, non-archived, one guest of that host)."""
     row = db.query_one(
         "SELECT MIN(a2.id) AS id FROM reservation r JOIN apartment a1 ON a1.id = r.apartment_id "
         "JOIN apartment a2 ON a2.owner_user_id = a1.owner_user_id WHERE r.id = ?",
         (host["ready"],),
     )
-    return {"first_property": row["id"]}
+    return {"first_property": row["id"], "stay_id": host["ready"]}
 
 
 def _path(spec, host):
@@ -129,7 +130,7 @@ def test_v2_page_matches_mockup_styles(spec, width, base, dashboard_rich_host):
                 if not same_value(prop, app_value, mock_value):
                     diffs.append(f"{selector} {prop}: app={app_value} mockup={mock_value}")
             if phone and width in PHONE_WIDTHS:
-                diffs += box_diffs(selector, computed(app_page, selector, BOX_PROPS), computed(mock_page, mock_selector, BOX_PROPS), width, spec.get("phone_box_skip", {}).get(selector))
+                diffs += box_diffs(selector, computed(app_page, selector, BOX_PROPS), computed(mock_page, mock_selector, BOX_PROPS), width, spec.get("phone_box_skip", {}).get(selector), spec["name"])
         app_ctx.close()
         mock_ctx.close()
         browser.close()
