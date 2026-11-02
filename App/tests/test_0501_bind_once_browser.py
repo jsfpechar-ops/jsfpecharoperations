@@ -63,7 +63,9 @@ def test_init_page_second_run_binds_no_row_or_button_again(calendar_workspace, c
 
         href = page.locator("tr[data-href]").first.get_attribute("data-href")
         navigations = []
-        page.on("framenavigated", lambda frame: navigations.append(frame.url) if frame == page.main_frame else None)
+        # Count full document loads. framenavigated also fires for Turbo's
+        # same-document replaceState when the new page starts, which is not a navigation.
+        page.on("load", lambda _page: navigations.append(page.url))
         page.locator("tr[data-href]").first.click()
         page.wait_for_url("**" + href, timeout=20000)
         page.wait_for_load_state()
