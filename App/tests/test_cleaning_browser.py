@@ -354,6 +354,8 @@ def test_missing_code_is_omitted_from_host_list_and_calendar_dialog(workspace, o
 
 
 def test_host_crud_and_drag_change_cleanings_without_moving_bookings(workspace, origin):
+    # 0834 part B: the tile calendar has no drag and no table rows. Create runs from the
+    # header, the day sheet opens the details, and edit and remove use the edit page.
     ws = workspace
     before = [dict(row) for row in db.query("SELECT id, date_from, date_to FROM reservation ORDER BY id")]
     with sync_api.sync_playwright() as playwright:
@@ -364,26 +366,10 @@ def test_host_crud_and_drag_change_cleanings_without_moving_bookings(workspace, 
             time.sleep(.3)
             route.continue_()
         page.route("**/static/cleaning.js?*", delayed_list_script)
-        page.goto(origin + "/cleaning?lang=en")
+        page.goto(origin + "/cleaning?lang=en&cal_date=2026-10-27")
         loaded(page)
         pathname = page.evaluate("location.pathname")
-        page.locator('[data-cal-view="gantt"]').click()
-        page.wait_for_selector(".cal-gantt-row")
-        first = next(item for item in cleaning.schedule(ws["owner"], cleaning.today(), cleaning.today() + timedelta(days=30))["cleanings"]
-                     if item["propertyId"] == ws["home"])
-        source = page.locator(f'[data-cal-event="cleaning:{first["eventId"]}"]')
-        target = page.locator(f'[data-date="2026-10-22"][data-property="{ws["home"]}"]')
-        with page.expect_response(lambda response: response.url.split("?")[0].endswith(f"/cleaning/events/{first['eventId']}") and response.request.method == "POST") as saved:
-            source.drag_to(target)
-        assert saved.value.status == 200
-        persisted_times = db.query_one("SELECT start_time, end_time FROM cleaning_event WHERE id = ?", (first["eventId"],))
-        assert persisted_times["start_time"] is None and persisted_times["end_time"] is None
-        # The host table prints the day as text, so check the saved date and that the row is still listed.
-        moved = next(item for item in cleaning.schedule(ws["owner"], cleaning.today() - timedelta(days=30), cleaning.today() + timedelta(days=30))["cleanings"]
-                     if item["eventId"] == first["eventId"])
-        assert str(moved["date"])[:10] == "2026-10-22"
-        assert page.locator(f'.cleaning-section tr#cleaning-{first["eventId"]}').count() == 1
-        page.get_by_role("link", name="+ Add cleaning", exact=True).click()
+        page.locator('[data-calendar-add][data-cal-create-type="cleaning"]').click()
         create = page.locator("[data-cal-create]")
         assert create.is_visible()
         assert page.locator('[data-cal-type-choice="cleaning"]').get_attribute("aria-pressed") == "true"
@@ -396,28 +382,36 @@ def test_host_crud_and_drag_change_cleanings_without_moving_bookings(workspace, 
         assert created.value.status == 201
         created_id = created.value.json()["id"]
         assert page.evaluate("location.pathname") == pathname
-        marker = page.locator(f'.cal-gantt-events .cal-event[data-cal-event="cleaning:{created_id}"]')
+        page.locator('.cal-day[data-date="2026-10-23"].has-cleaning').wait_for(state="visible")
+        page.locator('.cal-day[data-date="2026-10-23"] .cal-day-number').click()
+        marker = page.locator(f'[data-cal-day-list] .cal-event[data-cal-event="cleaning:{created_id}"]')
         marker.wait_for(state="visible")
         marker.click()
         page.locator("[data-cal-details]").wait_for(state="visible")
         assert page.locator("[data-cal-details] [data-cal-open]").get_attribute("href") == f"#cleaning-{created_id}"
         page.locator("[data-cal-details] [data-cal-close]").click()
-        card = page.locator(f'.cleaning-section tr#cleaning-{created_id}')
-        card.wait_for(state="visible")
-        card.locator("td a").first.click()
+        if page.locator("[data-cal-day-dialog][open]").count():
+            page.locator("[data-cal-day-dialog] [data-cal-close]").click()
+        # A move is a date change on the edit page now; the bookings must stay where they are.
+        page.goto(f"{origin}/cleaning/events/{created_id}/edit?lang=en")
         page.fill("#clean-date", "2026-10-25")
-        page.get_by_role("button", name="Save", exact=True).click()
+        with page.expect_response(lambda response: response.request.method == "POST" and
+                                  f"/cleaning/events/{created_id}" in response.url) as saved:
+            page.get_by_role("button", name="Save", exact=True).click()
+        assert saved.value.status < 400
+        moved = db.query_one("SELECT scheduled_date FROM cleaning_event WHERE id = ?", (created_id,))
+        assert str(moved["scheduled_date"])[:10] == "2026-10-25"
+        page.goto(f"{origin}/cleaning?lang=en&cal_date=2026-10-25")
         loaded(page)
-        card = page.locator(f'.cleaning-section tr#cleaning-{created_id}')
-        moved = next(item for item in cleaning.schedule(ws["owner"], cleaning.today() - timedelta(days=30), cleaning.today() + timedelta(days=30))["cleanings"]
-                     if item["eventId"] == created_id)
-        assert str(moved["date"])[:10] == "2026-10-25"
-        card.locator("td a").first.click()
+        page.locator('.cal-day[data-date="2026-10-25"].has-cleaning').wait_for(state="visible")
+        page.goto(f"{origin}/cleaning/events/{created_id}/edit?lang=en")
         page.locator(".cleaning-remove summary").click()
         page.get_by_role("button", name="Remove cleaning", exact=True).click()
         page.locator("#confirm-dialog [data-confirm-proceed]").click()
+        page.wait_for_url(lambda url: f"/cleaning/events/{created_id}" not in url, timeout=10000)
         loaded(page)
-        assert page.locator(f'.cleaning-section tr#cleaning-{created_id}').count() == 0
+        scheduled = cleaning.schedule(ws["owner"], cleaning.today() - timedelta(days=30), cleaning.today() + timedelta(days=30))["cleanings"]
+        assert all(item["eventId"] != created_id for item in scheduled)
         shot(page, "host-after-drag-1280")
         assert [dict(row) for row in db.query("SELECT id, date_from, date_to FROM reservation ORDER BY id")] == before
         context.close()
@@ -454,7 +448,8 @@ def test_calendar_popup_types_create_in_place_and_localize_validation(workspace,
     with sync_api.sync_playwright() as playwright:
         browser, context = browser_context(playwright, ws, origin, width=1280)
         page = context.new_page()
-        page.goto(f"{origin}/cleaning?lang=cs")
+        # October view, so the tile tag for the created cleaning is on screen.
+        page.goto(f"{origin}/cleaning?lang=cs&cal_date=2026-10-27")
         loaded(page)
         pathname = page.evaluate("location.pathname")
 
@@ -483,11 +478,11 @@ def test_calendar_popup_types_create_in_place_and_localize_validation(workspace,
         assert response.status == 201
         created = response.json()
         assert page.evaluate("location.pathname") == pathname
-        marker = page.locator(f'.cal-week-events .cal-event[data-cal-event="cleaning:{created["id"]}"]')
-        marker.wait_for(state="visible")
-        cleaning_card = page.locator(f'#cleaning-list #cleaning-{created["id"]}')
-        cleaning_card.wait_for(state="visible")
-        assert cleaning_card.locator("td").count() == 5  # the host table shows no notes
+        page.locator('.cal-day[data-date="2026-10-27"].has-cleaning').wait_for(state="visible")
+        page.locator('.cal-day[data-date="2026-10-27"] .cal-day-number').click()
+        sheet_marker = page.locator(f'[data-cal-day-list] .cal-event[data-cal-event="cleaning:{created["id"]}"]')
+        sheet_marker.wait_for(state="visible")
+        page.locator("[data-cal-day-dialog] [data-cal-close]").click()
         shot(page, "cleaning-create-result-cs")
 
         page.locator('[data-calendar-add][data-cal-create-type="cleaning"]').click()
@@ -526,10 +521,17 @@ def test_missing_property_hours_keep_full_day_cleaning_marker_without_saved_defa
     with sync_api.sync_playwright() as playwright:
         browser, context = browser_context(playwright, ws, origin, width=1280)
         page = context.new_page()
-        page.goto(f"{origin}/cleaning?lang=en")
+        # 0834: the tile tag and day sheet replace the week-view marker; the marker keeps its full-day label.
+        page.goto(f"{origin}/cleaning?lang=en&cal_date=2026-10-26")
         loaded(page)
-        _assert_cleaning_day_marker(page, f"cleaning:{event_id}", "2026-10-26", property_name, "en", False)
-        marker = page.locator(f'.cal-week-events .cal-event.is-cleaning-marker[data-cal-event="cleaning:{event_id}"]')
+        tag_day = page.locator('.cal-day[data-date="2026-10-26"].has-cleaning')
+        tag_day.wait_for(state="visible")
+        assert tag_day.locator(".cal-clean-tag").count() >= 1
+        tag_day.locator(".cal-day-number").click()
+        marker = page.locator(f'[data-cal-day-list] .cal-event.is-cleaning-marker[data-cal-event="cleaning:{event_id}"]')
+        marker.wait_for(state="visible")
+        details = marker.get_attribute("aria-label") or ""
+        assert "Cleaning" in details and property_name in details
         marker.click()
         assert page.locator("[data-cal-details] .cleaning-warning").count() >= 1
         shot(page, "cleaning-marker-unset-hours-mobile")
@@ -542,7 +544,9 @@ def test_cleaning_calendar_can_create_stay_and_refresh_turnover_in_place(workspa
     with sync_api.sync_playwright() as playwright:
         browser, context = browser_context(playwright, ws, origin, width=1280)
         page = context.new_page()
-        page.goto(f"{origin}/cleaning?lang=en")
+        # 0834: the /cleaning tiles show cleaning tags only, so the stay itself is checked in the database
+        # and the turnover is checked on its day tag and day sheet.
+        page.goto(f"{origin}/cleaning?lang=en&cal_date=2026-10-26")
         loaded(page)
         pathname = page.evaluate("location.pathname")
         page.locator('[data-calendar-add][data-cal-create-type="cleaning"]').click()
@@ -560,14 +564,17 @@ def test_cleaning_calendar_can_create_stay_and_refresh_turnover_in_place(workspa
             page.locator("[data-cal-save]").click()
         saved = result.value.json()
         assert result.value.status == 201 and page.evaluate("location.pathname") == pathname
-        booking = page.locator(f'.cal-week-events .cal-event[data-cal-event="reservation:{saved["id"]}"]')
-        booking.wait_for(state="visible")
+        # The turnover is reconciled by the refresh after save, so wait for its tag before reading it.
+        turnover_day = page.locator('.cal-day[data-date="2026-10-28"].has-cleaning')
+        turnover_day.wait_for(state="visible")
         turnover = db.query_one("SELECT id, scheduled_date FROM cleaning_event WHERE source_reservation_id = ?", (saved["id"],))
         assert turnover and turnover["scheduled_date"] == "2026-10-28"
         apartment_name = db.query_one("SELECT internal_name FROM apartment WHERE id = ?", (ws["homes"][1],))["internal_name"]
-        card = page.locator(f'#cleaning-list #cleaning-{turnover["id"]}')
+        turnover_day.locator(".cal-day-number").click()
+        card = page.locator(f'[data-cal-day-list] .cal-event[data-cal-event="cleaning:{turnover["id"]}"]')
         card.wait_for(state="visible")
         assert apartment_name in card.inner_text()
+        page.locator("[data-cal-day-dialog] [data-cal-close]").click()
         shot(page, "cleaning-calendar-created-stay-turnover")
         context.close()
         browser.close()

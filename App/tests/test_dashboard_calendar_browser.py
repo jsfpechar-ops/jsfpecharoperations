@@ -480,19 +480,20 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         shot(page, "dashboard-cleaning-absent-en")
 
         cleaning_page = context.new_page()
-        cleaning_page.goto(f"{calendar_origin}/cleaning?lang=en&cal_date=2026-10-27")
+        cleaning_page.goto(f"{calendar_origin}/cleaning?lang=en&cal_date=2026-10-27&cal_view=calendar")
         cleaning_page.wait_for_selector("[data-calendar]")
         wait_loaded(cleaning_page)
-        cleaning_page.locator('[data-cal-view="calendar"]').click()
-        cleaning_page.wait_for_selector(".cal-week")
-        wait_loaded(cleaning_page)
+        # 0834: the /cleaning tile calendar shows cleaning tags only, so the saved cleaning is checked
+        # on its day tag (month view) and in that day's sheet.
+        cleaning_tag_day = cleaning_page.locator('.cal-day[data-date="2026-10-27"].has-cleaning')
+        cleaning_tag_day.wait_for(state="visible")
+        assert cleaning_tag_day.locator(".cal-clean-tag").count() >= 1
+        cleaning_tag_day.locator(".cal-day-number").click()
         cleaning_marker = cleaning_page.locator(
-            f'.cal-week-events .cal-event[data-cal-event="{cleaning_event_id}"]'
+            f'[data-cal-day-list] .cal-event[data-cal-event="{cleaning_event_id}"]'
         )
         cleaning_marker.wait_for(state="visible")
-        cleaning_row = cleaning_page.locator(f'#cleaning-{created_cleaning["id"]}')
-        cleaning_row.wait_for(state="visible")
-        assert "Tue 27 Oct" in cleaning_row.inner_text()
+        assert "27" in cleaning_page.locator("[data-cal-day-dialog] #cal-day-title").inner_text()
         shot(cleaning_page, "cleaning-calendar-created-marker-en")
         cleaning_page.close()
 
@@ -504,8 +505,13 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         action = page.locator("[data-cal-details] [data-cal-open]")
         assert action.is_visible() and action.inner_text().strip() == "Open stay"
         page.locator("[data-cal-details] [data-cal-close]").click()
+        if page.locator("[data-cal-day-dialog][open]").count():
+            page.locator("[data-cal-day-dialog] [data-cal-close]").click()
 
+        # 0834: after the booking sheet the day click opens the day sheet, whose Add button opens the Stay form.
         page.locator("[data-cal-day]:visible").first.click()
+        if page.locator("[data-cal-day-dialog][open]").count():
+            page.locator("[data-cal-day-add]").click()
         page.locator('[data-cal-type-choice="stay"]').click()
         form = page.locator("[data-cal-form]")
         form.locator("#cal-property").select_option(str(ws["properties"][0]))

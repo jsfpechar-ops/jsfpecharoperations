@@ -1,6 +1,6 @@
 # 0832: Full-page calendar at every width, Airbnb-clean toolbar
 
-Status: todo
+Status: done
 Depends on: 0818 (committed 8d8f24c) | Branch: claude/project-thread-6aeyrs
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

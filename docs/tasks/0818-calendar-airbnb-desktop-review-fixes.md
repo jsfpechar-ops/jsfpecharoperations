@@ -1,6 +1,6 @@
 # 0818: Fix what the 0816 screenshot review found (tablet and desktop calendar)
 
-Status: todo
+Status: done
 Depends on: 0816 (committed) | Branch: claude/project-thread-6aeyrs
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
