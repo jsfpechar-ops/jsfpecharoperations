@@ -3402,6 +3402,22 @@ async def reservation_create(request: Request):
             "updated_at": db.utcnow(),
         },
     )
+    # 0833: a guest e-mail typed on this explicit Create sends the same claim mail as "resend".
+    guest_addr = mail.normalise_email(_form_str(form, "guest_email"))
+    if guest_addr and mail.mail_enabled():
+        reservation = access.reservation(request, reservation_id)
+        apartment = access.apartment(request, apartment_id)
+        if reservation and apartment:
+            lang = claim.ensure_row(reservation_id)["lang"] or "cs"
+            ok, _err, _secret = claim.start_claim(
+                reservation,
+                apartment,
+                email=guest_addr,
+                party_size=_form_int(form, "expected_guests") or 1,
+                lang=lang,
+            )
+            if ok:
+                db.audit("guest_link_sent_on_create", f"reservation={reservation_id}")
     if calendar_json:
         return JSONResponse(
             {"id": reservation_id, "url": f"/reservations/{reservation_id}?return_to=/"},
