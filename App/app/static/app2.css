@@ -1312,3 +1312,10 @@ body.v2 .settings-value-link{display:inline-flex;align-items:center;gap:4px;colo
 body.v2 .settings-pills{display:flex;flex-wrap:nowrap;gap:12px;overflow-x:auto;margin:0 0 24px;padding-bottom:4px}
 body.v2 .settings-pill{flex:0 0 auto;display:inline-flex;align-items:center;min-height:44px;padding:0 20px;border-radius:999px;background:#f2f2f2;color:var(--ink);text-decoration:none;font-size:15px;font-weight:600;white-space:nowrap}
 body.v2 .settings-pill.is-current{background:var(--ink);color:#fff}
+/* 0789b: a checkbox with data-toggle-submit is a 51x31 switch (ink when on) */
+body.v2 .settings-toggle-form{margin:0}
+body.v2 input[type=checkbox][data-toggle-submit]{appearance:none;-webkit-appearance:none;position:relative;flex:0 0 auto;width:51px;height:31px;margin:0;border-radius:31px;background:#e0e0e0;cursor:pointer;transition:background .15s}
+body.v2 input[type=checkbox][data-toggle-submit]::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s}
+body.v2 input[type=checkbox][data-toggle-submit]:checked{background:var(--ink)}
+body.v2 input[type=checkbox][data-toggle-submit]:checked::after{transform:translateX(20px)}
+body.v2 input[type=checkbox][data-toggle-submit]:focus-visible{outline:2px solid var(--ink);outline-offset:2px}

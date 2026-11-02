@@ -68,27 +68,17 @@
           <a class="ui-btn ui-btn-secondary ui-btn-compact" href="{{ ('/entities?edit=' ~ business_entities[0].id ~ '&next=/settings') if business_entities and business_entities | length == 1 else '/entities' }}">{{ t('settings.business.action') }}</a>
         </div>
         {% if onboarding_emails is not none %}
-          <form method="post" action="/account/onboarding-emails" class="settings-action-row" id="settings-onboarding-emails">
-            <div>
-              <label class="checkline">
-                <input type="checkbox" name="enabled" value="1"{% if onboarding_emails %} checked{% endif %}>
-                <strong>{{ t('settings.account.onboarding_emails') }}</strong>
-              </label>
-              {{ help_tip('settings-onboarding-emails-help', t('settings.account.onboarding_emails_help')) }}
-            </div>
-            <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('settings.account.onboarding_emails_save') }}</button>
+          <form method="post" action="/account/onboarding-emails" class="settings-toggle-form" id="settings-onboarding-emails">
+            {% set control %}<input type="checkbox" name="enabled" value="1" data-toggle-submit aria-label="{{ t('settings.account.onboarding_emails') }}"{% if onboarding_emails %} checked{% endif %}>{% endset %}
+            {% with label=t('settings.account.onboarding_emails'), help_id='settings-onboarding-emails-help', help_text=t('settings.account.onboarding_emails_help'), control=control %}{% include "partials/settings_toggle_row.html" %}{% endwith %}
+            <noscript><button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('settings.account.onboarding_emails_save') }}</button></noscript>
           </form>
         {% endif %}
         {% if stay_fee_emails is not none %}
-          <form method="post" action="/account/stay-fee-emails" class="settings-action-row" id="settings-stay-fee-emails">
-            <div>
-              <label class="checkline">
-                <input type="checkbox" name="enabled" value="1"{% if stay_fee_emails %} checked{% endif %}>
-                <strong>{{ t('settings.account.stay_fee_emails') }}</strong>
-              </label>
-              {{ help_tip('settings-stay-fee-emails-help', t('settings.account.stay_fee_emails_help')) }}
-            </div>
-            <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('settings.account.stay_fee_emails_save') }}</button>
+          <form method="post" action="/account/stay-fee-emails" class="settings-toggle-form" id="settings-stay-fee-emails">
+            {% set control %}<input type="checkbox" name="enabled" value="1" data-toggle-submit aria-label="{{ t('settings.account.stay_fee_emails') }}"{% if stay_fee_emails %} checked{% endif %}>{% endset %}
+            {% with label=t('settings.account.stay_fee_emails'), help_id='settings-stay-fee-emails-help', help_text=t('settings.account.stay_fee_emails_help'), control=control %}{% include "partials/settings_toggle_row.html" %}{% endwith %}
+            <noscript><button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('settings.account.stay_fee_emails_save') }}</button></noscript>
           </form>
         {% endif %}
         {% if current_user.role == 'admin' %}
