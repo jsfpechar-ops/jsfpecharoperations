@@ -16,7 +16,7 @@
   <p>{{ t('payments.consent.need') }}</p>
   <form method="post" action="/payments/consent" class="ui-form">
     {{ ui_check('pay-consent-agree', t('payments.consent.agree'), name='agree') }}
-    <p><a data-turbo="false" href="https://stripe.com/cz/legal/connect-account" target="_blank" rel="noopener">{{ t('payments.consent.stripe_link') }}</a></p>
+    <p><a href="https://stripe.com/cz/legal/connect-account" target="_blank" rel="noopener">{{ t('payments.consent.stripe_link') }}</a></p>
     {{ ui_button(t('payments.consent.continue'), 'primary', type='submit') }}
   </form>
 </div>

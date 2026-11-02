@@ -81,7 +81,7 @@
     {% endif %}
     <p class="fee-send-line">{% if apartment.stay_fee_authority_databox %}{{ t('stay_fees.pay.send_to', databox=apartment.stay_fee_authority_databox) }}{% else %}{{ t('stay_fees.pay.send') }}{% endif %}</p>
     <div class="fee-step-actions">
-      <a data-turbo="false" class="ui-btn ui-btn-primary" href="https://www.mojedatovaschranka.cz/" target="_blank" rel="noopener noreferrer">{{ t('stay_fees.pay.open_databox') }}</a>
+      <a class="ui-btn ui-btn-primary" href="https://www.mojedatovaschranka.cz/" target="_blank" rel="noopener noreferrer">{{ t('stay_fees.pay.open_databox') }}</a>
       <a class="ui-btn ui-btn-quiet" href="{{ fee_step_url(apartment.id, 2) }}">{{ t('stay_fees.pay.back') }}</a>
     </div>
   {% endif %}

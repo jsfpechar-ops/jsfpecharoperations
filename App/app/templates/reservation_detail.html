@@ -80,7 +80,7 @@
         <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">{{ t('stay.detail.cta.add_guest') }}</a>
         {% if stay_invoice %}<a class="row-menu-item" href="/invoices/{{ stay_invoice.id }}" role="menuitem">{{ t('invoice.stay.open', number=stay_invoice.number) }}</a>{% else %}<a class="row-menu-item" href="/invoices/new?reservation_id={{ reservation.id }}" role="menuitem">{{ t('invoice.new') }}</a>{% endif %}
         {% if reservation.permalink_token %}
-        <a data-turbo="false" class="row-menu-item" href="{{ guest_link }}" target="_blank" rel="noopener" role="menuitem">{{ t('stay.detail.menu.open_guest_form') }}</a>
+        <a class="row-menu-item" href="{{ guest_link }}" target="_blank" rel="noopener" role="menuitem">{{ t('stay.detail.menu.open_guest_form') }}</a>
         {% endif %}
         {% if reservation.archived_at %}
           <form method="post" action="/reservations/{{ reservation.id }}/unarchive" class="row-menu-form">

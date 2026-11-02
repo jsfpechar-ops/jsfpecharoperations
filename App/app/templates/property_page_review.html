@@ -22,7 +22,7 @@
       <button class="ui-btn ui-btn-primary ui-btn-compact" type="submit" name="publish" value="1">{{ t('payments.page.publish_btn') }}</button>
     </form>
     {% endif %}
-    {% if published %}<a data-turbo="false" class="ui-btn ui-btn-secondary ui-btn-compact" href="/p/{{ slug }}" target="_blank">{{ t('payments.page.preview') }}</a>{% endif %}
+    {% if published %}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="/p/{{ slug }}" target="_blank">{{ t('payments.page.preview') }}</a>{% endif %}
   </p>
   {% if published %}
   <form method="post" action="/apartments/{{ apartment.id }}/page" class="ui-form">

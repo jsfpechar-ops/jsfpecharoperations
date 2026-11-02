@@ -26,7 +26,7 @@
   <div class="property-operator-empty" id="operator-message">
     <p class="err-text"{% if op_error %} role="alert"{% endif %}>{{ t('apartment.form.operator.add_first') }}</p>
     <div class="actions">
-      <a data-turbo="false" class="btn small" href="/entities" target="_blank" rel="noopener">{{ t('apartment.form.operator.add_business') }}</a>
+      <a class="btn small" href="/entities" target="_blank" rel="noopener">{{ t('apartment.form.operator.add_business') }}</a>
       <button class="btn small ghost" type="submit" name="operator_refresh" value="1" formnovalidate>{{ t('apartment.form.operator.check_again') }}</button>
     </div>
   </div>
