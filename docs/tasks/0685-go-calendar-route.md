@@ -1,5 +1,5 @@
 # 0685: Go dashboard calendar: progress, events query, route
-Status: todo
+Status: review
 Depends on: 0682 partial (commit 9485212) | Base commit: task/0682-go-calendar | Branch: task/0682-go-calendar (same worktree /tmp/wt0682)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 80k tokens
 ## 1. Objective

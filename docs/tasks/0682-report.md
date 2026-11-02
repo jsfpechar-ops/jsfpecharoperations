@@ -54,3 +54,27 @@ Deviations and open points:
 - Not run: DB tests (0686). The route is not exercised over HTTP.
 
 Last 5 lines of §7 acceptance: package builds, unit tests pass, route registered.
+
+## 0686: DB tests for GET /dashboard/calendar
+
+Files: `go/internal/calendar/handler_test.go` (new, 10 DB tests and the exact-bytes golden), `go/internal/calendar/handler.go` (login gate and column fix). `calendar_test.go` keeps the `CZE` code in `not_required` (the Czech code is three letters, so `CZ` was not Czech).
+
+Fixes found by the tests:
+- Login gate: `hostweb.Login` now gets the real writer, so a signed-out call gets its 303 to `/login?next=/dashboard/calendar`. The 401 JSON path and the discard writer are gone.
+- `apartment.active` is `bigint` in the schema, so `active = true` failed in Postgres. Both queries now use `active = 1`.
+- Guest and reservation fields were checked against `App/migrations_pg/00001_baseline.sql`. The scans are correct as written.
+
+Test tail (`UBYHOST_TEST_DATABASE_URL` set, local DB `ubyhost0686`):
+```
+--- PASS: TestDashboardCalendarSignedOutRedirects
+--- PASS: TestDashboardCalendarOwnerScope
+--- PASS: TestDashboardCalendarPropertyFilter
+--- PASS: TestDashboardCalendarForeignAndBadInput (6 subtests)
+--- PASS: TestDashboardCalendarProgressAndTone
+--- PASS: TestDashboardCalendarRangeBoundaries
+--- PASS: TestDashboardCalendarTimingFallback
+--- PASS: TestDashboardCalendarExactBytes
+PASS  ok  internal/calendar  0 skipped
+```
+
+Known differences from Python: none found by these cases. Not covered: impersonation expiry, acceptance redirect, and POST paused billing (the gate code is shared with other routes).

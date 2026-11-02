@@ -1,5 +1,5 @@
 # 0682: Go dashboard calendar JSON
-Status: blocked
+Status: review
 Depends on: 0676 (hostweb, on main) | Base commit: origin/main | Branch: task/0682-go-calendar
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 80k tokens
 ## 1. Objective
