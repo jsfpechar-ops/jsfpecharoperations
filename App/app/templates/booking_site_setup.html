@@ -84,5 +84,28 @@
   {% endif %}
 </form>
 {% endcall %}
+{% call ui_section(t('bsite.bookings.title')) %}
+  {% if bookings %}
+  <dl class="ui-facts">
+    {% for b in bookings %}
+    <div>
+      <dt>{{ b.name }} · {{ b.dates }} · {{ b.total }} {{ t('payments.czk') }}</dt>
+      <dd>
+        {{ ui_badge('done' if b.status == 'paid' else 'neutral', t('bsite.bookings.status.' ~ b.status)) }}
+        {% if b.can_cancel or b.can_retry %}
+        <form method="post" action="/apartments/{{ apartment.id }}/booking-site/cancel" data-confirm data-confirm-message="{{ t('bsite.bookings.confirm') }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+          <input type="hidden" name="booking_id" value="{{ b.id }}">
+          {{ ui_button(t('bsite.bookings.retry') if b.can_retry else t('bsite.bookings.cancel'), 'danger', type='submit', size='compact') }}
+        </form>
+        {% endif %}
+      </dd>
+    </div>
+    {% endfor %}
+  </dl>
+  {% else %}
+  <p class="ui-sub">{{ t('bsite.bookings.empty') }}</p>
+  {% endif %}
+{% endcall %}
 {% endif %}
 {% endblock %}
