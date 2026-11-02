@@ -422,7 +422,7 @@
         const button = el("button", "cal-mini-day", String(dateValue(day).getUTCDate()));
         button.type = "button"; button.dataset.calMonthOpen = day;
         button.setAttribute("aria-label", fullDate(day));
-        const events = state.events.filter(event => displayOverlap(event, day, addDays(day, 1)));
+        const events = state.events.filter(event => (!hostCleaning || event.kind === "cleaning") && displayOverlap(event, day, addDays(day, 1)));
         if (events.length) button.classList.add("has-stays");
         if (events.some(event => event.tone === "overdue" || event.tone === "action")) button.classList.add("has-action");
         if (day === root.dataset.today) button.classList.add("is-today");

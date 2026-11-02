@@ -946,3 +946,17 @@ def test_mouse_drag_opens_panel(calendar_workspace, calendar_origin):
         assert page.locator("[data-cal-create]").is_hidden()
         context.close()
         browser.close()
+
+
+def test_calendar_view_hides_today_table_and_alert_stack_0835(calendar_workspace, calendar_origin):
+    # 0835: the full-page calendar at 1280 px shows no Today table and no alert stack.
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=1280)
+        page.goto(f"{calendar_origin}/?lang=en&cal_view=calendar&cal_date=2026-10-01")
+        wait_loaded(page)
+        assert page.locator(".ov-table").first.is_hidden()
+        visible = [node.evaluate("n => { const out = []; for (let e = n; e && out.length < 9; e = e.parentElement) out.push(e.tagName + '.' + e.className + '#' + e.id); return out.join(' > ') }") for node in page.locator("[data-notification]").all() if node.is_visible()]
+        assert not visible, visible
+        context.close()
+        browser.close()

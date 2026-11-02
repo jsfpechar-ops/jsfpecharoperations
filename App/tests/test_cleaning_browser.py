@@ -738,3 +738,156 @@ def test_desktop_cleaning_calendar_tags_and_side_panel(workspace, origin, width)
         assert page.locator("[data-calendar]").evaluate("element => element.classList.contains('has-panel')")
         context.close()
         browser.close()
+
+
+def _touch_context(playwright, ws, origin, width, height=844):
+    browser = playwright.chromium.launch(**chromium_launch_kwargs())
+    context = browser.new_context(viewport={"width": width, "height": height}, has_touch=True, is_mobile=True)
+    context.add_cookies([{"name": auth.SESSION_COOKIE, "value": ws["client"].cookies.get(auth.SESSION_COOKIE),
+                         "url": origin + "/"}])
+    return browser, context
+
+
+@pytest.mark.parametrize("width", [768, 1280])
+def test_0835_cleaning_header_has_no_long_text(workspace, origin, width):
+    ws = workspace
+    with sync_api.sync_playwright() as playwright:
+        browser, context = browser_context(playwright, ws, origin, width)
+        page = context.new_page()
+        page.goto(f"{origin}/cleaning?lang=en&cal_view=calendar&cal_property={ws['home']}")
+        loaded(page)
+        long_texts = page.evaluate("""() => {
+          const roots = [...document.querySelectorAll('.cleaning-page header, .cleaning-head, .cleaning-page .cal-heading, .cleaning-page .cal-toolbar')];
+          const out = [];
+          for (const root of roots) for (const el of [root, ...root.querySelectorAll('*')]) {
+            const text = [...el.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim();
+            if (text.length > 90) out.push(text.slice(0, 120));
+          }
+          return out; }""")
+        assert long_texts == []
+        context.close()
+        browser.close()
+
+
+def test_0835_cleaning_range_shot_390_long_press(workspace, origin):
+    ws = workspace
+    with sync_api.sync_playwright() as playwright:
+        browser, context = _touch_context(playwright, ws, origin, 390)
+        page = context.new_page()
+        page.goto(f"{origin}/cleaning?lang=en&cal_view=calendar&cal_property={ws['home']}&cal_date=2026-10-01")
+        loaded(page)
+        cdp = context.new_cdp_session(page)
+        page.evaluate("window.scrollTo(0, 0)")
+        page.wait_for_function("scrollY === 0")
+        box_a = page.locator('.cal-day[data-date="2026-10-03"]').bounding_box()
+        box_b = page.locator('.cal-day[data-date="2026-10-05"]').bounding_box()
+        x, y = box_a["x"] + box_a["width"] / 2, box_a["y"] + box_a["height"] / 2
+        tx, ty = box_b["x"] + box_b["width"] / 2, box_b["y"] + box_b["height"] / 2
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": x, "y": y}]})
+        page.wait_for_timeout(400)
+        for step in (1, 2, 3):
+            point = {"x": x + (tx - x) * step / 3, "y": y + (ty - y) * step / 3}
+            cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [point]})
+            page.wait_for_timeout(50)
+        selected = page.eval_on_selector_all(".cal-day.is-selected", "els => els.map(e => e.dataset.date)")
+        assert selected == ["2026-10-03", "2026-10-04", "2026-10-05"], selected
+        _save_cleaning_shot(page, "cleaning-range-390.png")
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+        context.close()
+        browser.close()
+
+
+def test_0835_cleaning_range_shot_1280_mouse_drag(workspace, origin):
+    ws = workspace
+    with sync_api.sync_playwright() as playwright:
+        browser, context = browser_context(playwright, ws, origin, 1280)
+        page = context.new_page()
+        page.goto(f"{origin}/cleaning?lang=en&cal_view=calendar&cal_property={ws['home']}&cal_date=2026-10-01")
+        loaded(page)
+        box_a = page.locator('.cal-day[data-date="2026-10-12"]').bounding_box()
+        box_b = page.locator('.cal-day[data-date="2026-10-14"]').bounding_box()
+        page.mouse.move(box_a["x"] + box_a["width"] / 2, box_a["y"] + box_a["height"] / 2)
+        page.mouse.down()
+        page.mouse.move(box_b["x"] + box_b["width"] / 2, box_b["y"] + box_b["height"] / 2, steps=8)
+        page.wait_for_timeout(150)
+        selected = page.eval_on_selector_all(".cal-day.is-selected", "els => els.map(e => e.dataset.date)")
+        assert selected == ["2026-10-12", "2026-10-13", "2026-10-14"], selected
+        _save_cleaning_shot(page, "cleaning-range-1280.png")
+        page.mouse.up()
+        context.close()
+        browser.close()
+
+
+ONE_ROW_0842 = ["h3[data-cal-period]", "[data-cal-prev]", "[data-cal-today]", "[data-cal-next]",
+                "[data-cal-property]", ".cal-view-segment", "[data-cal-settings]", "[data-cal-scales]"]
+FITS = "document.documentElement.scrollWidth <= window.innerWidth"
+
+
+def test_0842_cleaning_toolbar_one_row_at_1280(workspace, origin):
+    ws = workspace
+    with sync_api.sync_playwright() as playwright:
+        browser, context = browser_context(playwright, ws, origin, 1280)
+        page = context.new_page()
+        page.goto(f"{origin}/cleaning?lang=en&cal_view=calendar&cal_property={ws['home']}")
+        loaded(page)
+        boxes = [page.locator(".cleaning-page " + sel).first.bounding_box() for sel in ONE_ROW_0842]
+        assert all(boxes), list(zip(ONE_ROW_0842, boxes))
+        assert max(b["y"] for b in boxes) < min(b["y"] + b["height"] for b in boxes), boxes
+        ordered = sorted(boxes, key=lambda b: b["x"])
+        gaps = [round(b["x"] - (a["x"] + a["width"])) for a, b in zip(ordered, ordered[1:])]
+        assert min(gaps) >= 11, gaps
+        for sel, b in zip(ONE_ROW_0842[1:], boxes[1:]):
+            assert abs(b["height"] - 40) <= 1, (sel, b)
+        title = page.locator(".cleaning-page h3[data-cal-period]").evaluate(
+            "e => [getComputedStyle(e).fontSize, getComputedStyle(e).fontWeight]")
+        assert title == ["24px", "700"], title
+        assert page.get_by_role("button", name="Gantt", exact=True).count() == 1
+        body = page.locator(".cleaning-page [data-cal-body]").bounding_box()
+        assert body["y"] >= max(b["y"] + b["height"] for b in boxes), body
+        head = [page.locator(f'.cleaning-head a[href="{href}"]').bounding_box()
+                for href in ("/cleaning/new", "/cleaning/properties", "/cleaning/shares")]
+        assert all(abs(b["height"] - 40) <= 1 for b in head), head
+        assert round(head[1]["x"] - head[0]["x"] - head[0]["width"]) >= 11, head
+        assert page.evaluate(FITS)
+        context.close()
+        browser.close()
+
+
+@pytest.mark.parametrize("width", [390, 320])
+def test_0842_phone_cleaning_header(workspace, origin, width):
+    ws = workspace
+    with sync_api.sync_playwright() as playwright:
+        browser, context = browser_context(playwright, ws, origin, width)
+        page = context.new_page()
+        page.goto(f"{origin}/cleaning?lang=en&cal_view=calendar&cal_property={ws['home']}")
+        loaded(page)
+        select = page.locator(".cleaning-page [data-cal-property]").bounding_box()
+        title = page.locator(".cleaning-page h3[data-cal-period]").bounding_box()
+        prev = page.locator(".cleaning-page [data-cal-prev]").bounding_box()
+        nxt = page.locator(".cleaning-page [data-cal-next]").bounding_box()
+        assert abs(select["height"] - 48) <= 1, select
+        assert select["y"] + select["height"] <= title["y"], (select, title)
+        for b in (prev, nxt):
+            assert b["y"] < title["y"] + title["height"] and title["y"] < b["y"] + b["height"], (title, b)
+        assert abs(title["x"] - select["x"]) <= 2, (title, select)
+        assert title["x"] + title["width"] <= prev["x"], (title, prev)
+        assert page.evaluate(FITS)
+        context.close()
+        browser.close()
+
+
+@pytest.mark.parametrize("width", [320, 390, 768, 1024, 1280, 1440])
+def test_0842_cleaning_no_horizontal_overflow(workspace, origin, width):
+    ws = workspace
+    with sync_api.sync_playwright() as playwright:
+        browser, context = browser_context(playwright, ws, origin, width)
+        page = context.new_page()
+        page.goto(f"{origin}/cleaning?lang=cs&cal_view=calendar&cal_property={ws['home']}")
+        loaded(page)
+        assert page.evaluate(FITS), (width, "month")
+        if width >= 768:
+            page.locator('.cleaning-page [data-cal-scale="week"]').click()
+            page.wait_for_function("() => document.querySelector('[data-cal-body]')?.getAttribute('aria-busy') === 'false'")
+            assert page.evaluate(FITS), (width, "week")
+        context.close()
+        browser.close()

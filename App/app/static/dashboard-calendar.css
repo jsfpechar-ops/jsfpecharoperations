@@ -726,4 +726,34 @@ body:has(.dashboard-calendar.has-panel) .havel-fab { display:none !important; }
 .cleaning-page:has(.dashboard-calendar[data-readonly="false"]) :is(#cleaning-list, .cleaning-legend) { display:none; }
 
 /* 0833: phone host cleaning page shows the calendar (app2.css hides #calendar on the cleaning page under 768 px). The shared cleaner page (data-readonly="true") keeps the hide. */
-body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] { display:block; }
+@media (max-width:767px) {
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] { display:block; }
+}
+
+/* 0842: host cleaning page. 768 px+: one flex row (title left; nav, property, icon-only Calendar/Gantt, filter, scales packed right; wraps right-aligned only when too narrow), 40 px controls, 12 px gaps, title 24 px 700. Phone: practice banner hidden on this page, 48 px property select on top, title left and arrows right on one row. The (1,4,1) prefix beats app2.css 1058-1066. */
+@media (min-width:768px) {
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:12px; }
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] > :is(.cal-message, .cal-body) { order:5; flex:1 1 100%; min-width:0; }
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-toolbar h3[data-cal-period] { order:1; flex:0 1 auto; min-width:0; margin:0 auto 0 0; text-align:left; font-size:24px; line-height:32px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-toolbar .cal-navigation { order:2; display:flex; flex:0 0 auto; gap:12px; }
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-heading-actions:not([hidden]) { order:3; display:flex; flex:0 0 auto; flex-wrap:nowrap; gap:12px; margin:0; }
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-toolbar-options { order:4; display:flex; flex:0 0 auto; gap:12px; }
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] :is(.cal-heading-actions, .cal-toolbar) :is(button.btn, select) { height:40px; min-height:40px; box-sizing:border-box; }
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] :is(.cal-navigation .cal-arrow, .cal-settings) { width:40px; min-width:40px; padding:0; }
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-heading select[data-cal-property] { flex:0 0 170px; width:170px; max-width:170px; min-width:0; }
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-segment { height:40px; min-height:40px; box-sizing:border-box; }
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-segment button { height:34px; min-height:34px; min-width:0; }
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-view-segment button { position:relative; width:34px; min-width:34px; padding:0; }
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-view-segment button span { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+}
+@media (min-width:1024px) {
+  body.v2 .cleaning-head .cleaning-actions { gap:12px; }
+  body.v2 .cleaning-head .btn { display:inline-flex; align-items:center; height:40px; min-height:40px; box-sizing:border-box; }
+}
+@media (max-width:767px) {
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-heading select[data-cal-property] { width:100%; height:48px; min-height:48px; font-size:16px; border-radius:12px; box-sizing:border-box; }
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-toolbar:not([hidden]) { display:flex; align-items:center; gap:12px; margin:12px 0; }
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-toolbar-options { display:none; }
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-toolbar h3[data-cal-period] { order:1; flex:1 1 auto; min-width:0; margin:0; text-align:left; font-size:20px; line-height:28px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-toolbar .cal-navigation { order:2; flex:0 0 auto; gap:8px; }
+}
