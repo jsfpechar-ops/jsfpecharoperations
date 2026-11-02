@@ -5,12 +5,12 @@ Executor: Haiku 5.5, alone, on branch `claude/project-thread-vov8xp` (PR #700). 
 
 ## 1. Objective
 
-Josef's reference: Airbnb host app, listing Settings (his screenshots IMG_2197/IMG_2198, 2026-11-02 15:23). Apply the same pattern to `/settings` and every settings sub-page (`/entities`, `/privacy-requests`, `/settings/archived`), phone first, desktop the same structure in the 720 lane:
+Josef's references (Airbnb host app, 2026-11-02 15:23), saved in `/mnt/project-files/settings-area/airbnb-ref/`: IMG_2199 (account settings index), IMG_2200/IMG_2201 (a sub-page such as Privacy), IMG_2197/IMG_2198 (pill tabs + value cards). Open them before you start. Apply to `/settings` and every settings sub-page, phone first; desktop keeps the same structure in the 720 lane.
 
-1. **Header:** a round 40 px light-grey `×` button top left (closes back to the Menu tab / previous page; a plain link, works without JS), then a big bold title ("Settings", 32 px phone) under it. No crumb, no lede.
-2. **Pill tabs:** one horizontal, scrollable row of pill tabs under the title (44 px tall, grey fill; the active tab black fill, white text; 12 px apart; no scrollbar). Tabs = the settings groups: Account, Security, Phone app, Data & archive, Privacy, Technical, Help on `/settings` (each tab shows only its group, `?tab=` query param, server-rendered, no JS needed; default Account); the sub-pages (Business & legal details, Data requests, Archive) appear as tabs too and link to their pages, marked active there.
-3. **Cards:** one plain bordered card per setting (1 px border, 16 px radius, 24 px padding, 16 px between cards): a medium label (16 px, 500), optionally one short grey qualifier line, and the value big and bold (e.g. "Off", "2", "6 years") or the action button. No section intro text, no descriptions (the help `?` stays next to the label for anything explanatory). A card that edits something opens its form (link or `details`), not inline fields everywhere.
-4. Everything Josef already asked for stays: help `?` 8 px after the last word, 12 px minimum between any two controls, no fine print, no element at a card edge.
+1. **`/settings` becomes an index (IMG_2199):** a round 40 px light-grey back button top left (`←`, a plain link to the Menu tab / previous page), a big bold title "Settings" (32 px phone), then a plain list with no cards: per row a 24 px line icon, the label (17 px), a chevron `›` at the right; 64 px rows, no descriptions; a 1 px divider between groups. Rows: Account, Login & security, Phone app, Data & archive, Business & legal details (`/entities`), Data requests (`/privacy-requests`), Archive (`/settings/archived`), Technical, Help.
+2. **Each group opens its own sub-page** (`/settings/<group>`, server-rendered; reuse the existing forms and POST targets unchanged; a route that only renders a template slice is fine): back button + big title, then section headers (h2, 20 px bold) and rows like IMG_2200/2201: toggle rows (label left, switch right) for on/off settings, bordered cards with a chevron for links, value cards (label + big bold value, IMG_2198) for read-only values like retention years or PIN state.
+3. **Pill tabs (IMG_2197)** only where one sub-page has several parallel views (e.g. Archive types, activity filters): horizontal scrollable pills, 44 px tall, grey fill, active black with white text, 12 px apart.
+4. Everything Josef already asked for stays: no descriptions or fine print (the help `?` 8 px after the last word holds them), 12 px minimum between controls, nothing at a card edge.
 
 ## 2. Context
 
@@ -18,19 +18,19 @@ Josef's reference: Airbnb host app, listing Settings (his screenshots IMG_2197/I
 
 ## 3. Files
 
-`App/app/templates/settings.html`, `entities.html`, `privacy_requests.html`, `settings_archived.html`, a new shared partial for the header + pill tabs (e.g. `_settings_tabs.html`), the 0780/0781 blocks of `App/app/static/app2.css`, the settings route only if `?tab=` needs passing to the template (read-only, no logic change), tests touching these pages, `base.html` + `static_versions.json` (cache key).
+`App/app/templates/settings.html`, `entities.html`, `privacy_requests.html`, `settings_archived.html`, new shared partials for the back-button header, the index row and the pill tabs, new sub-page templates, the 0780/0781 blocks of `App/app/static/app2.css`, `App/app/` settings routes: only new GET routes that render the sub-page templates with the data the current settings route already loads (no new logic), tests touching these pages, `base.html` + `static_versions.json` (cache key).
 
 ## 4. Steps
 
-1. Test first in `test_0786_settings_geometry_browser.py`: at 390 and 1280, en and cs: the `×` is top left (x < 32) and >= 40 px; the h1 sits below it; the pill row exists, active pill has black background and `aria-current="page"`, pills >= 44 px tall and 12 px apart; every `.card` in main has a 1 px border, radius >= 12, padding >= 20; no card contains a paragraph longer than 60 characters.
-2. Build the header partial and tabs; restructure `/settings` into tabbed groups of cards; then the three sub-pages.
+1. Test first in `test_0786_settings_geometry_browser.py`: at 390 and 1280, en and cs: the back button is top left (x < 32) and >= 40 px; the h1 sits below it; /settings rows are >= 56 px, each with icon, label and chevron vertically centred within 1 px, no row text longer than 40 characters; every sub-page card has a 1 px border, radius >= 12, padding >= 20; no paragraph longer than 60 characters; pills (where present) >= 44 px tall, 12 px apart, active one black with `aria-current`.
+2. Build the partials; turn `/settings` into the index; move each group into its sub-page; restyle the three existing sub-pages the same way.
 3. Keep all existing behaviour tests green (forms, POST targets, help tips without JS, PWA, push, passkeys, 2FA, archive filters).
 4. Cache key bump, `tests/test_static_versions.py --write`.
-5. Screenshots at 390 and 1280 of every tab and sub-page to `/mnt/project-files/settings-area/airbnb/`.
+5. Screenshots at 390 and 1280 of the index and every sub-page to `/mnt/project-files/settings-area/airbnb/`.
 
 ## 5. Do not touch
 
-`App/app/static/app.js`, Python logic beyond passing `tab`, payments, other pages.
+`App/app/static/app.js`, Python logic beyond the new GET render routes, payments, other pages.
 
 ## 6. Commands
 
