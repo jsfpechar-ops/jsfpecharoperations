@@ -456,9 +456,15 @@ def test_form_errors_keep_the_values_and_the_click_id():
 def test_a_blank_workspace_is_named_from_the_email():
     client = _client()
     _submit(client, f"jan.novak_team-x+booking@{DOMAIN}", workspace="")
-    assert _account(f"jan.novak_team-x+booking@{DOMAIN}")["display_name"] == "jan novak team x booking"
+    assert _account(f"jan.novak_team-x+booking@{DOMAIN}")["display_name"] == "jan novak team x"
     _submit(client, f"+++@{DOMAIN}", workspace="")
     assert _account(f"+++@{DOMAIN}")["display_name"] == DOMAIN
+
+
+def test_a_plus_tag_is_left_out_of_the_workspace_name():
+    client = _client()
+    _submit(client, f"anna+airbnb+extra@{DOMAIN}", workspace="")
+    assert _account(f"anna+airbnb+extra@{DOMAIN}")["display_name"] == "anna"
 
 
 # --- consent --------------------------------------------------------------

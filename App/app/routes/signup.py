@@ -24,8 +24,9 @@ router = APIRouter()
 def _workspace_from_email(email: str) -> str:
     """Default workspace name for a sign-up that gave none: the e-mail's local part."""
     local, _, domain = email.partition("@")
-    name = local
-    name = re.sub(r"[.+_\-]+", " ", name)
+    # A plus-tag (anna+airbnb@) is a mailbox filter, not part of the name.
+    name = local.split("+", 1)[0]
+    name = re.sub(r"[._\-]+", " ", name)
     name = " ".join(name.split())[: signup.WORKSPACE_MAX].strip()
     return name or domain[: signup.WORKSPACE_MAX]
 
