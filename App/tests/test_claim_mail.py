@@ -1808,6 +1808,10 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
         "payment_request",
         "reminder_guest",
         "reminder_host",
+        # 0816: booking site confirmation, double-booking refund, host notice.
+        "site_booking_confirmed",
+        "site_booking_refunded",
+        "site_booking_host",
         "completion",
         "submission_problem",
         "invoice_issued",
