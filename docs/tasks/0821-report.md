@@ -29,6 +29,7 @@ Status: review (steps 1-10 done; step 9 by the orchestrator, step 10 by the exec
 
 - Step 7, test 8: the brief says the masked e-mail is `j***@`. The guest e-mail in the fixture is `petr@example.test`, so the test asserts `booking_manage.mask_email(...)` equals the page text and that the full address is absent.
 - Step 7, test 1 and test 4: `mail.enqueue` also records the paid-time host notice. Test 1 clears the mail list after payment; test 4 checks the last host mail.
+- Calendar link fix: the rule went into `App/app/templates/_pp_booking_css.html` (an inline include, not a versioned static file), so no `?v=` bump or `static_versions.json` change was needed. Scoped to `.pp-bk-page .pp-bk-actions .ui-btn-secondary`.
 - Step 7, test 2: the "says nothing is refunded" check is loose (`"refund"` in the lowercase guest text).
 - Step 7, test 7: the storno check asserts two invoice rows for the entity, with one of kind `storno` or `corrective`.
 - Step 7: the `site` fixture replaces the brief's `booking` fixture. `_paid(site, policy, ...)` takes the fixture dict, not the policy only.
