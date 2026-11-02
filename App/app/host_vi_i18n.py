@@ -2448,6 +2448,8 @@ STRINGS: Dict[str, str] = {
     "calendar.auto": "Tự động",
     "host.count_changed": "Số khách đã thay đổi. Hãy xem lại danh sách khách và thử lại.",
     "guide.title": "Trợ giúp và hướng dẫn",
+    "guide.search.placeholder": "Tìm trong hướng dẫn",
+    "guide.search.empty": "Không có mục nào khớp. Thử một từ ngắn hơn.",
     "guide.lede": "UbyHost hoạt động thế nào, từng trang một. Câu trả lời ngắn trước.",
     "guide.nav.overview": "Tổng quan",
     "guide.nav.statuses": "Ý nghĩa các màu",

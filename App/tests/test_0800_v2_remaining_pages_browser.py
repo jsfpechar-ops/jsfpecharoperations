@@ -57,6 +57,7 @@ def test_v2_remaining_page(name, width, base, dashboard_rich_host):
         context, page = _open_app(browser, base, cookie, _path({"path": ROUTES[name]}, dashboard_rich_host), width)
         shell = page.evaluate(_SHELL_JS)
         findings = geometry_findings(page, width)
+        findings += neighbour_findings(page)
         url = page.url
         if os.environ.get("UBYHOST_SHOTS_0800") == "1":
             SHOTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -74,6 +75,41 @@ def test_v2_remaining_page(name, width, base, dashboard_rich_host):
         problems.append("no visible v2 navigation (.tabs or .side) below 1024 px")
     problems += findings
     assert not problems, f"{name} ({url}) at {width} px:\n" + "\n".join(problems)
+
+
+_NEIGHBOUR_JS = """() => {
+  const main = document.querySelector('main') || document.body;
+  const SEL = 'button, a.ui-btn, .ui-btn, input:not([type=hidden]):not([type=checkbox]):not([type=radio]), select, textarea, .ui-pill, .badge, .ui-chip, .ui-card, .card, section';
+  const OUT = '.side, .tabs, header, .env-banner, .help-tip, .help-tip-btn';
+  const boxes = [...main.querySelectorAll(SEL)].filter(el => {
+    if (el.closest(OUT)) return false;
+    const r = el.getBoundingClientRect(); const s = getComputedStyle(el);
+    return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none';
+  });
+  const name = el => el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className.trim()
+    ? '.' + el.className.trim().split(/\\s+/).slice(0, 2).join('.') : '');
+  const out = [];
+  for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
+    const a = boxes[i], b = boxes[j];
+    if (a.contains(b) || b.contains(a)) continue;
+    const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+    const xo = Math.min(ra.right, rb.right) - Math.max(ra.left, rb.left);
+    const yo = Math.min(ra.bottom, rb.bottom) - Math.max(ra.top, rb.top);
+    let gap = null;
+    if (xo > 0 && yo > 0) gap = -Math.min(xo, yo);
+    else if (xo > 0) gap = Math.max(rb.top - ra.bottom, ra.top - rb.bottom);
+    else if (yo > 0) gap = Math.max(rb.left - ra.right, ra.left - rb.right);
+    if (gap === null || gap >= 12) continue;
+    out.push({a: name(a), b: name(b), gap: Math.round(gap * 10) / 10});
+  }
+  return out;
+}"""
+
+
+def neighbour_findings(page) -> list[str]:
+    """0813: controls and cards inside main keep 12 px from each other (sidebar, tabs, header, help tips excluded)."""
+    pairs = page.evaluate(_NEIGHBOUR_JS)
+    return [f"too close: {p['a']} and {p['b']} gap {p['gap']} px (need 12)" for p in pairs[:20]]
 
 
 def _launch_ctx():

@@ -1118,7 +1118,7 @@ body.v2 .guide-section{padding:20px}
 @media (max-width:1023px){body.v2 .guide-section{padding:16px}}
 /* 0808 step d: Havel as a standard chat: one message per row, topics as a vertical list */
 body.v2 .havel-v2 .havel-msg{max-width:80%}
-body.v2 .havel-v2 .havel-topics .havel-chips{display:flex;flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:8px;width:100%;max-width:420px}
+body.v2 .havel-v2 .havel-topics .havel-chips{display:flex;flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:12px;width:100%;max-width:420px}
 body.v2 .havel-v2 .havel-topics .havel-chip{display:flex;justify-content:flex-start;align-items:center;gap:8px;width:100%;box-sizing:border-box;min-height:44px;height:auto;padding:10px 16px;border-radius:var(--control-radius,10px);text-align:left;white-space:normal}
 /* 0804 cleaning sub-pages (v2) */
 body.v2 .cl-v2-edit .cleaning-form,body.v2 .cl-v2-shares .cleaning-form,body.v2 .cl-v2-shares .cleaning-share-row{max-width:680px;margin:0 0 16px;padding:20px;box-sizing:border-box}
@@ -1254,7 +1254,7 @@ body.v2 .prop-new .property-create-manage{display:inline-block;margin-top:8px;fo
 body.v2 .prop-new .grid{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
 body.v2 .prop-new .grid .field{margin-bottom:0}
 body.v2 .prop-new input[type=text],body.v2 .prop-new select{display:block;width:100%;min-height:40px;box-sizing:border-box;border:1px solid #d9d9d4;border-radius:10px;padding:8px 12px;font:inherit;font-size:15px;background:#fff;color:var(--ink)}
-body.v2 .prop-new .property-create-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:6px}
+body.v2 .prop-new .property-create-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:6px}
 body.v2 .prop-new .property-create-actions .ui-btn{display:inline-flex;align-items:center;justify-content:center;min-height:40px;box-sizing:border-box;text-decoration:none}
 body.v2 .prop-new .property-create-next h2{font-size:16px;margin:0 0 14px}
 body.v2 .prop-new .property-create-next-list{list-style:none;margin:0;padding:0}
@@ -1323,7 +1323,7 @@ body.v2 .guide-page .ui-help{display:block;margin-top:6px;font-size:14px;line-he
 body.v2 .guide-page .ui-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.5;word-break:break-all;color:var(--ink2)}
 body.v2 .guide-page .ui-btn-group{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 body.v2 .guide-page .ui-btn-group>form{margin:0}
-body.v2 .guide-page .ui-form-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:16px}
+body.v2 .guide-page .ui-form-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:16px}
 body.v2 .guide-page .ui-btn{display:inline-flex;align-items:center;gap:6px;text-decoration:none}
 body.v2 .guide-page .ui-btn-danger{background:#fff;color:var(--acc-text);border:1.5px solid var(--acc-text)}
 body.v2 .guide-page .ui-table{width:100%;border-collapse:collapse;margin:0}
@@ -1421,3 +1421,17 @@ body.v2 .help-tip-btn{min-width:24px;min-height:24px;padding:0;border-radius:50%
 body.v2 .heading-with-tip,body.v2 .havel-name-tip{display:flex;align-items:center;gap:6px}
 body.v2 .help-tip-body{display:none}
 body.v2 .help-tip.is-open>.help-tip-body,body.v2 .help-tip:not([data-js]):focus-within>.help-tip-body{display:block;position:absolute;z-index:70;left:0;top:100%;margin:6px 0 0;box-sizing:border-box;width:min(320px,calc(100vw - 32px));padding:10px 12px;background:var(--s);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.12);font-size:13px;font-weight:400;line-height:1.45;text-align:left;white-space:normal}
+/* 0828 guide search (v2) */
+body.v2 .guide-search{display:block;box-sizing:border-box;width:100%;min-height:44px;margin:0 0 16px;padding:0 16px;border:1px solid var(--line);border-radius:12px;background:var(--s);color:var(--ink);font:inherit;font-size:16px}
+body.v2 .guide-search[hidden],body.v2 .guide-search-empty[hidden],body.v2 .guide-topic[hidden]{display:none}
+body.v2 .guide-search-empty{margin:0 0 16px;color:var(--ink3)}
+body.v2 .guide-topic{margin:0 0 12px}
+body.v2 .guide-topic>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;cursor:pointer;list-style:none}
+body.v2 .guide-topic>summary::-webkit-details-marker{display:none}
+body.v2 .guide-topic>summary h2{margin:0;min-width:0;flex:1 1 auto}
+body.v2 .guide-topic>summary::after{content:"";flex:none;width:8px;height:8px;margin-right:4px;border-right:2px solid var(--ink3);border-bottom:2px solid var(--ink3);transform:rotate(45deg)}
+body.v2 .guide-topic[open]>summary::after{transform:rotate(-135deg)}
+body.v2 .guide-topic[open]>summary{margin-bottom:12px}
+body.v2 .guide-topic>summary:focus-visible{outline:2px solid var(--ink);outline-offset:4px;border-radius:8px}
+body.v2 .guide-search:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+body.v2 .guide-topic:not([open])>:not(summary){display:none}

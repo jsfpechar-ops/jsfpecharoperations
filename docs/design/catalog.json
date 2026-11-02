@@ -394,7 +394,10 @@
     "guide-qr",
     "heading-with-tip",
     "prop-name-tip",
-    "havel-name-tip"
+    "havel-name-tip",
+    "guide-search",
+    "guide-search-empty",
+    "guide-topic"
   ],
   "hooks": [
     "sr-only",
