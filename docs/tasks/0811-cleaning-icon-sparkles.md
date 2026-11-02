@@ -85,3 +85,32 @@ The calendar cleaning chips draw a third broom in `App/app/static/dashboard-cale
 3. From `App/`: `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_static_versions.py tests/test_0710_v2_mockup_match_browser.py -q --tb=short -rs -k "static or cleaning" 2>&1 | tail -15` (0 skipped). Also `grep -rln "dashboard-calendar" tests | head` and run those files the same way.
 4. Redo §4 step 5 for `cleaning-1440.png` only (copy to docs/tasks/screenshots-0811/, restore 0710 shots).
 5. Append the results to `docs/tasks/0811-report.md`, commit `0811b: sparkles in calendar cleaning chips`. Do not push.
+
+## 11. Addendum (0811c): one icon per nav destination
+
+Owner decision (Josef, 13:09): the stay fee icon becomes a receipt with text lines and no "$" (`receipt-text`), everywhere. Same rule for every nav destination: the v2 desktop sidebar (`_shell_v2.html` `.side-nav`), the v2 phone tab bar (`_shell_v2.html` `.tabs`) and the phone Menu (`menu.html`) must show the same icon. Today they differ for Stays, Payments, Stay fees, Settings and Help. Overview/Today, Calendar, Properties and Menu already match: leave them.
+
+Target icon per destination (all through the `icon()` macro from `_icons.html`; `_shell_v2.html` already imports it, it uses `icon('search', 16)`):
+
+| Destination | Icon | Where to change |
+|---|---|---|
+| Stays | `users` | `_shell_v2.html` sidebar link (line ~22) and tab (line ~48): replace the inline `<svg …>…</svg>` with `{{ icon('users', 18) }}` (sidebar) / `{{ icon('users', 22) }}` (tab) |
+| Payments | `credit-card` | `_shell_v2.html` sidebar link (line ~25) → `{{ icon('credit-card', 18) }}` |
+| Stay fees | `receipt-text` (new key) | `_shell_v2.html` sidebar (line ~26) → `{{ icon('receipt-text', 18) }}`; `menu.html` line 17 `icon('receipt', 26)` → `icon('receipt-text', 26)`; `_shell_sidebar.html` line 18 and `_shell_tabbar.html` line 19 `invoice-slip` → `receipt-text` |
+| Settings | `settings` | `_shell_v2.html` sidebar (line ~27) → `{{ icon('settings', 18) }}` |
+| Help | `circle-help` | `_shell_v2.html` `/guide` link (line ~31) → `{{ icon('circle-help', 18) }}` |
+
+Also replace the cleaning link's inline svg (line ~24, done in 0811) with `{{ icon('sparkles', 18) }}` so the sidebar uses one source.
+
+1. `_icons.html`: add after the `'receipt'` line:
+   `  'receipt-text': '<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/>',`
+   Then delete the `'invoice-slip'` entry if `grep -rn "invoice-slip" App/app` shows no other use. Keep `'receipt'` (`_property_create.html` uses it).
+2. Make the edits in the table. Existing CSS (`.nav svg`, `.tabs .tab svg`) sizes and strokes them; no CSS change.
+3. Tests: `App/tests/test_design_shell.py` line 29 `invoice-slip` → `receipt-text`; `App/tests/test_design_icons.py` `MASTER_ICONS`: add `"receipt-text"`, `"credit-card"` if missing, and remove `"invoice-slip"` if it is listed and was deleted. `grep -rn "invoice-slip\|M6 3h12v18" App/tests` and fix any other hit.
+4. `docs/design/MASTER.md` table in 6.1: `| Stay fees | \`coins\` |` → `| Stay fees | \`receipt-text\` |`.
+5. Mockups, so they stay the reference: in `docs/design/mockup/ubyhost-redesign-v2.html` lines 109 (stays), 112 (pay), 113 (fee), 114 (settings) and the help link, replace the inner markup of each nav `<svg viewBox="0 0 24 24">` with the matching icon's paths from `_icons.html` (users, credit-card, receipt-text, settings, circle-help). In `docs/design/mockup/ubyhost-phone-v2.html` replace the contents of symbols `i-stays`, `i-receipt`, `i-card`, `i-gear`, `i-help` the same way (keep the ids).
+6. Commands: `grep -rn "invoice-slip\|M6 3h12v18" App docs/design | head` prints nothing. Then from `App/`:
+   `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_design_icons.py tests/test_design_shell.py tests/test_0710_v2_mockup_match_browser.py tests/test_design_guardrails_browser.py tests/test_0728_menu_geometry_browser.py -q --tb=short -rs 2>&1 | tail -30` (0 skipped; if a failure also fails on `git stash`-free main logic unrelated to icons, note it and go on).
+   Also `grep -rln "_shell_v2\|side-nav\|class=\"tabs\"" tests | head` and run those files the same way.
+7. Screenshots: redo §4 step 5 (all four files), then restore the 0710 folder: `git checkout -- docs/tasks/screenshots-0710` and delete any untracked file under it with `rm` (list them with `git status --short docs/tasks/screenshots-0710`).
+8. Append results to `docs/tasks/0811-report.md`, commit `0811c: one icon per nav destination`. Do not push.
