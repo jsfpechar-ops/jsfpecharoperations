@@ -1185,7 +1185,15 @@ body.v2 .help-tip-btn{display:inline-flex;align-items:center;justify-content:cen
 body.v2 .help-tip-btn:hover,body.v2 .help-tip-btn[aria-expanded=true]{background:var(--brand-soft);border-color:var(--brand);color:var(--brand-ink)}
 body.v2 .help-tip-btn:focus-visible{outline:3px solid var(--brand-ring,var(--brand));outline-offset:2px}
 @media (max-width:1023px){body.v2 .help-tip-btn::after{content:"";position:absolute;inset:-10px}}
-body.v2 details .help-tip-body{position:static;display:block;max-width:none;margin:2px 0 0;padding:0;background:none;border:0;box-shadow:none;font-size:12px;color:var(--ink3)}body.v2 tr.clickable-row{cursor:pointer}
+body.v2 .help-tip-body{display:none;position:absolute;z-index:70;left:0;top:100%;box-sizing:border-box;width:min(320px,calc(100vw - 16px));max-width:calc(100vw - 16px);padding:10px 12px;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-popover);font-size:13px;font-weight:400;line-height:1.45;text-align:left;white-space:normal;overflow-wrap:anywhere}
+body.v2 .help-tip-body a{color:var(--brand-ink);font-weight:650}
+body.v2 .help-tip:not([data-js]):hover>.help-tip-body,body.v2 .help-tip:not([data-js]):focus-within>.help-tip-body,body.v2 .help-tip.is-open>.help-tip-body{display:block}
+body.v2 .help-tip[data-js]>.help-tip-body{position:fixed}
+/* 0543: inside details the hint is plain text, no ? button */
+body.v2 details .help-tip-btn{display:none}
+body.v2 details .help-tip{display:block}
+body.v2 details .help-tip-body,body.v2 details .help-tip[data-js]>.help-tip-body{width:auto;position:static;display:block;max-width:none;margin:2px 0 0;padding:0;background:none;border:0;box-shadow:none;font-size:12px;color:var(--ink3)}
+body.v2 tr.clickable-row{cursor:pointer}
 body.v2 .ui-table{width:100%;border-collapse:collapse;font-size:14px}
 body.v2 .ui-table th{text-align:left;font-size:12px;color:var(--ink3);font-weight:600;padding:10px 12px;border-bottom:1px solid var(--line)}
 body.v2 .ui-table td{padding:12px;border-bottom:1px solid var(--line);vertical-align:middle}
