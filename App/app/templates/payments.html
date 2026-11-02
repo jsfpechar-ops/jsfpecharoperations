@@ -64,7 +64,36 @@
   {% endif %}
   {% endif %}
 </div>
-<div class="ui-section">
+<div class="ui-section" data-payment-services>
+  <h2>{{ t('payments.services.title') }}</h2>
+  {% if services %}
+  <ul>
+    {% for s in services %}
+    <li data-service="{{ s.id }}">
+      <strong>{{ s.name }}</strong> · {{ s.amount_czk }} {{ t('payments.czk') }}
+      <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/payments?service={{ s.id }}#new-request">{{ t('payments.services.request') }}</a>
+      <form method="post" action="/payments/services/{{ s.id }}/delete" data-confirm data-confirm-message="{{ t('payments.services.remove_confirm') }}" style="display:inline">
+        <button class="ui-btn ui-btn-quiet ui-btn-compact" type="submit">{{ t('payments.services.remove') }}</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="ui-sub">{{ t('payments.services.empty') }}</p>
+  {% endif %}
+  <form method="post" action="/payments/services" class="ui-form">
+    <label class="ui-field">
+      <span>{{ t('payments.services.name') }}</span>
+      <input class="ui-input" type="text" name="name" maxlength="60" required>
+    </label>
+    <label class="ui-field">
+      <span>{{ t('payments.field.amount') }}</span>
+      <input class="ui-input" type="number" name="amount_czk" min="1" step="1" required>
+    </label>
+    {{ ui_button(t('payments.services.add'), 'secondary', type='submit') }}
+  </form>
+</div>
+<div class="ui-section" id="new-request">
   <h2>{{ t('payments.new.title') }}</h2>
   <form method="post" action="/payments/requests/new" class="ui-form">
     <label class="ui-field">
@@ -76,14 +105,18 @@
     </label>
     <label class="ui-field">
       <span>{{ t('payments.field.amount') }}</span>
-      <input class="ui-input" type="number" name="amount_czk" min="1" step="1" required>
+      <input class="ui-input" type="number" name="amount_czk" min="1" step="1" required{% if prefill %} value="{{ prefill.amount_czk }}"{% endif %}>
     </label>
     <fieldset class="ui-field">
       <legend>{{ t('payments.field.reason') }}</legend>
       <div class="ui-chips">
-        {% for r in reasons %}<label class="ui-chip"><input type="radio" name="reason" value="{{ r }}" {% if loop.first %}required{% endif %}> {{ t('payments.reason.' ~ r) }}</label>{% endfor %}
+        {% for r in reasons %}<label class="ui-chip"><input type="radio" name="reason" value="{{ r }}" {% if loop.first %}required{% endif %}{% if prefill and r == 'custom' %} checked{% endif %}> {{ t('payments.reason.' ~ r) }}</label>{% endfor %}
       </div>
     </fieldset>
+    <label class="ui-field">
+      <span>{{ t('payments.field.note') }}</span>
+      <input class="ui-input" type="text" name="guest_note" maxlength="60"{% if prefill %} value="{{ prefill.name }}"{% endif %}>
+    </label>
     <label class="ui-field">
       <span>{{ t('payments.field.guest_email') }}</span>
       <input class="ui-input" type="email" name="guest_email">
@@ -115,16 +148,21 @@
       {% for req in requests %}
         <tr>
           <td class="ui-sub" data-label="{{ t('payments.col.date') }}">{{ req.created_at | date_cz }}</td>
-          <td data-label="{{ t('payments.col.reason') }}">{{ t('payments.reason.' ~ req.reason) }}</td>
+          <td data-label="{{ t('payments.col.reason') }}">{% if req.reason == 'custom' and req.guest_note %}{{ req.guest_note }}{% else %}{{ t('payments.reason.' ~ req.reason) }}{% endif %}</td>
           <td class="ui-num" data-label="{{ t('payments.col.amount') }}">{{ req.amount_czk }} {{ t('payments.czk') }}</td>
           <td data-label="{{ t('payments.col.rail') }}">{{ t('payments.rail.' ~ req.rail) }}</td>
           <td data-label="{{ t('filter.status') }}"><span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('payments.status.' ~ req.status) }}</span></td>
           <td class="row-actions" data-label="">
+            {% if req.rail == 'card' and req.status in ['draft', 'sent', 'awaiting_payment'] %}
+            <form method="post" action="/payments/requests/{{ req.id }}/link" style="display:inline">
+              <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('payments.get_link') }}</button>
+            </form>
+            {% endif %}
             {% if req.status == 'draft' and req.guest_email %}
             <form method="post" action="/payments/requests/{{ req.id }}/send" style="display:inline">
               <button class="ui-btn ui-btn-primary ui-btn-compact" type="submit">{{ t('payments.send') }}</button>
             </form>
-            {% elif req.status == 'draft' %}
+            {% elif req.status == 'draft' and req.rail != 'card' %}
             <span class="ui-sub">{{ t('payments.need_email') }}</span>
             {% endif %}
             {% if req.status == 'draft' and req.rail == 'qr' %}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="/payments/qr/{{ req.id }}">{{ t('payments.qr.preview') }}</a>{% endif %}
