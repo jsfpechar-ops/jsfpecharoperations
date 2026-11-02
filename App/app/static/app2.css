@@ -1096,6 +1096,8 @@ body.v2 .settings-action-row > .btn,body.v2 .settings-action-row > .pill{flex:0 
 body.v2 .settings-move-form{max-width:420px;padding-bottom:16px}
 body.v2 .settings-lane .ui-btn{min-height:44px}
 body.v2 .settings-card .ui-btn,body.v2 .settings-card button{white-space:normal;max-width:100%}
+body.v2 .settings-row-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px}
+body.v2 .settings-row-actions[hidden]{display:none}
 body.v2 .settings-lane a{display:inline-flex;align-items:center;min-height:24px}
 body.v2 .settings-lane .help-tip-btn{min-width:24px;min-height:24px}
 body.v2 .settings-lane input[type=checkbox]{min-width:24px;min-height:24px;margin:0;accent-color:var(--acc)}
