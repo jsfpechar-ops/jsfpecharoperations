@@ -131,7 +131,8 @@ def test_phone_calendar_tiles_and_sheet(calendar_workspace, calendar_origin):
         tile, neighbour = _box(page, TILE.format("2026-10-10")), _box(page, TILE.format("2026-10-11"))
         assert tile["width"] >= 44 and tile["height"] >= 44
         assert neighbour["x"] - (tile["x"] + tile["width"]) >= 4
-        assert not page.locator("#calendar-title").is_visible()
+        title = page.locator("#calendar-title").bounding_box()
+        assert title is None or (title["width"] <= 1 and title["height"] <= 1), title
         hint = page.locator("#cal-hint").bounding_box()
         assert hint is None or hint["width"] <= 1 or hint["height"] <= 1
         arrow_bg = page.eval_on_selector(".dashboard-calendar[data-cleaning='false'] .cal-navigation .cal-arrow", "e => getComputedStyle(e).backgroundColor")
