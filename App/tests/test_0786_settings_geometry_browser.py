@@ -60,15 +60,15 @@ HELP_JS = """
     const tip = btn.closest('.help-tip');
     let anchor = null;
     const prev = tip.previousElementSibling;
-    if (prev && /^(H[1-6]|LABEL)$/.test(prev.tagName)) anchor = prev;
+    if (prev && /^(H[1-6]|LABEL|STRONG)$/.test(prev.tagName)) anchor = prev;
     const parent = tip.parentElement;
-    if (!anchor && parent && parent.matches('h1,h2,h3,h4,h5,h6,label')) anchor = parent;
+    if (!anchor && parent && parent.matches('h1,h2,h3,h4,h5,h6,label,strong')) anchor = parent;
     if (!anchor && parent && parent.matches('.heading-with-tip')) anchor = parent.querySelector('h1,h2,h3,h4,h5,h6');
     if (!anchor) continue;
     const a = anchor.getBoundingClientRect(), b = btn.getBoundingClientRect();
     const walker = document.createTreeWalker(anchor, NodeFilter.SHOW_TEXT);
     let last = null, node;
-    while ((node = walker.nextNode())) { if (node.textContent.trim()) last = node; }
+    while ((node = walker.nextNode())) { if (node.textContent.trim() && !node.parentElement.closest('.help-tip')) last = node; }
     let lastTop = a.top, lastBottom = a.bottom;
     if (last) {
       const rr = document.createRange();
@@ -76,7 +76,7 @@ HELP_JS = """
       const rs = [...rr.getClientRects()].filter(r => r.height > 0);
       if (rs.length) { lastTop = rs[rs.length - 1].top; lastBottom = rs[rs.length - 1].bottom; }
     }
-    out.push({label: anchor.textContent.trim().slice(0, 40), sameLine: b.top < a.bottom && b.bottom > a.top, lastLine: (b.top + b.bottom) / 2 >= lastTop && (b.top + b.bottom) / 2 <= lastBottom});
+    out.push({label: anchor.textContent.trim().slice(0, 40), sameLine: b.top < a.bottom && b.bottom > a.top, lastLine: b.top >= lastTop - 6 && b.top <= lastBottom});
   }
   return out;
 }

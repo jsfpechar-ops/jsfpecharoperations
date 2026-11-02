@@ -1111,6 +1111,11 @@ body.v2 div:has(> label.checkline + .help-tip) > label.checkline{min-width:0}
 body.v2 .field-label-row{display:flex;align-items:last baseline;flex-wrap:nowrap;gap:8px}
 body.v2 .field-label-row > label{min-width:0}
 body.v2 .settings-heading .help-tip,body.v2 .field-label-row .help-tip{display:inline-flex;vertical-align:middle}
+/* 0787d: a heading or label with its ? keeps the ? on its last line; Account card row keeps label + ? as one group */
+body.v2 :is(h1,h2,h3):has(> .help-tip){display:flex;align-items:last baseline;flex-wrap:nowrap;gap:8px}
+body.v2 :is(h1,h2,h3) > .help-tip{margin-left:0;vertical-align:middle}
+body.v2 .settings-action-row > div:has(> strong + .help-tip){display:flex;flex-wrap:nowrap;align-items:last baseline;gap:8px;min-width:0}
+body.v2 .settings-action-row > div:has(> strong + .help-tip) > strong{min-width:0}
 body.v2 .settings-lane input[type=checkbox]{min-width:24px;min-height:24px;margin:0;accent-color:var(--acc)}
 @media (min-width:1024px){body.v2 .settings-lane .ui-btn{min-height:40px}}
 body.v2 details.technical.ui-section{border:0;background:none;box-shadow:none;border-radius:0;padding:0;margin:0;border-top:1px solid var(--line)}
@@ -1172,6 +1177,8 @@ body.v2 .entity-form .action-group,body.v2 .entity-add .action-group{display:fle
 body.v2 .entity-form .action-group input,body.v2 .entity-add .action-group input{min-width:0}
 @media (min-width:1024px){body.v2 .entity-form .action-group,body.v2 .entity-add .action-group{flex-direction:row;align-items:flex-end}body.v2 .entity-form .action-group input,body.v2 .entity-add .action-group input{flex:1 1 auto}}
 @media (max-width:1023px){body.v2 .entities-page .ui-table-stack td.row-actions{justify-content:flex-start;flex-wrap:wrap;gap:8px;text-align:left}}
+/* 0787d: entities h1 keeps its ? on the last line; invoice account inputs are full width; the phone prefix is one 44 px box */
+body.v2 .head h1.big:has(> .help-tip){display:flex;align-items:last baseline;flex-wrap:nowrap;gap:8px;min-width:0}
 /* 0781 privacy requests */
 body.v2 .pr-lane{max-width:720px}
 body.v2 .pr-lane>.card{margin:0 0 16px}
