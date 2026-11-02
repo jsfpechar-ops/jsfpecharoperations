@@ -21,16 +21,16 @@
 {# 0083: one index, six visible groups. Each specialized action keeps its own form and endpoint. #}
 
 {% if not group %}
-<nav class="settings-index" aria-label="{{ t('nav.settings') }}">
+<nav class="airbnb-index" aria-label="{{ t('nav.settings') }}">
   {% with href='/settings/account', label=t('settings.group.account'), icon_name='users' %}{% include "partials/settings_index_row.html" %}{% endwith %}
   {% with href='/settings/security', label=t('settings.group.security'), icon_name='shield' %}{% include "partials/settings_index_row.html" %}{% endwith %}
   {% with href='/settings/phone', label=t('settings.group.phone'), icon_name='sliders-horizontal' %}{% include "partials/settings_index_row.html" %}{% endwith %}
   {% with href='/settings/data', label=t('settings.group.data'), icon_name='file-lock' %}{% include "partials/settings_index_row.html" %}{% endwith %}
-  <div class="settings-index-divider" aria-hidden="true"></div>
-  {% with href='/entities', label=t('settings.nav.legal'), icon_name='receipt' %}{% include "partials/settings_index_row.html" %}{% endwith %}
+  <div class="airbnb-divider" aria-hidden="true"></div>
+  {% with href='/entities', label=t('settings.index.business'), icon_name='receipt' %}{% include "partials/settings_index_row.html" %}{% endwith %}
   {% with href='/privacy-requests', label=t('nav.privacy_requests'), icon_name='mail' %}{% include "partials/settings_index_row.html" %}{% endwith %}
   {% with href='/settings/archived', label=t('settings.nav.archive'), icon_name='archive' %}{% include "partials/settings_index_row.html" %}{% endwith %}
-  <div class="settings-index-divider" aria-hidden="true"></div>
+  <div class="airbnb-divider" aria-hidden="true"></div>
   {% with href='/settings/technical', label=t('settings.group.technical'), icon_name='settings' %}{% include "partials/settings_index_row.html" %}{% endwith %}
   {% with href='/settings/help', label=t('settings.group.help'), icon_name='circle-help' %}{% include "partials/settings_index_row.html" %}{% endwith %}
 </nav>
