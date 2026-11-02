@@ -394,17 +394,18 @@
   {% endif %}
 {% endmacro %}
 
-{% macro onboarding_welcome(onboarding, compact=False) %}
+{% macro onboarding_welcome(onboarding, compact=False, v2=False) %}
   {# On the Overview the "Do this now" block already carries the current step's
      detail and "Have ready" text, so the list below it collapses to one line per
      step and the full checklist stays one click away at /onboarding. #}
   {% set compact_list = compact and onboarding.current and not onboarding.finished %}
-  <section class="onboarding-welcome">
+  <section class="onboarding-welcome"{% if v2 %} data-layout="v2"{% endif %}>
     <header class="onboarding-intro">
-      <img class="onboarding-logo" src="/static/ubyhost-mark.png?v=20261004a" alt="">
+      {% if not v2 %}<img class="onboarding-logo" src="/static/ubyhost-mark.png?v=20261004a" alt="">{% endif %}
       <div>
-        <p class="onboarding-kicker">{{ t('onboarding.kicker') }}</p>
+        {% if not v2 %}<p class="onboarding-kicker">{{ t('onboarding.kicker') }}</p>{% endif %}
         {% if compact %}<h2>{{ t('onboarding.welcome_title') }}</h2>{% else %}<h1>{{ t('onboarding.welcome_title') }}</h1>{% endif %}
+        {% if v2 %}<p class="sub">{{ t('onboarding.progress', done=onboarding.completed, total=onboarding.total) }}</p>{% endif %}
       </div>
       <div class="onboarding-meter" aria-label="{{ t('onboarding.progress', done=onboarding.completed, total=onboarding.total) }}">
         <strong>{{ onboarding.percent }}%</strong>
@@ -427,7 +428,7 @@
 
     {% if onboarding.finished %}
       {{ onboarding_finish(onboarding, show_toggle=False) }}
-    {% elif onboarding.current %}
+    {% elif onboarding.current and not v2 %}
       <div class="onboarding-now">
         <div class="onboarding-now-label">
           <span>{{ onboarding.completed + 1 }}</span>
@@ -473,6 +474,7 @@
           {% elif onboarding.current and step.id == onboarding.current.id %}
             <span class="onboarding-current-dot" aria-hidden="true"></span>
           {% endif %}
+          {% set step_url = step.url or (onboarding.current.url if onboarding.current and onboarding.current.id == step.id else none) %}{% if v2 and not step.done and step_url %}<a class="btn small onboarding-step-action" href="{{ step_url }}">{{ t('onboarding.' ~ step.id ~ '.action') }}</a>{% endif %}
           {% if not compact_list %}
             <details>
               <summary>{{ t('onboarding.learn') }}</summary>

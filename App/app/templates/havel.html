@@ -1,10 +1,13 @@
 {% extends "host_page.html" %}
+{% set v2 = true %}
 {% set nav = 'havel' %}
 {% set body_kind = 'detail' %}
 {% block title %}{{ t('havel.title') }}{% endblock %}
-{% block page_title %}{{ t('havel.name') }}{% endblock %}
-{% block meta %}{{ t('havel.subtitle') }}{% endblock %}
+{% block page_title %}{% endblock %}
+{% block meta %}{% endblock %}
 {% block body %}
+<div class="head"><div><h1 class="big">{{ t('havel.name') }}</h1><p class="sub">{{ t('havel.subtitle') }}</p></div></div>
+<div class="havel-v2">
 <section class="ui-section havel-page" data-havel-page data-havel-owner="{{ current_user.id }}">
   <div class="havel-thread" role="log" aria-live="polite" data-havel-thread>
     {% if havel_show_topics %}{% include "_havel_topics.html" %}{% endif %}
@@ -12,4 +15,5 @@
   </div>
   {% include "_havel_form.html" %}
 </section>
+</div>
 {% endblock %}

@@ -1,21 +1,26 @@
 {% extends "host_page.html" %}
+{% set v2 = true %}
 {% from "_ui.html" import ui_button with context %}
-{% block secondary_actions %}{% if havel_on %}{{ ui_button(t('havel.launcher'), 'secondary', href='/havel', icon_name='message-circle-question', attrs='data-sheet-open="havel-sheet" data-havel-launcher') }}{% endif %}{% endblock %}
 {% set nav = 'guide' %}
 {% set body_kind = 'detail' %}
 {% block title %}{{ t('guide.title') }}{% endblock %}
-{% block page_title %}{{ t('guide.title') }}{% endblock %}
-{% block meta %}{{ t('guide.lede') }}{% endblock %}
+{% block page_title %}{% endblock %}
+{% block meta %}{% endblock %}
 {% block body %}
 
 {% set sections = ['finding', 'overview', 'statuses', 'setup', 'business', 'stays', 'cleaning', 'guests', 'guest_links', 'reporting', 'filters', 'housebook', 'stay_fee', 'invoices', 'settings', 'archive', 'privacy_requests', 'door-codes', 'faster', 'faq', 'glossary', 'legal'] + (['demo'] if demo_available else []) %}
+<div class="head guide-head"><div><h1 class="big">{{ t('guide.title') }}</h1><p class="sub">{{ t('guide.lede') }}</p></div>{% if havel_on %}{{ ui_button(t('havel.launcher'), 'secondary', href='/havel', icon_name='message-circle-question', attrs='data-sheet-open="havel-sheet" data-havel-launcher') }}{% endif %}</div>
 <div class="guide-layout">
-  <nav class="guide-nav ui-section" aria-label="{{ t('guide.title') }}">
+  <nav class="guide-nav card" aria-label="{{ t('guide.title') }}">
     {% for key in sections %}<a href="#{{ key }}" class="guide-nav-link">{{ t('guide.nav.' ~ key) }}</a>{% endfor %}
   </nav>
+  <details class="guide-toc-phone card">
+    <summary class="guide-toc-summary">{{ t('guide.title') }}</summary>
+    {% for key in sections %}<a href="#{{ key }}" class="guide-nav-link">{{ t('guide.nav.' ~ key) }}</a>{% endfor %}
+  </details>
 
   <div class="guide-content">
-    <section class="guide-section ui-section ui-section-plain" id="finding">
+    <section class="guide-section card ui-section ui-section-plain" id="finding">
       <h2>{{ t('guide.nav.finding') }}</h2>
       <p>{{ t('guide.finding.what') }}</p>
       <p class="ui-sub">{{ t('guide.finding.when') }}</p>
@@ -29,7 +34,7 @@
       <ul>{% for n in range(1, 3) %}<li>{{ t('guide.finding.wrong' ~ n) }}</li>{% endfor %}</ul>
     </section>
 
-    <section class="guide-section ui-section ui-section-plain" id="overview">
+    <section class="guide-section card ui-section ui-section-plain" id="overview">
       <h2>{{ t('guide.nav.overview') }}</h2>
       {% from "_workflow.html" import workflow_strip with context %}
       {{ workflow_strip(none, heading=false) }}
@@ -43,7 +48,7 @@
       <ul>{% for n in range(1, 4) %}<li>{{ t('guide.overview.wrong' ~ n) }}</li>{% endfor %}</ul>
     </section>
 
-    <section class="guide-section ui-section ui-section-plain" id="statuses">
+    <section class="guide-section card ui-section ui-section-plain" id="statuses">
       <h2>{{ t('guide.nav.statuses') }}</h2>
       <p>{{ t('guide.statuses.lede') }}</p>
       <dl class="kv guide-statuses">
@@ -61,7 +66,7 @@
       <p class="ui-sub">{{ t('guide.statuses.other') }}</p>
     </section>
 
-    <section class="guide-section ui-section ui-section-plain" id="setup">
+    <section class="guide-section card ui-section ui-section-plain" id="setup">
       <h2>{{ t('guide.nav.setup') }}</h2>
       <p>{{ t('guide.setup.what') }}</p>
       <p class="ui-sub">{{ t('guide.setup.when') }}</p>
@@ -79,7 +84,7 @@
       </ol>
     </section>
 
-    <section class="guide-section ui-section ui-section-plain" id="business">
+    <section class="guide-section card ui-section ui-section-plain" id="business">
       <h2>{{ t('guide.nav.business') }}</h2>
       <p>{{ t('guide.business.what') }}</p>
       <p class="ui-sub">{{ t('guide.business.when') }}</p>
@@ -89,7 +94,7 @@
       <ul>{% for n in range(1, 3) %}<li>{{ t('guide.business.wrong' ~ n) }}</li>{% endfor %}</ul>
     </section>
 
-    <section class="guide-section ui-section ui-section-plain" id="stays">
+    <section class="guide-section card ui-section ui-section-plain" id="stays">
       <h2>{{ t('guide.nav.stays') }}</h2>
       <p>{{ t('guide.stays.body') }}</p>
       <p>{{ t('guide.stays.when') }}</p>
@@ -104,7 +109,7 @@
       <ul>{% for n in range(1, 4) %}<li>{{ t('guide.stays.wrong' ~ n) }}</li>{% endfor %}</ul>
     </section>
 
-    <section class="guide-section ui-section ui-section-plain" id="cleaning">
+    <section class="guide-section card ui-section ui-section-plain" id="cleaning">
       <h2>{{ t('guide.nav.cleaning') }}</h2>
       <p>{{ t('guide.cleaning.what') }}</p>
       <p>{{ t('guide.cleaning.when') }}</p>
@@ -117,7 +122,7 @@
       <ul>{% for n in range(1, 6) %}<li>{{ t('guide.cleaning.wrong' ~ n) }}</li>{% endfor %}</ul>
     </section>
 
-    <section class="guide-section ui-section ui-section-plain" id="guests">
+    <section class="guide-section card ui-section ui-section-plain" id="guests">
       <h2>{{ t('guide.nav.guests') }}</h2>
       <p>{{ t('guide.guests.body') }}</p>
       <ol class="guide-steps">
@@ -129,7 +134,7 @@
       <p class="ui-sub">{{ t('guide.guests.cookies') }}</p>
     </section>
 
-    <section class="guide-section ui-section ui-section-plain" id="guest_links">
+    <section class="guide-section card ui-section ui-section-plain" id="guest_links">
       <h2>{{ t('guide.nav.guest_links') }}</h2>
       <p>{{ t('guide.guest_links.what') }}</p>
       <p>{{ t('guide.guest_links.when') }}</p>
@@ -142,7 +147,7 @@
       <ul>{% for n in range(1, 4) %}<li>{{ t('guide.guest_links.wrong' ~ n) }}</li>{% endfor %}</ul>
     </section>
 
-    <section class="guide-section ui-section ui-section-plain" id="reporting">
+    <section class="guide-section card ui-section ui-section-plain" id="reporting">
       <h2>{{ t('guide.nav.reporting') }}</h2>
       <p>{{ t('guide.reporting.body') }}</p>
       <dl class="kv">
@@ -175,7 +180,7 @@
       <p class="ui-sub">{{ t('apartment.form.ubyport.mismatch_help') }}</p>
     </section>
 
-    <section class="guide-section ui-section ui-section-plain" id="filters">
+    <section class="guide-section card ui-section ui-section-plain" id="filters">
       <h2>{{ t('guide.nav.filters') }}</h2>
       <p>{{ t('guide.filters.body') }}</p>
       <ul class="guide-steps">
@@ -183,7 +188,7 @@
       </ul>
     </section>
 
-    <section class="guide-section ui-section ui-section-plain" id="housebook">
+    <section class="guide-section card ui-section ui-section-plain" id="housebook">
       <h2>{{ t('guide.nav.housebook') }}</h2>
       <p>{{ t('guide.housebook.body') }}</p>
       <p class="ui-sub">{{ t('housebook.legal_body') }}</p>
@@ -194,7 +199,7 @@
       <p class="ui-sub legal-fineprint">{{ t('housebook.legal_footnote') }}</p>
     </section>
 
-    <section class="guide-section ui-section ui-section-plain" id="stay_fee">
+    <section class="guide-section card ui-section ui-section-plain" id="stay_fee">
       <h2>{{ t('guide.nav.stay_fee') }}</h2>
       <p>{{ t('guide.stay_fee.body') }}</p>
       <p>{{ t('guide.stay_fee.when') }}</p>
@@ -208,7 +213,7 @@
       <ul>{% for n in range(1, 5) %}<li>{{ t('guide.stay_fee.wrong' ~ n) }}</li>{% endfor %}</ul>
     </section>
 
-    <section class="guide-section ui-section ui-section-plain" id="invoices">
+    <section class="guide-section card ui-section ui-section-plain" id="invoices">
       <h2>{{ t('guide.nav.invoices') }}</h2>
       <p>{{ t('guide.invoices.body') }}</p>
       <p>{{ t('guide.invoices.when') }}</p>
@@ -220,7 +225,7 @@
       <ul>{% for n in range(1, 4) %}<li>{{ t('guide.invoices.wrong' ~ n) }}</li>{% endfor %}</ul>
     </section>
 
-    <section class="guide-section ui-section ui-section-plain" id="settings">
+    <section class="guide-section card ui-section ui-section-plain" id="settings">
       <h2>{{ t('guide.nav.settings') }}</h2>
       <p>{{ t('guide.settings.body') }}</p>
       <p>{{ t('guide.settings.when') }}</p>
@@ -236,7 +241,7 @@
       </ul>
     </section>
 
-    <section class="guide-section ui-section ui-section-plain" id="archive">
+    <section class="guide-section card ui-section ui-section-plain" id="archive">
       <h2>{{ t('guide.nav.archive') }}</h2>
       <p>{{ t('guide.archive.what') }}</p>
       <p class="ui-sub">{{ t('guide.archive.when') }}</p>
@@ -247,7 +252,7 @@
       <ul><li>{{ t('guide.archive.wrong1') }}</li></ul>
     </section>
 
-    <section class="guide-section ui-section ui-section-plain" id="privacy_requests">
+    <section class="guide-section card ui-section ui-section-plain" id="privacy_requests">
       <h2>{{ t('guide.nav.privacy_requests') }}</h2>
       <p>{{ t('guide.privacy_requests.what') }}</p>
       <p class="ui-sub">{{ t('guide.privacy_requests.when') }}</p>
@@ -257,7 +262,7 @@
       <ul><li>{{ t('guide.privacy_requests.wrong1') }}</li></ul>
     </section>
 
-    <section class="guide-section ui-section ui-section-plain" id="door-codes">
+    <section class="guide-section card ui-section ui-section-plain" id="door-codes">
       <h2>{{ t('guide.nav.door_codes') }}</h2>
       <p>{{ t('guide.door_codes.lede') }}</p>
       <div data-door-code-disclosure>
@@ -278,13 +283,13 @@
       <ol>{% for n in range(1, 10) %}<li>{{ t('guide.door_codes.terms' ~ n) }}</li>{% endfor %}</ol>
     </section>
 
-    <section class="guide-section ui-section ui-section-plain" id="leon-terms">
+    <section class="guide-section card ui-section ui-section-plain" id="leon-terms">
       <h2>{{ t('guide.leon_terms.title') }}</h2>
       <p class="ui-sub">{{ t('guide.leon_terms.version', version='2026-10-25') }}</p>
       <ol>{% for n in range(1, 13) %}<li>{{ t('guide.leon_terms.terms' ~ n) }}</li>{% endfor %}</ol>
     </section>
 
-    <section class="guide-section ui-section ui-section-plain" id="faster">
+    <section class="guide-section card ui-section ui-section-plain" id="faster">
       <h2>{{ t('guide.nav.faster') }}</h2>
       <ul class="guide-steps">
         <li>{{ t('guide.faster.search') }}</li>
@@ -292,7 +297,7 @@
       </ul>
     </section>
 
-    <section class="guide-section ui-section ui-section-plain" id="faq">
+    <section class="guide-section card ui-section ui-section-plain" id="faq">
       <h2>{{ t('guide.nav.faq') }}</h2>
       <dl class="kv">
         {% for item in ['link', 'count', 'czech', 'twice', 'edit'] %}
@@ -302,7 +307,7 @@
       </dl>
     </section>
 
-    <section class="guide-section ui-section ui-section-plain" id="glossary">
+    <section class="guide-section card ui-section ui-section-plain" id="glossary">
       <h2>{{ t('guide.nav.glossary') }}</h2>
       <p>{{ t('guide.glossary.lede') }}</p>
       <dl class="kv">
@@ -313,7 +318,7 @@
       </dl>
     </section>
 
-    <section class="guide-section ui-section ui-section-plain guide-legal" id="legal">
+    <section class="guide-section card ui-section ui-section-plain guide-legal" id="legal">
       <h2>{{ t('guide.nav.legal') }}</h2>
       <p class="lede">{{ t('guide.legal.lede') }}</p>
       {% for item in ['housebook', 'paper', 'signature', 'verification', 'reporting', 'retention'] %}
@@ -327,7 +332,7 @@
     </section>
 
     {% if demo_available %}
-    <section class="guide-section ui-section ui-section-plain" id="demo">
+    <section class="guide-section card ui-section ui-section-plain" id="demo">
       <h2>{{ t('guide.nav.demo') }}</h2>
       <p>{{ t('guide.demo.body') }}</p>
       <form method="post" action="/demo" class="inline">

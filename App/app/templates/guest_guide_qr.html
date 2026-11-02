@@ -1,17 +1,20 @@
 {#- 0345: the guide's QR code for the host to print. The code opens /g/<token>,
     the public "everyone" cards only. A new link makes every printed code stop. -#}
 {% extends "host_page.html" %}
+{% set v2 = true %}
 {% set body_kind = 'form' %}
 {% set base_url = '/apartments/' ~ apartment.id ~ '/guide' %}
 {% block title %}{{ t('guest_guide.qr.title') }} · {{ apartment.internal_name }} · UbyHost{% endblock %}
-{% block page_title %}{{ t('guest_guide.qr.title') }}{% endblock %}
+{% block page_title %}{% endblock %}
 {% block back_url %}{{ base_url }}{% endblock %}
 {% block back_label %}{{ t('guest_guide.title') }}{% endblock %}
-{% block meta %}{{ t('guest_guide.qr.meta') }}{% endblock %}
+{% block meta %}{% endblock %}
 {% block body %}
+<div class="guide-page guide-form-page">
+<div class="head guide-hd"><div><a class="guide-back" href="{{ base_url }}">{{ t('guest_guide.title') }}</a><h1 class="big">{{ t('guest_guide.qr.title') }}</h1><p class="sub">{{ t('guest_guide.qr.meta') }}</p></div></div>
 {% if not progress.live %}{{ ui_banner('attention', t('guest_guide.qr.not_live')) }}{% endif %}
 {% call ui_section(apartment.internal_name, id='qr-code') %}
-<img src="{{ qr }}" width="240" height="240" alt="{{ t('guest_guide.qr.alt') }}">
+<img class="guide-qr" src="{{ qr }}" width="240" height="240" alt="{{ t('guest_guide.qr.alt') }}">
 <p class="ui-help">{{ t('guest_guide.qr.print_help') }}</p>
 <p class="ui-mono">{{ guest_url }}</p>
 <div class="ui-form-actions">
@@ -26,4 +29,5 @@
 {{ ui_button(t('guest_guide.qr.rotate'), 'danger', type='submit', icon_name='refresh-cw') }}
 </form>
 {% endcall %}
+</div>
 {% endblock %}

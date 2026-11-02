@@ -1,11 +1,12 @@
 {% extends "host_page.html" %}
+{% set v2 = true %}
+{% set nav = 'cleaning' %}
 {% set body_kind = 'list' %}
 {% block title %}{{ ct('settings') }} · UbyHost{% endblock %}
-{% block page_title %}{{ ct('settings') }}{% endblock %}
-{% block back_url %}/cleaning{% endblock %}
-{% block back_label %}{{ ct('back') }}{% endblock %}
+{% block page_title %}{% endblock %}
 {% block body %}
-<div class="cleaning-page">
-<div class="cleaning-property-links">{% for home in homes %}<a class="cleaning-panel cleaning-property-row" href="/cleaning/properties/{{ home.id }}"><strong>{{ home.internal_name }}</strong><span class="ui-btn ui-btn-open ui-btn-compact" aria-hidden="true">{{ t('common.open') }}</span></a>{% else %}<p>{{ ct('no_properties') }}</p>{% endfor %}</div>
+<div class="cleaning-page cl-v2-props">
+<div class="head"><div><p class="crumb"><a href="/cleaning">{{ ct('back') }}</a></p><h1 class="big">{{ ct('settings') }}</h1></div></div>
+<div class="cleaning-property-links card">{% for home in homes %}<a class="cleaning-panel cleaning-property-row" href="/cleaning/properties/{{ home.id }}"><strong>{{ home.internal_name }}</strong><span class="ui-btn ui-btn-open ui-btn-compact" aria-hidden="true">{{ t('common.open') }}</span></a>{% else %}<p>{{ ct('no_properties') }}</p>{% endfor %}</div>
 </div>
 {% endblock %}

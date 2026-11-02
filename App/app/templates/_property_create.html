@@ -8,7 +8,7 @@
 {%- set draft = draft or {} -%}
 {%- set property_prefill = property_prefill or {} -%}
 {%- set property_values = draft -%}
-<div class="property-create-lane"><div class="property-create">
+<div class="property-create-lane prop-new"><div class="property-create">
   <div class="property-create-main">
     {% if copy_property_peers %}
     <div class="copy-settings-bar">{% with copy_action='/apartments/new', copy_section='' %}{% include "_copy_settings_dialog.html" %}{% endwith %}</div>
