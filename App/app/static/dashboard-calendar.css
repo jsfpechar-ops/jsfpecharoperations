@@ -758,3 +758,12 @@ body:has(.dashboard-calendar.has-panel) .havel-fab { display:none !important; }
   body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-toolbar h3[data-cal-period] { order:1; flex:1 1 auto; min-width:0; margin:0; text-align:left; font-size:20px; line-height:28px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-toolbar .cal-navigation { order:2; flex:0 0 auto; gap:8px; }
 }
+
+/* 0877: tablet touch targets on the cleaning toolbar are at least 44 px (the desktop toolbar stays 40 px). */
+@media (min-width:768px) and (max-width:1023px) {
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] :is(.cal-heading-actions, .cal-toolbar) :is(button.btn, select) { height:44px; min-height:44px; }
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] :is(.cal-navigation .cal-arrow, .cal-settings) { width:44px; min-width:44px; }
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-segment { height:52px; min-height:52px; }
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-segment button { height:44px; min-height:44px; min-width:44px; }
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-view-segment button { width:44px; min-width:44px; }
+}

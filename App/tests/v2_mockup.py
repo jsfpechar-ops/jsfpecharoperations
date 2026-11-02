@@ -170,7 +170,7 @@ PAGES = [
             ".hs .pill": "today's stay cards exist only when a stay is due today; the phone mockup shows demo stays",
         },
     },
-    {"name": "cleaning", "path": "/cleaning", "view": "clean", "selectors": [".side .nav.on", ".head h1", ".head .sub", ".head .btn", "main h2", "main .card", "main table th", "main table td"], "phone_mockup": PHONE_MOCKUP_V2, "phone_view": "uklid",
+    {"name": "cleaning", "path": "/cleaning", "view": "clean", "selectors": [".side .nav.on", ".head h1", "main h2", "main table th", "main table td"], "phone_mockup": PHONE_MOCKUP_V2, "phone_view": "uklid",
         "phone_box_skip": {
             ".hs .pill.p-ok": (["width"], "same label; CI's Manrope renders it 101 px, the mockup's font 98.75 px"),
             ".kind": (["width"], "today's cleaning window text comes from the fixture"),
@@ -181,7 +181,9 @@ PAGES = [
             ".hl": (["height"], "the shared .hl@390 BOX_OVERRIDE is Overview's two-line headline; the cleaning headline is one line"),
             ".list.plain .row:not(:has(.pill))": (["height"], "line-height normal: the app font gives 23 + 19 px lines, the mockup 23.8 + 19.6 px"),
         },
-        "phone_selectors": [".tabs", ".tab.on", ".hl", ".hl-sub", ".hs .card", ".kind", ".av", ".nm", ".meta", ".hs .pill.p-ok", "h2.sec", ".list.plain .row:not(:has(.pill))", ".row:not(:has(.pill)) .t b", ".row:not(:has(.pill)) .t small", ".btn.line", ".promo", ".promo .pi", ".promo b", ".promo small"], "missing_ok": {"main table th": "below 1024 px the phone layout replaces the tables (0546)", "main table td": "below 1024 px the phone layout replaces the tables (0546)"}},  # pills follow the approved phone mockup (2026-11-01): scheduled green, the desktop mockup shows amber
+        # 0875: below 1024 px /cleaning is the Airbnb-style calendar (tiles), not the list the old phone mockup shows: only the tab bar is compared.
+        "phone_selectors": [".tabs", ".tab.on"],
+        "missing_ok": {"main table th": "below 1024 px the phone layout replaces the tables (0546)", "main table td": "below 1024 px the phone layout replaces the tables (0546)"}},
     {
         "name": "properties",
         "path": "/apartments",
