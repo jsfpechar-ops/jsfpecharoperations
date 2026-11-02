@@ -6,6 +6,8 @@ applies to the forms here as well.
 """
 from __future__ import annotations
 
+import re
+
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
 
@@ -17,6 +19,15 @@ from .admin_helpers import flash as _flash
 from .admin_helpers import form_str as _form_str
 
 router = APIRouter()
+
+
+def _workspace_from_email(email: str) -> str:
+    """Default workspace name for a sign-up that gave none: the e-mail's local part."""
+    local, _, domain = email.partition("@")
+    name = local
+    name = re.sub(r"[.+_\-]+", " ", name)
+    name = " ".join(name.split())[: signup.WORKSPACE_MAX].strip()
+    return name or domain[: signup.WORKSPACE_MAX]
 
 
 def _require_enabled() -> None:
@@ -103,7 +114,9 @@ async def signup_submit(request: Request):
     signup.record_attempt(ip_key, email)
     if not email:
         return again("signup.error.email", 400, "email")
-    if not workspace or len(workspace) > signup.WORKSPACE_MAX:
+    if not workspace:
+        workspace = _workspace_from_email(email)
+    if len(workspace) > signup.WORKSPACE_MAX:
         return again("signup.error.workspace", 400, "workspace")
     if _form_str(form, "accept") != "1":
         return again("signup.error.accept", 422, "accept")

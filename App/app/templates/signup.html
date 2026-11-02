@@ -30,16 +30,6 @@
       <p class="auth-hint err-text" id="email-error" role="alert">{{ t(error) }}</p>
       {% endif %}
     </div>
-    <div class="auth-field">
-      <label for="workspace">{{ t('signup.workspace') }}</label>
-      <input type="text" id="workspace" name="workspace" required maxlength="120"
-             value="{{ workspace | default('', true) }}" autocomplete="organization"
-             placeholder="{{ t('signup.workspace_ph') }}"
-             {% if error_field == 'workspace' %}aria-invalid="true" aria-describedby="workspace-error"{% endif %}>
-      {% if error_field == 'workspace' %}
-      <p class="auth-hint err-text" id="workspace-error" role="alert">{{ t(error) }}</p>
-      {% endif %}
-    </div>
     <label class="auth-remember">
       <input type="checkbox" name="accept" value="1" required
              {% if error_field == 'accept' %}aria-invalid="true" aria-describedby="accept-error"{% endif %}>

@@ -436,20 +436,29 @@ def test_an_admin_created_account_is_active_and_needs_no_verification():
 def test_form_errors_keep_the_values_and_the_click_id():
     client = _client()
     token = _click()
-    weak = _submit(client, f"weak@{DOMAIN}", workspace="  ", click=token, consent=True,
-                   opt_out=True)
-    assert weak.status_code == 400
-    assert f'name="click" value="{token}"' in weak.text
-    assert re.search(r'name="ads_consent" value="1" checked', weak.text)
-    assert re.search(r'name="onboarding_opt_out" value="1" checked', weak.text)
-    no_accept = _submit(client, f"accept@{DOMAIN}", accept="")
+    no_accept = _submit(client, f"accept@{DOMAIN}", accept="", click=token, consent=True,
+                        opt_out=True)
     assert no_accept.status_code == 422
+    assert f'name="click" value="{token}"' in no_accept.text
+    assert re.search(r'name="ads_consent" value="1" checked', no_accept.text)
+    assert re.search(r'name="onboarding_opt_out" value="1" checked', no_accept.text)
     bad_email = _submit(client, "not-an-email")
     assert bad_email.status_code == 400
+    weak = _submit(client, f"weak@{DOMAIN}", workspace="  ", click=token, consent=True)
+    assert weak.status_code == 200
+    assert _account(f"weak@{DOMAIN}")["display_name"] == "weak"
     no_name = _submit(client, f"name@{DOMAIN}", workspace="  ")
-    assert no_name.status_code == 400
-    assert _account(f"weak@{DOMAIN}") is None
+    assert no_name.status_code == 200
+    assert _account(f"name@{DOMAIN}")["display_name"] == "name"
     assert _account(f"accept@{DOMAIN}") is None
+
+
+def test_a_blank_workspace_is_named_from_the_email():
+    client = _client()
+    _submit(client, f"jan.novak_team-x+booking@{DOMAIN}", workspace="")
+    assert _account(f"jan.novak_team-x+booking@{DOMAIN}")["display_name"] == "jan novak team x booking"
+    _submit(client, f"+++@{DOMAIN}", workspace="")
+    assert _account(f"+++@{DOMAIN}")["display_name"] == DOMAIN
 
 
 # --- consent --------------------------------------------------------------

@@ -2789,8 +2789,6 @@ STRINGS: Dict[str, str] = {
     "signup.email_ph": "ban@example.com",
     "signup.password": "Mật khẩu",
     "signup.password_hint": "Ít nhất 12 ký tự, gồm chữ hoa, chữ thường và một chữ số.",
-    "signup.workspace": "Tên doanh nghiệp hoặc không gian làm việc",
-    "signup.workspace_ph": "Ví dụ: Căn hộ Phố Cổ",
     "signup.onboarding_opt_out": "Không gửi cho tôi mẹo thiết lập qua e-mail (bạn có thể thay đổi bất cứ lúc nào trong Cài đặt).",
     "signup.submit": "Tạo tài khoản",
     "signup.have_account": "Đã có tài khoản?",
