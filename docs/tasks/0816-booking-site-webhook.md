@@ -1,6 +1,6 @@
 # 0816: Booking site payment webhook (confirm, or refund a double booking)
 
-Status: blocked
+Status: in-progress
 Depends on: 0815 | Base commit: tip of task/0815-booking-site-checkout | Branch: task/0816-booking-site-webhook
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
@@ -65,6 +65,7 @@ Excerpt `App/app/host_i18n.py` Czech (verbatim, one place): `        "payments.r
 | `App/app/booking_webhook.py` | create | handlers |
 | `App/app/stripe_connect.py` | edit | dispatch booking sessions |
 | `App/app/mail.py` | edit | 3 kinds |
+| `App/tests/test_claim_mail.py` | edit | 3 kinds in the pinned set (done by the orchestrator) |
 | `App/app/host_i18n.py` | edit | EN + CS mail copy |
 | `App/tests/test_booking_webhook.py` | create | tests |
 | `docs/tasks/0816-report.md` | create | report |
