@@ -7,12 +7,12 @@
 {% set UI_DEADLINE_KINDS = {'overdue': 'action', 'urgent': 'attention', 'soon': 'attention', 'done': 'done', 'late': 'neutral'} %}
 {#- 0093 help: one contextual "?" tip beside a field label. Place it OUTSIDE the <label> tag.
     id must be unique on the page; text is escaped; guide_href optional ("/guide#anchor"). -#}
-{% macro help_tip(id, text, guide_href='') %}
-  <span class="help-tip" data-help-tip>
+{%- macro help_tip(id, text, guide_href='') -%}
+<span class="help-tip" data-help-tip>
     <button type="button" class="help-tip-btn" aria-label="{{ t('help.tip.label') }}" aria-expanded="false" aria-controls="{{ id }}">?</button>
     <span class="help-tip-body" id="{{ id }}" role="tooltip">{{ text }}{% if guide_href %} <a href="{{ guide_href }}" aria-label="{{ t('help.tip.more') }}: {{ text | striptags | truncate(50) }}">{{ t('help.tip.more') }}</a>{% endif %}</span>
   </span>
-{% endmacro %}
+{%- endmacro %}
 {#- 0410: one option card. The label is stretched over the whole bordered card, so a
     tap anywhere selects; the "?" and any extra field (call block) sit above it. No JS. -#}
 {% macro choice_card(name, value, label, checked=false, help_id='', help_text='', type='radio') %}

@@ -147,3 +147,23 @@ Tests (from App/, env PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_
 - `tests/test_onboarding_wizard_browser.py tests/test_property_create_browser.py`: `98 passed in 163.48s`, 0 failed.
 
 Left red: the 7 small_and_inline cases above. Re-run after the app2.css commit lands.
+
+## Round 6
+
+Status: blocked (guest-guide at 320 px still red; no commit made)
+
+Files changed: App/app/templates/setup_wizard/_layout.html (a), App/app/templates/_components.html (b, macro trims), App/app/static/app2.css (b, 0812 block), App/app/templates/_property_create.html (c), App/app/static/app.js (d), App/app/templates/guest_guide.html (e).
+
+- a: wizard_help block moved inside the h2. setup-* tests now pass.
+- b: help_tip macro uses whitespace trim. `white-space:nowrap` was tried and removed because it caused the wizard_polish overflow (javascript off, 6 cases). Added `body.v2 :is(h1,h2,label):has(>.help-tip)` flex rule and `margin-left:0`.
+- c: brief said one tip; three tips (create-next calendar, guests, reporting in _property_create.html) had no label element before them. Wrapped each label text in a span. Lock tip already passed.
+- d: app.js place(): on desktop the body is absolute inside .help-tip, so left/top are now relative to the offset parent (was viewport coords). addr_house_no-help at 1280 passes.
+- e: guest_guide.html import section now `{% if import_on %}`.
+
+Test tails:
+- Full section 16 set (before flex rule): `1 failed, 341 passed in 407.74s`. The only failure was guest-guide at 320 px, gap -237.7 px.
+- After flex rule, `-k "guest-guide or property-new"`: `1 failed, 24 passed`. guest-guide at 320 px: gap after label 174.0 px. Still red.
+- Not re-run after the flex rule: the full set. Other pages are unverified after the flex rule.
+
+Deviations: nowrap removed (see b). Three tips in c, not one. Test runs rewrote about 239 screenshot PNGs under docs/tasks/ (screenshots-0410 and others), which show in git status. Not restored (restore is forbidden to me). Check before committing.
+Left: guest-guide 320 px tip gap (label flex/tip placement); full set re-run; screenshots cleanup.

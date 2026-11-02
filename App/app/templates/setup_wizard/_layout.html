@@ -35,8 +35,7 @@
     {% if wizard_step in step_icons %}
     <div class="setup-wizard-ask" data-step-tone="{{ step_tones[wizard_step] }}">
       <span class="setup-wizard-ask-icon">{{ nav_icon(step_icons[wizard_step]) }}</span>
-      <h2 class="setup-wizard-question">{{ t('wizard.question.' ~ wizard_step) }}</h2>
-      {% block wizard_help %}{% endblock %}
+      <h2 class="setup-wizard-question">{{ t('wizard.question.' ~ wizard_step) }}{% block wizard_help %}{% endblock %}</h2>
     </div>
     {% endif %}
     {% if wizard_step in ('property', 'police', 'stay_fee') %}<p class="required-legend">{{ t('common.required_legend') }}</p>{% endif %}

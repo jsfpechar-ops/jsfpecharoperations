@@ -18,8 +18,7 @@
 {% macro import_section() %}
 {% set import_tip = help_tip('guide-import-off-help', t('guest_guide.import.off')) if not import_on else help_tip('guide-import-help', t('guest_guide.import.help') ~ ' ' ~ t('guest_guide.import.left', n=import_left)) %}
 {% call ui_section(t('guest_guide.import.title'), id='import', tip=import_tip) %}
-{% if not import_on %}
-{% else %}
+{% if import_on %}
 {% if import_busy %}{{ ui_banner('neutral', t('guest_guide.import.running')) }}{% endif %}
 {% if import_drafts %}<p class="ui-sub">{{ t('guest_guide.import.drafted', n=import_drafts) }}</p>{% endif %}
 {% if import_left > 0 and not import_busy %}

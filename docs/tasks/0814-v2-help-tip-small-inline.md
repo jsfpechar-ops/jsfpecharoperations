@@ -98,3 +98,10 @@ c. property-new: one tip reports `(no label)`. Print all findings for property-n
 d. `tests/test_host_help_browser.py[1280]` property-create `addr_house_no-help`: popover box x=1234.8 overflows. Find why the 5B `help-tip-end`/`place()` logic does not keep it inside the viewport at 1280 and fix it in app.js/app2.css. Do not change the test.
 e. `guest_guide.html` import section: replace the now-empty `{% if not import_on %}` / `{% else %}` pair with `{% if import_on %}` (same `{% endif %}`).
 Commands (from App/, env §4): `.venv/bin/python -m pytest tests/test_0800_v2_remaining_pages_browser.py tests/test_onboarding_wizard_browser.py tests/test_property_create_browser.py tests/test_host_help_browser.py tests/test_guest_guide*.py -q --tb=line -p no:cacheprovider 2>&1 | tail -10` → 0 failed. Report: "## Round 6" in 0814-report.md.
+
+## 17. Round 7 decisions (orchestrator, 2026-11-02 17:45)
+Round 6 left one red (guest-guide 320 px, gap 174 px) and an unverified broad rule. Decisions:
+a. Delete the two `:is(h1,h2,label):has(>.help-tip)` flex lines that round 6 added to the 0812 block in app2.css (too broad, not run against the full set).
+b. `ui_section` in `_ui_layout.html`: when `tip` is set, keep the tip glued to the last word: `{% set parts = title.rsplit(' ', 1) %}<h2>{% if parts|length == 2 %}{{ parts[0] }} {% endif %}<span class="tip-nowrap">{{ parts[-1] }}{{ tip }}</span></h2>`; without a tip render as before. CSS in the 0812 block: `body.v2 .tip-nowrap{white-space:nowrap}` and `body.v2 .tip-nowrap .help-tip-body{white-space:normal}`.
+c. Run the §16 command → 0 failed. Then `.venv/bin/python -m pytest tests -q -k "wizard_polish or label or help_tip or field" --tb=line -p no:cacheprovider 2>&1 | tail -8` (test_endtoend test_26 is a known pre-existing red on main).
+d. Orchestrator after green: bump the app2.css key in base.html, `.venv/bin/python tests/test_static_versions.py --write`, commit only App/ + docs/tasks/0814* (never the rewritten evidence PNGs), push to BOTH a41o7b and r3es5m, screenshots to Josef.

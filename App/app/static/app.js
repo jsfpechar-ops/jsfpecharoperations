@@ -1941,8 +1941,15 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       var top = r.bottom + 6;
       if (top + h > vh - margin && r.top - 6 - h >= margin) top = r.top - 6 - h;
       top = Math.max(margin, Math.min(top, vh - h - margin));
-      if (wide) body.style.left = left + "px";
-      body.style.top = top + "px";
+      if (wide) {
+        // Desktop: the body is absolutely positioned inside .help-tip, so the viewport
+        // coordinates must be made relative to its offset parent (else it drifts right).
+        var ob = body.offsetParent ? body.offsetParent.getBoundingClientRect() : { left: 0, top: 0 };
+        body.style.left = (left - ob.left) + "px";
+        body.style.top = (top - ob.top) + "px";
+      } else {
+        body.style.top = top + "px";
+      }
     }
     function close(tip) {
       tip.classList.remove("is-open");
