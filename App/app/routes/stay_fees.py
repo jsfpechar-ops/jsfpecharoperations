@@ -709,6 +709,40 @@ async def stay_fee_scope_ruling(apartment_id: int, request: Request):
     return _back(back_path, msg=_flash(request, "flash.stay_fees.saved"))
 
 
+@router.post("/stay-fees/confirm-ready")
+async def stay_fee_confirm_ready(request: Request):
+    """0845: seal every listed property's ready period for one month, one tap.
+
+    Same sealing as the job (stay_fee_auto.confirm), which equals the list's
+    "Ano, sedí": collected = the calculated amount per guest. A blocked or
+    already saved period is skipped, never changed.
+    """
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    today = claim.prague_today()
+    form = await request.form()
+    month = stay_fee.parse_month(_form_str(form, "month")) or _default_month(today)
+    if month > today.replace(day=1):
+        month = _default_month(today)
+    back_path = fee_return_path(_form_str(form, "return_to"), 0) or "/stay-fees"
+    saved = 0
+    seen = set()
+    for raw in form.getlist("apartment_id"):
+        text = str(raw).strip()
+        if not text.isdigit() or text in seen:
+            continue
+        seen.add(text)
+        apartment = access.apartment(request, int(text))
+        if not stay_fee.is_active(apartment) or apartment["archived_at"] or not apartment["active"]:
+            continue
+        if stay_fee_auto.confirm(apartment, month, today, audit_event="stay_fee_finalize"):
+            saved += 1
+    if not saved:
+        return _back(back_path, err=_flash(request, "flash.stay_fees.bulk_none"))
+    return _back(back_path, msg=_flash(request, "flash.stay_fees.bulk_saved", count=saved))
+
+
 @router.post("/stay-fees/{apartment_id}/finalize")
 async def stay_fee_finalize(apartment_id: int, request: Request):
     guard = auth.require_login(request)

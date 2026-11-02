@@ -60,8 +60,11 @@ def check(apartment, month, today, *, cadence=None, rate=None) -> dict:
             "key": stay_fee_filing.period_key(group["cadence"], group["first"])}
 
 
-def confirm(apartment, month, today) -> Optional[int]:
-    """Seal a clean period with the fee as calculated (job only). None when blocked or saved."""
+def confirm(apartment, month, today, *, audit_event: str = "stay_fee_auto_finalize") -> Optional[int]:
+    """Seal a clean period with the fee as calculated. None when blocked or saved.
+
+    The daily job and the list's "confirm all ready" button (0845) both call this.
+    """
     checked = check(apartment, month, today)
     if checked["issues"] or stay_fee_filing.latest(apartment["id"], checked["key"]):
         return None
@@ -76,7 +79,7 @@ def confirm(apartment, month, today) -> Optional[int]:
         return None
     except db.integrity_errors():
         return None
-    db.audit("stay_fee_auto_finalize", f"apartment_id={apartment['id']} period={checked['key']}")
+    db.audit(audit_event, f"apartment_id={apartment['id']} period={checked['key']}")
     return filing_id
 
 

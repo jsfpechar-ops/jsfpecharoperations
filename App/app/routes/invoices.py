@@ -142,7 +142,7 @@ def _stay_options(request: Request):
     for row in rows:
         name = (row["internal_name"] or "").strip() or (row["uby_name"] or "").strip()
         dates = validation.fmt_date_range(row["date_from"], row["date_to"])
-        options.append({"id": row["id"], "label": f"{name}, {dates}"})
+        options.append({"id": row["id"], "label": f"{name}, {dates}", "date_from": str(row["date_from"])[:10]})
     return options
 
 
@@ -184,6 +184,22 @@ def _drop_guest_suggestion(state: Dict[str, Any], guest) -> None:
     for key, value in _guest_buyer_values(guest).items():
         if key != "buyer_country" and value and (state.get(key) or "").strip() == value:
             state[key] = ""
+
+
+QUICK_STAYS = 6
+
+
+def _quick_stays(options):
+    """0849: started stays without a live invoice, newest first, as one-tap links."""
+    today = claim.prague_today().isoformat()
+    quick = []
+    for option in options[:40]:
+        if option["date_from"] > today or invoices.active_invoice_for_stay(option["id"]):
+            continue
+        quick.append(option)
+        if len(quick) == QUICK_STAYS:
+            break
+    return quick
 
 
 def _last_stay_price_hint(request: Request, apartment_id: int) -> str:
@@ -413,7 +429,8 @@ def invoice_new(request: Request):
             "invoice_stay_picker.html",
             {
                 "nav": "invoices",
-                "stays": _stay_options(request),
+                "stays": (stays := _stay_options(request)),
+                "quick_stays": _quick_stays(stays),
                 "invoice_details_url": access.invoice_details_url(request),
             },
         )
