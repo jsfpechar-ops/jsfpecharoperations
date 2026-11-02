@@ -402,6 +402,13 @@ def test_set_up_link_opens_visible_editor_and_save_returns_to_the_list(live):
                 assert page.locator("#stay-fee-settings details").count() == 1
                 page.locator("#stay-fee-council details.fee-more > summary").focus()
                 page.keyboard.press("Enter")  # by keyboard: a later focus() must stay :focus-visible
+                fee_more = "() => document.querySelector('#stay-fee-council details.fee-more').open"
+                try:
+                    page.wait_for_function(fee_more, timeout=1500)
+                except Exception:
+                    # The page had already opened it, so Enter closed it again: open it with a second Enter.
+                    page.keyboard.press("Enter")
+                    page.wait_for_function(fee_more, timeout=5000)
                 back = page.locator(".fee-return-note a")
                 assert back.is_visible() and back.get_attribute("href") == f"/stay-fees?month={month}"
                 assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"), (width, locale)
@@ -412,26 +419,18 @@ def test_set_up_link_opens_visible_editor_and_save_returns_to_the_list(live):
                 # focus() scrolls the page so another "?" tip can end up under it and take the open state.
                 page.mouse.move(0, 0)
                 help_button.focus()
-                tip_body = page.locator("#stay_fee_authority_databox-help")
                 try:
-                    tip_body.wait_for(state="visible", timeout=1500)
+                    page.locator("#stay_fee_authority_databox-help").wait_for(state="visible", timeout=5000)
                 except Exception:
-                    # A script focus() only counts as :focus-visible after keyboard use, which CI
-                    # does not always get. Reach the "?" with the real keys, as a keyboard user does.
-                    page.keyboard.press("Shift+Tab")
-                    page.keyboard.press("Tab")
-                    try:
-                        tip_body.wait_for(state="visible", timeout=5000)
-                    except Exception:
-                        info = page.evaluate("""() => {
-                            const b = document.querySelector('[aria-controls="stay_fee_authority_databox-help"]');
-                            const tip = b.closest('[data-help-tip]');
-                            return {active: document.activeElement === b, focusVisible: b.matches(':focus-visible'),
-                                    activeTag: document.activeElement && document.activeElement.outerHTML.slice(0, 120),
-                                    tipClass: tip && tip.className, expanded: b.getAttribute('aria-expanded'),
-                                    bound: tip && tip.hasAttribute('data-js'), hasFocus: document.hasFocus()};
-                        }""")
-                        pytest.fail(f"help tip did not open on keyboard focus at {width}px {locale}: {info}")
+                    info = page.evaluate("""() => {
+                        const b = document.querySelector('[aria-controls="stay_fee_authority_databox-help"]');
+                        const d = document.querySelector('#stay-fee-council details.fee-more');
+                        return {detailsOpen: d.open, buttonShown: !!b.offsetParent, active: document.activeElement === b,
+                                activeTag: document.activeElement && document.activeElement.outerHTML.slice(0, 80),
+                                focusVisible: b.matches(':focus-visible'), expanded: b.getAttribute('aria-expanded'),
+                                hasFocus: document.hasFocus()};
+                    }""")
+                    pytest.fail(f"help tip did not open on focus at {width}px {locale}: {info}")
                 help_button.blur()
                 if capture:
                     page.evaluate("document.getElementById('stay-fee-settings').scrollIntoView({block: 'start'}); window.scrollBy(0, -88)")
