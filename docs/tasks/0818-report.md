@@ -30,6 +30,8 @@ Status: review
 - Screenshot check (by eye, against §1): card order is calendar, price lines, policy, form. Arrival (10) and departure (13) use the accent. Booked 20 and 21 are struck through. Visible issue: the guests label wraps ("Počet / hostů") and the guests input is narrow. Not fixed.
 - Two mockup deviations from §1 were not re-read in this step.
 - Step 10: guests button was 21 px high; added `min-height: 44px` to `.pp-bk .ui-btn` in `App/app/templates/property_page.html` (line 32).
+- Visual fix: the guest row is stacked (label on top, select full width at 44 px, "Zobrazit cenu" full width below), in `App/app/templates/property_page.html`.
+- Visual fix: the primary button colour is scoped to `.pp-bk` (`.pp-bk .ui-btn-primary`), and secondary buttons get a surface background and `--line-2` border, in the same file.
 - Step 10: teardown FK error on `user_account` delete; added `alert` and `legal_entity` deletes to the browser test `_cleanup`. Cause not confirmed.
 - Playwright 1.63.0 installed with pip into the shared `App/.venv`; Chromium bundle not installed, tests use `/usr/bin/google-chrome`.
 - Step 8: `apartment` fixture takes `fake_sessions` (Stripe monkeypatch), otherwise the page is not bookable.
