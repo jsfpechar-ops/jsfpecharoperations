@@ -152,7 +152,7 @@ _AUDIT_JS = """(isBack) => {
   // than 60 characters, outside help bodies, open help panels, headings, input labels, table cells and form fields
   const SKIP_FINE = 'h1, h2, h3, h4, h5, h6, label, td, th, table, textarea, input, select, option, script, style';
   // .env-banner is the shell's practice-mode safety alert (base.html, _env_banner.html), shown only when UBYPORT_ENV is mock
-  const HELP_PANEL = '.help-tip-body, .help-tip, .env-banner, details[open].ui-how, details[open].stays-how, details[open].help-panel';
+  const HELP_PANEL = '.help-tip-body, .help-tip, .env-banner, details[open].ui-how, details[open].page-help, details[open].stays-how, details[open].help-panel';
   for (const el of [root, ...root.querySelectorAll('*')]) {
     if (el.matches(SKIP_FINE) || el.closest(SKIP_FINE + ', ' + HELP_PANEL)) continue;
     if (!vis(el)) continue;
@@ -270,9 +270,9 @@ def test_0830C_properties_regressions(base, dashboard_rich_host, seeded):
                 """() => {
                     const visible = (e) => !!e && getComputedStyle(e).display !== 'none' && e.getClientRects().length > 0;
                     const sub = [...document.querySelectorAll('.props-head p.sub')].filter(visible).length;
-                    const how = document.querySelector('details.ui-how[data-how="properties"]');
+                    const how = document.querySelector('details.page-help[data-how="properties"]');
                     const summary = how ? how.querySelector('summary') : null;
-                    const body = how ? how.querySelector('.ui-how-body') : null;
+                    const body = how ? how.querySelector('.page-help-body') : null;
                     const thead = document.querySelector('.props-card thead');
                     const card = document.querySelector('.props-card');
                     return {
@@ -299,6 +299,63 @@ def test_0830C_properties_regressions(base, dashboard_rich_host, seeded):
                 problems.append(f"{width}: beige table header is visible")
             if state["cardBorder"] != "1px":
                 problems.append(f"{width}: list container has no 1 px border")
+        browser.close()
+    assert not problems, problems
+
+
+def test_0831G_page_help(base, dashboard_rich_host, seeded):
+    from playwright import sync_api
+
+    from app import auth
+
+    cookie = dashboard_rich_host["client"].cookies.get(auth.SESSION_COOKIE)
+    assert cookie
+    problems = []
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        for path in ("/apartments", "/reservations"):
+            for width in (390, 1280):
+                context, page = _open_app(browser, base, cookie, path, width)
+                if page.locator(".ui-how").count():
+                    problems.append(f"{path} {width}: .ui-how is still on the page")
+                button = page.locator(".page-help-btn, .stays-title-row .help-tip-btn").first
+                if not button.is_visible():
+                    problems.append(f"{path} {width}: the help ? is not visible")
+                else:
+                    box = button.bounding_box()
+                    title = page.evaluate(
+                        """() => {
+                            const h1 = document.querySelector('h1');
+                            const walker = document.createTreeWalker(h1, NodeFilter.SHOW_TEXT);
+                            let node = null;
+                            while ((node = walker.nextNode())) { if (node.textContent.trim()) break; }
+                            const range = document.createRange();
+                            range.selectNodeContents(node);
+                            const r = range.getBoundingClientRect();
+                            return {right: r.right, mid: (r.top + r.bottom) / 2};
+                        }"""
+                    )
+                    if not 16 <= box["width"] <= 20:
+                        problems.append(f"{path} {width}: ? is {box['width']} px wide")
+                    if abs(box["y"] + box["height"] / 2 - title["mid"]) > 8:
+                        problems.append(f"{path} {width}: ? is not centred on the h1 line")
+                    gap = box["x"] - title["right"]
+                    if not 6 <= gap <= 12:
+                        problems.append(f"{path} {width}: ? sits {gap:.1f} px after the title")
+                if page.locator(".page-help").count():
+                    body = page.locator(".page-help-body").first
+                    if body.is_visible():
+                        problems.append(f"{path} {width}: help body is open by default")
+                    before = page.evaluate("() => document.documentElement.scrollHeight")
+                    page.locator(".page-help-btn").first.click()
+                    pb = body.bounding_box()
+                    viewport = page.viewport_size
+                    if not body.is_visible() or pb["x"] < 0 or pb["x"] + pb["width"] > viewport["width"]:
+                        problems.append(f"{path} {width}: help body is not visible inside the viewport")
+                    after = page.evaluate("() => document.documentElement.scrollHeight")
+                    if after != before:
+                        problems.append(f"{path} {width}: opening help moved the page")
+                context.close()
         browser.close()
     assert not problems, problems
 

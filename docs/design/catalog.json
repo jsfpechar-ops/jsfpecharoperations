@@ -407,7 +407,18 @@
     "row-actions",
     "row-primary-link",
     "clickable-row",
-    "actions"
+    "actions",
+    "stays-title-row",
+    "stays-pills",
+    "police-deadline-row",
+    "e-page",
+    "picker-links",
+    "settings-help-line",
+    "settings-toggle-form",
+    "f1-tip",
+    "page-help",
+    "page-help-btn",
+    "page-help-body"
   ],
   "hooks": [
     "sr-only",

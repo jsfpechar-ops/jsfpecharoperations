@@ -5,6 +5,7 @@
 {% from "_ui.html" import ui_button, ui_icon_button, ui_badge, ui_chip, ui_field, ui_select, ui_textarea, ui_check, ui_toggle, ui_menu_begin, ui_menu_end, ui_menu_item, ui_dialog_begin, ui_dialog_end, ui_empty, ui_tip, ui_pagination, ui_pdot with context %}
 {% from "_ui_layout.html" import ui_tabs, ui_toolbar, ui_section, ui_facts, ui_stats, ui_banner, ui_table_begin, ui_table_end, ui_card, ui_skeleton with context %}
 {% from "_icons.html" import icon with context %}
+{% from "_components.html" import page_help with context %}
 {% set body_kind = body_kind | default('list') %}
 {% set wrap_class = 'ui-lane-narrow' if body_kind in ('form', 'settings') else '' %}
 {% block content %}
@@ -18,26 +19,13 @@
   <header class="ui-ph" data-list-title-row>
     <div class="ui-ph-main">
       {% if page_back %}<a class="ui-ph-back" href="{{ page_back }}">{{ icon('arrow-left', 16) }}<span>{{ self.back_label() | trim or t('common.back') }}</span></a>{% endif %}
-      <h1>{{ page_title_html }}</h1>
+      <h1>{{ page_title_html }}{% if how_key | default('') %}{{ page_help(how_key | default('')) }}{% endif %}</h1>
       {% if page_meta %}<p class="ui-ph-meta" data-list-meta>{{ page_meta }}</p>{% endif %}
     </div>
     {% if page_primary or page_secondary %}
     <div class="ui-ph-acts" data-list-actions>{{ page_secondary }}{{ page_primary }}</div>
     {% endif %}
   </header>
-  {% set how = how_key | default('') %}
-  {% if how %}
-  <details class="ui-how" data-how="{{ how }}">
-    <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
-    <div class="ui-how-body">
-      <ol class="ui-how-steps">
-        {% for n in (1, 2, 3) %}<li>{{ t('how.' ~ how ~ '.' ~ n) }}</li>{% endfor %}
-      </ol>
-      {% set how_anchor = {'dashboard': 'overview', 'stays': 'stays', 'stay': 'guests', 'properties': 'setup', 'property': 'setup', 'reports': 'reporting', 'invoices': 'invoices', 'stay_fees': 'stay_fee', 'housebook': 'housebook'}[how] %}
-      <a class="ui-how-more" href="/guide#{{ how_anchor }}">{{ t('how.more') }}</a>
-    </div>
-  </details>
-  {% endif %}
   {% endif %}
   {% block tabs %}{% endblock %}
   {% block toolbar %}{% endblock %}

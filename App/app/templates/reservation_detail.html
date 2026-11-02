@@ -1,4 +1,5 @@
 {% extends "host_page.html" %}
+{% from "_components.html" import page_help with context %}
 {% set v2 = true %}
 {% from "_icons.html" import icon with context %}
 {% set nav = 'reservations' %}
@@ -58,14 +59,7 @@
 {% endmacro %}
 <div class="head" id="now"><div>
   <div class="crumb"><a href="{{ return_to }}">{{ t('stays.title') }}</a> › {{ lead_name or reservation.internal_name }}</div>
-  <div class="big">{{ lead_name or reservation.internal_name }}</div>
-  <details class="ui-how stays-how ph-hide" data-how="stay">
-    <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
-    <div class="ui-how-body">
-      <ol class="ui-how-steps">{% for n in (1, 2, 3) %}<li>{{ t('how.stay.' ~ n) }}</li>{% endfor %}</ol>
-      <a class="ui-how-more" href="/guide#guests">{{ t('how.more') }}</a>
-    </div>
-  </details>
+  <div class="big">{{ lead_name or reservation.internal_name }}{{ page_help('stay') }}</div>
   <p class="sub">{% if stay_inactive %}<span class="pill">{{ t('stays.filter.state.' ~ reservation.status) if reservation.status != 'active' else t('archive.col.when') }}</span>{% else %}{{ v2_status_pill(cell, progress, reservation) }}{% endif %}<span class="stay-sep"><a href="/apartments/{{ reservation.apartment_id }}">{{ reservation.internal_name }}</a> · {{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</span></p>
 </div>
 <div class="stay-head-actions">

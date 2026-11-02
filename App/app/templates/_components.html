@@ -13,6 +13,12 @@
     <span class="help-tip-body" id="{{ id }}" role="tooltip">{{ text }}{% if guide_href %} <a href="{{ guide_href }}" aria-label="{{ t('help.tip.more') }}: {{ text | striptags | truncate(50) }}">{{ t('help.tip.more') }}</a>{% endif %}</span>
   </span>
 {% endmacro %}
+{#- 0831G: the page "?" next to the h1 title. Same three steps and guide link as the old
+    "How does this work?" block; no icon, no chevron, no visible label. -#}
+{% macro page_help(how) %}
+{% set how_anchor = {'dashboard': 'overview', 'stays': 'stays', 'stay': 'guests', 'properties': 'setup', 'property': 'setup', 'reports': 'reporting', 'invoices': 'invoices', 'stay_fees': 'stay_fee', 'housebook': 'housebook'}.get(how, 'overview') %}
+<details class="page-help" data-how="{{ how }}"><summary class="page-help-btn" aria-label="{{ t('how.toggle') }}">?</summary><div class="page-help-body"><ol class="page-help-steps">{% for n in (1, 2, 3) %}<li>{{ t('how.' ~ how ~ '.' ~ n) }}</li>{% endfor %}</ol><a class="page-help-more" href="/guide#{{ how_anchor }}">{{ t('how.more') }}</a></div></details>
+{% endmacro %}
 {#- Label text with its "?" tip kept on the last word, so the tip never wraps alone to a new line. -#}
 {% macro tip_label(text, id, help, tag='strong') -%}
 {%- set words = text.rsplit(' ', 1) -%}
