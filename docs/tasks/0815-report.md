@@ -1,40 +1,47 @@
-# 0815 report
+# 0815 report: booking site checkout
 
-Status: review
+Status: review. Steps 1 to 10 done, section 6 run passes, section 7 ticked. Not pushed, no PR.
 
-## Files changed
-- App/app/billing.py, go/internal/billing/quote.go: new add-on prices (step 1)
-- go/internal/billing/testdata/quote_fixtures.json: regenerated with App/scripts/billing_fixtures.py (step 2)
-- go/internal/billing/snapshot_test.go: account 2 expected 2036 / 1831 / 1831 (step 2)
-- App/app/landing_i18n.py: anchor copy EN and CS replaced, pricing.addon.ttlock.body removed (step 3)
-- App/tests/test_billing_core.py, App/tests/test_billing_invoices.py, App/tests/test_0412_pricing_browser.py: expected amounts only (step 4)
-- docs/context/decisions.md: one line (step 5)
-- docs/tasks/screenshots-0815/cenik-390.png: /cenik, English, 390 px, default state (1 apartment, yearly)
-- docs/tasks/0815-report.md: this file
+## Files changed (vs local task/0814-booking-site-model)
+`origin/task/0814-booking-site-model` does not exist locally, so the diff uses the local 0814 branch. `git diff --stat task/0814-booking-site-model`:
+- App/app/booking_checkout.py (new, 124 lines)
+- App/app/host_i18n.py (EN and CS keys)
+- App/app/routes/property_page.py (/book uses quote; /checkout and /thanks added; /request removed)
+- App/app/templates/property_page.html, property_page_book.html, property_page_booked.html, property_page_pay.html (new)
+- App/tests/test_booking_checkout.py (new, step 10, 185 lines)
+- App/tests/test_booking_widget.py (step 9)
+- docs/tasks/0815-booking-site-checkout.md (Status line only)
+- docs/tasks/0815-report.md
+Total: 11 files, 530 insertions, 98 deletions.
 
-## Expected-amount arithmetic (slabs per apartment: 1-4 / 5-9 / 10+)
-- Max monthly extra: n=1 59; n=5 4x59+45=281 (715+281=996); n=12 4x59+5x45+3x29=548 (1488+548=2036); n=20 4x59+5x45+11x29=780 (2280+780=3060).
-- Max yearly extra: n=1 570 (1760); n=3 1710 (5280); n=5 2280+430=2710 (8420); n=12 2280+2150+840=5270 (17150); n=20 2280+2150+3080=7510 (25710).
-- TTLock yearly test: 470/12 = 39.2 -> carry 39 (was 40). Upgrade proration: 570 x 6/12 = 285 (was 359).
-- Add-on test: 2 apartments x 49 = 98, 298+98 = 396.
+## Commands
+- Section 6 ruff (last lines):
+  All checks passed!
+- Section 6 pytest, file order as instructed (test_booking_site.py first), last 5 lines:
+  ```
+    /home/claude/jsfpecharoperations/App/.venv/lib/python3.13/site-packages/starlette/testclient.py:518: DeprecationWarning: Setting per-request cookies=<...> is being deprecated, because the expected behaviour on cookie persistence is ambiguous. Set cookies directly on the client instance instead.
+      return super().request(
 
-## Commands (last lines)
-1. `pytest tests/test_billing_*.py tests/test_signup_selection.py` (App): `73 passed in 5.09s`
-2. `pytest` browser set with UBYHOST_BROWSER_EXECUTABLE: `27 passed in 88.91s (0:01:28)`, no skipped lines
-3. `go test ./internal/billing/`: `ok  github.com/jsfpechar-ops/jsfpecharoperations/go/internal/billing (cached)` (uncached run at step 2: `0.015s`)
-4. `grep -rn "50 000\|50,000" App/app/landing_i18n.py`: no output
-5. `python3 scripts/context_lint.py`: `context lint: OK` (WARN lines are pre-existing: catalog.json, RETENTION.md, status.md is 6 commits behind)
+  -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+  103 passed, 1 warning in 4.46s
+  ```
+- Step 10 `tests/test_booking_checkout.py -q --tb=short -x`: 11 passed.
+- Step 9 `tests/test_booking_widget.py -q --tb=short`: 6 passed.
 
-## Section 7 acceptance
-- /cenik figures for 1 apartment yearly (99 / 147 / +39) and monthly Max 208: asserted by the tests above. Monthly Standard + TTLock 198 (149+49) is covered by the browser loop, not by a separate assertion.
-- Screenshot saved. I did not look at the image myself.
+## Section 7
+- [x] The section 6 test run passes (103 passed).
+- [x] `grep -n '"/p/{slug}/request"' App/app/routes/property_page.py` prints nothing.
+- [x] `RedirectResponse` in property_page.py: only local `/p/` targets (lines 38 and 198).
+- [x] `git diff --stat` against the 0814 base lists only the section 3 files (see above). Against origin/main it also lists the 0814 files, because this branch sits on 0814.
 
 ## Deviations
-- Step 4 has two commits labelled "0815 step 4" (billing tests, browser tests).
-- The browser test writes screenshots to a default folder and the onboarding/signup tests write to UBYPORT shots dir when env is set. I set UBYHOST_SHOTS_DIR to docs/tasks/screenshots-0815 for the run, then deleted every file there except cenik-390.png. The stray default folder docs/tasks/screenshots-pricing-panel was created by my first run and removed.
-- Commit trailer uses Claude Opus 5.5 as the brief request said.
-- Done: steps 1 to 5 and the report. Nothing pushed, no PR.
+- Steps 8 and 9 were finished by the orchestrator, not by this executor:
+  - Pre-0814 price fallback in `booking_site.settings` (commit b7a6ba9 "0814 fix: settings read the pre-0814 page price"). This is why the step 9 test now passes.
+  - The quote page shows "nightly x nights" (commit 2ccf55c).
+- The earlier blocked report is replaced by this one.
+
+## Questions
+- None.
 
 ## Owner steps left
-1. Before deploy, run the psql query in the brief (Owner steps). Standard monthly TTLock rows go from 40 to 49 Kr: the Terms need 30 days' notice, so tell the thread first.
-2. Review and merge through scripts/merge-pr-on-green.sh. Deploy is manual.
+- None from this executor. The brief's Owner steps section was not reviewed here.

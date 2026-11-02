@@ -44,6 +44,11 @@ _OWNER_SCOPE = "(? IS NULL OR a.owner_user_id = ?)"
 # 0430-0434: property_page/property_slug hold the host's own content and
 # public names (no personal data); booking_hold holds dates only; a page
 # booking request lands in payment_request (covered above: guest e-mail).
+# 0814: site_booking.guest_name / guest_email are the booker's name and
+# address from the booking site. Kept with the booking (the host's money and
+# accommodation record; the invoice repeats them); deleted with the apartment
+# or the workspace by the foreign-key cascade. Used only for that booking's
+# confirmation, invoice and cancellation mails.
 # 0421: stripe_account holds no personal data beyond the owner reference; it
 # mirrors onboarding status (no keys, no documents) and is deleted with the workspace.
 

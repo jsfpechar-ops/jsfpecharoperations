@@ -1,7 +1,7 @@
-# 0815: New Max and TTLock prices on the price list and /cenik
+# 0821: New Max and TTLock prices on the price list and /cenik
 
 Status: todo
-Depends on: 0814 (same branch) | Base commit: ad1dbbb | Branch: task/0814-remove-founder-plan
+Depends on: 0820 (same branch) | Base commit: ad1dbbb | Branch: task/0820-remove-founder-plan
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -41,7 +41,7 @@ var ttlock = map[string]int{"month": 40, "year": 480}
 | App/app/landing_i18n.py | edit | Anchor copy (EN + CS); delete the unused `pricing.addon.ttlock.body` (EN + CS) |
 | App/tests/test_billing_*.py, App/tests/test_0412_pricing_browser.py, App/tests/test_0416_plan_page_browser.py, App/tests/test_signup_selection*.py | edit only if they fail | Expected amounts only |
 | docs/context/decisions.md | append | One line, see step 5 |
-| docs/tasks/0815-report.md | new | Report |
+| docs/tasks/0821-report.md | new | Report |
 
 No other file may change.
 
@@ -75,7 +75,7 @@ Browser tests: 0 skipped. The grep must print nothing.
 
 - [ ] /cenik, 1 apartment yearly: Standard 99 Kč/month (1 190/yr); Max 147 Kč/month (1 760/yr); TTLock line shows +39 Kč (470/12 rounded).
 - [ ] Monthly, 1 apartment: Max 208, Standard + TTLock 198.
-- [ ] One 390 px screenshot of /cenik (yearly, 1 apartment) saved to `docs/tasks/screenshots-0815/cenik-390.png`.
+- [ ] One 390 px screenshot of /cenik (yearly, 1 apartment) saved to `docs/tasks/screenshots-0821/cenik-390.png`.
 - [ ] All §6 commands pass.
 
 ## 8. Stop and ask
@@ -84,7 +84,7 @@ As in TEMPLATE: excerpt not found, a test fails twice, 25 tool calls / 50k token
 
 ## 9. Report
 
-`docs/tasks/0815-report.md`, 600 tokens at most, then `Status: review`.
+`docs/tasks/0821-report.md`, 600 tokens at most, then `Status: review`.
 
 ## Risk list (for the reviewer)
 
