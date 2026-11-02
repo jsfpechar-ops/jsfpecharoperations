@@ -74,6 +74,8 @@ def _max_owner(monkeypatch):
     apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
     if (apartment["passport_photo_policy"] or "off") != "required_foreign":
         db.update("apartment", apartment["id"], {"passport_photo_policy": "required_foreign"})
+    if int(apartment["ocr_scan"] or 0) != 1:
+        db.update("apartment", apartment["id"], {"ocr_scan": 1})
     if not apartment["owner_user_id"]:
         owner_id = db.insert(
             "user_account",
@@ -398,3 +400,29 @@ def test_a_missing_engine_still_propagates(monkeypatch):
     _fake_engine(monkeypatch, [doc_ocr.NoEngine()])
     with pytest.raises(doc_ocr.NoEngine):
         doc_ocr.read_document(_jpeg())
+
+
+def _gate_apartment(ocr_scan, policy):
+    return {"owner_user_id": 1, "ocr_scan": ocr_scan, "passport_photo_policy": policy}
+
+
+def _gate_max(monkeypatch):
+    monkeypatch.setattr(config, "AI_TEST_EMAILS", "")
+    monkeypatch.setattr(doc_ocr, "TESSERACT", "/usr/bin/tesseract")
+    monkeypatch.setattr(doc_ocr, "_owner_email_row", lambda owner_id: None)
+    monkeypatch.setattr(billing_mod(), "entitlements", _max_entitlements)
+
+
+def test_the_switch_off_means_no_scan_even_on_max(monkeypatch):
+    _gate_max(monkeypatch)
+    assert doc_ocr.available(_gate_apartment(0, "required_foreign")) is False
+
+
+def test_the_switch_on_without_upload_means_no_scan(monkeypatch):
+    _gate_max(monkeypatch)
+    assert doc_ocr.available(_gate_apartment(1, "off")) is False
+
+
+def test_the_switch_and_upload_on_on_max_means_scan(monkeypatch):
+    _gate_max(monkeypatch)
+    assert doc_ocr.available(_gate_apartment(1, "required_foreign")) is True

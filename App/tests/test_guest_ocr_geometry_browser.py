@@ -82,6 +82,7 @@ def world():
     token, stay, _other = _make_apartment_with_stays()
     apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
     db.update("apartment", apartment["id"], {"passport_photo_policy": "required_foreign"})
+    db.update("apartment", apartment["id"], {"ocr_scan": 1})
     owner_id = db.insert(
         "user_account",
         {
