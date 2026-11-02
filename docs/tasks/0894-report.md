@@ -50,3 +50,16 @@ Base: 41e86bd3 (branch claude/project-thread-56y70c). Nothing committed or stage
 
 ## Owner steps left
 1. Same as 0893-report.md run 5: fix the header gap and the guardrail findings, then rerun.
+
+## Run 6 (executor): Status: review
+- Gap (line 235): `body.v2 .ui-ph + .ui-tabs{margin-top:12px}` and `body.v2 .ui-ph-acts` as flex. The 7 px gap at 1024+ came from the Billing link overflowing a 19 px block, so the header ended above it. Gap now at least 12 px at every width.
+- Filter `select#customer-plan` vs `Apply filters`: bottom lines aligned (field bottom margin 0 and form-actions top margin 0 only in pairs holding the button).
+- Operations `cell-not-under-header`: phone stacked tables hide the header row (`display:none` at max-width 1023px); cells read labels from data-label.
+- Cache key `20261102-0893n` in the 5 templates; `static_versions.json` written with --write.
+- Probe file deleted. Not committed, not staged.
+- Last test lines:
+```
+........................................................................ [ 94%]
+....                                                                     [100%]
+76 passed in 103.86s (0:01:43)
+```

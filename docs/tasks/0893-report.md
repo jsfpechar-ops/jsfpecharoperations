@@ -68,3 +68,16 @@ Command 2 (other admin suites) NOT run: budget reached.
 ## Owner steps left
 1. Gap (line 235) and guardrail findings (table header alignment, filter field alignment) are open. A next executor run needs a DOM dump of the header at 390 px (the `.ui-ph-acts` and the element holding "Today") before any more CSS.
 2. Then rerun `tests/test_0893_admin_airbnb_browser.py` and `tests/test_design_guardrails_browser.py` to 0 findings, and retake the screenshots.
+
+## Run 6 (executor): Status: review
+- Gap (line 235): `body.v2 .ui-ph + .ui-tabs{margin-top:12px}` and `body.v2 .ui-ph-acts` as flex. The 7 px gap at 1024+ came from the Billing link overflowing a 19 px block, so the header ended above it. Gap now at least 12 px at every width.
+- Filter `select#customer-plan` vs `Apply filters`: bottom lines aligned (field bottom margin 0 and form-actions top margin 0 only in pairs holding the button).
+- Operations `cell-not-under-header`: phone stacked tables hide the header row (`display:none` at max-width 1023px); cells read labels from data-label.
+- Cache key `20261102-0893n` in the 5 templates; `static_versions.json` written with --write.
+- Probe file deleted. Not committed, not staged.
+- Last test lines:
+```
+........................................................................ [ 94%]
+....                                                                     [100%]
+76 passed in 103.86s (0:01:43)
+```
