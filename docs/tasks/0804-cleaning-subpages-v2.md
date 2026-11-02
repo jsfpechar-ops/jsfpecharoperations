@@ -1,10 +1,10 @@
 # 0804 brief: Nový úklid, Sdílení and cleaning properties on the v2 look
 
-Status: ready
+Status: review
 Executor: Haiku 5.5, alone, on the branch it is given. Routes: `cleaning-new`, `cleaning-shares`, `cleaning-properties`.
 CSS block comment: `/* 0804 cleaning sub-pages (v2) */`
 
-## Objective
+## 1. Objective
 `App/app/templates/cleaning_edit.html` (/cleaning/new and edit), `cleaning_shares.html` (/cleaning/shares), `cleaning_properties.html` (/cleaning/properties) get `{% set v2 = true %}` and match `/cleaning` (already v2; read `cleaning.html` and the cleaning rules in app2.css for the header pattern). Their old styles are in `App/app/static/cleaning.css`, which v2 does not load: port only what their markup uses into your block, in the v2 look:
 - header h1 + sub line + back link to Úklid like the other v2 detail pages; sidebar item Úklid active (`nav = 'cleaning'`);
 - forms in a white card, labels above inputs, 40 px inputs, even field spacing (audit P3: Nový úklid field spacing);
@@ -12,10 +12,12 @@ CSS block comment: `/* 0804 cleaning sub-pages (v2) */`
 - cleaning properties: one card with a row per property (name left, setting control right), like the properties table rows.
 Phone: compact cards, primary button full width. Do not change `cleaning.html` or `_cleaning_*.html` (the cleaning page is done).
 
-## Files
+## 3. Files
 The three templates, partials they include only if they are not used by `cleaning.html` (`grep` first), `App/app/static/app2.css` (append), `docs/design/catalog.json`, tests asserting old markup (`grep -rl 'cleaning/new\|cleaning/shares\|cleaning/properties\|cleaning_edit\|cleaning_shares\|cleaning_properties' App/tests | head -30`).
 
-## Shared rules for briefs 0800-0804 (same text in each)
+## 4. Steps
+
+Shared rules for briefs 0800-0804 (same text in each):
 
 Goal: the page leaves the old look (old fieldsets, red header bar, narrow 720 px column, host.css) and uses the v2 shell like the finished pages (`/`, `/cleaning`, `/apartments`, `/reservations`). Restyle only: same routes, same form fields and names, same POST targets, same copy keys, same behaviour without JavaScript. No new features, no removed fields.
 
@@ -35,3 +37,27 @@ Test commands (from `App/`; never reinstall playwright):
 - Screenshots: add `UBYHOST_SHOTS_0800=1` to the main check with `-k "<routes> and (390 or 1440)"`; PNGs land in `docs/tasks/screenshots-0800/<route>-<width>.png`. Open the 390 and 1440 PNG of each page (Read tool) and compare with the mockup look before you finish.
 
 Finish: commit on the current branch with message `0804: <title>` (no push), and write `docs/tasks/0804-report.md`: changed files, test tails, screenshot paths, deviations. Stop at 30 tool calls and write the report with what is left.
+
+## 2. Context
+
+See section 4 (how v2 works) and docs/tasks/0800-report.md … 0804-report.md.
+
+## 5. Do not touch
+
+Other pages, existing app2.css lines, wizard.css, cleaning.css, the guest-facing pages, static cache key, screenshot folders other than screenshots-0800.
+
+## 6. Commands
+
+See the test commands in section 4.
+
+## 7. Acceptance
+
+`tests/test_0800_v2_remaining_pages_browser.py` 0 failed for the brief's routes; the existing tests of the pages pass; design_lint passes.
+
+## 8. Stop and ask
+
+Stop and report if a route redirects away from the page, a fix would need a change to another page, or you reach 30 tool calls.
+
+## 9. Report
+
+`docs/tasks/<number>-report.md`: changed files, test tails, screenshot paths, deviations.

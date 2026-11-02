@@ -1,18 +1,20 @@
 # 0803 brief: Průvodce (help guide) and Havel page on the v2 look
 
-Status: ready
+Status: review
 Executor: Haiku 5.5, alone, on the branch it is given. Routes: `guide`, `havel`.
 CSS block comment: `/* 0803 help guide + Havel page (v2) */`
 
-## Objective
+## 1. Objective
 1. `/guide` (`App/app/templates/guide.html`, 340 lines: read it in ranges): `{% set v2 = true %}`; header h1 + sub line; the table of contents is a sticky left (or right) column card from 1280 px and a closed `<details>` card above the text below that (audit: TOC column looked broken); each guide section is a white `.card` with an `h2`; readable text column max ~720 px; anchors (`/guide#overview` etc., used by `havel.py` and `ui-how-more` links) must keep working: keep every `id`.
 2. `/havel` (`havel.html`, 15 lines; Havel styles are already in app2.css under "v2 shared: Havel"): `{% set v2 = true %}`, header h1 + sub line, the chat panel in a white card filling the content width with a sensible min-height; the empty state (audit: "empty chat") shows the existing topic suggestions/intro inside the card instead of a blank area (use what `_havel_topics.html`/`_havel_panel.html` already render; no new copy).
 Phone: guide TOC closed by default, sections stacked; Havel input stays above the tab bar.
 
-## Files
+## 3. Files
 `guide.html`, `havel.html` (and only if needed `_havel_panel.html`, `_havel_topics.html`: class additions only), `App/app/static/app2.css` (append), `docs/design/catalog.json`, tests asserting old markup (`grep -rl '"/guide"\|guide.html\|"/havel"\|havel.html' App/tests | head -30`).
 
-## Shared rules for briefs 0800-0804 (same text in each)
+## 4. Steps
+
+Shared rules for briefs 0800-0804 (same text in each):
 
 Goal: the page leaves the old look (old fieldsets, red header bar, narrow 720 px column, host.css) and uses the v2 shell like the finished pages (`/`, `/cleaning`, `/apartments`, `/reservations`). Restyle only: same routes, same form fields and names, same POST targets, same copy keys, same behaviour without JavaScript. No new features, no removed fields.
 
@@ -32,3 +34,27 @@ Test commands (from `App/`; never reinstall playwright):
 - Screenshots: add `UBYHOST_SHOTS_0800=1` to the main check with `-k "<routes> and (390 or 1440)"`; PNGs land in `docs/tasks/screenshots-0800/<route>-<width>.png`. Open the 390 and 1440 PNG of each page (Read tool) and compare with the mockup look before you finish.
 
 Finish: commit on the current branch with message `0803: <title>` (no push), and write `docs/tasks/0803-report.md`: changed files, test tails, screenshot paths, deviations. Stop at 30 tool calls and write the report with what is left.
+
+## 2. Context
+
+See section 4 (how v2 works) and docs/tasks/0800-report.md … 0804-report.md.
+
+## 5. Do not touch
+
+Other pages, existing app2.css lines, wizard.css, cleaning.css, the guest-facing pages, static cache key, screenshot folders other than screenshots-0800.
+
+## 6. Commands
+
+See the test commands in section 4.
+
+## 7. Acceptance
+
+`tests/test_0800_v2_remaining_pages_browser.py` 0 failed for the brief's routes; the existing tests of the pages pass; design_lint passes.
+
+## 8. Stop and ask
+
+Stop and report if a route redirects away from the page, a fix would need a change to another page, or you reach 30 tool calls.
+
+## 9. Report
+
+`docs/tasks/<number>-report.md`: changed files, test tails, screenshot paths, deviations.

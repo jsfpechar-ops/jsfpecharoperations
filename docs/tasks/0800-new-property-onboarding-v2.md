@@ -1,18 +1,20 @@
 # 0800 brief: Nové ubytování and onboarding on the v2 look
 
-Status: ready
+Status: review
 Executor: Haiku 5.5, alone, on the branch it is given. Routes: `property-new`, `onboarding`.
 CSS block comment: `/* 0800 new property + onboarding (v2) */`
 
-## Objective
+## 1. Objective
 1. `/apartments/new` (Nové ubytování) uses the same v2 sidebar as every other page. Cause: `App/app/templates/apartment_form.html` line 3 `{% set v2 = editing %}`; make it `{% set v2 = true %}` and make the create form (`_property_create.html`, plus the field partials it includes: `_property_identity_fields.html`, `_property_address_fields.html`, `_property_operator.html`, `_stay_fee_fields.html`, `_entity_*_fields.html` as used) look like the mockup `data-v="prop"` form: page header (h1 + one sub line), the form in white card sections with a bold section title, label above input, two-column fields from 1024 px where the mockup has them (`.fields` exists in app2.css), Zrušit (secondary) + Vytvořit (primary coral) bottom-right of the form. The follow-up panel the page shows (`.property-create-lane`) stays. The help `details.ui-how` stays computer-only.
 2. `/onboarding` (macro `onboarding_welcome` in `App/app/templates/_components.html`, page `onboarding.html`): on v2, laid out like mockup `data-v="welcome"`: h1 + sub line, then one card per step with the 36 px coral-soft number circle, bold step title, one grey line, and the step's existing link/button on the right. Max width 720 px, left-aligned with the content edge. Fix the audit bugs: the hero title must be one line at 1440 (shorten nothing; use the h1 size from the mockup), and step 4 must not appear twice (find why in the macro; if two different steps share number 4, renumber by loop index).
 Phone: one column, step cards compact (h2/number circle smaller is fine), primary button full width.
 
-## Files
+## 3. Files
 `apartment_form.html`, `_property_create.html` and the partials it includes, `onboarding.html`, the `onboarding_welcome` macro in `_components.html` (change only that macro), `App/app/static/app2.css` (append), `docs/design/catalog.json`, tests that assert the old markup of these two pages (`grep -rl 'apartments/new\|property_create\|onboarding' App/tests | head -30`).
 
-## Shared rules for briefs 0800-0804 (same text in each)
+## 4. Steps
+
+Shared rules for briefs 0800-0804 (same text in each):
 
 Goal: the page leaves the old look (old fieldsets, red header bar, narrow 720 px column, host.css) and uses the v2 shell like the finished pages (`/`, `/cleaning`, `/apartments`, `/reservations`). Restyle only: same routes, same form fields and names, same POST targets, same copy keys, same behaviour without JavaScript. No new features, no removed fields.
 
@@ -32,3 +34,27 @@ Test commands (from `App/`; never reinstall playwright):
 - Screenshots: add `UBYHOST_SHOTS_0800=1` to the main check with `-k "<routes> and (390 or 1440)"`; PNGs land in `docs/tasks/screenshots-0800/<route>-<width>.png`. Open the 390 and 1440 PNG of each page (Read tool) and compare with the mockup look before you finish.
 
 Finish: commit on the current branch with message `0800: <title>` (no push), and write `docs/tasks/0800-report.md`: changed files, test tails, screenshot paths, deviations. Stop at 30 tool calls and write the report with what is left.
+
+## 2. Context
+
+See section 4 (how v2 works) and docs/tasks/0800-report.md … 0804-report.md.
+
+## 5. Do not touch
+
+Other pages, existing app2.css lines, wizard.css, cleaning.css, the guest-facing pages, static cache key, screenshot folders other than screenshots-0800.
+
+## 6. Commands
+
+See the test commands in section 4.
+
+## 7. Acceptance
+
+`tests/test_0800_v2_remaining_pages_browser.py` 0 failed for the brief's routes; the existing tests of the pages pass; design_lint passes.
+
+## 8. Stop and ask
+
+Stop and report if a route redirects away from the page, a fix would need a change to another page, or you reach 30 tool calls.
+
+## 9. Report
+
+`docs/tasks/<number>-report.md`: changed files, test tails, screenshot paths, deviations.

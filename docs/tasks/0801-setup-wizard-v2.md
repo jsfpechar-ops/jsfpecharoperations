@@ -1,10 +1,10 @@
 # 0801 brief: setup wizard on the v2 look (restyle only)
 
-Status: ready
+Status: review
 Executor: Haiku 5.5, alone, on the branch it is given. Routes: `setup-property`, `setup-calendar`, `setup-police`, `setup-guest-link`, `setup-stay-fee`, `setup-done`.
 CSS block comment: `/* 0801 setup wizard (v2) */`
 
-## Objective
+## 1. Objective
 The property setup wizard (`App/app/templates/setup_wizard/_layout.html` and its steps `property, calendar, police, guest_link, door_lock, stay_fee, automation, try_it, done`) is RESTYLE ONLY (owner's order): same steps, fields, buttons, copy and order. Put `{% set v2 = true %}` in `_layout.html` (children inherit it; check with the test). Its styles today live in `App/app/static/wizard.css` (and some in host.css/components.css), which v2 does not load: port only the rules the wizard markup actually uses into your app2.css block, rewritten to the v2 look:
 - header: h1 + one sub line (mockup `.head`), progress as a small step strip or "Krok 2 z 8" line above the h1, not a full-width bar band;
 - each step body is one white `.card` (mockup radius/ring), max width 720 px, left-aligned with the content edge;
@@ -12,10 +12,12 @@ The property setup wizard (`App/app/templates/setup_wizard/_layout.html` and its
 - footer: Zpět/Přeskočit as secondary/link, Pokračovat as the one primary coral pill, right-aligned on desktop, full width on phone.
 Do not touch `wizard.css` (old-shell pages may still use it); grep that no non-wizard template uses the classes you restyle under `body.v2 .wiz-…` scoping.
 
-## Files
+## 3. Files
 `setup_wizard/*.html` (markup changes only where a class is needed for scoping or an old wrapper must become a `.card`), `App/app/static/app2.css` (append), `docs/design/catalog.json`, tests that assert the old wizard markup (`grep -rl 'setup_wizard\|/setup' App/tests | head -30`). Routes are in `App/app/routes/onboarding_wizard.py` (read only). If a step route redirects for the rich host fixture, say so in the report instead of changing the route.
 
-## Shared rules for briefs 0800-0804 (same text in each)
+## 4. Steps
+
+Shared rules for briefs 0800-0804 (same text in each):
 
 Goal: the page leaves the old look (old fieldsets, red header bar, narrow 720 px column, host.css) and uses the v2 shell like the finished pages (`/`, `/cleaning`, `/apartments`, `/reservations`). Restyle only: same routes, same form fields and names, same POST targets, same copy keys, same behaviour without JavaScript. No new features, no removed fields.
 
@@ -35,3 +37,27 @@ Test commands (from `App/`; never reinstall playwright):
 - Screenshots: add `UBYHOST_SHOTS_0800=1` to the main check with `-k "<routes> and (390 or 1440)"`; PNGs land in `docs/tasks/screenshots-0800/<route>-<width>.png`. Open the 390 and 1440 PNG of each page (Read tool) and compare with the mockup look before you finish.
 
 Finish: commit on the current branch with message `0801: <title>` (no push), and write `docs/tasks/0801-report.md`: changed files, test tails, screenshot paths, deviations. Stop at 30 tool calls and write the report with what is left.
+
+## 2. Context
+
+See section 4 (how v2 works) and docs/tasks/0800-report.md … 0804-report.md.
+
+## 5. Do not touch
+
+Other pages, existing app2.css lines, wizard.css, cleaning.css, the guest-facing pages, static cache key, screenshot folders other than screenshots-0800.
+
+## 6. Commands
+
+See the test commands in section 4.
+
+## 7. Acceptance
+
+`tests/test_0800_v2_remaining_pages_browser.py` 0 failed for the brief's routes; the existing tests of the pages pass; design_lint passes.
+
+## 8. Stop and ask
+
+Stop and report if a route redirects away from the page, a fix would need a change to another page, or you reach 30 tool calls.
+
+## 9. Report
+
+`docs/tasks/<number>-report.md`: changed files, test tails, screenshot paths, deviations.

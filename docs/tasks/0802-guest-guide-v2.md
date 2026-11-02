@@ -1,10 +1,10 @@
 # 0802 brief: guest guide (host side) on the v2 look
 
-Status: ready
+Status: review
 Executor: Haiku 5.5, alone, on the branch it is given. Routes: `guest-guide`, `guest-guide-quick`.
 CSS block comment: `/* 0802 guest guide (v2) */`
 
-## Objective
+## 1. Objective
 The host's guest-guide pages (routes in `App/app/routes/guest_guide.py`, read only): `guest_guide.html` (index), `guest_guide_card.html` (one item), `guest_guide_quick.html`, `guest_guide_quick_done.html`, `guest_guide_qr.html` get `{% set v2 = true %}` and the v2 look:
 - header: h1 + sub line; ONE primary coral button on the right (the main add/edit action), the other header actions become secondary `.btn.line` or plain links (audit: all header buttons had the same weight);
 - the item list is one white card with rows like the mockup properties table rows (name left, status pill right next to the content, not 1040 px away: audit "1040 px rows with a pill far right"; cap row content width or put the pill right after the title on desktop);
@@ -12,10 +12,12 @@ The host's guest-guide pages (routes in `App/app/routes/guest_guide.py`, read on
 - item edit, quick setup and QR pages: form/QR in a white card, max 720 px, buttons as in the shared rules.
 Phone: rows are `.list.plain .row` style compact rows; secondary header actions `ph-hide` where they are not needed on phone.
 
-## Files
+## 3. Files
 The five templates above, `App/app/static/app2.css` (append), `docs/design/catalog.json`, tests asserting the old markup (`grep -rl 'guest_guide\|/guide/quick\|guide-' App/tests | head -30`). Do NOT touch the guest-facing guide (`public_guide.html`, `templates/guest/`).
 
-## Shared rules for briefs 0800-0804 (same text in each)
+## 4. Steps
+
+Shared rules for briefs 0800-0804 (same text in each):
 
 Goal: the page leaves the old look (old fieldsets, red header bar, narrow 720 px column, host.css) and uses the v2 shell like the finished pages (`/`, `/cleaning`, `/apartments`, `/reservations`). Restyle only: same routes, same form fields and names, same POST targets, same copy keys, same behaviour without JavaScript. No new features, no removed fields.
 
@@ -35,3 +37,27 @@ Test commands (from `App/`; never reinstall playwright):
 - Screenshots: add `UBYHOST_SHOTS_0800=1` to the main check with `-k "<routes> and (390 or 1440)"`; PNGs land in `docs/tasks/screenshots-0800/<route>-<width>.png`. Open the 390 and 1440 PNG of each page (Read tool) and compare with the mockup look before you finish.
 
 Finish: commit on the current branch with message `0802: <title>` (no push), and write `docs/tasks/0802-report.md`: changed files, test tails, screenshot paths, deviations. Stop at 30 tool calls and write the report with what is left.
+
+## 2. Context
+
+See section 4 (how v2 works) and docs/tasks/0800-report.md … 0804-report.md.
+
+## 5. Do not touch
+
+Other pages, existing app2.css lines, wizard.css, cleaning.css, the guest-facing pages, static cache key, screenshot folders other than screenshots-0800.
+
+## 6. Commands
+
+See the test commands in section 4.
+
+## 7. Acceptance
+
+`tests/test_0800_v2_remaining_pages_browser.py` 0 failed for the brief's routes; the existing tests of the pages pass; design_lint passes.
+
+## 8. Stop and ask
+
+Stop and report if a route redirects away from the page, a fix would need a change to another page, or you reach 30 tool calls.
+
+## 9. Report
+
+`docs/tasks/<number>-report.md`: changed files, test tails, screenshot paths, deviations.
