@@ -12,7 +12,7 @@
 <div class="head settings-head"><div><h1 class="big">{{ t('nav.settings') }}</h1></div></div>
 <div class="settings-lane">
 {%- from "_icons.html" import icon with context -%}
-{% from "_components.html" import field_label, help_tip, settings_group, settings_heading with context %}
+{% from "_components.html" import field_label, help_tip, tip_label, settings_group, settings_heading with context %}
 
 {# 0083: one index, six visible groups. Each specialized action keeps its own form and endpoint. #}
 
@@ -43,8 +43,7 @@
         {# 0083: the single place for a link to the shared business editor. 0076 may point it at /entities?edit=<id>. #}
         <div class="settings-action-row" id="settings-business">
           <div>
-            <strong>{{ t('settings.business.title') }}</strong>
-            {{ help_tip('settings-business-help', t('settings.business.help')) }}
+            {{ tip_label(t('settings.business.title'), 'settings-business-help', t('settings.business.help')) }}
           </div>
           {#- 0076: one business opens its editor directly; several open the list. -#}
           <a class="ui-btn ui-btn-secondary ui-btn-compact" href="{{ ('/entities?edit=' ~ business_entities[0].id ~ '&next=/settings') if business_entities and business_entities | length == 1 else '/entities' }}">{{ t('settings.business.action') }}</a>
@@ -138,8 +137,7 @@
       <div class="settings-action-list">
         <div class="settings-action-row">
           <div>
-            <strong>{{ t('settings.account.2fa') }}</strong>
-            {% if current_user.totp_enabled %}<small>{{ t('settings.account.2fa_on') }}</small>{% else %}{{ help_tip('settings-2fa-help', t('settings.account.2fa_off')) }}{% endif %}
+            {% if current_user.totp_enabled %}<strong>{{ t('settings.account.2fa') }}</strong><small>{{ t('settings.account.2fa_on') }}</small>{% else %}{{ tip_label(t('settings.account.2fa'), 'settings-2fa-help', t('settings.account.2fa_off')) }}{% endif %}
           </div>
           {% if current_user.totp_enabled %}
             <span class="ui-badge ui-badge-done" data-tone="green">{{ t('settings.account.enabled') }}</span>
@@ -187,9 +185,8 @@
       <div class="settings-action-list" id="settings-install" data-pwa-install-row>
         <div class="settings-action-row">
           <div>
-            <strong>{{ t('pwa.install.title') }}</strong>
             {% set pwa_other %}<p class="ui-sub" data-pwa-other>{{ t('pwa.install.other') }}</p>{% endset %}
-            {{ help_tip('settings-pwa-help', t('pwa.install.help') ~ pwa_other) }}
+            {{ tip_label(t('pwa.install.title'), 'settings-pwa-help', t('pwa.install.help') ~ pwa_other) }}
           </div>
           <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" data-pwa-install hidden>{{ t('pwa.install.button') }}</button>
           <span class="ui-badge ui-badge-done" data-tone="green" data-pwa-installed hidden>{{ t('pwa.install.installed') }}</span>
@@ -297,8 +294,7 @@
       <div class="settings-action-list">
         <div class="settings-action-row">
           <div>
-            <strong>{{ t('nav.privacy_requests') }}</strong>
-            {{ help_tip('settings-privacy-requests-help', t('settings.privacy.requests_help')) }}
+            {{ tip_label(t('nav.privacy_requests'), 'settings-privacy-requests-help', t('settings.privacy.requests_help')) }}
           </div>
           <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/privacy-requests">{{ t('settings.privacy.requests_action') }}</a>
         </div>
@@ -474,8 +470,7 @@
       <div class="settings-action-list">
         <div class="settings-action-row">
           <div>
-            <strong>{{ t('nav.guide') }}</strong>
-            {{ help_tip('settings-guide-help', t('settings.help.guide_help')) }}
+            {{ tip_label(t('nav.guide'), 'settings-guide-help', t('settings.help.guide_help')) }}
           </div>
           <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/guide" aria-label="{{ t('settings.help.guide_action') }} {{ t('help.tip.label') | lower }}">{{ t('settings.help.guide_action') }}</a>
         </div>
@@ -483,7 +478,7 @@
     </div>
 
     <div class="ui-section" id="settings-legal">
-      <h2>{{ t('legal.settings_title') }}{{ help_tip('settings-legal-help', t('legal.settings_body', name=operator().name, ico=operator().ico) ~ ' ' ~ t('legal.support_help')) }}</h2>
+      <h2>{{ tip_label(t('legal.settings_title'), 'settings-legal-help', t('legal.settings_body', name=operator().name, ico=operator().ico) ~ ' ' ~ t('legal.support_help'), 'span') }}</h2>
       <dl class="kv ui-sub">
         <dt>{{ t('legal.operator_address') }}</dt><dd>{{ operator().address }}</dd>
         {% if operator().email %}

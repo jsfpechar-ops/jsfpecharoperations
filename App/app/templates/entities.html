@@ -2,7 +2,7 @@
 {% set v2 = true %}
 {% set nav = 'entities' %}
 {% set body_kind = 'list' %}
-{% from "_components.html" import onboarding_banner, row_menu_begin, row_menu_end, row_open, help_tip with context %}
+{% from "_components.html" import onboarding_banner, row_menu_begin, row_menu_end, row_open, help_tip, tip_label with context %}
 {% from "_entity_business_fields.html" import business_form_body, ico_field, register_messages, register_lookup_saved with context %}
 {% from "_entity_invoice_fields.html" import invoice_fields with context %}
 {% from "_ui_layout.html" import ui_section_tabs with context %}
@@ -14,7 +14,7 @@
 {% block tabs %}{% endblock %}
 {% block body %}
 {% include "_host_alerts.html" %}
-<div class="head"><div>{% if next_path %}<a class="crumb" href="{{ next_path }}">{{ t('common.back') }}</a>{% endif %}<h1 class="big">{{ t('entities.title') }}{{ help_tip('entities-lede-help', t('entities.lede')) }}</h1></div></div>
+<div class="head"><div>{% if next_path %}<a class="crumb" href="{{ next_path }}">{{ t('common.back') }}</a>{% endif %}<h1 class="big">{{ tip_label(t('entities.title'), 'entities-lede-help', t('entities.lede'), 'span') }}</h1></div></div>
 {{ onboarding_banner(onboarding) }}
 
 {% if edit_entity %}
@@ -42,7 +42,7 @@
   </div>
 
   <section class="entity-section" id="entity-business" aria-labelledby="entity-business-title">
-    <h3 class="entity-section-title" id="entity-business-title">{{ t('entities.section.business') }}{{ help_tip('entity-business-why-help', t('why.business')) }}</h3>
+    <h3 class="entity-section-title" id="entity-business-title">{{ tip_label(t('entities.section.business'), 'entity-business-why-help', t('why.business'), 'span') }}</h3>
     <form method="post" action="/entities/{{ edit_entity.id }}" enctype="multipart/form-data" data-unsaved-guard>
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
       {% if next_path %}<input type="hidden" name="next" value="{{ next_path }}">{% endif %}
@@ -154,7 +154,7 @@
 {% endif %}
 
 <div class="card entity-add" id="entity-add">
-  <h2>{{ t('entities.add') }}{{ help_tip('entity-add-why-help', t('why.business')) }}</h2>
+  <h2>{{ tip_label(t('entities.add'), 'entity-add-why-help', t('why.business'), 'span') }}</h2>
   <form method="post" action="/entities" enctype="multipart/form-data">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     {{ business_form_body('new_', new_entity or none, '', ares_error, ares_note) }}
