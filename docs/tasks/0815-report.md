@@ -1,39 +1,41 @@
 # 0815 report: booking site checkout
 
-Status: blocked. Done: steps 1 to 7 committed. Step 8 edited but NOT committed (its test fails). Left: steps 8 (test pass and commit), 9, 10, section 6 and 7.
+Status: blocked. Done: steps 1 to 8 committed (step 8 committed by the orchestrator as 0860013). Left: step 9 (test fails, see below), step 10, section 6 run, section 7 ticks.
 
 ## Files changed (committed)
-- App/app/booking_checkout.py (new): hold_dates, start (Stripe session on connected account via options).
+- App/app/booking_checkout.py (new): hold_dates, start (Stripe session on the connected account via options).
 - App/app/routes/property_page.py: /book uses quote; /checkout and /thanks added; /request removed; ?book= errors shown.
-- App/app/templates/property_page.html: guests field and error line.
-- App/app/templates/property_page_book.html, property_page_pay.html (new), property_page_booked.html: replaced per brief.
-- App/app/host_i18n.py: EN block committed (step 7). CS block edited, uncommitted (step 8).
+- App/app/templates/property_page.html, property_page_book.html, property_page_pay.html (new), property_page_booked.html.
+- App/app/host_i18n.py: EN and CS blocks (steps 7 and 8).
 - docs/tasks/0815-booking-site-checkout.md: Status line only.
 
 ## Commands
-- Step 1 ruff (App/app/booking_checkout.py): All checks passed!
-- Step 2 ruff (App/app/routes/property_page.py): All checks passed!
-- Step 8 pytest tests/test_host_i18n.py -q --tb=short -x (last lines):
-  sqlite3.OperationalError: no such table: apartment
-  FAILED tests/test_host_i18n.py::test_language_endpoint_sets_cookie_and_rejects_open_redirects
-  !!!!! stopping after 1 failures !!!!!
-  1 failed, 2 passed in 2.32s
-  Failed twice on the step 8 state (second run was the diagnosis run).
+- Step 1 ruff (booking_checkout.py): All checks passed!
+- Step 2 ruff (routes/property_page.py): All checks passed!
+- Step 9 pytest tests/test_booking_widget.py -q --tb=short (last lines, after the guests fix):
+  FAILED tests/test_booking_widget.py::test_check_computes_total - assert '3 ni...
+  FAILED tests/test_booking_widget.py::test_taken_dates_refused - AssertionErro...
+  2 failed, 4 passed in 1.50s
+  Failed twice (before and after adding "guests": "2").
 
-## Section 7 (checked so far)
-- [ ] Section 6 test run: not run to pass (blocked at step 8).
-- [x] /request route absent from property_page.py (grep count 0 after step 2).
-- [x] RedirectResponse only targets local /p/ paths (all in _book_error).
-- diff stat vs origin/main: see the stat output in the executor reply.
+## Blocker (step 9)
+- The quote for the test owner returns error "no_price" (redirect ?book=no_price), so /book shows no price lines and /book cannot return book=taken. The old request test relied on a price (1200 per night) that the test fixture does not set up for booking_site. Fixing this means changing the fixture or the test's price setup, which the brief does not allow ("only form data or expected text").
+- Uncommitted in the working tree: App/tests/test_booking_widget.py (new test_request_route_is_gone, plus "guests": "2" in two forms). Not committed because the test fails.
+
+## Section 7 (so far)
+- [ ] Section 6 test run: not run (blocked at step 9).
+- [x] /request route gone (grep count 0).
+- [x] RedirectResponse only local /p/ targets.
+- [ ] git diff --stat origin/main: branch sits on 0814, so origin/main diff includes 0814 files. The 0815 changes are limited to the section 3 files.
 
 ## Deviations
-- Step 8: Czech strings written as \uXXXX escapes, as the brief asks for the file's style (same runtime text).
-- Step 2: "replace to end of file" done by cutting the file at the /book line and appending the brief's block.
-- Steps 3 to 6 committed in one tool call, one commit per step.
-- A scratch file was briefly written to /tmp (removed); the rest used the scratchpad.
+- Step 8: Czech strings written as \uXXXX escapes (file style, same runtime text).
+- Step 2: "to end of file" replaced by cutting at the /book line and appending the brief's block.
+- Steps 3 to 6 in one tool call, one commit each.
+- Step 9: two added "guests": "2" form fields (allowed by brief); the test still fails.
 
 ## Questions
-- tests/test_host_i18n.py fails when run alone: guest.py pick_stay hits an uninitialised SQLite DB ("no such table: apartment"). guest.py is not touched by 0815, and the step 7 state also fails 4 tests in that file. Looks like a test-harness/DB-init issue. Owner or reviewer to check how this file gets its DB before step 8 can pass.
+- Test fixture owner needs a booking-site nightly price (or the test expects no_price). Who decides the fixture change? Brief 0815 step 9 wording did not cover it.
 
 ## Owner steps left
-- None until 0815 steps 8 to 10 are done and the i18n test is fixed.
+- None until 0815 steps 9 and 10 are done.
