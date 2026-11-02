@@ -1163,7 +1163,7 @@ def test_deferred_police_journey_without_javascript(host, base_url, monkeypatch,
 
         def check_controls():
             assert page.evaluate(_overflow_js())
-            header = page.locator(".ui-ph h1").bounding_box()
+            header = page.locator(".wiz-page h1.big").bounding_box()
             exit_button = page.locator(".setup-wizard-exit button").bounding_box()
             assert header and exit_button
             assert header["y"] + header["height"] <= exit_button["y"] + 1
@@ -1277,7 +1277,7 @@ def test_wizard_polish_and_overview_cards(host, base_url, monkeypatch, lang, wid
         }"""
         # 0212: the fee lede looks like every other step's lede.
         assert page.locator(".setup-wizard-lede").first.evaluate(typography)[1:4] != page.locator(
-            ".ui-ph h1"
+            ".wiz-page h1.big"
         ).evaluate(typography)[1:4]
         assert page.evaluate(_overflow_js())
         _shot(page, f"24-fee-intro-{tag}.png")
@@ -1449,7 +1449,7 @@ def test_phone_guest_sharing_and_clear_setup_actions(host, base_url, lang, width
         lede = page.locator(".setup-wizard-lede").first
         assert int(lede.evaluate("(el) => getComputedStyle(el).fontWeight")) == 400  # 0212
         assert lede.evaluate("(el) => getComputedStyle(el).color") == page.locator(
-            ".ui-ph h1"
+            ".wiz-page h1.big"
         ).evaluate("(el) => getComputedStyle(el).color")
         page.goto(f"{base}/door_lock?lang={lang}")
         assert page.locator('button[data-lock-choice="no"]').count() == 1

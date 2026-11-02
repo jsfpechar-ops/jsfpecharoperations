@@ -1221,6 +1221,11 @@ body.v2 .wiz-page .setup-wizard-actions form.inline{display:inline;margin:0}
   body.v2 .wiz-page .help-tip-btn{min-width:44px;min-height:44px}
   body.v2 .wiz-page .property-operator-hint a{min-height:44px}
 }
+body.v2 .wiz-page .calendar-other-platform{display:none}
+body.v2 .wiz-page .setup-wizard-form:has(select[name="label"] option[value="other"]:checked) .calendar-other-platform{display:block}
+body.v2 .wiz-page .ui-choice-card input{accent-color:var(--acc)}
+body.v2 .wiz-page .setup-wizard-card .setup-wizard-copy{margin-top:auto;align-self:flex-start}
+body.v2 .wiz-page .setup-wizard-copy{min-height:42px;width:200px;max-width:100%;white-space:normal;text-align:center}
 /* 0800 new property + onboarding (v2) */
 body.v2 .prop-new .property-create{display:grid;gap:20px;align-items:start}
 body.v2 .prop-new .property-create-main{min-width:0}

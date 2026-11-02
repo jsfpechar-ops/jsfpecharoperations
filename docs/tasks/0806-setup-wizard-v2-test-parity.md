@@ -1,6 +1,6 @@
 # 0806 brief: setup wizard v2 browser-test parity
 
-Status: todo
+Status: blocked
 Executor: Haiku 5.5, alone, in /home/claude/jsfpecharoperations on branch claude/project-thread-a41o7b (checked out; App/.venv exists). Do not commit, push, checkout, reset, stash or restore: the orchestrator commits.
 
 ## 1. Objective
