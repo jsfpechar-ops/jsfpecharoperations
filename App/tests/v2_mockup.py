@@ -58,9 +58,6 @@ BOX_OVERRIDES = {
     # text-dependent: app copy vs phone v2 mockup demo copy (0740)
     ".prop .in b@320": {"width": "93.0469px"},
     ".prop .in b@390": {"width": "93.0469px"},
-    # text-dependent: app PIN and permalink vs phone v2 mockup demo copy (0741)
-    ".guest-pin-value@320": {"width": "95.3125px"},
-    ".guest-pin-value@390": {"width": "95.3125px"},
     ".guest-card .sub@320": {"height": "46px"},
     ".guest-card .sub@390": {"height": "46px"},
     ".guest-card@320": {"height": "299.8px"},
@@ -183,6 +180,9 @@ PAGES = [
             ".preview h3", ".pv", ".pv .r", ".savebar .btn",
         ],
         "missing_ok": {".prop-phone-sub": "0741: the demo property has no street address, so the address line is not rendered"},
+        "phone_box_skip": {
+            ".guest-pin-value": (["width"], "width follows the PIN digits and the font rendering of the machine"),
+        },
     },
     {
         "name": "menu",
