@@ -1142,6 +1142,12 @@ body.v2 .stay-fees-toolbar input:not([type=hidden]):not(.sr-only){min-height:44p
 body.v2 .stay-fees-toolbar .month-control{min-width:10rem}
 body.v2 .stay-fees-toolbar .month-control input[data-month-native]{min-width:44px}
 /* 0794 stay fees v2 (end) */
+/* 0848 stay fee speed (start) */
+body.v2 .stay-fees-page .fee-bulk{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:16px;margin:0 0 16px}
+body.v2 .stay-fees-page .fee-bulk form{margin:0}
+body.v2 .stay-fees-page .fee-copy{padding:16px;margin:0 0 16px}
+body.v2 .stay-fees-page .fee-copy .fee-step-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px}
+/* 0848 stay fee speed (end) */
 /* cleaning (0542) */
 body.v2 .cleaning-page{width:100%;max-width:1080px;min-width:0;margin:0 auto;color:var(--ink)}
 body.v2 .cleaning-skip{display:inline-flex;align-items:center;min-height:44px;margin-bottom:12px;font-size:1.0625rem}
