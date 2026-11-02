@@ -315,7 +315,7 @@ def test_schema_apply_and_validate_are_idempotent_on_postgres(pg_runtime):
     finally:
         connection.close()
     assert trigger_count == 6
-    assert db.query_one("SELECT COUNT(*) AS n FROM schema_migrations")["n"] == 33
+    assert db.query_one("SELECT COUNT(*) AS n FROM schema_migrations")["n"] == 34
 
 
 def test_pg_schema_cli_reports_and_applies_the_current_schema(pg_runtime, tmp_path):
@@ -1052,7 +1052,7 @@ def test_transfer_copies_and_verifies_every_table(transfer_workspace):
     assert payload["tables"]["invoice_item"]["rows"] == 1
     assert payload["tables"]["stay_fee_filing"]["rows"] == 1
     assert payload["tables"]["rate_limit_event"]["rows"] == 1
-    assert payload["tables"]["schema_migrations"]["rows"] == 33
+    assert payload["tables"]["schema_migrations"]["rows"] == 34
     assert sum(1 for entry in payload["tables"].values() if entry["rows"] == 0) >= 40
 
 
