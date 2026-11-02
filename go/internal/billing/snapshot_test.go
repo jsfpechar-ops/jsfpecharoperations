@@ -19,14 +19,14 @@ func TestWriteMonthSnapshotMatchesFixturePrices(t *testing.T) {
 	ctx := context.Background()
 	stamp := "2026-11-01T03:30:00+00:00"
 	if _, err := pool.Exec(ctx, `INSERT INTO user_account (id, username, password_hash, created_at) VALUES
-		(1, 'founder', 'x', '2026-01-01T00:00:00+00:00'), (2, 'maxer', 'x', '2026-01-01T00:00:00+00:00')`); err != nil {
+		(1, 'yearly', 'x', '2026-01-01T00:00:00+00:00'), (2, 'maxer', 'x', '2026-01-01T00:00:00+00:00')`); err != nil {
 		t.Fatal(err)
 	}
-	// Founder yearly: 3 x 890 = 2670, monthly 2670/12 = 222.5 -> 222 (half to even).
+	// Standard yearly: 3 x 1190 = 3570, monthly 3570/12 = 297.5 -> 298 (half to even).
 	// Max monthly: list 2220, 15 % off -> 1887, plus carry 100 -> net 1987.
 	if _, err := pool.Exec(ctx, `INSERT INTO billing_account (owner_user_id, status, plan, billing_interval,
 		apartments_billed, addon_ttlock, addon_whitelabel, founder, carry_czk, discount_percent, updated_at) VALUES
-		(1, 'active', 'standard', 'year', 3, 0, 0, 1, 0, 0, '2026-01-01T00:00:00+00:00'),
+		(1, 'active', 'standard', 'year', 3, 0, 0, 0, 0, 0, '2026-01-01T00:00:00+00:00'),
 		(2, 'active', 'max', 'month', 12, 0, 0, 0, 100, 15, '2026-01-01T00:00:00+00:00')`); err != nil {
 		t.Fatal(err)
 	}
@@ -36,7 +36,7 @@ func TestWriteMonthSnapshotMatchesFixturePrices(t *testing.T) {
 			t.Fatalf("run %d: n=%d err=%v", run, n, err)
 		}
 	}
-	want := map[int64][3]int{1: {2670, 2670, 222}, 2: {2220, 1987, 1987}}
+	want := map[int64][3]int{1: {3570, 3570, 298}, 2: {2220, 1987, 1987}}
 	rows, err := pool.Query(ctx, "SELECT owner_user_id, list_czk, net_czk, monthly_czk FROM billing_month_snapshot WHERE month = '2026-11'")
 	if err != nil {
 		t.Fatal(err)

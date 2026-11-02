@@ -7,6 +7,7 @@ Updated: 2026-11-02.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
+- 2026-11-02: founder plan removed (0814). Schema keeps the unused founder column and founder_slot table.
 - 2026-11-01: **Production on PostgreSQL** since 2026-10-31 23:56Z (39 s downtime; SQLite kept at `/data/ubyhost.db`, rollback `./scripts/pg-cutover.sh rollback`). Go merged, off in prod until `go` is in `COMPOSE_PROFILES` and a kind in `UBYHOST_GO_JOB_KINDS`: G1a, container, G3a billing_snapshot, G3b stripe_sweep, G5a request bytes (#621-#634). G5b responses (#635), G5c transport + claim (#640), G5d-1 outcome decision (0482). Next: G5d-2 DB writes, G5d-3 alerts/mail/wiring, G3 jobs, G2, G4 after the redesign, G6 ([plan v4](../plans/postgresql/migration-plan-v4.md)).
 - Billing cockpit merged (#561). 0448 merged (#565): first plan to legacy hosts (immediate start, invoice now, no trial) + trial extension 1–365 days. Decisions 2026-10-29 in decisions.md.
 - Billing ON in production (`UBYHOST_BILLING_ENABLED=1`, 2026-10-29; cockpit #561, 0448 #565). Deploy manual.
@@ -26,7 +27,6 @@ Updated: 2026-11-02.
 ## Blocked: needs owner, lawyer or council
 - Lawyer review of legal texts (0005 and K-L rows in [known-issues](known-issues.md)).
 - Stale signed dates (K-F18). HIGH RISK filing: K-F02, K-F03, K-F07; secret rotation K-S10.
-- Decide with owner: founder-price flag on the customer page or discount-% only.
 
 ## Owner done
 - SES, Turnstile, healthchecks, Better Stack, Cloudflare pre-clearance, autopurge, Render staging, backup drill, 0001 (#281) done.
