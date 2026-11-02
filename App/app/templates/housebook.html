@@ -34,7 +34,6 @@
   <div class="ui-how-body">
     <p>{{ t('housebook.archived_lede') }}</p>
     <p>{{ t('housebook.pdf_export_help') }}</p>
-    <p class="housebook-pdf-warn">{{ t('housebook.pdf_hint', limit=max_inspection_pdfs) }}</p>
     <ol class="ui-how-steps">{% for n in (1, 2, 3) %}<li>{{ t('how.housebook.' ~ n) }}</li>{% endfor %}</ol>
     <a class="ui-how-more" href="/guide#housebook">{{ t('how.more') }}</a>
   </div>
@@ -170,6 +169,7 @@
 <dialog id="housebook-pdf-dialog" class="csv-export-dialog">
   <form id="housebook-pdf-form" method="get" action="/housebook/pdfs.zip">
     <h2>{{ t('housebook.pdf_export_title') }}</h2>
+    <p class="housebook-pdf-warn">{{ t('housebook.pdf_hint', limit=max_inspection_pdfs) }}</p>
     <div class="ui-field">
       <label for="pdf_export_apartment">{{ t('housebook.apartment') }}</label>
       <select id="pdf_export_apartment" name="apartment">

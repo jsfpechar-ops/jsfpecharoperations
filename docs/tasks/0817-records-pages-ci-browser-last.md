@@ -1,4 +1,4 @@
-# 0817: Last CI browser failures on PR #707 (run 41450674965, shard 1)
+# 0817: Last CI browser failures on PR #707 (run 41455096365, shard 4)
 
 Status: todo
 Depends on: 0816 | Branch: claude/project-thread-v4nqi5 (main checkout, do NOT commit; the orchestrator commits)
@@ -6,19 +6,17 @@ Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
 
-Make these CI failures pass. Fix the page when the v2 page really breaks the rule; update the test only when it asserts old-shell markup the v2 page intentionally dropped (comment "v2, 0792/0794"). Reproduce each with `-k` first: CI failed on some that passed locally in 0814, so run with `UBYHOST_REQUIRE_BROWSER=1` and the same widths.
+CI on the merged head ef5fe66 (run 41455096365) passes shards 1-3; the old shard-1 items are gone. Make the three shard-4 failures below pass. Fix the page when the v2 page really breaks the rule; update a test only when it asserts old-shell markup the v2 page intentionally dropped (comment "v2, 0792/0794"). Reproduce each with `-k` first, with `UBYHOST_REQUIRE_BROWSER=1`.
 
 ## 2. Context
 
-1. `tests/test_host_wide_geometry_browser.py:523`: `('housebook', 'en', 1024, {'left': 256, 'right': 988, 'top': 100, 'bottom': 119, ...}) is None`: an element the test expects to be absent/aligned at 1024 on /housebook. Read the test around 500-523 to see what it is.
-2. `tests/test_host_list_cards_browser.py:120`: `('stay-fees/1280', [])`, `assert 0 >= 2`: the test finds no clickable list rows on /stay-fees at 1280. Either the v2 table rows need the row-link hook the other v2 lists use (compare `/reservations` `.stays-desk` rows), or the selector must include the v2 rows.
-3. `tests/test_host_button_contrast_browser.py:154` `test_empty_state_action_is_centred_under_its_text`: /invoices empty state, action centre 420.5 px off the text centre. Centre it (see `.ui-empty` on `/reservations`).
-4. `tests/test_design_guardrails_browser.py:117` and `:287`: `/invoices` at 1280 with the filter panel open: "button-heights-differ" (`button.ui-btn.ui-btn-primary.filter-apply "Apply filters"` 37 px vs its siblings). One shared height (`var(--control-h)` or the stays filter's).
-5. `tests/test_host_list_page_layout_browser.py` `fees` entries at 760/1024 "expanded": "no list panel" and "missing block": the test looks for an old list panel on /stay-fees. If the v2 page has `.stays-desk`/`.stays-phone`, update the fees selectors like 0795 did for invoices.
+1. `tests/test_0252_touch_sweep_browser.py:103`: `/stay-fees` at ipad1024, ipad1180 and desk2000 reports `noCue` on the property rows ("Karlín Loft (demo) Praha", "Vinohrady Studio (demo) Praha"): a clickable row with no touch/hover cue. Read the PROBE in that test, then give the v2 stay-fees rows the same cue the `/reservations` `.stays-desk` rows have (same class or rule, no new look).
+2. `tests/test_host_controls_browser.py:363`: the housebook PDF dialog `#housebook-pdf-dialog` no longer contains `.housebook-pdf-warn` (the 100-PDF limit). 0798 moved that `<p>` into the page help (`housebook.html` around line 36). The limit belongs where the export happens: move that one `<p class="housebook-pdf-warn">` back into the PDF dialog (see `git show f48f8dd~10:App/app/templates/housebook.html` or `git log -p -S housebook-pdf-warn` for where it was) and remove it from the help body. Do not change the test.
+3. `tests/test_host_geometry.py:213`: `/invoices` month-filter `.month-step` buttons are 37 px tall at widths > 600; the test expects 42 (44 at <= 600). Fix the height in the invoices v2 / 0818 filter block of app2.css so the steppers match the test, without changing other controls.
 
 ## 3. Files
 
-`App/app/templates/invoices.html`, `housebook.html`, `stay_fees.html`; `App/app/static/app2.css` (0792-0794 blocks); the five test files above (selector updates only, rule in §1). If you change app2.css, bump `app2.css?v=` in `App/app/templates/base.html` to `20261102-0817` and run `.venv/bin/python tests/test_static_versions.py --write` from `App/` at the end.
+`App/app/templates/housebook.html`, `stay_fees.html`; `App/app/static/app2.css`; tests only per §1. If you change app2.css, bump `app2.css?v=` in `App/app/templates/base.html` to `20261102-0817` and run `.venv/bin/python tests/test_static_versions.py --write` from `App/` at the end.
 
 ## 4. Steps
 
@@ -30,7 +28,7 @@ Anything outside §3. No new dependency, colour or JS.
 
 ## 6. Commands (from `App/`, each `2>&1 | tail -30`)
 
-`UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_host_wide_geometry_browser.py tests/test_host_list_cards_browser.py tests/test_host_button_contrast_browser.py tests/test_design_guardrails_browser.py tests/test_host_list_page_layout_browser.py tests/test_host_geometry.py -q -rs --tb=short`
+`UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_0252_touch_sweep_browser.py tests/test_host_controls_browser.py tests/test_host_geometry.py tests/test_0710_v2_mockup_match_browser.py -k "touch_sweep or host_interactions or month_filter or invoices or housebook or stay_fees" -q -rs --tb=short`
 
 ## 7. Acceptance
 
