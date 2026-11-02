@@ -55,13 +55,11 @@ class NothingRead(Exception):
 def available(apartment) -> bool:
     """True when this property's guest form may offer the scan button.
 
-    The gates: the host's scan switch on and the passport upload on, Tesseract
-    installed, and the owner's active Max subscription - the trial does not
-    include scanning, matching the pricing copy.
+    The gates: the host's scan switch on, Tesseract installed, and the
+    owner's active Max subscription - the trial does not include scanning,
+    matching the pricing copy. The passport upload policy is independent.
     """
     if int(apartment["ocr_scan"] or 0) != 1:
-        return False
-    if (apartment["passport_photo_policy"] or "off").strip().lower() != "required_foreign":
         return False
     if not TESSERACT:
         return False
