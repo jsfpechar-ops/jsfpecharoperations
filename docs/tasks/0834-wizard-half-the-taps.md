@@ -1,5 +1,9 @@
 # 0834 Setup wizard speed: baseline + RÚIAN lookup (scope narrowed)
 
+## 1. Objective
+
+Status: in-progress
+
 **Scope now (coordinator, 18:04): do NOT edit any wizard template, wizard route, `property_setup.py`, CSS or wizard JS.** Josef's own wizard threads and PR #702 are in flight. Only: section A (baseline script + report) and section D backend (`ruian.py`, endpoint, tests, env doc). Sections B, C and the JS/UI part of D are the follow-up plan, parked until Josef names the wizard threads to align with.
 
 
@@ -7,6 +11,14 @@ Stacked on PR #702 (wizard restyle). Do not restyle; reuse the existing v2 class
 
 ## Goal (measured, not guessed)
 Today a host passes 8 steps (property, calendar, police, automation, stay_fee, door_lock, guest_link, try_it). Target: 4 required steps and about half the taps and typed fields. UbyPort filing correctness beats speed: nothing legal is auto-saved; every fill is a suggestion the host confirms.
+
+## 2. Context
+Stacked on #702. Parked parts B, C and the UI part of D wait for Josef's wizard threads.
+
+## 3. Files
+App/tests/wizard_taps.py, App/app/ruian.py, App/tests/test_ruian.py, one route in App/app/routes/admin.py, docs/ENVIRONMENT.md.
+
+## 4. Steps
 
 ## A. Baseline first
 Before any change write `App/tests/wizard_taps.py` (plain pytest, TestClient) that walks the wizard via `wizard_walk.py` with the cheapest answers and prints/asserts: number of steps visited, number of form fields marked required or empty-to-fill on each, number of POSTs. Record the "before" numbers in `docs/tasks/0834-report.md`, then the "after" numbers. Baseline only for now: no after-numbers, no halving assertion.
@@ -35,3 +47,18 @@ Before any change write `App/tests/wizard_taps.py` (plain pytest, TestClient) th
 - Screenshots 390 and 1280 of: property step with suggestions open, police step with automation cards, done page with "Do next" cards -> `docs/tasks/screenshots-0834/`.
 - `python3 scripts/context_lint.py` from repo root.
 - Do not commit; do not stage `docs/tasks/*evidence*`. Write `docs/tasks/0834-report.md` (before/after numbers, tests run, anything skipped).
+
+## 5. Do not touch
+Wizard templates, wizard routes, property_setup.py, CSS, wizard JS, signup, default times.
+
+## 6. Commands
+From App/: `.venv/bin/python -m pytest tests/test_ruian.py tests/test_ares.py tests/wizard_taps.py -q --tb=short 2>&1 | tail -30`; repo root: `python3 scripts/context_lint.py`.
+
+## 7. Acceptance
+New tests pass with 0 skipped; lint passes; baseline numbers in the report.
+
+## 8. Stop and ask
+If the ČÚZK URL or attribute names cannot be confirmed, say so in the report.
+
+## 9. Report
+docs/tasks/0834-report.md.
