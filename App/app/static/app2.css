@@ -221,8 +221,11 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
 @media (min-width:1024px){body.v2 .row-menu-trigger{min-width:24px;min-height:24px}}
 /* 0716 v2 shell parity: env badge under the logo, quiet support link in the bottom block */
 .side .env-badge{display:inline-block;margin:0 8px;padding:0 8px;border-radius:999px;font-size:12px;line-height:16px;color:var(--ink2);background:var(--side2)}
-.side .support-link{display:block;font-size:12px}
-.side .support-link small{display:block;font-size:12px;color:var(--ink3)}
+/* 0826 shell top gaps: at least 12 px between neighbouring sidebar blocks (brand, badge, account, search, nav, help, account, log out); geometry test in tests/test_0705_v2_shell_browser.py */
+.side .env-badge{margin:12px 8px}
+.side .org{margin-bottom:12px}
+.side .side-nav{margin-bottom:12px}
+.side .me{margin-bottom:12px}
 /* 0717: closed help on the v2 Overview header: body hidden until opened, link is a 44 px tap target. */
 .ov-head details.ui-how{display:block;margin:4px 0}
 .ov-head details.ui-how:not([open]) .ui-how-body{display:none}
@@ -1206,3 +1209,8 @@ body.v2 .head-title-row>details.stays-how{background:transparent;border:0;border
 /* 0820 empty state v2: the action sits centred under its text (host2.css 0176 is not loaded on v2 pages). */
 body.v2 .ui-empty{text-align:center}
 body.v2 .ui-empty .ui-btn-group{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px}
+/* 0825 empty state centred (start) */
+body.v2 main:has(:is(.submissions-page,.invoices-page,.stay-fees-page,.housebook-page) [data-empty-state]),body.v2 main:has(.housebook-page>.panel.empty){display:flex;flex-direction:column}
+body.v2 main:has(:is(.submissions-page,.invoices-page,.stay-fees-page,.housebook-page) [data-empty-state]) :is(.ui-page,.ui-body-list,.submissions-page,.invoices-page,.stay-fees-page,.housebook-page):has([data-empty-state]),body.v2 main:has(.housebook-page>.panel.empty) :is(.ui-page,.ui-body-list):has(.panel.empty),body.v2 main:has(.housebook-page>.panel.empty) .housebook-page{flex:1 0 auto;display:flex;flex-direction:column}
+body.v2 :is(.submissions-page,.invoices-page,.stay-fees-page,.housebook-page)>[data-empty-state],body.v2 .housebook-page>.panel.empty{flex:1 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center}
+/* 0825 empty state centred (end) */
