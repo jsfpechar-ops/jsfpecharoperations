@@ -1276,3 +1276,16 @@ body.v2 .ui-table .num,body.v2 .ui-table .ui-num{text-align:right}
 }
 body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .tip-nowrap{white-space:nowrap}
 body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .tip-nowrap>.help-tip{display:inline-flex;vertical-align:middle;margin-left:8px}
+
+/* 0788: no settings-area control touches its neighbour; 12 px between controls, 12 px under a label row (Josef, 2026-11-02) */
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .field-label-row{margin-bottom:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .entities-page td.row-actions{display:flex;align-items:center;gap:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .entities-page>table.ui-table td.row-actions{gap:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .action-group{gap:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .entity-register-lookup{margin-top:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .onboarding-banner-setup{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .ui-section .ui-btn + .help-tip{margin-inline-start:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .ui-section:has(.help-tip) > .ui-btn{margin-top:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) form:has(> .ui-btn + .help-tip){display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .archive-type-filters{gap:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .ui-form-actions{gap:12px}

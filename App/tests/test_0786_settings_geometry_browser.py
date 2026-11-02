@@ -256,3 +256,92 @@ def test_help_tip_sits_after_last_word_390(host, base, path):
         context.close()
         browser.close()
     assert not problems, "\n".join(problems[:20])
+
+
+# 0788: every visible control in main and the page header keeps 12 px from its neighbour (8 px inside one compound field)
+CONTROL_SELECTOR = (
+    "button, a.ui-btn, a.btn, input:not([type=hidden]), select, textarea, .ui-badge, .ui-chip, .pill, "
+    ".help-tip-btn, [role=tab], .tag, [class*=badge]"
+)
+CONTROLS_JS = """
+() => {
+  const SEL = '%s';
+  const main = document.querySelector('main') || document.body;
+  const header = document.querySelector('header, .page-head, .page-header, .ui-page-head, .settings-head, .entities-head');
+  const scopes = [main];
+  if (header && !main.contains(header)) scopes.push(header);
+  const seen = new Set();
+  const items = [];
+  const skipped = (el) => {
+    for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+      if (n.matches('.help-tip-body, [popover], .tab-bar, .bottom-tabs, .help-fab, .fab-help, nav.tabbar, .ui-tabbar')) return true;
+      if (getComputedStyle(n).position === 'fixed') return true;
+    }
+    return false;
+  };
+  for (const scope of scopes) {
+    for (const el of scope.querySelectorAll(SEL)) {
+      if (seen.has(el)) continue;
+      seen.add(el);
+      const cs = getComputedStyle(el);
+      if (cs.visibility === 'hidden' || cs.display === 'none') continue;
+      const r = el.getBoundingClientRect();
+      if (r.width < 1 || r.height < 1) continue;
+      if (skipped(el)) continue;
+      items.push({el, r});
+    }
+  }
+  const kept = items.filter(x => !items.some(y => y !== x && x.el.contains(y.el)));
+  const label = (el) => {
+    const cls = (typeof el.className === 'string' ? el.className.trim().split(/\\s+/).slice(0, 2).join('.') : '');
+    const txt = (el.textContent || el.value || el.placeholder || '').trim().slice(0, 24);
+    return el.tagName.toLowerCase() + (cls ? '.' + cls : '') + ' "' + txt + '"';
+  };
+  const grp = (x) => x.el.closest('.operator-phone, .account-parts');
+  const out = [];
+  for (let i = 0; i < kept.length; i++) {
+    for (let j = i + 1; j < kept.length; j++) {
+      const A = kept[i], B = kept[j];
+      const a = A.r, b = B.r;
+      const need = (grp(A) && grp(A) === grp(B)) ? 8 : 12;
+      const vOver = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+      const hOver = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+      let gap = null;
+      if (vOver > 0) {
+        gap = hOver > 0 ? -hOver : Math.max(a.left, b.left) - Math.min(a.right, b.right);
+      } else if (hOver > 0) {
+        gap = Math.max(a.top, b.top) - Math.min(a.bottom, b.bottom);
+      }
+      if (gap !== null && gap < need) {
+        out.push({a: label(A.el), b: label(B.el), gap: Math.round(gap * 10) / 10, need});
+      }
+    }
+  }
+  return out;
+}
+""" % CONTROL_SELECTOR
+
+CONTROL_PAGES = ("/settings", "/entities", "/entities?edit={entity}", "/privacy-requests", "/settings/archived")
+
+
+@pytest.mark.parametrize("width", WIDTHS)
+def test_settings_controls_keep_12px_apart(host, base, width):
+    problems = []
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        for lang in LANGS:
+            context = browser.new_context(viewport={"width": width, "height": 900})
+            cookie = host["client"].cookies.get(auth.SESSION_COOKIE)
+            context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": base + "/"}])
+            for template in CONTROL_PAGES:
+                path = template.format(entity=host["entity"])
+                page = context.new_page()
+                sep = "&" if "?" in path else "?"
+                page.goto(f"{base}{path}{sep}lang={lang}")
+                tag = f"{path} {lang} {width}"
+                for item in page.evaluate(CONTROLS_JS):
+                    problems.append(f"{tag}: {item['a']} / {item['b']} gap {item['gap']} px (need {item['need']})")
+                page.close()
+            context.close()
+        browser.close()
+    assert not problems, "\n".join(problems[:80])
