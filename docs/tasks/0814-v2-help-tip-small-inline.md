@@ -37,3 +37,10 @@ Stop at 30 tool calls, or if a template change beyond markup order is needed.
 
 ## 9. Report
 `docs/tasks/0814-report.md`: rules changed/removed, test added, final tails.
+
+## 10. Added scope: Add property (/apartments/new), Josef 15:23
+h. Phone: the "Copy from another property" button floats on its own line offset right, not aligned with the "How does this work?" help pill. Put the two on one row, left-aligned, vertically centred, 12 px apart (wrap to two left-aligned lines only below 360 px).
+i. Remove fine print: the "Start with the basics…" subtitle and the "Fields marked * are required." line (move into the page-title help "?" if not already there; keep the translation keys).
+j. Desktop 1024/1280/1440: the Cancel link sits 8 px from the create card (0813 neighbour check fails). Find the real cause with a computed-style probe (which element's margin/gap sets the 8 px) and make it >= 12 px.
+k. Remove the subtitle under the "Help & guide" h1 on /guide the same way (i).
+Files for 10: `App/app/templates/apartment_form.html`, `App/app/templates/_property_create.html`, `App/app/templates/guide.html` (subtitle only), app2.css 0800 block. Another executor is editing guide.html/guide.js at the same time: touch only the subtitle line there and re-read before editing.
