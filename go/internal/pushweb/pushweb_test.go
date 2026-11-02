@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -20,6 +21,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/pushsend"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
 )
@@ -441,4 +443,92 @@ func TestPushDeviceRoutes(t *testing.T) {
 		c.body = fmt.Sprintf(`{"subscription":{"endpoint":%q},"pad":%q}`, endpointFor(0), pad)
 		wantStatus(t, serve(rt.subscribe, c), http.StatusBadRequest)
 	})
+}
+
+// rewriteTransport sends every request to the fake push service, whatever the endpoint host.
+type rewriteTransport struct{ target *url.URL }
+
+func (rt rewriteTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	clone := req.Clone(req.Context())
+	clone.URL.Scheme = rt.target.Scheme
+	clone.URL.Host = rt.target.Host
+	clone.Host = rt.target.Host
+	return http.DefaultTransport.RoundTrip(clone)
+}
+
+// pushService is a fake push service that answers every send with status.
+func pushService(t *testing.T, status int) *http.Client {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(status)
+	}))
+	t.Cleanup(srv.Close)
+	target, err := url.Parse(srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return &http.Client{Transport: rewriteTransport{target: target}}
+}
+
+func testRoute(f *fixture, client *http.Client) http.Handler {
+	sender := &pushsend.Sender{
+		Pool:   f.pool,
+		Getenv: f.getenv,
+		Now:    func() time.Time { return testNow },
+		Client: client,
+	}
+	return TestHandler(sender, f.getenv, func() time.Time { return testNow })
+}
+
+// testCall is a signed-in POST to the test route for endpoint.
+func testCall(t *testing.T, endpoint string) call {
+	t.Helper()
+	c := as(t, 2, nil)
+	c.path = "/account/push/test"
+	c.body = fmt.Sprintf(`{"endpoint":%q}`, endpoint)
+	return c
+}
+
+// subscribeDevice turns alerts on for account 2 on endpointFor(1).
+func subscribeDevice(t *testing.T, f *fixture) {
+	t.Helper()
+	c := as(t, 2, nil)
+	c.path = "/account/push/subscribe"
+	c.body = f.subBody(endpointFor(1), "en")
+	wantStatus(t, serve(f.routes(f.getenv).subscribe, c), http.StatusOK)
+}
+
+func TestPushTestRoute(t *testing.T) {
+	f := newFixture(t)
+	subscribeDevice(t, f)
+	route := testRoute(f, pushService(t, http.StatusCreated))
+
+	ck, token := csrfCookieAndToken(t)
+	signedOut := call{path: "/account/push/test", body: `{"endpoint":"x"}`, cookies: []*http.Cookie{ck}, token: token}
+	wantStatus(t, serve(route, signedOut), http.StatusUnauthorized)
+
+	rec := serve(route, testCall(t, endpointFor(1)))
+	wantStatus(t, rec, http.StatusOK)
+	wantBody(t, rec, `{"ok":true,"message":"Test sent. It should arrive within a minute."}`)
+
+	for i := 1; i < testMaxPerHour; i++ {
+		wantStatus(t, serve(route, testCall(t, endpointFor(1))), http.StatusOK)
+	}
+	rec = serve(route, testCall(t, endpointFor(1)))
+	wantStatus(t, rec, http.StatusTooManyRequests)
+	wantBody(t, rec, `{"error":"Too many tests in a row. Try again in an hour."}`)
+}
+
+func TestPushTestRouteFailures(t *testing.T) {
+	f := newFixture(t)
+	subscribeDevice(t, f)
+	const failed = `{"error":"The test did not go through. Turn alerts off and on again."}`
+
+	rec := serve(testRoute(f, pushService(t, http.StatusInternalServerError)), testCall(t, endpointFor(1)))
+	wantStatus(t, rec, http.StatusBadGateway)
+	wantBody(t, rec, failed)
+
+	rec = serve(testRoute(f, pushService(t, http.StatusCreated)), testCall(t, endpointFor(9)))
+	wantStatus(t, rec, http.StatusBadGateway)
+	wantBody(t, rec, failed)
 }
