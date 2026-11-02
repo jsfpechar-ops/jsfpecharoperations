@@ -1,4 +1,5 @@
 {% extends "host_page.html" %}
+{% set v2 = true %}
 {% set nav = 'entities' %}
 {% set body_kind = 'list' %}
 {% from "_components.html" import onboarding_banner, row_menu_begin, row_menu_end, row_open, help_tip with context %}
@@ -7,11 +8,12 @@
 {% from "_ui_layout.html" import ui_section_tabs with context %}
 {% set cta = 'ui-btn ui-btn-primary' %}
 {% block title %}{{ t('entities.title') }}{% endblock %}
-{% block meta %}{{ t('entities.lede') }}{% endblock %}
+{% block page_title %}{% endblock %}{% block meta %}{% endblock %}{% block primary_action %}{% endblock %}{% block secondary_actions %}{% endblock %}
 {% block back_url %}{{ next_path or '/apartments' }}{% endblock %}
 {% block back_label %}{{ t('common.back') if next_path else t('entities.back') }}{% endblock %}
-{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
+{% block tabs %}{% endblock %}
 {% block body %}
+<div class="head"><div>{% if next_path %}<a class="crumb" href="{{ next_path }}">{{ t('common.back') }}</a>{% endif %}<h1 class="big">{{ t('entities.title') }}</h1></div></div>
 {{ onboarding_banner(onboarding) }}
 
 {% if edit_entity %}
@@ -19,7 +21,7 @@
     are two forms (their payloads and policies differ, see 0075); each field is
     defined once in its partial. Which business a property uses stays a
     property setting. -#}
-<div class="panel entity-form" id="entity-edit">
+<div class="card entity-form" id="entity-edit">
   <div class="ui-section-h">
     <h2>{{ t('entities.edit', name=edit_entity.name) }}</h2>
     <a class="ui-btn ui-btn-quiet ui-btn-compact" href="{{ next_path or '/entities' }}">{{ t('common.close') }}</a>
@@ -70,8 +72,8 @@
 {% endif %}
 
 {% if entities %}
-<div class="panel tight scroll-x entities-page list-cards lc-entities">
-  <table class="table-cards">
+<div class="card entities-page">
+  <table class="ui-table ui-table-stack">
     <thead><tr><th class="col-name">{{ t('entities.name') }}</th><th>{{ t('entities.seat') }}</th><th>{{ t('entities.ico') }}</th><th>{{ t('entities.contact') }}</th>
       <th>{{ t('entities.properties') }}</th><th></th></tr></thead>
     <tbody>
@@ -111,14 +113,14 @@
   </table>
 </div>
 {% else %}
-  <div class="panel empty">{{ t('entities.empty') }}</div>
+  <div class="card ui-empty">{{ t('entities.empty') }}</div>
 {% endif %}
 
 {% if archived_entities %}
 <h2>{{ t('entities.archived') }}</h2>
 <p class="ui-sub">{{ t('entities.archived_lede') }}</p>
-<div class="panel tight scroll-x">
-  <table class="table-cards">
+<div class="card">
+  <table class="ui-table ui-table-stack">
     <thead><tr><th class="col-name">{{ t('entities.name') }}</th><th>{{ t('entities.archived') }}</th><th>{{ t('entities.ico') }}</th><th></th></tr></thead>
     <tbody>
     {% for entity in archived_entities %}
@@ -150,7 +152,7 @@
 </div>
 {% endif %}
 
-<div class="panel entity-add" id="entity-add">
+<div class="card entity-add" id="entity-add">
   <h2>{{ t('entities.add') }}</h2>
   <form method="post" action="/entities" enctype="multipart/form-data">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">

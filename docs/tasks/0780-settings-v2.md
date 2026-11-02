@@ -55,11 +55,19 @@ tests allowed by the standing rule in step 6, new `docs/tasks/0780-report.md`.
 
 `App/app/static/app.js`, the mockup, other pages' templates, existing app2.css blocks of other pages, any route or Python file.
 
-## 6. Acceptance
+## 6. Commands
+
+The test commands in section 4, run from `App/`, plus `python3 scripts/design_lint.py` and `python3 scripts/context_lint.py` from the repo root.
+
+## 7. Acceptance
 
 - Step 7 commands pass with 0 skipped; one visible h1; no sideways scroll at 320-1440 (0710 geometry).
 - `git grep -n "host-property-grid" App/app/templates/settings.html` prints nothing.
 
-## 7. Stop and ask
+## 8. Stop and ask
 
 A non-settings test fails; a form needs a markup change beyond steps 1-3; you reach 25 tool calls (commit what passes, report the rest).
+
+## 9. Report
+
+`docs/tasks/0780-report.md`: commits, test results with counts, screenshot paths, anything stopped on.

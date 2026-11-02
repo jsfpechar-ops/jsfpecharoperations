@@ -48,10 +48,18 @@ The three templates, `App/app/templates/_shell_v2.html` (step above only), `App/
 
 `App/app/static/app.js`, the mockup, settings.html, other pages' templates and app2.css blocks, Python routes.
 
-## 6. Acceptance
+## 6. Commands
+
+The test commands in section 4, run from `App/`, plus `python3 scripts/design_lint.py` and `python3 scripts/context_lint.py` from the repo root.
+
+## 7. Acceptance
 
 Step 5 passes with 0 skipped; one visible h1 per page; no sideways scroll at 320-1440.
 
-## 7. Stop and ask
+## 8. Stop and ask
 
 A test outside step 5 fails; a form needs markup changes beyond wrappers and classes; you reach 25 tool calls (commit what passes, report the rest).
+
+## 9. Report
+
+`docs/tasks/0781-report.md`: commits, test results with counts, screenshot paths, anything stopped on.

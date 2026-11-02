@@ -1,12 +1,14 @@
 {% extends "host_page.html" %}
+{% set v2 = true %}
 {% set nav = 'privacy_requests' %}
 {% set body_kind = 'list' %}
 {% block title %}{{ t('privacy_requests.title') }}{% endblock %}
-{% block page_title %}{{ t('privacy_requests.title') }}{% endblock %}
-{% block meta %}{{ t('privacy_requests.lede') }}{% endblock %}
+{% block page_title %}{% endblock %}{% block meta %}{% endblock %}{% block primary_action %}{% endblock %}{% block secondary_actions %}{% endblock %}
 {% block body %}
+<div class="head"><div><h1 class="big">{{ t('privacy_requests.title') }}</h1></div></div>
+<div class="pr-lane">
 
-<details class="ui-section" {% if not requests %}open{% endif %}>
+<details class="card" {% if not requests %}open{% endif %}>
   <summary>{{ t('privacy_requests.create_title') }}</summary>
   <form method="post" action="/privacy-requests">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
@@ -36,7 +38,7 @@
 </details>
 
 {% for row in requests %}
-<div class="ui-section">
+<div class="card">
   <h2>
     {{ t('privacy_requests.type.' ~ row.request_type) }} &middot; {{ t('privacy_requests.status.' ~ row.status) }}
   </h2>
@@ -65,4 +67,5 @@
 {% else %}
 <p class="ui-sub">{{ t('privacy_requests.empty') }}</p>
 {% endfor %}
+</div>
 {% endblock %}
