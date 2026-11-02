@@ -1282,7 +1282,6 @@ body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step>details{font-size:1
 body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step>.pill{flex:none}
 body.v2 .onboarding-welcome[data-layout=v2] .onboarding-current-dot{display:block;width:8px;height:8px;border-radius:50%;background:var(--acc);flex:none}
 body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-action{flex:none;white-space:nowrap}
-/* 0809: the onboarding help tips (skip, demo) get the same 24 px target as other help tips */
 @media (max-width:1023px){body.v2 .onboarding-welcome[data-layout=v2] details>a,body.v2 .onboarding-welcome[data-layout=v2] .onboarding-demo a,body.v2 .prop-new .property-create-next a{display:inline-flex;align-items:center;min-height:44px;min-width:44px;box-sizing:border-box}body.v2 .onboarding-welcome[data-layout=v2] .onboarding-intro{flex-direction:column;align-items:stretch}body.v2 .onboarding-welcome[data-layout=v2] .onboarding-meter{justify-content:flex-start}body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step{flex-wrap:wrap;padding:12px;gap:12px;align-items:flex-start}body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-index{width:32px;height:32px}body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-copy{flex:1 1 calc(100% - 44px)}body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-action{flex:1 1 100%;min-height:44px;display:flex;align-items:center;justify-content:center;box-sizing:border-box}}
 
 /* 0808 step a: help tip beside its label (new property, wizard) */
@@ -1296,6 +1295,7 @@ body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-group details{posit
 body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-group summary{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:999px;white-space:nowrap;cursor:pointer;list-style:none}
 body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-group summary::-webkit-details-marker{display:none}
 body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-group details>:not(summary){white-space:normal}
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-group details:not([open])>:not(summary){display:none}
 @media (max-width:767px){
 body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step{flex-wrap:wrap}
 body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-copy{flex:1 1 0}

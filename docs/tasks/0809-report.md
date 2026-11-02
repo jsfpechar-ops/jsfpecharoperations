@@ -105,3 +105,20 @@ Final tails:
 - `python3 scripts/design_lint.py` → `design lint: FAIL`, 5 T3 findings, all in templates, none in app2.css: apartment_form.html (prop-name-tip), cleaning_shares.html, guest_guide_card.html, guest_guide_qr.html (heading-with-tip), havel.html (havel-name-tip). Catalog (docs/design/catalog.json) lacks these classes. Needs a catalog decision or a template change (not in this brief).
 
 Left for the owner / next brief: onboarding geometry (above); design lint catalog entries; the stale comment at app2.css line ~1285 ("0809: the onboarding help tips ...") still describes the deleted rule.
+
+## 0812 round 2
+
+Brief: docs/tasks/0812-v2-help-tip-shared.md section 10 (steps d, e, f). Only `App/app/static/app2.css` changed. Not committed.
+
+Culprit (step d): on /onboarding, the closed "Learn why" / Help `<details>` in each onboarding step. Chrome's `host2.css` fold-out rule (`details::details-content` with `block-size: 0; overflow: clip`, host-workspace only) clips the closed body, but its children still have layout rects and do not count toward the document scroll height. At 390 px the lowest such node was the `a` "Help" inside a closed details (bottom 1149 vs tab bar top 916). Same cause at 320 and 768.
+
+Rule added (0800 onboarding block, after the `details>:not(summary)` rule): `body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-group details:not([open])>:not(summary){display:none}`. The closed body takes no geometry; opened details are unchanged.
+
+Rule/comment removed (step e): the stale comment `/* 0809: the onboarding help tips (skip, demo) ... */` above the 0809 mobile block. Its rules are kept.
+
+Final tails:
+- `pytest tests/test_0800_v2_remaining_pages_browser.py tests/test_onboarding_wizard_browser.py tests/test_property_create_browser.py -q --tb=line -p no:cacheprovider -rs` → `204 passed in 290.83s (0:04:50)`
+- `UBYHOST_SHOTS_0800=1 pytest tests/test_0800_v2_remaining_pages_browser.py -q` → `106 passed in 151.73s (0:02:31)`. Screenshots regenerated.
+- `python3 scripts/design_lint.py` → `design lint: OK`.
+
+Not done: none in section 10.
