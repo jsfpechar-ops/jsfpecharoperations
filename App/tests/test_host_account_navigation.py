@@ -164,7 +164,7 @@ def test_czech_groups(host):
 def test_search_reaches_settings_groups_and_help(host, admin):
     items = host.get("/api/command-palette").json()["items"]
     urls = {item.get("url") for item in items}
-    assert {"/settings", "/guide", "/settings#settings-group-security", "/settings#settings-group-data"} <= urls
+    assert {"/settings", "/guide", "/settings/security", "/settings/data"} <= urls
     assert "/admin/users" not in urls
     admin_urls = {item.get("url") for item in admin.get("/api/command-palette").json()["items"]}
     assert {"/admin/customers", "/admin/incidents"} <= admin_urls

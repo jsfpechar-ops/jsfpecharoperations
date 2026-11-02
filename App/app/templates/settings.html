@@ -9,16 +9,35 @@
 {% block secondary_actions %}{% endblock %}
 {% block body %}
 {% include "_host_alerts.html" %}
-<div class="head settings-head"><div><h1 class="big">{{ t('nav.settings') }}</h1></div></div>
+{% if group %}
+{% with href='/settings', title=t('settings.group.' ~ group) %}{% include "partials/settings_back_header.html" %}{% endwith %}
+{% else %}
+{% with href='/', title=t('nav.settings') %}{% include "partials/settings_back_header.html" %}{% endwith %}
+{% endif %}
 <div class="settings-lane">
 {%- from "_icons.html" import icon with context -%}
 {% from "_components.html" import field_label, help_tip, tip_label, settings_group, settings_heading with context %}
 
 {# 0083: one index, six visible groups. Each specialized action keeps its own form and endpoint. #}
 
+{% if not group %}
+<nav class="settings-index" aria-label="{{ t('nav.settings') }}">
+  {% with href='/settings/account', label=t('settings.group.account'), icon_name='users' %}{% include "partials/settings_index_row.html" %}{% endwith %}
+  {% with href='/settings/security', label=t('settings.group.security'), icon_name='shield' %}{% include "partials/settings_index_row.html" %}{% endwith %}
+  {% with href='/settings/phone', label=t('settings.group.phone'), icon_name='sliders-horizontal' %}{% include "partials/settings_index_row.html" %}{% endwith %}
+  {% with href='/settings/data', label=t('settings.group.data'), icon_name='file-lock' %}{% include "partials/settings_index_row.html" %}{% endwith %}
+  <div class="settings-index-divider" aria-hidden="true"></div>
+  {% with href='/entities', label=t('settings.nav.legal'), icon_name='receipt' %}{% include "partials/settings_index_row.html" %}{% endwith %}
+  {% with href='/privacy-requests', label=t('nav.privacy_requests'), icon_name='mail' %}{% include "partials/settings_index_row.html" %}{% endwith %}
+  {% with href='/settings/archived', label=t('settings.nav.archive'), icon_name='archive' %}{% include "partials/settings_index_row.html" %}{% endwith %}
+  <div class="settings-index-divider" aria-hidden="true"></div>
+  {% with href='/settings/technical', label=t('settings.group.technical'), icon_name='settings' %}{% include "partials/settings_index_row.html" %}{% endwith %}
+  {% with href='/settings/help', label=t('settings.group.help'), icon_name='circle-help' %}{% include "partials/settings_index_row.html" %}{% endwith %}
+</nav>
+{% endif %}
 <div class="settings-groups">
 
-{% call settings_group('account', t('settings.group.account')) %}
+{% if group == 'account' %}{% call settings_group('account', t('settings.group.account')) %}
     <div class="ui-section" id="settings-account">
       {% if billing_on() %}<a class="set-row" href="/predplatne"><span>{{ t('billing.plan.title') }}</span><span class="set-row-v">{{ t('common.open') }}</span></a>{% endif %}
       <div class="account-identity">
@@ -90,9 +109,9 @@
         {% endif %}
       </div>
     </div>
-{% endcall %}
+{% endcall %}{% endif %}
 
-{% call settings_group('security', t('settings.group.security')) %}
+{% if group == 'security' %}{% call settings_group('security', t('settings.group.security')) %}
     <div class="ui-section" id="settings-security">
       {{ settings_heading('security', t('settings.nav.security'), t('settings.security.lede')) }}
       <div class="settings-action-list" id="settings-passkeys">
@@ -178,9 +197,9 @@
         {% endif %}
       </div>
     </div>
-{% endcall %}
+{% endcall %}{% endif %}
 
-{% call settings_group('phone', t('settings.group.phone')) %}
+{% if group == 'phone' %}{% call settings_group('phone', t('settings.group.phone')) %}
     <div class="ui-section" id="settings-phone">
       <div class="settings-action-list" id="settings-install" data-pwa-install-row>
         <div class="settings-action-row">
@@ -233,9 +252,9 @@
       </div>
       {% endif %}
     </div>
-{% endcall %}
+{% endcall %}{% endif %}
 
-{% call settings_group('data', t('settings.group.data')) %}
+{% if group == 'data' %}{% call settings_group('data', t('settings.group.data')) %}
     <div class="ui-section" id="settings-archive">
       {{ settings_heading('archive', t('settings.nav.archive'), t('settings.archive_hint_extended')) }}
       <a class="ui-btn ui-btn-secondary" href="/settings/archived">{{ t('settings.archive_link') }}</a>
@@ -287,9 +306,9 @@
         </dl>
       </div>
     </div>
-{% endcall %}
+{% endcall %}{% endif %}
 
-{% call settings_group('privacy', t('settings.group.privacy')) %}
+{% if group == 'data' %}{% call settings_group('privacy', t('settings.group.privacy')) %}
     <div class="ui-section" id="settings-privacy-requests">
       <div class="settings-action-list">
         <div class="settings-action-row">
@@ -352,10 +371,10 @@
       </div>
     </div>
     {% endif %}
-{% endcall %}
+{% endcall %}{% endif %}
 
-{% call settings_group('technical', t('settings.group.technical')) %}
-    <details class="ui-section technical" id="settings-technical">
+{% if group == 'technical' %}{% call settings_group('technical', t('settings.group.technical')) %}
+    <details class="ui-section technical" open id="settings-technical">
       <summary>{{ t('settings.technical.title') }}</summary>
 
       <h2 id="settings-overview">{{ t('settings.destination.title') }}{{ help_tip('settings-destination-help', t('settings.destination.help')) }}</h2>
@@ -442,8 +461,8 @@
       <summary>{{ t('settings.nav.audit') }}</summary>
             <h2>{{ t('settings.audit.recent', count=audit_count) }}</h2>
       <div class="host-audit-filters" data-audit-filter role="group" aria-label="{{ t('settings.audit.filter_label') }}">
-        <a class="host-audit-filter {{ 'is-active' if not audit_filter }}" href="/settings#settings-audit" {% if not audit_filter %}aria-current="page"{% endif %}>{{ t('settings.audit.filter_all') }}</a>
-        <a class="host-audit-filter {{ 'is-active' if audit_filter == 'support' }}" href="/settings?audit=support#settings-audit" {% if audit_filter == 'support' %}aria-current="page"{% endif %}>{{ t('settings.audit.filter_support') }}</a>
+        <a class="host-audit-filter {{ 'is-active' if not audit_filter }}" href="/settings/technical#settings-audit" {% if not audit_filter %}aria-current="page"{% endif %}>{{ t('settings.audit.filter_all') }}</a>
+        <a class="host-audit-filter {{ 'is-active' if audit_filter == 'support' }}" href="/settings/technical?audit=support#settings-audit" {% if audit_filter == 'support' %}aria-current="page"{% endif %}>{{ t('settings.audit.filter_support') }}</a>
       </div>
       <div class="scroll-x">
         <table class="ui-table ui-table-stack">
@@ -463,9 +482,9 @@
         </table>
       </div>
     </details>
-{% endcall %}
+{% endcall %}{% endif %}
 
-{% call settings_group('help', t('settings.group.help')) %}
+{% if group == 'help' %}{% call settings_group('help', t('settings.group.help')) %}
     <div class="ui-section" id="settings-guide">
       <div class="settings-action-list">
         <div class="settings-action-row">
@@ -499,7 +518,7 @@
       <h3>{{ t('settings.nav.version') }}</h3>
       <p class="ui-sub">{{ t('settings.version_line', version=app_version) }}</p>
     </div>
-{% endcall %}
+{% endcall %}{% endif %}
 </div>
 </div>
 {% endblock %}

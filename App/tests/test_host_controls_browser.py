@@ -264,8 +264,8 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
                 assert [choices.nth(i).inner_text().strip() for i in range(2)] == list(audit_labels[lang])
                 assert choices.nth(0).get_attribute("aria-current") == "page"
                 assert choices.nth(1).get_attribute("aria-current") is None
-                assert choices.nth(0).get_attribute("href") == "/settings#settings-audit"
-                assert choices.nth(1).get_attribute("href") == "/settings?audit=support#settings-audit"
+                assert choices.nth(0).get_attribute("href") == "/settings/technical#settings-audit"
+                assert choices.nth(1).get_attribute("href") == "/settings/technical?audit=support#settings-audit"
                 size = page.evaluate("() => ({width:innerWidth, scrollWidth:document.documentElement.scrollWidth})")
                 assert size["scrollWidth"] <= size["width"], f"Settings audit ({lang}, {width}px): {size}"
                 bounds = choices.evaluate_all("els => els.map(el => el.getBoundingClientRect().toJSON())")

@@ -217,7 +217,7 @@ def test_cs_and_vi_builds_are_complete(lang):
 
 
 def test_en_stay_fee_mails_link_to_the_off_switch():
-    url = f"{config.PUBLIC_BASE_URL}/settings#settings-stay-fee-emails"
+    url = f"{config.PUBLIC_BASE_URL}/settings/account#settings-stay-fee-emails"
     report = mail_notify.build_stay_fee_report(
         lang="en", property_name="Auto Flat", period="8/2026", amount="500 Kč",
         total_czk=500, authority="Úřad", databox="abc1234", account="19-2000781379/0800",
