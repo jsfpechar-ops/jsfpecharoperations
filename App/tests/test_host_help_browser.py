@@ -88,7 +88,7 @@ def _open_page(context, base, host, lang):
         "(() => { let d = document.querySelector('#permalink_window_days').closest('details');"
         " while (d) { d.open = true; d = d.parentElement.closest('details'); } })()"
     )
-    page.locator(BTN).scroll_into_view_if_needed()
+    page.locator(TIP).scroll_into_view_if_needed()  # 0543: the ? button is hidden on the v2 property page
     return page
 
 
@@ -109,6 +109,8 @@ def _active_controls(page):
 
 
 def test_help_tip_interactions_aria_and_fit(host, base):
+    # 0543: on the v2 property page the ? button is hidden on purpose (0536 item 6);
+    # the hint text stays visible in its field's label row, at every width.
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         for lang, name in (("en", "Help"), ("cs", "Nápověda")):
@@ -117,85 +119,45 @@ def test_help_tip_interactions_aria_and_fit(host, base):
             button = page.locator(BTN)
             tip = page.locator(TIP)
 
-            # aria wiring and unique ids; the old always-visible hint is gone
+            # aria wiring and unique ids
             assert button.get_attribute("type") == "button"
             assert button.get_attribute("aria-label") == name
             assert button.get_attribute("aria-expanded") == "false"
             assert tip.get_attribute("role") == "tooltip"
             ids = page.evaluate("[...document.querySelectorAll('[id]')].map(e => e.id)")
             assert len(ids) == len(set(ids))
-            assert tip.is_hidden()
             assert page.locator("label[for='permalink_window_days']").count() == 1
 
-            # hover opens, leaving closes
-            button.hover()
+            # the hint is visible in its field and inside the viewport
             tip.wait_for(state="visible")
-            assert button.get_attribute("aria-expanded") == "true"
-            page.mouse.move(5, 5)
-            tip.wait_for(state="hidden")
-            assert button.get_attribute("aria-expanded") == "false"
-
-            # keyboard focus opens, Esc closes and keeps focus on the trigger
-            page.locator("#permalink_window_days").focus()
-            page.keyboard.press("Shift+Tab")
-            assert _active_controls(page) == "permalink_window_days-help"
-            tip.wait_for(state="visible")
-            page.keyboard.press("Escape")
-            tip.wait_for(state="hidden")
-            assert _active_controls(page) == "permalink_window_days-help"
-
-            # click pins the tip open, outside click closes, second click toggles
-            button.click()
-            tip.wait_for(state="visible")
-            page.mouse.move(5, 5)
-            page.wait_for_timeout(300)
-            assert tip.is_visible()
+            # 0543: the hint sits in the field's label row (above the input), not under it
+            in_row = tip.evaluate(
+                "(el) => { const row = el.closest('.field-label-row');"
+                " return !!row && row.contains(document.querySelector(\"label[for='permalink_window_days']\")); }"
+            )
+            assert in_row, "hint is not in its field's label row"
             assert _inside_viewport(page)
             _capture(page, f"help-1280-{lang}")
-            page.mouse.click(5, 5)
-            tip.wait_for(state="hidden")
-            button.click()
-            tip.wait_for(state="visible")
-            button.click()
-            tip.wait_for(state="hidden")
-
-            # clicking the trigger never submits the form
-            posts = []
-            page.on("request", lambda r: posts.append(r) if r.method == "POST" else None)
-            button.click()
-            assert posts == []
             context.close()
 
-            # touch: tap opens, tap outside closes; fits at narrow widths
+            # touch: the hint stays visible and fits at narrow widths
             for width in (360, 390):
                 touch = _context(browser, host, base, width, has_touch=True)
                 tpage = _open_page(touch, base, host, lang)
-                tpage.locator(BTN).tap()
                 tpage.locator(TIP).wait_for(state="visible")
                 assert _inside_viewport(tpage), f"tip overflows at {width}"
                 assert tpage.evaluate(
                     "document.documentElement.scrollWidth <= document.documentElement.clientWidth"
                 )
                 _capture(tpage, f"help-{width}-{lang}")
-                tpage.touchscreen.tap(width - 4, 4)
-                tpage.locator(TIP).wait_for(state="hidden")
                 touch.close()
         browser.close()
 
 
 def test_help_tip_target_size_and_no_js_reachability(host, base):
+    # 0543: the property-page hint is visible without JS (no ? button to focus there).
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
-        touch = _context(browser, host, base, 390, has_touch=True)
-        page = _open_page(touch, base, host, "en")
-        hit = page.locator(BTN).evaluate("""(el) => {
-          const inset = Math.abs(parseFloat(getComputedStyle(el, '::after').top));
-          const box = el.getBoundingClientRect();
-          return [box.width + 2 * inset, box.height + 2 * inset];
-        }""")
-        assert hit[0] >= 44 and hit[1] >= 44
-        touch.close()
-
         html = host["client"].get(f"/apartments/{host['apartment']}?view=settings&section=guests&lang=en").text
         html = re.sub(r"<details", "<details open", html)
         html = html.replace("<head>", f'<head><base href="{base}/">', 1)
@@ -203,9 +165,7 @@ def test_help_tip_target_size_and_no_js_reachability(host, base):
         page = no_js.new_page()
         page.set_content(html, wait_until="load")
         tip = page.locator(TIP)
-        assert tip.count() == 1 and tip.is_hidden()
-        page.locator(BTN).focus()
-        assert tip.is_visible()
+        assert tip.count() == 1 and tip.is_visible()
         assert "stay-specific link" in tip.inner_text()
         no_js.close()
         browser.close()

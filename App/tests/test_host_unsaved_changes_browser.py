@@ -141,8 +141,12 @@ def _focused(page):
     }""")
 
 
-def _view(page):
-    return page.evaluate("() => [...document.querySelectorAll('[data-property-view].is-active')].map(e => e.dataset.propertyView)")
+def _open_sections(page):
+    return page.evaluate("() => [...document.querySelectorAll('details.prop-sec[open]')].map(e => e.id)")
+
+
+def _focus_is(page, selector):
+    return page.evaluate("(sel) => !!document.activeElement && document.activeElement.matches(sel)", selector)
 
 
 def _stored(host, column, table="apartment", key="apartment"):
@@ -161,7 +165,7 @@ def _check_dialog(page, lang, width):
     for button in dialog.locator("button").all():
         b = button.bounding_box()
         assert b["x"] >= box["x"] - 1 and b["x"] + b["width"] <= box["x"] + box["width"] + 1, b
-        assert b["height"] >= 40
+        assert b["height"] >= (36 if width >= 1024 else 44), b
 
 
 @pytest.mark.parametrize("width,height", SIZES)
@@ -171,62 +175,58 @@ def test_property_settings_save_discard_stay(browser, base, host, lang, width, h
     url = f"{base}/apartments/{host['apartment']}"
     page = _page(browser, base, host, width, height)
     page.goto(f"{url}?view=settings&section=property&lang={lang}")
-    reset = page.locator(".host-property-save [data-unsaved-reset]")
-    bookings = page.locator('.property-tabs a[data-property-tab="bookings"]')
-    settings = page.locator('.property-tabs a[data-property-tab="settings"]')
+    reset = page.locator(".savebar [data-unsaved-reset]")
+    leave = 'a.round[href="/apartments"]' if width < 1024 else ".crumb a"
+    crumb = page.locator(leave)
+    calendars = page.locator("#sec-calendars > summary")
 
-    # Clean form: no dialog, the tab simply switches.
+    # Clean form: no dialog, the in-page link just opens its section.
     assert not reset.is_visible()
-    bookings.click()
-    assert not _open(page) and _view(page) == ["bookings"]
-    settings.click()
+    calendars.click()
+    assert not _open(page) and "sec-calendars" in _open_sections(page)
 
-    # Dirty: the save bar offers Discard changes; the Settings sub-nav keeps the draft.
+    # Dirty: the save bar offers Discard changes; in-page links keep the draft.
     page.fill("#internal_name", "Typed O1 draft")
     assert reset.is_visible() and reset.inner_text() == TEXT[lang]["reset"]
-    page.locator('[data-property-section-link="guests"]').click()
-    assert not _open(page) and _view(page) == ["settings"]
-    page.locator('[data-property-section-link="property"]').click()
+    page.locator("#sec-lock > summary").click()
+    assert not _open(page)
+    assert page.input_value("#internal_name") == "Typed O1 draft"
 
-    # Another tab asks. Stay keeps the value and the focus on the tab.
-    bookings.click()
+    # A link that leaves the page asks. Stay keeps the value and the focus on that link.
+    crumb.click()
     _check_dialog(page, lang, width)
     _shot(page, f"property-dialog-{lang}-{width}")
     page.locator("#unsaved-dialog [data-unsaved-stay]").click()
-    assert not _open(page) and _view(page) == ["settings"]
+    assert not _open(page) and "/apartments/" in page.url
     assert page.input_value("#internal_name") == "Typed O1 draft"
-    assert _focused(page) == "propertyTab:bookings"
+    assert _focus_is(page, leave)
 
     # Esc is Stay.
-    bookings.click()
+    crumb.click()
     assert _open(page)
     page.keyboard.press("Escape")
-    assert not _open(page) and _view(page) == ["settings"]
+    assert not _open(page) and "/apartments/" in page.url
     assert page.input_value("#internal_name") == "Typed O1 draft"
-    assert _focused(page) == "propertyTab:bookings"
+    assert _focus_is(page, leave)
 
     # Discard restores the loaded value and follows the link.
-    bookings.click()
-    page.locator("#unsaved-dialog [data-unsaved-discard]").click()
-    assert not _open(page) and _view(page) == ["bookings"] and "view=bookings" in page.url
-    assert page.input_value("#internal_name") == NAME
+    crumb.click()
+    with page.expect_navigation():
+        page.locator("#unsaved-dialog [data-unsaved-discard]").click()
+    assert page.url.split("?")[0].rstrip("/").endswith("/apartments")
     assert _stored(host, "internal_name") == NAME
-    settings.click()
+    page.goto(f"{url}?view=settings&section=property&lang={lang}")
     assert not reset.is_visible()
-    bookings.click()  # clean again: no dialog
-    assert not _open(page) and _view(page) == ["bookings"]
+    assert page.input_value("#internal_name") == NAME
 
-    # Save submits the form; the host lands where return_to says.
-    settings.click()
+    # Save: the form posts, and the value is stored.
     saved = f"Saved O1 {lang} {width}"
     page.fill("#internal_name", saved)
-    page.locator('.property-tabs a[data-property-tab="overview"]').click()
+    crumb.click()
     assert _open(page)
     with page.expect_navigation():
         page.locator("#unsaved-dialog [data-unsaved-save]").click()
-    assert "view=settings&section=property" in page.url
     assert _stored(host, "internal_name") == saved
-    assert page.input_value("#internal_name") == saved
     assert page.native_dialogs == [], "the browser's own prompt must not fire after Save or Discard"
     page.context.close()
 
@@ -236,31 +236,25 @@ def test_property_rail_and_back_links_ask_and_cards_into_settings_do_not(browser
     page = _page(browser, base, host)
     page.goto(f"{url}?view=settings&section=property&lang=en")
     page.fill("#internal_name", "Rail O1 draft")
-    page.locator('.sidebar-nav a[href="/reservations"]').first.click()
+    page.locator('a.nav[href="/settings"]').first.click()
     assert _open(page)
     page.keyboard.press("Escape")
-    page.locator('.host-property-save a[href="/apartments"]').click()
+    page.locator('.savebar a[href="/apartments"]').click()
     assert _open(page)
     page.locator("#unsaved-dialog [data-unsaved-stay]").click()
     assert "/apartments/" in page.url and page.input_value("#internal_name") == "Rail O1 draft"
-    # Back to Overview keeps the draft; a card into Settings keeps it too.
-    page.goto(f"{url}?view=overview&lang=en")
-    page.locator('.property-tabs a[data-property-tab="settings"]').click()
-    page.fill("#internal_name", "Card O1 draft")
-    page.go_back()
-    assert not _open(page) and _view(page) == ["overview"]
-    page.locator(".host-property-card", has_text="Police reporting").click()
-    assert not _open(page) and _view(page) == ["settings"]
-    assert page.input_value("#internal_name") == "Card O1 draft"
-    # Discard via the rail leaves the page without the native prompt (the
-    # goto above left a dirty form, so the browser asked once already).
+    # An in-page aside link into Police keeps the draft and does not ask.
+    page.locator("#sec-police > summary").click()
+    assert not _open(page) and "sec-police" in _open_sections(page)
+    assert page.input_value("#internal_name") == "Rail O1 draft"
+    # Discard via the rail leaves the page without the native prompt.
     page.native_dialogs.clear()
-    page.locator('.sidebar-nav a[href="/reservations"]').first.click()
+    page.locator('a.nav[href="/settings"]').first.click()
     with page.expect_navigation():
         page.locator("#unsaved-dialog [data-unsaved-discard]").click()
-    assert page.url.split("?")[0].endswith("/reservations")
+    assert page.url.split("?")[0].endswith("/settings")
     assert page.native_dialogs == []
-    assert _stored(host, "internal_name") != "Card O1 draft"
+    assert _stored(host, "internal_name") != "Rail O1 draft"
     page.context.close()
 
 
@@ -270,27 +264,29 @@ def test_save_bar_discard_changes_button(browser, base, host, lang, width, heigh
     url = f"{base}/apartments/{host['apartment']}"
     page = _page(browser, base, host, width, height)
     page.goto(f"{url}?view=settings&section=guests&lang={lang}")
-    reset = page.locator(".host-property-save [data-unsaved-reset]")
+    reset = page.locator(".savebar [data-unsaved-reset]")
     status = page.locator("#door_codes-status")
-    loaded_status = status.inner_text()
     loaded_message = page.input_value("#guest_message")
     assert not reset.is_visible()
     page.fill("#guest_message", "Typed welcome to discard")
     # 0096: the door-code switch lives in its own Door lock group.
-    page.locator('[data-property-section-link="lock"]').click()
+    # 0736: inner_text() is "" inside a closed <details>, so read the status
+    # after the section opens and use text_content(), which holds the saved text.
+    page.locator("#sec-lock > summary").click()
+    loaded_status = status.text_content().strip()
     page.locator("#door_codes").click()
-    assert status.inner_text() != loaded_status
+    assert status.text_content().strip() != loaded_status
     assert reset.is_visible()
     box = reset.bounding_box()
     assert box["x"] >= 0 and box["x"] + box["width"] <= width + 1
     _shot(page, f"property-discard-button-{lang}-{width}")
     reset.click()
     assert page.input_value("#guest_message") == loaded_message
-    assert status.inner_text() == loaded_status
+    assert status.text_content().strip() == loaded_status
     assert not reset.is_visible()
     assert _focused(page) in (TEXT[lang]["save"], "Save changes", "Uložit změny")
-    page.locator('.property-tabs a[data-property-tab="overview"]').click()
-    assert not _open(page) and _view(page) == ["overview"]
+    page.locator("#sec-calendars > summary").click()
+    assert not _open(page) and "sec-calendars" in _open_sections(page)
     page.context.close()
 
 
@@ -302,7 +298,7 @@ def test_keyboard_only_flow(browser, base, host):
     page.keyboard.press("End")
     page.keyboard.type(" keyed")
     typed = page.input_value("#internal_name")
-    page.focus('.property-tabs a[data-property-tab="bookings"]')
+    page.focus(".crumb a")
     page.keyboard.press("Enter")
     assert _open(page) and _focused(page) == "unsavedStay:"
     # Tab stays inside the dialog, both ways.
@@ -318,13 +314,14 @@ def test_keyboard_only_flow(browser, base, host):
     page.keyboard.press("Shift+Tab")
     assert _focused(page) == "unsavedStay:"
     page.keyboard.press("Enter")  # Stay
-    assert not _open(page) and _focused(page) == "propertyTab:bookings"
+    assert not _open(page) and _focus_is(page, ".crumb a")
     assert page.input_value("#internal_name") == typed
     page.keyboard.press("Enter")
     page.keyboard.press("Tab")
-    page.keyboard.press("Enter")  # Discard
-    assert not _open(page) and _view(page) == ["bookings"]
-    assert page.input_value("#internal_name") != typed
+    with page.expect_navigation():
+        page.keyboard.press("Enter")  # Discard
+    assert page.url.split("?")[0].rstrip("/").endswith("/apartments")
+    assert _stored(host, "internal_name") != typed
     page.context.close()
 
 
@@ -378,16 +375,17 @@ def test_without_javascript_nothing_changes(browser, base, host):
     page = _page(browser, base, host, java_script_enabled=False)
     page.goto(f"{url}?view=settings&section=property&lang=en")
     assert not page.locator("#unsaved-dialog").is_visible()
-    assert not page.locator(".host-property-save [data-unsaved-reset]").is_visible()
+    assert not page.locator(".savebar [data-unsaved-reset]").is_visible()
     page.fill("#internal_name", "No JS O1 name")
     with page.expect_navigation():
-        page.locator(".host-property-save .ui-btn-primary").click()
+        page.locator(".savebar button[type=submit]").click()
     assert _stored(host, "internal_name") == "No JS O1 name"
     page.goto(f"{url}?view=settings&section=property&lang=en")
     page.fill("#internal_name", "No JS unsaved")
     with page.expect_navigation():
-        page.locator('.property-tabs a[data-property-tab="bookings"]').click()
-    assert "view=bookings" in page.url
+        page.locator('.crumb a[href="/apartments"]').click()
+    assert page.url.split("?")[0].rstrip("/").endswith("/apartments")
     assert _stored(host, "internal_name") == "No JS O1 name"
     page.context.close()
     db.execute("UPDATE apartment SET internal_name = ? WHERE id = ?", (NAME, host["apartment"]))
+

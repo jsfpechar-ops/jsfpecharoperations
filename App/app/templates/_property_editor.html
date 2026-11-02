@@ -4,6 +4,11 @@
     hidden from view; its controls stay enabled and are always submitted.
     0096: Door lock is its own group (only where door codes exist). -#}
 {%- from "_components.html" import copy_button, copy_inline, field_label, help_tip, source_badge, sync_calendars_button with context -%}
+{%- set feeds_count = (feeds or []) | length -%}
+{%- set calendar_errors = (feeds or []) | selectattr('last_status', 'equalto', 'error') | list | length -%}
+{%- set police_ok = (health or []) | selectattr('key', 'equalto', 'police') | selectattr('state', 'equalto', 'ok') | list | length -%}
+{%- set report_missing = (readiness.report | rejectattr('done') | list | length) if readiness else 0 -%}
+{%- set address_text = [((apartment.addr_street or '') ~ ' ' ~ (apartment.addr_house_no or '')) | trim, apartment.addr_obec or ''] | select | join(', ') -%}
 {%- set base_url = '/apartments/' ~ apartment.id -%}
 {%- set property_values = apartment -%}
 {% macro text_field(name, label, value, help='', optional=false, maxlength=none) %}
@@ -29,13 +34,9 @@
 </div>
 {% endif %}
 
-<div class="property-settings">
-<nav class="property-settings-nav" aria-label="{{ t('property_nav.settings_aria') }}">
-  {% for key, label in groups %}
-  <a href="{{ base_url }}?view=settings&amp;section={{ key }}" data-property-section-link="{{ key }}"{% if key == settings_section %} aria-current="true"{% endif %}>{{ label }}</a>
-  {% endfor %}
-</nav>
 
+<div class="form">
+<div class="form-main">
 <form method="post" action="{{ base_url }}" enctype="multipart/form-data" class="property-settings-form" id="property-settings-form" data-property-settings-form data-unsaved-guard>
   <p class="required-legend">{{ t('common.required_legend') }}</p>
   <input type="hidden" name="return_to" value="{{ base_url }}?view=settings&amp;section={{ settings_section }}" data-property-return>
@@ -47,14 +48,15 @@
   <button type="submit" hidden tabindex="-1" aria-hidden="true"></button>
 
   {# ---- Property information ---------------------------------------- #}
-  <div class="property-settings-group{% if settings_section == 'property' %} is-active{% endif %}" data-settings-group="property" id="settings-property">
-    <h2 class="property-group-title">{{ t('property_nav.group.property') }}</h2>
+<h2 class="sec prop-phone-only">{{ t('nav.settings') }}</h2>
+<details class="prop-sec" id="sec-basics"{% if property_view != 'bookings' and (not settings_section or settings_section == 'property') %} open{% endif %}><summary><span class="dot {{ 'g' if address_text else 'r' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.basics.title') }}</b><small>{{ t('property_page.sec.basics.sub') }}</small></div><small class="sec-state">{{ address_text or t('property_nav.address_missing') }}</small></summary>
+  <div class="fields-wrap">
     <section class="panel property-section ui-section" id="basics">
-      <h3 class="property-section-title">{{ t('apartment.form.basics.title') }}</h3>
+      <h2 class="property-section-title">{{ t('apartment.form.basics.title') }}</h2>
       {% include "_property_identity_fields.html" %}
       {% set operator_current = apartment.legal_entity_id %}
       {% include "_property_operator.html" %}
-      {% if entities %}<div class="hint property-operator-hint"><a href="/entities{{ '?edit=' ~ apartment.legal_entity_id if apartment.legal_entity_id else '' }}">{{ t('host.business') }} </a> {{ help_tip('legal_entity_id-help', t('apartment.form.entity.hint')) }}</div>{% endif %}
+      {% if entities %}<div class="hint property-operator-hint"><a href="{% if apartment.legal_entity_id %}/entities?edit={{ apartment.legal_entity_id }}{% else %}/apartments/{{ apartment.id }}?view=settings&amp;section=property#operator-picker{% endif %}">{{ t('host.business') }} </a> {{ help_tip('legal_entity_id-help', t('apartment.form.entity.hint')) }}</div>{% endif %}
       {% set controller_current = apartment.data_controller_entity_id %}
       <div class="field" style="max-width:420px" id="alternate-controller">
         <label for="data_controller_entity_id">{{ t('apartment.form.controller.alternate_label') }}</label>
@@ -69,7 +71,7 @@
     </section>
 
     <section class="panel property-section ui-section" id="arrival-departure">
-      <h3 class="property-section-title">{{ t('apartment.form.door_code.checkin') }} / {{ t('apartment.form.door_code.checkout') }}</h3>
+      <h2 class="property-section-title">{{ t('apartment.form.door_code.checkin') }} / {{ t('apartment.form.door_code.checkout') }}</h2>
       <p class="ui-sub">{{ t('why.times') }}</p>
       {% if shared_time_error %}<p class="err-text" role="alert">{{ t(shared_time_error) }}</p>{% endif %}
       <div class="grid two">
@@ -84,19 +86,23 @@
     </section>
 
     <section class="panel property-section ui-section" id="address">
-      <h3 class="property-section-title">{{ t('apartment.form.address.title') }}</h3>
+      <h2 class="property-section-title">{{ t('apartment.form.address.title') }}</h2>
       <p class="ui-sub">{{ t('why.address') }}</p>
       {% include "_property_address_fields.html" %}
     </section>
 
     <section class="panel property-section ui-section" id="notes-section">
-      <h3 class="property-section-title">{{ t('apartment.form.notes.title') }}</h3>
+      <h2 class="property-section-title">{{ t('apartment.form.notes.title') }}</h2>
       <div class="field">
         {{ field_label('notes', t('apartment.form.notes.label'), t('apartment.form.notes.hint')) }}
         <textarea id="notes" name="notes" aria-describedby="notes-help">{{ apartment.notes or '' }}</textarea>
       </div>
     </section>
 
+  </div>
+  </details>
+<details class="prop-sec" id="sec-archive"><summary><span class="dot {{ 'n' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.archive.title') }}</b><small>{{ t('property_page.sec.archive.sub') }}</small></div><small class="sec-state">{{ t('property_page.sec.archive.sub') }}</small></summary>
+  <div class="fields-wrap">
     <section class="panel property-section ui-section property-archive" id="archive">
       {% if apartment.archived_at %}
       <div class="setup-item">
@@ -120,12 +126,13 @@
       {% endif %}
     </section>
   </div>
+  </details>
 
   {# ---- Guest experience ---------------------------------------------- #}
-  <div class="property-settings-group{% if settings_section == 'guests' %} is-active{% endif %}" data-settings-group="guests" id="settings-guests">
-    <h2 class="property-group-title">{{ t('property_nav.group.guests') }}</h2>
+<details class="prop-sec" id="sec-messages"{% if settings_section == 'guests' %} open{% endif %}><summary><span class="dot {{ 'n' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.messages.title') }}</b><small>{{ t('property_page.sec.messages.sub') }}</small></div><small class="sec-state">{{ t('property_page.sec.messages.sub') }}</small></summary>
+  <div class="fields-wrap">
     <section class="panel property-section ui-section" id="communication">
-      <div class="field-label-row"><h3 class="property-section-title">{{ t('nav.guest_links') }}</h3>{{ help_tip('communication-help', t('guest_links.lede') ~ ' ' ~ t('apartment.form.guest_link.message_help'), '/guide#guests') }}</div>
+      <div class="field-label-row"><h2 class="property-section-title">{{ t('nav.guest_links') }}</h2>{{ help_tip('communication-help', t('guest_links.lede') ~ ' ' ~ t('apartment.form.guest_link.message_help'), '/guide#guests') }}</div>
       <p class="ui-sub">{{ t('why.guest_link') }}</p>
       <div class="guest-link-top">
         <div class="field guest-link-url">
@@ -133,7 +140,8 @@
           <div class="copyrow">
             <input type="text" id="permalink" readonly value="{{ permalink }}">
             {{ copy_button('permalink') }}
-            <a class="ui-btn ui-btn-quiet ui-btn-compact" href="/l/{{ link_key }}" target="_blank" rel="noopener">{{ t('guest_links.preview') }}</a>
+            <a class="btn sm ghost" href="/l/{{ link_key }}" target="_blank" rel="noopener">{{ t('guest_links.preview') }}</a>
+            <a class="ui-btn ui-btn-quiet ui-btn-compact" href="/apartments/{{ apartment.id }}/guide">{{ t('leon_page.guide_link') }}</a>
           </div>
         </div>
         <div class="field guest-link-pin">
@@ -190,11 +198,12 @@
     </section>
 
   </div>
+  </details>
 
   {# ---- Door lock (0096: its own group; optional) ---------------------- #}
   {% if door_code %}
-  <div class="property-settings-group{% if settings_section == 'lock' %} is-active{% endif %}" data-settings-group="lock" id="settings-lock">
-    <h2 class="property-group-title">{{ t('property_nav.group.lock') }}</h2>
+<details class="prop-sec" id="sec-lock"{% if settings_section == 'lock' %} open{% endif %}><summary><span class="dot {{ 'g' if door_code and door_code.enabled else 'n' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.lock.title') }}</b><small>{{ t('property_page.sec.lock.sub') }}</small></div><small class="sec-state">{{ t('property_nav.switch_enabled') if door_code and door_code.enabled else t('property_nav.switch_off') }}</small></summary>
+  <div class="fields-wrap">
     <p class="property-group-intro">{{ t('why.door_lock') }}</p>
     {% include "_door_code_window.html" %}
     {% if door_code.account and door_code.locks %}
@@ -211,7 +220,7 @@
           </select></div>
         {% endfor %}
       </div>
-      <div class="field-label-row"><h3 class="property-section-title">{{ t('host.door_code') }}</h3>{{ help_tip('door-code-help', t('apartment.form.door_code.lede') ~ ' ' ~ t('apartment.form.door_code.manual'), '/guide#door-codes') }}</div>
+      <div class="field-label-row"><h2 class="property-section-title">{{ t('host.door_code') }}</h2>{{ help_tip('door-code-help', t('apartment.form.door_code.lede') ~ ' ' ~ t('apartment.form.door_code.manual'), '/guide#door-codes') }}</div>
         {% if door_code.test_mode %}<p class="ui-sub"><strong>{{ t('apartment.form.door_code.test_mode') }}</strong></p>{% endif %}
         <input type="hidden" name="door_codes_fields" value="1">
         <div class="feature-switch-row">
@@ -237,13 +246,22 @@
     {% endif %}
     <input type="hidden" name="door_code_section" value="1">
   </div>
+  </details>
+  {% else %}
+  {# 0536: the mockup always shows the lock section. Without a lock account it has no controls, only the connect text. #}
+  <details class="prop-sec" id="sec-lock"{% if settings_section == 'lock' %} open{% endif %}><summary><span class="dot {{ 'g' if door_code and door_code.enabled else 'n' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.lock.title') }}</b><small>{{ t('property_page.sec.lock.sub') }}</small></div><small class="sec-state">{{ t('property_nav.switch_enabled') if door_code and door_code.enabled else t('property_nav.switch_off') }}</small></summary>
+  <div class="fields-wrap">
+    <p class="property-group-intro">{{ t('why.door_lock') }}</p>
+    <p class="ui-sub">{{ t('smart_locks.lede') }}</p>
+  </div>
+  </details>
   {% endif %}
 
   {# ---- Reporting & fees ---------------------------------------------- #}
-  <div class="property-settings-group{% if settings_section == 'reporting' %} is-active{% endif %}" data-settings-group="reporting" id="settings-reporting">
-    <h2 class="property-group-title">{{ t('property_nav.group.reporting') }}</h2>
+<details class="prop-sec" id="sec-police"{% if settings_section in ['reporting', 'automation'] %} open{% endif %}><summary><span class="dot {{ 'g' if police_ok else 'r' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.police.title') }}</b><small>{{ t('property_page.sec.police.sub') }}</small></div><small class="sec-state">{{ t('property_nav.report_ready') if police_ok else tp('property_nav.report_missing', report_missing) }}</small></summary>
+  <div class="fields-wrap">
     <section class="panel property-section ui-section" id="ubyport">
-      <div class="field-label-row police-section-head"><h3 class="property-section-title">{{ t('host.reporting') }}</h3>{{ help_tip('ubyport-help', t('apartment.form.ubyport.credentials_help_heading'), '/guide#ubyport-credentials') }}
+      <div class="field-label-row police-section-head"><h2 class="property-section-title">{{ t('host.reporting') }}</h2>{{ help_tip('ubyport-help', t('apartment.form.ubyport.credentials_help_heading'), '/guide#ubyport-credentials') }}
         <a class="ui-btn ui-btn-secondary ui-btn-compact police-sample-link" id="police-sample-link" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.sample_link') }}</a></div>
       <p class="ui-sub">{{ t('why.police') }}</p>
       <p class="ui-sub"><a href="{{ base_url }}?view=settings&amp;section=automation#automation">{{ t('automation.timing_title') }} </a></p>
@@ -281,55 +299,8 @@
       </div>
     </section>
 
-    <section class="panel property-section ui-section" id="stay-fee-settings">
-      <div class="field-label-row"><h3 class="property-section-title">{{ t('apartment.form.stay_fee.heading') }}</h3>{{ help_tip('stay-fee-help', t('apartment.form.stay_fee.lede')) }}</div>
-      <p class="ui-sub">{{ t('why.stay_fee') }}</p>
-      {% if fee_return_to %}
-      <p class="small fee-return-note"><a href="{{ fee_return_to }}"> {{ t('stay_fees.setup.back_to_report') }}</a></p>
-      {% endif %}
-      {% if fee_template_peers %}
-      <div class="field">
-        {{ field_label('fee-copy-source', t('apartment.form.stay_fee.copy_label'), t('apartment.form.stay_fee.copy_hint')) }}
-        <div class="copyrow">
-          <select id="fee-copy-source" aria-describedby="fee-copy-source-help">
-            {% for peer in fee_template_peers %}
-            <option value="{{ peer.id }}"
-                    data-rate="{{ peer.stay_fee_rate_czk or 0 }}"
-                    data-cadence="{{ peer.stay_fee_cadence or 'monthly' }}"
-                    data-vs="{{ peer.stay_fee_vs or '' }}"
-                    data-account="{{ peer.stay_fee_council_account or '' }}"
-                    data-authority-name="{{ peer.stay_fee_authority_name or '' }}"
-                    data-authority-address="{{ peer.stay_fee_authority_address or '' }}"
-                    data-authority-contact="{{ peer.stay_fee_authority_contact or '' }}"
-                    data-payee="{{ peer.stay_fee_payee or '' }}"
-                    data-instruction="{{ peer.stay_fee_instruction or '' }}">{{ peer.internal_name }}</option>
-            {% endfor %}
-          </select>
-          <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" id="fee-copy-apply">
-            {{ t('apartment.form.stay_fee.copy_button') }}
-          </button>
-        </div>
-      </div>
-      {% endif %}
-      {% include "_stay_fee_fields.html" %}
-      {% if apartment.stay_fee_rate_czk > 0 %}
-        {% if not (apartment.stay_fee_vs or '').strip()
-              or not (apartment.stay_fee_council_account or '').strip()
-              or not (apartment.stay_fee_authority_name or '').strip() %}
-        <p class="small warn-text">{{ t('apartment.form.stay_fee.missing_warn') }}</p>
-        {% endif %}
-        <p class="ui-sub">
-          <a href="/stay-fees/{{ apartment.id }}">{{ t('apartment.form.stay_fee.open_overview') }} </a>
-        </p>
-      {% endif %}
-    </section>
-  </div>
-
-  {# ---- Automation ---------------------------------------------------- #}
-  <div class="property-settings-group{% if settings_section == 'automation' %} is-active{% endif %}" data-settings-group="automation" id="settings-automation">
-    <h2 class="property-group-title">{{ t('property_nav.group.automation') }}</h2>
     <section class="panel property-section ui-section" id="automation">
-      <div class="field-label-row"><h3 class="property-section-title">{{ t('automation.timing_title') }}</h3>{{ help_tip('automation-help', t('automation.timing_help'), '/guide#reporting') }}</div>
+      <div class="field-label-row"><h2 class="property-section-title">{{ t('automation.timing_title') }}</h2>{{ help_tip('automation-help', t('automation.timing_help'), '/guide#reporting') }}</div>
       <p class="ui-sub">{{ t('why.automation') }}</p>
       <div class="grid two">
         <div class="field">
@@ -361,24 +332,158 @@
       </div>
     </section>
   </div>
+  </details>
+<details class="prop-sec" id="sec-fee"{% if settings_section == 'reporting' %} open{% endif %}><summary><span class="dot {{ 'g' if apartment.stay_fee_rate_czk else 'n' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.fee.title') }}</b><small>{{ t('property_page.sec.fee.sub') }}</small></div><small class="sec-state">{{ apartment.stay_fee_rate_czk ~ ' Kč' if apartment.stay_fee_rate_czk else t('apartments.chip_state.off') }}</small></summary>
+  <div class="fields-wrap">
+    <section class="panel property-section ui-section" id="stay-fee-settings">
+      <div class="field-label-row"><h2 class="property-section-title">{{ t('apartment.form.stay_fee.heading') }}</h2>{{ help_tip('stay-fee-help', t('apartment.form.stay_fee.lede')) }}</div>
+      <p class="ui-sub">{{ t('why.stay_fee') }}</p>
+      {% if fee_return_to %}
+      <p class="small fee-return-note"><a href="{{ fee_return_to }}"> {{ t('stay_fees.setup.back_to_report') }}</a></p>
+      {% endif %}
+      {% if fee_template_peers %}
+      <div class="field">
+        {{ field_label('fee-copy-source', t('apartment.form.stay_fee.copy_label'), t('apartment.form.stay_fee.copy_hint')) }}
+        <div class="copyrow">
+          <select id="fee-copy-source" aria-describedby="fee-copy-source-help">
+            {% for peer in fee_template_peers %}
+            <option value="{{ peer.id }}"
+                    data-rate="{{ peer.stay_fee_rate_czk or 0 }}"
+                    data-cadence="{{ peer.stay_fee_cadence or 'monthly' }}"
+                    data-vs="{{ peer.stay_fee_vs or '' }}"
+                    data-account="{{ peer.stay_fee_council_account or '' }}"
+                    data-authority-name="{{ peer.stay_fee_authority_name or '' }}"
+                    data-authority-address="{{ peer.stay_fee_authority_address or '' }}"
+                    data-authority-contact="{{ peer.stay_fee_authority_contact or '' }}"
+                    data-payee="{{ peer.stay_fee_payee or '' }}"
+                    data-instruction="{{ peer.stay_fee_instruction or '' }}">{{ peer.internal_name }}</option>
+            {% endfor %}
+          </select>
+          <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" id="fee-copy-apply">
+            {{ t('apartment.form.stay_fee.copy_button') }}
+          </button>
+        </div>
+      </div>
+      {% endif %}
+      {% set fee_heading = 'h3' %}
+      {% include "_stay_fee_fields.html" %}
+      {% if apartment.stay_fee_rate_czk > 0 %}
+        {% if not (apartment.stay_fee_vs or '').strip()
+              or not (apartment.stay_fee_council_account or '').strip()
+              or not (apartment.stay_fee_authority_name or '').strip() %}
+        <p class="small warn-text">{{ t('apartment.form.stay_fee.missing_warn') }}</p>
+        {% endif %}
+        <p class="ui-sub">
+          <a href="/stay-fees/{{ apartment.id }}">{{ t('apartment.form.stay_fee.open_overview') }} </a>
+        </p>
+      {% endif %}
+    </section>
+  </div>
+  </details>
 
-  <div class="actions host-property-save">
-    <button class="ui-btn ui-btn-primary" type="submit">{{ t('common.save_changes') }}</button>
-    <button class="ui-btn ui-btn-secondary" type="button" data-unsaved-reset hidden>{{ t('unsaved.discard_changes') }}</button>
-    <a class="ui-btn ui-btn-secondary" href="/apartments">{{ t('apartment.form.back_list') }}</a>
+  {# ---- Automation ---------------------------------------------------- #}
+
+  <div class="savebar">
+    <a class="btn ghost" href="/apartments">{{ t('common.cancel') }}</a>
+    <button class="btn ghost" type="button" data-unsaved-reset hidden>{{ t('unsaved.discard_changes') }}</button>
+    <button class="btn" type="submit">{{ t('common.save_changes') }}</button>
   </div>
 </form>
+<details class="prop-sec" id="sec-calendars"{% if property_view == 'bookings' %} open{% endif %}><summary><span class="dot {{ 'r' if calendar_errors else ('g' if feeds_count else 'n') }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.calendars.title') }}</b><small>{{ t('property_page.sec.calendars.sub') }}</small></div><small class="sec-state">{{ tp('apartment.form.calendars_count', feeds_count) }}</small></summary>
+  <div class="fields-wrap">
+{% include "_property_calendars.html" %}
+  </div>
+</details>
 {% if door_code and lock_panel and lock_panel.smart_locks_enabled %}
-<div class="property-settings-group{% if settings_section == 'lock' %} is-active{% endif %}" data-settings-group="lock" id="settings-lock-account">
+<details class="prop-sec" id="sec-lock-account"{% if settings_section == 'lock' %} open{% endif %}><summary><span class="dot {{ 'g' if door_code and door_code.enabled else 'n' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.lock.title') }}</b><small>{{ t('property_page.sec.lock.sub') }}</small></div><small class="sec-state">{{ t('property_nav.switch_enabled') if door_code and door_code.enabled else t('property_nav.switch_off') }}</small></summary>
+  <div class="fields-wrap">
   <section class="panel property-section ui-section" id="{% if door_code.account and door_code.locks %}smart-locks{% else %}door-code{% endif %}">
     {% if not (door_code.account and door_code.locks) %}
-    <h3 class="property-section-title">{{ t('smart_locks.title') }}</h3>
+    <h2 class="property-section-title">{{ t('smart_locks.title') }}</h2>
     <p class="ui-sub">{{ t('smart_locks.lede') }}</p>
     {% endif %}
     {% with account=lock_panel.account, receiver=lock_panel.receiver, locks=lock_panel.locks, fetched_at=lock_panel.fetched_at, reauth=lock_panel.reauth, return_to=lock_panel.return_to, properties_using=lock_panel.properties_using %}
     {% include "_smart_locks_panel.html" %}
     {% endwith %}
   </section>
-</div>
+  </div>
+</details>
 {% endif %}
+</div>
+<aside class="preview" aria-labelledby="property-preview-title">
+  <h3 id="property-preview-title">{{ t('property_page.preview.title') }}</h3>
+{% if setup_progress and not setup_progress.hidden %}
+<section class="pv setup-continue-card" aria-label="{{ t('wizard.continue_card_aria') }}">
+  <p>{{ t('wizard.continue_card', done=setup_progress.done, total=setup_progress.total) }}
+    {% if setup_progress.reporting_waiting %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ t('setup_guide.reporting.waiting_item') }}</span>{% endif %}
+  </p>
+  <div class="actions">
+    <a class="ui-btn ui-btn-primary" href="{{ setup_progress.continue_url }}">{{ t('wizard.continue') }}</a>
+    <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <button class="ui-btn ui-btn-quiet" type="submit" name="action" value="hide" formnovalidate>{{ t('setup_guide.hide') }}</button>
+    </form>
+  </div>
+</section>
+{% elif setup_hidden %}
+<form method="post" action="/apartments/{{ apartment.id }}/setup" class="property-setup-show">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <button class="link-button" type="submit" name="action" value="show">{{ t('setup_guide.show') }}</button>
+</form>
+{% endif %}
+  {%- set wizard_active = setup_progress and not setup_progress.hidden -%}
+  <div class="pv">
+    <h4>{{ t('property_page.sec.basics.title') }}</h4>
+    <a class="r" href="#sec-basics"><span>{{ t('entities.name') }}</span>{{ apartment.internal_name or '' }}</a>
+    <a class="r" href="#sec-basics"><span>{{ t('apartments.table.address') }}</span>{{ address_text or t('property_nav.address_missing') }}</a>
+  </div>
+  <div class="pv">
+    <h4>{{ t('property_page.preview.connections') }}</h4>
+    <a class="r" href="#sec-police"><span>{{ t('apartments.chip.police') }}</span><b class="pv-state" data-state="{{ 'ok' if police_ok else 'bad' }}">{{ t('property_nav.report_ready') if police_ok else tp('property_nav.report_missing', report_missing) }}</b></a>
+    <a class="r" href="#sec-calendars"><span>{{ t('property_page.sec.calendars.title') }}</span><small{% if calendar_errors %} class="is-bad"{% endif %}>{{ tp('apartment.form.calendars_count', feeds_count) }}</small></a>
+    <a class="r" href="#sec-lock"><span>{{ t('apartments.chip.lock') }}</span>{{ t('property_nav.switch_enabled') if door_code and door_code.enabled else t('property_nav.switch_off') }}</a>
+    <a class="r" href="#sec-fee"><span>{{ t('apartments.chip.fee') }}</span>{% if apartment.stay_fee_rate_czk %}{{ apartment.stay_fee_rate_czk }} Kč{% else %}{{ t('apartments.chip_state.off') }}{% endif %}</a>
+    {% if leon_card %}<a class="r" href="{{ base_url }}/leon{% if leon_card != 'on' %}/setup{% endif %}" data-leon-card="{{ leon_card }}"><span>{{ t('leon_page.title') }}</span>{{ t('leon_page.card.' ~ leon_card) }}</a>{% endif %}
+  </div>
+  {% if readiness and not wizard_active %}<div class="pv">
+{%- set wizard_active = setup_progress and not setup_progress.hidden -%}
+{% if readiness and not wizard_active %}
+<details class="setup-readiness-help" data-setup-status>
+    <summary><span aria-hidden="true">?</span> {{ t('wizard.overview.details') }}</summary>
+    <section class="readiness">
+  <div class="readiness-group">
+    <h3 class="readiness-title">{{ t('apartment.form.readiness.invite_title') }}</h3>
+    <ul class="readiness-list">
+      {% for item in readiness.invite %}
+      <li class="readiness-item{% if item.done %} is-done{% endif %}">
+        <span class="readiness-mark" aria-hidden="true">{{ '✓' if item.done else '✗' }}</span>
+        {% if item.done %}{{ t('apartment.form.readiness.item.' ~ item.key) }}
+        {% else %}<a href="#{{ item.anchor }}">{{ t('apartment.form.readiness.missing') }} {{ t('apartment.form.readiness.item.' ~ item.key) }}</a>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% if readiness.invite_ready %}
+    <p class="readiness-ready">{{ t('apartment.form.readiness.invite_ready') }}</p>
+    {% if not setup_finished %}{{ copy_inline('readiness-permalink', permalink, t('apartment.form.readiness.copy_link')) }}{% endif %}
+    {% endif %}
+  </div>
+  <div class="readiness-group">
+    <h3 class="readiness-title">{{ t('apartment.form.readiness.report_title') }}</h3>
+    <ul class="readiness-list">
+      {% for item in readiness.report %}
+      <li class="readiness-item{% if item.done %} is-done{% endif %}">
+        <span class="readiness-mark" aria-hidden="true">{{ '✓' if item.done else '✗' }}</span>
+        {% if item.done %}{{ t('apartment.form.readiness.item.' ~ item.key) }}
+        {% else %}<a href="#{{ item.anchor }}">{{ t('apartment.form.readiness.missing') }} {{ t('apartment.form.readiness.item.' ~ item.key) }}</a>
+          {% if item.message %}<span class="readiness-why">{{ validation_message(item.message) }}</span>{% endif %}
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+</details>
+{% endif %}
+  </div>{% endif %}
+</aside>
 </div>

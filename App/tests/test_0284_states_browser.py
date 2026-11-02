@@ -52,10 +52,10 @@ def _page(playwright, base, cookie, width=1280):
 def test_hover_changes_every_clickable_thing(base):
     cookie, flat = _session(base)
     targets = [
-        ("/apartments", "table.properties-table tbody tr.clickable-row"),
+        ("/apartments", ".props-card table tbody tr.clickable-row"),
         ("/reservations?range=all", "tbody tr.clickable-row"),
         ("/", "[data-needs-you-go]"),
-        (f"/apartments/{flat}?view=overview", "a.host-property-card"),
+        (f"/apartments/{flat}?view=overview", "aside.preview .pv .r"),
         ("/reservations?range=all", "a.ui-chip:not([aria-current])"),
     ]
     problems = []

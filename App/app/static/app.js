@@ -583,69 +583,6 @@
     });
   }
 
-  /* ---- 0098 inline reporting timing (Properties summary) ------------------- */
-  // Saves on change (debounced for the hours box) through the same POST the
-  // visible Save button sends without JS; shows "Saved" or the server's error.
-  function initInlineTiming() {
-    document.querySelectorAll("form[data-inline-timing]").forEach(function (form) {
-      if (!claimNode(form, "initInlineTiming")) return;
-      if (!window.fetch || !window.FormData) return;
-      var select = form.querySelector("[data-timing-mode]");
-      var hours = form.querySelector("[data-timing-hours-input]");
-      var status = form.querySelector("[data-timing-status]");
-      var timer = null;
-      var seq = 0;
-      form.classList.add("is-live");
-
-      function show(text, kind) {
-        if (!status) return;
-        status.textContent = text;
-        status.classList.toggle("is-error", kind === "error");
-        status.classList.toggle("is-saved", kind === "saved");
-      }
-
-      function save() {
-        window.clearTimeout(timer);
-        timer = null;
-        var mine = ++seq;
-        show(form.getAttribute("data-saving") || "", "");
-        var meta = document.querySelector('meta[name="csrf-token"]');
-        var headers = { "Accept": "application/json" };
-        if (meta) headers["X-CSRF-Token"] = meta.getAttribute("content") || "";
-        fetch(form.getAttribute("action"), {
-          method: "POST",
-          body: new FormData(form),
-          headers: headers,
-          credentials: "same-origin"
-        }).then(function (response) {
-          return response.json().catch(function () { return { ok: false }; });
-        }).then(function (data) {
-          if (mine !== seq) return;
-          if (data && data.ok) show(form.getAttribute("data-saved") || "", "saved");
-          else show((data && data.error) || form.getAttribute("data-failed") || "", "error");
-        }).catch(function () {
-          if (mine === seq) show(form.getAttribute("data-failed") || "", "error");
-        });
-      }
-
-      form.addEventListener("submit", function (event) {
-        event.preventDefault();
-        save();
-      });
-      if (select) select.addEventListener("change", save);
-      if (hours) {
-        hours.addEventListener("input", function () {
-          window.clearTimeout(timer);
-          timer = window.setTimeout(save, 700);
-        });
-        hours.addEventListener("change", function () {
-          if (timer) save();
-        });
-      }
-    });
-  }
-  /* ---- end 0098 ------------------------------------------------------------- */
-
   function initControllerFields() {
     document.querySelectorAll("[data-controller-same-toggle]").forEach(function (checkbox) {
       if (!claimNode(checkbox, "initControllerFields")) return;
@@ -2013,156 +1950,6 @@
     }
   }
 
-  /* 0094: property Overview / Bookings & calendars / Settings.
-     Every view and settings group is already in the page; switching only shows
-     another one, so the one settings form keeps whatever the host typed. Links
-     carry ?view=&section= (plus a #hash to scroll), history follows, and a dirty form asks before
-     the page is left. Without JavaScript the same links reload with ?view=. */
-  function initPropertyViews() {
-    var root = document.querySelector("[data-property-views]");
-    if (!root) return;
-    root.setAttribute("data-js", "1");
-    var base = root.getAttribute("data-property-base");
-    var VIEWS = ["overview", "bookings", "settings"];
-    var SECTIONS = ["property", "guests", "reporting", "lock", "automation"];
-    var form = root.querySelector("[data-property-settings-form]");
-    var returnInput = form && form.querySelector("[data-property-return]");
-    var connect = root.querySelector("[data-calendar-connect]");
-    // 0096: the setup guide's Continue shows only away from the step's place.
-    var guide = document.querySelector("[data-setup-guide]");
-    var guideContinue = guide && guide.querySelector("[data-setup-continue]");
-
-    function hashTarget(hash) {
-      if (!hash || hash.length < 2) return null;
-      try { return document.getElementById(decodeURIComponent(hash.slice(1))); } catch (_) { return null; }
-    }
-
-    // Where a URL points: [view, section] of the element the hash names in
-    // this page, else ?view/?section (0101: no table of old hashes).
-    function destination(url) {
-      var target = hashTarget(url.hash);
-      if (target && root.contains(target)) {
-        var panel = target.closest("[data-property-view]");
-        var group = target.closest("[data-settings-group]");
-        if (panel) return [panel.getAttribute("data-property-view"), group ? group.getAttribute("data-settings-group") : null];
-      }
-      var view = url.searchParams.get("view");
-      var section = url.searchParams.get("section");
-      if (VIEWS.indexOf(view) < 0) view = SECTIONS.indexOf(section) >= 0 ? "settings" : null;
-      if (!view) return null;
-      return [view, SECTIONS.indexOf(section) >= 0 ? section : null];
-    }
-
-    function activeSection() {
-      var group = root.querySelector("[data-settings-group].is-active");
-      return group ? group.getAttribute("data-settings-group") : "property";
-    }
-
-    function activate(view, section) {
-      if (VIEWS.indexOf(view) < 0) view = "overview";
-      root.querySelectorAll("[data-property-view]").forEach(function (panel) {
-        panel.classList.toggle("is-active", panel.getAttribute("data-property-view") === view);
-      });
-      document.querySelectorAll("[data-property-tab]").forEach(function (tab) {
-        if (tab.getAttribute("data-property-tab") === view) tab.setAttribute("aria-current", "page");
-        else tab.removeAttribute("aria-current");
-      });
-      if (section && SECTIONS.indexOf(section) >= 0) {
-        root.querySelectorAll("[data-settings-group]").forEach(function (group) {
-          group.classList.toggle("is-active", group.getAttribute("data-settings-group") === section);
-        });
-        root.querySelectorAll("[data-property-section-link]").forEach(function (link) {
-          if (link.getAttribute("data-property-section-link") === section) link.setAttribute("aria-current", "true");
-          else link.removeAttribute("aria-current");
-        });
-      }
-      if (returnInput) {
-        returnInput.value = view === "settings"
-          ? base + "?view=settings&section=" + activeSection()
-          : base + "?view=" + view;
-      }
-      if (guideContinue) {
-        var stepSection = guide.getAttribute("data-setup-section");
-        guideContinue.hidden = view === guide.getAttribute("data-setup-view")
-          && (!stepSection || (view === "settings" && activeSection() === stepSection));
-      }
-    }
-
-    function reveal(url, scroll) {
-      var dest = destination(url);
-      if (!dest) return false;
-      activate(dest[0], dest[1]);
-      var target = hashTarget(url.hash);
-      if (target && connect && (target === connect || connect.contains(target))) connect.classList.remove("is-collapsed");
-      if (url.searchParams.get("add_calendar") === "1" && connect) connect.classList.remove("is-collapsed");
-      if (scroll) {
-        var into = target && root.contains(target) ? target : root;
-        window.requestAnimationFrame(function () { into.scrollIntoView({ block: "start", behavior: "auto" }); });
-      }
-      return true;
-    }
-
-    document.addEventListener("click", function (event) {
-      if (event.defaultPrevented || event.button !== 0) return;
-      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      var link = event.target.closest && event.target.closest("a[href]");
-      if (!link || (link.target && link.target !== "_self") || link.hasAttribute("download")) return;
-      var url;
-      try { url = new URL(link.href, window.location.href); } catch (_) { return; }
-      if (url.origin !== window.location.origin || url.pathname !== base) return;
-      if (!url.search && !url.hash) url.searchParams.set("view", "overview");
-      if (!destination(url)) return;
-      event.preventDefault();
-      var lang = new URLSearchParams(window.location.search).get("lang");
-      if (lang && !url.searchParams.get("lang")) url.searchParams.set("lang", lang);
-      url.searchParams.delete("created");
-      window.history.pushState({ propertyView: true }, "", url.pathname + url.search + url.hash);
-      // skeleton.js saw a link click and armed its "page is loading" blank;
-      // this one stays in the page, so disarm it (0084 O1 finding).
-      if (window.ubyhostSkeleton) window.ubyhostSkeleton.hide();
-      reveal(url, true);
-    });
-
-    window.addEventListener("popstate", function () {
-      var url = new URL(window.location.href);
-      if (!reveal(url, false)) activate("overview", null);
-    });
-    window.addEventListener("hashchange", function () {
-      reveal(new URL(window.location.href), true);
-    });
-
-    if (form) {
-      // A field the browser refuses may sit in a hidden group: show that group
-      // first, so the browser can focus the field and say what is wrong.
-      var revealing = false;
-      form.addEventListener("invalid", function (event) {
-        if (revealing) return;
-        revealing = true;
-        window.setTimeout(function () { revealing = false; }, 0);
-        var group = event.target.closest && event.target.closest("[data-settings-group]");
-        activate("settings", group ? group.getAttribute("data-settings-group") : null);
-      }, true);
-      // Unsaved changes: the form carries data-unsaved-guard, so
-      // initUnsavedForms (browser prompt) and initUnsavedDialog (0084 O1) own it.
-    }
-
-    // A switch says "Not saved yet" until the form is saved; never "Enabled".
-    root.querySelectorAll("input[data-switch-saved]").forEach(function (input) {
-      var status = document.getElementById((input.getAttribute("aria-describedby") || "").split(" ")[0]);
-      if (!status) return;
-      input.addEventListener("change", function () {
-        var saved = input.getAttribute("data-switch-saved") === "1";
-        var text = input.checked === saved
-          ? status.getAttribute(input.checked ? "data-on" : "data-off")
-          : status.getAttribute("data-unsaved");
-        status.textContent = text;
-        status.classList.toggle("is-on", input.checked && input.checked === saved);
-        status.classList.toggle("is-unsaved", input.checked !== saved);
-      });
-    });
-
-    reveal(new URL(window.location.href), false);
-  }
 
   /* 0076: a page with several independent forms (the business editor's
      Business details and Invoice details). Saving one form, or leaving the
@@ -2191,6 +1978,88 @@
     }
   }
 
+  /* 0540: on the phone the property page opens with every section closed, as the mockup.
+     Only a section opened by default (no ?section=) is closed; a requested one stays open. */
+  function initPhoneDefaultClosed() {
+    if (!window.matchMedia("(max-width: 1023px)").matches) return;
+    if (/[?&](section|view)=/.test(window.location.search) || window.location.hash) return;
+    document.querySelectorAll("details#sec-basics").forEach(function (node) {
+      if (!claimNode(node, "initPhoneDefaultClosed")) return;
+      node.removeAttribute("open");
+    });
+  }
+  /* 0543: an aside link to a property section (#sec-*) opens that section; a #sec-* hash opens it on load */
+  function initPropSectionLinks() {
+    function openSection(hash) {
+      if (!/^#sec-/.test(hash || "")) return;
+      var node = document.getElementById(hash.slice(1));
+      if (node && node.tagName === "DETAILS" && node.classList.contains("prop-sec")) node.open = true;
+    }
+    document.querySelectorAll('a[href^="#sec-"]').forEach(function (link) {
+      if (!claimNode(link, "initPropSectionLinks")) return;
+      link.addEventListener("click", function () { openSection(link.getAttribute("href")); });
+    });
+    if (window.location.hash) openSection(window.location.hash);
+    if (claimNode(window, "initPropSectionLinks")) {
+      window.addEventListener("hashchange", function () { openSection(window.location.hash); });
+    }
+  }
+  /* 0547: the one-page property form. Restores what the removed tabs did: switch
+     status text, an invalid field opens its closed section, the calendar connect
+     panel opens for ?add_calendar=1 or its hash, and Save returns to the last
+     opened section. */
+  var PROPERTY_RETURN_SECTION = { "sec-basics": "property", "sec-police": "reporting", "sec-fee": "reporting", "sec-messages": "guests", "sec-lock": "lock" };
+  function initPropertyPage() {
+    var form = document.querySelector("form#property-settings-form");
+    if (form && claimNode(form, "initPropertyPage")) {
+      var lastOpened = null;
+      var returnInput = form.querySelector("input[data-property-return]");
+      form.addEventListener("toggle", function (event) {
+        var node = event.target;
+        if (node.tagName === "DETAILS" && node.open && node.id && node.matches("details.prop-sec")) lastOpened = node.id;
+      }, true);
+      form.addEventListener("submit", function () {
+        var group = PROPERTY_RETURN_SECTION[lastOpened];
+        if (!group || !returnInput) return;
+        returnInput.value = returnInput.value.replace(/([?&]section=)[^&#]*/, "$1" + group);
+      });
+      // A switch says "Not saved yet" until the form is saved; never "Enabled".
+      form.querySelectorAll("input[data-switch-saved]").forEach(function (input) {
+        var status = document.getElementById((input.getAttribute("aria-describedby") || "").split(" ")[0]);
+        if (!status) return;
+        input.addEventListener("change", function () {
+          var saved = input.getAttribute("data-switch-saved") === "1";
+          var text = input.checked === saved
+            ? status.getAttribute(input.checked ? "data-on" : "data-off")
+            : status.getAttribute("data-unsaved");
+          status.textContent = text;
+          status.classList.toggle("is-on", input.checked && input.checked === saved);
+          status.classList.toggle("is-unsaved", input.checked !== saved);
+        });
+      });
+      // A field the browser refuses may sit in a closed section: open it first,
+      // so the browser can focus the field and say what is wrong.
+      var revealing = false;
+      form.addEventListener("invalid", function (event) {
+        if (revealing) return;
+        revealing = true;
+        window.setTimeout(function () { revealing = false; }, 0);
+        var sec = event.target.closest && event.target.closest("details.prop-sec");
+        if (sec) sec.open = true;
+      }, true);
+    }
+    var connect = document.getElementById("calendar-connect");
+    if (!connect || !claimNode(connect, "initPropertyPage")) return;
+    var hash = window.location.hash;
+    var target = null;
+    try { target = hash.length > 1 ? document.getElementById(decodeURIComponent(hash.slice(1))) : null; } catch (_) { target = null; }
+    var wanted = new URLSearchParams(window.location.search).get("add_calendar") === "1"
+      || !!target && (target === connect || connect.contains(target));
+    if (!wanted) return;
+    connect.classList.remove("is-collapsed");
+    var calendars = document.getElementById("sec-calendars");
+    if (calendars && calendars.tagName === "DETAILS") calendars.open = true;
+  }
   /* ---- 0084 O1: unsaved changes, in-app Save / Discard / Stay ----------------
      A form with data-unsaved-guard that holds changes (data-dirty, set by
      initUnsavedForms) asks before an in-app link leaves it:
@@ -2199,17 +2068,14 @@
                refused save must stay on its error page).
        Discard restores the loaded values, then follows the link.
        Stay    (also Esc) keeps the edits and returns focus to the link.
-     Links that keep the draft on screen (property Settings sub-nav, cards and
-     anchors into Settings, in-page #anchors) do not ask. Tab close, reload and
+     Links that keep the draft on screen (cards and anchors into
+     Settings, in-page #anchors) do not ask. Tab close, reload and
      other sites keep the browser's own prompt. Without JavaScript nothing here
      runs and the forms post as before. */
   function initUnsavedDialog() {
     var forms = Array.prototype.slice.call(document.querySelectorAll("form[data-unsaved-guard]"));
     var dialog = document.getElementById("unsaved-dialog");
     if (!forms.length) return;
-    var property = document.querySelector("[data-property-views]");
-    var propertyBase = property && property.getAttribute("data-property-base");
-    var SETTINGS_SECTIONS = ["property", "guests", "reporting", "lock", "automation"];
     var pendingLink = null;
 
     function isDirty(form) { return form.getAttribute("data-dirty") === "1"; }
@@ -2237,18 +2103,6 @@
     // True when following this link keeps the draft on screen.
     function keepsDraft(url) {
       var here = window.location;
-      if (property && propertyBase && url.pathname === propertyBase) {
-        var target = null;
-        if (url.hash.length > 1) {
-          try { target = document.getElementById(decodeURIComponent(url.hash.slice(1))); } catch (_) { target = null; }
-        }
-        var panel = target && target.closest("[data-property-view]");
-        if (panel) return panel.getAttribute("data-property-view") === "settings";
-        var view = url.searchParams.get("view");
-        if (view) return view === "settings";
-        if (SETTINGS_SECTIONS.indexOf(url.searchParams.get("section")) >= 0) return true;
-        return url.search === here.search && !!url.hash;
-      }
       return url.pathname === here.pathname && url.search === here.search && !!url.hash;
     }
 
@@ -2260,7 +2114,7 @@
         button.addEventListener("click", function () {
           discard(form);
           syncResetButtons();
-          var save = form.querySelector(".host-property-save [type=submit]") || form.querySelector(".actions [type=submit]");
+          var save = form.querySelector(".savebar [type=submit]") || form.querySelector(".actions [type=submit]");
           if (save) save.focus();
         });
       });
@@ -2332,6 +2186,9 @@
   /* ---- end 0084 O1 ---------------------------------------------------------- */
 
   function initPage() {
+    initPhoneDefaultClosed();
+    initPropSectionLinks();
+    initPropertyPage();
     initCopy();
     initUnsavedForms();
     initUnsavedDialog();
@@ -2343,10 +2200,8 @@
     initTogglePanels();
     initDismissBanners();
     initNotifications();
-    initPropertyViews();
     initDetailsLinks();
     initAutomationFields();
-    initInlineTiming();
     initControllerFields();
     initFeeTemplateCopy();
     initCsvExport();

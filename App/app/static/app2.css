@@ -2,6 +2,21 @@
 :root{--bg:#f6f6f4;--s:#fff;--ink:#1c1c1a;--ink2:#55554f;--ink3:#6b6b65;--line:#ebebe7;--side:#fff;--side2:#f1f1ee;--acc:#d0452d;--acc-text:#b83d28;--accs:#fdece8;--ok:#167044;--oks:#e6f5ec;--warn:#8a5200;--warns:#fff4d6;--bad:#b42318;--bads:#fdecea;--info:#eaf3fb;
 font-family:var(--font-sans);color:var(--ink);font-size:14px}
 *{box-sizing:border-box}body{margin:0;background:var(--bg)}
+body.v2 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* v2 form controls (shared, generic) */
+:where(body.v2 label){display:block;font-size:13px;color:var(--ink2)}
+:where(body.v2 input[type=text],body.v2 input[type=number],body.v2 input[type=email],body.v2 input[type=password],body.v2 input[type=tel],body.v2 input[type=url],body.v2 input[type=date],body.v2 input[type=time],body.v2 input[type=search],body.v2 select,body.v2 textarea){margin-top:4px;border:1px solid #dcdcd7;border-radius:8px;padding:9px 10px;background:var(--s);color:var(--ink);font:inherit;width:100%;box-sizing:border-box}
+:where(body.v2 .hint){font-size:12px;color:var(--ink3)}
+:where(body.v2 .err-text){color:var(--bad)}
+:where(body.v2 .field){display:block;margin-bottom:12px}
+:where(body.v2 input[type=checkbox],body.v2 [role=switch]){width:20px;height:20px;accent-color:var(--acc)}
+:where(body.v2 input[type=checkbox]:focus-visible,body.v2 [role=switch]:focus-visible){outline:2px solid #d0452d;outline-offset:2px}
+:where(body.v2 .ui-btn){border:0;background:var(--acc);color:#fff;font:inherit;font-weight:600;padding:9px 16px;border-radius:999px;cursor:pointer;white-space:nowrap}
+:where(body.v2 .ui-btn-secondary,body.v2 .ui-btn-quiet){background:#efefeb;color:var(--ink)}
+:where(body.v2 .ui-btn-compact){padding:6px 12px;font-size:13px}
+@media (max-width:1023px){:where(body.v2 input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=submit]),body.v2 select,body.v2 textarea,body.v2 .ui-btn){min-height:44px}}
+/* 0532: the toast close is a 44 px tap target on phones (v2 pages load app2.css only, not host.css) */
+@media (max-width:767px){.toast-stack .toast > [data-toast-close]{width:44px;min-width:44px;min-height:44px}}
 .app{display:flex;min-height:100vh}
 .side{width:220px;background:var(--side);border-right:1px solid var(--line);color:var(--ink2);display:flex;flex-direction:column;padding:16px 10px;position:sticky;top:0;height:100vh;flex:none}
 @media (min-width:1024px){.app{background:linear-gradient(90deg,var(--side) 0 219px,var(--line) 219px 220px,transparent 220px)}}
@@ -169,6 +184,8 @@ body.v2 .crow{grid-auto-rows:44px}
 .cal .bar[data-row="8"]{grid-row:8}
 /* 0709 focus: one visible ring for every control */
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible,tr:focus-visible{outline:2px solid #d0452d;outline-offset:2px}
+body.v2 .btn.copy-btn:focus-visible{outline:2px solid #d0452d;outline-offset:2px}
+body.v2 .ui-btn.copy-btn:focus-visible{outline:2px solid #d0452d;outline-offset:2px}
 .clickable-row:focus-within{outline:2px solid #d0452d;outline-offset:-2px}
 body.v2 [data-needs-you-go]:hover{background:#b83a24}
 body.v2 .skip-link{position:fixed;z-index:1000;left:8px;top:-100px}
@@ -276,6 +293,105 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
   body.v2 .badge{background:var(--acc);color:#fff;font-size:12px;font-weight:800;border-radius:999px;padding:2px 8px}
 }
 @media (min-width:1024px){body.v2 .menu-list .row{display:flex;align-items:center;gap:14px;min-height:48px;padding:12px 0;border-bottom:1px solid var(--line)}}
+/* 0532: setup chips on the properties list (mockup .setup / .st) */
+.setup{display:flex;gap:6px;flex-wrap:wrap}
+.st{font-size:12px;font-weight:600;padding:3px 9px 3px 7px;border-radius:999px;display:inline-flex;align-items:center;gap:5px;text-decoration:none;min-height:24px;box-sizing:border-box}
+.st:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.st.g{background:var(--oks);color:var(--ok)}.st.r{background:var(--bads);color:var(--bad)}.st.n{background:#efefeb;color:var(--ink3)}
+@media (max-width:640px){body.v2 tbody .btn.sm{min-height:44px;display:inline-flex;align-items:center}}
+
+/* 0532: the properties table scrolls inside its card on phones instead of widening the page */
+.props-card{overflow-x:auto}
+/* 0532: the property name link in the list has a 24 px tap target (geometry guard) */
+body.v2 .props-card .row-primary-link{display:inline-block;min-height:24px;padding-block:3px;box-sizing:border-box}
+/* 0532: copy-link button in each list row shows on hover from 1024 px (mockup); always visible on touch and below 1024 px */
+@media (hover:hover) and (min-width:1024px){body.v2 .props-card tbody tr .btn.sm.ghost{opacity:0;transition:opacity .15s}body.v2 .props-card tbody tr:hover .btn.sm.ghost{opacity:1}body.v2 .props-card tbody tr:focus-within .btn.sm.ghost{opacity:1;transition:none}}
+/* 0532: a list row opens on click, so it shows the pointer */
+body.v2 .props-card tbody tr.clickable-row{cursor:pointer}
+/* 0533: below 1024 px the rows are the mockup cards (.props-phone) and the table is hidden; from 1024 px the cards are hidden */
+@media (max-width:1023px){body.v2 .props-card{display:none}body.v2 .props-phone .prop{display:block;padding:0;overflow:hidden;text-decoration:none;color:inherit}body.v2 .props-phone .cover{height:132px;display:flex;align-items:flex-end;justify-content:space-between;padding:14px 16px;color:#fff;font-weight:800}body.v2 .props-phone .cover .ini{font-size:40px;letter-spacing:-.03em;line-height:1}body.v2 .props-phone .in{padding:14px 16px 16px}body.v2 .props-phone .in b{font-size:18px;display:block}body.v2 .props-phone .in small{color:var(--ink3);font-size:14px}body.v2 .props-phone .setup{margin-top:12px}body.v2 .head h1:after{display:none}body.v2 .props-phone .in b{line-height:1.4}body.v2 .props-phone .st{font-size:12px;font-weight:600;padding:3px 9px 3px 7px;gap:5px;min-height:0;max-width:100%;white-space:normal}body.v2 .props-phone .st:before{width:6px;height:6px}body.v2 .props-phone .st.g{background:var(--oks);color:var(--ok)}body.v2 .props-phone .st.r{background:var(--accs);color:var(--acc-text)}body.v2 .props-phone .st.n{background:#f6f6f4;color:var(--ink3)}}
+@media (min-width:1024px){body.v2 .props-phone{display:none}body.v2 .props-top{display:none}}
+/* 0533 pass 3: below 1024 px the properties page shows the mockup's round add button above the title instead of the full-width button */
+@media (max-width:1023px){body.v2 .props-head .btn{display:none}}
+body.v2 .props-phone .cover.c0{background:linear-gradient(135deg,#d0452d,#e9836f)}
+body.v2 .props-phone .cover.c1{background:linear-gradient(135deg,#3f6f8f,#7fa8c2)}
+body.v2 .props-phone .cover.c2{background:linear-gradient(135deg,#5c7a4f,#9db58c)}
+/* 0532 pass 9: from 1024 px a list row is one line (mockup 53 px): the copy button is 24 px, not 60 px. Pass 11: the setup chips may wrap when they do not fit (no sideways scroll); name and address cells are one line with ellipsis */
+@media (min-width:1024px){body.v2 .props-card .setup .st{height:24px}body.v2 .props-card .copy-btn{height:28px;min-height:28px;padding-block:6px}body.v2 .props-card .copy-btn svg{width:16px;height:16px}body.v2 .props-card .row-primary-link .property-identity > span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}body.v2 .props-card > table td:nth-child(1),body.v2 .props-card > table td:nth-child(2){max-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+@media (min-width:1024px){body.v2 .props-card > table td:nth-child(1) .row-primary-link{display:block;max-width:100%;min-width:0;overflow:hidden}}
+@media (min-width:1024px){body.v2 .props-card > table th:nth-child(1),body.v2 .props-card > table td:nth-child(1){width:22%}body.v2 .props-card > table th:nth-child(2),body.v2 .props-card > table td:nth-child(2){width:26%}}
+
+/* 0534 property page */
+body.v2 .form{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;max-width:980px;margin:0 auto}
+body.v2 .crumb{color:var(--ink3);font-size:12px;margin-bottom:4px}
+body.v2 .guest-card{padding:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+body.v2 details{background:var(--s);border:1px solid var(--line);border-radius:12px;margin-bottom:10px}
+body.v2 summary{list-style:none;padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+body.v2 summary::-webkit-details-marker{display:none}
+body.v2 summary b{display:block}
+body.v2 summary small{color:var(--ink3)}
+body.v2 summary:after{content:"\2304";color:var(--ink3);font-size:18px}
+body.v2 details[open] summary:after{transform:rotate(180deg)}
+body.v2 .fields{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+body.v2 .savebar{position:fixed;right:24px;bottom:20px;display:flex;gap:8px}
+@media (max-width:600px){body.v2 .savebar{left:12px;right:12px;bottom:12px;flex-wrap:wrap;justify-content:flex-end}}
+/* 0535: onboarding 'all steps' link spacing (was an inline style) */
+.onb-more{margin-top:10px}
+
+/* 0535: mockup section order on the property page (CSS only; DOM order stays) */
+body.v2 .form{display:flex;flex-direction:column;gap:20px}
+body.v2 .property-settings-form{display:contents}
+body.v2 #sec-basics{order:1}
+body.v2 #sec-police{order:2}
+body.v2 #sec-calendars{order:3}
+body.v2 #sec-messages{order:4}
+body.v2 #sec-lock{order:5}
+body.v2 #sec-fee{order:6}
+body.v2 #sec-archive{order:7}
+body.v2 #sec-lock-account{order:8}
+/* 0535 step 2: preview aside. Two columns from 1024 px; below that the aside sits under the sections. */
+body.v2 .form-main{display:flex;flex-direction:column;gap:20px;min-width:0}
+body.v2 .preview{background:#efefeb;border-radius:14px;padding:12px;min-width:0}
+body.v2 .preview h3{font-size:14px;margin:2px 4px 10px}
+body.v2 .pv{background:var(--s);border-radius:10px;padding:12px;margin-bottom:8px}
+body.v2 .pv h4{font-size:13px;margin:0 0 6px}
+body.v2 .pv .r{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;padding:4px 0;color:inherit;text-decoration:none}
+body.v2 .pv .r span{color:var(--ink3)}
+body.v2 .pv .r b.is-bad{color:var(--bad)}
+body.v2 .pv-state{font-size:12px;font-weight:600;border-radius:999px;padding:2px 8px;background:var(--oks);color:var(--ok)}
+body.v2 .pv-state[data-state="bad"]{background:var(--bads);color:var(--bad)}
+@media (min-width:1024px){
+  body.v2 .form{display:grid;grid-template-columns:minmax(0,1fr) 300px;align-items:start}
+  body.v2 .preview{position:sticky;top:24px}
+}
+/* 0535 step 5: desktop tap targets and text size on the property page (0710 geometry guard) */
+body.v2 .crumb a{display:inline-block;min-height:24px;line-height:24px}
+body.v2 details .help-tip-btn{min-width:24px;min-height:24px;box-sizing:border-box}
+body.v2 details a{display:inline-block;min-height:24px;line-height:24px}
+body.v2 details small,body.v2 .preview small{font-size:12px}
+body.v2 details input{min-height:24px}
+/* 0535 step 3: no sideways scroll at 320-1023 px (generic control fixes, property page) */
+@media (max-width:1023px){
+  body.v2 details *{min-width:0}
+  body.v2 details{overflow-wrap:anywhere}
+  body.v2 details div{flex-wrap:wrap}
+  body.v2 details .ui-btn{max-width:100%;white-space:normal}
+  body.v2 .property-settings-form input,body.v2 .property-settings-form select,body.v2 .property-settings-form textarea{min-width:0;max-width:100%}
+}
+/* 0535 step 3b: the guest-link copy icon (injected by app.js, unstyled on v2) took ~77 px in flow and pushed the button past 1024 px. Hidden until copied, absolute inside the button. */
+body.v2 .copy-btn > svg{display:none}
+body.v2 .copy-btn .copy-label-default{display:inline}
+body.v2 .copy-btn [data-copy-label-slot]{display:none}
+body.v2 .copy-btn.copied [data-copy-label-slot]{display:inline}
+body.v2 .copy-btn.copied .copy-label-default{display:none}
+body.v2 .guest-card .copy-btn{position:relative;overflow:hidden}
+body.v2 .guest-card .copy-btn [data-copy-state-icon]{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none}
+body.v2 .guest-card .copy-btn.copied [data-copy-state-icon]{opacity:1}
+body.v2 .guest-card .copy-btn [data-copy-state-icon] svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+@media (max-width:639px){
+  body.v2 .fields{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:no-preference){@keyframes v2-fields-in{from{opacity:0}to{opacity:1}}body.v2 details .fields{animation:v2-fields-in .18s ease-out}}
 
 /* 0719 overview phone: Potřebuje vás cards, Dnes cards, top row (phone only unless noted) */
 @media (max-width:1023px){
@@ -338,6 +454,8 @@ body.v2 .ov-head .ov-quiet > *{margin:0}
 body.v2 .ov-head .ov-inline{display:inline-flex}
 body.v2 .ov-how > summary{list-style:none}
 body.v2 .ov-how > summary::-webkit-details-marker{display:none}
+body.v2 .ov-how .ui-how-more{display:inline-flex;align-items:center;min-height:44px}
+/* how-help blocks on the property pages are computer-only (owner, 0535) */
 
 /* v2 shared: Havel (copied from host2.css; delete the host2 copy when the old shell is retired) */
 body.v2{--tabbar-safe:env(safe-area-inset-bottom,0px)}
@@ -470,6 +588,21 @@ body.v2 .onboarding-intro .onboarding-logo{width: 64px; height: auto; max-width:
 @media (max-width:640px){body.v2 .onboarding-intro .onboarding-logo{width: 48px;}}
 
 /* v2 shared: motion (copied from host2.css; scoped body.v2; rail and tab-bar view transitions stay on the old shell only) */
+/* 0547: the sticky preview aside is above the save bar without JS unless the bar has a z-index (literal 20 = --z-sticky; host pages do not load tokens.css). */
+@media (min-width:1024px){body.v2 .savebar{z-index:20}}
+/* 0545: phone guest card also shows the access PIN and its copy button (below 1024 px only) */
+body.v2 .guest-pin,body.v2 .guest-pin-copy{display:none}
+body.v2 .guest-btns{display:contents}
+@media (max-width:1023px){
+  body.v2 .guest-pin{display:block;margin-top:8px;color:var(--ink3);font-size:14px}
+  body.v2 .guest-pin-value{display:block;font-family:var(--mono,ui-monospace,monospace);font-size:16px;font-weight:700;color:var(--ink);letter-spacing:.08em}
+  body.v2 .guest-btns{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+  body.v2 .guest-btns > .btn,body.v2 .guest-pin-copy > .btn{width:100%;justify-content:center}
+  body.v2 .guest-pin-copy{display:block}
+}
+/* 0736 item 4: below 1024 px the guest buttons wrap inside the card instead of pushing it past the viewport (no-JS copy buttons) */
+@media (max-width:1023px){body.v2 .guest-btns > *,body.v2 .guest-pin-copy{min-width:0}body.v2 .guest-btns .btn,body.v2 .guest-pin-copy > .btn{max-width:100%;white-space:normal;overflow-wrap:anywhere}}
+
 @media (scripting: enabled) {
   :root:has(body.v2) { interpolate-size: allow-keywords; }
 
@@ -504,6 +637,7 @@ body.v2 .onboarding-intro .onboarding-logo{width: 64px; height: auto; max-width:
     @view-transition { navigation: none; }
     ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
   }
+}
 @media (prefers-reduced-motion: reduce) { body.v2 *, body.v2 *::before, body.v2 *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
 /* 0722: phone-only hides (below 1024 px); desktop unchanged. */
 @media (max-width:1023px){body.v2 .ph-hide{display:none !important}}
@@ -519,7 +653,100 @@ body.v2 .onboarding-intro .onboarding-logo{width: 64px; height: auto; max-width:
 @media (max-width:1023px){body.v2 .needs-you-actions .btn{min-height:44px}}
 
 @media (max-width:767px){body.v2 .cal-day-number{min-width:44px}}
+/* 0536 items 1-7: desktop polish of the property page (mockup prop) */
+body.v2 .ov-how[data-how="property"]{background:none;border:0;margin:0 0 8px;display:inline-block}
+body.v2 .ov-how[data-how="property"] > summary{padding:0;display:inline-flex;gap:6px;justify-content:flex-start;min-height:24px;color:var(--ink2);font-size:13px}
+body.v2 .ov-how[data-how="property"] > summary:after{display:none}
+body.v2 #sec-basics > .fields-wrap > .property-section > h3:first-child,body.v2 #basics > h3:first-child{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+body.v2 .required-legend{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+body.v2 .property-section-title{font-size:14px;font-weight:600}
+body.v2 .fields-wrap{padding:0 16px 16px}
+body.v2 .setup-continue-card p{font-size:13px;margin:0 0 8px}
+body.v2 .setup-continue-card .actions{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+body.v2 .setup-continue-card .ui-btn{min-height:32px;padding:4px 12px;font-size:13px}
+body.v2 details .help-tip-btn{display:none}
+body.v2 details .help-tip{display:block}
+body.v2 details .help-tip-body{position:static;display:block;max-width:none;margin:2px 0 0;padding:0;background:none;border:0;box-shadow:none;font-size:12px;color:var(--ink3)}
+@media (min-width:601px){body.v2 .savebar{right:calc(var(--control-h) + var(--space-3) + var(--space-6));white-space:nowrap}}
+/* 0544: above the sticky preview aside from 1024 px; the Havel FAB (z 40) and dialog (z 60) stay above the bar. */
+body.v2 .savebar .ui-btn,body.v2 .savebar .btn{width:auto;white-space:nowrap}
+@media (min-width:1024px){
+  body.v2 .property-section{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+  body.v2 .property-section > :is(h3,p,.hint,.grid,.field-label-row,.actions,.preview-hint){grid-column:1/-1}
+  body.v2 .property-section .field:has(textarea){grid-column:1/-1}
+  body.v2 .property-section .grid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+  body.v2 .property-section .grid > .field{margin:0}
+  body.v2 .property-section .grid > .field:only-child{grid-column:1/-1}
+  body.v2 .property-section .grid > .field:has(textarea){grid-column:1/-1}
+  body.v2 .property-section .field[style*="max-width"]{max-width:none}
+}
+/* 0536 item 1 (second pass): the help toggle is a small pill card, so the generic details card look stays (0710 mockup match) */
+body.v2 .ov-how[data-how="property"]{background:var(--s);border:1px solid var(--line);border-radius:999px;padding:0 12px;margin:0 0 8px;display:inline-block}
+body.v2 .ov-how[data-how="property"] > summary{padding:6px 0;min-height:32px}
+/* 0536 item 1 (third pass): card radius and no details padding, as the generic details card (mockup match); the padding sits on the summary */
+body.v2 .ov-how[data-how="property"]{border-radius:12px;padding:0}
+body.v2 .ov-how[data-how="property"] > summary{padding:6px 12px;min-height:32px}
+
+/* 0540: phone property page as the approved phone mockup (nemovitost); desktop unchanged */
+body.v2 .dot,body.v2 .sec-state,body.v2 .prop-phone-top,body.v2 .prop-phone-sub,body.v2 .prop-phone-only{display:none}
+body.v2 .dot.g{background:var(--ok)}
+body.v2 .dot.r{background:var(--acc)}
+body.v2 .dot.n{background:#c9c9c3}
+@media (max-width:1023px){
+  body.v2 .crumb,body.v2 .required-legend,body.v2 aside.preview{display:none}
+  body.v2 .prop-phone-top{display:flex;padding:6px 12px;min-height:56px}
+  body.v2 .prop-phone-sub{display:block;color:var(--ink3);font-size:14px;margin:0 20px 8px}
+  body.v2 .prop-phone-only{display:block}
+  body.v2 .dot{display:block;width:10px;height:10px;border-radius:50%;flex:0 0 10px}
+  body.v2 .sec-state{display:block;color:var(--ink3);font-size:14px;margin-top:2px}
+  body.v2 .guest-card{flex-direction:column;align-items:stretch}
+  body.v2 .guest-card .sub{font-size:16px;font-weight:700;color:var(--ink);overflow-wrap:anywhere;word-break:break-all}
+  body.v2 .guest-card .copy-btn{width:100%;justify-content:center;background:#fff;color:var(--ink);border:1.5px solid var(--ink)}
+  body.v2 .prop-sec > summary{display:grid;grid-template-columns:10px minmax(0,1fr) 18px;column-gap:14px;align-items:center;min-height:76px;padding:12px 0;border-bottom:1px solid var(--line)}
+  body.v2 .prop-sec > summary > .dot{grid-column:1;grid-row:1/3}
+  body.v2 .prop-sec > summary > div{grid-column:2;grid-row:1;min-width:0}
+  body.v2 .prop-sec > summary > div b{display:block;font-size:16px}
+  body.v2 .prop-sec > summary > div > small{display:none}
+  body.v2 .prop-sec > summary > .sec-state{grid-column:2;grid-row:2}
+  body.v2 .prop-sec > summary:after{grid-column:3;grid-row:1/3}
+  body.v2 .property-settings-form .savebar{display:none}
+  body.v2 .property-settings-form:has(details.prop-sec[open]) .savebar{display:flex;flex-wrap:wrap;gap:8px;left:12px;right:12px;bottom:calc(var(--tabbar-h) + var(--tabbar-safe) + 8px);z-index:10}
+  body.v2 .property-settings-form .savebar .btn{flex:1 1 30%;white-space:normal;text-align:center;justify-content:center}
+  body.v2 .property-settings-form .savebar .btn[type="submit"]{flex-basis:100%}
+  body.v2:has(.property-settings-form details.prop-sec[open]) .havel-fab{display:none}
+  body.v2 .ov-how[data-how="property"]{display:none}
+  body.v2 .guest-card .copy-btn{min-height:44px;height:auto;padding:10px 16px;gap:8px;white-space:normal}
+  /* 0542: the guest-card button is a primary v2 .btn, so the white text rule (0,5,1) applies; (0,6,1) beats it without !important */
+  body.v2 .guest-card .btn.copy-btn:not(.soft):not(.ghost){color:#1c1c1a;background:#fff;border:1.5px solid var(--ink)}
+  body.v2 .guest-card .copy-btn > svg{display:block;width:18px;height:18px;flex:0 0 18px}
+  body.v2 .guest-card .copy-btn .sr-only{position:static;width:auto;height:auto;margin:0;overflow:visible;clip:auto;white-space:nowrap}
+  body.v2 details.prop-sec{border:0;border-radius:0;box-shadow:none;background:transparent;padding:0;margin:0}
+  body.v2 #sec-archive > summary{border-bottom:0}
+  body.v2 .property-settings-form .savebar{flex-wrap:nowrap}
+  body.v2 .property-settings-form .savebar .btn{flex:1 1 0;min-width:0;width:auto}
+  body.v2 .property-settings-form .savebar .btn[type="submit"]{flex-basis:0}
+  body.v2 .property-settings-form .savebar:has([data-unsaved-reset]:not([hidden])) .btn.ghost:not([data-unsaved-reset]){display:none}
+}
+/* 0543: CI browser fixes on the property page and its dialogs */
+body.v2 aside.preview .pv a.r:hover,body.v2 aside.preview .pv a.r:focus-visible{background:#f6f6f4;border-radius:8px}
+body.v2 .scroll-x:has(.feed-table){overflow-x:auto}
+body.v2 .signature-block{border:1px solid var(--line);border-radius:12px;padding:12px}
+body.v2 .signature-dialog-pad{width:100%}
+body.v2 .signature-modes .ui-tab{border-bottom-color:transparent}
+body.v2 .signature-modes .ui-tab[aria-selected="true"]{border-bottom-color:var(--ink)}
+@media (max-width:599px){body.v2 .ui-dialog.signature-dialog{width:calc(100vw - 16px);max-width:none;padding:0}body.v2 .ui-dialog.signature-dialog .ui-sheet{padding:12px}}
+body.v2 .savebar [hidden]{display:none}
+@media (max-width:1023px){body.v2 details.prop-sec input:not([type=checkbox]):not([type=radio]),body.v2 details.prop-sec select,body.v2 details.prop-sec textarea{min-height:44px;box-sizing:border-box}body.v2 details.prop-sec a{min-height:44px;display:inline-flex;align-items:center}body.v2:has(.property-settings-form) main{padding-bottom:calc(var(--tabbar-h) + var(--tabbar-safe) + 88px)}body.v2 details.prop-sec:not([open]) > :not(summary){display:none}}
 body.v2 .menu-list .row .t small{display:block;color:var(--ink3);font-size:14px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 0736 item 6: the "other platform" name shows only when "other" is picked (host.css rule, which v2 does not load) */
+body.v2 .calendar-add-form:has(#label option[value="other"]:not(:checked)) .calendar-other-platform{display:none}
+/* 0736 item 3: the continue button reads white on coral-600 (5.5:1); toast close is at least 24 px on desktop (phone keeps 44 px) */
+body.v2 .setup-continue-card .ui-btn-primary{color:#fff;background:var(--coral-600);border-color:var(--coral-600)}
+@media (min-width:768px){body.v2 .toast-stack .toast > [data-toast-close]{min-width:24px;min-height:24px}}
+/* 0736 run 8 step 3: buttons and links in a field row share the copy button height (48 px); the copy button itself is unchanged */
+body.v2 .fields-wrap .copyrow > .btn.sm{min-height:48px}
+body.v2 .fields-wrap .copyrow > .btn.sm{vertical-align:middle}
+body.v2 section#stay-fee-settings > fieldset.signature-block{grid-column:1/-1}
 /* cleaning (0542) */
 body.v2 .cleaning-page{width:100%;max-width:1080px;min-width:0;margin:0 auto;color:var(--ink)}
 body.v2 .cleaning-skip{display:inline-flex;align-items:center;min-height:44px;margin-bottom:12px;font-size:1.0625rem}

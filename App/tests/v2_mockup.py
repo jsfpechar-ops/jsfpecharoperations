@@ -20,6 +20,10 @@ STYLE_PROPS = (
 COLOR_OVERRIDES = {"rgb(212, 71, 47)": "rgb(208, 69, 45)", "rgb(138, 138, 132)": "rgb(107, 107, 101)"}
 # accessibility (AA contrast, 12 px minimum), 2026-11-01
 SELECTOR_OVERRIDES = {
+    # 0535: property page summary text is 12 px (geometry guard: no text under 12 px); the mockup uses 11.67 px
+    "summary small": {"font-size": "12px"},
+    # 0541: the demo property has no address, so the basics dot is red (r) in the app; the mockup shows green
+    ".dot": {"background-color": "rgb(208, 69, 45)"},
     ".side .nav": {"color": "rgb(184, 61, 40)", "border-bottom-color": "rgb(184, 61, 40)"},
     ".side .nav.on": {"color": "rgb(184, 61, 40)", "border-bottom-color": "rgb(184, 61, 40)"},
     ".cal .cd": {"font-size": "12px", "color": "rgb(184, 61, 40)", "border-bottom-color": "rgb(184, 61, 40)"},
@@ -33,6 +37,9 @@ SELECTOR_OVERRIDES = {
     ".actbar": {"padding-bottom": "12px", "height": "75px"},
     # tone follows the stay state (0715 mapping); fixture stay is waiting, mockup shows a finished one (0719)
     ".hs .pill": {"color": "rgb(138, 82, 0)", "background-color": "rgb(255, 244, 214)", "border-bottom-color": "rgb(138, 82, 0)"},
+    # owner 2026-11-01 19:09: smaller pills than the phone mockup
+    ".card.prop .st.g": {"font-size": "12px", "font-weight": "600", "padding-top": "3px", "padding-bottom": "3px", "padding-left": "7px", "padding-right": "9px", "column-gap": "5px", "row-gap": "5px"},
+    ".card.prop .st.r": {"font-size": "12px", "font-weight": "600", "padding-top": "3px", "padding-bottom": "3px", "padding-left": "7px", "padding-right": "9px", "column-gap": "5px", "row-gap": "5px"},
 }
 # style-compared only at computer width (phone design pending)
 DESKTOP_ONLY = {".side", ".side .nav", ".side .nav.on"}
@@ -49,7 +56,12 @@ BOX_OVERRIDES = {
     ".hs .pill@320": {"width": "143px"},
     ".hs .pill@390": {"width": "143px"},
     ".card.me": {"margin-left": "0px", "margin-right": "0px"},
-    ".big": {"margin-left": "0px", "margin-right": "0px"},
+    ".big, .head h1": {"margin-left": "0px", "margin-right": "0px"},
+    ".card.prop": {"margin-left": "0px", "margin-right": "0px"},
+    # owner 2026-11-01 19:09: smaller pills than the phone mockup (one line at 390 px)
+    ".card.prop .st.g": {"height": "23px"},
+    ".card.prop .st.r": {"height": "23px"},
+    ".big":{"margin-left": "0px", "margin-right": "0px"},
     "h2.sec": {"margin-left": "0px", "margin-right": "0px"},
     ".card.need": {"margin-left": "0px", "margin-right": "0px"},
     ".head .sub": {"margin-left": "0px", "margin-right": "0px"},
@@ -131,6 +143,36 @@ PAGES = [
         },
     },
     {"name": "cleaning", "path": "/cleaning", "view": "clean", "selectors": [".side .nav.on", ".head h1", ".head .sub", ".head .btn", "main h2", "main .card", "main table th", "main table td"], "phone_view": "uklid", "phone_selectors": [".tabs", ".tab.on", ".top .round", ".big", ".sub", ".grp", ".card", ".list .row:has(.p-ok)", ".row .t b", ".row .t small", ".row .t .pill.p-ok", ".actbar", ".actbar .btn"], "missing_ok": {"main table th": "below 1024 px the phone layout replaces the tables (0546)", "main table td": "below 1024 px the phone layout replaces the tables (0546)"}},  # pills follow the approved phone mockup (2026-11-01): scheduled green, the desktop mockup shows amber
+    {
+        "name": "properties",
+        "path": "/apartments",
+        "view": "props",
+        "phone_view": "nemovitosti",
+        "phone_selectors": [".big, .head h1", ".top .round", ".card.prop",".cover", ".cover .ini", ".prop .in b", ".prop .in small", ".card.prop .st.g", ".card.prop .st.r"],
+        "selectors": [
+            ".side .nav.on", ".head h1", ".head .sub", ".head .btn",
+            "main table th", "main table td", ".setup .st.g", ".setup .st.r", "tbody tr .btn.sm.ghost",
+        ],
+        "missing_ok": {".prop .in small": "0710 demo property has no address line; the phone card shows the address when one is stored"},
+        "phone_box_skip": {
+            ".card.prop .st.g": (["width"], "chip label comes from the property's state"),
+            ".card.prop .st.r": (["width"], "chip label comes from the property's state"),
+            ".cover .ini": (["width"], "initials come from the property name"),
+            ".card.prop": (["height"], "card height follows how the chips wrap"),
+        },
+    },
+    {
+        "name": "property",
+        "path": "/apartments/{first_property}",  # filled per test by _path() in test_0710 (0535)
+        "view": "prop",
+        "phone_view": "nemovitost",  # 0541: phone property screen (0540 section 2)
+        "phone_selectors": [".big, .head h1", "h2.sec", ".dot"],  # 0541: guest card and rows have no mockup class match yet (see 0541 report)
+        "selectors": [  # .guest-card (permalink card) has no mockup counterpart: not compared (0535)
+            ".crumb", "main h1", "details", "summary b", "summary small",
+            ".preview h3", ".pv", ".pv .r", ".savebar .btn",
+        ],
+        "missing_ok": {},
+    },
     {
         "name": "menu",
         "path": "/menu",
@@ -376,10 +418,17 @@ def show_phone_screen(page, key: str) -> None:
     )
 
 
-def box_diffs(selector: str, app: dict, mock: dict, width: int) -> list[str]:
-    """Phone box metrics: width within 2 px, height and margins within 1 px. Values that are not px are skipped."""
+def box_diffs(selector: str, app: dict, mock: dict, width: int, skip=None) -> list[str]:
+    """Phone box metrics: width within 2 px, height and margins within 1 px. Values that are not px are skipped.
+    skip: optional (["width"] or ["height"] or both, reason) from PAGES phone_box_skip; only width and height may be skipped."""
     out = []
+    skipped, reason = skip if skip else ([], "")
+    if set(skipped) - {"width", "height"}:
+        raise ValueError(f"phone_box_skip for {selector} may only skip width or height, got {skipped}")
     for prop in BOX_PROPS:
+        if prop in skipped:
+            print(f"phone_box_skip {selector} {prop} at {width} px: {reason}")
+            continue
         override = {**BOX_OVERRIDES.get(selector, {}), **BOX_OVERRIDES.get(f"{selector}@{width}", {})}
         a, m = _num(app[prop]), _num(override.get(prop, mock[prop]))
         if a is None or m is None:

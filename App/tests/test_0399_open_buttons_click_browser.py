@@ -27,7 +27,7 @@ REQUIRED_PAGES = (
 
 FIRST_OPEN = """() => {
   const visible = el => el.getClientRects().length > 0;
-  const all = [...document.querySelectorAll('a.row-open, a.host-property-card-open')];
+  const all = [...document.querySelectorAll('a.row-open, a.host-property-card-open, a.card.prop, tr.clickable-row a.row-primary-link')];
   const index = all.findIndex(visible);
   return index < 0 ? null : {index: index, href: all[index].getAttribute('href')};
 }"""
@@ -61,7 +61,7 @@ def _click_open(page, found):
     start = page.url
     target = urljoin(start, found["href"])
     # a real pointer click: a covering overlay that takes the click elsewhere must still land on the same href
-    page.locator("a.row-open, a.host-property-card-open").nth(found["index"]).click(force=True)
+    page.locator("a.row-open, a.host-property-card-open, a.card.prop, tr.clickable-row a.row-primary-link").nth(found["index"]).click(force=True)
     page.wait_for_url(lambda url: url == target, timeout=10000)
     assert page.url == target, (start, target)
     assert page.url != start, (start, target)
@@ -84,15 +84,6 @@ def test_open_buttons_open_their_row(base, width):
             _click_open(page, found)
             clicked.append(path)
 
-        # the first property overview, with its Guest links card Open
-        _open_page(page, "/apartments", base)
-        overview = page.evaluate(FIRST_PROPERTY)
-        assert overview is not None, (width, "no property row on /apartments")
-        _open_page(page, overview, page.url)
-        found = page.evaluate(FIRST_OPEN)
-        assert found is not None, (width, "no visible Open on the property overview")
-        _click_open(page, found)
-        clicked.append("property overview")
 
 
         context.close()
