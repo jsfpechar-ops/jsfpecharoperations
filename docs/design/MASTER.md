@@ -155,7 +155,7 @@ Rules: shown only if the response is slower than 300 ms, then kept at least 400 
 | Stays | `calendar-days` | Smart locks | `key-round` |
 | Properties | `house` | Guide | `book-open` |
 | Invoices | `receipt` | Admin | `shield` |
-| Cleaning | `brush-cleaning` (lucide-static 0.552.0, the vendored version) | More | `ellipsis` |
+| Cleaning | `sparkles` (lucide-static 0.552.0, the vendored version) | More | `ellipsis` |
 | Stay fees | `coins` | Search | `search` |
 | Add | `plus` | Row menu | `ellipsis-vertical` | Close | `x` | Back | `arrow-left` | Filter | `sliders-horizontal` | Copy | `copy` | Download | `download` | Send | `send` | Sync | `refresh-cw` | Edit | `pencil` | Delete | `trash-2` | Help tip | `circle-help` | Warning | `triangle-alert` | Done | `check` | External | `external-link` | Calendar prev/next | `chevron-left` / `chevron-right` |
 
