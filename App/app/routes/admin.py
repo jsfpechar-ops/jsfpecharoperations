@@ -4676,8 +4676,15 @@ def menu_view(request: Request):
     )
 
 
+SETTINGS_GROUPS = ("account", "security", "phone", "data", "technical", "help")
+
+
 @router.get("/settings")
 def settings_view(request: Request):
+    return _settings_page(request, "")
+
+
+def _settings_page(request: Request, group: str):
     guard = auth.require_login(request)
     if guard:
         return guard
@@ -4764,8 +4771,19 @@ def settings_view(request: Request):
             "push_available": _push_available(request),
             "push_key": push.public_key() if _push_available(request) else "",
             "push_devices": _own_push_devices(request),
+            "group": group,
         },
     )
+
+
+def _settings_group_view(group: str):
+    def view(request: Request):
+        return _settings_page(request, group)
+    return view
+
+
+for _group in SETTINGS_GROUPS:
+    router.add_api_route(f"/settings/{_group}", _settings_group_view(_group), methods=["GET"])
 
 
 def _push_available(request: Request) -> bool:
