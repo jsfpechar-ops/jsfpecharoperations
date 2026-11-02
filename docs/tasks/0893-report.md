@@ -47,3 +47,12 @@ Command 2 (other admin suites) NOT run: budget reached.
 ## Owner steps left
 1. Decide item 1 (move the three help lines under "?") and item 2 (location of the admin_home line), then rerun command 1 to 0 failed.
 2. Fix `auth2.css` version (0892), then `cd App && .venv/bin/python tests/test_static_versions.py --write`.
+
+## Run 3 (orchestrator follow-up): Status: review
+- security prompt (admin_home 320): fixed in the test fixture only. `two_factor_prompted_at` set on the admin account (the prompt condition in `App/app/templating.py` `_security_prompt`). base.html not edited. Deviation: marked as prompted, not given an authenticator or passkey.
+- gap under "Workspace or email" (10 px): cause was `.ui-field` flex gap 6 px plus input `margin-top` 4 px. Fixed by `body.v2 .ui-field{gap:12px}` in admin2.css. Version bumped to `?v=20261102-0893e` in the three templates; `tests/test_static_versions.py --write` run (45 files).
+- `tests/test_0893_admin_airbnb_browser.py`: `18 passed`, 0 skipped.
+- `tests/test_admin_customers.py tests/test_admin_section_tabs.py tests/test_admin_route_split.py tests/test_admin_helpers.py tests/test_design_admin.py tests/test_static_versions.py`: `37 passed`.
+- `tests/test_design_guardrails_browser.py`: `1 failed, 10 passed`. The failure is 56 findings on the admin-users pages (`admin_users.html` is not touched by 0893; admin2.css is loaded only by the three 0893 templates). Not verified as pre-existing.
+- Screenshots: `docs/tasks/screenshots-0893/` (390 and 1280). Files show as modified in git status.
+- Not committed, not staged.

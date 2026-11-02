@@ -1,7 +1,11 @@
 {
+  "admin2-system.css": {
+    "sha256": "c1c0a7826bf6843f96cf363dfb3add47d69e7ba3626b1a9242be4c6606bd33fd",
+    "v": "20261102-0894d"
+  },
   "admin2.css": {
-    "sha256": "eba3632ec561c523b0a86ef3719921ffe48a4148bda2f2a7826299bd4b24843f",
-    "v": "20261102-0893c"
+    "sha256": "6ceb1b03af7b53f22f62340447520a1377a5b35274661ffdca6490dd0bbf46ea",
+    "v": "20261102-0893e"
   },
   "analytics-optout.js": {
     "sha256": "9afc536f5842652fcfebd0fb30a88278f84f472b2874ad721a9984b72c01f9d5",

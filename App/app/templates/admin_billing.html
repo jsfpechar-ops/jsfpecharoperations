@@ -1,11 +1,14 @@
 {#- 0419: the operator's billing page /admin/fakturace. Admins only, works without JavaScript.
     Data: routes/admin_billing.py, app/billing_admin.py, app/bank_import.py. -#}
 {% extends "host_page.html" %}
+{% set v2 = true %}
+{% block head_extra %}<link rel="stylesheet" href="/static/admin2.css?v=20261102-0893e"><link rel="stylesheet" href="/static/admin2-system.css?v=20261102-0894d">{% endblock %}
+{% from "_components.html" import tip_label with context %}
 {% set nav = 'billing_admin' %}
 {% set body_kind = 'detail' %}
 {% from "_ui_layout.html" import ui_section_tabs with context %}
 {% block title %}{{ t('billing.admin.title') }}{% endblock %}
-{% block meta %}{{ t('billing.admin.lede') }}{% endblock %}
+{% block page_title %}{{ tip_label(self.title(), 'admin-billing-help', t('billing.admin.lede'), tag='span') }}{% endblock %}
 {% block tabs %}{{ ui_section_tabs() }}{% endblock %}
 {% block body %}
 {% set states = ['trial_pending', 'trialing', 'active', 'overdue', 'canceling', 'paused'] %}
@@ -46,7 +49,7 @@
   <td colspan="4">
     <form method="post" action="/admin/fakturace/{{ inv.id }}/zaplaceno" class="ui-form-actions">
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-      <label class="ui-sub" for="paid-{{ inv.id }}">{{ t('billing.admin.paid.date') }}</label>
+      <label class="admin-label" for="paid-{{ inv.id }}">{{ t('billing.admin.paid.date') }}</label>
       <input class="ui-input" type="date" id="paid-{{ inv.id }}" name="paid_on" value="{{ today }}" required>
       {{ ui_button(t('billing.admin.paid.submit'), 'secondary', type='submit') }}
     </form>
@@ -54,7 +57,7 @@
       <summary>{{ t('billing.admin.storno.open') }}</summary>
       <form method="post" action="/admin/fakturace/{{ inv.id }}/storno" class="ui-form-actions">
         <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-        <label class="ui-sub" for="reason-{{ inv.id }}">{{ t('billing.admin.storno.reason') }}</label>
+        <label class="admin-label" for="reason-{{ inv.id }}">{{ t('billing.admin.storno.reason') }}</label>
         <input class="ui-input" type="text" id="reason-{{ inv.id }}" name="reason" maxlength="200" required>
         {{ ui_button(t('billing.admin.storno.submit'), 'danger', type='submit') }}
       </form>
@@ -66,14 +69,13 @@
 {% else %}<p class="ui-sub">{{ t('billing.admin.unpaid.none') }}</p>{% endif %}
 {% endcall %}
 
-{% call ui_section(t('billing.admin.month.title'), id='month') %}
+{% call ui_section(tip_label(t('billing.admin.month.title'), 'month-help', t('billing.admin.month.export_help'), tag='span'), id='month') %}
 <form method="get" action="/admin/fakturace" class="ui-form-actions">
-  <label class="ui-sub" for="month-pick">{{ t('billing.admin.month.pick') }}</label>
+  <label class="admin-label" for="month-pick">{{ t('billing.admin.month.pick') }}</label>
   <input class="ui-input" type="month" id="month-pick" name="mesic" value="{{ month }}">
   {{ ui_button(t('billing.admin.month.show'), 'secondary', type='submit') }}
   {{ ui_button(t('billing.admin.month.export'), 'primary', href='/admin/fakturace/export?mesic=' ~ month) }}
 </form>
-<p class="ui-sub">{{ t('billing.admin.month.export_help') }}</p>
 {% if invoices %}
 {{ ui_table_begin([(t('billing.admin.col.number'), ''), (t('billing.admin.col.buyer'), ''), (t('billing.admin.col.amount'), 'r'), (t('billing.admin.col.state'), 'r')], label=t('billing.admin.month.title')) }}
 {% for inv in invoices %}
@@ -94,9 +96,9 @@
 
 {% call ui_section(t('billing.admin.portfolio.title'), id='portfolio') %}
 <form method="get" action="/admin/fakturace" class="ui-form-actions" data-billing-admin-portfolio-filter>
-  <label class="ui-sub" for="portfolio-q">{{ t('billing.admin.portfolio.search') }}</label>
+  <label class="admin-label" for="portfolio-q">{{ t('billing.admin.portfolio.search') }}</label>
   <input class="ui-input" type="search" id="portfolio-q" name="q" value="{{ q }}" placeholder="{{ t('billing.admin.portfolio.search_placeholder') }}">
-  <label class="ui-sub" for="portfolio-state">{{ t('billing.admin.portfolio.state') }}</label>
+  <label class="admin-label" for="portfolio-state">{{ t('billing.admin.portfolio.state') }}</label>
   <select class="ui-input" id="portfolio-state" name="state">
     <option value="">{{ t('billing.admin.portfolio.all') }}</option>
     {% for s in states %}<option value="{{ s }}"{% if state == s %} selected{% endif %}>{{ t('billing.plan.state.' ~ s) }}</option>{% endfor %}
@@ -148,11 +150,10 @@
 {% else %}<p class="ui-sub">{{ t('billing.admin.payments.none') }}</p>{% endif %}
 {% endcall %}
 
-{% call ui_section(t('billing.admin.statement.title'), id='statement') %}
-<p class="ui-sub">{{ t('billing.admin.statement.help') }}</p>
+{% call ui_section(tip_label(t('billing.admin.statement.title'), 'statement-help', t('billing.admin.statement.help'), tag='span'), id='statement') %}
 <form method="post" action="/admin/fakturace/vypis" enctype="multipart/form-data" data-billing-admin-statement>
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-  <label class="ui-sub" for="statement-file">{{ t('billing.admin.statement.file') }}</label>
+  <label class="admin-label" for="statement-file">{{ t('billing.admin.statement.file') }}</label>
   <input class="ui-input" type="file" id="statement-file" name="statement" accept=".gpc,.csv,.txt" required>
   <div class="ui-form-actions">{{ ui_button(t('billing.admin.statement.submit'), 'primary', type='submit') }}</div>
 </form>
@@ -183,7 +184,7 @@
 {% else %}<p class="ui-sub">{{ t('billing.admin.trend.none') }}</p>{% endif %}
 {% endcall %}
 
-{% call ui_section(t('billing.admin.movement.title'), id='movement') %}
+{% call ui_section(tip_label(t('billing.admin.movement.title'), 'movement-help', t('billing.admin.movement.help'), tag='span'), id='movement') %}
 {{ ui_facts([
   (t('billing.admin.movement.change'), (movement.total_change ~ ' Kč') if movement.total_change >= 0 else ('−' ~ (0 - movement.total_change) ~ ' Kč')),
   (t('billing.admin.movement.new'), movement.parts.new ~ ' Kč'),
@@ -191,7 +192,6 @@
   (t('billing.admin.movement.contraction'), movement.parts.contraction ~ ' Kč'),
   (t('billing.admin.movement.churn'), movement.parts.churn ~ ' Kč'),
 ]) }}
-<p class="ui-sub">{{ t('billing.admin.movement.help') }}</p>
 {% endcall %}
 
 {% call ui_section(t('billing.admin.funnel.title'), id='funnel') %}
@@ -225,7 +225,7 @@
 {% endcall %}
 
 {% call ui_section(t('billing.admin.accounts.title'), id='accounts') %}
-<p class="ui-sub" data-billing-admin-accounts>{% for s in states %}{{ t('billing.plan.state.' ~ s) }}: {{ accounts.get(s, 0) }}{{ ' · ' if not loop.last }}{% endfor %}</p>
+<ul class="admin-status" data-billing-admin-accounts>{% for s in states %}<li>{{ t('billing.plan.state.' ~ s) }}: {{ accounts.get(s, 0) }}</li>{% endfor %}</ul>
 {% endcall %}
 
 {% if not watch_rows %}{{ watch_html }}{% endif %}

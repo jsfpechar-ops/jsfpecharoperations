@@ -182,6 +182,8 @@ def host():
     username = f"admin-0893-{secrets.token_hex(4)}"
     owner_id = auth.create_account(f"{username}@example.test", "Admin 0893", role="host", username=username)
     db.execute("UPDATE user_account SET role = 'admin' WHERE id = ?", (owner_id,))
+    # the one-time security prompt (base.html) is not part of the admin look: mark it as already shown
+    db.execute("UPDATE user_account SET two_factor_prompted_at = ? WHERE id = ?", (db.utcnow(), owner_id))
     customer_name = f"{username}-customer"
     customer = auth.create_account(f"{customer_name}@example.test", "Customer 0893", role="host", username=customer_name)
     client = TestClient(app)

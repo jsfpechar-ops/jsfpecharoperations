@@ -1,0 +1,9 @@
+/* 0894: admin billing and operations, on top of admin2.css. Light mode only. */
+body.v2 .ui-body ul{display:grid;gap:12px;padding-left:20px}
+body.v2 .ui-body pre.ui-sub{white-space:pre-wrap;padding:16px;border:1px solid #e5e5e5;border-radius:12px;background:#fff}
+body.v2 .ui-body input[type="file"]{min-height:44px}
+body.v2 .ui-body details>summary{min-height:44px;display:flex;align-items:center;font-size:16px}
+body.v2 .ui-body summary h2{position:relative;display:block;padding-right:40px}
+body.v2 .ui-body summary h2 .ui-badge{position:absolute;right:0;top:0}
+body.v2 .ui-body p.ui-sub{margin-top:12px}
+body.v2 .ui-body ul.admin-status{list-style:none;padding-left:0;margin:0}

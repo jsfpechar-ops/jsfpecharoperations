@@ -25,3 +25,5 @@ body.v2 .ui-body td,body.v2 .ui-body td *{font-size:16px}
 body.v2 .ui-body .help-tip-btn{font-size:16px}
 body.v2 .ui-body label{font-size:16px;line-height:1.5}
 body.v2 .ui-body label{display:block;margin-bottom:12px}
+/* 0893 fix: 12 px between a field label and its input (flex gap was 6 px plus label box) */
+body.v2 .ui-field{gap:12px}
