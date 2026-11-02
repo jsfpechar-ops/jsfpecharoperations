@@ -1,6 +1,6 @@
 # 0821 report
 
-Status: blocked (steps 1-8 done, next = step 9)
+Status: review (steps 1-10 done; step 9 by the orchestrator, step 10 by the executor)
 
 ## Done
 
@@ -13,10 +13,17 @@ Status: blocked (steps 1-8 done, next = step 9)
 - Step 7: `App/tests/test_booking_cancel.py`, 8 tests. `python -m pytest tests/test_booking_cancel.py -q`: 8 passed. Ruff passed. Commit `addb645`.
 - Step 8: `App/tests/test_booking_manage_browser.py`, 4 tests (360, 390, 1280 geometry, plus the no-JS cancel). `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_BROWSER_EXECUTABLE=/usr/bin/google-chrome pytest tests/test_booking_manage_browser.py`: 4 passed, 0 skipped. Ruff passed. Screenshot saved to `docs/tasks/screenshots-0821/guest-390.png`. Commit `3e4853c`.
 
-## Next
+## Step 10 results (§6, run from App/ unless noted)
 
-Step 9 (notes and docs: `docs/context/decisions.md`, `docs/context/known-issues.md`). Not started, by instruction.
-Step 10 (§6 full command set, screenshot review, final report) also not started.
+- Ruff `--select E9,F63,F7,F82,F401,F841` on the five brief files: All checks passed!
+- First pytest set (17 files, `-x`): `201 passed, 1 warning` (DeprecationWarning from starlette `cookies=`, not a failure).
+- Browser set (`UBYHOST_REQUIRE_BROWSER=1`, `UBYHOST_BROWSER_EXECUTABLE=/usr/bin/google-chrome`; manage, site_page, guest e2e, host geometry): `27 passed`, 0 skipped.
+- Extra guards: `test_a11y_guard_browser.py`, `test_static_versions.py`, `test_flash_literals.py`: `12 passed`, 0 skipped.
+- `python3 scripts/context_lint.py`: `context lint: OK`.
+- `grep refunds.create`: `options=` carries `stripe_account` and `idempotency_key`; `params` has no `stripe_account`.
+- `grep style=|#hex` on the two templates: no output.
+- `git diff --stat task/0820-booking-site-invoice...HEAD`: 14 files, all in §3 (the three `host_i18n`/`property_page` edits and the step 9 doc lines included).
+- Screenshot `docs/tasks/screenshots-0821/guest-390.png` viewed. Badge, h1, policy card with grey refund box and closed "Zrušit rezervaci" row render. Visible issue: the "Přidat do kalendáře" link renders as an unstyled bordered box, full width, not a grey button like the mockup. Not changed here (it is a CSS fix in the §3 partial, not a failing command); flagged for review.
 
 ## Deviations
 
@@ -35,8 +42,8 @@ Step 10 (§6 full command set, screenshot review, final report) also not started
 - `tests/test_booking_cancel.py`: 8 passed, 0 failed.
 - `tests/test_booking_manage_browser.py` (browser, required): 4 passed, 0 skipped.
 - Ruff `--select E9,F63,F7,F82,F401,F841` on the step 6-8 files: all checks passed.
-- Not run in this session: the brief's full §6 command set, the `test_host_i18n` combined run, and `context_lint`. Those belong to step 10.
+- Step 10 full §6 set and extras: see "Step 10 results" above.
 
-## Left
+## Owner steps left
 
-Steps 9 and 10.
+Merge and deploy only (owner). No push was made.
