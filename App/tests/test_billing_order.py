@@ -71,8 +71,7 @@ def test_ordering_in_the_trial_waits_for_its_end(host):
     acc = billing.account(host["owner"])
     assert (acc["status"], acc["plan"], acc["billing_interval"], acc["apartments_billed"]) == (
         "trialing", "standard", "year", 2)
-    assert acc["founder"] == (1 if db.query_one(
-        "SELECT 1 FROM founder_slot WHERE owner_user_id = ?", (host["owner"],)) else 0)
+    assert acc["founder"] == 0
     assert acc["buyer_name"] == "Penzion Test s.r.o."
 
 

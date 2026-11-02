@@ -1,4 +1,4 @@
-"""Activation trial boundaries and retirement of founder offers for new orders."""
+"""Activation trial boundaries and list-price orders."""
 from __future__ import annotations
 
 import secrets
@@ -128,31 +128,19 @@ def test_legacy_verified_host_stays_free(owner):
     assert billing.entitlements(owner) == billing.UNBILLED
 
 
-def test_new_annual_order_never_claims_a_founder_slot(owner, monkeypatch):
+def test_annual_order_is_at_list_price(owner):
     assert signup.activate(_pending(owner))
-    monkeypatch.setattr(config, "FOUNDER_SLOTS", 10000)
-
-    def forbidden(_owner):
-        raise AssertionError("new orders must not claim founder slots")
-
-    monkeypatch.setattr(billing, "claim_founder_slot", forbidden)
     values = _order()
-    assert not billing_order.founder_offer(owner)
     assert billing_order.quote(owner, values)["base"] == billing.BASE["year"][0]
-    result = billing_order.place(owner, values)
-    assert result["invoice_id"] is None
+    assert billing_order.place(owner, values)["invoice_id"] is None
     assert billing.account(owner)["founder"] == 0
-    assert db.query_one("SELECT 1 FROM founder_slot WHERE owner_user_id = ?", (owner,)) is None
 
 
-def test_existing_founder_agreement_is_preserved(owner):
+def test_legacy_founder_flag_is_ignored(owner):
     assert signup.activate(_pending(owner))
     db.execute("UPDATE billing_account SET founder = 1 WHERE owner_user_id = ?", (owner,))
     values = _order()
-    assert billing_order.founder_offer(owner)
-    assert billing_order.quote(owner, values)["base"] == billing.FOUNDER_YEAR
-    billing_order.place(owner, values)
-    assert billing.account(owner)["founder"] == 1
+    assert billing_order.quote(owner, values)["base"] == billing.BASE["year"][0]
 
 
 def test_trial_boundary_without_order_pauses_without_invoice(owner):

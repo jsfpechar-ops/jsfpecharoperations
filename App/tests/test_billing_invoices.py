@@ -73,14 +73,6 @@ def test_period_items_follow_the_price_list(owner):
     assert not any("TTLock" in d for d, _ in items)  # included in Max
 
 
-def test_founder_line_on_an_annual_plan(owner):
-    acc = billing.account(owner)
-    acc.update(billing_interval="year", founder=1, apartments_billed=2)
-    assert billing_invoices.period_items(acc) == [
-        ("Předplatné UbyHost Standard, 2 apartmány, zakladatelská cena", 1780),
-    ]
-
-
 def test_period_invoice_is_numbered_stored_and_issued_once(owner):
     db.execute("UPDATE billing_account SET carry_czk = 20 WHERE owner_user_id = ?", (owner,))
     first = billing_invoices.issue_for_period(owner, "2099-03-02", "2099-04-01", today=DAY)
