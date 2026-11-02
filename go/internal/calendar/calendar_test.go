@@ -167,7 +167,7 @@ func TestProgressStatuses(t *testing.T) {
 		{"awaiting_verification", stayWith(&one), []guestRow{{nationality: "DE"}}, yes, "awaiting_verification"},
 		{"ready", stayWith(&one), []guestRow{{nationality: "DE", identityVerifiedAt: "x"}}, yes, "ready"},
 		{"reported", stayWith(&one), []guestRow{sentByHand}, no, "reported"},
-		{"not_required", stayWith(&one), []guestRow{{nationality: "CZ"}}, yes, "not_required"},
+		{"not_required", stayWith(&one), []guestRow{{nationality: "CZE"}}, yes, "not_required"},
 	}
 	for _, c := range cases {
 		if got := progressWith(c.stay, c.guests, c.complete).status; got != c.want {

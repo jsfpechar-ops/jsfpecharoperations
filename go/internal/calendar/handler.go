@@ -47,13 +47,6 @@ type propertyItem struct {
 	Name string `json:"name"`
 }
 
-// discard swallows what hostweb.Login writes, as palette does.
-type discard struct{ h http.Header }
-
-func (d *discard) Header() http.Header         { return d.h }
-func (d *discard) Write(p []byte) (int, error) { return len(p), nil }
-func (d *discard) WriteHeader(int)             {}
-
 // fieldReader decrypts guest fields the way ubyport.decryptOrPlain does. The
 // data keys load on first use, so a calendar with no encrypted field needs none.
 type fieldReader struct {
@@ -98,7 +91,7 @@ func hourAny(p *string) any {
 func propertyRows(ctx context.Context, pool *pgxpool.Pool, owner *int64) ([]propertyItem, error) {
 	rows, err := pool.Query(ctx,
 		`SELECT id, internal_name FROM apartment
-		  WHERE owner_user_id IS NOT DISTINCT FROM $1 AND archived_at IS NULL AND active = true
+		  WHERE owner_user_id IS NOT DISTINCT FROM $1 AND archived_at IS NULL AND active = 1
 		  ORDER BY internal_name`, owner)
 	if err != nil {
 		return nil, err
@@ -179,7 +172,7 @@ func events(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string,
 	sql := `SELECT r.id, r.apartment_id, a.internal_name, r.date_from, r.date_to, COALESCE(r.summary,''),
 		r.source, r.declared_guests, r.expected_guests_override, a.checkin_hour::text, a.checkout_hour::text
 		FROM reservation r JOIN apartment a ON a.id = r.apartment_id
-		WHERE a.owner_user_id IS NOT DISTINCT FROM $1 AND a.active = true
+		WHERE a.owner_user_id IS NOT DISTINCT FROM $1 AND a.active = 1
 		AND a.archived_at IS NULL AND r.archived_at IS NULL AND r.status = 'active'
 		AND r.date_from < $2 AND r.date_to >= $3`
 	if property != nil {
@@ -255,13 +248,13 @@ func Handler(pool *pgxpool.Pool, getenv func(string) string, now func() time.Tim
 		}
 		w.Header().Set("Cache-Control", "no-store")
 		at := now()
-		h, err := hostweb.Login(&discard{h: http.Header{}}, r, pool, getenv, at)
+		h, err := hostweb.Login(w, r, pool, getenv, at)
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
 		if h == nil {
-			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+			// hostweb.Login has written the redirect (sign-in, acceptance or impersonation).
 			return
 		}
 		query := r.URL.Query()
