@@ -252,11 +252,9 @@
 
     <div class="ui-section" id="settings-retention">
       {{ settings_heading('retention', t('settings.nav.retention'), t('settings.retention.help')) }}
-      <dl class="kv">
-        <dt>{{ t('settings.retention.period') }}</dt><dd>{{ t('settings.retention.years', count=retention_years) }}</dd>
-        <dt>{{ t('settings.retention.cutoff') }}</dt><dd>{{ retention_cutoff.strftime('%d.%m.%Y') }}</dd>
-        <dt>{{ t('settings.retention.expired') }}</dt><dd><strong>{{ expired_records }}</strong></dd>
-      </dl>
+      {% with label=t('settings.retention.period'), value=t('settings.retention.years', count=retention_years) %}{% include "partials/settings_value_card.html" %}{% endwith %}
+      {% with label=t('settings.retention.cutoff'), value=retention_cutoff.strftime('%d.%m.%Y') %}{% include "partials/settings_value_card.html" %}{% endwith %}
+      {% with label=t('settings.retention.expired'), value=expired_records %}{% include "partials/settings_value_card.html" %}{% endwith %}
       <form method="post" action="/settings/purge-expired"
             data-confirm data-confirm-message="{{ t('confirm.purge_expired') }}">
         <button class="ui-btn ui-btn-{{ 'danger' if expired_records else 'secondary' }}" type="submit"
@@ -494,8 +492,7 @@
     </div>
 
     <div class="ui-section" id="settings-version">
-      <h3>{{ t('settings.nav.version') }}</h3>
-      <p class="ui-sub">{{ t('settings.version_line', version=app_version) }}</p>
+      {% with label=t('settings.nav.version'), value=app_version %}{% include "partials/settings_value_card.html" %}{% endwith %}
     </div>
 {% endcall %}{% endif %}
 </div>
