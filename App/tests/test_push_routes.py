@@ -115,7 +115,7 @@ def test_a_device_is_removed_from_settings_without_javascript_by_its_owner_only(
     assert push.count_for(owner) == 1
     response = client.post(f"/account/push/devices/{device['id']}/delete", follow_redirects=False)
     assert response.status_code in (302, 303)
-    assert "#settings-group-phone" in response.headers["location"]
+    assert response.headers["location"].startswith("/settings/phone")
     assert push.count_for(owner) == 0
 
 

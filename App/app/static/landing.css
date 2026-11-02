@@ -942,7 +942,7 @@ a { color: inherit; }
 
 /* Brief 0412: the price list and calculator (/cenik). The page reuses the
    landing hero, sections, lanes, FAQ list and final band; only the calculator,
-   the two plan cards and the founder strip need rules of their own. Container
+   the two plan cards need rules of their own. Container
    widths come from the shared rule at the top of this file. */
 .pricing-page { overflow: hidden; }
 .pricing-plans-section { padding-top: 0; }
@@ -1015,22 +1015,6 @@ a { color: inherit; }
 .pricing-features li { display: grid; grid-template-columns: 20px 1fr; gap: 8px; align-items: start; color: var(--ink-secondary); }
 .pricing-features svg { margin-top: 3px; color: var(--green); }
 .pricing-fineprint { margin: 18px 0 0; color: var(--ink-muted); font-size: var(--text-sm); text-align: center; }
-
-.pricing-founder {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px 28px;
-  max-width: 1040px;
-  margin: 32px auto 0;
-  padding: clamp(24px, 4vw, 36px);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: var(--brand-soft);
-}
-.pricing-founder h3 { margin: 0; font-size: clamp(1.3rem, 2.2vw, 1.7rem); font-weight: 760; letter-spacing: -.035em; }
-.pricing-founder p { margin: 6px 0 0; color: var(--ink-secondary); }
 
 /* The phone menu. Below 900px `.landing-nav` is hidden, so this disclosure is
    the only route between the public pages; it is a plain <details> so it opens

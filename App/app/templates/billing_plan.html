@@ -41,7 +41,6 @@
 {{ choice_card('billing_interval', interval, t('billing.interval.' ~ interval), values.billing_interval == interval) }}
 {% endfor %}
 </div>
-{% if founder_offer %}{{ ui_tip('tip-billing-founder', t('billing.order.founder')) }}{% endif %}
 {{ ui_check('addon_ttlock', t('billing.order.ttlock'), checked=values.addon_ttlock) }}
 {{ ui_tip('tip-billing-apartments', t('billing.order.apartments', n=apartment_count)) }}
 {% endcall %}
@@ -68,7 +67,7 @@
 {% if acc.addon_ttlock and acc.plan != 'max' %}{% set _ = addons.append(t('billing.order.ttlock')) %}{% endif %}
 {% if acc.addon_whitelabel %}{% set _ = addons.append(t('billing.order.whitelabel')) %}{% endif %}
 {{ ui_facts([
-  (t('billing.plan.fact.plan'), t('billing.plan.name.' ~ acc.plan) ~ (' · ' ~ t('billing.plan.founder') if acc.founder and acc.billing_interval == 'year' else '')),
+  (t('billing.plan.fact.plan'), t('billing.plan.name.' ~ acc.plan)),
   (t('billing.plan.fact.interval'), t('billing.interval.' ~ acc.billing_interval)),
   (t('billing.plan.fact.apartments'), acc.apartments_billed | string),
   (t('billing.plan.fact.addons'), addons | join(', ') or '—'),

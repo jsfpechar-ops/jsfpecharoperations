@@ -463,7 +463,12 @@ def test_sidebar_search_has_a_border(wide_host, wide_base):
 
 
 BORDERED_ROUTES = {
-    "settings": "/settings",
+    "settings-account": "/settings/account",
+    "settings-security": "/settings/security",
+    "settings-phone": "/settings/phone",
+    "settings-data": "/settings/data",
+    "settings-technical": "/settings/technical",
+    "settings-help": "/settings/help",
     "housebook": "/housebook",
     "reservation": "/reservations/{reservation_id}",
     "setup-property": "/apartments/{property_id}/setup/property",

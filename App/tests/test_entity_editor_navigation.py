@@ -293,12 +293,12 @@ def test_property_overview_properties_settings_and_builder_links(host):
     assert f'href="/entities?edit={entity_id}"' in overview
     listing = host.get("/apartments").text
     assert f'href="/entities?edit={entity_id}&amp;next=/apartments"' in listing
-    settings = host.get("/settings").text
+    settings = host.get("/settings/account").text
     assert f'href="/entities?edit={entity_id}&amp;next=/settings"' in settings
     # The invoice builder link is pinned in test_invoice_settings/test_host_invoice_navigation.
     # Several businesses: Account settings opens the list, never an arbitrary one.
     _entity(name="Druhá s.r.o.")
-    assert 'href="/entities">' in host.get("/settings").text
+    assert 'href="/entities">' in host.get("/settings/account").text
 
 
 def test_property_without_a_business_links_to_its_own_settings(host):

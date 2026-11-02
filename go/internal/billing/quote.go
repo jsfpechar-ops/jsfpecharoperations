@@ -23,11 +23,9 @@ var plans = map[string]bool{"standard": true, "max": true}
 var intervals = map[string]bool{"month": true, "year": true}
 
 var base = map[string][3]int{"month": {149, 119, 99}, "year": {1190, 950, 790}}
-var maxExtra = map[string][3]int{"month": {80, 59, 39}, "year": {718, 570, 370}}
-var ttlock = map[string]int{"month": 40, "year": 480}
+var maxExtra = map[string][3]int{"month": {59, 45, 29}, "year": {570, 430, 280}}
+var ttlock = map[string]int{"month": 49, "year": 470}
 var whitelabel = map[string]int{"month": 590, "year": 5660}
-
-const founderYear = 890
 
 // band returns 0, 1 or 2 for the 1-based position of an apartment.
 func band(index int) int {
@@ -49,7 +47,7 @@ func graduated(count int, rates [3]int) int {
 }
 
 // Quote prices one period. It mirrors billing.quote; discount rounds half to even.
-func Quote(apartments int, plan, interval string, ttlockOn, whitelabelOn, founder bool, discountPercent int) (Price, error) {
+func Quote(apartments int, plan, interval string, ttlockOn, whitelabelOn bool, discountPercent int) (Price, error) {
 	if !plans[plan] || !intervals[interval] {
 		return Price{}, fmt.Errorf("unknown plan or interval: %s %s", plan, interval)
 	}
@@ -60,12 +58,7 @@ func Quote(apartments int, plan, interval string, ttlockOn, whitelabelOn, founde
 	if n < 0 {
 		n = 0
 	}
-	var b int
-	if founder && interval == "year" {
-		b = founderYear * n
-	} else {
-		b = graduated(n, base[interval])
-	}
+	b := graduated(n, base[interval])
 	extra := 0
 	if plan == "max" {
 		extra = graduated(n, maxExtra[interval])

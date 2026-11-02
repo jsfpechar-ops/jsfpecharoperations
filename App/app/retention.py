@@ -44,6 +44,11 @@ _OWNER_SCOPE = "(? IS NULL OR a.owner_user_id = ?)"
 # 0430-0434: property_page/property_slug hold the host's own content and
 # public names (no personal data); booking_hold holds dates only; a page
 # booking request lands in payment_request (covered above: guest e-mail).
+# 0814: site_booking.guest_name / guest_email are the booker's name and
+# address from the booking site. Kept with the booking (the host's money and
+# accommodation record; the invoice repeats them); deleted with the apartment
+# or the workspace by the foreign-key cascade. Used only for that booking's
+# confirmation, invoice and cancellation mails.
 # 0421: stripe_account holds no personal data beyond the owner reference; it
 # mirrors onboarding status (no keys, no documents) and is deleted with the workspace.
 
@@ -388,7 +393,7 @@ def _delete_workspace(owner_id: int) -> None:
         cur.execute("DELETE FROM lock_account WHERE owner_user_id = ?", (owner_id,))
         # Brief 0411: the billing row goes with the account. UbyHost's own
         # invoices are accounting records kept 10 years: they only lose the
-        # link (snapshot_json keeps the buyer as printed). A founder slot stays used.
+        # link (snapshot_json keeps the buyer as printed).
         cur.execute("DELETE FROM billing_account WHERE owner_user_id = ?", (owner_id,))
         # Brief 0443/0444: the operator's discount and the analytics snapshot go
         # with the billing row; the derived monthly snapshot is rebuilt from
