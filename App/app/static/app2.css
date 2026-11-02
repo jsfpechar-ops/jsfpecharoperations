@@ -1093,10 +1093,11 @@ body.v2 .entities-page>table.ui-table th:first-child,body.v2 .entities-page>tabl
 
 /* 0781 privacy requests */
 body.v2 .pr-lane{max-width:720px}
-body.v2 .pr-lane>.card{padding:20px 22px;margin:0 0 16px}
-body.v2 .pr-lane summary{font-weight:700;font-size:16px;cursor:pointer}
-body.v2 .pr-lane details[open]>summary{margin-bottom:16px}
-body.v2 .pr-lane h2{font-size:17px;margin:0 0 4px}
+body.v2 .pr-lane>.card{margin:0 0 16px}
+body.v2 .pr-lane>.card>summary{padding:20px 22px;font-weight:700;font-size:16px;cursor:pointer}
+body.v2 .pr-lane>.card>h2{padding:20px 22px 0;font-size:17px;margin:0 0 4px}
+body.v2 .pr-lane>.card>p{padding:0 22px;margin:0 0 12px}
+body.v2 .pr-lane>.card>form{padding:0 22px 22px}
 body.v2 .pr-lane .checkline{display:flex;gap:8px;align-items:center;font-size:14px}
 body.v2 .pr-lane .ui-form-actions{justify-content:flex-end}
 
@@ -1121,7 +1122,8 @@ body.v2 .ui-empty{color:var(--ink3);padding:20px;text-align:center}
 body.v2 .ui-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;background:#f6f6f4;color:var(--ink2)}
 body.v2 .ui-btn-open{background:#efefeb;color:var(--ink)}
 body.v2 .row-actions{white-space:nowrap;text-align:right}
-body.v2 .row-primary-link{color:var(--ink);font-weight:600;text-decoration:none}
+body.v2 .row-primary-link{color:var(--ink);font-weight:600;text-decoration:none;display:inline-flex;align-items:center;min-height:24px}
+body.v2 .help-tip-btn{min-width:24px;min-height:24px}
 body.v2 tr.clickable-row{cursor:pointer}
 body.v2 .ui-table{width:100%;border-collapse:collapse;font-size:14px}
 body.v2 .ui-table th{text-align:left;font-size:12px;color:var(--ink3);font-weight:600;padding:10px 12px;border-bottom:1px solid var(--line)}
