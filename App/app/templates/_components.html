@@ -475,6 +475,7 @@
             <span class="onboarding-current-dot" aria-hidden="true"></span>
           {% endif %}
           {% set step_url = step.url or (onboarding.current.url if onboarding.current and onboarding.current.id == step.id else none) %}{% if v2 and not step.done and step_url %}<a class="btn small onboarding-step-action" href="{{ step_url }}">{{ t('onboarding.' ~ step.id ~ '.action') }}</a>{% endif %}
+          {% if v2 and not step.done and step.manual_url %}<a class="small onboarding-step-manual" href="{{ step.manual_url }}">{{ t('onboarding.' ~ step.id ~ '.manual') }}</a>{% endif %}
           {% if not compact_list %}
             <details>
               <summary>{{ t('onboarding.learn') }}</summary>

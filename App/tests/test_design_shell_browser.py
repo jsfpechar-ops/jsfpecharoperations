@@ -177,7 +177,7 @@ def _assert_content_is_not_loading(page):
     "/?lang=en", "/reservations?lang=en", "/apartments/new?lang=en", "/settings?lang=en",
 ])
 def test_more_preserves_each_page_kind_and_sheet_links_work(base, engine, width, path):
-    if path in ("/?lang=en", "/reservations?lang=en"):
+    if path in ("/?lang=en", "/reservations?lang=en", "/apartments/new?lang=en"):
         # 0720c/0528: v2 pages have no More sheet on phone and tablet; the Menu tab (/menu) holds the links.
         with sync_api.sync_playwright() as playwright:
             browser, page = _open(playwright, base, width, path, engine)

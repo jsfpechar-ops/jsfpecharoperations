@@ -1314,7 +1314,7 @@ body.v2 .guide-page .ui-error{display:flex;gap:6px;align-items:center;color:var(
 body.v2 .guide-page fieldset.quick-choice{min-width:0;margin:0 0 20px;padding:0;border:0}
 body.v2 .guide-page fieldset.quick-choice legend{padding:0;margin:0 0 10px;font-size:15px;font-weight:600;color:var(--ink)}
 body.v2 .guide-page .quick-choice-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-body.v2 .guide-page .quick-choice-option{position:relative;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-height:52px;min-width:0;width:100%;padding:0 12px;border:1.5px solid var(--ink3);border-radius:999px;background:var(--s);color:var(--ink);font-size:17px;font-weight:600;cursor:pointer}
+body.v2 .guide-page .quick-choice-option{position:relative;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-height:52px;min-width:0;width:100%;padding:0;border:1.5px solid var(--ink3);border-radius:999px;background:var(--s);color:var(--ink);font-size:17px;font-weight:600;cursor:pointer}
 body.v2 .guide-page .quick-choice-option input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
 body.v2 .guide-page .quick-choice-option:has(input:checked){border-color:var(--ink);background:var(--ink);color:#fff}
 body.v2 .guide-page .quick-choice-option:focus-within{outline:2px solid #d0452d;outline-offset:2px}
