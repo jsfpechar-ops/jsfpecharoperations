@@ -1,6 +1,6 @@
 # 0738 report: remaining date-sensitive tests use the app's clock
 
-Status: blocked
+Status: done (see orchestrator review)
 Executor: Haiku 5.5, worktree /tmp/wt0738, branch task/0738-prague-today-tests.
 
 ## Files changed
@@ -42,3 +42,9 @@ Likely the brief's diagnosis covers only part of the failures. The owner or orch
 
 ## Owner steps left
 - Decide whether 0738 needs a new brief for the non-date failures.
+
+## Orchestrator review (supersedes the BLOCKED status)
+
+Status: done (see orchestrator review)
+
+Root cause of all 24 CI failures (run 41364636354): the run crossed UTC midnight. `test_billing_analytics.py` captured `TODAY` at import (Nov 1) and the app read Nov 2, so `test_the_operator_assigns_a_plan_to_a_legacy_host` failed at line 275, before its in-body cleanup (line 286). Its legacy host's apartment stayed in the database, so `demo.seed()` returned None (it refuses when any apartment exists), and `test_endtoend.py` test_04 picked that stray apartment with `SELECT * FROM apartment`, which cascaded through test_05 to test_29. The `_today()` change removes the trigger; `claim.prague_today()` in test_endtoend removes the Prague/UTC hour mismatch. The three files pass in CI order normally (62 passed).
