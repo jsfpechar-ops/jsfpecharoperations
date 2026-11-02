@@ -51,3 +51,26 @@ E   assert 'add_stay_calendar' == 'guest_second_person'
 ## Owner steps left
 
 - Decide the question above. No merge, deploy or secrets involved.
+
+## Update: coordinator follow-up (5 s timeouts, diagnostics)
+
+Status stays: blocked.
+
+Ruff (`.venv/bin/ruff check app tests tools --select E9,F63,F7,F82,F401,F841`): All checks passed.
+
+Test command 1 (run 3): FAILED in 15.81 s at guest_second_person. Cause: TimeoutError (Page.input_value), which the test correctly does not accept.
+
+Measured numbers (390 px, run 3 JSON in docs/tasks/screenshots-0841/flow-taps.json):
+
+| Flow | Taps | Typed | Prefilled | Result |
+|---|---|---|---|---|
+| add_stay_panel | 2 | 2 | 1 | measured (estimate 3+2) |
+| add_stay_calendar | 0 | 0 | 0 | NotAvailable: no [data-cal-day] on dashboard "/" (0 cells, not just hidden) |
+| copy_guest_link_row | 0 | 0 | 0 | NotAvailable: no stay-link copy control on /reservations (add-stay panel present) |
+| guest_second_person | 0 | 0 | 0 | TimeoutError: no #surname on /l/<token>/1?lang=en |
+| invoice_for_stay | 0 | 0 | 0 | TimeoutError: no fill_from_guest button on /invoices/new |
+| property_quick_create | 1 | 0 | 1 | measured (estimate 3) |
+
+Caveat: the NotAvailable results rest on DOM counts for the seeded host only. They are not verified against a real phone layout, and the seeded stay may hide the copy control. Not confirmed.
+
+Open items: unchanged from the first run; calendar, cleaning and single-send checks are unverified.

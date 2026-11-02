@@ -1,6 +1,6 @@
 # 0836: Invoice buyer prefilled from the stay's lead guest
 
-Status: todo
+Status: done
 Depends on: 0841 (baseline first) | Base commit: b8c87df | Branch: task/0836-invoice-buyer-prefill
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

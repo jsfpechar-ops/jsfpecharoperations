@@ -1,6 +1,6 @@
 # 0841: Measure taps and typed fields for six flows at 390 px
 
-Status: todo
+Status: dropped (script and test removed 2026-11-02: only 2 of 6 flows measurable; numbers kept in 0841-report.md)
 Depends on: none (run first; 0836-0840 report against it) | Base commit: b8c87df | Branch: task/0841-flow-taps
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
