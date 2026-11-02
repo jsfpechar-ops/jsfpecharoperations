@@ -287,7 +287,7 @@ def test_invalid_account_saves_nothing_and_keeps_what_was_typed(host):
     assert 'value="777"' in text  # 0208: the old three-box post is not echoed into the one box
     assert 'value="Council office"' in text
     assert f'name="fee_return_to" value="{back}"' in text
-    assert re.search(r'data-settings-group="reporting"[^>]*>|is-active" data-settings-group="reporting"', text)
+    assert 'id="sec-fee" open' in text  # the refused save reopens the stay fee section
     assert text.count('action="/apartments/') >= 1
     assert 'value="Typed name"' in text
 
@@ -361,8 +361,7 @@ def live(host):
 
 
 def _save(page):
-    page.locator('#property-settings-form [data-property-save] button[type="submit"], '
-                 '#property-settings-form button.ui-btn-primary[type="submit"]').first.click()
+    page.locator('#property-settings-form .savebar button[type="submit"]').click()
     page.wait_for_load_state("networkidle")
 
 
