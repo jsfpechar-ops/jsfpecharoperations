@@ -4618,6 +4618,7 @@ def housebook_view(request: Request):
             "date_to": date_to,
             "retention_years": housebook.RETENTION_YEARS,
             "max_inspection_pdfs": housebook.MAX_INSPECTION_PDFS,
+            "period_presets": housebook.period_presets(claim.prague_today()),
         },
     )
 

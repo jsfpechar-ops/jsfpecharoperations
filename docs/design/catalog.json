@@ -442,7 +442,13 @@
     "row-actions",
     "row-primary-link",
     "clickable-row",
-    "actions"
+    "actions",
+    "housebook-presets",
+    "invoice-quick-title",
+    "invoice-quick-stays",
+    "invoice-use-price",
+    "fee-bulk",
+    "fee-copy"
   ],
   "hooks": [
     "sr-only",

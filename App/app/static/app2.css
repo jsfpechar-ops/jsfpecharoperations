@@ -1088,6 +1088,10 @@ body.v2 #housebook-pdf-dialog .ui-form-actions{display:flex;gap:8px;margin-top:1
 body.v2 #housebook-pdf-dialog .ui-form-actions>.ui-btn{flex:1 1 0;min-width:0;min-height:44px}
 body.v2 #housebook-pdf-dialog .ui-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 /* 0793 housebook v2 (end) */
+/* 0889 housebook presets (start) */
+body.v2 .housebook-page .housebook-presets{display:flex;flex-wrap:wrap;gap:var(--space-4);margin:0 0 var(--space-4)}
+body.v2 .housebook-page .housebook-presets .is-on{border-color:var(--ink);color:var(--ink)}
+/* 0889 housebook presets (end) */
 /* 0794 stay fees v2 (start) */
 body.v2 .stay-fees-page .head{margin-top:16px}
 body.v2 .stay-fees-page .fee-pay-h{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 12px}
@@ -1138,6 +1142,12 @@ body.v2 .stay-fees-toolbar input:not([type=hidden]):not(.sr-only){min-height:44p
 body.v2 .stay-fees-toolbar .month-control{min-width:10rem}
 body.v2 .stay-fees-toolbar .month-control input[data-month-native]{min-width:44px}
 /* 0794 stay fees v2 (end) */
+/* 0848 stay fee speed (start) */
+body.v2 .stay-fees-page .fee-bulk{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:16px;margin:0 0 16px}
+body.v2 .stay-fees-page .fee-bulk form{margin:0}
+body.v2 .stay-fees-page .fee-copy{padding:16px;margin:0 0 16px}
+body.v2 .stay-fees-page .fee-copy .fee-step-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px}
+/* 0848 stay fee speed (end) */
 /* cleaning (0542) */
 body.v2 .cleaning-page{width:100%;max-width:1080px;min-width:0;margin:0 auto;color:var(--ink)}
 body.v2 .cleaning-skip{display:inline-flex;align-items:center;min-height:44px;margin-bottom:12px;font-size:1.0625rem}
