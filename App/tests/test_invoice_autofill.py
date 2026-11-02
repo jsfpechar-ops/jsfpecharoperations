@@ -13,6 +13,7 @@ from datetime import timedelta
 
 from app import claim
 from tests.invoice_stay_helper import drop_stays, make_stay, stay_form
+from unittest.mock import patch
 
 USERNAME = "invoice-autofill-host"
 OTHER = "invoice-autofill-other"
@@ -182,6 +183,69 @@ def test_no_guest_means_no_prefill_note(host):
     page = host.get(f"/invoices/new?reservation_id={stay_id}&entity={entity_id}")
     assert "Check before you issue." not in page.text
     assert "Vyplněno z údajů hosta" not in page.text
+
+
+ARES_FIRM = {"name": "ARES Test s.r.o.", "street": "Ulice 5", "city": "Praha", "zip": "11000",
+             "country": "CZE", "dic": "CZ04656679"}
+
+
+def _ares_post(host, entity_id, stay_id, kind, buyer_name="Jan Novák"):
+    with patch("app.ares.lookup", return_value=dict(ARES_FIRM)), \
+         patch("app.ares.rate_limited", return_value=False), \
+         patch("app.ares.record_lookup"):
+        return host.post(
+            "/invoices?lang=en",
+            data={
+                "legal_entity_id": str(entity_id), **stay_form(stay_id),
+                "buyer_kind": kind, "buyer_ico": "04656679", "fill_buyer_from_register": "1",
+                "buyer_name": buyer_name, "buyer_street": "Hlavní 1", "buyer_city": "Brno",
+                "buyer_zip": "", "buyer_country": "CZE", "lang": "cs",
+            },
+        )
+
+
+def test_switch_renders_two_radios_and_all_fields_without_js(host):
+    entity_id = _add_entity()
+    stay_id = make_stay(_owner(), entity_id=entity_id)
+    _complete_guest(stay_id)
+    page = host.get(f"/invoices/new?reservation_id={stay_id}&entity={entity_id}").text
+    assert '<input type="radio" name="buyer_kind" value="guest" checked>' in page
+    assert '<input type="radio" name="buyer_kind" value="company">' in page
+    assert 'id="buyer_ico"' in page and 'id="buyer_dic"' in page
+    assert 'data-buyer-only="company" hidden' not in page
+    assert 'invoice-supplier-picker" hidden' in page
+
+
+def test_two_entities_show_the_issuer_picker(host):
+    entity_id = _add_entity()
+    _add_entity(name="Second s.r.o.")
+    stay_id = make_stay(_owner())  # no pinned operator: the picker keeps every entity
+    page = host.get(f"/invoices/new?reservation_id={stay_id}&entity={entity_id}").text
+    assert 'invoice-supplier-picker" hidden' not in page
+    assert 'id="legal_entity_id"' in page
+
+
+def test_company_lookup_replaces_the_guest_suggestion(host):
+    entity_id = _add_entity()
+    stay_id = make_stay(_owner(), entity_id=entity_id)
+    _complete_guest(stay_id)
+    response = _ares_post(host, entity_id, stay_id, "company")
+    assert response.status_code == 200
+    assert 'value="ARES Test s.r.o."' in response.text
+    assert 'value="Ulice 5"' in response.text
+    assert 'value="Hlavní 1"' not in response.text
+    assert '<input type="radio" name="buyer_kind" value="company" checked>' in response.text
+    assert db.query_one("SELECT 1 AS x FROM invoice WHERE owner_user_id = ?", (_owner(),)) is None
+
+
+def test_company_lookup_keeps_what_the_host_typed(host):
+    entity_id = _add_entity()
+    stay_id = make_stay(_owner(), entity_id=entity_id)
+    _complete_guest(stay_id)
+    response = _ares_post(host, entity_id, stay_id, "company", buyer_name="Typed Firm")
+    assert 'value="Typed Firm"' in response.text
+    guest = _ares_post(host, entity_id, stay_id, "guest")
+    assert 'value="Jan Novák"' in guest.text
 
 
 def test_fill_guest_without_complete_guest_does_not_issue(host):
@@ -363,6 +427,75 @@ def test_invoice_fill_screenshots_at_required_widths():
             page.click('button[name="fill_from_guest"]')
             page.wait_for_load_state("networkidle")
             page.screenshot(path=os.path.join(shots, f"invoice-fill-after-{width}.png"), full_page=True)
+            context.close()
+        browser.close()
+    server.should_exit = True
+    thread.join(timeout=5)
+
+
+def test_invoice_buyer_kind_screenshots():
+    """0886 acceptance: Guest and Company at 390 and 1280; the switch hides the other parts."""
+    import os
+    import secrets
+    import socket
+    import threading
+    import time
+
+    import pytest
+    import uvicorn
+
+    sync_api = pytest.importorskip("playwright.sync_api")
+    from tests.test_invoice_stay_browser import _browser_session_cookie, _launch
+
+    shots = os.environ.get("UBYHOST_SHOTS_DIR")
+    if not shots:
+        pytest.skip("set UBYHOST_SHOTS_DIR to capture acceptance screenshots")
+
+    db.init_db()
+    username = f"invkind{secrets.token_hex(4)}"
+    owner = auth.create_account(f"{username}@example.test", "Kind Shots", username=username)
+    entity = db.insert(
+        "legal_entity",
+        {
+            "name": "Kind s.r.o.", "seat": "Praha 1", "ico": "04656679",
+            "registry_entry": "Fyzická osoba zapsaná v živnostenském rejstříku",
+            "vat_status": "non_payer", "invoice_due_days": 14,
+            "owner_user_id": owner, "created_at": db.utcnow(),
+        },
+    )
+    stay_id = make_stay(owner, entity_id=entity)
+    _complete_guest(stay_id)
+
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = sock.getsockname()[1]
+    server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error"))
+    thread = threading.Thread(target=server.run, daemon=True)
+    thread.start()
+    deadline = time.time() + 15
+    while not server.started and time.time() < deadline:
+        time.sleep(0.05)
+    base = f"http://127.0.0.1:{port}"
+    session = _browser_session_cookie(username)
+    path = f"/invoices/new?reservation_id={stay_id}&entity={entity}&lang=en"
+
+    with sync_api.sync_playwright() as playwright:
+        browser = _launch(playwright)
+        for width in (390, 1280):
+            context = browser.new_context(viewport={"width": width, "height": 900})
+            context.add_cookies([{"name": auth.SESSION_COOKIE, "value": session, "url": base + "/"}])
+            page = context.new_page()
+            page.goto(base + path)
+            page.wait_for_load_state("networkidle")
+            assert page.locator("#legal_entity_id").is_hidden()
+            assert page.locator("#buyer_ico").is_hidden()
+            assert page.locator('button[name="fill_from_guest"]').is_visible()
+            page.screenshot(path=os.path.join(shots, f"invoice-kind-guest-{width}.png"), full_page=True)
+            page.click('label.ui-choice-card-label:has(input[value="company"])')
+            assert page.is_checked('input[name="buyer_kind"][value="company"]')
+            assert page.locator("#buyer_ico").is_visible()
+            assert page.locator('button[name="fill_from_guest"]').is_hidden()
+            page.screenshot(path=os.path.join(shots, f"invoice-kind-company-{width}.png"), full_page=True)
             context.close()
         browser.close()
     server.should_exit = True

@@ -123,7 +123,7 @@ LAYOUT_JS = r"""
 }
 """
 
-# 0842: the purpose "?" sits on the last line of its step title, small, with
+# 0885: the purpose "?" sits on the last line of its step title, small, with
 # a 44 px tap target, 12 px or more from the title text.
 HELP_BESIDE_TITLE_JS = """(marker) => {
   const help = document.querySelector(`[data-purpose-help="${marker}"]`);
@@ -251,15 +251,15 @@ def _shot(page, name: str, full_page: bool = True) -> None:
     page.screenshot(path=str(SHOTS_0451 / name), full_page=full_page)
 
 
-SHOTS_0842 = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0842"
+SHOTS_0885 = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0885"
 
 
-def _shot_0842(page, name: str) -> None:
-    """0842 evidence: person 2, step 1, only when asked to."""
-    if os.environ.get("UBYHOST_0842_SHOTS") != "1":
+def _shot_0885(page, name: str) -> None:
+    """0885 evidence: person 2, step 1, only when asked to."""
+    if os.environ.get("UBYHOST_0885_SHOTS") != "1":
         return
-    SHOTS_0842.mkdir(parents=True, exist_ok=True)
-    page.screenshot(path=str(SHOTS_0842 / name), full_page=True)
+    SHOTS_0885.mkdir(parents=True, exist_ok=True)
+    page.screenshot(path=str(SHOTS_0885 / name), full_page=True)
 
 
 class Guest:
@@ -274,7 +274,7 @@ class Guest:
             self.problems.append(f"{where}: {problem}")
 
     def check_help_beside_title(self, marker: str, widths=()):
-        """0842: the "?" is on the title line, and opens its panel under it."""
+        """0885: the "?" is on the title line, and opens its panel under it."""
         page = self.page
         for width in widths or (self.width,):
             if widths:
@@ -340,11 +340,11 @@ class Guest:
         assert page.locator('[data-purpose-help="identity"]').is_visible()
         self.check_help_beside_title("identity", widths=(320, 390, 768))
         if number == 2 and self.lang == "en" and self.width in (390, 1280):
-            _shot_0842(page, f"person2-step1-{self.width}.png")
+            _shot_0885(page, f"person2-step1-{self.width}.png")
             if self.width == 390:
                 summary = page.locator('[data-purpose-help="identity"] summary')
                 summary.click()
-                _shot_0842(page, "person2-step1-open-390.png")
+                _shot_0885(page, "person2-step1-open-390.png")
                 summary.click()
         page.fill("#first_name", first)
         # A phone keyboard opening shrinks the viewport and fires resize while

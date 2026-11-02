@@ -1,7 +1,7 @@
-# 0843: Invoice buyer switch: Guest or Company
+# 0886: Invoice buyer switch: Guest or Company
 
-Status: todo
-Depends on: 0836 (merged in f7b1637) | Base commit: 83aea3e | Branch: task/0843-invoice-buyer-type-switch
+Status: review
+Depends on: 0836 (merged in f7b1637) | Base commit: 83aea3e | Branch: task/0886-invoice-buyer-type-switch
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -28,8 +28,8 @@ Target taps, counted as in 0836 (open, pick stay, Issue; the confirm dialog is n
 | `App/app/host_i18n.py` | edit | EN and CS keys |
 | `App/app/host_vi_i18n.py` | edit | VI keys |
 | `App/tests/test_invoice_autofill.py` | edit | Four tests and one screenshot test |
-| `docs/tasks/0843-report.md` | new | Report |
-| `docs/tasks/screenshots-0843/` | new | PNGs |
+| `docs/tasks/0886-report.md` | new | Report |
+| `docs/tasks/screenshots-0886/` | new | PNGs |
 
 No other file may change.
 
@@ -49,7 +49,7 @@ Directly below it, after one blank line, add:
 
 
 def _drop_guest_suggestion(state: Dict[str, Any], guest) -> None:
-    """0843: blank buyer slots that still hold the guest's suggestion, so ARES can fill them."""
+    """0886: blank buyer slots that still hold the guest's suggestion, so ARES can fill them."""
     if not guest:
         return
     for key, value in _guest_buyer_values(guest).items():
@@ -78,7 +78,7 @@ Replace it with:
             _drop_guest_suggestion(values, _lead_guest(stay["reservation"]))
         meta = _buyer_ares_fill(request, form, values)
 ```
-Command: `grep -n "buyer_kind\|_drop_guest_suggestion" app/routes/invoices.py 2>&1 | tail -30`. Expected: 8 lines (1a def, 1b, 1c three, 1c dict, 1d two). Commit `0843 step 1`.
+Command: `grep -n "buyer_kind\|_drop_guest_suggestion" app/routes/invoices.py 2>&1 | tail -30`. Expected: 8 lines (1a def, 1b, 1c three, 1c dict, 1d two). Commit `0886 step 1`.
 
 **Step 2. `App/app/templates/invoice_form.html`, five edits.**
 
@@ -126,7 +126,7 @@ with:
 ```
 2f. Script. Anchor `  if (paidRadio && dueRadio) {`. Directly above it insert:
 ```js
-  /* 0843: Guest or Company. Without JS every buyer field shows. With JS the
+  /* 0886: Guest or Company. Without JS every buyer field shows. With JS the
      other choice's parts are hidden and disabled, so they are never posted. */
   function syncBuyerKind() {
     var checked = form.querySelector('input[name="buyer_kind"]:checked');
@@ -144,7 +144,7 @@ with:
   syncBuyerKind();
 
 ```
-Command: `grep -c 'data-buyer-only' app/templates/invoice_form.html 2>&1 | tail -30`. Expected: `7` (lookup box, IČO, guest div, note, DIČ, and two script lines). Commit `0843 step 2`.
+Command: `grep -c 'data-buyer-only' app/templates/invoice_form.html 2>&1 | tail -30`. Expected: `7` (lookup box, IČO, guest div, note, DIČ, and two script lines). Commit `0886 step 2`.
 
 **Step 3. i18n.** Each line goes directly below its `invoice.fill_guest.prefilled` line.
 - `App/app/host_i18n.py` EN (below `        "invoice.fill_guest.prefilled": "Filled in from the guest. Check before you issue.",`):
@@ -165,7 +165,7 @@ Command: `grep -c 'data-buyer-only' app/templates/invoice_form.html 2>&1 | tail 
     "invoice.buyer_kind.company": "Công ty",
     "invoice.buyer_kind.company_help": "Dành cho công ty thanh toán lượt lưu trú. Tên và địa chỉ được lấy từ ARES, sổ đăng ký doanh nghiệp Séc, theo IČO.",
 ```
-Command: `grep -c "invoice.buyer_kind" app/host_i18n.py app/host_vi_i18n.py 2>&1 | tail -30`. Expected: `6` and `3`. Commit `0843 step 3`.
+Command: `grep -c "invoice.buyer_kind" app/host_i18n.py app/host_vi_i18n.py 2>&1 | tail -30`. Expected: `6` and `3`. Commit `0886 step 3`.
 
 **Step 4. `App/tests/test_invoice_autofill.py`.** Add near the top, below `from tests.invoice_stay_helper import drop_stays, make_stay, stay_form`: `from unittest.mock import patch`. Then, directly after the function `test_no_guest_means_no_prefill_note` (before `def test_fill_guest_without_complete_guest_does_not_issue`), add:
 ```python
@@ -234,7 +234,7 @@ def test_company_lookup_keeps_what_the_host_typed(host):
 Then, at the end of the file, add the screenshot test (same setup as `test_invoice_fill_screenshots_at_required_widths`):
 ```python
 def test_invoice_buyer_kind_screenshots():
-    """0843 acceptance: Guest and Company at 390 and 1280; the switch hides the other parts."""
+    """0886 acceptance: Guest and Company at 390 and 1280; the switch hides the other parts."""
     import os
     import secrets
     import socket
@@ -301,9 +301,9 @@ def test_invoice_buyer_kind_screenshots():
     server.should_exit = True
     thread.join(timeout=5)
 ```
-Run section 6, command 1. If an older test in this file breaks only because the picker is now `hidden` or the switch was added, change only that expectation and name it in the report. Commit `0843 step 4`.
+Run section 6, command 1. If an older test in this file breaks only because the picker is now `hidden` or the switch was added, change only that expectation and name it in the report. Commit `0886 step 4`.
 
-**Step 5.** Run the rest of section 6, then commit the screenshots and the report as `0843 step 5`.
+**Step 5.** Run the rest of section 6, then commit the screenshots and the report as `0886 step 5`.
 
 ## 5. Do not touch
 
@@ -313,10 +313,10 @@ Run section 6, command 1. If an older test in this file breaks only because the 
 
 From `App/`:
 1. `.venv/bin/python -m pytest tests/test_invoice_autofill.py tests/test_0293_invoice_form.py tests/test_design_invoices.py -q --tb=short -x 2>&1 | tail -30`
-2. Invoices row: `UBYHOST_SHOTS_DIR=../docs/tasks/screenshots-0843 .venv/bin/python -m pytest tests/test_invoice_*.py tests/test_stay_fee*.py -q --tb=short -x -rs 2>&1 | tail -30` (run `mkdir -p ../docs/tasks/screenshots-0843` first)
+2. Invoices row: `UBYHOST_SHOTS_DIR=../docs/tasks/screenshots-0886 .venv/bin/python -m pytest tests/test_invoice_*.py tests/test_stay_fee*.py -q --tb=short -x -rs 2>&1 | tail -30` (run `mkdir -p ../docs/tasks/screenshots-0886` first)
 3. Host row: `.venv/bin/python -m pytest tests/test_host_*.py tests/test_host_geometry.py tests/test_design_guardrails_browser.py -q --tb=short -x -rs 2>&1 | tail -30`
 4. Copy row: `.venv/bin/python -m pytest tests/test_*_i18n.py tests/test_no_em_dashes.py tests/test_copy_cleanup.py tests/test_flash_literals.py -q --tb=short -x 2>&1 | tail -30`
-5. Screenshots: `UBYHOST_SHOTS_DIR=../docs/tasks/screenshots-0843 .venv/bin/python -m pytest tests/test_invoice_autofill.py -k "kind_screenshots" -q --tb=short -rs 2>&1 | tail -30`
+5. Screenshots: `UBYHOST_SHOTS_DIR=../docs/tasks/screenshots-0886 .venv/bin/python -m pytest tests/test_invoice_autofill.py -k "kind_screenshots" -q --tb=short -rs 2>&1 | tail -30`
 
 Expected: all pass, with `0 skipped` in 2, 3 and 5. The 0836 report named two failures that already happen on the base commit: `test_host_feedback_browser.py::test_host_copy_feedback_truth_and_geometry` and `test_host_i18n.py::test_language_endpoint_sets_cookie_and_rejects_open_redirects`. If only those fail, rerun 3 and 4 without `-x`, report the counts, and do not fix them.
 
@@ -328,7 +328,7 @@ Expected: all pass, with `0 skipped` in 2, 3 and 5. The 0836 report named two fa
 - [ ] Without JS all buyer fields render (`data-buyer-only` is never `hidden` in server HTML).
 - [ ] `git diff 83aea3e -- App/app/ares.py App/app/static` is empty; `git diff 83aea3e | grep -c "localStorage\|sessionStorage"` prints 0.
 - [ ] Commands 1 to 5 pass, 0 skipped.
-- [ ] `docs/tasks/screenshots-0843/` holds `invoice-kind-guest-390.png`, `invoice-kind-company-390.png`, `invoice-kind-guest-1280.png`, `invoice-kind-company-1280.png`.
+- [ ] `docs/tasks/screenshots-0886/` holds `invoice-kind-guest-390.png`, `invoice-kind-company-390.png`, `invoice-kind-guest-1280.png`, `invoice-kind-company-1280.png`.
 
 ## 8. Stop and ask
 
@@ -345,7 +345,7 @@ Stop and write the report if:
 
 ## 9. Report
 
-Write `docs/tasks/0843-report.md` (600 tokens at most) and set `Status: review`. Include:
+Write `docs/tasks/0886-report.md` (600 tokens at most) and set `Status: review`. Include:
 - the files changed (`git diff --stat 83aea3e`);
 - each command with its last 5 lines;
 - section 7, ticked;
