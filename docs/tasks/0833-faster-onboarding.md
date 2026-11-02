@@ -31,6 +31,12 @@ File: `App/app/routes/admin.py`, the manual stay create handler (the one that in
 - Tests (add to the same file as the step 2 test or `tests/test_claim*.py`, whichever already tests start_claim/outbox): (a) create with a guest e-mail enqueues exactly one `claim` outbox row to that address with Reply-To of the host entity; (b) create without e-mail enqueues none; (c) invalid e-mail enqueues none and the stay is still created.
 - Privacy: this is an existing mail kind to an address the host typed for that stay; no new field, no new retention line (guest_email is already in `retention.py`).
 
+## Step 4: one width above 1,440 px in the geometry tests
+File: `App/tests/v2_mockup.py` line ~8: `WIDTHS = (320, 390, 768, 1024, 1280, 1440)`. Add `1920`. Then run the geometry tests that import WIDTHS for the Overview page only (`grep -ln "v2_mockup" App/tests | head`, pick the Overview/dashboard one). If a real layout bug shows at 1920, fix ONLY it with the smallest CSS change at the end of `App/app/static/app2.css` (new block, comment `/* 0833 wide (v2) */`), bump the app2.css cache key as the repo does (then `tests/test_static_versions.py --write`). If more than one page fails, STOP and list them in the report instead of fixing.
+
+## Step 5: verify, do not build ("What needs you" one button per row)
+Read `App/app/needs_you.py` (`_line(..., action, href)`) and the Overview rows in `App/app/templates/dashboard.html` (~lines 53-100). Write in the report, in 5 lines max, for each row kind (send report, resend guest link, failed filing, setup, alert) whether it already renders exactly one action button with a working href. Do NOT change code in this step.
+
 ## Tests (run only these, from `App/`)
 `.venv/bin/python -m pytest tests/test_signup.py <the file you added the step 2 test to> -q --tb=short -x 2>&1 | tail -30`
 Signup template changed: also run `tests/test_signup_selection_browser.py -rs` with 0 skipped, if the venv has Playwright; if it cannot run, say so in the report.
