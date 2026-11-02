@@ -408,7 +408,7 @@ def test_host_admin_portal_shows_ubyhost_support_email():
         assert overview.status_code == 200
         assert 'href="mailto:support@ubyhost.com"' in overview.text
         assert "support@ubyhost.com" in overview.text
-        settings = host.get("/settings")
+        settings = host.get("/settings/help")
         assert settings.status_code == 200
         assert "UbyHost support" in settings.text
         assert "support@ubyhost.com" in settings.text
@@ -437,7 +437,7 @@ def test_settings_archived_hub_lists_and_restores_entities():
         assert "Hub Archive s.r.o." in page.text
         assert "Operators (1)" in page.text
 
-        settings = admin.get("/settings")
+        settings = admin.get("/settings/data")
         assert "Open archive hub" in settings.text
 
         restored = admin.post(

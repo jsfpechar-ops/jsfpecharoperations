@@ -72,7 +72,8 @@ def test_list_panels_never_scroll_sideways_and_actions_stay_visible(acc, base):
                     # v2 (0794): stay-fees swaps .card.stays-desk (table) for .stays-phone (cards) by viewport, like /apartments.
                     sels = (".card.stays-desk", "tbody td.row-actions a.btn, tbody td.row-actions a.ui-btn, tbody td.row-actions .row-menu-trigger") if width >= 1024 else (".stays-phone", "a.card.stay")
                 else:
-                    sels = (".list-cards", "tbody td.row-actions a.btn, tbody td.row-actions a.ui-btn, tbody td.row-actions .row-menu-trigger")
+                    panel = ".entities-page" if name == "businesses" else ".list-cards"  # v2 entities list (0781)
+                    sels = (panel, "tbody td.row-actions a.btn, tbody td.row-actions a.ui-btn, tbody td.row-actions .row-menu-trigger")
                 result = page.evaluate(_LIST_JS, list(sels))
                 label = (name, lang, width, "collapsed" if collapsed else "expanded")
                 if result is None:

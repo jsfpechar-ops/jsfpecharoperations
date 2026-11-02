@@ -18,7 +18,7 @@
 <details class="ui-how stays-how" data-how="stay_fees">
   <summary class="ui-how-toggle" aria-label="{{ t('how.toggle') }}">{{ icon('circle-help', 16) }}</summary>
   <div class="ui-how-body">
-    <p id="fee-list-email">{{ t('stay_fees.list.email_on' if stay_fee_emails else 'stay_fees.list.email_off') }}</p>
+    <p id="fee-list-email">{{ t('stay_fees.list.email_on' if stay_fee_emails else 'stay_fees.list.email_off') }} <a href="/settings/account#settings-stay-fee-emails">{{ t('stay_fees.list.email_change') }}</a></p>
     <p>{% if apartment is defined and apartment and apartment.stay_fee_authority_databox %}{{ t('stay_fees.pay.send_to', databox=apartment.stay_fee_authority_databox) }}{% else %}{{ t('stay_fees.pay.send') }}{% endif %}</p>
     <ol class="ui-how-steps">{% for n in (1, 2, 3) %}<li>{{ t('how.stay_fees.' ~ n) }}</li>{% endfor %}</ol>
     <a class="ui-how-more" href="/guide#stay_fee">{{ t('how.more') }}</a>

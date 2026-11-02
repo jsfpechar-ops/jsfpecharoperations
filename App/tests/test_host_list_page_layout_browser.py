@@ -165,19 +165,12 @@ def _shot(page, name, width, lang):
 
 def test_tabs_are_links_that_mark_the_open_page(acc):
     client = acc["client"]
-    cases = [
-        (f"/entities?edit={acc['e1']}&next=/apartments", "host.business"),
-        (f"/entities?edit={acc['e1']}&next=/invoices/new", "host.invoice_settings"),
-    ]
-    for path, key in cases:
+    # v2, 0792/0793/0781: submissions, housebook, invoices and entities have no section tab strip; covered by 0710.
+    # 0781: v2 entities has no section tabs (the Menu tab marks it).
+    for path in (f"/entities?edit={acc['e1']}&next=/apartments", f"/entities?edit={acc['e1']}&next=/invoices/new"):
         html = client.get(_with_lang(path, "en")).text
-        nav = re.search(r'<nav class="(?:sub-tabs host-local-nav|ui-tabs)"[^>]*data-sub-tabs[^>]*>(.*?)</nav>', html, re.S)
-        assert nav, path
-        current = re.findall(r'<a class="(?:sub-tab|ui-tab)" href="[^"]+" aria-current="page">([^<]+)</a>', nav.group(1))
-        assert current == [STRINGS["en"][key].replace("&", "&amp;")], (path, current)
-        # Tabs sit directly under the title row, never above it.
-        assert html.index("</h1>") < nav.start(), path
-        assert "<button" not in nav.group(1) and "<form" not in nav.group(1), path
+        assert re.search(r'<body class="[^"]*v2', html), path
+        assert "data-sub-tabs" not in html, path
     # 0101: Invoice settings with two businesses opens the list to pick one.
     invoices = client.get("/invoices").text
     assert re.search(r'<a class="[^"]*" href="/entities"', invoices) and "/invoices/settings" not in invoices  # 0792: head button

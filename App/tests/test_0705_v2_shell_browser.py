@@ -87,8 +87,8 @@ def test_shell_top_blocks_keep_12px_gaps(base, width):
 
 
 def test_non_v2_dashboard_still_loads_the_old_stylesheets_and_sidebar(host_with_property):
-    # Old shell: / is v2 since 0720, so the non-v2 check uses /settings (no set v2).
-    page = host_with_property.get("/settings?lang=en").text
+    # Old shell: / is v2 since 0720 and /settings since 0780, so the non-v2 check uses /payments (held for the Stripe rework).
+    page = host_with_property.get("/payments?lang=en").text
     assert "/static/host2.css" in page
     assert "/static/skeleton.css" in page
     assert "app2.css" not in page
