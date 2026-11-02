@@ -54,7 +54,8 @@ def test_phone_rows_have_full_border_and_buttons_do_not_cover_names(base):
         rows = page.evaluate(BORDER_PROBE, ".props-phone .card.prop")
         assert rows, "no property rows on /apartments"
         for sides in rows:
-            assert sides == ["1px", "1px", "1px", "1px"], sides
+            # phone v2 shared look (0729): property cards are outlined by a box-shadow ring, no border; never a partial border
+            assert sides == ["0px", "0px", "0px", "0px"], sides
 
         page.goto(base + "/entities?lang=en")
         page.wait_for_timeout(200)
