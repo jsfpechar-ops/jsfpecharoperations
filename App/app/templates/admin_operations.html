@@ -13,7 +13,7 @@
   {%- else -%}{{ t('ops.age.days', n=minutes // 1440) }}{%- endif -%}
 {%- endmacro %}
 {% macro workspace_link(row) -%}
-  {%- if row.owner_user_id -%}<a href="/admin/customers/{{ row.owner_user_id }}">{{ row.workspace or row.owner_user_id }}</a>{%- else -%}<span class="ui-sub">{{ t('ops.no_workspace') }}</span>{%- endif -%}
+  {%- if row.owner_user_id -%}<a data-turbo="false" href="/admin/customers/{{ row.owner_user_id }}">{{ row.workspace or row.owner_user_id }}</a>{%- else -%}<span class="ui-sub">{{ t('ops.no_workspace') }}</span>{%- endif -%}
 {%- endmacro %}
 
 <details class="ui-section" id="ops-filings"{% if ops.filings.count or ops.stuck.count %} open{% endif %}>

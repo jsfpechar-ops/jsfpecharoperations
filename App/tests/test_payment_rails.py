@@ -307,7 +307,9 @@ def test_qr_send_mails_page_link(owner, client):
         (f"payment_request:{rid}:sent%",),
     )
     assert len(rows) == 1
-    assert f"/payments/qr/{rid}" in rows[0]["payload"]
+    token = payment_request.guest_token(payment_request.get(rid))
+    assert f"/pay/{rid}/{token}" in rows[0]["payload"]
+    assert "https://" in rows[0]["payload"] or "http://" in rows[0]["payload"]
     assert payment_request.get(rid)["status"] == "sent"
 
 
@@ -317,3 +319,79 @@ def test_foreign_owner_cannot_send(owner, client, stripe_env):
     response = other.post(f"/payments/requests/{rid}/send", follow_redirects=False)
     assert response.status_code == 303
     assert "/login" in response.headers["location"]
+
+
+# --- share link without e-mail (0761) -----------------------------------------
+
+
+def test_get_link_without_email_opens_share_page(owner, client, stripe_env, fake_link):
+    _complete_account(owner)
+    rid = _draft(owner, rail="card", email="")
+    response = client.post(f"/payments/requests/{rid}/link", follow_redirects=False)
+    assert response.status_code == 303
+    assert response.headers["location"] == f"/payments/requests/{rid}/share"
+    assert payment_request.get(rid)["status"] == "sent"
+    page = client.get(f"/payments/requests/{rid}/share")
+    assert page.status_code == 200
+    assert "https://buy.stripe.com/test_1" in page.text
+    assert "https://wa.me/?text=" in page.text
+    assert len(fake_link.created) == 1  # the page reused the link
+
+
+def test_get_link_never_redirects_off_site(owner, client, stripe_env, fake_link):
+    _complete_account(owner)
+    rid = _draft(owner, rail="card")
+    location = client.post(f"/payments/requests/{rid}/link", follow_redirects=False).headers["location"]
+    assert location.startswith("/") and not location.startswith("//")
+
+
+def test_get_link_refused_when_not_ready(owner, client, stripe_env):
+    rid = _draft(owner, rail="card")
+    response = client.post(f"/payments/requests/{rid}/link", follow_redirects=False)
+    assert response.headers["location"].startswith("/payments?err=")
+    assert payment_request.get(rid)["status"] == "draft"
+
+
+def test_share_page_hidden_from_other_owners_and_qr(owner, client, stripe_env, fake_link):
+    rid = _draft(owner, rail="qr")
+    response = client.post(f"/payments/requests/{rid}/link", follow_redirects=False)
+    assert "err=" in response.headers["location"]
+    response = client.get(f"/payments/requests/{rid}/share", follow_redirects=False)
+    assert "err=" in response.headers["location"]
+
+
+def test_custom_request_uses_the_description_as_product_name(owner):
+    rid = payment_request.create(
+        owner, reason="custom", amount_czk=500, rail="card",
+        expires_at="2026-11-27", guest_note="Pozdní odjezd",
+    )
+    assert payment_links.product_name(payment_request.get(rid)) == f"Pozdní odjezd (žádost č. {rid})"
+
+
+# --- public guest QR page (0763) -----------------------------------------------
+
+
+def test_guest_qr_page_opens_without_login(owner):
+    rid = _draft(owner, rail="qr")
+    token = payment_request.guest_token(payment_request.get(rid))
+    anonymous = TestClient(app)
+    page = anonymous.get(f"/pay/{rid}/{token}")
+    assert page.status_code == 200
+    assert f"/pay/{rid}/{token}.png" in page.text
+    png = anonymous.get(f"/pay/{rid}/{token}.png")
+    assert png.status_code == 200 and png.headers["content-type"] == "image/png"
+
+
+def test_guest_qr_page_rejects_wrong_token_and_card(owner):
+    anonymous = TestClient(app)
+    rid = _draft(owner, rail="qr")
+    assert anonymous.get(f"/pay/{rid}/{'0' * 32}").status_code == 404
+    card = _draft(owner, rail="card")
+    token = payment_request.guest_token(payment_request.get(card))
+    assert anonymous.get(f"/pay/{card}/{token}").status_code == 404
+
+
+def test_host_preview_still_needs_login(owner):
+    rid = _draft(owner, rail="qr")
+    response = TestClient(app).get(f"/payments/qr/{rid}", follow_redirects=False)
+    assert response.status_code == 303

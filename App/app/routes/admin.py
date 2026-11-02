@@ -436,6 +436,32 @@ def _with_calendar_refresh(request: Request, response):
     return response
 
 
+def _key_rows(rows, today):
+    """0765: phone Today lists every active stay from the day before check-in to 3 days after it."""
+    tomorrow = (today + timedelta(days=1)).isoformat()
+    today_s = today.isoformat()
+    window_start = (today - timedelta(days=3)).isoformat()
+    out = []
+    for row in rows:
+        reservation = row["reservation"]
+        if reservation["status"] != "active":
+            continue
+        date_from = str(reservation["date_from"])[:10]
+        date_to = str(reservation["date_to"])[:10]
+        if not (window_start <= date_from <= tomorrow or date_to == today_s):
+            continue
+        if date_from == tomorrow:
+            kind = "tomorrow"
+        elif date_from == today_s:
+            kind = "today"
+        elif date_to == today_s:
+            kind = "leaves"
+        else:
+            kind = "arrived"
+        out.append(dict(row, nights=_today_nights(reservation), key_kind=kind))
+    return sorted(out, key=lambda row: str(row["reservation"]["date_from"])[:10])
+
+
 @router.get("/")
 def dashboard(request: Request):
     if not auth.current_user(request):
@@ -532,10 +558,12 @@ def dashboard(request: Request):
                 for row in rows
                 if today.isoformat() in (str(row["reservation"]["date_from"])[:10], str(row["reservation"]["date_to"])[:10])
             ],
-            # 0729: phone "All done" line names the next arrival after today.
+            # 0765: phone Today lists every stay in the check-in window, with its kind.
+            "key_rows": _key_rows(rows, today),
+            # 0729/0765: the first stay after tomorrow, shown when the window is empty.
             "next_arrival": min(
-                (row["reservation"] for row in rows if str(row["reservation"]["date_from"])[:10] > today.isoformat()),
-                key=lambda r: str(r["date_from"])[:10],
+                (row for row in rows if str(row["reservation"]["date_from"])[:10] > (today + timedelta(days=1)).isoformat()),
+                key=lambda row: str(row["reservation"]["date_from"])[:10],
                 default=None,
             ),
         },

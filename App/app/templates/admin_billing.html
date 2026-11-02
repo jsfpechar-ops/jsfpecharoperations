@@ -37,7 +37,7 @@
 {{ ui_table_begin([(t('billing.admin.col.number'), ''), (t('billing.admin.col.buyer'), ''), (t('billing.admin.col.amount'), 'r'), (t('billing.admin.col.due'), 'r')], label=t('billing.admin.unpaid.title')) }}
 {% for inv in unpaid %}
 <tr class="ui-row" data-billing-admin-unpaid="{{ inv.number }}">
-  <td class="ui-cell-first" data-card="primary"><a href="/admin/fakturace/{{ inv.id }}.pdf">{{ inv.number }}</a><span class="ui-sub"> VS {{ inv.vs }}</span></td>
+  <td class="ui-cell-first" data-card="primary"><a data-turbo="false" href="/admin/fakturace/{{ inv.id }}.pdf">{{ inv.number }}</a><span class="ui-sub"> VS {{ inv.vs }}</span></td>
   <td>{{ inv.buyer.name }}</td>
   <td class="ui-cell-r ui-num">{{ kc(inv.total_haler) }} Kč</td>
   <td class="ui-cell-r" data-card="badge">{% if inv.overdue %}{{ ui_badge('action', fmt_date(inv.due_date), overdue=true) }}{% else %}{{ fmt_date(inv.due_date) }}{% endif %}</td>
@@ -78,7 +78,7 @@
 {{ ui_table_begin([(t('billing.admin.col.number'), ''), (t('billing.admin.col.buyer'), ''), (t('billing.admin.col.amount'), 'r'), (t('billing.admin.col.state'), 'r')], label=t('billing.admin.month.title')) }}
 {% for inv in invoices %}
 <tr class="ui-row">
-  <td class="ui-cell-first" data-card="primary"><a href="/admin/fakturace/{{ inv.id }}.pdf">{{ inv.number }}</a><span class="ui-sub"> {{ fmt_date(inv.issue_date) }}</span></td>
+  <td class="ui-cell-first" data-card="primary"><a data-turbo="false" href="/admin/fakturace/{{ inv.id }}.pdf">{{ inv.number }}</a><span class="ui-sub"> {{ fmt_date(inv.issue_date) }}</span></td>
   <td>{{ inv.buyer.name }}</td>
   <td class="ui-cell-r ui-num">{{ kc(inv.total_haler) if inv.total_haler >= 0 else '−' ~ kc(-inv.total_haler) }} Kč</td>
   <td class="ui-cell-r" data-card="badge">{% if inv.voided or inv.kind == 'storno' %}{{ ui_badge('neutral', t('billing.invoices.state.void')) }}{% elif inv.paid_on %}{{ ui_badge('done', t('billing.invoices.state.paid')) }}{% else %}{{ ui_badge('action', t('billing.invoices.state.open')) }}{% endif %}</td>
@@ -121,7 +121,7 @@
 ], label=t('billing.admin.portfolio.title')) }}
 {% for c in shown %}
 <tr class="ui-row" data-billing-admin-portfolio="{{ c.owner_user_id }}">
-  <td class="ui-cell-first" data-card="primary"><a href="/admin/customers/{{ c.owner_user_id }}">{{ c.display_name or c.username }}</a><span class="ui-sub"> {{ c.email or '' }}</span></td>
+  <td class="ui-cell-first" data-card="primary"><a data-turbo="false" href="/admin/customers/{{ c.owner_user_id }}">{{ c.display_name or c.username }}</a><span class="ui-sub"> {{ c.email or '' }}</span></td>
   <td>{{ t('billing.plan.name.' ~ c.plan) }} · {{ t('billing.interval.' ~ c.billing_interval) }} · {{ c.apartments_billed }}</td>
   <td>{{ ui_badge('done' if c.status == 'active' else ('action' if c.status in ('overdue', 'canceling') else 'neutral'), t('billing.plan.state.' ~ c.status)) }}</td>
   <td class="ui-cell-r ui-num">{{ c.net_czk }} Kč</td>
@@ -214,7 +214,7 @@
 {{ ui_table_begin([(t('billing.admin.col.buyer'), ''), (t('billing.admin.discounts.percent'), 'r'), (t('billing.admin.discounts.reason'), ''), (t('billing.admin.portfolio.monthly'), 'r')], label=t('billing.admin.discounts.title')) }}
 {% for c in discounts.customers %}
 <tr class="ui-row" data-billing-admin-discount="{{ c.owner_user_id }}">
-  <td class="ui-cell-first" data-card="primary"><a href="/admin/customers/{{ c.owner_user_id }}">{{ c.display_name or c.username }}</a></td>
+  <td class="ui-cell-first" data-card="primary"><a data-turbo="false" href="/admin/customers/{{ c.owner_user_id }}">{{ c.display_name or c.username }}</a></td>
   <td class="ui-cell-r ui-num">{{ c.discount_percent }} %</td>
   <td>{{ c.discount_reason or '' }}</td>
   <td class="ui-cell-r ui-num">{{ c.monthly_czk }} Kč</td>

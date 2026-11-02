@@ -1,6 +1,6 @@
 {% extends "host_page.html" %}
 {% set v2 = true %}
-{% set nav = 'dashboard' %}
+{% set nav = 'calendar' if cal_view else 'dashboard' %}
 {% set how_key = 'dashboard' %}
 {% set body_kind = 'detail' %}
 {% from "_components.html" import progress_pill, copy_inline, row_menu_begin, row_menu_end, onboarding_welcome, next_action, deadline_badge, property_identity, guest_count, onboarding_banner, onboarding_finish, onboarding_finish_strip, v2_status_pill with context %}
@@ -54,13 +54,12 @@
   {% set ny_lines = (needs_you.lines | rejectattr('kind', 'equalto', 'setup') | list) if banner_showing else needs_you.lines %}
 
   {#- 0729: phone v2 top (Airbnb style): Today/Upcoming switch and one headline. -#}
-  <div class="ph-top ph-only">
+  <div class="ph-top ph-only{{ ' ph-hide' if cal_view }}">
     <nav class="seg" aria-label="{{ t('dashboard.title') }}"><a class="on" href="/" aria-current="page">{{ t('nav.today') }}</a><a href="/reservations">{{ t('dashboard.ph.upcoming') }}</a></nav>
   </div>
   <div class="head ov-head"><div>
     {#- 0729: the page's one h1: "Overview" on desktop, the headline on phone. -#}
-    <h1 class="hl{{ ' done' if not ny_lines }}"><span class="ph-hide">{{ t('dashboard.title') }}</span><span class="ph-only">{% if ny_lines %}{{ tp('dashboard.ph.need', ny_lines | length) }}{% else %}{{ t('dashboard.ph.done') }}{% endif %}</span></h1>
-    {% if not ny_lines and next_arrival %}<p class="hl-sub ph-only">{{ t('dashboard.ph.next', when=(next_arrival.date_from | string)[:10] | date_long(lang), place=next_arrival.internal_name) }}</p>{% endif %}
+    <h1 class="hl{{ ' done' if not ny_lines }}"><span class="ph-hide">{{ t('dashboard.title') }}</span><span class="ph-only">{% if cal_view %}{{ t('nav.calendar') }}{% elif ny_lines %}{{ tp('dashboard.ph.need', ny_lines | length) }}{% else %}{{ t('dashboard.ph.done') }}{% endif %}</span></h1>
     <p class="sub ph-hide">{{ today.isoformat() | date_long(lang) }}</p>
     <div class="ov-quiet ph-hide">
     <details class="ui-how ov-how ph-hide" data-how="dashboard">
@@ -76,7 +75,7 @@
     </p>
     </div>
   </div>
-  <a class="btn" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">{{ t('stays.add_stay') }}</a></div>
+  <a class="btn{{ ' ph-hide' if cal_view }}" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">{{ t('stays.add_stay') }}</a></div>
 
   {#- 0717: alerts with no todo card of their own; a stay's alert stays hidden when its line is already here. -#}
   {% set ny_stay_ids = needs_you.lines | selectattr('stay_id') | map(attribute='stay_id') | list %}
@@ -86,7 +85,7 @@
   {% if not rows and feed_count %}{{ ui_empty(t('dashboard.empty.no_stays')) }}
   {% elif not rows %}{{ ui_empty(t('dashboard.empty.no_feed'), '', t('dashboard.empty.connect_calendar'), '/apartments/' ~ apartments[0].id ~ '?view=bookings#calendars', primary=false) }}
   {% endif %}
-  <section id="needs-action"data-needs-you-card data-dashboard-refresh="stats" aria-labelledby="needs-you-title">
+  <section id="needs-action"{% if cal_view %} class="ph-hide"{% endif %} data-needs-you-card data-dashboard-refresh="stats" aria-labelledby="needs-you-title">
     <h2 id="needs-you-title" class="sec ph-hide">{{ t('needs_you.title') }}</h2>
     <div class="todo ov-section">
     {% if ny_lines %}
@@ -110,9 +109,9 @@
   <div class="quiet ov-month ph-hide" data-dashboard-month><span>{{ t('dashboard.month.label') }}</span> <span class="ov-mi"><b>{{ month_summary.guests }}</b> {{ tp('dashboard.month.guests', month_summary.guests) }}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{ month_summary.nights }}</b> {{ tp('dashboard.month.nights', month_summary.nights) }}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{ month_summary.reported }}</b> {{ tp('dashboard.month.reported', month_summary.reported) }}</span></div>
   {% endif %}
 
-  <h2 class="ov-cal-block">{{ t('calendar.calendar') }}</h2>
+  <h2 class="ov-cal-block{{ ' ph-hide' if cal_view }}">{{ t('calendar.calendar') }}</h2>
   {% set wd = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'] if lang == 'cs' else ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'] %}
-  <div class="scroll-x ov-cal-block">
+  <div class="scroll-x ov-cal-block{{ ' ph-hide' if cal_view }}">
   <div class="card cal ov-section">
     <div class="cgrid"><div></div>{% for d in cal_days %}<div class="cd{{ ' today' if loop.first }}">{{ wd[d.weekday()] }} {{ d.day }}</div>{% endfor %}</div>
     {% for row in cal_rows %}
@@ -120,20 +119,21 @@
     {% endfor %}
   </div>
   </div>
-  <p class="ov-cal-more ov-cal-block"><a href="/?cal_view=calendar" class="ov-cal-link">{{ t('dashboard.calendar.full') }}</a></p>
+  <p class="ov-cal-more ov-cal-block{{ ' ph-hide' if cal_view }}"><a href="/?cal_view=calendar" class="ov-cal-link">{{ t('dashboard.calendar.full') }}</a></p>
   {% if cal_view %}{% include "_dashboard_calendar.html" %}{% endif %}
 
-  <h2 class="sec{{ ' ph-hide' if not today_rows }}">{{ t('dashboard.today.title') }}</h2>
-  <div class="hs ph-only">
-  {% for row in today_rows %}
+  <h2 class="sec{{ ' ph-hide' if cal_view or not key_rows }}"><span class="ph-hide">{{ t('dashboard.today.title') }}</span><span class="ph-only">{{ t('dashboard.ph.window') }}</span></h2>
+  <div class="hs ph-only{{ ' ph-hide' if cal_view or not (key_rows or next_arrival) }}">
+  {% for row in key_rows %}
     {% set reservation = row.reservation %}{% set progress = row.progress %}{% set cell = row.deadline_cell %}
     {% set stay_label = reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else reservation.internal_name %}
-    {% set arriving = (reservation.date_from | string)[:10] == today.isoformat() %}
+    {% set kind = row.key_kind %}
     <a class="card" href="/reservations/{{ reservation.id }}?return_to=/" data-stay-id="{{ reservation.id }}">
-      <span class="kind {{ 'in' if arriving else 'out' }}">{{ t('calendar.arrival') if arriving else t('calendar.departure') }}</span>
-      <div class="who"><div class="av">{{ stay_label[:1] | upper }}</div><div><div class="nm">{{ stay_label }}</div><div class="meta">{{ tp('dashboard.today.nights', row.nights) }} · {{ tp('dashboard.today.guests', progress.expected if progress.expected is not none else (progress.guests | length)) }}</div></div></div>
+      <span class="kind {{ 'out' if kind == 'leaves' else 'in' }}">{{ t('dashboard.ph.kind.tomorrow') if kind == 'tomorrow' else t('calendar.departure') if kind == 'leaves' else t('calendar.arrival') if kind == 'today' else t('dashboard.ph.kind.arrived', day=pass_date(reservation.date_from, 'wd')) }}</span>
+      <div class="who"><div class="av">{{ stay_label[:1] | upper }}</div><div><div class="nm">{{ stay_label }}</div><div class="meta">{{ stay_range(reservation.date_from, reservation.date_to) }} · {{ tp('dashboard.today.nights', row.nights) }} · {{ tp('dashboard.today.guests', progress.expected if progress.expected is not none else (progress.guests | length)) }}</div></div></div>
       {{ v2_status_pill(cell, progress, reservation) }}
     </a>
+  {% else %}{% if next_arrival and not cal_view %}{% set nx = next_arrival %}{% set nx_label = nx.reservation.summary if nx.reservation.source == 'manual' and nx.reservation.summary and nx.reservation.summary.strip() else nx.reservation.internal_name %}<a class="card" href="/reservations/{{ nx.reservation.id }}?return_to=/" data-stay-id="{{ nx.reservation.id }}"><span class="kind in">{{ t('dashboard.ph.kind.next') }}</span><div class="who"><div class="av">{{ nx_label[:1] | upper }}</div><div><div class="nm">{{ nx_label }}</div><div class="meta">{{ stay_range(nx.reservation.date_from, nx.reservation.date_to) }}</div></div></div>{{ v2_status_pill(nx.deadline_cell, nx.progress, nx.reservation) }}</a>{% endif %}
   {% endfor %}
   </div>
   <div class="card ov-table" data-dashboard-refresh="work"><table><thead><tr><th>{{ t('archive.col.guest') }}</th><th>{{ t('stay_fees.col.property') }}</th><th>{{ t('host.stay_dates') }}</th><th>{{ t('filter.status') }}</th><th></th></tr></thead><tbody>
