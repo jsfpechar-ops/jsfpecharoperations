@@ -547,7 +547,7 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                             f"feedback region overlaps local navigation on {name}/{lang}/{width}"
                         )
                     # 0538: the v2 property page header is a crumb and h1, not a full-width bar, so no edge lane to match
-                    v2_header_skip = name in ("fee-setup", "property-detail", "property-detail-configured", "guest-links", "automation")
+                    v2_header_skip = name in ("fee-setup", "property-detail", "property-detail-configured", "guest-links", "automation", "settings")  # 0789: settings index is a back button + h1, not a full-width bar
                     for edge in (() if v2_header_skip else ("left", "right")):
                         delta = round(result[edge] - header[edge], 2)
                         if abs(delta) > 2:
