@@ -251,6 +251,9 @@ func goHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
 				Resolver:     net.DefaultResolver,
 				AllowPrivate: ical.AllowPrivate(os.Getenv),
 			})
+			if err == nil {
+				jobs.Ping(ctx, os.Getenv("UBYHOST_HEARTBEAT_ICAL_URL"), "ical")
+			}
 			return totals.Feeds, err
 		},
 		"push": func(ctx context.Context) (int, error) {
@@ -273,6 +276,9 @@ func goHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
 			summary, err := ubyport.Sweep(ctx, d, nil)
 			if summary.Submitted > 0 || summary.Failed > 0 {
 				slog.Info("ubyport sweep", "apartments", summary.Apartments, "submitted", summary.Submitted, "failed", summary.Failed)
+			}
+			if err == nil {
+				jobs.Ping(ctx, os.Getenv("UBYHOST_HEARTBEAT_URL"), "submit")
 			}
 			return summary.Submitted, err
 		},
