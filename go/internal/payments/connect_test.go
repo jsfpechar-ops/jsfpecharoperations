@@ -15,6 +15,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
 )
@@ -25,6 +26,7 @@ type fakeOnboarder struct {
 	url     string
 	err     error
 	retErr  error
+	state   string
 	links   int
 	base    string
 	returns int
@@ -36,12 +38,26 @@ func (f *fakeOnboarder) OnboardingLink(_ context.Context, _ int64, base string) 
 	return f.url, f.err
 }
 
-func (f *fakeOnboarder) HandleReturn(_ context.Context, _ int64) error {
+func (f *fakeOnboarder) HandleReturn(_ context.Context, _ int64) (string, error) {
 	f.returns++
-	return f.retErr
+	return f.state, f.retErr
 }
 
 func connectNow() time.Time { return testNow }
+
+func TestConnectReturnKey(t *testing.T) {
+	cases := map[string]string{
+		"complete":        "payments.connect.flash_complete",
+		"action_required": "payments.connect.flash_action",
+		"pending":         "payments.connect.flash_pending",
+		"":                "payments.connect.flash_pending",
+	}
+	for state, want := range cases {
+		if got := connectReturnKey(state); got != want {
+			t.Errorf("state %q: got %s, want %s", state, got, want)
+		}
+	}
+}
 
 func connectEnv(mode string, extra map[string]string) func(string) string {
 	env := map[string]string{
@@ -104,9 +120,9 @@ func TestConnectExpiredTextsMatchPython(t *testing.T) {
 		src  []byte
 		want string
 	}{
-		"en": {en, connectExpiredTexts["en"]},
-		"cs": {en, connectExpiredTexts["cs"]},
-		"vi": {vi, connectExpiredTexts["vi"]},
+		"en": {en, hostweb.ExpiredTexts["en"]},
+		"cs": {en, hostweb.ExpiredTexts["cs"]},
+		"vi": {vi, hostweb.ExpiredTexts["vi"]},
 	}
 	for lang, c := range checks {
 		if !strings.Contains(string(c.src), `"impersonation.expired": "`+c.want+`"`) {
@@ -168,12 +184,37 @@ func TestConnectDatabase(t *testing.T) {
 		}
 	})
 
-	t.Run("no entity goes home", func(t *testing.T) {
+	t.Run("no entity goes back to payments with a flash before any Stripe call", func(t *testing.T) {
+		if _, err := pool.Exec(context.Background(), `UPDATE legal_entity SET archived_at = '2026-01-02T00:00:00+00:00' WHERE id = 1`); err != nil {
+			t.Fatal(err)
+		}
+		defer pool.Exec(context.Background(), `UPDATE legal_entity SET archived_at = NULL WHERE id = 1`)
+		fake.base = ""
+		rec := connectDo(start("test", nil), http.MethodGet, startPath, hostCookies, nil)
+		want := "/payments?err=" + strings.ReplaceAll("Add your business details first.", " ", "%20")
+		if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != want {
+			t.Errorf("no entity: %d %q", rec.Code, rec.Header().Get("Location"))
+		}
+		if fake.base != "" {
+			t.Errorf("Stripe was called without an entity")
+		}
+	})
+
+	t.Run("ErrNoEntity from Stripe onboarding goes back with the start flash", func(t *testing.T) {
 		fake.err = ErrNoEntity
 		defer func() { fake.err = nil }()
 		rec := connectDo(start("test", nil), http.MethodGet, startPath, hostCookies, nil)
-		if rec.Header().Get("Location") != "/" {
-			t.Errorf("no entity: %q", rec.Header().Get("Location"))
+		if rec.Code != http.StatusSeeOther || !strings.HasPrefix(rec.Header().Get("Location"), "/payments?err=") {
+			t.Errorf("no entity: %d %q", rec.Code, rec.Header().Get("Location"))
+		}
+	})
+
+	t.Run("stripe off goes back to payments with a flash", func(t *testing.T) {
+		fake.err = ErrStripeOff
+		defer func() { fake.err = nil }()
+		rec := connectDo(start("test", nil), http.MethodGet, startPath, hostCookies, nil)
+		if rec.Code != http.StatusSeeOther || !strings.HasPrefix(rec.Header().Get("Location"), "/payments?err=") {
+			t.Errorf("stripe off: %d %q", rec.Code, rec.Header().Get("Location"))
 		}
 	})
 
@@ -186,18 +227,30 @@ func TestConnectDatabase(t *testing.T) {
 		}
 	})
 
-	t.Run("return calls HandleReturn and goes home", func(t *testing.T) {
+	t.Run("return calls HandleReturn and flashes on /payments", func(t *testing.T) {
 		h := ConnectReturnHandler(pool, connectEnv("test", nil), connectNow, fake)
 		before := fake.returns
+		fake.state = "complete"
 		rec := connectDo(h, http.MethodGet, "/payments/connect/return", hostCookies, nil)
-		if rec.Header().Get("Location") != "/" || fake.returns != before+1 {
+		fake.state = ""
+		if !strings.HasPrefix(rec.Header().Get("Location"), "/payments?msg=") || fake.returns != before+1 {
 			t.Errorf("return: %q, calls %d", rec.Header().Get("Location"), fake.returns-before)
 		}
 		fake.retErr = ErrNoAccount
 		rec = connectDo(h, http.MethodGet, "/payments/connect/return", hostCookies, nil)
 		fake.retErr = nil
-		if rec.Header().Get("Location") != "/" {
+		if !strings.HasPrefix(rec.Header().Get("Location"), "/payments?msg=") {
 			t.Errorf("return with no account: %q", rec.Header().Get("Location"))
+		}
+	})
+
+	t.Run("return with a Stripe error is 500", func(t *testing.T) {
+		h := ConnectReturnHandler(pool, connectEnv("test", nil), connectNow, fake)
+		fake.retErr = errors.New("boom")
+		rec := connectDo(h, http.MethodGet, "/payments/connect/return", hostCookies, nil)
+		fake.retErr = nil
+		if rec.Code != http.StatusInternalServerError {
+			t.Errorf("return error: %d", rec.Code)
 		}
 	})
 
@@ -240,7 +293,7 @@ func TestConnectDatabase(t *testing.T) {
 	t.Run("expired impersonation writes two rows and a plain cookie", func(t *testing.T) {
 		h := ConnectReturnHandler(pool, connectEnv("test", nil), connectNow, fake)
 		rec := connectDo(h, http.MethodGet, "/payments/connect/return", adminCookies, nil)
-		want := "/admin/customers?msg=" + url.PathEscape(connectExpiredTexts["en"])
+		want := "/admin/customers?msg=" + url.PathEscape(hostweb.ExpiredTexts["en"])
 		if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != want {
 			t.Errorf("expired: %d %q", rec.Code, rec.Header().Get("Location"))
 		}
@@ -299,6 +352,8 @@ func connectSeed(t *testing.T, pool *pgxpool.Pool) {
 			(1, 1, 'terms', 't1', NOW(), 'clickwrap'), (2, 1, 'privacy', 'p1', NOW(), 'clickwrap'), (3, 1, 'dpa', 'd1', NOW(), 'clickwrap'),
 			(4, 2, 'terms', 't1', NOW(), 'clickwrap'), (5, 2, 'privacy', 'p1', NOW(), 'clickwrap'), (6, 2, 'dpa', 'd1', NOW(), 'clickwrap'),
 			(7, 4, 'terms', 't1', NOW(), 'clickwrap'), (8, 4, 'privacy', 'p1', NOW(), 'clickwrap'), (9, 4, 'dpa', 'd1', NOW(), 'clickwrap')`,
+		`INSERT INTO legal_entity (id, owner_user_id, name, business_type, created_at, contact_email, vat_status, invoice_due_days)
+			VALUES (1, 1, 'Test Company s.r.o.', 'company', '2026-01-01T00:00:00+00:00', NULL, 'none', 14)`,
 	}
 	for _, q := range stmts {
 		if _, err := pool.Exec(ctx, q); err != nil {

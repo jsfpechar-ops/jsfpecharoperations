@@ -87,7 +87,7 @@ func QueueCancelledWithGuestsMail(ctx context.Context, pool *pgxpool.Pool, geten
 	return EnqueueMail(ctx, pool, OutboxMail{
 		Kind:        "cancelled_with_guests",
 		Key:         fmt.Sprintf("cancelled_with_guests:%d:%s", reservationID, variant),
-		ApartmentID: apartmentID,
+		ApartmentID: &apartmentID,
 		OwnerUserID: owner,
 		To:          to,
 		Subject:     content.Subject,
