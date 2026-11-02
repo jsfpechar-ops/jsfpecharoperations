@@ -10,7 +10,7 @@ Josef's review of the 0780-0784 screenshots (390 px phone), fixed everywhere the
 1. **Help `?` sits on its own line under a heading** (Archive, Data protection, Guest form access, and the rest). Put the 24 px round `?` inline, right after the heading text, on the same line (`display:inline-flex`, `vertical-align:middle`, 6-8 px gap). Every `.help-tip` that follows a heading or label.
 2. **Text too close to a button.** Data protection: the note after "Delete 0 expired records" starts right beside the button and wraps under it. The note goes on its own line under the button, with a 8-12 px gap. Same for any button followed by inline text.
 3. **Text at the card edge.** Activity log: the intro sentence and "Recent activity (1 events)" heading and the filter chips have no side padding, while the rows above have 20-24 px. Give every block inside a `.card` the same side padding as its rows. Check every `details` body and every card section.
-4. **Help button label.** The accessible/visible text "Open help" is enough as "Help" ("Nápověda" in Czech); the `?` already says what it is. Change the i18n strings only.
+4. **Help button label.** Josef: the visible text "Open help" becomes just "Open" ("Otevřít" in Czech), because it sits right next to the `?`. Keep an accessible name that still says help (aria-label). Change the i18n strings only.
 5. **Společnosti (entities) row actions.** Phone card: Edit and Invoice settings buttons and the `⋮` menu are not on one line or not vertically centred; desktop row: `⋮` sits lower than the two buttons. All three on one row, same 36 px height (44 px tap area below 1024), centred on one axis; `⋮` is a 36 px round ghost button.
 
 ## 2. Context
