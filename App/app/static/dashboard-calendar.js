@@ -111,7 +111,7 @@
     properties, events: [], loading: false,
     display: { property: preferences.property !== false, label: preferences.label !== false, guests: preferences.guests !== false }
   };
-  let requestNumber = 0, controller = null, selection = null, suppressClickUntil = 0;
+  let requestNumber = 0, controller = null, selection = null, suppressClickUntil = 0, dayListEnd = null, touchPress = null;
   let keyboardAnchor = null, dayListDate = null, saving = false, createKind = cleaningMode ? "cleaning" : "stay";
   const focusReturn = new WeakMap();
   let lastLoadedRange = null;
@@ -295,7 +295,8 @@
         day.dataset.date = date;
         if (date.slice(0, 7) !== state.date.slice(0, 7) && state.scale !== "week") day.classList.add("is-outside");
         if (date === root.dataset.today) day.classList.add("is-today");
-        const button = el("button", "cal-day-number", String(dateValue(date).getUTCDate()));
+        if (date < root.dataset.today) day.classList.add("is-past");
+        const button = el("button", "cal-day-number"); button.append(el("span", "cal-num", String(dateValue(date).getUTCDate())));
         button.type = "button"; button.dataset.calDay = date;
         button.setAttribute("aria-label", format("select_day", { date: fullDate(date) }));
         button.title = labels.keyboard;
@@ -510,6 +511,7 @@
   $$("dialog").forEach(dialog => {
     dialog.addEventListener("close", () => {
       const target = focusReturn.get(dialog); focusReturn.delete(dialog);
+      if (dialog === dayDialog) cancelSelection();
       if ($("dialog[open]")) return;
       // The close event is queued: keep focus if another control already received it.
       const active = document.activeElement;
@@ -579,8 +581,22 @@
     if (dayDialog.open) close(dayDialog);
     show(detailsDialog);
   }
+  function openSheet(start, end) {
+    dayListDate = start; dayListEnd = addDays(end, 1);
+    $("[data-cal-day-dialog] #cal-day-title").textContent = end > start ? shortDate(start) + " – " + shortDate(dayListEnd) : shortDate(start);
+    const list = $("[data-cal-day-list]"); list.replaceChildren(); list.className = "cal-day-list";
+    state.events.filter(event => displayOverlap(event, start, dayListEnd)).forEach(event => list.append(eventLink(event)));
+    if (!dayDialog.open) { focusReturn.set(dayDialog, document.activeElement); dayDialog.show(); }
+  }
+  function phoneTap(date) {
+    const current = selection, single = !!current && current.start === current.end;
+    if (single && current.start === date) { cancelSelection(); dayDialog.close(); return; }
+    const from = single && date > current.start ? current.start : date;
+    selection = { anchor: from, start: from, end: date, property: "" };
+    paintSelection(); openSheet(from, date);
+  }
   function openDay(day) {
-    dayListDate = day; $("[data-cal-day-dialog] #cal-day-title").textContent = cleaningMode ? fullDate(day) : format("day_stays", { date: fullDate(day) });
+    dayListDate = day; dayListEnd = addDays(day, 1); $("[data-cal-day-dialog] #cal-day-title").textContent = cleaningMode ? fullDate(day) : format("day_stays", { date: fullDate(day) });
     const list = $("[data-cal-day-list]"); list.replaceChildren(); list.className = "cal-day-list";
     const events = state.events.filter(event => displayOverlap(event, day, addDays(day, 1)));
     events.forEach(event => list.append(eventLink(event)));
@@ -692,15 +708,58 @@
     if (phoneDots() && chosen.start === chosen.end) {
       cancelSelection(); suppressClickUntil = Date.now() + 400;
       if (root.hasPointerCapture(event.pointerId)) root.releasePointerCapture(event.pointerId);
-      openDay(chosen.start);
+      phoneTap(chosen.start);
       return;
     }
     cancelSelection(); suppressClickUntil = Date.now() + 400;
     if (root.hasPointerCapture(event.pointerId)) root.releasePointerCapture(event.pointerId);
     openCreate(chosen.start, addDays(chosen.end, 1), chosen.property, cleaningMode ? "cleaning" : "stay", anchor);
   });
-  root.addEventListener("pointercancel", cancelSelection);
-  root.addEventListener("lostpointercapture", cancelSelection);
+  root.addEventListener("pointercancel", cancelMouseSelection);
+  root.addEventListener("lostpointercapture", cancelMouseSelection);
+  function cancelMouseSelection() { if (selection && selection.pointerId === undefined) return; cancelSelection(); }
+  function cancelTouchPress() { if (touchPress) clearTimeout(touchPress.timer); touchPress = null; }
+  function startTouchDrag() {
+    if (!touchPress) return;
+    touchPress.dragging = true; touchPress.timer = 0;
+    selection = { anchor: touchPress.date, start: touchPress.date, end: touchPress.date, property: "" };
+    paintSelection();
+  }
+  body.addEventListener("touchstart", event => {
+    const cell = event.target.closest("[data-date]");
+    if (!phoneDots() || readOnly || event.touches.length !== 1 || state.loading || !lastLoadedRange || !cell || !body.contains(cell) ||
+      event.target.closest("[data-cal-event], [data-cal-more]")) return;
+    const touch = event.touches[0];
+    cancelTouchPress();
+    touchPress = { x: touch.clientX, y: touch.clientY, date: cell.dataset.date, dragging: false, timer: setTimeout(startTouchDrag, 300) };
+  }, { passive: true });
+  body.addEventListener("touchmove", event => {
+    if (!touchPress) return;
+    const touch = event.touches[0];
+    if (!touchPress.dragging) {
+      if (Math.hypot(touch.clientX - touchPress.x, touch.clientY - touchPress.y) > 8) cancelTouchPress();
+      return;
+    }
+    event.preventDefault();
+    const target = document.elementFromPoint(touch.clientX, touch.clientY), cell = target && target.closest("[data-date]");
+    if (!cell || !body.contains(cell) || !selection) return;
+    const day = cell.dataset.date;
+    selection.start = day < selection.anchor ? day : selection.anchor;
+    selection.end = day > selection.anchor ? day : selection.anchor;
+    paintSelection();
+  }, { passive: false });
+  body.addEventListener("touchend", () => {
+    if (!touchPress) return;
+    const dragging = touchPress.dragging;
+    cancelTouchPress();
+    if (!dragging) return;
+    suppressClickUntil = Date.now() + 400;
+    openSheet(selection.start, selection.end);
+  });
+  body.addEventListener("touchcancel", () => {
+    if (touchPress && touchPress.dragging) cancelSelection();
+    cancelTouchPress();
+  });
   root.addEventListener("keydown", event => {
     if (event.key === "Escape") { cancelSelection(); return; }
     const cell = event.target.closest("[data-cal-day]");
@@ -736,7 +795,7 @@
     const day = target.closest("[data-cal-day]");
     if (day) {
       if (Date.now() < suppressClickUntil || state.loading || !lastLoadedRange) return;
-      if (phoneDots()) { openDay(day.dataset.calDay); return; }
+      if (phoneDots()) { phoneTap(day.dataset.calDay); return; }
       openCreate(day.dataset.calDay, addDays(day.dataset.calDay, 1), day.dataset.property || state.property, cleaningMode ? "cleaning" : "stay", day); return;
     }
     const more = target.closest("[data-cal-more]");
@@ -753,7 +812,7 @@
       state.date = next < "1900-01-01" ? "1900-01-01" : next > "2100-12-01" ? "2100-12-01" : next;
       load(); return;
     }
-    if (target.closest("[data-cal-day-add]") && dayListDate) openCreate(dayListDate, addDays(dayListDate, 1), state.property, cleaningMode ? "cleaning" : "stay", target.closest("[data-cal-day-add]"));
+    if (target.closest("[data-cal-day-add]") && dayListDate) openCreate(dayListDate, dayListEnd, state.property, cleaningMode ? "cleaning" : "stay", target.closest("[data-cal-day-add]"));
   });
   document.querySelectorAll("[data-calendar-add]").forEach(link => link.addEventListener("click", event => {
     if (event.ctrlKey || event.metaKey || event.shiftKey || event.button !== 0 || !state.properties.length) return;
