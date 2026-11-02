@@ -1165,3 +1165,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .invoice-quick-stays li + li{margin-top:var(--space-4)}
 .invoice-quick-stays .ui-btn{width:100%;min-height:44px;justify-content:flex-start;text-align:left;white-space:normal}
 /* 0849 invoice quick stays (end) */
+/* 0888 invoice use price (start) */
+.invoice-use-price{margin-top:var(--space-3);min-height:var(--control-h-phone)}
+.invoice-use-price[hidden]{display:none}
+/* 0888 invoice use price (end) */

@@ -221,6 +221,26 @@ def _last_stay_price_hint(request: Request, apartment_id: int) -> str:
     return f"{amount:.2f}".rstrip("0").rstrip(".")
 
 
+PAID_VIA_CHOICES = ("direct_transfer", "cash", "airbnb", "booking")
+
+
+def _remember_paid_via(request: Request, entity_id: int, values: Dict[str, Any]) -> None:
+    """0888: a new invoice starts with the payment method of this operator's last paid invoice."""
+    row = db.query_one(
+        "SELECT paid_via FROM invoice "
+        f"WHERE legal_entity_id = ? AND {db.null_safe_eq('owner_user_id')} "
+        "AND kind = 'invoice' AND paid_via IS NOT NULL AND paid_via != '' "
+        "ORDER BY issue_date DESC, id DESC LIMIT 1",
+        (entity_id, access.owner_id(request)),
+    )
+    if not row:
+        return
+    if row["paid_via"] in PAID_VIA_CHOICES:
+        values["paid_via"] = row["paid_via"]
+    else:
+        values["paid_via_custom"] = row["paid_via"][:60]
+
+
 def _form_state(request, form, entity) -> Dict[str, Any]:
     """Reshape a failed POST so the 422 render loses nothing the host typed."""
     state = {key: _form_str(form, key) for key in (
@@ -259,6 +279,8 @@ def _form_context(request, entities, entity, *, errors=None, values=None, stay=N
     price_hint = ""
     if stay:
         price_hint = _last_stay_price_hint(request, stay["reservation"]["apartment_id"])
+    if stay and entity and not any(key in values for key in ("already_paid", "paid_via", "paid_via_custom")):
+        _remember_paid_via(request, entity["id"], values)
     return {
         "nav": "invoices",
         "entities": entities,
