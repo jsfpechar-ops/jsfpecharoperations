@@ -1,12 +1,16 @@
 {% extends "host_page.html" %}
 {% set nav = 'invoices' %}
 {% set body_kind = 'form' %}
+{% set v2 = true %}
 {% from "_components.html" import field_label, help_tip with context %}
 {% block title %}{{ t('invoice.new') }}{% endblock %}
 {% block meta %}{{ t('invoices.lede') }}{% endblock %}
 {% block back_url %}/invoices{% endblock %}
 {% block back_label %}{{ t('nav.invoices') }}{% endblock %}
+{% block page_title %}{% endblock %}
 {% block body %}
+<div class="e-page">
+{% with href='/invoices', title=t('invoice.new') %}{% include "partials/settings_back_header.html" %}{% endwith %}
 
 {% if errors %}
 <div class="ui-banner ui-banner-attention">
@@ -490,4 +494,5 @@
 })();
 </script>
 {% endif %}
+</div>
 {% endblock %}

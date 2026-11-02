@@ -22,7 +22,7 @@ def test_invoice_stay_picker_has_the_v2_form_shell(host_with_property):
     # Without reservation_id, /invoices/new renders the stay picker.
     page = host_with_property.get("/invoices/new?lang=en").text
     assert page.count("<h1") == 1 and 'data-body-kind="form"' in page and "<style>" not in page
-    assert 'class="ui-ph-back" href="/invoices"' in page
+    assert 'class="airbnb-back" href="/invoices"' in page
 
 
 def test_templates_have_no_raw_style_or_legacy_control():

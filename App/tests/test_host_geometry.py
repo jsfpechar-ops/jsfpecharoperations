@@ -103,7 +103,7 @@ def test_dashboard_actions_share_height_and_gap(base):
         )
         browser.close()
     boxes = measured["boxes"]
-    assert measured["gap"] == "8px"
+    assert measured["gap"] == "12px"
     assert boxes
     assert len({box["height"] for box in boxes}) == 1
     assert boxes[0]["height"] == 37  # v2 mockup .btn (checked against the mockup by test_0710)

@@ -148,11 +148,16 @@ _AUDIT_JS = """(isBack) => {
     }
   }
 
-  // no fine print: p, small or .muted longer than 60 characters, outside help bodies
-  for (const el of root.querySelectorAll('p, small, .muted')) {
-    if (!vis(el) || el.closest('.help-tip-body, .help-tip, script, style')) continue;
-    const t = el.textContent.trim().replace(/\\s+/g, ' ');
-    if (t.length > 60) out.push(`fine print of ${t.length} characters outside a help body: "${t.slice(0, 40)}..."`);
+  // no fine print: any visible element (any tag) whose OWN text (its direct text nodes, not its children) is longer
+  // than 60 characters, outside help bodies, open help panels, headings, input labels, table cells and form fields
+  const SKIP_FINE = 'h1, h2, h3, h4, h5, h6, label, td, th, table, textarea, input, select, option, script, style';
+  // .env-banner is the shell's practice-mode safety alert (base.html, _env_banner.html), shown only when UBYPORT_ENV is mock
+  const HELP_PANEL = '.help-tip-body, .help-tip, .env-banner, details[open].ui-how, details[open].stays-how, details[open].help-panel';
+  for (const el of [root, ...root.querySelectorAll('*')]) {
+    if (el.matches(SKIP_FINE) || el.closest(SKIP_FINE + ', ' + HELP_PANEL)) continue;
+    if (!vis(el)) continue;
+    const own = [...el.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join(' ').trim().replace(/\\s+/g, ' ');
+    if (own.length > 60) out.push(`fine print of ${own.length} characters outside a help body: "${own.slice(0, 40)}..."`);
   }
   return out;
 }"""
@@ -193,15 +198,38 @@ def seeded(dashboard_rich_host):
     db.execute("DELETE FROM submission WHERE id = ?", (submission_id,))
 
 
+@pytest.fixture
+def leon_on(dashboard_rich_host, monkeypatch):
+    """The Leon settings page is a 404 while AI features are off and redirects to setup while Leon is off or the terms
+    are stale. Same switches as test_0396's leon_offered fixture, plus Leon on with current terms for the first property;
+    the apartment's Leon columns are restored afterwards."""
+    from app import config, leon
+
+    monkeypatch.setattr(config, "AI_FEATURES", frozenset({"leon"}))
+    monkeypatch.setattr(config, "ANTHROPIC_API_KEY", "test-key")
+    monkeypatch.setattr(config, "AI_TEST_EMAILS", frozenset())
+    apartment = _placeholders(dashboard_rich_host)["first_property"]
+    before = db.query_one("SELECT leon_enabled, leon_terms_version FROM apartment WHERE id = ?", (apartment,))
+    db.execute("UPDATE apartment SET leon_enabled = 1, leon_terms_version = ? WHERE id = ?", (leon.LEON_TERMS_VERSION, apartment))
+    yield apartment
+    db.execute("UPDATE apartment SET leon_enabled = ?, leon_terms_version = ? WHERE id = ?",
+               (before["leon_enabled"], before["leon_terms_version"], apartment))
+
+
 def _path(name, host, seeded_ids):
     values = {**_placeholders(host), **seeded_ids}
     return ROUTES[name].format(**values)
 
 
 @pytest.mark.parametrize("name,width", CASES, ids=IDS)
-def test_0830_airbnb_page(name, width, base, dashboard_rich_host, seeded):
-    from app import auth
+def test_0830_airbnb_page(name, width, base, dashboard_rich_host, seeded, monkeypatch, request):
+    from app import auth, config
 
+    if name == "partF-subscription":
+        # /predplatne redirects to /settings while billing is off (routes/billing.py), so switch it on for this page
+        monkeypatch.setattr(config, "BILLING_ENABLED", True)
+    if name == "partF-leon-settings":
+        request.getfixturevalue("leon_on")
     cookie = dashboard_rich_host["client"].cookies.get(auth.SESSION_COOKIE)
     assert cookie
     path = _path(name, dashboard_rich_host, seeded)
@@ -225,3 +253,64 @@ def test_0830_airbnb_page(name, width, base, dashboard_rich_host, seeded):
     problems += findings
     problems += audit
     assert not problems, f"{name} ({url}) at {width} px:\n" + "\n".join(problems)
+
+
+def test_0830C_properties_regressions(base, dashboard_rich_host, seeded):
+    from app import auth
+
+    cookie = dashboard_rich_host["client"].cookies.get(auth.SESSION_COOKIE)
+    assert cookie
+    path = _path("partC-properties", dashboard_rich_host, seeded)
+    problems = []
+    with _launch_ctx() as playwright:
+        browser = _launch(playwright)
+        for width in (390, 1280):
+            context, page = _open_app(browser, base, cookie, path, width)
+            state = page.evaluate(
+                """() => {
+                    const visible = (e) => !!e && getComputedStyle(e).display !== 'none' && e.getClientRects().length > 0;
+                    const sub = [...document.querySelectorAll('.props-head p.sub')].filter(visible).length;
+                    const how = document.querySelector('details.ui-how[data-how="properties"]');
+                    const summary = how ? how.querySelector('summary') : null;
+                    const body = how ? how.querySelector('.ui-how-body') : null;
+                    const thead = document.querySelector('.props-card thead');
+                    const card = document.querySelector('.props-card');
+                    return {
+                        sub,
+                        howOpen: how ? how.open : null,
+                        bodyVisible: visible(body),
+                        markers: summary ? getComputedStyle(summary).listStyleType : null,
+                        chevrons: summary ? [...summary.querySelectorAll('svg.ui-how-chevron')].filter(visible).length : 0,
+                        theadVisible: visible(thead),
+                        cardBorder: card ? getComputedStyle(card).borderTopWidth : null,
+                    };
+                }"""
+            )
+            context.close()
+            if state["sub"] != 0:
+                problems.append(f"{width}: fine print under the h1 is still visible")
+            if state["howOpen"] is not False or state["bodyVisible"]:
+                problems.append(f"{width}: the help box renders expanded by default")
+            if state["markers"] != "none":
+                problems.append(f"{width}: help summary still shows a native marker")
+            if state["chevrons"] > 0:
+                problems.append(f"{width}: help summary shows a chevron icon")
+            if state["theadVisible"]:
+                problems.append(f"{width}: beige table header is visible")
+            if state["cardBorder"] != "1px":
+                problems.append(f"{width}: list container has no 1 px border")
+        browser.close()
+    assert not problems, problems
+
+
+def test_0830D_stays_regressions():
+    # Stays list with ZERO stays seeded: tabs are settings pills, one help control, index-row links.
+    from tests.test_signed_in_chrome import empty_host as _empty_host
+
+    gen = _empty_host.__wrapped__()
+    host = next(gen)
+    page = host.get("/reservations?lang=en").text
+    assert page.count("<h1") == 1
+    assert 'class="settings-pills"' in page or 'data-empty-state' in page
+    assert 'class="chip ' not in page and 'class="chips' not in page
+    assert page.count("ui-how-chevron") <= 1

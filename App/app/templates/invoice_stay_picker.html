@@ -1,12 +1,16 @@
 {% extends "host_page.html" %}
 {% set nav = 'invoices' %}
 {% set body_kind = 'form' %}
+{% set v2 = true %}
 {% from "_components.html" import field_label with context %}
 {% block title %}{{ t('invoice.new') }}{% endblock %}
 {% block meta %}{{ t('invoice.picker.lede') }}{% endblock %}
 {% block back_url %}/invoices{% endblock %}
 {% block back_label %}{{ t('nav.invoices') }}{% endblock %}
+{% block page_title %}{% endblock %}
 {% block body %}
+<div class="e-page">
+{% with href='/invoices', title=t('invoice.new') %}{% include "partials/settings_back_header.html" %}{% endwith %}
 
 <div class="ui-section">
   {% if stays %}
@@ -26,7 +30,7 @@
   {% else %}
   <p>{{ t('invoice.picker.empty') }}</p>
   {% endif %}
-  <p class="ui-sub"><a href="/reservations">{{ t('invoice.picker.add_stay') }}</a>
-    · <a href="{{ invoice_details_url }}">{{ t('host.invoice_settings') }}</a></p>
+  <p class="ui-sub picker-links"><a href="/reservations">{{ t('invoice.picker.add_stay') }}</a><a href="{{ invoice_details_url }}">{{ t('host.invoice_settings') }}</a></p>
+</div>
 </div>
 {% endblock %}

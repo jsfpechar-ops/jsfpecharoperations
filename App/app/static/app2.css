@@ -1322,12 +1322,161 @@ body.v2 input[type=checkbox][data-toggle-submit]:focus-visible{outline:2px solid
 /* 0830 shared (start) */
 /* 0830 shared (end) */
 /* 0830B overview+menu (start) */
+/* Overview (dashboard.html): bordered 1 px cards, no shadow, text 16 px inside the edge */
+body.v2 .needs-you-card-item,body.v2 .cal,body.v2 .ov-table{background:#fff;border:1px solid var(--line);box-shadow:none;padding:16px}
+/* Overview today cards keep their phone radius (0729 spec); only the border and the shadow change */
+body.v2 .hs>.card{background:#fff;border:1px solid var(--line);box-shadow:none}
+/* Overview: 12 px between the headline and the date line */
+body.v2 .ov-head .sub{margin-top:12px}
+/* Overview calendar: 12 px between neighbouring stay bars in one row */
+body.v2 .cal .crow .bar{margin:0 6px;padding:0 8px}
+/* Overview calendar: the day grid fits the card at 1024 px, so the day labels stay 16 px inside the edge */
+body.v2 .cal .cgrid{min-width:0;grid-template-columns:112px repeat(14,minmax(36px,1fr))}
 /* 0830B overview+menu (end) */
 /* 0830C properties+property (start) */
+body.v2 .props-head p.sub{display:none}
+body.v2 .props-card > table :is(th,td):first-child{padding-left:16px}
+body.v2 .props-card > table :is(th,td):last-child{padding-right:16px}
+body.v2 .props-phone .card.prop{border:1px solid #e5e5e5;border-radius:12px;box-shadow:none;padding:20px}
+body.v2 .guest-card{border:1px solid #e5e5e5;border-radius:12px;box-shadow:none;background:#fff}
+body.v2 .guest-card .guest-btns{gap:12px}
+body.v2 .guest-card .guest-pin-copy{margin-top:12px}
+body.v2 .guest-card input.sr-only{visibility:hidden}
+body.v2 .prop-sec label{display:block;margin-bottom:12px}
+body.v2 .prop-sec :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select,textarea){margin-bottom:12px}
+body.v2 .prop-sec p.ui-sub:not([data-link-window-note]):not(:has(strong)),body.v2 .prop-sec .property-group-intro,body.v2 .prop-sec .police-no-credentials{display:none}
+body.v2 .props-phone .in b{white-space:normal;overflow-wrap:anywhere}
+body.v2 .props-card > table thead .sr-only{display:none}
+body.v2 .airbnb-back{width:44px;height:44px;flex-basis:44px}
+body.v2 a.btn.ghost[href="/apartments"]{margin-right:12px}
+body.v2 aside.preview h4{margin-bottom:12px}
+body.v2 aside.preview a.r{display:flex;margin-bottom:12px}
+body.v2 aside.preview .ui-btn,body.v2 aside.preview button{margin-bottom:12px}
+body.v2 .props-head details.ui-how:not([open]) > .ui-how-body{display:none}
+body.v2 .props-head details.ui-how[open] > .ui-how-body{border:0;background:none;box-shadow:none;padding:0}
+body.v2 .props-head details.ui-how > summary{list-style:none;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;min-height:24px;padding:0;border:0;background:none;margin:0}
+body.v2 .props-head details.ui-how > summary::-webkit-details-marker,body.v2 .props-head details.ui-how > summary::marker{display:none;content:""}
+body.v2 .props-head details.ui-how > summary .ui-how-chevron,body.v2 .props-head details.ui-how > summary > span:not(.ui-how-chevron){display:none}
+body.v2 .props-head details.ui-how > summary > svg:not(.ui-how-chevron){display:inline-block}
+body.v2 .props-card thead{display:none}
+body.v2 .props-card{border:1px solid #e5e5e5;border-radius:12px;box-shadow:none;background:#fff}
+body.v2 .props-card > table td{border-bottom:1px solid #e5e5e5}
 /* 0830C properties+property (end) */
 /* 0830D reservations+stay (start) */
+body.v2 .stays-desk{padding:16px}
+body.v2 .host-stay-detail .card{border:1px solid #e5e5e5;border-radius:12px;padding:16px 20px;box-shadow:none}
+body.v2 .stays-phone .card.stay{border:1px solid #e5e5e5;border-radius:12px;padding:16px}
+body.v2 .stays-title-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+body.v2 [data-filter-summary]{display:none}
+body.v2 .stays-head-actions{flex-wrap:wrap;gap:12px}
+body.v2 .stays-head-actions [data-filter-toggle][hidden]{display:none}
+body.v2 .stays-links{display:flex;flex-direction:column;gap:12px;margin-top:16px}
+body.v2 .stays-links .link{display:flex;align-items:center;justify-content:space-between;min-height:64px;padding:0 16px;border:1px solid #e5e5e5;border-radius:12px;color:var(--ink);text-decoration:none;font-size:17px}
+body.v2 .stay-head-cta{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+body.v2 .stay-guests-actions{display:flex;flex-wrap:wrap;gap:12px}
+body.v2 .stays-title-row .help-tip-btn,body.v2 .police-deadline-row .help-tip-btn{min-width:44px;min-height:44px;box-sizing:border-box}
+body.v2 .stays-title-row .help-tip,body.v2 .police-deadline-row .help-tip{position:relative;display:inline-flex;align-items:center}
+body.v2 .stays-title-row .help-tip-body,body.v2 .police-deadline-row .help-tip-body{display:none;position:fixed;z-index:70;left:0;top:100%;box-sizing:border-box;width:min(320px,calc(100vw - 16px));max-width:calc(100vw - 16px);padding:10px 12px;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-popover);font-size:13px;font-weight:400;line-height:1.45;text-align:left}
+body.v2 .stays-title-row .help-tip.is-open>.help-tip-body,body.v2 .police-deadline-row .help-tip.is-open>.help-tip-body,body.v2 .stays-title-row .help-tip:not([data-js]):hover>.help-tip-body,body.v2 .police-deadline-row .help-tip:not([data-js]):hover>.help-tip-body,body.v2 .stays-title-row .help-tip:not([data-js]):focus-within>.help-tip-body,body.v2 .police-deadline-row .help-tip:not([data-js]):focus-within>.help-tip-body{display:block}
+body.v2 .stays-title-row .help-tip-body a,body.v2 .police-deadline-row .help-tip-body a{color:var(--brand-ink);font-weight:650}
+body.v2 .police-deadline-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+body.v2 .stays-phone .in b,body.v2 .stays-phone .in small{white-space:normal;overflow-wrap:anywhere}
+body.v2 .stays-pills .settings-pill:hover{background:#e4e4e4}
 /* 0830D reservations+stay (end) */
 /* 0830E invoices+submission (start) */
+
+/* 0830E page wrapper: phone bottom room for the tab bar; 44 px tap targets; 12 px gaps between neighbours */
+/* closed details keep their content out of layout; the hidden form otherwise sticks out under the tab bar */
+body.v2 .e-page details:not([open]) > :not(summary){display:none}
+body.v2 .e-page .picker-links{margin:24px 0 0;display:flex;flex-wrap:wrap;gap:12px}
+body.v2 .e-page .airbnb-back{width:44px;height:44px;min-width:44px;min-height:44px}
+body.v2 .e-page .help-tip-btn{min-width:44px;min-height:44px}
+body.v2 .e-page .ui-btn-compact{min-height:44px}
+body.v2 .e-page .field-label-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 12px}
+body.v2 .e-page .ui-form-actions,body.v2 .e-page .ui-btn-group,body.v2 .e-page .stay-command-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+body.v2 .e-page .technical-downloads{gap:12px}
+
+/* 0830E: invoice detail, invoice form + stay picker, submission detail (v2). Ported from host.css look; detail pages use the settings back header. */
+body.v2 .stay-command-panel{border:1px solid var(--line,#e5e5e5);border-radius:12px;padding:20px;margin:0 0 24px;background:var(--paper,#fff);box-shadow:none}
+body.v2 .stay-command-main{display:flex;flex-direction:column;gap:16px}
+body.v2 .stay-command-panel .eyebrow{font-size:14px;font-weight:600;color:var(--ink3,#6b6b6b);margin:0 0 4px}
+body.v2 .stay-command-note{margin:0;font-size:16px;line-height:1.5;color:var(--ink,#222)}
+body.v2 .stay-command-actions .ui-btn-group,body.v2 .stay-command-actions .ui-form-actions{display:flex;flex-wrap:wrap;gap:12px}
+body.v2 .stay-command-actions form.inline{margin:0}
+body.v2 .stay-command-panel .ui-banner{margin:16px 0 0}
+body.v2 .stay-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0 0}
+@media (min-width:768px){body.v2 .stay-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}}
+body.v2 .detail-metric{border:1px solid var(--line,#e5e5e5);border-radius:12px;padding:16px;min-width:0}
+body.v2 .metric-label{font-size:14px;color:var(--ink3,#6b6b6b);margin:0 0 8px;overflow-wrap:anywhere}
+body.v2 .metric-value{font-size:24px;font-weight:700;color:var(--ink,#222);overflow-wrap:anywhere}
+body.v2 .metric-value.small-value{font-size:16px}
+body.v2 .report-stamp-value .copy-btn,body.v2 .report-stamp-value button{margin-left:8px}
+body.v2 .report-stamp{overflow-wrap:anywhere}
+body.v2 .report-header-problems{margin:16px 0 0;padding:16px;border:1px solid var(--line,#e5e5e5);border-radius:12px}
+body.v2 .report-header-problems h3{font-size:16px;font-weight:700;margin:0 0 8px}
+body.v2 .report-header-problems ul{margin:0 0 12px;padding-left:20px}
+body.v2 .invoice-document{display:block;min-width:0}
+body.v2 .ui-table-wrap{max-width:100%;overflow-x:auto}
+body.v2 .ui-note-line,body.v2 .invoice-document > p.ui-sub{margin:12px 0 0}
+body.v2 .danger-zone{border:1px solid var(--line,#e5e5e5);border-radius:12px;padding:16px;margin:24px 0 0;background:none}
+body.v2 .danger-zone > summary{font-size:16px;font-weight:700;cursor:pointer;min-height:44px;display:flex;align-items:center}
+body.v2 .danger-zone form{display:flex;flex-direction:column;gap:12px;margin:12px 0 0}
+body.v2 .danger-zone .ui-field{margin:0}
+body.v2 .invoice-cancel-reason input{max-width:100%}
+body.v2 details.technical{border:1px solid var(--line,#e5e5e5);border-radius:12px;padding:16px;margin:24px 0 0;background:none}
+body.v2 details.technical > summary{font-size:16px;font-weight:700;cursor:pointer;min-height:44px;display:flex;align-items:center}
+body.v2 details.technical > h3{font-size:16px;font-weight:700;margin:16px 0 8px}
+body.v2 details.technical dl.kv{display:grid;gap:4px;margin:12px 0 0}
+body.v2 details.technical dl.kv dt{font-size:14px;color:var(--ink3,#6b6b6b)}
+body.v2 details.technical dl.kv dd{margin:0;overflow-wrap:anywhere}
+body.v2 .technical-downloads{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+body.v2 .technical-download{display:inline-flex;align-items:center;gap:8px}
+body.v2 .help-dot{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;border:1px solid var(--line-strong,#bbb);font-size:14px;color:var(--ink3,#6b6b6b);cursor:help}
+body.v2 .code-block{white-space:pre-wrap;overflow-wrap:anywhere;margin:12px 0 0;padding:12px;border-radius:12px;border:1px solid var(--line,#e5e5e5);font-size:14px}
+body.v2 .invoice-items-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:end}
+body.v2 .invoice-items-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+body.v2 .invoice-items-heading h2{margin:0}
+body.v2 .invoice-total{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:16px 0 0}
+body.v2 .invoice-total-label{font-size:16px;font-weight:600}
+body.v2 .invoice-total-value{font-size:24px;font-weight:700}
+body.v2 .invoice-paid-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+body.v2 .invoice-lookup-row,body.v2 .invoice-supplier-meta{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+body.v2 .invoice-lookup-row > *{min-width:0}
+body.v2 .invoice-supplier,body.v2 .invoice-customer{border:1px solid var(--line,#e5e5e5);border-radius:12px;padding:16px;margin:12px 0 0}
+body.v2 .invoice-f-half,body.v2 .invoice-f-city,body.v2 .invoice-f-zip,body.v2 .invoice-f-full{min-width:0}
+@media (min-width:768px){
+  body.v2 .invoice-items-grid{grid-template-columns:minmax(0,3fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)}
+  body.v2 .invoice-paid-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  body.v2 .invoice-buyer-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  body.v2 .invoice-f-full{grid-column:1 / -1}
+}
+
 /* 0830E invoices+submission (end) */
 /* 0830F sub-pages (start) */
+/* 0830F1 (start) */
+body.v2 .setup-wizard-count{font-size:14px;color:var(--ink3);margin-top:4px}
+body.v2 .cleaning-form-page .ui-field>label{display:inline-block;margin-bottom:12px}
+body.v2 .cleaning-form-page .ui-field>.help-tip{margin-left:8px}
+body.v2 .cleaning-form-page .cleaning-actions{margin:12px 0}
+body.v2 .cleaning-form-page .cleaning-panel,body.v2 .cleaning-form-page .cleaning-subsection{margin-top:24px}
+body.v2 .f1-tip .help-tip .help-tip-btn{min-width:44px;min-height:44px}
+body.v2 .f1-list li:last-child{margin-bottom:0}
+body.v2 .f1-terms .f1-terms-link{display:inline-flex;align-items:center;min-height:44px!important}
+body.v2 ul.f1-list{display:block;grid-template-columns:none;columns:auto;gap:0;padding-left:20px}
+body.v2 ul.f1-list>li{display:list-item;margin:0 0 12px}
+body.v2 .f1-leon-terms .settings-value-link{display:inline-flex;align-items:center;min-height:44px}
+/* 0830F1 (end) */
+/* 0830F2 (start) */
+body.v2 .settings-lane [data-payment-services] ul{list-style:none;padding:0;margin:0 0 16px}
+body.v2 .settings-lane [data-payment-services] li{border:1px solid #e5e5e5;border-radius:12px;padding:16px;margin:0 0 12px}
+body.v2 .settings-lane [data-payments-step]{margin:0 0 12px}
+body.v2 .settings-lane .setup-summary-card{border:1px solid #e5e5e5;border-radius:12px;padding:16px;margin:0}
+body.v2 .settings-lane .ui-chip input[type=radio]{margin:0;accent-color:var(--acc)}
+@media (max-width:1023.98px){body.v2 .settings-lane input[type=radio],body.v2 .settings-lane input[type=checkbox]{min-width:44px;min-height:44px}}
+@media (min-width:1024px){body.v2 .settings-lane .ui-chip input[type=radio]{min-width:24px;min-height:24px}}
+body.v2 .settings-lane > .ui-section{margin:0 0 24px}
+body.v2 .settings-lane .ui-chips{display:flex;flex-wrap:wrap;gap:12px}
+body.v2 .settings-lane .ui-chip input[type=radio]{margin:0 12px 0 0}
+@media (max-width:1023.98px){body.v2 .settings-lane .help-tip-btn{min-width:44px;min-height:44px}}
+/* 0830F2 (end) */
 /* 0830F sub-pages (end) */
