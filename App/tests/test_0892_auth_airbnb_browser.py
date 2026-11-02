@@ -64,7 +64,7 @@ CHECK_JS = r"""
   const exempt16 = el => el.closest('.auth-acceptance, .auth-foot-legal, [role=alert], [role=status]');
   for (const el of all('body *')) {
     if (!ownText(el) || !vis(el)) continue;
-    if (el.closest('.auth-q > summary, [aria-hidden=true]')) continue;
+    if (el.closest('.auth-q > summary')) continue;
     const fs = parseFloat(getComputedStyle(el).fontSize);
     const label = (el.textContent || '').trim().slice(0, 40);
     if (fs < 14) problems.push(`text ${fs}px: ${label}`);

@@ -1,15 +1,18 @@
 {% extends "host_page.html" %}
+{% set v2 = true %}
+{% block head_extra %}<link rel="stylesheet" href="/static/admin2.css?v=20261102-0893c">{% endblock %}
 {% set nav = 'users' %}
 {% set body_kind = 'list' %}
 {% from "_ui_layout.html" import ui_section_tabs with context %}
+{% from "_components.html" import tip_label with context %}
 {% block title %}{{ t('customers.title') }}{% endblock %}
-{% block meta %}{{ t('customers.meta') }}{% endblock %}
+{% block page_title %}{{ tip_label(self.title(), 'admin-customers-help', t('customers.meta'), tag='span') }}{% endblock %}
 {% block tabs %}{{ ui_section_tabs() }}{% endblock %}
 {% block secondary_actions %}{{ ui_button(t('customers.payments'), 'secondary', href='/admin/fakturace') }}{% endblock %}
 {% block toolbar %}
 <form method="get" action="/admin/customers" class="ui-section">
   <div class="ui-pair">
-    {{ ui_field('customer-search', t('customers.search'), name='q', value=q, type='search', attrs='maxlength="120"') }}
+    {{ ui_field('customer-search', t('customers.search'), name='q', value=q, type='search', attrs='maxlength="120" enterkeyhint="search"') }}
     {% set options = [('', t('customers.all')), ('ending', t('customers.ending'))] %}
     {% for value in states %}{% set _ = options.append((value, t('customers.state.' ~ value))) %}{% endfor %}
     {{ ui_select('customer-state', t('customers.state'), options, selected=state, name='state') }}
@@ -53,8 +56,7 @@
 {% if newer_url or older_url %}{{ ui_button(t('customers.reset'), 'quiet', href=href()) }}{% endif %}
 
 <section class="ui-section" id="create-host">
-  <h2>{{ t('users.create.title') }}</h2>
-  <p class="ui-sub">{{ t('users.create.lede') }}</p>
+  <h2>{{ tip_label(t('users.create.title'), 'create-host-help', t('users.create.lede'), tag='span') }}</h2>
   <form method="post" action="/admin/users">
     <div class="ui-field">
       <label for="display_name">{{ t('users.create.name') }}</label>

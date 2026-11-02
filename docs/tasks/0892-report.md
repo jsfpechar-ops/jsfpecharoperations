@@ -28,15 +28,16 @@ Not committed, staged or pushed (orchestrator commits). No PR opened.
 ## Deviations
 
 - CSS added beyond §4, to meet the brief's own checks: `.auth-card>.auth-title` (expired-link h1 has no title row); lang buttons, `.auth-notice`, `.auth-card .btn` at 16 px; footer and footer links at 14 px; `.auth-card code` at 16 px; `.auth-card .btn` min-height 44 px; the environment banner (`_env_banner.html`, included by auth_base, outside §3) styled through `body.auth-page .env-banner`.
-- Test checks: the "?" glyph (12 px) is exempt from the 14 px rule; decorative `[aria-hidden]` content (desktop hero illustration) is exempt from text-size rules; content of closed `<details>` is not counted as visible (Chromium lays it out); when the h1's last line is short, the "?" gap may be measured from the h1 box edge (8 px flex gap).
+- Test checks: the "?" glyph (12 px) is exempt from the 14 px rule; content of closed `<details>` is not counted as visible (Chromium lays it out); when the h1's last line is short, the "?" gap may be measured from the h1 box edge (8 px flex gap).
 - Login form found with `form[action='/login']` (the first form on the page is the language switch, action `/language`).
 - Recovery page reached by POST `/account/2fa/setup` as in `test_two_factor_setup_page.py`; not skipped.
 - Test uses local copies of helpers (no import of private test helpers).
 
-## Questions
+## Owner decision applied
 
-- Desktop hero illustration (`aside.auth-hero`, kept per owner default) still has 10 to 16 px labels. They are excluded from the text rules because they are decorative. Owner to decide: enlarge, or remove the labels.
-
+- Owner: no fine text anywhere. Hero text removed from the desktop illustration (domain label, flow step numbers and labels, the ready float, the body paragraph). Shapes, logo and the h2 stay; the aside stays aria-hidden. The test no longer exempts aria-hidden content.
+- Rerun: command 1 `37 passed in 13.81s` (0 skipped). Screenshots at 390 and 1280 refreshed (`12 passed`).
+- `static_versions.json --write` still refused: `admin2.css` (0893) changed without its key bump. Rerun once 0893 bumps its key.
 ## Owner steps left
 
 1. After 0893 merges or bumps `admin2.css`: run `App/.venv/bin/python tests/test_static_versions.py --write` and confirm command 2 is green.
