@@ -1,7 +1,9 @@
 """Host-only stay-fee overview and per-property detail."""
 from __future__ import annotations
 
+import io
 import unicodedata
+import zipfile
 from datetime import date
 from urllib.parse import parse_qsl, quote, urlencode, urlsplit
 
@@ -309,6 +311,48 @@ def fee_return_after_save(apartment, return_to: str) -> str:
         month = stay_fee.parse_month(dict(parse_qsl(split.query)).get("month"))
         return f"/stay-fees?month={stay_fee.month_key(month)}" if month else "/stay-fees"
     return back
+
+
+@router.get("/stay-fees/pdfs.zip")
+def stay_fee_pdfs_zip(request: Request):
+    """0846: every saved report of one month in one ZIP, the same bytes as each PDF button."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    today = claim.prague_today()
+    month = stay_fee.parse_month(request.query_params.get("month")) or _default_month(today)
+    if month > today.replace(day=1):
+        month = _default_month(today)
+    apartments = db.query(
+        f"SELECT * FROM apartment WHERE {db.null_safe_eq('owner_user_id')} AND archived_at IS NULL "
+        "ORDER BY internal_name, id",
+        (access.owner_id(request),),
+    )
+    buffer = io.BytesIO()
+    names = set()
+    count = 0
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+        for apartment in apartments:
+            row = stay_fee_filing.covering(apartment["id"], month)
+            if not row:
+                continue
+            name = f'hlaseni-poplatek-z-pobytu-{row["period_key"]}-{stay_fee.vs_of(apartment)}-{apartment["id"]}.pdf'
+            if name in names:
+                continue
+            names.add(name)
+            archive.writestr(name, stay_fee_filing.pdf_bytes(row))
+            count += 1
+    if not count:
+        return _back(f"/stay-fees?month={stay_fee.month_key(month)}", err=_flash(request, "flash.stay_fees.not_saved"))
+    db.audit("stay_fee_pdf_zip", f"month={stay_fee.month_key(month)} files={count}")
+    return Response(
+        buffer.getvalue(),
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="poplatek-z-pobytu-{stay_fee.month_key(month)}.zip"',
+            "Cache-Control": "no-store",
+        },
+    )
 
 
 @router.get("/stay-fees/{apartment_id}")

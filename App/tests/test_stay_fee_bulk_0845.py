@@ -224,3 +224,52 @@ def test_job_audit_name_is_unchanged(host):
                        ("stay_fee_auto_finalize", f"apartment_id={a} %"))
     assert hit is not None
     db.execute("DELETE FROM audit WHERE id = ?", (hit["id"],))
+
+
+def test_zip_holds_each_saved_pdf_byte_for_byte(host):
+    import io
+    import zipfile
+
+    client, owner_id, entity_id = host
+    a = _property(owner_id, entity_id, "Bulk A")
+    b = _property(owner_id, entity_id, "Bulk B")
+    _stay(a, "bulk-a")
+    _stay(b, "bulk-b")
+    token = _csrf(client, LIST_PATH)
+    bulk = client.post(
+        "/stay-fees/confirm-ready",
+        data={"_csrf": token, "month": "2026-08", "return_to": "/stay-fees?month=2026-08",
+              "apartment_id": [str(a), str(b)]},
+        follow_redirects=False,
+    )
+    assert bulk.status_code == 303
+    resp = client.get("/stay-fees/pdfs.zip?month=2026-08")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("application/zip")
+    archive = zipfile.ZipFile(io.BytesIO(resp.content))
+    names = archive.namelist()
+    assert len(names) == 2
+    for apartment_id in (a, b):
+        member = next(name for name in names if name.endswith(f"-{apartment_id}.pdf"))
+        single = client.get(f"/stay-fees/{apartment_id}/pdf?month=2026-08")
+        assert single.status_code == 200
+        assert archive.read(member) == single.content
+
+
+def test_zip_without_saved_period_goes_back_to_the_list(host):
+    client, owner_id, entity_id = host
+    other_id = auth.create_account("stay-fee-bulk-other@example.test", "Other Demo", role="host",
+                                   username="stay-fee-bulk-other")
+    other_entity = db.insert("legal_entity", {
+        "name": "Other Demo s.r.o.",
+        "owner_user_id": other_id,
+        "created_at": db.utcnow(),
+    })
+    foreign = _property(other_id, other_entity, "Foreign Flat")
+    _stay(foreign, "bulk-foreign")
+    assert stay_fee_auto.confirm(_row(foreign), date(2026, 8, 1), date(2026, 9, 30)) is not None
+    a = _property(owner_id, entity_id, "Bulk A")
+    _stay(a, "bulk-a")
+    resp = client.get("/stay-fees/pdfs.zip?month=2026-08", follow_redirects=False)
+    assert resp.status_code == 303
+    assert resp.headers["location"].startswith("/stay-fees?month=2026-08")
