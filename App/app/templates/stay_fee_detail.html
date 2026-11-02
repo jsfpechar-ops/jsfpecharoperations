@@ -151,42 +151,6 @@
   <div class="action-group">
     <a class="ui-btn ui-btn-secondary" href="/stay-fees/{{ apartment.id }}/pdf?month={{ month_key }}" download>{{ t('stay_fees.download_pdf') }}</a>
   </div>
-  <h3 class="fee-send-marks-title">{{ t('stay_fees.send.marks_title') }}</h3>
-  <div class="fee-send-marks">
-    {% if send_panel.sent_at %}
-    <p class="ui-sub">{{ t('stay_fees.send.sent_on', date=send_panel.sent_at | date_cz) }}{% if send_panel.sent_message_id %} · {{ t('stay_fees.send.message_id', id=send_panel.sent_message_id) }}{% endif %}</p>
-    <form method="post" action="/stay-fees/{{ apartment.id }}/filings/{{ send_panel.filing_id }}/sent" class="inline-form">
-      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-      <input type="hidden" name="month" value="{{ month_key }}">
-      <input type="hidden" name="undo" value="1">
-      <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('stay_fees.send.undo_sent') }}</button>
-    </form>
-    {% else %}
-    <form method="post" action="/stay-fees/{{ apartment.id }}/filings/{{ send_panel.filing_id }}/sent" class="fee-send-form">
-      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-      <input type="hidden" name="month" value="{{ month_key }}">
-      <div class="ui-field">
-        <label for="fee-sent-message-id">{{ t('stay_fees.send.message_id_label') }} <span class="opt">{{ t('common.optional') }}</span></label>
-        <input id="fee-sent-message-id" name="sent_message_id" maxlength="100" value="">
-      </div>
-      <button class="ui-btn ui-btn-secondary" type="submit">{{ t('stay_fees.send.mark_sent') }}</button>
-    </form>
-    {% endif %}
-    {% if send_panel.paid_at %}
-    <p class="ui-sub">{{ t('stay_fees.send.paid_on', date=send_panel.paid_at | date_cz) }}</p>
-    <form method="post" action="/stay-fees/{{ apartment.id }}/filings/{{ send_panel.filing_id }}/paid" class="inline-form">
-      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-      <input type="hidden" name="month" value="{{ month_key }}">
-      <input type="hidden" name="undo" value="1">
-      <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('stay_fees.send.undo_paid') }}</button>
-    </form>
-    {% else %}
-    <form method="post" action="/stay-fees/{{ apartment.id }}/filings/{{ send_panel.filing_id }}/paid" class="inline-form">
-      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-      <input type="hidden" name="month" value="{{ month_key }}">
-      <button class="ui-btn ui-btn-secondary" type="submit">{{ t('stay_fees.send.mark_paid') }}</button>
-    </form>
-    {% endif %}
   </div>
 </section>
 {% endif %}

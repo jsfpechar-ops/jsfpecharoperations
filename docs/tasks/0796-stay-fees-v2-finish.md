@@ -23,12 +23,14 @@ Make `/stay-fees` pass the v2 mockup-match test and the old stay-fee test entrie
 | `App/app/static/app2.css` | edit only inside `/* 0794 stay fees v2 */` block |
 | `App/tests/v2_mockup.py` | edit only the `stay_fees` entries |
 | `App/tests/test_host_wide_geometry_browser.py`, `test_host_geometry.py`, `test_host_list_page_layout_browser.py` | edit only the stay-fee (`fees`, `fees-unset`, month filter) entries: update selectors to the v2 markup, or drop the page from an old-shell-only list with a one-line comment "v2, covered by 0710" |
-| `App/tests/test_stay_fee*.py`, `test_fee_setup_compatibility.py` | edit only assertions on removed sent/paid marks or changed markup |
-| locale files with `stay_fees.status.sent/paid` | delete those keys only if nothing else uses them (`grep -rn "status.sent\|status.paid" App/app`) |
+| `App/tests/test_fee_setup_compatibility.py`, `App/tests/test_stay_fees_list*.py` (if present) | edit only assertions on changed list markup |
 
 No other file. Another executor edits other app2.css blocks and other tests at the same time: touch nothing outside this list.
 
 ## 4. Steps
+
+Run 2 (orchestrator, 12:5x): the first run stopped at its tool cap; read `docs/tasks/0796-report.md` first and continue from where it stopped (the template pills are already removed). Brief 0799 (running at the same time) owns `routes/stay_fees.py`, `stay_fee_detail.html`, locale files and the sent/paid tests: the filter options "Odesláno/Zaplaceno" disappear through 0799, not you. Your job: the 0710 findings, the old stay-fee layout test entries, the screenshots. Overwrite the report at the end.
+
 
 1. Remove the sent/paid marks (template + now-unused strings).
 2. Fix the 0710 findings one by one, rerunning `-k stay_fees`.

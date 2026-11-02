@@ -478,10 +478,6 @@ body.host-workspace.sidebar-collapsed .sidebar-collapse .ui-icon { transform: ro
   .host-workspace .lc-fees td.row-actions { grid-column: 2; grid-row: 1; justify-content: flex-end; align-items: flex-start; }
 }
 .host-workspace .copyrow textarea { flex: 1 1 14rem; min-width: 0; }
-.host-workspace .fee-send-marks { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; gap: var(--space-3); }
-.host-workspace .fee-send-marks > form, .host-workspace .fee-send-marks > p { flex: none; }
-.host-workspace .fee-send-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-2) var(--space-3); width: 100%; }
-.host-workspace .fee-send-form .ui-field { flex: 0 1 18rem; min-width: 0; margin: 0; }
 
 /* 0140: businesses page, moved out of entities.html */
 .host-workspace .entities-page tbody tr .row-actions > * { opacity: 1; }
