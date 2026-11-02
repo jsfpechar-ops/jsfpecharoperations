@@ -56,8 +56,22 @@ func (r *statusRecorder) WriteHeader(code int) {
 	r.ResponseWriter.WriteHeader(code)
 }
 
+// hardenHeaders are Python's _harden defaults plus the middleware's
+// Cache-Control (App/app/main.py 181-218, 293-300). A route's own value wins.
+var hardenHeaders = [][2]string{
+	{"X-Content-Type-Options", "nosniff"},
+	{"X-Frame-Options", "DENY"},
+	{"Referrer-Policy", "strict-origin-when-cross-origin"},
+	{"Permissions-Policy", "camera=(self), microphone=()"},
+	{"Content-Security-Policy", "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com"},
+	{"Cache-Control", "no-store, private"},
+}
+
 func (m *metrics) wrap(route string, h http.HandlerFunc) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		for _, hv := range hardenHeaders {
+			w.Header().Set(hv[0], hv[1])
+		}
 		rec := &statusRecorder{ResponseWriter: w, code: http.StatusOK}
 		h(rec, r)
 		m.mu.Lock()
