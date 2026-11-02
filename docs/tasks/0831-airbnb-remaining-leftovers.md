@@ -46,3 +46,39 @@ Settings area templates and their CSS blocks, `_dashboard_calendar.html`, `clean
 ## Stop and ask
 
 If a fix needs a Python route change, a new dependency, or another group's file: stop and write it in your report.
+
+## 1. Objective
+
+Groups G, H, I and J above (0830 leftovers).
+
+## 2. Context
+
+See the group sections above.
+
+## 3. Files
+
+Named per group above.
+
+## 4. Steps
+
+Per group above.
+
+## 5. Do not touch
+
+See "Do not touch" above.
+
+## 6. Commands
+
+See "Commands" above.
+
+## 7. Acceptance
+
+Each group's run line passes with 0 skipped.
+
+## 8. Stop and ask
+
+See "Stop and ask" above.
+
+## 9. Report
+
+See the 0831G, 0831H, 0831I and 0831J reports.

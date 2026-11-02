@@ -116,8 +116,7 @@
       {% else %}
       <div class="setup-item">
         <div class="grow">
-          <strong>{{ t('apartment.form.archive_title') }}</strong>
-          <div class="ui-sub">{{ t('apartment.form.archive_help') }}</div>
+          <strong>{{ t('apartment.form.archive_title') }}</strong> {{ help_tip('archive-help', t('apartment.form.archive_help')) }}
         </div>
         <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" formmethod="post" formnovalidate
                 formaction="{{ base_url }}/archive"

@@ -70,3 +70,35 @@ From `App/`: `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=
 ## 7. Stop and ask
 
 A Python logic change; a form that would need JS; a test that can only pass by changing an out-of-scope file.
+
+## 7. Acceptance
+
+Part tests pass with 0 skipped.
+
+## 8. Stop and ask
+
+See section 7.
+
+## 9. Report
+
+See the 0830A to 0830F reports.
+
+## 2. Context
+
+See the numbered parts above.
+
+## 3. Files
+
+See the numbered parts above.
+
+## 4. Steps
+
+See the numbered parts above.
+
+## 5. Do not touch
+
+See the numbered parts above.
+
+## 6. Commands
+
+See the numbered parts above.

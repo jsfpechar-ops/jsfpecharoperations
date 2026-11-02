@@ -16,7 +16,7 @@
 <div class="ui-field"><label for="property-instructions">{{ ct('instructions') }}</label>{{ help_tip('property-instructions-hint', ct('notes_hint')) }}<textarea id="property-instructions" name="instructions" rows="8" maxlength="10000" aria-describedby="property-instructions-hint">{{ prop.cleaning_instructions or '' }}</textarea></div>
 <section class="cleaning-subsection" aria-labelledby="cleaning-property-times"><h2 id="cleaning-property-times">{{ ct('property_times') }}</h2>{{ help_tip('property-times-hint', ct('property_times_hint')) }}<p>{{ ct('checkout') }}: <strong>{{ prop.effective_checkout_time or '—' }}</strong> · {{ ct('arrival') }}: <strong>{{ prop.effective_checkin_time or '—' }}</strong></p><a class="ui-btn ui-btn-quiet" href="/apartments/{{ home.id }}?view=settings&amp;section=property#arrival-departure">{{ ct('edit_property_times') }}</a></section>
 <div class="cleaning-actions"><button class="ui-btn ui-btn-primary" type="submit">{{ ct('save') }}</button></div></form>
-<section class="cleaning-panel cleaning-form"><h2>{{ ct('code') }}</h2><p>{{ ct('code_hint') }}</p>
+<section class="cleaning-panel cleaning-form"><h2>{{ ct('code') }}</h2>{{ help_tip('code-hint', ct('code_hint')) }}
 {% if codes_disabled %}<p class="cleaning-warning" role="status">{{ ct('login_required') }}</p>{% endif %}
 {% if code.value %}<strong class="cleaning-pin" translate="no">{{ code.value }}{{ '#' if code.source == 'ttlock' else '' }}</strong>{{ help_tip('code-source-hint', ct('permanent_code') if code.source == 'ttlock' else ct('manual_code')) }}{% endif %}
 {% if code.pending %}<p class="cleaning-warning" role="status">{{ ct('code_failed') if code.pending == 'failed' else ct('code_pending') }}</p>{% endif %}

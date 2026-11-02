@@ -33,7 +33,6 @@ ROUTES = {
     "partF-cleaning-settings": "/cleaning/properties/{first_property}",
     "partF-subscription": "/predplatne",
     "partF-payments": "/payments",
-    "partF-payments-consent": "/payments/consent",
 }
 # detail and sub-pages: the back header is required (its back goes to the list page)
 BACK_PAGES = {name for name in ROUTES if name not in {"partB-overview", "partB-menu", "partC-properties", "partD-reservations"}}
