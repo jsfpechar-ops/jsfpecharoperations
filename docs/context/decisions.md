@@ -63,3 +63,4 @@ Append-only.
 - 2026-11-01 | Go: module go/, stdlib, pgx v5, go-ntlmssp v0.1.1, go-qrcode; crypto via Python fixtures | owner (waiver) | 0474, 0481, 0684
 - 2026-11-02 | Booking page: Czech first, CS/EN switch (?lang=, no cookie); host copy verbatim; replaces 10-28 English-only | owner | 0818
 - 2026-11-02 | Booking site: one HMAC link per booking (`manage_token`) serves invoice and booking page | orchestrator | 0820, 0821
+- 2026-11-02 | Booking site cancel: guest self-cancel via signed link, refund per policy; host cancel refunds in full | owner | 0821
