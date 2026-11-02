@@ -123,6 +123,21 @@ LAYOUT_JS = r"""
 }
 """
 
+# 0842: the purpose "?" sits on the last line of its step title, small, with
+# a 44 px tap target, 12 px or more from the title text.
+HELP_BESIDE_TITLE_JS = """(marker) => {
+  const help = document.querySelector(`[data-purpose-help="${marker}"]`);
+  const range = document.createRange();
+  range.selectNodeContents(help.closest('.g-step-head').querySelector('h2'));
+  const lines = range.getClientRects();
+  const line = lines[lines.length - 1];
+  const tap = help.querySelector('summary').getBoundingClientRect();
+  const dot = help.querySelector('.g-help-dot').getBoundingClientRect();
+  return {title: (line.top + line.bottom) / 2, help: (dot.top + dot.bottom) / 2,
+          gap: dot.left - line.right, dot: dot.width, tapW: tap.width, tapH: tap.height,
+          lineBottom: line.bottom};
+}"""
+
 PEOPLE = [
     ("Anna", "Müller", "14031988", "C01X00T47"),
     ("Jonas", "Müller", "02111990", "C22Y11K08"),
@@ -236,6 +251,17 @@ def _shot(page, name: str, full_page: bool = True) -> None:
     page.screenshot(path=str(SHOTS_0451 / name), full_page=full_page)
 
 
+SHOTS_0842 = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0842"
+
+
+def _shot_0842(page, name: str) -> None:
+    """0842 evidence: person 2, step 1, only when asked to."""
+    if os.environ.get("UBYHOST_0842_SHOTS") != "1":
+        return
+    SHOTS_0842.mkdir(parents=True, exist_ok=True)
+    page.screenshot(path=str(SHOTS_0842 / name), full_page=True)
+
+
 class Guest:
     def __init__(self, page, width, lang="en"):
         self.page = page
@@ -246,6 +272,29 @@ class Guest:
     def check_layout(self, where: str):
         for problem in self.page.evaluate(LAYOUT_JS):
             self.problems.append(f"{where}: {problem}")
+
+    def check_help_beside_title(self, marker: str, widths=()):
+        """0842: the "?" is on the title line, and opens its panel under it."""
+        page = self.page
+        for width in widths or (self.width,):
+            if widths:
+                page.set_viewport_size({"width": width, "height": 812})
+            box = page.evaluate(HELP_BESIDE_TITLE_JS, marker)
+            where = f"{marker} at {width}px"
+            assert abs(box["title"] - box["help"]) <= 4, f"{where}: the ? is not on the title line {box}"
+            assert box["gap"] >= 12, f"{where}: the ? is closer than 12px to the title {box}"
+            assert 16 <= box["dot"] <= 20, f"{where}: the ? is not small {box}"
+            assert box["tapW"] >= 44 and box["tapH"] >= 44, f"{where}: tap target under 44px {box}"
+        if widths:
+            page.set_viewport_size({"width": self.width, "height": 812})
+        help_ = page.locator(f'[data-purpose-help="{marker}"]')
+        help_.locator("summary").click()
+        assert help_.evaluate("el => el.open")
+        panel_top = help_.locator(".g-intro").evaluate("el => el.getBoundingClientRect().top")
+        line_bottom = page.evaluate(HELP_BESIDE_TITLE_JS, marker)["lineBottom"]
+        assert panel_top >= line_bottom, f"{marker}: the panel does not open under the title"
+        help_.locator("summary").click()
+        assert not help_.evaluate("el => el.open")
 
     def step(self) -> str:
         return self.page.evaluate(
@@ -289,6 +338,14 @@ class Guest:
         t = i18n.translator(self.lang)
         self.check_layout(f"guest {number}, details (empty)")
         assert page.locator('[data-purpose-help="identity"]').is_visible()
+        self.check_help_beside_title("identity", widths=(320, 390, 768))
+        if number == 2 and self.lang == "en" and self.width in (390, 1280):
+            _shot_0842(page, f"person2-step1-{self.width}.png")
+            if self.width == 390:
+                summary = page.locator('[data-purpose-help="identity"] summary')
+                summary.click()
+                _shot_0842(page, "person2-step1-open-390.png")
+                summary.click()
         page.fill("#first_name", first)
         # A phone keyboard opening shrinks the viewport and fires resize while
         # the signature step is still hidden. That is what left the pad 0 x 0.
@@ -304,6 +361,7 @@ class Guest:
         self.check_layout(f"guest {number}, details")
         self.next()
         assert page.locator('[data-purpose-help="address-stay"]').is_visible()
+        self.check_help_beside_title("address-stay")
         if not page.input_value("#res_street"):
             page.fill("#res_street", "Hauptstraße 12")
             page.fill("#res_city", "Berlin")
@@ -311,6 +369,7 @@ class Guest:
         self.check_layout(f"guest {number}, home")
         self.next()
         assert page.locator('[data-purpose-help="signature"]').is_visible()
+        self.check_help_beside_title("signature")
         self.sign()
         self.check_layout(f"guest {number}, signature")
         # The legal notice moved onto the signature step and is collapsed by
