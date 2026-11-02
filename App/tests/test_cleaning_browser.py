@@ -804,6 +804,10 @@ def test_0835_cleaning_range_shot_1280_mouse_drag(workspace, origin):
         page = context.new_page()
         page.goto(f"{origin}/cleaning?lang=en&cal_view=calendar&cal_property={ws['home']}&cal_date=2026-10-01")
         loaded(page)
+        page.evaluate("window.scrollTo(0, 0)")
+        page.wait_for_function("scrollY === 0")
+        page.locator('.cal-day[data-date="2026-10-12"]').scroll_into_view_if_needed()
+        page.wait_for_timeout(300)  # the calendar settles its scroll after load
         box_a = page.locator('.cal-day[data-date="2026-10-12"]').bounding_box()
         box_b = page.locator('.cal-day[data-date="2026-10-14"]').bounding_box()
         page.mouse.move(box_a["x"] + box_a["width"] / 2, box_a["y"] + box_a["height"] / 2)

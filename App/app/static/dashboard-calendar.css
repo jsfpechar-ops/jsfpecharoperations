@@ -747,7 +747,7 @@ body:has(.dashboard-calendar.has-panel) .havel-fab { display:none !important; }
   body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-view-segment button span { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 }
 @media (min-width:1024px) {
-  body.v2 .cleaning-head .cleaning-actions { gap:12px; }
+  body.v2 .cleaning-head .cleaning-actions { display:flex; align-items:center; gap:12px; }
   body.v2 .cleaning-head .btn { display:inline-flex; align-items:center; height:40px; min-height:40px; box-sizing:border-box; }
 }
 @media (max-width:767px) {

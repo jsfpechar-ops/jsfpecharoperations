@@ -688,7 +688,7 @@
   function paintSelection() {
     $$("[data-date]").forEach(node => {
       node.classList.toggle("is-selected", !!selection && node.dataset.date >= selection.start && node.dataset.date <= selection.end &&
-        (!selection.property || node.dataset.property === selection.property));
+        (!selection.property || !node.dataset.property || node.dataset.property === selection.property));
     });
     if (selection) $("[data-cal-selection]").textContent = format("selection", { start: shortDate(selection.start), end: shortDate(addDays(selection.end, 1)) });
   }
