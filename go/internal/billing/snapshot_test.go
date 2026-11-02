@@ -23,7 +23,7 @@ func TestWriteMonthSnapshotMatchesFixturePrices(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Standard yearly: 3 x 1190 = 3570, monthly 3570/12 = 297.5 -> 298 (half to even).
-	// Max monthly: list 2220, 15 % off -> 1887, plus carry 100 -> net 1987.
+	// Max monthly: list 2036, 15 % off (305) -> 1731, plus carry 100 -> net 1831.
 	if _, err := pool.Exec(ctx, `INSERT INTO billing_account (owner_user_id, status, plan, billing_interval,
 		apartments_billed, addon_ttlock, addon_whitelabel, founder, carry_czk, discount_percent, updated_at) VALUES
 		(1, 'active', 'standard', 'year', 3, 0, 0, 0, 0, 0, '2026-01-01T00:00:00+00:00'),
@@ -36,7 +36,7 @@ func TestWriteMonthSnapshotMatchesFixturePrices(t *testing.T) {
 			t.Fatalf("run %d: n=%d err=%v", run, n, err)
 		}
 	}
-	want := map[int64][3]int{1: {3570, 3570, 298}, 2: {2220, 1987, 1987}}
+	want := map[int64][3]int{1: {3570, 3570, 298}, 2: {2036, 1831, 1831}}
 	rows, err := pool.Query(ctx, "SELECT owner_user_id, list_czk, net_czk, monthly_czk FROM billing_month_snapshot WHERE month = '2026-11'")
 	if err != nil {
 		t.Fatal(err)
