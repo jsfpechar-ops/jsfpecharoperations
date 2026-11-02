@@ -1,12 +1,17 @@
 """Production-style upgrade coverage for databases created before PIN support."""
 from __future__ import annotations
 
+import pytest
+
 import sqlite3
 
 from fastapi.testclient import TestClient
 
 from app import config, db, scheduler
 from app.main import app
+
+
+pytestmark = pytest.mark.sqlite_only
 
 
 def test_older_apartment_schema_migrates_and_serves_pages(monkeypatch, tmp_path):

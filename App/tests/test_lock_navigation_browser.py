@@ -188,7 +188,7 @@ def test_lock_setup_flow_keeps_its_place(world):
             box = _in_view(page, "#smart-locks-share")
             assert box["y"] > 0  # a real scroll to the section, not the page top
             assert page.locator("#smart-locks-share .guide-steps li").count() == 3
-            assert page.locator("#smart-locks-share .help-tip-btn").is_visible()
+            assert page.locator("#smart-locks-share .help-tip-body").first.is_visible()  # v2 hides the button in details (0536 item 6)
             assert page.locator('#smart-locks-share .help-tip-body a[href="/guide#door-codes-share"]').count() == 1
             assert page.locator("#smart-locks-share a.help-link").count() == 0
             _shot(page, f"share-1280-{lang}")
@@ -216,7 +216,7 @@ def test_lock_setup_flow_keeps_its_place(world):
             _in_view(page, "#door-code")
             _shot(page, f"property-door-code-1280-{lang}")
             page.select_option("#lock_id", LOCK_A["lock_id"])
-            page.locator(".host-property-save button[type=submit]").click()
+            page.locator(".savebar button[type=submit]").click()
             _settle(page)
             row = db.query_one("SELECT lock_provider, lock_id FROM apartment WHERE id = ?", (apartment,))
             assert row["lock_id"] == LOCK_A["lock_id"] and row["lock_provider"] is None

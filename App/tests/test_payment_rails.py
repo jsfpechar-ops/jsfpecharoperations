@@ -6,6 +6,8 @@ local code. The mail kind is real, enqueued into email_outbox.
 from __future__ import annotations
 
 from typing import Any, Dict, List
+import threading
+import time
 
 import pytest
 from fastapi.testclient import TestClient
@@ -64,23 +66,37 @@ def client(owner):
 
 
 class _FakePaymentLink:
-    """Strict SDK-16 shape: params dict only."""
+    """Strict SDK-16 shape: params dict, connected account in options (0622)."""
 
     def __init__(self) -> None:
         self.created: List[Dict[str, Any]] = []
+        self.options: List[Dict[str, Any]] = []
+        self.retrieved: List[str] = []
+        self.active = True
 
     def create(self, params=None, options=None):
         assert params is not None, "payment_links.create must pass params="
+        assert "stripe_account" not in params, "stripe_account belongs in options="
+        assert options and options.get("stripe_account"), "connected account missing"
         self.created.append(params)
+        self.options.append(options)
         return {"id": "plink_test_1", "url": "https://buy.stripe.com/test_1"}
+
+    def retrieve(self, link_id, options=None):
+        assert options and options.get("stripe_account"), "connected account missing"
+        self.retrieved.append(link_id)
+        return {"id": link_id, "url": "https://buy.stripe.com/test_1", "active": self.active}
 
 
 @pytest.fixture
 def fake_link(monkeypatch, stripe_env):
     link = _FakePaymentLink()
 
-    class _Client:
+    class _V1:
         payment_links = link
+
+    class _Client:
+        v1 = _V1()
 
     monkeypatch.setattr(stripe_connect, "_client", lambda: _Client())
     return link
@@ -123,9 +139,70 @@ def test_send_creates_payment_link_on_connected_account(owner, fake_link):
     item = params["line_items"][0]
     assert item["price_data"]["currency"] == "czk"
     assert item["price_data"]["unit_amount"] == 80000
-    assert params["stripe_account"] == "acct_rails"
+    assert fake_link.options[0] == {"stripe_account": "acct_rails"}
+    assert params["restrictions"] == {"completed_sessions": {"limit": 1}}
+    assert params["metadata"] == {"payment_request_id": str(rid)}
+    assert item["price_data"]["product_data"]["name"] == f"Úklid (žádost č. {rid})"
     row = payment_request.get(rid)
     assert row["stripe_payment_link_id"] == "plink_test_1"
+
+
+def test_resend_reuses_the_active_link(owner, fake_link):
+    _complete_account(owner)
+    rid = _draft(owner, rail="card")
+    first = payment_links.send(rid)
+    second = payment_links.send(rid)
+    assert first == second
+    assert len(fake_link.created) == 1
+    assert fake_link.retrieved == ["plink_test_1"]
+
+
+def test_overlapping_send_creates_only_one_stripe_link(owner, fake_link):
+    """Two Send clicks at once must not mint two live Stripe links."""
+    _complete_account(owner)
+    rid = _draft(owner, rail="card")
+    hold = threading.Event()
+    in_create = threading.Event()
+    original = fake_link.create
+
+    def gated_create(*args, **kwargs):
+        in_create.set()
+        assert hold.wait(2), "test gate was not released"
+        return original(*args, **kwargs)
+
+    fake_link.create = gated_create
+    results: list = [None, None]
+    errors: list = [None, None]
+
+    def run(index: int) -> None:
+        try:
+            results[index] = payment_links.send(rid)
+        except Exception as exc:
+            errors[index] = exc
+
+    first = threading.Thread(target=run, args=(0,))
+    second = threading.Thread(target=run, args=(1,))
+    first.start()
+    assert in_create.wait(2), "first send never reached Stripe create"
+    second.start()
+    time.sleep(0.2)
+    hold.set()
+    first.join(5)
+    second.join(5)
+    assert errors == [None, None]
+    assert results[0] == results[1] == "https://buy.stripe.com/test_1"
+    assert len(fake_link.created) == 1
+    row = payment_request.get(rid)
+    assert row["stripe_payment_link_id"] == "plink_test_1"
+
+
+def test_resend_creates_new_link_when_old_inactive(owner, fake_link):
+    _complete_account(owner)
+    rid = _draft(owner, rail="card")
+    payment_links.send(rid)
+    fake_link.active = False
+    payment_links.send(rid)
+    assert len(fake_link.created) == 2
 
 
 def test_send_refused_without_complete_account(owner, stripe_env):
@@ -139,8 +216,8 @@ def test_webhook_paid_flips_request(owner, stripe_env, fake_link):
     payment_links.send(rid)
     event = {
         "id": "evt_rail_1",
-        "type": "payment_link.paid",
-        "data": {"object": {"payment_link": "plink_test_1"}},
+        "type": "checkout.session.completed",
+        "data": {"object": {"payment_link": "plink_test_1", "payment_status": "paid"}},
     }
     stripe_connect.process_event(event)
     assert payment_request.get(rid)["status"] == "paid"
@@ -148,6 +225,18 @@ def test_webhook_paid_flips_request(owner, stripe_env, fake_link):
     stripe_connect.process_event(event)
     row = db.query_one("SELECT id FROM stripe_webhook_event WHERE event_id = ?", ("evt_rail_1",))
     assert row is not None
+
+
+def test_webhook_unpaid_checkout_does_not_flip(owner, stripe_env, fake_link):
+    _complete_account(owner)
+    rid = _draft(owner, rail="card")
+    payment_links.send(rid)
+    stripe_connect.process_event({
+        "id": "evt_rail_unpaid",
+        "type": "checkout.session.completed",
+        "data": {"object": {"payment_link": "plink_test_1", "payment_status": "unpaid"}},
+    })
+    assert payment_request.get(rid)["status"] == "draft"
 
 
 def test_route_send_mails_the_link_once(owner, client, stripe_env, fake_link):
@@ -218,7 +307,9 @@ def test_qr_send_mails_page_link(owner, client):
         (f"payment_request:{rid}:sent%",),
     )
     assert len(rows) == 1
-    assert f"/payments/qr/{rid}" in rows[0]["payload"]
+    token = payment_request.guest_token(payment_request.get(rid))
+    assert f"/pay/{rid}/{token}" in rows[0]["payload"]
+    assert "https://" in rows[0]["payload"] or "http://" in rows[0]["payload"]
     assert payment_request.get(rid)["status"] == "sent"
 
 
@@ -228,3 +319,79 @@ def test_foreign_owner_cannot_send(owner, client, stripe_env):
     response = other.post(f"/payments/requests/{rid}/send", follow_redirects=False)
     assert response.status_code == 303
     assert "/login" in response.headers["location"]
+
+
+# --- share link without e-mail (0761) -----------------------------------------
+
+
+def test_get_link_without_email_opens_share_page(owner, client, stripe_env, fake_link):
+    _complete_account(owner)
+    rid = _draft(owner, rail="card", email="")
+    response = client.post(f"/payments/requests/{rid}/link", follow_redirects=False)
+    assert response.status_code == 303
+    assert response.headers["location"] == f"/payments/requests/{rid}/share"
+    assert payment_request.get(rid)["status"] == "sent"
+    page = client.get(f"/payments/requests/{rid}/share")
+    assert page.status_code == 200
+    assert "https://buy.stripe.com/test_1" in page.text
+    assert "https://wa.me/?text=" in page.text
+    assert len(fake_link.created) == 1  # the page reused the link
+
+
+def test_get_link_never_redirects_off_site(owner, client, stripe_env, fake_link):
+    _complete_account(owner)
+    rid = _draft(owner, rail="card")
+    location = client.post(f"/payments/requests/{rid}/link", follow_redirects=False).headers["location"]
+    assert location.startswith("/") and not location.startswith("//")
+
+
+def test_get_link_refused_when_not_ready(owner, client, stripe_env):
+    rid = _draft(owner, rail="card")
+    response = client.post(f"/payments/requests/{rid}/link", follow_redirects=False)
+    assert response.headers["location"].startswith("/payments?err=")
+    assert payment_request.get(rid)["status"] == "draft"
+
+
+def test_share_page_hidden_from_other_owners_and_qr(owner, client, stripe_env, fake_link):
+    rid = _draft(owner, rail="qr")
+    response = client.post(f"/payments/requests/{rid}/link", follow_redirects=False)
+    assert "err=" in response.headers["location"]
+    response = client.get(f"/payments/requests/{rid}/share", follow_redirects=False)
+    assert "err=" in response.headers["location"]
+
+
+def test_custom_request_uses_the_description_as_product_name(owner):
+    rid = payment_request.create(
+        owner, reason="custom", amount_czk=500, rail="card",
+        expires_at="2026-11-27", guest_note="Pozdní odjezd",
+    )
+    assert payment_links.product_name(payment_request.get(rid)) == f"Pozdní odjezd (žádost č. {rid})"
+
+
+# --- public guest QR page (0763) -----------------------------------------------
+
+
+def test_guest_qr_page_opens_without_login(owner):
+    rid = _draft(owner, rail="qr")
+    token = payment_request.guest_token(payment_request.get(rid))
+    anonymous = TestClient(app)
+    page = anonymous.get(f"/pay/{rid}/{token}")
+    assert page.status_code == 200
+    assert f"/pay/{rid}/{token}.png" in page.text
+    png = anonymous.get(f"/pay/{rid}/{token}.png")
+    assert png.status_code == 200 and png.headers["content-type"] == "image/png"
+
+
+def test_guest_qr_page_rejects_wrong_token_and_card(owner):
+    anonymous = TestClient(app)
+    rid = _draft(owner, rail="qr")
+    assert anonymous.get(f"/pay/{rid}/{'0' * 32}").status_code == 404
+    card = _draft(owner, rail="card")
+    token = payment_request.guest_token(payment_request.get(card))
+    assert anonymous.get(f"/pay/{card}/{token}").status_code == 404
+
+
+def test_host_preview_still_needs_login(owner):
+    rid = _draft(owner, rail="qr")
+    response = TestClient(app).get(f"/payments/qr/{rid}", follow_redirects=False)
+    assert response.status_code == 303

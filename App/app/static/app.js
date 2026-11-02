@@ -1,3 +1,5 @@
+// Turbo ignores reduced motion; without startViewTransition it swaps pages without a fade.
+if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches && document.startViewTransition) { document.startViewTransition = undefined; }
 (function () {
   "use strict";
 
@@ -7,26 +9,31 @@
   /* 0099: every clickable list row, table or dashboard card. */
   var ROW_SELECTOR = "tr[data-href], .clickable-row[data-href]";
 
-  function bindHostNodes(selector, attach) {
-    var seen = new WeakSet();
-    function visit(root) {
-      if (!root || !root.querySelectorAll) return;
-      if (root.matches && root.matches(selector) && !seen.has(root)) {
-        seen.add(root);
-        attach(root);
-      }
-      root.querySelectorAll(selector).forEach(function (node) {
-        if (seen.has(node)) return;
-        seen.add(node);
-        attach(node);
-      });
-    }
-    visit(document);
-    document.addEventListener("ubyhost:content-updated", function (event) {
-      var root = event.detail && event.detail.root;
-      if (root && root.isConnected) visit(root);
+  var hostBindings = {};
+  var navState = { railWasCollapsed: false, animateTimer: null, tabletRail: null };
+  function claimNode(node, key) {
+    var keys = node._ubyBound || (node._ubyBound = {});
+    if (keys[key]) return false;
+    keys[key] = true;
+    return true;
+  }
+  function visitBinding(root, selector) {
+    if (!root || !root.querySelectorAll) return;
+    var attach = hostBindings[selector];
+    if (root.matches && root.matches(selector) && claimNode(root, selector)) attach(root);
+    root.querySelectorAll(selector).forEach(function (node) {
+      if (claimNode(node, selector)) attach(node);
     });
   }
+  function bindHostNodes(selector, attach) {
+    hostBindings[selector] = attach;
+    visitBinding(document, selector);
+  }
+  document.addEventListener("ubyhost:content-updated", function (event) {
+    var root = event.detail && event.detail.root;
+    if (!root || !root.isConnected) return;
+    Object.keys(hostBindings).forEach(function (selector) { visitBinding(root, selector); });
+  });
 
   document.documentElement.classList.add("has-js");
 
@@ -460,6 +467,7 @@
     }
 
     document.querySelectorAll("[data-birth-date]").forEach(function (input) {
+      if (!claimNode(input, "initBirthDateInputs")) return;
       function apply(value) {
         var digits = String(value || "").replace(/\D/g, "").slice(0, 8);
         var formatted = formatDigits(digits);
@@ -476,6 +484,7 @@
     });
   }
 
+  var rowMenuLastOpenAt = 0;
   function initRowMenus() {
     function focusOutsideMenu(trigger, backwards) {
       var selector = "a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex='-1'])";
@@ -488,8 +497,6 @@
       if (next) { next.focus(); return true; }
       return false;
     }
-
-    var lastOpenAt = 0;
 
     function closeAll() {
       document.querySelectorAll(".row-menu-panel").forEach(closeRowMenu);
@@ -504,7 +511,7 @@
         var wasOpen = panel.classList.contains("is-open");
         closeAll();
         if (!wasOpen) {
-          lastOpenAt = Date.now();
+          rowMenuLastOpenAt = Date.now();
           positionRowMenu(trigger, panel);
           trigger.setAttribute("aria-expanded", "true");
           var firstItem = panel.querySelector('[role="menuitem"]');
@@ -537,25 +544,27 @@
       });
     });
 
-    document.addEventListener("click", function (event) {
-      if (event.target.closest(".row-menu, .row-menu-panel")) return;
-      closeAll();
-    });
+    if (claimNode(document, "initRowMenus")) {
+      document.addEventListener("click", function (event) {
+        if (event.target.closest(".row-menu, .row-menu-panel")) return;
+        closeAll();
+      });
 
-    document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape") closeAll();
-    });
-    window.addEventListener("resize", closeAll);
-    window.addEventListener("scroll", function () {
-      // Opening a menu can scroll the page (focus, scroll-into-view); keep it open and follow the trigger.
-      if (Date.now() - lastOpenAt < 400) {
-        var open = document.querySelector(".row-menu-panel.is-open");
-        var openTrigger = open ? rowMenuTrigger(open) : null;
-        if (openTrigger) positionRowMenu(openTrigger, open);
-        return;
-      }
-      closeAll();
-    }, true);
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") closeAll();
+      });
+      window.addEventListener("resize", closeAll);
+      window.addEventListener("scroll", function () {
+        // Opening a menu can scroll the page (focus, scroll-into-view); keep it open and follow the trigger.
+        if (Date.now() - rowMenuLastOpenAt < 400) {
+          var open = document.querySelector(".row-menu-panel.is-open");
+          var openTrigger = open ? rowMenuTrigger(open) : null;
+          if (openTrigger) positionRowMenu(openTrigger, open);
+          return;
+        }
+        closeAll();
+      }, true);
+    }
   }
 
   function syncAutomationHours(select) {
@@ -571,75 +580,15 @@
 
   function initAutomationFields() {
     document.querySelectorAll("[data-automation-mode]").forEach(function (select) {
+      if (!claimNode(select, "initAutomationFields")) return;
       syncAutomationHours(select);
       select.addEventListener("change", function () { syncAutomationHours(select); });
     });
   }
 
-  /* ---- 0098 inline reporting timing (Properties summary) ------------------- */
-  // Saves on change (debounced for the hours box) through the same POST the
-  // visible Save button sends without JS; shows "Saved" or the server's error.
-  function initInlineTiming() {
-    document.querySelectorAll("form[data-inline-timing]").forEach(function (form) {
-      if (!window.fetch || !window.FormData) return;
-      var select = form.querySelector("[data-timing-mode]");
-      var hours = form.querySelector("[data-timing-hours-input]");
-      var status = form.querySelector("[data-timing-status]");
-      var timer = null;
-      var seq = 0;
-      form.classList.add("is-live");
-
-      function show(text, kind) {
-        if (!status) return;
-        status.textContent = text;
-        status.classList.toggle("is-error", kind === "error");
-        status.classList.toggle("is-saved", kind === "saved");
-      }
-
-      function save() {
-        window.clearTimeout(timer);
-        timer = null;
-        var mine = ++seq;
-        show(form.getAttribute("data-saving") || "", "");
-        var meta = document.querySelector('meta[name="csrf-token"]');
-        var headers = { "Accept": "application/json" };
-        if (meta) headers["X-CSRF-Token"] = meta.getAttribute("content") || "";
-        fetch(form.getAttribute("action"), {
-          method: "POST",
-          body: new FormData(form),
-          headers: headers,
-          credentials: "same-origin"
-        }).then(function (response) {
-          return response.json().catch(function () { return { ok: false }; });
-        }).then(function (data) {
-          if (mine !== seq) return;
-          if (data && data.ok) show(form.getAttribute("data-saved") || "", "saved");
-          else show((data && data.error) || form.getAttribute("data-failed") || "", "error");
-        }).catch(function () {
-          if (mine === seq) show(form.getAttribute("data-failed") || "", "error");
-        });
-      }
-
-      form.addEventListener("submit", function (event) {
-        event.preventDefault();
-        save();
-      });
-      if (select) select.addEventListener("change", save);
-      if (hours) {
-        hours.addEventListener("input", function () {
-          window.clearTimeout(timer);
-          timer = window.setTimeout(save, 700);
-        });
-        hours.addEventListener("change", function () {
-          if (timer) save();
-        });
-      }
-    });
-  }
-  /* ---- end 0098 ------------------------------------------------------------- */
-
   function initControllerFields() {
     document.querySelectorAll("[data-controller-same-toggle]").forEach(function (checkbox) {
+      if (!claimNode(checkbox, "initControllerFields")) return;
       var panel = document.getElementById(checkbox.getAttribute("data-controller-target"));
       if (!panel) return;
       var select = panel.querySelector("select");
@@ -659,6 +608,7 @@
     var source = document.getElementById("fee-copy-source");
     var button = document.getElementById("fee-copy-apply");
     if (!source || !button) return;
+    if (!claimNode(button, "initFeeTemplateCopy")) return;
     button.addEventListener("click", function () {
       var option = source.options[source.selectedIndex];
       if (!option || !option.value) return;
@@ -694,8 +644,10 @@
   function initHousebookPdfExport() {
     var dialog = document.getElementById("housebook-pdf-dialog");
     if (!dialog) return;
+    if (!claimNode(dialog, "initHousebookPdfExport")) return;
     var form = document.getElementById("housebook-pdf-form");
     document.querySelectorAll("[data-housebook-pdf-export]").forEach(function (button) {
+      if (!claimNode(button, "initHousebookPdfExport")) return;
       button.addEventListener("click", function (event) {
         event.preventDefault();
         var pageFrom = document.getElementById("from");
@@ -723,11 +675,13 @@
   function initCsvExport() {
     var dialog = document.getElementById("csv-export-dialog");
     if (!dialog) return;
+    if (!claimNode(dialog, "initCsvExport")) return;
     var form = document.getElementById("csv-export-form");
     var pending = { base: "", params: "", scopeLabel: "" };
     var scope = dialog.querySelector("[data-csv-scope-label]");
 
     document.querySelectorAll("[data-csv-export]").forEach(function (button) {
+      if (!claimNode(button, "initCsvExport")) return;
       button.addEventListener("click", function (event) {
         event.preventDefault();
         pending.base = button.getAttribute("data-csv-export") || "";
@@ -789,9 +743,10 @@
     var toggles = document.querySelectorAll("[data-nav-toggle]");
     var closers = document.querySelectorAll("[data-nav-close]");
 
-    var sidebar = document.getElementById("app-sidebar");
-    var main = document.getElementById("main-content");
     function setDrawer(open) {
+      var sidebar = document.getElementById("app-sidebar");
+      var main = document.getElementById("main-content");
+      var toggles = document.querySelectorAll("[data-nav-toggle]");
       var wasOpen = document.body.classList.contains("nav-open");
       document.body.classList.toggle("nav-open", open);
       if (sidebar) sidebar.inert = isCompact() && !open;
@@ -806,13 +761,13 @@
     }
 
     // 0377: only a click slides the rail; restore and resize stay instant.
-    var animateTimer = null;
     function animateRail() {
       document.body.classList.add("sidebar-animating");
-      clearTimeout(animateTimer);
-      animateTimer = setTimeout(function () { document.body.classList.remove("sidebar-animating"); }, 280);
+      clearTimeout(navState.animateTimer);
+      navState.animateTimer = setTimeout(function () { document.body.classList.remove("sidebar-animating"); }, 280);
     }
     function setCollapsed(collapsed, animate) {
+      var collapse = document.querySelector("[data-sidebar-collapse]");
       if (animate && collapsed !== document.body.classList.contains("sidebar-collapsed")) animateRail();
       document.body.classList.toggle("sidebar-collapsed", collapsed);
       if (collapse) {
@@ -828,9 +783,9 @@
 
     // 0251: 1024-1279 px always shows the rail (host2.css); there the button
     // opens the full menu over the page instead, never stored.
-    var tabletRail = window.matchMedia("(min-width: 1024px) and (max-width: 1279px)");
-    var railWasCollapsed = false;
+    var tabletRail = navState.tabletRail || (navState.tabletRail = window.matchMedia("(min-width: 1024px) and (max-width: 1279px)"));
     function syncRailButton() {
+      var collapse = document.querySelector("[data-sidebar-collapse]");
       if (!collapse || !tabletRail.matches) return;
       var open = document.body.classList.contains("sidebar-expanded");
       collapse.setAttribute("aria-expanded", open ? "true" : "false");
@@ -838,12 +793,13 @@
     }
     function setExpanded(open, animate) {
       var body = document.body;
+      var collapse = document.querySelector("[data-sidebar-collapse]");
       if (open === body.classList.contains("sidebar-expanded")) return;
       if (animate) animateRail();
       if (open) {
-        railWasCollapsed = body.classList.contains("sidebar-collapsed");
+        navState.railWasCollapsed = body.classList.contains("sidebar-collapsed");
         body.classList.remove("sidebar-collapsed");
-      } else if (railWasCollapsed) {
+      } else if (navState.railWasCollapsed) {
         body.classList.add("sidebar-collapsed");
       }
       body.classList.toggle("sidebar-expanded", open);
@@ -862,54 +818,60 @@
     }
     if (stored === "1") setCollapsed(true);
 
-    if (collapse) collapse.addEventListener("click", function () {
+    if (collapse && claimNode(collapse, "initNavigation")) collapse.addEventListener("click", function () {
       if (tabletRail.matches) { setExpanded(!document.body.classList.contains("sidebar-expanded"), true); return; }
       setCollapsed(!document.body.classList.contains("sidebar-collapsed"), true);
     });
-    if (expand) expand.addEventListener("click", function () {
+    if (expand && claimNode(expand, "initNavigation")) expand.addEventListener("click", function () {
       if (tabletRail.matches) { setExpanded(true, true); return; }
       setCollapsed(false, true);
     });
-    document.addEventListener("pointerdown", function (event) {
-      if (document.body.classList.contains("sidebar-expanded") && sidebar && !sidebar.contains(event.target)) setExpanded(false, true);
-    });
-    document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape" && document.body.classList.contains("sidebar-expanded")) setExpanded(false, true);
-    });
+    if (claimNode(document, "initNavigation")) {
+      document.addEventListener("pointerdown", function (event) {
+        var sidebar = document.getElementById("app-sidebar");
+        if (document.body.classList.contains("sidebar-expanded") && sidebar && !sidebar.contains(event.target)) setExpanded(false, true);
+      });
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && document.body.classList.contains("sidebar-expanded")) setExpanded(false, true);
+      });
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && document.body.classList.contains("nav-open")) {
+          setDrawer(false);
+        }
+      });
+      document.addEventListener("keydown", function (event) {
+        var sidebar = document.getElementById("app-sidebar");
+        if (event.key !== "Tab" || !sidebar || !document.body.classList.contains("nav-open")) return;
+        var focusable = Array.from(sidebar.querySelectorAll("a, button, summary, input, select")).filter(function (el) {
+          return !el.disabled && el.getClientRects().length > 0;
+        });
+        var first = focusable[0], last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      });
+      document.addEventListener("host:close-navigation", function () { setDrawer(false); });
+    }
     var onRailChange = function () { setExpanded(false); syncRailButton(); if (!tabletRail.matches) setCollapsed(document.body.classList.contains("sidebar-collapsed")); };
-    if (tabletRail.addEventListener) tabletRail.addEventListener("change", onRailChange);
+    if (claimNode(tabletRail, "initNavigation") && tabletRail.addEventListener) tabletRail.addEventListener("change", onRailChange);
     syncRailButton();
 
     toggles.forEach(function (button) {
+      if (!claimNode(button, "initNavigation")) return;
       button.addEventListener("click", function () {
         setDrawer(!document.body.classList.contains("nav-open"));
       });
     });
     closers.forEach(function (button) {
+      if (!claimNode(button, "initNavigation")) return;
       button.addEventListener("click", function () { setDrawer(false); });
     });
-
-    document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape" && document.body.classList.contains("nav-open")) {
-        setDrawer(false);
-      }
-    });
-    document.addEventListener("keydown", function (event) {
-      if (event.key !== "Tab" || !sidebar || !document.body.classList.contains("nav-open")) return;
-      var focusable = Array.from(sidebar.querySelectorAll("a, button, summary, input, select")).filter(function (el) {
-        return !el.disabled && el.getClientRects().length > 0;
-      });
-      var first = focusable[0], last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
-    });
-    document.addEventListener("host:close-navigation", function () { setDrawer(false); });
-    window.addEventListener("resize", function () { setDrawer(false); });
+    if (claimNode(window, "initNavigation")) window.addEventListener("resize", function () { setDrawer(false); });
     setDrawer(false);
   }
 
   function initTogglePanels() {
     document.querySelectorAll("[data-toggle-panel]").forEach(function (button) {
+      if (!claimNode(button, "initTogglePanels")) return;
       button.addEventListener("click", function () {
         var panelId = button.getAttribute("data-toggle-panel");
         var panel = document.getElementById(panelId);
@@ -927,6 +889,7 @@
       });
     });
     document.querySelectorAll("[data-close-panel]").forEach(function (button) {
+      if (!claimNode(button, "initTogglePanels")) return;
       button.addEventListener("click", function () {
         var panel = button.closest(".action-panel");
         if (panel) panel.classList.add("hidden");
@@ -934,7 +897,7 @@
     });
     if (new URLSearchParams(window.location.search).get("new") === "1") {
       var addPanel = document.getElementById("add-stay-panel");
-      if (addPanel) {
+      if (addPanel && claimNode(addPanel, "initTogglePanels")) {
         addPanel.classList.remove("hidden");
         var first = addPanel.querySelector("input, select, textarea");
         if (first) first.focus();
@@ -961,9 +924,12 @@
       });
     }
     document.querySelectorAll("[data-open-details]").forEach(function (link) {
+      if (!claimNode(link, "initDetailsLinks")) return;
       link.addEventListener("click", function () { openTarget(link.hash); });
     });
-    window.addEventListener("hashchange", function () { openTarget(window.location.hash); });
+    if (claimNode(window, "initDetailsLinks")) {
+      window.addEventListener("hashchange", function () { openTarget(window.location.hash); });
+    }
     openTarget(window.location.hash);
   }
 
@@ -978,6 +944,7 @@
 
   function initNotifications() {
     document.querySelectorAll("form[data-notification-dismiss]").forEach(function (form) {
+      if (!claimNode(form, "initNotifications")) return;
       form.addEventListener("submit", function (event) {
         event.preventDefault();
         var notification = form.closest("[data-notification]");
@@ -1022,10 +989,9 @@
         if (origin && origin.isConnected && typeof origin.focus === "function") origin.focus();
       });
     }
-    if (!root._feedbackVisibilityBound) {
-      root._feedbackVisibilityBound = true;
+    if (claimNode(document, "feedbackVisibility")) {
       document.addEventListener("visibilitychange", function () {
-        rail.querySelectorAll("[data-toast]").forEach(function (toast) {
+        document.querySelectorAll("[data-toast]").forEach(function (toast) {
           if (document.hidden) toast._toastPause && toast._toastPause("hidden");
           else toast._toastResume && toast._toastResume("hidden");
         });
@@ -1040,6 +1006,7 @@
     });
     var signatures = new Set();
     toasts.forEach(function (toast, index) {
+      if (!claimNode(toast, "initToasts")) return;
       var kind = toastKind(toast);
       var messageNode = toast.querySelector(".grow");
       var message = messageNode ? messageNode.textContent.trim() : toast.textContent.trim();
@@ -1069,6 +1036,7 @@
 
   function initFilterPanels() {
     document.querySelectorAll("[data-filter-panel]").forEach(function (form) {
+      if (!claimNode(form, "initFilterPanels")) return;
       var toggle = form.id ? document.querySelector('[data-filter-toggle][aria-controls="' + form.id + '"]') : null;
       var controls = Array.prototype.slice.call(form.querySelectorAll("input, select, textarea"));
       var initial = controls.map(function (control) { return control.value; });
@@ -1126,7 +1094,23 @@
   }
 
   function initDateRanges(form) {
+    if (claimNode(document, "initDateRanges")) {
+      document.addEventListener("pointerdown", function (event) {
+        document.querySelectorAll("[data-date-range]").forEach(function (range) {
+          var popover = range.querySelector("[data-range-popover]");
+          if (range._ubyClose && popover && !popover.hidden && !range.contains(event.target)) range._ubyClose(true);
+        });
+      });
+      document.addEventListener("keydown", function (event) {
+        if (event.key !== "Escape") return;
+        document.querySelectorAll("[data-date-range]").forEach(function (range) {
+          var popover = range.querySelector("[data-range-popover]");
+          if (range._ubyClose && popover && !popover.hidden) { event.preventDefault(); range._ubyClose(true); }
+        });
+      });
+    }
     form.querySelectorAll("[data-date-range]").forEach(function (range) {
+      if (!claimNode(range, "initDateRanges")) return;
       var from = range.querySelector("[data-range-from]");
       var until = range.querySelector("[data-range-until]");
       var trigger = range.querySelector("[data-range-trigger]");
@@ -1244,14 +1228,29 @@
         until.dispatchEvent(new Event("change", { bubbles: true }));
         setCaption(); popover.hidden = true; trigger.setAttribute("aria-expanded", "false"); trigger.focus();
       });
-      document.addEventListener("pointerdown", function (event) { if (!range.contains(event.target) && !popover.hidden) close(true); });
-      document.addEventListener("keydown", function (event) { if (event.key === "Escape" && !popover.hidden) { event.preventDefault(); close(true); } });
+      range._ubyClose = close;
       setCaption(); render();
     });
   }
 
   function initMonthPickers(form) {
+    if (claimNode(document, "initMonthPickers")) {
+      document.addEventListener("pointerdown", function (event) {
+        document.querySelectorAll("[data-month-picker]").forEach(function (picker) {
+          var panel = picker.querySelector("[data-month-grid-panel]");
+          if (picker._ubyClose && panel && !panel.hidden && !picker.contains(event.target)) picker._ubyClose(true);
+        });
+      });
+      document.addEventListener("keydown", function (event) {
+        if (event.key !== "Escape") return;
+        document.querySelectorAll("[data-month-picker]").forEach(function (picker) {
+          var panel = picker.querySelector("[data-month-grid-panel]");
+          if (picker._ubyClose && panel && !panel.hidden) { event.preventDefault(); picker._ubyClose(true); }
+        });
+      });
+    }
     form.querySelectorAll("[data-month-picker]").forEach(function (picker) {
+      if (!claimNode(picker, "initMonthPickers")) return;
       var nativeInput = picker.querySelector("[data-month-native]");
       var trigger = picker.querySelector("[data-month-trigger]");
       var panel = picker.querySelector("[data-month-grid-panel]");
@@ -1321,15 +1320,22 @@
       var all = picker.querySelector("[data-month-all-choice]");
       if (all && optional) all.addEventListener("click", function () { selected = ""; nativeInput.value = ""; nativeInput.dispatchEvent(new Event("change", { bubbles: true })); setCaption(); render(); panel.hidden = true; trigger.setAttribute("aria-expanded", "false"); trigger.focus(); });
       nativeInput.addEventListener("change", function () { selected = nativeInput.value; setCaption(); render(); });
-      document.addEventListener("pointerdown", function (event) { if (!picker.contains(event.target) && !panel.hidden) close(true); });
-      document.addEventListener("keydown", function (event) { if (event.key === "Escape" && !panel.hidden) { event.preventDefault(); close(true); } });
+      picker._ubyClose = close;
       setCaption(); render();
     });
   }
 
   /* Legacy auto-submit remains available only to forms that explicitly opt in. */
   function initAutoFilters() {
+    document.querySelectorAll("form input[type=checkbox][data-toggle-submit]").forEach(function (input) {
+      var toggleForm = input.form;
+      if (!toggleForm || !claimNode(input, "initAutoFilters")) return;
+      input.addEventListener("change", function () {
+        toggleForm.requestSubmit ? toggleForm.requestSubmit() : toggleForm.submit();
+      });
+    });
     document.querySelectorAll("form[data-auto-submit]").forEach(function (form) {
+      if (!claimNode(form, "initAutoFilters")) return;
       form.querySelectorAll("select, input[type=date], input[type=month]").forEach(function (input) {
         input.addEventListener("change", function () {
           if (input.type === "date") {
@@ -1368,10 +1374,12 @@
 
   function initGeneratedPasswords() {
     document.querySelectorAll("[data-generated-password]").forEach(function (input) {
+      if (!claimNode(input, "initGeneratedPasswords")) return;
       if (!input.value) fillGeneratedPassword(input);
     });
 
     document.querySelectorAll("[data-generate-password]").forEach(function (button) {
+      if (!claimNode(button, "initGeneratedPasswords")) return;
       button.addEventListener("click", function () {
         var field = button.closest(".password-generate");
         if (!field) return;
@@ -1390,6 +1398,7 @@
     var form = document.getElementById("reset-password-form");
     var label = document.getElementById("reset-password-label");
     if (!dialog || !form || !label) return;
+    if (!claimNode(dialog, "initResetPasswordDialog")) return;
 
     document.querySelectorAll("[data-reset-password]").forEach(function (button) {
       button.addEventListener("click", function () {
@@ -1418,6 +1427,7 @@
     var body = document.getElementById("confirm-body");
     var proceed = shell && shell.querySelector("[data-confirm-proceed]");
     if (!dialog || !shell) return;
+    if (!claimNode(shell, "initConfirmDialog")) return;
     var pendingForm = null;
     var pendingButton = null;
 
@@ -1492,6 +1502,7 @@
     });
   }
 
+  var powerToolsKeydown = null;
   function initPowerTools() {
     var command = document.getElementById("command-dialog");
     var input = command ? command.querySelector("[data-command-input]") : null;
@@ -1724,28 +1735,32 @@
     }
 
     document.querySelectorAll("[data-command-open]").forEach(function (button) {
+      if (!claimNode(button, "initPowerTools")) return;
       button.addEventListener("click", openCommand);
     });
     document.querySelectorAll("[data-command-close]").forEach(function (button) {
+      if (!claimNode(button, "initPowerTools")) return;
       button.addEventListener("click", closeCommand);
     });
-    if (command) {
+    if (command && claimNode(command, "initPowerTools")) {
       command.addEventListener("close", clearCommandCopyError);
       command.addEventListener("click", function (event) {
         if (event.target === command) closeCommand();
       });
     }
     document.querySelectorAll("[data-shortcuts-open]").forEach(function (button) {
+      if (!claimNode(button, "initPowerTools")) return;
       button.addEventListener("click", function () {
         document.dispatchEvent(new Event("host:close-navigation"));
         if (shortcuts && typeof shortcuts.showModal === "function") shortcuts.showModal();
       });
     });
     document.querySelectorAll("[data-shortcuts-close]").forEach(function (button) {
+      if (!claimNode(button, "initPowerTools")) return;
       button.addEventListener("click", function () { if (shortcuts) shortcuts.close(); });
     });
 
-    if (input) {
+    if (input && claimNode(input, "initPowerTools")) {
       input.addEventListener("input", function () { clearCommandCopyError(); render(input.value); });
       input.addEventListener("keydown", function (event) {
         if ((event.key === "ArrowDown" || event.key === "ArrowUp") && visible.length) {
@@ -1759,7 +1774,7 @@
       });
     }
 
-    document.addEventListener("keydown", function (event) {
+    powerToolsKeydown = function (event) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         openCommand();
@@ -1805,13 +1820,17 @@
       } else if (event.key === "Enter" && current >= 0) {
         window.location.assign(rows[current].getAttribute("data-href"));
       }
-    });
+    };
+    if (claimNode(document, "initPowerTools")) {
+      document.addEventListener("keydown", function (event) { if (powerToolsKeydown) powerToolsKeydown(event); });
+    }
   }
 
   function initSavedViews() {
     var key = "ubyhost-saved-stay-views";
     var container = document.querySelector("[data-saved-views]");
     var button = document.querySelector("[data-save-view]");
+    if (button && !claimNode(button, "initSavedViews")) return;
     var views = [];
     try { views = JSON.parse(localStorage.getItem(key) || "[]"); } catch (error) { views = []; }
 
@@ -1850,6 +1869,7 @@
 
   function initInlineEdit() {
     document.querySelectorAll("form[data-inline-edit]").forEach(function (form) {
+      if (!claimNode(form, "initInlineEdit")) return;
       var status = form.querySelector(".inline-edit-status");
       form.addEventListener("submit", function (event) {
         event.preventDefault();
@@ -1878,6 +1898,7 @@
     // request died on the UNIQUE index with a 500. The uid is collision proof
     // now; this is the visible half of the fix, so a click has one effect.
     document.querySelectorAll(".action-panel form").forEach(function (form) {
+      if (!claimNode(form, "initSubmitGuard")) return;
       form.addEventListener("submit", function (event) {
         // A confirm dialog or a fetch handler owns this submit and may hand it
         // back, so never disable a button for a submission that did not start.
@@ -1890,20 +1911,21 @@
     });
     // Coming back with the browser's back button restores the button's own
     // disabled state, so clear ours on every restore.
-    window.addEventListener("pageshow", function () {
-      document.querySelectorAll("[data-submit-guard]").forEach(function (button) {
-        button.disabled = false;
-        button.removeAttribute("data-submit-guard");
+    if (claimNode(window, "initSubmitGuard")) {
+      window.addEventListener("pageshow", function () {
+        document.querySelectorAll("[data-submit-guard]").forEach(function (button) {
+          button.disabled = false;
+          button.removeAttribute("data-submit-guard");
+        });
       });
-    });
+    }
   }
 
   /* 0093 help: contextual "?" tips (macro help_tip). Hover/focus/tap open, Esc and outside click close. */
+  var helpTipState = { current: null, timer: null };
   function initHelpTips() {
     var tips = Array.prototype.slice.call(document.querySelectorAll("[data-help-tip]"));
     if (!tips.length) return;
-    var current = null;
-    var timer = null;
 
     function place(tip) {
       var btn = tip.querySelector(".help-tip-btn");
@@ -1926,25 +1948,26 @@
       tip.classList.remove("is-open");
       tip.removeAttribute("data-pinned");
       tip.querySelector(".help-tip-btn").setAttribute("aria-expanded", "false");
-      if (current === tip) current = null;
+      if (helpTipState.current === tip) helpTipState.current = null;
     }
     function open(tip, pinned) {
-      if (current && current !== tip) close(current);
-      window.clearTimeout(timer);
-      current = tip;
+      if (helpTipState.current && helpTipState.current !== tip) close(helpTipState.current);
+      window.clearTimeout(helpTipState.timer);
+      helpTipState.current = tip;
       tip.classList.add("is-open");
       tip.querySelector(".help-tip-btn").setAttribute("aria-expanded", "true");
       if (pinned) tip.setAttribute("data-pinned", "1");
       place(tip);
     }
     function closeSoon(tip) {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(function () {
+      window.clearTimeout(helpTipState.timer);
+      helpTipState.timer = window.setTimeout(function () {
         if (!tip.hasAttribute("data-pinned") && !tip.contains(document.activeElement)) close(tip);
       }, 150);
     }
 
     tips.forEach(function (tip) {
+      if (!claimNode(tip, "initHelpTips")) return;
       var btn = tip.querySelector(".help-tip-btn");
       tip.setAttribute("data-js", "1");
       tip.addEventListener("pointerenter", function (e) {
@@ -1966,170 +1989,22 @@
         else open(tip, true);
       });
     });
-    document.addEventListener("keydown", function (e) {
-      if (e.key !== "Escape" || !current) return;
-      var tip = current;
-      close(tip);
-      tip.querySelector(".help-tip-btn").focus();
-    });
-    document.addEventListener("click", function (e) {
-      if (current && !current.contains(e.target)) close(current);
-    });
-    function reflow() { if (current) place(current); }
-    window.addEventListener("resize", reflow);
-    window.addEventListener("scroll", reflow, true);
+    if (claimNode(document, "initHelpTips")) {
+      document.addEventListener("keydown", function (e) {
+        if (e.key !== "Escape" || !helpTipState.current) return;
+        var tip = helpTipState.current;
+        close(tip);
+        tip.querySelector(".help-tip-btn").focus();
+      });
+      document.addEventListener("click", function (e) {
+        if (helpTipState.current && !helpTipState.current.contains(e.target)) close(helpTipState.current);
+      });
+      function reflow() { if (helpTipState.current) place(helpTipState.current); }
+      window.addEventListener("resize", reflow);
+      window.addEventListener("scroll", reflow, true);
+    }
   }
 
-  /* 0094: property Overview / Bookings & calendars / Settings.
-     Every view and settings group is already in the page; switching only shows
-     another one, so the one settings form keeps whatever the host typed. Links
-     carry ?view=&section= (plus a #hash to scroll), history follows, and a dirty form asks before
-     the page is left. Without JavaScript the same links reload with ?view=. */
-  function initPropertyViews() {
-    var root = document.querySelector("[data-property-views]");
-    if (!root) return;
-    root.setAttribute("data-js", "1");
-    var base = root.getAttribute("data-property-base");
-    var VIEWS = ["overview", "bookings", "settings"];
-    var SECTIONS = ["property", "guests", "reporting", "lock", "automation"];
-    var form = root.querySelector("[data-property-settings-form]");
-    var returnInput = form && form.querySelector("[data-property-return]");
-    var connect = root.querySelector("[data-calendar-connect]");
-    // 0096: the setup guide's Continue shows only away from the step's place.
-    var guide = document.querySelector("[data-setup-guide]");
-    var guideContinue = guide && guide.querySelector("[data-setup-continue]");
-
-    function hashTarget(hash) {
-      if (!hash || hash.length < 2) return null;
-      try { return document.getElementById(decodeURIComponent(hash.slice(1))); } catch (_) { return null; }
-    }
-
-    // Where a URL points: [view, section] of the element the hash names in
-    // this page, else ?view/?section (0101: no table of old hashes).
-    function destination(url) {
-      var target = hashTarget(url.hash);
-      if (target && root.contains(target)) {
-        var panel = target.closest("[data-property-view]");
-        var group = target.closest("[data-settings-group]");
-        if (panel) return [panel.getAttribute("data-property-view"), group ? group.getAttribute("data-settings-group") : null];
-      }
-      var view = url.searchParams.get("view");
-      var section = url.searchParams.get("section");
-      if (VIEWS.indexOf(view) < 0) view = SECTIONS.indexOf(section) >= 0 ? "settings" : null;
-      if (!view) return null;
-      return [view, SECTIONS.indexOf(section) >= 0 ? section : null];
-    }
-
-    function activeSection() {
-      var group = root.querySelector("[data-settings-group].is-active");
-      return group ? group.getAttribute("data-settings-group") : "property";
-    }
-
-    function activate(view, section) {
-      if (VIEWS.indexOf(view) < 0) view = "overview";
-      root.querySelectorAll("[data-property-view]").forEach(function (panel) {
-        panel.classList.toggle("is-active", panel.getAttribute("data-property-view") === view);
-      });
-      document.querySelectorAll("[data-property-tab]").forEach(function (tab) {
-        if (tab.getAttribute("data-property-tab") === view) tab.setAttribute("aria-current", "page");
-        else tab.removeAttribute("aria-current");
-      });
-      if (section && SECTIONS.indexOf(section) >= 0) {
-        root.querySelectorAll("[data-settings-group]").forEach(function (group) {
-          group.classList.toggle("is-active", group.getAttribute("data-settings-group") === section);
-        });
-        root.querySelectorAll("[data-property-section-link]").forEach(function (link) {
-          if (link.getAttribute("data-property-section-link") === section) link.setAttribute("aria-current", "true");
-          else link.removeAttribute("aria-current");
-        });
-      }
-      if (returnInput) {
-        returnInput.value = view === "settings"
-          ? base + "?view=settings&section=" + activeSection()
-          : base + "?view=" + view;
-      }
-      if (guideContinue) {
-        var stepSection = guide.getAttribute("data-setup-section");
-        guideContinue.hidden = view === guide.getAttribute("data-setup-view")
-          && (!stepSection || (view === "settings" && activeSection() === stepSection));
-      }
-    }
-
-    function reveal(url, scroll) {
-      var dest = destination(url);
-      if (!dest) return false;
-      activate(dest[0], dest[1]);
-      var target = hashTarget(url.hash);
-      if (target && connect && (target === connect || connect.contains(target))) connect.classList.remove("is-collapsed");
-      if (url.searchParams.get("add_calendar") === "1" && connect) connect.classList.remove("is-collapsed");
-      if (scroll) {
-        var into = target && root.contains(target) ? target : root;
-        window.requestAnimationFrame(function () { into.scrollIntoView({ block: "start", behavior: "auto" }); });
-      }
-      return true;
-    }
-
-    document.addEventListener("click", function (event) {
-      if (event.defaultPrevented || event.button !== 0) return;
-      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      var link = event.target.closest && event.target.closest("a[href]");
-      if (!link || (link.target && link.target !== "_self") || link.hasAttribute("download")) return;
-      var url;
-      try { url = new URL(link.href, window.location.href); } catch (_) { return; }
-      if (url.origin !== window.location.origin || url.pathname !== base) return;
-      if (!url.search && !url.hash) url.searchParams.set("view", "overview");
-      if (!destination(url)) return;
-      event.preventDefault();
-      var lang = new URLSearchParams(window.location.search).get("lang");
-      if (lang && !url.searchParams.get("lang")) url.searchParams.set("lang", lang);
-      url.searchParams.delete("created");
-      window.history.pushState({ propertyView: true }, "", url.pathname + url.search + url.hash);
-      // skeleton.js saw a link click and armed its "page is loading" blank;
-      // this one stays in the page, so disarm it (0084 O1 finding).
-      if (window.ubyhostSkeleton) window.ubyhostSkeleton.hide();
-      reveal(url, true);
-    });
-
-    window.addEventListener("popstate", function () {
-      var url = new URL(window.location.href);
-      if (!reveal(url, false)) activate("overview", null);
-    });
-    window.addEventListener("hashchange", function () {
-      reveal(new URL(window.location.href), true);
-    });
-
-    if (form) {
-      // A field the browser refuses may sit in a hidden group: show that group
-      // first, so the browser can focus the field and say what is wrong.
-      var revealing = false;
-      form.addEventListener("invalid", function (event) {
-        if (revealing) return;
-        revealing = true;
-        window.setTimeout(function () { revealing = false; }, 0);
-        var group = event.target.closest && event.target.closest("[data-settings-group]");
-        activate("settings", group ? group.getAttribute("data-settings-group") : null);
-      }, true);
-      // Unsaved changes: the form carries data-unsaved-guard, so
-      // initUnsavedForms (browser prompt) and initUnsavedDialog (0084 O1) own it.
-    }
-
-    // A switch says "Not saved yet" until the form is saved; never "Enabled".
-    root.querySelectorAll("input[data-switch-saved]").forEach(function (input) {
-      var status = document.getElementById((input.getAttribute("aria-describedby") || "").split(" ")[0]);
-      if (!status) return;
-      input.addEventListener("change", function () {
-        var saved = input.getAttribute("data-switch-saved") === "1";
-        var text = input.checked === saved
-          ? status.getAttribute(input.checked ? "data-on" : "data-off")
-          : status.getAttribute("data-unsaved");
-        status.textContent = text;
-        status.classList.toggle("is-on", input.checked && input.checked === saved);
-        status.classList.toggle("is-unsaved", input.checked !== saved);
-      });
-    });
-
-    reveal(new URL(window.location.href), false);
-  }
 
   /* 0076: a page with several independent forms (the business editor's
      Business details and Invoice details). Saving one form, or leaving the
@@ -2137,24 +2012,109 @@
   function initUnsavedForms() {
     var forms = Array.prototype.slice.call(document.querySelectorAll("form[data-unsaved-guard]"));
     if (!forms.length) return;
-    var submitting = null;
     forms.forEach(function (form) {
+      if (!claimNode(form, "initUnsavedForms")) return;
       var mark = function () { form.setAttribute("data-dirty", "1"); };
       form.addEventListener("input", mark);
       form.addEventListener("change", mark);
-      form.addEventListener("submit", function () { submitting = form; });
+      form.addEventListener("submit", function () { form._ubySubmitting = true; });
     });
-    window.addEventListener("beforeunload", function (event) {
-      var unsaved = forms.some(function (form) {
-        return form !== submitting && form.getAttribute("data-dirty") === "1";
+    if (claimNode(window, "initUnsavedForms")) {
+      window.addEventListener("beforeunload", function (event) {
+        var current = Array.prototype.slice.call(document.querySelectorAll("form[data-unsaved-guard]"));
+        var unsaved = current.some(function (form) {
+          return form.getAttribute("data-dirty") === "1" && form._ubySubmitting !== true;
+        });
+        current.forEach(function (form) { form._ubySubmitting = false; });
+        if (!unsaved) return;
+        event.preventDefault();
+        event.returnValue = "";
       });
-      submitting = null;
-      if (!unsaved) return;
-      event.preventDefault();
-      event.returnValue = "";
-    });
+    }
   }
 
+  /* 0540: on the phone the property page opens with every section closed, as the mockup.
+     Only a section opened by default (no ?section=) is closed; a requested one stays open. */
+  function initPhoneDefaultClosed() {
+    if (!window.matchMedia("(max-width: 1023px)").matches) return;
+    if (/[?&](section|view)=/.test(window.location.search) || window.location.hash) return;
+    document.querySelectorAll("details#sec-basics").forEach(function (node) {
+      if (!claimNode(node, "initPhoneDefaultClosed")) return;
+      node.removeAttribute("open");
+    });
+  }
+  /* 0543: an aside link to a property section (#sec-*) opens that section; a #sec-* hash opens it on load */
+  function initPropSectionLinks() {
+    function openSection(hash) {
+      if (!/^#sec-/.test(hash || "")) return;
+      var node = document.getElementById(hash.slice(1));
+      if (node && node.tagName === "DETAILS" && node.classList.contains("prop-sec")) node.open = true;
+    }
+    document.querySelectorAll('a[href^="#sec-"]').forEach(function (link) {
+      if (!claimNode(link, "initPropSectionLinks")) return;
+      link.addEventListener("click", function () { openSection(link.getAttribute("href")); });
+    });
+    if (window.location.hash) openSection(window.location.hash);
+    if (claimNode(window, "initPropSectionLinks")) {
+      window.addEventListener("hashchange", function () { openSection(window.location.hash); });
+    }
+  }
+  /* 0547: the one-page property form. Restores what the removed tabs did: switch
+     status text, an invalid field opens its closed section, the calendar connect
+     panel opens for ?add_calendar=1 or its hash, and Save returns to the last
+     opened section. */
+  var PROPERTY_RETURN_SECTION = { "sec-basics": "property", "sec-police": "reporting", "sec-fee": "reporting", "sec-messages": "guests", "sec-lock": "lock" };
+  function initPropertyPage() {
+    var form = document.querySelector("form#property-settings-form");
+    if (form && claimNode(form, "initPropertyPage")) {
+      var lastOpened = null;
+      var returnInput = form.querySelector("input[data-property-return]");
+      form.addEventListener("toggle", function (event) {
+        var node = event.target;
+        if (node.tagName === "DETAILS" && node.open && node.id && node.matches("details.prop-sec")) lastOpened = node.id;
+      }, true);
+      form.addEventListener("submit", function () {
+        var group = PROPERTY_RETURN_SECTION[lastOpened];
+        if (!group || !returnInput) return;
+        returnInput.value = returnInput.value.replace(/([?&]section=)[^&#]*/, "$1" + group);
+      });
+      // A switch says "Not saved yet" until the form is saved; never "Enabled".
+      form.querySelectorAll("input[data-switch-saved]").forEach(function (input) {
+        var status = document.getElementById((input.getAttribute("aria-describedby") || "").split(" ")[0]);
+        if (!status) return;
+        input.addEventListener("change", function () {
+          var saved = input.getAttribute("data-switch-saved") === "1";
+          var text = input.checked === saved
+            ? status.getAttribute(input.checked ? "data-on" : "data-off")
+            : status.getAttribute("data-unsaved");
+          status.textContent = text;
+          status.classList.toggle("is-on", input.checked && input.checked === saved);
+          status.classList.toggle("is-unsaved", input.checked !== saved);
+        });
+      });
+      // A field the browser refuses may sit in a closed section: open it first,
+      // so the browser can focus the field and say what is wrong.
+      var revealing = false;
+      form.addEventListener("invalid", function (event) {
+        if (revealing) return;
+        revealing = true;
+        window.setTimeout(function () { revealing = false; }, 0);
+        var sec = event.target.closest && event.target.closest("details.prop-sec");
+        if (sec) sec.open = true;
+      }, true);
+    }
+    var connect = document.getElementById("calendar-connect");
+    if (!connect || !claimNode(connect, "initPropertyPage")) return;
+    var hash = window.location.hash;
+    var target = null;
+    try { target = hash.length > 1 ? document.getElementById(decodeURIComponent(hash.slice(1))) : null; } catch (_) { target = null; }
+    var wanted = new URLSearchParams(window.location.search).get("add_calendar") === "1"
+      || !!target && (target === connect || connect.contains(target));
+    if (!wanted) return;
+    connect.classList.remove("is-collapsed");
+    var calendars = document.getElementById("sec-calendars");
+    if (calendars && calendars.tagName === "DETAILS") calendars.open = true;
+  }
   /* ---- 0084 O1: unsaved changes, in-app Save / Discard / Stay ----------------
      A form with data-unsaved-guard that holds changes (data-dirty, set by
      initUnsavedForms) asks before an in-app link leaves it:
@@ -2163,17 +2123,14 @@
                refused save must stay on its error page).
        Discard restores the loaded values, then follows the link.
        Stay    (also Esc) keeps the edits and returns focus to the link.
-     Links that keep the draft on screen (property Settings sub-nav, cards and
-     anchors into Settings, in-page #anchors) do not ask. Tab close, reload and
+     Links that keep the draft on screen (cards and anchors into
+     Settings, in-page #anchors) do not ask. Tab close, reload and
      other sites keep the browser's own prompt. Without JavaScript nothing here
      runs and the forms post as before. */
   function initUnsavedDialog() {
     var forms = Array.prototype.slice.call(document.querySelectorAll("form[data-unsaved-guard]"));
     var dialog = document.getElementById("unsaved-dialog");
     if (!forms.length) return;
-    var property = document.querySelector("[data-property-views]");
-    var propertyBase = property && property.getAttribute("data-property-base");
-    var SETTINGS_SECTIONS = ["property", "guests", "reporting", "lock", "automation"];
     var pendingLink = null;
 
     function isDirty(form) { return form.getAttribute("data-dirty") === "1"; }
@@ -2201,38 +2158,28 @@
     // True when following this link keeps the draft on screen.
     function keepsDraft(url) {
       var here = window.location;
-      if (property && propertyBase && url.pathname === propertyBase) {
-        var target = null;
-        if (url.hash.length > 1) {
-          try { target = document.getElementById(decodeURIComponent(url.hash.slice(1))); } catch (_) { target = null; }
-        }
-        var panel = target && target.closest("[data-property-view]");
-        if (panel) return panel.getAttribute("data-property-view") === "settings";
-        var view = url.searchParams.get("view");
-        if (view) return view === "settings";
-        if (SETTINGS_SECTIONS.indexOf(url.searchParams.get("section")) >= 0) return true;
-        return url.search === here.search && !!url.hash;
-      }
       return url.pathname === here.pathname && url.search === here.search && !!url.hash;
     }
 
     forms.forEach(function (form) {
+      if (!claimNode(form, "initUnsavedDialog")) return;
       form.addEventListener("input", syncResetButtons);
       form.addEventListener("change", syncResetButtons);
       form.querySelectorAll("[data-unsaved-reset]").forEach(function (button) {
         button.addEventListener("click", function () {
           discard(form);
           syncResetButtons();
-          var save = form.querySelector(".host-property-save [type=submit]") || form.querySelector(".actions [type=submit]");
+          var save = form.querySelector(".savebar [type=submit]") || form.querySelector(".actions [type=submit]");
           if (save) save.focus();
         });
       });
     });
     syncResetButtons();
     // Back/Forward may restore typed values without input events.
-    window.addEventListener("pageshow", syncResetButtons);
+    if (claimNode(window, "initUnsavedDialog")) window.addEventListener("pageshow", syncResetButtons);
 
     if (!dialog || typeof dialog.showModal !== "function") return;
+    if (!claimNode(dialog, "initUnsavedDialog")) return;
     var stay = dialog.querySelector("[data-unsaved-stay]");
     var discardBtn = dialog.querySelector("[data-unsaved-discard]");
     var save = dialog.querySelector("[data-unsaved-save]");
@@ -2293,7 +2240,15 @@
   }
   /* ---- end 0084 O1 ---------------------------------------------------------- */
 
-  document.addEventListener("DOMContentLoaded", function () {
+  var pageHooks = [];
+  var pageStarted = false;
+  window.UbyHost = window.UbyHost || {};
+  window.UbyHost.onPage = function (fn) { pageHooks.push(fn); if (pageStarted) fn(); };
+
+  function initPage() {
+    initPhoneDefaultClosed();
+    initPropSectionLinks();
+    initPropertyPage();
     initCopy();
     initUnsavedForms();
     initUnsavedDialog();
@@ -2305,10 +2260,8 @@
     initTogglePanels();
     initDismissBanners();
     initNotifications();
-    initPropertyViews();
     initDetailsLinks();
     initAutomationFields();
-    initInlineTiming();
     initControllerFields();
     initFeeTemplateCopy();
     initCsvExport();
@@ -2323,5 +2276,13 @@
     initPowerTools();
     initSavedViews();
     initInlineEdit();
-  });
+    pageStarted = true;
+    pageHooks.forEach(function (fn) { fn(); });
+  }
+  window.UbyHost = window.UbyHost || {};
+  window.UbyHost.initPage = initPage;
+  document.addEventListener("turbo:load", initPage);
+  if (!window.Turbo) document.addEventListener("DOMContentLoaded", initPage);
+  // Forms stay full page loads: Turbo must not submit them.
+  if (window.Turbo) window.Turbo.config.forms.mode = "off";
 })();

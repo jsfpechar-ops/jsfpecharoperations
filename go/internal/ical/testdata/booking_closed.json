@@ -1,0 +1,16 @@
+[
+  {
+    "date_from": "2026-09-20",
+    "date_to": "2026-09-21",
+    "description": "Manual closure.",
+    "guest_email": null,
+    "is_block": false,
+    "is_cancelled": false,
+    "name_hint": "",
+    "phone_last4": null,
+    "recurring": false,
+    "reservation_url": null,
+    "summary": "CLOSED - Not available",
+    "uid": "closed-1@booking.example"
+  }
+]

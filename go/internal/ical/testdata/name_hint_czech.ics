@@ -1,0 +1,9 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20270105
+DTEND;VALUE=DATE:20270107
+UID:cz-1@example.test
+SUMMARY:Kateřina Dvořáková-Nováčková, Jiří Šťastný a Michaela Hájková s celou rodinou, dětmi a přáteli z Brna
+END:VEVENT
+END:VCALENDAR

@@ -1,6 +1,8 @@
 # 0456: PostgreSQL deployment, cutover and recovery kit
 
-Status: blocked — exact patch review and 0455 interface integration pending
+Replaced by 0461 (managed PostgreSQL, D1).
+
+Status: replaced
 Depends on: 0455 | Base: codex/ubyhost-corrections-20261030
 Executor: Haiku 5.5 (latest owner-supplied AGENTS.md)
 

@@ -8,6 +8,8 @@ insert the one-off settings row, and the loser crashes on start.
 """
 from __future__ import annotations
 
+import pytest
+
 import os
 import subprocess
 import sys
@@ -73,6 +75,7 @@ def _columns(path: Path, table: str) -> set:
         conn.close()
 
 
+@pytest.mark.sqlite_only
 def test_init_db_from_many_processes_at_once_on_a_fresh_file(tmp_path):
     for attempt in range(3):
         target = tmp_path / f"run{attempt}"
@@ -84,6 +87,7 @@ def test_init_db_from_many_processes_at_once_on_a_fresh_file(tmp_path):
         assert {"doc_number_enc", "fee_host_reason_reference"} <= guest
 
 
+@pytest.mark.sqlite_only
 def test_bootstrap_admin_is_created_once_when_web_workers_race(tmp_path):
     results = _boot_many(
         tmp_path,
@@ -112,6 +116,7 @@ def test_the_startup_lock_is_reentrant_in_one_process(monkeypatch, tmp_path):
     assert db.query_one("SELECT COUNT(*) AS n FROM settings") is not None
 
 
+@pytest.mark.sqlite_only
 def test_init_db_waits_for_a_lock_held_by_another_process(monkeypatch, tmp_path):
     """The lock is real across processes: init_db blocks until it is released."""
     monkeypatch.setattr(config, "DB_PATH", tmp_path / "blocked.db")

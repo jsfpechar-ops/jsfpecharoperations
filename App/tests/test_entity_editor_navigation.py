@@ -6,6 +6,7 @@ property setting, and issued invoices never change. ARES is never called.
 """
 from __future__ import annotations
 
+import html as _html
 import os
 import re
 import secrets
@@ -27,6 +28,14 @@ USERNAME = "entity-nav-0076-host"
 OTHER = "entity-nav-0076-other"
 ICO = "04656679"
 EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0076-evidence"
+
+
+def _text(markup: str) -> str:
+    """Visible text: the "?" tip button and its body are dropped, tags become spaces."""
+    markup = re.sub(r'<button class="help-tip-btn"[^>]*>.*?</button>', " ", markup, flags=re.S)
+    markup = re.sub(r'<span class="help-tip-body"[^>]*>.*?</span>', " ", markup, flags=re.S)
+    markup = re.sub(r"<[^>]+>", " ", markup)
+    return re.sub(r"\s+", " ", _html.unescape(markup))
 
 
 def _owner(username: str = USERNAME) -> int:
@@ -156,7 +165,7 @@ def test_editor_has_both_sections_and_the_linked_properties(host):
     page = host.get(f"/entities?edit={entity_id}&lang=en").text
     business = _section(page, "entity-business")
     invoice = _section(page, "entity-invoice")
-    assert "Business details" in business and "Invoice details" in invoice
+    assert "Business details" in _text(business) and "Invoice details" in _text(invoice)
     assert f'action="/entities/{entity_id}" enctype="multipart/form-data"' in business
     assert f'action="/entities/{entity_id}/invoice"' in invoice
     assert 'name="vat_status"' in invoice and 'name="vat_status"' not in business
@@ -281,15 +290,15 @@ def test_property_overview_properties_settings_and_builder_links(host):
     first = _property("Byt Alfa", entity_id)
     _property("Byt Beta", entity_id)
     overview = host.get(f"/apartments/{first}").text
-    assert f'href="/entities?edit={entity_id}&amp;next=/apartments/{first}"' in overview
+    assert f'href="/entities?edit={entity_id}"' in overview
     listing = host.get("/apartments").text
     assert f'href="/entities?edit={entity_id}&amp;next=/apartments"' in listing
-    settings = host.get("/settings").text
+    settings = host.get("/settings/account").text
     assert f'href="/entities?edit={entity_id}&amp;next=/settings"' in settings
     # The invoice builder link is pinned in test_invoice_settings/test_host_invoice_navigation.
     # Several businesses: Account settings opens the list, never an arbitrary one.
     _entity(name="Druhá s.r.o.")
-    assert 'href="/entities">' in host.get("/settings").text
+    assert 'href="/entities">' in host.get("/settings/account").text
 
 
 def test_property_without_a_business_links_to_its_own_settings(host):

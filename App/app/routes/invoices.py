@@ -50,7 +50,7 @@ def _lang(request: Request) -> str:
 @lru_cache(maxsize=1)
 def _invoice_columns() -> str:
     """Every invoice column except the stored PDF, which only downloads read."""
-    names = [row["name"] for row in db.query("PRAGMA table_info(invoice)")]
+    names = db.column_names("invoice")
     return ", ".join(name for name in names if name != "pdf_blob")
 
 
@@ -342,7 +342,10 @@ def invoices_list(request: Request):
     if view.status:
         where.append(_STATUS_SQL[view.status])
     if view.q:
-        where.append("(instr(lower(number), ?) > 0 OR instr(lower(buyer_name), ?) > 0)")
+        where.append(
+            f"({db.substring_pos('lower(number)')} > 0 "
+            f"OR {db.substring_pos('lower(buyer_name)')} > 0)"
+        )
         params += [view.q.lower(), view.q.lower()]
     clause = " AND ".join(where)
     total = int(db.query_one(f"SELECT COUNT(*) AS n FROM invoice WHERE {clause}", params)["n"])

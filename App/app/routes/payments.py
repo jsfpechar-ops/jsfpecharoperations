@@ -13,9 +13,9 @@ from typing import Any, Dict, List
 import json
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import Response
+from fastapi.responses import RedirectResponse, Response
 
-from .. import access, auth, config, db, host_i18n, i18n, mail, payment_links, payment_request, security, stripe_connect
+from .. import access, auth, config, db, host_i18n, i18n, mail, payment_links, payment_request, payment_services, payments_consent, security, stripe_connect
 from ..templating import render
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
@@ -59,6 +59,29 @@ def _stay_label(stay: Dict[str, Any]) -> str:
     return f"{name} ({stay['date_from']} → {stay['date_to']})"
 
 
+def _setup(owner_id: int, state: Dict[str, Any]) -> Dict[str, Any]:
+    """The 4 guided setup steps (0729) and which one the primary button opens."""
+    consent = payments_consent.accepted(owner_id)
+    entity = stripe_connect.legal_entity_for_owner(owner_id)
+    has_details = bool(entity and (entity.get("name") or "").strip())
+    onboarding = state.get("onboarding_state") or "none"
+    stripe_status = {"pending": "waiting", "action_required": "attention"}.get(onboarding, "todo")
+    steps = [
+        {"key": "consent", "status": "done" if consent else "todo"},
+        {"key": "details", "status": "done" if has_details else "todo",
+        "href": f"/entities?edit={entity['id']}" if entity else "/entities"},
+        {"key": "stripe", "status": stripe_status},
+        {"key": "live", "status": "todo"},
+    ]
+    if not consent:
+        next_step = "consent"
+    elif not has_details:
+        next_step = "details"
+    else:
+        next_step = "stripe"
+    return {"steps": steps, "next": next_step, "entity": entity if has_details else None}
+
+
 @router.get("/payments")
 def payments_page(request: Request):
     guard = auth.require_login(request)
@@ -66,6 +89,10 @@ def payments_page(request: Request):
         return guard
     owner_id = access.owner_id(request)
     state = _connect_state(owner_id)
+    raw_stay = str(request.query_params.get("reservation_id") or "")
+    selected_reservation_id = int(raw_stay) if raw_stay.isdigit() else None
+    services = payment_services.list_for(owner_id)
+    prefill = payment_services.get(owner_id, str(request.query_params.get("service") or ""))
     return render(
         request,
         "payments.html",
@@ -73,14 +100,44 @@ def payments_page(request: Request):
             "nav": "payments",
             "how_key": "payments",
             "connect_state": state,
+            "setup": _setup(owner_id, state),
             "stripe_off": _off(),
             "requests": payment_request.for_owner(owner_id),
             "reasons": list(payment_request.REASONS),
             "stays": [
                 {"id": s["id"], "label": _stay_label(s)} for s in _stays(owner_id)
             ],
+            "selected_reservation_id": selected_reservation_id,
+            "services": services,
+            "prefill": prefill,
         },
     )
+
+
+@router.post("/payments/services")
+async def payment_service_add(request: Request):
+    """0762: save one extra (name + price)."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    form = await request.form()
+    raw_amount = str(form.get("amount_czk") or "").strip()
+    if not raw_amount.isdigit():
+        return _back("/payments", err=_flash(request, "payments.err.amount"))
+    try:
+        payment_services.add(access.owner_id(request), str(form.get("name") or ""), int(raw_amount))
+    except ValueError:
+        return _back("/payments", err=_flash(request, "payments.services.err"))
+    return _back("/payments", msg=_flash(request, "payments.services.saved"))
+
+
+@router.post("/payments/services/{service_id}/delete")
+async def payment_service_delete(request: Request, service_id: str):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    payment_services.remove(access.owner_id(request), service_id)
+    return _back("/payments", msg=_flash(request, "payments.services.removed"))
 
 
 @router.post("/payments/requests/new")
@@ -145,6 +202,80 @@ def _host_reply_to(row) -> str:
     return str(entity["contact_email"] or "") if entity else ""
 
 
+_OPEN_CARD = ("draft", "sent", "awaiting_payment")
+
+
+def _own_card_request(request: Request, request_id: int):
+    """The owner's open card request, or None."""
+    row = payment_request.get(request_id)
+    if row is None or int(row["owner_user_id"]) != access.owner_id(request):
+        return None
+    if row["rail"] != "card" or row["status"] not in _OPEN_CARD:
+        return None
+    return row
+
+
+@router.post("/payments/requests/{request_id}/link")
+async def payment_request_link(request: Request, request_id: int):
+    """0761: make (or reuse) the card link without an e-mail, then show the
+    share page. Never redirect this POST off-site (CSP form-action, 0730)."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    row = _own_card_request(request, request_id)
+    if row is None:
+        return _back("/payments", err=_flash(request, "payments.err.invalid"))
+    try:
+        link = payment_links.send(request_id) or ""
+    except stripe_connect.StripeOff:
+        return _back("/payments", err=_flash(request, "payments.err.stripe_off"))
+    if not link:
+        return _back("/payments", err=_flash(request, "payments.err.not_ready"))
+    if row["status"] == "draft":
+        from datetime import date
+
+        payment_request.set_status(request_id, "sent", today=date.today())
+    return RedirectResponse(f"/payments/requests/{request_id}/share", status_code=303)
+
+
+@router.get("/payments/requests/{request_id}/share")
+def payment_request_share(request: Request, request_id: int):
+    """0761: the link, Copy, WhatsApp and e-mail. Reached only after the POST."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    row = _own_card_request(request, request_id)
+    if row is None or not row.get("stripe_payment_link_id"):
+        return _back("/payments", err=_flash(request, "payments.err.invalid"))
+    try:
+        link = payment_links.send(request_id) or ""
+    except stripe_connect.StripeOff:
+        return _back("/payments", err=_flash(request, "payments.err.stripe_off"))
+    if not link:
+        return _back("/payments", err=_flash(request, "payments.err.not_ready"))
+    from urllib.parse import quote
+
+    lang = host_i18n.lang_from_request(request)
+    reason = host_i18n.translate(lang, f"payments.reason.{row['reason']}")
+    message = host_i18n.translate(
+        lang, "payments.share.message", reason=reason, amount=row["amount_czk"], link=link
+    )
+    subject = host_i18n.translate(lang, "payments.share.subject")
+    email = (row.get("guest_email") or "").strip()
+    return render(
+        request,
+        "payments_share.html",
+        {
+            "nav": "payments",
+            "how_key": "payments",
+            "req": row,
+            "link": link,
+            "whatsapp_url": "https://wa.me/?text=" + quote(message),
+            "mailto_url": f"mailto:{quote(email)}?subject={quote(subject)}&body={quote(message)}",
+        },
+    )
+
+
 @router.post("/payments/requests/{request_id}/send")
 async def payment_request_send(request: Request, request_id: int):
     """0435/0436: send the request to the guest (card link or QR page)."""
@@ -171,7 +302,7 @@ async def payment_request_send(request: Request, request_id: int):
         if not link:
             return _back("/payments", err=_flash(request, "payments.err.not_ready"))
     else:
-        link = f"/payments/qr/{request_id}"
+        link = f"{config.app_base_url()}/pay/{request_id}/{payment_request.guest_token(row)}"
     if not resend:
         payment_request.set_status(request_id, "sent", today=__import__("datetime").date.today())
     translate = i18n.translator(lang)
@@ -229,7 +360,7 @@ def payment_request_qr(request: Request, request_id: int):
     return render(
         request,
         "payments_qr.html",
-        {"nav": "payments", "request": row, "qr_payload": payload, "show_nav": False},
+        {"nav": "payments", "request": row, "qr_payload": payload, "show_nav": False, "png_url": f"/payments/qr/{row['id']}.png"},
     )
 
 
@@ -322,3 +453,86 @@ async def property_page_photo_delete(request: Request, apartment_id: int):
 
     pp.delete_photo(apartment_id, str(form.get("path") or ""))
     return _back(f"/apartments/{apartment_id}/page", msg=_flash(request, "payments.page.saved"))
+
+
+# --- one-time payments consent (0624) ------------------------------------------
+
+
+@router.get("/payments/consent")
+def payments_consent_page(request: Request):
+    """The plain-language summary a host accepts once before Stripe."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    if _off():
+        return Response(status_code=404)
+    return render(request, "payments_consent.html", {"nav": "payments", "how_key": "payments"})
+
+
+@router.post("/payments/consent")
+async def payments_consent_accept(request: Request):
+    """Record the tick, then go straight on to Stripe onboarding."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    if _off():
+        return Response(status_code=404)
+    workspace = auth.workspace_user(request)
+    if not workspace:
+        return RedirectResponse("/", status_code=303)
+    form = await request.form()
+    if str(form.get("agree") or "") != "1":
+        return _back("/payments/consent", err=_flash(request, "payments.err.consent"))
+    payments_consent.record(int(workspace["id"]))
+    # 0730: never redirect a form POST to Stripe. The CSP form-action 'self'
+    # blocks a form whose redirect chain leaves our origin (blank page). Back
+    # to /payments, where "Open Stripe" is a plain link.
+    return _back("/payments", msg=_flash(request, "payments.consent.saved"))
+
+
+# --- public guest QR page (0763) ----------------------------------------------
+
+
+def _guest_qr_row(request_id: int, token: str):
+    row = payment_request.get(request_id)
+    if row is None or row["rail"] != "qr" or row["status"] == "cancelled":
+        return None
+    if not payment_request.guest_token_ok(row, token):
+        return None
+    return row
+
+
+@router.get("/pay/{request_id:int}/{token}.png")
+def guest_qr_png(request_id: int, token: str):
+    row = _guest_qr_row(request_id, token)
+    if row is None:
+        return Response(status_code=404)
+    try:
+        _, png = payment_request.qr_payload(row)
+    except ValueError:
+        return Response(status_code=404)
+    return Response(content=png, media_type="image/png", headers={"Cache-Control": "private, max-age=300"})
+
+
+@router.get("/pay/{request_id:int}/{token}")
+def guest_qr_page(request: Request, request_id: int, token: str):
+    """0763: the guest's bank-transfer page; no login, token-checked."""
+    row = _guest_qr_row(request_id, token)
+    if row is None:
+        return Response(status_code=404)
+    try:
+        payload, _ = payment_request.qr_payload(row)
+    except ValueError:
+        return Response(status_code=404)
+    response = render(
+        request,
+        "payments_qr.html",
+        {
+            "request": row,
+            "qr_payload": payload,
+            "show_nav": False,
+            "png_url": f"/pay/{request_id}/{token}.png",
+        },
+    )
+    response.headers["X-Robots-Tag"] = "noindex"
+    return response

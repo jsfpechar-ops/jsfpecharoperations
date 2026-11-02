@@ -284,8 +284,8 @@ def purge_stale(owner_user_id: Optional[int] = None, today: Optional[date] = Non
         # back to the booking, instead of comparing as text - where "garbage"
         # sorts after every cutoff and would keep the photo forever.
         "WHERE (g.identity_verified_at IS NOT NULL "
-        "OR COALESCE(date(g.stay_from), date(r.date_from)) <= ? "
-        "OR date(g.passport_photo_at) <= ?) "
+        f"OR COALESCE({db.sqlite_date_expr('g.stay_from')}, {db.sqlite_date_expr('r.date_from')}) <= ? "
+        f"OR {db.sqlite_date_expr('g.passport_photo_at')} <= ?) "
         "AND (? IS NULL OR a.owner_user_id = ?)",
         (checkin, uploaded, owner_user_id, owner_user_id),
     )

@@ -197,7 +197,7 @@ def new_username(email: str) -> str:
     for _ in range(20):
         candidate = f"{base}-{secrets.token_hex(2)}"
         if username_is_valid(candidate) and not db.query_one(
-            "SELECT id FROM user_account WHERE username = ?", (candidate,)
+            f"SELECT id FROM user_account WHERE {db.username_eq()}", (candidate,)
         ):
             return candidate
     return f"host-{secrets.token_hex(6)}"
@@ -218,7 +218,7 @@ def account_by_username(username: str):
     if not name:
         return None
     return db.query_one(
-        "SELECT * FROM user_account WHERE username = ? AND active = 1", (name,)
+        f"SELECT * FROM user_account WHERE {db.username_eq()} AND active = 1", (name,)
     )
 
 
@@ -450,7 +450,7 @@ def end_expired_impersonation(request: Request) -> Optional[RedirectResponse]:
         host_i18n.lang_from_request(request), "impersonation.expired"
     )
     response = RedirectResponse(
-        f"/admin/users?msg={quote(notice)}", status_code=303
+        f"/admin/customers?msg={quote(notice)}", status_code=303
     )
     attach_session(
         response,

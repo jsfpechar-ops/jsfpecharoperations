@@ -59,6 +59,7 @@ def test_helpers_reuse_one_connection_per_thread(fresh_db, monkeypatch):
     assert db.query_one("SELECT n FROM counter WHERE id = 1")["n"] == 20
 
 
+@pytest.mark.sqlite_only
 def test_changing_db_path_switches_connection(fresh_db, monkeypatch):
     first = _thread_conn()
     db.insert("settings", {"key": "where", "value": "first"})
@@ -73,6 +74,7 @@ def test_changing_db_path_switches_connection(fresh_db, monkeypatch):
     assert db.get_setting("where") == "first"
 
 
+@pytest.mark.sqlite_only
 def test_a_replaced_database_file_is_reopened(fresh_db):
     db.set_setting("marker", "old")
     path = config.DB_PATH
@@ -90,6 +92,7 @@ def test_a_replaced_database_file_is_reopened(fresh_db):
     assert db.get_setting("marker") == "new"
 
 
+@pytest.mark.sqlite_only
 def test_close_connections_reopens_on_next_use(fresh_db):
     conn = _thread_conn()
     db.close_connections()
@@ -101,6 +104,7 @@ def test_close_connections_reopens_on_next_use(fresh_db):
 # --- transaction semantics ----------------------------------------------------
 
 
+@pytest.mark.sqlite_only
 def test_no_transaction_is_left_open(fresh_db):
     conn = _thread_conn()
     db.query("SELECT * FROM counter")
@@ -117,6 +121,7 @@ def test_no_transaction_is_left_open(fresh_db):
     assert db.query_one("SELECT n FROM counter WHERE id = 1")["n"] == 7
 
 
+@pytest.mark.sqlite_only
 def test_an_error_inside_immediate_rolls_back_and_keeps_the_connection(fresh_db):
     conn = _thread_conn()
     with pytest.raises(RuntimeError):
@@ -135,6 +140,7 @@ def test_an_error_inside_immediate_rolls_back_and_keeps_the_connection(fresh_db)
     assert db.query_one("SELECT n FROM counter WHERE id = 1")["n"] == 3
 
 
+@pytest.mark.sqlite_only
 def test_a_helper_that_opens_a_transaction_is_rolled_back(fresh_db):
     conn = _thread_conn()
     with pytest.raises(RuntimeError, match="left a transaction open"):
@@ -144,6 +150,7 @@ def test_a_helper_that_opens_a_transaction_is_rolled_back(fresh_db):
     assert db.query_one("SELECT n FROM counter WHERE id = 1")["n"] == 4
 
 
+@pytest.mark.sqlite_only
 def test_a_helper_inside_a_block_does_not_join_its_transaction(fresh_db):
     """As before sharing: a helper inside a block has a connection of its own."""
     with db.immediate() as cur:
@@ -153,6 +160,7 @@ def test_a_helper_inside_a_block_does_not_join_its_transaction(fresh_db):
     assert db.query_one("SELECT n FROM counter WHERE id = 1")["n"] == 42
 
 
+@pytest.mark.sqlite_only
 def test_a_nested_read_block_uses_its_own_connection(fresh_db):
     with db.immediate() as outer:
         outer.execute("UPDATE counter SET n = 8 WHERE id = 1")
@@ -163,6 +171,7 @@ def test_a_nested_read_block_uses_its_own_connection(fresh_db):
     assert db.query_one("SELECT n FROM counter WHERE id = 1")["n"] == 8
 
 
+@pytest.mark.sqlite_only
 def test_execute_reports_the_rows_it_changed_not_a_previous_insert(fresh_db):
     # WP18: execute() returns the row count. On the shared connection (WP14)
     # it must not leak the previous statement's insert.
@@ -203,6 +212,7 @@ def _run_threads(target, count):
     return results
 
 
+@pytest.mark.sqlite_only
 def test_concurrent_read_modify_write_blocks_lose_no_update(fresh_db):
     per_thread = 25
 
@@ -245,6 +255,7 @@ def _draft(entity_id):
     }
 
 
+@pytest.mark.sqlite_only
 def test_concurrent_invoice_numbering_has_no_gaps_or_duplicates(fresh_db):
     entity_id = db.insert("legal_entity", {
         "name": "WP14 Test s.r.o.", "seat": "Praha", "ico": "04656679",
@@ -265,6 +276,7 @@ def test_concurrent_invoice_numbering_has_no_gaps_or_duplicates(fresh_db):
     assert numbers == list(range(1, 33))
 
 
+@pytest.mark.sqlite_only
 def test_concurrent_claim_sendable_leases_each_guest_once(fresh_db):
     now = db.utcnow()
     apartment_id = db.insert("apartment", {"internal_name": "WP14 flat", "created_at": now})

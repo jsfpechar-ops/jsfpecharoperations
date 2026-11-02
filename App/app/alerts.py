@@ -17,7 +17,6 @@ itself returns.
 from __future__ import annotations
 
 import json
-import sqlite3
 from datetime import date
 from typing import Any, Dict, List, Optional
 
@@ -499,7 +498,7 @@ def raise_alert(
                 "created_at": db.utcnow(),
             },
         )
-    except sqlite3.IntegrityError:
+    except db.integrity_errors():
         # Another thread raised the same open alert between our SELECT and
         # INSERT (unique index idx_alert_dedupe). Refresh that one instead.
         again = db.query_one(

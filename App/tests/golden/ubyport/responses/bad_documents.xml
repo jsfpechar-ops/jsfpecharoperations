@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns1="urn:example:ubyport:golden"><soap:Body><ns1:ZapisUbytovaneResponse><ns1:ZapisUbytovaneResult>
+<ns1:ChybyHlavicky/>
+<ns1:DokumentPotvrzeni>@@@</ns1:DokumentPotvrzeni>
+<ns1:DokumentChybyPotvrzeni>aGVsbG8=</ns1:DokumentChybyPotvrzeni>
+</ns1:ZapisUbytovaneResult></ns1:ZapisUbytovaneResponse></soap:Body></soap:Envelope>

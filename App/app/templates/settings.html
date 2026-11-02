@@ -1,25 +1,45 @@
 {% extends "host_page.html" %}
+{% set v2 = true %}
 {% set nav = 'settings' %}
 {% set body_kind = 'settings' %}
 {% block title %}{{ t('nav.settings') }}{% endblock %}
-{% block page_title %}{{ t('nav.settings') }}{% endblock %}
-{% block meta %}{{ t('settings.lede') }}{% endblock %}
+{% block page_title %}{% endblock %}
+{% block meta %}{% endblock %}
+{% block primary_action %}{% endblock %}
+{% block secondary_actions %}{% endblock %}
 {% block body %}
+{% include "_host_alerts.html" %}
+{% if group %}
+{% with href='/settings', title=t('settings.group.' ~ group) %}{% include "partials/settings_back_header.html" %}{% endwith %}
+{% else %}
+{% with href='/', title=t('nav.settings') %}{% include "partials/settings_back_header.html" %}{% endwith %}
+{% endif %}
+<div class="settings-lane">
 {%- from "_icons.html" import icon with context -%}
-{% from "_components.html" import field_label, help_tip, settings_group, settings_heading with context %}
+{% from "_components.html" import field_label, help_tip, tip_label, settings_group, settings_heading with context %}
 
 {# 0083: one index, six visible groups. Each specialized action keeps its own form and endpoint. #}
-<nav class="host-property-grid" aria-label="{{ t('settings.index_label') }}">
-  {% for href, key in [('#settings-group-account', 'settings.group.account'), ('#settings-group-security', 'settings.group.security'), ('#settings-group-phone', 'settings.group.phone'), ('#settings-group-data', 'settings.group.data'), ('#settings-group-privacy', 'settings.group.privacy'), ('#settings-technical', 'settings.group.technical'), ('#settings-group-help', 'settings.group.help')] %}
-    <a class="host-property-card" href="{{ href }}"><strong>{{ t(key) }}</strong><span class="host-property-card-open" aria-hidden="true"><span class="host-property-card-open-text">{{ t('common.open') }}</span></span></a>
-  {% endfor %}
-  {% if billing_on() %}<a class="host-property-card" href="/predplatne"><strong>{{ t('billing.plan.title') }}</strong><span class="host-property-card-open" aria-hidden="true"><span class="host-property-card-open-text">{{ t('common.open') }}</span></span></a>{% endif %}
-</nav>
 
+{% if not group %}
+<nav class="airbnb-index" aria-label="{{ t('nav.settings') }}">
+  {% with href='/settings/account', label=t('settings.group.account'), icon_name='users' %}{% include "partials/settings_index_row.html" %}{% endwith %}
+  {% with href='/settings/security', label=t('settings.group.security'), icon_name='shield' %}{% include "partials/settings_index_row.html" %}{% endwith %}
+  {% with href='/settings/phone', label=t('settings.group.phone'), icon_name='sliders-horizontal' %}{% include "partials/settings_index_row.html" %}{% endwith %}
+  {% with href='/settings/data', label=t('settings.group.data'), icon_name='file-lock' %}{% include "partials/settings_index_row.html" %}{% endwith %}
+  <div class="airbnb-divider" aria-hidden="true"></div>
+  {% with href='/entities', label=t('settings.index.business'), icon_name='receipt' %}{% include "partials/settings_index_row.html" %}{% endwith %}
+  {% with href='/privacy-requests', label=t('nav.privacy_requests'), icon_name='mail' %}{% include "partials/settings_index_row.html" %}{% endwith %}
+  {% with href='/settings/archived', label=t('settings.nav.archive'), icon_name='archive' %}{% include "partials/settings_index_row.html" %}{% endwith %}
+  <div class="airbnb-divider" aria-hidden="true"></div>
+  {% with href='/settings/technical', label=t('settings.group.technical'), icon_name='settings' %}{% include "partials/settings_index_row.html" %}{% endwith %}
+  {% with href='/settings/help', label=t('settings.group.help'), icon_name='circle-help' %}{% include "partials/settings_index_row.html" %}{% endwith %}
+</nav>
+{% endif %}
 <div class="settings-groups">
 
-{% call settings_group('account', t('settings.group.account')) %}
+{% if group == 'account' %}{% call settings_group('account', t('settings.group.account')) %}
     <div class="ui-section" id="settings-account">
+      {% if billing_on() %}<a class="set-row" href="/predplatne"><span>{{ t('billing.plan.title') }}</span><span class="set-row-v">{{ t('common.open') }}</span></a>{% endif %}
       <div class="account-identity">
         <strong>{{ current_user.display_name or current_user.email or current_user.username }}</strong>
       </div>
@@ -42,64 +62,53 @@
         {# 0083: the single place for a link to the shared business editor. 0076 may point it at /entities?edit=<id>. #}
         <div class="settings-action-row" id="settings-business">
           <div>
-            <strong>{{ t('settings.business.title') }}</strong>
-            <small>{{ t('settings.business.help') }}</small>
+            {{ tip_label(t('settings.business.title'), 'settings-business-help', t('settings.business.help')) }}
           </div>
           {#- 0076: one business opens its editor directly; several open the list. -#}
           <a class="ui-btn ui-btn-secondary ui-btn-compact" href="{{ ('/entities?edit=' ~ business_entities[0].id ~ '&next=/settings') if business_entities and business_entities | length == 1 else '/entities' }}">{{ t('settings.business.action') }}</a>
         </div>
         {% if onboarding_emails is not none %}
-          <form method="post" action="/account/onboarding-emails" class="settings-action-row" id="settings-onboarding-emails">
-            <div>
-              <label class="checkline">
-                <input type="checkbox" name="enabled" value="1"{% if onboarding_emails %} checked{% endif %}>
-                <strong>{{ t('settings.account.onboarding_emails') }}</strong>
-              </label>
-              <small>{{ t('settings.account.onboarding_emails_help') }}</small>
-            </div>
-            <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('settings.account.onboarding_emails_save') }}</button>
+          <form method="post" action="/account/onboarding-emails" class="settings-toggle-form" id="settings-onboarding-emails">
+            {% set control %}<input type="checkbox" name="enabled" value="1" data-toggle-submit aria-label="{{ t('settings.account.onboarding_emails') }}"{% if onboarding_emails %} checked{% endif %}>{% endset %}
+            {% with label=t('settings.account.onboarding_emails'), help_id='settings-onboarding-emails-help', help_text=t('settings.account.onboarding_emails_help'), control=control %}{% include "partials/settings_toggle_row.html" %}{% endwith %}
+            <noscript><button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('settings.account.onboarding_emails_save') }}</button></noscript>
           </form>
         {% endif %}
         {% if stay_fee_emails is not none %}
-          <form method="post" action="/account/stay-fee-emails" class="settings-action-row" id="settings-stay-fee-emails">
-            <div>
-              <label class="checkline">
-                <input type="checkbox" name="enabled" value="1"{% if stay_fee_emails %} checked{% endif %}>
-                <strong>{{ t('settings.account.stay_fee_emails') }}</strong>
-              </label>
-              <small>{{ t('settings.account.stay_fee_emails_help') }}</small>
-            </div>
-            <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('settings.account.stay_fee_emails_save') }}</button>
+          <form method="post" action="/account/stay-fee-emails" class="settings-toggle-form" id="settings-stay-fee-emails">
+            {% set control %}<input type="checkbox" name="enabled" value="1" data-toggle-submit aria-label="{{ t('settings.account.stay_fee_emails') }}"{% if stay_fee_emails %} checked{% endif %}>{% endset %}
+            {% with label=t('settings.account.stay_fee_emails'), help_id='settings-stay-fee-emails-help', help_text=t('settings.account.stay_fee_emails_help'), control=control %}{% include "partials/settings_toggle_row.html" %}{% endwith %}
+            <noscript><button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('settings.account.stay_fee_emails_save') }}</button></noscript>
           </form>
         {% endif %}
         {% if current_user.role == 'admin' %}
           <div class="settings-action-row">
             <div>
               <strong>{{ t('settings.account.users') }}</strong>
-              <small>{{ t('settings.account.users_help') }}</small>
+              {{ help_tip('settings-users-help', t('settings.account.users_help')) }}
             </div>
-            <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/admin/users">{{ t('settings.account.users_action') }}</a>
+            <a data-turbo="false" class="ui-btn ui-btn-secondary ui-btn-compact" href="/admin/customers">{{ t('settings.account.users_action') }}</a>
           </div>
           <div class="settings-action-row">
             <div>
               <strong>{{ t('users.incidents_link') }}</strong>
-              <small>{{ t('settings.account.incidents_help') }}</small>
+              {{ help_tip('settings-incidents-help', t('settings.account.incidents_help')) }}
             </div>
-            <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/admin/incidents">{{ t('settings.account.incidents_action') }}</a>
+            <a data-turbo="false" class="ui-btn ui-btn-secondary ui-btn-compact" href="/admin/incidents">{{ t('settings.account.incidents_action') }}</a>
           </div>
         {% endif %}
       </div>
     </div>
-{% endcall %}
+{% endcall %}{% endif %}
 
-{% call settings_group('security', t('settings.group.security')) %}
+{% if group == 'security' %}{% call settings_group('security', t('settings.group.security')) %}
     <div class="ui-section" id="settings-security">
       {{ settings_heading('security', t('settings.nav.security'), t('settings.security.lede')) }}
       <div class="settings-action-list" id="settings-passkeys">
         <div class="settings-action-row">
           <div>
             <strong>{{ t('passkeys.title') }}</strong>
-            <small>{{ t('passkeys.help') }}</small>
+            {{ help_tip('settings-passkeys-help', t('passkeys.help') ~ (' ' ~ t('passkeys.unavailable') if not passkeys_available else '')) }}
           </div>
           {% if passkeys_available %}
             <button class="ui-btn ui-btn-primary ui-btn-compact" type="button" data-passkey-add data-passkey-supported hidden>{{ t('passkeys.add') }}</button>
@@ -108,9 +117,8 @@
         {% if passkeys_available %}
           <p class="ui-sub" data-passkey-unsupported>{{ t('passkeys.unsupported') }}</p>
           <p class="ui-sub err-text" data-passkey-error data-generic="{{ t('passkeys.error.failed') }}" role="alert" hidden></p>
-        {% else %}
-          <p class="ui-sub">{{ t('passkeys.unavailable') }}</p>
         {% endif %}
+        {% with label=t('passkeys.title'), value=(passkeys or []) | length %}{% include "partials/settings_value_card.html" %}{% endwith %}
         {% for key in passkeys %}
           <div class="settings-action-row passkey-row">
             <div>
@@ -137,17 +145,13 @@
         {% endfor %}
       </div>
       <div class="settings-action-list">
+        {% with label=t('settings.account.2fa'), value=t('settings.account.enabled') if current_user.totp_enabled else t('settings.access.off') %}{% include "partials/settings_value_card.html" %}{% endwith %}
+        {% if not current_user.totp_enabled %}
         <div class="settings-action-row">
-          <div>
-            <strong>{{ t('settings.account.2fa') }}</strong>
-            <small>{{ t('settings.account.2fa_on') if current_user.totp_enabled else t('settings.account.2fa_off') }}</small>
-          </div>
-          {% if current_user.totp_enabled %}
-            <span class="ui-badge ui-badge-done" data-tone="green">{{ t('settings.account.enabled') }}</span>
-          {% else %}
-            <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/account/2fa/setup">{{ t('settings.account.setup') }}</a>
-          {% endif %}
+          {{ help_tip('settings-2fa-help', t('settings.account.2fa_off')) }}
+          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/account/2fa/setup">{{ t('settings.account.setup') }}</a>
         </div>
+        {% endif %}
         {% if current_user.totp_enabled %}
           <details class="settings-move">
             <summary>
@@ -181,29 +185,28 @@
         {% endif %}
       </div>
     </div>
-{% endcall %}
+{% endcall %}{% endif %}
 
-{% call settings_group('phone', t('settings.group.phone')) %}
+{% if group == 'phone' %}{% call settings_group('phone', t('settings.group.phone')) %}
     <div class="ui-section" id="settings-phone">
       <div class="settings-action-list" id="settings-install" data-pwa-install-row>
         <div class="settings-action-row">
           <div>
-            <strong>{{ t('pwa.install.title') }}</strong>
-            <small>{{ t('pwa.install.help') }}</small>
+            {% set pwa_other %}<p class="ui-sub" data-pwa-other>{{ t('pwa.install.other') }}</p>{% endset %}
+            {{ tip_label(t('pwa.install.title'), 'settings-pwa-help', t('pwa.install.help') ~ pwa_other) }}
           </div>
           <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" data-pwa-install hidden>{{ t('pwa.install.button') }}</button>
           <span class="ui-badge ui-badge-done" data-tone="green" data-pwa-installed hidden>{{ t('pwa.install.installed') }}</span>
         </div>
         <p class="ui-sub" data-pwa-ios hidden>{{ t('pwa.install.ios') }}</p>
         {% if passkeys_available %}<p class="ui-sub" data-pwa-ios hidden>{{ t('pwa.install.ios_passkey') }}</p>{% endif %}
-        <p class="ui-sub" data-pwa-other>{{ t('pwa.install.other') }}</p>
-      </div>
+              </div>
       {% if push_available %}
       <div class="settings-action-list" id="settings-alerts" data-push-row data-push-key="{{ push_key }}">
         <div class="settings-action-row">
           <div>
             <strong>{{ t('push.title') }}</strong>
-            <small>{{ t('push.help') }}</small>
+            {{ help_tip('settings-push-help', t('push.help')) }}
           </div>
           <div class="settings-row-actions">
             <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" data-push-on hidden>{{ t('push.on') }}</button>
@@ -216,7 +219,7 @@
         </div>
         <p class="ui-sub" data-push-unsupported>{{ t('push.unsupported') }}</p>
         <p class="ui-sub" data-push-ios-first hidden>{{ t('push.ios_first') }}</p>
-        <p class="ui-sub" data-push-denied hidden>{{ t('push.denied') }}</p>
+        <p class="ui-sub" data-push-denied role="status" hidden>{{ t('push.denied') }}</p>
         <p class="ui-sub" data-push-status role="status" hidden></p>
         <p class="ui-sub err-text" data-push-error data-generic="{{ t('push.error.failed') }}" role="alert" hidden></p>
         {% if push_devices %}
@@ -237,9 +240,9 @@
       </div>
       {% endif %}
     </div>
-{% endcall %}
+{% endcall %}{% endif %}
 
-{% call settings_group('data', t('settings.group.data')) %}
+{% if group == 'data' %}{% call settings_group('data', t('settings.group.data')) %}
     <div class="ui-section" id="settings-archive">
       {{ settings_heading('archive', t('settings.nav.archive'), t('settings.archive_hint_extended')) }}
       <a class="ui-btn ui-btn-secondary" href="/settings/archived">{{ t('settings.archive_link') }}</a>
@@ -247,18 +250,16 @@
 
     <div class="ui-section" id="settings-retention">
       {{ settings_heading('retention', t('settings.nav.retention'), t('settings.retention.help')) }}
-      <dl class="kv">
-        <dt>{{ t('settings.retention.period') }}</dt><dd>{{ t('settings.retention.years', count=retention_years) }}</dd>
-        <dt>{{ t('settings.retention.cutoff') }}</dt><dd>{{ retention_cutoff.strftime('%d.%m.%Y') }}</dd>
-        <dt>{{ t('settings.retention.expired') }}</dt><dd><strong>{{ expired_records }}</strong></dd>
-      </dl>
+      {% with label=t('settings.retention.period'), value=t('settings.retention.years', count=retention_years) %}{% include "partials/settings_value_card.html" %}{% endwith %}
+      {% with label=t('settings.retention.cutoff'), value=retention_cutoff.strftime('%d.%m.%Y') %}{% include "partials/settings_value_card.html" %}{% endwith %}
+      {% with label=t('settings.retention.expired'), value=expired_records %}{% include "partials/settings_value_card.html" %}{% endwith %}
       <form method="post" action="/settings/purge-expired"
             data-confirm data-confirm-message="{{ t('confirm.purge_expired') }}">
         <button class="ui-btn ui-btn-{{ 'danger' if expired_records else 'secondary' }}" type="submit"
                 {% if not expired_records %}disabled{% endif %}>
           {{ tp('settings.retention.delete', expired_records) }}
         </button>
-        <span class="ui-sub">{{ t('settings.retention.delete_help') }}</span>
+        {{ help_tip('settings-purge-expired-help', t('settings.retention.delete_help')) }}
       </form>
 
       <div class="ui-section" id="settings-data">
@@ -291,21 +292,9 @@
         </dl>
       </div>
     </div>
-{% endcall %}
+{% endcall %}{% endif %}
 
-{% call settings_group('privacy', t('settings.group.privacy')) %}
-    <div class="ui-section" id="settings-privacy-requests">
-      <div class="settings-action-list">
-        <div class="settings-action-row">
-          <div>
-            <strong>{{ t('nav.privacy_requests') }}</strong>
-            <small>{{ t('settings.privacy.requests_help') }}</small>
-          </div>
-          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/privacy-requests">{{ t('settings.privacy.requests_action') }}</a>
-        </div>
-      </div>
-    </div>
-
+{% if group == 'data' %}{% call settings_group('privacy', t('settings.group.privacy')) %}
       {% if apartments_without_entity or entities_without_contact %}
         <div class="ui-banner ui-banner-attention">
           <div class="grow">
@@ -357,13 +346,13 @@
       </div>
     </div>
     {% endif %}
-{% endcall %}
+{% endcall %}{% endif %}
 
-{% call settings_group('technical', t('settings.group.technical')) %}
-    <details class="ui-section technical" id="settings-technical">
+{% if group == 'technical' %}{% call settings_group('technical', t('settings.group.technical')) %}
+    <details class="ui-section technical" open id="settings-technical">
       <summary>{{ t('settings.technical.title') }}</summary>
 
-      <h2 id="settings-overview">{{ t('settings.destination.title') }}</h2>
+      <h2 id="settings-overview">{{ t('settings.destination.title') }}{{ help_tip('settings-destination-help', t('settings.destination.help')) }}</h2>
       <dl class="kv">
         <dt>{{ t('settings.destination.deployment') }}</dt><dd>{{ deployment_tier | capitalize }}</dd>
         <dt>{{ t('settings.destination.target') }}</dt><dd>{{ t('settings.destination.production') if ubyport_env == 'prod' else (ubyport_env | upper) }}</dd>
@@ -382,15 +371,13 @@
           </div>
         </div>
       {% endif %}
-      <p class="ui-sub">{{ t('settings.destination.help') }}</p>
-
-      <h2 id="settings-mail">{{ t('settings.mail.title') }}</h2>
+      
+      <h2 id="settings-mail">{{ t('settings.mail.title') }}{{ help_tip('settings-mail-help', t('settings.mail.help')) }}</h2>
       <dl class="kv">
         <dt>{{ t('settings.mail.backend') }}</dt>
         <dd class="ui-mono">{{ mail_backend }}</dd>
       </dl>
-      <p class="ui-sub">{{ t('settings.mail.help') }}</p>
-      {% if mail_backend == 'console' and console_mail %}
+            {% if mail_backend == 'console' and console_mail %}
         <table class="ui-table">
           <thead>
             <tr>
@@ -429,14 +416,13 @@
         </table>
       {% endif %}
 
-      <h2 id="settings-codelists">{{ t('settings.codelists.title') }}</h2>
+      <h2 id="settings-codelists">{{ t('settings.codelists.title') }}{{ help_tip('settings-codelists-help', t('settings.codelists.help')) }}</h2>
       <dl class="kv">
         <dt>{{ t('settings.codelists.countries') }}</dt><dd>{{ (codelists.countries | datetime_local(seconds=true)) if codelists.countries else t('settings.codelists.bundled') }}</dd>
         <dt>{{ t('settings.codelists.purposes') }}</dt><dd>{{ (codelists.purposes | datetime_local(seconds=true)) if codelists.purposes else t('settings.codelists.bundled') }}</dd>
         <dt>{{ t('settings.codelists.errors') }}</dt><dd>{{ (codelists.errors | datetime_local(seconds=true)) if codelists.errors else t('settings.codelists.not_fetched') }}</dd>
       </dl>
-      <p class="ui-sub">{{ t('settings.codelists.help') }}</p>
-    </details>
+          </details>
 
     <div class="ui-section" id="settings-ubyport">
       {{ settings_heading('access', t('settings.access.title'), t('settings.access.help')) }}
@@ -448,12 +434,12 @@
 
     <details class="ui-section technical" open id="settings-audit">
       <summary>{{ t('settings.nav.audit') }}</summary>
-      <p class="ui-sub">{{ t('settings.audit.help') }}</p>
-      <h2>{{ t('settings.audit.recent', count=audit_count) }}</h2>
-      <div class="host-audit-filters" data-audit-filter role="group" aria-label="{{ t('settings.audit.filter_label') }}">
-        <a class="host-audit-filter {{ 'is-active' if not audit_filter }}" href="/settings#settings-audit" {% if not audit_filter %}aria-current="page"{% endif %}>{{ t('settings.audit.filter_all') }}</a>
-        <a class="host-audit-filter {{ 'is-active' if audit_filter == 'support' }}" href="/settings?audit=support#settings-audit" {% if audit_filter == 'support' %}aria-current="page"{% endif %}>{{ t('settings.audit.filter_support') }}</a>
-      </div>
+            <h2>{{ t('settings.audit.recent', count=audit_count) }}</h2>
+      {% set audit_pills = [
+        {'label': t('settings.audit.filter_all'), 'href': '/settings/technical#settings-audit', 'current': not audit_filter},
+        {'label': t('settings.audit.filter_support'), 'href': '/settings/technical?audit=support#settings-audit', 'current': audit_filter == 'support'}
+      ] %}
+      {% with pills=audit_pills, aria_label=t('settings.audit.filter_label') %}{% include "partials/settings_pills.html" %}{% endwith %}
       <div class="scroll-x">
         <table class="ui-table ui-table-stack">
           <thead><tr><th>{{ t('settings.audit.when') }}</th><th>{{ t('settings.audit.who') }}</th><th>{{ t('settings.audit.action') }}</th><th>{{ t('settings.audit.detail') }}</th></tr></thead>
@@ -472,24 +458,22 @@
         </table>
       </div>
     </details>
-{% endcall %}
+{% endcall %}{% endif %}
 
-{% call settings_group('help', t('settings.group.help')) %}
+{% if group == 'help' %}{% call settings_group('help', t('settings.group.help')) %}
     <div class="ui-section" id="settings-guide">
       <div class="settings-action-list">
         <div class="settings-action-row">
           <div>
-            <strong>{{ t('nav.guide') }}</strong>
-            <small>{{ t('settings.help.guide_help') }}</small>
+            {{ tip_label(t('nav.guide'), 'settings-guide-help', t('settings.help.guide_help')) }}
           </div>
-          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/guide">{{ t('settings.help.guide_action') }}</a>
+          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/guide" aria-label="{{ t('settings.help.guide_action') }} {{ t('help.tip.label') | lower }}">{{ t('settings.help.guide_action') }}</a>
         </div>
       </div>
     </div>
 
     <div class="ui-section" id="settings-legal">
-      <h2>{{ t('legal.settings_title') }}</h2>
-      <p class="ui-sub">{{ t('legal.settings_body', name=operator().name, ico=operator().ico) }}</p>
+      <h2>{{ tip_label(t('legal.settings_title'), 'settings-legal-help', t('legal.settings_body', name=operator().name, ico=operator().ico) ~ ' ' ~ t('legal.support_help'), 'span') }}</h2>
       <dl class="kv ui-sub">
         <dt>{{ t('legal.operator_address') }}</dt><dd>{{ operator().address }}</dd>
         {% if operator().email %}
@@ -498,7 +482,6 @@
           <dt>{{ t('legal.support_label') }}</dt><dd class="ui-sub">{{ t('legal.settings_contact_missing') }}</dd>
         {% endif %}
       </dl>
-      <p class="ui-sub">{{ t('legal.support_help') }}</p>
       <nav class="document-links" aria-label="{{ t('legal.settings_title') }}">
         <a href="/legal"><span>{{ t('legal.footer_link') }}</span></a>
         <a href="/terms"><span>{{ t('terms.footer_link') }}</span></a>
@@ -508,9 +491,9 @@
     </div>
 
     <div class="ui-section" id="settings-version">
-      <h3>{{ t('settings.nav.version') }}</h3>
-      <p class="ui-sub">{{ t('settings.version_line', version=app_version) }}</p>
+      {% with label=t('settings.nav.version'), value=app_version %}{% include "partials/settings_value_card.html" %}{% endwith %}
     </div>
-{% endcall %}
+{% endcall %}{% endif %}
+</div>
 </div>
 {% endblock %}

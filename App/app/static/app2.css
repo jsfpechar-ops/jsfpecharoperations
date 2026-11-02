@@ -1,0 +1,1332 @@
+/* v2 shell (brief 0705). Copied from ubyhost-redesign-v2.html; loaded only by pages that set v2. */
+:root{--bg:#f6f6f4;--s:#fff;--ink:#1c1c1a;--ink2:#55554f;--ink3:#6b6b65;--line:#ebebe7;--side:#fff;--side2:#f1f1ee;--acc:#d0452d;--acc-text:#b83d28;--accs:#fdece8;--ok:#167044;--oks:#e6f5ec;--warn:#8a5200;--warns:#fff4d6;--bad:#b42318;--bads:#fdecea;--info:#eaf3fb;
+font-family:var(--font-sans);color:var(--ink);font-size:14px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg)}
+body.v2 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* v2 form controls (shared, generic) */
+:where(body.v2 label){display:block;font-size:13px;color:var(--ink2)}
+:where(body.v2 input[type=text],body.v2 input[type=number],body.v2 input[type=email],body.v2 input[type=password],body.v2 input[type=tel],body.v2 input[type=url],body.v2 input[type=date],body.v2 input[type=time],body.v2 input[type=search],body.v2 select,body.v2 textarea){margin-top:4px;border:1px solid #dcdcd7;border-radius:8px;padding:9px 10px;background:var(--s);color:var(--ink);font:inherit;width:100%;box-sizing:border-box}
+:where(body.v2 .hint){font-size:12px;color:var(--ink3)}
+:where(body.v2 .err-text){color:var(--bad)}
+:where(body.v2 .field){display:block;margin-bottom:12px}
+:where(body.v2 input[type=checkbox],body.v2 [role=switch]){width:20px;height:20px;accent-color:var(--acc)}
+:where(body.v2 input[type=checkbox]:focus-visible,body.v2 [role=switch]:focus-visible){outline:2px solid #d0452d;outline-offset:2px}
+:where(body.v2 .ui-btn){border:0;background:var(--acc);color:#fff;font:inherit;font-weight:600;padding:9px 16px;border-radius:999px;cursor:pointer;white-space:nowrap}
+:where(body.v2 .ui-btn-secondary,body.v2 .ui-btn-quiet){background:#efefeb;color:var(--ink)}
+:where(body.v2 .ui-btn-compact){padding:6px 12px;font-size:13px}
+@media (max-width:1023px){:where(body.v2 input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=submit]),body.v2 select,body.v2 textarea,body.v2 .ui-btn){min-height:44px}}
+/* 0532: the toast close is a 44 px tap target on phones (v2 pages load app2.css only, not host.css) */
+@media (max-width:767px){.toast-stack .toast > [data-toast-close]{width:44px;min-width:44px;min-height:44px}}
+.app{display:flex;min-height:100vh}
+.side{width:220px;background:var(--side);border-right:1px solid var(--line);color:var(--ink2);display:flex;flex-direction:column;padding:16px 10px;position:sticky;top:0;height:100vh;flex:none}
+@media (min-width:1024px){.app{background:linear-gradient(90deg,var(--side) 0 219px,var(--line) 219px 220px,transparent 220px)}}
+.logo{color:var(--ink);font-weight:800;font-size:18px;padding:2px 10px 14px;letter-spacing:-.01em}
+.org{display:flex;align-items:center;gap:10px;background:var(--side2);border-radius:10px;padding:8px 10px;margin-bottom:14px;color:var(--ink);font-size:13px}
+.org i{width:26px;height:26px;border-radius:7px;background:#e4e4df;display:grid;place-items:center;font-style:normal;font-weight:700}
+.org small{display:block;color:var(--ink3);font-size:12px}
+.nav{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;color:var(--ink2);text-decoration:none;transition:background .15s,color .15s;font-size:14px;cursor:pointer}
+.nav:hover{background:var(--side2)}.nav.on{background:var(--accs);color:var(--acc-text);font-weight:600}
+.nav svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.badge{margin-left:auto;background:var(--acc);color:#fff;border-radius:999px;font-size:11px;padding:1px 7px;font-weight:700}
+.me{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px;font-size:13px;color:var(--ink)}
+.me i{width:28px;height:28px;border-radius:50%;background:#e4e4df;display:grid;place-items:center;font-style:normal}
+.me small{display:block;color:var(--ink3);font-size:12px}
+.main{flex:1;min-width:0;padding:28px 36px 96px}
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px}
+h1{font-size:24px;font-weight:800;margin:0;letter-spacing:-.01em}.sub{color:var(--ink3);margin:4px 0 0}
+.btn{border:0;background:var(--acc);color:#fff;font:inherit;font-weight:600;padding:9px 16px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.btn.ghost{background:#efefeb;color:var(--ink)}.btn.sm{padding:6px 12px;font-size:13px}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px}
+.tile{background:var(--s);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.tile span{color:var(--ink3);font-size:13px}.tile b{display:block;font-size:26px;margin-top:6px;letter-spacing:-.01em}
+h2{font-size:16px;font-weight:700;margin:0 0 12px}
+.card{background:var(--s);border:1px solid var(--line);border-radius:12px}
+.search{display:flex;align-items:center;gap:8px;background:#efefeb;border-radius:8px;padding:8px 12px;color:var(--ink3);width:260px;border:0;font:inherit;cursor:pointer}
+.chip{border:1px dashed #cfcfca;border-radius:999px;padding:6px 12px;color:var(--ink2);font-size:13px;background:var(--s)}
+.chip.on{border-style:solid;background:var(--ink);color:#fff;border-color:var(--ink)}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-weight:500;color:var(--ink3);font-size:12px;padding:10px 14px;border-bottom:1px solid var(--line)}
+td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}tbody tr:hover{background:#fafaf8;cursor:pointer}
+td small{display:block;color:var(--ink3);font-size:12px;margin-top:2px}
+.pill{font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap;display:inline-block}
+.p-ok{background:var(--oks);color:var(--ok)}.p-warn{background:var(--warns);color:var(--warn)}.p-bad{background:var(--bads);color:var(--bad)}.p-n{background:#efefeb;color:var(--ink2)}
+/* 0527: [hidden] and the old .hidden class win over display rules such as .chip{display:…} */
+body.v2 [hidden]{display:none!important}
+body.v2 .hidden{display:none!important}
+/* 0715: a Stav pill may wrap a status badge; the pill carries the colour */
+.dashboard-row-task .pill>.ui-badge{background:none;border:0;padding:0;color:inherit}
+.todo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.todo .card{display:flex;gap:14px;padding:16px;align-items:flex-start}
+.todo .ic{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;flex:none;font-weight:800}
+.todo .t{font-weight:700;margin-bottom:3px}.todo p{margin:0 0 10px;color:var(--ink2);font-size:13px}
+.empty{padding:14px 16px;color:var(--ok);background:var(--oks);border-radius:12px;font-weight:600;margin-bottom:12px}
+.quiet{color:var(--ink3);font-size:14px;margin:-12px 0 28px;display:flex;gap:8px;align-items:baseline}.quiet b{color:var(--ink);font-size:15px}.quiet span{margin-right:4px}.quiet i{font-style:normal}
+.cgrid{display:grid;grid-template-columns:140px repeat(14,minmax(44px,1fr));align-items:center;min-width:780px}
+.cd{font-size:12px;color:var(--ink3);text-align:center;padding:8px 0}.cd.today{color:var(--acc-text);font-weight:700}
+.crow{border-top:1px solid var(--line);height:44px}.cn{font-size:13px;font-weight:600;grid-column:1}
+.cal{padding:6px 14px 10px;overflow-x:auto}
+.crow .bar{grid-row:1;height:28px;border-radius:999px;font-size:12px;font-weight:600;display:flex;align-items:center;padding:0 10px;margin:0 2px;white-space:nowrap;overflow:hidden}
+.b-ok{background:var(--oks);color:var(--ok)}.b-warn{background:var(--warns);color:var(--warn)}.b-grey{background:#efefeb;color:var(--ink2)}
+.note{background:var(--info);border-radius:10px;padding:10px 14px;color:#1d4f9e;font-size:13px;margin-bottom:16px;display:flex;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:8px}.mark{width:22px;height:22px;border-radius:7px;background:var(--acc);box-shadow:inset -6px -6px 0 rgba(255,255,255,.25)}
+.org i,.me i{background:var(--accs)!important;color:var(--acc-text)}
+.tile{background:linear-gradient(135deg,#fff 55%,#fdf1ee);border-top:3px solid var(--acc)}
+.chip.on{background:var(--acc)!important;border-color:var(--acc)!important;color:#fff}
+tbody tr:hover{background:#fdf6f4!important}
+.cd.today{background:var(--accs);border-radius:8px}
+.head h1:after{content:"";display:block;width:28px;height:3px;border-radius:2px;background:var(--acc);margin-top:8px}
+tbody tr .btn.sm.ghost{opacity:0;transition:opacity .15s}tbody tr:hover .btn.sm.ghost{opacity:1}
+.btn,.chip,tbody tr,.tile{transition:background .15s,transform .1s,box-shadow .15s}
+.btn:active{transform:scale(.97)}.btn:hover{filter:brightness(1.05)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* Phone: the sidebar becomes a top bar, the page keeps one column. */
+@media (max-width: 767px){
+  .app{flex-direction:column}
+  .side{width:auto;position:static;height:auto;flex-direction:row;align-items:center;overflow-x:auto;padding:10px 12px;border-right:0;border-bottom:1px solid var(--line)}
+  .side .logo{padding:2px 8px;flex:none}
+  .side .search{display:none}
+  .side .nav{white-space:nowrap;flex:none;padding:8px 10px}
+  .side .me{flex:none;margin-top:0;padding:4px 8px}
+  .side .me small{display:none}
+  .main{padding:16px}
+}
+/* 0715: the two "What needs you" cards are cramped next to the 220 px sidebar below 1024 px */
+@media (max-width:1023px){.todo{grid-template-columns:1fr}}
+@media (max-width:359px){body.v2 main table{table-layout:fixed}}
+/* 0709 phone (390 px): the v2 Overview fits without a sideways page scroll */
+@media (max-width: 767px){
+  body.v2 .side .org,body.v2 .side .me,body.v2 .side .side-bottom,body.v2 .side .search{display:none}
+  body.v2 .head{flex-wrap:wrap}
+  body.v2 .head .btn{width:100%}
+  body.v2 .cal{overflow-x:auto}
+  body.v2 .dashboard-calendar{padding-inline:4px}
+  body.v2 .side .nav{min-height:44px;display:flex;align-items:center}
+  body.v2 .dashboard-row-actions .ui-btn{min-width:44px;min-height:44px}
+  body.v2 .card[data-dashboard-refresh="work"] > table th:nth-child(2),body.v2 .card[data-dashboard-refresh="work"] > table td:nth-child(2),body.v2 .card[data-dashboard-refresh="work"] > table th:nth-child(3),body.v2 .card[data-dashboard-refresh="work"] > table td:nth-child(3){display:none}
+}
+
+/* Sidebar parts that are not in the mockup: the nav lists, the logout button. */
+.side-nav{display:flex;flex-direction:column;gap:2px}
+.side-bottom{margin-top:auto}
+.side .side-bottom{margin-top:auto}
+.side button.nav{border:0;background:none;font:inherit;width:100%;text-align:left;cursor:pointer}
+.side .me{margin-top:0}
+.side-logout{margin:0}
+@media (max-width: 767px){
+  .side .side-nav{flex-direction:row;flex:none;align-items:center}
+  .side .side-bottom{margin-top:0}
+}
+/* 0707 polish: browser defaults off in the v2 shell */
+body.v2 a{color:inherit;text-decoration:none}
+body.v2 .quiet a,body.v2 a.quiet{color:var(--ink3);text-decoration:none}
+body.v2 .quiet a:hover,body.v2 a.quiet:hover{text-decoration:underline}
+body.v2 a.btn{color:#fff}
+body.v2 a.btn.ghost{color:var(--ink)}
+body.v2 .skip-link{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
+body.v2 .skip-link:focus{left:8px;top:8px;width:auto;height:auto;overflow:visible;background:#fff;color:var(--ink);padding:8px 12px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.08);z-index:100}
+body.v2 .env-banner{background:var(--warns);color:var(--warn);border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:16px}
+body.v2 .ui-tabbar,body.v2 .havel-fab{display:none}
+body.v2 form[action="/demo/reset"] button{background:none;border:0;padding:0;box-shadow:none;font:inherit;font-size:13px;color:var(--ink3);text-decoration:none;cursor:pointer}
+body.v2 form[action="/demo/reset"] button:hover{text-decoration:underline}
+body.v2 .row-menu{position:relative;display:inline-block}
+body.v2 .row-menu-trigger{border:0;background:none;box-shadow:none;color:var(--ink3);letter-spacing:.1em}
+body.v2 .row-menu-panel{position:absolute;right:0;top:100%;z-index:20;min-width:200px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.08);padding:6px}
+body.v2 .row-menu-panel[hidden]{display:none}
+body.v2 .row-menu-item{display:block;font:inherit;font-size:13px;min-height:36px;box-sizing:border-box;width:100%;text-align:left;padding:8px 12px;border:0;border-radius:6px;background:none;color:var(--ink);cursor:pointer;text-decoration:none}
+body.v2 .row-menu-item:hover{background:#f6f6f4}
+body.v2 .row-menu-item svg{width:16px;height:16px;vertical-align:middle}
+body.v2 .row-menu-panel.is-open{position:fixed}
+body.v2 .row-menu-item[hidden]{display:none}
+@media (max-width:1023px){body.v2 .ui-menu-panel.is-open,body.v2 .row-menu-panel.is-open{position:fixed;left:8px;right:8px;bottom:8px;top:auto;min-width:0}body.v2 .row-menu-item{min-height:44px}}
+body.v2 .onboarding-banner-setup-link{display:inline-flex;align-items:center;justify-content:center;background:var(--acc);color:#fff;font-weight:600;font-size:13px;padding:8px 16px;border-radius:999px;text-decoration:none}
+@media (max-width:1023px){body.v2 .onboarding-banner-setup-link{min-height:44px}}
+body.v2 .crow{grid-auto-rows:44px}
+
+/* 0709 Overview: named classes instead of inline styles (design lint T1) */
+.ov-head{margin-bottom:6px}
+.ov-links{font-size:13px;color:var(--ink3);margin:4px 0 0;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center}
+.ov-link,.ov-inline .ui-btn-quiet{display:inline-flex;align-items:center}
+@media (max-width:1023px){.ov-link{min-height:44px}}
+@media (min-width:1024px){.ov-link{min-height:24px}}
+.ov-month{flex-wrap:wrap}.ov-mi{white-space:nowrap}
+.ov-link{color:var(--ink3)}
+.ov-inline{display:inline}
+.ov-section{margin-bottom:28px}
+.ov-more{margin-top:12px}
+.ov-cal-more{margin:-16px 0 28px}
+.ov-cal-link{color:var(--ink3);font-size:13px}
+.ic-red,.ic[data-ic=red]{background:var(--bads);color:var(--bad)}
+.ic-amber,.ic[data-ic=amber]{background:var(--warns);color:var(--warn)}
+.ic-neutral,.ic[data-ic=neutral]{background:#efefeb;color:var(--ink2)}
+.cal .bar[data-overdue]{background:var(--bads);color:var(--bad)}
+.cal .bar[data-c1="2"]{grid-column-start:2}.cal .bar[data-c2="2"]{grid-column-end:2}
+.cal .bar[data-c1="3"]{grid-column-start:3}.cal .bar[data-c2="3"]{grid-column-end:3}
+.cal .bar[data-c1="4"]{grid-column-start:4}.cal .bar[data-c2="4"]{grid-column-end:4}
+.cal .bar[data-c1="5"]{grid-column-start:5}.cal .bar[data-c2="5"]{grid-column-end:5}
+.cal .bar[data-c1="6"]{grid-column-start:6}.cal .bar[data-c2="6"]{grid-column-end:6}
+.cal .bar[data-c1="7"]{grid-column-start:7}.cal .bar[data-c2="7"]{grid-column-end:7}
+.cal .bar[data-c1="8"]{grid-column-start:8}.cal .bar[data-c2="8"]{grid-column-end:8}
+.cal .bar[data-c1="9"]{grid-column-start:9}.cal .bar[data-c2="9"]{grid-column-end:9}
+.cal .bar[data-c1="10"]{grid-column-start:10}.cal .bar[data-c2="10"]{grid-column-end:10}
+.cal .bar[data-c1="11"]{grid-column-start:11}.cal .bar[data-c2="11"]{grid-column-end:11}
+.cal .bar[data-c1="12"]{grid-column-start:12}.cal .bar[data-c2="12"]{grid-column-end:12}
+.cal .bar[data-c1="13"]{grid-column-start:13}.cal .bar[data-c2="13"]{grid-column-end:13}
+.cal .bar[data-c1="14"]{grid-column-start:14}.cal .bar[data-c2="14"]{grid-column-end:14}
+.cal .bar[data-c1="15"]{grid-column-start:15}.cal .bar[data-c2="15"]{grid-column-end:15}
+.cal .bar[data-c1="16"]{grid-column-start:16}.cal .bar[data-c2="16"]{grid-column-end:16}
+.cal .bar[data-c1="17"]{grid-column-start:17}.cal .bar[data-c2="17"]{grid-column-end:17}
+.cal .bar[data-row="1"]{grid-row:1}
+.cal .bar[data-row="2"]{grid-row:2}
+.cal .bar[data-row="3"]{grid-row:3}
+.cal .bar[data-row="4"]{grid-row:4}
+.cal .bar[data-row="5"]{grid-row:5}
+.cal .bar[data-row="6"]{grid-row:6}
+.cal .bar[data-row="7"]{grid-row:7}
+.cal .bar[data-row="8"]{grid-row:8}
+/* 0709 focus: one visible ring for every control */
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible,tr:focus-visible{outline:2px solid #d0452d;outline-offset:2px}
+body.v2 .btn.copy-btn:focus-visible{outline:2px solid #d0452d;outline-offset:2px}
+body.v2 .ui-btn.copy-btn:focus-visible{outline:2px solid #d0452d;outline-offset:2px}
+.clickable-row:focus-within{outline:2px solid #d0452d;outline-offset:-2px}
+body.v2 [data-needs-you-go]:hover{background:#b83a24}
+body.v2 .skip-link{position:fixed;z-index:1000;left:8px;top:-100px}
+body.v2 .skip-link:focus{top:8px}
+
+/* 0711 tap targets: 44 px below 1024 px, 24 px from 1024 px up */
+@media (max-width: 1023px){
+  body.v2 .btn,body.v2 .btn.sm,body.v2 .logo,body.v2 summary,body.v2 .row-menu-trigger{min-width:44px;min-height:44px;box-sizing:border-box}
+}
+@media (min-width: 1024px){
+  body.v2 .row-menu-trigger,body.v2 summary,body.v2 form[action="/demo/reset"] button{min-height:24px}
+  body.v2 .dashboard-row-property{display:inline-block;min-height:24px;line-height:24px}
+}
+/* 0711 needs-you card: the text column may shrink, the actions wrap below the text */
+body.v2 .card.needs-you-card-item{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start}
+body.v2 .needs-you-card-item > div:not(.ic){min-width:0}
+body.v2 .needs-you-actions{display:flex;flex-wrap:wrap;gap:8px}
+/* 0711 tap targets below 1024 px: sidebar links and the property link in table rows */
+@media (max-width: 1023px){
+  body.v2 .side .nav,body.v2 .dashboard-row-property{min-height:44px;display:inline-flex;align-items:center}
+}
+body.v2 kbd{font-size:12px!important}
+
+/* 0711 AA, tap-target and menu fixes (orchestrator decisions, 2026-11-01) */
+body.v2 .cal .bar.b-ok{color:var(--ok)}
+body.v2 .cal .bar.b-warn{color:var(--warn)}
+body.v2 .ui-btn-quiet{background:none;border:0;box-shadow:none;padding:0 2px;color:var(--ink2);font:inherit;font-size:12px;text-decoration:underline;min-height:24px;display:inline-flex;align-items:center;cursor:pointer}
+@media (max-width:1023px){body.v2 .ui-btn-quiet{min-height:44px}body.v2 .search{min-height:44px}}
+body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
+@media (min-width:1024px){body.v2 .row-menu-trigger{min-width:24px;min-height:24px}}
+/* 0716 v2 shell parity: env badge under the logo, quiet support link in the bottom block */
+.side .env-badge{display:inline-block;margin:0 8px;padding:0 8px;border-radius:999px;font-size:12px;line-height:16px;color:var(--ink2);background:var(--side2)}
+.side .support-link{display:block;font-size:12px}
+.side .support-link small{display:block;font-size:12px;color:var(--ink3)}
+/* 0717: closed help on the v2 Overview header: body hidden until opened, link is a 44 px tap target. */
+.ov-head details.ui-how{display:block;margin:4px 0}
+.ov-head details.ui-how:not([open]) .ui-how-body{display:none}
+.ov-head .ui-how-more{display:inline-block;min-height:44px;line-height:44px}
+
+/* 0718 phone shell: bottom tab bar replaces the sidebar below 1024 px */
+.tabs{display:none}
+@media (max-width:1023px){
+  body.v2 .side{display:none}
+  body.v2 .tabs{display:flex;position:fixed;left:0;right:0;bottom:0;height:84px;background:#fff;border-top:1px solid var(--line);padding:6px 4px 22px;padding-bottom:calc(22px + env(safe-area-inset-bottom));z-index:5}
+  body.v2 .tabs .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12px;font-weight:700;color:var(--ink3);position:relative;min-height:56px;text-decoration:none}
+  body.v2 .tabs .tab svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  body.v2 .tabs .tab.on{color:var(--acc-text)}body.v2 .tabs .tab.on svg{stroke-width:2.2}
+  body.v2 .tabs .tab .n{position:absolute;top:2px;left:calc(50% + 6px);background:var(--acc);color:#fff;font-size:10px;border-radius:999px;padding:1px 6px}
+  body.v2 main{padding-bottom:104px;padding-left:20px;padding-right:20px}
+}
+
+/* 0718 phone classes: values copied from docs/design/mockup/ubyhost-phone-v1.html (below 1024 px only) */
+@media (max-width:1023px){
+  body.v2 .top{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;min-height:56px}
+  body.v2 .round{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#fff;border:1px solid var(--line)}
+  body.v2 .round.solid{background:var(--acc);border-color:var(--acc);color:#fff}
+  body.v2 .big,body.v2 .head h1{font-size:32px;font-weight:800;letter-spacing:-.025em;margin:2px 20px 4px;line-height:1.15}
+  body.v2 .sub,body.v2 .head .sub{color:var(--ink3);margin:0 0 8px;font-size:15px}
+  body.v2 h2.sec{font-size:13px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin:26px 0 12px;display:flex;justify-content:center;align-items:baseline}
+  body.v2 h2.sec a{font-size:14px;font-weight:700;color:var(--ink);text-decoration:underline}
+  body.v2 .card{margin:0 0 16px;background:#fff;border-radius:24px;padding:22px;box-shadow:0 6px 24px rgba(0,0,0,.08),0 0 0 1px rgba(0,0,0,.03);border:0}
+  body.v2 .ic{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;flex:none;font-weight:800;font-size:18px}
+  body.v2 .ic.bad{background:var(--bads);color:var(--bad)}body.v2 .ic.warn{background:var(--warns);color:var(--warn)}body.v2 .ic.ok{background:var(--oks);color:var(--ok)}body.v2 .ic.acc{background:var(--accs);color:var(--acc-text)}
+  body.v2 .need .t{display:block;font-size:13px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;line-height:1.4}body.v2 .need[data-tone="red"] .t{color:var(--acc-text)}body.v2 .need[data-tone="amber"] .t{color:var(--warn)}body.v2 .need small{display:block;font-size:20px;font-weight:800;letter-spacing:-.01em;color:var(--ink);line-height:1.3;margin-top:2px}body.v2 .need .ic{display:none}
+  body.v2 .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;border-radius:12px;background:var(--acc);color:#fff;font-weight:700;font-size:16px}
+  body.v2 .btn:active{transform:scale(.98)}
+  body.v2 .btn:not(.line):not(.soft):not(.ghost),body.v2 a.btn:not(.line):not(.soft):not(.ghost){color:#fff}
+  body.v2 .btn.ghost{background:#efefeb;color:var(--ink)}
+  body.v2 .card[data-dashboard-refresh="work"]{margin-left:0;margin-right:0;overflow-x:auto}
+  body.v2 .btn.line{background:#fff;color:var(--ink);border:1.5px solid var(--ink)}
+  body.v2 .btn.soft{background:#f6f6f4;color:var(--ink)}
+  body.v2 .allgood{margin:0 0 12px;padding:16px 18px;border-radius:18px;background:var(--oks);color:var(--ok);font-weight:700;display:flex;gap:10px;align-items:center}
+  body.v2 .hs{display:flex;gap:12px;overflow-x:auto;margin:0 -20px;padding:4px 20px 16px;scroll-padding-inline:20px;scroll-snap-type:x mandatory;scrollbar-width:none}body.v2 .hs::-webkit-scrollbar{display:none}
+  body.v2 .hs .card{margin:0;flex:0 0 272px;scroll-snap-align:start;display:flex;flex-direction:column;gap:10px}
+  body.v2 .hs .card:only-child{flex:1 1 auto}
+  body.v2 .hs:has(> .card:only-child){margin-left:0;margin-right:0;padding-left:0;padding-right:0}
+  body.v2 .kind{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}body.v2 .kind.in{color:var(--ok)}body.v2 .kind.out{color:var(--ink2)}
+  body.v2 .hs .nm{font-size:20px;font-weight:800;letter-spacing:-.01em}body.v2 .hs .meta{color:var(--ink3);font-size:14px}
+  body.v2 .av{width:48px;height:48px;border-radius:50%;background:var(--accs);color:var(--acc-text);display:grid;place-items:center;font-weight:800;font-size:18px;flex:none}
+  body.v2 .pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:5px 10px;border-radius:999px;width:max-content}
+  body.v2 .pill:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+  body.v2 .p-ok{background:var(--oks);color:var(--ok)}body.v2 .p-warn{background:var(--warns);color:var(--warn)}body.v2 .p-bad{background:var(--bads);color:var(--bad)}body.v2 .p-n{background:#f6f6f4;color:var(--ink3)}
+  body.v2 .chips{display:flex;gap:8px;overflow-x:auto;margin:0 -20px;padding:6px 20px 14px;scrollbar-width:none}body.v2 .chips::-webkit-scrollbar{display:none}
+  body.v2 .chip{min-height:44px;padding:0 18px;border-radius:999px;border:1px solid #d9d9d4;font-weight:700;font-size:14px;white-space:nowrap;background:#fff}
+  body.v2 .chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  body.v2 .list{margin:0}
+  body.v2 .row{display:flex;align-items:center;gap:14px;min-height:76px;padding:12px 0;border-bottom:1px solid var(--line);width:100%;text-align:left}
+  body.v2 .row:last-child{border-bottom:0}
+  body.v2 .row .t{flex:1;min-width:0}body.v2 .row .t b{display:block;font-size:16px}body.v2 .row .t small{display:block;color:var(--ink3);font-size:14px;margin-top:2px}
+  body.v2 .row .t .pill{margin-top:6px}
+  body.v2 .chev{color:#b4b4ae}
+  body.v2 .grp{font-size:13px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin:22px 0 2px}
+  body.v2 .facts{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:16px 0 0;border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  body.v2 .facts div{padding:14px 16px}body.v2 .facts div:nth-child(odd){border-right:1px solid var(--line)}body.v2 .facts div:nth-child(n+3){border-top:1px solid var(--line)}
+  body.v2 .facts small{display:block;color:var(--ink3);font-size:13px}body.v2 .facts b{font-size:16px}
+  body.v2 .link{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;font-weight:700;width:100%;text-align:left}
+  body.v2 .link small{display:block;font-weight:500;color:var(--ink3);font-size:13px}
+  body.v2 .actbar{position:fixed;left:0;right:0;bottom:calc(84px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--line);padding:12px 20px;display:flex;gap:10px;align-items:center;z-index:4}
+  body.v2 .actbar .btn{flex:1;padding:0}
+  body.v2 .actbar .hint{font-size:13px;color:var(--ink3)}
+  body.v2 .badge{background:var(--acc);color:#fff;font-size:12px;font-weight:800;border-radius:999px;padding:2px 8px}
+}
+/* 0532: setup chips on the properties list (mockup .setup / .st) */
+.setup{display:flex;gap:6px;flex-wrap:wrap}
+.st{font-size:12px;font-weight:600;padding:3px 9px 3px 7px;border-radius:999px;display:inline-flex;align-items:center;gap:5px;text-decoration:none;min-height:24px;box-sizing:border-box}
+.st:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.st.g{background:var(--oks);color:var(--ok)}.st.r{background:var(--bads);color:var(--bad)}.st.n{background:#efefeb;color:var(--ink3)}
+@media (max-width:640px){body.v2 tbody .btn.sm{min-height:44px;display:inline-flex;align-items:center}}
+
+/* 0532: the properties table scrolls inside its card on phones instead of widening the page */
+.props-card{overflow-x:auto}
+/* 0532: the property name link in the list has a 24 px tap target (geometry guard) */
+body.v2 .props-card .row-primary-link{display:inline-block;min-height:24px;padding-block:3px;box-sizing:border-box}
+/* 0532: copy-link button in each list row shows on hover from 1024 px (mockup); always visible on touch and below 1024 px */
+@media (hover:hover) and (min-width:1024px){body.v2 .props-card tbody tr .btn.sm.ghost{opacity:0;transition:opacity .15s}body.v2 .props-card tbody tr:hover .btn.sm.ghost{opacity:1}body.v2 .props-card tbody tr:focus-within .btn.sm.ghost{opacity:1;transition:none}}
+/* 0532: a list row opens on click, so it shows the pointer */
+body.v2 .props-card tbody tr.clickable-row{cursor:pointer}
+/* 0533: below 1024 px the rows are the mockup cards (.props-phone) and the table is hidden; from 1024 px the cards are hidden */
+/* 0740: phone v2 properties list; values from docs/design/mockup/ubyhost-phone-v2.html, screen nemovitosti */
+@media (max-width:1023px){
+  body.v2 .props-card{display:none}
+  body.v2 .head.props-head{display:flex;align-items:center;justify-content:space-between;margin:6px 0 24px}
+  body.v2 .props-head>div>h1{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.15;margin:0}
+  body.v2 .props-add{width:44px;height:44px;border:0;border-radius:50%;background:#f4f3ef;color:var(--ink);display:grid;place-items:center;flex:none}
+  body.v2 .props-head>div:first-child{flex:none}
+  body.v2 .props-phone .card.prop{display:flex;align-items:center;gap:16px;padding:16px;margin:0 0 14px;color:inherit;text-decoration:none}
+  body.v2 .props-phone .cover{width:64px;height:64px;border-radius:16px;display:grid;place-items:center;color:#fff;flex:none}
+  body.v2 .props-phone .cover .ini{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1}
+  body.v2 .props-phone .in{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start}
+  body.v2 .props-phone .in b{font-size:17px;font-weight:700;line-height:1.3;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  body.v2 .props-phone .in small{color:var(--ink3);font-size:14px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  body.v2 .props-phone .st{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;margin-top:6px;line-height:1.3;padding:0;background:none;min-height:0;border-radius:0}
+  body.v2 .props-phone .st:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+  body.v2 .props-phone .st.g{color:var(--ok)}
+  body.v2 .props-phone .st.r{color:var(--acc-text)}
+  body.v2 .props-phone .chev{width:20px;height:20px;color:var(--ink3);flex:none}
+}
+@media (min-width:1024px){body.v2 .props-phone{display:none}}
+/* 0533 pass 3: below 1024 px the properties page shows the mockup's round add button above the title instead of the full-width button */
+@media (max-width:1023px){body.v2 .props-head .btn{display:none}}
+body.v2 .props-phone .cover.c0{background:linear-gradient(135deg,#d0452d,#e9836f)}
+body.v2 .props-phone .cover.c1{background:linear-gradient(135deg,#3f6f8f,#7fa8c2)}
+body.v2 .props-phone .cover.c2{background:linear-gradient(135deg,#5c7a4f,#9db58c)}
+/* 0532 pass 9: from 1024 px a list row is one line (mockup 53 px): the copy button is 24 px, not 60 px. Pass 11: the setup chips may wrap when they do not fit (no sideways scroll); name and address cells are one line with ellipsis */
+@media (min-width:1024px){body.v2 .props-card .setup .st{height:24px}body.v2 .props-card .copy-btn{height:28px;min-height:28px;padding-block:6px}body.v2 .props-card .copy-btn svg{width:16px;height:16px}body.v2 .props-card .row-primary-link .property-identity > span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}body.v2 .props-card > table td:nth-child(1),body.v2 .props-card > table td:nth-child(2){max-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+@media (min-width:1024px){body.v2 .props-card > table td:nth-child(1) .row-primary-link{display:block;max-width:100%;min-width:0;overflow:hidden}}
+@media (min-width:1024px){body.v2 .props-card > table th:nth-child(1),body.v2 .props-card > table td:nth-child(1){width:22%}body.v2 .props-card > table th:nth-child(2),body.v2 .props-card > table td:nth-child(2){width:26%}}
+
+/* 0534 property page */
+body.v2 .form{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;max-width:980px;margin:0 auto}
+body.v2 .crumb{color:var(--ink3);font-size:12px;margin-bottom:4px}
+body.v2 .guest-card{padding:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+body.v2 details{background:var(--s);border:1px solid var(--line);border-radius:12px;margin-bottom:10px}
+body.v2 summary{list-style:none;padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+body.v2 summary::-webkit-details-marker{display:none}
+body.v2 summary b{display:block}
+body.v2 summary small{color:var(--ink3)}
+body.v2 summary:after{content:"\2304";color:var(--ink3);font-size:18px}
+body.v2 details[open] summary:after{transform:rotate(180deg)}
+body.v2 .fields{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+body.v2 .savebar{position:fixed;right:24px;bottom:20px;display:flex;gap:8px}
+@media (max-width:600px){body.v2 .savebar{left:12px;right:12px;bottom:12px;flex-wrap:wrap;justify-content:flex-end}}
+/* 0535: onboarding 'all steps' link spacing (was an inline style) */
+.onb-more{margin-top:10px}
+
+/* 0535: mockup section order on the property page (CSS only; DOM order stays) */
+body.v2 .form{display:flex;flex-direction:column;gap:20px}
+body.v2 .property-settings-form{display:contents}
+body.v2 #sec-basics{order:1}
+body.v2 #sec-police{order:2}
+body.v2 #sec-calendars{order:3}
+body.v2 #sec-messages{order:4}
+body.v2 #sec-lock{order:5}
+body.v2 #sec-fee{order:6}
+body.v2 #sec-archive{order:7}
+body.v2 #sec-lock-account{order:8}
+/* 0535 step 2: preview aside. Two columns from 1024 px; below that the aside sits under the sections. */
+body.v2 .form-main{display:flex;flex-direction:column;gap:20px;min-width:0}
+body.v2 .preview{background:#efefeb;border-radius:14px;padding:12px;min-width:0}
+body.v2 .preview h3{font-size:14px;margin:2px 4px 10px}
+body.v2 .pv{background:var(--s);border-radius:10px;padding:12px;margin-bottom:8px}
+body.v2 .pv h4{font-size:13px;margin:0 0 6px}
+body.v2 .pv .r{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;padding:4px 0;color:inherit;text-decoration:none}
+body.v2 .pv .r span{color:var(--ink3)}
+body.v2 .pv .r b.is-bad{color:var(--bad)}
+body.v2 .pv-state{font-size:12px;font-weight:600;border-radius:999px;padding:2px 8px;background:var(--oks);color:var(--ok)}
+body.v2 .pv-state[data-state="bad"]{background:var(--bads);color:var(--bad)}
+@media (min-width:1024px){
+  body.v2 .form{display:grid;grid-template-columns:minmax(0,1fr) 300px;align-items:start}
+  body.v2 .preview{position:sticky;top:24px}
+}
+/* 0535 step 5: desktop tap targets and text size on the property page (0710 geometry guard) */
+body.v2 .crumb a{display:inline-block;min-height:24px;line-height:24px}
+body.v2 details .help-tip-btn{min-width:24px;min-height:24px;box-sizing:border-box}
+body.v2 details a{display:inline-block;min-height:24px;line-height:24px}
+body.v2 details small,body.v2 .preview small{font-size:12px}
+body.v2 details input{min-height:24px}
+/* 0535 step 3: no sideways scroll at 320-1023 px (generic control fixes, property page) */
+@media (max-width:1023px){
+  body.v2 details *{min-width:0}
+  body.v2 details{overflow-wrap:anywhere}
+  body.v2 details div{flex-wrap:wrap}
+  body.v2 details .ui-btn{max-width:100%;white-space:normal}
+  body.v2 .property-settings-form input,body.v2 .property-settings-form select,body.v2 .property-settings-form textarea{min-width:0;max-width:100%}
+}
+/* 0535 step 3b: the guest-link copy icon (injected by app.js, unstyled on v2) took ~77 px in flow and pushed the button past 1024 px. Hidden until copied, absolute inside the button. */
+body.v2 .copy-btn > svg{display:none}
+body.v2 .copy-btn .copy-label-default{display:inline}
+body.v2 .copy-btn [data-copy-label-slot]{display:none}
+body.v2 .copy-btn.copied [data-copy-label-slot]{display:inline}
+body.v2 .copy-btn.copied .copy-label-default{display:none}
+body.v2 .guest-card .copy-btn{position:relative;overflow:hidden}
+body.v2 .guest-card .copy-btn [data-copy-state-icon]{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none}
+body.v2 .guest-card .copy-btn.copied [data-copy-state-icon]{opacity:1}
+body.v2 .guest-card .copy-btn [data-copy-state-icon] svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+@media (max-width:639px){
+  body.v2 .fields{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:no-preference){@keyframes v2-fields-in{from{opacity:0}to{opacity:1}}body.v2 details .fields{animation:v2-fields-in .18s ease-out}}
+
+/* 0719 overview phone: Potřebuje vás cards, Dnes cards, top row (phone only unless noted) */
+@media (max-width:1023px){
+  body.v2 .needs-you-card-item{display:block}
+  body.v2 .needs-you-card-item .h{display:flex;gap:14px;align-items:center}
+  body.v2 .needs-you-card-item .h > div:last-child{min-width:0;flex:1}
+  body.v2 .needs-you-actions{display:flex;gap:8px;align-items:center;margin-top:14px}
+  body.v2 .needs-you-actions .btn{flex:1;min-width:0}
+  body.v2 .needs-you-card-item .btn.sm{min-height:50px;font-size:16px;padding:0}
+  body.v2 .needs-you-card-item .needs-you-dismiss{margin:0}
+  body.v2 .ov-table{display:none}
+  body.v2 .ov-cal-block{display:none}
+  body.v2 .hs .card{text-decoration:none;color:inherit}
+  body.v2 .hs .who{display:flex;gap:12px;align-items:center}
+  body.v2 .card.needs-you-card-item{display:block}
+  body.v2 .needs-you-actions{width:100%}
+}
+@media (min-width:1024px){
+  body.v2 .ph-only{display:none}
+  body.v2 .needs-you-card-item .h{display:contents}
+  body.v2 .needs-you-card-item b.t{display:block;font-weight:700}
+  body.v2 .needs-you-card-item small{display:block;font-size:inherit;color:inherit;margin:0}
+}
+
+/* 0719: the Dnes cards scroll inside their row and never widen the page */
+@media (max-width:1023px){
+  body.v2 .hs{min-width:0;max-width:100%}
+}
+
+/* 0719: phone chip and round buttons match the mockup (below 1024 px only) */
+@media (max-width:1023px){
+  /* border needs !important to beat the global .chip.on accent rule (0719 fix) */
+  body.v2 .chip.on{background:var(--ink)!important;border-color:var(--ink)!important;color:#fff}
+  body.v2 .chip{display:inline-flex;align-items:center;font-family:inherit;font-size:14px;font-weight:700;line-height:1.2;color:var(--ink);padding:0 18px}
+  body.v2 .round{font:inherit;color:inherit;padding:0}
+}
+@media (max-width:1023px){body.v2 .big{margin:2px 0 4px}}
+@media (max-width:1023px){body.v2 #security-prompt{z-index:10}}
+
+/* 0719: phone head is a block so the title and date take the full screen width (mockup) */
+@media (max-width:1023px){body.v2 .head{display:block}body.v2 .head h1:after{content:none}body.v2 .hs .who>div:not(.av){min-width:0;flex:1}body.v2 .head h1{margin:2px 0 4px}body.v2 .need b{margin-bottom:0}}
+/* 0529 compact: the phone "Zobrazit další" list is shown on phone only */
+body.v2 .stays-more{display:none}
+@media (max-width:1023px){body.v2 .stays-more{display:block}}
+/* 0526 stays list: page-only rules; shared phone classes (.top, .round, .big, .grp, .av, .list, .row, .link, .chips, .chev) come from the 0718 block above */
+.stays-phone{display:none}
+.stays-phone-only{display:none}
+.stays-head-actions{display:flex;gap:8px}
+/* stay page: hand-filing cards (desktop only) */
+.host-stay-detail .stay-filing{padding:16px;margin-top:12px}
+/* stays + stay page help (one closed "How it works", desktop only like the Overview's) */
+body.v2 details.stays-how{display:block;margin:4px 0}
+body.v2 details.stays-how:not([open]) .ui-how-body{display:none}
+body.v2 .stays-how .ui-how-more{display:inline-block;min-height:44px;line-height:44px}
+body.v2 .stays-how > summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;min-height:44px;color:var(--ink3);font-size:14px}
+body.v2 .stays-how > summary::-webkit-details-marker{display:none}
+.stays-links{margin-top:12px}
+.stays-desk .stay-identity-link{display:inline-block;min-height:24px}
+body.v2 .stays-filter select,body.v2 .stays-filter input:not([type=hidden]){border:1px solid #dcdcd7;border-radius:8px;padding:9px 10px}
+@media (max-width:1023px){
+  .stays-head{display:block}
+  .stays-head h1:after{display:none}
+  .stays-head-actions{display:none}
+  .stays-desk{display:none}
+  .stays-phone{display:block}
+  .stays-phone-only{display:flex}
+}
+/* 0750 phone stays list (Airbnb style): values from docs/design/mockup/ubyhost-phone-v2.html, screen pobyty; below 1024 px only */
+@media (max-width:1023px){
+  body.v2 .stays-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:6px 0 24px}
+  body.v2 .stays-head h1.big{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.15;margin:0}
+  body.v2 .stays-head .stays-add{width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border:0;border-radius:50%;background:#f4f3ef;color:var(--ink);display:grid;place-items:center;flex:none;box-sizing:border-box}
+  body.v2 .stays-chips{display:flex;justify-content:flex-start;gap:10px;overflow-x:auto;scrollbar-width:none;margin:0 -20px 24px;padding:0 20px 8px}
+  body.v2 .stays-chips::-webkit-scrollbar{display:none}
+  body.v2 .stays-chips .chip.on{color:#fff}
+  body.v2 .stays-chips .chip{flex:none;border:0;background:#f4f3ef;color:var(--ink);font-size:15px;font-weight:600}
+  body.v2 .stays-phone h2.sec{margin-top:8px}
+  body.v2 .stays-phone .card.stay{display:flex;align-items:center;gap:16px;padding:16px;margin:0 0 14px;color:inherit;text-decoration:none}
+  body.v2 .stays-phone .sav{width:56px;height:56px;border-radius:50%;background:var(--accs);color:var(--acc-text);display:grid;place-items:center;font-weight:800;font-size:20px;flex:none}
+  body.v2 .stays-phone .in{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start}
+  body.v2 .stays-phone .in b{font-size:17px;font-weight:700;line-height:1.3;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  body.v2 .stays-phone .in small{color:var(--ink3);font-size:14px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  body.v2 .stays-phone .card.stay .pill{background:none;padding:0;border-radius:0;margin-top:6px;line-height:1.3;width:auto}
+  body.v2 .stays-phone .card.stay .pill.p-ok{color:var(--ok)}
+  body.v2 .stays-phone .card.stay .pill.p-warn{color:var(--warn)}
+  body.v2 .stays-phone .card.stay .pill.p-bad{color:var(--acc-text)}
+  body.v2 .stays-phone .card.stay .pill.p-n{color:var(--ink3)}
+  body.v2 .stays-phone .card.stay .chev{width:20px;height:20px;color:var(--ink3);flex:none}
+}
+@media (max-width:1023px){
+  body.v2 .stays-filter select,body.v2 .stays-filter input:not([type=hidden]),body.v2 .stays-filter .ui-btn,body.v2 .stays-panel .ui-btn,body.v2 .stays-pager .ui-btn{min-height:44px;min-width:44px}
+  body.v2 .stays-pager .ui-btn{display:inline-flex;align-items:center}
+  body.v2 .stays-panel select,body.v2 .stays-panel input:not([type=hidden]){min-height:44px}
+  .stays-desk .stay-identity-link{min-height:44px}
+}
+@media (min-width:1024px){
+  body.v2 .stays-filter select,body.v2 .stays-filter input:not([type=hidden]),body.v2 .stays-filter .ui-btn,body.v2 .stays-panel .ui-btn,body.v2 .stays-pager .ui-btn{min-height:36px}
+  body.v2 .stays-pager .ui-btn{display:inline-flex;align-items:center}
+  body.v2 .stays-panel select,body.v2 .stays-panel input:not([type=hidden]){min-height:36px}
+}
+@media (min-width:1024px){
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+  .list{margin:0 20px}
+  .link{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;font-weight:700;width:100%;text-align:left}
+  .link small{display:block;color:var(--ink3);font-size:14px;font-weight:400;margin-top:2px}
+}
+/* 0527 stays page: panels, pager, count line and table sr-only label follow the mockup (page-only selectors) */
+body.v2 .stays-panel,body.v2 .stays-filter{padding:16px}
+body.v2 .stays-panel .ui-section-h{display:flex;align-items:center;justify-content:space-between;gap:12px}
+body.v2 .stays-panel .ui-section-h h2{margin:0}
+body.v2 .stays-panel .grid,body.v2 .stays-filter .grid{display:grid;grid-template-columns:1fr;gap:12px}
+body.v2 .stays-panel label,body.v2 .stays-filter label{display:block;font-size:12px;color:var(--ink2);margin-bottom:4px}
+body.v2 .stays-panel input:not([type=hidden]),body.v2 .stays-panel select,body.v2 .stays-filter input:not([type=hidden]),body.v2 .stays-filter select{width:100%;box-sizing:border-box;border:1px solid #dcdcd7;border-radius:8px;padding:9px 10px}
+body.v2 .stays-panel .ui-form-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+body.v2 .stays-pager{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px}
+body.v2 .stays-pager-label{font-size:13px;color:var(--ink3)}
+body.v2 .stays-pager [aria-disabled=true]{opacity:.45}
+body.v2 p.stays-count{font-size:13px;color:var(--ink3)}
+body.v2 .stays-desk .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (min-width:1024px){
+  body.v2 .stays-pager{justify-content:flex-end}
+  body.v2 .stays-panel .grid,body.v2 .stays-filter .grid{grid-template-columns:1fr 1fr}
+}
+
+/* 0527: the collapsed filter panel on v2 pages (the .host-workspace rule in host.css does not apply here) */
+body.v2 .stays-filter.is-collapsed{display:none}
+@media (min-width:1024px){body.v2 .stays-phone-only{display:none}}
+
+/* 0527: the shared date-range popover and month grid, ported from host.css (v2 pages do not load host.css) */
+body.v2 .date-range-popover,body.v2 .month-grid-panel{position:fixed;z-index:100;width:min(360px,calc(100vw - 16px));padding:12px;border:1px solid var(--line);border-radius:12px;background:white;box-shadow:var(--shadow-popover)}
+body.v2 .range-calendar-head,body.v2 .month-year-row{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:8px;margin-bottom:8px;text-align:center}
+body.v2 .range-step,body.v2 .year-step{width:44px;min-width:44px;height:44px;padding:0;justify-content:center;font-size:19px}
+body.v2 .range-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+body.v2 .range-draft-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+body.v2 .range-draft-fields .field{min-width:0;margin:0}
+body.v2 .range-draft-fields label{display:block;margin:0 0 4px;color:var(--ink2);font-size:12px;font-weight:650}
+body.v2 .range-draft-fields input[type=date]{width:100%;min-width:0;height:42px}
+body.v2 .range-weekday{display:grid;min-height:26px;place-items:center;color:var(--ink3);font-size:11px;font-weight:700}
+body.v2 .range-day{min-width:0;min-height:40px;padding:0;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--ink)}
+body.v2 .range-day:hover,body.v2 .range-day:focus-visible{border-color:var(--brand-action);outline:2px solid color-mix(in srgb,var(--brand-action) 24%,transparent);outline-offset:1px}
+body.v2 .range-day.outside-month{color:var(--ink3)}
+body.v2 .range-day.in-range{border-radius:0;background:var(--brand-soft)}
+body.v2 .range-day.selected{border-color:var(--brand-action);border-radius:8px;background:var(--brand-action);color:white;font-weight:750}
+body.v2 .date-range-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px}
+body.v2 .month-row{display:flex;align-items:center;gap:8px}
+body.v2 .month-control{position:relative;display:flex;align-items:center;flex:1 1 auto;min-width:0}
+/* 0527: 44px day and date targets on phone; the popover stays inside a 360 px viewport */
+@media (max-width:1023px){
+  body.v2 .range-day{min-width:44px;min-height:44px}
+  body.v2 .range-draft-fields input[type=date]{min-height:44px}
+  body.v2 .date-range-popover,body.v2 .month-grid-panel{width:min(360px,calc(100vw - 8px));padding:8px}
+  body.v2 .date-range-actions .btn{min-height:44px}
+  body.v2 .range-calendar-grid{gap:2px}
+  body.v2 .month-choice{min-height:44px}
+}
+body.v2 [data-filter-toggle]{min-height:40px}
+@media (max-width:600px){body.v2 [data-filter-toggle]{min-height:44px}}
+body.v2 #security-prompt{z-index:20}
+body.v2 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* 0528 stay page */
+.host-stay-detail .crumb{color:var(--ink3);font-size:12px;margin-bottom:4px}
+.host-stay-detail .stay-head-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.host-stay-detail .stay-head-actions form{margin:0}
+.host-stay-detail .stay-pill-line{margin:0}
+.host-stay-detail .stay-sep{margin-left:8px}
+@media (max-width:1023px){.host-stay-detail .head .crumb,.host-stay-detail .head>div:first-child>.sub{display:none}.host-stay-detail{display:flex;flex-direction:column}.host-stay-detail>.stay-top{order:-3}.host-stay-detail>.head{order:-2}.host-stay-detail>.head>div:first-child{flex:1 1 100%;min-width:0}}
+@media (min-width:1024px){.host-stay-detail .top,.host-stay-detail .sub-phone,.host-stay-detail .facts{display:none}}
+.host-stay-detail .stay-guests-h{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.host-stay-detail .stay-guests-actions{display:flex;flex-wrap:wrap;gap:8px}
+.host-stay-detail .guest-table table{width:100%;border-collapse:collapse}
+.host-stay-detail .guest-table small{display:block;color:var(--ink3);font-size:13px}
+.host-stay-detail .guest-list{display:none}
+@media (max-width:1023px){.host-stay-detail .guest-table{display:none}.host-stay-detail .guest-list{display:block}}
+.host-stay-detail .police-card{margin-left:0;margin-right:0}
+.host-stay-detail .police-deadline{color:var(--ink3);font-size:14px;margin-top:4px}
+.host-stay-detail .police-card.police-failed{background:var(--bads);border-color:var(--bads);box-shadow:none}
+.host-stay-detail .police-card.police-failed>b{color:var(--bad)}
+.host-stay-detail .code{font-size:28px;font-weight:800;letter-spacing:.08em}
+@media (min-width:1024px){body.v2 .stay-top,body.v2 .actbar{display:none}}
+@media (max-width:1023px){.host-stay-detail .stay-head-cta{display:none}}
+/* shared (v2): copy buttons swap their label for "Copied" in place (app.js copy-label-stack) */
+body.v2 .copy-label-stack{display:inline-grid;vertical-align:baseline}
+body.v2 .copy-label-stack>span{grid-area:1/1}
+body.v2 .copy-label-confirmed{visibility:hidden}
+body.v2 [data-copy].is-copy-confirmed .copy-label-default{visibility:hidden}
+body.v2 [data-copy].is-copy-confirmed .copy-label-confirmed{visibility:visible}
+.host-stay-detail .stay-head-actions .sub{margin:0}
+.host-stay-detail .stay-guests-h h2 .sub{font-size:14px;font-weight:600;color:var(--ink3);margin-left:8px}
+@media (max-width:1023px){body.v2 .host-stay-detail input,body.v2 .host-stay-detail select,body.v2 .host-stay-detail textarea,body.v2 .host-stay-detail button,body.v2 .host-stay-detail summary{min-height:44px}}
+@media (min-width:1024px){body.v2 .host-stay-detail input,body.v2 .host-stay-detail select,body.v2 .host-stay-detail textarea,body.v2 .host-stay-detail button,body.v2 .host-stay-detail summary{min-height:36px}}
+@media (min-width:1024px){body.v2 .host-stay-detail .help-tip-btn{min-width:36px}body.v2 .host-stay-detail a.link{display:inline-flex;align-items:center;min-height:36px}}
+.host-stay-detail .crumb a{display:inline-block;min-height:24px;line-height:24px}
+.host-stay-detail [data-copy]{position:relative}
+.host-stay-detail details:not([open])>:not(summary){display:none}
+@media (max-width:1023px){body.v2 .host-stay-detail .help-tip-btn{min-width:44px}}
+/* 0529: copy confirmation badge (shared; was scoped to .host-workspace only) */
+body.v2 [data-copy]{position:relative}
+body.v2 [data-copy-state-icon] {
+  position: absolute;
+  z-index: 1;
+  top: 2px;
+  right: 2px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #ef6b58;
+  color: #fff;
+  opacity: 0;
+  transform: scale(.72);
+  transition: opacity .14s ease, transform .14s ease;
+  pointer-events: none;
+}
+body.v2 [data-copy-state-icon] svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 20; stroke-dashoffset: 20; }
+body.v2 [data-copy].copied [data-copy-state-icon] { opacity: 1; transform: scale(1); }
+body.v2 [data-copy].copied [data-copy-state-icon] svg { animation: host-copy-check .3s ease forwards; }
+body.v2 [data-copy].copied { color: #bf4f40; border-color: #ef6b58; }
+@media (prefers-reduced-motion: reduce){body.v2 [data-copy-state-icon],body.v2 [data-copy-state-icon] svg{animation:none !important;transition:none !important}}
+@keyframes host-copy-check{to{stroke-dashoffset:0}}
+/* 0529: phone ⋮ menu sits in the top row (right, next to the copy round button); one render, placed by CSS */
+@media (max-width:1023px){body.v2 .host-stay-detail{position:relative}body.v2 .host-stay-detail .stay-head-actions .row-menu{position:absolute;top:8px;right:0;z-index:6}body.v2 .host-stay-detail .stay-head-actions .row-menu-trigger{width:44px;height:44px;border-radius:50%;background:#f4f3ef;border:0;padding:0;display:grid;place-items:center}body.v2 .host-stay-detail .stay-head-actions .row-menu-trigger svg{transform:rotate(90deg)}}
+/* 0529: phone guests heading takes the full row; the stay title keeps the mockup line height */
+@media (max-width:1023px){body.v2 .host-stay-detail .stay-guests-h h2.sec{flex:1 1 100%}body.v2 .host-stay-detail .head h1.big{line-height:1.15}}
+/* 0529: the phone action bar is the header CTA placed at the bottom by CSS (one form, one render) */
+@media (max-width:1023px){body.v2 .host-stay-detail .stay-head-cta{display:block;position:fixed;left:0;right:0;bottom:calc(84px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--line);padding:12px 20px;z-index:4}body.v2 .host-stay-detail .stay-head-cta form{display:block}body.v2 .host-stay-detail .stay-head-cta .btn{width:100%}}
+@media (max-width:1023px){body.v2 .host-stay-detail .stay-head-cta:not(:has(form, a.btn)){display:none}body.v2 .host-stay-detail:has(.stay-head-cta :is(form, a.btn)){padding-bottom:180px}}
+/* 0529 final: stay page table and phone row rules take the mockup line colour (--line), not ink */
+body.v2 .host-stay-detail table th,body.v2 .host-stay-detail table td,body.v2 .host-stay-detail .list .row{border-bottom-color:var(--line)}
+/* 0751: phone stay page = mockup pobyt (ubyhost-phone-v2.html). Below 1024 px only. */
+@media (max-width:1023px){
+body.v2 .host-stay-detail .stay-top{padding-top:8px;margin-bottom:12px}
+body.v2 .host-stay-detail .stay-top .round{width:44px;height:44px;border-radius:50%;background:#f4f3ef;border:0;display:grid;place-items:center}
+body.v2 .host-stay-detail h1.big{font-size:30px;line-height:1.15;font-weight:800;letter-spacing:-.02em;text-align:center;margin:0 8px 6px}
+body.v2 .host-stay-detail .sub-phone{text-align:center;color:var(--ink3);font-size:16px;margin:0 0 24px}
+body.v2 .host-stay-detail .stay-dates{display:grid;grid-template-columns:1fr 1fr;padding:0;border:0;border-radius:24px;margin:0 0 16px}
+body.v2 .host-stay-detail .stay-dates>div{padding:18px 20px}
+body.v2 .host-stay-detail .stay-dates>div+div{border-left:1px solid var(--line)}
+body.v2 .host-stay-detail .stay-dates small{display:block;color:var(--ink3);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+body.v2 .host-stay-detail .stay-dates b{display:block;font-size:20px;font-weight:800;letter-spacing:-.01em;margin-top:4px}
+body.v2 .host-stay-detail .stay-dates .tot{grid-column:1/-1;border-left:0;border-top:1px solid var(--line);padding:14px 20px;text-align:center;color:var(--ink2);font-size:15px;font-weight:600}
+body.v2 .host-stay-detail .guests .row{display:flex;align-items:center;gap:16px;min-height:56px;padding:10px 0;border-bottom:0}
+body.v2 .host-stay-detail .guests .ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex:none;font-weight:800;font-size:15px}
+body.v2 .host-stay-detail .guests .row .t{flex:0 1 auto}
+body.v2 .host-stay-detail .guests .ic.ok{background:var(--oks);color:var(--ok)}
+body.v2 .host-stay-detail .guests .ic.warn{background:var(--warns);color:var(--warn)}
+body.v2 .host-stay-detail .guests .ic svg.i{width:18px;height:18px;stroke-width:2.4}
+body.v2 .host-stay-detail .guests .row b{display:block;font-size:17px;font-weight:600}
+body.v2 .host-stay-detail .guests .row small{display:block;color:var(--ink3);font-size:14px;margin-top:0}
+body.v2 .host-stay-detail .police-card b{display:block;font-size:17px}
+body.v2 .host-stay-detail .police-card small{display:block;color:var(--ink3);font-size:14px;margin-top:4px}
+body.v2 .host-stay-detail .stay-door-card{display:flex;align-items:center;justify-content:space-between}
+body.v2 .host-stay-detail .stay-door-card .code{font-size:28px;font-weight:800;letter-spacing:.14em}
+body.v2 .host-stay-detail .stay-door-card small{display:block;color:var(--ink3);font-size:14px}
+body.v2 .host-stay-detail .stay-door-card .ic.acc{width:44px;height:44px;border-radius:50%;background:var(--accs);color:var(--acc2);display:grid;place-items:center}
+body.v2 .host-stay-detail .stay-head-cta .btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:50px;border-radius:12px;box-sizing:border-box}
+}
+
+/* 0720 step 0: Overview desktop and header regressions (0719 screenshots) */
+@media (min-width:1024px){
+  body.v2 .card.needs-you-card-item{display:block}
+  body.v2 .needs-you-card-item .h{display:flex;gap:14px;align-items:flex-start}
+  body.v2 .needs-you-card-item .h > .ic{width:48px;height:48px;flex:none}
+  body.v2 .needs-you-card-item .h > div:not(.ic){min-width:0;flex:1}
+  body.v2 .needs-you-actions{margin:12px 0 0 62px}
+}
+body.v2 .ov-head .ov-links{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;margin:0}
+body.v2 .ov-head .ov-links > *{margin:0}
+body.v2 .ov-head .ov-quiet{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center}
+body.v2 .ov-head .ov-quiet > *{margin:0}
+body.v2 .ov-head .ov-inline{display:inline-flex}
+body.v2 .ov-how > summary{list-style:none}
+body.v2 .ov-how > summary::-webkit-details-marker{display:none}
+body.v2 .ov-how .ui-how-more{display:inline-flex;align-items:center;min-height:44px}
+/* how-help blocks on the property pages are computer-only (owner, 0535) */
+
+/* v2 shared: Havel (copied from host2.css; delete the host2 copy when the old shell is retired) */
+body.v2{--tabbar-safe:env(safe-area-inset-bottom,0px)}
+@media (max-width:1023px){body.v2{--tabbar-h:84px}}
+@media (max-width:1023px){html:has(body.v2){scroll-padding-bottom:84px}}
+body.v2 .havel-thread{display: flex; flex-direction: column; gap: var(--space-3);}
+body.v2 .havel-msg{display: flex; flex-direction: column; max-width: 85%;}
+body.v2 .havel-msg-host{align-self: flex-end; align-items: flex-end;}
+body.v2 .havel-msg-havel{align-self: flex-start; align-items: flex-start;}
+body.v2 .havel-msg:focus{outline: none;}
+body.v2 .havel-msg:focus-visible .havel-bubble{box-shadow: var(--focus-ring-2);}
+body.v2 .havel-who{display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-1); color: var(--ink-2); font-size: var(--size-13); font-weight: 600;}
+body.v2 .havel-avatar{display: inline-flex; align-items: center; justify-content: center; width: var(--space-6); height: var(--space-6); border-radius: var(--radius-pill); background: var(--accent-soft); color: var(--accent-ink);}
+body.v2 .havel-bubble{padding: var(--space-3) var(--space-4); border-radius: var(--radius-4); font-size: var(--size-15); line-height: 1.5; color: var(--ink);}
+body.v2 .havel-msg-host .havel-bubble{background: var(--surface-2); border-bottom-right-radius: var(--radius-1);}
+body.v2 .havel-msg-havel .havel-bubble{background: var(--surface); border: 1px solid var(--line); border-bottom-left-radius: var(--radius-1);}
+body.v2 .havel-bubble p{margin: 0;}
+body.v2 .havel-bubble p + p, body.v2 .havel-bubble p + ol, body.v2 .havel-bubble ol + p{margin-top: var(--space-2);}
+body.v2 .havel-bubble ol{margin: 0; padding-left: var(--space-5);}
+body.v2 .havel-bubble li + li{margin-top: var(--space-1);}
+body.v2 .havel-links{display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2);}
+body.v2 .havel-composer{display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--line);}
+body.v2 .havel-composer textarea{width: 100%; box-sizing: border-box; min-height: calc(var(--control-h) * 2); padding: var(--space-3); border: 1px solid var(--input-border); border-radius: var(--input-radius); font: inherit; font-size: var(--size-15); color: var(--ink); background: var(--surface); resize: vertical;}
+body.v2 .havel-composer textarea:focus-visible{outline: 0; border-color: var(--accent); box-shadow: var(--focus-ring-2);}
+body.v2 .havel-actions{display: flex; align-items: center; justify-content: flex-end; gap: var(--space-2); flex-wrap: wrap;}
+body.v2 .havel-actions .havel-meta{margin: 0 auto 0 0;}
+body.v2 .havel-meta{margin: 0; font-size: var(--size-13); color: var(--ink-3);}
+body.v2 .havel-note{font-size: var(--size-12);}
+body.v2 .havel-error{margin: 0; font-size: var(--size-13); color: var(--danger);}
+body.v2 .havel-topics{display: flex; flex-direction: column; gap: var(--space-2);}
+body.v2 .havel-topics .ui-btn-quiet{align-self: flex-start;}
+body.v2 .havel-answer-title{margin: 0; font-size: var(--size-15); font-weight: 600; color: var(--ink);}
+body.v2 .havel-topic{min-height: var(--control-h);}
+body.v2 .havel-topics .havel-answer{max-width: none;}
+body.v2 .havel-ask{align-self: flex-start;}
+body.v2 .havel-topics .ui-menu-panel{position: static; display: flex; min-width: 0; box-shadow: none; border-radius: var(--card-radius); padding: var(--space-2); z-index: auto;}
+body.v2 .havel-topic .grow{flex: 1 1 auto;}
+body.v2 .havel-launcher span{white-space: nowrap;}
+body.v2 .havel-dialog{--havel-w: 400px; --havel-h: 680px; z-index: var(--z-popover);}
+@media (min-width: 768px){
+body.v2 .havel-dialog{position: fixed; inset: auto var(--space-6) var(--space-6) auto; margin: 0; width: min(var(--havel-w), calc(100vw - var(--space-12)));}
+body.v2 .havel-dialog .ui-sheet{height: min(var(--havel-h), calc(100dvh - var(--space-12)));}
+}
+body.v2 .havel-dialog .ui-sheet{display: flex; flex-direction: column; padding: var(--space-4) var(--space-4) var(--space-3); overflow: hidden;}
+body.v2 .havel-dialog .havel-thread{flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: var(--space-2) var(--space-1);}
+body.v2 .havel-dialog .havel-composer{margin-top: var(--space-2); padding-bottom: env(safe-area-inset-bottom);}
+body.v2 .havel-head{display: flex; align-items: center; gap: var(--space-3); padding-bottom: var(--space-3); border-bottom: 1px solid var(--line);}
+body.v2 .havel-head .havel-avatar{width: var(--space-6); height: var(--space-6);}
+body.v2 .havel-head-text{flex: 1 1 auto; min-width: 0;}
+body.v2 .havel-dialog .havel-head h2{margin: 0; font-size: var(--size-16); font-weight: 600; line-height: 1.3;}
+body.v2 .havel-head-text p{margin: 0; font-size: var(--size-13); color: var(--ink-3);}
+body.v2 .havel-head h2[tabindex="-1"]:focus{outline: none;}
+body.v2 .havel-writing .havel-bubble{padding: var(--space-3) var(--space-4);}
+body.v2 .havel-dots{display: inline-flex; gap: var(--space-1);}
+body.v2 .havel-dots i{width: var(--space-2); height: var(--space-2); border-radius: var(--radius-pill); background: var(--ink-3); animation: havel-blink 1.2s infinite ease-in-out;}
+body.v2 .havel-dots i:nth-child(2){animation-delay: 0.2s;}
+body.v2 .havel-dots i:nth-child(3){animation-delay: 0.4s;}
+@keyframes havel-blink{ 0%, 80%, 100% { opacity: 0.3; } 40% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce){
+body.v2 .havel-dots i{animation: none; opacity: 0.6;}
+}
+body.v2 .havel-fab{position: fixed; right: var(--space-6); bottom: var(--space-6); z-index: var(--z-drawer); width: calc(var(--control-h) + var(--space-3)); height: calc(var(--control-h) + var(--space-3)); display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-pill); background: var(--accent); color: var(--accent-on, var(--surface)); box-shadow: var(--shadow-2); text-decoration: none;}
+body.v2 .havel-fab:hover{background: var(--accent-hover);}
+body.v2 .havel-fab:focus-visible{box-shadow: var(--focus-ring-2); outline: 0;}
+body.v2 .havel-fab[data-unread]::after{content: ""; position: absolute; top: var(--space-1); right: var(--space-1); width: var(--space-3); height: var(--space-3); border-radius: var(--radius-pill); background: var(--danger); border: 2px solid var(--surface);}
+body.v2 .havel-fab[hidden]{display: none;}
+body.v2 .havel-composer[hidden]{display: none;}
+@media (min-width: 1024px){
+html:has(.havel-fab:not([hidden])){scroll-padding-bottom: calc(var(--control-h) + var(--space-3) + var(--space-12));}
+body.v2:has(.havel-fab) .wrap.with-sidebar{padding-bottom: calc(var(--control-h) + var(--space-3) + var(--space-12));}
+}
+body.v2 .havel-greeting{margin-bottom: var(--space-2);}
+@media (max-width: 767px){
+body.v2 .havel-dialog{position: fixed; inset: auto 0 calc(var(--tabbar-h) + var(--tabbar-safe)) 0; margin: 0; width: 100%; max-width: 100%; box-shadow: var(--shadow-2);}
+body.v2 .havel-dialog .ui-sheet{max-height: 70dvh; height: 70dvh;}
+body.v2 .havel-fab{right: var(--space-4); bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--space-4));}
+body.v2:has(.ui-sticky-actions) .havel-fab{bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--control-h) + var(--space-8));}
+}
+body.v2 .havel-card{margin-top: var(--space-2); max-width: 100%;}
+body.v2 .havel-card-title{margin: 0 0 var(--space-2); font-size: var(--size-15); font-weight: 600; color: var(--ink);}
+body.v2 .havel-card-facts{display: flex; flex-direction: column; gap: var(--space-1); margin: 0;}
+body.v2 .havel-card-facts div{display: flex; gap: var(--space-2); align-items: baseline;}
+body.v2 .havel-card-facts dt{font-size: var(--size-13); color: var(--ink-3);}
+body.v2 .havel-card-facts dd{margin: 0; font-size: var(--size-15); color: var(--ink); overflow-wrap: anywhere;}
+body.v2 .havel-card-link{display: flex; align-items: center; gap: var(--space-1); font-family: var(--font-mono); font-size: var(--size-13);}
+body.v2 .havel-card-pin{font-family: var(--font-mono); font-size: var(--size-18); font-weight: 600; letter-spacing: 0.08em;}
+body.v2 .havel-card-warning{display: flex; gap: var(--space-2); align-items: flex-start; margin: var(--space-2) 0 0; font-size: var(--size-13); color: var(--ink-2);}
+body.v2 .havel-card-danger{color: var(--danger);}
+body.v2 .havel-card-change{margin-top: var(--space-2);}
+body.v2 .havel-card-change summary{list-style: none; display: inline-flex;}
+body.v2 .havel-card-change summary::-webkit-details-marker{display: none;}
+body.v2 .havel-card-change[open] summary{margin-bottom: var(--space-2);}
+body.v2 .havel-card-change .ui-field{margin-bottom: var(--space-2);}
+body.v2 .havel-card-actions{display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-3); flex-wrap: wrap;}
+.havel-links .havel-support{flex-basis: 100%; display: grid; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--card-radius); background: var(--surface);}
+.havel-support-title{margin: 0; font-size: var(--size-16);}
+.havel-links > .havel-meta{flex-basis: 100%;}
+.havel-next{display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2);}
+.havel-next .havel-meta{flex-basis: 100%; margin: 0;}
+.havel-next .ui-btn{max-width: 100%; white-space: normal; text-align: left;}
+body.v2 .havel-head h2[tabindex="-1"]:focus-visible, body.v2 .havel-msg[tabindex="-1"]:focus-visible, body.v2 .havel-answer[tabindex="-1"]:focus-visible{outline: none !important; box-shadow: none;}
+body.v2 .havel-head .havel-avatar{width: calc(var(--space-8) + var(--space-1)); height: calc(var(--space-8) + var(--space-1)); background: var(--accent); color: var(--on-accent);}
+body.v2 .havel-head{border-bottom-color: var(--line); padding-bottom: var(--space-3);}
+body.v2 .havel-msg-havel .havel-bubble{background: var(--sand-150); border: 0;}
+body.v2 .havel-msg-host .havel-bubble{background: var(--accent); color: var(--on-accent);}
+body.v2 .havel-chips{gap: var(--space-2);}
+body.v2 .havel-chip{display: inline-flex; align-items: center; height: auto; min-height: var(--control-h); padding: var(--space-2) var(--space-4); background: var(--surface); color: var(--accent-ink); border: 1px solid var(--coral-200); font-weight: 600; text-align: left; white-space: normal;}
+body.v2 .havel-chip:hover{background: var(--accent-soft); color: var(--accent-ink);}
+body.v2 .havel-chip-back{align-self: flex-start; background: transparent; color: var(--ink-2); padding-left: var(--space-2);}
+body.v2 .havel-next .havel-chips, body.v2 .havel-topics .havel-chips{margin-top: var(--space-1);}
+body.v2 .havel-composer{gap: var(--space-2); padding-top: var(--space-3);}
+body.v2 .havel-input{display: flex; align-items: flex-end; gap: var(--space-2); padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4); border-radius: var(--radius-pill); background: var(--sand-150);}
+body.v2 .havel-input:focus-within{box-shadow: var(--focus-ring-2);}
+body.v2 .havel-input textarea#havel-message{flex: 1 1 auto; min-height: 0; height: var(--control-h); padding: var(--space-2) 0; border: 0; border-radius: 0; background: transparent; resize: none; line-height: 1.5;}
+body.v2 .havel-input textarea#havel-message:focus, body.v2 .havel-input textarea#havel-message:focus-visible{outline: none !important; box-shadow: none;}
+body.v2 .havel-send{flex: none; width: var(--control-h); height: var(--control-h); border-radius: var(--radius-pill);}
+body.v2 .havel-actions{justify-content: flex-start;}
+body.v2 .havel-note{text-align: center;}
+body.v2 .havel-status{text-align: center;}
+body.v2 .havel-support-open{width: 100%; justify-content: center; border-radius: var(--radius-pill); min-height: var(--control-h-phone);}
+@media (max-width: 767px){
+body.v2 .havel-dialog{inset: var(--space-12) 0 0 0; height: auto; padding: 0; border: 0;}
+body.v2 .havel-dialog .ui-sheet{height: calc(100dvh - var(--space-12)); max-height: none; padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom));}
+body.v2 .havel-composer textarea{font-size: var(--size-16);}
+}
+body.v2 .havel-topics > .havel-chip{align-self: flex-start;}
+
+/* v2 shared: onboarding intro logo (width rules from app.css, which v2 does not load) */
+body.v2 .onboarding-intro .onboarding-logo{width: 64px; height: auto; max-width: 100%; margin: 0;}
+@media (max-width:640px){body.v2 .onboarding-intro .onboarding-logo{width: 48px;}}
+
+/* v2 shared: motion (copied from host2.css; scoped body.v2; rail and tab-bar view transitions stay on the old shell only) */
+/* 0547: the sticky preview aside is above the save bar without JS unless the bar has a z-index (literal 20 = --z-sticky; host pages do not load tokens.css). */
+@media (min-width:1024px){body.v2 .savebar{z-index:20}}
+/* 0545: phone guest card also shows the access PIN and its copy button (below 1024 px only) */
+body.v2 .guest-pin,body.v2 .guest-pin-copy{display:none}
+body.v2 .guest-btns{display:contents}
+@media (max-width:1023px){
+  body.v2 .guest-pin{display:block;margin-top:8px;color:var(--ink3);font-size:14px}
+  body.v2 .guest-pin-value{display:block;font-family:var(--mono,ui-monospace,monospace);font-size:16px;font-weight:700;color:var(--ink);letter-spacing:.08em}
+  body.v2 .guest-btns{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+  body.v2 .guest-btns > .btn,body.v2 .guest-pin-copy > .btn{width:100%;justify-content:center}
+  body.v2 .guest-pin-copy{display:block}
+}
+/* 0736 item 4: below 1024 px the guest buttons wrap inside the card instead of pushing it past the viewport (no-JS copy buttons) */
+@media (max-width:1023px){body.v2 .guest-btns > *,body.v2 .guest-pin-copy{min-width:0}body.v2 .guest-btns .btn,body.v2 .guest-pin-copy > .btn{max-width:100%;white-space:normal;overflow-wrap:anywhere}}
+
+@media (scripting: enabled) {
+  :root:has(body.v2) { interpolate-size: allow-keywords; }
+
+  /* Dialogs fade and rise in, fade out; phone sheets slide up from the bottom edge. */
+  body.v2 dialog { transition: opacity var(--motion-2) var(--ease-standard), translate var(--motion-2) var(--ease-standard), display var(--motion-2) allow-discrete, overlay var(--motion-2) allow-discrete; }
+  body.v2 dialog:not([open]) { opacity: 0; translate: 0 var(--space-2); }
+  body.v2 dialog[open] { opacity: 1; translate: 0 0; }
+  @starting-style { body.v2 dialog[open] { opacity: 0; translate: 0 var(--space-2); } }
+  body.v2 dialog::backdrop { transition: opacity var(--motion-2) var(--ease-standard), display var(--motion-2) allow-discrete, overlay var(--motion-2) allow-discrete; }
+  body.v2 dialog:not([open])::backdrop { opacity: 0; }
+  @starting-style { body.v2 dialog[open]::backdrop { opacity: 0; } }
+  @media (max-width: 767px) {
+    body.v2 .ui-dialog { transition-duration: var(--motion-3); }
+    body.v2 .ui-dialog:not([open]) { opacity: 1; translate: 0 100%; }
+    @starting-style { body.v2 .ui-dialog[open] { opacity: 1; translate: 0 100%; } }
+  }
+
+  /* Fold-outs (help, sections, "more"): the body slides open and shut. Menus that float stay instant. */
+  body.v2 details:not(.host-account)::details-content { block-size: 0; overflow: clip; overflow-clip-margin: var(--space-1); transition: block-size var(--motion-3) var(--ease-standard), content-visibility var(--motion-3) allow-discrete; }
+  body.v2 details:not(.host-account)[open]::details-content { block-size: auto; }
+
+  /* Floating menus and the Stays filter panel fade in. */
+  body.v2 :is(.ui-menu-panel, .host-account-menu, .host-filter-panel) { transition: opacity var(--motion-2) var(--ease-standard), translate var(--motion-2) var(--ease-standard); }
+  @starting-style {
+    body.v2 :is(.ui-menu-panel.is-open, .ui-menu-panel:not([hidden]), .host-account[open] .host-account-menu, .host-filter-panel:not(.is-collapsed)) { opacity: 0; translate: 0 calc(var(--space-1) * -1); }
+  }
+
+  /* Page to page: a short cross-fade; the rail, top bar and tab bar hold still. */
+  @view-transition { navigation: auto; }
+  ::view-transition-group(*) { animation-duration: var(--motion-2); animation-timing-function: var(--ease-standard); }
+  @media (prefers-reduced-motion: reduce) {
+    @view-transition { navigation: none; }
+    ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+  }
+}
+@media (prefers-reduced-motion: reduce) { body.v2 *, body.v2 *::before, body.v2 *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
+/* 0722: phone-only hides (below 1024 px); desktop unchanged. */
+@media (max-width:1023px){body.v2 .ph-hide{display:none !important}}
+@media (min-width:1024px){.env-banner .env-more{display:none}}
+@media (max-width:1023px){.env-banner .env-body{display:none}}
+/* 0722: phone shows 2 needs-you cards; the rest open from one toggle. */
+@media (max-width:1023px){#needs-action > .todo > .needs-you-card-item:nth-child(n+3){display:none}#needs-action:has(> details[open]) > .todo > .needs-you-card-item:nth-child(n+3){display:block}#needs-action .ny-sum-desk{display:none}}
+@media (min-width:1024px){#needs-action .ny-sum-phone{display:none}#needs-action .ny-phone-only{display:none}}
+/* 0722: on phone the month line goes last, after Dnes (mockup order). */
+@media (max-width:1023px){body.v2 .ui-body:has(> .ov-month){display:flex;flex-direction:column}body.v2 .ov-month{order:1}}
+@media (max-width:1023px){body.v2 .ui-body:has(> .ov-month) > :not(h2.sec){margin-top:0;margin-bottom:0}body.v2 #needs-action .todo{gap:0}body.v2 #needs-action .needs-you-card-item{margin-bottom:16px}body.v2 details.needs-you-more{margin:0}}
+/* 0722: phone action buttons keep the 44 px touch target of the mockup. */
+@media (max-width:1023px){body.v2 .needs-you-actions .btn{min-height:44px}}
+/* 0529 tests: the desk rows are clickable (data-href), so they show the pointer */
+body.v2 tr[data-href]{cursor:pointer}
+body.v2 a.chip:not(.on):hover{background:#f4f4f1}
+/* 0529: the shared CSV export dialog (base.html) on v2 pages, which do not load host-controls.css */
+body.v2 .csv-export-dialog{width:min(520px,calc(100vw - 24px));max-width:520px;max-height:calc(100vh - 24px);overflow:auto}
+body.v2 .csv-export-dialog form{padding:clamp(18px,4vw,24px)}
+body.v2 .csv-export-dialog .grid.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+body.v2 .csv-export-dialog .field>label{display:block;margin:0 0 6px;font-size:13px;font-weight:650}
+body.v2 .csv-export-dialog input[type="date"]{width:100%;min-width:0;min-height:44px}
+body.v2 .csv-export-dialog .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+body.v2 .csv-export-dialog .actions .btn{width:100%;min-width:0;min-height:44px;white-space:normal;text-align:center}
+
+@media (max-width:767px){body.v2 .cal-day-number{min-width:44px}}
+/* 0729 phone v2 (Airbnb style, approved 2026-11-01 21:15): shared phone parts; values from docs/design/mockup/ubyhost-phone-v2.html */
+@media (max-width:1023px){
+  body.v2 .ph-top{padding-top:8px}
+  body.v2 .seg{display:flex;gap:10px;justify-content:center;margin:0 0 28px}
+  body.v2 .seg a{display:inline-flex;align-items:center;min-height:44px;padding:0 20px;border-radius:999px;background:#f4f3ef;color:var(--ink);font-weight:600;font-size:15px;text-decoration:none}
+  body.v2 .seg a.on{background:var(--ink);color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+  body.v2 .head h1.hl{font-size:30px;line-height:1.15;font-weight:800;letter-spacing:-.02em;text-align:center;margin:0 8px 28px}
+  body.v2 .head h1.hl.done{margin-top:120px}
+  body.v2 .ov-head{display:block;margin:0;padding:0}
+  body.v2 .ov-head > .btn{display:none}
+  body.v2 .hl-sub{text-align:center;color:var(--ink3);font-size:16px;margin:-16px 0 28px}
+  body.v2 .needs-you-actions{margin-top:14px}
+  body.v2 .hs .card{align-items:center;text-align:center;padding:26px 22px 28px;gap:0}
+  body.v2 .hs .kind{font-size:15px;font-weight:600;text-transform:none;letter-spacing:0}
+  body.v2 .hs .who{flex-direction:column;align-items:center;gap:0}
+  body.v2 .hs .av{width:72px;height:72px;font-size:26px;border:3px solid #fff;margin:18px 0 16px}
+  body.v2 .hs .nm{font-size:22px}
+  body.v2 .hs .meta{font-size:15px;margin-top:4px}
+  body.v2 .hs .pill{margin-top:14px}
+}
+/* 0735 phone v2 Menu (Airbnb style); values from docs/design/mockup/ubyhost-phone-v2.html, screen menu */
+body.v2 .mh{display:flex;align-items:center;justify-content:space-between;margin:6px 0 24px}
+body.v2 .mh .big{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.15;margin:0}
+body.v2 .me-av{width:44px;height:44px;border-radius:50%;background:var(--accs);color:var(--acc-text);display:grid;place-items:center;font-weight:800;text-decoration:none}
+body.v2 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+body.v2 .tile{background:#fff;border:0;border-radius:20px;box-shadow:0 6px 24px rgba(0,0,0,.08),0 0 0 1px rgba(0,0,0,.03);padding:16px 16px 18px;height:150px;display:flex;flex-direction:column;color:inherit;text-decoration:none}
+body.v2 .tile b{font-size:16px;margin-top:0}body.v2 .tile small{color:var(--ink3);font-size:14px;margin-top:2px}
+body.v2 .tile .v{margin-top:auto;font-size:32px;font-weight:800;letter-spacing:-.02em;color:var(--ink)}
+body.v2 .promo{background:#f4f3ef;border-radius:20px;padding:18px;display:flex;gap:14px;align-items:center;margin-bottom:10px;color:inherit;text-decoration:none}
+body.v2 .promo .pi{width:44px;height:44px;border-radius:12px;background:#fff;display:grid;place-items:center;color:var(--acc);flex:none}
+body.v2 .promo > span:last-child{flex:1;min-width:0}body.v2 .promo b{font-size:17px;display:block}body.v2 .promo small{display:block;color:var(--ink3);font-size:14px;line-height:1.4}
+body.v2 .list.plain .row{display:flex;align-items:center;gap:18px;min-height:56px;padding:15px 0;border:0;font:inherit;font-size:17px;font-weight:500;color:var(--ink);text-decoration:none;width:100%;text-align:left;background:none;cursor:pointer}
+body.v2 .list.plain .row > svg:first-child{width:26px;height:26px;stroke-width:1.6;flex:none}
+body.v2 .list.plain .row .t{flex:1;min-width:0}
+body.v2 .list.plain .badge{background:var(--acc);color:#fff;font-size:12px;font-weight:800;border-radius:999px;min-width:22px;height:22px;display:grid;place-items:center;padding:0 6px}
+body.v2 .list.plain .chev{width:20px;height:20px;color:var(--ink3);flex:none}
+body.v2 .menu-logout{margin-top:8px;border-top:1px solid var(--line);padding-top:8px}
+/* 0536 items 1-7: desktop polish of the property page (mockup prop) */
+body.v2 .ov-how[data-how="property"]{background:none;border:0;margin:0 0 8px;display:inline-block}
+body.v2 .ov-how[data-how="property"] > summary{padding:0;display:inline-flex;gap:6px;justify-content:flex-start;min-height:24px;color:var(--ink2);font-size:13px}
+body.v2 .ov-how[data-how="property"] > summary:after{display:none}
+body.v2 #sec-basics > .fields-wrap > .property-section > h3:first-child,body.v2 #basics > h3:first-child{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+body.v2 .required-legend{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+body.v2 .property-section-title{font-size:14px;font-weight:600}
+body.v2 .fields-wrap{padding:0 16px 16px}
+body.v2 .setup-continue-card p{font-size:13px;margin:0 0 8px}
+body.v2 .setup-continue-card .actions{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+body.v2 .setup-continue-card .ui-btn{min-height:32px;padding:4px 12px;font-size:13px}
+@media (min-width:601px){body.v2 .savebar{right:calc(var(--control-h) + var(--space-3) + var(--space-6));white-space:nowrap}}
+/* 0544: above the sticky preview aside from 1024 px; the Havel FAB (z 40) and dialog (z 60) stay above the bar. */
+body.v2 .savebar .ui-btn,body.v2 .savebar .btn{width:auto;white-space:nowrap}
+@media (min-width:1024px){
+  body.v2 .property-section{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+  body.v2 .property-section > :is(h3,p,.hint,.grid,.field-label-row,.actions,.preview-hint){grid-column:1/-1}
+  body.v2 .property-section .field:has(textarea){grid-column:1/-1}
+  body.v2 .property-section .grid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+  body.v2 .property-section .grid > .field{margin:0}
+  body.v2 .property-section .grid > .field:only-child{grid-column:1/-1}
+  body.v2 .property-section .grid > .field:has(textarea){grid-column:1/-1}
+  body.v2 .property-section .field[style*="max-width"]{max-width:none}
+}
+/* 0536 item 1 (second pass): the help toggle is a small pill card, so the generic details card look stays (0710 mockup match) */
+body.v2 .ov-how[data-how="property"]{background:var(--s);border:1px solid var(--line);border-radius:999px;padding:0 12px;margin:0 0 8px;display:inline-block}
+body.v2 .ov-how[data-how="property"] > summary{padding:6px 0;min-height:32px}
+/* 0536 item 1 (third pass): card radius and no details padding, as the generic details card (mockup match); the padding sits on the summary */
+body.v2 .ov-how[data-how="property"]{border-radius:12px;padding:0}
+body.v2 .ov-how[data-how="property"] > summary{padding:6px 12px;min-height:32px}
+
+/* 0540: phone property page as the approved phone mockup (nemovitost); desktop unchanged */
+body.v2 .dot,body.v2 .sec-state,body.v2 .prop-phone-top,body.v2 .prop-phone-sub,body.v2 .prop-phone-only{display:none}
+body.v2 .dot.g{background:var(--ok)}
+body.v2 .dot.r{background:var(--acc)}
+body.v2 .dot.n{background:#c9c9c3}
+@media (max-width:1023px){
+  body.v2 .crumb,body.v2 .required-legend,body.v2 aside.preview{display:none}
+  body.v2 .prop-phone-top{display:flex;padding:8px 0 0;margin-bottom:12px}
+  body.v2 .prop-phone-top .round{width:44px;height:44px;border:0;border-radius:50%;background:#f4f3ef;display:grid;place-items:center}
+  body.v2 .prop-phone-top ~ h1.big{font-size:30px;line-height:1.15;font-weight:800;letter-spacing:-.02em;text-align:center;margin:0 8px 6px}
+  body.v2 .prop-phone-sub{display:block;text-align:center;color:var(--ink3);font-size:16px;margin:0 0 24px}
+  body.v2 .prop-phone-only{display:block}
+  body.v2 .dot{display:block;width:10px;height:10px;border-radius:50%;flex:0 0 10px}
+  body.v2 .sec-state{display:block;color:var(--ink3);font-size:14px;line-height:1.35;margin-top:0}
+  body.v2 .guest-card{display:block;padding:22px;margin:0 0 16px;background:#fff;border:0;border-radius:24px;box-shadow:0 6px 24px rgba(0,0,0,.08),0 0 0 1px rgba(0,0,0,.03)}
+  body.v2 .guest-card b{display:block;font-size:13px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em}
+  body.v2 .guest-card .guest-pin{display:flex;align-items:baseline;justify-content:space-between;border-top:1px solid var(--line);padding-top:14px;margin-bottom:16px}
+  body.v2 .guest-card .guest-pin-label{font-size:15px;color:var(--ink3)}
+  body.v2 .guest-card .guest-pin-value{font-size:22px;font-weight:800;line-height:1.4;letter-spacing:.12em}
+  body.v2 .guest-card .guest-btns{display:flex;flex-direction:column;gap:10px}
+  body.v2 .guest-card .sub{font-size:17px;font-weight:700;color:var(--ink);margin:6px 0 14px;overflow-wrap:anywhere;word-break:break-all}
+  body.v2 .guest-card .copy-btn{width:100%;justify-content:center}
+  body.v2 .prop-sec > summary{display:grid;grid-template-columns:10px minmax(0,1fr) 20px;column-gap:16px;align-items:center;min-height:64px;padding:12px 0;border-bottom:0}
+  body.v2 .prop-sec > summary > .dot{grid-column:1;grid-row:1/3}
+  body.v2 .prop-sec > summary > div{grid-column:2;grid-row:1;min-width:0}
+  body.v2 .prop-sec > summary > div b{display:block;font-size:17px;font-weight:600;line-height:1.3}
+  body.v2 .prop-sec > summary > div > small{display:none}
+  body.v2 .prop-sec > summary > .sec-state{grid-column:2;grid-row:2}
+  body.v2 .prop-sec > summary:after{grid-column:3;grid-row:1/3}
+  body.v2 .property-settings-form .savebar{display:none}
+  body.v2 .property-settings-form:has(details.prop-sec[open]) .savebar{display:flex;flex-wrap:wrap;gap:8px;left:12px;right:12px;bottom:calc(var(--tabbar-h) + var(--tabbar-safe) + 8px);z-index:10}
+  body.v2 .property-settings-form .savebar .btn{flex:1 1 30%;white-space:normal;text-align:center;justify-content:center}
+  body.v2 .property-settings-form .savebar .btn[type="submit"]{flex-basis:100%}
+  body.v2:has(.property-settings-form details.prop-sec[open]) .havel-fab{display:none}
+  body.v2 .ov-how[data-how="property"]{display:none}
+  body.v2 .guest-card .copy-btn{min-height:50px;height:auto;padding:0;gap:8px;white-space:normal;border-radius:12px;font-size:16px;font-weight:700}
+  /* 0741: copy link is the coral filled button, copy PIN the white outlined one; (0,6,1)+ beats the primary v2 .btn text rule (0,5,1) without !important */
+  body.v2 .guest-card .guest-btns > .copy-btn:not(.soft):not(.ghost){color:#fff;background:var(--acc);border:0}
+  body.v2 .guest-card .guest-pin-copy .copy-btn:not(.soft):not(.ghost){color:var(--ink);background:#fff;border:1.5px solid var(--ink)}
+  body.v2 .guest-card .copy-btn > svg{display:block;width:18px;height:18px;flex:0 0 18px}
+  body.v2 .guest-card .copy-btn .sr-only{position:static;width:auto;height:auto;margin:0;overflow:visible;clip:auto;white-space:nowrap}
+  body.v2 details.prop-sec{border:0;border-radius:0;box-shadow:none;background:transparent;padding:0;margin:0}
+  body.v2 #sec-archive > summary{border-bottom:0}
+  body.v2 .property-settings-form .savebar{flex-wrap:nowrap}
+  body.v2 .property-settings-form .savebar .btn{flex:1 1 0;min-width:0;width:auto}
+  body.v2 .property-settings-form .savebar .btn[type="submit"]{flex-basis:0}
+  body.v2 .property-settings-form .savebar:has([data-unsaved-reset]:not([hidden])) .btn.ghost:not([data-unsaved-reset]){display:none}
+}
+/* 0543: CI browser fixes on the property page and its dialogs */
+body.v2 aside.preview .pv a.r:hover,body.v2 aside.preview .pv a.r:focus-visible{background:#f6f6f4;border-radius:8px}
+body.v2 .scroll-x:has(.feed-table){overflow-x:auto}
+body.v2 .signature-block{border:1px solid var(--line);border-radius:12px;padding:12px}
+body.v2 .signature-dialog-pad{width:100%}
+body.v2 .signature-modes .ui-tab{border-bottom-color:transparent}
+body.v2 .signature-modes .ui-tab[aria-selected="true"]{border-bottom-color:var(--ink)}
+@media (max-width:599px){body.v2 .ui-dialog.signature-dialog{width:calc(100vw - 16px);max-width:none;padding:0}body.v2 .ui-dialog.signature-dialog .ui-sheet{padding:12px}}
+body.v2 .savebar [hidden]{display:none}
+@media (max-width:1023px){body.v2 details.prop-sec input:not([type=checkbox]):not([type=radio]),body.v2 details.prop-sec select,body.v2 details.prop-sec textarea{min-height:44px;box-sizing:border-box}body.v2 details.prop-sec a{min-height:44px;display:inline-flex;align-items:center}body.v2:has(.property-settings-form) main{padding-bottom:calc(var(--tabbar-h) + var(--tabbar-safe) + 88px)}body.v2 details.prop-sec:not([open]) > :not(summary){display:none}}
+/* 0736 item 6: the "other platform" name shows only when "other" is picked (host.css rule, which v2 does not load) */
+body.v2 .calendar-add-form:has(#label option[value="other"]:not(:checked)) .calendar-other-platform{display:none}
+/* 0736 item 3: the continue button reads white on coral-600 (5.5:1); toast close is at least 24 px on desktop (phone keeps 44 px) */
+body.v2 .setup-continue-card .ui-btn-primary{color:#fff;background:var(--coral-600);border-color:var(--coral-600)}
+@media (min-width:768px){body.v2 .toast-stack .toast > [data-toast-close]{min-width:24px;min-height:24px}}
+/* 0736 run 8 step 3: buttons and links in a field row share the copy button height (48 px); the copy button itself is unchanged */
+body.v2 .fields-wrap .copyrow > .btn.sm{min-height:48px}
+body.v2 .fields-wrap .copyrow > .btn.sm{vertical-align:middle}
+body.v2 section#stay-fee-settings > fieldset.signature-block{grid-column:1/-1}
+/* cleaning (0542) */
+body.v2 .cleaning-page{width:100%;max-width:1080px;min-width:0;margin:0 auto;color:var(--ink)}
+body.v2 .cleaning-skip{display:inline-flex;align-items:center;min-height:44px;margin-bottom:12px;font-size:1.0625rem}
+body.v2 .cleaning-skip:not(:focus){position:absolute;width:1px;height:1px;min-height:0;margin:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+body.v2 .cleaning-legend{display:flex;flex-wrap:wrap;gap:14px;margin:6px 0 10px;font-size:12px;color:var(--ink2)}
+body.v2 .cleaning-legend span::before{content:"";display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:3px}
+body.v2 .cleaning-legend-booking::before{background:var(--info);border:1px solid var(--info)}
+body.v2 .cleaning-legend-event::before{background:var(--warns);border:1px solid var(--warn);border-radius:3px}
+body.v2 .cleaning-list{margin-top:20px;min-width:0}
+body.v2 .cleaning-list h2{font-size:1.125rem;font-weight:650;margin:0 0 10px}
+body.v2 .cleaning-list:focus{outline:none}
+body.v2 .cleaning-list-error{color:var(--bad);background:var(--bads);padding:16px;border-radius:6px;font-size:1.0625rem;line-height:1.5}
+body.v2 .cleaning-notice{padding:16px;background:var(--oks);color:var(--ink);border-radius:6px}
+body.v2 .cleaning-empty{font-size:1.1875rem;background:var(--s);padding:24px;border:1px solid var(--line);border-radius:10px}
+body.v2 .cleaning-section{margin-bottom:28px}
+body.v2 .cleaning-head{flex-wrap:wrap;gap:12px}
+body.v2 .cleaning-head .sub{color:rgb(107,107,101)}
+body.v2 .cleaning-head .btn{min-height:44px}
+body.v2 .cleaning-list h2{font-weight:700}
+body.v2 .cleaning-page th{color:rgb(107,107,101)}
+body.v2 .cleaning-page td a{display:inline-flex;align-items:center}
+@media (max-width:1023px){body.v2 .cleaning-page td a{min-height:44px}body.v2 .cleaning-page .row-open{width:44px;height:44px}}
+@media (min-width:1024px){body.v2 .cleaning-page td a{min-height:24px}body.v2 .cleaning-page .row-open{width:24px;height:24px;border:0;color:var(--ink3)}body.v2 .cleaning-page .row-open::after{content:"›";font-size:18px;line-height:1}body.v2 .cleaning-page td.dots{width:40px;text-align:right}}
+body.v2 .cleaning-page td.dots{padding-left:0;padding-right:0}
+body.v2 .cleaning-page [data-cal-scale]{min-width:44px;min-height:44px}
+body.v2 .row-open{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;box-sizing:border-box;border:1px solid var(--ink3);border-radius:999px;color:var(--ink);background:var(--s);vertical-align:middle;flex:0 0 auto}
+body.v2 .row-open-text{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+body.v2 .visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+
+/* 0544 geometry: calendar tap targets and text floor (cleaning page only) */
+@media (min-width: 768px) and (max-width: 1023px){body.v2 .cleaning-page #calendar button,body.v2 .cleaning-page #calendar select,body.v2 .cleaning-page #calendar a{min-width:44px;min-height:44px}}
+@media (min-width: 1024px){body.v2 .cleaning-page #calendar button,body.v2 .cleaning-page #calendar select,body.v2 .cleaning-page #calendar a{min-width:24px;min-height:24px}}
+body.v2 .cleaning-page #calendar *{font-size:max(12px,1em)}
+body.v2 .cleaning-page #calendar-title{font-size:16px;font-weight:700}
+
+/* 0546 phone layout: /cleaning is the phone mockup's Uklid screen below 1024 px */
+body.v2 .cleaning-phone{display:none}
+@media (max-width:1023px){body.v2 .cleaning-phone{display:block}body.v2 .cleaning-desk,body.v2 .cleaning-head{display:none}body.v2 .cleaning-desk-only{display:none}}
+body.v2 .list.plain .row .t b,body.v2 .list.plain .row .t small{display:block}
+body.v2 .list.plain .row .t small{color:var(--ink3);font-size:14px;font-weight:400;margin-top:2px}
+body.v2 .list.plain .row .pill{margin-top:0}
+@media (max-width:767px){body.v2 .cleaning-page .cleaning-legend,body.v2 .cleaning-page #calendar{display:none}}
+@media (max-width:1023px){body.v2 .cleaning-more>summary{display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;box-sizing:border-box;margin-top:8px;list-style:none;cursor:pointer}body.v2 .cleaning-more>summary::-webkit-details-marker{display:none}}
+@media (max-width:1023px){body.v2 .cleaning-more:not([open])>:not(summary){display:none}}
+@media (max-width:1023px){body.v2 .cleaning-phone h1.hl{font-size:30px;line-height:1.15;font-weight:800;letter-spacing:-.02em;text-align:center;margin:0 8px 28px}body.v2 .cleaning-phone h2.sec{font-size:13px;font-weight:700;margin:26px 0 12px}}
+@media (max-width:1023px){body.v2 .cleaning-more>summary.btn{margin-top:0;padding:0;min-height:50px}}
+@media (max-width:1023px){body.v2 .cleaning-phone .list.plain .row .t b{font-size:17px}}
+
+/* 0780 settings page (v2) */
+body.v2 .settings-lane{max-width:720px}
+body.v2 .settings-head{max-width:720px}
+body.v2 .settings-lane h2.settings-group-title{font-size:16px;font-weight:700;text-transform:none;letter-spacing:0;color:var(--ink);justify-content:flex-start;margin:24px 0 12px}
+body.v2 .settings-lane .settings-group:first-child h2.settings-group-title{margin-top:0}
+body.v2 .settings-card{padding:0;margin:0}
+body.v2 .settings-card .ui-section{padding:16px;border-top:1px solid var(--line)}
+body.v2 .settings-card > .ui-section:first-child{border-top:0}
+body.v2 .settings-card .ui-section h2,body.v2 .settings-card .ui-section h3{font-size:16px;font-weight:700;margin:0 0 8px;background:none;border:0;padding:0;color:var(--ink)}
+body.v2 .set-row{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:48px;padding:12px 0;color:var(--ink);text-decoration:none;box-sizing:border-box}
+body.v2 .set-row-v{color:var(--ink3);text-align:right}
+body.v2 .settings-action-row{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:48px;padding:12px 0;box-sizing:border-box}
+body.v2 .settings-action-row > div{min-width:0}
+body.v2 .settings-action-row strong{display:block;color:var(--ink);font-size:15px}
+body.v2 .settings-action-row small{display:block;color:var(--ink3);font-size:14px;line-height:1.4;margin-top:2px}
+body.v2 .settings-action-row > .btn,body.v2 .settings-action-row > .pill{flex:0 0 auto}
+body.v2 .settings-move-form{max-width:420px;padding-bottom:16px}
+body.v2 .settings-lane .ui-btn{min-height:44px}
+body.v2 .settings-card .ui-btn,body.v2 .settings-card button{white-space:normal;max-width:100%}
+body.v2 .settings-row-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:nowrap;flex:0 0 auto;gap:8px}
+body.v2 .settings-row-actions .ui-btn{white-space:nowrap}
+body.v2 .settings-action-row > div:first-child{flex:1 1 auto}
+body.v2 .settings-row-actions[hidden]{display:none}
+body.v2 .settings-lane a{display:inline-flex;align-items:center;min-height:24px}
+body.v2 .settings-lane .help-tip-btn{min-width:24px;min-height:24px}
+body.v2 .settings-lane form > .ui-btn + .ui-sub{display:block;margin-top:10px}
+body.v2 .settings-action-row > div{display:flex;flex-wrap:wrap;align-items:center;gap:0 8px}
+body.v2 .settings-action-row > div > strong{width:auto}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) h2 > .help-tip,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) h3 > .help-tip{margin-left:8px;vertical-align:middle}
+body.v2 .settings-heading{display:flex;align-items:last baseline;flex-wrap:nowrap;gap:8px}
+body.v2 .settings-heading h3{min-width:0}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) div:has(> label.checkline + .help-tip){display:flex;align-items:last baseline;flex-wrap:nowrap;gap:8px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) div:has(> label.checkline + .help-tip) > label.checkline{min-width:0}
+body.v2 .field-label-row{display:flex;align-items:last baseline;flex-wrap:nowrap;gap:8px}
+body.v2 .field-label-row > label{min-width:0}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-heading .help-tip,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .field-label-row .help-tip{display:inline-flex;vertical-align:middle}
+/* 0787e: the heading text flows inline and the help ? follows its last word 8 px later; the reserved 32 px keeps the ? on the last line */
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-heading{display:block;}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) div:has(> strong + .help-tip){}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-heading h3{display:inline}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-heading .help-tip{display:inline;margin-left:8px;vertical-align:middle}
+/* 0787e: the ? is joined to the word before it (word joiner), so a wrap never leaves the ? alone at a line start */
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) :is(h1,h2,h3) > .help-tip,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-action-row > div:has(> strong + .help-tip) > .help-tip,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-heading .help-tip{display:inline;margin-left:8px;vertical-align:middle}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) :is(h1,h2,h3) > .help-tip::before,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-action-row > div:has(> strong + .help-tip) > .help-tip::before,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-heading .help-tip::before{content:"\2060"}
+/* 0787d: a heading or label with its ? keeps the ? on its last line; Account card row keeps label + ? as one group */
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) :is(h1,h2,h3):has(> .help-tip){display:block;}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) :is(h1,h2,h3) > .help-tip{display:inline;margin-left:8px;vertical-align:middle}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-action-row > div:has(> strong + .help-tip){display:block;min-width:0;}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-action-row > div:has(> strong + .help-tip) > strong{display:inline;min-width:0}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-action-row > div:has(> strong + .help-tip) > strong::after{content:"\2060"}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-action-row > div:has(> strong + .help-tip) > .help-tip{display:inline;margin-left:8px;vertical-align:middle}
+body.v2 .settings-lane input[type=checkbox]{min-width:24px;min-height:24px;margin:0;accent-color:var(--acc)}
+@media (min-width:1024px){body.v2 .settings-lane .ui-btn{min-height:40px}}
+body.v2 details.technical.ui-section{border:0;background:none;box-shadow:none;border-radius:0;padding:0;margin:0;border-top:1px solid var(--line)}
+body.v2 details.technical > summary{min-height:48px;justify-content:space-between;gap:12px;list-style:none}
+body.v2 details.technical > summary,body.v2 details.technical > :not(summary):not(.ui-section){padding-left:16px;padding-right:16px}
+@media (max-width:1023px){
+  body.v2 details.technical table.ui-table-stack thead{display:none}
+  body.v2 details.technical table.ui-table-stack,body.v2 details.technical table.ui-table-stack tbody{display:block;width:100%}
+  body.v2 details.technical table.ui-table-stack tr{display:grid;gap:4px;padding:12px 0;border-bottom:1px solid var(--line)}
+  body.v2 details.technical table.ui-table-stack td{display:flex;justify-content:space-between;gap:12px;border:0;padding:2px 0;text-align:right;min-width:0;overflow-wrap:anywhere}
+  body.v2 details.technical table.ui-table-stack td::before{content:attr(data-label);color:var(--ink3);text-align:left;flex:none}
+}
+body.v2 details.technical > summary::-webkit-details-marker{display:none}
+body.v2 details.technical > summary::after{content:"";flex:none;width:8px;height:8px;margin-right:6px;border-right:2px solid var(--ink3);border-bottom:2px solid var(--ink3);transform:rotate(45deg);transition:transform .15s}
+body.v2 details.technical[open] > summary::after{transform:rotate(-135deg)}
+body.v2 .host-audit-filters{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+body.v2 .host-audit-filter{display:inline-flex;align-items:center;min-height:40px;padding:0 18px;border-radius:999px;border:1px dashed #cfcfca;background:var(--s);color:var(--ink2);font-size:14px;font-weight:700;text-decoration:none}
+body.v2 .host-audit-filter.is-active{border-style:solid;background:var(--ink);border-color:var(--ink);color:#fff}
+/* 0781 entities */
+body.v2 .entity-form,body.v2 .entity-add{padding:22px;margin:0 0 20px}
+body.v2 .entity-form>.ui-section-h h2,body.v2 .entity-add>h2{font-size:18px;font-weight:700;margin:0 0 12px}
+body.v2 .entity-linked{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline;font-size:14px;margin:0 0 8px}
+body.v2 .entity-linked-label{font-weight:600;color:var(--ink2)}
+body.v2 .entity-linked-list{display:flex;flex-wrap:wrap;gap:6px 10px;margin:0;padding:0;list-style:none}
+body.v2 .entity-linked-list a{color:var(--ink);text-decoration:underline}
+body.v2 .entity-section{border-top:1px solid var(--line);margin-top:20px;padding-top:18px}
+body.v2 .entity-section-head{display:flex;align-items:center;gap:8px}
+body.v2 .entity-section-title{font-size:16px;font-weight:700;margin:0 0 12px}
+body.v2 .entities-page,body.v2 .card:has(>table.ui-table){overflow-x:auto}
+body.v2 .entities-page>table.ui-table th:first-child,body.v2 .entities-page>table.ui-table td:first-child{padding-left:20px}
+
+body.v2 .entities-page{margin:0 0 16px;container:entities-list / inline-size}
+/* 0785: the Business list switches to labelled cards by its own panel width
+   (under 950 px, as the Properties and Business lists did on main), so a
+   1024 px lane with the rail open never overflows sideways. */
+@container entities-list (max-width:949.98px){
+  body.v2 .entities-page>table.ui-table,body.v2 .entities-page>table.ui-table tbody{display:block;width:100%;min-width:0}
+  body.v2 .entities-page>table.ui-table thead{display:none}
+  body.v2 .entities-page>table.ui-table tbody{display:grid;gap:12px}
+  body.v2 .entities-page>table.ui-table tr{display:block;padding:12px 16px;border:1px solid var(--line-strong);border-radius:12px}
+  body.v2 .entities-page>table.ui-table td{display:flex;justify-content:space-between;align-items:center;gap:12px;border:0;padding:4px 0;text-align:right}
+  body.v2 .entities-page>table.ui-table td::before{content:attr(data-label);color:var(--ink3);font-size:13px;text-align:left}
+  body.v2 .entities-page>table.ui-table td[data-label=""]::before{content:none}
+  body.v2 .entities-page>table.ui-table td.row-actions{justify-content:flex-start;flex-wrap:wrap;gap:8px}
+  body.v2 .entities-page>table.ui-table td.row-actions{flex-wrap:nowrap}
+}
+body.v2 .entities-page td.row-actions .row-menu{display:inline-flex;vertical-align:middle}
+body.v2 .entities-page td.row-actions>.ui-btn{vertical-align:middle}
+body.v2 .entities-page td.row-actions .ui-btn,body.v2 .entities-page td.row-actions .row-menu-trigger{height:36px;min-height:36px;box-sizing:border-box}
+body.v2 .entities-page td.row-actions .row-menu-trigger{width:36px;min-width:36px;padding:0;border-radius:50%}
+@media (max-width:1023px){body.v2 .entities-page td.row-actions .ui-btn,body.v2 .entities-page td.row-actions .row-menu-trigger{height:44px;min-height:44px}body.v2 .entities-page td.row-actions .row-menu-trigger{width:44px;min-width:44px}}
+body.v2 .entity-form .field,body.v2 .entity-add .field{max-width:480px}
+body.v2 .entity-form .operator-phone,body.v2 .entity-add .operator-phone{display:flex;align-items:stretch;gap:8px}
+body.v2 .entity-form .operator-phone-number,body.v2 .entity-add .operator-phone-number{flex:1 1 auto;min-width:0}
+body.v2 .entity-form .operator-phone>*,body.v2 .entity-add .operator-phone>*{margin:0;align-self:stretch;box-sizing:border-box}
+@media (max-width:1023.98px){body.v2 .ui-section-h>.ui-btn-compact,.ui-section-h>.ui-btn-compact{min-height:44px!important;height:auto!important;min-width:44px!important;display:inline-flex;align-items:center;justify-content:center}}
+body.v2 .entity-form input:not([type=checkbox]):not([type=radio]){min-height:44px}
+body.v2 .entity-form .action-group,body.v2 .entity-add .action-group{display:flex;flex-direction:column;align-items:stretch;gap:8px}
+body.v2 .entity-form .action-group input,body.v2 .entity-add .action-group input{min-width:0}
+@media (min-width:1024px){body.v2 .entity-form .action-group,body.v2 .entity-add .action-group{flex-direction:row;align-items:flex-end}body.v2 .entity-form .action-group input,body.v2 .entity-add .action-group input{flex:1 1 auto}}
+@media (max-width:1023px){body.v2 .entities-page .ui-table-stack td.row-actions{justify-content:flex-start;flex-wrap:wrap;gap:8px;text-align:left}}
+/* 0787d: entities h1 keeps its ? on the last line; invoice account inputs are full width; the phone prefix is one 44 px box */
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .head h1.big:has(> .help-tip){display:block;min-width:0}
+@media (max-width:1023.98px){body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .head h1.big:has(> .help-tip){padding-right:32px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) :is(h1,h2,h3,label,strong):has(> .help-tip),body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-heading,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-action-row > div:has(> strong + .help-tip),body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) div:has(> strong + .help-tip){padding-right:64px}}
+body.v2 .entity-form .account-parts input,body.v2 .entity-add .account-parts input{width:100%;min-width:0;max-width:none;box-sizing:border-box}
+body.v2 .entity-form .operator-phone-prefix,body.v2 .entity-add .operator-phone-prefix{display:inline-flex;align-items:center;flex:0 0 80px;width:80px;height:44px;min-height:44px;border:0;box-shadow:inset 0 0 0 1px var(--line);border-radius:8px;background:#fff;padding:0 10px;gap:2px;box-sizing:border-box}
+body.v2 .entity-form .operator-phone-prefix input.operator-phone-code[type=text],body.v2 .entity-add .operator-phone-prefix input.operator-phone-code[type=text]{flex:1 1 auto;width:100%;min-width:0;max-width:none;min-height:44px;height:100%;padding:0;margin:0;border:0;border-radius:0;background:transparent;color:inherit;font:inherit;text-align:center;box-shadow:none;outline:none}
+/* 0787e: the prefix shows the v2 focus ring; the code input gets its own ring too */
+body.v2 .entity-form .operator-phone-prefix:focus-within,body.v2 .entity-add .operator-phone-prefix:focus-within{outline:2px solid #d0452d;outline-offset:2px}
+body.v2 .entity-form .operator-phone-prefix input.operator-phone-code[type=text]:focus-visible,body.v2 .entity-add .operator-phone-prefix input.operator-phone-code[type=text]:focus-visible{outline:2px solid #d0452d;outline-offset:-2px}
+/* 0781 privacy requests */
+body.v2 .pr-lane{max-width:720px}
+body.v2 .pr-lane>.card{margin:0 0 16px}
+body.v2 .pr-lane>.card>summary{padding:20px 22px;font-weight:700;font-size:16px;cursor:pointer}
+body.v2 .pr-lane>.card>h2{padding:20px 22px 0;font-size:17px;margin:0 0 4px}
+body.v2 .pr-lane>.card>p{padding:0 22px;margin:0 0 12px}
+body.v2 .pr-lane>.card>form{padding:0 22px 22px}
+body.v2 .pr-lane .checkline{display:flex;gap:8px;align-items:center;font-size:14px}
+body.v2 .pr-lane .ui-form-actions{justify-content:flex-end}
+
+/* 0781 archive */
+body.v2 .heading-with-tip{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:24px 0 10px}
+body.v2 .heading-with-tip h2{font-size:18px;margin:0}
+body.v2 a.chip{text-decoration:none;display:inline-flex;align-items:center}
+body.v2 .card.scroll-x{overflow-x:auto}
+/* v2 ports of shared ui-* classes */
+body.v2 .ui-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+body.v2 .ui-prewrap{white-space:pre-wrap}
+body.v2 .ui-badge-done{color:var(--ok)}
+body.v2 .ui-badge-neutral{color:var(--ink3)}
+body.v2 .ui-banner{padding:12px 16px;border-radius:10px;border:1px solid var(--line);background:var(--s);color:var(--ink);font-size:15px;line-height:1.5}
+body.v2 .ui-banner-attention{background:var(--warns);border-color:var(--warn)}
+body.v2 .ui-field{display:flex;flex-direction:column;gap:6px;margin:0 0 12px;min-width:0}
+body.v2 .ui-field > label{font-size:14px;font-weight:600;color:var(--ink)}
+body.v2 .ui-field > input:not([type=checkbox]):not([type=radio]),body.v2 .ui-field > select,body.v2 .ui-field > textarea{width:100%;max-width:420px;min-height:40px;padding:0 12px;box-sizing:border-box;font:inherit;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:8px}
+body.v2 .checkline{display:flex;gap:10px;align-items:flex-start;font-size:15px}
+body.v2 .checkline input{width:auto;margin-top:3px;accent-color:var(--acc)}
+body.v2 .checkline label{font-weight:500;margin:0}
+body.v2 .kv{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:15px}
+body.v2 .kv dt{color:var(--ink3)}
+body.v2 .kv dd{margin:0;color:var(--ink)}
+body.v2 details.technical > summary{font-weight:650;cursor:pointer;min-height:44px;display:flex;align-items:center}
+body.v2 .ui-table{width:100%;border-collapse:collapse;font-size:15px}
+body.v2 .ui-table th{color:var(--ink3);font-weight:600;text-align:left;padding:8px}
+body.v2 .ui-table td{padding:10px 8px;border-top:1px solid var(--line);vertical-align:top}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .crumb{display:inline-block;font-size:14px;color:var(--ink3);margin-bottom:6px;text-decoration:none}
+body.v2 .ui-sub{color:var(--ink3);font-size:14px;margin:0 0 12px}
+body.v2 .ui-section-h{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+body.v2 .ui-pair{display:grid;grid-template-columns:minmax(0,1fr);gap:14px 16px}
+@media (min-width:1024px){body.v2 .ui-pair{grid-template-columns:repeat(2,minmax(0,1fr))}}
+body.v2 .ui-field{display:flex;flex-direction:column;gap:6px;min-width:0}
+body.v2 .ui-field>label{font-size:13px;font-weight:600;color:var(--ink2)}
+body.v2 .ui-field input:not([type=checkbox]):not([type=radio]):not([type=hidden]),body.v2 .ui-field select,body.v2 .ui-field textarea{width:100%;max-width:none;box-sizing:border-box;height:40px;padding:0 12px;border:1px solid #d9d9d4;border-radius:10px;background:#fff;font:inherit;color:var(--ink)}
+@media (max-width:1023px){body.v2 .ui-field input:not([type=checkbox]):not([type=radio]):not([type=hidden]),body.v2 .ui-field select{height:44px}}
+body.v2 .ui-form-actions,body.v2 .actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;margin-top:16px}
+body.v2 .ui-empty{color:var(--ink3);padding:20px;text-align:center}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .ui-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;background:#f6f6f4;color:var(--ink2)}
+body.v2 .ui-btn-open{background:#efefeb;color:var(--ink)}
+body.v2 .row-actions{white-space:nowrap;text-align:right}
+body.v2 .row-primary-link{color:var(--ink);font-weight:600;text-decoration:none;display:inline-flex;align-items:center;min-height:24px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip{display:inline-flex;align-items:center}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-btn{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:24px;height:24px;min-width:24px;min-height:24px;padding:0;margin:0;border:1px solid var(--line);border-radius:50%;background:#fff;color:var(--ink3);font-family:inherit;font-size:12px;font-weight:600;line-height:1;cursor:help;position:relative}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-btn:hover,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-btn[aria-expanded=true]{background:var(--brand-soft);border-color:var(--brand);color:var(--brand-ink)}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-btn:focus-visible{outline:3px solid var(--brand-ring,var(--brand));outline-offset:2px}
+@media (max-width:1023px){body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-btn::after{content:"";position:absolute;inset:-10px}}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-body{display:none;position:absolute;z-index:70;left:0;top:100%;box-sizing:border-box;width:min(320px,calc(100vw - 16px));max-width:calc(100vw - 16px);padding:10px 12px;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-popover);font-size:13px;font-weight:400;line-height:1.45;text-align:left;white-space:normal;overflow-wrap:anywhere}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-body a{color:var(--brand-ink);font-weight:650}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip:not([data-js]):hover>.help-tip-body,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip:not([data-js]):focus-within>.help-tip-body,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip.is-open>.help-tip-body{display:block}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip[data-js]>.help-tip-body{position:fixed}
+/* 0543: inside details the hint is plain text, no ? button */
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) details .help-tip-btn{display:none}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) details .help-tip{display:block}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) details .help-tip-body,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) details .help-tip[data-js]>.help-tip-body{width:auto;position:static;display:block;max-width:none;margin:2px 0 0;padding:0;background:none;border:0;box-shadow:none;font-size:12px;color:var(--ink3)}
+body.v2 tr.clickable-row{cursor:pointer}
+body.v2 .ui-table{width:100%;border-collapse:collapse;font-size:14px}
+body.v2 .ui-table th{text-align:left;font-size:12px;color:var(--ink3);font-weight:600;padding:10px 12px;border-bottom:1px solid var(--line)}
+body.v2 .ui-table td{padding:12px;border-bottom:1px solid var(--line);vertical-align:middle}
+body.v2 .ui-table .num,body.v2 .ui-table .ui-num{text-align:right}
+@media (max-width:1023px){
+  body.v2 .ui-table-stack thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  body.v2 .ui-table-stack tr{display:block;padding:12px 16px;border-bottom:1px solid var(--line)}
+  body.v2 .ui-table-stack td{display:flex;justify-content:space-between;align-items:center;gap:12px;border:0;padding:4px 0;text-align:right}
+  body.v2 .ui-table-stack td::before{content:attr(data-label);color:var(--ink3);font-size:13px;text-align:left}
+  body.v2 .ui-table-stack td[data-label=""]::before{content:none}
+  body.v2 .ui-table-stack td.row-actions{justify-content:flex-end;flex-wrap:wrap}
+}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .tip-nowrap{white-space:nowrap}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .tip-nowrap>.help-tip{display:inline-flex;vertical-align:middle;margin-left:8px}
+
+/* 0788: no settings-area control touches its neighbour; 12 px between controls, 12 px under a label row (Josef, 2026-11-02) */
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .field-label-row{margin-bottom:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .entities-page td.row-actions{display:flex;align-items:center;gap:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .entities-page>table.ui-table td.row-actions{gap:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .action-group{gap:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .entity-register-lookup{margin-top:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .onboarding-banner-setup{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .ui-section .ui-btn + .help-tip{margin-inline-start:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .ui-section:has(.help-tip) > .ui-btn{margin-top:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) form:has(> .ui-btn + .help-tip){display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .archive-type-filters{gap:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .ui-form-actions{gap:12px}
+
+/* 0789a settings index and group sub-pages (Airbnb pattern, every width) */
+body.v2 .airbnb-header{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin:16px 0 24px}
+body.v2 .airbnb-back{width:40px;height:40px;border-radius:50%;background:#f2f2f2;color:var(--ink);display:inline-flex;align-items:center;justify-content:center;text-decoration:none;flex:0 0 40px}
+body.v2 .airbnb-title{width:100%;margin:0;font-size:32px;font-weight:700;color:var(--ink)}
+body.v2 .airbnb-index{display:block}
+body.v2 .settings-lane .airbnb-index-row{display:flex;align-items:center;gap:16px;min-height:64px;color:var(--ink);text-decoration:none;font-size:17px}
+body.v2 .airbnb-index-row .airbnb-label{flex:1 1 auto}
+/* 0789a2: a sub-page's back-header h1 is its only title; the group h2 that repeats it is hidden (section h2s stay) */
+body.v2 .settings-lane h2.settings-group-title{display:none}
+body.v2 .airbnb-divider{height:1px;background:#e5e5e5;margin:12px 0}
+
+/* 0789b: shared settings partials (toggle row, value card, pills) */
+body.v2 .settings-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:12px 0;border-bottom:1px solid #e5e5e5}
+body.v2 .settings-toggle-label{display:inline-flex;align-items:center;gap:8px;font-size:17px;color:var(--ink)}
+body.v2 .settings-toggle-control{flex:0 0 auto;display:inline-flex;align-items:center}
+body.v2 .settings-value-card{display:flex;flex-direction:column;gap:4px;border:1px solid #e5e5e5;border-radius:12px;padding:20px;margin:0 0 12px;background:#fff}
+body.v2 .settings-value-label{font-size:14px;color:#6a6a6a}
+body.v2 .settings-value{font-size:24px;font-weight:700;color:var(--ink)}
+body.v2 .settings-value-link{display:inline-flex;align-items:center;gap:4px;color:var(--ink);text-decoration:none;font-size:15px}
+body.v2 .settings-pills{display:flex;flex-wrap:nowrap;gap:12px;overflow-x:auto;margin:0 0 24px;padding-bottom:4px}
+body.v2 .settings-pill{flex:0 0 auto;display:inline-flex;align-items:center;min-height:44px;padding:0 20px;border-radius:999px;background:#f2f2f2;color:var(--ink);text-decoration:none;font-size:15px;font-weight:600;white-space:nowrap}
+body.v2 .settings-pill.is-current{background:var(--ink);color:#fff}
+/* 0789b: a checkbox with data-toggle-submit is a 51x31 switch (ink when on) */
+body.v2 .settings-toggle-form{margin:0}
+body.v2 input[type=checkbox][data-toggle-submit]{appearance:none;-webkit-appearance:none;position:relative;flex:0 0 auto;width:51px;height:31px;margin:0;border-radius:31px;background:#e0e0e0;cursor:pointer;transition:background .15s}
+body.v2 input[type=checkbox][data-toggle-submit]::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s}
+body.v2 input[type=checkbox][data-toggle-submit]:checked{background:var(--ink)}
+body.v2 input[type=checkbox][data-toggle-submit]:checked::after{transform:translateX(20px)}
+body.v2 input[type=checkbox][data-toggle-submit]:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+/* 0789c: 12 px between the Entities setup banner and the help "?" and between archive filter chips */
+body.v2 .settings-help-line + .onboarding-banner-setup{margin-block-start:12px}
+body.v2 .archive-type-filters{gap:12px !important}
+body.v2 .ui-empty .ui-form-actions{gap:12px}
+body.v2 .settings-help-line .help-tip-btn{width:24px;height:24px;min-width:24px;min-height:24px}
+@media (max-width:1023px){body.v2 .settings-help-line .help-tip-btn{position:relative}body.v2 .settings-help-line .help-tip-btn::after{content:"";position:absolute;inset:-10px}}
+@media (max-width:1023px){body.v2 .property-settings-form .help-tip-btn{position:relative}body.v2 .property-settings-form .help-tip-btn::after{content:"";position:absolute;inset:-10px}}
+/* 0789c step 5: sub-page link rows (go somewhere) are bordered cards with a chevron */
+body.v2 .settings-lane .set-row,body.v2 .settings-lane .document-links a{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:0;margin:0 0 12px;padding:20px;border:1px solid var(--line);border-radius:12px;color:var(--ink);text-decoration:none;box-sizing:border-box}
+body.v2 .settings-lane .document-links{border-top:0;margin-top:0}
+body.v2 .settings-lane .set-row::after,body.v2 .settings-lane .document-links a::after{content:"\203A";flex:0 0 auto;color:var(--ink3);font-size:20px;line-height:1}

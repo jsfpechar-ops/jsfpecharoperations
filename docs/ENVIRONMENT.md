@@ -47,6 +47,8 @@ Optional host subdomain: [deployment, exact values and rollback](APP_SUBDOMAIN.m
 
 | Variable | Default | Notes |
 | --- | --- | --- |
+| `UBYHOST_JOB_QUEUE_KINDS` | empty | PostgreSQL only. Comma list of scheduler job ids that go through the job table instead of running directly; unknown ids stop the worker. |
+| `UBYHOST_GO_JOB_KINDS` | empty | PostgreSQL only. Kinds the Go service runs instead of Python; each must also be in `UBYHOST_JOB_QUEUE_KINDS`. Today `billing_snapshot`, `stripe_sweep`, `submit` and `ical`. |
 | `UBYHOST_ENABLE_SCHEDULER` | `1` | `0` stops **all** background work: calendar polling, automatic submission, the deadline watch, the guest e-mail outbox, claim-hold expiry and the passport-photo sweep. |
 | `UBYHOST_ROLE` | `web` | What the process runs (WP06). `web`: HTTP only, never starts the scheduler (the Docker image, two uvicorn workers). `worker`: only the background jobs, started with `python -m app.worker` (the Lightsail `worker` container). `all`: both in one process (`run.sh` and `render_start.sh` default to it). Only one scheduler can run per data directory: it holds `DATA_DIR/scheduler.lock`. |
 | `UBYHOST_WEB_WORKERS` | `2` | uvicorn workers in the Docker image's web process (WP32). `4` on the 8 GB / 2 vCPU production server. `docker-entrypoint.sh` and `preflight.sh` refuse anything but 1 to 16. |
@@ -177,6 +179,8 @@ On **Render `ubyhost-staging`**, keep `UBYHOST_UBYPORT_ENV=mock`, set
 | `UBYHOST_STRIPE_SECRET_KEY` | unset | Secret key (`sk_test_...` or `sk_live_...`) matching `UBYHOST_STRIPE_MODE`. Set in Lightsail `.env` or Render Environment only, never in git. Unset means the feature is off even if `UBYHOST_STRIPE_MODE` is set. |
 | `UBYHOST_STRIPE_WEBHOOK_SECRET` | unset | Signing secret (`whsec_...`) for the platform webhook endpoint. Unset means webhooks are logged-and-ignored in tests; in `test`/`live` mode an unset value fails verification loudly. |
 | `UBYHOST_STRIPE_MONTHLY_API_CALLS` | `50000` | Shared monthly cap on Stripe API calls (all hosts), same guard pattern as `UBYHOST_TTLOCK_MONTHLY_CALLS`. `0` removes the cap. |
+| `UBYHOST_GO_PATHS` | unset | Space-separated paths Caddy sends to the Go service (`ubyhost-go`). Unset keeps all traffic on Python (compose sets `/__go_off__`). Never set it to an empty value: Caddy will not start. Put the value in double quotes (`deploy.sh` sources `.env`): `UBYHOST_GO_PATHS="/api/command-palette /dashboard/calendar /payments/qr/*.png"`; `*.png` keeps the QR preview page `/payments/qr/<id>` on Python. Add `/webhooks/stripe` only after the owner has checked the Go webhook. |
+| `UBYHOST_STRIPE_WEBHOOK_SECRET` (Go service too) | unset | `ubyhost-go` reads the same two Stripe variables as the app (`UBYHOST_STRIPE_MODE`, `UBYHOST_STRIPE_WEBHOOK_SECRET`); set the same values for both services. |
 
 ## Guest guide imports (Apify)
 
@@ -224,7 +228,6 @@ production. **`UBYHOST_STAGING_NO_LOGIN=1`** on staging skips login entirely: ev
 | `UBYHOST_BILLING_BANK_ACCOUNT` | unset | ČSOB account in Czech form (`123456789/0300`), printed on every invoice. |
 | `UBYHOST_BILLING_IBAN` | unset | The same account as IBAN; the QR Platba on the invoice uses it. No invoice is issued without it. |
 | `UBYHOST_BILLING_VAT_STATUS` | `non_payer` | `non_payer` prints "Nejsem plátce DPH"; switch to `payer` only after VAT registration. |
-| `UBYHOST_FOUNDER_SLOTS` | `100` | How many yearly orders get the founder price. |
 
 Payments are matched from a ČSOB statement (GPC or CSV) uploaded on `/admin/fakturace`; there is no bank API and no outbound request. The daily `billing` job (06:00) issues invoices, sends reminders 1 and 7 days after the due date and makes an account read-only after 14. UbyPort filing never waits for a payment.
 
@@ -285,6 +288,11 @@ Plans: [havel-support-assistant](plans/havel-support-assistant.md). Everything i
 | `UBYHOST_AI_KEY_DAILY_USD_<FEATURE>` | `0` (off) | Per-key daily cap, e.g. `UBYHOST_AI_KEY_DAILY_USD_LEON=0.50` caps one property's guest bot at 50 cents a day. Havel passes no key. |
 | `UBYHOST_AI_PRICE_INPUT`, `UBYHOST_AI_PRICE_OUTPUT`, `UBYHOST_AI_PRICE_CACHE_READ`, `UBYHOST_AI_PRICE_CACHE_WRITE` | `0.10`, `0.50`, `0.01`, `0.125` | USD per million tokens, Anthropic table 2026-10-06. Update when the price changes. |
 | `UBYHOST_HAVEL_WEEKLY`, `UBYHOST_HAVEL_MONTHLY` | `8`, `15` | Havel messages per host per calendar week and month. |
+
+## Database (PostgreSQL, optional)
+
+`UBYHOST_DATABASE_URL` unset means SQLite (the default). Set it to use PostgreSQL; never set it together with `UBYHOST_DB`. A TCP URL must carry `sslmode=verify-full` (or `require`); a Unix-socket URL (`host=/absolute/dir`) needs no sslmode. The schema is applied only by `App/scripts/pg_schema.py apply`, never at startup.
+The `postgres` Compose service has no password and no network; it is reached over the `ubyhost-pgsock` socket volume only.
 
 ## Development and test only
 

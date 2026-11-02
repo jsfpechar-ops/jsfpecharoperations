@@ -487,6 +487,7 @@ def test_without_the_opt_out_box_the_setup_tips_are_allowed():
     assert not lifecycle_mail.is_opted_out(_account(email)["id"])
 
 
+@pytest.mark.sqlite_only
 def test_the_opt_out_columns_are_added_if_missing():
     names = {row["name"] for row in db.query("PRAGMA table_info(user_account)")}
     assert {"onboarding_emails_opt_out", "onboarding_emails_opt_out_at"} <= names
@@ -545,7 +546,7 @@ def test_the_host_withdraws_in_settings_privacy():
     user_id = _account(email)["id"]
     # Production would ask for 2FA first; this checks the page, not the guard.
     db.execute("UPDATE user_account SET totp_enabled = 1 WHERE id = ?", (user_id,))
-    page = client.get("/settings?lang=en")
+    page = client.get("/settings/data?lang=en")
     if page.status_code != 200:
         pytest.skip(f"settings page needs more onboarding here ({page.status_code})")
     assert 'id="settings-privacy"' in page.text
@@ -562,7 +563,7 @@ def test_the_host_withdraws_in_settings_privacy():
     )["detail"] == "google; uploaded=no"
     # Excluded from every later export, even "download again".
     assert all(r["id"] != row["id"] for r in signup.export_rows(again=True))
-    again = client.get("/settings?lang=en").text
+    again = client.get("/settings/data?lang=en").text
     assert "The click identifier has been deleted." in again
 
 

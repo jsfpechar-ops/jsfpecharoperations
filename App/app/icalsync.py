@@ -151,8 +151,13 @@ def _feed_value(feed, key: str) -> Any:
         return None
 
 
+_DTSTAMP_LINE = re.compile(r"^DTSTAMP[;:].*\n?", re.IGNORECASE | re.MULTILINE)
+
+
 def body_digest(ics_text: str) -> str:
-    return hashlib.sha256(ics_text.encode("utf-8", errors="replace")).hexdigest()
+    """Hash the feed without line-ending or DTSTAMP noise: Booking.com and Airbnb stamp DTSTAMP at request time."""
+    normalised = _DTSTAMP_LINE.sub("", ics_text.replace("\r\n", "\n"))
+    return hashlib.sha256(normalised.encode("utf-8", errors="replace")).hexdigest()
 
 
 def _trusted_for_skip(feed) -> bool:

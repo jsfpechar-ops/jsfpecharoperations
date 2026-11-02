@@ -1,0 +1,30 @@
+[
+  {
+    "date_from": "2026-10-05",
+    "date_to": "2026-10-05",
+    "description": "",
+    "guest_email": null,
+    "is_block": false,
+    "is_cancelled": false,
+    "name_hint": "",
+    "phone_last4": null,
+    "recurring": false,
+    "reservation_url": null,
+    "summary": "Reserved",
+    "uid": "dur-2@example.test"
+  },
+  {
+    "date_from": "2026-10-07",
+    "date_to": "2026-10-08",
+    "description": "",
+    "guest_email": null,
+    "is_block": false,
+    "is_cancelled": false,
+    "name_hint": "",
+    "phone_last4": null,
+    "recurring": false,
+    "reservation_url": null,
+    "summary": "Reserved",
+    "uid": "dur-3@example.test"
+  }
+]

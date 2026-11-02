@@ -70,7 +70,9 @@
 .host-workspace .ui-chips { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 .host-workspace .ui-chip { display: inline-flex; align-items: center; gap: var(--space-1); height: var(--control-h-compact); padding: 0 var(--space-3); border-radius: var(--radius-pill); background: var(--surface-2); color: var(--ink-2); font: inherit; font-size: var(--size-14); font-weight: 500; text-decoration: none; border: 0; cursor: pointer; }
 .host-workspace .ui-chip:hover { background: var(--surface-3); color: var(--ink); }
-.host-workspace .ui-chip[aria-pressed="true"], .host-workspace .ui-chip[aria-current="true"] { background: var(--ink); color: var(--surface); }
+.host-workspace .ui-chip[aria-pressed="true"], .host-workspace .ui-chip[aria-current="true"] { background: var(--accent); color: var(--on-accent); }
+/* 0495: coral shell. Page title underline (MASTER 5.1, 4.2 i). */
+.host-workspace .ui-ph h1::after { content: ""; display: block; width: 28px; height: 3px; margin-top: var(--space-2); border-radius: var(--radius-pill); background: var(--accent); }
 
 /* ---- 7.8 menu ---- */
 .host-workspace .ui-menu { position: relative; display: inline-flex; }
@@ -282,7 +284,7 @@ body.host-workspace .ui-section.cleaning-panel { border: 1px solid var(--line); 
 .host-workspace .ui-nav-count { margin-left: auto; min-width: var(--size-18); height: var(--size-18); padding: 0 var(--space-1); border-radius: var(--radius-pill); background: var(--accent); color: var(--on-accent); font-size: var(--size-11); font-weight: 600; display: grid; place-items: center; }
 .host-workspace .ui-nav-gap { display: block; height: var(--space-4); }
 .host-workspace .host-rail-bottom { margin-top: auto; }
-.host-workspace .ui-topbar, .host-workspace .ui-tabbar { display: none; }
+.host-workspace .ui-tabbar { display: none; }
 body.host-workspace.sidebar-collapsed .ui-sidebar { width: var(--nav-w-collapsed); padding: var(--space-3) var(--space-2); }
 body.host-workspace.sidebar-collapsed .wrap.with-sidebar { margin-left: var(--nav-w-collapsed); }
 body.host-workspace.sidebar-collapsed .ui-sidebar :is(.brand-word, .ui-env, .ui-search-row span, .ui-search-row kbd, .ui-nav a > span:not(.ui-nav-count), .host-account-name) { display: none; }
@@ -326,8 +328,6 @@ body.host-workspace.sidebar-collapsed .sidebar-collapse .ui-icon { transform: ro
   .host-workspace .ui-sidebar, .host-workspace .sidebar-expand { display: none; }
   html:has(.host-workspace) { scroll-padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); }
   .host-workspace .wrap.with-sidebar, body.host-workspace.sidebar-collapsed .wrap.with-sidebar { margin-left: 0; padding: var(--space-6) var(--space-4) calc(var(--tabbar-h) + env(safe-area-inset-bottom) + var(--space-6)); }
-  .host-workspace .ui-topbar { display: flex; align-items: center; gap: var(--space-2); height: var(--topbar-h); padding: 0 var(--space-2) 0 var(--space-4); background: var(--surface); border-bottom: 1px solid var(--line); }
-  .host-workspace .ui-topbar .ui-env { margin: 0; }
   .host-workspace .ui-tabbar { position: fixed; inset: auto 0 0 0; display: grid; grid-template-columns: repeat(5, 1fr); height: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); background: var(--surface); border-top: 1px solid var(--line); z-index: var(--z-sticky); }
   .host-workspace .ui-tabbar a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(var(--space-1) / 2); min-height: var(--control-h-phone); color: var(--ink-2); text-decoration: none; font-size: var(--size-11); font-weight: 500; position: relative; }
   .host-workspace .ui-tabbar-ic { display: grid; place-items: center; width: var(--control-h-phone); height: calc(var(--space-6) + var(--space-1)); border-radius: var(--radius-pill); }
@@ -591,12 +591,6 @@ body.host-workspace.sidebar-collapsed .sidebar-collapse .ui-icon { transform: ro
 .host-workspace .host-checklist[data-setup-status] { margin-top: var(--space-6); padding: var(--card-p); background: var(--surface); border: 1px solid var(--line); border-radius: var(--card-radius); }
 .host-workspace .host-checklist[data-setup-status] .setup-status-head { margin-bottom: var(--space-4); }
 
-/* 0179: guest cards show one four-column fact grid; Staying only when the dates differ */
-.host-workspace .guest-card .guest-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3) var(--space-4); border: 0; overflow-wrap: anywhere; }
-.host-workspace .guest-card .guest-facts .fact-wide { grid-column: span 2; }
-@media (max-width: 639px) {
-  .host-workspace .guest-card .guest-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
 
 /* 0181: on desktop every table row is its own bordered, rounded card with a gap between rows */
 @media (min-width: 1024px) {
@@ -666,7 +660,6 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
   html:has(.host-workspace) { scroll-padding-bottom: calc(var(--tabbar-h) + var(--tabbar-safe)); }
   .host-workspace .ui-tabbar { height: calc(var(--tabbar-h) + var(--tabbar-safe)); padding: 0 env(safe-area-inset-right) var(--tabbar-safe) env(safe-area-inset-left); }
   .host-workspace .wrap.with-sidebar, body.host-workspace.sidebar-collapsed .wrap.with-sidebar { padding-left: calc(var(--space-4) + env(safe-area-inset-left)); padding-right: calc(var(--space-4) + env(safe-area-inset-right)); padding-bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--space-6)); }
-  .host-workspace .ui-topbar { padding-left: calc(var(--space-4) + env(safe-area-inset-left)); padding-right: calc(var(--space-2) + env(safe-area-inset-right)); }
   .host-workspace .ui-sticky-actions { bottom: calc(var(--tabbar-h) + var(--tabbar-safe)); }
 }
 
@@ -1110,11 +1103,10 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
   /* Page to page: a short cross-fade; the rail, top bar and tab bar hold still. */
   @view-transition { navigation: auto; }
   .host-workspace .ui-sidebar { view-transition-name: host-rail; }
-  .host-workspace .ui-topbar { view-transition-name: host-topbar; }
   .host-workspace .ui-tabbar { view-transition-name: host-tabbar; }
   ::view-transition-group(*) { animation-duration: var(--motion-2); animation-timing-function: var(--ease-standard); }
-  ::view-transition-group(host-rail), ::view-transition-group(host-topbar), ::view-transition-group(host-tabbar) { animation: none; }
-  ::view-transition-old(host-rail), ::view-transition-new(host-rail), ::view-transition-old(host-topbar), ::view-transition-new(host-topbar), ::view-transition-old(host-tabbar), ::view-transition-new(host-tabbar) { animation: none; }
+  ::view-transition-group(host-rail), ::view-transition-group(host-tabbar) { animation: none; }
+  ::view-transition-old(host-rail), ::view-transition-new(host-rail), ::view-transition-old(host-tabbar), ::view-transition-new(host-tabbar) { animation: none; }
   @media (prefers-reduced-motion: reduce) {
     @view-transition { navigation: none; }
     ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
@@ -1134,3 +1126,22 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .ui-choice-card:has(input:checked) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .host-workspace .ui-choice-card input:focus-visible { outline: none !important; }
 .ui-choice-card:has(input:focus-visible) { outline: 2px solid var(--coral-600); outline-offset: 2px; }
+/* 0523: stays list at computer width: quiet grey header, guest column widest, pay and actions shrink to content. */
+@media (min-width: 1024px) {
+  .host-workspace .stays-view .ui-table th { background: var(--surface-2); }
+  .host-workspace .stays-view .ui-table :is(th, td).stay-col-actions { width: 1%; white-space: nowrap; }
+}
+/* 0523: phone stays card: arrival stays in column 1, departure sits on the same line in column 2 (the two dates no longer print on top of each other). */
+@media (max-width: 1023.98px) {
+  .host-workspace .stays-view .ui-table td.stay-col-dates { grid-column: 1; }
+  .host-workspace .stays-view .ui-table td.stay-col-departure { grid-row: 2; grid-column: 2; justify-self: start; }
+  .host-workspace .stays-view .ui-table td.stay-col-departure::before { content: "– "; }
+
+/* 0525: stay page on desktop: guests are table rows in one white card; the door code is large. */
+@media (min-width: 1024px) {
+  .host-workspace .stay-door-card { padding: var(--space-4); }
+  .host-workspace .stay-door-card #door-code-line { font-size: var(--text-lg); font-weight: 700; }
+}
+
+/* Turbo progress bar stays hidden: the page swap should look like before. */
+.turbo-progress-bar { display: none; }

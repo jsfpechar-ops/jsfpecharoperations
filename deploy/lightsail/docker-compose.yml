@@ -7,6 +7,34 @@
 name: ubyhost
 
 services:
+  # 0463: PostgreSQL 16 for the cutover. No password: the server never listens on
+  # a network (network_mode none, listen_addresses empty), so only containers that
+  # mount the ubyhost-pgsock volume can reach it, the same trust boundary as the
+  # SQLite file. pg-cutover.sh runs the rehearsal and the cutover against it.
+  postgres:
+    image: postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ubyhost
+      POSTGRES_DB: ubyhost
+      POSTGRES_HOST_AUTH_METHOD: trust
+    network_mode: none
+    command: ["postgres", "-c", "listen_addresses=", "-c", "shared_buffers=256MB", "-c", "max_connections=50", "-c", "log_min_duration_statement=1000"]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "ubyhost", "-d", "ubyhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ubyhost-pgdata:/var/lib/postgresql/data
+      - ubyhost-pgsock:/var/run/postgresql
+    mem_limit: 1g
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
   ubyhost:
     build:
       context: ../..
@@ -24,6 +52,7 @@ services:
       UBYHOST_ROLE: web
     volumes:
       - ubyhost-data:/data
+      - ubyhost-pgsock:/var/run/postgresql
     expose:
       - "8080"
     healthcheck:
@@ -70,6 +99,7 @@ services:
     command: ["python", "-m", "app.worker"]
     volumes:
       - ubyhost-data:/data
+      - ubyhost-pgsock:/var/run/postgresql
     # No HTTP server: the worker touches /data/worker.alive every 30 s while
     # its scheduler runs.
     healthcheck:
@@ -92,6 +122,48 @@ services:
         max-file: "5"
     # Built and migrated by the web service first; also creates the volume
     # with the app's ownership on a fresh server.
+    depends_on:
+      ubyhost:
+        condition: service_healthy
+    networks:
+      - web
+
+  # Go port of the web app (plan v4 G1b). Runs the background jobs whose kinds
+  # are listed in UBYHOST_GO_JOB_KINDS. HTTP only for paths in UBYHOST_GO_PATHS.
+  # Off unless COMPOSE_PROFILES contains "go" (needs PostgreSQL).
+  ubyhost-go:
+    build:
+      context: ../..
+      dockerfile: go/Dockerfile
+    image: ubyhost-go:local
+    restart: unless-stopped
+    stop_grace_period: 15s
+    profiles: ["go"]
+    env_file: .env
+    environment:
+      UBYHOST_DATABASE_URL: ${UBYHOST_DATABASE_URL:-}
+      UBYHOST_GO_JOB_KINDS: ${UBYHOST_GO_JOB_KINDS:-}
+      UBYHOST_STRIPE_MODE: ${UBYHOST_STRIPE_MODE:-off}
+      UBYHOST_STRIPE_WEBHOOK_SECRET: ${UBYHOST_STRIPE_WEBHOOK_SECRET:-}
+      UBYHOST_DATA_DIR: /data
+    volumes:
+      - ubyhost-pgsock:/var/run/postgresql
+      - ubyhost-data:/data:ro
+    expose:
+      - "8081"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8081/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    mem_limit: ${UBYHOST_GO_MEM:-128m}
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    # goose runs in the web service first; the Go service starts after it.
     depends_on:
       ubyhost:
         condition: service_healthy
@@ -175,6 +247,7 @@ services:
       UBYHOST_DOMAIN: ${UBYHOST_DOMAIN}
       UBYHOST_APP_DOMAIN: ${UBYHOST_APP_DOMAIN:-}
       ACME_EMAIL: ${ACME_EMAIL}
+      UBYHOST_GO_PATHS: ${UBYHOST_GO_PATHS:-/__go_off__}
     volumes:
       - ./caddy/Caddyfile.active:/etc/caddy/Caddyfile:ro
       - ./caddy/certs:/etc/caddy/certs:ro
@@ -251,7 +324,7 @@ services:
   cadvisor:
     profiles: ["monitoring"]
     # Pinned by digest.
-    image: gcr.io/cadvisor/cadvisor:v0.52.1@sha256:f40e65878e25c2e78ea037f73a449527a0fb994e303dc3e34cb6b187b4b91435
+    image: gcr.io/cadvisor/cadvisor:v0.55.1@sha256:3de2bd5203120b866d74a9b283b2ffb8ec382fbf9dc321814700c6ea6f44ec57
     restart: unless-stopped
     privileged: true
     devices:
@@ -278,6 +351,10 @@ services:
 volumes:
   ubyhost-data:
     name: ubyhost-data
+  ubyhost-pgdata:
+    name: ubyhost-pgdata
+  ubyhost-pgsock:
+    name: ubyhost-pgsock
   caddy-data:
     name: ubyhost-caddy-data
   caddy-config:

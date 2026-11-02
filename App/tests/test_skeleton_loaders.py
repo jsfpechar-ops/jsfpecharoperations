@@ -154,6 +154,6 @@ def test_post_export_forms_opt_out_of_skeleton_markup():
     """POST downloads that do not match DOWNLOAD_RE must carry data-no-skeleton."""
     templates = APP_DIR / "templates"
     base = (templates / "base.html").read_text(encoding="utf-8")
-    users = (templates / "users.html").read_text(encoding="utf-8")
+    customer = (templates / "admin_customer.html").read_text(encoding="utf-8")
     assert 'action="/settings/workspace-export" data-no-skeleton' in base
-    assert 'action="/admin/users/{{ user.id }}/export"' in users and "data-no-skeleton" in users
+    assert 'action="/admin/users/{{ customer.id }}/export"' in customer and "data-no-skeleton" in customer

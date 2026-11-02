@@ -101,6 +101,8 @@ def test_the_worker_needs_the_worker_role(monkeypatch, tmp_path):
 
 def _worker_env(tmp_path: Path) -> dict:
     env = os.environ.copy()
+    env.pop("UBYHOST_DATABASE_URL", None)
+    env.pop("UBYHOST_TEST_DATABASE_URL", None)
     env.update(
         {
             "UBYHOST_DATA_DIR": str(tmp_path),

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns2="urn:example:ubyport:golden"><soap:Body><ns2:ZapisUbytovaneResponse><ns2:ZapisUbytovaneResult>
+<ns2:DokumentPotvrzeni>JVBERi0xLjQgZ29sZGVuIHJlY2VpcHQgb25l</ns2:DokumentPotvrzeni>
+<ns2:ChybyZaznamu><ns2:string>106;<ns2:note>tail</ns2:note>after</ns2:string><ns2:string>112;</ns2:string></ns2:ChybyZaznamu>
+<ns2:ChybyHlavicky>leading text<ns2:x>child</ns2:x>tail text</ns2:ChybyHlavicky>
+</ns2:ZapisUbytovaneResult></ns2:ZapisUbytovaneResponse></soap:Body></soap:Envelope>

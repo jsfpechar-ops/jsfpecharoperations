@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UbyHost redesign v2</title>
+<style>
+:root{--bg:#f6f6f4;--s:#fff;--ink:#1c1c1a;--ink2:#55554f;--ink3:#8a8a84;--line:#ebebe7;--side:#fff;--side2:#f1f1ee;--acc:#d4472f;--accs:#fdece8;--ok:#167044;--oks:#e6f5ec;--warn:#8a5200;--warns:#fff4d6;--bad:#b42318;--bads:#fdecea;--info:#eaf3fb;
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);font-size:14px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg)}
+.app{display:flex;min-height:100vh}
+.side{width:220px;background:var(--side);border-right:1px solid var(--line);color:var(--ink2);display:flex;flex-direction:column;padding:16px 10px;position:sticky;top:0;height:100vh;flex:none}
+.logo{color:var(--ink);font-weight:800;font-size:18px;padding:2px 10px 14px;letter-spacing:-.01em}
+.org{display:flex;align-items:center;gap:10px;background:var(--side2);border-radius:10px;padding:8px 10px;margin-bottom:14px;color:var(--ink);font-size:13px}
+.org i{width:26px;height:26px;border-radius:7px;background:#e4e4df;display:grid;place-items:center;font-style:normal;font-weight:700}
+.org small{display:block;color:var(--ink3);font-size:11px}
+.nav{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;color:var(--ink2);text-decoration:none;transition:background .15s,color .15s;font-size:14px;cursor:pointer}
+.nav:hover{background:var(--side2)}.nav.on{background:var(--accs);color:var(--acc);font-weight:600}
+.nav svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.badge{margin-left:auto;background:var(--acc);color:#fff;border-radius:999px;font-size:11px;padding:1px 7px;font-weight:700}
+.me{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px;font-size:13px;color:var(--ink)}
+.me i{width:28px;height:28px;border-radius:50%;background:#e4e4df;display:grid;place-items:center;font-style:normal}
+.me small{display:block;color:var(--ink3);font-size:11px}
+.main{flex:1;min-width:0;padding:28px 36px 96px}
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px}
+h1{font-size:24px;font-weight:800;margin:0;letter-spacing:-.01em}.sub{color:var(--ink3);margin:4px 0 0}
+.btn{border:0;background:var(--acc);color:#fff;font:inherit;font-weight:600;padding:9px 16px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.btn.ghost{background:#efefeb;color:var(--ink)}.btn.sm{padding:6px 12px;font-size:13px}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px}
+.tile{background:var(--s);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.tile span{color:var(--ink3);font-size:13px}.tile b{display:block;font-size:26px;margin-top:6px;letter-spacing:-.01em}
+h2{font-size:16px;font-weight:700;margin:0 0 12px}
+.card{background:var(--s);border:1px solid var(--line);border-radius:12px}
+.tools{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+.search{display:flex;align-items:center;gap:8px;background:#efefeb;border-radius:8px;padding:8px 12px;color:var(--ink3);width:260px}
+.chip{border:1px dashed #cfcfca;border-radius:999px;padding:6px 12px;color:var(--ink2);font-size:13px;background:var(--s)}
+.chip.on{border-style:solid;background:var(--ink);color:#fff;border-color:var(--ink)}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-weight:500;color:var(--ink3);font-size:12px;padding:10px 14px;border-bottom:1px solid var(--line)}
+td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}tbody tr:hover{background:#fafaf8;cursor:pointer}
+td small{display:block;color:var(--ink3);font-size:12px;margin-top:2px}
+.pill{font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap;display:inline-block}
+.p-ok{background:var(--oks);color:var(--ok)}.p-warn{background:var(--warns);color:var(--warn)}.p-bad{background:var(--bads);color:var(--bad)}
+.dots{color:var(--ink3);letter-spacing:2px}
+.todo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.todo .card{display:flex;gap:14px;padding:16px;align-items:flex-start}
+.todo .ic{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;flex:none;font-weight:800}
+.todo .t{font-weight:700;margin-bottom:3px}.todo p{margin:0 0 10px;color:var(--ink2);font-size:13px}
+.empty{padding:14px 16px;color:var(--ok);background:var(--oks);border-radius:12px;font-weight:600;margin-bottom:12px}
+.form{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;max-width:980px;margin:0 auto}
+.crumb{color:var(--ink3);font-size:12px;margin-bottom:4px}
+details{background:var(--s);border:1px solid var(--line);border-radius:12px;margin-bottom:10px}
+summary{list-style:none;padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+summary::-webkit-details-marker{display:none}summary b{display:block}summary small{color:var(--ink3)}
+summary:after{content:"⌄";color:var(--ink3);font-size:18px}details[open] summary:after{transform:rotate(180deg)}
+.fields{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{font-size:12px;color:var(--ink2);display:block}
+.in{margin-top:4px;border:1px solid #dcdcd7;border-radius:8px;padding:9px 10px;background:var(--s);color:var(--ink)}
+.preview{background:#efefeb;border-radius:14px;padding:12px;align-self:start;position:sticky;top:24px}
+.preview h3{font-size:14px;margin:2px 4px 10px}.pv{background:var(--s);border-radius:10px;padding:12px;margin-bottom:8px}
+.pv .r{display:flex;justify-content:space-between;font-size:13px;padding:4px 0}.pv .r span{color:var(--ink3)}
+.savebar{position:fixed;right:24px;bottom:20px;display:flex;gap:8px}
+.tsub{display:block;color:var(--ink3);font-size:12px;margin-top:4px}
+.cal{padding:6px 14px 10px;overflow-x:auto}
+.cgrid{display:grid;grid-template-columns:140px repeat(14,minmax(44px,1fr));align-items:center;min-width:780px}
+.cd{font-size:11px;color:var(--ink3);text-align:center;padding:8px 0}.cd.today{color:var(--acc);font-weight:700}
+.crow{border-top:1px solid var(--line);height:44px}.cn{font-size:13px;font-weight:600;grid-column:1}
+.crow .bar{grid-row:1;height:28px;border-radius:999px;font-size:12px;font-weight:600;display:flex;align-items:center;padding:0 10px;margin:0 2px;white-space:nowrap;overflow:hidden}
+.b-ok{background:var(--oks);color:var(--ok)}.b-warn{background:var(--warns);color:var(--warn)}.b-grey{background:#efefeb;color:var(--ink2)}
+.setup{display:flex;gap:6px;flex-wrap:wrap}.st{font-size:12px;font-weight:600;padding:3px 9px 3px 7px;border-radius:999px;display:inline-flex;align-items:center;gap:5px}
+.st:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.st.g{background:var(--oks);color:var(--ok)}.st.r{background:var(--bads);color:var(--bad)}.st.n{background:#efefeb;color:var(--ink3)}
+.logo{display:flex;align-items:center;gap:8px}.mark{width:22px;height:22px;border-radius:7px;background:var(--acc);box-shadow:inset -6px -6px 0 rgba(255,255,255,.25)}
+.org i,.me i{background:var(--accs)!important;color:var(--acc)}
+.tile{background:linear-gradient(135deg,#fff 55%,#fdf1ee);border-top:3px solid var(--acc)}
+.chip.on{background:var(--acc)!important;border-color:var(--acc)!important;color:#fff}
+tbody tr:hover{background:#fdf6f4!important}
+.cd.today{background:var(--accs);border-radius:8px}
+.head h1:after{content:"";display:block;width:28px;height:3px;border-radius:2px;background:var(--acc);margin-top:8px}
+tbody tr .btn.sm.ghost{opacity:0;transition:opacity .15s}tbody tr:hover .btn.sm.ghost{opacity:1}
+.quiet{color:var(--ink3);font-size:14px;margin:-12px 0 28px;display:flex;gap:8px;align-items:baseline}.quiet b{color:var(--ink);font-size:15px}.quiet span{margin-right:4px}.quiet i{font-style:normal}
+section[data-v=welcome]{max-width:640px;margin:6vh auto 0;text-align:center}section[data-v=welcome] .head{justify-content:center}section[data-v=welcome] .head h1:after{margin:8px auto 0}section[data-v=welcome] .card{text-align:left}
+body.f-inter,body.f-inter *{font-family:Inter,sans-serif}
+body.f-jakarta,body.f-jakarta *{font-family:"Plus Jakarta Sans",sans-serif}
+body.f-manrope,body.f-manrope *{font-family:Manrope,sans-serif}
+.fontpick{position:fixed;right:20px;top:14px;z-index:9;background:#fff;border:1px solid var(--line);border-radius:999px;padding:3px;display:flex;gap:2px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.fontpick button{border:0;background:none;font-size:12px;padding:6px 10px;border-radius:999px;cursor:pointer;color:var(--ink2)}
+.fontpick button.on{background:var(--ink);color:#fff}
+.view{display:none}.view.on{display:block;animation:in .18s ease-out}
+@keyframes in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.btn,.chip,tbody tr,details,.tile{transition:background .15s,transform .1s,box-shadow .15s}
+.btn:active{transform:scale(.97)}.btn:hover{filter:brightness(1.05)}
+details .fields{animation:in .18s ease-out}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.note{background:var(--info);border-radius:10px;padding:10px 14px;color:#1d4f9e;font-size:13px;margin-bottom:16px;display:flex;justify-content:space-between}
+.mock{position:fixed;left:236px;bottom:16px;font-size:12px;color:var(--ink3)}
+.set .row{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}.set .row:last-child{border-bottom:0}.set .row span{color:var(--ink3)}
+.set h2{margin-top:24px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="logo"><span class="mark"></span><span>Uby<span style="color:var(--acc)">Host</span></span></div>
+    <div class="org"><i>J</i><div>Jana Nováková<small>4 nemovitosti</small></div></div>
+    <div class="search" style="width:auto;margin-bottom:14px;justify-content:space-between"><span>⌕ Hledat</span><kbd style="font-size:11px;background:#fff;border-radius:5px;padding:1px 6px;color:var(--ink3)">Ctrl K</kbd></div>
+    <a class="nav on" data-go="today"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V21H3z"/></svg>Přehled<span class="badge">2</span></a>
+    <a class="nav" data-go="stays"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Pobyty</a>
+    <a class="nav" data-go="props"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 7h6M9 11h6M9 15h3"/></svg>Nemovitosti</a>
+    <a class="nav" data-go="clean"><svg viewBox="0 0 24 24"><path d="M14 4l6 6M4 20l7-7M9 11l4 4M3 21c2-1 4-1 6-3l-3-3c-2 2-2 4-3 6z"/></svg>Úklid</a>
+    <a class="nav" data-go="pay"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>Platby</a>
+    <a class="nav" data-go="fee"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Poplatek z pobytu</a>
+    <a class="nav" data-go="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>Nastavení</a>
+    <a class="nav" style="margin-top:auto"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/></svg>Pomoc a Havel</a>
+    <div class="me" style="margin-top:0"><i>J</i><div>Jana Nováková<small>Účet · Admin · Odhlásit</small></div></div>
+  </aside>
+  <main class="main">
+    <!-- TODAY -->
+    <section class="view on" data-v="today">
+      <div class="note" style="background:var(--warns);color:var(--warn);align-items:center"><span>Zkušební režim: hlášení se zatím neodesílají na policii.</span><a style="color:var(--warn);font-weight:600;cursor:pointer;text-decoration:underline;white-space:nowrap">Přepnout na ostrý provoz</a></div>
+      <div class="head"><div><h1>Vítejte zpátky, Jano!</h1><p class="sub">Sobota 1. listopadu</p></div><button class="btn">Přidat pobyt</button></div>
+      <h2>Potřebuje vás</h2>
+      <div class="todo" style="margin-bottom:28px">
+        <div class="card"><div class="ic" style="background:var(--bads);color:var(--bad)">!</div><div><div class="t">Hlášení cizinecké policii selhalo</div><p>Anna Weber · Old Town Loft · odjezd 31. 10.</p><button class="btn sm">Opravit</button></div></div>
+        <div class="card"><div class="ic" style="background:var(--warns);color:var(--warn)">2</div><div><div class="t">2 hosté se ještě neregistrovali</div><p>Příjezd dnes · River Studio</p><button class="btn sm ghost">Poslat odkaz znovu</button></div></div>
+      </div>
+      <div class="quiet"><span>Tento měsíc</span><b>38</b> hostů<i>·</i><b>112</b> nocí<i>·</i><b>36</b> nahlášeno policii</div>
+      <h2>Kalendář</h2>
+      <div class="card cal" style="margin-bottom:28px">
+        <div class="cgrid"><div></div><div class="cd today">So 1</div><div class="cd">Ne 2</div><div class="cd">Po 3</div><div class="cd">Út 4</div><div class="cd">St 5</div><div class="cd">Čt 6</div><div class="cd">Pá 7</div><div class="cd">So 8</div><div class="cd">Ne 9</div><div class="cd">Po 10</div><div class="cd">Út 11</div><div class="cd">St 12</div><div class="cd">Čt 13</div><div class="cd">Pá 14</div></div>
+        <div class="cgrid crow"><div class="cn">Old Town Loft</div><div class="bar b-ok" style="grid-column:2/5">Marco Rossi</div><div class="bar b-warn" style="grid-column:6/11">Emma Moreau</div><div class="bar b-grey" style="grid-column:12/16">Booking</div></div><div class="cgrid crow"><div class="cn">River Studio</div><div class="bar b-warn" style="grid-column:2/4">Sofia Costa</div><div class="bar b-grey" style="grid-column:5/10">Airbnb</div></div><div class="cgrid crow"><div class="cn">Vinohrady Flat</div><div class="bar b-warn" style="grid-column:4/7">Tomas Novak</div><div class="bar b-grey" style="grid-column:10/15">Airbnb</div></div><div class="cgrid crow"><div class="cn">Castle View</div><div class="bar b-warn" style="grid-column:8/10">Kenji Hara</div></div>
+      </div>
+      <h2>Dnes</h2>
+      <div class="card"><table><thead><tr><th>Host</th><th>Nemovitost</th><th>Termín</th><th>Stav</th><th></th></tr></thead><tbody>
+        <tr data-go="stay"><td>Marco Rossi<small>2 hosté</small></td><td>Old Town Loft</td><td>Příjezd · 3 noci</td><td><span class="pill p-ok">Hotovo, nahlášeno policii</span></td><td class="dots">···</td></tr>
+        <tr data-go="stay"><td>Sofia Costa<small>3 hosté</small></td><td>River Studio</td><td>Příjezd · 2 noci</td><td><span class="pill p-warn">Čeká na 2 ze 3 hostů</span></td><td class="dots">···</td></tr>
+        <tr data-go="stay"><td>Lena Jansen<small>1 host</small></td><td>Vinohrady Flat</td><td>Odjezd · úklid 11:00</td><td><span class="pill p-ok">Hotovo, nahlášeno policii</span></td><td class="dots">···</td></tr>
+      </tbody></table></div>
+      <p style="margin:20px 0 0"><a data-go="welcome" style="color:var(--ink3);font-size:13px;cursor:pointer;text-decoration:underline">Ukázat, jak vypadá přehled pro nového hostitele →</a></p>
+    </section>
+    <!-- STAYS -->
+    <section class="view" data-v="stays">
+      <div class="head"><div><h1>Pobyty</h1></div><div style="display:flex;gap:8px"><button class="btn ghost">Stáhnout domovní knihu</button><button class="btn">Přidat pobyt</button></div></div>
+      <div class="tools"><div class="search">⌕ Hledat hosta nebo nemovitost</div><span class="chip on">Vše</span><span class="chip">+ Stav</span><span class="chip">+ Nemovitost</span><span class="chip">+ Termín</span></div>
+      <div class="card"><table><thead><tr><th>Host</th><th>Nemovitost</th><th>Příjezd</th><th>Odjezd</th><th>Hlášení</th><th></th><th></th></tr></thead><tbody>
+        <tr data-go="stay"><td>Marco Rossi<small>marco@example.com</small></td><td>Old Town Loft</td><td>1. 11. 2026</td><td>4. 11. 2026</td><td><span class="pill p-ok">Nahlášeno</span></td><td><button class="btn sm ghost">Požádat o platbu</button></td><td class="dots">···</td></tr>
+        <tr data-go="stay"><td>Sofia Costa<small>sofia@example.com</small></td><td>River Studio</td><td>1. 11. 2026</td><td>3. 11. 2026</td><td><span class="pill p-warn">Čeká na 2 ze 3 hostů</span></td><td><button class="btn sm ghost">Požádat o platbu</button></td><td class="dots">···</td></tr>
+        <tr data-go="stay"><td>Tomas Novak<small>tomas@example.com</small></td><td>Vinohrady Flat</td><td>3. 11. 2026</td><td>6. 11. 2026</td><td><span class="pill p-warn">Host se zatím neregistroval</span></td><td><button class="btn sm ghost">Požádat o platbu</button></td><td class="dots">···</td></tr>
+        <tr data-go="stay"><td>Emma Moreau<small>emma@example.com</small></td><td>Old Town Loft</td><td>5. 11. 2026</td><td>9. 11. 2026</td><td><span class="pill p-warn">Host se zatím neregistroval</span></td><td><button class="btn sm ghost">Požádat o platbu</button></td><td class="dots">···</td></tr>
+        <tr data-go="stay"><td>Kenji Hara<small>kenji@example.com</small></td><td>Castle View</td><td>7. 11. 2026</td><td>8. 11. 2026</td><td><span class="pill p-warn">Host se zatím neregistroval</span></td><td><button class="btn sm ghost">Požádat o platbu</button></td><td class="dots">···</td></tr>
+        <tr data-go="stay"><td>Anna Weber<small>anna@example.com</small></td><td>Old Town Loft</td><td>28. 10. 2026</td><td>31. 10. 2026</td><td><span class="pill p-bad">Hlášení selhalo, opravte</span></td><td><button class="btn sm ghost">Požádat o platbu</button></td><td class="dots">···</td></tr>
+        <tr data-go="stay"><td>Lena Jansen<small>lena@example.com</small></td><td>Vinohrady Flat</td><td>29. 10. 2026</td><td>1. 11. 2026</td><td><span class="pill p-ok">Nahlášeno</span></td><td><button class="btn sm ghost">Požádat o platbu</button></td><td class="dots">···</td></tr>
+      </tbody></table></div>
+    </section>
+    <!-- STAY DETAIL -->
+    <section class="view" data-v="stay">
+      <div class="head"><div><div class="crumb"><span data-go="stays" style="cursor:pointer">Pobyty</span> › Sofia Costa</div><h1>Sofia Costa</h1><p class="sub"><span class="pill p-warn">Čeká na 2 ze 3 hostů</span><span style="margin-left:8px">River Studio · 1.–3. 11. 2026</span></p></div><div style="display:flex;gap:8px"><button class="btn">Kopírovat odkaz pro hosty</button><button class="btn ghost">Poslat odkaz znovu</button></div></div>
+      <h2>Hosté</h2>
+      <div class="card" style="margin-bottom:28px"><table><thead><tr><th>Jméno</th><th>Doklad</th><th>Registrace</th></tr></thead><tbody>
+        <tr><td>Sofia Costa</td><td>Pas · ověřeno</td><td><span class="pill p-ok">Registrována</span></td></tr>
+        <tr><td>Luca Costa</td><td>—</td><td><span class="pill p-warn">Zatím neregistrován</span></td></tr>
+        <tr><td>Mia Costa</td><td>—</td><td><span class="pill p-warn">Zatím neregistrována</span></td></tr>
+      </tbody></table></div>
+      <h2>Hlášení cizinecké policii</h2>
+      <div class="card" style="padding:16px;margin-bottom:28px;color:var(--ink2)">Odešle se samo, jakmile se zaregistrují všichni hosté.</div>
+      <h2>Kód ke dveřím</h2>
+      <div class="card" style="padding:16px"><b style="font-size:18px">4821</b> · platí 1. 11. 14:00 – 3. 11. 11:00</div>
+    </section>
+    <!-- PROPERTIES -->
+    <section class="view" data-v="props">
+      <div class="head"><div><h1>Nemovitosti</h1><p class="sub">Zelená hotovo · červená chybí · šedá nepoužíváte. Klikněte na řádek.</p></div><button class="btn">Přidat nemovitost</button></div>
+      <div class="card"><table><thead><tr><th>Název</th><th>Adresa</th><th>Nastavení</th><th></th><th></th></tr></thead><tbody>
+        <tr data-go="prop"><td>Old Town Loft</td><td>Celetná 12, Praha 1</td><td><div class="setup"><span class="st g">Policie</span><span class="st g">Kalendář</span><span class="st g">Zámek</span><span class="st g">Poplatek</span></div></td><td><button class="btn sm ghost" onclick="event.stopPropagation()">Kopírovat odkaz</button></td><td class="dots">···</td></tr>
+        <tr data-go="prop"><td>River Studio</td><td>Dvořákovo nábř. 4, Praha 1</td><td><div class="setup"><span class="st g">Policie</span><span class="st g">Kalendář</span><span class="st n">Zámek</span><span class="st g">Poplatek</span></div></td><td><button class="btn sm ghost" onclick="event.stopPropagation()">Kopírovat odkaz</button></td><td class="dots">···</td></tr>
+        <tr data-go="prop"><td>Vinohrady Flat</td><td>Mánesova 30, Praha 2</td><td><div class="setup"><span class="st r">Policie</span><span class="st g">Kalendář</span><span class="st g">Zámek</span><span class="st r">Poplatek</span></div></td><td><button class="btn sm ghost" onclick="event.stopPropagation()">Kopírovat odkaz</button></td><td class="dots">···</td></tr>
+        <tr data-go="prop"><td>Castle View</td><td>Nerudova 8, Praha 1</td><td><div class="setup"><span class="st g">Policie</span><span class="st r">Kalendář</span><span class="st n">Zámek</span><span class="st g">Poplatek</span></div></td><td><button class="btn sm ghost" onclick="event.stopPropagation()">Kopírovat odkaz</button></td><td class="dots">···</td></tr>
+      </tbody></table></div>
+    </section>
+    <!-- PROPERTY EDIT -->
+    <section class="view" data-v="prop">
+      <div class="form">
+        <div>
+          <div class="crumb">Nemovitosti › Old Town Loft</div>
+          <h1 style="margin-bottom:16px">Old Town Loft</h1>
+          <div class="card" style="padding:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px"><div><b>Odkaz pro hosty</b><div class="sub" style="margin:2px 0 0">ubyhost.cz/g/old-town-loft</div></div><button class="btn sm">Kopírovat</button></div>
+          <details open><summary><div><b>Základní údaje</b><small>Název a adresa nemovitosti</small></div></summary>
+            <div class="fields"><label>Název<div class="in">Old Town Loft</div></label><label>Kapacita<div class="in">4 hosté</div></label><label style="grid-column:1/-1">Adresa<div class="in">Celetná 12, 110 00 Praha 1</div></label></div></details>
+          <details><summary><div><b>Cizinecká policie</b><small>Ubytovací zařízení a hlášení</small></div></summary><div class="fields"><label>ID ubytovacího zařízení<div class="in">123456</div></label></div></details>
+          <details><summary><div><b>Kalendáře</b><small>Airbnb a Booking</small></div></summary><div class="fields"><label style="grid-column:1/-1">Airbnb iCal<div class="in">Připojeno</div></label></div></details>
+          <details><summary><div><b>Automatické zprávy</b><small>Kdy se hostům pošle odkaz k registraci</small></div></summary><div class="fields"><label>Poslat odkaz<div class="in">3 dny před příjezdem</div></label><label>Připomenout<div class="in">1 den před příjezdem, pokud chybí</div></label></div></details>
+          <details><summary><div><b>Chytrý zámek</b><small>Kódy ke dveřím pro hosty</small></div></summary><div class="fields"><label>Zámek<div class="in">TTLock · Vchod</div></label></div></details>
+          <details><summary><div><b>Úklid a poplatek z pobytu</b><small>Kdo uklízí a kolik se platí obci</small></div></summary><div class="fields"><label>Poplatek za noc<div class="in">50 Kč</div></label></div></details>
+        </div>
+        <aside class="preview"><h3>Náhled</h3>
+          <div class="pv"><b style="font-size:13px">Základní údaje</b><div class="r"><span>Název</span>Old Town Loft</div><div class="r"><span>Adresa</span>Celetná 12</div><div class="r"><span>Kapacita</span>4</div></div>
+          <div class="pv"><b style="font-size:13px">Napojení</b><div class="r"><span>Policie</span><span class="pill p-ok">Připojeno</span></div><div class="r"><span>Kalendáře</span>2</div><div class="r"><span>Zámek</span>TTLock</div></div>
+        </aside>
+      </div>
+      <div class="savebar"><button class="btn ghost" data-go="props">Zrušit</button><button class="btn">Uložit</button></div>
+    </section>
+    <!-- CLEAN -->
+    <section class="view" data-v="clean">
+      <div class="head"><div><h1>Úklid</h1><p class="sub">Úklidy vznikají samy z odjezdů. Uklízečka vidí svůj rozpis přes odkaz.</p></div><button class="btn">Sdílet rozpis s uklízečkou</button></div>
+      <h2>Dnes</h2>
+      <div class="card" style="margin-bottom:28px"><table><thead><tr><th>Nemovitost</th><th>Čas</th><th>Kdo</th><th>Další příjezd</th><th>Stav</th></tr></thead><tbody>
+        <tr><td>Vinohrady Flat</td><td>11:00–14:00</td><td>Petra</td><td>3. 11. · Tomas Novak</td><td><span class="pill p-warn">Naplánováno</span></td></tr>
+      </tbody></table></div>
+      <h2>Tento týden</h2>
+      <div class="card"><table><thead><tr><th>Nemovitost</th><th>Den</th><th>Kdo</th><th>Další příjezd</th><th>Stav</th></tr></thead><tbody>
+        <tr><td>River Studio</td><td>Po 3. 11.</td><td>Petra</td><td>4. 11. · Airbnb</td><td><span class="pill p-warn">Naplánováno</span></td></tr>
+        <tr><td>Old Town Loft</td><td>Út 4. 11.</td><td>Jana</td><td>5. 11. · Emma Moreau</td><td><span class="pill p-warn">Naplánováno</span></td></tr>
+        <tr><td>Vinohrady Flat</td><td>Čt 6. 11.</td><td><span style="color:var(--bad);font-weight:600">Nikdo</span></td><td>9. 11. · Airbnb</td><td><span class="pill p-bad">Chybí uklízečka</span></td></tr>
+      </tbody></table></div>
+    </section>
+    <!-- PAY -->
+    <section class="view" data-v="pay">
+      <div class="head"><div><h1>Platby</h1><p class="sub">Pošlete hostovi odkaz k zaplacení. Zaplatí kartou, peníze jdou rovnou vám.</p></div><button class="btn">Požádat o platbu</button></div>
+      <h2>Žádosti o platbu</h2>
+      <div class="card" style="margin-bottom:28px"><table><thead><tr><th>Host</th><th>Za co</th><th>Odesláno</th><th>Stav</th><th></th></tr></thead><tbody>
+        <tr><td>Marco Rossi</td><td>Pobyt 1.–4. 11.</td><td>28. 10. 2026</td><td><span class="pill p-ok">Zaplaceno</span></td><td class="dots">···</td></tr>
+        <tr><td>Emma Moreau</td><td>Záloha 5.–9. 11.</td><td>30. 10. 2026</td><td><span class="pill p-warn">Odesláno, zatím nezaplaceno</span></td><td class="dots">···</td></tr>
+      </tbody></table></div>
+      <h2>Faktury</h2>
+      <div class="card"><table><thead><tr><th>Číslo</th><th>Odběratel</th><th>Vystaveno</th><th></th></tr></thead><tbody>
+        <tr><td>2026-041</td><td>Lena Jansen</td><td>29. 10. 2026</td><td class="dots">PDF ···</td></tr>
+        <tr><td>2026-040</td><td>Example GmbH</td><td>20. 10. 2026</td><td class="dots">PDF ···</td></tr>
+      </tbody></table></div>
+    </section>
+    <!-- FEE -->
+    <section class="view" data-v="fee">
+      <div class="head"><div><h1>Poplatek z pobytu</h1><p class="sub">Co odvádíte obci. Spočítáno z nahlášených pobytů.</p></div><button class="btn ghost">Stáhnout přehled</button></div>
+      <div class="card"><table><thead><tr><th>Měsíc</th><th>Obec</th><th>Noci k poplatku</th><th>Částka</th><th>Splatnost</th><th></th></tr></thead><tbody>
+        <tr><td>Říjen 2026</td><td>Praha 1</td><td>124</td><td>6 200 Kč</td><td>15. 11. 2026</td><td class="dots">···</td></tr>
+        <tr><td>Říjen 2026</td><td>Praha 2</td><td>31</td><td>1 550 Kč</td><td>15. 11. 2026</td><td class="dots">···</td></tr>
+        <tr><td>Září 2026</td><td>Praha 1</td><td>118</td><td>5 900 Kč</td><td>15. 10. 2026</td><td class="dots">···</td></tr>
+      </tbody></table></div>
+    </section>
+    <!-- SETTINGS -->
+    <section class="view set" data-v="settings">
+      <div class="head"><div><h1>Nastavení</h1></div></div>
+      <div style="max-width:720px">
+        <h2 style="margin-top:0">Účet</h2><div class="card"><div class="row">Jméno<span>Jana Nováková</span></div><div class="row">E-mail<span>you@example.com</span></div><div class="row">Jazyk<span>Čeština</span></div></div>
+        <h2>Firma</h2><div class="card"><div class="row">Název firmy<span>Example s.r.o.</span></div><div class="row">IČO<span>12345678</span></div></div>
+        <h2>Upozornění</h2><div class="card"><div class="row">E-mail při selhání hlášení<span>Zapnuto</span></div><div class="row">Denní souhrn<span>Vypnuto</span></div></div>
+        <h2>Tarif a fakturace</h2><div class="card"><div class="row">Tarif<span>4 nemovitosti · měsíčně</span></div><div class="row">Faktury za UbyHost<span>Otevřít</span></div></div>
+        <h2>Soukromí</h2><div class="card"><div class="row">Archiv pobytů<span>Otevřít</span></div><div class="row">Žádosti o osobní údaje<span>Žádné</span></div><div class="row">Stáhnout všechna data<span>ZIP</span></div></div>
+      </div>
+    </section>
+    <!-- WELCOME -->
+    <section class="view" data-v="welcome">
+      <div class="head"><div><h1>Vítejte v UbyHost!</h1><p class="sub">Tři kroky a první hosté se nahlásí sami.</p></div></div>
+      <div style="display:grid;gap:12px;max-width:720px">
+        <div class="card" style="display:flex;gap:14px;align-items:center;padding:16px"><div style="width:36px;height:36px;border-radius:50%;background:var(--accs);color:var(--acc);display:grid;place-items:center;font-weight:800;flex:none">1</div><div style="flex:1"><div style="font-weight:700;margin-bottom:3px">Přidejte nemovitost</div><p style="margin:0;color:var(--ink2);font-size:13px">Název, adresa a kapacita.</p></div><button class="btn">Přidat nemovitost</button></div>
+        <div class="card" style="display:flex;gap:14px;align-items:center;padding:16px"><div style="width:36px;height:36px;border-radius:50%;background:var(--accs);color:var(--acc);display:grid;place-items:center;font-weight:800;flex:none">2</div><div style="flex:1"><div style="font-weight:700;margin-bottom:3px">Připojte cizineckou policii</div><p style="margin:0;color:var(--ink2);font-size:13px">Zadejte údaje ubytovacího zařízení z Ubyportu.</p></div><button class="btn ghost">Připojit policii</button></div>
+        <div class="card" style="display:flex;gap:14px;align-items:center;padding:16px"><div style="width:36px;height:36px;border-radius:50%;background:var(--accs);color:var(--acc);display:grid;place-items:center;font-weight:800;flex:none">3</div><div style="flex:1"><div style="font-weight:700;margin-bottom:3px">Připojte kalendář Airbnb nebo Booking</div><p style="margin:0;color:var(--ink2);font-size:13px">Pobyty se pak vytvoří samy.</p></div><button class="btn ghost">Připojit kalendář</button></div>
+      </div>
+    </section>
+  </main>
+</div>
+<div class="mock">Návrh · smyšlená data · klikejte v levém menu a na řádky nemovitostí</div>
+<script>
+document.addEventListener('click',function(e){var g=e.target.closest('[data-go]');if(!g)return;var v=g.dataset.go;
+document.querySelectorAll('.view').forEach(function(s){s.classList.toggle('on',s.dataset.v===v)});
+document.querySelectorAll('.nav').forEach(function(n){n.classList.toggle('on',n.dataset.go===(v==='prop'?'props':v==='stay'?'stays':v))});window.scrollTo(0,0);});
+</script>
+<div class="fontpick" aria-label="Písmo"><button type="button" data-f="" class="on" style="font-family:-apple-system,Segoe UI,Roboto,sans-serif">Dnes (systémové)</button><button type="button" data-f="f-jakarta" style="font-family:'Plus Jakarta Sans'">Plus Jakarta Sans</button><button type="button" data-f="f-inter" style="font-family:Inter">Inter</button><button type="button" data-f="f-manrope" style="font-family:Manrope">Manrope</button></div>
+<script>document.querySelectorAll('[data-f]').forEach(function(b){b.addEventListener('click',function(){document.body.classList.remove('f-inter','f-jakarta','f-manrope');if(b.dataset.f)document.body.classList.add(b.dataset.f);document.querySelectorAll('[data-f]').forEach(function(x){x.classList.toggle('on',x===b)})})});</script>
+</body>
+</html>

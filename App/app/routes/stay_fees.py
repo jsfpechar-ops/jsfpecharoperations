@@ -1,7 +1,6 @@
 """Host-only stay-fee overview and per-property detail."""
 from __future__ import annotations
 
-import sqlite3
 import unicodedata
 from datetime import date
 from urllib.parse import parse_qsl, quote, urlencode, urlsplit
@@ -802,7 +801,7 @@ async def stay_fee_finalize(apartment_id: int, request: Request):
         )
     except ValueError:
         return _back(back_path, err=_flash(request, "flash.stay_fees.report_blocked"))
-    except sqlite3.IntegrityError:
+    except db.integrity_errors():
         return _back(back_path, err=_flash(request, "flash.stay_fees.already_saved"))
     db.audit("stay_fee_finalize", f"apartment_id={apartment['id']} period={key}")
     return _back(back_path, msg=_flash(request, "flash.stay_fees.period_saved"))

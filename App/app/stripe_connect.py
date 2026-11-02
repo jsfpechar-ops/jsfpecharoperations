@@ -16,7 +16,6 @@ provider 'stripe'), the same guard pattern as TTLock.
 from __future__ import annotations
 
 import json
-import sqlite3
 from typing import Any, Dict, Optional
 
 import stripe
@@ -30,6 +29,10 @@ _REQUIREMENT_KEYS = ("currently_due", "past_due", "eventually_due", "disabled_re
 # Rejection codes that mean Stripe turned the host down (never stored beyond
 # the requirement field names themselves; see _mirror).
 _REJECT_CODES = ("rejected", "listed", "fraudulent")
+
+# disabled_reason values that mean Stripe or the platform switched the
+# account off for a reason the host cannot fix in onboarding (0623).
+_DISABLED_REASONS = ("platform_paused", "under_review", "listed", "other")
 
 
 def enabled() -> bool:
@@ -60,7 +63,7 @@ def _count_call() -> None:
     month = _month_key()
     db.execute(
         "INSERT INTO lock_api_usage (month, provider, calls) VALUES (?, 'stripe', 1) "
-        "ON CONFLICT(month, provider) DO UPDATE SET calls = calls + 1",
+        "ON CONFLICT(month, provider) DO UPDATE SET calls = lock_api_usage.calls + 1",
         (month,),
     )
 
@@ -172,14 +175,23 @@ def account_for_owner(owner_user_id: int) -> Optional[Dict[str, Any]]:
     return dict(row) if row else None
 
 
+def legal_entity_for_owner(owner_user_id: int) -> Optional[Dict[str, Any]]:
+    """The business entity whose details go to Stripe (0729: the host sees
+    them on /payments before opening Stripe)."""
+    row = db.query_one(
+        "SELECT * FROM legal_entity WHERE owner_user_id = ? AND archived_at IS NULL"
+        " ORDER BY id",
+        (owner_user_id,),
+    )
+    return dict(row) if row else None
+
+
 def create_or_get_account(owner_user_id: int) -> Dict[str, Any]:
     """The mirror row for this owner, creating the Stripe account once."""
     row = account_for_owner(owner_user_id)
     if row is not None:
         return row
-    entity = db.query_one(
-        "SELECT * FROM legal_entity WHERE owner_user_id = ?", (owner_user_id,)
-    )
+    entity = legal_entity_for_owner(owner_user_id)
     if entity is None:
         raise ValueError("host has no legal entity; connect needs the business profile")
     # v2 service methods take one params dict (SDK 16.x), not kwargs.
@@ -219,7 +231,12 @@ def create_or_get_account(owner_user_id: int) -> Dict[str, Any]:
 def _onboarding_state(account: Dict[str, Any]) -> str:
     """Map Stripe's account state onto our five mirror states."""
     requirements = account.get("requirements") or {}
-    if account.get("disabled"):
+    # v1 accounts carry no top-level "disabled"; Stripe says why an account
+    # is switched off in requirements.disabled_reason (0623).
+    reason = requirements.get("disabled_reason") or ""
+    if reason.startswith("rejected"):
+        return "rejected"
+    if reason in _DISABLED_REASONS:
         return "disabled"
     due = requirements.get("currently_due") or []
     past = requirements.get("past_due") or []
@@ -242,16 +259,18 @@ def _requirements_json(requirements: Dict[str, Any]) -> Optional[str]:
 
 
 def _mirror(owner_user_id: int, account: Dict[str, Any]) -> None:
-    """Upsert the account state mirror; audit every state transition."""
+    """Upsert the account state mirror on every call (requirements and the
+    charges/payouts flags can change while the state name stays the same,
+    0623); audit only real state transitions."""
     row = account_for_owner(owner_user_id)
     if row is None or row["stripe_account_id"] != account.get("id"):
         return
     state = _onboarding_state(account)
     requirements = account.get("requirements") or {}
-    changed = db.execute_rowcount(
+    db.execute(
         "UPDATE stripe_account SET onboarding_state = ?, charges_enabled = ?,"
         " payouts_enabled = ?, requirements_json = ?, updated_at = ?"
-        " WHERE owner_user_id = ? AND mode = ? AND onboarding_state != ?",
+        " WHERE owner_user_id = ? AND mode = ?",
         (
             state,
             1 if account.get("charges_enabled") else 0,
@@ -260,10 +279,9 @@ def _mirror(owner_user_id: int, account: Dict[str, Any]) -> None:
             db.utcnow(),
             owner_user_id,
             config.STRIPE_MODE,
-            state,
         ),
     )
-    if changed:
+    if row["onboarding_state"] != state:
         db.audit(
             "stripe_account_state",
             f"acct={account.get('id')} state={state}"
@@ -358,7 +376,7 @@ def _record_event(event: Dict[str, Any]) -> bool:
                 "created_at": db.utcnow(),
             },
         )
-    except sqlite3.IntegrityError:
+    except db.integrity_errors():
         return False
     return True
 
@@ -380,13 +398,24 @@ def sweep_webhook_events(today) -> int:
 
 
 def process_event(event: Dict[str, Any]) -> None:
-    """Dedupe by event id, then dispatch. Only account.updated is handled in
-    0428; the card/QR rail events arrive in later briefs and are recorded."""
-    if not _record_event(event):
+    """Skip a replay, dispatch, then record the event id (0623).
+
+    The id is recorded only after the handler returned, so a handler that
+    raises leaves the event unrecorded and Stripe's retry runs it again.
+    Both handlers are idempotent (mirror upserts; on_paid skips paid rows),
+    so a concurrent duplicate delivery is harmless.
+    """
+    if event_seen(str(event.get("id"))):
         return
+    from . import payment_links
+
     etype = event.get("type")
+    from . import booking_webhook
+
     if etype == "account.updated":
         mirror_by_account_id(dict(event["data"]["object"]), config.STRIPE_MODE)
-    elif etype in ("payment_link.paid", "checkout.session.completed"):
-        from . import payment_links
+    elif booking_webhook.is_booking_event(event):
+        booking_webhook.handle(event)
+    elif etype in payment_links.PAID_EVENTS:
         payment_links.on_paid(event)
+    _record_event(event)

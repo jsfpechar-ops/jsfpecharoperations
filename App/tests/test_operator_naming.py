@@ -8,6 +8,7 @@ and the guest privacy notice then had nobody to point at.
 """
 from __future__ import annotations
 
+import html as _html
 import re
 
 import pytest
@@ -21,6 +22,14 @@ from app.terms_i18n import TERMS_STRINGS
 from tests.conftest import login_as
 
 USERNAME = "operator-naming-host"
+
+
+def _text(markup: str) -> str:
+    """Visible text: the "?" tip button and its body are dropped, tags become spaces."""
+    markup = re.sub(r'<button class="help-tip-btn"[^>]*>.*?</button>', " ", markup, flags=re.S)
+    markup = re.sub(r'<span class="help-tip-body"[^>]*>.*?</span>', " ", markup, flags=re.S)
+    markup = re.sub(r"<[^>]+>", " ", markup)
+    return re.sub(r"\s+", " ", _html.unescape(markup))
 
 ENTITY_NAME = "Operator Naming s.r.o."
 
@@ -193,33 +202,33 @@ def test_the_navigation_links_to_operators(host):
     page = host.get("/settings?lang=en")
     assert page.status_code == 200, page.text
     assert 'href="/entities"' in page.text
-    assert "Business &amp; legal details" in page.text
+    assert "Business & legal details" in _text(page.text)
     assert "Legal entities" not in page.text
 
 
 def test_the_navigation_says_it_in_czech(host):
     page = host.get("/settings?lang=cs")
-    assert ">Firma a právní údaje<" in page.text
+    assert "Firma a právní údaje" in _text(page.text)
     assert "Právnické osoby" not in page.text
 
 
-def test_the_properties_table_has_an_operator_column(host_with_property):
+def test_the_properties_table_has_no_operator_column(host_with_property):
     page = host_with_property.get("/apartments?lang=en")
     assert page.status_code == 200, page.text
-    assert "<th>Legal operator</th>" in page.text
-    assert ENTITY_NAME in page.text
+    # 0530 (owner): the Legal operator column is gone from the one table.
+    assert "<th>Legal operator</th>" not in page.text
 
 
 def test_the_operators_page_is_named_and_explained(host):
     page = host.get("/entities?lang=en")
     assert page.status_code == 200, page.text
-    assert "Business &amp; legal details" in page.text
+    assert "Business & legal details" in _text(page.text)
     assert (
         "Who runs the accommodation: a company or a self-employed person."
         in page.text
     )
     assert "No operators yet. Add the first one here." in page.text
-    assert "Add an operator" in page.text
+    assert "Add an operator" in _text(page.text)
     assert "Legal entities" not in page.text
 
 

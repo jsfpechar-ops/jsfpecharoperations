@@ -237,7 +237,7 @@ def test_after_sixty_minutes_the_next_request_ends_the_impersonation(seeded, mon
     response = client.get(f"/reservations/{seeded['reservation']}", follow_redirects=False)
     assert response.status_code == 303
     location = unquote(response.headers["location"])
-    assert location.startswith("/admin/users?msg=")
+    assert location.startswith("/admin/customers?msg=")
     assert host_i18n.translate("en", "impersonation.expired") in location
 
     host_rows = _audit(seeded["owner"], "impersonation_stopped")
@@ -278,7 +278,9 @@ def test_the_host_sees_full_identity_data(seeded):
     client = _login("wp04-host")
     for path in _pages(seeded):
         assert client.get(path).status_code == 200, path
-    assert DOC_A in client.get(f"/reservations/{seeded['reservation']}").text
+    # v2 stay page lists the document type only (approved mockup, data minimisation); the number is on the guest form
+    assert DOC_A not in client.get(f"/reservations/{seeded['reservation']}").text
+    assert DOC_A in client.get(f"/guests/{seeded['guest_a']}").text
     assert VISA_A in client.get("/housebook").text
     assert DOC_B in client.get(f"/submissions/{seeded['submission']}").text
     form = client.get(f"/guests/{seeded['guest_a']}").text
@@ -295,7 +297,9 @@ def test_the_admin_sees_full_identity_data_while_supporting(seeded):
     client = _supporting(seeded)
     for path in _pages(seeded):
         assert client.get(path).status_code == 200, path
-    assert DOC_A in client.get(f"/reservations/{seeded['reservation']}").text
+    # v2 stay page lists the document type only (approved mockup, data minimisation); the number is on the guest form
+    assert DOC_A not in client.get(f"/reservations/{seeded['reservation']}").text
+    assert DOC_A in client.get(f"/guests/{seeded['guest_a']}").text
     assert VISA_A in client.get("/housebook").text
     assert DOC_B in client.get(f"/submissions/{seeded['submission']}").text
     form = client.get(f"/guests/{seeded['guest_a']}").text
@@ -426,7 +430,7 @@ def test_the_host_sees_start_stop_and_reveal_in_settings(seeded):
     db.audit("apartment_updated", "id=1", actor="wp04-host", owner_user_id=seeded["owner"])
 
     host = _login("wp04-host")
-    page = host.get("/settings").text
+    page = host.get("/settings/technical").text
     for text in (
         "impersonation_started",
         f"reason={REASON}",
@@ -439,7 +443,7 @@ def test_the_host_sees_start_stop_and_reveal_in_settings(seeded):
     ):
         assert text in page, text
 
-    support = host.get("/settings?audit=support").text
+    support = host.get("/settings/technical?audit=support").text
     assert "impersonation_started" in support
     assert "impersonation_stopped" in support
     assert "guest_identity_revealed" in support

@@ -89,9 +89,10 @@ def test_too_long_is_refused_without_a_call(host):
     assert "under 600 characters" in page and fake.calls == []
 
 
-def test_the_seventh_message_starts_a_fresh_conversation(host):
+def test_the_seventh_message_starts_a_fresh_conversation(host, monkeypatch):
     from tests.test_submission_retry_cap import USERNAME
 
+    monkeypatch.setattr(havel, "support_blocked", lambda uid: True)
     fake = FakeClient([])
     ai.set_client_for_tests(fake)
     uid = int(db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))["id"])

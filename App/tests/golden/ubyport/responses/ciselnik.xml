@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"><soap:Body><GetCiselnikResponse xmlns="urn:example:ubyport:golden"><GetCiselnikResult><CiselnikType><Kod>CZ</Kod><Nazev>Cesko</Nazev></CiselnikType><CiselnikType><Kod>SK</Kod><Nazev>Slovensko &amp; okoli</Nazev></CiselnikType></GetCiselnikResult></GetCiselnikResponse></soap:Body></soap:Envelope>

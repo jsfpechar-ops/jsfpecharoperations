@@ -15,7 +15,7 @@ from typing import Any, Dict, List
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, config, db, stripe_connect
+from app import auth, config, db, payments_consent, stripe_connect
 from app.main import app
 from tests.conftest import login_as
 
@@ -104,7 +104,7 @@ def _account_dict(*, charges: bool, payouts: bool, due: list, errors: list = Non
             "currently_due": due,
             "past_due": [],
             "eventually_due": [],
-            "disabled_reason": None,
+            "disabled_reason": "platform_paused" if disabled else None,
             "errors": errors or [],
             "alternative": {"booleans": ["individual.verification.document"]},
         },
@@ -351,6 +351,30 @@ def test_process_event_records_unknown_types(fake_stripe):
     assert rows and rows[0]["event_type"] == "checkout.session.completed"
 
 
+def test_mirror_updates_requirements_when_state_unchanged(fake_stripe):
+    oid = _owner_id()
+    stripe_connect.create_or_get_account(oid)
+    first = _account_dict(charges=False, payouts=False, due=["individual.id_number"])
+    stripe_connect._mirror(oid, first)
+    second = _account_dict(charges=False, payouts=False, due=["individual.dob.day"])
+    stripe_connect._mirror(oid, second)
+    row = stripe_connect.account_for_owner(oid)
+    assert row["onboarding_state"] == "action_required"
+    assert json.loads(row["requirements_json"])["currently_due"] == ["individual.dob.day"]
+
+
+def test_process_event_failure_leaves_event_unrecorded(fake_stripe, monkeypatch):
+    def boom(account, mode):
+        raise RuntimeError("handler failed")
+
+    monkeypatch.setattr(stripe_connect, "mirror_by_account_id", boom)
+    event = _account_updated_event(_account_dict(charges=True, payouts=True, due=[]))
+    event["id"] = "evt_test_fail"
+    with pytest.raises(RuntimeError):
+        stripe_connect.process_event(event)
+    assert not stripe_connect.event_seen(event["id"])
+
+
 # --- routes ------------------------------------------------------------------
 
 
@@ -359,6 +383,7 @@ def client(owner):
     client = TestClient(app)
     response = login_as(client, OWNER, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
+    payments_consent.record(_owner_id())  # 0624: consent comes before Stripe
     return client
 
 
@@ -391,6 +416,7 @@ def test_return_mirrors_state(client, owner, stripe_env, fake_stripe):
     fake_stripe.account.state = _account_dict(charges=True, payouts=True, due=[])
     response = client.get("/payments/connect/return", follow_redirects=False)
     assert response.status_code == 303
+    assert response.headers["location"].startswith("/payments?msg=")
     assert stripe_connect.account_for_owner(_owner_id())["onboarding_state"] == "complete"
 
 

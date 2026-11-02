@@ -17,7 +17,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, deadlines, filing_watchdog, host_i18n, housebook, reporting
 from tests.test_filing_watchdog import USERNAME, world as world  # noqa: F401
-from tests.test_filing_watchdog import FRIDAY, _mine
+from tests.test_filing_watchdog import MONDAY, _mine
 from tests.conftest import login_as
 
 # A filing time on Wednesday 30.09.2026 at 14:32 Prague time (CEST, UTC+2).
@@ -92,7 +92,7 @@ def test_the_deadline_badge_says_filed_by_hand(world):
     rid = world["add_stay"]([("DEU", "pending")])
     reporting.mark_filed_by_hand(rid, FILED_UTC, None)
     progress = reporting.reservation_progress(_reservation(rid))
-    cell = reporting.deadline_cell(progress, FRIDAY)
+    cell = reporting.deadline_cell(progress, MONDAY)
     assert cell["by_hand"] is True
     assert cell["state"] == "filed_on_time"
     assert cell["filed_at"] == datetime(2026, 9, 30, 14, 32)
@@ -101,7 +101,7 @@ def test_the_deadline_badge_says_filed_by_hand(world):
 def test_a_late_filing_by_hand_is_still_marked_by_hand(world):
     rid = world["add_stay"]([("DEU", "pending")])
     reporting.mark_filed_by_hand(rid, "2026-10-02T08:00:00+00:00", None)
-    cell = reporting.deadline_cell(reporting.reservation_progress(_reservation(rid)), FRIDAY)
+    cell = reporting.deadline_cell(reporting.reservation_progress(_reservation(rid)), MONDAY)
     assert cell["state"] == "filed_late" and cell["by_hand"] is True
 
 
@@ -305,7 +305,7 @@ def test_a_stay_of_another_workspace_cannot_be_marked(world, client):
     rid = db.insert(
         "reservation",
         {"apartment_id": apartment_id, "source": "manual", "uid": "filed-by-hand-other",
-         "date_from": FRIDAY.isoformat(), "date_to": (FRIDAY + timedelta(days=2)).isoformat(),
+         "date_from": MONDAY.isoformat(), "date_to": (MONDAY + timedelta(days=2)).isoformat(),
          "status": "active", "created_at": now, "updated_at": now},
     )
     guest_id = db.insert(

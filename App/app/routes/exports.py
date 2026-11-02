@@ -188,10 +188,10 @@ def submissions_receipts_zip(request: Request, background_tasks: BackgroundTasks
     )
     params: List[Any] = [owner_id]
     if date_from:
-        sql += " AND date(s.created_at) >= ?"
+        sql += f" AND {db.sqlite_date_expr('s.created_at')} >= ?"
         params.append(date_from)
     if date_to:
-        sql += " AND date(s.created_at) <= ?"
+        sql += f" AND {db.sqlite_date_expr('s.created_at')} <= ?"
         params.append(date_to)
     sql += " ORDER BY s.created_at DESC"
     rows = db.query(sql, params)

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any, Dict, Optional
 from zoneinfo import ZoneInfo
@@ -57,6 +57,31 @@ def _money_czk(haler, quantity=1) -> str:
 def _weekday(value: Optional[str]) -> str:
     parsed = validation.parse_iso_date(value)
     return parsed.strftime("%a") if parsed else ""
+
+
+_LONG_MONTHS_CS = (
+    "ledna", "února", "března", "dubna", "května", "června",
+    "července", "srpna", "září", "října", "listopadu", "prosince",
+)
+_LONG_MONTHS_EN = (
+    "January", "February", "March", "April", "May", "June", "July",
+    "August", "September", "October", "November", "December",
+)
+_LONG_WEEKDAYS_CS = ("pondělí", "úterý", "středa", "čtvrtek", "pátek", "sobota", "neděle")
+_LONG_WEEKDAYS_EN = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+_LONG_WEEKDAYS_VI = ("Thứ hai", "Thứ ba", "Thứ tư", "Thứ năm", "Thứ sáu", "Thứ bảy", "Chủ nhật")
+
+
+def date_long(value: Optional[str], lang: str) -> str:
+    """The date in words for the Overview header: "neděle 1. listopadu", "Sunday 1 November", "Chủ nhật, 1 tháng 11"."""
+    parsed = validation.parse_iso_date(value)
+    if not parsed:
+        return ""
+    if lang == "cs":
+        return f"{_LONG_WEEKDAYS_CS[parsed.weekday()]} {parsed.day}. {_LONG_MONTHS_CS[parsed.month - 1]}"
+    if lang == "vi":
+        return f"{_LONG_WEEKDAYS_VI[parsed.weekday()]}, {parsed.day} tháng {parsed.month}"
+    return f"{_LONG_WEEKDAYS_EN[parsed.weekday()]} {parsed.day} {_LONG_MONTHS_EN[parsed.month - 1]}"
 
 
 def _nights(date_from: Optional[str], date_to: Optional[str]) -> int:
@@ -311,6 +336,7 @@ _PASS_MONTHS = {
     "es": ("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"),
     "fr": ("janv", "févr", "mars", "avr", "mai", "juin", "juil", "août", "sept", "oct", "nov", "déc"),
     "uk": guest_uk_i18n.PASS_MONTHS,
+    "vi": ("thg 1", "thg 2", "thg 3", "thg 4", "thg 5", "thg 6", "thg 7", "thg 8", "thg 9", "thg 10", "thg 11", "thg 12"),
 }
 _PASS_WEEKDAYS = {
     "en": ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"),
@@ -319,6 +345,7 @@ _PASS_WEEKDAYS = {
     "es": ("lun", "mar", "mié", "jue", "vie", "sáb", "dom"),
     "fr": ("lun", "mar", "mer", "jeu", "ven", "sam", "dim"),
     "uk": guest_uk_i18n.PASS_WEEKDAYS,
+    "vi": ("T2", "T3", "T4", "T5", "T6", "T7", "CN"),
 }
 
 
@@ -341,6 +368,34 @@ def _pass_date(context, value: Optional[str], part: str = "dm") -> str:
     if part == "long":
         return f"{weekday} {day_month}"
     return day_month
+
+
+@pass_context
+def stay_range(context, date_from: Optional[str], date_to: Optional[str]) -> str:
+    """A stay's dates on one line for the stays list (0766).
+
+    Same month: "Thu 5 – Sun 8 Nov". Across months: "Sat 31 Oct – Mon 2 Nov".
+    Czech is numeric ("čt 5. – ne 8. 11."), Vietnamese is "T5 5/11 – CN 8/11".
+    An unparseable date returns "" so a broken reservation never crashes the list.
+    """
+    start = validation.parse_iso_date(date_from)
+    end = validation.parse_iso_date(date_to)
+    if not start or not end:
+        return ""
+    lang = context.get("lang") if context.get("lang") in _PASS_MONTHS else "en"
+    weekdays = _PASS_WEEKDAYS[lang]
+    same_month = (start.year, start.month) == (end.year, end.month)
+    if lang == "vi":
+        return f"{weekdays[start.weekday()]} {start.day}/{start.month} – {weekdays[end.weekday()]} {end.day}/{end.month}"
+    if lang == "cs":
+        if same_month:
+            return f"{weekdays[start.weekday()]} {start.day}. – {weekdays[end.weekday()]} {end.day}. {end.month}."
+        return f"{weekdays[start.weekday()]} {start.day}. {start.month}. – {weekdays[end.weekday()]} {end.day}. {end.month}."
+    months = _PASS_MONTHS[lang]
+    if same_month:
+        return f"{weekdays[start.weekday()]} {start.day} – {weekdays[end.weekday()]} {end.day} {months[end.month - 1]}"
+    return (f"{weekdays[start.weekday()]} {start.day} {months[start.month - 1]} – "
+            f"{weekdays[end.weekday()]} {end.day} {months[end.month - 1]}")
 
 
 @pass_context
@@ -384,6 +439,7 @@ templates.env.filters["date_cz"] = _fmt_date
 templates.env.filters["date_short"] = validation.fmt_date_short
 templates.env.filters["money_czk"] = _money_czk
 templates.env.filters["weekday"] = _weekday
+templates.env.filters["date_long"] = date_long
 templates.env.globals["havel_topics_for"] = havel_topics.ordered  # 0324: topics for the panel in base.html
 templates.env.filters["datetime_local"] = _datetime_local
 templates.env.filters["from_json"] = _from_json
@@ -441,6 +497,13 @@ def _template_section_tabs(request: Request, section: str, current: str = "") ->
             ("archive", "/settings/archived", "settings.nav.archive"),
             ("privacy", "/privacy-requests", "nav.privacy_requests"),
         ]
+    elif section == "admin":
+        items = [
+            ("today", "/admin", "admin.tab.today"),
+            ("customers", "/admin/customers", "customers.title"),
+            ("money", "/admin/fakturace", "admin.tab.money"),
+            ("system", "/admin/operations", "admin.tab.system"),
+        ]
     else:
         return []
     return [(href, key, name == current) for name, href, key in items]
@@ -469,7 +532,14 @@ def _template_page_tabs(context) -> list:
         if str(context.get("next_path") or "").startswith("/invoices"):
             return _template_section_tabs(request, "invoices", "settings")
         return _template_section_tabs(request, "properties", "business")
-    if nav in ("settings", "privacy_requests", "users", "incidents", "operations", "funnel", "billing_admin"):
+    if path == "/admin" or path.startswith("/admin/"):
+        segment = path.split("/")[2] if path.count("/") >= 2 else ""
+        current = {
+            "": "today", "fakturace": "money", "customers": "customers", "users": "customers",
+            "incidents": "system", "operations": "system", "funnel": "money",
+        }.get(segment, "")
+        return _template_section_tabs(request, "admin", current)
+    if nav in ("settings", "privacy_requests"):
         current = (
             "settings" if nav == "settings" and path == "/settings"
             else "archive" if path == "/settings/archived"
@@ -539,6 +609,7 @@ templates.env.globals.update(
     nights=_nights,
     nights_label=_nights_label,
     pass_date=_pass_date,
+    stay_range=stay_range,
     source_label=_source_label,
     source_mark=source_mark,
     feed_platform_key=icalsync.platform_of,
@@ -554,6 +625,7 @@ templates.env.globals.update(
 # Pages that are themselves about setting up a second way in; the prompt would
 # only get in the way there.
 _NO_SECURITY_PROMPT = ("/account/2fa", "/settings", "/account/accept")
+SECURITY_PROMPT_DELAY_DAYS = 7  # a new self-signup host sets up first, then secures the account
 
 
 def _security_prompt(request: Request, account, workspace):
@@ -571,6 +643,13 @@ def _security_prompt(request: Request, account, workspace):
             return None  # an admin previewing a host's workspace
         if request.url.path.startswith(_NO_SECURITY_PROMPT):
             return None
+        signup_at = account["signup_at"] if "signup_at" in account.keys() else None
+        if signup_at:
+            started = datetime.fromisoformat(str(signup_at))
+            if started.tzinfo is None:
+                started = started.replace(tzinfo=timezone.utc)
+            if datetime.now(timezone.utc) - started < timedelta(days=SECURITY_PROMPT_DELAY_DAYS):
+                return None
         if not db.update_if(
             "user_account", int(account["id"]), {"two_factor_prompted_at": db.utcnow()},
             {"two_factor_prompted_at": None},

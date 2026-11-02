@@ -1,0 +1,44 @@
+[
+  {
+    "date_from": "2026-12-20",
+    "date_to": "2026-12-21",
+    "description": "",
+    "guest_email": null,
+    "is_block": false,
+    "is_cancelled": false,
+    "name_hint": "",
+    "phone_last4": null,
+    "recurring": true,
+    "reservation_url": null,
+    "summary": "Reserved",
+    "uid": "rr-1@example.test"
+  },
+  {
+    "date_from": "2026-12-22",
+    "date_to": "2026-12-23",
+    "description": "",
+    "guest_email": null,
+    "is_block": false,
+    "is_cancelled": false,
+    "name_hint": "",
+    "phone_last4": null,
+    "recurring": true,
+    "reservation_url": null,
+    "summary": "Reserved",
+    "uid": "rr-2@example.test"
+  },
+  {
+    "date_from": "2026-12-26",
+    "date_to": "2026-12-27",
+    "description": "",
+    "guest_email": null,
+    "is_block": false,
+    "is_cancelled": false,
+    "name_hint": "",
+    "phone_last4": null,
+    "recurring": false,
+    "reservation_url": null,
+    "summary": "Reserved",
+    "uid": "rr-3@example.test"
+  }
+]

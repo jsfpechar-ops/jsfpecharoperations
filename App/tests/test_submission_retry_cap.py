@@ -665,10 +665,10 @@ def test_every_state_submit_batch_can_write_is_terminal():
     states as the set of finished batches. A state the batch path can write but
     that set omits would be swept away as if still running, so the two must not
     drift apart."""
-    source = inspect.getsource(reporting.submit_batch)
+    source = inspect.getsource(reporting.submit_batch) + inspect.getsource(reporting.plan_outcome)
     for state in ("ok", "ok_duplicate", "partial", "error", "transport_error",
                   "outcome_unknown"):
-        assert state in source, f"submit_batch never writes {state!r}"
+        assert state in source, f"the batch path never writes {state!r}"
         assert state in reporting.TERMINAL_SUBMISSION_STATES, (
             f"{state!r} is a terminal batch state the set does not list"
         )

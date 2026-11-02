@@ -9,7 +9,7 @@ Scanning is on today for every Max property with passport upload on. Make it a p
 `doc_ocr.available(apartment)` in `App/app/doc_ocr.py` gates the guest tickbox (Max plan, test list, Tesseract). The editor field `passport_photo_policy` is saved in `App/app/routes/admin.py` (~line 1530) and rendered in `App/app/templates/_property_editor.html` (~line 183). Switch markup to copy: the `feature-switch-row` / `switch feature-switch` block of `door_codes` in the same template. Schema rule: new file in `App/app/migrations/`, mirror the newest `ALTER TABLE` migration.
 
 ## 3. Files
-`App/app/migrations/0034_apartment_ocr_scan.sql` (new), `App/app/db.py` (only where `passport_photo_policy` is declared at ~165 and ~969: add the matching `ocr_scan INTEGER NOT NULL DEFAULT 0`), `App/app/doc_ocr.py`, `App/app/routes/admin.py`, `App/app/templates/_property_editor.html`, `App/app/host_i18n.py`, `App/tests/test_doc_ocr.py`, `App/tests/test_guest_ocr_geometry_browser.py`, the test file the test-map names for the property editor save.
+`App/app/migrations/0035_apartment_ocr_scan.sql` (new), `App/app/db.py` (only where `passport_photo_policy` is declared at ~165 and ~969: add the matching `ocr_scan INTEGER NOT NULL DEFAULT 0`), `App/app/doc_ocr.py`, `App/app/routes/admin.py`, `App/app/templates/_property_editor.html`, `App/app/host_i18n.py`, `App/tests/test_doc_ocr.py`, `App/tests/test_guest_ocr_geometry_browser.py`, the test file the test-map names for the property editor save.
 
 ## 4. Steps
 1. Migration plus the two `db.py` lines: column `ocr_scan INTEGER NOT NULL DEFAULT 0` on `apartment`.

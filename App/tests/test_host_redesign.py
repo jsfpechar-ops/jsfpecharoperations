@@ -55,7 +55,10 @@ def test_all_host_destinations_render_with_valid_structure(fee_host, lang):
                  '/settings', '/settings/archived', '/privacy-requests', '/guide', '/onboarding'):
         response = client.get(path + ('&' if '?' in path else '?') + 'lang=' + lang)
         assert response.status_code == 200, path
-        assert '/static/host.css' in response.text, path
+        if re.search(r'<body class="[^"]*\bv2\b', response.text):
+            assert '/static/app2.css' in response.text, path
+        else:
+            assert '/static/host.css' in response.text, path
         assert 'data-command-open' in rail(response.text), path
         structure = PageStructure(response.text)
         assert not structure.nested_forms, path

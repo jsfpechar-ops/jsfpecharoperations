@@ -10,7 +10,7 @@ start-up lock), takes the existing scheduler lock on DATA_DIR/scheduler.lock,
 starts the jobs and blocks until SIGTERM or SIGINT. It refuses to run when
 another process already holds the scheduler lock, so two workers, or a worker
 next to a single-process ``UBYHOST_ROLE=all`` app on the same volume, can never
-both sweep and file the same guests.
+both sweep and file the same guests. On PostgreSQL, when every job id is in ``UBYHOST_JOB_QUEUE_KINDS``, the scheduler lock is skipped and several workers share the job queue.
 
 There is no HTTP server. While the scheduler runs, the process touches
 DATA_DIR/worker.alive every 30 s; the compose health check reads its age.

@@ -648,6 +648,7 @@ def _write_issued(draft: Dict[str, Any], actor_user_id: Optional[int]) -> tuple:
     """Write an issued document inside one write lock. Returns (id, number)."""
     year = int(draft["issue_date"][:4])
     with db.immediate() as cur:
+        db.lock_key(cur, "invoice_sequence", draft["legal_entity_id"])
         entity = cur.execute(
             "SELECT * FROM legal_entity WHERE id = ?", (draft["legal_entity_id"],)
         ).fetchone()

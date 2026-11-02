@@ -156,7 +156,7 @@ def raise_due_alerts(today: Optional[date] = None) -> int:
     horizon = (today + timedelta(days=DUE_SOON_DAYS)).isoformat()
     rows = db.query(
         "SELECT * FROM data_subject_request "
-        "WHERE status IN ('open','extended') AND date(due_at) <= ?",
+        f"WHERE status IN ('open','extended') AND {db.sqlite_date_expr('due_at')} <= ?",
         (horizon,),
     )
     for row in rows:

@@ -133,8 +133,6 @@ def test_the_note_is_printed_and_an_overfull_page_is_refused():
 
 
 def test_an_issued_note_cannot_be_changed():
-    import sqlite3
-
     import pytest
 
     from app import db
@@ -152,7 +150,7 @@ def test_an_issued_note_cannot_be_changed():
             "created_at": now,
         },
     )
-    with pytest.raises(sqlite3.DatabaseError, match="immutable"):
+    with pytest.raises(db.integrity_errors(), match="immutable"):
         db.execute("UPDATE invoice SET note = 'Jiná' WHERE id = ?", (invoice,))
 
 

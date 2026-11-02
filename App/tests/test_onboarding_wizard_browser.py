@@ -659,13 +659,16 @@ def test_try_it_open_skip_moves_on(host):
 
 
 def test_overview_guest_link_card_links_to_settings(host):
-    """Fix 9: the status line does not repeat the copy button, and settings are linked."""
+    """Fix 9: the guest link card shows the copy button once, and does not repeat a status line.
+
+    0544: the overview card is gone; the guest card (section.guest-card) sits on the property page.
+    """
     flat = _create(host)
-    page = host["client"].get(f"/apartments/{flat['id']}?view=overview&lang=en").text
+    page = host["client"].get(f"/apartments/{flat['id']}?lang=en").text
     assert "Ready · Copy link" not in page
-    assert _t("en", "wizard.guest_link.ready") in page
-    assert _t("en", "wizard.guest_link.copy_link") in page
-    assert f"/apartments/{flat['id']}?view=settings&amp;section=guests#communication" in page
+    assert 'id="property-guest-link-title"' in page
+    assert 'data-copy="property-guest-url"' in page
+    assert _t("en", "common.copy_link") in page
 
 
 def test_police_saved_without_password_stays_on_police(host):
@@ -987,9 +990,9 @@ def test_review_fixes_in_the_browser(host, base_url):
         page.wait_for_url("**view=overview**")
         assert page.locator("[data-setup-status]").is_visible()
         _shot(page, "12-overview-hidden-en-1280.png")
-        page.locator(".host-property-card-static").scroll_into_view_if_needed()
+        page.locator("section.guest-card").first.scroll_into_view_if_needed()
         _shot(page, "13-overview-guest-link-en-1280.png")
-        assert page.locator("a[href*='section=guests']").count() >= 1
+        assert page.locator("section.guest-card [data-copy='property-guest-url']").count() >= 1
         browser.close()
 
 
@@ -1320,19 +1323,30 @@ def test_wizard_polish_and_overview_cards(host, base_url, monkeypatch, lang, wid
             page.locator(".setup-wizard-foot .ui-btn-primary").click()
         # 0274 (M): police is still waiting, so the finish button opens that step.
         assert f"/apartments/{flat['id']}/setup/police" in page.url, page.url
-        page.goto(f"{base_url}/apartments/{flat['id']}?view=overview&lang={lang}")
-        overview = page.locator(".host-property-grid").first
-        assert overview.get_by_text(_t(lang, "wizard.overview.calendars"), exact=True).is_visible()
-        heights = overview.locator(".host-property-card").evaluate_all(
-            "cards => cards.map(card => card.getBoundingClientRect().height)"
-        )
-        assert max(heights) - min(heights) <= 1, heights
-        guest_card = overview.locator(".host-property-card-static")
-        assert guest_card.locator("button[data-copy]").is_visible()
-        label_box = guest_card.locator("strong").bounding_box()
-        copy_box = guest_card.locator("button[data-copy]").bounding_box()
+        # 0541: the overview cards are aside rows; the guest link sits in the messages section.
+        page.goto(f"{base_url}/apartments/{flat['id']}?view=settings&section=guests&lang={lang}")
+        calendars_title = _t(lang, "property_page.sec.calendars.title")
+        if width >= 1024:
+            aside = page.locator("aside.preview")
+            calendars_row = aside.locator('a.r[href="#sec-calendars"]')
+            assert calendars_row.locator("span").inner_text() == calendars_title
+            assert aside.locator(".pv .r").count() >= 4
+            assert aside.locator("button[data-copy]").count() == 0
+        else:
+            calendars_summary = page.locator("details#sec-calendars > summary")
+            assert calendars_summary.is_visible()
+            assert calendars_summary.locator("b").inner_text() == calendars_title
+        link_card = page.locator("section.guest-card")
+        copy_button = link_card.locator('button[data-copy="property-guest-url"]')
+        assert copy_button.is_visible()
+        label_box = link_card.locator("#property-guest-link-title").bounding_box()
+        copy_box = copy_button.bounding_box()
         assert label_box and copy_box
-        assert label_box["x"] + label_box["width"] <= copy_box["x"]
+        # Label left of the button; when the button wraps, the label sits above it.
+        assert (
+            label_box["x"] + label_box["width"] <= copy_box["x"]
+            or label_box["y"] + label_box["height"] <= copy_box["y"]
+        )
         assert page.evaluate(_overflow_js())
         _shot(page, f"26-overview-cards-{tag}.png")
         browser.close()

@@ -198,7 +198,7 @@ def stays_for_submission(submission_id: Optional[int]) -> List[Dict[str, Any]]:
             "JOIN reservation r ON r.id = g.reservation_id "
             "JOIN apartment a ON a.id = r.apartment_id "
             f"WHERE g.id IN ({marks}) "
-            "GROUP BY r.id "
+            "GROUP BY r.id, a.id, a.internal_name "
             "ORDER BY r.date_from, r.id",
             list(guest_ids),
         )
@@ -992,7 +992,7 @@ def build_stay_fee_report(
     open_label = _text(lang, "mail.stay_fee.open")
     footer = _text(lang, "mail.stay_fee.footer")
     turn_off = _text(lang, "mail.stay_fee.turn_off")
-    turn_off_url = _app("/settings#settings-stay-fee-emails")
+    turn_off_url = _app("/settings/account#settings-stay-fee-emails")
     show_qr = has_qr and not zero
     text_lines = [intro, "", step_send, step_pay]
     if show_qr:
@@ -1077,7 +1077,7 @@ def build_stay_fee_blocked(
     open_label = _text(lang, "mail.stay_fee.open")
     footer = _text(lang, "mail.stay_fee.footer")
     turn_off = _text(lang, "mail.stay_fee.turn_off")
-    turn_off_url = _app("/settings#settings-stay-fee-emails")
+    turn_off_url = _app("/settings/account#settings-stay-fee-emails")
     text = "\n".join(
         [
             intro, "", *[f"- {item}" for item in items], "", after, report_url, "", "--", "UbyHost",

@@ -28,9 +28,29 @@ def _context(request: Request, **values) -> dict:
         day = date.fromisoformat(value)
         return f"{weekdays[day.weekday()]} {day.day}.{day.month}.{day.year}"
 
+    short_days = {"en": ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"), "vi": ("T2", "T3", "T4", "T5", "T6", "T7", "CN"),
+                  "cs": ("Po", "Út", "St", "Čt", "Pá", "So", "Ne")}[lang if lang in ("en", "vi") else "cs"]
+    months = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+    def cleaning_short(value):
+        day = date.fromisoformat(value)
+        if lang == "en":
+            return f"{day.day} {months[day.month - 1]}"
+        if lang == "vi":
+            return f"{day.day}/{day.month}"
+        return f"{day.day}. {day.month}."
+
+    def cleaning_day(value):
+        day = date.fromisoformat(value)
+        if lang == "en":
+            return f"{short_days[day.weekday()]} {day.day} {months[day.month - 1]}"
+        if lang == "vi":
+            return f"{short_days[day.weekday()]} {day.day}/{day.month}"
+        return f"{short_days[day.weekday()]} {day.day}. {day.month}."
+
     return {"cleaning_labels": {key: (host_vi_i18n.CLEANING_WORDS.get(key) or pair[0]) if lang == "vi" else pair[1 if lang == "cs" else 0] for key, pair in cleaning_i18n.WORDS.items()},
             "nav": "cleaning", "ct": cleaning_i18n.translator(lang),
-            "cleaning_date": full_date, "lang": lang, **values}
+            "cleaning_date": full_date, "cleaning_day": cleaning_day, "cleaning_short": cleaning_short, "lang": lang, **values}
 
 
 def _groups(payload: dict) -> list:
@@ -64,6 +84,20 @@ def _period(request: Request):
     return cleaning.parse_range(first.isoformat(), end)
 
 
+def _sections(cleanings, today: date) -> list:
+    week_end = today + timedelta(days=6)
+    buckets = {"today": [], "week": [], "later": []}
+    for item in cleanings:
+        day = date.fromisoformat(item["date"])
+        if day == today:
+            buckets["today"].append(item)
+        elif today < day <= week_end:
+            buckets["week"].append(item)
+        else:
+            buckets["later"].append(item)
+    return [(key, items) for key, items in buckets.items() if items or key == "today"]
+
+
 def _payload(request: Request, first: date, last: date, ids=None, read_only=False, owner_id=None):
     owner = access.owner_id(request) if not read_only else owner_id
     allowed = cleaning.properties(owner, ids)
@@ -80,8 +114,10 @@ def _payload(request: Request, first: date, last: date, ids=None, read_only=Fals
                 entry["displayStart"] = max(entry["displayStart"], first.isoformat() + "T00:00")
                 entry["displayEnd"] = min(entry["displayEnd"], last.isoformat() + "T00:00")
     payload["properties"] = [{"id": p["id"], "name": p["internal_name"]} for p in allowed]
-    context = _context(request, groups=_groups(payload), read_only=read_only)
-    payload["listHtml"] = templating.templates.get_template("_cleaning_list.html").render(context)
+    sections = _sections(payload["cleanings"], cleaning.today())
+    context = _context(request, groups=_groups(payload), read_only=read_only, sections=sections)
+    template = "_cleaning_list.html" if read_only else "_cleaning_table.html"
+    payload["listHtml"] = templating.templates.get_template(template).render(context)
     return payload
 
 
@@ -101,6 +137,7 @@ def index(request: Request):
         raise HTTPException(422, "Invalid cleaning range") from None
     return _render(request, "cleaning.html", payload=payload, groups=_groups(payload),
                    today=cleaning.today(), apartments=cleaning.properties(access.owner_id(request)),
+                   sections=_sections(payload["cleanings"], cleaning.today()),
                    read_only=False, calendar_source="/cleaning/schedule", calendar_cleaning=True,
                    calendar_readonly=False, calendar_date=first.isoformat(),
                    calendar_from=first.isoformat(), calendar_to=last.isoformat(),

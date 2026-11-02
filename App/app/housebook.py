@@ -470,7 +470,7 @@ def expired_guest_ids(
     rows = db.query(
         "SELECT g.id AS id FROM guest g JOIN reservation r ON r.id = g.reservation_id "
         "JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE COALESCE(date(g.stay_to), date(r.date_to)) < ? "
+        f"WHERE COALESCE({db.sqlite_date_expr('g.stay_to')}, {db.sqlite_date_expr('r.date_to')}) < ? "
         "AND (? IS NULL OR a.owner_user_id = ?)",
         (retention_cutoff(today).isoformat(), owner_user_id, owner_user_id),
     )
@@ -488,8 +488,8 @@ def due_guest_ids(
     rows = db.query(
         "SELECT g.id AS id FROM guest g JOIN reservation r ON r.id = g.reservation_id "
         "JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE COALESCE(date(g.stay_to), date(r.date_to)) >= ? "
-        "AND COALESCE(date(g.stay_to), date(r.date_to)) < ? "
+        f"WHERE COALESCE({db.sqlite_date_expr('g.stay_to')}, {db.sqlite_date_expr('r.date_to')}) >= ? "
+        f"AND COALESCE({db.sqlite_date_expr('g.stay_to')}, {db.sqlite_date_expr('r.date_to')}) < ? "
         "AND (? IS NULL OR a.owner_user_id = ?)",
         (start, end, owner_user_id, owner_user_id),
     )
@@ -504,8 +504,8 @@ def due_guest_counts(today: Optional[date] = None, within_days: int = 30) -> Dic
         "SELECT a.owner_user_id AS owner, COUNT(*) AS n FROM guest g "
         "JOIN reservation r ON r.id = g.reservation_id "
         "JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE COALESCE(date(g.stay_to), date(r.date_to)) >= ? "
-        "AND COALESCE(date(g.stay_to), date(r.date_to)) < ? "
+        f"WHERE COALESCE({db.sqlite_date_expr('g.stay_to')}, {db.sqlite_date_expr('r.date_to')}) >= ? "
+        f"AND COALESCE({db.sqlite_date_expr('g.stay_to')}, {db.sqlite_date_expr('r.date_to')}) < ? "
         "GROUP BY a.owner_user_id",
         (start, end),
     )

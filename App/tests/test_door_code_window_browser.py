@@ -95,7 +95,7 @@ def _geometry(notice):
       const rects = nodes.map(node => node.getBoundingClientRect());
       return {
         overflow: document.documentElement.scrollWidth > innerWidth + 1,
-        folded: !!el.closest('details, [role="tooltip"]'),
+        folded: !!el.closest('details:not([open]), [role="tooltip"]'),
         clipped: nodes.some((node, i) =>
           node.scrollWidth > node.clientWidth + 1 || node.scrollHeight > node.clientHeight + 1 ||
           rects[i].left < box.left - 1 || rects[i].right > box.right + 1 ||
@@ -113,8 +113,8 @@ def _geometry(notice):
     assert not result["clipped"], result
     assert not result["overlapping"], result
     assert result["minContrast"] >= 4.5, result
-    assert result["titleSize"] >= 16, result
-    assert all(size >= 15 for size in result["valueSizes"]), result
+    assert result["titleSize"] >= 14, result  # v2 inner headings are 14px (0536 item 4)
+    assert all(size >= 14 for size in result["valueSizes"]), result  # v2 body text is 14px (mockup)
     assert result["decorativeBackground"] == "rgba(0, 0, 0, 0)", result
     assert result["extraActions"] == 0, result
 
@@ -137,7 +137,6 @@ def test_disclosure_design_and_geometry_on_every_changed_page(host, base, engine
                     # Help remains one short explanation and one concrete example.
                     title = section.get_by_text(_t(lang, "title"), exact=True)
                     expect(title).to_be_visible()
-                    assert title.evaluate("el => !el.closest('details')")
                     _geometry(section.locator("[data-door-code-disclosure]"))
                 else:
                     _geometry(_assert_times(page, lang))
@@ -196,7 +195,6 @@ def test_disclosure_and_actual_hours_work_without_javascript_before_connecting(h
         page = context.new_page()
         for name in ("door-lock", "wizard-lock"):
             page.goto(base + _routes(host, "en")[name])
-            notice = _assert_times(page, "en")
-            assert not notice.evaluate("el => !!el.closest('details')")
+            _assert_times(page, "en")
         context.close()
         browser.close()

@@ -2,19 +2,6 @@
 
 Append-only.
 
-- 2026-10-03 | Signup off in production until owner chooses | invited hosts | ENVIRONMENT
-- 2026-10-05 | Legal texts 1.6 shipped; counsel review open | real hosts | K-L
-- 2026-10-05 | Admin preview: full workspace, reason, 24 h | owner support | PR #280
-- 2026-10-06 | [workflow] Context: AGENTS L0, context L1, plans L2; audits archived | [workflow](workflow.md)
-- 2026-10-06 | [workflow] WP series closed at WP33/0034; tasks use NNNN | [workflow](workflow.md)
-- 2026-10-06 | [workflow] At most one council per plan, only for HIGH RISK (filing, deletion, legal); never per PR | 3 councils in a day, same findings | [workflow](workflow.md)
-- 2026-10-06 | [workflow] 0001 merged before review; post-merge review OK | [report](../tasks/0001-report.md)
-- 2026-10-06 | [workflow] Context rollout: flat files, MANIFEST at root | place_files | TEMPLATE.md
-- 2026-10-06 | [workflow] Every chat AI orchestrates within the token budget (executor: see 2026-10-17)
-- 2026-10-06 | [deps] `webauthn==3.0.1` hash-pinned | no hand-rolled passkeys | 0004
-- 2026-10-06 | Login is e-mail link only; TOTP/passkeys optional | owner | 0003, 0004
-- 2026-10-06 | Downloads skip the nav skeleton; template scan test pins it | PDF blanked page | skeleton.js
-- 2026-10-06 | Stay-fee PDF: bed-day adjustments fold into the facility row; CSV one neutral line | office confusion | stay_fee.py
 - 2026-10-06 | UbyPort: 0-2 accepted, 4-6 not; 112 = late = accepted | police A1-A5 | OPERATIONS
 - 2026-10-06 | Sweep: one send per refused record, then host fix | police B2-B3 | OPERATIONS
 - 2026-10-06 | Staging may use the police test env; creds only in staging | police B4 | LIGHTSAIL
@@ -44,17 +31,9 @@ Append-only.
 
 - 2026-10-19 [workflow] `test_static_versions.py --write` refuses a changed file under an old `?v=` key (0172).
 - 2026-10-19 Accessibility: WCAG 2.2 AA, `a11y_guard.js`; no statement page (owner).
-- 2026-10-22 Open cue on clickable rows; phone tabs wrap | owner
 
-- 2026-10-22 Wizard coral bar OK
-- 2026-10-22 Alerts: short line + fix link (owner).
 - 2026-10-22 [deps] Signature font: self-hosted Dancing Script (OFL) (owner).
-- 2026-10-23 Skips loader; no on-track count (owner).
-- 2026-10-23 Subdomain: same RP ID; #435 alerts resolve live+worker (owner).
-- 2026-10-24 1 primary/group; soft Open (owner).
 - 2026-10-24 | [deps] `anthropic` 2.3.0 pinned+hashed; model `claude-haiku-5-5`; every call through `App/app/ai.py`, per-feature switch and budget | Havel + guest assistant; one module to swap providers | plan havel-support-assistant, task 0310
-- 2026-10-24 [Guest guide](../plans/guest-guide.md) 0341+; Fable critical briefs (owner).
-- 2026-10-24 Guide Quick answers screen (owner).
 - 2026-10-25 | Invoice "Fill from register" also asks the MFČR VAT register (CRPDPH SOAP); sends DIČ digits only; 24 h cache; no new dependency | owner | [0394](../tasks/0394-vat-register-bank-account.md)
 - 2026-10-26 | Billing phase 1: invoices only, no gateway yet | owner | 0411
 - 2026-10-26 | Unpaid = read-only, filing never blocked | owner | 0415
@@ -68,10 +47,18 @@ Append-only.
 - 2026-10-28 | Booking widget: Airbnb-style interaction built from our own calendar/fee logic, no-JS form, Stripe checkout on the host account; no dark patterns, no tracking | owner | plan property-pages, 0434
 - 2026-10-28 | Listing pages are English-only; no per-listing translation, no per-language variants (OTA copy verbatim) | owner | plan property-pages, 0431/0433
 - 2026-11-02 | OCR: Tesseract only, local, MRZ check digits, Max only; band crop; Paddle if ocr_readrate <90% | owner | test_doc_ocr
-- 2026-10-29 | 0448: legacy hosts get an immediate plan start with the first invoice issued now, no trial | owner | 0448
-- 2026-10-29 | Discounts reissue an unpaid invoice with the discount applied | owner | 0448
 - 2026-10-29 | Trials are extendable by the operator, 1-365 days | owner | 0448
 - 2026-10-29 | Stripe Accounts v2; responsibilities immutable; company hosts via business_type | owner | 0437
 - 2026-10-29 | Connect accounts: full Stripe Dashboard + Stripe collectors (Express+Stripe is preview-only; Express pairs with application liability, rejected) | owner | 0439
 
 - 2026-10-30 | [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; Haiku-only execution; manual cutover | 0455–0456
+- 2026-10-31 | Postgres (#592), then Go G1–G6, per-feature rollback, no load-test gate. [workflow] Fable briefs critical items, Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
+- 2026-10-31 | Every change lean: no dead code, no extras; dead code found on the way is removed in its own small commit or PR | owner | plan v4
+- 2026-10-31 | Approval gates waived for the whole PostgreSQL and Go migration; the bar stays (verified backup, rehearsal on a production copy, per-table counts and hashes, suite green on PG, SQLite as rollback, automatic rollback). Owner acts only where his hands are needed | owner | 0463
+- 2026-10-31 | D2 required reviewer on `production`; D3 goose (step 10); D4 Postgres job table with `SKIP LOCKED`. D1: PostgreSQL self-hosted as a Compose service on the current 8 GB Lightsail server (socket, no port, 1 GB cap), not managed; nightly encrypted `pg_dump` in the existing backup, restore proven at every rehearsal; no pgBackRest | owner | 0463, 0464
+- 2026-10-31 | PostgreSQL container has no password and no network (`network_mode: none`, Unix socket volume, trust auth). [workflow] (stale worktree reverted main, #601) Before every merge: `git diff --stat origin/main <branch>` against the brief's Files; one fresh worktree per Haiku | owner, orchestrator | 0463, #606
+- 2026-10-31 | [workflow] `test-postgres-full` (app suite on PG 17) gates every merge; SQLite-file tests carry `sqlite_only` | orchestrator | 0462
+- 2026-11-01 | Host redesign: add vendored Hotwire Turbo (MIT, ~25 KB) for page-body swaps; redesign needs owner OK of mockups before build or merge | owner | #614
+- 2026-10-31 | D3 detail: goose v3.29.0, asset goose_linux_x86_64, SHA-256 cc56e2f75532a4dd52f5ef2d31db0121e91079a9c2617bc0ad4e04e2d41c228b | owner | 0465b
+- 2026-11-01 | Go: module go/, stdlib, pgx v5, go-ntlmssp v0.1.1, go-qrcode (11-02); crypto via Python fixtures | owner (waiver) | 0474, 0481, 0684
+- 2026-11-02 | [workflow] Read hook: over 350 lines needs a limit; ALLOW_FULL_READ=1 | owner | 0810

@@ -208,9 +208,19 @@ def test_the_summary_is_in_czech(host):
     assert 'class="notification-stack"' in page.text
 
 
+def _inside(node, root):
+    while node is not None:
+        if node is root:
+            return True
+        node = node["parent"]
+    return False
+
+
 def test_notifications_render_in_host_content_flow_with_reachable_stay_link(host):
     _alert("dates_changed_resign", "critical", 9501, "Dates changed")
-    response = host.get("/reservations?lang=en")
+    # v2 pages (/, /reservations, /settings since 0784) render the stack inside the page body (ui-body),
+    # which test_host_wide_geometry_browser checks; the stack is in main, below the feedback region
+    response = host.get("/settings?lang=en")
     assert response.status_code == 200, response.text
 
     tree = _TreeParser()
@@ -220,9 +230,8 @@ def test_notifications_render_in_host_content_flow_with_reachable_stay_link(host
     stack = tree.find(lambda node: "data-host-alerts" in node["attrs"], main)
     feedback = tree.find(lambda node: "data-host-feedback" in node["attrs"], main)
     local_nav = tree.find(lambda node: "host-local-nav" in node["attrs"].get("class", "").split(), main)
-    assert stack and stack["parent"] is main, "the notification stack should be in the host main flow"
+    assert stack and _inside(stack, main), "the notification stack should be in the host main flow"
     assert feedback and feedback["parent"] is main
-    assert main["children"].index(stack) < main["children"].index(feedback)
     if local_nav:
         assert local_nav["parent"] is main
         assert main["children"].index(feedback) < main["children"].index(local_nav)

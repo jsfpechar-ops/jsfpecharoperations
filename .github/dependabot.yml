@@ -20,3 +20,10 @@ updates:
       # A Python runtime upgrade is its own task, not a weekly bump.
       - dependency-name: python
         update-types: [version-update:semver-major, version-update:semver-minor]
+  - package-ecosystem: docker
+    directory: /go
+    schedule: { interval: weekly }
+    ignore:
+      # A Go toolchain upgrade is its own task, not a weekly bump.
+      - dependency-name: golang
+        update-types: [version-update:semver-major, version-update:semver-minor]

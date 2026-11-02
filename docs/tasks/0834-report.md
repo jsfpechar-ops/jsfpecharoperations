@@ -4,7 +4,7 @@ Status: review
 Branch claude/project-thread-6ozz7x. Not pushed, no PR.
 
 ## Done
-- Step 1 (54130d38) and 1b (93055c43): migration 0034_apartment_ocr_scan.sql only. The two db.py lines were dropped (duplicate column with the migration).
+- Step 1 (54130d38) and 1b (93055c43): migration 0035_apartment_ocr_scan.sql (renamed from 0034 after main added 0034_site_booking) only. The two db.py lines were dropped (duplicate column with the migration).
 - Step 2 (6a775479): doc_ocr.available gates on ocr_scan and policy, plus module docstring line.
 - Step 3 (3030e6f4): admin.py allowed field and payload rule.
 - Step 4 (2e6ec36b): _property_editor.html switch row, help via help_tip.

@@ -1,0 +1,458 @@
+{
+ "classify": {
+  "codebook_apozdni_not_late": {
+   "messages": [
+    "213: ápozdní"
+   ],
+   "record_is_duplicate": false,
+   "state": "error"
+  },
+  "codebook_empty_text_falls_back": {
+   "messages": [
+    "217: UbyPort error 217 — refresh code lists on the property page to see the explanation."
+   ],
+   "record_is_duplicate": false,
+   "state": "error"
+  },
+  "codebook_late_pozde": {
+   "messages": [
+    "210: Oznámeno pozdě"
+   ],
+   "record_is_duplicate": false,
+   "state": "not_correctable"
+  },
+  "codebook_late_word": {
+   "messages": [
+    "216: LATE fee"
+   ],
+   "record_is_duplicate": false,
+   "state": "not_correctable"
+  },
+  "codebook_pozde_comma": {
+   "messages": [
+    "211: Podáno pozdě,"
+   ],
+   "record_is_duplicate": false,
+   "state": "not_correctable"
+  },
+  "codebook_pozdeji_not_late": {
+   "messages": [
+    "212: později"
+   ],
+   "record_is_duplicate": false,
+   "state": "error"
+  },
+  "codebook_related_not_late": {
+   "messages": [
+    "215: related"
+   ],
+   "record_is_duplicate": false,
+   "state": "error"
+  },
+  "codebook_zpozdneno_not_late": {
+   "messages": [
+    "214: zpozdněno"
+   ],
+   "record_is_duplicate": false,
+   "state": "error"
+  },
+  "duplicate_under_err_cze_151": {
+   "messages": [
+    "151: Duplicitní záznam"
+   ],
+   "record_is_duplicate": true,
+   "state": "not_correctable"
+  },
+  "empty_strings": {
+   "messages": [],
+   "record_is_duplicate": false,
+   "state": "accepted"
+  },
+  "err_cze_prefix_112": {
+   "messages": [
+    "ERR_CZE_112: UbyPort error ERR_CZE_112 — refresh code lists on the property page to see the explanation."
+   ],
+   "record_is_duplicate": false,
+   "state": "accepted"
+  },
+  "header_plus_record": {
+   "messages": [
+    "5: UbyPort error 5 — refresh code lists on the property page to see the explanation.",
+    "106: Invalid value in a guest field",
+    "112: Reported after the deadline - the record was accepted"
+   ],
+   "record_is_duplicate": false,
+   "state": "error"
+  },
+  "known_106_cs": {
+   "messages": [
+    "106: Invalid value in a guest field"
+   ],
+   "record_is_duplicate": false,
+   "state": "error"
+  },
+  "negative_5": {
+   "messages": [
+    "-5: UbyPort error -5 — refresh code lists on the property page to see the explanation."
+   ],
+   "record_is_duplicate": false,
+   "state": "error"
+  },
+  "no_codes": {
+   "messages": [],
+   "record_is_duplicate": false,
+   "state": "accepted"
+  },
+  "record_106": {
+   "messages": [
+    "106: Invalid value in a guest field"
+   ],
+   "record_is_duplicate": false,
+   "state": "error"
+  },
+  "record_112_accepted": {
+   "messages": [
+    "112: Reported after the deadline - the record was accepted"
+   ],
+   "record_is_duplicate": false,
+   "state": "accepted"
+  },
+  "record_150_accepted_by_severity": {
+   "messages": [
+    "150: Duplicate record - the register already holds it"
+   ],
+   "record_is_duplicate": true,
+   "state": "accepted"
+  },
+  "record_150_duplicate": {
+   "messages": [
+    "150: Duplicate record - the register already holds it"
+   ],
+   "record_is_duplicate": true,
+   "state": "not_correctable"
+  },
+  "severity_overrides_112": {
+   "messages": [
+    "112: Reported after the deadline - the record was accepted"
+   ],
+   "record_is_duplicate": false,
+   "state": "error"
+  },
+  "unknown_999_cs": {
+   "messages": [
+    "999: Chyba UbyPortu 999 — vysvětlení uvidíte po obnovení číselníků na stránce ubytování."
+   ],
+   "record_is_duplicate": false,
+   "state": "error"
+  },
+  "unknown_999_en": {
+   "messages": [
+    "999: UbyPort error 999 — refresh code lists on the property page to see the explanation."
+   ],
+   "record_is_duplicate": false,
+   "state": "error"
+  },
+  "zero_padded_0112": {
+   "messages": [
+    "0112: UbyPort error 0112 — refresh code lists on the property page to see the explanation."
+   ],
+   "record_is_duplicate": false,
+   "state": "accepted"
+  }
+ },
+ "responses": {
+  "accepted_receipt.xml": {
+   "ciselnik": [],
+   "element_names": [
+    "ChybyHlavicky",
+    "ChybyZaznamu",
+    "DokumentPotvrzeni",
+    "DokumentChybyPotvrzeni",
+    "PseudoRazitko"
+   ],
+   "fault": null,
+   "scalar": {
+    "MaximalniDelkaSeznamu": null,
+    "TestDostupnosti": null
+   },
+   "zapis": {
+    "error_pdf": "",
+    "header_errors": "",
+    "pdf_problems": {},
+    "pseudo_stamp": "GOLDEN-STAMP-1",
+    "receipt_pdf": "JVBERi0xLjQgZ29sZGVuIHJlY2VpcHQgb25l",
+    "record_errors": [
+     "",
+     ""
+    ]
+   }
+  },
+  "bad_documents.xml": {
+   "ciselnik": [],
+   "element_names": [
+    "ChybyHlavicky",
+    "DokumentPotvrzeni",
+    "DokumentChybyPotvrzeni"
+   ],
+   "fault": null,
+   "scalar": {
+    "MaximalniDelkaSeznamu": null,
+    "TestDostupnosti": null
+   },
+   "zapis": {
+    "error_pdf": "",
+    "header_errors": "",
+    "pdf_problems": {
+     "error_pdf": "not_pdf",
+     "receipt_pdf": "not_base64"
+    },
+    "pseudo_stamp": "",
+    "receipt_pdf": "",
+    "record_errors": []
+   }
+  },
+  "ciselnik.xml": {
+   "ciselnik": [
+    {
+     "Kod": "CZ",
+     "Nazev": "Cesko"
+    },
+    {
+     "Kod": "SK",
+     "Nazev": "Slovensko & okoli"
+    }
+   ],
+   "element_names": [],
+   "fault": null,
+   "scalar": {
+    "MaximalniDelkaSeznamu": null,
+    "TestDostupnosti": null
+   },
+   "zapis": {
+    "error_pdf": "",
+    "header_errors": "",
+    "pdf_problems": {},
+    "pseudo_stamp": "",
+    "receipt_pdf": "",
+    "record_errors": []
+   }
+  },
+  "empty.xml": {
+   "ciselnik": "parse_error",
+   "element_names": [],
+   "fault": null,
+   "scalar": {
+    "MaximalniDelkaSeznamu": "parse_error",
+    "TestDostupnosti": "parse_error"
+   },
+   "zapis": "parse_error"
+  },
+  "empty_documents.xml": {
+   "ciselnik": [],
+   "element_names": [
+    "DokumentPotvrzeni",
+    "DokumentChybyPotvrzeni"
+   ],
+   "fault": null,
+   "scalar": {
+    "MaximalniDelkaSeznamu": null,
+    "TestDostupnosti": null
+   },
+   "zapis": {
+    "error_pdf": "",
+    "header_errors": "",
+    "pdf_problems": {
+     "error_pdf": "empty",
+     "receipt_pdf": "empty"
+    },
+    "pseudo_stamp": "",
+    "receipt_pdf": "",
+    "record_errors": []
+   }
+  },
+  "fault11.xml": {
+   "ciselnik": [],
+   "element_names": [],
+   "fault": "soap:Server / Golden fault one",
+   "scalar": {
+    "MaximalniDelkaSeznamu": null,
+    "TestDostupnosti": null
+   },
+   "zapis": {
+    "error_pdf": "",
+    "header_errors": "",
+    "pdf_problems": {},
+    "pseudo_stamp": "",
+    "receipt_pdf": "",
+    "record_errors": []
+   }
+  },
+  "fault12.xml": {
+   "ciselnik": [],
+   "element_names": [],
+   "fault": "Golden fault two",
+   "scalar": {
+    "MaximalniDelkaSeznamu": null,
+    "TestDostupnosti": null
+   },
+   "zapis": {
+    "error_pdf": "",
+    "header_errors": "",
+    "pdf_problems": {},
+    "pseudo_stamp": "",
+    "receipt_pdf": "",
+    "record_errors": []
+   }
+  },
+  "fault_empty.xml": {
+   "ciselnik": [],
+   "element_names": [],
+   "fault": "Unspecified SOAP fault",
+   "scalar": {
+    "MaximalniDelkaSeznamu": null,
+    "TestDostupnosti": null
+   },
+   "zapis": {
+    "error_pdf": "",
+    "header_errors": "",
+    "pdf_problems": {},
+    "pseudo_stamp": "",
+    "receipt_pdf": "",
+    "record_errors": []
+   }
+  },
+  "not_xml.xml": {
+   "ciselnik": "parse_error",
+   "element_names": [],
+   "fault": null,
+   "scalar": {
+    "MaximalniDelkaSeznamu": "parse_error",
+    "TestDostupnosti": "parse_error"
+   },
+   "zapis": "parse_error"
+  },
+  "record_errors.xml": {
+   "ciselnik": [],
+   "element_names": [
+    "ChybyHlavicky",
+    "ChybyZaznamu",
+    "DokumentPotvrzeni",
+    "DokumentChybyPotvrzeni",
+    "PseudoRazirko"
+   ],
+   "fault": null,
+   "scalar": {
+    "MaximalniDelkaSeznamu": null,
+    "TestDostupnosti": null
+   },
+   "zapis": {
+    "error_pdf": "JVBERi0xLjQgZ29sZGVuIGVycm9yIG9uZQ==",
+    "header_errors": "5;",
+    "pdf_problems": {},
+    "pseudo_stamp": "GOLDEN-STAMP-2",
+    "receipt_pdf": "",
+    "record_errors": [
+     "106;",
+     "112;150;"
+    ]
+   }
+  },
+  "scalar_availability.xml": {
+   "ciselnik": [],
+   "element_names": [],
+   "fault": null,
+   "scalar": {
+    "MaximalniDelkaSeznamu": null,
+    "TestDostupnosti": "true"
+   },
+   "zapis": {
+    "error_pdf": "",
+    "header_errors": "",
+    "pdf_problems": {},
+    "pseudo_stamp": "",
+    "receipt_pdf": "",
+    "record_errors": []
+   }
+  },
+  "scalar_max.xml": {
+   "ciselnik": [],
+   "element_names": [],
+   "fault": null,
+   "scalar": {
+    "MaximalniDelkaSeznamu": "500",
+    "TestDostupnosti": null
+   },
+   "zapis": {
+    "error_pdf": "",
+    "header_errors": "",
+    "pdf_problems": {},
+    "pseudo_stamp": "",
+    "receipt_pdf": "",
+    "record_errors": []
+   }
+  },
+  "text_then_child.xml": {
+   "ciselnik": [],
+   "element_names": [
+    "DokumentPotvrzeni",
+    "ChybyZaznamu",
+    "ChybyHlavicky"
+   ],
+   "fault": null,
+   "scalar": {
+    "MaximalniDelkaSeznamu": null,
+    "TestDostupnosti": null
+   },
+   "zapis": {
+    "error_pdf": "",
+    "header_errors": "leading text",
+    "pdf_problems": {},
+    "pseudo_stamp": "",
+    "receipt_pdf": "JVBERi0xLjQgZ29sZGVuIHJlY2VpcHQgb25l",
+    "record_errors": [
+     "106;",
+     "112;"
+    ]
+   }
+  },
+  "trailing_garbage.xml": {
+   "ciselnik": "parse_error",
+   "element_names": [],
+   "fault": null,
+   "scalar": {
+    "MaximalniDelkaSeznamu": "parse_error",
+    "TestDostupnosti": "parse_error"
+   },
+   "zapis": "parse_error"
+  },
+  "truncated.xml": {
+   "ciselnik": "parse_error",
+   "element_names": [],
+   "fault": null,
+   "scalar": {
+    "MaximalniDelkaSeznamu": "parse_error",
+    "TestDostupnosti": "parse_error"
+   },
+   "zapis": "parse_error"
+  }
+ },
+ "tables": {
+  "accepted_max_severity": 2,
+  "fallback_text": {
+   "cs": "Chyba UbyPortu %(code)s — vysvětlení uvidíte po obnovení číselníků na stránce ubytování.",
+   "en": "UbyPort error %(code)s — refresh code lists on the property page to see the explanation."
+  },
+  "known_codes": {
+   "1": "Incorrect file extension",
+   "106": "Invalid value in a guest field",
+   "112": "Reported after the deadline - the record was accepted",
+   "150": "Duplicate record - the register already holds it"
+  },
+  "known_severity": {
+   "1": 0,
+   "112": 0,
+   "150": 4
+  },
+  "max_pdf_bytes": 10485760
+ }
+}

@@ -1,0 +1,23 @@
+{% extends "host_page.html" %}
+{% set nav = 'payments' %}
+{% set how_key = 'payments' %}
+{% set body_kind = 'form' %}
+{% from "_ui.html" import ui_button, ui_check with context %}
+{% block title %}{{ t('payments.consent.title') }}{% endblock %}
+{% block primary_action %}{% endblock %}
+{% block tabs %}{% endblock %}
+{% block toolbar %}{% endblock %}
+{% block body %}
+<div class="ui-section">
+  <p>{{ t('payments.consent.lead') }}</p>
+  <ol>
+    {% for n in range(1, 8) %}<li>{{ t('payments.consent.p' ~ n) }}</li>{% endfor %}
+  </ol>
+  <p>{{ t('payments.consent.need') }}</p>
+  <form method="post" action="/payments/consent" class="ui-form">
+    {{ ui_check('pay-consent-agree', t('payments.consent.agree'), name='agree') }}
+    <p><a href="https://stripe.com/cz/legal/connect-account" target="_blank" rel="noopener">{{ t('payments.consent.stripe_link') }}</a></p>
+    {{ ui_button(t('payments.consent.continue'), 'primary', type='submit') }}
+  </form>
+</div>
+{% endblock %}

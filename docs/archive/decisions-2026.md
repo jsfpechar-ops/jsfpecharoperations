@@ -22,3 +22,30 @@ Moved from docs/context/decisions.md during compaction.
 - 2026-10-21 PWA + push for 4 critical alerts only, no pywebpush (owner, 0219, 0225-0229).
 - 2026-10-21 Stay-fee email: auto-confirm clean; PDF+QR on 2nd; Settings switch | owner, [plan](../plans/stay-fee-monthly-email.md)
 - 2026-10-22 One needs-you card on `/`; unopened-link reminder once/stay; no new host emails | owner.
+- 2026-10-06 | [workflow] Context: AGENTS L0, context L1, plans L2; audits archived | [workflow](workflow.md)
+- 2026-10-06 | [workflow] WP series closed at WP33/0034; tasks use NNNN | [workflow](workflow.md)
+- 2026-10-06 | [workflow] At most one council per plan, only for HIGH RISK (filing, deletion, legal); never per PR | 3 councils in a day, same findings | [workflow](workflow.md)
+- 2026-10-06 | [workflow] 0001 merged before review; post-merge review OK | [report](../tasks/0001-report.md)
+- 2026-10-06 | [workflow] Context rollout: flat files, MANIFEST at root | place_files | TEMPLATE.md
+- 2026-10-03 | Signup off in production until owner chooses | invited hosts | ENVIRONMENT
+- 2026-10-05 | Legal texts 1.6 shipped; counsel review open | real hosts | K-L
+- 2026-10-05 | Admin preview: full workspace, reason, 24 h | owner support | PR #280
+- 2026-10-06 | [workflow] Every chat AI orchestrates within the token budget (executor: see 2026-10-17)
+- 2026-10-03 | Signup off in production until owner chooses | invited hosts | ENVIRONMENT
+- 2026-10-05 | Legal texts 1.6 shipped; counsel review open | real hosts | K-L
+- 2026-10-05 | Admin preview: full workspace, reason, 24 h | owner support | PR #280
+- 2026-10-06 | [workflow] Every chat AI orchestrates within the token budget (executor: see 2026-10-17)
+- 2026-10-06 | [deps] `webauthn==3.0.1` hash-pinned | no hand-rolled passkeys | 0004
+- 2026-10-06 | Login is e-mail link only; TOTP/passkeys optional | owner | 0003, 0004
+- 2026-10-06 | Downloads skip the nav skeleton; template scan test pins it | PDF blanked page | skeleton.js
+- 2026-10-06 | Stay-fee PDF: bed-day adjustments fold into the facility row; CSV one neutral line | office confusion | stay_fee.py
+- 2026-10-22 Open cue on clickable rows; phone tabs wrap | owner
+- 2026-10-22 Wizard coral bar OK
+- 2026-10-22 Alerts: short line + fix link (owner).
+- 2026-10-23 Skips loader; no on-track count (owner).
+- 2026-10-23 Subdomain: same RP ID; #435 alerts resolve live+worker (owner).
+- 2026-10-24 1 primary/group; soft Open (owner).
+- 2026-10-24 [Guest guide](../plans/guest-guide.md) 0341+; Fable critical briefs (owner).
+- 2026-10-24 Guide Quick answers screen (owner).
+- 2026-10-29 | 0448: legacy hosts get an immediate plan start with the first invoice issued now, no trial | owner | 0448
+- 2026-10-29 | Discounts reissue an unpaid invoice with the discount applied | owner | 0448

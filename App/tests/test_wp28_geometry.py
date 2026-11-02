@@ -145,14 +145,14 @@ def test_stay_page_cards_hold_their_buttons(base, world, browser):
     context, page = _page(browser, base, world, 1280)
     try:
         page.goto(f"{base}/reservations/{world['stay']}?lang=en")
-        page.wait_for_selector(".guest-card.placeholder")
+        page.wait_for_selector("tr.placeholder")  # v2 guest table: one row per missing guest
         measured = page.evaluate(
             """() => {
               const R = el => el.getBoundingClientRect();
               const out = {placeholders: [], filing: null};
-              document.querySelectorAll('.guest-card.placeholder').forEach(card => {
+              document.querySelectorAll('tr.placeholder').forEach(card => {
                 const c = R(card);
-                const worst = Math.max(...[...card.querySelectorAll('.ui-btn')].map(b => R(b).bottom));
+                const worst = Math.max(...[...card.querySelectorAll('.btn')].map(b => R(b).bottom));
                 out.placeholders.push(Math.round(c.bottom - worst));
               });
               const filing = document.querySelector('#file-by-hand');
@@ -188,7 +188,7 @@ def test_overdue_deadline_is_a_pill_not_a_bar(base, world, browser):
     try:
         page.goto(f"{base}/reservations/{overdue['id']}?lang=en")
         widths = page.evaluate(
-            """() => { const pill = document.querySelector('.metric-value[data-deadline=\"overdue\"]');
+            """() => { const pill = document.querySelector('.host-stay-detail .head .pill.p-bad');  // v2 (0528): overdue pill in the header
               if (!pill) return null;
               return [pill.getBoundingClientRect().width, pill.parentElement.getBoundingClientRect().width]; }"""
         )

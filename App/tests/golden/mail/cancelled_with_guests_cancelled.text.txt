@@ -1,0 +1,5 @@
+Stay from 06.05.2026 with guest forms was cancelled.
+
+Nothing will be reported for it. If the booking only moved, set the stay back to Active.
+
+Open stay: https://app.example.test/reservations/201

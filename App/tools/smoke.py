@@ -303,7 +303,7 @@ def main(url=None):
         "/",
         must_contain=[
             host_i18n.STRINGS["en"]["dashboard.title"],
-            host_i18n.STRINGS["en"]["dashboard.section.current"],
+            host_i18n.STRINGS["en"]["dashboard.today.title"],
             "Smoke flat",
         ],
         must_not_contain=["/login", "row-arrow"],
@@ -313,7 +313,7 @@ def main(url=None):
         "/?lang=cs",
         must_contain=[
             host_i18n.STRINGS["cs"]["dashboard.title"],
-            host_i18n.STRINGS["cs"]["dashboard.section.current"],
+            host_i18n.STRINGS["cs"]["dashboard.today.title"],
             "Smoke flat",
         ],
         must_not_contain=["/login", "row-arrow"],

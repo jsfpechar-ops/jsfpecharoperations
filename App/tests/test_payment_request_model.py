@@ -49,6 +49,7 @@ def _create(owner, **kw):
     return payment_request.create(owner, today=TODAY, **values)
 
 
+@pytest.mark.sqlite_only
 def test_migration_0026_tables_exist(owner):
     tables = {r["name"] for r in db.query(
         "SELECT name FROM sqlite_master WHERE type = 'table'")}

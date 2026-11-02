@@ -10,8 +10,8 @@ WORDS = {
         "Úklid"
     ],
     "subtitle": [
-        "Upcoming turnovers, door codes and property instructions in one place.",
-        "Nadcházející úklidy, kódy ke dveřím a pokyny na jednom místě."
+        "Cleanings are created from departures. Your cleaner sees the schedule through a link.",
+        "Úklidy vznikají samy z odjezdů. Uklízečka vidí svůj rozpis přes odkaz."
     ],
     "schedule": [
         "Cleaning calendar",
@@ -343,7 +343,28 @@ WORDS = {
     "auto_help": [
         "Checkout changes update automatic cleanings. A date you change stays as you set it.",
         "Změna odjezdu upraví automatický úklid. Vámi upravený termín zůstane zachovaný."
-    ]
+    ],
+    "section_today": ["Today", "Dnes"],
+    "section_week": ["This week", "Tento týden"],
+    "section_later": ["Later", "Později"],
+    "today_empty": ["No cleaning today.", "Dnes žádný úklid."],
+    "col_property": ["Property", "Nemovitost"],
+    "col_time": ["Time", "Čas"],
+    "col_day": ["Day", "Den"],
+    "col_status": ["Status", "Stav"],
+    "status_scheduled": ["Scheduled", "Naplánováno"],
+    "status_conflict": ["Check the time", "Zkontrolujte čas"],
+    "status_hours": ["Hours missing", "Chybí časy"],
+    "share_cleaner": ["Share schedule with cleaner", "Sdílet rozpis s uklízečkou"],
+    "next_arrival_short": ["next check-in", "další příjezd"],
+    "subtitle_short": ["Created from departures.", "Vzniká sám z odjezdů."],
+    "show_more": ["Show %(count)s more", "Zobrazit další (%(count)s)"],
+    "headline_one": ["%(count)s cleaning today", "%(count)s úklid dnes"],
+    "headline_few": ["%(count)s cleanings today", "%(count)s úklidy dnes"],
+    "headline_many": ["%(count)s cleanings today", "%(count)s úklidů dnes"],
+    "headline_none": ["No cleaning today", "Dnes žádný úklid"],
+    "section_cleaner": ["Your cleaner", "Vaše uklízečka"],
+    "share_hint": ["They see this plan without an account", "Uvidí plán bez účtu"],
 }
 
 def translator(lang: str):

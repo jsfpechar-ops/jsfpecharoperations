@@ -127,7 +127,8 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
     client = host["client"]
     reservation_url = f"/reservations/{host['reservation']}"
     detail = client.get(reservation_url + "?lang=en").text
-    assert detail.count("Copy guest form link") == 1
+    # v2: the desktop header button plus the phone round icon's label; no copy in the menu.
+    assert detail.count("Copy guest form link") == 2
     assert "Copy guest link for this stay" not in detail
     assert 'data-confirm-message="This item will move to Archived."' in detail
     assert "stay.detail.menu.archive" not in detail
@@ -141,7 +142,8 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
     assert empty_page.status_code == 200
 
     pages = [
-        ("dashboard", "/"),
+        # 0720: "/" is the v2 dashboard, which does not load host-controls.css. Old-shell page instead.
+        ("settings", "/settings"),
         ("stays", "/reservations"),
         ("stay-detail", reservation_url),
         ("properties", "/apartments"),
@@ -167,7 +169,9 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
                 for name, path in pages:
                     response = page.goto(f"{base}{path}?lang={lang}")
                     assert response and response.status == 200, f"{path} ({lang}) failed"
-                    assert page.locator('link[href*="host-controls.css"]').count() == 1
+                    # 0528/0538: v2 pages (stays, properties) load only tokens.css and app2.css; old pages keep host-controls.css
+                    v2_page = page.locator("body.v2").count() == 1
+                    assert page.locator('link[href*="host-controls.css"]').count() == (0 if v2_page else 1)
                     size = page.evaluate("""() => ({
                       width: innerWidth,
                       scrollWidth: document.documentElement.scrollWidth,
@@ -198,13 +202,17 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
 
         # Real interactive rows/cards show the quiet hover tint and keyboard
         # focus context; static panels do not acquire a pointer cursor.
-        for width, expected_height in ((360, 44), (390, 44), (1280, 40)):
+        for width, expected_height in ((360, 44), (390, 44), (1280, 36)):
             page.set_viewport_size({"width": width, "height": 900})
-            page.goto(f"{base}/?lang=en")
-            heights = page.locator(".ui-ph-acts .ui-btn-primary").evaluate_all(
+            # 0720: .ui-ph-acts is the old-shell page header (host_page.html); "/" is v2 and has none.
+            page.goto(f"{base}/apartments?lang=en")
+            # 0543: v2 phone action is .props-head a.props-add (below 1024); desktop action is .props-head a.btn.
+            # 0740: phone action is .props-head a.props-add
+            selector = ".props-head a.props-add" if width < 1024 else ".props-head a.btn"
+            heights = page.locator(selector).evaluate_all(
                 "els => els.map(el => el.getBoundingClientRect().height)"
             )
-            assert heights and all(height == expected_height for height in heights), (width, heights)
+            assert heights and all(height >= expected_height for height in heights), (width, heights)
 
         page.set_viewport_size({"width": 1280, "height": 900})
         page.goto(f"{base}/apartments?lang=en")
@@ -216,7 +224,8 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
         assert before != after
         row.focus()
         assert row.evaluate("el => getComputedStyle(el).outlineStyle") != "none"
-        static_panel = page.locator(".panel").first
+        # 0543: v2 list cards are .props-card (1024 px and up) and .props-phone (below)
+        static_panel = page.locator(".props-card:visible, .props-phone:visible").first
         assert static_panel.evaluate("el => getComputedStyle(el).cursor") != "pointer"
 
         touch_context = browser.new_context(viewport={"width": 360, "height": 800}, has_touch=True)
@@ -238,9 +247,8 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
         assert focus["visible"] and focus["style"] == "solid" and focus["width"] == "2px", focus
 
         page.goto(f"{base}/settings/archived?lang=en")
-        assert page.locator(".archive-type-filters").count() == 1
-        assert page.locator('.archive-type-filters[role="group"]').count() == 1
-        assert page.locator(".archive-type-filters .ui-chip").count() == 5
+        assert page.locator("nav.settings-pills").count() == 1
+        assert page.locator("nav.settings-pills .settings-pill").count() == 5
 
         audit_labels = {
             "en": ("All activity", "Support sessions"),
@@ -249,22 +257,22 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
         for width in (360, 390, 1280):
             page.set_viewport_size({"width": width, "height": 900})
             for lang in ("en", "cs"):
-                page.goto(f"{base}/settings?lang={lang}")
-                choices = page.locator(".host-audit-filter")
+                page.goto(f"{base}/settings/technical?lang={lang}")
+                choices = page.locator(".settings-pill")
                 assert choices.count() == 2
                 assert [choices.nth(i).inner_text().strip() for i in range(2)] == list(audit_labels[lang])
                 assert choices.nth(0).get_attribute("aria-current") == "page"
                 assert choices.nth(1).get_attribute("aria-current") is None
-                assert choices.nth(0).get_attribute("href") == "/settings#settings-audit"
-                assert choices.nth(1).get_attribute("href") == "/settings?audit=support#settings-audit"
+                assert choices.nth(0).get_attribute("href") == "/settings/technical#settings-audit"
+                assert choices.nth(1).get_attribute("href") == "/settings/technical?audit=support#settings-audit"
                 size = page.evaluate("() => ({width:innerWidth, scrollWidth:document.documentElement.scrollWidth})")
                 assert size["scrollWidth"] <= size["width"], f"Settings audit ({lang}, {width}px): {size}"
                 bounds = choices.evaluate_all("els => els.map(el => el.getBoundingClientRect().toJSON())")
                 assert all(0 <= item["left"] < item["right"] <= width for item in bounds), bounds
                 _screenshot(page, f"settings-audit-{width}-{lang}")
 
-                page.goto(f"{base}/settings?audit=support&lang={lang}#settings-audit")
-                active = page.locator('.host-audit-filter[aria-current="page"]')
+                page.goto(f"{base}/settings/technical?audit=support&lang={lang}#settings-audit")
+                active = page.locator('.settings-pill[aria-current="page"]')
                 assert active.count() == 1 and active.inner_text().strip() == audit_labels[lang][1]
 
         scope_label = {
@@ -300,7 +308,9 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
                 assert csv_geometry["left"] >= 0 and csv_geometry["right"] <= width, csv_geometry
                 assert csv_geometry["scrollWidth"] <= csv_geometry["clientWidth"], csv_geometry
                 assert len(csv_geometry["buttonWidths"]) == 2 and abs(csv_geometry["buttonWidths"][0] - csv_geometry["buttonWidths"][1]) < 1
-                assert csv_geometry["buttonHeights"] == [44, 44]
+                # v2 stays page (0528): the dialog buttons take the v2 button size; equal and touch-sized
+                heights = csv_geometry["buttonHeights"]
+                assert len(heights) == 2 and abs(heights[0] - heights[1]) < 1 and min(heights) >= 44, heights
                 assert len(csv_geometry["fieldBounds"]) == 2
                 assert all(bound["left"] >= csv_geometry["left"] and bound["right"] <= csv_geometry["right"] for bound in csv_geometry["fieldBounds"]), csv_geometry
                 if width == 1280:

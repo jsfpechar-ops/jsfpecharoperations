@@ -40,74 +40,90 @@ def test_rows_hover_as_one_surface_and_use_compact_menus(stay_actions_host, stay
         page = context.new_page()
         page.goto(f"{base}/reservations?range=all&lang={lang}")
         _ready(page)
-        row = page.locator(f'tr[data-href^="/reservations/{stay_id}?"]')
-        assert row.locator(".stay-portal-link").count() == 0
-        assert row.locator(".row-open").count() == 1  # 0252: visible Open cue
-        assert row.locator('.row-actions > button[data-copy]').count() == 0
-        assert row.locator('button[data-copy]').is_hidden()
-        row.scroll_into_view_if_needed()
-        before = row.bounding_box()
-        target = row if width < 1024 else row.locator("td").first
-        initial = target.evaluate("el => getComputedStyle(el).backgroundColor")
-        row.hover()
-        page.wait_for_timeout(180)
-        assert target.evaluate("el => getComputedStyle(el).backgroundColor") != initial
-        if width >= 1024:
-            cell_colours = row.locator("td").evaluate_all("cells => cells.map(el => getComputedStyle(el).backgroundColor)")
-            assert len(set(cell_colours)) == 1 and cell_colours[0] != initial, cell_colours
-        else:
-            assert row.locator("td").evaluate_all("cells => cells.every(el => getComputedStyle(el).backgroundColor === 'rgba(0, 0, 0, 0)')")
-        after = row.bounding_box()
-        assert all(abs(before[key] - after[key]) <= 1 for key in ("x", "y", "width", "height")), (before, after)
-        _fits(page)
-        _shot(page, f"36-uniform-stays-hover-{lang}-{width}.png")
+        if width >= 1024:  # v2 desk table; phones get the grouped row list
+            row = page.locator(f'tr[data-href^="/reservations/{stay_id}?"]')
+            assert row.locator(".stay-portal-link").count() == 0
+            assert row.locator("td a.stay-identity-link").count() == 1  # v2: the guest name opens the stay (the mockup has no Open cue)
+            assert row.locator('.row-actions > button[data-copy]').count() == 0
+            assert row.locator('button[data-copy]').is_hidden()
+            row.scroll_into_view_if_needed()
+            before = row.bounding_box()
+            target = row  # v2 (mockup): the row itself takes the hover colour
+            initial = target.evaluate("el => getComputedStyle(el).backgroundColor")
+            row.hover()
+            page.wait_for_timeout(180)
+            assert target.evaluate("el => getComputedStyle(el).backgroundColor") != initial
+            if width >= 1024:
+                # one surface: no cell paints its own background over the row's hover colour
+                assert row.locator("td").evaluate_all("cells => cells.every(el => getComputedStyle(el).backgroundColor === 'rgba(0, 0, 0, 0)')")
+            else:
+                assert row.locator("td").evaluate_all("cells => cells.every(el => getComputedStyle(el).backgroundColor === 'rgba(0, 0, 0, 0)')")
+            after = row.bounding_box()
+            assert all(abs(before[key] - after[key]) <= 1 for key in ("x", "y", "width", "height")), (before, after)
+            _fits(page)
+            _shot(page, f"36-uniform-stays-hover-{lang}-{width}.png")
 
-        trigger = row.locator(".row-menu-trigger")
-        trigger.click()
-        menu = page.locator(".row-menu-panel.is-open")
-        assert menu.get_by_role("menuitem", name=_t(lang, "host.copy_guest_form_link"), exact=True).is_visible()
-        menu.get_by_role("menuitem", name=_t(lang, "common.open"), exact=True).click()
-        page.wait_for_url(f"**/reservations/{stay_id}?**")
+            trigger = row.locator(".row-menu-trigger")
+            trigger.click()
+            menu = page.locator(".row-menu-panel.is-open")
+            assert menu.get_by_role("menuitem", name=_t(lang, "host.copy_guest_form_link"), exact=True).is_visible()
+            menu.get_by_role("menuitem", name=_t(lang, "common.open"), exact=True).click()
+            page.wait_for_url(f"**/reservations/{stay_id}?**")
+        else:
+            phone_row = page.locator(f'.stays-phone a.card.stay[href^="/reservations/{stay_id}?"]')
+            assert phone_row.is_visible() and phone_row.bounding_box()["height"] >= 44
+            _fits(page)
+            phone_row.click()
+            page.wait_for_url(f"**/reservations/{stay_id}?**")
         _fits(page)
         # Every direct child retains the same centered content lane on wide screens.
-        boxes = [page.locator(selector).bounding_box() for selector in (".ui-ph", ".stay-property-line", ".stay-jump", "#now")]
+        # 0525 standing rule: .stay-property-line and .stay-jump were removed in 0524; the lane check keeps the rest.
+        # v2 stay page: the header (computer) or the facts grid (phone) and the police card share one lane
+        boxes = [page.locator(selector).bounding_box() for selector in ((".head", "#police-card") if width >= 1024 else (".facts", "#police-card"))]
         assert all(boxes)
         assert max(box["x"] for box in boxes) - min(box["x"] for box in boxes) <= 1
         assert max(box["x"] + box["width"] for box in boxes) - min(box["x"] + box["width"] for box in boxes) <= 1
-        assert page.locator('#now > .stay-command-main > .stay-command-actions > button[data-copy]').count() == 0
         _shot(page, f"37-centered-stay-detail-{lang}-{width}.png")
 
         page.goto(f"{base}/reservations?range=all&lang={lang}")
 
         _ready(page)
-        row = page.locator(f'tr[data-href^="/reservations/{stay_id}?"]')
-        row.focus()
-        page.keyboard.press("Enter")
-        page.wait_for_url(f"**/reservations/{stay_id}?**")
-        page.goto(f"{base}/reservations?range=all&lang={lang}")
-        _ready(page)
-        page.locator(f'tr[data-href^="/reservations/{stay_id}?"] .stay-col-guests').click()
-        page.wait_for_url(f"**/reservations/{stay_id}?**")
+        if width >= 1024:
+            row = page.locator(f'tr[data-href^="/reservations/{stay_id}?"]')
+            row.focus()
+            page.keyboard.press("Enter")
+            page.wait_for_url(f"**/reservations/{stay_id}?**")
+            page.goto(f"{base}/reservations?range=all&lang={lang}")
+            _ready(page)
+            page.locator(f'tr[data-href^="/reservations/{stay_id}?"] td[data-card="badge"]').click()
+            page.wait_for_url(f"**/reservations/{stay_id}?**")
 
         page.goto(f"{base}/apartments?lang={lang}")
 
         _ready(page)
-        property_row = page.locator(".properties-table tbody .clickable-row").first
-        assert property_row.locator(".row-actions > a.btn").count() == 0
-        property_row.locator(".row-menu-trigger").click()
-        menu = page.locator(".row-menu-panel.is-open")
-        assert menu.get_by_role("menuitem", name=_t(lang, "common.open"), exact=True).is_visible()
-        page.keyboard.press("Escape")
-        property_row.locator(".row-primary-link").click()
+        if width >= 1024:
+            property_row = page.locator(".props-card tbody .clickable-row").first
+            assert property_row.locator(".row-actions > a.btn").count() == 0
+            property_row.locator(".row-menu-trigger").click()
+            menu = page.locator(".row-menu-panel.is-open")
+            assert menu.get_by_role("menuitem", name=_t(lang, "common.open"), exact=True).is_visible()
+            page.keyboard.press("Escape")
+            property_row.locator(".row-primary-link").click()
+        else:
+            # 0533: below 1024 px the table is hidden; the phone card is the whole link, and the phone mockup has no row menu.
+            page.locator(".props-phone a.card.prop").first.click()
         page.wait_for_url("**/apartments/*")
 
         page.goto(f"{base}/?lang={lang}")
 
         _ready(page)
-        assert page.locator(".needs-you").is_visible()
+        assert page.locator("#needs-action").is_visible()
         _fits(page)
 
         if width >= 1440:
+            # Old shell: the collapsible sidebar account lives on /settings; v2 Overview has no sidebar account.
+            page.goto(f"{base}/payments?lang={lang}")
+            _ready(page)
             page.evaluate("document.body.classList.add('sidebar-collapsed')")
             account = page.locator("[data-host-account] > summary")
             avatar = account.locator(".sidebar-user-avatar")
@@ -161,26 +177,28 @@ def test_current_property_name_demo_label_and_distinct_setup_status(wizard_host,
         assert page.locator("#demo-message-heading .ui-badge").is_visible()
         _shot(page, f"39-labeled-demo-message-{lang}-{width}.png")
         property_setup.finish(apartment_id)
-        page.goto(f"{base}?view=overview&lang={lang}")
+        page.goto(f"{base}?lang={lang}")
         _ready(page)
-        status = page.locator("[data-setup-status]")
-        assert status.is_visible()
-        # 0286: the health check lives on the overview cards: a dot per checked card, no separate box.
-        cards = page.locator(".host-property-grid [data-health-check]")
-        assert cards.count() >= 4
+        # 0286 and 0544: the health check is aside rows from 1024 px; below that, the section summaries.
+        if width >= 1024:
+            rows = page.locator("aside.preview .pv .r")
+            assert rows.count() >= 5
+            assert page.locator("aside.preview a.r[href='#sec-police']").count() == 1
+            assert page.locator("aside.preview a.r[href='#sec-calendars']").count() == 1
+            status = page.locator("[data-setup-status]")
+            assert status.is_visible()
+            assert not status.evaluate("el => el.open")
+            status.locator("summary").click()
+            status.locator(".readiness").wait_for(state="visible")  # 0401: the fold-out slides open
+            status.locator("summary").click()
+        else:
+            rows = page.locator("details.prop-sec > summary")
+            assert rows.count() >= 4
+            for index in range(rows.count()):
+                row = rows.nth(index)
+                assert row.locator(".dot").is_visible()
+                assert row.locator("small.sec-state").is_visible()
         assert page.locator(".host-checklist, .health-row").count() == 0
-        assert not status.evaluate("el => el.open")
-        for index in range(cards.count()):
-            card = cards.nth(index)
-            assert card.locator(".host-property-card-dot").is_visible(), card.get_attribute("data-health-check")
-            assert card.evaluate("el => getComputedStyle(el).borderTopStyle") == "solid"
-            assert card.bounding_box()["height"] >= 43.5
-        police = page.locator('.host-property-grid [data-health-check="police"]')
-        assert police.count() == 1
-        assert page.locator(".host-property-grid > a.host-property-card").count() >= 5
-        status.locator("summary").click()
-        status.locator(".readiness").wait_for(state="visible")  # 0401: the fold-out slides open
-        status.locator("summary").click()
         _fits(page)
         _shot(page, f"40-overview-health-{lang}-{width}.png")
         context.close()
@@ -198,11 +216,17 @@ def test_native_record_links_still_work_without_javascript(stay_actions_host, st
         page = context.new_page()
         page.goto(f"{base}/reservations?range=all&lang=en")
         _ready(page)
-        page.locator(f'tr[data-href^="/reservations/{stay_id}?"] .row-primary-link').click()
+        record_link = (f'tr[data-href^="/reservations/{stay_id}?"] td a.stay-identity-link' if width >= 1024
+                       else f'.stays-phone a.card.stay[href^="/reservations/{stay_id}?"]')
+        # keyboard activation: the fixed phone tab bar may cover a row Playwright scrolls to the bottom edge
+        page.locator(record_link).press("Enter")
         page.wait_for_url(f"**/reservations/{stay_id}?**")
         page.goto(f"{base}/apartments?lang=en")
         _ready(page)
-        page.locator(".properties-table .row-primary-link").first.click()
+        if width >= 1024:
+            page.locator(".props-card .row-primary-link").first.click()
+        else:
+            page.locator(".props-phone a.card.prop").first.click()
         page.wait_for_url("**/apartments/*")
         context.close()
         browser.close()

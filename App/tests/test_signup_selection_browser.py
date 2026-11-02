@@ -64,12 +64,7 @@ def test_signup_and_onboarding_review_fit_without_js(
         review = page.locator('.ui-section').filter(
             has=page.locator('a[href="/predplatne"]'),
         )
-        assert review.is_visible()
-        assert "7" in review.inner_text()
+        assert review.count() == 0
         screenshot(page, f"onboarding-pricing-{lang}-{width}-js{int(javascript)}.png")
         fits(page)
-        # Billing review remains a regular link, usable with scripting disabled.
-        review.locator('a[href="/predplatne"]').click()
-        page.wait_for_url("**/predplatne")
-        assert page.locator("main").is_visible()
         browser.close()

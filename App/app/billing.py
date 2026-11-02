@@ -30,10 +30,9 @@ INTERVALS = ("month", "year")
 # prices only the apartments inside it.
 BAND_TOPS = (4, 9)
 BASE = {"month": (149, 119, 99), "year": (1190, 950, 790)}
-MAX_EXTRA = {"month": (80, 59, 39), "year": (718, 570, 370)}
-TTLOCK = {"month": 40, "year": 480}
+MAX_EXTRA = {"month": (59, 45, 29), "year": (570, 430, 280)}
+TTLOCK = {"month": 49, "year": 470}
 WHITELABEL = {"month": 590, "year": 5660}
-FOUNDER_YEAR = 890
 # A supplementary amount under this is carried to the next invoice instead.
 SUPPLEMENTARY_MIN_CZK = 50
 
@@ -70,7 +69,6 @@ def quote(
     *,
     ttlock: bool = False,
     whitelabel: bool = False,
-    founder: bool = False,
     discount_percent: int = 0,
 ) -> Dict[str, int]:
     """Whole-Kč amounts for one period (a month or a year). Prices are final.
@@ -83,10 +81,7 @@ def quote(
     if not 0 <= int(discount_percent) <= 100:
         raise ValueError(f"discount out of range: {discount_percent}")
     n = max(0, int(apartments))
-    if founder and interval == "year":
-        base = FOUNDER_YEAR * n
-    else:
-        base = graduated(n, BASE[interval])
+    base = graduated(n, BASE[interval])
     extra = graduated(n, MAX_EXTRA[interval]) if plan == "max" else 0
     lock = TTLOCK[interval] * n if ttlock and plan != "max" else 0
     brand = WHITELABEL[interval] if whitelabel else 0
@@ -169,6 +164,7 @@ def set_status(owner_user_id: int, new: str, *, actor: str = "system") -> bool:
     if new not in STATUSES:
         raise ValueError(f"unknown status: {new}")
     with db.immediate() as cur:
+        db.lock_key(cur, "billing_account", owner_user_id)
         cur.execute("SELECT status FROM billing_account WHERE owner_user_id = ?", (owner_user_id,))
         row = cur.fetchone()
         if row is None or new not in TRANSITIONS[row["status"]]:
@@ -205,7 +201,6 @@ def _period_total(state: Dict[str, Any]) -> int:
         state["billing_interval"],
         ttlock=bool(state["addon_ttlock"]),
         whitelabel=bool(state["addon_whitelabel"]),
-        founder=bool(state["founder"]),
         discount_percent=int(state.get("discount_percent") or 0),
     )["total"]
 
@@ -241,7 +236,6 @@ def apply_change(
         "billing_interval": acc["billing_interval"],
         "addon_ttlock": acc["addon_ttlock"],
         "addon_whitelabel": acc["addon_whitelabel"],
-        "founder": acc["founder"],
         "discount_percent": int(acc["discount_percent"] or 0),
     }
     target = {**current, field: value}
@@ -318,7 +312,7 @@ def apply_discount(
         "apartments": acc["apartments_billed"], "plan": acc["plan"],
         "billing_interval": acc["billing_interval"],
         "addon_ttlock": acc["addon_ttlock"], "addon_whitelabel": acc["addon_whitelabel"],
-        "founder": acc["founder"], "discount_percent": int(acc["discount_percent"] or 0),
+        "discount_percent": int(acc["discount_percent"] or 0),
     })
     db.execute(
         "UPDATE billing_account SET discount_percent = ?, discount_reason = ?, updated_at = ? "
@@ -345,33 +339,8 @@ def apply_discount(
             "billing_interval": refreshed["billing_interval"],
             "addon_ttlock": refreshed["addon_ttlock"],
             "addon_whitelabel": refreshed["addon_whitelabel"],
-            "founder": refreshed["founder"],
             "discount_percent": int(percent),
         }),
         "reissued_invoice_ids": reissued,
     }
 
-
-def founder_slots_left() -> int:
-    row = db.query_one("SELECT COUNT(*) AS n FROM founder_slot")
-    used = int(row["n"]) if row else 0
-    return max(0, int(config.FOUNDER_SLOTS) - used)
-
-
-def claim_founder_slot(owner_user_id: int) -> Optional[int]:
-    """The host's founder slot number, claiming the next one; None when all are gone."""
-    with db.immediate() as cur:
-        cur.execute("SELECT slot FROM founder_slot WHERE owner_user_id = ?", (owner_user_id,))
-        mine = cur.fetchone()
-        if mine is not None:
-            return int(mine["slot"])
-        cur.execute("SELECT COUNT(*) AS n, COALESCE(MAX(slot), 0) AS top FROM founder_slot")
-        row = cur.fetchone()
-        if int(row["n"]) >= int(config.FOUNDER_SLOTS):
-            return None
-        slot = int(row["top"]) + 1
-        cur.execute(
-            "INSERT INTO founder_slot (slot, owner_user_id, claimed_at) VALUES (?, ?, ?)",
-            (slot, owner_user_id, db.utcnow()),
-        )
-    return slot

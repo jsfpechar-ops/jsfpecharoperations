@@ -78,7 +78,7 @@ def test_cross_device_verification_preserves_choices_without_ordering(client):
     assert db.query_one("SELECT active FROM user_account WHERE id = ?", (row["id"],))["active"] == 0
     response = other_device.post("/signup/verify", data={"t": token(row)}, follow_redirects=False)
     assert response.status_code == 303
-    assert response.headers["location"] == "/onboarding"
+    assert response.headers["location"] == "/"
     account = billing.account(row["id"])
     assert account["plan"] is None  # Trial creation is not an order.
     values = billing_order.form_values(row["id"])
@@ -131,7 +131,7 @@ def test_existing_pricing_cta_apts_survives_signup_and_verification(client):
     row = db.query_one("SELECT * FROM user_account WHERE email = ?",
                        ("pricing-link@selection.test",))
     assert client.post("/signup/verify", data={"t": token(row)},
-                       follow_redirects=False).headers["location"] == "/onboarding"
+                       follow_redirects=False).headers["location"] == "/"
     assert signup_selection.for_owner(row["id"]) == {
         "plan": "standard", "interval": "year", "apartments": "7", "ttlock": "1",
     }

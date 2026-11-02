@@ -111,8 +111,8 @@ def test_the_next_action_on_a_czech_queue_row_is_czech():
     assert page.status_code == 200
     card = re.search(r'<section[^>]*id="needs-action"[^>]*>(.*?)</section>', page.text, re.S)
     assert card, "no What needs you card on the dashboard"
-    english = host_i18n.translate("en", "needs_you.stay.ready")
-    czech = host_i18n.translate("cs", "needs_you.stay.ready")
+    english = host_i18n.translate("en", "needs_you.short.ready")
+    czech = host_i18n.translate("cs", "needs_you.short.ready")
     assert czech != english, "fixture is pointless if the two languages match"
     assert english not in card.group(1), "the line on the dashboard is in English for a Czech host"
     assert czech in card.group(1)

@@ -389,6 +389,7 @@ def test_pdf_plurals_and_many_rows_paginate():
         assert f"Strana {number}" in page.extract_text()
 
 
+@pytest.mark.sqlite_only
 def test_legacy_reset_runs_once(owner):
     ent = _entity(owner)
     aid = _apartment(owner, ent, "Legacy")

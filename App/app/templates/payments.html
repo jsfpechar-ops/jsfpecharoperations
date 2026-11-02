@@ -21,34 +21,102 @@
   <p>{{ t('payments.connect.support') }}</p>
   {% else %}
   <p>{{ t('payments.connect.' ~ connect_state.onboarding_state) }}</p>
+  <p>{{ t('payments.setup.lead') }}</p>
+  <ul class="setup-wizard-checklist host-property-grid" data-payments-setup>
+    {% for step in setup.steps %}
+    <li class="is-{{ step.status }}" data-payments-step="{{ step.key }}">
+      <div class="host-property-card host-property-card-static setup-summary-card">
+        <span class="setup-summary-icon" aria-hidden="true">{{ loop.index }}</span>
+        <div class="setup-summary-copy">
+          <strong>{{ t('payments.setup.step.' ~ step.key) }}</strong>
+          <span class="ui-badge ui-badge-{{ 'done' if step.status == 'done' else 'attention' if step.status == 'attention' else 'neutral' }}" data-tone="{{ 'green' if step.status == 'done' else 'amber' if step.status == 'attention' else 'grey' }}">
+            {% if step.status == 'done' %}<span aria-hidden="true">✓</span>{% endif %}
+            {{ t('payments.setup.badge.' ~ step.status) }}
+          </span>
+          {% if step.key == 'details' %}
+            {% if setup.entity %}
+            <span class="ui-sub">{{ setup.entity.name }}{% if setup.entity.contact_email %} · {{ setup.entity.contact_email }}{% endif %}</span>
+            <a class="setup-summary-action" href="{{ step.href }}">{{ t('payments.setup.details_edit') }}</a>
+            {% else %}
+            <span class="ui-sub">{{ t('payments.setup.details_missing') }}</span>
+            {% endif %}
+          {% elif step.key == 'stripe' %}
+            <span class="ui-sub">{{ t('payments.setup.stripe_help') }}</span>
+          {% elif step.key == 'live' %}
+            <span class="ui-sub">{{ t('payments.setup.live_help') }}</span>
+          {% endif %}
+        </div>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% if setup.next == 'consent' %}
+  {{ ui_button(t('payments.setup.continue'), 'primary', href='/payments/consent') }}
+  {% elif setup.next == 'details' %}
+  {{ ui_button(t('payments.setup.details_add'), 'primary', href='/entities') }}
+  {% else %}
   {#- A plain link, not a form POST: the same-origin POST/303 navigation is
       eaten by the PWA submit handling (live-observed hang on the skeleton);
       link navigation works everywhere, and target=_blank keeps the dashboard
-      open behind the single-use Stripe onboarding. -#}
-  {{ ui_button(t('payments.connect.open_stripe'), 'primary',
+      open behind the single-use Stripe onboarding (and out of prefetch). -#}
+  {{ ui_button(t('payments.connect.open_stripe') if connect_state.onboarding_state == 'none' else t('payments.connect.continue_stripe'), 'primary',
                href='/payments/connect/start', attrs='target="_blank" rel="noopener"') }}
   {% endif %}
+  {% endif %}
 </div>
-<div class="ui-section">
+<div class="ui-section" data-payment-services>
+  <h2>{{ t('payments.services.title') }}</h2>
+  {% if services %}
+  <ul>
+    {% for s in services %}
+    <li data-service="{{ s.id }}">
+      <strong>{{ s.name }}</strong> · {{ s.amount_czk }} {{ t('payments.czk') }}
+      <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/payments?service={{ s.id }}#new-request">{{ t('payments.services.request') }}</a>
+      <form method="post" action="/payments/services/{{ s.id }}/delete" data-confirm data-confirm-message="{{ t('payments.services.remove_confirm') }}" style="display:inline">
+        <button class="ui-btn ui-btn-quiet ui-btn-compact" type="submit">{{ t('payments.services.remove') }}</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="ui-sub">{{ t('payments.services.empty') }}</p>
+  {% endif %}
+  <form method="post" action="/payments/services" class="ui-form">
+    <label class="ui-field">
+      <span>{{ t('payments.services.name') }}</span>
+      <input class="ui-input" type="text" name="name" maxlength="60" required>
+    </label>
+    <label class="ui-field">
+      <span>{{ t('payments.field.amount') }}</span>
+      <input class="ui-input" type="number" name="amount_czk" min="1" step="1" required>
+    </label>
+    {{ ui_button(t('payments.services.add'), 'secondary', type='submit') }}
+  </form>
+</div>
+<div class="ui-section" id="new-request">
   <h2>{{ t('payments.new.title') }}</h2>
   <form method="post" action="/payments/requests/new" class="ui-form">
     <label class="ui-field">
       <span>{{ t('payments.field.stay') }}</span>
       <select name="reservation_id" class="ui-input">
         <option value="">{{ t('payments.field.no_stay') }}</option>
-        {% for s in stays %}<option value="{{ s.id }}">{{ s.label }}</option>{% endfor %}
+        {% for s in stays %}<option value="{{ s.id }}"{% if selected_reservation_id == s.id %} selected{% endif %}>{{ s.label }}</option>{% endfor %}
       </select>
     </label>
     <label class="ui-field">
       <span>{{ t('payments.field.amount') }}</span>
-      <input class="ui-input" type="number" name="amount_czk" min="1" step="1" required>
+      <input class="ui-input" type="number" name="amount_czk" min="1" step="1" required{% if prefill %} value="{{ prefill.amount_czk }}"{% endif %}>
     </label>
     <fieldset class="ui-field">
       <legend>{{ t('payments.field.reason') }}</legend>
       <div class="ui-chips">
-        {% for r in reasons %}<label class="ui-chip"><input type="radio" name="reason" value="{{ r }}" {% if loop.first %}required{% endif %}> {{ t('payments.reason.' ~ r) }}</label>{% endfor %}
+        {% for r in reasons %}<label class="ui-chip"><input type="radio" name="reason" value="{{ r }}" {% if loop.first %}required{% endif %}{% if prefill and r == 'custom' %} checked{% endif %}> {{ t('payments.reason.' ~ r) }}</label>{% endfor %}
       </div>
     </fieldset>
+    <label class="ui-field">
+      <span>{{ t('payments.field.note') }}</span>
+      <input class="ui-input" type="text" name="guest_note" maxlength="60"{% if prefill %} value="{{ prefill.name }}"{% endif %}>
+    </label>
     <label class="ui-field">
       <span>{{ t('payments.field.guest_email') }}</span>
       <input class="ui-input" type="email" name="guest_email">
@@ -80,16 +148,21 @@
       {% for req in requests %}
         <tr>
           <td class="ui-sub" data-label="{{ t('payments.col.date') }}">{{ req.created_at | date_cz }}</td>
-          <td data-label="{{ t('payments.col.reason') }}">{{ t('payments.reason.' ~ req.reason) }}</td>
+          <td data-label="{{ t('payments.col.reason') }}">{% if req.reason == 'custom' and req.guest_note %}{{ req.guest_note }}{% else %}{{ t('payments.reason.' ~ req.reason) }}{% endif %}</td>
           <td class="ui-num" data-label="{{ t('payments.col.amount') }}">{{ req.amount_czk }} {{ t('payments.czk') }}</td>
           <td data-label="{{ t('payments.col.rail') }}">{{ t('payments.rail.' ~ req.rail) }}</td>
           <td data-label="{{ t('filter.status') }}"><span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('payments.status.' ~ req.status) }}</span></td>
           <td class="row-actions" data-label="">
+            {% if req.rail == 'card' and req.status in ['draft', 'sent', 'awaiting_payment'] %}
+            <form method="post" action="/payments/requests/{{ req.id }}/link" style="display:inline">
+              <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('payments.get_link') }}</button>
+            </form>
+            {% endif %}
             {% if req.status == 'draft' and req.guest_email %}
             <form method="post" action="/payments/requests/{{ req.id }}/send" style="display:inline">
               <button class="ui-btn ui-btn-primary ui-btn-compact" type="submit">{{ t('payments.send') }}</button>
             </form>
-            {% elif req.status == 'draft' %}
+            {% elif req.status == 'draft' and req.rail != 'card' %}
             <span class="ui-sub">{{ t('payments.need_email') }}</span>
             {% endif %}
             {% if req.status == 'draft' and req.rail == 'qr' %}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="/payments/qr/{{ req.id }}">{{ t('payments.qr.preview') }}</a>{% endif %}

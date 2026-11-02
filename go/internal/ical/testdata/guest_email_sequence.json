@@ -1,0 +1,16 @@
+[
+  {
+    "date_from": "2027-01-10",
+    "date_to": "2027-01-12",
+    "description": "Contact: jana.novakova@example.org.",
+    "guest_email": "jana.novakova@example.org.",
+    "is_block": false,
+    "is_cancelled": false,
+    "name_hint": "Jana Nováková",
+    "phone_last4": null,
+    "recurring": false,
+    "reservation_url": null,
+    "summary": "Jana Nováková",
+    "uid": "synthetic-ed10bb37906a7428"
+  }
+]

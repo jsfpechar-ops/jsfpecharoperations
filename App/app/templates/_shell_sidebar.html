@@ -41,14 +41,6 @@
         <div class="host-menu-rule"></div>
         <a href="/settings/archived">{{ t('settings.nav.archive') }}</a>
         <a href="/privacy-requests">{{ t('nav.privacy_requests') }}</a>
-        {% if current_user.role == 'admin' %}
-        <a href="/admin">{{ t('home.admin.title') }}</a>
-        <a href="/admin/users">{{ t('nav.users') }}</a>
-        <a href="/admin/incidents">{{ t('users.incidents_link') }}</a>
-        <a href="/admin/operations">{{ t('ops.title') }}</a>
-        <a href="/admin/funnel">{{ t('funnel.title') }}</a>
-        <a href="/admin/fakturace">{{ t('billing.admin.title') }}</a>
-        {% endif %}
         <div class="host-menu-rule"></div>
         <form method="post" action="/language" class="lang-switch compact">
           <input type="hidden" name="next" value="{{ request.url.path }}">

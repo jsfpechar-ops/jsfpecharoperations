@@ -126,6 +126,7 @@ def save(
     now = db.utcnow()
     payload_enc = db.encrypt_field(json.dumps(payload_obj, sort_keys=True))
     with db.immediate() as cur:
+        db.lock_key(cur, "stay_fee_filing", apartment["id"])
         if replacing_id is not None:
             cur.execute(
                 "UPDATE stay_fee_filing SET superseded_at = ? "

@@ -50,8 +50,8 @@ def command_palette(request: Request):
         ("nav.guest_links", hub_url("guests", "communication"), "invitation guest link pin"),
         ("nav.automation", hub_url("automation", "automation"), "automatic reporting timing police"),
         ("host.invoice_settings", access.invoice_details_url(request), "invoice settings faktura"),
-        ("settings.group.security", "/settings#settings-group-security", "passkey 2fa authenticator login password"),
-        ("settings.group.data", "/settings#settings-group-data", "retention backup delete expired export"),
+        ("settings.group.security", "/settings/security", "passkey 2fa authenticator login password"),
+        ("settings.group.data", "/settings/data", "retention backup delete expired export"),
         ("settings.nav.archive", "/settings/archived", "restore archived records"),
         ("nav.privacy_requests", "/privacy-requests", "privacy gdpr"),
         ("nav.guide", "/guide", "help guide support"),
@@ -60,7 +60,7 @@ def command_palette(request: Request):
         destinations.append(("properties.shared.lock", "/smart-locks", "ttlock door lock code"))
     if auth.current_user(request)["role"] == "admin":
         destinations.extend([
-            ("nav.users", "/admin/users", "team accounts roles"),
+            ("nav.users", "/admin/customers", "team accounts roles"),
             ("users.incidents_link", "/admin/incidents", "incidents"),
         ])
     items.extend({"label": t(key), "group": t("command.group.pages"), "url": url,

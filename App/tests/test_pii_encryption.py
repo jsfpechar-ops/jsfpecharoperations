@@ -173,12 +173,13 @@ def _raw_insert_guest(reservation_id: int, **overrides) -> int:
     values.update(overrides)
     conn = db.connect()
     try:
-        cur = conn.execute(
+        row = conn.execute(
             f"INSERT INTO guest ({', '.join(values)})"
-            f" VALUES ({', '.join('?' for _ in values)})",
+            f" VALUES ({', '.join('?' for _ in values)}) RETURNING id",
             list(values.values()),
-        )
-        return int(cur.lastrowid)
+        ).fetchone()
+        conn.commit()
+        return int(row[0])
     finally:
         conn.close()
 
@@ -206,6 +207,7 @@ def test_a_guest_saved_by_the_form_reads_back_through_the_encrypted_column(clien
     assert stored["visa_number_enc"] and stored["visa_number_enc"] != VISA
 
 
+@pytest.mark.sqlite_only
 def test_the_database_file_does_not_contain_the_document_number(client):
     apartment, reservation = _seed_stay("b")
     guest = _save_guest(client, apartment, reservation)
@@ -251,6 +253,7 @@ def test_saving_a_guest_clears_a_stale_plaintext_copy():
     assert db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))["doc_number"] == "ZZ1111111"
 
 
+@pytest.mark.sqlite_only
 def test_the_backfill_encrypts_plaintext_rows_and_blanks_them():
     _, reservation = _seed_stay("f")
     backfill = _load_backfill()
@@ -270,6 +273,7 @@ def test_the_backfill_encrypts_plaintext_rows_and_blanks_them():
     assert (guest["doc_number"], guest["visa_number"]) == (DOC, VISA)
 
 
+@pytest.mark.sqlite_only
 def test_the_backfill_can_be_run_twice():
     _, reservation = _seed_stay("g")
     guest_id = _raw_insert_guest(reservation["id"])
@@ -282,6 +286,7 @@ def test_the_backfill_can_be_run_twice():
     assert db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))["doc_number"] == DOC
 
 
+@pytest.mark.sqlite_only
 def test_the_backfill_dry_run_writes_nothing():
     _, reservation = _seed_stay("h")
     guest_id = _raw_insert_guest(reservation["id"])

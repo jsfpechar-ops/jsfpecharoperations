@@ -16,6 +16,50 @@ set -a
 source .env
 set +a
 
+# PostgreSQL mode: the same test scripts/backup.sh uses.
+PG_MODE=0
+if [ -n "${UBYHOST_DATABASE_URL:-}" ]; then
+  PG_MODE=1
+fi
+
+# 0710: rollback target. .deployed-sha is written only when a deploy finished;
+# before the first one, ORIG_HEAD is the commit the workflow reset away from.
+PREV_SHA="$(cat .deployed-sha 2>/dev/null || git rev-parse -q --verify ORIG_HEAD 2>/dev/null || true)"
+
+# 0710: the site as visitors reach it (Cloudflare, Caddy, app). About 60 s.
+public_ok() {
+  for _ in $(seq 1 12); do
+    if curl -fsS --max-time 10 -o /dev/null "${UBYHOST_PUBLIC_BASE_URL%/}/healthz"; then
+      return 0
+    fi
+    sleep 5
+  done
+  return 1
+}
+
+# 0710: put back the last good compose file, Caddyfile and app image. Database
+# migrations are not undone (goose files are additive). The working tree stays
+# modified until the next deploy's git reset.
+rollback() {
+  echo "==> Rolling back to ${PREV_SHA:-the previous image and Caddyfile}" >&2
+  if [ -n "${PREV_SHA}" ]; then
+    git checkout "${PREV_SHA}" -- docker-compose.yml caddy/Caddyfile.acme caddy/Caddyfile.cloudflare || true
+  fi
+  if [ -f caddy/Caddyfile.previous ]; then
+    cp caddy/Caddyfile.previous caddy/Caddyfile.active
+  fi
+  if docker image inspect ubyhost:previous >/dev/null 2>&1; then
+    docker tag ubyhost:previous ubyhost:local
+  fi
+  docker compose up -d --no-build --remove-orphans || true
+  docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile || true
+  if public_ok; then
+    echo "Rollback done: the public site answers again. The new release is NOT live." >&2
+  else
+    echo "ROLLBACK DID NOT BRING THE SITE BACK. Run: docker compose ps; docker compose logs --tail=50 caddy" >&2
+  fi
+}
+
 # shellcheck disable=SC1091
 source "$(dirname "$0")/litestream_env.sh"
 if [ "${litestream_enabled}" = "1" ]; then
@@ -38,6 +82,11 @@ if [ "${UBYHOST_PUBLIC_BASE_URL#https://}" = "${UBYHOST_PUBLIC_BASE_URL}" ]; the
   echo "WARNING: UBYHOST_PUBLIC_BASE_URL should use https:// in production." >&2
 fi
 
+# 0710: keep the running Caddyfile for rollback.
+if [ -f caddy/Caddyfile.active ]; then
+  cp caddy/Caddyfile.active caddy/Caddyfile.previous
+fi
+
 if [ "${CLOUDFLARE_PROXY:-0}" = "1" ]; then
   echo "==> Cloudflare proxy mode (origin certificate)"
   for cert in caddy/certs/origin.pem caddy/certs/origin-key.pem; do
@@ -50,6 +99,18 @@ if [ "${CLOUDFLARE_PROXY:-0}" = "1" ]; then
 else
   echo "==> Direct TLS mode (Let's Encrypt via Caddy)"
   cp caddy/Caddyfile.acme caddy/Caddyfile.active
+fi
+
+# 0710: a recreated Caddy container does not keep its old config, so a broken
+# file takes the site down. Test it with the production caddy service before
+# anything restarts.
+echo "==> Validating the Caddyfile"
+if ! bash ./scripts/caddy-validate.sh; then
+  if [ -f caddy/Caddyfile.previous ]; then
+    cp caddy/Caddyfile.previous caddy/Caddyfile.active
+  fi
+  echo "The new Caddyfile is invalid; nothing was restarted." >&2
+  exit 1
 fi
 
 if [ -z "${UBYHOST_SECRET_KEY:-}" ] && docker compose run --rm --no-deps -T --entrypoint sh ubyhost \
@@ -79,8 +140,8 @@ chmod +x scripts/*.sh
 # every active account has one (admin > Users shows them).
 # UBYHOST_ALLOW_MISSING_EMAIL=1 deploys anyway.
 if docker compose ps --status running --services 2>/dev/null | grep -qx ubyhost; then
-  MISSING_EMAIL="$(docker compose exec -T ubyhost sqlite3 /data/ubyhost.db \
-    "SELECT COUNT(*) FROM user_account WHERE active = 1 AND (email IS NULL OR email = '');" \
+  MISSING_EMAIL="$(docker compose exec -T ubyhost python -c \
+    "from app import db; print(db.query_one(\"SELECT COUNT(*) AS n FROM user_account WHERE active = 1 AND (email IS NULL OR email = '')\")['n'])" \
     2>/dev/null || echo "?")"
   if [ "${MISSING_EMAIL}" != "0" ] && [ "${UBYHOST_ALLOW_MISSING_EMAIL:-0}" != "1" ]; then
     echo "Active accounts without a login e-mail: ${MISSING_EMAIL}. Add one to each in admin > Users, then deploy again." >&2
@@ -104,23 +165,35 @@ if docker compose ps --status running --services 2>/dev/null | grep -qx ubyhost;
   # identity is kept off the server). Check that it exists and really is an
   # age file (or, outside production, a non-empty plaintext copy), then
   # integrity-check a fresh copy of the live database.
-  if ! docker compose exec -T ubyhost sh -c \
-    "f=/data/backups/${BACKUP_STAMP}/ubyhost-backup.tar.age; p=/data/backups/${BACKUP_STAMP}/ubyhost.db; if [ -s \"\$f\" ]; then head -c 21 \"\$f\" | grep -q 'age-encryption.org/v1'; else [ -s \"\$p\" ]; fi"; then
-    echo "Backup ${BACKUP_STAMP} is missing, empty or not an age file - refusing deployment." >&2
-    exit 1
-  fi
-  PREFLIGHT_DB="/data/.preflight-${BACKUP_STAMP}.db"
-  docker compose exec -T ubyhost sqlite3 /data/ubyhost.db ".backup '${PREFLIGHT_DB}'"
-  BACKUP_OK="$(docker compose exec -T ubyhost sh -c \
-    "[ -s '${PREFLIGHT_DB}' ] && sqlite3 '${PREFLIGHT_DB}' 'PRAGMA integrity_check;'")" || BACKUP_OK="missing"
-  if [ "${BACKUP_OK}" != "ok" ]; then
-    echo "Live database copy failed its integrity check: ${BACKUP_OK}" >&2
-    docker compose exec -T ubyhost rm -f "${PREFLIGHT_DB}"
-    exit 1
+  if [ "${PG_MODE}" = "1" ]; then
+    # PostgreSQL: backup.sh writes an age-encrypted pg_dump. The SQLite copy
+    # and integrity check below do not apply to it.
+    PG_DUMP="/data/backups/${BACKUP_STAMP}/ubyhost-pg.dump.age"
+    if ! docker compose exec -T ubyhost sh -c \
+      "[ -s '${PG_DUMP}' ] && head -c 21 '${PG_DUMP}' | grep -q 'age-encryption.org/v1'"; then
+      echo "PostgreSQL backup ${BACKUP_STAMP} is missing, empty or not an age file - refusing deployment." >&2
+      exit 1
+    fi
+    echo "PostgreSQL backup ${BACKUP_STAMP} is valid."
+  else
+    if ! docker compose exec -T ubyhost sh -c \
+      "f=/data/backups/${BACKUP_STAMP}/ubyhost-backup.tar.age; p=/data/backups/${BACKUP_STAMP}/ubyhost.db; if [ -s \"\$f\" ]; then head -c 21 \"\$f\" | grep -q 'age-encryption.org/v1'; else [ -s \"\$p\" ]; fi"; then
+      echo "Backup ${BACKUP_STAMP} is missing, empty or not an age file - refusing deployment." >&2
+      exit 1
+    fi
+    PREFLIGHT_DB="/data/.preflight-${BACKUP_STAMP}.db"
+    docker compose exec -T ubyhost sqlite3 /data/ubyhost.db ".backup '${PREFLIGHT_DB}'"
+    BACKUP_OK="$(docker compose exec -T ubyhost sh -c \
+      "[ -s '${PREFLIGHT_DB}' ] && sqlite3 '${PREFLIGHT_DB}' 'PRAGMA integrity_check;'")" || BACKUP_OK="missing"
+    if [ "${BACKUP_OK}" != "ok" ]; then
+      echo "Live database copy failed its integrity check: ${BACKUP_OK}" >&2
+      docker compose exec -T ubyhost rm -f "${PREFLIGHT_DB}"
+      exit 1
+    fi
   fi
   for table in "${TABLES[@]}"; do
-    BEFORE_COUNTS["${table}"]="$(docker compose exec -T ubyhost sqlite3 \
-      /data/ubyhost.db "SELECT COUNT(*) FROM ${table};")"
+    BEFORE_COUNTS["${table}"]="$(docker compose exec -T ubyhost python -c \
+      "from app import db; print(db.query_one('SELECT COUNT(*) AS n FROM ${table}')['n'])")"
   done
   echo "Backup ${BACKUP_STAMP} is valid; live row counts recorded."
 fi
@@ -146,7 +219,17 @@ else
   docker compose build --pull
 fi
 
-if [ -n "${BACKUP_STAMP}" ]; then
+if [ "${PG_MODE}" = "1" ]; then
+  # PostgreSQL: apply pending goose files with the new image, before the stack
+  # starts. A failure exits here, before `up` touches the running stack.
+  echo "==> Applying PostgreSQL goose migrations (new image)"
+  if ! docker compose run --rm --no-deps -T --entrypoint python ubyhost \
+    scripts/pg_schema.py apply --expect-database ubyhost; then
+    echo "Goose apply failed." >&2
+    exit 1
+  fi
+  echo "Goose migrations applied."
+elif [ -n "${BACKUP_STAMP}" ]; then
   echo "==> Dry-running database migration against a copy of the live database"
   if ! docker compose run --rm --no-deps \
     -e "UBYHOST_DB=${PREFLIGHT_DB}" \
@@ -158,6 +241,15 @@ if [ -n "${BACKUP_STAMP}" ]; then
   fi
   docker compose exec -T ubyhost rm -f "${PREFLIGHT_DB}"
   echo "Migration dry-run passed."
+fi
+
+if docker compose config --services | grep -qx 'ubyhost-go'; then
+  # Rebuild the local Go image so a merged change reaches production.
+  # Runs before "up", so a failed build leaves the running stack untouched.
+  if ! docker compose build ubyhost-go; then
+    echo "Go image build failed." >&2
+    exit 1
+  fi
 fi
 
 echo "==> Starting stack"
@@ -179,12 +271,13 @@ docker compose up -d --remove-orphans
 # `caddy reload` is a graceful, zero-downtime config swap over the admin API
 # (localhost:2019 inside the container, enabled by default) — unlike
 # `docker compose restart caddy`, it does not drop live connections. Caddy
-# validates the new config before applying it and keeps the running config if
-# validation fails, so aborting here on a bad config is safe.
+# validates the new config before applying it, but a container that `up -d`
+# recreated has no running config to keep, so a failure here rolls back.
 echo "==> Reloading Caddy"
 if ! docker compose exec -T caddy caddy reload \
   --config /etc/caddy/Caddyfile --adapter caddyfile; then
-  echo "Caddy reload failed — the deployed Caddyfile is NOT active." >&2
+  echo "Caddy reload failed." >&2
+  rollback
   exit 1
 fi
 
@@ -201,11 +294,14 @@ for _ in $(seq 1 30); do
 done
 if [ "${HEALTHY}" != "1" ]; then
   echo "New release never became healthy." >&2
-  if docker image inspect ubyhost:previous >/dev/null 2>&1; then
-    echo "==> Rolling back to ubyhost:previous" >&2
-    docker tag ubyhost:previous ubyhost:local
-    docker compose up -d --no-build ubyhost worker
-  fi
+  rollback
+  exit 1
+fi
+
+echo "==> Checking the public site (Cloudflare, Caddy, app)"
+if ! public_ok; then
+  echo "The public site does not answer after the restart." >&2
+  rollback
   exit 1
 fi
 
@@ -241,6 +337,14 @@ echo "Health (internal):"
 docker compose exec -T ubyhost python -c \
   "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8080/healthz').read().decode())"
 
+# Go port (G1b): report only. This block never exits non-zero.
+if docker compose ps --status running --services | grep -qx ubyhost-go; then
+  echo "Go service (internal, no traffic yet):"
+  docker compose exec -T ubyhost-go wget -qO- http://127.0.0.1:8081/healthz || echo "not healthy (does not affect the app)"
+else
+  echo "Go service: not enabled (COMPOSE_PROFILES has no go)"
+fi
+
 # BE-1: turn legacy login acceptance lines into legal_acceptance rows. The
 # script is idempotent and prints a count only. A failure aborts the deploy
 # loudly rather than leaving acceptance evidence half-migrated.
@@ -266,14 +370,16 @@ fi
 if [ -n "${BACKUP_STAMP}" ]; then
   echo ""
   echo "Post-deploy database integrity and row-count checks:"
-  LIVE_OK="$(docker compose exec -T ubyhost sqlite3 /data/ubyhost.db "PRAGMA integrity_check;")"
-  if [ "${LIVE_OK}" != "ok" ]; then
-    echo "Live database integrity check failed: ${LIVE_OK}" >&2
-    exit 1
+  if [ "${PG_MODE}" != "1" ]; then
+    LIVE_OK="$(docker compose exec -T ubyhost sqlite3 /data/ubyhost.db "PRAGMA integrity_check;")"
+    if [ "${LIVE_OK}" != "ok" ]; then
+      echo "Live database integrity check failed: ${LIVE_OK}" >&2
+      exit 1
+    fi
   fi
   for table in "${TABLES[@]}"; do
-    after="$(docker compose exec -T ubyhost sqlite3 /data/ubyhost.db \
-      "SELECT COUNT(*) FROM ${table};")"
+    after="$(docker compose exec -T ubyhost python -c \
+      "from app import db; print(db.query_one('SELECT COUNT(*) AS n FROM ${table}')['n'])")"
     if [ "${after}" -lt "${BEFORE_COUNTS[${table}]}" ]; then
       echo "${table} row count fell from ${BEFORE_COUNTS[${table}]} to ${after}." >&2
       exit 1
@@ -295,3 +401,6 @@ if [ "${SKIP_PUBLIC_SMOKE:-0}" != "1" ]; then
     exit 1
   fi
 fi
+
+# 0710: this commit is now the rollback target.
+git rev-parse HEAD > .deployed-sha

@@ -1,6 +1,6 @@
 # Business metrics and database direction
 
-Status: staged plan, 2026-10-30. Production remains on SQLite until an owner-operated cutover. The owner now requests the complete PostgreSQL migration code under tasks 0455–0456; metric definitions and source verification still precede new analytics infrastructure. UX work and metric-contract work may proceed independently.
+Status: staged plan, 2026-10-30; database section updated 2026-11-01. Production runs on self-hosted PostgreSQL since the 2026-10-31 cutover ([migration-plan-v4](postgresql/migration-plan-v4.md)). Metric definitions and source verification still precede new analytics infrastructure. UX work and metric-contract work may proceed independently.
 
 ## Owner direction and limits
 
@@ -80,11 +80,9 @@ The implementation brief must define:
 - Off-host backups for configuration/application data and a demonstrated restoration of a dashboard and access settings.
 - Measured RAM, CPU, disk growth and I/O alongside the app, workers, monitoring and backups before choosing resource limits. Previously proposed Postgres and Metabase memory caps are unverified.
 
-## PostgreSQL migration code: owner requested, production cutover manual
+## PostgreSQL
 
-The owner explicitly expanded this task to include all PostgreSQL runtime, transfer, reconciliation, deployment and recovery code. Tasks 0455–0456 own that implementation and its local rehearsal. This supersedes deferral of writing the migration code; it does not authorize a production cutover. Verify compatibility and filing/money behavior, define downtime and recovery objectives, identify owners, and rehearse data reconciliation and recovery before the owner enables production writes.
-
-Before cutover, quiesce web mutations, workers, schedulers and callbacks, then perform a final reconciliation before destination writes. Rehearse post-write recovery and reconcile external side effects. An untouched SQLite file is not a sufficient rollback plan after PostgreSQL has accepted authoritative writes.
+Done: production cut over to self-hosted PostgreSQL on 2026-10-31. The plan, rollback path and next steps (goose, then the Go port) live in [migration-plan-v4](postgresql/migration-plan-v4.md); this plan no longer covers the database move.
 
 ## Verification and deliverables
 

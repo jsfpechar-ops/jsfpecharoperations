@@ -28,6 +28,7 @@ from tests.conftest import login_as
 
 EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0083-evidence"
 GROUPS = ("account", "security", "data", "privacy", "technical", "help")
+GROUP_PAGE = {"privacy": "data"}
 FORM_ACTIONS = (
     "/account/email",
     "/settings/purge-expired",
@@ -66,34 +67,38 @@ def admin():
     _drop(uid)
 
 
-def _group_positions(html: str):
-    return [html.index(f'id="settings-group-{key}"') for key in GROUPS]
+def _plain(html: str) -> str:
+    return " ".join(re.sub(r"<[^>]+>", " ", html).split())
+
+
+def _group_page(key: str) -> str:
+    return f"/settings/{GROUP_PAGE.get(key, key)}"
 
 
 def test_six_groups_in_order_and_index_links_each(host):
-    html = host.get("/settings?lang=en").text
-    positions = _group_positions(html)
+    index = host.get("/settings?lang=en").text
+    index = index[index.index('class="airbnb-index"'):]
+    index = index[: index.index("</nav>")]
+    positions = [index.index(f'href="/settings/{key}"') for key in ("account", "security", "data", "technical", "help")]
     assert positions == sorted(positions)
-    nav = html[html.index('class="host-property-grid"'):]
-    nav = nav[: nav.index("</nav>")]
-    for key in GROUPS[:4] + GROUPS[5:]:
-        assert f'href="#settings-group-{key}"' in nav
-    assert 'href="#settings-technical"' in nav
     for key in GROUPS:
+        page = host.get(f"{_group_page(key)}?lang=en").text
+        assert f'id="settings-group-{key}"' in page
         title = STRINGS["en"][f"settings.group.{key}"]
-        assert f'id="settings-group-{key}-title">{htmllib.escape(title)}</h2>' in html
+        assert f'id="settings-group-{key}-title">{htmllib.escape(title)}</h2>' in page
 
 
 def test_ordinary_user_sees_no_admin_controls(host):
     html = host.get("/settings?lang=en").text
-    assert "/admin/" not in html
+    # The speculation-rules JSON excludes "/admin/*" for everyone; that is not a control.
+    assert 'href="/admin' not in html
     assert STRINGS["en"]["settings.account.users"] not in html
 
 
 def test_admin_sees_team_and_incidents_in_account_group(admin):
-    html = admin.get("/settings?lang=en").text
-    account = html[html.index('id="settings-group-account"'): html.index('id="settings-group-security"')]
-    assert 'href="/admin/users"' in account
+    html = admin.get("/settings/account?lang=en").text
+    account = html[html.index('id="settings-group-account"'):]
+    assert 'href="/admin/customers"' in account
     assert 'href="/admin/incidents"' in account
 
 
@@ -102,7 +107,7 @@ def test_admin_sees_team_and_incidents_in_account_group(admin):
 def test_secondary_navigation_landmark_matches_visible_links(role, lang, request):
     client = request.getfixturevalue(role)
     html = client.get(f"/settings?lang={lang}").text
-    nav = re.search(r'<nav class="ui-nav ui-nav-bottom" aria-label="([^"]+)">', html)
+    nav = re.search(r'<nav class="side-nav side-bottom" aria-label="([^"]+)">', html)
     assert nav is not None
     expected = STRINGS[lang]["nav.guide"]
     if role == "admin":
@@ -111,7 +116,7 @@ def test_secondary_navigation_landmark_matches_visible_links(role, lang, request
 
 
 def test_email_change_is_a_visible_form_not_a_disclosure(host):
-    html = host.get("/settings?lang=en").text
+    html = host.get("/settings/account?lang=en").text
     start = html.index('id="settings-login-email"')
     form = html[html.index('<form method="post" action="/account/email"', start):]
     form = form[: form.index("</form>")]
@@ -126,47 +131,55 @@ def test_email_change_is_a_visible_form_not_a_disclosure(host):
 
 
 def test_specialized_actions_stay_distinct(host):
-    html = host.get("/settings?lang=en").text
-    assert 'action="/settings/purge-expired"' in html
-    assert "data-confirm" in html[html.index('action="/settings/purge-expired"'):][:200]
+    data = host.get("/settings/data?lang=en").text
+    assert 'action="/settings/purge-expired"' in data
+    assert "data-confirm" in data[data.index('action="/settings/purge-expired"'):][:200]
+    index = host.get("/settings?lang=en").text + host.get("/settings/help?lang=en").text
     for href in ("/settings/archived", "/privacy-requests", "/guide", "/legal", "/terms", "/privacy", "/dpa"):
-        assert f'href="{href}"' in html, href
-    assert 'href="/account/2fa/setup"' in html
-    assert "data-passkey-add" in html or "passkeys" in html
+        assert f'href="{href}"' in index, href
+    security = host.get("/settings/security?lang=en").text
+    assert 'href="/account/2fa/setup"' in security
+    assert "data-passkey-add" in security or "passkeys" in security
 
 
 def test_business_details_link_lives_in_one_place(host):
-    html = host.get("/settings?lang=en").text
+    html = host.get("/settings/account?lang=en").text
     assert html.count('id="settings-business"') == 1
     row = html[html.index('id="settings-business"'):]
-    row = row[: row.index("</div>\n        </div>") + 20]
-    assert 'href="/entities"' in row
-    assert htmllib.escape(STRINGS["en"]["settings.business.title"]) in row
+    row = row[: row.index("</a>") + 4]
+    assert 'href="/entities' in row
+    assert htmllib.escape(STRINGS["en"]["settings.business.title"]) in _plain(row)
 
 
 def test_routine_helper_text_is_behind_the_question_mark(host):
-    html = host.get("/settings?lang=en").text
-    for key in ("settings-security-help", "settings-retention-help", "settings-archive-help", "settings-access-help"):
-        assert f'id="{key}"' in html and f'aria-controls="{key}"' in html
-    # Ids stay unique so aria-controls is unambiguous.
-    ids = re.findall(r'\sid="([^"]+)"', html)
-    assert len(ids) == len(set(ids)), sorted({i for i in ids if ids.count(i) > 1})
+    expected = {
+        "/settings/security": ("settings-security-help",),
+        "/settings/data": ("settings-retention-help",),
+        "/settings/archived": ("archive-retention-help",),
+    }
+    for path, keys in expected.items():
+        html = host.get(f"{path}?lang=en").text
+        for key in keys:
+            assert f'id="{key}"' in html and f'aria-controls="{key}"' in html, (path, key)
+        # Ids stay unique so aria-controls is unambiguous.
+        ids = re.findall(r'\sid="([^"]+)"', html)
+        assert len(ids) == len(set(ids)), (path, sorted({i for i in ids if ids.count(i) > 1}))
 
 
 def test_czech_groups(host):
-    html = host.get("/settings?lang=cs").text
     for key in GROUPS:
+        html = host.get(f"{_group_page(key)}?lang=cs").text
         assert STRINGS["cs"][f"settings.group.{key}"] in html
-    assert STRINGS["cs"]["settings.business.title"] in html
+    assert STRINGS["cs"]["settings.business.title"] in _plain(host.get("/settings/account?lang=cs").text)
 
 
 def test_search_reaches_settings_groups_and_help(host, admin):
     items = host.get("/api/command-palette").json()["items"]
     urls = {item.get("url") for item in items}
-    assert {"/settings", "/guide", "/settings#settings-group-security", "/settings#settings-group-data"} <= urls
+    assert {"/settings", "/guide", "/settings/security", "/settings/data"} <= urls
     assert "/admin/users" not in urls
     admin_urls = {item.get("url") for item in admin.get("/api/command-palette").json()["items"]}
-    assert {"/admin/users", "/admin/incidents"} <= admin_urls
+    assert {"/admin/customers", "/admin/incidents"} <= admin_urls
 
 
 def test_group_strings_in_step():
@@ -208,25 +221,27 @@ def test_settings_geometry_and_help_at_widths(live):
                 context = browser.new_context(viewport={"width": width, "height": 900})
                 context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": base + "/"}])
                 page = context.new_page()
-                page.goto(f"{base}/settings?lang={lang}")
-                overflow = page.evaluate(
-                    "document.documentElement.scrollWidth - document.documentElement.clientWidth"
-                )
-                assert overflow <= 0, (lang, width, overflow)
                 for key in GROUPS:
-                    assert page.locator(f"#settings-group-{key}-title").is_visible(), (lang, width, key)
-                # the e-mail form is visible without opening anything
-                assert page.locator("#account-new-email").is_visible()
-                # keyboard focus opens a ? tip and it stays inside the viewport
-                button = page.locator("[aria-controls='settings-security-help']")
-                button.focus()
-                tip = page.locator("#settings-security-help")
-                assert tip.is_visible()
-                box = tip.bounding_box()
-                assert box["x"] >= 0 and box["x"] + box["width"] <= width + 0.5
-                page.keyboard.press("Escape")
-                if capture:
-                    EVIDENCE.mkdir(parents=True, exist_ok=True)
-                    page.screenshot(path=str(EVIDENCE / f"settings-{width}-{lang}.png"), full_page=True)
+                    page.goto(f"{base}{_group_page(key)}?lang={lang}")
+                    overflow = page.evaluate(
+                        "document.documentElement.scrollWidth - document.documentElement.clientWidth"
+                    )
+                    assert overflow <= 0, (lang, width, key, overflow)
+                    assert page.locator("h1.airbnb-title").is_visible(), (lang, width, key)
+                    if key == "account":
+                        # the e-mail form is visible without opening anything
+                        assert page.locator("#account-new-email").is_visible()
+                    if key == "security":
+                        # keyboard focus opens a ? tip and it stays inside the viewport
+                        button = page.locator("[aria-controls='settings-security-help']")
+                        button.focus()
+                        tip = page.locator("#settings-security-help")
+                        assert tip.is_visible()
+                        box = tip.bounding_box()
+                        assert box["x"] >= 0 and box["x"] + box["width"] <= width + 0.5
+                        page.keyboard.press("Escape")
+                    if capture:
+                        EVIDENCE.mkdir(parents=True, exist_ok=True)
+                        page.screenshot(path=str(EVIDENCE / f"settings-{key}-{width}-{lang}.png"), full_page=True)
                 context.close()
         browser.close()
