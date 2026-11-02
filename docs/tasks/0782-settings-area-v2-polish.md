@@ -17,7 +17,7 @@ Executor: Haiku 5.5, alone, in `/home/claude/jsfpecharoperations` on branch `cla
 
 - Rules for these pages: page-only rules go in their existing blocks (`/* 0780 settings page (v2) */`, `/* 0781 entities */`, …); generic ports only in `/* v2 ports of shared ui-* classes */` (another thread may also edit that block later: keep rules short and generic).
 - From 1024 px controls are 40 px high, buttons 24 px tap minimum; below 1024 px 44 px.
-- Screenshots of the current state: `/tmp/wt0780/docs/tasks/screenshots-0710/settings-*.png`, `/tmp/wt0781/docs/tasks/screenshots-0710/entities-*.png`.
+- Current state: run the step 5 screenshot command once first and look at settings-1280/390 and entities-1280/390 in `docs/tasks/screenshots-0710/`.
 
 ## 3. Files
 
