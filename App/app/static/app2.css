@@ -1043,15 +1043,24 @@ body.v2 .fields-wrap .copyrow > .btn.sm{min-height:48px}
 body.v2 .fields-wrap .copyrow > .btn.sm{vertical-align:middle}
 body.v2 section#stay-fee-settings > fieldset.signature-block{grid-column:1/-1}
 /* 0791 submissions v2 (start) */
+body.v2 .head-title-row{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2)}
+body.v2 .head-title-row>details.stays-how{position:relative;margin:0}
+body.v2 .head-title-row>details.stays-how .ui-how-toggle{display:inline-flex;align-items:center;gap:var(--space-2);min-height:44px}
+body.v2 .head-title-row>details.stays-how[open] .ui-how-body{position:absolute;top:calc(100% + 8px);left:0;z-index:30;width:min(520px,calc(100vw - 32px));box-sizing:border-box;padding:var(--space-4);background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+@media (max-width:1023px){body.v2 .head-title-row>details.stays-how .ui-how-toggle>span{display:none}}
 body.v2 .submissions-page .ui-empty .ui-btn{display:inline-flex;align-items:center;min-height:44px}
 /* 0791 submissions v2 (end) */
 /* 0792 invoices v2 (start) */
+body.v2 .invoices-page .month-row{gap:14px}
+body.v2 .invoices-page .list-filter-period{max-width:360px}
+body.v2 .invoices-page form#list-filter-panel{margin-bottom:16px}
 @media (max-width:1023px){body.v2 .invoices-page .ui-btn,body.v2 .invoices-page .month-step,body.v2 .invoices-page .filters input[type=month]{min-height:44px;min-width:44px;height:auto}}
 body.v2 .invoices-page input[type=month]{min-height:40px;box-sizing:border-box;padding:9px 10px;border:1px solid #dcdcd7;border-radius:8px;font:inherit}
 body.v2 .invoices-page .ui-empty .ui-btn{display:inline-flex;align-items:center;min-height:44px}
 body.v2 .invoices-page tbody tr .btn.sm.ghost:focus-visible{opacity:1;transition:none}
 /* 0792 invoices v2 (end) */
 /* 0793 housebook v2 (start) */
+body.v2 .housebook-page .stays-phone .card.stay{padding:16px}
 body.v2 .housebook-page{min-width:0;max-width:100%;width:100%;contain:inline-size;color:var(--ink)}
 body.v2 .housebook-page .housebook-scroll{min-width:0;max-width:100%;position:relative}
 body.v2 .housebook-page .housebook-scroll:focus-visible{outline:2px solid #d0452d;outline-offset:2px}
@@ -1077,6 +1086,7 @@ body.v2 #housebook-pdf-dialog .ui-form-actions>.ui-btn{flex:1 1 0;min-width:0;mi
 body.v2 #housebook-pdf-dialog .ui-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 /* 0793 housebook v2 (end) */
 /* 0794 stay fees v2 (start) */
+body.v2 .stay-fees-page .head{margin-top:16px}
 body.v2 .stay-fees-page .fee-pay-h{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 12px}
 body.v2 .stay-fees-page .fee-pay-h h2{font-size:20px;font-weight:700;letter-spacing:-.01em;margin:0}
 body.v2 .stay-fees-page .fee-pay-h .sub{color:var(--ink3);font-size:14px;margin:0}

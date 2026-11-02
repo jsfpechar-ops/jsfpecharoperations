@@ -300,6 +300,7 @@
     "link",
     "chips",
     "stays-head",
+    "head-title-row",
     "stays-desk",
     "stays-phone",
     "submissions-page",
@@ -1179,6 +1180,7 @@
     "housebook-page": "Page scope for the v2 Domovní kniha (0793).",
     "stay-fees-page": "Page scope for the v2 Poplatek z pobytu list (0794).",
     "stay-fees-toolbar": "Month filter row of the stay fee list (0796).",
-    "fee-pay-h": "Step heading inside the stay fee two-step pay box (0794)."
+    "fee-pay-h": "Step heading inside the stay fee two-step pay box (0794).",
+    "head-title-row": "v2 page head row: h1 with the help ? disclosure on the same line (0816, owner rule)."
   }
 }

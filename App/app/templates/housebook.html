@@ -28,7 +28,7 @@
   {% if apartment_id and property.id|string == apartment_id|string %}{% set housebook_property.label = property.internal_name %}{% endif %}
 {% endfor %}
 <div class="housebook-page">
-<div class="head stays-head"><div><h1 class="big">{{ t('housebook.title') }}</h1>
+<div class="head stays-head"><div class="head-title-row"><h1 class="big">{{ t('housebook.title') }}</h1>
 <details class="ui-how stays-how ph-hide" data-how="housebook">
   <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
   <div class="ui-how-body">

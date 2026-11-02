@@ -45,7 +45,7 @@ _LIST_JS = """([panelSel, actSel]) => {
   const box = sel => { const el = document.querySelector(sel); if (!el) return null;
     const r = el.getBoundingClientRect(); return {left: r.left, right: r.right, top: r.top, bottom: r.bottom}; };
   const shown = sel => { const b = box(sel); return b && b.right > b.left ? b : null; };
-  return {summary: box('#fee-list-summary'), filter: shown('#list-filter-panel') || shown('[data-filter-toolbar]'), panelTop: pr.top,
+  return {summary: box('.stay-fees-page h1'), filter: shown('#list-filter-panel') || shown('[data-filter-toolbar]'), panelTop: pr.top,
           scrollWidth: panel.scrollWidth, clientWidth: panel.clientWidth, panelLeft: pr.left, panelRight: pr.right,
           panelWidth: Math.round(pr.width), cards, acts, labels, rows: panel.querySelectorAll('tbody tr').length};
 }"""

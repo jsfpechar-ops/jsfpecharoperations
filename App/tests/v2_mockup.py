@@ -53,10 +53,9 @@ BOX_PROPS = ("width", "height", "margin-top", "margin-right", "margin-bottom", "
 BOX_OVERRIDES = {
     # text-dependent: the stay fee head h1 is as wide as the fixture title on a 320 px phone (0794)
     "stay_fees:.mh .big, .head h1@320": {"width": "116px"},
+    "submissions:.mh .big, .head h1@320": {"width": "113px"},  # text-dependent: Odeslání vs mockup Pobyty
+    "submissions:.mh .big, .head h1@390": {"width": "113px"},
     "stay_fees:.mh .big, .head h1@390": {"width": "116px"},
-    # text-dependent: the head text column is as wide as the lede copy on phones (0791)
-    "submissions:.mh .big, .head h1@320": {"width": "280px"},
-    "submissions:.mh .big, .head h1@390": {"width": "350px"},
     # text-dependent: fixture copy vs phone v2 mockup demo copy (0729)
     # text-dependent: app copy vs phone v2 mockup demo copy (0735)
     ".mh .big@320": {"width": "79.3594px"},
@@ -243,7 +242,7 @@ PAGES = [
         "name": "stay_fees",
         "path": "/stay-fees",
         "view": "fee",
-        "selectors": [".head h1", ".head .sub", ".head .btn.ghost", "main .card"],
+        "selectors": [".head h1", ".head .btn.ghost", "main .card"],  # no .sub: owner no-fine-print rule (0816)
         "phone_mockup": PHONE_MOCKUP_V2,
         "phone_view": "menu",
         "phone_selectors": [".tabs", ".tab.on", ".mh .big, .head h1"],
