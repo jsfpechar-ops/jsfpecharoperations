@@ -1,6 +1,6 @@
 # 0815: Booking site checkout (Stripe Checkout on the host's account)
 
-Status: todo
+Status: in-progress
 Depends on: 0814 | Base commit: tip of task/0814-booking-site-model | Branch: task/0815-booking-site-checkout
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
