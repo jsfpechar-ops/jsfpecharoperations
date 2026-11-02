@@ -118,18 +118,27 @@ def _center(page, selector):
     return box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
 
 
+WAIT_OPEN = "() => [...document.querySelectorAll('dialog[open]')].every(d => getComputedStyle(d).opacity === '1')"
+
+
 def test_phone_calendar_tiles_and_sheet(calendar_workspace, calendar_origin):
     SHOTS.mkdir(parents=True, exist_ok=True)
     with sync_api.sync_playwright() as playwright:
         browser = launch(playwright)
         context, page = open_page(browser, calendar_workspace, calendar_origin, width=390, locale="en", touch=True)
         page.wait_for_selector(".cal-week.is-dots")
+        page.evaluate("window.scrollTo(0, 0)")
         tile, neighbour = _box(page, TILE.format("2026-10-10")), _box(page, TILE.format("2026-10-11"))
         assert tile["width"] >= 44 and tile["height"] >= 44
         assert neighbour["x"] - (tile["x"] + tile["width"]) >= 4
         assert not page.locator("#calendar-title").is_visible()
         hint = page.locator("#cal-hint").bounding_box()
         assert hint is None or hint["width"] <= 1 or hint["height"] <= 1
+        arrow_bg = page.eval_on_selector(".dashboard-calendar[data-cleaning='false'] .cal-navigation .cal-arrow", "e => getComputedStyle(e).backgroundColor")
+        assert arrow_bg != "rgb(208, 69, 45)" and arrow_bg == "rgb(242, 242, 240)"
+        assert page.evaluate("() => [...document.querySelectorAll('.cal-dots')].every(d => d.querySelectorAll('.cal-dot').length <= 3)")
+        assert page.evaluate("() => [...document.querySelectorAll('.cal-dot')].every(d => d.getBoundingClientRect().right <= d.closest('.cal-day').getBoundingClientRect().right + 0.5)")
+        page.wait_for_function(WAIT_OPEN)
         page.screenshot(path=str(SHOTS / "calendar-390.png"))
         page.locator(BUTTON.format("2026-10-10")).tap()
         assert page.locator(SHEET).is_visible()
@@ -137,6 +146,9 @@ def test_phone_calendar_tiles_and_sheet(calendar_workspace, calendar_origin):
         assert not page.evaluate("!!document.querySelector('dialog:modal')")
         assert page.locator(TILE.format("2026-10-10") + ".is-selected").count() == 1
         assert page.eval_on_selector(TILE.format("2026-10-10"), "e => getComputedStyle(e).backgroundColor") == "rgb(34, 34, 34)"
+        selected_look = page.eval_on_selector(TILE.format("2026-10-10"), "e => [getComputedStyle(e).boxShadow, getComputedStyle(e).outlineStyle]")
+        assert selected_look == ["none", "none"], selected_look
+        assert page.eval_on_selector_all(".havel-fab", "els => els.every(e => getComputedStyle(e).display === 'none')")
         page.locator(BUTTON.format("2026-10-12")).tap()
         assert page.locator(".cal-day.is-selected").count() == 3
         assert "13" in page.inner_text("#cal-day-title")
@@ -149,11 +161,23 @@ def test_phone_calendar_tiles_and_sheet(calendar_workspace, calendar_origin):
         assert sheet["y"] + sheet["height"] <= page.viewport_size["height"] - 84 + 1
         assert add["height"] >= 44 and (sheet["y"] + sheet["height"]) - (add["y"] + add["height"]) >= 24
         assert add["x"] - sheet["x"] >= 16 and (sheet["x"] + sheet["width"]) - (add["x"] + add["width"]) >= 16
+        if page.locator("[data-cal-day-list] .cal-event").count() == 0:
+            heading = _box(page, "[data-cal-day-dialog] .cal-dialog-heading")
+            assert abs((add["y"] - (heading["y"] + heading["height"])) - 16) <= 1
+        page.wait_for_function(WAIT_OPEN)
         page.screenshot(path=str(SHOTS / "calendar-range-390.png"))
         page.locator("[data-cal-day-add]").tap()
         assert page.locator("[data-cal-create]").is_visible()
         assert page.input_value("#cal-arrival") == "2026-10-10"
         assert page.input_value("#cal-departure") == "2026-10-13"
+        page.wait_for_function(WAIT_OPEN)
+        select_box = _box(page, "#cal-property")
+        assert abs(select_box["height"] - 48) <= 1
+        assert page.eval_on_selector("#cal-property", "e => getComputedStyle(e).fontSize") == "16px"
+        toggle = _box(page, "[data-cal-create] .cal-create-types .btn >> nth=0")
+        assert abs(toggle["height"] - 40) <= 1
+        inactive = page.eval_on_selector("[data-cal-create] .cal-create-types .btn:not([aria-pressed='true'])", "e => getComputedStyle(e).backgroundColor")
+        assert inactive != "rgb(208, 69, 45)"
         page.screenshot(path=str(SHOTS / "calendar-create-390.png"))
         page.locator("[data-cal-create] [data-cal-close]").first.tap()
         page.locator(BUTTON.format("2026-10-10")).tap()

@@ -1,6 +1,6 @@
 # 0817: Polish the 0814 phone calendar before Josef sees it
 
-Status: todo
+Status: done
 Depends on: 0814 (committed) | Branch: claude/project-thread-vnnr9p
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
