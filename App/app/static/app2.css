@@ -1239,10 +1239,11 @@ body.v2 .wiz-page .setup-wizard-copy{min-height:42px;width:200px;max-width:100%;
 body.v2 .wiz-page .setup-wizard-lede{color:var(--ink)}
 body.v2 .wiz-page .ui-choice-card input:focus-visible{outline:none}
 body.v2 .wiz-page .ui-choice-card:has(input:focus-visible){outline:2px solid var(--acc);outline-offset:2px}
+@media (max-width:1023px){body.v2 .wiz-page .ui-choice-card>.help-tip .help-tip-btn{margin:0}}
 /* 0800 new property + onboarding (v2) */
 body.v2 .prop-new .property-create{display:grid;gap:20px;align-items:start}
 body.v2 .prop-new .property-create-main{min-width:0}
-body.v2 .prop-new .copy-settings-bar{margin-bottom:14px}
+body.v2 .prop-new .copy-settings-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:12px;margin:0 0 14px}
 body.v2 .prop-new .property-create-copied{background:var(--info);color:#1d4f9e;border:0;border-radius:10px;padding:10px 14px;font-size:13px;margin:0 0 14px;box-shadow:none}
 body.v2 .prop-new .required-legend{font-size:13px;color:var(--ink3);margin:0 0 14px}
 body.v2 .prop-new .property-create-card,body.v2 .prop-new .property-create-next{background:var(--s);border:1px solid var(--line);border-radius:12px;padding:20px;margin:0 0 14px;box-shadow:none}
@@ -1254,7 +1255,7 @@ body.v2 .prop-new .property-create-manage{display:inline-block;margin-top:8px;fo
 body.v2 .prop-new .grid{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
 body.v2 .prop-new .grid .field{margin-bottom:0}
 body.v2 .prop-new input[type=text],body.v2 .prop-new select{display:block;width:100%;min-height:40px;box-sizing:border-box;border:1px solid #d9d9d4;border-radius:10px;padding:8px 12px;font:inherit;font-size:15px;background:#fff;color:var(--ink)}
-body.v2 .prop-new .property-create-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:6px}
+body.v2 .prop-new .property-create-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:14px}
 body.v2 .prop-new .property-create-actions .ui-btn{display:inline-flex;align-items:center;justify-content:center;min-height:40px;box-sizing:border-box;text-decoration:none}
 body.v2 .prop-new .property-create-next h2{font-size:16px;margin:0 0 14px}
 body.v2 .prop-new .property-create-next-list{list-style:none;margin:0;padding:0}
@@ -1263,7 +1264,7 @@ body.v2 .prop-new .property-create-next-list li svg{flex:none;color:var(--acc)}
 body.v2 .prop-new .property-create-next-list strong{display:block;color:var(--ink);font-size:14px}
 body.v2 .prop-new .property-create-next-list small{display:block;font-size:13px;color:var(--ink3);margin-top:2px}
 @media (min-width:1280px){body.v2 .prop-new .property-create{grid-template-columns:minmax(0,1fr) 300px}}@media (min-width:1024px){body.v2 .prop-new .grid.two,body.v2 .prop-new .property-address-grid{grid-template-columns:repeat(2,minmax(0,1fr))}body.v2 .prop-new .property-create-manage{display:inline-flex;align-items:center;min-height:24px;min-width:24px;box-sizing:border-box}body.v2 .prop-new .property-create-next a{display:inline-flex;align-items:center;min-height:24px}}
-@media (max-width:1023px){body.v2 .prop-new .property-create-card,body.v2 .prop-new .property-create-next{padding:16px}body.v2 .prop-new input[type=text],body.v2 .prop-new select{min-height:44px}body.v2 .prop-new .property-create-actions{flex-direction:column-reverse}body.v2 .prop-new .property-create-actions .ui-btn{width:100%;min-height:44px}body.v2 .prop-new .copy-settings-bar .ui-btn,body.v2 .prop-new .property-create-manage{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;box-sizing:border-box}body.v2 .prop-new .copy-settings-bar .ui-btn{width:100%}}
+@media (max-width:1023px){body.v2 .prop-new .property-create-card,body.v2 .prop-new .property-create-next{padding:16px}body.v2 .prop-new input[type=text],body.v2 .prop-new select{min-height:44px}body.v2 .prop-new .property-create-actions{flex-direction:column-reverse}body.v2 .prop-new .property-create-actions .ui-btn{width:100%;min-height:44px}body.v2 .prop-new .copy-settings-bar .ui-btn,body.v2 .prop-new .property-create-manage{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;box-sizing:border-box}body.v2 .prop-new .copy-settings-bar .ui-btn{width:auto}}
 body.v2 .onboarding-welcome[data-layout=v2]{max-width:720px}
 body.v2 .onboarding-welcome[data-layout=v2] .onboarding-intro{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin:0 0 20px}
 body.v2 .onboarding-welcome[data-layout=v2] .onboarding-intro h1{font-size:24px;font-weight:800;margin:0;letter-spacing:-.01em}
@@ -1419,8 +1420,8 @@ body.v2 .help-tip{position:relative;display:inline-flex;flex:none;align-items:ce
 body.v2 .help-tip-btn{position:relative;isolation:isolate;width:24px;height:24px;min-width:24px;min-height:24px;margin:-3px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--ink3);font-size:12px;line-height:1;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
 body.v2 .help-tip-btn::after{content:"";position:absolute;z-index:-1;left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%);border:1px solid var(--line);border-radius:50%;box-sizing:border-box}
 @media (max-width:1023px){body.v2 .help-tip-btn{width:44px;height:44px;min-width:44px;min-height:44px;margin:-13px}}
-body.v2 .heading-with-tip,body.v2 .prop-name-tip,body.v2 .havel-name-tip{display:flex;flex-wrap:nowrap;align-items:center;gap:6px}
-body.v2 .heading-with-tip>:not(.help-tip),body.v2 .prop-name-tip>:not(.help-tip),body.v2 .havel-name-tip>:not(.help-tip){min-width:0}
+body.v2 .heading-with-tip,body.v2 .prop-name-tip,body.v2 .havel-name-tip,body.v2 .prop-new .heading-with-tip{display:block}
+body.v2 .heading-with-tip>:not(.help-tip),body.v2 .prop-name-tip>:not(.help-tip),body.v2 .havel-name-tip>:not(.help-tip){min-width:0;display:inline;vertical-align:middle}
 body.v2 .head>div:has(>.havel-name-tip){display:flex;flex-wrap:nowrap;align-items:center;gap:6px}
 body.v2 .head>div:has(>.havel-name-tip)>h1{min-width:0;margin:0}
 body.v2 .help-tip-body{display:none}

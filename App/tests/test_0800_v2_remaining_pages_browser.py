@@ -186,8 +186,14 @@ _HELP_TIP_SIZE_JS = """() => {
     if (!ref) {
       why.push('no label before it');
     } else {
+      // 0814 round 2: measure the last visible text node of the label (not boxes of inputs or the tip itself).
+      const tw = document.createTreeWalker(ref, NodeFilter.SHOW_TEXT);
+      let last = null;
+      for (let tn = tw.nextNode(); tn; tn = tw.nextNode()) {
+        if (tn.textContent.trim() && !tn.parentElement.closest('.help-tip')) last = tn;
+      }
       const rg = document.createRange();
-      rg.selectNodeContents(ref);
+      if (last) rg.selectNodeContents(last);
       const rects = [...rg.getClientRects()].filter(r => r.width > 0 && r.height > 0);
       if (!rects.length) {
         why.push('label has no text box');

@@ -50,3 +50,10 @@ Files for 10: `App/app/templates/apartment_form.html`, `App/app/templates/_prope
 - Update `test_help_tip_is_small_and_inline`: compare the tip with the last line box of the label text (Range over the text node, `getClientRects()`, take the last rect): |centre diff| <= 4 px and left gap 0-12 px. Havel 1024 5.5 px offset: align with `vertical-align:middle` against the h1's line, or give the h1 wrapper `align-items:center` if it stays flex there.
 - Onboarding choice_card[390-False-*] card-edge click: check on the commit before 0814 (`git stash` is forbidden: use `git worktree add /tmp/wt0814 HEAD~1` read-only and run that one test there, then `git worktree remove /tmp/wt0814`); if it passes there, fix it.
 - Then section 10 (h-k).
+
+## 12. Round 3 decisions (orchestrator, from "Round 2 (tip wrapping)" in the report)
+- cleaning-new ("Cleaning date", "Cleaning notes"): move each help tip into the label element in `App/app/templates/cleaning_edit.html` (right after the label text), not after the whole `.ui-field` block. If the field macro renders the label, pass the tip the way other v2 pages do (grep `help=` in `_ui_*.html` / `_components.html`).
+- cleaning-shares "Create sharing link": a "?" next to a button is allowed. In the test, when the tip's previous element sibling is a button or `.ui-btn`, compare with the button box instead (|centre diff| <= 4 px, gap 6-12 px). "Share schedule" at >=1024: move the tip inside the h1/h2 element in `App/app/templates/cleaning_shares.html`, right after the text.
+- havel 1024-1440: remove the flex row rule `.head>div:has(>.havel-name-tip)` and let the tip sit inline inside/after the h1 text like the others.
+- Then run the whole 0800 file and fix any property-new, setup-*, guest-guide, guide case the same way (tip inside the heading/label, inline).
+- The modified PNGs under docs/tasks/screenshots-guide/ come from test runs: ignore them.

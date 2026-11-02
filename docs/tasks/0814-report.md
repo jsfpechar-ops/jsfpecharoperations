@@ -23,3 +23,21 @@ Status: blocked (sections 1-9 partly done; section 10 not done)
 - The 320 px wrapping labels need a layout decision beyond CSS (label + "?" wrap to their own line); stop per brief section 8.
 - The test file `tests/test_0800_v2_remaining_pages_browser.py` changed on disk during my run (someone else edited it); I edited on top of that version.
 - Not committed (per orchestrator).
+
+## Round 2 (tip wrapping)
+
+Status: blocked (30-call cap reached; help-tip tests still red, section 10 not touched, as scoped)
+
+Changed:
+- `App/app/static/app2.css`, `/* 0812 help tip (v2) */` block only: `.heading-with-tip`, `.prop-name-tip`, `.havel-name-tip` and `.prop-new .heading-with-tip` now `display:block` (was flex, so a long label wrapped and the "?" went to the far right or onto its own line); their text children `display:inline;vertical-align:middle`. `.help-tip` unchanged (inline-flex, middle, 6 px).
+- `App/tests/test_0800_v2_remaining_pages_browser.py`, `_HELP_TIP_SIZE_JS` only: the label is now the last visible text node of the label (TreeWalker, tip body skipped), not the element's client rects (those included input boxes and the tip itself). The 0814 round-1 check is otherwise unchanged (<= 4 px vertical, 0-12 px gap).
+- No template change (cleaning/havel markup not moved yet).
+
+Result, last run: `pytest tests/test_0800_v2_remaining_pages_browser.py -k help_tip_is_small -q`: 11 failed, 4 passed. Last tail:
+- `cleaning-new` ("Cleaning date", "Cleaning notes"): the "?" sits after the whole `.ui-field` block (vertical offset 26-90 px, negative gap). Needs the tip moved into the label row in `cleaning_edit.html` (template markup only, not done).
+- `cleaning-shares`: "Create sharing link" is a button; the "?" follows the button, not its text (gap -178 to -378 px at 320-768). "Share schedule" at 1024+ offset 44 px. Needs a layout decision (brief 8).
+- `havel` 1024-1440: vertical offset 6.6 px (the flex `.head>div` row centres the tip on the h1 box, not its glyph box).
+- Other failures (`property-new`, `setup-*`, `guest-guide`, `guide`) were not re-read after the block change; not confirmed.
+
+Not run: the whole 0800 file, screenshots, design_lint.
+Not committed (per brief).
