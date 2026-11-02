@@ -1,6 +1,7 @@
 """Calmer property and guest forms: more-options, defaults, operator pick."""
 from __future__ import annotations
 
+import json
 import re
 from datetime import timedelta
 from urllib.parse import urlparse
@@ -8,7 +9,7 @@ from urllib.parse import urlparse
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, claim, db, host_i18n
+from app import auth, claim, db, host_i18n, mail, mail_notify
 from app.main import app
 from tests.conftest import complete_guest_claim, login_as
 
@@ -312,3 +313,64 @@ def test_saved_residence_is_not_replaced_by_nationality(host):
     )
     assert response.status_code == 422
     assert _res_country_selected(response.text, "AUT")
+
+
+def _manual_stay_form(apartment_id, **extra):
+    data = {"apartment_id": str(apartment_id), "date_from": "2030-05-01",
+            "date_to": "2030-05-03", "summary": "0833 stay"}
+    data.update(extra)
+    return data
+
+
+def _create_property_and_return_id(host):
+    host.post("/apartments", data=_new_payload(legal_entity_id=str(_operator_id())),
+              follow_redirects=False)
+    return db.query_one(
+        "SELECT id FROM apartment WHERE owner_user_id = ? ORDER BY id DESC LIMIT 1",
+        (_owner_id(),),
+    )["id"]
+
+
+def _latest_manual_stay(apartment_id):
+    return db.query_one(
+        "SELECT id FROM reservation WHERE apartment_id = ? AND source = 'manual' ORDER BY id DESC LIMIT 1",
+        (apartment_id,),
+    )
+
+
+def _claim_mails(reservation_id):
+    return db.query("SELECT * FROM email_outbox WHERE kind = 'claim' AND reservation_id = ?",
+                    (reservation_id,))
+
+
+def test_manual_stay_with_guest_email_sends_one_claim_mail(host, monkeypatch):
+    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+    monkeypatch.setattr(mail_notify, "_entity_contact_email", lambda _id: "host@example.test")
+    apartment_id = _create_property_and_return_id(host)
+    response = host.post("/reservations", data=_manual_stay_form(
+        apartment_id, guest_email="Guest@Example.test"), follow_redirects=False)
+    assert response.status_code == 303
+    stay = _latest_manual_stay(apartment_id)
+    mails = _claim_mails(stay["id"])
+    assert len(mails) == 1
+    assert mails[0]["to_email"] == "guest@example.test"
+    assert json.loads(mails[0]["payload"] or "{}").get("reply_to") == "host@example.test"
+
+
+def test_manual_stay_without_guest_email_sends_no_claim_mail(host, monkeypatch):
+    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+    apartment_id = _create_property_and_return_id(host)
+    host.post("/reservations", data=_manual_stay_form(apartment_id), follow_redirects=False)
+    stay = _latest_manual_stay(apartment_id)
+    assert stay is not None
+    assert _claim_mails(stay["id"]) == []
+
+
+def test_manual_stay_with_invalid_guest_email_is_created_without_mail(host, monkeypatch):
+    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+    apartment_id = _create_property_and_return_id(host)
+    host.post("/reservations", data=_manual_stay_form(
+        apartment_id, guest_email="not-an-email"), follow_redirects=False)
+    stay = _latest_manual_stay(apartment_id)
+    assert stay is not None
+    assert _claim_mails(stay["id"]) == []

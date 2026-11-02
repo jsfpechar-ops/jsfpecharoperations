@@ -3408,7 +3408,7 @@ async def reservation_create(request: Request):
         reservation = access.reservation(request, reservation_id)
         apartment = access.apartment(request, apartment_id)
         if reservation and apartment:
-            lang = claim.ensure_row(reservation_id)["lang"] or "cs"
+            lang = "en"
             ok, _err, _secret = claim.start_claim(
                 reservation,
                 apartment,
