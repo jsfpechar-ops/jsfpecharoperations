@@ -58,7 +58,7 @@
 
   <div class="ui-section invoice-customer">
     <h2 id="invoice-customer-title">{{ t('invoice.section.customer') }}</h2>
-    <div class="ui-toolbar invoice-buyer-kind" role="radiogroup" aria-labelledby="invoice-customer-title">
+    <div class="ui-toolbar" role="radiogroup" aria-labelledby="invoice-customer-title">
       {{ choice_card('buyer_kind', 'guest', t('invoice.buyer_kind.guest'), buyer_kind == 'guest') }}
       {{ choice_card('buyer_kind', 'company', t('invoice.buyer_kind.company'), buyer_kind == 'company', 'buyer-kind-company-help', t('invoice.buyer_kind.company_help')) }}
     </div>
