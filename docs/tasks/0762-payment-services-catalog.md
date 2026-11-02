@@ -1,6 +1,6 @@
 # 0762: Saved services (cleaning, late checkout…) with one-tap payment requests
 
-Status: in-progress
+Status: review
 Depends on: 0761 (this branch is stacked on it) | Base commit: task/0761-payment-link-share head | Branch: task/0762-payment-services (check it out; it already holds this brief)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
