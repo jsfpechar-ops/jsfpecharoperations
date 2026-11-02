@@ -36,6 +36,8 @@ V2_TEMPLATES = {
     "App/app/templates/dashboard.html",
     "App/app/templates/_shell_v2.html",
     "App/app/templates/apartments.html",
+    "App/app/templates/cleaning.html",
+    "App/app/templates/_cleaning_table.html",
 }
 
 
