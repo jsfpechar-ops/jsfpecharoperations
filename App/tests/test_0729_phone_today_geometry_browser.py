@@ -39,6 +39,10 @@ MEASURE = """() => {
     const av = card.querySelector('.av');
     return {box: box(card), av: av ? box(av) : null};
   });
+  const hsEl = document.querySelector('.hs');
+  const hsOn = !!hsEl && vis(hsEl);
+  const secBefore = hsEl ? [...document.querySelectorAll('h2.sec')].filter(h => h.compareDocumentPosition(hsEl) & Node.DOCUMENT_POSITION_FOLLOWING).pop() : null;
+  const hsInfo = hsOn ? {box: box(hsEl), sw: hsEl.scrollWidth, cw: hsEl.clientWidth, secL: secBefore ? secBefore.getBoundingClientRect().left : null, pl: getComputedStyle(hsEl).paddingLeft, ml: getComputedStyle(hsEl).marginLeft} : null;
   const hidden = sel => { const el = document.querySelector(sel); return !el || !vis(el); };
   const main = document.querySelector('main');
   let mainBottom = 0;
@@ -51,7 +55,7 @@ MEASURE = """() => {
     ovSub: hidden('.ov-head .sub'), ovQuiet: hidden('.ov-head .ov-quiet'), ovBtn: hidden('.ov-head > .btn'),
     ovH1Hidden: hidden('.ov-head h1.hl'), ovMonth: hidden('.ov-month'), needsTitle: hidden('#needs-you-title'),
     ovTopCount: document.querySelectorAll('.ov-top').length,
-    needs: needs, icVisible: icVisible, stays: stays,
+    needs: needs, icVisible: icVisible, stays: stays, hs: hsInfo,
     mainBottom: mainBottom, tabTop: tabs && vis(tabs) ? tabs.getBoundingClientRect().top : null,
   };
 }"""
@@ -113,11 +117,30 @@ def test_today_phone_geometry(width, base, dashboard_rich_host):
             problems.append(f"need card {index} button {btn['h']:.1f} px tall (< 44)")
     if measured["icVisible"]:
         problems.append(".need .ic is visible")
-    for index, stay in enumerate(measured["stays"]):
+    stays = measured["stays"]
+    if len(stays) == 1:
+        stay = stays[0]
         if abs(stay["box"]["l"] - (W - stay["box"]["r"])) > 2:
-            problems.append(f"stay card {index} off centre")
+            problems.append("stay card 0 off centre")
         if stay["box"]["r"] > W + 0.5:
-            problems.append(f"stay card {index} overflows the viewport")
+            problems.append("stay card 0 overflows the viewport")
+    elif len(stays) > 1:
+        # Several stays: .hs is the sideways-scrolling row (#681), so check its alignment and scrolling instead.
+        hs = measured["hs"]
+        if hs is None:
+            problems.append(".hs is not visible with several stays")
+        else:
+            overflows = len(stays) * 272 + (len(stays) - 1) * 12 > hs["cw"]  # 272 px cards, 12 px gap (#681)
+            if overflows and hs["sw"] <= hs["cw"]:
+                problems.append(f"stay row does not scroll: scrollWidth {hs['sw']} <= clientWidth {hs['cw']}")
+            if hs["secL"] is None:
+                problems.append("no h2.sec before .hs")
+            elif abs(stays[0]["box"]["l"] - hs["secL"]) > 1:
+                problems.append(f"first stay card left {stays[0]['box']['l']:.1f} != h2.sec left {hs['secL']:.1f} (hs padding {hs['pl']}, margin {hs['ml']})")
+        tops = [stay["box"]["t"] for stay in stays]
+        if max(tops) - min(tops) > 1:
+            problems.append(f"stay card tops differ: {min(tops):.1f} to {max(tops):.1f}")
+    for index, stay in enumerate(stays):
         av = stay["av"]
         if av is None or abs(av["w"] - 72) > 0.5 or abs(av["h"] - 72) > 0.5:
             problems.append(f"stay card {index} avatar is not 72x72")
