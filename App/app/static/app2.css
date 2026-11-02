@@ -1114,6 +1114,13 @@ body.v2 .settings-lane input[type=checkbox]{min-width:24px;min-height:24px;margi
 body.v2 details.technical.ui-section{border:0;background:none;box-shadow:none;border-radius:0;padding:0;margin:0;border-top:1px solid var(--line)}
 body.v2 details.technical > summary{min-height:48px;justify-content:space-between;gap:12px;list-style:none}
 body.v2 details.technical > summary,body.v2 details.technical > :not(summary):not(.ui-section){padding-left:16px;padding-right:16px}
+@media (max-width:1023px){
+  body.v2 details.technical table.ui-table-stack thead{display:none}
+  body.v2 details.technical table.ui-table-stack,body.v2 details.technical table.ui-table-stack tbody{display:block;width:100%}
+  body.v2 details.technical table.ui-table-stack tr{display:grid;gap:4px;padding:12px 0;border-bottom:1px solid var(--line)}
+  body.v2 details.technical table.ui-table-stack td{display:flex;justify-content:space-between;gap:12px;border:0;padding:2px 0;text-align:right;min-width:0;overflow-wrap:anywhere}
+  body.v2 details.technical table.ui-table-stack td::before{content:attr(data-label);color:var(--ink3);text-align:left;flex:none}
+}
 body.v2 details.technical > summary::-webkit-details-marker{display:none}
 body.v2 details.technical > summary::after{content:"";flex:none;width:8px;height:8px;margin-right:6px;border-right:2px solid var(--ink3);border-bottom:2px solid var(--ink3);transform:rotate(45deg);transition:transform .15s}
 body.v2 details.technical[open] > summary::after{transform:rotate(-135deg)}
