@@ -13,6 +13,9 @@ from tests.test_host_wide_geometry_browser import (  # noqa: F401 - shared synth
 # Records whether the page being left started a cross-document view transition.
 PAGE_SWAP_RECORDER = """
 window.addEventListener('pageswap', event => { sessionStorage.setItem('swapFaded', String(!!event.viewTransition)); });
+if (sessionStorage.getItem('swapFaded') === null) sessionStorage.setItem('swapFaded', 'false');
+const svt = Document.prototype.startViewTransition;
+if (svt) Document.prototype.startViewTransition = function (...a) { sessionStorage.setItem('swapFaded', 'true'); return svt.apply(this, a); };
 """
 # True when a stylesheet opts this page into page-change fades (inside media rules that match).
 OPTS_IN = """() => {

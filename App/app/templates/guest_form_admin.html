@@ -212,7 +212,7 @@
         {% if passport_is_pdf %}
           {# WP08: a PDF is never shown inline from our origin; the host downloads it. #}
           <p class="passport-preview-pdf-link">
-            <a class="ui-btn ui-btn-quiet ui-btn-compact" href="/guests/{{ guest.id }}/passport-photo" download>{{ t('guest.admin.passport_pdf_download') }}</a>
+            <a data-turbo="false" class="ui-btn ui-btn-quiet ui-btn-compact" href="/guests/{{ guest.id }}/passport-photo" download>{{ t('guest.admin.passport_pdf_download') }}</a>
           </p>
           <p class="ui-sub">{{ t('guest.admin.passport_pdf_hint') }}</p>
         {% else %}
@@ -264,8 +264,8 @@
   </div>
   {% if editing and guest.id %}
   <div class="ui-form-actions">
-    <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/guests/{{ guest.id }}/form.pdf">{{ t('guest.admin.download_pdf') }}</a>
-    <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/guests/{{ guest.id }}/export.json">{{ t('guest.admin.export_dsr') }}</a>
+    <a data-turbo="false" class="ui-btn ui-btn-secondary ui-btn-compact" href="/guests/{{ guest.id }}/form.pdf">{{ t('guest.admin.download_pdf') }}</a>
+    <a data-turbo="false" class="ui-btn ui-btn-secondary ui-btn-compact" href="/guests/{{ guest.id }}/export.json">{{ t('guest.admin.export_dsr') }}</a>
     <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/privacy-requests">{{ t('guest.admin.record_request') }}</a>
     {% if guest.restricted_at %}
       <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" formaction="/guests/{{ guest.id }}/unrestrict">{{ t('guest.admin.unrestrict') }}</button>

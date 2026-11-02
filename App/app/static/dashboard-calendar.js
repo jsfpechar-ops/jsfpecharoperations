@@ -874,18 +874,28 @@
       if (createDialog.open) requestAnimationFrame(() => placeCreate(createAnchor));
     }
   });
-  window.addEventListener("resize", () => {
-    if (!state.loading && lastLoadedRange) { if (phoneDots() && state.scale === "year") load(); else render(); }
-    if (createDialog.open) requestAnimationFrame(() => placeCreate(createAnchor));
-  });
-  window.addEventListener("popstate", () => {
-    const params = new URLSearchParams(location.search);
-    if (validMode(params.get("cal_view"))) state.mode = params.get("cal_view");
-    if (validDate(params.get("cal_date"))) state.date = params.get("cal_date");
-    state.property = state.properties.some(item => String(item.id) === params.get("cal_property")) ? params.get("cal_property") : "";
-    state.scale = ["month", "week", "year"].includes(params.get("cal_scale")) ? params.get("cal_scale") : "month";
-    load();
-  });
+  // The window listeners are bound once. Each calendar run sets the handlers for the page now shown.
+  window._ubyCalendarHandlers = {
+    resize: () => {
+      if (!document.querySelector("[data-calendar]")) return;
+      if (!state.loading && lastLoadedRange) { if (phoneDots() && state.scale === "year") load(); else render(); }
+      if (createDialog.open) requestAnimationFrame(() => placeCreate(createAnchor));
+    },
+    popstate: () => {
+      if (!document.querySelector("[data-calendar]")) return;
+      const params = new URLSearchParams(location.search);
+      if (validMode(params.get("cal_view"))) state.mode = params.get("cal_view");
+      if (validDate(params.get("cal_date"))) state.date = params.get("cal_date");
+      state.property = state.properties.some(item => String(item.id) === params.get("cal_property")) ? params.get("cal_property") : "";
+      state.scale = ["month", "week", "year"].includes(params.get("cal_scale")) ? params.get("cal_scale") : "month";
+      load();
+    }
+  };
+  if (!window._ubyCalendarBound) {
+    window._ubyCalendarBound = true;
+    window.addEventListener("resize", () => window._ubyCalendarHandlers.resize());
+    window.addEventListener("popstate", () => window._ubyCalendarHandlers.popstate());
+  }
   $$(".cal-enhanced").forEach(node => { node.hidden = false; });
   $("[data-cal-fallback]").hidden = true;
   fillProperties(form.elements.apartment_id, false);

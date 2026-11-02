@@ -115,7 +115,7 @@
 {{ ui_table_begin([(t('billing.invoices.col.number'), ''), (t('billing.invoices.col.amount'), 'r'), (t('billing.invoices.col.state'), 'r')], label=t('billing.invoices.title')) }}
 {% for inv in invoices %}
 <tr class="ui-row">
-  <td class="ui-cell-first" data-card="primary"><a href="/predplatne/faktury/{{ inv.id }}.pdf">{{ inv.number }}</a><span class="ui-sub"> {{ inv.issue_date | string | truncate(10, true, '') }}</span></td>
+  <td class="ui-cell-first" data-card="primary"><a data-turbo="false" href="/predplatne/faktury/{{ inv.id }}.pdf">{{ inv.number }}</a><span class="ui-sub"> {{ inv.issue_date | string | truncate(10, true, '') }}</span></td>
   <td class="ui-cell-r ui-num">{{ '{:,}'.format(inv.total_haler // 100).replace(',', ' ') }} Kč</td>
   <td class="ui-cell-r" data-card="badge">{% if inv.voided or inv.kind == 'storno' %}{{ ui_badge('neutral', t('billing.invoices.state.void')) }}{% elif inv.paid_on %}{{ ui_badge('done', t('billing.invoices.state.paid')) }}{% else %}{{ ui_badge('action', t('billing.invoices.state.open')) }}{% endif %}</td>
 </tr>

@@ -78,14 +78,14 @@
               <strong>{{ t('settings.account.users') }}</strong>
               {{ help_tip('settings-users-help', t('settings.account.users_help')) }}
             </div>
-            <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/admin/customers">{{ t('settings.account.users_action') }}</a>
+            <a data-turbo="false" class="ui-btn ui-btn-secondary ui-btn-compact" href="/admin/customers">{{ t('settings.account.users_action') }}</a>
           </div>
           <div class="settings-action-row">
             <div>
               <strong>{{ t('users.incidents_link') }}</strong>
               {{ help_tip('settings-incidents-help', t('settings.account.incidents_help')) }}
             </div>
-            <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/admin/incidents">{{ t('settings.account.incidents_action') }}</a>
+            <a data-turbo="false" class="ui-btn ui-btn-secondary ui-btn-compact" href="/admin/incidents">{{ t('settings.account.incidents_action') }}</a>
           </div>
         {% endif %}
       </div>

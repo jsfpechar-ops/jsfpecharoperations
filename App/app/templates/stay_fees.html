@@ -60,7 +60,7 @@
     <h3>{{ t('stay_fees.pay.step2') }}</h3>
     <p class="ui-sub">{{ t('stay_fees.pay.download_why') }}</p>
     <div class="fee-step-actions">
-      <a class="ui-btn ui-btn-primary" href="{{ pdf_url }}" download>{{ t('stay_fees.download_pdf') }}</a>
+      <a data-turbo="false" class="ui-btn ui-btn-primary" href="{{ pdf_url }}" download>{{ t('stay_fees.download_pdf') }}</a>
       <a class="ui-btn ui-btn-secondary" href="{{ fee_step_url(apartment.id, 3) }}">{{ t('stay_fees.pay.next') }}</a>
     </div>
   {% else %}
