@@ -256,7 +256,7 @@ def mrz_band(jpeg: bytes, flip: bool = False) -> bytes:
         _TILT_ANGLES,
         key=lambda angle: _row_variance(small.rotate(angle, expand=True, fillcolor=255)),
     )
-    straight = band.rotate(best_angle, expand=True, fillcolor=255)
+    straight = band.rotate(best_angle, fillcolor=255)
     out = BytesIO()
     straight.save(out, format="JPEG", quality=90)
     return out.getvalue()

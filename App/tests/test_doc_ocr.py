@@ -318,3 +318,83 @@ def test_the_tickbox_uses_the_design_system_checkline():
     # The component and its tokens exist in the guest stylesheet.
     assert ".checkline" in css and ".checkline small" in css
     assert "checkline:has(input:checked)" in css
+
+
+def _fake_engine(monkeypatch, replies):
+    """Replace run_tesseract with a queue of replies; record each image sent."""
+    seen = []
+    queue = list(replies)
+
+    def fake(jpeg):
+        seen.append(jpeg)
+        reply = queue.pop(0)
+        if isinstance(reply, Exception):
+            raise reply
+        return reply
+
+    monkeypatch.setattr(doc_ocr, "run_tesseract", fake)
+    return seen
+
+
+_GARBAGE = "hello world\nnothing here\n"
+
+
+def test_mrz_band_straightens_and_enlarges_a_tilted_photo():
+    from PIL import ImageDraw
+
+    base = Image.new("L", (1600, 1200), 255)
+    draw = ImageDraw.Draw(base)
+    for y in range(900, 1100, 20):
+        draw.line((100, y, 1500, y), fill=0, width=6)
+    tilted = base.rotate(4, expand=True, fillcolor=255).convert("RGB")
+    out = io.BytesIO()
+    tilted.save(out, format="JPEG")
+    band = doc_ocr.mrz_band(out.getvalue())
+    assert Image.open(io.BytesIO(band)).size[0] == doc_ocr.BAND_WIDTH
+
+
+def test_an_upside_down_photo_reads_on_the_third_attempt(monkeypatch):
+    seen = _fake_engine(monkeypatch, [_GARBAGE, _GARBAGE, _td3_text()])
+    values = doc_ocr.read_document(_jpeg())
+    assert values["surname"] == "SMITH"
+    assert len(seen) == 3
+    assert Image.open(io.BytesIO(seen[2])).size[0] == doc_ocr.BAND_WIDTH
+
+
+def test_the_band_attempt_is_used_first_and_stops_early(monkeypatch):
+    seen = _fake_engine(monkeypatch, [_td3_text()])
+    values = doc_ocr.read_document(_jpeg())
+    assert values["surname"] == "SMITH"
+    assert len(seen) == 1
+    assert Image.open(io.BytesIO(seen[0])).size[0] == doc_ocr.BAND_WIDTH
+
+
+def test_the_whole_image_is_tried_when_the_band_reads_nothing(monkeypatch):
+    seen = _fake_engine(monkeypatch, [_GARBAGE, _td3_text()])
+    values = doc_ocr.read_document(_jpeg())
+    assert values["surname"] == "SMITH"
+    assert len(seen) == 2
+
+
+def test_both_attempts_garbage_raises_nothing_read(monkeypatch):
+    _fake_engine(monkeypatch, [_GARBAGE, _GARBAGE, _GARBAGE])
+    with pytest.raises(doc_ocr.NothingRead):
+        doc_ocr.read_document(_jpeg())
+
+
+def test_a_failing_band_falls_back_to_the_plain_image(monkeypatch):
+    def broken(jpeg, flip=False):
+        raise RuntimeError("crop failed")
+
+    monkeypatch.setattr(doc_ocr, "mrz_band", broken)
+    plain = _jpeg()
+    seen = _fake_engine(monkeypatch, [_td3_text()])
+    values = doc_ocr.read_document(plain)
+    assert values["surname"] == "SMITH"
+    assert seen[0] == plain
+
+
+def test_a_missing_engine_still_propagates(monkeypatch):
+    _fake_engine(monkeypatch, [doc_ocr.NoEngine()])
+    with pytest.raises(doc_ocr.NoEngine):
+        doc_ocr.read_document(_jpeg())
