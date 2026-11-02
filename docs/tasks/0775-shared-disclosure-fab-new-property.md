@@ -36,6 +36,13 @@ No other file may change.
 4. Nové ubytování: set `{% set v2 = true %}` in `apartment_form.html`; load `/apartments/new` and compare with Pobyty: sidebar, logo, icon order, left edge. If the form body breaks (it is unstyled in v2), fix only with existing `ui-field`/card classes from 0773, in this file's CSS section. Commit.
 5. **Shared button and section spacing (owner feedback 2026-11-02: buttons are too close to each other).** Put one rule in `body.v2` on the shared ui-* classes so every v2 page behaves the same: adjacent buttons/links in a row use `gap:var(--space-3)` (12 px), a button or help row that ends a block is followed by >= `var(--space-6)` (24 px) before the next heading, and an empty-state line sits `var(--space-4)` (16 px) below the row above it. Remove page-local margins this makes redundant. Check Overview, Úklid, Pobyty, Pobyt and Nemovitost headers and empty states.
 
+5b. **Recurring geometry rules (owner feedback 2026-11-02, shots in `/mnt/project-files/ux-desktop-audit/josef-geometry-1102/`; "it all keeps reoccurring"). Fix once in the shared ui-* classes, then sweep every v2 page for the same pattern:**
+   - Help "?" / "Archive"-style toggles sit on the same line, right next to the section title or label (inline-flex, `gap:var(--space-2)`), never wrapped below it. Save space.
+   - Card text has the card's padding from every edge: titles like "Activity log" and "Recent activity" must not touch the card edge (min inline padding `var(--space-4)`).
+   - Text and the button beside or below it keep >= `var(--space-3)` (12 px).
+   - Row actions (Edit, Upravit, buttons) share one height and one vertical centre line; the "···" menu button is the same height as its sibling buttons and its centre is within 1 px of theirs.
+   - Help labels are short: "Open" / "Otevřít", not "Open help", because the help icon is right beside it (cs/en/vi/uk strings).
+   Then grep templates for the same patterns on the other v2 pages and fix them in this PR.
 5. **Cache key.** In `App/app/templates/base.html` bump `app2.css?v=` (now `20261102-0743`) to today's date plus this brief number. If you changed another stylesheet, bump its key too (`grep -rn "<name>.css" App/app/templates | head`). Commit.
 
 
@@ -60,6 +67,7 @@ Fixture caveat: the yellow demo banner and "UKÁZKA" sidebar chip appear only be
 - [ ] `/apartments/new` has the same sidebar markup class and left edge as `/reservations` (difference 0 px) and `body.v2` is present.
 - [ ] `grep -n "stays-how\|ov-how" App/app/static/app2.css` returns only rules still referenced by a template.
 - [ ] On the five v2 pages at 1024/1280/1440 (incl. the empty-account Overview): gap between adjacent buttons in a row >= 12 px; gap from a block-ending button to the next heading >= 24 px; empty-state line >= 16 px below the row above (getBoundingClientRect).
+- [ ] Sweep, every v2 page at 1024/1280/1440: no help toggle below its title (same top as the title +-4 px); no text node closer than 16 px to its card's edge; text-to-button gap >= 12 px; sibling row buttons and "···" have equal height and centre y (diff <= 1 px); no help label longer than one word.
 - [ ] mockup browser test: 0 failed, 0 skipped. Screenshots attached.
 
 ## 8. Stop and ask
