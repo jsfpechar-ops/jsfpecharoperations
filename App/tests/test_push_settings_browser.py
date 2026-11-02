@@ -98,7 +98,13 @@ def _shot(page, name):
 def _open_settings(page, base, lang):
     page.goto(f"{base}/settings?lang={lang}")
     page.wait_for_selector("#settings-group-phone", timeout=30000)
-    page.wait_for_function("navigator.serviceWorker.controller !== null", timeout=30000)
+    # No string predicate: Playwright evaluates those with eval, which the page CSP blocks.
+    for _ in range(300):
+        if page.evaluate("navigator.serviceWorker.controller !== null"):
+            break
+        page.wait_for_timeout(100)
+    else:
+        raise AssertionError("service worker never took control of /settings")
 
 
 @pytest.mark.parametrize("lang", ["en", "cs", "vi"])
