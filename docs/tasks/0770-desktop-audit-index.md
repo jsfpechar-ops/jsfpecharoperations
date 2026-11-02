@@ -4,7 +4,7 @@ Status: todo
 
 Source: `/mnt/project-files/ux-desktop-audit/audit-report.md` (2026-11-02, main 1bd2148). Every brief starts with "verify the finding still reproduces", because the audit's CSS causes were unverified guesses. The demo banner and "UKÁZKA" chip are fixture-only; nobody fixes them. Tablet (768/820) has no designed layout (finding 16); these briefs only fix clipping and overlap there. Pre-v2 pages (findings 7, 18-25) and the sidebar rail (17) are out of scope: separate briefs after owner decision.
 
-Order (one PR each; 0770 to 0774 are independent, run in this order to avoid `app2.css` merge conflicts, merge each before starting the next):
+Order (owner 2026-11-02: ONE big PR, not several; all six briefs commit one after the other on the same branch, in this order, to avoid `app2.css` conflicts; no merge between them. One draft PR at the end with all screenshots, merged on green when main CI is idle):
 
 1. 0770 Overview (`0770-overview-desktop-fixes.md`)
 2. 0771 Úklid (`0771-cleaning-desktop-fixes.md`)
@@ -21,7 +21,7 @@ None. This file is an index; the lint treats every `NNNN-*.md` as a brief, so th
 
 ## 7. Acceptance
 
-- [ ] Briefs 0770 to 0775 each merged in the order above.
+- [ ] Briefs 0770 to 0775 all done in the order above on one branch, one PR.
 
 ## 8. Stop and ask
 
