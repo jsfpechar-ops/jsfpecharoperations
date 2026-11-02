@@ -1104,14 +1104,14 @@ body.v2 .settings-lane .help-tip-btn{min-width:24px;min-height:24px}
 body.v2 .settings-lane form > .ui-btn + .ui-sub{display:block;margin-top:10px}
 body.v2 .settings-action-row > div{display:flex;flex-wrap:wrap;align-items:center;gap:0 8px}
 body.v2 .settings-action-row > div > strong{width:auto}
-body.v2 h2 > .help-tip,body.v2 h3 > .help-tip{margin-left:8px;vertical-align:middle}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) h2 > .help-tip,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) h3 > .help-tip{margin-left:8px;vertical-align:middle}
 body.v2 .settings-heading{display:flex;align-items:last baseline;flex-wrap:nowrap;gap:8px}
 body.v2 .settings-heading h3{min-width:0}
-body.v2 div:has(> label.checkline + .help-tip){display:flex;align-items:last baseline;flex-wrap:nowrap;gap:8px}
-body.v2 div:has(> label.checkline + .help-tip) > label.checkline{min-width:0}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) div:has(> label.checkline + .help-tip){display:flex;align-items:last baseline;flex-wrap:nowrap;gap:8px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) div:has(> label.checkline + .help-tip) > label.checkline{min-width:0}
 body.v2 .field-label-row{display:flex;align-items:last baseline;flex-wrap:nowrap;gap:8px}
 body.v2 .field-label-row > label{min-width:0}
-body.v2 .settings-heading .help-tip,body.v2 .field-label-row .help-tip{display:inline-flex;vertical-align:middle}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-heading .help-tip,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .field-label-row .help-tip{display:inline-flex;vertical-align:middle}
 /* 0787e: the heading text flows inline and the help ? follows its last word 8 px later; the reserved 32 px keeps the ? on the last line */
 body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-heading{display:block;}
 body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) div:has(> strong + .help-tip){}
@@ -1248,19 +1248,19 @@ body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .ui-ba
 body.v2 .ui-btn-open{background:#efefeb;color:var(--ink)}
 body.v2 .row-actions{white-space:nowrap;text-align:right}
 body.v2 .row-primary-link{color:var(--ink);font-weight:600;text-decoration:none;display:inline-flex;align-items:center;min-height:24px}
-body.v2 .help-tip{display:inline-flex;align-items:center}
-body.v2 .help-tip-btn{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:24px;height:24px;min-width:24px;min-height:24px;padding:0;margin:0;border:1px solid var(--line);border-radius:50%;background:#fff;color:var(--ink3);font-family:inherit;font-size:12px;font-weight:600;line-height:1;cursor:help;position:relative}
-body.v2 .help-tip-btn:hover,body.v2 .help-tip-btn[aria-expanded=true]{background:var(--brand-soft);border-color:var(--brand);color:var(--brand-ink)}
-body.v2 .help-tip-btn:focus-visible{outline:3px solid var(--brand-ring,var(--brand));outline-offset:2px}
-@media (max-width:1023px){body.v2 .help-tip-btn::after{content:"";position:absolute;inset:-10px}}
-body.v2 .help-tip-body{display:none;position:absolute;z-index:70;left:0;top:100%;box-sizing:border-box;width:min(320px,calc(100vw - 16px));max-width:calc(100vw - 16px);padding:10px 12px;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-popover);font-size:13px;font-weight:400;line-height:1.45;text-align:left;white-space:normal;overflow-wrap:anywhere}
-body.v2 .help-tip-body a{color:var(--brand-ink);font-weight:650}
-body.v2 .help-tip:not([data-js]):hover>.help-tip-body,body.v2 .help-tip:not([data-js]):focus-within>.help-tip-body,body.v2 .help-tip.is-open>.help-tip-body{display:block}
-body.v2 .help-tip[data-js]>.help-tip-body{position:fixed}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip{display:inline-flex;align-items:center}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-btn{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:24px;height:24px;min-width:24px;min-height:24px;padding:0;margin:0;border:1px solid var(--line);border-radius:50%;background:#fff;color:var(--ink3);font-family:inherit;font-size:12px;font-weight:600;line-height:1;cursor:help;position:relative}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-btn:hover,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-btn[aria-expanded=true]{background:var(--brand-soft);border-color:var(--brand);color:var(--brand-ink)}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-btn:focus-visible{outline:3px solid var(--brand-ring,var(--brand));outline-offset:2px}
+@media (max-width:1023px){body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-btn::after{content:"";position:absolute;inset:-10px}}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-body{display:none;position:absolute;z-index:70;left:0;top:100%;box-sizing:border-box;width:min(320px,calc(100vw - 16px));max-width:calc(100vw - 16px);padding:10px 12px;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-popover);font-size:13px;font-weight:400;line-height:1.45;text-align:left;white-space:normal;overflow-wrap:anywhere}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-body a{color:var(--brand-ink);font-weight:650}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip:not([data-js]):hover>.help-tip-body,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip:not([data-js]):focus-within>.help-tip-body,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip.is-open>.help-tip-body{display:block}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip[data-js]>.help-tip-body{position:fixed}
 /* 0543: inside details the hint is plain text, no ? button */
-body.v2 details .help-tip-btn{display:none}
-body.v2 details .help-tip{display:block}
-body.v2 details .help-tip-body,body.v2 details .help-tip[data-js]>.help-tip-body{width:auto;position:static;display:block;max-width:none;margin:2px 0 0;padding:0;background:none;border:0;box-shadow:none;font-size:12px;color:var(--ink3)}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) details .help-tip-btn{display:none}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) details .help-tip{display:block}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) details .help-tip-body,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) details .help-tip[data-js]>.help-tip-body{width:auto;position:static;display:block;max-width:none;margin:2px 0 0;padding:0;background:none;border:0;box-shadow:none;font-size:12px;color:var(--ink3)}
 body.v2 tr.clickable-row{cursor:pointer}
 body.v2 .ui-table{width:100%;border-collapse:collapse;font-size:14px}
 body.v2 .ui-table th{text-align:left;font-size:12px;color:var(--ink3);font-weight:600;padding:10px 12px;border-bottom:1px solid var(--line)}
