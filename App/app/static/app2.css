@@ -1089,8 +1089,8 @@ body.v2 #housebook-pdf-dialog .ui-form-actions>.ui-btn{flex:1 1 0;min-width:0;mi
 body.v2 #housebook-pdf-dialog .ui-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 /* 0793 housebook v2 (end) */
 /* 0889 housebook presets (start) */
-body.v2 .housebook-page .housebook-presets{display:flex;flex-wrap:wrap;gap:12px;margin:0 0 16px}
-body.v2 .housebook-page .housebook-presets .on{border-color:var(--ink);color:var(--ink)}
+body.v2 .housebook-page .housebook-presets{display:flex;flex-wrap:wrap;gap:var(--space-3);margin:0 0 var(--space-4)}
+body.v2 .housebook-page .housebook-presets .is-on{border-color:var(--ink);color:var(--ink)}
 /* 0889 housebook presets (end) */
 /* 0794 stay fees v2 (start) */
 body.v2 .stay-fees-page .head{margin-top:16px}

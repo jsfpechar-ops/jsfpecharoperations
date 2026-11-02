@@ -1159,7 +1159,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .turbo-progress-bar { display: none; }
 
 /* 0849 invoice quick stays (start) */
-.invoice-quick-title{font-size:16px;font-weight:600;margin:0 0 12px}
-.invoice-quick-stays{list-style:none;margin:0 0 24px;padding:0;display:flex;flex-direction:column;gap:12px}
+.invoice-quick-title{font-size:var(--text-md);font-weight:600;margin:0 0 var(--space-3)}
+.invoice-quick-stays{list-style:none;margin:0 0 var(--space-6);padding:0;display:flex;flex-direction:column;gap:var(--space-3)}
 .invoice-quick-stays .ui-btn{width:100%;min-height:44px;justify-content:flex-start;text-align:left;white-space:normal}
 /* 0849 invoice quick stays (end) */
