@@ -75,6 +75,7 @@
   </div>
 
   <div class="g-card" data-guest-step data-step-title="{{ t('your_details') }}">
+    {% if ocr_available %}{% include 'guest/_ocr_scan.html' %}{% endif %}
     <h2>
       {{ t('your_details') }}
       {% if person_number and person_number > 1 %}
