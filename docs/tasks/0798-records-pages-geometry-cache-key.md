@@ -6,7 +6,7 @@ Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
 
-Apply the owner's recurring geometry rules (brief 0775 §5b, owner shots `/mnt/project-files/ux-desktop-audit/josef-geometry-1102/`) on Odeslání (`/submissions`), Faktury (`/invoices`), Domovní kniha (`/housebook`) and Poplatek z pobytu (`/stay-fees`), then bump the cache key and the catalog, then take the screenshots.
+Apply the owner's recurring geometry rules (brief 0775 §5b, owner shots `/mnt/project-files/ux-desktop-audit/josef-geometry-1102/`) and the owner's no-fine-print rule (§2 rule 6) on Odeslání (`/submissions`), Faktury (`/invoices`), Domovní kniha (`/housebook`) and Poplatek z pobytu (`/stay-fees`), then bump the cache key and the catalog, then take the screenshots.
 
 ## 2. Context (rules) (measure each with Playwright `getBoundingClientRect` at 390, 1024, 1280, 1440 on the rich-host fixture in `App/tests/v2_mockup.py`)
 
@@ -15,6 +15,7 @@ Apply the owner's recurring geometry rules (brief 0775 §5b, owner shots `/mnt/p
 3. Text and a button beside or below it: gap >= 12 px (`var(--space-3)`); adjacent buttons: gap >= 12 px.
 4. Row actions: sibling row buttons and the "···" menu button have equal height and centre y (diff <= 1 px).
 5. Help labels are one word: "Otevřít" / "Open" (and the vi/uk equivalents), not "Otevřít nápovědu".
+6. No descriptions or fine print on the page (owner 2026-11-02 13:04, Wolt has none): remove the one-line sub under the h1, step/section descriptions, hint and `ui-sub`/`small`/`muted` paragraphs. Text a host needs moves into the page's existing help "?" disclosure (`details.ui-how` body); text that only repeats a label or button is deleted (rule 9 of AGENTS.md). Keep: titles, labels, values, empty-state line, error messages, legally required text (grep `docs/UbyHost_workplan/04_legal_positions.md` if unsure and report it). Delete strings that become unused (cs/en/vi/uk).
 
 ## 3. Files
 
@@ -42,6 +43,7 @@ Anything outside §3. No new dependency, colour or JS.
 
 - [ ] measure.py prints no violation on the four pages at 390/1024/1280/1440 (paste its final output, max 10 lines).
 - [ ] Commands 1-3: 0 failed, 0 skipped.
+- [ ] No `.sub`, `ui-sub`, hint or description paragraph left outside the help disclosure on the four pages (list what moved and what was deleted).
 - [ ] 8 screenshots saved.
 
 ## 8. Stop and ask

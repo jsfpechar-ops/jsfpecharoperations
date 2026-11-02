@@ -52,7 +52,8 @@ BOX_PROPS = ("width", "height", "margin-top", "margin-right", "margin-bottom", "
 # phone box departure: the 20 px side room comes from body.v2 .main padding, so phone cards have no side margin (2026-11-01)
 BOX_OVERRIDES = {
     # text-dependent: the stay fee head h1 is as wide as the fixture title on a 320 px phone (0794)
-    "stay_fees:.mh .big, .head h1@320": {"width": "120px"},
+    "stay_fees:.mh .big, .head h1@320": {"width": "116px"},
+    "stay_fees:.mh .big, .head h1@390": {"width": "116px"},
     # text-dependent: the head text column is as wide as the lede copy on phones (0791)
     "submissions:.mh .big, .head h1@320": {"width": "280px"},
     "submissions:.mh .big, .head h1@390": {"width": "350px"},

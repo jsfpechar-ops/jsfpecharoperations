@@ -554,6 +554,18 @@ body.v2 .range-day.selected{border-color:var(--brand-action);border-radius:8px;b
 body.v2 .date-range-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px}
 body.v2 .month-row{display:flex;align-items:center;gap:8px}
 body.v2 .month-control{position:relative;display:flex;align-items:center;flex:1 1 auto;min-width:0}
+body.v2 .month-choice{min-width:0;min-height:42px;padding:6px 5px;border:1px solid var(--line);border-radius:8px;background:white;color:var(--ink-secondary);font-size:13px;font-weight:650}
+body.v2 .month-choice.selected{border-color:var(--brand-action);background:var(--brand-soft);color:var(--brand-ink);font-weight:750}
+body.v2 .month-choice:disabled{opacity:.38}
+body.v2 .month-control input[type=month]{width:100%;min-width:9.5rem;font-weight:650}
+body.v2 .month-control.is-empty{height:var(--action-height);padding:0 14px;border:1px dashed var(--border-strong);border-radius:9px;background:white}
+body.v2 .month-control.is-empty input[type=month]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0}
+body.v2 .month-control-face{font-size:13.5px;font-weight:650;color:var(--ink-muted);white-space:nowrap}
+body.v2 .month-control input[data-month-native]{width:100%;min-width:0;height:var(--action-height)}
+.has-js body.v2 .month-control.is-empty{height:auto;padding:0;border:0;border-radius:0;background:transparent}
+.has-js body.v2 input[data-month-native]{position:absolute;width:1px;height:1px;min-width:0;opacity:0;pointer-events:none}
+.has-js body.v2 .month-control-face{display:none}
+body.v2 .month-trigger{width:100%}
 /* 0527: 44px day and date targets on phone; the popover stays inside a 360 px viewport */
 @media (max-width:1023px){
   body.v2 .range-day{min-width:44px;min-height:44px}
@@ -1037,10 +1049,12 @@ body.v2 .submissions-page .ui-empty .ui-btn{display:inline-flex;align-items:cent
 @media (max-width:1023px){body.v2 .invoices-page .ui-btn,body.v2 .invoices-page .month-step,body.v2 .invoices-page .filters input[type=month]{min-height:44px;min-width:44px;height:auto}}
 body.v2 .invoices-page input[type=month]{min-height:40px;box-sizing:border-box;padding:9px 10px;border:1px solid #dcdcd7;border-radius:8px;font:inherit}
 body.v2 .invoices-page .ui-empty .ui-btn{display:inline-flex;align-items:center;min-height:44px}
+body.v2 .invoices-page tbody tr .btn.sm.ghost:focus-visible{opacity:1;transition:none}
 /* 0792 invoices v2 (end) */
 /* 0793 housebook v2 (start) */
 body.v2 .housebook-page{min-width:0;max-width:100%;width:100%;contain:inline-size;color:var(--ink)}
 body.v2 .housebook-page .housebook-scroll{min-width:0;max-width:100%;position:relative}
+body.v2 .housebook-page .housebook-scroll:focus-visible{outline:2px solid #d0452d;outline-offset:2px}
 body.v2 .housebook-page .stays-head-actions{align-items:center}
 body.v2 .housebook-page .stays-head-actions .btn,body.v2 .housebook-page .stays-head-actions .row-menu-trigger,body.v2 .housebook-page .filter-toggle{min-height:44px}
 body.v2 .housebook-page .filter-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:0 0 12px}
@@ -1058,6 +1072,9 @@ body.v2 .housebook-page .housebook-table td{border-bottom-color:var(--line)}
 body.v2 .housebook-page .housebook-table .pill{white-space:nowrap;display:inline-block}
 body.v2 .housebook-page .housebook-table .col-reported small{display:block;margin-top:4px;color:var(--ink3);font-size:12px}
 body.v2 .housebook-page .housebook-table .row-actions{white-space:nowrap}
+body.v2 #housebook-pdf-dialog .ui-form-actions{display:flex;gap:8px;margin-top:16px}
+body.v2 #housebook-pdf-dialog .ui-form-actions>.ui-btn{flex:1 1 0;min-width:0;min-height:44px}
+body.v2 #housebook-pdf-dialog .ui-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 /* 0793 housebook v2 (end) */
 /* 0794 stay fees v2 (start) */
 body.v2 .stay-fees-page .fee-pay-h{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 12px}
@@ -1103,6 +1120,10 @@ body.v2 .stay-fees-page .ui-btn,body.v2 .stay-fees-page .ui-btn-quiet,body.v2 .s
 body.v2 .stay-fees-page .row-primary-link{display:inline-flex;align-items:center;min-height:44px}
 body.v2 .stay-fees-page .stays-desk input:not([type=hidden]){min-height:44px}
 body.v2 .stay-fees-page input:not([type=hidden]):not(.sr-only){min-height:44px}
+body.v2 .stay-fees-toolbar .ui-btn,body.v2 .stay-fees-toolbar .ui-btn-quiet,body.v2 .stay-fees-toolbar .filter-toggle,body.v2 .stay-fees-toolbar .month-step{min-height:44px;min-width:44px}
+body.v2 .stay-fees-toolbar input:not([type=hidden]):not(.sr-only){min-height:44px}
+body.v2 .stay-fees-toolbar .month-control{min-width:10rem}
+body.v2 .stay-fees-toolbar .month-control input[data-month-native]{min-width:44px}
 /* 0794 stay fees v2 (end) */
 /* cleaning (0542) */
 body.v2 .cleaning-page{width:100%;max-width:1080px;min-width:0;margin:0 auto;color:var(--ink)}

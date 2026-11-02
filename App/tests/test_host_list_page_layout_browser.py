@@ -31,7 +31,7 @@ STRINGS = host_i18n.STRINGS
 LISTS = {
     "properties": "/apartments",
     "invoices": "/invoices",
-    "fees": "/stay-fees",
+    # /stay-fees is v2 (card list, no sub-tab strip, no table rows): covered by 0710
 }
 # The tab labels each list shows, in order. Stay fees is a tab of Invoices
 # (0165, 0192), so Invoices and Stay fees share one strip; CURRENT is the
@@ -40,7 +40,6 @@ TABS = {
     "stays": ["nav.stays", "tabs.stays.reports", "tabs.stays.register"],
     "properties": ["nav.properties", "host.business"],
     "invoices": ["nav.invoices", "nav.stay_fees", "host.invoice_settings"],
-    "fees": ["nav.invoices", "nav.stay_fees", "host.invoice_settings"],
 }
 CURRENT = {"fees": 1}
 FILLED = ".btn.primary, .btn.accent, .btn.send-all, .ui-btn-primary"
@@ -183,7 +182,7 @@ def test_tabs_are_links_that_mark_the_open_page(acc):
     invoices = client.get("/invoices").text
     assert re.search(r'<a class="[^"]*" href="/entities"', invoices) and "/invoices/settings" not in invoices  # 0792: head button
     # Stay fees is a tab of Invoices (0165).
-    assert "data-sub-tabs" in client.get("/stay-fees").text
+    # /stay-fees is v2 (no sub-tab strip): covered by 0710
     # Property pages keep their own local tabs, not the section tabs.
     assert "data-sub-tabs" not in client.get(f"/apartments/{acc['p1']}").text
 
@@ -206,7 +205,6 @@ ROWS = {
     "stays": ("/reservations?range=all", ".stays-desk tbody tr"),
     "properties": ("/apartments", ".props-card table tbody tr.clickable-row"),
     "invoices": ("/invoices", ".stays-desk tr.clickable-row"),  # 0792: v2 table
-    "fees": ("/stay-fees", ".lc-fees tr.clickable-row"),
 }
 
 _SPOT_JS = """(sel) => {

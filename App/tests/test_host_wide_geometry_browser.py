@@ -29,7 +29,7 @@ from tests.conftest import login_as
 WIDE_WIDTHS = (1024, 1280, 1440, 1680, 1920, 2048)
 MOBILE_WIDTHS = (360, 390, 760)
 MOBILE_ROUTE_KEYS = {
-    "dashboard", "stays", "properties", "invoices", "fees-unset", "fees-configured",
+    "dashboard", "stays", "properties", "invoices",
     "invoice-new-picker", "invoice-new-selected", "invoice-settings", "invoice-detail",
     "property-new", "operator-add", "operator-edit", "property-detail",
     "property-detail-configured", "fee-setup", "fee-detail", "stay-detail",
@@ -42,8 +42,8 @@ CAPTURE_ROUTES = {
     "operator-add": ("/entities?new=1", ".entity-add"),
     "operator-edit": ("/entities?edit={entity_id}", ".entity-form"),
     "invoices": ("/invoices", ".stays-desk, .stays-phone, .ui-empty"),
-    "fees-unset": ("/stay-fees?apartment={unconfigured_apartment}", ".panel.tight.scroll-x, .panel.empty"),
-    "fees-configured": ("/stay-fees?apartment={configured_apartment}", ".panel.tight.scroll-x, .panel.empty"),
+    # fees-unset: v2 empty state, covered by 0710
+    # fees-configured: v2 card list, covered by 0710
     # 0077/0101: the fee editor is property Settings -> Reporting & fees -> Stay fee.
     "fee-setup": ("/apartments/{unconfigured_apartment}?view=settings&section=reporting", ".property-settings, details.prop-sec#sec-fee"),  # v2 (0538)
     "fee-detail": ("/stay-fees/{configured_apartment}", ".ui-body-detail, .ui-section"),
@@ -648,7 +648,7 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                                 if re.fullmatch(r"(?:common|confirm|host)\.[a-z0-9_.-]+", line.strip(), re.IGNORECASE)]
                     assert not raw_keys, f"raw translation key visible on {name}/{lang}/{width}: {raw_keys}"
                     if width in {1440, 1920} or width in MOBILE_WIDTHS or name in {
-                        "dashboard", "stays", "properties", "invoices", "fees-unset", "fees-configured"
+                        "dashboard", "stays", "properties", "invoices"
                     }:
                         page.screenshot(path=str(output_dir / f"after-{name}-{lang}-{width}.png"), full_page=True)
                 context.close()

@@ -85,7 +85,7 @@ FORM_PAGES = ("/apartments/new?lang=en", "/cleaning/new?lang=en")
 def test_collapsed_rail_expands_again_with_the_same_button(base):
     with sync_api.sync_playwright() as playwright:
         browser, page = _open(playwright, base, 1280)
-        page.goto(base + "/invoices?lang=en")
+        page.goto(base + "/payments?lang=en")
         page.wait_for_selector("#main-content")
         button = page.locator("button[data-sidebar-collapse]")
         button.click()
@@ -105,7 +105,7 @@ def test_collapsed_account_menu_is_whole_inside_the_viewport(base):
     for width in (1280, 2000):
         with sync_api.sync_playwright() as playwright:
             browser, page = _open(playwright, base, width)
-            page.goto(base + "/invoices?lang=en")
+            page.goto(base + "/payments?lang=en")
             page.wait_for_selector("#main-content")
             page.locator("button[data-sidebar-collapse]").click()
             page.wait_for_function("document.body.classList.contains('sidebar-collapsed')")

@@ -15,7 +15,7 @@ def test_steps_are_locked_until_the_period_is_confirmed(host):
     apartment_id = _property(owner_id, entity_id, "Vivus Apartment with Balcony & Garage")
     _stay(apartment_id, "2026-08-10", "2026-08-14", [{}])
     page = client.get("/stay-fees?month=2026-08&lang=en").text
-    assert 'class="ui-section fee-pay"' in page
+    assert 'class="card fee-pay"' in page
     assert 'data-fee-step="1"' in page and "Are these numbers right?" in page
     assert f'/stay-fees/{apartment_id}/pdf?month=2026-08' not in page
     assert 'name="return_to" value="/stay-fees?month=2026-08' in page

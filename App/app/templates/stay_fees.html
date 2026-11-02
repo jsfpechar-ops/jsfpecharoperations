@@ -11,10 +11,17 @@
 {% block primary_action %}{% endblock %}
 {% block secondary_actions %}{% endblock %}
 {% block tabs %}{% endblock %}
-{% block toolbar %}{% include "_list_filter.html" %}{% endblock %}
+{% block toolbar %}<div class="stay-fees-toolbar">{% include "_list_filter.html" %}</div>{% endblock %}
 {% block body %}
 <div class="stay-fees-page">
 <div class="head stays-head"><div><h1 class="big">{{ t('stay_fees.title') }}</h1>
+<details class="ui-how stays-how ph-hide" data-how="stay_fees">
+  <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
+  <div class="ui-how-body">
+    <ol class="ui-how-steps">{% for n in (1, 2, 3) %}<li>{{ t('how.stay_fees.' ~ n) }}</li>{% endfor %}</ol>
+    <a class="ui-how-more" href="/guide#stay_fee">{{ t('how.more') }}</a>
+  </div>
+</details>
 {% if periods %}
 <p class="sub ph-hide" id="fee-list-summary">
   {% set ns_count = namespace(ready=0) %}{% for period in periods %}{% if not period.unset %}{% set ns_count.ready = ns_count.ready + 1 %}{% endif %}{% endfor %}
@@ -170,11 +177,7 @@
         <td class="num" data-label="{{ t('stay_fees.col.exempt') }}">{{ period.exempt_nights }}</td>
         <td class="num" data-label="{{ t('stay_fees.col.total') }}">{{ period.total_display }}</td>
         <td class="nowrap" data-label="{{ t('filter.status') }}">
-          {% if period.status == 'paid' %}
-            <span class="pill p-ok">{{ t('stay_fees.status.paid') }}</span>
-          {% elif period.status == 'sent' %}
-            <span class="pill p-n">{{ t('stay_fees.status.sent') }}</span>
-          {% elif period.status == 'saved' %}
+          {% if period.status == 'saved' %}
             <span class="pill p-ok">{{ t('stay_fees.saved_version', version=period.version) }}</span>
           {% elif period.status == 'attention' %}
             <span class="pill p-warn">{{ t('stay_fees.needs_setup') }}</span>
@@ -203,9 +206,7 @@
     {% set row_href = '/stay-fees/' ~ apartment.id ~ '?month=' ~ selected_month.strftime('%Y-%m') %}
     {% set row_status = t('stay_fees.status.ready') %}
     {% set row_tone = 'p-warn' %}
-    {% if period.status == 'paid' %}{% set row_status = t('stay_fees.status.paid') %}{% set row_tone = 'p-ok' %}
-    {% elif period.status == 'sent' %}{% set row_status = t('stay_fees.status.sent') %}{% set row_tone = 'p-n' %}
-    {% elif period.status == 'saved' %}{% set row_status = t('stay_fees.saved_version', version=period.version) %}{% set row_tone = 'p-ok' %}
+    {% if period.status == 'saved' %}{% set row_status = t('stay_fees.saved_version', version=period.version) %}{% set row_tone = 'p-ok' %}
     {% elif period.status == 'attention' %}{% set row_status = t('stay_fees.needs_setup') %}{% set row_tone = 'p-warn' %}
     {% elif period.status == 'waiting' %}{% set row_status = t('stay_fees.status.in_progress') %}{% set row_tone = 'p-n' %}
     {% endif %}
