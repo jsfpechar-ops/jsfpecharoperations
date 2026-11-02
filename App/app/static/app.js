@@ -2232,6 +2232,11 @@
   }
   /* ---- end 0084 O1 ---------------------------------------------------------- */
 
+  var pageHooks = [];
+  var pageStarted = false;
+  window.UbyHost = window.UbyHost || {};
+  window.UbyHost.onPage = function (fn) { pageHooks.push(fn); if (pageStarted) fn(); };
+
   function initPage() {
     initPhoneDefaultClosed();
     initPropSectionLinks();
@@ -2263,6 +2268,8 @@
     initPowerTools();
     initSavedViews();
     initInlineEdit();
+    pageStarted = true;
+    pageHooks.forEach(function (fn) { fn(); });
   }
   window.UbyHost = window.UbyHost || {};
   window.UbyHost.initPage = initPage;
