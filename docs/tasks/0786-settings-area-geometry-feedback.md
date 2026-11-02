@@ -13,6 +13,8 @@ Josef's review of the 0780-0784 screenshots (390 px phone), fixed everywhere the
 4. **Help button label.** Josef: the visible text "Open help" becomes just "Open" ("Otevřít" in Czech), because it sits right next to the `?`. Keep an accessible name that still says help (aria-label). Change the i18n strings only.
 5. **Společnosti (entities) row actions.** Phone card: Edit and Invoice settings buttons and the `⋮` menu are not on one line or not vertically centred; desktop row: `⋮` sits lower than the two buttons. All three on one row, same 36 px height (44 px tap area below 1024), centred on one axis; `⋮` is a 36 px round ghost button.
 
+6. **No fine print (Josef 13:04, Wolt rule).** No description or explanatory sentence shown on the page itself: page ledes (`<p class="sub">`), section intros, notes under buttons (e.g. the passport-retention note) and hint lines all move into the help `?` popover of their heading, or are dropped when they repeat the label/button. Only titles, labels, values and actions stay visible. Keep each text's i18n key (help popovers already take i18n text). `test_operator_naming` checks the operator explanation exists: keep it in the entities help popover and update that test only so it finds the sentence there (it must still be reachable without JavaScript, like other help tips).
+
 ## 2. Context
 
 CSS rules go in the existing `/* 0780 … */`, `/* 0781 … */` blocks of `App/app/static/app2.css`; generic `.help-tip` placement in `/* v2 ports of shared ui-* classes */`. Tips inside closed `details` stay plain text (0543 rule, `test_help_tip_target_size_and_no_js_reachability`); do not break the help popover rules from 2f54815. Tablet layout: no phone-only rules at 768.
