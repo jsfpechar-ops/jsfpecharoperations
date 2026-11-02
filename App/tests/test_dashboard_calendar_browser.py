@@ -1092,3 +1092,52 @@ def test_0891_calendar_no_horizontal_overflow(calendar_workspace, calendar_origi
         assert page.evaluate(FITS_0891), (width, "bottom")
         context.close()
         browser.close()
+
+
+GEOMETRY_0893 = """() => {
+  const root = document.querySelector('#calendar');
+  const out = {small: [], edge: [], touching: []};
+  const visible = el => { const r = el.getBoundingClientRect(); const s = getComputedStyle(el);
+    return r.width > 1 && r.height > 1 && s.visibility !== 'hidden' && s.display !== 'none'; };
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) {
+    const node = walker.currentNode; if (!node.textContent.trim()) continue;
+    const el = node.parentElement; if (!visible(el) || el.scrollWidth > el.clientWidth + 1) continue;
+    const size = parseFloat(getComputedStyle(el).fontSize);
+    if (size < 12) out.small.push([el.className, node.textContent.trim().slice(0, 20), size]);
+    const range = document.createRange(); range.selectNodeContents(node);
+    const box = range.getBoundingClientRect();
+    if (box.width && (box.left < 8 || box.right > innerWidth - 8)) out.edge.push([el.className, node.textContent.trim().slice(0, 20), Math.round(box.left), Math.round(box.right)]);
+  }
+  const controls = [...root.querySelectorAll('[data-cal-head] button, [data-cal-head] select, [data-cal-head] a')].filter(visible)
+    .map(el => [el, el.getBoundingClientRect()]);
+  const title = root.querySelector('[data-cal-period]');
+  if (title && visible(title)) controls.push([title, title.getBoundingClientRect()]);
+  for (let i = 0; i < controls.length; i++) for (let j = i + 1; j < controls.length; j++) {
+    const [a, p] = controls[i], [b, q] = controls[j];
+    if (a.contains(b) || b.contains(a)) continue;
+    const group = a.closest('.cal-segment');
+    if (group && group === b.closest('.cal-segment')) continue;
+    const dx = Math.max(q.left - p.right, p.left - q.right), dy = Math.max(q.top - p.bottom, p.top - q.bottom);
+    if (Math.max(dx, dy) < 12) out.touching.push([a.className || a.tagName, b.className || b.tagName, Math.round(dx), Math.round(dy)]);
+  }
+  return out;
+}"""
+
+
+@pytest.mark.parametrize("width", [320, 390, 768, 1024, 1280, 1440])
+def test_0893_calendar_text_size_edges_and_header_spacing(calendar_workspace, calendar_origin, width):
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=width, touch=width < 768)
+        page.goto(f"{calendar_origin}/?lang=en&cal_view=calendar&cal_date=2026-10-01")
+        page.wait_for_selector(".cal-month")
+        wait_loaded(page)
+        page.evaluate("window.scrollTo(0, 0)")
+        page.wait_for_timeout(300)
+        found = page.evaluate(GEOMETRY_0893)
+        assert not found["small"], (width, found["small"][:8])
+        assert not found["edge"], (width, found["edge"][:8])
+        assert not found["touching"], (width, found["touching"][:8])
+        context.close()
+        browser.close()
