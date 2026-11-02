@@ -23,13 +23,17 @@ a.pp-bk-day:hover { background: var(--surface-2); }
 .pp-bk-day[data-state="end"] { border-radius: 0 var(--radius-2) var(--radius-2) 0; }
 .pp-bk-row { display: flex; justify-content: space-between; gap: var(--space-3); }
 .pp-bk-total { border-top: 1px solid var(--line); padding-top: var(--space-3); font-size: var(--size-16); font-weight: 700; }
-.pp-bk-guests { display: flex; gap: var(--space-2); align-items: flex-end; }
-.pp-bk-guests .ui-field { flex: 1; }
+.pp-bk-guests { display: flex; flex-direction: column; gap: var(--space-2); align-items: stretch; }
+.pp-bk-guests .ui-field { display: flex; flex-direction: column; gap: var(--space-1); }
+.pp-bk-guests .ui-input { width: 100%; min-height: 44px; }
 .pp-bk-error { background: var(--accent-soft); border-radius: var(--radius-2); padding: var(--space-3); margin: 0; color: var(--ink); }
 .pp-bk-lang { text-align: center; font-size: var(--size-12); color: var(--ink-3); }
 .pp-bk-lang a { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; color: var(--ink-2); }
 .pp-bk-lang a[aria-current="true"] { color: var(--ink); font-weight: 700; }
 .pp-bk .ui-btn { width: 100%; min-height: 44px; }
+.pp-bk .ui-btn-primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.pp-bk .ui-btn-primary:hover { background: var(--accent-hover); }
+.pp-bk .ui-btn-secondary { background: var(--surface); color: var(--ink); border: 1px solid var(--line-2); }
 @media (max-width: 480px) { .pp-bk { max-width: none; } }
 </style>
 <meta property="og:title" content="{{ page.og.title }}">
