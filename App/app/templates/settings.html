@@ -100,7 +100,7 @@
         <div class="settings-action-row">
           <div>
             <strong>{{ t('passkeys.title') }}</strong>
-            {{ help_tip('settings-passkeys-help', t('passkeys.help')) }}
+            {{ help_tip('settings-passkeys-help', t('passkeys.help') ~ (' ' ~ t('passkeys.unavailable') if not passkeys_available else '')) }}
           </div>
           {% if passkeys_available %}
             <button class="ui-btn ui-btn-primary ui-btn-compact" type="button" data-passkey-add data-passkey-supported hidden>{{ t('passkeys.add') }}</button>
@@ -109,8 +109,6 @@
         {% if passkeys_available %}
           <p class="ui-sub" data-passkey-unsupported>{{ t('passkeys.unsupported') }}</p>
           <p class="ui-sub err-text" data-passkey-error data-generic="{{ t('passkeys.error.failed') }}" role="alert" hidden></p>
-        {% else %}
-          <p class="ui-sub">{{ t('passkeys.unavailable') }}</p>
         {% endif %}
         {% for key in passkeys %}
           <div class="settings-action-row passkey-row">
@@ -141,7 +139,7 @@
         <div class="settings-action-row">
           <div>
             <strong>{{ t('settings.account.2fa') }}</strong>
-            <small>{{ t('settings.account.2fa_on') if current_user.totp_enabled else t('settings.account.2fa_off') }}</small>
+            {% if current_user.totp_enabled %}<small>{{ t('settings.account.2fa_on') }}</small>{% else %}{{ help_tip('settings-2fa-help', t('settings.account.2fa_off')) }}{% endif %}
           </div>
           {% if current_user.totp_enabled %}
             <span class="ui-badge ui-badge-done" data-tone="green">{{ t('settings.account.enabled') }}</span>
@@ -190,15 +188,14 @@
         <div class="settings-action-row">
           <div>
             <strong>{{ t('pwa.install.title') }}</strong>
-            {{ help_tip('settings-pwa-help', t('pwa.install.help')) }}
+            {{ help_tip('settings-pwa-help', t('pwa.install.help') ~ ' ' ~ t('pwa.install.other')) }}
           </div>
           <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" data-pwa-install hidden>{{ t('pwa.install.button') }}</button>
           <span class="ui-badge ui-badge-done" data-tone="green" data-pwa-installed hidden>{{ t('pwa.install.installed') }}</span>
         </div>
         <p class="ui-sub" data-pwa-ios hidden>{{ t('pwa.install.ios') }}</p>
         {% if passkeys_available %}<p class="ui-sub" data-pwa-ios hidden>{{ t('pwa.install.ios_passkey') }}</p>{% endif %}
-        <p class="ui-sub" data-pwa-other>{{ t('pwa.install.other') }}</p>
-      </div>
+              </div>
       {% if push_available %}
       <div class="settings-action-list" id="settings-alerts" data-push-row data-push-key="{{ push_key }}">
         <div class="settings-action-row">
@@ -217,7 +214,7 @@
         </div>
         <p class="ui-sub" data-push-unsupported>{{ t('push.unsupported') }}</p>
         <p class="ui-sub" data-push-ios-first hidden>{{ t('push.ios_first') }}</p>
-        <p class="ui-sub" data-push-denied hidden>{{ t('push.denied') }}</p>
+        <p class="ui-sub" data-push-denied role="status" hidden>{{ t('push.denied') }}</p>
         <p class="ui-sub" data-push-status role="status" hidden></p>
         <p class="ui-sub err-text" data-push-error data-generic="{{ t('push.error.failed') }}" role="alert" hidden></p>
         {% if push_devices %}
@@ -364,7 +361,7 @@
     <details class="ui-section technical" id="settings-technical">
       <summary>{{ t('settings.technical.title') }}</summary>
 
-      <h2 id="settings-overview">{{ t('settings.destination.title') }}</h2>
+      <h2 id="settings-overview">{{ t('settings.destination.title') }}{{ help_tip('settings-destination-help', t('settings.destination.help')) }}</h2>
       <dl class="kv">
         <dt>{{ t('settings.destination.deployment') }}</dt><dd>{{ deployment_tier | capitalize }}</dd>
         <dt>{{ t('settings.destination.target') }}</dt><dd>{{ t('settings.destination.production') if ubyport_env == 'prod' else (ubyport_env | upper) }}</dd>
@@ -383,15 +380,13 @@
           </div>
         </div>
       {% endif %}
-      <p class="ui-sub">{{ t('settings.destination.help') }}</p>
-
-      <h2 id="settings-mail">{{ t('settings.mail.title') }}</h2>
+      
+      <h2 id="settings-mail">{{ t('settings.mail.title') }}{{ help_tip('settings-mail-help', t('settings.mail.help')) }}</h2>
       <dl class="kv">
         <dt>{{ t('settings.mail.backend') }}</dt>
         <dd class="ui-mono">{{ mail_backend }}</dd>
       </dl>
-      <p class="ui-sub">{{ t('settings.mail.help') }}</p>
-      {% if mail_backend == 'console' and console_mail %}
+            {% if mail_backend == 'console' and console_mail %}
         <table class="ui-table">
           <thead>
             <tr>
@@ -430,14 +425,13 @@
         </table>
       {% endif %}
 
-      <h2 id="settings-codelists">{{ t('settings.codelists.title') }}</h2>
+      <h2 id="settings-codelists">{{ t('settings.codelists.title') }}{{ help_tip('settings-codelists-help', t('settings.codelists.help')) }}</h2>
       <dl class="kv">
         <dt>{{ t('settings.codelists.countries') }}</dt><dd>{{ (codelists.countries | datetime_local(seconds=true)) if codelists.countries else t('settings.codelists.bundled') }}</dd>
         <dt>{{ t('settings.codelists.purposes') }}</dt><dd>{{ (codelists.purposes | datetime_local(seconds=true)) if codelists.purposes else t('settings.codelists.bundled') }}</dd>
         <dt>{{ t('settings.codelists.errors') }}</dt><dd>{{ (codelists.errors | datetime_local(seconds=true)) if codelists.errors else t('settings.codelists.not_fetched') }}</dd>
       </dl>
-      <p class="ui-sub">{{ t('settings.codelists.help') }}</p>
-    </details>
+          </details>
 
     <div class="ui-section" id="settings-ubyport">
       {{ settings_heading('access', t('settings.access.title'), t('settings.access.help')) }}
@@ -449,8 +443,7 @@
 
     <details class="ui-section technical" open id="settings-audit">
       <summary>{{ t('settings.nav.audit') }}</summary>
-      <p class="ui-sub">{{ t('settings.audit.help') }}</p>
-      <h2>{{ t('settings.audit.recent', count=audit_count) }}</h2>
+            <h2>{{ t('settings.audit.recent', count=audit_count) }}{{ help_tip('settings-audit-help', t('settings.audit.help')) }}</h2>
       <div class="host-audit-filters" data-audit-filter role="group" aria-label="{{ t('settings.audit.filter_label') }}">
         <a class="host-audit-filter {{ 'is-active' if not audit_filter }}" href="/settings#settings-audit" {% if not audit_filter %}aria-current="page"{% endif %}>{{ t('settings.audit.filter_all') }}</a>
         <a class="host-audit-filter {{ 'is-active' if audit_filter == 'support' }}" href="/settings?audit=support#settings-audit" {% if audit_filter == 'support' %}aria-current="page"{% endif %}>{{ t('settings.audit.filter_support') }}</a>
