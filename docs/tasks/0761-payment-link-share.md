@@ -1,6 +1,6 @@
 # 0761: Get a card payment link and share it (no guest e-mail needed)
 
-Status: in-progress
+Status: review
 Depends on: none | Base commit: 1bd21484 | Branch: task/0761-payment-link-share (check it out; it already holds this brief)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
