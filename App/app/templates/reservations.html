@@ -30,7 +30,7 @@
     <ol class="ui-how-steps">{% for n in (1, 2, 3) %}<li>{{ t('how.stays.' ~ n) }}</li>{% endfor %}</ol>
     <a class="ui-how-more" href="/guide#stays">{{ t('how.more') }}</a>
   </div>
-</details></div>{% if apartments %}<button class="round stays-add ph-only" type="button" data-toggle-panel="add-stay-panel" aria-label="{{ t('stays.add_stay') }}">{{ icon('plus', 22) }}</button><div class="stays-head-actions">{% if manual_send %}<form method="post" action="/reservations/submit-ready" class="inline send-all-form"><input type="hidden" name="return_to" value="{{ return_to }}"><button class="btn ghost send-all" type="submit"{% if not ready_send_count %} disabled{% endif %} title="{{ t('send.all_ready_hint') }}">{{ icon('send', 16) }}<span>{{ t('send.all_ready') }}{% if ready_send_count %} ({{ ready_send_count }}){% endif %}</span></button></form>{% endif %}<a class="btn ghost" href="/housebook.csv?{{ csv_export_params }}" data-stays-housebook>{{ t('stays.housebook_download') }}</a><button class="btn" type="button" data-toggle-panel="add-stay-panel">{{ t('stays.add_stay') }}</button></div>{% endif %}</div>
+</details></div>{% if apartments %}<button class="round stays-add ph-only" type="button" data-toggle-panel="add-stay-panel" aria-label="{{ t('stays.add_stay') }}">{{ icon('plus', 22) }}</button><div class="stays-head-actions">{% if manual_send %}<form method="post" action="/reservations/submit-ready" class="inline send-all-form"><input type="hidden" name="return_to" value="{{ return_to }}"><button class="btn ghost send-all" type="submit"{% if not ready_send_count %} disabled{% endif %} title="{{ t('send.all_ready_hint') }}">{{ icon('send', 16) }}<span>{{ t('send.all_ready') }}{% if ready_send_count %} ({{ ready_send_count }}){% endif %}</span></button></form>{% endif %}<a data-turbo="false" class="btn ghost" href="/housebook.csv?{{ csv_export_params }}" data-stays-housebook>{{ t('stays.housebook_download') }}</a><button class="btn" type="button" data-toggle-panel="add-stay-panel">{{ t('stays.add_stay') }}</button></div>{% endif %}</div>
 {{ onboarding_banner(onboarding) }}
 
 {% if apartments %}
@@ -238,7 +238,7 @@
             {% endif %}
             <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">{{ t('stays.row.add_guest') }}</a>
             {% if reservation.permalink_token %}
-            <a class="row-menu-item" href="/l/{{ reservation.permalink_slug or reservation.permalink_token }}/{{ reservation.id }}" target="_blank" rel="noopener" role="menuitem">{{ t('stays.row.open_guest_form') }}</a>
+            <a data-turbo="false" class="row-menu-item" href="/l/{{ reservation.permalink_slug or reservation.permalink_token }}/{{ reservation.id }}" target="_blank" rel="noopener" role="menuitem">{{ t('stays.row.open_guest_form') }}</a>
             {% endif %}
             {% if show_archive %}
               <form method="post" action="/reservations/{{ reservation.id }}/unarchive" class="row-menu-form">
@@ -295,7 +295,7 @@
 <div class="list stays-links ph-hide">
   <a class="link ph-hide" href="/submissions"><span>{{ t('tabs.stays.reports') }}</span>{{ icon('chevron-right', 16) }}</a>
   <a class="link ph-hide" href="/housebook"><span>{{ t('tabs.stays.register') }}</span>{{ icon('chevron-right', 16) }}</a>
-  <a class="link ph-hide" href="/reservations.csv?{{ csv_export_params }}" data-csv-export="/reservations.csv" data-csv-params="{{ csv_export_params }}" data-csv-scope-label="{{ stay_property.label }}"><span>{{ t('csv.export_stays') }}</span>{{ icon('download', 16) }}</a>
-  <a class="link stays-phone-only" href="/housebook.csv?{{ csv_export_params }}" data-stays-housebook-phone><span>{{ t('stays.housebook_download') }}<small>{{ t('stays.housebook_hint') }}</small></span>{{ icon('download', 16) }}</a>
+  <a data-turbo="false" class="link ph-hide" href="/reservations.csv?{{ csv_export_params }}" data-csv-export="/reservations.csv" data-csv-params="{{ csv_export_params }}" data-csv-scope-label="{{ stay_property.label }}"><span>{{ t('csv.export_stays') }}</span>{{ icon('download', 16) }}</a>
+  <a data-turbo="false" class="link stays-phone-only" href="/housebook.csv?{{ csv_export_params }}" data-stays-housebook-phone><span>{{ t('stays.housebook_download') }}<small>{{ t('stays.housebook_hint') }}</small></span>{{ icon('download', 16) }}</a>
 </div>
 {% endblock %}

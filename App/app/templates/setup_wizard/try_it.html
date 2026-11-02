@@ -49,7 +49,7 @@
   <div class="ui-banner ui-banner-neutral setup-demo-disclaimer" role="status">{{ icon('info', 20) }}<div class="grow">{{ t('wizard.try_it.model_note') }}</div></div>
   {% set message_url = permalink %}
   {% set message_text = t('wizard.guest_link.message_template', url=message_url, pin=pin, operator_first_name=message_operator_first_name, property_name=apartment.internal_name) %}
-  <div class="setup-demo-bubble">{% for part in message_text.split(message_url) %}{{ part }}{% if not loop.last %}{% if demo_state == 'none' %}<button class="setup-demo-message-link" type="submit" form="setup-create-demo">{{ message_url }}</button>{% else %}<a href="{{ setup_demo.guest_url }}" target="_blank" rel="noopener">{{ message_url }}</a>{% endif %}{% endif %}{% endfor %}</div>
+  <div class="setup-demo-bubble">{% for part in message_text.split(message_url) %}{{ part }}{% if not loop.last %}{% if demo_state == 'none' %}<button class="setup-demo-message-link" type="submit" form="setup-create-demo">{{ message_url }}</button>{% else %}<a data-turbo="false" href="{{ setup_demo.guest_url }}" target="_blank" rel="noopener">{{ message_url }}</a>{% endif %}{% endif %}{% endfor %}</div>
   {% if demo_state != 'registered' %}<p class="setup-wizard-instruction">{{ t('wizard.try_it.instructions') }}</p>{% endif %}
 </section>
 {% if demo_state == 'open' %}
@@ -78,7 +78,7 @@
 <form method="get" action="/apartments/{{ apartment.id }}/setup/try_it" class="inline">
   <button class="ui-btn ui-btn-secondary" type="submit">{{ t('wizard.try_it.check_again') }}</button>
 </form>
-<a class="{{ cta }}" href="{{ setup_demo.guest_url }}" target="_blank" rel="noopener">{{ t('setup_guide.try.open') }}</a>
+<a data-turbo="false" class="{{ cta }}" href="{{ setup_demo.guest_url }}" target="_blank" rel="noopener">{{ t('setup_guide.try.open') }}</a>
 {% else %}
 <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline setup-wizard-skip">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">

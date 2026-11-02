@@ -78,14 +78,14 @@
               <strong>{{ t('settings.account.users') }}</strong>
               <small>{{ t('settings.account.users_help') }}</small>
             </div>
-            <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/admin/customers">{{ t('settings.account.users_action') }}</a>
+            <a data-turbo="false" class="ui-btn ui-btn-secondary ui-btn-compact" href="/admin/customers">{{ t('settings.account.users_action') }}</a>
           </div>
           <div class="settings-action-row">
             <div>
               <strong>{{ t('users.incidents_link') }}</strong>
               <small>{{ t('settings.account.incidents_help') }}</small>
             </div>
-            <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/admin/incidents">{{ t('settings.account.incidents_action') }}</a>
+            <a data-turbo="false" class="ui-btn ui-btn-secondary ui-btn-compact" href="/admin/incidents">{{ t('settings.account.incidents_action') }}</a>
           </div>
         {% endif %}
       </div>

@@ -50,10 +50,10 @@
           <a class="{{ cta }}" href="/reservations/{{ fix_reservation_id }}#guests">{{ t('reports.detail.fix_stay') }}</a>
         {% endif %}
         {% if submission.receipt_pdf %}
-          <a class="{{ cta }}" href="/submissions/{{ submission.id }}/receipt.pdf">{{ t('reports.detail.download_receipt') }}</a>
+          <a data-turbo="false" class="{{ cta }}" href="/submissions/{{ submission.id }}/receipt.pdf">{{ t('reports.detail.download_receipt') }}</a>
         {% endif %}
         {% if submission.error_pdf %}
-          <a class="ui-btn ui-btn-secondary" href="/submissions/{{ submission.id }}/errors.pdf">{{ t('reports.detail.download_errors') }}</a>
+          <a data-turbo="false" class="ui-btn ui-btn-secondary" href="/submissions/{{ submission.id }}/errors.pdf">{{ t('reports.detail.download_errors') }}</a>
         {% endif %}
       </div>
     </div>

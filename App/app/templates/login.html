@@ -36,7 +36,7 @@
       {% endif %}
       <button class="auth-submit" type="submit">{{ t('login.staging.submit') }}</button>
       <p class="auth-acceptance">
-        {{ t('login.acceptance_before') }}<a href="/terms" target="_blank" rel="noopener noreferrer">{{ t('login.acceptance_terms') }}</a>{{ t('login.acceptance_between_terms_dpa') }}<a href="/dpa" target="_blank" rel="noopener noreferrer">{{ t('login.acceptance_dpa') }}</a>{{ t('login.acceptance_between_dpa_privacy') }}<a href="/privacy" target="_blank" rel="noopener noreferrer">{{ t('login.acceptance_privacy') }}</a>{{ t('login.acceptance_between_privacy_legal') }}<a href="/legal" target="_blank" rel="noopener noreferrer">{{ t('login.acceptance_legal') }}</a>{{ t('login.acceptance_after') }}
+        {{ t('login.acceptance_before') }}<a data-turbo="false" href="/terms" target="_blank" rel="noopener noreferrer">{{ t('login.acceptance_terms') }}</a>{{ t('login.acceptance_between_terms_dpa') }}<a data-turbo="false" href="/dpa" target="_blank" rel="noopener noreferrer">{{ t('login.acceptance_dpa') }}</a>{{ t('login.acceptance_between_dpa_privacy') }}<a data-turbo="false" href="/privacy" target="_blank" rel="noopener noreferrer">{{ t('login.acceptance_privacy') }}</a>{{ t('login.acceptance_between_privacy_legal') }}<a data-turbo="false" href="/legal" target="_blank" rel="noopener noreferrer">{{ t('login.acceptance_legal') }}</a>{{ t('login.acceptance_after') }}
       </p>
     </form>
   {% else %}
@@ -72,7 +72,7 @@
       {% endif %}
       <button class="auth-submit" type="submit">{{ t('login.submit') }}</button>
       <p class="auth-acceptance">
-        {{ t('login.acceptance_before') }}<a href="/terms" target="_blank" rel="noopener noreferrer">{{ t('login.acceptance_terms') }}</a>{{ t('login.acceptance_between_terms_dpa') }}<a href="/dpa" target="_blank" rel="noopener noreferrer">{{ t('login.acceptance_dpa') }}</a>{{ t('login.acceptance_between_dpa_privacy') }}<a href="/privacy" target="_blank" rel="noopener noreferrer">{{ t('login.acceptance_privacy') }}</a>{{ t('login.acceptance_between_privacy_legal') }}<a href="/legal" target="_blank" rel="noopener noreferrer">{{ t('login.acceptance_legal') }}</a>{{ t('login.acceptance_after') }}
+        {{ t('login.acceptance_before') }}<a data-turbo="false" href="/terms" target="_blank" rel="noopener noreferrer">{{ t('login.acceptance_terms') }}</a>{{ t('login.acceptance_between_terms_dpa') }}<a data-turbo="false" href="/dpa" target="_blank" rel="noopener noreferrer">{{ t('login.acceptance_dpa') }}</a>{{ t('login.acceptance_between_dpa_privacy') }}<a data-turbo="false" href="/privacy" target="_blank" rel="noopener noreferrer">{{ t('login.acceptance_privacy') }}</a>{{ t('login.acceptance_between_privacy_legal') }}<a data-turbo="false" href="/legal" target="_blank" rel="noopener noreferrer">{{ t('login.acceptance_legal') }}</a>{{ t('login.acceptance_after') }}
       </p>
     </form>
   {% endif %}
