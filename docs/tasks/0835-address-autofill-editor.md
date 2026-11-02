@@ -13,6 +13,8 @@ On the property editor (`_property_address_fields.html`) the host types a street
 - No new dependency, no third-party script (rule 2). Phone: fewer taps, one suggestion list under the street field.
 - ČÚZK terms, endpoint and a decisions.md line are still open (#731); the UI must degrade to plain fields when the endpoint returns `[]` or the switch is off.
 
+Alignment (2026-11-02): backend and baseline are 0834 (#731). Property copy-from on /apartments/new is 0839 (#734), runs after this; do not build it. Fewer editor fields: after a pick the seven address fields are filled (the host types only street and number), focus jumps to the next empty field, and the editor does not add steps or fields.
+
 ## 3. Files
 
 `App/app/static/ruian_suggest.js` (new, plain JS, loaded with defer by the partial), `App/app/templates/_ruian_suggest.html` (partial: script tag only), `App/app/templates/_property_address_fields.html` (include partial, add `data-ruian-suggest` to the street input), `App/app/static/app2.css` (one block `/* 0835 address suggest (v2) */`), new test `App/tests/test_0835_address_suggest_browser.py`. Do not edit app.js.
