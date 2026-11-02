@@ -2789,7 +2789,7 @@ STRINGS: Dict[str, str] = {
     "signup.email_ph": "ban@example.com",
     "signup.password": "Mật khẩu",
     "signup.password_hint": "Ít nhất 12 ký tự, gồm chữ hoa, chữ thường và một chữ số.",
-    "signup.onboarding_opt_out": "Không gửi mẹo thiết lập qua e-mail",
+    "signup.marketing_opt_in": "Gửi cho tôi mẹo và tin tức qua e-mail",
     "signup.submit": "Tạo tài khoản",
     "signup.have_account": "Đã có tài khoản?",
     "signup.login_link": "Đăng nhập",
