@@ -7,6 +7,7 @@
 {% block primary_action %}{% endblock %}
 {% block secondary_actions %}{% endblock %}
 {% block body %}
+<h1 class="sr-only cleaning-phone">{{ ct('title') }}</h1>
 <div class="head cleaning-head"><div><h1 class="big">{{ ct('title') }}</h1><p class="sub cleaning-phone">{{ ct('subtitle_short') }}</p></div><div class="cleaning-actions"><a class="btn soft" href="/cleaning/new" data-calendar-add data-cal-create-type="cleaning">+ {{ ct('add') }}</a><a class="btn soft" href="/cleaning/properties">{{ ct('settings') }}</a></div><a class="btn" href="/cleaning/shares">{{ ct('share_cleaner') }}</a></div>
 <div class="cleaning-page">
   {% include "_cleaning_screen.html" %}

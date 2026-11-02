@@ -585,7 +585,7 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
 /* 0814: phone host calendar is a full page of Airbnb-style day tiles with a bottom sheet. The cleaning page keeps its own look. */
 @media (max-width:767px) {
   .dashboard-calendar[data-readonly="false"] { border:0; background:transparent; box-shadow:none; padding-left:0; padding-right:0; }
-  .dashboard-calendar[data-readonly="false"] #calendar-title { display:none; }
+  .dashboard-calendar[data-readonly="false"] #calendar-title { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
   .dashboard-calendar[data-readonly="false"] .cal-heading select[data-cal-property] { width:100%; min-height:44px; border-radius:12px; box-sizing:border-box; }
   .dashboard-calendar[data-readonly="false"] #cal-property { width:100%; height:48px; min-height:48px; font-size:16px; border-radius:12px; box-sizing:border-box; }
   .dashboard-calendar[data-readonly="false"] .cal-body { border:0; background:transparent; border-radius:0; overflow:visible; }
@@ -638,10 +638,10 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
 .dashboard-calendar[data-readonly="false"] .cal-tile-chips { display:none; }
 @media (min-width:768px) {
   .dashboard-calendar[data-readonly="false"] { border:0; box-shadow:none; background:transparent; padding:0; }
-  .dashboard-calendar[data-readonly="false"] #calendar-title { display:none; }
+  .dashboard-calendar[data-readonly="false"] #calendar-title { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
   .dashboard-calendar[data-readonly="false"] .cal-body { border:0; background:transparent; overflow:visible; }
   .dashboard-calendar[data-readonly="false"] .cal-weekdays { position:sticky; top:var(--app-header-h, 0px); z-index:5; border:0; background:var(--bg, #f6f6f4); padding:0 0 6px; gap:8px; }
-  .dashboard-calendar[data-readonly="false"] .cal-weekdays span { font-size:12px; line-height:16px; padding:6px 2px; }
+  .dashboard-calendar[data-readonly="false"] .cal-weekdays span { font-size:12px; color:#5f5f5a; line-height:16px; padding:6px 2px; }
   .dashboard-calendar[data-readonly="false"] .cal-week { border:0; background:transparent; }
   .dashboard-calendar[data-readonly="false"] .cal-week-days { gap:8px; min-height:0; }
   .dashboard-calendar[data-readonly="false"] .cal-week-days .cal-day { display:flex; flex-direction:column; min-height:96px; border:1px solid var(--cal-line); border-radius:12px; background:var(--surface); overflow:hidden; }
