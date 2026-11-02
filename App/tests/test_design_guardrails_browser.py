@@ -415,6 +415,8 @@ def test_cleaning_card_facts_line_up_across_cards(wide_host, wide_base):
         page.route("**/static/cleaning.js*", lambda route: route.abort())
         response = page.goto(f"{wide_base}/cleaning?lang=en")
         assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
+        # 0875: the calendar replaces the list on /cleaning; show it here to measure the card CSS itself.
+        page.add_style_tag(content="#cleaning-list { display:block !important; }")
         page.wait_for_selector(".cleaning-section tr[id^='cleaning-'] td", timeout=5000)
         lefts = page.evaluate(
             """() => Array.from(document.querySelectorAll('.cleaning-section table')).map(t =>
