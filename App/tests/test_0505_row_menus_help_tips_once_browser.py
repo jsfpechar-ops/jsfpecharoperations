@@ -122,7 +122,9 @@ def test_row_menu_and_help_tip_still_work_after_two_runs(calendar_workspace, cal
         page.evaluate("() => window.UbyHost.initPage()")
         page.evaluate("() => window.UbyHost.initPage()")
         assert page.locator(HELP_TIP).count() > 0
-        page.evaluate("() => document.querySelectorAll('details').forEach(d => { d.open = true; })")  # v2: the tip sits in a closed section
+        # v2 shows help text inline inside <details> (tip button hidden), so lift one tip out of its section;
+        # its listeners stay bound from page load, which is what this test checks.
+        page.evaluate("() => { const t = document.querySelector('[data-help-tip]'); document.querySelector('main').prepend(t); }")
         page.locator(HELP_BUTTON + ":visible").first.click()
         assert page.locator(HELP_TIP + ".is-open").count() == 1
         page.keyboard.press("Escape")
