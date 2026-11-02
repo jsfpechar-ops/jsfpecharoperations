@@ -43,6 +43,7 @@ No other file may change.
    - Row actions (Edit, Upravit, buttons) share one height and one vertical centre line; the "···" menu button is the same height as its sibling buttons and its centre is within 1 px of theirs.
    - Help labels are short: "Open" / "Otevřít", not "Open help", because the help icon is right beside it (cs/en/vi/uk strings).
    Then grep templates for the same patterns on the other v2 pages and fix them in this PR.
+5c. **No descriptions or fine print on pages (owner 2026-11-02: "Wolt UX has no fine print or description on the main page").** Sweep every v2 page (Overview, Úklid, Pobyty, Pobyt, Ubytování, Nemovitost, Menu, plus any page migrated by 0780-0809 that is on main when you start). For each subtitle, helper paragraph, hint line, grey 12-13 px meta text and banner explanation under a title or above a list: (a) delete it if the title, button or field label already says it (AGENTS.md rule 9), (b) otherwise move it into the page's help "?" disclosure (`ui-how`), (c) keep only data (counts, dates, status) and error/empty-state lines the user must act on. Field-level hints stay only when validation needs them. Remove the now-unused i18n keys in all four languages (cs/en/vi/uk) and the test assertions that quoted the deleted copy. Report a table: page, text removed or moved, new location.
 5. **Cache key.** In `App/app/templates/base.html` bump `app2.css?v=` (now `20261102-0743`) to today's date plus this brief number. If you changed another stylesheet, bump its key too (`grep -rn "<name>.css" App/app/templates | head`). Commit.
 
 
@@ -68,6 +69,7 @@ Fixture caveat: the yellow demo banner and "UKÁZKA" sidebar chip appear only be
 - [ ] `grep -n "stays-how\|ov-how" App/app/static/app2.css` returns only rules still referenced by a template.
 - [ ] On the five v2 pages at 1024/1280/1440 (incl. the empty-account Overview): gap between adjacent buttons in a row >= 12 px; gap from a block-ending button to the next heading >= 24 px; empty-state line >= 16 px below the row above (getBoundingClientRect).
 - [ ] Sweep, every v2 page at 1024/1280/1440: no help toggle below its title (same top as the title +-4 px); no text node closer than 16 px to its card's edge; text-to-button gap >= 12 px; sibling row buttons and "···" have equal height and centre y (diff <= 1 px); no help label longer than one word.
+- [ ] Sweep: on every v2 page at 1280 the only text outside headings, labels, buttons, table/list data and the help disclosure is empty-state or error text (list the exceptions in the report); no paragraph of explanation is visible by default; unused i18n keys removed.
 - [ ] mockup browser test: 0 failed, 0 skipped. Screenshots attached.
 
 ## 8. Stop and ask
