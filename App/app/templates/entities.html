@@ -13,7 +13,7 @@
 {% block back_label %}{{ t('common.back') if next_path else t('entities.back') }}{% endblock %}
 {% block tabs %}{% endblock %}
 {% block body %}
-<div class="head"><div>{% if next_path %}<a class="crumb" href="{{ next_path }}">{{ t('common.back') }}</a>{% endif %}<h1 class="big">{{ t('entities.title') }}</h1></div></div>
+<div class="head"><div>{% if next_path %}<a class="crumb" href="{{ next_path }}">{{ t('common.back') }}</a>{% endif %}<h1 class="big">{{ t('entities.title') }}</h1><p class="sub">{{ t('entities.lede') }}</p></div></div>
 {{ onboarding_banner(onboarding) }}
 
 {% if edit_entity %}
