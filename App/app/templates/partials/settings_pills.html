@@ -1,0 +1,4 @@
+{#- 0789b: a row of pill tabs. `pills` is a list of {label, href, current}. -#}
+<nav class="settings-pills" aria-label="{{ aria_label }}">
+  {% for pill in pills %}<a class="settings-pill{% if pill.current %} is-current{% endif %}" href="{{ pill.href }}"{% if pill.current %} aria-current="page"{% endif %}>{{ pill.label }}</a>{% endfor %}
+</nav>
