@@ -70,7 +70,7 @@ def test_rows_hover_as_one_surface_and_use_compact_menus(stay_actions_host, stay
             menu.get_by_role("menuitem", name=_t(lang, "common.open"), exact=True).click()
             page.wait_for_url(f"**/reservations/{stay_id}?**")
         else:
-            phone_row = page.locator(f'.stays-phone a.row[href^="/reservations/{stay_id}?"]')
+            phone_row = page.locator(f'.stays-phone a.card.stay[href^="/reservations/{stay_id}?"]')
             assert phone_row.is_visible() and phone_row.bounding_box()["height"] >= 44
             _fits(page)
             phone_row.click()
@@ -217,7 +217,7 @@ def test_native_record_links_still_work_without_javascript(stay_actions_host, st
         page.goto(f"{base}/reservations?range=all&lang=en")
         _ready(page)
         record_link = (f'tr[data-href^="/reservations/{stay_id}?"] td a.stay-identity-link' if width >= 1024
-                       else f'.stays-phone a.row[href^="/reservations/{stay_id}?"]')
+                       else f'.stays-phone a.card.stay[href^="/reservations/{stay_id}?"]')
         # keyboard activation: the fixed phone tab bar may cover a row Playwright scrolls to the bottom edge
         page.locator(record_link).press("Enter")
         page.wait_for_url(f"**/reservations/{stay_id}?**")

@@ -98,26 +98,28 @@ BOX_OVERRIDES = {
     ".head h1": {"margin-left": "0px", "margin-right": "0px"},
     # stays/stay (0529): text- and data-dependent; fixture copy vs mockup demo copy
     # pill width follows its label ("Chybí 1 host" vs "Čeká na 2 ze 3 hostů")
-    "stays:.row .pill.p-warn@320": {"width": "121.891px"},
-    "stays:.row .pill.p-warn@390": {"width": "121.891px"},
+    # text-dependent: app copy vs phone v2 mockup demo copy (0750)
+    "stays:.mh .big, .head h1@320": {"width": "100.203px"},
+    "stays:.mh .big, .head h1@390": {"width": "100.203px"},
+    "stays:.stay .in b@320": {"width": "135.656px"},
+    "stays:.stay .in b@390": {"width": "135.656px"},
+    "stays:.stay .in small@320": {"width": "128.641px"},
+    "stays:.stay .in small@390": {"width": "128.641px"},
+    "stays:.stay .pill.p-warn@320": {"width": "101.891px"},
+    "stays:.stay .pill.p-warn@390": {"width": "101.891px"},
     # fixture property has no check-in/out time, so the facts grid has no time line
-    "stay:.facts@320": {"height": "139px"},
-    "stay:.facts@390": {"height": "139px"},
-    # police card text follows the stay state (fixture: ready to send; mockup: waiting for guests); phone v2 card padding (0729)
-    "stay:.card@320": {"height": "82px"},
-    "stay:.card@390": {"height": "82px"},
-    # stays rows are 2 px shorter: the fixture pill label is one short line ("Chybí 1 host"), the mockup's wraps differently
-    "stays:.grp + .list .row:not(:last-child)@320": {"height": "101px"},
-    "stays:.grp + .list .row:not(:last-child)@390": {"height": "101px"},
-    # cleaning phone (0549b): heights and pill width follow the English fixture copy; the fixture has no cleaning today, so .card is the empty today card
-    "cleaning:.card@320": {"height": "63px"},
-    "cleaning:.card@390": {"height": "63px"},
-    "cleaning:.list .row:has(.p-ok)@320": {"height": "102px"},
-    "cleaning:.list .row:has(.p-ok)@390": {"height": "102px"},
-    "cleaning:.row .t .pill.p-ok@320": {"width": "100.641px"},
-    "cleaning:.row .t .pill.p-ok@390": {"width": "100.641px"},
-    "cleaning:.actbar@320": {"height": "75px"},
-    "cleaning:.actbar@390": {"height": "75px"},
+    # text-dependent: app copy vs phone v2 mockup demo copy (0751). Values are the app's measured fixture sizes:
+    # the stay dates card has no check-in time line in the fixture; the guest rows and police card copy differ from the demo
+    "stay:.stay-dates@320": {"height": "135px"},
+    "stay:.stay-dates@390": {"height": "135px"},
+    "stay:.police-card@320": {"height": "90px"},
+    "stay:.police-card@390": {"height": "90px"},
+    "stay:.guests .row@320": {"height": "62px"},
+    "stay:.guests .row@390": {"height": "62px"},
+    "stay:.guests .row b@320": {"width": "117.656px"},
+    "stay:.guests .row b@390": {"width": "117.656px"},
+    "stay:.guests .row small@320": {"width": "117.656px"},
+    "stay:.guests .row small@390": {"width": "117.656px"},
 }
 
 
@@ -162,7 +164,18 @@ PAGES = [
             ".hs .pill": "today's stay cards exist only when a stay is due today; the phone mockup shows demo stays",
         },
     },
-    {"name": "cleaning", "path": "/cleaning", "view": "clean", "selectors": [".side .nav.on", ".head h1", ".head .sub", ".head .btn", "main h2", "main .card", "main table th", "main table td"], "phone_view": "uklid", "phone_selectors": [".tabs", ".tab.on", ".top .round", ".big", ".sub", ".grp", ".card", ".list .row:has(.p-ok)", ".row .t b", ".row .t small", ".row .t .pill.p-ok", ".actbar", ".actbar .btn"], "missing_ok": {"main table th": "below 1024 px the phone layout replaces the tables (0546)", "main table td": "below 1024 px the phone layout replaces the tables (0546)"}},  # pills follow the approved phone mockup (2026-11-01): scheduled green, the desktop mockup shows amber
+    {"name": "cleaning", "path": "/cleaning", "view": "clean", "selectors": [".side .nav.on", ".head h1", ".head .sub", ".head .btn", "main h2", "main .card", "main table th", "main table td"], "phone_mockup": PHONE_MOCKUP_V2, "phone_view": "uklid",
+        "phone_box_skip": {
+            ".hs .pill.p-ok": (["width"], "same label; CI's Manrope renders it 101 px, the mockup's font 98.75 px"),
+            ".kind": (["width"], "today's cleaning window text comes from the fixture"),
+            ".nm": (["width"], "shrink-to-fit width follows the fixture's property name"),
+            ".meta": (["width"], "shrink-to-fit width follows the fixture's next check-in text"),
+            ".promo": (["height"], "the app's share copy is longer than the mockup's and wraps at 320 px"),
+            ".promo b": (["height"], "the app's share copy is longer than the mockup's and wraps at 320 px"),
+            ".hl": (["height"], "the shared .hl@390 BOX_OVERRIDE is Overview's two-line headline; the cleaning headline is one line"),
+            ".list.plain .row:not(:has(.pill))": (["height"], "line-height normal: the app font gives 23 + 19 px lines, the mockup 23.8 + 19.6 px"),
+        },
+        "phone_selectors": [".tabs", ".tab.on", ".hl", ".hl-sub", ".hs .card", ".kind", ".av", ".nm", ".meta", ".hs .pill.p-ok", "h2.sec", ".list.plain .row:not(:has(.pill))", ".row:not(:has(.pill)) .t b", ".row:not(:has(.pill)) .t small", ".btn.line", ".promo", ".promo .pi", ".promo b", ".promo small"], "missing_ok": {"main table th": "below 1024 px the phone layout replaces the tables (0546)", "main table td": "below 1024 px the phone layout replaces the tables (0546)"}},  # pills follow the approved phone mockup (2026-11-01): scheduled green, the desktop mockup shows amber
     {
         "name": "properties",
         "path": "/apartments",
@@ -220,14 +233,12 @@ PAGES = [
             ".head h1", ".head .btn", ".head .btn.ghost", ".chip", ".chip.on",
             "main table th", "main table td", "main td small", "main .pill.p-ok", "main .pill.p-warn",
         ],
-        "phone_selectors": [
-            ".tabs", ".tab.on", ".top .round", ".big", ".chips .chip", ".chip.on", ".grp",
-            # a row that is not the last of its group, so it draws the row line (the fixture's Dnes group has one stay)
-            ".grp + .list .row:not(:last-child)", ".row .av", ".row .t b", ".row .t small", ".row .pill.p-ok", ".row .pill.p-warn", ".list .link",
-        ],
+        "phone_mockup": PHONE_MOCKUP_V2,
+        "phone_selectors": [".tabs", ".tab.on", ".mh .big, .head h1", ".stays-add", "h2.sec", ".card.stay", ".sav", ".stay .in b", ".stay .in small", ".stay .pill.p-ok", ".stay .pill.p-warn", ".card.stay .chev"],
         "missing_ok": {
             "main .pill.p-ok": "tone depends on data: the test fixture has no reported stay",
-            ".row .pill.p-ok": "tone depends on data: the test fixture has no reported stay",
+            ".stay .pill.p-ok": "tone depends on data: the test fixture has no reported stay",
+            ".stay .pill.p-warn": "tone depends on data: the test fixture has no reported stay",
         },
     },
     {
@@ -239,9 +250,11 @@ PAGES = [
             ".crumb", ".head h1", ".head .sub", ".head .btn", ".head .btn.ghost", "main h2", "main .card",
             "main table th", "main table td", "main .pill",
         ],
+        "phone_mockup": PHONE_MOCKUP_V2,
         "phone_selectors": [
-            ".tabs", ".top .round", ".big", ".sub", ".facts", ".facts b", ".facts small", "h2.sec",
-            ".list .row", ".row .ic", ".row .t b", ".row .t small", ".card", ".code", ".list .link", ".actbar .btn",
+            ".tabs", ".stay-top .round", ".host-stay-detail h1.big", ".sub-phone", ".stay-dates", ".stay-dates small",
+            ".stay-dates b", ".stay-dates .tot", "h2.sec", ".guests .row", ".guests .ic", ".guests .row b",
+            ".guests .row small", ".police-card", ".police-card b", ".stay-door-card", ".code",
         ],
         "missing_ok": {
             ".head .btn.ghost": "the ghost button shows only when a second action applies; depends on the stay's state",
@@ -250,6 +263,7 @@ PAGES = [
             "main table td": "the submissions table shows only after a submission; the seeded stay has none yet",
             ".code": "the door-code PIN shows only once a code is issued; the seeded stay has none yet",
             ".actbar .btn": "the phone action bar shows only when an action applies; the seeded stay has none yet",
+            ".stay-door-card": "the door-code card shows only once a door code is issued; the seeded stay has none yet",
             ".row .t small": "payment rows have no subtitle in the current copy; the mockup subtitles are demo copy",
         },
     },

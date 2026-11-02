@@ -205,6 +205,7 @@ func run() int {
 	mux.Handle("GET /dashboard/calendar", m.wrap("/dashboard/calendar", calendar.Handler(pool, os.Getenv, time.Now)))
 	mux.Handle("POST /payments/requests/new", m.wrap("/payments/requests/new", payments.RequestNewHandler(pool, os.Getenv, time.Now)))
 	mux.Handle("POST /payments/requests/{id}/send", m.wrap("/payments/requests/{id}/send", payments.RequestSendHandler(pool, os.Getenv, time.Now, onboarder)))
+	mux.Handle("GET /payments/qr/{file}", m.wrap("/payments/qr/{file}", payments.QRPNGHandler(pool, os.Getenv, time.Now)))
 	mux.Handle("/", m.wrap("/", notFound))
 
 	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
@@ -250,6 +251,9 @@ func goHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
 				Resolver:     net.DefaultResolver,
 				AllowPrivate: ical.AllowPrivate(os.Getenv),
 			})
+			if err == nil {
+				jobs.Ping(ctx, os.Getenv("UBYHOST_HEARTBEAT_ICAL_URL"), "ical")
+			}
 			return totals.Feeds, err
 		},
 		"push": func(ctx context.Context) (int, error) {
@@ -272,6 +276,9 @@ func goHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
 			summary, err := ubyport.Sweep(ctx, d, nil)
 			if summary.Submitted > 0 || summary.Failed > 0 {
 				slog.Info("ubyport sweep", "apartments", summary.Apartments, "submitted", summary.Submitted, "failed", summary.Failed)
+			}
+			if err == nil {
+				jobs.Ping(ctx, os.Getenv("UBYHOST_HEARTBEAT_URL"), "submit")
 			}
 			return summary.Submitted, err
 		},

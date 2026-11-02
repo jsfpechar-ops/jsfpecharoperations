@@ -359,6 +359,12 @@ WORDS = {
     "next_arrival_short": ["next check-in", "další příjezd"],
     "subtitle_short": ["Created from departures.", "Vzniká sám z odjezdů."],
     "show_more": ["Show %(count)s more", "Zobrazit další (%(count)s)"],
+    "headline_one": ["%(count)s cleaning today", "%(count)s úklid dnes"],
+    "headline_few": ["%(count)s cleanings today", "%(count)s úklidy dnes"],
+    "headline_many": ["%(count)s cleanings today", "%(count)s úklidů dnes"],
+    "headline_none": ["No cleaning today", "Dnes žádný úklid"],
+    "section_cleaner": ["Your cleaner", "Vaše uklízečka"],
+    "share_hint": ["They see this plan without an account", "Uvidí plán bez účtu"],
 }
 
 def translator(lang: str):

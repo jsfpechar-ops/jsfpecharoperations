@@ -138,6 +138,12 @@ CLEANING_WORDS: Dict[str, str] = {
     "subtitle": "Lịch dọn tự tạo từ ngày khách trả phòng. Người dọn xem lịch qua một đường liên kết.",
     "subtitle_short": "Tự tạo từ lượt trả phòng.",
     "show_more": "Xem thêm %(count)s",
+    "headline_one": "%(count)s lượt dọn hôm nay",
+    "headline_few": "%(count)s lượt dọn hôm nay",
+    "headline_many": "%(count)s lượt dọn hôm nay",
+    "headline_none": "Hôm nay không có lượt dọn",
+    "section_cleaner": "Người dọn của bạn",
+    "share_hint": "Họ xem lịch mà không cần tài khoản",
 }
 
 # validation_i18n.CS_MESSAGES key (the English sentence) -> Vietnamese.
@@ -1329,6 +1335,9 @@ STRINGS: Dict[str, str] = {
     "stay.detail.note.scheduled": "%(hours)s giờ sau khi mọi biểu mẫu đã khai đều hoàn tất",
     "stay.detail.note.manual": "chỉ thủ công",
     "stay.detail.facts.nights": "Đêm",
+    "stay.detail.facts.guests": "%(count)s khách",
+    "stay.detail.facts.guests.one": "%(count)s khách",
+    "stay.detail.facts.guests.few": "%(count)s khách",
     "stay.detail.guests.title": "Khách",
     "stay.detail.guests.lead": "khách chính",
     "stay.detail.guests.reported": "Đã khai báo",

@@ -187,7 +187,7 @@ def test_stays_guest_link_copy_is_status_independent_and_token_guarded(stay_acti
                     assert row.count() == 1
                     if width < 1024:
                         # phone: grouped rows with the pill; the row menu and the copy action live on the stay page (compact phone rule)
-                        phone_row = page.locator(f'.stays-phone a.row[href^="/reservations/{reservation_id}?"]')
+                        phone_row = page.locator(f'.stays-phone a.card.stay[href^="/reservations/{reservation_id}?"]')
                         assert phone_row.is_visible() and phone_row.locator(".pill").count() == 1, key
                         continue
                     status_pill = row.locator("td[data-card='badge'] .pill")

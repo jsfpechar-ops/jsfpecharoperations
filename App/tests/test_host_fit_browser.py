@@ -18,8 +18,8 @@ MEASURE = """() => {
   // v2 (0528): the computer table from 1024 px, the phone list below it.
   const view = innerWidth >= 1024 ? document.querySelector('.stays-desk') : [...document.querySelectorAll('.stays-phone')].pop();
   const v = view.getBoundingClientRect();
-  const rows = [...view.querySelectorAll('tbody tr, a.row')].map(tr => {
-    const items = [...tr.querySelectorAll('td, td a, td button, td .pill, td .deadline, a.row > *, a.row .pill')]
+  const rows = [...view.querySelectorAll('tbody tr, a.card.stay')].map(tr => {
+    const items = [...tr.querySelectorAll('td, td a, td button, td .pill, td .deadline, a.card.stay > *, a.card.stay .pill')]
       .filter(el => el.offsetParent !== null && el.getBoundingClientRect().width > 0 && !el.closest('.row-menu-panel') && !el.classList.contains('sr-only'));
     const rects = items.map(el => { const r = el.getBoundingClientRect();
       return {tag: el.tagName, cls: el.className, left: r.left, right: r.right, top: r.top, bottom: r.bottom,

@@ -475,6 +475,28 @@ body.v2 .stays-filter select,body.v2 .stays-filter input:not([type=hidden]){bord
   .stays-phone{display:block}
   .stays-phone-only{display:flex}
 }
+/* 0750 phone stays list (Airbnb style): values from docs/design/mockup/ubyhost-phone-v2.html, screen pobyty; below 1024 px only */
+@media (max-width:1023px){
+  body.v2 .stays-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:6px 0 24px}
+  body.v2 .stays-head h1.big{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.15;margin:0}
+  body.v2 .stays-head .stays-add{width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border:0;border-radius:50%;background:#f4f3ef;color:var(--ink);display:grid;place-items:center;flex:none;box-sizing:border-box}
+  body.v2 .stays-chips{display:flex;justify-content:flex-start;gap:10px;overflow-x:auto;scrollbar-width:none;margin:0 -20px 24px;padding:0 20px 8px}
+  body.v2 .stays-chips::-webkit-scrollbar{display:none}
+  body.v2 .stays-chips .chip.on{color:#fff}
+  body.v2 .stays-chips .chip{flex:none;border:0;background:#f4f3ef;color:var(--ink);font-size:15px;font-weight:600}
+  body.v2 .stays-phone h2.sec{margin-top:8px}
+  body.v2 .stays-phone .card.stay{display:flex;align-items:center;gap:16px;padding:16px;margin:0 0 14px;color:inherit;text-decoration:none}
+  body.v2 .stays-phone .sav{width:56px;height:56px;border-radius:50%;background:var(--accs);color:var(--acc-text);display:grid;place-items:center;font-weight:800;font-size:20px;flex:none}
+  body.v2 .stays-phone .in{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start}
+  body.v2 .stays-phone .in b{font-size:17px;font-weight:700;line-height:1.3;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  body.v2 .stays-phone .in small{color:var(--ink3);font-size:14px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  body.v2 .stays-phone .card.stay .pill{background:none;padding:0;border-radius:0;margin-top:6px;line-height:1.3;width:auto}
+  body.v2 .stays-phone .card.stay .pill.p-ok{color:var(--ok)}
+  body.v2 .stays-phone .card.stay .pill.p-warn{color:var(--warn)}
+  body.v2 .stays-phone .card.stay .pill.p-bad{color:var(--acc-text)}
+  body.v2 .stays-phone .card.stay .pill.p-n{color:var(--ink3)}
+  body.v2 .stays-phone .card.stay .chev{width:20px;height:20px;color:var(--ink3);flex:none}
+}
 @media (max-width:1023px){
   body.v2 .stays-filter select,body.v2 .stays-filter input:not([type=hidden]),body.v2 .stays-filter .ui-btn,body.v2 .stays-panel .ui-btn,body.v2 .stays-pager .ui-btn{min-height:44px;min-width:44px}
   body.v2 .stays-pager .ui-btn{display:inline-flex;align-items:center}
@@ -551,8 +573,6 @@ body.v2 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;ov
 .host-stay-detail .stay-head-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .host-stay-detail .stay-head-actions form{margin:0}
 .host-stay-detail .stay-pill-line{margin:0}
-/* mockup pobyt: 10px under the property line */
-@media (max-width:1023px){body.v2 .host-stay-detail .sub.sub-phone{margin-bottom:10px}}
 .host-stay-detail .stay-sep{margin-left:8px}
 @media (max-width:1023px){.host-stay-detail .head .crumb,.host-stay-detail .head>div:first-child>.sub{display:none}.host-stay-detail{display:flex;flex-direction:column}.host-stay-detail>.stay-top{order:-3}.host-stay-detail>.head{order:-2}.host-stay-detail>.head>div:first-child{flex:1 1 100%;min-width:0}}
 @media (min-width:1024px){.host-stay-detail .top,.host-stay-detail .sub-phone,.host-stay-detail .facts{display:none}}
@@ -611,13 +631,41 @@ body.v2 [data-copy].copied { color: #bf4f40; border-color: #ef6b58; }
 @media (prefers-reduced-motion: reduce){body.v2 [data-copy-state-icon],body.v2 [data-copy-state-icon] svg{animation:none !important;transition:none !important}}
 @keyframes host-copy-check{to{stroke-dashoffset:0}}
 /* 0529: phone ⋮ menu sits in the top row (right, next to the copy round button); one render, placed by CSS */
-@media (max-width:1023px){body.v2 .host-stay-detail{position:relative}body.v2 .host-stay-detail .stay-head-actions .row-menu{position:absolute;top:6px;right:64px;z-index:6}body.v2 .host-stay-detail .stay-head-actions .row-menu-trigger{width:44px;height:44px;border-radius:50%;background:#fff;border:1px solid var(--line);padding:0}}
+@media (max-width:1023px){body.v2 .host-stay-detail{position:relative}body.v2 .host-stay-detail .stay-head-actions .row-menu{position:absolute;top:8px;right:0;z-index:6}body.v2 .host-stay-detail .stay-head-actions .row-menu-trigger{width:44px;height:44px;border-radius:50%;background:#f4f3ef;border:0;padding:0;display:grid;place-items:center}body.v2 .host-stay-detail .stay-head-actions .row-menu-trigger svg{transform:rotate(90deg)}}
 /* 0529: phone guests heading takes the full row; the stay title keeps the mockup line height */
 @media (max-width:1023px){body.v2 .host-stay-detail .stay-guests-h h2.sec{flex:1 1 100%}body.v2 .host-stay-detail .head h1.big{line-height:1.15}}
 /* 0529: the phone action bar is the header CTA placed at the bottom by CSS (one form, one render) */
 @media (max-width:1023px){body.v2 .host-stay-detail .stay-head-cta{display:block;position:fixed;left:0;right:0;bottom:calc(84px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--line);padding:12px 20px;z-index:4}body.v2 .host-stay-detail .stay-head-cta form{display:block}body.v2 .host-stay-detail .stay-head-cta .btn{width:100%}}
 /* 0529 final: stay page table and phone row rules take the mockup line colour (--line), not ink */
 body.v2 .host-stay-detail table th,body.v2 .host-stay-detail table td,body.v2 .host-stay-detail .list .row{border-bottom-color:var(--line)}
+/* 0751: phone stay page = mockup pobyt (ubyhost-phone-v2.html). Below 1024 px only. */
+@media (max-width:1023px){
+body.v2 .host-stay-detail .stay-top{padding-top:8px;margin-bottom:12px}
+body.v2 .host-stay-detail .stay-top .round{width:44px;height:44px;border-radius:50%;background:#f4f3ef;border:0;display:grid;place-items:center}
+body.v2 .host-stay-detail h1.big{font-size:30px;line-height:1.15;font-weight:800;letter-spacing:-.02em;text-align:center;margin:0 8px 6px}
+body.v2 .host-stay-detail .sub-phone{text-align:center;color:var(--ink3);font-size:16px;margin:0 0 24px}
+body.v2 .host-stay-detail .stay-dates{display:grid;grid-template-columns:1fr 1fr;padding:0;border:0;border-radius:24px;margin:0 0 16px}
+body.v2 .host-stay-detail .stay-dates>div{padding:18px 20px}
+body.v2 .host-stay-detail .stay-dates>div+div{border-left:1px solid var(--line)}
+body.v2 .host-stay-detail .stay-dates small{display:block;color:var(--ink3);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+body.v2 .host-stay-detail .stay-dates b{display:block;font-size:20px;font-weight:800;letter-spacing:-.01em;margin-top:4px}
+body.v2 .host-stay-detail .stay-dates .tot{grid-column:1/-1;border-left:0;border-top:1px solid var(--line);padding:14px 20px;text-align:center;color:var(--ink2);font-size:15px;font-weight:600}
+body.v2 .host-stay-detail .guests .row{display:flex;align-items:center;gap:16px;min-height:56px;padding:10px 0;border-bottom:0}
+body.v2 .host-stay-detail .guests .ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex:none;font-weight:800;font-size:15px}
+body.v2 .host-stay-detail .guests .row .t{flex:0 1 auto}
+body.v2 .host-stay-detail .guests .ic.ok{background:var(--oks);color:var(--ok)}
+body.v2 .host-stay-detail .guests .ic.warn{background:var(--warns);color:var(--warn)}
+body.v2 .host-stay-detail .guests .ic svg.i{width:18px;height:18px;stroke-width:2.4}
+body.v2 .host-stay-detail .guests .row b{display:block;font-size:17px;font-weight:600}
+body.v2 .host-stay-detail .guests .row small{display:block;color:var(--ink3);font-size:14px;margin-top:0}
+body.v2 .host-stay-detail .police-card b{display:block;font-size:17px}
+body.v2 .host-stay-detail .police-card small{display:block;color:var(--ink3);font-size:14px;margin-top:4px}
+body.v2 .host-stay-detail .stay-door-card{display:flex;align-items:center;justify-content:space-between}
+body.v2 .host-stay-detail .stay-door-card .code{font-size:28px;font-weight:800;letter-spacing:.14em}
+body.v2 .host-stay-detail .stay-door-card small{display:block;color:var(--ink3);font-size:14px}
+body.v2 .host-stay-detail .stay-door-card .ic.acc{width:44px;height:44px;border-radius:50%;background:var(--accs);color:var(--acc2);display:grid;place-items:center}
+body.v2 .host-stay-detail .stay-head-cta .btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:50px;border-radius:12px;box-sizing:border-box}
+}
 
 /* 0720 step 0: Overview desktop and header regressions (0719 screenshots) */
 @media (min-width:1024px){
@@ -1019,7 +1067,13 @@ body.v2 .cleaning-page #calendar-title{font-size:16px;font-weight:700}
 
 /* 0546 phone layout: /cleaning is the phone mockup's Uklid screen below 1024 px */
 body.v2 .cleaning-phone{display:none}
-@media (max-width:1023px){body.v2 .cleaning-phone{display:block}body.v2 .top.cleaning-phone{display:flex}body.v2 .actbar.cleaning-phone{display:flex}body.v2 .cleaning-desk,body.v2 .cleaning-head .btn,body.v2 .cleaning-head .ov-links{display:none}body.v2 .cleaning-today b{display:block;font-size:18px}body.v2 .cleaning-meta{color:var(--ink3);font-size:14px}body.v2 .cleaning-pillrow{margin-top:10px}body.v2 .cleaning-page{padding-bottom:96px}body.v2 .cleaning-desk-only{display:none}body.v2 .cleaning-head h1:after{display:none}body.v2 .cleaning-today{display:block;margin-top:8px}body.v2 .cleaning-head>div{flex:1 1 100%;min-width:0}}
+@media (max-width:1023px){body.v2 .cleaning-phone{display:block}body.v2 .cleaning-desk,body.v2 .cleaning-head{display:none}body.v2 .cleaning-desk-only{display:none}}
+body.v2 .list.plain .row .t b,body.v2 .list.plain .row .t small{display:block}
+body.v2 .list.plain .row .t small{color:var(--ink3);font-size:14px;font-weight:400;margin-top:2px}
+body.v2 .list.plain .row .pill{margin-top:0}
 @media (max-width:767px){body.v2 .cleaning-page .cleaning-legend,body.v2 .cleaning-page #calendar{display:none}}
 @media (max-width:1023px){body.v2 .cleaning-more>summary{display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;box-sizing:border-box;margin-top:8px;list-style:none;cursor:pointer}body.v2 .cleaning-more>summary::-webkit-details-marker{display:none}}
 @media (max-width:1023px){body.v2 .cleaning-more:not([open])>:not(summary){display:none}}
+@media (max-width:1023px){body.v2 .cleaning-phone h1.hl{font-size:30px;line-height:1.15;font-weight:800;letter-spacing:-.02em;text-align:center;margin:0 8px 28px}body.v2 .cleaning-phone h2.sec{font-size:13px;font-weight:700;margin:26px 0 12px}}
+@media (max-width:1023px){body.v2 .cleaning-more>summary.btn{margin-top:0;padding:0;min-height:50px}}
+@media (max-width:1023px){body.v2 .cleaning-phone .list.plain .row .t b{font-size:17px}}
