@@ -39,3 +39,8 @@ Base: 41e86bd3 (branch claude/project-thread-56y70c). Nothing committed or stage
 2. Look at the 390 px screenshots of billing and operations.
 3. Measure the two taps on staging.
 4. Commit and open the PR after the above.
+
+## Run 4 (executor): Status: blocked
+- Shared with 0893 run 4 (see 0893-report.md): admin2.css tap/table/help fixes. `admin_operations.html`: design_lint T1 (`<link rel=stylesheet>`) still fails; `tip-label` added to catalog.
+- Suites last run: `7 failed, 69 passed in 104.12s`, all in `test_0893_admin_airbnb_browser.py` (4 px gap, admin_customer/customers) and the guardrail (14 findings). The 0894 tests (`test_0894_admin_airbnb_billing_ops_browser.py`, `test_funnel_ads_geometry_browser.py`, `test_0419_admin_billing_browser.py`) passed in that run.
+- Screenshots: NOT retaken. Not committed, not staged.
