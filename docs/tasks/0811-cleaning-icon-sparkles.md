@@ -1,6 +1,6 @@
 # 0811: One cleaning icon everywhere: Lucide `sparkles`
 
-Status: ready
+Status: review
 Depends on: none | Branch: claude/project-thread-0p5l4e (already checked out)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
