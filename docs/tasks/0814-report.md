@@ -26,6 +26,7 @@ Status: review
 3. `quote_test.go`: removed the bool founder argument from three direct `Quote(...)` calls (not named in §3 by line). The case count assert changed 1120 to 560, since the fixture product lost one factor of 2.
 4. `test_billing_order.py`: removed `monkeypatch.setattr(config, "FOUNDER_SLOTS", 10_000)` in `test_cenik_uses_the_billing_price_list`. The brief did not name it; without the removal the test raises AttributeError.
 5. Commit trailer: used `Co-Authored-By: Claude Haiku 5.5` (the attribution in this session names Haiku), not Opus 5.5 as the launch message said.
+- CI fix: bumped landing.css cache key to 20261102-0814 and refreshed the static manifest.
 
 ## Not verified
 - `tests/test_0412_pricing_browser.py` SKIPPED: `playwright` is not installed in App/.venv. AGENTS rule 7 requires 0 skipped browser tests and a 390 px screenshot for template and CSS changes (`billing_plan.html`, `landing.css`). Not run; not in §6.
