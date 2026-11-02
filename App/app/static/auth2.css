@@ -1,0 +1,33 @@
+/* 0892: Airbnb pattern for the auth shell (login, magic link, 2FA). Loaded only by auth_base.html. Light mode only. */
+body.auth-page .auth-title-row{position:relative;display:flex;align-items:flex-end;gap:8px;margin:0 0 24px}
+body.auth-page .auth-title-row .auth-title{margin:0;font-size:32px;line-height:1.2;font-weight:700;color:#222;letter-spacing:0}
+body.auth-page .auth-q{flex:0 0 auto;margin:0 0 8px}
+body.auth-page .auth-q>summary{list-style:none;position:relative;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;box-sizing:border-box;border-radius:50%;border:1px solid #717171;color:#222;font-size:12px;font-weight:700;line-height:1;cursor:pointer}
+body.auth-page .auth-q>summary::-webkit-details-marker{display:none}
+body.auth-page .auth-q>summary::after{content:"";position:absolute;inset:-13px}
+body.auth-page .auth-q[open]>summary{background:#222;border-color:#222;color:#fff}
+body.auth-page .auth-q>.auth-lede{position:absolute;left:0;right:0;top:calc(100% + 12px);z-index:5;margin:0;padding:16px;background:#fff;border:1px solid #e5e5e5;border-radius:12px;font-size:16px;line-height:1.5;color:#222}
+body.auth-page .auth-lede,body.auth-page .auth-help-note,body.auth-page .auth-steps,body.auth-page .auth-warn{font-size:16px;line-height:1.5;color:#222}
+body.auth-page .auth-steps{margin:0 0 24px;padding-left:20px}
+body.auth-page .auth-steps li+li{margin-top:12px}
+body.auth-page .auth-form>*+*,body.auth-page .auth-card>*+*{margin-top:12px}
+body.auth-page .auth-submit{min-height:48px;border-radius:8px;font-size:16px;font-weight:600}
+body.auth-page .auth-submit+*{margin-top:24px}
+body.auth-page .auth-field input{min-height:48px;font-size:16px;border-radius:8px}
+body.auth-page .auth-help>summary{min-height:44px;display:flex;align-items:center;font-size:16px}
+body.auth-page .auth-acceptance,body.auth-page .auth-foot-legal{font-size:14px;line-height:1.5;color:#6a6a6a}
+body.auth-page .auth-foot-links a{display:inline-flex;align-items:center;min-height:44px}
+body.auth-page .auth-lang-switch{display:flex;gap:12px;flex-wrap:wrap}
+body.auth-page .auth-lang-switch button{min-height:44px;padding:0 16px;border-radius:999px;border:0;background:#f2f2f2;color:#222;font-weight:600}
+body.auth-page .auth-lang-switch button.is-active{background:#222;color:#fff}
+body.auth-page .auth-codes-actions{display:flex;gap:12px;flex-wrap:wrap}
+body.auth-page .auth-codes-actions .btn{min-height:44px}
+@media (min-width:1024px){body.auth-page .auth-card{border:1px solid #e5e5e5;border-radius:12px;padding:32px}}
+body.auth-page .auth-card>.auth-title{font-size:32px;line-height:1.2;font-weight:700;margin:0 0 24px;color:#222}
+body.auth-page .auth-lang-switch button{font-size:16px}
+body.auth-page .auth-notice{font-size:16px;line-height:1.5}
+body.auth-page .auth-foot-legal *,body.auth-page .auth-foot-links a{font-size:14px;line-height:1.5}
+body.auth-page .auth-card .btn{font-size:16px}
+body.auth-page .auth-card .btn{min-height:44px}
+body.auth-page .auth-card code{font-size:16px;line-height:1.5}
+body.auth-page .env-banner,body.auth-page .env-banner *{font-size:16px;line-height:1.5}
