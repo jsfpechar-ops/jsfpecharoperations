@@ -81,8 +81,8 @@ def test_route_needs_the_token(apartment):
 def test_feed_survives_rename(apartment):
     slug = property_page.account_row(apartment)["slug"]
     token = booking_site.ical_token(apartment)
-    db.insert("property_slug_history", {"old_slug": "old-name-abcd", "apartment_id": apartment,
-                                         "created_at": db.utcnow()})
+    db.execute("INSERT INTO property_slug_history (old_slug, apartment_id, created_at)"
+               " VALUES (?, ?, ?)", ("old-name-abcd", apartment, db.utcnow()))
     client = TestClient(app)
     assert client.get(f"/p/old-name-abcd/{token}.ics").status_code == 200
     assert client.get(f"/p/{slug}/{token}.ics").status_code == 200
