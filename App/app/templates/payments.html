@@ -72,7 +72,7 @@
     <li data-service="{{ s.id }}">
       <strong>{{ s.name }}</strong> · {{ s.amount_czk }} {{ t('payments.czk') }}
       <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/payments?service={{ s.id }}#new-request">{{ t('payments.services.request') }}</a>
-      <form method="post" action="/payments/services/{{ s.id }}/delete" style="display:inline">
+      <form method="post" action="/payments/services/{{ s.id }}/delete" data-confirm data-confirm-message="{{ t('payments.services.remove_confirm') }}" style="display:inline">
         <button class="ui-btn ui-btn-quiet ui-btn-compact" type="submit">{{ t('payments.services.remove') }}</button>
       </form>
     </li>
