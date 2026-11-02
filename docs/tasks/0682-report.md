@@ -32,3 +32,25 @@ Reason for stopping: the brief's scope (reporting.reservation_progress, guest_is
 
 ## Owner steps left
 - None yet. The next executor should continue from step 1 with the calendar events query and route, then step 3 DB tests. The local Postgres setup in brief section 6 is still needed.
+
+## 0685: calendar progress, events query, route
+
+Commands (from `go/`): `gofmt -l .` empty, `go vet ./...` clean, `go build ./...` ok.
+`go test ./internal/calendar/ ./internal/ubyport/ ./cmd/... -count=1` tail:
+```
+ok  	.../go/internal/calendar	0.005s
+ok  	.../go/internal/ubyport	0.334s
+?   	.../go/cmd/ubyhost-web	[no test files]
+```
+Repo root `python3 scripts/context_lint.py`: `context lint: OK`.
+
+Files: `go/internal/calendar/progress.go` (urgency, progress, anchor, filing, deadline cell), `handler.go` (guest query, events, property list, route handler), `calendar_test.go` (urgency, anchor, progress statuses, key order), `go/internal/ubyport/collect.go` (one exported wrapper `ParseStoredUTC`), `go/cmd/ubyhost-web/main.go` (import and `GET /dashboard/calendar` line). Brief 0685 copied to `docs/tasks/`.
+
+Deviations and open points:
+- Guard: unauthenticated returns 401 `{"error":"unauthorized"}`, copying palette's 401. Python `require_login` returns a 303 redirect to /login for this route. Owner to decide which one the calendar keeps.
+- Completeness: `validation.GuestIsComplete` already covers stay dates and the signature check (`GuestIssues`), so no extra export was needed.
+- Guests load in one query (`reservation_id = ANY`), not per stay. A decrypt error returns 500. Data keys load lazily on the first encrypted field, not up front.
+- Column types assumed, not yet verified against the DB: `active` boolean, `date_from`/`date_to` text, `declared_guests`/`expected_guests_override` integer, `identity_verified_at` text. Brief 0686 must confirm.
+- Not run: DB tests (0686). The route is not exercised over HTTP.
+
+Last 5 lines of §7 acceptance: package builds, unit tests pass, route registered.
