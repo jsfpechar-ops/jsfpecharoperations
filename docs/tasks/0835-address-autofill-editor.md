@@ -4,7 +4,7 @@ Status: todo
 
 ## 1. Objective
 
-On the property editor (`_property_address_fields.html`) the host types a street and number, picks a suggestion, and street, č.p., č.o., PSČ, obec, část obce and okres fill in. Typing by hand always works. One shared JS component, reused by the setup wizard's address step (thread "Make onboarding wizard twice as fast").
+On the property editor (`_property_address_fields.html`) the host types a street and number, picks a suggestion, and street, č.p., č.o., PSČ, obec, část obce and okres fill in. Typing by hand always works. One shared JS component (owned by the wizard thread), reused by the setup wizard's address step (thread "Make onboarding wizard twice as fast").
 
 ## 2. Context
 
@@ -15,13 +15,14 @@ On the property editor (`_property_address_fields.html`) the host types a street
 
 ## 3. Files
 
-`App/app/static/app.js` (component `initAddressSuggest`), `App/app/static/app2.css` (one block `/* 0835 address suggest (v2) */`), `App/app/templates/_property_address_fields.html`, one new test `App/tests/test_0835_address_suggest_browser.py`.
+`App/app/templates/_property_address_fields.html` (include the wizard thread's partial next to the addr_* fields), `App/app/static/app2.css` (one block `/* 0835 address suggest (v2) */`, editor-only spacing), one new test `App/tests/test_0835_address_suggest_browser.py`. The component itself (`App/app/static/ruian_suggest.js`, partial, data-ruian-suggest contract) is built by the wizard thread on top of #731; do not build a second one.
 
 ## 4. Steps
 
-1. Component: input `[data-address-suggest]` on the street field; after 3 chars and 250 ms debounce, fetch the endpoint; show a list (role listbox, keyboard up/down/enter/esc, 44 px rows on phone). Pick fills the named fields (`data-fill="street|cp|co|zip|town|part|district"`), moves focus to the next empty field. No result or error: list hidden, nothing else changes. Works without JS (plain fields).
-2. Mark the editor's address fields with the data attributes; keep field names and ids.
-3. CSS: list under the field, 12 px gaps, no fine print, no help text.
+1. Wait until the component is on the branch (merge that branch). Keep addr_* ids/names unchanged.
+2. Add `data-ruian-suggest` to the street input and include the partial in the editor's address block.
+3. CSS: list under the field fits the two-column editor grid, 12 px gaps, no fine print.
+4. Test at 390/768/1280 with the endpoint mocked: typing shows the list, picking fills the seven fields, `[]` leaves fields untouched, list inside viewport.
 
 ## 5. Do not touch
 
