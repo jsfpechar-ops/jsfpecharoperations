@@ -331,18 +331,64 @@ def _claim_mails(reservation_id):
                     (reservation_id,))
 
 
-def test_manual_stay_with_guest_email_sends_one_claim_mail(host, monkeypatch):
+def test_manual_stay_with_email_and_guest_count_sends_one_claim_mail(host, monkeypatch):
     monkeypatch.setattr(mail, "mail_enabled", lambda: True)
     monkeypatch.setattr(mail_notify, "_entity_contact_email", lambda _id: "host@example.test")
     apartment_id = _create_property_and_return_id(host)
     response = host.post("/reservations", data=_manual_stay_form(
-        apartment_id, guest_email="Guest@Example.test"), follow_redirects=False)
+        apartment_id, guest_email="Guest@Example.test", expected_guests="3"), follow_redirects=False)
     assert response.status_code == 303
     stay = _latest_manual_stay(apartment_id)
     mails = _claim_mails(stay["id"])
     assert len(mails) == 1
     assert mails[0]["to_email"] == "guest@example.test"
     assert json.loads(mails[0]["payload"] or "{}").get("reply_to") == "host@example.test"
+    row = db.query_one("SELECT declared_guests FROM reservation_claim WHERE reservation_id = ?",
+                       (stay["id"],))
+    assert row["declared_guests"] == 3
+
+
+def test_manual_stay_with_email_but_blank_guest_count_sends_no_claim_mail(host, monkeypatch):
+    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+    apartment_id = _create_property_and_return_id(host)
+    response = host.post("/reservations", data=_manual_stay_form(
+        apartment_id, guest_email="guest@example.test", expected_guests=""), follow_redirects=False)
+    assert response.status_code == 303
+    stay = _latest_manual_stay(apartment_id)
+    assert stay is not None
+    assert _claim_mails(stay["id"]) == []
+    assert db.query_one("SELECT reservation_id FROM reservation_claim WHERE reservation_id = ?",
+                        (stay["id"],)) is None
+
+
+def test_manual_stay_is_created_when_start_claim_raises(host, monkeypatch):
+    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+
+    def boom(*_args, **_kwargs):
+        raise RuntimeError("mail down")
+
+    monkeypatch.setattr(claim, "start_claim", boom)
+    apartment_id = _create_property_and_return_id(host)
+    response = host.post("/reservations", data=_manual_stay_form(
+        apartment_id, guest_email="guest@example.test", expected_guests="2"), follow_redirects=False)
+    assert response.status_code == 303
+    assert _latest_manual_stay(apartment_id) is not None
+
+
+def test_calendar_quick_create_sends_no_claim_mail(host, monkeypatch):
+    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+    apartment_id = _create_property_and_return_id(host)
+    response = host.post(
+        "/reservations",
+        data=_manual_stay_form(apartment_id, guest_email="guest@example.test",
+                               expected_guests="2", calendar="1"),
+        headers={"accept": "application/json"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 201
+    stay = _latest_manual_stay(apartment_id)
+    assert stay is not None
+    assert _claim_mails(stay["id"]) == []
 
 
 def test_manual_stay_without_guest_email_sends_no_claim_mail(host, monkeypatch):
