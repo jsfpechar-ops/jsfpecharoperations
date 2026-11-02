@@ -68,3 +68,27 @@ Status: blocked. Done: steps 1 to 3. Left: step 4 (differences below need an own
 ## Owner steps left
 - Answer question 1 and question 2 (orchestrator), then run `cd App && PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py -k "cleaning or overview or menu" -q -rs --tb=short`.
 - Step 5 screenshots after step 4 is green.
+
+## Addendum 0732c (executor)
+
+Status: blocked. Done: steps 1 to 2, the `?v=` bump and manifest of step 3. Left: step 3 box overrides (blocked by a shared-key conflict, see Deviations), step 4 (screenshots not retaken, no `0732c` report tails for the final run).
+
+- Step 1: `body.v2 .cleaning-more>summary.btn{margin-top:0;padding:0;min-height:50px}` (max-width 1023 px) in `App/app/static/app2.css`. The `.btn.line` diff is gone.
+- Step 2: `body.v2 .cleaning-phone .list.plain .row .t b{font-size:17px}` (max-width 1023 px). The `.t b` diff is gone.
+- `App/app/templates/base.html` key `20261102-0732c`. `tests/static_versions.json` regenerated with `--write` (41 files).
+- Step 3 brief set: `82 passed in 52.49s` (0 skipped).
+- Mockup browser `-k "cleaning or overview or menu"`: `2 failed, 31 passed, 25 deselected in 45.13s`. Overview and menu pass. Failures: cleaning-320 (6 diffs), cleaning-390 (5 diffs).
+- Remaining cleaning diffs: `.kind` 87.36 vs 85.08, `.nm` and `.meta` 135.23 vs 173.44 (320 and 390), `.promo` 121.19 vs 98.98 and `.promo b` 46 vs 23.8 (320), `.list.plain .row:not(:has(.pill))` 74 vs 75.39 (320 and 390), `.hl` 34.5 (390, equal values, likely rounding).
+
+## Deviations
+- The addendum's overrides were not added. `BOX_OVERRIDES` is keyed by selector only, not by page. `.kind`, `.nm`, `.meta` and `.promo` are shared with overview and menu. Adding the cleaning values made overview (3 diffs at 320 and 390) and menu (2 diffs at 320) fail, so `App/tests/v2_mockup.py` was reverted to HEAD.
+- The addendum's `# cleaning phone v2 (0732)` comment does not exist. The nearest is the `# cleaning phone (0549b)` comment.
+- Commit trailer: `Co-Authored-By: Claude Opus 5.5` only, as the brief says.
+
+## Questions
+1. Should the overrides be page-scoped (a per-page key), or should the cleaning layout change for `.nm`, `.meta`, `.kind` and `.promo`?
+2. `.list.plain .row:not(:has(.pill))` (74 vs 75.39 at 320 and 390) is not in the addendum. Override or fix?
+
+## Owner steps left
+- Answer question 1 and question 2 (orchestrator), then rerun `cd App && PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py -k "cleaning or overview or menu" -q -rs --tb=short`.
+- Step 4 screenshots after that run is green.
