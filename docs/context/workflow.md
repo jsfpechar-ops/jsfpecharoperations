@@ -29,6 +29,7 @@ Closed by the latest owner-supplied AGENTS.md: Haiku 5.5 is the only executor. E
 - **Every chat, orchestrator or Haiku:** checkpoint at 60k tokens, hard stop at 100k. Agents cannot count tokens exactly, so also count calls: an orchestrator stops after 25 tool calls and 5 file reads, Haiku after 30 tool calls. At the checkpoint, stop new work and hand over (see below). Orchestrators aim for 40k.
 - **No audit and no full test suite** unless the owner asks in the current message. Run only the [test-map](test-map.md) row for the changed area. CI runs the rest.
 - **Cap every command's output:** `| tail -30`, `grep -m 20`, `head -50`. Never print a full traceback, log or diff.
+- Enforced by hook: `scripts/hooks/read_guard.py` blocks a Read of more than 350 lines without a `limit` (0810). Questions about a large file go to a Haiku subagent that returns only the answer.
 - The orchestrator's deliverable is a brief and, for non-Claude AIs, the executor prompt with the brief between `<<<BRIEF` and `BRIEF>>>`.
 - Read AGENTS.md, then status, then one routing row. Grep before you read; ranges of 150 lines or less. Fetch single files, never the whole repo.
 - Bugs: confirm the root cause with at most 5 greps and 2 range reads. Fixes of 40 lines or fewer go into the brief as an exact diff; bigger ones as files, change and test to add.

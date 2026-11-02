@@ -105,8 +105,6 @@ def pricing(request: Request):
             **signup.public_context(request),
             "rates": PUBLIC_RATES,
             "start": start,
-            # 0416: places left at the founder price, only while billing is on.
-            "founder_left": billing.founder_slots_left() if billing.enabled() else None,
         },
     )
 

@@ -393,7 +393,7 @@ def _delete_workspace(owner_id: int) -> None:
         cur.execute("DELETE FROM lock_account WHERE owner_user_id = ?", (owner_id,))
         # Brief 0411: the billing row goes with the account. UbyHost's own
         # invoices are accounting records kept 10 years: they only lose the
-        # link (snapshot_json keeps the buyer as printed). A founder slot stays used.
+        # link (snapshot_json keeps the buyer as printed).
         cur.execute("DELETE FROM billing_account WHERE owner_user_id = ?", (owner_id,))
         # Brief 0443/0444: the operator's discount and the analytics snapshot go
         # with the billing row; the derived monthly snapshot is rebuilt from

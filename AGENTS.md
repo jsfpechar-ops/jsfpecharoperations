@@ -14,6 +14,7 @@ Read this file, then [status](docs/context/status.md). Open nothing else unless 
 - **100k tokens per chat, orchestrator or Haiku.** Checkpoint at 60k: stop new work and hand over. Also stop after 25 tool calls (Haiku 30). What happens next: [at the cap](docs/context/workflow.md#when-haiku-reaches-the-cap).
 - **No audit and no full test suite** unless the owner asks in the current chat. Run only the [test-map](docs/context/test-map.md) row for what changed. CI runs the rest.
 - End every command with `| tail -30` (or `head -50`). Never print a full log.
+- A hook blocks whole-file reads over 350 lines: grep, then read a range of 150 lines or fewer. Owner override: `ALLOW_FULL_READ=1`.
 
 ## Hard rules (full text: [rules](docs/context/rules.md))
 

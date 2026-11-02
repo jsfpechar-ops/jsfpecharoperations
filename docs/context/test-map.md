@@ -38,5 +38,6 @@ Run only the row for the area you changed, from `App/`, always ending `-q --tb=s
 | Booking site (rules, checkout, webhook, iCal) | `test_booking_site.py test_property_page.py test_stripe_connect.py` |
 | Deploy scripts, Caddyfile, compose | `shellcheck -S error deploy/lightsail/scripts/*.sh`; CI job `caddy` validates both Caddyfiles with the compose caddy service |
 | A module with no row | `tests/test_<module name>*.py`; none exists: `-k <module name>` |
+| Read guard hook (`scripts/hooks/`, `.claude/settings.json`) | `tests/test_read_guard_hook.py` |
 
 A row missing or wrong: the orchestrator fixes this table in the same brief.
