@@ -194,6 +194,24 @@ def test_the_scan_button_is_a_44px_target(base, world, browser, width):
         context.close()
 
 
+@pytest.mark.parametrize("width", [390, 1280])
+def test_the_scan_hint_sits_below_the_button_inside_the_card(base, world, browser, width):
+    context, page = _page(browser, base, world, width)
+    try:
+        _goto_form(page, base, world)
+        hint = page.locator("#ocr-scan-hint")
+        assert hint.is_visible()
+        button = page.locator("#ocr-scan label[for='ocr-scan-file']").bounding_box()
+        box = hint.bounding_box()
+        card = page.locator("[data-guest-step]").first.bounding_box()
+        assert box["y"] - (button["y"] + button["height"]) >= 12
+        assert box["x"] >= card["x"] - 0.5
+        assert box["x"] + box["width"] <= card["x"] + card["width"] + 0.5
+        assert box["y"] + box["height"] <= card["y"] + card["height"] + 0.5
+    finally:
+        context.close()
+
+
 @pytest.mark.parametrize("width", [390])
 def test_a_chosen_photo_fills_the_surname(base, world, browser, monkeypatch, width):
     import io
