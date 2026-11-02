@@ -18,7 +18,16 @@ Executor: Haiku 5.5. Branch: task/0819-booking-site-host-setup (worktree /home/c
 
 - Step 3 command: `.venv/bin/python -m pytest tests/test_host_i18n.py tests/test_no_em_dashes.py -q --tb=short -x`. Result: 1 failed (`no such table: apartment` in `test_language_endpoint_sets_cookie_and_rejects_open_redirects`), 2 passed. Not rerun for steps 4 to 7 (no test-map row required before step 9).
 - Steps 4 to 7: design lint OK after step 6.
-- Steps 8 and 9: not started.
+- Step 8: `App/tests/test_booking_setup.py` (7 tests) and `App/tests/test_booking_site_host_browser.py` created; `booking-site` added to `ROUTES` in `App/tests/test_design_guardrails_browser.py`.
+- §6 ruff (E9,F63,F7,F82,F401,F841) on the four files: All checks passed.
+- §6 run 2 (non-browser, 15 files, with `test_host_i18n.py` in the same call): 150 passed, 0 failed. The `no such table: apartment` question is answered: it only fails when `test_host_i18n.py` runs alone.
+- §6 run 3 (browser, `UBYHOST_REQUIRE_BROWSER=1`, `UBYHOST_BROWSER_EXECUTABLE=/usr/bin/google-chrome`): `test_design_guardrails_browser.py` + `test_host_geometry.py`: 13 passed, 0 skipped. `test_booking_site_host_browser.py` FAILED at 390 px (twice): `controls shorter than 44px at 390px`, `INPUT non_refundable / flexible / moderate` at 20.25 px high (the policy radio buttons). No 390 px screenshot was written because the test stops before it.
+- `python3 scripts/context_lint.py`: OK. `design_lint` not rerun in this session (last OK after step 6).
+- Diff vs `task/0818-booking-site-public-page`: the 8 files from steps 1 to 7 plus the 3 test files from step 8 (no §5 file touched).
+
+## Owner steps left
+
+- Decide the 390 px fix: the policy radio buttons in `App/app/templates/booking_site_setup.html` are 20 px high (below 44 px). Either enlarge their label targets in the page CSS or relax §7 for radios. Then rerun the browser command and take the screenshot.
 
 ## Deviations
 
