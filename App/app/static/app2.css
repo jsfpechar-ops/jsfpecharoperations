@@ -1179,6 +1179,9 @@ body.v2 .entity-form .action-group input,body.v2 .entity-add .action-group input
 @media (max-width:1023px){body.v2 .entities-page .ui-table-stack td.row-actions{justify-content:flex-start;flex-wrap:wrap;gap:8px;text-align:left}}
 /* 0787d: entities h1 keeps its ? on the last line; invoice account inputs are full width; the phone prefix is one 44 px box */
 body.v2 .head h1.big:has(> .help-tip){display:flex;align-items:last baseline;flex-wrap:nowrap;gap:8px;min-width:0}
+body.v2 .entity-form .account-parts input,body.v2 .entity-add .account-parts input{width:100%;min-width:0;max-width:none;box-sizing:border-box}
+body.v2 .entity-form .operator-phone-prefix,body.v2 .entity-add .operator-phone-prefix{display:inline-flex;align-items:center;flex:0 0 80px;width:80px;height:44px;min-height:44px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:0 10px;gap:2px;box-sizing:border-box}
+body.v2 .entity-form .operator-phone-prefix input.operator-phone-code[type=text],body.v2 .entity-add .operator-phone-prefix input.operator-phone-code[type=text]{flex:1 1 auto;width:100%;min-width:0;max-width:none;min-height:0;height:auto;padding:0;margin:0;border:0;border-radius:0;background:transparent;color:inherit;font:inherit;text-align:center;box-shadow:none;outline:none}
 /* 0781 privacy requests */
 body.v2 .pr-lane{max-width:720px}
 body.v2 .pr-lane>.card{margin:0 0 16px}
