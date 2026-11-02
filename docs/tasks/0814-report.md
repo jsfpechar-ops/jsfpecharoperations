@@ -167,3 +167,25 @@ Test tails:
 
 Deviations: nowrap removed (see b). Three tips in c, not one. Test runs rewrote about 239 screenshot PNGs under docs/tasks/ (screenshots-0410 and others), which show in git status. Not restored (restore is forbidden to me). Check before committing.
 Left: guest-guide 320 px tip gap (label flex/tip placement); full set re-run; screenshots cleanup.
+
+## Round 7
+
+Status: review (no commit, no PR: the caller said not to commit or push)
+
+Files changed (working tree only, not committed):
+- App/app/static/app2.css: deleted the two `body.v2 :is(h1,h2,label):has(>.help-tip)` lines (17a). Added in the 0812 block `body.v2 .tip-nowrap{white-space:nowrap}`, `body.v2 .tip-nowrap .help-tip-body{white-space:normal}` and `body.v2 .ui-section-h>h2:has(>.help-tip){display:flex;align-items:last baseline}`.
+- App/app/templates/_ui_layout.html: `ui_section` renders the title split on its last space when `tip` is set (17b). The last word is in `<span class="tip-nowrap">`, and the tip follows it directly inside the h2. Without a tip the markup is unchanged.
+
+Test tails:
+- §16 set (`test_0800_v2_remaining_pages_browser.py test_onboarding_wizard_browser.py test_property_create_browser.py test_host_help_browser.py test_guest_guide*.py`), first run after 17a+b with the tip inside the nowrap span: `1 failed, 284 passed, 57 skipped in 263.83s`. Failure: `test_help_tip_is_small_and_inline[guest-guide]`, "no label before it" at all widths.
+- §16 set after the fix: `285 passed, 57 skipped in 255.28s (0:04:15)`. 0 failed.
+- §17c `pytest tests -q -k "wizard_polish or label or help_tip or field"`: `1 failed, 287 passed, 14 skipped, 5331 deselected in 161.48s (0:02:41)`. Failure: `tests/test_endtoend.py::test_26_a_field_error_is_reported_back_as_correctable` (KeyError: 'id'), the known pre-existing red on main. Not touched.
+
+Deviations:
+- 17b markup changed: the tip is outside the `tip-nowrap` span, not inside it. The test's label check needs the tip's previous element sibling, or an H1/H2/LABEL parent, and a span wrapper defeats both. The glue is now the flex rule above, scoped to `.ui-section-h>h2` (not the broad rule round 6 removed).
+- The 17b CSS for `.tip-nowrap .help-tip-body` is kept as written, though it no longer matches any element.
+- No commit, no PR, no push (caller instruction). 17d and the static-version bump were not done.
+- Skips: all 57 skips in the §16 set (and 14 in the §17c run) are reported by pytest as "browser not required" in test_onboarding_wizard_browser.py. I did not check the skip reasons for every file, so the executor's "0 skipped" rule is not confirmed for the whole set.
+- Screenshots were not taken (no UI screenshot step in this brief).
+
+Owner steps left: none for the executor. Orchestrator: decide on the test_26 red (pre-existing on main) and on the skip count before the 17d commit.
