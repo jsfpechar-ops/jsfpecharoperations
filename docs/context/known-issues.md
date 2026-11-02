@@ -97,7 +97,7 @@
 - K-CHECKIN: form alert fix #435; undeployed.
 - K-MORE: #436 undeployed.
 - K-PK0290: passkey fix open.
-- K-CF01: mid-session challenge: see CLOUDFLARE Rule 3.
+- K-CF01: see CLOUDFLARE Rule 3.
 
 
-PG: 0455–0456 incomplete. OCR rate unmeasured.
+PG: 0455–0456 incomplete.
