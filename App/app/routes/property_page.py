@@ -280,8 +280,13 @@ async def property_page_book(request: Request, slug: str):
     )
 
 
-def _book_error(slug: str, kind: str) -> Response:
-    return RedirectResponse(f"/p/{slug}?book={kind}#book", status_code=303)
+def _book_error(slug: str, kind: str, lang: str = "cs", form=None) -> Response:
+    query = {"book": kind, "lang": lang}
+    for name in ("date_from", "date_to", "guests"):
+        value = str((form or {}).get(name) or "").strip()[:10]
+        if value:
+            query[name] = value
+    return RedirectResponse(f"/p/{slug}?{urlencode(query)}#book", status_code=303)
 
 
 @router.post("/p/{slug}/checkout")
@@ -297,6 +302,7 @@ async def property_page_checkout(request: Request, slug: str):
     if apartment_id is None:
         return Response(status_code=404)
     form = await request.form()
+    lang = "cs" if str(form.get("lang") or "") == "cs" else "en"
     q = booking_site.quote(
         apartment_id,
         str(form.get("date_from") or "").strip(),
@@ -304,24 +310,26 @@ async def property_page_checkout(request: Request, slug: str):
         _guests(form.get("guests")),
     )
     if q["error"]:
-        return _book_error(slug, q["error"])
+        return _book_error(slug, q["error"], lang, form)
     name = " ".join(str(form.get("guest_name") or "").split())
     email = str(form.get("guest_email") or "").strip()
     if len(name) < 3:
-        return _book_error(slug, "bad_name")
+        return _book_error(slug, "bad_name", lang, form)
     if not _EMAIL.fullmatch(email):
-        return _book_error(slug, "bad_email")
+        return _book_error(slug, "bad_email", lang, form)
     if str(form.get("terms") or "") != "1":
-        return _book_error(slug, "terms")
-    lang = "cs" if str(form.get("lang") or "") == "cs" else "en"
+        return _book_error(slug, "terms", lang, form)
+    # A page opened before the terms text changed must not be accepted.
+    if str(form.get("terms_version") or booking_site.TERMS_VERSION) != booking_site.TERMS_VERSION:
+        return _book_error(slug, "terms", lang, form)
     result = booking_checkout.start(apartment_id, slug, q, guest_name=name,
                                     guest_email=email, lang=lang)
     if result.get("error"):
-        return _book_error(slug, result["error"])
+        return _book_error(slug, result["error"], lang, form)
     response = render(
         request,
         "property_page_pay.html",
-        {"page": _page_context(apartment_id) or {}, "show_nav": False, "lang": "en",
+        {"page": _page_context(apartment_id) or {}, "show_nav": False, "lang": lang,
          "pay_url": result["url"], "total": q["total_czk"]},
     )
     response.headers["Cache-Control"] = "no-store"
@@ -354,6 +362,6 @@ def property_page_thanks(request: Request, slug: str):
     """Stripe's success_url. Shows no booking data: the confirmation e-mail
     (0816) is the record."""
     response = render(request, "property_page_booked.html",
-                      {"show_nav": False, "slug": slug, "lang": "en"})
+                      {"show_nav": False, "slug": slug, "lang": _page_lang(request)})
     response.headers["X-Robots-Tag"] = "noindex"
     return response
