@@ -1295,6 +1295,7 @@ def apartments_list(request: Request):
         "SELECT a.*, e.name AS entity_name, "
         "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds, "
         "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1 AND f.last_status = 'error') AS feed_errors, "
+        "  (SELECT COUNT(*) FROM reservation r WHERE r.apartment_id = a.id AND r.status = 'active' AND r.source = 'manual') AS manual_stays, "
         "  (SELECT COUNT(*) FROM reservation r WHERE r.apartment_id = a.id AND r.status = 'active') AS reservations "
         "FROM apartment a LEFT JOIN legal_entity e ON e.id = a.legal_entity_id "
         f"WHERE a.archived_at IS NULL AND {db.null_safe_eq('a.owner_user_id')} ORDER BY a.internal_name",
@@ -1339,6 +1340,7 @@ def apartments_list(request: Request):
         base = f"/apartments/{apartment_id}"
         has_feeds = int(apartment["feeds"] or 0) > 0
         feed_error = int(apartment["feed_errors"] or 0) > 0
+        has_manual_stays = int(apartment["manual_stays"] or 0) > 0
         police_bad = bool(item["issues"]) or apartment_id in auth_failed
         lock_ok = bool(apartment["lock_id"])
         item["chips"] = [
@@ -1349,7 +1351,11 @@ def apartments_list(request: Request):
             },
             {
                 "key": "calendar",
-                "state": "ok" if has_feeds and not feed_error else "bad",
+                "state": (
+                    "ok"
+                    if has_feeds and not feed_error
+                    else "off" if not has_feeds and has_manual_stays else "bad"
+                ),
                 "href": f"{base}?view=bookings#calendars",
             },
             {

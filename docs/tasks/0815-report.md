@@ -1,47 +1,24 @@
-# 0815 report: booking site checkout
+# 0815 report (executor)
 
-Status: review. Steps 1 to 10 done, section 6 run passes, section 7 ticked. Not pushed, no PR.
+Status: blocked
+Done: steps 1 and 2 (JS, CSS, no template or version change). Step 3 (tests, screenshots) partly done. Left: see Open items.
 
-## Files changed (vs local task/0814-booking-site-model)
-`origin/task/0814-booking-site-model` does not exist locally, so the diff uses the local 0814 branch. `git diff --stat task/0814-booking-site-model`:
-- App/app/booking_checkout.py (new, 124 lines)
-- App/app/host_i18n.py (EN and CS keys)
-- App/app/routes/property_page.py (/book uses quote; /checkout and /thanks added; /request removed)
-- App/app/templates/property_page.html, property_page_book.html, property_page_booked.html, property_page_pay.html (new)
-- App/tests/test_booking_checkout.py (new, step 10, 185 lines)
-- App/tests/test_booking_widget.py (step 9)
-- docs/tasks/0815-booking-site-checkout.md (Status line only)
-- docs/tasks/0815-report.md
-Total: 11 files, 530 insertions, 98 deletions.
+## Files changed (not staged, not committed)
+- `App/app/static/dashboard-calendar.js`: `hostCleaning` flag; `phoneDots()` and `tiles()` now true for the host cleaning page (not the read-only one); cleaning tags in the month tile (`.cal-clean-tag`, `.cal-clean-chip`, `has-cleaning`); bookings dropped from week and gantt on the host cleaning page; the day sheet and day dialog list only cleanings; the add button reads `labels.add_cleaning`.
+- `App/app/static/dashboard-calendar.css`: every `[data-cleaning="false"]` selector became `[data-readonly="false"]` (same specificity; host dashboard unchanged, host cleaning page now gets the Airbnb rules); `/* 0815 */` block at the end (tags, chips, hides `#cleaning-list` and `.cleaning-legend` on the host cleaning page).
+- `App/tests/test_cleaning_browser.py`: two tests appended (`test_phone_cleaning_calendar_tags_only`, `test_desktop_cleaning_calendar_tags_and_side_panel`). Not green.
 
-## Commands
-- Section 6 ruff (last lines):
-  All checks passed!
-- Section 6 pytest, file order as instructed (test_booking_site.py first), last 5 lines:
-  ```
-    /home/claude/jsfpecharoperations/App/.venv/lib/python3.13/site-packages/starlette/testclient.py:518: DeprecationWarning: Setting per-request cookies=<...> is being deprecated, because the expected behaviour on cookie persistence is ambiguous. Set cookies directly on the client instance instead.
-      return super().request(
+Not changed: templates, `?v=`, `static_versions.json` (skipped per brief).
 
-  -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-  103 passed, 1 warning in 4.46s
-  ```
-- Step 10 `tests/test_booking_checkout.py -q --tb=short -x`: 11 passed.
-- Step 9 `tests/test_booking_widget.py -q --tb=short`: 6 passed.
+## Test results (UBYHOST_REQUIRE_BROWSER=1, skipped: none)
+- `test_dashboard_phone_browser.py`, `test_dashboard_calendar_browser.py`, `test_0199_phone_geometry_browser.py`: `1 failed, 26 passed`. The failure is `test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place` at line 507, a step on the cleaning page that expects a cleaning bar in week view. Expected from the new design; test not yet updated.
+- `test_cleaning_browser.py` (last full run, before the two new tests): 15 failed, 35 passed. Failing cleaning tests: `test_calendar_and_large_list_geometry_and_filtering` (6), `test_fractional_checkout_and_same_day_cleaning_geometry` (2), `test_missing_code_is_omitted_from_host_list_and_calendar_dialog`, `test_host_crud_and_drag_change_cleanings_without_moving_bookings`, `test_calendar_popup_types_create_in_place_and_localize_validation`, `test_missing_property_hours_keep_full_day_cleaning_marker_without_saved_defaults`, `test_cleaning_calendar_can_create_stay_and_refresh_turnover_in_place`, `test_cleaning_chip_label_starts_with_cleaning`. All use bars, labels or the visible list on the host page.
+- New phone test: fails in `loaded()`. Cause: the host cleaning page on phone has `section.dashboard-calendar` at `display:none`. An untouched HEAD copy shows the same, so this is pre-existing.
 
-## Section 7
-- [x] The section 6 test run passes (103 passed).
-- [x] `grep -n '"/p/{slug}/request"' App/app/routes/property_page.py` prints nothing.
-- [x] `RedirectResponse` in property_page.py: only local `/p/` targets (lines 38 and 198).
-- [x] `git diff --stat` against the 0814 base lists only the section 3 files (see above). Against origin/main it also lists the 0814 files, because this branch sits on 0814.
-
-## Deviations
-- Steps 8 and 9 were finished by the orchestrator, not by this executor:
-  - Pre-0814 price fallback in `booking_site.settings` (commit b7a6ba9 "0814 fix: settings read the pre-0814 page price"). This is why the step 9 test now passes.
-  - The quote page shows "nightly x nights" (commit 2ccf55c).
-- The earlier blocked report is replaced by this one.
-
-## Questions
-- None.
-
-## Owner steps left
-- None from this executor. The brief's Owner steps section was not reviewed here.
+## Open items (owner or orchestrator decision)
+1. Phone host cleaning page hides the whole calendar at HEAD (cards only). Brief 0815 section 2 assumes it is visible. Find and override that hide rule, or confirm the owner wants the phone cleaning page as cards. Not found in the CSS within budget.
+2. Update the 8 cleaning test groups above to the tag UI (tags instead of `.cal-cleaning-label` or bars; list hidden on the host page). Range select (long press) at 390 is not tested.
+3. Screenshots `docs/tasks/screenshots-0814/cleaning-*.png` not produced. Test runs with `UBYHOST_TASK_SHOTS=1` also overwrote the tracked `calendar-*.png` files in that folder. Restore them with `git checkout -- docs/tasks/screenshots-0814/` unless 0832 wants its new ones.
+4. Table actions: `_cleaning_table.html` has only the edit link per row. Calendar details open `event.url` for cleanings, so the list is hidden on the host page without losing an action. Not checked against the server URL.
+5. Year view on the host cleaning page still counts bookings (not drawn, not in brief).
+6. Concurrent edits: 0832 changed `dashboard.html`, `_dashboard_calendar.html` and `test_dashboard_calendar_browser.py` in the same checkout. My CSS selector switch touched only `dashboard-calendar.css`.

@@ -1,18 +1,44 @@
 {% extends "host_page.html" %}
+{% set v2 = true %}
 {% set nav = 'housebook' %}
 {% set how_key = 'housebook' %}
 {% set body_kind = 'list' %}
 {% from "_components.html" import row_menu_begin, row_menu_end, row_open, housebook_csv_menu, property_identity with context %}
-{% from "_ui_layout.html" import ui_section_tabs with context %}
+{% from "_icons.html" import icon with context %}
 {% set housebook_csv_params = 'apartment=' ~ (apartment_id or '') %}
 {% block title %}{{ t('housebook.title') }}{% endblock %}
-{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
+{% block page_title %}{% endblock %}
+{% block meta %}{% endblock %}
+{% block primary_action %}{% endblock %}
+{% block secondary_actions %}{% endblock %}
+{% block tabs %}{% endblock %}
+{% block toolbar %}{% endblock %}
 {% block body %}
+{% macro reported_pill(row, show_date) -%}
+  {% if row.reported == 'yes' %}<span class="pill p-ok">{{ t('status.reported') }}</span>{% if show_date %}<small>{{ row.reported_at[:10] }}</small>{% endif %}
+  {% elif row.reported.startswith('not required') %}<span class="pill p-n">{{ t('status.not_required') }}</span>
+  {% elif row.reported == 'NO - rejected, cannot be corrected' %}<span class="pill p-bad">{{ t('stay.detail.guests.rejected_final') }}</span>
+  {% elif row.reported.startswith('NO') %}<span class="pill p-bad">{{ t('submission.rejected') }}</span>
+  {% else %}<span class="pill p-n">{{ t('housebook.not_sent') }}</span>{% endif %}
+{%- endmacro %}
 
 {% set housebook_property = namespace(label=t('host.filter.all_properties')) %}
 {% for property in apartments %}
   {% if apartment_id and property.id|string == apartment_id|string %}{% set housebook_property.label = property.internal_name %}{% endif %}
 {% endfor %}
+<div class="housebook-page">
+<div class="head stays-head"><div class="head-title-row"><h1 class="big">{{ t('housebook.title') }}</h1>
+<details class="ui-how stays-how" data-how="housebook">
+  <summary class="ui-how-toggle" aria-label="{{ t('how.toggle') }}">{{ icon('circle-help', 16) }}</summary>
+  <div class="ui-how-body">
+    <p>{{ t('housebook.archived_lede') }}</p>
+    <p>{{ t('housebook.pdf_export_help') }}</p>
+    <ol class="ui-how-steps">{% for n in (1, 2, 3) %}<li>{{ t('how.housebook.' ~ n) }}</li>{% endfor %}</ol>
+    <a class="ui-how-more" href="/guide#housebook">{{ t('how.more') }}</a>
+  </div>
+</details></div>
+<div class="stays-head-actions">{{ housebook_csv_menu(housebook_csv_params, true, true, scope_label=housebook_property.label) }}<a class="btn ghost" href="/submissions">{{ t('nav.reports') }}</a></div></div>
+
 <div class="filter-toolbar" data-filter-toolbar>
   <button class="ui-btn ui-btn-secondary filter-toggle" type="button" data-filter-toggle aria-expanded="true" aria-controls="housebook-filter-panel" hidden>
     {{ t('host.filter.filters') }}
@@ -26,11 +52,8 @@
       {% else %}{{ t('host.filter.range_until', date=date_to | date_cz) }}{% endif %}
     {% endif %}
   </p>
-  <div class="filter-toolbar-actions" aria-label="{{ t('housebook.actions') }}">
-    {{ housebook_csv_menu(housebook_csv_params, true, true, scope_label=housebook_property.label) }}
-  </div>
 </div>
-<form id="housebook-filter-panel" method="get" action="/housebook" class="filters ui-section host-filter-panel" data-filter-panel data-filter-route="day-range">
+<form id="housebook-filter-panel" method="get" action="/housebook" class="filters ui-section host-filter-panel card" data-filter-panel data-filter-route="day-range">
   <div class="filter-fields">
     <div class="ui-field">
       <label for="apartment">{{ t('housebook.apartment') }}</label>
@@ -54,10 +77,10 @@
 
 {% if rows %}
 {# The register is eleven columns of legal record. It keeps every word whole
-   and scrolls sideways inside its own panel when the viewport is narrower
+   and scrolls sideways inside its own card when the viewport is narrower
    than the row; the shaded edge shows there is more to the right. #}
-<div class="panel tight scroll-x housebook-scroll" tabindex="0" role="region" aria-label="{{ t('housebook.title') }}">
-  <table class="table-cards housebook-table">
+<div class="card stays-desk housebook-scroll scroll-x" tabindex="0" role="region" aria-label="{{ t('housebook.title') }}">
+  <table class="housebook-table">
     <thead>
       <tr>
         <th class="col-stay">{{ t('housebook.stay') }}</th><th class="col-property">{{ t('housebook.apartment') }}</th><th class="col-name">{{ t('housebook.guest') }}</th><th class="col-born">{{ t('housebook.born') }}</th><th>{{ t('housebook.nationality') }}</th>
@@ -79,18 +102,11 @@
         <td class="mono small" data-label="{{ t('housebook.document') }}">{{ guest_identifier(row.doc_number, row._guest_id) }}{% if row.visa_number %}<br>{{ t('housebook.visa', number=guest_identifier(row.visa_number, row._guest_id)) }}{% endif %}</td>
         <td class="small col-address" data-label="{{ t('housebook.residence') }}">{{ row.residence or '—' }}</td>
         <td class="small col-purpose" data-label="{{ t('housebook.purpose') }}">{{ row.purpose }}</td>
-        <td class="small nowrap" data-label="{{ t('housebook.signed') }}">{% if row.signed == 'yes' %}<span class="ui-badge ui-badge-done" data-tone="green">{{ t('housebook.signed_yes') }}</span>
-          {% else %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ t('housebook.signed_no') }}</span>{% endif %}</td>
+        <td class="small nowrap" data-label="{{ t('housebook.signed') }}">{% if row.signed == 'yes' %}<span class="pill p-ok">{{ t('housebook.signed_yes') }}</span>
+          {% else %}<span class="pill p-warn">{{ t('housebook.signed_no') }}</span>{% endif %}</td>
         {# The stored values double as the CSV column, which the importer reads
            back, so they stay as they are and only the label changes here. #}
-        <td class="small col-reported" data-label="{{ t('housebook.reported') }}">
-          {% if row.reported == 'yes' %}<span class="ui-badge ui-badge-done" data-tone="green">{{ t('status.reported') }}</span>
-            <div class="ui-sub">{{ row.reported_at[:10] }}</div>
-          {% elif row.reported.startswith('not required') %}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('status.not_required') }}</span>
-          {% elif row.reported == 'NO - rejected, cannot be corrected' %}<span class="ui-badge ui-badge-action" data-tone="red">{{ t('stay.detail.guests.rejected_final') }}</span>
-          {% elif row.reported.startswith('NO') %}<span class="ui-badge ui-badge-action" data-tone="red">{{ t('submission.rejected') }}</span>
-          {% else %}<span class="ui-badge ui-badge-neutral" data-tone="teal">{{ t('housebook.not_sent') }}</span>{% endif %}
-        </td>
+        <td class="small col-reported" data-label="{{ t('housebook.reported') }}">{{ reported_pill(row, true) }}</td>
         <td class="nowrap row-actions" data-label="">{{ row_open('/guests/' ~ row._guest_id ~ '?return_to=/housebook') }}
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="/guests/{{ row._guest_id }}?return_to=/housebook" role="menuitem">{{ t('common.edit') }}</a>
@@ -107,15 +123,24 @@
     </tbody>
   </table>
 </div>
-<p class="ui-sub">{{ t('housebook.entries', count=rows | length) }} {{ t('housebook.filter_footer') }}</p>
+<div class="stays-phone">
+{% for row in rows %}
+  <a class="card stay" href="/guests/{{ row._guest_id }}?return_to=/housebook">
+    <span class="sav">{{ (row.surname or '')[:1] | upper }}</span>
+    <span class="in"><b>{{ row.surname }} {{ row.first_name }}</b>
+      <small>{{ row.stay_from | date_cz }} – {{ row.stay_to | date_cz }} · {{ row.apartment }}</small>
+      {{ reported_pill(row, false) }}</span>
+    {{ icon('chevron-right', 20, 'chev') }}
+  </a>
+{% endfor %}
+</div>
 {% else %}
   <div class="panel empty">{{ t('housebook.empty') }}</div>
 {% endif %}
 
 {% if archived_rows %}
-<h2>{{ t('housebook.archived_title') }}</h2>
-<p class="ui-sub">{{ t('housebook.archived_lede') }}</p>
-<div class="panel tight scroll-x">
+<h2 class="ph-hide">{{ t('housebook.archived_title') }}</h2>
+<div class="panel tight scroll-x ph-hide">
   <table class="table-cards">
     <thead>
       <tr><th>{{ t('housebook.stay') }}</th><th>{{ t('housebook.apartment') }}</th><th>{{ t('housebook.guest') }}</th><th>{{ t('housebook.archived') }}</th><th></th></tr>
@@ -139,13 +164,11 @@
 </div>
 {% endif %}
 
-<p class="ui-sub"><a href="/guide#housebook">{{ t('nav.guide') }}</a></p>
 
 <dialog id="housebook-pdf-dialog" class="csv-export-dialog">
   <form id="housebook-pdf-form" method="get" action="/housebook/pdfs.zip">
     <h2>{{ t('housebook.pdf_export_title') }}</h2>
-    <p class="ui-sub">{{ t('housebook.pdf_export_help') }}</p>
-    <p class="ui-sub housebook-pdf-warn">{{ t('housebook.pdf_hint', limit=max_inspection_pdfs) }}</p>
+    <p class="housebook-pdf-warn">{{ t('housebook.pdf_hint', limit=max_inspection_pdfs) }}</p>
     <div class="ui-field">
       <label for="pdf_export_apartment">{{ t('housebook.apartment') }}</label>
       <select id="pdf_export_apartment" name="apartment">
@@ -172,5 +195,5 @@
     </div>
   </form>
 </dialog>
-
+</div>
 {% endblock %}
