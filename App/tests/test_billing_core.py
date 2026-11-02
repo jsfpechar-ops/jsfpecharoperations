@@ -54,11 +54,11 @@ def _order(owner_id: int, **fields) -> None:
 @pytest.mark.parametrize(
     "n, month, month_max, year, year_max",
     [
-        (1, 149, 229, 1190, 1908),
-        (3, 447, 687, 3570, 5724),
-        (5, 715, 1094, 5710, 9152),
-        (12, 1488, 2220, 11880, 18712),
-        (20, 2280, 3324, 18200, 27992),
+        (1, 149, 208, 1190, 1760),
+        (3, 447, 624, 3570, 5280),
+        (5, 715, 996, 5710, 8420),
+        (12, 1488, 2036, 11880, 17150),
+        (20, 2280, 3060, 18200, 25710),
     ],
 )
 def test_totals_match_the_strategy_table(n, month, month_max, year, year_max):
@@ -69,7 +69,7 @@ def test_totals_match_the_strategy_table(n, month, month_max, year, year_max):
 
 
 def test_addons_price():
-    assert billing.quote(2, "standard", "month", ttlock=True)["total"] == 298 + 80
+    assert billing.quote(2, "standard", "month", ttlock=True)["total"] == 298 + 98
     assert billing.quote(2, "max", "month", ttlock=True)["ttlock"] == 0
     assert billing.quote(1, "standard", "year", whitelabel=True)["total"] == 1190 + 5660
 
@@ -122,8 +122,8 @@ def test_an_added_apartment_bills_the_remaining_whole_months(owner):
 def test_max_upgrade_bills_the_revised_annual_extra(owner):
     _order(owner, period_end="2027-05-01")
     preview = billing.apply_change(owner, {"plan": "max"}, today=date(2026, 11, 1))
-    assert preview["period_total_after"] == 1908
-    assert (preview["months"], preview["supplementary_czk"], preview["carry_czk"]) == (6, 359, 0)
+    assert preview["period_total_after"] == 1760
+    assert (preview["months"], preview["supplementary_czk"], preview["carry_czk"]) == (6, 285, 0)
 
 
 def test_under_fifty_kc_is_carried_to_the_next_invoice(owner):
@@ -131,9 +131,9 @@ def test_under_fifty_kc_is_carried_to_the_next_invoice(owner):
     result = billing.apply_change(
         owner, {"addon_ttlock": 1}, today=date(2026, 11, 1), confirm=True
     )
-    assert (result["supplementary_czk"], result["carry_czk"]) == (0, 40)
+    assert (result["supplementary_czk"], result["carry_czk"]) == (0, 39)
     row = billing.account(owner)
-    assert row["addon_ttlock"] == 1 and row["carry_czk"] == 40
+    assert row["addon_ttlock"] == 1 and row["carry_czk"] == 39
 
 
 def test_a_downgrade_waits_for_the_next_period(owner):
