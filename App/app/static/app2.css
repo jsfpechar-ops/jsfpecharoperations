@@ -1200,6 +1200,7 @@ body.v2 .head-title-row>details.stays-how .ui-how-toggle::before{content:"";posi
 body.v2 .head-title-row>details.stays-how .ui-how-toggle::-webkit-details-marker{display:none}
 body.v2 .head-title-row>details.stays-how .ui-how-toggle:focus-visible{outline:2px solid #d0452d;outline-offset:2px}
 body.v2 .head-title-row>details.stays-how .ui-how-toggle::after{content:none}
+body.v2 .head-title-row>details.stays-how{background:transparent;border:0;border-radius:0;box-shadow:none}
 @media (min-width:601px){body.v2 .invoices-page form.list-filter .month-step{height:42px;min-height:42px}}
 /* 0818 list filter v2 (end) */
 /* 0820 empty state v2: the action sits centred under its text (host2.css 0176 is not loaded on v2 pages). */
