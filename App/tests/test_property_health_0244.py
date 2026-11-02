@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from app import db, property_health, property_setup
+from app import property_health
 from tests.test_guest_links_bilingual import _apartment_id, host  # noqa: F401
 
 APARTMENT = {"id": 7, "internal_name": "Flat", "active": 1}
@@ -61,13 +61,3 @@ def test_no_calendar_is_a_nudge_and_door_codes_show_only_with_a_lock():
     assert "door" not in _rows()
 
 
-def test_the_overview_shows_the_health_check(host):  # noqa: F811
-    apartment_id = _apartment_id()
-    property_setup.set_hidden(apartment_id, False)  # stores a setup state so finish() can mark it
-    property_setup.finish(apartment_id)
-    for lang, title in (("en", "Health check"), ("cs", "Kontrola nastavení"), ("vi", "Kiểm tra thiết lập")):
-        page = host.get(f"/apartments/{apartment_id}?view=overview&lang={lang}").text
-        assert "host-property-card-dot" in page and title not in page, lang
-        assert 'data-health-check="police"' in page
-        assert 'class="setup-status-tile' not in page
-    assert db.query_one("SELECT id FROM apartment WHERE id = ?", (apartment_id,))

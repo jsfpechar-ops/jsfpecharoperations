@@ -1,13 +1,16 @@
 {% extends "host_page.html" %}
+{% set v2 = true %}
 {% set body_kind = 'list' %}
-{% from "_ui.html" import ui_button with context %}
 {% block title %}{{ ct('title') }} · UbyHost{% endblock %}
-{% block page_title %}{{ ct('title') }}{% endblock %}
-{% block meta %}{{ ct('subtitle') }}{% endblock %}
-{% block primary_action %}{{ ui_button(ct('add'), 'primary', href='/cleaning/new', icon_name='plus', attrs='data-calendar-add data-cal-create-type="cleaning"') }}{% endblock %}
-{% block secondary_actions %}{{ ui_button(t('calendar.add_stay'), 'secondary', href='/reservations?new=1', attrs='data-calendar-add data-cal-create-type="stay"') }}{{ ui_button(ct('settings'), 'secondary', href='/cleaning/properties') }}{{ ui_button(ct('share'), 'secondary', href='/cleaning/shares') }}{% endblock %}
+{% block page_title %}{% endblock %}
+{% block meta %}{% endblock %}
+{% block primary_action %}{% endblock %}
+{% block secondary_actions %}{% endblock %}
 {% block body %}
+<div class="top cleaning-phone"><a class="round" href="/menu" aria-label="{{ t('common.back') }}">{{ icon('arrow-left', 20) }}</a><span></span></div>
+<div class="head cleaning-head"><div><h1 class="big">{{ ct('title') }}</h1><p class="sub cleaning-phone">{{ ct('subtitle_short') }}</p><p class="sub cleaning-desk-only">{{ ct('subtitle') }}</p><p class="ov-links"><a class="ov-link" href="/cleaning/new" data-calendar-add data-cal-create-type="cleaning">+ {{ ct('add') }}</a><span aria-hidden="true"> · </span><a class="ov-link" href="/cleaning/properties">{{ ct('settings') }}</a></p></div><a class="btn" href="/cleaning/shares">{{ ct('share_cleaner') }}</a></div>
 <div class="cleaning-page">
   {% include "_cleaning_screen.html" %}
 </div>
+<div class="actbar cleaning-phone"><a class="btn" href="/cleaning/shares">{{ ct('share_cleaner') }}</a></div>
 {% endblock %}

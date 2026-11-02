@@ -8,12 +8,12 @@
     "v": "20261027-signup-wrap"
   },
   "app.js": {
-    "sha256": "7056d39dfa970dd41388e42e23aec64f97417d9673d51f7abade860b075ed693",
-    "v": "20261101-0505"
+    "sha256": "85248d6c7f5ccdac51134d1b77f9317826eeeca97cc798d97d67b4c34296aab4",
+    "v": "20261101-0737"
   },
   "app2.css": {
-    "sha256": "433d05e69088ef1b19186dd3d3e25fa0cc999f64c5c7b13bedd08613a1608bcd",
-    "v": "20261101-0736b"
+    "sha256": "e44f522564458a055536cff652b3d2e246f8630e4da1e28dd971b3bc2f185581",
+    "v": "20261102-0738b"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -88,16 +88,16 @@
     "v": "20261025-0380"
   },
   "host.css": {
-    "sha256": "8ffdd8b82a7127d47931499cfc9a3f16b8907715f4270f9a8573f08eb669ae71",
-    "v": "20261030-0454"
+    "sha256": "62ac96cd208a0f0496465c6fb0c88e5b24845a3bcca964ba2a1a345703a49862",
+    "v": "20261101-0531g"
   },
   "host.js": {
     "sha256": "9a1c690af6f4edb599cd51ba0d122957dafa94ac4d9572aba3f86fa668b14d6c",
-    "v": "20261026-door-lock-times"
+    "v": "20261101-0547b"
   },
   "host2.css": {
     "sha256": "53b30b450cf5da470bef0b3e0c4acf5bc84d3926c50b5474e229f11cc1655dcc",
-    "v": "20261101-0495b"
+    "v": "20261101-0530c"
   },
   "landing.css": {
     "sha256": "9910e555ae69914d71e920a5c00947adaf3759221c53d9e6234c5731c21b142b",

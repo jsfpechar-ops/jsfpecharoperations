@@ -99,9 +99,8 @@ def assert_covered(page, selectors):
         assert page.locator(selector).count() > 0, selector
 
 
-# initPropertyViews still re-binds; brief 0505 makes this zero.
+# 0539 removed initPropertyViews, which used to re-bind 'invalid' on the guard forms; now zero.
 GUARD = "form[data-unsaved-guard]"
-GUARD_KNOWN_EVENTS = ["invalid"]
 
 
 def assert_second_run_adds_nothing(page):
@@ -111,8 +110,7 @@ def assert_second_run_adds_nothing(page):
     guard_events = sorted(a[1] for a in matched if a[2] == GUARD)
     others = [a for a in matched if a[2] != GUARD]
     assert others == [], others
-    guard_forms = page.locator(GUARD).count()
-    assert guard_events == sorted(GUARD_KNOWN_EVENTS * guard_forms), guard_events
+    assert guard_events == [], guard_events
 
 
 def test_second_init_page_run_binds_nothing_on_real_pages(calendar_workspace, calendar_origin):

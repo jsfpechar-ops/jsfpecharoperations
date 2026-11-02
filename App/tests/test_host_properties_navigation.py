@@ -81,11 +81,6 @@ def _property(name, entity_id, owner=None, **over) -> int:
     return db.insert("apartment", values)
 
 
-def _summary(page):
-    start = page.index('id="property-summaries"')
-    return page[start:page.index("</section>", start)]
-
-
 # --- one / many / none / archived ------------------------------------------------
 
 def test_no_business_and_no_property_states_stay_distinct(host):
@@ -95,12 +90,14 @@ def test_no_business_and_no_property_states_stay_distinct(host):
     # business there is no Business & legal details tab yet.
     assert 'href="/entities?edit=' not in empty
     assert "Add operator" in empty
-    entity_id = _entity()
+    _entity()
     ready = host.get("/apartments?lang=en").text
-    assert "No properties yet." in ready and 'href="/apartments/new"' in ready
+    assert 'href="/apartments/new"' in ready
     assert 'id="property-summaries"' not in ready
-    # The one shared business is linked once, in its own editor scope.
-    assert ready.count(f'href="/entities?edit={entity_id}&amp;next=/apartments"') == 1
+    # v2 list (0532): operator exists but no property yet, so the empty
+    # state asks for the first property and no longer offers Add operator.
+    assert "No properties yet." in ready
+    assert "Add operator" not in ready
 
 
 def test_list_rows_show_setup_calendars_and_open_inside_the_menu(host):
@@ -109,7 +106,7 @@ def test_list_rows_show_setup_calendars_and_open_inside_the_menu(host):
                       uby_idub="123456789012", uby_mark="UBYX", uby_ws_user="ws-login-x")
     second = _property("Chata Beta", entity_id, automation_mode="scheduled", submit_after_hours=6)
     page = host.get("/apartments?lang=en").text
-    table = page[page.index('class="table-cards properties-table"'):page.index("</table>")]
+    table = page[page.index("<table"):page.index("</table>")]
     for apartment_id in (first, second):
         assert f'<a class="btn small" href="/apartments/{apartment_id}">Open</a>' not in table
         assert f'<a class="row-menu-item" href="/apartments/{apartment_id}" role="menuitem">Open</a>' in table
@@ -117,40 +114,28 @@ def test_list_rows_show_setup_calendars_and_open_inside_the_menu(host):
         assert f'href="/apartments/{apartment_id}?view=settings&amp;section=automation#automation"' in table
     # 0098 (owner): no police/UbyPort value under the name (address, facility
     # name, IDUB, mark, login); the row shows the avatar and the name only.
-    assert "property-location" not in table and ">Brno<" not in table
+    # The address is its own column now; the old under-name location line is gone.
+    assert "property-location" not in table and ">Brno<" in table
     for police in ("UBY-FACILITY", "123456789012", "UBYX", "ws-login-x"):
         assert police not in page, police
-    assert re.search(r'<span class="ui-badge ui-badge-(?:action|done)" data-tone="(amber|green)">', table)
+    assert re.search(r'<a class="st [grn]" data-setup-chip="[^"]+" data-state="[^"]+"', table)
     # Old hashes that pointed at the wrong group are gone.
     assert "#ubyport\" role=\"menuitem\"" not in table
     # Two businesses: the shared link opens the list, never an arbitrary one.
     _entity(name="Druhá s.r.o.")
-    assert '<a class="ui-tab" href="/entities">Business &amp; legal details</a>' in host.get("/apartments").text
+    assert '<a class="ui-tab"' not in host.get("/apartments").text
 
 
-def test_summary_is_visible_read_only_and_links_to_each_editor(host):
+def test_summary_section_is_gone_and_archived_stays_off_the_list(host):
     entity_id = _entity()
-    first = _property("Byt Alfa", entity_id)
-    second = _property("Chata Beta", entity_id, automation_mode="scheduled", submit_after_hours=6)
+    _property("Byt Alfa", entity_id)
+    _property("Chata Beta", entity_id, automation_mode="scheduled", submit_after_hours=6)
     archived = _property("Starý byt", entity_id, archived_at=db.utcnow())
     page = host.get("/apartments?lang=en").text
-    summary = _summary(page)
-    assert "<details" not in page[page.index('data-sub-tabs'):]
-    assert "Guest links and reporting timing" in summary
-    # 0098 (owner): the summary now carries the inline timing control and the
-    # New PIN form; it posts only to the scoped timing route and regenerate-pin.
-    actions = set(re.findall(r'<form[^>]*action="([^"]+)"', summary))
-    assert actions == {f"/apartments/{i}/{route}" for i in (first, second)
-                       for route in ("regenerate-pin", "automation-timing")}
-    assert "<textarea" not in summary and 'name="default_purpose"' not in summary
-    for apartment_id in (first, second):
-        assert f'href="/apartments/{apartment_id}"' in summary
-    token = db.query_one("SELECT permalink_token FROM apartment WHERE id = ?", (first,))["permalink_token"]
-    assert f"/l/{token}" in summary
-    assert '<option value="manual" selected>Only when I press send' in summary
-    assert '<option value="scheduled" selected>Automatically, after a delay' in summary
-    assert 'value="6" data-timing-hours-input' in summary
-    assert "Starý byt" not in summary
+    # 0530/0531 (owner): the property summaries section is removed on purpose.
+    assert 'id="property-summaries"' not in page
+    assert "Guest links and reporting timing" not in page
+    assert "Starý byt" not in page
     # Archived properties are off the working list; Restore lives in
     # Settings › Data & archive › Archived (owner, 2026-10-13).
     assert f'action="/apartments/{archived}/unarchive"' not in page
@@ -173,7 +158,7 @@ def test_czech_labels_render(host):
     entity_id = _entity()
     _property("Byt Alfa", entity_id)
     page = host.get("/apartments?lang=cs").text
-    assert "Odkazy pro hosty a načasování hlášení" in _summary(page)
+    assert 'id="property-summaries"' not in page
     assert ">Otevřít</a>" in page
     assert not re.search(r">\s*properties\.[a-z_.]+\s*<", page)
 
@@ -261,23 +246,18 @@ def live_base(browser_host):
 _FIT_JS = """() => {
   const vw = document.documentElement.clientWidth;
   const bad = [];
-  const sel = '.ui-tabs a, .properties-table a, .properties-table button, '
-    + '.property-summaries a, .property-summaries h2, .property-summaries button';
+  const sel = 'main table a, main table button';
   for (const el of document.querySelectorAll(sel)) {
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height) continue;
     if (r.right > vw + 1 || r.left < -1) bad.push(el.textContent.trim().slice(0, 30));
   }
-  const opens = [...document.querySelectorAll('.properties-table .row-actions .row-menu-trigger')]
+  const opens = [...document.querySelectorAll('main table .row-actions .row-menu-trigger')]
     .map(a => Math.round(a.getBoundingClientRect().right));
-  const lane = document.querySelector('.properties-table').closest('.panel').getBoundingClientRect();
-  const summary = document.querySelector('.property-summaries .panel').getBoundingClientRect();
-  const title = document.querySelector('.property-summaries-title');
+  const lane = document.querySelector('main table').closest('.card').getBoundingClientRect();
   return {scroll: document.documentElement.scrollWidth, vw, bad, opens,
           lane: [Math.round(lane.left), Math.round(lane.right)],
-          summary: [Math.round(summary.left), Math.round(summary.right)],
-          titleVisible: title.getBoundingClientRect().height > 0,
-          details: document.querySelectorAll('.property-summaries details').length};
+          };
 }"""
 
 
@@ -316,10 +296,7 @@ def test_properties_page_fits_every_width_and_both_languages(browser_host, live_
                         key = (width, lang, collapsed)
                         assert fit["scroll"] <= fit["vw"], (key, fit)
                         assert not fit["bad"], (key, fit)
-                        assert fit["titleVisible"] and fit["details"] == 0, (key, fit)
                         assert len(fit["opens"]) == 3, (key, fit)
-                        assert abs(fit["lane"][0] - fit["summary"][0]) <= 2, (key, fit)
-                        assert abs(fit["lane"][1] - fit["summary"][1]) <= 2, (key, fit)
                         if width >= 1024:
                             # Open sits at the same right edge on every row.
                             assert max(fit["opens"]) - min(fit["opens"]) <= 2, (key, fit)
@@ -328,11 +305,6 @@ def test_properties_page_fits_every_width_and_both_languages(browser_host, live_
                         EVIDENCE.mkdir(parents=True, exist_ok=True)
                         page.screenshot(path=str(EVIDENCE / f"properties-{width}-{lang}.png"),
                                         full_page=True)
-                # Old hub URL with several properties lands on the summary.
-                page.goto(f"{live_base}/guest-links?lang=en")
-                assert page.url.endswith("/apartments#property-summaries")
-                box = page.locator("#property-summaries").bounding_box()
-                assert box and box["y"] < 900, box
                 context.close()
         finally:
             browser.close()

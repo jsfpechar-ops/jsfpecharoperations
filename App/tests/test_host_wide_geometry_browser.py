@@ -37,7 +37,7 @@ MOBILE_ROUTE_KEYS = {
 CAPTURE_ROUTES = {
     "dashboard": ("/", "#needs-action"),  # 0720c: v2 lane; `.needs-you` is the old shell
     "stays": ("/reservations", ".stays-view, .ui-empty"),
-    "properties": ("/apartments", ".panel.tight.scroll-x, .panel.empty"),
+    "properties": ("/apartments", ".props-card, .props-phone, .panel.empty"),  # v2 list (0538): table from 1024, phone cards below
     "operators": ("/entities", ".entities-page, .panel.empty"),
     "operator-add": ("/entities?new=1", ".entity-add"),
     "operator-edit": ("/entities?edit={entity_id}", ".entity-form"),
@@ -45,7 +45,7 @@ CAPTURE_ROUTES = {
     "fees-unset": ("/stay-fees?apartment={unconfigured_apartment}", ".panel.tight.scroll-x, .panel.empty"),
     "fees-configured": ("/stay-fees?apartment={configured_apartment}", ".panel.tight.scroll-x, .panel.empty"),
     # 0077/0101: the fee editor is property Settings -> Reporting & fees -> Stay fee.
-    "fee-setup": ("/apartments/{unconfigured_apartment}?view=settings&section=reporting", ".property-settings"),
+    "fee-setup": ("/apartments/{unconfigured_apartment}?view=settings&section=reporting", ".property-settings, details.prop-sec#sec-fee"),  # v2 (0538)
     "fee-detail": ("/stay-fees/{configured_apartment}", ".ui-body-detail, .ui-section"),
     "invoice-new-picker": ("/invoices/new", ".ui-section"),
     "invoice-new-selected": ("/invoices/new?entity={entity_id}&reservation_id={reservation_id}", ".invoice-workspace, .invoice-stay-picker"),
@@ -61,8 +61,8 @@ CAPTURE_ROUTES = {
     "submissions": ("/submissions", ".ui-table, .ui-empty"),
     "submission-detail": ("/submissions/{submission_id}", ".submission-detail, .panel"),
     # 0094: both now live in property Settings; the lane is the tab content.
-    "guest-links": ("/apartments/{property_id}?view=settings&section=guests", ".property-views"),
-    "automation": ("/apartments/{property_id}?view=settings&section=automation", ".property-views"),
+    "guest-links": ("/apartments/{property_id}?view=settings&section=guests", ".property-views, details.prop-sec"),  # v2 (0538)
+    "automation": ("/apartments/{property_id}?view=settings&section=automation", ".property-views, details.prop-sec"),  # v2 (0538)
     "archive": ("/settings/archived", ".ui-section, .ui-empty"),
     "settings": ("/settings", ".host-property-grid"),
     "smart-locks": ("/smart-locks", ".ui-body-list, .panel"),
@@ -206,7 +206,8 @@ def _capture_geometry(page, result_selector):
     return page.evaluate(
         """(resultSelector) => {
           const box = (selector) => {
-            const element = selector && document.querySelector(selector);
+            // 0538: first VISIBLE match (v2 renders .props-card and .props-phone; one is always hidden)
+            const element = selector && [...document.querySelectorAll(selector)].find(el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; }) || document.querySelector(selector);
             if (!element) return null;
             const rect = element.getBoundingClientRect();
             return Object.fromEntries(['left','right','top','bottom','width','height']
@@ -311,7 +312,7 @@ def _capture_geometry(page, result_selector):
             viewport: {width: innerWidth, scrollWidth: document.documentElement.scrollWidth},
             hostLane,
             title: box('.page-header-main h1, .ui-ph-main h1, .host-today-head h1, .head h1'),
-            pageHeader: box('.page-header, .ui-ph, .host-today-head, .head'),
+            pageHeader: box('.page-header, .ui-ph, .host-today-head, .head, .crumb, main h1'),
             phTop: box('.ph-top'),
             directBacklink: box('main.wrap.with-sidebar > a.back-link'),
             headerMain: box('.page-header-main, .ui-ph-main, .host-today-head'),
@@ -515,6 +516,9 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                             "dates_changed_resign alerts are filing gates and must remain non-dismissible"
                         )
                         assert geometry["alertStack"] is None, geometry["alertStack"]
+                    elif name in ("properties", "fee-setup", "property-detail", "property-detail-configured", "guest-links", "automation", "smart-locks"):  # v2 property pages (0538)
+                        # 0538: the v2 shell does not render the alert stack (base.html), as on the dashboard
+                        assert geometry["alertStack"] is None, (name, lang, width, geometry["alertStack"])
                     else:
                         alert_stack = geometry["alertStack"]
                         assert alert_stack and geometry["alertLink"], (
@@ -538,7 +542,9 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                         assert feedback_region["bottom"] <= navigation["top"] + 1, (
                             f"feedback region overlaps local navigation on {name}/{lang}/{width}"
                         )
-                    for edge in ("left", "right"):
+                    # 0538: the v2 property page header is a crumb and h1, not a full-width bar, so no edge lane to match
+                    v2_header_skip = name in ("fee-setup", "property-detail", "property-detail-configured", "guest-links", "automation")
+                    for edge in (() if v2_header_skip else ("left", "right")):
                         delta = round(result[edge] - header[edge], 2)
                         if abs(delta) > 2:
                             mismatches.append({"route": name, "locale": lang, "width": width,
@@ -635,7 +641,7 @@ def test_host_wide_lanes_align(wide_host, wide_base):
         browser.close()
     (output_dir / "rectangles.json").write_text(json.dumps(rect_rows, indent=2, ensure_ascii=False) + "\n")
     (output_dir / "lane-mismatches.json").write_text(json.dumps(mismatches, indent=2, ensure_ascii=False) + "\n")
-    assert not mismatches, mismatches
+    assert not mismatches, [(m['route'], m['locale'], m['width'], m['lane'], m.get('delta'), m['candidate'].get('left'), m['candidate'].get('right'), m['result'].get('left'), m['result'].get('right')) for m in mismatches]
 
 
 def test_stay_row_actions_fit_midwidth_lanes(wide_host, wide_base):
@@ -745,7 +751,7 @@ def test_direct_fee_backlinks_align_with_page_lane(wide_host, wide_base):
                 assert response and response.status == 200
                 page.wait_for_load_state("networkidle")
                 assert f"/apartments/{wide_host['unconfigured_apartment']}?view=settings&section=reporting" in page.url
-                header = page.locator(".page-header, .ui-ph").first.bounding_box()
+                header = page.locator(".page-header, .ui-ph, .head, .crumb, main h1").first.bounding_box()
                 section = page.locator("#stay-fee-settings").bounding_box()
                 assert header and section and section["width"] > 0
                 assert section["x"] >= header["x"] - 2

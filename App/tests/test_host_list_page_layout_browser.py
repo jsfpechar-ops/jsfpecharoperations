@@ -95,6 +95,8 @@ def test_list_pages_share_order_edges_and_rhythm(acc, base):
             context = _context(browser, base, acc["cookie"], width=width, height=900, collapsed=collapsed)
             page = context.new_page()
             for name, path in LISTS.items():
+                if name == "properties":
+                    continue  # v2 /apartments has no title, toolbar or tabs block (0532)
                 page.goto(base + _with_lang(path, lang))
                 _settle(page)
                 _dismiss_prompt(page)
@@ -167,7 +169,7 @@ def test_tabs_are_links_that_mark_the_open_page(acc):
     client = acc["client"]
     cases = [
         ("/reservations", "nav.stays"), ("/submissions", "tabs.stays.reports"),
-        ("/housebook", "tabs.stays.register"), ("/apartments", "nav.properties"),
+        ("/housebook", "tabs.stays.register"),
         ("/invoices", "nav.invoices"),
         (f"/entities?edit={acc['e1']}&next=/apartments", "host.business"),
         (f"/entities?edit={acc['e1']}&next=/invoices/new", "host.invoice_settings"),
@@ -181,8 +183,6 @@ def test_tabs_are_links_that_mark_the_open_page(acc):
         # Tabs sit directly under the title row, never above it.
         assert html.index("</h1>") < nav.start(), path
         assert "<button" not in nav.group(1) and "<form" not in nav.group(1), path
-    # Two businesses: Business & legal details opens the list, never one record.
-    assert re.search(r'<a class="(?:sub-tab|ui-tab)" href="/entities"', client.get("/apartments").text)
     # 0101: Invoice settings with two businesses opens the list to pick one.
     invoices = client.get("/invoices").text
     assert re.search(r'<a class="(?:sub-tab|ui-tab)" href="/entities"', invoices) and "/invoices/settings" not in invoices
@@ -208,8 +208,7 @@ def test_empty_states_use_the_shared_component(acc):
 
 ROWS = {
     "stays": ("/reservations?range=all", ".stays-view tr.clickable-row"),
-    "properties": ("/apartments", ".properties-table tr.clickable-row"),
-    "property-summary": ("/apartments", ".property-summary-table tr.clickable-row"),
+    "properties": ("/apartments", ".props-card table tbody tr.clickable-row"),
     "invoices": ("/invoices", ".lc-invoices tr.clickable-row"),
     "fees": ("/stay-fees", ".lc-fees tr.clickable-row"),
 }

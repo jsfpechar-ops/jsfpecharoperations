@@ -89,8 +89,8 @@ def assert_mixed_second_run(page):
     expected_window = ["hashchange"] if page.locator("[data-property-views]").count() else []
     assert window_hits == expected_window, window_hits
     guard_events = sorted(a[1] for a in adds if a[0] == "match" and a[2] == GUARD)
-    # initPropertyViews still re-binds; brief 0505 makes this zero.
-    assert guard_events == sorted(["invalid"] * page.locator(GUARD).count()), guard_events
+    # 0539 removed initPropertyViews, which used to re-bind 'invalid' on the guard forms; now zero.
+    assert guard_events == [], guard_events
 
 
 def test_mixed_inits_bind_nothing_on_second_run(calendar_workspace, calendar_origin):

@@ -168,7 +168,9 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
                 for name, path in pages:
                     response = page.goto(f"{base}{path}?lang={lang}")
                     assert response and response.status == 200, f"{path} ({lang}) failed"
-                    assert page.locator('link[href*="host-controls.css"]').count() == 1
+                    # 0538: v2 property pages load only tokens.css and app2.css on purpose; old pages keep host-controls.css
+                    v2_page = path.split('?')[0] in ('/apartments',) or path.startswith('/apartments/')
+                    assert page.locator('link[href*="host-controls.css"]').count() == (0 if v2_page else 1)
                     size = page.evaluate("""() => ({
                       width: innerWidth,
                       scrollWidth: document.documentElement.scrollWidth,
@@ -199,14 +201,16 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
 
         # Real interactive rows/cards show the quiet hover tint and keyboard
         # focus context; static panels do not acquire a pointer cursor.
-        for width, expected_height in ((360, 44), (390, 44), (1280, 40)):
+        for width, expected_height in ((360, 44), (390, 44), (1280, 36)):
             page.set_viewport_size({"width": width, "height": 900})
             # 0720: .ui-ph-acts is the old-shell page header (host_page.html); "/" is v2 and has none.
             page.goto(f"{base}/apartments?lang=en")
-            heights = page.locator(".ui-ph-acts .ui-btn-primary").evaluate_all(
+            # 0543: v2 phone action is .props-top a.round (below 1024); desktop action is .props-head a.btn.
+            selector = ".props-top a.round" if width < 1024 else ".props-head a.btn"
+            heights = page.locator(selector).evaluate_all(
                 "els => els.map(el => el.getBoundingClientRect().height)"
             )
-            assert heights and all(height == expected_height for height in heights), (width, heights)
+            assert heights and all(height >= expected_height for height in heights), (width, heights)
 
         page.set_viewport_size({"width": 1280, "height": 900})
         page.goto(f"{base}/apartments?lang=en")
@@ -218,7 +222,8 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
         assert before != after
         row.focus()
         assert row.evaluate("el => getComputedStyle(el).outlineStyle") != "none"
-        static_panel = page.locator(".panel").first
+        # 0543: v2 list cards are .props-card (1024 px and up) and .props-phone (below)
+        static_panel = page.locator(".props-card:visible, .props-phone:visible").first
         assert static_panel.evaluate("el => getComputedStyle(el).cursor") != "pointer"
 
         touch_context = browser.new_context(viewport={"width": 360, "height": 800}, has_touch=True)

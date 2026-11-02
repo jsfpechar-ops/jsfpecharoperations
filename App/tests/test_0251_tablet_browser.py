@@ -29,7 +29,8 @@ CARD_JS = """() => {
     const el = document.elementFromPoint(x, y);
     return !!(el && el.closest('a, .host-property-card-actions'));
   };
-  return [...document.querySelectorAll('.host-property-card')].map(card => {
+  return [...document.querySelectorAll('aside.preview .pv .r')].map(card => {
+    card.scrollIntoView({block: 'center'});
     const r = card.getBoundingClientRect();
     const pill = card.querySelector('.host-property-card-open');
     const p = pill ? pill.getBoundingClientRect() : r;
@@ -91,8 +92,11 @@ def test_overview_cards_and_tablet_menu_on_touch(host, base):
             page.wait_for_timeout(50)
 
             # 1. Every card can be hit at its centre, corner and Open pill.
-            cards = page.evaluate(CARD_JS)
-            assert cards, f"no overview cards at {width}px"
+            cards = page.evaluate(CARD_JS) if width >= 1024 else []  # 0543: v2 phone rows have no cards to hit
+            # 0543: from 1024 px the v2 aside is the nav; below it the phone rows (details.prop-sec) are.
+            desktop = width >= 1024
+            if desktop:
+                assert page.locator("aside.preview").first.is_visible(), width  # v2: the preview aside replaces the cards (0536)
             for card in cards:
                 assert card["centre"] and card["corner"] and card["pill"], (width, card)
             fits = page.evaluate(
@@ -103,18 +107,25 @@ def test_overview_cards_and_tablet_menu_on_touch(host, base):
 
             # 2. Tapping the guest card opens the guests group; police reporting
             #    opens the reporting group.
-            page.locator(".host-property-card-static").tap(position={"x": 8, "y": 8})
-            page.wait_for_url("**section=guests**")
-            assert "guests" in _visible_groups(page), (width, _visible_groups(page))
+            if desktop:
+                page.locator('aside.preview a.r[href="#sec-lock"]').tap(position={"x": 8, "y": 8})
+                page.wait_for_url("**#sec-lock**")
+            else:
+                page.locator("#sec-lock > summary").tap()
+            assert page.locator("#sec-lock[open]").count() == 1, width  # v2: guest-facing row is the lock section (0536)
 
             page.goto(url)
             page.wait_for_timeout(50)
-            page.locator('a.host-property-card[href*="section=reporting#ubyport"]').tap(position={"x": 8, "y": 8})
-            page.wait_for_url("**section=reporting**")
-            assert "reporting" in _visible_groups(page), (width, _visible_groups(page))
+            if desktop:
+                page.locator('aside.preview a.r[href="#sec-police"]').tap(position={"x": 8, "y": 8})
+                page.wait_for_url("**#sec-police**")
+            else:
+                page.locator("#sec-police > summary").tap()
+            assert page.locator("#sec-police[open]").count() == 1, width
 
             # 3. Only in the tablet rail range: the toggle opens and closes the full menu.
-            if 1024 <= width <= 1279:
+            # 0543: v2 pages have no tablet rail (shared shell, 0705); the check runs only where the toggle exists.
+            if 1024 <= width <= 1279 and page.locator("button[data-sidebar-collapse]").count():
                 page.goto(url)
                 page.wait_for_timeout(50)
                 toggle = page.locator("button[data-sidebar-collapse]")
