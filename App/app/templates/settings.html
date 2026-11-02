@@ -443,7 +443,7 @@
 
     <details class="ui-section technical" open id="settings-audit">
       <summary>{{ t('settings.nav.audit') }}</summary>
-            <h2>{{ t('settings.audit.recent', count=audit_count) }}{{ help_tip('settings-audit-help', t('settings.audit.help')) }}</h2>
+            <h2>{{ t('settings.audit.recent', count=audit_count) }}</h2>
       <div class="host-audit-filters" data-audit-filter role="group" aria-label="{{ t('settings.audit.filter_label') }}">
         <a class="host-audit-filter {{ 'is-active' if not audit_filter }}" href="/settings#settings-audit" {% if not audit_filter %}aria-current="page"{% endif %}>{{ t('settings.audit.filter_all') }}</a>
         <a class="host-audit-filter {{ 'is-active' if audit_filter == 'support' }}" href="/settings?audit=support#settings-audit" {% if audit_filter == 'support' %}aria-current="page"{% endif %}>{{ t('settings.audit.filter_support') }}</a>
