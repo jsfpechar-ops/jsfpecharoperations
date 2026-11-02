@@ -61,3 +61,4 @@ Append-only.
 - 2026-11-01 | Host redesign: add vendored Hotwire Turbo (MIT, ~25 KB) for page-body swaps; redesign needs owner OK of mockups before build or merge | owner | #614
 - 2026-10-31 | D3 detail: goose v3.29.0, asset goose_linux_x86_64, SHA-256 cc56e2f75532a4dd52f5ef2d31db0121e91079a9c2617bc0ad4e04e2d41c228b | owner | 0465b
 - 2026-11-01 | Go: module go/, stdlib, pgx v5, go-ntlmssp v0.1.1, go-qrcode (11-02); crypto via Python fixtures | owner (waiver) | 0474, 0481, 0684
+- 2026-11-02 | Booking page: the page's own words are Czech first with a CS/EN switch (?lang= or the saved language, no cookie set); host listing copy stays verbatim. Supersedes the 2026-10-28 "English-only" line for the page chrome | owner (approved mockups) | 0818

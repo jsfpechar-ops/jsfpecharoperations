@@ -105,11 +105,14 @@ def _jpeg_bytes() -> bytes:
     return buf.getvalue()
 
 
-def test_listing_page_is_english_only(owner):
-    """Owner decision (28 Oct): the listing page renders English even for a
-    Czech visitor; OTA listing copy is never translated per listing."""
+def test_listing_page_chrome_is_czech_first_and_listing_copy_stays_verbatim(owner):
+    """Owner decision (2 Nov 2026, booking site v1): the page's own words follow
+    ?lang= or the saved language, Czech by default; the host's listing copy is
+    never translated."""
     client = TestClient(app)
-    client.cookies.set("ubyhost_lang", "cs")
     response = client.get(f"/p/{_slug(owner)}")
     assert response.status_code == 200
-    assert '<html lang="en">' in response.text
+    assert '<html lang="cs">' in response.text
+    client.cookies.set("ubyhost_lang", "en")
+    assert '<html lang="en">' in client.get(f"/p/{_slug(owner)}").text
+    assert '<html lang="en">' in client.get(f"/p/{_slug(owner)}?lang=en").text
