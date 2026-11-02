@@ -69,7 +69,8 @@ def test_list_panels_never_scroll_sideways_and_actions_stay_visible(acc, base):
                     # v2: table from 1024 px (.props-card), phone cards below (.props-phone, whole card is the link)
                     sels = (".props-card", "tbody td.row-actions a.btn, tbody td.row-actions a.ui-btn, tbody td.row-actions .row-menu-trigger") if width >= 1024 else (".props-phone", "a.card.prop")
                 else:
-                    sels = (".list-cards", "tbody td.row-actions a.btn, tbody td.row-actions a.ui-btn, tbody td.row-actions .row-menu-trigger")
+                    panel = ".entities-page" if name == "businesses" else ".list-cards"  # v2 entities list (0781)
+                    sels = (panel, "tbody td.row-actions a.btn, tbody td.row-actions a.ui-btn, tbody td.row-actions .row-menu-trigger")
                 result = page.evaluate(_LIST_JS, list(sels))
                 label = (name, lang, width, "collapsed" if collapsed else "expanded")
                 if result is None:
