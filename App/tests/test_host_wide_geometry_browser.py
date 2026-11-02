@@ -832,8 +832,8 @@ def test_collapsed_sidebar_keeps_dashboard_and_stays_lanes_aligned(wide_host, wi
             }])
             page = context.new_page()
             for key, path, selector in (
-                # 0720c: v2 `/` has no sidebar collapse button; the collapse case runs on /settings (old shell).
-                ("settings", "/settings", ".host-property-grid"),
+                # 0720c: v2 `/` has no sidebar collapse button; the collapse case runs on /payments (old shell, 0785a).
+                ("payments", "/payments", ".ui-section"),
                 ("stays", "/reservations", ".stays-desk"),
             ):
                 response = page.goto(f"{wide_base}{path}?lang={lang}")
@@ -965,8 +965,8 @@ def _rail_context(browser, wide_host, wide_base, width, collapsed, **options):
     return context
 
 
-# 0720c: the rail cases run on /settings (old shell, no `v2` set); v2 `/` has no `button[data-sidebar-collapse]`.
-def _rail_page(context, wide_base, path="/settings"):
+# 0720c: the rail cases run on /payments (old shell, no `v2` set, 0785a); v2 `/` has no `button[data-sidebar-collapse]`.
+def _rail_page(context, wide_base, path="/payments"):
     page = context.new_page()
     response = page.goto(f"{wide_base}{path}")
     assert response and response.status == 200
