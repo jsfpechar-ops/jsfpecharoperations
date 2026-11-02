@@ -46,6 +46,32 @@ def _fold_place(value) -> str:
     return "".join(ch for ch in plain if not unicodedata.combining(ch)).casefold()
 
 
+# 0847: the council fields a property can take over from a sibling in the same municipality.
+FEE_COPY_FIELDS = (
+    "stay_fee_rate_czk", "stay_fee_cadence", "stay_fee_vs",
+    "stay_fee_council_account", "stay_fee_council_iban",
+    "stay_fee_authority_name", "stay_fee_authority_address",
+    "stay_fee_authority_contact", "stay_fee_authority_databox",
+    "stay_fee_payee", "stay_fee_instruction",
+    "stay_fee_scope_rule", "stay_fee_scope_reference",
+)
+
+
+def fee_copy_source(apartment, candidates):
+    """The first candidate with an active fee in the same municipality, or None."""
+    place = _fold_place(apartment["addr_obec"])
+    if not place:
+        return None
+    for candidate in candidates:
+        if (
+            candidate["id"] != apartment["id"]
+            and stay_fee.is_active(candidate)
+            and _fold_place(candidate["addr_obec"]) == place
+        ):
+            return candidate
+    return None
+
+
 def _default_month(today: date) -> date:
     return stay_fee.previous_month(today)
 
@@ -144,7 +170,10 @@ def stay_fees_list(request: Request):
     configured = {row["apartment"]["id"] for row in rows}
     for apartment in apartments:
         if apartment["id"] not in configured:
-            rows.append({"apartment": apartment, "unset": True, "issues": []})
+            rows.append({
+                "apartment": apartment, "unset": True, "issues": [],
+                "copy_from": fee_copy_source(apartment, apartments),
+            })
     for row in rows:
         row["status"] = _row_status(row)
     rows = [
@@ -785,6 +814,33 @@ async def stay_fee_confirm_ready(request: Request):
     if not saved:
         return _back(back_path, err=_flash(request, "flash.stay_fees.bulk_none"))
     return _back(back_path, msg=_flash(request, "flash.stay_fees.bulk_saved", count=saved))
+
+
+@router.post("/stay-fees/{apartment_id}/copy-setup")
+async def stay_fee_copy_setup(apartment_id: int, request: Request):
+    """0847: one tap takes over the fee setup the host was shown on the list."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment = access.apartment(request, apartment_id)
+    if not apartment:
+        return _back("/stay-fees", err=_flash(request, "flash.error.no_such_apartment"))
+    form = await request.form()
+    back_path = fee_return_path(_form_str(form, "return_to"), apartment_id) or "/stay-fees"
+    raw = _form_str(form, "source_id")
+    source = access.apartment(request, int(raw)) if raw.isdigit() else None
+    has_filing = db.query_one("SELECT id FROM stay_fee_filing WHERE apartment_id = ?", (apartment["id"],))
+    if (
+        not source
+        or source["archived_at"]
+        or stay_fee.is_active(apartment)
+        or has_filing
+        or fee_copy_source(apartment, [source]) is None
+    ):
+        return _back(back_path, err=_flash(request, "flash.stay_fees.copy_failed"))
+    db.update("apartment", apartment["id"], {key: source[key] for key in FEE_COPY_FIELDS})
+    db.audit("stay_fee_copy_setup", f"apartment_id={apartment['id']} source_id={source['id']}")
+    return _back(back_path, msg=_flash(request, "flash.stay_fees.copy_done", name=source["internal_name"] or ""))
 
 
 @router.post("/stay-fees/{apartment_id}/finalize")
