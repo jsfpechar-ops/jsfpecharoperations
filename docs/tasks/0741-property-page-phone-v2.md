@@ -22,6 +22,12 @@ expected (CSS only); desktop (>= 1024 px) must not change.
 
 ## 3. Steps
 
+0. Finish 0740 first (orchestrator decision 2026-11-02, phone-only test updates, allowed by this brief):
+   - `App/tests/test_0530_properties_chips.py::test_phone_cards_one_per_property_with_four_chips`: the phone card now has ONE status line, not four chips. Rename it `test_phone_cards_one_per_property_with_one_status_line` and assert one card, href `/apartments/…`, and exactly one `<span class="st g">` or `<span class="st r">` in the card body. Update the `PHONE_CARD` regex if it relies on the old markup.
+   - `App/tests/test_properties_table_chips.py::test_the_add_property_cta_carries_the_property_icon` (and `_add_cta` if needed): the phone CTA is now `<a class="round props-add ph-only" …>`; assert `'round' in` its class list instead of the exact `class="round"`.
+   - `App/tests/test_host_controls_browser.py` ~line 209: change `.props-top a.round` to `.props-head a.props-add` (comment: `0740: phone action is .props-head a.props-add`).
+   - Run those three files (browser command from step 5) and commit `0740: update phone-card tests` before starting step 1.
+
 1. Read app2.css lines 715-770 and 590-595. Edit the existing phone rules in place (do not append a second competing block) so that below 1024 px:
    - `.prop-phone-top`: `display:flex;padding:8px 0 0;margin-bottom:12px`; its `.round`: 44×44, `border-radius:50%`, `background:#f4f3ef`, grid-centred icon.
    - `.prop-phone-top ~ h1.big` (only on this page): `font-size:30px;line-height:1.15;font-weight:800;letter-spacing:-.02em;text-align:center;margin:0 8px 6px`.
@@ -50,4 +56,17 @@ expected (CSS only); desktop (>= 1024 px) must not change.
    ```
    Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>
    ```
-7. Report `docs/tasks/0741-report.md`: changed files, command tails, overrides added, deviations. Commit it with the work.
+
+## 7. Acceptance
+
+- All commands in step 5 and step 0 pass with 0 skipped; desktop (1024+) assertions unchanged.
+- `git grep -n "props-top" App` prints nothing.
+
+## 8. Stop and ask
+
+- A test outside the files named in section 2 and step 0 fails, or a style failure in 0710 cannot be fixed in CSS.
+- `test_0250_property_cards.py` overview-pill failures also fail on the base commit: note them in the report, do not fix.
+
+## 9. Report
+
+`docs/tasks/0741-report.md`: changed files, command tails, overrides added, deviations. Commit it with the work.
