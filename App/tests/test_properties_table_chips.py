@@ -160,7 +160,8 @@ def test_the_setup_pill_survives(host):
 
 
 def _add_cta(page: str) -> str:
-    match = re.search(r"<a[^>]*href=\"/apartments/new\"[^>]*>.*?</a>", page, re.S)
+    # 0740: the phone CTA is the round one (.props-add); the desktop one is a plain .btn.
+    match = re.search(r"<a[^>]*class=\"[^\"]*\bround\b[^\"]*\"[^>]*href=\"/apartments/new\"[^>]*>.*?</a>", page, re.S)
     assert match, "the Add a property CTA is missing"
     return match.group(0)
 
@@ -168,7 +169,8 @@ def _add_cta(page: str) -> str:
 def test_the_add_property_cta_carries_the_property_icon(host):
     cta = _add_cta(host.get("/apartments?lang=en").text)
 
-    assert 'class="round"' in cta
+    # 0740: the phone CTA is <a class="round props-add ph-only" ...>; assert the class list has round.
+    assert re.search(r'class="[^"]*\bround\b', cta)
     assert host_i18n.STRINGS["en"]["apartments.add"] in cta
 
 
