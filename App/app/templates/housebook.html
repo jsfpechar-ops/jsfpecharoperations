@@ -14,7 +14,6 @@
 {% block tabs %}{% endblock %}
 {% block toolbar %}{% endblock %}
 {% block body %}
-{% include "_host_alerts.html" %}
 {% macro reported_pill(row, show_date) -%}
   {% if row.reported == 'yes' %}<span class="pill p-ok">{{ t('status.reported') }}</span>{% if show_date %}<small>{{ row.reported_at[:10] }}</small>{% endif %}
   {% elif row.reported.startswith('not required') %}<span class="pill p-n">{{ t('status.not_required') }}</span>
