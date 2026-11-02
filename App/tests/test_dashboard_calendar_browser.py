@@ -889,6 +889,20 @@ def test_month_tiles_and_side_panel(calendar_workspace, calendar_origin, width):
         add = page.locator("[data-cal-day-add]").bounding_box()
         assert add["height"] >= 44 and box["y"] + box["height"] - (add["y"] + add["height"]) >= 24, (add, box)
         assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+        panel_left = page.locator("[data-cal-day-dialog]").bounding_box()["x"]
+        for selector in (".cal-toolbar button, .cal-toolbar select", ".cal-heading button, .cal-heading select"):
+            for control in page.locator(selector).all():
+                if control.is_visible():
+                    box = control.bounding_box()
+                    assert box["x"] + box["width"] <= panel_left + 1, (selector, box, panel_left)
+        grid = page.locator(".cal-body").bounding_box()
+        assert grid["x"] + grid["width"] >= panel_left - 24, (grid, panel_left)
+        for selector in ("[data-cal-prev]", "[data-cal-today]", "[data-cal-next]"):
+            assert page.locator(selector).evaluate("node => getComputedStyle(node).backgroundColor") != "rgb(208, 69, 45)", selector
+        if width == 768:
+            chip_sizes = page.locator(".cal-tile-chip").evaluate_all("nodes => nodes.filter(node => node.offsetParent).map(node => getComputedStyle(node).fontSize)")
+            assert chip_sizes and all(size == "0px" for size in chip_sizes), chip_sizes
+        assert not page.locator(".havel-fab").is_visible()
         save_task_shot(page, f"calendar-range-{width}.png") if width in (768, 1280) else None
 
         page.locator("[data-cal-day-add]").click()

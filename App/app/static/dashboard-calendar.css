@@ -684,3 +684,22 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
 @media (min-width:768px) {
   .dashboard-calendar[data-cleaning="false"] [data-cal-day-add] { display:block; width:100%; min-height:48px; margin:0; border-radius:12px; }
 }
+
+/* 0818: Airbnb desktop calendar. Neutral nav, title left, grid full width beside the panel, bar chips at 768-1023, help bubble hidden while the panel is open. */
+@media (min-width:768px) {
+  body.host-workspace .dashboard-calendar[data-cleaning="false"] .cal-navigation .btn { height:40px; min-height:40px; min-width:40px; padding:0 16px; border:0; border-radius:999px; background:#f2f2f0; box-shadow:none; color:var(--ink); font-size:14px; font-weight:600; }
+  body.host-workspace .dashboard-calendar[data-cleaning="false"] .cal-navigation .btn:hover { background:#e8e8e5; }
+  body.host-workspace .dashboard-calendar[data-cleaning="false"] .cal-navigation .cal-arrow { width:40px; padding:0; border-radius:50%; }
+  .dashboard-calendar[data-cleaning="false"] .cal-toolbar { grid-template-columns:minmax(0,1fr) auto auto; gap:12px; margin-bottom:12px; }
+  .dashboard-calendar[data-cleaning="false"] .cal-toolbar .cal-navigation { grid-column:2; grid-row:1; gap:12px; }
+  .dashboard-calendar[data-cleaning="false"] .cal-toolbar h3 { grid-column:1; grid-row:1; min-width:0; margin:0; text-align:left; font-size:24px; line-height:32px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .dashboard-calendar[data-cleaning="false"] .cal-toolbar-options { grid-column:3; grid-row:1; gap:12px; }
+  .dashboard-calendar[data-cleaning="false"].has-panel { margin-right:calc(360px + 16px - 36px); } /* 0818: desktop wrap gutter measured 36 px */
+  .dashboard-calendar[data-cleaning="false"].has-panel .cal-body { padding-right:0; }
+}
+@media (min-width:768px) and (max-width:1023px) {
+  .dashboard-calendar[data-cleaning="false"].has-panel { margin-right:calc(320px + 16px - 20px); } /* 0818: tablet wrap gutter measured 20 px */
+  .dashboard-calendar[data-cleaning="false"] .cal-tile-chips { gap:3px; }
+  .dashboard-calendar[data-cleaning="false"] .cal-tile-chip { height:6px; padding:0; border:0; border-radius:3px; background:var(--cal-ink, #888); font-size:0; line-height:0; color:transparent; }
+}
+body:has(.dashboard-calendar.has-panel) .havel-fab { display:none !important; }
