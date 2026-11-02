@@ -49,7 +49,7 @@
           </div>
         {% endif %}
         {% if card.video_url %}
-          <p class="g-guide-video"><a data-turbo="false" href="{{ card.video_url }}" rel="noopener noreferrer" target="_blank">{{ t('guide_video') }}</a></p>
+          <p class="g-guide-video"><a href="{{ card.video_url }}" rel="noopener noreferrer" target="_blank">{{ t('guide_video') }}</a></p>
         {% endif %}
         {% if card.original %}
           {# 0353: the AI translation is shown; the host's own words are one tap away, no JavaScript. #}

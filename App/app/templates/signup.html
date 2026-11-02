@@ -43,7 +43,7 @@
     <label class="auth-remember">
       <input type="checkbox" name="accept" value="1" required
              {% if error_field == 'accept' %}aria-invalid="true" aria-describedby="accept-error"{% endif %}>
-      <span>{{ t('signup.accept_before') }}<a data-turbo="false" href="/terms" target="_blank" rel="noopener noreferrer">{{ t('signup.accept_terms') }}</a>{{ t('signup.accept_between') }}<a data-turbo="false" href="/dpa" target="_blank" rel="noopener noreferrer">{{ t('signup.accept_dpa') }}</a>{{ t('signup.accept_privacy_before') }}<a data-turbo="false" href="/privacy" target="_blank" rel="noopener noreferrer">{{ t('signup.accept_privacy') }}</a>{{ t('signup.accept_after') }}</span>
+      <span>{{ t('signup.accept_before') }}<a href="/terms" target="_blank" rel="noopener noreferrer">{{ t('signup.accept_terms') }}</a>{{ t('signup.accept_between') }}<a href="/dpa" target="_blank" rel="noopener noreferrer">{{ t('signup.accept_dpa') }}</a>{{ t('signup.accept_privacy_before') }}<a href="/privacy" target="_blank" rel="noopener noreferrer">{{ t('signup.accept_privacy') }}</a>{{ t('signup.accept_after') }}</span>
     </label>
     {% if error_field == 'accept' %}
     <p class="auth-hint err-text" id="accept-error" role="alert">{{ t(error) }}</p>
@@ -54,7 +54,7 @@
     {% for box in consent_boxes %}
     <label class="auth-remember" data-consent="{{ box.platform }}">
       <input type="checkbox" name="{{ box.field }}" value="1"{% if box.checked %} checked{% endif %}>
-      <span>{{ box.text }} <a data-turbo="false" href="{{ box.link_url }}" target="_blank" rel="noopener noreferrer">{{ box.link_label }}</a></span>
+      <span>{{ box.text }} <a href="{{ box.link_url }}" target="_blank" rel="noopener noreferrer">{{ box.link_label }}</a></span>
     </label>
     {% endfor %}
     {# Legal position 2: refusing setup tips is one optional, unticked box. #}
