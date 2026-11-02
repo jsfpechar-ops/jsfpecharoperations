@@ -35,6 +35,7 @@ Executor: Haiku 5.5. Branch: task/0819-booking-site-host-setup (worktree /home/c
 - Step 3 is committed although its test command failed (the edit applied exactly as the brief gives it).
 - Step 4 mockup path was not read; the brief's mapping text was used.
 - Done: steps 1 to 7. Left: steps 8 and 9. Next = step 8 (`App/tests/test_booking_setup.py`).
+- Focus ring on policy radios: the `.host-workspace .ui-choice-card input:focus-visible` rule in host2.css now draws a 2 px `--coral-600` outline on the input itself instead of `outline: none`, so the a11y guard sees a visible focus (CI `focus-not-visible`, `input#:non_refundable`).
 - Deviations (orchestrator option (a)): host2.css got one scoped rule block, `.ui-choice-card-label:has(> input[name="cancellation_policy"])` (label min-height and 44 px radio input, tokens only). The planned `booking-policy-cards` class on the template was dropped because `design_lint` rejects classes not in the catalog and the brief forbids catalog edits; the rule targets the input name instead. The choice_card macro is untouched.
 - Acceptance not ticked: "form saves without JavaScript" (not checked in this session); "git diff --stat origin/main lists only the §3 files" (the branch base carries 0818, 0820 to 0822 docs and other files, so this cannot hold as written).
 - 390 px screenshot viewed: policy radios are full-size, the selected card is outlined, the form is readable; the Copy buttons under the Airbnb link and the address QR wrap onto their own lines (existing markup, not changed here).
