@@ -20,7 +20,12 @@ expected (CSS only); desktop (>= 1024 px) must not change.
 - CSS: `App/app/static/app2.css` ~lines 717-765 (0541/0542 phone property rules: `.prop-phone-top`, `.prop-phone-sub`, `.guest-card`, `.prop-sec > summary`) and line ~593 (`.guest-btns`).
 - Standing rule for tests: you may change phone-only (below 1024 px) assertions about the property page header, guest card and summary rows in `App/tests/test_0541_property_page_phone_browser.py`, `test_0534_property_page_v2.py` and the `property` entry of `App/tests/v2_mockup.py`. Change no desktop assertion and no other test; if another test fails, stop and write it in the report.
 
-## 3. Steps
+## 3. Files
+
+`App/app/static/app2.css`, `App/app/templates/base.html`, `App/tests/static_versions.json`, `App/tests/v2_mockup.py`, `docs/design/catalog.json`,
+the tests named in section 2 and step 0, new `docs/tasks/0741-report.md`.
+
+## 4. Steps
 
 0. Finish 0740 first (orchestrator decision 2026-11-02, phone-only test updates, allowed by this brief):
    - `App/tests/test_0530_properties_chips.py::test_phone_cards_one_per_property_with_four_chips`: the phone card now has ONE status line, not four chips. Rename it `test_phone_cards_one_per_property_with_one_status_line` and assert one card, href `/apartments/…`, and exactly one `<span class="st g">` or `<span class="st r">` in the card body. Update the `PHONE_CARD` regex if it relies on the old markup.
@@ -56,6 +61,14 @@ expected (CSS only); desktop (>= 1024 px) must not change.
    ```
    Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>
    ```
+
+## 5. Do not touch
+
+Templates (unless a CSS-only fix is impossible: then stop and ask), `App/app/static/app.js`, `docs/design/mockup/`, desktop (>= 1024 px) rules.
+
+## 6. Commands
+
+The test commands in step 5, run from `App/`, plus `python3 scripts/design_lint.py` and `python3 scripts/context_lint.py` from the repo root.
 
 ## 7. Acceptance
 
