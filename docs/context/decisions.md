@@ -62,3 +62,4 @@ Append-only.
 - 2026-10-31 | D3 detail: goose v3.29.0, asset goose_linux_x86_64 (SHA-256 pinned in .github/workflows/ci.yml) | owner | 0465b
 - 2026-11-01 | Go: module go/, stdlib, pgx v5, go-ntlmssp v0.1.1, go-qrcode (11-02); crypto via Python fixtures | owner (waiver) | 0474, 0481, 0684
 - 2026-11-02 | Booking page: Czech first, CS/EN switch (?lang=, no cookie); host copy verbatim; replaces 10-28 English-only | owner | 0818
+- 2026-11-02 | Booking site: one HMAC link per booking (`manage_token`) serves invoice and booking page | orchestrator | 0820, 0821

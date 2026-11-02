@@ -329,11 +329,11 @@ The last line is the test-map row "Invoices, stay fee" (`test_invoice_*.py test_
 
 ## 7. Acceptance
 
-- [ ] The three §6 runs pass.
-- [ ] `grep -rn "manage_token" App/app | grep -v tests` shows `booking_site.py`, `booking_webhook.py` (through `manage_url`) and no other writer of a token.
-- [ ] A webhook-confirmed test booking has a non-null `invoice_id` and a PDF that starts with `%PDF`.
-- [ ] A host without seller details: booking `paid`, no invoice, one `site_invoice_skipped` audit row, no exception.
-- [ ] `git diff --stat origin/main` lists only the §3 files.
+- [x] The three §6 runs pass.
+- [x] `grep -rn "manage_token" App/app | grep -v tests` shows `booking_site.py`, `booking_webhook.py` (through `manage_url`) and no other writer of a token.
+- [x] A webhook-confirmed test booking has a non-null `invoice_id` and a PDF that starts with `%PDF`.
+- [x] A host without seller details: booking `paid`, no invoice, one `site_invoice_skipped` audit row, no exception.
+- [x] `git diff --stat origin/main` lists only the §3 files.
 
 ## 8. Stop and ask
 
