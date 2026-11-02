@@ -1,6 +1,6 @@
 # 0816: Booking site payment webhook (confirm, or refund a double booking)
 
-Status: todo
+Status: in-progress
 Depends on: 0815 | Base commit: tip of task/0815-booking-site-checkout | Branch: task/0816-booking-site-webhook
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
