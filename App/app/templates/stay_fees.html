@@ -22,7 +22,7 @@
     <span class="ui-sub">{{ period.period_label }}</span>
   </div>
   <ol class="fee-stepper" aria-label="{{ t('stay_fees.pay.step', n=period.step) }}">
-    {% for n in (1, 2, 3) %}
+    {% for n in (1, 2) %}
     <li class="fee-stepper-item" data-state="{{ 'done' if n < period.step else ('current' if n == period.step else 'todo') }}"{% if n == period.step %} aria-current="step"{% endif %}>
       <span class="fee-stepper-dot" aria-hidden="true">{% if n < period.step %}✓{% else %}{{ n }}{% endif %}</span>
       <span class="fee-stepper-label">{{ t('stay_fees.pay.short' ~ n) }}</span>
@@ -56,33 +56,40 @@
       </ul>
       <div class="fee-step-actions"><a class="ui-btn ui-btn-primary" href="{{ report_url }}">{{ t('stay_fees.pay.fix') }}</a></div>
     {% endif %}
-  {% elif period.step == 2 %}
-    <h3>{{ t('stay_fees.pay.step2') }}</h3>
-    <p class="ui-sub">{{ t('stay_fees.pay.download_why') }}</p>
-    <div class="fee-step-actions">
-      <a class="ui-btn ui-btn-primary" href="{{ pdf_url }}" download>{{ t('stay_fees.download_pdf') }}</a>
-      <a class="ui-btn ui-btn-secondary" href="{{ fee_step_url(apartment.id, 3) }}">{{ t('stay_fees.pay.next') }}</a>
-    </div>
   {% else %}
-    <h3>{{ t('stay_fees.pay.step3') }}</h3>
-    {% if period.pay_total_czk == 0 %}
-      <p>{{ t('stay_fees.pay.nothing') }}</p>
-    {% elif period.pay and period.pay.qr %}
-      <div class="fee-qr">
+    <h3>{{ t('stay_fees.pay.step2') }}</h3>
+    <div class="fee-send-pay">
+      <ol class="fee-tasks">
+        <li>
+          <strong>{{ t('stay_fees.pay.task_pdf') }}</strong>
+          <a class="ui-btn ui-btn-secondary" href="{{ pdf_url }}" download>{{ t('stay_fees.download_pdf') }}</a>
+        </li>
+        <li>
+          <strong>{{ t('stay_fees.pay.task_send') }}</strong>
+          <p class="ui-sub">{% if apartment.stay_fee_authority_databox %}{{ t('stay_fees.pay.send_to', databox=apartment.stay_fee_authority_databox) }}{% else %}{{ t('stay_fees.pay.send') }}{% endif %}</p>
+          <a class="ui-btn ui-btn-primary" href="https://www.mojedatovaschranka.cz/" target="_blank" rel="noopener noreferrer">{{ t('stay_fees.pay.open_databox') }}</a>
+        </li>
+        {% if period.pay_total_czk != 0 %}
+        <li>
+          <strong>{{ t('stay_fees.pay.task_pay') }}</strong>
+          {% if period.pay and period.pay.qr %}<p class="ui-sub">{{ t('stay_fees.payment.qr_help', amount=period.pay_total_display) }}</p>{% endif %}
+        </li>
+        {% endif %}
+      </ol>
+      <div class="fee-qr-panel">
+      {% if period.pay_total_czk == 0 %}
+        <p>{{ t('stay_fees.pay.nothing') }}</p>
+      {% elif period.pay and period.pay.qr %}
         <img src="{{ period.pay.qr }}" width="176" height="176" alt="{{ t('stay_fees.payment.qr_alt') }}">
-        <div>
-          <p class="fee-qr-amount">{{ period.pay_total_display }}</p>
-          <p class="ui-sub">{{ t('stay_fees.payment.account') }}: {{ period.pay.account or period.pay.iban_display }}</p>
-          <p class="ui-sub">{{ t('stay_fees.payment.vs') }}: {{ period.pay.vs }}</p>
-        </div>
+        <p class="fee-qr-amount">{{ period.pay_total_display }}</p>
+        <dl class="fee-qr-meta">
+          <div><dt>{{ t('stay_fees.payment.account') }}</dt><dd>{{ period.pay.account or period.pay.iban_display }}</dd></div>
+          <div><dt>{{ t('stay_fees.payment.vs') }}</dt><dd>{{ period.pay.vs }}</dd></div>
+        </dl>
+      {% else %}
+        <p class="ui-sub">{{ t('stay_fees.pay.no_account') }} <a href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ t('stay_fees.pay.add_account') }}</a></p>
+      {% endif %}
       </div>
-    {% else %}
-      <p class="ui-sub">{{ t('stay_fees.pay.no_account') }} <a href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ t('stay_fees.pay.add_account') }}</a></p>
-    {% endif %}
-    <p class="fee-send-line">{% if apartment.stay_fee_authority_databox %}{{ t('stay_fees.pay.send_to', databox=apartment.stay_fee_authority_databox) }}{% else %}{{ t('stay_fees.pay.send') }}{% endif %}</p>
-    <div class="fee-step-actions">
-      <a class="ui-btn ui-btn-primary" href="https://www.mojedatovaschranka.cz/" target="_blank" rel="noopener noreferrer">{{ t('stay_fees.pay.open_databox') }}</a>
-      <a class="ui-btn ui-btn-quiet" href="{{ fee_step_url(apartment.id, 2) }}">{{ t('stay_fees.pay.back') }}</a>
     </div>
   {% endif %}
   </div>
