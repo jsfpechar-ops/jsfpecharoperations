@@ -37,3 +37,9 @@ Status: review
 1. Before deploy: on the server run `psql "$DATABASE_URL" -c "SELECT COUNT(*) FROM billing_account WHERE founder = 1;"` (expect 0). If not 0, do not deploy.
 2. Merge the PR, deploy as usual.
 3. Optional: remove `UBYHOST_FOUNDER_SLOTS` from the server `.env` if set.
+
+## Orchestrator review (2026-11-02)
+
+- Diff reviewed: placeholder counts in `place`, analytics and Go snapshot INSERT match.
+- Browser tests run with the preinstalled Chromium: `test_0412_pricing_browser.py`, `test_0416_plan_page_browser.py`, `test_0414_billing_banner_browser.py`: 12 passed, 0 skipped.
+- No screenshot: the only visible change is the removed founder line, which no account could show.
