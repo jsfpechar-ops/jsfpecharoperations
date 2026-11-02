@@ -242,4 +242,4 @@ def test_no_sqlite_only_insert_variants_or_bare_is_comparisons_remain():
 
 @pytest.mark.sqlite_only
 def test_python_runner_is_frozen():
-    assert max(v for v, _n, _p in db.migration_files()) == 34
+    assert max(v for v, _n, _p in db.migration_files()) == 35
