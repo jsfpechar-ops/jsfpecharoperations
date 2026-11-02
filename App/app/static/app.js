@@ -8,6 +8,7 @@
   var ROW_SELECTOR = "tr[data-href], .clickable-row[data-href]";
 
   var hostBindings = {};
+  var navState = { railWasCollapsed: false, animateTimer: null, tabletRail: null };
   function claimNode(node, key) {
     var keys = node._ubyBound || (node._ubyBound = {});
     if (keys[key]) return false;
@@ -740,9 +741,10 @@
     var toggles = document.querySelectorAll("[data-nav-toggle]");
     var closers = document.querySelectorAll("[data-nav-close]");
 
-    var sidebar = document.getElementById("app-sidebar");
-    var main = document.getElementById("main-content");
     function setDrawer(open) {
+      var sidebar = document.getElementById("app-sidebar");
+      var main = document.getElementById("main-content");
+      var toggles = document.querySelectorAll("[data-nav-toggle]");
       var wasOpen = document.body.classList.contains("nav-open");
       document.body.classList.toggle("nav-open", open);
       if (sidebar) sidebar.inert = isCompact() && !open;
@@ -757,13 +759,13 @@
     }
 
     // 0377: only a click slides the rail; restore and resize stay instant.
-    var animateTimer = null;
     function animateRail() {
       document.body.classList.add("sidebar-animating");
-      clearTimeout(animateTimer);
-      animateTimer = setTimeout(function () { document.body.classList.remove("sidebar-animating"); }, 280);
+      clearTimeout(navState.animateTimer);
+      navState.animateTimer = setTimeout(function () { document.body.classList.remove("sidebar-animating"); }, 280);
     }
     function setCollapsed(collapsed, animate) {
+      var collapse = document.querySelector("[data-sidebar-collapse]");
       if (animate && collapsed !== document.body.classList.contains("sidebar-collapsed")) animateRail();
       document.body.classList.toggle("sidebar-collapsed", collapsed);
       if (collapse) {
@@ -779,9 +781,9 @@
 
     // 0251: 1024-1279 px always shows the rail (host2.css); there the button
     // opens the full menu over the page instead, never stored.
-    var tabletRail = window.matchMedia("(min-width: 1024px) and (max-width: 1279px)");
-    var railWasCollapsed = false;
+    var tabletRail = navState.tabletRail || (navState.tabletRail = window.matchMedia("(min-width: 1024px) and (max-width: 1279px)"));
     function syncRailButton() {
+      var collapse = document.querySelector("[data-sidebar-collapse]");
       if (!collapse || !tabletRail.matches) return;
       var open = document.body.classList.contains("sidebar-expanded");
       collapse.setAttribute("aria-expanded", open ? "true" : "false");
@@ -789,12 +791,13 @@
     }
     function setExpanded(open, animate) {
       var body = document.body;
+      var collapse = document.querySelector("[data-sidebar-collapse]");
       if (open === body.classList.contains("sidebar-expanded")) return;
       if (animate) animateRail();
       if (open) {
-        railWasCollapsed = body.classList.contains("sidebar-collapsed");
+        navState.railWasCollapsed = body.classList.contains("sidebar-collapsed");
         body.classList.remove("sidebar-collapsed");
-      } else if (railWasCollapsed) {
+      } else if (navState.railWasCollapsed) {
         body.classList.add("sidebar-collapsed");
       }
       body.classList.toggle("sidebar-expanded", open);
@@ -813,49 +816,54 @@
     }
     if (stored === "1") setCollapsed(true);
 
-    if (collapse) collapse.addEventListener("click", function () {
+    if (collapse && claimNode(collapse, "initNavigation")) collapse.addEventListener("click", function () {
       if (tabletRail.matches) { setExpanded(!document.body.classList.contains("sidebar-expanded"), true); return; }
       setCollapsed(!document.body.classList.contains("sidebar-collapsed"), true);
     });
-    if (expand) expand.addEventListener("click", function () {
+    if (expand && claimNode(expand, "initNavigation")) expand.addEventListener("click", function () {
       if (tabletRail.matches) { setExpanded(true, true); return; }
       setCollapsed(false, true);
     });
-    document.addEventListener("pointerdown", function (event) {
-      if (document.body.classList.contains("sidebar-expanded") && sidebar && !sidebar.contains(event.target)) setExpanded(false, true);
-    });
-    document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape" && document.body.classList.contains("sidebar-expanded")) setExpanded(false, true);
-    });
+    if (claimNode(document, "initNavigation")) {
+      document.addEventListener("pointerdown", function (event) {
+        var sidebar = document.getElementById("app-sidebar");
+        if (document.body.classList.contains("sidebar-expanded") && sidebar && !sidebar.contains(event.target)) setExpanded(false, true);
+      });
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && document.body.classList.contains("sidebar-expanded")) setExpanded(false, true);
+      });
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && document.body.classList.contains("nav-open")) {
+          setDrawer(false);
+        }
+      });
+      document.addEventListener("keydown", function (event) {
+        var sidebar = document.getElementById("app-sidebar");
+        if (event.key !== "Tab" || !sidebar || !document.body.classList.contains("nav-open")) return;
+        var focusable = Array.from(sidebar.querySelectorAll("a, button, summary, input, select")).filter(function (el) {
+          return !el.disabled && el.getClientRects().length > 0;
+        });
+        var first = focusable[0], last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      });
+      document.addEventListener("host:close-navigation", function () { setDrawer(false); });
+    }
     var onRailChange = function () { setExpanded(false); syncRailButton(); if (!tabletRail.matches) setCollapsed(document.body.classList.contains("sidebar-collapsed")); };
-    if (tabletRail.addEventListener) tabletRail.addEventListener("change", onRailChange);
+    if (claimNode(tabletRail, "initNavigation") && tabletRail.addEventListener) tabletRail.addEventListener("change", onRailChange);
     syncRailButton();
 
     toggles.forEach(function (button) {
+      if (!claimNode(button, "initNavigation")) return;
       button.addEventListener("click", function () {
         setDrawer(!document.body.classList.contains("nav-open"));
       });
     });
     closers.forEach(function (button) {
+      if (!claimNode(button, "initNavigation")) return;
       button.addEventListener("click", function () { setDrawer(false); });
     });
-
-    document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape" && document.body.classList.contains("nav-open")) {
-        setDrawer(false);
-      }
-    });
-    document.addEventListener("keydown", function (event) {
-      if (event.key !== "Tab" || !sidebar || !document.body.classList.contains("nav-open")) return;
-      var focusable = Array.from(sidebar.querySelectorAll("a, button, summary, input, select")).filter(function (el) {
-        return !el.disabled && el.getClientRects().length > 0;
-      });
-      var first = focusable[0], last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
-    });
-    document.addEventListener("host:close-navigation", function () { setDrawer(false); });
-    window.addEventListener("resize", function () { setDrawer(false); });
+    if (claimNode(window, "initNavigation")) window.addEventListener("resize", function () { setDrawer(false); });
     setDrawer(false);
   }
 
@@ -1027,6 +1035,7 @@
 
   function initFilterPanels() {
     document.querySelectorAll("[data-filter-panel]").forEach(function (form) {
+      if (!claimNode(form, "initFilterPanels")) return;
       var toggle = form.id ? document.querySelector('[data-filter-toggle][aria-controls="' + form.id + '"]') : null;
       var controls = Array.prototype.slice.call(form.querySelectorAll("input, select, textarea"));
       var initial = controls.map(function (control) { return control.value; });
@@ -1084,7 +1093,23 @@
   }
 
   function initDateRanges(form) {
+    if (claimNode(document, "initDateRanges")) {
+      document.addEventListener("pointerdown", function (event) {
+        document.querySelectorAll("[data-date-range]").forEach(function (range) {
+          var popover = range.querySelector("[data-range-popover]");
+          if (range._ubyClose && popover && !popover.hidden && !range.contains(event.target)) range._ubyClose(true);
+        });
+      });
+      document.addEventListener("keydown", function (event) {
+        if (event.key !== "Escape") return;
+        document.querySelectorAll("[data-date-range]").forEach(function (range) {
+          var popover = range.querySelector("[data-range-popover]");
+          if (range._ubyClose && popover && !popover.hidden) { event.preventDefault(); range._ubyClose(true); }
+        });
+      });
+    }
     form.querySelectorAll("[data-date-range]").forEach(function (range) {
+      if (!claimNode(range, "initDateRanges")) return;
       var from = range.querySelector("[data-range-from]");
       var until = range.querySelector("[data-range-until]");
       var trigger = range.querySelector("[data-range-trigger]");
@@ -1202,14 +1227,29 @@
         until.dispatchEvent(new Event("change", { bubbles: true }));
         setCaption(); popover.hidden = true; trigger.setAttribute("aria-expanded", "false"); trigger.focus();
       });
-      document.addEventListener("pointerdown", function (event) { if (!range.contains(event.target) && !popover.hidden) close(true); });
-      document.addEventListener("keydown", function (event) { if (event.key === "Escape" && !popover.hidden) { event.preventDefault(); close(true); } });
+      range._ubyClose = close;
       setCaption(); render();
     });
   }
 
   function initMonthPickers(form) {
+    if (claimNode(document, "initMonthPickers")) {
+      document.addEventListener("pointerdown", function (event) {
+        document.querySelectorAll("[data-month-picker]").forEach(function (picker) {
+          var panel = picker.querySelector("[data-month-grid-panel]");
+          if (picker._ubyClose && panel && !panel.hidden && !picker.contains(event.target)) picker._ubyClose(true);
+        });
+      });
+      document.addEventListener("keydown", function (event) {
+        if (event.key !== "Escape") return;
+        document.querySelectorAll("[data-month-picker]").forEach(function (picker) {
+          var panel = picker.querySelector("[data-month-grid-panel]");
+          if (picker._ubyClose && panel && !panel.hidden) { event.preventDefault(); picker._ubyClose(true); }
+        });
+      });
+    }
     form.querySelectorAll("[data-month-picker]").forEach(function (picker) {
+      if (!claimNode(picker, "initMonthPickers")) return;
       var nativeInput = picker.querySelector("[data-month-native]");
       var trigger = picker.querySelector("[data-month-trigger]");
       var panel = picker.querySelector("[data-month-grid-panel]");
@@ -1279,8 +1319,7 @@
       var all = picker.querySelector("[data-month-all-choice]");
       if (all && optional) all.addEventListener("click", function () { selected = ""; nativeInput.value = ""; nativeInput.dispatchEvent(new Event("change", { bubbles: true })); setCaption(); render(); panel.hidden = true; trigger.setAttribute("aria-expanded", "false"); trigger.focus(); });
       nativeInput.addEventListener("change", function () { selected = nativeInput.value; setCaption(); render(); });
-      document.addEventListener("pointerdown", function (event) { if (!picker.contains(event.target) && !panel.hidden) close(true); });
-      document.addEventListener("keydown", function (event) { if (event.key === "Escape" && !panel.hidden) { event.preventDefault(); close(true); } });
+      picker._ubyClose = close;
       setCaption(); render();
     });
   }
@@ -1455,6 +1494,7 @@
     });
   }
 
+  var powerToolsKeydown = null;
   function initPowerTools() {
     var command = document.getElementById("command-dialog");
     var input = command ? command.querySelector("[data-command-input]") : null;
@@ -1687,28 +1727,32 @@
     }
 
     document.querySelectorAll("[data-command-open]").forEach(function (button) {
+      if (!claimNode(button, "initPowerTools")) return;
       button.addEventListener("click", openCommand);
     });
     document.querySelectorAll("[data-command-close]").forEach(function (button) {
+      if (!claimNode(button, "initPowerTools")) return;
       button.addEventListener("click", closeCommand);
     });
-    if (command) {
+    if (command && claimNode(command, "initPowerTools")) {
       command.addEventListener("close", clearCommandCopyError);
       command.addEventListener("click", function (event) {
         if (event.target === command) closeCommand();
       });
     }
     document.querySelectorAll("[data-shortcuts-open]").forEach(function (button) {
+      if (!claimNode(button, "initPowerTools")) return;
       button.addEventListener("click", function () {
         document.dispatchEvent(new Event("host:close-navigation"));
         if (shortcuts && typeof shortcuts.showModal === "function") shortcuts.showModal();
       });
     });
     document.querySelectorAll("[data-shortcuts-close]").forEach(function (button) {
+      if (!claimNode(button, "initPowerTools")) return;
       button.addEventListener("click", function () { if (shortcuts) shortcuts.close(); });
     });
 
-    if (input) {
+    if (input && claimNode(input, "initPowerTools")) {
       input.addEventListener("input", function () { clearCommandCopyError(); render(input.value); });
       input.addEventListener("keydown", function (event) {
         if ((event.key === "ArrowDown" || event.key === "ArrowUp") && visible.length) {
@@ -1722,7 +1766,7 @@
       });
     }
 
-    document.addEventListener("keydown", function (event) {
+    powerToolsKeydown = function (event) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         openCommand();
@@ -1768,7 +1812,10 @@
       } else if (event.key === "Enter" && current >= 0) {
         window.location.assign(rows[current].getAttribute("data-href"));
       }
-    });
+    };
+    if (claimNode(document, "initPowerTools")) {
+      document.addEventListener("keydown", function (event) { if (powerToolsKeydown) powerToolsKeydown(event); });
+    }
   }
 
   function initSavedViews() {
