@@ -1100,7 +1100,13 @@ body.v2 .settings-row-actions[hidden]{display:none}
 body.v2 .settings-lane a{display:inline-flex;align-items:center;min-height:24px}
 body.v2 .settings-lane .help-tip-btn{min-width:24px;min-height:24px}
 body.v2 .settings-lane form > .ui-btn + .ui-sub{display:block;margin-top:10px}
-body.v2 .settings-heading{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+body.v2 .settings-action-row > div{display:flex;flex-wrap:wrap;align-items:center;gap:0 8px}
+body.v2 .settings-action-row > div > strong{width:auto}
+body.v2 h2 > .help-tip,body.v2 h3 > .help-tip{margin-left:8px;vertical-align:middle}
+body.v2 .settings-heading{display:flex;align-items:center;flex-wrap:nowrap;gap:8px}
+body.v2 .settings-heading h3{min-width:0}
+body.v2 div:has(> label.checkline + .help-tip){display:flex;align-items:center;flex-wrap:nowrap;gap:8px}
+body.v2 div:has(> label.checkline + .help-tip) > label.checkline{min-width:0}
 body.v2 .field-label-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
 body.v2 .settings-heading .help-tip,body.v2 .field-label-row .help-tip{display:inline-flex;vertical-align:middle}
 body.v2 .settings-lane input[type=checkbox]{min-width:24px;min-height:24px;margin:0;accent-color:var(--acc)}

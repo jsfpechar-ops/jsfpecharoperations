@@ -14,7 +14,7 @@
 {% block tabs %}{% endblock %}
 {% block body %}
 {% include "_host_alerts.html" %}
-<div class="head"><div>{% if next_path %}<a class="crumb" href="{{ next_path }}">{{ t('common.back') }}</a>{% endif %}<h1 class="big">{{ t('entities.title') }}</h1><p class="sub">{{ t('entities.lede') }}</p></div></div>
+<div class="head"><div>{% if next_path %}<a class="crumb" href="{{ next_path }}">{{ t('common.back') }}</a>{% endif %}<h1 class="big">{{ t('entities.title') }}{{ help_tip('entities-lede-help', t('entities.lede')) }}</h1></div></div>
 {{ onboarding_banner(onboarding) }}
 
 {% if edit_entity %}

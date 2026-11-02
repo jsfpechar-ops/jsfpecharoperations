@@ -44,7 +44,7 @@
         <div class="settings-action-row" id="settings-business">
           <div>
             <strong>{{ t('settings.business.title') }}</strong>
-            <small>{{ t('settings.business.help') }}</small>
+            {{ help_tip('settings-business-help', t('settings.business.help')) }}
           </div>
           {#- 0076: one business opens its editor directly; several open the list. -#}
           <a class="ui-btn ui-btn-secondary ui-btn-compact" href="{{ ('/entities?edit=' ~ business_entities[0].id ~ '&next=/settings') if business_entities and business_entities | length == 1 else '/entities' }}">{{ t('settings.business.action') }}</a>
@@ -56,7 +56,7 @@
                 <input type="checkbox" name="enabled" value="1"{% if onboarding_emails %} checked{% endif %}>
                 <strong>{{ t('settings.account.onboarding_emails') }}</strong>
               </label>
-              <small>{{ t('settings.account.onboarding_emails_help') }}</small>
+              {{ help_tip('settings-onboarding-emails-help', t('settings.account.onboarding_emails_help')) }}
             </div>
             <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('settings.account.onboarding_emails_save') }}</button>
           </form>
@@ -68,7 +68,7 @@
                 <input type="checkbox" name="enabled" value="1"{% if stay_fee_emails %} checked{% endif %}>
                 <strong>{{ t('settings.account.stay_fee_emails') }}</strong>
               </label>
-              <small>{{ t('settings.account.stay_fee_emails_help') }}</small>
+              {{ help_tip('settings-stay-fee-emails-help', t('settings.account.stay_fee_emails_help')) }}
             </div>
             <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('settings.account.stay_fee_emails_save') }}</button>
           </form>
@@ -77,14 +77,14 @@
           <div class="settings-action-row">
             <div>
               <strong>{{ t('settings.account.users') }}</strong>
-              <small>{{ t('settings.account.users_help') }}</small>
+              {{ help_tip('settings-users-help', t('settings.account.users_help')) }}
             </div>
             <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/admin/customers">{{ t('settings.account.users_action') }}</a>
           </div>
           <div class="settings-action-row">
             <div>
               <strong>{{ t('users.incidents_link') }}</strong>
-              <small>{{ t('settings.account.incidents_help') }}</small>
+              {{ help_tip('settings-incidents-help', t('settings.account.incidents_help')) }}
             </div>
             <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/admin/incidents">{{ t('settings.account.incidents_action') }}</a>
           </div>
@@ -100,7 +100,7 @@
         <div class="settings-action-row">
           <div>
             <strong>{{ t('passkeys.title') }}</strong>
-            <small>{{ t('passkeys.help') }}</small>
+            {{ help_tip('settings-passkeys-help', t('passkeys.help')) }}
           </div>
           {% if passkeys_available %}
             <button class="ui-btn ui-btn-primary ui-btn-compact" type="button" data-passkey-add data-passkey-supported hidden>{{ t('passkeys.add') }}</button>
@@ -190,7 +190,7 @@
         <div class="settings-action-row">
           <div>
             <strong>{{ t('pwa.install.title') }}</strong>
-            <small>{{ t('pwa.install.help') }}</small>
+            {{ help_tip('settings-pwa-help', t('pwa.install.help')) }}
           </div>
           <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" data-pwa-install hidden>{{ t('pwa.install.button') }}</button>
           <span class="ui-badge ui-badge-done" data-tone="green" data-pwa-installed hidden>{{ t('pwa.install.installed') }}</span>
@@ -204,7 +204,7 @@
         <div class="settings-action-row">
           <div>
             <strong>{{ t('push.title') }}</strong>
-            <small>{{ t('push.help') }}</small>
+            {{ help_tip('settings-push-help', t('push.help')) }}
           </div>
           <div class="settings-row-actions">
             <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" data-push-on hidden>{{ t('push.on') }}</button>
@@ -259,7 +259,7 @@
                 {% if not expired_records %}disabled{% endif %}>
           {{ tp('settings.retention.delete', expired_records) }}
         </button>
-        <span class="ui-sub">{{ t('settings.retention.delete_help') }}</span>
+        {{ help_tip('settings-purge-expired-help', t('settings.retention.delete_help')) }}
       </form>
 
       <div class="ui-section" id="settings-data">
@@ -300,7 +300,7 @@
         <div class="settings-action-row">
           <div>
             <strong>{{ t('nav.privacy_requests') }}</strong>
-            <small>{{ t('settings.privacy.requests_help') }}</small>
+            {{ help_tip('settings-privacy-requests-help', t('settings.privacy.requests_help')) }}
           </div>
           <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/privacy-requests">{{ t('settings.privacy.requests_action') }}</a>
         </div>
@@ -481,7 +481,7 @@
         <div class="settings-action-row">
           <div>
             <strong>{{ t('nav.guide') }}</strong>
-            <small>{{ t('settings.help.guide_help') }}</small>
+            {{ help_tip('settings-guide-help', t('settings.help.guide_help')) }}
           </div>
           <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/guide" aria-label="{{ t('settings.help.guide_action') }} {{ t('help.tip.label') | lower }}">{{ t('settings.help.guide_action') }}</a>
         </div>
@@ -489,8 +489,7 @@
     </div>
 
     <div class="ui-section" id="settings-legal">
-      <h2>{{ t('legal.settings_title') }}</h2>
-      <p class="ui-sub">{{ t('legal.settings_body', name=operator().name, ico=operator().ico) }}</p>
+      <h2>{{ t('legal.settings_title') }}{{ help_tip('settings-legal-help', t('legal.settings_body', name=operator().name, ico=operator().ico) ~ ' ' ~ t('legal.support_help')) }}</h2>
       <dl class="kv ui-sub">
         <dt>{{ t('legal.operator_address') }}</dt><dd>{{ operator().address }}</dd>
         {% if operator().email %}
@@ -499,7 +498,6 @@
           <dt>{{ t('legal.support_label') }}</dt><dd class="ui-sub">{{ t('legal.settings_contact_missing') }}</dd>
         {% endif %}
       </dl>
-      <p class="ui-sub">{{ t('legal.support_help') }}</p>
       <nav class="document-links" aria-label="{{ t('legal.settings_title') }}">
         <a href="/legal"><span>{{ t('legal.footer_link') }}</span></a>
         <a href="/terms"><span>{{ t('terms.footer_link') }}</span></a>
