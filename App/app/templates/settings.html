@@ -1,25 +1,25 @@
 {% extends "host_page.html" %}
+{% set v2 = true %}
 {% set nav = 'settings' %}
 {% set body_kind = 'settings' %}
 {% block title %}{{ t('nav.settings') }}{% endblock %}
-{% block page_title %}{{ t('nav.settings') }}{% endblock %}
-{% block meta %}{{ t('settings.lede') }}{% endblock %}
+{% block page_title %}{% endblock %}
+{% block meta %}{% endblock %}
+{% block primary_action %}{% endblock %}
+{% block secondary_actions %}{% endblock %}
 {% block body %}
+<div class="head settings-head"><div><h1 class="big">{{ t('nav.settings') }}</h1></div></div>
+<div class="settings-lane">
 {%- from "_icons.html" import icon with context -%}
 {% from "_components.html" import field_label, help_tip, settings_group, settings_heading with context %}
 
 {# 0083: one index, six visible groups. Each specialized action keeps its own form and endpoint. #}
-<nav class="host-property-grid" aria-label="{{ t('settings.index_label') }}">
-  {% for href, key in [('#settings-group-account', 'settings.group.account'), ('#settings-group-security', 'settings.group.security'), ('#settings-group-phone', 'settings.group.phone'), ('#settings-group-data', 'settings.group.data'), ('#settings-group-privacy', 'settings.group.privacy'), ('#settings-technical', 'settings.group.technical'), ('#settings-group-help', 'settings.group.help')] %}
-    <a class="host-property-card" href="{{ href }}"><strong>{{ t(key) }}</strong><span class="host-property-card-open" aria-hidden="true"><span class="host-property-card-open-text">{{ t('common.open') }}</span></span></a>
-  {% endfor %}
-  {% if billing_on() %}<a class="host-property-card" href="/predplatne"><strong>{{ t('billing.plan.title') }}</strong><span class="host-property-card-open" aria-hidden="true"><span class="host-property-card-open-text">{{ t('common.open') }}</span></span></a>{% endif %}
-</nav>
 
 <div class="settings-groups">
 
 {% call settings_group('account', t('settings.group.account')) %}
     <div class="ui-section" id="settings-account">
+      {% if billing_on() %}<a class="set-row" href="/predplatne"><span>{{ t('billing.plan.title') }}</span><span class="set-row-v">{{ t('common.open') }}</span></a>{% endif %}
       <div class="account-identity">
         <strong>{{ current_user.display_name or current_user.email or current_user.username }}</strong>
       </div>
@@ -512,5 +512,6 @@
       <p class="ui-sub">{{ t('settings.version_line', version=app_version) }}</p>
     </div>
 {% endcall %}
+</div>
 </div>
 {% endblock %}
