@@ -7,7 +7,7 @@
   const list = document.querySelector("[data-cleaning-list]");
   const error = document.querySelector("[data-cleaning-error]");
   const readOnly = root.dataset.readonly === "true";
-  let events = new Map(), dragged = null, saving = false;
+  let events = new Map(), dragged = null;
   function showError(text) { error.textContent = text; error.hidden = !text; }
   function applySnapshot(data) {
     events = new Map(data.cleanings.map(item => [String(item.eventId), item]));
@@ -40,17 +40,24 @@
       const dialog = link.closest("dialog"); if (dialog.open) dialog.close();
     }
   });
+  // Body scripts run again on every Turbo visit: refresh finds the current
+  // calendar at event time, and its timers and listeners are bound once.
   function refresh() {
-    if (!saving && !document.hidden && !document.querySelector("dialog[open]") &&
-        !list.contains(document.activeElement)) root.dispatchEvent(new Event("calendar:refresh"));
+    const current = document.querySelector("[data-calendar][data-cleaning='true']");
+    const currentList = document.querySelector("[data-cleaning-list]");
+    if (current && !current.saving && !document.hidden && !document.querySelector("dialog[open]") &&
+        currentList && !currentList.contains(document.activeElement)) current.dispatchEvent(new Event("calendar:refresh"));
   }
-  setInterval(refresh, 60000);
-  document.addEventListener("visibilitychange", refresh);
-  window.addEventListener("focus", refresh);
+  if (!window._ubyCleaningBound) {
+    window._ubyCleaningBound = true;
+    setInterval(refresh, 60000);
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+  }
   if (readOnly) return;
   root.addEventListener("dragstart", event => {
     const block = event.target.closest("[data-cal-event][data-event-kind='cleaning']");
-    if (!block || saving || root.querySelector("[data-cal-body]").getAttribute("aria-busy") === "true") {
+    if (!block || root.saving || root.querySelector("[data-cal-body]").getAttribute("aria-busy") === "true") {
       event.preventDefault(); return;
     }
     const id = block.dataset.calEvent.split(":")[1];
@@ -75,9 +82,9 @@
   });
   root.addEventListener("drop", async event => {
     const cell = event.target.closest("[data-date]"), item = dragged;
-    if (!item || !cell || saving || (cell.dataset.property && Number(cell.dataset.property) !== item.propertyId)) return;
+    if (!item || !cell || root.saving || (cell.dataset.property && Number(cell.dataset.property) !== item.propertyId)) return;
     event.preventDefault();
-    dragged = null; saving = true;
+    dragged = null; root.saving = true;
     const data = new FormData();
     data.set("_csrf", root.querySelector("[name='_csrf']").value);
     data.set("apartment_id", String(item.propertyId)); data.set("scheduled_date", cell.dataset.date);
@@ -93,7 +100,7 @@
       showError("");
     } catch (_) { showError(labels.changed); }
     finally {
-      saving = false;
+      root.saving = false;
       root.dispatchEvent(new Event("calendar:refresh"));
     }
   });

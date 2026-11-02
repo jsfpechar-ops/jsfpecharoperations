@@ -51,7 +51,7 @@
   {% elif progress.status == 'reported' and submissions %}
     {% set receipt_report = submissions | selectattr('has_receipt') | first %}
     {% if receipt_report %}
-      <a class="btn" href="/submissions/{{ receipt_report.id }}/receipt.pdf">{{ t('reports.detail.download_receipt') }}</a>
+      <a data-turbo="false" class="btn" href="/submissions/{{ receipt_report.id }}/receipt.pdf">{{ t('reports.detail.download_receipt') }}</a>
       <a class="btn ghost" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
     {% else %}
       <a class="btn" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
@@ -223,7 +223,7 @@
       <td>
         {{ row_menu_begin() }}
           <a class="row-menu-item" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}" role="menuitem">{{ t('stay.detail.guests.edit') }}</a>
-          <a class="row-menu-item" href="/guests/{{ guest.id }}/form.pdf" role="menuitem">{{ t('stay.detail.guests.pdf') }}</a>
+          <a data-turbo="false" class="row-menu-item" href="/guests/{{ guest.id }}/form.pdf" role="menuitem">{{ t('stay.detail.guests.pdf') }}</a>
           <form method="post" action="/guests/{{ guest.id }}/archive" class="row-menu-form"
                 data-confirm data-confirm-message="{{ t('host.delete_to_archived.confirm') }}">
             <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
@@ -337,7 +337,7 @@
             {{ row_menu_begin() }}
               <a class="row-menu-item" href="/submissions/{{ submission.id }}" role="menuitem">{{ t('stay.detail.reports.open') }}</a>
               {% if submission.has_receipt %}
-                <a class="row-menu-item" href="/submissions/{{ submission.id }}/receipt.pdf" role="menuitem">{{ t('reports.receipt') }}</a>
+                <a data-turbo="false" class="row-menu-item" href="/submissions/{{ submission.id }}/receipt.pdf" role="menuitem">{{ t('reports.receipt') }}</a>
               {% endif %}
             {{ row_menu_end() }}
           </td>
