@@ -309,17 +309,6 @@
 {% endcall %}{% endif %}
 
 {% if group == 'data' %}{% call settings_group('privacy', t('settings.group.privacy')) %}
-    <div class="ui-section" id="settings-privacy-requests">
-      <div class="settings-action-list">
-        <div class="settings-action-row">
-          <div>
-            {{ tip_label(t('nav.privacy_requests'), 'settings-privacy-requests-help', t('settings.privacy.requests_help')) }}
-          </div>
-          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/privacy-requests">{{ t('settings.privacy.requests_action') }}</a>
-        </div>
-      </div>
-    </div>
-
       {% if apartments_without_entity or entities_without_contact %}
         <div class="ui-banner ui-banner-attention">
           <div class="grow">
