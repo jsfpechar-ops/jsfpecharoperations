@@ -5,3 +5,6 @@ push.error.signed_out
 flash.push.signed_out
 flash.push.device_removed
 passkeys.default_name
+push.error.rate_limited
+push.error.test_failed
+push.test_sent

@@ -21,10 +21,12 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/billing"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/calendar"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ical"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/jobs"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/palette"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/payments"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/pushsend"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/pushweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/schema"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
@@ -198,7 +200,9 @@ func run() int {
 	mux.Handle("POST /account/push/refresh", m.wrap("/account/push/refresh", pushweb.RefreshHandler(pool, os.Getenv, time.Now)))
 	mux.Handle("POST /account/push/unsubscribe", m.wrap("/account/push/unsubscribe", pushweb.UnsubscribeHandler(pool, os.Getenv, time.Now)))
 	mux.Handle("POST /account/push/devices/{id}/delete", m.wrap("/account/push/devices/{id}/delete", pushweb.DeviceDeleteHandler(pool, os.Getenv, time.Now)))
+	mux.Handle("POST /account/push/test", m.wrap("/account/push/test", pushweb.TestHandler(&pushsend.Sender{Pool: pool, Getenv: os.Getenv, Now: time.Now}, os.Getenv, time.Now)))
 	mux.Handle("GET /api/command-palette", m.wrap("/api/command-palette", palette.Handler(pool, os.Getenv, time.Now)))
+	mux.Handle("GET /dashboard/calendar", m.wrap("/dashboard/calendar", calendar.Handler(pool, os.Getenv, time.Now)))
 	mux.Handle("POST /payments/requests/new", m.wrap("/payments/requests/new", payments.RequestNewHandler(pool, os.Getenv, time.Now)))
 	mux.Handle("POST /payments/requests/{id}/send", m.wrap("/payments/requests/{id}/send", payments.RequestSendHandler(pool, os.Getenv, time.Now, onboarder)))
 	mux.Handle("/", m.wrap("/", notFound))
@@ -229,7 +233,7 @@ func run() int {
 }
 
 // goIntervals are the schedule intervals (minutes) that cap a retry backoff.
-var goIntervals = map[string]int{"billing_snapshot": 24 * 60, "stripe_sweep": 24 * 60, "submit": 10, "ical": 60}
+var goIntervals = map[string]int{"billing_snapshot": 24 * 60, "stripe_sweep": 24 * 60, "submit": 10, "ical": 60, "push": 1}
 
 // goHandlers maps each Go-owned job kind to its handler.
 func goHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
@@ -247,6 +251,14 @@ func goHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
 				AllowPrivate: ical.AllowPrivate(os.Getenv),
 			})
 			return totals.Feeds, err
+		},
+		"push": func(ctx context.Context) (int, error) {
+			counts, err := (&pushsend.Sender{Pool: pool, Getenv: os.Getenv, Now: time.Now}).Drain(ctx, 50)
+			total := 0
+			for _, n := range counts {
+				total += n
+			}
+			return total, err
 		},
 		"submit": func(ctx context.Context) (int, error) {
 			keys, err := secure.LoadDataKeys(os.Getenv)
