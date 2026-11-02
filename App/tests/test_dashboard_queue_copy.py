@@ -13,7 +13,7 @@ from datetime import timedelta
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, claim, db, host_i18n, reporting
+from app import auth, db, deadlines, host_i18n, reporting
 from app.main import app
 from tests.conftest import login_as
 
@@ -60,7 +60,7 @@ def _cleanup():
 def _stay(apartment_id: int, uid: str, nationality: str, submit_state: str, days: int) -> int:
     """One stay with exactly one complete guest, so its status is unambiguous."""
     now = db.utcnow()
-    today = claim.prague_today()
+    today = deadlines.local_now().date()
     reservation_id = db.insert(
         "reservation",
         {
