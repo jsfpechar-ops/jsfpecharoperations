@@ -10,7 +10,6 @@ import json
 import os
 import pathlib
 import secrets
-import socket
 import threading
 import time
 
