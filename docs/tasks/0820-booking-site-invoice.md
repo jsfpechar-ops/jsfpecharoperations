@@ -306,7 +306,7 @@ Run `.venv/bin/python -m pytest tests/test_booking_invoice.py -q --tb=short -x 2
 **Step 7.** `docs/context/decisions.md`: append one line:
 
 ```
-- 2026-11-02 | Booking site: one signed link per booking (HMAC of the booking id with the server secret, `booking_site.manage_token`) serves the guest's invoice (0820) and booking page (0821); site bookings are invoiced in the host's entity through the host invoice code, best effort | orchestrator | 0820, 0821
+- 2026-11-02 | Booking site: one HMAC link per booking (`booking_site.manage_token`) serves invoice and booking page; invoices in the host's entity | orchestrator | 0820, 0821
 ```
 
 **Step 8.** Run §6 and write the report.
