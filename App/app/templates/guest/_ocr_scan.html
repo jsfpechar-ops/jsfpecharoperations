@@ -1,0 +1,62 @@
+<div class="g-field" id="ocr-scan">
+  <label class="g-btn secondary" for="ocr-scan-file">{{ t('ocr_scan_button') }}</label>
+  <input type="file" id="ocr-scan-file" accept="image/jpeg,image/png,image/webp"
+         style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0 0 0 0)">
+  <p class="hint" id="ocr-scan-hint" style="margin-top:12px">{{ t('ocr_scan_hint') }}</p>
+  <p class="hint" id="ocr-scan-status" role="status" aria-live="polite" hidden></p>
+</div>
+<script>
+(function () {
+  var fileInput = document.getElementById('ocr-scan-file');
+  var scanStatus = document.getElementById('ocr-scan-status');
+  if (!fileInput) return;
+  var form = fileInput.form;
+
+  function fillFields(values) {
+    var map = { surname: 'surname', first_name: 'first_name', birth_date: 'birth_date',
+                nationality: 'nationality', doc_number: 'doc_number' };
+    Object.keys(map).forEach(function (k) {
+      var el = document.getElementById(map[k]);
+      if (!el || !values[k]) return;
+      el.value = k === 'birth_date'
+        ? values[k].replace(/(\d{2})(\d{2})(\d{4})/, '$1.$2.$3')
+        : values[k];
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  }
+
+  function showStatus(text) {
+    if (!scanStatus) return;
+    scanStatus.textContent = text;
+    scanStatus.hidden = false;
+  }
+
+  fileInput.addEventListener('change', function () {
+    var file = fileInput.files && fileInput.files[0];
+    if (!file || !form) return;
+    var body = new FormData();
+    body.append('passport_photo', file);
+    body.append('_csrf', form.elements._csrf.value);
+    fileInput.disabled = true;
+    showStatus({{ t('ocr_scan_working') | tojson }});
+    fetch(form.getAttribute('action').replace(/\/save\?/, '/scan?'), {
+      method: 'POST',
+      body: body,
+      headers: { Accept: 'application/json' }
+    }).then(function (res) { return res.json(); }).then(function (data) {
+      if (data.kind === 'values') {
+        fillFields(data.values);
+        showStatus({{ t('ocr_scan_done') | tojson }});
+      } else {
+        showStatus(data.message || {{ t('ocr_unavailable') | tojson }});
+      }
+    }).catch(function () {
+      showStatus({{ t('ocr_unavailable') | tojson }});
+    }).then(function () {
+      fileInput.disabled = false;
+      fileInput.value = '';
+    });
+  });
+})();
+</script>

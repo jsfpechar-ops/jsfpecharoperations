@@ -251,6 +251,7 @@ _MORE_OPTIONS_FIELDS = frozenset(
         "permalink_window_days",
         "permalink_reachback_days",
         "passport_photo_policy",
+        "ocr_scan",
         "label",
         "own_name",
     }
@@ -1688,6 +1689,7 @@ def _apartment_payload(form) -> Dict[str, Any]:
     payload["passport_photo_policy"] = (
         policy if policy in ("off", "required_foreign") else "off"
     )
+    payload["ocr_scan"] = 1 if _form_str(form, "ocr_scan", "") == "1" else 0
     if "stay_fee_rate_czk" in form:
         # 0077: the one fee normaliser (routes/stay_fees.py).
         payload.update(stay_fee_routes.fee_form_values(form))

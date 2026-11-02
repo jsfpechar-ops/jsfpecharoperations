@@ -74,6 +74,8 @@ def _max_owner(monkeypatch):
     apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
     if (apartment["passport_photo_policy"] or "off") != "required_foreign":
         db.update("apartment", apartment["id"], {"passport_photo_policy": "required_foreign"})
+    if int(apartment["ocr_scan"] or 0) != 1:
+        db.update("apartment", apartment["id"], {"ocr_scan": 1})
     if not apartment["owner_user_id"]:
         owner_id = db.insert(
             "user_account",
@@ -168,10 +170,10 @@ def test_the_form_hides_the_button_until_max_and_installed(browser, monkeypatch)
     client, token, stay = browser
     monkeypatch.setattr(doc_ocr, "TESSERACT", "")
     page = client.get(f"/l/{token}/{stay}/new?lang=en")
-    assert "ocr-scan-toggle" not in page.text
+    assert "ocr-scan-file" not in page.text
     _max_owner(monkeypatch)
     page = client.get(f"/l/{token}/{stay}/new?lang=en")
-    assert "ocr-scan-toggle" in page.text
+    assert "ocr-scan-file" in page.text
 
 
 # --- the route --------------------------------------------------------------
@@ -301,20 +303,123 @@ def test_nationality_is_validated_against_the_country_list():
 
 # --- design conformance (the browser geometry run is test_guest_ocr_geometry_browser) ---
 
-def test_the_tickbox_uses_the_design_system_checkline():
-    """The scan toggle must be the guest form's own checkbox component:
-    ``checkline`` (full-row tap target, help inside the label), inside a
-    ``g-field``, with the status line as the field's ``hint``."""
+def test_the_scan_button_is_a_plain_button_in_the_first_step():
+    """The scan control is a standard guest button in its own partial,
+    included inside the first wizard step card (not in the passport card)."""
     from pathlib import Path
 
     here = Path(__file__).resolve().parent.parent
     form = (here / "app" / "templates" / "guest" / "form.html").read_text(encoding="utf-8")
-    css = (here / "app" / "static" / "guest.css").read_text(encoding="utf-8")
-    assert '<label class="checkline" for="ocr-scan-toggle">' in form
-    assert 'id="ocr-scan-toggle"' in form and 'class="g-check"' not in form
-    assert '<small>{{ t(\'ocr_scan_help\') }}</small>' in form
-    assert '<div class="g-field" id="ocr-scan">' in form
-    assert 'id="ocr-scan-status" role="status" aria-live="polite"' in form
-    # The component and its tokens exist in the guest stylesheet.
-    assert ".checkline" in css and ".checkline small" in css
-    assert "checkline:has(input:checked)" in css
+    part = (here / "app" / "templates" / "guest" / "_ocr_scan.html").read_text(encoding="utf-8")
+    assert "guest/_ocr_scan.html" in form
+    assert 'data-step-title="{{ t(\'your_details\') }}"' in form
+    assert '<label class="g-btn secondary" for="ocr-scan-file">' in part
+    assert "{{ t('ocr_scan_button') }}" in part
+    assert 'id="ocr-scan-status" role="status" aria-live="polite"' in part
+    assert "ocr-scan-toggle" not in form
+
+
+def _fake_engine(monkeypatch, replies):
+    """Replace run_tesseract with a queue of replies; record each image sent."""
+    seen = []
+    queue = list(replies)
+
+    def fake(jpeg):
+        seen.append(jpeg)
+        reply = queue.pop(0)
+        if isinstance(reply, Exception):
+            raise reply
+        return reply
+
+    monkeypatch.setattr(doc_ocr, "run_tesseract", fake)
+    return seen
+
+
+_GARBAGE = "hello world\nnothing here\n"
+
+
+def test_mrz_band_straightens_and_enlarges_a_tilted_photo():
+    from PIL import ImageDraw
+
+    base = Image.new("L", (1600, 1200), 255)
+    draw = ImageDraw.Draw(base)
+    for y in range(900, 1100, 20):
+        draw.line((100, y, 1500, y), fill=0, width=6)
+    tilted = base.rotate(4, expand=True, fillcolor=255).convert("RGB")
+    out = io.BytesIO()
+    tilted.save(out, format="JPEG")
+    band = doc_ocr.mrz_band(out.getvalue())
+    assert Image.open(io.BytesIO(band)).size[0] == doc_ocr.BAND_WIDTH
+
+
+def test_an_upside_down_photo_reads_on_the_third_attempt(monkeypatch):
+    seen = _fake_engine(monkeypatch, [_GARBAGE, _GARBAGE, _td3_text()])
+    values = doc_ocr.read_document(_jpeg())
+    assert values["surname"] == "SMITH"
+    assert len(seen) == 3
+    assert Image.open(io.BytesIO(seen[2])).size[0] == doc_ocr.BAND_WIDTH
+
+
+def test_the_band_attempt_is_used_first_and_stops_early(monkeypatch):
+    seen = _fake_engine(monkeypatch, [_td3_text()])
+    values = doc_ocr.read_document(_jpeg())
+    assert values["surname"] == "SMITH"
+    assert len(seen) == 1
+    assert Image.open(io.BytesIO(seen[0])).size[0] == doc_ocr.BAND_WIDTH
+
+
+def test_the_whole_image_is_tried_when_the_band_reads_nothing(monkeypatch):
+    seen = _fake_engine(monkeypatch, [_GARBAGE, _td3_text()])
+    values = doc_ocr.read_document(_jpeg())
+    assert values["surname"] == "SMITH"
+    assert len(seen) == 2
+
+
+def test_both_attempts_garbage_raises_nothing_read(monkeypatch):
+    _fake_engine(monkeypatch, [_GARBAGE, _GARBAGE, _GARBAGE])
+    with pytest.raises(doc_ocr.NothingRead):
+        doc_ocr.read_document(_jpeg())
+
+
+def test_a_failing_band_falls_back_to_the_plain_image(monkeypatch):
+    def broken(jpeg, flip=False):
+        raise RuntimeError("crop failed")
+
+    monkeypatch.setattr(doc_ocr, "mrz_band", broken)
+    plain = _jpeg()
+    seen = _fake_engine(monkeypatch, [_td3_text()])
+    values = doc_ocr.read_document(plain)
+    assert values["surname"] == "SMITH"
+    assert seen[0] == plain
+
+
+def test_a_missing_engine_still_propagates(monkeypatch):
+    _fake_engine(monkeypatch, [doc_ocr.NoEngine()])
+    with pytest.raises(doc_ocr.NoEngine):
+        doc_ocr.read_document(_jpeg())
+
+
+def _gate_apartment(ocr_scan, policy):
+    return {"owner_user_id": 1, "ocr_scan": ocr_scan, "passport_photo_policy": policy}
+
+
+def _gate_max(monkeypatch):
+    monkeypatch.setattr(config, "AI_TEST_EMAILS", "")
+    monkeypatch.setattr(doc_ocr, "TESSERACT", "/usr/bin/tesseract")
+    monkeypatch.setattr(doc_ocr, "_owner_email_row", lambda owner_id: None)
+    monkeypatch.setattr(billing_mod(), "entitlements", _max_entitlements)
+
+
+def test_the_switch_off_means_no_scan_even_on_max(monkeypatch):
+    _gate_max(monkeypatch)
+    assert doc_ocr.available(_gate_apartment(0, "required_foreign")) is False
+
+
+def test_the_switch_on_on_max_scans_without_the_upload_policy(monkeypatch):
+    _gate_max(monkeypatch)
+    assert doc_ocr.available(_gate_apartment(1, "off")) is True
+
+
+def test_the_switch_and_upload_on_on_max_means_scan(monkeypatch):
+    _gate_max(monkeypatch)
+    assert doc_ocr.available(_gate_apartment(1, "required_foreign")) is True
