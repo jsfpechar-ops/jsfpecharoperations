@@ -36,3 +36,11 @@ Stop if a fix needs a shared rule, JavaScript, or a file outside section 3.
 
 ## 9. Report
 `docs/tasks/0732-report.md`: Status, tails before/after, each test changed and why, BOX_OVERRIDES added with values, screenshot paths.
+
+## Addendum 0732b (orchestrator diagnosis of the step 4 diffs)
+Status: todo. Same executor rules, cap 12 tool calls. Files: the cleaning block of `App/app/static/app2.css` (+ `?v=` key, `--write`), the cleaning PAGES entry and cleaning BOX_OVERRIDES in `App/tests/v2_mockup.py`.
+1. `.hl`: the shared rule is scoped to `.head h1.hl` (app2.css line 651) and the cleaning headline is not in `.head`. In the cleaning block, below 1024 px, add `body.v2 .cleaning-phone h1.hl{font-size:30px;line-height:1.15;font-weight:800;letter-spacing:-.02em;text-align:center;margin:0 8px 28px}`.
+2. `h2.sec` is 15.75px because `.cleaning-list h2` (line ~784) wins. Below 1024 px add `body.v2 .cleaning-phone h2.sec{font-size:13px;font-weight:700;margin:26px 0 12px}`.
+3. Selectors in the cleaning PAGES entry: `".hs .pill"` → `".hs .pill.p-ok"` (the global `.hs .pill` colour override is Overview's amber); `".list.plain .row"` → `".list.plain .row:not(:has(.pill))"`, `".row .t b"` → `".row:not(:has(.pill)) .t b"`, `".row .t small"` → `".row:not(:has(.pill)) .t small"` (the fixture's first row carries a warn pill, the mockup's first row has none); `".cleaning-more .btn.line"` → `".btn.line"`.
+4. Run `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py -k "cleaning or overview or menu" -q --tb=short 2>&1 | tail -40`. Remaining width/height diffs that come only from fixture text (property names, dates) go into BOX_OVERRIDES under the 0732 comment with the app's value; anything else: stop and list it.
+5. Rerun step 3's set, take the step 5 screenshots again (overwrite), commit `0732b`, append tails to the report, commit. Do not push.
