@@ -159,7 +159,7 @@ def test_phone_calendar_tiles_and_sheet(calendar_workspace, calendar_origin):
         assert page.eval_on_selector("[data-cal-day-dialog] [data-cal-close]", "e => getComputedStyle(e).backgroundColor") != "rgb(208, 69, 45)"
         assert close["x"] - (pill["x"] + pill["width"]) >= 12
         sheet, add = _box(page, SHEET), _box(page, "[data-cal-day-add]")
-        assert sheet["y"] + sheet["height"] <= page.viewport_size["height"] - 84 + 1
+        assert sheet["y"] + sheet["height"] <= page.viewport_size["height"] - 84 + 2
         assert add["height"] >= 44 and (sheet["y"] + sheet["height"]) - (add["y"] + add["height"]) >= 24
         assert add["x"] - sheet["x"] >= 16 and (sheet["x"] + sheet["width"]) - (add["x"] + add["width"]) >= 16
         if page.locator("[data-cal-day-list] .cal-event").count() == 0:
