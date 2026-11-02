@@ -336,7 +336,7 @@ async def onboarding_emails_submit(request: Request):
         return RedirectResponse("/login", status_code=303)
     workspace = auth.workspace_user(request)
     if account["role"] != "host" or (workspace and workspace["id"] != account["id"]):
-        return _back("/settings#settings-account")
+        return _back("/settings/account#settings-account")
     form = await request.form()
     wanted = str(form.get("enabled", "")) == "1"
     if wanted:
@@ -345,7 +345,7 @@ async def onboarding_emails_submit(request: Request):
     else:
         lifecycle_mail.set_opt_out(int(account["id"]), True, actor=account["username"])
         key = "flash.accounts.onboarding_emails_off"
-    return _back("/settings#settings-account", msg=_flash(request, key))
+    return _back("/settings/account#settings-account", msg=_flash(request, key))
 
 
 @router.post("/account/stay-fee-emails")
@@ -359,12 +359,12 @@ async def stay_fee_emails_submit(request: Request):
         return RedirectResponse("/login", status_code=303)
     workspace = auth.workspace_user(request)
     if account["role"] != "host" or (workspace and workspace["id"] != account["id"]):
-        return _back("/settings#settings-stay-fee-emails")
+        return _back("/settings/account#settings-stay-fee-emails")
     form = await request.form()
     wanted = str(form.get("enabled", "")) == "1"
     stay_fee_auto.set_emails_enabled(int(account["id"]), wanted, actor=account["username"])
     key = "flash.accounts.stay_fee_emails_on" if wanted else "flash.accounts.stay_fee_emails_off"
-    return _back("/settings#settings-stay-fee-emails", msg=_flash(request, key))
+    return _back("/settings/account#settings-stay-fee-emails", msg=_flash(request, key))
 
 
 def _pending_doc_rows(docs) -> list:
@@ -433,7 +433,7 @@ def two_factor_setup_form(request: Request):
     if account["totp_enabled"]:
         return _back("/settings", msg=_flash(request, "flash.accounts.twofa_enabled"))
     if not auth.session_is_fresh(request):
-        return _back("/settings#settings-security", err=_flash(request, "auth.error.recent_login"))
+        return _back("/settings/security#settings-security", err=_flash(request, "auth.error.recent_login"))
     try:
         secret = db.decrypt_secret(account["totp_secret_enc"]) if account["totp_secret_enc"] else ""
     except Exception:
@@ -458,7 +458,7 @@ async def two_factor_setup_submit(request: Request):
     if account["totp_enabled"]:
         return _back("/settings", msg=_flash(request, "flash.accounts.twofa_enabled"))
     if not auth.session_is_fresh(request):
-        return _back("/settings#settings-security", err=_flash(request, "auth.error.recent_login"))
+        return _back("/settings/security#settings-security", err=_flash(request, "auth.error.recent_login"))
     remember = auth.session_remembers(request)
     form = await request.form()
     # Authenticator apps show the code as "123 456", so a pasted one arrives
@@ -541,18 +541,18 @@ async def two_factor_disable(request: Request):
         return guard
     account = auth.current_user(request)
     if not account["totp_enabled"]:
-        return _back("/settings#settings-security")
+        return _back("/settings/security#settings-security")
     form = await request.form()
     if rate_limit.account_2fa_blocked(account["id"]):
-        return _back("/settings#settings-security", err=_flash(request, "auth.error.code_locked"))
+        return _back("/settings/security#settings-security", err=_flash(request, "auth.error.code_locked"))
     if not auth.verify_second_factor(account, _form_str(form, "code")):
         rate_limit.record_account_2fa_failure(account["id"])
         db.audit("two_factor_disable_failed", actor=account["username"], owner_user_id=account["id"])
-        return _back("/settings#settings-security", err=_flash(request, "auth.error.code_invalid"))
+        return _back("/settings/security#settings-security", err=_flash(request, "auth.error.code_invalid"))
     auth.reset_totp(account["id"])
     refreshed = db.query_one("SELECT * FROM user_account WHERE id = ?", (account["id"],))
     db.audit("two_factor_disabled", actor=account["username"], owner_user_id=account["id"])
-    response = _back("/settings#settings-security", msg=_flash(request, "flash.accounts.twofa_disabled"))
+    response = _back("/settings/security#settings-security", msg=_flash(request, "flash.accounts.twofa_disabled"))
     remember = auth.session_remembers(request)
     auth.attach_session(
         response,
@@ -575,18 +575,18 @@ async def account_email_request(request: Request):
         return guard
     account = auth.current_user(request)
     if auth.impersonating(request):
-        return _back("/settings#settings-account", err=_flash(request, "auth.error.admins_only"))
+        return _back("/settings/account#settings-account", err=_flash(request, "auth.error.admins_only"))
     if not auth.session_is_fresh(request):
-        return _back("/settings#settings-account", err=_flash(request, "auth.error.recent_login"))
+        return _back("/settings/account#settings-account", err=_flash(request, "auth.error.recent_login"))
     form = await request.form()
     email = mail.normalise_email(_form_str(form, "email"))
     if not email:
-        return _back("/settings#settings-account", err=_flash(request, "users.email.error.invalid"))
+        return _back("/settings/account#settings-account", err=_flash(request, "users.email.error.invalid"))
     if email == (account["email"] or "").strip().lower():
-        return _back("/settings#settings-account", msg=_flash(request, "users.email.unchanged"))
+        return _back("/settings/account#settings-account", msg=_flash(request, "users.email.unchanged"))
     ip_key = rate_limit.client_key(request)
     if login_link.request_blocked(ip_key, email):
-        return _back("/settings#settings-account", err=_flash(request, "auth.error.link_rate_limited"))
+        return _back("/settings/account#settings-account", err=_flash(request, "auth.error.link_rate_limited"))
     login_link.record_request(ip_key, email)
     # A taken address gets the same answer and no mail: the form must not tell
     # a host which addresses other accounts use.
@@ -604,7 +604,7 @@ async def account_email_request(request: Request):
         background.add_task(mail.send_now, outbox_id)
         db.audit("email_change_requested", f"to={mail.mask_email(email)}", owner_user_id=account["id"])
     response = _back(
-        "/settings#settings-account",
+        "/settings/account#settings-account",
         msg=_flash(request, "settings.account.email_sent", email=email),
     )
     response.background = background

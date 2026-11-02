@@ -103,7 +103,7 @@ def test_the_test_alert_reaches_this_device_and_is_limited_to_five_an_hour(monke
         assert response.status_code == 200 and response.json()["message"]
     assert _post(client, "/account/push/test", {"endpoint": browser.endpoint}).status_code == 429
     assert len(service.sent) == 5
-    assert browser.read(service.sent[0]["data"])["url"] == "/settings#settings-group-phone"
+    assert browser.read(service.sent[0]["data"])["url"] == "/settings/phone"
 
 
 def test_a_device_is_removed_from_settings_without_javascript_by_its_owner_only():
@@ -115,7 +115,7 @@ def test_a_device_is_removed_from_settings_without_javascript_by_its_owner_only(
     assert push.count_for(owner) == 1
     response = client.post(f"/account/push/devices/{device['id']}/delete", follow_redirects=False)
     assert response.status_code in (302, 303)
-    assert "#settings-group-phone" in response.headers["location"]
+    assert response.headers["location"].startswith("/settings/phone")
     assert push.count_for(owner) == 0
 
 

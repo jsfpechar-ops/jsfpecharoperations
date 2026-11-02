@@ -101,11 +101,11 @@ def test_posting_enabled_turns_the_emails_back_on(host):
 
 def test_the_settings_row_is_hidden_without_a_fee_property_and_shown_with_one(host):
     client, owner_id = host
-    hidden = client.get("/settings?lang=en")
+    hidden = client.get("/settings/account?lang=en")
     assert hidden.status_code == 200
     assert 'id="settings-stay-fee-emails"' not in hidden.text
     _add_fee_property(owner_id)
-    shown = client.get("/settings?lang=en")
+    shown = client.get("/settings/account?lang=en")
     assert shown.status_code == 200
     assert 'id="settings-stay-fee-emails"' in shown.text
     assert 'action="/account/stay-fee-emails"' in shown.text

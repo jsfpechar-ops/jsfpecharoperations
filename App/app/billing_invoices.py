@@ -38,17 +38,13 @@ def period_items(acc: Dict[str, Any]) -> List[Tuple[str, int]]:
     n = int(acc["apartments_billed"])
     plan = acc["plan"]
     interval = acc["billing_interval"]
-    founder = bool(acc["founder"]) and interval == "year"
     q = billing.quote(
         n, plan, interval,
         ttlock=bool(acc["addon_ttlock"]),
         whitelabel=bool(acc["addon_whitelabel"]),
-        founder=founder,
         discount_percent=int(acc["discount_percent"] or 0),
     )
     label = f"Předplatné UbyHost {PLAN_NAMES[plan]}, {apartments_cs(n)}"
-    if founder:
-        label += ", zakladatelská cena"
     items = [(label, q["base"] + q["max"])]
     if q["ttlock"]:
         items.append((f"Doplněk TTLock, {apartments_cs(n)}", q["ttlock"]))

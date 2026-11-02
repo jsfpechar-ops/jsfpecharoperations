@@ -784,7 +784,7 @@ def test_27_transport_failure_keeps_the_record_queued(host, monkeypatch):
 def test_28_the_audit_trail_records_what_happened(host):
     kinds = {row["action"] for row in db.query("SELECT action FROM audit")}
     assert {"apartment_created", "guest_form_saved", "ubyport_submit"} <= kinds
-    page = host.get("/settings")
+    page = host.get("/settings/technical")
     assert page.status_code == 200
     assert "guest_form_saved" in page.text
 

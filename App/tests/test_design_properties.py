@@ -26,4 +26,5 @@ def test_property_page_keeps_local_tabs_without_section_tabs(host_with_property)
 def test_add_property_and_businesses_are_v2_pages(empty_host):
     assert 'data-body-kind="form"' in empty_host.get("/apartments/new?lang=en").text
     businesses = empty_host.get("/entities?lang=en").text
-    assert 'data-body-kind="list"' in businesses and 'class="ui-tabs" data-sub-tabs' in businesses
+    assert re.search(r'<body class="[^"]*\bv2\b', businesses)
+    assert 'class="side" id="app-sidebar"' in businesses
