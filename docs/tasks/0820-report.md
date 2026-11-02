@@ -1,54 +1,46 @@
-# 0820 report
+# 0820 report: remove the founder plan
 
 Status: review
 
-## Done
-
-- Step 1: `App/app/booking_site.py` got `import hmac`, `manage_token`, `token_ok`, `manage_url`. Commit `83eaffe`.
-- Step 2: `App/app/booking_invoice.py` created. Commit `31c3f23`.
-- Step 3: `App/app/booking_webhook.py` got the invoice call and the `guest_manage` mail line. Commit `a43b378`.
-- Step 4: `App/app/routes/property_page.py` got the `invoice.pdf` route before `/thanks`. Commit `ebd8806`.
-- Step 5: `App/app/host_i18n.py` got the three keys in English and Czech. Commit `55b3108`.
-- Step 6: `App/tests/test_booking_invoice.py`, 8 tests. Commit `36cd663`.
-- Step 7: `docs/context/decisions.md` got the brief's line. `python3 scripts/context_lint.py` reports OK.
-- Step 8: §6 run from `App/`, §7 ticked.
-
-## Files changed (this branch against `task/0819-booking-site-host-setup`)
-
-App/app/booking_invoice.py, App/app/booking_site.py, App/app/booking_webhook.py, App/app/host_i18n.py, App/app/routes/property_page.py, App/tests/test_booking_invoice.py, docs/context/decisions.md, docs/tasks/0820-booking-site-invoice.md (ticks only), docs/tasks/0820-report.md.
+## Files changed
+28 files vs base 47a5dbe (see `git diff --stat 47a5dbe..HEAD`). Code under App/app, App/scripts, App/tests, go/internal/billing, docs/ENVIRONMENT.md, docs/context/status.md. No migration added or changed. `retention.py` changed in its comment only (plus the same line's comment).
 
 ## Commands (last lines)
+- §6 grep: only `App/app/retention.py:413` (expected) and `go/internal/billing/snapshot_test.go:28` (see Deviations 2).
+- `pytest` core, invoices, order, self_service: `59 passed in 3.15s`
+- `pytest` tests/test_billing_admin.py: `8 passed in 2.23s`
+- `go vet ./internal/billing/`: no output (clean)
+- `go test ./internal/billing/`: `ok ... 0.013s` (snapshot test needs Postgres, not run here)
+- `scripts/context_lint.py`: `context lint: OK`
+- Fixture regen: `fixtures written: 578` (560 quote + 18 monthly)
 
-- `ruff check --select E9,F63,F7,F82,F401,F841 ...` : `All checks passed!`
-- `pytest tests/test_booking_invoice.py ... tests/test_no_em_dashes.py -q`: `113 passed, 1 warning in 3.82s`
-- `pytest tests -k "invoice or stay_fee" -q`: `360 passed, 1 skipped, 5232 deselected in 114.44s`
-  - Skipped: `tests/test_invoice_autofill.py:300`, "set UBYHOST_SHOTS_DIR to capture acceptance screenshots". A screenshot-capture skip, not a browser requirement. Not caused by 0820.
-- `python3 scripts/context_lint.py`: `context lint: OK`
-
-§6 runs were made with `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_BROWSER_EXECUTABLE=/usr/bin/google-chrome` set.
-
-## §7 acceptance
-
-All five boxes ticked.
-- `grep -rn manage_token App/app`: only `booking_site.py` writes the token. `booking_webhook.py` uses `manage_url`.
-- Invoice tests cover the `%PDF` check and the skipped-invoice audit row.
+## Acceptance (§7)
+- [x] grep shows only the retention line (plus the snapshot_test column, Deviation 2)
+- [x] Billing tests pass; go test passes
+- [x] Terms §15 EN and CS end at the 30-day notice sentence
+- [x] No migration file added or changed
 
 ## Deviations
+1. Step 3 was first committed without deleting `founder_offer` (my edit helper re-read the file). Fixed in a second commit with the same message `0820 step 3`.
+2. `snapshot_test.go` still names the `founder` column in its billing_account INSERT, with value 0, because §4 step 8 says `0, 0, 0, 0, 0`. Reviewer may prefer dropping the column from that row.
+3. `quote_test.go`: removed the bool founder argument from three direct `Quote(...)` calls (not named in §3 by line). The case count assert changed 1120 to 560, since the fixture product lost one factor of 2.
+4. `test_billing_order.py`: removed `monkeypatch.setattr(config, "FOUNDER_SLOTS", 10_000)` in `test_cenik_uses_the_billing_price_list`. The brief did not name it; without the removal the test raises AttributeError.
+5. Commit trailer: used `Co-Authored-By: Claude Haiku 5.5` (the attribution in this session names Haiku), not Opus 5.5 as the launch message said.
+- CI fix: bumped landing.css cache key to 20261102-0820 and refreshed the static manifest.
 
-- Brief step 6 says `invoice.total_czk`; the invoice table has no such column. The test compares `total_haler` with the booking's `total_czk * 100`.
-- Step 6 `_cleanup` also deletes `invoice_sequence` rows and sets `settings.invoice_purge_unlock = 1` for the `invoice_delete_guard` trigger.
-- Step 6 test 4 issues a real invoice, clears `site_booking.invoice_id`, then stubs `invoices.issue` to raise `StayLimit`.
-- Step 6 route tests use the fixed slug `invoice-flat`; the route reads only the token.
-- Step 6 mail test checks the `mail.enqueue` payloads captured in the fixture, not `email_outbox`.
-- Steps 1 and 3 have no ruff command in the brief. I ran the step 2 ruff command on the touched files anyway.
-- Commits used named files, not `git add -A`.
-- §7 item 5: `git diff --stat origin/main` lists 36 files, because this branch carries the 0818 and 0819 work. Against `task/0819-booking-site-host-setup` only the 9 files above appear.
-- `decisions.md` against 0819 also shows line reflow from the orchestrator's earlier compact commits (`87379b7`, `6123963`), not from this step.
+## Not verified
+- `tests/test_0412_pricing_browser.py` SKIPPED: `playwright` is not installed in App/.venv. AGENTS rule 7 requires 0 skipped browser tests and a 390 px screenshot for template and CSS changes (`billing_plan.html`, `landing.css`). Not run; not in §6.
 
 ## Questions
+- Run the browser test and 390 px screenshot on a venv with playwright, or accept without it?
 
-None.
+## Owner steps left
+1. Before deploy: on the server run `psql "$DATABASE_URL" -c "SELECT COUNT(*) FROM billing_account WHERE founder = 1;"` (expect 0). If not 0, do not deploy.
+2. Merge the PR, deploy as usual.
+3. Optional: remove `UBYHOST_FOUNDER_SLOTS` from the server `.env` if set.
 
-## Owner steps
+## Orchestrator review (2026-11-02)
 
-None.
+- Diff reviewed: placeholder counts in `place`, analytics and Go snapshot INSERT match.
+- Browser tests run with the preinstalled Chromium: `test_0412_pricing_browser.py`, `test_0416_plan_page_browser.py`, `test_0414_billing_banner_browser.py`: 12 passed, 0 skipped.
+- No screenshot: the only visible change is the removed founder line, which no account could show.

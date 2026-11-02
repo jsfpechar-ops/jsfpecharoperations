@@ -1,0 +1,6 @@
+{%- from "_icons.html" import icon with context -%}
+<a class="airbnb-index-row" href="{{ href }}">
+  <span class="airbnb-icon">{{ icon(icon_name, 24) }}</span>
+  <span class="airbnb-label">{{ label }}</span>
+  <span class="airbnb-chevron" aria-hidden="true">{{ icon('chevron-right', 20) }}</span>
+</a>

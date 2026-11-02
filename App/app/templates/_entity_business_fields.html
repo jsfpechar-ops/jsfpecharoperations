@@ -54,7 +54,7 @@
              value="{{ (entity.contact_email or '') if entity else '' }}">
     </div>
     <div class="field">
-      <label for="{{ prefix }}contact_phone">{{ t('entities.phone') }}</label>
+      <div class="field-label-row"><label for="{{ prefix }}contact_phone">{{ t('entities.phone') }}</label>{{ help_tip(prefix ~ 'contact-phone-help', t('entity.signature.moved')) }}</div>
       {% set phone = phone_form_parts((entity.contact_phone or '') if entity else '') %}
       <div class="operator-phone">
         <span class="operator-phone-prefix">
@@ -123,11 +123,9 @@
     edit post different targets; the caller owns the <form> element, its
     action and the multipart encoding the signature upload needs. -#}
 {% macro business_form_body(prefix, entity, preview='', ares_error=none, ares_note=none) %}
-  <p class="ui-sub">{{ t('why.business') }}</p>
   <p class="required-legend">{{ t('common.required_legend') }}</p>
   {{ register_messages(ares_error, ares_note) }}
   {{ business_fields(prefix, entity) }}
-  <p class="small">{{ t('entity.signature.moved') }}</p>
 {% endmacro %}
 
 
@@ -137,7 +135,6 @@
   <div class="field entity-register-lookup">
     {% if ico %}
     <input type="hidden" name="ico" value="{{ ico }}">
-    <p class="small">{{ t('entities.register_lookup.uses', ico=ico) }}</p>
     <button class="btn" type="submit" name="fill_from_register" value="1" formnovalidate>{{ t('ares.fill') }}</button>
     {% else %}
     <p class="small muted">{{ t('entities.register_lookup.needs_ico') }} <a href="#entity-business">{{ t('entities.section.business') }} </a></p>

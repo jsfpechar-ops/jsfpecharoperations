@@ -100,7 +100,6 @@ def _quote_for(customer):
         customer["billing_interval"] or "month",
         ttlock=bool(customer.get("addon_ttlock")),
         whitelabel=bool(customer.get("addon_whitelabel")),
-        founder=bool(customer.get("founder")),
         discount_percent=int(customer.get("discount_percent") or 0),
     )
 

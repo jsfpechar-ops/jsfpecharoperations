@@ -247,9 +247,8 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
         assert focus["visible"] and focus["style"] == "solid" and focus["width"] == "2px", focus
 
         page.goto(f"{base}/settings/archived?lang=en")
-        assert page.locator(".archive-type-filters").count() == 1
-        assert page.locator('.archive-type-filters[role="group"]').count() == 1
-        assert page.locator(".archive-type-filters .ui-chip").count() == 5
+        assert page.locator("nav.settings-pills").count() == 1
+        assert page.locator("nav.settings-pills .settings-pill").count() == 5
 
         audit_labels = {
             "en": ("All activity", "Support sessions"),
@@ -258,22 +257,22 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
         for width in (360, 390, 1280):
             page.set_viewport_size({"width": width, "height": 900})
             for lang in ("en", "cs"):
-                page.goto(f"{base}/settings?lang={lang}")
-                choices = page.locator(".host-audit-filter")
+                page.goto(f"{base}/settings/technical?lang={lang}")
+                choices = page.locator(".settings-pill")
                 assert choices.count() == 2
                 assert [choices.nth(i).inner_text().strip() for i in range(2)] == list(audit_labels[lang])
                 assert choices.nth(0).get_attribute("aria-current") == "page"
                 assert choices.nth(1).get_attribute("aria-current") is None
-                assert choices.nth(0).get_attribute("href") == "/settings#settings-audit"
-                assert choices.nth(1).get_attribute("href") == "/settings?audit=support#settings-audit"
+                assert choices.nth(0).get_attribute("href") == "/settings/technical#settings-audit"
+                assert choices.nth(1).get_attribute("href") == "/settings/technical?audit=support#settings-audit"
                 size = page.evaluate("() => ({width:innerWidth, scrollWidth:document.documentElement.scrollWidth})")
                 assert size["scrollWidth"] <= size["width"], f"Settings audit ({lang}, {width}px): {size}"
                 bounds = choices.evaluate_all("els => els.map(el => el.getBoundingClientRect().toJSON())")
                 assert all(0 <= item["left"] < item["right"] <= width for item in bounds), bounds
                 _screenshot(page, f"settings-audit-{width}-{lang}")
 
-                page.goto(f"{base}/settings?audit=support&lang={lang}#settings-audit")
-                active = page.locator('.host-audit-filter[aria-current="page"]')
+                page.goto(f"{base}/settings/technical?audit=support&lang={lang}#settings-audit")
+                active = page.locator('.settings-pill[aria-current="page"]')
                 assert active.count() == 1 and active.inner_text().strip() == audit_labels[lang][1]
 
         scope_label = {

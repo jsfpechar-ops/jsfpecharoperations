@@ -1,4 +1,4 @@
-"""Brief 0411: billing core. Prices, entitlements, changes, founder slots, deletion."""
+"""Brief 0411: billing core. Prices, entitlements, changes, deletion."""
 from __future__ import annotations
 
 import secrets
@@ -54,11 +54,11 @@ def _order(owner_id: int, **fields) -> None:
 @pytest.mark.parametrize(
     "n, month, month_max, year, year_max",
     [
-        (1, 149, 229, 1190, 1908),
-        (3, 447, 687, 3570, 5724),
-        (5, 715, 1094, 5710, 9152),
-        (12, 1488, 2220, 11880, 18712),
-        (20, 2280, 3324, 18200, 27992),
+        (1, 149, 208, 1190, 1760),
+        (3, 447, 624, 3570, 5280),
+        (5, 715, 996, 5710, 8420),
+        (12, 1488, 2036, 11880, 17150),
+        (20, 2280, 3060, 18200, 25710),
     ],
 )
 def test_totals_match_the_strategy_table(n, month, month_max, year, year_max):
@@ -68,12 +68,10 @@ def test_totals_match_the_strategy_table(n, month, month_max, year, year_max):
     assert billing.quote(n, "max", "year")["total"] == year_max
 
 
-def test_addons_and_founder_price():
-    assert billing.quote(2, "standard", "month", ttlock=True)["total"] == 298 + 80
+def test_addons_price():
+    assert billing.quote(2, "standard", "month", ttlock=True)["total"] == 298 + 98
     assert billing.quote(2, "max", "month", ttlock=True)["ttlock"] == 0
     assert billing.quote(1, "standard", "year", whitelabel=True)["total"] == 1190 + 5660
-    assert billing.quote(6, "standard", "year", founder=True)["base"] == 890 * 6
-    assert billing.quote(6, "standard", "month", founder=True)["base"] == 149 * 4 + 119 * 2
 
 
 def test_billing_off_or_no_row_means_active_standard(owner, billing_on, monkeypatch):
@@ -124,8 +122,8 @@ def test_an_added_apartment_bills_the_remaining_whole_months(owner):
 def test_max_upgrade_bills_the_revised_annual_extra(owner):
     _order(owner, period_end="2027-05-01")
     preview = billing.apply_change(owner, {"plan": "max"}, today=date(2026, 11, 1))
-    assert preview["period_total_after"] == 1908
-    assert (preview["months"], preview["supplementary_czk"], preview["carry_czk"]) == (6, 359, 0)
+    assert preview["period_total_after"] == 1760
+    assert (preview["months"], preview["supplementary_czk"], preview["carry_czk"]) == (6, 285, 0)
 
 
 def test_under_fifty_kc_is_carried_to_the_next_invoice(owner):
@@ -133,9 +131,9 @@ def test_under_fifty_kc_is_carried_to_the_next_invoice(owner):
     result = billing.apply_change(
         owner, {"addon_ttlock": 1}, today=date(2026, 11, 1), confirm=True
     )
-    assert (result["supplementary_czk"], result["carry_czk"]) == (0, 40)
+    assert (result["supplementary_czk"], result["carry_czk"]) == (0, 39)
     row = billing.account(owner)
-    assert row["addon_ttlock"] == 1 and row["carry_czk"] == 40
+    assert row["addon_ttlock"] == 1 and row["carry_czk"] == 39
 
 
 def test_a_downgrade_waits_for_the_next_period(owner):
@@ -153,24 +151,8 @@ def test_one_change_at_a_time(owner):
         billing.apply_change(owner, {"apartments": 2, "plan": "max"})
 
 
-def test_founder_slots_are_claimed_once_and_capped(owner, monkeypatch):
-    left = billing.founder_slots_left()
-    slot = billing.claim_founder_slot(owner)
-    assert slot is not None
-    assert billing.claim_founder_slot(owner) == slot
-    assert billing.founder_slots_left() == max(0, left - 1)
-    other = _user()
-    try:
-        used = db.query_one("SELECT COUNT(*) AS n FROM founder_slot")["n"]
-        monkeypatch.setattr(config, "FOUNDER_SLOTS", used)
-        assert billing.claim_founder_slot(other) is None
-    finally:
-        db.execute("DELETE FROM user_account WHERE id = ?", (other,))
-
-
 def test_deleting_the_workspace_keeps_our_invoices(owner):
     _order(owner)
-    slot = billing.claim_founder_slot(owner)
     db.execute(
         "INSERT INTO platform_invoice (owner_user_id, kind, seq_year, seq_no, number, vs, "
         "issue_date, due_date, period_from, period_to, total_haler, snapshot_json, created_at) "
@@ -183,6 +165,3 @@ def test_deleting_the_workspace_keeps_our_invoices(owner):
     assert kept is not None and kept["owner_user_id"] is None
     assert billing.account(owner) is None
     assert db.query_one("SELECT 1 FROM user_account WHERE id = ?", (owner,)) is None
-    used = db.query_one("SELECT owner_user_id FROM founder_slot WHERE slot = ?", (slot,))
-    assert used is not None and used["owner_user_id"] is None
-    db.execute("DELETE FROM founder_slot WHERE slot = ?", (slot,))

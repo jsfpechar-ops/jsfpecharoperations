@@ -287,7 +287,7 @@ def test_invalid_account_saves_nothing_and_keeps_what_was_typed(host):
     assert 'value="777"' in text  # 0208: the old three-box post is not echoed into the one box
     assert 'value="Council office"' in text
     assert f'name="fee_return_to" value="{back}"' in text
-    assert re.search(r'data-settings-group="reporting"[^>]*>|is-active" data-settings-group="reporting"', text)
+    assert 'id="sec-fee" open' in text  # the refused save reopens the stay fee section
     assert text.count('action="/apartments/') >= 1
     assert 'value="Typed name"' in text
 
@@ -361,8 +361,7 @@ def live(host):
 
 
 def _save(page):
-    page.locator('#property-settings-form [data-property-save] button[type="submit"], '
-                 '#property-settings-form button.ui-btn-primary[type="submit"]').first.click()
+    page.locator('#property-settings-form .savebar button[type="submit"]').click()
     page.wait_for_load_state("networkidle")
 
 
@@ -387,7 +386,10 @@ def test_set_up_link_opens_visible_editor_and_save_returns_to_the_list(live):
                 page.set_viewport_size({"width": width, "height": 900})
                 page.goto(f"{base}/stay-fees?month={month}&lang={locale}")
                 page.wait_for_load_state("networkidle")
+                # Turbo swaps the page without a load event: wait for turbo:load and for the skeleton to go.
+                page.evaluate("() => { window.__feeSwapped = false; document.addEventListener('turbo:load', () => { window.__feeSwapped = true; }, {once: true}); }")
                 page.locator(f'a.ui-btn[href^="/apartments/{unset}?view=settings"]').click()
+                page.wait_for_function("() => window.__feeSwapped === true && !document.querySelector('main[aria-busy]')", timeout=15000)
                 page.wait_for_load_state("networkidle")
                 assert "section=reporting" in page.url and page.url.endswith("#stay-fee-settings")
                 assert page.locator("html").get_attribute("lang") == locale
@@ -400,6 +402,13 @@ def test_set_up_link_opens_visible_editor_and_save_returns_to_the_list(live):
                 assert page.locator("#stay-fee-settings details").count() == 1
                 page.locator("#stay-fee-council details.fee-more > summary").focus()
                 page.keyboard.press("Enter")  # by keyboard: a later focus() must stay :focus-visible
+                fee_more = "() => document.querySelector('#stay-fee-council details.fee-more').open"
+                try:
+                    page.wait_for_function(fee_more, timeout=1500)
+                except Exception:
+                    # The page had already opened it, so Enter closed it again: open it with a second Enter.
+                    page.keyboard.press("Enter")
+                    page.wait_for_function(fee_more, timeout=5000)
                 back = page.locator(".fee-return-note a")
                 assert back.is_visible() and back.get_attribute("href") == f"/stay-fees?month={month}"
                 assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"), (width, locale)
@@ -410,7 +419,18 @@ def test_set_up_link_opens_visible_editor_and_save_returns_to_the_list(live):
                 # focus() scrolls the page so another "?" tip can end up under it and take the open state.
                 page.mouse.move(0, 0)
                 help_button.focus()
-                assert page.locator("#stay_fee_authority_databox-help").is_visible(), (width, locale)
+                try:
+                    page.locator("#stay_fee_authority_databox-help").wait_for(state="visible", timeout=5000)
+                except Exception:
+                    info = page.evaluate("""() => {
+                        const b = document.querySelector('[aria-controls="stay_fee_authority_databox-help"]');
+                        const d = document.querySelector('#stay-fee-council details.fee-more');
+                        return {detailsOpen: d.open, buttonShown: !!b.offsetParent, active: document.activeElement === b,
+                                activeTag: document.activeElement && document.activeElement.outerHTML.slice(0, 80),
+                                focusVisible: b.matches(':focus-visible'), expanded: b.getAttribute('aria-expanded'),
+                                hasFocus: document.hasFocus()};
+                    }""")
+                    pytest.fail(f"help tip did not open on focus at {width}px {locale}: {info}")
                 help_button.blur()
                 if capture:
                     page.evaluate("document.getElementById('stay-fee-settings').scrollIntoView({block: 'start'}); window.scrollBy(0, -88)")
