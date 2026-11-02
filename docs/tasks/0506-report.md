@@ -180,3 +180,10 @@ Test tails:
 Left: identify the 3 wait_for_selector timeouts (`pytest <keyword files> -rf --tb=line -k "not webkit"`, ~20 min) and the 2 test_motion failures; fix the ones caused by the branch; compare with origin/main for any that also fail there.
 
 Deviations: step 2 changed the test, not the code, because the bind-once assertions already passed. The test's navigation assumption was the broken part.
+
+## 0508 page swap (executor)
+- Turbo 8 now wraps renders in startViewTransition: added `<meta name="view-transition" content="same-origin">` in base.html (Turbo metas), so the existing ::view-transition CSS applies again.
+- Reduced motion: app.js (top of file) clears `document.startViewTransition` as an own property when prefers-reduced-motion is set, so Turbo swaps without a fade.
+- tests/test_motion_browser.py PAGE_SWAP_RECORDER also records startViewTransition calls; defaults swapFaded to 'false' per tab. Assertions unchanged.
+- app.js bumped to v=20261102-0510; static_versions.json regenerated.
+- Tests: test_motion_browser, test_0508_page_swap_browser, test_0705_v2_shell_browser, test_design_shell_browser, test_static_versions: 31 passed, 0 skipped (-k "not webkit").
