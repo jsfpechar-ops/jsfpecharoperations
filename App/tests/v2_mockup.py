@@ -82,14 +82,8 @@ BOX_OVERRIDES = {
     # owner 2026-11-01 19:09: smaller pills than the phone mockup (one line at 390 px)
     ".card.prop .st.g": {"height": "23px"},
     ".card.prop .st.r": {"height": "23px"},
-    # cleaning phone (0549b): main padding replaces side margins (0719); heights and pill width follow the English fixture copy; the fixture has no cleaning today, so .card is the empty today card
+    # cleaning phone (0549b): main padding replaces side margins (0719); heights and pill width follow the English fixture copy; 0732: the fixture has a cleaning today
     ".sub": {"margin-left": "0px", "margin-right": "0px"},
-    ".grp": {"margin-left": "0px", "margin-right": "0px"},
-    ".card": {"margin-left": "0px", "margin-right": "0px"},
-    ".card@320": {"height": "63px"},
-    ".card@390": {"height": "63px"},
-    ".list .row:has(.p-ok)@320": {"height": "102px"},
-    ".list .row:has(.p-ok)@390": {"height": "102px"},
     ".row .t .pill.p-ok@320": {"width": "100.641px"},
     ".row .t .pill.p-ok@390": {"width": "100.641px"},
     ".actbar@320": {"height": "75px"},
@@ -138,7 +132,7 @@ PAGES = [
             ".hs .pill": "today's stay cards exist only when a stay is due today; the phone mockup shows demo stays",
         },
     },
-    {"name": "cleaning", "path": "/cleaning", "view": "clean", "selectors": [".side .nav.on", ".head h1", ".head .sub", ".head .btn", "main h2", "main .card", "main table th", "main table td"], "phone_view": "uklid", "phone_selectors": [".tabs", ".tab.on", ".top .round", ".big", ".sub", ".grp", ".card", ".list .row:has(.p-ok)", ".row .t b", ".row .t small", ".row .t .pill.p-ok", ".actbar", ".actbar .btn"], "missing_ok": {"main table th": "below 1024 px the phone layout replaces the tables (0546)", "main table td": "below 1024 px the phone layout replaces the tables (0546)"}},  # pills follow the approved phone mockup (2026-11-01): scheduled green, the desktop mockup shows amber
+    {"name": "cleaning", "path": "/cleaning", "view": "clean", "selectors": [".side .nav.on", ".head h1", ".head .sub", ".head .btn", "main h2", "main .card", "main table th", "main table td"], "phone_mockup": PHONE_MOCKUP_V2, "phone_view": "uklid", "phone_selectors": [".tabs", ".tab.on", ".hl", ".hl-sub", ".hs .card", ".kind", ".av", ".nm", ".meta", ".hs .pill", "h2.sec", ".list.plain .row", ".row .t b", ".row .t small", ".cleaning-more .btn.line", ".promo", ".promo .pi", ".promo b", ".promo small"], "missing_ok": {"main table th": "below 1024 px the phone layout replaces the tables (0546)", "main table td": "below 1024 px the phone layout replaces the tables (0546)"}},  # pills follow the approved phone mockup (2026-11-01): scheduled green, the desktop mockup shows amber
     {
         "name": "properties",
         "path": "/apartments",
