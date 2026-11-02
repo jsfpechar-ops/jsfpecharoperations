@@ -1030,6 +1030,12 @@ body.v2 .setup-continue-card .ui-btn-primary{color:#fff;background:var(--coral-6
 body.v2 .fields-wrap .copyrow > .btn.sm{min-height:48px}
 body.v2 .fields-wrap .copyrow > .btn.sm{vertical-align:middle}
 body.v2 section#stay-fee-settings > fieldset.signature-block{grid-column:1/-1}
+/* 0791 submissions v2 (start) */
+/* 0791 submissions v2 (end) */
+/* 0792 invoices v2 (start) */
+/* 0792 invoices v2 (end) */
+/* 0793 housebook v2 (start) */
+/* 0793 housebook v2 (end) */
 /* cleaning (0542) */
 body.v2 .cleaning-page{width:100%;max-width:1080px;min-width:0;margin:0 auto;color:var(--ink)}
 body.v2 .cleaning-skip{display:inline-flex;align-items:center;min-height:44px;margin-bottom:12px;font-size:1.0625rem}
