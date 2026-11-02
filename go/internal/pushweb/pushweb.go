@@ -22,7 +22,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -37,6 +36,7 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/webpush"
 )
 
 //go:embed i18n.json
@@ -54,14 +54,6 @@ const (
 	maxDevice   = 40
 	defaultLang = "en"
 )
-
-// pushHosts are the push services browsers use (push.py PUSH_HOST_SUFFIXES).
-var pushHosts = []string{
-	"fcm.googleapis.com",
-	"push.services.mozilla.com",
-	"push.apple.com",
-	"notify.windows.com",
-}
 
 // deviceFamilies is passkeys._DEVICES in order; the first match names the device.
 var deviceFamilies = []struct {
@@ -384,15 +376,6 @@ func unb64url(text string) ([]byte, error) {
 	return base64.URLEncoding.DecodeString(text)
 }
 
-func pushHost(host string) bool {
-	for _, suffix := range pushHosts {
-		if host == suffix || strings.HasSuffix(host, "."+suffix) {
-			return true
-		}
-	}
-	return false
-}
-
 // cleanSubscription is push.clean_subscription: the three parts of a browser's
 // PushSubscription, checked. Every refusal is errBadSubscription.
 func cleanSubscription(v any) (endpoint, p256dh, auth string, err error) {
@@ -407,14 +390,7 @@ func cleanSubscription(v any) (endpoint, p256dh, auth string, err error) {
 	if endpoint == "" || utf8.RuneCountInString(endpoint) > maxEndpoint {
 		return "", "", "", errBadSubscription
 	}
-	u, perr := url.Parse(endpoint)
-	if perr != nil || u.Scheme != "https" || u.User != nil {
-		return "", "", "", errBadSubscription
-	}
-	if port := u.Port(); port != "" && port != "443" {
-		return "", "", "", errBadSubscription
-	}
-	if !pushHost(strings.ToLower(u.Hostname())) {
+	if !webpush.EndpointAllowed(endpoint) {
 		return "", "", "", errBadSubscription
 	}
 	point, perr := unb64url(p256dh)

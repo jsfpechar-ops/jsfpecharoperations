@@ -15,7 +15,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -49,14 +48,6 @@ const (
 
 // retryMinutes are the waits after the 1st, 2nd, ... failed try (push.py RETRY_MINUTES).
 var retryMinutes = []int{1, 5, 15, 60}
-
-// pushHosts are the push services browsers subscribe with (push.py PUSH_HOST_SUFFIXES).
-var pushHosts = []string{
-	"fcm.googleapis.com",
-	"push.services.mozilla.com",
-	"push.apple.com",
-	"notify.windows.com",
-}
 
 // errBadKey means the stored VAPID setting decrypts but is not a usable key.
 var errBadKey = errors.New("pushsend: stored VAPID key is unusable")
@@ -120,17 +111,7 @@ func (s *Sender) allowed(endpoint string) bool {
 	if s.AllowEndpoint != nil {
 		return s.AllowEndpoint(endpoint)
 	}
-	parts, err := url.Parse(endpoint)
-	if err != nil {
-		return false
-	}
-	host := strings.ToLower(parts.Hostname())
-	for _, suffix := range pushHosts {
-		if host == suffix || strings.HasSuffix(host, "."+suffix) {
-			return true
-		}
-	}
-	return false
+	return webpush.EndpointAllowed(endpoint)
 }
 
 // stamp is push.py _stamp: UTC, whole seconds, ISO 8601 with +00:00.
@@ -436,14 +417,16 @@ func (s *Sender) deliver(ctx context.Context, keys *secure.MultiFernet, outboxID
 	auth, authErr := webpush.UnB64URL(decryptSecret(keys, r.authEnc))
 	if uaErr != nil || authErr != nil {
 		// Stored keys that no longer decrypt (the app key changed): unusable.
+		log.Printf("pushsend: push_unreadable_device subscription=%d", r.subscriptionID)
 		return s.goneDevice(ctx, r.subscriptionID)
 	}
 	if !s.allowed(endpoint) {
 		return s.goneDevice(ctx, r.subscriptionID)
 	}
-	status, err := webpush.Send(s.client(), endpoint, ua, auth, []byte(payload), vapid,
+	status, err := webpush.Send(ctx, s.client(), endpoint, ua, auth, []byte(payload), vapid,
 		"mailto:"+supportEmail, ttlSeconds, "high", s.now())
 	if errors.Is(err, webpush.ErrTransport) {
+		log.Printf("pushsend: push_transport_error subscription=%d error=%v", r.subscriptionID, err)
 		return s.retry(ctx, r, nil, moment)
 	}
 	if err != nil {
@@ -466,10 +449,12 @@ func (s *Sender) settle(ctx context.Context, r outboxRow, status int, moment tim
 		return "sent", nil
 	case status == 404 || status == 410:
 		// The browser unsubscribed or the app was removed: forget the device.
+		log.Printf("pushsend: push_gone subscription=%d status=%d", r.subscriptionID, status)
 		return s.goneDevice(ctx, r.subscriptionID)
 	case status == 429 || status >= 500:
 		return s.retry(ctx, r, &status, moment)
 	}
+	log.Printf("pushsend: push_refused subscription=%d status=%d kind=%s", r.subscriptionID, status, r.kind)
 	if err := s.finish(ctx, r.id, "failed", &status, moment); err != nil {
 		return "", err
 	}
