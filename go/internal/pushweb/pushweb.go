@@ -1,7 +1,7 @@
-// Package pushweb serves four routes of the Web Push device API
+// Package pushweb serves five routes of the Web Push device API
 // (App/app/routes/push.py): turn alerts on (subscribe), refresh a known device,
-// turn alerts off (unsubscribe) and the Settings remove form. The test-alert
-// route stays in Python until the push sender moves to Go.
+// turn alerts off (unsubscribe), the Settings remove form and the test alert
+// (TestHandler, which sends through pushsend).
 //
 // Every route runs the CSRF gate first, as the Python admin router does. The
 // routes act on the signed-in account only: an admin previewing another
@@ -22,7 +22,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -33,9 +32,11 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/pushsend"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/webpush"
 )
 
 //go:embed i18n.json
@@ -53,14 +54,6 @@ const (
 	maxDevice   = 40
 	defaultLang = "en"
 )
-
-// pushHosts are the push services browsers use (push.py PUSH_HOST_SUFFIXES).
-var pushHosts = []string{
-	"fcm.googleapis.com",
-	"push.services.mozilla.com",
-	"push.apple.com",
-	"notify.windows.com",
-}
 
 // deviceFamilies is passkeys._DEVICES in order; the first match names the device.
 var deviceFamilies = []struct {
@@ -383,15 +376,6 @@ func unb64url(text string) ([]byte, error) {
 	return base64.URLEncoding.DecodeString(text)
 }
 
-func pushHost(host string) bool {
-	for _, suffix := range pushHosts {
-		if host == suffix || strings.HasSuffix(host, "."+suffix) {
-			return true
-		}
-	}
-	return false
-}
-
 // cleanSubscription is push.clean_subscription: the three parts of a browser's
 // PushSubscription, checked. Every refusal is errBadSubscription.
 func cleanSubscription(v any) (endpoint, p256dh, auth string, err error) {
@@ -406,14 +390,7 @@ func cleanSubscription(v any) (endpoint, p256dh, auth string, err error) {
 	if endpoint == "" || utf8.RuneCountInString(endpoint) > maxEndpoint {
 		return "", "", "", errBadSubscription
 	}
-	u, perr := url.Parse(endpoint)
-	if perr != nil || u.Scheme != "https" || u.User != nil {
-		return "", "", "", errBadSubscription
-	}
-	if port := u.Port(); port != "" && port != "443" {
-		return "", "", "", errBadSubscription
-	}
-	if !pushHost(strings.ToLower(u.Hostname())) {
+	if !webpush.EndpointAllowed(endpoint) {
 		return "", "", "", errBadSubscription
 	}
 	point, perr := unb64url(p256dh)
@@ -573,4 +550,84 @@ func flashFor(r *http.Request, key string) hostweb.Flash {
 func serverError(w http.ResponseWriter, err error) {
 	log.Printf("pushweb: %v", err)
 	http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+}
+
+// Test-alert limits: push.py TEST_MAX_PER_HOUR and the window it counts over.
+const (
+	testScope      = "push_test"
+	testMaxPerHour = 5
+	testWindow     = 3600
+)
+
+// The rate_limit_event SQL, as rate_limit.py _count and record run it.
+const (
+	pruneRateSQL  = `DELETE FROM rate_limit_event WHERE scope = $1 AND key = $2 AND at < $3`
+	countRateSQL  = `SELECT COUNT(*) FROM rate_limit_event WHERE scope = $1 AND key = $2`
+	insertRateSQL = `INSERT INTO rate_limit_event (scope, key, at) VALUES ($1, $2, $3)`
+)
+
+type testBody struct {
+	OK      bool   `json:"ok"`
+	Message string `json:"message"`
+}
+
+// TestHandler serves POST /account/push/test (push.py push_test): one test alert
+// to one of the signed-in account's devices, at most testMaxPerHour tries an hour.
+func TestHandler(sender *pushsend.Sender, getenv func(string) string, now func() time.Time) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		at := now()
+		if !hostweb.CSRF(w, r, getenv, at) {
+			return
+		}
+		h, ok := ownHost(w, r, sender.Pool, getenv, at)
+		if !ok {
+			return
+		}
+		if h == nil {
+			answerError(w, r, "push.error.signed_out", http.StatusUnauthorized)
+			return
+		}
+		ctx := r.Context()
+		key := strconv.FormatInt(h.Account.ID, 10)
+		blocked, err := rateBlocked(ctx, sender.Pool, key, at)
+		if err != nil {
+			serverError(w, err)
+			return
+		}
+		if blocked {
+			answerError(w, r, "push.error.rate_limited", http.StatusTooManyRequests)
+			return
+		}
+		if _, err := sender.Pool.Exec(ctx, insertRateSQL, testScope, key, unixFloat(at)); err != nil {
+			serverError(w, err)
+			return
+		}
+		data := readBody(r)
+		outcome, err := sender.SendTest(ctx, h.Account.ID, pyStr(data["endpoint"]))
+		if err != nil {
+			serverError(w, err)
+			return
+		}
+		if outcome != "sent" {
+			answerError(w, r, "push.error.test_failed", http.StatusBadGateway)
+			return
+		}
+		answer(w, http.StatusOK, testBody{OK: true, Message: catalog.T(hostweb.Lang(r), "push.test_sent", nil)})
+	}
+}
+
+// rateBlocked is rate_limit.py _count and blocked: prune the window, then count.
+func rateBlocked(ctx context.Context, pool *pgxpool.Pool, key string, now time.Time) (bool, error) {
+	if _, err := pool.Exec(ctx, pruneRateSQL, testScope, key, unixFloat(now)-testWindow); err != nil {
+		return false, err
+	}
+	var n int64
+	if err := pool.QueryRow(ctx, countRateSQL, testScope, key).Scan(&n); err != nil {
+		return false, err
+	}
+	return n >= testMaxPerHour, nil
+}
+
+func unixFloat(t time.Time) float64 {
+	return float64(t.UnixNano()) / 1e9
 }

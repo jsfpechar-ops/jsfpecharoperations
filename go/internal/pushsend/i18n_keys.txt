@@ -1,0 +1,11 @@
+# Push alert text read by go/internal/pushsend (push.py message)
+push.msg.filing_problem.title
+push.msg.filing_problem.body
+push.msg.deadline_at_risk.title
+push.msg.deadline_at_risk.body
+push.msg.door_code.title
+push.msg.door_code.body
+push.msg.cancelled_with_guests.title
+push.msg.cancelled_with_guests.body
+push.msg.test.title
+push.msg.test.body
