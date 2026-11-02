@@ -1,4 +1,4 @@
-# 0834 Passport OCR: per-property host toggle (default off)
+# 0880 Passport OCR: per-property host toggle (default off)
 
 Status: todo. Executor: Haiku 5.5. Goes into PR #727 (same branch).
 
@@ -26,10 +26,10 @@ No new dependency, no guest template change, no other settings, no `main`.
 From `App/`, each ending `2>&1 | tail -30`: `.venv/bin/python -m pytest tests/test_doc_ocr.py tests/test_billing_order.py <editor test file from the test-map> -q --tb=short -x`; then `UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium-1243/chrome-linux64/chrome UBYHOST_BROWSER_NO_SANDBOX=1 .venv/bin/python -m pytest tests/test_guest_ocr_geometry_browser.py -q -rs --tb=short` (0 skipped). Root: `python3 scripts/context_lint.py 2>&1 | tail -30`.
 
 ## 7. Acceptance
-All commands pass, 0 skipped. Commit each step as `0834 step k`. Do not push.
+All commands pass, 0 skipped. Commit each step as `0880 step k`. Do not push.
 
 ## 8. Stop and ask
 An anchor is missing, the test-map names no editor test file, or a step is unclear: STOP and ask.
 
 ## 9. Report
-`docs/tasks/0834-report.md`, 300 words at most.
+`docs/tasks/0880-report.md`, 300 words at most.

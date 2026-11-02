@@ -1,4 +1,4 @@
-# 0835 Passport OCR: scan independent of passport upload
+# 0881 Passport OCR: scan independent of passport upload
 
 Status: todo. Executor: Haiku 5.5. Same branch and PR #727. No new dependency.
 
@@ -27,10 +27,10 @@ Everything else on the guest form, the `/scan` route, the scan engine, Stripe, o
 From `App/`, each ending `2>&1 | tail -30`: `.venv/bin/python -m pytest tests/test_doc_ocr.py tests/test_property_form_save.py tests/test_billing_order.py -q --tb=short -x`; then `UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium-1243/chrome-linux64/chrome UBYHOST_BROWSER_NO_SANDBOX=1 .venv/bin/python -m pytest tests/test_guest_ocr_geometry_browser.py -q -rs --tb=short` (0 skipped); also the other guest-form tests the test-map lists for `templates/guest/form.html`. Root: `python3 scripts/context_lint.py 2>&1 | tail -30`.
 
 ## 7. Acceptance
-All pass, 0 skipped. Commit each step as `0835 step k`. Do not push.
+All pass, 0 skipped. Commit each step as `0881 step k`. Do not push.
 
 ## 8. Stop and ask
 An anchor is missing, a guest-form test outside §3 breaks, or a step is unclear: STOP and ask.
 
 ## 9. Report
-`docs/tasks/0835-report.md`, 200 words at most.
+`docs/tasks/0881-report.md`, 200 words at most.

@@ -1,4 +1,4 @@
-# 0833 Passport OCR: read more passport photos (Tesseract only)
+# 0879 Passport OCR: read more passport photos (Tesseract only)
 
 Status: todo. Executor: Haiku 5.5. One PR. No new dependency (Pillow and Tesseract already ship).
 
@@ -40,4 +40,4 @@ Tests in section 6 pass, 0 skipped, lint passes.
 An anchor is missing, or a step is unclear: STOP and ask.
 
 ## 9. Report
-`docs/tasks/0833-report.md` per executor.md, then open one draft PR from this branch.
+`docs/tasks/0879-report.md` per executor.md, then open one draft PR from this branch.

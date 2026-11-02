@@ -1,4 +1,4 @@
-# 0834 report
+# 0880 report
 
 Status: review
 Branch claude/project-thread-6ozz7x. Not pushed, no PR.
@@ -20,7 +20,7 @@ Branch claude/project-thread-6ozz7x. Not pushed, no PR.
 ## Deviations
 - Scan switch row uses help_tip directly instead of field_label, because field_label would add a second label.
 - No 390 px screenshot: host editor change, not a guest template.
-- Warnings: Pillow getdata DeprecationWarning (from 0833).
+- Warnings: Pillow getdata DeprecationWarning (from 0879).
 
 ## Owner steps left
 - Review and open the PR yourself (no push by executor).
