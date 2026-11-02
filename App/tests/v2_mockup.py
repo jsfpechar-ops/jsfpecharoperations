@@ -267,6 +267,7 @@ PAGES = [
             ".row .t small": "payment rows have no subtitle in the current copy; the mockup subtitles are demo copy",
         },
     },
+    {"name": "settings", "path": "/settings", "view": "settings", "selectors": [".side .nav.on", ".head h1", "main h2", "main .card"]},
 ]
 
 

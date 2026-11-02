@@ -373,7 +373,16 @@
     "setup",
     "st",
     "props-add",
-    "chev"
+    "chev",
+    "settings-lane",
+    "settings-head",
+    "settings-groups",
+    "settings-group-title",
+    "settings-card",
+    "set-row",
+    "set-row-v",
+    "settings-action-row",
+    "settings-move-form"
   ],
   "hooks": [
     "sr-only",

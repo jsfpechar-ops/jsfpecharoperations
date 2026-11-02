@@ -1082,8 +1082,8 @@ body.v2 .list.plain .row .pill{margin-top:0}
 body.v2 .settings-lane{max-width:720px}
 body.v2 .settings-lane h2.settings-group-title{font-size:16px;font-weight:700;text-transform:none;letter-spacing:0;color:var(--ink);justify-content:flex-start;margin:24px 0 12px}
 body.v2 .settings-lane .settings-group:first-child h2.settings-group-title{margin-top:0}
-body.v2 .settings-card{padding:0 16px;margin:0}
-body.v2 .settings-card .ui-section{padding:16px 0;border-top:1px solid var(--line)}
+body.v2 .settings-card{padding:0;margin:0}
+body.v2 .settings-card .ui-section{padding:16px;border-top:1px solid var(--line)}
 body.v2 .settings-card > .ui-section:first-child{border-top:0}
 body.v2 .settings-card .ui-section h2,body.v2 .settings-card .ui-section h3{font-size:16px;font-weight:700;margin:0 0 8px;background:none;border:0;padding:0;color:var(--ink)}
 body.v2 .set-row{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:48px;padding:12px 0;color:var(--ink);text-decoration:none;box-sizing:border-box}
@@ -1095,6 +1095,9 @@ body.v2 .settings-action-row small{display:block;color:var(--ink3);font-size:14p
 body.v2 .settings-action-row > .btn,body.v2 .settings-action-row > .pill{flex:0 0 auto}
 body.v2 .settings-move-form{max-width:420px;padding-bottom:16px}
 body.v2 .settings-lane .ui-btn{min-height:44px}
+body.v2 .settings-lane a{display:inline-flex;align-items:center;min-height:24px}
+body.v2 .settings-lane .help-tip-btn{min-width:24px;min-height:24px}
+body.v2 .settings-lane input[type=checkbox]{min-width:24px;min-height:24px;margin:0;accent-color:var(--acc)}
 @media (min-width:1024px){body.v2 .settings-lane .ui-btn{min-height:40px}}
 /* v2 ports of shared ui-* classes */
 body.v2 .ui-sub{color:var(--ink3);margin:0;font-size:14px;line-height:1.45}
