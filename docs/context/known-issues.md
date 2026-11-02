@@ -100,5 +100,4 @@
 - K-CF01: mid-session challenge: see CLOUDFLARE Rule 3.
 
 
-PG: 0455–0456 incomplete.
-OCR-B traineddata not used (needs a downloaded asset); read rate unmeasured until the owner runs `ocr_readrate.py` on real photos.
+PG: 0455–0456 incomplete. OCR rate unmeasured.

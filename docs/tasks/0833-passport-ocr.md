@@ -2,13 +2,16 @@
 
 Status: todo. Executor: Haiku 5.5. One PR. No new dependency (Pillow and Tesseract already ship).
 
-## 1. Goal
+## 1. Objective
 Phone photos of passports are often tilted, with the MRZ small in the frame. Today `doc_ocr.read_document` runs Tesseract once on the whole shrunken image. Make it try the MRZ band first, straightened and enlarged, then the whole image, and only ever return a read whose check digits validate (unchanged). Fix the stale "coming soon" checkout copy. Add a read-rate script that prints no personal data.
 
-## 2. Files (open only these)
+## 2. Context
+See section 1; the existing code is `App/app/doc_ocr.py` (#559).
+
+## 3. Files (open only these)
 `App/app/doc_ocr.py`, `App/tests/test_doc_ocr.py`, `App/app/host_i18n.py` (grep `billing.order.plan_max`, EN and CS), `App/scripts/ocr_readrate.py` (new), `docs/context/decisions.md` (append), `docs/context/known-issues.md` (append).
 
-## 3. Steps
+## 4. Steps
 1. In `doc_ocr.py` add after `_TD1_LEN`:
 ```python
 _WHITELIST = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<"
@@ -24,11 +27,17 @@ _TILT_ANGLES = (-8, -6, -4, -2, 0, 2, 4, 6, 8)
 7. `App/scripts/ocr_readrate.py DIR`: for each jpg/png/jpeg in DIR call `doc_ocr.prepare_image` then `doc_ocr.read_document`; print only `file index, ok|nothing_read|bad_file, seconds` and a final `read N of M (P%)`. Never print any field value, filename or MRZ text. Exit 0. Module docstring: photos are the owner's own test passports and never go in the repo.
 8. Append to `decisions.md` one line: `2026-11-02 | OCR accuracy: stay on Tesseract; MRZ band crop plus straighten plus character whitelist, pure Pillow; PaddleOCR (ONNX) only if ocr_readrate on about 30 real photos reads under 90%, then owner decision line needed | owner | test_doc_ocr`. Append to `known-issues.md`: OCR-B traineddata not used (needs a downloaded asset); read rate unmeasured until the owner runs `ocr_readrate.py` on real photos.
 
-## 4. Tests (brief 6)
+## 6. Commands
 From `App/`: `.venv/bin/python -m pytest tests/test_doc_ocr.py tests/test_guest_ocr_geometry_browser.py tests/test_privacy_first.py -q --tb=short -x -rs 2>&1 | tail -30` and, for the copy change, `.venv/bin/python -m pytest tests/test_billing_order.py -q --tb=short -x 2>&1 | tail -30`. From repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`. Browser tests: 0 skipped. No template change, so no screenshots.
 
-## 5. Not in scope
+## 5. Do not touch
 No PaddleOCR, MinerU, new package or tessdata download. No guest-form change. No stored images (module stays stateless).
 
-## 6. Report
+## 7. Acceptance
+Tests in section 6 pass, 0 skipped, lint passes.
+
+## 8. Stop and ask
+An anchor is missing, or a step is unclear: STOP and ask.
+
+## 9. Report
 `docs/tasks/0833-report.md` per executor.md, then open one draft PR from this branch.

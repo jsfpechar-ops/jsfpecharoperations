@@ -67,7 +67,7 @@ Append-only.
 - 2026-10-28 | Page photos: download + re-host from the host's own import run (max 10, EXIF stripped), never hotlink; host confirms rights at review | owner | plan property-pages, 0432
 - 2026-10-28 | Booking widget: Airbnb-style interaction built from our own calendar/fee logic, no-JS form, Stripe checkout on the host account; no dark patterns, no tracking | owner | plan property-pages, 0434
 - 2026-10-28 | Listing pages are English-only; no per-listing translation, no per-language variants (OTA copy verbatim) | owner | plan property-pages, 0431/0433
-- 2026-10-29 | OCR: local Tesseract in the image (no AI, photo stays on the server), MRZ check digits required, prefill only, Max plan only, guest tickbox | owner | test_doc_ocr
+- 2026-11-02 | OCR: Tesseract only, local, MRZ check digits, Max only; band crop; Paddle if ocr_readrate <90% | owner | test_doc_ocr
 - 2026-10-29 | 0448: legacy hosts get an immediate plan start with the first invoice issued now, no trial | owner | 0448
 - 2026-10-29 | Discounts reissue an unpaid invoice with the discount applied | owner | 0448
 - 2026-10-29 | Trials are extendable by the operator, 1-365 days | owner | 0448
@@ -75,4 +75,3 @@ Append-only.
 - 2026-10-29 | Connect accounts: full Stripe Dashboard + Stripe collectors (Express+Stripe is preview-only; Express pairs with application liability, rejected) | owner | 0439
 
 - 2026-10-30 | [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; Haiku-only execution; manual cutover | 0455–0456
-2026-11-02 | OCR accuracy: stay on Tesseract; MRZ band crop plus straighten plus character whitelist, pure Pillow; PaddleOCR (ONNX) only if ocr_readrate on about 30 real photos reads under 90%, then owner decision line needed | owner | test_doc_ocr
