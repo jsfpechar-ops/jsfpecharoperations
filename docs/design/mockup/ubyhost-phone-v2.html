@@ -58,7 +58,7 @@ h2.sec{font-size:13px;font-weight:700;color:var(--ink3);text-transform:uppercase
 .meta{color:var(--ink3);font-size:15px;margin-top:4px}
 .pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:5px 10px;border-radius:999px;width:max-content;margin-top:14px}
 .pill:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
-.p-warn{background:var(--warns);color:var(--warn)}
+.p-warn{background:var(--warns);color:var(--warn)}.p-ok{background:var(--oks);color:var(--ok)}
 
 /* menu */
 .mh{display:flex;align-items:center;justify-content:space-between;margin:6px 0 24px}
@@ -75,6 +75,7 @@ h2.sec{font-size:13px;font-weight:700;color:var(--ink3);text-transform:uppercase
 .list.plain .row{display:flex;align-items:center;gap:18px;min-height:56px;padding:15px 0;font-size:17px;font-weight:500;width:100%;text-align:left}
 .list.plain .row > svg.i:first-child{width:26px;height:26px;stroke-width:1.6}
 .list.plain .row .t{flex:1;min-width:0}
+.list.plain .row .t b,.list.plain .row .t small{display:block}.list.plain .row .t small{color:var(--ink3);font-size:14px;font-weight:400;margin-top:2px}.list.plain .row .pill{margin-top:0}
 .list.plain .badge{background:var(--acc);color:#fff;font-size:12px;font-weight:800;border-radius:999px;min-width:22px;height:22px;display:grid;place-items:center;padding:0 6px}
 .list.plain .chev{width:20px;height:20px;color:var(--ink3)}
 .menu-logout{margin-top:8px;border-top:1px solid var(--line);padding-top:8px}
@@ -142,6 +143,25 @@ h2.sec{font-size:13px;font-weight:700;color:var(--ink3);text-transform:uppercase
     <a class="row" href="#"><svg class="i"><use href="#i-help"/></svg><span class="t">Get help</span><svg class="i chev"><use href="#i-chev"/></svg></a>
   </nav>
   <form class="list plain menu-logout"><button class="row" type="button"><svg class="i"><use href="#i-out"/></svg><span class="t">Log out</span></button></form>
+</div></section>
+
+<section class="scr" data-s="uklid"><div class="body">
+  <div class="ph-top">
+    <h1 class="hl">1 cleaning today</h1>
+    <p class="hl-sub">Created from departures.</p>
+  </div>
+  <div class="hs"><a class="card" href="#"><span class="kind out">10:00–15:00</span>
+    <div class="who"><div class="av">V</div><div><div class="nm">Vinohrady Flat</div><div class="meta">Next check-in today 15:00</div></div></div>
+    <span class="pill p-ok">Scheduled</span></a></div>
+  <h2 class="sec">This week</h2>
+  <nav class="list plain">
+    <a class="row" href="#"><span class="t"><b>River Studio</b><small>Thu 6 Nov · next check-in 7 Nov</small></span><svg class="i chev"><use href="#i-chev"/></svg></a>
+    <a class="row" href="#"><span class="t"><b>Vinohrady Flat</b><small>Fri 7 Nov · no arrival planned</small></span><svg class="i chev"><use href="#i-chev"/></svg></a>
+    <a class="row" href="#"><span class="t"><b>Old Town Loft</b><small>Sat 8 Nov · next check-in 8 Nov</small></span><span class="pill p-warn">Clash</span><svg class="i chev"><use href="#i-chev"/></svg></a>
+  </nav>
+  <a class="btn line" href="#">Show 4 more</a>
+  <h2 class="sec">Your cleaner</h2>
+  <a class="promo" href="#"><span class="pi"><svg class="i"><use href="#i-brush"/></svg></span><span><b>Share with cleaner</b><small>They see this plan without an account</small></span></a>
 </div></section>
 
 <nav class="tabs" aria-label="Main menu">
