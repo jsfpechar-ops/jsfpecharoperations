@@ -163,3 +163,20 @@ git diff --stat origin/main:
 - The listener test visits both pages once before it starts counting, because features bind their document listeners the first time their page appears.
 - The help tip check runs on the reservation detail page reached by Turbo.visit, lifting one tip out of its section as 0505 does.
 - Logout is a POST form (not a link). It is a full load because forms mode is off.
+
+## 0508 Part C, continuation (executor, second session)
+
+Status: blocked
+
+Done: step 1 (c59e7ee, non-host templates reverted; login.html keeps only its version key). Step 2 (4e9c515): the listener assertions in test_0501 passed; the failing assertion counted `framenavigated` navigations, which also fires for Turbo's same-document replaceState when the new page starts. The test now counts `load` events (full document loads). App code unchanged. Step 3 partly run. Step 4 not done.
+
+Test tails:
+- `test_050[1-8]*_browser.py test_static_versions.py test_navigation_prefetch.py`: `23 passed in 26.81s`
+- keyword-matched browser files (58 files), `-k "not webkit"`: `5 failed, 383 passed, 57 skipped, 6 deselected in 1212.96s`. Skips are `browser not required` in test_onboarding_wizard_browser.py.
+- Failures: 2 in `tests/test_motion_browser.py` (`test_page_changes_cross_fade_with_the_rail_held_still` line 106, `test_reduced_motion_keeps_pages_and_dialogs_still` line 127; attribute `None` instead of `'true'`/`'false'`). Probably caused by the branch: Turbo visits do not rerun the page-load cross-fade/motion code. Not diagnosed. 3 more failures are `Page.wait_for_selector` timeouts in test files I did not identify (the summary line did not name them).
+- WebKit: not installed locally (`/opt/pw-browsers/webkit-2359` missing). Not a branch failure; CI runs WebKit.
+- `python3 scripts/context_lint.py`: `context lint: OK`.
+
+Left: identify the 3 wait_for_selector timeouts (`pytest <keyword files> -rf --tb=line -k "not webkit"`, ~20 min) and the 2 test_motion failures; fix the ones caused by the branch; compare with origin/main for any that also fail there.
+
+Deviations: step 2 changed the test, not the code, because the bind-once assertions already passed. The test's navigation assumption was the broken part.
