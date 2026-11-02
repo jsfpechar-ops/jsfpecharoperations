@@ -1,5 +1,5 @@
 # 0683 report (executor: Haiku 5.5)
-Status: blocked
+Status: review
 
 ## Files changed (vs origin/main)
 - App/scripts/webpush_golden.py (new): loads app/webpush.py by path, writes the golden file with fixed keys, salt and time.

@@ -1,5 +1,5 @@
 # 0682 report (executor, Haiku 5.5)
-Status: blocked
+Status: review
 
 ## Files changed
 - `go/internal/calendar/calendar.go` (new): pure helpers ported from dashboard_calendar.py: parse_dates, parse_range, visual hour, hour validity, display_at, tone, deadline_cell (given precomputed inputs).
