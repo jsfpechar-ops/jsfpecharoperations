@@ -86,7 +86,8 @@ async def signup_submit(request: Request):
         platform: _form_str(form, signup.CONSENT_FIELDS[platform]) == "1"
         for platform in signup.click_platforms(click)
     }
-    onboarding_opt_out = _form_str(form, "onboarding_opt_out") == "1"
+    # Unticked (the default) means no tips or news: stored as the opt-out flag.
+    marketing_opt_in = _form_str(form, "marketing_opt_in") == "1"
     lang = host_i18n.resolve_language(request, default=host_i18n.PUBLIC_DEFAULT_LANGUAGE)
 
     def again(error: str, status_code: int, field: str = ""):
@@ -102,7 +103,7 @@ async def signup_submit(request: Request):
                 error_field=field,
                 email=raw_email,
                 workspace=workspace,
-                onboarding_opt_out=onboarding_opt_out,
+                marketing_opt_in=marketing_opt_in,
             ),
             status_code=status_code,
         )
@@ -127,7 +128,7 @@ async def signup_submit(request: Request):
         selection=selection,
         attr=attr,
         consents=consents,
-        onboarding_opt_out=onboarding_opt_out,
+        onboarding_opt_out=not marketing_opt_in,
         lang=lang,
         request=request,
     )
