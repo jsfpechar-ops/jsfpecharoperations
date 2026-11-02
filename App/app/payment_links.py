@@ -58,42 +58,51 @@ def send(request_id: int) -> str | None:
         return None
     if row["rail"] != "card":
         raise ValueError("card rail only")
-    account = stripe_connect.account_for_owner(int(row["owner_user_id"]))
+    owner_id = int(row["owner_user_id"])
+    account = stripe_connect.account_for_owner(owner_id)
     if account is None or account["onboarding_state"] != "complete":
         return None
     stripe_account = account["stripe_account_id"]
     api = stripe_connect._api()
-    if row.get("stripe_payment_link_id"):
-        url = _existing_url(api, row["stripe_payment_link_id"], stripe_account)
-        if url:
-            return url
-    link = api.v1.payment_links.create(
-        params={
-            "line_items": [
-                {
-                    "quantity": 1,
-                    "price_data": {
-                        "currency": "czk",
-                        "unit_amount": int(row["amount_czk"]) * 100,
-                        "product_data": {"name": product_name(row)},
-                    },
-                }
-            ],
-            "restrictions": {"completed_sessions": {"limit": 1}},
-            "metadata": {"payment_request_id": str(row["id"])},
-            "payment_intent_data": {"metadata": {"payment_request_id": str(row["id"])}},
-        },
-        options={"stripe_account": stripe_account},
-    )
-    db.execute(
-        "UPDATE payment_request SET stripe_payment_link_id = ?, updated_at = ?"
-        " WHERE id = ?",
-        (link["id"], db.utcnow(), request_id),
-    )
+    with db.immediate() as cur:
+        db.lock_key(cur, "payment_request", request_id)
+        cur.execute("SELECT * FROM payment_request WHERE id = ?", (request_id,))
+        locked = cur.fetchone()
+        if locked is None:
+            return None
+        row = dict(locked)
+        if row["rail"] != "card":
+            raise ValueError("card rail only")
+        if row.get("stripe_payment_link_id"):
+            url = _existing_url(api, row["stripe_payment_link_id"], stripe_account)
+            if url:
+                return url
+        link = api.v1.payment_links.create(
+            params={
+                "line_items": [
+                    {
+                        "quantity": 1,
+                        "price_data": {
+                            "currency": "czk",
+                            "unit_amount": int(row["amount_czk"]) * 100,
+                            "product_data": {"name": product_name(row)},
+                        },
+                    }
+                ],
+                "restrictions": {"completed_sessions": {"limit": 1}},
+                "metadata": {"payment_request_id": str(row["id"])},
+                "payment_intent_data": {"metadata": {"payment_request_id": str(row["id"])}},
+            },
+            options={"stripe_account": stripe_account},
+        )
+        cur.execute(
+            "UPDATE payment_request SET stripe_payment_link_id = ?, updated_at = ? WHERE id = ?",
+            (link["id"], db.utcnow(), request_id),
+        )
     db.audit(
         "payment_link_created",
         f"id={request_id} link={link['id']}",
-        owner_user_id=int(row["owner_user_id"]),
+        owner_user_id=owner_id,
     )
     return str(link["url"])
 

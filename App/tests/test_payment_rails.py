@@ -5,6 +5,8 @@ local code. The mail kind is real, enqueued into email_outbox.
 """
 from __future__ import annotations
 
+import threading
+import time
 from typing import Any, Dict, List
 
 import pytest
@@ -71,19 +73,30 @@ class _FakePaymentLink:
         self.options: List[Dict[str, Any]] = []
         self.retrieved: List[str] = []
         self.active = True
+        self._create_gate = None
+        self._create_started = None
+        self._create_count = 0
 
     def create(self, params=None, options=None):
         assert params is not None, "payment_links.create must pass params="
         assert "stripe_account" not in params, "stripe_account belongs in options="
         assert options and options.get("stripe_account"), "connected account missing"
+        gate = self._create_gate
+        if gate is not None:
+            started = self._create_started
+            if started is not None:
+                started.set()
+            gate.wait()
+        self._create_count += 1
+        link_id = f"plink_test_{self._create_count}"
         self.created.append(params)
         self.options.append(options)
-        return {"id": "plink_test_1", "url": "https://buy.stripe.com/test_1"}
+        return {"id": link_id, "url": f"https://buy.stripe.com/{link_id}"}
 
     def retrieve(self, link_id, options=None):
         assert options and options.get("stripe_account"), "connected account missing"
         self.retrieved.append(link_id)
-        return {"id": link_id, "url": "https://buy.stripe.com/test_1", "active": self.active}
+        return {"id": link_id, "url": f"https://buy.stripe.com/{link_id}", "active": self.active}
 
 
 @pytest.fixture
@@ -132,7 +145,7 @@ def test_send_creates_payment_link_on_connected_account(owner, fake_link):
     _complete_account(owner)
     rid = _draft(owner, rail="card")
     url = payment_links.send(rid)
-    assert url == "https://buy.stripe.com/test_1"
+    assert url == "https://buy.stripe.com/plink_test_1"
     params = fake_link.created[0]
     item = params["line_items"][0]
     assert item["price_data"]["currency"] == "czk"
@@ -153,6 +166,39 @@ def test_resend_reuses_the_active_link(owner, fake_link):
     assert first == second
     assert len(fake_link.created) == 1
     assert fake_link.retrieved == ["plink_test_1"]
+
+
+def test_concurrent_send_creates_one_link(owner, fake_link):
+    """0813 parity: overlapping Send calls must not mint two Stripe links."""
+    _complete_account(owner)
+    rid = _draft(owner, rail="card")
+    gate = threading.Event()
+    started = threading.Event()
+    fake_link._create_gate = gate
+    fake_link._create_started = started
+    results: List[str | None] = []
+    errors: List[BaseException] = []
+
+    def run():
+        try:
+            results.append(payment_links.send(rid))
+        except BaseException as exc:
+            errors.append(exc)
+
+    first = threading.Thread(target=run)
+    second = threading.Thread(target=run)
+    first.start()
+    assert started.wait(timeout=2), "first Stripe create did not start"
+    second.start()
+    time.sleep(0.2)
+    gate.set()
+    first.join(timeout=2)
+    second.join(timeout=2)
+    assert not errors, errors
+    assert len(results) == 2
+    assert results[0] == results[1] == "https://buy.stripe.com/plink_test_1"
+    assert len(fake_link.created) == 1
+    assert payment_request.get(rid)["stripe_payment_link_id"] == "plink_test_1"
 
 
 def test_resend_creates_new_link_when_old_inactive(owner, fake_link):
@@ -292,7 +338,7 @@ def test_get_link_without_email_opens_share_page(owner, client, stripe_env, fake
     assert payment_request.get(rid)["status"] == "sent"
     page = client.get(f"/payments/requests/{rid}/share")
     assert page.status_code == 200
-    assert "https://buy.stripe.com/test_1" in page.text
+    assert "https://buy.stripe.com/plink_test_1" in page.text
     assert "https://wa.me/?text=" in page.text
     assert len(fake_link.created) == 1  # the page reused the link
 
