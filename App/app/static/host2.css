@@ -1142,3 +1142,6 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
   .host-workspace .stay-door-card { padding: var(--space-4); }
   .host-workspace .stay-door-card #door-code-line { font-size: var(--text-lg); font-weight: 700; }
 }
+
+/* Turbo progress bar stays hidden: the page swap should look like before. */
+.turbo-progress-bar { display: none; }

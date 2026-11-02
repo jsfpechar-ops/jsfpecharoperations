@@ -2273,5 +2273,8 @@
   }
   window.UbyHost = window.UbyHost || {};
   window.UbyHost.initPage = initPage;
-  document.addEventListener("DOMContentLoaded", initPage);
+  document.addEventListener("turbo:load", initPage);
+  if (!window.Turbo) document.addEventListener("DOMContentLoaded", initPage);
+  // Forms stay full page loads: Turbo must not submit them.
+  if (window.Turbo) window.Turbo.config.forms.mode = "off";
 })();
