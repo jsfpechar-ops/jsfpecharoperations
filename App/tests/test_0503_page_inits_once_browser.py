@@ -31,7 +31,8 @@ SELECTORS = [
 
 # Selectors each real page must contain before the second run, so the test is not empty.
 PAGE_SELECTORS = {
-    "reservations": ["#unsaved-dialog", "#confirm-dialog", "[data-feedback-rail]", "[data-saved-views]", "[data-save-view]"],
+    # v2 stays (0528) dropped the "save this view" button; [data-save-view] stays in SELECTORS for the recorder.
+    "reservations": ["#unsaved-dialog", "#confirm-dialog", "[data-feedback-rail]", "[data-saved-views]"],
     "reservation_detail": ["form[data-inline-edit]"],
     "apartment": ["form[data-unsaved-guard]"],
 }

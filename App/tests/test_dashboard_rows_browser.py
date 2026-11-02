@@ -1,7 +1,8 @@
 """Stay-list rows (0194; the dashboard has no table since 0241): one clean box per row at every width, sidebar open or collapsed.
 
 Guards: every cell and badge sits inside its row's box (no overflow), only the first and last cell of a
-row carry a side border or radius (no per-cell boxes), and the number of row boxes equals the row count.
+row carry a side border or radius (no per-cell boxes). The v2 table (0528) uses plain divided rows, so the
+old one-box-per-row count is gone.
 Set DASH_ROWS_SHOTS=1 (and DASH_ROWS_LANG=en|cs) to write screenshots to DASH_ROWS_SHOT_DIR.
 """
 from __future__ import annotations
@@ -23,28 +24,27 @@ from app import auth
 from tests.test_dashboard_calendar import make_stay
 from tests.test_dashboard_calendar_browser import calendar_origin, calendar_workspace, launch  # noqa: F401
 
-GUARD_WIDTHS = (390, 700, 900, 1023, 1024, 1100, 1200, 1280, 1366, 1440, 1536, 2000)
+# v2: the stays table shows from 1024 px; below that the phone list is checked by test_0710.
+GUARD_WIDTHS = (1024, 1100, 1200, 1280, 1366, 1440, 1536, 2000)
 LANG = os.environ.get("DASH_ROWS_LANG", "cs")
 SHOT_DIR = pathlib.Path(os.environ.get("DASH_ROWS_SHOT_DIR") or os.path.join(os.environ.get("UBYHOST_SHOTS_DIR", tempfile.gettempdir()), "dashboard-rows"))
 PATHS = (
-    (f"/reservations?lang={LANG}", "table.ui-table", "stays"),
+    (f"/reservations?lang={LANG}", "main table", "stays"),
 )
 
 METRICS_JS = """
 (sel) => {
   const table = document.querySelector(sel);
   if (!table) return {error: 'no table'};
-  const rows = [...table.querySelectorAll('tbody tr.ui-row')].filter(r => r.offsetParent !== null);
+  const rows = [...table.querySelectorAll('tbody tr[data-href]')].filter(r => r.offsetParent !== null);
   const px = v => parseFloat(v) || 0;
-  const res = {rows: rows.length, overflow: [], boxes: 0, midBorders: [],
+  const res = {rows: rows.length, overflow: [], midBorders: [],
     scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     tableWidth: Math.round(table.getBoundingClientRect().width),
     trDisplay: rows.length ? getComputedStyle(rows[0]).display : null};
   rows.forEach((r, i) => {
     const rr = r.getBoundingClientRect();
     const cells = [...r.children];
-    const rowCs = getComputedStyle(r);
-    if (px(rowCs.borderTopWidth) > 0 || (cells[0] && px(getComputedStyle(cells[0]).borderLeftWidth) > 0)) res.boxes++;
     cells.forEach((td, j) => {
       const b = td.getBoundingClientRect();
       if (b.width && (b.left < rr.left - 0.5 || b.right > rr.right + 0.5)) res.overflow.push([i, j, Math.round(b.right - rr.right)]);
@@ -63,7 +63,7 @@ METRICS_JS = """
 DETAIL_JS = """
 (sel) => {
   const table = document.querySelector(sel);
-  const tr = table.querySelector('tbody tr.ui-row');
+  const tr = table.querySelector('tbody tr[data-href]');
   const pick = (el) => { const c = getComputedStyle(el); return {display: c.display, border: [c.borderTopWidth, c.borderRightWidth, c.borderBottomWidth, c.borderLeftWidth].join(' '), radius: c.borderTopLeftRadius, bg: c.backgroundColor, shadow: c.boxShadow, padding: c.padding, width: Math.round(el.getBoundingClientRect().width), left: Math.round(el.getBoundingClientRect().left)}; };
   return {table: pick(table), tr: pick(tr), cells: [...tr.children].map(pick), spacing: getComputedStyle(table).borderSpacing,
     sidebar: document.body.classList.contains('sidebar-collapsed'), section: pick(table.closest('.ui-section') || table)};
@@ -102,7 +102,7 @@ def test_each_row_is_one_box_inside_its_row_at_every_width(calendar_workspace, c
                 key = f"{width}-{'collapsed' if collapsed else 'open'}"
                 context, page = open_page(browser, calendar_workspace, calendar_origin, path, selector, width, collapsed)
                 results[key] = page.evaluate(METRICS_JS, selector)
-                if width in (390, 1024, 1280, 2000):
+                if width in (1024, 1280, 2000):
                     details[key] = page.evaluate(DETAIL_JS, selector)
                 if os.environ.get("DASH_ROWS_SHOTS"):
                     SHOT_DIR.mkdir(parents=True, exist_ok=True)
@@ -117,5 +117,4 @@ def test_each_row_is_one_box_inside_its_row_at_every_width(calendar_workspace, c
     for key, metrics in results.items():
         assert metrics.get("rows", 0) >= 2, (key, metrics)
         assert not metrics.get("overflow"), (key, metrics)
-        assert metrics["boxes"] == metrics["rows"], (key, metrics)
         assert not metrics.get("midBorders"), (key, metrics)

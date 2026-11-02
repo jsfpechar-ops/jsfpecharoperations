@@ -15,8 +15,8 @@ from app import auth, db
 from tests.browser_support import chromium_launch_kwargs
 from tests.test_host_geometry import _browser_session_cookie, base  # noqa: F401
 
-PAGES = ("/onboarding", "/reservations", "/invoices", "/settings")  # "/" is the v2 shell: see test_0709
-HAS_PRIMARY = ("/reservations",)  # migrated page headers with a primary action; the rest are checked when present
+PAGES = ("/onboarding", "/invoices", "/settings")  # "/" and "/reservations" are the v2 shell: see test_0709/test_0710
+HAS_PRIMARY = ()  # migrated page headers with a primary action; the rest are checked when present
 PRIMARY_BG = "rgb(173, 73, 66)"  # --accent = --coral-600 #ad4942
 SECONDARY_BORDER = "rgb(201, 201, 194)"  # --line-strong = --sand-400 #c9c9c2
 GEOMETRY = """(() => {

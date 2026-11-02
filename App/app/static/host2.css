@@ -591,12 +591,6 @@ body.host-workspace.sidebar-collapsed .sidebar-collapse .ui-icon { transform: ro
 .host-workspace .host-checklist[data-setup-status] { margin-top: var(--space-6); padding: var(--card-p); background: var(--surface); border: 1px solid var(--line); border-radius: var(--card-radius); }
 .host-workspace .host-checklist[data-setup-status] .setup-status-head { margin-bottom: var(--space-4); }
 
-/* 0179: guest cards show one four-column fact grid; Staying only when the dates differ */
-.host-workspace .guest-card .guest-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3) var(--space-4); border: 0; overflow-wrap: anywhere; }
-.host-workspace .guest-card .guest-facts .fact-wide { grid-column: span 2; }
-@media (max-width: 639px) {
-  .host-workspace .guest-card .guest-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
 
 /* 0181: on desktop every table row is its own bordered, rounded card with a gap between rows */
 @media (min-width: 1024px) {
@@ -1132,3 +1126,19 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .ui-choice-card:has(input:checked) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .host-workspace .ui-choice-card input:focus-visible { outline: none !important; }
 .ui-choice-card:has(input:focus-visible) { outline: 2px solid var(--coral-600); outline-offset: 2px; }
+/* 0523: stays list at computer width: quiet grey header, guest column widest, pay and actions shrink to content. */
+@media (min-width: 1024px) {
+  .host-workspace .stays-view .ui-table th { background: var(--surface-2); }
+  .host-workspace .stays-view .ui-table :is(th, td).stay-col-actions { width: 1%; white-space: nowrap; }
+}
+/* 0523: phone stays card: arrival stays in column 1, departure sits on the same line in column 2 (the two dates no longer print on top of each other). */
+@media (max-width: 1023.98px) {
+  .host-workspace .stays-view .ui-table td.stay-col-dates { grid-column: 1; }
+  .host-workspace .stays-view .ui-table td.stay-col-departure { grid-row: 2; grid-column: 2; justify-self: start; }
+  .host-workspace .stays-view .ui-table td.stay-col-departure::before { content: "– "; }
+
+/* 0525: stay page on desktop: guests are table rows in one white card; the door code is large. */
+@media (min-width: 1024px) {
+  .host-workspace .stay-door-card { padding: var(--space-4); }
+  .host-workspace .stay-door-card #door-code-line { font-size: var(--text-lg); font-weight: 700; }
+}

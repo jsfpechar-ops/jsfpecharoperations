@@ -25,9 +25,10 @@ REQUIRED_PAGES = (
     "/housebook",
 )
 
+# v2 stays (0528) has no Open cue: the guest name on the computer and the whole row on the phone open the stay.
 FIRST_OPEN = """() => {
   const visible = el => el.getClientRects().length > 0;
-  const all = [...document.querySelectorAll('a.row-open, a.host-property-card-open')];
+  const all = [...document.querySelectorAll('a.row-open, a.host-property-card-open, a.stay-identity-link, .stays-phone a.row')];
   const index = all.findIndex(visible);
   return index < 0 ? null : {index: index, href: all[index].getAttribute('href')};
 }"""
@@ -61,7 +62,7 @@ def _click_open(page, found):
     start = page.url
     target = urljoin(start, found["href"])
     # a real pointer click: a covering overlay that takes the click elsewhere must still land on the same href
-    page.locator("a.row-open, a.host-property-card-open").nth(found["index"]).click(force=True)
+    page.locator("a.row-open, a.host-property-card-open, a.stay-identity-link, .stays-phone a.row").nth(found["index"]).click(force=True)
     page.wait_for_url(lambda url: url == target, timeout=10000)
     assert page.url == target, (start, target)
     assert page.url != start, (start, target)

@@ -278,7 +278,9 @@ def test_the_host_sees_full_identity_data(seeded):
     client = _login("wp04-host")
     for path in _pages(seeded):
         assert client.get(path).status_code == 200, path
-    assert DOC_A in client.get(f"/reservations/{seeded['reservation']}").text
+    # v2 stay page lists the document type only (approved mockup, data minimisation); the number is on the guest form
+    assert DOC_A not in client.get(f"/reservations/{seeded['reservation']}").text
+    assert DOC_A in client.get(f"/guests/{seeded['guest_a']}").text
     assert VISA_A in client.get("/housebook").text
     assert DOC_B in client.get(f"/submissions/{seeded['submission']}").text
     form = client.get(f"/guests/{seeded['guest_a']}").text
@@ -295,7 +297,9 @@ def test_the_admin_sees_full_identity_data_while_supporting(seeded):
     client = _supporting(seeded)
     for path in _pages(seeded):
         assert client.get(path).status_code == 200, path
-    assert DOC_A in client.get(f"/reservations/{seeded['reservation']}").text
+    # v2 stay page lists the document type only (approved mockup, data minimisation); the number is on the guest form
+    assert DOC_A not in client.get(f"/reservations/{seeded['reservation']}").text
+    assert DOC_A in client.get(f"/guests/{seeded['guest_a']}").text
     assert VISA_A in client.get("/housebook").text
     assert DOC_B in client.get(f"/submissions/{seeded['submission']}").text
     form = client.get(f"/guests/{seeded['guest_a']}").text

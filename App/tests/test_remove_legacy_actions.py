@@ -19,7 +19,8 @@ def test_update_calendars_lives_only_in_the_property_calendar_section():
 def test_the_stays_list_has_no_row_send_and_send_all_is_manual_only():
     text = _t("reservations.html")
     assert "row_reporting_actions" not in text
-    assert "{% if manual_send %}{{ bulk_send_ready(" in text
+    # v2 header: send-all is a ghost button shown only in manual send mode
+    assert '{% if manual_send %}<form method="post" action="/reservations/submit-ready"' in text
 
 
 def test_the_stay_detail_keeps_one_send_and_moves_the_rest_into_the_menu():
@@ -28,11 +29,13 @@ def test_the_stay_detail_keeps_one_send_and_moves_the_rest_into_the_menu():
     assert text.count('/submit" class="row-menu-form"') == 1
     assert "remove-empty-slot" not in text
     assert text.count("delete-demo") == 1  # item 7 kept: shows only for the demo stay
-    menu = text[text.index('id="now"'):text.index("</section>", text.index('id="now"'))]
+    # v2: the header row menu replaced the old "Now" panel menu
+    start = text.index("{{ row_menu_begin() }}")
+    menu = text[start:text.index("row_menu_end()", start)]
     assert "reopen-guest" in menu and "release-claim" not in menu
     assert text.count("data-release-claim") == 1  # 0380: a visible button in the Guests section
     assert "filed-by-hand" in text  # Keep: the manual-filing fallback
-    assert text.count("ui-btn-primary") == 1
+    assert text.count("{{ stay_cta() }}") == 1  # v2: one primary action (send, fix or receipt), placed by CSS
 
 
 def test_code_list_refresh_is_gone_and_test_connection_and_clear_demo_stay():

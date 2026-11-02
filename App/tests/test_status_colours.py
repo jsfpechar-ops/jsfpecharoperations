@@ -230,8 +230,8 @@ def test_the_guest_card_reads_ready_now_that_the_id_check_is_gone(host):
     assert page.status_code == 200
     assert "verify-identity" not in page.text
     assert not [pill for pill in _pills(page.text) if pill[2].strip() == "ID not checked"]
-    tone, _tip = _pill(page.text, "Ready")
-    assert tone == "blue"
+    # v2 stay page (mockup): the guest state is a neutral .pill; the mockup has no blue tone
+    assert '<span class="pill">Ready</span>' in page.text
 
 
 def test_the_properties_list_setup_pill_is_amber_not_red(host):

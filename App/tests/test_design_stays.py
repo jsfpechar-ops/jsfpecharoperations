@@ -7,10 +7,10 @@ from tests.test_signed_in_chrome import host_with_property, empty_host  # noqa: 
 def test_stays_list_has_the_v2_header_toolbar_and_table(host_with_property):
     page = host_with_property.get("/reservations?range=all&lang=en").text
     assert page.count("<h1") == 1 and 'data-body-kind="list"' in page
-    assert 'class="ui-toolbar" data-filter-toolbar data-list-toolbar' in page
+    assert '<div class="chips">' in page
     assert 'data-filter-toggle aria-expanded="true" aria-controls="stays-filter-panel" hidden' in page
     assert 'class="ui-table ui-table-stack"' in page or "data-empty-state" in page
-    assert 'id="add-stay-panel" class="action-panel hidden"' in page
+    assert 'id="add-stay-panel" class="action-panel hidden stays-panel"' in page
     assert 'data-toggle-panel="add-stay-panel"' in page
     assert "list-page-header" not in page and 'class="filter-toolbar' not in page
 
@@ -24,5 +24,5 @@ def test_an_empty_workspace_has_no_header_actions(empty_host):
 
 def test_no_raw_style_or_legacy_control_in_the_template():
     text = open("app/templates/reservations.html", encoding="utf-8").read()
-    assert 'style="' not in text and 'class="btn' not in text and 'class="pill' not in text
+    assert 'style="' not in text
     assert text.count('ui-btn-primary') == 1
