@@ -31,3 +31,35 @@ Left: steps 3 to 6. Step 3 (pushsend + DB tests), step 4 (pushweb /account/push/
 
 ## Owner steps left
 None until the executor work continues. Pushing and PR are the owner's call.
+
+## 0687 (pushsend, Go): section
+Commit 51f9930 "0687 step 1: go pushsend port". 15 DB tests written, run in CI (ci.yml sets UBYHOST_TEST_DATABASE_URL); they skip locally.
+Differences from Python:
+- An endpoint outside PUSH_HOST_SUFFIXES is treated as gone (not sent).
+- SUPPORT_EMAIL is a Go constant (support@ubyhost.com), not read from config.
+- Sends time out after 10 s.
+- Redirects are not followed.
+
+## 0688 (test route and push job, Go): section
+Commit d647d65 "0688 step 1: Go push test route and push job kind".
+- `POST /account/push/test` is `pushweb.TestHandler(sender, getenv, now)`: CSRF, signed-in account only (401), 5 tries per hour (429) on rate_limit_event scope `push_test`, then `pushsend.SendTest`. Outcome other than "sent" gives 502 with the Python error JSON; success gives `{"ok":true,"message":...}`.
+- Job kind `push`: `Drain(ctx, 50)` every 1 minute (goIntervals are minutes). `Drain` returns nothing while UBYHOST_WEB_PUSH is off.
+- i18n: pushweb gains push.error.rate_limited, push.error.test_failed, push.test_sent (regenerated with App/.venv of the main checkout).
+
+Commands (tails):
+- `gofmt -l .`: empty. `go vet ./...`: clean. `go build ./...`: clean.
+- `go test ./internal/webpush/ ./internal/pushsend/ ./internal/pushweb/ ./cmd/... -count=1`: all `ok`. DB tests SKIP (no UBYHOST_TEST_DATABASE_URL locally): pushweb TestPushTestRoute, TestPushTestRouteFailures, TestPushDeviceRoutes; pushsend 12 DB tests. CI must run them.
+- `go_host_i18n.py --check`: pass. `context_lint.py`: OK.
+
+Deviations:
+- The brief says the 11th test in an hour gets 429. Python TEST_MAX_PER_HOUR is 5, so the 6th gets 429. Tests follow Python.
+- Brief step 4 mentioned a `public_key` in subscribe: subscribe returns only `{"ok":true}`, so there was nothing to check.
+- The job interval is 1 minute, not 60 s (goIntervals are minutes).
+- The route does not check enabled(), as push.py push_test does not; only the job is off when disabled.
+- TestHandler takes *pushsend.Sender (not Pool) so tests can inject the client and the endpoint check.
+- Local Postgres password cannot be reset here, so the DB tests were compile-checked (go vet) only.
+
+Questions:
+- Caddy/deploy: `/account/push/test` must route to Go (the Python route is still served for it until then). Not changed here.
+
+Owner steps left: none for this branch. Not pushed.
