@@ -364,9 +364,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Use a JPEG, PNG, or WebP photo, or a PDF registration form."
         ),
         "passport_photo_missing": "Please upload a photo of your passport or ID card.",
-        "ocr_scan_title": "Scan your document",
-        "ocr_scan_help": "We can read the photo you chose and fill the form. Nothing is saved until you check it and send.",
-        "ocr_scan_label": "Fill the form from this photo automatically",
+        "ocr_scan_button": "Scan your passport",
         "ocr_scan_working": "Reading the document…",
         "ocr_scan_done": "Filled from the photo. Check every field before you send.",
         "ocr_no_file": "Choose a photo of your document first.",
@@ -1055,9 +1053,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Použijte fotografii JPEG, PNG nebo WebP, nebo PDF registrační formulář."
         ),
         "passport_photo_missing": "Nahrajte prosím fotografii pasu nebo občanského průkazu.",
-        "ocr_scan_title": "Naskenujte doklad",
-        "ocr_scan_help": "Z vyfocené stránky dokladu předvyplníme formulář. Nic se neukládá, dokud ji neprohlédnete a neodešlete.",
-        "ocr_scan_label": "Vyplnit formulář automaticky z této fotografie",
+        "ocr_scan_button": "Naskenovat pas",
         "ocr_scan_working": "Čteme doklad…",
         "ocr_scan_done": "Předvyplněno z fotografie. Před odesláním zkontrolujte všechna pole.",
         "ocr_no_file": "Nejdříve vyberte fotografii dokladu.",
