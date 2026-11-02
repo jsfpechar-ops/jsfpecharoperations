@@ -2,32 +2,25 @@
 
 Status: blocked
 
-## Files changed
-- App/app/booking_calendar.py (new, step 1): ruff E9,F63,F7,F82,F401,F841 passed.
-- App/app/booking_checkout.py (step 2): success and cancel URLs carry lang. ruff passed.
-- App/app/routes/property_page.py (step 3): imports added (date, urlencode, booking_calendar, host_i18n). Ruff F401 flagged 4 unused imports at this commit; cleared by step 4.
-- App/app/routes/property_page.py (step 4): `_page_lang`, `_href`, `_month_param`, `_short_day`, `_booking_view` added; `property_page_view` now uses them. ruff passed.
-- App/app/routes/property_page.py (step 5, commit aba043f): `_book_error` takes lang and form and keeps dates and guests; checkout uses lang from the form and checks `terms_version`; thanks page uses `_page_lang`. ruff passed.
-- App/app/host_i18n.py (step 6, commit e025791): 25 `pp.cal.*`, `pp.book.*` (nightly_line, city_tax_note, policy_title, policy_name, pay_card, stripe_note) and `pp.lang.label` keys added in cs and en. `grep -c pp.book.terms` gives 2 (check passed).
-- App/app/templates/property_page.html (step 7, commit 4908694): page CSS block in head_extra (tokens only) and the new calendar, price card, policy card, checkout form and CS/EN switch in place of the old form. Jinja parse passed. Not rendered yet (step 10 is the browser test).
-
-## Commands
-- Ruff (E9,F63,F7,F82,F401,F841) on property_page.py and host_i18n.py after step 7: `All checks passed!`
-- Token check (step 7): all 26 names found in app/static/tokens.css (1 hit each).
-- `.venv/bin/python -m pytest tests/test_host_i18n.py tests/test_no_em_dashes.py -q`: 3 failed, 15 passed. Failures: `test_language_endpoint_sets_cookie_and_rejects_open_redirects`, `test_a_signed_in_dashboard_keeps_vietnamese`, `test_language_endpoint_accepts_vietnamese`. Error is `sqlite3.OperationalError: no such table: apartment`. The first one also fails with step 6 stashed (before the i18n keys were added), so this is not caused by the new keys. Likely a test database setup issue in this worktree; not investigated (budget).
+## Done
+- Steps 1 to 7: as before (commits 47f9ccc to 4908694).
+- Step 8 (commit be52c83): `App/tests/test_booking_calendar.py` (4 tests) and `App/tests/test_booking_site_page.py` (8 tests). `pytest tests/test_booking_calendar.py tests/test_booking_site_page.py`: 12 passed.
+- Step 9 (commit a464bec): `test_property_page_meta.py` test renamed and rewritten; two assertions in `test_booking_widget.py` changed to "Choose your dates"; decision line appended to `docs/context/decisions.md`. Run with calendar test and widget test: 15 passed.
+- Step 10 (commit db18e54): `App/tests/test_booking_site_page_browser.py` (3 geometry tests at 360, 390, 1280, plus 1 no-JS calendar test). Run with `UBYHOST_REQUIRE_BROWSER=1`: 4 passed, 0 skipped.
+- Screenshot: `docs/tasks/screenshots-0818/booking-390.png` (written by the 390 test; not yet looked at).
 
 ## Deviations
-- Done: steps 1 to 7. Next: step 8 (`App/tests/test_booking_calendar.py`), then 9 to 11.
-- Verified: `slug` is a parameter of `property_page_view` (line 32) and `host_i18n.LANG_COOKIE` exists (`"ubyhost_lang"`). Both open points closed, no fix needed.
-- Pre-existing test failures listed under Commands (3 in test_host_i18n.py, "no such table: apartment"). Needs a look before step 11.
-- Step 7 `money` macro and `tp(...)`: `tp` is defined in app/templating.py. Keys `payments.czk` and `stay_fees.nights` were not checked against the i18n files; the step 10 render test will show missing keys if any.
-- Stopped after committing step 7 and running ruff, as the brief says (step 8 not started).
+- Step 10 found the guests button (`.pp-bk-card .ui-btn`) at 21 px high. Added `min-height: 44px` to the page's own `.pp-bk .ui-btn` rule in `App/app/templates/property_page.html` (line 32). Template change, not a CSS file.
+- Step 10 teardown hit a FK error on `user_account` delete. Added `alert` and `legal_entity` deletes to the browser test's `_cleanup`. Cause not confirmed.
+- Playwright 1.63.0 was missing from the shared `App/.venv` (symlink to the main checkout). Installed it with pip. Chromium bundle not installed; tests run with `UBYHOST_BROWSER_EXECUTABLE=/usr/bin/google-chrome`.
+- Brief step 8 fixture: `apartment` fixture takes `fake_sessions` (Stripe monkeypatch), otherwise the page is not bookable.
 
-## Questions
-- Why does `test_host_i18n.py` hit `no such table: apartment`? Is the test DB created by a conftest that this worktree lacks, or does the test need a migration run first?
+## Not done
+- Step 11: the section 6 commands were not run (tool budget reached). Not run: ruff, the long pytest list, the full browser list (`test_guest_browser_e2e.py`, `test_host_geometry.py` still to run), `design_lint`, `context_lint`, the section 7 greps.
+- Open from before: `test_host_i18n.py` "no such table: apartment" when run alone. Not investigated.
+
+## Next step
+Run section 6 from `App/` in this order: ruff, the long pytest list, then the browser command with `UBYHOST_BROWSER_EXECUTABLE=/usr/bin/google-chrome` added (check `0 skipped`). From repo root: `design_lint.py` and `context_lint.py`. Look at the screenshot once, then tick section 7 and set Status: review.
 
 ## Owner steps left
-- None yet. Do not merge. Next session starts at step 8.
-
-## Section 7 acceptance
-- Not ticked. No §7 item is met yet.
+- None. Do not merge.
