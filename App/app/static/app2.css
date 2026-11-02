@@ -1111,6 +1111,7 @@ body.v2 .field-label-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
 body.v2 .settings-heading .help-tip,body.v2 .field-label-row .help-tip{display:inline-flex;vertical-align:middle}
 body.v2 .settings-lane input[type=checkbox]{min-width:24px;min-height:24px;margin:0;accent-color:var(--acc)}
 @media (min-width:1024px){body.v2 .settings-lane .ui-btn{min-height:40px}}
+body.v2 .field-label-row > label, body.v2 .settings-heading h3{white-space:nowrap}
 body.v2 details.technical.ui-section{border:0;background:none;box-shadow:none;border-radius:0;padding:0;margin:0;border-top:1px solid var(--line)}
 body.v2 details.technical > summary{min-height:48px;justify-content:space-between;gap:12px;list-style:none}
 body.v2 details.technical > summary,body.v2 details.technical > :not(summary):not(.ui-section){padding-left:16px;padding-right:16px}
