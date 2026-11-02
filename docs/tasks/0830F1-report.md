@@ -28,3 +28,24 @@ Status: blocked (leon-settings test not green; see Questions)
 
 ## Owner steps left
 None.
+
+## Run 2 (executor, fine-print fix): Status: blocked
+
+Done in this run:
+- Fine-print check (`App/tests/test_0830_airbnb_pages_browser.py`, `_AUDIT_JS`): now checks every visible element's own text nodes over 60 characters, any tag. Excluded: `.help-tip-body`, `.help-tip`, `details[open].ui-how|stays-how|help-panel`, headings, `label`, `td`/`th`/`table`, `textarea`, `input`, `select`, `option`. Added one exclusion not in the brief: `.env-banner` (the shell's practice-mode alert from `_env_banner.html`, shown only when UBYPORT_ENV is mock). It was 159 characters on every page and is not page copy; owner to confirm.
+- Leon: `leon_on` fixture (in the test file) sets AI_FEATURES, ANTHROPIC_API_KEY, AI_TEST_EMAILS as test_0396, and also sets the first property's `leon_enabled = 1` with `LEON_TERMS_VERSION` (without it the page redirects to setup). Columns restored after. `partF-leon-settings` is now green (6 passed). Needed CSS: `body.v2 .f1-leon-terms .settings-value-link{min-height:44px}` and a wrapper div `f1-leon-terms` in `leon_settings.html`.
+- Cleaning settings: p->div reverted to p where the text is short; long hints moved under help `?` (`help_tip`, imported in the template): notes_hint, property_times_hint, manual_hint, code source text. CSS: labels inline-block, `.help-tip` 8 px after the label.
+
+Result: `-k "partF and not subscription and not payments"`: 9 of 12 cases... see counts: leon 6 passed; cleaning 6 failed (1 message left); guest-questions 6 passed; 0 skipped.
+
+Left (not finished):
+1. partF-cleaning-settings: "A permanent code stays valid until removed from the lock..." (91 chars) is still reported at every width, although its only template use is inside `help_tip` (checked by grep). Not yet explained; probably the help body is not excluded for this text. Needs a DOM probe.
+2. leon_setup/*.html: not changed in this run. The test does not cover them (they are reached by redirect only). Their long texts (for example "Leon is an optional AI chat...", 190 chars, and the switch_on lines) still need the rule-2 treatment.
+3. Test-file run: `21 failed, 71 passed`, 0 skipped. Failures outside F1 (not fixed):
+   - partC-property-detail at 1024, 1280, 1440: fine print "Hide it without deleting records..." (76) and "Amber marks what is still missing..." (61).
+   - partE-submission-detail at all 6 widths: "UbyPort accepted this report. Keep the D..." (81).
+   - partF-payments-consent at all 6 widths: failing, reason not captured in this run (not checked).
+   - partF-cleaning-settings at all 6 widths: only the permanent-code text above.
+
+Deviations: the leon test fixture and `.env-banner` exclusion are changes beyond the brief; both are called out above.
+Owner steps left: decide on the `.env-banner` exclusion; the leon_setup copy decision.
