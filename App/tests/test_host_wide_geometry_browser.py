@@ -41,7 +41,7 @@ CAPTURE_ROUTES = {
     "operators": ("/entities", ".entities-page, .panel.empty"),
     "operator-add": ("/entities?new=1", ".entity-add"),
     "operator-edit": ("/entities?edit={entity_id}", ".entity-form"),
-    "invoices": ("/invoices", ".ui-table-wrap, .ui-empty"),
+    "invoices": ("/invoices", ".stays-desk, .stays-phone, .ui-empty"),
     "fees-unset": ("/stay-fees?apartment={unconfigured_apartment}", ".panel.tight.scroll-x, .panel.empty"),
     "fees-configured": ("/stay-fees?apartment={configured_apartment}", ".panel.tight.scroll-x, .panel.empty"),
     # 0077/0101: the fee editor is property Settings -> Reporting & fees -> Stay fee.
@@ -58,7 +58,7 @@ CAPTURE_ROUTES = {
     "property-detail": ("/apartments/{property_id}", ".property-detail, .panel"),
     "property-detail-configured": ("/apartments/{configured_apartment}", ".property-detail, .panel"),
     "housebook": ("/housebook?apartment={unconfigured_apartment}&from={today}&to={housebook_end}", ".housebook-page, .panel"),
-    "submissions": ("/submissions", ".ui-table, .ui-empty"),
+    "submissions": ("/submissions", ".stays-desk, .stays-phone, .ui-empty"),
     "submission-detail": ("/submissions/{submission_id}", ".submission-detail, .panel"),
     # 0094: both now live in property Settings; the lane is the tab content.
     "guest-links": ("/apartments/{property_id}?view=settings&section=guests", ".property-views, details.prop-sec"),  # v2 (0538)
@@ -518,7 +518,7 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                             "dates_changed_resign alerts are filing gates and must remain non-dismissible"
                         )
                         assert geometry["alertStack"] is None, geometry["alertStack"]
-                    elif name in ("properties", "fee-setup", "property-detail", "property-detail-configured", "guest-links", "automation", "smart-locks"):  # v2 property pages (0538)
+                    elif name in ("properties", "fee-setup", "property-detail", "property-detail-configured", "guest-links", "automation", "smart-locks", "invoices", "submissions", "housebook"):  # v2 pages (0538, 0792): no alert stack
                         # 0538: the v2 shell does not render the alert stack (base.html), as on the dashboard
                         assert geometry["alertStack"] is None, (name, lang, width, geometry["alertStack"])
                     else:

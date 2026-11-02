@@ -132,7 +132,7 @@ def test_invoice_settings_tab_switch_does_not_move_the_page(base):
         browser, page = _open(playwright, base, 1280)
         page.goto(base + "/invoices?lang=en")
         page.wait_for_selector("#main-content")
-        page.locator(".ui-tabs a", has_text="Invoice settings").first.click()
+        page.locator(".stays-head-actions a", has_text="Invoice settings").first.click()  # 0792: head button, no tab strip
         page.wait_for_url("**/entities**")
         page.wait_for_selector("#main-content")
         samples = page.evaluate(

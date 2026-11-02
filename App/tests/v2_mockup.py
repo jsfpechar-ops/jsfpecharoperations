@@ -51,6 +51,8 @@ SELECTOR_ALIASES = {".actbar": ".bar", ".actbar .btn": ".bar .btn", ".head h1": 
 BOX_PROPS = ("width", "height", "margin-top", "margin-right", "margin-bottom", "margin-left")
 # phone box departure: the 20 px side room comes from body.v2 .main padding, so phone cards have no side margin (2026-11-01)
 BOX_OVERRIDES = {
+    # text-dependent: the stay fee head h1 is as wide as the fixture title on a 320 px phone (0794)
+    "stay_fees:.mh .big, .head h1@320": {"width": "120px"},
     # text-dependent: the head text column is as wide as the lede copy on phones (0791)
     "submissions:.mh .big, .head h1@320": {"width": "280px"},
     "submissions:.mh .big, .head h1@390": {"width": "350px"},
@@ -235,6 +237,16 @@ PAGES = [
         "phone_view": "menu",
         "phone_selectors": [".tabs", ".tab:not(.on)", ".tab.on", ".mh .big", ".me-av", ".tile", ".tile b", ".tile small", ".tile .v", ".promo", ".promo .pi", ".promo b", ".promo small", ".list.plain .row", ".list.plain .badge", ".menu-logout"],
         "missing_ok": {".list.plain .badge": "the Cleaning badge shows only when a cleaning is planned for today"},
+    },
+    {
+        "name": "stay_fees",
+        "path": "/stay-fees",
+        "view": "fee",
+        "selectors": [".head h1", ".head .sub", ".head .btn.ghost", "main .card"],
+        "phone_mockup": PHONE_MOCKUP_V2,
+        "phone_view": "menu",
+        "phone_selectors": [".tabs", ".tab.on", ".mh .big, .head h1"],
+        "missing_ok": {},
     },
     {
         "name": "stays",

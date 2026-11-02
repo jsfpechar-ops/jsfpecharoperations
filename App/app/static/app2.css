@@ -1060,6 +1060,49 @@ body.v2 .housebook-page .housebook-table .col-reported small{display:block;margi
 body.v2 .housebook-page .housebook-table .row-actions{white-space:nowrap}
 /* 0793 housebook v2 (end) */
 /* 0794 stay fees v2 (start) */
+body.v2 .stay-fees-page .fee-pay-h{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 12px}
+body.v2 .stay-fees-page .fee-pay-h h2{font-size:20px;font-weight:700;letter-spacing:-.01em;margin:0}
+body.v2 .stay-fees-page .fee-pay-h .sub{color:var(--ink3);font-size:14px;margin:0}
+body.v2 .stay-fees-page .fee-stepper{display:flex;gap:8px;margin:14px 0 18px;padding:0;list-style:none}
+body.v2 .stay-fees-page .fee-stepper-item{flex:1 1 0;min-width:0;display:flex;align-items:center;gap:8px;padding-top:8px;border-top:3px solid var(--line);color:var(--ink3);font-size:14px}
+body.v2 .stay-fees-page .fee-stepper-item[data-state="done"]{border-top-color:var(--ok);color:var(--ink2)}
+body.v2 .stay-fees-page .fee-stepper-item[data-state="current"]{border-top-color:var(--acc);color:var(--ink)}
+body.v2 .stay-fees-page .fee-stepper-dot{flex:0 0 auto;display:inline-grid;place-items:center;width:24px;height:24px;border:1px solid var(--line);border-radius:50%;font-size:13px}
+body.v2 .stay-fees-page .fee-stepper-item[data-state="current"] .fee-stepper-dot{background:var(--acc);border-color:var(--acc);color:var(--acc-text)}
+body.v2 .stay-fees-page .fee-stepper-item[data-state="done"] .fee-stepper-dot{border-color:var(--ok);color:var(--ok)}
+body.v2 .stay-fees-page .fee-stepper-label{min-width:0;overflow-wrap:anywhere}
+body.v2 .stay-fees-page .fee-step h3{margin:0 0 8px;font-size:17px;font-weight:700}
+body.v2 .stay-fees-page .fee-step p{margin:0 0 8px}
+body.v2 .stay-fees-page .fee-figures{display:flex;flex-wrap:wrap;gap:12px 24px;margin:0 0 16px}
+body.v2 .stay-fees-page .fee-figures div{min-width:0}
+body.v2 .stay-fees-page .fee-figures dt{color:var(--ink3);font-size:13px}
+body.v2 .stay-fees-page .fee-figures dd{margin:0;font-size:18px;font-weight:700}
+body.v2 .stay-fees-page .fee-figures-total dd{font-size:22px}
+body.v2 .stay-fees-page .fee-step-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0 0}
+body.v2 .stay-fees-page .fee-step-issues{margin:0 0 12px;padding-left:20px}
+body.v2 .stay-fees-page .fee-send-pay{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:24px;align-items:start;background:var(--bg);border-radius:18px;padding:18px}
+body.v2 .stay-fees-page .fee-tasks{margin:0;padding:0;list-style:none;counter-reset:fee-task;display:grid;gap:18px}
+body.v2 .stay-fees-page .fee-tasks li{counter-increment:fee-task;position:relative;padding-left:40px;min-width:0}
+body.v2 .stay-fees-page .fee-tasks li::before{content:counter(fee-task);position:absolute;left:0;top:0;width:28px;height:28px;border-radius:50%;background:var(--accs);color:var(--acc-text);display:grid;place-items:center;font-weight:700;font-size:14px}
+body.v2 .stay-fees-page .fee-tasks strong{display:block;margin-bottom:6px}
+body.v2 .stay-fees-page .fee-tasks .btn{margin-top:8px}
+body.v2 .stay-fees-page .fee-qr-panel{min-width:0;text-align:center}
+body.v2 .stay-fees-page .fee-qr-panel img{max-width:100%;height:auto;border-radius:12px}
+body.v2 .stay-fees-page .fee-qr-panel p{margin:8px 0 0}
+body.v2 .stay-fees-page .fee-qr-amount{font-size:22px;font-weight:700}
+body.v2 .stay-fees-page .fee-qr-meta{margin:12px 0 0;display:grid;gap:8px;text-align:left;font-size:14px}
+body.v2 .stay-fees-page .fee-qr-meta div{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 12px}
+body.v2 .stay-fees-page .fee-qr-meta dt{color:var(--ink3)}
+body.v2 .stay-fees-page .fee-qr-meta dd{margin:0;min-width:0;display:flex;align-items:center;gap:8px;overflow-wrap:anywhere}
+@media (max-width:1023px){
+  body.v2 .stay-fees-page .fee-send-pay{grid-template-columns:minmax(0,1fr)}
+  body.v2 .stay-fees-page .fee-qr-panel{order:-1}
+  body.v2 .stay-fees-page .fee-tasks .btn,body.v2 .stay-fees-page .fee-step-actions .btn{display:flex;justify-content:center;width:100%}
+}
+body.v2 .stay-fees-page .ui-btn,body.v2 .stay-fees-page .ui-btn-quiet,body.v2 .stay-fees-page .filter-toggle{min-height:44px}
+body.v2 .stay-fees-page .row-primary-link{display:inline-flex;align-items:center;min-height:44px}
+body.v2 .stay-fees-page .stays-desk input:not([type=hidden]){min-height:44px}
+body.v2 .stay-fees-page input:not([type=hidden]):not(.sr-only){min-height:44px}
 /* 0794 stay fees v2 (end) */
 /* cleaning (0542) */
 body.v2 .cleaning-page{width:100%;max-width:1080px;min-width:0;margin:0 auto;color:var(--ink)}
