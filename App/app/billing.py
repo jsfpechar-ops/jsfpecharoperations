@@ -30,8 +30,8 @@ INTERVALS = ("month", "year")
 # prices only the apartments inside it.
 BAND_TOPS = (4, 9)
 BASE = {"month": (149, 119, 99), "year": (1190, 950, 790)}
-MAX_EXTRA = {"month": (80, 59, 39), "year": (718, 570, 370)}
-TTLOCK = {"month": 40, "year": 480}
+MAX_EXTRA = {"month": (59, 45, 29), "year": (570, 430, 280)}
+TTLOCK = {"month": 49, "year": 470}
 WHITELABEL = {"month": 590, "year": 5660}
 # A supplementary amount under this is carried to the next invoice instead.
 SUPPLEMENTARY_MIN_CZK = 50

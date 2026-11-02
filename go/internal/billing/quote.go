@@ -23,8 +23,8 @@ var plans = map[string]bool{"standard": true, "max": true}
 var intervals = map[string]bool{"month": true, "year": true}
 
 var base = map[string][3]int{"month": {149, 119, 99}, "year": {1190, 950, 790}}
-var maxExtra = map[string][3]int{"month": {80, 59, 39}, "year": {718, 570, 370}}
-var ttlock = map[string]int{"month": 40, "year": 480}
+var maxExtra = map[string][3]int{"month": {59, 45, 29}, "year": {570, 430, 280}}
+var ttlock = map[string]int{"month": 49, "year": 470}
 var whitelabel = map[string]int{"month": 590, "year": 5660}
 
 // band returns 0, 1 or 2 for the 1-based position of an apartment.
