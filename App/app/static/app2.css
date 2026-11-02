@@ -1195,7 +1195,9 @@ body.v2 form.list-filter .filter-panel-actions>.ui-btn{display:inline-flex;align
 body.v2 form.list-filter .filter-panel-actions>.ui-btn[hidden]{display:none}
 body.v2 form.list-filter .filter-panel-actions>[data-filter-cancel]{background:var(--surface);color:var(--ink);border:1px solid #dcdcd7}
 @media (max-width:1023px){body.v2 form.list-filter .filter-panel-actions>.ui-btn{min-height:44px;height:44px}body.v2 form.list-filter .filter-fields select,body.v2 form.list-filter .filter-fields input:not([type=hidden]){min-height:44px}}
-body.v2 .head-title-row>details.stays-how .ui-how-toggle{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:32px;height:32px;min-height:32px;padding:0;margin:0;border:0;border-radius:50%;background:#efefeb;color:var(--ink);box-shadow:none;list-style:none}
+body.v2 .head-title-row>details.stays-how .ui-how-toggle{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;position:relative;isolation:isolate;width:44px;height:44px;min-height:44px;padding:0;margin:0;border:0;border-radius:0;background:none;color:var(--ink);box-shadow:none;list-style:none}
+body.v2 .head-title-row>details.stays-how .ui-how-toggle::before{content:"";position:absolute;left:50%;top:50%;width:32px;height:32px;margin:-16px 0 0 -16px;border-radius:50%;background:#efefeb;z-index:-1;pointer-events:none}
 body.v2 .head-title-row>details.stays-how .ui-how-toggle::-webkit-details-marker{display:none}
 body.v2 .head-title-row>details.stays-how .ui-how-toggle:focus-visible{outline:2px solid #d0452d;outline-offset:2px}
+body.v2 .head-title-row>details.stays-how .ui-how-toggle::after{content:none}
 /* 0818 list filter v2 (end) */

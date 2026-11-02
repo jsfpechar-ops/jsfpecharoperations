@@ -643,7 +643,6 @@ STRINGS: Dict[str, str] = {
     "housebook.pdf_export_title": "Tải gói PDF",
     "housebook.pdf_export_help": "Chọn ngày lưu trú và chỗ ở cần đưa vào. Máy chủ tạo lần lượt từng biểu mẫu khách. Khoảng thời gian càng dài thì càng lâu và tốn tài nguyên máy chủ hơn.",
     "housebook.pdf_hint": "Tối đa %(limit)s biểu mẫu mỗi lần tải. Nếu có nhiều mục, hãy chọn khoảng ngày hẹp hơn.",
-    "housebook.filter_footer": "Dữ liệu xuất theo bộ lọc hiện tại.",
     "host.signature_title": "Chữ ký của khách",
     "host.signature_help": "Luật bắt buộc. Khách phải ký, hoặc bạn phải giữ biểu mẫu giấy tương ứng. Hồ sơ chưa ký không thể gửi đến UbyPort.",
     "host.signature_missing": "Vui lòng ký trước khi lưu.",

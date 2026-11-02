@@ -29,7 +29,7 @@
 {% endfor %}
 <div class="housebook-page">
 <div class="head stays-head"><div class="head-title-row"><h1 class="big">{{ t('housebook.title') }}</h1>
-<details class="ui-how stays-how ph-hide" data-how="housebook">
+<details class="ui-how stays-how" data-how="housebook">
   <summary class="ui-how-toggle" aria-label="{{ t('how.toggle') }}">{{ icon('circle-help', 16) }}</summary>
   <div class="ui-how-body">
     <p>{{ t('housebook.archived_lede') }}</p>
@@ -136,7 +136,6 @@
   </a>
 {% endfor %}
 </div>
-<p class="stays-count">{{ t('housebook.entries', count=rows | length) }} {{ t('housebook.filter_footer') }}</p>
 {% else %}
   <div class="panel empty">{{ t('housebook.empty') }}</div>
 {% endif %}

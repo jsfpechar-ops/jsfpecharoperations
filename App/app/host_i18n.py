@@ -434,7 +434,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "housebook.pdf_hint": (
             "Up to %(limit)s forms per download. Use a narrower date range if you have many entries."
         ),
-        "housebook.filter_footer": "Exports use the current filter.",
         "host.signature_title": "Guest signature",
         "host.signature_help": "Required by law. The guest must sign, or you must keep a matching paper form. Unsigned records cannot be sent to UbyPort.",
         "host.signature_missing": "Please sign before saving.",
@@ -2291,7 +2290,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "housebook.pdf_hint": (
             "Nejvýše %(limit)s formulářů na jedno stažení. Při velkém počtu záznamů zužte datumy."
         ),
-        "housebook.filter_footer": "Exporty používají aktuální filtr.",
         "host.signature_title": "Podpis hosta",
         "host.signature_help": "Vyžaduje to zákon. Host se musí podepsat, nebo musíte mít shodný papírový formulář. Nepodepsané záznamy nelze odeslat do UbyPortu.",
         "host.signature_missing": "Před uložením se prosím podepište.",
