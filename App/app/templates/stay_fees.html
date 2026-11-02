@@ -28,6 +28,24 @@
 <div class="stay-fees-toolbar">{% include "_list_filter.html" %}</div>
 {% if periods %}
 {% set pay_rows = periods | rejectattr('unset') | list %}
+{% set fee_bulk = namespace(ready=[], saved=0) %}
+{% for period in pay_rows %}{% if period.status == 'ready' %}{% set fee_bulk.ready = fee_bulk.ready + [period.apartment.id] %}{% elif period.status == 'saved' %}{% set fee_bulk.saved = fee_bulk.saved + 1 %}{% endif %}{% endfor %}
+{% if fee_bulk.ready | length > 1 or fee_bulk.saved > 1 %}
+<section class="card fee-bulk" aria-label="{{ t('stay_fees.bulk.label') }}">
+  {% if fee_bulk.ready | length > 1 %}
+  <form method="post" action="/stay-fees/confirm-ready">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <input type="hidden" name="month" value="{{ selected_month.strftime('%Y-%m') }}">
+    <input type="hidden" name="return_to" value="{{ fee_return }}">
+    {% for apartment_id in fee_bulk.ready %}<input type="hidden" name="apartment_id" value="{{ apartment_id }}">{% endfor %}
+    <button class="btn" type="submit" data-confirm data-confirm-message="{{ t('stay_fees.bulk.confirm_ask') }}">{{ t('stay_fees.bulk.confirm', count=fee_bulk.ready | length) }}</button>
+  </form>
+  {% endif %}
+  {% if fee_bulk.saved > 1 %}
+  <a data-turbo="false" class="btn ghost" href="/stay-fees/pdfs.zip?month={{ selected_month.strftime('%Y-%m') }}" download>{{ t('stay_fees.bulk.pdfs', count=fee_bulk.saved) }}</a>
+  {% endif %}
+</section>
+{% endif %}
 {% for period in pay_rows %}
 {% set apartment = period.apartment %}
 {% set month_q = selected_month.strftime('%Y-%m') %}
@@ -111,6 +129,30 @@
   </div>
 </section>
 {% endfor %}
+{% for period in periods %}{% if period.unset and period.copy_from %}
+{% set target = period.apartment %}{% set source = period.copy_from %}
+<section class="card fee-copy" id="fee-copy-{{ target.id }}" aria-label="{{ t('stay_fees.copy.label') }}">
+  <div class="fee-pay-h">
+    <h2>{{ target.internal_name }}</h2>
+    <span class="sub">{{ t('stay_fees.copy.title', name=source.internal_name) }}</span>
+  </div>
+  <dl class="fee-figures">
+    <div><dt>{{ t('apartment.form.stay_fee.rate_label') }}</dt><dd>{{ t('stay_fees.rate_line', rate=source.stay_fee_rate_czk) }}</dd></div>
+    <div><dt>{{ t('stay_fees.col.period') }}</dt><dd>{{ t('apartment.form.stay_fee.cadence.quarterly' if source.stay_fee_cadence == 'quarterly' else 'apartment.form.stay_fee.cadence.monthly') }}</dd></div>
+    {% if source.stay_fee_vs %}<div><dt>{{ t('stay_fees.payment.vs') }}</dt><dd>{{ source.stay_fee_vs }}</dd></div>{% endif %}
+    {% if source.stay_fee_council_account or source.stay_fee_council_iban %}<div><dt>{{ t('stay_fees.payment.account') }}</dt><dd>{{ source.stay_fee_council_account or source.stay_fee_council_iban }}</dd></div>{% endif %}
+    {% if source.stay_fee_authority_name %}<div><dt>{{ t('apartment.form.stay_fee.authority_name_label') }}</dt><dd>{{ source.stay_fee_authority_name }}</dd></div>{% endif %}
+    {% if source.stay_fee_authority_databox %}<div><dt>{{ t('stay_fees.send.databox') }}</dt><dd>{{ source.stay_fee_authority_databox }}</dd></div>{% endif %}
+  </dl>
+  <form method="post" action="/stay-fees/{{ target.id }}/copy-setup" class="fee-step-actions">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <input type="hidden" name="source_id" value="{{ source.id }}">
+    <input type="hidden" name="return_to" value="{{ fee_return }}">
+    <button class="btn" type="submit">{{ t('stay_fees.copy.use') }}</button>
+    <a class="btn ghost" href="{{ fee_settings_url(target.id, fee_return) }}">{{ t('stay_fees.copy.other') }}</a>
+  </form>
+</section>
+{% endif %}{% endfor %}
 {% set fee_list = namespace(all_unset=true) %}
 {% for period in periods %}{% if not period.unset %}{% set fee_list.all_unset = false %}{% endif %}{% endfor %}
 <div class="card stays-desk fee-periods{% if fee_list.all_unset %} fee-periods-unset{% endif %}">

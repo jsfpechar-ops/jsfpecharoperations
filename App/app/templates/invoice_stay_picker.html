@@ -10,6 +10,13 @@
 
 <div class="ui-section">
   {% if stays %}
+  {% if quick_stays %}
+  <h2 class="invoice-quick-title">{{ t('invoice.picker.recent') }}</h2>
+  <ul class="invoice-quick-stays">
+    {% for option in quick_stays %}<li><a class="ui-btn ui-btn-secondary" href="/invoices/new?reservation_id={{ option.id }}">{{ option.label }}</a></li>{% endfor %}
+  </ul>
+  <h2 class="invoice-quick-title">{{ t('invoice.picker.other') }}</h2>
+  {% endif %}
   <form method="get" action="/invoices/new">
     <div class="ui-field">
       {{ field_label('reservation_id', t('invoice.picker.label'), t('invoice.picker.help')) }}
