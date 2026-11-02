@@ -315,3 +315,11 @@ def test_share_page_hidden_from_other_owners_and_qr(owner, client, stripe_env, f
     assert "err=" in response.headers["location"]
     response = client.get(f"/payments/requests/{rid}/share", follow_redirects=False)
     assert "err=" in response.headers["location"]
+
+
+def test_custom_request_uses_the_description_as_product_name(owner):
+    rid = payment_request.create(
+        owner, reason="custom", amount_czk=500, rail="card",
+        expires_at="2026-11-27", guest_note="Pozdní odjezd",
+    )
+    assert payment_links.product_name(payment_request.get(rid)) == f"Pozdní odjezd (žádost č. {rid})"

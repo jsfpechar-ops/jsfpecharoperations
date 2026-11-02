@@ -15,7 +15,7 @@ import json
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse, Response
 
-from .. import access, auth, config, db, host_i18n, i18n, mail, payment_links, payment_request, payments_consent, security, stripe_connect
+from .. import access, auth, config, db, host_i18n, i18n, mail, payment_links, payment_request, payment_services, payments_consent, security, stripe_connect
 from ..templating import render
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
@@ -91,6 +91,8 @@ def payments_page(request: Request):
     state = _connect_state(owner_id)
     raw_stay = str(request.query_params.get("reservation_id") or "")
     selected_reservation_id = int(raw_stay) if raw_stay.isdigit() else None
+    services = payment_services.list_for(owner_id)
+    prefill = payment_services.get(owner_id, str(request.query_params.get("service") or ""))
     return render(
         request,
         "payments.html",
@@ -106,8 +108,36 @@ def payments_page(request: Request):
                 {"id": s["id"], "label": _stay_label(s)} for s in _stays(owner_id)
             ],
             "selected_reservation_id": selected_reservation_id,
+            "services": services,
+            "prefill": prefill,
         },
     )
+
+
+@router.post("/payments/services")
+async def payment_service_add(request: Request):
+    """0762: save one extra (name + price)."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    form = await request.form()
+    raw_amount = str(form.get("amount_czk") or "").strip()
+    if not raw_amount.isdigit():
+        return _back("/payments", err=_flash(request, "payments.err.amount"))
+    try:
+        payment_services.add(access.owner_id(request), str(form.get("name") or ""), int(raw_amount))
+    except ValueError:
+        return _back("/payments", err=_flash(request, "payments.services.err"))
+    return _back("/payments", msg=_flash(request, "payments.services.saved"))
+
+
+@router.post("/payments/services/{service_id}/delete")
+async def payment_service_delete(request: Request, service_id: str):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    payment_services.remove(access.owner_id(request), service_id)
+    return _back("/payments", msg=_flash(request, "payments.services.removed"))
 
 
 @router.post("/payments/requests/new")
