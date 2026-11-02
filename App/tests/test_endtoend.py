@@ -17,7 +17,7 @@ import pytest
 import requests
 from fastapi.testclient import TestClient
 
-from app import auth, codelists, db, reporting
+from app import auth, claim, codelists, db, reporting
 from app.host_i18n import STRINGS as HOST_STRINGS
 from app.main import app
 from tests.conftest import complete_guest_claim
@@ -62,7 +62,7 @@ def feed_url(tmp_path_factory):
     import socketserver
     import threading
 
-    check_in = date.today() - timedelta(days=1)
+    check_in = claim.prague_today() - timedelta(days=1)
     body = ics_for(check_in).encode()
 
     class Handler(http.server.BaseHTTPRequestHandler):
@@ -599,7 +599,7 @@ def create_manual_stay(host, start: date, nights: int, expected_guests: int) -> 
 
 
 def test_24_an_incomplete_stay_past_the_deadline_raises_an_alert(host):
-    reservation_id = create_manual_stay(host, date.today() - timedelta(days=10), 2, 2)
+    reservation_id = create_manual_stay(host, claim.prague_today() - timedelta(days=10), 2, 2)
     assert reporting.check_deadlines() >= 1
     alert = db.query_one(
         "SELECT * FROM alert WHERE reservation_id = ? AND resolved_at IS NULL", (reservation_id,)
@@ -617,7 +617,7 @@ def test_25_manual_mode_waits_for_the_host(host, mock_ubyport):
     db.update("apartment", apartment["id"], {"automation_mode": "manual"})
     requests.post(mock_ubyport + "/reset", timeout=5)
 
-    reservation_id = create_manual_stay(host, date.today() - timedelta(days=1), 3, 1)
+    reservation_id = create_manual_stay(host, claim.prague_today() - timedelta(days=1), 3, 1)
     MANUAL_STAY["id"] = reservation_id
     guest_browser = TestClient(app)
     complete_guest_claim(
