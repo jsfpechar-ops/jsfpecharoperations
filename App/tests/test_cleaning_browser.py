@@ -197,9 +197,9 @@ def _assert_cleaning_day_marker(page, event_id, day, property_name, lang, mobile
 @pytest.mark.parametrize(("width", "lang"), [(1280, "en"), (1280, "cs")])
 def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, width, lang):
     ws = workspace
-    booking_id = stay(ws["home"], "2026-10-15", "2026-10-17")
+    stay(ws["home"], "2026-10-15", "2026-10-17")
     # A second property checks out the same day, so the 17th carries two cleaning tags.
-    second_booking_id = stay(ws["homes"][1], "2026-10-15", "2026-10-17")
+    stay(ws["homes"][1], "2026-10-15", "2026-10-17")
     short_jobs = [
         cleaning.save_event(ws["home"], {"scheduled_date": "2026-10-25", "start_time": "09:00", "end_time": "10:00"}),
         cleaning.save_event(ws["home"], {"scheduled_date": "2026-10-25", "start_time": "14:00", "end_time": "15:00"}),
