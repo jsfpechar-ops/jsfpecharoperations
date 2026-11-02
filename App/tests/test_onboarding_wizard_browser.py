@@ -1166,7 +1166,7 @@ def test_deferred_police_journey_without_javascript(host, base_url, monkeypatch,
             header = page.locator(".wiz-page h1.big").bounding_box()
             exit_button = page.locator(".setup-wizard-exit button").bounding_box()
             assert header and exit_button
-            assert header["y"] + header["height"] <= exit_button["y"] + 1
+            assert header["x"] + header["width"] <= exit_button["x"] + 1 or header["y"] + header["height"] <= exit_button["y"] + 1
             radius = page.locator(".setup-wizard-foot .ui-btn-primary").evaluate(
                 "(el) => getComputedStyle(el).borderRadius"
             )

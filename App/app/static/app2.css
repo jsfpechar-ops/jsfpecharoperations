@@ -1226,6 +1226,9 @@ body.v2 .wiz-page .setup-wizard-form:has(select[name="label"] option[value="othe
 body.v2 .wiz-page .ui-choice-card input{accent-color:var(--acc)}
 body.v2 .wiz-page .setup-wizard-card .setup-wizard-copy{margin-top:auto;align-self:flex-start}
 body.v2 .wiz-page .setup-wizard-copy{min-height:42px;width:200px;max-width:100%;white-space:normal;text-align:center}
+body.v2 .wiz-page .setup-wizard-lede{color:var(--ink)}
+body.v2 .wiz-page .ui-choice-card input:focus-visible{outline:none}
+body.v2 .wiz-page .ui-choice-card:has(input:focus-visible){outline:2px solid var(--acc);outline-offset:2px}
 /* 0800 new property + onboarding (v2) */
 body.v2 .prop-new .property-create{display:grid;gap:20px;align-items:start}
 body.v2 .prop-new .property-create-main{min-width:0}
