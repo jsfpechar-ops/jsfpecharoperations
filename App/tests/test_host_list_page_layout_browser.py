@@ -194,7 +194,13 @@ def test_empty_states_use_the_shared_component(acc):
         assert html.count("data-empty-state") == 1, path
         block = html[html.index("data-empty-state"):]
         block = block[:block.index("\n  </div>")]
-        assert len(re.findall(r'<a class="(?:btn|ui-btn)[^"]*"', block)) == 1, (path, block)
+        if path == "/invoices":
+            # v2, 0818: the head carries the action, so the empty block has none.
+            head = html[:html.index("data-empty-state")]
+            assert len(re.findall(r'<a class="btn" href="/invoices/new">', head)) == 1, path
+            assert len(re.findall(r'<a class="(?:btn|ui-btn)[^"]*"', block)) == 0, (path, block)
+        else:
+            assert len(re.findall(r'<a class="(?:btn|ui-btn)[^"]*"', block)) == 1, (path, block)
         assert "<p>" in block or "<h2>" in block, path
     filtered = acc["client"].get("/invoices?q=zzzz-no-such-invoice&lang=en").text
     assert filtered.count("data-empty-state") == 1
