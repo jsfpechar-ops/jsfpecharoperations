@@ -1141,6 +1141,7 @@ body.v2 .entity-form .operator-phone,body.v2 .entity-add .operator-phone{display
 body.v2 .entity-form .operator-phone-number,body.v2 .entity-add .operator-phone-number{flex:1 1 auto;min-width:0}
 body.v2 .entity-form .operator-phone>*,body.v2 .entity-add .operator-phone>*{margin:0;align-self:stretch;box-sizing:border-box}
 @media (max-width:1023.98px){body.v2 .entity-form>.ui-section-h>.ui-btn-compact{min-height:44px}}
+body.v2 .entity-form input:not([type=checkbox]):not([type=radio]){min-height:44px}
 body.v2 .entity-form .action-group,body.v2 .entity-add .action-group{display:flex;flex-direction:column;align-items:stretch;gap:8px}
 body.v2 .entity-form .action-group input,body.v2 .entity-add .action-group input{min-width:0}
 @media (min-width:1024px){body.v2 .entity-form .action-group,body.v2 .entity-add .action-group{flex-direction:row;align-items:flex-end}body.v2 .entity-form .action-group input,body.v2 .entity-add .action-group input{flex:1 1 auto}}
