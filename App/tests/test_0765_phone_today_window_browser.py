@@ -129,8 +129,9 @@ def test_phone_calendar_tab_hides_today(base, window_host):
     assert result["need_cards"] == 0 and result["more"] == 0 and result["ph_top"] == 0, result
 
 
-def test_desktop_calendar_keeps_needs_action(base, window_host):
+def test_desktop_calendar_hides_needs_action(base, window_host):
     playwright, browser, context, page = _page(base, window_host, "/?cal_view=calendar", 1280)
     shown = page.locator("#needs-action").evaluate_all(VISIBLE)
     _close(playwright, browser, context)
-    assert shown == 1, "desktop calendar view still shows #needs-action"
+    # 0877: the calendar view is a full page, like the Airbnb host calendar: no alert stack above it.
+    assert shown == 0, "desktop calendar view shows #needs-action above the full-page calendar"
