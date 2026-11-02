@@ -1563,3 +1563,19 @@ body.v2 .settings-help-line .help-tip-btn{width:24px;height:24px;min-width:24px;
 body.v2 .settings-lane .set-row,body.v2 .settings-lane .document-links a{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:0;margin:0 0 12px;padding:20px;border:1px solid var(--line);border-radius:12px;color:var(--ink);text-decoration:none;box-sizing:border-box}
 body.v2 .settings-lane .document-links{border-top:0;margin-top:0}
 body.v2 .settings-lane .set-row::after,body.v2 .settings-lane .document-links a::after{content:"\203A";flex:0 0 auto;color:var(--ink3);font-size:20px;line-height:1}
+
+/* 0833 property editor (v2) */
+body.v2 .property-settings-form .help-tip{display:inline-flex;align-items:center;vertical-align:middle;position:relative}
+body.v2 .property-settings-form .help-tip-btn{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:24px;height:24px;min-width:24px;min-height:24px;padding:0;margin:0 0 0 12px;border:1px solid var(--line);border-radius:50%;background:#fff;color:var(--ink3);font-family:inherit;font-size:12px;font-weight:600;line-height:1;cursor:help;position:relative}
+body.v2 .property-settings-form .help-tip-btn::after{content:"";position:absolute;inset:-13px}
+body.v2 .property-settings-form .help-tip-btn:hover,body.v2 .property-settings-form .help-tip-btn[aria-expanded=true]{background:var(--brand-soft);border-color:var(--brand);color:var(--brand-ink)}
+body.v2 .property-settings-form .help-tip-btn:focus-visible{outline:3px solid var(--brand-ring,var(--brand));outline-offset:2px}
+body.v2 .property-settings-form .help-tip-body{display:none;position:absolute;z-index:70;left:0;top:100%;box-sizing:border-box;width:min(320px,calc(100vw - 16px));max-width:calc(100vw - 16px);padding:10px 12px;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-popover);font-size:13px;font-weight:400;line-height:1.45;text-align:left;white-space:normal;overflow-wrap:anywhere}
+body.v2 .property-settings-form .help-tip-body a{color:var(--brand-ink);font-weight:650}
+body.v2 .property-settings-form .help-tip:not([data-js]):hover>.help-tip-body,body.v2 .property-settings-form .help-tip:not([data-js]):focus-within>.help-tip-body,body.v2 .property-settings-form .help-tip.is-open>.help-tip-body{display:block}
+body.v2 .property-settings-form .help-tip[data-js]>.help-tip-body{position:fixed}
+@media (min-width:1024px){
+body.v2 .property-settings-form .grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+body.v2 .property-settings-form .property-identity-fields>.field{grid-column:1/-1}
+body.v2 .property-settings-form .field input:not([type=checkbox]):not([type=radio]):not([type=hidden]),body.v2 .property-settings-form .field select{width:100%;max-width:none;box-sizing:border-box}
+}
