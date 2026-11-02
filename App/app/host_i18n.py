@@ -6963,6 +6963,9 @@ _PASSKEY_STRINGS = {
         "notification.mail_kind.billing_overdue": "payment reminder",
         "notification.mail_kind.billing_paid": "payment confirmation",
         "notification.mail_kind.payment_request": "payment request",
+        "notification.mail_kind.site_booking_confirmed": "booking confirmation",
+        "notification.mail_kind.site_booking_refunded": "booking refund",
+        "notification.mail_kind.site_booking_host": "new website booking",
     },
     "cs": {
         "login.passkey": "Přihlásit se pomocí klíče (passkey)",
@@ -7009,6 +7012,9 @@ _PASSKEY_STRINGS = {
         "notification.mail_kind.billing_overdue": "připomínka platby",
         "notification.mail_kind.billing_paid": "potvrzení platby",
         "notification.mail_kind.payment_request": "platební žádost",
+        "notification.mail_kind.site_booking_confirmed": "potvrzení rezervace",
+        "notification.mail_kind.site_booking_refunded": "vrácení platby za rezervaci",
+        "notification.mail_kind.site_booking_host": "nová rezervace z webu",
     },
 }
 for _lang, _strings in _PASSKEY_STRINGS.items():
