@@ -59,6 +59,29 @@ def _stay_label(stay: Dict[str, Any]) -> str:
     return f"{name} ({stay['date_from']} → {stay['date_to']})"
 
 
+def _setup(owner_id: int, state: Dict[str, Any]) -> Dict[str, Any]:
+    """The 4 guided setup steps (0729) and which one the primary button opens."""
+    consent = payments_consent.accepted(owner_id)
+    entity = stripe_connect.legal_entity_for_owner(owner_id)
+    has_details = bool(entity and (entity.get("name") or "").strip())
+    onboarding = state.get("onboarding_state") or "none"
+    stripe_status = {"pending": "waiting", "action_required": "attention"}.get(onboarding, "todo")
+    steps = [
+        {"key": "consent", "status": "done" if consent else "todo"},
+        {"key": "details", "status": "done" if has_details else "todo",
+        "href": f"/entities?edit={entity['id']}" if entity else "/entities"},
+        {"key": "stripe", "status": stripe_status},
+        {"key": "live", "status": "todo"},
+    ]
+    if not consent:
+        next_step = "consent"
+    elif not has_details:
+        next_step = "details"
+    else:
+        next_step = "stripe"
+    return {"steps": steps, "next": next_step, "entity": entity if has_details else None}
+
+
 @router.get("/payments")
 def payments_page(request: Request):
     guard = auth.require_login(request)
@@ -73,6 +96,7 @@ def payments_page(request: Request):
             "nav": "payments",
             "how_key": "payments",
             "connect_state": state,
+            "setup": _setup(owner_id, state),
             "stripe_off": _off(),
             "requests": payment_request.for_owner(owner_id),
             "reasons": list(payment_request.REASONS),
@@ -353,4 +377,7 @@ async def payments_consent_accept(request: Request):
     if str(form.get("agree") or "") != "1":
         return _back("/payments/consent", err=_flash(request, "payments.err.consent"))
     payments_consent.record(int(workspace["id"]))
-    return RedirectResponse("/payments/connect/start", status_code=303)
+    # 0730: never redirect a form POST to Stripe. The CSP form-action 'self'
+    # blocks a form whose redirect chain leaves our origin (blank page). Back
+    # to /payments, where "Open Stripe" is a plain link.
+    return _back("/payments", msg=_flash(request, "payments.consent.saved"))

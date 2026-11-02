@@ -7,7 +7,7 @@ from datetime import date, timedelta
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, db, reporting
+from app import auth, db, deadlines, reporting
 from app.main import app
 from tests.conftest import login_as
 
@@ -128,7 +128,7 @@ def host():
 
 
 def test_month_line_shows_guests_nights_and_reports(host):
-    today = date.today()
+    today = deadlines.local_now().date()
     apartment_id = _property(_owner_id(USERNAME), "overviewtoday1")
     stay = _stay(apartment_id, "month-1", today.replace(day=1), 3)
     _guest(stay, "Month One", reporting.SENT, db.utcnow())
@@ -142,7 +142,7 @@ def test_month_line_shows_guests_nights_and_reports(host):
 
 
 def test_today_table_lists_arrivals_and_departures_today_only(host):
-    today = date.today()
+    today = deadlines.local_now().date()
     apartment_id = _property(_owner_id(USERNAME), "overviewtoday2")
     arrive = _stay(apartment_id, "today-arrive", today, 2)
     depart = _stay(apartment_id, "today-depart", today - timedelta(days=2), 2)
@@ -158,7 +158,7 @@ def test_today_table_lists_arrivals_and_departures_today_only(host):
 
 
 def test_order_is_needs_you_month_calendar_today(host):
-    today = date.today()
+    today = deadlines.local_now().date()
     apartment_id = _property(_owner_id(USERNAME), "overviewtoday3")
     _stay(apartment_id, "order-overdue", today - timedelta(days=5), 2)
 
@@ -173,7 +173,7 @@ def test_order_is_needs_you_month_calendar_today(host):
 
 def test_no_add_cleaning_button_and_no_more_actions_menu(host):
     apartment_id = _property(_owner_id(USERNAME), "overviewtoday4")
-    _stay(apartment_id, "buttons-1", date.today(), 1)
+    _stay(apartment_id, "buttons-1", deadlines.local_now().date(), 1)
 
     page = host.get("/?lang=en").text
 
@@ -184,7 +184,7 @@ def test_no_add_cleaning_button_and_no_more_actions_menu(host):
 
 
 def test_month_summary_ignores_demo_stays_and_other_owners(host):
-    today = date.today()
+    today = deadlines.local_now().date()
     start = today.replace(day=1)
     owner_id = _owner_id(USERNAME)
     other_id = _owner_id(OTHER)

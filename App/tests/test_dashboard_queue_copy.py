@@ -8,12 +8,12 @@ column labelled "Deadline" mostly shows an arrival time.
 from __future__ import annotations
 
 import re
-from datetime import date, timedelta
+from datetime import timedelta
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, db, host_i18n, reporting
+from app import auth, db, deadlines, host_i18n, reporting
 from app.main import app
 from tests.conftest import login_as
 
@@ -60,7 +60,7 @@ def _cleanup():
 def _stay(apartment_id: int, uid: str, nationality: str, submit_state: str, days: int) -> int:
     """One stay with exactly one complete guest, so its status is unambiguous."""
     now = db.utcnow()
-    today = date.today()
+    today = deadlines.local_now().date()
     reservation_id = db.insert(
         "reservation",
         {

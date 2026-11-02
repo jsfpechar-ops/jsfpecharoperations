@@ -1,37 +1,37 @@
-# 0730 report: Úklid phone, compact list
+# 0730 report
 
 Status: review
 
 ## Files changed
-- `App/app/templates/_cleaning_table.html`: phone block only. Week shows first 3 rows; the rest of "This week" and all of "Later" sit in `<details class="cleaning-more">` with summary "Show N more" (N = hidden count).
-- `App/app/cleaning_i18n.py`: key `show_more` (cs/en).
-- `App/app/host_vi_i18n.py`: key `show_more` (vi).
-- `App/app/static/app2.css`: end of file, two rules below 1024 px (summary style; hide closed content).
-- `App/app/templates/base.html`: `app2.css?v=20261101-0730b`.
-- `App/tests/static_versions.json`: via `--write`.
-- `App/tests/test_0540_cleaning_tables.py`: one new test (6 week + 1 later, 3 rows before details, "Zobrazit další (4)").
-- `docs/tasks/screenshots-0730/cleaning-390.png`.
+
+- App/app/routes/payments.py: consent POST returns `_back("/payments", msg=...)` instead of 303 to /payments/connect/start.
+- App/app/host_i18n.py: new `payments.consent.saved` (en, cs); `payments.consent.continue` relabelled "Agree and continue" / "Souhlasím a pokračuji".
+- App/tests/test_payments_consent.py: test renamed to `test_post_with_tick_records_and_returns_to_payments`, asserts `/payments?msg=`; new `test_consent_post_never_redirects_off_site`.
+- docs/tasks/0730-consent-redirect-fix.md: Status line only.
+- docs/tasks/0730-report.md: this file.
+
+CSP in App/app/main.py not changed.
 
 ## Commands (last lines)
-- `.venv/bin/python -m pytest tests/test_0540_cleaning_tables.py tests/test_cleaning.py tests/test_design_cleaning.py tests/test_static_versions.py -q --tb=line`: `51 passed in 11.70s`
-- `UBYHOST_REQUIRE_BROWSER=1 ... pytest tests/test_0710_v2_mockup_match_browser.py tests/test_cleaning_browser.py -k cleaning -q -rs`: `34 passed, 22 deselected in 56.06s` (0 skipped)
-- `python3 scripts/design_lint.py`: `design lint: OK`
-- Screenshot run (`-k screenshots`): `1 passed, 33 deselected in 19.51s`
 
-## Step 7 acceptance
-- Steps 3 sets green: yes. Lint OK: yes. Screenshot shows today + 3 week rows + "Show 4 more" above the share bar: yes.
+1. `pytest tests/test_payments_consent.py tests/test_payments_dashboard.py tests/test_stripe_connect.py -q -k "not fits_a_phone"`: `45 passed, 1 deselected`
+2. `pytest tests/test_host_i18n.py -k same_keys`: `1 passed, 13 deselected`
+3. `python3 scripts/context_lint.py`: `context lint: OK`
+
+## Acceptance (§7)
+
+- [x] POST /payments/consent with the tick redirects to `/payments?msg=...`, never to `/payments/connect/start`.
+- [x] §6 passes.
 
 ## Deviations
-- The step 3 test was lost: a temporary `git checkout` of an older tree for the failure check reverted the uncommitted test file. It is re-added in commit "0730 step 3b" (the earlier report line claiming it was in step 3 was wrong).
-- Step 1 commit was amended once (missing comma in cleaning_i18n.py caught by an import check; unpushed).
-- Step 2: added a second CSS rule `.cleaning-more:not([open])>:not(summary){display:none}`. Without it the browser geometry check (`tests/v2_mockup.py`) counted rows inside the closed details and failed at 320/390/768 px ("main content ends under the tab bar"). The check passes with it.
-- Key bumped to `0730b` after that fix.
-- No PR opened: the brief said do not push.
-- Done: steps 1 to 4. Left: none.
+
+- `fits_a_phone` browser test deselected, as §6 specifies. Template not changed, so no 390 px screenshot was taken.
+- Running the consent tests rewrote `docs/tasks/screenshots-0624/consent-390.png` as a side effect; restored with git checkout and not committed.
 
 ## Questions
-- None.
+
+None.
 
 ## Owner steps left
-1. Review commits `0730 step 1` to `0730 step 4` and this report on branch `claude/project-thread-c1h7ok`.
-2. Push the branch, then merge with `scripts/merge-pr-on-green.sh` when green (AGENTS.md rule 8).
+
+After merge and deploy: Platby, tick the box, tap "Souhlasím a pokračuji". You land on Platby with "Uloženo…". Tap "Otevřít Stripe".
