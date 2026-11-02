@@ -444,7 +444,7 @@ def test_sidebar_search_has_a_border(wide_host, wide_base):
         context = browser.new_context(viewport={"width": 1280, "height": 1000})
         context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": wide_base + "/"}])
         page = context.new_page()
-        response = page.goto(f"{wide_base}/settings?lang=en")
+        response = page.goto(f"{wide_base}/payments?lang=en")
         assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
         _wait_for_host_layout(page)
         _dismiss_optional_security_prompt(page)
@@ -482,13 +482,14 @@ def test_host_sections_are_bordered_panels(wide_host, wide_base):
         )
         for key, path in BORDERED_ROUTES.items()
     }
+    # 0785a: v2 pages (body.v2) group their settings in .card panels, not old-shell .ui-section; they are counted but not held to the border rule.
     js = """() => Array.from(document.querySelectorAll('.ui-section:not(.ui-section-plain)'))
         .filter(el => !el.parentElement || !el.parentElement.closest('.ui-section'))
         .map(el => {
           const cs = getComputedStyle(el);
           const border = ['Top', 'Right', 'Bottom', 'Left'].reduce((n, side) => n + parseFloat(cs['border' + side + 'Width']), 0);
           const pad = ['Top', 'Right', 'Bottom', 'Left'].reduce((n, side) => n + parseFloat(cs['padding' + side]), 0);
-          return {id: el.id || el.className, border, pad};
+          return {id: el.id || el.className, border, pad, v2: !!el.closest('body.v2')};
         })"""
     counts = {}
     findings = []
@@ -511,6 +512,8 @@ def test_host_sections_are_bordered_panels(wide_host, wide_base):
             sections = page.evaluate(js)
             counts[name] = len(sections)
             for section in sections:
+                if section["v2"]:
+                    continue
                 if section["border"] <= 0 or section["pad"] <= 0:
                     findings.append((name, section))
         context.close()
