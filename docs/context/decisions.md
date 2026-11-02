@@ -75,3 +75,4 @@ Append-only.
 - 2026-10-29 | Connect accounts: full Stripe Dashboard + Stripe collectors (Express+Stripe is preview-only; Express pairs with application liability, rejected) | owner | 0439
 
 - 2026-10-30 | [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; Haiku-only execution; manual cutover | 0455–0456
+2026-11-02 | OCR accuracy: stay on Tesseract; MRZ band crop plus straighten plus character whitelist, pure Pillow; PaddleOCR (ONNX) only if ocr_readrate on about 30 real photos reads under 90%, then owner decision line needed | owner | test_doc_ocr

@@ -101,3 +101,4 @@
 
 
 PG: 0455–0456 incomplete.
+OCR-B traineddata not used (needs a downloaded asset); read rate unmeasured until the owner runs `ocr_readrate.py` on real photos.
