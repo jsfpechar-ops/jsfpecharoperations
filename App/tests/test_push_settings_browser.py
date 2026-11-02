@@ -96,7 +96,7 @@ def _shot(page, name):
 
 
 def _open_settings(page, base, lang):
-    page.goto(f"{base}/settings?lang={lang}")
+    page.goto(f"{base}/settings/phone?lang={lang}")
     page.wait_for_selector("#settings-group-phone", timeout=30000)
     # No string predicate: Playwright evaluates those with eval, which the page CSP blocks.
     for _ in range(300):
@@ -104,7 +104,7 @@ def _open_settings(page, base, lang):
             break
         page.wait_for_timeout(100)
     else:
-        raise AssertionError("service worker never took control of /settings")
+        raise AssertionError("service worker never took control of /settings/phone")
 
 
 @pytest.mark.parametrize("lang", ["en", "cs", "vi"])
@@ -166,7 +166,7 @@ def test_an_iphone_outside_the_home_screen_app_is_told_to_add_it_first(base, lan
         browser = _browser(playwright)
         try:
             page = _page(browser, base, username, 390, user_agent=IPHONE, grant=False)
-            page.goto(f"{base}/settings?lang={lang}")
+            page.goto(f"{base}/settings/phone?lang={lang}")
             page.wait_for_selector("#settings-group-phone", timeout=30000)
             page.wait_for_selector("[data-push-ios-first]:not([hidden])", timeout=30000)
             assert not page.is_visible("[data-push-on]")
