@@ -205,8 +205,9 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
             page.set_viewport_size({"width": width, "height": 900})
             # 0720: .ui-ph-acts is the old-shell page header (host_page.html); "/" is v2 and has none.
             page.goto(f"{base}/apartments?lang=en")
-            # 0543: v2 phone action is .props-top a.round (below 1024); desktop action is .props-head a.btn.
-            selector = ".props-top a.round" if width < 1024 else ".props-head a.btn"
+            # 0543: v2 phone action is .props-head a.props-add (below 1024); desktop action is .props-head a.btn.
+            # 0740: phone action is .props-head a.props-add
+            selector = ".props-head a.props-add" if width < 1024 else ".props-head a.btn"
             heights = page.locator(selector).evaluate_all(
                 "els => els.map(el => el.getBoundingClientRect().height)"
             )
