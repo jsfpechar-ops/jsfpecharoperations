@@ -89,12 +89,6 @@ def read_form(form: Dict[str, str]) -> Tuple[Dict[str, Any], Dict[str, str]]:
     return values, errors
 
 
-def founder_offer(owner_user_id: int) -> bool:
-    """Keep an already confirmed founder agreement; new orders get list prices."""
-    acc = billing.account(owner_user_id) or {}
-    return bool(acc.get("founder"))
-
-
 def quote(owner_user_id: int, values: Dict[str, Any]) -> Dict[str, int]:
     return billing.quote(
         apartments(owner_user_id), values["plan"], values["billing_interval"],
