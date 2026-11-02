@@ -22,6 +22,7 @@ Master version: 2.0.0. This file adds; it never overrides MASTER.md. Keep it und
 - then exactly one primary button: the first unfinished step (consent -> `/payments/consent`, details -> `/entities`, Stripe -> `/payments/connect/start` with `target=_blank`, which also keeps it out of prefetch).
 - complete: one green badge `payments.connect.complete` and the tip; rejected/disabled: state copy + support line.
 - section 2: new payment request form; section 3: request list.
+- services (0762): "Your services" section above the request form: saved name + price rows with "Request payment" (link to /payments?service=…#new-request, prefills amount, Custom and the description) and Remove; a 2-field add form.
 - request row: open card requests get a `secondary compact` "Get link" (POST, then our share page; never a POST to Stripe).
 - share page `/payments/requests/{id}/share` (template `payments_share.html`, body_kind `detail`): reason and amount, the link in a read-only field, then Copy, Send by e-mail (secondary) and Send on WhatsApp (primary, new tab), one note, a back link.
 - badges used: `done` (step done), `attention` (Stripe needs you), `neutral` (to do / Stripe is checking).
