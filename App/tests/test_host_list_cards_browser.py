@@ -68,6 +68,9 @@ def test_list_panels_never_scroll_sideways_and_actions_stay_visible(acc, base):
                 if name == "properties":
                     # v2: table from 1024 px (.props-card), phone cards below (.props-phone, whole card is the link)
                     sels = (".props-card", "tbody td.row-actions a.btn, tbody td.row-actions a.ui-btn, tbody td.row-actions .row-menu-trigger") if width >= 1024 else (".props-phone", "a.card.prop")
+                elif name == "fees":
+                    # v2 (0794): stay-fees swaps .card.stays-desk (table) for .stays-phone (cards) by viewport, like /apartments.
+                    sels = (".card.stays-desk", "tbody td.row-actions a.btn, tbody td.row-actions a.ui-btn, tbody td.row-actions .row-menu-trigger") if width >= 1024 else (".stays-phone", "a.card.stay")
                 else:
                     sels = (".list-cards", "tbody td.row-actions a.btn, tbody td.row-actions a.ui-btn, tbody td.row-actions .row-menu-trigger")
                 result = page.evaluate(_LIST_JS, list(sels))
@@ -77,7 +80,8 @@ def test_list_panels_never_scroll_sideways_and_actions_stay_visible(acc, base):
                     continue
                 if result["scrollWidth"] > result["clientWidth"] + 1:
                     failures.append((label, "inner horizontal scroll", result["scrollWidth"], result["clientWidth"]))
-                expect_cards = width < 1024 if name == "properties" else result["panelWidth"] < THRESHOLDS[name]
+                # v2 fees (0794) switch on the viewport, not the panel width.
+                expect_cards = width < 1024 if name in ("properties", "fees") else result["panelWidth"] < THRESHOLDS[name]
                 if result["cards"] != expect_cards:
                     failures.append((label, "layout does not follow the panel width", result["panelWidth"], result["cards"]))
                 if not result["acts"]:

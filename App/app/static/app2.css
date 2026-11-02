@@ -1202,3 +1202,6 @@ body.v2 .head-title-row>details.stays-how .ui-how-toggle:focus-visible{outline:2
 body.v2 .head-title-row>details.stays-how .ui-how-toggle::after{content:none}
 @media (min-width:601px){body.v2 .invoices-page form.list-filter .month-step{height:42px;min-height:42px}}
 /* 0818 list filter v2 (end) */
+/* 0820 empty state v2: the action sits centred under its text (host2.css 0176 is not loaded on v2 pages). */
+body.v2 .ui-empty{text-align:center}
+body.v2 .ui-empty .ui-btn-group{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px}
