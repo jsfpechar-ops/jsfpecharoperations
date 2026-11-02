@@ -1,6 +1,6 @@
 """0250: facility name example. The overview "Open" pills went away with the one-page property view (0535)."""
 
-from tests.test_property_navigation_browser import host  # noqa: F401
+from tests.property_host_fixture import host  # noqa: F401
 
 
 def test_facility_name_help_shows_highlighted_example_unescaped(host):
