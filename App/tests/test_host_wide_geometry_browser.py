@@ -561,7 +561,9 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                             mismatches.append({"route": name, "locale": lang, "width": width,
                                 "lane": "directBacklink.left", "result": header,
                                 "candidate": direct_backlink, "delta": delta})
-                    if title and result and not phone_dashboard and abs(result["left"] - title["left"]) > 2:
+                    # 0751: the phone v2 stay page centres its title (Airbnb style), so no left lane below 1024 px
+                    phone_centred_title = name == "stay-detail" and width < 1024
+                    if title and result and not phone_dashboard and not phone_centred_title and abs(result["left"] - title["left"]) > 2:
                         mismatches.append({"route": name, "locale": lang, "width": width,
                             "lane": "pageHeader.titleLeft", "result": result, "candidate": title})
                     lane = geometry["result"]
@@ -635,7 +637,7 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                             _assert_stay_menu_copy_geometry(page, width, 0, lang, keyboard=True)
                             _assert_stay_menu_copy_geometry(page, width, 1, lang)
                         else:
-                            phone_rows = page.locator(".stays-phone .list a.row")
+                            phone_rows = page.locator(".stays-phone a.card.stay")
                             assert phone_rows.count() >= 4
                             for row_index in range(phone_rows.count()):
                                 phone_row = phone_rows.nth(row_index)

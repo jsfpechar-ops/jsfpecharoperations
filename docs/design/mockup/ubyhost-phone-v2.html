@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>UbyHost phone v2 (approved 2026-11-01)</title>
+<title>UbyHost phone v2 (approved 2026-11-01; stays screens 0750 proposed 2026-11-02)</title>
 <!--
   Repo copy of the phone v2 design Josef approved on 2026-11-01 21:15 ("Airbnb style", app-wide).
   Source: ux-redesign/phone-v2/today-menu-v2.html in the project files.
@@ -60,6 +60,45 @@ h2.sec{font-size:13px;font-weight:700;color:var(--ink3);text-transform:uppercase
 .pill:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
 .p-warn{background:var(--warns);color:var(--warn)}.p-ok{background:var(--oks);color:var(--ok)}
 
+/* stays list + stay page (0750, proposed 2026-11-02): pills scroll sideways like Airbnb's reservations tabs,
+   one compact row card per stay (avatar, name, property + dates, one status line), stay page with back + more,
+   centred name, a dates card, plain guest rows, a police card and one sticky coral button */
+.mh .stays-add{width:44px;height:44px;border-radius:50%;background:var(--soft);color:var(--ink);display:grid;place-items:center;flex:none}
+.seg.scroll{justify-content:flex-start;overflow-x:auto;scrollbar-width:none;margin:0 -20px 24px;padding:0 20px 8px}
+.seg.scroll::-webkit-scrollbar{display:none}
+.seg.scroll a{flex:none}
+.stays-phone h2.sec{margin-top:8px}
+.stays-phone .card.stay{display:flex;align-items:center;gap:16px;padding:16px;margin:0 0 14px}
+.stay .sav{width:56px;height:56px;border-radius:50%;background:var(--accs);color:var(--acc2);display:grid;place-items:center;font-weight:800;font-size:20px;flex:none}
+.stay .in{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start}
+.stay .in b{font-size:17px;font-weight:700;line-height:1.3;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stay .in small{color:var(--ink3);font-size:14px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stay .pill{background:none;padding:0;border-radius:0;margin-top:6px;line-height:1.3}
+.stay .pill.p-ok{color:var(--ok)}.stay .pill.p-warn{color:var(--warn)}.stay .pill.p-bad{color:var(--acc2)}.stay .pill.p-n{color:var(--ink3)}
+.stay .chev{width:20px;height:20px;color:var(--ink3)}
+.stay-top{display:flex;justify-content:space-between;padding-top:8px;margin-bottom:12px}
+.stay-top .round{width:44px;height:44px;border-radius:50%;background:var(--soft);display:grid;place-items:center}
+.host-stay-detail h1.big{font-size:30px;line-height:1.15;font-weight:800;letter-spacing:-.02em;text-align:center;margin:0 8px 6px}
+.host-stay-detail .sub-phone{text-align:center;color:var(--ink3);font-size:16px;margin:0 0 24px}
+.stay-dates{display:grid;grid-template-columns:1fr 1fr;padding:0}
+.stay-dates > div{padding:18px 20px}
+.stay-dates > div + div{border-left:1px solid var(--line)}
+.stay-dates small{display:block;color:var(--ink3);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.stay-dates b{display:block;font-size:20px;font-weight:800;letter-spacing:-.01em;margin-top:4px}
+.stay-dates span{display:block;color:var(--ink3);font-size:14px}
+.stay-dates .tot{grid-column:1/-1;border-left:0;border-top:1px solid var(--line);padding:14px 20px;text-align:center;color:var(--ink2);font-size:15px;font-weight:600}
+.guests .row{display:flex;align-items:center;gap:16px;min-height:56px;padding:10px 0}
+.guests .ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex:none;font-weight:800}
+.guests .ic.ok{background:var(--oks);color:var(--ok)}.guests .ic.warn{background:var(--warns);color:var(--warn)}
+.guests .ic svg.i{width:18px;height:18px;stroke-width:2.4}
+.guests .row b{display:block;font-size:17px;font-weight:600}.guests .row small{display:block;color:var(--ink3);font-size:14px}
+.police-card b{display:block;font-size:17px}.police-card small{display:block;color:var(--ink3);font-size:14px;margin-top:4px}
+.stay-door-card{display:flex;align-items:center;justify-content:space-between}
+.stay-door-card .code{font-size:28px;font-weight:800;letter-spacing:.14em}
+.stay-door-card small{display:block;color:var(--ink3);font-size:14px}
+.stay-door-card .ic.acc{width:44px;height:44px;border-radius:50%;background:var(--accs);color:var(--acc2);display:grid;place-items:center}
+.actbar{position:absolute;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:12px 20px 30px;z-index:6}
+
 /* menu */
 .mh{display:flex;align-items:center;justify-content:space-between;margin:6px 0 24px}
 .mh .big{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.15;margin:0}
@@ -101,6 +140,10 @@ h2.sec{font-size:13px;font-weight:700;color:var(--ink3);text-transform:uppercase
   <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></symbol>
   <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14M12 17.5v.5"/></symbol>
   <symbol id="i-out" viewBox="0 0 24 24"><path d="m16 17 5-5-5-5M21 12H9M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l3 3"/></symbol>
 </defs></svg>
 
 <div class="stage"><div class="phone">
@@ -127,6 +170,37 @@ h2.sec{font-size:13px;font-weight:700;color:var(--ink3);text-transform:uppercase
     <p class="hl-sub">Next arrival: Friday 7 November 2026, River Studio</p>
   </div>
 </div></section>
+
+<section class="scr" data-s="pobyty"><div class="body">
+  <div class="mh"><h1 class="big">Stays</h1><a class="round stays-add" href="#" aria-label="Add stay"><svg class="i"><use href="#i-plus"/></svg></a></div>
+  <nav class="seg scroll"><a class="on" href="#">Upcoming</a><a href="#">In house</a><a href="#">Past</a><a href="#">Report failed</a></nav>
+  <div class="stays-phone">
+    <h2 class="sec">Today</h2>
+    <a class="card stay" href="#"><span class="sav">M</span><span class="in"><b>Marco Rossi</b><small>Old Town Loft · 1–4 Nov</small><span class="pill p-ok">Reported</span></span><svg class="i chev"><use href="#i-chev"/></svg></a>
+    <a class="card stay" href="#"><span class="sav">S</span><span class="in"><b>Sofia Costa</b><small>River Studio · 1–3 Nov</small><span class="pill p-warn">Waiting for 2 of 3 guests</span></span><svg class="i chev"><use href="#i-chev"/></svg></a>
+    <h2 class="sec">This week</h2>
+    <a class="card stay" href="#"><span class="sav">T</span><span class="in"><b>Tomas Novak</b><small>Vinohrady Flat · 3–6 Nov</small><span class="pill p-n">Not registered yet</span></span><svg class="i chev"><use href="#i-chev"/></svg></a>
+    <a class="card stay" href="#"><span class="sav">E</span><span class="in"><b>Emma Moreau</b><small>Old Town Loft · 5–9 Nov</small><span class="pill p-n">Not registered yet</span></span><svg class="i chev"><use href="#i-chev"/></svg></a>
+  </div>
+</div></section>
+
+<section class="scr host-stay-detail" data-s="pobyt"><div class="body">
+  <div class="top stay-top"><a class="round" href="#" aria-label="Back"><svg class="i"><use href="#i-back"/></svg></a><button class="round" type="button" aria-label="More: add guest, request payment"><svg class="i"><use href="#i-dots"/></svg></button></div>
+  <h1 class="big">Sofia Costa</h1>
+  <div class="sub sub-phone">River Studio · Airbnb</div>
+  <div class="card facts stay-dates"><div><small>Check-in</small><b>Sat 1 Nov</b><span>from 14:00</span></div><div><small>Check-out</small><b>Mon 3 Nov</b><span>until 11:00</span></div><div class="tot">3 guests · 2 nights</div></div>
+  <h2 class="sec">Guests</h2>
+  <div class="list guests">
+    <div class="row"><span class="ic ok"><svg class="i"><use href="#i-check"/></svg></span><span class="t"><b>Sofia Costa</b><small>Registered</small></span></div>
+    <div class="row"><span class="ic warn">?</span><span class="t"><b>Guest 2</b><small>Not registered yet</small></span></div>
+    <div class="row"><span class="ic warn">?</span><span class="t"><b>Guest 3</b><small>Not registered yet</small></span></div>
+  </div>
+  <h2 class="sec">Police report</h2>
+  <div class="card police-card"><b>Sends itself</b><small>Once every guest has registered. Deadline Tue 4 Nov.</small></div>
+  <h2 class="sec">Door code</h2>
+  <div class="card stay-door-card"><div><div class="code">4821</div><small>1 Nov 14:00 – 3 Nov 11:00</small></div><span class="ic acc"><svg class="i"><use href="#i-key"/></svg></span></div>
+</div>
+<div class="actbar"><a class="btn" href="#">Resend link to 2 guests</a></div></section>
 
 <section class="scr" data-s="menu"><div class="body">
   <div class="mh"><h1 class="big">Menu</h1><a class="me-av" href="#">J</a></div>
