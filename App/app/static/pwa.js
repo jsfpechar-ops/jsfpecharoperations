@@ -3,6 +3,15 @@
    login page hint. Without JavaScript, Settings still says how to add the app. */
 (function () {
   "use strict";
+  function claimOnce(node, key) {
+    var keys = node._ubyBound || (node._ubyBound = {});
+    if (keys[key]) return false;
+    keys[key] = true;
+    return true;
+  }
+  function onPage(fn) {
+    if (window.UbyHost && window.UbyHost.onPage) window.UbyHost.onPage(fn); else fn();
+  }
 
   var standalone = window.matchMedia("(display-mode: standalone)").matches ||
     window.navigator.standalone === true;
@@ -69,16 +78,16 @@
   // Login page: inside the installed app an e-mail link opens the browser instead.
   show("[data-pwa-standalone]", standalone);
 
-  paintInstall();
+  onPage(paintInstall);
 
   // --- Settings > urgent alerts (brief 0206) --------------------------------
 
-  var pushRow = document.querySelector("[data-push-row]");
+  function pushRowEl() { return document.querySelector("[data-push-row]"); }
   var pushSupported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
-  var csrfMeta = document.querySelector('meta[name="csrf-token"]');
   var pageLang = document.documentElement.lang || "en";
 
   function post(url, body) {
+    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
     return fetch(url, {
       method: "POST",
       credentials: "same-origin",
@@ -143,6 +152,7 @@
   }
 
   function initPush() {
+    var pushRow = pushRowEl();
     if (!pushRow) return;
     if (ios && !standalone) return paintPush("ios");
     if (!pushSupported) return paintPush("unsupported");
@@ -215,7 +225,7 @@
 
   document.addEventListener("click", function (event) {
     var target = event.target.closest ? event.target.closest("[data-push-on], [data-push-test], [data-push-off]") : null;
-    if (!target || !pushRow) return;
+    if (!target || !pushRowEl()) return;
     if (target.hasAttribute("data-push-on")) turnOn();
     else if (target.hasAttribute("data-push-test")) sendTest();
     else turnOff();
@@ -251,5 +261,8 @@
     });
   });
 
-  initPush();
+  onPage(function () {
+    var row = pushRowEl();
+    if (row && claimOnce(row, "push-row")) initPush();
+  });
 })();
