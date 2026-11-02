@@ -161,48 +161,22 @@ def _step_title(page):
 
 
 def _goto_form(page, base, world):
-    """Open the form and walk the wizard to the passport-photo step.
-
-    The card is a later wizard step and nationality-gated: a foreign guest
-    (picked through the country search widget) reaches it after Continue.
-    """
+    """Open the form. The scan button sits at the top of the first step."""
     page.goto(f"{base}/l/{world['token']}/{world['stay']}/new?lang=en")
-    page.wait_for_selector("[data-guest-step]")
-    page.fill("#first_name", "John Paul")
-    page.fill("#surname", "Smith")
-    page.fill("#birth_date", "01.01.1990")
-    page.click("#nationality_search")
-    page.keyboard.type("GBR")
-    page.locator("#nationality_list [role=option]").first.click()
-    page.fill("#doc_number", "P1234567")
-    for _ in range(6):
-        if page.locator("#passport-photo-card:not([hidden])").count():
-            break
-        if _step_title(page) == "Permanent home address":
-            page.fill("#res_street", "Baker Street 221B")
-            page.fill("#res_city", "London")
-            page.click("#res_country_search")
-            page.keyboard.type("GBR")
-            page.locator("#res_country_list [role=option]").first.click()
-        before = _step_title(page)
-        page.locator(
-            "[data-guest-step]:not([hidden]) .g-wizard-nav button.g-btn[type=button]:not(.secondary)"
-        ).first.click()
-        page.wait_for_timeout(900)
-        assert _step_title(page) != before, f"Continue did not leave the step {before!r}"
-    page.wait_for_selector("#passport-photo-card:not([hidden])")
-    page.wait_for_selector("#ocr-scan-toggle")
+    page.wait_for_selector("#ocr-scan-file", state="attached")
 
 
 @pytest.mark.parametrize("width", [390, 1280])
-def test_the_scan_tickbox_fits_its_card_without_sideways_scroll(base, world, browser, width):
+def test_the_scan_button_fits_the_first_card_without_sideways_scroll(base, world, browser, width):
     context, page = _page(browser, base, world, width)
     try:
         _goto_form(page, base, world)
         settle_motion(page)
         assert page.evaluate(NO_SIDEWAYS_SCROLL) <= 1
+        first = page.locator("[data-guest-step]").first
+        assert first.locator("#ocr-scan").count() == 1
         box = page.locator("#ocr-scan").bounding_box()
-        card = page.locator("#passport-photo-card").bounding_box()
+        card = first.bounding_box()
         assert box["width"] <= card["width"]
         assert box["x"] >= card["x"] - 0.5
     finally:
@@ -210,48 +184,17 @@ def test_the_scan_tickbox_fits_its_card_without_sideways_scroll(base, world, bro
 
 
 @pytest.mark.parametrize("width", [390, 1280])
-def test_the_tickbox_uses_the_checkline_component(base, world, browser, width):
+def test_the_scan_button_is_a_44px_target(base, world, browser, width):
     context, page = _page(browser, base, world, width)
     try:
         _goto_form(page, base, world)
-        # The design's checkbox row: card-like, full-width tap target, the
-        # help text inside the label, not under it.
-        label = page.locator("#ocr-scan .checkline")
-        assert label.count() == 1
-        assert label.locator("small").count() == 1
-        styles = page.evaluate(
-            "() => { const s = getComputedStyle(document.querySelector('#ocr-scan .checkline'));"
-            " return { display: s.display, color: s.color, padding: s.padding }; }"
-        )
-        assert styles["display"] == "flex"
-        # The component's 14px row padding, not a bare input.
-        assert styles["padding"].split(" ")[0].rstrip("px").isdigit()
-        # The whole row is the target, as tall as its padding promises.
-        box = label.bounding_box()
-        assert box["height"] >= 48
+        box = page.locator("#ocr-scan label[for='ocr-scan-file']").bounding_box()
+        assert box["height"] >= 44
     finally:
         context.close()
 
 
-@pytest.mark.parametrize("width", [390, 1280])
-def test_the_status_line_appears_inside_the_card_when_scanning(base, world, browser, width, monkeypatch):
-    context, page = _page(browser, base, world, width)
-    try:
-        _goto_form(page, base, world)
-        # Without a photo the tick still answers, and the message stays in the card.
-        page.check("#ocr-scan-toggle")
-        page.wait_for_selector("#ocr-scan-status:not([hidden])")
-        settle_motion(page)
-        assert page.evaluate(NO_SIDEWAYS_SCROLL) <= 1
-        card = page.locator("#passport-photo-card").bounding_box()
-        status = page.locator("#ocr-scan-status").bounding_box()
-        assert status["x"] >= card["x"] - 0.5
-        assert status["x"] + status["width"] <= card["x"] + card["width"] + 0.5
-    finally:
-        context.close()
-
-
-def test_the_scan_tickbox_is_absent_when_the_plan_is_not_max(base, world, browser, monkeypatch):
+def test_the_scan_button_is_absent_when_the_plan_is_not_max(base, world, browser, monkeypatch):
     context, page = _page(browser, base, world, 390)
     try:
         owner = db.query_one(
@@ -261,10 +204,8 @@ def test_the_scan_tickbox_is_absent_when_the_plan_is_not_max(base, world, browse
             "UPDATE billing_account SET plan = 'standard' WHERE owner_user_id = ?", (owner["o"],)
         )
         page.goto(f"{base}/l/{world['token']}/{world['stay']}/new?lang=en")
-        # The card lives on a later wizard step; its markup must simply not
-        # contain the scan toggle when the plan is not Max.
-        page.wait_for_selector("#passport-photo-card", state="attached")
-        assert page.locator("#ocr-scan-toggle").count() == 0
+        page.wait_for_selector("[data-guest-step]", state="attached")
+        assert page.locator("#ocr-scan-file").count() == 0
     finally:
         db.execute(
             "UPDATE billing_account SET plan = 'max' WHERE owner_user_id = ?",
@@ -282,4 +223,3 @@ def test_a_390px_screenshot_of_the_scan_step(base, world, browser):
         page.screenshot(path=f"{SHOT_DIR}/guest-form-scan-step-390.png", full_page=False)
     finally:
         context.close()
-

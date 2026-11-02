@@ -170,10 +170,10 @@ def test_the_form_hides_the_button_until_max_and_installed(browser, monkeypatch)
     client, token, stay = browser
     monkeypatch.setattr(doc_ocr, "TESSERACT", "")
     page = client.get(f"/l/{token}/{stay}/new?lang=en")
-    assert "ocr-scan-toggle" not in page.text
+    assert "ocr-scan-file" not in page.text
     _max_owner(monkeypatch)
     page = client.get(f"/l/{token}/{stay}/new?lang=en")
-    assert "ocr-scan-toggle" in page.text
+    assert "ocr-scan-file" in page.text
 
 
 # --- the route --------------------------------------------------------------
@@ -303,23 +303,20 @@ def test_nationality_is_validated_against_the_country_list():
 
 # --- design conformance (the browser geometry run is test_guest_ocr_geometry_browser) ---
 
-def test_the_tickbox_uses_the_design_system_checkline():
-    """The scan toggle must be the guest form's own checkbox component:
-    ``checkline`` (full-row tap target, help inside the label), inside a
-    ``g-field``, with the status line as the field's ``hint``."""
+def test_the_scan_button_is_a_plain_button_in_the_first_step():
+    """The scan control is a standard guest button in its own partial,
+    included inside the first wizard step card (not in the passport card)."""
     from pathlib import Path
 
     here = Path(__file__).resolve().parent.parent
     form = (here / "app" / "templates" / "guest" / "form.html").read_text(encoding="utf-8")
-    css = (here / "app" / "static" / "guest.css").read_text(encoding="utf-8")
-    assert '<label class="checkline" for="ocr-scan-toggle">' in form
-    assert 'id="ocr-scan-toggle"' in form and 'class="g-check"' not in form
-    assert '<small>{{ t(\'ocr_scan_help\') }}</small>' in form
-    assert '<div class="g-field" id="ocr-scan">' in form
-    assert 'id="ocr-scan-status" role="status" aria-live="polite"' in form
-    # The component and its tokens exist in the guest stylesheet.
-    assert ".checkline" in css and ".checkline small" in css
-    assert "checkline:has(input:checked)" in css
+    part = (here / "app" / "templates" / "guest" / "_ocr_scan.html").read_text(encoding="utf-8")
+    assert "guest/_ocr_scan.html" in form
+    assert 'data-step-title="{{ t(\'your_details\') }}"' in form
+    assert '<label class="g-btn secondary" for="ocr-scan-file">' in part
+    assert "{{ t('ocr_scan_button') }}" in part
+    assert 'id="ocr-scan-status" role="status" aria-live="polite"' in part
+    assert "ocr-scan-toggle" not in form
 
 
 def _fake_engine(monkeypatch, replies):
@@ -418,9 +415,9 @@ def test_the_switch_off_means_no_scan_even_on_max(monkeypatch):
     assert doc_ocr.available(_gate_apartment(0, "required_foreign")) is False
 
 
-def test_the_switch_on_without_upload_means_no_scan(monkeypatch):
+def test_the_switch_on_on_max_scans_without_the_upload_policy(monkeypatch):
     _gate_max(monkeypatch)
-    assert doc_ocr.available(_gate_apartment(1, "off")) is False
+    assert doc_ocr.available(_gate_apartment(1, "off")) is True
 
 
 def test_the_switch_and_upload_on_on_max_means_scan(monkeypatch):

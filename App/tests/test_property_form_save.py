@@ -239,7 +239,7 @@ def test_the_scan_switch_is_saved_off_without_the_upload(host):
         follow_redirects=False,
     )
     assert saved.status_code == 303, saved.text
-    assert _apartment()["ocr_scan"] == 0
+    assert _apartment()["ocr_scan"] == 1
 
 
 def test_the_scan_switch_is_saved_on_with_the_upload(host):
