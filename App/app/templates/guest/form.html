@@ -76,16 +76,12 @@
 
   <div class="g-card" data-guest-step data-step-title="{{ t('your_details') }}">
     {% if ocr_available %}{% include 'guest/_ocr_scan.html' %}{% endif %}
-    <h2>
-      {{ t('your_details') }}
-      {% if person_number and person_number > 1 %}
-        <span class="g-chip">{{ t('person') }} {{ person_number }}</span>
-      {% endif %}
-    </h2>
-    <details class="g-card g-why" data-purpose-help="identity">
-      <summary class="g-why-summary">{{ t('identity_purpose_help_label') }}</summary>
-      <p class="g-intro">{{ t('identity_purpose_help') }}</p>
-    </details>
+    <div class="g-step-head">
+      <h2>{{ t('your_details') }}{% if person_number and person_number > 1 %} <span class="g-chip">{{ t('person') }} {{ person_number }}</span>{% endif %}</h2><details class="g-head-help" data-purpose-help="identity">
+        <summary aria-label="{{ t('identity_purpose_help_label') }}"><span class="g-help-dot" aria-hidden="true">?</span></summary>
+        <p class="g-intro">{{ t('identity_purpose_help') }}</p>
+      </details>
+    </div>
 
     {% if ask_party_size %}
       <div class="g-field" data-guest-stepper data-less-label="{{ t('tw_fewer') }}" data-more-label="{{ t('tw_more') }}">
@@ -196,12 +192,13 @@
   </div>
 
   <div class="g-card" data-guest-step data-step-title="{{ t('residence_title') }}">
-    <h2>{{ t('residence_title') }}</h2>
+    <div class="g-step-head">
+      <h2>{{ t('residence_title') }}</h2><details class="g-head-help" data-purpose-help="address-stay">
+        <summary aria-label="{{ t('address_purpose_help_label') }}"><span class="g-help-dot" aria-hidden="true">?</span></summary>
+        <p class="g-intro">{{ t('address_purpose_help') }}</p>
+      </details>
+    </div>
     <p class="g-intro">{{ t('residence_help') }}</p>
-    <details class="g-card g-why" data-purpose-help="address-stay">
-      <summary class="g-why-summary">{{ t('address_purpose_help_label') }}</summary>
-      <p class="g-intro">{{ t('address_purpose_help') }}</p>
-    </details>
     {% if residence_copied_from %}
       <p class="hint" role="status">{{ t('residence_copied', name=residence_copied_from) }}</p>
     {% endif %}
@@ -243,12 +240,13 @@
   <div class="g-card" id="passport-photo-card" data-guest-step data-step-title="{{ t('passport_photo_title') }}"
        data-guest-step-skip-when="CZE"
        data-has-existing="{{ '1' if has_existing_passport_photo else '0' }}">
-    <h2>{{ t('passport_photo_title') }}</h2>
+    <div class="g-step-head">
+      <h2>{{ t('passport_photo_title') }}</h2><details class="g-head-help" data-purpose-help="passport-photo">
+        <summary aria-label="{{ t('passport_photo_purpose_help_label') }}"><span class="g-help-dot" aria-hidden="true">?</span></summary>
+        <p class="g-intro">{{ t('passport_photo_purpose_help') }}</p>
+      </details>
+    </div>
     <p class="g-intro">{{ t('passport_photo_help') }}</p>
-    <details class="g-card g-why" data-purpose-help="passport-photo">
-      <summary class="g-why-summary">{{ t('passport_photo_purpose_help_label') }}</summary>
-      <p class="g-intro">{{ t('passport_photo_purpose_help') }}</p>
-    </details>
     <p class="hint" id="passport-photo-pending" hidden>{{ t('passport_photo_pending_nat') }}</p>
     <p class="hint" id="passport-photo-czech" hidden>{{ t('passport_photo_not_required') }}</p>
     <div class="g-field" id="passport-photo-upload">
@@ -273,12 +271,13 @@
   {% endif %}
 
   <div class="g-card" data-guest-step data-step-title="{{ t('signature') }}">
-    <h2>{{ t('signature') }}</h2>
+    <div class="g-step-head">
+      <h2>{{ t('signature') }}</h2><details class="g-head-help" data-purpose-help="signature">
+        <summary aria-label="{{ t('signature_purpose_help_label') }}"><span class="g-help-dot" aria-hidden="true">?</span></summary>
+        <p class="g-intro">{{ t('signature_purpose_help') }}</p>
+      </details>
+    </div>
     <p class="g-intro" id="sig-help">{{ t('signature_help') }}</p>
-    <details class="g-card g-why" data-purpose-help="signature">
-      <summary class="g-why-summary">{{ t('signature_purpose_help_label') }}</summary>
-      <p class="g-intro">{{ t('signature_purpose_help') }}</p>
-    </details>
     <div class="g-sign">
       <canvas id="sig-canvas" tabindex="0" role="img" aria-label="{{ t('signature') }}"
               aria-describedby="sig-help sig-status"></canvas>

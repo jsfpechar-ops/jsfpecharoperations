@@ -388,7 +388,7 @@ def test_set_up_link_opens_visible_editor_and_save_returns_to_the_list(live):
                 page.wait_for_load_state("networkidle")
                 # Turbo swaps the page without a load event: wait for turbo:load and for the skeleton to go.
                 page.evaluate("() => { window.__feeSwapped = false; document.addEventListener('turbo:load', () => { window.__feeSwapped = true; }, {once: true}); }")
-                page.locator(f'a.ui-btn[href^="/apartments/{unset}?view=settings"]').click()
+                page.locator(f'a[href^="/apartments/{unset}?view=settings"]:visible').first.click()  # v2: phone card or desktop button
                 page.wait_for_function("() => window.__feeSwapped === true && !document.querySelector('main[aria-busy]')", timeout=15000)
                 page.wait_for_load_state("networkidle")
                 assert "section=reporting" in page.url and page.url.endswith("#stay-fee-settings")
