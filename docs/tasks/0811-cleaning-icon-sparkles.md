@@ -75,3 +75,13 @@ A test fails for a reason the icon cannot explain, or a file outside §3 seems t
 ## 9. Report
 
 `docs/tasks/0811-report.md`: Status: review, changed files, test command tails, screenshot paths, deviations.
+
+## 10. Addendum (0811b): calendar cleaning chips
+
+The calendar cleaning chips draw a third broom in `App/app/static/dashboard-calendar.js` line 229: `path.setAttribute("d", "M15 3l6 6M13 5l6 6M12 10l4 4-8 8H3v-5zM5 17v4M8 15v5M11 13v4");`.
+
+1. Replace that `d` string with the five SPARKLES paths joined into one string: `M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0zM20 3v4M22 5h-4M4 17v2M5 18H3`. Nothing else in the file changes.
+2. In `App/app/templates/_dashboard_calendar.html` line 170 change `?v=20261023-clean-url` to `?v=20261102-0811`. Then from `App/`: `.venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -5`.
+3. From `App/`: `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_static_versions.py tests/test_0710_v2_mockup_match_browser.py -q --tb=short -rs -k "static or cleaning" 2>&1 | tail -15` (0 skipped). Also `grep -rln "dashboard-calendar" tests | head` and run those files the same way.
+4. Redo §4 step 5 for `cleaning-1440.png` only (copy to docs/tasks/screenshots-0811/, restore 0710 shots).
+5. Append the results to `docs/tasks/0811-report.md`, commit `0811b: sparkles in calendar cleaning chips`. Do not push.
