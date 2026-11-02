@@ -27,15 +27,13 @@
 {#- 0528: phone top (below 1024 px). Mockup phone-v1 section pobyt. -#}
 <div class="top stay-top">
   <a class="round" href="{{ return_to }}" aria-label="{{ t('stay.detail.back') }}">{{ icon('arrow-left', 20) }}</a>
-  {% if reservation.permalink_token and not stay_inactive %}<button class="round" type="button" data-copy="stay-link" data-copied-label="{{ t('stay.detail.link_copied') }}" aria-label="{{ t('host.copy_guest_form_link') }}">{{ icon('copy', 20) }}</button>{% endif %}
 </div>
 <div class="sub sub-phone">{{ reservation.internal_name }} · {{ source_label(reservation) }}</div>
-<div class="sub-phone stay-pill-line">{% if stay_inactive %}<span class="pill">{{ t('stays.filter.state.' ~ reservation.status) if reservation.status != 'active' else t('archive.col.when') }}</span>{% else %}{{ v2_status_pill(cell, progress, reservation) }}{% endif %}</div>
-<div class="facts sub-phone">
+<div class="sub-phone stay-pill-line ph-hide">{% if stay_inactive %}<span class="pill">{{ t('stays.filter.state.' ~ reservation.status) if reservation.status != 'active' else t('archive.col.when') }}</span>{% else %}{{ v2_status_pill(cell, progress, reservation) }}{% endif %}</div>
+<div class="card facts stay-dates">
   <div><small>{{ t('stays.table.arrival') }}</small><b>{{ reservation.date_from | weekday }} {{ reservation.date_from | date_short }}</b></div>
   <div><small>{{ t('stays.table.departure') }}</small><b>{{ reservation.date_to | weekday }} {{ reservation.date_to | date_short }}</b></div>
-  <div><small>{{ t('stays.table.guests') }}</small><b>{{ progress.expected if progress.expected is not none else (progress.guests | length) }}</b></div>
-  <div><small>{{ t('stay.detail.facts.nights') }}</small><b>{{ nights(reservation.date_from, reservation.date_to) }}</b></div>
+  <div class="tot">{{ tp('stay.detail.facts.guests', progress.expected if progress.expected is not none else (progress.guests | length)) }} · {{ tp('stays.table.nights', nights(reservation.date_from, reservation.date_to)) }}</div>
 </div>
 {% macro stay_cta() %}
   {% if send_controls.send_enabled %}
@@ -77,6 +75,8 @@
   {% if reservation.permalink_token and not stay_inactive %}<button class="btn ph-hide{{ ' ghost' if has_cta }}" type="button" data-copy="stay-link" data-copied-label="{{ t('stay.detail.link_copied') }}" data-stay-header-copy>{{ t('host.copy_guest_form_link') }}</button>{% endif %}</div>
   {% if claim_resend.enabled %}<form method="post" action="/reservations/{{ reservation.id }}/resend-claim" class="inline"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="btn ghost" type="submit" data-resend-claim title="{{ t('stay.claim.resend_help') }}">{{ t('stay.claim.resend') }}</button></form>{% endif %}
       {{ row_menu_begin() }}
+        {% if reservation.permalink_token and not stay_inactive %}<button class="row-menu-item ph-only" type="button" role="menuitem" data-copy="stay-link" data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('host.copy_guest_form_link') }}</button>{% endif %}
+        {% if not stay_inactive %}<a class="row-menu-item ph-only" href="/payments?reservation_id={{ reservation.id }}#new-request" role="menuitem">{{ t('stays.row.request_payment') }}</a>{% endif %}
         <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">{{ t('stay.detail.cta.add_guest') }}</a>
         {% if stay_invoice %}<a class="row-menu-item" href="/invoices/{{ stay_invoice.id }}" role="menuitem">{{ t('invoice.stay.open', number=stay_invoice.number) }}</a>{% else %}<a class="row-menu-item" href="/invoices/new?reservation_id={{ reservation.id }}" role="menuitem">{{ t('invoice.new') }}</a>{% endif %}
         {% if reservation.permalink_token %}
@@ -245,7 +245,7 @@
   </tbody>
 </table>
 </div>
-<div class="list guest-list">
+<div class="list guests guest-list">
   {% for row in guest_rows %}
     {% set guest = row.guest %}
     {% set ok = guest.submit_state in ('sent', 'not_required') or (row.complete and guest.submit_state not in ('error', 'blocked')) %}
@@ -356,11 +356,13 @@
 {% if progress.status == 'reported' and not send_controls.send_enabled %}<div class="allgood">{{ t('hint.all_reported') }}</div>{% endif %}
 {% if door_code %}<section id="door-code"><h2 class="sec">{{ t('stay.detail.door_code.title') }}</h2>
 <div class="card stay-door-card">
+<div>
   {% if door_code.state == 'issued' %}<div class="code">{{ door_code.pin }}</div><small id="door-code-line">{{ door_code.works_from }} – {{ door_code.works_until }}</small>
   {% else %}<p id="door-code-line">{% if door_code.state == 'failed' %}{{ t('stay.detail.door_code.failed') }}{% elif door_code.state == 'delayed' %}{{ t('stay.detail.door_code.delayed') }}{% elif door_code.state == 'preparing' %}{{ t('stay.detail.door_code.preparing') }}{% else %}{{ t('stay.detail.door_code.waiting') }}{% endif %}</p>{% endif %}
+</div>
   <div class="ic acc" aria-hidden="true">{{ icon('key-round', 22) }}</div>
 </div></section>{% endif %}
-{% if not stay_inactive %}<div class="list"><a class="link" href="/payments?reservation_id={{ reservation.id }}#new-request">{{ t('stays.row.request_payment') }}{{ icon('chevron-right', 20) }}</a></div>{% endif %}
+{% if not stay_inactive %}<div class="list ph-hide"><a class="link" href="/payments?reservation_id={{ reservation.id }}#new-request">{{ t('stays.row.request_payment') }}{{ icon('chevron-right', 20) }}</a></div>{% endif %}
 <details class="card stay-settings ph-hide" id="stay-quick-edit">
   <summary><b>{{ t('stay.detail.settings.title') }}</b></summary>
   <p class="ui-sub">{{ t('stay.detail.settings.lede') }} <a href="/apartments/{{ reservation.apartment_id }}?view=settings&amp;section=guests#communication">{{ t('stay.detail.settings.guest_links') }}</a>.</p>
