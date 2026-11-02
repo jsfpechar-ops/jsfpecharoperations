@@ -561,7 +561,7 @@ def test_the_host_withdraws_in_settings_privacy():
     user_id = _account(email)["id"]
     # Production would ask for 2FA first; this checks the page, not the guard.
     db.execute("UPDATE user_account SET totp_enabled = 1 WHERE id = ?", (user_id,))
-    page = client.get("/settings?lang=en")
+    page = client.get("/settings/data?lang=en")
     if page.status_code != 200:
         pytest.skip(f"settings page needs more onboarding here ({page.status_code})")
     assert 'id="settings-privacy"' in page.text
@@ -578,7 +578,7 @@ def test_the_host_withdraws_in_settings_privacy():
     )["detail"] == "google; uploaded=no"
     # Excluded from every later export, even "download again".
     assert all(r["id"] != row["id"] for r in signup.export_rows(again=True))
-    again = client.get("/settings?lang=en").text
+    again = client.get("/settings/data?lang=en").text
     assert "The click identifier has been deleted." in again
 
 

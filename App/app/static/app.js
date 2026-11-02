@@ -1327,6 +1327,13 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
 
   /* Legacy auto-submit remains available only to forms that explicitly opt in. */
   function initAutoFilters() {
+    document.querySelectorAll("form input[type=checkbox][data-toggle-submit]").forEach(function (input) {
+      var toggleForm = input.form;
+      if (!toggleForm || !claimNode(input, "initAutoFilters")) return;
+      input.addEventListener("change", function () {
+        toggleForm.requestSubmit ? toggleForm.requestSubmit() : toggleForm.submit();
+      });
+    });
     document.querySelectorAll("form[data-auto-submit]").forEach(function (form) {
       if (!claimNode(form, "initAutoFilters")) return;
       form.querySelectorAll("select, input[type=date], input[type=month]").forEach(function (input) {

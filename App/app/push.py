@@ -348,7 +348,7 @@ def send_test(account_id: int, endpoint: str) -> str:
         "user_account_id": account_id,
         "kind": TEST_KIND,
         "params": "{}",
-        "url": "/settings#settings-group-phone",
+        "url": "/settings/phone",
         "state": "queued",
         "attempts": 1,
         "next_attempt_at": _stamp(moment + timedelta(minutes=CLAIM_MINUTES)),

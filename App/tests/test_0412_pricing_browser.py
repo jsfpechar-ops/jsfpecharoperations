@@ -86,7 +86,7 @@ def test_the_calculator_updates_and_aligns(base, monkeypatch, lang, width):
         assert page.locator("[data-pricing-calc]").is_visible()
         std = page.locator('[data-plan="standard"] [data-total]')
         top = page.locator('[data-plan="max"] [data-total]')
-        assert (_number(std), _number(top)) == (99, 159)
+        assert (_number(std), _number(top)) == (99, 147)
         assert page.locator('[data-plan="standard"] [data-ttlock]').count() == 1
         assert page.locator('[data-plan="max"] [data-ttlock]').count() == 0
         assert page.locator(".pricing-founder").count() == 0
@@ -106,7 +106,7 @@ def test_the_calculator_updates_and_aligns(base, monkeypatch, lang, width):
         page.locator(".pricing-bands summary").click()
         assert page.locator(".pricing-plans-section [data-band]").count() == 3
         assert page.locator(".pricing-plans-section [data-addon]").count() == 1
-        assert "40" in page.locator('[data-addon="ttlock"]').inner_text()
+        assert "39" in page.locator('[data-addon="ttlock"]').inner_text()
         _geometry(page, width)
         if (width == 390 or (width == 1280 and lang == "en")) and (
             os.environ.get("UBYHOST_SHOTS_DIR") or os.environ.get("UBYHOST_CAPTURE_0412") == "1"
@@ -125,14 +125,14 @@ def test_the_calculator_updates_and_aligns(base, monkeypatch, lang, width):
                 assert [_number(page.locator(f'[data-band="{i}"]')) for i in range(3)] == (
                     [99, 79, 66] if interval == "year" else [149, 119, 99]
                 )
-                assert "40" in page.locator('[data-addon="ttlock"]').inner_text()
-                max_annual = annual + min(n, 4) * 718 + min(max(n - 4, 0), 5) * 570 + max(n - 9, 0) * 370
-                max_monthly = monthly + min(n, 4) * 80 + min(max(n - 4, 0), 5) * 59 + max(n - 9, 0) * 39
+                assert ("39" if interval == "year" else "49") in page.locator('[data-addon="ttlock"]').inner_text()
+                max_annual = annual + min(n, 4) * 570 + min(max(n - 4, 0), 5) * 430 + max(n - 9, 0) * 280
+                max_monthly = monthly + min(n, 4) * 59 + min(max(n - 4, 0), 5) * 45 + max(n - 9, 0) * 29
                 max_price = (max_annual * 2 + 12) // 24 if interval == "year" else max_monthly
                 assert _number(top) == max_price
                 for lock in (False, True):
                     page.locator("[data-ttlock]").set_checked(lock)
-                    expected = ((annual + (480 * n if lock else 0)) * 2 + 12) // 24 if interval == "year" else monthly + (40 * n if lock else 0)
+                    expected = ((annual + (470 * n if lock else 0)) * 2 + 12) // 24 if interval == "year" else monthly + (49 * n if lock else 0)
                     assert _number(std) == expected, (lang, width, n, interval, lock)
                     assert _number(top) == max_price
                     assert page.locator("[data-ttlock-selected]").is_visible() == lock
@@ -142,7 +142,7 @@ def test_the_calculator_updates_and_aligns(base, monkeypatch, lang, width):
                         assert f"plan={plan}" in href and f"interval={interval}" in href and f"apts={n}" in href
                         assert ("ttlock=1" in href) == (lock and plan == "standard")
                     if n == 5 and interval == "month":
-                        assert _number(top) == 1094
+                        assert _number(top) == 996
                 page.locator("[data-ttlock]").uncheck()
         assert page.locator('[data-step="1"]').is_disabled()
         assert not errors, errors
@@ -159,8 +159,8 @@ def test_no_javascript_has_truthful_annual_prices_and_login_fallback(base, monke
         page.goto(f"{base}/cenik?lang={lang}")
         assert not page.locator("[data-pricing-calc]").is_visible()
         assert not page.locator("[data-ttlock-control]").is_visible()
-        assert [_number(page.locator(f'[data-plan="{plan}"] [data-total]')) for plan in ("standard", "max")] == [99, 159]
-        assert "40" in page.locator('[data-addon="ttlock"]').inner_text()
+        assert [_number(page.locator(f'[data-plan="{plan}"] [data-total]')) for plan in ("standard", "max")] == [99, 147]
+        assert "39" in page.locator('[data-addon="ttlock"]').inner_text()
         assert "Havel" in page.locator('[data-plan="standard"] .pricing-features').inner_text()
         assert page.locator('[data-addon="whitelabel"]').count() == 0
         assert all("/login?lang=" in href for href in page.locator("a[data-cta-plan]").evaluate_all("(links) => links.map(link => link.getAttribute('href'))"))

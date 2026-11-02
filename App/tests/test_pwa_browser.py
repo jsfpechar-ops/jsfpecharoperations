@@ -54,11 +54,13 @@ def _shot(page, name):
 )
 def test_a_failed_page_load_shows_the_offline_page_in_the_hosts_language(base, lang, title):
     with sync_api.sync_playwright() as playwright:
-        browser, context, page = _open(playwright, base, 390, 844, f"/settings?lang={lang}")
+        browser, context, page = _open(playwright, base, 390, 844, f"/settings/phone?lang={lang}")
         try:
             page.wait_for_function("() => navigator.serviceWorker.controller !== null", timeout=30000)  # a bare string can hit the CSP eval block
             page.wait_for_function(_OFFLINE_CACHED, arg=lang, timeout=30000)
-            # Settings > Phone app: on desktop Chromium the generic how-to shows.
+            # Settings > Phone app: the how-to lives in the Phone app help tip, so open it first.
+            page.click('button[aria-controls="settings-pwa-help"]')
+            # on desktop Chromium the generic how-to shows.
             assert page.is_visible("#settings-group-phone [data-pwa-other]")
             assert not page.is_visible("#settings-group-phone [data-pwa-ios]")
             page.locator("#settings-group-phone").scroll_into_view_if_needed()
