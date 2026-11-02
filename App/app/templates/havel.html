@@ -2,11 +2,12 @@
 {% set v2 = true %}
 {% set nav = 'havel' %}
 {% set body_kind = 'detail' %}
+{% from "_components.html" import help_tip with context %}
 {% block title %}{{ t('havel.title') }}{% endblock %}
 {% block page_title %}{% endblock %}
 {% block meta %}{% endblock %}
 {% block body %}
-<div class="head"><div><h1 class="big">{{ t('havel.name') }}</h1><p class="sub">{{ t('havel.subtitle') }}</p></div></div>
+<div class="head"><div><h1 class="big">{{ t('havel.name') }}</h1><span class="havel-name-tip">{{ help_tip('havel-subtitle-help', t('havel.subtitle')) }}</span></div></div>
 <div class="havel-v2">
 <section class="ui-section havel-page" data-havel-page data-havel-owner="{{ current_user.id }}">
   <div class="havel-thread" role="log" aria-live="polite" data-havel-thread>

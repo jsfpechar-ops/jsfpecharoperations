@@ -689,6 +689,10 @@ body.v2 .ov-how .ui-how-more{display:inline-flex;align-items:center;min-height:4
 body.v2{--tabbar-safe:env(safe-area-inset-bottom,0px)}
 @media (max-width:1023px){body.v2{--tabbar-h:84px}}
 @media (max-width:1023px){html:has(body.v2){scroll-padding-bottom:84px}}
+body.v2 .prop-name-tip .help-tip-btn{min-width:24px;min-height:24px;box-sizing:border-box}
+@media (max-width:1023px){body.v2 .prop-name-tip .help-tip-btn{min-width:44px;min-height:44px}}
+body.v2 .havel-name-tip .help-tip-btn{min-width:24px;min-height:24px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
+@media (max-width:1023px){body.v2 .havel-name-tip .help-tip-btn{min-width:44px;min-height:44px}}
 body.v2 .havel-thread{display: flex; flex-direction: column; gap: var(--space-3);}
 body.v2 .havel-msg{display: flex; flex-direction: column; max-width: 85%;}
 body.v2 .havel-msg-host{align-self: flex-end; align-items: flex-end;}

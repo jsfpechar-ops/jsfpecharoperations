@@ -16,7 +16,7 @@
 {% set draft = draft or {} %}
 {% set copy_property_peers = copy_property_peers or [] %}
 {% if not editing %}
-<div class="head prop-new-head"><div><h1 class="big">{{ t('property_create.title') }}</h1><p class="sub">{{ t('property_create.lede') }}</p></div></div>
+<div class="head prop-new-head prop-new"><div><div class="heading-with-tip prop-name-tip"><h1 class="big">{{ t('property_create.title') }}</h1>{{ help_tip('property-create-lede-help', t('property_create.lede')) }}</div></div></div>
 {% include "_property_create.html" %}
 {% else %}
 {% set base_url = '/apartments/' ~ apartment.id %}

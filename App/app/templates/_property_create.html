@@ -85,10 +85,10 @@
   <aside class="panel property-create-next" aria-labelledby="property-create-next-title">
     <h2 id="property-create-next-title">{{ t('property_create.next_title') }}</h2>
     <ul class="property-create-next-list">
-      <li>{{ icon('calendar-days', 20) }}<div><strong>{{ t('property_create.next_calendar') }}</strong><small>{{ t('property_create.next_calendar_body') }}</small></div></li>
-      <li>{{ icon('external-link', 20) }}<div><strong>{{ t('property_create.next_guests') }}</strong><small>{{ t('property_create.next_guests_body') }}</small></div></li>
-      <li>{{ icon('send', 20) }}<div><strong>{{ t('property_create.next_reporting') }}</strong><small>{{ t('property_create.next_reporting_body') }}</small></div></li>
-      <li>{{ icon('key-round', 20) }}<div><strong>{{ t('host.door_code') }} <span class="opt">{{ t('common.optional') }}</span></strong><small>{{ t('property_create.next_lock_body') }} <a href="/guide#door-codes" aria-label="{{ t('help.tip.more') }}: {{ t('property_create.next_lock_body') | striptags | truncate(50) }}">{{ t('help.tip.more') }}</a></small></div></li>
+      <li>{{ icon('calendar-days', 20) }}<div><strong>{{ t('property_create.next_calendar') }}</strong>{{ help_tip('property-create-next-calendar-help', t('property_create.next_calendar_body')) }}</div></li>
+      <li>{{ icon('external-link', 20) }}<div><strong>{{ t('property_create.next_guests') }}</strong>{{ help_tip('property-create-next-guests-help', t('property_create.next_guests_body')) }}</div></li>
+      <li>{{ icon('send', 20) }}<div><strong>{{ t('property_create.next_reporting') }}</strong>{{ help_tip('property-create-next-reporting-help', t('property_create.next_reporting_body')) }}</div></li>
+      <li>{{ icon('key-round', 20) }}<div><strong>{{ t('host.door_code') }} <span class="opt">{{ t('common.optional') }}</span></strong>{{ help_tip('property-create-next-lock-help', t('property_create.next_lock_body'), '/guide#door-codes') }}</div></li>
     </ul>
   </aside>
 </div></div>
