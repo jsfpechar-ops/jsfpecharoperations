@@ -52,4 +52,16 @@ def host(monkeypatch):
     yield {"client": client, "owner": owner, "apartment": apartment, "entities": entities, "username": username}
     db.execute("DELETE FROM ical_feed WHERE apartment_id IN (SELECT id FROM apartment WHERE owner_user_id = ?)", (owner,))
     db.execute("DELETE FROM lock_account WHERE owner_user_id = ?", (owner,))
+    # Child rows first, then the apartment and its legal entities (so demo.seed() sees no leftovers).
+    apartment_ids = "SELECT id FROM apartment WHERE owner_user_id = ?"
+    db.execute(f"DELETE FROM guest WHERE reservation_id IN (SELECT id FROM reservation WHERE apartment_id IN ({apartment_ids}))", (owner,))
+    db.execute(f"DELETE FROM submission WHERE apartment_id IN ({apartment_ids})", (owner,))
+    db.execute(f"DELETE FROM reservation WHERE apartment_id IN ({apartment_ids})", (owner,))
+    db.execute(f"DELETE FROM stay_fee_adjustment WHERE apartment_id IN ({apartment_ids})", (owner,))
+    db.execute(f"DELETE FROM stay_fee_filing WHERE apartment_id IN ({apartment_ids})", (owner,))
+    db.execute("DELETE FROM invoice_item WHERE invoice_id IN (SELECT id FROM invoice WHERE owner_user_id = ?)", (owner,))
+    db.execute("DELETE FROM invoice WHERE owner_user_id = ?", (owner,))
+    db.execute("DELETE FROM invoice_sequence WHERE legal_entity_id IN (SELECT id FROM legal_entity WHERE owner_user_id = ?)", (owner,))
+    db.execute("DELETE FROM apartment WHERE owner_user_id = ?", (owner,))
+    db.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (owner,))
 
