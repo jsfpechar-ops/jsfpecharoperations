@@ -355,7 +355,7 @@ def test_filter_draft_calendar_and_month_grid_commit_once(host, base):
         assert page.locator('.stays-desk tbody tr[aria-label*="10.03.2026"]').count() == 1
         assert "Filter Property Two" in page.locator("[data-filter-summary]").inner_text()
         page.goto(base + f"/reservations?range=custom&archive_scope=1&apartment={host['apartments'][1]}&status=cancelled&lang=en")
-        assert "range=archive" in page.locator('.chips .chip.on').get_attribute("href")
+        assert "range=archive" in page.locator('.settings-pills .settings-pill.is-current').get_attribute("href")
         assert page.locator('#stays-filter-panel a').filter(has_text="Reset").get_attribute("href") == "/reservations?range=archive"
         assert not page_errors, "browser script errors: " + " | ".join(page_errors)
 

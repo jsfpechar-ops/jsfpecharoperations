@@ -13,8 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_non_v2_dashboard_still_loads_the_old_stylesheets_and_sidebar(host_with_property):
-    # Old shell: / is v2 since 0720 and /settings since 0780, so the non-v2 check uses /payments (held for the Stripe rework).
-    page = host_with_property.get("/payments?lang=en").text
+    # Old shell: / is v2 since 0720 and /settings since 0780, so the non-v2 check uses /stay-fees (/payments is v2 since PR #725).
+    page = host_with_property.get("/stay-fees?lang=en").text
     assert "/static/host2.css" in page
     assert "/static/skeleton.css" in page
     assert "app2.css" not in page

@@ -213,7 +213,7 @@ PAGES = [
         "phone_selectors": [".tabs", ".tab.on", ".prop-phone-top .round", ".prop-phone-top ~ h1.big", ".prop-phone-sub", ".guest-card", ".guest-card b", ".guest-card .sub", ".guest-pin-value", ".guest-btns .btn", "h2.sec", ".prop-sec > summary", ".prop-sec summary b", ".sec-state", ".dot"],
         "selectors": [  # .guest-card (permalink card) has no mockup counterpart: not compared (0535)
             ".crumb", "main h1", "details", "summary b", "summary small",
-            ".preview h3", ".pv", ".pv .r", ".savebar .btn",
+            ".preview h3", ".pv", ".pv .r",  # 0851: savebar has its own test, test_0851_savebar_browser.py
         ],
         "missing_ok": {".prop-phone-sub": "0741: the demo property has no street address, so the address line is not rendered"},
         "phone_box_skip": {

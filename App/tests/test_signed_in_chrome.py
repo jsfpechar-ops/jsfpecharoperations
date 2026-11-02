@@ -130,7 +130,7 @@ def test_the_support_line_names_the_configured_operator_address(host_with_proper
 
 
 def test_the_support_line_is_not_part_of_the_legal_link_row(host_with_property):
-    footer = _sidebar(host_with_property.get("/payments?lang=en").text)  # old-shell rail; v2 pages use .side
+    footer = _sidebar(host_with_property.get("/stay-fees?lang=en").text)  # old-shell rail; v2 pages use .side
     # Support lives in the account disclosure, keeping the default rail short.
     account = re.search(r'<details class="host-account".*?</details>', footer, re.S).group(0)
     assert 'mailto:' in account
@@ -203,7 +203,7 @@ def test_the_zero_state_overview_still_renders_the_welcome_card(empty_host):
 def test_a_workspace_with_a_property_keeps_the_page_header(host_with_property):
     page = host_with_property.get("/?lang=en").text
 
-    assert f"<span class=\"ph-hide\">{host_i18n.STRINGS['en']['dashboard.title']}</span>" in page and page.count("<h1") == 1  # 0729: one h1; desktop title span, phone headline span
+    assert f"<span class=\"ph-hide\">{host_i18n.STRINGS['en']['dashboard.title']}" in page and page.count("<h1") == 1  # 0729: one h1; desktop title span, phone headline span
 
 
 def test_dashboard_opens_with_the_what_needs_you_card(host_with_property):
