@@ -642,7 +642,7 @@ Run `cd App && .venv/bin/python -m pytest tests/test_booking_cancel.py -q --tb=s
 **Step 9.** Notes and docs. Append to `docs/context/decisions.md`:
 
 ```
-- 2026-11-02 | Booking site cancellation: guest cancels with the signed link and gets the refund per policy automatically; host cancel is always a full refund; a failed refund leaves the booking `cancelled` and is repeated by the host with the same stored amount and idempotency key; a full refund issues the invoice storno, a partial one is left for the host (audit `site_invoice_needs_correction`) | owner (plan), orchestrator | 0821
+- 2026-11-02 | Booking site cancel: guest self-cancel via signed link, refund per policy; host cancel refunds in full | owner | 0821
 ```
 
 Append to `docs/context/known-issues.md`:
