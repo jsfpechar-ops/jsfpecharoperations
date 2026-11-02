@@ -243,6 +243,26 @@ async def property_page_checkout(request: Request, slug: str):
     return response
 
 
+@router.get("/p/{slug}/{token}.ics")
+def property_page_ical(request: Request, slug: str, token: str):
+    """0817: private calendar feed for Airbnb / Booking.com import."""
+    from .. import booking_ical
+
+    scope = "property_page_ical"
+    key = rate_limit.client_key(request, scope)
+    if rate_limit.blocked(scope, key, _RATE_MAX, _RATE_WINDOW):
+        return PlainTextResponse("slow down", status_code=429)
+    rate_limit.record(scope, key)
+    apartment_id = booking_ical.apartment_for_slug(slug)
+    if apartment_id is None or not booking_ical.token_ok(apartment_id, token):
+        return Response(status_code=404)
+    return Response(
+        booking_ical.export_ics(apartment_id).encode("utf-8"),
+        media_type="text/calendar; charset=utf-8",
+        headers={"Cache-Control": "private, max-age=300", "X-Robots-Tag": "noindex"},
+    )
+
+
 @router.get("/p/{slug}/thanks")
 def property_page_thanks(request: Request, slug: str):
     """Stripe's success_url. Shows no booking data: the confirmation e-mail
