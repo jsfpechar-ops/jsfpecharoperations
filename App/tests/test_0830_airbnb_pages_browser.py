@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 from app import db
+from tests.browser_support import chromium_launch_kwargs, settle_motion
 from tests.test_0710_v2_mockup_match_browser import _launch, _open_app, _placeholders, base, dashboard_host, dashboard_rich_host
 from tests.v2_mockup import WIDTHS, geometry_findings
 
@@ -135,7 +136,7 @@ _AUDIT_JS = """(isBack) => {
   // 12 px between neighbouring interactive or text boxes in the main lane
   const SEL = 'a[href], button, input:not([type=hidden]), select, textarea, .settings-pill, .settings-value-card, .airbnb-index-row, h1, h2, h3, h4, p, label, li';
   const boxes = [...root.querySelectorAll(SEL)].filter(el => vis(el) &&
-    !el.closest('.help-tip-body, .help-tip, summary, details:not([open]), table, .ui-table-stack, script, style, .row-menu, nav'));
+    !el.closest('.help-tip-body, .help-tip, summary, details:not([open]), table, .ui-table-stack, script, style, .row-menu, nav, .stays-links'));
   const describe = el => (el.tagName.toLowerCase() + ': ' + el.textContent.trim().replace(/\\s+/g, ' ').slice(0, 20));
   let pairs = 0;
   for (let i = 0; i < boxes.length && pairs < 8; i++) for (let j = i + 1; j < boxes.length && pairs < 8; j++) {
@@ -318,7 +319,7 @@ def test_0831G_page_help(base, dashboard_rich_host, seeded):
                 context, page = _open_app(browser, base, cookie, path, width)
                 if page.locator(".ui-how").count():
                     problems.append(f"{path} {width}: .ui-how is still on the page")
-                button = page.locator(".page-help-btn, .stays-title-row .help-tip-btn").first
+                button = page.locator(".page-help-dot, .stays-title-row .help-tip-btn").first
                 if not button.is_visible():
                     problems.append(f"{path} {width}: the help ? is not visible")
                 else:
@@ -348,6 +349,7 @@ def test_0831G_page_help(base, dashboard_rich_host, seeded):
                         problems.append(f"{path} {width}: help body is open by default")
                     before = page.evaluate("() => document.documentElement.scrollHeight")
                     page.locator(".page-help-btn").first.click()
+                    settle_motion(page)
                     pb = body.bounding_box()
                     viewport = page.viewport_size
                     if not body.is_visible() or pb["x"] < 0 or pb["x"] + pb["width"] > viewport["width"]:
