@@ -156,7 +156,7 @@ Rules: shown only if the response is slower than 300 ms, then kept at least 400 
 | Properties | `house` | Guide | `book-open` |
 | Invoices | `receipt` | Admin | `shield` |
 | Cleaning | `sparkles` (lucide-static 0.552.0, the vendored version) | More | `ellipsis` |
-| Stay fees | `coins` | Search | `search` |
+| Stay fees | `receipt-text` | Search | `search` |
 | Add | `plus` | Row menu | `ellipsis-vertical` | Close | `x` | Back | `arrow-left` | Filter | `sliders-horizontal` | Copy | `copy` | Download | `download` | Send | `send` | Sync | `refresh-cw` | Edit | `pencil` | Delete | `trash-2` | Help tip | `circle-help` | Warning | `triangle-alert` | Done | `check` | External | `external-link` | Calendar prev/next | `chevron-left` / `chevron-right` |
 
 ### 6.2 Phone: bottom tab bar (below 1024 px)
