@@ -35,7 +35,7 @@
         {{ row_menu_begin() }}
           <a class="row-menu-item" href="/submissions/{{ submission.id }}" role="menuitem">{{ t('reports.details') }}</a>
           {% if submission.has_receipt %}
-            <a class="row-menu-item" href="/submissions/{{ submission.id }}/receipt.pdf" role="menuitem">{{ t('reports.receipt') }}</a>
+            <a data-turbo="false" class="row-menu-item" href="/submissions/{{ submission.id }}/receipt.pdf" role="menuitem">{{ t('reports.receipt') }}</a>
           {% endif %}
         {{ row_menu_end() }}
       </td>

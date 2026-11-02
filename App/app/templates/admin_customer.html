@@ -236,7 +236,7 @@
 {{ ui_table_begin([(t('customers.invoice'), ''), (t('customers.amount'), 'r'), (t('customers.due'), ''), (t('customers.state'), '')], label=t('customers.invoices')) }}
 {% for inv in customer.invoices %}
 <tr class="ui-row">
-  <td class="ui-cell-first" data-card="primary"><a href="/admin/fakturace/{{ inv.id }}.pdf">{{ inv.number }}</a></td>
+  <td class="ui-cell-first" data-card="primary"><a data-turbo="false" href="/admin/fakturace/{{ inv.id }}.pdf">{{ inv.number }}</a></td>
   <td class="ui-cell-r" data-card="meta">{{ inv.total_haler | money_czk }}</td>
   <td data-card="secondary">{{ fmt_date(inv.due_date) }}</td>
   <td data-card="badge">{{ t('billing.invoices.state.void') if inv.voided or inv.kind == 'storno' else t('billing.invoices.state.paid') if inv.paid_on else t('billing.invoices.state.open') }}</td>
