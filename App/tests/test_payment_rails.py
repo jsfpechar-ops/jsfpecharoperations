@@ -276,3 +276,42 @@ def test_foreign_owner_cannot_send(owner, client, stripe_env):
     response = other.post(f"/payments/requests/{rid}/send", follow_redirects=False)
     assert response.status_code == 303
     assert "/login" in response.headers["location"]
+
+
+# --- share link without e-mail (0761) -----------------------------------------
+
+
+def test_get_link_without_email_opens_share_page(owner, client, stripe_env, fake_link):
+    _complete_account(owner)
+    rid = _draft(owner, rail="card", email="")
+    response = client.post(f"/payments/requests/{rid}/link", follow_redirects=False)
+    assert response.status_code == 303
+    assert response.headers["location"] == f"/payments/requests/{rid}/share"
+    assert payment_request.get(rid)["status"] == "sent"
+    page = client.get(f"/payments/requests/{rid}/share")
+    assert page.status_code == 200
+    assert "https://buy.stripe.com/test_1" in page.text
+    assert "https://wa.me/?text=" in page.text
+    assert len(fake_link.created) == 1  # the page reused the link
+
+
+def test_get_link_never_redirects_off_site(owner, client, stripe_env, fake_link):
+    _complete_account(owner)
+    rid = _draft(owner, rail="card")
+    location = client.post(f"/payments/requests/{rid}/link", follow_redirects=False).headers["location"]
+    assert location.startswith("/") and not location.startswith("//")
+
+
+def test_get_link_refused_when_not_ready(owner, client, stripe_env):
+    rid = _draft(owner, rail="card")
+    response = client.post(f"/payments/requests/{rid}/link", follow_redirects=False)
+    assert response.headers["location"].startswith("/payments?err=")
+    assert payment_request.get(rid)["status"] == "draft"
+
+
+def test_share_page_hidden_from_other_owners_and_qr(owner, client, stripe_env, fake_link):
+    rid = _draft(owner, rail="qr")
+    response = client.post(f"/payments/requests/{rid}/link", follow_redirects=False)
+    assert "err=" in response.headers["location"]
+    response = client.get(f"/payments/requests/{rid}/share", follow_redirects=False)
+    assert "err=" in response.headers["location"]

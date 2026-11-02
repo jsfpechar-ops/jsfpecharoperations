@@ -120,11 +120,16 @@
           <td data-label="{{ t('payments.col.rail') }}">{{ t('payments.rail.' ~ req.rail) }}</td>
           <td data-label="{{ t('filter.status') }}"><span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('payments.status.' ~ req.status) }}</span></td>
           <td class="row-actions" data-label="">
+            {% if req.rail == 'card' and req.status in ['draft', 'sent', 'awaiting_payment'] %}
+            <form method="post" action="/payments/requests/{{ req.id }}/link" style="display:inline">
+              <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('payments.get_link') }}</button>
+            </form>
+            {% endif %}
             {% if req.status == 'draft' and req.guest_email %}
             <form method="post" action="/payments/requests/{{ req.id }}/send" style="display:inline">
               <button class="ui-btn ui-btn-primary ui-btn-compact" type="submit">{{ t('payments.send') }}</button>
             </form>
-            {% elif req.status == 'draft' %}
+            {% elif req.status == 'draft' and req.rail != 'card' %}
             <span class="ui-sub">{{ t('payments.need_email') }}</span>
             {% endif %}
             {% if req.status == 'draft' and req.rail == 'qr' %}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="/payments/qr/{{ req.id }}">{{ t('payments.qr.preview') }}</a>{% endif %}
