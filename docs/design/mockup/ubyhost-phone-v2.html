@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>UbyHost phone v2 (approved 2026-11-01)</title>
+<title>UbyHost phone v2 (approved 2026-11-01; properties screens 0740 proposed 2026-11-02)</title>
 <!--
   Repo copy of the phone v2 design Josef approved on 2026-11-01 21:15 ("Airbnb style", app-wide).
   Source: ux-redesign/phone-v2/today-menu-v2.html in the project files.
@@ -79,6 +79,43 @@ h2.sec{font-size:13px;font-weight:700;color:var(--ink3);text-transform:uppercase
 .list.plain .chev{width:20px;height:20px;color:var(--ink3)}
 .menu-logout{margin-top:8px;border-top:1px solid var(--line);padding-top:8px}
 
+/* properties list (0740): Airbnb listings style, one compact row card per property, one status line */
+.mh .props-add{width:44px;height:44px;border-radius:50%;background:var(--soft);color:var(--ink);display:grid;place-items:center;flex:none}
+.props-phone .card.prop{display:flex;align-items:center;gap:16px;padding:16px;margin:0 0 14px}
+.prop .cover{width:64px;height:64px;border-radius:16px;display:grid;place-items:center;color:#fff;flex:none}
+.cover.c0{background:linear-gradient(135deg,#d0452d,#e9836f)}.cover.c1{background:linear-gradient(135deg,#3f6f8f,#7fa8c2)}.cover.c2{background:linear-gradient(135deg,#5c7a4f,#9db58c)}
+.prop .cover .ini{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1}
+.prop .in{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start}
+.prop .in b{font-size:17px;font-weight:700;line-height:1.3;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prop .in small{color:var(--ink3);font-size:14px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prop .st{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;margin-top:6px;line-height:1.3}
+.prop .st:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.prop .st.g{color:var(--ok)}.prop .st.r{color:var(--acc2)}
+.prop .chev{width:20px;height:20px;color:var(--ink3)}
+
+/* property page (0741): back, centred title, guest link card, settings rows like the Menu list */
+.prop-phone-top{display:flex;padding-top:8px;margin-bottom:12px}
+.prop-phone-top .round{width:44px;height:44px;border-radius:50%;background:var(--soft);display:grid;place-items:center}
+.prop-page h1.big{font-size:30px;line-height:1.15;font-weight:800;letter-spacing:-.02em;text-align:center;margin:0 8px 6px}
+.prop-phone-sub{text-align:center;color:var(--ink3);font-size:16px;margin:0 0 24px}
+.guest-card b{display:block;font-size:13px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em}
+.guest-card .sub{font-size:17px;font-weight:700;margin:6px 0 14px;overflow-wrap:anywhere}
+.guest-pin{display:flex;align-items:baseline;justify-content:space-between;border-top:1px solid var(--line);padding-top:14px;margin-bottom:16px}
+.guest-pin-label{font-size:15px;color:var(--ink3)}
+.guest-pin-value{font-size:22px;font-weight:800;letter-spacing:.12em}
+.guest-btns{display:flex;flex-direction:column;gap:10px}
+.prop-sec{margin:0}
+.prop-sec > summary{list-style:none;display:grid;grid-template-columns:10px minmax(0,1fr) 20px;column-gap:16px;align-items:center;min-height:64px;padding:12px 0;cursor:pointer}
+.prop-sec > summary::-webkit-details-marker{display:none}
+.prop-sec > summary > .dot{grid-column:1;grid-row:1/3}
+.prop-sec > summary > div{grid-column:2;grid-row:1;min-width:0}
+.prop-sec > summary b{display:block;font-size:17px;font-weight:600;line-height:1.3}
+.prop-sec > summary > .sec-state{grid-column:2;grid-row:2}
+.prop-sec > summary > .chev{grid-column:3;grid-row:1/3}
+.sec-state{display:block;color:var(--ink3);font-size:14px;line-height:1.35}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.dot.g{background:var(--ok)}.dot.r{background:var(--acc)}.dot.n{background:#c8c7c1}
+
 /* tab bar (unchanged from ubyhost-phone-v1.html) */
 .tabs{position:absolute;left:0;right:0;bottom:0;height:84px;background:#fff;border-top:1px solid var(--line);display:flex;padding:6px 4px 22px;z-index:5}
 .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:700;color:var(--ink3);position:relative;min-height:56px}
@@ -93,6 +130,8 @@ h2.sec{font-size:13px;font-weight:700;color:var(--ink3);text-transform:uppercase
   <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></symbol>
   <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
   <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a1 1 0 0 1 1-1h10"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-brush" viewBox="0 0 24 24"><path d="M14 3 8 13M6 13h9l2 8H4z"/></symbol>
   <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6"/></symbol>
@@ -142,6 +181,31 @@ h2.sec{font-size:13px;font-weight:700;color:var(--ink3);text-transform:uppercase
     <a class="row" href="#"><svg class="i"><use href="#i-help"/></svg><span class="t">Get help</span><svg class="i chev"><use href="#i-chev"/></svg></a>
   </nav>
   <form class="list plain menu-logout"><button class="row" type="button"><svg class="i"><use href="#i-out"/></svg><span class="t">Log out</span></button></form>
+</div></section>
+
+<section class="scr" data-s="nemovitosti"><div class="body">
+  <div class="mh"><h1 class="big">Properties</h1><a class="round props-add" href="#" aria-label="Add a property"><svg class="i"><use href="#i-plus"/></svg></a></div>
+  <div class="props-phone">
+    <a class="card prop" href="#"><span class="cover c0"><span class="ini">OT</span></span><span class="in"><b>Old Town Loft</b><small>Celetná 12, Praha 1</small><span class="st g">Ready for guests</span></span><svg class="i chev"><use href="#i-chev"/></svg></a>
+    <a class="card prop" href="#"><span class="cover c1"><span class="ini">RS</span></span><span class="in"><b>River Studio</b><small>Dvořákovo nábř. 4, Praha 1</small><span class="st r">Missing: Calendar</span></span><svg class="i chev"><use href="#i-chev"/></svg></a>
+    <a class="card prop" href="#"><span class="cover c2"><span class="ini">VF</span></span><span class="in"><b>Vinohrady Flat</b><small>Mánesova 30, Praha 2</small><span class="st r">Missing: Police, Calendar</span></span><svg class="i chev"><use href="#i-chev"/></svg></a>
+  </div>
+</div></section>
+
+<section class="scr prop-page" data-s="nemovitost"><div class="body">
+  <div class="prop-phone-top"><a class="round" href="#" aria-label="Back"><svg class="i"><use href="#i-back"/></svg></a></div>
+  <h1 class="big">River Studio</h1>
+  <div class="prop-phone-sub">Dvořákovo nábř. 4, Praha 1</div>
+  <section class="card guest-card"><b>Guest link</b><div class="sub">ubyhost.cz/l/river-studio</div>
+    <div class="guest-pin"><span class="guest-pin-label">PIN</span><span class="guest-pin-value">482913</span></div>
+    <div class="guest-btns"><a class="btn" href="#"><svg class="i"><use href="#i-copy"/></svg>Copy link</a><a class="btn line" href="#"><svg class="i"><use href="#i-copy"/></svg>Copy PIN</a></div></section>
+  <h2 class="sec">Settings</h2>
+  <details class="prop-sec"><summary><span class="dot g"></span><div><b>Basics</b></div><small class="sec-state">Dvořákovo nábř. 4, Praha 1</small><svg class="i chev"><use href="#i-chev"/></svg></summary></details>
+  <details class="prop-sec"><summary><span class="dot g"></span><div><b>Police reports</b></div><small class="sec-state">Ready</small><svg class="i chev"><use href="#i-chev"/></svg></summary></details>
+  <details class="prop-sec"><summary><span class="dot r"></span><div><b>Calendars</b></div><small class="sec-state">No calendar yet</small><svg class="i chev"><use href="#i-chev"/></svg></summary></details>
+  <details class="prop-sec"><summary><span class="dot n"></span><div><b>Guest messages</b></div><small class="sec-state">Link 3 days before arrival</small><svg class="i chev"><use href="#i-chev"/></svg></summary></details>
+  <details class="prop-sec"><summary><span class="dot n"></span><div><b>Smart lock</b></div><small class="sec-state">Off</small><svg class="i chev"><use href="#i-chev"/></svg></summary></details>
+  <details class="prop-sec"><summary><span class="dot n"></span><div><b>Stay fee</b></div><small class="sec-state">Not used</small><svg class="i chev"><use href="#i-chev"/></svg></summary></details>
 </div></section>
 
 <nav class="tabs" aria-label="Main menu">
