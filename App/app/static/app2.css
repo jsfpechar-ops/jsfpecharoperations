@@ -1099,10 +1099,15 @@ body.v2 .settings-action-row > div:first-child{flex:1 1 auto}
 body.v2 .settings-row-actions[hidden]{display:none}
 body.v2 .settings-lane a{display:inline-flex;align-items:center;min-height:24px}
 body.v2 .settings-lane .help-tip-btn{min-width:24px;min-height:24px}
+body.v2 .settings-lane form > .ui-btn + .ui-sub{display:block;margin-top:10px}
+body.v2 .settings-heading{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+body.v2 .field-label-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+body.v2 .settings-heading .help-tip,body.v2 .field-label-row .help-tip{display:inline-flex;vertical-align:middle}
 body.v2 .settings-lane input[type=checkbox]{min-width:24px;min-height:24px;margin:0;accent-color:var(--acc)}
 @media (min-width:1024px){body.v2 .settings-lane .ui-btn{min-height:40px}}
 body.v2 details.technical.ui-section{border:0;background:none;box-shadow:none;border-radius:0;padding:0;margin:0;border-top:1px solid var(--line)}
 body.v2 details.technical > summary{min-height:48px;justify-content:space-between;gap:12px;list-style:none}
+body.v2 details.technical > summary,body.v2 details.technical > :not(summary):not(.ui-section){padding-left:16px;padding-right:16px}
 body.v2 details.technical > summary::-webkit-details-marker{display:none}
 body.v2 details.technical > summary::after{content:"";flex:none;width:8px;height:8px;margin-right:6px;border-right:2px solid var(--ink3);border-bottom:2px solid var(--ink3);transform:rotate(45deg);transition:transform .15s}
 body.v2 details.technical[open] > summary::after{transform:rotate(-135deg)}
@@ -1135,7 +1140,13 @@ body.v2 .entities-page{margin:0 0 16px;container:entities-list / inline-size}
   body.v2 .entities-page>table.ui-table td::before{content:attr(data-label);color:var(--ink3);font-size:13px;text-align:left}
   body.v2 .entities-page>table.ui-table td[data-label=""]::before{content:none}
   body.v2 .entities-page>table.ui-table td.row-actions{justify-content:flex-start;flex-wrap:wrap;gap:8px}
+  body.v2 .entities-page>table.ui-table td.row-actions{flex-wrap:nowrap}
 }
+body.v2 .entities-page td.row-actions .row-menu{display:inline-flex;vertical-align:middle}
+body.v2 .entities-page td.row-actions>.ui-btn{vertical-align:middle}
+body.v2 .entities-page td.row-actions .ui-btn,body.v2 .entities-page td.row-actions .row-menu-trigger{height:36px;min-height:36px;box-sizing:border-box}
+body.v2 .entities-page td.row-actions .row-menu-trigger{width:36px;min-width:36px;padding:0;border-radius:50%}
+@media (max-width:1023px){body.v2 .entities-page td.row-actions .ui-btn,body.v2 .entities-page td.row-actions .row-menu-trigger{height:44px;min-height:44px}body.v2 .entities-page td.row-actions .row-menu-trigger{width:44px;min-width:44px}}
 body.v2 .entity-form .field,body.v2 .entity-add .field{max-width:480px}
 body.v2 .entity-form .operator-phone,body.v2 .entity-add .operator-phone{display:flex;align-items:stretch;gap:8px}
 body.v2 .entity-form .operator-phone-number,body.v2 .entity-add .operator-phone-number{flex:1 1 auto;min-width:0}

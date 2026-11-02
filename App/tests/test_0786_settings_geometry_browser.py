@@ -103,7 +103,7 @@ ROW_JS = """
     const items = [...cell.querySelectorAll('a.ui-btn, button.ui-btn, .row-menu > summary, .row-menu-btn, summary.ui-btn')].filter(e => e.getClientRects().length);
     if (items.length < 2) continue;
     const centres = items.map(e => { const r = e.getBoundingClientRect(); return r.top + r.height / 2; });
-    out.push({spread: Math.max(...centres) - Math.min(...centres)});
+    out.push({spread: Math.max(...centres) - Math.min(...centres), detail: items.map(e => e.className + ' ' + Math.round(e.getBoundingClientRect().height) + 'px').join(' | ')});
   }
   return out;
 }
@@ -168,7 +168,7 @@ def test_settings_area_geometry_rules(host, base, width):
                     problems.append(f"{tag}: text beside a button: {item['button']} / {item['text']}")
                 for item in page.evaluate(ROW_JS):
                     if item["spread"] > 1:
-                        problems.append(f"{tag}: row actions not on one centre line ({item['spread']:.1f} px)")
+                        problems.append(f"{tag}: row actions not on one centre line ({item['spread']:.1f} px) {item['detail']}")
                 page.close()
             context.close()
         browser.close()

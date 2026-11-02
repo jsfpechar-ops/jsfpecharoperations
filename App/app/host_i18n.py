@@ -7273,7 +7273,7 @@ _SETTINGS_GROUP_STRINGS = {
         "settings.privacy.requests_help": "Requests from guests about their data, and their deadlines.",
         "settings.privacy.requests_action": "Open requests",
         "settings.help.guide_help": "Step-by-step guides, and how to reach support.",
-        "settings.help.guide_action": "Open Help",
+        "settings.help.guide_action": "Open",
     },
     "cs": {
         "settings.index_label": "Sekce nastavení",
@@ -7291,7 +7291,7 @@ _SETTINGS_GROUP_STRINGS = {
         "settings.privacy.requests_help": "Žádosti hostů o jejich údaje a jejich lhůty.",
         "settings.privacy.requests_action": "Otevřít žádosti",
         "settings.help.guide_help": "Návody krok za krokem a kontakt na podporu.",
-        "settings.help.guide_action": "Otevřít nápovědu",
+        "settings.help.guide_action": "Otevřít",
     },
 }
 for _lang, _strings in _SETTINGS_GROUP_STRINGS.items():
