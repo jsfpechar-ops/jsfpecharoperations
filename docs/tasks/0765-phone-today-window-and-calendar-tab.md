@@ -58,6 +58,22 @@ Two failures left (see report):
 2. `test_dashboard_phone_browser.py::test_phone_dashboard_compact`: `.needs-you-more > summary` not visible at 390. Find the cause: dump the rendered HTML of `/` for that test's fixture around `needs-you-more` and `#needs-action`, and check computed `display` of the details/summary and its parents at 390. Compare with `git show HEAD~1:App/app/templates/dashboard.html` (main's version). Possible causes: the moved next-stay/`.hs` block, an unclosed tag in the edited template, or the `ny-phone-only` rule. Fix the template, not the test, unless the test assumption is about the old Today cards.
 Then run 0729, test_dashboard_phone_browser.py, test_0765 (same env as §7), plus the 0710 subset `-k "dashboard or overview or today"` and the non-browser dashboard tests. Append results to 0765-report.md.
 
+## 5. Do not touch
+
+Desktop (>= 1024 px) markup and CSS.
+
+## 6. Commands
+
+In section 4.
+
+## 7. Acceptance
+
+Section 4 tests pass; 390 px screenshots taken.
+
+## 8. Stop and ask
+
+If a desktop assertion would have to change.
+
 ## 9. Report
 
 See the matching `-report.md` file.

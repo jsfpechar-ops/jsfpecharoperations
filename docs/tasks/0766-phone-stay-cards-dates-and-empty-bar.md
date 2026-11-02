@@ -39,6 +39,22 @@ Desktop (>= 1024 px) must not change at all.
 5. "After" screenshots, same script: `docs/tasks/screenshots-0766/after-stays-390.png`, `after-stay-390.png`.
 6. Write `docs/tasks/0766-report.md`: what changed, test commands with their last line, anything you could not do.
 
+## 5. Do not touch
+
+Desktop (>= 1024 px) markup and CSS.
+
+## 6. Commands
+
+In section 4.
+
+## 7. Acceptance
+
+Section 4 tests pass; 390 px screenshots taken.
+
+## 8. Stop and ask
+
+If a desktop assertion would have to change.
+
 ## 9. Report
 
 See the matching `-report.md` file.
