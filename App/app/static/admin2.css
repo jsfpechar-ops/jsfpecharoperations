@@ -44,3 +44,6 @@ body.v2 .ui-pair:has(>.ui-form-actions)>.ui-field{margin-bottom:0}
 body.v2 .ui-pair:has(>.ui-form-actions)>.ui-form-actions{margin-top:0}
 /* 0894 fix: stacked tables on phone hide the header row; each cell reads its label from data-label */
 @media (max-width:1023px){body.v2 .ui-table-stack thead{display:none}}
+/* 0894 fix: the pager row under a list shares one button height (40 px desktop, 44 px phone), so Older, Newer and First page line up */
+body.v2 .ui-body nav.ui-form-actions>a.ui-btn{min-height:40px;height:auto;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center}
+@media (max-width:1023.98px){body.v2 .ui-body nav.ui-form-actions>a.ui-btn{min-height:44px}}

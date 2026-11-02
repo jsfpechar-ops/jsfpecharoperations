@@ -31,3 +31,10 @@ body.auth-page .auth-card .btn{font-size:16px}
 body.auth-page .auth-card .btn{min-height:44px}
 body.auth-page .auth-card code{font-size:16px;line-height:1.5}
 body.auth-page .env-banner,body.auth-page .env-banner *{font-size:16px;line-height:1.5}
+/* 0892 fix: wide system fonts (CI) must not push the page past 320 px. Flex/grid children may shrink; long words wrap. */
+body.auth-page .auth-title-row>*,body.auth-page .auth-card>*,body.auth-page .auth-form>*,body.auth-page .auth-lang-switch>*{min-width:0}
+body.auth-page h1,body.auth-page h2,body.auth-page label,body.auth-page .auth-notice,body.auth-page .auth-lede,body.auth-page .auth-title{overflow-wrap:anywhere}
+body.auth-page .btn,body.auth-page .auth-submit,body.auth-page .auth-lang-switch button,body.auth-page .auth-foot-links a{max-width:100%;overflow-wrap:anywhere;box-sizing:border-box;text-align:center}
+body.auth-page .auth-lang-switch{row-gap:12px}
+/* 0892 fix: button labels may wrap onto two lines at wide fonts instead of running past the card */
+body.auth-page .btn{white-space:normal;height:auto}
