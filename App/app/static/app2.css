@@ -1122,7 +1122,20 @@ body.v2 .entity-section-title{font-size:16px;font-weight:700;margin:0 0 12px}
 body.v2 .entities-page,body.v2 .card:has(>table.ui-table){overflow-x:auto}
 body.v2 .entities-page>table.ui-table th:first-child,body.v2 .entities-page>table.ui-table td:first-child{padding-left:20px}
 
-body.v2 .entities-page{margin:0 0 16px}
+body.v2 .entities-page{margin:0 0 16px;container:entities-list / inline-size}
+/* 0785: the Business list switches to labelled cards by its own panel width
+   (under 950 px, as the Properties and Business lists did on main), so a
+   1024 px lane with the rail open never overflows sideways. */
+@container entities-list (max-width:949.98px){
+  body.v2 .entities-page>table.ui-table,body.v2 .entities-page>table.ui-table tbody{display:block;width:100%;min-width:0}
+  body.v2 .entities-page>table.ui-table thead{display:none}
+  body.v2 .entities-page>table.ui-table tbody{display:grid;gap:12px}
+  body.v2 .entities-page>table.ui-table tr{display:block;padding:12px 16px;border:1px solid var(--line-strong);border-radius:12px}
+  body.v2 .entities-page>table.ui-table td{display:flex;justify-content:space-between;align-items:center;gap:12px;border:0;padding:4px 0;text-align:right}
+  body.v2 .entities-page>table.ui-table td::before{content:attr(data-label);color:var(--ink3);font-size:13px;text-align:left}
+  body.v2 .entities-page>table.ui-table td[data-label=""]::before{content:none}
+  body.v2 .entities-page>table.ui-table td.row-actions{justify-content:flex-start;flex-wrap:wrap;gap:8px}
+}
 body.v2 .entity-form .field,body.v2 .entity-add .field{max-width:480px}
 body.v2 .entity-form .operator-phone,body.v2 .entity-add .operator-phone{display:flex;align-items:stretch;gap:8px}
 body.v2 .entity-form .operator-phone-number,body.v2 .entity-add .operator-phone-number{flex:1 1 auto;min-width:0}
