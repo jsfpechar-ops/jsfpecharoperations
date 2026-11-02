@@ -18,7 +18,7 @@ else:
 
 import uvicorn
 
-from app import auth, booking_site, config, db, property_page, stripe_connect
+from app import auth, booking_site, config, db, property_page
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
 
