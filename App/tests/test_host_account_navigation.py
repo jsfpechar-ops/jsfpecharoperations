@@ -42,7 +42,6 @@ def _account(role: str):
     uid = auth.create_account(f"{username}@example.test", "Account Nav", role=role, username=username)
     db.execute("UPDATE user_account SET must_change_password = 0 WHERE id = ?", (uid,))
     client = TestClient(app)
-    client.get("/login?lang=en")
     response = login_as(client, username, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
     return uid, client
@@ -66,6 +65,10 @@ def admin():
     uid, client = _account("admin")
     yield client
     _drop(uid)
+
+
+def _plain(html: str) -> str:
+    return " ".join(re.sub(r"<[^>]+>", " ", html).split())
 
 
 def _group_page(key: str) -> str:
@@ -104,7 +107,7 @@ def test_admin_sees_team_and_incidents_in_account_group(admin):
 def test_secondary_navigation_landmark_matches_visible_links(role, lang, request):
     client = request.getfixturevalue(role)
     html = client.get(f"/settings?lang={lang}").text
-    nav = re.search(r'<nav class="ui-nav ui-nav-bottom" aria-label="([^"]+)">', html)
+    nav = re.search(r'<nav class="side-nav side-bottom" aria-label="([^"]+)">', html)
     assert nav is not None
     expected = STRINGS[lang]["nav.guide"]
     if role == "admin":
@@ -143,9 +146,9 @@ def test_business_details_link_lives_in_one_place(host):
     html = host.get("/settings/account?lang=en").text
     assert html.count('id="settings-business"') == 1
     row = html[html.index('id="settings-business"'):]
-    row = row[: row.index("</div>\n        </div>") + 20]
-    assert 'href="/entities"' in row
-    assert htmllib.escape(STRINGS["en"]["settings.business.title"]) in row
+    row = row[: row.index("</a>") + 4]
+    assert 'href="/entities' in row
+    assert htmllib.escape(STRINGS["en"]["settings.business.title"]) in _plain(row)
 
 
 def test_routine_helper_text_is_behind_the_question_mark(host):
@@ -167,7 +170,7 @@ def test_czech_groups(host):
     for key in GROUPS:
         html = host.get(f"{_group_page(key)}?lang=cs").text
         assert STRINGS["cs"][f"settings.group.{key}"] in html
-    assert STRINGS["cs"]["settings.business.title"] in host.get("/settings/account?lang=cs").text
+    assert STRINGS["cs"]["settings.business.title"] in _plain(host.get("/settings/account?lang=cs").text)
 
 
 def test_search_reaches_settings_groups_and_help(host, admin):
