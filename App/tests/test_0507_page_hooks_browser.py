@@ -92,7 +92,7 @@ def test_settings_push_row_stays_bound_after_two_runs(calendar_workspace, calend
     with sync_api.sync_playwright() as playwright:
         browser = launch(playwright)
         context = new_context(browser, calendar_workspace, calendar_origin)
-        page = open_page(context, calendar_origin, "/settings?lang=cs")
+        page = open_page(context, calendar_origin, "/settings/phone?lang=cs")
         page.evaluate("() => window.UbyHost.initPage()")
         page.evaluate("() => window.UbyHost.initPage()")
         assert page.locator(PUSH_ROW).count() > 0

@@ -59,7 +59,7 @@ def test_phone_rows_have_full_border_and_buttons_do_not_cover_names(base):
 
         page.goto(base + "/entities?lang=en")
         page.wait_for_timeout(200)
-        rows = page.evaluate(BORDER_PROBE, ".lc-entities tbody tr")
+        rows = page.evaluate(BORDER_PROBE, ".entities-page tbody tr")  # v2 entities list (0781)
         assert rows, "no business rows on /entities"
         for sides in rows:
             assert sides == ["1px", "1px", "1px", "1px"], sides

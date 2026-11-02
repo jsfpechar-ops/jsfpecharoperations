@@ -19,7 +19,7 @@ from tests.conftest import login_as
 
 USERNAME = "settings-technical-host"
 
-OPEN_TAG = '<details class="ui-section technical" id="settings-technical">'
+OPEN_TAG = '<details class="ui-section technical" open id="settings-technical">'
 PIN_PANEL = '<div class="ui-section" id="settings-ubyport">'
 
 
@@ -67,15 +67,15 @@ def _technical_block(page: str) -> str:
     return block
 
 
-def test_the_technical_details_start_collapsed(host):
-    page = host.get("/settings").text
-    # The exact open tag means no `open` attribute and no extra one.
+def test_the_technical_details_open_on_their_own_page(host):
+    page = host.get("/settings/technical").text
+    # The technical sub page opens the block; the exact open tag is the check.
     assert OPEN_TAG in page
     assert f"{OPEN_TAG}\n      <summary>" in page
 
 
 def test_the_three_diagnostics_live_in_that_one_block(host):
-    page = host.get("/settings").text
+    page = host.get("/settings/technical").text
     block = _technical_block(page)
     for key in (
         "settings.destination.title",
@@ -89,14 +89,14 @@ def test_the_three_diagnostics_live_in_that_one_block(host):
 
 
 def test_the_guest_form_pin_stays_out_of_the_technical_block(host):
-    page = host.get("/settings").text
+    page = host.get("/settings/technical").text
     block = _technical_block(page)
     assert HOST_STRINGS["en"]["settings.access.title"] not in block
     assert PIN_PANEL in page
 
 
 def test_the_czech_page_reads_technicke_udaje(czech_host):
-    page = czech_host.get("/settings").text
+    page = czech_host.get("/settings/technical").text
     block = _technical_block(page)
     assert HOST_STRINGS["cs"]["settings.technical.title"] in block
     assert HOST_STRINGS["cs"]["settings.destination.title"] in block
@@ -104,12 +104,11 @@ def test_the_czech_page_reads_technicke_udaje(czech_host):
 
 
 def test_the_section_nav_points_at_the_collapsed_block(host):
-    page = host.get("/settings").text
-    start = page.index('class="host-property-grid"')
-    nav = page[start : page.index("</nav>", start)]
-    assert 'href="#settings-technical"' in nav
-    assert 'href="#settings-overview"' not in nav
-    assert 'href="#settings-mail"' not in nav
+    page = host.get("/settings/technical").text
+    assert 'class="host-property-grid"' not in page
+    assert '<details class="ui-section technical" open id="settings-technical">' in page
+    assert 'href="#settings-overview"' not in page
+    assert 'href="#settings-mail"' not in page
 
 
 def test_both_languages_name_the_block_the_same_way():

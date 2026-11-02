@@ -1719,7 +1719,7 @@ def test_settings_shows_the_host_a_working_claim_link(monkeypatch):
         # the Settings query finds it.
         db.update("apartment", apartment["id"], {"owner_user_id": owner_id})
 
-        page = _login("boundary-w24").get("/settings")
+        page = _login("boundary-w24").get("/settings/technical")
         assert page.status_code == 200
         assert mail.CLAIM_SECRET_MARKER not in page.text
         assert f"#c={secret}" in page.text
