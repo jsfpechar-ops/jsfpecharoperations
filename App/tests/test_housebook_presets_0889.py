@@ -51,6 +51,6 @@ def test_page_shows_presets_and_marks_the_current_one(host):
 
     active = host.get("/housebook?from=2026-02-01&to=2026-02-28&lang=en")
     assert active.status_code == 200
-    nav = active.text.split('class="housebook-presets"', 1)[1].split("</nav>", 1)[0]
+    nav = active.text.split('class="housebook-presets"', 1)[1].split("</div>", 1)[0]
     assert nav.count('aria-current="true"') == 1
     assert "from=2026-02-01&amp;to=2026-02-28" in nav
