@@ -80,6 +80,24 @@ func (s *StripeOnboarder) SendPaymentLink(ctx context.Context, requestID int64) 
 	if err != nil {
 		return "", err
 	}
+	tx, err := s.Pool.Begin(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer tx.Rollback(ctx)
+	// Same lock as Python's payment_links.send: a second Send for this
+	// request waits here, then reuses the link the first one stored.
+	if _, err := tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtext($1), $2)", "payment_request", int32(requestID)); err != nil {
+		return "", err
+	}
+	// Re-read under the lock, so a link stored by an earlier Send is seen.
+	err = tx.QueryRow(ctx, paylinkRequestSQL, requestID).Scan(&id, &owner, &rail, &reason, &amount, &linkID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
 	if linkID != "" {
 		var old paymentLink
 		err := s.call(ctx, key, "GET", "/v1/payment_links/"+url.PathEscape(linkID), "", nil, &old, acct)
@@ -108,7 +126,10 @@ func (s *StripeOnboarder) SendPaymentLink(ctx context.Context, requestID int64) 
 	if created.ID == "" || created.URL == "" {
 		return "", errors.New("stripe: payment link response has no id or url")
 	}
-	if _, err := s.Pool.Exec(ctx, paylinkStampSQL, created.ID, stamp, requestID); err != nil {
+	if _, err := tx.Exec(ctx, paylinkStampSQL, created.ID, stamp, requestID); err != nil {
+		return "", err
+	}
+	if err := tx.Commit(ctx); err != nil {
 		return "", err
 	}
 	if err := audit(ctx, s.Pool, stamp, "payment_link_created",
