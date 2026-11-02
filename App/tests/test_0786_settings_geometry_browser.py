@@ -366,6 +366,7 @@ AIRBNB_JS = """
   });
   return {
     backX: back ? back.getBoundingClientRect().left : null,
+    backDelta: back && h1 && h1.parentElement ? back.getBoundingClientRect().left - h1.parentElement.getBoundingClientRect().left : null,
     backW: back ? back.getBoundingClientRect().width : 0,
     backBottom: back ? back.getBoundingClientRect().bottom : 0,
     h1Top: h1 ? h1.getBoundingClientRect().top : 0,
@@ -392,8 +393,8 @@ def test_0789_airbnb_settings_pattern_every_width(host, base, width):
                 if info["backX"] is None:
                     problems.append(f"{tag}: no back button (.airbnb-back)")
                 else:
-                    if info["backX"] >= 32:
-                        problems.append(f"{tag}: back button not top left (x={info['backX']})")
+                    if info["backDelta"] is None or not (0 <= info["backDelta"] < 32):
+                        problems.append(f"{tag}: back button not at lane left (dx={info['backDelta']})")
                     if info["backW"] < 40:
                         problems.append(f"{tag}: back button under 40 px ({info['backW']})")
                     if info["h1Top"] < info["backBottom"]:
