@@ -31,6 +31,10 @@ KINDS = (
     "payment_request",
     "reminder_guest",
     "reminder_host",
+    # 0816: booking site — guest confirmation, guest double-booking refund, host notice.
+    "site_booking_confirmed",
+    "site_booking_refunded",
+    "site_booking_host",
     "completion",
     "submission_problem",
     "invoice_issued",
@@ -90,9 +94,12 @@ GUEST_KINDS = (
     "completion",
     "invoice_issued",
     "door_code",
+    "site_booking_confirmed",
+    "site_booking_refunded",
 )
 HOST_KINDS = (
     "reminder_host",
+    "site_booking_host",
     "submission_problem",
     "workspace_deletion",
     "cancelled_with_guests",
