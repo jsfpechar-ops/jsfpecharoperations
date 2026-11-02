@@ -1,9 +1,9 @@
-# 0833 Faster onboarding: e-mail-only signup, default check-in/out
+# 0882 Faster onboarding: e-mail-only signup, default check-in/out
 
 Executor: Haiku 5.5. Alone, no subagents. Do not commit secrets. Do not push.
 
 Status: review
-Superseded in part by 0834 (step 2 reverted)
+Superseded in part by 0883 (step 2 reverted)
 
 ## 1. Objective
 Speed is UbyHost's edge. Signup asks for e-mail AND a workspace name; a new property starts with empty check-in/out hours. Both are friction the host does not need.
@@ -45,7 +45,7 @@ File: `App/app/routes/admin.py`, the manual stay create handler (the one that in
 - Privacy: this is an existing mail kind to an address the host typed for that stay; no new field, no new retention line (guest_email is already in `retention.py`).
 
 ### Step 4: one width above 1,440 px in the geometry tests
-File: `App/tests/v2_mockup.py` line ~8: `WIDTHS = (320, 390, 768, 1024, 1280, 1440)`. Add `1920`. Then run the geometry tests that import WIDTHS for the Overview page only (`grep -ln "v2_mockup" App/tests | head`, pick the Overview/dashboard one). If a real layout bug shows at 1920, fix ONLY it with the smallest CSS change at the end of `App/app/static/app2.css` (new block, comment `/* 0833 wide (v2) */`), bump the app2.css cache key as the repo does (then `tests/test_static_versions.py --write`). If more than one page fails, STOP and list them in the report instead of fixing.
+File: `App/tests/v2_mockup.py` line ~8: `WIDTHS = (320, 390, 768, 1024, 1280, 1440)`. Add `1920`. Then run the geometry tests that import WIDTHS for the Overview page only (`grep -ln "v2_mockup" App/tests | head`, pick the Overview/dashboard one). If a real layout bug shows at 1920, fix ONLY it with the smallest CSS change at the end of `App/app/static/app2.css` (new block, comment `/* 0882 wide (v2) */`), bump the app2.css cache key as the repo does (then `tests/test_static_versions.py --write`). If more than one page fails, STOP and list them in the report instead of fixing.
 
 ### Step 5: verify, do not build ("What needs you" one button per row)
 Read `App/app/needs_you.py` (`_line(..., action, href)`) and the Overview rows in `App/app/templates/dashboard.html` (~lines 53-100). Write in the report, in 5 lines max, for each row kind (send report, resend guest link, failed filing, setup, alert) whether it already renders exactly one action button with a working href. Do NOT change code in this step.
@@ -63,4 +63,4 @@ The listed tests pass with 0 skipped.
 Any anchor not found, or a second test failure: stop and report.
 
 ## 9. Report
-Write `docs/tasks/0833-report.md`: what changed, test output tail, deviations. Commit as `0833 step k` per step.
+Write `docs/tasks/0882-report.md`: what changed, test output tail, deviations. Commit as `0882 step k` per step.

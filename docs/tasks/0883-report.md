@@ -1,4 +1,4 @@
-# 0834 report (executor: Haiku 5.5)
+# 0883 report (executor: Haiku 5.5)
 
 Status: review. Branch `claude/project-thread-mb7ww2`. Not pushed (brief §0 and §9).
 
@@ -8,11 +8,11 @@ Status: review. Branch `claude/project-thread-mb7ww2`. Not pushed (brief §0 and
 - `App/tests/test_calmer_forms.py`: `test_a_new_property_starts_at_15_and_11` removed; the claim-mail test replaced by 4 tests (step 3).
 - `App/app/routes/signup.py`: plus-tag dropped from the derived workspace name.
 - `App/tests/test_signup.py`: one assertion changed; `test_a_plus_tag_is_left_out_of_the_workspace_name` added.
-- `docs/tasks/0833-faster-onboarding.md`: one line added.
-- `docs/tasks/0834-onboarding-review-fixes.md`: Status set to review.
+- `docs/tasks/0882-faster-onboarding.md`: one line added.
+- `docs/tasks/0883-onboarding-review-fixes.md`: Status set to review.
 
 ## Commits (in order)
-`0834 step 1`, `0834 step 2-3`, `0834 step 4`, `0834 step 5`, `0834 report`.
+`0883 step 1`, `0883 step 2-3`, `0883 step 4`, `0883 step 5`, `0883 report`.
 
 ## Commands (section 6)
 1. `App/`: `.venv/bin/python -m pytest tests/test_calmer_forms.py tests/test_dashboard_calendar.py -q --tb=short -x 2>&1 | tail -30`

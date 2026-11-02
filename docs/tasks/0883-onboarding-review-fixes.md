@@ -1,4 +1,4 @@
-# 0834 Onboarding review fixes (follow-up to 0833)
+# 0883 Onboarding review fixes (follow-up to 0882)
 
 Executor: Haiku 5.5. Alone, no subagents. Branch `claude/project-thread-mb7ww2` (PR #729). Do not push, do not merge.
 
@@ -6,10 +6,10 @@ Status: review
 
 ## 1. Objective
 
-Fix three problems the review of 0833 found, all decided by the owner:
+Fix three problems the review of 0882 found, all decided by the owner:
 
 1. The guest link mail sent on manual stay create can under-report guests to UbyPort: with a blank guest count, `claim.start_claim` stores `declared_guests = 1` and the guest is never asked. Send the mail only when the host typed a guest count, and pass that count.
-2. 0833 step 2 (default 15:00 / 11:00 on new properties) silently bypasses the `times_missing` gate for TTLock door codes. Revert it completely (`booking_site.py` already falls back to 15 for the booking site).
+2. 0882 step 2 (default 15:00 / 11:00 on new properties) silently bypasses the `times_missing` gate for TTLock door codes. Revert it completely (`booking_site.py` already falls back to 15 for the booking site).
 3. The signup workspace name keeps the `+tag` of the e-mail (`jan+booking@x` gives "jan booking"). Drop everything after the first `+`.
 
 ## 2. Context
@@ -29,16 +29,16 @@ Fix three problems the review of 0833 found, all decided by the owner:
 | `App/tests/test_calmer_forms.py` | Step 1 remove one test, Step 3 tests |
 | `App/app/routes/signup.py` | Step 4 plus-tag |
 | `App/tests/test_signup.py` | Step 4 tests |
-| `docs/tasks/0833-faster-onboarding.md` | Step 5 one line |
+| `docs/tasks/0882-faster-onboarding.md` | Step 5 one line |
 
 ## 4. Steps
 
-### Step 1: revert 0833 step 2 (default hours)
+### Step 1: revert 0882 step 2 (default hours)
 
-1a. `App/app/routes/admin.py`. Anchor: `grep -nF '# 0833: a new property starts at the usual 15:00 / 11:00' App/app/routes/admin.py` (about line 1756). Delete exactly these 5 lines (and nothing else):
+1a. `App/app/routes/admin.py`. Anchor: `grep -nF '# 0882: a new property starts at the usual 15:00 / 11:00' App/app/routes/admin.py` (about line 1756). Delete exactly these 5 lines (and nothing else):
 
 ```python
-    # 0833: a new property starts at the usual 15:00 / 11:00 unless the host typed hours.
+    # 0882: a new property starts at the usual 15:00 / 11:00 unless the host typed hours.
     if payload.get("checkin_hour") in (None, ""):
         payload["checkin_hour"] = booking_site.DEFAULT_CHECKIN_HOUR
     if payload.get("checkout_hour") in (None, ""):
@@ -66,7 +66,7 @@ def test_a_new_property_starts_at_15_and_11(host):
     assert (row["checkin_hour"], row["checkout_hour"]) == (15, 11)
 ```
 
-1e. Check: `grep -rn 'DEFAULT_CHECKOUT_HOUR' App/app App/tests --include=*.py | tail -30` prints nothing. Commit `0834 step 1`.
+1e. Check: `grep -rn 'DEFAULT_CHECKOUT_HOUR' App/app App/tests --include=*.py | tail -30` prints nothing. Commit `0883 step 1`.
 
 ### Step 2: claim mail on manual stay create only with a typed guest count
 
@@ -84,10 +84,10 @@ log = logging.getLogger("ubyhost.admin")
 
 Before inserting, `grep -nw 'log' App/app/routes/admin.py | tail -30` must show no existing variable or function named `log` (only the comment "activity log" around line 3119). If there is one, STOP.
 
-2b. Same file, in `reservation_create`. Anchor: `grep -nF '# 0833: a guest e-mail typed on this explicit Create sends the same claim mail as "resend".' App/app/routes/admin.py` (about line 3405). Replace the whole block from that comment line down to and including the line `                db.audit("guest_link_sent_on_create", f"reservation={reservation_id}")`. The block you replace is exactly:
+2b. Same file, in `reservation_create`. Anchor: `grep -nF '# 0882: a guest e-mail typed on this explicit Create sends the same claim mail as "resend".' App/app/routes/admin.py` (about line 3405). Replace the whole block from that comment line down to and including the line `                db.audit("guest_link_sent_on_create", f"reservation={reservation_id}")`. The block you replace is exactly:
 
 ```python
-    # 0833: a guest e-mail typed on this explicit Create sends the same claim mail as "resend".
+    # 0882: a guest e-mail typed on this explicit Create sends the same claim mail as "resend".
     guest_addr = mail.normalise_email(_form_str(form, "guest_email"))
     if guest_addr and mail.mail_enabled():
         reservation = access.reservation(request, reservation_id)
@@ -108,7 +108,7 @@ Before inserting, `grep -nw 'log' App/app/routes/admin.py | tail -30` must show 
 Replace it with exactly:
 
 ```python
-    # 0834: the claim mail goes out only on the full Create form, only to a valid
+    # 0883: the claim mail goes out only on the full Create form, only to a valid
     # guest e-mail, and only when the host typed the guest count. That count is
     # the declared party size. A blank count would store 1 guest and the guest
     # would never be asked, so UbyPort would under-report. The calendar
@@ -140,7 +140,7 @@ Replace it with exactly:
 
 The lines after the block stay unchanged: `    if calendar_json:` then the `JSONResponse(...)` 201 reply, then `    return _back(f"/reservations/{reservation_id}", msg=_flash(request, "flash.reservations.created"))`.
 
-Run the Step 3 command after Step 3; commit Steps 2 and 3 together as `0834 step 2-3` once the tests pass.
+Run the Step 3 command after Step 3; commit Steps 2 and 3 together as `0883 step 2-3` once the tests pass.
 
 ### Step 3: tests in `App/tests/test_calmer_forms.py`
 
@@ -257,21 +257,21 @@ def test_a_plus_tag_is_left_out_of_the_workspace_name():
 Command (from `App/`):
 `.venv/bin/python -m pytest tests/test_signup.py -q --tb=short -x 2>&1 | tail -30`
 
-Commit `0834 step 4`.
+Commit `0883 step 4`.
 
-### Step 5: mark 0833 as partly superseded
+### Step 5: mark 0882 as partly superseded
 
-`docs/tasks/0833-faster-onboarding.md`. Anchor: `grep -nF 'Status: review' docs/tasks/0833-faster-onboarding.md` (line 5). Insert one new line directly after it, with no blank line between:
+`docs/tasks/0882-faster-onboarding.md`. Anchor: `grep -nF 'Status: review' docs/tasks/0882-faster-onboarding.md` (line 5). Insert one new line directly after it, with no blank line between:
 
 ```
-Superseded in part by 0834 (step 2 reverted)
+Superseded in part by 0883 (step 2 reverted)
 ```
 
-Change nothing else in that file. From the repo root run `python3 scripts/context_lint.py 2>&1 | tail -30`; it must report no errors. Commit `0834 step 5`.
+Change nothing else in that file. From the repo root run `python3 scripts/context_lint.py 2>&1 | tail -30`; it must report no errors. Commit `0883 step 5`.
 
 ## 5. Do not touch
 
-`App/app/claim.py`, `App/app/booking_site.py` beyond line 1c, `App/app/templates/`, i18n files, the property editor, `reservation_resend_claim`, the calendar JSON validation block, migrations, `docs/tasks/0833-report.md`. No new mail template, no new i18n key, no new dependency.
+`App/app/claim.py`, `App/app/booking_site.py` beyond line 1c, `App/app/templates/`, i18n files, the property editor, `reservation_resend_claim`, the calendar JSON validation block, migrations, `docs/tasks/0882-report.md`. No new mail template, no new i18n key, no new dependency.
 
 ## 6. Commands
 
@@ -301,4 +301,4 @@ No template or CSS changes, so no browser tests and no screenshots.
 
 ## 9. Report
 
-Write `docs/tasks/0834-report.md` (600 tokens at most): files changed, each section 6 command with its last 5 lines, section 7 ticked, Deviations, Questions. Then set this brief to `Status: review`. Commits as named in each step. Do not push; the orchestrator updates PR #729.
+Write `docs/tasks/0883-report.md` (600 tokens at most): files changed, each section 6 command with its last 5 lines, section 7 ticked, Deviations, Questions. Then set this brief to `Status: review`. Commits as named in each step. Do not push; the orchestrator updates PR #729.

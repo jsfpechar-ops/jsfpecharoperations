@@ -305,7 +305,7 @@ def test_saved_residence_is_not_replaced_by_nationality(host):
 
 def _manual_stay_form(apartment_id, **extra):
     data = {"apartment_id": str(apartment_id), "date_from": "2030-05-01",
-            "date_to": "2030-05-03", "summary": "0833 stay"}
+            "date_to": "2030-05-03", "summary": "0882 stay"}
     data.update(extra)
     return data
 

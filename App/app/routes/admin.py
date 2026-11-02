@@ -3399,7 +3399,7 @@ async def reservation_create(request: Request):
             "updated_at": db.utcnow(),
         },
     )
-    # 0834: the claim mail goes out only on the full Create form, only to a valid
+    # 0883: the claim mail goes out only on the full Create form, only to a valid
     # guest e-mail, and only when the host typed the guest count. That count is
     # the declared party size. A blank count would store 1 guest and the guest
     # would never be asked, so UbyPort would under-report. The calendar
