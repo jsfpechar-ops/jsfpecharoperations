@@ -267,10 +267,20 @@ def run_tesseract(jpeg: bytes) -> str:
         image_path = Path(tmp) / "doc.jpg"
         image_path.write_bytes(jpeg)
         result = subprocess.run(
-            [TESSERACT, str(image_path), "stdout", "-l", "eng", "--psm", "6"],
+            [
+                TESSERACT,
+                str(image_path),
+                "stdout",
+                "-l",
+                "eng",
+                "--psm",
+                "6",
+                "-c",
+                f"tessedit_char_whitelist={_WHITELIST}",
+            ],
             capture_output=True,
             text=True,
-            timeout=25,
+            timeout=15,
         )
     if result.returncode != 0:
         raise NothingRead()
