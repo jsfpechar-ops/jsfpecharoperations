@@ -118,8 +118,8 @@ def add_stay_panel(rec, base, ids):
 
 def add_stay_calendar(rec, base, ids):
     rec.page.goto(base + ids.get("dashboard_path", "/"))
-    rec.tap("[data-cal-day]")
-    rec.tap("[data-cal-day-add]")
+    rec.tap("[data-cal-day]:visible")
+    rec.tap("[data-cal-day-add]:visible")
     rec.fill("#cal-arrival", ids.get("cal_arrival", DEFAULTS["cal_arrival"]))
     rec.fill("#cal-departure", ids.get("cal_departure", DEFAULTS["cal_departure"]))
     rec.save_unpressed()
@@ -195,8 +195,9 @@ def _context(browser, base, cookie):
     context = browser.new_context(
         viewport=VIEWPORT, device_scale_factor=1, is_mobile=True, has_touch=True
     )
-    if cookie:
-        name, _, value = cookie.partition("=")
+    cookies = [cookie] if isinstance(cookie, str) else list(cookie or [])
+    for item in cookies:
+        name, _, value = item.partition("=")
         context.add_cookies([{"name": name, "value": value, "url": base}])
     return context
 

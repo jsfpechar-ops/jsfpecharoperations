@@ -165,6 +165,25 @@ def test_no_complete_guest_means_no_fill_button(host):
     assert 'name="fill_from_guest"' not in page.text
 
 
+def test_first_open_prefills_the_lead_guest_as_buyer(host):
+    entity_id = _add_entity()
+    stay_id = make_stay(_owner(), entity_id=entity_id)
+    _complete_guest(stay_id)
+    page = host.get(f"/invoices/new?reservation_id={stay_id}&entity={entity_id}")
+    assert page.status_code == 200
+    assert 'value="Hlavní 1"' in page.text
+    assert 'value="Brno"' in page.text
+    assert 'name="fill_from_guest"' in page.text
+
+
+def test_no_guest_means_no_prefill_note(host):
+    entity_id = _add_entity()
+    stay_id = make_stay(_owner(), entity_id=entity_id)
+    page = host.get(f"/invoices/new?reservation_id={stay_id}&entity={entity_id}")
+    assert "Check before you issue." not in page.text
+    assert "Vyplněno z údajů hosta" not in page.text
+
+
 def test_fill_guest_without_complete_guest_does_not_issue(host):
     entity_id = _add_entity()
     stay_id = make_stay(_owner(), entity_id=entity_id)

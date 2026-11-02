@@ -1451,6 +1451,7 @@ STRINGS: Dict[str, str] = {
     "invoice.buyer.required": "Nhập tên khách hàng.",
     "invoice.fill_guest.button": "Dùng thông tin của khách",
     "invoice.fill_guest.none": "Lượt lưu trú này chưa có khách đã nhận phòng.",
+    "invoice.fill_guest.prefilled": "Đã điền từ thông tin của khách. Hãy kiểm tra trước khi xuất.",
     "invoice.fill_guest.bic_filled": "Điền từ mã ngân hàng của bạn",
     "invoice.price_hint": "Giá gần nhất của chỗ ở này: %(price)s Kč",
     "invoice.item.accommodation": "Tiền phòng (CZK)",

@@ -217,11 +217,17 @@ def _form_state(request, form, entity) -> Dict[str, Any]:
 
 
 def _form_context(request, entities, entity, *, errors=None, values=None, stay=None):
+    fresh = not values
     values = dict(values or {})
-    if stay and not values and stay["reservation"]["guest_email"]:
+    if stay and fresh and stay["reservation"]["guest_email"]:
         values["buyer_email"] = stay["reservation"]["guest_email"]
     lang = "cs" if _lang(request) == "cs" else "en"
     lead_guest = _lead_guest(stay["reservation"]) if stay else None
+    guest_prefilled = False
+    if stay and fresh and lead_guest:
+        # 0836: suggest the lead guest as buyer on first open; the host checks before issuing.
+        _merge_guest_fill(values, lead_guest)
+        guest_prefilled = bool(values.get("buyer_name"))
     price_hint = ""
     if stay:
         price_hint = _last_stay_price_hint(request, stay["reservation"]["apartment_id"])
@@ -237,6 +243,7 @@ def _form_context(request, entities, entity, *, errors=None, values=None, stay=N
         "stay_label": invoices.stay_label(stay["property_name"], stay["reservation"], lang) if stay else "",
         "extra_kinds": invoices.EXTRA_KINDS,
         "show_fill_guest": bool(lead_guest),
+        "guest_prefilled": guest_prefilled,
         "stay_price_hint": price_hint,
     }
 

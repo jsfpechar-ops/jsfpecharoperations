@@ -75,6 +75,7 @@
       </div>
       {% endif %}
     </div>
+    {% if guest_prefilled %}<p class="hint" role="status">{{ t('invoice.fill_guest.prefilled') }}</p>{% endif %}
     <div class="invoice-buyer-fields">
       <div class="ui-field invoice-f-full">
         <label for="buyer_name">{{ t('invoice.buyer.name') }}</label>
