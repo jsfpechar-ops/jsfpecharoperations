@@ -148,7 +148,7 @@ def test_each_property_form_explanation_renders_once():
     # once across them, and the suggested portal message is gone.
     template = "".join(
         (TEMPLATES / name).read_text(encoding="utf-8")
-        for name in ("apartment_form.html", "_property_overview.html", "_property_calendars.html", "_property_editor.html")
+        for name in ("apartment_form.html", "_property_calendars.html", "_property_editor.html")
     )
     assert template.count("apartment.form.calendars.lede") == 1
     assert template.count("t('guest_links.lede')") == 1

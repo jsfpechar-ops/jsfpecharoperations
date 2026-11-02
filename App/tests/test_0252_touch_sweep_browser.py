@@ -42,8 +42,9 @@ PROBE = r"""() => {
   }
   for (const e of main.querySelectorAll('tr.clickable-row:not(.dashboard-row), a.host-property-card')) {
     if (!shown(e)) continue;
+    const v2Row = e.matches('tr.clickable-row') && e.closest('.props-card');  // v2 property list: no cue in the mockup props view; the row is a link (role=link)
     // v2 stays (0528): the guest name link is the row's open cue (mockup has no Open button)
-    if (!e.querySelector('.row-open, .host-property-card-open, .ui-btn-open, .stay-identity-link')) out.noCue.push(name(e));
+    if (!v2Row && !e.querySelector('.row-open, .host-property-card-open, .ui-btn-open, .stay-identity-link')) out.noCue.push(name(e));
     const r = e.getBoundingClientRect();
     const x = r.left + Math.min(r.width / 2, 120), y = r.top + Math.min(r.height / 2, 24);
     if (y > 0 && y < innerHeight && x < vw) {

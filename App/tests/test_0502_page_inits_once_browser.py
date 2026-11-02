@@ -19,7 +19,6 @@ from tests.test_dashboard_calendar_browser import calendar_origin, calendar_work
 # chosen so that every selector below is present on at least one of them.
 PAGES = [
     ("/reservations?lang=cs", [".action-panel", "#add-stay-panel", "[data-csv-export]", "#csv-export-dialog"]),
-    ("/apartments?lang=cs", ["form[data-inline-timing]"]),
     ("/apartments/{property_id}?lang=cs", ["[data-automation-mode]", "#fee-copy-apply"]),
     ("/housebook?lang=cs", ["#housebook-pdf-dialog", "#csv-export-dialog"]),
 ]

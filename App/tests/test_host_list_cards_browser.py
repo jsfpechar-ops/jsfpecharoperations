@@ -29,17 +29,17 @@ LISTS = {
 # Per-list switch point (measured min-content width + ~40 px), in panel px.
 THRESHOLDS = {"properties": 800, "businesses": 950, "fees": 940}
 
-_LIST_JS = """() => {
-  const panel = document.querySelector('.list-cards');
+_LIST_JS = """([panelSel, actSel]) => {
+  const panel = document.querySelector(panelSel);
   if (!panel) return null;
   const pr = panel.getBoundingClientRect();
   const table = panel.querySelector('table');
-  const cards = getComputedStyle(table.querySelector('thead')).display === 'none';
-  const acts = [...panel.querySelectorAll('tbody td.row-actions a.btn, tbody td.row-actions a.ui-btn, tbody td.row-actions a.ui-btn, tbody td.row-actions .row-menu-trigger')]
+  const cards = table ? getComputedStyle(table.querySelector('thead')).display === 'none' : true;
+  const acts = [...panel.querySelectorAll(actSel)]
     .filter(el => { const r = el.getBoundingClientRect(); return r.width > 1 && r.height > 1; })
     .map(el => { const r = el.getBoundingClientRect();
       return {left: r.left, right: r.right, top: r.top, bottom: r.bottom, text: (el.textContent || '').trim().slice(0, 20)}; });
-  const labels = [...panel.querySelectorAll('tbody tr:first-child td')].map(td => {
+  const labels = !table ? [] : [...panel.querySelectorAll('tbody tr:first-child td')].map(td => {
     const b = getComputedStyle(td, '::before'); return b.content;
   });
   const box = sel => { const el = document.querySelector(sel); if (!el) return null;
@@ -65,14 +65,20 @@ def test_list_panels_never_scroll_sideways_and_actions_stay_visible(acc, base):
                 page.goto(base + _with_lang(path, lang))
                 _settle(page)
                 _dismiss_prompt(page)
-                result = page.evaluate(_LIST_JS)
+                if name == "properties":
+                    # v2: table from 1024 px (.props-card), phone cards below (.props-phone, whole card is the link)
+                    sels = (".props-card", "tbody td.row-actions a.btn, tbody td.row-actions a.ui-btn, tbody td.row-actions .row-menu-trigger") if width >= 1024 else (".props-phone", "a.card.prop")
+                else:
+                    sels = (".list-cards", "tbody td.row-actions a.btn, tbody td.row-actions a.ui-btn, tbody td.row-actions .row-menu-trigger")
+                result = page.evaluate(_LIST_JS, list(sels))
                 label = (name, lang, width, "collapsed" if collapsed else "expanded")
                 if result is None:
                     failures.append((label, "no list panel"))
                     continue
                 if result["scrollWidth"] > result["clientWidth"] + 1:
                     failures.append((label, "inner horizontal scroll", result["scrollWidth"], result["clientWidth"]))
-                if result["cards"] != (result["panelWidth"] < THRESHOLDS[name]):
+                expect_cards = width < 1024 if name == "properties" else result["panelWidth"] < THRESHOLDS[name]
+                if result["cards"] != expect_cards:
                     failures.append((label, "layout does not follow the panel width", result["panelWidth"], result["cards"]))
                 if not result["acts"]:
                     failures.append((label, "no visible row action"))
@@ -100,7 +106,7 @@ def test_list_panels_never_scroll_sideways_and_actions_stay_visible(acc, base):
                     failures.append((label, "760 px must be cards", result["panelWidth"]))
                 if result["cards"]:
                     seen_cards += 1
-                    if not any(text not in ('none', 'normal', '""') for text in result["labels"]):
+                    if result["labels"] and not any(text not in ('none', 'normal', '""') for text in result["labels"]):
                         failures.append((label, "cards without labels", result["labels"]))
                 else:
                     seen_table += 1

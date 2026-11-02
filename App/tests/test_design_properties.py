@@ -9,8 +9,8 @@ from tests.test_signed_in_chrome import empty_host, host_with_property  # noqa: 
 def test_properties_list_header_tabs_and_icon(host_with_property):
     page = host_with_property.get("/apartments?lang=en").text
     assert page.count("<h1") == 1 and 'data-body-kind="list"' in page
-    assert 'class="ui-tabs" data-sub-tabs' in page and 'data-icon="house"' in page
-    assert page.count('class="ui-btn ui-btn-primary"') == 1
+    assert 'data-icon="house"' in page
+    assert page.count('<a class="btn" href="/apartments/new"') == 1
 
 
 def test_property_page_keeps_local_tabs_without_section_tabs(host_with_property):
@@ -18,8 +18,8 @@ def test_property_page_keeps_local_tabs_without_section_tabs(host_with_property)
     match = re.search(r'data-href="(/apartments/\d+)"', page)
     assert match
     detail = host_with_property.get(match.group(1) + "?lang=en").text
-    assert '<nav class="ui-tabs property-tabs"' in detail and "data-sub-tabs" not in detail
-    assert detail.count('data-property-tab="') == 3 and 'class="ui-ph-back"' in detail
+    assert 'id="sec-basics"' in detail and "data-sub-tabs" not in detail
+    assert 'id="sec-basics"' in detail and 'class="crumb"' in detail
     assert 'data-body-kind="detail"' in detail and "nav_icon" not in detail
 
 

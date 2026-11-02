@@ -316,8 +316,8 @@ def test_setup_checklist_is_a_padded_card(wide_host, wide_base):
         facts = page.evaluate(
             """() => ({
                 box: !!document.querySelector('.host-checklist'),
-                dots: document.querySelectorAll('.host-property-grid [data-health-check] .host-property-card-dot').length,
-                details: !!document.querySelector('.host-workspace details.setup-readiness-help[data-setup-status]'),
+                dots: document.querySelectorAll('details.prop-sec > summary .dot').length,
+                details: !!document.querySelector('details.setup-readiness-help[data-setup-status]'),
             })"""
         )
         print(f"setup health measured: {facts}")
