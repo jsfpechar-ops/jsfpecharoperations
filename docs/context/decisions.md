@@ -52,7 +52,7 @@ Append-only.
 - 2026-10-29 | Connect accounts: full Stripe Dashboard + Stripe collectors (Express+Stripe is preview-only; Express pairs with application liability, rejected) | owner | 0439
 
 - 2026-10-30 | [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; Haiku-only execution; manual cutover | 0455–0456
-- 2026-10-31 | Postgres now (#592), Go port G1–G6 now after cutover + tenancy, per-feature rollback, no load-test gate. `ws_uby_test` and golden files dropped; XML snapshot test before G5. [workflow] Fable briefs critical items, Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
+- 2026-10-31 | Postgres (#592), then Go G1–G6, per-feature rollback, no load-test gate. [workflow] Fable briefs critical items, Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
 - 2026-10-31 | Every change lean: no dead code, no extras; dead code found on the way is removed in its own small commit or PR | owner | plan v4
 - 2026-10-31 | Approval gates waived for the whole PostgreSQL and Go migration; the bar stays (verified backup, rehearsal on a production copy, per-table counts and hashes, suite green on PG, SQLite as rollback, automatic rollback). Owner acts only where his hands are needed | owner | 0463
 - 2026-10-31 | D2 required reviewer on `production`; D3 goose (step 10); D4 Postgres job table with `SKIP LOCKED`. D1: PostgreSQL self-hosted as a Compose service on the current 8 GB Lightsail server (socket, no port, 1 GB cap), not managed; nightly encrypted `pg_dump` in the existing backup, restore proven at every rehearsal; no pgBackRest | owner | 0463, 0464
@@ -61,3 +61,4 @@ Append-only.
 - 2026-11-01 | Host redesign: add vendored Hotwire Turbo (MIT, ~25 KB) for page-body swaps; redesign needs owner OK of mockups before build or merge | owner | #614
 - 2026-10-31 | D3 detail: goose v3.29.0, asset goose_linux_x86_64, SHA-256 cc56e2f75532a4dd52f5ef2d31db0121e91079a9c2617bc0ad4e04e2d41c228b | owner | 0465b
 - 2026-11-01 | Go: module go/, stdlib, pgx v5, go-ntlmssp v0.1.1, go-qrcode (11-02); crypto via Python fixtures | owner (waiver) | 0474, 0481, 0684
+- 2026-11-02 | [workflow] Read hook: over 350 lines needs a limit; ALLOW_FULL_READ=1 | owner | 0810
