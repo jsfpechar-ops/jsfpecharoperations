@@ -1,5 +1,5 @@
 # 0683: Go Web Push sender, push test button, push job
-Status: review
+Status: todo
 Depends on: 0678 (pushweb, on main) | Base commit: origin/main | Branch: task/0683-go-push-sender
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 90k tokens
 ## 1. Objective
