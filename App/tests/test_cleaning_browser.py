@@ -701,3 +701,60 @@ def test_cleaning_form_pages_fit_the_viewport_and_take_screenshots(workspace, or
                 shot(page, name)
         finally:
             browser.close()
+
+
+def _save_cleaning_shot(page, name):
+    """0815 screenshots: written only when UBYHOST_TASK_SHOTS=1."""
+    if os.environ.get("UBYHOST_TASK_SHOTS") == "1":
+        page.screenshot(path=str(Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0814" / name))
+
+
+@pytest.mark.parametrize("width", [390, 320])
+def test_phone_cleaning_calendar_tags_only(workspace, origin, width):
+    ws = workspace
+    with sync_api.sync_playwright() as playwright:
+        browser, context = browser_context(playwright, ws, origin, width)
+        page = context.new_page()
+        page.goto(origin + "/cleaning?lang=en")
+        loaded(page)
+        assert page.locator("#cleaning-list").is_hidden()
+        assert page.locator(".cleaning-legend").is_hidden()
+        assert page.locator(".cal-week-events").count() == 0
+        assert page.locator(".cal-day.has-stays").count() == 0
+        tagged = page.locator(".cal-day.has-cleaning")
+        assert tagged.count() >= 1
+        assert tagged.first.locator(".cal-clean-tag svg").count() >= 1
+        assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
+        page.evaluate("scrollTo(0, 0)")
+        _save_cleaning_shot(page, "cleaning-390.png") if width == 390 else None
+        tagged.first.locator(".cal-day-number").click()
+        assert page.locator("[data-cal-day-dialog][open]").is_visible()
+        assert page.locator("[data-cal-day-list] .cal-event").count() >= 1
+        assert page.locator("[data-cal-day-list] .cal-event:not(.is-cleaning-marker)").count() == 0
+        page.locator("[data-cal-day-add]").click()
+        assert page.locator("[data-cal-create]").is_visible()
+        assert page.locator('[data-cal-type-choice="cleaning"]').get_attribute("aria-pressed") == "true"
+        context.close()
+        browser.close()
+
+
+@pytest.mark.parametrize("width", [768, 1280])
+def test_desktop_cleaning_calendar_tags_and_side_panel(workspace, origin, width):
+    ws = workspace
+    with sync_api.sync_playwright() as playwright:
+        browser, context = browser_context(playwright, ws, origin, width)
+        page = context.new_page()
+        page.goto(f"{origin}/cleaning?lang=en&cal_view=calendar&cal_property={ws['home']}")
+        loaded(page)
+        assert page.locator("#cleaning-list").is_hidden()
+        assert page.locator(".cal-week-events").count() == 0
+        tagged = page.locator(".cal-day.has-cleaning")
+        assert tagged.count() >= 1
+        assert tagged.first.locator(".cal-tile-chip.cal-clean-chip").is_visible()
+        _save_cleaning_shot(page, f"cleaning-{width}.png")
+        tagged.first.locator(".cal-day-number").click()
+        assert page.locator("[data-cal-day-dialog][open]").is_visible()
+        assert page.locator("[data-cal-day-list] .cal-event").count() >= 1
+        assert page.locator("[data-calendar]").evaluate("element => element.classList.contains('has-panel')")
+        context.close()
+        browser.close()

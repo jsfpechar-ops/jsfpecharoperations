@@ -54,38 +54,38 @@
   {% set ny_lines = (needs_you.lines | rejectattr('kind', 'equalto', 'setup') | list) if banner_showing else needs_you.lines %}
 
   {#- 0729: phone v2 top (Airbnb style): Today/Upcoming switch and one headline. -#}
-  <div class="ph-top ph-only{{ ' ph-hide' if cal_view }}">
+  <div class="ph-top ph-only{{ ' ph-hide cal-hide' if cal_view }}">
     <nav class="seg" aria-label="{{ t('dashboard.title') }}"><a class="on" href="/" aria-current="page">{{ t('nav.today') }}</a><a href="/reservations">{{ t('dashboard.ph.upcoming') }}</a></nav>
   </div>
   <div class="head ov-head"><div>
     {#- 0729: the page's one h1: "Overview" on desktop, the headline on phone. -#}
-    <h1 class="hl{{ ' done' if not ny_lines }}"><span class="ph-hide">{{ t('dashboard.title') }}</span><span class="ph-only">{% if cal_view %}{{ t('nav.calendar') }}{% elif ny_lines %}{{ tp('dashboard.ph.need', ny_lines | length) }}{% else %}{{ t('dashboard.ph.done') }}{% endif %}</span></h1>
-    <p class="sub ph-hide">{{ today.isoformat() | date_long(lang) }}</p>
-    <div class="ov-quiet ph-hide">
-    <details class="ui-how ov-how ph-hide" data-how="dashboard">
+    <h1 class="hl{{ ' done' if not ny_lines }}"><span class="ph-hide{{ ' cal-hide' if cal_view }}">{{ t('dashboard.title') }}</span><span class="ph-only">{% if cal_view %}{{ t('nav.calendar') }}{% elif ny_lines %}{{ tp('dashboard.ph.need', ny_lines | length) }}{% else %}{{ t('dashboard.ph.done') }}{% endif %}</span></h1>
+    <p class="sub ph-hide{{ ' cal-hide' if cal_view }}">{{ today.isoformat() | date_long(lang) }}</p>
+    <div class="ov-quiet ph-hide{{ ' cal-hide' if cal_view }}">
+    <details class="ui-how ov-how ph-hide{{ ' cal-hide' if cal_view }}" data-how="dashboard">
       <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
       <div class="ui-how-body">
         <ol class="ui-how-steps">{% for n in (1, 2, 3) %}<li>{{ t('how.dashboard.' ~ n) }}</li>{% endfor %}</ol>
         <a class="ui-how-more" href="/guide#overview">{{ t('how.more') }}</a>
       </div>
     </details>
-    <p class="ov-links ph-hide">
+    <p class="ov-links ph-hide{{ ' cal-hide' if cal_view }}">
       <a href="/cleaning/new" class="ov-link">+ {{ t('nav.cleaning') }}</a>
       {% if demo_loaded %}<form method="post" action="/demo/reset" class="inline ov-inline ph-hide" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">{{ ui_button(t('demo.clear'), 'quiet', type='submit') }}</form>{% endif %}
     </p>
     </div>
   </div>
-  <a class="btn{{ ' ph-hide' if cal_view }}" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">{{ t('stays.add_stay') }}</a></div>
+  <a class="btn{{ ' ph-hide cal-hide' if cal_view }}" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">{{ t('stays.add_stay') }}</a></div>
 
   {#- 0717: alerts with no todo card of their own; a stay's alert stays hidden when its line is already here. -#}
   {% set ny_stay_ids = needs_you.lines | selectattr('stay_id') | map(attribute='stay_id') | list %}
   {% set ny_alert_ids = needs_you.lines | selectattr('dismiss_id') | map(attribute='dismiss_id') | list %}
   {% with open_alerts = open_alerts | rejectattr('reservation_id', 'in', ny_stay_ids) | rejectattr('id', 'in', ny_alert_ids) | list, alerts_expanded = true, ph_hide_pin = true %}{% include "_host_alerts.html" %}{% endwith %}
-  <div class="ph-hide">{{ onboarding_banner(onboarding) }}</div>
+  <div class="ph-hide{{ ' cal-hide' if cal_view }}">{{ onboarding_banner(onboarding) }}</div>
   {% if not rows and feed_count %}{{ ui_empty(t('dashboard.empty.no_stays')) }}
   {% elif not rows %}{{ ui_empty(t('dashboard.empty.no_feed'), '', t('dashboard.empty.connect_calendar'), '/apartments/' ~ apartments[0].id ~ '?view=bookings#calendars', primary=false) }}
   {% endif %}
-  <section id="needs-action"{% if cal_view %} class="ph-hide"{% endif %} data-needs-you-card data-dashboard-refresh="stats" aria-labelledby="needs-you-title">
+  <section id="needs-action"{% if cal_view %} class="ph-hide cal-hide"{% endif %} data-needs-you-card data-dashboard-refresh="stats" aria-labelledby="needs-you-title">
     <h2 id="needs-you-title" class="sec ph-hide">{{ t('needs_you.title') }}</h2>
     <div class="todo ov-section">
     {% if ny_lines %}
@@ -104,14 +104,14 @@
   {% set focus_is_urgent = focus and focus.urgency in ('overdue', 'urgent') %}
   {% set finish_card_showing = onboarding and onboarding.finished and onboarding.finish and not onboarding.dismissed %}
   {% if finish_card_showing and focus_is_urgent %}{{ onboarding_finish_strip(onboarding) }}{% endif %}
-  {% if finish_card_showing and not focus_is_urgent %}<div class="ph-hide">{{ onboarding_finish(onboarding) }}</div>{% endif %}
+  {% if finish_card_showing and not focus_is_urgent %}<div class="ph-hide{{ ' cal-hide' if cal_view }}">{{ onboarding_finish(onboarding) }}</div>{% endif %}
   {% if month_summary %}
-  <div class="quiet ov-month ph-hide" data-dashboard-month><span>{{ t('dashboard.month.label') }}</span> <span class="ov-mi"><b>{{ month_summary.guests }}</b> {{ tp('dashboard.month.guests', month_summary.guests) }}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{ month_summary.nights }}</b> {{ tp('dashboard.month.nights', month_summary.nights) }}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{ month_summary.reported }}</b> {{ tp('dashboard.month.reported', month_summary.reported) }}</span></div>
+  <div class="quiet ov-month ph-hide{{ ' cal-hide' if cal_view }}" data-dashboard-month><span>{{ t('dashboard.month.label') }}</span> <span class="ov-mi"><b>{{ month_summary.guests }}</b> {{ tp('dashboard.month.guests', month_summary.guests) }}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{ month_summary.nights }}</b> {{ tp('dashboard.month.nights', month_summary.nights) }}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{ month_summary.reported }}</b> {{ tp('dashboard.month.reported', month_summary.reported) }}</span></div>
   {% endif %}
 
-  <h2 class="ov-cal-block{{ ' ph-hide' if cal_view }}">{{ t('calendar.calendar') }}</h2>
+  <h2 class="ov-cal-block{{ ' ph-hide cal-hide' if cal_view }}">{{ t('calendar.calendar') }}</h2>
   {% set wd = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'] if lang == 'cs' else ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'] %}
-  <div class="scroll-x ov-cal-block{{ ' ph-hide' if cal_view }}">
+  <div class="scroll-x ov-cal-block{{ ' ph-hide cal-hide' if cal_view }}">
   <div class="card cal ov-section">
     <div class="cgrid"><div></div>{% for d in cal_days %}<div class="cd{{ ' today' if loop.first }}">{{ wd[d.weekday()] }} {{ d.day }}</div>{% endfor %}</div>
     {% for row in cal_rows %}
@@ -119,11 +119,11 @@
     {% endfor %}
   </div>
   </div>
-  <p class="ov-cal-more ov-cal-block{{ ' ph-hide' if cal_view }}"><a href="/?cal_view=calendar" class="ov-cal-link">{{ t('dashboard.calendar.full') }}</a></p>
+  <p class="ov-cal-more ov-cal-block{{ ' ph-hide cal-hide' if cal_view }}"><a href="/?cal_view=calendar" class="ov-cal-link">{{ t('dashboard.calendar.full') }}</a></p>
   {% if cal_view %}{% include "_dashboard_calendar.html" %}{% endif %}
 
-  <h2 class="sec{{ ' ph-hide' if cal_view or not key_rows }}"><span class="ph-hide">{{ t('dashboard.today.title') }}</span><span class="ph-only">{{ t('dashboard.ph.window') }}</span></h2>
-  <div class="hs ph-only{{ ' ph-hide' if cal_view or not (key_rows or next_arrival) }}">
+  <h2 class="sec{{ ' ph-hide cal-hide' if cal_view or not key_rows }}"><span class="ph-hide">{{ t('dashboard.today.title') }}</span><span class="ph-only">{{ t('dashboard.ph.window') }}</span></h2>
+  <div class="hs ph-only{{ ' ph-hide cal-hide' if cal_view or not (key_rows or next_arrival) }}">
   {% for row in key_rows %}
     {% set reservation = row.reservation %}{% set progress = row.progress %}{% set cell = row.deadline_cell %}
     {% set stay_label = reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else reservation.internal_name %}

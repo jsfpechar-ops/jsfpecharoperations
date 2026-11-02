@@ -76,6 +76,7 @@
   if (!root) return;
   const cleaningMode = root.dataset.cleaning === "true";
   const readOnly = root.dataset.readonly === "true";
+  const hostCleaning = cleaningMode && !readOnly; // 0815: host cleaning page shows cleaning tags only
   const cleaningLabels = JSON.parse(document.querySelector("[data-cleaning-labels]")?.textContent || "{}");
   const $ = selector => root.querySelector(selector);
   const $$ = selector => Array.from(root.querySelectorAll(selector));
@@ -218,8 +219,9 @@
     return labels["status_" + event.status] || labels.booked;
   }
   function propertyColor(id) { return ["teal", "blue", "purple"][Math.abs(Number(id)) % 3]; }
-  function phoneDots() { return !cleaningMode && matchMedia("(max-width:767px)").matches; }
-  function tiles() { return !cleaningMode && view() === "calendar" && state.scale === "month"; }
+  // 0815: the host cleaning page uses the host calendar tiles; the shared cleaner page (read-only) keeps its list.
+  function phoneDots() { return !(cleaningMode && readOnly) && matchMedia("(max-width:767px)").matches; }
+  function tiles() { return !(cleaningMode && readOnly) && view() === "calendar" && state.scale === "month"; }
   function appendCleaningIcon(node, className) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("viewBox", "0 0 24 24");
@@ -282,7 +284,7 @@
     const bookingBudgetDefault = cleaningMode ? 1 : (mobile ? 1 : 2);
     for (let week = start; week < end; week = addDays(week, 7)) {
       const until = addDays(week, 7);
-      const bookings = lanes(state.events.filter(event => event.kind !== "cleaning"), week, until);
+      const bookings = lanes(state.events.filter(event => event.kind !== "cleaning" && !hostCleaning), week, until);
       const cleanings = lanes(state.events.filter(event => event.kind === "cleaning"), week, until);
       const bookingBudget = cleanings.count ? 1 : bookingBudgetDefault;
       const visibleBookings = bookings.segments.filter(segment => segment.lane < bookingBudget);
@@ -301,7 +303,19 @@
         button.type = "button"; button.dataset.calDay = date;
         button.setAttribute("aria-label", format("select_day", { date: fullDate(date) }));
         button.title = labels.keyboard;
-        if (dots) {
+        if (dots && hostCleaning) {
+          const dayCleanings = state.events.filter(event => event.kind === "cleaning" && displayOverlap(event, date, addDays(date, 1)));
+          const marks = el("div", "cal-dots");
+          marks.dataset.calDots = String(dayCleanings.length);
+          dayCleanings.slice(0, 2).forEach(() => { const tag = el("span", "cal-clean-tag"); appendCleaningIcon(tag, "cal-cleaning-icon"); marks.append(tag); });
+          if (dayCleanings.length > 2) marks.append(el("span", "cal-dot-more", "+" + String(dayCleanings.length - 2)));
+          button.append(marks);
+          const chips = el("div", "cal-tile-chips");
+          dayCleanings.slice(0, 2).forEach(event => { const chip = el("span", "cal-tile-chip cal-clean-chip"); appendCleaningIcon(chip, "cal-cleaning-icon"); chip.append(el("span", "", event.startTime || (cleaningLabels.title || labels.cleaning))); chips.append(chip); });
+          if (dayCleanings.length > 2) { const more = el("span", "cal-tile-more", "+" + String(dayCleanings.length - 2)); more.dataset.calMore = date; chips.append(more); }
+          button.append(chips);
+          if (dayCleanings.length) day.classList.add("has-cleaning");
+        } else if (dots) {
           const dayEvents = state.events.filter(event => event.kind !== "cleaning" && displayOverlap(event, date, addDays(date, 1)));
           const marks = el("div", "cal-dots");
           marks.dataset.calDots = String(dayEvents.length);
@@ -432,7 +446,7 @@
     }
     timeline.append(heading);
     state.properties.filter(property => !state.property || String(property.id) === state.property).forEach(property => {
-      const events = state.events.filter(event => event.propertyId === property.id);
+      const events = state.events.filter(event => event.propertyId === property.id && (!hostCleaning || event.kind === "cleaning"));
       const layout = lanes(events, start, end);
       const row = el("div", "cal-gantt-row");
       const name = el("div", "cal-gantt-name"); name.title = property.name;
@@ -590,7 +604,7 @@
     dayListDate = start; dayListEnd = addDays(end, 1);
     $("[data-cal-day-dialog] #cal-day-title").textContent = end > start ? shortDate(start) + " – " + shortDate(dayListEnd) : shortDate(start);
     const list = $("[data-cal-day-list]"); list.replaceChildren(); list.className = "cal-day-list";
-    state.events.filter(event => displayOverlap(event, start, dayListEnd)).forEach(event => list.append(eventLink(event)));
+    state.events.filter(event => displayOverlap(event, start, dayListEnd) && (!hostCleaning || event.kind === "cleaning")).forEach(event => list.append(eventLink(event)));
     root.classList.add("has-panel");
     if (!dayDialog.open) { focusReturn.set(dayDialog, document.activeElement); dayDialog.show(); }
   }
@@ -604,7 +618,7 @@
   function openDay(day) {
     dayListDate = day; dayListEnd = addDays(day, 1); $("[data-cal-day-dialog] #cal-day-title").textContent = cleaningMode ? fullDate(day) : format("day_stays", { date: fullDate(day) });
     const list = $("[data-cal-day-list]"); list.replaceChildren(); list.className = "cal-day-list";
-    const events = state.events.filter(event => displayOverlap(event, day, addDays(day, 1)));
+    const events = state.events.filter(event => displayOverlap(event, day, addDays(day, 1)) && (!hostCleaning || event.kind === "cleaning"));
     events.forEach(event => list.append(eventLink(event)));
     if (!events.length) list.append(el("p", "cal-empty", labels.none_today));
     show(dayDialog);
@@ -974,6 +988,7 @@
   root.addEventListener("calendar:refresh", load);
   if (cleaningMode) {
     $("[data-cal-day-add]").hidden = readOnly;
+    if (!readOnly) $("[data-cal-day-add]").textContent = labels.add_cleaning;
     root.querySelectorAll("[data-cal-display='guests']").forEach(input => { input.closest("label").hidden = true; });
   }
   load();
