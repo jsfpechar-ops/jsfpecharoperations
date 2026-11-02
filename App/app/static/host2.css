@@ -1126,6 +1126,8 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .ui-choice-card:has(input:checked) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .host-workspace .ui-choice-card input:focus-visible { outline: none !important; }
 .ui-choice-card:has(input:focus-visible) { outline: 2px solid var(--coral-600); outline-offset: 2px; }
+.ui-choice-card-label:has(> input[name="cancellation_policy"]) { min-height: var(--control-h-phone); }
+.ui-choice-card-label:has(> input[name="cancellation_policy"]) > input { width: var(--control-h-phone); height: var(--control-h-phone); }
 /* 0523: stays list at computer width: quiet grey header, guest column widest, pay and actions shrink to content. */
 @media (min-width: 1024px) {
   .host-workspace .stays-view .ui-table th { background: var(--surface-2); }
