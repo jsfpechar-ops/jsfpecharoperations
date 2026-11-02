@@ -1353,7 +1353,9 @@ body.v2 .guide-page .quick-choice-option{position:relative;display:inline-flex;a
 body.v2 .guide-page .quick-choice-option input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
 body.v2 .guide-page .quick-choice-option:has(input:checked){border-color:var(--ink);background:var(--ink);color:#fff}
 body.v2 .guide-page .quick-choice-option:focus-within{outline:2px solid #d0452d;outline-offset:2px}
-body.v2 .guide-page .quick-choice-option>span{display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;text-align:center}
+body.v2 .guide-page .quick-choice-option>span{display:flex;align-items:center;justify-content:center;width:100%;min-height:49px;border-radius:inherit;text-align:center;transition:background-color .15s}
+body.v2 .guide-page .quick-choice-option input:checked+span{background:var(--ink);color:#fff}
+body.v2 .guide-page .quick-choice-option input:focus-visible+span{box-shadow:0 0 0 2px #d0452d}
 body.v2 .guide-page dl.ui-facts{display:grid;gap:12px;margin:0}
 body.v2 .guide-page dl.ui-facts>div{display:grid;grid-template-columns:minmax(0,200px) minmax(0,1fr);gap:4px 16px;padding-top:12px;border-top:1px solid var(--line)}
 body.v2 .guide-page dl.ui-facts>div:first-child{padding-top:0;border-top:0}
@@ -1417,6 +1419,8 @@ body.v2 .help-tip{position:relative;display:inline-flex;flex:none;align-items:ce
 body.v2 .help-tip-btn{position:relative;isolation:isolate;width:24px;height:24px;min-width:24px;min-height:24px;margin:-3px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--ink3);font-size:12px;line-height:1;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
 body.v2 .help-tip-btn::after{content:"";position:absolute;z-index:-1;left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%);border:1px solid var(--line);border-radius:50%;box-sizing:border-box}
 @media (max-width:1023px){body.v2 .help-tip-btn{width:44px;height:44px;min-width:44px;min-height:44px;margin:-13px -26px -13px 0}body.v2 .help-tip-btn::after{left:0;top:13px;transform:none}}
+/* 0872: the phone tap box of a "?" at the end of a line may reach past the gutter; main clips it instead of scrolling sideways */
+@media (max-width:1023px){body.v2 main{overflow-x:clip}}
 body.v2 .heading-with-tip,body.v2 .prop-name-tip,body.v2 .havel-name-tip,body.v2 .prop-new .heading-with-tip{display:block}
 body.v2 .heading-with-tip>:not(.help-tip),body.v2 .prop-name-tip>:not(.help-tip),body.v2 .havel-name-tip>:not(.help-tip){min-width:0;display:inline;vertical-align:middle}
 @media (max-width:1023px){body.v2 .cl-v2-shares .cleaning-actions{flex-direction:row;flex-wrap:wrap}body.v2 .cl-v2-shares .cleaning-actions .ui-btn{width:auto}}
@@ -1702,5 +1706,3 @@ body.v2 .settings-lane .set-row::after,body.v2 .settings-lane .document-links a:
 body.v2 details.prop-sec .help-tip-btn{display:none}
 body.v2 details.prop-sec .help-tip{display:block}
 body.v2 details.prop-sec .help-tip-body,body.v2 details.prop-sec .help-tip[data-js]>.help-tip-body{position:static;display:block;max-width:none;width:auto;margin:2px 0 0;padding:0;background:none;border:0;box-shadow:none;font-size:12px;color:var(--ink3)}
-/* 0872 /onboarding 360 px: the skip "?" tap box stays inside the card (CI fonts are wider than local) */
-@media (max-width:1023px){body.v2 .onboarding-welcome .help-tip-btn{margin-right:0}}
