@@ -1595,3 +1595,12 @@ body.v2 form.property-settings-form .savebar .btn[type="submit"],body.v2 form.pr
 body.v2 form.property-settings-form .savebar:has([data-unsaved-reset]:not([hidden])) a.btn.ghost{display:none}
 body.v2 form.property-settings-form .savebar [hidden]{display:none}
 @media (max-width:1023px){body.v2 form.property-settings-form .savebar,body.v2 form.property-settings-form:has(details.prop-sec[open]) .savebar{bottom:calc(var(--tabbar-h) + var(--tabbar-safe));padding-bottom:12px}}
+
+/* 0852 */
+body.v2 a.ui-btn-primary{color:#fff}
+body.v2 .e-page .stay-command-actions .ui-btn-quiet{align-self:stretch;font-size:14px}
+body.v2 #stay-fee-settings > .field:has(> .copyrow){grid-column:1 / -1}
+body.v2 .prop-sec .copyrow{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+body.v2 .prop-sec .copyrow > select#fee-copy-source{margin-bottom:0;flex:1 1 220px;min-width:0}
+body.v2 .props-card thead{display:table-header-group}
+@media (max-width:1023px){body.v2 .e-page table.ui-table-stack thead{display:none}}

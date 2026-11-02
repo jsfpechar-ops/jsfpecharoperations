@@ -518,7 +518,7 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                             "dates_changed_resign alerts are filing gates and must remain non-dismissible"
                         )
                         assert geometry["alertStack"] is None, geometry["alertStack"]
-                    elif name in ("properties", "fee-setup", "property-detail", "property-detail-configured", "guest-links", "automation", "smart-locks"):  # v2 property pages (0538)
+                    elif name in ("properties", "fee-setup", "property-detail", "property-detail-configured", "guest-links", "automation", "smart-locks", "invoice-new-picker", "invoice-new-selected", "invoice-detail", "submission-detail"):  # v2 property pages (0538)
                         # 0538: the v2 shell does not render the alert stack (base.html), as on the dashboard
                         assert geometry["alertStack"] is None, (name, lang, width, geometry["alertStack"])
                     else:
@@ -832,8 +832,8 @@ def test_collapsed_sidebar_keeps_dashboard_and_stays_lanes_aligned(wide_host, wi
             }])
             page = context.new_page()
             for key, path, selector in (
-                # 0720c: v2 `/` has no sidebar collapse button; the collapse case runs on /payments (old shell, 0785a).
-                ("payments", "/payments", ".ui-section"),
+                # 0720c: v2 `/` has no sidebar collapse button; the collapse case runs on /invoices (old shell, 0785a).
+                ("invoices", "/invoices", ".ui-table-wrap, .ui-empty"),
                 ("stays", "/reservations", ".stays-desk"),
             ):
                 response = page.goto(f"{wide_base}{path}?lang={lang}")
@@ -965,8 +965,8 @@ def _rail_context(browser, wide_host, wide_base, width, collapsed, **options):
     return context
 
 
-# 0720c: the rail cases run on /payments (old shell, no `v2` set, 0785a); v2 `/` has no `button[data-sidebar-collapse]`.
-def _rail_page(context, wide_base, path="/payments"):
+# 0720c: the rail cases run on /invoices (old shell, no `v2` set, 0785a); v2 `/` has no `button[data-sidebar-collapse]`.
+def _rail_page(context, wide_base, path="/invoices"):
     page = context.new_page()
     response = page.goto(f"{wide_base}{path}")
     assert response and response.status == 200
