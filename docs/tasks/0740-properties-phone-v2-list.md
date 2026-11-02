@@ -1,6 +1,6 @@
 # 0740 brief: phone v2 properties list (Airbnb listings style)
 
-Status: blocked
+Status: review (test follow-ups moved to 0741 step 0)
 Executor: Haiku 5.5, alone, on branch `claude/project-thread-b9cg54` in `/home/claude/jsfpecharoperations` (already checked out; do not switch branches, do not push).
 
 ## 1. Objective
@@ -18,7 +18,11 @@ Desktop (>= 1024 px) must not change at all.
 - `.ph-hide` hides below 1024 px; `.ph-only` (app2.css ~line 408) shows only below 1024 px. Check both with grep before use.
 - Standing rule for tests: you may change assertions that only check the phone property cards below 1024 px (cover height, chips inside `.props-phone`, `.props-top`) in `App/tests/test_0281_card_borders_browser.py`, `test_host_list_cards_browser.py`, `test_design_guardrails_browser.py`, `test_host_wide_geometry_browser.py` and the `properties` entry of `App/tests/v2_mockup.py`. Change no desktop assertion and no other test; if another test fails, stop and write it in the report.
 
-## 3. Steps
+## 3. Files
+
+`App/app/templates/apartments.html`, i18n files, `App/app/static/app2.css`, `base.html`, `static_versions.json`, `v2_mockup.py`, `catalog.json`, the tests in section 2.
+
+## 4. Steps
 
 1. `apartments.html`:
    a. Delete the line `<div class="top props-top">…</div>`.
@@ -79,4 +83,23 @@ Desktop (>= 1024 px) must not change at all.
    ```
    Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>
    ```
-9. Report `docs/tasks/0740-report.md`: changed files, command tails, overrides added, deviations. Commit it with the work.
+
+## 5. Do not touch
+
+Desktop (>= 1024 px) rules and markup, `docs/design/mockup/`.
+
+## 6. Commands
+
+The test commands in step 7, from `App/`.
+
+## 7. Acceptance
+
+Step 7 commands pass with 0 skipped.
+
+## 8. Stop and ask
+
+A test outside the standing rule fails.
+
+## 9. Report
+
+`docs/tasks/0740-report.md`: changed files, command tails, overrides added, deviations. Commit it with the work.
