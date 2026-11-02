@@ -1,6 +1,6 @@
 # 0763: Guests can open the bank-transfer (QR) payment page
 
-Status: todo
+Status: in-progress
 Depends on: 0762 (stacked) | Base commit: task/0762-payment-services head | Branch: task/0763-qr-guest-link (check it out; it already holds this brief)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
