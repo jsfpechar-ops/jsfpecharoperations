@@ -24,7 +24,7 @@ from tests.conftest import login_as
 sync_api = pytest.importorskip("playwright.sync_api")
 
 PAGES = ("/settings", "/entities", "/privacy-requests", "/settings/archived")
-WIDTHS = (390, 1280)
+WIDTHS = (320, 390, 1280)
 LANGS = ("en", "cs")
 
 # text nodes inside a card: the text rectangle, not the box, so table cells and buttons count by their text
