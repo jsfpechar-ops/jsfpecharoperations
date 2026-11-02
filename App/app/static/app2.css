@@ -1319,3 +1319,15 @@ body.v2 input[type=checkbox][data-toggle-submit]::after{content:"";position:abso
 body.v2 input[type=checkbox][data-toggle-submit]:checked{background:var(--ink)}
 body.v2 input[type=checkbox][data-toggle-submit]:checked::after{transform:translateX(20px)}
 body.v2 input[type=checkbox][data-toggle-submit]:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+/* 0830 shared (start) */
+/* 0830 shared (end) */
+/* 0830B overview+menu (start) */
+/* 0830B overview+menu (end) */
+/* 0830C properties+property (start) */
+/* 0830C properties+property (end) */
+/* 0830D reservations+stay (start) */
+/* 0830D reservations+stay (end) */
+/* 0830E invoices+submission (start) */
+/* 0830E invoices+submission (end) */
+/* 0830F sub-pages (start) */
+/* 0830F sub-pages (end) */
