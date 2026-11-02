@@ -64,7 +64,7 @@ CAPTURE_ROUTES = {
     "guest-links": ("/apartments/{property_id}?view=settings&section=guests", ".property-views, details.prop-sec"),  # v2 (0538)
     "automation": ("/apartments/{property_id}?view=settings&section=automation", ".property-views, details.prop-sec"),  # v2 (0538)
     "archive": ("/settings/archived", ".ui-section, .ui-empty"),
-    "settings": ("/settings", ".host-property-grid"),
+    "settings": ("/settings", ".settings-lane"),
     "smart-locks": ("/smart-locks", ".ui-body-list, .panel"),
 }
 
