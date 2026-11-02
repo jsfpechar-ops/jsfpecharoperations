@@ -4,7 +4,7 @@ Status: todo
 
 ## 1. Objective
 
-On the property editor (`_property_address_fields.html`) the host types a street and number, picks a suggestion, and street, č.p., č.o., PSČ, obec, část obce and okres fill in. Typing by hand always works. One shared JS component (owned by the wizard thread), reused by the setup wizard's address step (thread "Make onboarding wizard twice as fast").
+On the property editor (`_property_address_fields.html`) the host types a street and number, picks a suggestion, and street, č.p., č.o., PSČ, obec, část obce and okres fill in. Typing by hand always works. One shared JS component (owned here), reused by the setup wizard's address step (thread "Make onboarding wizard twice as fast").
 
 ## 2. Context
 
@@ -15,18 +15,18 @@ On the property editor (`_property_address_fields.html`) the host types a street
 
 ## 3. Files
 
-`App/app/templates/_property_address_fields.html` (include the wizard thread's partial next to the addr_* fields), `App/app/static/app2.css` (one block `/* 0835 address suggest (v2) */`, editor-only spacing), one new test `App/tests/test_0835_address_suggest_browser.py`. The component itself (`App/app/static/ruian_suggest.js`, partial, data-ruian-suggest contract) is built by the wizard thread on top of #731; do not build a second one.
+`App/app/static/ruian_suggest.js` (new, plain JS, loaded with defer by the partial), `App/app/templates/_ruian_suggest.html` (partial: script tag only), `App/app/templates/_property_address_fields.html` (include partial, add `data-ruian-suggest` to the street input), `App/app/static/app2.css` (one block `/* 0835 address suggest (v2) */`), new test `App/tests/test_0835_address_suggest_browser.py`. Do not edit app.js.
 
 ## 4. Steps
 
-1. Wait until the component is on the branch (merge that branch). Keep addr_* ids/names unchanged.
-2. Add `data-ruian-suggest` to the street input and include the partial in the editor's address block.
-3. CSS: list under the field fits the two-column editor grid, 12 px gaps, no fine print.
-4. Test at 390/768/1280 with the endpoint mocked: typing shows the list, picking fills the seven fields, `[]` leaves fields untouched, list inside viewport.
+1. Contract (the wizard thread reuses it unchanged): an input with `data-ruian-suggest` inside a form that holds inputs named `addr_street, addr_house_no, addr_orient_no, addr_zip, addr_obec, addr_obec_cast, addr_okres`. After 3 chars and 250 ms debounce fetch `/apartments/ruian-suggest?q=<text>` (credentials same-origin) returning `[{label, fields:{<those seven names>}}]` (max 6). Show a listbox under the input (role listbox, up/down/enter/esc, 44 px rows on phone). Picking sets the seven inputs as ordinary editable values and focuses the next empty one. Empty list, error or 404: hide the list, change nothing. Without JS the plain fields work. Fill only names present in the form.
+2. Backend comes from draft PR #731 (not on this branch): do not implement it; tests mock the endpoint with Playwright `page.route`.
+3. Include the partial in the editor's address block; keep addr_* ids and names.
+4. CSS: list fits the two-column editor grid, 12 px gaps, no fine print, list inside the viewport.
 
 ## 5. Do not touch
 
-Wizard templates (the wizard thread wires its step to the component), settings pages, calendar, backend endpoint.
+Wizard templates (the wizard thread wires its step to the component), backend, settings pages, calendar, backend endpoint.
 
 ## 6. Commands
 
