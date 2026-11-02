@@ -8,8 +8,8 @@
     "v": "20261027-signup-wrap"
   },
   "app.js": {
-    "sha256": "5d69c46a96984cb709c6abe2ded5babd5b44f96ea2868f25a21782214f341d4a",
-    "v": "20261102-0507"
+    "sha256": "6a3b5f24bce441074844aab8913125a1e483fb9509d04f5648fea6d91d7bbd3a",
+    "v": "20261102-0508"
   },
   "app2.css": {
     "sha256": "dde508a67f7d32207f06d610e43d20957ed91638a97cade36cd8d4107270fb0f",
@@ -96,8 +96,8 @@
     "v": "20261102-0507"
   },
   "host2.css": {
-    "sha256": "0da4f0319b193b4c1ee74c1d5dded14abc11266fef0096b3e61a4af7d6d2b31b",
-    "v": "20261102-0529y"
+    "sha256": "956a5416be8886fccd9b1071b03e36b68d3bb277b2fefab5858a39c92fd606b4",
+    "v": "20261102-0508"
   },
   "landing.css": {
     "sha256": "9910e555ae69914d71e920a5c00947adaf3759221c53d9e6234c5731c21b142b",
@@ -136,8 +136,8 @@
     "v": "20261014-0102c"
   },
   "skeleton.js": {
-    "sha256": "9cf081b116df7de3765c42ce63592cc841730c16f77d201d0434b2e44458f382",
-    "v": "20261025-havel-skeleton"
+    "sha256": "c5812aa7492da9e038f2e27b4bd264df876fe8cecb82f12991a5cc8f631b0a88",
+    "v": "20261102-0508"
   },
   "tokens.css": {
     "sha256": "f2ff6d6ad651558d60bc7312d74aca175c9782a27234e9e4505dd7a1f4841961",
