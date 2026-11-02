@@ -5,6 +5,7 @@ local code. The mail kind is real, enqueued into email_outbox.
 """
 from __future__ import annotations
 
+from datetime import date
 from typing import Any, Dict, List
 
 import pytest
@@ -325,6 +326,23 @@ def test_custom_request_uses_the_description_as_product_name(owner):
         expires_at="2026-11-27", guest_note="Pozdní odjezd",
     )
     assert payment_links.product_name(payment_request.get(rid)) == f"Pozdní odjezd (žádost č. {rid})"
+
+
+def test_custom_product_name_collapses_whitespace(owner):
+    rid = payment_request.create(
+        owner, reason="custom", amount_czk=500, rail="card",
+        expires_at="2026-11-27", guest_note="  Extra   clean  ",
+    )
+    assert payment_links.product_name(payment_request.get(rid)) == f"Extra clean (žádost č. {rid})"
+
+
+def test_guest_qr_page_rejects_cancelled_request(owner):
+    rid = _draft(owner, rail="qr")
+    token = payment_request.guest_token(payment_request.get(rid))
+    payment_request.set_status(rid, "cancelled", today=date(2026, 11, 1))
+    anonymous = TestClient(app)
+    assert anonymous.get(f"/pay/{rid}/{token}").status_code == 404
+    assert anonymous.get(f"/pay/{rid}/{token}.png").status_code == 404
 
 
 # --- public guest QR page (0763) -----------------------------------------------
