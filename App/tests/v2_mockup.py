@@ -113,15 +113,6 @@ BOX_OVERRIDES = {
     "stay:.guests .row b@390": {"width": "117.656px"},
     "stay:.guests .row small@320": {"width": "117.656px"},
     "stay:.guests .row small@390": {"width": "117.656px"},
-    # cleaning phone (0549b): heights and pill width follow the English fixture copy; the fixture has no cleaning today, so .card is the empty today card
-    "cleaning:.card@320": {"height": "63px"},
-    "cleaning:.card@390": {"height": "63px"},
-    "cleaning:.list .row:has(.p-ok)@320": {"height": "102px"},
-    "cleaning:.list .row:has(.p-ok)@390": {"height": "102px"},
-    "cleaning:.row .t .pill.p-ok@320": {"width": "100.641px"},
-    "cleaning:.row .t .pill.p-ok@390": {"width": "100.641px"},
-    "cleaning:.actbar@320": {"height": "75px"},
-    "cleaning:.actbar@390": {"height": "75px"},
 }
 
 
@@ -166,7 +157,18 @@ PAGES = [
             ".hs .pill": "today's stay cards exist only when a stay is due today; the phone mockup shows demo stays",
         },
     },
-    {"name": "cleaning", "path": "/cleaning", "view": "clean", "selectors": [".side .nav.on", ".head h1", ".head .sub", ".head .btn", "main h2", "main .card", "main table th", "main table td"], "phone_view": "uklid", "phone_selectors": [".tabs", ".tab.on", ".top .round", ".big", ".sub", ".grp", ".card", ".list .row:has(.p-ok)", ".row .t b", ".row .t small", ".row .t .pill.p-ok", ".actbar", ".actbar .btn"], "missing_ok": {"main table th": "below 1024 px the phone layout replaces the tables (0546)", "main table td": "below 1024 px the phone layout replaces the tables (0546)"}},  # pills follow the approved phone mockup (2026-11-01): scheduled green, the desktop mockup shows amber
+    {"name": "cleaning", "path": "/cleaning", "view": "clean", "selectors": [".side .nav.on", ".head h1", ".head .sub", ".head .btn", "main h2", "main .card", "main table th", "main table td"], "phone_mockup": PHONE_MOCKUP_V2, "phone_view": "uklid",
+        "phone_box_skip": {
+            ".hs .pill.p-ok": (["width"], "same label; CI's Manrope renders it 101 px, the mockup's font 98.75 px"),
+            ".kind": (["width"], "today's cleaning window text comes from the fixture"),
+            ".nm": (["width"], "shrink-to-fit width follows the fixture's property name"),
+            ".meta": (["width"], "shrink-to-fit width follows the fixture's next check-in text"),
+            ".promo": (["height"], "the app's share copy is longer than the mockup's and wraps at 320 px"),
+            ".promo b": (["height"], "the app's share copy is longer than the mockup's and wraps at 320 px"),
+            ".hl": (["height"], "the shared .hl@390 BOX_OVERRIDE is Overview's two-line headline; the cleaning headline is one line"),
+            ".list.plain .row:not(:has(.pill))": (["height"], "line-height normal: the app font gives 23 + 19 px lines, the mockup 23.8 + 19.6 px"),
+        },
+        "phone_selectors": [".tabs", ".tab.on", ".hl", ".hl-sub", ".hs .card", ".kind", ".av", ".nm", ".meta", ".hs .pill.p-ok", "h2.sec", ".list.plain .row:not(:has(.pill))", ".row:not(:has(.pill)) .t b", ".row:not(:has(.pill)) .t small", ".btn.line", ".promo", ".promo .pi", ".promo b", ".promo small"], "missing_ok": {"main table th": "below 1024 px the phone layout replaces the tables (0546)", "main table td": "below 1024 px the phone layout replaces the tables (0546)"}},  # pills follow the approved phone mockup (2026-11-01): scheduled green, the desktop mockup shows amber
     {
         "name": "properties",
         "path": "/apartments",

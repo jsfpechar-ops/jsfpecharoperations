@@ -100,6 +100,7 @@ def dashboard_rich_host():
     # Manual cleaning event for the cleaning phone compare (green row). None today: a cleaning today
     # adds a count badge to the shared Menu screen, which its own compare does not expect.
     cleaning.save_event(apartment_id, {"scheduled_date": (today + timedelta(days=2)).isoformat(), "start_time": "11:00", "end_time": "14:00"})
+    cleaning.save_event(apartment_id, {"scheduled_date": today.isoformat(), "start_time": "10:00", "end_time": "15:00"})  # 0732: cleaning today for the Úklid compare
 
     def stay(label, arrival, departure, expected=1):
         return db.insert("reservation", {

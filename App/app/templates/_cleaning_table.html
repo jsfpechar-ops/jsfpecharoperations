@@ -1,4 +1,5 @@
 {% from "_components.html" import row_open with context %}
+{% from "_icons.html" import icon with context %}
 <div class="cleaning-desk">
 {% for key, items in sections %}
 <section class="cleaning-section" aria-labelledby="cleaning-section-{{ key }}">
@@ -27,34 +28,42 @@
 {% endfor %}
 </div>
 <div class="cleaning-phone">
-{% set ns = namespace(week=[], later=[], open=false) %}
-{% for key, items in sections %}{% if key == 'week' %}{% set ns.week = items %}{% elif key == 'later' %}{% set ns.later = items %}{% endif %}{% endfor %}
+{% macro cleaning_row(item) -%}
+<a class="row" href="/cleaning/events/{{ item.eventId }}/edit"><span class="t"><b>{{ item.property }}</b><small>{{ cleaning_day(item.date) }} · {% if item.nextArrival %}{{ ct('next_arrival_short') }} {{ cleaning_short(item.nextArrival) }}{% if item.checkinTime %} {{ item.checkinTime }}{% endif %}{% else %}{{ ct('no_arrival') }}{% endif %}</small></span>{% if item.conflict %}<span class="pill p-warn">{{ ct('status_conflict') }}</span>{% elif item.timingUnavailable %}<span class="pill p-warn">{{ ct('status_hours') }}</span>{% endif %}{{ icon('chevron-right', 20, 'chev') }}</a>
+{%- endmacro %}
+{% set ns = namespace(week=[], later=[], today=[], open=false) %}
+{% for key, items in sections %}{% if key == 'today' %}{% set ns.today = items %}{% elif key == 'week' %}{% set ns.week = items %}{% elif key == 'later' %}{% set ns.later = items %}{% endif %}{% endfor %}
 {% set hidden = [ns.week|length - 3, 0]|max + ns.later|length %}
-{% for key, items in sections %}
-{% if key == 'later' and hidden and not ns.open %}<details class="cleaning-more"><summary class="btn ghost">{{ ct('show_more')|format(count=hidden) }}</summary>{% set ns.open = true %}{% endif %}
-<div class="grp">{{ ct('section_' ~ key) }}</div>
-{% if key == 'today' %}
-  {% for item in items %}
-  <a class="card cleaning-today" href="/cleaning/events/{{ item.eventId }}/edit">
-    <b>{{ item.property }}</b>
-    <div class="cleaning-meta">{% if item.startTime and item.endTime %}{{ item.startTime }}–{{ item.endTime }}{% elif item.checkoutTime and item.checkinTime %}{{ item.checkoutTime }}–{{ item.checkinTime }}{% else %}{{ ct('time_missing') }}{% endif %} · {% if item.nextArrival %}{{ ct('next_arrival_short') }} {{ cleaning_short(item.nextArrival) }} {% if item.checkinTime %} {{ item.checkinTime }}{% endif %}{% else %}{{ ct('no_arrival') }}{% endif %}</div>
-    <div class="cleaning-pillrow">{% if item.conflict %}<span class="pill p-warn">{{ ct('status_conflict') }}</span>{% elif item.timingUnavailable %}<span class="pill p-warn">{{ ct('status_hours') }}</span>{% else %}<span class="pill p-ok">{{ ct('status_scheduled') }}</span>{% endif %}</div>
-  </a>
-  {% else %}
-  <div class="card cleaning-today">{{ ct('today_empty') }}</div>
-  {% endfor %}
-{% else %}
-  {% if items %}
-  <div class="list">
-  {% for item in items %}
-    {% if key == 'week' and loop.index == 4 %}</div><details class="cleaning-more"><summary class="btn ghost">{{ ct('show_more')|format(count=hidden) }}</summary><div class="list">{% set ns.open = true %}{% endif %}
-    <a class="row" href="/cleaning/events/{{ item.eventId }}/edit"><div class="t"><b>{{ item.property }}</b><small>{{ cleaning_day(item.date) }} · {% if item.nextArrival %}{{ ct('next_arrival_short') }} {{ cleaning_short(item.nextArrival) }} {% if item.checkinTime %} {{ item.checkinTime }}{% endif %}{% else %}{{ ct('no_arrival') }}{% endif %}</small>{% if item.conflict %}<span class="pill p-warn">{{ ct('status_conflict') }}</span>{% elif item.timingUnavailable %}<span class="pill p-warn">{{ ct('status_hours') }}</span>{% else %}<span class="pill p-ok">{{ ct('status_scheduled') }}</span>{% endif %}</div></a>
-  {% endfor %}
-  </div>
-  {% else %}
-  <div class="card cleaning-today">{{ ct('today_empty') }}</div>
-  {% endif %}
-{% endif %}
+{% set n = ns.today|length %}
+{% set hkey = 'headline_none' if n == 0 else ('headline_one' if n == 1 else ('headline_few' if n < 5 else 'headline_many')) %}
+<div class="ph-top"><h1 class="hl">{{ ct(hkey)|format(count=n) }}</h1><p class="hl-sub">{{ ct('subtitle_short') }}</p></div>
+{% if ns.today %}
+<div class="hs">
+{% for item in ns.today %}
+  <a class="card" href="/cleaning/events/{{ item.eventId }}/edit"><span class="kind out">{% if item.startTime and item.endTime %}{{ item.startTime }}–{{ item.endTime }}{% elif item.checkoutTime and item.checkinTime %}{{ item.checkoutTime }}–{{ item.checkinTime }}{% else %}{{ ct('time_missing') }}{% endif %}</span>
+    <div class="who"><div class="av">{{ item.property[:1] }}</div><div><div class="nm">{{ item.property }}</div><div class="meta">{% if item.nextArrival %}{{ ct('next_arrival_short') }} {{ cleaning_short(item.nextArrival) }}{% if item.checkinTime %} {{ item.checkinTime }}{% endif %}{% else %}{{ ct('no_arrival') }}{% endif %}</div></div></div>
+    {% if item.conflict %}<span class="pill p-warn">{{ ct('status_conflict') }}</span>{% elif item.timingUnavailable %}<span class="pill p-warn">{{ ct('status_hours') }}</span>{% else %}<span class="pill p-ok">{{ ct('status_scheduled') }}</span>{% endif %}</a>
 {% endfor %}
-{% if ns.open %}</details>{% endif %}
+</div>
+{% endif %}
+{% if ns.week %}
+<h2 class="sec">{{ ct('section_week') }}</h2>
+<div class="list plain">
+{% for item in ns.week[:3] %}{{ cleaning_row(item) }}
+{% endfor %}
+</div>
+{% endif %}
+{% if hidden %}<details class="cleaning-more"><summary class="btn line">{{ ct('show_more')|format(count=hidden) }}</summary>
+{% if ns.week|length > 3 %}<div class="list plain">
+{% for item in ns.week[3:] %}{{ cleaning_row(item) }}
+{% endfor %}
+</div>{% endif %}
+{% if ns.later %}<h2 class="sec">{{ ct('section_later') }}</h2>
+<div class="list plain">
+{% for item in ns.later %}{{ cleaning_row(item) }}
+{% endfor %}
+</div>{% endif %}
+</details>{% endif %}
+<h2 class="sec">{{ ct('section_cleaner') }}</h2>
+<a class="promo" href="/cleaning/shares"><span class="pi">{{ icon('brush-cleaning', 22) }}</span><span><b>{{ ct('share_cleaner') }}</b><small>{{ ct('share_hint') }}</small></span></a>
 </div>

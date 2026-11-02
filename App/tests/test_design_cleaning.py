@@ -18,11 +18,13 @@ def test_cleaning_pages_have_the_v2_shell_and_one_stylesheet(host_with_property)
         response = host_with_property.get(f"{path}?lang=en")
         assert response.status_code == 200, path
         page = response.text
-        assert page.count("<h1") == 1, path
+        # 0732: /cleaning has the phone headline (ph-top h1) plus the desktop head h1; the other pages have one
+        assert page.count("<h1") == (2 if path == "/cleaning" else 1), path
         if path == "/cleaning":
             # 0542: the host cleaning page is on the v2 shell (tokens.css + app2.css only)
             assert page.count("/static/cleaning.css") == 0 and "/static/host2.css" not in page, path
-            assert page.count('class="head cleaning-head"') == 1 and page.count('<a class="btn" href="/cleaning/shares"') == 2 and page.count('class="actbar cleaning-phone"') == 1, path
+            # 0732: the phone actbar is gone; the phone share card is a .promo
+            assert page.count('class="head cleaning-head"') == 1 and page.count('<a class="btn" href="/cleaning/shares"') == 1 and page.count('class="promo" href="/cleaning/shares"') == 1 and page.count('class="actbar cleaning-phone"') == 0, path
             continue
         assert page.count("/static/cleaning.css") == 1, path
         assert page.index("/static/cleaning.css") < page.index("/static/host2.css"), path
