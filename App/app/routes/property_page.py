@@ -12,7 +12,11 @@ from fastapi.responses import PlainTextResponse, RedirectResponse, Response
 
 from ..templating import render
 
-from .. import booking_checkout, booking_site, config, db, property_page, rate_limit
+from datetime import date
+from urllib.parse import urlencode
+
+from .. import (booking_calendar, booking_checkout, booking_site, config, db, host_i18n,
+                property_page, rate_limit)
 
 router = APIRouter()
 
