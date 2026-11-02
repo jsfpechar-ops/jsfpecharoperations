@@ -1124,7 +1124,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .ui-choice-card > .help-tip:is(.is-open, :focus-within) { z-index: 2; }
 .ui-choice-card-extra { flex: 1 1 100%; min-width: 0; cursor: auto; }
 .ui-choice-card:has(input:checked) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
-.host-workspace .ui-choice-card input:focus-visible { outline: none !important; }
+.host-workspace .ui-choice-card input:focus-visible { outline: 2px solid var(--coral-600); outline-offset: 2px; }
 .ui-choice-card:has(input:focus-visible) { outline: 2px solid var(--coral-600); outline-offset: 2px; }
 .ui-choice-card-label:has(> input[name="cancellation_policy"]) { min-height: var(--control-h-phone); }
 .ui-choice-card-label:has(> input[name="cancellation_policy"]) > input { width: var(--control-h-phone); height: var(--control-h-phone); }

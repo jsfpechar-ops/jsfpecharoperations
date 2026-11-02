@@ -533,7 +533,8 @@ async def booking_site_save(request: Request, apartment_id: int):
     try:
         booking_site.save_settings(apartment_id, booking_setup.parse_form(form))
     except ValueError as exc:
-        return _back(here + "#rules", err=_flash(request, "bsite.err." + booking_setup.error_field(exc)))
+        err_key = "bsite.err." + booking_setup.error_field(exc)
+        return _back(here + "#rules", err=_flash(request, err_key))
     return _back(here, msg=_flash(request, "payments.page.saved"))
 
 
