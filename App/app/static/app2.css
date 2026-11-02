@@ -1323,3 +1323,4 @@ body.v2 input[type=checkbox][data-toggle-submit]:focus-visible{outline:2px solid
 body.v2 .settings-help-line + .onboarding-banner-setup{margin-block-start:12px}
 body.v2 .archive-type-filters{gap:12px !important}
 body.v2 .ui-empty .ui-form-actions{gap:12px}
+body.v2 .settings-help-line .help-tip-btn{width:24px;height:24px;min-width:24px;min-height:24px}

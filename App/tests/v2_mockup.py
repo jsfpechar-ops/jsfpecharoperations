@@ -230,9 +230,9 @@ PAGES = [
         "phone_selectors": [".tabs", ".tab:not(.on)", ".tab.on", ".mh .big", ".me-av", ".tile", ".tile b", ".tile small", ".tile .v", ".promo", ".promo .pi", ".promo b", ".promo small", ".list.plain .row", ".list.plain .badge", ".menu-logout"],
         "missing_ok": {".list.plain .badge": "the Cleaning badge shows only when a cleaning is planned for today"},
     },
-    {"name": "entities", "path": "/entities", "view": "props", "selectors": [".head h1", "main .card"], "missing_ok": {}},
-    {"name": "privacy_requests", "path": "/privacy-requests", "view": "props", "selectors": [".head h1", "main .card"], "missing_ok": {}},
-    {"name": "archive", "path": "/settings/archived", "view": "props", "selectors": [".head h1", "main .card"], "missing_ok": {"main .card": "the test fixture has no archived item: the empty state has no card"}},
+    {"name": "entities", "path": "/entities", "view": "props", "selectors": [".head h1", "main .card"], "missing_ok": {".head h1": "the settings sub page uses the airbnb big title, not the .head bar (0789c)"}},
+    {"name": "privacy_requests", "path": "/privacy-requests", "view": "props", "selectors": [".head h1", "main .card"], "missing_ok": {".head h1": "the settings sub page uses the airbnb big title, not the .head bar (0789c)"}},
+    {"name": "archive", "path": "/settings/archived", "view": "props", "selectors": [".head h1", "main .card"], "missing_ok": {"main .card": "the test fixture has no archived item: the empty state has no card", ".head h1": "the settings sub page uses the airbnb big title, not the .head bar (0789c)"}},
     {
         "name": "stays",
         "path": "/reservations?range=upcoming&lang=cs",
