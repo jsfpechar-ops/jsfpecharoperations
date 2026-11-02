@@ -1148,6 +1148,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
   .host-workspace .stays-view .ui-table td.stay-col-dates { grid-column: 1; }
   .host-workspace .stays-view .ui-table td.stay-col-departure { grid-row: 2; grid-column: 2; justify-self: start; }
   .host-workspace .stays-view .ui-table td.stay-col-departure::before { content: "– "; }
+}
 
 /* 0525: stay page on desktop: guests are table rows in one white card; the door code is large. */
 @media (min-width: 1024px) {
@@ -1157,3 +1158,14 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 
 /* Turbo progress bar stays hidden: the page swap should look like before. */
 .turbo-progress-bar { display: none; }
+
+/* 0849 invoice quick stays (start) */
+.invoice-quick-title{font-size:var(--text-md);font-weight:600;margin:0 0 var(--space-3)}
+.invoice-quick-stays{list-style:none;margin:0 0 var(--space-6);padding:0;display:flex;flex-direction:column;gap:0}
+.invoice-quick-stays li + li{margin-top:var(--space-4)}
+.invoice-quick-stays .ui-btn{width:100%;min-height:44px;justify-content:flex-start;text-align:left;white-space:normal}
+/* 0849 invoice quick stays (end) */
+/* 0888 invoice use price (start) */
+.invoice-use-price{margin-top:var(--space-3);min-height:var(--control-h-phone)}
+.invoice-use-price[hidden]{display:none}
+/* 0888 invoice use price (end) */
