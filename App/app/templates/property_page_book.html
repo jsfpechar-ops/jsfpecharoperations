@@ -8,7 +8,7 @@
     <tbody>
       <tr><td>{{ t('pp.book.dates') }}</td><td>{{ q.date_from }} → {{ q.date_to }} ({{ q.nights }} {{ t('pp.book.nights') }})</td></tr>
       <tr><td>{{ t('pp.book.guests') }}</td><td>{{ q.guests }}</td></tr>
-      <tr><td>{{ t('pp.book.nightly') }} × {{ q.nights }}</td><td>{{ q.accommodation_czk }} {{ t('payments.czk') }}</td></tr>
+      <tr><td>{{ q.nightly_czk }} {{ t('payments.czk') }} × {{ q.nights }} {{ t('pp.book.nights') }}</td><td>{{ q.accommodation_czk }} {{ t('payments.czk') }}</td></tr>
       {% if q.cleaning_fee_czk %}<tr><td>{{ t('pp.book.cleaning') }}</td><td>{{ q.cleaning_fee_czk }} {{ t('payments.czk') }}</td></tr>{% endif %}
       <tr><td>{{ t('pp.book.total') }}</td><td><strong>{{ q.total_czk }} {{ t('payments.czk') }}</strong></td></tr>
       {% if q.city_tax_on_site_czk %}<tr><td>{{ t('pp.book.city_tax') }}</td><td>{{ q.city_tax_on_site_czk }} {{ t('payments.czk') }}</td></tr>{% endif %}
