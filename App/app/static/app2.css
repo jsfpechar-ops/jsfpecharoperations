@@ -816,3 +816,4 @@ body.v2 .list.plain .row .pill{margin-top:0}
 @media (max-width:767px){body.v2 .cleaning-page .cleaning-legend,body.v2 .cleaning-page #calendar{display:none}}
 @media (max-width:1023px){body.v2 .cleaning-more>summary{display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;box-sizing:border-box;margin-top:8px;list-style:none;cursor:pointer}body.v2 .cleaning-more>summary::-webkit-details-marker{display:none}}
 @media (max-width:1023px){body.v2 .cleaning-more:not([open])>:not(summary){display:none}}
+@media (max-width:1023px){body.v2 .cleaning-phone h1.hl{font-size:30px;line-height:1.15;font-weight:800;letter-spacing:-.02em;text-align:center;margin:0 8px 28px}body.v2 .cleaning-phone h2.sec{font-size:13px;font-weight:700;margin:26px 0 12px}}
