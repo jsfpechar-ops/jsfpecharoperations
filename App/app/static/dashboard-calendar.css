@@ -724,3 +724,6 @@ body:has(.dashboard-calendar.has-panel) .havel-fab { display:none !important; }
 .dashboard-calendar[data-readonly="false"] .cal-tile-chip.cal-clean-chip { display:flex; align-items:center; gap:4px; box-sizing:border-box; height:22px; line-height:22px; padding:0 6px; border:0; border-radius:6px; background:var(--status-action-bg); color:var(--status-action-ink); font-size:12px; font-weight:400; }
 .dashboard-calendar[data-readonly="false"] .cal-tile-chip.cal-clean-chip .cal-cleaning-icon { flex:0 0 12px; }
 .cleaning-page:has(.dashboard-calendar[data-readonly="false"]) :is(#cleaning-list, .cleaning-legend) { display:none; }
+
+/* 0833: phone host cleaning page shows the calendar (app2.css hides #calendar on the cleaning page under 768 px). The shared cleaner page (data-readonly="true") keeps the hide. */
+body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] { display:block; }
