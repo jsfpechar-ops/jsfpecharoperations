@@ -6,20 +6,32 @@
   <p class="pp-location">{{ page.district }}</p>
   <table class="ui-table">
     <tbody>
-      <tr><td>{{ t('pp.book.dates') }}</td><td>{{ date_from }} → {{ date_to }} ({{ nights }} {{ t('pp.book.nights') }})</td></tr>
-      <tr><td>{{ t('pp.book.nightly') }}</td><td>{{ nightly }} {{ t('payments.czk') }}</td></tr>
-      <tr><td>{{ t('pp.book.total') }}</td><td><strong>{{ total }} {{ t('payments.czk') }}</strong></td></tr>
+      <tr><td>{{ t('pp.book.dates') }}</td><td>{{ q.date_from }} → {{ q.date_to }} ({{ q.nights }} {{ t('pp.book.nights') }})</td></tr>
+      <tr><td>{{ t('pp.book.guests') }}</td><td>{{ q.guests }}</td></tr>
+      <tr><td>{{ t('pp.book.nightly') }} × {{ q.nights }}</td><td>{{ q.accommodation_czk }} {{ t('payments.czk') }}</td></tr>
+      {% if q.cleaning_fee_czk %}<tr><td>{{ t('pp.book.cleaning') }}</td><td>{{ q.cleaning_fee_czk }} {{ t('payments.czk') }}</td></tr>{% endif %}
+      <tr><td>{{ t('pp.book.total') }}</td><td><strong>{{ q.total_czk }} {{ t('payments.czk') }}</strong></td></tr>
+      {% if q.city_tax_on_site_czk %}<tr><td>{{ t('pp.book.city_tax') }}</td><td>{{ q.city_tax_on_site_czk }} {{ t('payments.czk') }}</td></tr>{% endif %}
     </tbody>
   </table>
-  {#- The Stripe Checkout Session lands in the payments follow-up; the guest can
-      send a request now (the host confirms, then charges on approval). -#}
-  <form method="post" action="/p/{{ slug }}/request">
+  <p class="ui-sub">{{ t('pp.book.policy.' ~ q.cancellation_policy) }}</p>
+  <form method="post" action="/p/{{ slug }}/checkout" class="ui-form">
+    <label class="ui-field">
+      <span>{{ t('pp.book.name') }}</span>
+      <input class="ui-input" type="text" name="guest_name" autocomplete="name" minlength="3" maxlength="120" required>
+    </label>
     <label class="ui-field">
       <span>{{ t('pp.book.email') }}</span>
-      <input class="ui-input" type="email" name="guest_email" required>
+      <input class="ui-input" type="email" name="guest_email" autocomplete="email" required>
     </label>
-    <input type="hidden" name="date_from" value="{{ date_from }}">
-    <input type="hidden" name="date_to" value="{{ date_to }}">
+    <label class="ui-check">
+      <input type="checkbox" name="terms" value="1" required>
+      <span>{{ t('pp.book.terms') }}</span>
+    </label>
+    <input type="hidden" name="date_from" value="{{ q.date_from }}">
+    <input type="hidden" name="date_to" value="{{ q.date_to }}">
+    <input type="hidden" name="guests" value="{{ q.guests }}">
+    <input type="hidden" name="lang" value="{{ lang }}">
     <button class="ui-btn ui-btn-primary" type="submit">{{ t('pp.book.send_request') }}</button>
   </form>
   <p class="ui-sub">{{ t('pp.book.request_note') }}</p>
