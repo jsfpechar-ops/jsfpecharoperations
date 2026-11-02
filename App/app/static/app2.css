@@ -1319,3 +1319,6 @@ body.v2 input[type=checkbox][data-toggle-submit]::after{content:"";position:abso
 body.v2 input[type=checkbox][data-toggle-submit]:checked{background:var(--ink)}
 body.v2 input[type=checkbox][data-toggle-submit]:checked::after{transform:translateX(20px)}
 body.v2 input[type=checkbox][data-toggle-submit]:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+/* 0789c: 12 px between the Entities setup banner and the help "?" and between archive filter chips */
+body.v2 .settings-help-line + .onboarding-banner-setup{margin-inline-start:12px}
+body.v2 .archive-type-filters{gap:12px !important}
