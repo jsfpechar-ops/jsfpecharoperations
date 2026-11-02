@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from . import booking_cancel, booking_site, db
 
@@ -74,3 +74,27 @@ def calendar_ics(booking: Dict[str, Any], name: str) -> str:
              f"DTSTART;VALUE=DATE:{start}", f"DTEND;VALUE=DATE:{end}",
              f"SUMMARY:{summary}", "END:VEVENT", "END:VCALENDAR"]
     return "\r\n".join(lines) + "\r\n"
+
+
+def host_rows(apartment_id: int, limit: int = 20) -> List[Dict[str, Any]]:
+    """The host's recent site bookings: short name, dates, total, status, actions."""
+    rows = db.query(
+        "SELECT * FROM site_booking WHERE apartment_id = ? AND status IN ('paid', 'cancelled',"
+        " 'refunded', 'clash_refunded') ORDER BY date_from DESC, id DESC LIMIT ?",
+        (apartment_id, limit),
+    )
+    out = []
+    for row in rows:
+        b = dict(row)
+        parts = (b["guest_name"] or "").split()
+        short = parts[0] + (f" {parts[-1][:1]}." if len(parts) > 1 else "") if parts else ""
+        d_from, d_to = date.fromisoformat(b["date_from"]), date.fromisoformat(b["date_to"])
+        out.append({
+            "id": int(b["id"]), "name": short, "status": b["status"],
+            "dates": f"{d_from.day}.–{d_to.day}. {d_to.month}.",
+            "total": int(b["total_czk"]),
+            "can_cancel": b["status"] == "paid",
+            "can_retry": b["status"] == "cancelled" and not int(b["refunded_czk"] or 0),
+        })
+    return out
+
