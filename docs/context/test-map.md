@@ -6,6 +6,7 @@ Run only the row for the area you changed, from `App/`, always ending `-q --tb=s
 |---|---|
 | Guest pages, guest templates | `test_guest_*.py` and `test_guest_browser_e2e.py` (0 skipped) |
 | Host pages, host templates, host CSS | `test_host_*.py` and `test_host_geometry.py` (0 skipped) |
+| Host Turbo page swap (`initPage`, Turbo Drive) | `test_050*_browser.py test_navigation_prefetch.py test_motion_browser.py` (browser, 0 skipped) |
 | Login, 2FA, passkeys, sessions | `test_login_*.py test_auth_*.py test_two_factor_*.py test_passkeys.py test_remember_me_reissue.py test_security*.py` |
 | Filing, UbyPort, worker, claim | `test_ubyport_*.py test_soap.py test_worker.py test_submission_*.py test_stale_submission.py test_filed_by_hand.py test_filing_watchdog.py test_police_*.py test_deadline*.py test_claim_*.py test_endtoend.py` |
 | Platform billing, subscription, trial | `test_billing_*.py` |
@@ -31,7 +32,7 @@ Run only the row for the area you changed, from `App/`, always ending `-q --tb=s
 | Public/app domain configuration | `test_app_domain.py test_env_guard.py test_passkeys.py test_pwa.py`, login/auth/security row, relevant mail tests; Caddy validation in both TLS modes |
 | Operator customer dashboard | `test_admin_customers.py test_host_*.py test_design_guardrails_browser.py` (browser checks 0 skipped) |
 | Direct payments, Stripe Connect | `test_payment_request_model.py test_stripe_connect.py` |
-| Payments dashboard + rails | `test_payments_dashboard.py test_payment_request_model.py test_stripe_connect.py test_payment_links.py test_payment_qr.py`, design row when templates change |
+| Payments dashboard + rails | `test_payments_dashboard.py test_payment_request_model.py test_stripe_connect.py test_payment_links.py test_payment_qr.py test_payment_services.py`, design row when templates change |
 | Public property pages | `test_property_slug.py test_property_page.py test_property_page_photos.py test_property_page_meta.py` (+ browser/geometry row when templates land) |
 | v2 pages (any page with `{% set v2 = true %}`) | `tests/test_0710_v2_mockup_match_browser.py` (browser, 0 skipped; styles vs mockup and geometry at 320-1440 px) |
 | Page booking widget | `test_booking_widget.py test_property_page.py test_stripe_connect.py test_payment_request_model.py` |

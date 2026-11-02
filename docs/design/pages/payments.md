@@ -24,6 +24,7 @@ Master version: 2.0.0. This file adds; it never overrides MASTER.md. Keep it und
 - section 2: new payment request form; section 3: request list.
 - services (0762): "Your services" section above the request form: saved name + price rows with "Request payment" (link to /payments?service=…#new-request, prefills amount, Custom and the description) and Remove; a 2-field add form.
 - request row: open card requests get a `secondary compact` "Get link" (POST, then our share page; never a POST to Stripe).
+- guest QR (0763): bank-transfer e-mails use the public URL `/pay/{id}/{token}` (`payment_request.guest_token`, no login); PNG at the same path with `.png`. Host preview stays `/payments/qr/{id}`; `payments_qr.html` takes `png_url`.
 - share page `/payments/requests/{id}/share` (template `payments_share.html`, body_kind `detail`): reason and amount, the link in a read-only field, then Copy, Send by e-mail (secondary) and Send on WhatsApp (primary, new tab), one note, a back link.
 - badges used: `done` (step done), `attention` (Stripe needs you), `neutral` (to do / Stripe is checking).
 - host copy never says Connect, KYC, payout or webhook.
