@@ -285,6 +285,11 @@
     "havel-card-form",
     "havel-card-change",
     "havel-card-danger",
+    "ph-top",
+    "seg",
+    "hl",
+    "hl-sub",
+    "done",
     "props-phone",
     "props-top",
     "props-head",
@@ -1020,6 +1025,11 @@
     "App/app/static/wizard.css"
   ],
   "class_notes": {
+    "ph-top": "phone v2 top block (0729)",
+    "seg": "phone v2 pill switch",
+    "hl": "phone v2 centred headline",
+    "hl-sub": "line under the phone headline",
+    "done": "headline state when nothing needs the host",
     "ui-section-plain": "Guide page section: a section with no border or fill, only spacing and a heading (MASTER 3, section rhythm).",
     "property-guest-link": "Properties page guest-link card above the tabs: the guest link and one Copy button (0531).",
     "property-savebar": "Property settings save bar, sticky at the bottom: Cancel, discard, then Save (0531).",

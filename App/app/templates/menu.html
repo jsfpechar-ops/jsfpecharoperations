@@ -5,22 +5,20 @@
 {% block title %}{{ t('nav.menu') }}{% endblock %}
 {% block page_title %}{% endblock %}
 {% block body %}
-<h1 class="big">{{ t('nav.menu') }}</h1>
-<section class="card me" aria-label="{{ t('nav.account') }}">
-  <a class="me-link" href="/settings">
-    <span class="av" aria-hidden="true">{{ (workspace_user.display_name or workspace_user.username)[:1] | upper }}</span>
-    <span class="who"><b>{{ workspace_user.display_name or workspace_user.username }}</b>
-      <small>{{ tp('nav.property_count', apartments | length) }}</small></span>
-    {{ icon('chevron-right', 24, 'chev') }}
-  </a>
-</section>
-<nav class="list menu-list" aria-label="{{ t('nav.menu') }}">
-  <a class="row" href="/cleaning"><span class="ic acc" aria-hidden="true">{{ icon('brush-cleaning', 22) }}</span><span class="t"><b>{{ t('nav.cleaning') }}</b>{% if cleaning_week is not none %}<small>{% if cleaning_week %}{{ t('menu.sub.cleaning_live', today=cleaning_today, week=cleaning_week) }}{% else %}{{ t('menu.sub.cleaning_none') }}{% endif %}</small>{% endif %}</span>{% if cleaning_today %}<span class="badge">{{ cleaning_today }}</span>{% endif %}{{ icon('chevron-right', 24, 'chev') }}</a>
-  <a class="row" href="/stay-fees"><span class="ic acc" aria-hidden="true">{{ icon('receipt', 22) }}</span><span class="t"><b>{{ t('nav.stay_fees') }}</b><small>{{ t('menu.sub.stay_fees') }}</small></span>{{ icon('chevron-right', 24, 'chev') }}</a>
-  <a class="row" href="/payments"><span class="ic acc" aria-hidden="true">{{ icon('credit-card', 22) }}</span><span class="t"><b>{{ t('nav.payments') }}</b><small>{{ t('menu.sub.payments') }}</small></span>{{ icon('chevron-right', 24, 'chev') }}</a>
-  <a class="row" href="/settings"><span class="ic acc" aria-hidden="true">{{ icon('settings', 22) }}</span><span class="t"><b>{{ t('nav.settings') }}</b><small>{{ t('menu.sub.settings') }}</small></span>{{ icon('chevron-right', 24, 'chev') }}</a>
-  <a class="row" href="/guide"><span class="ic acc" aria-hidden="true">{{ icon('book-open', 22) }}</span><span class="t"><b>{{ t('nav.guide') }}</b><small>{{ t('menu.sub.guide') }}</small></span>{{ icon('chevron-right', 24, 'chev') }}</a>
-  {% if current_user.role == 'admin' %}<a class="row" href="/admin"><span class="ic acc" aria-hidden="true">{{ icon('shield', 22) }}</span><span class="t"><b>{{ t('nav.admin') }}</b><small>{{ t('menu.sub.admin') }}</small></span>{{ icon('chevron-right', 24, 'chev') }}</a>{% endif %}
+{#- 0735: phone v2 Menu (docs/design/mockup/ubyhost-phone-v2.html, screen menu). -#}
+<div class="mh"><h1 class="big">{{ t('nav.menu') }}</h1><a class="me-av" href="/settings" aria-label="{{ t('nav.account') }}">{{ (workspace_user.display_name or workspace_user.username)[:1] | upper }}</a></div>
+<div class="tiles">
+  <a class="tile" href="/reservations"><b>{{ t('menu.tile.guests') }}</b><small>{{ t('menu.tile.when') }}</small><span class="v">{{ month.guests }}</span></a>
+  <a class="tile" href="/submissions"><b>{{ t('menu.tile.police') }}</b><small>{{ t('menu.tile.when') }}</small><span class="v">{{ month.reported }}</span></a>
+</div>
+<a class="promo" href="/reservations?new=1"><span class="pi" aria-hidden="true">{{ icon('plus', 24) }}</span><span><b>{{ t('stays.add_stay') }}</b><small>{{ t('menu.add_stay_sub') }}</small></span></a>
+<nav class="list plain" aria-label="{{ t('nav.menu') }}">
+  <a class="row" href="/cleaning">{{ icon('brush-cleaning', 26) }}<span class="t">{{ t('nav.cleaning') }}</span>{% if cleaning_today %}<span class="badge">{{ cleaning_today }}</span>{% endif %}{{ icon('chevron-right', 20, 'chev') }}</a>
+  <a class="row" href="/stay-fees">{{ icon('receipt', 26) }}<span class="t">{{ t('nav.stay_fees') }}</span>{{ icon('chevron-right', 20, 'chev') }}</a>
+  <a class="row" href="/payments">{{ icon('credit-card', 26) }}<span class="t">{{ t('nav.payments') }}</span>{{ icon('chevron-right', 20, 'chev') }}</a>
+  <a class="row" href="/settings">{{ icon('settings', 26) }}<span class="t">{{ t('nav.settings') }}</span>{{ icon('chevron-right', 20, 'chev') }}</a>
+  <a class="row" href="/guide">{{ icon('circle-help', 26) }}<span class="t">{{ t('menu.help') }}</span>{{ icon('chevron-right', 20, 'chev') }}</a>
+  {% if current_user.role == 'admin' %}<a class="row" href="/admin">{{ icon('shield', 26) }}<span class="t">{{ t('nav.admin') }}</span>{{ icon('chevron-right', 20, 'chev') }}</a>{% endif %}
 </nav>
-<form method="post" action="/logout" class="list menu-logout"><button class="row" type="submit"><span class="ic" aria-hidden="true">{{ icon('log-out', 22) }}</span><span class="t"><b>{{ t('nav.logout') }}</b></span></button></form>
+<form method="post" action="/logout" class="list plain menu-logout"><button class="row" type="submit">{{ icon('log-out', 26) }}<span class="t">{{ t('nav.logout') }}</span></button></form>
 {% endblock %}

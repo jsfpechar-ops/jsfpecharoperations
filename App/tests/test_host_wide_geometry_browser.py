@@ -313,6 +313,7 @@ def _capture_geometry(page, result_selector):
             hostLane,
             title: box('.page-header-main h1, .ui-ph-main h1, .host-today-head h1, .head h1'),
             pageHeader: box('.page-header, .ui-ph, .host-today-head, .head, .crumb, main h1'),
+            phTop: box('.ph-top'),
             directBacklink: box('main.wrap.with-sidebar > a.back-link'),
             headerMain: box('.page-header-main, .ui-ph-main, .host-today-head'),
             headerActions: box('.page-actions, .ui-ph-acts, .dashboard-actions'),
@@ -501,7 +502,9 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                     title = geometry["title"]
                     result = geometry["result"]
                     assert result, f"{name}/{lang}/{width}: selected result lane {result_selector!r} is missing"
-                    header = geometry["pageHeader"]
+                    # 0729: below 1024 the dashboard lane is the phone top block (.head is hidden there on purpose).
+                    phone_dashboard = name == "dashboard" and width < 1024 and bool(geometry["phTop"])
+                    header = geometry["phTop"] if phone_dashboard else geometry["pageHeader"]
                     assert header, f"{name}/{lang}/{width}: page header is missing"
                     feedback_region = geometry["feedbackRegion"]
                     assert feedback_region, f"feedback region missing on {name}/{lang}/{width}"
@@ -554,7 +557,7 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                             mismatches.append({"route": name, "locale": lang, "width": width,
                                 "lane": "directBacklink.left", "result": header,
                                 "candidate": direct_backlink, "delta": delta})
-                    if title and result and abs(result["left"] - title["left"]) > 2:
+                    if title and result and not phone_dashboard and abs(result["left"] - title["left"]) > 2:
                         mismatches.append({"route": name, "locale": lang, "width": width,
                             "lane": "pageHeader.titleLeft", "result": result, "candidate": title})
                     lane = geometry["result"]
@@ -877,19 +880,23 @@ def test_dashboard_760_header_and_actions_remain_in_the_shared_lane(wide_host, w
             # 0720c: v2 dashboard. The header is `.head`, the lane is `#needs-action`, the lines are `.card.need`.
             v2 = page.evaluate("""() => {
               const rect = el => { if (!el) return null; const r = el.getBoundingClientRect(); return {left: r.left, right: r.right, top: r.top, bottom: r.bottom}; };
-              return {main: rect(document.querySelector('main')), head: rect(document.querySelector('.head')),
-                title: rect(document.querySelector('.head h1')), ovTop: rect(document.querySelector('.ov-top')),
+              const shown = el => el && el.offsetParent !== null ? rect(el) : null;
+              return {main: rect(document.querySelector('main')), head: shown(document.querySelector('.ph-top')) || rect(document.querySelector('.head')),
+                title: shown(document.querySelector('.head h1')), ovTop: shown(document.querySelector('.ov-top')),
                 lane: rect(document.querySelector('#needs-action')),
                 overflow: document.documentElement.scrollWidth - innerWidth,
                 alertStack: !!document.querySelector('.notification-stack')};
             }""")
-            assert v2["lane"] and v2["head"] and v2["title"] and v2["ovTop"], v2
+            # 0729: below 1024 .head and .ov-top are hidden on purpose; the phone top block (.ph-top) is the header.
+            assert v2["lane"] and v2["head"], v2
             assert v2["overflow"] <= 1, v2
             assert not v2["alertStack"], v2
             for edge in ("left", "right"):
                 assert abs(v2["head"][edge] - v2["lane"][edge]) <= 2, v2
-                assert abs(v2["ovTop"][edge] - v2["lane"][edge]) <= 2, v2
-            assert abs(v2["title"]["left"] - v2["lane"]["left"]) <= 2, v2
+                if v2["ovTop"]:
+                    assert abs(v2["ovTop"][edge] - v2["lane"][edge]) <= 2, v2
+            if v2["title"]:  # 0729: the phone headline is centred inside the lane (8px side margin)
+                assert abs((v2["title"]["left"] + v2["title"]["right"]) / 2 - (v2["lane"]["left"] + v2["lane"]["right"]) / 2) <= 2, v2
             # 0241: the alert is a line in "What needs you", never a second stack.
             card_alert = page.locator('#needs-action [data-needs-you="alert"]')
             assert card_alert.count() >= 1, page.locator("body").inner_text()[:500]

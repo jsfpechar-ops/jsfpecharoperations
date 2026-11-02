@@ -17,6 +17,7 @@ from tests.v2_mockup import (
     DESKTOP,
     DESKTOP_ONLY,
     PAGES,
+    PHONE_MOCKUP,
     PHONE_WIDTHS,
     SELECTOR_ALIASES,
     STYLE_PROPS,
@@ -76,11 +77,11 @@ def _open_app(browser, base_url, cookie, path, width):
     return context, page
 
 
-def _open_phone(browser, key, width):
+def _open_phone(browser, key, width, mockup=PHONE_MOCKUP):
     context = browser.new_context(viewport={"width": width, "height": 1000}, reduced_motion="reduce")
     page = context.new_page()
     route_offline(page)
-    page.goto(phone_url())
+    page.goto(phone_url(mockup))
     show_phone_screen(page, key)
     return context, page
 
@@ -104,7 +105,7 @@ def test_v2_page_matches_mockup_styles(spec, width, base, dashboard_rich_host):
         browser = _launch(playwright)
         app_ctx, app_page = _open_app(browser, base, cookie, _path(spec, dashboard_rich_host), width)
         if phone:
-            mock_ctx, mock_page = _open_phone(browser, spec["phone_view"], width)
+            mock_ctx, mock_page = _open_phone(browser, spec["phone_view"], width, spec.get("phone_mockup", PHONE_MOCKUP))
             selectors, view_name = spec["phone_selectors"], f"phone screen {spec['phone_view']}"
         else:
             mock_ctx, mock_page = _open_mockup(browser, spec["view"], width)

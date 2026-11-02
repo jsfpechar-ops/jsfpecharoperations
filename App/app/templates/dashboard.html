@@ -53,11 +53,16 @@
   {% set needs_you = needs_you_build(rows, needs_you_queue, open_alerts, missing_report_rows, link_unused, lang, today) %}
   {% set ny_lines = (needs_you.lines | rejectattr('kind', 'equalto', 'setup') | list) if banner_showing else needs_you.lines %}
 
-  <div class="top ov-top"><span></span><a class="round" href="/reservations?new=1" aria-label="{{ t('stays.add_stay') }}">{{ icon('plus', 20) }}</a></div>
+  {#- 0729: phone v2 top (Airbnb style): Today/Upcoming switch and one headline. -#}
+  <div class="ph-top ph-only">
+    <nav class="seg" aria-label="{{ t('dashboard.title') }}"><a class="on" href="/" aria-current="page">{{ t('nav.today') }}</a><a href="/reservations">{{ t('dashboard.ph.upcoming') }}</a></nav>
+  </div>
   <div class="head ov-head"><div>
-    <h1>{{ t('dashboard.title') }}</h1>
-    <p class="sub">{{ today.isoformat() | date_long(lang) }}</p>
-    <div class="ov-quiet">
+    {#- 0729: the page's one h1: "Overview" on desktop, the headline on phone. -#}
+    <h1 class="hl{{ ' done' if not ny_lines }}"><span class="ph-hide">{{ t('dashboard.title') }}</span><span class="ph-only">{% if ny_lines %}{{ tp('dashboard.ph.need', ny_lines | length) }}{% else %}{{ t('dashboard.ph.done') }}{% endif %}</span></h1>
+    {% if not ny_lines and next_arrival %}<p class="hl-sub ph-only">{{ t('dashboard.ph.next', when=(next_arrival.date_from | string)[:10] | date_long(lang), place=next_arrival.internal_name) }}</p>{% endif %}
+    <p class="sub ph-hide">{{ today.isoformat() | date_long(lang) }}</p>
+    <div class="ov-quiet ph-hide">
     <details class="ui-how ov-how ph-hide" data-how="dashboard">
       <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
       <div class="ui-how-body">
@@ -82,12 +87,12 @@
   {% elif not rows %}{{ ui_empty(t('dashboard.empty.no_feed'), '', t('dashboard.empty.connect_calendar'), '/apartments/' ~ apartments[0].id ~ '?view=bookings#calendars', primary=false) }}
   {% endif %}
   <section id="needs-action"data-needs-you-card data-dashboard-refresh="stats" aria-labelledby="needs-you-title">
-    <h2 id="needs-you-title" class="sec">{{ t('needs_you.title') }}{% if ny_lines %} <span class="badge ph-only">{{ ny_lines | length }}</span>{% endif %}</h2>
+    <h2 id="needs-you-title" class="sec ph-hide">{{ t('needs_you.title') }}</h2>
     <div class="todo ov-section">
     {% if ny_lines %}
       {% for line in ny_lines[:4] %}{{ overview_card(line, loop.first) }}{% endfor %}
     {% else %}
-      <div class="card needs-you-calm allgood"><p>{{ icon('check', 20) }} <strong>{{ t('needs_you.calm') }}</strong></p></div>
+      <div class="card needs-you-calm allgood ph-hide"><p>{{ icon('check', 20) }} <strong>{{ t('needs_you.calm') }}</strong></p></div>
     {% endif %}
     </div>
     {% if ny_lines | length > 2 %}
@@ -102,7 +107,7 @@
   {% if finish_card_showing and focus_is_urgent %}{{ onboarding_finish_strip(onboarding) }}{% endif %}
   {% if finish_card_showing and not focus_is_urgent %}<div class="ph-hide">{{ onboarding_finish(onboarding) }}</div>{% endif %}
   {% if month_summary %}
-  <div class="quiet ov-month" data-dashboard-month><span>{{ t('dashboard.month.label') }}</span> <span class="ov-mi"><b>{{ month_summary.guests }}</b> {{ tp('dashboard.month.guests', month_summary.guests) }}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{ month_summary.nights }}</b> {{ tp('dashboard.month.nights', month_summary.nights) }}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{ month_summary.reported }}</b> {{ tp('dashboard.month.reported', month_summary.reported) }}</span></div>
+  <div class="quiet ov-month ph-hide" data-dashboard-month><span>{{ t('dashboard.month.label') }}</span> <span class="ov-mi"><b>{{ month_summary.guests }}</b> {{ tp('dashboard.month.guests', month_summary.guests) }}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{ month_summary.nights }}</b> {{ tp('dashboard.month.nights', month_summary.nights) }}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{ month_summary.reported }}</b> {{ tp('dashboard.month.reported', month_summary.reported) }}</span></div>
   {% endif %}
 
   <h2 class="ov-cal-block">{{ t('calendar.calendar') }}</h2>
@@ -118,7 +123,7 @@
   <p class="ov-cal-more ov-cal-block"><a href="/?cal_view=calendar" class="ov-cal-link">{{ t('dashboard.calendar.full') }}</a></p>
   {% if cal_view %}{% include "_dashboard_calendar.html" %}{% endif %}
 
-  <h2 class="sec">{{ t('dashboard.today.title') }} <a class="ph-only" href="/?cal_view=calendar">{{ t('calendar.calendar') }}</a></h2>
+  <h2 class="sec{{ ' ph-hide' if not today_rows }}">{{ t('dashboard.today.title') }}</h2>
   <div class="hs ph-only">
   {% for row in today_rows %}
     {% set reservation = row.reservation %}{% set progress = row.progress %}{% set cell = row.deadline_cell %}

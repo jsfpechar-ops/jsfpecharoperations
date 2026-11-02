@@ -532,6 +532,12 @@ def dashboard(request: Request):
                 for row in rows
                 if today.isoformat() in (str(row["reservation"]["date_from"])[:10], str(row["reservation"]["date_to"])[:10])
             ],
+            # 0729: phone "All done" line names the next arrival after today.
+            "next_arrival": min(
+                (row["reservation"] for row in rows if str(row["reservation"]["date_from"])[:10] > today.isoformat()),
+                key=lambda r: str(r["date_from"])[:10],
+                default=None,
+            ),
         },
     ))
 
@@ -4613,22 +4619,22 @@ def menu_view(request: Request):
         return guard
     from .. import claim, cleaning
 
-    cleaning_today = cleaning_week = None
+    owner = access.owner_id(request)
+    today = claim.prague_today()
+    cleaning_today = None
     try:
-        today = claim.prague_today()
-        events = cleaning.schedule(access.owner_id(request), today, today + timedelta(days=6))["events"]
-        cleaned = [e for e in events if e.get("kind") == "cleaning"]
-        cleaning_today = sum(1 for e in cleaned if str(e.get("start", ""))[:10] == today.isoformat())
-        cleaning_week = len(cleaned)
+        events = cleaning.schedule(owner, today, today)["events"]
+        cleaning_today = sum(
+            1 for e in events if e.get("kind") == "cleaning" and str(e.get("start", ""))[:10] == today.isoformat()
+        )
     except Exception:
-        cleaning_today = cleaning_week = None
+        cleaning_today = None
     return render(
         request,
         "menu.html",
         {
-            "apartments": access.apartments(request, "id, internal_name"),
             "cleaning_today": cleaning_today,
-            "cleaning_week": cleaning_week,
+            "month": reporting.month_summary(owner, today),
         },
     )
 

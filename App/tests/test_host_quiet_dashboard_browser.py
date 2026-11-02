@@ -199,7 +199,7 @@ CARD_JS = """() => {
     };
   });
   return {card: rect(card), cardBorder: [style(card).borderTopStyle, parseFloat(style(card).borderTopWidth)], items,
-          header: rect(document.querySelector('.ov-top').offsetParent !== null ? document.querySelector('.ov-top') : document.querySelector('.ov-head')),
+          header: rect([document.querySelector('.ov-top'), document.querySelector('.ov-head'), document.querySelector('.ph-top')].find(el => el && el.offsetParent !== null) || document.querySelector('.ov-head')),
           calendar: document.querySelector('#calendar') ? rect(document.querySelector('#calendar')) : null,
           scroll: document.documentElement.scrollWidth - innerWidth,
           stack: !!document.querySelector('.notification-stack')};
@@ -249,7 +249,9 @@ def _check_card(geo, width, label):
         where = (label, item["kind"], item["text"])
         box, copy = item["box"], item["copy"]
         assert box["l"] >= card["l"] - 0.5 and box["r"] <= card["r"] + 0.5, where
-        assert item["border"][0] == "solid" and item["border"][1] >= 1, where + (item["border"],)
+        if width >= 768:
+            # v2 (0729, brief 4b): below 768 the card has border:0 and its shadow is the frame (checked above).
+            assert item["border"][0] == "solid" and item["border"][1] >= 1, where + (item["border"],)
         if width >= 768:
             # 0701: a card with a 44 px tinted tile; no coloured left edge, the tone is the tile.
             assert item["border"][2] <= 1.0, where + (item["border"],)
@@ -259,10 +261,14 @@ def _check_card(geo, width, label):
         # Same icon-tile check at every width: square, inside the card. The v2 tile measures 48 px
         # at 360 and 1280 (the old 44 px figure is stale), so the size only has to sit in 40-52 px.
         icon = item["iconBox"]
-        assert 40 <= icon["w"] <= 52 and 40 <= icon["h"] <= 52, where + (icon,)
-        assert abs(icon["w"] - icon["h"]) <= 1, where + (icon,)
-        assert icon["l"] >= box["l"] - 0.5 and icon["r"] <= box["r"] + 0.5, where + (icon,)
-        assert icon["t"] >= box["t"] - 0.5 and icon["b"] <= box["b"] + 0.5, where + (icon,)
+        if width >= 1024:
+            assert 40 <= icon["w"] <= 52 and 40 <= icon["h"] <= 52, where + (icon,)
+            assert abs(icon["w"] - icon["h"]) <= 1, where + (icon,)
+            assert icon["l"] >= box["l"] - 0.5 and icon["r"] <= box["r"] + 0.5, where + (icon,)
+            assert icon["t"] >= box["t"] - 0.5 and icon["b"] <= box["b"] + 0.5, where + (icon,)
+        else:
+            # v2 (0729, brief 10.2 / 4): below 1024 `.need .ic` is not shown on the phone Today.
+            assert icon["w"] == 0 or icon["h"] == 0, where + (icon,)
         tone_colours.setdefault(item["tone"], set()).add(item["icon"])
         assert not item["copyOverflow"], where
         assert copy["l"] >= box["l"] - 0.5 and copy["r"] <= box["r"] + 0.5, where
@@ -376,17 +382,20 @@ def test_dashboard_rich_needs_you_order_cap_and_geometry(dashboard_rich_host, ba
                     assert page.locator('.card.need[data-needs-you="setup"]', has_text="(demo)").count() == 0, label
 
                     # Header: one primary action, no overflow menu (0520).
-                    # v2 below 1024: the phone header action is the "+" link in the top row.
-                    header_buttons = page.locator(".top a.round")
-                    visible_buttons = [button for button in header_buttons.all() if button.is_visible()]
                     if width < 1024:
-                        assert len(visible_buttons) == 1, label
-                        plus = visible_buttons[0].bounding_box()
-                        assert plus["width"] >= 44 and plus["height"] >= 44, (label, plus)
-                        assert plus["x"] >= -0.5 and plus["x"] + plus["width"] <= width + 0.5, (label, plus)
+                        # 0729: the phone header has no "+" on purpose; the two pill links of the top block replace it.
+                        seg_links = [link for link in page.locator(".ph-top .seg a").all() if link.is_visible()]
+                        assert len(seg_links) == 2, label
+                        for link in seg_links:
+                            seg_box = link.bounding_box()
+                            assert seg_box["height"] >= 44, (label, seg_box)
+                            assert seg_box["x"] >= -0.5 and seg_box["x"] + seg_box["width"] <= width + 0.5, (label, seg_box)
                         assert page.locator(".ui-ph-menu").count() == 0, label
-                    header_boxes = [button.bounding_box() for button in visible_buttons]
-                    assert all(abs(box["height"] - (44 if width <= 767 else 40)) <= 1 for box in header_boxes), label
+                    else:
+                        header_buttons = page.locator(".top a.round")
+                        visible_buttons = [button for button in header_buttons.all() if button.is_visible()]
+                        header_boxes = [button.bounding_box() for button in visible_buttons]
+                        assert all(abs(box["height"] - (44 if width <= 767 else 40)) <= 1 for box in header_boxes), label
 
                     _check_card(page.evaluate(CARD_JS), width, label)
                     _check_focus(page, label)
