@@ -413,7 +413,7 @@ def test_the_stay_page_reads_as_one_ordered_grammar():
         assert positions == sorted(positions)
         # Reporting facts now live after Guests, in the Police report section.
         assert 'police-card' in body
-        assert 'class="facts' in body
+        assert 'class="card facts stay-dates' in body
         assert body.index('id="guests"') < body.index('police-card')
         assert 'class="panel tight detail-hero' not in body
         # The guest-assignment line moved into the Guests group.

@@ -1273,6 +1273,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.facts.nights": "Nights",
         "stay.detail.facts.guests": "%(count)s guests",
         "stay.detail.facts.guests.one": "%(count)s guest",
+        "stay.detail.facts.guests.few": "%(count)s guests",
         "stay.detail.door_code.title": "Door code",
         "stay.detail.banner.cancelled": "This stay is cancelled. UbyHost sends nothing for it. If that's a mistake, set it back to Active in Stay settings.",
         "stay.detail.banner.ignored": "Marked as not a guest stay and hidden from daily work.",

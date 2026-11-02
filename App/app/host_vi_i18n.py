@@ -1330,6 +1330,8 @@ STRINGS: Dict[str, str] = {
     "stay.detail.note.manual": "chỉ thủ công",
     "stay.detail.facts.nights": "Đêm",
     "stay.detail.facts.guests": "%(count)s khách",
+    "stay.detail.facts.guests.one": "%(count)s khách",
+    "stay.detail.facts.guests.few": "%(count)s khách",
     "stay.detail.guests.title": "Khách",
     "stay.detail.guests.lead": "khách chính",
     "stay.detail.guests.reported": "Đã khai báo",
