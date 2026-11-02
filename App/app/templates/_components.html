@@ -469,6 +469,7 @@
               <small>{{ t('onboarding.' ~ step.id ~ '.prepare') }}</small>
             {% endif %}
           </div>
+          {% if v2 %}<div class="onboarding-step-group">{% endif %}
           {% if step.done %}
             <span class="pill green">{{ t('onboarding.step_done') }}</span>
           {% elif onboarding.current and step.id == onboarding.current.id %}
@@ -483,6 +484,7 @@
               <a href="{{ step.learn_url }}">{{ t('nav.guide') }} </a>
             </details>
           {% endif %}
+          {% if v2 %}</div>{% endif %}
         </article>
       {% endfor %}
     </div>

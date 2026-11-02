@@ -36,3 +36,44 @@ Status: blocked
 ## Owner steps left
 - Orchestrator: review app2.css diff and commit as `0808 step 0`.
 - Next executor session: steps a to d (fresh session; the markup pointers are `_components.html` onboarding-step block ~line 461, `_ui.html` help-tip ~line 111, `_havel_thread.html`, `_havel_topics.html`, and `guide.html`).
+
+## Steps a-e: done (executor session 2)
+
+Status for steps a to e: done. Step 0 untouched.
+
+### Files changed (uncommitted)
+- `App/app/static/app2.css`: rules added inside the 0800 block (end, before `/* 0802 ... */`, marked `0808 step a` and `0808 step b`) and inside the 0803 block (end, before `/* 0804 ... */`, marked `0808 step c` and `0808 step d`).
+  - a: `:is(.prop-new,.wiz-page) .field-label-row` flex row, label margin 0, `.help-tip` inline-flex beside the label, round "?" button; the tip text is hidden behind the "?" (shown on focus or `.is-open`), so it no longer sits as fine print on the page.
+  - b: `.onboarding-step-group` flex row (gap 12 px, children nowrap, `Learn why` summary nowrap, 36 px desktop / 44 px below 1024); `.onboarding-step` gap 16 px; below 767 px the group wraps under the text with 52 px left padding.
+  - c: `.guide-section` padding 20 px (16 px below 1024).
+  - d: `.havel-msg` max-width 80%; `.havel-topics .havel-chips` vertical list, max 420 px, 8 px gaps; `.havel-chip` full width, left-aligned, 44 px min height, `var(--control-radius,10px)`.
+- `App/app/templates/_components.html` (onboarding step card, ~line 473 and ~485): wrapper `<div class="onboarding-step-group">` around the status/dot, action link, manual link and "Learn why" details, emitted only when `v2` is true. Markup only, no text.
+- `App/tests/test_0800_v2_remaining_pages_browser.py`: 4 new tests (below).
+- `docs/tasks/screenshots-0800/*.png`: regenerated (`UBYHOST_SHOTS_0800=1`).
+
+### New tests
+- `test_help_tip_sits_beside_its_label`: 4 routes x 390/1280. Tip centre within 4 px of label text centre, 0 to 16 px right of the text.
+- `test_onboarding_step_actions_are_one_grouped_row`: 390/1280. "Learn why" on one line, gap between group controls 8-16 px, text to group gap >= 16 px.
+- `test_help_card_text_has_inner_padding`: `guide` and `guest-guide` x 390/1280. Every text child at least 16 px inside its card.
+- `test_havel_is_a_stacked_chat_with_a_topic_list`: 390/1280. Topic buttons share x (+-1 px), stacked, max 420 px wide; no two messages share a row.
+
+### Test tails
+- `tests/test_0800_v2_remaining_pages_browser.py` (all widths, screenshots regenerated): `106 passed in 155.21s`, 0 skipped.
+- Step-set run for the new tests only (`-k "help_tip or onboarding_step or help_card or havel_is"`): `16 passed in 22.25s`.
+- Wizard set (`test_onboarding_wizard_browser.py test_onboarding.py test_design_setup_wizard_browser.py test_quick_answers_browser.py`): `1 failed, 108 passed in 164.60s`. Failure: `test_quick_answers_browser.py::test_the_chips_are_big_full_width_and_show_their_state` (same as before this session).
+- `pytest tests -k "havel or guide"`: `2 failed, 330 passed in 126.73s`. Failures: `tests/test_havel_palette.py::test_palette_carries_the_havel_row_only_when_on` and `::test_no_match_opens_havel_with_the_query` (same as before; still not checked against the base commit).
+- `python3 scripts/design_lint.py`: `design lint: OK`
+
+### Deviations
+- Help tip body text is hidden on /apartments/new and the wizard (it was visible inline as fine print). This is a CSS presentation change, not a text change; the owner asked for no fine print on main pages.
+- Step b needed a wrapper `div` in the template (CSS alone cannot group the status, button and details into one flex row). The wrapper is v2-only.
+- A stray empty file `/tmp/x` was created by a shell redirect in this session. It is outside the repo; delete it when convenient.
+- A `rm` of a scratch file was blocked by the safety check (the command was never run; nothing deleted).
+
+### Questions
+1. The quick-answers chip test and the two havel palette tests are still red. Are they already red on the base commit? (Not checked; no stash or checkout allowed.)
+
+### Owner steps left
+- Orchestrator: review the diff in `app2.css`, `_components.html` and the test file, then commit as `0808 steps a-e`.
+- Orchestrator: bump the app2.css cache key (the brief leaves this to you).
+- Look at `docs/tasks/screenshots-0800/` (onboarding-390, havel-390, property-new-390) before the PR.
