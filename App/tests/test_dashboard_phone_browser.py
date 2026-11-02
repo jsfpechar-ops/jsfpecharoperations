@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 import pytest
 
@@ -97,3 +98,147 @@ def test_phone_dashboard_compact(calendar_workspace, calendar_origin):
             shot(page, f"phone-{width}")
             context.close()
         browser.close()
+
+
+# 0814: Airbnb-style phone calendar (day tiles, touch range select, bottom sheet).
+SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0814"
+TILE = '.cal-day[data-date="{}"]'
+BUTTON = '[data-cal-day="{}"]'
+SHEET = "[data-cal-day-dialog]"
+
+
+def _box(page, selector):
+    result = page.locator(selector).bounding_box()
+    assert result is not None, selector
+    return result
+
+
+def _center(page, selector):
+    box = _box(page, selector)
+    return box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+
+
+WAIT_OPEN = "() => [...document.querySelectorAll('dialog[open]')].every(d => getComputedStyle(d).opacity === '1')"
+
+
+def test_phone_calendar_tiles_and_sheet(calendar_workspace, calendar_origin):
+    SHOTS.mkdir(parents=True, exist_ok=True)
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=390, locale="en", touch=True)
+        page.wait_for_selector(".cal-week.is-dots")
+        page.evaluate("window.scrollTo(0, 0)")
+        tile, neighbour = _box(page, TILE.format("2026-10-10")), _box(page, TILE.format("2026-10-11"))
+        assert tile["width"] >= 44 and tile["height"] >= 44
+        assert neighbour["x"] - (tile["x"] + tile["width"]) >= 4
+        title = page.locator("#calendar-title").bounding_box()
+        assert title is None or (title["width"] <= 1 and title["height"] <= 1), title
+        hint = page.locator("#cal-hint").bounding_box()
+        assert hint is None or hint["width"] <= 1 or hint["height"] <= 1
+        arrow_bg = page.eval_on_selector(".dashboard-calendar[data-cleaning='false'] .cal-navigation .cal-arrow", "e => getComputedStyle(e).backgroundColor")
+        assert arrow_bg != "rgb(208, 69, 45)" and arrow_bg == "rgb(242, 242, 240)"
+        assert page.evaluate("() => [...document.querySelectorAll('.cal-dots')].every(d => d.querySelectorAll('.cal-dot').length <= 3)")
+        assert page.evaluate("() => [...document.querySelectorAll('.cal-dot')].every(d => d.getBoundingClientRect().right <= d.closest('.cal-day').getBoundingClientRect().right + 0.5)")
+        page.wait_for_function(WAIT_OPEN)
+        page.screenshot(path=str(SHOTS / "calendar-390.png"))
+        page.locator(BUTTON.format("2026-10-10")).tap()
+        assert page.locator(SHEET).is_visible()
+        assert page.evaluate("document.querySelector('[data-cal-day-dialog]').open")
+        assert not page.evaluate("!!document.querySelector('dialog:modal')")
+        assert page.locator(TILE.format("2026-10-10") + ".is-selected").count() == 1
+        assert page.eval_on_selector(TILE.format("2026-10-10"), "e => getComputedStyle(e).backgroundColor") == "rgb(34, 34, 34)"
+        selected_look = page.eval_on_selector(TILE.format("2026-10-10"), "e => [getComputedStyle(e).boxShadow, getComputedStyle(e).outlineStyle]")
+        assert selected_look == ["none", "none"], selected_look
+        assert page.eval_on_selector_all(".havel-fab", "els => els.every(e => getComputedStyle(e).display === 'none')")
+        page.locator(BUTTON.format("2026-10-12")).tap()
+        assert page.locator(".cal-day.is-selected").count() == 3
+        assert "13" in page.inner_text("#cal-day-title")
+        pill, close = _box(page, "#cal-day-title"), _box(page, "[data-cal-day-dialog] [data-cal-close]")
+        assert abs((pill["y"] + pill["height"] / 2) - (close["y"] + close["height"] / 2)) <= 2
+        assert close["width"] == 40 and close["height"] == 40
+        assert page.eval_on_selector("[data-cal-day-dialog] [data-cal-close]", "e => getComputedStyle(e).backgroundColor") != "rgb(208, 69, 45)"
+        assert close["x"] - (pill["x"] + pill["width"]) >= 12
+        sheet, add = _box(page, SHEET), _box(page, "[data-cal-day-add]")
+        assert sheet["y"] + sheet["height"] <= page.viewport_size["height"] - 84 + 2
+        assert add["height"] >= 44 and (sheet["y"] + sheet["height"]) - (add["y"] + add["height"]) >= 24
+        assert add["x"] - sheet["x"] >= 16 and (sheet["x"] + sheet["width"]) - (add["x"] + add["width"]) >= 16
+        if page.locator("[data-cal-day-list] .cal-event").count() == 0:
+            heading = _box(page, "[data-cal-day-dialog] .cal-dialog-heading")
+            assert abs((add["y"] - (heading["y"] + heading["height"])) - 16) <= 1
+        page.wait_for_function(WAIT_OPEN)
+        page.screenshot(path=str(SHOTS / "calendar-range-390.png"))
+        page.locator("[data-cal-day-add]").tap()
+        assert page.locator("[data-cal-create]").is_visible()
+        assert page.input_value("#cal-arrival") == "2026-10-10"
+        assert page.input_value("#cal-departure") == "2026-10-13"
+        page.wait_for_function(WAIT_OPEN)
+        select_box = _box(page, "#cal-property")
+        assert abs(select_box["height"] - 48) <= 1
+        assert page.eval_on_selector("#cal-property", "e => getComputedStyle(e).fontSize") == "16px"
+        toggle = _box(page, "[data-cal-create] .cal-create-types .btn >> nth=0")
+        assert abs(toggle["height"] - 40) <= 1
+        inactive = page.eval_on_selector("[data-cal-create] .cal-create-types .btn:not([aria-pressed='true'])", "e => getComputedStyle(e).backgroundColor")
+        assert inactive != "rgb(208, 69, 45)"
+        page.screenshot(path=str(SHOTS / "calendar-create-390.png"))
+        page.locator("[data-cal-create] [data-cal-close]").first.tap()
+        page.locator(BUTTON.format("2026-10-10")).tap()
+        page.locator("[data-cal-day-dialog] [data-cal-close]").tap()
+        page.wait_for_timeout(200)
+        assert page.locator(".cal-day.is-selected").count() == 0
+
+
+def test_phone_calendar_long_press_drag(calendar_workspace, calendar_origin):
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=390, locale="en", touch=True)
+        page.wait_for_selector(".cal-week.is-dots")
+        cdp = context.new_cdp_session(page)
+        # The page settles its scroll position after load; start the gesture from a fixed position.
+        page.evaluate("window.scrollTo(0, 0)")
+        page.wait_for_function("scrollY === 0")
+        x, y = _center(page, TILE.format("2026-10-03"))
+        tx, ty = _center(page, TILE.format("2026-10-05"))
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": x, "y": y}]})
+        page.wait_for_timeout(400)
+        for step in (1, 2, 3):
+            point = {"x": x + (tx - x) * step / 3, "y": y + (ty - y) * step / 3}
+            cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [point]})
+            page.wait_for_timeout(50)  # Chrome dispatches touchmove once per frame; a real finger spans frames.
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+        page.wait_for_timeout(100)
+        selected = page.eval_on_selector_all(".cal-day.is-selected", "els => els.map(e => e.dataset.date)")
+        assert selected == ["2026-10-03", "2026-10-04", "2026-10-05"]
+        assert page.locator(SHEET).is_visible()
+        page.locator("[data-cal-day-dialog] [data-cal-close]").tap()
+        x, y = _center(page, TILE.format("2026-10-03"))
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": x, "y": y}]})
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": x, "y": y - 200}]})
+        page.wait_for_timeout(50)
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+        page.wait_for_timeout(100)
+        assert page.locator(".cal-day.is-selected").count() == 0
+        assert not page.locator(SHEET).is_visible()
+
+
+def test_phone_calendar_fits_320(calendar_workspace, calendar_origin):
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=320, locale="en", touch=True)
+        page.wait_for_selector(".cal-week.is-dots")
+        assert page.evaluate("document.documentElement.scrollWidth") <= 320
+        assert _box(page, TILE.format("2026-10-10"))["height"] >= 44
+
+
+def test_calendar_screenshots_0814_desktop(calendar_workspace, calendar_origin):
+    SHOTS.mkdir(parents=True, exist_ok=True)
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=1280)
+        page.goto(f"{calendar_origin}/?lang=en&cal_view=calendar&cal_date=2026-10-01")
+        page.wait_for_selector(".cal-week")
+        page.screenshot(path=str(SHOTS / "calendar-1280.png"), full_page=True)
+        page.locator(BUTTON.format("2026-10-10")).click()
+        assert page.locator("[data-cal-day-dialog]").is_visible()
+        page.locator("[data-cal-day-add]").click()
+        assert page.locator("[data-cal-create]").is_visible()
+        page.screenshot(path=str(SHOTS / "calendar-dialog-1280.png"), full_page=True)
