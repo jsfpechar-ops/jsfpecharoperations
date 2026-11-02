@@ -1,3 +1,5 @@
+// Turbo ignores reduced motion; without startViewTransition it swaps pages without a fade.
+if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches && document.startViewTransition) { document.startViewTransition = undefined; }
 (function () {
   "use strict";
 
