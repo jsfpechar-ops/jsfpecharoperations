@@ -102,8 +102,6 @@ BOX_OVERRIDES = {
     "stays:.mh .big, .head h1@320": {"width": "100.203px"},
     "stays:.mh .big, .head h1@390": {"width": "100.203px"},
     # text-dependent (0766): the stays card shows the stay dates with weekdays; values are the app's measured fixture sizes
-    "stays:.stay .in b@320": {"width": "113.547px"},
-    "stays:.stay .in b@390": {"width": "113.547px"},
     "stays:.stay .in small@320": {"width": "72.2656px"},
     "stays:.stay .in small@390": {"width": "72.2656px"},
     "stays:.stay .pill.p-warn@320": {"width": "101.891px"},
@@ -247,6 +245,9 @@ PAGES = [
             "main .pill.p-ok": "tone depends on data: the test fixture has no reported stay",
             ".stay .pill.p-ok": "tone depends on data: the test fixture has no reported stay",
             ".stay .pill.p-warn": "tone depends on data: the test fixture has no reported stay",
+        },
+        "phone_box_skip": {
+            ".stay .in b": (["width"], "title is the stay's date range relative to today, so its text width changes daily (0766)"),
         },
     },
     {
