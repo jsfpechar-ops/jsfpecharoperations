@@ -228,3 +228,27 @@ def test_a_new_login_lifts_the_auth_pause(host):
 
     assert response.status_code == 303, response.text
     assert alerts.open_alert(f"ubyport_auth_failed:{apartment['id']}") is None
+
+
+def test_the_scan_switch_is_saved_off_without_the_upload(host):
+    """0834: with passport upload off, saving forces the scan switch off."""
+    apartment = _apartment()
+    saved = host.post(
+        f"/apartments/{apartment['id']}",
+        data=_payload(passport_photo_policy="off", ocr_scan="1"),
+        follow_redirects=False,
+    )
+    assert saved.status_code == 303, saved.text
+    assert _apartment()["ocr_scan"] == 0
+
+
+def test_the_scan_switch_is_saved_on_with_the_upload(host):
+    """0834: the switch is stored on when the upload is on too."""
+    apartment = _apartment()
+    saved = host.post(
+        f"/apartments/{apartment['id']}",
+        data=_payload(passport_photo_policy="required_foreign", ocr_scan="1"),
+        follow_redirects=False,
+    )
+    assert saved.status_code == 303, saved.text
+    assert _apartment()["ocr_scan"] == 1
