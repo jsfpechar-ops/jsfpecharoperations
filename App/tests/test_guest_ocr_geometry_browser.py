@@ -194,6 +194,32 @@ def test_the_scan_button_is_a_44px_target(base, world, browser, width):
         context.close()
 
 
+@pytest.mark.parametrize("width", [390])
+def test_a_chosen_photo_fills_the_surname(base, world, browser, monkeypatch, width):
+    import io
+
+    from PIL import Image
+
+    from tests.test_doc_ocr import _td3_text
+
+    monkeypatch.setattr(doc_ocr, "run_tesseract", lambda jpeg: _td3_text())
+    buf = io.BytesIO()
+    Image.new("RGB", (900, 600), "white").save(buf, "JPEG")
+    context, page = _page(browser, base, world, width)
+    try:
+        _goto_form(page, base, world)
+        page.set_input_files(
+            "#ocr-scan-file",
+            files=[{"name": "passport.jpg", "mimeType": "image/jpeg", "buffer": buf.getvalue()}],
+        )
+        page.wait_for_function(
+            "() => document.getElementById('surname').value === 'SMITH'", timeout=15000
+        )
+        assert page.input_value("#surname") == "SMITH"
+    finally:
+        context.close()
+
+
 def test_the_scan_button_is_absent_when_the_plan_is_not_max(base, world, browser, monkeypatch):
     context, page = _page(browser, base, world, 390)
     try:
