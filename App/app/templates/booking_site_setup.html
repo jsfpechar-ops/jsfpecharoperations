@@ -1,0 +1,88 @@
+{% extends "host_page.html" %}
+{% from "_ui.html" import ui_button, ui_badge, ui_field, ui_select with context %}
+{% from "_ui_layout.html" import ui_section, ui_facts, ui_banner with context %}
+{% from "_components.html" import choice_card, copy_button with context %}
+{% set nav = 'properties' %}
+{% set body_kind = 'form' %}
+{% block title %}{{ t('bsite.title') }} · {{ apartment.internal_name }}{% endblock %}
+{% block back_url %}/apartments/{{ apartment.id }}/page{% endblock %}
+{% block back_label %}{{ t('payments.page.title') }}{% endblock %}
+{% block meta %}{{ apartment.internal_name }}{% endblock %}
+{% block primary_action %}{% endblock %}
+{% block tabs %}{% endblock %}
+{% block toolbar %}{% endblock %}
+{% block body %}
+{% if not allowed %}
+{{ ui_banner('attention', t('bsite.max_only'), t('bsite.max_cta'), '/predplatne') }}
+{% else %}
+{% call ui_section(t('bsite.steps.title', done=steps_done)) %}
+<dl class="ui-facts">
+  {% for row in steps %}
+  <div>
+    <dt>{{ t('bsite.step.' ~ row.key) }}</dt>
+    <dd>
+      {% if row.done %}{{ ui_badge('done', t('bsite.badge.done')) }}
+      {% elif row.current %}{{ ui_badge('action', t('bsite.badge.next')) }}
+      {% else %}{{ ui_badge('neutral', t('bsite.badge.wait')) }}{% endif %}
+      {# the current step's one action button goes here, see below #}
+      {% if row.current and not row.done %}
+        {% if row.key == 'stripe' %}{{ ui_button(t('bsite.act.stripe'), 'secondary', href='/payments', size='compact') }}
+        {% elif row.key == 'page' %}{{ ui_button(t('bsite.act.page'), 'secondary', href='/apartments/' ~ apartment.id ~ '/page', size='compact') }}
+        {% elif row.key == 'price' or row.key == 'policy' %}{{ ui_button(t('bsite.act.price'), 'secondary', href='#rules', size='compact') }}
+        {% elif row.key == 'calendar' %}{{ ui_button(t('bsite.act.calendar'), 'secondary', href='#ical', size='compact') }}
+        {% endif %}
+      {% endif %}
+    </dd>
+  </div>
+  {% endfor %}
+</dl>
+{% endcall %}
+
+{% call ui_section(t('bsite.rules.title'), id='rules') %}
+<form method="post" action="/apartments/{{ apartment.id }}/booking-site">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  {{ ui_field('nightly_price_czk', t('bsite.f.price'), value=s.nightly_price_czk, type='number', attrs='min="1" inputmode="numeric" required') }}
+  {{ ui_field('cleaning_fee_czk', t('bsite.f.cleaning'), value=s.cleaning_fee_czk, type='number', attrs='min="0" inputmode="numeric"') }}
+  {{ ui_field('min_nights', t('bsite.f.min_nights'), value=s.min_nights, type='number', attrs='min="1" max="30" inputmode="numeric"') }}
+  {{ ui_field('max_guests', t('bsite.f.max_guests'), value=s.max_guests, type='number', attrs='min="0" max="60" inputmode="numeric"') }}
+  {{ ui_select('notice', t('bsite.f.notice'), notice_options, selected=notice_value) }}
+  <p class="ui-label">{{ t('bsite.f.policy') }}</p>
+  <div class="ui-choice-cards">
+    {% for p in policies %}
+    {% call choice_card('cancellation_policy', p, t('pp.book.policy_name.' ~ p), s.cancellation_policy == p) %}<span class="ui-sub">{{ t('bsite.policy_detail.' ~ p) }}</span>{% endcall %}
+    {% endfor %}
+  </div>
+  {{ ui_button(t('common.save'), 'primary', type='submit') }}
+</form>
+{% endcall %}
+
+{% call ui_section(t('bsite.ical.title'), id='ical') %}
+<p class="ui-sub">{{ t('bsite.ical.help') }}</p>
+<input class="ui-input ui-mono" id="ical-url" type="text" readonly value="{{ ical_url }}" aria-label="{{ t('bsite.ical.title') }}">
+{{ copy_button('ical-url') }}
+<form method="post" action="/apartments/{{ apartment.id }}/booking-site">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="ical_done" value="1">
+  {{ ui_button(t('bsite.ical.done_btn'), 'secondary', type='submit', size='compact') }}
+</form>
+{% endcall %}
+
+{% call ui_section(t('bsite.url.title')) %}
+<p><a href="{{ page_url }}" id="page-url">{{ page_url }}</a></p>
+{{ copy_button('page-url') }}
+<img src="{{ qr }}" alt="{{ t('bsite.url.qr_alt') }}" width="160" height="160">
+{% endcall %}
+
+{% call ui_section(t('bsite.step.publish')) %}
+<form method="post" action="/apartments/{{ apartment.id }}/booking-site">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  {% if published %}
+    {{ ui_badge('done', t('payments.page.live')) }}
+    {{ ui_button(t('bsite.unpublish.btn'), 'secondary', type='submit', attrs='name="unpublish" value="1"') }}
+  {% else %}
+    {{ ui_button(t('bsite.publish.btn'), 'primary', type='submit', attrs='name="publish" value="1"' ~ ('' if can_publish else ' disabled')) }}
+  {% endif %}
+</form>
+{% endcall %}
+{% endif %}
+{% endblock %}
