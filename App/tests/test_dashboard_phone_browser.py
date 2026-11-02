@@ -56,7 +56,8 @@ def test_phone_dashboard_compact(calendar_workspace, calendar_origin):
                 assert page.locator("[data-cal-day-list] .cal-event").count() == 5
                 page.locator("[data-cal-day-dialog] [data-cal-close]").click()
                 names = seed_pin_alerts(calendar_workspace)
-                page.reload()
+                # 0765: the phone calendar view hides the to-do list, so check it on the Today view (no cal_ params).
+                page.goto(f"{calendar_origin}/?lang=en")
                 # 0241: the three PIN alerts are one line in "What needs you", linking to the property list.
                 assert page.locator(".notification-stack:visible").count() == 0
                 pin_lines = page.locator('[data-needs-you-card] [data-needs-you="alert"]', has_text="PIN")
