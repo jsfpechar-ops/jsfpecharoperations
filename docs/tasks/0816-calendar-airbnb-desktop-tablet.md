@@ -1,6 +1,6 @@
 # 0816: Airbnb calendar on tablet and desktop too
 
-Status: todo
+Status: done
 Depends on: 0814 (same branch, committed first) | Branch: claude/project-thread-vnnr9p
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

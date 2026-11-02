@@ -219,6 +219,7 @@
   }
   function propertyColor(id) { return ["teal", "blue", "purple"][Math.abs(Number(id)) % 3]; }
   function phoneDots() { return !cleaningMode && matchMedia("(max-width:767px)").matches; }
+  function tiles() { return !cleaningMode && view() === "calendar" && state.scale === "month"; }
   function appendCleaningIcon(node, className) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("viewBox", "0 0 24 24");
@@ -277,7 +278,7 @@
     const [start, end] = range(), weekdays = el("div", "cal-weekdays");
     for (let day = 0; day < 7; day++) weekdays.append(el("span", "", weekday(addDays(start, day))));
     body.append(weekdays);
-    const mobile = matchMedia("(max-width:760px)").matches, dots = phoneDots();
+    const mobile = matchMedia("(max-width:760px)").matches, dots = tiles();
     const bookingBudgetDefault = cleaningMode ? 1 : (mobile ? 1 : 2);
     for (let week = start; week < end; week = addDays(week, 7)) {
       const until = addDays(week, 7);
@@ -307,6 +308,10 @@
           dayEvents.slice(0, 3).forEach(event => { const dot = el("span", "cal-dot"); dot.dataset.calColor = propertyColor(event.propertyId); marks.append(dot); });
           if (dayEvents.length > 3) marks.append(el("span", "cal-dot-more", "+" + String(dayEvents.length - 3)));
           button.append(marks);
+          const chips = el("div", "cal-tile-chips");
+          dayEvents.slice(0, 2).forEach(event => { const chip = el("span", "cal-tile-chip", labelFor(event)); chip.dataset.calColor = propertyColor(event.propertyId); chips.append(chip); });
+          if (dayEvents.length > 2) { const more = el("span", "cal-tile-more", "+" + String(dayEvents.length - 2)); more.dataset.calMore = date; chips.append(more); }
+          button.append(chips);
           if (dayEvents.length) day.classList.add("has-stays");
         }
         day.append(button); days.append(day);
@@ -511,7 +516,7 @@
   $$("dialog").forEach(dialog => {
     dialog.addEventListener("close", () => {
       const target = focusReturn.get(dialog); focusReturn.delete(dialog);
-      if (dialog === dayDialog) cancelSelection();
+      if (dialog === dayDialog) { cancelSelection(); root.classList.remove("has-panel"); }
       if ($("dialog[open]")) return;
       // The close event is queued: keep focus if another control already received it.
       const active = document.activeElement;
@@ -586,6 +591,7 @@
     $("[data-cal-day-dialog] #cal-day-title").textContent = end > start ? shortDate(start) + " – " + shortDate(dayListEnd) : shortDate(start);
     const list = $("[data-cal-day-list]"); list.replaceChildren(); list.className = "cal-day-list";
     state.events.filter(event => displayOverlap(event, start, dayListEnd)).forEach(event => list.append(eventLink(event)));
+    root.classList.add("has-panel");
     if (!dayDialog.open) { focusReturn.set(dayDialog, document.activeElement); dayDialog.show(); }
   }
   function phoneTap(date) {
@@ -681,7 +687,8 @@
     event.preventDefault();
     const focusable = cell.matches("[data-cal-day]") ? cell : cell.querySelector("[data-cal-day]");
     if (focusable) focusable.focus({ preventScroll: true });
-    selection = { anchor: cell.dataset.date, start: cell.dataset.date, end: cell.dataset.date, property: cell.dataset.property || state.property, lastX: event.clientX, pointerId: event.pointerId };
+    const prior = selection && selection.pointerId === undefined ? { ...selection } : null;
+    selection = { anchor: cell.dataset.date, start: cell.dataset.date, end: cell.dataset.date, property: cell.dataset.property || state.property, lastX: event.clientX, pointerId: event.pointerId, prior };
     root.setPointerCapture(event.pointerId); paintSelection();
   });
   root.addEventListener("pointermove", event => {
@@ -705,10 +712,11 @@
     const chosen = { ...selection };
     const pointTarget = document.elementFromPoint(event.clientX, event.clientY);
     const anchor = pointTarget && pointTarget.closest("[data-date]");
-    if (phoneDots() && chosen.start === chosen.end) {
+    if (tiles()) {
       cancelSelection(); suppressClickUntil = Date.now() + 400;
       if (root.hasPointerCapture(event.pointerId)) root.releasePointerCapture(event.pointerId);
-      phoneTap(chosen.start);
+      if (chosen.start === chosen.end) { if (chosen.prior) { selection = chosen.prior; paintSelection(); } phoneTap(chosen.start); }
+      else { selection = { anchor: chosen.start, start: chosen.start, end: chosen.end, property: "" }; paintSelection(); openSheet(chosen.start, chosen.end); }
       return;
     }
     cancelSelection(); suppressClickUntil = Date.now() + 400;
@@ -727,7 +735,7 @@
   }
   body.addEventListener("touchstart", event => {
     const cell = event.target.closest("[data-date]");
-    if (!phoneDots() || readOnly || event.touches.length !== 1 || state.loading || !lastLoadedRange || !cell || !body.contains(cell) ||
+    if (!tiles() || readOnly || event.touches.length !== 1 || state.loading || !lastLoadedRange || !cell || !body.contains(cell) ||
       event.target.closest("[data-cal-event], [data-cal-more]")) return;
     const touch = event.touches[0];
     cancelTouchPress();
@@ -780,6 +788,10 @@
       candidates[0].focus();
     } else if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
+      if (tiles()) {
+        if (!selection) selection = { anchor: day, start: day, end: day, property: "" };
+        paintSelection(); openSheet(selection.start, selection.end); return;
+      }
       const start = selection ? selection.start : day, end = addDays(selection ? selection.end : day, 1);
       openCreate(start, end, cell.dataset.property || state.property, cleaningMode ? "cleaning" : "stay", cell);
     }
@@ -795,7 +807,7 @@
     const day = target.closest("[data-cal-day]");
     if (day) {
       if (Date.now() < suppressClickUntil || state.loading || !lastLoadedRange) return;
-      if (phoneDots()) { phoneTap(day.dataset.calDay); return; }
+      if (tiles()) { phoneTap(day.dataset.calDay); return; }
       openCreate(day.dataset.calDay, addDays(day.dataset.calDay, 1), day.dataset.property || state.property, cleaningMode ? "cleaning" : "stay", day); return;
     }
     const more = target.closest("[data-cal-more]");

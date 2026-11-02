@@ -237,5 +237,7 @@ def test_calendar_screenshots_0814_desktop(calendar_workspace, calendar_origin):
         page.wait_for_selector(".cal-week")
         page.screenshot(path=str(SHOTS / "calendar-1280.png"), full_page=True)
         page.locator(BUTTON.format("2026-10-10")).click()
+        assert page.locator("[data-cal-day-dialog]").is_visible()
+        page.locator("[data-cal-day-add]").click()
         assert page.locator("[data-cal-create]").is_visible()
         page.screenshot(path=str(SHOTS / "calendar-dialog-1280.png"), full_page=True)

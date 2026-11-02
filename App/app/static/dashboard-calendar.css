@@ -633,3 +633,54 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
   .cal-day.is-selected, .cal-gantt-slot.is-selected { background:#222; box-shadow:none; }
   .cal-day.is-selected .cal-day-number { color:#fff; }
 }
+
+/* 0816: Airbnb month tiles, side panel and modals at 768 px and up (host month scale) */
+.dashboard-calendar[data-cleaning="false"] .cal-tile-chips { display:none; }
+@media (min-width:768px) {
+  .dashboard-calendar[data-cleaning="false"] { border:0; box-shadow:none; background:transparent; padding:0; }
+  .dashboard-calendar[data-cleaning="false"] #calendar-title { display:none; }
+  .dashboard-calendar[data-cleaning="false"] .cal-body { border:0; background:transparent; overflow:visible; }
+  .dashboard-calendar[data-cleaning="false"] .cal-weekdays { position:sticky; top:var(--app-header-h, 0px); z-index:5; border:0; background:var(--bg, #f6f6f4); padding:0 0 6px; gap:8px; }
+  .dashboard-calendar[data-cleaning="false"] .cal-weekdays span { font-size:12px; line-height:16px; padding:6px 2px; }
+  .dashboard-calendar[data-cleaning="false"] .cal-week { border:0; background:transparent; }
+  .dashboard-calendar[data-cleaning="false"] .cal-week-days { gap:8px; min-height:0; }
+  .dashboard-calendar[data-cleaning="false"] .cal-week-days .cal-day { display:flex; flex-direction:column; min-height:96px; border:1px solid var(--cal-line); border-radius:12px; background:var(--surface); overflow:hidden; }
+  .dashboard-calendar[data-cleaning="false"] .cal-week-days .cal-day:last-child { border-right:1px solid var(--cal-line); }
+  .dashboard-calendar[data-cleaning="false"] .cal-day.is-outside { visibility:hidden; pointer-events:none; }
+  .dashboard-calendar[data-cleaning="false"] .cal-day.is-past .cal-day-number { color:var(--ink-muted); }
+  .dashboard-calendar[data-cleaning="false"] .cal-day.has-stays { background:var(--cal-muted); }
+  .dashboard-calendar[data-cleaning="false"] .cal-day.is-today { background:var(--surface); }
+  .dashboard-calendar[data-cleaning="false"] .cal-day-number { flex:1; display:flex; flex-direction:column; align-items:flex-start; gap:6px; width:100%; height:auto; min-height:0; padding:12px; text-align:left; font-size:15px; font-weight:600; }
+  .dashboard-calendar[data-cleaning="false"] .cal-day-number .cal-num { display:inline-flex; align-items:center; justify-content:center; min-width:28px; height:28px; border-radius:50%; font-size:15px; font-weight:600; }
+  .dashboard-calendar[data-cleaning="false"] .cal-day.is-today .cal-day-number .cal-num { background:var(--coral, #d0452d); color:#fff; }
+  .dashboard-calendar[data-cleaning="false"] .cal-dots { display:none; }
+  .dashboard-calendar[data-cleaning="false"] .cal-tile-chips { display:flex; flex-direction:column; gap:4px; width:100%; min-width:0; pointer-events:none; }
+  .dashboard-calendar[data-cleaning="false"] .cal-tile-chip { display:block; box-sizing:border-box; height:22px; line-height:22px; padding:0 6px; border-radius:6px; background:#f2f2f0; border-left:3px solid var(--cal-ink, #888); font-size:12px; font-weight:400; color:var(--ink); text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .dashboard-calendar[data-cleaning="false"] .cal-tile-more { display:block; font-size:11px; line-height:16px; color:var(--ink-muted); padding-left:6px; pointer-events:auto; }
+  .dashboard-calendar[data-cleaning="false"] .cal-day.is-selected { background:#222; border-color:#222; box-shadow:none; }
+  .dashboard-calendar[data-cleaning="false"] .cal-day.is-selected .cal-day-number, .dashboard-calendar .cal-day.is-selected .cal-day-number .cal-num { color:#fff; }
+  .dashboard-calendar[data-cleaning="false"] .cal-day.is-selected .cal-day-number .cal-num { background:transparent; }
+  .dashboard-calendar[data-cleaning="false"] .cal-day.is-selected .cal-tile-chip { background:rgba(255,255,255,.14); color:#fff; }
+  .dashboard-calendar[data-cleaning="false"] .dashboard-calendar .cal-day.is-selected .cal-tile-more { color:#fff; }
+  .dashboard-calendar[data-cleaning="false"].has-panel .cal-body { padding-right:360px; }
+  body.host-workspace .dashboard-calendar[data-cleaning="false"] :is(.cal-heading,.cal-toolbar) .btn,
+  body.host-workspace .dashboard-calendar[data-cleaning="false"] :is(.cal-heading,.cal-toolbar) select { height:40px; min-height:40px; }
+  .dashboard-calendar[data-cleaning="false"] .cal-dialog { width:min(480px, calc(100vw - 32px)); padding:24px; border-radius:16px; }
+  .dashboard-calendar[data-cleaning="false"] .cal-dialog .cal-close { min-width:40px; min-height:40px; width:40px; height:40px; border-radius:50%; padding:0; }
+  body.host-workspace .dashboard-calendar[data-cleaning="false"] .cal-segment { height:40px; }
+  body.host-workspace .dashboard-calendar[data-cleaning="false"] .cal-segment button { height:34px; min-height:34px; }
+  .cal-dialog-actions .btn:last-child, .cal-dialog-actions .btn[type="submit"] { flex:1 1 100%; }
+  .dashboard-calendar[data-cleaning="false"] dialog[data-cal-day-dialog] { position:fixed; top:var(--app-header-h, 0px); right:0; bottom:0; left:auto; margin:0; width:360px; max-width:none; max-height:none; height:auto; box-sizing:border-box; padding:24px; border:0; border-left:1px solid var(--cal-line); border-radius:0; background:var(--surface); box-shadow:-8px 0 24px rgba(0,0,0,.08); }
+  .dashboard-calendar[data-cleaning="false"] dialog[data-cal-day-dialog]::backdrop { background:transparent; }
+}
+@media (min-width:768px) and (max-width:1023px) {
+  .dashboard-calendar[data-cleaning="false"] .cal-week-days .cal-day { min-height:96px; }
+  .dashboard-calendar[data-cleaning="false"].has-panel .cal-body { padding-right:320px; }
+  .dashboard-calendar[data-cleaning="false"] dialog[data-cal-day-dialog] { width:320px; }
+}
+@media (min-width:1024px) {
+  .dashboard-calendar[data-cleaning="false"] .cal-week-days .cal-day { min-height:112px; }
+}
+@media (min-width:768px) {
+  .dashboard-calendar[data-cleaning="false"] [data-cal-day-add] { display:block; width:100%; min-height:48px; margin:0; border-radius:12px; }
+}
