@@ -26,6 +26,10 @@ GREY_QUALITY = 80
 
 _TD3_LEN = 44
 _TD1_LEN = 30
+_WHITELIST = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<"
+BAND_FRACTION = 0.4  # the MRZ sits in the bottom 40% of the page
+BAND_WIDTH = 1800  # px; Tesseract reads small MRZ text better enlarged
+_TILT_ANGLES = (-8, -6, -4, -2, 0, 2, 4, 6, 8)
 
 # The two characters that may legally appear in an MRZ.
 _MRZ_CHARS = re.compile(r"^[A-Z0-9<]*$")
