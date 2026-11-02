@@ -201,7 +201,7 @@ def _residence_prefill(request: Request, reservation) -> tuple:
     cookie already names the guests this browser filled in, so the address is
     known - it was simply not being used. Only a completed guest is copied
     from: a half-finished record is not something to repeat on someone else's
-    behalf.
+    behalf. Since 0838 it also carries the surname and the stay dates.
     """
     owned = set(_owned_ids(request))
     if not owned:
@@ -222,10 +222,14 @@ def _residence_prefill(request: Request, reservation) -> tuple:
         if not (street and city and country):
             continue
         name = _guest_display_name(row["first_name"], row["surname"])
-        return (
-            {"res_street": street, "res_city": city, "res_country": country},
-            name,
-        )
+        values = {"res_street": street, "res_city": city, "res_country": country}
+        # 0838: family name and stay dates usually match too. Shown in the form for
+        # the guest to confirm or change; nothing is saved until they submit.
+        for key in ("surname", "stay_from", "stay_to"):
+            value = row[key]
+            if value:
+                values[key] = str(value).strip()
+        return values, name
     return {}, None
 
 
