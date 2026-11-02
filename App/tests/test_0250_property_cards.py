@@ -1,6 +1,6 @@
 """0250: facility name example on the property page (the overview Open-pill cards were removed by the one-scroll property page, #659)."""
 
-from tests.test_property_navigation_browser import host  # noqa: F401
+from tests.property_host_fixture import host  # noqa: F401
 
 
 def test_facility_name_help_shows_highlighted_example_unescaped(host):
