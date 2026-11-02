@@ -805,6 +805,7 @@ body.v2 #calendar.dashboard-calendar[data-readonly="false"].has-panel .cal-to-to
 }
 @media (min-width:1024px) {
   body.v2 #calendar.dashboard-calendar[data-readonly="false"] .cal-head .cal-toolbar h3[data-cal-period] { font-size:32px; line-height:40px; }
+}
 /* 0877: tablet touch targets on the cleaning toolbar are at least 44 px (the desktop toolbar stays 40 px). */
 @media (min-width:768px) and (max-width:1023px) {
   body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] :is(.cal-heading-actions, .cal-toolbar) :is(button.btn, select) { height:44px; min-height:44px; }
@@ -812,4 +813,13 @@ body.v2 #calendar.dashboard-calendar[data-readonly="false"].has-panel .cal-to-to
   body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-segment { height:52px; min-height:52px; }
   body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-segment button { height:44px; min-height:44px; min-width:44px; }
   body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-view-segment button { width:44px; min-width:44px; }
+}
+
+/* 0895: tablet touch targets inside the 0891 sticky head are at least 44 px (desktop stays 40 px). */
+@media (min-width:768px) and (max-width:1023px) {
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-head :is(button.btn, select, .cal-arrow, .cal-settings) { height:44px; min-height:44px; }
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-head :is(.cal-arrow, .cal-settings) { width:44px; min-width:44px; }
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-head .cal-segment { height:52px; min-height:52px; }
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-head .cal-segment button { height:44px; min-height:44px; min-width:44px; }
+  body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-head .cal-view-segment button { width:44px; min-width:44px; }
 }
