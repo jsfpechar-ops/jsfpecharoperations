@@ -15,8 +15,8 @@ from ..templating import render
 from datetime import date
 from urllib.parse import urlencode
 
-from .. import (booking_calendar, booking_checkout, booking_site, config, db, host_i18n,
-                property_page, rate_limit)
+from .. import (booking_calendar, booking_cancel, booking_checkout, booking_manage, booking_site,
+                config, db, host_i18n, property_page, rate_limit)
 
 router = APIRouter()
 
@@ -383,6 +383,85 @@ def booking_invoice_pdf(request: Request, slug: str, booking_id: int, token: str
             "Cache-Control": "no-store",
             "X-Robots-Tag": "noindex",
         },
+    )
+
+
+def _booking_or_none(booking_id: int, token: str):
+    if not booking_site.token_ok(booking_id, token):
+        return None
+    booking = booking_site.get(booking_id)
+    if booking is None or booking["status"] not in booking_manage.VISIBLE:
+        return None
+    return booking
+
+
+def _manage_lang(request: Request, booking) -> str:
+    value = request.query_params.get("lang")
+    if value in ("cs", "en"):
+        return value
+    return booking["lang"] if booking["lang"] in ("cs", "en") else "cs"
+
+
+def _manage_throttle(request: Request, scope: str):
+    key = rate_limit.client_key(request, scope)
+    if rate_limit.blocked(scope, key, _RATE_MAX, _RATE_WINDOW):
+        return PlainTextResponse("slow down", status_code=429)
+    rate_limit.record(scope, key)
+    return None
+
+
+@router.get("/p/{slug}/b/{booking_id}/{token}")
+def booking_manage_page(request: Request, slug: str, booking_id: int, token: str):
+    """0821: the guest's private booking page (signed link from the e-mail)."""
+    slow = _manage_throttle(request, "booking_manage")
+    if slow:
+        return slow
+    booking = _booking_or_none(booking_id, token)
+    if booking is None:
+        return Response(status_code=404)
+    lang = _manage_lang(request, booking)
+    error = request.query_params.get("e", "")
+    response = render(request, "booking_manage.html", {
+        "show_nav": False, "lang": lang, "slug": slug, "token": token,
+        "v": booking_manage.view(booking, lang),
+        "error": error if error in ("started", "busy", "refund_failed") else "",
+    })
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Robots-Tag"] = "noindex"
+    return response
+
+
+@router.post("/p/{slug}/b/{booking_id}/{token}/cancel")
+def booking_manage_cancel(request: Request, slug: str, booking_id: int, token: str):
+    slow = _manage_throttle(request, "booking_cancel")
+    if slow:
+        return slow
+    booking = _booking_or_none(booking_id, token)
+    if booking is None:
+        return Response(status_code=404)
+    result = booking_cancel.cancel(booking_id, by_host=False)
+    lang = _manage_lang(request, booking)
+    query = {"lang": lang}
+    if result["error"] in ("started", "busy", "refund_failed"):
+        query["e"] = result["error"]
+    return RedirectResponse(f"/p/{slug}/b/{booking_id}/{token}?{urlencode(query)}", status_code=303)
+
+
+@router.get("/p/{slug}/b/{booking_id}/{token}/calendar.ics")
+def booking_manage_calendar(request: Request, slug: str, booking_id: int, token: str):
+    slow = _manage_throttle(request, "booking_manage")
+    if slow:
+        return slow
+    booking = _booking_or_none(booking_id, token)
+    if booking is None or booking["status"] != "paid":
+        return Response(status_code=404)
+    name = (db.query_one("SELECT internal_name FROM apartment WHERE id = ?",
+                         (booking["apartment_id"],)) or {"internal_name": ""})["internal_name"]
+    return Response(
+        booking_manage.calendar_ics(booking, name).encode("utf-8"),
+        media_type="text/calendar; charset=utf-8",
+        headers={"Cache-Control": "no-store", "X-Robots-Tag": "noindex",
+                 "Content-Disposition": 'attachment; filename="stay.ics"'},
     )
 
 
