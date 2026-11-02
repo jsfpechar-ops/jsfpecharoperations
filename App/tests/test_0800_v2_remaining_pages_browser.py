@@ -140,12 +140,14 @@ _HELP_TIP_JS = """() => {
     const tip = btn.closest('.help-tip');
     const box = tip && tip.parentElement;
     if (!box) continue;
-    const label = [...box.children].find(el => el.tagName === 'LABEL') ||
+    const label = box.tagName === 'LABEL' ? box : [...box.children].find(el => el.tagName === 'LABEL') ||
       (tip.previousElementSibling && tip.previousElementSibling.tagName === 'LABEL' ? tip.previousElementSibling : null);
     const b = btn.getBoundingClientRect();
     if (!label || !b.width) continue;
     const rg = document.createRange();
-    rg.selectNodeContents(label);
+    // 0814 round 4: the tip now sits inside the label, so measure the label's own text node, not the tip.
+    const ownText = [...label.childNodes].find(n => n.nodeType === 3 && n.textContent.trim());
+    rg.selectNodeContents(ownText || label);
     const t = rg.getBoundingClientRect();
     if (!t.width) continue;
     out.push({label: label.textContent.trim().slice(0, 40), dy: Math.abs((t.top + t.bottom) / 2 - (b.top + b.bottom) / 2), dx: b.left - t.right});
@@ -183,7 +185,9 @@ _HELP_TIP_SIZE_JS = """() => {
     const after = getComputedStyle(btn, '::after');
     const cw = parseFloat(after.width), ch = parseFloat(after.height);
     if (!(cw <= 20 && ch <= 20)) why.push(`visible circle ${cw}x${ch}`);
-    const cx = (b.left + b.right) / 2, cy = (b.top + b.bottom) / 2;
+    // 0814 round 4: the visible circle, from the ::after offset (phone: left 0, top 13px; desktop: centred by translate).
+    const tr = after.transform === 'none' ? [0, 0, 0, 0, 0, 0] : after.transform.slice(7, -1).split(',').map(Number);
+    const cx = b.left + parseFloat(after.left) + tr[4] + cw / 2, cy = b.top + parseFloat(after.top) + tr[5] + ch / 2;
     const left = cx - cw / 2;
     if (!ref) {
       why.push('no label before it');

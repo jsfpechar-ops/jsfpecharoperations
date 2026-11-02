@@ -63,3 +63,11 @@ Files for 10: `App/app/templates/apartment_form.html`, `App/app/templates/_prope
 - The test measures the gap and the vertical centre from the visible circle: circle rect = box rect offset by the `::after` computed `left`/`top` and sized by its `width`/`height`. Limits stay: centre <= 4 px, gap 0-12 px.
 - setup-* and guest-guide: change the shared `field_label` macro in `App/app/templates/_components.html` so its help tip renders inside the `<label>` right after the text (same markup otherwise). Then also run `.venv/bin/python -m pytest tests -q -k "label or help_tip or field" --tb=line -p no:cacheprovider 2>&1 | tail -8` to catch other pages.
 - guide and property-new: the other executor is done; their title tips may now be fixed here (tip inside the h1, after the text).
+
+## 14. Round 5 (next thread)
+Open items from "Round 4" in the report:
+- setup-calendar/police/guest-guide-link/stay-fee: `.field-label-row` h2 rows (setup_wizard/*.html, _property_editor.html) do not use field_label; put their tip inside the h2 after the text like field_label does now.
+- guest-guide "Import from Booking or Airbnb" row in guest_guide.html: tip inside its heading.
+- property-new "After you create it" list tips (_property_create.html): tip inside each item title.
+- Popover overflow (test_host_help_browser 360/390/1280): the tip body is `left:0` of the tip, so a tip near the right edge overflows. Below 1024 px show the body as `position:fixed;left:16px;right:16px;width:auto` under the tip; at >=1024 clamp with `right:0;left:auto` when the tip is in the right half (add a `.help-tip-end` class from help.js if needed, or simply anchor the body to the heading wrapper).
+- test_endtoend test_26 KeyError 'id': check on origin/main first; fix only if this branch caused it.
