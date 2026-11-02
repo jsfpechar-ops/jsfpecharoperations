@@ -266,7 +266,9 @@ def test_qr_send_mails_page_link(owner, client):
         (f"payment_request:{rid}:sent%",),
     )
     assert len(rows) == 1
-    assert f"/payments/qr/{rid}" in rows[0]["payload"]
+    token = payment_request.guest_token(payment_request.get(rid))
+    assert f"/pay/{rid}/{token}" in rows[0]["payload"]
+    assert "https://" in rows[0]["payload"] or "http://" in rows[0]["payload"]
     assert payment_request.get(rid)["status"] == "sent"
 
 
@@ -323,3 +325,32 @@ def test_custom_request_uses_the_description_as_product_name(owner):
         expires_at="2026-11-27", guest_note="Pozdní odjezd",
     )
     assert payment_links.product_name(payment_request.get(rid)) == f"Pozdní odjezd (žádost č. {rid})"
+
+
+# --- public guest QR page (0763) -----------------------------------------------
+
+
+def test_guest_qr_page_opens_without_login(owner):
+    rid = _draft(owner, rail="qr")
+    token = payment_request.guest_token(payment_request.get(rid))
+    anonymous = TestClient(app)
+    page = anonymous.get(f"/pay/{rid}/{token}")
+    assert page.status_code == 200
+    assert f"/pay/{rid}/{token}.png" in page.text
+    png = anonymous.get(f"/pay/{rid}/{token}.png")
+    assert png.status_code == 200 and png.headers["content-type"] == "image/png"
+
+
+def test_guest_qr_page_rejects_wrong_token_and_card(owner):
+    anonymous = TestClient(app)
+    rid = _draft(owner, rail="qr")
+    assert anonymous.get(f"/pay/{rid}/{'0' * 32}").status_code == 404
+    card = _draft(owner, rail="card")
+    token = payment_request.guest_token(payment_request.get(card))
+    assert anonymous.get(f"/pay/{card}/{token}").status_code == 404
+
+
+def test_host_preview_still_needs_login(owner):
+    rid = _draft(owner, rail="qr")
+    response = TestClient(app).get(f"/payments/qr/{rid}", follow_redirects=False)
+    assert response.status_code == 303

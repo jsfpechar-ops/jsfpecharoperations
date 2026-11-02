@@ -302,7 +302,7 @@ async def payment_request_send(request: Request, request_id: int):
         if not link:
             return _back("/payments", err=_flash(request, "payments.err.not_ready"))
     else:
-        link = f"/payments/qr/{request_id}"
+        link = f"{config.app_base_url()}/pay/{request_id}/{payment_request.guest_token(row)}"
     if not resend:
         payment_request.set_status(request_id, "sent", today=__import__("datetime").date.today())
     translate = i18n.translator(lang)
@@ -360,7 +360,7 @@ def payment_request_qr(request: Request, request_id: int):
     return render(
         request,
         "payments_qr.html",
-        {"nav": "payments", "request": row, "qr_payload": payload, "show_nav": False},
+        {"nav": "payments", "request": row, "qr_payload": payload, "show_nav": False, "png_url": f"/payments/qr/{row['id']}.png"},
     )
 
 
@@ -488,3 +488,51 @@ async def payments_consent_accept(request: Request):
     # blocks a form whose redirect chain leaves our origin (blank page). Back
     # to /payments, where "Open Stripe" is a plain link.
     return _back("/payments", msg=_flash(request, "payments.consent.saved"))
+
+
+# --- public guest QR page (0763) ----------------------------------------------
+
+
+def _guest_qr_row(request_id: int, token: str):
+    row = payment_request.get(request_id)
+    if row is None or row["rail"] != "qr" or row["status"] == "cancelled":
+        return None
+    if not payment_request.guest_token_ok(row, token):
+        return None
+    return row
+
+
+@router.get("/pay/{request_id:int}/{token}.png")
+def guest_qr_png(request_id: int, token: str):
+    row = _guest_qr_row(request_id, token)
+    if row is None:
+        return Response(status_code=404)
+    try:
+        _, png = payment_request.qr_payload(row)
+    except ValueError:
+        return Response(status_code=404)
+    return Response(content=png, media_type="image/png", headers={"Cache-Control": "private, max-age=300"})
+
+
+@router.get("/pay/{request_id:int}/{token}")
+def guest_qr_page(request: Request, request_id: int, token: str):
+    """0763: the guest's bank-transfer page; no login, token-checked."""
+    row = _guest_qr_row(request_id, token)
+    if row is None:
+        return Response(status_code=404)
+    try:
+        payload, _ = payment_request.qr_payload(row)
+    except ValueError:
+        return Response(status_code=404)
+    response = render(
+        request,
+        "payments_qr.html",
+        {
+            "request": row,
+            "qr_payload": payload,
+            "show_nav": False,
+            "png_url": f"/pay/{request_id}/{token}.png",
+        },
+    )
+    response.headers["X-Robots-Tag"] = "noindex"
+    return response
