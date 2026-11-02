@@ -5522,10 +5522,8 @@ _SIGNUP_STRINGS = {
             "anytime in Settings."
         ),
         "signup.ads_consent_link": "How Google uses data",
-        # Legal position 2, verbatim.
-        "signup.onboarding_opt_out": (
-            "No setup tips by e-mail"
-        ),
+        # Legal position 2: unticked marketing opt-in (owner, 2026-11-02).
+        "signup.marketing_opt_in": "Send me tips and news by e-mail",
         "signup.submit": "Create account",
         "signup.have_account": "Already have an account?",
         "signup.login_link": "Log in",
@@ -5918,9 +5916,7 @@ _SIGNUP_STRINGS = {
             "Souhlas můžete kdykoli odvolat v Nastavení."
         ),
         "signup.ads_consent_link": "Jak Google používá data",
-        "signup.onboarding_opt_out": (
-            "Bez tipů k nastavení e-mailem"
-        ),
+        "signup.marketing_opt_in": "Posílejte mi tipy a novinky e-mailem",
         "signup.submit": "Založit účet",
         "signup.have_account": "Už účet máte?",
         "signup.login_link": "Přihlaste se",
