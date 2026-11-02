@@ -261,7 +261,7 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
   body.v2 .btn.line{background:#fff;color:var(--ink);border:1.5px solid var(--ink)}
   body.v2 .btn.soft{background:#f6f6f4;color:var(--ink)}
   body.v2 .allgood{margin:0 0 12px;padding:16px 18px;border-radius:18px;background:var(--oks);color:var(--ok);font-weight:700;display:flex;gap:10px;align-items:center}
-  body.v2 .hs{display:flex;gap:12px;overflow-x:auto;margin:0 -20px;padding:4px 20px 16px;scroll-snap-type:x mandatory;scrollbar-width:none}body.v2 .hs::-webkit-scrollbar{display:none}
+  body.v2 .hs{display:flex;gap:12px;overflow-x:auto;margin:0 -20px;padding:4px 20px 16px;scroll-padding-inline:20px;scroll-snap-type:x mandatory;scrollbar-width:none}body.v2 .hs::-webkit-scrollbar{display:none}
   body.v2 .hs .card{margin:0;flex:0 0 272px;scroll-snap-align:start;display:flex;flex-direction:column;gap:10px}
   body.v2 .hs .card:only-child{flex:1 1 auto}
   body.v2 .hs:has(> .card:only-child){margin-left:0;margin-right:0;padding-left:0;padding-right:0}

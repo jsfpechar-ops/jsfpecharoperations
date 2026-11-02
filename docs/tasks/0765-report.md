@@ -50,3 +50,23 @@ Still failing (not fixed, status blocked):
 - test_dashboard_phone_browser::test_phone_dashboard_compact: `.needs-you-more > summary` is not visible at 390 px. It passed in the first run of this follow-up and failed after the #needs-action class fix. Cause not confirmed; the rendered markup for non-calendar views should be unchanged. Needs a look.
 - The 0765 tests at 1280 and the 0765 calendar test pass.
 - The 0710 subset and the non-browser dashboard tests were not run (budget).
+
+## Follow-up 2 (section 8)
+
+Files changed: `App/app/static/app2.css` (line 264: `scroll-padding-inline:20px` on `body.v2 .hs`), `App/app/templates/base.html` (app2.css `?v=` key 20261102-0732i to 20261102-0905a), `App/tests/static_versions.json` (rewritten by `test_static_versions.py --write`).
+
+1. 0729 first card left 0 vs h2 left 20: fixed by the scroll-padding line. 0729 now passes (the three `test_today_phone_geometry` cases are not in the failure list).
+2. `test_phone_dashboard_compact`: NOT fixed. Root cause: the test opens the calendar fixture URL (`cal_view`) at 390 px, and on that view section 88 `#needs-action` and its `.needs-you-more` are `ph-hide` by design (brief 0765 §4, line 34). The `<details>` computes to `display:block` inside `section.ph-hide` (`display:none`), so the summary has 0x0 size. Main's template showed the list here only because of the quote-escaping bug fixed in follow-up A. The template is not at fault. The test assumption (PIN alert reachable on the phone calendar view) is outdated. Open question for the owner or orchestrator: change the test to check the PIN line on `/` (the Today view) at 390, or keep the list on the phone calendar. I did not change the test.
+3. Static version test (2 failed before this step too, since app2.css changed without a key bump): bumped the key and rewrote the manifest. Now 3 passed.
+
+Test runs (from App/, browser env per brief):
+- test_0729_phone_today_geometry_browser.py + test_dashboard_phone_browser.py: `1 failed, 5 passed in 42.41s` (the failure is test_phone_dashboard_compact, see 2)
+- test_0765_phone_today_window_browser.py: `4 passed in 8.85s`
+- test_static_versions.py: `3 passed in 0.18s` (after the bump)
+- non-browser dashboard tests (test_dashboard_*.py without browser, test_design_dashboard, test_host_quiet_dashboard, test_needs_you_dashboard_0241, test_payments_dashboard): `94 passed in 5.19s`
+- test_0710_v2_mockup_match_browser.py -k "dashboard or overview or today": `2 failed, 10 passed in 24.15s`. Failures are test_v2_page_matches_mockup_styles[overview-320] and [overview-390]: 5 style differences, mainly `.hs .card` 272 px wide vs mockup 350 px and `.meta` size. These come from the 272 px card row (#681), not from this step. Not fixed; needs a clean baseline (as the earlier note says).
+- scripts/context_lint.py: `context lint: FAIL`, `ERROR docs/tasks/0766-phone-stay-cards-dates-and-empty-bar.md: missing section '## 9. Report'`. Not from this step; 0766's brief.
+
+Screenshots: not retaken. The scroll-padding only changes where a scrolled row snaps, so the page at rest should look the same. Not checked visually.
+
+Status: blocked (item 2 needs an owner decision; the 0710 overview failures and the lint error are pre-existing). Nothing committed.

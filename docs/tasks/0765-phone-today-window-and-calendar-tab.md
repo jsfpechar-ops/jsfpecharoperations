@@ -57,3 +57,7 @@ Two failures left (see report):
 1. 0729 "first card left 0, h2 left 20": `.hs` has `scroll-snap-type:x mandatory` and cards `scroll-snap-align:start`, but no scroll padding, so the browser snaps the first card to the scrollport edge (left 0) and hides the 20 px gutter. That is a real bug. Fix in `App/app/static/app2.css` line ~264 by adding `scroll-padding-inline:20px` to `body.v2 .hs` (this one CSS change is allowed). Rerun 0729.
 2. `test_dashboard_phone_browser.py::test_phone_dashboard_compact`: `.needs-you-more > summary` not visible at 390. Find the cause: dump the rendered HTML of `/` for that test's fixture around `needs-you-more` and `#needs-action`, and check computed `display` of the details/summary and its parents at 390. Compare with `git show HEAD~1:App/app/templates/dashboard.html` (main's version). Possible causes: the moved next-stay/`.hs` block, an unclosed tag in the edited template, or the `ny-phone-only` rule. Fix the template, not the test, unless the test assumption is about the old Today cards.
 Then run 0729, test_dashboard_phone_browser.py, test_0765 (same env as §7), plus the 0710 subset `-k "dashboard or overview or today"` and the non-browser dashboard tests. Append results to 0765-report.md.
+
+## 9. Report
+
+See the matching `-report.md` file.

@@ -38,3 +38,7 @@ Desktop (>= 1024 px) must not change at all.
    Add to a new `App/tests/test_0766_phone_stays_browser.py` (reuse the 0710 fixtures; under 100 lines): at 390 px a no-name stay card's `b` contains the weekday and day of check-in; a stay page with no CTA has no visible `.stay-head-cta`; a stay page with a CTA (guests ready to send, or failed) still shows it.
 5. "After" screenshots, same script: `docs/tasks/screenshots-0766/after-stays-390.png`, `after-stay-390.png`.
 6. Write `docs/tasks/0766-report.md`: what changed, test commands with their last line, anything you could not do.
+
+## 9. Report
+
+See the matching `-report.md` file.
