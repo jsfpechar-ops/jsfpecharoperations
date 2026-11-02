@@ -23,3 +23,11 @@ Status: blocked
 
 ## Owner steps left
 - None yet. No push, no PR.
+
+## Part C (0789c)
+
+- Commits: `9412dcb` step 6 (cache key `20261102-0789c` for app2.css and app.js in base.html, static manifest, catalog classes `settings-help-line` and `settings-toggle-form`); `c032be6` step 5 (sub-page link rows are bordered cards with a chevron: account plan row, help legal links). Steps 1 to 4 were already on the branch up to `ff7937e`.
+- Step 5 partial: the lists on /entities and /privacy-requests are tables and forms, not link rows. Not converted to cards. Owner decision needed.
+- Step 7 test line: `224 passed in 219.55s` for the brief 0789 section 6 files plus 0789 subpages, 0789b toggles, host account navigation, plural helper and host controls browser. 0 skipped.
+- Screenshots (step 8): 30 full-page PNGs in `/mnt/project-files/settings-area/airbnb/`: `<page>-<width>.png` for settings, account, security, phone, data, technical, help, entities, privacy-requests, archived at 390, 768 and 1280. Taken with the 0710 helpers (`_launch`, `_open_app`, dashboard_rich_host). Not viewed by the executor.
+- Design lint OK, context lint OK, static versions manifest written.

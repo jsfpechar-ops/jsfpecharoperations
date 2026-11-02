@@ -1553,3 +1553,13 @@ body.v2 #item-rows.invoice-items-grid { max-width: 850px; } /* form lane: rows a
 body.v2 .stays-head-actions .btn{height:37px;min-height:37px;box-sizing:border-box}
 @media (max-width:600px){body.v2 .stays-head-actions .btn{height:auto;min-height:44px}}
 /* 0831H details+cleanup (end) */
+
+/* 0789c: 12 px between the Entities setup banner and the help "?" and between archive filter chips */
+body.v2 .settings-help-line + .onboarding-banner-setup{margin-block-start:12px}
+body.v2 .archive-type-filters{gap:12px !important}
+body.v2 .ui-empty .ui-form-actions{gap:12px}
+body.v2 .settings-help-line .help-tip-btn{width:24px;height:24px;min-width:24px;min-height:24px}
+/* 0789c step 5: sub-page link rows (go somewhere) are bordered cards with a chevron */
+body.v2 .settings-lane .set-row,body.v2 .settings-lane .document-links a{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:0;margin:0 0 12px;padding:20px;border:1px solid var(--line);border-radius:12px;color:var(--ink);text-decoration:none;box-sizing:border-box}
+body.v2 .settings-lane .document-links{border-top:0;margin-top:0}
+body.v2 .settings-lane .set-row::after,body.v2 .settings-lane .document-links a::after{content:"\203A";flex:0 0 auto;color:var(--ink3);font-size:20px;line-height:1}
