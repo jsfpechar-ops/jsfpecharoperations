@@ -24,29 +24,37 @@ Then finish what 0783 left open (items 1-3 are committed; item 3 was fixed in 2f
 - Cache key: bump the app2.css `?v=` in `App/app/templates/base.html` to `20261102-0783a`, then from `App/`: `.venv/bin/python tests/test_static_versions.py --write`.
 - Screenshots: the 0783 brief's screenshot command (section 6); they must exist for settings, entities, privacy_requests, archive at 390 and 1280. Do not commit PNGs.
 
-## 2. Files
+## 2. Context
+
+See the 0783 brief section 2.
+
+## 3. Files
 
 The test files above, `App/app/templates/entities.html` (lede only), and the template that renders the alert stack only if that row says so. Plus `docs/design/catalog.json`, `App/app/templates/base.html` (cache key only), `App/tests/static_versions.json`. Nothing else.
 
-## 3. Steps
+## 4. Steps
 
 One commit per row (`0784: <test file> …`), adding files by name (never `App/.venv`, never PNGs).
 
-## 4. Commands
+## 5. Do not touch
+
+`App/app/static/app.js`, Python routes, other pages.
+
+## 6. Commands
 
 From `App/`:
 `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_0705_v2_shell_browser.py tests/test_alert_stack.py tests/test_design_properties.py tests/test_design_settings.py tests/test_design_shell.py tests/test_operator_naming.py tests/test_pwa.py tests/test_signed_in_chrome.py tests/test_host_help_browser.py tests/test_push_settings_browser.py tests/test_settings_technical.py tests/test_entity_editor_fields.py tests/test_entity_editor_navigation.py tests/test_privacy_requests.py tests/test_static_versions.py -q --tb=short 2>&1 | tail -30`
 
 Also the 0783 brief's 0710 command, and from the repo root `python3 scripts/design_lint.py 2>&1 | tail -5` and `python3 scripts/context_lint.py 2>&1 | tail -5`.
 
-## 5. Acceptance
+## 7. Acceptance
 
 All pass, 0 skipped.
 
-## 6. Stop and ask
+## 8. Stop and ask
 
 Any stop named in the table; a Python route or `app.js` change needed; 35 tool calls.
 
-## 7. Report
+## 9. Report
 
 Append a `## 0784` section to `docs/tasks/0783-report.md`: commits, counts, what each row needed, screenshot paths.
