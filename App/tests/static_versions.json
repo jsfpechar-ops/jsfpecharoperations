@@ -8,8 +8,8 @@
     "v": "20261027-signup-wrap"
   },
   "app.js": {
-    "sha256": "85248d6c7f5ccdac51134d1b77f9317826eeeca97cc798d97d67b4c34296aab4",
-    "v": "20261101-0737"
+    "sha256": "5d69c46a96984cb709c6abe2ded5babd5b44f96ea2868f25a21782214f341d4a",
+    "v": "20261102-0507"
   },
   "app2.css": {
     "sha256": "dde508a67f7d32207f06d610e43d20957ed91638a97cade36cd8d4107270fb0f",
@@ -32,8 +32,8 @@
     "v": "20261024-0291"
   },
   "cleaning.js": {
-    "sha256": "8c430853292b8dd39b0922b26ad4307d6005f057f9ff670e1847b545de16c904",
-    "v": "20261016-0123c"
+    "sha256": "2f0be0505681096250e093668bc9b30c7a4eeae2866b34dcb44288ca10ea89b1",
+    "v": "20261102-0507"
   },
   "components.css": {
     "sha256": "844da27d439ab6086d6191474f2ac0f394e3b11d5c9367a9a9ebff04bde6d68c",
@@ -92,8 +92,8 @@
     "v": "20261101-0531g"
   },
   "host.js": {
-    "sha256": "9a1c690af6f4edb599cd51ba0d122957dafa94ac4d9572aba3f86fa668b14d6c",
-    "v": "20261101-0547b"
+    "sha256": "d40a8a60dd73d86313e0e40d3b41a8cd9c18922e05a03cbbec62b7954cb8d66f",
+    "v": "20261102-0507"
   },
   "host2.css": {
     "sha256": "0da4f0319b193b4c1ee74c1d5dded14abc11266fef0096b3e61a4af7d6d2b31b",
@@ -112,16 +112,16 @@
     "v": "20261027-ai-usage"
   },
   "passkeys.js": {
-    "sha256": "a54da46300bec0b817fc47c7fffa811a2e21567e4c9e40748f1345b217ef5773",
-    "v": "20261023-passkey-recovery"
+    "sha256": "c54bced8466bd89592f6a7a36a48b1cf6b0d692d419e03182d4f0c3527764609",
+    "v": "20261102-0507"
   },
   "pricing.js": {
     "sha256": "4ebb282d09e55fcd782087dfd47c494c78f542f6c26648ddb55fc4390fe50b09",
     "v": "20261028-ttlock-month"
   },
   "pwa.js": {
-    "sha256": "42c47bb36919fa186885e4e913823c5447a6ab8e0dd8709a74bd3a216a06a9ce",
-    "v": "20261021-0206"
+    "sha256": "2dab37331ff2737f395126c7624e96b1d0ee4be071bae07dc134a5a61e826294",
+    "v": "20261102-0507"
   },
   "shell.js": {
     "sha256": "17d08de32baf5dd03f38508a0f88f4cf09e47e54cea2a0a1dff0421d23e3989b",
