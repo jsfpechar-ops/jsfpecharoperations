@@ -987,10 +987,9 @@
         if (origin && origin.isConnected && typeof origin.focus === "function") origin.focus();
       });
     }
-    if (!root._feedbackVisibilityBound) {
-      root._feedbackVisibilityBound = true;
+    if (claimNode(document, "feedbackVisibility")) {
       document.addEventListener("visibilitychange", function () {
-        rail.querySelectorAll("[data-toast]").forEach(function (toast) {
+        document.querySelectorAll("[data-toast]").forEach(function (toast) {
           if (document.hidden) toast._toastPause && toast._toastPause("hidden");
           else toast._toastResume && toast._toastResume("hidden");
         });

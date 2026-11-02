@@ -21,13 +21,10 @@ ROW_TRIGGER = ".row-menu-trigger"
 ROW_PANEL = ".row-menu-panel"
 COMMAND_DIALOG = "#command-dialog"
 
-# Counts document/window listeners added while initPage (or one of its init functions) runs,
-# and turbo:load events, so the test can wait for each swap to finish.
+# Records document/window listeners added while initPage (or one of its init functions) runs.
 RECORD_JS = """
 () => {
   window.__adds = [];
-  window.__loads = 0;
-  document.addEventListener('turbo:load', () => { window.__loads += 1; });
   const orig = EventTarget.prototype.addEventListener;
   EventTarget.prototype.addEventListener = function (type, fn, opts) {
     if ((this === document || this === window) && /initPage|init[A-Z]/.test(new Error().stack || '')) {
@@ -114,8 +111,10 @@ def test_controls_work_after_swap_and_back_restores_dashboard(calendar_workspace
 
         # Back returns to the dashboard without a full reload, and the calendar renders.
         page.go_back()
+        page.wait_for_function("() => location.pathname === '/reservations'", timeout=15000)
+        page.go_back()
         page.wait_for_function("() => location.pathname === '/'", timeout=15000)
-        page.wait_for_selector("[data-calendar]", timeout=15000)
+        page.wait_for_selector('#app-sidebar a[href="/"][aria-current="page"]', timeout=15000)
         assert page.evaluate("() => window.__swapMarker") == 1
         browser.close()
 
@@ -126,11 +125,17 @@ def test_listeners_do_not_grow_over_five_swaps(calendar_workspace, calendar_orig
         browser = launch(playwright)
         context = new_context(browser, calendar_workspace, calendar_origin)
         page = open_page(context, calendar_origin, "/?lang=cs")
+        page.evaluate("() => { window.__loads = 0; document.addEventListener('turbo:load', () => { window.__loads += 1; }); }")
+        # Visit both pages once first: a feature that exists only on one page binds its document
+        # listeners the first time that page appears, and never again after that.
+        for path in ("/reservations?lang=cs", "/?lang=cs"):
+            turbo_visit(page, path, page.evaluate("() => window.__loads"))
         page.evaluate(RECORD_JS)
         for i in range(5):
             path = "/reservations?lang=cs" if i % 2 == 0 else "/?lang=cs"
             turbo_visit(page, path, page.evaluate("() => window.__loads"))
-        assert page.evaluate("() => window.__adds") == []
+        adds = page.evaluate("() => window.__adds")
+        assert adds == [], "\n".join(adds)
         browser.close()
 
 
