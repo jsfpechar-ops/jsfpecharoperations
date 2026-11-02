@@ -8,8 +8,10 @@ form simply started empty and said nothing about it.
 from __future__ import annotations
 
 import base64
+import os
 import re
 from datetime import timedelta
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -19,6 +21,7 @@ from app import claim, db, i18n
 from app.main import app
 from app.routes import guest
 from tests.conftest import complete_guest_claim
+from tests.test_guest_browser_e2e import browser, live_server  # noqa: F401  (fixtures)
 
 TOKEN = "resprefilltok"
 EN_HELP = "Your permanent home address, as in your passport or ID card."
@@ -176,11 +179,13 @@ def test_the_address_comes_from_the_most_recent_completed_guest():
         values, name = guest._residence_prefill(
             _request_owning([rows[0]["id"]]), reservation
         )
-        assert values == {
+        assert {key: values[key] for key in ("res_street", "res_city", "res_country")} == {
             "res_street": "Baker Street 221B",
             "res_city": "London",
             "res_country": "GBR",
         }
+        assert values.get("surname") == "SMITH"
+        assert "first_name" not in values and "birth_date" not in values
         assert name == "John Paul Smith"
     finally:
         _cleanup()
@@ -252,6 +257,7 @@ def test_the_next_person_sees_the_address_already_filled_in(
             r'<option value="GBR"\s+selected', page
         ), "the country was not prefilled"
         assert expected_hint in page
+        assert re.search(r'id="surname"[^>]*value="SMITH"', page), "the surname was not prefilled"
     finally:
         _cleanup()
 
@@ -293,3 +299,33 @@ def test_the_address_fields_use_the_autocomplete_tokens_that_fit_them():
         assert 'autocomplete="country"' in country
     finally:
         _cleanup()
+
+
+SHOTS_0838 = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0838"
+
+
+def test_the_second_person_on_a_phone_sees_the_copied_surname_and_dates(live_server, browser):
+    """0838 evidence: person 2 on the same device, step 1, at 390 px in a real browser."""
+    try:
+        test_client, reservation, rows = _first_person_done("en")
+        context = browser.new_context(viewport={"width": 390, "height": 812}, locale="en-GB")
+        context.add_cookies(
+            [
+                {"name": c.name, "value": c.value, "url": live_server}
+                for c in test_client.cookies.jar
+            ]
+        )
+        page = context.new_page()
+        try:
+            page.goto(f"{live_server}/l/{TOKEN}/{reservation['id']}/new?lang=en")
+            assert page.input_value("#surname") == "SMITH"
+            assert page.input_value("#first_name") == ""
+            assert page.input_value("#res_street") == "Baker Street 221B"
+            if os.environ.get("UBYHOST_0838_SHOTS") == "1":
+                SHOTS_0838.mkdir(parents=True, exist_ok=True)
+                page.screenshot(path=str(SHOTS_0838 / "person2-step1-390.png"), full_page=True)
+        finally:
+            context.close()
+    finally:
+        _cleanup()
+
