@@ -1297,4 +1297,6 @@ body.v2 .airbnb-title{width:100%;margin:0;font-size:32px;font-weight:700;color:v
 body.v2 .airbnb-index{display:block}
 body.v2 .settings-lane .airbnb-index-row{display:flex;align-items:center;gap:16px;min-height:64px;color:var(--ink);text-decoration:none;font-size:17px}
 body.v2 .airbnb-index-row .airbnb-label{flex:1 1 auto}
+/* 0789a2: a sub-page's back-header h1 is its only title; the group h2 that repeats it is hidden (section h2s stay) */
+body.v2 .settings-lane h2.settings-group-title{display:none}
 body.v2 .airbnb-divider{height:1px;background:#e5e5e5;margin:12px 0}
