@@ -109,3 +109,18 @@ E   assert not ['.hl height at 390 px: app=34.5px mockup=34.5px', '.list.plain .
 ```
 
 Screenshots: `docs/tasks/screenshots-0732/cleaning-390.png`, `cleaning-320.png`, `cleaning-1280.png`.
+
+## 0732e
+
+Step 2 pytest tail:
+
+```
+.................................                                        [100%]
+33 passed, 25 deselected in 45.87s
+```
+
+Step 2 ruff tail:
+
+```
+All checks passed!
+```
