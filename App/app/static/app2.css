@@ -1702,3 +1702,5 @@ body.v2 .settings-lane .set-row::after,body.v2 .settings-lane .document-links a:
 body.v2 details.prop-sec .help-tip-btn{display:none}
 body.v2 details.prop-sec .help-tip{display:block}
 body.v2 details.prop-sec .help-tip-body,body.v2 details.prop-sec .help-tip[data-js]>.help-tip-body{position:static;display:block;max-width:none;width:auto;margin:2px 0 0;padding:0;background:none;border:0;box-shadow:none;font-size:12px;color:var(--ink3)}
+/* 0872 /onboarding 360 px: the skip "?" tap box stays inside the card (CI fonts are wider than local) */
+@media (max-width:1023px){body.v2 .onboarding-welcome .help-tip-btn{margin-right:0}}
