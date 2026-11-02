@@ -94,10 +94,11 @@ BOX_OVERRIDES = {
     # text-dependent: app copy vs phone v2 mockup demo copy (0750)
     "stays:.mh .big, .head h1@320": {"width": "100.203px"},
     "stays:.mh .big, .head h1@390": {"width": "100.203px"},
-    "stays:.stay .in b@320": {"width": "135.656px"},
-    "stays:.stay .in b@390": {"width": "135.656px"},
-    "stays:.stay .in small@320": {"width": "128.641px"},
-    "stays:.stay .in small@390": {"width": "128.641px"},
+    # text-dependent (0766): the stays card shows the stay dates with weekdays; values are the app's measured fixture sizes
+    "stays:.stay .in b@320": {"width": "113.547px"},
+    "stays:.stay .in b@390": {"width": "113.547px"},
+    "stays:.stay .in small@320": {"width": "72.2656px"},
+    "stays:.stay .in small@390": {"width": "72.2656px"},
     "stays:.stay .pill.p-warn@320": {"width": "101.891px"},
     "stays:.stay .pill.p-warn@390": {"width": "101.891px"},
     # fixture property has no check-in/out time, so the facts grid has no time line
