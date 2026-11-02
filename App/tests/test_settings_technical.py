@@ -105,11 +105,10 @@ def test_the_czech_page_reads_technicke_udaje(czech_host):
 
 def test_the_section_nav_points_at_the_collapsed_block(host):
     page = host.get("/settings").text
-    start = page.index('class="host-property-grid"')
-    nav = page[start : page.index("</nav>", start)]
-    assert 'href="#settings-technical"' in nav
-    assert 'href="#settings-overview"' not in nav
-    assert 'href="#settings-mail"' not in nav
+    assert 'class="host-property-grid"' not in page
+    assert '<details class="ui-section technical" id="settings-technical">' in page
+    assert 'href="#settings-overview"' not in page
+    assert 'href="#settings-mail"' not in page
 
 
 def test_both_languages_name_the_block_the_same_way():
