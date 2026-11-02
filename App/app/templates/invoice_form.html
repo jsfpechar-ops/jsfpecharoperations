@@ -1,7 +1,7 @@
 {% extends "host_page.html" %}
 {% set nav = 'invoices' %}
 {% set body_kind = 'form' %}
-{% from "_components.html" import field_label, help_tip with context %}
+{% from "_components.html" import field_label, help_tip, choice_card with context %}
 {% block title %}{{ t('invoice.new') }}{% endblock %}
 {% block meta %}{{ t('invoices.lede') }}{% endblock %}
 {% block back_url %}/invoices{% endblock %}
@@ -37,7 +37,7 @@
   {% endif %}
   <div class="ui-section invoice-supplier">
     <a class="invoice-supplier-edit" href="/entities?edit={{ entity.id }}&amp;next={{ (('/invoices/new?reservation_id=' ~ (stay.reservation.id if stay else '') ~ '&entity=' ~ entity.id) | urlencode) }}#entity-invoice">{{ t('invoice.edit_details') }}</a>
-    <div class="ui-field invoice-supplier-picker">
+    <div class="ui-field invoice-supplier-picker"{% if entities|length < 2 %} hidden{% endif %}>
       <label for="legal_entity_id">{{ t('invoice.entity.label') }}</label>
       <select id="legal_entity_id" name="legal_entity_id">
         {% for option in entities %}
@@ -57,9 +57,13 @@
   </div>
 
   <div class="ui-section invoice-customer">
-    <h2>{{ t('invoice.section.customer') }}</h2>
-    <div class="invoice-lookup">
-      <div class="ui-field invoice-lookup-ico">
+    <h2 id="invoice-customer-title">{{ t('invoice.section.customer') }}</h2>
+    <div class="ui-toolbar" role="radiogroup" aria-labelledby="invoice-customer-title">
+      {{ choice_card('buyer_kind', 'guest', t('invoice.buyer_kind.guest'), buyer_kind == 'guest') }}
+      {{ choice_card('buyer_kind', 'company', t('invoice.buyer_kind.company'), buyer_kind == 'company', 'buyer-kind-company-help', t('invoice.buyer_kind.company_help')) }}
+    </div>
+    <div class="invoice-lookup"{% if not show_fill_guest %} data-buyer-only="company"{% endif %}>
+      <div class="ui-field invoice-lookup-ico" data-buyer-only="company">
         <label for="buyer_ico">{{ t('invoice.buyer.ico') }} <span class="opt">{{ t('common.optional') }}</span></label>
         <div class="invoice-lookup-row">
           <input type="text" id="buyer_ico" name="buyer_ico" inputmode="numeric" maxlength="8" autocomplete="off" value="{{ values.get('buyer_ico', '') }}">
@@ -69,12 +73,13 @@
         {% if ares_note %}<p class="hint">{{ t('ares.source_note') }} {{ ares_note }}</p>{% endif %}
       </div>
       {% if show_fill_guest %}
-      <div class="invoice-lookup-guest">
-        <span class="ui-sub">{{ t('invoice.buyer.or') }}</span>
+      <div class="invoice-lookup-guest" data-buyer-only="guest">
+        <span class="ui-sub" data-buyer-or>{{ t('invoice.buyer.or') }}</span>
         <button type="submit" name="fill_from_guest" value="1" formnovalidate class="ui-btn ui-btn-secondary">{{ t('invoice.fill_guest.button') }}</button>
       </div>
       {% endif %}
     </div>
+    {% if guest_prefilled %}<p class="hint" role="status" data-buyer-only="guest">{{ t('invoice.fill_guest.prefilled') }}</p>{% endif %}
     <div class="invoice-buyer-fields">
       <div class="ui-field invoice-f-full">
         <label for="buyer_name">{{ t('invoice.buyer.name') }}</label>
@@ -100,7 +105,7 @@
           {% endfor %}
         </select>
       </div>
-      <div class="ui-field invoice-f-half">
+      <div class="ui-field invoice-f-half" data-buyer-only="company">
         <label for="buyer_dic">{{ t('invoice.buyer.dic') }} <span class="opt">{{ t('common.optional') }}</span></label>
         <input type="text" id="buyer_dic" name="buyer_dic" value="{{ values.get('buyer_dic', '') }}">
       </div>
@@ -472,6 +477,23 @@
         });
     });
   }
+
+  /* 0843: Guest or Company. Without JS every buyer field shows. With JS the
+     other choice's parts are hidden and disabled, so they are never posted. */
+  function syncBuyerKind() {
+    var checked = form.querySelector('input[name="buyer_kind"]:checked');
+    var kind = checked ? checked.value : "";
+    form.querySelectorAll("[data-buyer-only]").forEach(function (part) {
+      var off = kind !== "" && part.getAttribute("data-buyer-only") !== kind;
+      part.hidden = off;
+      part.querySelectorAll("input, select, button").forEach(function (control) { control.disabled = off; });
+    });
+    form.querySelectorAll("[data-buyer-or]").forEach(function (part) { part.hidden = kind !== ""; });
+  }
+  form.querySelectorAll('input[name="buyer_kind"]').forEach(function (radio) {
+    radio.addEventListener("change", syncBuyerKind);
+  });
+  syncBuyerKind();
 
   if (paidRadio && dueRadio) {
     [paidRadio, dueRadio].forEach(function (radio) { radio.addEventListener("change", syncPayment); });
