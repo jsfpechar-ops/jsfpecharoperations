@@ -1,0 +1,16 @@
+[
+  {
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "description": "This is a deliberately long description that is folded across several physical lines so the unfolding step has to join them back together without losing any character at the fold points.",
+    "guest_email": null,
+    "is_block": false,
+    "is_cancelled": false,
+    "name_hint": "",
+    "phone_last4": null,
+    "recurring": false,
+    "reservation_url": null,
+    "summary": "Reserved",
+    "uid": "folded-1@example.test"
+  }
+]

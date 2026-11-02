@@ -46,18 +46,19 @@ def test_phone_tab_bar_clears_the_home_indicator(base, width, height, lang, path
             meta = page.evaluate("document.querySelector('meta[name=viewport]').getAttribute('content')")
             assert "viewport-fit=cover" in meta
             inner_h = page.evaluate("window.innerHeight")
-            bar = page.evaluate("(() => { const r = document.querySelector('.ui-tabbar').getBoundingClientRect(); return {top: r.top, bottom: r.bottom, h: r.height}; })()")
+            bar = page.evaluate("(() => { const r = (document.querySelector('body.v2 .tabs') || document.querySelector('.ui-tabbar')).getBoundingClientRect(); return {top: r.top, bottom: r.bottom, h: r.height}; })()")
             assert abs(bar["bottom"] - inner_h) <= 1
-            assert round(bar["h"]) == 56
-            assert page.evaluate("getComputedStyle(document.documentElement).scrollPaddingBottom") == "56px"
-            link_bottoms = page.evaluate("[...document.querySelectorAll('.ui-tabbar a')].map(a => a.getBoundingClientRect().bottom)")
+            expected = 84 if page.evaluate("!!document.querySelector('body.v2 .tabs')") else 56
+            assert round(bar["h"]) == expected
+            assert page.evaluate("getComputedStyle(document.documentElement).scrollPaddingBottom") == f"{expected}px"
+            link_bottoms = page.evaluate("[...document.querySelectorAll(document.querySelector('body.v2 .tabs') ? 'body.v2 .tabs a' : '.ui-tabbar a')].map(a => a.getBoundingClientRect().bottom)")
             assert len(link_bottoms) == 5
             max_link_bottom = max(link_bottoms)
             assert max_link_bottom <= bar["bottom"] + 0.5
             page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
             page.wait_for_timeout(100)
             content_bottom = page.evaluate("Math.max(...[...document.querySelectorAll('#main-content *')].filter(e => e.getBoundingClientRect().height > 0).map(e => e.getBoundingClientRect().bottom))")
-            bar_top = page.evaluate("document.querySelector('.ui-tabbar').getBoundingClientRect().top")
+            bar_top = page.evaluate("(document.querySelector('body.v2 .tabs') || document.querySelector('.ui-tabbar')).getBoundingClientRect().top")
             assert content_bottom <= bar_top
             scroll_w = page.evaluate("document.documentElement.scrollWidth")
             assert scroll_w <= width
@@ -74,6 +75,6 @@ def test_phone_tab_bar_is_hidden_at_1280(base):
     with sync_api.sync_playwright() as playwright:
         browser, page = _open(playwright, base, 1280, 900, "/?lang=en")
         try:
-            assert page.evaluate("getComputedStyle(document.querySelector('.ui-tabbar')).display") == "none"
+            assert page.evaluate("getComputedStyle((document.querySelector('body.v2 .tabs') || document.querySelector('.ui-tabbar'))).display") == "none"
         finally:
             browser.close()

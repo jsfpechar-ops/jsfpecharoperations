@@ -78,7 +78,7 @@ def events(owner_user_id: int | None, start: date, end: date, apartment_id: int 
     result = []
     for stay in reservations:
         # Do not expose guest identity, credentials, notes, or guest-form tokens.
-        progress = reporting.reservation_progress(stay, guests.get(stay["id"], []))
+        progress = reporting.reservation_progress(stay, guests.get(stay["id"]))
         anchor = reporting.reservation_deadline_anchor(stay, progress["guests"])
         cell = reporting.deadline_cell(progress, anchor)
         status = progress["status"]

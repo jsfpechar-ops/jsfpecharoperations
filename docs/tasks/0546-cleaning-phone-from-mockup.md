@@ -1,0 +1,39 @@
+# 0546: Cleaning page phone layout 1:1 from the approved phone mockup
+Status: todo
+Depends on: 0545, shared phone shell 0718 (merged into this branch at 40b4e7e) | Branch: claude/project-thread-c1h7ok
+Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
+
+## 1. Objective
+Below 1024 px, `/cleaning` is the phone mockup's Úklid screen 1:1 (owner approved 2026-11-01, "make it 1:1"): `docs/design/mockup/ubyhost-phone-v1.html`, `<section class="scr push" data-s="uklid">` (grep `data-s="uklid"`, about 16 lines). From 1024 px up nothing changes (desktop tables, calendar first).
+
+## 2. Context
+- The shared phone classes already exist in `App/app/static/app2.css` inside the `@media (max-width:1023px)` block from brief 0718: `.top`, `.round`, `.big` (and `.head h1` gets the same values), `.sub`, `.grp`, `.card`, `.list`, `.row`, `.row .t b/small/.pill`, `.pill` + `.p-ok/.p-warn`, `.btn`, `.actbar` (the mockup's `.bar`), bottom tab bar. Use them as they are: do NOT restyle them in the cleaning block. Do not add side padding to `main` (brief 0719 does it).
+- Mockup Úklid markup to reproduce: `.top` with a `.round` back button; `.big` "Úklid"; `.sub`; `.grp` "Dnes"; today items as `.card` (name `<b>` 18px, then a 14px `var(--ink3)` line "11:00–14:00 · další příjezd 3. 11. 15:00", then a pill below with 10px gap); `.grp` "Tento týden"; `.list` of `.row > .t` (`<b>` name, `<small>` "Po 3. 11. · další příjezd 4. 11. 15:00", pill); `.bar` (`.actbar` here) with the coral `.btn` "Sdílet rozpis s uklízečkou".
+- Page files: `App/app/templates/cleaning.html` (head), `App/app/templates/_cleaning_table.html` (sections; `sections` = list of `(key, items)`; item fields `eventId, property, date, startTime, endTime, checkoutTime, checkinTime, nextArrival, conflict, timingUnavailable`; formatters `cleaning_day`, `cleaning_short`; copy `ct(...)`), `App/app/templates/_cleaning_screen.html` (calendar include then list). Cleaning CSS: the `/* cleaning (0542) */` block at the end of `app2.css`.
+- `App/tests/v2_mockup.py`: PAGES entries can set `phone_view` and `phone_selectors`; at 320 and 390 they are compared strictly (styles and box metrics) against the phone mockup. See the `menu` entry.
+
+## 3. Files
+`App/app/templates/cleaning.html`, `App/app/templates/_cleaning_table.html`, the cleaning block of `App/app/static/app2.css` (+ `?v=` key in `base.html`, `tests/static_versions.json` via `--write`), `App/app/cleaning_i18n.py` + `App/app/host_vi_i18n.py` (one key if needed), `App/tests/v2_mockup.py` (cleaning entry only), cleaning assertions in existing tests under section 8. Screenshots `docs/tasks/screenshots-0546/`. Report `docs/tasks/0546-report.md`.
+
+## 4. Steps
+1. **Phone markup.** In `_cleaning_table.html` wrap the existing desktop sections in `<div class="cleaning-desk">`. After it add `<div class="cleaning-phone">` that, for each section, prints `<div class="grp">{{ ct('section_' ~ key) }}</div>`, then: for `today`, one `<a class="card cleaning-today" href="/cleaning/events/{{ item.eventId }}/edit">` per item with `<b>` property, `<div class="cleaning-meta">` time window (same logic as the desktop Time cell) ` · ` `{{ ct('next_arrival_short') }} ` `cleaning_short(nextArrival)` ` ` `checkinTime` (or `ct('no_arrival')`), and `<div class="cleaning-pillrow">` with the same pill; or for `today` with no items `<div class="card">{{ ct('today_empty') }}</div>`. For `week`/`later`: `<div class="list">` of `<a class="row" href="/cleaning/events/{{ item.eventId }}/edit"><div class="t"><b>property</b><small>cleaning_day(date) · next arrival as above</small>PILL</div></a>`. New copy key `next_arrival_short`: cs "další příjezd", en "next check-in", vi "khách đến tiếp" (append at the END of `WORDS` / `CLEANING_WORDS`). Commit `0546 step 1`.
+2. **Phone head and bar.** In `cleaning.html`: add `class="big"` to the h1; before the `.head` add `<div class="top cleaning-phone"><a class="round" href="/menu" aria-label="{{ t('common.back') }}">{{ icon('arrow-left', 20) }}</a><span></span></div>` (check the icon name and the `t()` key exist with grep; use what exists); after the page content add `<div class="actbar cleaning-phone"><a class="btn" href="/cleaning/shares">{{ ct('share_cleaner') }}</a></div>`. Commit `0546 step 2`.
+3. **Page CSS** (cleaning block only): `body.v2 .cleaning-phone{display:none}`; `@media (max-width:1023px){ body.v2 .cleaning-phone{display:block} body.v2 .top.cleaning-phone{display:flex} body.v2 .actbar.cleaning-phone{display:flex} body.v2 .cleaning-desk, body.v2 .cleaning-head .btn, body.v2 .cleaning-head .ov-links{display:none} body.v2 .cleaning-today b{display:block;font-size:18px} body.v2 .cleaning-meta{color:var(--ink3);font-size:14px} body.v2 .cleaning-pillrow{margin-top:10px} body.v2 .cleaning-page{padding-bottom:96px} }` and hide the legend and calendar below 768 px (`.cleaning-legend`, `#calendar`). Remove any older cleaning-block rule that conflicts with these below 1024 px (for example the 44 px `td a` rule now only matters for the hidden tables: keep it). Bump the key, `--write`. Commit `0546 step 3`.
+4. **Test entry.** In the cleaning PAGES entry add `"phone_view": "uklid"` and `"phone_selectors": [".tabs", ".tab.on", ".top .round", ".big", ".sub", ".grp", ".card", ".list .row", ".row .t b", ".row .t small", ".row .t .pill", ".actbar", ".actbar .btn"]`, and in `missing_ok` add `"main table th"`, `"main table td"` with the reason "below 1024 px the phone layout replaces the tables (0546)". Run `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py -k cleaning -q --tb=short -rs 2>&1 | tail -60` and fix differences in the cleaning markup or page rules until all `cleaning-*` cases pass. If a difference comes from a shared phone rule, stop and report it. Commit `0546 step 4`.
+5. **Regression**: `.venv/bin/python -m pytest tests/test_cleaning_browser.py tests/test_0252_touch_sweep_browser.py tests/test_0540_cleaning_tables.py tests/test_0541_cleaning_header.py tests/test_design_cleaning.py tests/test_cleaning.py tests/test_static_versions.py tests/test_host_language.py -q --tb=short -rs 2>&1 | tail -30`. Fix cleaning causes; host-page assertions that look for the header button or table rows at phone widths may point at `.actbar .btn` / `.cleaning-phone .row` (section 8). Commit `0546 step 5`.
+6. **Screenshots**: run `UBYHOST_SHOTS_V2=1 UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py -k screenshots -q`, copy `cleaning-*.png` and the phone mockup shots for `uklid` from `docs/tasks/screenshots-0710/` into `docs/tasks/screenshots-0546/`, then `git checkout -- docs/tasks/screenshots-0710 && git clean -fq docs/tasks/screenshots-0710` (never commit 0710 shots). Commit `0546 step 6`.
+
+## 5. Do not touch
+Shared `app2.css` rules (anything above the cleaning block), `_shell_v2.html`, `dashboard.html`, `menu.html`, the mockups, other PAGES entries, the cleaner's shared view (`cleaning_shared.html`, `_cleaning_list.html`), JS, routes. No new dependency, no migration.
+
+## 6. Commands
+In the steps (from `App/`, `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`), then from the repo root `python3 scripts/design_lint.py 2>&1 | tail -3`.
+
+## 7. Acceptance
+All `cleaning-*` cases of test_0710 pass at all six widths, step 5 passes (list any failure that is not cleaning's), 0 skipped, lint OK, screenshots copied.
+
+## 8. Stop and ask
+Assertions about the host header button / table rows at widths below 1024 may be repointed; list each. Stop if a fix needs a shared rule or a file outside section 3.
+
+## 9. Report
+`docs/tasks/0546-report.md` (required): Status, tails, differences fixed and left, deviations from the mockup (for example the "+ Přidat úklid" link if you keep it visible: you must not, it is hidden by step 3; report if that loses a needed action), screenshot paths.

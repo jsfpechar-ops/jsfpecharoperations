@@ -38,9 +38,9 @@ def _client():
     return client, flat
 
 
-def _card(page, key):
-    match = re.search(r'<(?:a|div) class="host-property-card[^"]*"[^>]*data-health-check="' + key + r'"[^>]*>.*?</(?:a|div)>', page, re.S)
-    assert match, key
+def _row(page, href):
+    match = re.search(r'<a class="r" href="' + re.escape(href) + r'"[^>]*>.*?</a>', page, re.S)
+    assert match, href
     return match.group(0)
 
 
@@ -49,15 +49,15 @@ def test_cards_carry_the_health_and_the_box_is_gone():
     for lang in ("en", "cs", "vi"):
         page = client.get(f"/apartments/{flat}?view=overview&lang={lang}").text
         assert 'class="panel host-checklist"' not in page and 'class="health-row"' not in page, lang
-        for key in ("calendar", "guest_link", "police", "business"):
-            assert "host-property-card-dot" in _card(page, key), (lang, key)
+        assert 'class="pv"' in page, lang
+        for href in ("#sec-calendars", "#sec-police"):
+            assert f'href="{href}"' in page, (lang, href)
+        assert 'data-state=' in _row(page, "#sec-police"), lang
 
 
-def test_a_problem_card_names_the_problem_and_opens_the_fix():
+def test_a_problem_row_opens_the_fix_section():
     client, flat = _client()
-    db.execute("UPDATE ical_feed SET active = 0 WHERE apartment_id = ?", (flat,))
+    db.execute("UPDATE ical_feed SET last_status = 'error' WHERE apartment_id = ?", (flat,))
     page = client.get(f"/apartments/{flat}?view=overview&lang=en").text
-    card = _card(page, "calendar")
-    assert 'data-state="warn"' in card
-    assert "host-property-card-problem" in card and "No calendar connected" in card
-    assert f'href="/apartments/{flat}?view=bookings#calendars"' in card
+    row = _row(page, "#sec-calendars")
+    assert 'class="is-bad"' in row

@@ -112,7 +112,11 @@ func Fail(ctx context.Context, pool *pgxpool.Pool, j *Job, cause error, interval
 	return false, err
 }
 
-var jobNames = map[string]string{"billing_snapshot": "billing snapshot", "stripe_sweep": "payment check"}
+var jobNames = map[string]string{"billing_snapshot": "billing snapshot", "stripe_sweep": "payment check", "ical": "calendar sync",
+	"submit": "automatic filing", "push": "urgent alerts"}
+
+// jobLevels is the alert level per job; every job not listed is "warning".
+var jobLevels = map[string]string{"submit": "critical"}
 
 // RaiseFailed opens the job_failed alert with the English copy of host_i18n,
 // refreshing it when it is already open. Owner and apartment stay empty: it
@@ -122,12 +126,16 @@ func RaiseFailed(ctx context.Context, pool *pgxpool.Pool, kind string) error {
 	if name == "" {
 		name = kind
 	}
+	level := "warning"
+	if l, ok := jobLevels[kind]; ok {
+		level = l
+	}
 	title := fmt.Sprintf("Background job '%s' failed.", name)
 	detail := "Automatic reporting may be delayed until it runs again."
 	key := "job_failed:" + kind
 	tag, err := pool.Exec(ctx,
 		"UPDATE alert SET level = $1, message = $2, detail = $3, params = NULL, created_at = $4 WHERE dedupe_key = $5 AND resolved_at IS NULL",
-		"warning", title, detail, Now(0), key)
+		level, title, detail, Now(0), key)
 	if err != nil {
 		return err
 	}
@@ -136,7 +144,7 @@ func RaiseFailed(ctx context.Context, pool *pgxpool.Pool, kind string) error {
 	}
 	_, err = pool.Exec(ctx,
 		"INSERT INTO alert (level, kind, dedupe_key, message, detail, created_at) VALUES ($1, $2, $3, $4, $5, $6)",
-		"warning", "job_failed", key, title, detail, Now(0))
+		level, "job_failed", key, title, detail, Now(0))
 	return err
 }
 

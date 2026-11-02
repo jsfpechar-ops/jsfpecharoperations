@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -20,9 +21,16 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/billing"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/calendar"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ical"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/jobs"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/palette"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/payments"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/pushsend"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/pushweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/schema"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 )
 
 const version = "go-dev"
@@ -183,6 +191,21 @@ func run() int {
 	mux := http.NewServeMux()
 	mux.Handle("GET /healthz", m.wrap("/healthz", healthz(pool)))
 	mux.Handle("GET /metrics", m.wrap("/metrics", m.serve))
+	mux.Handle("POST /webhooks/stripe", m.wrap("/webhooks/stripe", payments.WebhookHandler(pool, os.Getenv, time.Now)))
+	onboarder := payments.NewStripeOnboarder(pool, os.Getenv, time.Now)
+	mux.Handle("GET /payments/connect/start", m.wrap("/payments/connect/start", payments.ConnectStartHandler(pool, os.Getenv, time.Now, onboarder)))
+	mux.Handle("POST /payments/connect/start", m.wrap("/payments/connect/start", payments.ConnectStartHandler(pool, os.Getenv, time.Now, onboarder)))
+	mux.Handle("GET /payments/connect/return", m.wrap("/payments/connect/return", payments.ConnectReturnHandler(pool, os.Getenv, time.Now, onboarder)))
+	mux.Handle("POST /account/push/subscribe", m.wrap("/account/push/subscribe", pushweb.SubscribeHandler(pool, os.Getenv, time.Now)))
+	mux.Handle("POST /account/push/refresh", m.wrap("/account/push/refresh", pushweb.RefreshHandler(pool, os.Getenv, time.Now)))
+	mux.Handle("POST /account/push/unsubscribe", m.wrap("/account/push/unsubscribe", pushweb.UnsubscribeHandler(pool, os.Getenv, time.Now)))
+	mux.Handle("POST /account/push/devices/{id}/delete", m.wrap("/account/push/devices/{id}/delete", pushweb.DeviceDeleteHandler(pool, os.Getenv, time.Now)))
+	mux.Handle("POST /account/push/test", m.wrap("/account/push/test", pushweb.TestHandler(&pushsend.Sender{Pool: pool, Getenv: os.Getenv, Now: time.Now}, os.Getenv, time.Now)))
+	mux.Handle("GET /api/command-palette", m.wrap("/api/command-palette", palette.Handler(pool, os.Getenv, time.Now)))
+	mux.Handle("GET /dashboard/calendar", m.wrap("/dashboard/calendar", calendar.Handler(pool, os.Getenv, time.Now)))
+	mux.Handle("POST /payments/requests/new", m.wrap("/payments/requests/new", payments.RequestNewHandler(pool, os.Getenv, time.Now)))
+	mux.Handle("POST /payments/requests/{id}/send", m.wrap("/payments/requests/{id}/send", payments.RequestSendHandler(pool, os.Getenv, time.Now, onboarder)))
+	mux.Handle("GET /payments/qr/{file}", m.wrap("/payments/qr/{file}", payments.QRPNGHandler(pool, os.Getenv, time.Now)))
 	mux.Handle("/", m.wrap("/", notFound))
 
 	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
@@ -211,7 +234,7 @@ func run() int {
 }
 
 // goIntervals are the schedule intervals (minutes) that cap a retry backoff.
-var goIntervals = map[string]int{"billing_snapshot": 24 * 60, "stripe_sweep": 24 * 60}
+var goIntervals = map[string]int{"billing_snapshot": 24 * 60, "stripe_sweep": 24 * 60, "submit": 10, "ical": 60, "push": 1}
 
 // goHandlers maps each Go-owned job kind to its handler.
 func goHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
@@ -222,6 +245,42 @@ func goHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
 		"stripe_sweep": func(ctx context.Context) (int, error) {
 			expired, deleted, err := payments.Sweep(ctx, pool, time.Now().UTC(), jobs.Now(0))
 			return expired + deleted, err
+		},
+		"ical": func(ctx context.Context) (int, error) {
+			totals, err := ical.SyncAll(ctx, pool, os.Getenv, ical.FetchOptions{
+				Resolver:     net.DefaultResolver,
+				AllowPrivate: ical.AllowPrivate(os.Getenv),
+			})
+			if err == nil {
+				jobs.Ping(ctx, os.Getenv("UBYHOST_HEARTBEAT_ICAL_URL"), "ical")
+			}
+			return totals.Feeds, err
+		},
+		"push": func(ctx context.Context) (int, error) {
+			counts, err := (&pushsend.Sender{Pool: pool, Getenv: os.Getenv, Now: time.Now}).Drain(ctx, 50)
+			total := 0
+			for _, n := range counts {
+				total += n
+			}
+			return total, err
+		},
+		"submit": func(ctx context.Context) (int, error) {
+			keys, err := secure.LoadDataKeys(os.Getenv)
+			if err != nil {
+				return 0, err
+			}
+			d, err := ubyport.NewSweepDeps(ctx, pool, keys, os.Getenv)
+			if err != nil {
+				return 0, err
+			}
+			summary, err := ubyport.Sweep(ctx, d, nil)
+			if summary.Submitted > 0 || summary.Failed > 0 {
+				slog.Info("ubyport sweep", "apartments", summary.Apartments, "submitted", summary.Submitted, "failed", summary.Failed)
+			}
+			if err == nil {
+				jobs.Ping(ctx, os.Getenv("UBYHOST_HEARTBEAT_URL"), "submit")
+			}
+			return summary.Submitted, err
 		},
 	}
 }

@@ -521,8 +521,86 @@ def dashboard(request: Request):
             # 0233: remind until a real guest has used the guest link.
             "link_unused": workflow.link_unused(apartments),
             "welcome_back": welcome,
+            "month_summary": reporting.month_summary(owner_user_id, today),
+            # 0706: 14-day grid for the overview calendar, built server-side.
+            "cal_days": [today + timedelta(days=i) for i in range(14)],
+            "cal_rows": _overview_calendar_rows(owner_user_id, apartments, today, host_i18n.lang_from_request(request)),
+            "cal_view": any(k.startswith("cal_") for k in request.query_params),
+            # 0520: stays that arrive or leave today, for the "Today" table.
+            "today_rows": [
+                dict(row, nights=_today_nights(row["reservation"]))
+                for row in rows
+                if today.isoformat() in (str(row["reservation"]["date_from"])[:10], str(row["reservation"]["date_to"])[:10])
+            ],
+            # 0729: phone "All done" line names the next arrival after today.
+            "next_arrival": min(
+                (row["reservation"] for row in rows if str(row["reservation"]["date_from"])[:10] > today.isoformat()),
+                key=lambda r: str(r["date_from"])[:10],
+                default=None,
+            ),
         },
     ))
+
+
+_OVERVIEW_SOURCE_NAMES = {"airbnb": "Airbnb", "booking": "Booking"}
+
+
+def _overview_calendar_rows(owner_user_id, apartments, today, lang) -> list:
+    """0706: one row per active apartment for the overview's 14-day grid (grid columns 2-15)."""
+    events = dashboard_calendar.events(owner_user_id, today, today + timedelta(days=14))
+    rows = []
+    for apartment in apartments:
+        if not apartment["active"]:
+            continue
+        bars = []
+        placed = []
+        for event in events:
+            if event["propertyId"] != apartment["id"]:
+                continue
+            start = date.fromisoformat(str(event["start"])[:10])
+            stop = date.fromisoformat(str(event["end"])[:10])
+            col_start = 2 + max(0, (start - today).days)
+            col_end = 2 + min(14, (stop - today).days)
+            if col_end <= col_start:
+                continue
+            tone = event["tone"]
+            if tone == "done":
+                css = "b-ok"
+            elif tone in ("action", "ready", "overdue"):
+                css = "b-warn"
+            else:
+                css = "b-grey"
+            overdue = tone == "overdue"
+            source = str(event["source"] or "").lower()
+            label = event["label"] or _OVERVIEW_SOURCE_NAMES.get(source) or host_i18n.translate(lang, "calendar.kind_stay")
+            guests = int(event.get("guests") or 0)
+            if guests > 0:
+                label += f" · {guests}"
+            placed.append((col_start, col_end, {"css": css, "col_start": col_start, "col_end": col_end, "overdue": overdue, "label": label, "url": event["url"]}))
+        # 0707: greedy lanes, so stays that overlap in one property row do not overlap visually.
+        lane_ends: list[int] = []
+        for col_start, col_end, bar in sorted(placed, key=lambda item: item[0]):
+            for lane, lane_end in enumerate(lane_ends):
+                if lane_end <= col_start:
+                    lane_ends[lane] = col_end
+                    break
+            else:
+                lane_ends.append(col_end)
+                lane = len(lane_ends) - 1
+            bar["row"] = lane + 1
+            bars.append(bar)
+        rows.append({"name": apartment["internal_name"], "bars": bars})
+    return rows
+
+
+def _today_nights(reservation) -> int:
+    """0701: nights of a stay on the Today table (0 when a date is unreadable)."""
+    try:
+        start = date.fromisoformat(str(reservation["date_from"])[:10])
+        end = date.fromisoformat(str(reservation["date_to"])[:10])
+    except ValueError:
+        return 0
+    return max((end - start).days, 0)
 
 
 @router.get("/guide")
@@ -1188,6 +1266,7 @@ def apartments_list(request: Request):
     rows = db.query(
         "SELECT a.*, e.name AS entity_name, "
         "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds, "
+        "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1 AND f.last_status = 'error') AS feed_errors, "
         "  (SELECT COUNT(*) FROM reservation r WHERE r.apartment_id = a.id AND r.status = 'active') AS reservations "
         "FROM apartment a LEFT JOIN legal_entity e ON e.id = a.legal_entity_id "
         f"WHERE a.archived_at IS NULL AND {db.null_safe_eq('a.owner_user_id')} ORDER BY a.internal_name",
@@ -1216,6 +1295,50 @@ def apartments_list(request: Request):
         item["link_url"] = (
             f"{config.PUBLIC_BASE_URL}/l/{item['link_key']}" if item["link_key"] else ""
         )
+    # 0530: four setup chips per property (police, calendar, lock, stay fee).
+    auth_failed = {
+        int(alert["apartment_id"])
+        for alert in db.query(
+            "SELECT apartment_id FROM alert WHERE owner_user_id = ? "
+            "AND kind = 'ubyport_auth_failed' AND resolved_at IS NULL",
+            (access.owner_id(request),),
+        )
+        if alert["apartment_id"] is not None
+    }
+    for item in enriched:
+        apartment = item["apartment"]
+        apartment_id = int(apartment["id"])
+        base = f"/apartments/{apartment_id}"
+        has_feeds = int(apartment["feeds"] or 0) > 0
+        feed_error = int(apartment["feed_errors"] or 0) > 0
+        police_bad = bool(item["issues"]) or apartment_id in auth_failed
+        lock_ok = bool(apartment["lock_id"])
+        item["chips"] = [
+            {
+                "key": "police",
+                "state": "bad" if police_bad else "ok",
+                "href": f"{base}?view=settings&section=reporting#ubyport",
+            },
+            {
+                "key": "calendar",
+                "state": "ok" if has_feeds and not feed_error else "bad",
+                "href": f"{base}?view=bookings#calendars",
+            },
+            {
+                "key": "lock",
+                "state": "ok" if lock_ok else "off",
+                "href": (
+                    f"{base}?view=settings&section=lock#door-code"
+                    if lock_ok
+                    else f"{base}?view=settings&section=property#basics"
+                ),
+            },
+            {
+                "key": "fee",
+                "state": "ok" if stay_fee.is_active(apartment) else "off",
+                "href": f"{base}?view=settings&section=reporting#stay-fee-settings",
+            },
+        ]
     archived_rows = [
         {"apartment": row, "issues": validation.errors_only(_apartment_issues(row))} for row in archived
     ]
@@ -3017,7 +3140,7 @@ async def refresh_codelists(apartment_id: int, request: Request):
 RESERVATION_PAGE_SIZE = 5
 
 # Presets are what a host actually asks for; the two date boxes cover the rest.
-RESERVATION_RANGES = ("upcoming", "past", "all")
+RESERVATION_RANGES = ("upcoming", "current", "past", "all")
 
 
 def _overdue_unfinished_ids(request: Request) -> List[int]:
@@ -3055,6 +3178,9 @@ def reservations_list(request: Request):
     elif date_range == "past":
         # Departed stays only — a guest checking in today still belongs under Upcoming.
         date_from, date_to = "", (date.today() - timedelta(days=1)).isoformat()
+    elif date_range == "current":
+        # In the flat today: arrived on or before today and leaving on or after it.
+        date_from = date_to = today
     elif date_range == "all" or date_range == "archive":
         date_from = date_to = ""
 
@@ -3099,6 +3225,11 @@ def reservations_list(request: Request):
         else:
             sql += " AND r.date_from <= ?"
         params.append(date_to)
+    report = request.query_params.get("report", "")
+    if report == "failed":
+        # Stays with a guest whose police report was refused or blocked.
+        sql += (" AND EXISTS (SELECT 1 FROM guest g WHERE g.reservation_id = r.id"
+                " AND g.submit_state IN ('error', 'blocked'))")
     total = int(db.query_one(f"SELECT COUNT(*) AS n FROM ({sql})", params)["n"])
     page_count = max(1, (total + RESERVATION_PAGE_SIZE - 1) // RESERVATION_PAGE_SIZE)
     page = max(1, min(_query_int(request, "page") or 1, page_count))
@@ -3147,6 +3278,7 @@ def reservations_list(request: Request):
             "ready_send_count": ready_send_count,
             "manual_send": manual_send,
             "status": status,
+            "report": report,
             "apartments": access.apartments(request, "id, internal_name"),
             "apartment_id": apartment_id,
             "date_from": date_from,
@@ -4487,6 +4619,33 @@ SUPPORT_AUDIT_ACTIONS = (
     "impersonation_stopped",
     "guest_identity_revealed",
 )
+
+
+@router.get("/menu")
+def menu_view(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    from .. import claim, cleaning
+
+    owner = access.owner_id(request)
+    today = claim.prague_today()
+    cleaning_today = None
+    try:
+        events = cleaning.schedule(owner, today, today)["events"]
+        cleaning_today = sum(
+            1 for e in events if e.get("kind") == "cleaning" and str(e.get("start", ""))[:10] == today.isoformat()
+        )
+    except Exception:
+        cleaning_today = None
+    return render(
+        request,
+        "menu.html",
+        {
+            "cleaning_today": cleaning_today,
+            "month": reporting.month_summary(owner, today),
+        },
+    )
 
 
 @router.get("/settings")

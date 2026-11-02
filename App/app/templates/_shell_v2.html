@@ -1,0 +1,52 @@
+{#- v2 sidebar (brief 0705), copied from the mockup <aside class="side">. Used only when a page sets v2 = true. Old sidebar: _shell_sidebar.html. -#}
+{% from "_icons.html" import icon with context %}
+{% set stays_nav = nav in ('reservations', 'submissions', 'housebook') %}
+{% set properties_nav = nav in ('apartments', 'guest_links', 'automation', 'entities', 'smart_locks') %}
+<aside class="side" id="app-sidebar">
+  <div class="ui-brand"><a class="logo" href="/" aria-label="UbyHost"><img class="mark" src="/static/ubyhost-mark.png?v=20261004a" alt="" width="22" height="22"><span>UbyHost</span></a></div>
+  <span class="env-badge ui-env {{ ubyport_env }}" title="{{ t('env.where_reports_go') }}">{{ t('env.' ~ ubyport_env) }}</span>
+  {% if current_user %}
+  <a class="org" href="/settings">
+    <i>{{ (workspace_user.display_name or workspace_user.username)[:1] | upper }}</i>
+    <div>{{ workspace_user.display_name or workspace_user.username }}
+      <small>{% if apartments is defined %}{{ tp('nav.property_count', apartments | length) }}{% else %}{{ t('nav.account') }}{% endif %}</small>
+    </div>
+  </a>
+  {% endif %}
+  <button class="search" type="button" data-command-open style="width:auto;margin-bottom:14px;justify-content:space-between">
+    <span style="display:flex;align-items:center;gap:8px">{{ icon('search', 16) }}{{ t('host.search') }}</span>
+    <kbd data-command-shortcut style="font-size:11px;background:#fff;border-radius:5px;padding:1px 6px;color:var(--ink3)">Ctrl K</kbd>
+  </button>
+  <nav class="side-nav" aria-label="{{ t('a11y.main_navigation') }}">
+    <a class="nav{{ ' on' if nav == 'dashboard' }}" href="/" {% if nav == 'dashboard' %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V21H3z"/></svg>{{ t('nav.overview') }}{% if nav_badge is defined and nav_badge %}<span class="badge">{{ nav_badge }}</span>{% endif %}</a>
+    <a class="nav{{ ' on' if stays_nav }}" href="/reservations" {% if stays_nav %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>{{ t('nav.stays') }}</a>
+    <a class="nav{{ ' on' if properties_nav }}" href="/apartments" {% if properties_nav %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 7h6M9 11h6M9 15h3"/></svg>{{ t('nav.properties') }}</a>
+    <a class="nav{{ ' on' if nav == 'cleaning' }}" href="/cleaning" {% if nav == 'cleaning' %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24"><path d="M14 4l6 6M4 20l7-7M9 11l4 4M3 21c2-1 4-1 6-3l-3-3c-2 2-2 4-3 6z"/></svg>{{ t('nav.cleaning') }}</a>
+    <a class="nav{{ ' on' if nav == 'payments' }}" href="/payments" {% if nav == 'payments' %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>{{ t('nav.payments') }}</a>
+    <a class="nav{{ ' on' if nav == 'stay_fees' }}" href="/stay-fees" {% if nav == 'stay_fees' %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>{{ t('nav.stay_fees') }}</a>
+    <a class="nav{{ ' on' if nav == 'settings' }}" href="/settings" {% if nav == 'settings' %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>{{ t('nav.settings') }}</a>
+  </nav>
+  {% if current_user %}
+  <nav class="side-nav side-bottom" aria-label="{{ t('nav.guide') }}{% if current_user.role == 'admin' %} / {{ t('nav.admin') }}{% endif %}">
+    <a class="nav" href="/guide"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/></svg>{{ t('nav.guide') }}</a>
+    {% if current_user.role == 'admin' %}<a class="nav{{ ' on' if nav == 'admin' }}" href="/admin" {% if nav == 'admin' %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>{{ t('nav.admin') }}</a>{% endif %}
+  </nav>
+  {% if operator().email %}<a class="nav support-link" href="mailto:{{ operator().email }}">{{ t('nav.support') }}<small>{{ operator().email }}</small></a>{% endif %}
+  <div class="me">
+    <i>{{ (workspace_user.display_name or workspace_user.username)[:1] | upper }}</i>
+    <div>{{ workspace_user.display_name or workspace_user.username }}<small>{{ t('nav.account') }}</small></div>
+  </div>
+  <form method="post" action="/logout" class="side-logout">
+    <button class="nav" type="submit">{{ t('nav.logout') }}</button>
+  </form>
+  {% endif %}
+</aside>
+{% if current_user %}
+<nav class="tabs" aria-label="{{ t('a11y.main_navigation') }}">
+  <a class="tab{{ ' on' if nav == 'dashboard' }}" href="/" {% if nav == 'dashboard' %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V21H3z"/></svg>{{ t('nav.today') }}{% if nav_badge is defined and nav_badge %}<span class="n">{{ nav_badge }}</span>{% endif %}</a>
+  <a class="tab{{ ' on' if nav == 'calendar' }}" href="/?cal_view=calendar" {% if nav == 'calendar' %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>{{ t('nav.calendar') }}</a>
+  <a class="tab{{ ' on' if stays_nav }}" href="/reservations" {% if stays_nav %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24"><path d="M4 21V9l8-6 8 6v12"/><path d="M9 21v-6h6v6"/></svg>{{ t('nav.stays') }}</a>
+  <a class="tab{{ ' on' if properties_nav }}" href="/apartments" {% if properties_nav %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 7h6M9 11h6M9 15h3"/></svg>{{ t('nav.properties') }}</a>
+  <a class="tab{{ ' on' if nav in ['menu', 'cleaning', 'stay_fees', 'payments', 'settings'] }}" href="/menu" {% if nav in ['menu', 'cleaning', 'stay_fees', 'payments', 'settings'] %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>{{ t('nav.menu') }}</a>
+</nav>
+{% endif %}

@@ -53,7 +53,7 @@ MEASURE = """() => {
   if (fa) out.D = [f(R(fa.querySelector('.ui-btn,button')).width), f(R(fa).width)];
   const ib = q('#stay-quick-edit .inline-edit-bar button[type=submit]');
   if (ib) out.Dinner = [f(R(ib).width), f(R(ib.parentElement).width)];
-  const nav = q('.property-settings-nav');
+  const nav = q('.property-settings-nav');  // v2 has no tab nav (0536): no E key
   if (nav) { const chips = [...nav.querySelectorAll('a')].filter(vis);
     out.E = { rows: new Set(chips.map(c => Math.round(R(c).top))).size, chipH: chips.map(c => f(R(c).height)),
       navR: f(R(nav).right), laneR: f(R(nav.parentElement).right), navW: f(R(nav).width), scrollW: nav.scrollWidth,
@@ -135,9 +135,12 @@ def _check_stay(m, name):
 
 def _check_lock(m, name):
     _ok(m, name)
-    FAILS.append((m["E"]["rows"] <= 3 and m["E"]["scrollW"] <= m["E"]["clientW"] + 1, f"{name}: E chips hidden off-screen {m['E']}"))
-    FAILS.append((m["E"]["navR"] <= m["E"]["laneR"] + 1, f"{name}: E nav leaves lane {m['E']}"))
-    FAILS.append((m["F"] is not None and m["F"] <= 24, f"{name}: F gap {m['F']} {m.get('Fd')}"))
+    # v2 has no settings tab chips (0536); E and F only apply to the old tab nav.
+    if "E" in m:
+        FAILS.append((m["E"]["rows"] <= 3 and m["E"]["scrollW"] <= m["E"]["clientW"] + 1, f"{name}: E chips hidden off-screen {m['E']}"))
+        FAILS.append((m["E"]["navR"] <= m["E"]["laneR"] + 1, f"{name}: E nav leaves lane {m['E']}"))
+    if "F" in m:
+        FAILS.append((m["F"] is not None and m["F"] <= 24, f"{name}: F gap {m['F']} {m.get('Fd')}"))
 
 
 def test_stay(stay_actions_host, stay_actions_base):

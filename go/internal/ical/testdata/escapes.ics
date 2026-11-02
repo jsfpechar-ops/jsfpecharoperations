@@ -1,0 +1,11 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20261120
+DTEND;VALUE=DATE:20261122
+UID:esc-1@example.test
+SUMMARY:Novák\, Jana\; family
+DESCRIPTION:Line one\nLine two\, with comma\; semicolon\\nliteral, backslash\\ and upper\NNL
+URL:https://www.example.test/x\,y
+END:VEVENT
+END:VCALENDAR

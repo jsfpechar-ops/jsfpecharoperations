@@ -1,0 +1,24 @@
+{% extends "host_page.html" %}
+{% set v2 = true %}
+{% from "_icons.html" import icon with context %}
+{% set nav = 'menu' %}
+{% block title %}{{ t('nav.menu') }}{% endblock %}
+{% block page_title %}{% endblock %}
+{% block body %}
+{#- 0735: phone v2 Menu (docs/design/mockup/ubyhost-phone-v2.html, screen menu). -#}
+<div class="mh"><h1 class="big">{{ t('nav.menu') }}</h1><a class="me-av" href="/settings" aria-label="{{ t('nav.account') }}">{{ (workspace_user.display_name or workspace_user.username)[:1] | upper }}</a></div>
+<div class="tiles">
+  <a class="tile" href="/reservations"><b>{{ t('menu.tile.guests') }}</b><small>{{ t('menu.tile.when') }}</small><span class="v">{{ month.guests }}</span></a>
+  <a class="tile" href="/submissions"><b>{{ t('menu.tile.police') }}</b><small>{{ t('menu.tile.when') }}</small><span class="v">{{ month.reported }}</span></a>
+</div>
+<a class="promo" href="/reservations?new=1"><span class="pi" aria-hidden="true">{{ icon('plus', 24) }}</span><span><b>{{ t('stays.add_stay') }}</b><small>{{ t('menu.add_stay_sub') }}</small></span></a>
+<nav class="list plain" aria-label="{{ t('nav.menu') }}">
+  <a class="row" href="/cleaning">{{ icon('brush-cleaning', 26) }}<span class="t">{{ t('nav.cleaning') }}</span>{% if cleaning_today %}<span class="badge">{{ cleaning_today }}</span>{% endif %}{{ icon('chevron-right', 20, 'chev') }}</a>
+  <a class="row" href="/stay-fees">{{ icon('receipt', 26) }}<span class="t">{{ t('nav.stay_fees') }}</span>{{ icon('chevron-right', 20, 'chev') }}</a>
+  <a class="row" href="/payments">{{ icon('credit-card', 26) }}<span class="t">{{ t('nav.payments') }}</span>{{ icon('chevron-right', 20, 'chev') }}</a>
+  <a class="row" href="/settings">{{ icon('settings', 26) }}<span class="t">{{ t('nav.settings') }}</span>{{ icon('chevron-right', 20, 'chev') }}</a>
+  <a class="row" href="/guide">{{ icon('circle-help', 26) }}<span class="t">{{ t('menu.help') }}</span>{{ icon('chevron-right', 20, 'chev') }}</a>
+  {% if current_user.role == 'admin' %}<a class="row" href="/admin">{{ icon('shield', 26) }}<span class="t">{{ t('nav.admin') }}</span>{{ icon('chevron-right', 20, 'chev') }}</a>{% endif %}
+</nav>
+<form method="post" action="/logout" class="list plain menu-logout"><button class="row" type="submit">{{ icon('log-out', 26) }}<span class="t">{{ t('nav.logout') }}</span></button></form>
+{% endblock %}

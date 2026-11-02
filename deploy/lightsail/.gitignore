@@ -4,3 +4,5 @@ caddy-config/
 caddy/certs/*.pem
 caddy/Caddyfile.active
 .env.sqlite-*
+caddy/Caddyfile.previous
+.deployed-sha

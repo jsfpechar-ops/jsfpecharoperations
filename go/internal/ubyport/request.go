@@ -6,13 +6,13 @@ package ubyport
 
 import (
 	_ "embed"
-	"encoding/json"
 	"regexp"
 	"strings"
-	"sync"
 	"time"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/countries"
 )
 
 // Apartment holds the apartment fields of the payload (JSON keys as in cases.json).
@@ -284,39 +284,8 @@ func BuildZapisUbytovane(header map[string]*string, guests []map[string]any, aut
 	return buildEnvelope("ZapisUbytovane", body, wsa)
 }
 
-//go:embed countries.json
-var countriesJSON []byte
-
-var (
-	countriesOnce   sync.Once
-	countriesByCode map[string]map[string]string
-)
-
-// CountryName mirrors validation.country_name: the name in lang (cs, de, es,
-// fr, uk) when present, else English, else the code as given.
+// CountryName mirrors validation.country_name; the table lives in
+// internal/countries so validation does not import this package.
 func CountryName(code, lang string) string {
-	countriesOnce.Do(func() {
-		var list []map[string]string
-		if err := json.Unmarshal(countriesJSON, &list); err != nil {
-			panic("ubyport: countries.json: " + err.Error())
-		}
-		countriesByCode = make(map[string]map[string]string, len(list))
-		for _, c := range list {
-			countriesByCode[c["code"]] = c
-		}
-	})
-	entry, ok := countriesByCode[pyUpper(code)]
-	if !ok {
-		return code
-	}
-	switch lang {
-	case "cs", "de", "es", "fr", "uk":
-		if v := entry[lang]; v != "" {
-			return v
-		}
-	}
-	if v, ok := entry["en"]; ok {
-		return v
-	}
-	return code
+	return countries.Name(code, lang)
 }

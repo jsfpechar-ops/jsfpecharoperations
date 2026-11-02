@@ -128,8 +128,9 @@ services:
     networks:
       - web
 
-  # Go port of the web app (plan v4 G1b). Serves no traffic until a Caddy route
-  # is added (G2). Off unless COMPOSE_PROFILES contains "go" (needs PostgreSQL).
+  # Go port of the web app (plan v4 G1b). Runs the background jobs whose kinds
+  # are listed in UBYHOST_GO_JOB_KINDS. HTTP only for paths in UBYHOST_GO_PATHS.
+  # Off unless COMPOSE_PROFILES contains "go" (needs PostgreSQL).
   ubyhost-go:
     build:
       context: ../..
@@ -138,11 +139,16 @@ services:
     restart: unless-stopped
     stop_grace_period: 15s
     profiles: ["go"]
+    env_file: .env
     environment:
       UBYHOST_DATABASE_URL: ${UBYHOST_DATABASE_URL:-}
       UBYHOST_GO_JOB_KINDS: ${UBYHOST_GO_JOB_KINDS:-}
+      UBYHOST_STRIPE_MODE: ${UBYHOST_STRIPE_MODE:-off}
+      UBYHOST_STRIPE_WEBHOOK_SECRET: ${UBYHOST_STRIPE_WEBHOOK_SECRET:-}
+      UBYHOST_DATA_DIR: /data
     volumes:
       - ubyhost-pgsock:/var/run/postgresql
+      - ubyhost-data:/data:ro
     expose:
       - "8081"
     healthcheck:
@@ -241,6 +247,7 @@ services:
       UBYHOST_DOMAIN: ${UBYHOST_DOMAIN}
       UBYHOST_APP_DOMAIN: ${UBYHOST_APP_DOMAIN:-}
       ACME_EMAIL: ${ACME_EMAIL}
+      UBYHOST_GO_PATHS: ${UBYHOST_GO_PATHS:-/__go_off__}
     volumes:
       - ./caddy/Caddyfile.active:/etc/caddy/Caddyfile:ro
       - ./caddy/certs:/etc/caddy/certs:ro

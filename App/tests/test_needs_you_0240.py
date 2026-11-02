@@ -41,11 +41,11 @@ def test_each_stay_gets_one_plain_line_with_the_exact_button():
         _row(4, "incomplete", days=-1, urgency="overdue"),
     ]
     lines = {line["stay_id"]: line for line in _build(rows)["lines"]}
-    assert lines[1]["text"] == "The police did not accept the report." and lines[1]["href"].endswith("#guests")
+    assert lines[1]["text"] == "Police report failed" and lines[1]["href"].endswith("#guests")
     assert lines[2]["action"] == "Send the report" and lines[2]["href"].endswith("#now")
-    assert lines[3]["text"] == "The guest arrives tomorrow and has not filled in the guest form."
+    assert lines[3]["text"] == "Guests not registered"
     assert lines[3]["href"] == "/reservations/3?return_to=/#now"
-    assert lines[4]["tone"] == "red" and lines[4]["text"] == "The police deadline has passed."
+    assert lines[4]["tone"] == "red" and lines[4]["text"] == "Police overdue"
 
 
 def test_red_lines_come_first():
@@ -67,12 +67,13 @@ def test_an_alert_for_a_stay_with_its_own_line_is_not_repeated():
     assert lines[1]["action"] == "Check the calendar" and lines[1]["dismiss_id"] == 8
 
 
-def test_setup_and_paste_lines_name_the_property():
+def test_setup_and_paste_lines_name_the_property(monkeypatch):
+    monkeypatch.setattr("app.demo.is_demo_apartment", lambda apartment: False)  # 0723: no DB in this unit test
     missing = [{"apartment": {"id": 5, "internal_name": "Loft", "legal_entity_id": None}, "missing": [{"key": "ubyport", "anchor": "ubyport"}]}]
     unused = [{"id": 6, "internal_name": "Studio"}]
     lines = _build([], missing=missing, unused=unused, lang="cs")["lines"]
     assert lines[0]["subject"] == "Loft" and lines[0]["href"] == "/apartments/5?view=settings&section=reporting#ubyport"
-    assert lines[0]["text"] == "Chybí údaje pro policii, takže zatím nemůže odejít žádné hlášení."
+    assert lines[0]["text"] == "Chybí údaje pro policii"
     assert lines[1]["subject"] == "Studio" and lines[1]["href"].endswith("#communication")
 
 

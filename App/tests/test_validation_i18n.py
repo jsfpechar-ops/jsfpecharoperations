@@ -146,8 +146,8 @@ def test_the_property_banner_names_the_missing_fields_in_czech(host):
     page = _signed_in("cs").get(f"/apartments/{apartment_id}")
 
     assert page.status_code == 200
+    # 0535: the readiness list is back, in the preview aside.
     assert "Bez IDUB nelze nic nahlásit." in page.text
-    assert "Vyplňte PSČ." in page.text
     assert "IDUB is required before anything can be reported." not in page.text
 
 
@@ -156,6 +156,7 @@ def test_an_english_host_still_reads_english(host):
     page = _signed_in("en").get(f"/apartments/{apartment_id}")
 
     assert page.status_code == 200
+    # 0535: the readiness list is back, in the preview aside.
     assert "IDUB is required before anything can be reported." in page.text
     assert "Bez IDUB nelze nic nahlásit." not in page.text
 

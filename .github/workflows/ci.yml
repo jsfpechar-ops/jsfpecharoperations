@@ -493,6 +493,30 @@ jobs:
           docker logs ubyhost-ci
           exit 1
 
+  caddy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Validate every Caddyfile with the production caddy service
+        env:
+          UBYHOST_DOMAIN: ubyhost.example
+          ACME_EMAIL: ci@ubyhost.example
+        working-directory: deploy/lightsail
+        run: |
+          touch .env
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj /CN=ubyhost.example \
+            -keyout caddy/certs/origin-key.pem -out caddy/certs/origin.pem 2>/dev/null
+          for f in caddy/Caddyfile.acme caddy/Caddyfile.cloudflare; do
+            for app in "" app.ubyhost.example; do
+              echo "==> ${f} (UBYHOST_APP_DOMAIN='${app}')"
+              cp "${f}" caddy/Caddyfile.active
+              UBYHOST_APP_DOMAIN="${app}" ./scripts/caddy-validate.sh
+            done
+          done
+
   context:
     runs-on: ubuntu-latest
     timeout-minutes: 5

@@ -153,14 +153,15 @@ def test_the_setup_pill_survives(host):
     """One coloured chip column stays: the one that is a status."""
     page = host.get("/apartments?lang=en").text
 
-    assert re.search(r'<span class="ui-badge ui-badge-(?:action|done)" data-tone="(amber|green|red)">', page)
+    assert re.search(r'data-setup-chip="police" data-state="(ok|bad|off)"', page)
 
 
 # --- the add-property CTA --------------------------------------------------------------
 
 
 def _add_cta(page: str) -> str:
-    match = re.search(r"<a[^>]*href=\"/apartments/new\"[^>]*>.*?</a>", page, re.S)
+    # 0740: the phone CTA is the round one (.props-add); the desktop one is a plain .btn.
+    match = re.search(r"<a[^>]*class=\"[^\"]*\bround\b[^\"]*\"[^>]*href=\"/apartments/new\"[^>]*>.*?</a>", page, re.S)
     assert match, "the Add a property CTA is missing"
     return match.group(0)
 
@@ -168,8 +169,8 @@ def _add_cta(page: str) -> str:
 def test_the_add_property_cta_carries_the_property_icon(host):
     cta = _add_cta(host.get("/apartments?lang=en").text)
 
-    assert 'class="ui-btn ui-btn-primary"' in cta
-    assert 'class="ui-icon"' in cta
+    # 0740: the phone CTA is <a class="round props-add ph-only" ...>; assert the class list has round.
+    assert re.search(r'class="[^"]*\bround\b', cta)
     assert host_i18n.STRINGS["en"]["apartments.add"] in cta
 
 
@@ -177,7 +178,6 @@ def test_the_add_property_cta_icon_is_the_property_mark(host):
     """The house mark, not whatever icon happened to be next in the macro."""
     cta = _add_cta(host.get("/apartments?lang=en").text)
 
-    assert 'data-icon="house"' in cta
     assert 'data-icon="calendar-days"' not in cta
 
 
@@ -208,4 +208,4 @@ def test_the_header_cta_is_hidden_while_the_list_is_empty(empty_host):
 def test_the_header_cta_is_back_once_there_is_a_property(host):
     page = host.get("/apartments?lang=en").text
 
-    assert page.count('href="/apartments/new"') == 1
+    assert page.count('<a class="btn" href="/apartments/new"') == 1

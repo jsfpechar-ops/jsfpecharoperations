@@ -1,0 +1,10 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20260915
+DTEND;VALUE=DATE:20260916
+UID:block-1@airbnb.example
+SUMMARY:Airbnb (Not available)
+DESCRIPTION:Phone Number (Last 4 Digits): 7712\nSee https://www.airbnb.example/hosting/blocks/B9).
+END:VEVENT
+END:VCALENDAR

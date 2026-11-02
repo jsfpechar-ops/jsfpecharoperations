@@ -13,9 +13,9 @@ from typing import Any, Dict, List
 import json
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import Response
+from fastapi.responses import RedirectResponse, Response
 
-from .. import access, auth, config, db, host_i18n, i18n, mail, payment_links, payment_request, security, stripe_connect
+from .. import access, auth, config, db, host_i18n, i18n, mail, payment_links, payment_request, payments_consent, security, stripe_connect
 from ..templating import render
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
@@ -59,6 +59,29 @@ def _stay_label(stay: Dict[str, Any]) -> str:
     return f"{name} ({stay['date_from']} → {stay['date_to']})"
 
 
+def _setup(owner_id: int, state: Dict[str, Any]) -> Dict[str, Any]:
+    """The 4 guided setup steps (0729) and which one the primary button opens."""
+    consent = payments_consent.accepted(owner_id)
+    entity = stripe_connect.legal_entity_for_owner(owner_id)
+    has_details = bool(entity and (entity.get("name") or "").strip())
+    onboarding = state.get("onboarding_state") or "none"
+    stripe_status = {"pending": "waiting", "action_required": "attention"}.get(onboarding, "todo")
+    steps = [
+        {"key": "consent", "status": "done" if consent else "todo"},
+        {"key": "details", "status": "done" if has_details else "todo",
+        "href": f"/entities?edit={entity['id']}" if entity else "/entities"},
+        {"key": "stripe", "status": stripe_status},
+        {"key": "live", "status": "todo"},
+    ]
+    if not consent:
+        next_step = "consent"
+    elif not has_details:
+        next_step = "details"
+    else:
+        next_step = "stripe"
+    return {"steps": steps, "next": next_step, "entity": entity if has_details else None}
+
+
 @router.get("/payments")
 def payments_page(request: Request):
     guard = auth.require_login(request)
@@ -66,6 +89,8 @@ def payments_page(request: Request):
         return guard
     owner_id = access.owner_id(request)
     state = _connect_state(owner_id)
+    raw_stay = str(request.query_params.get("reservation_id") or "")
+    selected_reservation_id = int(raw_stay) if raw_stay.isdigit() else None
     return render(
         request,
         "payments.html",
@@ -73,12 +98,14 @@ def payments_page(request: Request):
             "nav": "payments",
             "how_key": "payments",
             "connect_state": state,
+            "setup": _setup(owner_id, state),
             "stripe_off": _off(),
             "requests": payment_request.for_owner(owner_id),
             "reasons": list(payment_request.REASONS),
             "stays": [
                 {"id": s["id"], "label": _stay_label(s)} for s in _stays(owner_id)
             ],
+            "selected_reservation_id": selected_reservation_id,
         },
     )
 
@@ -322,3 +349,38 @@ async def property_page_photo_delete(request: Request, apartment_id: int):
 
     pp.delete_photo(apartment_id, str(form.get("path") or ""))
     return _back(f"/apartments/{apartment_id}/page", msg=_flash(request, "payments.page.saved"))
+
+
+# --- one-time payments consent (0624) ------------------------------------------
+
+
+@router.get("/payments/consent")
+def payments_consent_page(request: Request):
+    """The plain-language summary a host accepts once before Stripe."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    if _off():
+        return Response(status_code=404)
+    return render(request, "payments_consent.html", {"nav": "payments", "how_key": "payments"})
+
+
+@router.post("/payments/consent")
+async def payments_consent_accept(request: Request):
+    """Record the tick, then go straight on to Stripe onboarding."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    if _off():
+        return Response(status_code=404)
+    workspace = auth.workspace_user(request)
+    if not workspace:
+        return RedirectResponse("/", status_code=303)
+    form = await request.form()
+    if str(form.get("agree") or "") != "1":
+        return _back("/payments/consent", err=_flash(request, "payments.err.consent"))
+    payments_consent.record(int(workspace["id"]))
+    # 0730: never redirect a form POST to Stripe. The CSP form-action 'self'
+    # blocks a form whose redirect chain leaves our origin (blank page). Back
+    # to /payments, where "Open Stripe" is a plain link.
+    return _back("/payments", msg=_flash(request, "payments.consent.saved"))

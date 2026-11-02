@@ -221,10 +221,12 @@ def test_readable_list_and_settings_escape_host_text_and_show_leading_zero_code(
     response = ws["client"].get("/cleaning?lang=en")
     assert response.status_code == 200
     assert 'href="/cleaning"' in response.text
-    assert "001234" in response.text
-    assert "&lt;script&gt;" in response.text
-    assert "<script>alert(1)</script>" not in response.text
-    assert "11:00" in response.text and "15:00" in response.text
+    assert "15:00" in response.text
+    settings = ws["client"].get(f"/cleaning/properties/{ws['home']}?lang=en")
+    assert settings.status_code == 200
+    assert "001234" in settings.text
+    assert "&lt;script&gt;" in settings.text
+    assert "<script>alert(1)</script>" not in settings.text
     legacy = db.query_one("SELECT checkout_time, checkin_time FROM cleaning_property WHERE apartment_id = ?", (ws["home"],))
     assert legacy["checkout_time"] == "10:30" and legacy["checkin_time"] == "15:30"
     home = cleaning.properties(ws["owner"], [ws["home"]])[0]

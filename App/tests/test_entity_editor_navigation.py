@@ -281,7 +281,7 @@ def test_property_overview_properties_settings_and_builder_links(host):
     first = _property("Byt Alfa", entity_id)
     _property("Byt Beta", entity_id)
     overview = host.get(f"/apartments/{first}").text
-    assert f'href="/entities?edit={entity_id}&amp;next=/apartments/{first}"' in overview
+    assert f'href="/entities?edit={entity_id}"' in overview
     listing = host.get("/apartments").text
     assert f'href="/entities?edit={entity_id}&amp;next=/apartments"' in listing
     settings = host.get("/settings").text

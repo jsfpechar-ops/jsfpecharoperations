@@ -263,7 +263,8 @@ def test_manual_stay_can_cross_years_without_broadening_calendar_reads(calendar_
 
 
 def test_calendar_dashboard_renders_with_only_its_own_fixture(calendar_workspace):
-    response = calendar_workspace["client"].get("/?lang=en")
+    # 0706: the JS calendar is opened from the Overview with ?cal_view=calendar
+    response = calendar_workspace["client"].get("/?lang=en&cal_view=calendar")
     assert response.status_code == 200
     assert 'data-calendar data-today=' in response.text
     assert 'data-cal-properties' in response.text

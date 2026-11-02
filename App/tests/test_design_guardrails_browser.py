@@ -316,8 +316,8 @@ def test_setup_checklist_is_a_padded_card(wide_host, wide_base):
         facts = page.evaluate(
             """() => ({
                 box: !!document.querySelector('.host-checklist'),
-                dots: document.querySelectorAll('.host-property-grid [data-health-check] .host-property-card-dot').length,
-                details: !!document.querySelector('.host-workspace details.setup-readiness-help[data-setup-status]'),
+                dots: document.querySelectorAll('details.prop-sec > summary .dot').length,
+                details: !!document.querySelector('details.setup-readiness-help[data-setup-status]'),
             })"""
         )
         print(f"setup health measured: {facts}")
@@ -346,9 +346,9 @@ def test_guest_card_facts_share_four_column_lines(wide_host, wide_base):
         assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
         _wait_for_host_layout(page)
         _dismiss_optional_security_prompt(page)
-        page.wait_for_selector(".guest-card .guest-facts dt", timeout=5000)
+        page.wait_for_selector("#guests .guest-table tbody td", timeout=5000)
         lefts = page.evaluate(
-            """() => Array.from(document.querySelector('.guest-card').querySelectorAll('.guest-facts dt'))
+            """() => Array.from(document.querySelector('#guests .guest-table tbody tr').querySelectorAll('td'))
                 .map(dt => dt.getBoundingClientRect().left)"""
         )
         context.close()
@@ -360,7 +360,7 @@ def test_guest_card_facts_share_four_column_lines(wide_host, wide_base):
 
 
 def test_table_rows_have_their_own_border_on_desktop(wide_host, wide_base):
-    """0181: on desktop each table row is its own bordered card, with a gap between rows."""
+    """0181: on desktop each table row is separated from the next by a 1px line (mockup --line)."""
     cookie = wide_host["cookie"]
     with sync_api.sync_playwright() as playwright:
         try:
@@ -376,23 +376,21 @@ def test_table_rows_have_their_own_border_on_desktop(wide_host, wide_base):
         assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
         _wait_for_host_layout(page)
         _dismiss_optional_security_prompt(page)
-        page.wait_for_selector(".host-workspace .ui-table tbody tr:nth-child(2) td", timeout=5000)
+        page.wait_for_selector(".host-workspace .stays-desk tbody tr:nth-child(2) td", timeout=5000)
         facts = page.evaluate(
             """() => {
-                const rows = document.querySelectorAll('.host-workspace .ui-table tbody tr');
+                const rows = document.querySelectorAll('.host-workspace .stays-desk tbody tr');
                 const first = rows[0].querySelector('td');
                 const style = getComputedStyle(first);
                 return {
-                    top: style.borderTopWidth,
-                    left: style.borderLeftWidth,
+                    bottom: style.borderBottomWidth,
                     gap: rows[1].getBoundingClientRect().top - rows[0].getBoundingClientRect().bottom,
                 };
             }"""
         )
         print(f"table row border measured: {facts}")
-        assert facts["top"] == "1px", f"row top border is {facts['top']}, not 1px"
-        assert facts["left"] == "1px", f"first cell left border is {facts['left']}, not 1px"
-        assert facts["gap"] >= 4, f"rows are only {facts['gap']}px apart"
+        assert facts["bottom"] == "1px", f"row bottom border is {facts['bottom']}, not 1px"
+        assert facts["gap"] <= 1, f"rows are {facts['gap']}px apart, not separated by a 1px line"
         context.close()
         browser.close()
 
@@ -417,17 +415,20 @@ def test_cleaning_card_facts_line_up_across_cards(wide_host, wide_base):
         page.route("**/static/cleaning.js*", lambda route: route.abort())
         response = page.goto(f"{wide_base}/cleaning?lang=en")
         assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
-        page.wait_for_selector(".cleaning-card .cleaning-facts > div", timeout=5000)
+        page.wait_for_selector(".cleaning-section tr[id^='cleaning-'] td", timeout=5000)
         lefts = page.evaluate(
-            """() => Array.from(document.querySelectorAll('.cleaning-card')).map(card =>
-                Array.from(card.querySelectorAll('.cleaning-facts > div')).map(d => d.getBoundingClientRect().left))"""
+            """() => Array.from(document.querySelectorAll('.cleaning-section table')).map(t =>
+                Array.from(t.querySelectorAll('tr[id^="cleaning-"]')).map(r =>
+                    Array.from(r.querySelectorAll('td')).map(td => td.getBoundingClientRect().left)))"""
         )
         context.close()
         browser.close()
-    assert len(lefts) >= 2, f"cleaning list shows only {len(lefts)} cards"
-    for index in (0, 1):
-        firsts = {round(card[index] / 2) * 2 for card in lefts if len(card) > index}
-        assert len(firsts) == 1, f"fact {index + 1} starts at different x across cards: {sorted(firsts)}"
+    rows_total = sum(len(table) for table in lefts)
+    assert rows_total >= 2, f"cleaning list shows only {rows_total} rows"
+    for table in lefts:
+        for index in (0, 1):
+            firsts = {round(row[index] / 2) * 2 for row in table if len(row) > index}
+            assert len(firsts) <= 1, f"column {index + 1} starts at different x across rows: {sorted(firsts)}"
 
 
 def test_sidebar_search_has_a_border(wide_host, wide_base):
@@ -443,7 +444,7 @@ def test_sidebar_search_has_a_border(wide_host, wide_base):
         context = browser.new_context(viewport={"width": 1280, "height": 1000})
         context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": wide_base + "/"}])
         page = context.new_page()
-        response = page.goto(f"{wide_base}/?lang=en")
+        response = page.goto(f"{wide_base}/settings?lang=en")
         assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
         _wait_for_host_layout(page)
         _dismiss_optional_security_prompt(page)

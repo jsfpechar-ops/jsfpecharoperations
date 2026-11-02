@@ -230,19 +230,20 @@ def test_the_guest_card_reads_ready_now_that_the_id_check_is_gone(host):
     assert page.status_code == 200
     assert "verify-identity" not in page.text
     assert not [pill for pill in _pills(page.text) if pill[2].strip() == "ID not checked"]
-    tone, _tip = _pill(page.text, "Ready")
-    assert tone == "blue"
+    # v2 stay page (mockup): the guest state is a neutral .pill; the mockup has no blue tone
+    assert '<span class="pill">Ready</span>' in page.text
 
 
-def test_the_properties_list_setup_pill_is_amber_not_red(host):
+def test_the_properties_list_shows_setup_chips_not_a_pill(host):
     client, apartment_id, _ = host
     page = client.get("/apartments")
     assert page.status_code == 200
     rows = re.findall(r"<tr.*?</tr>", page.text, re.S)
     mine = [row for row in rows if f"/apartments/{apartment_id}" in row]
     assert mine, "the seeded property is not on the list"
-    tone, _tip = _pill_containing(mine[0], "to fix")
-    assert tone == "amber", "guests can still register, so it is a warning"
+    # 0530: the setup pill is replaced by one chip per setup item.
+    assert not [p for p in _pills(mine[0]) if "to fix" in p[2]]
+    assert "data-setup-chip=" in mine[0]
 
 
 def test_the_property_readiness_lists_missing_setup_items(host):

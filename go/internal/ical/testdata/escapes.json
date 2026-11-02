@@ -1,0 +1,16 @@
+[
+  {
+    "date_from": "2026-11-20",
+    "date_to": "2026-11-22",
+    "description": "Line one\nLine two, with comma; semicolon\nliteral, backslash\\ and upper\nNL",
+    "guest_email": null,
+    "is_block": false,
+    "is_cancelled": false,
+    "name_hint": "Novák, Jana; family",
+    "phone_last4": null,
+    "recurring": false,
+    "reservation_url": "https://www.example.test/x,y",
+    "summary": "Novák, Jana; family",
+    "uid": "esc-1@example.test"
+  }
+]

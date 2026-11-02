@@ -1,0 +1,12 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20261201
+DTEND;VALUE=DATE:20261204
+UID:folded-1@example.test
+SUMMARY:Reserved
+DESCRIPTION:This is a deliberately long description that is folded across se
+ veral physical lines so the unfolding step has to join them back together wi
+	thout losing any character at the fold points.
+END:VEVENT
+END:VCALENDAR

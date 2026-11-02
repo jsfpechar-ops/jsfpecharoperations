@@ -1,0 +1,16 @@
+[
+  {
+    "date_from": "2026-10-10",
+    "date_to": "2026-10-11",
+    "description": "",
+    "guest_email": null,
+    "is_block": false,
+    "is_cancelled": false,
+    "name_hint": "",
+    "phone_last4": null,
+    "recurring": false,
+    "reservation_url": null,
+    "summary": "Reserved",
+    "uid": "noend-1@example.test"
+  }
+]

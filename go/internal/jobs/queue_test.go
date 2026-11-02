@@ -191,3 +191,22 @@ func applyMigrations(t *testing.T, pool *pgxpool.Pool) {
 		}
 	}
 }
+
+func TestRaiseFailedSubmitIsCritical(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	if err := RaiseFailed(ctx, pool, "submit"); err != nil {
+		t.Fatal(err)
+	}
+	var level, message string
+	if err := pool.QueryRow(ctx,
+		"SELECT level, message FROM alert WHERE dedupe_key = 'job_failed:submit' AND resolved_at IS NULL").Scan(&level, &message); err != nil {
+		t.Fatal(err)
+	}
+	if level != "critical" {
+		t.Fatalf("level = %q, want critical", level)
+	}
+	if !strings.Contains(message, "automatic filing") {
+		t.Fatalf("message = %q, want the English submit name", message)
+	}
+}
