@@ -102,11 +102,11 @@ def _quick_stays(options):
    - `test_invoiced_stay_leaves_the_quick_list`: issue for `sid` exactly as `test_issue_for_a_stay_prints_the_stay` does; the picker no longer has that href (the select may still list it).
    - `test_future_stay_is_not_in_the_quick_list`: `past = make_stay(_owner())`, then insert a second reservation in the same apartment (`db.query_one("SELECT apartment_id FROM reservation WHERE id = ?", (past,))`) with `source="manual"`, `status="active"`, `date_from` = `claim.prague_today()` + 5 days, `date_to` = + 8 days, `uid=UID_PREFIX + "future-" + secrets.token_hex(4)` (`from tests.invoice_stay_helper import UID_PREFIX`, so `drop_stays` removes it), `created_at`/`updated_at` = `db.utcnow()`; its href is absent and `past`'s href is present.
    Run §6 command 1. Commit `0849 step 4`.
-5. Run §6 commands 2-3. Screenshot: a scratchpad Playwright snippet is not needed; 0854 takes the 390 px picker screenshot. Commit.
+5. Run §6 commands 2-3. Screenshot: a scratchpad Playwright snippet is not needed; 0890 takes the 390 px picker screenshot. Commit.
 
 ## 5. Do not touch
 
-`_form_context`, `invoice_form.html` (0836, 0852), ARES code, `invoice_issue`, numbering, PDF, the invoices list `invoices.html` (#707).
+`_form_context`, `invoice_form.html` (0836, 0888), ARES code, `invoice_issue`, numbering, PDF, the invoices list `invoices.html` (#707).
 
 ## 6. Commands
 

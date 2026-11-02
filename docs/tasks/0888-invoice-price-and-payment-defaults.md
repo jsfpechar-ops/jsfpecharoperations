@@ -1,7 +1,7 @@
-# 0852: Invoice form: one tap for the last price, payment method remembered
+# 0888: Invoice form: one tap for the last price, payment method remembered
 
 Status: todo
-Depends on: 0844 (keys), 0836 (PR #734, buyer prefill) and 0849 merged (all edit `routes/invoices.py`) | Base commit: main after them | Branch: task/0852-invoice-defaults
+Depends on: 0844 (keys), 0836 (PR #734, buyer prefill) and 0849 merged (all edit `routes/invoices.py`) | Base commit: main after them | Branch: task/0888-invoice-defaults
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -37,11 +37,11 @@ On a new stay invoice: (a) a "Use last price: 2 500 Kč" button fills the stay p
 |---|---|---|
 | `App/app/routes/invoices.py` | edit | `_remember_paid_via` + call |
 | `App/app/templates/invoice_form.html` | edit | Button + 12 JS lines |
-| `App/app/static/host2.css` | edit | `0852` block at the end |
+| `App/app/static/host2.css` | edit | `0888` block at the end |
 | `App/app/templates/base.html` | edit | host2.css key only |
 | `App/tests/static_versions.json` | regenerate | `--write` |
 | `App/tests/test_invoice_autofill.py` | edit | Four tests at the end |
-| `docs/tasks/0852-report.md` | new | Report |
+| `docs/tasks/0888-report.md` | new | Report |
 
 No other file may change.
 
@@ -53,7 +53,7 @@ PAID_VIA_CHOICES = ("direct_transfer", "cash", "airbnb", "booking")
 
 
 def _remember_paid_via(request: Request, entity_id: int, values: Dict[str, Any]) -> None:
-    """0852: a new invoice starts with the payment method of this operator's last paid invoice."""
+    """0888: a new invoice starts with the payment method of this operator's last paid invoice."""
     row = db.query_one(
         "SELECT paid_via FROM invoice "
         f"WHERE legal_entity_id = ? AND {db.null_safe_eq('owner_user_id')} "
@@ -75,7 +75,7 @@ def _remember_paid_via(request: Request, entity_id: int, values: Dict[str, Any])
     if stay and entity and not any(key in values for key in ("already_paid", "paid_via", "paid_via_custom")):
         _remember_paid_via(request, entity["id"], values)
 ```
-   (a 422 re-render always carries `already_paid`, so the host's own choice is never overwritten). Commit `0852 step 1`.
+   (a 422 re-render always carries `already_paid`, so the host's own choice is never overwritten). Commit `0888 step 1`.
 2. `invoice_form.html`: replace the three-line hint anchor with
 ```jinja
             {% if stay_price_hint %}
@@ -86,7 +86,7 @@ def _remember_paid_via(request: Request, entity_id: int, values: Dict[str, Any])
    and directly below the `var entitySel = ...` anchor insert:
 ```js
 
-  /* 0852: one tap copies the last price on this property into the stay line. */
+  /* 0888: one tap copies the last price on this property into the stay line. */
   var usePrice = form.querySelector("[data-use-price]");
   var priceInput = form.querySelector('input[name="stay_price"]');
   if (usePrice && priceInput) {
@@ -101,20 +101,20 @@ def _remember_paid_via(request: Request, entity_id: int, values: Dict[str, Any])
     });
   }
 ```
-   Commit `0852 step 2`.
+   Commit `0888 step 2`.
 3. Append to `host2.css`:
 ```css
-/* 0852 invoice use price (start) */
+/* 0888 invoice use price (start) */
 .invoice-use-price{display:inline-flex;margin-top:12px;min-height:44px}
-/* 0852 invoice use price (end) */
+/* 0888 invoice use price (end) */
 ```
-   Bump `host2.css?v=` to `20261103-0852`; `.venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -5`. Commit `0852 step 3`.
+   Bump `host2.css?v=` to `20261103-0888`; `.venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -5`. Commit `0888 step 3`.
 4. Tests at the end of `App/tests/test_invoice_autofill.py` (its `host`, `_add_entity`, `_owner`, `make_stay`, `stay_form`). Helper `_second_stay(first_id)`: insert a reservation in the first stay's apartment with `source="manual"`, `status="active"`, `date_from` = today - 12 days, `date_to` = today - 9, `uid=UID_PREFIX + "second-" + secrets.token_hex(4)` (`from tests.invoice_stay_helper import UID_PREFIX`; `import secrets`), `created_at`/`updated_at` = `db.utcnow()`; return its id. Helper `_issue(sid, **extra)`: `host.post("/invoices", data={"buyer_name": "Buyer", "already_paid": "1", "lang": "cs", **stay_form(sid, price="2500"), **extra}, follow_redirects=False)` must be 303 (pattern of `test_issue_for_a_stay_prints_the_stay` in `tests/test_invoice_stay_pages.py`).
    - `test_last_price_button_on_the_same_property`: entity, `s1 = make_stay(_owner(), entity_id=e)`, `_issue(s1)`, `s2 = _second_stay(s1)`; `GET /invoices/new?reservation_id={s2}&entity={e}`: has `data-use-price="2500"` and `Use last price: 2500 Kč`.
    - `test_payment_method_is_remembered`: `_issue(s1, paid_via="cash")`; form for `s2` contains `value="cash" selected`.
    - `test_custom_payment_text_is_remembered`: `_issue(s1, paid_via="custom", paid_via_custom="Revolut")`; form for `s2` contains `value="Revolut"`.
    - `test_first_invoice_keeps_bank_transfer`: no earlier invoice: `value="direct_transfer" selected`, no `data-use-price`.
-   Run §6 command 1. Commit `0852 step 4`.
+   Run §6 command 1. Commit `0888 step 4`.
 5. Run §6 commands 2-4. Commit.
 
 ## 5. Do not touch
@@ -141,7 +141,7 @@ Stop, and write the report, if an excerpt is not found (0836 may have moved line
 
 ## 9. Report
 
-`docs/tasks/0852-report.md` (400 tokens at most), `Status: review`: files, command tails, §7 ticked.
+`docs/tasks/0888-report.md` (400 tokens at most), `Status: review`: files, command tails, §7 ticked.
 
 ## Risk list (for the reviewer)
 

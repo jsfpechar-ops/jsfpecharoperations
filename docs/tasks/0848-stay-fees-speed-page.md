@@ -103,7 +103,7 @@ body.v2 .stay-fees-page .fee-copy .fee-step-actions{display:flex;flex-wrap:wrap;
    - `test_bulk_box_posts_end_to_end`: post the form the page rendered (parse the `apartment_id` values from the HTML) and assert both filings exist.
    Run §6 command 1. Commit `0848 step 4`.
 5. Run §6 commands 2-4. If a v2 geometry finding names `.fee-bulk` or `.fee-copy`, fix it only inside the 0848 CSS block (bump the key again with suffix `b`). Commit.
-6. Screenshot (no test file change): run `UBYHOST_SHOTS_V2=1 .venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py -k screenshots -q 2>&1 | tail -5` and copy `docs/tasks/screenshots-0710/stay_fees-390.png` to `docs/tasks/screenshots-0848/stay-fees-390.png`. If the rich fixture shows no bulk box, say so in the report; 0854 takes the seeded screenshot.
+6. Screenshot (no test file change): run `UBYHOST_SHOTS_V2=1 .venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py -k screenshots -q 2>&1 | tail -5` and copy `docs/tasks/screenshots-0710/stay_fees-390.png` to `docs/tasks/screenshots-0848/stay-fees-390.png`. If the rich fixture shows no bulk box, say so in the report; 0890 takes the seeded screenshot.
 
 ## 5. Do not touch
 

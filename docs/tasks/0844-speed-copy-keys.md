@@ -6,7 +6,7 @@ Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
 
-Add, in one place, the 19 copy keys that the speed briefs 0845-0853 use, so those briefs never edit the locale files and can run in parallel. Nothing renders these keys until the later briefs land.
+Add, in one place, the 19 copy keys that the speed briefs 0845-0849 and 0888-0889 use, so those briefs never edit the locale files and can run in parallel. Nothing renders these keys until the later briefs land.
 
 ## 2. Context
 
@@ -132,4 +132,4 @@ Write `docs/tasks/0844-report.md` (300 tokens at most) and set `Status: review`:
 
 ## Owner steps
 
-1. Merge with `scripts/merge-pr-on-green.sh <pr>` when CI is green. It must merge before 0845, 0847, 0848, 0849, 0852 and 0853.
+1. Merge with `scripts/merge-pr-on-green.sh <pr>` when CI is green. It must merge before 0845, 0847, 0848, 0849, 0888 and 0889.
