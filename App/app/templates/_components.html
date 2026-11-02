@@ -529,8 +529,8 @@
 {# 0083: a visible settings group with an ordinary header bar. #}
 {% macro settings_group(key, title) %}
   <section class="settings-group" id="settings-group-{{ key }}" aria-labelledby="settings-group-{{ key }}-title">
-    <h2 class="settings-group-title" id="settings-group-{{ key }}-title">{{ title }}</h2>
-    {{ caller() }}
+    <h2 class="settings-group-title sec" id="settings-group-{{ key }}-title">{{ title }}</h2>
+    <div class="card settings-card">{{ caller() }}</div>
   </section>
 {% endmacro %}
 
