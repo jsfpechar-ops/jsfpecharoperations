@@ -30,7 +30,7 @@ SELECTOR_OVERRIDES = {
     ".tab:not(.on)": {"font-size": "12px"},
     ".tab.on": {"font-size": "12px"},
     # mockup's 30 px bottom padding is home-indicator room in the phone frame; the app's action bar sits above the tab bar
-    ".actbar": {"padding-bottom": "12px"},
+    ".actbar": {"padding-bottom": "12px", "height": "75px"},
     # tone follows the stay state (0715 mapping); fixture stay is waiting, mockup shows a finished one (0719)
     ".hs .pill": {"color": "rgb(138, 82, 0)", "background-color": "rgb(255, 244, 214)", "border-bottom-color": "rgb(138, 82, 0)"},
 }
@@ -81,17 +81,26 @@ BOX_OVERRIDES = {
     ".meta@390": {"height": "19px", "width": "252px"},
     # stays/stay (0529): text- and data-dependent; fixture copy vs mockup demo copy
     # pill width follows its label ("Chybí 1 host" vs "Čeká na 2 ze 3 hostů")
-    ".row .pill.p-warn@320": {"width": "121.891px"},
-    ".row .pill.p-warn@390": {"width": "121.891px"},
+    "stays:.row .pill.p-warn@320": {"width": "121.891px"},
+    "stays:.row .pill.p-warn@390": {"width": "121.891px"},
     # fixture property has no check-in/out time, so the facts grid has no time line
-    ".facts@320": {"height": "139px"},
-    ".facts@390": {"height": "139px"},
+    "stay:.facts@320": {"height": "139px"},
+    "stay:.facts@390": {"height": "139px"},
     # police card text follows the stay state (fixture: ready to send; mockup: waiting for guests)
-    ".card@320": {"height": "76px"},
-    ".card@390": {"height": "76px"},
+    "stay:.card@320": {"height": "76px"},
+    "stay:.card@390": {"height": "76px"},
     # stays rows are 2 px shorter: the fixture pill label is one short line ("Chybí 1 host"), the mockup's wraps differently
-    ".grp + .list .row:not(:last-child)@320": {"height": "101px"},
-    ".grp + .list .row:not(:last-child)@390": {"height": "101px"},
+    "stays:.grp + .list .row:not(:last-child)@320": {"height": "101px"},
+    "stays:.grp + .list .row:not(:last-child)@390": {"height": "101px"},
+    # cleaning phone (0549b): main padding replaces side margins (0719); heights and pill width follow the English fixture copy; the fixture has no cleaning today, so .card is the empty today card
+    "cleaning:.card@320": {"height": "57px"},
+    "cleaning:.card@390": {"height": "57px"},
+    "cleaning:.list .row:has(.p-ok)@320": {"height": "102px"},
+    "cleaning:.list .row:has(.p-ok)@390": {"height": "102px"},
+    "cleaning:.row .t .pill.p-ok@320": {"width": "100.641px"},
+    "cleaning:.row .t .pill.p-ok@390": {"width": "100.641px"},
+    "cleaning:.actbar@320": {"height": "75px"},
+    "cleaning:.actbar@390": {"height": "75px"},
 }
 
 
@@ -136,6 +145,7 @@ PAGES = [
             ".hs .pill": "today's stay cards exist only when a stay is due today; the phone mockup shows demo stays",
         },
     },
+    {"name": "cleaning", "path": "/cleaning", "view": "clean", "selectors": [".side .nav.on", ".head h1", ".head .sub", ".head .btn", "main h2", "main .card", "main table th", "main table td"], "phone_view": "uklid", "phone_selectors": [".tabs", ".tab.on", ".top .round", ".big", ".sub", ".grp", ".card", ".list .row:has(.p-ok)", ".row .t b", ".row .t small", ".row .t .pill.p-ok", ".actbar", ".actbar .btn"], "missing_ok": {"main table th": "below 1024 px the phone layout replaces the tables (0546)", "main table td": "below 1024 px the phone layout replaces the tables (0546)"}},  # pills follow the approved phone mockup (2026-11-01): scheduled green, the desktop mockup shows amber
     {
         "name": "menu",
         "path": "/menu",
@@ -423,11 +433,17 @@ def show_phone_screen(page, key: str) -> None:
     )
 
 
-def box_diffs(selector: str, app: dict, mock: dict, width: int) -> list[str]:
-    """Phone box metrics: width within 2 px, height and margins within 1 px. Values that are not px are skipped."""
+def box_diffs(selector: str, app: dict, mock: dict, width: int, page: str = "") -> list[str]:
+    """Phone box metrics: width within 2 px, height and margins within 1 px. Values that are not px are skipped.
+
+    BOX_OVERRIDES keys are "selector", "selector@width" or, for one page only, "page:selector[@width]".
+    """
     out = []
+    keys = (selector, f"{selector}@{width}", f"{page}:{selector}", f"{page}:{selector}@{width}")
+    override = {}
+    for key in keys:
+        override.update(BOX_OVERRIDES.get(key, {}))
     for prop in BOX_PROPS:
-        override = {**BOX_OVERRIDES.get(selector, {}), **BOX_OVERRIDES.get(f"{selector}@{width}", {})}
         a, m = _num(app[prop]), _num(override.get(prop, mock[prop]))
         if a is None or m is None:
             continue

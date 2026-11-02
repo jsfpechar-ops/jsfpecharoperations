@@ -122,6 +122,22 @@ CLEANING_WORDS: Dict[str, str] = {
     "load_error": "Không làm mới được lịch. Các ngày bên dưới có thể đã cũ. Hãy thử lại.",
     "cleaning_time": "Giờ dọn dẹp",
     "auto_help": "Thay đổi giờ trả phòng sẽ cập nhật các lượt dọn dẹp tự động. Ngày bạn đã đổi sẽ được giữ nguyên.",
+    "section_today": "Hôm nay",
+    "section_week": "Tuần này",
+    "section_later": "Sau đó",
+    "today_empty": "Hôm nay không có lịch dọn.",
+    "col_property": "Chỗ ở",
+    "col_time": "Giờ",
+    "col_day": "Ngày",
+    "col_status": "Trạng thái",
+    "status_scheduled": "Đã lên lịch",
+    "status_conflict": "Kiểm tra giờ",
+    "status_hours": "Thiếu giờ",
+    "share_cleaner": "Chia sẻ lịch với người dọn",
+    "next_arrival_short": "Khách đến tiếp",
+    "subtitle": "Lịch dọn tự tạo từ ngày khách trả phòng. Người dọn xem lịch qua một đường liên kết.",
+    "subtitle_short": "Tự tạo từ lượt trả phòng.",
+    "show_more": "Xem thêm %(count)s",
 }
 
 # validation_i18n.CS_MESSAGES key (the English sentence) -> Vietnamese.

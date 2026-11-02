@@ -9,23 +9,17 @@ Master version: 2.0.0. Adds only; never overrides MASTER.md.
 - back link: none
 
 ## Header
-- primary action: `cleaning.add` -> `/cleaning/new`
-- secondary actions: `cleaning.settings` -> `/cleaning/properties`; `cleaning.share` -> `/cleaning/shares`
-- tabs: (`cleaning.tab.list`, `/cleaning`), (`cleaning.tab.calendar`, `/cleaning?view=calendar`)
+- primary action: `cleaning.share_cleaner` -> `/cleaning/shares`
+- secondary actions: `cleaning.add` -> `/cleaning/new` (plus icon); `cleaning.settings` -> `/cleaning/properties`
 
-## Toolbar
-- search: property name
-- chips: `Upcoming`, `This week`, `Done`
-- filters (sheet on phone): property: select; date range: date_range
-- actions: none
+## Body (host)
+- three tables in order: Today, This week, Later (`_cleaning_table.html`, 0540)
+- columns: Property; Time or Day; Next arrival; Status badge
+- badges: `action` = check the time; `attention` = hours missing; `neutral` = scheduled
+- below the tables: the cleaning calendar (`_cleaning_calendar.html`, drag to move)
 
-## Body
-- list columns: date and window (`d. m., HH:MM to HH:MM`); property (`property_dot` + name); stay context (checkout guest count or "manual"); door code (mono, copy_button, omitted when none); status badge; row menu
-- phone card: line 1 date and window + badge; line 2 property; line 3 code or stay context
-- grouped by day: a `section` title per date (existing 17 px date headings become section titles)
-- badges: `action` = cleaning today without a cleaner confirmed or hours missing ("Hours missing"); `attention` = window changed by a later arrival; `done` = marked cleaned; `neutral` = scheduled
-- row menu items: Open, Edit, Mark cleaned, Copy door code, Delete
-- calendar tab: `calendar` component in month/week with cleaning markers (existing behaviour, restyled)
+## Body (cleaner, shared view)
+- unchanged: cards (`_cleaning_list.html`), calendar first, skip link to the list
 
 ## Empty state
 - `cleaning.empty.title` ("No cleaning scheduled"), `cleaning.empty.body` ("Cleaning is added from a stay's checkout or by hand."), `cleaning.add` -> `/cleaning/new`
