@@ -50,3 +50,5 @@ None.
 ## 5. Do not touch
 
 Everything.
+
+Owner decision 2026-11-02: tablet layout approved (64 px icon rail from 768 up, bottom bar only below 768, gutters 24/32; mockup docs/design/mockup/ubyhost-tablet.html). decisions.md is at its token cap, so the line goes there when it is next compacted.
