@@ -8,6 +8,7 @@
 {% block primary_action %}{% endblock %}
 {% block secondary_actions %}{% endblock %}
 {% block body %}
+{% include "_host_alerts.html" %}
 <div class="head settings-head"><div><h1 class="big">{{ t('nav.settings') }}</h1></div></div>
 <div class="settings-lane">
 {%- from "_icons.html" import icon with context -%}
