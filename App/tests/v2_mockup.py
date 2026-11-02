@@ -565,3 +565,106 @@ def box_diffs(selector: str, app: dict, mock: dict, width: int, skip=None, page:
         if abs(a - m) > tol:
             out.append(f"{selector} {prop} at {width} px: app={app[prop]} mockup={mock[prop]}")
     return out
+
+
+# 0896: Josef's spacing rules inside one part of a page (owner, 2026-11-02):
+# no page scroll sideways; text 16 px or more from the edges of its card; no
+# text under 13 px (the "?" glyph excepted); controls 12 px or more apart;
+# a button never over text and 12 px or more from it.
+_SPACING_JS = r"""
+(args) => {
+  const out = [];
+  const scope = document.querySelector(args.scope);
+  if (!scope) return [`scope ${args.scope} not found`];
+  const name = (el) => el.tagName.toLowerCase() + (el.id ? '#' + el.id : '')
+    + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '');
+  const shown = (el) => {
+    for (let e = el; e; e = e.parentElement) {
+      const cs = getComputedStyle(e);
+      if (e.hidden || cs.display === 'none' || cs.visibility === 'hidden') return false;
+      const up = e.parentElement;
+      if (up && up.tagName === 'DETAILS' && !up.open && e.tagName !== 'SUMMARY') return false;
+    }
+    const r = el.getBoundingClientRect();
+    return r.width > 2 && r.height > 2;
+  };
+  // a pinned (fixed or sticky) bar rides over the content by design; it is not a neighbour
+  const pinned = (el) => {
+    for (let e = el; e && e !== document.body; e = e.parentElement) {
+      const p = getComputedStyle(e).position;
+      if (p === 'fixed' || p === 'sticky') return true;
+    }
+    return false;
+  };
+  const vw = window.innerWidth;
+  if (document.documentElement.scrollWidth > vw + 1) {
+    const wide = [...document.querySelectorAll('body *')].filter(e => e.getBoundingClientRect().right > vw + 1 && getComputedStyle(e).position !== 'fixed');
+    out.push(`page scrolls sideways (${document.documentElement.scrollWidth} px at ${vw} px), widest: ${wide.length ? name(wide[wide.length - 1]) : 'unknown'}`);
+  }
+  const texts = [];
+  const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT);
+  let node;
+  while ((node = walker.nextNode())) {
+    const el = node.parentElement;
+    if (!node.textContent.trim() || !el || el.closest('script, style, select, option, textarea, ' + args.skip)) continue;
+    if (!shown(el)) continue;
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    for (const r of range.getClientRects()) {
+      if (r.width > 0 && r.height > 0) texts.push({el, r, pinned: pinned(el), text: node.textContent.trim().slice(0, 30)});
+    }
+  }
+  for (const t of texts) {
+    const size = parseFloat(getComputedStyle(t.el).fontSize);
+    if (size < 13 && !t.el.closest(args.glyphs)) out.push(`fine print ${size} px: ${name(t.el)} "${t.text}"`);
+    const card = t.el.closest(args.cards);
+    if (!card) continue;
+    const c = card.getBoundingClientRect();
+    const edge = Math.min(t.r.left - c.left, c.right - t.r.right, t.r.top - c.top, c.bottom - t.r.bottom);
+    if (edge < 15.5) out.push(`text ${edge.toFixed(1)} px from the edge of ${name(card)} (min 16): "${t.text}"`);
+  }
+  const gapOf = (a, b) => {
+    const v = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+    const h = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+    if (v > 0 && h > 0) return -Math.min(v, h);
+    if (v > 0) return -h;
+    if (h > 0) return -v;
+    return null;
+  };
+  const found = [...scope.querySelectorAll(args.controls)].filter(el => shown(el) && !pinned(el));
+  const controls = found.filter(x => !found.some(y => y !== x && x.contains(y)));
+  for (let i = 0; i < controls.length; i++) {
+    for (let j = i + 1; j < controls.length; j++) {
+      const gap = gapOf(controls[i].getBoundingClientRect(), controls[j].getBoundingClientRect());
+      if (gap !== null && gap < 11.5) out.push(`controls ${gap.toFixed(1)} px apart (min 12): ${name(controls[i])} / ${name(controls[j])}`);
+    }
+  }
+  for (const b of [...scope.querySelectorAll(args.buttons)].filter(el => shown(el) && !pinned(el))) {
+    const br = b.getBoundingClientRect();
+    for (const t of texts) {
+      if (b.contains(t.el) || t.pinned) continue;
+      const gap = gapOf(br, t.r);
+      if (gap !== null && gap < 11.5) out.push(`text ${gap.toFixed(1)} px from a button (min 12): ${name(b)} / "${t.text}"`);
+    }
+  }
+  // a field keeps 12 px from text that is not its own label or hint
+  for (const f of [...scope.querySelectorAll('input:not([type=hidden]):not([type=radio]):not([type=checkbox]), select, textarea')].filter(el => shown(el) && !pinned(el))) {
+    const own = f.closest(args.fields);
+    const fr = f.getBoundingClientRect();
+    for (const t of texts) {
+      if (t.pinned || (own && own.contains(t.el))) continue;
+      const gap = gapOf(fr, t.r);
+      if (gap !== null && gap < 11.5) out.push(`text ${gap.toFixed(1)} px from a field it does not belong to (min 12): ${name(f)} / "${t.text}"`);
+    }
+  }
+  return out;
+}
+"""
+
+
+def spacing_findings(page, scope: str, cards: str, controls: str, buttons: str, glyphs: str, skip: str, fields: str) -> list[str]:
+    """0896: one string per spacing problem inside `scope`. Empty list means it passes."""
+    return page.evaluate(_SPACING_JS, {
+        "scope": scope, "cards": cards, "controls": controls,
+        "buttons": buttons, "glyphs": glyphs, "skip": skip, "fields": fields,
+    })

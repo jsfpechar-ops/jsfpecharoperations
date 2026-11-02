@@ -873,7 +873,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .invoice-supplier-meta { grid-column: 1 / -1; padding: 0; }
 .host-workspace .invoice-lookup { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3) var(--space-4); margin: var(--space-3) 0 var(--space-5); padding: var(--space-4); border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface-2); }
 .host-workspace .invoice-lookup-ico { flex: 1 1 18rem; min-width: 0; margin: 0; }
-.host-workspace .invoice-lookup-row { display: flex; gap: var(--space-2); }
+.host-workspace .invoice-lookup-row { display: flex; gap: var(--space-3); }
 .host-workspace .invoice-lookup-row input { flex: 1 1 auto; min-width: 0; max-width: 12rem; }
 .host-workspace .invoice-lookup-row .ui-btn { flex: 0 0 auto; min-height: 0; height: auto; align-self: stretch; }
 .host-workspace .invoice-lookup-row { align-items: stretch; }
@@ -884,6 +884,13 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .invoice-f-zip { grid-column: span 2; }
 .host-workspace .invoice-f-city { grid-column: span 4; }
 .host-workspace .invoice-f-half { grid-column: span 3; }
+/* 0896: Josef's spacing rules on the buyer switch: text 16 px inside the card, the "?" an 18 px ring right after "Company", no fine print */
+.host-workspace .invoice-customer .ui-choice-card { padding: var(--space-4); }
+.host-workspace .invoice-customer .ui-choice-card-label { flex: 0 1 auto; }
+.host-workspace .invoice-customer .hint { font-size: var(--size-14); }
+.host-workspace .invoice-lookup-ico > label { margin-bottom: var(--space-3); }
+.host-workspace .invoice-form .help-tip-btn { width: 18px; height: 18px; }
+.host-workspace .invoice-form .help-tip-btn::after { inset: -13px; }
 @media (max-width: 639px) {
   .host-workspace .invoice-buyer-fields > .ui-field { grid-column: 1 / -1; }
   .host-workspace .invoice-lookup-row input { max-width: none; }

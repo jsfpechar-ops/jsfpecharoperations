@@ -500,3 +500,103 @@ def test_invoice_buyer_kind_screenshots():
         browser.close()
     server.should_exit = True
     thread.join(timeout=5)
+
+
+# 0896: the buyer block keeps Josef's spacing rules at every width, Guest and Company.
+INVOICE_SPACING = {
+    "scope": ".invoice-customer",
+    "cards": ".invoice-customer, .ui-choice-card, .invoice-lookup",
+    "controls": "input:not([type=hidden]), select, textarea, button, a.ui-btn",
+    "buttons": "button, a.ui-btn",
+    "glyphs": ".help-tip-btn",
+    "skip": ".help-tip-body, .sr-only",
+    "fields": ".ui-field",
+}
+# the "?" on the Company card: an 18 px ring on the label's line, 12 to 16 px after its last word, 44 px tap area
+INVOICE_HELP_JS = """
+() => [...document.querySelectorAll('.invoice-customer .help-tip-btn')].filter(b => b.getClientRects().length).map(btn => {
+  const label = btn.closest('.help-tip').previousElementSibling;
+  const range = document.createRange();
+  range.selectNodeContents(label);
+  const lines = [...range.getClientRects()].filter(r => r.width > 0 && r.height > 0);
+  const line = lines[lines.length - 1];
+  const b = btn.getBoundingClientRect();
+  const hit = -parseFloat(getComputedStyle(btn, '::after').left);
+  return {label: label.textContent.trim(), ring: b.width, tap: b.width + 2 * hit,
+          gap: b.left - line.right, centre: Math.abs((b.top + b.bottom) / 2 - (line.top + line.bottom) / 2)};
+})
+"""
+
+
+def test_invoice_buyer_block_spacing_0896():
+    """0896: Guest and Company at 320 to 1440 px; Chromium is required."""
+    import os
+    import secrets
+    import socket
+    import threading
+    import time
+    from pathlib import Path
+
+    import uvicorn
+
+    sync_api = pytest.importorskip("playwright.sync_api")
+    from tests.test_invoice_stay_browser import _browser_session_cookie, _launch
+    from tests.v2_mockup import WIDTHS, spacing_findings
+
+    shots = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0896"
+    db.init_db()
+    username = f"inv0896{secrets.token_hex(4)}"
+    owner = auth.create_account(f"{username}@example.test", "Spacing 0896", username=username)
+    entity = db.insert(
+        "legal_entity",
+        {
+            "name": "Vivus Apartment with Balcony & Garage s.r.o.", "seat": "Praha 1", "ico": "04656679",
+            "registry_entry": "Fyzická osoba zapsaná v živnostenském rejstříku",
+            "vat_status": "non_payer", "invoice_due_days": 14,
+            "owner_user_id": owner, "created_at": db.utcnow(),
+        },
+    )
+    stay_id = make_stay(owner, entity_id=entity)
+    _complete_guest(stay_id)
+
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = sock.getsockname()[1]
+    server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error"))
+    thread = threading.Thread(target=server.run, daemon=True)
+    thread.start()
+    deadline = time.time() + 15
+    while not server.started and time.time() < deadline:
+        time.sleep(0.05)
+    assert server.started, "the 0896 test server did not start"
+    base = f"http://127.0.0.1:{port}"
+    session = _browser_session_cookie(username)
+    path = f"/invoices/new?reservation_id={stay_id}&entity={entity}&lang=en"
+    problems = []
+    try:
+        with sync_api.sync_playwright() as playwright:
+            browser = _launch(playwright)
+            for width in WIDTHS:
+                context = browser.new_context(viewport={"width": width, "height": 900})
+                context.add_cookies([{"name": auth.SESSION_COOKIE, "value": session, "url": base + "/"}])
+                page = context.new_page()
+                page.goto(base + path)
+                page.wait_for_load_state("networkidle")
+                for kind in ("guest", "company"):
+                    if kind == "company":
+                        page.click('label.ui-choice-card-label:has(input[value="company"])')
+                    assert page.is_checked(f'input[name="buyer_kind"][value="{kind}"]')
+                    tag = f"{kind} at {width}px"
+                    problems += [f"{tag}: {p}" for p in spacing_findings(page, **INVOICE_SPACING)]
+                    for box in page.evaluate(INVOICE_HELP_JS):
+                        if not (16 <= box["ring"] <= 20 and box["tap"] >= 44 and 12 <= box["gap"] <= 16 and box["centre"] <= 4):
+                            problems.append(f"{tag}: the ? beside {box['label']!r} breaks the rule {box}")
+                    if os.environ.get("UBYHOST_0896_SHOTS") == "1" and width in (390, 1280):
+                        shots.mkdir(parents=True, exist_ok=True)
+                        page.screenshot(path=str(shots / f"invoice-{kind}-{width}.png"), full_page=True)
+                context.close()
+            browser.close()
+    finally:
+        server.should_exit = True
+        thread.join(timeout=5)
+    assert not problems, "\n".join(problems[:60])
