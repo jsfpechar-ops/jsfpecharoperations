@@ -1,0 +1,20 @@
+# Host strings read by the Go payment request routes, one key per line.
+payments.draft_saved
+payments.sent
+payments.err.invalid
+payments.err.amount
+payments.err.no_email
+payments.err.cannot_send
+payments.err.stripe_off
+payments.err.not_ready
+payments.reason.repair
+payments.reason.extra_guest
+payments.reason.late_checkout
+payments.reason.cleaning
+payments.reason.damage
+payments.reason.custom
+payments.err.no_entity
+payments.err.stripe_start
+payments.connect.flash_complete
+payments.connect.flash_action
+payments.connect.flash_pending
