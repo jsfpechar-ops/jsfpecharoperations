@@ -30,6 +30,9 @@ def _request_or_none(request_id: int) -> Dict[str, Any] | None:
 
 def product_name(row: Dict[str, Any]) -> str:
     """What the guest sees on Stripe Checkout and the receipt (Czech)."""
+    note = " ".join((row.get("guest_note") or "").split())[:60]
+    if row["reason"] == "custom" and note:
+        return f"{note} (žádost č. {row['id']})"
     reason = host_i18n.translate("cs", f"payments.reason.{row['reason']}")
     return f"{reason} (žádost č. {row['id']})"
 
