@@ -175,6 +175,8 @@ _HELP_TIP_SIZE_JS = """() => {
     const tip = btn.closest('.help-tip');
     const wrap = tip && tip.parentElement;
     let ref = tip && tip.previousElementSibling;
+    // 0814 round 3: a tip inside its label or heading (after the text) is measured against that element.
+    if (!ref && wrap && /^(LABEL|H1|H2)$/.test(wrap.tagName)) ref = wrap;
     if (!ref && wrap) ref = wrap.previousElementSibling || [...wrap.children].find(el => el !== tip) || null;
     const label = ref ? ref.textContent.trim().slice(0, 40) : '(no label)';
     const why = [];
@@ -185,6 +187,13 @@ _HELP_TIP_SIZE_JS = """() => {
     const left = cx - cw / 2;
     if (!ref) {
       why.push('no label before it');
+    } else if (ref.matches('button, .ui-btn')) {
+      // 0814 round 3: a "?" after a button is measured against the button box (centre, 6-12 px gap).
+      const rb = ref.getBoundingClientRect();
+      const dy = Math.abs(cy - (rb.top + rb.bottom) / 2);
+      const dx = left - rb.right;
+      if (dy > 4) why.push(`vertical offset ${dy.toFixed(1)}px`);
+      if (dx < 6 || dx > 12) why.push(`gap after button ${dx.toFixed(1)}px`);
     } else {
       // 0814 round 2: measure the last visible text node of the label (not boxes of inputs or the tip itself).
       const tw = document.createTreeWalker(ref, NodeFilter.SHOW_TEXT);

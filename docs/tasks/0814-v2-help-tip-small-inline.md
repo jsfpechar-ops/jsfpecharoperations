@@ -57,3 +57,9 @@ Files for 10: `App/app/templates/apartment_form.html`, `App/app/templates/_prope
 - havel 1024-1440: remove the flex row rule `.head>div:has(>.havel-name-tip)` and let the tip sit inline inside/after the h1 text like the others.
 - Then run the whole 0800 file and fix any property-new, setup-*, guest-guide, guide case the same way (tip inside the heading/label, inline).
 - The modified PNGs under docs/tasks/screenshots-guide/ come from test runs: ignore them.
+
+## 13. Round 4 decisions (orchestrator, from "Round 3" in the report)
+- Phone geometry: keep the box from overlapping the text and keep the visible gap 6 px: below 1024 px the 18 px circle (`::after`) sits at the LEFT of the 44 px box (`left:0;top:13px`, not centred), the box margins are `-13px -26px -13px 0` (layout footprint 18 px wide), `.help-tip{margin-left:6px}`. Desktop unchanged (24 px box, circle centred, -3px margins).
+- The test measures the gap and the vertical centre from the visible circle: circle rect = box rect offset by the `::after` computed `left`/`top` and sized by its `width`/`height`. Limits stay: centre <= 4 px, gap 0-12 px.
+- setup-* and guest-guide: change the shared `field_label` macro in `App/app/templates/_components.html` so its help tip renders inside the `<label>` right after the text (same markup otherwise). Then also run `.venv/bin/python -m pytest tests -q -k "label or help_tip or field" --tb=line -p no:cacheprovider 2>&1 | tail -8` to catch other pages.
+- guide and property-new: the other executor is done; their title tips may now be fixed here (tip inside the h1, after the text).
