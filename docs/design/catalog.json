@@ -302,6 +302,12 @@
     "stays-head",
     "stays-desk",
     "stays-phone",
+    "submissions-page",
+    "invoices-page",
+    "housebook-page",
+    "stay-fees-page",
+    "stay-fees-toolbar",
+    "fee-pay-h",
     "stays-phone-only",
     "pill",
     "p-n",
@@ -1167,6 +1173,12 @@
     "sm": "Small button size from the v2 mockup (.btn.sm).",
     "stays-more": "Phone-only \"Show more\" link on the stays list (0529 compact).",
     "stays-how": "Stays list page help (\"How it works\"), desktop only.",
-    "stay-filing": "Stay page hand-filing cards (file by hand / filed by hand), desktop only."
+    "stay-filing": "Stay page hand-filing cards (file by hand / filed by hand), desktop only.",
+    "submissions-page": "Page scope for the v2 Odeslání list (0791).",
+    "invoices-page": "Page scope for the v2 Faktury list (0792).",
+    "housebook-page": "Page scope for the v2 Domovní kniha (0793).",
+    "stay-fees-page": "Page scope for the v2 Poplatek z pobytu list (0794).",
+    "stay-fees-toolbar": "Month filter row of the stay fee list (0796).",
+    "fee-pay-h": "Step heading inside the stay fee two-step pay box (0794)."
   }
 }

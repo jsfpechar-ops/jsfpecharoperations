@@ -32,6 +32,9 @@
 <details class="ui-how stays-how ph-hide" data-how="housebook">
   <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
   <div class="ui-how-body">
+    <p>{{ t('housebook.archived_lede') }}</p>
+    <p>{{ t('housebook.pdf_export_help') }}</p>
+    <p class="housebook-pdf-warn">{{ t('housebook.pdf_hint', limit=max_inspection_pdfs) }}</p>
     <ol class="ui-how-steps">{% for n in (1, 2, 3) %}<li>{{ t('how.housebook.' ~ n) }}</li>{% endfor %}</ol>
     <a class="ui-how-more" href="/guide#housebook">{{ t('how.more') }}</a>
   </div>
@@ -140,7 +143,6 @@
 
 {% if archived_rows %}
 <h2 class="ph-hide">{{ t('housebook.archived_title') }}</h2>
-<p class="ui-sub ph-hide">{{ t('housebook.archived_lede') }}</p>
 <div class="panel tight scroll-x ph-hide">
   <table class="table-cards">
     <thead>
@@ -165,13 +167,10 @@
 </div>
 {% endif %}
 
-<p class="ui-sub ph-hide"><a href="/guide#housebook">{{ t('nav.guide') }}</a></p>
 
 <dialog id="housebook-pdf-dialog" class="csv-export-dialog">
   <form id="housebook-pdf-form" method="get" action="/housebook/pdfs.zip">
     <h2>{{ t('housebook.pdf_export_title') }}</h2>
-    <p class="ui-sub">{{ t('housebook.pdf_export_help') }}</p>
-    <p class="ui-sub housebook-pdf-warn">{{ t('housebook.pdf_hint', limit=max_inspection_pdfs) }}</p>
     <div class="ui-field">
       <label for="pdf_export_apartment">{{ t('housebook.apartment') }}</label>
       <select id="pdf_export_apartment" name="apartment">

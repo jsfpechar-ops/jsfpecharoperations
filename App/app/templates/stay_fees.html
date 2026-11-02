@@ -18,6 +18,7 @@
 <details class="ui-how stays-how ph-hide" data-how="stay_fees">
   <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
   <div class="ui-how-body">
+    <p id="fee-list-email">{{ t('stay_fees.list.email_on' if stay_fee_emails else 'stay_fees.list.email_off') }}</p>
     <ol class="ui-how-steps">{% for n in (1, 2, 3) %}<li>{{ t('how.stay_fees.' ~ n) }}</li>{% endfor %}</ol>
     <a class="ui-how-more" href="/guide#stay_fee">{{ t('how.more') }}</a>
   </div>
@@ -92,7 +93,7 @@
         {% if period.pay_total_czk != 0 %}
         <li>
           <strong>{{ t('stay_fees.pay.task_pay') }}</strong>
-          {% if period.pay and period.pay.qr %}<p class="sub">{{ t('stay_fees.payment.qr_help', amount=period.pay_total_display) }}</p>{% endif %}
+          
         </li>
         {% endif %}
       </ol>
@@ -115,7 +116,6 @@
   </div>
 </section>
 {% endfor %}
-<p class="sub" id="fee-list-email">{{ t('stay_fees.list.email_on' if stay_fee_emails else 'stay_fees.list.email_off') }}</p>
 {% set fee_list = namespace(all_unset=true) %}
 {% for period in periods %}{% if not period.unset %}{% set fee_list.all_unset = false %}{% endif %}{% endfor %}
 <div class="card stays-desk fee-periods{% if fee_list.all_unset %} fee-periods-unset{% endif %}">
@@ -150,14 +150,14 @@
         </td>
         {% if fee_list.all_unset %}
         <td data-label="{{ t('filter.status') }}"><span class="pill p-n">{{ t('stay_fees.status.not_setup') }}</span></td>
-        <td class="nowrap row-actions" data-label=""><a class="btn small" href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ t('stay_fees.setup.action') }}</a></td>
+        <td class="nowrap row-actions" data-label=""><a class="btn sm" href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ t('stay_fees.setup.action') }}</a></td>
         {% else %}
         <td data-label="{{ t('stay_fees.col.period') }}">—</td>
         <td class="num" data-label="{{ t('stay_fees.col.liable') }}">—</td>
         <td class="num" data-label="{{ t('stay_fees.col.exempt') }}">—</td>
         <td class="num" data-label="{{ t('stay_fees.col.total') }}">—</td>
         <td data-label="{{ t('filter.status') }}"><span class="pill p-n">{{ t('stay_fees.status.not_setup') }}</span></td>
-        <td class="nowrap row-actions" data-label=""><a class="btn small" href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ t('stay_fees.setup.action') }}</a></td>
+        <td class="nowrap row-actions" data-label=""><a class="btn sm" href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ t('stay_fees.setup.action') }}</a></td>
         {% endif %}
       </tr>
       {% else %}

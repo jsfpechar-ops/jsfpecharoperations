@@ -19,12 +19,12 @@
 <details class="ui-how stays-how ph-hide" data-how="reports">
   <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
   <div class="ui-how-body">
+    <p>{{ t('reports.lede') }}</p>
+    {% if receipt_count %}<p>{{ t('reports.download_receipts_hint') }}</p>{% endif %}
     <ol class="ui-how-steps">{% for n in (1, 2, 3) %}<li>{{ t('how.reports.' ~ n) }}</li>{% endfor %}</ol>
     <a class="ui-how-more" href="/guide#reports">{{ t('how.more') }}</a>
   </div>
 </details>
-<p class="sub">{{ t('reports.lede') }}</p>
-{% if receipt_count %}<p class="sub ph-hide">{{ t('reports.download_receipts_hint') }}</p>{% endif %}
 </div><div class="stays-head-actions"><a class="btn ghost" href="/housebook">{{ t('nav.housebook') }}</a>{% if receipt_count %}<a class="btn ghost" href="/submissions/receipts.zip">{{ icon('download', 16) }}<span>{{ t('reports.download_receipts') }}</span></a>{% endif %}</div></div>
 
 {% if rows %}
