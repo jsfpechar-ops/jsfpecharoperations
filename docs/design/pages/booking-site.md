@@ -26,6 +26,7 @@ Master version: 2.0.0. This file adds; it never overrides MASTER.md. Keep it und
 - badges used: `done` = step complete, `action` = next step, `neutral` = waiting
 - row menu items: none
 - Max gate: banner `bsite.max_only` -> `/predplatne` (no price form shown)
+- Bookings from the site: facts list, one row per booking (short name, dates, total), status badge `done` for paid and `neutral` otherwise; one `danger` compact button per row behind the confirm dialog (full refund); empty text when none.
 
 ## Empty state
 - none
