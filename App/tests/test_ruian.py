@@ -1,4 +1,4 @@
-"""0834 D: RÚIAN address suggest endpoint. No real network: requests.get is mocked."""
+"""0884 D: RÚIAN address suggest endpoint. No real network: requests.get is mocked."""
 from __future__ import annotations
 
 import pytest
@@ -61,15 +61,15 @@ def test_happy_path_returns_structured_fields(host, calls):  # noqa: F811
     assert len(body) == 1
     assert body[0]["label"] == CANDIDATE["address"]
     fields = body[0]["fields"]
-    assert fields["street"] == "Václavské náměstí"
-    assert fields["house_no"] == "1"
-    assert fields["orientation_no"] == "2"
-    assert fields["zip"] == "11000"
-    assert fields["town"] == "Praha"
-    assert fields["district_part"] == "Praha 1"
-    assert fields["okres"] == "Hlavní město Praha"
+    assert fields["addr_street"] == "Václavské náměstí"
+    assert fields["addr_house_no"] == "1"
+    assert fields["addr_orient_no"] == "2"
+    assert fields["addr_zip"] == "11000"
+    assert fields["addr_obec"] == "Praha"
+    assert fields["addr_obec_cast"] == "Praha 1"
+    assert fields["addr_okres"] == "Hlavní město Praha"
     url, kwargs = calls[0]
-    assert url == ruian._FIND_URL
+    assert url == ruian._find_url()
     assert kwargs["params"]["SingleLine"] == "Václavské náměstí 1"
     assert kwargs["timeout"] == 4
 

@@ -1,4 +1,4 @@
-"""RÚIAN address suggestions for the property form (0834 D).
+"""RÚIAN address suggestions for the property form (0884 D).
 
 Sends only the typed address text to ČÚZK. Nothing is stored. Every failure
 returns an empty list, so the plain address fields always work without this.
@@ -13,20 +13,28 @@ import requests
 
 from . import rate_limit
 
-# TODO-verify: ČÚZK public GeocodeSOE endpoint and parameters. Not checked from the
-# sandbox (outbound HTTPS is blocked there); confirm the URL before the owner merges.
-_FIND_URL = "https://ags.cuzk.cz/arcgis/rest/services/GeocodeSOE/GeocodeServer/findAddressCandidates"
+# UNVERIFIED: ČÚZK public RÚIAN geocoder URL and attribute names (the build sandbox
+# cannot reach ČÚZK). Override the URL with UBYHOST_RUIAN_URL; turn the feature off
+# with UBYHOST_RUIAN_ENABLED=0. Check once against real output before relying on it.
+_DEFAULT_URL = (
+    "https://ags.cuzk.cz/arcgis/rest/services/RUIAN/Vyhledavaci_sluzba_nad_daty_RUIAN/"
+    "MapServer/exts/GeocodeSOE/tables/1/findAddressCandidates"
+)
+
+
+def _find_url() -> str:
+    return os.environ.get("UBYHOST_RUIAN_URL", "").strip() or _DEFAULT_URL
 
 # TODO-verify: attribute keys of an address candidate in the ČÚZK response.
 # Structured values only: never parse the display label.
 _ATTR_KEYS = {
-    "street": "StreetName",
-    "house_no": "BuildingNumber",  # číslo popisné
-    "orientation_no": "OrientationNumber",  # číslo orientační
-    "zip": "PostalCode",  # PSČ
-    "town": "Municipality",  # obec
-    "district_part": "MunicipalityPart",  # část obce
-    "okres": "District",  # okres
+    "addr_street": "StreetName",
+    "addr_house_no": "BuildingNumber",  # číslo popisné
+    "addr_orient_no": "OrientationNumber",  # číslo orientační
+    "addr_zip": "PostalCode",  # PSČ
+    "addr_obec": "Municipality",  # obec
+    "addr_obec_cast": "MunicipalityPart",  # část obce
+    "addr_okres": "District",  # okres
 }
 
 _TIMEOUT_SECONDS = 4
@@ -84,7 +92,7 @@ def suggest(q: str) -> List[Dict[str, Any]]:
         return cached[1]
     try:
         response = requests.get(
-            _FIND_URL,
+            _find_url(),
             params={"SingleLine": text, "outFields": "*", "maxLocations": _MAX_RESULTS, "f": "json"},
             timeout=_TIMEOUT_SECONDS,
             headers={"User-Agent": _USER_AGENT},

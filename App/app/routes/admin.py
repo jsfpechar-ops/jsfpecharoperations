@@ -62,7 +62,7 @@ from .. import (
     workflow,
     welcome_back,
 )
-from .. import ruian as ruian_lookup  # 0834
+from .. import ruian as ruian_lookup  # 0884
 from ..templating import render
 from .guest_guide import leon_card_state as _leon_card_state  # 0396
 from ..ubyport.client import UbyportError, UbyportTransportError
@@ -1287,7 +1287,7 @@ def delete_entity(entity_id: int, request: Request):
 
 # --- apartments ----------------------------------------------------------
 
-# 0834: must stay above /apartments/{apartment_id}, which would otherwise match it.
+# 0884: must stay above /apartments/{apartment_id}, which would otherwise match it.
 @router.get("/apartments/ruian-suggest")
 def apartments_ruian_suggest(request: Request, q: str = ""):
     owner = access.owner_id(request)

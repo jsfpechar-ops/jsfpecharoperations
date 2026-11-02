@@ -1,4 +1,4 @@
-"""0834 section A: baseline measurement of the setup wizard (steps, fields, POSTs).
+"""0884 section A: baseline measurement of the setup wizard (steps, fields, POSTs).
 
 Measurement only: prints the numbers, asserts nothing about the target.
 Run: .venv/bin/python -m pytest tests/wizard_taps.py -q -s --tb=short -x 2>&1 | tail -30

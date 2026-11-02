@@ -1,4 +1,4 @@
-# 0834 Setup wizard speed: baseline + RÚIAN lookup (scope narrowed)
+# 0884 Setup wizard speed: baseline + RÚIAN lookup (scope narrowed)
 
 ## 1. Objective
 
@@ -21,7 +21,7 @@ App/tests/wizard_taps.py, App/app/ruian.py, App/tests/test_ruian.py, one route i
 ## 4. Steps
 
 ## A. Baseline first
-Before any change write `App/tests/wizard_taps.py` (plain pytest, TestClient) that walks the wizard via `wizard_walk.py` with the cheapest answers and prints/asserts: number of steps visited, number of form fields marked required or empty-to-fill on each, number of POSTs. Record the "before" numbers in `docs/tasks/0834-report.md`, then the "after" numbers. Baseline only for now: no after-numbers, no halving assertion.
+Before any change write `App/tests/wizard_taps.py` (plain pytest, TestClient) that walks the wizard via `wizard_walk.py` with the cheapest answers and prints/asserts: number of steps visited, number of form fields marked required or empty-to-fill on each, number of POSTs. Record the "before" numbers in `docs/tasks/0884-report.md`, then the "after" numbers. Baseline only for now: no after-numbers, no halving assertion.
 
 ## B. Fewer steps (PARKED, do not build)
 1. `STEPS` becomes: property, calendar, police, guest_link. (`TOTAL_STEPS` follows.)
@@ -44,9 +44,9 @@ Before any change write `App/tests/wizard_taps.py` (plain pytest, TestClient) th
 
 ## E. Tests and evidence
 - Run only: `tests/test_ares.py`, `tests/test_onboarding*.py`, `tests/test_wizard_*.py`, `tests/test_design_setup_wizard_browser.py`, `tests/test_0800_v2_remaining_pages_browser.py`, the new tests, and `tests/test_static_versions.py` (rewrite with `--write` after bumping the app2.css/js cache key). Browser tests at 320/390/768/1024/1280/1440, 0 skipped, geometry rules (12 px gaps, targets 44 px).
-- Screenshots 390 and 1280 of: property step with suggestions open, police step with automation cards, done page with "Do next" cards -> `docs/tasks/screenshots-0834/`.
+- Screenshots 390 and 1280 of: property step with suggestions open, police step with automation cards, done page with "Do next" cards -> `docs/tasks/screenshots-0884/`.
 - `python3 scripts/context_lint.py` from repo root.
-- Do not commit; do not stage `docs/tasks/*evidence*`. Write `docs/tasks/0834-report.md` (before/after numbers, tests run, anything skipped).
+- Do not commit; do not stage `docs/tasks/*evidence*`. Write `docs/tasks/0884-report.md` (before/after numbers, tests run, anything skipped).
 
 ## 5. Do not touch
 Wizard templates, wizard routes, property_setup.py, CSS, wizard JS, signup, default times.
@@ -61,4 +61,4 @@ New tests pass with 0 skipped; lint passes; baseline numbers in the report.
 If the ČÚZK URL or attribute names cannot be confirmed, say so in the report.
 
 ## 9. Report
-docs/tasks/0834-report.md.
+docs/tasks/0884-report.md.

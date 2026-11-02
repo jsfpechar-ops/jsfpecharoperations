@@ -1,4 +1,4 @@
-# 0834 report (sections A and D backend)
+# 0884 report (sections A and D backend)
 
 Status: blocked (context lint fails, see Questions). Nothing committed or pushed, per coordinator.
 
@@ -9,7 +9,7 @@ Status: blocked (context lint fails, see Questions). Nothing committed or pushed
 - `App/app/routes/admin.py`: import line and `GET /apartments/ruian-suggest` (placed above `/apartments/{apartment_id}`).
 - `docs/ENVIRONMENT.md`: one row for `UBYHOST_RUIAN_ENABLED`.
 - `docs/context/decisions.md`: one line, "proposed, awaiting owner".
-- `docs/tasks/0834-report.md` (this file).
+- `docs/tasks/0884-report.md` (this file).
 
 ## Commands (last lines)
 - `pytest tests/test_ruian.py tests/test_ares.py tests/wizard_taps.py -q -rs`: `24 passed in 8.35s`, no skips.
