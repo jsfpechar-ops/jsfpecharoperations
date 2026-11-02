@@ -345,3 +345,72 @@ def test_settings_controls_keep_12px_apart(host, base, width):
             context.close()
         browser.close()
     assert not problems, "\n".join(problems[:80])
+
+
+# 0789: the Airbnb settings pattern at every width (390, 768, 1280), en and cs.
+AIRBNB_WIDTHS = (390, 768, 1280)
+AIRBNB_PAGES = ("/settings", "/settings/archived")
+
+AIRBNB_JS = """
+() => {
+  const back = document.querySelector('.airbnb-back');
+  const h1 = document.querySelector('h1');
+  const rows = [...document.querySelectorAll('.airbnb-index-row')].map(r => {
+    const b = r.getBoundingClientRect();
+    const chev = r.querySelector('.airbnb-chevron');
+    const cb = chev ? chev.getBoundingClientRect() : null;
+    const label = (r.querySelector('.airbnb-label') || r).textContent.trim();
+    return {height: b.height, label: label.slice(0, 60),
+            chevCentreDelta: cb ? Math.abs((cb.top + cb.height / 2) - (b.top + b.height / 2)) : 999,
+            hasIcon: !!r.querySelector('.airbnb-icon'), hasChevron: !!chev};
+  });
+  return {
+    backX: back ? back.getBoundingClientRect().left : null,
+    backW: back ? back.getBoundingClientRect().width : 0,
+    backBottom: back ? back.getBoundingClientRect().bottom : 0,
+    h1Top: h1 ? h1.getBoundingClientRect().top : 0,
+    rows,
+  };
+}
+"""
+
+
+@pytest.mark.parametrize("width", AIRBNB_WIDTHS)
+def test_0789_airbnb_settings_pattern_every_width(host, base, width):
+    problems = []
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        for lang in LANGS:
+            context = browser.new_context(viewport={"width": width, "height": 900})
+            cookie = host["client"].cookies.get(auth.SESSION_COOKIE)
+            context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": base + "/"}])
+            for path in AIRBNB_PAGES:
+                page = context.new_page()
+                page.goto(f"{base}{path}?lang={lang}")
+                tag = f"{path} {lang} {width}"
+                info = page.evaluate(AIRBNB_JS)
+                if info["backX"] is None:
+                    problems.append(f"{tag}: no back button (.airbnb-back)")
+                else:
+                    if info["backX"] >= 32:
+                        problems.append(f"{tag}: back button not top left (x={info['backX']})")
+                    if info["backW"] < 40:
+                        problems.append(f"{tag}: back button under 40 px ({info['backW']})")
+                    if info["h1Top"] < info["backBottom"]:
+                        problems.append(f"{tag}: h1 not below the back button")
+                if path == "/settings":
+                    if not info["rows"]:
+                        problems.append(f"{tag}: no index rows (.airbnb-index-row)")
+                    for row in info["rows"]:
+                        if row["height"] < 56:
+                            problems.append(f"{tag}: row under 56 px: {row['label']}")
+                        if len(row["label"]) > 40:
+                            problems.append(f"{tag}: row label over 40 characters: {row['label']}")
+                        if not (row["hasIcon"] and row["hasChevron"]):
+                            problems.append(f"{tag}: row without icon or chevron: {row['label']}")
+                        elif row["chevCentreDelta"] > 1:
+                            problems.append(f"{tag}: chevron not centred: {row['label']}")
+                page.close()
+            context.close()
+        browser.close()
+    assert not problems, "\n".join(problems[:40])
