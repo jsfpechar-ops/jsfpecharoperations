@@ -7,7 +7,7 @@ module - the read fields return to the browser as form suggestions only.
 
 Max plan only (the pricing copy promises scanning on Max, and explicitly
 not during the trial). Tesseract must be installed (the Docker image ships
-it); ``available`` says so per property.
+it); ``available`` says so per property, and needs the host's scan switch and the passport upload on.
 """
 from __future__ import annotations
 
@@ -55,9 +55,14 @@ class NothingRead(Exception):
 def available(apartment) -> bool:
     """True when this property's guest form may offer the scan button.
 
-    The gates: Tesseract installed, and the owner's active Max subscription -
-    the trial does not include scanning, matching the pricing copy.
+    The gates: the host's scan switch on and the passport upload on, Tesseract
+    installed, and the owner's active Max subscription - the trial does not
+    include scanning, matching the pricing copy.
     """
+    if int(apartment["ocr_scan"] or 0) != 1:
+        return False
+    if (apartment["passport_photo_policy"] or "off").strip().lower() != "required_foreign":
+        return False
     if not TESSERACT:
         return False
     owner_id = apartment["owner_user_id"] if apartment else None
