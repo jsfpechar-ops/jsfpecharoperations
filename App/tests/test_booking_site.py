@@ -191,3 +191,10 @@ def test_site_allowed_follows_plan(owner, monkeypatch):
     monkeypatch.setattr(billing, "entitlements",
                         lambda oid: billing.Entitlements(status="active", plan="max"))
     assert booking_site.site_allowed(owner) is True
+
+
+def test_price_set_before_0814_is_read(owner):
+    aid = _apartment(owner)
+    property_page.page_for(aid)
+    db.execute("UPDATE property_page SET nightly_price_czk = 1200 WHERE apartment_id = ?", (aid,))
+    assert booking_site.settings(aid)["nightly_price_czk"] == 1200

@@ -33,6 +33,12 @@ CREATE TABLE IF NOT EXISTS site_booking (
 );
 CREATE INDEX IF NOT EXISTS idx_site_booking_apartment ON site_booking (apartment_id, date_from);
 CREATE INDEX IF NOT EXISTS idx_site_booking_status ON site_booking (status);
+-- A goose-only database must also record SQLite migration 34, or the
+-- schema check reports it as not current.
+INSERT INTO schema_migrations (version, name, applied_at)
+    VALUES (34, 'site_booking', '2026-11-02T00:00:00+00:00')
+    ON CONFLICT (version) DO NOTHING;
 
 -- +goose Down
+DELETE FROM schema_migrations WHERE version = 34;
 DROP TABLE IF EXISTS site_booking;

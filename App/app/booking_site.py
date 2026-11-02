@@ -77,6 +77,14 @@ def settings(apartment_id: int) -> Dict[str, Any]:
         stored = {}
     out = dict(DEFAULTS)
     out.update({k: stored[k] for k in DEFAULTS if k in stored})
+    if "nightly_price_czk" not in stored:
+        # Pages priced before 0814 kept the price only on property_page (0434).
+        page = db.query_one(
+            "SELECT nightly_price_czk FROM property_page WHERE apartment_id = ?",
+            (apartment_id,),
+        )
+        if page is not None and page["nightly_price_czk"]:
+            out["nightly_price_czk"] = int(page["nightly_price_czk"])
     if out["cancellation_policy"] not in POLICIES:
         out["cancellation_policy"] = "non_refundable"
     if out["advance_notice_days"] not in NOTICE_DAYS:
