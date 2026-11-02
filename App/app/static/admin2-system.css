@@ -7,3 +7,6 @@ body.v2 .ui-body summary h2{position:relative;display:block;padding-right:40px}
 body.v2 .ui-body summary h2 .ui-badge{position:absolute;right:0;top:0}
 body.v2 .ui-body p.ui-sub{margin-top:12px}
 body.v2 .ui-body ul.admin-status{list-style:none;padding-left:0;margin:0}
+@media (min-width:1024px){body.v2 .ui-body .ui-btn{min-height:40px}}
+body.v2 .ui-body .ui-btn-group{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+body.v2 .ui-body .ui-btn-group form+form{margin-top:0}

@@ -1,7 +1,7 @@
 {% extends "host_page.html" %}
 {% set v2 = true %}
-{% block head_extra %}<link rel="stylesheet" href="/static/admin2.css?v=20261102-0893e"><link rel="stylesheet" href="/static/admin2-system.css?v=20261102-0894d">{% endblock %}
-{% from "_components.html" import tip_label with context %}
+{% block head_extra %}<link rel="stylesheet" href="/static/admin2.css?v=20261102-0893e"><link rel="stylesheet" href="/static/admin2-system.css?v=20261102-0894e">{% endblock %}
+{% from "_components.html" import tip_label, help_tip with context %}
 {% set nav = 'operations' %}
 {% set body_kind = 'detail' %}
 {% from "_ui_layout.html" import ui_section_tabs with context %}
@@ -20,7 +20,7 @@
 {%- endmacro %}
 
 <details class="ui-section" id="ops-filings"{% if ops.filings.count or ops.stuck.count %} open{% endif %}>
-  <summary><h2>{{ tip_label(t('ops.filings.title'), 'ops-filings-help', t('ops.filings.help'), tag='span') }} <span class="ui-badge {{ 'ui-badge-action' if ops.filings.count else 'ui-badge-done' }}">{{ ops.filings.count }}</span></h2></summary>
+  <summary><h2><span class="tip-label">{{ t('ops.filings.title') }}{{ help_tip('ops-filings-help', t('ops.filings.help')) }}</span> <span class="ui-badge {{ 'ui-badge-action' if ops.filings.count else 'ui-badge-done' }}">{{ ops.filings.count }}</span></h2></summary>
   {% if ops.filings.rows %}
   <table class="ui-table ui-table-stack">
     <thead><tr><th>{{ t('ops.col.workspace') }}</th><th>{{ t('ops.col.property') }}</th><th>{{ t('ops.col.stay') }}</th><th>{{ t('ops.col.state') }}</th><th>{{ t('ops.col.age') }}</th></tr></thead>
