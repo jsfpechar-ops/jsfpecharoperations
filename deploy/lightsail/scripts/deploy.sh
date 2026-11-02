@@ -243,6 +243,15 @@ elif [ -n "${BACKUP_STAMP}" ]; then
   echo "Migration dry-run passed."
 fi
 
+if docker compose config --services | grep -qx 'ubyhost-go'; then
+  # Rebuild the local Go image so a merged change reaches production.
+  # Runs before "up", so a failed build leaves the running stack untouched.
+  if ! docker compose build ubyhost-go; then
+    echo "Go image build failed." >&2
+    exit 1
+  fi
+fi
+
 echo "==> Starting stack"
 docker compose pull caddy
 docker compose up -d --remove-orphans
