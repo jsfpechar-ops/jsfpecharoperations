@@ -39,8 +39,6 @@ SELECTOR_OVERRIDES = {
     # tone follows the stay state (0715 mapping); fixture stay is waiting, mockup shows a finished one (0719)
     ".hs .pill": {"color": "rgb(138, 82, 0)", "background-color": "rgb(255, 244, 214)", "border-bottom-color": "rgb(138, 82, 0)"},
     # owner 2026-11-01 19:09: smaller pills than the phone mockup
-    ".card.prop .st.g": {"font-size": "12px", "font-weight": "600", "padding-top": "3px", "padding-bottom": "3px", "padding-left": "7px", "padding-right": "9px", "column-gap": "5px", "row-gap": "5px"},
-    ".card.prop .st.r": {"font-size": "12px", "font-weight": "600", "padding-top": "3px", "padding-bottom": "3px", "padding-left": "7px", "padding-right": "9px", "column-gap": "5px", "row-gap": "5px"},
 }
 # style-compared only at computer width (phone design pending)
 DESKTOP_ONLY = {".side", ".side .nav", ".side .nav.on"}
@@ -57,6 +55,13 @@ BOX_OVERRIDES = {
     # text-dependent: app copy vs phone v2 mockup demo copy (0735)
     ".mh .big@320": {"width": "79.3594px"},
     ".mh .big@390": {"width": "79.3594px"},
+    # text-dependent: app copy vs phone v2 mockup demo copy (0740)
+    ".prop .in b@320": {"width": "93.0469px"},
+    ".prop .in b@390": {"width": "93.0469px"},
+    # 0740: same title text as the mockup, app title box is wider (font metrics), kept as measured
+    ".big, .head h1@320": {"width": "150.547px"},
+    ".big, .head h1@390": {"width": "150.547px"},
+    ".card.prop .st.r@320": {"height": "33.7812px"},
     ".promo@390": {"height": "80px"},
     ".tile .v@320": {"margin-top": "29px"},
     ".tile .v@390": {"margin-top": "29px"},
@@ -80,8 +85,6 @@ BOX_OVERRIDES = {
     "h2.sec": {"margin-left": "0px", "margin-right": "0px"},
     ".card.prop": {"margin-left": "0px", "margin-right": "0px"},
     # owner 2026-11-01 19:09: smaller pills than the phone mockup (one line at 390 px)
-    ".card.prop .st.g": {"height": "23px"},
-    ".card.prop .st.r": {"height": "23px"},
     # cleaning phone (0549b): main padding replaces side margins (0719); heights and pill width follow the English fixture copy; the fixture has no cleaning today, so .card is the empty today card
     ".sub": {"margin-left": "0px", "margin-right": "0px"},
     ".grp": {"margin-left": "0px", "margin-right": "0px"},
@@ -144,17 +147,21 @@ PAGES = [
         "path": "/apartments",
         "view": "props",
         "phone_view": "nemovitosti",
-        "phone_selectors": [".big, .head h1", ".top .round", ".card.prop",".cover", ".cover .ini", ".prop .in b", ".prop .in small", ".card.prop .st.g", ".card.prop .st.r"],
+        "phone_mockup": PHONE_MOCKUP_V2,
+        "phone_selectors": [".tabs", ".tab.on", ".big, .head h1", ".props-add", ".card.prop", ".cover", ".cover .ini", ".prop .in b", ".prop .in small", ".card.prop .st.g", ".card.prop .st.r", ".card.prop .chev"],
         "selectors": [
             ".side .nav.on", ".head h1", ".head .sub", ".head .btn",
             "main table th", "main table td", ".setup .st.g", ".setup .st.r", "tbody tr .btn.sm.ghost",
         ],
-        "missing_ok": {".prop .in small": "0710 demo property has no address line; the phone card shows the address when one is stored"},
+        "missing_ok": {
+            ".prop .in small": "0710 demo property has no address line; the phone card shows the address when one is stored",
+            ".card.prop .st.g": "tone depends on the demo property's setup",
+            ".card.prop .st.r": "tone depends on the demo property's setup",
+        },
         "phone_box_skip": {
             ".card.prop .st.g": (["width"], "chip label comes from the property's state"),
             ".card.prop .st.r": (["width"], "chip label comes from the property's state"),
             ".cover .ini": (["width"], "initials come from the property name"),
-            ".card.prop": (["height"], "card height follows how the chips wrap"),
         },
     },
     {

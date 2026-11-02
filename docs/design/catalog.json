@@ -291,8 +291,8 @@
     "hl-sub",
     "done",
     "props-phone",
-    "props-top",
     "props-head",
+    "props-top",
     "prop",
     "cover",
     "ini",
@@ -301,7 +301,9 @@
     "c1",
     "c2",
     "setup",
-    "st"
+    "st",
+    "props-add",
+    "chev"
   ],
   "hooks": [
     "sr-only",

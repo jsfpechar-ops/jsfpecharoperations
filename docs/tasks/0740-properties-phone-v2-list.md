@@ -1,6 +1,6 @@
 # 0740 brief: phone v2 properties list (Airbnb listings style)
 
-Status: todo
+Status: blocked
 Executor: Haiku 5.5, alone, on branch `claude/project-thread-b9cg54` in `/home/claude/jsfpecharoperations` (already checked out; do not switch branches, do not push).
 
 ## 1. Objective

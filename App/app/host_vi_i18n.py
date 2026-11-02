@@ -1553,6 +1553,8 @@ STRINGS: Dict[str, str] = {
     "apartments.chip.calendar": "Lịch",
     "apartments.chip.lock": "Khóa",
     "apartments.chip.fee": "Phí lưu trú",
+    "apartments.phone.ready": "Sẵn sàng đón khách",
+    "apartments.phone.missing": "Thiếu: %(items)s",
     "apartments.chip_state.ok": "xong",
     "apartments.chip_state.bad": "thiếu",
     "apartments.chip_state.off": "không dùng",
