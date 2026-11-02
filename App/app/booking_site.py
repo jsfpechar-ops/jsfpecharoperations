@@ -28,7 +28,6 @@ MAX_PRICE_CZK = 1_000_000
 MAX_GUESTS = 60
 DEFAULT_CUTOFF_HOUR = 18
 DEFAULT_CHECKIN_HOUR = 15
-DEFAULT_CHECKOUT_HOUR = 11
 # The guest terms text shown at checkout (0818); bump when the text changes.
 TERMS_VERSION = "2026-11-01"
 

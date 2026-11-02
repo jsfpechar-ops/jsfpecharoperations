@@ -29,7 +29,6 @@ from .. import (
     alerts,
     ares,
     auth,
-    booking_site,
     celebrations,
     codelists,
     config,
@@ -1753,11 +1752,6 @@ async def apartment_create(request: Request):
         payload["data_controller_entity_id"] = None
     password = _form_str(form, "uby_ws_password")
     payload["uby_ws_password_enc"] = db.encrypt_secret(password) if password else None
-    # 0833: a new property starts at the usual 15:00 / 11:00 unless the host typed hours.
-    if payload.get("checkin_hour") in (None, ""):
-        payload["checkin_hour"] = booking_site.DEFAULT_CHECKIN_HOUR
-    if payload.get("checkout_hour") in (None, ""):
-        payload["checkout_hour"] = booking_site.DEFAULT_CHECKOUT_HOUR
     apartment_id = db.insert("apartment", payload)
     guest_slug.ensure(db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,)))
     db.audit("apartment_created", f"id={apartment_id}")

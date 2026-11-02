@@ -192,18 +192,6 @@ def test_create_with_blank_guest_message_stores_default(host):
     assert row["guest_message"] == host_i18n.STRINGS["en"]["apartment.form.guest_message.default"]
 
 
-def test_a_new_property_starts_at_15_and_11(host):
-    operator = str(_operator_id())
-    response = host.post("/apartments", data=_new_payload(legal_entity_id=operator),
-                         follow_redirects=False)
-    assert response.status_code == 303
-    row = db.query_one(
-        "SELECT checkin_hour, checkout_hour FROM apartment WHERE owner_user_id = ? ORDER BY id DESC LIMIT 1",
-        (_owner_id(),),
-    )
-    assert (row["checkin_hour"], row["checkout_hour"]) == (15, 11)
-
-
 def test_update_with_blank_guest_message_stores_blank(host):
     operator = str(_operator_id())
     created = host.post(
