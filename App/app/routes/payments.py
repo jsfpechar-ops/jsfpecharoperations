@@ -172,6 +172,80 @@ def _host_reply_to(row) -> str:
     return str(entity["contact_email"] or "") if entity else ""
 
 
+_OPEN_CARD = ("draft", "sent", "awaiting_payment")
+
+
+def _own_card_request(request: Request, request_id: int):
+    """The owner's open card request, or None."""
+    row = payment_request.get(request_id)
+    if row is None or int(row["owner_user_id"]) != access.owner_id(request):
+        return None
+    if row["rail"] != "card" or row["status"] not in _OPEN_CARD:
+        return None
+    return row
+
+
+@router.post("/payments/requests/{request_id}/link")
+async def payment_request_link(request: Request, request_id: int):
+    """0761: make (or reuse) the card link without an e-mail, then show the
+    share page. Never redirect this POST off-site (CSP form-action, 0730)."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    row = _own_card_request(request, request_id)
+    if row is None:
+        return _back("/payments", err=_flash(request, "payments.err.invalid"))
+    try:
+        link = payment_links.send(request_id) or ""
+    except stripe_connect.StripeOff:
+        return _back("/payments", err=_flash(request, "payments.err.stripe_off"))
+    if not link:
+        return _back("/payments", err=_flash(request, "payments.err.not_ready"))
+    if row["status"] == "draft":
+        from datetime import date
+
+        payment_request.set_status(request_id, "sent", today=date.today())
+    return RedirectResponse(f"/payments/requests/{request_id}/share", status_code=303)
+
+
+@router.get("/payments/requests/{request_id}/share")
+def payment_request_share(request: Request, request_id: int):
+    """0761: the link, Copy, WhatsApp and e-mail. Reached only after the POST."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    row = _own_card_request(request, request_id)
+    if row is None or not row.get("stripe_payment_link_id"):
+        return _back("/payments", err=_flash(request, "payments.err.invalid"))
+    try:
+        link = payment_links.send(request_id) or ""
+    except stripe_connect.StripeOff:
+        return _back("/payments", err=_flash(request, "payments.err.stripe_off"))
+    if not link:
+        return _back("/payments", err=_flash(request, "payments.err.not_ready"))
+    from urllib.parse import quote
+
+    lang = host_i18n.lang_from_request(request)
+    reason = host_i18n.translate(lang, f"payments.reason.{row['reason']}")
+    message = host_i18n.translate(
+        lang, "payments.share.message", reason=reason, amount=row["amount_czk"], link=link
+    )
+    subject = host_i18n.translate(lang, "payments.share.subject")
+    email = (row.get("guest_email") or "").strip()
+    return render(
+        request,
+        "payments_share.html",
+        {
+            "nav": "payments",
+            "how_key": "payments",
+            "req": row,
+            "link": link,
+            "whatsapp_url": "https://wa.me/?text=" + quote(message),
+            "mailto_url": f"mailto:{quote(email)}?subject={quote(subject)}&body={quote(message)}",
+        },
+    )
+
+
 @router.post("/payments/requests/{request_id}/send")
 async def payment_request_send(request: Request, request_id: int):
     """0435/0436: send the request to the guest (card link or QR page)."""
