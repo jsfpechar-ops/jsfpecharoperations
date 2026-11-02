@@ -2,7 +2,7 @@
 
 Executor: Haiku 5.5. Alone, no subagents. Branch `claude/project-thread-mb7ww2` (PR #729). Do not push, do not merge.
 
-Status: todo
+Status: review
 
 ## 1. Objective
 
