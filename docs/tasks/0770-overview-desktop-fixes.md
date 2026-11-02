@@ -35,6 +35,8 @@ No other file may change.
 3. Links: render "+ Úklid" and "Smazat ukázková data" with the same quiet button style as the other header actions, inside one flex row (`.ov-links`, gap `var(--space-3)`), with a 36 px min height at 1024+ and 44 px below. Delete `.ov-link` rules that become unused. Commit.
 4. "Zobrazit další": add `margin-top:var(--space-3)` between the stats line and the `.needs-you-more` summary card on desktop. Commit.
 5. Security prompt at 768/820: it must sit in normal flow above the content, never fixed under the tab bar; add `padding-bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--space-4))` to the page wrapper if content is hidden behind the bar. Commit.
+6. **Spacing (owner feedback 2026-11-02, screenshot `/mnt/project-files/ux-desktop-audit/josef-dashboard-spacing.png`).** On the empty-account Overview the "Jak to funguje?" button and "+ Úklid" sit tight together, the "Připojit kalendář" button almost touches the "Potřebuje vás" heading, and the empty-state line hugs the help row above it. Use the shared spacing tokens: `gap:var(--space-3)` (12 px) between adjacent buttons/links in a row, `margin-top:var(--space-4)` (16 px) between the help row and the empty-state line, `margin-bottom:var(--space-6)` (24 px) after a button that ends a block before the next h2. No page-local pixel values.
+
 6. **Cache key.** In `App/app/templates/base.html` bump the `app2.css?v=` value (now `20261102-0743`) to `20261102-0770` style: today's date plus this brief number. If you changed `dashboard-calendar.css` or `cleaning.css`, bump the key of that file in the template that links it (`grep -rn "dashboard-calendar.css\|cleaning.css" App/app/templates | head`). Commit.
 
 
@@ -58,6 +60,7 @@ Fixture caveat: the yellow demo banner and "UKÁZKA" sidebar chip appear only be
 - [ ] At 768 and 820 the security prompt's bottom is >= 8 px above the tab bar's top; no overlap.
 - [ ] "+ Úklid" and "Smazat ukázková data" have the same height and font size as the other quiet header buttons (36 px at >= 1024).
 - [ ] Gap between stats line and "Zobrazit další" card >= 12 px at 1280.
+- [ ] Empty-account Overview at 1024/1280/1440: gap between adjacent header buttons/links >= 12 px; gap from help row to the empty-state line >= 16 px; gap from the "Připojit kalendář" button's bottom to the "Potřebuje vás" heading's top >= 24 px (measured with getBoundingClientRect).
 - [ ] mockup browser test: 0 failed, 0 skipped. Screenshots attached.
 
 ## 8. Stop and ask
