@@ -1,4 +1,4 @@
-# 0842 report: address autofill on the property editor
+# 0850 report: address autofill on the property editor
 
 Status: blocked (work done and tested; nothing committed, no PR opened)
 
@@ -8,14 +8,14 @@ Status: blocked (work done and tested; nothing committed, no PR opened)
 - App/app/templates/_ruian_suggest.html (new): script tag only
 - App/app/templates/_property_address_fields.html: macro gets `extra` parameter; street input gets `data-ruian-suggest`
 - App/app/templates/_property_editor.html: includes `_ruian_suggest.html` after the address fields
-- App/app/templates/base.html: app2.css cache key 20261102-0833 to 20261102-0842
-- App/app/static/app2.css: block `/* 0842 address suggest (v2) */`
-- App/tests/test_0842_address_suggest_browser.py (new): 3 tests at 390/768/1280, endpoint mocked with page.route
-- docs/tasks/screenshots-0842/390-suggest-open.png (new)
+- App/app/templates/base.html: app2.css cache key 20261102-0833 to 20261102-0850
+- App/app/static/app2.css: block `/* 0850 address suggest (v2) */`
+- App/tests/test_0850_address_suggest_browser.py (new): 3 tests at 390/768/1280, endpoint mocked with page.route
+- docs/tasks/screenshots-0850/390-suggest-open.png (new)
 
 ## Commands
 
-- `cd App && UBYHOST_SHOTS_0842=<repo>/docs/tasks/screenshots-0842 .venv/bin/python -m pytest tests/test_0842_address_suggest_browser.py tests/test_0833_property_editor_browser.py -q -rs --tb=short -x 2>&1 | tail -30`
+- `cd App && UBYHOST_SHOTS_0850=<repo>/docs/tasks/screenshots-0850 .venv/bin/python -m pytest tests/test_0850_address_suggest_browser.py tests/test_0833_property_editor_browser.py -q -rs --tb=short -x 2>&1 | tail -30`
   Last lines: `4 passed in 29.72s` (0 skipped)
 - `python3 scripts/context_lint.py 2>&1 | tail -30`
   Last lines: `context lint: OK` (WARN lines name other open briefs)

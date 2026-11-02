@@ -1,4 +1,4 @@
-"""0842: address suggestions on the property editor (shared component; the endpoint is mocked with page.route)."""
+"""0850: address suggestions on the property editor (shared component; the endpoint is mocked with page.route)."""
 from __future__ import annotations
 
 import json
@@ -9,8 +9,8 @@ from tests.test_0710_v2_mockup_match_browser import _placeholders, base, dashboa
 from tests.test_0830_airbnb_pages_browser import seeded  # noqa: F401
 from tests.test_0833_property_editor_browser import _open_settings
 
-WIDTHS_0842 = (390, 768, 1280)
-SHOTS = os.environ.get("UBYHOST_SHOTS_0842")
+WIDTHS_0850 = (390, 768, 1280)
+SHOTS = os.environ.get("UBYHOST_SHOTS_0850")
 SEVEN = ("addr_street", "addr_house_no", "addr_orient_no", "addr_zip", "addr_obec", "addr_obec_cast", "addr_okres")
 ITEM = {
     "label": "Vinohradská 12, Praha 2",
@@ -68,14 +68,14 @@ def _cookie_and_apartment(dashboard_rich_host):
     return cookie, _placeholders(dashboard_rich_host)["first_property"]
 
 
-def test_0842_typing_shows_list_and_pick_fills_all_seven(base, dashboard_rich_host, seeded):  # noqa: F811
+def test_0850_typing_shows_list_and_pick_fills_all_seven(base, dashboard_rich_host, seeded):  # noqa: F811
     from playwright import sync_api
 
     cookie, apartment_id = _cookie_and_apartment(dashboard_rich_host)
     problems = []
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
-        for width in WIDTHS_0842:
+        for width in WIDTHS_0850:
             context, page = _open_settings(browser, base, cookie, apartment_id, width)
             _mock(page, [ITEM, OTHER])
             page.locator("#addr_street").fill("Vinohr")
@@ -103,14 +103,14 @@ def test_0842_typing_shows_list_and_pick_fills_all_seven(base, dashboard_rich_ho
     assert not problems, "\n".join(problems)
 
 
-def test_0842_keyboard_moves_escape_closes_enter_picks(base, dashboard_rich_host, seeded):  # noqa: F811
+def test_0850_keyboard_moves_escape_closes_enter_picks(base, dashboard_rich_host, seeded):  # noqa: F811
     from playwright import sync_api
 
     cookie, apartment_id = _cookie_and_apartment(dashboard_rich_host)
     problems = []
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
-        for width in WIDTHS_0842:
+        for width in WIDTHS_0850:
             context, page = _open_settings(browser, base, cookie, apartment_id, width)
             _mock(page, [ITEM, OTHER])
             street = page.locator("#addr_street")
@@ -135,14 +135,14 @@ def test_0842_keyboard_moves_escape_closes_enter_picks(base, dashboard_rich_host
     assert not problems, "\n".join(problems)
 
 
-def test_0842_empty_or_error_leaves_fields_untouched(base, dashboard_rich_host, seeded):  # noqa: F811
+def test_0850_empty_or_error_leaves_fields_untouched(base, dashboard_rich_host, seeded):  # noqa: F811
     from playwright import sync_api
 
     cookie, apartment_id = _cookie_and_apartment(dashboard_rich_host)
     problems = []
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
-        for width in WIDTHS_0842:
+        for width in WIDTHS_0850:
             for body, status in (([], 200), ({"error": "x"}, 500), ({"error": "x"}, 404)):
                 context, page = _open_settings(browser, base, cookie, apartment_id, width)
                 _mock(page, body, status)
