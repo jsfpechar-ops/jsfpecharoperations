@@ -8,7 +8,7 @@ Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 Apply the owner's recurring geometry rules (brief 0775 §5b, owner shots `/mnt/project-files/ux-desktop-audit/josef-geometry-1102/`) on Odeslání (`/submissions`), Faktury (`/invoices`), Domovní kniha (`/housebook`) and Poplatek z pobytu (`/stay-fees`), then bump the cache key and the catalog, then take the screenshots.
 
-## 2. Rules (measure each with Playwright `getBoundingClientRect` at 390, 1024, 1280, 1440 on the rich-host fixture in `App/tests/v2_mockup.py`)
+## 2. Context (rules) (measure each with Playwright `getBoundingClientRect` at 390, 1024, 1280, 1440 on the rich-host fixture in `App/tests/v2_mockup.py`)
 
 1. A help "?" toggle sits on the same line, right next to its title or label (`inline-flex`, `gap:var(--space-2)`), its top within 4 px of the title's top; never below it.
 2. Every text node inside a `.card` is >= 16 px (`var(--space-4)`) from each card edge.
@@ -28,6 +28,10 @@ Apply the owner's recurring geometry rules (brief 0775 §5b, owner shots `/mnt/p
 4. Catalog: add the missing classes; run the lint test.
 5. Screenshots (rich-host fixture, full page): `docs/tasks/screenshots-0790/<page>-390.png` and `<page>-1280.png` for submissions, invoices, housebook, stay-fees (8 files, overwrite old ones). Look at each once.
 
+## 5. Do not touch
+
+Anything outside §3. No new dependency, colour or JS.
+
 ## 6. Commands (from `App/`, each `2>&1 | tail -30`)
 
 1. `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py -k "invoices or housebook or submissions or stay_fees" -q -rs --tb=short`
@@ -40,6 +44,10 @@ Apply the owner's recurring geometry rules (brief 0775 §5b, owner shots `/mnt/p
 - [ ] Commands 1-3: 0 failed, 0 skipped.
 - [ ] 8 screenshots saved.
 
-## 8. Stop and ask / 9. Report
+## 8. Stop and ask
 
-Blocked if a fix fails twice, a file outside §3 needs a change, or 30 tool calls. Report `docs/tasks/0798-report.md`, 400 tokens at most. Do not commit or push.
+Blocked if a fix fails twice, a file outside §3 needs a change, or 30 tool calls.
+
+## 9. Report
+
+Report `docs/tasks/0798-report.md`, 400 tokens at most. Do not commit or push.

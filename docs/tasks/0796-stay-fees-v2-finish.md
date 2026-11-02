@@ -35,6 +35,10 @@ No other file. Another executor edits other app2.css blocks and other tests at t
 3. Fix the old stay-fee test entries (§3).
 4. Screenshots: `UBYHOST_SHOTS...` if the test supports it, otherwise a scratchpad Playwright snippet with the rich-host fixture: `docs/tasks/screenshots-0790/stay-fees-390.png` and `stay-fees-1280.png`.
 
+## 5. Do not touch
+
+Anything outside §3. No new dependency, colour or JS.
+
 ## 6. Commands (from `App/`, each `2>&1 | tail -30`)
 
 1. `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py -k stay_fees -q -rs --tb=short`
