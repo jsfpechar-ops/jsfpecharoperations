@@ -38,20 +38,23 @@ Current places (grep `brush-cleaning`, `i-brush` and `M14 4l6 6` to confirm):
 | docs/tasks/screenshots-0811/ | new | 4 PNGs, step 5 |
 | docs/tasks/0811-report.md | new | report |
 
-No other file may change. No CSS change (the existing `.nav svg`, `.ui-icon` and `.list.plain .row > svg` rules already style it).
 
 ## 4. Steps
 
 1. From `App/`: `python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt -r requirements-dev.txt 2>&1 | tail -3`. Do not commit `.venv` (check `git status` before each commit).
 2. Make the edits in §3. Afterwards `grep -rn "brush-cleaning\|M14 4l6 6" App docs/design | head` must print nothing.
 3. Commit `0811: sparkles cleaning icon everywhere`.
-4. Run §5 tests. On a failure, fix only what this task changed; if the failure is unrelated to the icon, write it in the report and go on.
+4. Run §6 tests. On a failure, fix only what this task changed; if the failure is unrelated to the icon, write it in the report and go on.
 5. Screenshots: from `App/` run
    `UBYHOST_SHOTS_V2=1 PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py -q --tb=short -k screenshots 2>&1 | tail -5`
    then copy from `docs/tasks/screenshots-0710/`: `cleaning-1440.png`, `cleaning-390.png`, `menu-390.png`, `menu-1024.png` into `docs/tasks/screenshots-0811/`. Then `git restore docs/tasks/screenshots-0710` and `git clean -fdq docs/tasks/screenshots-0710` so no 0710 PNG changes.
 6. Write the report, commit `0811: report and screenshots`. Do not push.
 
-## 5. Tests
+## 5. Do not touch
+
+Any file not in §3, including `App/app/static/app2.css` (the existing `.nav svg`, `.ui-icon` and `.list.plain .row > svg` rules already style the icon).
+
+## 6. Commands
 
 From `App/`:
 ```
@@ -59,12 +62,16 @@ PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=1 .venv/bin/py
 ```
 0 skipped. From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -5`.
 
-## 6. Report
+## 7. Acceptance
+
+- No `brush-cleaning` or hand-drawn broom left in App/ or docs/design/.
+- §6 green, 0 skipped.
+- 4 screenshots in docs/tasks/screenshots-0811/ show the sparkles icon.
+
+## 8. Stop and ask
+
+A test fails for a reason the icon cannot explain, or a file outside §3 seems to need a change.
+
+## 9. Report
 
 `docs/tasks/0811-report.md`: Status: review, changed files, test command tails, screenshot paths, deviations.
-
-## 7. Done when
-
-- [ ] No `brush-cleaning` or hand-drawn broom left in App/ or docs/design/.
-- [ ] §5 green, 0 skipped.
-- [ ] 4 screenshots in docs/tasks/screenshots-0811/ show the sparkles icon.
