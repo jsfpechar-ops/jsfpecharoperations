@@ -161,9 +161,10 @@ def test_stays_guest_link_copy_is_status_independent_and_token_guarded(stay_acti
         "reported": "reported", "failed": "failed", "preview": "demo_preview",
         "scheduled": "ready_scheduled",
     }
+    # v2 pills (v2_status_pill): p-ok reported, p-bad failed or overdue, p-warn needs attention, p-n neutral
     expected_tones = {
-        "waiting": "teal", "incomplete": "amber", "ready": "blue",
-        "reported": "green", "failed": "red", "preview": "grey", "scheduled": "blue",
+        "waiting": "p-warn", "incomplete": "p-warn", "ready": "p-warn",
+        "reported": "p-ok", "failed": "p-bad", "preview": "p-n", "scheduled": "p-warn",
     }
     with sync_api.sync_playwright() as playwright:
         browser = _browser(playwright)
@@ -184,9 +185,15 @@ def test_stays_guest_link_copy_is_status_independent_and_token_guarded(stay_acti
                 for key, reservation_id in valid_ids.items():
                     row = _stay_row(page, stay_actions_base, locale, reservation_id)
                     assert row.count() == 1
-                    status_pill = row.locator("td.stay-col-reporting [data-tone]")
+                    if width < 1024:
+                        # phone: grouped rows with the pill; the row menu and the copy action live on the stay page (compact phone rule)
+                        phone_row = page.locator(f'.stays-phone a.row[href^="/reservations/{reservation_id}?"]')
+                        assert phone_row.is_visible() and phone_row.locator(".pill").count() == 1, key
+                        continue
+                    status_pill = row.locator("td[data-card='badge'] .pill")
                     assert status_pill.count() == 1
-                    assert status_pill.get_attribute("data-tone") == expected_tones[key], (key, expected_statuses[key], status_pill.get_attribute("data-tone"))
+                    tone = status_pill.get_attribute("class")
+                    assert expected_tones[key] in tone.split() or ("p-bad" in tone.split()), (key, expected_statuses[key], tone)
                     copy = row.locator('button[data-copy]')
                     assert copy.count() == 1, f"Copy missing on {key} ({expected_statuses[key]}) {locale}/{width}"
                     source_id = copy.get_attribute("data-copy")
@@ -200,14 +207,16 @@ def test_stays_guest_link_copy_is_status_independent_and_token_guarded(stay_acti
                 assert no_token.locator('button[data-copy]').count() == 0
                 assert no_token.locator('a[href^="/l/"][target="_blank"]').count() == 0
 
+                if width < 1024:
+                    continue
                 ready_row = _stay_row(page, stay_actions_base, locale, stay_actions_host["ids"]["ready"])
                 assert ready_row.locator(".row-action-send").count() == 0  # 0137: rows have the menu only
                 copy = ready_row.locator('button[data-copy]')
                 trigger = ready_row.locator(".row-menu-trigger")
                 assert copy.is_hidden()
-                assert ready_row.locator(".row-open").count() == 1  # 0252: visible Open cue
+                assert ready_row.locator("td a.stay-identity-link").count() == 1  # v2: the guest name opens the stay (no separate Open cue in the mockup)
                 boxes = [trigger.bounding_box()]
-                expected_height = 44 if width <= 390 else 40
+                expected_height = 24  # v2 desk "···" menu: WCAG 2.5.8 minimum
                 assert all(box["height"] >= expected_height - 1 for box in boxes), boxes
                 assert all(abs(box["height"] - expected_height) <= 1 for box in boxes), boxes
                 # 0091: actions wrap as whole controls when the lane is narrow, so
@@ -218,7 +227,7 @@ def test_stays_guest_link_copy_is_status_independent_and_token_guarded(stay_acti
                                     or a["y"] + a["height"] <= b["y"] + 1 or b["y"] + b["height"] <= a["y"] + 1)
                         assert separate, boxes
                 assert all(box["x"] >= -1 and box["x"] + box["width"] <= width + 1 for box in boxes), boxes
-                if locale == "en" and width == 360:
+                if locale == "en" and width == 1280:
                     ready_source = page.locator(f"#{copy.get_attribute('data-copy')}")
                     ready_link = ready_row.locator('a[href^="/l/"][target="_blank"]').get_attribute("href")
                     page.evaluate("window.scrollTo(0, 0)")

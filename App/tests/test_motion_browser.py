@@ -140,7 +140,7 @@ def test_pages_without_javascript_stay_still(wide_host, wide_base):
         assert page.locator(".ui-how-body").is_visible()
         page.locator('.ui-nav a[href="/reservations"]').click()
         page.wait_for_url("**/reservations**")
-        page.locator(".ui-nav a[href='/']").click()
+        page.locator("a.nav[href='/']").click()  # /reservations is the v2 shell (0528)
         page.wait_for_url(wide_base + "/")
         context.close()
         browser.close()

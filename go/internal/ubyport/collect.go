@@ -392,6 +392,9 @@ func isWorkingDay(d time.Time) bool {
 	return d.Weekday() != time.Saturday && d.Weekday() != time.Sunday
 }
 
+// ParseStoredUTC is parseStoredUTC for the calendar (reporting._as_utc).
+func ParseStoredUTC(v string) (time.Time, bool) { return parseStoredUTC(v) }
+
 // parseStoredUTC is reporting._as_utc: a naive stored timestamp reads as UTC.
 func parseStoredUTC(v string) (time.Time, bool) {
 	layouts := []string{

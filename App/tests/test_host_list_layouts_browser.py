@@ -49,7 +49,7 @@ def test_dashboard_and_stays_share_compact_row_menu(
         for locale in ("en", "cs"):
             for width in WIDTHS:
                 for name, url, cookie, selector in (
-                    ("stays", stay_actions_base, stay_cookie, ".stays-view tbody tr"),
+                    ("stays", stay_actions_base, stay_cookie, ".stays-desk tbody tr"),
                 ):
                     context = browser.new_context(viewport={"width": width, "height": 900})
                     context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": url + "/"}])
@@ -73,11 +73,11 @@ def test_dashboard_and_stays_share_compact_row_menu(
         browser.close()
 
 
-ONE_LINE = """() => [...document.querySelectorAll('.stays-view tbody tr')].map(tr => {
+ONE_LINE = """() => [...document.querySelectorAll('.stays-desk tbody tr')].map(tr => {
   const one = el => { if (!el) return true; const lh = parseFloat(getComputedStyle(el).lineHeight) || parseFloat(getComputedStyle(el).fontSize) * 1.3;
     const r = el.getBoundingClientRect(); return r.height <= lh * 1.4 + 12; };
-  return {pill: one(tr.querySelector('.stay-col-reporting [data-tone]')), deadline: one(tr.querySelector('.stay-report-deadline [data-deadline]')),
-          height: tr.getBoundingClientRect().height, name: tr.querySelector('.property-identity').textContent.trim().length,
+  return {pill: one(tr.querySelector('td .pill')), deadline: one(tr.querySelector('td small')),
+          height: tr.getBoundingClientRect().height, name: tr.querySelector('td a').textContent.trim().length,
           send: !!tr.querySelector('.row-action-form')};
 })"""
 
