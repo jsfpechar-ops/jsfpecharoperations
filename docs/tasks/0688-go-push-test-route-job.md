@@ -1,5 +1,5 @@
 # 0688: Go push test route and push job kind
-Status: todo
+Status: review
 Depends on: 0687 | Base commit: task/0683-go-push-sender | Branch: task/0683-go-push-sender (worktree /tmp/wt0683)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 70k tokens
 ## 1. Objective

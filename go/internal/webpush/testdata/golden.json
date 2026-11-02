@@ -1,0 +1,14 @@
+{
+  "ua_private": "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20",
+  "ua_public": "04515c3d6eb9e396b904d3feca7f54fdcd0cc1e997bf375dca515ad0a6c3b4035f4536be3a50f318fbf9a5475902a221502bef0d57e08c53b2cc0a56f17d9f9354",
+  "auth_secret": "c8c9cacbcccdcecfd0d1d2d3d4d5d6d7",
+  "as_private": "65666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f8081828384",
+  "salt": "32333435363738393a3b3c3d3e3f4041",
+  "vapid_private": "0708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20212223242526",
+  "payload": "{\"message\": \"Čau é\", \"url\": \"/x\", \"tag\": \"t\", \"lang\": \"cs\"}",
+  "endpoint": "https://push.example.net/send/abc123",
+  "subject": "mailto:ops@example.org",
+  "now": 1767225600,
+  "body": "32333435363738393a3b3c3d3e3f4041000010004104254ee6d1bad1c74ce2fd28ac529a166af4950a0e3da0bc53d96bf40dce38ebe7df5937f11e869d453729a222f63e709d0740b97544e1416b1e5a401b385fb95091e33d0b2dfb17d1043fce57693c8c6fe5f4b9647178c2aa34f01f7ebe32c3aec759699c325e31d985dbe6cb97a629747863b0a09191c63d70eb04b512ce20f295d8bcd85ccb58e2152f428a018f",
+  "vapid_authorization": "vapid t=eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJhdWQiOiJodHRwczovL3B1c2guZXhhbXBsZS5uZXQiLCJleHAiOjE3NjcyNjg4MDAsInN1YiI6Im1haWx0bzpvcHNAZXhhbXBsZS5vcmcifQ.xxd2wswLqkdtcsk_z6d3f-A-TewU53MhUj4sXop8XMW2llwXI4e24Y8dwnYk9Ky4KvApQhhnonCl5F3NTcUshA, k=BKKOONyrFom5wvQTFBk5QW_qncyOatdqihNCK7TBHm4yaVsaDRQAM-fg6qVjT7Xm02vu3LxnrT7rWot_R3pZv9o"
+}

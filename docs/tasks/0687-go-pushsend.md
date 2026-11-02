@@ -1,5 +1,5 @@
 # 0687: Go push delivery (pushsend) with DB tests
-Status: todo
+Status: review
 Depends on: 0683 steps 1-2 (commit 4a34744, go/internal/webpush) | Base commit: task/0683-go-push-sender | Branch: task/0683-go-push-sender (worktree /tmp/wt0683)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 80k tokens
 ## 1. Objective
