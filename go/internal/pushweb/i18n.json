@@ -1,0 +1,26 @@
+{
+ "cs": {
+  "flash.push.device_removed": "Toto zařízení už upozornění nedostává.",
+  "flash.push.signed_out": "Přihlaste se znovu a zkuste to ještě jednou.",
+  "passkeys.default_name": "Přístupový klíč",
+  "push.error.failed": "Upozornění se nepodařilo zapnout. Zkuste to znovu.",
+  "push.error.signed_out": "Přihlaste se znovu a zkuste to ještě jednou.",
+  "push.error.too_many": "Upozornění už máte na 10 zařízeních. Nejdřív jedno níže odeberte."
+ },
+ "en": {
+  "flash.push.device_removed": "That device no longer gets alerts.",
+  "flash.push.signed_out": "Log in again, then try once more.",
+  "passkeys.default_name": "Passkey",
+  "push.error.failed": "Could not turn on alerts. Try again.",
+  "push.error.signed_out": "Log in again, then try once more.",
+  "push.error.too_many": "Alerts are on for 10 devices already. Remove one below first."
+ },
+ "vi": {
+  "flash.push.device_removed": "Thiết bị đó sẽ không nhận cảnh báo nữa.",
+  "flash.push.signed_out": "Hãy đăng nhập lại rồi thử lần nữa.",
+  "passkeys.default_name": "Passkey",
+  "push.error.failed": "Không bật được cảnh báo. Hãy thử lại.",
+  "push.error.signed_out": "Hãy đăng nhập lại rồi thử lần nữa.",
+  "push.error.too_many": "Cảnh báo đã bật trên 10 thiết bị. Hãy gỡ bớt một thiết bị bên dưới trước."
+ }
+}

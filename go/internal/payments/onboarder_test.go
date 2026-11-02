@@ -169,7 +169,7 @@ func TestStripeOnboarderLinksAndReturn(t *testing.T) {
 	ob := newOnboarder(pool, onboardEnv("test", onboardTestKey, nil), fake)
 
 	// Return before any account exists.
-	if err := ob.HandleReturn(ctx, 3); !errors.Is(err, ErrNoAccount) {
+	if _, err := ob.HandleReturn(ctx, 3); !errors.Is(err, ErrNoAccount) {
 		t.Errorf("return without row: got %v, want ErrNoAccount", err)
 	}
 
@@ -269,7 +269,7 @@ func TestStripeOnboarderLinksAndReturn(t *testing.T) {
 	fake.set(0, map[string]any{
 		"id": "acct_test1", "charges_enabled": true, "payouts_enabled": true, "requirements": map[string]any{},
 	})
-	if err := ob.HandleReturn(ctx, 1); err != nil {
+	if _, err := ob.HandleReturn(ctx, 1); err != nil {
 		t.Fatal(err)
 	}
 	last := fake.requests()[3]
