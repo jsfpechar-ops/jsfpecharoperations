@@ -1,4 +1,4 @@
-# 0833 Setup wizard speed: baseline + RÚIAN lookup (scope narrowed)
+# 0834 Setup wizard speed: baseline + RÚIAN lookup (scope narrowed)
 
 **Scope now (coordinator, 18:04): do NOT edit any wizard template, wizard route, `property_setup.py`, CSS or wizard JS.** Josef's own wizard threads and PR #702 are in flight. Only: section A (baseline script + report) and section D backend (`ruian.py`, endpoint, tests, env doc). Sections B, C and the JS/UI part of D are the follow-up plan, parked until Josef names the wizard threads to align with.
 
@@ -9,7 +9,7 @@ Stacked on PR #702 (wizard restyle). Do not restyle; reuse the existing v2 class
 Today a host passes 8 steps (property, calendar, police, automation, stay_fee, door_lock, guest_link, try_it). Target: 4 required steps and about half the taps and typed fields. UbyPort filing correctness beats speed: nothing legal is auto-saved; every fill is a suggestion the host confirms.
 
 ## A. Baseline first
-Before any change write `App/tests/wizard_taps.py` (plain pytest, TestClient) that walks the wizard via `wizard_walk.py` with the cheapest answers and prints/asserts: number of steps visited, number of form fields marked required or empty-to-fill on each, number of POSTs. Record the "before" numbers in `docs/tasks/0833-report.md`, then the "after" numbers. Baseline only for now: no after-numbers, no halving assertion.
+Before any change write `App/tests/wizard_taps.py` (plain pytest, TestClient) that walks the wizard via `wizard_walk.py` with the cheapest answers and prints/asserts: number of steps visited, number of form fields marked required or empty-to-fill on each, number of POSTs. Record the "before" numbers in `docs/tasks/0834-report.md`, then the "after" numbers. Baseline only for now: no after-numbers, no halving assertion.
 
 ## B. Fewer steps (PARKED, do not build)
 1. `STEPS` becomes: property, calendar, police, guest_link. (`TOTAL_STEPS` follows.)
@@ -32,6 +32,6 @@ Before any change write `App/tests/wizard_taps.py` (plain pytest, TestClient) th
 
 ## E. Tests and evidence
 - Run only: `tests/test_ares.py`, `tests/test_onboarding*.py`, `tests/test_wizard_*.py`, `tests/test_design_setup_wizard_browser.py`, `tests/test_0800_v2_remaining_pages_browser.py`, the new tests, and `tests/test_static_versions.py` (rewrite with `--write` after bumping the app2.css/js cache key). Browser tests at 320/390/768/1024/1280/1440, 0 skipped, geometry rules (12 px gaps, targets 44 px).
-- Screenshots 390 and 1280 of: property step with suggestions open, police step with automation cards, done page with "Do next" cards -> `docs/tasks/screenshots-0833/`.
+- Screenshots 390 and 1280 of: property step with suggestions open, police step with automation cards, done page with "Do next" cards -> `docs/tasks/screenshots-0834/`.
 - `python3 scripts/context_lint.py` from repo root.
-- Do not commit; do not stage `docs/tasks/*evidence*`. Write `docs/tasks/0833-report.md` (before/after numbers, tests run, anything skipped).
+- Do not commit; do not stage `docs/tasks/*evidence*`. Write `docs/tasks/0834-report.md` (before/after numbers, tests run, anything skipped).
