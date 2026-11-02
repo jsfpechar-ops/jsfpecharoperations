@@ -17,7 +17,7 @@
 <div class="invoices-page">
 <div class="head stays-head"><div class="head-title-row"><h1 class="big">{{ t('invoices.title') }}</h1>
 <details class="ui-how stays-how ph-hide" data-how="invoices">
-  <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
+  <summary class="ui-how-toggle" aria-label="{{ t('how.toggle') }}">{{ icon('circle-help', 16) }}</summary>
   <div class="ui-how-body">
     <ol class="ui-how-steps">{% for n in (1, 2, 3) %}<li>{{ t('how.invoices.' ~ n) }}</li>{% endfor %}</ol>
     <a class="ui-how-more" href="/guide#invoices">{{ t('how.more') }}</a>
@@ -76,7 +76,7 @@
 {% if filter_active %}
 {{ empty_state(t('filter.no_results'), '', filter_reset_href, t('filter.reset'), primary=false) }}
 {% else %}
-{{ empty_state(t('invoices.empty_title'), t('invoices.empty'), '/invoices/new', t('invoice.new'), primary=false) }}
+{{ empty_state(t('invoices.empty_title')) }}
 {% endif %}
 {% endif %}
 </div>

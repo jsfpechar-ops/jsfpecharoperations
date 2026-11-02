@@ -1,6 +1,6 @@
 # 0818: Records pages: collapsed filter panel, "?" help icon, no duplicate empty-state button
 
-Status: todo
+Status: review
 Depends on: 0816 (in checkout) | Branch: claude/project-thread-v4nqi5 (main checkout, do NOT commit; the orchestrator commits)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

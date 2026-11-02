@@ -1373,7 +1373,6 @@ STRINGS: Dict[str, str] = {
     "stay.detail.guests.add_by_hand": "Tự thêm",
     "stay.detail.money.title": "Thanh toán",
     "invoices.title": "Hóa đơn",
-    "invoices.empty": "Xuất hóa đơn khi lượt lưu trú cần chứng từ.",
     "invoices.empty_title": "Chưa có hóa đơn",
     "invoices.col.number": "Số",
     "invoices.col.date": "Ngày xuất",

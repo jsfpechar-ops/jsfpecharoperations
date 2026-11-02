@@ -11,12 +11,12 @@
 {% block primary_action %}{% endblock %}
 {% block secondary_actions %}{% endblock %}
 {% block tabs %}{% endblock %}
-{% block toolbar %}<div class="stay-fees-toolbar">{% include "_list_filter.html" %}</div>{% endblock %}
+{% block toolbar %}{% endblock %}
 {% block body %}
 <div class="stay-fees-page">
 <div class="head stays-head"><div class="head-title-row"><h1 class="big">{{ t('stay_fees.title') }}</h1>
 <details class="ui-how stays-how ph-hide" data-how="stay_fees">
-  <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
+  <summary class="ui-how-toggle" aria-label="{{ t('how.toggle') }}">{{ icon('circle-help', 16) }}</summary>
   <div class="ui-how-body">
     <p id="fee-list-email">{{ t('stay_fees.list.email_on' if stay_fee_emails else 'stay_fees.list.email_off') }}</p>
     <p>{% if apartment is defined and apartment and apartment.stay_fee_authority_databox %}{{ t('stay_fees.pay.send_to', databox=apartment.stay_fee_authority_databox) }}{% else %}{{ t('stay_fees.pay.send') }}{% endif %}</p>
@@ -25,6 +25,7 @@
   </div>
 </details>
 </div><div class="stays-head-actions">{% for href, key, current in page_tabs() %}{% if not current and key != 'nav.invoices' %}<a class="btn ghost" href="{{ href }}">{{ t(key) }}</a>{% endif %}{% endfor %}<a class="btn ghost" href="/settings#settings-stay-fee-emails">{{ t('stay_fees.list.email_change') }}</a></div></div>
+<div class="stay-fees-toolbar">{% include "_list_filter.html" %}</div>
 {% if periods %}
 {% set pay_rows = periods | rejectattr('unset') | list %}
 {% for period in pay_rows %}
