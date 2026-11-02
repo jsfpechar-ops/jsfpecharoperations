@@ -51,10 +51,22 @@ SELECTOR_ALIASES = {".actbar": ".bar", ".actbar .btn": ".bar .btn", ".head h1": 
 BOX_PROPS = ("width", "height", "margin-top", "margin-right", "margin-bottom", "margin-left")
 # phone box departure: the 20 px side room comes from body.v2 .main padding, so phone cards have no side margin (2026-11-01)
 BOX_OVERRIDES = {
+    # text-dependent: the head text column is as wide as the lede copy on phones (0791)
+    "submissions:.mh .big, .head h1@320": {"width": "280px"},
+    "submissions:.mh .big, .head h1@390": {"width": "350px"},
     # text-dependent: fixture copy vs phone v2 mockup demo copy (0729)
     # text-dependent: app copy vs phone v2 mockup demo copy (0735)
     ".mh .big@320": {"width": "79.3594px"},
     ".mh .big@390": {"width": "79.3594px"},
+    # text-dependent: the Faktury h1 is longer than the mockup's demo title (0792)
+    "invoices:.mh .big, .head h1@320": {"width": "118.984px"},
+    "invoices:.mh .big, .head h1@390": {"width": "118.984px"},
+    # text-dependent: the register title and guest names are longer than the mockup demo copy (0793)
+    "housebook:.mh .big, .head h1@320": {"width": "167.469px"},
+    "housebook:.mh .big, .head h1@390": {"width": "167.469px"},
+    "housebook:.stay .in b@320": {"width": "119.422px"},
+    "housebook:.stay .in b@390": {"width": "119.422px"},
+    "housebook:.stay .in small@390": {"width": "210px"},
     # text-dependent: app copy vs phone v2 mockup demo copy (0740)
     ".prop .in b@320": {"width": "93.0469px"},
     ".prop .in b@390": {"width": "93.0469px"},
@@ -267,6 +279,9 @@ PAGES = [
             ".row .t small": "payment rows have no subtitle in the current copy; the mockup subtitles are demo copy",
         },
     },
+    {"name": "submissions", "path": "/submissions", "view": "stays", "phone_view": "pobyty", "phone_mockup": PHONE_MOCKUP_V2, "selectors": [".head h1", ".head .btn.ghost", "main table th", "main table td"], "phone_selectors": [".tabs", ".tab.on", ".mh .big, .head h1", ".card.stay", ".sav", ".stay .in b", ".stay .in small"], "missing_ok": {"main table th": "the rich test host has no police submission, so the table is absent", "main table td": "the rich test host has no police submission, so the table is absent", ".card.stay": "the phone card list shows only after a submission; the rich test host has none", ".sav": "the phone card list shows only after a submission; the rich test host has none", ".stay .in b": "the phone card list shows only after a submission; the rich test host has none", ".stay .in small": "the phone card list shows only after a submission; the rich test host has none"}},
+    {"name": "invoices", "path": "/invoices", "view": "stays", "phone_view": "pobyty", "phone_mockup": PHONE_MOCKUP_V2, "selectors": [".head h1", ".head .btn", ".head .btn.ghost", "main table th", "main table td"], "phone_selectors": [".tabs", ".tab.on", ".mh .big, .head h1", ".stays-add", ".card.stay", ".sav", ".stay .in b", ".stay .in small"], "missing_ok": {".tab.on": "the page has no section tab strip (owner rule; invoice settings is a head button)", "main table th": "fixture has no invoice", "main table td": "fixture has no invoice", ".card.stay": "fixture has no invoice", ".sav": "fixture has no invoice", ".stay .in b": "fixture has no invoice", ".stay .in small": "fixture has no invoice"}},
+    {"name": "housebook", "path": "/housebook", "view": "stays", "phone_view": "pobyty", "phone_mockup": PHONE_MOCKUP_V2, "selectors": [".head h1", ".head .btn.ghost", "main table th", "main table td", "main .pill.p-ok", "main .pill.p-warn"], "phone_selectors": [".tabs", ".tab.on", ".mh .big, .head h1", ".card.stay", ".sav", ".stay .in b", ".stay .in small"], "missing_ok": {"main .pill.p-ok": "tone depends on data", "main .pill.p-warn": "tone depends on data"}},
 ]
 
 

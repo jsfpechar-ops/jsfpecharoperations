@@ -1031,10 +1031,33 @@ body.v2 .fields-wrap .copyrow > .btn.sm{min-height:48px}
 body.v2 .fields-wrap .copyrow > .btn.sm{vertical-align:middle}
 body.v2 section#stay-fee-settings > fieldset.signature-block{grid-column:1/-1}
 /* 0791 submissions v2 (start) */
+body.v2 .submissions-page .ui-empty .ui-btn{display:inline-flex;align-items:center;min-height:44px}
 /* 0791 submissions v2 (end) */
 /* 0792 invoices v2 (start) */
+@media (max-width:1023px){body.v2 .invoices-page .ui-btn,body.v2 .invoices-page .month-step,body.v2 .invoices-page .filters input[type=month]{min-height:44px;min-width:44px;height:auto}}
+body.v2 .invoices-page input[type=month]{min-height:40px;box-sizing:border-box;padding:9px 10px;border:1px solid #dcdcd7;border-radius:8px;font:inherit}
+body.v2 .invoices-page .ui-empty .ui-btn{display:inline-flex;align-items:center;min-height:44px}
 /* 0792 invoices v2 (end) */
 /* 0793 housebook v2 (start) */
+body.v2 .housebook-page{min-width:0;max-width:100%;width:100%;contain:inline-size;color:var(--ink)}
+body.v2 .housebook-page .housebook-scroll{min-width:0;max-width:100%;position:relative}
+body.v2 .housebook-page .stays-head-actions{align-items:center}
+body.v2 .housebook-page .stays-head-actions .btn,body.v2 .housebook-page .stays-head-actions .row-menu-trigger,body.v2 .housebook-page .filter-toggle{min-height:44px}
+body.v2 .housebook-page .filter-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:0 0 12px}
+body.v2 .housebook-page .filter-applied-summary{margin:0;font-size:14px;color:var(--ink3)}
+body.v2 .housebook-page #housebook-filter-panel{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 16px;padding:16px;margin:0 0 16px}
+body.v2 .housebook-page #housebook-filter-panel[hidden],body.v2 .housebook-page #housebook-filter-panel.is-collapsed{display:none}
+body.v2 .housebook-page .filter-fields{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;flex:1 1 auto;min-width:0}
+body.v2 .housebook-page .filter-fields .ui-field{min-width:160px}
+body.v2 .housebook-page .filter-fields label{display:block;font-size:12px;color:var(--ink2);margin-bottom:4px}
+body.v2 .housebook-page .filter-fields select,body.v2 .housebook-page .filter-fields input:not([type=hidden]){min-height:36px;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+body.v2 .housebook-page .filter-panel-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+body.v2 .housebook-page .housebook-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;background-color:white;background-image:linear-gradient(90deg,white 30%,rgba(255,255,255,0)),linear-gradient(270deg,white 30%,rgba(255,255,255,0)),linear-gradient(90deg,rgba(0,0,0,.12),rgba(0,0,0,0)),linear-gradient(270deg,rgba(0,0,0,.12),rgba(0,0,0,0));background-position:left center,right center,left center,right center;background-repeat:no-repeat;background-size:40px 100%,40px 100%,14px 100%,14px 100%;background-attachment:local,local,scroll,scroll}
+body.v2 .housebook-page .housebook-table{width:max-content;min-width:100%;border-collapse:collapse}
+body.v2 .housebook-page .housebook-table td{border-bottom-color:var(--line)}
+body.v2 .housebook-page .housebook-table .pill{white-space:nowrap;display:inline-block}
+body.v2 .housebook-page .housebook-table .col-reported small{display:block;margin-top:4px;color:var(--ink3);font-size:12px}
+body.v2 .housebook-page .housebook-table .row-actions{white-space:nowrap}
 /* 0793 housebook v2 (end) */
 /* cleaning (0542) */
 body.v2 .cleaning-page{width:100%;max-width:1080px;min-width:0;margin:0 auto;color:var(--ink)}
