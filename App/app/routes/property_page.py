@@ -357,6 +357,35 @@ def property_page_ical(request: Request, slug: str, token: str):
     )
 
 
+@router.get("/p/{slug}/b/{booking_id}/{token}/invoice.pdf")
+def booking_invoice_pdf(request: Request, slug: str, booking_id: int, token: str):
+    """0820: the guest's invoice, by the signed booking link. 404 for anything else."""
+    from .. import booking_invoice
+
+    scope = "booking_invoice"
+    key = rate_limit.client_key(request, scope)
+    if rate_limit.blocked(scope, key, _RATE_MAX, _RATE_WINDOW):
+        return PlainTextResponse("slow down", status_code=429)
+    rate_limit.record(scope, key)
+    if not booking_site.token_ok(booking_id, token):
+        return Response(status_code=404)
+    invoice_id = booking_invoice.ensure(booking_id)
+    if invoice_id is None:
+        return Response(status_code=404)
+    from .. import invoices
+
+    number = db.query_one("SELECT number FROM invoice WHERE id = ?", (invoice_id,))["number"]
+    return Response(
+        invoices.download_pdf(invoice_id),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="faktura-{number}.pdf"',
+            "Cache-Control": "no-store",
+            "X-Robots-Tag": "noindex",
+        },
+    )
+
+
 @router.get("/p/{slug}/thanks")
 def property_page_thanks(request: Request, slug: str):
     """Stripe's success_url. Shows no booking data: the confirmation e-mail
