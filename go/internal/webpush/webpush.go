@@ -5,6 +5,7 @@ package webpush
 
 import (
 	"bytes"
+	"context"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/ecdh"
@@ -36,6 +37,34 @@ const (
 
 // ErrTransport means the push service could not be reached (Python TransportError).
 var ErrTransport = errors.New("webpush: transport error")
+
+// PushHosts are the push services browsers subscribe with (push.py PUSH_HOST_SUFFIXES).
+var PushHosts = []string{
+	"fcm.googleapis.com",
+	"push.services.mozilla.com",
+	"push.apple.com",
+	"notify.windows.com",
+}
+
+// EndpointAllowed is the save-time and send-time endpoint rule (push.py
+// clean_subscription): https, no userinfo, default port only, and a host that
+// is one of PushHosts or a subdomain of one.
+func EndpointAllowed(raw string) bool {
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme != "https" || u.User != nil {
+		return false
+	}
+	if port := u.Port(); port != "" && port != "443" {
+		return false
+	}
+	host := strings.ToLower(u.Hostname())
+	for _, suffix := range PushHosts {
+		if host == suffix || strings.HasSuffix(host, "."+suffix) {
+			return true
+		}
+	}
+	return false
+}
 
 // B64URL encodes without padding, as Python's b64url does.
 func B64URL(data []byte) string {
@@ -192,7 +221,7 @@ func marshalNoHTMLEscape(s string) (string, error) {
 
 // Send encrypts payload and POSTs it to the push service. It returns the HTTP
 // status. A network failure is ErrTransport. Redirects are not followed.
-func Send(client *http.Client, endpoint string, uaPublic, authSecret, payload []byte,
+func Send(ctx context.Context, client *http.Client, endpoint string, uaPublic, authSecret, payload []byte,
 	key *ecdsa.PrivateKey, subject string, ttl int, urgency string, now time.Time) (int, error) {
 	parts, err := url.Parse(endpoint)
 	if err != nil {
@@ -206,7 +235,7 @@ func Send(client *http.Client, endpoint string, uaPublic, authSecret, payload []
 	if err != nil {
 		return 0, err
 	}
-	req, err := http.NewRequest(http.MethodPost, endpoint, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
 	if err != nil {
 		return 0, ErrTransport
 	}

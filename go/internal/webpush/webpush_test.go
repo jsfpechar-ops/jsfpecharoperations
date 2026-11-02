@@ -2,6 +2,7 @@ package webpush
 
 import (
 	"bytes"
+	"context"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/ecdh"
@@ -219,7 +220,7 @@ func TestSendHeaders(t *testing.T) {
 	defer srv.Close()
 	key, _ := NewPrivateKey()
 	ua, _ := NewPrivateKey()
-	status, err := Send(srv.Client(), srv.URL+"/send/1", PublicRaw(ua), []byte("0123456789abcdef"),
+	status, err := Send(context.Background(), srv.Client(), srv.URL+"/send/1", PublicRaw(ua), []byte("0123456789abcdef"),
 		[]byte("hi"), key, "mailto:ops@example.org", 60, "high", time.Now())
 	if err != nil {
 		t.Fatal(err)
@@ -249,7 +250,7 @@ func TestSendRedirectIsNotFollowed(t *testing.T) {
 	key, _ := NewPrivateKey()
 	ua, _ := NewPrivateKey()
 	client := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	status, err := Send(client, srv.URL+"/x", PublicRaw(ua), []byte("0123456789abcdef"), []byte("hi"), key, "mailto:a@b.c", 60, "high", time.Now())
+	status, err := Send(context.Background(), client, srv.URL+"/x", PublicRaw(ua), []byte("0123456789abcdef"), []byte("hi"), key, "mailto:a@b.c", 60, "high", time.Now())
 	if err != nil || status != http.StatusFound {
 		t.Fatalf("status %d err %v", status, err)
 	}
@@ -258,8 +259,39 @@ func TestSendRedirectIsNotFollowed(t *testing.T) {
 func TestSendTransportError(t *testing.T) {
 	key, _ := NewPrivateKey()
 	ua, _ := NewPrivateKey()
-	_, err := Send(&http.Client{Timeout: time.Second}, "http://127.0.0.1:1/x", PublicRaw(ua), []byte("0123456789abcdef"), []byte("hi"), key, "mailto:a@b.c", 60, "high", time.Now())
+	_, err := Send(context.Background(), &http.Client{Timeout: time.Second}, "http://127.0.0.1:1/x", PublicRaw(ua), []byte("0123456789abcdef"), []byte("hi"), key, "mailto:a@b.c", 60, "high", time.Now())
 	if err != ErrTransport {
 		t.Fatalf("want ErrTransport, got %v", err)
+	}
+}
+
+func TestEndpointAllowed(t *testing.T) {
+	ok := []string{
+		"https://fcm.googleapis.com/fcm/send/abc",
+		"https://FCM.GOOGLEAPIS.COM/x",
+		"https://updates.push.services.mozilla.com/wpush/v2/x",
+		"https://web.push.apple.com:443/x",
+		"https://wns2-db5p.notify.windows.com/w/?x=1",
+	}
+	for _, raw := range ok {
+		if !EndpointAllowed(raw) {
+			t.Errorf("want allowed: %s", raw)
+		}
+	}
+	bad := []string{
+		"http://fcm.googleapis.com/x",
+		"https://fcm.googleapis.com:8080/x",
+		"https://user:pw@fcm.googleapis.com/x",
+		"https://evil.example.org/x",
+		"https://fcm.googleapis.com.evil.example.org/x",
+		"https://notfcm.googleapis.com.example/x",
+		"https://evilfcm.googleapis.com/x",
+		"::not a url",
+		"",
+	}
+	for _, raw := range bad {
+		if EndpointAllowed(raw) {
+			t.Errorf("want refused: %s", raw)
+		}
 	}
 }
