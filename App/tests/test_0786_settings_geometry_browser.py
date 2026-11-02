@@ -205,3 +205,54 @@ def test_settings_area_geometry_rules(host, base, width):
             context.close()
         browser.close()
     assert not problems, "\n".join(problems[:40])
+
+
+# 0787e: the help ? sits 8 px after the last word of its heading or label, not at the far right of the row
+HELP_GAP_JS = """
+() => {
+  const out = [];
+  for (const btn of document.querySelectorAll('.help-tip-btn')) {
+    if (!btn.getClientRects().length) continue;
+    const tip = btn.closest('.help-tip');
+    let anchor = null;
+    const prev = tip.previousElementSibling;
+    if (prev && /^(H[1-6]|LABEL|STRONG)$/.test(prev.tagName)) anchor = prev;
+    const parent = tip.parentElement;
+    if (!anchor && parent && parent.matches('h1,h2,h3,h4,h5,h6,label,strong')) anchor = parent;
+    if (!anchor && parent && parent.matches('.heading-with-tip')) anchor = parent.querySelector('h1,h2,h3,h4,h5,h6');
+    if (!anchor) continue;
+    const walker = document.createTreeWalker(anchor, NodeFilter.SHOW_TEXT);
+    let last = null, node;
+    while ((node = walker.nextNode())) { if (node.textContent.trim() && !node.parentElement.closest('.help-tip')) last = node; }
+    if (!last) continue;
+    const rr = document.createRange();
+    rr.selectNodeContents(last);
+    const rs = [...rr.getClientRects()].filter(r => r.width > 0 && r.height > 0);
+    if (!rs.length) continue;
+    const lastRight = Math.max(...rs.filter(r => Math.abs(r.top - rs[rs.length - 1].top) < 4).map(r => r.right));
+    const b = btn.getBoundingClientRect();
+    out.push({label: anchor.textContent.trim().slice(0, 40), gap: b.left - lastRight});
+  }
+  return out;
+}
+"""
+
+
+@pytest.mark.parametrize("path", PAGES)
+def test_help_tip_sits_after_last_word_390(host, base, path):
+    problems = []
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        context = browser.new_context(viewport={"width": 390, "height": 900})
+        cookie = host["client"].cookies.get(auth.SESSION_COOKIE)
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": base + "/"}])
+        page = context.new_page()
+        sep = "&" if "?" in path else "?"
+        page.goto(f"{base}{path}{sep}lang=en" if "entities" not in path else f"{base}{path}?edit={host['entity']}&lang=en")
+        for item in page.evaluate(HELP_GAP_JS):
+            if not 0 <= item["gap"] <= 16:
+                problems.append(f"{path} 390: ? is {item['gap']:.1f} px after the last word of: {item['label']}")
+        page.close()
+        context.close()
+        browser.close()
+    assert not problems, "\n".join(problems[:20])

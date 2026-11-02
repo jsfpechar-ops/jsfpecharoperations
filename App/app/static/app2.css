@@ -1112,11 +1112,21 @@ body.v2 div:has(> label.checkline + .help-tip) > label.checkline{min-width:0}
 body.v2 .field-label-row{display:flex;align-items:last baseline;flex-wrap:nowrap;gap:8px}
 body.v2 .field-label-row > label{min-width:0}
 body.v2 .settings-heading .help-tip,body.v2 .field-label-row .help-tip{display:inline-flex;vertical-align:middle}
+/* 0787e: the heading text flows inline and the help ? follows its last word 8 px later; the reserved 32 px keeps the ? on the last line */
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-heading{display:block;}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) div:has(> strong + .help-tip){}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-heading h3{display:inline}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-heading .help-tip{display:inline;margin-left:8px;vertical-align:middle}
+/* 0787e: the ? is joined to the word before it (word joiner), so a wrap never leaves the ? alone at a line start */
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) :is(h1,h2,h3) > .help-tip,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-action-row > div:has(> strong + .help-tip) > .help-tip,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-heading .help-tip{display:inline;margin-left:8px;vertical-align:middle}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) :is(h1,h2,h3) > .help-tip::before,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-action-row > div:has(> strong + .help-tip) > .help-tip::before,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-heading .help-tip::before{content:"\2060"}
 /* 0787d: a heading or label with its ? keeps the ? on its last line; Account card row keeps label + ? as one group */
-body.v2 :is(h1,h2,h3):has(> .help-tip){display:flex;align-items:last baseline;flex-wrap:nowrap;gap:8px}
-body.v2 :is(h1,h2,h3) > .help-tip{margin-left:0;vertical-align:middle}
-body.v2 .settings-action-row > div:has(> strong + .help-tip){display:flex;flex-wrap:nowrap;align-items:last baseline;gap:8px;min-width:0}
-body.v2 .settings-action-row > div:has(> strong + .help-tip) > strong{min-width:0}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) :is(h1,h2,h3):has(> .help-tip){display:block;}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) :is(h1,h2,h3) > .help-tip{display:inline;margin-left:8px;vertical-align:middle}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-action-row > div:has(> strong + .help-tip){display:block;min-width:0;}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-action-row > div:has(> strong + .help-tip) > strong{display:inline;min-width:0}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-action-row > div:has(> strong + .help-tip) > strong::after{content:"\2060"}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-action-row > div:has(> strong + .help-tip) > .help-tip{display:inline;margin-left:8px;vertical-align:middle}
 body.v2 .settings-lane input[type=checkbox]{min-width:24px;min-height:24px;margin:0;accent-color:var(--acc)}
 @media (min-width:1024px){body.v2 .settings-lane .ui-btn{min-height:40px}}
 body.v2 details.technical.ui-section{border:0;background:none;box-shadow:none;border-radius:0;padding:0;margin:0;border-top:1px solid var(--line)}
@@ -1172,17 +1182,22 @@ body.v2 .entity-form .field,body.v2 .entity-add .field{max-width:480px}
 body.v2 .entity-form .operator-phone,body.v2 .entity-add .operator-phone{display:flex;align-items:stretch;gap:8px}
 body.v2 .entity-form .operator-phone-number,body.v2 .entity-add .operator-phone-number{flex:1 1 auto;min-width:0}
 body.v2 .entity-form .operator-phone>*,body.v2 .entity-add .operator-phone>*{margin:0;align-self:stretch;box-sizing:border-box}
-@media (max-width:1023.98px){body.v2 .entity-form>.ui-section-h>.ui-btn-compact{min-height:44px}}
+@media (max-width:1023.98px){body.v2 .ui-section-h>.ui-btn-compact,.ui-section-h>.ui-btn-compact{min-height:44px!important;height:auto!important}}
 body.v2 .entity-form input:not([type=checkbox]):not([type=radio]){min-height:44px}
 body.v2 .entity-form .action-group,body.v2 .entity-add .action-group{display:flex;flex-direction:column;align-items:stretch;gap:8px}
 body.v2 .entity-form .action-group input,body.v2 .entity-add .action-group input{min-width:0}
 @media (min-width:1024px){body.v2 .entity-form .action-group,body.v2 .entity-add .action-group{flex-direction:row;align-items:flex-end}body.v2 .entity-form .action-group input,body.v2 .entity-add .action-group input{flex:1 1 auto}}
 @media (max-width:1023px){body.v2 .entities-page .ui-table-stack td.row-actions{justify-content:flex-start;flex-wrap:wrap;gap:8px;text-align:left}}
 /* 0787d: entities h1 keeps its ? on the last line; invoice account inputs are full width; the phone prefix is one 44 px box */
-body.v2 .head h1.big:has(> .help-tip){display:flex;align-items:last baseline;flex-wrap:nowrap;gap:8px;min-width:0}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .head h1.big:has(> .help-tip){display:block;min-width:0}
+@media (max-width:1023.98px){body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .head h1.big:has(> .help-tip){padding-right:32px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) :is(h1,h2,h3,label,strong):has(> .help-tip),body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-heading,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-action-row > div:has(> strong + .help-tip),body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) div:has(> strong + .help-tip){padding-right:64px}}
 body.v2 .entity-form .account-parts input,body.v2 .entity-add .account-parts input{width:100%;min-width:0;max-width:none;box-sizing:border-box}
-body.v2 .entity-form .operator-phone-prefix,body.v2 .entity-add .operator-phone-prefix{display:inline-flex;align-items:center;flex:0 0 80px;width:80px;height:44px;min-height:44px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:0 10px;gap:2px;box-sizing:border-box}
-body.v2 .entity-form .operator-phone-prefix input.operator-phone-code[type=text],body.v2 .entity-add .operator-phone-prefix input.operator-phone-code[type=text]{flex:1 1 auto;width:100%;min-width:0;max-width:none;min-height:0;height:auto;padding:0;margin:0;border:0;border-radius:0;background:transparent;color:inherit;font:inherit;text-align:center;box-shadow:none;outline:none}
+body.v2 .entity-form .operator-phone-prefix,body.v2 .entity-add .operator-phone-prefix{display:inline-flex;align-items:center;flex:0 0 80px;width:80px;height:44px;min-height:44px;border:0;box-shadow:inset 0 0 0 1px var(--line);border-radius:8px;background:#fff;padding:0 10px;gap:2px;box-sizing:border-box}
+body.v2 .entity-form .operator-phone-prefix input.operator-phone-code[type=text],body.v2 .entity-add .operator-phone-prefix input.operator-phone-code[type=text]{flex:1 1 auto;width:100%;min-width:0;max-width:none;min-height:44px;height:100%;padding:0;margin:0;border:0;border-radius:0;background:transparent;color:inherit;font:inherit;text-align:center;box-shadow:none;outline:none}
+/* 0787e: the prefix shows the v2 focus ring; the code input gets its own ring too */
+body.v2 .entity-form .operator-phone-prefix:focus-within,body.v2 .entity-add .operator-phone-prefix:focus-within{outline:2px solid #d0452d;outline-offset:2px}
+body.v2 .entity-form .operator-phone-prefix input.operator-phone-code[type=text]:focus-visible,body.v2 .entity-add .operator-phone-prefix input.operator-phone-code[type=text]:focus-visible{outline:2px solid #d0452d;outline-offset:-2px}
 /* 0781 privacy requests */
 body.v2 .pr-lane{max-width:720px}
 body.v2 .pr-lane>.card{margin:0 0 16px}

@@ -188,7 +188,8 @@
         <div class="settings-action-row">
           <div>
             <strong>{{ t('pwa.install.title') }}</strong>
-            {{ help_tip('settings-pwa-help', t('pwa.install.help') ~ ' ' ~ t('pwa.install.other')) }}
+            {% set pwa_other %}<p class="ui-sub" data-pwa-other>{{ t('pwa.install.other') }}</p>{% endset %}
+            {{ help_tip('settings-pwa-help', t('pwa.install.help') ~ pwa_other) }}
           </div>
           <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" data-pwa-install hidden>{{ t('pwa.install.button') }}</button>
           <span class="ui-badge ui-badge-done" data-tone="green" data-pwa-installed hidden>{{ t('pwa.install.installed') }}</span>
