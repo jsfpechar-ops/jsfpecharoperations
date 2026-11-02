@@ -48,14 +48,96 @@ def property_page_view(request: Request, slug: str):
         return Response(status_code=404)
     page["noindex"] = _noindex(apartment_id)
     page["og"] = _og(apartment_id, page)
+    lang = _page_lang(request)
     page["bookable"] = property_page.widget_ready(apartment_id)
     page["book_error"] = request.query_params.get("book", "")
     if page["book_error"] not in BOOK_ERRORS:
         page["book_error"] = ""
-    # Owner decision (28 Oct): listing pages stay English — hosts' OTA copy is
-    # not translated per listing; no per-language variants, no cookie switch.
+    if page["bookable"]:
+        page["booking"] = _booking_view(slug, apartment_id, lang, request.query_params)
+    # Only the page's own words are translated (owner decision 2 Nov 2026,
+    # booking site v1); the host's listing copy stays verbatim.
     return render(request, "property_page.html",
-                  {"page": page, "show_nav": False, "lang": "en"})
+                  {"page": page, "show_nav": False, "lang": lang})
+
+
+def _page_lang(request: Request) -> str:
+    """?lang=cs|en, then the saved language cookie, then Czech. Sets no cookie."""
+    for value in (request.query_params.get("lang"), request.cookies.get(host_i18n.LANG_COOKIE)):
+        if value in ("cs", "en"):
+            return value
+    return "cs"
+
+
+def _href(slug: str, lang: str, ym: tuple, date_from: str = "", date_to: str = "",
+          guests: int = 0) -> str:
+    query = {"lang": lang, "month": f"{ym[0]}-{ym[1]:02d}"}
+    if date_from:
+        query["date_from"] = date_from
+    if date_to:
+        query["date_to"] = date_to
+    if guests:
+        query["guests"] = str(guests)
+    return f"/p/{slug}?{urlencode(query)}#book"
+
+
+def _month_param(value: str) -> tuple:
+    today = booking_site._now(None).date()
+    low = (today.year, today.month)
+    high = booking_calendar.add_months(low[0], low[1], booking_calendar.HORIZON_MONTHS)
+    try:
+        year, month = (int(part) for part in str(value).split("-"))
+        date(year, month, 1)
+    except ValueError:
+        return low
+    return (year, month) if low <= (year, month) <= high else low
+
+
+def _short_day(iso: str, lang: str) -> str:
+    day = booking_calendar.parse_day(iso)
+    if day is None:
+        return ""
+    return f"{day.day}. {day.month}." if lang == "cs" else day.isoformat()
+
+
+def _booking_view(slug: str, apartment_id: int, lang: str, params) -> dict:
+    """Everything the booking card shows, from the query string (no JS)."""
+    s = booking_site.settings(apartment_id)
+    ym = _month_param(params.get("month", ""))
+    date_from = str(params.get("date_from") or "")[:10]
+    date_to = str(params.get("date_to") or "")[:10]
+    cap = min(int(s["max_guests"]) or 10, booking_site.MAX_GUESTS)
+    guests = min(max(_guests(params.get("guests") or 2), 1), cap)
+    grid = booking_calendar.month_grid(
+        apartment_id, ym[0], ym[1], date_from=date_from, date_to=date_to)
+    for week in grid["weeks"]:
+        for cell in week:
+            cell["href"] = _href(slug, lang, ym, *cell["pick"], guests) if cell["pick"] else ""
+    q = None
+    q_error = ""
+    if booking_calendar.parse_day(date_from) and booking_calendar.parse_day(date_to):
+        q = booking_site.quote(apartment_id, date_from, date_to, guests)
+        if q["error"]:
+            q_error, q = q["error"], None
+    kept = {"date_from": date_from, "date_to": date_to}
+    return {
+        "slug": slug,
+        "grid": grid,
+        "prev_href": _href(slug, lang, grid["prev"], date_from, date_to, guests) if grid["prev"] else "",
+        "next_href": _href(slug, lang, grid["next"], date_from, date_to, guests) if grid["next"] else "",
+        "q": q,
+        "q_error": q_error,
+        "guests": guests,
+        "guest_options": list(range(1, cap + 1)),
+        "month_value": f"{ym[0]}-{ym[1]:02d}",
+        "date_from": date_from,
+        "date_to": date_to,
+        "arrive": _short_day(date_from, lang),
+        "depart": _short_day(date_to, lang),
+        "city_tax_rate": int(s["city_tax_czk"]),
+        "terms_version": booking_site.TERMS_VERSION,
+        "lang_href": {code: _href(slug, code, ym, **kept, guests=guests) for code in ("cs", "en")},
+    }
 
 
 def _noindex(apartment_id: int) -> bool:
