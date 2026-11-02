@@ -1,0 +1,39 @@
+# 0814 brief: small, minimal help "?" on the same line as its title
+
+Status: todo
+Executor: Haiku 5.5, alone, in /home/claude/jsfpecharoperations on branch claude/project-thread-a41o7b (checked out; App/.venv exists). Do not commit, push, checkout, reset, stash or restore: the orchestrator commits.
+
+## 1. Objective
+Josef (2026-11-02 14:47): the help "?" buttons sit under the headers instead of next to them, and they are huge. He wants them minimalistic. See `docs/tasks/screenshots-0800/property-new-390.png`: 44 px grey circles, and under "After you create it" each "?" is on its own line below the title. Target on every page of `App/tests/test_0800_v2_remaining_pages_browser.py`, all widths: the "?" is a plain round icon, 18 px visible (1px `var(--line)` border, `var(--ink3)` glyph, 12 px font, no fill, no shadow), placed inline 6 px after the last word of its heading/label, vertically centred on that line, never alone on a new line.
+
+## 2. Context
+The shared rule is the `/* 0812 help tip (v2) */` block at the end of `App/app/static/app2.css` (24 px desktop, 44 px phone min size: that is the "huge"). Phone tap target stays 44 px but invisible: give `.help-tip-btn` `position:relative` and a `::before{content:"";position:absolute;inset:-13px}` hit area, so layout size stays 18 px. Wrappers from 0809: `.heading-with-tip`, `.prop-name-tip`, `.havel-name-tip`; the new-property "After you create it" list (`App/app/templates/_property_create.html`) puts title and tip in a column.
+
+## 3. Files
+`App/app/static/app2.css` (0812 block, plus deleting conflicting help-tip size rules in other 0800-0809 blocks), `App/app/templates/_property_create.html` (markup order only if CSS cannot do it), `App/tests/test_0800_v2_remaining_pages_browser.py`.
+
+## 4. Steps
+Env (from App/): `export PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=1`.
+a. Rewrite the 0812 block: `.help-tip` inline-flex, vertical-align middle, margin-left 6px, flex none; `.help-tip-btn` width/height 18px (all widths), min-width/min-height 0, padding 0, border 1px solid var(--line), border-radius 50%, background transparent, color var(--ink3), font-size 12px, line-height 1, plus the invisible `::before` hit area (inset -13px below 1024 px, -3px above). Wrappers (`.heading-with-tip`, `.prop-name-tip`, `.havel-name-tip`, the create-next item title row): `display:flex;flex-wrap:nowrap;align-items:center;gap:6px`, the heading text `min-width:0`.
+b. Remove the 44 px/24 px help-tip size rules elsewhere in app2.css that beat this (grep `help-tip-btn`; keep the stay-detail and `details` rules outside these pages).
+c. Test: for every visible `.help-tip-btn` in `main` on each page and width: visible box <= 20 x 20 px; its vertical centre is within the line box of the text it follows (the previous sibling or the wrapper's heading: |centre difference| <= 4 px); its left edge is >= that text's right edge and <= right edge + 12 px. Fail with page, width and the label text. The check must fail on the current screenshot state (run it before the CSS fix to confirm).
+d. Update any older assertion that requires 44 px help buttons on these pages to check the hit area instead (element bounding box of the `::before` cannot be measured; assert the computed `inset` or use `elementFromPoint` 10 px outside the visible circle).
+e. Full commands, then screenshots.
+
+## 5. Do not touch
+Other pages, copy, behaviour, the cache key, sidebar/top bar.
+
+## 6. Commands
+From App/, env above:
+- `.venv/bin/python -m pytest tests/test_0800_v2_remaining_pages_browser.py tests/test_onboarding_wizard_browser.py tests/test_property_create_browser.py -q --tb=line -p no:cacheprovider 2>&1 | tail -8` → 0 failed
+- `UBYHOST_SHOTS_0800=1 .venv/bin/python -m pytest tests/test_0800_v2_remaining_pages_browser.py -q 2>&1 | tail -3`
+- repo root: `python3 scripts/design_lint.py 2>&1 | tail -3`
+
+## 7. Acceptance
+Section 6 green; property-new-390 and havel-1280 screenshots show a small "?" right after the title text.
+
+## 8. Stop and ask
+Stop at 30 tool calls, or if a template change beyond markup order is needed.
+
+## 9. Report
+`docs/tasks/0814-report.md`: rules changed/removed, test added, final tails.
