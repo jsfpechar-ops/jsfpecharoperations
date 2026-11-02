@@ -219,6 +219,43 @@ def parse_mrz(raw_text: str) -> Dict[str, str]:
     raise NothingRead()
 
 
+def _row_variance(image) -> float:
+    """Variance of the per-row mean brightness; high when text lines are level."""
+    from PIL import Image
+
+    rows = image.resize((1, image.height), Image.BOX)
+    values = list(rows.getdata())
+    mean = sum(values) / len(values)
+    return sum((v - mean) ** 2 for v in values) / len(values)
+
+
+def mrz_band(jpeg: bytes) -> bytes:
+    """The bottom band of the photo, enlarged and straightened, as a JPEG."""
+    from io import BytesIO
+
+    from PIL import Image, ImageOps
+
+    image = Image.open(BytesIO(jpeg)).convert("L")
+    width, height = image.size
+    band = image.crop((0, int(height * (1 - BAND_FRACTION)), width, height))
+    band = band.resize(
+        (BAND_WIDTH, max(1, round(band.height * BAND_WIDTH / width))),
+        Image.LANCZOS,
+    )
+    band = ImageOps.autocontrast(band, cutoff=1)
+    small = band.resize(
+        (400, max(1, round(band.height * 400 / band.width))), Image.LANCZOS
+    )
+    best_angle = max(
+        _TILT_ANGLES,
+        key=lambda angle: _row_variance(small.rotate(angle, expand=True, fillcolor=255)),
+    )
+    straight = band.rotate(best_angle, expand=True, fillcolor=255)
+    out = BytesIO()
+    straight.save(out, format="JPEG", quality=90)
+    return out.getvalue()
+
+
 def run_tesseract(jpeg: bytes) -> str:
     """Tesseract's raw text for one image. Tests replace this function."""
     import tempfile
