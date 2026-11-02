@@ -54,11 +54,11 @@ Append-only.
 - 2026-10-30 | [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; Haiku-only execution; manual cutover | 0455–0456
 - 2026-10-31 | Postgres now (#592), Go port G1–G6 after cutover + tenancy, per-feature rollback, no load-test gate; `ws_uby_test` and golden files dropped; XML snapshot test before G5. [workflow] Fable briefs, Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
 - 2026-10-31 | Every change lean: no dead code, no extras; dead code found on the way is removed in its own small commit or PR | owner | plan v4
-- 2026-10-31 | Approval gates waived for the whole PostgreSQL and Go migration; the bar stays (verified backup, production-copy rehearsal, per-table counts and hashes, suite green on PG, SQLite rollback). | owner | 0463
+- 2026-10-31 | Approval gates waived for the whole PostgreSQL and Go migration; the bar stays (verified backup, production-copy rehearsal, per-table counts and hashes, suite green on PG, SQLite rollback). Owner acts only where his hands are needed | owner | 0463
 - 2026-10-31 | D2 required reviewer on `production`; D3 goose (step 10); D4 Postgres job table with `SKIP LOCKED`. D1: PostgreSQL self-hosted Compose service on the 8 GB Lightsail server (socket, no port, 1 GB cap), not managed; nightly encrypted `pg_dump` in the existing backup, restore proven each rehearsal; no pgBackRest | owner | 0463, 0464
 - 2026-10-31 | PostgreSQL container: no password, no network (`network_mode: none`, Unix socket volume, trust auth). [workflow] Before every merge: `git diff --stat origin/main <branch>` against the brief's Files; one fresh worktree per Haiku | owner, orchestrator | 0463, #606
 - 2026-10-31 | [workflow] `test-postgres-full` (app suite on PG 17) gates every merge; SQLite-file tests carry `sqlite_only` | orchestrator | 0462
 - 2026-11-01 | Host redesign: add vendored Hotwire Turbo (MIT, ~25 KB) for page-body swaps; redesign needs owner OK of mockups before build or merge | owner | #614
 - 2026-10-31 | D3 detail: goose v3.29.0, asset goose_linux_x86_64 (SHA-256 pinned in .github/workflows/ci.yml) | owner | 0465b
 - 2026-11-01 | Go: module go/, stdlib, pgx v5, go-ntlmssp v0.1.1, go-qrcode (11-02); crypto via Python fixtures | owner (waiver) | 0474, 0481, 0684
-- 2026-11-02 | Booking page text: Czech first, CS/EN switch (?lang=, no cookie); host copy verbatim; replaces 10-28 English-only for page chrome | owner | 0818
+- 2026-11-02 | Booking page text: Czech first, CS/EN switch (?lang=, no cookie); host copy verbatim; replaces 10-28 English-only | owner | 0818
