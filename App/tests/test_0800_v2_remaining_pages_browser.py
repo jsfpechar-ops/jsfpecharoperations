@@ -164,6 +164,67 @@ def test_help_tip_sits_beside_its_label(name, width, base, dashboard_rich_host):
     assert not bad, f"{name} at {width} px: help tip not beside its label: {bad}"
 
 
+# 0814 c: every visible "?" in main is a small round icon (18 px circle drawn by ::after), on its label's line,
+# 6 px after the label text (at most 12 px). The tap target is the 24 px (desktop) or 44 px (phone) button box.
+_HELP_TIP_SIZE_JS = """() => {
+  const out = [];
+  const main = document.querySelector('main') || document.body;
+  for (const btn of main.querySelectorAll('.help-tip-btn')) {
+    const b = btn.getBoundingClientRect();
+    if (!b.width || !b.height) continue;
+    const tip = btn.closest('.help-tip');
+    const wrap = tip && tip.parentElement;
+    let ref = tip && tip.previousElementSibling;
+    if (!ref && wrap) ref = wrap.previousElementSibling || [...wrap.children].find(el => el !== tip) || null;
+    const label = ref ? ref.textContent.trim().slice(0, 40) : '(no label)';
+    const why = [];
+    const after = getComputedStyle(btn, '::after');
+    const cw = parseFloat(after.width), ch = parseFloat(after.height);
+    if (!(cw <= 20 && ch <= 20)) why.push(`visible circle ${cw}x${ch}`);
+    const cx = (b.left + b.right) / 2, cy = (b.top + b.bottom) / 2;
+    const left = cx - cw / 2;
+    if (!ref) {
+      why.push('no label before it');
+    } else {
+      const rg = document.createRange();
+      rg.selectNodeContents(ref);
+      const rects = [...rg.getClientRects()].filter(r => r.width > 0 && r.height > 0);
+      if (!rects.length) {
+        why.push('label has no text box');
+      } else {
+        const line = rects[rects.length - 1];
+        const right = line.right;
+        const dy = Math.abs(cy - (line.top + line.bottom) / 2);
+        const dx = left - right;
+        if (dy > 4) why.push(`vertical offset ${dy.toFixed(1)}px`);
+        if (dx < 0 || dx > 12) why.push(`gap after label ${dx.toFixed(1)}px`);
+      }
+    }
+    if (why.length) out.push({label, why: why.join('; ')});
+  }
+  return out;
+}"""
+HELP_TIP_SIZE_ROUTES = list(ROUTES)
+
+
+@pytest.mark.parametrize("name", HELP_TIP_SIZE_ROUTES)
+def test_help_tip_is_small_and_inline(name, base, dashboard_rich_host):
+    from app import auth
+
+    cookie = dashboard_rich_host["client"].cookies.get(auth.SESSION_COOKIE)
+    assert cookie
+    bad = []
+    with _launch_ctx() as playwright:
+        browser = _launch(playwright)
+        for width in WIDTHS:
+            context, page = _open_app(browser, base, cookie, _path({"path": ROUTES[name]}, dashboard_rich_host), width)
+            for finding in page.evaluate(_HELP_TIP_SIZE_JS):
+                bad.append(f"{name} at {width} px, label {finding['label']!r}: {finding['why']}")
+            context.close()
+        browser.close()
+    assert not bad, "\n".join(bad)
+
+
 # 0808 step b: the onboarding card's action group stays on one line per control and 16 px from the text.
 _ONBOARDING_GROUP_JS = """() => {
   const out = [];

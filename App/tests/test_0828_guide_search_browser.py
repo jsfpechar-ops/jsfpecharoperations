@@ -111,3 +111,31 @@ def test_guide_page_height_under_3000_on_load_at_1280(base, dashboard_rich_host)
         lambda p: p.evaluate("() => document.documentElement.scrollHeight"),
     )
     assert height < 3000, f"/guide is {height} px tall on load at 1280 px"
+
+
+def test_search_still_filters_after_turbo_swap_from_sidebar(base, dashboard_rich_host):
+    """0829: guide.js loads once in base.html and binds per page, so a Turbo visit to /guide works."""
+    from app import auth
+
+    cookie = dashboard_rich_host["client"].cookies.get(auth.SESSION_COOKIE)
+    assert cookie
+    with _launch_ctx() as playwright:
+        browser = _launch(playwright)
+        context = browser.new_context(viewport={"width": 1280, "height": 1000}, reduced_motion="reduce")
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": base + "/"}])
+        page = context.new_page()
+        try:
+            page.goto(f"{base}/havel")
+            page.wait_for_load_state("networkidle")
+            page.locator('a[href="/guide"]:visible').first.click()
+            page.wait_for_url("**/guide**")
+            page.wait_for_selector("#guide-search:not([hidden])")
+            page.fill("#guide-search", "PIN")
+            page.wait_for_timeout(300)
+            topics = page.evaluate(_TOPICS_JS)
+        finally:
+            context.close()
+            browser.close()
+    opened = [t["id"] for t in topics if t["open"]]
+    assert opened, "search typed after a Turbo visit to /guide opened no topic"
+    assert len(opened) < len(topics), "search after a Turbo visit did not filter the topics"

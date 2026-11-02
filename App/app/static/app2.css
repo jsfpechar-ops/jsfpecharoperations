@@ -1248,7 +1248,7 @@ body.v2 .prop-new .required-legend{font-size:13px;color:var(--ink3);margin:0 0 1
 body.v2 .prop-new .property-create-card,body.v2 .prop-new .property-create-next{background:var(--s);border:1px solid var(--line);border-radius:12px;padding:20px;margin:0 0 14px;box-shadow:none}
 body.v2 .prop-new .property-create-head{display:flex;align-items:center;gap:10px;margin:0 0 16px;color:var(--ink2)}
 body.v2 .prop-new .property-create-head h2{margin:0;font-size:16px;font-weight:700;color:var(--ink)}
-body.v2 .prop-new .heading-with-tip{display:flex;align-items:center;gap:8px}
+body.v2 .prop-new .heading-with-tip{display:flex;align-items:center;gap:6px}
 body.v2 .prop-new .property-create-operator-row{display:block}
 body.v2 .prop-new .property-create-manage{display:inline-block;margin-top:8px;font-size:13px}
 body.v2 .prop-new .grid{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
@@ -1415,10 +1415,14 @@ body.v2 .page-skeleton:not([hidden]) ~ *, body.v2 main[aria-busy="true"] > .ui-p
 }
 @media (prefers-reduced-motion: reduce) { body.v2 .ui-bone { animation: none; } }
 /* 0812 help tip (v2) */
-body.v2 .help-tip{position:relative;display:inline-flex;align-items:center;vertical-align:middle;margin-left:6px}
-body.v2 .help-tip-btn{min-width:24px;min-height:24px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
-@media (max-width:1023px){body.v2 .help-tip-btn{min-width:44px;min-height:44px}}
-body.v2 .heading-with-tip,body.v2 .havel-name-tip{display:flex;align-items:center;gap:6px}
+body.v2 .help-tip{position:relative;display:inline-flex;flex:none;align-items:center;vertical-align:middle;margin-left:6px}
+body.v2 .help-tip-btn{position:relative;isolation:isolate;width:24px;height:24px;min-width:24px;min-height:24px;margin:-3px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--ink3);font-size:12px;line-height:1;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
+body.v2 .help-tip-btn::after{content:"";position:absolute;z-index:-1;left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%);border:1px solid var(--line);border-radius:50%;box-sizing:border-box}
+@media (max-width:1023px){body.v2 .help-tip-btn{width:44px;height:44px;min-width:44px;min-height:44px;margin:-13px}}
+body.v2 .heading-with-tip,body.v2 .prop-name-tip,body.v2 .havel-name-tip{display:flex;flex-wrap:nowrap;align-items:center;gap:6px}
+body.v2 .heading-with-tip>:not(.help-tip),body.v2 .prop-name-tip>:not(.help-tip),body.v2 .havel-name-tip>:not(.help-tip){min-width:0}
+body.v2 .head>div:has(>.havel-name-tip){display:flex;flex-wrap:nowrap;align-items:center;gap:6px}
+body.v2 .head>div:has(>.havel-name-tip)>h1{min-width:0;margin:0}
 body.v2 .help-tip-body{display:none}
 body.v2 .help-tip.is-open>.help-tip-body,body.v2 .help-tip:not([data-js]):focus-within>.help-tip-body{display:block;position:absolute;z-index:70;left:0;top:100%;margin:6px 0 0;box-sizing:border-box;width:min(320px,calc(100vw - 32px));padding:10px 12px;background:var(--s);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.12);font-size:13px;font-weight:400;line-height:1.45;text-align:left;white-space:normal}
 /* 0828 guide search (v2) */

@@ -40,6 +40,7 @@
   <script src="/static/skeleton.js?v=20261102-0508" defer data-turbo-track="reload"></script>
   <script src="/static/app.js?v=20261102-0510" defer data-turbo-track="reload"></script>
   {% if show_nav | default(true) %}<script src="/static/host.js?v=20261102-0507" defer data-turbo-track="reload"></script>{% endif %}
+  {% if show_nav | default(true) %}<script src="/static/guide.js?v=20261102-0829" defer data-turbo-track="reload"></script>{% endif %}
   {% if show_nav | default(true) %}<script src="/static/pwa.js?v=20261102-0511" defer data-turbo-track="reload"></script>{% endif %}
   {% if (show_nav | default(true)) and passkeys_enabled() %}<script src="/static/passkeys.js?v=20261102-0507" defer data-turbo-track="reload"></script>{% endif %}
   {% if show_nav | default(true) %}<script src="/static/shell.js?v=20261025-0373" defer data-turbo-track="reload"></script>{% endif %}

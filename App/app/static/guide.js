@@ -80,21 +80,21 @@
     });
   }
 
-  function boot() {
-    bindSearch();
-    openForHash();
+  // Same pattern as host.js: runs on every page view, Turbo swaps included.
+  // Off /guide there is no #guide-search, so it returns early.
+  function onPage(fn) {
+    if (window.UbyHost && window.UbyHost.onPage) window.UbyHost.onPage(fn); else fn();
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", boot);
-  } else {
-    boot();
-  }
+  onPage(function () {
+    if (!document.getElementById("guide-search")) return;
+    bindSearch();
+    openForHash();
+  });
 
   if (!window.__guideListeners) {
     window.__guideListeners = true;
     window.addEventListener("hashchange", openForHash);
-    document.addEventListener("turbo:load", boot);
     document.addEventListener("click", function (event) {
       var link = event.target && event.target.closest
         ? event.target.closest('.guide-nav a[href^="#"]')
