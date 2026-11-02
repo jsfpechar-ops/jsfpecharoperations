@@ -12,8 +12,8 @@
     "v": "20261102-0510"
   },
   "app2.css": {
-    "sha256": "880e600a3547cdff7cce7a18134c5f35c915550539f04b5008009e5a2e719801",
-    "v": "20261102-0788b"
+    "sha256": "e13d7b627b4813331c4fc9a804a81de8c20470fc48a0afc04bb3db62e1b6bb21",
+    "v": "20261102-0789a"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -112,8 +112,8 @@
     "v": "20261027-ai-usage"
   },
   "passkeys.js": {
-    "sha256": "c54bced8466bd89592f6a7a36a48b1cf6b0d692d419e03182d4f0c3527764609",
-    "v": "20261102-0507"
+    "sha256": "4e75d63ea5de86912252b34a8b22fc5d91ed7b7190ad7d623947295e1725c7cd",
+    "v": "20261102-0789a"
   },
   "pricing.js": {
     "sha256": "4ebb282d09e55fcd782087dfd47c494c78f542f6c26648ddb55fc4390fe50b09",
