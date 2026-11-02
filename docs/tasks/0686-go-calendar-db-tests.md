@@ -1,5 +1,5 @@
 # 0686: Go dashboard calendar: DB tests
-Status: todo
+Status: review
 Depends on: 0685 | Base commit: task/0682-go-calendar | Branch: task/0682-go-calendar (worktree /tmp/wt0682)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 80k tokens
 ## 1. Objective
