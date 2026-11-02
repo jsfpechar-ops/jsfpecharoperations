@@ -92,3 +92,20 @@ Status: blocked. Done: steps 1 to 2, the `?v=` bump and manifest of step 3. Left
 ## Owner steps left
 - Answer question 1 and question 2 (orchestrator), then rerun `cd App && PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py -k "cleaning or overview or menu" -q -rs --tb=short`.
 - Step 4 screenshots after that run is green.
+
+## 0732d
+
+Command: `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py -k "cleaning or overview or menu" -q --tb=short 2>&1 | tail -30` (from App/)
+
+```
+E   AssertionError: cleaning at 320 px: 1 style differences
+E     .list.plain .row:not(:has(.pill)) height at 320 px: app=74px mockup=75.3906px
+E   assert not ['.list.plain .row:not(:has(.pill)) height at 320 px: app=74px mockup=75.3906px']
+E   AssertionError: cleaning at 390 px: 2 style differences
+E     .hl height at 390 px: app=34.5px mockup=34.5px
+E     .list.plain .row:not(:has(.pill)) height at 390 px: app=74px mockup=75.3906px
+E   assert not ['.hl height at 390 px: app=34.5px mockup=34.5px', '.list.plain .row:not(:has(.pill)) height at 390 px: app=74px mockup=75.3906px']
+2 failed, 31 passed, 25 deselected in 46.00s
+```
+
+Screenshots: `docs/tasks/screenshots-0732/cleaning-390.png`, `cleaning-320.png`, `cleaning-1280.png`.
