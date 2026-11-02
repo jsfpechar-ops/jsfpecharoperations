@@ -1,4 +1,4 @@
-# 0835 Address autofill on the property editor (shared component)
+# 0842 Address autofill on the property editor (shared component)
 
 Status: todo
 
@@ -17,7 +17,7 @@ Alignment (2026-11-02): backend and baseline are 0834 (#731). Property copy-from
 
 ## 3. Files
 
-`App/app/static/ruian_suggest.js` (new, plain JS, loaded with defer by the partial), `App/app/templates/_ruian_suggest.html` (partial: script tag only), `App/app/templates/_property_address_fields.html` (include partial, add `data-ruian-suggest` to the street input), `App/app/static/app2.css` (one block `/* 0835 address suggest (v2) */`), new test `App/tests/test_0835_address_suggest_browser.py`. Do not edit app.js.
+`App/app/static/ruian_suggest.js` (new, plain JS, loaded with defer by the partial), `App/app/templates/_ruian_suggest.html` (partial: script tag only), `App/app/templates/_property_address_fields.html` (include partial, add `data-ruian-suggest` to the street input), `App/app/static/app2.css` (one block `/* 0842 address suggest (v2) */`), new test `App/tests/test_0842_address_suggest_browser.py`. Do not edit app.js.
 
 ## 4. Steps
 
@@ -32,7 +32,7 @@ Wizard templates (the wizard thread wires its step to the component), backend, s
 
 ## 6. Commands
 
-`cd App && .venv/bin/python -m pytest tests/test_0835_address_suggest_browser.py tests/test_0833_property_editor_browser.py -q --tb=short -x 2>&1 | tail -30` (mock the endpoint with Playwright route). Tests at 390/768/1280: typing shows the list, picking fills all seven fields, keyboard works, endpoint `[]` leaves fields untouched, list stays inside the viewport, 12 px neighbour rule.
+`cd App && .venv/bin/python -m pytest tests/test_0842_address_suggest_browser.py tests/test_0833_property_editor_browser.py -q --tb=short -x 2>&1 | tail -30` (mock the endpoint with Playwright route). Tests at 390/768/1280: typing shows the list, picking fills all seven fields, keyboard works, endpoint `[]` leaves fields untouched, list stays inside the viewport, 12 px neighbour rule.
 
 ## 7. Acceptance
 
@@ -44,4 +44,4 @@ If #731 changes the response shape or ČÚZK terms block the endpoint.
 
 ## 9. Report
 
-Write docs/tasks/0835-report.md.
+Write docs/tasks/0842-report.md.
