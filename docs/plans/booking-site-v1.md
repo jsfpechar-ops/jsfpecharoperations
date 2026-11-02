@@ -72,12 +72,13 @@ audit and scope"):
 | 0815 | Checkout: quote page "Pokračovat k platbě" -> locked hold (15 min) + pending booking + Stripe Checkout Session on the host's account (30 min); success and cancel pages; removes request-to-book | 0814 | small |
 | 0816 | Payment webhook: paid -> re-check under lock -> reservation (`source='site'`) + mails, or automatic full refund on a clash; expired -> release hold | 0815 | no |
 | 0817 | iCal export `/p/<slug>/<token>.ics` (site + manual stays) | 0814 | no |
-| 0818 | Public page v2: Czech first with EN switch, server-rendered 2-month calendar, quote card with price lines, city tax note, cancellation summary, terms pages CZ/EN filled with host data, page weight test | 0815 | yes |
-| 0819 | Host setup: booking site settings (price, cleaning fee, min nights, guests, 3 cancellation cards, advance notice), 6-step checklist, iCal copy button with where-to-paste help, Max upsell; design add-on `docs/design/pages/booking-site.md` | 0814, 0817 | yes |
-| 0820 | Czech invoice PDF per paid booking in the host's name, e-mailed to the guest | 0816 | no |
-| 0821 | Cancellation: guest self-cancel link (refund per policy), host cancel (full refund), bookings list on the host page | 0816 | yes |
+| 0818 | [Public page v2](../tasks/0818-booking-site-public-page.md): Czech first with CS/EN switch (`?lang=`), server-rendered month calendar (booked and blocked nights, chosen range, no JS), guests, price lines, city-tax note, cancellation summary, terms checkbox with `TERMS_VERSION`, pay button to `/checkout`, page weight test | 0815 | yes |
+| 0819 | [Host setup](../tasks/0819-booking-site-host-setup.md): `/apartments/<id>/booking-site`: 6-step checklist, price and rules form (`save_settings`), iCal link with copy button, site address with QR, publish, Max gate; design add-on `docs/design/pages/booking-site.md` | 0814, 0817, 0818 (same `host_i18n.py`) | yes |
+| 0820 | [Invoice](../tasks/0820-booking-site-invoice.md): Czech invoice PDF per paid booking in the host's entity (reuses the host invoice code), `site_booking.invoice_id`, signed booking link (`booking_site.manage_token`), PDF route and link in the confirmation mail | 0816 | no |
+| 0821 | [Cancellation, guest side](../tasks/0821-booking-site-cancellation.md): guest booking page and self-cancel by the signed link (refund per policy, Stripe refund with idempotency key), invoice storno on a full refund, mails to both, reservation freed | 0818, 0820 | yes |
+| 0822 | [Cancellation, host side](../tasks/0822-booking-site-host-cancel.md): bookings list on the 0819 page, host cancel with full refund, repeat a failed refund | 0819, 0821 | yes |
 
-0815 and 0817 can run in parallel after 0814; the rest go in order. Each UI
+0815 and 0817 can run in parallel after 0814; the rest go in order: 0818, 0819, 0820, 0821, 0822 (each edits `host_i18n.py` or a template the next one extends, so no parallel runs). Each UI
 brief carries the redesign rules: page add-on, no new component classes,
 browser + geometry tests, 390 px screenshots, Stripe links excluded from the
 hover prefetch.
