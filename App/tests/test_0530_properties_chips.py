@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import re
-from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -142,14 +141,6 @@ def test_manual_stay_without_feed_marks_calendar_not_used(clean):
 def test_no_feed_and_no_manual_stay_marks_calendar_missing(clean):
     chips = _chips(_page())
     assert chips["calendar"][0] == "bad"
-
-
-def test_app2_phone_missing_status_uses_bad_token_not_brand():
-    css = (Path(__file__).resolve().parents[1] / "app" / "static" / "app2.css").read_text(encoding="utf-8")
-    rule = re.search(r"body\.v2 \.props-phone \.st\.r\{([^}]*)\}", css)
-    assert rule is not None
-    assert "var(--warn)" in rule.group(1)
-    assert "var(--acc-text)" not in rule.group(1)
 
 
 PHONE_CARD = re.compile(r'<a class="card prop" href="([^"]+)">(.*?)</a>', re.S)

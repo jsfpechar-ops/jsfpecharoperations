@@ -323,7 +323,7 @@ body.v2 .props-card tbody tr.clickable-row{cursor:pointer}
   body.v2 .props-phone .st{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;margin-top:6px;line-height:1.3;padding:0;background:none;min-height:0;border-radius:0}
   body.v2 .props-phone .st:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
   body.v2 .props-phone .st.g{color:var(--ok)}
-  body.v2 .props-phone .st.r{color:var(--warn)}
+  body.v2 .props-phone .st.r{color:var(--acc-text)}
   body.v2 .props-phone .chev{width:20px;height:20px;color:var(--ink3);flex:none}
 }
 @media (min-width:1024px){body.v2 .props-phone{display:none}}
