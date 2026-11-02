@@ -134,8 +134,8 @@ def test_pages_without_javascript_stay_still(wide_host, wide_base):
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = _rail_context(browser, wide_host, wide_base, 1280, collapsed=False, java_script_enabled=False)
-        # 0720: old-shell sidebar and help block (/settings has no how_key), so this runs on /stay-fees (v2 is /).
-        page = _rail_page(context, wide_base, "/stay-fees")
+        # 0720: old-shell sidebar and help block (/settings has no how_key), so this runs on /payments (v2, 0794: /stay-fees moved to v2).
+        page = _rail_page(context, wide_base, "/payments")
         page.locator("details.ui-how summary").click()
         assert page.locator(".ui-how-body").is_visible()
         page.locator('.ui-nav a[href="/reservations"]').click()
