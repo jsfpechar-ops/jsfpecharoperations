@@ -118,6 +118,7 @@
           <p class="ui-sub" data-passkey-unsupported>{{ t('passkeys.unsupported') }}</p>
           <p class="ui-sub err-text" data-passkey-error data-generic="{{ t('passkeys.error.failed') }}" role="alert" hidden></p>
         {% endif %}
+        {% with label=t('passkeys.title'), value=(passkeys or []) | length %}{% include "partials/settings_value_card.html" %}{% endwith %}
         {% for key in passkeys %}
           <div class="settings-action-row passkey-row">
             <div>
@@ -144,16 +145,13 @@
         {% endfor %}
       </div>
       <div class="settings-action-list">
+        {% with label=t('settings.account.2fa'), value=t('settings.account.enabled') if current_user.totp_enabled else t('settings.access.off') %}{% include "partials/settings_value_card.html" %}{% endwith %}
+        {% if not current_user.totp_enabled %}
         <div class="settings-action-row">
-          <div>
-            {% if current_user.totp_enabled %}<strong>{{ t('settings.account.2fa') }}</strong><small>{{ t('settings.account.2fa_on') }}</small>{% else %}{{ tip_label(t('settings.account.2fa'), 'settings-2fa-help', t('settings.account.2fa_off')) }}{% endif %}
-          </div>
-          {% if current_user.totp_enabled %}
-            <span class="ui-badge ui-badge-done" data-tone="green">{{ t('settings.account.enabled') }}</span>
-          {% else %}
-            <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/account/2fa/setup">{{ t('settings.account.setup') }}</a>
-          {% endif %}
+          {{ help_tip('settings-2fa-help', t('settings.account.2fa_off')) }}
+          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/account/2fa/setup">{{ t('settings.account.setup') }}</a>
         </div>
+        {% endif %}
         {% if current_user.totp_enabled %}
           <details class="settings-move">
             <summary>
