@@ -5524,7 +5524,7 @@ _SIGNUP_STRINGS = {
         "signup.ads_consent_link": "How Google uses data",
         # Legal position 2, verbatim.
         "signup.onboarding_opt_out": (
-            "Do not send me setup tips by e-mail (you can change this anytime in Settings)."
+            "No setup tips by e-mail"
         ),
         "signup.submit": "Create account",
         "signup.have_account": "Already have an account?",
@@ -5919,8 +5919,7 @@ _SIGNUP_STRINGS = {
         ),
         "signup.ads_consent_link": "Jak Google používá data",
         "signup.onboarding_opt_out": (
-            "Nepřeji si dostávat e-mailem tipy k nastavení (kdykoli to můžete změnit "
-            "v Nastavení)."
+            "Bez tipů k nastavení e-mailem"
         ),
         "signup.submit": "Založit účet",
         "signup.have_account": "Už účet máte?",

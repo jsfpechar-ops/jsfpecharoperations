@@ -241,7 +241,7 @@ def test_the_ads_box_is_shown_only_with_a_click_id():
     # The setup-tips box is always there, optional and unticked.
     box = re.search(r'<input type="checkbox" name="onboarding_opt_out"[^>]*>', html).group(0)
     assert "checked" not in box and "required" not in box
-    assert "Do not send me setup tips by e-mail (you can change this anytime in Settings)." in html
+    assert "No setup tips by e-mail" in html
 
 
 def test_the_consent_texts_are_the_legal_wording():
@@ -264,7 +264,7 @@ def test_the_czech_form_reads_czech():
     html = _client().get(f"/signup?lang=cs&gclid={GCLID}").text
     assert "Založte si účet UbyHost" in html
     assert "Nepovinné: Souhlasím, aby UbyHost zaznamenal" in html
-    assert "Nepřeji si dostávat e-mailem tipy k nastavení" in html
+    assert "Bez tipů k nastavení e-mailem" in html
 
 
 # --- sign-up and verification --------------------------------------------
