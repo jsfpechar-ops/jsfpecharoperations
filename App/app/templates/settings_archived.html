@@ -20,7 +20,7 @@
     ('housebook', 'archive.chip.housebook_count'),
     ('entities', 'archive.chip.entities_count')
   ] %}
-    <a class="chip" href="/settings/archived?type={{ value }}"{% if item_type == value %} aria-current="true"{% endif %}>
+    <a class="chip ui-chip" href="/settings/archived?type={{ value }}"{% if item_type == value %} aria-current="true"{% endif %}>
       {{ t(label_key, count=counts[value]) }}
     </a>
   {% endfor %}

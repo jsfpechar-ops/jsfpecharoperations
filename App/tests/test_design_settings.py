@@ -21,7 +21,7 @@ def test_settings_pages_have_the_v2_shell(host_with_property):
 
 def test_archive_chips_mark_the_current_type(host_with_property):
     page = host_with_property.get("/settings/archived?type=stays&lang=en").text
-    assert page.count('class="ui-chip"') == 5 and page.count('aria-current="true"') >= 1
+    assert page.count('class="chip ui-chip"') == 5 and page.count('aria-current="true"') >= 1
 
 
 def test_templates_have_no_raw_style_or_legacy_control():
