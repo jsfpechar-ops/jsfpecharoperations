@@ -14,7 +14,7 @@ Josef (2026-11-02): the host calendar (`/?cal_view=calendar`) must look and work
 
 Target on phone (≤767 px, host calendar, not the cleaning page): Airbnb pattern in Ubyhost style (Manrope, ink `#222`, coral only for today and the one primary button, no money anywhere, no prices).
 
-## 2. Design (phone, `phoneDots()` true)
+## 2. Context: design (phone, `phoneDots()` true)
 
 1. **Full page.** `.dashboard-calendar` loses its card look: no border, no background card, no shadow, padding 0 left/right (the page gutter stays). Hide `#calendar-title` (the page h1 already says "Calendar"). Property select: full width, 44 px tall, 12 px radius. Under it the toolbar: month title (`[data-cal-period]`, 20 px, 700) on the left, prev/next as 40 px round icon buttons on the right; hide the Today button on phone. The weekday row is `position:sticky; top:0` with a white background.
 2. **Day tiles.** Each `.cal-day` in an `.is-dots` week is a tile: grid gap 6 px between tiles (columns and rows), tile radius 12 px, `1px solid var(--cal-line)`, min-height 64 px, day number centred at top (15 px, 600), status marks centred below. Keep `.cal-dots` and `.cal-dot` (tests use them) but restyle `.cal-dot` as a bar 14 px wide, 4 px tall, radius 2 px, colour from `data-cal-color` as now; `.cal-dots` centred, gap 3 px.
@@ -58,11 +58,7 @@ Desktop (≥768 px): only items 5 (close button) and 6 change, plus the selected
 
 No other file. No new dependency. No new i18n key (reuse `add_stay`, `close`).
 
-## 4. Do not touch
-
-Cleaning page calendar (`data-cleaning="true"`) must look and behave as before: scope every phone rule with `.dashboard-calendar[data-cleaning="false"]` and every JS change with `phoneDots()` (already false in cleaning mode). Gantt, year view, desktop mouse drag, the create form fields and its POST.
-
-## 5. Steps
+## 4. Steps
 
 1. Read `dashboard-calendar.js` lines 276-320 (`renderCalendar` dots part), 501-530, 582-590 (`openDay`), 634-760 (create, selection, pointer, click handlers). Read CSS lines 80-100 and 555-583. Read `_shell_tabbar.html` for the tab bar height.
 2. JS changes per section 2. Keep functions short; no dead code (remove the phone branch in `pointerup` that called `openDay`, since touch never reaches it).
@@ -70,7 +66,11 @@ Cleaning page calendar (`data-cleaning="true"`) must look and behave as before: 
 4. Template, version bump, static_versions.
 5. Tests, screenshots, report.
 
-## 6. Tests
+## 5. Do not touch
+
+Cleaning page calendar (`data-cleaning="true"`) must look and behave as before: scope every phone rule with `.dashboard-calendar[data-cleaning="false"]` and every JS change with `phoneDots()` (already false in cleaning mode). Gantt, year view, desktop mouse drag, the create form fields and its POST.
+
+## 6. Commands and tests
 
 In `test_dashboard_phone_browser.py`, using the existing fixtures (`calendar_workspace`, `open_page`, `launch`, viewport 390×844, `has_touch=True`, `is_mobile=True` for the touch tests):
 - `test_phone_calendar_tiles_and_sheet`: open `/?cal_view=calendar`; tiles ≥44 px tall and wide; gap between neighbouring tiles ≥4 px; `#calendar-title` not visible; `#cal-hint` has zero size or is clipped (sr-only). Tap day 10 → `[data-cal-day-dialog]` visible, `open` attribute set, `document.querySelector('dialog:modal')` is null; tapped tile has `is-selected` and computed background `rgb(34, 34, 34)`. Tap day 12 → tiles 10, 11, 12 selected, pill text contains "13" (check-out day). Sheet: pill and × top centres within 2 px; × is 40×40 and not coral (background not `rgb(208, 69, 45)`); gap pill→× ≥12 px; sheet bottom ≤ tab bar top; Add button ≥44 px tall, ≥24 px from sheet bottom; text inside sheet ≥16 px from its left/right edges. Tap Add → create dialog open with `date_from` = day 10 and `date_to` = day 13.

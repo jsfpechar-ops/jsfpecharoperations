@@ -10,7 +10,7 @@ Josef (2026-11-02): the host cleaning page `/cleaning` must use the same full-pa
 
 Scope: host page only (`data-readonly="false"`). The shared cleaner page (`read_only`, `/cleaning/s/...`) and its list stay exactly as now.
 
-## 2. Design
+## 2. Context: design
 
 **Phone (≤767 px):**
 1. In `dashboard-calendar.js`, add `function phoneTiles() { return !readOnly && matchMedia("(max-width:767px)").matches; }` and use it where 0814 used `phoneDots()` for tiles, tap, long press and the sheet. `phoneDots()` stays for the host-only things (the `view()` force to calendar etc.); in cleaning mode `view()` must also be `"calendar"` with month scale on phone.
@@ -32,11 +32,21 @@ Turnover logic (cleaning timing from bookings) stays on the server; the events s
 | `App/app/static/cleaning.css` | edit only if needed to hide the list/legend |
 | `App/app/templates/_cleaning_screen.html` / `_cleaning_calendar.html` | add a host class hook only if needed |
 | templates linking changed static files | bump `?v=` to `20261102-0815`; regenerate `App/tests/static_versions.json` with `.venv/bin/python tests/test_static_versions.py --write` |
-| `App/tests/test_cleaning_browser.py` | update assertions that need the list or booking bars on the host page; add tests (section 4) |
+| `App/tests/test_cleaning_browser.py` | update assertions that need the list or booking bars on the host page; add tests (section 6) |
 | `docs/tasks/screenshots-0814/` | add `cleaning-390.png`, `cleaning-range-390.png`, `cleaning-1280.png` |
 | `docs/tasks/0815-report.md` | create |
 
-## 4. Tests
+## 4. Steps
+
+1. Read 0814's committed changes in `dashboard-calendar.js` (`git show HEAD --stat`, then the diff of that file) and `_cleaning_table.html`.
+2. Build section 2 (JS, then CSS, then template hooks, version bump, static_versions).
+3. Section 6 tests and screenshots, then the report.
+
+## 5. Do not touch
+
+The shared cleaner page behaviour, server code, the create/details form fields, the host calendar (0814) look. No new dependency, no new i18n key.
+
+## 6. Commands and tests
 
 Add to `test_cleaning_browser.py`, using its fixtures:
 - `test_phone_cleaning_calendar_tags_only` at 390 and 320: host `/cleaning` shows tiles; a day with a cleaning has ≥1 tag with the cleaning icon; a booked day without cleaning has no tag and no grey fill; `#cleaning-list` not visible; no horizontal overflow. Tap a cleaning day → sheet (non-modal) lists that cleaning; Add → create dialog in cleaning kind with `scheduled_date` = that day. Long press + drag (CDP touch as in 0814's test) selects a range.
@@ -44,14 +54,17 @@ Add to `test_cleaning_browser.py`, using its fixtures:
 
 Run from `App/` with `UBYHOST_REQUIRE_BROWSER=1`: `.venv/bin/python -m pytest tests/test_cleaning_browser.py tests/test_dashboard_phone_browser.py tests/test_dashboard_calendar_browser.py tests/test_0199_phone_geometry_browser.py tests/test_0252_touch_sweep_browser.py tests/test_static_versions.py -q --tb=short -x 2>&1 | tail -30`. All pass, 0 skipped.
 
-## 5. Do not touch
+## 7. Acceptance
 
-The shared cleaner page behaviour, server code, the create/details form fields, the host calendar (0814) look. No new dependency, no new i18n key.
+- [ ] Section 6 tests pass, 0 skipped; the shared cleaner page tests pass unchanged.
+- [ ] Three screenshots exist.
+- [ ] `python3 scripts/context_lint.py` (repo root) clean.
+- [ ] Only section 3 files changed.
 
-## 6. Stop and ask
+## 8. Stop and ask
 
 A table action has no calendar equivalent (report it, keep the desktop table); the read-only page test fails twice; 25 tool calls without green tests.
 
-## 7. Report
+## 9. Report
 
 `docs/tasks/0815-report.md`: files, test last lines, changed old assertions and why, deviations.
