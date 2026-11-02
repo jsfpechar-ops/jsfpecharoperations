@@ -2,6 +2,8 @@
 
 Executor: Haiku 5.5. Alone, no subagents. Do not commit secrets. Do not push.
 
+Status: review
+
 ## Why
 Speed is UbyHost's edge. Signup asks for e-mail AND a workspace name; a new property starts with empty check-in/out hours. Both are friction the host does not need.
 
