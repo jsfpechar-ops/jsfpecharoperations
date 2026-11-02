@@ -3923,7 +3923,10 @@ STRINGS.update({
     "dashboard.ph.need.one": "1 việc cần bạn hôm nay",
     "dashboard.ph.need.few": "%(count)s việc cần bạn hôm nay",
     "dashboard.ph.done": "Xong hết. Hôm nay không có việc gì.",
-    "dashboard.ph.next": "Khách đến tiếp theo: %(when)s, %(place)s",
+    "dashboard.ph.window": "Khách đến",
+    "dashboard.ph.kind.tomorrow": "Ngày mai",
+    "dashboard.ph.kind.arrived": "Đã đến %(day)s",
+    "dashboard.ph.kind.next": "Lượt khách tiếp theo",
     "dashboard.today.guests.one": "1 khách",
     "dashboard.today.guests.few": "%(count)s khách",
 })
