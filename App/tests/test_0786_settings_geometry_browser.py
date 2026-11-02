@@ -66,7 +66,17 @@ HELP_JS = """
     if (!anchor && parent && parent.matches('.heading-with-tip')) anchor = parent.querySelector('h1,h2,h3,h4,h5,h6');
     if (!anchor) continue;
     const a = anchor.getBoundingClientRect(), b = btn.getBoundingClientRect();
-    out.push({label: anchor.textContent.trim().slice(0, 40), sameLine: b.top < a.bottom && b.bottom > a.top});
+    const walker = document.createTreeWalker(anchor, NodeFilter.SHOW_TEXT);
+    let last = null, node;
+    while ((node = walker.nextNode())) { if (node.textContent.trim()) last = node; }
+    let lastTop = a.top, lastBottom = a.bottom;
+    if (last) {
+      const rr = document.createRange();
+      rr.selectNodeContents(last);
+      const rs = [...rr.getClientRects()].filter(r => r.height > 0);
+      if (rs.length) { lastTop = rs[rs.length - 1].top; lastBottom = rs[rs.length - 1].bottom; }
+    }
+    out.push({label: anchor.textContent.trim().slice(0, 40), sameLine: b.top < a.bottom && b.bottom > a.top, lastLine: (b.top + b.bottom) / 2 >= lastTop && (b.top + b.bottom) / 2 <= lastBottom});
   }
   return out;
 }
@@ -104,6 +114,26 @@ ROW_JS = """
     if (items.length < 2) continue;
     const centres = items.map(e => { const r = e.getBoundingClientRect(); return r.top + r.height / 2; });
     out.push({spread: Math.max(...centres) - Math.min(...centres), detail: items.map(e => e.className + ' ' + Math.round(e.getBoundingClientRect().height) + 'px').join(' | ')});
+  }
+  return out;
+}
+"""
+
+
+# static sentences longer than 60 characters: only help popovers, table/list values, status/alert text and controls may hold them
+LONG_TEXT_JS = """
+() => {
+  const out = [];
+  const root = document.querySelector('main') || document.body;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let node;
+  while ((node = walker.nextNode())) {
+    const text = node.textContent.trim();
+    if (text.length <= 60) continue;
+    const el = node.parentElement;
+    if (!el || !el.getClientRects().length) continue;
+    if (el.closest('.help-tip-body, .help-tip, .ui-empty, script, style, summary, td, th, dd, dt, .kv, .ui-table-stack, pre, code, button, a, label, select, textarea, option, input, [role=alert], [role=status], .alert, .flash, .err-text, .ui-btn')) continue;
+    out.push(text.slice(0, 60));
   }
   return out;
 }
@@ -159,8 +189,8 @@ def test_settings_area_geometry_rules(host, base, width):
                 page.goto(f"{base}{path}{sep}lang={lang}" if "entities" not in path else f"{base}{path}?edit={host['entity']}&lang={lang}")
                 tag = f"{path} {lang} {width}"
                 for item in page.evaluate(HELP_JS):
-                    if not item["sameLine"]:
-                        problems.append(f"{tag}: help ? not on the heading line: {item['label']}")
+                    if not item["sameLine"] or not item["lastLine"]:
+                        problems.append(f"{tag}: help ? not on the last heading line: {item['label']}")
                 for item in page.evaluate(CARD_TEXT_JS):
                     if item["left"] < item["cardLeft"] + 16 - 0.5:
                         problems.append(f"{tag}: card text at the edge: {item['text']}")
@@ -169,6 +199,8 @@ def test_settings_area_geometry_rules(host, base, width):
                 for item in page.evaluate(ROW_JS):
                     if item["spread"] > 1:
                         problems.append(f"{tag}: row actions not on one centre line ({item['spread']:.1f} px) {item['detail']}")
+                for text in page.evaluate(LONG_TEXT_JS):
+                    problems.append(f"{tag}: static text outside the help tip: {text}")
                 page.close()
             context.close()
         browser.close()
