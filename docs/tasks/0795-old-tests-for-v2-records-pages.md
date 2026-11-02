@@ -1,5 +1,7 @@
 # 0795 brief: update older tests for the v2 Odeslání, Faktury, Domovní kniha pages
 
+Status: in-progress
+
 Executor: Haiku 5.5. Read `AGENTS.md`, `docs/context/executor.md`, then `docs/tasks/0790-records-pages-v2-common.md` (standing rule for assertions, test env, report). Another executor (0794) works on `/stay-fees` at the same time: never touch stay fee files or the `/* 0794` CSS block.
 
 ## Situation
@@ -17,3 +19,39 @@ test_design_reports.py::test_no_raw_style_or_legacy_control_in_the_three_templat
 ## Report
 
 `docs/tasks/0795-report.md`: per failing test: pre-existing / fixed assertion (file:line, old -> new) / fixed template. Stop at 30 tool calls with what is left.
+
+## 1. Objective
+
+Restyle the page(s) named above onto the v2 look; no behaviour change.
+
+## 2. Context
+
+See the sections above and docs/tasks/0790-records-pages-v2-common.md.
+
+## 3. Files
+
+Only the files named above, plus this brief's report.
+
+## 4. Steps
+
+Follow the sections above in order.
+
+## 5. Do not touch
+
+base.html, catalog.json, static_versions.json, docs/design/mockup/, other briefs' CSS blocks and templates.
+
+## 6. Commands
+
+From App/: PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest <files> -q --tb=short 2>&1 | tail -30
+
+## 7. Acceptance
+
+The named tests pass with 0 skipped; screenshots at 390 and 1440 px exist.
+
+## 8. Stop and ask
+
+A test outside the standing rule fails, or the tool-call cap comes near: write the report with what is left.
+
+## 9. Report
+
+docs/tasks/<number>-report.md as described in 0790.

@@ -1,5 +1,7 @@
 # 0794 brief: Poplatek z pobytu (/stay-fees) on the v2 look, with the approved two-step box
 
+Status: in-progress
+
 Executor: Haiku 5.5. Read `AGENTS.md`, `docs/context/executor.md`, then `docs/tasks/0790-records-pages-v2-common.md` (shared rules, tests, report) and follow it. Your CSS block is `/* 0794 stay fees v2 (start) */` … `(end)` in `App/app/static/app2.css`. Another executor (0795) edits tests at the same time; do not edit tests other than the ones named here.
 
 ## Context
@@ -21,3 +23,39 @@ If the rich test host has no fee period, say so in the report and add the reason
 ## Tests
 
 0710 `-k stay_fees`, then `tests/test_stay_fee*.py tests/test_fee_setup_compatibility.py tests/test_host_i18n.py`, browser env as in 0790. Screenshots 390 and 1440 into `docs/tasks/screenshots-0790/stay-fees-<w>.png`, with a fee period showing step 2 if the fixture allows (otherwise say so).
+
+## 1. Objective
+
+Restyle the page(s) named above onto the v2 look; no behaviour change.
+
+## 2. Context
+
+See the sections above and docs/tasks/0790-records-pages-v2-common.md.
+
+## 3. Files
+
+Only the files named above, plus this brief's report.
+
+## 4. Steps
+
+Follow the sections above in order.
+
+## 5. Do not touch
+
+base.html, catalog.json, static_versions.json, docs/design/mockup/, other briefs' CSS blocks and templates.
+
+## 6. Commands
+
+From App/: PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest <files> -q --tb=short 2>&1 | tail -30
+
+## 7. Acceptance
+
+The named tests pass with 0 skipped; screenshots at 390 and 1440 px exist.
+
+## 8. Stop and ask
+
+A test outside the standing rule fails, or the tool-call cap comes near: write the report with what is left.
+
+## 9. Report
+
+docs/tasks/<number>-report.md as described in 0790.

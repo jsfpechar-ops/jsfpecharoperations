@@ -1,5 +1,7 @@
 # 0793 brief: Domovní kniha (/housebook) on the v2 look
 
+Status: in-progress
+
 Executor: Haiku 5.5. Read `AGENTS.md`, `docs/context/executor.md`, then `docs/tasks/0790-records-pages-v2-common.md` (shared rules, tests, report) and follow it.
 
 ## Page
@@ -16,3 +18,39 @@ Executor: Haiku 5.5. Read `AGENTS.md`, `docs/context/executor.md`, then `docs/ta
 
 `{"name": "housebook", "path": "/housebook", "view": "stays", "phone_view": "pobyty", "phone_mockup": PHONE_MOCKUP_V2, "selectors": [".head h1", ".head .btn.ghost", "main table th", "main table td", "main .pill.p-ok", "main .pill.p-warn"], "phone_selectors": [".tabs", ".tab.on", ".mh .big, .head h1", ".card.stay", ".sav", ".stay .in b", ".stay .in small"], "missing_ok": {"main .pill.p-ok": "tone depends on data", "main .pill.p-warn": "tone depends on data"}}`
 Also run `tests/test_host_filter_panels_browser.py` (filter panel behaviour must not change).
+
+## 1. Objective
+
+Restyle the page(s) named above onto the v2 look; no behaviour change.
+
+## 2. Context
+
+See the sections above and docs/tasks/0790-records-pages-v2-common.md.
+
+## 3. Files
+
+Only the files named above, plus this brief's report.
+
+## 4. Steps
+
+Follow the sections above in order.
+
+## 5. Do not touch
+
+base.html, catalog.json, static_versions.json, docs/design/mockup/, other briefs' CSS blocks and templates.
+
+## 6. Commands
+
+From App/: PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest <files> -q --tb=short 2>&1 | tail -30
+
+## 7. Acceptance
+
+The named tests pass with 0 skipped; screenshots at 390 and 1440 px exist.
+
+## 8. Stop and ask
+
+A test outside the standing rule fails, or the tool-call cap comes near: write the report with what is left.
+
+## 9. Report
+
+docs/tasks/<number>-report.md as described in 0790.

@@ -1,6 +1,6 @@
 # 0790: v2 look for Odeslání, Faktury, Domovní kniha (shared rules for briefs 0791-0793)
 
-Status: active. Orchestrator thread "Redesign guest book and invoices pages", branch `claude/project-thread-tluz48`.
+Status: in-progress
 Executors: three Haiku 5.5 runs in parallel in `/home/claude/jsfpecharoperations` (already checked out). Do not switch branches, commit or push. Edit only the files and lines your brief names; never revert changes you did not make. Re-read a shared file right before each edit (other runs change it too).
 
 ## Goal
@@ -34,3 +34,39 @@ Restyle only: each page moves from the old look (`host_page.html` without `v2`) 
 ## Report
 
 `docs/tasks/079x-report.md`: files changed, tests run with pass/fail/skip counts, assertions changed (file:line, old -> new, why), anything left. Stop at 30 tool calls and write the report with what is left.
+
+## 1. Objective
+
+Restyle the page(s) named above onto the v2 look; no behaviour change.
+
+## 2. Context
+
+See the sections above and docs/tasks/0790-records-pages-v2-common.md.
+
+## 3. Files
+
+Only the files named above, plus this brief's report.
+
+## 4. Steps
+
+Follow the sections above in order.
+
+## 5. Do not touch
+
+base.html, catalog.json, static_versions.json, docs/design/mockup/, other briefs' CSS blocks and templates.
+
+## 6. Commands
+
+From App/: PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest <files> -q --tb=short 2>&1 | tail -30
+
+## 7. Acceptance
+
+The named tests pass with 0 skipped; screenshots at 390 and 1440 px exist.
+
+## 8. Stop and ask
+
+A test outside the standing rule fails, or the tool-call cap comes near: write the report with what is left.
+
+## 9. Report
+
+docs/tasks/<number>-report.md as described in 0790.
