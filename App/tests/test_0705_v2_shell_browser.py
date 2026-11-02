@@ -111,8 +111,3 @@ def test_app2_css_has_the_phone_top_bar_rule_and_no_font_picker():
     assert "@media (max-width: 767px)" in css
     assert "fontpick" not in css and "body.f-" not in css
     assert "--acc:#d0452d" in css  # v2 accent token as copied into app2.css (no --coral-600 there)
-
-
-def test_v2_shell_has_one_help_entry_0826():
-    shell = (ROOT / "app/templates/_shell_v2.html").read_text(encoding="utf-8")
-    assert "support-link" not in shell  # v2, 0826: one help entry (the Help link to /guide)

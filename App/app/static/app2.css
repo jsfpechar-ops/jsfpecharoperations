@@ -221,6 +221,8 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
 @media (min-width:1024px){body.v2 .row-menu-trigger{min-width:24px;min-height:24px}}
 /* 0716 v2 shell parity: env badge under the logo, quiet support link in the bottom block */
 .side .env-badge{display:inline-block;margin:0 8px;padding:0 8px;border-radius:999px;font-size:12px;line-height:16px;color:var(--ink2);background:var(--side2)}
+.side .support-link{display:block;font-size:12px;margin-bottom:12px}
+.side .support-link small{display:block;font-size:12px;color:var(--ink3)}
 /* 0826 shell top gaps: at least 12 px between neighbouring sidebar blocks (brand, badge, account, search, nav, help, account, log out); geometry test in tests/test_0705_v2_shell_browser.py */
 .side .env-badge{margin:12px 8px}
 .side .org{margin-bottom:12px}
