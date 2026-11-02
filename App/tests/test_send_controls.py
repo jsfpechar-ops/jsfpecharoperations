@@ -727,12 +727,12 @@ def test_the_refused_stay_page_leads_with_the_fix_and_keeps_send_secondary():
     body = client.get(f"/reservations/{reservation['id']}").text
 
     assert "The police did not accept a guest record." in body
-    assert 'class="ui-btn ui-btn-primary" href="#guests"' in body
+    assert 'class="btn" href="#guests"' in body  # v2 primary button
     assert "Fix rejection" in body
     assert "Send again" in body
     assert body.index("Fix rejection") < body.index("Send again")
     # Nothing has been changed since the refusal, so the resend is not primary.
-    assert 'class="ui-btn ui-btn-primary" type="submit"' not in body
+    assert f'/reservations/{reservation["id"]}/submit" class="inline"' not in body  # no primary send form
     assert "Send to UbyPort" not in body
 
     db.update("guest", guest_id, {"updated_at": "2026-09-20T12:00:00+00:00"})
@@ -740,7 +740,7 @@ def test_the_refused_stay_page_leads_with_the_fix_and_keeps_send_secondary():
 
     # 0137: "Send again" lives in the stay's More menu; Fix stays the one coral button.
     assert '<button class="row-menu-item" type="submit" role="menuitem">Send again</button>' in fixed
-    assert 'class="ui-btn ui-btn-primary" type="submit"' not in fixed
+    assert f'/reservations/{reservation["id"]}/submit" class="inline"' not in fixed
     assert "Fix rejection" in fixed
 
 
