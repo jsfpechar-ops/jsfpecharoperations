@@ -89,11 +89,10 @@ def test_login_and_host_pages_link_the_manifest_and_the_app_script():
     assert "/static/pwa.js?v=" in login_page
     if "data-passkey-login-button" in login_page:  # the hint sits with the passkey button
         assert "data-pwa-standalone" in login_page
-    settings = _signed_in().get("/settings?lang=en").text
+    settings = _signed_in().get("/settings/phone?lang=en").text
     assert '<link rel="manifest" href="/manifest.webmanifest">' in settings
     assert "/static/pwa.js?v=" in settings
     assert 'id="settings-group-phone"' in settings
-    assert 'href="#settings-group-phone"' in settings
     # Without JavaScript the generic how-to is the one visible line.
     assert "<p class=\"ui-sub\" data-pwa-other>" in settings
 

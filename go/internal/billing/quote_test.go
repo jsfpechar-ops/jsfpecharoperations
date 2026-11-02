@@ -12,7 +12,6 @@ type fixtureQuote struct {
 	Interval        string `json:"interval"`
 	TTLock          bool   `json:"ttlock"`
 	Whitelabel      bool   `json:"whitelabel"`
-	Founder         bool   `json:"founder"`
 	DiscountPercent int    `json:"discount_percent"`
 	Expected        Price  `json:"expected"`
 }
@@ -43,11 +42,11 @@ func loadFixtures(t *testing.T) fixtureFile {
 
 func TestQuoteMatchesPythonFixtures(t *testing.T) {
 	f := loadFixtures(t)
-	if len(f.Quote) != 1120 {
-		t.Fatalf("expected 1120 quote cases, got %d", len(f.Quote))
+	if len(f.Quote) != 560 {
+		t.Fatalf("expected 560 quote cases, got %d", len(f.Quote))
 	}
 	for _, c := range f.Quote {
-		got, err := Quote(c.Apartments, c.Plan, c.Interval, c.TTLock, c.Whitelabel, c.Founder, c.DiscountPercent)
+		got, err := Quote(c.Apartments, c.Plan, c.Interval, c.TTLock, c.Whitelabel, c.DiscountPercent)
 		if err != nil {
 			t.Fatalf("%+v: %v", c, err)
 		}
@@ -66,13 +65,13 @@ func TestMonthlyMatchesPythonFixtures(t *testing.T) {
 }
 
 func TestQuoteRejectsBadInput(t *testing.T) {
-	if _, err := Quote(1, "pro", "month", false, false, false, 0); err == nil {
+	if _, err := Quote(1, "pro", "month", false, false, 0); err == nil {
 		t.Error("unknown plan accepted")
 	}
-	if _, err := Quote(1, "max", "week", false, false, false, 0); err == nil {
+	if _, err := Quote(1, "max", "week", false, false, 0); err == nil {
 		t.Error("unknown interval accepted")
 	}
-	if _, err := Quote(1, "max", "month", false, false, false, 101); err == nil {
+	if _, err := Quote(1, "max", "month", false, false, 101); err == nil {
 		t.Error("discount above 100 accepted")
 	}
 }

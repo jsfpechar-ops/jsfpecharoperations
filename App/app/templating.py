@@ -336,6 +336,7 @@ _PASS_MONTHS = {
     "es": ("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"),
     "fr": ("janv", "févr", "mars", "avr", "mai", "juin", "juil", "août", "sept", "oct", "nov", "déc"),
     "uk": guest_uk_i18n.PASS_MONTHS,
+    "vi": ("thg 1", "thg 2", "thg 3", "thg 4", "thg 5", "thg 6", "thg 7", "thg 8", "thg 9", "thg 10", "thg 11", "thg 12"),
 }
 _PASS_WEEKDAYS = {
     "en": ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"),
@@ -344,6 +345,7 @@ _PASS_WEEKDAYS = {
     "es": ("lun", "mar", "mié", "jue", "vie", "sáb", "dom"),
     "fr": ("lun", "mar", "mer", "jeu", "ven", "sam", "dim"),
     "uk": guest_uk_i18n.PASS_WEEKDAYS,
+    "vi": ("T2", "T3", "T4", "T5", "T6", "T7", "CN"),
 }
 
 
@@ -366,6 +368,34 @@ def _pass_date(context, value: Optional[str], part: str = "dm") -> str:
     if part == "long":
         return f"{weekday} {day_month}"
     return day_month
+
+
+@pass_context
+def stay_range(context, date_from: Optional[str], date_to: Optional[str]) -> str:
+    """A stay's dates on one line for the stays list (0766).
+
+    Same month: "Thu 5 – Sun 8 Nov". Across months: "Sat 31 Oct – Mon 2 Nov".
+    Czech is numeric ("čt 5. – ne 8. 11."), Vietnamese is "T5 5/11 – CN 8/11".
+    An unparseable date returns "" so a broken reservation never crashes the list.
+    """
+    start = validation.parse_iso_date(date_from)
+    end = validation.parse_iso_date(date_to)
+    if not start or not end:
+        return ""
+    lang = context.get("lang") if context.get("lang") in _PASS_MONTHS else "en"
+    weekdays = _PASS_WEEKDAYS[lang]
+    same_month = (start.year, start.month) == (end.year, end.month)
+    if lang == "vi":
+        return f"{weekdays[start.weekday()]} {start.day}/{start.month} – {weekdays[end.weekday()]} {end.day}/{end.month}"
+    if lang == "cs":
+        if same_month:
+            return f"{weekdays[start.weekday()]} {start.day}. – {weekdays[end.weekday()]} {end.day}. {end.month}."
+        return f"{weekdays[start.weekday()]} {start.day}. {start.month}. – {weekdays[end.weekday()]} {end.day}. {end.month}."
+    months = _PASS_MONTHS[lang]
+    if same_month:
+        return f"{weekdays[start.weekday()]} {start.day} – {weekdays[end.weekday()]} {end.day} {months[end.month - 1]}"
+    return (f"{weekdays[start.weekday()]} {start.day} {months[start.month - 1]} – "
+            f"{weekdays[end.weekday()]} {end.day} {months[end.month - 1]}")
 
 
 @pass_context
@@ -579,6 +609,7 @@ templates.env.globals.update(
     nights=_nights,
     nights_label=_nights_label,
     pass_date=_pass_date,
+    stay_range=stay_range,
     source_label=_source_label,
     source_mark=source_mark,
     feed_platform_key=icalsync.platform_of,

@@ -312,20 +312,26 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                     page.wait_for_selector(".cal-gantt-row" if mode == "gantt" else ".cal-week")
                     wait_loaded(page)
                     # Summary (needs you + month line) -> calendar -> detailed action queue, in the same lane.
-                    boxes = page.evaluate("""() => ['[data-dashboard-refresh="stats"]', '.ov-cal-more', '#calendar'].map(selector => {
+                    boxes = page.evaluate("""() => ['[data-dashboard-refresh="stats"]', '.ov-cal-more', '#calendar', 'h1.hl'].map(selector => {
                         const r = document.querySelector(selector).getBoundingClientRect();
                         return {top:r.top, bottom:r.bottom, left:r.left, right:r.right, height:r.height};
                     })""")
                     # 0723: .ov-cal-more is display:none below 1024 px, so its box is all zeros there.
-                    if boxes[1]["height"] == 0:
+                    # 0765: below 1024 px the phone calendar-only view hides the to-do section (all-zero box).
+                    if width < 1024 and boxes[0]["height"] == 0:
+                        assert boxes[2]["height"] > 0, boxes
+                        assert 0 <= boxes[2]["top"] - boxes[3]["bottom"] <= 120, boxes
+                        aligned = [boxes[2]]
+                    elif boxes[1]["height"] == 0:
                         assert 0 <= boxes[2]["top"] - boxes[0]["bottom"] <= 44, boxes
                         aligned = [boxes[0], boxes[2]]
                     else:
                         assert 0 <= boxes[2]["top"] - boxes[1]["bottom"] <= 44, boxes
-                        aligned = boxes[1:]
+                        aligned = boxes[1:3]
+                    reference = boxes[2] if boxes[0]["height"] == 0 else boxes[0]
                     for box in aligned:
-                        assert abs(box["left"] - boxes[0]["left"]) <= 2, boxes
-                        assert abs(box["right"] - boxes[0]["right"]) <= 2, boxes
+                        assert abs(box["left"] - reference["left"]) <= 2, boxes
+                        assert abs(box["right"] - reference["right"]) <= 2, boxes
                     if width >= 768:
                         icon = page.locator("[data-cal-settings] svg").bounding_box()
                         assert icon["width"] >= 18 and icon["height"] >= 18, icon

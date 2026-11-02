@@ -101,12 +101,18 @@ BOX_OVERRIDES = {
     # text-dependent: app copy vs phone v2 mockup demo copy (0750)
     "stays:.mh .big, .head h1@320": {"width": "100.203px"},
     "stays:.mh .big, .head h1@390": {"width": "100.203px"},
-    "stays:.stay .in b@320": {"width": "135.656px"},
-    "stays:.stay .in b@390": {"width": "135.656px"},
-    "stays:.stay .in small@320": {"width": "128.641px"},
-    "stays:.stay .in small@390": {"width": "128.641px"},
+    # text-dependent (0766): the stays card shows the stay dates with weekdays; values are the app's measured fixture sizes
+    "stays:.stay .in small@320": {"width": "72.2656px"},
+    "stays:.stay .in small@390": {"width": "72.2656px"},
     "stays:.stay .pill.p-warn@320": {"width": "101.891px"},
     "stays:.stay .pill.p-warn@390": {"width": "101.891px"},
+    # text/data-dependent (0765): two stay cards in the check-in window and a dates prefix in .meta
+    "overview:.hs .card@320": {"width": "272px", "height": "299px"},
+    "overview:.hs .card@390": {"width": "272px", "height": "299px"},
+    "overview:.nm@320": {"width": "228px"},
+    "overview:.nm@390": {"width": "228px"},
+    "overview:.meta@320": {"width": "228px", "height": "42px"},
+    "overview:.meta@390": {"width": "228px", "height": "42px"},
     # fixture property has no check-in/out time, so the facts grid has no time line
     # text-dependent: app copy vs phone v2 mockup demo copy (0751). Values are the app's measured fixture sizes:
     # the stay dates card has no check-in time line in the fixture; the guest rows and police card copy differ from the demo
@@ -224,6 +230,9 @@ PAGES = [
         "phone_selectors": [".tabs", ".tab:not(.on)", ".tab.on", ".mh .big", ".me-av", ".tile", ".tile b", ".tile small", ".tile .v", ".promo", ".promo .pi", ".promo b", ".promo small", ".list.plain .row", ".list.plain .badge", ".menu-logout"],
         "missing_ok": {".list.plain .badge": "the Cleaning badge shows only when a cleaning is planned for today"},
     },
+    {"name": "entities", "path": "/entities", "view": "props", "selectors": [".head h1", "main .card"], "missing_ok": {".head h1": "the settings sub page uses the airbnb big title, not the .head bar (0789c)"}},
+    {"name": "privacy_requests", "path": "/privacy-requests", "view": "props", "selectors": [".head h1", "main .card"], "missing_ok": {".head h1": "the settings sub page uses the airbnb big title, not the .head bar (0789c)"}},
+    {"name": "archive", "path": "/settings/archived", "view": "props", "selectors": [".head h1", "main .card"], "missing_ok": {"main .card": "the test fixture has no archived item: the empty state has no card", ".head h1": "the settings sub page uses the airbnb big title, not the .head bar (0789c)"}},
     {
         "name": "stays",
         "path": "/reservations?range=upcoming&lang=cs",
@@ -239,6 +248,9 @@ PAGES = [
             "main .pill.p-ok": "tone depends on data: the test fixture has no reported stay",
             ".stay .pill.p-ok": "tone depends on data: the test fixture has no reported stay",
             ".stay .pill.p-warn": "tone depends on data: the test fixture has no reported stay",
+        },
+        "phone_box_skip": {
+            ".stay .in b": (["width"], "title is the stay's date range relative to today, so its text width changes daily (0766)"),
         },
     },
     {
@@ -267,6 +279,7 @@ PAGES = [
             ".row .t small": "payment rows have no subtitle in the current copy; the mockup subtitles are demo copy",
         },
     },
+    {"name": "settings", "path": "/settings", "view": "settings", "selectors": [".side .nav.on", ".head h1", "main h2", "main .card"], "missing_ok": {".head h1": "the index page uses the airbnb big title, not the .head bar (0789)", "main h2": "the index page has no group headings: each group is on its own sub page (0789)", "main .card": "the index page has no group cards: each group is on its own sub page (0789)"}},
 ]
 
 

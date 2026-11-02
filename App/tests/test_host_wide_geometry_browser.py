@@ -64,7 +64,7 @@ CAPTURE_ROUTES = {
     "guest-links": ("/apartments/{property_id}?view=settings&section=guests", ".property-views, details.prop-sec"),  # v2 (0538)
     "automation": ("/apartments/{property_id}?view=settings&section=automation", ".property-views, details.prop-sec"),  # v2 (0538)
     "archive": ("/settings/archived", ".ui-section, .ui-empty"),
-    "settings": ("/settings", ".host-property-grid"),
+    "settings": ("/settings", ".settings-lane"),
     "smart-locks": ("/smart-locks", ".ui-body-list, .panel"),
 }
 
@@ -547,7 +547,7 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                             f"feedback region overlaps local navigation on {name}/{lang}/{width}"
                         )
                     # 0538: the v2 property page header is a crumb and h1, not a full-width bar, so no edge lane to match
-                    v2_header_skip = name in ("fee-setup", "property-detail", "property-detail-configured", "guest-links", "automation")
+                    v2_header_skip = name in ("fee-setup", "property-detail", "property-detail-configured", "guest-links", "automation", "settings")  # 0789: settings index is a back button + h1, not a full-width bar
                     for edge in (() if v2_header_skip else ("left", "right")):
                         delta = round(result[edge] - header[edge], 2)
                         if abs(delta) > 2:
@@ -832,8 +832,8 @@ def test_collapsed_sidebar_keeps_dashboard_and_stays_lanes_aligned(wide_host, wi
             }])
             page = context.new_page()
             for key, path, selector in (
-                # 0720c: v2 `/` has no sidebar collapse button; the collapse case runs on /settings (old shell).
-                ("settings", "/settings", ".host-property-grid"),
+                # 0720c: v2 `/` has no sidebar collapse button; the collapse case runs on /payments (old shell, 0785a).
+                ("payments", "/payments", ".ui-section"),
                 ("stays", "/reservations", ".stays-desk"),
             ):
                 response = page.goto(f"{wide_base}{path}?lang={lang}")
@@ -965,8 +965,8 @@ def _rail_context(browser, wide_host, wide_base, width, collapsed, **options):
     return context
 
 
-# 0720c: the rail cases run on /settings (old shell, no `v2` set); v2 `/` has no `button[data-sidebar-collapse]`.
-def _rail_page(context, wide_base, path="/settings"):
+# 0720c: the rail cases run on /payments (old shell, no `v2` set, 0785a); v2 `/` has no `button[data-sidebar-collapse]`.
+def _rail_page(context, wide_base, path="/payments"):
     page = context.new_page()
     response = page.goto(f"{wide_base}{path}")
     assert response and response.status == 200

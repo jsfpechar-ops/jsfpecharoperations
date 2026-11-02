@@ -36,7 +36,7 @@ PROBE = r"""() => {
     if (!shown(e) || e.closest('.cal-scroll, [data-dashboard-calendar], .notification-stack')) continue;
     const r = e.getBoundingClientRect();
     if (r.right > vw + 1 || r.left < -1) {
-      if (e.closest('.scroll-x, .hs, body.v2 .chips')) continue;  // .hs (phone today cards) and v2 chips scroll inside themselves
+      if (e.closest('.scroll-x, .hs, body.v2 .chips, .settings-pills')) continue;  // .hs (phone today cards), v2 chips and settings pills scroll inside themselves
       out.outside.push((e.textContent || e.name || e.tagName).trim().slice(0, 30));
     }
   }

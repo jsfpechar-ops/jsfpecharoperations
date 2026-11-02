@@ -240,9 +240,7 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "If an invoice is not paid when due, the Operator sends reminders; fourteen days after the "
             "due date the Account becomes read-only until the invoice is paid. Guest details already "
             "submitted continue to be reported to the police while the Account is read-only. The "
-            "Operator may change prices for future billing periods with at least 30 days' notice. A "
-            "founder price, where granted, stays for as long as the Host keeps the yearly plan without "
-            "interruption."
+            "Operator may change prices for future billing periods with at least 30 days' notice."
         ),
         "terms.s16_title": "16. Disclaimer of warranties",
         "terms.s16_body": (
@@ -593,8 +591,7 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "faktura zaplacena včas, Provozovatel pošle připomínky; čtrnáct dní po splatnosti je Účet "
             "jen pro čtení, dokud faktura není zaplacena. Hosty, kteří už údaje vyplnili, hlásíme "
             "cizinecké policii i po tuto dobu. Provozovatel může ceny pro budoucí období změnit s "
-            "oznámením nejméně 30 dní předem. Zakladatelská cena, byla-li přiznána, platí, dokud "
-            "Ubytovatel bez přerušení pokračuje v ročním plánu."
+            "oznámením nejméně 30 dní předem."
         ),
         "terms.s16_title": "16. Vyloučení záruk",
         "terms.s16_body": (

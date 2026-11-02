@@ -1719,7 +1719,7 @@ def test_settings_shows_the_host_a_working_claim_link(monkeypatch):
         # the Settings query finds it.
         db.update("apartment", apartment["id"], {"owner_user_id": owner_id})
 
-        page = _login("boundary-w24").get("/settings")
+        page = _login("boundary-w24").get("/settings/technical")
         assert page.status_code == 200
         assert mail.CLAIM_SECRET_MARKER not in page.text
         assert f"#c={secret}" in page.text
@@ -1808,6 +1808,10 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
         "payment_request",
         "reminder_guest",
         "reminder_host",
+        # 0816: booking site confirmation, double-booking refund, host notice.
+        "site_booking_confirmed",
+        "site_booking_refunded",
+        "site_booking_host",
         "completion",
         "submission_problem",
         "invoice_issued",

@@ -261,7 +261,7 @@ body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
   body.v2 .btn.line{background:#fff;color:var(--ink);border:1.5px solid var(--ink)}
   body.v2 .btn.soft{background:#f6f6f4;color:var(--ink)}
   body.v2 .allgood{margin:0 0 12px;padding:16px 18px;border-radius:18px;background:var(--oks);color:var(--ok);font-weight:700;display:flex;gap:10px;align-items:center}
-  body.v2 .hs{display:flex;gap:12px;overflow-x:auto;margin:0 -20px;padding:4px 20px 16px;scroll-snap-type:x mandatory;scrollbar-width:none}body.v2 .hs::-webkit-scrollbar{display:none}
+  body.v2 .hs{display:flex;gap:12px;overflow-x:auto;margin:0 -20px;padding:4px 20px 16px;scroll-padding-inline:20px;scroll-snap-type:x mandatory;scrollbar-width:none}body.v2 .hs::-webkit-scrollbar{display:none}
   body.v2 .hs .card{margin:0;flex:0 0 272px;scroll-snap-align:start;display:flex;flex-direction:column;gap:10px}
   body.v2 .hs .card:only-child{flex:1 1 auto}
   body.v2 .hs:has(> .card:only-child){margin-left:0;margin-right:0;padding-left:0;padding-right:0}
@@ -588,7 +588,7 @@ body.v2 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;ov
 .host-stay-detail .police-card.police-failed>b{color:var(--bad)}
 .host-stay-detail .code{font-size:28px;font-weight:800;letter-spacing:.08em}
 @media (min-width:1024px){body.v2 .stay-top,body.v2 .actbar{display:none}}
-@media (max-width:1023px){.host-stay-detail .stay-head-cta{display:none}.host-stay-detail{padding-bottom:180px}}
+@media (max-width:1023px){.host-stay-detail .stay-head-cta{display:none}}
 /* shared (v2): copy buttons swap their label for "Copied" in place (app.js copy-label-stack) */
 body.v2 .copy-label-stack{display:inline-grid;vertical-align:baseline}
 body.v2 .copy-label-stack>span{grid-area:1/1}
@@ -636,6 +636,7 @@ body.v2 [data-copy].copied { color: #bf4f40; border-color: #ef6b58; }
 @media (max-width:1023px){body.v2 .host-stay-detail .stay-guests-h h2.sec{flex:1 1 100%}body.v2 .host-stay-detail .head h1.big{line-height:1.15}}
 /* 0529: the phone action bar is the header CTA placed at the bottom by CSS (one form, one render) */
 @media (max-width:1023px){body.v2 .host-stay-detail .stay-head-cta{display:block;position:fixed;left:0;right:0;bottom:calc(84px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--line);padding:12px 20px;z-index:4}body.v2 .host-stay-detail .stay-head-cta form{display:block}body.v2 .host-stay-detail .stay-head-cta .btn{width:100%}}
+@media (max-width:1023px){body.v2 .host-stay-detail .stay-head-cta:not(:has(form, a.btn)){display:none}body.v2 .host-stay-detail:has(.stay-head-cta :is(form, a.btn)){padding-bottom:180px}}
 /* 0529 final: stay page table and phone row rules take the mockup line colour (--line), not ink */
 body.v2 .host-stay-detail table th,body.v2 .host-stay-detail table td,body.v2 .host-stay-detail .list .row{border-bottom-color:var(--line)}
 /* 0751: phone stay page = mockup pobyt (ubyhost-phone-v2.html). Below 1024 px only. */
@@ -940,9 +941,6 @@ body.v2 .fields-wrap{padding:0 16px 16px}
 body.v2 .setup-continue-card p{font-size:13px;margin:0 0 8px}
 body.v2 .setup-continue-card .actions{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
 body.v2 .setup-continue-card .ui-btn{min-height:32px;padding:4px 12px;font-size:13px}
-body.v2 details .help-tip-btn{display:none}
-body.v2 details .help-tip{display:block}
-body.v2 details .help-tip-body{position:static;display:block;max-width:none;margin:2px 0 0;padding:0;background:none;border:0;box-shadow:none;font-size:12px;color:var(--ink3)}
 @media (min-width:601px){body.v2 .savebar{right:calc(var(--control-h) + var(--space-3) + var(--space-6));white-space:nowrap}}
 /* 0544: above the sticky preview aside from 1024 px; the Havel FAB (z 40) and dialog (z 60) stay above the bar. */
 body.v2 .savebar .ui-btn,body.v2 .savebar .btn{width:auto;white-space:nowrap}
@@ -1077,3 +1075,258 @@ body.v2 .list.plain .row .pill{margin-top:0}
 @media (max-width:1023px){body.v2 .cleaning-phone h1.hl{font-size:30px;line-height:1.15;font-weight:800;letter-spacing:-.02em;text-align:center;margin:0 8px 28px}body.v2 .cleaning-phone h2.sec{font-size:13px;font-weight:700;margin:26px 0 12px}}
 @media (max-width:1023px){body.v2 .cleaning-more>summary.btn{margin-top:0;padding:0;min-height:50px}}
 @media (max-width:1023px){body.v2 .cleaning-phone .list.plain .row .t b{font-size:17px}}
+
+/* 0780 settings page (v2) */
+body.v2 .settings-lane{max-width:720px}
+body.v2 .settings-head{max-width:720px}
+body.v2 .settings-lane h2.settings-group-title{font-size:16px;font-weight:700;text-transform:none;letter-spacing:0;color:var(--ink);justify-content:flex-start;margin:24px 0 12px}
+body.v2 .settings-lane .settings-group:first-child h2.settings-group-title{margin-top:0}
+body.v2 .settings-card{padding:0;margin:0}
+body.v2 .settings-card .ui-section{padding:16px;border-top:1px solid var(--line)}
+body.v2 .settings-card > .ui-section:first-child{border-top:0}
+body.v2 .settings-card .ui-section h2,body.v2 .settings-card .ui-section h3{font-size:16px;font-weight:700;margin:0 0 8px;background:none;border:0;padding:0;color:var(--ink)}
+body.v2 .set-row{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:48px;padding:12px 0;color:var(--ink);text-decoration:none;box-sizing:border-box}
+body.v2 .set-row-v{color:var(--ink3);text-align:right}
+body.v2 .settings-action-row{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:48px;padding:12px 0;box-sizing:border-box}
+body.v2 .settings-action-row > div{min-width:0}
+body.v2 .settings-action-row strong{display:block;color:var(--ink);font-size:15px}
+body.v2 .settings-action-row small{display:block;color:var(--ink3);font-size:14px;line-height:1.4;margin-top:2px}
+body.v2 .settings-action-row > .btn,body.v2 .settings-action-row > .pill{flex:0 0 auto}
+body.v2 .settings-move-form{max-width:420px;padding-bottom:16px}
+body.v2 .settings-lane .ui-btn{min-height:44px}
+body.v2 .settings-card .ui-btn,body.v2 .settings-card button{white-space:normal;max-width:100%}
+body.v2 .settings-row-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:nowrap;flex:0 0 auto;gap:8px}
+body.v2 .settings-row-actions .ui-btn{white-space:nowrap}
+body.v2 .settings-action-row > div:first-child{flex:1 1 auto}
+body.v2 .settings-row-actions[hidden]{display:none}
+body.v2 .settings-lane a{display:inline-flex;align-items:center;min-height:24px}
+body.v2 .settings-lane .help-tip-btn{min-width:24px;min-height:24px}
+body.v2 .settings-lane form > .ui-btn + .ui-sub{display:block;margin-top:10px}
+body.v2 .settings-action-row > div{display:flex;flex-wrap:wrap;align-items:center;gap:0 8px}
+body.v2 .settings-action-row > div > strong{width:auto}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) h2 > .help-tip,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) h3 > .help-tip{margin-left:8px;vertical-align:middle}
+body.v2 .settings-heading{display:flex;align-items:last baseline;flex-wrap:nowrap;gap:8px}
+body.v2 .settings-heading h3{min-width:0}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) div:has(> label.checkline + .help-tip){display:flex;align-items:last baseline;flex-wrap:nowrap;gap:8px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) div:has(> label.checkline + .help-tip) > label.checkline{min-width:0}
+body.v2 .field-label-row{display:flex;align-items:last baseline;flex-wrap:nowrap;gap:8px}
+body.v2 .field-label-row > label{min-width:0}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-heading .help-tip,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .field-label-row .help-tip{display:inline-flex;vertical-align:middle}
+/* 0787e: the heading text flows inline and the help ? follows its last word 8 px later; the reserved 32 px keeps the ? on the last line */
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-heading{display:block;}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) div:has(> strong + .help-tip){}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-heading h3{display:inline}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-heading .help-tip{display:inline;margin-left:8px;vertical-align:middle}
+/* 0787e: the ? is joined to the word before it (word joiner), so a wrap never leaves the ? alone at a line start */
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) :is(h1,h2,h3) > .help-tip,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-action-row > div:has(> strong + .help-tip) > .help-tip,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-heading .help-tip{display:inline;margin-left:8px;vertical-align:middle}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) :is(h1,h2,h3) > .help-tip::before,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-action-row > div:has(> strong + .help-tip) > .help-tip::before,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-heading .help-tip::before{content:"\2060"}
+/* 0787d: a heading or label with its ? keeps the ? on its last line; Account card row keeps label + ? as one group */
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) :is(h1,h2,h3):has(> .help-tip){display:block;}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) :is(h1,h2,h3) > .help-tip{display:inline;margin-left:8px;vertical-align:middle}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-action-row > div:has(> strong + .help-tip){display:block;min-width:0;}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-action-row > div:has(> strong + .help-tip) > strong{display:inline;min-width:0}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-action-row > div:has(> strong + .help-tip) > strong::after{content:"\2060"}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-action-row > div:has(> strong + .help-tip) > .help-tip{display:inline;margin-left:8px;vertical-align:middle}
+body.v2 .settings-lane input[type=checkbox]{min-width:24px;min-height:24px;margin:0;accent-color:var(--acc)}
+@media (min-width:1024px){body.v2 .settings-lane .ui-btn{min-height:40px}}
+body.v2 details.technical.ui-section{border:0;background:none;box-shadow:none;border-radius:0;padding:0;margin:0;border-top:1px solid var(--line)}
+body.v2 details.technical > summary{min-height:48px;justify-content:space-between;gap:12px;list-style:none}
+body.v2 details.technical > summary,body.v2 details.technical > :not(summary):not(.ui-section){padding-left:16px;padding-right:16px}
+@media (max-width:1023px){
+  body.v2 details.technical table.ui-table-stack thead{display:none}
+  body.v2 details.technical table.ui-table-stack,body.v2 details.technical table.ui-table-stack tbody{display:block;width:100%}
+  body.v2 details.technical table.ui-table-stack tr{display:grid;gap:4px;padding:12px 0;border-bottom:1px solid var(--line)}
+  body.v2 details.technical table.ui-table-stack td{display:flex;justify-content:space-between;gap:12px;border:0;padding:2px 0;text-align:right;min-width:0;overflow-wrap:anywhere}
+  body.v2 details.technical table.ui-table-stack td::before{content:attr(data-label);color:var(--ink3);text-align:left;flex:none}
+}
+body.v2 details.technical > summary::-webkit-details-marker{display:none}
+body.v2 details.technical > summary::after{content:"";flex:none;width:8px;height:8px;margin-right:6px;border-right:2px solid var(--ink3);border-bottom:2px solid var(--ink3);transform:rotate(45deg);transition:transform .15s}
+body.v2 details.technical[open] > summary::after{transform:rotate(-135deg)}
+body.v2 .host-audit-filters{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+body.v2 .host-audit-filter{display:inline-flex;align-items:center;min-height:40px;padding:0 18px;border-radius:999px;border:1px dashed #cfcfca;background:var(--s);color:var(--ink2);font-size:14px;font-weight:700;text-decoration:none}
+body.v2 .host-audit-filter.is-active{border-style:solid;background:var(--ink);border-color:var(--ink);color:#fff}
+/* 0781 entities */
+body.v2 .entity-form,body.v2 .entity-add{padding:22px;margin:0 0 20px}
+body.v2 .entity-form>.ui-section-h h2,body.v2 .entity-add>h2{font-size:18px;font-weight:700;margin:0 0 12px}
+body.v2 .entity-linked{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline;font-size:14px;margin:0 0 8px}
+body.v2 .entity-linked-label{font-weight:600;color:var(--ink2)}
+body.v2 .entity-linked-list{display:flex;flex-wrap:wrap;gap:6px 10px;margin:0;padding:0;list-style:none}
+body.v2 .entity-linked-list a{color:var(--ink);text-decoration:underline}
+body.v2 .entity-section{border-top:1px solid var(--line);margin-top:20px;padding-top:18px}
+body.v2 .entity-section-head{display:flex;align-items:center;gap:8px}
+body.v2 .entity-section-title{font-size:16px;font-weight:700;margin:0 0 12px}
+body.v2 .entities-page,body.v2 .card:has(>table.ui-table){overflow-x:auto}
+body.v2 .entities-page>table.ui-table th:first-child,body.v2 .entities-page>table.ui-table td:first-child{padding-left:20px}
+
+body.v2 .entities-page{margin:0 0 16px;container:entities-list / inline-size}
+/* 0785: the Business list switches to labelled cards by its own panel width
+   (under 950 px, as the Properties and Business lists did on main), so a
+   1024 px lane with the rail open never overflows sideways. */
+@container entities-list (max-width:949.98px){
+  body.v2 .entities-page>table.ui-table,body.v2 .entities-page>table.ui-table tbody{display:block;width:100%;min-width:0}
+  body.v2 .entities-page>table.ui-table thead{display:none}
+  body.v2 .entities-page>table.ui-table tbody{display:grid;gap:12px}
+  body.v2 .entities-page>table.ui-table tr{display:block;padding:12px 16px;border:1px solid var(--line-strong);border-radius:12px}
+  body.v2 .entities-page>table.ui-table td{display:flex;justify-content:space-between;align-items:center;gap:12px;border:0;padding:4px 0;text-align:right}
+  body.v2 .entities-page>table.ui-table td::before{content:attr(data-label);color:var(--ink3);font-size:13px;text-align:left}
+  body.v2 .entities-page>table.ui-table td[data-label=""]::before{content:none}
+  body.v2 .entities-page>table.ui-table td.row-actions{justify-content:flex-start;flex-wrap:wrap;gap:8px}
+  body.v2 .entities-page>table.ui-table td.row-actions{flex-wrap:nowrap}
+}
+body.v2 .entities-page td.row-actions .row-menu{display:inline-flex;vertical-align:middle}
+body.v2 .entities-page td.row-actions>.ui-btn{vertical-align:middle}
+body.v2 .entities-page td.row-actions .ui-btn,body.v2 .entities-page td.row-actions .row-menu-trigger{height:36px;min-height:36px;box-sizing:border-box}
+body.v2 .entities-page td.row-actions .row-menu-trigger{width:36px;min-width:36px;padding:0;border-radius:50%}
+@media (max-width:1023px){body.v2 .entities-page td.row-actions .ui-btn,body.v2 .entities-page td.row-actions .row-menu-trigger{height:44px;min-height:44px}body.v2 .entities-page td.row-actions .row-menu-trigger{width:44px;min-width:44px}}
+body.v2 .entity-form .field,body.v2 .entity-add .field{max-width:480px}
+body.v2 .entity-form .operator-phone,body.v2 .entity-add .operator-phone{display:flex;align-items:stretch;gap:8px}
+body.v2 .entity-form .operator-phone-number,body.v2 .entity-add .operator-phone-number{flex:1 1 auto;min-width:0}
+body.v2 .entity-form .operator-phone>*,body.v2 .entity-add .operator-phone>*{margin:0;align-self:stretch;box-sizing:border-box}
+@media (max-width:1023.98px){body.v2 .ui-section-h>.ui-btn-compact,.ui-section-h>.ui-btn-compact{min-height:44px!important;height:auto!important;min-width:44px!important;display:inline-flex;align-items:center;justify-content:center}}
+body.v2 .entity-form input:not([type=checkbox]):not([type=radio]){min-height:44px}
+body.v2 .entity-form .action-group,body.v2 .entity-add .action-group{display:flex;flex-direction:column;align-items:stretch;gap:8px}
+body.v2 .entity-form .action-group input,body.v2 .entity-add .action-group input{min-width:0}
+@media (min-width:1024px){body.v2 .entity-form .action-group,body.v2 .entity-add .action-group{flex-direction:row;align-items:flex-end}body.v2 .entity-form .action-group input,body.v2 .entity-add .action-group input{flex:1 1 auto}}
+@media (max-width:1023px){body.v2 .entities-page .ui-table-stack td.row-actions{justify-content:flex-start;flex-wrap:wrap;gap:8px;text-align:left}}
+/* 0787d: entities h1 keeps its ? on the last line; invoice account inputs are full width; the phone prefix is one 44 px box */
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .head h1.big:has(> .help-tip){display:block;min-width:0}
+@media (max-width:1023.98px){body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .head h1.big:has(> .help-tip){padding-right:32px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) :is(h1,h2,h3,label,strong):has(> .help-tip),body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-heading,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .settings-action-row > div:has(> strong + .help-tip),body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) div:has(> strong + .help-tip){padding-right:64px}}
+body.v2 .entity-form .account-parts input,body.v2 .entity-add .account-parts input{width:100%;min-width:0;max-width:none;box-sizing:border-box}
+body.v2 .entity-form .operator-phone-prefix,body.v2 .entity-add .operator-phone-prefix{display:inline-flex;align-items:center;flex:0 0 80px;width:80px;height:44px;min-height:44px;border:0;box-shadow:inset 0 0 0 1px var(--line);border-radius:8px;background:#fff;padding:0 10px;gap:2px;box-sizing:border-box}
+body.v2 .entity-form .operator-phone-prefix input.operator-phone-code[type=text],body.v2 .entity-add .operator-phone-prefix input.operator-phone-code[type=text]{flex:1 1 auto;width:100%;min-width:0;max-width:none;min-height:44px;height:100%;padding:0;margin:0;border:0;border-radius:0;background:transparent;color:inherit;font:inherit;text-align:center;box-shadow:none;outline:none}
+/* 0787e: the prefix shows the v2 focus ring; the code input gets its own ring too */
+body.v2 .entity-form .operator-phone-prefix:focus-within,body.v2 .entity-add .operator-phone-prefix:focus-within{outline:2px solid #d0452d;outline-offset:2px}
+body.v2 .entity-form .operator-phone-prefix input.operator-phone-code[type=text]:focus-visible,body.v2 .entity-add .operator-phone-prefix input.operator-phone-code[type=text]:focus-visible{outline:2px solid #d0452d;outline-offset:-2px}
+/* 0781 privacy requests */
+body.v2 .pr-lane{max-width:720px}
+body.v2 .pr-lane>.card{margin:0 0 16px}
+body.v2 .pr-lane>.card>summary{padding:20px 22px;font-weight:700;font-size:16px;cursor:pointer}
+body.v2 .pr-lane>.card>h2{padding:20px 22px 0;font-size:17px;margin:0 0 4px}
+body.v2 .pr-lane>.card>p{padding:0 22px;margin:0 0 12px}
+body.v2 .pr-lane>.card>form{padding:0 22px 22px}
+body.v2 .pr-lane .checkline{display:flex;gap:8px;align-items:center;font-size:14px}
+body.v2 .pr-lane .ui-form-actions{justify-content:flex-end}
+
+/* 0781 archive */
+body.v2 .heading-with-tip{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:24px 0 10px}
+body.v2 .heading-with-tip h2{font-size:18px;margin:0}
+body.v2 a.chip{text-decoration:none;display:inline-flex;align-items:center}
+body.v2 .card.scroll-x{overflow-x:auto}
+/* v2 ports of shared ui-* classes */
+body.v2 .ui-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+body.v2 .ui-prewrap{white-space:pre-wrap}
+body.v2 .ui-badge-done{color:var(--ok)}
+body.v2 .ui-badge-neutral{color:var(--ink3)}
+body.v2 .ui-banner{padding:12px 16px;border-radius:10px;border:1px solid var(--line);background:var(--s);color:var(--ink);font-size:15px;line-height:1.5}
+body.v2 .ui-banner-attention{background:var(--warns);border-color:var(--warn)}
+body.v2 .ui-field{display:flex;flex-direction:column;gap:6px;margin:0 0 12px;min-width:0}
+body.v2 .ui-field > label{font-size:14px;font-weight:600;color:var(--ink)}
+body.v2 .ui-field > input:not([type=checkbox]):not([type=radio]),body.v2 .ui-field > select,body.v2 .ui-field > textarea{width:100%;max-width:420px;min-height:40px;padding:0 12px;box-sizing:border-box;font:inherit;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:8px}
+body.v2 .checkline{display:flex;gap:10px;align-items:flex-start;font-size:15px}
+body.v2 .checkline input{width:auto;margin-top:3px;accent-color:var(--acc)}
+body.v2 .checkline label{font-weight:500;margin:0}
+body.v2 .kv{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:15px}
+body.v2 .kv dt{color:var(--ink3)}
+body.v2 .kv dd{margin:0;color:var(--ink)}
+body.v2 details.technical > summary{font-weight:650;cursor:pointer;min-height:44px;display:flex;align-items:center}
+body.v2 .ui-table{width:100%;border-collapse:collapse;font-size:15px}
+body.v2 .ui-table th{color:var(--ink3);font-weight:600;text-align:left;padding:8px}
+body.v2 .ui-table td{padding:10px 8px;border-top:1px solid var(--line);vertical-align:top}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .crumb{display:inline-block;font-size:14px;color:var(--ink3);margin-bottom:6px;text-decoration:none}
+body.v2 .ui-sub{color:var(--ink3);font-size:14px;margin:0 0 12px}
+body.v2 .ui-section-h{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+body.v2 .ui-pair{display:grid;grid-template-columns:minmax(0,1fr);gap:14px 16px}
+@media (min-width:1024px){body.v2 .ui-pair{grid-template-columns:repeat(2,minmax(0,1fr))}}
+body.v2 .ui-field{display:flex;flex-direction:column;gap:6px;min-width:0}
+body.v2 .ui-field>label{font-size:13px;font-weight:600;color:var(--ink2)}
+body.v2 .ui-field input:not([type=checkbox]):not([type=radio]):not([type=hidden]),body.v2 .ui-field select,body.v2 .ui-field textarea{width:100%;max-width:none;box-sizing:border-box;height:40px;padding:0 12px;border:1px solid #d9d9d4;border-radius:10px;background:#fff;font:inherit;color:var(--ink)}
+@media (max-width:1023px){body.v2 .ui-field input:not([type=checkbox]):not([type=radio]):not([type=hidden]),body.v2 .ui-field select{height:44px}}
+body.v2 .ui-form-actions,body.v2 .actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;margin-top:16px}
+body.v2 .ui-empty{color:var(--ink3);padding:20px;text-align:center}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .ui-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;background:#f6f6f4;color:var(--ink2)}
+body.v2 .ui-btn-open{background:#efefeb;color:var(--ink)}
+body.v2 .row-actions{white-space:nowrap;text-align:right}
+body.v2 .row-primary-link{color:var(--ink);font-weight:600;text-decoration:none;display:inline-flex;align-items:center;min-height:24px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip{display:inline-flex;align-items:center}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-btn{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:24px;height:24px;min-width:24px;min-height:24px;padding:0;margin:0;border:1px solid var(--line);border-radius:50%;background:#fff;color:var(--ink3);font-family:inherit;font-size:12px;font-weight:600;line-height:1;cursor:help;position:relative}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-btn:hover,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-btn[aria-expanded=true]{background:var(--brand-soft);border-color:var(--brand);color:var(--brand-ink)}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-btn:focus-visible{outline:3px solid var(--brand-ring,var(--brand));outline-offset:2px}
+@media (max-width:1023px){body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-btn::after{content:"";position:absolute;inset:-10px}}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-body{display:none;position:absolute;z-index:70;left:0;top:100%;box-sizing:border-box;width:min(320px,calc(100vw - 16px));max-width:calc(100vw - 16px);padding:10px 12px;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-popover);font-size:13px;font-weight:400;line-height:1.45;text-align:left;white-space:normal;overflow-wrap:anywhere}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip-body a{color:var(--brand-ink);font-weight:650}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip:not([data-js]):hover>.help-tip-body,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip:not([data-js]):focus-within>.help-tip-body,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip.is-open>.help-tip-body{display:block}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .help-tip[data-js]>.help-tip-body{position:fixed}
+/* 0543: inside details the hint is plain text, no ? button */
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) details .help-tip-btn{display:none}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) details .help-tip{display:block}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) details .help-tip-body,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) details .help-tip[data-js]>.help-tip-body{width:auto;position:static;display:block;max-width:none;margin:2px 0 0;padding:0;background:none;border:0;box-shadow:none;font-size:12px;color:var(--ink3)}
+body.v2 tr.clickable-row{cursor:pointer}
+body.v2 .ui-table{width:100%;border-collapse:collapse;font-size:14px}
+body.v2 .ui-table th{text-align:left;font-size:12px;color:var(--ink3);font-weight:600;padding:10px 12px;border-bottom:1px solid var(--line)}
+body.v2 .ui-table td{padding:12px;border-bottom:1px solid var(--line);vertical-align:middle}
+body.v2 .ui-table .num,body.v2 .ui-table .ui-num{text-align:right}
+@media (max-width:1023px){
+  body.v2 .ui-table-stack thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  body.v2 .ui-table-stack tr{display:block;padding:12px 16px;border-bottom:1px solid var(--line)}
+  body.v2 .ui-table-stack td{display:flex;justify-content:space-between;align-items:center;gap:12px;border:0;padding:4px 0;text-align:right}
+  body.v2 .ui-table-stack td::before{content:attr(data-label);color:var(--ink3);font-size:13px;text-align:left}
+  body.v2 .ui-table-stack td[data-label=""]::before{content:none}
+  body.v2 .ui-table-stack td.row-actions{justify-content:flex-end;flex-wrap:wrap}
+}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .tip-nowrap{white-space:nowrap}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .tip-nowrap>.help-tip{display:inline-flex;vertical-align:middle;margin-left:8px}
+
+/* 0788: no settings-area control touches its neighbour; 12 px between controls, 12 px under a label row (Josef, 2026-11-02) */
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .field-label-row{margin-bottom:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .entities-page td.row-actions{display:flex;align-items:center;gap:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .entities-page>table.ui-table td.row-actions{gap:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .action-group{gap:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .entity-register-lookup{margin-top:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .onboarding-banner-setup{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .ui-section .ui-btn + .help-tip{margin-inline-start:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .ui-section:has(.help-tip) > .ui-btn{margin-top:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) form:has(> .ui-btn + .help-tip){display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .archive-type-filters{gap:12px}
+body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .ui-form-actions{gap:12px}
+
+/* 0789a settings index and group sub-pages (Airbnb pattern, every width) */
+body.v2 .airbnb-header{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin:16px 0 24px}
+body.v2 .airbnb-back{width:40px;height:40px;border-radius:50%;background:#f2f2f2;color:var(--ink);display:inline-flex;align-items:center;justify-content:center;text-decoration:none;flex:0 0 40px}
+body.v2 .airbnb-title{width:100%;margin:0;font-size:32px;font-weight:700;color:var(--ink)}
+body.v2 .airbnb-index{display:block}
+body.v2 .settings-lane .airbnb-index-row{display:flex;align-items:center;gap:16px;min-height:64px;color:var(--ink);text-decoration:none;font-size:17px}
+body.v2 .airbnb-index-row .airbnb-label{flex:1 1 auto}
+/* 0789a2: a sub-page's back-header h1 is its only title; the group h2 that repeats it is hidden (section h2s stay) */
+body.v2 .settings-lane h2.settings-group-title{display:none}
+body.v2 .airbnb-divider{height:1px;background:#e5e5e5;margin:12px 0}
+
+/* 0789b: shared settings partials (toggle row, value card, pills) */
+body.v2 .settings-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:12px 0;border-bottom:1px solid #e5e5e5}
+body.v2 .settings-toggle-label{display:inline-flex;align-items:center;gap:8px;font-size:17px;color:var(--ink)}
+body.v2 .settings-toggle-control{flex:0 0 auto;display:inline-flex;align-items:center}
+body.v2 .settings-value-card{display:flex;flex-direction:column;gap:4px;border:1px solid #e5e5e5;border-radius:12px;padding:20px;margin:0 0 12px;background:#fff}
+body.v2 .settings-value-label{font-size:14px;color:#6a6a6a}
+body.v2 .settings-value{font-size:24px;font-weight:700;color:var(--ink)}
+body.v2 .settings-value-link{display:inline-flex;align-items:center;gap:4px;color:var(--ink);text-decoration:none;font-size:15px}
+body.v2 .settings-pills{display:flex;flex-wrap:nowrap;gap:12px;overflow-x:auto;margin:0 0 24px;padding-bottom:4px}
+body.v2 .settings-pill{flex:0 0 auto;display:inline-flex;align-items:center;min-height:44px;padding:0 20px;border-radius:999px;background:#f2f2f2;color:var(--ink);text-decoration:none;font-size:15px;font-weight:600;white-space:nowrap}
+body.v2 .settings-pill.is-current{background:var(--ink);color:#fff}
+/* 0789b: a checkbox with data-toggle-submit is a 51x31 switch (ink when on) */
+body.v2 .settings-toggle-form{margin:0}
+body.v2 input[type=checkbox][data-toggle-submit]{appearance:none;-webkit-appearance:none;position:relative;flex:0 0 auto;width:51px;height:31px;margin:0;border-radius:31px;background:#e0e0e0;cursor:pointer;transition:background .15s}
+body.v2 input[type=checkbox][data-toggle-submit]::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s}
+body.v2 input[type=checkbox][data-toggle-submit]:checked{background:var(--ink)}
+body.v2 input[type=checkbox][data-toggle-submit]:checked::after{transform:translateX(20px)}
+body.v2 input[type=checkbox][data-toggle-submit]:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+/* 0789c: 12 px between the Entities setup banner and the help "?" and between archive filter chips */
+body.v2 .settings-help-line + .onboarding-banner-setup{margin-block-start:12px}
+body.v2 .archive-type-filters{gap:12px !important}
+body.v2 .ui-empty .ui-form-actions{gap:12px}
+body.v2 .settings-help-line .help-tip-btn{width:24px;height:24px;min-width:24px;min-height:24px}
+@media (max-width:1023px){body.v2 .settings-help-line .help-tip-btn{position:relative}body.v2 .settings-help-line .help-tip-btn::after{content:"";position:absolute;inset:-10px}}
+@media (max-width:1023px){body.v2 .property-settings-form .help-tip-btn{position:relative}body.v2 .property-settings-form .help-tip-btn::after{content:"";position:absolute;inset:-10px}}
+/* 0789c step 5: sub-page link rows (go somewhere) are bordered cards with a chevron */
+body.v2 .settings-lane .set-row,body.v2 .settings-lane .document-links a{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:0;margin:0 0 12px;padding:20px;border:1px solid var(--line);border-radius:12px;color:var(--ink);text-decoration:none;box-sizing:border-box}
+body.v2 .settings-lane .document-links{border-top:0;margin-top:0}
+body.v2 .settings-lane .set-row::after,body.v2 .settings-lane .document-links a::after{content:"\203A";flex:0 0 auto;color:var(--ink3);font-size:20px;line-height:1}

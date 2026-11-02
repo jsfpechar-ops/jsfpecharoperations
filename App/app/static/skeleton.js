@@ -112,6 +112,7 @@
   // The back button restores this page from the cache with the placeholder
   // still showing, so always start clean.
   window.addEventListener("pageshow", hide);
+  document.addEventListener("turbo:load", hide);
 
   // For navigations started from script (clickable rows, the command palette).
   window.ubyhostSkeleton = { start: start, hide: hide };

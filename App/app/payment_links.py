@@ -30,6 +30,9 @@ def _request_or_none(request_id: int) -> Dict[str, Any] | None:
 
 def product_name(row: Dict[str, Any]) -> str:
     """What the guest sees on Stripe Checkout and the receipt (Czech)."""
+    note = " ".join((row.get("guest_note") or "").split())[:60]
+    if row["reason"] == "custom" and note:
+        return f"{note} (žádost č. {row['id']})"
     reason = host_i18n.translate("cs", f"payments.reason.{row['reason']}")
     return f"{reason} (žádost č. {row['id']})"
 
@@ -60,39 +63,55 @@ def send(request_id: int) -> str | None:
         return None
     stripe_account = account["stripe_account_id"]
     api = stripe_connect._api()
-    if row.get("stripe_payment_link_id"):
-        url = _existing_url(api, row["stripe_payment_link_id"], stripe_account)
-        if url:
-            return url
-    link = api.v1.payment_links.create(
-        params={
-            "line_items": [
-                {
-                    "quantity": 1,
-                    "price_data": {
-                        "currency": "czk",
-                        "unit_amount": int(row["amount_czk"]) * 100,
-                        "product_data": {"name": product_name(row)},
-                    },
-                }
-            ],
-            "restrictions": {"completed_sessions": {"limit": 1}},
-            "metadata": {"payment_request_id": str(row["id"])},
-            "payment_intent_data": {"metadata": {"payment_request_id": str(row["id"])}},
-        },
-        options={"stripe_account": stripe_account},
-    )
-    db.execute(
-        "UPDATE payment_request SET stripe_payment_link_id = ?, updated_at = ?"
-        " WHERE id = ?",
-        (link["id"], db.utcnow(), request_id),
-    )
+    owner_id = int(row["owner_user_id"])
+    created_id = created_url = None
+    # Two overlapping Send clicks used to mint two live Stripe links (each
+    # accepts one payment), so a guest could be charged twice. Take the row
+    # lock before the Stripe create; a second caller waits, re-reads, and
+    # reuses the link the first caller stored.
+    with db.immediate() as cur:
+        db.lock_key(cur, "payment_request", request_id)
+        locked = cur.execute(
+            "SELECT * FROM payment_request WHERE id = ?", (request_id,)
+        ).fetchone()
+        if locked is None:
+            return None
+        link_id = locked["stripe_payment_link_id"]
+        if link_id:
+            url = _existing_url(api, link_id, stripe_account)
+            if url:
+                return url
+        link = api.v1.payment_links.create(
+            params={
+                "line_items": [
+                    {
+                        "quantity": 1,
+                        "price_data": {
+                            "currency": "czk",
+                            "unit_amount": int(locked["amount_czk"]) * 100,
+                            "product_data": {"name": product_name(dict(locked))},
+                        },
+                    }
+                ],
+                "restrictions": {"completed_sessions": {"limit": 1}},
+                "metadata": {"payment_request_id": str(locked["id"])},
+                "payment_intent_data": {"metadata": {"payment_request_id": str(locked["id"])}},
+            },
+            options={"stripe_account": stripe_account},
+        )
+        cur.execute(
+            "UPDATE payment_request SET stripe_payment_link_id = ?, updated_at = ?"
+            " WHERE id = ?",
+            (link["id"], db.utcnow(), request_id),
+        )
+        created_id = link["id"]
+        created_url = str(link["url"])
     db.audit(
         "payment_link_created",
-        f"id={request_id} link={link['id']}",
-        owner_user_id=int(row["owner_user_id"]),
+        f"id={request_id} link={created_id}",
+        owner_user_id=owner_id,
     )
-    return str(link["url"])
+    return created_url
 
 
 def on_paid(event: Dict[str, Any]) -> None:

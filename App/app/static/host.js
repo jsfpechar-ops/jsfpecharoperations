@@ -1,6 +1,16 @@
 /* Progressive enhancement only: native links, forms and details work without JS. */
 (function () {
   'use strict';
+  // Same claim rule as app.js claimNode (shared _ubyBound store).
+  function claimOnce(node, key) {
+    var keys = node._ubyBound || (node._ubyBound = {});
+    if (keys[key]) return false;
+    keys[key] = true;
+    return true;
+  }
+  function onPage(fn) {
+    if (window.UbyHost && window.UbyHost.onPage) window.UbyHost.onPage(fn); else fn();
+  }
   function revealTarget() {
     var id;
     try { id = decodeURIComponent(window.location.hash.slice(1)); } catch (_) { return; }
@@ -29,12 +39,14 @@
       menu.querySelector('summary').focus();
     });
   });
+  onPage(function () {
   var alerts = document.querySelector('[data-host-alerts]');
-  if (alerts) {
+  if (alerts && claimOnce(alerts, 'host-alerts')) {
     new MutationObserver(function () {
       alerts.hidden = alerts.querySelectorAll('[data-notification]').length === 0;
     }).observe(alerts, {childList: true, subtree: true});
   }
+  });
   // Invalid controls inside closed sections must be visible before the browser
   // moves focus there. Keep every field in the form so partial section edits
   // never clear values in another section.
@@ -48,7 +60,9 @@
   // handwriting font. Nothing reaches the form until "Use this signature".
   var SIGNATURE_INK = '#20201e';
   var SIGNATURE_FONT = '"UbyHost Signature", cursive';
+  onPage(function () {
   document.querySelectorAll('[data-host-signature]').forEach(function (block) {
+    if (!claimOnce(block, 'host-signature')) return;
     var dialog = block.querySelector('[data-signature-dialog]');
     var canvas = block.querySelector('[data-signature-panel="draw"] canvas');
     var typedCanvas = block.querySelector('[data-signature-typed-canvas]');
@@ -200,18 +214,23 @@
       if (dialog.open && !drawing) setMode(mode);
     }).observe(canvas);
   });
+  });
 
   // The demo form opens its POST response in a new tab. Refresh this step
   // when the host comes back so the registration result is visible.
-  var wizardDemo = document.querySelector('[data-wizard-demo]');
-  if (wizardDemo) {
-    var demoOpened = false;
-    wizardDemo.addEventListener('submit', function () { demoOpened = true; });
-    function refreshDemo() {
-      if (!demoOpened) return;
-      demoOpened = false;
-      window.location.reload();
+  var wizardState = { opened: false };
+  onPage(function () {
+    var wizardDemo = document.querySelector('[data-wizard-demo]');
+    if (wizardDemo && claimOnce(wizardDemo, 'wizard-demo')) {
+      wizardDemo.addEventListener('submit', function () { wizardState.opened = true; });
     }
+  });
+  function refreshDemo() {
+    if (!wizardState.opened) return;
+    wizardState.opened = false;
+    window.location.reload();
+  }
+  if (claimOnce(window, 'host-wizard-focus')) {
     window.addEventListener('focus', refreshDemo);
     document.addEventListener('visibilitychange', function () {
       if (document.visibilityState === 'visible') refreshDemo();
@@ -221,15 +240,17 @@
   // 0203: while the demo stay waits for its registration, coming back to this
   // tab reloads the step, so a finished demo shows "Continue" at once.
   // Only on a tab switch: a reload on load or focus could loop.
-  if (document.querySelector('[data-wizard-demo-wait]')) {
+  if (claimOnce(document, 'host-wizard-wait')) {
     document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState === 'visible') window.location.reload();
+      if (document.visibilityState === 'visible' && document.querySelector('[data-wizard-demo-wait]')) window.location.reload();
     });
   }
 
   // 0205: a whole account pasted into any of the three boxes splits itself:
   // 19-2000145399/0800, 2000145399/0800 or a Czech IBAN.
+  onPage(function () {
   document.querySelectorAll('[data-account-parts]').forEach(function (group) {
+    if (!claimOnce(group, 'account-parts')) return;
     var prefix = group.querySelector('[name="account_prefix"]');
     var number = group.querySelector('[name="account_number"]');
     var bank = group.querySelector('[name="account_bank"]');
@@ -258,10 +279,12 @@
       });
     });
   });
+  });
 
   // 0205: the police abbreviation follows the web-service login as it is
   // typed (UBY-WS_ABCDE gives ABCDE), the rule of validation.mark_from_ws_user.
   // A value the host typed themselves is never replaced.
+  onPage(function () {
   var wsUser = document.getElementById('uby_ws_user');
   var ubyMark = document.getElementById('uby_mark');
   if (wsUser && ubyMark) {
@@ -285,6 +308,7 @@
   }
 
   document.querySelectorAll('[data-phone-country-code]').forEach(function (input) {
+    if (!claimOnce(input, 'phone-country-code')) return;
     function digits(value) { return value.replace(/\D/g, '').slice(0, 3); }
     input.addEventListener('input', function () { input.value = digits(input.value); });
     input.addEventListener('paste', function (event) {
@@ -297,9 +321,11 @@
       if (event.key === '+') event.preventDefault();
     });
   });
+  });
 
+  onPage(function () {
   var adjustMode = document.getElementById('adjust-mode');
-  if (adjustMode) {
+  if (adjustMode && claimOnce(adjustMode, 'adjust-mode')) {
     var syncAdjust = function () {
       var people = adjustMode.value === 'people';
       document.querySelectorAll('[data-adjust-people]').forEach(function (field) { field.hidden = !people; });
@@ -308,6 +334,7 @@
     adjustMode.addEventListener('change', syncAdjust);
     syncAdjust();
   }
+  });
   // Preview the same buffered wall-clock hours used when the code is issued.
   function updateDoorCodeWindows() {
     document.querySelectorAll('[data-door-code-window]').forEach(function (preview) {
@@ -347,5 +374,5 @@
       });
     }
   });
-  updateDoorCodeWindows();
+  onPage(updateDoorCodeWindows);
 })();
