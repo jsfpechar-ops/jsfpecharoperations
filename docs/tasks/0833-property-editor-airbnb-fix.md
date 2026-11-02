@@ -1,5 +1,7 @@
 # 0833 Property editor: help "?", duplicate heading, subtitles, width
 
+Status: review
+
 Executor: Haiku. Branch claude/project-thread-wkaqmz (stacked on PR #725). Read only AGENTS.md, docs/context/executor.md, this brief, and the files named here.
 
 ## Problem (Josef's screenshot partC-property-detail-1280.png)
@@ -23,3 +25,19 @@ At widths 390/768/1280 on the property editor with the Basic details section ope
 - at 1280 the first text input is at least 400 px wide.
 - no overlap between a help button's rect and any label/input rect.
 Run: `cd App && .venv/bin/python -m pytest tests/test_0830_airbnb_pages_browser.py tests/test_0833_property_editor_browser.py -q --tb=short -x 2>&1 | tail -30`. If `.venv` missing: python3 -m venv .venv; .venv/bin/pip install -r requirements.txt -r requirements-dev.txt playwright==1.63.0 (foreground). Also run tests/test_property_navigation_browser.py. Do not commit; write a 10-line report to docs/tasks/0833-report.md. Do not stage docs/tasks/screenshots-0387/*.
+
+## 6. Do not touch
+
+Settings pages, calendar, other pages.
+
+## 7. Acceptance
+
+Tests in the Tests section pass.
+
+## 8. Stop and ask
+
+If a rule conflicts with the 0830 audit, report it.
+
+## 9. Report
+
+See docs/tasks/0833-report.md.
