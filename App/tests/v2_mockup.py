@@ -132,7 +132,15 @@ PAGES = [
             ".hs .pill": "today's stay cards exist only when a stay is due today; the phone mockup shows demo stays",
         },
     },
-    {"name": "cleaning", "path": "/cleaning", "view": "clean", "selectors": [".side .nav.on", ".head h1", ".head .sub", ".head .btn", "main h2", "main .card", "main table th", "main table td"], "phone_mockup": PHONE_MOCKUP_V2, "phone_view": "uklid", "phone_selectors": [".tabs", ".tab.on", ".hl", ".hl-sub", ".hs .card", ".kind", ".av", ".nm", ".meta", ".hs .pill.p-ok", "h2.sec", ".list.plain .row:not(:has(.pill))", ".row:not(:has(.pill)) .t b", ".row:not(:has(.pill)) .t small", ".btn.line", ".promo", ".promo .pi", ".promo b", ".promo small"], "missing_ok": {"main table th": "below 1024 px the phone layout replaces the tables (0546)", "main table td": "below 1024 px the phone layout replaces the tables (0546)"}},  # pills follow the approved phone mockup (2026-11-01): scheduled green, the desktop mockup shows amber
+    {"name": "cleaning", "path": "/cleaning", "view": "clean", "selectors": [".side .nav.on", ".head h1", ".head .sub", ".head .btn", "main h2", "main .card", "main table th", "main table td"], "phone_mockup": PHONE_MOCKUP_V2, "phone_view": "uklid",
+        "phone_box_skip": {
+            ".kind": (["width"], "today's cleaning window text comes from the fixture"),
+            ".nm": (["width"], "shrink-to-fit width follows the fixture's property name"),
+            ".meta": (["width"], "shrink-to-fit width follows the fixture's next check-in text"),
+            ".promo": (["height"], "the app's share copy is longer than the mockup's and wraps at 320 px"),
+            ".promo b": (["height"], "the app's share copy is longer than the mockup's and wraps at 320 px"),
+        },
+        "phone_selectors": [".tabs", ".tab.on", ".hl", ".hl-sub", ".hs .card", ".kind", ".av", ".nm", ".meta", ".hs .pill.p-ok", "h2.sec", ".list.plain .row:not(:has(.pill))", ".row:not(:has(.pill)) .t b", ".row:not(:has(.pill)) .t small", ".btn.line", ".promo", ".promo .pi", ".promo b", ".promo small"], "missing_ok": {"main table th": "below 1024 px the phone layout replaces the tables (0546)", "main table td": "below 1024 px the phone layout replaces the tables (0546)"}},  # pills follow the approved phone mockup (2026-11-01): scheduled green, the desktop mockup shows amber
     {
         "name": "properties",
         "path": "/apartments",
