@@ -48,21 +48,21 @@
 {% endif %}
 {% if ns.week %}
 <h2 class="sec">{{ ct('section_week') }}</h2>
-<nav class="list plain">
+<div class="list plain">
 {% for item in ns.week[:3] %}{{ cleaning_row(item) }}
 {% endfor %}
-</nav>
+</div>
 {% endif %}
 {% if hidden %}<details class="cleaning-more"><summary class="btn line">{{ ct('show_more')|format(count=hidden) }}</summary>
-{% if ns.week|length > 3 %}<nav class="list plain">
+{% if ns.week|length > 3 %}<div class="list plain">
 {% for item in ns.week[3:] %}{{ cleaning_row(item) }}
 {% endfor %}
-</nav>{% endif %}
+</div>{% endif %}
 {% if ns.later %}<h2 class="sec">{{ ct('section_later') }}</h2>
-<nav class="list plain">
+<div class="list plain">
 {% for item in ns.later %}{{ cleaning_row(item) }}
 {% endfor %}
-</nav>{% endif %}
+</div>{% endif %}
 </details>{% endif %}
 <h2 class="sec">{{ ct('section_cleaner') }}</h2>
 <a class="promo" href="/cleaning/shares"><span class="pi">{{ icon('brush-cleaning', 22) }}</span><span><b>{{ ct('share_cleaner') }}</b><small>{{ ct('share_hint') }}</small></span></a>
