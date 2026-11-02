@@ -61,14 +61,14 @@ def _click(gclid=GCLID, seen_ms=None, **more) -> str:
 
 
 def _submit(client, email, *, workspace="Old Town Flats",
-            accept="1", consent=False, gclid="", click=None, opt_out=False, extra=None):
+            accept="1", consent=False, gclid="", click=None, opt_in=False, extra=None):
     data = {"email": email, "workspace": workspace}
     if accept:
         data["accept"] = accept
     if consent:
         data["ads_consent"] = "1"
-    if opt_out:
-        data["onboarding_opt_out"] = "1"
+    if opt_in:
+        data["marketing_opt_in"] = "1"
     if click is None and gclid:
         click = _click(gclid)
     if click:
@@ -238,10 +238,11 @@ def test_the_ads_box_is_shown_only_with_a_click_id():
     html = _client().get("/signup?lang=en&utm_source=google").text
     assert 'name="ads_consent"' not in html
     assert "Google ad" not in html
-    # The setup-tips box is always there, optional and unticked.
-    box = re.search(r'<input type="checkbox" name="onboarding_opt_out"[^>]*>', html).group(0)
+    # The tips-and-news opt-in box is always there, optional and unticked.
+    box = re.search(r'<input type="checkbox" name="marketing_opt_in"[^>]*>', html).group(0)
     assert "checked" not in box and "required" not in box
-    assert "No setup tips by e-mail" in html
+    assert "Send me tips and news by e-mail" in html
+    assert "No setup tips by e-mail" not in html
 
 
 def test_the_consent_texts_are_the_legal_wording():
@@ -264,7 +265,7 @@ def test_the_czech_form_reads_czech():
     html = _client().get(f"/signup?lang=cs&gclid={GCLID}").text
     assert "Založte si účet UbyHost" in html
     assert "Nepovinné: Souhlasím, aby UbyHost zaznamenal" in html
-    assert "Bez tipů k nastavení e-mailem" in html
+    assert "Posílejte mi tipy a novinky e-mailem" in html
 
 
 # --- sign-up and verification --------------------------------------------
@@ -287,8 +288,9 @@ def test_signup_creates_an_inactive_account_that_cannot_sign_in():
     # The record points at the exact wording shown, in the language shown.
     assert row["version"] == "ads-google-v1-en"
     assert row["consent_text"] == signup.consent_text("google", "en")
-    assert account["onboarding_emails_opt_out"] == 0
-    assert account["onboarding_emails_opt_out_at"] is None
+    # No opt-in box ticked: no tips or news (owner decision 2026-11-02).
+    assert account["onboarding_emails_opt_out"] == 1
+    assert account["onboarding_emails_opt_out_at"]
     assert account["signup_utm_source"] == "google"
     assert account["signup_utm_medium"] == "cpc"
     assert auth.username_is_valid(account["username"])
@@ -437,11 +439,11 @@ def test_form_errors_keep_the_values_and_the_click_id():
     client = _client()
     token = _click()
     no_accept = _submit(client, f"accept@{DOMAIN}", accept="", click=token, consent=True,
-                        opt_out=True)
+                        opt_in=True)
     assert no_accept.status_code == 422
     assert f'name="click" value="{token}"' in no_accept.text
     assert re.search(r'name="ads_consent" value="1" checked', no_accept.text)
-    assert re.search(r'name="onboarding_opt_out" value="1" checked', no_accept.text)
+    assert re.search(r'name="marketing_opt_in" value="1" checked', no_accept.text)
     bad_email = _submit(client, "not-an-email")
     assert bad_email.status_code == 400
     weak = _submit(client, f"weak@{DOMAIN}", workspace="  ", click=token, consent=True)
@@ -485,9 +487,9 @@ def test_consent_without_a_click_id_stores_nothing():
     assert _ad_click(email) is None
 
 
-def test_the_setup_tips_opt_out_is_stored_with_its_time():
+def test_without_the_opt_in_box_no_tips_or_news_are_sent():
     email = f"optout@{DOMAIN}"
-    _submit(_client(), email, opt_out=True)
+    _submit(_client(), email)
     account = _account(email)
     assert account["onboarding_emails_opt_out"] == 1
     assert account["onboarding_emails_opt_out_at"]
@@ -496,10 +498,23 @@ def test_the_setup_tips_opt_out_is_stored_with_its_time():
     assert lifecycle_mail.is_opted_out(account["id"])
 
 
-def test_without_the_opt_out_box_the_setup_tips_are_allowed():
+def test_the_ticked_opt_in_box_allows_tips_and_news():
     email = f"optin@{DOMAIN}"
+    _submit(_client(), email, opt_in=True)
+    account = _account(email)
+    assert account["onboarding_emails_opt_out"] == 0
+    assert account["onboarding_emails_opt_out_at"] is None
+    assert not lifecycle_mail.is_opted_out(account["id"])
+
+
+def test_a_host_who_skipped_the_box_can_turn_tips_on_later():
+    email = f"tipslater@{DOMAIN}"
     _submit(_client(), email)
-    assert not lifecycle_mail.is_opted_out(_account(email)["id"])
+    account_id = _account(email)["id"]
+    assert lifecycle_mail.is_opted_out(account_id)
+    # The Settings toggle calls resubscribe (routes/admin_accounts.py).
+    assert lifecycle_mail.resubscribe(account_id, actor="test")
+    assert not lifecycle_mail.is_opted_out(account_id)
 
 
 @pytest.mark.sqlite_only
