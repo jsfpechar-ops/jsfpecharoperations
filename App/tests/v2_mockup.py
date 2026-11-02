@@ -279,7 +279,7 @@ PAGES = [
             ".row .t small": "payment rows have no subtitle in the current copy; the mockup subtitles are demo copy",
         },
     },
-    {"name": "settings", "path": "/settings", "view": "settings", "selectors": [".side .nav.on", ".head h1", "main h2", "main .card"]},
+    {"name": "settings", "path": "/settings", "view": "settings", "selectors": [".side .nav.on", ".head h1", "main h2", "main .card"], "missing_ok": {".head h1": "the index page uses the airbnb big title, not the .head bar (0789)", "main h2": "the index page has no group headings: each group is on its own sub page (0789)", "main .card": "the index page has no group cards: each group is on its own sub page (0789)"}},
 ]
 
 

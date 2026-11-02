@@ -54,7 +54,7 @@ def _shot(page, name):
 )
 def test_a_failed_page_load_shows_the_offline_page_in_the_hosts_language(base, lang, title):
     with sync_api.sync_playwright() as playwright:
-        browser, context, page = _open(playwright, base, 390, 844, f"/settings?lang={lang}")
+        browser, context, page = _open(playwright, base, 390, 844, f"/settings/phone?lang={lang}")
         try:
             page.wait_for_function("() => navigator.serviceWorker.controller !== null", timeout=30000)  # a bare string can hit the CSP eval block
             page.wait_for_function(_OFFLINE_CACHED, arg=lang, timeout=30000)
