@@ -1,4 +1,7 @@
-# 0833 Setup wizard: half the steps, half the typing
+# 0833 Setup wizard speed: baseline + RÚIAN lookup (scope narrowed)
+
+**Scope now (coordinator, 18:04): do NOT edit any wizard template, wizard route, `property_setup.py`, CSS or wizard JS.** Josef's own wizard threads and PR #702 are in flight. Only: section A (baseline script + report) and section D backend (`ruian.py`, endpoint, tests, env doc). Sections B, C and the JS/UI part of D are the follow-up plan, parked until Josef names the wizard threads to align with.
+
 
 Stacked on PR #702 (wizard restyle). Do not restyle; reuse the existing v2 classes. Read first: `App/app/property_setup.py`, `App/app/routes/onboarding_wizard.py`, `App/app/templates/setup_wizard/*.html`, `App/app/templates/_property_address_fields.html`, `App/app/ares.py`, `App/tests/wizard_walk.py`, `App/tests/test_onboarding_wizard_browser.py`. Do NOT touch signup, default check-in/check-out times or guest-link send (another thread owns them).
 
@@ -6,15 +9,15 @@ Stacked on PR #702 (wizard restyle). Do not restyle; reuse the existing v2 class
 Today a host passes 8 steps (property, calendar, police, automation, stay_fee, door_lock, guest_link, try_it). Target: 4 required steps and about half the taps and typed fields. UbyPort filing correctness beats speed: nothing legal is auto-saved; every fill is a suggestion the host confirms.
 
 ## A. Baseline first
-Before any change write `App/tests/wizard_taps.py` (plain pytest, TestClient) that walks the wizard via `wizard_walk.py` with the cheapest answers and prints/asserts: number of steps visited, number of form fields marked required or empty-to-fill on each, number of POSTs. Record the "before" numbers in `docs/tasks/0833-report.md`, then the "after" numbers. Assert after <= half of before for steps visited.
+Before any change write `App/tests/wizard_taps.py` (plain pytest, TestClient) that walks the wizard via `wizard_walk.py` with the cheapest answers and prints/asserts: number of steps visited, number of form fields marked required or empty-to-fill on each, number of POSTs. Record the "before" numbers in `docs/tasks/0833-report.md`, then the "after" numbers. Baseline only for now: no after-numbers, no halving assertion.
 
-## B. Fewer steps
+## B. Fewer steps (PARKED, do not build)
 1. `STEPS` becomes: property, calendar, police, guest_link. (`TOTAL_STEPS` follows.)
 2. automation: moves into the police step as the same choice cards, preselected "manual" (today's safe default). Saving the police step saves `automation_mode`/`submit_after_hours` with it; keep validation and the audit event identical. Remove the standalone automation template and route case; keep the stored value and the `automation` checklist row on the done page ("done" once the police step is saved).
 3. stay_fee, door_lock, try_it stop being wizard steps. They stay optional and appear on the done page as three "Do next" cards (existing `host-property-card` look) linking to their existing pages (stay fees page, door lock settings, try-it). Their old `/setup/stay_fee|door_lock|try_it` URLs redirect to the done page. Existing saved marks for them stay valid (no migration: unknown marks are ignored, `legacy_state` and the checklist must not break).
 4. Update `wizard_facts`, the checklist, `may_view_step`, progress "n of 4", and every test that hard-codes the 8 steps. `wizard_walk._ACTIONS` loses the removed steps.
 
-## C. Less typing in the property step
+## C. Less typing in the property step (PARKED, do not build)
 1. Operator/ARES: in the property step, if the host has no entity, show one IČO field with a "Fill from ARES" button that reuses the existing `ares.lookup` endpoint used on Entities (find it with `grep -n "ares.lookup" App/app/routes/*.py`), prefilling the entity name, address and DIČ as editable values. Works without JavaScript (plain POST that re-renders). Same rate limit as today.
 2. Address autofill (new, see D): a search box above the address fields; picking a suggestion fills street, house no., orientation no., ZIP, town, district part, okres as editable values. The seven fields stay and stay editable; manual entry is always available and is the fallback when the lookup is down or empty.
 3. Copy the property's address to the operator address when the entity address is blank and the host ticks nothing (reuse existing fields, no new column).
@@ -23,7 +26,7 @@ Before any change write `App/tests/wizard_taps.py` (plain pytest, TestClient) th
 ## D. RÚIAN address lookup (new outbound request)
 - New `App/app/ruian.py`, `requests` only (no new package). Endpoints (ČÚZK public, no key): GeocodeSOE `suggest` for the typed text, then `findAddressCandidates`/the address-point record for the chosen id, and use its STRUCTURED attributes (street, číslo popisné, číslo orientační, PSČ, obec, část obce, okres). Never split the display string.
 - Route `GET /apartments/ruian-suggest?q=` (host login required, CSRF not needed for GET, min 3 chars, 4 s timeout, 24 h in-memory cache keyed by lowercased query, rate limit 60/h per user via `rate_limit` like `ares.py`). Returns JSON list of at most 6 `{label, fields:{...}}`. Any error or empty result returns `[]`.
-- JS: a small deferred function in the existing wizard JS file (find it with `grep -rn "data-copy" App/app/static/*.js`), progressive enhancement, 250 ms debounce, keyboard accessible listbox (`role="listbox"`), 16 px text, 12 px neighbour gaps. Without JS the plain fields work.
+- (PARKED, do not build) JS: a small deferred function in the existing wizard JS file (find it with `grep -rn "data-copy" App/app/static/*.js`), progressive enhancement, 250 ms debounce, keyboard accessible listbox (`role="listbox"`), 16 px text, 12 px neighbour gaps. Without JS the plain fields work.
 - Privacy: only the typed address text goes out (a property address, not guest data); nothing stored. Add the reason to the PR text. Add one line to `docs/context/decisions.md` ONLY as "proposed, awaiting owner" (the owner must confirm; ČÚZK terms not yet checked from this sandbox, outbound is blocked here). Gate the feature behind env `UBYHOST_RUIAN_ENABLED` (default `1` in code, document in `docs/ENVIRONMENT.md` one line).
 - Tests mock `requests.get` (never hit the network): suggest happy path, empty, timeout, rate limit, structured fill (street+č.p./č.o. not parsed from a string).
 
