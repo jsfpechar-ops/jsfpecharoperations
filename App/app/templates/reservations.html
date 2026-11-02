@@ -162,15 +162,19 @@
       {% set progress = row.progress %}
       {% set lead = (progress.guests | selectattr('is_lead') | first) or (progress.guests | first) %}
       {% set lead_name = ((lead.first_name or '') ~ ' ' ~ (lead.surname or '')) | trim if lead else '' %}
-      {% set shown = lead_name or (reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else t('stays.row.no_name')) %}
+      {% set who = lead_name or (reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else '') %}
+      {% set shown = who or t('stays.row.no_name') %}
       {% set check_in = deadline_anchor(reservation, progress.guests) %}
       {% set cell = deadline_cell(progress, check_in) if check_in else none %}
       {% set d_from = parse_iso_date(reservation.date_from) %}
       {% set d_to = parse_iso_date(reservation.date_to) %}
       <a class="card stay" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}">
-        <span class="sav">{{ shown[:1] | upper }}</span>
-        <span class="in"><b>{{ shown }}</b>
-          <small>{{ reservation.internal_name }} &middot; {{ d_from.day }}.{% if d_from.month != d_to.month %} {{ d_from.month }}.{% endif %}&ndash;{{ d_to.day }}. {{ d_to.month }}.</small>
+        <span class="sav">{{ who[:1] | upper if who else d_from.day }}</span>
+        <span class="in">{% if who %}<b>{{ who }}</b>
+          <small>{{ stay_range(reservation.date_from, reservation.date_to) }} &middot; {{ reservation.internal_name }}</small>
+          {% else %}<b>{{ stay_range(reservation.date_from, reservation.date_to) }}</b>
+          <small>{{ reservation.internal_name }}</small>
+          {% endif %}
           {% if reservation.status != 'active' %}<span class="pill p-n">{{ t('stays.filter.state.' ~ reservation.status) }}</span>
           {% elif cell %}{{ v2_status_pill(cell, progress, reservation) }}
           {% else %}{{ progress_pill(progress.status, reservation.automation_mode) }}{% endif %}

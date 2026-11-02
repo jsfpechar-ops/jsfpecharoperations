@@ -8717,7 +8717,10 @@ _WELCOME_0275_STRINGS = {
         "dashboard.ph.need.one": "1 thing needs you today",
         "dashboard.ph.need.few": "%(count)s things need you today",
         "dashboard.ph.done": "All done. Nothing needs you today.",
-        "dashboard.ph.next": "Next arrival: %(when)s, %(place)s",
+        "dashboard.ph.window": "Check-ins",
+        "dashboard.ph.kind.tomorrow": "Tomorrow",
+        "dashboard.ph.kind.arrived": "Arrived %(day)s",
+        "dashboard.ph.kind.next": "Next stay",
     },
     "cs": {
         "welcome_back.title": "Vítejte zpět! Od %(date)s:",
@@ -8752,7 +8755,10 @@ _WELCOME_0275_STRINGS = {
         "dashboard.ph.need.one": "Dnes na vás čeká 1 věc",
         "dashboard.ph.need.few": "Dnes na vás čekají %(count)s věci",
         "dashboard.ph.done": "Hotovo. Dnes na vás nic nečeká.",
-        "dashboard.ph.next": "Další příjezd: %(when)s, %(place)s",
+        "dashboard.ph.window": "Příjezdy",
+        "dashboard.ph.kind.tomorrow": "Zítra",
+        "dashboard.ph.kind.arrived": "Přijel(a) %(day)s",
+        "dashboard.ph.kind.next": "Další pobyt",
     },
 }
 for _lang, _strings in _WELCOME_0275_STRINGS.items():
