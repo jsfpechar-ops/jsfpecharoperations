@@ -51,3 +51,28 @@ Status: blocked at the executor cap. Done: steps 1, 2 (host.js, pwa.js, passkeys
 
 ### Owner steps left
 - None.
+
+### 0507 Part B, continued session (steps 2 to 6)
+Status: review (committed on task/0506-page-swap, not pushed).
+
+Commit: `9f0d3bf 0507 step 2-5`.
+
+- `havel.js`: `panel`, `page`, `root` are shared variables. `refresh()` (registered with `onPage`, direct call without app.js) looks them up, binds `submit`/`click` on `root` once per element (`claimOnce`), binds `close` and the MutationObserver on `panel` once, sets `window.UbyHavel`, and restores the chat, device and counter once per element. Document `click`/`submit` are bound once (claim on document) and return early when `root` is null.
+- `dashboard-calendar.js`: the window `resize`/`popstate` listeners are bound once (`window._ubyCalendarBound`). Each run sets `window._ubyCalendarHandlers`; the listeners call it, and each handler returns if `[data-calendar]` is missing.
+- `shell.js`, `skeleton.js`, `csrf.js`: checked, no change. shell and skeleton look elements up at event time. csrf keeps the token string read from the meta at load; it is not an element, so the rule did not apply.
+- Version keys: `havel.js?v=20261102-0507` in base.html, `dashboard-calendar.js?v=20261102-0507` in _dashboard_calendar.html, `static_versions.json` rewritten (41 files).
+- Test `App/tests/test_0507_page_hooks_browser.py` (3 tests).
+
+Test tails (from App/, PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers, timeout 900):
+- Batch 1 (0507, 0506, 0505, 0504, 0503, static versions): `14 passed in 14.82s`, no skips.
+- Batch 2 (`grep -lE 'havel|data-push|passkey|cleaning|signature' tests/*_browser.py | head -12`, 12 files, one call, -x): `84 passed in 352.88s (0:05:52)`, no skips.
+
+Deviations:
+- Calendar: the spec says to only guard and look up `[data-calendar]`. Done, but the body needs the current page's closure (state, load, render). A direct guard would keep the first page's closure, so after a Turbo visit the popstate and resize would act on the old calendar. The handlers therefore go through `window._ubyCalendarHandlers`, set by each run.
+- Test: `grep ... | head -12` returned exactly 12 files, so more matching files may exist beyond the cap.
+- Test: the dashboard calendar needs `cal_view=calendar` (dashboard.html includes it only then). The push row check proves the claim (`_ubyBound`), not a click.
+- Not run: a 390 px screenshot (no template or CSS changed in Part B).
+
+Questions: none.
+
+Owner steps left: none. Part C is next; no push or PR was made.
