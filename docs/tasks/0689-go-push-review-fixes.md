@@ -1,5 +1,5 @@
 # 0689: Go push review fixes
-Status: todo
+Status: review
 Depends on: 0688 | Base commit: claude/project-thread-pw8sp2 | Branch: task/0689-go-push-review-fixes
 Executor: Haiku 5.5 | Fits one session: 20 tool calls, 50k tokens
 ## 1. Objective
