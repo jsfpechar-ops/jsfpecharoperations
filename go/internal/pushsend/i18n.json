@@ -1,0 +1,38 @@
+{
+ "cs": {
+  "push.msg.cancelled_with_guests.body": "%(property)s, %(date)s: nic se nenahlásí.",
+  "push.msg.cancelled_with_guests.title": "Zrušený pobyt měl registrované hosty",
+  "push.msg.deadline_at_risk.body": "%(property)s, příjezd %(date)s: hosté zatím nejsou nahlášeni. Termín %(deadline)s.",
+  "push.msg.deadline_at_risk.title": "Hrozí zmeškání lhůty pro policii",
+  "push.msg.door_code.body": "%(property)s, příjezd %(date)s: zatím bez kódu ke dveřím.",
+  "push.msg.door_code.title": "Chybí kód ke dveřím",
+  "push.msg.filing_problem.body": "%(property)s: UbyPort hlášení nepřijal.",
+  "push.msg.filing_problem.title": "Hlášení policii nepřijato",
+  "push.msg.test.body": "Toto zařízení dostane naléhavá upozornění UbyHost.",
+  "push.msg.test.title": "Upozornění jsou zapnutá"
+ },
+ "en": {
+  "push.msg.cancelled_with_guests.body": "%(property)s, %(date)s: nothing will be reported.",
+  "push.msg.cancelled_with_guests.title": "Cancelled stay had registered guests",
+  "push.msg.deadline_at_risk.body": "%(property)s, arrival %(date)s: guests are not reported yet. Deadline %(deadline)s.",
+  "push.msg.deadline_at_risk.title": "Police deadline at risk",
+  "push.msg.door_code.body": "%(property)s, arrival %(date)s: no door code yet.",
+  "push.msg.door_code.title": "Door code missing",
+  "push.msg.filing_problem.body": "%(property)s: UbyPort did not accept the report.",
+  "push.msg.filing_problem.title": "Police report not accepted",
+  "push.msg.test.body": "This device will get urgent UbyHost alerts.",
+  "push.msg.test.title": "Alerts are on"
+ },
+ "vi": {
+  "push.msg.cancelled_with_guests.body": "%(property)s, %(date)s: sẽ không khai báo gì.",
+  "push.msg.cancelled_with_guests.title": "Lượt lưu trú bị hủy đã có khách đăng ký",
+  "push.msg.deadline_at_risk.body": "%(property)s, ngày đến %(date)s: khách chưa được khai báo. Hạn chót %(deadline)s.",
+  "push.msg.deadline_at_risk.title": "Sắp trễ hạn khai báo cảnh sát",
+  "push.msg.door_code.body": "%(property)s, ngày đến %(date)s: chưa có mã cửa.",
+  "push.msg.door_code.title": "Thiếu mã cửa",
+  "push.msg.filing_problem.body": "%(property)s: UbyPort không chấp nhận khai báo.",
+  "push.msg.filing_problem.title": "Báo cáo cho cảnh sát không được chấp nhận",
+  "push.msg.test.body": "Thiết bị này sẽ nhận cảnh báo khẩn từ UbyHost.",
+  "push.msg.test.title": "Đã bật cảnh báo"
+ }
+}
