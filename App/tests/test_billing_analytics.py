@@ -14,7 +14,8 @@ from app import auth, billing, billing_analytics, billing_invoices, config, db
 from app.main import app
 from tests.conftest import login_as
 
-TODAY = date.today()
+def _today():
+    return date.today()
 
 @pytest.fixture
 def setup(monkeypatch):
@@ -33,10 +34,10 @@ def setup(monkeypatch):
         "apartments_billed = 1, period_start = ?, period_end = ?, buyer_name = 'Penzion \u00da\u010detn\u00ed', "
         "buyer_street = 'Hlavn\u00ed 3', buyer_city = 'Brno', buyer_zip = '60200', buyer_ico = '27074358' "
         "WHERE owner_user_id = ?",
-        (TODAY.isoformat(), (TODAY + timedelta(days=29)).isoformat(), host),
+        (_today().isoformat(), (_today() + timedelta(days=29)).isoformat(), host),
     )
-    invoice_id = billing_invoices.issue_for_period(host, TODAY.isoformat(),
-                                                   (TODAY + timedelta(days=29)).isoformat(), today=TODAY)
+    invoice_id = billing_invoices.issue_for_period(host, _today().isoformat(),
+                                                   (_today() + timedelta(days=29)).isoformat(), today=_today())
     yield {"admin": f"adm{suffix}", "host": f"hst{suffix}", "host_id": host,
            "invoice": dict(billing_invoices.get(invoice_id))}
     db.execute("DELETE FROM bank_payment WHERE matched_invoice_id IN "
@@ -58,7 +59,7 @@ def test_portfolio_prices_come_from_the_engine(setup):
 
 def test_watchlists_flag_the_overdue_invoice(setup):
     db.execute("UPDATE platform_invoice SET due_date = ? WHERE id = ?",
-               ((TODAY - timedelta(days=3)).isoformat(), setup["invoice"]["id"]))
+               ((_today() - timedelta(days=3)).isoformat(), setup["invoice"]["id"]))
     db.execute("UPDATE billing_account SET status = 'overdue' WHERE owner_user_id = ?",
                (setup["host_id"],))
     watch = billing_analytics.watchlists()
@@ -156,7 +157,7 @@ def test_the_discounted_invoice_prints_the_discount_line(setup):
 
 def test_operator_can_change_the_plan_through_the_engine(setup):
     host = setup["host_id"]
-    result = billing.apply_change(host, {"plan": "max"}, today=TODAY, confirm=True,
+    result = billing.apply_change(host, {"plan": "max"}, today=_today(), confirm=True,
                                   actor="operator:adm")
     assert result["period_total_after"] > result["period_total_before"]
     assert billing.account(host)["plan"] == "max"
@@ -165,7 +166,7 @@ def test_operator_can_change_the_plan_through_the_engine(setup):
 def test_month_snapshot_and_movement(setup):
     host = setup["host_id"]
     assert billing_analytics.write_month_snapshot() == 1
-    month = f"{TODAY:%Y-%m}"
+    month = f"{_today():%Y-%m}"
     row = db.query_one("SELECT * FROM billing_month_snapshot WHERE owner_user_id = ?", (host,))
     assert row["month"] == month and row["net_czk"] == 149 and row["monthly_czk"] == 149
     move = billing_analytics.movement(month)
@@ -272,7 +273,7 @@ def test_the_operator_assigns_a_plan_to_a_legacy_host(setup):
     assert r.status_code == 303
     acc = billing.account(host)
     assert acc["plan"] == "standard" and acc["status"] == "active"
-    assert acc["period_start"] == TODAY.isoformat()
+    assert acc["period_start"] == _today().isoformat()
     invoices = [dict(x) for x in db.query(
         "SELECT * FROM platform_invoice WHERE owner_user_id = ? AND kind = 'invoice' AND voided = 0",
         (host,))]
@@ -330,7 +331,7 @@ def test_the_operator_extends_a_running_trial(setup):
     db.execute(
         "UPDATE billing_account SET status = 'trialing', trial_started_at = ?, trial_ends_at = ? "
         "WHERE owner_user_id = ?",
-        (TODAY.isoformat(), (TODAY + timedelta(days=3)).isoformat(), host))
+        (_today().isoformat(), (_today() + timedelta(days=3)).isoformat(), host))
     client = TestClient(app)
     login_as(client, setup["admin"], url="/login?lang=cs")
     detail = client.get(f"/admin/customers/{host}").text
@@ -338,7 +339,7 @@ def test_the_operator_extends_a_running_trial(setup):
     r = client.post(f"/admin/customers/{host}/prodlouzit", data={"days": "7"},
                     follow_redirects=False)
     assert r.status_code == 303
-    assert billing.account(host)["trial_ends_at"][:10] == (TODAY + timedelta(days=10)).isoformat()
+    assert billing.account(host)["trial_ends_at"][:10] == (_today() + timedelta(days=10)).isoformat()
     db.execute("DELETE FROM apartment WHERE owner_user_id = ?", (host,))
     db.execute("DELETE FROM billing_account WHERE owner_user_id = ?", (host,))
 
@@ -416,7 +417,7 @@ def test_the_customer_detail_shows_activity_and_operator_log(setup):
 
 def test_the_admin_home_lists_the_queue(setup):
     db.execute("UPDATE platform_invoice SET due_date = ? WHERE owner_user_id = ? AND voided = 0",
-               ((TODAY - timedelta(days=3)).isoformat(), setup["host_id"]))
+               ((_today() - timedelta(days=3)).isoformat(), setup["host_id"]))
     client = TestClient(app)
     login_as(client, setup["admin"], url="/login?lang=cs")
     page = client.get("/admin").text

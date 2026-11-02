@@ -89,18 +89,35 @@ BOX_OVERRIDES = {
     "h2.sec": {"margin-left": "0px", "margin-right": "0px"},
     ".card.prop": {"margin-left": "0px", "margin-right": "0px"},
     # owner 2026-11-01 19:09: smaller pills than the phone mockup (one line at 390 px)
-    # cleaning phone (0549b): main padding replaces side margins (0719); heights and pill width follow the English fixture copy; the fixture has no cleaning today, so .card is the empty today card
+    # phone gutter is main padding, see 0719
     ".sub": {"margin-left": "0px", "margin-right": "0px"},
-    ".grp": {"margin-left": "0px", "margin-right": "0px"},
+    ".facts": {"margin-left": "0px", "margin-right": "0px"},
     ".card": {"margin-left": "0px", "margin-right": "0px"},
-    ".card@320": {"height": "63px"},
-    ".card@390": {"height": "63px"},
-    ".list .row:has(.p-ok)@320": {"height": "102px"},
-    ".list .row:has(.p-ok)@390": {"height": "102px"},
-    ".row .t .pill.p-ok@320": {"width": "100.641px"},
-    ".row .t .pill.p-ok@390": {"width": "100.641px"},
-    ".actbar@320": {"height": "75px"},
-    ".actbar@390": {"height": "75px"},
+    ".grp": {"margin-left": "0px", "margin-right": "0px"},
+    ".head .sub": {"margin-left": "0px", "margin-right": "0px"},
+    ".head h1": {"margin-left": "0px", "margin-right": "0px"},
+    # stays/stay (0529): text- and data-dependent; fixture copy vs mockup demo copy
+    # pill width follows its label ("Chybí 1 host" vs "Čeká na 2 ze 3 hostů")
+    "stays:.row .pill.p-warn@320": {"width": "121.891px"},
+    "stays:.row .pill.p-warn@390": {"width": "121.891px"},
+    # fixture property has no check-in/out time, so the facts grid has no time line
+    "stay:.facts@320": {"height": "139px"},
+    "stay:.facts@390": {"height": "139px"},
+    # police card text follows the stay state (fixture: ready to send; mockup: waiting for guests); phone v2 card padding (0729)
+    "stay:.card@320": {"height": "82px"},
+    "stay:.card@390": {"height": "82px"},
+    # stays rows are 2 px shorter: the fixture pill label is one short line ("Chybí 1 host"), the mockup's wraps differently
+    "stays:.grp + .list .row:not(:last-child)@320": {"height": "101px"},
+    "stays:.grp + .list .row:not(:last-child)@390": {"height": "101px"},
+    # cleaning phone (0549b): heights and pill width follow the English fixture copy; the fixture has no cleaning today, so .card is the empty today card
+    "cleaning:.card@320": {"height": "63px"},
+    "cleaning:.card@390": {"height": "63px"},
+    "cleaning:.list .row:has(.p-ok)@320": {"height": "102px"},
+    "cleaning:.list .row:has(.p-ok)@390": {"height": "102px"},
+    "cleaning:.row .t .pill.p-ok@320": {"width": "100.641px"},
+    "cleaning:.row .t .pill.p-ok@390": {"width": "100.641px"},
+    "cleaning:.actbar@320": {"height": "75px"},
+    "cleaning:.actbar@390": {"height": "75px"},
 }
 
 
@@ -193,6 +210,48 @@ PAGES = [
         "phone_view": "menu",
         "phone_selectors": [".tabs", ".tab:not(.on)", ".tab.on", ".mh .big", ".me-av", ".tile", ".tile b", ".tile small", ".tile .v", ".promo", ".promo .pi", ".promo b", ".promo small", ".list.plain .row", ".list.plain .badge", ".menu-logout"],
         "missing_ok": {".list.plain .badge": "the Cleaning badge shows only when a cleaning is planned for today"},
+    },
+    {
+        "name": "stays",
+        "path": "/reservations?range=upcoming&lang=cs",
+        "view": "stays",
+        "phone_view": "pobyty",
+        "selectors": [
+            ".head h1", ".head .btn", ".head .btn.ghost", ".chip", ".chip.on",
+            "main table th", "main table td", "main td small", "main .pill.p-ok", "main .pill.p-warn",
+        ],
+        "phone_selectors": [
+            ".tabs", ".tab.on", ".top .round", ".big", ".chips .chip", ".chip.on", ".grp",
+            # a row that is not the last of its group, so it draws the row line (the fixture's Dnes group has one stay)
+            ".grp + .list .row:not(:last-child)", ".row .av", ".row .t b", ".row .t small", ".row .pill.p-ok", ".row .pill.p-warn", ".list .link",
+        ],
+        "missing_ok": {
+            "main .pill.p-ok": "tone depends on data: the test fixture has no reported stay",
+            ".row .pill.p-ok": "tone depends on data: the test fixture has no reported stay",
+        },
+    },
+    {
+        "name": "stay",
+        "path": "/reservations/{stay_id}",  # resolved in the test: an active stay with one guest of the rich host
+        "view": "stay",
+        "phone_view": "pobyt",
+        "selectors": [
+            ".crumb", ".head h1", ".head .sub", ".head .btn", ".head .btn.ghost", "main h2", "main .card",
+            "main table th", "main table td", "main .pill",
+        ],
+        "phone_selectors": [
+            ".tabs", ".top .round", ".big", ".sub", ".facts", ".facts b", ".facts small", "h2.sec",
+            ".list .row", ".row .ic", ".row .t b", ".row .t small", ".card", ".code", ".list .link", ".actbar .btn",
+        ],
+        "missing_ok": {
+            ".head .btn.ghost": "the ghost button shows only when a second action applies; depends on the stay's state",
+            "main .pill": "the pill follows the stay's submission state; the seeded stay has none yet",
+            "main table th": "the submissions table shows only after a submission; the seeded stay has none yet",
+            "main table td": "the submissions table shows only after a submission; the seeded stay has none yet",
+            ".code": "the door-code PIN shows only once a code is issued; the seeded stay has none yet",
+            ".actbar .btn": "the phone action bar shows only when an action applies; the seeded stay has none yet",
+            ".row .t small": "payment rows have no subtitle in the current copy; the mockup subtitles are demo copy",
+        },
     },
 ]
 
@@ -430,18 +489,21 @@ def show_phone_screen(page, key: str) -> None:
     )
 
 
-def box_diffs(selector: str, app: dict, mock: dict, width: int, skip=None) -> list[str]:
+def box_diffs(selector: str, app: dict, mock: dict, width: int, skip=None, page: str = "") -> list[str]:
     """Phone box metrics: width within 2 px, height and margins within 1 px. Values that are not px are skipped.
-    skip: optional (["width"] or ["height"] or both, reason) from PAGES phone_box_skip; only width and height may be skipped."""
+    skip: optional (["width"] or ["height"] or both, reason) from PAGES phone_box_skip; only width and height may be skipped.
+    BOX_OVERRIDES keys are "selector", "selector@width" or, for one page only, "page:selector[@width]"."""
     out = []
     skipped, reason = skip if skip else ([], "")
     if set(skipped) - {"width", "height"}:
         raise ValueError(f"phone_box_skip for {selector} may only skip width or height, got {skipped}")
+    override = {}
+    for key in (selector, f"{selector}@{width}", f"{page}:{selector}", f"{page}:{selector}@{width}"):
+        override.update(BOX_OVERRIDES.get(key, {}))
     for prop in BOX_PROPS:
         if prop in skipped:
             print(f"phone_box_skip {selector} {prop} at {width} px: {reason}")
             continue
-        override = {**BOX_OVERRIDES.get(selector, {}), **BOX_OVERRIDES.get(f"{selector}@{width}", {})}
         a, m = _num(app[prop]), _num(override.get(prop, mock[prop]))
         if a is None or m is None:
             continue

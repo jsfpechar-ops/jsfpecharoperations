@@ -29,7 +29,6 @@ EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0099-eviden
 CAPTURE = os.environ.get("UBYHOST_CAPTURE_0099") == "1"
 STRINGS = host_i18n.STRINGS
 LISTS = {
-    "stays": "/reservations?range=all",
     "properties": "/apartments",
     "invoices": "/invoices",
     "fees": "/stay-fees",
@@ -59,7 +58,7 @@ _LAYOUT_JS = """(filled) => {
   const meta = one('[data-list-meta]');
   const tabs = one('[data-sub-tabs]');
   const toolbar = one('[data-list-toolbar]');
-  const panel = one('.stays-view, .list-cards, .ui-body-list');
+  const panel = one('.stays-desk, .list-cards, .ui-body-list');
   const order = [env, notices, title, tabs, toolbar, panel].filter(Boolean);
   let ordered = true;
   for (let i = 1; i < order.length; i++) {
@@ -168,7 +167,7 @@ def _shot(page, name, width, lang):
 def test_tabs_are_links_that_mark_the_open_page(acc):
     client = acc["client"]
     cases = [
-        ("/reservations", "nav.stays"), ("/submissions", "tabs.stays.reports"),
+        ("/submissions", "tabs.stays.reports"),
         ("/housebook", "tabs.stays.register"),
         ("/invoices", "nav.invoices"),
         (f"/entities?edit={acc['e1']}&next=/apartments", "host.business"),
@@ -207,7 +206,7 @@ def test_empty_states_use_the_shared_component(acc):
 
 
 ROWS = {
-    "stays": ("/reservations?range=all", ".stays-view tr.clickable-row"),
+    "stays": ("/reservations?range=all", ".stays-desk tbody tr"),
     "properties": ("/apartments", ".props-card table tbody tr.clickable-row"),
     "invoices": ("/invoices", ".lc-invoices tr.clickable-row"),
     "fees": ("/stay-fees", ".lc-fees tr.clickable-row"),

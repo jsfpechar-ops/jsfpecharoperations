@@ -54,6 +54,10 @@ def test_unlink_button_is_visible_and_explained(stay_actions_host, stay_actions_
                 page.wait_for_load_state("networkidle")
                 label = f"{lang} {width} {collapsed}"
                 button = page.locator("[data-stay-claim] [data-release-claim]")
+                if width < 1024:  # v2 compact phone rule: the claim card stays on the computer
+                    assert page.locator("[data-stay-claim]").is_hidden(), label
+                    context.close()
+                    continue
                 assert button.is_visible(), label
                 assert button.inner_text().strip() == host_i18n.translate(lang, "stay.claim.release"), label
                 assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"), label
