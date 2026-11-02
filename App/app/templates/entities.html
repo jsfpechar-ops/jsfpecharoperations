@@ -42,7 +42,7 @@
   </div>
 
   <section class="entity-section" id="entity-business" aria-labelledby="entity-business-title">
-    <h3 class="entity-section-title" id="entity-business-title">{{ t('entities.section.business') }}</h3>
+    <h3 class="entity-section-title" id="entity-business-title">{{ t('entities.section.business') }}{{ help_tip('entity-business-why-help', t('why.business')) }}</h3>
     <form method="post" action="/entities/{{ edit_entity.id }}" enctype="multipart/form-data" data-unsaved-guard>
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
       {% if next_path %}<input type="hidden" name="next" value="{{ next_path }}">{% endif %}
@@ -56,7 +56,7 @@
   <section class="entity-section invoice-settings-form" id="entity-invoice" aria-labelledby="entity-invoice-title">
     <div class="entity-section-head">
       <h3 class="entity-section-title" id="entity-invoice-title">{{ t('entities.section.invoice') }}</h3>
-      {{ help_tip('entity-invoice-help', t('invoice.settings.lede')) }}
+      {{ help_tip('entity-invoice-help', t('invoice.settings.lede') ~ ' ' ~ t('entities.invoice.snapshot_hint')) }}
     </div>
     <form method="post" action="/entities/{{ edit_entity.id }}/invoice" data-unsaved-guard>
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
@@ -154,7 +154,7 @@
 {% endif %}
 
 <div class="card entity-add" id="entity-add">
-  <h2>{{ t('entities.add') }}</h2>
+  <h2>{{ t('entities.add') }}{{ help_tip('entity-add-why-help', t('why.business')) }}</h2>
   <form method="post" action="/entities" enctype="multipart/form-data">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     {{ business_form_body('new_', new_entity or none, '', ares_error, ares_note) }}
