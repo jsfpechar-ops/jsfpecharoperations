@@ -184,7 +184,7 @@
       return workerReady.then(function (registration) {
         return registration.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: keyBytes(pushRow.getAttribute("data-push-key"))
+          applicationServerKey: keyBytes(pushRowEl().getAttribute("data-push-key"))
         });
       }).then(function (subscription) {
         return post("/account/push/subscribe", { subscription: subscription.toJSON(), lang: pageLang }).then(function () {
