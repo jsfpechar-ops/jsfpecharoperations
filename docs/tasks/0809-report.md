@@ -86,3 +86,22 @@ At 390 px the `.help-tip-btn` in the cleaning-shares heading is 23x21 px (minimu
 
 ### Owner steps left
 None. Commit is the orchestrator's job.
+
+## 0812
+
+Brief: docs/tasks/0812-v2-help-tip-shared.md. Only `App/app/static/app2.css` changed. Not committed (owner asked for no commit from this run).
+
+Rules added (end of app2.css, block `/* 0812 help tip (v2) */`): `body.v2 .help-tip` (inline-flex, relative, margin-left 6px); `body.v2 .help-tip-btn` (24 px, 44 px below 1024 px); `body.v2 .heading-with-tip, body.v2 .havel-name-tip` (flex, gap 6px); `body.v2 .help-tip-body` hidden; popover shown on `.is-open` or `:not([data-js]):focus-within`.
+
+Rules removed: prop-name-tip and havel-name-tip help-tip-btn sizes (692-695); wiz-page help-tip-btn (1189, 1236); prop-new help-tip-btn selectors in the 1270-1271 blocks (fragment only, the rest of those lines kept); onboarding-welcome help-tip-btn (1292-1293); the `:is(.prop-new,.wiz-page)` help-tip, help-tip-btn, help-tip-body and popover rules (1299-1302). Kept: stay-detail (602/606), details (385, 943-945).
+
+Deviation: the brief's -10px negative margin on the 44 px mobile target made the "?" overlap the h1 on havel (test "overlapping text in head"). Removed the negative margin; the 44 px target now takes its full box. Havel's `.havel-name-tip` also made flex, same reason.
+
+Final tails:
+- `pytest tests/test_0800_v2_remaining_pages_browser.py tests/test_onboarding_wizard_browser.py tests/test_property_create_browser.py -q --tb=line -p no:cacheprovider -rs` → `3 failed, 201 passed in 289.99s`
+- Failing: `test_v2_remaining_page[onboarding-320|390|768]`: "main content ends at 1149 under the tab bar (top 916)".
+- Same three onboarding cases also fail on HEAD (copy from `git archive HEAD`): "main content ends at 1111 ... (top 916)" at 768. Pre-existing, not caused by this brief; not fixed (out of brief scope).
+- `UBYHOST_SHOTS_0800=1 pytest tests/test_0800_v2_remaining_pages_browser.py -q` → `3 failed, 103 passed in 153.56s` (same onboarding cases). Screenshots regenerated.
+- `python3 scripts/design_lint.py` → `design lint: FAIL`, 5 T3 findings, all in templates, none in app2.css: apartment_form.html (prop-name-tip), cleaning_shares.html, guest_guide_card.html, guest_guide_qr.html (heading-with-tip), havel.html (havel-name-tip). Catalog (docs/design/catalog.json) lacks these classes. Needs a catalog decision or a template change (not in this brief).
+
+Left for the owner / next brief: onboarding geometry (above); design lint catalog entries; the stale comment at app2.css line ~1285 ("0809: the onboarding help tips ...") still describes the deleted rule.

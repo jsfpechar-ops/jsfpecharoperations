@@ -35,3 +35,8 @@ Stop at 30 tool calls, or if a template change seems needed.
 
 ## 9. Report
 Append "## 0812" to `docs/tasks/0809-report.md`: rules added, rules removed, final tails.
+
+## 10. Follow-up (round 2)
+d. Onboarding 320/390/768 fail in `tests/v2_mockup.py` check 7 ("main content ends at ~1149 under the tab bar (top 916)"): scrolled to the bottom, some visible element inside `main` still has its bottom ~230 px below the tab bar top, i.e. below the document end. Find it: in a short Playwright snippet at 390 px on /onboarding (reuse the test's fixtures/login from `tests/test_0800_v2_remaining_pages_browser.py`), scroll to the bottom and print tag, class and bottom of the 5 lowest visible elements in `main`. Likely an absolutely positioned or overflowing element added in 0809 (a help-tip body, the Learn disclosure content, or the onboarding action group). Fix it in the 0800 or 0812 block of app2.css (hide it, make it static, or contain it), not in the test.
+e. Remove the stale comment in app2.css near the 0800 onboarding rules that describes the deleted onboarding help-tip rule.
+f. Rerun section 6 commands; all green, screenshots regenerated.

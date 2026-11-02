@@ -391,7 +391,10 @@
     "guide-links",
     "guide-acts",
     "guide-form-card",
-    "guide-qr"
+    "guide-qr",
+    "heading-with-tip",
+    "prop-name-tip",
+    "havel-name-tip"
   ],
   "hooks": [
     "sr-only",

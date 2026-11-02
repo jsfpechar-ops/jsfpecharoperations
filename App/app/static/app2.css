@@ -689,10 +689,6 @@ body.v2 .ov-how .ui-how-more{display:inline-flex;align-items:center;min-height:4
 body.v2{--tabbar-safe:env(safe-area-inset-bottom,0px)}
 @media (max-width:1023px){body.v2{--tabbar-h:84px}}
 @media (max-width:1023px){html:has(body.v2){scroll-padding-bottom:84px}}
-body.v2 .prop-name-tip .help-tip-btn{min-width:24px;min-height:24px;box-sizing:border-box}
-@media (max-width:1023px){body.v2 .prop-name-tip .help-tip-btn{min-width:44px;min-height:44px}}
-body.v2 .havel-name-tip .help-tip-btn{min-width:24px;min-height:24px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
-@media (max-width:1023px){body.v2 .havel-name-tip .help-tip-btn{min-width:44px;min-height:44px}}
 body.v2 .havel-thread{display: flex; flex-direction: column; gap: var(--space-3);}
 body.v2 .havel-msg{display: flex; flex-direction: column; max-width: 85%;}
 body.v2 .havel-msg-host{align-self: flex-end; align-items: flex-end;}
@@ -1186,7 +1182,6 @@ body.v2 .wiz-page .setup-wizard-form{display:block}
 body.v2 .wiz-page .grid{display:grid;grid-template-columns:minmax(0,1fr);gap:0}
 body.v2 .wiz-page .grid.two{display:grid;grid-template-columns:1fr 1fr;column-gap:12px}
 body.v2 .wiz-page .setup-wizard-body .field{margin-bottom:14px}
-body.v2 .wiz-page .help-tip-btn{min-width:24px;min-height:24px;display:inline-flex;align-items:center;justify-content:center}
 body.v2 .wiz-page .property-operator-hint a{display:inline-flex;align-items:center;min-height:24px}
 body.v2 .wiz-page textarea{font:inherit}
 body.v2 .wiz-page .err-text{margin:0 0 12px}
@@ -1233,7 +1228,6 @@ body.v2 .wiz-page .setup-wizard-actions form.inline{display:inline;margin:0}
   body.v2 .wiz-page .setup-wizard-foot>*{width:100%}
   body.v2 .wiz-page .setup-wizard-foot .ui-btn{width:100%;justify-content:center}
   body.v2 .wiz-page .setup-wizard-actions{flex-direction:column;align-items:stretch;margin-left:0;width:100%}
-  body.v2 .wiz-page .help-tip-btn{min-width:44px;min-height:44px}
   body.v2 .wiz-page .property-operator-hint a{min-height:44px}
 }
 body.v2 .wiz-page .calendar-other-platform{display:none}
@@ -1267,8 +1261,8 @@ body.v2 .prop-new .property-create-next-list li{display:flex;gap:12px;align-item
 body.v2 .prop-new .property-create-next-list li svg{flex:none;color:var(--acc)}
 body.v2 .prop-new .property-create-next-list strong{display:block;color:var(--ink);font-size:14px}
 body.v2 .prop-new .property-create-next-list small{display:block;font-size:13px;color:var(--ink3);margin-top:2px}
-@media (min-width:1280px){body.v2 .prop-new .property-create{grid-template-columns:minmax(0,1fr) 300px}}@media (min-width:1024px){body.v2 .prop-new .grid.two,body.v2 .prop-new .property-address-grid{grid-template-columns:repeat(2,minmax(0,1fr))}body.v2 .prop-new .help-tip-btn,body.v2 .prop-new .property-create-manage{display:inline-flex;align-items:center;min-height:24px;min-width:24px;box-sizing:border-box}body.v2 .prop-new .property-create-next a{display:inline-flex;align-items:center;min-height:24px}}
-@media (max-width:1023px){body.v2 .prop-new .property-create-card,body.v2 .prop-new .property-create-next{padding:16px}body.v2 .prop-new input[type=text],body.v2 .prop-new select{min-height:44px}body.v2 .prop-new .property-create-actions{flex-direction:column-reverse}body.v2 .prop-new .property-create-actions .ui-btn{width:100%;min-height:44px}body.v2 .prop-new .copy-settings-bar .ui-btn,body.v2 .prop-new .property-create-manage,body.v2 .prop-new .help-tip-btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;box-sizing:border-box}body.v2 .prop-new .copy-settings-bar .ui-btn{width:100%}}
+@media (min-width:1280px){body.v2 .prop-new .property-create{grid-template-columns:minmax(0,1fr) 300px}}@media (min-width:1024px){body.v2 .prop-new .grid.two,body.v2 .prop-new .property-address-grid{grid-template-columns:repeat(2,minmax(0,1fr))}body.v2 .prop-new .property-create-manage{display:inline-flex;align-items:center;min-height:24px;min-width:24px;box-sizing:border-box}body.v2 .prop-new .property-create-next a{display:inline-flex;align-items:center;min-height:24px}}
+@media (max-width:1023px){body.v2 .prop-new .property-create-card,body.v2 .prop-new .property-create-next{padding:16px}body.v2 .prop-new input[type=text],body.v2 .prop-new select{min-height:44px}body.v2 .prop-new .property-create-actions{flex-direction:column-reverse}body.v2 .prop-new .property-create-actions .ui-btn{width:100%;min-height:44px}body.v2 .prop-new .copy-settings-bar .ui-btn,body.v2 .prop-new .property-create-manage{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;box-sizing:border-box}body.v2 .prop-new .copy-settings-bar .ui-btn{width:100%}}
 body.v2 .onboarding-welcome[data-layout=v2]{max-width:720px}
 body.v2 .onboarding-welcome[data-layout=v2] .onboarding-intro{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin:0 0 20px}
 body.v2 .onboarding-welcome[data-layout=v2] .onboarding-intro h1{font-size:24px;font-weight:800;margin:0;letter-spacing:-.01em}
@@ -1289,17 +1283,11 @@ body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step>.pill{flex:none}
 body.v2 .onboarding-welcome[data-layout=v2] .onboarding-current-dot{display:block;width:8px;height:8px;border-radius:50%;background:var(--acc);flex:none}
 body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-action{flex:none;white-space:nowrap}
 /* 0809: the onboarding help tips (skip, demo) get the same 24 px target as other help tips */
-body.v2 .onboarding-welcome[data-layout=v2] .help-tip-btn{min-width:24px;min-height:24px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
-@media (max-width:1023px){body.v2 .onboarding-welcome[data-layout=v2] .help-tip-btn{min-width:44px;min-height:44px}}
 @media (max-width:1023px){body.v2 .onboarding-welcome[data-layout=v2] details>a,body.v2 .onboarding-welcome[data-layout=v2] .onboarding-demo a,body.v2 .prop-new .property-create-next a{display:inline-flex;align-items:center;min-height:44px;min-width:44px;box-sizing:border-box}body.v2 .onboarding-welcome[data-layout=v2] .onboarding-intro{flex-direction:column;align-items:stretch}body.v2 .onboarding-welcome[data-layout=v2] .onboarding-meter{justify-content:flex-start}body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step{flex-wrap:wrap;padding:12px;gap:12px;align-items:flex-start}body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-index{width:32px;height:32px}body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-copy{flex:1 1 calc(100% - 44px)}body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-action{flex:1 1 100%;min-height:44px;display:flex;align-items:center;justify-content:center;box-sizing:border-box}}
 
 /* 0808 step a: help tip beside its label (new property, wizard) */
 body.v2 :is(.prop-new,.wiz-page) .field-label-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 body.v2 :is(.prop-new,.wiz-page) .field-label-row>label{margin:0}
-body.v2 :is(.prop-new,.wiz-page) .help-tip{position:relative;display:inline-flex;align-items:center}
-body.v2 :is(.prop-new,.wiz-page) .help-tip-btn{padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
-body.v2 :is(.prop-new,.wiz-page) .help-tip-body{display:none}
-body.v2 :is(.prop-new,.wiz-page) .help-tip:not([data-js]):focus-within>.help-tip-body,body.v2 :is(.prop-new,.wiz-page) .help-tip.is-open>.help-tip-body{display:block;position:absolute;z-index:70;left:0;top:100%;margin:6px 0 0;box-sizing:border-box;width:min(320px,calc(100vw - 32px));padding:10px 12px;background:var(--s);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.12);font-size:13px;font-weight:400;line-height:1.45;text-align:left;white-space:normal}
 /* 0808 step b: onboarding step card action group (status, button, Learn why) */
 body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step{gap:16px}
 body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-group{display:flex;flex-wrap:wrap;align-items:center;gap:12px;flex:none;min-width:0}
@@ -1425,3 +1413,10 @@ body.v2 .page-skeleton:not([hidden]) ~ *, body.v2 main[aria-busy="true"] > .ui-p
   body.v2 .ui-skel-detail { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { body.v2 .ui-bone { animation: none; } }
+/* 0812 help tip (v2) */
+body.v2 .help-tip{position:relative;display:inline-flex;align-items:center;vertical-align:middle;margin-left:6px}
+body.v2 .help-tip-btn{min-width:24px;min-height:24px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
+@media (max-width:1023px){body.v2 .help-tip-btn{min-width:44px;min-height:44px}}
+body.v2 .heading-with-tip,body.v2 .havel-name-tip{display:flex;align-items:center;gap:6px}
+body.v2 .help-tip-body{display:none}
+body.v2 .help-tip.is-open>.help-tip-body,body.v2 .help-tip:not([data-js]):focus-within>.help-tip-body{display:block;position:absolute;z-index:70;left:0;top:100%;margin:6px 0 0;box-sizing:border-box;width:min(320px,calc(100vw - 32px));padding:10px 12px;background:var(--s);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.12);font-size:13px;font-weight:400;line-height:1.45;text-align:left;white-space:normal}
