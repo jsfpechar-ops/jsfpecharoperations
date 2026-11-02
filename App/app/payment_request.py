@@ -8,11 +8,13 @@ funds and never calls Stripe (brief 0422+ adds that).
 """
 from __future__ import annotations
 
+import hashlib
+import hmac
 from datetime import date
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
-from . import db, payments
+from . import config, db, payments
 
 REASONS = ("repair", "extra_guest", "late_checkout", "cleaning", "damage", "custom")
 RAILS = ("card", "qr")
@@ -173,3 +175,13 @@ def qr_payload(request: Dict[str, Any]) -> tuple:
         "UbyHost payment request",
     )
     return payload, payments.qr_png_bytes(payload)
+
+
+def guest_token(row: Dict[str, Any]) -> str:
+    """0763: unguessable token for the public QR page (no schema change)."""
+    message = f"payreq:{int(row['id'])}:{row.get('variable_symbol') or ''}"
+    return hmac.new(config.secret_key().encode("utf-8"), message.encode("utf-8"), hashlib.sha256).hexdigest()[:32]
+
+
+def guest_token_ok(row: Dict[str, Any], token: str) -> bool:
+    return hmac.compare_digest(guest_token(row), str(token or ""))
