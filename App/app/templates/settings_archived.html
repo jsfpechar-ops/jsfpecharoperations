@@ -1,17 +1,18 @@
 {% extends "host_page.html" %}
+{% set v2 = true %}
 {% set nav = 'settings' %}
 {% set body_kind = 'list' %}
 {% block title %}{{ t('archive.title') }}{% endblock %}
-{% block page_title %}{{ t('archive.title') }}{% endblock %}
-{% block meta %}{{ t('archive.page_lede') }}{% endblock %}
+{% block page_title %}{% endblock %}{% block meta %}{% endblock %}
 {% block back_url %}/settings{% endblock %}
 {% block back_label %}{{ t('common.back') }}{% endblock %}
 {% block body %}
 {% from "_components.html" import help_tip, row_menu_begin, row_menu_end, row_open with context %}
 
+<div class="head"><div><h1 class="big">{{ t('archive.title') }}</h1></div></div>
 <p class="ui-sub">{{ t('archive.retention_note') }}</p>
 
-<div class="ui-chips archive-type-filters" role="group" aria-label="{{ t('archive.title') }}">
+<div class="chips archive-type-filters" role="group" aria-label="{{ t('archive.title') }}">
   {% for value, label_key in [
     ('all', 'archive.chip.all_count'),
     ('stays', 'archive.chip.stays_count'),
@@ -19,7 +20,7 @@
     ('housebook', 'archive.chip.housebook_count'),
     ('entities', 'archive.chip.entities_count')
   ] %}
-    <a class="ui-chip" href="/settings/archived?type={{ value }}"{% if item_type == value %} aria-current="true"{% endif %}>
+    <a class="chip" href="/settings/archived?type={{ value }}"{% if item_type == value %} aria-current="true"{% endif %}>
       {{ t(label_key, count=counts[value]) }}
     </a>
   {% endfor %}
@@ -39,7 +40,7 @@
 
   {% if item_type in ('all', 'stays') and archived_stays %}
   <div class="heading-with-tip"><h2>{{ t('archive.section.stays') }}</h2> {{ help_tip('archive-stays-help', t('archive.hint.stays')) }}</div>
-  <div class="ui-section scroll-x">
+  <div class="card scroll-x">
     <table class="ui-table ui-table-stack">
       <thead>
         <tr>
@@ -79,7 +80,7 @@
 
   {% if item_type in ('all', 'properties') and archived_properties %}
   <div class="heading-with-tip"><h2>{{ t('archive.section.properties') }}</h2> {{ help_tip('archive-properties-help', t('archive.hint.properties')) }}</div>
-  <div class="ui-section scroll-x">
+  <div class="card scroll-x">
     <table class="ui-table ui-table-stack">
       <thead>
         <tr>
@@ -117,7 +118,7 @@
 
   {% if item_type in ('all', 'housebook') and archived_housebook %}
   <div class="heading-with-tip"><h2>{{ t('archive.section.guests') }}</h2> {{ help_tip('archive-housebook-help', t('archive.hint.housebook')) }}</div>
-  <div class="ui-section scroll-x">
+  <div class="card scroll-x">
     <table class="ui-table ui-table-stack">
       <thead>
         <tr>
@@ -152,7 +153,7 @@
 
   {% if item_type in ('all', 'entities') and archived_entities %}
   <div class="heading-with-tip"><h2>{{ t('archive.section.entities') }}</h2> {{ help_tip('archive-entities-help', t('archive.hint.entities')) }}</div>
-  <div class="ui-section scroll-x">
+  <div class="card scroll-x">
     <table class="ui-table ui-table-stack">
       <thead>
         <tr>
