@@ -1706,3 +1706,10 @@ body.v2 .settings-lane .set-row::after,body.v2 .settings-lane .document-links a:
 body.v2 details.prop-sec .help-tip-btn{display:none}
 body.v2 details.prop-sec .help-tip{display:block}
 body.v2 details.prop-sec .help-tip-body,body.v2 details.prop-sec .help-tip[data-js]>.help-tip-body{position:static;display:block;max-width:none;width:auto;margin:2px 0 0;padding:0;background:none;border:0;box-shadow:none;font-size:12px;color:var(--ink3)}
+/* 0872 CI fixes: table header under its cell, QR download button colour, police sample link wraps, address labels align */
+body.v2 .guide-page .ui-table th.ui-cell-r{width:1%;padding-left:16px;white-space:nowrap}
+body.v2 .guide-page .ui-btn-primary{color:#fff;background:var(--coral-600);border-color:var(--coral-600)}
+body.v2 .guide-page .ui-btn-primary>span{color:inherit}
+body.v2 .police-section-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+body.v2 .police-sample-link{max-width:100%;white-space:normal;text-align:left;margin-bottom:0}
+@media (max-width:767px){body.v2 .guide-page .ui-table thead{display:none}}
