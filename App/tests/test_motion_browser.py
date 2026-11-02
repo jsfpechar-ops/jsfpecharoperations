@@ -71,9 +71,12 @@ def test_fold_outs_slide_open_and_floating_menus_are_not_clipped(wide_host, wide
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = _rail_context(browser, wide_host, wide_base, 1280, collapsed=False)
         page = _rail_page(context, wide_base, "/")
-        page.locator("details.page-help summary").first.click()
-        _open = page.evaluate("() => { const b = document.querySelector('details.page-help[open] > .page-help-body'); return !!b && getComputedStyle(b).display === 'block' && b.getBoundingClientRect().width > 0 && b.getBoundingClientRect().left >= 0 && b.getBoundingClientRect().right <= innerWidth; }")
-        assert _open, "help popover did not open inside the viewport"
+        heights = page.evaluate(FOLD_OUT_HEIGHTS, "details.ui-how")
+        full = page.evaluate("() => document.querySelector('.ui-how-body').getBoundingClientRect().height")
+        assert heights[0] < full, heights
+        assert heights == sorted(heights), heights
+        page.wait_for_function("() => document.querySelector('details.ui-how').getAnimations({subtree: true}).length === 0")
+        assert page.evaluate("() => getComputedStyle(document.querySelector('details.ui-how'), '::details-content').overflow") == "clip"
 
         # The account menu floats above its trigger, so its fold-out must never clip it.
         # 0720: v2 has no details.host-account menu; this old-shell case is checked on /payments (0785a).
@@ -134,10 +137,10 @@ def test_pages_without_javascript_stay_still(wide_host, wide_base):
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = _rail_context(browser, wide_host, wide_base, 1280, collapsed=False, java_script_enabled=False)
-        # 0720: old-shell sidebar and help block (/settings has no how_key), so this runs on /stay-fees (v2 is /).
-        page = _rail_page(context, wide_base, "/stay-fees")
-        page.locator("details.page-help summary").click()
-        assert page.locator(".page-help-body").is_visible()
+        # 0720: old-shell sidebar and help block (/settings has no how_key), so this runs on /payments (v2, 0794: /stay-fees moved to v2).
+        page = _rail_page(context, wide_base, "/payments")
+        page.locator("details.ui-how summary").click()
+        assert page.locator(".ui-how-body").is_visible()
         page.locator('.ui-nav a[href="/reservations"]').click()
         page.wait_for_url("**/reservations**")
         page.locator("a.nav[href='/']").click()  # /reservations is the v2 shell (0528)

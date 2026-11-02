@@ -9,11 +9,11 @@
   },
   "app.js": {
     "sha256": "f77fa7a9026398c495ff582622acc1ed2008b3cf3d040e14bf7bec5b85863102",
-    "v": "20261102-0833"
+    "v": "20261102-0789c"
   },
   "app2.css": {
-    "sha256": "9b5f0ff59988cc1cb8f11b2b48a7820a54a581d2d3b16d79133c365877307150",
-    "v": "20261102-0851"
+    "sha256": "a923b747a5be3172d0921326e6dabd81ab51700321eb71f4968331ce8d98d102",
+    "v": "20261102-0868"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -72,8 +72,8 @@
     "v": "20261025-0393b"
   },
   "guest.css": {
-    "sha256": "aadc364e69c1a005ad88304a9a1514ed725ef9bd15e05332fb377a3fc015a022",
-    "v": "20261030-0429"
+    "sha256": "52f3b7456d57ca1c9280d2dc8f09ca9526ce9286fcc0a0a74808ee70b802be43",
+    "v": "20261102-1205"
   },
   "havel.js": {
     "sha256": "b09f7e3d74c1423a038ba11303572c01625bf7ba6888b59b35aea06e656286f6",
@@ -88,16 +88,16 @@
     "v": "20261025-0380"
   },
   "host.css": {
-    "sha256": "62ac96cd208a0f0496465c6fb0c88e5b24845a3bcca964ba2a1a345703a49862",
-    "v": "20261101-0531g"
+    "sha256": "9b7482bf25cd464248beef60b5b925df65bdd2930bc05d1cc08fbfeae9a2e627",
+    "v": "20261102-0799"
   },
   "host.js": {
     "sha256": "d40a8a60dd73d86313e0e40d3b41a8cd9c18922e05a03cbbec62b7954cb8d66f",
     "v": "20261102-0507"
   },
   "host2.css": {
-    "sha256": "956a5416be8886fccd9b1071b03e36b68d3bb277b2fefab5858a39c92fd606b4",
-    "v": "20261102-0508"
+    "sha256": "2f89ffe1b683cf585c619323aa2d34a3bfd988a63c25daf12e52e1fdea50c051",
+    "v": "20261102-0864"
   },
   "landing.css": {
     "sha256": "a9218c2d33c3d07d955b0c630d194ef81801834baaed1cb3615387222ce50ba5",
