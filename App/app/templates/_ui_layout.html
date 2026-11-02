@@ -25,9 +25,9 @@
 {%- endmacro %}
 
 {#- 7.14 section with a title row; call-block holds the content. -#}
-{% macro ui_section(title, actions='', id='') -%}
+{% macro ui_section(title, actions='', id='', tip='') -%}
 <section class="ui-section"{% if id %} id="{{ id }}"{% endif %}>
-  <div class="ui-section-h"><h2>{{ title }}</h2>{% if actions | trim %}<div class="ui-btn-group">{{ actions | safe }}</div>{% endif %}</div>
+  <div class="ui-section-h"><h2>{{ title }}{{ tip }}</h2>{% if actions | trim %}<div class="ui-btn-group">{{ actions | safe }}</div>{% endif %}</div>
   {{ caller() }}
 </section>
 {%- endmacro %}

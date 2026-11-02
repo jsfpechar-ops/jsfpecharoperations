@@ -16,13 +16,12 @@
 <div class="guide-page">
 <div class="head guide-hd"><div><a class="guide-back" href="/apartments/{{ apartment.id }}">{{ apartment.internal_name }}</a><h1 class="big">{{ t('guest_guide.title') }}</h1><p class="sub">{% if progress.live %}{{ t('guest_guide.progress_live', answered=progress.answered, total=progress.cards) }}{% else %}{{ t('guest_guide.progress', answered=progress.answered, total=progress.cards) }}{% endif %}</p><p class="guide-links"><a href="{{ base_url ~ '/quick' }}">{{ t('guest_guide.quick.link') }}</a><a href="{{ base_url ~ '/questions' }}">{{ t('guest_questions.link', n=questions_open) }}</a><a class="ph-hide" href="{{ base_url ~ '/qr' }}">{{ t('guest_guide.qr.link') }}</a></p></div>{% if next_id %}<div class="guide-acts"><a class="btn" href="{{ base_url ~ '/' ~ next_id }}">{{ t('guest_guide.continue') }}</a></div>{% endif %}</div>
 {% macro import_section() %}
-{% call ui_section(t('guest_guide.import.title'), id='import') %}
+{% set import_tip = help_tip('guide-import-off-help', t('guest_guide.import.off')) if not import_on else help_tip('guide-import-help', t('guest_guide.import.help') ~ ' ' ~ t('guest_guide.import.left', n=import_left)) %}
+{% call ui_section(t('guest_guide.import.title'), id='import', tip=import_tip) %}
 {% if not import_on %}
-{{ help_tip('guide-import-off-help', t('guest_guide.import.off')) }}
 {% else %}
 {% if import_busy %}{{ ui_banner('neutral', t('guest_guide.import.running')) }}{% endif %}
 {% if import_drafts %}<p class="ui-sub">{{ t('guest_guide.import.drafted', n=import_drafts) }}</p>{% endif %}
-{{ help_tip('guide-import-help', t('guest_guide.import.help') ~ ' ' ~ t('guest_guide.import.left', n=import_left)) }}
 {% if import_left > 0 and not import_busy %}
 <form method="post" action="{{ base_url }}/import">
 <input type="hidden" name="_csrf" value="{{ csrf_token }}">

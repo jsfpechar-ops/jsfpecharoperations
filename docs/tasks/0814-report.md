@@ -125,3 +125,25 @@ Questions / owner steps:
 - Keep the h1 title-tip move if host-help overflow must be fixed first?
 - For the h2 `.field-label-row` rows, is an 18 px gap acceptable, or should the gap check be widened?
 - Nothing committed (per instructions). Owner steps: none.
+
+## Round 5B
+
+Status: review (one browser case still failing, see below). Not committed.
+
+- Files changed: `App/app/static/app2.css` (0812 help-tip block: `@media (max-width:1023px)` narrow fixed popover, `@media (min-width:1024px)` `.help-tip-end` right alignment), `App/app/static/app.js` (help-tip `open()` toggles `help-tip-end` when the tip is right of the middle; `place()` skips inline width/left below 1024 px and right-aligns to the button when `help-tip-end`).
+- Deviation: the spec's `right:0` alone cannot position a fixed popover, so `place()` computes `left = r.right - w` for end tips (the CSS rule is kept as specified).
+- `tests/test_host_help_browser.py`: 5 passed, 1 failed (`[1280]`, property-create, `addr_house_no-help`: popover box x=1234.8, overflows 1280). HEAD JS/CSS run: 3 failed (360, 390, 1280), so the 360/390 failures are fixed by this round. The 1280 case may also depend on the in-progress template edits (5A); not investigated further.
+- `tests/test_endtoend.py -k test_26`: failed in setup at `host_adds_guest(host, MANUAL_STAY["id"])`, `KeyError: 'id'` (MANUAL_STAY has no `id` key). Not a CSS/JS failure; not fixed.
+- Owner/orchestrator: decide on the 1280 popover case and the test_26 fixture.
+
+## Round 5A
+
+Status: partial (templates done; 15A tests red until the app2.css step lands)
+
+Files changed (templates only): `App/app/templates/_property_editor.html` (5 h2 rows: help_tip moved before `</h2>`), `App/app/templates/setup_wizard/police.html`, `App/app/templates/setup_wizard/guest_link.html`, `App/app/templates/_ui_layout.html` (`ui_section` gets `tip=''`, rendered after title inside h2), `App/app/templates/guest_guide.html` (import tip passed as `tip=import_tip`; two standalone help_tip lines removed), `App/app/templates/_property_create.html` ("After you create it" items: help_tip moved inside `<strong>`).
+
+Tests (from App/, env PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=1):
+- `tests/test_0800_v2_remaining_pages_browser.py -k small_and_inline`: `7 failed, 8 passed, 106 deselected in 75.15s`. Failing: property-new, setup-property, setup-calendar, setup-police, setup-guest-link, setup-stay-fee, guest-guide. Cause: the "?" still sits below the label (e.g. guest-guide at 320 px: vertical offset 24.9 px, gap after label -237.7 px). The heading row is not yet a nowrap flex row and the 44 px circle rules are still in app2.css, which is the CSS step owned by the other executor.
+- `tests/test_onboarding_wizard_browser.py tests/test_property_create_browser.py`: `98 passed in 163.48s`, 0 failed.
+
+Left red: the 7 small_and_inline cases above. Re-run after the app2.css commit lands.

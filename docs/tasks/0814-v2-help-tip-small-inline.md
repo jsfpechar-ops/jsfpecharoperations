@@ -71,3 +71,30 @@ Open items from "Round 4" in the report:
 - property-new "After you create it" list tips (_property_create.html): tip inside each item title.
 - Popover overflow (test_host_help_browser 360/390/1280): the tip body is `left:0` of the tip, so a tip near the right edge overflows. Below 1024 px show the body as `position:fixed;left:16px;right:16px;width:auto` under the tip; at >=1024 clamp with `right:0;left:auto` when the tip is in the right half (add a `.help-tip-end` class from help.js if needed, or simply anchor the body to the heading wrapper).
 - test_endtoend test_26 KeyError 'id': check on origin/main first; fix only if this branch caused it.
+
+## 15. Round 5 decisions (orchestrator, 2026-11-02 16:40)
+Two executors run at the same time in the same checkout. Each edits ONLY its files. Do not commit.
+
+### 15A. Tips inside headings (templates only)
+Files: `App/app/templates/_property_editor.html`, `App/app/templates/setup_wizard/police.html`, `App/app/templates/setup_wizard/guest_link.html`, `App/app/templates/_ui_layout.html`, `App/app/templates/guest_guide.html`, `App/app/templates/_property_create.html`.
+- Every `.field-label-row` whose first child is an `<h2>` followed by `{{ help_tip(...) }}`: move the `help_tip(...)` call inside the h2, right before `</h2>` (after the text). Keep everything else (e.g. the police sample link stays after the h2). Do not touch the `<label>` row in reservation_detail.html.
+- `_ui_layout.html` `ui_section`: add a param `tip=''` and render `{{ tip }}` inside the h2 after `{{ title }}`. In `guest_guide.html` import section, pass the import tip as `tip=help_tip(...)` (off-state tip when `not import_on`, otherwise the import-help tip) and delete the two standalone `{{ help_tip('guide-import...') }}` lines. Use `{% set %}` before the call if needed.
+- `_property_create.html` "After you create it" list: move each `help_tip(...)` inside its `<strong>`, after the text (for the door-code item: after the `opt` span).
+Tests (from App/, env as §4): `.venv/bin/python -m pytest tests/test_0800_v2_remaining_pages_browser.py -k small_and_inline -q --tb=line -p no:cacheprovider 2>&1 | tail -8` → 0 failed; then `.venv/bin/python -m pytest tests/test_onboarding_wizard_browser.py tests/test_property_create_browser.py -q --tb=line -p no:cacheprovider 2>&1 | tail -5`.
+
+### 15B. Popover overflow and endtoend check
+Files: `App/app/static/app2.css` (the 0812 help-tip block only), `App/app/static/app.js` (help-tip open function near line 1950 only).
+- Below 1024 px: open `.help-tip-body` is `position:fixed;left:16px;right:16px;width:auto;top:auto` (vertical position stays under the tip).
+- At >=1024 px: in app.js, when a tip opens, toggle class `help-tip-end` on the tip if `tip.getBoundingClientRect().left > window.innerWidth / 2`. CSS: `body.v2 .help-tip-end>.help-tip-body{left:auto;right:0}`.
+- Tests: `.venv/bin/python -m pytest tests/test_host_help_browser.py -q --tb=line -p no:cacheprovider 2>&1 | tail -6` → 0 failed.
+- endtoend test_26: run `.venv/bin/python -m pytest tests/test_endtoend.py -k test_26 -q --tb=short -p no:cacheprovider 2>&1 | tail -15`. If it fails, report the traceback only; do not fix (orchestrator checks main).
+Report: append "## Round 5A" or "## Round 5B" to `docs/tasks/0814-report.md` (changed, final tails, deviations).
+
+## 16. Round 6 decisions (orchestrator, 2026-11-02 17:10)
+After 5A+5B: the four-file run is `8 failed, 217 passed`. Remaining reds and decisions (one executor, all files below allowed):
+a. setup-* (all five): `App/app/templates/setup_wizard/_layout.html` line ~38: move `{% block wizard_help %}{% endblock %}` inside the `<h2 class="setup-wizard-question">`, right after the text.
+b. guest-guide at 320 px: the tip wraps alone onto the next line of the h2 (gap -237 px). First: make the `help_tip` macro in `_components.html` emit no leading/trailing whitespace (`{%- ... -%}` trims) and add `white-space:nowrap` to `body.v2 .help-tip` in the 0812 block. If it still wraps, add to the 0812 block: `body.v2 :is(h1,h2,label):has(>.help-tip){display:flex;align-items:last baseline;gap:6px}` with `body.v2 :is(h1,h2,label):has(>.help-tip)>.help-tip{margin-left:0}` and check the other pages stay green.
+c. property-new: one tip reports `(no label)`. Print all findings for property-new (call `_HELP_TIP_SIZE_JS` in a scratch run) to find it, then move that tip inside its heading/label like §15A. Do not change the test.
+d. `tests/test_host_help_browser.py[1280]` property-create `addr_house_no-help`: popover box x=1234.8 overflows. Find why the 5B `help-tip-end`/`place()` logic does not keep it inside the viewport at 1280 and fix it in app.js/app2.css. Do not change the test.
+e. `guest_guide.html` import section: replace the now-empty `{% if not import_on %}` / `{% else %}` pair with `{% if import_on %}` (same `{% endif %}`).
+Commands (from App/, env §4): `.venv/bin/python -m pytest tests/test_0800_v2_remaining_pages_browser.py tests/test_onboarding_wizard_browser.py tests/test_property_create_browser.py tests/test_host_help_browser.py tests/test_guest_guide*.py -q --tb=line -p no:cacheprovider 2>&1 | tail -10` → 0 failed. Report: "## Round 6" in 0814-report.md.

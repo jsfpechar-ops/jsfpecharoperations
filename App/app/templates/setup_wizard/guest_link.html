@@ -11,8 +11,7 @@
   </section>
   <section class="setup-wizard-card" aria-labelledby="wizard-pin-title">
     <div class="field-label-row">
-      <h2 id="wizard-pin-title">{{ t('wizard.guest_link.pin_title') }}</h2>
-      {{ help_tip('wizard-pin-help', t('wizard.guest_link.pin_why')) }}
+      <h2 id="wizard-pin-title">{{ t('wizard.guest_link.pin_title') }}{{ help_tip('wizard-pin-help', t('wizard.guest_link.pin_why')) }}</h2>
     </div>
     <p class="setup-wizard-pin" id="wizard-guest-pin">{{ pin }}</p>
     <button class="ui-btn ui-btn-secondary setup-wizard-copy" type="button" data-copy="wizard-guest-pin" data-copy-label="{{ t('wizard.guest_link.copy_pin') }}" data-copied-label="{{ t('common.copied') }}">{{ t('wizard.guest_link.copy_pin') }}</button>
