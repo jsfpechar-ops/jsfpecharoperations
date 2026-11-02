@@ -1,8 +1,9 @@
 {% extends "setup_wizard/_layout.html" %}
 {% from "_components.html" import choice_card with context %}
+{% block wizard_help %}{% from "_components.html" import help_tip with context %}{{ help_tip('wiz-why-automation', t('why.automation')) }}{% endblock %}
 {% block wizard_content %}
 {% set values = draft if draft is defined and draft else apartment %}
-<p class="setup-wizard-lede">{{ t('why.automation') }}</p>
+
 <form method="post" action="/apartments/{{ apartment.id }}/automation-timing" class="setup-wizard-form" id="automation-form">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="return_to" value="{{ wizard_next_return_to }}">

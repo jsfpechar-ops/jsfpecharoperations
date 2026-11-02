@@ -1288,6 +1288,9 @@ body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step>details{font-size:1
 body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step>.pill{flex:none}
 body.v2 .onboarding-welcome[data-layout=v2] .onboarding-current-dot{display:block;width:8px;height:8px;border-radius:50%;background:var(--acc);flex:none}
 body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-action{flex:none;white-space:nowrap}
+/* 0809: the onboarding help tips (skip, demo) get the same 24 px target as other help tips */
+body.v2 .onboarding-welcome[data-layout=v2] .help-tip-btn{min-width:24px;min-height:24px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
+@media (max-width:1023px){body.v2 .onboarding-welcome[data-layout=v2] .help-tip-btn{min-width:44px;min-height:44px}}
 @media (max-width:1023px){body.v2 .onboarding-welcome[data-layout=v2] details>a,body.v2 .onboarding-welcome[data-layout=v2] .onboarding-demo a,body.v2 .prop-new .property-create-next a{display:inline-flex;align-items:center;min-height:44px;min-width:44px;box-sizing:border-box}body.v2 .onboarding-welcome[data-layout=v2] .onboarding-intro{flex-direction:column;align-items:stretch}body.v2 .onboarding-welcome[data-layout=v2] .onboarding-meter{justify-content:flex-start}body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step{flex-wrap:wrap;padding:12px;gap:12px;align-items:flex-start}body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-index{width:32px;height:32px}body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-copy{flex:1 1 calc(100% - 44px)}body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-action{flex:1 1 100%;min-height:44px;display:flex;align-items:center;justify-content:center;box-sizing:border-box}}
 
 /* 0808 step a: help tip beside its label (new property, wizard) */

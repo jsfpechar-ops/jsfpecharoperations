@@ -1,6 +1,7 @@
 {#- 0355: the end of Quick answers. Shows what guests now read and sends the host
     to the cards that still need their words. Data: app/guide_facts.py. -#}
 {% extends "host_page.html" %}
+{% from "_components.html" import help_tip with context %}
 {% set v2 = true %}
 {% set body_kind = 'list' %}
 {% set base_url = '/apartments/' ~ apartment.id ~ '/guide' %}
@@ -25,7 +26,7 @@
 {% endcall %}
 {% call ui_section(t('guest_guide.quick.missing_title'), id='quick-missing') %}
 {% if open_cards %}
-<p class="ui-sub">{{ t('guest_guide.quick.missing_lede') }}</p>
+{{ help_tip('guide-quick-missing-help', t('guest_guide.quick.missing_lede')) }}
 {{ ui_table_begin([(t('guest_guide.col.card'), ''), (t('guest_guide.col.state'), 'r')], label=t('guest_guide.quick.missing_title')) }}
 {% for card in open_cards %}
 {% set card_url = base_url ~ '/' ~ card.id %}

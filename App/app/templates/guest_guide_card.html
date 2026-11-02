@@ -2,6 +2,7 @@
     every card that still needs them; the old free text arrives as a draft
     ('check') that guests never see until the host saves it. -#}
 {% extends "host_page.html" %}
+{% from "_components.html" import help_tip with context %}
 {% set v2 = true %}
 {% set body_kind = 'form' %}
 {% set base_url = '/apartments/' ~ apartment.id ~ '/guide' %}
@@ -14,7 +15,7 @@
 {% block meta %}{% endblock %}
 {% block body %}
 <div class="guide-page guide-form-page">
-<div class="head guide-hd"><div><a class="guide-back" href="{{ base_url }}">{{ t('guest_guide.title') }}</a><h1 class="big">{{ card_title }}</h1><p class="sub">{{ t('guest_guide.custom_prompt') if custom else t('guest_guide.kind.' ~ item.kind ~ '.prompt') }}</p></div></div>
+<div class="head guide-hd"><div><a class="guide-back" href="{{ base_url }}">{{ t('guest_guide.title') }}</a><div class="heading-with-tip"><h1 class="big">{{ card_title }}</h1>{{ help_tip('guide-card-prompt-help', t('guest_guide.custom_prompt') if custom else t('guest_guide.kind.' ~ item.kind ~ '.prompt')) }}</div></div></div>
 {% set visibility_options = [] %}{% for level in visibility %}{% set _ = visibility_options.append((level, t('guest_guide.visibility.' ~ level))) %}{% endfor %}
 {% if error %}{{ ui_banner('attention', t(error)) }}{% endif %}
 {% if item.state == 'check' %}{{ ui_banner('attention', t('guest_guide.draft_from.' ~ (item.source if item.source in ('booking', 'airbnb', 'legacy') else 'other')) ~ ' ' ~ t('guest_guide.check_banner')) }}{% endif %}

@@ -421,7 +421,7 @@
             <input type="hidden" name="return_to" value="/">
             <button class="btn ghost small" type="submit">{{ t('onboarding.skip') }}</button>
           </form>
-          <small>{{ t('onboarding.skip_hint') }}</small>
+          {{ help_tip('onboarding-skip-help', t('onboarding.skip_hint')) }}
         {% endif %}
       </div>
     </header>
@@ -464,10 +464,6 @@
           <div class="onboarding-step-index" aria-hidden="true">{% if step.done %}✓{% else %}{{ loop.index }}{% endif %}</div>
           <div class="onboarding-step-copy">
             <h3>{{ t('onboarding.' ~ step.id ~ '.title') }}</h3>
-            {% if not compact_list %}
-              <p>{{ t('onboarding.' ~ step.id ~ '.detail') }}</p>
-              <small>{{ t('onboarding.' ~ step.id ~ '.prepare') }}</small>
-            {% endif %}
           </div>
           {% if v2 %}<div class="onboarding-step-group">{% endif %}
           {% if step.done %}
@@ -480,6 +476,7 @@
           {% if not compact_list %}
             <details>
               <summary>{{ t('onboarding.learn') }}</summary>
+              <p>{{ t('onboarding.' ~ step.id ~ '.detail') }} {{ t('onboarding.' ~ step.id ~ '.prepare') }}</p>
               <p>{{ t('onboarding.' ~ step.id ~ '.why') }}</p>
               <a href="{{ step.learn_url }}">{{ t('nav.guide') }} </a>
             </details>
@@ -499,8 +496,7 @@
       <div class="onboarding-demo">
         <div>
           <strong>{{ t('onboarding.demo_title') }}</strong>
-          <p>{{ t('onboarding.demo_body') }}</p>
-          <small>{{ t('onboarding.demo_hint') }}</small>
+          {{ help_tip('onboarding-demo-help', t('onboarding.demo_body') ~ ' ' ~ t('onboarding.demo_hint')) }}
         </div>
         <form method="post" action="/demo">
           <button class="btn" type="submit">{{ t('demo.load') }}</button>

@@ -1,6 +1,7 @@
 {#- 0342: the host's guest guide, one property. Cards grouped by topic in
     guest order; a row opens the card editor. Data: app/guest_guide.py. -#}
 {% extends "host_page.html" %}
+{% from "_components.html" import help_tip with context %}
 {% set v2 = true %}
 {% set body_kind = 'list' %}
 {% set base_url = '/apartments/' ~ apartment.id ~ '/guide' %}
@@ -17,11 +18,11 @@
 {% macro import_section() %}
 {% call ui_section(t('guest_guide.import.title'), id='import') %}
 {% if not import_on %}
-<p class="ui-sub">{{ t('guest_guide.import.off') }}</p>
+{{ help_tip('guide-import-off-help', t('guest_guide.import.off')) }}
 {% else %}
 {% if import_busy %}{{ ui_banner('neutral', t('guest_guide.import.running')) }}{% endif %}
 {% if import_drafts %}<p class="ui-sub">{{ t('guest_guide.import.drafted', n=import_drafts) }}</p>{% endif %}
-<p class="ui-sub">{{ t('guest_guide.import.help') }} {{ t('guest_guide.import.left', n=import_left) }}</p>
+{{ help_tip('guide-import-help', t('guest_guide.import.help') ~ ' ' ~ t('guest_guide.import.left', n=import_left)) }}
 {% if import_left > 0 and not import_busy %}
 <form method="post" action="{{ base_url }}/import">
 <input type="hidden" name="_csrf" value="{{ csrf_token }}">
@@ -71,7 +72,7 @@
 
 {% if leon_offer %}
 {% call ui_section(t('guest_guide.leon.title'), id='leon') %}
-<p class="ui-sub">{{ t('guest_guide.leon.help') }}</p>
+{{ help_tip('guide-leon-help', t('guest_guide.leon.help')) }}
 <p class="ui-sub">{{ t('leon_page.card.' ~ leon_state) }}</p>
 <div class="ui-form-actions">{{ ui_button(t('guest_guide.leon.open'), 'secondary', href='/apartments/' ~ apartment.id ~ '/leon') }}</div>
 {% endcall %}

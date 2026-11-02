@@ -1276,7 +1276,7 @@ def test_wizard_polish_and_overview_cards(host, base_url, monkeypatch, lang, wid
             return [s.fontFamily, s.fontSize, s.fontWeight, s.lineHeight, s.letterSpacing, s.color];
         }"""
         # 0212: the fee lede looks like every other step's lede.
-        assert page.locator(".setup-wizard-lede").first.evaluate(typography)[1:4] != page.locator(
+        assert page.locator("#wiz-why-stay_fee").evaluate(typography)[1:4] != page.locator(
             ".wiz-page h1.big"
         ).evaluate(typography)[1:4]
         assert page.evaluate(_overflow_js())
@@ -1446,11 +1446,8 @@ def test_phone_guest_sharing_and_clear_setup_actions(host, base_url, lang, width
         page.locator("button[value=done]").click()
         page.wait_for_url("**/setup/try_it**")
         assert page.get_by_role("button", name=_t(lang, "wizard.try_it.skip"), exact=True).is_visible()
-        lede = page.locator(".setup-wizard-lede").first
-        assert int(lede.evaluate("(el) => getComputedStyle(el).fontWeight")) == 400  # 0212
-        assert lede.evaluate("(el) => getComputedStyle(el).color") == page.locator(
-            ".wiz-page h1.big"
-        ).evaluate("(el) => getComputedStyle(el).color")
+        # 0809: the try-it lede moved into its help tip next to the question.
+        assert page.locator("#wiz-why-try").count() == 1
         page.goto(f"{base}/door_lock?lang={lang}")
         assert page.locator('button[data-lock-choice="no"]').count() == 1
         assert page.locator('[aria-controls="wizard-lock-help"]').is_visible()
