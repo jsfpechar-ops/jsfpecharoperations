@@ -2,6 +2,36 @@
 {% block title %}{{ page.name }}{% endblock %}
 {% block head_extra %}
 {% if page.noindex %}<meta name="robots" content="noindex">{% endif %}
+<style>
+.pp-bk { display: flex; flex-direction: column; gap: var(--space-4); max-width: 520px; margin-top: var(--space-6); }
+.pp-bk-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-3); padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); font-size: var(--size-14); color: var(--ink); }
+.pp-bk-card h2 { margin: 0; font-size: var(--size-16); font-weight: 700; }
+.pp-bk-note { color: var(--ink-2); font-size: var(--size-13); margin: 0; }
+.pp-bk-fine { color: var(--ink-3); font-size: var(--size-12); text-align: center; margin: 0; }
+.pp-bk-months { display: flex; align-items: center; justify-content: space-between; }
+.pp-bk-months strong { font-size: var(--size-15); }
+.pp-bk-nav { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 1px solid var(--line-2); border-radius: var(--radius-2); background: var(--surface); color: var(--ink); text-decoration: none; font-size: var(--size-16); }
+.pp-bk-nav[aria-disabled="true"] { color: var(--ink-3); border-color: var(--line); }
+.pp-bk-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; text-align: center; }
+.pp-bk-dow { font-size: var(--size-12); color: var(--ink-3); }
+.pp-bk-day { display: flex; align-items: center; justify-content: center; min-height: 44px; font-size: var(--size-14); color: var(--ink); text-decoration: none; border-radius: var(--radius-2); }
+a.pp-bk-day:hover { background: var(--surface-2); }
+.pp-bk-day[data-state="past"], .pp-bk-day[data-state="taken"] { color: var(--ink-3); text-decoration: line-through; }
+.pp-bk-day[data-state="range"] { background: var(--accent-soft); border-radius: 0; }
+.pp-bk-day[data-state="start"], .pp-bk-day[data-state="end"] { background: var(--accent); color: var(--on-accent); font-weight: 700; }
+.pp-bk-day[data-state="start"] { border-radius: var(--radius-2) 0 0 var(--radius-2); }
+.pp-bk-day[data-state="end"] { border-radius: 0 var(--radius-2) var(--radius-2) 0; }
+.pp-bk-row { display: flex; justify-content: space-between; gap: var(--space-3); }
+.pp-bk-total { border-top: 1px solid var(--line); padding-top: var(--space-3); font-size: var(--size-16); font-weight: 700; }
+.pp-bk-guests { display: flex; gap: var(--space-2); align-items: flex-end; }
+.pp-bk-guests .ui-field { flex: 1; }
+.pp-bk-error { background: var(--accent-soft); border-radius: var(--radius-2); padding: var(--space-3); margin: 0; color: var(--ink); }
+.pp-bk-lang { text-align: center; font-size: var(--size-12); color: var(--ink-3); }
+.pp-bk-lang a { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; color: var(--ink-2); }
+.pp-bk-lang a[aria-current="true"] { color: var(--ink); font-weight: 700; }
+.pp-bk .ui-btn { width: 100%; }
+@media (max-width: 480px) { .pp-bk { max-width: none; } }
+</style>
 <meta property="og:title" content="{{ page.og.title }}">
 <meta property="og:description" content="{{ page.og.description }}">
 <meta property="og:url" content="{{ page.og.url }}">
@@ -59,19 +89,77 @@
     </div>
     {% endif %}
     {% if page.bookable %}
-    <div class="pp-book">
-      <form method="post" action="/p/{{ page.og.url.rsplit('/', 1)[1] }}/book" class="ui-form">
-        <h2>{{ t('pp.book.title') }}</h2>
-        <label class="ui-field"><span>{{ t('pp.book.from') }}</span>
-          <input class="ui-input" type="date" name="date_from" required></label>
-        <label class="ui-field"><span>{{ t('pp.book.to') }}</span>
-          <input class="ui-input" type="date" name="date_to" required></label>
-        <label class="ui-field"><span>{{ t('pp.book.guests') }}</span>
-          <input class="ui-input" type="number" name="guests" min="1" max="60" value="2" inputmode="numeric" required></label>
-        {% if page.book_error %}<p class="ui-sub" role="alert" id="book">{{ t('pp.book.err.' ~ page.book_error) }}</p>{% endif %}
-        <button class="ui-btn ui-btn-primary" type="submit">{{ t('pp.book.check') }}</button>
+    {% set b = page.booking %}
+    {% macro money(n) %}{{ ('{:,}'.format(n) | replace(',', '&nbsp;')) | safe }}&nbsp;{{ t('payments.czk') }}{% endmacro %}
+    <section class="pp-book pp-bk" id="book" aria-labelledby="bk-title">
+      <div class="pp-bk-card">
+        <h2 id="bk-title">{{ t('pp.cal.title') }}</h2>
+        <div class="pp-bk-months">
+          {% if b.prev_href %}<a class="pp-bk-nav" href="{{ b.prev_href }}" aria-label="{{ t('pp.cal.prev') }}">&lsaquo;</a>{% else %}<span class="pp-bk-nav" aria-disabled="true">&lsaquo;</span>{% endif %}
+          <strong>{{ t('pp.cal.month.' ~ b.grid.month) }} {{ b.grid.year }}</strong>
+          {% if b.next_href %}<a class="pp-bk-nav" href="{{ b.next_href }}" aria-label="{{ t('pp.cal.next') }}">&rsaquo;</a>{% else %}<span class="pp-bk-nav" aria-disabled="true">&rsaquo;</span>{% endif %}
+        </div>
+        <div class="pp-bk-grid" role="grid">
+          {% for n in range(1, 8) %}<div class="pp-bk-dow">{{ t('pp.cal.dow.' ~ n) }}</div>{% endfor %}
+          {% for week in b.grid.weeks %}{% for cell in week %}
+            {% if cell.state == 'pad' %}<span></span>
+            {% elif cell.href %}<a class="pp-bk-day" data-state="{{ cell.state }}" href="{{ cell.href }}" aria-label="{{ cell.day }}. {{ b.grid.month }}. {{ b.grid.year }}, {{ t('pp.cal.state.' ~ cell.state) }}">{{ cell.day }}</a>
+            {% else %}<span class="pp-bk-day" data-state="{{ cell.state }}" aria-label="{{ cell.day }}. {{ b.grid.month }}. {{ b.grid.year }}, {{ t('pp.cal.state.' ~ cell.state) }}">{{ cell.day }}</span>{% endif %}
+          {% endfor %}{% endfor %}
+        </div>
+        <p class="pp-bk-note">
+          {% if b.q %}{{ t('pp.cal.summary', **{'from': b.arrive, 'to': b.depart}) }} · {{ tp('stay_fees.nights', b.q.nights) }}
+          {% elif b.date_from and not b.date_to %}{{ t('pp.cal.pick_to') }}
+          {% else %}{{ t('pp.cal.pick_from') }}{% endif %}
+        </p>
+        <form method="get" action="/p/{{ b.slug }}#book" class="pp-bk-guests">
+          <input type="hidden" name="lang" value="{{ lang }}">
+          <input type="hidden" name="month" value="{{ b.month_value }}">
+          <input type="hidden" name="date_from" value="{{ b.date_from }}">
+          <input type="hidden" name="date_to" value="{{ b.date_to }}">
+          <label class="ui-field"><span>{{ t('pp.book.guests') }}</span>
+            <select class="ui-input" name="guests">{% for n in b.guest_options %}<option value="{{ n }}"{% if n == b.guests %} selected{% endif %}>{{ n }}</option>{% endfor %}</select></label>
+          <button class="ui-btn ui-btn-secondary" type="submit">{{ t('pp.cal.guests_apply') }}</button>
+        </form>
+        {% if b.q_error or page.book_error %}
+        <p class="pp-bk-error" role="alert">{{ t('pp.book.err.' ~ (b.q_error or page.book_error)) }}</p>
+        {% endif %}
+      </div>
+
+      {% if b.q %}
+      <div class="pp-bk-card">
+        <div class="pp-bk-row"><span>{{ t('pp.book.nightly_line', price=money(b.q.nightly_czk), nights=b.q.nights) | safe }}</span><span>{{ money(b.q.accommodation_czk) }}</span></div>
+        {% if b.q.cleaning_fee_czk %}<div class="pp-bk-row"><span>{{ t('pp.book.cleaning') }}</span><span>{{ money(b.q.cleaning_fee_czk) }}</span></div>{% endif %}
+        <div class="pp-bk-row pp-bk-total"><span>{{ t('pp.book.total') }}</span><span>{{ money(b.q.total_czk) }}</span></div>
+        {% if b.q.city_tax_on_site_czk %}<p class="pp-bk-note">{{ t('pp.book.city_tax_note', amount=b.q.city_tax_on_site_czk, guests=b.q.guests, nights=b.q.nights, rate=b.city_tax_rate) }}</p>{% endif %}
+      </div>
+
+      <div class="pp-bk-card">
+        <h2>{{ t('pp.book.policy_title', name=t('pp.book.policy_name.' ~ b.q.cancellation_policy)) }}</h2>
+        <p class="pp-bk-note">{{ t('pp.book.policy.' ~ b.q.cancellation_policy) }}</p>
+      </div>
+
+      <form method="post" action="/p/{{ b.slug }}/checkout" class="pp-bk-card ui-form">
+        <input type="hidden" name="date_from" value="{{ b.q.date_from }}">
+        <input type="hidden" name="date_to" value="{{ b.q.date_to }}">
+        <input type="hidden" name="guests" value="{{ b.q.guests }}">
+        <input type="hidden" name="lang" value="{{ lang }}">
+        <input type="hidden" name="terms_version" value="{{ b.terms_version }}">
+        <label class="ui-field"><span>{{ t('pp.book.name') }}</span>
+          <input class="ui-input" type="text" name="guest_name" autocomplete="name" minlength="3" maxlength="120" required></label>
+        <label class="ui-field"><span>{{ t('pp.book.email') }}</span>
+          <input class="ui-input" type="email" name="guest_email" autocomplete="email" required></label>
+        <label class="ui-check"><input type="checkbox" name="terms" value="1" required><span>{{ t('pp.book.terms') }}</span></label>
+        <button class="ui-btn ui-btn-primary" type="submit">{{ t('pp.book.pay_card', total=b.q.total_czk) }}</button>
+        <p class="pp-bk-fine">{{ t('pp.book.stripe_note') }}</p>
       </form>
-    </div>
+      {% endif %}
+
+      <nav class="pp-bk-lang" aria-label="{{ t('pp.lang.label') }}">
+        <a href="{{ b.lang_href.cs }}" hreflang="cs" lang="cs"{% if lang == 'cs' %} aria-current="true"{% endif %}>CS</a>
+        <a href="{{ b.lang_href.en }}" hreflang="en" lang="en"{% if lang == 'en' %} aria-current="true"{% endif %}>EN</a>
+      </nav>
+    </section>
     {% endif %}
   </section>
 </main>
