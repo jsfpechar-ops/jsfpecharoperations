@@ -1,0 +1,7 @@
+{#- 0789b: a read-only value: small label, big bold value, optional chevron link. -#}
+{%- from "_icons.html" import icon with context -%}
+<div class="settings-value-card">
+  <span class="settings-value-label">{{ label }}</span>
+  <strong class="settings-value">{{ value }}</strong>
+  {% if href %}<a class="settings-value-link" href="{{ href }}">{{ link_label }} {{ icon('chevron-right', 20) }}</a>{% endif %}
+</div>

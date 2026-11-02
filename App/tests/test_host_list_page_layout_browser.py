@@ -170,8 +170,6 @@ def test_tabs_are_links_that_mark_the_open_page(acc):
         ("/submissions", "tabs.stays.reports"),
         ("/housebook", "tabs.stays.register"),
         ("/invoices", "nav.invoices"),
-        (f"/entities?edit={acc['e1']}&next=/apartments", "host.business"),
-        (f"/entities?edit={acc['e1']}&next=/invoices/new", "host.invoice_settings"),
     ]
     for path, key in cases:
         html = client.get(_with_lang(path, "en")).text
@@ -182,6 +180,11 @@ def test_tabs_are_links_that_mark_the_open_page(acc):
         # Tabs sit directly under the title row, never above it.
         assert html.index("</h1>") < nav.start(), path
         assert "<button" not in nav.group(1) and "<form" not in nav.group(1), path
+    # 0781: v2 entities has no section tabs (the Menu tab marks it).
+    for path in (f"/entities?edit={acc['e1']}&next=/apartments", f"/entities?edit={acc['e1']}&next=/invoices/new"):
+        html = client.get(_with_lang(path, "en")).text
+        assert re.search(r'<body class="[^"]*v2', html), path
+        assert "data-sub-tabs" not in html, path
     # 0101: Invoice settings with two businesses opens the list to pick one.
     invoices = client.get("/invoices").text
     assert re.search(r'<a class="(?:sub-tab|ui-tab)" href="/entities"', invoices) and "/invoices/settings" not in invoices

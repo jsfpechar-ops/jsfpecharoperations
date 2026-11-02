@@ -111,7 +111,7 @@ def _move(client, *, code=""):
 def test_settings_offers_the_move_once_a_second_factor_is_on(phone):
     client, _secret, _codes = phone
 
-    page = client.get("/settings")
+    page = client.get("/settings/security")
     assert page.status_code == 200, page.text
     body = _body(page)
 
@@ -123,7 +123,7 @@ def test_settings_offers_the_move_once_a_second_factor_is_on(phone):
 
 def test_the_move_form_is_labelled_and_its_hint_is_linked(phone):
     client, _secret, _codes = phone
-    body = _body(client.get("/settings"))
+    body = _body(client.get("/settings/security"))
 
     assert f'<label for="move-code">{_text("settings.account.2fa_move_code")}</label>' in body
     assert 'aria-describedby="move-code-hint"' in body
@@ -281,7 +281,7 @@ def test_a_first_time_setup_is_not_told_about_an_old_phone(host):
 
 def test_the_move_form_is_translated(phone):
     client, _secret, _codes = phone
-    body = _body(client.get("/settings?lang=cs"))
+    body = _body(client.get("/settings/security?lang=cs"))
 
     assert _text("settings.account.2fa_move", "cs") in body
     assert _text("settings.account.2fa_move_help", "cs") in body

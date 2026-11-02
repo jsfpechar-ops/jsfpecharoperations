@@ -21,7 +21,7 @@ from .admin_helpers import form_str as _form_str
 
 router = APIRouter()
 
-_SECURITY = "/settings#settings-security"
+_SECURITY = "/settings/security#settings-security"
 # A WebAuthn answer is a few kilobytes; anything far bigger is not one.
 _MAX_BODY = 64 * 1024
 

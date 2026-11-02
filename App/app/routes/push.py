@@ -20,7 +20,7 @@ from .passkeys import device_label
 
 router = APIRouter()
 
-_PHONE = "/settings#settings-group-phone"
+_PHONE = "/settings/phone"
 _MAX_BODY = 8 * 1024
 TEST_MAX_PER_HOUR = 5
 
