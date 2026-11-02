@@ -1,36 +1,44 @@
 # 0814 report
 
-Status: review (partial: remaining failures are stay fees, owned by 0796)
+Status: review
 
-## Files changed
-- `App/app/templates/housebook.html`: `housebook-scroll` div also gets `scroll-x` (the touch probe's documented scroll-container marker). Fixes the ipad1024 `/housebook` Open buttons reported as outside.
-- `App/app/static/app2.css` (0792 and 0793 blocks only):
-  - 0792: `body.v2 .invoices-page tbody tr .btn.sm.ghost:focus-visible{opacity:1;transition:none}` (Download PDF was opacity 0 on keyboard focus).
-  - 0793: `body.v2 .housebook-page .housebook-scroll:focus-visible{outline:2px solid #d0452d;outline-offset:2px}`.
-- No test files changed. No commit, no push.
+## Files changed (my commits, steps 1 to 8)
+- App/app/migrations/0034_site_booking.sql (new)
+- App/migrations_pg/00004_site_booking.sql (new)
+- App/app/booking_site.py (new, verbatim from brief)
+- App/app/property_page.py (4 lines, Max gate in widget_ready)
+- App/app/retention.py (comment block)
+- App/tests/test_booking_site.py (new, verbatim from brief)
+- App/tests/test_db_postgres.py (33 -> 34, two lines)
+- docs/context/test-map.md (one row)
+- docs/tasks/0814-booking-site-model.md (Status line only)
+
+`git diff --stat origin/main` also lists docs/plans/booking-site-v1.md and the brief itself; both came in with the orchestrator's commit 0ef67a4, not from the executor.
 
 ## Commands (last lines)
-- Full brief command, first run: 4 failed, 14 passed (touch, a11y, contrast, motion; dev_ui timed out once).
-- Full brief command, final run: 3 failed, 15 passed, 0 skipped.
-- a11y guard alone: 4 passed.
-- touch sweep: only `/stay-fees` `noCue` entries remain.
+- `.venv/bin/python -c "...site_booking..."` -> `0`
+- `ls App/migrations_pg | tail -2` -> `00003_job.sql`, `00004_site_booking.sql`
+- `ruff check app/booking_site.py` -> `Found 19 errors. [*] 18 fixable` (see Deviations)
+- `pytest tests/test_property_page.py -q` -> `7 passed in 1.85s`
+- `python3 scripts/context_lint.py` -> `context lint: OK`
+- `pytest tests/test_booking_site.py tests/test_property_page.py tests/test_stripe_connect.py -q --tb=short -x` -> `66 passed in 2.61s`
+- `ruff check app/booking_site.py tests/test_booking_site.py` -> `Found 19 errors`
 
-## Still failing (all stay fees, not fixed here)
-- `test_0252_touch_sweep_browser.py::test_every_host_page_on_phone_ipad_and_desktop`: `/stay-fees` noCue (Karlín Loft, Vinohrady Studio). Owner: 0796.
-- `test_host_button_contrast_browser.py::test_small_primary_buttons_on_stay_fees_meet_contrast`: stay-fees/1280. Owner: 0796.
-- `test_motion_browser.py::test_pages_without_javascript_stay_still` (line 139): `/stay-fees` has no `details.ui-how`. Not a records page. Owner: 0796.
+## Section 7
+- [x] site_booking exists on fresh SQLite (prints 0)
+- [x] 00004_site_booking.sql has Up and Down
+- [x] section 6 tests pass
+- [x] git diff stat lists only section 3 files (plus the brief and plan from 0ef67a4, see above)
+- [x] context lint OK
 
-## Brief items
-1. Touch outside: fixed.
-2. Focus ring: invoices Download PDF (opacity) and housebook scroll div fixed. `input#filter-month` and `.stays-desk` were not failing.
-3. Empty-state centring: not failing in the final run; not touched.
-4. `data-sub-tabs` test: passing; the failing case in the brief no longer exists; not touched.
-5. dev_ui catalog: passed in 2 of 3 runs (one timeout, not reproduced); not touched.
-6. Motion: fails on `/stay-fees`, not a records page; not fixed.
+## Deviations
+- Ruff: the brief expects `All checks passed!`, but the verbatim code gives 19 pyupgrade (UP006/UP035/UP045) findings. Existing modules (property_page.py, billing.py) show the same rule profile (31 findings in three files), so the code was kept verbatim and not auto-fixed. Owner or orchestrator to decide whether the lint expectation or the code style should change.
+- Step 6 and step 7 landed in one commit: the step 7 file was written before the step 6 commit ran. Step 7 has an empty marker commit "0814 step 7", so the log reads step 1 to 8. Contents are as the brief specifies.
+- Step 0: Status line set to in-progress, then to review (brief header only).
+- test_db_postgres.py not run locally (needs PostgreSQL), per brief.
 
-## Screenshots (390 px, full page)
-- `/tmp/claude-0/scratch-0814/shots/housebook-phone390.png`
-- `/tmp/claude-0/scratch-0814/shots/invoices-phone390.png`
+## Questions
+- Ruff expectation vs verbatim code (above).
 
 ## Owner steps left
-None for this brief. 0796 must clear the three stay-fees failures before the CI run is green.
+- None for this brief. Orchestrator pushes and opens the PR; CI runs test-postgres.

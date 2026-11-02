@@ -110,7 +110,7 @@
         <td class="nowrap row-actions" data-label="">{{ row_open('/guests/' ~ row._guest_id ~ '?return_to=/housebook') }}
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="/guests/{{ row._guest_id }}?return_to=/housebook" role="menuitem">{{ t('common.edit') }}</a>
-            <a class="row-menu-item" href="/guests/{{ row._guest_id }}/form.pdf" role="menuitem">{{ t('housebook.pdf') }}</a>
+            <a data-turbo="false" class="row-menu-item" href="/guests/{{ row._guest_id }}/form.pdf" role="menuitem">{{ t('housebook.pdf') }}</a>
             <form method="post" action="/guests/{{ row._guest_id }}/archive" class="row-menu-form"
                   data-confirm data-confirm-message="{{ t('host.delete_to_archived.confirm') }}">
               <input type="hidden" name="return_to" value="/housebook">

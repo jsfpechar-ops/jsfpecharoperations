@@ -79,7 +79,7 @@
       <ol class="fee-tasks">
         <li>
           <strong>{{ t('stay_fees.pay.task_pdf') }}</strong>
-          <a class="btn ghost" href="{{ pdf_url }}" download>{{ t('stay_fees.download_pdf') }}</a>
+          <a data-turbo="false" class="btn ghost" href="{{ pdf_url }}" download>{{ t('stay_fees.download_pdf') }}</a>
         </li>
         <li>
           <strong>{{ t('stay_fees.pay.task_send') }}</strong>

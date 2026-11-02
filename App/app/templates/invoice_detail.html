@@ -33,7 +33,7 @@
       </div>
       <div class="stay-command-actions">
         <div class="ui-btn-group">
-          <a class="{{ cta }}" href="/invoices/{{ invoice.id }}.pdf">{{ t('invoice.detail.download') }}</a>
+          <a data-turbo="false" class="{{ cta }}" href="/invoices/{{ invoice.id }}.pdf">{{ t('invoice.detail.download') }}</a>
           {% if invoice.kind == 'invoice' and not invoice.marked_paid_at and not invoice.paid_on %}
           <form method="post" action="/invoices/{{ invoice.id }}/paid" class="inline">
             <input type="hidden" name="_csrf" value="{{ csrf_token }}">
