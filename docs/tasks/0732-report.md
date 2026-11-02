@@ -41,3 +41,30 @@ Status: blocked. Steps 1, 2, 3 and 5 done. Step 4 (mockup compare at 320/390/768
 ## Owner steps left
 - Decide question 1 and question 2, then run `.venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py -k "cleaning" -q` from App/.
 - Fix the `.hl`, `h2.sec` and row-width diffs in a follow-up brief. Those need a look at the cascade, not more copy changes.
+
+## Addendum 0732b (executor)
+
+Status: blocked. Done: steps 1 to 3. Left: step 4 (differences below need an owner or orchestrator decision), step 5 (screenshots not retaken).
+
+- Step 1 and 2: `h1.hl` 30px and `h2.sec` 13px below 1024 px added in the cleaning block of `App/app/static/app2.css`. The `h2.sec` and `.hl height` diffs are gone at 320, 390 and 768.
+- Step 3: five selectors in the cleaning PAGES entry changed. Cache key `20261102-0732b` in `base.html`, `tests/static_versions.json` regenerated with `--write` (41 files).
+- Step 3 test set: `82 passed in 51.58s` (0 skipped).
+- Step 4 run: `3 failed, 30 passed, 25 deselected in 46.55s`. Failures: cleaning-320, cleaning-390, cleaning-768. Overview and menu pass.
+- Step 4 remaining diffs (not fixed, no BOX_OVERRIDES added):
+  - `.btn.line` padding 14/16px and height 54 vs 50px, margin-top 8px at 320: the mockup's `.btn.line` has no padding. This is a style diff, not width or height from fixture text. It fails at 768 too.
+  - `.nm` and `.meta` width 135px app vs 173px mockup at 320 and 390: layout, not text.
+  - `.promo` height 121 vs 99px and `.promo b` height 46 vs 24px at 320: the `.t` column wraps. Layout.
+  - `.list.plain .row:not(:has(.pill))` height 73 vs 75px and `.t b` 22 vs 24px at 320 and 390.
+  - `.kind` width 87 vs 85px at 320 and 390 (2px).
+
+## Deviations
+- `?v=` key is in `App/app/templates/base.html`, not `App/app/static/app2.css`. Bumped there.
+- `tests/static_versions.json` was regenerated (the brief's `--write`).
+
+## Questions
+1. For `.btn.line` padding: should the app drop the padding below 1024 px, or should the mockup compare treat it as missing_ok?
+2. For `.nm`, `.meta` and `.promo` widths and heights: are these fixture text (a BOX_OVERRIDES case) or a layout fix in the cleaning files?
+
+## Owner steps left
+- Answer question 1 and question 2 (orchestrator), then run `cd App && PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py -k "cleaning or overview or menu" -q -rs --tb=short`.
+- Step 5 screenshots after step 4 is green.
