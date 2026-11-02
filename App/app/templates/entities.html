@@ -14,7 +14,8 @@
 {% block tabs %}{% endblock %}
 {% block body %}
 {% include "_host_alerts.html" %}
-<div class="head"><div>{% if next_path %}<a class="crumb" href="{{ next_path }}">{{ t('common.back') }}</a>{% endif %}<h1 class="big">{{ tip_label(t('entities.title'), 'entities-lede-help', t('entities.lede'), 'span') }}</h1></div></div>
+{% with href='/settings', title=t('entities.title') %}{% include "partials/settings_back_header.html" %}{% endwith %}
+<div class="settings-help-line">{{ help_tip('entities-lede-help', t('entities.lede')) }}</div>
 {{ onboarding_banner(onboarding) }}
 
 {% if edit_entity %}

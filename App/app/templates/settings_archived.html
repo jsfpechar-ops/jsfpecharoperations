@@ -10,7 +10,8 @@
 {% include "_host_alerts.html" %}
 {% from "_components.html" import help_tip, row_menu_begin, row_menu_end, row_open with context %}
 
-<div class="head"><div><h1 class="big">{{ t('archive.title') }}{{ help_tip('archive-retention-help', t('archive.retention_note')) }}</h1></div></div>
+{% with href='/settings', title=t('archive.title') %}{% include "partials/settings_back_header.html" %}{% endwith %}
+<div class="settings-help-line">{{ help_tip('archive-retention-help', t('archive.retention_note')) }}</div>
 
 <div class="chips archive-type-filters" role="group" aria-label="{{ t('archive.title') }}">
   {% for value, label_key in [

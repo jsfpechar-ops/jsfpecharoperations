@@ -5,7 +5,7 @@
 {% block title %}{{ t('privacy_requests.title') }}{% endblock %}
 {% block page_title %}{% endblock %}{% block meta %}{% endblock %}{% block primary_action %}{% endblock %}{% block secondary_actions %}{% endblock %}
 {% block body %}
-<div class="head"><div><h1 class="big">{{ t('privacy_requests.title') }}</h1></div></div>
+{% with href='/settings', title=t('privacy_requests.title') %}{% include "partials/settings_back_header.html" %}{% endwith %}
 <div class="pr-lane">
 
 <details class="card" {% if not requests %}open{% endif %}>
