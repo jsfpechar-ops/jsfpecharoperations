@@ -1127,6 +1127,46 @@ details.g-why.g-fold > summary.g-why-summary {
 }
 details.g-why.g-fold > summary.g-why-summary::after { display: none; }
 
+/* 0842: a step's purpose help is a small "?" at the end of the step title,
+   never a card under it. Title and "?" share one line; the panel opens under
+   that line. Native <details>, so it works without script. The summary is
+   the 44 px tap target; only the 18 px ring is drawn. The template has no
+   space between </h2> and <details>, so the "?" never wraps away alone. */
+.g-step-head { margin: 0 0 12px; font-size: 21px; }
+/* 0842: the title is an inline-block capped at the row minus the 31 px the
+   "?" takes, so a long (wrapped) title wraps inside its own box and the "?"
+   stays on its last line instead of dropping to a line of its own. */
+.g-step-head > h2 { display: inline-block; max-width: calc(100% - 31px); margin: 0; }
+details.g-head-help { display: inline; }
+details.g-head-help > summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  /* 0842: the 44 px box overhangs 13 px to the right, so at 320 px a title
+     that fills the row still leaves the "?" on its line (probe: title 194 px,
+     row 238 px, 44 px box wrapped by 0.08 px). The tap box stays 44 px. */
+  margin: -13px -13px -13px 0;
+  vertical-align: middle;
+  list-style: none;
+  cursor: pointer;
+  color: var(--g-muted);
+}
+details.g-head-help > summary::-webkit-details-marker { display: none; }
+.g-help-dot {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--g-line);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+details.g-head-help > .g-intro { margin: 10px 0 0; }
+
 .g-chip {
   display: inline-block;
   margin-left: 7px;
