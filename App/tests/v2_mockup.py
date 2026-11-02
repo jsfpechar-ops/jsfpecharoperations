@@ -79,7 +79,6 @@ BOX_OVERRIDES = {
     # text-dependent: app copy vs phone v2 mockup demo copy (0740)
     ".big, .head h1@320": {"width": "150.547px"},
     ".big, .head h1@390": {"width": "150.547px"},
-    ".card.prop .st.r@320": {"height": "33.7812px"},
     ".promo@390": {"height": "80px"},
     ".tile .v@320": {"margin-top": "29px"},
     ".tile .v@390": {"margin-top": "29px"},
