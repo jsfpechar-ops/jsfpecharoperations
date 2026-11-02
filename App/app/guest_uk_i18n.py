@@ -315,7 +315,7 @@ STRINGS: Dict[str, str] = {
     "passport_photo_too_large_pdf": "PDF завеликий. Використайте файл до 15 МБ.",
     "passport_photo_bad_type": "Використайте фото JPEG, PNG чи WebP або PDF реєстраційної форми.",
     "passport_photo_missing": "Будь ласка, завантажте фото паспорта або посвідчення особи.",
-    "ocr_scan_button": "Сканувати паспорт",
+    "ocr_scan_button": "Сканувати паспорт або ID-картку",
     "ocr_scan_working": "Читаємо документ…",
     "ocr_scan_done": "Заповнено з фото. Перевірте кожне поле перед надсиланням.",
     "ocr_no_file": "Спочатку виберіть фото документа.",
