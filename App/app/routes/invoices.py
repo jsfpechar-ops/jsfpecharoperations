@@ -177,6 +177,15 @@ def _merge_guest_fill(state: Dict[str, Any], guest) -> None:
             state[key] = value
 
 
+def _drop_guest_suggestion(state: Dict[str, Any], guest) -> None:
+    """0843: blank buyer slots that still hold the guest's suggestion, so ARES can fill them."""
+    if not guest:
+        return
+    for key, value in _guest_buyer_values(guest).items():
+        if key != "buyer_country" and value and (state.get(key) or "").strip() == value:
+            state[key] = ""
+
+
 def _last_stay_price_hint(request: Request, apartment_id: int) -> str:
     """Last issued accommodation unit price on this property, for a placeholder."""
     row = db.query_one(
@@ -202,7 +211,7 @@ def _form_state(request, form, entity) -> Dict[str, Any]:
         "stay_price", "stay_vat_rate", "reservation_id",
         "buyer_name", "buyer_street", "buyer_city", "buyer_zip", "buyer_country",
         "buyer_ico", "buyer_dic", "buyer_email", "paid_via", "paid_via_custom",
-        "due_date", "duzp", "note",
+        "due_date", "duzp", "note", "buyer_kind",
         "legal_entity_id",
     )}
     state["already_paid"] = "1" if form.get("already_paid") else "0"
@@ -217,11 +226,20 @@ def _form_state(request, form, entity) -> Dict[str, Any]:
 
 
 def _form_context(request, entities, entity, *, errors=None, values=None, stay=None):
+    fresh = not values
     values = dict(values or {})
-    if stay and not values and stay["reservation"]["guest_email"]:
+    if stay and fresh and stay["reservation"]["guest_email"]:
         values["buyer_email"] = stay["reservation"]["guest_email"]
     lang = "cs" if _lang(request) == "cs" else "en"
     lead_guest = _lead_guest(stay["reservation"]) if stay else None
+    guest_prefilled = False
+    if stay and fresh and lead_guest:
+        # 0836: suggest the lead guest as buyer on first open; the host checks before issuing.
+        _merge_guest_fill(values, lead_guest)
+        guest_prefilled = bool(values.get("buyer_name"))
+    buyer_kind = values.get("buyer_kind")
+    if buyer_kind not in ("guest", "company"):
+        buyer_kind = "company" if str(values.get("buyer_ico") or "").strip() else "guest"
     price_hint = ""
     if stay:
         price_hint = _last_stay_price_hint(request, stay["reservation"]["apartment_id"])
@@ -237,6 +255,8 @@ def _form_context(request, entities, entity, *, errors=None, values=None, stay=N
         "stay_label": invoices.stay_label(stay["property_name"], stay["reservation"], lang) if stay else "",
         "extra_kinds": invoices.EXTRA_KINDS,
         "show_fill_guest": bool(lead_guest),
+        "guest_prefilled": guest_prefilled,
+        "buyer_kind": buyer_kind,
         "stay_price_hint": price_hint,
     }
 
@@ -768,6 +788,8 @@ async def invoice_issue(request: Request):
         return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
     if form.get("fill_buyer_from_register"):
         values = _form_state(request, form, entity)
+        if values.get("buyer_kind") == "company":
+            _drop_guest_suggestion(values, _lead_guest(stay["reservation"]))
         meta = _buyer_ares_fill(request, form, values)
         context = _form_context(request, entities, entity, values=values, stay=stay)
         context.update(meta)

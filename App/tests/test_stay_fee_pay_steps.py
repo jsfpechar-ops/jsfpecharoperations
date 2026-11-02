@@ -1,4 +1,4 @@
-"""0203: the fee list shows confirm, PDF and QR steps; PDF and QR wait for the confirm."""
+"""0203/0630: the fee list shows check, then one send-and-pay box (PDF, data box, QR) after the confirm."""
 from __future__ import annotations
 
 import re
@@ -15,7 +15,7 @@ def test_steps_are_locked_until_the_period_is_confirmed(host):
     apartment_id = _property(owner_id, entity_id, "Vivus Apartment with Balcony & Garage")
     _stay(apartment_id, "2026-08-10", "2026-08-14", [{}])
     page = client.get("/stay-fees?month=2026-08&lang=en").text
-    assert 'class="ui-section fee-pay"' in page
+    assert 'class="card fee-pay"' in page
     assert 'data-fee-step="1"' in page and "Are these numbers right?" in page
     assert f'/stay-fees/{apartment_id}/pdf?month=2026-08' not in page
     assert 'name="return_to" value="/stay-fees?month=2026-08' in page
@@ -37,8 +37,7 @@ def test_confirm_from_the_list_comes_back_with_pdf_and_qr(host):
     page = client.get("/stay-fees?month=2026-08&lang=en").text
     assert f'/stay-fees/{apartment_id}/pdf?month=2026-08' in page
     assert 'data-fee-step="2"' in page
-    page = client.get(f"/stay-fees?month=2026-08&fee_step=3&fee_apt={apartment_id}&lang=en").text
-    assert 'data-fee-step="3"' in page and "https://www.mojedatovaschranka.cz/" in page
+    assert "https://www.mojedatovaschranka.cz/" in page and 'class="fee-qr-panel"' in page
 
 
 def test_return_to_outside_the_fee_pages_is_ignored(host):

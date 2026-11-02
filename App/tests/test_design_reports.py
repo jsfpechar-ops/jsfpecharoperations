@@ -12,19 +12,24 @@ def test_reports_and_housebook_have_the_v2_header_and_tabs(host_with_property):
     for path in ("/submissions?lang=en", "/housebook?lang=en"):
         page = host_with_property.get(path).text
         assert page.count("<h1") == 1 and 'data-body-kind="list"' in page, path
-        assert 'class="ui-tabs" data-sub-tabs' in page, path
+        if path.startswith(("/submissions", "/housebook")):  # 0791/0792: the tab strip is gone, housebook is a head button
+            assert "data-sub-tabs" not in page, path
+        else:
+            assert 'class="ui-tabs" data-sub-tabs' in page, path
         assert "page-header" not in page, path
 
 
 def test_the_house_book_keeps_its_filter_and_export_hooks(host_with_property):
     page = host_with_property.get("/housebook?lang=en").text
     assert 'id="housebook-filter-panel"' in page and "data-filter-toggle" in page
-    assert 'class="filters ui-section host-filter-panel"' in page
+    assert 'class="filters ui-section host-filter-panel card"' in page  # 0792: v2 filter card
     assert 'id="housebook-pdf-dialog" class="csv-export-dialog"' in page
 
 
 def test_no_raw_style_or_legacy_control_in_the_three_templates():
     for name in ("submissions.html", "submission_detail.html", "housebook.html"):
         text = (TEMPLATES / name).read_text(encoding="utf-8")
-        assert 'style="' not in text and 'class="btn' not in text and 'class="pill' not in text, name
+        assert 'style="' not in text, name
+        if name not in ("submissions.html", "housebook.html"):  # 0791/0792: v2 head buttons and pills use btn/pill classes
+            assert 'class="btn' not in text and 'class="pill' not in text, name
         assert text.count('class="ui-btn ui-btn-primary') <= 1, name
