@@ -229,15 +229,21 @@ def _row_variance(image) -> float:
     return sum((v - mean) ** 2 for v in values) / len(values)
 
 
-def mrz_band(jpeg: bytes) -> bytes:
-    """The bottom band of the photo, enlarged and straightened, as a JPEG."""
+def mrz_band(jpeg: bytes, flip: bool = False) -> bytes:
+    """The bottom band of the photo, enlarged and straightened, as a JPEG.
+
+    With ``flip`` the top band is taken and turned 180 degrees (upside-down photo).
+    """
     from io import BytesIO
 
     from PIL import Image, ImageOps
 
     image = Image.open(BytesIO(jpeg)).convert("L")
     width, height = image.size
-    band = image.crop((0, int(height * (1 - BAND_FRACTION)), width, height))
+    if flip:
+        band = image.crop((0, 0, width, int(height * BAND_FRACTION))).rotate(180)
+    else:
+        band = image.crop((0, int(height * (1 - BAND_FRACTION)), width, height))
     band = band.resize(
         (BAND_WIDTH, max(1, round(band.height * BAND_WIDTH / width))),
         Image.LANCZOS,
@@ -287,10 +293,32 @@ def run_tesseract(jpeg: bytes) -> str:
     return result.stdout
 
 
+def _band_or_plain(jpeg: bytes, flip: bool = False) -> bytes:
+    """The MRZ band, or the plain photo if the crop fails."""
+    try:
+        return mrz_band(jpeg, flip=flip)
+    except Exception:
+        return jpeg
+
+
+def _attempts(jpeg: bytes):
+    """Images to try in order; each is built only when its turn comes."""
+    yield _band_or_plain(jpeg)
+    yield jpeg
+    yield _band_or_plain(jpeg, flip=True)
+
+
 def read_document(jpeg: bytes) -> Dict[str, str]:
     """The document's fields as normalised form values; nothing is stored."""
-    raw = run_tesseract(jpeg)
-    values = parse_mrz(raw)
+    values = None
+    for attempt in _attempts(jpeg):
+        try:
+            values = parse_mrz(run_tesseract(attempt))
+            break
+        except NothingRead:
+            continue
+    if values is None:
+        raise NothingRead()
     countries = validation.country_codes()
     if values["nationality"] not in countries:
         values["nationality"] = ""
@@ -304,6 +332,7 @@ __all__ = [
     "available",
     "prepare_image",
     "parse_mrz",
+    "mrz_band",
     "run_tesseract",
     "read_document",
     "TESSERACT",
