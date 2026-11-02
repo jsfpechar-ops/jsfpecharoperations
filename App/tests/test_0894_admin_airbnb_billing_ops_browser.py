@@ -4,7 +4,8 @@ import os
 from pathlib import Path
 
 import pytest
-from playwright import sync_api
+
+sync_api = pytest.importorskip("playwright.sync_api")
 
 from app import auth
 from tests.test_0893_admin_airbnb_browser import (  # noqa: F401
