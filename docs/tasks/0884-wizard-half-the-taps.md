@@ -32,7 +32,7 @@ The setup wizard goes from 8 steps to 4 required steps (property, calendar, poli
 | `App/app/host_i18n.py`, `App/app/host_vi_i18n.py` | edit | one key `wizard.done.next_title` |
 | `App/app/static/app2.css`, `App/app/templates/base.html`, `App/tests/static_versions.json` | edit | wizard-only CSS, cache key |
 | `App/tests/wizard_taps.py`, `App/tests/wizard_walk.py` | edit | counter scope, BEFORE numbers, after-asserts; 4-step walk |
-| `App/tests/test_0884_wizard_four_steps.py` | new | server tests |
+| `App/tests/test_wizard_four_steps_0884.py` | new | server tests |
 | `App/tests/test_0884_wizard_geometry_browser.py` | new | geometry at 6 widths + screenshots |
 | Old tests in step 12 | edit | follow the 4 steps |
 | `docs/tasks/screenshots-0884/` | new | PNGs |
@@ -356,7 +356,7 @@ In `App/app/templates/base.html`: `/static/app2.css?v=20261103-0852` → `/stati
 ```
 Run C1. If an assert fails, STOP (do not change BEFORE). Copy the printed after-numbers into the report. Commit.
 
-**Step 11. New `App/tests/test_0884_wizard_four_steps.py`** (write exactly; fix only an obvious typo):
+**Step 11. New `App/tests/test_wizard_four_steps_0884.py`** (write exactly; fix only an obvious typo):
 ```python
 """0884: four required wizard steps; the rest are Do next cards on the done page."""
 from __future__ import annotations
@@ -664,7 +664,7 @@ Run C4. **CSS fix rounds (at most 2).** Each failure names the page, the rule an
 
 All from `App/`. Expected: `passed`, no `failed`, browser runs `0 skipped`.
 - C0 `.venv/bin/python -c "import playwright" 2>&1 | tail -1 || (.venv/bin/pip install playwright==1.63.0 2>&1 | tail -3; .venv/bin/python -m playwright install chromium 2>&1 | tail -3)`
-- C1 `.venv/bin/python -m pytest tests/wizard_taps.py tests/test_0884_wizard_four_steps.py -q -s --tb=short -x 2>&1 | tail -30` (in step 1 only `tests/wizard_taps.py`)
+- C1 `.venv/bin/python -m pytest tests/wizard_taps.py tests/test_wizard_four_steps_0884.py -q -s --tb=short -x 2>&1 | tail -30` (in step 1 only `tests/wizard_taps.py`)
 - C2 `.venv/bin/python -m pytest tests/test_onboarding.py tests/test_onboarding_wizard_survival.py tests/test_wizard_friendly_0273.py tests/test_wizard_second_lock_0400.py tests/test_test_run_0272.py tests/test_fee_setup_compatibility.py tests/test_smart_locks_page.py tests/test_setup_banner.py tests/test_ares.py tests/test_ruian.py tests/test_demo_stay_exclusion.py tests/test_privacy_first.py -q --tb=short -x 2>&1 | tail -30`
 - C3 (server parts; browser parts run in C6) `.venv/bin/python -m pytest tests/test_onboarding_wizard_survival.py tests/test_onboarding_wizard_browser.py tests/test_wizard_friendly_0273.py tests/test_wizard_second_lock_0400.py tests/test_fee_setup_compatibility.py tests/test_smart_locks_page.py -q --tb=line 2>&1 | grep -E "FAILED|ERROR|passed|failed" | tail -30`
 - C4 `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_0884_wizard_geometry_browser.py -q -rs --tb=short -x 2>&1 | tail -30`
