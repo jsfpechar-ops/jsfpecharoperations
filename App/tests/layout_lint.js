@@ -199,5 +199,53 @@
     const versions = new Set(sheets.filter((h) => file(h) === d));
     if (versions.size > 1) out.push(['mixed-stylesheets', 'head', d + ' loaded in ' + versions.size + ' versions']);
   }
+  // 9. A help "?" sits inline right after its heading or label: same line, no more than 32 px away. Never on its own line.
+  const tipCircle = (tip) => {
+    const b = tip.querySelector('.help-tip-btn') || tip;
+    const r = b.getBoundingClientRect();
+    const mobile = r.width >= 40;
+    const cx = mobile ? r.left + 9 : r.left + r.width / 2;
+    return {left: cx - 9, right: cx + 9, cy: r.top + r.height / 2};
+  };
+  const anchorRect = (node, last) => {
+    if (node.nodeType === 1 && node.matches('button,input,select,textarea,.ui-btn,.btn')) return node.getBoundingClientRect();
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    const rs = [...range.getClientRects()].filter((r) => r.width > 1 && r.height > 1);
+    if (!rs.length) return null;
+    return last ? rs[rs.length - 1] : rs[0];
+  };
+  const sideOf = (start, dir) => {
+    for (let n = dir < 0 ? start.previousSibling : start.nextSibling; n; n = dir < 0 ? n.previousSibling : n.nextSibling) {
+      if (n.nodeType === 3 && n.textContent.trim()) return n;
+      if (n.nodeType === 1) {
+        if (n.matches('.help-tip,script,style,template') || !vis(n)) continue;
+        const cs = getComputedStyle(n);
+        if (cs.position === 'absolute' || cs.position === 'fixed') continue;
+        if ((n.innerText || '').trim() || n.querySelector('svg,img') || n.matches('button,a,input,select')) return n;
+      }
+    }
+    return null;
+  };
+  for (const tip of document.body.querySelectorAll('.help-tip')) {
+    if (!vis(tip.querySelector('.help-tip-btn') || tip) || skipZone(tip) || tip.closest('[data-lint-ignore]')) continue;
+    const c = tipCircle(tip);
+    let cur = tip, prev = null, next = null;
+    for (let up = 0; up < 3 && cur && cur !== document.body; up++, cur = cur.parentElement) {
+      prev = sideOf(cur, -1);
+      next = prev ? null : sideOf(cur, 1);
+      if (prev || next) break;
+    }
+    const anchor = prev || next;
+    if (!anchor) continue;
+    const ar = anchorRect(anchor, !!prev);
+    if (!ar) continue;
+    const sameLine = c.cy >= ar.top - 3 && c.cy <= ar.bottom + 3;
+    const gap = prev ? c.left - ar.right : ar.left - c.right;
+    const cid = (tip.querySelector('[aria-controls]') || tip).getAttribute('aria-controls') || '';
+    if (!sameLine) add('help-stranded', tip, '#' + cid + ' on its own line, ' + Math.round(Math.abs(c.cy - (ar.top + ar.bottom) / 2)) + 'px off its label');
+    else if (gap > 32 || gap < -4) add('help-stranded', tip, '#' + cid + ' ' + Math.round(gap) + 'px from its label');
+  }
+
   return out;
 })()

@@ -206,8 +206,6 @@ body.v2 .skip-link:focus{top:8px}
   body.v2 .dashboard-row-property{display:inline-block;min-height:24px;line-height:24px}
 }
 /* 0711 needs-you card: the text column may shrink, the actions wrap below the text */
-body.v2 .card.needs-you-card-item{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start}
-body.v2 .needs-you-card-item > div:not(.ic){min-width:0}
 body.v2 .needs-you-actions{display:flex;flex-wrap:wrap;gap:8px}
 /* 0711 tap targets below 1024 px: sidebar links and the property link in table rows */
 @media (max-width: 1023px){
@@ -220,7 +218,6 @@ body.v2 .cal .bar.b-ok{color:var(--ok)}
 body.v2 .cal .bar.b-warn{color:var(--warn)}
 body.v2 .ui-btn-quiet{background:none;border:0;box-shadow:none;padding:0 2px;color:var(--ink2);font:inherit;font-size:12px;text-decoration:underline;min-height:24px;display:inline-flex;align-items:center;cursor:pointer}
 @media (max-width:1023px){body.v2 .ui-btn-quiet{min-height:44px}body.v2 .search{min-height:44px}}
-body.v2 .needs-you-card-item details:not([open]) > :not(summary){display:none}
 @media (min-width:1024px){body.v2 .row-menu-trigger{min-width:24px;min-height:24px}}
 /* 0716 v2 shell parity: env badge under the logo, quiet support link in the bottom block */
 .side .env-badge{display:inline-block;margin:0 8px;padding:0 8px;border-radius:999px;font-size:12px;line-height:16px;color:var(--ink2);background:var(--side2)}
@@ -419,25 +416,18 @@ body.v2 .guest-card .copy-btn [data-copy-state-icon] svg{width:16px;height:16px;
 
 /* 0719 overview phone: Potřebuje vás cards, Dnes cards, top row (phone only unless noted) */
 @media (max-width:1023px){
-  body.v2 .needs-you-card-item{display:block}
-  body.v2 .needs-you-card-item .h{display:flex;gap:14px;align-items:center}
-  body.v2 .needs-you-card-item .h > div:last-child{min-width:0;flex:1}
   body.v2 .needs-you-actions{display:flex;gap:8px;align-items:center;margin-top:14px}
   body.v2 .needs-you-actions .btn{flex:1;min-width:0}
-  body.v2 .needs-you-card-item .btn.sm{min-height:50px;font-size:16px;padding:0}
-  body.v2 .needs-you-card-item .needs-you-dismiss{margin:0}
+  body.v2 .needs-you-item .btn.sm{min-height:50px;font-size:16px;padding:0}
+  body.v2 .needs-you-item .needs-you-dismiss{margin:0}
   body.v2 .ov-table{display:none}
   body.v2 .ov-cal-block{display:none}
   body.v2 .hs .card{text-decoration:none;color:inherit}
   body.v2 .hs .who{display:flex;gap:12px;align-items:center}
-  body.v2 .card.needs-you-card-item{display:block}
   body.v2 .needs-you-actions{width:100%}
 }
 @media (min-width:1024px){
   body.v2 .ph-only{display:none}
-  body.v2 .needs-you-card-item .h{display:contents}
-  body.v2 .needs-you-card-item b.t{display:block;font-weight:700}
-  body.v2 .needs-you-card-item small{display:block;font-size:inherit;color:inherit;margin:0}
 }
 
 /* 0719: the Dnes cards scroll inside their row and never widen the page */
@@ -690,11 +680,6 @@ body.v2 .host-stay-detail .stay-head-cta .btn{display:flex;align-items:center;ju
 
 /* 0720 step 0: Overview desktop and header regressions (0719 screenshots) */
 @media (min-width:1024px){
-  body.v2 .card.needs-you-card-item{display:block}
-  body.v2 .needs-you-card-item .h{display:flex;gap:14px;align-items:flex-start}
-  body.v2 .needs-you-card-item .h > .ic{width:48px;height:48px;flex:none}
-  body.v2 .needs-you-card-item .h > div:not(.ic){min-width:0;flex:1}
-  body.v2 .needs-you-actions{margin:12px 0 0 62px}
 }
 body.v2 .ov-head .ov-links{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;margin:0}
 body.v2 .ov-head .ov-links > *{margin:0}
@@ -895,11 +880,9 @@ body.v2 .guest-btns{display:contents}
 @media (min-width:1024px){.env-banner .env-more{display:none}}
 @media (max-width:1023px){.env-banner .env-body{display:none}}
 /* 0722: phone shows 2 needs-you cards; the rest open from one toggle. */
-@media (max-width:1023px){#needs-action > .todo > .needs-you-card-item:nth-child(n+3){display:none}#needs-action:has(> details[open]) > .todo > .needs-you-card-item:nth-child(n+3){display:block}#needs-action .ny-sum-desk{display:none}}
-@media (min-width:1024px){#needs-action .ny-sum-phone{display:none}#needs-action .ny-phone-only{display:none}}
 /* 0722: on phone the month line goes last, after Dnes (mockup order). */
 @media (max-width:1023px){body.v2 .ui-body:has(> .ov-month){display:flex;flex-direction:column}body.v2 .ov-month{order:1}}
-@media (max-width:1023px){body.v2 .ui-body:has(> .ov-month) > :not(h2.sec){margin-top:0;margin-bottom:0}body.v2 #needs-action .todo{gap:0}body.v2 #needs-action .needs-you-card-item{margin-bottom:16px}body.v2 details.needs-you-more{margin:0}}
+@media (max-width:1023px){body.v2 .ui-body:has(> .ov-month) > :not(h2.sec){margin-top:0;margin-bottom:0}body.v2 #needs-action .todo{gap:0}body.v2 details.needs-you-more{margin:0}}
 /* 0722: phone action buttons keep the 44 px touch target of the mockup. */
 @media (max-width:1023px){body.v2 .needs-you-actions .btn{min-height:44px}}
 /* 0529 tests: the desk rows are clickable (data-href), so they show the pointer */
@@ -1885,7 +1868,7 @@ body.v2 input[type=checkbox][data-toggle-submit]:focus-visible{outline:2px solid
 /* 0830 shared (end) */
 /* 0830B overview+menu (start) */
 /* Overview (dashboard.html): bordered 1 px cards, no shadow, text 16 px inside the edge */
-body.v2 .needs-you-card-item,body.v2 .cal,body.v2 .ov-table{background:#fff;border:1px solid var(--line);box-shadow:none;padding:16px}
+body.v2 .cal,body.v2 .ov-table{background:#fff;border:1px solid var(--line);box-shadow:none;padding:16px}
 /* Overview today cards keep their phone radius (0729 spec); only the border and the shadow change */
 body.v2 .hs>.card{background:#fff;border:1px solid var(--line);box-shadow:none}
 /* Overview: 12 px between the headline and the date line */
@@ -2197,13 +2180,12 @@ body.v2 .notification-bubble.info .notification-icon{background:var(--ink3)}
 body.v2 .notification-bubble strong{display:block;font-size:14px;line-height:1.35;font-weight:650}
 body.v2 .notification-bubble small{display:block;margin-top:2px;color:var(--ink3);font-size:13px;line-height:1.35}
 body.v2 .notification-bubble .notification-action{color:#b3261e;font-weight:650}
-body.v2 .notification-bubble form[data-notification-dismiss],body.v2 .needs-you-card-item .needs-you-dismiss{position:absolute;top:6px;right:6px;margin:0;z-index:2}
+body.v2 .notification-bubble form[data-notification-dismiss],body.v2 .needs-you-item .needs-you-dismiss{position:absolute;top:6px;right:6px;margin:0;z-index:2}
 body.v2 .notification-bubble form[data-notification-dismiss] button,body.v2 .needs-you-dismiss button{position:relative;display:block;width:44px;height:44px;min-width:44px;min-height:44px;margin:0;padding:0;border:0;background:transparent;font-size:0;line-height:0;color:transparent;cursor:pointer;text-decoration:none}
 body.v2 .notification-bubble form[data-notification-dismiss] button:before,body.v2 .needs-you-dismiss button:before{content:"";position:absolute;left:50%;top:50%;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:#f0f0ec url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none' stroke='%23222' stroke-width='1.75' stroke-linecap='round'%3E%3Cpath d='M3 3l8 8M11 3l-8 8'/%3E%3C/svg%3E") center/14px 14px no-repeat}
 body.v2 .notification-bubble form[data-notification-dismiss] button:hover:before,body.v2 .needs-you-dismiss button:hover:before{background-color:#e3e3dd}
 body.v2 .notification-bubble form[data-notification-dismiss] button:focus-visible,body.v2 .needs-you-dismiss button:focus-visible{outline:2px solid #222;outline-offset:-4px;border-radius:50%}
-body.v2 .card.needs-you-card-item:has(.needs-you-dismiss){position:relative;padding-right:56px}
-body.v2 .needs-you-card-item .needs-you-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+body.v2 .needs-you-item .needs-you-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
 /* 0896: page help "?" is a plain round button again: no chevron from the generic body.v2 summary rule */
 body.v2 summary.page-help-btn:after,body.v2 details[open] summary.page-help-btn:after{content:none;display:none}
 body.v2 summary.page-help-btn{list-style:none;gap:0;font-size:0}
@@ -2286,3 +2268,37 @@ body.v2 .airbnb-header>.page-help{margin:0}
 body.v2 .airbnb-header:has(>.page-help)>.airbnb-back{margin-right:calc(100% - 44px)}
 body.v2 .airbnb-header:has(>.page-help)>.airbnb-title{width:auto;flex:0 1 auto;min-width:0}
 @media (max-width:1023px){body.v2 .host-stay-detail>.head{min-height:1px}}
+
+/* 0902: "Potřebuje vás" is one list: a full-width row per item, first 5 visible, the rest behind one toggle.
+   No stretched link (see 0901): only the button and the dismiss X are clickable. */
+body.v2 #needs-action .needs-you-list{display:grid;gap:12px;margin:0;padding:0;list-style:none}
+body.v2 #needs-action .needs-you-more{margin-top:12px}
+body.v2 #needs-action .needs-you-more > .needs-you-list{margin-top:12px}
+body.v2 .needs-you-item{position:relative;display:grid;gap:12px;align-items:center;min-width:0;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:none}
+body.v2 .needs-you-item > .needs-you-copy > strong::before{content:"";display:inline-block;width:10px;height:10px;margin-right:8px;border-radius:50%;background:var(--ink3,#6b6b65)}
+body.v2 .needs-you-item[data-tone="red"] > .needs-you-copy > strong::before{background:#b3261e}
+body.v2 .needs-you-item[data-tone="amber"] > .needs-you-copy > strong::before{background:#b26a00}
+body.v2 .needs-you-item details:not([open]) > :not(summary){display:none}
+body.v2 .needs-you-item:has(.needs-you-dismiss){padding-right:56px}
+body.v2 .needs-you-item .needs-you-copy{min-width:0;overflow-wrap:anywhere}
+body.v2 .needs-you-item .needs-you-copy strong{display:block;font-weight:700}
+body.v2 .needs-you-item .needs-you-copy span{display:block;margin-top:2px;color:var(--ink3);font-size:13px}
+body.v2 .needs-you-item .needs-you-copy details{margin-top:8px}
+body.v2 .needs-you-item .needs-you-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:0}
+@media (min-width:1024px){body.v2 .needs-you-item{grid-template-columns:minmax(0,1fr) auto}}
+@media (max-width:1023px){body.v2 .needs-you-item{border-radius:24px}body.v2 .needs-you-item .needs-you-actions{width:100%}body.v2 .needs-you-item .needs-you-actions .btn{flex:1;min-width:0;min-height:44px;display:flex;align-items:center;justify-content:center}}
+@media (min-width:1024px){body.v2 .needs-you-item .needs-you-actions{margin-top:0}body.v2 .needs-you-item .needs-you-actions .btn{flex:none;display:inline-flex;align-items:center;justify-content:center;padding:0 20px;min-height:44px;font-size:15px}}
+.needs-you-how,.needs-you-how li{font-size:14px;line-height:1.45}
+/* 0901: a help "?" always sits inline right after its heading or label, never on its own line (lint rule help-stranded) */
+body.v2 .stay-claim-label{display:block}
+body.v2 .ui-choice-card>.ui-choice-card-label:has(+ .help-tip){flex:0 1 auto;max-width:calc(100% - 64px)}
+body.v2 .field-label-row:has(>.help-tip){display:block}
+body.v2 .field-label-row:has(>.help-tip)>label{display:inline}
+body.v2 .tip-tail{white-space:nowrap}
+body.v2 .wiz-page .ui-choice-card{display:flex;flex-wrap:wrap;align-items:center;column-gap:8px}
+body.v2 .wiz-page .ui-choice-card-label{display:flex;align-items:center;gap:12px;margin:0}
+body.v2 .wiz-page .ui-choice-card-extra{flex:1 1 100%}
+body.v2 .ui-choice-card-label .help-tip{position:relative;z-index:2}
+body.v2 .wiz-page .ui-choice-cards{display:flex;flex-direction:column;gap:12px;margin-bottom:12px}
+body.v2 .host-workspace .ui-empty .help-tip-btn,body.v2 .ui-empty h2 .help-tip-btn{background:transparent!important;box-shadow:none!important;border:0!important}
+body.v2 .wiz-page .ui-choice-card-extra{margin-top:12px}

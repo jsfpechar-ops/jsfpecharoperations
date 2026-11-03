@@ -243,6 +243,34 @@ def test_failed_issue_keeps_payment_requested(host):
     assert "hidden" not in due
 
 
+def test_failed_issue_keeps_already_paid(host):
+    """already_paid=1 must stay Already paid on a 422 re-render (not flip to Payment requested)."""
+    entity_id = _add_entity()
+    stay_id = make_stay(_owner(), entity_id=entity_id)
+    response = host.post(
+        "/invoices",
+        data={
+            "legal_entity_id": str(entity_id),
+            **stay_form(stay_id),
+            "already_paid": "1",
+            "paid_via": "cash",
+            "buyer_email": "keep@me.test",
+            "item_description": ["Stay"],
+            "item_quantity": ["1"],
+            "item_unit_price": [""],
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 422, response.text[:400]
+    page = response.text
+    paid = page.split('id="already_paid"', 1)[1].split(">", 1)[0]
+    requested = page.split('id="payment_requested"', 1)[1].split(">", 1)[0]
+    assert "checked" in paid
+    assert "checked" not in requested
+    due = page.split('id="due-fields"', 1)[1][:80]
+    assert "hidden" in due
+
+
 def test_seller_snapshot_presence_semantics():
     entity = {
         "name": "Op s.r.o.", "seat": "Praha", "ico": "04656679", "dic": "CZ1",

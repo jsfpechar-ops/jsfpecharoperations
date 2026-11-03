@@ -30,7 +30,7 @@ MAX_GUESTS = 60
 DEFAULT_CUTOFF_HOUR = 18
 DEFAULT_CHECKIN_HOUR = 15
 # The guest terms text shown at checkout (0818); bump when the text changes.
-TERMS_VERSION = "2026-11-01"
+TERMS_VERSION = "2026-11-03"
 
 DEFAULTS: Dict[str, Any] = {
     "nightly_price_czk": 0,

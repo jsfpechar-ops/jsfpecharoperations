@@ -96,4 +96,3 @@
 - K-PK0290: passkey fix open.
 - K-CF01: mid-session challenge: see CLOUDFLARE Rule 3.
 - K-PG-ORDER: goose tests fail after icalsync locally; CI OK.
-- K-BS01: a partial site refund leaves the invoice uncorrected (audit `site_invoice_needs_correction`); host fixes by hand.

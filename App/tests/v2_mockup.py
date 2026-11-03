@@ -201,10 +201,17 @@ PAGES = [
             ".cal .cd", ".cal .cn", ".cal .bar.b-ok", ".cal .bar.b-warn", "main table th", "main tbody tr:first-child td", "main td small",
             "main .pill.p-ok", "main .pill.p-warn",
         ],
+        "phone_box_skip": {
+            ".card.need": (["height"], "0902: needs-you rows have no icon tile, so they are shorter than the mockup card"),
+            ".card.need .btn": (["height"], "0902: row button is 44 px (touch minimum), the mockup card has 50 px"),
+        },
         "missing_ok": {
             ".cal .bar.b-ok": "demo data has no confirmed stay in the 14-day window; the tone follows the data",
             "main .pill.p-ok": "tone depends on data: the demo overview has no reported stay",
             ".todo p": "the needs-you line is a small element at every width (one markup for phone and desktop, 0719)",
+            ".todo .card": "0902: needs-you is one list of rows (.needs-you-item), not the mockup's two-column .todo grid",
+            ".todo .ic": "0902: needs-you rows have a tone dot instead of an icon tile",
+            ".todo .t": "0902: needs-you rows use strong, not .t",
             ".card.need": "needs-you cards exist only while the account has an open to-do; the phone mockup shows demo cards",
             ".need .t": "needs-you cards exist only while the account has an open to-do; the phone mockup shows demo cards",
             "h2.sec": "the Today label shows only when a stay arrives or leaves today",

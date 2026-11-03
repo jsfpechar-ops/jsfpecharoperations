@@ -49,7 +49,7 @@ CW = W - 2 * M
 
 LABELS = {
     "cs": {
-        "invoice": "Faktura", "tax_invoice": "Faktura – daňový doklad", "storno": "Storno faktury",
+        "invoice": "Faktura", "tax_invoice": "Faktura – daňový doklad", "storno": "Storno faktury", "credit_note": "Dobropis",
         "corrective": "Opravný daňový doklad", "no": "č.", "to": "k dokladu č.",
         "supplier": "Dodavatel", "customer": "Odběratel", "ico": "IČO", "dic": "DIČ",
         "issued": "Datum vystavení", "duzp": "Datum zdanitelného plnění", "due": "Datum splatnosti",
@@ -64,7 +64,7 @@ LABELS = {
         "footer": "Vystaveno v UbyHost – registrace hostů a faktury pro ubytovatele", "page": "Strana 1/1", "preview": "NÁHLED – NEPLATNÝ DOKLAD",
     },
     "en": {
-        "invoice": "Invoice", "tax_invoice": "Tax invoice", "storno": "Cancellation of invoice",
+        "invoice": "Invoice", "tax_invoice": "Tax invoice", "storno": "Cancellation of invoice", "credit_note": "Credit note",
         "corrective": "Credit note (corrective tax document)", "no": "No.", "to": "to document No.",
         "supplier": "Supplier", "customer": "Customer", "ico": "Company ID (IČO)", "dic": "VAT ID (DIČ)",
         "issued": "Issue date", "duzp": "Tax point (DUZP)", "due": "Due date",
@@ -153,10 +153,14 @@ def render(
     kind = inv["kind"]
     title = {"invoice": L["tax_invoice"] if payer else L["invoice"],
              "storno": L["storno"], "corrective": L["corrective"]}[kind]
+    if kind == "storno" and inv.get("partial_correction"):
+        title = L["credit_note"]
     _text(c, W - M, top + 0.5 * mm, title.upper(), BOLD, 8, CORAL, right=True)
     if lang != "cs":
         cs_title = {"invoice": LABELS["cs"]["tax_invoice"] if payer else LABELS["cs"]["invoice"],
                     "storno": LABELS["cs"]["storno"], "corrective": LABELS["cs"]["corrective"]}[kind]
+        if kind == "storno" and inv.get("partial_correction"):
+            cs_title = LABELS["cs"]["credit_note"]
         _text(c, W - M, top + 4.2 * mm, cs_title, REG, 7, MUTED, right=True)
     _text(c, W - M, top - 8 * mm, inv["number"], BOLD, 20, INK, right=True)
     if inv.get("corrects_number"):

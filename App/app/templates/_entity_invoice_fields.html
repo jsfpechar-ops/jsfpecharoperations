@@ -45,7 +45,7 @@
                value="{{ entity.invoice_prefix or '' }}">
       </div>
       <div class="field">
-        <div class="field-label-row"><label for="invoice_next_number">{{ t('entities.invoice_next.label') }} <span class="opt">{{ t('common.optional') }}</span></label>{{ help_tip('invoice-next-number-help', t('entities.invoice_next.hint')) }}</div>
+        <div class="field-label-row"><label for="invoice_next_number">{{ t('entities.invoice_next.label') }} <span class="opt">{{ t('common.optional') }}</span>{{ help_tip('invoice-next-number-help', t('entities.invoice_next.hint')) }}</label></div>
         <input type="number" id="invoice_next_number" name="invoice_next_number" min="1" inputmode="numeric"
                value="{{ entity.invoice_next_number if entity.invoice_next_number else '' }}">
               </div>
