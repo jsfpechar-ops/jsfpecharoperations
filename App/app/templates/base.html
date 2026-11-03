@@ -20,10 +20,12 @@
   {% if v2 | default(false) %}
   <link rel="stylesheet" data-turbo-track="reload" href="/static/tokens.css?v=20261103-0920">
   <link rel="stylesheet" data-turbo-track="reload" href="/static/app2.css?v=20261103-0900f">
+  {% if show_nav | default(true) %}<link rel="stylesheet" data-turbo-track="reload" href="/static/command.css?v=20261103-0935">{% endif %}
   {% else %}
   <link rel="stylesheet" data-turbo-track="reload" href="/static/tokens.css?v=20261103-0920">
   <link rel="stylesheet" data-turbo-track="reload" href="/static/app.css?v=20261027-signup-wrap">
-  <link rel="stylesheet" data-turbo-track="reload" href="/static/components.css?v=20261014-0102c">
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/components.css?v=20261103-0930">
+  {% if show_nav | default(true) %}<link rel="stylesheet" data-turbo-track="reload" href="/static/command.css?v=20261103-0935">{% endif %}
   {% if show_nav | default(true) %}
   <link rel="stylesheet" data-turbo-track="reload" href="/static/host.css?v=20261102-0799">
   <link rel="stylesheet" data-turbo-track="reload" href="/static/host-controls.css?v=20261014-0102d">

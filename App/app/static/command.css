@@ -1,0 +1,44 @@
+/* Command palette (Ctrl/Cmd K) and shortcuts dialog. Loaded on every host page, old and v2 shells. */
+dialog { color:var(--ink-secondary);background:var(--surface-raised) }
+dialog::backdrop { background:rgba(10,10,9,.58) }
+.command-dialog,.shortcuts-dialog { width:min(640px,calc(100vw - 24px));max-height:min(680px,calc(100vh - 40px));padding:0;border:1px solid var(--border-strong);border-radius:var(--radius-lg);background:var(--surface-raised);box-shadow:var(--shadow-dialog) }
+.command-dialog { margin-top:max(8vh,32px) }
+.command-shell { overflow:hidden }
+.command-search { display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border) }
+.command-search>span { color:var(--ink-muted);font-size:22px }
+.command-search input { flex:1;min-width:0;padding:4px 0;border:0;border-radius:0;background:transparent;font-size:var(--text-md);box-shadow:none }
+.command-search input:focus { box-shadow:none }
+.command-close { display:grid;place-items:center;width:30px;height:30px;padding:0;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface-hover);color:var(--ink-muted);font-size:20px;line-height:1;cursor:pointer }
+.command-close:hover { color:var(--ink);background:var(--surface-active) }
+.command-results { max-height:min(520px,65vh);padding:6px;overflow-y:auto }
+.command-option { display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--ink-secondary);font:inherit;text-align:left;cursor:pointer }
+.command-option.is-selected { background:var(--surface-hover);color:var(--ink) }
+.command-option-copy { display:grid;flex:1;min-width:0 }
+.command-option-copy strong,.command-option-copy small { overflow:hidden;text-overflow:ellipsis;white-space:nowrap }
+.command-option-copy strong { font-size:var(--text-base) }
+.command-option-copy small,.command-group { color:var(--ink-muted);font-size:var(--text-xs) }
+.command-empty { padding:32px;color:var(--ink-muted);text-align:center }
+.shortcuts-shell { padding:20px }
+.shortcuts-shell .section-heading { margin:0 0 12px }
+.shortcut-list { display:grid;margin:0 }
+.shortcut-list>div { display:grid;grid-template-columns:150px 1fr;gap:16px;padding:10px 0;border-top:1px solid var(--border) }
+.shortcut-list dt,.shortcut-list dd { margin:0 }
+.shortcut-list dd { color:var(--ink-muted) }
+@media (max-width:560px) {
+  .command-dialog { width:calc(100vw - 16px);max-height:calc(100dvh - 16px);margin:8px auto;border-radius:18px }
+  .command-search { padding:12px }
+  .command-results { max-height:calc(100dvh - 82px) }
+  .command-group { display:none }
+  .shortcut-list>div { grid-template-columns:120px 1fr }
+  .command-trigger kbd { display:none }
+}
+
+.command-dialog,.shortcuts-dialog {
+  border:2px solid var(--ink);
+  box-shadow:8px 9px 0 rgba(32,32,30,.32);
+}
+.command-search { background:linear-gradient(135deg,var(--amber-bg),var(--surface) 52%) }
+.command-option { border-radius:9px }
+.command-option.is-selected { color:var(--ink);background:var(--blue-bg) }
+.host-workspace .command-dialog { border-radius: 16px; }
+.command-search input:focus, .command-search input:focus-visible { outline: 0; box-shadow: none; }
