@@ -2238,3 +2238,37 @@ body.v2 .ov-quiet,body.v2 .ov-links{margin-bottom:12px}
 body.v2 .ov-links:empty{display:none}
 body.v2 details.page-help:not([open]){background:none;box-shadow:none;border-color:transparent}
 body.v2 summary.page-help-btn{position:relative;left:-3px}
+/* 0899 audit: one help "?" circle, centred on its glyph. admin2.css gives every help button an invisible
+   ::after hit area with inset:-13px; on host pages that inset won over the 18 px ring above and pushed it
+   22 px up-left, so a second ghost circle floated beside every "?". The ring is re-stated here with the same
+   specificity, and the two scopes where the button draws its own 24 px ring keep an invisible hit area only. */
+body.v2 button.help-tip-btn::after{inset:auto;right:auto;bottom:auto;left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%);border:1px solid var(--line);border-radius:50%;box-sizing:border-box}
+body.v2 .property-settings-form button.help-tip-btn::after,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) button.help-tip-btn::after{border:0}
+@media (max-width:1023px){
+  body.v2 button.help-tip-btn{padding:0 26px 0 0}
+  body.v2 button.help-tip-btn::after{left:0;top:13px;transform:none}
+  body.v2 .property-settings-form button.help-tip-btn,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) button.help-tip-btn{padding:0}
+}
+/* 0899 audit: the tab bar shows up to 1023 px, but the Havel button only lifted above it up to 767 px, so at tablet
+   widths it covered the Menu tab. */
+@media (min-width:768px) and (max-width:1023px){
+  body.v2 .havel-fab{right:var(--space-4);bottom:calc(var(--tabbar-h) + var(--tabbar-safe) + var(--space-4))}
+  body.v2:has(.ui-sticky-actions) .havel-fab{bottom:calc(var(--tabbar-h) + var(--tabbar-safe) + var(--control-h) + var(--space-8))}
+}
+/* 0899 audit: the five-step list on the wizard and Help pages rendered as a raw <ol> ("1. 1 You paste ..."), because
+   workflow.css is not loaded on v2 pages. Quiet number circles, no browser numbering. */
+body.v2 .workflow-strip{list-style:none;margin:0 0 16px;padding:0;display:grid;gap:12px}
+body.v2 .workflow-strip-step{display:flex;align-items:flex-start;gap:12px;min-width:0}
+body.v2 .workflow-strip .workflow-num{flex:0 0 28px;display:inline-grid;place-items:center;width:28px;height:28px;border:1px solid var(--line);border-radius:50%;font-size:14px;font-weight:600;color:var(--ink2)}
+body.v2 .workflow-strip-copy{display:grid;gap:2px;min-width:0}
+body.v2 .workflow-strip-label{font-size:16px;line-height:1.35;overflow-wrap:anywhere}
+body.v2 .workflow-strip .workflow-tag{font-size:14px;color:var(--ink3)}
+body.v2 .wiz-page h1.big{text-wrap:balance}
+body.v2 .ui-banner{margin-bottom:16px}
+/* 0899 audit: the stay detail showed its title twice (desktop head plus the back-arrow header).
+   The head keeps its "?" and actions; only its title text is dropped. */
+body.v2 .host-stay-detail .head .big>span[hidden]{display:none}
+/* 0899 audit: the empty-guests card let its inline "Add a guest" button sit 9 px over the hint above it at 1280. */
+body.v2 .host-stay-detail .card>.sub+.btn{display:inline-flex;align-items:center;margin-top:16px}
+/* 0899 audit: the row "open" circle had no glyph outside the cleaning page (archive lists showed an empty ring). */
+body.v2 .row-open::after{content:"\203A";font-size:18px;line-height:1}
