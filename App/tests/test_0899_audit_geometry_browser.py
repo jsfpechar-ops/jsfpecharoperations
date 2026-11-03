@@ -117,9 +117,27 @@ def test_wizard_steps_have_no_browser_numbering(host_page, calendar_workspace, c
 @pytest.mark.parametrize("width", WIDTHS)
 def test_stay_detail_title_shows_once(host_page, calendar_workspace, calendar_origin, stay_id, width):
     _visit(host_page, calendar_origin, f"/reservations/{stay_id}", width)
-    big = host_page.evaluate("""() => [...document.querySelectorAll('main h1, main .big')].filter(e => {
-        const r = e.getBoundingClientRect(); return r.width > 0 && parseFloat(getComputedStyle(e).fontSize) >= 20 && (e.innerText || '').trim() === 'Calendar home 1'; }).length""")
-    assert big == 1, f"title shown {big} times at {width}"
+    shown = host_page.evaluate("""() => [...document.querySelectorAll('main h1, main .head .big')].filter(e => {
+        const r = e.getBoundingClientRect(); return r.width > 0 && parseFloat(getComputedStyle(e).fontSize) > 0
+          && (e.innerText || '').split('\\n')[0].trim() === 'Calendar home 1'; }).length""")
+    assert shown == 1, f"title shown {shown} times at {width}"
+
+
+@pytest.mark.parametrize("width", WIDTHS)
+def test_empty_guests_button_clears_the_hint(host_page, calendar_origin, stay_id, width):
+    _visit(host_page, calendar_origin, f"/reservations/{stay_id}", width)
+    gap = host_page.evaluate("""() => { const c = [...document.querySelectorAll('.host-stay-detail .card')].find(c => /No guest has filled/.test(c.innerText));
+        const hint = c.querySelector('p.sub').getBoundingClientRect(), btn = c.querySelector('a.btn').getBoundingClientRect(); return btn.top - hint.bottom; }""")
+    assert gap >= 12, f"button {gap}px under the hint at {width}"
+
+
+@pytest.mark.parametrize("width", WIDTHS)
+def test_row_open_circle_has_a_chevron(host_page, calendar_workspace, calendar_origin, stay_id, width):
+    for path in ("/settings/archived", "/reservations", "/cleaning/properties", "/invoices"):
+        _visit(host_page, calendar_origin, path, width)
+        empty = host_page.evaluate("""() => [...document.querySelectorAll('.row-open')].filter(e => e.getBoundingClientRect().width > 0
+            && getComputedStyle(e, '::after').content === 'none').length""")
+        assert empty == 0, f"{path} at {width}"
 
 
 @pytest.mark.parametrize("width", WIDTHS)

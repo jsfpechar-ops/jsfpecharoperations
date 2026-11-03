@@ -2200,9 +2200,11 @@ body.v2 .workflow-strip-label{font-size:16px;line-height:1.35;overflow-wrap:anyw
 body.v2 .workflow-strip .workflow-tag{font-size:14px;color:var(--ink3)}
 body.v2 .wiz-page h1.big{text-wrap:balance}
 body.v2 .ui-banner{margin-bottom:16px}
-/* 0899 audit: on phones and tablets the stay detail showed its title twice (desktop head plus the back-arrow header).
+/* 0899 audit: the stay detail showed its title twice (desktop head plus the back-arrow header).
    The head keeps its "?" and actions; only its title text is dropped. */
-@media (max-width:1023px){
-  body.v2 .host-stay-detail .head .big{font-size:0;line-height:0}
-  body.v2 .host-stay-detail .head .big .page-help{font-size:16px;line-height:1.35}
-}
+body.v2 .host-stay-detail .head .big{font-size:0;line-height:0}
+body.v2 .host-stay-detail .head .big .page-help{font-size:16px;line-height:1.35}
+/* 0899 audit: the empty-guests card let its inline "Add a guest" button sit 9 px over the hint above it at 1280. */
+body.v2 .host-stay-detail .card>.sub+.btn{display:inline-flex;align-items:center;margin-top:16px}
+/* 0899 audit: the row "open" circle had no glyph outside the cleaning page (archive lists showed an empty ring). */
+body.v2 .row-open::after{content:"\203A";font-size:18px;line-height:1}
