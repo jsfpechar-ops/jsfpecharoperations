@@ -12,19 +12,17 @@
 {% block meta %}{% endblock %}
 {% block body %}
 <div class="guide-page guide-form-page">
-<div class="head guide-hd"><div><a class="guide-back" href="{{ base_url }}">{{ t('guest_guide.title') }}</a><div class="heading-with-tip"><h1 class="big">{{ t('guest_guide.qr.title') }}</h1>{{ help_tip('guide-qr-meta-help', t('guest_guide.qr.meta')) }}</div></div></div>
+<div class="head guide-hd"><div><a class="guide-back" href="{{ base_url }}">{{ t('guest_guide.title') }}</a><div class="heading-with-tip"><h1 class="big">{{ t('guest_guide.qr.title') }}{{ help_tip('guide-qr-meta-help', t('guest_guide.qr.meta')) }}</h1></div></div></div>
 {% if not progress.live %}{{ ui_banner('attention', t('guest_guide.qr.not_live')) }}{% endif %}
-{% call ui_section(apartment.internal_name, id='qr-code') %}
+{% call ui_section(apartment.internal_name, id='qr-code', tip=help_tip('guide-qr-print-help', t('guest_guide.qr.print_help'))) %}
 <img class="guide-qr" src="{{ qr }}" width="240" height="240" alt="{{ t('guest_guide.qr.alt') }}">
-{{ help_tip('guide-qr-print-help', t('guest_guide.qr.print_help')) }}
 <p class="ui-mono">{{ guest_url }}</p>
 <div class="ui-form-actions">
 {{ ui_button(t('guest_guide.qr.download'), 'primary', href=base_url ~ '/qr.png', icon_name='download') }}
 {{ ui_button(t('guest_guide.qr.open'), 'secondary', href=guest_url, icon_name='external-link', attrs='target="_blank" rel="noopener"') }}
 </div>
 {% endcall %}
-{% call ui_section(t('guest_guide.qr.rotate_title'), id='qr-rotate') %}
-{{ help_tip('guide-qr-rotate-help', t('guest_guide.qr.rotate_help')) }}
+{% call ui_section(t('guest_guide.qr.rotate_title'), id='qr-rotate', tip=help_tip('guide-qr-rotate-help', t('guest_guide.qr.rotate_help'))) %}
 <form method="post" action="{{ base_url }}/qr/rotate" data-confirm data-confirm-message="{{ t('guest_guide.qr.rotate_confirm') }}">
 <input type="hidden" name="_csrf" value="{{ csrf_token }}">
 {{ ui_button(t('guest_guide.qr.rotate'), 'danger', type='submit', icon_name='refresh-cw') }}
