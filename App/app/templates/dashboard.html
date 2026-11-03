@@ -15,7 +15,7 @@
 
 {#- 0902: one full-width row per "Potřebuje vás" line (the pre-0706 list); first 5 visible, the rest behind one toggle. -#}
 {% macro ny_row(line, first=False) %}
-<li class="needs-you-item need" data-tone="{{ line.tone }}" data-needs-you="{{ line.kind }}"{% if line.stay_id %} data-needs-you-stay="{{ line.stay_id }}"{% endif %}{% if line.dismiss_id %} data-notification{% endif %}>
+<li class="card needs-you-item need" data-tone="{{ line.tone }}" data-needs-you="{{ line.kind }}"{% if line.stay_id %} data-needs-you-stay="{{ line.stay_id }}"{% endif %}{% if line.dismiss_id %} data-notification{% endif %}>
   <div class="needs-you-copy">
     <strong>{{ line.text or line.subject }}</strong>
     {% if line.text %}<span>{{ line.subject }}</span>{% endif %}

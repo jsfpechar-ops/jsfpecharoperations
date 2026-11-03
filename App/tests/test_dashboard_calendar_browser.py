@@ -537,7 +537,7 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         assert page.evaluate("location.pathname") == pathname
         # 0241: the new stay arrives today with no guest form, so "What needs you" gains its line.
         line = page.locator(
-            f'[data-dashboard-refresh="stats"] .todo .card[data-needs-you-stay="{created_stay["id"]}"]'
+            f'[data-dashboard-refresh="stats"] .card[data-needs-you-stay="{created_stay["id"]}"]'
         )
         line.wait_for(state="attached")
         assert "Popup row refresh" in line.text_content()
@@ -614,7 +614,7 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
             const normalize = value => (value || "").replace(/\\s+/g, " ").trim();
             return {
                 stats: normalize(document.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
-                rows: [...document.querySelectorAll('[data-dashboard-refresh="stats"] .todo .card[data-needs-you="stay"]')].map(row => ({
+                rows: [...document.querySelectorAll('[data-dashboard-refresh="stats"] .card[data-needs-you="stay"]')].map(row => ({
                     id: row.getAttribute("data-needs-you-stay"),
                     text: normalize(row.textContent)
                 }))
@@ -683,7 +683,7 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
             const normalize = value => (value || "").replace(/\\s+/g, " ").trim(); const rowText = row => { const c = row.cloneNode(true); c.querySelectorAll("[data-copy]").forEach(n => n.remove()); return (c.textContent || "").replace(/\\s+/g, " ").trim(); };
             return {
                 stats: normalize(doc.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
-                rows: [...doc.querySelectorAll('[data-dashboard-refresh="stats"] .todo .card[data-needs-you="stay"]')].map(row => ({
+                rows: [...doc.querySelectorAll('[data-dashboard-refresh="stats"] .card[data-needs-you="stay"]')].map(row => ({
                     id: row.getAttribute("data-needs-you-stay"),
                     text: rowText(row)
                 }))
@@ -698,7 +698,7 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
             const normalize = value => (value || "").replace(/\\s+/g, " ").trim(); const rowText = row => { const c = row.cloneNode(true); c.querySelectorAll("[data-copy]").forEach(n => n.remove()); return (c.textContent || "").replace(/\\s+/g, " ").trim(); };
             const actual = {
                 stats: normalize(document.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
-                rows: [...document.querySelectorAll('[data-dashboard-refresh="stats"] .todo .card[data-needs-you="stay"]')].map(row => ({
+                rows: [...document.querySelectorAll('[data-dashboard-refresh="stats"] .card[data-needs-you="stay"]')].map(row => ({
                     id: row.getAttribute("data-needs-you-stay"),
                     text: rowText(row)
                 }))

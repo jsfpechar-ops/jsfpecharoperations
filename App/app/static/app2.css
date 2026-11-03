@@ -2274,15 +2274,18 @@ body.v2 .airbnb-header:has(>.page-help)>.airbnb-title{width:auto;flex:0 1 auto;m
 body.v2 #needs-action .needs-you-list{display:grid;gap:12px;margin:0;padding:0;list-style:none}
 body.v2 #needs-action .needs-you-more{margin-top:12px}
 body.v2 #needs-action .needs-you-more > .needs-you-list{margin-top:12px}
-body.v2 .needs-you-item{position:relative;display:grid;gap:12px;align-items:center;min-width:0;background:#fff;border:1px solid var(--line);border-left:4px solid var(--line);border-radius:12px;padding:16px;box-shadow:none}
-body.v2 .needs-you-item[data-tone="red"]{border-left-color:#b3261e}
-body.v2 .needs-you-item[data-tone="amber"]{border-left-color:#b26a00}
+body.v2 .needs-you-item{position:relative;display:grid;gap:12px;align-items:center;min-width:0;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:none}
+body.v2 .needs-you-item > .needs-you-copy > strong::before{content:"";display:inline-block;width:10px;height:10px;margin-right:8px;border-radius:50%;background:var(--ink3,#6b6b65)}
+body.v2 .needs-you-item[data-tone="red"] > .needs-you-copy > strong::before{background:#b3261e}
+body.v2 .needs-you-item[data-tone="amber"] > .needs-you-copy > strong::before{background:#b26a00}
+body.v2 .needs-you-item details:not([open]) > :not(summary){display:none}
 body.v2 .needs-you-item:has(.needs-you-dismiss){padding-right:56px}
 body.v2 .needs-you-item .needs-you-copy{min-width:0;overflow-wrap:anywhere}
 body.v2 .needs-you-item .needs-you-copy strong{display:block;font-weight:700}
 body.v2 .needs-you-item .needs-you-copy span{display:block;margin-top:2px;color:var(--ink3);font-size:13px}
 body.v2 .needs-you-item .needs-you-copy details{margin-top:8px}
 body.v2 .needs-you-item .needs-you-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:0}
-@media (min-width:768px){body.v2 .needs-you-item{grid-template-columns:minmax(0,1fr) auto}}
-@media (max-width:767px){body.v2 .needs-you-item .needs-you-actions{width:100%}body.v2 .needs-you-item .needs-you-actions .btn{flex:1;min-width:0;min-height:44px;display:flex;align-items:center;justify-content:center}}
-@media (min-width:768px){body.v2 .needs-you-item .needs-you-actions{margin-top:0}body.v2 .needs-you-item .needs-you-actions .btn{flex:none;padding:0 20px;min-height:44px;font-size:15px}}
+@media (min-width:1024px){body.v2 .needs-you-item{grid-template-columns:minmax(0,1fr) auto}}
+@media (max-width:1023px){body.v2 .needs-you-item{border-radius:24px}body.v2 .needs-you-item .needs-you-actions{width:100%}body.v2 .needs-you-item .needs-you-actions .btn{flex:1;min-width:0;min-height:44px;display:flex;align-items:center;justify-content:center}}
+@media (min-width:1024px){body.v2 .needs-you-item .needs-you-actions{margin-top:0}body.v2 .needs-you-item .needs-you-actions .btn{flex:none;display:inline-flex;align-items:center;justify-content:center;padding:0 20px;min-height:44px;font-size:15px}}
+.needs-you-how,.needs-you-how li{font-size:14px;line-height:1.45}
