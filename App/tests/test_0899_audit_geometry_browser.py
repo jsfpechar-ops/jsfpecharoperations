@@ -112,3 +112,19 @@ def test_wizard_steps_have_no_browser_numbering(host_page, calendar_workspace, c
     _visit(host_page, calendar_origin, f"/apartments/{calendar_workspace['properties'][0]}/setup/property", width)
     assert host_page.evaluate("() => getComputedStyle(document.querySelector('.workflow-strip')).listStyleType") == "none"
     assert host_page.evaluate("() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
+
+
+@pytest.mark.parametrize("width", WIDTHS)
+def test_stay_detail_title_shows_once(host_page, calendar_workspace, calendar_origin, stay_id, width):
+    _visit(host_page, calendar_origin, f"/reservations/{stay_id}", width)
+    big = host_page.evaluate("""() => [...document.querySelectorAll('main h1, main .big')].filter(e => {
+        const r = e.getBoundingClientRect(); return r.width > 0 && parseFloat(getComputedStyle(e).fontSize) >= 20 && (e.innerText || '').trim() === 'Calendar home 1'; }).length""")
+    assert big == 1, f"title shown {big} times at {width}"
+
+
+@pytest.mark.parametrize("width", WIDTHS)
+@pytest.mark.parametrize("path", ["/entities", "/settings/archived"])
+def test_settings_help_sits_in_the_title(host_page, calendar_origin, path, width):
+    _visit(host_page, calendar_origin, path, width)
+    assert host_page.locator("main h1 .help-tip-btn").count() == 1
+    assert host_page.locator(".settings-help-line").count() == 0
