@@ -866,6 +866,20 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       button.addEventListener("click", function () { setDrawer(false); });
     });
     if (claimNode(window, "initNavigation")) window.addEventListener("resize", function () { setDrawer(false); });
+    // Self-heal: a rail left inert while the window is wide would swallow every click.
+    function healInert() {
+      var rail = document.getElementById("app-sidebar");
+      var main = document.getElementById("main-content");
+      if (isCompact() || document.body.classList.contains("nav-open")) return;
+      if (rail && rail.inert) rail.inert = false;
+      if (main && main.inert) main.inert = false;
+    }
+    if (claimNode(document, "initNavigationHeal")) {
+      document.addEventListener("pointerdown", healInert, true);
+      document.addEventListener("visibilitychange", healInert);
+      window.addEventListener("focus", healInert);
+      window.addEventListener("pageshow", healInert);
+    }
     setDrawer(false);
   }
 
