@@ -60,11 +60,12 @@ def test_wizard_sits_in_the_lane(base, width, collapsed):
             page.goto(f"{base}/apartments/{apartment}/setup/{step}?lang=en")
             page.wait_for_selector(".ui-page[data-body-kind='form'] .setup-wizard", timeout=30000)
             assert page.locator("main h1").count() == 1, step
-            assert page.locator(".ui-ph h1").is_visible(), step
+            assert page.locator(".setup-wizard h1").is_visible(), step
             assert page.locator(".setup-wizard-exit .ui-btn").is_visible(), step
             size = page.evaluate("({sw: document.documentElement.scrollWidth, iw: innerWidth})")
             assert size["sw"] <= size["iw"], (step, width, size)
-            if width < 1024:
+            # v2 pages use the v2 shell, which has no .wrap.with-sidebar; tests/test_0800_v2_remaining_pages_browser.py checks its geometry
+            if width < 1024 or page.locator(".wrap.with-sidebar").count() == 0:
                 continue
             rail_w = 64 if collapsed else 240
             page.wait_for_function(  # app.css animates margin-left for 0.26 s

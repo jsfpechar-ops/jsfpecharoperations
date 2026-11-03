@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from datetime import date
 from typing import Any, Dict, List
+import threading
+import time
 
 import pytest
 from fastapi.testclient import TestClient
@@ -154,6 +156,45 @@ def test_resend_reuses_the_active_link(owner, fake_link):
     assert first == second
     assert len(fake_link.created) == 1
     assert fake_link.retrieved == ["plink_test_1"]
+
+
+def test_overlapping_send_creates_only_one_stripe_link(owner, fake_link):
+    """Two Send clicks at once must not mint two live Stripe links."""
+    _complete_account(owner)
+    rid = _draft(owner, rail="card")
+    hold = threading.Event()
+    in_create = threading.Event()
+    original = fake_link.create
+
+    def gated_create(*args, **kwargs):
+        in_create.set()
+        assert hold.wait(2), "test gate was not released"
+        return original(*args, **kwargs)
+
+    fake_link.create = gated_create
+    results: list = [None, None]
+    errors: list = [None, None]
+
+    def run(index: int) -> None:
+        try:
+            results[index] = payment_links.send(rid)
+        except Exception as exc:
+            errors[index] = exc
+
+    first = threading.Thread(target=run, args=(0,))
+    second = threading.Thread(target=run, args=(1,))
+    first.start()
+    assert in_create.wait(2), "first send never reached Stripe create"
+    second.start()
+    time.sleep(0.2)
+    hold.set()
+    first.join(5)
+    second.join(5)
+    assert errors == [None, None]
+    assert results[0] == results[1] == "https://buy.stripe.com/test_1"
+    assert len(fake_link.created) == 1
+    row = payment_request.get(rid)
+    assert row["stripe_payment_link_id"] == "plink_test_1"
 
 
 def test_resend_creates_new_link_when_old_inactive(owner, fake_link):

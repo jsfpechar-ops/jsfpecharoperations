@@ -14,6 +14,7 @@ Read this file, then [status](docs/context/status.md). Open nothing else unless 
 - **100k tokens per chat, orchestrator or Haiku.** Checkpoint at 60k: stop new work and hand over. Also stop after 25 tool calls (Haiku 30). What happens next: [at the cap](docs/context/workflow.md#when-haiku-reaches-the-cap).
 - **No audit and no full test suite** unless the owner asks in the current chat. Run only the [test-map](docs/context/test-map.md) row for what changed. CI runs the rest.
 - End every command with `| tail -30` (or `head -50`). Never print a full log.
+- A hook blocks whole-file reads over 350 lines: grep, then read a range of 150 lines or fewer. Owner override: `ALLOW_FULL_READ=1`.
 
 ## Hard rules (full text: [rules](docs/context/rules.md))
 
@@ -26,6 +27,7 @@ Read this file, then [status](docs/context/status.md). Open nothing else unless 
 7. Template, CSS or guest-page change: the browser and geometry tests for the changed pages pass with 0 skipped, plus one 390 px screenshot per changed page in the report.
 8. Never push to `main`. Merge only with `scripts/merge-pr-on-green.sh`. Production deploy is manual, done by the owner.
 9. Copy: one explanation lives in one place; no sentence the button already says; write "no tracking cookies", never "no cookies".
+10. UX gate (owner does not review UX; you do): a PR touching a host page merges only after you ran `test_layout_lint_browser.py` green, opened the 390/768/1280 screenshots of each touched page, and wrote per page in the PR what you saw. Never ask the owner, never silence a finding. [Steps](docs/context/workflow.md#ux-gate).
 
 ## Test
 

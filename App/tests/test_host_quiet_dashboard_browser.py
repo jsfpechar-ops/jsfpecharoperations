@@ -188,13 +188,13 @@ CARD_JS = """() => {
   const style = el => getComputedStyle(el);
   const shown = el => el.offsetParent !== null;
   const items = [...card.querySelectorAll('.card.need')].filter(shown).map(li => {
-    const copy = li.querySelector('.h');
+    const copy = li.querySelector('.needs-you-copy');
     const buttons = [...li.querySelectorAll('.needs-you-actions a, .needs-you-actions button')].filter(shown);
     return {
       kind: li.dataset.needsYou, tone: li.dataset.tone, text: copy.textContent.trim().slice(0, 80), box: rect(li),
       border: [style(li).borderTopStyle, parseFloat(style(li).borderTopWidth), parseFloat(style(li).borderLeftWidth), style(li).borderLeftColor],
       radius: parseFloat(style(li).borderTopLeftRadius), shadow: style(li).boxShadow,
-      icon: style(li.querySelector('.ic')).backgroundColor, iconBox: rect(li.querySelector('.ic')),
+      icon: getComputedStyle(li.querySelector('.needs-you-copy strong'), '::before').backgroundColor, iconBox: {l: 0, r: 0, t: 0, b: 0, w: 0, h: 0},  // 0902: the tone is a dot before the title, no tile
       copy: rect(copy), copyOverflow: copy.scrollWidth > copy.clientWidth + 1,
       buttons: buttons.map(b => Object.assign(rect(b), {text: b.innerText.trim(), clipped: b.scrollWidth > b.clientWidth + 1})),
     };
@@ -262,7 +262,7 @@ def _check_card(geo, width, label):
         # Same icon-tile check at every width: square, inside the card. The v2 tile measures 48 px
         # at 360 and 1280 (the old 44 px figure is stale), so the size only has to sit in 40-52 px.
         icon = item["iconBox"]
-        if width >= 1024:
+        if False:  # 0902: rows have no icon tile
             assert 40 <= icon["w"] <= 52 and 40 <= icon["h"] <= 52, where + (icon,)
             assert abs(icon["w"] - icon["h"]) <= 1, where + (icon,)
             assert icon["l"] >= box["l"] - 0.5 and icon["r"] <= box["r"] + 0.5, where + (icon,)
@@ -292,7 +292,7 @@ def _check_card(geo, width, label):
 
 def _check_focus(page, label):
     page.keyboard.press("Tab")
-    button = page.locator("#needs-action .todo .needs-you-actions .btn").first
+    button = page.locator("#needs-action .needs-you-actions .btn").first
     button.focus()
     ring = button.evaluate("el => [getComputedStyle(el).outlineStyle, parseFloat(getComputedStyle(el).outlineWidth)]")
     assert ring[0] != "none" and ring[1] >= 2, (label, ring)
@@ -356,7 +356,7 @@ def test_dashboard_rich_needs_you_order_cap_and_geometry(dashboard_rich_host, ba
                     assert tones, label
                     ranks = [TONE_RANK[tone] for tone in tones]
                     assert ranks == sorted(ranks), (label, tones)
-                    first = page.locator("#needs-action > .todo > .card.need").first
+                    first = page.locator("#needs-action .needs-you-list:first-of-type > .card.need").first
                     assert first.get_attribute("data-needs-you-stay") == str(overdue), label
                     assert first.get_attribute("data-tone") == "red", label
                     ready_line = page.locator(f'.card.need[data-needs-you-stay="{ready}"]')
@@ -366,9 +366,9 @@ def test_dashboard_rich_needs_you_order_cap_and_geometry(dashboard_rich_host, ba
                         assert page.locator(f'.card.need[data-needs-you-stay="{later}"]').count() == 0, label
 
                     # At most five lines open; the rest behind one "Show N more".
-                    cap = 2 if width < 1024 else 4  # 0722: phone shows two needs-you cards
+                    cap = 5  # 0902: one list at every width, five rows open
                     total = len(tones)
-                    shown = page.locator("#needs-action > .todo > .card.need").evaluate_all("nodes => nodes.filter(n => n.offsetParent).length")
+                    shown = page.locator("#needs-action .needs-you-list:first-of-type > .card.need").evaluate_all("nodes => nodes.filter(n => n.offsetParent).length")
                     assert shown == min(total, cap), (label, shown, total)
                     more = page.locator(".needs-you-more:not([data-paste-check]) > summary")
                     assert more.count() == (1 if total > cap else 0), label
@@ -378,7 +378,7 @@ def test_dashboard_rich_needs_you_order_cap_and_geometry(dashboard_rich_host, ba
                     if paste_line.count() and paste_line.first.is_visible():
                         how = paste_line.first.locator("[data-paste-check] > summary")
                         assert how.is_visible(), label
-                        how_box, copy_box = how.bounding_box(), paste_line.first.locator(".h").bounding_box()
+                        how_box, copy_box = how.bounding_box(), paste_line.first.locator(".needs-you-copy > strong").bounding_box()
                         assert how_box["y"] >= copy_box["y"] + copy_box["height"] - 1, (label, how_box, copy_box)
                     assert page.locator('.card.need[data-needs-you="setup"]', has_text="(demo)").count() == 0, label
 

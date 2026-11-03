@@ -1,9 +1,9 @@
 {% extends "leon_setup/_layout.html" %}
 {#- 0404 placeholder: 0405 fills this step with the test chat. -#}
 {% block wizard_content %}
-<p class="setup-wizard-lede">{{ t('leon_setup.try.lede') }} {{ t('leon_setup.try.limit') }}</p>
+<div class="setup-wizard-lede">{{ t('leon_setup.try.lede') }} {{ t('leon_setup.try.limit') }}</div>
 {% if not live %}
-<p class="setup-wizard-instruction">{{ t('leon_page.not_live') }}</p>
+<div class="setup-wizard-instruction">{{ t('leon_page.not_live') }}</div>
 {% else %}
 <div class="havel-card" data-leon-try data-leon-try-url="/apartments/{{ apartment.id }}/leon/setup/try">
   <ol data-leon-try-log aria-live="polite">

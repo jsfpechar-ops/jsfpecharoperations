@@ -55,6 +55,8 @@ def test_panel_above_calendar(calendar_workspace, calendar_origin):
 
         page.evaluate(
             """() => {
+                // 0877: the calendar is the first block on the page now, so add room above it to scroll it under the panel.
+                document.body.style.paddingTop = '1200px';
                 const h = document.querySelector('.cal-gantt-header');
                 const d = document.getElementById('havel-sheet').getBoundingClientRect();
                 window.scrollBy(0, h.getBoundingClientRect().top - (d.top + d.height / 2));

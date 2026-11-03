@@ -531,7 +531,7 @@ def register(
         "signup_utm_source": attr.get("utm_source"),
         "signup_utm_medium": attr.get("utm_medium"),
         "signup_utm_campaign": attr.get("utm_campaign"),
-        # Legal position 2: the sign-up refusal of setup-tip e-mails.
+        # Legal position 2: tips and news only if the unticked sign-up box was ticked.
         "onboarding_emails_opt_out": 1 if onboarding_opt_out else 0,
         "onboarding_emails_opt_out_at": now if onboarding_opt_out else None,
     }

@@ -1,9 +1,12 @@
 {% extends "host_page.html" %}
+{% set v2 = true %}
+{% block head_extra %}<link rel="stylesheet" href="/static/admin2.css?v=20261102-0893o"><link rel="stylesheet" href="/static/admin2-system.css?v=20261102-0894e">{% endblock %}
+{% from "_components.html" import tip_label, help_tip with context %}
 {% set nav = 'operations' %}
 {% set body_kind = 'detail' %}
 {% from "_ui_layout.html" import ui_section_tabs with context %}
 {% block title %}{{ t('ops.title') }}{% endblock %}
-{% block meta %}{{ t('ops.lede') }}{% endblock %}
+{% block page_title %}{{ tip_label(self.title(), 'admin-ops-help', t('ops.lede'), tag='span') }}{% endblock %}
 {% block tabs %}{{ ui_section_tabs() }}{% endblock %}
 {% block body %}
 {% macro age(minutes) -%}
@@ -17,8 +20,7 @@
 {%- endmacro %}
 
 <details class="ui-section" id="ops-filings"{% if ops.filings.count or ops.stuck.count %} open{% endif %}>
-  <summary><h2>{{ t('ops.filings.title') }} <span class="ui-badge {{ 'ui-badge-action' if ops.filings.count else 'ui-badge-done' }}">{{ ops.filings.count }}</span></h2></summary>
-  <p class="ui-sub">{{ t('ops.filings.help') }}</p>
+  <summary><h2><span class="tip-label">{{ t('ops.filings.title') }}{{ help_tip('ops-filings-help', t('ops.filings.help')) }}</span> <span class="ui-badge {{ 'ui-badge-action' if ops.filings.count else 'ui-badge-done' }}">{{ ops.filings.count }}</span></h2></summary>
   {% if ops.filings.rows %}
   <table class="ui-table ui-table-stack">
     <thead><tr><th>{{ t('ops.col.workspace') }}</th><th>{{ t('ops.col.property') }}</th><th>{{ t('ops.col.stay') }}</th><th>{{ t('ops.col.state') }}</th><th>{{ t('ops.col.age') }}</th></tr></thead>
@@ -54,8 +56,7 @@
 </details>
 
 <details class="ui-section" id="ops-feeds"{% if ops.feeds.count %} open{% endif %}>
-  <summary><h2>{{ t('ops.feeds.title') }} <span class="ui-badge {{ 'ui-badge-attention' if ops.feeds.count else 'ui-badge-done' }}">{{ ops.feeds.count }}</span></h2></summary>
-  <p class="ui-sub">{{ t('ops.feeds.help') }}</p>
+  <summary><h2>{{ tip_label(t('ops.feeds.title'), 'ops-feeds-help', t('ops.feeds.help'), tag='span') }} <span class="ui-badge {{ 'ui-badge-attention' if ops.feeds.count else 'ui-badge-done' }}">{{ ops.feeds.count }}</span></h2></summary>
   {% if ops.feeds.rows %}
   <table class="ui-table ui-table-stack">
     <thead><tr><th>{{ t('ops.col.workspace') }}</th><th>{{ t('ops.col.property') }}</th><th>{{ t('ops.col.feed') }}</th><th>{{ t('ops.col.state') }}</th><th>{{ t('ops.col.last_sync') }}</th></tr></thead>
@@ -75,8 +76,7 @@
 </details>
 
 <details class="ui-section" id="ops-jobs"{% if ops.jobs.count %} open{% endif %}>
-  <summary><h2>{{ t('ops.jobs.title') }} <span class="ui-badge {{ 'ui-badge-action' if ops.jobs.count else 'ui-badge-done' }}">{{ ops.jobs.count }}</span></h2></summary>
-  <p class="ui-sub">{{ t('ops.jobs.help') }}</p>
+  <summary><h2>{{ tip_label(t('ops.jobs.title'), 'ops-jobs-help', t('ops.jobs.help'), tag='span') }} <span class="ui-badge {{ 'ui-badge-action' if ops.jobs.count else 'ui-badge-done' }}">{{ ops.jobs.count }}</span></h2></summary>
   <table class="ui-table ui-table-stack">
     <thead><tr><th>{{ t('ops.col.job') }}</th><th>{{ t('ops.col.interval') }}</th><th>{{ t('ops.col.last_ok') }}</th><th>{{ t('ops.col.state') }}</th></tr></thead>
     <tbody>
@@ -97,8 +97,7 @@
 </details>
 
 <details class="ui-section" id="ops-mail"{% if ops.mail.count %} open{% endif %}>
-  <summary><h2>{{ t('ops.mail.title') }} <span class="ui-badge {{ 'ui-badge-attention' if ops.mail.count else 'ui-badge-done' }}">{{ ops.mail.count }}</span></h2></summary>
-  <p class="ui-sub">{{ t('ops.mail.help') }}</p>
+  <summary><h2>{{ tip_label(t('ops.mail.title'), 'ops-mail-help', t('ops.mail.help'), tag='span') }} <span class="ui-badge {{ 'ui-badge-attention' if ops.mail.count else 'ui-badge-done' }}">{{ ops.mail.count }}</span></h2></summary>
   {% if ops.mail.rows %}
   <table class="ui-table ui-table-stack">
     <thead><tr><th>{{ t('ops.col.mail') }}</th><th>{{ t('ops.col.kind') }}</th><th>{{ t('ops.col.state') }}</th><th>{{ t('ops.col.attempts') }}</th><th>{{ t('ops.col.age') }}</th></tr></thead>
@@ -119,15 +118,13 @@
 
 {% if ops.ttlock.enabled %}
 <details class="ui-section" id="ops-ttlock"{% if ops.ttlock.failed or ops.ttlock.used >= ops.ttlock.limit * 0.8 %} open{% endif %}>
-  <summary><h2>{{ t('ops.ttlock.title') }} <span class="ui-badge {{ 'ui-badge-attention' if ops.ttlock.used >= ops.ttlock.limit * 0.8 else 'ui-badge-done' }}">{{ ops.ttlock.used }} / {{ ops.ttlock.limit }}</span></h2></summary>
-  <p class="ui-sub">{{ t('ops.ttlock.help') }}</p>
+  <summary><h2>{{ tip_label(t('ops.ttlock.title'), 'ops-ttlock-help', t('ops.ttlock.help'), tag='span') }} <span class="ui-badge {{ 'ui-badge-attention' if ops.ttlock.used >= ops.ttlock.limit * 0.8 else 'ui-badge-done' }}">{{ ops.ttlock.used }} / {{ ops.ttlock.limit }}</span></h2></summary>
   <p class="ui-sub">{{ t('ops.ttlock.counts', issued=ops.ttlock.issued, failed=ops.ttlock.failed) }} · {{ t('ops.ttlock.live') if ops.ttlock.live else t('ops.ttlock.test_mode') }}</p>
 </details>
 {% endif %}
 
 <details class="ui-section" id="ops-alerts"{% if ops.alerts.count %} open{% endif %}>
-  <summary><h2>{{ t('ops.alerts.title') }} <span class="ui-badge {{ 'ui-badge-attention' if ops.alerts.count else 'ui-badge-done' }}">{{ ops.alerts.count }}</span></h2></summary>
-  <p class="ui-sub">{{ t('ops.alerts.help') }}</p>
+  <summary><h2>{{ tip_label(t('ops.alerts.title'), 'ops-alerts-help', t('ops.alerts.help'), tag='span') }} <span class="ui-badge {{ 'ui-badge-attention' if ops.alerts.count else 'ui-badge-done' }}">{{ ops.alerts.count }}</span></h2></summary>
   {% if ops.alerts.rows %}
   <table class="ui-table ui-table-stack">
     <thead><tr><th>{{ t('ops.col.kind') }}</th><th>{{ t('ops.col.level') }}</th><th>{{ t('ops.col.count') }}</th><th>{{ t('ops.col.oldest') }}</th></tr></thead>
@@ -145,8 +142,7 @@
   {% else %}<p class="ui-sub">{{ t('ops.none') }}</p>{% endif %}
 </details>
 <details class="ui-section" id="ops-havel"{% if havel_ops.gaps %} open{% endif %}>
-  <summary><h2>{{ t('ops.havel.title') }}</h2></summary>
-  <p class="ui-sub">{{ t('ops.havel.help') }}</p>
+  <summary><h2>{{ tip_label(t('ops.havel.title'), 'ops-havel-help', t('ops.havel.help'), tag='span') }}</h2></summary>
   <p class="ui-sub">{{ t('ops.havel.spend', spent=havel_ops.spent, cap=havel_ops.cap, percent=havel_ops.percent) }}{% if not havel_ops.enabled %} · {{ t('ops.havel.off') }}{% endif %}</p>
   <h3>{{ t('ops.havel.how_title') }}</h3>
   <ol>
@@ -187,9 +183,8 @@
 
 {% if review_alerts %}
 <div class="ui-section">
-  <h2>{{ t('incidents.review_title') }}</h2>
-  <p class="ui-sub">{{ t('incidents.review_help') }}</p>
-  <ul>
+  <h2>{{ tip_label(t('incidents.review_title'), 'incidents-review-help', t('incidents.review_help'), tag='span') }}</h2>
+    <ul>
     {% for alert in review_alerts %}
     <li>{{ alert.message }} <span class="ui-sub">{{ alert.detail }}</span></li>
     {% endfor %}
@@ -260,8 +255,7 @@
     <div class="ui-btn-group"><button class="ui-btn ui-btn-secondary" type="submit">{{ t('incidents.save') }}</button></div>
   </form>
   <details>
-    <summary>{{ t('incidents.draft_title') }}</summary>
-    <p class="ui-sub">{{ t('incidents.draft_help') }}</p>
+    <summary>{{ tip_label(t('incidents.draft_title'), 'incidents-draft-help', t('incidents.draft_help'), tag='span') }}</summary>
     <pre class="ui-sub">{{ row.draft }}</pre>
   </details>
 </div>

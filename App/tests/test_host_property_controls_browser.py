@@ -149,11 +149,13 @@ def test_property_and_operator_controls_render_and_work_in_browser(host, base):
               return { input: Math.round(input.getBoundingClientRect().top),
                        labelBottom: Math.round(label.getBoundingClientRect().bottom) };
             })""")
-            assert len({item["input"] for item in label_input_tops}) == 1
+            # 0872: on the v2 create page the four fields sit in two rows of two; inputs in one row share a top.
+            tops = [item["input"] for item in label_input_tops]
+            assert all(tops.count(top) >= 2 for top in tops), tops
             second_row = page.locator("#address .property-address-grid").nth(1)
             second_row_tops = second_row.evaluate("""(row) => [...row.querySelectorAll('input')].map((input) =>
               Math.round(input.getBoundingClientRect().top))""")
-            assert len(set(second_row_tops)) == 1
+            assert second_row_tops.count(second_row_tops[0]) >= 2, second_row_tops  # 0872: two per row on the v2 page
 
             page.goto(f"{base}/entities?lang={lang}")
             _capture_review(page, f"operators-1280-{lang}")

@@ -1,3 +1,4 @@
+{% from "_components.html" import help_tip with context %}
 {#- Task 0075: the one definition of a business's invoice defaults (bank
     account, BIC, VAT mode, registry entry, numbering and due days). Import
     "with context". These values seed new invoices only; issued invoices keep
@@ -44,16 +45,14 @@
                value="{{ entity.invoice_prefix or '' }}">
       </div>
       <div class="field">
-        <label for="invoice_next_number">{{ t('entities.invoice_next.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
+        <div class="field-label-row"><label for="invoice_next_number">{{ t('entities.invoice_next.label') }} <span class="opt">{{ t('common.optional') }}</span>{{ help_tip('invoice-next-number-help', t('entities.invoice_next.hint')) }}</label></div>
         <input type="number" id="invoice_next_number" name="invoice_next_number" min="1" inputmode="numeric"
                value="{{ entity.invoice_next_number if entity.invoice_next_number else '' }}">
-        <div class="hint">{{ t('entities.invoice_next.hint') }}</div>
-      </div>
+              </div>
       <div class="field">
         <label for="invoice_due_days">{{ t('entities.invoice_due.label') }}</label>
         <input type="number" id="invoice_due_days" name="invoice_due_days" min="0" max="365" inputmode="numeric"
                value="{{ entity.invoice_due_days if entity.invoice_due_days is not none else 14 }}">
       </div>
     </div>
-    <p class="hint">{{ t('entities.invoice.snapshot_hint') }}</p>
-{% endmacro %}
+    {% endmacro %}

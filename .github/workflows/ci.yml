@@ -378,7 +378,7 @@ jobs:
         id: files
         run: |
           files="$(printf '%s\n' tests/*_browser.py tests/test_guest_browser_e2e.py tests/test_host_geometry.py \
-            tests/test_wp28_geometry.py tests/test_onboarding_wizard_survival.py | sort -u \
+            tests/test_wp28_geometry.py tests/test_onboarding_wizard_survival.py tests/test_fee_setup_compatibility.py | sort -u \
             | awk -v n=4 -v s=${{ matrix.shard }} '(NR - 1) % n == s - 1' | tr '\n' ' ')"
           echo "files=${files}" >> "$GITHUB_OUTPUT"
           echo "Shard ${{ matrix.shard }}: ${files}"
@@ -446,6 +446,16 @@ jobs:
             ${{ runner.temp }}/browser-shots
             docs/tasks/0102-evidence/
           if-no-files-found: warn
+
+      - name: Screenshot links in the job summary
+        if: always()
+        run: |
+          {
+            echo "### Layout screenshots (shard ${{ matrix.shard }})"
+            echo "Download the \`browser-shots-${{ matrix.shard }}\` artifact from this run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo "Per host page at 390, 768 and 1280 px: \`layout-lint/<page>-<width>.png\`; findings: \`layout-lint/layout-lint-report.json\`."
+            echo "AGENTS.md UX gate: open them before you merge a UX PR."
+          } >> "$GITHUB_STEP_SUMMARY"
 
   browser:
     # The one name the deploy gate and the main ruleset require.

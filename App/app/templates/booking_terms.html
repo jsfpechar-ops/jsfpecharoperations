@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{% if lang == 'en' %}Booking terms{% else %}Podmínky rezervace{% endif %} · UbyHost{% endblock %}
+{% block head_extra %}
+<meta name="robots" content="noindex">
+{% include "_pp_booking_css.html" %}
+{% endblock %}
+{% block content %}
+<main class="pp-bk pp-bk-page">
+  <nav class="pp-bk-lang" aria-label="{{ t('pp.lang.label') }}">
+    <a href="/terms/booking?lang=cs" hreflang="cs" lang="cs"{% if lang == 'cs' %} aria-current="true"{% endif %}>CS</a>
+    <a href="/terms/booking?lang=en" hreflang="en" lang="en"{% if lang == 'en' %} aria-current="true"{% endif %}>EN</a>
+  </nav>
+  <section class="pp-bk-card">
+    {% if lang == 'en' %}{% include "_booking_terms_en.html" %}{% else %}{% include "_booking_terms_cs.html" %}{% endif %}
+  </section>
+</main>
+{% endblock %}

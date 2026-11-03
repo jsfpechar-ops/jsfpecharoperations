@@ -23,6 +23,7 @@
     </form>
     {% endif %}
     {% if published %}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="/p/{{ slug }}" target="_blank">{{ t('payments.page.preview') }}</a>{% endif %}
+    <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/apartments/{{ apartment.id }}/booking-site">{{ t('bsite.title') }}</a>
   </p>
   {% if published %}
   <form method="post" action="/apartments/{{ apartment.id }}/page" class="ui-form">

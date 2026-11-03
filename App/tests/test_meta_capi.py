@@ -443,7 +443,7 @@ def test_the_settings_page_offers_the_meta_toggle():
     email = f"page@{DOMAIN}"
     client = _signed_up(email)
     db.execute("UPDATE user_account SET totp_enabled = 1 WHERE email = ?", (email,))
-    page = client.get("/settings?lang=en")
+    page = client.get("/settings/data?lang=en")
     if page.status_code != 200:
         pytest.skip(f"settings page needs more onboarding here ({page.status_code})")
     assert "Use my sign-up to measure UbyHost&#39;s Facebook and Instagram campaigns" in page.text

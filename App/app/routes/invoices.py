@@ -142,7 +142,7 @@ def _stay_options(request: Request):
     for row in rows:
         name = (row["internal_name"] or "").strip() or (row["uby_name"] or "").strip()
         dates = validation.fmt_date_range(row["date_from"], row["date_to"])
-        options.append({"id": row["id"], "label": f"{name}, {dates}"})
+        options.append({"id": row["id"], "label": f"{name}, {dates}", "date_from": str(row["date_from"])[:10]})
     return options
 
 
@@ -177,6 +177,31 @@ def _merge_guest_fill(state: Dict[str, Any], guest) -> None:
             state[key] = value
 
 
+def _drop_guest_suggestion(state: Dict[str, Any], guest) -> None:
+    """0843: blank buyer slots that still hold the guest's suggestion, so ARES can fill them."""
+    if not guest:
+        return
+    for key, value in _guest_buyer_values(guest).items():
+        if key != "buyer_country" and value and (state.get(key) or "").strip() == value:
+            state[key] = ""
+
+
+QUICK_STAYS = 6
+
+
+def _quick_stays(options):
+    """0849: started stays without a live invoice, newest first, as one-tap links."""
+    today = claim.prague_today().isoformat()
+    quick = []
+    for option in options[:40]:
+        if option["date_from"] > today or invoices.active_invoice_for_stay(option["id"]):
+            continue
+        quick.append(option)
+        if len(quick) == QUICK_STAYS:
+            break
+    return quick
+
+
 def _last_stay_price_hint(request: Request, apartment_id: int) -> str:
     """Last issued accommodation unit price on this property, for a placeholder."""
     row = db.query_one(
@@ -196,16 +221,38 @@ def _last_stay_price_hint(request: Request, apartment_id: int) -> str:
     return f"{amount:.2f}".rstrip("0").rstrip(".")
 
 
+PAID_VIA_CHOICES = ("direct_transfer", "cash", "airbnb", "booking")
+
+
+def _remember_paid_via(request: Request, entity_id: int, values: Dict[str, Any]) -> None:
+    """0888: a new invoice starts with the payment method of this operator's last paid invoice."""
+    row = db.query_one(
+        "SELECT paid_via FROM invoice "
+        f"WHERE legal_entity_id = ? AND {db.null_safe_eq('owner_user_id')} "
+        "AND kind = 'invoice' AND paid_via IS NOT NULL AND paid_via != '' "
+        "ORDER BY issue_date DESC, id DESC LIMIT 1",
+        (entity_id, access.owner_id(request)),
+    )
+    if not row:
+        return
+    if row["paid_via"] in PAID_VIA_CHOICES:
+        values["paid_via"] = row["paid_via"]
+    else:
+        values["paid_via_custom"] = row["paid_via"][:60]
+
+
 def _form_state(request, form, entity) -> Dict[str, Any]:
     """Reshape a failed POST so the 422 render loses nothing the host typed."""
     state = {key: _form_str(form, key) for key in (
         "stay_price", "stay_vat_rate", "reservation_id",
         "buyer_name", "buyer_street", "buyer_city", "buyer_zip", "buyer_country",
         "buyer_ico", "buyer_dic", "buyer_email", "paid_via", "paid_via_custom",
-        "due_date", "duzp", "note",
+        "due_date", "duzp", "note", "buyer_kind",
         "legal_entity_id",
     )}
-    state["already_paid"] = "1" if form.get("already_paid") else "0"
+    # Radio value "0" (Payment requested) is truthy in Python; only "1"/"on"
+    # mean paid. A 422 or fill-* re-render must keep the host's choice.
+    state["already_paid"] = "1" if _form_str(form, "already_paid") in ("1", "on") else "0"
     state["lang"] = _form_str(form, "lang")
     state["item_rows"] = [
         {key: row[key] for key in (
@@ -217,14 +264,25 @@ def _form_state(request, form, entity) -> Dict[str, Any]:
 
 
 def _form_context(request, entities, entity, *, errors=None, values=None, stay=None):
+    fresh = not values
     values = dict(values or {})
-    if stay and not values and stay["reservation"]["guest_email"]:
+    if stay and fresh and stay["reservation"]["guest_email"]:
         values["buyer_email"] = stay["reservation"]["guest_email"]
     lang = "cs" if _lang(request) == "cs" else "en"
     lead_guest = _lead_guest(stay["reservation"]) if stay else None
+    guest_prefilled = False
+    if stay and fresh and lead_guest:
+        # 0836: suggest the lead guest as buyer on first open; the host checks before issuing.
+        _merge_guest_fill(values, lead_guest)
+        guest_prefilled = bool(values.get("buyer_name"))
+    buyer_kind = values.get("buyer_kind")
+    if buyer_kind not in ("guest", "company"):
+        buyer_kind = "company" if str(values.get("buyer_ico") or "").strip() else "guest"
     price_hint = ""
     if stay:
         price_hint = _last_stay_price_hint(request, stay["reservation"]["apartment_id"])
+    if stay and entity and not any(key in values for key in ("already_paid", "paid_via", "paid_via_custom")):
+        _remember_paid_via(request, entity["id"], values)
     return {
         "nav": "invoices",
         "entities": entities,
@@ -237,6 +295,8 @@ def _form_context(request, entities, entity, *, errors=None, values=None, stay=N
         "stay_label": invoices.stay_label(stay["property_name"], stay["reservation"], lang) if stay else "",
         "extra_kinds": invoices.EXTRA_KINDS,
         "show_fill_guest": bool(lead_guest),
+        "guest_prefilled": guest_prefilled,
+        "buyer_kind": buyer_kind,
         "stay_price_hint": price_hint,
     }
 
@@ -393,7 +453,8 @@ def invoice_new(request: Request):
             "invoice_stay_picker.html",
             {
                 "nav": "invoices",
-                "stays": _stay_options(request),
+                "stays": (stays := _stay_options(request)),
+                "quick_stays": _quick_stays(stays),
                 "invoice_details_url": access.invoice_details_url(request),
             },
         )
@@ -768,6 +829,8 @@ async def invoice_issue(request: Request):
         return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
     if form.get("fill_buyer_from_register"):
         values = _form_state(request, form, entity)
+        if values.get("buyer_kind") == "company":
+            _drop_guest_suggestion(values, _lead_guest(stay["reservation"]))
         meta = _buyer_ares_fill(request, form, values)
         context = _form_context(request, entities, entity, values=values, stay=stay)
         context.update(meta)

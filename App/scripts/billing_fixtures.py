@@ -26,17 +26,17 @@ MONTHLY_TOTALS = (0, 6, 7, 13, 18, 25, 30, 1194, 1206)
 
 def build():
     quotes = []
-    for n, plan, interval, ttlock, whitelabel, founder, discount in itertools.product(
+    for n, plan, interval, ttlock, whitelabel, discount in itertools.product(
         APARTMENTS, billing.PLANS, billing.INTERVALS, (False, True), (False, True),
-        (False, True), DISCOUNTS,
+        DISCOUNTS,
     ):
         expected = billing.quote(
             n, plan, interval, ttlock=ttlock, whitelabel=whitelabel,
-            founder=founder, discount_percent=discount,
+            discount_percent=discount,
         )
         quotes.append({
             "apartments": n, "plan": plan, "interval": interval,
-            "ttlock": ttlock, "whitelabel": whitelabel, "founder": founder,
+            "ttlock": ttlock, "whitelabel": whitelabel,
             "discount_percent": discount, "expected": expected,
         })
     monthly = [

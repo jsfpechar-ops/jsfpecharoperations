@@ -28,7 +28,7 @@ def test_done_count_words_and_tick(host, monkeypatch):
     apt_id = flat["id"]
     client = host["client"]
     base = f"/apartments/{apt_id}/setup"
-    pattern = re.compile(r"(\d+) of 8 done")
+    pattern = re.compile(r"(\d+) of 4 done")
 
     # A complete apartment already counts some steps: the words and the tick show it.
     shown = client.get(f"{base}/calendar?lang=en")
@@ -41,7 +41,7 @@ def test_done_count_words_and_tick(host, monkeypatch):
     monkeypatch.setattr(property_setup, "done_count", lambda *args, **kwargs: 0)
     zero = client.get(f"{base}/calendar?lang=en")
     assert zero.status_code == 200
-    assert "0 of 8 done" in zero.text
+    assert "0 of 4 done" in zero.text
     assert "setup-wizard-tick" not in zero.text
     monkeypatch.undo()
 

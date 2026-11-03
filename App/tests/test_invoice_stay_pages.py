@@ -201,3 +201,59 @@ def test_the_form_works_without_javascript_fields(host):
     assert 'name="item_kind"' in page.text
     assert 'name="reservation_id"' in page.text
     assert 'name="item_description" maxlength="60" required' not in page.text
+
+
+def test_picker_lists_an_uninvoiced_stay_as_one_tap(host):
+    _add_entity()
+    sid = make_stay(_owner())
+    page = host.get("/invoices/new?lang=en")
+    assert f'href="/invoices/new?reservation_id={sid}"' in page.text
+    assert "Recent stays without an invoice" in page.text
+
+
+def test_invoiced_stay_leaves_the_quick_list(host):
+    _add_entity()
+    sid = make_stay(_owner())
+    issued = host.post(
+        "/invoices",
+        data={"buyer_name": "Buyer", "already_paid": "1", "lang": "cs", **stay_form(sid)},
+        follow_redirects=False,
+    )
+    assert issued.status_code == 303
+    page = host.get("/invoices/new?lang=en")
+    assert f'href="/invoices/new?reservation_id={sid}"' not in page.text
+
+
+def test_future_stay_is_not_in_the_quick_list(host):
+    import secrets
+    from datetime import timedelta
+
+    from app import claim
+    from tests.invoice_stay_helper import UID_PREFIX
+
+    _add_entity()
+    past = make_stay(_owner())
+    apartment_id = db.query_one("SELECT apartment_id FROM reservation WHERE id = ?", (past,))["apartment_id"]
+    today = claim.prague_today()
+    now = db.utcnow()
+    db.execute(
+        "INSERT INTO reservation (apartment_id, source, status, date_from, date_to, uid, created_at, updated_at) "
+        "VALUES (?, 'manual', 'active', ?, ?, ?, ?, ?)",
+        (
+            apartment_id,
+            (today + timedelta(days=5)).isoformat(),
+            (today + timedelta(days=8)).isoformat(),
+            UID_PREFIX + "future-" + secrets.token_hex(4),
+            now,
+            now,
+        ),
+    )
+    page = host.get("/invoices/new?lang=en")
+    assert f'href="/invoices/new?reservation_id={past}"' in page.text
+    future_ids = [
+        row["id"]
+        for row in db.query("SELECT id FROM reservation WHERE apartment_id = ? AND date_from > ?", (apartment_id, today.isoformat()))
+    ]
+    assert future_ids
+    for fid in future_ids:
+        assert f'href="/invoices/new?reservation_id={fid}"' not in page.text

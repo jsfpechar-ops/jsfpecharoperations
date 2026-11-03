@@ -12,7 +12,11 @@ from fastapi.responses import PlainTextResponse, RedirectResponse, Response
 
 from ..templating import render
 
-from .. import config, db, property_page, rate_limit
+from datetime import date
+from urllib.parse import urlencode
+
+from .. import (booking_calendar, booking_cancel, booking_checkout, booking_manage, booking_site,
+                config, db, host_i18n, property_page, rate_limit)
 
 router = APIRouter()
 
@@ -22,6 +26,13 @@ _RATE_WINDOW = 3600
 
 def _off() -> bool:
     return config.STRIPE_MODE not in ("test", "live") and not config.PUBLIC_BASE_URL
+
+
+@router.get("/terms/booking")
+def booking_terms_page(request: Request):
+    """Public guest terms for card bookings (0900). Sets no cookie."""
+    return render(request, "booking_terms.html",
+                  {"show_nav": False, "lang": _page_lang(request)})
 
 
 @router.get("/p/{slug}")
@@ -44,11 +55,96 @@ def property_page_view(request: Request, slug: str):
         return Response(status_code=404)
     page["noindex"] = _noindex(apartment_id)
     page["og"] = _og(apartment_id, page)
+    lang = _page_lang(request)
     page["bookable"] = property_page.widget_ready(apartment_id)
-    # Owner decision (28 Oct): listing pages stay English — hosts' OTA copy is
-    # not translated per listing; no per-language variants, no cookie switch.
+    page["book_error"] = request.query_params.get("book", "")
+    if page["book_error"] not in BOOK_ERRORS:
+        page["book_error"] = ""
+    if page["bookable"]:
+        page["booking"] = _booking_view(slug, apartment_id, lang, request.query_params)
+    # Only the page's own words are translated (owner decision 2 Nov 2026,
+    # booking site v1); the host's listing copy stays verbatim.
     return render(request, "property_page.html",
-                  {"page": page, "show_nav": False, "lang": "en"})
+                  {"page": page, "show_nav": False, "lang": lang})
+
+
+def _page_lang(request: Request) -> str:
+    """?lang=cs|en, then the saved language cookie, then Czech. Sets no cookie."""
+    for value in (request.query_params.get("lang"), request.cookies.get(host_i18n.LANG_COOKIE)):
+        if value in ("cs", "en"):
+            return value
+    return "cs"
+
+
+def _href(slug: str, lang: str, ym: tuple, date_from: str = "", date_to: str = "",
+          guests: int = 0) -> str:
+    query = {"lang": lang, "month": f"{ym[0]}-{ym[1]:02d}"}
+    if date_from:
+        query["date_from"] = date_from
+    if date_to:
+        query["date_to"] = date_to
+    if guests:
+        query["guests"] = str(guests)
+    return f"/p/{slug}?{urlencode(query)}#book"
+
+
+def _month_param(value: str) -> tuple:
+    today = booking_site._now(None).date()
+    low = (today.year, today.month)
+    high = booking_calendar.add_months(low[0], low[1], booking_calendar.HORIZON_MONTHS)
+    try:
+        year, month = (int(part) for part in str(value).split("-"))
+        date(year, month, 1)
+    except ValueError:
+        return low
+    return (year, month) if low <= (year, month) <= high else low
+
+
+def _short_day(iso: str, lang: str) -> str:
+    day = booking_calendar.parse_day(iso)
+    if day is None:
+        return ""
+    return f"{day.day}. {day.month}." if lang == "cs" else day.isoformat()
+
+
+def _booking_view(slug: str, apartment_id: int, lang: str, params) -> dict:
+    """Everything the booking card shows, from the query string (no JS)."""
+    s = booking_site.settings(apartment_id)
+    ym = _month_param(params.get("month", ""))
+    date_from = str(params.get("date_from") or "")[:10]
+    date_to = str(params.get("date_to") or "")[:10]
+    cap = min(int(s["max_guests"]) or 10, booking_site.MAX_GUESTS)
+    guests = min(max(_guests(params.get("guests") or 2), 1), cap)
+    grid = booking_calendar.month_grid(
+        apartment_id, ym[0], ym[1], date_from=date_from, date_to=date_to)
+    for week in grid["weeks"]:
+        for cell in week:
+            cell["href"] = _href(slug, lang, ym, *cell["pick"], guests) if cell["pick"] else ""
+    q = None
+    q_error = ""
+    if booking_calendar.parse_day(date_from) and booking_calendar.parse_day(date_to):
+        q = booking_site.quote(apartment_id, date_from, date_to, guests)
+        if q["error"]:
+            q_error, q = q["error"], None
+    kept = {"date_from": date_from, "date_to": date_to}
+    return {
+        "slug": slug,
+        "grid": grid,
+        "prev_href": _href(slug, lang, grid["prev"], date_from, date_to, guests) if grid["prev"] else "",
+        "next_href": _href(slug, lang, grid["next"], date_from, date_to, guests) if grid["next"] else "",
+        "q": q,
+        "q_error": q_error,
+        "guests": guests,
+        "guest_options": list(range(1, cap + 1)),
+        "month_value": f"{ym[0]}-{ym[1]:02d}",
+        "date_from": date_from,
+        "date_to": date_to,
+        "arrive": _short_day(date_from, lang),
+        "depart": _short_day(date_to, lang),
+        "city_tax_rate": int(s["city_tax_czk"]),
+        "terms_version": booking_site.TERMS_VERSION,
+        "lang_href": {code: _href(slug, code, ym, **kept, guests=guests) for code in ("cs", "en")},
+    }
 
 
 def _noindex(apartment_id: int) -> bool:
@@ -143,94 +239,276 @@ def property_photo_file(request: Request, name: str):
 # --- booking widget (brief 0434) -----------------------------------------------
 
 
-@router.post("/p/{slug}/book")
-async def property_page_book(request: Request, slug: str):
-    """No-JS form POST: dates + guests -> availability + itemized total.
-    The hold is created at the payment step, not here."""
-    from datetime import date as _date
+BOOK_ERRORS = ("bad_dates", "min_nights", "too_soon", "guests", "no_price", "taken",
+               "bad_email", "bad_name", "terms", "unavailable", "cancelled")
+_EMAIL = __import__("re").compile(r"[^@\s]{1,64}@[^@\s]{1,200}\.[^@\s]{2,30}")
+_CHECKOUT_MAX = 20
+_CHECKOUT_WINDOW = 3600
 
-    from fastapi.responses import PlainTextResponse
 
+def _bookable_apartment(slug: str):
     resolved = property_page.resolve(slug)
     if resolved is None or "redirect" in resolved or resolved.get("missing"):
-        return Response(status_code=404)
+        return None
     apartment_id = int(resolved["apartment_id"])
     if not property_page.widget_ready(apartment_id):
-        return PlainTextResponse("not available", status_code=404)
-    form = await request.form()
+        return None
+    return apartment_id
 
-    def _day(name: str) -> str:
-        return str(form.get(name) or "").strip()
 
-    date_from, date_to = _day("date_from"), _day("date_to")
+def _guests(value) -> int:
     try:
-        nights = (_date.fromisoformat(date_to) - _date.fromisoformat(date_from)).days
+        return int(str(value or "").strip())
     except ValueError:
-        return _book_error(slug, "bad_dates")
-    if nights < 1 or nights > 30:
-        return _book_error(slug, "bad_dates")
-    if not property_page.dates_available(apartment_id, date_from, date_to):
-        return _book_error(slug, "taken")
-    price = property_page.nightly_price(apartment_id) or 0
-    page = _page_context(apartment_id) or {}
+        return 0
+
+
+@router.post("/p/{slug}/book")
+async def property_page_book(request: Request, slug: str):
+    """No-JS form POST: dates + guests -> the quote and the guest form.
+    Nothing is held here; the hold starts at /checkout."""
+    apartment_id = _bookable_apartment(slug)
+    if apartment_id is None:
+        return Response(status_code=404)
+    form = await request.form()
+    q = booking_site.quote(
+        apartment_id,
+        str(form.get("date_from") or "").strip(),
+        str(form.get("date_to") or "").strip(),
+        _guests(form.get("guests") or 1),
+    )
+    if q["error"]:
+        return _book_error(slug, q["error"])
     return render(
         request,
         "property_page_book.html",
-        {
-            "page": page,
-            "show_nav": False,
-            "lang": "en",
-            "slug": slug,
-            "date_from": date_from,
-            "date_to": date_to,
-            "nights": nights,
-            "nightly": price,
-            "total": price * nights,
+        {"page": _page_context(apartment_id) or {}, "show_nav": False, "lang": "en",
+         "slug": slug, "q": q},
+    )
+
+
+def _book_error(slug: str, kind: str, lang: str = "cs", form=None) -> Response:
+    query = {"book": kind, "lang": lang}
+    for name in ("date_from", "date_to", "guests"):
+        value = str((form or {}).get(name) or "").strip()[:10]
+        if value:
+            query[name] = value
+    return RedirectResponse(f"/p/{slug}?{urlencode(query)}#book", status_code=303)
+
+
+@router.post("/p/{slug}/checkout")
+async def property_page_checkout(request: Request, slug: str):
+    """Hold + pending booking + Stripe session, then a page with one link to
+    Stripe (a POST never redirects off-site: CSP form-action 'self')."""
+    scope = "property_page_checkout"
+    key = rate_limit.client_key(request, scope)
+    if rate_limit.blocked(scope, key, _CHECKOUT_MAX, _CHECKOUT_WINDOW):
+        return PlainTextResponse("slow down", status_code=429)
+    rate_limit.record(scope, key)
+    apartment_id = _bookable_apartment(slug)
+    if apartment_id is None:
+        return Response(status_code=404)
+    form = await request.form()
+    lang = "cs" if str(form.get("lang") or "") == "cs" else "en"
+    q = booking_site.quote(
+        apartment_id,
+        str(form.get("date_from") or "").strip(),
+        str(form.get("date_to") or "").strip(),
+        _guests(form.get("guests")),
+    )
+    if q["error"]:
+        return _book_error(slug, q["error"], lang, form)
+    name = " ".join(str(form.get("guest_name") or "").split())
+    email = str(form.get("guest_email") or "").strip()
+    if len(name) < 3:
+        return _book_error(slug, "bad_name", lang, form)
+    if not _EMAIL.fullmatch(email):
+        return _book_error(slug, "bad_email", lang, form)
+    if str(form.get("terms") or "") != "1":
+        return _book_error(slug, "terms", lang, form)
+    # A page opened before the terms text changed must not be accepted.
+    if str(form.get("terms_version") or booking_site.TERMS_VERSION) != booking_site.TERMS_VERSION:
+        return _book_error(slug, "terms", lang, form)
+    result = booking_checkout.start(apartment_id, slug, q, guest_name=name,
+                                    guest_email=email, lang=lang)
+    if result.get("error"):
+        return _book_error(slug, result["error"], lang, form)
+    response = render(
+        request,
+        "property_page_pay.html",
+        {"page": _page_context(apartment_id) or {}, "show_nav": False, "lang": lang,
+         "pay_url": result["url"], "total": q["total_czk"]},
+    )
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Robots-Tag"] = "noindex"
+    return response
+
+
+@router.get("/p/{slug}/{token}.ics")
+def property_page_ical(request: Request, slug: str, token: str):
+    """0817: private calendar feed for Airbnb / Booking.com import."""
+    from .. import booking_ical
+
+    scope = "property_page_ical"
+    key = rate_limit.client_key(request, scope)
+    if rate_limit.blocked(scope, key, _RATE_MAX, _RATE_WINDOW):
+        return PlainTextResponse("slow down", status_code=429)
+    rate_limit.record(scope, key)
+    apartment_id = booking_ical.apartment_for_slug(slug)
+    if apartment_id is None or not booking_ical.token_ok(apartment_id, token):
+        return Response(status_code=404)
+    return Response(
+        booking_ical.export_ics(apartment_id).encode("utf-8"),
+        media_type="text/calendar; charset=utf-8",
+        headers={"Cache-Control": "private, max-age=300", "X-Robots-Tag": "noindex"},
+    )
+
+
+@router.get("/p/{slug}/b/{booking_id}/{token}/invoice.pdf")
+def booking_invoice_pdf(request: Request, slug: str, booking_id: int, token: str):
+    """0820: the guest's invoice, by the signed booking link. 404 for anything else."""
+    from .. import booking_invoice
+
+    scope = "booking_invoice"
+    key = rate_limit.client_key(request, scope)
+    if rate_limit.blocked(scope, key, _RATE_MAX, _RATE_WINDOW):
+        return PlainTextResponse("slow down", status_code=429)
+    rate_limit.record(scope, key)
+    if not booking_site.token_ok(booking_id, token):
+        return Response(status_code=404)
+    invoice_id = booking_invoice.ensure(booking_id)
+    if invoice_id is None:
+        return Response(status_code=404)
+    from .. import invoices
+
+    number = db.query_one("SELECT number FROM invoice WHERE id = ?", (invoice_id,))["number"]
+    return Response(
+        invoices.download_pdf(invoice_id),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="faktura-{number}.pdf"',
+            "Cache-Control": "no-store",
+            "X-Robots-Tag": "noindex",
         },
     )
 
 
-def _book_error(slug: str, kind: str) -> Response:
-    return RedirectResponse(f"/p/{slug}?book={kind}", status_code=303)
-
-
-@router.post("/p/{slug}/request")
-async def property_page_request(request: Request, slug: str):
-    """Request-to-book: the guest asks, the host confirms (P2.2 adds the
-    charge-on-approval; here the request lands in the host's list)."""
-    from fastapi.responses import PlainTextResponse
-
-    resolved = property_page.resolve(slug)
-    if resolved is None or "redirect" in resolved or resolved.get("missing"):
+@router.get("/p/{slug}/b/{booking_id}/{token}/correction.pdf")
+def booking_correction_pdf(request: Request, slug: str, booking_id: int, token: str):
+    """0901: the credit note of a partial refund, by the signed booking link. 404 otherwise."""
+    scope = "booking_invoice"
+    key = rate_limit.client_key(request, scope)
+    if rate_limit.blocked(scope, key, _RATE_MAX, _RATE_WINDOW):
+        return PlainTextResponse("slow down", status_code=429)
+    rate_limit.record(scope, key)
+    if not booking_site.token_ok(booking_id, token):
         return Response(status_code=404)
-    apartment_id = int(resolved["apartment_id"])
-    if not property_page.widget_ready(apartment_id):
-        return PlainTextResponse("not available", status_code=404)
-    form = await request.form()
-    date_from = str(form.get("date_from") or "").strip()
-    date_to = str(form.get("date_to") or "").strip()
-    guest_email = str(form.get("guest_email") or "").strip()
-    if not guest_email or "@" not in guest_email:
-        return _book_error(slug, "bad_email")
-    if not property_page.dates_available(apartment_id, date_from, date_to):
-        return _book_error(slug, "taken")
-    apartment = db.query_one(
-        "SELECT owner_user_id FROM apartment WHERE id = ?", (apartment_id,)
-    )
-    price = property_page.nightly_price(apartment_id) or 0
-    from datetime import date as _date
+    booking = booking_site.get(booking_id)
+    if booking is None or not booking.get("invoice_id"):
+        return Response(status_code=404)
+    from .. import invoices
 
-    nights = (_date.fromisoformat(date_to) - _date.fromisoformat(date_from)).days
-    from .. import payment_request
-
-    payment_request.create(
-        int(apartment["owner_user_id"]),
-        apartment_id=apartment_id,
-        reason="custom",
-        amount_czk=price * nights,
-        rail="card",
-        expires_at=(_date.today().replace(day=28)).isoformat(),
-        guest_email=guest_email,
+    row = db.query_one(
+        "SELECT id, number FROM invoice WHERE corrects_invoice_id = ? ORDER BY id DESC LIMIT 1",
+        (int(booking["invoice_id"]),),
     )
-    return render(request, "property_page_booked.html",
-                  {"show_nav": False, "slug": slug, "lang": "en"})
+    if row is None:
+        return Response(status_code=404)
+    return Response(
+        invoices.download_pdf(row["id"]),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="opravny-doklad-{row["number"]}.pdf"',
+            "Cache-Control": "no-store",
+            "X-Robots-Tag": "noindex",
+        },
+    )
+
+
+def _booking_or_none(booking_id: int, token: str):
+    if not booking_site.token_ok(booking_id, token):
+        return None
+    booking = booking_site.get(booking_id)
+    if booking is None or booking["status"] not in booking_manage.VISIBLE:
+        return None
+    return booking
+
+
+def _manage_lang(request: Request, booking) -> str:
+    value = request.query_params.get("lang")
+    if value in ("cs", "en"):
+        return value
+    return booking["lang"] if booking["lang"] in ("cs", "en") else "cs"
+
+
+def _manage_throttle(request: Request, scope: str):
+    key = rate_limit.client_key(request, scope)
+    if rate_limit.blocked(scope, key, _RATE_MAX, _RATE_WINDOW):
+        return PlainTextResponse("slow down", status_code=429)
+    rate_limit.record(scope, key)
+    return None
+
+
+@router.get("/p/{slug}/b/{booking_id}/{token}")
+def booking_manage_page(request: Request, slug: str, booking_id: int, token: str):
+    """0821: the guest's private booking page (signed link from the e-mail)."""
+    slow = _manage_throttle(request, "booking_manage")
+    if slow:
+        return slow
+    booking = _booking_or_none(booking_id, token)
+    if booking is None:
+        return Response(status_code=404)
+    lang = _manage_lang(request, booking)
+    error = request.query_params.get("e", "")
+    response = render(request, "booking_manage.html", {
+        "show_nav": False, "lang": lang, "slug": slug, "token": token,
+        "v": booking_manage.view(booking, lang),
+        "error": error if error in ("started", "busy", "refund_failed") else "",
+    })
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Robots-Tag"] = "noindex"
+    return response
+
+
+@router.post("/p/{slug}/b/{booking_id}/{token}/cancel")
+def booking_manage_cancel(request: Request, slug: str, booking_id: int, token: str):
+    slow = _manage_throttle(request, "booking_cancel")
+    if slow:
+        return slow
+    booking = _booking_or_none(booking_id, token)
+    if booking is None:
+        return Response(status_code=404)
+    result = booking_cancel.cancel(booking_id, by_host=False)
+    lang = _manage_lang(request, booking)
+    query = {"lang": lang}
+    if result["error"] in ("started", "busy", "refund_failed"):
+        query["e"] = result["error"]
+    return RedirectResponse(f"/p/{slug}/b/{booking_id}/{token}?{urlencode(query)}", status_code=303)
+
+
+@router.get("/p/{slug}/b/{booking_id}/{token}/calendar.ics")
+def booking_manage_calendar(request: Request, slug: str, booking_id: int, token: str):
+    slow = _manage_throttle(request, "booking_manage")
+    if slow:
+        return slow
+    booking = _booking_or_none(booking_id, token)
+    if booking is None or booking["status"] != "paid":
+        return Response(status_code=404)
+    name = (db.query_one("SELECT internal_name FROM apartment WHERE id = ?",
+                         (booking["apartment_id"],)) or {"internal_name": ""})["internal_name"]
+    return Response(
+        booking_manage.calendar_ics(booking, name).encode("utf-8"),
+        media_type="text/calendar; charset=utf-8",
+        headers={"Cache-Control": "no-store", "X-Robots-Tag": "noindex",
+                 "Content-Disposition": 'attachment; filename="stay.ics"'},
+    )
+
+
+@router.get("/p/{slug}/thanks")
+def property_page_thanks(request: Request, slug: str):
+    """Stripe's success_url. Shows no booking data: the confirmation e-mail
+    (0816) is the record."""
+    response = render(request, "property_page_booked.html",
+                      {"show_nav": False, "slug": slug, "lang": _page_lang(request)})
+    response.headers["X-Robots-Tag"] = "noindex"
+    return response

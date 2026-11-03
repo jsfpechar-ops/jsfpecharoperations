@@ -8,11 +8,11 @@ APP_DIR = Path(__file__).resolve().parents[1] / "app"
 ENV = jinja2.Environment(loader=jinja2.FileSystemLoader(str(APP_DIR / "templates")), undefined=jinja2.StrictUndefined)
 
 MASTER_ICONS = [
-    "layout-dashboard", "calendar-days", "house", "receipt", "brush-cleaning", "coins", "settings",
+    "layout-dashboard", "calendar-days", "house", "receipt", "receipt-text", "sparkles", "coins", "settings",
     "key-round", "book-open", "shield", "ellipsis", "ellipsis-vertical", "search", "plus", "x",
     "arrow-left", "chevron-left", "chevron-right", "chevron-down", "sliders-horizontal", "copy",
     "download", "send", "refresh-cw", "pencil", "trash-2", "circle-help", "triangle-alert", "check",
-    "external-link", "info", "menu", "panel-left", "log-out", "languages", "archive", "file-lock", "users",
+    "external-link", "info", "menu", "panel-left", "log-out", "languages", "archive", "file-lock", "users", "credit-card",
 ]
 
 
