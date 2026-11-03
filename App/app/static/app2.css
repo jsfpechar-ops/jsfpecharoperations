@@ -65,7 +65,7 @@ body.v2 .hidden{display:none!important}
 .cgrid{display:grid;grid-template-columns:140px repeat(14,minmax(44px,1fr));align-items:center;min-width:780px}
 .cd{font-size:12px;color:var(--ink3);text-align:center;padding:8px 0}.cd.today{color:var(--acc-text);font-weight:700}
 .crow{border-top:1px solid var(--line);height:44px}.cn{font-size:13px;font-weight:600;grid-column:1}
-.cal .crow .cn{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;line-height:1.25;padding-right:8px;overflow-wrap:anywhere;min-width:0}
+.cal .crow .cn{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;line-height:1.25;overflow-wrap:anywhere;min-width:0}
 .cal{padding:6px 14px 10px;overflow-x:auto}
 .crow .bar{grid-row:1;height:28px;border-radius:999px;font-size:12px;font-weight:600;display:flex;align-items:center;padding:0 10px;margin:0 2px;white-space:nowrap;overflow:hidden}
 .b-ok{background:var(--oks);color:var(--ok)}.b-warn{background:var(--warns);color:var(--warn)}.b-grey{background:#efefeb;color:var(--ink2)}
