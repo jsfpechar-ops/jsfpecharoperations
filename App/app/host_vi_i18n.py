@@ -3379,6 +3379,7 @@ STRINGS: Dict[str, str] = {
     "calendar.week": "Tuần",
     "calendar.year": "Năm",
     "calendar.today": "Hôm nay",
+    "calendar.back_to_top": "Lên đầu trang",
     "calendar.previous": "Kỳ trước",
     "calendar.next": "Kỳ sau",
     "calendar.settings": "Hiển thị lịch",
