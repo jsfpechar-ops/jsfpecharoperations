@@ -1963,7 +1963,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         tail.className = "tip-tail";
         prev.nodeValue = m[1];
         tail.appendChild(document.createTextNode(m[2]));
-      } else if (prev && prev.nodeType === 1 && /^(SPAN|B|STRONG|EM|A|SMALL|BUTTON)$/.test(prev.tagName) && (prev.textContent || "").length <= 24) {
+      } else if (prev && prev.nodeType === 1 && /^(SPAN|B|STRONG|EM|A|SMALL|BUTTON)$/.test(prev.tagName) && (prev.textContent || "").length <= 24 && !/flex|grid/.test(window.getComputedStyle(parent).display)) {
         tail = document.createElement("span");
         tail.className = "tip-tail";
         parent.insertBefore(tail, prev);
