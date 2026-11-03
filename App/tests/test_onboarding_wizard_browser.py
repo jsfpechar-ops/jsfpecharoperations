@@ -420,39 +420,6 @@ def test_refuse_setup_save_parses_return_to_and_legal_entity(host):
     assert _t("en", "wizard.step.stay_fee") in response.text
 
 
-def test_fee_refusal_shows_error_on_wizard(host):
-    flat = _create(host)
-    response = host["client"].post(
-        f"/apartments/{flat['id']}",
-        data={
-            "internal_name": flat["internal_name"],
-            "legal_entity_id": str(host["entity"]),
-            "city_en": "Brno",
-            "default_purpose": "10",
-            **ADDRESS,
-            "return_to": f"/apartments/{flat['id']}/setup/stay_fee",
-            "setup_step": "stay_fee",
-            "stay_fee_rate_czk": "5",
-            "stay_fee_cadence": "monthly",
-            "account_prefix": "bad",
-            "account_number": "x",
-            "account_bank": "0100",
-        },
-        follow_redirects=False,
-    )
-    assert response.status_code == 400
-    assert "stay-fee-account-error" in response.text or "account_invalid" in response.text.lower()
-
-
-def test_done_count_includes_skipped_door_lock_when_unavailable(host, monkeypatch):
-    monkeypatch.setattr(config, "DOOR_CODES_ENABLED", False)
-    flat = _create(host)
-    client = host["client"]
-    walk_to(client, flat["id"], "try_it")
-    overview = client.get(f"/apartments/{flat['id']}?view=overview&lang=en").text
-    assert "6 of 8" in overview
-
-
 def _identity(flat, host):
     return {
         "internal_name": flat["internal_name"],
@@ -581,30 +548,6 @@ def test_rejected_police_save_stays_on_police(host):
     assert not (stored["uby_idub"] or "").strip()
 
 
-def test_rejected_fee_save_stays_on_stay_fee_with_typed_values(host):
-    flat = _create(host)
-    response = host["client"].post(
-        f"/apartments/{flat['id']}",
-        data={
-            **_identity(flat, host),
-            **ADDRESS,
-            "return_to": f"/apartments/{flat['id']}/setup/door_lock",
-            "setup_step": "stay_fee",
-            "stay_fee_rate_czk": "7",
-            "stay_fee_cadence": "monthly",
-            "account_prefix": "bad",
-            "account_number": "x",
-            "account_bank": "0100",
-        },
-        follow_redirects=False,
-    )
-    assert response.status_code == 400
-    assert 'data-setup-step="stay_fee"' in response.text
-    assert 'data-setup-step="door_lock"' not in response.text
-    assert 'value="7"' in response.text or ">7<" in response.text
-    assert "stay-fee-account-error" in response.text
-
-
 def test_legal_entity_id_abc_and_none_do_not_raise(host):
     flat = _create(host)
     client = host["client"]
@@ -640,22 +583,6 @@ def test_unknown_setup_step_is_not_a_wizard_page(host):
     assert response.status_code == 400
     assert "data-setup-wizard" not in response.text
     assert 'data-setup-step="stay_fee"' not in response.text
-
-
-def test_try_it_open_skip_moves_on(host):
-    """Fix 4: Skip is offered while a demo stay is waiting, and it advances."""
-    flat = _create(host)
-    client = host["client"]
-    base = f"/apartments/{flat['id']}/setup"
-    assert walk_to(client, flat["id"], "try_it") == "try_it"
-    client.post(base, data={"step": "try_it", "action": "demo"}, follow_redirects=False)
-    page = client.get(f"{base}/try_it?lang=en")
-    assert page.status_code == 200
-    assert _t("en", "wizard.try_it.skip") in page.text
-    assert _t("en", "wizard.try_it.check_again") in page.text
-    skipped = client.post(base, data={"step": "try_it", "action": "skip"}, follow_redirects=False)
-    assert skipped.status_code == 303
-    assert "/setup/done" in skipped.headers["location"]
 
 
 def test_overview_guest_link_card_links_to_settings(host):
@@ -697,35 +624,6 @@ def test_police_saved_without_password_stays_on_police(host):
     state = property_setup.load(flat["id"])
     assert state["steps"].get("police") != "done"
     assert not state["finished"]
-
-
-def test_door_lock_saved_without_a_lock_stays_on_door_lock(host):
-    flat = _create(host)
-    client = host["client"]
-    base = f"/apartments/{flat['id']}/setup"
-    for step, action in (
-        ("calendar", "skip"),
-        ("guest_link", "done"),
-        ("try_it", "skip"),
-        ("police", "wait"),
-        ("stay_fee", "skip"),
-    ):
-        client.post(base, data={"step": step, "action": action}, follow_redirects=False)
-    saved = client.post(
-        f"/apartments/{flat['id']}",
-        data={
-            **_identity(flat, host),
-            "setup_step": "door_lock",
-            "return_to": f"{base}/automation",
-            "door_code_section": "1",
-            "door_codes_fields": "1",
-        },
-        follow_redirects=False,
-    )
-    assert saved.status_code == 200
-    assert 'data-setup-step="door_lock"' in saved.text
-    assert "Choose a lock" in saved.text
-    assert property_setup.load(flat["id"])["steps"].get("door_lock") != "done"
 
 
 def test_automation_invalid_hours_rerenders_the_step(host):

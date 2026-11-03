@@ -41,3 +41,21 @@ Status: blocked (context lint fails, see Questions). Nothing committed or pushed
 1. Confirm the ČÚZK URL, attribute names and terms; approve or reject the "proposed" decision line.
 2. Compact `decisions.md` below 2200 tokens; add `Status:` to the brief; rerun `python3 scripts/context_lint.py`.
 3. Parked, not built: sections B, C, the JS and UI part of D, screenshots, and `test_static_versions.py` (no CSS or JS changed).
+
+## Deleted tests (0884 step 12, limit raised to 13 by owner)
+
+- test_onboarding_wizard_survival.py::test_stay_fee_save_skips_door_lock_when_unavailable: tests the retired stay_fee and door_lock steps; the fee and lock pages have their own tests.
+- test_onboarding_wizard_survival.py::test_try_it_skip_deletes_demo_stay: tests the retired try_it skip; the demo page has its own tests.
+- test_onboarding_wizard_survival.py::test_missing_property_hours_from_lock_step_keep_saved_property_draft: starts from the retired door_lock step.
+- test_fee_setup_compatibility.py::test_the_wizard_asks_four_fee_boxes: asks four fee boxes on the retired stay_fee step; the fee editor tests cover the fields.
+- test_wizard_second_lock_0400.py::test_no_free_lock_shows_the_sharing_steps_not_a_dead_dropdown: wizard door_lock step, retired; the smart-lock page tests cover sharing.
+- test_wizard_second_lock_0400.py::test_a_free_lock_is_offered_and_the_taken_one_is_disabled: wizard door_lock step, retired; the smart-lock page tests cover it.
+- test_wizard_second_lock_0400.py::test_the_first_property_keeps_its_own_lock_selectable: wizard door_lock step, retired; the smart-lock page tests cover it.
+- test_wizard_second_lock_0400.py::test_a_refused_lock_save_stays_on_the_step_and_keeps_the_times: wizard door_lock step, retired; the smart-lock page tests cover refusals.
+- test_onboarding_wizard_browser.py::test_fee_refusal_shows_error_on_wizard: fee refusal on the retired stay_fee step; the fee editor shows the same errors.
+- test_onboarding_wizard_browser.py::test_rejected_fee_save_stays_on_stay_fee_with_typed_values: retired stay_fee step; the fee editor keeps typed values.
+- test_onboarding_wizard_browser.py::test_try_it_open_skip_moves_on: retired try_it step; the demo page has its own tests.
+- test_onboarding_wizard_browser.py::test_door_lock_saved_without_a_lock_stays_on_door_lock: retired door_lock step; the smart-lock page covers the no-lock case.
+- test_onboarding_wizard_browser.py::test_done_count_includes_skipped_door_lock_when_unavailable: counts the retired door_lock step; the done page count is covered by test_wizard_friendly_0273.
+
+Also (not deleted, rewritten per brief): test_onboarding_followup_browser.py try_it block removed; test_smart_locks_page.py test renamed to test_the_setup_wizard_lock_step_goes_to_the_lock_settings.
