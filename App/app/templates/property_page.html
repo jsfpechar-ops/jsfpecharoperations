@@ -2,6 +2,7 @@
 {% block title %}{{ page.name }}{% endblock %}
 {% block head_extra %}
 {% if page.noindex %}<meta name="robots" content="noindex">{% endif %}
+{% include "_pp_booking_css.html" %}
 <meta property="og:title" content="{{ page.og.title }}">
 <meta property="og:description" content="{{ page.og.description }}">
 <meta property="og:url" content="{{ page.og.url }}">
@@ -59,16 +60,78 @@
     </div>
     {% endif %}
     {% if page.bookable %}
-    <div class="pp-book">
-      <form method="post" action="/p/{{ page.og.url.rsplit('/', 1)[1] }}/book" class="ui-form">
-        <h2>{{ t('pp.book.title') }}</h2>
-        <label class="ui-field"><span>{{ t('pp.book.from') }}</span>
-          <input class="ui-input" type="date" name="date_from" required></label>
-        <label class="ui-field"><span>{{ t('pp.book.to') }}</span>
-          <input class="ui-input" type="date" name="date_to" required></label>
-        <button class="ui-btn ui-btn-primary" type="submit">{{ t('pp.book.check') }}</button>
+    {% set b = page.booking %}
+    {% macro money(n) %}{{ ('{:,}'.format(n) | replace(',', '&nbsp;')) | safe }}&nbsp;{{ t('payments.czk') }}{% endmacro %}
+    <section class="pp-book pp-bk" id="book" aria-labelledby="bk-title">
+      <div class="pp-bk-card">
+        <h2 id="bk-title">{{ t('pp.cal.title') }}</h2>
+        <div class="pp-bk-months">
+          {% if b.prev_href %}<a class="pp-bk-nav" href="{{ b.prev_href }}" aria-label="{{ t('pp.cal.prev') }}">&lsaquo;</a>{% else %}<span class="pp-bk-nav" aria-disabled="true">&lsaquo;</span>{% endif %}
+          <strong>{{ t('pp.cal.month.' ~ b.grid.month) }} {{ b.grid.year }}</strong>
+          {% if b.next_href %}<a class="pp-bk-nav" href="{{ b.next_href }}" aria-label="{{ t('pp.cal.next') }}">&rsaquo;</a>{% else %}<span class="pp-bk-nav" aria-disabled="true">&rsaquo;</span>{% endif %}
+        </div>
+        <div class="pp-bk-grid" role="grid">
+          {% for n in range(1, 8) %}<div class="pp-bk-dow">{{ t('pp.cal.dow.' ~ n) }}</div>{% endfor %}
+          {% for week in b.grid.weeks %}{% for cell in week %}
+            {% if cell.state == 'pad' %}<span></span>
+            {% elif cell.href %}<a class="pp-bk-day" data-state="{{ cell.state }}" href="{{ cell.href }}" aria-label="{{ cell.day }}. {{ b.grid.month }}. {{ b.grid.year }}, {{ t('pp.cal.state.' ~ cell.state) }}">{{ cell.day }}</a>
+            {% else %}<span class="pp-bk-day" data-state="{{ cell.state }}" aria-label="{{ cell.day }}. {{ b.grid.month }}. {{ b.grid.year }}, {{ t('pp.cal.state.' ~ cell.state) }}">{{ cell.day }}</span>{% endif %}
+          {% endfor %}{% endfor %}
+        </div>
+        <p class="pp-bk-note">
+          {% if b.q %}{{ t('pp.cal.summary', **{'from': b.arrive, 'to': b.depart}) }} · {{ tp('stay_fees.nights', b.q.nights) }}
+          {% elif b.date_from and not b.date_to %}{{ t('pp.cal.pick_to') }}
+          {% else %}{{ t('pp.cal.pick_from') }}{% endif %}
+        </p>
+        <form method="get" action="/p/{{ b.slug }}#book" class="pp-bk-guests">
+          <input type="hidden" name="lang" value="{{ lang }}">
+          <input type="hidden" name="month" value="{{ b.month_value }}">
+          <input type="hidden" name="date_from" value="{{ b.date_from }}">
+          <input type="hidden" name="date_to" value="{{ b.date_to }}">
+          <label class="ui-field"><span>{{ t('pp.book.guests') }}</span>
+            <select class="ui-input" name="guests">{% for n in b.guest_options %}<option value="{{ n }}"{% if n == b.guests %} selected{% endif %}>{{ n }}</option>{% endfor %}</select></label>
+          <button class="ui-btn ui-btn-secondary" type="submit">{{ t('pp.cal.guests_apply') }}</button>
+        </form>
+        {% if b.q_error or page.book_error %}
+        <p class="pp-bk-error" role="alert">{{ t('pp.book.err.' ~ (b.q_error or page.book_error)) }}</p>
+        {% endif %}
+      </div>
+
+      {% if b.q %}
+      <div class="pp-bk-card">
+        <div class="pp-bk-row"><span>{{ t('pp.book.nightly_line', price=money(b.q.nightly_czk), nights=b.q.nights) | safe }}</span><span>{{ money(b.q.accommodation_czk) }}</span></div>
+        {% if b.q.cleaning_fee_czk %}<div class="pp-bk-row"><span>{{ t('pp.book.cleaning') }}</span><span>{{ money(b.q.cleaning_fee_czk) }}</span></div>{% endif %}
+        <div class="pp-bk-row pp-bk-total"><span>{{ t('pp.book.total') }}</span><span>{{ money(b.q.total_czk) }}</span></div>
+        {% if b.q.city_tax_on_site_czk %}<p class="pp-bk-note">{{ t('pp.book.city_tax_note', amount=b.q.city_tax_on_site_czk, guests=b.q.guests, nights=b.q.nights, rate=b.city_tax_rate) }}</p>{% endif %}
+      </div>
+
+      <div class="pp-bk-card">
+        <h2>{{ t('pp.book.policy_title', name=t('pp.book.policy_name.' ~ b.q.cancellation_policy)) }}</h2>
+        <p class="pp-bk-note">{{ t('pp.book.policy.' ~ b.q.cancellation_policy) }}</p>
+      </div>
+
+      <form method="post" action="/p/{{ b.slug }}/checkout" class="pp-bk-card ui-form">
+        <input type="hidden" name="date_from" value="{{ b.q.date_from }}">
+        <input type="hidden" name="date_to" value="{{ b.q.date_to }}">
+        <input type="hidden" name="guests" value="{{ b.q.guests }}">
+        <input type="hidden" name="lang" value="{{ lang }}">
+        <input type="hidden" name="terms_version" value="{{ b.terms_version }}">
+        <label class="ui-field"><span>{{ t('pp.book.name') }}</span>
+          <input class="ui-input" type="text" name="guest_name" autocomplete="name" minlength="3" maxlength="120" required></label>
+        <label class="ui-field"><span>{{ t('pp.book.email') }}</span>
+          <input class="ui-input" type="email" name="guest_email" autocomplete="email" required></label>
+        <label class="ui-check"><input type="checkbox" name="terms" value="1" required><span>{{ t('pp.book.terms') }}</span></label>
+        <p class="pp-bk-note"><a href="/terms/booking?lang={{ lang }}" target="_blank" rel="noopener">{{ t('pp.book.terms_read') }}</a></p>
+        <button class="ui-btn ui-btn-primary" type="submit">{{ t('pp.book.pay_card', total=b.q.total_czk) }}</button>
+        <p class="pp-bk-fine">{{ t('pp.book.stripe_note') }}</p>
       </form>
-    </div>
+      {% endif %}
+
+      <nav class="pp-bk-lang" aria-label="{{ t('pp.lang.label') }}">
+        <a href="{{ b.lang_href.cs }}" hreflang="cs" lang="cs"{% if lang == 'cs' %} aria-current="true"{% endif %}>CS</a>
+        <a href="{{ b.lang_href.en }}" hreflang="en" lang="en"{% if lang == 'en' %} aria-current="true"{% endif %}>EN</a>
+      </nav>
+    </section>
     {% endif %}
   </section>
 </main>

@@ -165,8 +165,9 @@ def test_logout_is_a_full_load_and_back_shows_no_dashboard(calendar_workspace, c
         page.locator('#app-sidebar a[href="/reservations"]').first.click()
         page.wait_for_selector('#app-sidebar a[href="/reservations"][aria-current="page"]', timeout=15000)
         page.evaluate("() => { window.__swapMarker = 1; }")
+        page.locator("#app-sidebar .me-menu > summary").click()  # 0896: Log out lives in the profile menu
         with page.expect_navigation(timeout=15000):
-            page.locator('form[action="/logout"] button:visible').first.click()
+            page.locator('.me-menu-list form[action="/logout"] button').click()
         page.wait_for_load_state()
         assert page.evaluate("() => window.__swapMarker") is None
         page.go_back()

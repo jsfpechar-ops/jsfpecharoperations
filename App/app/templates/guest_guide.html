@@ -1,24 +1,26 @@
 {#- 0342: the host's guest guide, one property. Cards grouped by topic in
     guest order; a row opens the card editor. Data: app/guest_guide.py. -#}
 {% extends "host_page.html" %}
+{% from "_components.html" import help_tip with context %}
+{% set v2 = true %}
 {% set body_kind = 'list' %}
 {% set base_url = '/apartments/' ~ apartment.id ~ '/guide' %}
 {% block title %}{{ t('guest_guide.title') }} · {{ apartment.internal_name }} · UbyHost{% endblock %}
-{% block page_title %}{{ t('guest_guide.title') }}{% endblock %}
+{% block page_title %}{% endblock %}
 {% block back_url %}/apartments/{{ apartment.id }}{% endblock %}
 {% block back_label %}{{ apartment.internal_name }}{% endblock %}
-{% block meta %}{% if progress.live %}{{ t('guest_guide.progress_live', answered=progress.answered, total=progress.cards) }}{% else %}{{ t('guest_guide.progress', answered=progress.answered, total=progress.cards) }}{% endif %}{% endblock %}
-{% block secondary_actions %}{{ ui_button(t('guest_guide.quick.link'), 'secondary', href=base_url ~ '/quick') }} {{ ui_button(t('guest_guide.qr.link'), 'secondary', href=base_url ~ '/qr') }} {{ ui_button(t('guest_questions.link', n=questions_open), 'secondary', href=base_url ~ '/questions') }}{% endblock %}
-{% block primary_action %}{% if next_id %}{{ ui_button(t('guest_guide.continue'), 'primary', href=base_url ~ '/' ~ next_id) }}{% endif %}{% endblock %}
+{% block meta %}{% endblock %}
+{% block secondary_actions %}{% endblock %}
+{% block primary_action %}{% endblock %}
 {% block body %}
+<div class="guide-page">
+<div class="head guide-hd"><div><a class="guide-back" href="/apartments/{{ apartment.id }}">{{ apartment.internal_name }}</a><h1 class="big">{{ t('guest_guide.title') }}</h1><p class="sub">{% if progress.live %}{{ t('guest_guide.progress_live', answered=progress.answered, total=progress.cards) }}{% else %}{{ t('guest_guide.progress', answered=progress.answered, total=progress.cards) }}{% endif %}</p><p class="guide-links"><a href="{{ base_url ~ '/quick' }}">{{ t('guest_guide.quick.link') }}</a><a href="{{ base_url ~ '/questions' }}">{{ t('guest_questions.link', n=questions_open) }}</a><a class="ph-hide" href="{{ base_url ~ '/qr' }}">{{ t('guest_guide.qr.link') }}</a></p></div>{% if next_id %}<div class="guide-acts"><a class="btn" href="{{ base_url ~ '/' ~ next_id }}">{{ t('guest_guide.continue') }}</a></div>{% endif %}</div>
 {% macro import_section() %}
-{% call ui_section(t('guest_guide.import.title'), id='import') %}
-{% if not import_on %}
-<p class="ui-sub">{{ t('guest_guide.import.off') }}</p>
-{% else %}
+{% set import_tip = help_tip('guide-import-off-help', t('guest_guide.import.off')) if not import_on else help_tip('guide-import-help', t('guest_guide.import.help') ~ ' ' ~ t('guest_guide.import.left', n=import_left)) %}
+{% call ui_section(t('guest_guide.import.title'), id='import', tip=import_tip) %}
+{% if import_on %}
 {% if import_busy %}{{ ui_banner('neutral', t('guest_guide.import.running')) }}{% endif %}
 {% if import_drafts %}<p class="ui-sub">{{ t('guest_guide.import.drafted', n=import_drafts) }}</p>{% endif %}
-<p class="ui-sub">{{ t('guest_guide.import.help') }} {{ t('guest_guide.import.left', n=import_left) }}</p>
 {% if import_left > 0 and not import_busy %}
 <form method="post" action="{{ base_url }}/import">
 <input type="hidden" name="_csrf" value="{{ csrf_token }}">
@@ -68,7 +70,7 @@
 
 {% if leon_offer %}
 {% call ui_section(t('guest_guide.leon.title'), id='leon') %}
-<p class="ui-sub">{{ t('guest_guide.leon.help') }}</p>
+{{ help_tip('guide-leon-help', t('guest_guide.leon.help')) }}
 <p class="ui-sub">{{ t('leon_page.card.' ~ leon_state) }}</p>
 <div class="ui-form-actions">{{ ui_button(t('guest_guide.leon.open'), 'secondary', href='/apartments/' ~ apartment.id ~ '/leon') }}</div>
 {% endcall %}
@@ -83,4 +85,5 @@
 <div class="ui-form-actions">{{ ui_button(t('guest_guide.add.button'), 'secondary', type='submit', icon_name='plus') }}</div>
 </form>
 {% endcall %}
+</div>
 {% endblock %}

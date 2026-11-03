@@ -1,10 +1,12 @@
 {% extends "host_page.html" %}
+{% set v2 = true %}
+{% block head_extra %}<link rel="stylesheet" href="/static/admin2.css?v=20261102-0893o">{% endblock %}
 {% set nav = 'users' %}
 {% set body_kind = 'detail' %}
 {% from "_ui_layout.html" import ui_section_tabs with context %}
+{% from "_components.html" import tip_label with context %}
 {% from "_ui.html" import ui_button, ui_field with context %}
 {% block title %}{{ customer.display_name or customer.username }}{% endblock %}
-{% block meta %}{{ t('customers.state.' ~ customer.customer_state) }}{% endblock %}
 {% block tabs %}{{ ui_section_tabs() }}{% endblock %}
 {% block back_url %}/admin/customers{% endblock %}
 {% block back_label %}{{ t('customers.title') }}{% endblock %}
@@ -15,6 +17,7 @@
 {% if not billing_enabled %}{{ ui_banner('neutral', t('customers.billing_off')) }}{% endif %}
 {% if customer.customer_state == 'legacy' %}<p class="ui-sub">{{ t('customers.legacy_note') }}</p>{% endif %}
 {% call ui_section(t('customers.account')) %}
+{% with label=t('customers.state'), value=t('customers.state.' ~ customer.customer_state), href='' %}{% include "partials/settings_value_card.html" %}{% endwith %}
 {{ ui_facts([
 (t('customers.search'), customer.email | e if customer.email else t('customers.not_recorded')),
 (t('customers.created'), fmt_date(customer.created_at)),
@@ -83,55 +86,53 @@
 {% endcall %}
 
 {% if billing_enabled and not quote %}
-{% call ui_section(t('customers.assign.title'), id='assign-plan') %}
-<p class="ui-sub">{{ t('customers.assign.help') }}</p>
+{% call ui_section(tip_label(t('customers.assign.title'), 'assign-help', t('customers.assign.help') ~ ' ' ~ t('customers.assign.help2'), tag='span'), id='assign-plan') %}
 <form method="post" action="/admin/customers/{{ customer.id }}/priradit" data-customer-assign>
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <div class="ui-form-actions">
-    <label class="ui-sub" for="assign-plan">{{ t('customers.assign.plan') }}</label>
+    <label class="admin-label" for="assign-plan">{{ t('customers.assign.plan') }}</label>
     <select class="ui-input" id="assign-plan" name="plan">
       <option value="standard">{{ t('billing.plan.name.standard') }}</option>
       <option value="max">{{ t('billing.plan.name.max') }}</option>
     </select>
-    <label class="ui-sub" for="assign-interval">{{ t('customers.actions.field_interval') }}</label>
+    <label class="admin-label" for="assign-interval">{{ t('customers.actions.field_interval') }}</label>
     <select class="ui-input" id="assign-interval" name="billing_interval">
       <option value="month">{{ t('billing.interval.month') }}</option>
       <option value="year">{{ t('billing.interval.year') }}</option>
     </select>
-    <label class="ui-sub" for="assign-ttlock">{{ t('customers.actions.field_ttlock') }}</label>
+    <label class="admin-label" for="assign-ttlock">{{ t('customers.actions.field_ttlock') }}</label>
     <select class="ui-input" id="assign-ttlock" name="addon_ttlock">
       <option value="0">{{ t('customers.no') }}</option>
       <option value="1">{{ t('customers.yes') }}</option>
     </select>
   </div>
   <div class="ui-form-actions">
-    <label class="ui-sub" for="assign-name">{{ t('customers.assign.buyer_name') }}</label>
+    <label class="admin-label" for="assign-name">{{ t('customers.assign.buyer_name') }}</label>
     <input class="ui-input" type="text" id="assign-name" name="buyer_name" value="{{ customer.buyer_prefill.get('buyer_name') or customer.display_name or '' }}" required>
-    <label class="ui-sub" for="assign-street">{{ t('customers.assign.buyer_street') }}</label>
+    <label class="admin-label" for="assign-street">{{ t('customers.assign.buyer_street') }}</label>
     <input class="ui-input" type="text" id="assign-street" name="buyer_street" required
            value="{{ customer.buyer_prefill.get('buyer_street', '') }}">
-    <label class="ui-sub" for="assign-city">{{ t('customers.assign.buyer_city') }}</label>
+    <label class="admin-label" for="assign-city">{{ t('customers.assign.buyer_city') }}</label>
     <input class="ui-input" type="text" id="assign-city" name="buyer_city" required
            value="{{ customer.buyer_prefill.get('buyer_city', '') }}">
   </div>
   <div class="ui-form-actions">
-    <label class="ui-sub" for="assign-zip">{{ t('customers.assign.buyer_zip') }}</label>
+    <label class="admin-label" for="assign-zip">{{ t('customers.assign.buyer_zip') }}</label>
     <input class="ui-input" type="text" id="assign-zip" name="buyer_zip" required
            value="{{ customer.buyer_prefill.get('buyer_zip', '') }}">
-    <label class="ui-sub" for="assign-ico">{{ t('customers.assign.buyer_ico') }}</label>
+    <label class="admin-label" for="assign-ico">{{ t('customers.assign.buyer_ico') }}</label>
     <input class="ui-input" type="text" id="assign-ico" name="buyer_ico"
            value="{{ customer.buyer_prefill.get('buyer_ico', '') }}">
-    <label class="ui-sub" for="assign-dic">{{ t('customers.assign.buyer_dic') }}</label>
+    <label class="admin-label" for="assign-dic">{{ t('customers.assign.buyer_dic') }}</label>
     <input class="ui-input" type="text" id="assign-dic" name="buyer_dic"
            value="{{ customer.buyer_prefill.get('buyer_dic', '') }}">
-    <label class="ui-sub" for="assign-email">{{ t('customers.assign.buyer_email') }}</label>
+    <label class="admin-label" for="assign-email">{{ t('customers.assign.buyer_email') }}</label>
     <input class="ui-input" type="email" id="assign-email" name="buyer_email" value="{{ customer.buyer_prefill.get('buyer_email') or customer.email or '' }}" required>
   </div>
   <div class="ui-form-actions">
     {{ ui_button(t('customers.assign.submit'), 'primary', type='submit') }}
   </div>
 </form>
-<p class="ui-sub">{{ t('customers.assign.help2') }}</p>
 {% endcall %}
 {% endif %}
 
@@ -139,27 +140,26 @@
 {% call ui_section(t('customers.extend.title'), id='extend-trial') %}
 <form method="post" action="/admin/customers/{{ customer.id }}/prodlouzit" class="ui-form-actions" data-customer-extend>
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-  <label class="ui-sub" for="extend-days">{{ t('customers.extend.days') }}</label>
-  <input class="ui-input" type="number" id="extend-days" name="days" min="1" max="365" required>
+  <label class="admin-label" for="extend-days">{{ t('customers.extend.days') }}</label>
+  <input class="ui-input" type="number" id="extend-days" name="days" min="1" max="365" value="14" inputmode="numeric" required>
   {{ ui_button(t('customers.extend.submit'), 'secondary', type='submit') }}
 </form>
 {% endcall %}
 {% endif %}
 
 {% if billing_enabled and quote %}
-{% call ui_section(t('customers.actions.title'), id='operator-actions') %}
+{% call ui_section(tip_label(t('customers.actions.title'), 'actions-help', t('customers.actions.discount_help') ~ ' ' ~ t('customers.actions.change_help'), tag='span'), id='operator-actions') %}
 <form method="post" action="/admin/customers/{{ customer.id }}/sleva" class="ui-form-actions" data-customer-discount>
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-  <label class="ui-sub" for="discount-percent">{{ t('customers.actions.discount') }}</label>
+  <label class="admin-label" for="discount-percent">{{ t('customers.actions.discount') }}</label>
   <input class="ui-input" type="number" id="discount-percent" name="percent" min="0" max="100" value="{{ customer.discount_percent or 0 }}" required>
-  <label class="ui-sub" for="discount-reason">{{ t('customers.actions.reason') }}</label>
+  <label class="admin-label" for="discount-reason">{{ t('customers.actions.reason') }}</label>
   <input class="ui-input" type="text" id="discount-reason" name="reason" maxlength="200" value="{{ customer.discount_reason or '' }}">
   {{ ui_button(t('customers.actions.discount_submit'), 'secondary', type='submit') }}
 </form>
-<p class="ui-sub">{{ t('customers.actions.discount_help') }}</p>
 <form method="post" action="/admin/customers/{{ customer.id }}/plan" class="ui-form-actions" data-customer-plan>
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-  <label class="ui-sub" for="plan-field">{{ t('customers.actions.change') }}</label>
+  <label class="admin-label" for="plan-field">{{ t('customers.actions.change') }}</label>
   <select class="ui-input" id="plan-field" name="field">
     <option value="plan">{{ t('customers.actions.field_plan') }}</option>
     <option value="billing_interval">{{ t('customers.actions.field_interval') }}</option>
@@ -167,14 +167,13 @@
     <option value="addon_ttlock">{{ t('customers.actions.field_ttlock') }}</option>
     <option value="addon_whitelabel">{{ t('customers.actions.field_whitelabel') }}</option>
   </select>
-  <label class="ui-sub" for="plan-value">{{ t('customers.actions.value') }}</label>
+  <label class="admin-label" for="plan-value">{{ t('customers.actions.value') }}</label>
   <input class="ui-input" type="text" id="plan-value" name="value" required>
   {{ ui_button(t('customers.actions.change_submit'), 'secondary', type='submit') }}
 </form>
-<p class="ui-sub">{{ t('customers.actions.change_help') }}</p>
 <form method="post" action="/admin/customers/{{ customer.id }}/stav" class="ui-form-actions" data-customer-status>
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-  <label class="ui-sub" for="status-new">{{ t('customers.actions.status') }}</label>
+  <label class="admin-label" for="status-new">{{ t('customers.actions.status') }}</label>
   <select class="ui-input" id="status-new" name="status">
     <option value="active">{{ t('billing.plan.state.active') }}</option>
     <option value="paused">{{ t('billing.plan.state.paused') }}</option>
@@ -186,7 +185,7 @@
 </form>
 {% endcall %}
 {% endif %}
-{% call ui_section(t('customers.ops.title'), id='operator-actions-card') %}
+{% call ui_section(tip_label(t('customers.ops.title'), 'ops-help', t('customers.ops.help'), tag='span'), id='operator-actions-card') %}
 <div class="ui-form-actions">
   <form method="post" action="/admin/customers/{{ customer.id }}/aktivovat" data-customer-toggle{% if customer.active %} data-confirm data-confirm-message="{{ t('confirm.disable_user', name=customer.display_name or customer.username) }}"{% endif %}>
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
@@ -200,7 +199,6 @@
   </form>
   {% endif %}
 </div>
-<p class="ui-sub">{{ t('customers.ops.help') }}</p>
 {% endcall %}
 
 {% call ui_section(t('customers.activity.title'), id='activity-card') %}

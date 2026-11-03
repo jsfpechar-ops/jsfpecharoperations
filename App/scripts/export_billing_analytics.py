@@ -28,7 +28,7 @@ COALESCE(SUM(total_haler),0) AS h FROM platform_invoice
 WHERE voided = 0 AND paid_on IS NOT NULL AND paid_on >= ? AND paid_on < ?
 GROUP BY substr(paid_on,1,7) ORDER BY month"""
 ACCOUNT_SQL = """SELECT status, plan, billing_interval, apartments_billed,
-addon_ttlock, addon_whitelabel, founder, carry_czk, discount_percent
+addon_ttlock, addon_whitelabel, carry_czk, discount_percent
 FROM billing_account WHERE plan IS NOT NULL ORDER BY status"""
 
 
@@ -109,7 +109,6 @@ def extract(from_month: str, through_month: str) -> Dict[str, Any]:
                 account["billing_interval"],
                 ttlock=bool(account["addon_ttlock"]),
                 whitelabel=bool(account["addon_whitelabel"]),
-                founder=bool(account["founder"]),
                 discount_percent=int(account["discount_percent"] or 0),
             )
             net = int(quote["total"]) + int(account["carry_czk"] or 0)

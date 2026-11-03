@@ -89,18 +89,11 @@ def read_form(form: Dict[str, str]) -> Tuple[Dict[str, Any], Dict[str, str]]:
     return values, errors
 
 
-def founder_offer(owner_user_id: int) -> bool:
-    """Keep an already confirmed founder agreement; new orders get list prices."""
-    acc = billing.account(owner_user_id) or {}
-    return bool(acc.get("founder"))
-
-
 def quote(owner_user_id: int, values: Dict[str, Any]) -> Dict[str, int]:
-    founder = values["billing_interval"] == "year" and founder_offer(owner_user_id)
     return billing.quote(
         apartments(owner_user_id), values["plan"], values["billing_interval"],
         ttlock=values["addon_ttlock"],
-        whitelabel=bool((billing.account(owner_user_id) or {}).get("addon_whitelabel")), founder=founder,
+        whitelabel=bool((billing.account(owner_user_id) or {}).get("addon_whitelabel")),
     )
 
 
@@ -115,15 +108,14 @@ def place(owner_user_id: int, values: Dict[str, Any], *, today: Optional[date] =
     if values.get("addon_whitelabel") and not acc["addon_whitelabel"]:
         raise ValueError("whitelabel_unavailable")
     day = today or date.today()
-    founder = 1 if acc["founder"] else 0
     db.execute(
         "UPDATE billing_account SET plan = ?, billing_interval = ?, addon_ttlock = ?, "
-        "addon_whitelabel = ?, founder = ?, apartments_billed = ?, pending_change_json = NULL, "
+        "addon_whitelabel = ?, apartments_billed = ?, pending_change_json = NULL, "
         "buyer_name = ?, buyer_street = ?, buyer_city = ?, buyer_zip = ?, buyer_ico = ?, "
         "buyer_dic = ?, buyer_email = ?, updated_at = ? WHERE owner_user_id = ?",
         (
             values["plan"], values["billing_interval"], int(values["addon_ttlock"]),
-            int(acc["addon_whitelabel"]), founder, apartments(owner_user_id),
+            int(acc["addon_whitelabel"]), apartments(owner_user_id),
             *(values[field] or None for field in BUYER_FIELDS), db.utcnow(), owner_user_id,
         ),
     )

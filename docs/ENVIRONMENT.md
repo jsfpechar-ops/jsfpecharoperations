@@ -23,6 +23,8 @@ Optional host subdomain: [deployment, exact values and rollback](APP_SUBDOMAIN.m
 
 | Variable | Default | Notes |
 | --- | --- | --- |
+| `UBYHOST_RUIAN_ENABLED` | `1` | Set `0` to turn off the RÚIAN address suggestions on the property form (only the typed text goes to ČÚZK; nothing is stored). |
+| `UBYHOST_RUIAN_URL` | built-in | Override the ČÚZK RÚIAN geocoder URL (unverified default; see `app/ruian.py`). |
 | `UBYHOST_DATA_DIR` | `App/data` | Database, secret key, passport photos. Created at import time with mode `0700`. |
 | `UBYHOST_DB` | `$UBYHOST_DATA_DIR/ubyhost.db` | Full path override for the SQLite file. `App/scripts/backup_data.sh` honours it too, so if you set one you must set it for the backup script as well. |
 | `UBYHOST_SECRET_KEY` | generated once into `$UBYHOST_DATA_DIR/secret_key` | Minimum 32 characters; the process refuses to start if shorter. Signs session/PIN/claim cookies and CSRF tokens, and, while `UBYHOST_DATA_KEY_LEGACY` is on, derives the legacy Fernet key for data at rest. See [OPERATIONS.md](OPERATIONS.md#if-the-secret-key-is-lost-or-rotated). |
@@ -228,7 +230,6 @@ production. **`UBYHOST_STAGING_NO_LOGIN=1`** on staging skips login entirely: ev
 | `UBYHOST_BILLING_BANK_ACCOUNT` | unset | ČSOB account in Czech form (`123456789/0300`), printed on every invoice. |
 | `UBYHOST_BILLING_IBAN` | unset | The same account as IBAN; the QR Platba on the invoice uses it. No invoice is issued without it. |
 | `UBYHOST_BILLING_VAT_STATUS` | `non_payer` | `non_payer` prints "Nejsem plátce DPH"; switch to `payer` only after VAT registration. |
-| `UBYHOST_FOUNDER_SLOTS` | `100` | How many yearly orders get the founder price. |
 
 Payments are matched from a ČSOB statement (GPC or CSV) uploaded on `/admin/fakturace`; there is no bank API and no outbound request. The daily `billing` job (06:00) issues invoices, sends reminders 1 and 7 days after the due date and makes an account read-only after 14. UbyPort filing never waits for a payment.
 

@@ -37,7 +37,7 @@ def _database():
 
 def test_the_panel_renders_for_a_host_without_backup_internals():
     auth.create_account("settings-host@example.test", "Host", username="settings-host")
-    page = _login("settings-host").get("/settings?lang=en")
+    page = _login("settings-host").get("/settings/data?lang=en")
     assert page.status_code == 200, page.text
     assert "Data protection" in page.text
     assert "Open data requests" in page.text
@@ -55,7 +55,7 @@ def test_a_platform_admin_sees_the_backup_marker():
         encoding="utf-8",
     )
     try:
-        page = _login("settings-admin").get("/settings?lang=en")
+        page = _login("settings-admin").get("/settings/data?lang=en")
         assert "Last backup" in page.text
         assert "encrypted" in page.text
     finally:

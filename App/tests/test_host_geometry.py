@@ -103,7 +103,7 @@ def test_dashboard_actions_share_height_and_gap(base):
         )
         browser.close()
     boxes = measured["boxes"]
-    assert measured["gap"] == "8px"
+    assert measured["gap"] == "12px"
     assert boxes
     assert len({box["height"] for box in boxes}) == 1
     assert boxes[0]["height"] == 37  # v2 mockup .btn (checked against the mockup by test_0710)
@@ -145,7 +145,7 @@ def test_the_month_filter_shares_its_page_edges(base):
         )
         page = context.new_page()
         measured = {}
-        for route in ("/stay-fees?lang=en", "/invoices?lang=en"):
+        for route in ("/invoices?lang=en",):  # /stay-fees is v2, covered by 0710
             page.goto(base + route)
             _open_month_filter(page)
             measured[route] = page.evaluate(
@@ -171,7 +171,7 @@ def test_the_month_filter_shares_its_page_edges(base):
         for width in (1280, 1024, 390, 360):
             page.set_viewport_size({"width": width, "height": 900})
             for lang in ("en", "cs"):
-                for path in ("/stay-fees", "/invoices"):
+                for path in ("/invoices",):
                     route = f"{path}?lang={lang}"
                     page.goto(base + route)
                     _open_month_filter(page)

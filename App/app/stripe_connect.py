@@ -410,8 +410,12 @@ def process_event(event: Dict[str, Any]) -> None:
     from . import payment_links
 
     etype = event.get("type")
+    from . import booking_webhook
+
     if etype == "account.updated":
         mirror_by_account_id(dict(event["data"]["object"]), config.STRIPE_MODE)
+    elif booking_webhook.is_booking_event(event):
+        booking_webhook.handle(event)
     elif etype in payment_links.PAID_EVENTS:
         payment_links.on_paid(event)
     _record_event(event)

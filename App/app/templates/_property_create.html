@@ -8,7 +8,7 @@
 {%- set draft = draft or {} -%}
 {%- set property_prefill = property_prefill or {} -%}
 {%- set property_values = draft -%}
-<div class="property-create-lane"><div class="property-create">
+<div class="property-create-lane prop-new"><div class="property-create">
   <div class="property-create-main">
     {% if copy_property_peers %}
     <div class="copy-settings-bar">{% with copy_action='/apartments/new', copy_section='' %}{% include "_copy_settings_dialog.html" %}{% endwith %}</div>
@@ -19,7 +19,6 @@
       {% if property_prefill.get('stay_fee_rate_czk') %}<br><span class="ui-sub">{{ t('apartment.form.copy_from.vs_hint') }}</span>{% endif %}</p>
     {% endif %}
     <form method="post" action="/apartments" class="property-create-form" id="property-create-form">
-      <p class="required-legend">{{ t('common.required_legend') }}</p>
       {# Enter in any field creates the property, never "Check again". #}
       <button type="submit" hidden tabindex="-1" aria-hidden="true"></button>
       {# Works without JavaScript too: csrf.js would add the same token. #}
@@ -85,10 +84,10 @@
   <aside class="panel property-create-next" aria-labelledby="property-create-next-title">
     <h2 id="property-create-next-title">{{ t('property_create.next_title') }}</h2>
     <ul class="property-create-next-list">
-      <li>{{ icon('calendar-days', 20) }}<div><strong>{{ t('property_create.next_calendar') }}</strong><small>{{ t('property_create.next_calendar_body') }}</small></div></li>
-      <li>{{ icon('external-link', 20) }}<div><strong>{{ t('property_create.next_guests') }}</strong><small>{{ t('property_create.next_guests_body') }}</small></div></li>
-      <li>{{ icon('send', 20) }}<div><strong>{{ t('property_create.next_reporting') }}</strong><small>{{ t('property_create.next_reporting_body') }}</small></div></li>
-      <li>{{ icon('key-round', 20) }}<div><strong>{{ t('host.door_code') }} <span class="opt">{{ t('common.optional') }}</span></strong><small>{{ t('property_create.next_lock_body') }} <a href="/guide#door-codes" aria-label="{{ t('help.tip.more') }}: {{ t('property_create.next_lock_body') | striptags | truncate(50) }}">{{ t('help.tip.more') }}</a></small></div></li>
+      <li>{{ icon('calendar-days', 20) }}<div><strong><span>{{ t('property_create.next_calendar') }}</span>{{ help_tip('property-create-next-calendar-help', t('property_create.next_calendar_body')) }}</strong></div></li>
+      <li>{{ icon('external-link', 20) }}<div><strong><span>{{ t('property_create.next_guests') }}</span>{{ help_tip('property-create-next-guests-help', t('property_create.next_guests_body')) }}</strong></div></li>
+      <li>{{ icon('send', 20) }}<div><strong><span>{{ t('property_create.next_reporting') }}</span>{{ help_tip('property-create-next-reporting-help', t('property_create.next_reporting_body')) }}</strong></div></li>
+      <li>{{ icon('key-round', 20) }}<div><strong>{{ t('host.door_code') }} <span class="opt">{{ t('common.optional') }}</span>{{ help_tip('property-create-next-lock-help', t('property_create.next_lock_body'), '/guide#door-codes') }}</strong></div></li>
     </ul>
   </aside>
 </div></div>

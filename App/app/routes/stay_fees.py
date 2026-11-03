@@ -1,11 +1,13 @@
 """Host-only stay-fee overview and per-property detail."""
 from __future__ import annotations
 
+import io
 import unicodedata
+import zipfile
 from datetime import date
 from urllib.parse import parse_qsl, quote, urlencode, urlsplit
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse, Response
 
 from .. import (
@@ -44,6 +46,32 @@ def _fold_place(value) -> str:
     return "".join(ch for ch in plain if not unicodedata.combining(ch)).casefold()
 
 
+# 0847: the council fields a property can take over from a sibling in the same municipality.
+FEE_COPY_FIELDS = (
+    "stay_fee_rate_czk", "stay_fee_cadence", "stay_fee_vs",
+    "stay_fee_council_account", "stay_fee_council_iban",
+    "stay_fee_authority_name", "stay_fee_authority_address",
+    "stay_fee_authority_contact", "stay_fee_authority_databox",
+    "stay_fee_payee", "stay_fee_instruction",
+    "stay_fee_scope_rule", "stay_fee_scope_reference",
+)
+
+
+def fee_copy_source(apartment, candidates):
+    """The first candidate with an active fee in the same municipality, or None."""
+    place = _fold_place(apartment["addr_obec"])
+    if not place:
+        return None
+    for candidate in candidates:
+        if (
+            candidate["id"] != apartment["id"]
+            and stay_fee.is_active(candidate)
+            and _fold_place(candidate["addr_obec"]) == place
+        ):
+            return candidate
+    return None
+
+
 def _default_month(today: date) -> date:
     return stay_fee.previous_month(today)
 
@@ -66,8 +94,6 @@ STAY_FEE_STATUSES = (
     ("waiting", "stay_fees.status.in_progress"),
     ("ready", "stay_fees.status.ready"),
     ("saved", "stay_fees.status.saved"),
-    ("sent", "stay_fees.status.sent"),
-    ("paid", "stay_fees.status.paid"),
 )
 
 
@@ -75,10 +101,6 @@ def _row_status(row: dict) -> str:
     if row["unset"]:
         return "attention"
     if row.get("frozen"):
-        if row.get("paid_at"):
-            return "paid"
-        if row.get("sent_at"):
-            return "sent"
         return "saved"
     issues = row["issues"] or []
     if issues == ["stay_fees.issue.period_running"]:
@@ -148,7 +170,10 @@ def stay_fees_list(request: Request):
     configured = {row["apartment"]["id"] for row in rows}
     for apartment in apartments:
         if apartment["id"] not in configured:
-            rows.append({"apartment": apartment, "unset": True, "issues": []})
+            rows.append({
+                "apartment": apartment, "unset": True, "issues": [],
+                "copy_from": fee_copy_source(apartment, apartments),
+            })
     for row in rows:
         row["status"] = _row_status(row)
     rows = [
@@ -158,27 +183,14 @@ def stay_fees_list(request: Request):
     ]
     rows.sort(key=lambda row: (row["apartment"]["internal_name"] or "", row["apartment"]["id"]))
 
-    # 0292: which step each property card shows. Step 1 until the period is
-    # confirmed; then 2 (download), and 3 (pay and send) when the host pressed Next.
-    try:
-        step_apartment = int(request.query_params.get("fee_apt", ""))
-    except ValueError:
-        step_apartment = None
-    step_three = request.query_params.get("fee_step") == "3"
-    list_query = [(k, v) for k, v in request.query_params.multi_items() if k not in ("lang", "fee_step", "fee_apt")]
-
-    def fee_step_url(apartment_id: int, step: int) -> str:
-        query = urlencode(list_query + ([("fee_step", "3"), ("fee_apt", str(apartment_id))] if step == 3 else []))
-        return f"/stay-fees?{query}#fee-pay-{apartment_id}" if query else f"/stay-fees#fee-pay-{apartment_id}"
-
+    # 0630: step 1 until the period is confirmed, then 2 (send and pay).
     for row in rows:
         if not row.get("unset"):
-            row["step"] = 1 if not row.get("frozen") else (3 if step_three and step_apartment == row["apartment"]["id"] else 2)
+            row["step"] = 2 if row.get("frozen") else 1
 
     return render(request, "stay_fees.html", {
         "nav": "stay_fees",
         "periods": rows,
-        "fee_step_url": fee_step_url,
         "selected_month": selected_month,
         "has_properties": bool(apartments),
         "stay_fee_emails": stay_fee_auto.emails_enabled(owner_id),
@@ -330,6 +342,48 @@ def fee_return_after_save(apartment, return_to: str) -> str:
     return back
 
 
+@router.get("/stay-fees/pdfs.zip")
+def stay_fee_pdfs_zip(request: Request):
+    """0846: every saved report of one month in one ZIP, the same bytes as each PDF button."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    today = claim.prague_today()
+    month = stay_fee.parse_month(request.query_params.get("month")) or _default_month(today)
+    if month > today.replace(day=1):
+        month = _default_month(today)
+    apartments = db.query(
+        f"SELECT * FROM apartment WHERE {db.null_safe_eq('owner_user_id')} AND archived_at IS NULL "
+        "ORDER BY internal_name, id",
+        (access.owner_id(request),),
+    )
+    buffer = io.BytesIO()
+    names = set()
+    count = 0
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+        for apartment in apartments:
+            row = stay_fee_filing.covering(apartment["id"], month)
+            if not row:
+                continue
+            name = f'hlaseni-poplatek-z-pobytu-{row["period_key"]}-{stay_fee.vs_of(apartment)}-{apartment["id"]}.pdf'
+            if name in names:
+                continue
+            names.add(name)
+            archive.writestr(name, stay_fee_filing.pdf_bytes(row))
+            count += 1
+    if not count:
+        return _back(f"/stay-fees?month={stay_fee.month_key(month)}", err=_flash(request, "flash.stay_fees.not_saved"))
+    db.audit("stay_fee_pdf_zip", f"month={stay_fee.month_key(month)} files={count}")
+    return Response(
+        buffer.getvalue(),
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="poplatek-z-pobytu-{stay_fee.month_key(month)}.zip"',
+            "Cache-Control": "no-store",
+        },
+    )
+
+
 @router.get("/stay-fees/{apartment_id}")
 def stay_fee_detail(apartment_id: int, request: Request):
     guard = auth.require_login(request)
@@ -429,21 +483,7 @@ def _send_panel_context(apartment, period, group, filing_row: dict) -> dict:
         "databox": apartment["stay_fee_authority_databox"] or "",
         "subject_cs": subject_cs,
         "body_cs": body_cs,
-        "sent_at": filing_row["sent_at"],
-        "paid_at": filing_row["paid_at"],
-        "sent_message_id": filing_row["sent_message_id"] or "",
     }
-
-
-def _filing_for_action(request: Request, apartment_id: int, filing_id: int):
-    apartment = access.apartment(request, apartment_id)
-    if not apartment:
-        return None, None
-    row = db.query_one(
-        "SELECT * FROM stay_fee_filing WHERE id = ? AND apartment_id = ? AND superseded_at IS NULL",
-        (filing_id, apartment_id),
-    )
-    return apartment, row
 
 
 def _guest_lines(apartment, period):
@@ -742,6 +782,67 @@ async def stay_fee_scope_ruling(apartment_id: int, request: Request):
     return _back(back_path, msg=_flash(request, "flash.stay_fees.saved"))
 
 
+@router.post("/stay-fees/confirm-ready")
+async def stay_fee_confirm_ready(request: Request):
+    """0845: seal every listed property's ready period for one month, one tap.
+
+    Same sealing as the job (stay_fee_auto.confirm), which equals the list's
+    "Ano, sedí": collected = the calculated amount per guest. A blocked or
+    already saved period is skipped, never changed.
+    """
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    today = claim.prague_today()
+    form = await request.form()
+    month = stay_fee.parse_month(_form_str(form, "month")) or _default_month(today)
+    if month > today.replace(day=1):
+        month = _default_month(today)
+    back_path = fee_return_path(_form_str(form, "return_to"), 0) or "/stay-fees"
+    saved = 0
+    seen = set()
+    for raw in form.getlist("apartment_id"):
+        text = str(raw).strip()
+        if not text.isdigit() or text in seen:
+            continue
+        seen.add(text)
+        apartment = access.apartment(request, int(text))
+        if not stay_fee.is_active(apartment) or apartment["archived_at"] or not apartment["active"]:
+            continue
+        if stay_fee_auto.confirm(apartment, month, today, audit_event="stay_fee_finalize"):
+            saved += 1
+    if not saved:
+        return _back(back_path, err=_flash(request, "flash.stay_fees.bulk_none"))
+    return _back(back_path, msg=_flash(request, "flash.stay_fees.bulk_saved", count=saved))
+
+
+@router.post("/stay-fees/{apartment_id}/copy-setup")
+async def stay_fee_copy_setup(apartment_id: int, request: Request):
+    """0847: one tap takes over the fee setup the host was shown on the list."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment = access.apartment(request, apartment_id)
+    if not apartment:
+        return _back("/stay-fees", err=_flash(request, "flash.error.no_such_apartment"))
+    form = await request.form()
+    back_path = fee_return_path(_form_str(form, "return_to"), apartment_id) or "/stay-fees"
+    raw = _form_str(form, "source_id")
+    source = access.apartment(request, int(raw)) if raw.isdigit() else None
+    has_filing = db.query_one("SELECT id FROM stay_fee_filing WHERE apartment_id = ?", (apartment["id"],))
+    if (
+        not source
+        or source["archived_at"]
+        or stay_fee.is_active(apartment)
+        or has_filing
+        or fee_copy_source(apartment, [source]) is None
+    ):
+        return _back(back_path, err=_flash(request, "flash.stay_fees.copy_failed"))
+    db.update("apartment", apartment["id"], {key: source[key] for key in FEE_COPY_FIELDS})
+    db.audit("stay_fee_copy_setup", f"apartment_id={apartment['id']} source_id={source['id']}")
+    return _back(back_path, msg=_flash(request, "flash.stay_fees.copy_done", name=source["internal_name"] or ""))
+
+
 @router.post("/stay-fees/{apartment_id}/finalize")
 async def stay_fee_finalize(apartment_id: int, request: Request):
     guard = auth.require_login(request)
@@ -806,51 +907,3 @@ async def stay_fee_finalize(apartment_id: int, request: Request):
     db.audit("stay_fee_finalize", f"apartment_id={apartment['id']} period={key}")
     return _back(back_path, msg=_flash(request, "flash.stay_fees.period_saved"))
 
-
-@router.post("/stay-fees/{apartment_id}/filings/{filing_id}/sent")
-async def stay_fee_filing_sent(apartment_id: int, filing_id: int, request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    apartment, row = _filing_for_action(request, apartment_id, filing_id)
-    if not apartment or not row:
-        raise HTTPException(status_code=404)
-    form = await request.form()
-    month = stay_fee.parse_month(_form_str(form, "month")) or _default_month(claim.prague_today())
-    back_path = f"/stay-fees/{apartment_id}?month={stay_fee.month_key(month)}"
-    undo = _form_str(form, "undo") == "1"
-    if undo:
-        if row["sent_at"]:
-            db.update("stay_fee_filing", filing_id, {"sent_at": None, "sent_message_id": None})
-            db.audit("stay_fee_sent_undo", f"filing_id={filing_id}")
-    elif not row["sent_at"]:
-        message_id = _form_str(form, "sent_message_id")[:100].strip() or None
-        db.update(
-            "stay_fee_filing",
-            filing_id,
-            {"sent_at": db.utcnow(), "sent_message_id": message_id},
-        )
-        db.audit("stay_fee_sent", f"filing_id={filing_id}")
-    return _back(back_path, msg=_flash(request, "flash.stay_fees.saved"))
-
-
-@router.post("/stay-fees/{apartment_id}/filings/{filing_id}/paid")
-async def stay_fee_filing_paid(apartment_id: int, filing_id: int, request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    apartment, row = _filing_for_action(request, apartment_id, filing_id)
-    if not apartment or not row:
-        raise HTTPException(status_code=404)
-    form = await request.form()
-    month = stay_fee.parse_month(_form_str(form, "month")) or _default_month(claim.prague_today())
-    back_path = f"/stay-fees/{apartment_id}?month={stay_fee.month_key(month)}"
-    undo = _form_str(form, "undo") == "1"
-    if undo:
-        if row["paid_at"]:
-            db.update("stay_fee_filing", filing_id, {"paid_at": None})
-            db.audit("stay_fee_paid_undo", f"filing_id={filing_id}")
-    elif not row["paid_at"]:
-        db.update("stay_fee_filing", filing_id, {"paid_at": db.utcnow()})
-        db.audit("stay_fee_paid", f"filing_id={filing_id}")
-    return _back(back_path, msg=_flash(request, "flash.stay_fees.saved"))

@@ -1,7 +1,8 @@
 {% extends "host_page.html" %}
 {% set nav = 'submissions' %}
 {% set body_kind = 'detail' %}
-{% from "_components.html" import submission_pill, row_menu_begin, row_menu_end, row_open, copy_button with context %}
+{% set v2 = true %}
+{% from "_components.html" import submission_pill, row_menu_begin, row_menu_end, row_open, copy_button, help_tip with context %}
 {# The two coral links below sit in exclusive branches (failed vs receipt), as on the stay detail. #}
 {% set cta = 'ui-btn ui-btn-primary' %}
 {% block title %}{{ t('reports.detail.title', id=submission.id) }}{% endblock %}
@@ -18,11 +19,21 @@
   'noop': t('reports.detail.note_noop'),
   'not_configured': t('reports.detail.note_noop'),
 } %}
+{% set state_words = {
+  'ok': t('submission.accepted'), 'ok_duplicate': t('submission.duplicate'),
+  'partial': t('submission.partial'), 'error': t('submission.rejected'),
+  'failed': t('submission.rejected'), 'transport_error': t('submission.not_delivered'),
+  'outcome_unknown': t('submission.outcome_unknown'), 'not_configured': t('submission.setup_incomplete'),
+  'running': t('submission.in_progress'), 'noop': t('submission.nothing_to_send')
+} %}
 
 {% block meta %}{{ submission.internal_name ~ ' · ' ~ report_mode_label(submission.mode) }}{% endblock %}
 {% block back_url %}/submissions{% endblock %}
 {% block back_label %}{{ t('reports.detail.back') }}{% endblock %}
+{% block page_title %}{% endblock %}
 {% block body %}
+<div class="e-page">
+{% with href='/submissions', title=t('reports.detail.title', id=submission.id) %}{% include "partials/settings_back_header.html" %}{% endwith %}
 
 {# The report detail follows the stay page's grammar (C-16 [UX-81]): the Now
    panel answers outcome and next step, the guests follow, and the operator
@@ -38,10 +49,9 @@
 <section class="panel stay-command-panel outcome-{{ outcome_levels.get(submission.state, 'critical') }}" id="now">
   <div class="stay-command-main">
     <div>
-      <div class="eyebrow">{{ t('reports.outcome') }}</div>
-      <p class="stay-command-note">{{ outcome_notes.get(submission.state, '') }}</p>
+      {% with label=t('reports.outcome'), value=state_words.get(submission.state, ''), help_id='submission-outcome-help', help_text=outcome_notes.get(submission.state, '') %}{% include "partials/settings_value_card.html" %}{% endwith %}
       {% if accepted and not submission.receipt_pdf %}
-        <p class="ui-sub report-receipt-missing" data-receipt-missing>{{ t('reports.detail.receipt_missing') }}</p>
+        <span class="report-receipt-missing" data-receipt-missing>{{ help_tip('report-receipt-help', t('reports.detail.receipt_missing')) }}</span>
       {% endif %}
     </div>
     <div class="stay-command-actions">
@@ -71,7 +81,7 @@
       <ul class="ui-sub">
         {% for message in header_messages %}<li>{{ message }}</li>{% endfor %}
       </ul>
-      <p class="ui-sub">{{ t('reports.detail.header_help') }}
+      <p class="ui-sub">{{ help_tip('report-header-help', t('reports.detail.header_help')) }}
         <a href="/apartments/{{ submission.apartment_id }}?view=settings&amp;section=reporting#ubyport">{{ t('reports.detail.header_help_link') }}</a>
       </p>
     </div>
@@ -146,7 +156,7 @@
 
 <details class="panel technical">
   <summary>{{ t('reports.detail.technical') }}</summary>
-  <p class="ui-sub">{{ t('reports.detail.technical_help') }}</p>
+  {{ help_tip('report-technical-help', t('reports.detail.technical_help')) }}
   <dl class="kv">
     <dt>{{ t('reports.detail.endpoint') }}</dt>
     <dd class="ui-mono">{{ submission.endpoint or '—' }}</dd>
@@ -169,4 +179,5 @@
     <pre class="ui-mono code-block">{{ record_errors | join('\n') }}</pre>
   {% endif %}
 </details>
+</div>
 {% endblock %}
