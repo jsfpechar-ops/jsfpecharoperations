@@ -63,6 +63,7 @@ from .. import (
     workflow,
     welcome_back,
 )
+from .. import ruian as ruian_lookup  # 0884
 from ..templating import render
 from .guest_guide import leon_card_state as _leon_card_state  # 0396
 from ..ubyport.client import UbyportError, UbyportTransportError
@@ -214,9 +215,7 @@ def _lock_property_return(request: Request, return_to: str) -> Optional[str]:
     apartment_id = int(match.group(1))
     if not access.apartment(request, apartment_id):
         return None
-    if match.group(2):
-        # 0203: the setup wizard's lock step; every lock answer returns to it.
-        return f"/apartments/{apartment_id}/setup/door_lock"
+    # 0884: the wizard has no lock step; an old wizard return_to lands on the lock settings.
     return f"/apartments/{apartment_id}?view=settings&section=lock#door-code"
 
 
@@ -1180,6 +1179,10 @@ async def create_entity(request: Request):
     payload["owner_user_id"] = access.owner_id(request)
     entity_id = db.insert("legal_entity", payload)
     _resolve_controller_alerts(entity_id)
+    next_path = _entity_next(_form_str(form, "next"))
+    if next_path:
+        # 0884: "Fill from register" on the wizard's property step returns there.
+        return _back(next_path, msg=_flash(request, "flash.entities.added", name=payload["name"]))
     apartments = access.apartments(request)
     if not apartments:
         return _back(
@@ -1289,6 +1292,18 @@ def delete_entity(entity_id: int, request: Request):
 
 
 # --- apartments ----------------------------------------------------------
+
+# 0884: must stay above /apartments/{apartment_id}, which would otherwise match it.
+@router.get("/apartments/ruian-suggest")
+def apartments_ruian_suggest(request: Request, q: str = ""):
+    owner = access.owner_id(request)
+    if owner is None:
+        return JSONResponse([], status_code=401)
+    if not ruian_lookup.enabled() or ruian_lookup.usable_query(q) is None or ruian_lookup.rate_limited(owner):
+        return JSONResponse([])
+    ruian_lookup.record_lookup(owner)
+    return JSONResponse(ruian_lookup.suggest(q))
+
 
 @router.get("/apartments")
 def apartments_list(request: Request):
@@ -1649,6 +1664,9 @@ def _wizard_step_payload(form, step: str) -> Dict[str, Any]:
         for field in property_setup.STEP_FIELDS["police"]:
             payload[field] = _form_str(form, field)
         payload["uby_mark"] = payload["uby_mark"].upper()
+        if "automation_mode" in form:
+            # 0884: the automation choice cards live on the police step.
+            payload.update(_automation_timing_values(form))
     elif step == "stay_fee":
         payload.update(stay_fee_routes.fee_form_values(form))
     elif step == "door_lock":
@@ -1671,6 +1689,18 @@ def _automation_timing_values(form) -> Dict[str, Any]:
         "automation_mode": mode if mode in reporting.AUTOMATION_MODES else "manual",
         "submit_after_hours": min(_form_int(form, "submit_after_hours") or 24, 48),
     }
+
+
+def automation_choice_error(form) -> Optional[str]:
+    """0884: the timing save's own checks, for the police step's cards. A flash key or None."""
+    mode = _form_str(form, "automation_mode")
+    if mode not in reporting.AUTOMATION_MODES:
+        return "flash.properties.timing_invalid"
+    if mode == "scheduled":
+        hours = _form_int(form, "submit_after_hours")
+        if hours is None or not 1 <= hours <= 48:
+            return "flash.properties.timing_hours"
+    return None
 
 
 def _apartment_payload(form) -> Dict[str, Any]:
@@ -2369,6 +2399,9 @@ def _setup_after_save(
     lock_available = bundle["lock_available"]
     feeds = bundle["feeds"]
     issues = _apartment_issues(apartment)
+    if step == "police" and "automation_mode" in form:
+        # 0884: saving the police step answers the automation question too.
+        property_setup.mark(apartment_id, "automation", "done")
     if step == "property" and property_setup.property_details_complete(apartment):
         property_setup.mark(apartment_id, step, "done")
     elif step == "police" and report_complete:
@@ -2479,6 +2512,11 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
     if not apartment:
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment")), False
     form = _with_lock_tab_hours(form, apartment)
+    if _form_str(form, "setup_step") in property_setup.RETIRED_STEPS:
+        # 0884: a page left open from the old eight-step wizard saves nothing.
+        from .onboarding_wizard import wizard_return_to
+
+        return _back(wizard_return_to(apartment_id, "done")), False
     setup_step = _wizard_setup_step(form)
     if setup_step:
         payload = _wizard_step_payload(form, setup_step)
@@ -2611,6 +2649,14 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
         address_errors = _create_address_errors(merged)
         if address_errors:
             return _refuse_apartment_save(request, apartment, form, None, address_errors), False
+    if setup_step == "police" and "automation_mode" in form:
+        timing_error = automation_choice_error(form)
+        if timing_error:
+            from .onboarding_wizard import refuse_setup_save
+
+            refused = refuse_setup_save(request, apartment, form, operator_error=timing_error)
+            if refused:
+                return refused, False
     password = _form_str(form, "uby_ws_password")
     if setup_step == "police":
         police_errors = _wizard_police_format_errors(apartment, payload, password)

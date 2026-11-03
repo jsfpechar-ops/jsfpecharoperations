@@ -20,7 +20,6 @@ ROUTES = {
     "setup-calendar": "/apartments/{first_property}/setup/calendar",  # 0801
     "setup-police": "/apartments/{first_property}/setup/police",  # 0801
     "setup-guest-link": "/apartments/{first_property}/setup/guest_link",  # 0801
-    "setup-stay-fee": "/apartments/{first_property}/setup/stay_fee",  # 0801
     "setup-done": "/apartments/{first_property}/setup/done",  # 0801
     "guest-guide": "/apartments/{first_property}/guide",  # 0802
     "guest-guide-quick": "/apartments/{first_property}/guide/quick",  # 0802
@@ -154,7 +153,7 @@ _HELP_TIP_JS = """() => {
   }
   return out;
 }"""
-HELP_TIP_ROUTES = ["property-new", "setup-property", "setup-calendar", "setup-stay-fee"]
+HELP_TIP_ROUTES = ["property-new", "setup-property", "setup-calendar"]
 
 
 @pytest.mark.parametrize("width", [390, 1280])
