@@ -192,6 +192,8 @@ body.v2 .btn.copy-btn:focus-visible{outline:2px solid #d0452d;outline-offset:2px
 body.v2 .ui-btn.copy-btn:focus-visible{outline:2px solid #d0452d;outline-offset:2px}
 .clickable-row:focus-within{outline:2px solid #d0452d;outline-offset:-2px}
 body.v2 [data-needs-you-go]:hover{background:#b83a24}
+/* 0901: never a stretched-link overlay on the shell-v2 dashboard (it covered the page when workflow.css leaked in) */
+body.v2 [data-needs-you-go]::before{content:none}
 body.v2 .skip-link{position:fixed;z-index:1000;left:8px;top:-100px}
 body.v2 .skip-link:focus{top:8px}
 
