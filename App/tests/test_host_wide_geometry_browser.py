@@ -314,7 +314,7 @@ def _capture_geometry(page, result_selector):
             viewport: {width: innerWidth, scrollWidth: document.documentElement.scrollWidth},
             hostLane,
             title: box('.page-header-main h1, .ui-ph-main h1, .host-today-head h1, .head h1'),
-            pageHeader: box('.page-header, .ui-ph, .host-today-head, .head, .crumb, main h1'),
+            pageHeader: box('.airbnb-header, .page-header, .ui-ph, .host-today-head, .head, .crumb, main h1'),
             phTop: box('.ph-top'),
             directBacklink: box('main.wrap.with-sidebar > a.back-link'),
             headerMain: box('.page-header-main, .ui-ph-main, .host-today-head'),

@@ -2279,3 +2279,4 @@ body.v2 .host-stay-detail .crumb{margin-bottom:12px}
 body.v2 .airbnb-header>.page-help{margin:0}
 body.v2 .airbnb-header:has(>.page-help)>.airbnb-back{margin-right:calc(100% - 44px)}
 body.v2 .airbnb-header:has(>.page-help)>.airbnb-title{width:auto;flex:0 1 auto;min-width:0}
+@media (max-width:1023px){body.v2 .host-stay-detail>.head{min-height:1px}}
