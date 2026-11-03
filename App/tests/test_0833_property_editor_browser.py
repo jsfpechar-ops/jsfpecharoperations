@@ -44,6 +44,7 @@ _ROWS_JS = """() => {
         if (lbl && vis(lbl)) {
             const range = document.createRange();
             range.selectNodeContents(lbl);
+            if (lbl.contains(b)) range.setEndBefore(b.closest('.help-tip') || b);  // 0852: the macro may put the tip inside the label
             const lr = range.getBoundingClientRect();
             const mid = (x) => x.top + x.height / 2;
             out.push({kind: 'row', dy: Math.abs(mid(r) - mid(lr)), gap: r.left - lr.right});

@@ -239,7 +239,7 @@ def test_property_rail_and_back_links_ask_and_cards_into_settings_do_not(browser
     page.locator('a.nav[href="/settings"]').first.click()
     assert _open(page)
     page.keyboard.press("Escape")
-    page.locator('.savebar a[href="/apartments"]').click()
+    page.locator('a.airbnb-back[href="/apartments"]').click()
     assert _open(page)
     page.locator("#unsaved-dialog [data-unsaved-stay]").click()
     assert "/apartments/" in page.url and page.input_value("#internal_name") == "Rail O1 draft"

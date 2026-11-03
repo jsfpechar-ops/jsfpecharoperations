@@ -305,7 +305,7 @@ def test_filter_draft_calendar_and_month_grid_commit_once(host, base):
         assert page.locator("[data-range-from]").input_value() == "2026-11-12"
 
         page.goto(base + "/invoices?lang=en")
-        assert page.locator("[data-filter-summary]").inner_text().strip() == "All dates · All properties"
+        assert " ".join(page.locator("[data-filter-summary]").inner_text().split()) == "All dates · All properties"
         page.goto(base + f"/invoices?status=paid&q=Sample&apartment={host['apartments'][0]}&lang=en")
         assert "Payment recorded" in page.locator("[data-filter-summary]").inner_text()
         page.locator("[data-filter-toggle]").click()
@@ -395,7 +395,7 @@ def test_filter_geometry_and_popovers_stay_inside_the_viewport_in_english_and_cz
                     page.goto(base + route + "?lang=" + lang)
                     if route == "/invoices":
                         page.wait_for_function("document.documentElement.classList.contains('has-js')")
-                    lane = ".chips" if route == "/reservations" else "[data-filter-toolbar]"
+                    lane = ".stays-pills" if route == "/reservations" else "[data-filter-toolbar]"
                     toolbar = page.locator(lane).first
                     assert toolbar.is_visible(), f"{width}px {lang} {route}"
                     capture = width in (390, 1280)
@@ -411,7 +411,7 @@ def test_filter_geometry_and_popovers_stay_inside_the_viewport_in_english_and_cz
                           const pageWidth = root.clientWidth;
                           return {
                             overflow: (laneSel !== '.chips' && lane.scrollWidth > lane.clientWidth + 1) || toolbar.left < -1 || toolbar.right > pageWidth + 1 || (pageWidth <= 600 && root.scrollWidth > pageWidth + 1),
-                            summaryInside: summary.left >= toolbar.left - 1 && summary.right <= toolbar.right + 1,
+                            summaryInside: summary.width === 0 || (summary.left >= toolbar.left - 1 && summary.right <= toolbar.right + 1),  // 0852: the summary line is dropped on phones (no fine print)
                             triggerHeight: Math.round(document.querySelector('[data-filter-toggle]').getBoundingClientRect().height),
                             clipped: [...document.querySelectorAll(laneSel + ' .btn, ' + laneSel + ' .chip')].some((button) => button.scrollWidth > button.clientWidth + 1),
                           };
@@ -428,7 +428,7 @@ def test_filter_geometry_and_popovers_stay_inside_the_viewport_in_english_and_cz
                     elif width <= 600:
                         assert geometry["triggerHeight"] >= 44
                     else:
-                        assert geometry["triggerHeight"] >= 40
+                        assert geometry["triggerHeight"] >= 37  # 0852: the v2 head actions are 37 px (mockup)
                     if capture:
                         page.locator("[data-filter-toggle]").click()
                         _capture(page, f"{name}-{lang}-{width}-expanded")

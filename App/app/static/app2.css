@@ -1851,9 +1851,6 @@ body.v2 .ov-head .sub{margin-top:12px}
 body.v2 .cal .crow .bar{margin:0 6px;padding:0 8px}
 /* Overview calendar: the day grid fits the card at 1024 px, so the day labels stay 16 px inside the edge */
 body.v2 .cal .cgrid{min-width:0;grid-template-columns:112px repeat(14,minmax(36px,1fr))}
-/* 0830B overview+menu (end) */
-/* 0830C properties+property (start) */
-body.v2 .props-head p.sub{display:none}
 body.v2 .props-card > table :is(th,td):first-child{padding-left:16px}
 body.v2 .props-card > table :is(th,td):last-child{padding-right:16px}
 body.v2 .props-phone .card.prop{border:1px solid #e5e5e5;border-radius:12px;box-shadow:none;padding:20px}
@@ -2122,10 +2119,6 @@ body.v2 #stay-fee-settings > .field:has(> .copyrow){grid-column:1 / -1}
 body.v2 .prop-sec .copyrow{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
 body.v2 .prop-sec .copyrow > select#fee-copy-source{margin-bottom:0;flex:1 1 220px;min-width:0}
 @media (max-width:1023px){body.v2 .e-page table.ui-table-stack thead{display:none}}
-/* 0872 merge: help tips inside <details> (property page) stay visible text, no "?" button */
-body.v2 details.prop-sec .help-tip-btn{display:none}
-body.v2 details.prop-sec .help-tip{display:block}
-body.v2 details.prop-sec .help-tip-body,body.v2 details.prop-sec .help-tip[data-js]>.help-tip-body{position:static;display:block;max-width:none;width:auto;margin:2px 0 0;padding:0;background:none;border:0;box-shadow:none;font-size:12px;color:var(--ink3)}
 /* 0872 CI fixes: table header under its cell, QR download button colour, police sample link wraps, address labels align */
 body.v2 .guide-page .ui-table th.ui-cell-r{width:1%;padding-left:16px;white-space:nowrap}
 body.v2 .guide-page .ui-btn-primary{color:#fff;background:var(--coral-600);border-color:var(--coral-600)}
