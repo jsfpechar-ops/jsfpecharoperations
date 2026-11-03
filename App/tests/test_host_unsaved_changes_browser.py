@@ -236,7 +236,8 @@ def test_property_rail_and_back_links_ask_and_cards_into_settings_do_not(browser
     page = _page(browser, base, host)
     page.goto(f"{url}?view=settings&section=property&lang=en")
     page.fill("#internal_name", "Rail O1 draft")
-    page.locator('a.nav[href="/settings"]').first.click()
+    page.locator(".me-menu > summary").click()  # 0896: Settings lives in the profile menu
+    page.locator('.me-menu-list a[href="/settings"]').click()
     assert _open(page)
     page.keyboard.press("Escape")
     page.locator('a.airbnb-back[href="/apartments"]').click()
@@ -249,7 +250,8 @@ def test_property_rail_and_back_links_ask_and_cards_into_settings_do_not(browser
     assert page.input_value("#internal_name") == "Rail O1 draft"
     # Discard via the rail leaves the page without the native prompt.
     page.native_dialogs.clear()
-    page.locator('a.nav[href="/settings"]').first.click()
+    page.locator(".me-menu > summary").click()  # 0896: Settings lives in the profile menu
+    page.locator('.me-menu-list a[href="/settings"]').click()
     with page.expect_navigation():
         page.locator("#unsaved-dialog [data-unsaved-discard]").click()
     assert page.url.split("?")[0].endswith("/settings")
