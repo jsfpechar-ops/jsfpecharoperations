@@ -170,12 +170,6 @@ def test_current_property_name_demo_label_and_distinct_setup_status(wizard_host,
         message = page.locator("#wizard-guest-message").input_value()
         assert current_name in message and "[PROPERTY_NAME]" not in message
         assert "%(" not in message
-        page.goto(f"{base}/setup/try_it?lang={lang}")
-        _ready(page)
-        assert current_name in page.locator(".setup-demo-bubble").inner_text()
-        assert page.locator(".setup-demo-disclaimer").inner_text() == _t(lang, "wizard.try_it.model_note")
-        assert page.locator("#demo-message-heading .ui-badge").is_visible()
-        _shot(page, f"39-labeled-demo-message-{lang}-{width}.png")
         property_setup.finish(apartment_id)
         page.goto(f"{base}?lang={lang}")
         _ready(page)

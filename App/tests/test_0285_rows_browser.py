@@ -30,7 +30,7 @@ def _client():
 def test_stays_open_on_upcoming_and_current():
     client = _client()
     page = client.get("/reservations?lang=en").text
-    assert 'aria-current="true">Upcoming &amp; current<' in page or 'aria-current="true">Upcoming & current<' in page
+    assert 'aria-current="page">Upcoming &amp; current<' in page
     # v2 (0528): the mockup has no "All dates" chip, so no chip is current on range=all.
     page = client.get("/reservations?range=all&lang=en").text
     assert 'class="chip on"' not in page

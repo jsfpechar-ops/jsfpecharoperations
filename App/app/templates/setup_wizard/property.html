@@ -4,10 +4,23 @@
 {% set property_values = apartment %}
 {% set address_errors = address_errors or {} %}
 {% set operator_current = apartment.legal_entity_id %}
+{% block wizard_help %}{% from "_components.html" import help_tip with context %}{{ help_tip('wiz-why-property', t('why.property') ~ ' ' ~ t('why.times') ~ ' ' ~ t('why.address')) }}{% endblock %}
 {% block wizard_content %}
-<p class="setup-wizard-lede">{{ t('why.property') }}</p>
+
 {% from "_workflow.html" import workflow_strip with context %}
 {{ workflow_strip(none) }}
+{% if not entities %}
+{#- 0884: no business yet. The register lookup prefills the business form on /entities; the host checks it and saves it there, then comes back here. -#}
+<form method="post" action="/entities" class="wizard-ares" id="wizard-ares-form">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="next" value="/apartments/{{ apartment.id }}/setup/property">
+  <div class="field">
+    <label for="wizard-ares-ico">{{ t('entities.ico') }}</label>
+    <input type="text" id="wizard-ares-ico" name="ico" inputmode="numeric" maxlength="8" autocomplete="off" required>
+  </div>
+  <button class="ui-btn ui-btn-secondary" type="submit" name="fill_from_register" value="1">{{ t('ares.fill') }}</button>
+</form>
+{% endif %}
 <form method="post" action="/apartments/{{ apartment.id }}" class="setup-wizard-form" id="property-details-form">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="return_to" value="{{ wizard_next_return_to }}">
@@ -15,7 +28,7 @@
   <input type="hidden" name="default_purpose" value="{{ apartment.default_purpose or '10' }}">
   {% include "_property_identity_fields.html" %}
   <h3 class="property-section-title">{{ t('apartment.form.door_code.checkin') }} / {{ t('apartment.form.door_code.checkout') }}</h3>
-  <p class="setup-wizard-instruction">{{ t('why.times') }}</p>
+  
   <div class="grid two">
     {% for name, label in [('checkin_hour', 'apartment.form.door_code.checkin'), ('checkout_hour', 'apartment.form.door_code.checkout')] %}
     <div class="field"><label for="{{ name }}">{{ t(label) }}</label>
@@ -28,7 +41,7 @@
   {% include "_property_operator.html" %}
   {% if entities %}<div class="setup-wizard-instruction property-operator-hint"><a href="/entities{{ '?edit=' ~ apartment.legal_entity_id if apartment.legal_entity_id else '' }}">{{ t('host.business') }} </a> {{ help_tip('legal_entity_id-help', t('apartment.form.entity.hint')) }}</div>{% endif %}
   <h3 class="property-section-title">{{ t('apartment.form.address.title') }}</h3>
-  <p class="setup-wizard-instruction">{{ t('why.address') }}</p>
+  
   {% include "_property_address_fields.html" %}
 </form>
 {% endblock %}

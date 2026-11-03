@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import os
-import re
 import secrets
 import socket
 import threading
@@ -476,20 +475,3 @@ def test_set_up_link_opens_visible_editor_and_save_returns_to_the_list(live):
         context.close()
         browser.close()
 
-
-def test_the_wizard_asks_four_fee_boxes(host):
-    """0239: rate, symbol, account and council name; no period, no print-only office details."""
-    client, owner_id, entity_id = host
-    apartment_id = _property(owner_id, entity_id)
-    from app import property_setup
-    property_setup.start(apartment_id)
-    for step in property_setup.STEPS[:property_setup.STEPS.index("stay_fee")]:
-        property_setup.mark(apartment_id, step, "waiting" if step == "police" else "done")
-    page = client.get(f"/apartments/{apartment_id}/setup/stay_fee?lang=en").text
-    form = page.split('id="stay-fee-form"', 1)[1].split("</form>", 1)[0]
-    for name in ("stay_fee_rate_czk", "stay_fee_vs", "stay_fee_council_account", "stay_fee_authority_name"):
-        assert f'name="{name}"' in form, name
-    for name in ("stay_fee_cadence", "stay_fee_authority_address", "stay_fee_authority_contact",
-                 "stay_fee_authority_databox"):
-        assert f'name="{name}"' not in form, name
-    assert re.search(r'name="stay_fee_authority_name"[^>]*required', form)

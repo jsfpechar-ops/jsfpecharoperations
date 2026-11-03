@@ -600,3 +600,54 @@ def test_invoice_buyer_block_spacing_0896():
         server.should_exit = True
         thread.join(timeout=5)
     assert not problems, "\n".join(problems[:60])
+def _issue_paid(host, entity_id: int, stay_id: int, **extra):
+    """0888: issue an already-paid invoice at 2500 Kč (the fields the form posts)."""
+    response = host.post(
+        "/invoices",
+        data={
+            "legal_entity_id": str(entity_id),
+            **stay_form(stay_id, price="2500"),
+            "buyer_name": "Buyer",
+            "already_paid": "1",
+            "lang": "cs",
+            **extra,
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303, response.text
+
+
+def test_last_price_button_on_the_same_property(host):
+    entity_id = _add_entity()
+    stay_a = make_stay(_owner(), entity_id=entity_id)
+    _issue_paid(host, entity_id, stay_a)
+    stay_b = _second_stay_same_property(_owner(), stay_a)
+    page = host.get(f"/invoices/new?reservation_id={stay_b}&entity={entity_id}")
+    assert 'data-use-price="2500"' in page.text
+    assert "Use last price: 2500 Kč" in page.text
+
+
+def test_payment_method_is_remembered(host):
+    entity_id = _add_entity()
+    stay_a = make_stay(_owner(), entity_id=entity_id)
+    _issue_paid(host, entity_id, stay_a, paid_via="cash")
+    stay_b = _second_stay_same_property(_owner(), stay_a)
+    page = host.get(f"/invoices/new?reservation_id={stay_b}&entity={entity_id}")
+    assert 'value="cash" selected' in page.text
+
+
+def test_custom_payment_text_is_remembered(host):
+    entity_id = _add_entity()
+    stay_a = make_stay(_owner(), entity_id=entity_id)
+    _issue_paid(host, entity_id, stay_a, paid_via="custom", paid_via_custom="Revolut")
+    stay_b = _second_stay_same_property(_owner(), stay_a)
+    page = host.get(f"/invoices/new?reservation_id={stay_b}&entity={entity_id}")
+    assert 'value="Revolut"' in page.text
+
+
+def test_first_invoice_keeps_bank_transfer(host):
+    entity_id = _add_entity()
+    stay_a = make_stay(_owner(), entity_id=entity_id)
+    page = host.get(f"/invoices/new?reservation_id={stay_a}&entity={entity_id}")
+    assert 'value="direct_transfer" selected' in page.text
+    assert 'data-use-price="' not in page.text

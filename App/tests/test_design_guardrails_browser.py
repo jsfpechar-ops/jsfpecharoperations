@@ -40,13 +40,10 @@ ROUTES.update({
     "setup-police": "/apartments/{property_id}/setup/police",
     "setup-guest-link": "/apartments/{property_id}/setup/guest_link",
     "setup-calendar": "/apartments/{property_id}/setup/calendar",
-    "setup-stay-fee": "/apartments/{property_id}/setup/stay_fee",
-    "setup-door-lock": "/apartments/{property_id}/setup/door_lock",
-    "setup-automation": "/apartments/{property_id}/setup/automation",
-    "setup-try-it": "/apartments/{property_id}/setup/try_it",
     "settings-account": "/settings",
     "havel": "/havel",
     "payments": "/payments",
+    "booking-site": "/apartments/{property_id}/booking-site",
 })
 
 
@@ -415,6 +412,8 @@ def test_cleaning_card_facts_line_up_across_cards(wide_host, wide_base):
         page.route("**/static/cleaning.js*", lambda route: route.abort())
         response = page.goto(f"{wide_base}/cleaning?lang=en")
         assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
+        # 0875: the calendar replaces the list on /cleaning; show it here to measure the card CSS itself.
+        page.add_style_tag(content="#cleaning-list { display:block !important; }")
         page.wait_for_selector(".cleaning-section tr[id^='cleaning-'] td", timeout=5000)
         lefts = page.evaluate(
             """() => Array.from(document.querySelectorAll('.cleaning-section table')).map(t =>
@@ -473,7 +472,6 @@ BORDERED_ROUTES = {
     "reservation": "/reservations/{reservation_id}",
     "setup-property": "/apartments/{property_id}/setup/property",
     "setup-police": "/apartments/{property_id}/setup/police",
-    "setup-stay-fee": "/apartments/{property_id}/setup/stay_fee",
 }
 
 

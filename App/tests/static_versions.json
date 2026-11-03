@@ -1,4 +1,12 @@
 {
+  "admin2-system.css": {
+    "sha256": "71375d0cbcd5e0cef2b3e8a07c08a3b87520ef186ee4d324e1b5213ec9b228d6",
+    "v": "20261102-0894e"
+  },
+  "admin2.css": {
+    "sha256": "e26e64477ffa0b1ccec98d3384ea79675f0d587a89aa9749fdeda6a102ae6ef5",
+    "v": "20261102-0893o"
+  },
   "analytics-optout.js": {
     "sha256": "9afc536f5842652fcfebd0fb30a88278f84f472b2874ad721a9984b72c01f9d5",
     "v": "20261010a"
@@ -8,12 +16,12 @@
     "v": "20261027-signup-wrap"
   },
   "app.js": {
-    "sha256": "f77fa7a9026398c495ff582622acc1ed2008b3cf3d040e14bf7bec5b85863102",
-    "v": "20261102-0789c"
+    "sha256": "84985275c6fbcbfd4c0ebcf6aa4163637a3b500919e836693e3292b7962af18e",
+    "v": "20261103-0901f"
   },
   "app2.css": {
-    "sha256": "bf6c369758570851e66de139a82f165e15b4672b6bdc6148dfde69f57a03698c",
-    "v": "20261102-0867"
+    "sha256": "044b72c7b8b864a68d22af55ee7d0d6127ec2a0eccf37cacdc1c28f66ae42f46",
+    "v": "0902h"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -44,12 +52,12 @@
     "v": "20260915a"
   },
   "dashboard-calendar.css": {
-    "sha256": "be5112e17f37f97569ff6b0d7cb162ec69579d3d487ba019e0fb268da26dbe2a",
-    "v": "20261021-0199b"
+    "sha256": "d0af2f2b97b33e79b3d899cad9e61c82490bb7fe060b24162fc6a8dd27089ba9",
+    "v": "20261103-0905c"
   },
   "dashboard-calendar.js": {
-    "sha256": "4f6393998473a376288b24d006c57233a67b2cf07db4968c960261f3a6b34f3d",
-    "v": "20261102-0507"
+    "sha256": "80e2e01b6a330d4f9bb8c4195b243d9d4ac9470006a359894dd65ff6711084a0",
+    "v": "20261103-0905c"
   },
   "docs/ubyport-ws-credential-sample.pdf": {
     "sha256": "0c147cf9c5dd5326612bc4668c5bce853cf300171ca62e3a0bab688c09b75fe6",
@@ -75,6 +83,10 @@
     "sha256": "96f16ecdd71283743e2fb9e50e9d88789e999ad27acb4d86918b33cd3257d9af",
     "v": "20261102-0896"
   },
+  "guide.js": {
+    "sha256": "46178439314acfb977c235ee7eab530082a0a5a6bb214f3efac58c388762c1da",
+    "v": "20261102-0829"
+  },
   "havel.js": {
     "sha256": "b09f7e3d74c1423a038ba11303572c01625bf7ba6888b59b35aea06e656286f6",
     "v": "20261102-0507"
@@ -96,8 +108,8 @@
     "v": "20261102-0507"
   },
   "host2.css": {
-    "sha256": "f7bedbaffae86da0a5a7616144caab4f3a8d3365bdb0d24066e1386745bfafb6",
-    "v": "20261102-0896"
+    "sha256": "eeabc6acc8be792a51d3b433002a58cd22dce1208936e9cb9f886797fcdf9ccd",
+    "v": "20261103-0900f"
   },
   "landing.css": {
     "sha256": "a9218c2d33c3d07d955b0c630d194ef81801834baaed1cb3615387222ce50ba5",
@@ -123,6 +135,10 @@
     "sha256": "5e1ed00ab7dcac29b5cb42603b958a14dc3e9af2c5a3af187714d0d1fe494364",
     "v": "20261102-0511"
   },
+  "ruian_suggest.js": {
+    "sha256": "9975473a4761c06b6aeb421c82931d7e179e78e7659ad26ab9eaab73d8b34660",
+    "v": "20261102-0835"
+  },
   "shell.js": {
     "sha256": "17d08de32baf5dd03f38508a0f88f4cf09e47e54cea2a0a1dff0421d23e3989b",
     "v": "20261025-0373"
@@ -136,8 +152,8 @@
     "v": "20261014-0102c"
   },
   "skeleton.js": {
-    "sha256": "c5812aa7492da9e038f2e27b4bd264df876fe8cecb82f12991a5cc8f631b0a88",
-    "v": "20261102-0508"
+    "sha256": "37160a722bb10d28ebf4aa12a6783a478699364651f12f415042f236f2f6d79b",
+    "v": "20261102-0509"
   },
   "tokens.css": {
     "sha256": "f2ff6d6ad651558d60bc7312d74aca175c9782a27234e9e4505dd7a1f4841961",

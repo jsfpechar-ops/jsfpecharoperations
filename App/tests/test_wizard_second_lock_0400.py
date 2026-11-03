@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import json
-import re
 
 import pytest
 from fastapi.testclient import TestClient
@@ -83,60 +82,6 @@ def _add_lock_b(owner):
         "UPDATE lock_account SET locks_json = ? WHERE owner_user_id = ?",
         (json.dumps([LOCK_A, LOCK_B]), owner),
     )
-
-
-def test_no_free_lock_shows_the_sharing_steps_not_a_dead_dropdown(world):
-    _, _, _, second = world
-    page = _step(_client(), second)
-    assert 'id="door-lock-form"' not in page
-    assert 'id="smart-locks-share"' in page
-    assert "x_secondlock" in page  # the UbyHost name to paste in TTLock
-    assert 'action="/smart-locks/refresh"' in page
-    assert f'value="/apartments/{second}/setup/door_lock"' in page
-    assert "one lock serves one property" in page
-    assert "Vivus A2.6 · in use by Flat A" in page
-    assert "No smart lock" in page
-
-
-def test_a_free_lock_is_offered_and_the_taken_one_is_disabled(world):
-    owner, _, _, second = world
-    _add_lock_b(owner)
-    page = _step(_client(), second)
-    assert 'id="door-lock-form"' in page
-    taken = re.search(r'<option value="35874326"[^>]*>[^<]*', page).group(0)
-    assert "disabled" in taken and "in use by Flat A" in taken
-    free = re.search(r'<option value="35874327"[^>]*>', page).group(0)
-    assert "selected" in free and "disabled" not in free
-    assert 'id="smart-locks-add-more"' in page
-    assert "x_secondlock" in page
-
-
-def test_the_first_property_keeps_its_own_lock_selectable(world):
-    _, _, first, _ = world
-    page = _client().get(f"/apartments/{first}/setup/door_lock").text
-    option = re.search(r'<option value="35874326"[^>]*>', page)
-    if option:  # the first property may have finished its wizard already
-        assert "disabled" not in option.group(0)
-
-
-def test_a_refused_lock_save_stays_on_the_step_and_keeps_the_times(world):
-    owner, entity, _, second = world
-    _add_lock_b(owner)
-    response = _client().post(f"/apartments/{second}", data={
-        "return_to": f"/apartments/{second}/setup/guest_link",
-        "setup_step": "door_lock", "door_code_section": "1", "door_codes_fields": "1",
-        "internal_name": "Flat B", "legal_entity_id": str(entity), "default_purpose": "10",
-        "checkin_hour": "14", "checkout_hour": "11", "door_codes": "1",
-        "lock_id": LOCK_A["lock_id"],
-    }, follow_redirects=False)
-    assert response.status_code == 400
-    page = response.text
-    assert "already sends codes for another property" in page
-    assert 'id="door-lock-form"' in page
-    assert re.search(r'<select id="checkin_hour"[\s\S]*?<option value="14" selected>', page)
-    assert re.search(r'<select id="checkout_hour"[\s\S]*?<option value="11" selected>', page)
-    assert re.search(r'id="door_codes"[^>]*checked', page)
-    assert db.query_one("SELECT lock_provider FROM apartment WHERE id = ?", (second,))["lock_provider"] is None
 
 
 def test_the_door_lock_tab_still_shows_its_sharing_steps(world):

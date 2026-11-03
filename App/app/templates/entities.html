@@ -14,8 +14,7 @@
 {% block tabs %}{% endblock %}
 {% block body %}
 {% include "_host_alerts.html" %}
-{% with href='/settings', title=t('entities.title') %}{% include "partials/settings_back_header.html" %}{% endwith %}
-<div class="settings-help-line">{{ help_tip('entities-lede-help', t('entities.lede')) }}</div>
+{% with help=help_tip('entities-lede-help', t('entities.lede')), href='/settings', title=t('entities.title') %}{% include "partials/settings_back_header.html" %}{% endwith %}
 {{ onboarding_banner(onboarding) }}
 
 {% if edit_entity %}
@@ -29,7 +28,7 @@
     <a class="ui-btn ui-btn-quiet ui-btn-compact" href="{{ next_path or '/entities' }}">{{ t('common.close') }}</a>
   </div>
   <div class="entity-linked" id="entity-linked">
-    <span class="entity-linked-label">{{ t('entities.linked.label') }}</span>
+    <span class="entity-linked-label">{{ t('entities.linked.label') }}</span>{{ help_tip('entity-linked-help', t('entities.linked.help')) }}
     {% if linked_properties %}
       <ul class="entity-linked-list">
         {% for property in linked_properties %}
@@ -39,7 +38,6 @@
     {% else %}
       <span class="ui-sub">{{ t('entities.linked.none') }}</span>
     {% endif %}
-    {{ help_tip('entity-linked-help', t('entities.linked.help')) }}
   </div>
 
   <section class="entity-section" id="entity-business" aria-labelledby="entity-business-title">
@@ -158,6 +156,7 @@
   <h2>{{ tip_label(t('entities.add'), 'entity-add-why-help', t('why.business'), 'span') }}</h2>
   <form method="post" action="/entities" enctype="multipart/form-data">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    {% if next_path %}<input type="hidden" name="next" value="{{ next_path }}">{% endif %}
     {{ business_form_body('new_', new_entity or none, '', ares_error, ares_note) }}
     <div class="actions"><button class="{{ cta }}" type="submit">{{ t('entities.add_action') }}</button></div>
   </form>

@@ -75,14 +75,14 @@ def test_widget_hidden_without_price_or_stripe(owner, monkeypatch):
     monkeypatch.setattr(config, "STRIPE_MODE", "off")
     client = _client()
     response = client.get(f"/p/{_slug(owner)}")
-    assert "Book this place" not in response.text
+    assert "Choose your dates" not in response.text
 
 
 def test_widget_shown_when_ready(owner, monkeypatch):
     _complete_account(owner, monkeypatch)
     client = _client()
     response = client.get(f"/p/{_slug(owner)}")
-    assert "Book this place" in response.text
+    assert "Choose your dates" in response.text
     assert "<form" in response.text  # no-JS form POST
 
 

@@ -185,7 +185,7 @@ def test_editor_has_both_sections_and_the_linked_properties(host):
 def test_editor_keeps_a_safe_return_path_only(host):
     entity_id = _entity()
     page = host.get(f"/entities?edit={entity_id}&next=/apartments/5").text
-    assert page.count('name="next" value="/apartments/5"') == 2
+    assert page.count('name="next" value="/apartments/5"') == 3  # 0884: + the register-fill form
     assert 'href="/apartments/5"' in page
     evil = host.get(f"/entities?edit={entity_id}&next=https://evil.test/").text
     assert 'name="next"' not in _section(evil, "entity-business")
@@ -224,7 +224,7 @@ def test_canonical_post_rerenders_422_with_typed_values_on_the_editor(host):
         assert typed in invoice, typed
     # The business form still shows the stored values and keeps the return path.
     assert 'value="pole@example.test"' in _section(page, "entity-business")
-    assert page.count('name="next" value="/apartments/9"') == 2
+    assert page.count('name="next" value="/apartments/9"') == 3  # 0884: + the register-fill form
     assert _row(entity_id)["bank_account"] == "123/0600"
 
 

@@ -11,6 +11,7 @@ Money is whole CZK.
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 import secrets
 from datetime import date, datetime, time, timedelta
@@ -29,7 +30,7 @@ MAX_GUESTS = 60
 DEFAULT_CUTOFF_HOUR = 18
 DEFAULT_CHECKIN_HOUR = 15
 # The guest terms text shown at checkout (0818); bump when the text changes.
-TERMS_VERSION = "2026-11-01"
+TERMS_VERSION = "2026-11-03"
 
 DEFAULTS: Dict[str, Any] = {
     "nightly_price_czk": 0,
@@ -249,6 +250,33 @@ def refund_czk(booking: Dict[str, Any], *, checkin_hour: int,
 
 def token_hash(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def manage_token(booking_id: int) -> str:
+    """The guest's private key to one booking (0820 invoice, 0821 cancel page).
+
+    An HMAC of the booking id with the server secret: the confirmation mail
+    can carry it and nothing needs storing. 160 bits, URL safe.
+    """
+    from . import config
+
+    return hmac.new(config.secret_key().encode("utf-8"),
+                    f"site_booking:{int(booking_id)}".encode("utf-8"),
+                    hashlib.sha256).hexdigest()[:40]
+
+
+def token_ok(booking_id: int, token: str) -> bool:
+    return hmac.compare_digest(manage_token(booking_id), str(token or ""))
+
+
+def manage_url(booking: Dict[str, Any]) -> str:
+    """https://<host>/p/<slug>/b/<id>/<token>: the guest's booking page (0821)."""
+    from . import config, property_page
+
+    row = property_page.account_row(int(booking["apartment_id"]))
+    slug = row["slug"] if row else "x"
+    return (f"{config.PUBLIC_BASE_URL.rstrip('/')}/p/{slug}/b/{int(booking['id'])}/"
+            f"{manage_token(int(booking['id']))}")
 
 
 def create_pending(apartment_id: int, owner_user_id: int, q: Dict[str, Any], *,

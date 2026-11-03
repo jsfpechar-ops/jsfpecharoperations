@@ -11,13 +11,13 @@
 {% endmacro %}
 {% block wizard_content %}
 {% if not import_on %}
-<p class="setup-wizard-lede">{{ t('leon_setup.import.off') }}</p>
+<div class="setup-wizard-lede">{{ t('leon_setup.import.off') }}</div>
 {% elif import_busy %}
-<p class="setup-wizard-instruction" data-leon-import-wait>{{ t('leon_setup.import.waiting') }}</p>
+<div class="setup-wizard-instruction" data-leon-import-wait>{{ t('leon_setup.import.waiting') }}</div>
 {% if imports %}{{ history() }}{% endif %}
 <p><a class="ui-btn ui-btn-secondary" href="/apartments/{{ apartment.id }}/leon/setup/import">{{ t('wizard.try_it.check_again') }}</a></p>
 {% elif sources %}
-<p class="setup-wizard-lede">{{ t('leon_setup.import.lede') }}</p>
+<div class="setup-wizard-lede">{{ t('leon_setup.import.lede') }}</div>
 <form method="post" action="/apartments/{{ apartment.id }}/guide/import" id="leon-setup-import">
 <input type="hidden" name="_csrf" value="{{ csrf_token }}">
 <input type="hidden" name="next" value="leon">
@@ -26,7 +26,7 @@
 </form>
 {% if imports %}{{ history() }}{% endif %}
 {% else %}
-<p class="setup-wizard-instruction">{{ t('leon_setup.import.result', n=drafts) }}</p>
+<div class="setup-wizard-instruction">{{ t('leon_setup.import.result', n=drafts) }}</div>
 {% if imports %}{{ history() }}{% endif %}
 {% endif %}
 {% endblock %}

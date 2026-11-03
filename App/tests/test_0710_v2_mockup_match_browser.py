@@ -126,7 +126,7 @@ def test_v2_page_matches_mockup_styles(spec, width, base, dashboard_rich_host):
                 continue
             for prop in STYLE_PROPS:
                 app_value = app_styles[prop]
-                mock_value = expected_value(selector, prop, mock_styles[prop])
+                mock_value = expected_value(selector, prop, mock_styles[prop], spec["name"])
                 if not same_value(prop, app_value, mock_value):
                     diffs.append(f"{selector} {prop}: app={app_value} mockup={mock_value}")
             if phone and width in PHONE_WIDTHS:

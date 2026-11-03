@@ -203,7 +203,7 @@ def test_the_zero_state_overview_still_renders_the_welcome_card(empty_host):
 def test_a_workspace_with_a_property_keeps_the_page_header(host_with_property):
     page = host_with_property.get("/?lang=en").text
 
-    assert f"<span class=\"ph-hide\">{host_i18n.STRINGS['en']['dashboard.title']}</span>" in page and page.count("<h1") == 1  # 0729: one h1; desktop title span, phone headline span
+    assert f"<span class=\"ph-hide\">{host_i18n.STRINGS['en']['dashboard.title']}" in page and page.count("<h1") == 1  # 0729: one h1; desktop title span, phone headline span
 
 
 def test_dashboard_opens_with_the_what_needs_you_card(host_with_property):
@@ -229,7 +229,7 @@ def test_a_stay_that_needs_the_host_gets_one_line_with_one_button(host_with_prop
     try:
         page = host_with_property.get("/?lang=en").text
         line = re.search(
-            rf'<div class="card needs-you-card-item[^"]*"[^>]*data-needs-you-stay="{reservation_id}"[^>]*>(.*?)(?=<div class="card needs-you-card-item[^"]*"|<section|</main>)', page, re.S
+            rf'<li class="card needs-you-item[^"]*"[^>]*data-needs-you-stay="{reservation_id}"[^>]*>(.*?)(?=<li class="card needs-you-item[^"]*"|<section|</main>)', page, re.S
         )
         assert line, "the stay arriving tomorrow has no line"
         assert host_i18n.STRINGS["en"]["needs_you.short.forms"] in line.group(1)

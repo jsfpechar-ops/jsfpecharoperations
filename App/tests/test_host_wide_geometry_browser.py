@@ -314,7 +314,7 @@ def _capture_geometry(page, result_selector):
             viewport: {width: innerWidth, scrollWidth: document.documentElement.scrollWidth},
             hostLane,
             title: box('.page-header-main h1, .ui-ph-main h1, .host-today-head h1, .head h1'),
-            pageHeader: box('.page-header, .ui-ph, .host-today-head, .head, .crumb, main h1'),
+            pageHeader: box('.airbnb-header, .page-header, .ui-ph, .host-today-head, .head, .crumb, main h1'),
             phTop: box('.ph-top'),
             directBacklink: box('main.wrap.with-sidebar > a.back-link'),
             headerMain: box('.page-header-main, .ui-ph-main, .host-today-head'),
@@ -518,7 +518,7 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                             "dates_changed_resign alerts are filing gates and must remain non-dismissible"
                         )
                         assert geometry["alertStack"] is None, geometry["alertStack"]
-                    elif name in ("properties", "fee-setup", "property-detail", "property-detail-configured", "guest-links", "automation", "smart-locks", "invoices", "submissions", "housebook"):  # v2 pages (0538, 0792): no alert stack
+                    elif name in ("properties", "fee-setup", "property-detail", "property-detail-configured", "guest-links", "automation", "smart-locks", "invoices", "submissions", "housebook", "property-new", "invoice-new-picker", "invoice-new-selected", "invoice-detail", "submission-detail"):  # v2 pages (0538, 0792): no alert stack
                         # 0538: the v2 shell does not render the alert stack (base.html), as on the dashboard
                         assert geometry["alertStack"] is None, (name, lang, width, geometry["alertStack"])
                     else:

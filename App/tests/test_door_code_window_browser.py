@@ -52,7 +52,6 @@ def _routes(host, lang):
         "property-times": home + "?view=settings&section=property&lang=" + lang,
         "door-lock": home + "?view=settings&section=lock&lang=" + lang,
         "wizard-property": home + "/setup/property?lang=" + lang,
-        "wizard-lock": home + "/setup/door_lock?lang=" + lang,
         "help": "/guide?lang=" + lang + "#door-codes",
     }
 
@@ -159,7 +158,7 @@ def test_live_preview_all_hours_missing_values_and_reflow(host, base, engine, la
         )
         context = _context(browser, base, host)
         page = context.new_page()
-        for name in ("property-times", "wizard-property", "wizard-lock"):
+        for name in ("property-times", "wizard-property"):
             page.goto(base + _routes(host, lang)[name])
             _assert_times(page, lang)
             for hour in range(24):
@@ -193,7 +192,7 @@ def test_disclosure_and_actual_hours_work_without_javascript_before_connecting(h
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = _context(browser, base, host, js=False)
         page = context.new_page()
-        for name in ("door-lock", "wizard-lock"):
+        for name in ("door-lock",):
             page.goto(base + _routes(host, "en")[name])
             _assert_times(page, "en")
         context.close()

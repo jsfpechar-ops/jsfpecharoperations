@@ -56,7 +56,7 @@ def test_hover_changes_every_clickable_thing(base):
         ("/reservations?range=all", "tbody tr.clickable-row"),
         ("/", "[data-needs-you-go]"),
         (f"/apartments/{flat}?view=overview", "aside.preview .pv .r"),
-        ("/reservations?range=all", "a.chip:not([aria-current])"),
+        ("/reservations?range=all", "a.settings-pill:not([aria-current])"),
     ]
     problems = []
     with sync_api.sync_playwright() as playwright:
@@ -83,7 +83,7 @@ def test_needs_you_buttons_line_up_and_the_line_opens(base):
         browser, page = _page(playwright, base, cookie)
         page.goto(base + "/?lang=en")
         rights = page.evaluate(
-            "() => [...document.querySelectorAll('.todo > .needs-you-card-item [data-needs-you-go]')]"
+            "() => [...document.querySelectorAll('#needs-action .needs-you-item [data-needs-you-go]')]"
             ".filter(e => e.offsetParent).map(e => Math.round(e.getBoundingClientRect().right))"
         )
         assert rights, "no What needs you line with a button"
@@ -94,7 +94,7 @@ def test_needs_you_buttons_line_up_and_the_line_opens(base):
                 "e => { const r = e.getBoundingClientRect(); const h = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return !!(h && h.closest('.needs-you-dismiss')); }"
             )
             assert hit, "the dismiss x is covered by the stretched link"
-        item = page.locator(".todo > .needs-you-card-item:has([data-needs-you-go])").first
+        item = page.locator("#needs-action .needs-you-item:has([data-needs-you-go])").first
         href = item.locator("[data-needs-you-go]").get_attribute("href")
         item.locator("[data-needs-you-go]").first.click()
         page.wait_for_url("**" + href.split("#")[0].split("?")[0] + "**")

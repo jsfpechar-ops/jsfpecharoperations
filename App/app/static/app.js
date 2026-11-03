@@ -866,6 +866,20 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       button.addEventListener("click", function () { setDrawer(false); });
     });
     if (claimNode(window, "initNavigation")) window.addEventListener("resize", function () { setDrawer(false); });
+    // Self-heal: a rail left inert while the window is wide would swallow every click.
+    function healInert() {
+      var rail = document.getElementById("app-sidebar");
+      var main = document.getElementById("main-content");
+      if (isCompact() || document.body.classList.contains("nav-open")) return;
+      if (rail && rail.inert) rail.inert = false;
+      if (main && main.inert) main.inert = false;
+    }
+    if (claimNode(document, "initNavigationHeal")) {
+      document.addEventListener("pointerdown", healInert, true);
+      document.addEventListener("visibilitychange", healInert);
+      window.addEventListener("focus", healInert);
+      window.addEventListener("pageshow", healInert);
+    }
     setDrawer(false);
   }
 
@@ -1927,22 +1941,69 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     var tips = Array.prototype.slice.call(document.querySelectorAll("[data-help-tip]"));
     if (!tips.length) return;
 
+    /* 0901: a "?" never drops onto its own line. The last word before it (or a short inline element) and the "?"
+       share one no-break box, so a wrapping heading or label breaks before that word instead of before the "?". */
+    tips.forEach(function (tip) {
+      var parent = tip.parentNode;
+      if (!parent || parent.classList.contains("tip-tail")) return;
+      var prev = tip.previousSibling;
+      while (prev && prev.nodeType === 3 && !prev.nodeValue.trim()) prev = prev.previousSibling;
+      if (prev && prev.nodeType === 1 && /^(LABEL|H[1-6]|LEGEND)$/.test(prev.tagName)) {
+        /* the "?" sits beside its label: move it inside, so it wraps with the label's last word */
+        prev.appendChild(tip);
+        parent = prev;
+        prev = tip.previousSibling;
+        while (prev && prev.nodeType === 3 && !prev.nodeValue.trim()) prev = prev.previousSibling;
+      }
+      var tail = null;
+      if (prev && prev.nodeType === 3) {
+        var m = /^([\s\S]*?)(\S+)(\s*)$/.exec(prev.nodeValue);
+        if (!m) return;
+        tail = document.createElement("span");
+        tail.className = "tip-tail";
+        prev.nodeValue = m[1];
+        tail.appendChild(document.createTextNode(m[2]));
+      } else if (prev && prev.nodeType === 1 && /^(SPAN|B|STRONG|EM|A|SMALL|BUTTON)$/.test(prev.tagName) && (prev.textContent || "").length <= 24 && !/flex|grid/.test(window.getComputedStyle(parent).display)) {
+        tail = document.createElement("span");
+        tail.className = "tip-tail";
+        parent.insertBefore(tail, prev);
+        tail.appendChild(prev);
+      }
+      if (!tail) return;
+      if (!tail.parentNode) parent.insertBefore(tail, tip);
+      tail.appendChild(tip);
+    });
+
     function place(tip) {
       var btn = tip.querySelector(".help-tip-btn");
       var body = tip.querySelector(".help-tip-body");
       var margin = 8;
       var vw = document.documentElement.clientWidth;
       var vh = window.innerHeight;
-      body.style.width = Math.min(320, vw - 2 * margin) + "px";
+      var wide = vw >= 1024;
+      if (wide) {
+        body.style.width = Math.min(320, vw - 2 * margin) + "px";
+      } else {
+        body.style.width = "";
+        body.style.left = "";
+      }
       var r = btn.getBoundingClientRect();
-      var w = body.offsetWidth;
+      var w = body.offsetWidth || Math.min(320, vw - 2 * margin);
       var h = body.offsetHeight;
-      var left = Math.max(margin, Math.min(r.left, vw - w - margin));
+      var left = tip.classList.contains("help-tip-end") ? r.right - w : r.left;
+      left = Math.max(margin, Math.min(left, vw - w - margin));
       var top = r.bottom + 6;
       if (top + h > vh - margin && r.top - 6 - h >= margin) top = r.top - 6 - h;
       top = Math.max(margin, Math.min(top, vh - h - margin));
-      body.style.left = left + "px";
-      body.style.top = top + "px";
+      if (wide) {
+        // Desktop: the body is absolutely positioned inside .help-tip, so the viewport
+        // coordinates must be made relative to its offset parent (else it drifts right).
+        var ob = body.offsetParent ? body.offsetParent.getBoundingClientRect() : { left: 0, top: 0 };
+        body.style.left = (left - ob.left) + "px";
+        body.style.top = (top - ob.top) + "px";
+      } else {
+        body.style.top = top + "px";
+      }
     }
     function close(tip) {
       tip.classList.remove("is-open");
@@ -1955,6 +2016,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       window.clearTimeout(helpTipState.timer);
       helpTipState.current = tip;
       tip.classList.add("is-open");
+      tip.classList.toggle("help-tip-end", tip.getBoundingClientRect().left > window.innerWidth / 2);
       tip.querySelector(".help-tip-btn").setAttribute("aria-expanded", "true");
       if (pinned) tip.setAttribute("data-pinned", "1");
       place(tip);

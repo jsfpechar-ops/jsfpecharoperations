@@ -135,6 +135,8 @@ def test_phone_launcher_and_sheet(origin):
         dialog.locator("[data-sheet-close]").click()
         # Wait for the close to finish before leaving the page, or Havel reopens on /settings.
         page.wait_for_selector("#havel-sheet[open]", state="detached")
+        # The close event saves open:false a moment after the attribute goes; leaving first would restore it open.
+        page.wait_for_function("() => { const s = sessionStorage.getItem('ubyhost.havel.chat'); return !s || JSON.parse(s).open === false; }")
         # 0720: v2 phone has no More sheet (the Menu tab replaces it); this tail checks the old shell's More menu on /payments (0785a).
         page.goto(origin[0] + "/payments")
         page.locator("[data-sheet-open='more-sheet']").click()

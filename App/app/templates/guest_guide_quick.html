@@ -4,16 +4,20 @@
     works without JavaScript, "Not sure" (empty) is checked until the host answers.
     Data: app/guide_facts.py. -#}
 {% extends "host_page.html" %}
+{% set v2 = true %}
 {% set body_kind = 'form' %}
 {% set base_url = '/apartments/' ~ apartment.id ~ '/guide' %}
 {% block title %}{{ t('guest_guide.quick.title') }} · {{ apartment.internal_name }} · UbyHost{% endblock %}
-{% block page_title %}{{ t('guest_guide.quick.step.' ~ step) }}{% endblock %}
+{% block page_title %}{% endblock %}
 {% block back_url %}{{ base_url }}{% endblock %}
 {% block back_label %}{{ t('guest_guide.title') }}{% endblock %}
-{% block meta %}{{ t('guest_guide.quick.step_of', n=step_index, total=step_total) }}{% endblock %}
+{% block meta %}{% endblock %}
 {% block body %}
+<div class="guide-page guide-form-page">
+<div class="head guide-hd"><div><a class="guide-back" href="{{ base_url }}">{{ t('guest_guide.title') }}</a><h1 class="big">{{ t('guest_guide.quick.step.' ~ step) }}</h1><p class="sub">{{ t('guest_guide.quick.step_of', n=step_index, total=step_total) }}</p></div></div>
 {% if step_index == 1 %}{{ ui_banner('neutral', t('guest_guide.quick.lede')) }}{% endif %}
 {% set choices = [('yes', t('guest_guide.quick.yes')), ('no', t('guest_guide.quick.no')), ('', t('guest_guide.quick.unsure'))] %}
+<section class="guide-form-card">
 <form method="post" action="{{ base_url }}/quick/{{ step }}">
 <input type="hidden" name="_csrf" value="{{ csrf_token }}">
 {% for fact in facts %}
@@ -37,4 +41,6 @@
 {{ ui_button(t('guest_guide.quick.skip'), 'quiet', type='submit', attrs='name="skip" value="1"') }}
 </div>
 </form>
+</section>
+</div>
 {% endblock %}

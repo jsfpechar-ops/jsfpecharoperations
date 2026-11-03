@@ -35,6 +35,29 @@
   </li>
   {% endfor %}
 </ul>
+<h2 class="setup-wizard-section-title">{{ t('wizard.done.next_title') }}</h2>
+<ul class="setup-wizard-checklist host-property-grid setup-wizard-next" data-setup-next>
+  <li data-setup-next-step="stay_fee">
+    <a class="host-property-card setup-summary-card setup-next-card" href="/apartments/{{ apartment.id }}?view=settings&amp;section=reporting#stay-fee-settings">
+      <span class="setup-summary-icon">{{ nav_icon('coins') }}</span>
+      <span class="setup-summary-copy"><strong>{{ t('wizard.step.stay_fee') }}</strong></span>
+    </a>
+  </li>
+  {% if lock_available %}
+  <li data-setup-next-step="door_lock">
+    <a class="host-property-card setup-summary-card setup-next-card" href="/apartments/{{ apartment.id }}?view=settings&amp;section=lock#door-code">
+      <span class="setup-summary-icon">{{ nav_icon('lock') }}</span>
+      <span class="setup-summary-copy"><strong>{{ t('wizard.step.door_lock') }}</strong></span>
+    </a>
+  </li>
+  {% endif %}
+  <li data-setup-next-step="try_it">
+    <a class="host-property-card setup-summary-card setup-next-card" href="/apartments/{{ apartment.id }}/setup/try_it">
+      <span class="setup-summary-icon">{{ nav_icon('users') }}</span>
+      <span class="setup-summary-copy"><strong>{{ t('wizard.step.try_it') }}</strong></span>
+    </a>
+  </li>
+</ul>
 {% if not missing_row %}
 <p class="setup-wizard-instruction" data-finish-note>{% if link_next.stay and link_next.window and link_next.window.state == 'now' %}{{ t('workflow.link.next_stay_now', stay=link_next.stay.date_from | date_short) }}{% elif link_next.stay and link_next.window %}{{ t('workflow.link.next_stay', stay=link_next.stay.date_from | date_short, date=link_next.window.opens.isoformat() | date_short) }}{% elif wizard_facts.feeds %}{{ t('wizard.done.note_sync', minutes=ical_poll_minutes) }}{% else %}{{ t('wizard.done.note_no_calendar') }}{% endif %}</p>
 {% endif %}

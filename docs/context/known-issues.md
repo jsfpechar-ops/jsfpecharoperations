@@ -23,8 +23,8 @@
 | K-F14 | Med unverified | reporting.py due_for_automatic_send | 48 h send cap not compared with the legal deadline | AR-06 |
 | K-F15 | Med unverified | icalsync.py ~750 | Vanished bookings may keep a live guest link | AR-27 |
 | K-F16 | Med unverified | icalsync.py ~549-642 | Date-move reconcile not atomic; re-sign alert can be lost | AR-38 |
-| K-F17 | Low unverified | reporting.py claim TTL; :1683 recover_stale_submissions | Lease may expire across slow batches; stale-running recovery unconfirmed | P A16, A30 |
-| K-F19 | Low open | codelists.py error_severities | Before successful test/Refresh code lists, only 1/112/150 known; other codes refused | police A1-A2 |
+| K-F17 | Low unverified | reporting.py claim TTL; :1683 recover_stale_submissions | Lease may expire in slow batches | P A16, A30 |
+| K-F19 | Low open | codelists.py error_severities | Before a successful Refresh only 1/112/150 are known | police A1-A2 |
 | K-F18 | High decision HR | reporting.py:859 signature_dates_stale | Stale signed dates: keep the safety net or restore re-signing (T48–T50)? | P Q6 |
 | K-L01 | High decision | retention.py:218,237 | Deletion 30+30 days and Terms s19 export wording need a lawyer | P Q9, G G-D11 |
 | K-L02 | High decision | retention.py ~306 | Termination deletes legal_acceptance rows; G-D7 says keep 3 years | F BE-10 |
@@ -76,20 +76,20 @@
 | K-O01 | High open | server crontab | Backup and off-site crons aren't in the repo; verify on the server | AR-04 |
 | K-O02 | Med open | docker-compose.yml:14 | Floating image tag; check rollback on a real deploy | AR-03 |
 | K-O03 | Med open | reporting.py:702 dashboard_rows | N+1 queries and double decrypts | P A50-51 |
-| K-O04 | Low open | requirements.txt, Caddyfile | Pillow undeclared; dev deps use >=; HSTS includeSubDomains missing | P A59, A61 |
+| K-O04 | Low open | requirements.txt, Caddyfile | Pillow undeclared; dev deps use >=; no HSTS includeSubDomains | P A59, A61 |
 | K-O05 | Med open | db.py periodic scans | Scans cover all stays ever, so cost grows with retention | AR-43 |
 | K-W01 | Med decision | GitHub repo | ~30 stale PRs; owner task 0001 step 12 APPLY=1; keep #278 #279 | 0001 |
 | K-ML01 | Low open | App/app/static/app.js | Unused reset-password JS (0003) | magic-link HANDOFF |
 | K-ML02 | Low open | App/app/host_i18n.py | Unused `login.password*` i18n keys | magic-link HANDOFF |
-| K-ML03 | Low open | docs/UbyHost_workplan/compliance/01, 03 | Compliance docs partially updated in 0005; lawyer review on LAWYER REVIEW paragraphs | task 0005 |
+| K-ML03 | Low open | docs/UbyHost_workplan/compliance/01, 03 | Compliance docs partly updated; lawyer review pending | task 0005 |
 | K-ML04 | Low open | login limit | Address 3/15 min budget exhaustible; account-only limits expose accounts | 0006 |
 | K-D02 | Low open | door_codes `_handle_moves` | Move replace: gateway retry every 15 min, no cap; guest keeps old PIN | 0037 |
 | K-D03 | Med decision | door_codes `_handle_moves` | Move permission/reauth/config/disabled: no retry after access fixed (0037) | 0037 |
-| K-D04 | High open | door_codes `issue`, `_handle_moves` | Same-hours rebooking can receive an undeleted cancelled PIN via `get` | [0069](../tasks/0069-same-period-shared-pin.md) |
+| K-D04 | High open | door_codes `issue`, `_handle_moves` | Same-hours rebooking can get a cancelled PIN via `get` | [0069](../tasks/0069-same-period-shared-pin.md) |
 | K-U15 | Med review | Host forms/navigation | Staging fixed; 0084 incl. K-U14; owner review | [plan](../plans/host-ux-combined-staging.md) |
 | K-T01 | Low open | Tests | Order-dependent tests (also 3 in test_host_i18n.py) | [0080](../tasks/0080-report.md) |
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
-| K-PG04 | Low open | scripts/reencrypt_data_key.py | Refuses to write on PG (no verified backup source yet); fix before the first PG key rotation | 0462 |
+| K-PG04 | Low open | scripts/reencrypt_data_key.py | Refuses to write on PG (no verified backup source); fix before the first PG key rotation | 0462 |
 
 - K-UI-CACHE: bump `?v=` on edits; 1y cache (0172).
 - K-NAV-418: 3 host_i18n tests fail. K-CHECKIN #435, K-MORE #436 undeployed.
