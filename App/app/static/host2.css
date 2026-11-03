@@ -1169,3 +1169,17 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .invoice-use-price{margin-top:var(--space-3);min-height:var(--control-h-phone)}
 .invoice-use-price[hidden]{display:none}
 /* 0888 invoice use price (end) */
+/* 0896: page help "?" on old-shell pages (same plain round button as app2.css) */
+.host-workspace .page-help{display:inline-block;flex:0 0 auto;position:relative;vertical-align:middle;margin-left:0;font-weight:400;line-height:1}
+.host-workspace summary.page-help-btn{display:inline-flex;flex:0 0 44px;padding:0;justify-content:center;align-items:center;justify-content:center;box-sizing:border-box;width:44px;height:44px;margin:-13px -13px -13px 1px;padding:0;background:none;border:0;vertical-align:top;list-style:none;cursor:pointer}
+.host-workspace .page-help-btn::-webkit-details-marker{display:none}
+.host-workspace .page-help-btn::marker{content:""}
+.host-workspace .page-help-dot{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:18px;height:18px;border:1.5px solid #717171;border-radius:50%;background:#fff;color:#222;font-size:12px;font-weight:700;line-height:1}
+.host-workspace .page-help-btn:focus-visible .page-help-dot{outline:2px solid #222;outline-offset:3px}
+.host-workspace .page-help:not([open]) > .page-help-body{display:none}
+.host-workspace .page-help[open] > .page-help-body{display:block;position:fixed;z-index:60;top:50%;left:50%;transform:translate(-50%,-50%);width:min(320px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow:auto;box-sizing:border-box;padding:16px;background:#fff;color:#222;border:1px solid #ddd;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.12);font-size:15px;font-weight:400;line-height:1.4;text-align:left;text-transform:none;letter-spacing:0;white-space:normal}
+.host-workspace .page-help-steps{margin:0 0 12px;padding-left:20px}
+.host-workspace .page-help-steps li{margin:0 0 6px}
+.host-workspace .page-help-more{display:inline-block;min-height:44px;line-height:44px;color:#222;font-weight:600;text-decoration:underline}
+.host-workspace summary.page-help-btn::-webkit-details-marker{display:none}
+.host-workspace summary.page-help-btn:after{content:none}

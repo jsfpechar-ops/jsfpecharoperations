@@ -6,12 +6,12 @@
   <div class="ui-brand"><a class="logo" href="/" aria-label="UbyHost"><img class="mark" src="/static/ubyhost-mark.png?v=20261004a" alt="" width="22" height="22"><span>UbyHost</span></a></div>
   <span class="env-badge ui-env {{ ubyport_env }}" title="{{ t('env.where_reports_go') }}">{{ t('env.' ~ ubyport_env) }}</span>
   {% if current_user %}
-  <a class="org" href="/settings">
+  <div class="org">
     <i>{{ (workspace_user.display_name or workspace_user.username)[:1] | upper }}</i>
     <div>{{ workspace_user.display_name or workspace_user.username }}
       <small>{% if apartments is defined %}{{ tp('nav.property_count', apartments | length) }}{% else %}{{ t('nav.account') }}{% endif %}</small>
     </div>
-  </a>
+  </div>
   {% endif %}
   <button class="search" type="button" data-command-open style="width:auto;margin-bottom:14px;justify-content:space-between">
     <span style="display:flex;align-items:center;gap:8px">{{ icon('search', 16) }}{{ t('host.search') }}</span>
@@ -24,21 +24,25 @@
     <a class="nav{{ ' on' if nav == 'cleaning' }}" href="/cleaning" {% if nav == 'cleaning' %}aria-current="page"{% endif %}>{{ icon('sparkles', 18) }}{{ t('nav.cleaning') }}</a>
     <a class="nav{{ ' on' if nav == 'payments' }}" href="/payments" {% if nav == 'payments' %}aria-current="page"{% endif %}>{{ icon('credit-card', 18) }}{{ t('nav.payments') }}</a>
     <a class="nav{{ ' on' if nav == 'stay_fees' }}" href="/stay-fees" {% if nav == 'stay_fees' %}aria-current="page"{% endif %}>{{ icon('receipt-text', 18) }}{{ t('nav.stay_fees') }}</a>
-    <a class="nav{{ ' on' if nav == 'settings' }}" href="/settings" {% if nav == 'settings' %}aria-current="page"{% endif %}>{{ icon('settings', 18) }}{{ t('nav.settings') }}</a>
   </nav>
   {% if current_user %}
-  <nav class="side-nav side-bottom" aria-label="{{ t('nav.guide') }}{% if current_user.role == 'admin' %} / {{ t('nav.admin') }}{% endif %}">
-    <a class="nav" href="/guide">{{ icon('circle-help', 18) }}{{ t('nav.guide') }}</a>
-    {% if current_user.role == 'admin' %}<a class="nav{{ ' on' if nav == 'admin' }}" href="/admin" {% if nav == 'admin' %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>{{ t('nav.admin') }}</a>{% endif %}
-  </nav>
-  {% if operator().email %}<a class="nav support-link" href="mailto:{{ operator().email }}">{{ t('nav.support') }}<small>{{ operator().email }}</small></a>{% endif %}
-  <div class="me">
-    <i>{{ (workspace_user.display_name or workspace_user.username)[:1] | upper }}</i>
-    <div>{{ workspace_user.display_name or workspace_user.username }}<small>{{ t('nav.account') }}</small></div>
-  </div>
-  <form method="post" action="/logout" class="side-logout">
-    <button class="nav" type="submit">{{ t('nav.logout') }}</button>
-  </form>
+  {% set me_name = workspace_user.display_name or workspace_user.username %}
+  <details class="me-menu host-account" data-host-account>
+    <summary class="me" aria-label="{{ t('nav.account') }}: {{ me_name }}">
+      <i>{{ me_name[:1] | upper }}</i>
+      <div>{{ me_name }}<small>{{ t('nav.account') }}</small></div>
+    </summary>
+    <div class="me-menu-list" role="menu">
+      <a role="menuitem" class="{{ 'on' if nav == 'settings' }}" href="/settings" {% if nav == 'settings' %}aria-current="page"{% endif %}>{{ icon('settings', 18) }}{{ t('nav.settings') }}</a>
+      {% if current_user.role == 'admin' %}
+      <a role="menuitem" href="/admin/fakturace#funnel">{{ icon('coins', 18) }}{{ t('billing.admin.funnel.title') }}</a>
+      <a role="menuitem" class="{{ 'on' if nav == 'admin' }}" href="/admin" {% if nav == 'admin' %}aria-current="page"{% endif %}>{{ icon('shield', 18) }}{{ t('nav.admin') }}</a>
+      {% endif %}
+      <a role="menuitem" href="/guide">{{ icon('circle-help', 18) }}{{ t('nav.guide') }}</a>
+      {% if operator().email %}<a role="menuitem" class="support-link" href="mailto:{{ operator().email }}">{{ t('nav.support') }}<small>{{ operator().email }}</small></a>{% endif %}
+      <form method="post" action="/logout" class="side-logout"><button class="nav" role="menuitem" type="submit">{{ icon('log-out', 18) }}{{ t('nav.logout') }}</button></form>
+    </div>
+  </details>
   {% endif %}
 </aside>
 {% if current_user %}
