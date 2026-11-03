@@ -20,7 +20,10 @@ After this brief a partial refund issues a correction document with one negative
 - i18n: new keys in BOTH language blocks of `App/app/host_i18n.py`: `site_booking.invoice.partial_item` (CS "Vrácení části ubytování podle storno podmínek", EN "Partial refund of accommodation under the cancellation policy"), `bk.btn.correction` (CS "Opravný doklad (PDF)", EN "Credit note (PDF)"). `_flash()` keys stay string literals.
 - Rules: SQL only through `db` helpers; no migration; no new dependency; a template change needs the browser test below; copy: no sentence the button already says.
 
-## 3. Steps
+## 3. Files
+Edit `invoices.py`, `booking_cancel.py`, `booking_manage.py`, `routes/property_page.py`, `booking_manage.html`, `host_i18n.py`, `docs/context/known-issues.md`, `docs/context/decisions.md`; create `tests/test_booking_credit_note.py`; extend `tests/test_booking_manage_browser.py`.
+
+## 4. Steps
 
 1. `invoices.correct_partial` as above.
 2. `booking_cancel.cancel()`: in the partial branch call a new `_correct_invoice_partial(booking, amount)` (copy of `_storno_invoice`, try/except, audit `site_invoice_needs_correction` with the reason on failure). Remove nothing else.
@@ -29,6 +32,18 @@ After this brief a partial refund issues a correction document with one negative
 5. Browser: extend `tests/test_booking_manage_browser.py` with a case: a refunded booking with a correction shows both buttons, both >= 44 px high at 390 px, no horizontal scroll. Run it, 0 skipped. Save one 390 px screenshot to `docs/tasks/screenshots-0901/guest-correction-390.png`.
 6. Docs: delete the K-BS01 row from `docs/context/known-issues.md`; append to `docs/context/decisions.md` `- 2026-11-03 | Partial site refund issues a credit note / corrective document for the refunded amount; full refund keeps storno | owner | 0901` (shorten an older line if the lint cap is hit); `python3 scripts/context_lint.py | tail -30`. Write `docs/tasks/0901-report.md` (Status: review, files changed, test tails, deviations, any PDF heading decision). `git add` named files only.
 
-## 4. Do not
+## 5. Do not touch
 
 Add a migration, a new invoice kind or a dependency; change the full-refund path; touch other templates or CSS; make a failed correction block a refund.
+
+## 6. Commands
+The pytest line of step 4, the browser test of step 5 and `python3 scripts/context_lint.py | tail -30`.
+
+## 7. Acceptance
+A partial refund issues one correction document for exactly the refunded amount, the guest can open it, a failed correction never blocks the refund, tests pass with 0 skipped, lint OK.
+
+## 8. Stop and ask
+Stop and ask the owner if a test outside this brief fails, or if the brief and the code disagree on a name or signature.
+
+## 9. Report
+Write the report named in the last step.

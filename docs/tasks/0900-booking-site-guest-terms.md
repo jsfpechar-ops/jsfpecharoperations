@@ -16,7 +16,10 @@ The checkout box on `/p/<slug>` has a "I agree to the booking terms" tickbox but
 - `App/app/booking_site.py`: `TERMS_VERSION = "2026-11-03"`. grep tests for the old value `2026-11-01` and update only literal expectations.
 - Rules: light mode, works without JavaScript, copy rule "no tracking cookies" never "no cookies" (the terms say so in section 9). No new dependency.
 
-## 3. Steps
+## 3. Files
+Create `booking_terms.html`, `_booking_terms_cs.html`, `_booking_terms_en.html`, `tests/test_booking_terms.py`, `tests/test_booking_terms_browser.py`; edit `routes/property_page.py`, `property_page.html`, `_pp_booking_css.html`, `host_i18n.py`, `booking_site.py`, `docs/context/decisions.md`.
+
+## 4. Steps
 
 1. Create the two partials from section 5 verbatim (CS and EN), the template and the route (200, `lang` attribute follows the language, `X-Robots-Tag` not needed).
 2. Add the checkout link and the two i18n keys; bump `TERMS_VERSION`.
@@ -25,11 +28,24 @@ The checkout box on `/p/<slug>` has a "I agree to the booking terms" tickbox but
 5. Template change, so the browser rule applies: write `App/tests/test_booking_terms_browser.py` (mirror `test_booking_manage_browser.py`): page loads at 390 px, no horizontal scroll, first `<h1>` visible, the CS/EN switch link has height >= 44. Run it, 0 skipped. Save one 390 px screenshot of `/terms/booking` to `docs/tasks/screenshots-0900/terms-390.png`.
 6. `python3 scripts/context_lint.py | tail -30`; append to `docs/context/decisions.md` one line `- 2026-11-03 | Booking terms: own text modeled on marketplace guest terms (structure only), CS+EN, /terms/booking, versioned | owner | 0900` (shorten an older line if the lint cap is hit). Write `docs/tasks/0900-report.md` (Status: review, files changed, test tails, deviations). `git add` named files only, never `git add -A`.
 
-## 4. Do not
+## 5. Do not touch
 
 Touch other templates, CSS files or the checkout logic; add a dependency; copy text from any third-party terms.
 
-## 5. Text (verbatim; HTML structure is yours, wording is not)
+
+## 6. Commands
+The pytest line of step 4 and `python3 scripts/context_lint.py | tail -30`.
+
+## 7. Acceptance
+Terms page renders in CS and EN at 390 px without horizontal scroll, link under the tickbox, pytest and browser tests pass with 0 skipped, lint OK.
+
+## 8. Stop and ask
+Stop and ask the owner if a test outside this brief fails, or if the brief and the code disagree on a name or signature.
+
+## 9. Report
+Write the report named in the last step.
+
+## Text (verbatim; HTML structure is yours, wording is not)
 
 ### Czech (`_booking_terms_cs.html`)
 
