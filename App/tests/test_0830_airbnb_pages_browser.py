@@ -347,11 +347,12 @@ def test_0831G_page_help(base, dashboard_rich_host, seeded):
                         problems.append(f"{path} {width}: help body is open by default")
                     before = page.evaluate("() => document.documentElement.scrollHeight")
                     page.locator(".page-help-btn").first.click()
-                    # The open animation can start a frame after settle_motion() first looks (slow CI), so wait
-                    # for the box to exist before measuring it.
-                    page.wait_for_function(
-                        "() => { const b = document.querySelector('.page-help-body'); const r = b && b.getBoundingClientRect(); return !!r && r.width > 1 && r.height > 1; }"
-                    )
+                    # The popup opens through a short details animation; on a slow runner it is still collapsing out of
+                    # view when the click returns. Wait for it to become visible, then measure after the motion ends.
+                    try:
+                        body.wait_for(state="visible", timeout=5000)
+                    except Exception:
+                        pass
                     settle_motion(page)
                     pb = body.bounding_box()
                     viewport = page.viewport_size
@@ -360,7 +361,7 @@ def test_0831G_page_help(base, dashboard_rich_host, seeded):
                             """() => { const d = document.querySelector('.page-help'); const b = d && d.querySelector('.page-help-body');
                             const r = b ? b.getBoundingClientRect() : null;
                             return {open: d && d.open, display: b && getComputedStyle(b).display, rect: r && [r.x, r.y, r.width, r.height],
-                              n: document.querySelectorAll('.page-help').length}; }"""
+                              n: document.querySelectorAll('.page-help').length, vis: b && getComputedStyle(b).visibility, op: b && getComputedStyle(b).opacity, cv: b && getComputedStyle(b.parentElement).contentVisibility, anim: document.getAnimations().length}; }"""
                         )
                         problems.append(f"{path} {width}: help body is not visible inside the viewport {info} box={pb}")
                     after = page.evaluate("() => document.documentElement.scrollHeight")
