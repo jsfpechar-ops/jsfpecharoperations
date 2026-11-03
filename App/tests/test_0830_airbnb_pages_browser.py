@@ -351,7 +351,13 @@ def test_0831G_page_help(base, dashboard_rich_host, seeded):
                     pb = body.bounding_box()
                     viewport = page.viewport_size
                     if not body.is_visible() or pb["x"] < 0 or pb["x"] + pb["width"] > viewport["width"]:
-                        problems.append(f"{path} {width}: help body is not visible inside the viewport")
+                        info = page.evaluate(
+                            """() => { const d = document.querySelector('.page-help'); const b = d && d.querySelector('.page-help-body');
+                            const r = b ? b.getBoundingClientRect() : null;
+                            return {open: d && d.open, display: b && getComputedStyle(b).display, rect: r && [r.x, r.y, r.width, r.height],
+                              n: document.querySelectorAll('.page-help').length}; }"""
+                        )
+                        problems.append(f"{path} {width}: help body is not visible inside the viewport {info} box={pb}")
                     after = page.evaluate("() => document.documentElement.scrollHeight")
                     if after != before:
                         problems.append(f"{path} {width}: opening help moved the page")
