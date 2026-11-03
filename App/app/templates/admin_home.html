@@ -1,9 +1,12 @@
 {% extends "host_page.html" %}
+{% set v2 = true %}
+{% block head_extra %}<link rel="stylesheet" href="/static/admin2.css?v=20261102-0893o">{% endblock %}
 {% set nav = 'admin' %}
 {% set body_kind = 'list' %}
 {% from "_ui_layout.html" import ui_section_tabs with context %}
+{% from "_components.html" import tip_label with context %}
 {% block title %}{{ t('home.admin.title') }}{% endblock %}
-{% block meta %}{{ t('home.admin.meta', date=today) }}{% endblock %}
+{% block page_title %}{{ tip_label(self.title(), 'admin-home-help', t('home.admin.meta', date=today), tag='span') }}{% endblock %}
 {% block tabs %}{{ ui_section_tabs() }}{% endblock %}
 {% block body %}
 {% set problems = [

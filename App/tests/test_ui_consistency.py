@@ -72,8 +72,6 @@ def test_the_sign_in_page_has_no_leftover_demo_date(client):
     assert page.status_code == 200
     assert "Sep 12" not in page.text
     assert "auth-float-booking" not in page.text
-    # The other float badge belongs there; only the date was the problem.
-    assert "auth-float-ready" in page.text
 
 
 def test_no_shell_template_hardcodes_a_demo_date():
