@@ -306,7 +306,7 @@ Run `.venv/bin/python -m pytest tests/test_booking_invoice.py -q --tb=short -x 2
 **Step 7.** `docs/context/decisions.md`: append one line:
 
 ```
-- 2026-11-02 | Booking site: one signed link per booking (HMAC of the booking id with the server secret, `booking_site.manage_token`) serves the guest's invoice (0820) and booking page (0821); site bookings are invoiced in the host's entity through the host invoice code, best effort | orchestrator | 0820, 0821
+- 2026-11-02 | Booking site: one HMAC link per booking (`manage_token`) serves invoice and booking page | orchestrator | 0820, 0821
 ```
 
 **Step 8.** Run §6 and write the report.
@@ -329,11 +329,11 @@ The last line is the test-map row "Invoices, stay fee" (`test_invoice_*.py test_
 
 ## 7. Acceptance
 
-- [ ] The three §6 runs pass.
-- [ ] `grep -rn "manage_token" App/app | grep -v tests` shows `booking_site.py`, `booking_webhook.py` (through `manage_url`) and no other writer of a token.
-- [ ] A webhook-confirmed test booking has a non-null `invoice_id` and a PDF that starts with `%PDF`.
-- [ ] A host without seller details: booking `paid`, no invoice, one `site_invoice_skipped` audit row, no exception.
-- [ ] `git diff --stat origin/main` lists only the §3 files.
+- [x] The three §6 runs pass.
+- [x] `grep -rn "manage_token" App/app | grep -v tests` shows `booking_site.py`, `booking_webhook.py` (through `manage_url`) and no other writer of a token.
+- [x] A webhook-confirmed test booking has a non-null `invoice_id` and a PDF that starts with `%PDF`.
+- [x] A host without seller details: booking `paid`, no invoice, one `site_invoice_skipped` audit row, no exception.
+- [x] `git diff --stat origin/main` lists only the §3 files.
 
 ## 8. Stop and ask
 

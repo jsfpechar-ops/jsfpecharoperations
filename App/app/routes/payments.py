@@ -455,6 +455,115 @@ async def property_page_photo_delete(request: Request, apartment_id: int):
     return _back(f"/apartments/{apartment_id}/page", msg=_flash(request, "payments.page.saved"))
 
 
+# --- booking site setup (brief 0819) ---------------------------------------------
+
+
+def _bsite_apartment(request: Request, apartment_id: int):
+    owner_id = access.owner_id(request)
+    row = db.query_one(
+        "SELECT id, internal_name FROM apartment WHERE id = ? AND owner_user_id = ?",
+        (apartment_id, owner_id),
+    )
+    return row, owner_id
+
+
+@router.get("/apartments/{apartment_id}/booking-site")
+def booking_site_setup(request: Request, apartment_id: int):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment, owner_id = _bsite_apartment(request, apartment_id)
+    if apartment is None:
+        return Response(status_code=404)
+    from .. import booking_manage, booking_setup, booking_site, property_page as pp
+    from .. import payments as payments_mod
+
+    context: Dict[str, Any] = {
+        "nav": "properties", "apartment": apartment,
+        "allowed": booking_site.site_allowed(owner_id),
+    }
+    if context["allowed"]:
+        lang = host_i18n.lang_from_request(request)
+        s = booking_site.settings(apartment_id)
+        slug = pp.ensure_slug(apartment_id)["slug"]
+        page_url = f"{config.PUBLIC_BASE_URL.rstrip('/')}/p/{slug}"
+        rows = booking_setup.steps(apartment_id, owner_id)
+        context.update(
+            s=s,
+            steps=rows,
+            steps_done=sum(1 for row in rows if row["done"]),
+            can_publish=booking_setup.can_publish(rows),
+            published=any(row["key"] == "publish" and row["done"] for row in rows),
+            page_url=page_url,
+            ical_url=f"{page_url}/{booking_site.ical_token(apartment_id)}.ics",
+            qr=payments_mod.qr_data_uri(page_url),
+            notice_value=booking_setup.notice_value(s),
+            notice_options=[
+                (value, host_i18n.translate(lang, "bsite.notice." + value.replace(":", "_")))
+                for value in booking_setup.NOTICE_OPTIONS
+            ],
+            policies=booking_site.POLICIES,
+            bookings=booking_manage.host_rows(apartment_id),
+        )
+    return render(request, "booking_site_setup.html", context)
+
+
+@router.post("/apartments/{apartment_id}/booking-site")
+async def booking_site_save(request: Request, apartment_id: int):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment, owner_id = _bsite_apartment(request, apartment_id)
+    if apartment is None:
+        return Response(status_code=404)
+    from .. import booking_setup, booking_site, property_page as pp
+
+    here = f"/apartments/{apartment_id}/booking-site"
+    if not booking_site.site_allowed(owner_id):
+        return _back(here, err=_flash(request, "bsite.err.not_max"))
+    form = await request.form()
+    if "ical_done" in form:
+        booking_setup.mark_calendar_done(apartment_id)
+        return _back(here, msg=_flash(request, "bsite.flash.ical_done"))
+    if "publish" in form or "unpublish" in form:
+        if "publish" in form and not booking_setup.can_publish(booking_setup.steps(apartment_id, owner_id)):
+            return _back(here, err=_flash(request, "bsite.err.publish_not_ready"))
+        pp.publish_page(apartment_id, published="publish" in form)
+        key = "bsite.flash.published" if "publish" in form else "bsite.flash.unpublished"
+        return _back(here, msg=_flash(request, key))
+    try:
+        booking_site.save_settings(apartment_id, booking_setup.parse_form(form))
+    except ValueError as exc:
+        err_key = "bsite.err." + booking_setup.error_field(exc)
+        return _back(here + "#rules", err=_flash(request, err_key))
+    return _back(here, msg=_flash(request, "payments.page.saved"))
+
+
+@router.post("/apartments/{apartment_id}/booking-site/cancel")
+async def booking_site_cancel(request: Request, apartment_id: int):
+    """0821: the host cancels a site booking; the guest is refunded in full."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment, owner_id = _bsite_apartment(request, apartment_id)
+    if apartment is None:
+        return Response(status_code=404)
+    from .. import booking_cancel, booking_site
+
+    here = f"/apartments/{apartment_id}/booking-site"
+    form = await request.form()
+    raw = str(form.get("booking_id") or "")
+    booking = booking_site.get(int(raw)) if raw.isdigit() else None
+    if booking is None or int(booking["apartment_id"]) != apartment_id or int(booking["owner_user_id"]) != owner_id:
+        return Response(status_code=404)
+    result = booking_cancel.cancel(int(booking["id"]), by_host=True)
+    if result["error"] == "refund_failed":
+        return _back(here, err=_flash(request, "bsite.err.cancel_failed"))
+    if result["error"]:
+        return _back(here, err=_flash(request, "bsite.err.not_cancellable"))
+    return _back(here, msg=_flash(request, "bsite.flash.cancelled"))
+
+
 # --- one-time payments consent (0624) ------------------------------------------
 
 
