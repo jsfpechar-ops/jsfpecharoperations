@@ -64,7 +64,7 @@ body.v2 .hidden{display:none!important}
 .quiet{color:var(--ink3);font-size:14px;margin:-12px 0 28px;display:flex;gap:8px;align-items:baseline}.quiet b{color:var(--ink);font-size:15px}.quiet span{margin-right:4px}.quiet i{font-style:normal}
 .cgrid{display:grid;grid-template-columns:140px repeat(14,minmax(44px,1fr));align-items:center;min-width:780px}
 .cd{font-size:12px;color:var(--ink3);text-align:center;padding:8px 0}.cd.today{color:var(--acc-text);font-weight:700}
-.crow{border-top:1px solid var(--line);height:44px}.cn{font-size:13px;font-weight:600;grid-column:1}
+.crow{border-top:1px solid var(--line);min-height:44px}.cn{font-size:13px;font-weight:600;grid-column:1;padding-block:8px;line-height:1.25;overflow-wrap:anywhere;padding-right:8px}
 .cal{padding:6px 14px 10px;overflow-x:auto}
 .crow .bar{grid-row:1;height:28px;border-radius:999px;font-size:12px;font-weight:600;display:flex;align-items:center;padding:0 10px;margin:0 2px;white-space:nowrap;overflow:hidden}
 .b-ok{background:var(--oks);color:var(--ok)}.b-warn{background:var(--warns);color:var(--warn)}.b-grey{background:#efefeb;color:var(--ink2)}
@@ -142,7 +142,7 @@ body.v2 .row-menu-item[hidden]{display:none}
 @media (max-width:1023px){body.v2 .ui-menu-panel.is-open,body.v2 .row-menu-panel.is-open{position:fixed;left:8px;right:8px;bottom:8px;top:auto;min-width:0}body.v2 .row-menu-item{min-height:44px}}
 body.v2 .onboarding-banner-setup-link{display:inline-flex;align-items:center;justify-content:center;background:var(--acc);color:#fff;font-weight:600;font-size:13px;padding:8px 16px;border-radius:999px;text-decoration:none}
 @media (max-width:1023px){body.v2 .onboarding-banner-setup-link{min-height:44px}}
-body.v2 .crow{grid-auto-rows:44px}
+body.v2 .crow{grid-auto-rows:minmax(44px,auto)}
 
 /* 0709 Overview: named classes instead of inline styles (design lint T1) */
 .ov-head{margin-bottom:6px}
@@ -339,7 +339,7 @@ body.v2 .props-phone .cover.c1{background:linear-gradient(135deg,#3f6f8f,#7fa8c2
 body.v2 .props-phone .cover.c2{background:linear-gradient(135deg,#5c7a4f,#9db58c)}
 /* 0532 pass 9: from 1024 px a list row is one line (mockup 53 px): the copy button is 24 px, not 60 px. Pass 11: the setup chips may wrap when they do not fit (no sideways scroll); name and address cells are one line with ellipsis */
 @media (min-width:1024px){body.v2 .props-card .setup .st{height:24px}body.v2 .props-card .copy-btn{height:28px;min-height:28px;padding-block:6px}body.v2 .props-card .copy-btn svg{width:16px;height:16px}body.v2 .props-card .row-primary-link .property-identity > span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}body.v2 .props-card > table td:nth-child(1),body.v2 .props-card > table td:nth-child(2){max-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
-@media (min-width:1024px){body.v2 .props-card > table td:nth-child(1) .row-primary-link{display:block;max-width:100%;min-width:0;overflow:hidden}}
+@media (min-width:1024px){body.v2 .props-card > table td:nth-child(1) .row-primary-link{display:block;max-width:100%;min-width:0;overflow:hidden}body.v2 .props-card .row-primary-link .property-identity{display:flex;max-width:100%}}
 @media (min-width:1024px){body.v2 .props-card > table th:nth-child(1),body.v2 .props-card > table td:nth-child(1){width:22%}body.v2 .props-card > table th:nth-child(2),body.v2 .props-card > table td:nth-child(2){width:26%}}
 
 /* 0534 property page */
@@ -2173,3 +2173,9 @@ body.v2 .invoice-use-price[hidden]{display:none}
 body.v2 .props-card thead{display:table-header-group}
 body.v2 .props-card thead,body.v2 .props-card thead th{background:transparent}
 @media (min-width:1024px) and (max-width:1100px){body.v2 .stay-fees-page .card.stays-desk th,body.v2 .stay-fees-page .card.stays-desk td{padding-left:6px;padding-right:6px}}
+/* 0900 layout lint: no squeezed headings, labels or metrics on narrow phones */
+body.v2 .ui-section-h{flex-wrap:wrap;gap:6px 12px}
+body.v2 dl.ui-facts>div{flex-wrap:wrap}
+body.v2 dl.ui-facts>div>dt{min-width:min(100%,9rem)}
+@media (max-width:359px){body.v2 .stay-metrics,body.v2 .detail-hero,body.v2 .report-metrics{grid-template-columns:1fr}}
+@media (min-width:1024px){body.v2 td.col-name{width:18%;max-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}

@@ -823,3 +823,5 @@ body.v2 #calendar.dashboard-calendar[data-readonly="false"].has-panel .cal-to-to
   body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-head .cal-segment button { height:44px; min-height:44px; min-width:44px; }
   body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-head .cal-view-segment button { width:44px; min-width:44px; }
 }
+.host-workspace .dashboard-calendar .cal-toolbar h3 { white-space:normal; overflow:visible; text-overflow:clip; }
+@media (max-width:359px) { body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-toolbar h3[data-cal-period] { font-size:17px; } }
