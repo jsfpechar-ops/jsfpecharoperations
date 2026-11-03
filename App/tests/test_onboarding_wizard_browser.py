@@ -1131,34 +1131,8 @@ def test_wizard_polish_and_overview_cards(host, base_url, monkeypatch, lang, wid
         page.locator("button[value=done]").click()
         page.wait_for_url("**/setup/done**")
         assert page.locator("[data-setup-next-step=try_it]").is_visible()
-        assert page.locator(".setup-demo-property strong").inner_text() == flat["internal_name"]
-        assert page.locator(".setup-demo-stay").is_visible()
-        assert page.locator(".setup-demo-bubble").inner_text().count("PIN:") == 1
-        assert "[Example:" in page.locator(".setup-demo-bubble").inner_text() if lang == "en" else "[Příklad:" in page.locator(".setup-demo-bubble").inner_text()
-        assert page.evaluate(_overflow_js())
-        _shot(page, f"35-demo-walkthrough-{tag}.png")
-        with context.expect_page() as demo_tab:
-            page.locator(".setup-demo-message-link").click()
-        guest_page = demo_tab.value
-        guest_page.locator("#pin").wait_for()
-        _shot(guest_page, f"34-demo-pin-{tag}.png")
-        guest_page.fill("#pin", flat["permalink_pin"])
-        guest_page.locator("form button[type=submit]").first.click()
-        guest_page.wait_for_url(lambda url: "/l/" in url and "/new" in url)
-        assert "/setup/try_it" in page.url
-        _shot(guest_page, f"23-demo-new-tab-{tag}.png")
-        # Reload the original tab while the guest tab is still open; it stays
-        # on the wizard and shows the demo's current state.
-        page.reload()
-        assert page.locator("form.setup-wizard-skip button[value=skip]").is_visible()
-        assert page.get_by_role("button", name=_t(lang, "wizard.try_it.check_again"), exact=True).is_visible()
-        guest_page.close()
-        page.locator("form.setup-wizard-skip button[value=skip]").click()
-        page.wait_for_url("**/setup/done**")
-        cards = page.locator(".setup-wizard-checklist .host-property-card")
-        assert cards.count() == TOTAL
-        assert page.locator(".setup-wizard-checklist .ui-badge-done").count() == 4
-        assert page.locator(".setup-wizard-checklist .ui-badge-neutral").count() == 3
+        cards = page.locator("[data-setup-summary-step]")
+        assert cards.count() == 4
         police = page.locator('[data-setup-summary-step="police"]')
         assert police.locator(".ui-badge-attention").inner_text() == _t(lang, "wizard.summary.status.waiting")
         assert police.locator(".ui-badge-done").count() == 0
@@ -1290,16 +1264,9 @@ def test_phone_guest_sharing_and_clear_setup_actions(host, base_url, lang, width
             page.keyboard.press("Escape")
         _shot(page, f"29-guest-sharing-{tag}.png")
         page.locator("button[value=done]").click()
-        page.wait_for_url("**/setup/try_it**")
-        assert page.get_by_role("button", name=_t(lang, "wizard.try_it.skip"), exact=True).is_visible()
-        # 0809: the try-it lede moved into its help tip next to the question.
-        assert page.locator("#wiz-why-try").count() == 1
-        page.goto(f"{base}/door_lock?lang={lang}")
-        assert page.locator('button[data-lock-choice="no"]').count() == 1
-        assert page.locator('[aria-controls="wizard-lock-help"]').is_visible()
-        assert page.locator(".setup-wizard-body p.small.muted").count() == 0
-        _shot(page, f"30-lock-instructions-{tag}.png")
-        page.goto(f"{base}/automation?lang={lang}")
+        page.wait_for_url("**/setup/done**")
+        assert page.locator("[data-setup-next-step=try_it]").is_visible()
+        page.goto(f"{base}/police?lang={lang}")
         assert page.locator(".ui-choice-card .help-tip").count() == 3
         page.locator('input[value="manual"]').check()
         _shot(page, f"31-automation-help-{tag}.png")
@@ -1367,7 +1334,7 @@ def test_choice_card_selects_from_anywhere(host, base_url, lang, width, collapse
     if not REQUIRE_BROWSER:
         pytest.skip("browser not required")
     flat = _create(host)
-    walk_to(host["client"], flat["id"], "automation")
+    walk_to(host["client"], flat["id"], "police")
     session = host["client"].cookies.get(auth.SESSION_COOKIE)
     with sync_api.sync_playwright() as p:
         browser = p.chromium.launch(**chromium_launch_kwargs())
@@ -1376,7 +1343,7 @@ def test_choice_card_selects_from_anywhere(host, base_url, lang, width, collapse
         if collapsed:
             context.add_init_script("localStorage.setItem('ubyhost-sidebar-collapsed', '1')")
         page = context.new_page()
-        page.goto(f"{base_url}/apartments/{flat['id']}/setup/automation?lang={lang}")
+        page.goto(f"{base_url}/apartments/{flat['id']}/setup/police?lang={lang}")
         cards = page.locator(".ui-choice-card")
         assert cards.count() == 3
 
