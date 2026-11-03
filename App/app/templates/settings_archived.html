@@ -10,8 +10,7 @@
 {% include "_host_alerts.html" %}
 {% from "_components.html" import help_tip, row_menu_begin, row_menu_end, row_open with context %}
 
-{% with href='/settings', title=t('archive.title') %}{% include "partials/settings_back_header.html" %}{% endwith %}
-<div class="settings-help-line">{{ help_tip('archive-retention-help', t('archive.retention_note')) }}</div>
+{% with help=help_tip('archive-retention-help', t('archive.retention_note')), href='/settings', title=t('archive.title') %}{% include "partials/settings_back_header.html" %}{% endwith %}
 
 {% set pills = [
   {'label': t('archive.chip.all_count', count=counts['all']), 'href': '/settings/archived?type=all', 'current': item_type == 'all'},
