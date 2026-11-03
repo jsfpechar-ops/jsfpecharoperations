@@ -777,6 +777,8 @@ body.v2 .havel-greeting{margin-bottom: var(--space-2);}
 @media (max-width: 767px){
 body.v2 .havel-dialog{position: fixed; inset: auto 0 calc(var(--tabbar-h) + var(--tabbar-safe)) 0; margin: 0; width: 100%; max-width: 100%; box-shadow: var(--shadow-2);}
 body.v2 .havel-dialog .ui-sheet{max-height: 70dvh; height: 70dvh;}
+}
+@media (max-width: 1023px){
 body.v2 .havel-fab{right: var(--space-4); bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--space-4));}
 body.v2:has(.ui-sticky-actions) .havel-fab{bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--control-h) + var(--space-8));}
 }
