@@ -285,7 +285,7 @@
     const from = month && month > week ? month : week, to = monthEnd < until ? monthEnd : until;
     const overlay = el("div", "cal-pills"), ends = [], hidden = [0, 0, 0, 0, 0, 0, 0];
     let shown = 1; // 0905: stays that overlap stack in their own lanes; only a 4th and later stay folds into "+N"
-    const PILL_LANES = 3;
+    const PILL_LANES = matchMedia("(min-width:768px)").matches ? 3 : 1; // phone tiles already show every stay as a dot
     state.events.filter(event => event.kind !== "cleaning" && event.start < to && event.end > from)
       .sort((a, b) => a.start.localeCompare(b.start) || b.end.localeCompare(a.end) || String(a.id).localeCompare(String(b.id)))
       .forEach(event => {

@@ -49,11 +49,12 @@ def test_two_overlapping_stays_both_draw_in_a_week_with_cleanings(base, width):
         page.goto(base + "/cleaning?lang=en&cal_date=2026-11-03")
         page.wait_for_selector(".cal-week")
         page.wait_for_timeout(500)
-        # The week of 2-8 Nov holds both stays, drawn as two stacked pills, with no "+N" overflow button.
         week = page.locator(".cal-week", has=page.locator('[data-date="2026-11-08"]'))
-        names = week.locator(".cal-pill").all_inner_texts()
-        assert sum("Cozy" in n for n in names) == 1 and sum("Spacious" in n for n in names) == 1, names
-        assert week.locator(".cal-pill-more").count() == 0
+        if width >= 768:  # phone tiles show every stay as a dot, not as pills
+            # The week of 2-8 Nov holds both stays, drawn as two stacked pills, with no "+N" overflow button.
+            names = week.locator(".cal-pill").all_inner_texts()
+            assert sum("Cozy" in n for n in names) == 1 and sum("Spacious" in n for n in names) == 1, names
+            assert week.locator(".cal-pill-more").count() == 0
         if os.environ.get("UBYHOST_TASK_SHOTS") == "1" and width in (390, 768, 1280):
             SHOTS.mkdir(parents=True, exist_ok=True)
             week.scroll_into_view_if_needed()
