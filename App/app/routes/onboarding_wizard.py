@@ -250,7 +250,7 @@ def refuse_setup_save(
         if "stay_fee_council_account" in form:
             draft["stay_fee_council_account"] = _form_str(form, "stay_fee_council_account")
             draft["stay_fee_council_iban"] = None
-    if step == "automation":
+    if step == "police" and "automation_mode" in form:
         draft["automation_mode"] = _form_str(form, "automation_mode")
         draft["submit_after_hours"] = _form_str(form, "submit_after_hours")
     if "guest_message" in owned and "guest_message" in form:
@@ -295,6 +295,9 @@ def setup_step(apartment_id: int, step: str, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    if step in property_setup.RETIRED_STEPS:
+        # 0884: automation, stay fee, door lock and the demo left the wizard.
+        return _back(wizard_return_to(apartment_id, "done"))
     if step != "done" and step not in property_setup.STEPS:
         return _back(f"/apartments/{apartment_id}/setup")
     ctx, redirect = _wizard_context(request, apartment_id, step)
@@ -326,6 +329,13 @@ async def setup_action(apartment_id: int, request: Request):
     form = await request.form()
     step, action = _form_str(form, "step"), _form_str(form, "action")
     overview = f"/apartments/{apartment_id}?view=overview"
+    if step == "try_it" and action == "demo":
+        # 0884: "Try it yourself" is a Do next card on the done page, so the demo
+        # starts without a current wizard step. Demo stays are never reported.
+        stay_id = demo.create_demo_stay(apartment_id)
+        db.audit("property_setup_step", f"apartment={apartment_id} step=try_it action=demo")
+        lang = host_i18n.lang_from_request(request)
+        return _back(f"/l/{guest_slug.link_key(apartment)}/demo/{stay_id}?lang={lang}")
     if action == "show":
         stored = property_setup.load(apartment_id)
         if stored and stored["hidden"]:
@@ -365,6 +375,18 @@ async def setup_action(apartment_id: int, request: Request):
     if step == "try_it" and action in ("done", "skip") and stay:
         deleted = demo.delete_demo_stay(stay["id"], apartment_id)
     if action == "wait" and step == "police":
+        if "automation_mode" in form:
+            # 0884: the police step carries the automation choice; Wait keeps it too.
+            admin_routes = _admin_helpers()
+            timing_error = admin_routes.automation_choice_error(form)
+            if timing_error:
+                refused = refuse_setup_save(request, apartment, form, operator_error=timing_error)
+                if refused:
+                    return refused
+                return _back(guide["url"])
+            db.update("apartment", apartment_id, admin_routes._automation_timing_values(form))
+            db.audit("apartment_updated", f"id={apartment_id}")
+            property_setup.mark(apartment_id, "automation", "done")
         property_setup.mark(apartment_id, step, "waiting")
     else:
         property_setup.mark(apartment_id, step, _SETUP_MARKS.get(action, "done"))

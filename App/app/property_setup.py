@@ -17,12 +17,11 @@ STEPS = (
     "property",
     "calendar",
     "police",
-    "automation",
-    "stay_fee",
-    "door_lock",
     "guest_link",
-    "try_it",
 )
+# 0884: former steps. Their saved marks stay readable; their URLs go to the done page.
+RETIRED_STEPS = ("automation", "stay_fee", "door_lock", "try_it")
+KNOWN_STEPS = STEPS + RETIRED_STEPS
 TOTAL_STEPS = len(STEPS)
 OPTIONAL = frozenset({"stay_fee", "door_lock"})
 SKIPPABLE = frozenset({"calendar", "try_it", "stay_fee", "door_lock"})
@@ -99,7 +98,7 @@ def load(apartment_id: int) -> Optional[Dict[str, Any]]:
     if isinstance(steps, dict):
         for key, value in steps.items():
             step = _normalise_step(key)
-            if step not in STEPS or value not in MARKS:
+            if step not in KNOWN_STEPS or value not in MARKS:
                 continue
             if value == "waiting" and step != "police":
                 continue
@@ -140,7 +139,7 @@ def start(apartment_id: int) -> None:
 def mark(apartment_id: int, step: str, value: str) -> None:
     step = _normalise_step(step)
     state = load(apartment_id) or legacy_state()
-    if state["finished"] or step not in STEPS or value not in MARKS:
+    if state["finished"] or step not in KNOWN_STEPS or value not in MARKS:
         return
     if value == "waiting" and step != "police":
         return

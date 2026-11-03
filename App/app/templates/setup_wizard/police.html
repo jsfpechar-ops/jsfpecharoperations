@@ -1,6 +1,6 @@
 {% extends "setup_wizard/_layout.html" %}
 {% set values = draft if draft is defined else apartment %}
-{% from "_components.html" import field_label, help_tip with context %}
+{% from "_components.html" import field_label, help_tip, choice_card with context %}
 {% macro text_field(name, label, value, help='', optional=false, maxlength=none, required=false) %}
   <div class="field">
     {{ field_label(name, label, help, optional) }}
@@ -29,6 +29,7 @@
   <input type="hidden" name="legal_entity_id" value="{{ values.legal_entity_id }}">
   <input type="hidden" name="city_en" value="{{ values.city_en or '' }}">
   <input type="hidden" name="default_purpose" value="{{ values.default_purpose or '10' }}">
+  <input type="hidden" name="step" value="police">
   <div class="grid">{{ text_field('uby_idub', 'IDUB', values.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14, true) }}
   </div>
   <div class="grid two">
@@ -44,15 +45,24 @@
     {{ text_field('uby_name', t('automation.facility_name'), values.uby_name, facility_help, false, 35, true) }}
     {{ text_field('uby_contact', t('automation.contact'), values.uby_contact, t('apartment.form.ubyport.contact_hint'), true, 50) }}
   </div>
+  {#- 0884: the former automation step. The stored mode is shown; a new property stores manual. -#}
+  {% set auto_mode = values.automation_mode if values.automation_mode in ('manual', 'scheduled', 'immediate') else 'manual' %}
+  <h3 class="property-section-title">{{ t('wizard.question.automation') }}{{ help_tip('wiz-why-automation', t('why.automation')) }}</h3>
+  <div class="ui-choice-cards">
+    {{ choice_card('automation_mode', 'manual', t('automation.mode.manual'), auto_mode == 'manual', 'wizard-manual-help', t('wizard.automation.manual_detail')) }}
+    {% call choice_card('automation_mode', 'scheduled', t('automation.mode.scheduled'), auto_mode == 'scheduled', 'wizard-scheduled-help', t('wizard.automation.scheduled_detail')) %}
+      <div class="field inline-hours">
+        <label for="submit_after_hours">{{ t('automation.hours') }}</label>
+        <input type="number" id="submit_after_hours" name="submit_after_hours" min="1" max="48" value="{{ values.submit_after_hours if values.submit_after_hours is not none else 2 }}">
+      </div>
+    {% endcall %}
+    {{ choice_card('automation_mode', 'immediate', t('automation.mode.immediate'), auto_mode == 'immediate', 'wizard-immediate-help', t('wizard.automation.immediate_detail')) }}
+  </div>
 </form>
 {% endblock %}
 {% block wizard_actions %}
 <div class="setup-wizard-actions">
-  <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline" id="police-wait-form">
-    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-    <input type="hidden" name="step" value="police">
-    <button class="ui-btn ui-btn-secondary setup-wizard-wait" type="submit" name="action" value="wait" formnovalidate>{{ t('setup_guide.reporting.wait') }}</button>
-  </form>
+  <button class="ui-btn ui-btn-secondary setup-wizard-wait" type="submit" form="police-form" formaction="/apartments/{{ apartment.id }}/setup" name="action" value="wait" formnovalidate>{{ t('setup_guide.reporting.wait') }}</button>
   <button class="ui-btn ui-btn-primary" type="submit" form="police-form">{{ t('wizard.save_continue') }}</button>
 </div>
 {% endblock %}
