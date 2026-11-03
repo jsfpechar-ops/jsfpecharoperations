@@ -50,7 +50,8 @@ already do (same stance as the payment-request rails, plan
 | Per-property toggles | `apartment.ocr_scan` (migration `0035` + pg twin `migrations_pg/00005`), `passport_photo_policy` | Same pattern: apartment columns + gate in the guest route |
 | Property editor / wizard | `templates/_property_editor.html` (fee section includes `_stay_fee_fields.html`), saved via `routes/admin.py` + `routes/stay_fees.py::fee_form_values` | Toggle UI goes into `_stay_fee_fields.html` → appears on the property page and the wizard property step automatically |
 | Migrations | `App/app/migrations/00NN_*.sql` + twin `App/migrations_pg/000NN_*.sql` (next: `0036` / `00006`) | Four `ALTER TABLE` columns only |
-| i18n | guest copy `App/app/i18n.py` (en/cs/de/es/fr) + `guest_uk_i18n.py` (uk); host copy `host_i18n.py` | New keys, all 6 guest languages |
+| i18n | guest copy `App/app/i18n.py` (en/cs/de/es/fr) + `guest_uk_i18n.py` (uk); host copy `host_i18n.py` | New keys, all 6 guest languages; `legal_notice_fee_*` follows the existing notice keys |
+| Legal notice mechanism | `templates/guest/_legal_notice.html` (conditional sections, `legal_ack` checkbox), `UBYHOST_GUEST_NOTICE_VERSION` + `notice_version`/`notice_ack_at` on `guest` (`config.py:617`, `docs/ENVIRONMENT.md:86`) | New conditional fee section; version bump on ship |
 
 ## 3. Data model (migration `0036` + pg twin `00006`)
 
@@ -100,6 +101,41 @@ property collects: "Municipal stay fee: about X CZK per person for this stay —
 you'll pay it once everyone is registered." (Estimate from the entered
 dates/birth date; informational only.)
 
+**Legal explanation in the guest form's legal notice** — same mechanism as
+the existing legal text. `templates/guest/_legal_notice.html` gets one new
+conditional section, exactly like the passport section is gated on
+`apartment.passport_photo_policy`:
+
+```jinja
+{% if fee_notice %}
+  <h3>{{ t('legal_notice_fee_title') }}</h3>
+  <p>{{ t('legal_notice_fee_body') }}</p>
+{% endif %}
+```
+
+`fee_notice` is true only when the kill switch is on, `stay_fee_collect` is 1,
+and the rate > 0 — the same gate the pay panel uses, computed once in
+`_form_context` and passed to the template. The section explains **why the
+guest must pay**: the municipal stay fee (poplatek z pobytu) under zákon č.
+565/1990 Sb. — the guest (not a resident of the obec) is the payer (§3), the
+host collects and remits to the obec, the base is commenced days after
+arrival (§3c), the rate comes from the obec's vyhláška and is capped at 50
+Kč/day (§3d), under-18s and other statutory exemptions don't pay (§3a–3b),
+and stays over 60 nights are out of scope (§3a). Copy is drafted from the
+legal frame in `docs/POPLATEK_Z_POBYTU.md` and the stay-fee row of
+`docs/UbyHost_workplan/04_legal_positions.md` (§3g(4), 6-year register) and
+**must pass counsel review before it ships**. It also states that the guest
+pays the **host**, and that ubyhost never receives funds and does not track
+whether payment arrived. New keys `legal_notice_fee_*` go into `i18n.py`
+(en/cs/de/es/fr) and `guest_uk_i18n.py` (uk), like every other
+`legal_notice_*` key. The single existing `legal_ack` checkbox covers the new
+section — one acknowledgement for the whole notice, no new checkbox. Because
+a `legal_notice_*` string changes materially, ship with a bumped
+`UBYHOST_GUEST_NOTICE_VERSION` (env; rule in `docs/ENVIRONMENT.md:86`); the
+version is stamped on the guest at save (`notice_version`/`notice_ack_at`)
+and shown in the house-book export and DSR, so the acknowledgement evidence
+covers the fee explanation too.
+
 **Guest hub (`guest/stay.html`).** The "money" card, fully read-only: total
 due, per-person breakdown (nights × rate), and the allowed rails:
 
@@ -109,6 +145,10 @@ due, per-person breakdown (nights × rate), and the allowed rails:
   host's pasted link (external navigation; CSP-safe, no script) with the note
   that the host sees the payment in their Revolut.
 - **Cash** — the host's note text ("pay in cash at check-in").
+
+The card ends with a one-line pointer to the legal information the guest
+already confirmed in the form ("why this fee applies — see the legal
+information"), not a second copy of the legal text.
 
 No guest POST endpoints, no state changes, no audit rows for payments.
 
@@ -120,11 +160,13 @@ id makes that matchable by hand or by their bank import).
 
 - No third-party scripts (Stripe/Revolut are plain links, QR is our own PNG):
   no CSP change. The Revolut/Stripe merchant SDKs stay out.
-- Copy on the panel must state: the fee is owed to the municipality, **you pay
-  the host**, the host remits it; ubyhost never receives funds and does not
-  track whether payment arrived. Copy goes through the legal review path
+- Copy on the panel and in the legal-notice section must state: the fee is
+  owed to the municipality, **you pay the host**, the host remits it; ubyhost
+  never receives funds and does not track whether payment arrived. All
+  `legal_notice_fee_*` copy goes through counsel review
   (`docs/POPLATEK_Z_POBYTU.md` open questions,
-  `docs/UbyHost_workplan/04_legal_positions.md`).
+  `docs/UbyHost_workplan/04_legal_positions.md`), and shipping it bumps
+  `UBYHOST_GUEST_NOTICE_VERSION` per `docs/ENVIRONMENT.md:86`.
 - No new personal data: the four columns are host configuration on
   `apartment`, so **no `retention.py` / RETENTION.md change**.
 - i18n: guest keys in all 6 languages; host keys in `host_i18n.py`.
@@ -137,10 +179,12 @@ off), `.env.example`, `docs/ENVIRONMENT.md`; the four columns; toggle UI in
 `_stay_fee_fields.html` + `fee_form_values()` + admin save; kill-switch gate;
 host i18n keys.
 
-**Phase 1 — guest panel.** `stay_fee.charge_for_reservation()`; hub card in
-`routes/guest.py` (`stay_overview` context) + `templates/guest/stay.html` +
-new `templates/guest/_fee_pay.html`; form notice in `guest/form.html`; guest
-i18n (6 languages).
+**Phase 1 — guest panel + legal notice.** `stay_fee.charge_for_reservation()`;
+hub card in `routes/guest.py` (`stay_overview` context) + `templates/guest/stay.html`
++ new `templates/guest/_fee_pay.html`; form notice in `guest/form.html`; the
+conditional `legal_notice_fee_*` section in `templates/guest/_legal_notice.html`
+with keys in all 6 guest languages and a `UBYHOST_GUEST_NOTICE_VERSION` bump
+(counsel sign-off on the copy first); `fee_notice` gate in `_form_context`.
 
 **Phase 2 — optional only if asked.** A host-pasted Stripe payment link as a
 fourth rail (same zero-state pattern as Revolut). Auto-minted Stripe links
