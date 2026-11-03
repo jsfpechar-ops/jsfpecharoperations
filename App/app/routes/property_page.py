@@ -28,6 +28,13 @@ def _off() -> bool:
     return config.STRIPE_MODE not in ("test", "live") and not config.PUBLIC_BASE_URL
 
 
+@router.get("/terms/booking")
+def booking_terms_page(request: Request):
+    """Public guest terms for card bookings (0900). Sets no cookie."""
+    return render(request, "booking_terms.html",
+                  {"show_nav": False, "lang": _page_lang(request)})
+
+
 @router.get("/p/{slug}")
 def property_page_view(request: Request, slug: str):
     scope = "property_page"
