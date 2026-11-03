@@ -96,6 +96,18 @@ on each render (never stored):
   obec). Conservative by design: any non-match → no auto-exemption, the host
   decides via `fee_host_decision`. The guest UI never mentions the rule — the
   panel simply shows the amount due (and is hidden when it is 0).
+
+  **Why CZ-only is correct here, not a gap:** RÚIAN is the Czech national
+  address registry, so it can only ever identify *Czech* municipalities —
+  which is all this rule needs, because the property's obec is always in
+  Czechia (UbyHost properties are Czech). A guest who picks any other country
+  in `res_country` can never be a resident of a Czech obec, so the
+  `res_country == 'CZ'` guard makes them liable by default. There is no EU-wide
+  equivalent to query instead: INSPIRE is a harmonisation framework, not one
+  queryable API, and national address/residence registers differ per country
+  (many are not public at all). So no EU lookup is needed or wanted — the
+  comparison is guest's free-text `res_city` (folded) vs the property's
+  RÚIAN-sourced `addr_obec` (host autofill, `ruian.py`, 0884), CZ only.
 - Form-end estimate card: the same math on the **entered, un-saved** form
   values (stay dates + birth date), rendered server-side on every form render
   (initial GET and the 422 re-render with the guest's values), so the number
@@ -247,7 +259,11 @@ geometry tests and one 390 px screenshot per changed guest page (rules 7/10);
    wording, no hint of the residence rule).
 2. `res_city` is free text — the same-obec match is exact-after-folding only;
    edge cases (Praha vs Prague vs Hlavní město Praha) go in the small alias
-   map, everything else falls back to the host's manual decision.
+   map, everything else falls back to the host's manual decision. RÚIAN stays
+   CZ-only (host property autofill); no EU-wide address API is needed, because
+   only CZ residents can be exempt — see §4. A guest-facing RÚIAN suggest is
+   deliberately not added (it would not leak the exemption, but it is scope
+   creep; free text + folding is enough for a conservative match).
 3. Pasted Revolut/Stripe links cannot enforce the exact amount (only the QR
    rail embeds it) — the panel shows the amount next to the link; flagged in
    the legal copy review.
