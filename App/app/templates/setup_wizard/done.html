@@ -52,13 +52,10 @@
   </li>
   {% endif %}
   <li data-setup-next-step="try_it">
-    <form method="post" action="/apartments/{{ apartment.id }}/setup" class="host-property-card setup-summary-card setup-next-card">
-      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-      <input type="hidden" name="step" value="try_it">
+    <a class="host-property-card setup-summary-card setup-next-card" href="/apartments/{{ apartment.id }}/setup/try_it">
       <span class="setup-summary-icon">{{ nav_icon('users') }}</span>
       <span class="setup-summary-copy"><strong>{{ t('wizard.step.try_it') }}</strong></span>
-      <button class="ui-btn ui-btn-secondary" type="submit" name="action" value="demo">{{ t('setup_guide.try.create') }}</button>
-    </form>
+    </a>
   </li>
 </ul>
 {% if not missing_row %}

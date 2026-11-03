@@ -2,7 +2,7 @@
 {% from "_icons.html" import icon with context %}
 {% set cta = 'ui-btn ui-btn-primary' %}
 {% from "_components.html" import help_tip, progress_pill, guest_count with context %}
-{% block wizard_help %}{% from "_components.html" import help_tip with context %}{{ help_tip('wiz-why-try', t('why.try')) }} {{ help_tip('setup-try-help', t('setup_guide.try.help')) }}{% endblock %}
+{% block wizard_help %}{% from "_components.html" import help_tip with context %}{{ help_tip('setup-try-help', t('why.try') ~ ' ' ~ t('setup_guide.try.help')) }}{% endblock %}
 {% block wizard_content %}
 
 {% set demo_state = setup_demo.state if setup_demo else 'none' %}
@@ -46,7 +46,7 @@
   </div>
 </section>
 <section class="setup-demo-message" aria-labelledby="demo-message-heading">
-  <header><span class="setup-demo-mark" aria-hidden="true">{{ message_operator_first_name[:1] }}</span><div><h2 id="demo-message-heading">{{ t('wizard.try_it.message') }} <span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('wizard.try_it.preview') }}</span></h2><strong>{{ message_operator_first_name }}</strong></div>{{ help_tip('demo-message-help', t('wizard.try_it.message_help')) }}</header>
+  <header><span class="setup-demo-mark" aria-hidden="true">{{ message_operator_first_name.lstrip('[')[:1] }}</span><div><h2 id="demo-message-heading">{{ t('wizard.try_it.message') }} <span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('wizard.try_it.preview') }}</span></h2><strong>{{ message_operator_first_name }}</strong></div>{{ help_tip('demo-message-help', t('wizard.try_it.message_help')) }}</header>
   <div class="ui-banner ui-banner-neutral setup-demo-disclaimer" role="status">{{ icon('info', 20) }}<div class="grow">{{ t('wizard.try_it.model_note') }}</div></div>
   {% set message_url = permalink %}
   {% set message_text = t('wizard.guest_link.message_template', url=message_url, pin=pin, operator_first_name=message_operator_first_name, property_name=apartment.internal_name) %}
