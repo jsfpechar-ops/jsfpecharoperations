@@ -1068,7 +1068,9 @@
       "setup-wizard-celebrate-copy",
       "setup-wizard-celebrate-mark",
       "setup-wizard-celebrate-title",
-      "setup-wizard-instruction"
+      "setup-wizard-instruction",
+      "setup-wizard-next",
+      "setup-next-card"
     ],
     "App/app/templates/setup_wizard/door_lock.html": [
       "feature-switch",
@@ -1113,7 +1115,9 @@
       "setup-wizard-police-notes",
       "setup-wizard-section-title",
       "setup-wizard-wait",
-      "two"
+      "two",
+      "property-section-title",
+      "inline-hours"
     ],
     "App/app/templates/setup_wizard/property.html": [
       "field",
@@ -1123,7 +1127,8 @@
       "setup-wizard-form",
       "setup-wizard-instruction",
       "setup-wizard-lede",
-      "two"
+      "two",
+      "wizard-ares"
     ],
     "App/app/templates/setup_wizard/stay_fee.html": [
       "err-text",
