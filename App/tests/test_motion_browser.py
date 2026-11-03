@@ -70,7 +70,8 @@ def test_fold_outs_slide_open_and_floating_menus_are_not_clipped(wide_host, wide
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = _rail_context(browser, wide_host, wide_base, 1280, collapsed=False)
-        page = _rail_page(context, wide_base, "/")
+        # The dashboard now uses the page_help "?" (0831); a details.ui-how fold-out lives on /stay-fees.
+        page = _rail_page(context, wide_base, "/stay-fees")
         heights = page.evaluate(FOLD_OUT_HEIGHTS, "details.ui-how")
         full = page.evaluate("() => document.querySelector('.ui-how-body').getBoundingClientRect().height")
         assert heights[0] < full, heights
