@@ -134,7 +134,7 @@ _AUDIT_JS = """(isBack) => {
   // 12 px between neighbouring interactive or text boxes in the main lane
   const SEL = 'a[href], button, input:not([type=hidden]), select, textarea, .settings-pill, .settings-value-card, .airbnb-index-row, h1, h2, h3, h4, p, label, li';
   const boxes = [...root.querySelectorAll(SEL)].filter(el => vis(el) &&
-    !el.closest('.help-tip-body, .help-tip, summary, details:not([open]), table, .ui-table-stack, script, style, .row-menu, nav, .stays-links'));
+    !el.closest('.help-tip-body, .help-tip, summary, details:not([open]), table, .ui-table-stack, script, style, .row-menu, .sr-only, nav, .stays-links'));
   const describe = el => (el.tagName.toLowerCase() + ': ' + el.textContent.trim().replace(/\\s+/g, ' ').slice(0, 20));
   let pairs = 0;
   for (let i = 0; i < boxes.length && pairs < 8; i++) for (let j = i + 1; j < boxes.length && pairs < 8; j++) {
