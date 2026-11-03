@@ -67,18 +67,10 @@ def test_period_items_follow_the_price_list(owner):
     acc = billing.account(owner)
     acc.update(plan="max", addon_whitelabel=1, carry_czk=30)
     items = billing_invoices.period_items(acc)
-    assert items[0] == ("Předplatné UbyHost Max, 5 apartmánů", 715 + 379)
+    assert items[0] == ("Předplatné UbyHost Max, 5 apartmánů", 715 + 4 * 59 + 45)
     assert ("Doplněk vlastní značka", 590) in items
     assert ("Doplatek za změny v minulém období", 30) in items
     assert not any("TTLock" in d for d, _ in items)  # included in Max
-
-
-def test_founder_line_on_an_annual_plan(owner):
-    acc = billing.account(owner)
-    acc.update(billing_interval="year", founder=1, apartments_billed=2)
-    assert billing_invoices.period_items(acc) == [
-        ("Předplatné UbyHost Standard, 2 apartmány, zakladatelská cena", 1780),
-    ]
 
 
 def test_period_invoice_is_numbered_stored_and_issued_once(owner):

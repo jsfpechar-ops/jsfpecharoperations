@@ -18,8 +18,9 @@ def test_cleaning_pages_have_the_v2_shell_and_one_stylesheet(host_with_property)
         response = host_with_property.get(f"{path}?lang=en")
         assert response.status_code == 200, path
         page = response.text
-        # 0732: /cleaning has the phone headline (ph-top h1) plus the desktop head h1; the other pages have one
-        assert page.count("<h1") == (2 if path == "/cleaning" else 1), path
+        # 0732: /cleaning has the phone headline (ph-top h1) plus the desktop head h1; the other pages have one.
+        # The phone calendar view hides the list headline, so a screen-reader-only phone h1 keeps one h1 on screen.
+        assert page.count("<h1") == (3 if path == "/cleaning" else 1), path
         if path == "/cleaning":
             # 0542: the host cleaning page is on the v2 shell (tokens.css + app2.css only)
             assert page.count("/static/cleaning.css") == 0 and "/static/host2.css" not in page, path

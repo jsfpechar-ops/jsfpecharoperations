@@ -16,8 +16,8 @@ from tests.browser_support import chromium_launch_kwargs
 from tests.test_host_geometry import _browser_session_cookie, base  # noqa: F401
 
 
-def _open(playwright, base, width, path="/settings?lang=en", engine="chromium", java_script_enabled=True):
-    # 0528: "/" and "/reservations" use the v2 shell; the old-shell sidebar/tab bar checks run on /settings.
+def _open(playwright, base, width, path="/payments?lang=en", engine="chromium", java_script_enabled=True):
+    # 0528: "/" and "/reservations" use the v2 shell; the old-shell sidebar/tab bar checks run on /payments (0785a: /settings is v2).
     username = f"shell{secrets.token_hex(3)}"
     owner = auth.create_account(f"{username}@example.test", "Shell", role="host", username=username)
     db.insert("apartment", {"internal_name": "Shell flat", "owner_user_id": owner, "permalink_token": f"sh{secrets.token_hex(4)}", "active": 1, "created_at": db.utcnow()})
@@ -85,7 +85,7 @@ FORM_PAGES = ("/apartments/new?lang=en", "/cleaning/new?lang=en")
 def test_collapsed_rail_expands_again_with_the_same_button(base):
     with sync_api.sync_playwright() as playwright:
         browser, page = _open(playwright, base, 1280)
-        page.goto(base + "/invoices?lang=en")
+        page.goto(base + "/payments?lang=en")
         page.wait_for_selector("#main-content")
         button = page.locator("button[data-sidebar-collapse]")
         button.click()
@@ -105,7 +105,7 @@ def test_collapsed_account_menu_is_whole_inside_the_viewport(base):
     for width in (1280, 2000):
         with sync_api.sync_playwright() as playwright:
             browser, page = _open(playwright, base, width)
-            page.goto(base + "/invoices?lang=en")
+            page.goto(base + "/payments?lang=en")
             page.wait_for_selector("#main-content")
             page.locator("button[data-sidebar-collapse]").click()
             page.wait_for_function("document.body.classList.contains('sidebar-collapsed')")
@@ -132,7 +132,7 @@ def test_invoice_settings_tab_switch_does_not_move_the_page(base):
         browser, page = _open(playwright, base, 1280)
         page.goto(base + "/invoices?lang=en")
         page.wait_for_selector("#main-content")
-        page.locator(".ui-tabs a", has_text="Invoice settings").first.click()
+        page.locator(".stays-head-actions a", has_text="Invoice settings").first.click()  # 0792: head button, no tab strip
         page.wait_for_url("**/entities**")
         page.wait_for_selector("#main-content")
         samples = page.evaluate(
@@ -174,7 +174,7 @@ def _assert_content_is_not_loading(page):
 @pytest.mark.parametrize("engine", os.environ.get("UBYHOST_SHELL_BROWSERS", "chromium").split(","))
 @pytest.mark.parametrize("width", [390, 820])
 @pytest.mark.parametrize("path", [
-    "/?lang=en", "/reservations?lang=en", "/apartments/new?lang=en", "/settings?lang=en",
+    "/?lang=en", "/reservations?lang=en", "/apartments/new?lang=en", "/payments?lang=en",
 ])
 def test_more_preserves_each_page_kind_and_sheet_links_work(base, engine, width, path):
     if path in ("/?lang=en", "/reservations?lang=en", "/apartments/new?lang=en"):

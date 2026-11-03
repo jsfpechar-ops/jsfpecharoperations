@@ -230,7 +230,6 @@ production. **`UBYHOST_STAGING_NO_LOGIN=1`** on staging skips login entirely: ev
 | `UBYHOST_BILLING_BANK_ACCOUNT` | unset | ČSOB account in Czech form (`123456789/0300`), printed on every invoice. |
 | `UBYHOST_BILLING_IBAN` | unset | The same account as IBAN; the QR Platba on the invoice uses it. No invoice is issued without it. |
 | `UBYHOST_BILLING_VAT_STATUS` | `non_payer` | `non_payer` prints "Nejsem plátce DPH"; switch to `payer` only after VAT registration. |
-| `UBYHOST_FOUNDER_SLOTS` | `100` | How many yearly orders get the founder price. |
 
 Payments are matched from a ČSOB statement (GPC or CSV) uploaded on `/admin/fakturace`; there is no bank API and no outbound request. The daily `billing` job (06:00) issues invoices, sends reminders 1 and 7 days after the due date and makes an account read-only after 14. UbyPort filing never waits for a payment.
 

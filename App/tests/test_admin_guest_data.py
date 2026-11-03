@@ -430,7 +430,7 @@ def test_the_host_sees_start_stop_and_reveal_in_settings(seeded):
     db.audit("apartment_updated", "id=1", actor="wp04-host", owner_user_id=seeded["owner"])
 
     host = _login("wp04-host")
-    page = host.get("/settings").text
+    page = host.get("/settings/technical").text
     for text in (
         "impersonation_started",
         f"reason={REASON}",
@@ -443,7 +443,7 @@ def test_the_host_sees_start_stop_and_reveal_in_settings(seeded):
     ):
         assert text in page, text
 
-    support = host.get("/settings?audit=support").text
+    support = host.get("/settings/technical?audit=support").text
     assert "impersonation_started" in support
     assert "impersonation_stopped" in support
     assert "guest_identity_revealed" in support

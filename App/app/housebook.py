@@ -32,6 +32,18 @@ RETENTION_YEARS = 6
 # Police-inspection ZIPs are built one PDF at a time on disk — not held in RAM.
 MAX_INSPECTION_PDFS = 100
 
+
+def period_presets(today: date) -> list:
+    """0889: one-tap stay-date ranges for the filter: (copy key, first day, last day)."""
+    first = today.replace(day=1)
+    last_month_end = first - timedelta(days=1)
+    this_month_end = (first + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+    return [
+        ("housebook.preset.this_month", first, this_month_end),
+        ("housebook.preset.last_month", last_month_end.replace(day=1), last_month_end),
+        ("housebook.preset.this_year", today.replace(month=1, day=1), today.replace(month=12, day=31)),
+    ]
+
 FONT_REGULAR = "Helvetica"
 FONT_BOLD = "Helvetica-Bold"
 

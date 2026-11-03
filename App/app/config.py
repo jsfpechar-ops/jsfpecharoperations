@@ -502,8 +502,6 @@ BILLING_BANK_ACCOUNT = os.environ.get("UBYHOST_BILLING_BANK_ACCOUNT", "").strip(
 BILLING_IBAN = os.environ.get("UBYHOST_BILLING_IBAN", "").strip()
 # "non_payer" until UbyHost registers for VAT, then "payer".
 BILLING_VAT_STATUS = os.environ.get("UBYHOST_BILLING_VAT_STATUS", "non_payer").strip() or "non_payer"
-# How many hosts can get the founder price.
-FOUNDER_SLOTS = int(os.environ.get("UBYHOST_FOUNDER_SLOTS", "100"))
 
 # Model API (docs/plans/havel-support-assistant.md section 3; shared by Havel and
 # the guest bot). A feature is on only when it is listed in UBYHOST_AI_FEATURES

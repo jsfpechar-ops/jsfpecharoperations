@@ -314,21 +314,26 @@ def test_a_suppressed_address_gets_no_tip_even_on_another_account():
     assert mail_notify.workspace_deletion(uid, "2026-12-01T00:00:00+00:00", "scheduled") == 2
 
 
+def _onboarding_checked(text):
+    start = text.index('id="settings-onboarding-emails"')
+    return " checked" in text[start:text.index(">", text.index("<input", start))]
+
+
 def test_settings_toggle_is_bound_to_the_flag():
     uid = _host("settings")
     db.execute("UPDATE user_account SET must_change_password = 0 WHERE id = ?", (uid,))
     client = TestClient(app)
     login = login_as(client, PREFIX + "settings", url="/login?lang=en", follow_redirects=False)
     assert login.status_code == 303, login.text
-    page = client.get("/settings?lang=en")
+    page = client.get("/settings/account?lang=en")
     assert "Setup tips by e-mail" in page.text
-    assert 'name="enabled" value="1" checked' in page.text
+    assert _onboarding_checked(page.text)
     token = page.text.split('name="csrf-token" content="', 1)[1].split('"', 1)[0]
     off = client.post("/account/onboarding-emails", data={"_csrf": token}, follow_redirects=False)
     assert off.status_code == 303
     assert lifecycle_mail.is_opted_out(uid)
-    page = client.get("/settings?lang=en")
-    assert 'name="enabled" value="1" checked' not in page.text
+    page = client.get("/settings/account?lang=en")
+    assert not _onboarding_checked(page.text)
     lifecycle_mail.suppress(lifecycle_mail.email_hash("settings@example.test"))
     on = client.post(
         "/account/onboarding-emails", data={"_csrf": token, "enabled": "1"}, follow_redirects=False
@@ -337,7 +342,7 @@ def test_settings_toggle_is_bound_to_the_flag():
     assert not lifecycle_mail.is_opted_out(uid)
     # Turning tips back on is a fresh choice: the workspace's addresses leave the list.
     assert not lifecycle_mail.is_suppressed("settings@example.test")
-    czech = client.get("/settings?lang=cs")
+    czech = client.get("/settings/account?lang=cs")
     assert "Tipy k nastavení e-mailem" in czech.text
 
 

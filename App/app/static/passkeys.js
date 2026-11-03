@@ -201,7 +201,7 @@
         });
       })
       .then(function (data) {
-        window.location.assign(data.redirect || "/settings#settings-security");
+        window.location.assign(data.redirect || "/settings/security#settings-security");
       })
       .catch(function (error) {
         button.disabled = false;

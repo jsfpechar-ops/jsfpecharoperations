@@ -71,8 +71,7 @@ def test_ordering_in_the_trial_waits_for_its_end(host):
     acc = billing.account(host["owner"])
     assert (acc["status"], acc["plan"], acc["billing_interval"], acc["apartments_billed"]) == (
         "trialing", "standard", "year", 2)
-    assert acc["founder"] == (1 if db.query_one(
-        "SELECT 1 FROM founder_slot WHERE owner_user_id = ?", (host["owner"],)) else 0)
+    assert acc["founder"] == 0
     assert acc["buyer_name"] == "Penzion Test s.r.o."
 
 
@@ -129,8 +128,7 @@ def test_the_page_orders_without_javascript(host):
     assert "Leon Lite" in page.text
     assert "AI concierge Leon pro vaše hosty" in page.text
     assert 'name="addon_whitelabel"' not in page.text
-    assert "Skenování dokladů (OCR): připravujeme" in page.text
-    assert "Zatím není dostupné, ani během zkušební doby." in page.text
+    assert "Skenování dokladů (OCR) pasů, není součástí zkušební doby." in page.text
     bad = client.post("/predplatne", data={**BUYER, "buyer_zip": "1"}, follow_redirects=False)
     assert bad.status_code == 400 and "PSČ má pět číslic." in bad.text
     ok = client.post("/predplatne", data=BUYER, follow_redirects=False)
@@ -174,7 +172,6 @@ def test_cenik_uses_the_billing_price_list(monkeypatch):
     assert legal.PUBLIC_RATES["base"] == {k: list(v) for k, v in billing.BASE.items()}
     assert legal.PUBLIC_RATES["max"] == {k: list(v) for k, v in billing.MAX_EXTRA.items()}
     assert legal.PUBLIC_RATES["ttlock"] == dict(billing.TTLOCK)
-    monkeypatch.setattr(config, "FOUNDER_SLOTS", 10_000)
     client = TestClient(app)
     for enabled in (True, False):
         monkeypatch.setattr(config, "BILLING_ENABLED", enabled)

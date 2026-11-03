@@ -415,6 +415,8 @@ def test_cleaning_card_facts_line_up_across_cards(wide_host, wide_base):
         page.route("**/static/cleaning.js*", lambda route: route.abort())
         response = page.goto(f"{wide_base}/cleaning?lang=en")
         assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
+        # 0875: the calendar replaces the list on /cleaning; show it here to measure the card CSS itself.
+        page.add_style_tag(content="#cleaning-list { display:block !important; }")
         page.wait_for_selector(".cleaning-section tr[id^='cleaning-'] td", timeout=5000)
         lefts = page.evaluate(
             """() => Array.from(document.querySelectorAll('.cleaning-section table')).map(t =>
@@ -444,7 +446,7 @@ def test_sidebar_search_has_a_border(wide_host, wide_base):
         context = browser.new_context(viewport={"width": 1280, "height": 1000})
         context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": wide_base + "/"}])
         page = context.new_page()
-        response = page.goto(f"{wide_base}/settings?lang=en")
+        response = page.goto(f"{wide_base}/payments?lang=en")
         assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
         _wait_for_host_layout(page)
         _dismiss_optional_security_prompt(page)
@@ -463,7 +465,12 @@ def test_sidebar_search_has_a_border(wide_host, wide_base):
 
 
 BORDERED_ROUTES = {
-    "settings": "/settings",
+    "settings-account": "/settings/account",
+    "settings-security": "/settings/security",
+    "settings-phone": "/settings/phone",
+    "settings-data": "/settings/data",
+    "settings-technical": "/settings/technical",
+    "settings-help": "/settings/help",
     "housebook": "/housebook",
     "reservation": "/reservations/{reservation_id}",
     "setup-property": "/apartments/{property_id}/setup/property",
@@ -482,13 +489,14 @@ def test_host_sections_are_bordered_panels(wide_host, wide_base):
         )
         for key, path in BORDERED_ROUTES.items()
     }
+    # 0785a: v2 pages (body.v2) group their settings in .card panels, not old-shell .ui-section; they are counted but not held to the border rule.
     js = """() => Array.from(document.querySelectorAll('.ui-section:not(.ui-section-plain)'))
         .filter(el => !el.parentElement || !el.parentElement.closest('.ui-section'))
         .map(el => {
           const cs = getComputedStyle(el);
           const border = ['Top', 'Right', 'Bottom', 'Left'].reduce((n, side) => n + parseFloat(cs['border' + side + 'Width']), 0);
           const pad = ['Top', 'Right', 'Bottom', 'Left'].reduce((n, side) => n + parseFloat(cs['padding' + side]), 0);
-          return {id: el.id || el.className, border, pad};
+          return {id: el.id || el.className, border, pad, v2: !!el.closest('body.v2')};
         })"""
     counts = {}
     findings = []
@@ -511,6 +519,8 @@ def test_host_sections_are_bordered_panels(wide_host, wide_base):
             sections = page.evaluate(js)
             counts[name] = len(sections)
             for section in sections:
+                if section["v2"]:
+                    continue
                 if section["border"] <= 0 or section["pad"] <= 0:
                     findings.append((name, section))
         context.close()

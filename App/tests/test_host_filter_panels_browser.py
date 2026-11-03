@@ -505,7 +505,7 @@ def test_filter_geometry_and_popovers_stay_inside_the_viewport_in_english_and_cz
                 page.locator("[data-month-trigger]").click()
                 selected_month = page.locator('[data-month-choice="2026-08"].selected')
                 assert selected_month.is_visible()
-                assert selected_month.evaluate("element => getComputedStyle(element).backgroundColor") == "rgb(250, 235, 232)"
+                assert selected_month.evaluate("element => getComputedStyle(element).backgroundColor") == "rgb(249, 233, 231)"  # v2 --brand-soft
                 _capture(page, f"invoices-selected-month-{lang}-{width}-month-grid")
         assert not page_errors, "browser script errors: " + " | ".join(page_errors)
         browser.close()

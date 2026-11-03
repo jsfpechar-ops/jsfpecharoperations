@@ -51,10 +51,24 @@ SELECTOR_ALIASES = {".actbar": ".bar", ".actbar .btn": ".bar .btn", ".head h1": 
 BOX_PROPS = ("width", "height", "margin-top", "margin-right", "margin-bottom", "margin-left")
 # phone box departure: the 20 px side room comes from body.v2 .main padding, so phone cards have no side margin (2026-11-01)
 BOX_OVERRIDES = {
+    # text-dependent: the stay fee head h1 is as wide as the fixture title on a 320 px phone (0794)
+    "stay_fees:.mh .big, .head h1@320": {"width": "116px"},
+    "submissions:.mh .big, .head h1@320": {"width": "113px"},  # text-dependent: Odeslání vs mockup Pobyty
+    "submissions:.mh .big, .head h1@390": {"width": "113px"},
+    "stay_fees:.mh .big, .head h1@390": {"width": "116px"},
     # text-dependent: fixture copy vs phone v2 mockup demo copy (0729)
     # text-dependent: app copy vs phone v2 mockup demo copy (0735)
     ".mh .big@320": {"width": "79.3594px"},
     ".mh .big@390": {"width": "79.3594px"},
+    # text-dependent: the Faktury h1 is longer than the mockup's demo title (0792)
+    "invoices:.mh .big, .head h1@320": {"width": "118.984px"},
+    "invoices:.mh .big, .head h1@390": {"width": "118.984px"},
+    # text-dependent: the register title and guest names are longer than the mockup demo copy (0793)
+    "housebook:.mh .big, .head h1@320": {"width": "167.469px"},
+    "housebook:.mh .big, .head h1@390": {"width": "167.469px"},
+    "housebook:.stay .in b@320": {"width": "119.422px"},
+    "housebook:.stay .in b@390": {"width": "119.422px"},
+    "housebook:.stay .in small@390": {"width": "210px"},
     # text-dependent: app copy vs phone v2 mockup demo copy (0740)
     ".prop .in b@320": {"width": "93.0469px"},
     ".prop .in b@390": {"width": "93.0469px"},
@@ -65,7 +79,6 @@ BOX_OVERRIDES = {
     # text-dependent: app copy vs phone v2 mockup demo copy (0740)
     ".big, .head h1@320": {"width": "150.547px"},
     ".big, .head h1@390": {"width": "150.547px"},
-    ".card.prop .st.r@320": {"height": "33.7812px"},
     ".promo@390": {"height": "80px"},
     ".tile .v@320": {"margin-top": "29px"},
     ".tile .v@390": {"margin-top": "29px"},
@@ -170,7 +183,7 @@ PAGES = [
             ".hs .pill": "today's stay cards exist only when a stay is due today; the phone mockup shows demo stays",
         },
     },
-    {"name": "cleaning", "path": "/cleaning", "view": "clean", "selectors": [".side .nav.on", ".head h1", ".head .sub", ".head .btn", "main h2", "main .card", "main table th", "main table td"], "phone_mockup": PHONE_MOCKUP_V2, "phone_view": "uklid",
+    {"name": "cleaning", "path": "/cleaning", "view": "clean", "selectors": [".side .nav.on", ".head h1", "main h2", "main table th", "main table td"], "phone_mockup": PHONE_MOCKUP_V2, "phone_view": "uklid",
         "phone_box_skip": {
             ".hs .pill.p-ok": (["width"], "same label; CI's Manrope renders it 101 px, the mockup's font 98.75 px"),
             ".kind": (["width"], "today's cleaning window text comes from the fixture"),
@@ -181,7 +194,9 @@ PAGES = [
             ".hl": (["height"], "the shared .hl@390 BOX_OVERRIDE is Overview's two-line headline; the cleaning headline is one line"),
             ".list.plain .row:not(:has(.pill))": (["height"], "line-height normal: the app font gives 23 + 19 px lines, the mockup 23.8 + 19.6 px"),
         },
-        "phone_selectors": [".tabs", ".tab.on", ".hl", ".hl-sub", ".hs .card", ".kind", ".av", ".nm", ".meta", ".hs .pill.p-ok", "h2.sec", ".list.plain .row:not(:has(.pill))", ".row:not(:has(.pill)) .t b", ".row:not(:has(.pill)) .t small", ".btn.line", ".promo", ".promo .pi", ".promo b", ".promo small"], "missing_ok": {"main table th": "below 1024 px the phone layout replaces the tables (0546)", "main table td": "below 1024 px the phone layout replaces the tables (0546)"}},  # pills follow the approved phone mockup (2026-11-01): scheduled green, the desktop mockup shows amber
+        # 0875: below 1024 px /cleaning is the Airbnb-style calendar (tiles), not the list the old phone mockup shows: only the tab bar is compared.
+        "phone_selectors": [".tabs", ".tab.on"],
+        "missing_ok": {"main table th": "below 1024 px the phone layout replaces the tables (0546)", "main table td": "below 1024 px the phone layout replaces the tables (0546)"}},
     {
         "name": "properties",
         "path": "/apartments",
@@ -230,6 +245,19 @@ PAGES = [
         "phone_selectors": [".tabs", ".tab:not(.on)", ".tab.on", ".mh .big", ".me-av", ".tile", ".tile b", ".tile small", ".tile .v", ".promo", ".promo .pi", ".promo b", ".promo small", ".list.plain .row", ".list.plain .badge", ".menu-logout"],
         "missing_ok": {".list.plain .badge": "the Cleaning badge shows only when a cleaning is planned for today"},
     },
+    {"name": "entities", "path": "/entities", "view": "props", "selectors": [".head h1", "main .card"], "missing_ok": {".head h1": "the settings sub page uses the airbnb big title, not the .head bar (0789c)"}},
+    {"name": "privacy_requests", "path": "/privacy-requests", "view": "props", "selectors": [".head h1", "main .card"], "missing_ok": {".head h1": "the settings sub page uses the airbnb big title, not the .head bar (0789c)"}},
+    {"name": "archive", "path": "/settings/archived", "view": "props", "selectors": [".head h1", "main .card"], "missing_ok": {"main .card": "the test fixture has no archived item: the empty state has no card", ".head h1": "the settings sub page uses the airbnb big title, not the .head bar (0789c)"}},
+    {
+        "name": "stay_fees",
+        "path": "/stay-fees",
+        "view": "fee",
+        "selectors": [".head h1", ".head .btn.ghost", "main .card"],  # no .sub: owner no-fine-print rule (0816)
+        "phone_mockup": PHONE_MOCKUP_V2,
+        "phone_view": "menu",
+        "phone_selectors": [".tabs", ".tab.on", ".mh .big, .head h1"],
+        "missing_ok": {},
+    },
     {
         "name": "stays",
         "path": "/reservations?range=upcoming&lang=cs",
@@ -276,6 +304,10 @@ PAGES = [
             ".row .t small": "payment rows have no subtitle in the current copy; the mockup subtitles are demo copy",
         },
     },
+    {"name": "submissions", "path": "/submissions", "view": "stays", "phone_view": "pobyty", "phone_mockup": PHONE_MOCKUP_V2, "selectors": [".head h1", ".head .btn.ghost", "main table th", "main table td"], "phone_selectors": [".tabs", ".tab.on", ".mh .big, .head h1", ".card.stay", ".sav", ".stay .in b", ".stay .in small"], "missing_ok": {"main table th": "the rich test host has no police submission, so the table is absent", "main table td": "the rich test host has no police submission, so the table is absent", ".card.stay": "the phone card list shows only after a submission; the rich test host has none", ".sav": "the phone card list shows only after a submission; the rich test host has none", ".stay .in b": "the phone card list shows only after a submission; the rich test host has none", ".stay .in small": "the phone card list shows only after a submission; the rich test host has none"}},
+    {"name": "invoices", "path": "/invoices", "view": "stays", "phone_view": "pobyty", "phone_mockup": PHONE_MOCKUP_V2, "selectors": [".head h1", ".head .btn", ".head .btn.ghost", "main table th", "main table td"], "phone_selectors": [".tabs", ".tab.on", ".mh .big, .head h1", ".stays-add", ".card.stay", ".sav", ".stay .in b", ".stay .in small"], "missing_ok": {".tab.on": "the page has no section tab strip (owner rule; invoice settings is a head button)", "main table th": "fixture has no invoice", "main table td": "fixture has no invoice", ".card.stay": "fixture has no invoice", ".sav": "fixture has no invoice", ".stay .in b": "fixture has no invoice", ".stay .in small": "fixture has no invoice"}},
+    {"name": "housebook", "path": "/housebook", "view": "stays", "phone_view": "pobyty", "phone_mockup": PHONE_MOCKUP_V2, "selectors": [".head h1", ".head .btn.ghost", "main table th", "main table td", "main .pill.p-ok", "main .pill.p-warn"], "phone_selectors": [".tabs", ".tab.on", ".mh .big, .head h1", ".card.stay", ".sav", ".stay .in b", ".stay .in small"], "missing_ok": {"main .pill.p-ok": "tone depends on data", "main .pill.p-warn": "tone depends on data"}},
+    {"name": "settings", "path": "/settings", "view": "settings", "selectors": [".side .nav.on", ".head h1", "main h2", "main .card"], "missing_ok": {".head h1": "the index page uses the airbnb big title, not the .head bar (0789)", "main h2": "the index page has no group headings: each group is on its own sub page (0789)", "main .card": "the index page has no group cards: each group is on its own sub page (0789)"}},
 ]
 
 

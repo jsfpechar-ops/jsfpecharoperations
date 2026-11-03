@@ -7,7 +7,7 @@ Executor: Haiku 5.5, alone, in /home/claude/jsfpecharoperations on branch claude
 0828 (committed) made /guide folded with a search field. Fix what is left red: design lint T1, Turbo page swap, test_guide_coverage, and the 0800/0813 geometry on /guide.
 
 ## 2. Context
-Reports: `docs/tasks/0828-report.md`, `docs/tasks/0813-report.md`. The app uses Turbo page swap (`App/app/static/vendor/turbo-*.js`): a `<script src>` inside a page template does not run on swap, and design lint T1 forbids it. Host scripts are loaded once in `App/app/templates/base.html` (lines ~38-46) and bind per page with `onPage(fn)` (see `App/app/static/host.js` line ~11 and `App/tests/test_0507_page_hooks_browser.py`).
+Reports: `docs/tasks/0828-report.md`, `docs/tasks/0871-report.md`. The app uses Turbo page swap (`App/app/static/vendor/turbo-*.js`): a `<script src>` inside a page template does not run on swap, and design lint T1 forbids it. Host scripts are loaded once in `App/app/templates/base.html` (lines ~38-46) and bind per page with `onPage(fn)` (see `App/app/static/host.js` line ~11 and `App/tests/test_0507_page_hooks_browser.py`).
 
 ## 3. Files
 `App/app/templates/guide.html`, `App/app/static/guide.js`, `App/app/templates/base.html` (one script line), `App/app/static/app2.css` (only the `/* 0828 guide search (v2) */` block at the end), `App/tests/test_guide_coverage.py`, `App/tests/test_0828_guide_search_browser.py`, `App/tests/test_0800_v2_remaining_pages_browser.py` (only if a selector names old guide markup).

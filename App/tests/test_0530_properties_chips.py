@@ -31,7 +31,7 @@ COMPLETE_UBY = {
 }
 
 
-def _seed(*, lock=False, fee=False, feed_status=None, auth_alert=False, police=False) -> None:
+def _seed(*, lock=False, fee=False, feed_status=None, auth_alert=False, police=False, manual_stay=False) -> None:
     auth.create_account(f"{USERNAME}@example.test", "Properties Host", username=USERNAME)
     owner_id = db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))["id"]
     entity_id = db.insert(
@@ -68,6 +68,15 @@ def _seed(*, lock=False, fee=False, feed_status=None, auth_alert=False, police=F
             {
                 "level": "error", "kind": "ubyport_auth_failed", "apartment_id": apartment_id,
                 "owner_user_id": owner_id, "message": "UbyPort sign-in failed", "created_at": db.utcnow(),
+            },
+        )
+    if manual_stay:
+        db.insert(
+            "reservation",
+            {
+                "apartment_id": apartment_id, "source": "manual", "uid": "manual-0530",
+                "date_from": "2026-12-01", "date_to": "2026-12-03", "status": "active",
+                "created_at": db.utcnow(), "updated_at": db.utcnow(),
             },
         )
 
@@ -121,6 +130,16 @@ def test_open_auth_alert_marks_police_missing(clean):
 
 def test_feed_error_marks_calendar_missing(clean):
     chips = _chips(_page(lock=True, fee=True, feed_status="error"))
+    assert chips["calendar"][0] == "bad"
+
+
+def test_manual_stay_without_feed_marks_calendar_not_used(clean):
+    chips = _chips(_page(manual_stay=True))
+    assert chips["calendar"][0] == "off"
+
+
+def test_no_feed_and_no_manual_stay_marks_calendar_missing(clean):
+    chips = _chips(_page())
     assert chips["calendar"][0] == "bad"
 
 

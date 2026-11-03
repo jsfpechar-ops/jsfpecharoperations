@@ -1,4 +1,12 @@
 {
+  "admin2-system.css": {
+    "sha256": "71375d0cbcd5e0cef2b3e8a07c08a3b87520ef186ee4d324e1b5213ec9b228d6",
+    "v": "20261102-0894e"
+  },
+  "admin2.css": {
+    "sha256": "e26e64477ffa0b1ccec98d3384ea79675f0d587a89aa9749fdeda6a102ae6ef5",
+    "v": "20261102-0893o"
+  },
   "analytics-optout.js": {
     "sha256": "9afc536f5842652fcfebd0fb30a88278f84f472b2874ad721a9984b72c01f9d5",
     "v": "20261010a"
@@ -8,12 +16,12 @@
     "v": "20261027-signup-wrap"
   },
   "app.js": {
-    "sha256": "080225db6e3678eeec570e0c1b26f271ff5ee73dc11c45d9f907e21211802a91",
-    "v": "20261102-0814"
+    "sha256": "a916c5bba4b826c9568841b50a2d18dffa9edb2d9745b2abb529a1c0bdf11b05",
+    "v": "20261103-0853"
   },
   "app2.css": {
-    "sha256": "e9246ca71a4eb7b78a1f561d5be0e1690409aef6474867668c2559fbfc427ce8",
-    "v": "20261102-0814"
+    "sha256": "cbb6a11e5a5b590a29666c7dc15101be9ce15071beeb1affb24448eea899f0f2",
+    "v": "20261103-0852"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -22,6 +30,10 @@
   "auth.js": {
     "sha256": "4e8f87ff689788f7f01049f8e55cd3bb37aba03c2f50b939ed6366ba1e9892da",
     "v": "20260925a"
+  },
+  "auth2.css": {
+    "sha256": "3407136f99f6834f41317ba734a81db55839fbe01fd376e30ace8185642048d4",
+    "v": "20261102-0892e"
   },
   "claim.js": {
     "sha256": "be07c1fa7a37b4207f0d6d7fd56238175a87579bd71b52d879ba0a81c91aa099",
@@ -44,12 +56,12 @@
     "v": "20260915a"
   },
   "dashboard-calendar.css": {
-    "sha256": "be5112e17f37f97569ff6b0d7cb162ec69579d3d487ba019e0fb268da26dbe2a",
-    "v": "20261021-0199b"
+    "sha256": "1922de5addf9c4a48353cc289d91e06ef3b2f542276680f1a91901ed1467c23f",
+    "v": "20261102-0845"
   },
   "dashboard-calendar.js": {
-    "sha256": "4f6393998473a376288b24d006c57233a67b2cf07db4968c960261f3a6b34f3d",
-    "v": "20261102-0507"
+    "sha256": "31872aa276f076e25df42fba7b4150572656ffa6608df204fdd2013522624866",
+    "v": "20261102-0846"
   },
   "docs/ubyport-ws-credential-sample.pdf": {
     "sha256": "0c147cf9c5dd5326612bc4668c5bce853cf300171ca62e3a0bab688c09b75fe6",
@@ -72,8 +84,8 @@
     "v": "20261025-0393b"
   },
   "guest.css": {
-    "sha256": "aadc364e69c1a005ad88304a9a1514ed725ef9bd15e05332fb377a3fc015a022",
-    "v": "20261030-0429"
+    "sha256": "52f3b7456d57ca1c9280d2dc8f09ca9526ce9286fcc0a0a74808ee70b802be43",
+    "v": "20261102-1205"
   },
   "guide.js": {
     "sha256": "46178439314acfb977c235ee7eab530082a0a5a6bb214f3efac58c388762c1da",
@@ -92,20 +104,20 @@
     "v": "20261025-0380"
   },
   "host.css": {
-    "sha256": "62ac96cd208a0f0496465c6fb0c88e5b24845a3bcca964ba2a1a345703a49862",
-    "v": "20261101-0531g"
+    "sha256": "9b7482bf25cd464248beef60b5b925df65bdd2930bc05d1cc08fbfeae9a2e627",
+    "v": "20261102-0799"
   },
   "host.js": {
     "sha256": "d40a8a60dd73d86313e0e40d3b41a8cd9c18922e05a03cbbec62b7954cb8d66f",
     "v": "20261102-0507"
   },
   "host2.css": {
-    "sha256": "956a5416be8886fccd9b1071b03e36b68d3bb277b2fefab5858a39c92fd606b4",
-    "v": "20261102-0508"
+    "sha256": "36184cb173174c74ce74a8fe05ae2b64968f1538665087a7ca277d5e156038d9",
+    "v": "20261103-0888"
   },
   "landing.css": {
-    "sha256": "9910e555ae69914d71e920a5c00947adaf3759221c53d9e6234c5731c21b142b",
-    "v": "20261101-pricing-v4"
+    "sha256": "a9218c2d33c3d07d955b0c630d194ef81801834baaed1cb3615387222ce50ba5",
+    "v": "20261102-0814"
   },
   "landing.js": {
     "sha256": "0e8f2e973a4c2797dfe018fd1ce477669641ee7baa1fdd06c263702c01d972bf",
@@ -116,8 +128,8 @@
     "v": "20261027-ai-usage"
   },
   "passkeys.js": {
-    "sha256": "c54bced8466bd89592f6a7a36a48b1cf6b0d692d419e03182d4f0c3527764609",
-    "v": "20261102-0507"
+    "sha256": "4e75d63ea5de86912252b34a8b22fc5d91ed7b7190ad7d623947295e1725c7cd",
+    "v": "20261102-0789a"
   },
   "pricing.js": {
     "sha256": "4ebb282d09e55fcd782087dfd47c494c78f542f6c26648ddb55fc4390fe50b09",
@@ -140,8 +152,8 @@
     "v": "20261014-0102c"
   },
   "skeleton.js": {
-    "sha256": "c5812aa7492da9e038f2e27b4bd264df876fe8cecb82f12991a5cc8f631b0a88",
-    "v": "20261102-0508"
+    "sha256": "37160a722bb10d28ebf4aa12a6783a478699364651f12f415042f236f2f6d79b",
+    "v": "20261102-0509"
   },
   "tokens.css": {
     "sha256": "f2ff6d6ad651558d60bc7312d74aca175c9782a27234e9e4505dd7a1f4841961",

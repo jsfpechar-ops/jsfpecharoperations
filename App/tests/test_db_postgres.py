@@ -247,8 +247,8 @@ def test_full_schema_apply_and_validate_on_postgres(pg_runtime):
     assert config.DB_BACKEND == "postgresql"
     status = db.postgres_schema_status()
     assert status["current"] is True
-    assert status["actual_version"] == db.expected_schema_version() == 33
-    assert status["expected_tables"] == 67 and status["actual_tables"] == 68  # + job (goose 00003, PostgreSQL only)
+    assert status["actual_version"] == db.expected_schema_version() == 35
+    assert status["expected_tables"] == 68 and status["actual_tables"] == 69  # + job (goose 00003, PostgreSQL only)
     assert status["missing_tables"] == 0 and status["extra_tables"] == 1  # job
     assert status["column_mismatches"] == 0
     assert status["missing_indexes"] == 0
@@ -287,7 +287,7 @@ def test_full_schema_apply_and_validate_on_postgres(pg_runtime):
 
     history = db.query("SELECT version, name FROM schema_migrations ORDER BY version")
     assert history[0]["version"] == 1 and history[0]["name"] == "baseline"
-    assert [row["version"] for row in history] == list(range(1, 34))
+    assert [row["version"] for row in history] == list(range(1, 36))
 
 
 def test_schema_apply_and_validate_are_idempotent_on_postgres(pg_runtime):
@@ -306,7 +306,7 @@ def test_schema_apply_and_validate_are_idempotent_on_postgres(pg_runtime):
     ):
         assert apply_status[key] == before[key] == after[key], key
     assert after["current"] is True
-    assert db.schema_version() == 33
+    assert db.schema_version() == 35
     connection = db.connect()
     try:
         trigger_count = connection.execute_native(
@@ -315,7 +315,7 @@ def test_schema_apply_and_validate_are_idempotent_on_postgres(pg_runtime):
     finally:
         connection.close()
     assert trigger_count == 6
-    assert db.query_one("SELECT COUNT(*) AS n FROM schema_migrations")["n"] == 33
+    assert db.query_one("SELECT COUNT(*) AS n FROM schema_migrations")["n"] == 35
 
 
 def test_pg_schema_cli_reports_and_applies_the_current_schema(pg_runtime, tmp_path):
@@ -331,7 +331,7 @@ def test_pg_schema_cli_reports_and_applies_the_current_schema(pg_runtime, tmp_pa
         timeout=120,
     )
     assert plan.returncode == 0, plan.stderr[-1000:]
-    assert "schema version 33 is planned" in plan.stdout
+    assert "schema version 35 is planned" in plan.stdout
 
     apply = subprocess.run(
         [*base, "apply", "--expect-database", expected_database],
@@ -342,7 +342,7 @@ def test_pg_schema_cli_reports_and_applies_the_current_schema(pg_runtime, tmp_pa
         timeout=180,
     )
     assert apply.returncode == 0, apply.stderr[-1000:]
-    assert "version=33" in apply.stdout and "tables=68" in apply.stdout
+    assert "version=35" in apply.stdout and "tables=69" in apply.stdout
 
     wrong = subprocess.run(
         [*base, "check", "--expect-database", "definitely-not-this-database"],
@@ -941,7 +941,7 @@ try:
     tables = conn.execute(
         "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
     ).fetchall()
-    assert len(tables) == 67, len(tables)
+    assert len(tables) == 68, len(tables)
 finally:
     conn.close()
 '''
@@ -1013,7 +1013,7 @@ def transfer_workspace(tmp_path_factory, pg_runtime):
     report = root / "copy-report.json"
     copy = _run_transfer(source, report)
     assert copy.returncode == 0, copy.stderr[-2000:]
-    assert "copied-and-verified OK: tables=67" in copy.stdout
+    assert "copied-and-verified OK: tables=68" in copy.stdout
     payload = json.loads(report.read_text(encoding="utf-8"))
     return {
         "root": root,
@@ -1029,7 +1029,7 @@ def test_transfer_copies_and_verifies_every_table(transfer_workspace):
     tables, counts = _source_tables_and_counts(transfer_workspace["source"])
     assert payload["report_version"] == 1
     assert payload["mode"] == "copied-and-verified"
-    assert payload["table_count"] == 67
+    assert payload["table_count"] == 68
     assert set(payload["tables"]) == tables
     assert set(tables) == set(db._expected_sqlite_columns())
     assert all(entry["match"] for entry in payload["tables"].values())
@@ -1052,7 +1052,7 @@ def test_transfer_copies_and_verifies_every_table(transfer_workspace):
     assert payload["tables"]["invoice_item"]["rows"] == 1
     assert payload["tables"]["stay_fee_filing"]["rows"] == 1
     assert payload["tables"]["rate_limit_event"]["rows"] == 1
-    assert payload["tables"]["schema_migrations"]["rows"] == 33
+    assert payload["tables"]["schema_migrations"]["rows"] == 35
     assert sum(1 for entry in payload["tables"].values() if entry["rows"] == 0) >= 40
 
 
@@ -1065,7 +1065,7 @@ def test_transfer_report_contains_no_raw_values_or_secrets(transfer_workspace):
     assert "postgresql://" not in combined
     assert transfer_workspace["payload"]["source_identity"] == {
         "path_name": "source.sqlite",
-        "schema_version": 33,
+        "schema_version": 35,
     }
     assert transfer_workspace["payload"]["target_database"] == TARGET["database"]
 
@@ -1074,11 +1074,11 @@ def test_transfer_verify_only_reconciles_typed_hashes(transfer_workspace):
     report = transfer_workspace["root"] / "verify-report.json"
     result = _run_transfer(transfer_workspace["source"], report, verify_only=True)
     assert result.returncode == 0, result.stderr[-2000:]
-    assert "verify-only OK: tables=67" in result.stdout
+    assert "verify-only OK: tables=68" in result.stdout
     payload = json.loads(report.read_text(encoding="utf-8"))
     copy_payload = transfer_workspace["payload"]
     assert payload["mode"] == "verify-only"
-    assert payload["table_count"] == 67
+    assert payload["table_count"] == 68
     assert all(entry["match"] for entry in payload["tables"].values())
     for table, entry in payload["tables"].items():
         assert entry["source_sha256"] == copy_payload["tables"][table]["source_sha256"]
@@ -1134,7 +1134,7 @@ def test_transfer_digest_order_is_null_stable_across_backends(pg_runtime):
                 "AND name NOT LIKE 'sqlite_%' ORDER BY name"
             )
         ]
-        assert len(tables) == 67
+        assert len(tables) == 68
         for table in tables:
             info = list(connection.execute(f'PRAGMA table_info("{table}")'))
             ordered = [row[1] for row in info]
@@ -1308,7 +1308,7 @@ def test_transfer_skips_litestream_tables(transfer_workspace):
     report = root / "litestream-report.json"
     copy = _run_transfer(source, report)
     assert copy.returncode == 0, copy.stderr[-2000:]
-    assert "copied-and-verified OK: tables=67" in copy.stdout
+    assert "copied-and-verified OK: tables=68" in copy.stdout
     payload = json.loads(report.read_text(encoding="utf-8"))
     assert not [name for name in payload["tables"] if name.startswith("_litestream")]
     with _psycopg_connect(_PG_URL) as conn:
@@ -1416,7 +1416,7 @@ def test_transfer_refuses_an_unsupported_source_schema_version(transfer_workspac
     shutil.copy2(transfer_workspace["source"], stale)
     connection = sqlite3.connect(stale)
     try:
-        connection.execute("DELETE FROM schema_migrations WHERE version = 33")
+        connection.execute("DELETE FROM schema_migrations WHERE version = 35")
         connection.commit()
     finally:
         connection.close()
