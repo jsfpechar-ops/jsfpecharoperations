@@ -59,7 +59,7 @@
 {% endmacro %}
 <div class="head" id="now"><div>
   <div class="crumb"><a href="{{ return_to }}">{{ t('stays.title') }}</a> › {{ lead_name or reservation.internal_name }}</div>
-  <div class="big">{{ lead_name or reservation.internal_name }}{{ page_help('stay') }}</div>
+  <div class="big"><span hidden>{{ lead_name or reservation.internal_name }}</span>{{ page_help('stay') }}</div>
   <p class="sub">{% if stay_inactive %}<span class="pill">{{ t('stays.filter.state.' ~ reservation.status) if reservation.status != 'active' else t('archive.col.when') }}</span>{% else %}{{ v2_status_pill(cell, progress, reservation) }}{% endif %}<span class="stay-sep"><a href="/apartments/{{ reservation.apartment_id }}">{{ reservation.internal_name }}</a> · {{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</span></p>
 </div>
 <div class="stay-head-actions">
