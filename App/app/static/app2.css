@@ -1102,7 +1102,7 @@ body.v2 .stay-fees-page .fee-stepper-item{flex:1 1 0;min-width:0;display:flex;al
 body.v2 .stay-fees-page .fee-stepper-item[data-state="done"]{border-top-color:var(--ok);color:var(--ink2)}
 body.v2 .stay-fees-page .fee-stepper-item[data-state="current"]{border-top-color:var(--acc);color:var(--ink)}
 body.v2 .stay-fees-page .fee-stepper-dot{flex:0 0 auto;display:inline-grid;place-items:center;width:24px;height:24px;border:1px solid var(--line);border-radius:50%;font-size:13px}
-body.v2 .stay-fees-page .fee-stepper-item[data-state="current"] .fee-stepper-dot{background:var(--acc);border-color:var(--acc);color:var(--acc-text)}
+body.v2 .stay-fees-page .fee-stepper-item[data-state="current"] .fee-stepper-dot{background:var(--acc);border-color:var(--acc);color:#fff;font-size:14px;font-weight:700}
 body.v2 .stay-fees-page .fee-stepper-item[data-state="done"] .fee-stepper-dot{border-color:var(--ok);color:var(--ok)}
 body.v2 .stay-fees-page .fee-stepper-label{min-width:0;overflow-wrap:anywhere}
 body.v2 .stay-fees-page .fee-step h3{margin:0 0 8px;font-size:17px;font-weight:700}
@@ -1114,25 +1114,34 @@ body.v2 .stay-fees-page .fee-figures dd{margin:0;font-size:18px;font-weight:700}
 body.v2 .stay-fees-page .fee-figures-total dd{font-size:22px}
 body.v2 .stay-fees-page .fee-step-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0 0}
 body.v2 .stay-fees-page .fee-step-issues{margin:0 0 12px;padding-left:20px}
-body.v2 .stay-fees-page .fee-send-pay{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:24px;align-items:start;background:var(--bg);border-radius:18px;padding:18px}
-body.v2 .stay-fees-page .fee-tasks{margin:0;padding:0;list-style:none;counter-reset:fee-task;display:grid;gap:18px}
-body.v2 .stay-fees-page .fee-tasks li{counter-increment:fee-task;position:relative;padding-left:40px;min-width:0}
-body.v2 .stay-fees-page .fee-tasks li::before{content:counter(fee-task);position:absolute;left:0;top:0;width:28px;height:28px;border-radius:50%;background:var(--accs);color:var(--acc-text);display:grid;place-items:center;font-weight:700;font-size:14px}
-body.v2 .stay-fees-page .fee-tasks strong{display:block;margin-bottom:6px}
-body.v2 .stay-fees-page .fee-tasks .btn{margin-top:8px}
-body.v2 .stay-fees-page .fee-qr-panel{min-width:0;text-align:center}
-body.v2 .stay-fees-page .fee-qr-panel img{max-width:100%;height:auto;border-radius:12px}
-body.v2 .stay-fees-page .fee-qr-panel p{margin:8px 0 0}
-body.v2 .stay-fees-page .fee-qr-amount{font-size:22px;font-weight:700}
-body.v2 .stay-fees-page .fee-qr-meta{margin:12px 0 0;display:grid;gap:8px;text-align:left;font-size:14px}
-body.v2 .stay-fees-page .fee-qr-meta div{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 12px}
-body.v2 .stay-fees-page .fee-qr-meta dt{color:var(--ink3)}
-body.v2 .stay-fees-page .fee-qr-meta dd{margin:0;min-width:0;display:flex;align-items:center;gap:8px;overflow-wrap:anywhere}
+body.v2 .stay-fees-page .card.fee-pay{padding:16px}
+body.v2 .stay-fees-page .fee-send-pay{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:24px;align-items:start;max-width:960px}
+body.v2 .stay-fees-page .fee-tasks{margin:0;padding:0;list-style:none;counter-reset:fee-task;display:grid;gap:12px}
+body.v2 .stay-fees-page .fee-tasks li{counter-increment:fee-task;display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:12px;min-width:0;min-height:44px;padding-top:12px;border-top:1px solid var(--line)}
+body.v2 .stay-fees-page .fee-tasks li:first-child{padding-top:0;border-top:0}
+body.v2 .stay-fees-page .fee-tasks li::before{content:counter(fee-task);width:28px;height:28px;border-radius:50%;background:var(--accs);color:var(--acc-text);display:grid;place-items:center;font-weight:700;font-size:14px}
+body.v2 .stay-fees-page .fee-qr-n{flex:none;width:28px;height:28px;border-radius:50%;background:var(--accs);color:var(--acc-text);display:inline-grid;place-items:center;font-weight:700;font-size:14px}
+body.v2 .stay-fees-page .fee-tasks strong{min-width:0;font-size:16px;font-weight:700;line-height:1.35}
+body.v2 .stay-fees-page .fee-send-pay .btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:12px;font-size:15px;font-weight:600;box-sizing:border-box;white-space:nowrap}
+body.v2 .stay-fees-page .fee-send-pay .btn.line{background:#fff;color:var(--ink);border:1px solid var(--ink)}
+body.v2 .stay-fees-page .fee-qr-panel{min-width:0;display:grid;gap:12px;justify-items:center;padding:16px;border:1px solid var(--line);border-radius:16px;background:#fff}
+body.v2 .stay-fees-page .fee-qr-panel p,body.v2 .stay-fees-page .fee-qr-panel p.sub{margin:0;font-size:14px}
+body.v2 .stay-fees-page .fee-qr-title{justify-self:stretch;display:flex;align-items:center;gap:12px;margin:0;font-size:16px;font-weight:700}
+body.v2 .stay-fees-page .fee-qr-panel img{display:block;width:176px;max-width:100%;height:auto;border-radius:12px}
+body.v2 .stay-fees-page .fee-qr-panel .fee-qr-amount{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+body.v2 .stay-fees-page .fee-qr-meta{justify-self:stretch;margin:0;display:grid;gap:12px}
+body.v2 .stay-fees-page .fee-qr-meta div{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;row-gap:4px;align-items:center;min-width:0;padding-top:12px;border-top:1px solid var(--line)}
+body.v2 .stay-fees-page .fee-qr-meta dt{grid-column:1;grid-row:1;color:var(--ink3);font-size:14px}
+body.v2 .stay-fees-page .fee-qr-meta dd{display:contents}
+body.v2 .stay-fees-page .fee-qr-val{grid-column:1;grid-row:2;min-width:0;font-size:16px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+body.v2 .stay-fees-page .fee-qr-meta .btn.small[data-copy]{grid-column:2;grid-row:1 / span 2;width:auto;min-width:44px;min-height:44px;padding:0 14px;border-radius:12px;background:#fff;color:var(--ink);border:1px solid var(--ink3);font-size:14px;font-weight:600}
+@media (min-width:1024px) and (max-width:1279px){body.v2 .stay-fees-page .fee-tasks li{grid-template-columns:28px minmax(0,1fr)}body.v2 .stay-fees-page .fee-tasks li .btn{grid-column:2;justify-self:start}}
 @media (max-width:1023px){
-  body.v2 .stay-fees-page .fee-send-pay{grid-template-columns:minmax(0,1fr)}
-  body.v2 .stay-fees-page .fee-qr-panel{order:-1}
+  body.v2 .stay-fees-page .fee-send-pay{grid-template-columns:minmax(0,1fr)}body.v2 .stay-fees-page .fee-qr-panel{order:-1;padding:0;border:0;border-radius:0}body.v2 .stay-fees-page .fee-qr-n{display:none}
+  body.v2 .stay-fees-page .fee-tasks li{grid-template-columns:28px minmax(0,1fr)}body.v2 .stay-fees-page .fee-tasks li .btn{grid-column:1 / -1;min-height:50px;font-size:16px}
   body.v2 .stay-fees-page .fee-tasks .btn,body.v2 .stay-fees-page .fee-step-actions .btn{display:flex;justify-content:center;width:100%}
 }
+@media (max-width:400px){body.v2 .stay-fees-page .fee-qr-val{font-size:15px}}
 body.v2 .stay-fees-page .ui-btn,body.v2 .stay-fees-page .ui-btn-quiet,body.v2 .stay-fees-page .filter-toggle{min-height:44px}
 body.v2 .stay-fees-page .row-primary-link{display:inline-flex;align-items:center;min-height:44px}
 body.v2 .stay-fees-page .stays-desk input:not([type=hidden]){min-height:44px}
