@@ -1,5 +1,7 @@
 # 0895: a wide window must never keep the sidebar inert
 
+Status: done
+
 ## Problem
 Josef (Chrome desktop, production, admin preview mode) got a page where every click did nothing until reload. DevTools showed exactly one inert element: `ASIDE#app-sidebar` while the window was wide. No console errors, no view transition.
 `setDrawer()` in App/app/static/app.js (inside `initNavigation`, around line 745) sets `sidebar.inert = isCompact() && !open`. `isCompact()` is `window.innerWidth <= NAV_BREAKPOINT` (960). If the width is momentarily small when it runs (window animation, zoom, DevTools dock) and no later `resize` event corrects it, the rail stays inert on a wide window. Clicks on it, including Help and Dashboard, silently do nothing.
