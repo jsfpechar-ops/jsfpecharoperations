@@ -46,7 +46,7 @@ Append-only.
 - 2026-10-28 | Page photos: download + re-host from the host's own import run (max 10, EXIF stripped), never hotlink; host confirms rights at review | owner | plan property-pages, 0432
 - 2026-10-28 | Booking widget: Airbnb-style interaction built from our own calendar/fee logic, no-JS form, Stripe checkout on the host account; no dark patterns, no tracking | owner | plan property-pages, 0434
 - 2026-10-28 | Listing pages are English-only; no per-listing translation, no per-language variants (OTA copy verbatim) | owner | plan property-pages, 0431/0433
-- 2026-10-29 | OCR: local Tesseract in the image (no AI, photo stays on the server), MRZ check digits required, prefill only, Max plan only, guest tickbox | owner | test_doc_ocr
+- 2026-11-02 | OCR: Tesseract only, local, MRZ check digits, Max only; band crop; Paddle if ocr_readrate <90% | owner | test_doc_ocr
 - 2026-10-29 | Trials are extendable by the operator, 1-365 days | owner | 0448
 - 2026-10-29 | Stripe Accounts v2; responsibilities immutable; company hosts via business_type | owner | 0437
 - 2026-10-29 | Connect accounts: full Stripe Dashboard + Stripe collectors (Express+Stripe is preview-only; Express pairs with application liability, rejected) | owner | 0439

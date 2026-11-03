@@ -1,41 +1,43 @@
-# 0836 report: signup box becomes an unticked marketing opt-in
+# 0836 report
 
-Status: review (Command 2 not green: pre-existing failure, see Deviations)
+Status: blocked
 
-## Files changed (commits, not pushed)
-- 0836 step 1: `App/app/templates/signup.html` (field `marketing_opt_in`, new label key)
-- 0836 step 2: `App/app/host_i18n.py` (EN and CS keys renamed, new text)
-- 0836 step 3: `App/app/host_vi_i18n.py` (VI key renamed, new text)
-- 0836 step 4: `App/app/routes/signup.py` (reads `marketing_opt_in`, passes `not marketing_opt_in`)
-- 0836 step 5: `App/app/signup.py` (comment), `App/app/lifecycle_mail.py` (docstring)
-- 0836 step 6: `App/tests/test_signup.py` (helper, assertions, three tests)
-- 0836 step 7: `docs/UbyHost_workplan/04_legal_positions.md`, `docs/context/decisions.md`
-- 0836 step 8: `docs/tasks/screenshots-0836/` (two 390 px PNGs)
+## Files changed (uncommitted, per orchestrator instruction)
+- App/app/routes/invoices.py: `_form_context` prefills the lead guest into blank buyer slots on first open only (`fresh`), sets `guest_prefilled`.
+- App/app/templates/invoice_form.html: one `hint` status line above `.invoice-buyer-fields`.
+- App/app/host_i18n.py (EN, CS) and App/app/host_vi_i18n.py (VI): `invoice.fill_guest.prefilled`.
+- App/tests/test_invoice_autofill.py: two tests (prefill on first open; no note without guest).
+- docs/tasks/screenshots-0836/: invoice-fill-after-390.png (and before-390/360/1280 from the run).
 
-## Commands (last 5 lines)
-1. `pytest tests/test_signup.py tests/test_signup_selection.py tests/test_meta_capi.py tests/test_lifecycle_mail.py`: `97 passed in 6.50s`
-2. `pytest tests/test_*_i18n.py tests/test_no_em_dashes.py tests/test_copy_cleanup.py tests/test_flash_literals.py`: `3 failed, 11 passed`. Failures in `tests/test_host_i18n.py` (`no such table: apartment`). Same 3 failures on base commit 0386de0^, so not caused by this change.
-3. `pytest tests/test_signup_selection_browser.py -rs`: `16 passed in 23.78s`, no skipped lines.
-4. `python3 scripts/context_lint.py`: `context lint: OK`
+Not touched: ARES code, invoice_issue, numbering, PDF, VAT.
+
+## Commands (last lines)
+1. `tests/test_invoice_autofill.py`: 10 passed, 1 skipped (screenshot test; needs UBYHOST_SHOTS_DIR, see 5).
+2. `tests/test_invoice_*.py tests/test_stay_fee*.py` with UBYHOST_SHOTS_DIR set: 240 passed, 0 skipped.
+3. Host row: 34 passed, 1 failed before `-x` stop. Full run without `-x` was still running at report time (65%). Result pending.
+4. Copy row: stopped at 1 failed, 4 passed (`-x`). Full run without `-x` pending.
+5. `-k screenshots`: 1 passed.
+
+## Failures (pre-existing, not from this change)
+- `tests/test_host_feedback_browser.py::test_host_copy_feedback_truth_and_geometry` (waits for "Copy guest link" option, 30 s timeout).
+- `tests/test_host_i18n.py::test_language_endpoint_sets_cookie_and_rejects_open_redirects` (`no such table: apartment`).
+Both fail twice here and also fail on a clean checkout of base commit b243ed8 (worktree, removed afterwards). So they are not caused by 0836.
 
 ## Section 7
-- [x] New label in EN, CS (VI string added), unticked, not required, field `marketing_opt_in`
-- [x] Unticked stores `1` plus time; ticked stores `0` and NULL (test_signup)
-- [x] Form error re-renders the box ticked (test_form_errors...)
-- [x] grep for `onboarding_opt_out` lists only `signup.py` (register parameter, lines 496, 535-536) and `routes/signup.py:131`
-- [ ] Command 2 passes (pre-existing failure, see below)
-- [x] Command 3 passes, 0 skipped; Command 4 OK
-- [x] Two 390 px screenshots (EN and CS) in `docs/tasks/screenshots-0836/`; both viewed: new label visible, box unticked
+- [x] First open with a complete guest shows street and city plus the note; no guest, no note (tests).
+- [x] No automatic ARES call (no change near `register_lookup`).
+- [ ] Commands 1-5 pass with 0 skipped: 3 and 4 not complete (see above).
+- [x] One 390 px screenshot in docs/tasks/screenshots-0836/.
 
 ## Deviations
-- Command 2: 3 failures in `tests/test_host_i18n.py`, identical on the base commit. Not fixed (outside the brief).
-- The brief's expected grep for `opt_out\|opt_in` in `routes/signup.py` shows 3 lines, not 4: the comment line uses "opt-out" with a hyphen and does not match. Content is as specified.
-- Brief section 9 asks for no push; executor.md asks for a PR. I did not push and did not open a PR. The orchestrator updates PR #729.
-- Screenshots also copied to `/mnt/project-files/onboarding-speed/signup-optin-390-en.png` and `signup-optin-390-cs.png`.
+- No commits made (the executor brief asked for per-step commits; the orchestrator instruction said not to commit). No git add.
+- Done: steps 1 to 5 (code, template, i18n, tests, screenshots). Left: confirm command 3 and 4 results without `-x`, and the two failures above.
+- Tap count after change: not measured (no tap script in this brief's scope).
 
 ## Questions
-- Command 2 failure: fix the pre-existing `test_host_i18n.py` DB setup separately, or accept it for this PR?
+- Are the two failing tests known to the owner on base b243ed8? They block a green host/copy row.
+- Tracked screenshot files under docs/tasks/screenshots-0387 and screenshots-0402 show as modified in `git status`. Probably test-run side effects; not reverted, not committed by me.
 
 ## Owner steps left
-- Push the branch and merge PR #729 with `scripts/merge-pr-on-green.sh` (owner or orchestrator).
-- Lawyer to confirm the new wording (logged in decisions and legal positions).
+- Decide on the two pre-existing failures before merge.
+- Commit the listed files and the report.

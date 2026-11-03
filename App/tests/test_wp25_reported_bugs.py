@@ -346,7 +346,7 @@ def test_stay_page_offers_the_doručenka(client, seeded):
 
 def test_housebook_truncates_the_property_with_a_tooltip(client, seeded):
     page = client.get("/housebook?lang=en").text
-    assert 'class="table-cards housebook-table"' in page
-    assert 'class="panel tight scroll-x housebook-scroll"' in page
+    assert 'class="housebook-table"' in page  # 0792: v2 table
+    assert 'class="card stays-desk housebook-scroll scroll-x"' in page
     assert f'class="property-identity truncate" title="{LONG_PROPERTY}"' in page
     assert 'class="small col-reported"' in page

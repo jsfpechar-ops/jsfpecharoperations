@@ -421,7 +421,7 @@ def test_copy_correction_pages_browser_evidence(browser_base):
 
                 page.goto(f"{base}/housebook?lang={lang}")
                 assert page.locator("#housebook-legal-details").count() == 0
-                _assert_lane_fits(page, "main.wrap")
+                _assert_lane_fits(page, "#main-content")  # 0792: v2 housebook has no main.wrap
                 _maybe_shot(page, f"housebook-{width}-{lang}.png")
 
                 page.goto(f"{base}/stay-fees/{apartment_id}?month=2026-08&lang={lang}")

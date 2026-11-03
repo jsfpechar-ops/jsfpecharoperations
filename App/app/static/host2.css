@@ -478,10 +478,6 @@ body.host-workspace.sidebar-collapsed .sidebar-collapse .ui-icon { transform: ro
   .host-workspace .lc-fees td.row-actions { grid-column: 2; grid-row: 1; justify-content: flex-end; align-items: flex-start; }
 }
 .host-workspace .copyrow textarea { flex: 1 1 14rem; min-width: 0; }
-.host-workspace .fee-send-marks { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; gap: var(--space-3); }
-.host-workspace .fee-send-marks > form, .host-workspace .fee-send-marks > p { flex: none; }
-.host-workspace .fee-send-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-2) var(--space-3); width: 100%; }
-.host-workspace .fee-send-form .ui-field { flex: 0 1 18rem; min-width: 0; margin: 0; }
 
 /* 0140: businesses page, moved out of entities.html */
 .host-workspace .entities-page tbody tr .row-actions > * { opacity: 1; }
@@ -847,10 +843,26 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .fee-figures-total dd { font-size: var(--size-22); }
 .host-workspace .fee-step-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: var(--space-3) 0 0; }
 .host-workspace .fee-qr-amount { font-size: var(--size-22); font-weight: 600; }
-.host-workspace .fee-send-line { margin: var(--space-4) 0 0; }
+.host-workspace .fee-send-pay { display: grid; grid-template-columns: minmax(0, 1fr) 18rem; gap: var(--space-6); align-items: start; }
+.host-workspace .fee-tasks { margin: 0; padding: 0; list-style: none; counter-reset: fee-task; display: grid; gap: var(--space-5); }
+.host-workspace .fee-tasks li { counter-increment: fee-task; position: relative; padding-left: 2.5rem; min-width: 0; }
+.host-workspace .fee-tasks li::before { content: counter(fee-task); position: absolute; left: 0; top: 0; width: 1.75rem; height: 1.75rem; border-radius: 50%; background: var(--accent-soft); color: var(--accent-ink); font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.host-workspace .fee-tasks strong { display: block; }
+.host-workspace .fee-tasks p { margin: var(--space-1) 0 var(--space-2); overflow-wrap: anywhere; }
+.host-workspace .fee-tasks .ui-btn { margin-top: var(--space-2); }
+.host-workspace .fee-qr-panel { background: var(--accent-soft); border-radius: var(--radius-3); padding: var(--space-4); text-align: center; min-width: 0; }
+.host-workspace .fee-qr-panel img { background: var(--surface); border-radius: var(--radius-2); padding: var(--space-2); max-width: 100%; height: auto; }
+.host-workspace .fee-qr-panel p { margin: var(--space-2) 0 0; }
+.host-workspace .fee-qr-meta { margin: var(--space-3) 0 0; display: grid; gap: var(--space-1); text-align: left; font-size: var(--size-13); }
+.host-workspace .fee-qr-meta div { display: flex; justify-content: space-between; gap: var(--space-3); }
+.host-workspace .fee-qr-meta dt { color: var(--ink-3); }
+.host-workspace .fee-qr-meta dd { margin: 0; white-space: nowrap; }
 @media (max-width: 639px) {
   .host-workspace .fee-step-actions { flex-direction: column; align-items: stretch; }
   .host-workspace .fee-stepper-label { font-size: var(--size-12); }
+  .host-workspace .fee-send-pay { grid-template-columns: minmax(0, 1fr); }
+  .host-workspace .fee-qr-panel { order: -1; }
+  .host-workspace .fee-tasks .ui-btn { display: flex; justify-content: center; }
 }
 
 /* 0293: invoice builder (owner 2026-10-24): the IČO lookup comes first, the
@@ -1136,6 +1148,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
   .host-workspace .stays-view .ui-table td.stay-col-dates { grid-column: 1; }
   .host-workspace .stays-view .ui-table td.stay-col-departure { grid-row: 2; grid-column: 2; justify-self: start; }
   .host-workspace .stays-view .ui-table td.stay-col-departure::before { content: "– "; }
+}
 
 /* 0525: stay page on desktop: guests are table rows in one white card; the door code is large. */
 @media (min-width: 1024px) {
@@ -1145,3 +1158,14 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 
 /* Turbo progress bar stays hidden: the page swap should look like before. */
 .turbo-progress-bar { display: none; }
+
+/* 0849 invoice quick stays (start) */
+.invoice-quick-title{font-size:var(--text-md);font-weight:600;margin:0 0 var(--space-3)}
+.invoice-quick-stays{list-style:none;margin:0 0 var(--space-6);padding:0;display:flex;flex-direction:column;gap:0}
+.invoice-quick-stays li + li{margin-top:var(--space-4)}
+.invoice-quick-stays .ui-btn{width:100%;min-height:44px;justify-content:flex-start;text-align:left;white-space:normal}
+/* 0849 invoice quick stays (end) */
+/* 0888 invoice use price (start) */
+.invoice-use-price{margin-top:var(--space-3);min-height:var(--control-h-phone)}
+.invoice-use-price[hidden]{display:none}
+/* 0888 invoice use price (end) */
