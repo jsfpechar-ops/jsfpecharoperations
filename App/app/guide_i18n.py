@@ -8,6 +8,8 @@ GUIDE_STRINGS = {
     "en": {
         "guide.title": "Help & guide",
         "guide.lede": "How UbyHost works, page by page. Short answers first.",
+        "guide.search.placeholder": "Search the guide",
+        "guide.search.empty": "No topic matches. Try a shorter word.",
         "guide.nav.overview": "Dashboard",
         "guide.nav.statuses": "What the colours mean",
         "guide.nav.setup": "First-time setup",
@@ -386,6 +388,8 @@ GUIDE_STRINGS = {
     "cs": {
         "guide.title": "Nápověda a průvodce",
         "guide.lede": "Jak UbyHost funguje, stránku po stránce. Nejdřív krátké odpovědi.",
+        "guide.search.placeholder": "Hledat v nápovědě",
+        "guide.search.empty": "Žádné téma neodpovídá. Zkuste kratší slovo.",
         "guide.nav.overview": "Přehled",
         "guide.nav.statuses": "Co znamenají barvy",
         "guide.nav.setup": "První nastavení",

@@ -1,44 +1,40 @@
 # 0818 report
 
-Status: review
+Status: blocked (items 1-4 done, item 5 not done; see Open item)
 
-## Files changed (step 11)
-- `App/tests/test_booking_site_page_browser.py`: removed unused `stripe_connect` import (ruff F401).
-- `docs/tasks/screenshots-0818/booking-390.png`: 390 px screenshot, viewed once.
-- `docs/tasks/0818-report.md`: this report.
+## Files changed
 
-## Commands (section 6, from App/ unless noted)
-- ruff (E9,F63,F7,F82,F401,F841): first run `Found 1 error.` (F401, stripe_connect). Fixed. Rerun: `All checks passed!`
-- Unit list (incl. test_host_i18n.py with test_booking_site.py, one call): `143 passed, 1 warning in 5.55s`
-- Browser, 3 files, `UBYHOST_REQUIRE_BROWSER=1`, `UBYHOST_BROWSER_EXECUTABLE=/usr/bin/google-chrome`: `23 passed in 180.17s`, no skip lines.
-- Browser file rerun after the import fix: `4 passed in 7.28s`, 0 skipped.
-- `design_lint.py` (repo root): `design lint: OK`
-- `context_lint.py` (repo root): `context lint: FAIL`. `ERROR docs/context/decisions.md: ~2264 tokens > cap 2200`. Not fixed (see Deviations).
-- Section 7 greps: colour grep prints nothing; `ui-input` count 3; `<script` count 0.
-- `git diff --stat origin/main...HEAD`: 18 files. No requirements/lock file and no .venv path.
+- `App/app/static/dashboard-calendar.css`: new 0818 block appended at the end (items 1-4).
+- `App/app/templates/_dashboard_calendar.html`: css `?v=20261102-0818`, js `?v=20261102-0818`; prev, Today and next buttons get the `soft` class.
+- `App/tests/static_versions.json`: regenerated.
+- `App/tests/test_dashboard_calendar_browser.py`: assertions added to `test_month_tiles_and_side_panel` (controls clear of the panel, grid reaches the panel, arrow and Today not coral, 768 chips have 0 px text, `.havel-fab` hidden with the panel open).
+- `docs/tasks/screenshots-0814/*.png`: retaken by the test run with `UBYHOST_TASK_SHOTS=1`.
+- `docs/tasks/0818-report.md`: this file.
 
-## Section 7
-- [x] Three test runs pass; browser run shows 0 skipped.
-- [x] No raw colour in property_page.html.
-- [x] `ui-input` count 3; no `<script` in the template.
-- [ ] Fresh `GET /p/<slug>` is Czech and `?lang=en` is English with no `Set-Cookie`: not checked by hand in this step.
-- [ ] `git diff --stat origin/main` lists only §3 files: NOT MET. The diff also has `docs/tasks/0819-*` to `0822-*` (4 briefs), `docs/plans/booking-site-v1.md`, and `docs/context/decisions.md`. The first five were not in §3 and were not changed by step 11.
-- [x] 390 px screenshot at `docs/tasks/screenshots-0818/booking-390.png`, named here.
+## Tests
+
+Command: `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_TASK_SHOTS=1 .venv/bin/python -m pytest tests/test_dashboard_calendar_browser.py tests/test_dashboard_phone_browser.py tests/test_cleaning_browser.py tests/test_0199_phone_geometry_browser.py tests/test_0252_touch_sweep_browser.py tests/test_static_versions.py -q --tb=short -rfEs`
+
+Last line: `53 passed in 166.93s (0:02:46)`. 0 failed, 0 skipped.
+Lint: `context lint: OK`.
 
 ## Deviations
-- Context lint fails on `decisions.md`. origin/main is 8806 chars (~2201 tokens) and is already over the 2200 cap. The step 9 line adds ~63 tokens. Fixing it needs compacting other decisions, which is an orchestrator call.
-- Screenshot check (by eye, against §1): card order is calendar, price lines, policy, form. Arrival (10) and departure (13) use the accent. Booked 20 and 21 are struck through. Visible issue: the guests label wraps ("Počet / hostů") and the guests input is narrow. Not fixed.
-- Two mockup deviations from §1 were not re-read in this step.
-- Step 10: guests button was 21 px high; added `min-height: 44px` to `.pp-bk .ui-btn` in `App/app/templates/property_page.html` (line 32).
-- Visual fix: the guest row is stacked (label on top, select full width at 44 px, "Zobrazit cenu" full width below), in `App/app/templates/property_page.html`.
-- Visual fix: the primary button colour is scoped to `.pp-bk` (`.pp-bk .ui-btn-primary`), and secondary buttons get a surface background and `--line-2` border, in the same file.
-- Step 10: teardown FK error on `user_account` delete; added `alert` and `legal_entity` deletes to the browser test `_cleanup`. Cause not confirmed.
-- Playwright 1.63.0 installed with pip into the shared `App/.venv`; Chromium bundle not installed, tests use `/usr/bin/google-chrome`.
-- Step 8: `apartment` fixture takes `fake_sessions` (Stripe monkeypatch), otherwise the page is not bookable.
-- Open from before: `test_host_i18n.py` alone gives "no such table: apartment". Not investigated; it passes in the unit run together with test_booking_site.py.
 
-## Questions
-- Diff scope: keep the 0819-0822 briefs and the plan file on this branch, or move them out?
+- Item 2 (grid width): the calendar root gets `margin-right` when the panel is open: `calc(360px + 16px - 36px)` at 1024 px and up, `calc(320px + 16px - 20px)` at 768-1023 px. The 36 px and 20 px are the page wrap's measured right gutter. They are hard-coded, so they break if the wrap padding changes. The earlier `padding-right` approach left the grid about 100 px short because the dashboard has a left sidebar.
+- Item 1: at 1280 with the panel open, the month title truncates ("Octo...") because the controls fill the row. Not fixed.
+- Item 3: the JS renders 2 chips plus `+n` (`dashboard-calendar.js` line 312, `slice(0, 2)`). CSS cannot show 3 bars. At 768-1023 the view shows 2 bars plus `+n`. Showing 3 needs a JS change that would also change the text chips at 1024 px and up, so I did not make it.
+- Item 4: done in CSS for every width: `body:has(.dashboard-calendar.has-panel) .havel-fab { display:none }`.
+- Section 4 said to edit the 0816 block. I appended a 0818 block instead and left the 0816 rules as they were.
+
+## Open item (blocked): item 5, full-page calendar on desktop
+
+Not implemented. No route change was needed; the blocks are in `dashboard.html`. I tried hiding them with `cal-only-hide` classes and reverted the attempt. `cal_view` is set for any query parameter starting with `cal_` (`App/app/routes/admin.py:554`), so `?cal_date=` pages count as calendar pages too. Hiding the blocks on desktop breaks existing tests that use them:
+
+- `test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place` clicks `[data-dashboard-refresh="stats"] .needs-you-more > summary` (line 584) and appends a banner to `[data-dashboard-refresh="work"]` (line 569).
+- `test_calendar_geometry_locales_and_screenshots` expects the stats block and `.ov-cal-more` to have height at 1024 px and up.
+
+Owner decision needed: (a) hide the blocks on the calendar page and rewrite those two test flows to use another page, or (b) keep the dashboard blocks on desktop. The tests for item 5 were not added.
 
 ## Owner steps left
-- None. Do not merge.
+
+None for this brief. Deploy is not involved. The orchestrator commits.

@@ -12,8 +12,9 @@ at all for a stall older than ``MAX_LATE_DAYS`` past the due point, so turning
 the switch on does not mail every dormant account at once.
 
 Off unless ``UBYHOST_LIFECYCLE_MAIL=1``. Built to the standard of section 7(3)
-of Czech Act 480/2004 (legal position 2): the host can refuse at sign-up, in
-Settings and with the link in every tip; every tip names the sender.
+of Czech Act 480/2004 (legal position 2): tips need the unticked opt-in box at
+sign-up or the Settings toggle; the host can refuse in Settings and with the
+link in every tip; every tip names the sender.
 
 Two things stop a tip. ``user_account.onboarding_emails_opt_out`` is the
 account's own choice (Settings, sign-up, the unsubscribe link). The

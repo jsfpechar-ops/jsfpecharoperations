@@ -1,10 +1,10 @@
 {% extends "leon_setup/_layout.html" %}
 {% block wizard_content %}
-<p class="setup-wizard-lede">{{ t('leon_setup.cards.lede') }}</p>
+<div class="setup-wizard-lede">{{ t('leon_setup.cards.lede') }}</div>
 {% if live %}
-<p class="setup-wizard-instruction">{{ t('leon_setup.cards.live') }}</p>
+<div class="setup-wizard-instruction">{{ t('leon_setup.cards.live') }}</div>
 {% else %}
-<p class="setup-wizard-instruction">{{ t('guest_guide.not_live', done=progress.must_have_done, total=progress.must_have_total) }}</p>
+<div class="setup-wizard-instruction">{{ t('guest_guide.not_live', done=progress.must_have_done, total=progress.must_have_total) }}</div>
 {% endif %}
 {% if progress.check %}{{ ui_banner('attention', t('guest_guide.check_waiting')) }}{% endif %}
 {% if open_cards %}

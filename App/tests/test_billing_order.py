@@ -128,8 +128,7 @@ def test_the_page_orders_without_javascript(host):
     assert "Leon Lite" in page.text
     assert "AI concierge Leon pro vaše hosty" in page.text
     assert 'name="addon_whitelabel"' not in page.text
-    assert "Skenování dokladů (OCR): připravujeme" in page.text
-    assert "Zatím není dostupné, ani během zkušební doby." in page.text
+    assert "Skenování dokladů (OCR) pasů, není součástí zkušební doby." in page.text
     bad = client.post("/predplatne", data={**BUYER, "buyer_zip": "1"}, follow_redirects=False)
     assert bad.status_code == 400 and "PSČ má pět číslic." in bad.text
     ok = client.post("/predplatne", data=BUYER, follow_redirects=False)

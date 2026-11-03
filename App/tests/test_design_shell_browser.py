@@ -85,7 +85,7 @@ FORM_PAGES = ("/apartments/new?lang=en", "/cleaning/new?lang=en")
 def test_collapsed_rail_expands_again_with_the_same_button(base):
     with sync_api.sync_playwright() as playwright:
         browser, page = _open(playwright, base, 1280)
-        page.goto(base + "/invoices?lang=en")
+        page.goto(base + "/payments?lang=en")
         page.wait_for_selector("#main-content")
         button = page.locator("button[data-sidebar-collapse]")
         button.click()
@@ -105,7 +105,7 @@ def test_collapsed_account_menu_is_whole_inside_the_viewport(base):
     for width in (1280, 2000):
         with sync_api.sync_playwright() as playwright:
             browser, page = _open(playwright, base, width)
-            page.goto(base + "/invoices?lang=en")
+            page.goto(base + "/payments?lang=en")
             page.wait_for_selector("#main-content")
             page.locator("button[data-sidebar-collapse]").click()
             page.wait_for_function("document.body.classList.contains('sidebar-collapsed')")
@@ -132,7 +132,7 @@ def test_invoice_settings_tab_switch_does_not_move_the_page(base):
         browser, page = _open(playwright, base, 1280)
         page.goto(base + "/invoices?lang=en")
         page.wait_for_selector("#main-content")
-        page.locator(".ui-tabs a", has_text="Invoice settings").first.click()
+        page.locator(".stays-head-actions a", has_text="Invoice settings").first.click()  # 0792: head button, no tab strip
         page.wait_for_url("**/entities**")
         page.wait_for_selector("#main-content")
         samples = page.evaluate(
@@ -177,7 +177,7 @@ def _assert_content_is_not_loading(page):
     "/?lang=en", "/reservations?lang=en", "/apartments/new?lang=en", "/payments?lang=en",
 ])
 def test_more_preserves_each_page_kind_and_sheet_links_work(base, engine, width, path):
-    if path in ("/?lang=en", "/reservations?lang=en"):
+    if path in ("/?lang=en", "/reservations?lang=en", "/apartments/new?lang=en"):
         # 0720c/0528: v2 pages have no More sheet on phone and tablet; the Menu tab (/menu) holds the links.
         with sync_api.sync_playwright() as playwright:
             browser, page = _open(playwright, base, width, path, engine)

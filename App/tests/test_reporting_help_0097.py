@@ -128,7 +128,7 @@ _LIST_JS = """() => { const r = sel => { const el = document.querySelector(sel);
     const b = el.getBoundingClientRect(); return {left: b.left, right: b.right, top: b.top, bottom: b.bottom, w: b.width}; };
   const panel = r('.list-cards'); const toolbar = r('[data-filter-toolbar]');
   const filter = r('#list-filter-panel');
-  return {summary: r('#fee-list-summary'), panel, toolbar, filter: filter && filter.w > 0 ? filter : toolbar,
+  return {summary: r('.stay-fees-page h1'), panel, toolbar, filter: filter && filter.w > 0 ? filter : toolbar,
           overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1}; }"""
 
 

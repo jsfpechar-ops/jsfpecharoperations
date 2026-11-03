@@ -384,59 +384,6 @@ def test_calendar_sync_failure_stays_in_wizard(host, monkeypatch):
     assert "read" in follow.text.lower()
 
 
-def test_stay_fee_save_skips_door_lock_when_unavailable(host, monkeypatch):
-    """0D: stay_fee save lands on automation with one redirect when door lock does not apply."""
-    monkeypatch.setattr(config, "DOOR_CODES_ENABLED", False)
-    flat = _full_apartment(host)
-    apt_id = flat["id"]
-    client = host["client"]
-    base = f"/apartments/{apt_id}/setup"
-    for step, action in (
-        ("calendar", "skip"),
-        ("guest_link", "done"),
-        ("try_it", "skip"),
-    ):
-        client.post(base, data={"step": step, "action": action}, follow_redirects=False)
-    saved = client.post(
-        f"/apartments/{apt_id}",
-        data={
-            "internal_name": flat["internal_name"],
-            "legal_entity_id": str(host["entity"]),
-            "city_en": flat["city_en"],
-            "default_purpose": "10",
-            "setup_step": "stay_fee",
-            "return_to": property_setup.wizard_url(apt_id, "automation"),
-            "stay_fee_rate_czk": "50",
-            "stay_fee_cadence": "monthly",
-        },
-        follow_redirects=False,
-    )
-    assert saved.status_code == 303
-    from urllib.parse import urlparse
-
-    location = saved.headers["location"]
-    assert urlparse(location).path.endswith("/setup/automation")
-    assert "/setup/door_lock" not in location
-    page = client.get(location, follow_redirects=False)
-    assert page.status_code == 200
-    assert 'data-setup-step="automation"' in page.text
-
-
-def test_try_it_skip_deletes_demo_stay(host):
-    """0E: Skip removes an open demo stay instead of leaving it behind."""
-    flat = _full_apartment(host)
-    apt_id = flat["id"]
-    client = host["client"]
-    base = f"/apartments/{apt_id}/setup"
-    assert walk_to(client, apt_id, "try_it") == "try_it"
-    client.post(base, data={"step": "try_it", "action": "demo"}, follow_redirects=False)
-    stay = demo.demo_stay_for(apt_id)
-    assert stay is not None
-    skipped = client.post(base, data={"step": "try_it", "action": "skip"}, follow_redirects=False)
-    assert skipped.status_code == 303
-    assert demo.demo_stay_for(apt_id) is None
-
-
 def test_refuse_setup_save_ignores_posted_id(host):
     flat = _full_apartment(host)
     response = host["client"].post(
@@ -498,16 +445,16 @@ def test_finish_setup_with_police_credentials_deferred(host, monkeypatch, lock_a
     for step, action in actions:
         response = client.post(base, data={"step": step, "action": action}, follow_redirects=False)
         assert response.status_code == 303
-    saved = client.post(
-        f"/apartments/{apt_id}/automation-timing",
-        data={
-            "automation_mode": mode,
-            "submit_after_hours": "24",
-            "setup_step": "automation",
-            "return_to": f"{base}/stay_fee",
-        },
-        follow_redirects=False,
-    )
+    police_data = {
+        "step": "police",
+        "automation_mode": mode,
+        "submit_after_hours": "24",
+        "setup_step": "police",
+        "return_to": f"{base}/guest_link",
+    }
+    if defer_police:
+        police_data["action"] = "wait"
+    saved = client.post(base, data=police_data, follow_redirects=False)
     assert saved.status_code == 303
     target = urlparse(saved.headers["location"]).path
     if defer_police:
@@ -531,7 +478,7 @@ def test_finish_setup_with_police_credentials_deferred(host, monkeypatch, lock_a
         assert property_setup.load(apt_id)["finished"] is True
 
 
-@pytest.mark.parametrize("missing_step", ["calendar", "guest_link", "try_it"])
+@pytest.mark.parametrize("missing_step", ["calendar", "guest_link"])
 def test_waiting_for_police_does_not_skip_other_required_steps(host, monkeypatch, missing_step):
     from urllib.parse import urlparse
 
@@ -548,11 +495,12 @@ def test_waiting_for_police_does_not_skip_other_required_steps(host, monkeypatch
             property_setup.mark(apt_id, step, mark)
     base = f"/apartments/{apt_id}/setup"
     response = host["client"].post(
-        f"/apartments/{apt_id}/automation-timing",
+        base,
         data={
+            "step": "police",
             "automation_mode": "manual",
             "submit_after_hours": "24",
-            "setup_step": "automation",
+            "setup_step": "police",
             "return_to": f"{base}/done",
         },
         follow_redirects=False,
@@ -602,7 +550,6 @@ def test_demo_action_teaches_pin_then_opens_the_guest_form_and_reuses_its_stay(h
     apt_id = flat["id"]
     client = host["client"]
     base = f"/apartments/{apt_id}/setup"
-    assert walk_to(client, apt_id, "try_it") == "try_it"
     first = client.post(base, data={"step": "try_it", "action": "demo"}, follow_redirects=False)
     stay = demo.demo_stay_for(apt_id)
     assert stay is not None
@@ -715,23 +662,3 @@ def test_property_hour_validation_rerender_keeps_draft_and_selection(host):
     checkout = response.text.split('id="checkout_hour"', 1)[1].split("</select>", 1)[0]
     assert 'option value="10" selected' in checkout
 
-
-def test_missing_property_hours_from_lock_step_keep_saved_property_draft(host, monkeypatch):
-    flat = _full_apartment(host)
-    monkeypatch.setattr(admin_routes.ttlock, "allowed_for", lambda _owner: True)
-    response = host["client"].post(
-        f"/apartments/{flat['id']}",
-        data={
-            "setup_step": "door_lock",
-            "door_code_section": "1",
-            "door_codes": "1",
-            "return_to": f"/apartments/{flat['id']}/setup/automation",
-        },
-        follow_redirects=False,
-    )
-    assert response.status_code == 400
-    # 0400: the refusal stays on the lock step; the saved property is untouched.
-    assert 'id="door-lock-form"' in response.text or 'id="smart-locks-share"' in response.text or 'id="lock-question"' in response.text
-    assert flat["internal_name"] in response.text
-    saved = admin_routes.db.query_one("SELECT internal_name, addr_street FROM apartment WHERE id = ?", (flat["id"],))
-    assert saved["internal_name"] == flat["internal_name"] and saved["addr_street"] == ADDRESS["addr_street"]

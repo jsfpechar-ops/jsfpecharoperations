@@ -183,23 +183,16 @@ def test_wizard_journey_and_geometry(host, base_url, lang, width):
         page.fill("#uby_ws_password", POLICE["uby_ws_password"])
         page.fill("#uby_mark", POLICE["uby_mark"])
         page.fill("#uby_name", POLICE["uby_name"])
-        page.locator('button[form="police-form"]').click()
-        page.wait_for_url("**/setup/automation**")
-        _shot(page, f"06-automation-{tag}.png")
-        page.locator('button[form="automation-form"]').click()
-        page.wait_for_url("**/setup/stay_fee**")
-        _shot(page, f"05-stay-fee-{tag}.png")
-        page.locator(".setup-wizard-foot form.setup-wizard-skip button").click()
-        page.wait_for_url("**/setup/door_lock**")
-        page.locator('button[data-lock-choice="no"]').click()
+        # 0884: the police step carries the automation choice; it saves straight to guest link.
+        page.locator('button[form="police-form"]:not([value=wait]):not([value=wait])').click()
         page.wait_for_url("**/setup/guest_link**")
         _shot(page, f"02-guest-link-{tag}.png")
         assert _t(lang, "wizard.guest_link.link_title") in page.content()
         assert "/l/" not in page.locator(".host-property-grid").inner_text() if page.locator(".host-property-grid").count() else True
         page.locator("button[value='done']").click()
-        page.wait_for_url("**/setup/try_it**")
-        _shot(page, f"03-try-it-{tag}.png")
-        page.locator("form.setup-wizard-skip button[value=skip]").click()
+        page.wait_for_url("**/setup/done**")
+        assert page.locator("[data-setup-next-step=try_it]").is_visible()
+        _shot(page, f"03-done-{tag}.png")
         page.wait_for_url("**/setup/done**")
         _shot(page, f"07-done-{tag}.png")
         assert _t(lang, "wizard.done.title") in page.content()
@@ -258,9 +251,9 @@ def test_back_from_later_step_reaches_earlier_page(host):
     assert walk_to(client, flat["id"], "guest_link") == "guest_link"
     at_link = client.get(f"{base}/guest_link?lang=en")
     assert at_link.status_code == 200
-    back = client.get(f"{base}/automation?lang=en", follow_redirects=False)
+    back = client.get(f"{base}/police?lang=en", follow_redirects=False)
     assert back.status_code == 200
-    assert 'data-setup-step="automation"' in back.text
+    assert 'data-setup-step="police"' in back.text
 
 
 def test_police_waiting_can_finish_setup_via_automation(host):
@@ -406,10 +399,8 @@ def test_refuse_setup_save_parses_return_to_and_legal_entity(host):
             "legal_entity_id": "abc",
             "city_en": "Brno",
             "default_purpose": "10",
-            "return_to": f"/apartments/{flat['id']}/setup/stay_fee#x",
-            "setup_step": "stay_fee",
-            "stay_fee_rate_czk": "5",
-            "stay_fee_cadence": "monthly",
+            "return_to": f"/apartments/{flat['id']}/setup/police#x",
+            "setup_step": "police",
             "account_prefix": "123456",
             "account_number": "1234567890",
             "account_bank": "0100",
@@ -417,40 +408,7 @@ def test_refuse_setup_save_parses_return_to_and_legal_entity(host):
         follow_redirects=False,
     )
     assert response.status_code == 400
-    assert _t("en", "wizard.step.stay_fee") in response.text
-
-
-def test_fee_refusal_shows_error_on_wizard(host):
-    flat = _create(host)
-    response = host["client"].post(
-        f"/apartments/{flat['id']}",
-        data={
-            "internal_name": flat["internal_name"],
-            "legal_entity_id": str(host["entity"]),
-            "city_en": "Brno",
-            "default_purpose": "10",
-            **ADDRESS,
-            "return_to": f"/apartments/{flat['id']}/setup/stay_fee",
-            "setup_step": "stay_fee",
-            "stay_fee_rate_czk": "5",
-            "stay_fee_cadence": "monthly",
-            "account_prefix": "bad",
-            "account_number": "x",
-            "account_bank": "0100",
-        },
-        follow_redirects=False,
-    )
-    assert response.status_code == 400
-    assert "stay-fee-account-error" in response.text or "account_invalid" in response.text.lower()
-
-
-def test_done_count_includes_skipped_door_lock_when_unavailable(host, monkeypatch):
-    monkeypatch.setattr(config, "DOOR_CODES_ENABLED", False)
-    flat = _create(host)
-    client = host["client"]
-    walk_to(client, flat["id"], "try_it")
-    overview = client.get(f"/apartments/{flat['id']}?view=overview&lang=en").text
-    assert "6 of 8" in overview
+    assert 'data-setup-step="police"' in response.text
 
 
 def _identity(flat, host):
@@ -547,7 +505,7 @@ def test_back_skips_steps_that_do_not_apply(host, monkeypatch):
     walk_to(client, flat["id"], "guest_link")
     page = client.get(f"{base}/guest_link?lang=en")
     assert page.status_code == 200
-    assert f'href="{base}/stay_fee"' in page.text
+    assert f'href="{base}/police"' in page.text
     assert f'href="{base}/door_lock"' not in page.text
 
 
@@ -581,30 +539,6 @@ def test_rejected_police_save_stays_on_police(host):
     assert not (stored["uby_idub"] or "").strip()
 
 
-def test_rejected_fee_save_stays_on_stay_fee_with_typed_values(host):
-    flat = _create(host)
-    response = host["client"].post(
-        f"/apartments/{flat['id']}",
-        data={
-            **_identity(flat, host),
-            **ADDRESS,
-            "return_to": f"/apartments/{flat['id']}/setup/door_lock",
-            "setup_step": "stay_fee",
-            "stay_fee_rate_czk": "7",
-            "stay_fee_cadence": "monthly",
-            "account_prefix": "bad",
-            "account_number": "x",
-            "account_bank": "0100",
-        },
-        follow_redirects=False,
-    )
-    assert response.status_code == 400
-    assert 'data-setup-step="stay_fee"' in response.text
-    assert 'data-setup-step="door_lock"' not in response.text
-    assert 'value="7"' in response.text or ">7<" in response.text
-    assert "stay-fee-account-error" in response.text
-
-
 def test_legal_entity_id_abc_and_none_do_not_raise(host):
     flat = _create(host)
     client = host["client"]
@@ -614,15 +548,13 @@ def test_legal_entity_id_abc_and_none_do_not_raise(host):
             data={
                 **_identity(flat, host),
                 "legal_entity_id": raw,
-                "return_to": f"/apartments/{flat['id']}/setup/stay_fee",
-                "setup_step": "stay_fee",
-                "stay_fee_rate_czk": "5",
-                "stay_fee_cadence": "monthly",
+                "return_to": f"/apartments/{flat['id']}/setup/police",
+                "setup_step": "police",
             },
             follow_redirects=False,
         )
         assert response.status_code == 400, raw
-        assert 'data-setup-step="stay_fee"' in response.text
+        assert 'data-setup-step="police"' in response.text
 
 
 def test_unknown_setup_step_is_not_a_wizard_page(host):
@@ -640,22 +572,6 @@ def test_unknown_setup_step_is_not_a_wizard_page(host):
     assert response.status_code == 400
     assert "data-setup-wizard" not in response.text
     assert 'data-setup-step="stay_fee"' not in response.text
-
-
-def test_try_it_open_skip_moves_on(host):
-    """Fix 4: Skip is offered while a demo stay is waiting, and it advances."""
-    flat = _create(host)
-    client = host["client"]
-    base = f"/apartments/{flat['id']}/setup"
-    assert walk_to(client, flat["id"], "try_it") == "try_it"
-    client.post(base, data={"step": "try_it", "action": "demo"}, follow_redirects=False)
-    page = client.get(f"{base}/try_it?lang=en")
-    assert page.status_code == 200
-    assert _t("en", "wizard.try_it.skip") in page.text
-    assert _t("en", "wizard.try_it.check_again") in page.text
-    skipped = client.post(base, data={"step": "try_it", "action": "skip"}, follow_redirects=False)
-    assert skipped.status_code == 303
-    assert "/setup/done" in skipped.headers["location"]
 
 
 def test_overview_guest_link_card_links_to_settings(host):
@@ -697,35 +613,6 @@ def test_police_saved_without_password_stays_on_police(host):
     state = property_setup.load(flat["id"])
     assert state["steps"].get("police") != "done"
     assert not state["finished"]
-
-
-def test_door_lock_saved_without_a_lock_stays_on_door_lock(host):
-    flat = _create(host)
-    client = host["client"]
-    base = f"/apartments/{flat['id']}/setup"
-    for step, action in (
-        ("calendar", "skip"),
-        ("guest_link", "done"),
-        ("try_it", "skip"),
-        ("police", "wait"),
-        ("stay_fee", "skip"),
-    ):
-        client.post(base, data={"step": step, "action": action}, follow_redirects=False)
-    saved = client.post(
-        f"/apartments/{flat['id']}",
-        data={
-            **_identity(flat, host),
-            "setup_step": "door_lock",
-            "return_to": f"{base}/automation",
-            "door_code_section": "1",
-            "door_codes_fields": "1",
-        },
-        follow_redirects=False,
-    )
-    assert saved.status_code == 200
-    assert 'data-setup-step="door_lock"' in saved.text
-    assert "Choose a lock" in saved.text
-    assert property_setup.load(flat["id"])["steps"].get("door_lock") != "done"
 
 
 def test_automation_invalid_hours_rerenders_the_step(host):
@@ -877,7 +764,7 @@ def test_waiting_hide_show_and_demo_exclusion(host):
         response = client.post(setup, data={"step": step, "action": action}, follow_redirects=False)
         assert response.status_code == 303
         assert property_setup.load(flat["id"])["steps"] == {}
-    assert walk_to(client, flat["id"], "try_it") == "try_it"
+    walk_to(client, flat["id"], "guest_link")
     opened = client.post(setup, data={"step": "try_it", "action": "demo"}, follow_redirects=False)
     assert "/l/" in opened.headers["location"]
     from app import demo
@@ -956,7 +843,7 @@ def test_review_fixes_in_the_browser(host, base_url):
     bare = _bare_property(host, "Browser property step")
     flat = _create(host)
     base = f"/apartments/{flat['id']}/setup"
-    assert walk_to(client, flat["id"], "try_it") == "try_it"
+    assert walk_to(client, flat["id"], "guest_link") == "guest_link"
     client.post(base, data={"step": "try_it", "action": "demo"}, follow_redirects=False)
     session = client.cookies.get(auth.SESSION_COOKIE)
     with sync_api.sync_playwright() as p:
@@ -972,16 +859,16 @@ def test_review_fixes_in_the_browser(host, base_url):
         page.wait_for_url("**/setup/calendar**")
         assert page.locator("[data-setup-step=calendar]").is_visible()
         _shot(page, "09-back-calendar-en-1280.png")
-        page.goto(f"{base_url}{base}/try_it?lang=en")
-        assert page.get_by_role("button", name=_t("en", "wizard.try_it.skip")).is_visible()
-        _shot(page, "10-try-it-open-en-1280.png")
+        page.goto(f"{base_url}{base}/done?lang=en")
+        assert page.locator("[data-setup-next-step=try_it]").is_visible()
+        _shot(page, "10-done-try-it-card-en-1280.png")
         page.goto(f"{base_url}{base}/police?lang=en")
         page.fill("#uby_idub", "12")
         page.fill("#uby_ws_user", POLICE["uby_ws_user"])
         page.fill("#uby_mark", POLICE["uby_mark"])
         page.fill("#uby_name", "Typed Facility")
         page.fill("#uby_ws_password", "typed-password")  # 0205: required until one is stored
-        page.locator('button[form="police-form"]').click()
+        page.locator('button[form="police-form"]:not([value=wait])').click()
         page.wait_for_load_state("networkidle")
         assert page.locator("[data-setup-step=police]").is_visible()
         assert page.locator(".err-text").first.is_visible()
@@ -1045,16 +932,8 @@ def test_full_wizard_clickthrough_keeps_police_and_guest_settings(host, base_url
         page.goto(f"{base}/calendar?lang=en")
         page.locator(".setup-wizard-skip button[value=skip]").click()
         # Police details are already stored, so the wizard goes on to when to report.
-        page.wait_for_url("**/setup/automation**")
-        page.locator('button[form="automation-form"]').click()
-        page.wait_for_url("**/setup/stay_fee**")
-        page.locator(".setup-wizard-foot form.setup-wizard-skip button").click()
-        page.wait_for_url("**/setup/door_lock**")
-        page.locator('button[data-lock-choice="no"]').click()
         page.wait_for_url("**/setup/guest_link**")
         page.locator("button[value='done']").click()
-        page.wait_for_url("**/setup/try_it**")
-        page.locator("form.setup-wizard-skip button[value=skip]").click()
         page.wait_for_url("**/setup/done**")
         page.goto(f"{base_url}/apartments/{apt_id}?view=overview&lang=en")
         overview = page.content()
@@ -1092,7 +971,7 @@ def test_wizard_round_screenshots(host, base_url, monkeypatch):
     )
     property_setup.start(bare)
     tried = _create(host)
-    assert walk_to(host["client"], tried["id"], "try_it") == "try_it"
+    assert walk_to(host["client"], tried["id"], "guest_link") == "guest_link"
     calendar = _create(host, name="Calendar error flat")
     monkeypatch.setattr(
         icalsync,
@@ -1118,19 +997,11 @@ def test_wizard_round_screenshots(host, base_url, monkeypatch):
         assert page.locator("#internal_name").input_value() == "Named but no ZIP"
         assert page.locator("#addr_street").input_value() == "Masarykova"
         _shot(page, "15-property-stored-values-en-1280.png")
-        page.goto(f"{base_url}/apartments/{tried['id']}/setup/try_it?lang=en")
-        with context.expect_page() as demo_tab:
-            page.locator("button[value=demo]").click()
-        demo_page = demo_tab.value
-        demo_page.wait_for_url("**/l/**")
-        demo_page.close()
-        page.bring_to_front()
-        page.reload()
-        page.wait_for_url("**/setup/try_it**")
+        page.goto(f"{base_url}/apartments/{tried['id']}/setup/done?lang=en")
+        page.locator("[data-setup-next-step=try_it] button[value=demo]").click()
+        page.wait_for_url("**/l/**")
+        page.goto(f"{base_url}/apartments/{tried['id']}/setup/done?lang=en")
         assert demo.demo_stay_for(tried["id"])
-        page.locator("form.setup-wizard-skip button[value=skip]").click()
-        page.wait_for_url("**/setup/done**")
-        assert demo.demo_stay_for(tried["id"]) is None
         _shot(page, "17-try-it-after-skip-en-1280.png")
         page.goto(f"{base_url}/apartments/{calendar['id']}/setup/calendar?lang=en")
         page.select_option("#label", "airbnb")
@@ -1163,10 +1034,10 @@ def test_deferred_police_journey_without_javascript(host, base_url, monkeypatch,
 
         def check_controls():
             assert page.evaluate(_overflow_js())
-            header = page.locator(".ui-ph h1").bounding_box()
+            header = page.locator(".wiz-page h1.big").bounding_box()
             exit_button = page.locator(".setup-wizard-exit button").bounding_box()
             assert header and exit_button
-            assert header["y"] + header["height"] <= exit_button["y"] + 1
+            assert header["x"] + header["width"] <= exit_button["x"] + 1 or header["y"] + header["height"] <= exit_button["y"] + 1
             radius = page.locator(".setup-wizard-foot .ui-btn-primary").evaluate(
                 "(el) => getComputedStyle(el).borderRadius"
             )
@@ -1185,7 +1056,7 @@ def test_deferred_police_journey_without_javascript(host, base_url, monkeypatch,
         page.wait_for_url("**/setup/police**")
         check_controls()
         wait = page.locator(".setup-wizard-foot .setup-wizard-wait")
-        save = page.locator('button[form="police-form"]')
+        save = page.locator('button[form="police-form"]:not([value=wait])')
         assert wait.is_visible() and save.is_visible()
         wait_box, save_box = wait.bounding_box(), save.bounding_box()
         assert wait_box and save_box
@@ -1196,20 +1067,9 @@ def test_deferred_police_journey_without_javascript(host, base_url, monkeypatch,
         assert notes and notes["y"] >= save_box["y"] + save_box["height"]
         _shot(page, f"20-police-{tag}.png")
         wait.click()
-        page.wait_for_url("**/setup/automation**")
-        check_controls()
-        page.locator('input[value="manual"]').check()
-        page.locator('button[form="automation-form"]').click()
-        page.wait_for_url("**/setup/stay_fee**")
-        check_controls()
-        page.locator(".setup-wizard-skip button").click()
         page.wait_for_url("**/setup/guest_link**")
         check_controls()
         page.locator("button[value=done]").click()
-        page.wait_for_url("**/setup/try_it**")
-        check_controls()
-        _shot(page, f"19-try-it-{tag}.png")
-        page.locator(".setup-wizard-skip button").click()
         page.wait_for_url("**/setup/done**")
         page.reload()
         check_controls()
@@ -1267,52 +1127,12 @@ def test_wizard_polish_and_overview_cards(host, base_url, monkeypatch, lang, wid
         feed = db.query_one("SELECT label FROM ical_feed WHERE apartment_id = ?", (flat["id"],))
         assert feed["label"] == "Booking.com"
         page.locator(".setup-wizard-wait").click()
-        page.wait_for_url("**/setup/automation**")
-        page.locator('input[value="manual"]').check()
-        page.locator('button[form="automation-form"]').click()
-        page.wait_for_url("**/setup/stay_fee**")
-        typography = """el => {
-            const s = getComputedStyle(el);
-            return [s.fontFamily, s.fontSize, s.fontWeight, s.lineHeight, s.letterSpacing, s.color];
-        }"""
-        # 0212: the fee lede looks like every other step's lede.
-        assert page.locator(".setup-wizard-lede").first.evaluate(typography)[1:4] != page.locator(
-            ".ui-ph h1"
-        ).evaluate(typography)[1:4]
-        assert page.evaluate(_overflow_js())
-        _shot(page, f"24-fee-intro-{tag}.png")
-        page.locator(".setup-wizard-skip button").click()
         page.wait_for_url("**/setup/guest_link**")
         page.locator("button[value=done]").click()
-        page.wait_for_url("**/setup/try_it**")
-        assert page.locator(".setup-demo-property strong").inner_text() == flat["internal_name"]
-        assert page.locator(".setup-demo-stay").is_visible()
-        assert page.locator(".setup-demo-bubble").inner_text().count("PIN:") == 1
-        assert "[Example:" in page.locator(".setup-demo-bubble").inner_text() if lang == "en" else "[Příklad:" in page.locator(".setup-demo-bubble").inner_text()
-        assert page.evaluate(_overflow_js())
-        _shot(page, f"35-demo-walkthrough-{tag}.png")
-        with context.expect_page() as demo_tab:
-            page.locator(".setup-demo-message-link").click()
-        guest_page = demo_tab.value
-        guest_page.locator("#pin").wait_for()
-        _shot(guest_page, f"34-demo-pin-{tag}.png")
-        guest_page.fill("#pin", flat["permalink_pin"])
-        guest_page.locator("form button[type=submit]").first.click()
-        guest_page.wait_for_url(lambda url: "/l/" in url and "/new" in url)
-        assert "/setup/try_it" in page.url
-        _shot(guest_page, f"23-demo-new-tab-{tag}.png")
-        # Reload the original tab while the guest tab is still open; it stays
-        # on the wizard and shows the demo's current state.
-        page.reload()
-        assert page.locator("form.setup-wizard-skip button[value=skip]").is_visible()
-        assert page.get_by_role("button", name=_t(lang, "wizard.try_it.check_again"), exact=True).is_visible()
-        guest_page.close()
-        page.locator("form.setup-wizard-skip button[value=skip]").click()
         page.wait_for_url("**/setup/done**")
-        cards = page.locator(".setup-wizard-checklist .host-property-card")
-        assert cards.count() == TOTAL
-        assert page.locator(".setup-wizard-checklist .ui-badge-done").count() == 4
-        assert page.locator(".setup-wizard-checklist .ui-badge-neutral").count() == 3
+        assert page.locator("[data-setup-next-step=try_it]").is_visible()
+        cards = page.locator("[data-setup-summary-step]")
+        assert cards.count() == 4
         police = page.locator('[data-setup-summary-step="police"]')
         assert police.locator(".ui-badge-attention").inner_text() == _t(lang, "wizard.summary.status.waiting")
         assert police.locator(".ui-badge-done").count() == 0
@@ -1444,19 +1264,9 @@ def test_phone_guest_sharing_and_clear_setup_actions(host, base_url, lang, width
             page.keyboard.press("Escape")
         _shot(page, f"29-guest-sharing-{tag}.png")
         page.locator("button[value=done]").click()
-        page.wait_for_url("**/setup/try_it**")
-        assert page.get_by_role("button", name=_t(lang, "wizard.try_it.skip"), exact=True).is_visible()
-        lede = page.locator(".setup-wizard-lede").first
-        assert int(lede.evaluate("(el) => getComputedStyle(el).fontWeight")) == 400  # 0212
-        assert lede.evaluate("(el) => getComputedStyle(el).color") == page.locator(
-            ".ui-ph h1"
-        ).evaluate("(el) => getComputedStyle(el).color")
-        page.goto(f"{base}/door_lock?lang={lang}")
-        assert page.locator('button[data-lock-choice="no"]').count() == 1
-        assert page.locator('[aria-controls="wizard-lock-help"]').is_visible()
-        assert page.locator(".setup-wizard-body p.small.muted").count() == 0
-        _shot(page, f"30-lock-instructions-{tag}.png")
-        page.goto(f"{base}/automation?lang={lang}")
+        page.wait_for_url("**/setup/done**")
+        assert page.locator("[data-setup-next-step=try_it]").is_visible()
+        page.goto(f"{base}/police?lang={lang}")
         assert page.locator(".ui-choice-card .help-tip").count() == 3
         page.locator('input[value="manual"]').check()
         _shot(page, f"31-automation-help-{tag}.png")
@@ -1524,7 +1334,7 @@ def test_choice_card_selects_from_anywhere(host, base_url, lang, width, collapse
     if not REQUIRE_BROWSER:
         pytest.skip("browser not required")
     flat = _create(host)
-    walk_to(host["client"], flat["id"], "automation")
+    walk_to(host["client"], flat["id"], "police")
     session = host["client"].cookies.get(auth.SESSION_COOKIE)
     with sync_api.sync_playwright() as p:
         browser = p.chromium.launch(**chromium_launch_kwargs())
@@ -1533,7 +1343,7 @@ def test_choice_card_selects_from_anywhere(host, base_url, lang, width, collapse
         if collapsed:
             context.add_init_script("localStorage.setItem('ubyhost-sidebar-collapsed', '1')")
         page = context.new_page()
-        page.goto(f"{base_url}/apartments/{flat['id']}/setup/automation?lang={lang}")
+        page.goto(f"{base_url}/apartments/{flat['id']}/setup/police?lang={lang}")
         cards = page.locator(".ui-choice-card")
         assert cards.count() == 3
 

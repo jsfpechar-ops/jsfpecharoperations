@@ -70,7 +70,8 @@ def test_fold_outs_slide_open_and_floating_menus_are_not_clipped(wide_host, wide
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = _rail_context(browser, wide_host, wide_base, 1280, collapsed=False)
-        page = _rail_page(context, wide_base, "/")
+        # The dashboard now uses the page_help "?" (0831); a details.ui-how fold-out lives on /stay-fees.
+        page = _rail_page(context, wide_base, "/stay-fees")
         heights = page.evaluate(FOLD_OUT_HEIGHTS, "details.ui-how")
         full = page.evaluate("() => document.querySelector('.ui-how-body').getBoundingClientRect().height")
         assert heights[0] < full, heights
@@ -137,10 +138,10 @@ def test_pages_without_javascript_stay_still(wide_host, wide_base):
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = _rail_context(browser, wide_host, wide_base, 1280, collapsed=False, java_script_enabled=False)
-        # 0720: old-shell sidebar and help block (/settings has no how_key), so this runs on /stay-fees (v2 is /).
-        page = _rail_page(context, wide_base, "/stay-fees")
-        page.locator("details.ui-how summary").click()
-        assert page.locator(".ui-how-body").is_visible()
+        # 0720: old-shell sidebar and help block (/settings has no how_key), so this runs on /payments (v2, 0794: /stay-fees moved to v2).
+        page = _rail_page(context, wide_base, "/payments")
+        page.locator("details.page-help summary").click()
+        assert page.locator(".page-help-body").is_visible()
         page.locator('.ui-nav a[href="/reservations"]').click()
         page.wait_for_url("**/reservations**")
         page.locator("a.nav[href='/']").click()  # /reservations is the v2 shell (0528)

@@ -31,7 +31,7 @@ STRINGS = host_i18n.STRINGS
 LISTS = {
     "properties": "/apartments",
     "invoices": "/invoices",
-    "fees": "/stay-fees",
+    # /stay-fees is v2 (card list, no sub-tab strip, no table rows): covered by 0710
 }
 # The tab labels each list shows, in order. Stay fees is a tab of Invoices
 # (0165, 0192), so Invoices and Stay fees share one strip; CURRENT is the
@@ -40,7 +40,6 @@ TABS = {
     "stays": ["nav.stays", "tabs.stays.reports", "tabs.stays.register"],
     "properties": ["nav.properties", "host.business"],
     "invoices": ["nav.invoices", "nav.stay_fees", "host.invoice_settings"],
-    "fees": ["nav.invoices", "nav.stay_fees", "host.invoice_settings"],
 }
 CURRENT = {"fees": 1}
 FILLED = ".btn.primary, .btn.accent, .btn.send-all, .ui-btn-primary"
@@ -94,8 +93,8 @@ def test_list_pages_share_order_edges_and_rhythm(acc, base):
             context = _context(browser, base, acc["cookie"], width=width, height=900, collapsed=collapsed)
             page = context.new_page()
             for name, path in LISTS.items():
-                if name == "properties":
-                    continue  # v2 /apartments has no title, toolbar or tabs block (0532)
+                if name in ("properties", "invoices"):
+                    continue  # v2 /apartments and /invoices have no title, toolbar or tabs block (0532, 0792)
                 page.goto(base + _with_lang(path, lang))
                 _settle(page)
                 _dismiss_prompt(page)
@@ -166,20 +165,7 @@ def _shot(page, name, width, lang):
 
 def test_tabs_are_links_that_mark_the_open_page(acc):
     client = acc["client"]
-    cases = [
-        ("/submissions", "tabs.stays.reports"),
-        ("/housebook", "tabs.stays.register"),
-        ("/invoices", "nav.invoices"),
-    ]
-    for path, key in cases:
-        html = client.get(_with_lang(path, "en")).text
-        nav = re.search(r'<nav class="(?:sub-tabs host-local-nav|ui-tabs)"[^>]*data-sub-tabs[^>]*>(.*?)</nav>', html, re.S)
-        assert nav, path
-        current = re.findall(r'<a class="(?:sub-tab|ui-tab)" href="[^"]+" aria-current="page">([^<]+)</a>', nav.group(1))
-        assert current == [STRINGS["en"][key].replace("&", "&amp;")], (path, current)
-        # Tabs sit directly under the title row, never above it.
-        assert html.index("</h1>") < nav.start(), path
-        assert "<button" not in nav.group(1) and "<form" not in nav.group(1), path
+    # v2, 0792/0793/0781: submissions, housebook, invoices and entities have no section tab strip; covered by 0710.
     # 0781: v2 entities has no section tabs (the Menu tab marks it).
     for path in (f"/entities?edit={acc['e1']}&next=/apartments", f"/entities?edit={acc['e1']}&next=/invoices/new"):
         html = client.get(_with_lang(path, "en")).text
@@ -187,9 +173,9 @@ def test_tabs_are_links_that_mark_the_open_page(acc):
         assert "data-sub-tabs" not in html, path
     # 0101: Invoice settings with two businesses opens the list to pick one.
     invoices = client.get("/invoices").text
-    assert re.search(r'<a class="(?:sub-tab|ui-tab)" href="/entities"', invoices) and "/invoices/settings" not in invoices
+    assert re.search(r'<a class="[^"]*" href="/entities"', invoices) and "/invoices/settings" not in invoices  # 0792: head button
     # Stay fees is a tab of Invoices (0165).
-    assert "data-sub-tabs" in client.get("/stay-fees").text
+    # /stay-fees is v2 (no sub-tab strip): covered by 0710
     # Property pages keep their own local tabs, not the section tabs.
     assert "data-sub-tabs" not in client.get(f"/apartments/{acc['p1']}").text
 
@@ -201,7 +187,13 @@ def test_empty_states_use_the_shared_component(acc):
         assert html.count("data-empty-state") == 1, path
         block = html[html.index("data-empty-state"):]
         block = block[:block.index("\n  </div>")]
-        assert len(re.findall(r'<a class="(?:btn|ui-btn)[^"]*"', block)) == 1, (path, block)
+        if path == "/invoices":
+            # v2, 0818: the head carries the action, so the empty block has none.
+            head = html[:html.index("data-empty-state")]
+            assert len(re.findall(r'<a class="btn" href="/invoices/new">', head)) == 1, path
+            assert len(re.findall(r'<a class="(?:btn|ui-btn)[^"]*"', block)) == 0, (path, block)
+        else:
+            assert len(re.findall(r'<a class="(?:btn|ui-btn)[^"]*"', block)) == 1, (path, block)
         assert "<p>" in block or "<h2>" in block, path
     filtered = acc["client"].get("/invoices?q=zzzz-no-such-invoice&lang=en").text
     assert filtered.count("data-empty-state") == 1
@@ -211,8 +203,7 @@ def test_empty_states_use_the_shared_component(acc):
 ROWS = {
     "stays": ("/reservations?range=all", ".stays-desk tbody tr"),
     "properties": ("/apartments", ".props-card table tbody tr.clickable-row"),
-    "invoices": ("/invoices", ".lc-invoices tr.clickable-row"),
-    "fees": ("/stay-fees", ".lc-fees tr.clickable-row"),
+    "invoices": ("/invoices", ".stays-desk tr.clickable-row"),  # 0792: v2 table
 }
 
 _SPOT_JS = """(sel) => {

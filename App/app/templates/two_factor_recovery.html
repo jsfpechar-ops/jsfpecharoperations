@@ -5,9 +5,14 @@
 {% block lang_switch %}{% endblock %}
 {% block auth_body %}
 <section class="auth-card">
-  <h1 class="auth-title">{{ t('account.2fa.recovery_title') }}</h1>
-  <p class="auth-lede">{{ t('account.2fa.recovery_lede') }}</p>
-  <p class="small"><strong>{{ t('account.2fa.recovery_once') }}</strong></p>
+  <div class="auth-title-row">
+    <h1 class="auth-title">{{ t('account.2fa.recovery_title') }}</h1>
+    <details class="auth-q">
+      <summary aria-label="{{ t('help.tip.label') }}">?</summary>
+      <p class="auth-lede">{{ t('account.2fa.recovery_lede') }}</p>
+    </details>
+  </div>
+  <p class="auth-warn"><strong>{{ t('account.2fa.recovery_once') }}</strong></p>
   {# One <code> per code, separated by newlines so "Copy all" pastes one code
      per line into a password manager. The whitespace-only text nodes between
      them are not grid items. #}

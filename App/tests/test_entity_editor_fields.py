@@ -495,9 +495,11 @@ def test_each_shared_field_has_one_template_definition():
         'name="invoice_due_days"': "_entity_invoice_fields.html",
         'name="registry_entry"': "_entity_invoice_fields.html",
     }
+    # 0884: the wizard's property step posts "fill from ARES" to the same route.
+    also = {'name="fill_from_register"': "property.html"}
     for needle, owner in owners.items():
         found = sorted(p.name for p in TEMPLATES.rglob("*.html") if needle in p.read_text())
-        assert found == [owner], (needle, found)
+        assert found == sorted([owner] + ([also[needle]] if needle in also else [])), (needle, found)
     # 0076: invoice_settings.html is gone; the business editor is the one page.
     assert not (TEMPLATES / "invoice_settings.html").exists()
     text = (TEMPLATES / "entities.html").read_text()

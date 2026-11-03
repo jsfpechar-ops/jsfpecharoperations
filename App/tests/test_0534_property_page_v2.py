@@ -32,7 +32,7 @@ def test_page_is_one_scroll_page_without_tabs(host):
     assert "data-property-views" not in html
     assert "data-settings-group" not in html
     assert "property-settings-nav" not in html
-    assert 'class="crumb"' in html
+    assert 'class="airbnb-back"' in html
     assert "<h1" in html
     assert 'class="savebar"' in html
 

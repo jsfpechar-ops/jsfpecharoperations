@@ -5,14 +5,7 @@ from urllib.parse import urlparse
 
 from app import property_setup
 
-_ACTIONS = {
-    "calendar": "skip",
-    "police": "wait",
-    "stay_fee": "skip",
-    "door_lock": "none",
-    "guest_link": "done",
-    "try_it": "skip",
-}
+_ACTIONS = {"calendar": "skip", "police": "wait", "guest_link": "done"}
 
 
 def current_step(client, apartment_id: int) -> str:
@@ -24,7 +17,7 @@ def current_step(client, apartment_id: int) -> str:
 
 
 def walk_to(client, apartment_id: int, target: str) -> str:
-    """Answer each step (police: wait, automation: manual) until ``target`` is current.
+    """Answer each step (police: wait) until ``target`` is current.
 
     ``target`` may be a step name or "done". Returns the step it stopped on.
     """
@@ -33,22 +26,8 @@ def walk_to(client, apartment_id: int, target: str) -> str:
         step = current_step(client, apartment_id)
         if step == target or step in ("", "done") or step == "property":
             return step
-        if step == "automation":
-            response = client.post(
-                f"/apartments/{apartment_id}/automation-timing",
-                data={
-                    "automation_mode": "manual",
-                    "submit_after_hours": "24",
-                    "setup_step": "automation",
-                    "return_to": property_setup.wizard_url(
-                        apartment_id, property_setup.next_step("automation") or "done"
-                    ),
-                },
-                follow_redirects=False,
-            )
-        else:
-            response = client.post(
-                base, data={"step": step, "action": _ACTIONS[step]}, follow_redirects=False
-            )
+        response = client.post(
+            base, data={"step": step, "action": _ACTIONS[step]}, follow_redirects=False
+        )
         assert response.status_code == 303, (step, response.status_code)
     return current_step(client, apartment_id)

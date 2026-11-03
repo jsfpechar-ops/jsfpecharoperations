@@ -1,7 +1,7 @@
 /* UbyHost reservation calendar. Date arithmetic uses UTC date-only values. */
 (function () {
   "use strict";
-  const DAY = 86400000;
+  const DAY = 86400000, MONTHS = 6; // 0891: the Month scale shows MONTHS month sections in one scroll.
   function dateValue(value) { return new Date(value + "T00:00:00Z"); }
   function iso(value) { return value.toISOString().slice(0, 10); }
   function addDays(value, days) { return iso(new Date(dateValue(value).getTime() + days * DAY)); }
@@ -76,6 +76,7 @@
   if (!root) return;
   const cleaningMode = root.dataset.cleaning === "true";
   const readOnly = root.dataset.readonly === "true";
+  const hostCleaning = cleaningMode && !readOnly; // 0815: host cleaning page shows cleaning tags only
   const cleaningLabels = JSON.parse(document.querySelector("[data-cleaning-labels]")?.textContent || "{}");
   const $ = selector => root.querySelector(selector);
   const $$ = selector => Array.from(root.querySelectorAll(selector));
@@ -86,6 +87,7 @@
   const shortDate = value => new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", timeZone: "UTC" }).format(dateValue(value));
   const fullDate = value => new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(dateValue(value));
   const monthName = value => new Intl.DateTimeFormat(locale, { month: "long", year: "numeric", timeZone: "UTC" }).format(dateValue(value));
+  const monthOnly = value => new Intl.DateTimeFormat(locale, { month: "long", timeZone: "UTC" }).format(dateValue(value));
   const weekday = value => new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" }).format(dateValue(value));
   const body = $("[data-cal-body]"), message = $("[data-cal-message]");
   const createDialog = $("[data-cal-create]"), form = $("[data-cal-form]");
@@ -111,10 +113,10 @@
     properties, events: [], loading: false,
     display: { property: preferences.property !== false, label: preferences.label !== false, guests: preferences.guests !== false }
   };
-  let requestNumber = 0, controller = null, selection = null, suppressClickUntil = 0;
+  let requestNumber = 0, controller = null, selection = null, suppressClickUntil = 0, dayListEnd = null, touchPress = null;
   let keyboardAnchor = null, dayListDate = null, saving = false, createKind = cleaningMode ? "cleaning" : "stay";
   const focusReturn = new WeakMap();
-  let lastLoadedRange = null;
+  let lastLoadedRange = null, visibleMonth = "";
   function el(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -136,6 +138,7 @@
     if (view() === "gantt") return [monthStart(state.date), moveMonth(state.date, 1)];
     if (state.scale === "week") { const start = monday(state.date); return [start, addDays(start, 7)]; }
     if (state.scale === "year") return [state.date.slice(0, 4) + "-01-01", String(Number(state.date.slice(0, 4)) + 1) + "-01-01"];
+    if (tiles()) return [monthRange(state.date)[0], monthRange(moveMonth(state.date, MONTHS - 1))[1]];
     return monthRange(state.date);
   }
   function rememberURL() {
@@ -218,7 +221,9 @@
     return labels["status_" + event.status] || labels.booked;
   }
   function propertyColor(id) { return ["teal", "blue", "purple"][Math.abs(Number(id)) % 3]; }
-  function phoneDots() { return !cleaningMode && matchMedia("(max-width:767px)").matches; }
+  // 0815: the host cleaning page uses the host calendar tiles; the shared cleaner page (read-only) keeps its list.
+  function phoneDots() { return !(cleaningMode && readOnly) && matchMedia("(max-width:767px)").matches; }
+  function tiles() { return !(cleaningMode && readOnly) && view() === "calendar" && state.scale === "month"; }
   function appendCleaningIcon(node, className) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("viewBox", "0 0 24 24");
@@ -226,7 +231,7 @@
     svg.setAttribute("focusable", "false");
     svg.setAttribute("class", className || "cal-cleaning-icon");
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    path.setAttribute("d", "M15 3l6 6M13 5l6 6M12 10l4 4-8 8H3v-5zM5 17v4M8 15v5M11 13v4");
+    path.setAttribute("d", "M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0zM20 3v4M22 5h-4M4 17v2M5 18H3");
     path.setAttribute("fill", "none");
     path.setAttribute("stroke", "currentColor");
     path.setAttribute("stroke-width", "1.8");
@@ -273,15 +278,61 @@
       });
     });
   }
+  // 0891: Airbnb stay pills. Whole nights, clipped to the week and to the month section. Lane 0 is drawn;
+  // a day with more stays gets a "+N" button (data-cal-more) that opens the day list.
+  function pillRow(week, until, month) {
+    const monthEnd = month ? moveMonth(month, 1) : until;
+    const from = month && month > week ? month : week, to = monthEnd < until ? monthEnd : until;
+    const overlay = el("div", "cal-pills"), ends = [], hidden = [0, 0, 0, 0, 0, 0, 0];
+    state.events.filter(event => event.kind !== "cleaning" && event.start < to && event.end > from)
+      .sort((a, b) => a.start.localeCompare(b.start) || b.end.localeCompare(a.end) || String(a.id).localeCompare(String(b.id)))
+      .forEach(event => {
+        const left = event.start > from ? event.start : from, right = event.end < to ? event.end : to;
+        let lane = ends.findIndex(last => last <= left);
+        if (lane < 0) lane = ends.length;
+        ends[lane] = right;
+        const column = distance(week, left), span = distance(left, right);
+        if (lane > 0) { for (let index = column; index < column + span; index++) hidden[index]++; return; }
+        const pill = el("a", "cal-pill" + (event.start < from ? " continues-start" : "") + (event.end > to ? " continues-end" : ""));
+        pill.href = event.url; pill.draggable = false;
+        pill.dataset.calEvent = String(event.id); pill.dataset.calFrom = left; pill.dataset.calTo = right;
+        pill.style.gridColumn = String(column + 1) + " / span " + String(span);
+        const name = labelFor(event);
+        pill.title = name + " · " + fullDate(event.start) + " – " + fullDate(event.end);
+        pill.setAttribute("aria-label", pill.title); pill.setAttribute("aria-haspopup", "dialog");
+        pill.append(el("span", "cal-pill-avatar", (name.trim().charAt(0) || "·").toUpperCase()), el("span", "cal-pill-name", name));
+        overlay.append(pill);
+      });
+    hidden.forEach((count, index) => {
+      if (!count) return;
+      const date = addDays(week, index), more = el("button", "cal-pill-more", "+" + String(count));
+      more.type = "button"; more.dataset.calMore = date; more.style.gridColumn = String(index + 1);
+      more.setAttribute("aria-label", fullDate(date) + " · " + format("more", { count }));
+      overlay.append(more);
+    });
+    return overlay;
+  }
   function renderCalendar() {
     const [start, end] = range(), weekdays = el("div", "cal-weekdays");
     for (let day = 0; day < 7; day++) weekdays.append(el("span", "", weekday(addDays(start, day))));
-    body.append(weekdays);
-    const mobile = matchMedia("(max-width:760px)").matches, dots = phoneDots();
+    const head = $("[data-cal-head]");
+    if (tiles() && head && matchMedia("(min-width:768px)").matches) head.append(weekdays); else body.append(weekdays);
+    const mobile = matchMedia("(max-width:760px)").matches, dots = tiles();
     const bookingBudgetDefault = cleaningMode ? 1 : (mobile ? 1 : 2);
-    for (let week = start; week < end; week = addDays(week, 7)) {
+    // 0891: the Month scale is one scroll of MONTHS month sections; outside days are blank cells. Other scales keep one block ("").
+    const months = tiles() ? Array.from({ length: MONTHS }, (_, index) => moveMonth(state.date, index)) : [""];
+    for (const month of months) {
+    let target = body, weekStart = start, weekEnd = end;
+    if (month) {
+      const section = el("section", "cal-month"); section.dataset.calSection = month;
+      section.setAttribute("aria-label", monthName(month));
+      section.append(el("h4", "cal-month-title", month.slice(0, 4) === root.dataset.today.slice(0, 4) ? monthOnly(month) : monthName(month)));
+      body.append(section); target = section;
+      [weekStart, weekEnd] = monthRange(month);
+    }
+    for (let week = weekStart; week < weekEnd; week = addDays(week, 7)) {
       const until = addDays(week, 7);
-      const bookings = lanes(state.events.filter(event => event.kind !== "cleaning"), week, until);
+      const bookings = lanes(state.events.filter(event => event.kind !== "cleaning" && !hostCleaning), week, until);
       const cleanings = lanes(state.events.filter(event => event.kind === "cleaning"), week, until);
       const bookingBudget = cleanings.count ? 1 : bookingBudgetDefault;
       const visibleBookings = bookings.segments.filter(segment => segment.lane < bookingBudget);
@@ -292,27 +343,48 @@
       const days = el("div", "cal-week-days");
       for (let index = 0; index < 7; index++) {
         const date = addDays(week, index), day = el("div", "cal-day");
+        if (date.slice(0, 7) !== (month || state.date).slice(0, 7) && state.scale !== "week") day.classList.add("is-outside");
+        // 0891: a day outside its month section is a blank cell; the day itself lives in its own section.
+        if (month && day.classList.contains("is-outside")) { days.append(day); continue; }
         day.dataset.date = date;
-        if (date.slice(0, 7) !== state.date.slice(0, 7) && state.scale !== "week") day.classList.add("is-outside");
         if (date === root.dataset.today) day.classList.add("is-today");
-        const button = el("button", "cal-day-number", String(dateValue(date).getUTCDate()));
+        if (date < root.dataset.today) day.classList.add("is-past");
+        const button = el("button", "cal-day-number"); button.append(el("span", "cal-num", String(dateValue(date).getUTCDate())));
         button.type = "button"; button.dataset.calDay = date;
         button.setAttribute("aria-label", format("select_day", { date: fullDate(date) }));
         button.title = labels.keyboard;
-        if (dots) {
+        if (dots && hostCleaning) {
+          const dayCleanings = state.events.filter(event => event.kind === "cleaning" && displayOverlap(event, date, addDays(date, 1)));
+          const marks = el("div", "cal-dots");
+          marks.dataset.calDots = String(dayCleanings.length);
+          dayCleanings.slice(0, 2).forEach(() => { const tag = el("span", "cal-clean-tag"); appendCleaningIcon(tag, "cal-cleaning-icon"); marks.append(tag); });
+          if (dayCleanings.length > 2) marks.append(el("span", "cal-dot-more", "+" + String(dayCleanings.length - 2)));
+          button.append(marks);
+          const chips = el("div", "cal-tile-chips");
+          dayCleanings.slice(0, 2).forEach(event => { const chip = el("span", "cal-tile-chip cal-clean-chip"); appendCleaningIcon(chip, "cal-cleaning-icon"); chip.append(el("span", "", event.startTime || (cleaningLabels.title || labels.cleaning))); chips.append(chip); });
+          if (dayCleanings.length > 2) { const more = el("span", "cal-tile-more", "+" + String(dayCleanings.length - 2)); more.dataset.calMore = date; chips.append(more); }
+          button.append(chips);
+          if (dayCleanings.length) day.classList.add("has-cleaning");
+        } else if (dots) {
           const dayEvents = state.events.filter(event => event.kind !== "cleaning" && displayOverlap(event, date, addDays(date, 1)));
           const marks = el("div", "cal-dots");
           marks.dataset.calDots = String(dayEvents.length);
           dayEvents.slice(0, 3).forEach(event => { const dot = el("span", "cal-dot"); dot.dataset.calColor = propertyColor(event.propertyId); marks.append(dot); });
           if (dayEvents.length > 3) marks.append(el("span", "cal-dot-more", "+" + String(dayEvents.length - 3)));
           button.append(marks);
+          const chips = el("div", "cal-tile-chips");
+          dayEvents.slice(0, 2).forEach(event => { const chip = el("span", "cal-tile-chip", labelFor(event)); chip.dataset.calColor = propertyColor(event.propertyId); chips.append(chip); });
+          // 0891: the stays "+N" is the .cal-pill-more button from pillRow().
+          button.append(chips);
           if (dayEvents.length) day.classList.add("has-stays");
         }
         day.append(button); days.append(day);
       }
       if (dots) {
         const row = el("div", "cal-week is-dots"); row.style.setProperty("--lanes", "1");
-        row.append(days); body.append(row);
+        row.append(days);
+        if (!hostCleaning) row.append(pillRow(week, until, month));
+        target.append(row);
         continue;
       }
       const overlay = el("div", "cal-week-events");
@@ -386,7 +458,8 @@
         overlay.style.setProperty("--mobile-event-rows", mobileRows.join(" "));
       }
       const row = el("div", "cal-week"); row.style.setProperty("--lanes", String(lanesShown));
-      row.append(days, overlay); body.append(row);
+      row.append(days, overlay); target.append(row);
+    }
     }
   }
   function renderYear() {
@@ -402,7 +475,7 @@
         const button = el("button", "cal-mini-day", String(dateValue(day).getUTCDate()));
         button.type = "button"; button.dataset.calMonthOpen = day;
         button.setAttribute("aria-label", fullDate(day));
-        const events = state.events.filter(event => displayOverlap(event, day, addDays(day, 1)));
+        const events = state.events.filter(event => (!hostCleaning || event.kind === "cleaning") && displayOverlap(event, day, addDays(day, 1)));
         if (events.length) button.classList.add("has-stays");
         if (events.some(event => event.tone === "overdue" || event.tone === "action")) button.classList.add("has-action");
         if (day === root.dataset.today) button.classList.add("is-today");
@@ -426,7 +499,7 @@
     }
     timeline.append(heading);
     state.properties.filter(property => !state.property || String(property.id) === state.property).forEach(property => {
-      const events = state.events.filter(event => event.propertyId === property.id);
+      const events = state.events.filter(event => event.propertyId === property.id && (!hostCleaning || event.kind === "cleaning"));
       const layout = lanes(events, start, end);
       const row = el("div", "cal-gantt-row");
       const name = el("div", "cal-gantt-name"); name.title = property.name;
@@ -457,6 +530,9 @@
   }
   function render() {
     cancelSelection(); syncControls(); body.replaceChildren();
+    $$("[data-cal-head] > .cal-weekdays").forEach(node => node.remove());
+    visibleMonth = "";
+    const toTop = $("[data-cal-top]"); if (toTop) toTop.hidden = true;
     if (!state.properties.length) { body.append(el("p", "cal-empty", labels.empty_properties)); return; }
     markConflicts();
     if (view() === "gantt") renderGantt(); else if (state.scale === "year") renderYear(); else renderCalendar();
@@ -510,6 +586,7 @@
   $$("dialog").forEach(dialog => {
     dialog.addEventListener("close", () => {
       const target = focusReturn.get(dialog); focusReturn.delete(dialog);
+      if (dialog === dayDialog) { cancelSelection(); root.classList.remove("has-panel"); }
       if ($("dialog[open]")) return;
       // The close event is queued: keep focus if another control already received it.
       const active = document.activeElement;
@@ -579,10 +656,25 @@
     if (dayDialog.open) close(dayDialog);
     show(detailsDialog);
   }
-  function openDay(day) {
-    dayListDate = day; $("[data-cal-day-dialog] #cal-day-title").textContent = cleaningMode ? fullDate(day) : format("day_stays", { date: fullDate(day) });
+  function openSheet(start, end) {
+    dayListDate = start; dayListEnd = addDays(end, 1);
+    $("[data-cal-day-dialog] #cal-day-title").textContent = end > start ? shortDate(start) + " – " + shortDate(dayListEnd) : shortDate(start);
     const list = $("[data-cal-day-list]"); list.replaceChildren(); list.className = "cal-day-list";
-    const events = state.events.filter(event => displayOverlap(event, day, addDays(day, 1)));
+    state.events.filter(event => displayOverlap(event, start, dayListEnd) && (!hostCleaning || event.kind === "cleaning")).forEach(event => list.append(eventLink(event)));
+    root.classList.add("has-panel");
+    if (!dayDialog.open) { focusReturn.set(dayDialog, document.activeElement); dayDialog.show(); }
+  }
+  function phoneTap(date) {
+    const current = selection, single = !!current && current.start === current.end;
+    if (single && current.start === date) { cancelSelection(); dayDialog.close(); return; }
+    const from = single && date > current.start ? current.start : date;
+    selection = { anchor: from, start: from, end: date, property: "" };
+    paintSelection(); openSheet(from, date);
+  }
+  function openDay(day) {
+    dayListDate = day; dayListEnd = addDays(day, 1); $("[data-cal-day-dialog] #cal-day-title").textContent = cleaningMode ? fullDate(day) : format("day_stays", { date: fullDate(day) });
+    const list = $("[data-cal-day-list]"); list.replaceChildren(); list.className = "cal-day-list";
+    const events = state.events.filter(event => displayOverlap(event, day, addDays(day, 1)) && (!hostCleaning || event.kind === "cleaning"));
     events.forEach(event => list.append(eventLink(event)));
     if (!events.length) list.append(el("p", "cal-empty", labels.none_today));
     show(dayDialog);
@@ -652,7 +744,7 @@
   function paintSelection() {
     $$("[data-date]").forEach(node => {
       node.classList.toggle("is-selected", !!selection && node.dataset.date >= selection.start && node.dataset.date <= selection.end &&
-        (!selection.property || node.dataset.property === selection.property));
+        (!selection.property || !node.dataset.property || node.dataset.property === selection.property));
     });
     if (selection) $("[data-cal-selection]").textContent = format("selection", { start: shortDate(selection.start), end: shortDate(addDays(selection.end, 1)) });
   }
@@ -665,7 +757,8 @@
     event.preventDefault();
     const focusable = cell.matches("[data-cal-day]") ? cell : cell.querySelector("[data-cal-day]");
     if (focusable) focusable.focus({ preventScroll: true });
-    selection = { anchor: cell.dataset.date, start: cell.dataset.date, end: cell.dataset.date, property: cell.dataset.property || state.property, lastX: event.clientX, pointerId: event.pointerId };
+    const prior = selection && selection.pointerId === undefined ? { ...selection } : null;
+    selection = { anchor: cell.dataset.date, start: cell.dataset.date, end: cell.dataset.date, property: cell.dataset.property || state.property, lastX: event.clientX, pointerId: event.pointerId, prior };
     root.setPointerCapture(event.pointerId); paintSelection();
   });
   root.addEventListener("pointermove", event => {
@@ -689,18 +782,62 @@
     const chosen = { ...selection };
     const pointTarget = document.elementFromPoint(event.clientX, event.clientY);
     const anchor = pointTarget && pointTarget.closest("[data-date]");
-    if (phoneDots() && chosen.start === chosen.end) {
+    if (tiles()) {
       cancelSelection(); suppressClickUntil = Date.now() + 400;
       if (root.hasPointerCapture(event.pointerId)) root.releasePointerCapture(event.pointerId);
-      openDay(chosen.start);
+      if (chosen.start === chosen.end) { if (chosen.prior) { selection = chosen.prior; paintSelection(); } phoneTap(chosen.start); }
+      else { selection = { anchor: chosen.start, start: chosen.start, end: chosen.end, property: "" }; paintSelection(); openSheet(chosen.start, chosen.end); }
       return;
     }
     cancelSelection(); suppressClickUntil = Date.now() + 400;
     if (root.hasPointerCapture(event.pointerId)) root.releasePointerCapture(event.pointerId);
     openCreate(chosen.start, addDays(chosen.end, 1), chosen.property, cleaningMode ? "cleaning" : "stay", anchor);
   });
-  root.addEventListener("pointercancel", cancelSelection);
-  root.addEventListener("lostpointercapture", cancelSelection);
+  root.addEventListener("pointercancel", cancelMouseSelection);
+  root.addEventListener("lostpointercapture", cancelMouseSelection);
+  function cancelMouseSelection() { if (selection && selection.pointerId === undefined) return; cancelSelection(); }
+  function cancelTouchPress() { if (touchPress) clearTimeout(touchPress.timer); touchPress = null; }
+  function startTouchDrag() {
+    if (!touchPress) return;
+    touchPress.dragging = true; touchPress.timer = 0;
+    selection = { anchor: touchPress.date, start: touchPress.date, end: touchPress.date, property: "" };
+    paintSelection();
+  }
+  body.addEventListener("touchstart", event => {
+    const cell = event.target.closest("[data-date]");
+    if (!tiles() || readOnly || event.touches.length !== 1 || state.loading || !lastLoadedRange || !cell || !body.contains(cell) ||
+      event.target.closest("[data-cal-event], [data-cal-more]")) return;
+    const touch = event.touches[0];
+    cancelTouchPress();
+    touchPress = { x: touch.clientX, y: touch.clientY, date: cell.dataset.date, dragging: false, timer: setTimeout(startTouchDrag, 300) };
+  }, { passive: true });
+  body.addEventListener("touchmove", event => {
+    if (!touchPress) return;
+    const touch = event.touches[0];
+    if (!touchPress.dragging) {
+      if (Math.hypot(touch.clientX - touchPress.x, touch.clientY - touchPress.y) > 8) cancelTouchPress();
+      return;
+    }
+    event.preventDefault();
+    const target = document.elementFromPoint(touch.clientX, touch.clientY), cell = target && target.closest("[data-date]");
+    if (!cell || !body.contains(cell) || !selection) return;
+    const day = cell.dataset.date;
+    selection.start = day < selection.anchor ? day : selection.anchor;
+    selection.end = day > selection.anchor ? day : selection.anchor;
+    paintSelection();
+  }, { passive: false });
+  body.addEventListener("touchend", () => {
+    if (!touchPress) return;
+    const dragging = touchPress.dragging;
+    cancelTouchPress();
+    if (!dragging) return;
+    suppressClickUntil = Date.now() + 400;
+    openSheet(selection.start, selection.end);
+  });
+  body.addEventListener("touchcancel", () => {
+    if (touchPress && touchPress.dragging) cancelSelection();
+    cancelTouchPress();
+  });
   root.addEventListener("keydown", event => {
     if (event.key === "Escape") { cancelSelection(); return; }
     const cell = event.target.closest("[data-cal-day]");
@@ -721,6 +858,10 @@
       candidates[0].focus();
     } else if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
+      if (tiles()) {
+        if (!selection) selection = { anchor: day, start: day, end: day, property: "" };
+        paintSelection(); openSheet(selection.start, selection.end); return;
+      }
       const start = selection ? selection.start : day, end = addDays(selection ? selection.end : day, 1);
       openCreate(start, end, cell.dataset.property || state.property, cleaningMode ? "cleaning" : "stay", cell);
     }
@@ -736,7 +877,7 @@
     const day = target.closest("[data-cal-day]");
     if (day) {
       if (Date.now() < suppressClickUntil || state.loading || !lastLoadedRange) return;
-      if (phoneDots()) { openDay(day.dataset.calDay); return; }
+      if (tiles()) { phoneTap(day.dataset.calDay); return; }
       openCreate(day.dataset.calDay, addDays(day.dataset.calDay, 1), day.dataset.property || state.property, cleaningMode ? "cleaning" : "stay", day); return;
     }
     const more = target.closest("[data-cal-more]");
@@ -744,16 +885,21 @@
     const month = target.closest("[data-cal-month-open]");
     if (month) { state.date = month.dataset.calMonthOpen; state.mode = "calendar"; state.scale = "month"; savePreferences(); load(); return; }
     if (target.closest("[data-cal-settings]")) { show(settingsDialog); return; }
-    if (target.closest("[data-cal-today]")) { state.date = root.dataset.today; load(); return; }
+    if (target.closest("[data-cal-top]")) { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+    if (target.closest("[data-cal-today]")) { if (tiles()) window.scrollTo(0, 0); state.date = root.dataset.today; load(); return; }
     const movement = target.closest("[data-cal-prev], [data-cal-next]");
     if (movement) {
       const sign = movement.hasAttribute("data-cal-prev") ? -1 : 1;
+      // 0891: in the Month scroll the arrows step from the month shown in the sticky title.
+      const base = tiles() && visibleMonth ? visibleMonth : state.date;
+      visibleMonth = "";
+      if (tiles()) window.scrollTo(0, 0);
       const next = view() === "calendar" && state.scale === "week" ? addDays(state.date, sign * 7) :
-        moveMonth(state.date, sign * (view() === "calendar" && state.scale === "year" ? 12 : 1));
+        moveMonth(base, sign * (view() === "calendar" && state.scale === "year" ? 12 : 1));
       state.date = next < "1900-01-01" ? "1900-01-01" : next > "2100-12-01" ? "2100-12-01" : next;
       load(); return;
     }
-    if (target.closest("[data-cal-day-add]") && dayListDate) openCreate(dayListDate, addDays(dayListDate, 1), state.property, cleaningMode ? "cleaning" : "stay", target.closest("[data-cal-day-add]"));
+    if (target.closest("[data-cal-day-add]") && dayListDate) openCreate(dayListDate, dayListEnd, state.property, cleaningMode ? "cleaning" : "stay", target.closest("[data-cal-day-add]"));
   });
   document.querySelectorAll("[data-calendar-add]").forEach(link => link.addEventListener("click", event => {
     if (event.ctrlKey || event.metaKey || event.shiftKey || event.button !== 0 || !state.properties.length) return;
@@ -881,6 +1027,18 @@
       if (!state.loading && lastLoadedRange) { if (phoneDots() && state.scale === "year") load(); else render(); }
       if (createDialog.open) requestAnimationFrame(() => placeCreate(createAnchor));
     },
+    scroll: () => {
+      // 0891: the title follows the month section under the sticky head; the back-to-top button shows after 400 px.
+      if (!document.querySelector("[data-calendar]") || state.loading || !tiles()) return;
+      const head = $("[data-cal-head]");
+      const line = head && getComputedStyle(head).position === "sticky" ? head.getBoundingClientRect().bottom + 1 : 1;
+      let current = "";
+      $$(".cal-month").forEach(section => { if (section.getBoundingClientRect().top <= line) current = section.dataset.calSection; });
+      visibleMonth = current;
+      $("[data-cal-period]").textContent = monthName(current || state.date);
+      const toTop = $("[data-cal-top]");
+      if (toTop) toTop.hidden = window.scrollY < 400;
+    },
     popstate: () => {
       if (!document.querySelector("[data-calendar]")) return;
       const params = new URLSearchParams(location.search);
@@ -895,6 +1053,7 @@
     window._ubyCalendarBound = true;
     window.addEventListener("resize", () => window._ubyCalendarHandlers.resize());
     window.addEventListener("popstate", () => window._ubyCalendarHandlers.popstate());
+    window.addEventListener("scroll", () => window._ubyCalendarHandlers.scroll(), { passive: true });
   }
   $$(".cal-enhanced").forEach(node => { node.hidden = false; });
   $("[data-cal-fallback]").hidden = true;
@@ -903,6 +1062,7 @@
   root.addEventListener("calendar:refresh", load);
   if (cleaningMode) {
     $("[data-cal-day-add]").hidden = readOnly;
+    if (!readOnly) $("[data-cal-day-add]").textContent = labels.add_cleaning;
     root.querySelectorAll("[data-cal-display='guests']").forEach(input => { input.closest("label").hidden = true; });
   }
   load();

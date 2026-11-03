@@ -1,28 +1,63 @@
 {% extends "host_page.html" %}
+{% set v2 = true %}
 {% set nav = 'stay_fees' %}
 {% set how_key = 'stay_fees' %}
 {% set body_kind = 'list' %}
-{% from "_components.html" import row_menu_begin, row_menu_end, row_open, empty_state with context %}
-{% from "_ui_layout.html" import ui_section_tabs with context %}
+{% from "_components.html" import row_menu_begin, row_menu_end, row_open, empty_state, copy_inline with context %}
+{% from "_icons.html" import icon with context %}
 {% block title %}{{ t('stay_fees.title') }}{% endblock %}
-{% block page_title %}{{ t('stay_fees.title') }}{% endblock %}
-{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
-{% block toolbar %}{% include "_list_filter.html" %}{% endblock %}
+{% block page_title %}{% endblock %}
+{% block meta %}{% endblock %}
+{% block primary_action %}{% endblock %}
+{% block secondary_actions %}{% endblock %}
+{% block tabs %}{% endblock %}
+{% block toolbar %}{% endblock %}
 {% block body %}
+<div class="stay-fees-page">
+<div class="head stays-head"><div class="head-title-row"><h1 class="big">{{ t('stay_fees.title') }}</h1>
+<details class="ui-how stays-how" data-how="stay_fees">
+  <summary class="ui-how-toggle" aria-label="{{ t('how.toggle') }}">{{ icon('circle-help', 16) }}</summary>
+  <div class="ui-how-body">
+    <p id="fee-list-email">{{ t('stay_fees.list.email_on' if stay_fee_emails else 'stay_fees.list.email_off') }} <a href="/settings/account#settings-stay-fee-emails">{{ t('stay_fees.list.email_change') }}</a></p>
+    <p>{% if apartment is defined and apartment and apartment.stay_fee_authority_databox %}{{ t('stay_fees.pay.send_to', databox=apartment.stay_fee_authority_databox) }}{% else %}{{ t('stay_fees.pay.send') }}{% endif %}</p>
+    <ol class="ui-how-steps">{% for n in (1, 2, 3) %}<li>{{ t('how.stay_fees.' ~ n) }}</li>{% endfor %}</ol>
+    <a class="ui-how-more" href="/guide#stay_fee">{{ t('how.more') }}</a>
+  </div>
+</details>
+</div><div class="stays-head-actions">{% for href, key, current in page_tabs() %}{% if not current and key != 'nav.invoices' %}<a class="btn ghost" href="{{ href }}">{{ t(key) }}</a>{% endif %}{% endfor %}<a class="btn ghost" href="/settings#settings-stay-fee-emails">{{ t('stay_fees.list.email_change') }}</a></div></div>
+<div class="stay-fees-toolbar">{% include "_list_filter.html" %}</div>
 {% if periods %}
 {% set pay_rows = periods | rejectattr('unset') | list %}
+{% set fee_bulk = namespace(ready=[], saved=0) %}
+{% for period in pay_rows %}{% if period.status == 'ready' %}{% set fee_bulk.ready = fee_bulk.ready + [period.apartment.id] %}{% elif period.status == 'saved' %}{% set fee_bulk.saved = fee_bulk.saved + 1 %}{% endif %}{% endfor %}
+{% if fee_bulk.ready | length > 1 or fee_bulk.saved > 1 %}
+<section class="card fee-bulk" aria-label="{{ t('stay_fees.bulk.label') }}">
+  {% if fee_bulk.ready | length > 1 %}
+  <form method="post" action="/stay-fees/confirm-ready">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <input type="hidden" name="month" value="{{ selected_month.strftime('%Y-%m') }}">
+    <input type="hidden" name="return_to" value="{{ fee_return }}">
+    {% for apartment_id in fee_bulk.ready %}<input type="hidden" name="apartment_id" value="{{ apartment_id }}">{% endfor %}
+    <button class="btn" type="submit" data-confirm data-confirm-message="{{ t('stay_fees.bulk.confirm_ask') }}">{{ t('stay_fees.bulk.confirm', count=fee_bulk.ready | length) }}</button>
+  </form>
+  {% endif %}
+  {% if fee_bulk.saved > 1 %}
+  <a data-turbo="false" class="btn ghost" href="/stay-fees/pdfs.zip?month={{ selected_month.strftime('%Y-%m') }}" download>{{ t('stay_fees.bulk.pdfs', count=fee_bulk.saved) }}</a>
+  {% endif %}
+</section>
+{% endif %}
 {% for period in pay_rows %}
 {% set apartment = period.apartment %}
 {% set month_q = selected_month.strftime('%Y-%m') %}
 {% set report_url = '/stay-fees/' ~ apartment.id ~ '?month=' ~ month_q %}
 {% set pdf_url = '/stay-fees/' ~ apartment.id ~ '/pdf?month=' ~ month_q %}
-<section class="ui-section fee-pay" id="fee-pay-{{ apartment.id }}" aria-labelledby="fee-pay-h-{{ apartment.id }}" data-fee-step="{{ period.step }}">
-  <div class="ui-section-h">
+<section class="card fee-pay" id="fee-pay-{{ apartment.id }}" aria-labelledby="fee-pay-h-{{ apartment.id }}" data-fee-step="{{ period.step }}">
+  <div class="fee-pay-h">
     <h2 id="fee-pay-h-{{ apartment.id }}">{{ apartment.internal_name }}</h2>
-    <span class="ui-sub">{{ period.period_label }}</span>
+    <span class="sub">{{ period.period_label }}</span>
   </div>
   <ol class="fee-stepper" aria-label="{{ t('stay_fees.pay.step', n=period.step) }}">
-    {% for n in (1, 2, 3) %}
+    {% for n in (1, 2) %}
     <li class="fee-stepper-item" data-state="{{ 'done' if n < period.step else ('current' if n == period.step else 'todo') }}"{% if n == period.step %} aria-current="step"{% endif %}>
       <span class="fee-stepper-dot" aria-hidden="true">{% if n < period.step %}✓{% else %}{{ n }}{% endif %}</span>
       <span class="fee-stepper-label">{{ t('stay_fees.pay.short' ~ n) }}</span>
@@ -43,60 +78,85 @@
         <input type="hidden" name="month" value="{{ month_q }}">
         <input type="hidden" name="confirm_collected" value="1">
         <input type="hidden" name="return_to" value="{{ fee_return }}">
-        <button class="ui-btn ui-btn-primary" type="submit">{{ t('stay_fees.pay.yes') }}</button>
-        <a class="ui-btn ui-btn-secondary" href="{{ report_url }}">{{ t('stay_fees.pay.edit') }}</a>
+        <button class="btn" type="submit">{{ t('stay_fees.pay.yes') }}</button>
+        <a class="btn ghost" href="{{ report_url }}">{{ t('stay_fees.pay.edit') }}</a>
       </form>
     {% elif period.status == 'waiting' %}
       <h3>{{ t('stay_fees.pay.ask') }}</h3>
-      <p class="ui-sub">{{ t('stay_fees.issue.period_running') }}</p>
+      <p class="sub">{{ t('stay_fees.issue.period_running') }}</p>
     {% else %}
       <h3>{{ t('stay_fees.pay.fix_first') }}</h3>
       <ul class="fee-step-issues">
         {% for issue in period.issues %}<li>{{ t(issue) }}</li>{% endfor %}
       </ul>
-      <div class="fee-step-actions"><a class="ui-btn ui-btn-primary" href="{{ report_url }}">{{ t('stay_fees.pay.fix') }}</a></div>
+      <div class="fee-step-actions"><a class="btn" href="{{ report_url }}">{{ t('stay_fees.pay.fix') }}</a></div>
     {% endif %}
-  {% elif period.step == 2 %}
-    <h3>{{ t('stay_fees.pay.step2') }}</h3>
-    <p class="ui-sub">{{ t('stay_fees.pay.download_why') }}</p>
-    <div class="fee-step-actions">
-      <a data-turbo="false" class="ui-btn ui-btn-primary" href="{{ pdf_url }}" download>{{ t('stay_fees.download_pdf') }}</a>
-      <a class="ui-btn ui-btn-secondary" href="{{ fee_step_url(apartment.id, 3) }}">{{ t('stay_fees.pay.next') }}</a>
-    </div>
   {% else %}
-    <h3>{{ t('stay_fees.pay.step3') }}</h3>
-    {% if period.pay_total_czk == 0 %}
-      <p>{{ t('stay_fees.pay.nothing') }}</p>
-    {% elif period.pay and period.pay.qr %}
-      <div class="fee-qr">
+    <h3>{{ t('stay_fees.pay.step2') }}</h3>
+    <div class="fee-send-pay">
+      <ol class="fee-tasks">
+        <li>
+          <strong>{{ t('stay_fees.pay.task_pdf') }}</strong>
+          <a data-turbo="false" class="btn ghost" href="{{ pdf_url }}" download>{{ t('stay_fees.download_pdf') }}</a>
+        </li>
+        <li>
+          <strong>{{ t('stay_fees.pay.task_send') }}</strong>
+          <a class="btn" href="https://www.mojedatovaschranka.cz/" target="_blank" rel="noopener noreferrer">{{ t('stay_fees.pay.open_databox') }}</a>
+        </li>
+        {% if period.pay_total_czk != 0 %}
+        <li>
+          <strong>{{ t('stay_fees.pay.task_pay') }}</strong>
+          
+        </li>
+        {% endif %}
+      </ol>
+      <div class="fee-qr-panel">
+      {% if period.pay_total_czk == 0 %}
+        <p>{{ t('stay_fees.pay.nothing') }}</p>
+      {% elif period.pay and period.pay.qr %}
         <img src="{{ period.pay.qr }}" width="176" height="176" alt="{{ t('stay_fees.payment.qr_alt') }}">
-        <div>
-          <p class="fee-qr-amount">{{ period.pay_total_display }}</p>
-          <p class="ui-sub">{{ t('stay_fees.payment.account') }}: {{ period.pay.account or period.pay.iban_display }}</p>
-          <p class="ui-sub">{{ t('stay_fees.payment.vs') }}: {{ period.pay.vs }}</p>
-        </div>
+        <p class="fee-qr-amount">{{ period.pay_total_display }}</p>
+        <dl class="fee-qr-meta">
+          <div><dt>{{ t('stay_fees.payment.account') }}</dt><dd>{{ period.pay.account or period.pay.iban_display }}{{ copy_inline('fee-acc-' ~ apartment.id, period.pay.account or period.pay.iban_display, t('common.copy')) }}</dd></div>
+          <div><dt>{{ t('stay_fees.payment.vs') }}</dt><dd>{{ period.pay.vs }}{{ copy_inline('fee-vs-' ~ apartment.id, period.pay.vs, t('common.copy')) }}</dd></div>
+        </dl>
+      {% else %}
+        <p class="sub">{{ t('stay_fees.pay.no_account') }} <a href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ t('stay_fees.pay.add_account') }}</a></p>
+      {% endif %}
       </div>
-    {% else %}
-      <p class="ui-sub">{{ t('stay_fees.pay.no_account') }} <a href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ t('stay_fees.pay.add_account') }}</a></p>
-    {% endif %}
-    <p class="fee-send-line">{% if apartment.stay_fee_authority_databox %}{{ t('stay_fees.pay.send_to', databox=apartment.stay_fee_authority_databox) }}{% else %}{{ t('stay_fees.pay.send') }}{% endif %}</p>
-    <div class="fee-step-actions">
-      <a class="ui-btn ui-btn-primary" href="https://www.mojedatovaschranka.cz/" target="_blank" rel="noopener noreferrer">{{ t('stay_fees.pay.open_databox') }}</a>
-      <a class="ui-btn ui-btn-quiet" href="{{ fee_step_url(apartment.id, 2) }}">{{ t('stay_fees.pay.back') }}</a>
     </div>
   {% endif %}
   </div>
 </section>
 {% endfor %}
+{% for period in periods %}{% if period.unset and period.copy_from %}
+{% set target = period.apartment %}{% set source = period.copy_from %}
+<section class="card fee-copy" id="fee-copy-{{ target.id }}" aria-label="{{ t('stay_fees.copy.label') }}">
+  <div class="fee-pay-h">
+    <h2>{{ target.internal_name }}</h2>
+    <span class="sub">{{ t('stay_fees.copy.title', name=source.internal_name) }}</span>
+  </div>
+  <dl class="fee-figures">
+    <div><dt>{{ t('apartment.form.stay_fee.rate_label') }}</dt><dd>{{ t('stay_fees.rate_line', rate=source.stay_fee_rate_czk) }}</dd></div>
+    <div><dt>{{ t('stay_fees.col.period') }}</dt><dd>{{ t('apartment.form.stay_fee.cadence.quarterly' if source.stay_fee_cadence == 'quarterly' else 'apartment.form.stay_fee.cadence.monthly') }}</dd></div>
+    {% if source.stay_fee_vs %}<div><dt>{{ t('stay_fees.payment.vs') }}</dt><dd>{{ source.stay_fee_vs }}</dd></div>{% endif %}
+    {% if source.stay_fee_council_account or source.stay_fee_council_iban %}<div><dt>{{ t('stay_fees.payment.account') }}</dt><dd>{{ source.stay_fee_council_account or source.stay_fee_council_iban }}</dd></div>{% endif %}
+    {% if source.stay_fee_authority_name %}<div><dt>{{ t('apartment.form.stay_fee.authority_name_label') }}</dt><dd>{{ source.stay_fee_authority_name }}</dd></div>{% endif %}
+    {% if source.stay_fee_authority_databox %}<div><dt>{{ t('stay_fees.send.databox') }}</dt><dd>{{ source.stay_fee_authority_databox }}</dd></div>{% endif %}
+  </dl>
+  <form method="post" action="/stay-fees/{{ target.id }}/copy-setup" class="fee-step-actions">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <input type="hidden" name="source_id" value="{{ source.id }}">
+    <input type="hidden" name="return_to" value="{{ fee_return }}">
+    <button class="btn" type="submit">{{ t('stay_fees.copy.use') }}</button>
+    <a class="btn ghost" href="{{ fee_settings_url(target.id, fee_return) }}">{{ t('stay_fees.copy.other') }}</a>
+  </form>
+</section>
+{% endif %}{% endfor %}
 {% set fee_list = namespace(all_unset=true) %}
 {% for period in periods %}{% if not period.unset %}{% set fee_list.all_unset = false %}{% endif %}{% endfor %}
-<p class="fee-list-summary ui-sub" id="fee-list-summary">
-  {% set ns_count = namespace(ready=0) %}{% for period in periods %}{% if not period.unset %}{% set ns_count.ready = ns_count.ready + 1 %}{% endif %}{% endfor %}
-  {{ t('stay_fees.list.summary', period=(t('month.' ~ selected_month.month) ~ ' ' ~ selected_month.year), count=periods|length, set_up=ns_count.ready) }}
-</p>
-<p class="ui-sub" id="fee-list-email">{{ t('stay_fees.list.email_on' if stay_fee_emails else 'stay_fees.list.email_off') }} <a href="/settings/account#settings-stay-fee-emails">{{ t('stay_fees.list.email_change') }}</a></p>
-<div class="panel tight scroll-x list-cards lc-fees fee-periods{% if fee_list.all_unset %} fee-periods-unset{% endif %}">
-  <table class="table-cards{% if fee_list.all_unset %} fee-periods-table-unset{% endif %}">
+<div class="card stays-desk fee-periods{% if fee_list.all_unset %} fee-periods-unset{% endif %}">
+  <table>
     <thead>
       {% if fee_list.all_unset %}
       <tr>
@@ -122,26 +182,26 @@
       {% if period.unset %}
       <tr class="clickable-row" data-href="{{ fee_settings_url(apartment.id, fee_return) }}" tabindex="0" role="link" aria-label="{{ apartment.internal_name }}">
         <td data-label="{{ t('stay_fees.col.property') }}">
-          <a class="row-primary-link" href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ apartment.internal_name }}</a>
-          <div class="ui-sub">{{ apartment.addr_obec or '' }}</div>
+          <a class="row-primary-link stay-identity-link" href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ apartment.internal_name }}</a>
+          <small>{{ apartment.addr_obec or '' }}</small>
         </td>
         {% if fee_list.all_unset %}
-        <td data-label="{{ t('filter.status') }}"><span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('stay_fees.status.not_setup') }}</span></td>
-        <td class="nowrap row-actions" data-label=""><a class="ui-btn ui-btn-open ui-btn-compact" href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ t('stay_fees.setup.action') }}</a></td>
+        <td data-label="{{ t('filter.status') }}"><span class="pill p-n">{{ t('stay_fees.status.not_setup') }}</span></td>
+        <td class="nowrap row-actions" data-label=""><a class="btn sm" href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ t('stay_fees.setup.action') }}</a></td>
         {% else %}
         <td data-label="{{ t('stay_fees.col.period') }}">—</td>
         <td class="num" data-label="{{ t('stay_fees.col.liable') }}">—</td>
         <td class="num" data-label="{{ t('stay_fees.col.exempt') }}">—</td>
         <td class="num" data-label="{{ t('stay_fees.col.total') }}">—</td>
-        <td data-label="{{ t('filter.status') }}"><span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('stay_fees.status.not_setup') }}</span></td>
-        <td class="nowrap row-actions" data-label=""><a class="ui-btn ui-btn-open ui-btn-compact" href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ t('stay_fees.setup.action') }}</a></td>
+        <td data-label="{{ t('filter.status') }}"><span class="pill p-n">{{ t('stay_fees.status.not_setup') }}</span></td>
+        <td class="nowrap row-actions" data-label=""><a class="btn sm" href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ t('stay_fees.setup.action') }}</a></td>
         {% endif %}
       </tr>
       {% else %}
       <tr class="clickable-row" data-href="/stay-fees/{{ apartment.id }}?month={{ selected_month.strftime('%Y-%m') }}" tabindex="0" role="link" aria-label="{{ apartment.internal_name }}">
         <td data-label="{{ t('stay_fees.col.property') }}">
-          <a class="row-primary-link" href="/stay-fees/{{ apartment.id }}?month={{ selected_month.strftime('%Y-%m') }}">{{ apartment.internal_name }}</a>
-          <div class="ui-sub">{{ apartment.addr_obec or '' }} · {{ t('stay_fees.rate_line', rate=period.rate_czk) }}</div>
+          <a class="row-primary-link stay-identity-link" href="/stay-fees/{{ apartment.id }}?month={{ selected_month.strftime('%Y-%m') }}">{{ apartment.internal_name }}</a>
+          <small>{{ apartment.addr_obec or '' }} · {{ t('stay_fees.rate_line', rate=period.rate_czk) }}</small>
         </td>
         <td class="nowrap" data-label="{{ t('stay_fees.col.period') }}">
           {% if period.cadence == 'quarterly' %}
@@ -154,18 +214,14 @@
         <td class="num" data-label="{{ t('stay_fees.col.exempt') }}">{{ period.exempt_nights }}</td>
         <td class="num" data-label="{{ t('stay_fees.col.total') }}">{{ period.total_display }}</td>
         <td class="nowrap" data-label="{{ t('filter.status') }}">
-          {% if period.status == 'paid' %}
-            <span class="ui-badge ui-badge-done" data-tone="green">{{ t('stay_fees.status.paid') }}</span>
-          {% elif period.status == 'sent' %}
-            <span class="ui-badge ui-badge-action" data-tone="blue">{{ t('stay_fees.status.sent') }}</span>
-          {% elif period.status == 'saved' %}
-            <span class="ui-badge ui-badge-done" data-tone="green">{{ t('stay_fees.saved_version', version=period.version) }}</span>
+          {% if period.status == 'saved' %}
+            <span class="pill p-ok">{{ t('stay_fees.saved_version', version=period.version) }}</span>
           {% elif period.status == 'attention' %}
-            <span class="ui-badge ui-badge-action" data-tone="amber">{{ t('stay_fees.needs_setup') }}</span>
+            <span class="pill p-warn">{{ t('stay_fees.needs_setup') }}</span>
           {% elif period.status == 'waiting' %}
-            <span class="ui-badge ui-badge-attention" data-tone="teal">{{ t('stay_fees.status.in_progress') }}</span>
+            <span class="pill p-n">{{ t('stay_fees.status.in_progress') }}</span>
           {% else %}
-            <span class="ui-badge ui-badge-action" data-tone="blue">{{ t('stay_fees.status.ready') }}</span>
+            <span class="pill p-warn">{{ t('stay_fees.status.ready') }}</span>
           {% endif %}
         </td>
         <td class="nowrap row-actions" data-label="">{{ row_open('/stay-fees/' ~ apartment.id ~ '?month=' ~ selected_month.strftime('%Y-%m')) }}{{ row_menu_begin() }}<a class="row-menu-item" href="/stay-fees/{{ apartment.id }}?month={{ selected_month.strftime('%Y-%m') }}" role="menuitem">{{ t('stay_fees.open_report') }}</a>{{ row_menu_end() }}</td>
@@ -175,6 +231,26 @@
     </tbody>
   </table>
 </div>
+<div class="stays-phone">
+  <h2 class="sec">{{ t('stay_fees.title') }}</h2>
+  {% for period in periods %}
+    {% set apartment = period.apartment %}
+    {% if period.unset %}
+    {% set row_href = fee_settings_url(apartment.id, fee_return) %}
+    {% set row_status = t('stay_fees.status.not_setup') %}
+    {% set row_tone = 'p-n' %}
+    {% else %}
+    {% set row_href = '/stay-fees/' ~ apartment.id ~ '?month=' ~ selected_month.strftime('%Y-%m') %}
+    {% set row_status = t('stay_fees.status.ready') %}
+    {% set row_tone = 'p-warn' %}
+    {% if period.status == 'saved' %}{% set row_status = t('stay_fees.saved_version', version=period.version) %}{% set row_tone = 'p-ok' %}
+    {% elif period.status == 'attention' %}{% set row_status = t('stay_fees.needs_setup') %}{% set row_tone = 'p-warn' %}
+    {% elif period.status == 'waiting' %}{% set row_status = t('stay_fees.status.in_progress') %}{% set row_tone = 'p-n' %}
+    {% endif %}
+    {% endif %}
+    <a class="card stay" href="{{ row_href }}"><span class="sav">{{ (apartment.internal_name or '?')[:1] }}</span><span class="in"><b>{{ apartment.internal_name }}</b><small>{{ apartment.addr_obec or '' }}</small><span class="pill {{ row_tone }}">{{ row_status }}</span></span>{{ icon('chevron-right', 20, 'chev') }}</a>
+  {% endfor %}
+</div>
 {% else %}
 {% if filter_active and has_properties %}
 {{ empty_state(t('filter.no_results'), '', filter_reset_href, t('filter.reset'), primary=false) }}
@@ -182,4 +258,5 @@
 {{ empty_state(t('stay_fees.empty_title'), '', '/apartments/new', t('apartments.add')) }}
 {% endif %}
 {% endif %}
+</div>
 {% endblock %}
