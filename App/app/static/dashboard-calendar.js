@@ -284,6 +284,8 @@
     const monthEnd = month ? moveMonth(month, 1) : until;
     const from = month && month > week ? month : week, to = monthEnd < until ? monthEnd : until;
     const overlay = el("div", "cal-pills"), ends = [], hidden = [0, 0, 0, 0, 0, 0, 0];
+    let shown = 1; // 0905: stays that overlap stack in their own lanes; only a 4th and later stay folds into "+N"
+    const PILL_LANES = 3;
     state.events.filter(event => event.kind !== "cleaning" && event.start < to && event.end > from)
       .sort((a, b) => a.start.localeCompare(b.start) || b.end.localeCompare(a.end) || String(a.id).localeCompare(String(b.id)))
       .forEach(event => {
@@ -292,11 +294,12 @@
         if (lane < 0) lane = ends.length;
         ends[lane] = right;
         const column = distance(week, left), span = distance(left, right);
-        if (lane > 0) { for (let index = column; index < column + span; index++) hidden[index]++; return; }
+        if (lane >= PILL_LANES) { for (let index = column; index < column + span; index++) hidden[index]++; return; }
         const pill = el("a", "cal-pill" + (event.start < from ? " continues-start" : "") + (event.end > to ? " continues-end" : ""));
         pill.href = event.url; pill.draggable = false;
         pill.dataset.calEvent = String(event.id); pill.dataset.calFrom = left; pill.dataset.calTo = right;
         pill.style.gridColumn = String(column + 1) + " / span " + String(span);
+        pill.style.gridRow = String(lane + 1); shown = Math.max(shown, lane + 1);
         const name = labelFor(event);
         pill.title = name + " · " + fullDate(event.start) + " – " + fullDate(event.end);
         pill.setAttribute("aria-label", pill.title); pill.setAttribute("aria-haspopup", "dialog");
@@ -310,6 +313,7 @@
       more.setAttribute("aria-label", fullDate(date) + " · " + format("more", { count }));
       overlay.append(more);
     });
+    overlay.dataset.lanes = String(shown);
     return overlay;
   }
   function renderCalendar() {
@@ -383,7 +387,9 @@
       if (dots) {
         const row = el("div", "cal-week is-dots"); row.style.setProperty("--lanes", "1");
         row.append(days);
-        row.append(pillRow(week, until, month));
+        const pills = pillRow(week, until, month);
+        row.style.setProperty("--pl", pills.dataset.lanes);
+        row.append(pills);
         target.append(row);
         continue;
       }

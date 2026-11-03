@@ -227,7 +227,7 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, w
         word = "Úklid" if lang == "cs" else "Cleaning"
         assert all(word in chips.nth(index).inner_text() for index in range(2))
         assert day.locator(".cal-tile-more").count() == 0
-        day.locator(".cal-day-number").click()
+        day.locator(".cal-day-number").click(position={"x": 12, "y": 10})  # 0905: stacked pills cover the tile centre
         dialog = page.locator("[data-cal-day-dialog]")
         assert dialog.is_visible()
         dialog_marker = dialog.locator(f'.cal-day-list .cal-event.is-cleaning-marker[data-cal-event="{marker["id"]}"]')
