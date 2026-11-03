@@ -104,7 +104,7 @@ def test_phone_window_lists_checkins_from_three_days_back(base, window_host):
 def test_phone_far_stay_shows_next_stay_card(base, far_host):
     playwright, browser, context, page = _page(base, far_host, "/", 390)
     cards = page.locator(".hs .card").evaluate_all(VISIBLE)
-    needs = page.locator(".card.need").evaluate_all(VISIBLE)
+    needs = page.locator(".needs-you-item.need").evaluate_all(VISIBLE)
     _close(playwright, browser, context)
     assert needs >= 1, "the 10-days-ahead host should have a need card (precondition)"
     assert cards == 1, f"only stay 10 days ahead: want one visible .hs .card (next stay), found {cards}"
@@ -117,7 +117,7 @@ def test_phone_calendar_tab_hides_today(base, window_host):
         "h1": page.locator("h1").evaluate_all(VISIBLE),
         "hs": page.locator(".hs").evaluate_all(VISIBLE),
         "needs_action": page.locator("#needs-action").evaluate_all(VISIBLE),
-        "need_cards": page.locator(".card.need").evaluate_all(VISIBLE),
+        "need_cards": page.locator(".needs-you-item.need").evaluate_all(VISIBLE),
         "more": page.locator(".needs-you-more").evaluate_all(VISIBLE),
         "ph_top": page.locator(".ph-top").evaluate_all(VISIBLE),
     }
