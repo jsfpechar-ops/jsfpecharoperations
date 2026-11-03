@@ -62,4 +62,4 @@ Append-only.
 - 2026-10-31 | D3 detail: goose v3.29.0, asset goose_linux_x86_64, SHA-256 cc56e2f75532a4dd52f5ef2d31db0121e91079a9c2617bc0ad4e04e2d41c228b | owner | 0465b
 - 2026-11-01 | Go: module go/, stdlib, pgx v5, go-ntlmssp v0.1.1, go-qrcode (11-02); crypto via Python fixtures | owner (waiver) | 0474, 0481, 0684
 - 2026-11-02 | [workflow] Read hook: over 350 lines needs a limit; ALLOW_FULL_READ=1 | owner | 0810
-- 2026-11-02 | Signup box: unticked marketing opt-in; lawyer to confirm | owner | 0836- 2026-11-02 | Address autofill from official register RÚIAN (ČÚZK), server-side, typed text only, none stored; "do the official address register" | owner | 0884, #731
+- 2026-11-02 | Signup box: unticked marketing opt-in; lawyer to confirm | owner | 0836- 2026-11-02 | Address autofill from RÚIAN (ČÚZK), server-side, typed text only; "do the official address register" | owner | 0884
