@@ -1520,11 +1520,6 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     var recents = [];
     try { recents = JSON.parse(localStorage.getItem(recentKey) || "[]"); } catch (error) { recents = []; }
 
-    document.querySelectorAll("[data-command-shortcut]").forEach(function (hint) {
-      var platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
-      hint.textContent = /mac|iphone|ipad|ipod/i.test(platform) ? "⌘ K" : "Ctrl K";
-    });
-
     function typingTarget(target) {
       return target && (target.matches("input, textarea, select") || target.isContentEditable);
     }
