@@ -41,7 +41,7 @@
 
 **Dashboard calendar:** `routes/dashboard_calendar.py` provides bounded, owner-scoped booking data; `_dashboard_calendar.html` and `dashboard-calendar.js`/CSS implement views, selection and dialogs. Manual creation remains in `routes/admin.py`.
 
-**Host Turbo (#709):** With `show_nav`, `base.html` loads Turbo 8; host links swap `<body>`. `app.js` runs `UbyHost.initPage` on `turbo:load`, keeps forms as full loads, and uses `claimNode` / `UbyHost.onPage` so bindings are safe after a swap; mark downloads with `data-turbo="false"`. Details: briefs `0501`–`0508`, [test-map](test-map.md) Turbo row.
+**Host Turbo (#709):** With `show_nav`, `base.html` loads Turbo 8; host links swap `<body>`. `app.js` runs `UbyHost.initPage` on `turbo:load`, keeps forms as full loads, and uses `claimNode` / `UbyHost.onPage` so bindings are safe after a swap; mark downloads with `data-turbo="false"`. Details: briefs `0501`–`0508`; tests `test_050*_browser.py`, `test_navigation_prefetch.py`.
 
 **Host property hub:** `apartment_form.html` uses `?view=overview|bookings|settings`; settings select `section=property|guests|reporting|automation|lock`. Guest links and timing are per property; `/apartments#property-summaries` is the cross-property summary.
 
