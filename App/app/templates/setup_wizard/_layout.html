@@ -3,7 +3,7 @@
 {% set body_kind = 'form' %}
 {% block title %}{{ t('wizard.title', name=apartment.internal_name) }}{% endblock %}
 {% block page_title %}{% endblock %}
-{% block meta %}{% if wizard_number %}{{ t('wizard.count', n=wizard_number, total=wizard_total, step=t('wizard.step.' ~ wizard_step) ~ (t('wizard.optional_suffix') if wizard_step in ('stay_fee', 'door_lock') else '')) }}{% elif guide %}{{ t('wizard.count', n=guide.number, total=guide.total, step=t('wizard.step.' ~ guide.key) ~ (t('wizard.optional_suffix') if guide.key in ('stay_fee', 'door_lock') else '')) }}{% endif %}{% endblock %}
+{% block meta %}{% if wizard_number %}{{ t('wizard.count', n=wizard_number, total=wizard_total, step=t('wizard.step.' ~ wizard_step) ~ (t('wizard.optional_suffix') if wizard_step in ('stay_fee', 'door_lock') else '')) }}{% elif guide and wizard_step != 'try_it' %}{{ t('wizard.count', n=guide.number, total=guide.total, step=t('wizard.step.' ~ guide.key) ~ (t('wizard.optional_suffix') if guide.key in ('stay_fee', 'door_lock') else '')) }}{% endif %}{% endblock %}
 {% block body %}
 {% from "_components.html" import help_tip, copy_button, progress_pill, guest_count, nav_icon with context %}
 {% set base_setup = '/apartments/' ~ apartment.id ~ '/' ~ 'setup' %}
@@ -12,7 +12,7 @@
   <div class="setup-wizard-head">
     <div class="wiz-title">
     {% set count_line = self.meta() | trim %}{% if count_line %}<p class="wiz-count">{{ count_line }}</p>{% endif %}
-    {% if guide %}
+    {% if guide and wizard_step != 'try_it' %}
     <div class="setup-wizard-meter">
       <ol class="setup-wizard-progress" aria-hidden="true">
         {% for item in guide.progress %}
@@ -24,10 +24,12 @@
     {% endif %}
     <h1 class="big">{{ t('wizard.title', name=apartment.internal_name) }}</h1>
     </div>
+    {% if wizard_step != 'try_it' %}
     <form method="post" action="{{ base_setup }}" class="setup-wizard-exit">
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
       <button class="ui-btn ui-btn-secondary" type="submit" name="action" value="hide" formnovalidate>{{ t('wizard.exit') }}</button>
     </form>
+    {% endif %}
   </div>
   <div class="setup-wizard-body">
     {% set step_icons = {'property': 'property', 'calendar': 'calendar', 'police': 'report', 'automation': 'automation', 'stay_fee': 'coins', 'door_lock': 'lock', 'guest_link': 'link', 'try_it': 'users'} %}
@@ -44,7 +46,7 @@
   </div>
   <footer class="setup-wizard-foot">
     {% if prev_step %}
-    <a class="ui-btn ui-btn-quiet setup-wizard-back" href="{{ base_setup }}/{{ prev_step }}">{{ t('wizard.back') }}</a>
+    <a class="ui-btn ui-btn-quiet setup-wizard-back" href="{{ base_setup }}/{{ prev_step }}">{{ t('wizard.try_it.leave') if wizard_step == 'try_it' else t('wizard.back') }}</a>
     {% else %}
     <span></span>
     {% endif %}

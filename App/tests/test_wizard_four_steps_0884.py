@@ -32,7 +32,7 @@ def test_four_required_steps():
 
 def test_retired_step_urls_go_to_done(host):  # noqa: F811
     flat = _full_apartment(host)
-    for step in RETIRED:
+    for step in [s for s in RETIRED if s != "try_it"]:  # try_it is an optional page again
         response = host["client"].get(f"/apartments/{flat['id']}/setup/{step}", follow_redirects=False)
         assert response.status_code == 303, step
         assert _path(response) == f"/apartments/{flat['id']}/setup/done", step
