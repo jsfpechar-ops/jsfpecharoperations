@@ -41,6 +41,7 @@
 
   <div class="pp-bk-actions">
     {% if v.has_invoice %}<a class="ui-btn ui-btn-secondary" href="{{ base }}/invoice.pdf" data-no-prefetch>{{ t('bk.invoice') }}</a>{% endif %}
+    {% if v.has_correction %}<a class="ui-btn ui-btn-secondary" href="{{ base }}/correction.pdf" data-no-prefetch>{{ t('bk.btn.correction') }}</a>{% endif %}
     {% if v.state == 'paid' %}<a class="ui-btn ui-btn-secondary" href="{{ base }}/calendar.ics" data-no-prefetch>{{ t('bk.calendar') }}</a>{% endif %}
   </div>
   <p class="pp-bk-fine">{{ t('bk.link_note') }}</p>

@@ -60,6 +60,9 @@ def view(booking: Dict[str, Any], lang: str) -> Dict[str, Any]:
         "can_cancel": can_cancel,
         "refund_now": booking_cancel.refund_now(booking, by_host=False) if can_cancel else 0,
         "has_invoice": bool(booking.get("invoice_id")),
+        "has_correction": bool(booking.get("invoice_id")) and db.query_one(
+            "SELECT id FROM invoice WHERE corrects_invoice_id = ?",
+            (int(booking["invoice_id"]),)) is not None,
     }
 
 

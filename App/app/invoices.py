@@ -602,11 +602,13 @@ def pdf_view_row(cur, invoice_id: int) -> Dict[str, Any]:
     )
     row["paid_via_label"] = custom_paid_via_label(row.get("paid_via"))
     row["corrects_number"] = None
+    row["partial_correction"] = False
     if row.get("corrects_invoice_id"):
         src = cur.execute(
-            "SELECT number FROM invoice WHERE id = ?", (row["corrects_invoice_id"],)
+            "SELECT number, total_haler FROM invoice WHERE id = ?", (row["corrects_invoice_id"],)
         ).fetchone()
         row["corrects_number"] = src["number"] if src else None
+        row["partial_correction"] = bool(src) and abs(row["total_haler"]) < abs(src["total_haler"])
     return row
 
 
@@ -776,6 +778,57 @@ def cancel(invoice_id: int, reason: str, correction_date: Optional[str], actor_u
     db.audit(
         "invoice_corrected",
         f"orig={invoice_id} new={new_id} kind={kind} reason={reason.strip()}",
+        owner_user_id=original["owner_user_id"],
+    )
+    return new_id
+
+
+def correct_partial(invoice_id: int, refund_czk: int, reason: str, actor_user_id: Optional[int], *, today: date) -> int:
+    """Credit note (non-payer storno, payer ODD) for part of an issued invoice.
+
+    One negative line for the refunded amount; the original stays untouched.
+    """
+    from . import host_i18n
+
+    original = db.query_one("SELECT * FROM invoice WHERE id = ?", (invoice_id,))
+    if not original or original["kind"] != "invoice":
+        raise ValueError("not_cancellable")
+    if not reason or len(reason.strip()) < 5:
+        raise ValueError("reason_required")
+    if db.query_one("SELECT id FROM invoice WHERE corrects_invoice_id = ?", (invoice_id,)):
+        raise ValueError("already_corrected")
+    haler = int(refund_czk) * 100
+    if not 0 < haler < int(original["total_haler"]):
+        raise ValueError("bad_amount")
+    items = db.query(
+        "SELECT * FROM invoice_item WHERE invoice_id = ? ORDER BY position", (invoice_id,)
+    )
+    stay = items[0]
+    payer = original["vat_status"] == "payer"
+    kind = "corrective" if payer else "storno"
+    base = vat = None
+    if payer:
+        rate = int(stay["vat_rate"])
+        base = int((Decimal(haler) / (1 + Decimal(rate) / 100)).to_integral_value(rounding=ROUND_HALF_UP))
+        vat = haler - base
+    draft = _draft_from_original(original, [], kind, reason.strip(), today.isoformat(), today)
+    draft["items"] = [{
+        "kind": stay["kind"],
+        "description": host_i18n.translate(original["lang"] or "cs", "site_booking.invoice.partial_item"),
+        "quantity": 1,
+        "unit": stay["unit"],
+        "vat_rate": stay["vat_rate"],
+        "base_haler": -base if payer else None,
+        "vat_haler": -vat if payer else None,
+        "gross_haler": -haler,
+    }]
+    draft["total_haler"] = -haler
+    draft["total_base_haler"] = -base if payer else None
+    draft["total_vat_haler"] = -vat if payer else None
+    new_id, _number = _write_issued(draft, actor_user_id)
+    db.audit(
+        "invoice_corrected",
+        f"orig={invoice_id} new={new_id} kind={kind} partial=1 reason={reason.strip()}",
         owner_user_id=original["owner_user_id"],
     )
     return new_id

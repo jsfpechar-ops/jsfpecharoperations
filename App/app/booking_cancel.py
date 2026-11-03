@@ -68,8 +68,7 @@ def cancel(booking_id: int, *, by_host: bool, now: Optional[datetime] = None) ->
         if amount >= int(booking["total_czk"]):
             _storno_invoice(booking_site.get(booking_id) or booking)
         elif booking.get("invoice_id"):
-            db.audit("site_invoice_needs_correction", f"id={booking_id} amount={amount}",
-                     owner_user_id=owner)
+            _correct_invoice_partial(booking, amount)
     _mail_cancelled(booking_site.get(booking_id) or booking, amount, by_host)
     return {"error": None, "refund_czk": amount}
 
@@ -112,6 +111,20 @@ def _storno_invoice(booking: Dict[str, Any]) -> None:
                         None, None, today=claim.prague_today())
     except ValueError as exc:
         log.warning("site booking %s: no storno (%s)", booking["id"], exc)
+        db.audit("site_invoice_needs_correction", f"id={booking['id']} reason={exc}",
+                 owner_user_id=int(booking["owner_user_id"]))
+
+
+def _correct_invoice_partial(booking: Dict[str, Any], amount: int) -> None:
+    """Credit note for the refunded part. Never undoes or blocks the refund, mail or status."""
+    from . import invoices
+
+    try:
+        invoices.correct_partial(int(booking["invoice_id"]), amount,
+                                 host_i18n.translate("cs", "site_booking.invoice.cancel_reason"),
+                                 None, today=claim.prague_today())
+    except Exception as exc:
+        log.warning("site booking %s: no credit note (%s)", booking["id"], exc)
         db.audit("site_invoice_needs_correction", f"id={booking['id']} reason={exc}",
                  owner_user_id=int(booking["owner_user_id"]))
 
