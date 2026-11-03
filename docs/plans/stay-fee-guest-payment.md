@@ -113,13 +113,24 @@ on each render (never stored):
   (initial GET and the 422 re-render with the guest's values), so the number
   always reflects what they filled in. No live JS recalculation (rule 6,
   no duplicated exemption logic in the browser).
-- **Residence card field order (owner question, decided):** country → city →
-  street. The two fields the same-obec rule reads (`res_country`, `res_city`)
-  come first, which also matches how the existing nationality→residence sync
-  JS treats `res_country` as the primary field. Pure template reorder in the
-  one residence card of `guest/form.html`; labels, `required`, and
-  `autocomplete` attributes unchanged, validation untouched, and nothing
-  about the fee rule is hinted to the guest.
+- **Residence card field order (owner decision):** country → city → street.
+  The two fields the same-obec rule reads (`res_country`, `res_city`) come
+  first, which also matches how the existing nationality→residence sync JS
+  treats `res_country` as the primary field. Pure template reorder in the one
+  residence card of `guest/form.html`; labels, `required`, and `autocomplete`
+  attributes unchanged, validation untouched, and nothing about the fee rule
+  is hinted to the guest.
+- **Czech address integration in the guest form (owner decision):** with
+  country first, when the picked country is CZ the city/street inputs get the
+  RÚIAN autocomplete — reuse `ruian.suggest()` behind a new **token-scoped**
+  guest route (e.g. `GET /l/{token}/ruian-suggest?q=`), rate-limited
+  (`ruian.rate_limited(apartment.owner_user_id)` + the guest-route throttle),
+  enabled only for CZ client-side, and **progressive enhancement only**: without
+  JS the plain free-text inputs work exactly as today (rule 6). The
+  autocomplete improves the `res_city` quality the same-obec match relies on;
+  it never reveals the exemption — the panel still just shows the amount due.
+  Bump the `?v=` cache key in `templates/guest/base.html` for the changed
+  guest JS (rules.md guest-pages).
 - Hub panel shows when the computed due > 0 and all expected guests are
   registered (`remaining <= 0` or no expected count).
 
@@ -243,9 +254,14 @@ form-end estimate card in `guest/form.html` (`_form_context`);
 `legal_notice_fee_*` section in `_legal_notice.html` + keys in 6 languages +
 `UBYHOST_GUEST_NOTICE_VERSION` bump (counsel sign-off first); guest i18n.
 
-**Tests & gates.** Test-map rows for guest pages and `stay_fee`; browser +
-geometry tests and one 390 px screenshot per changed guest page (rules 7/10);
-`scripts/context_lint.py`; no new dependency.
+**Tests & gates.** Test-map rows for guest pages and `stay_fee`; per
+`docs/context/rules.md#guest-pages`: `tests/test_guest_browser_e2e.py` and
+`tests/test_host_geometry.py` with **0 skipped**, plus one 390 px screenshot
+per changed guest page (rules 7/10), following the Arrival-lane rules in
+`docs/DESIGN.md`; `scripts/context_lint.py`; no new dependency. EN+CS (here:
+all 6 guest languages) in the same commit. Implementation goes to a Haiku
+executor brief in `docs/tasks/` per `AGENTS.md` — the orchestrator plans, the
+executor builds.
 
 ## 8. Explicitly out of scope
 
