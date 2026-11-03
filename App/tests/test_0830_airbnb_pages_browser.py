@@ -347,6 +347,11 @@ def test_0831G_page_help(base, dashboard_rich_host, seeded):
                         problems.append(f"{path} {width}: help body is open by default")
                     before = page.evaluate("() => document.documentElement.scrollHeight")
                     page.locator(".page-help-btn").first.click()
+                    # The open animation can start a frame after settle_motion() first looks (slow CI), so wait
+                    # for the box to exist before measuring it.
+                    page.wait_for_function(
+                        "() => { const b = document.querySelector('.page-help-body'); const r = b && b.getBoundingClientRect(); return !!r && r.width > 1 && r.height > 1; }"
+                    )
                     settle_motion(page)
                     pb = body.bounding_box()
                     viewport = page.viewport_size
