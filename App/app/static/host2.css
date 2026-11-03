@@ -1171,6 +1171,10 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .invoice-use-price{margin-top:var(--space-3);min-height:var(--control-h-phone)}
 .invoice-use-price[hidden]{display:none}
 /* 0888 invoice use price (end) */
+/* 0900 layout lint: legacy-shell headings and fact rows wrap instead of squeezing */
+.host-workspace .ui-section-h { flex-wrap: wrap; gap: var(--space-2) var(--space-3); }
+.host-workspace .ui-facts div { flex-wrap: wrap; }
+.host-workspace .ui-facts dt { min-width: min(100%, 9rem); }
 /* 0896: page help "?" on old-shell pages: a plain round button, no marker or chevron */
 .host-workspace .page-help { display: inline-block; flex: 0 0 auto; position: relative; vertical-align: middle; margin-left: var(--space-1); font-weight: 400; line-height: 1; }
 .host-workspace summary.page-help-btn { display: inline-flex; flex: 0 0 2.75rem; justify-content: center; align-items: center; box-sizing: border-box; width: 2.75rem; height: 2.75rem; margin: -0.8rem; padding: 0; background: none; border: 0; list-style: none; cursor: pointer; }

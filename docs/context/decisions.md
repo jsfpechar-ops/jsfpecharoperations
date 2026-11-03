@@ -61,8 +61,10 @@ Append-only.
 - 2026-11-01 | Host redesign: vendored Hotwire Turbo (MIT) for page-body swaps; owner OKs mockups first | owner | #614
 - 2026-10-31 | D3 detail: goose v3.29.0, asset goose_linux_x86_64 (SHA-256 pinned in ci.yml) | owner | 0465b
 - 2026-11-01 | Go: module go/, stdlib, pgx v5, go-ntlmssp v0.1.1, go-qrcode (11-02) | owner (waiver) | 0474, 0481, 0684
-- 2026-11-02 | [workflow] Read hook: over 350 lines needs a limit (ALLOW_FULL_READ=1) | owner | 0810
+- 2026-11-02 | [workflow] Read hook: 350+ lines needs a limit | owner | 0810
 - 2026-11-02 | Signup box: unticked marketing opt-in; lawyer to confirm | owner | 0836
-- 2026-11-02 | Address autofill from RÚIAN (ČÚZK), server-side, typed text only | owner | 0884
-- 2026-11-03 | Try it rehearsal: optional page from the finish page, Skip and Leave | owner | 0884
-- 2026-11-02 | Booking site: CS/EN via ?lang=; one HMAC link per booking; guest cancel refunds per policy, host cancel in full | owner | 0818-0821
+- 2026-11-02 | Address autofill from RÚIAN, server-side | owner | 0884
+- 2026-11-03 | Try it rehearsal: optional page, Skip and Leave | owner | 0884
+- 2026-11-02 | Booking site: CS/EN, one HMAC link per booking, cancel refunds per policy | owner | 0818-0821
+
+- 2026-11-03 | [workflow] UX gate: threads self-check UX (lint + screenshots) | owner | 0900

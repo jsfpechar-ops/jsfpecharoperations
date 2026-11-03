@@ -342,7 +342,7 @@ body.v2 .props-phone .cover.c1{background:linear-gradient(135deg,#3f6f8f,#7fa8c2
 body.v2 .props-phone .cover.c2{background:linear-gradient(135deg,#5c7a4f,#9db58c)}
 /* 0532 pass 9: from 1024 px a list row is one line (mockup 53 px): the copy button is 24 px, not 60 px. Pass 11: the setup chips may wrap when they do not fit (no sideways scroll); name and address cells are one line with ellipsis */
 @media (min-width:1024px){body.v2 .props-card .setup .st{height:24px}body.v2 .props-card .copy-btn{height:28px;min-height:28px;padding-block:6px}body.v2 .props-card .copy-btn svg{width:16px;height:16px}body.v2 .props-card .row-primary-link .property-identity > span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}body.v2 .props-card > table td:nth-child(1),body.v2 .props-card > table td:nth-child(2){max-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
-@media (min-width:1024px){body.v2 .props-card > table td:nth-child(1) .row-primary-link{display:block;max-width:100%;min-width:0;overflow:hidden}}
+@media (min-width:1024px){body.v2 .props-card > table td:nth-child(1) .row-primary-link{display:block;max-width:100%;min-width:0;overflow:hidden}body.v2 .props-card .row-primary-link .property-identity{display:flex;max-width:100%}}
 @media (min-width:1024px){body.v2 .props-card > table th:nth-child(1),body.v2 .props-card > table td:nth-child(1){width:22%}body.v2 .props-card > table th:nth-child(2),body.v2 .props-card > table td:nth-child(2){width:26%}}
 
 /* 0534 property page */
@@ -2178,6 +2178,12 @@ body.v2 .invoice-use-price[hidden]{display:none}
 body.v2 .props-card thead{display:table-header-group}
 body.v2 .props-card thead,body.v2 .props-card thead th{background:transparent}
 @media (min-width:1024px) and (max-width:1100px){body.v2 .stay-fees-page .card.stays-desk th,body.v2 .stay-fees-page .card.stays-desk td{padding-left:6px;padding-right:6px}}
+/* 0900 layout lint: no squeezed headings, labels or metrics on narrow phones */
+body.v2 .ui-section-h{flex-wrap:wrap;gap:6px 12px}
+body.v2 dl.ui-facts>div{flex-wrap:wrap}
+body.v2 dl.ui-facts>div>dt{min-width:min(100%,9rem)}
+@media (max-width:359px){body.v2 .stay-metrics,body.v2 .detail-hero,body.v2 .report-metrics{grid-template-columns:1fr}}
+@media (min-width:1024px){body.v2 .stays-desk td.col-name{width:18%;max-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
 /* 0896: notification bubbles (old style back): X sits in the top-right corner, text never runs under it, bubbles never overlap. */
 body.v2 .notification-stack{display:grid;gap:12px;width:100%;max-width:none;margin:0 0 16px;pointer-events:auto}
 body.v2 .notification-bubble{position:relative;box-sizing:border-box;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 2px 8px rgba(32,32,30,.08);overflow:hidden}

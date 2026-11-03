@@ -20,8 +20,8 @@
     "v": "20261103-0900"
   },
   "app2.css": {
-    "sha256": "86bfaddf5a7fe5797d97359bdfdf73ba6375e3f10428dc7e5905214c84765045",
-    "v": "20261103-0900e"
+    "sha256": "015d6871167b4b7fa37619ff24395999ddc756818b6df2c376d1b76fdcc38de8",
+    "v": "20261103-0900f"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -52,8 +52,8 @@
     "v": "20260915a"
   },
   "dashboard-calendar.css": {
-    "sha256": "184c8458a68fb5a5297d939e016cd97912083d03d96858f8dfaba226913f6fe6",
-    "v": "20261103-0896b"
+    "sha256": "d84e623660bd694485b8fcf1740b6868cb644f0f9a922196f465db17d667ccad",
+    "v": "20261103-0900f"
   },
   "dashboard-calendar.js": {
     "sha256": "238add34c346ccd4c2ec1a5dd511f745fe794fec6c1480fd90a8e21f20bb88ec",
@@ -108,8 +108,8 @@
     "v": "20261102-0507"
   },
   "host2.css": {
-    "sha256": "c846bfeef065b820e454de881f2aeb1dcb90b467d551aa918de5923d53380b67",
-    "v": "20261103-0896c"
+    "sha256": "eeabc6acc8be792a51d3b433002a58cd22dce1208936e9cb9f886797fcdf9ccd",
+    "v": "20261103-0900f"
   },
   "landing.css": {
     "sha256": "a9218c2d33c3d07d955b0c630d194ef81801834baaed1cb3615387222ce50ba5",
