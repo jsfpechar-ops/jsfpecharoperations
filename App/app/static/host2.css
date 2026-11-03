@@ -1172,6 +1172,6 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .invoice-use-price[hidden]{display:none}
 /* 0888 invoice use price (end) */
 /* 0900 layout lint: legacy-shell headings and fact rows wrap instead of squeezing */
-.host-workspace .ui-section-h { flex-wrap: wrap; gap: 6px 12px; }
+.host-workspace .ui-section-h { flex-wrap: wrap; gap: var(--space-2) var(--space-3); }
 .host-workspace .ui-facts div { flex-wrap: wrap; }
 .host-workspace .ui-facts dt { min-width: min(100%, 9rem); }
