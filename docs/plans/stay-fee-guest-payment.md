@@ -275,7 +275,44 @@ executor builds.
   anything; multi-currency (CZK only).
 - Live JS fee recalculation in the form (server-rendered estimate only).
 
-## 9. Open questions (not blocking)
+## 9. Gap check (2026-11-03, orchestrator review)
+
+Verified against the code; the material findings:
+
+- **Sealed filings are safe.** `stay_fee_filing.frozen_summary()` renders sealed
+  periods from the frozen row, so adding the same-obec rule to the *live*
+  per-guest logic does not rewrite already-filed periods. Live, unsealed
+  periods (list page, `stay_fee_auto` e-mails) will drop resident guests after
+  deploy — legally correct, but flag it in the PR and add a decisions.md line.
+- **QR/IBAN rails need a host account.** `payment_request.qr_payload` requires
+  `legal_entity.iban`/`bank_account`; the settings save must warn (or block)
+  when `qr`/`iban` is enabled but the owner has no account, and the panel must
+  hide those rails if it is missing at render time.
+- **Guest RÚIAN route throttling.** `rate_limit.record(scope, key)` is generic;
+  the guest suggest route uses a scope like `ruian_guest` keyed by link token +
+  client IP, on top of `ruian.rate_limited(owner)`.
+- **pg twin pattern.** `migrations_pg/00005` shows the twin file needs
+  `+goose Up`, `IF NOT EXISTS` statements, **and** an
+  `INSERT INTO schema_migrations … ON CONFLICT DO NOTHING` for SQLite version
+  36 — the build brief must copy that exactly (next: `0036` / `00006`).
+- **Never reveal *why* the fee is 0.** Statutory exemptions (under 18, >60
+  nights) are public law and may be stated (they are in the legal notice). The
+  **same-obec exemption must never be explained to the guest**: when the
+  computed amount is 0 because of residence, the form estimate and hub panel
+  show nothing or a neutral "no fee due" — never "because you live in this
+  city". The register (host-facing) records the reason "resident of the obec".
+- **Rate change mid-stay:** the panel uses the current `stay_fee_rate_czk` ×
+  counted days; the register splits per period at sealed rates. No rate
+  history exists, so the panel states "at the current rate". Accepted for v1
+  (rates change rarely; the council PDF remains the legal artefact).
+- **Cash rail without a note:** if enabled with an empty note, render a default
+  "pay in cash to the host at check-in" line (host can customize).
+- **Privacy page:** no change needed — the feature stores no guest personal
+  data; the duty + payee wording lives in the form's legal notice (above).
+- **Delivery:** PR template sections filled, CI green, merge only via
+  `scripts/merge-pr-on-green.sh`, never push to `main` (AGENTS.md rule 8).
+
+## 10. Open questions (not blocking)
 
 1. Counsel: confirm the same-obec exemption rule + its register reason
    wording, and the `legal_notice_fee_*` copy (payee wording, "not tracked"
