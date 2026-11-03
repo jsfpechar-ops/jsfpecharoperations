@@ -9,13 +9,8 @@
   <p class="auth-lede">{{ t('login.link.expired.locked') if locked else t('login.link.expired.body') }}</p>
   <a class="auth-submit" href="/login?lang={{ lang }}">{{ t('login.link.expired.action') }}</a>
   {% else %}
-  <div class="auth-title-row">
-    <h1 class="auth-title">{{ t('login.link.invite_title') if invite else t('login.link.title') }}</h1>
-    <details class="auth-q">
-      <summary aria-label="{{ t('help.tip.label') }}">?</summary>
-      <p class="auth-lede">{{ t('login.link.lede') }}</p>
-    </details>
-  </div>
+  <h1 class="auth-title">{{ t('login.link.invite_title') if invite else t('login.link.title') }}</h1>
+  <p class="auth-lede">{{ t('login.link.lede') }}</p>
   <form method="post" action="/login/link" class="auth-form">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <input type="hidden" name="t" value="{{ token }}">

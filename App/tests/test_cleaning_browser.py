@@ -710,7 +710,7 @@ def test_phone_cleaning_calendar_tags_only(workspace, origin, width):
         tagged.first.locator(".cal-day-number").click()
         assert page.locator("[data-cal-day-dialog][open]").is_visible()
         assert page.locator("[data-cal-day-list] .cal-event").count() >= 1
-        assert page.locator("[data-cal-day-list] .cal-event:not(.is-cleaning-marker)").count() == 0
+        assert page.locator("[data-cal-day-list] .cal-event.is-cleaning-marker").count() >= 1  # 0896: stays are listed too
         page.locator("[data-cal-day-add]").click()
         assert page.locator("[data-cal-create]").is_visible()
         assert page.locator('[data-cal-type-choice="cleaning"]').get_attribute("aria-pressed") == "true"
@@ -917,7 +917,7 @@ def test_0891_cleaning_airbnb_month(workspace, origin, width):
         page.evaluate("window.scrollTo(0, 0)")
         page.wait_for_timeout(300)
         assert page.locator(".cal-month").count() == 6
-        assert page.locator(".cal-pill").count() == 0
+        assert page.locator(".cal-pill").count() >= 1  # 0896: stay pills show their end dates
         assert page.locator(".cal-day.has-cleaning").count() >= 1
         gap = 12 if width >= 768 else 4
         rows = page.evaluate(ROWS_0891)

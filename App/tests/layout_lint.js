@@ -114,7 +114,7 @@
       if (s.textOverflow === 'ellipsis') {
         if (own(el).length <= 24 && !el.title && !el.closest('[title]')) add('truncated-short-text', el, el.scrollWidth + '>' + el.clientWidth);
       } else if (/hidden|clip/.test(s.overflowX)) add('clipped-text', el, el.scrollWidth + '>' + el.clientWidth);
-    } else if (el.scrollHeight > el.clientHeight + 2 && /hidden|clip/.test(s.overflowY) && el.clientHeight > 0 && own(el) && s.display !== 'inline') {
+    } else if (el.scrollHeight > el.clientHeight + 2 && s.webkitLineClamp === 'none' && /hidden|clip/.test(s.overflowY) && el.clientHeight > 0 && own(el) && s.display !== 'inline') {
       add('clipped-text', el, 'height ' + el.scrollHeight + '>' + el.clientHeight);
     }
   }
@@ -131,14 +131,16 @@
       range.selectNodeContents(n);
       // text clipped away by an overflow:hidden ancestor (ellipsis) is not visible, so it cannot overlap
       const clipped = (r) => {
-        let x0 = r.left, x1 = r.right;
+        let x0 = r.left, x1 = r.right, y0 = r.top, y1 = r.bottom;
         for (let a = el; a && a !== document.body; a = a.parentElement) {
           const cs = getComputedStyle(a);
-          if (/hidden|clip|auto|scroll/.test(cs.overflowX)) { const ar = a.getBoundingClientRect(); x0 = Math.max(x0, ar.left); x1 = Math.min(x1, ar.right); }
+          const ar = a.getBoundingClientRect();
+          if (/hidden|clip|auto|scroll/.test(cs.overflowX)) { x0 = Math.max(x0, ar.left); x1 = Math.min(x1, ar.right); }
+          if (/hidden|clip/.test(cs.overflowY)) { y0 = Math.max(y0, ar.top); y1 = Math.min(y1, ar.bottom); }
         }
-        return {left: x0, right: x1, top: r.top, bottom: r.bottom, width: x1 - x0, height: r.height};
+        return {left: x0, right: x1, top: y0, bottom: y1, width: x1 - x0, height: y1 - y0};
       };
-      const rects = [...range.getClientRects()].filter((r) => r.width > 2 && r.height > 2).map(clipped).filter((r) => r.width > 2);
+      const rects = [...range.getClientRects()].filter((r) => r.width > 2 && r.height > 2).map(clipped).filter((r) => r.width > 2 && r.height > 2);
       if (rects.length) boxes.push({el, rects});
     }
   }

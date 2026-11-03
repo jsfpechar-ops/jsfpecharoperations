@@ -134,7 +134,7 @@ _AUDIT_JS = """(isBack) => {
   // 12 px between neighbouring interactive or text boxes in the main lane
   const SEL = 'a[href], button, input:not([type=hidden]), select, textarea, .settings-pill, .settings-value-card, .airbnb-index-row, h1, h2, h3, h4, p, label, li';
   const boxes = [...root.querySelectorAll(SEL)].filter(el => vis(el) &&
-    !el.closest('.help-tip-body, .help-tip, summary, details:not([open]), table, .ui-table-stack, script, style, .row-menu, nav, .stays-links'));
+    !el.closest('.help-tip-body, .help-tip, summary, details:not([open]), table, .ui-table-stack, script, style, .row-menu, .sr-only, nav, .stays-links'));
   const describe = el => (el.tagName.toLowerCase() + ': ' + el.textContent.trim().replace(/\\s+/g, ' ').slice(0, 20));
   let pairs = 0;
   for (let i = 0; i < boxes.length && pairs < 8; i++) for (let j = i + 1; j < boxes.length && pairs < 8; j++) {
@@ -347,11 +347,23 @@ def test_0831G_page_help(base, dashboard_rich_host, seeded):
                         problems.append(f"{path} {width}: help body is open by default")
                     before = page.evaluate("() => document.documentElement.scrollHeight")
                     page.locator(".page-help-btn").first.click()
+                    # The popup opens through a short details animation; on a slow runner it is still collapsing out of
+                    # view when the click returns. Wait for it to become visible, then measure after the motion ends.
+                    try:
+                        body.wait_for(state="visible", timeout=5000)
+                    except Exception:
+                        pass
                     settle_motion(page)
                     pb = body.bounding_box()
                     viewport = page.viewport_size
                     if not body.is_visible() or pb["x"] < 0 or pb["x"] + pb["width"] > viewport["width"]:
-                        problems.append(f"{path} {width}: help body is not visible inside the viewport")
+                        info = page.evaluate(
+                            """() => { const d = document.querySelector('.page-help'); const b = d && d.querySelector('.page-help-body');
+                            const r = b ? b.getBoundingClientRect() : null;
+                            return {open: d && d.open, display: b && getComputedStyle(b).display, rect: r && [r.x, r.y, r.width, r.height],
+                              n: document.querySelectorAll('.page-help').length, vis: b && getComputedStyle(b).visibility, op: b && getComputedStyle(b).opacity, cv: b && getComputedStyle(b.parentElement).contentVisibility, anim: document.getAnimations().length}; }"""
+                        )
+                        problems.append(f"{path} {width}: help body is not visible inside the viewport {info} box={pb}")
                     after = page.evaluate("() => document.documentElement.scrollHeight")
                     if after != before:
                         problems.append(f"{path} {width}: opening help moved the page")

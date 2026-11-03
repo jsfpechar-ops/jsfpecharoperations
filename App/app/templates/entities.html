@@ -14,8 +14,7 @@
 {% block tabs %}{% endblock %}
 {% block body %}
 {% include "_host_alerts.html" %}
-{% with href='/settings', title=t('entities.title') %}{% include "partials/settings_back_header.html" %}{% endwith %}
-<div class="settings-help-line">{{ help_tip('entities-lede-help', t('entities.lede')) }}</div>
+{% with help=help_tip('entities-lede-help', t('entities.lede')), href='/settings', title=t('entities.title') %}{% include "partials/settings_back_header.html" %}{% endwith %}
 {{ onboarding_banner(onboarding) }}
 
 {% if edit_entity %}

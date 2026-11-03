@@ -64,7 +64,8 @@ body.v2 .hidden{display:none!important}
 .quiet{color:var(--ink3);font-size:14px;margin:-12px 0 28px;display:flex;gap:8px;align-items:baseline}.quiet b{color:var(--ink);font-size:15px}.quiet span{margin-right:4px}.quiet i{font-style:normal}
 .cgrid{display:grid;grid-template-columns:140px repeat(14,minmax(44px,1fr));align-items:center;min-width:780px}
 .cd{font-size:12px;color:var(--ink3);text-align:center;padding:8px 0}.cd.today{color:var(--acc-text);font-weight:700}
-.crow{border-top:1px solid var(--line);min-height:44px}.cn{font-size:13px;font-weight:600;grid-column:1;line-height:1.25;overflow-wrap:anywhere}
+.crow{border-top:1px solid var(--line);height:44px}.cn{font-size:13px;font-weight:600;grid-column:1}
+.cal .crow .cn{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;line-height:1.25;overflow-wrap:anywhere;min-width:0}
 .cal{padding:6px 14px 10px;overflow-x:auto}
 .crow .bar{grid-row:1;height:28px;border-radius:999px;font-size:12px;font-weight:600;display:flex;align-items:center;padding:0 10px;margin:0 2px;white-space:nowrap;overflow:hidden}
 .b-ok{background:var(--oks);color:var(--ok)}.b-warn{background:var(--warns);color:var(--warn)}.b-grey{background:#efefeb;color:var(--ink2)}
@@ -142,7 +143,7 @@ body.v2 .row-menu-item[hidden]{display:none}
 @media (max-width:1023px){body.v2 .ui-menu-panel.is-open,body.v2 .row-menu-panel.is-open{position:fixed;left:8px;right:8px;bottom:8px;top:auto;min-width:0}body.v2 .row-menu-item{min-height:44px}}
 body.v2 .onboarding-banner-setup-link{display:inline-flex;align-items:center;justify-content:center;background:var(--acc);color:#fff;font-weight:600;font-size:13px;padding:8px 16px;border-radius:999px;text-decoration:none}
 @media (max-width:1023px){body.v2 .onboarding-banner-setup-link{min-height:44px}}
-body.v2 .crow{grid-auto-rows:minmax(44px,auto)}
+body.v2 .crow{grid-auto-rows:44px}
 
 /* 0709 Overview: named classes instead of inline styles (design lint T1) */
 .ov-head{margin-bottom:6px}
@@ -191,6 +192,8 @@ body.v2 .btn.copy-btn:focus-visible{outline:2px solid #d0452d;outline-offset:2px
 body.v2 .ui-btn.copy-btn:focus-visible{outline:2px solid #d0452d;outline-offset:2px}
 .clickable-row:focus-within{outline:2px solid #d0452d;outline-offset:-2px}
 body.v2 [data-needs-you-go]:hover{background:#b83a24}
+/* 0901: never a stretched-link overlay on the shell-v2 dashboard (it covered the page when workflow.css leaked in) */
+body.v2 [data-needs-you-go]::before{content:none}
 body.v2 .skip-link{position:fixed;z-index:1000;left:8px;top:-100px}
 body.v2 .skip-link:focus{top:8px}
 
@@ -777,6 +780,8 @@ body.v2 .havel-greeting{margin-bottom: var(--space-2);}
 @media (max-width: 767px){
 body.v2 .havel-dialog{position: fixed; inset: auto 0 calc(var(--tabbar-h) + var(--tabbar-safe)) 0; margin: 0; width: 100%; max-width: 100%; box-shadow: var(--shadow-2);}
 body.v2 .havel-dialog .ui-sheet{max-height: 70dvh; height: 70dvh;}
+}
+@media (max-width: 1023px){
 body.v2 .havel-fab{right: var(--space-4); bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--space-4));}
 body.v2:has(.ui-sticky-actions) .havel-fab{bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--control-h) + var(--space-8));}
 }
@@ -2179,3 +2184,105 @@ body.v2 dl.ui-facts>div{flex-wrap:wrap}
 body.v2 dl.ui-facts>div>dt{min-width:min(100%,9rem)}
 @media (max-width:359px){body.v2 .stay-metrics,body.v2 .detail-hero,body.v2 .report-metrics{grid-template-columns:1fr}}
 @media (min-width:1024px){body.v2 .stays-desk td.col-name{width:18%;max-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+/* 0896: notification bubbles (old style back): X sits in the top-right corner, text never runs under it, bubbles never overlap. */
+body.v2 .notification-stack{display:grid;gap:12px;width:100%;max-width:none;margin:0 0 16px;pointer-events:auto}
+body.v2 .notification-bubble{position:relative;box-sizing:border-box;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 2px 8px rgba(32,32,30,.08);overflow:hidden}
+body.v2 .notification-bubble.warning{background:#fffaf0}
+body.v2 .notification-bubble.error,body.v2 .notification-bubble.critical{background:#fff6f5}
+body.v2 .notification-link{display:flex;align-items:flex-start;gap:12px;box-sizing:border-box;padding:12px 56px 12px 12px;min-height:56px;color:var(--ink);text-decoration:none}
+body.v2 .notification-link .grow{min-width:0;flex:1 1 auto;overflow-wrap:anywhere}
+body.v2 .notification-icon{display:grid;place-items:center;flex:0 0 28px;width:28px;height:28px;border-radius:50%;background:#d0452d;color:#fff;font-size:14px;font-weight:700}
+body.v2 .notification-bubble.warning .notification-icon{background:#c98a14}
+body.v2 .notification-bubble.info .notification-icon{background:var(--ink3)}
+body.v2 .notification-bubble strong{display:block;font-size:14px;line-height:1.35;font-weight:650}
+body.v2 .notification-bubble small{display:block;margin-top:2px;color:var(--ink3);font-size:13px;line-height:1.35}
+body.v2 .notification-bubble .notification-action{color:#b3261e;font-weight:650}
+body.v2 .notification-bubble form[data-notification-dismiss],body.v2 .needs-you-card-item .needs-you-dismiss{position:absolute;top:6px;right:6px;margin:0;z-index:2}
+body.v2 .notification-bubble form[data-notification-dismiss] button,body.v2 .needs-you-dismiss button{position:relative;display:block;width:44px;height:44px;min-width:44px;min-height:44px;margin:0;padding:0;border:0;background:transparent;font-size:0;line-height:0;color:transparent;cursor:pointer;text-decoration:none}
+body.v2 .notification-bubble form[data-notification-dismiss] button:before,body.v2 .needs-you-dismiss button:before{content:"";position:absolute;left:50%;top:50%;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:#f0f0ec url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none' stroke='%23222' stroke-width='1.75' stroke-linecap='round'%3E%3Cpath d='M3 3l8 8M11 3l-8 8'/%3E%3C/svg%3E") center/14px 14px no-repeat}
+body.v2 .notification-bubble form[data-notification-dismiss] button:hover:before,body.v2 .needs-you-dismiss button:hover:before{background-color:#e3e3dd}
+body.v2 .notification-bubble form[data-notification-dismiss] button:focus-visible,body.v2 .needs-you-dismiss button:focus-visible{outline:2px solid #222;outline-offset:-4px;border-radius:50%}
+body.v2 .card.needs-you-card-item:has(.needs-you-dismiss){position:relative;padding-right:56px}
+body.v2 .needs-you-card-item .needs-you-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+/* 0896: page help "?" is a plain round button again: no chevron from the generic body.v2 summary rule */
+body.v2 summary.page-help-btn:after,body.v2 details[open] summary.page-help-btn:after{content:none;display:none}
+body.v2 summary.page-help-btn{list-style:none;gap:0;font-size:0}
+body.v2 summary.page-help-btn::-webkit-details-marker{display:none}
+/* 0896: the profile bubble in the sidebar corner opens the account menu (Settings, Funnel, Admin, Help, Log out), like Airbnb */
+.side .me-menu{position:relative;margin-top:auto;margin-bottom:12px;color:var(--ink)}
+.side .me-menu > summary.me{list-style:none;margin:0;padding:10px;cursor:pointer;border-radius:12px;min-height:48px;box-sizing:border-box}
+.side .me-menu > summary.me::-webkit-details-marker{display:none}
+.side .me-menu > summary.me:after{content:none;display:none}
+.side .me-menu > summary.me:hover,.side .me-menu[open] > summary.me{background:#efefea}
+.side .me-menu-list{position:absolute;left:8px;bottom:calc(100% + 12px);z-index:80;width:236px;box-sizing:border-box;padding:8px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 28px rgba(0,0,0,.14)}
+.side .me-menu-list > a,.side .me-menu-list button.nav{display:flex;align-items:center;gap:12px;box-sizing:border-box;width:100%;min-height:44px;padding:10px 12px;border:0;border-radius:10px;background:none;color:var(--ink);font:inherit;font-size:14px;text-align:left;text-decoration:none;cursor:pointer}
+.side .me-menu-list > a:hover,.side .me-menu-list button.nav:hover,.side .me-menu-list > a.on{background:#f4f4f0}
+.side .me-menu-list .support-link{margin:0}
+.side .me-menu-list .side-logout{margin:8px 0 0;padding-top:8px;border-top:1px solid var(--line)}
+@media (max-width:767px){body.v2 .side .me-menu{display:none}}
+/* 0896: Reporting column: one pill with one dot; the deadline hint under it is plain grey text, never a second pill */
+body.v2 .pill > .ui-badge,body.v2 td[data-card="badge"] small .ui-badge{display:inline;height:auto;min-height:0;margin:0;padding:0;border:0;border-radius:0;background:none;color:inherit;font:inherit;font-weight:inherit}
+body.v2 .pill > .ui-badge:before,body.v2 td[data-card="badge"] small .ui-badge:before{content:none;display:none}
+body.v2 td[data-card="badge"] small{display:block;margin-top:6px;color:var(--ink3);font-size:13px;font-weight:500;background:none}
+body.v2 td[data-card="badge"] small .ui-badge{color:var(--ink3)}
+.side .me-menu > summary.me{justify-content:flex-start;gap:10px}
+/* 0896 audit: cleaning tiles are tall enough for two chips plus a stay pill; on phones the stay pill is hidden (too small to tap) */
+body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-week.is-dots .cal-day { min-height:150px; }
+body.v2 #calendar.dashboard-calendar[data-cleaning="true"] .cal-pill-more { display:none !important; }
+@media (max-width:767px) {
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-week.is-dots .cal-day { min-height:96px; }
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-pill { display:none; }
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-pill > * { display:none; }
+}
+/* 0896 audit: icon + label buttons keep a gap; stats line under the needs-you cards keeps 12 px */
+body.v2 .btn svg,body.v2 .filters-btn svg,body.v2 button[data-toggle-filters] svg{margin-right:6px}
+body.v2 .ov-stats,body.v2 .stats-line{margin-top:12px}
+body.v2 [data-filter-toggle]{display:inline-flex;align-items:center;gap:8px}
+body.v2 [data-filter-toggle] svg{margin-right:0}
+body.v2 .btn:has(> svg){display:inline-flex;align-items:center;gap:8px}
+body.v2 .btn > svg{margin-right:0}
+body.v2 .ov-month{margin-top:12px}
+body.v2 .ov-quiet,body.v2 .ov-links{margin-bottom:12px}
+body.v2 .ov-links:empty{display:none}
+body.v2 details.page-help:not([open]){background:none;box-shadow:none;border-color:transparent}
+body.v2 summary.page-help-btn{position:relative;left:-3px}
+/* 0899 audit: one help "?" circle, centred on its glyph. admin2.css gives every help button an invisible
+   ::after hit area with inset:-13px; on host pages that inset won over the 18 px ring above and pushed it
+   22 px up-left, so a second ghost circle floated beside every "?". The ring is re-stated here with the same
+   specificity, and the two scopes where the button draws its own 24 px ring keep an invisible hit area only. */
+body.v2 button.help-tip-btn::after{inset:auto;right:auto;bottom:auto;left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%);border:1px solid var(--line);border-radius:50%;box-sizing:border-box}
+body.v2 .property-settings-form button.help-tip-btn::after,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) button.help-tip-btn::after{border:0}
+@media (max-width:1023px){
+  body.v2 button.help-tip-btn{padding:0 26px 0 0}
+  body.v2 button.help-tip-btn::after{left:0;top:13px;transform:none}
+  body.v2 .property-settings-form button.help-tip-btn,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) button.help-tip-btn{padding:0}
+}
+/* 0899 audit: the tab bar shows up to 1023 px, but the Havel button only lifted above it up to 767 px, so at tablet
+   widths it covered the Menu tab. */
+@media (min-width:768px) and (max-width:1023px){
+  body.v2 .havel-fab{right:var(--space-4);bottom:calc(var(--tabbar-h) + var(--tabbar-safe) + var(--space-4))}
+  body.v2:has(.ui-sticky-actions) .havel-fab{bottom:calc(var(--tabbar-h) + var(--tabbar-safe) + var(--control-h) + var(--space-8))}
+}
+/* 0899 audit: the five-step list on the wizard and Help pages rendered as a raw <ol> ("1. 1 You paste ..."), because
+   workflow.css is not loaded on v2 pages. Quiet number circles, no browser numbering. */
+body.v2 .workflow-strip{list-style:none;margin:0 0 16px;padding:0;display:grid;gap:12px}
+body.v2 .workflow-strip-step{display:flex;align-items:flex-start;gap:12px;min-width:0}
+body.v2 .workflow-strip .workflow-num{flex:0 0 28px;display:inline-grid;place-items:center;width:28px;height:28px;border:1px solid var(--line);border-radius:50%;font-size:14px;font-weight:600;color:var(--ink2)}
+body.v2 .workflow-strip-copy{display:grid;gap:2px;min-width:0}
+body.v2 .workflow-strip-label{font-size:16px;line-height:1.35;overflow-wrap:anywhere}
+body.v2 .workflow-strip .workflow-tag{font-size:14px;color:var(--ink3)}
+body.v2 .wiz-page h1.big{text-wrap:balance}
+body.v2 .ui-banner{margin-bottom:16px}
+/* 0899 audit: the stay detail showed its title twice (desktop head plus the back-arrow header).
+   The head keeps its "?" and actions; only its title text is dropped. */
+/* 0899 audit: the empty-guests card let its inline "Add a guest" button sit 9 px over the hint above it at 1280. */
+body.v2 .host-stay-detail .card>.sub+.btn{display:inline-flex;align-items:center;margin-top:16px}
+/* 0899 audit: the row "open" circle had no glyph outside the cleaning page (archive lists showed an empty ring). */
+body.v2 .row-open::after{content:"\203A";font-size:18px;line-height:1}
+
+/* 0900: the stay head no longer carries the "?" row, so keep the crumb 12 px above the status line */
+body.v2 .host-stay-detail .crumb{margin-bottom:12px}
+body.v2 .airbnb-header>.page-help{margin:0}
+body.v2 .airbnb-header:has(>.page-help)>.airbnb-back{margin-right:calc(100% - 44px)}
+body.v2 .airbnb-header:has(>.page-help)>.airbnb-title{width:auto;flex:0 1 auto;min-width:0}
+@media (max-width:1023px){body.v2 .host-stay-detail>.head{min-height:1px}}
