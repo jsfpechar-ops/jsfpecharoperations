@@ -367,6 +367,13 @@ de/es/fr/uk: faithful translations at build (brief 0901). Ship with a bumped
 | [0898](../tasks/0898-stay-fee-charge-computation.md) | `charge_for_reservation()` + same-obec rule in shared logic + tests | 0897 |
 | [0900](../tasks/0900-stay-fee-guest-panel.md) | hub money card + rail picker, form estimate, residence order | 0898 |
 | [0901](../tasks/0901-stay-fee-legal-notice-ruian.md) | legal-notice section + 6-language copy + guest RÚIAN route | 0897 |
+| [0902](../tasks/0902-stay-fee-help-guide.md) | host help topic (`page_help('stay_fees')`) + guest-guide fact for the fee | 0897 |
+
+**Help/legal prep already done in docs (2026-11-03):** ROPA row (no new personal
+data, no payment state, Stripe/Revolut are the host's processors —
+`docs/privacy/ROPA.md`), RETENTION row (config-only columns, no payment data —
+`docs/privacy/RETENTION.md`), legal position §8 + open item 11 for counsel
+(`docs/UbyHost_workplan/04_legal_positions.md`), counsel-draft copy in §10.
 
 ## 12. Open questions (not blocking)
 
