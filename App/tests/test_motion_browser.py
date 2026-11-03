@@ -56,7 +56,7 @@ def test_dialogs_fade_in_and_phone_sheets_slide_up(wide_host, wide_base):
 
         context = _rail_context(browser, wide_host, wide_base, 390, collapsed=False)
         # 0720: v2 phone has no More sheet (Menu tab replaces it); the old shell's more-sheet is checked on /payments (0785a: /settings is v2).
-        page = _rail_page(context, wide_base, "/apartments/new")
+        page = _rail_page(context, wide_base, "/payments")
         page.click('[data-sheet-open="more-sheet"]')
         start = page.evaluate("() => getComputedStyle(document.getElementById('more-sheet')).translate")
         assert start not in ("none", "0px"), start
@@ -72,7 +72,7 @@ def test_fold_outs_slide_open_and_floating_menus_are_not_clipped(wide_host, wide
         context = _rail_context(browser, wide_host, wide_base, 1280, collapsed=False)
         page = _rail_page(context, wide_base, "/")
         heights = page.evaluate(FOLD_OUT_HEIGHTS, "details.ui-how")
-        full = page.evaluate("() => document.querySelector('.page-help-body').getBoundingClientRect().height")
+        full = page.evaluate("() => document.querySelector('.ui-how-body').getBoundingClientRect().height")
         assert heights[0] < full, heights
         assert heights == sorted(heights), heights
         page.wait_for_function("() => document.querySelector('details.ui-how').getAnimations({subtree: true}).length === 0")
@@ -99,7 +99,7 @@ def test_page_changes_cross_fade_with_the_rail_held_still(wide_host, wide_base):
         context = _rail_context(browser, wide_host, wide_base, 1280, collapsed=False)
         context.add_init_script(PAGE_SWAP_RECORDER)
         # 0720: the host-rail view transition is old-shell only (group C); checked on /payments (0785a).
-        page = _rail_page(context, wide_base, "/apartments/new")
+        page = _rail_page(context, wide_base, "/payments")
         assert page.evaluate("getComputedStyle(document.getElementById('app-sidebar')).viewTransitionName") == "host-rail"
         assert page.evaluate(OPTS_IN) is True
         page.locator('.ui-nav a[href="/reservations"]').click()
@@ -118,7 +118,7 @@ def test_reduced_motion_keeps_pages_and_dialogs_still(wide_host, wide_base):
         context = _rail_context(browser, wide_host, wide_base, 1280, collapsed=False, reduced_motion="reduce")
         context.add_init_script(PAGE_SWAP_RECORDER)
         # 0720: / is the v2 shell; the old-shell rail link is checked on /payments (0785a).
-        page = _rail_page(context, wide_base, "/apartments/new")
+        page = _rail_page(context, wide_base, "/payments")
         page.evaluate(OPEN_DIALOG, "command-dialog")
         duration = page.evaluate("() => getComputedStyle(document.getElementById('command-dialog')).transitionDuration")
         seconds = [float(p[:-2]) / 1000 if p.endswith("ms") else float(p[:-1]) for p in duration.split(", ")]
@@ -137,10 +137,10 @@ def test_pages_without_javascript_stay_still(wide_host, wide_base):
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = _rail_context(browser, wide_host, wide_base, 1280, collapsed=False, java_script_enabled=False)
-        # 0720: old-shell sidebar and help block (/settings has no how_key), so this runs on /apartments/new (old shell; /payments and /stay-fees are v2).
-        page = _rail_page(context, wide_base, "/apartments/new")
-        page.locator("details.page-help summary").click()
-        assert page.locator(".page-help-body").is_visible()
+        # 0720: old-shell sidebar and help block (/settings has no how_key), so this runs on /payments (v2, 0794: /stay-fees moved to v2).
+        page = _rail_page(context, wide_base, "/payments")
+        page.locator("details.ui-how summary").click()
+        assert page.locator(".ui-how-body").is_visible()
         page.locator('.ui-nav a[href="/reservations"]').click()
         page.wait_for_url("**/reservations**")
         page.locator("a.nav[href='/']").click()  # /reservations is the v2 shell (0528)

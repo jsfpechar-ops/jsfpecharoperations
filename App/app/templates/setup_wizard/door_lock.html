@@ -2,8 +2,9 @@
 {% set cta = 'ui-btn ui-btn-primary' %}
 {% from "_components.html" import field_label, help_tip with context %}
 {% from "_smart_lock_share.html" import share_block with context %}
+{% block wizard_help %}{% from "_components.html" import help_tip with context %}{{ help_tip('wiz-why-door_lock', t('why.door_lock') ~ ' ' ~ t('why.times')) }} {{ help_tip('wizard-lock-help', t('apartment.form.door_code.connect_first')) }}{% endblock %}
 {% block wizard_content %}
-<p class="setup-wizard-lede">{{ t('why.door_lock') }} {{ help_tip('wizard-lock-help', t('apartment.form.door_code.connect_first')) }}</p>
+
 {% if door_code %}{% include "_door_code_window.html" %}{% endif %}
 {% if door_code and door_code.account and door_code.locks and door_code.free_lock_count %}
 <form method="post" action="/apartments/{{ apartment.id }}" class="setup-wizard-form" id="door-lock-form">
@@ -15,7 +16,7 @@
   <input type="hidden" name="legal_entity_id" value="{{ apartment.legal_entity_id }}">
   <input type="hidden" name="city_en" value="{{ apartment.city_en or '' }}">
   <input type="hidden" name="default_purpose" value="{{ apartment.default_purpose or '10' }}">
-  <p class="setup-wizard-instruction">{{ t('why.times') }}</p>
+  
   {#- 0210: set or change the times here, without leaving the wizard. -#}
   <div class="grid two">
     {% for name, label in [('checkin_hour', 'apartment.form.door_code.checkin'), ('checkout_hour', 'apartment.form.door_code.checkout')] %}

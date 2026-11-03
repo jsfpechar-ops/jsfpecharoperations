@@ -1,9 +1,10 @@
 {% extends "host_page.html" %}
+{% set v2 = true %}
 {% set nav = 'dashboard' %}
 {% set body_kind = 'form' %}
 {% block title %}{{ t('onboarding.welcome_title') }}{% endblock %}
 {% block page_title %}{% endblock %}
 {% block body %}
 {% from "_components.html" import onboarding_welcome with context %}
-{{ onboarding_welcome(onboarding) }}
+{{ onboarding_welcome(onboarding, v2=true) }}
 {% endblock %}

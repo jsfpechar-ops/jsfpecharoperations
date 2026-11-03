@@ -22,6 +22,9 @@ def _env(monkeypatch):
     monkeypatch.setattr(config, "DOOR_CODES_LIVE", False)
     monkeypatch.setattr(config, "MAIL_BACKEND", "console")
     monkeypatch.setattr(door_codes, "check_lock_clocks", lambda: {})
+    # reconcile() takes the oldest BATCH due rows of the whole database, so rows other test files leave behind
+    # (they are not purged here) can push this file's stays out of the batch, depending on test order.
+    monkeypatch.setattr(door_codes, "BATCH", 10000)
     monkeypatch.setattr(ttlock, "find_code_by_name", lambda *a, **k: None)
     yield
     _purge()

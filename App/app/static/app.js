@@ -1933,16 +1933,30 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       var margin = 8;
       var vw = document.documentElement.clientWidth;
       var vh = window.innerHeight;
-      body.style.width = Math.min(320, vw - 2 * margin) + "px";
+      var wide = vw >= 1024;
+      if (wide) {
+        body.style.width = Math.min(320, vw - 2 * margin) + "px";
+      } else {
+        body.style.width = "";
+        body.style.left = "";
+      }
       var r = btn.getBoundingClientRect();
-      var w = body.offsetWidth;
+      var w = body.offsetWidth || Math.min(320, vw - 2 * margin);
       var h = body.offsetHeight;
-      var left = Math.max(margin, Math.min(r.left, vw - w - margin));
+      var left = tip.classList.contains("help-tip-end") ? r.right - w : r.left;
+      left = Math.max(margin, Math.min(left, vw - w - margin));
       var top = r.bottom + 6;
       if (top + h > vh - margin && r.top - 6 - h >= margin) top = r.top - 6 - h;
       top = Math.max(margin, Math.min(top, vh - h - margin));
-      body.style.left = left + "px";
-      body.style.top = top + "px";
+      if (wide) {
+        // Desktop: the body is absolutely positioned inside .help-tip, so the viewport
+        // coordinates must be made relative to its offset parent (else it drifts right).
+        var ob = body.offsetParent ? body.offsetParent.getBoundingClientRect() : { left: 0, top: 0 };
+        body.style.left = (left - ob.left) + "px";
+        body.style.top = (top - ob.top) + "px";
+      } else {
+        body.style.top = top + "px";
+      }
     }
     function close(tip) {
       tip.classList.remove("is-open");
@@ -1955,6 +1969,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       window.clearTimeout(helpTipState.timer);
       helpTipState.current = tip;
       tip.classList.add("is-open");
+      tip.classList.toggle("help-tip-end", tip.getBoundingClientRect().left > window.innerWidth / 2);
       tip.querySelector(".help-tip-btn").setAttribute("aria-expanded", "true");
       if (pinned) tip.setAttribute("data-pinned", "1");
       place(tip);

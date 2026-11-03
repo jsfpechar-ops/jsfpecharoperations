@@ -1,0 +1,49 @@
+/* 0893: admin pages in the Airbnb pattern. Loaded only by admin templates (head_extra). Light mode only. */
+body.v2 .ui-ph h1{font-size:32px;line-height:1.2;font-weight:700;color:#222}
+body.v2 .ui-ph-back{width:40px;height:40px;border-radius:50%;background:#f2f2f2;color:#222;display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;text-decoration:none}
+body.v2 .ui-ph-back span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+body.v2 .ui-tabs{display:flex;gap:12px;overflow-x:auto;border:0;padding:4px 0;margin:0 0 24px}
+body.v2 .ui-tabs .ui-tab{display:inline-flex;align-items:center;min-height:44px;padding:0 20px;border-radius:999px;border:0;background:#f2f2f2;color:#222;font-weight:600;white-space:nowrap;text-decoration:none}
+body.v2 .ui-tabs .ui-tab::after{display:none}
+body.v2 .ui-tabs .ui-tab[aria-current="page"]{background:#222;color:#fff}
+body.v2 .ui-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin:0 0 24px}
+body.v2 .ui-stats .ui-stat{display:flex;flex-direction:column;gap:8px;padding:20px;border:1px solid #e5e5e5;border-radius:12px;background:#fff;color:#222;text-decoration:none}
+body.v2 .ui-stats .ui-num{font-size:28px;font-weight:700}
+body.v2 .ui-stats .ui-stat span{font-size:16px}
+body.v2 .ui-body .ui-section+.ui-section{margin-top:32px}
+body.v2 .ui-body .ui-section-h h2,body.v2 .ui-body .ui-section>h2{font-size:22px;font-weight:700;color:#222}
+body.v2 .ui-body .ui-sub,body.v2 .ui-body .admin-label{font-size:16px;line-height:1.5;color:#6a6a6a}
+body.v2 .ui-body .admin-label{color:#222}
+body.v2 .ui-body .ui-form-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+body.v2 .ui-body table{border:1px solid #e5e5e5;border-radius:12px;border-collapse:separate;border-spacing:0;overflow:hidden}
+body.v2 .ui-body form+form{margin-top:12px}
+body.v2 .settings-value-card{border:1px solid #e5e5e5;border-radius:12px;padding:20px;margin:0 0 12px}
+body.v2 .ui-body .ui-label{font-size:16px;line-height:1.5}
+body.v2 .ui-body th{font-size:14px}
+body.v2 .ui-table{display:block;max-width:100%;overflow-x:auto}
+body.v2 .ui-body td,body.v2 .ui-body td *{font-size:16px}
+body.v2 .ui-body .help-tip-btn{font-size:16px}
+body.v2 .ui-body label{font-size:16px;line-height:1.5}
+body.v2 .ui-body label{display:block;margin-bottom:12px}
+/* 0893 fix: 12 px between a field label and its input (flex gap was 6 px plus label box) */
+body.v2 .ui-field{gap:12px}
+/* 0893 fix: tables scroll inside their card: the card (parent of the table) scrolls sideways, the table keeps its columns */
+body.v2 :has(>table.ui-table){overflow-x:auto;max-width:100%}
+/* 0893 fix: tap targets 44 px high (buttons, compact Open, filter inputs) */
+@media (max-width:1023.98px){body.v2 a.ui-btn{display:inline-flex;align-items:center;vertical-align:middle}body.v2 a.ui-btn,body.v2 button.ui-btn,body.v2 input.ui-input,body.v2 select.ui-select{min-height:44px!important;height:auto}}
+body.v2 .ui-pair{align-items:end}
+/* 0893 fix: at least 12 px between header buttons (inline-flex buttons were 4 px apart on phones) */
+body.v2 .ui-ph-acts{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+/* 0893 fix: 18 px visible help mark with a 44 px invisible hit area (same idea as host.css help-tip-btn::after) */
+body.v2 button.help-tip-btn{width:18px;height:18px;min-width:18px;min-height:18px;padding:0;box-sizing:border-box;font-size:12px;line-height:1;position:relative}
+body.v2 button.help-tip-btn::after{content:"";position:absolute;inset:-13px}
+/* 0894 fix: the tab row under the page header keeps 12 px from the header actions */
+body.v2 .ui-ph + .ui-tabs{margin-top:12px}
+/* 0894 fix: the filter button shares the select's bottom line (the field has no bottom margin in that pair) */
+body.v2 .ui-pair:has(>.ui-form-actions)>.ui-field{margin-bottom:0}
+body.v2 .ui-pair:has(>.ui-form-actions)>.ui-form-actions{margin-top:0}
+/* 0894 fix: stacked tables on phone hide the header row; each cell reads its label from data-label */
+@media (max-width:1023px){body.v2 .ui-table-stack thead{display:none}}
+/* 0894 fix: the pager row under a list shares one button height (40 px desktop, 44 px phone), so Older, Newer and First page line up */
+body.v2 .ui-body nav.ui-form-actions>a.ui-btn{min-height:40px;height:auto;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center}
+@media (max-width:1023.98px){body.v2 .ui-body nav.ui-form-actions>a.ui-btn{min-height:44px}}

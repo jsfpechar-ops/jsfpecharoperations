@@ -1,17 +1,14 @@
 {% extends "host_page.html" %}
-{% set v2 = true %}
 {% set nav = 'payments' %}
 {% set how_key = 'payments' %}
 {% set body_kind = 'detail' %}
-{% from "_ui.html" import ui_button, ui_tip with context %}
+{% from "_ui.html" import ui_button with context %}
 {% from "_components.html" import copy_button with context %}
 {% block title %}{{ t('payments.share.title') }}{% endblock %}
-{% block page_title %}{% endblock %}{% block meta %}{% endblock %}{% block primary_action %}{% endblock %}{% block secondary_actions %}{% endblock %}
+{% block primary_action %}{% endblock %}
 {% block tabs %}{% endblock %}
 {% block toolbar %}{% endblock %}
 {% block body %}
-{% with href='/payments', title=t('payments.share.title') %}{% include "partials/settings_back_header.html" %}{% endwith %}
-<div class="settings-lane">
 <div class="ui-section" data-payment-share>
   <p>{{ t('payments.reason.' ~ req.reason) }} · <strong>{{ req.amount_czk }} {{ t('payments.czk') }}</strong></p>
   <p>{{ t('payments.share.lead') }}</p>
@@ -24,7 +21,7 @@
     {{ ui_button(t('payments.share.email'), 'secondary', href=mailto_url, attrs='data-no-prefetch') }}
     {{ ui_button(t('payments.share.whatsapp'), 'primary', href=whatsapp_url, attrs='target="_blank" rel="noopener"') }}
   </div>
-  {{ ui_tip('tip-pay-share-paid', t('payments.share.paid_note')) }}
-</div>
+  <p class="ui-sub">{{ t('payments.share.paid_note') }}</p>
+  <p><a href="/payments">{{ t('payments.share.back') }}</a></p>
 </div>
 {% endblock %}

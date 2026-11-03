@@ -151,6 +151,7 @@
                    value="{{ values.get('stay_price', '') }}">
             {% if stay_price_hint %}
             <span id="stay-price-hint" class="ui-sub">{{ t('invoice.price_hint', price=stay_price_hint) }}</span>
+            {% if not values.get('stay_price') %}<button class="ui-btn ui-btn-quiet ui-btn-compact invoice-use-price" type="button" data-use-price="{{ stay_price_hint }}" hidden>{{ t('invoice.price_use', price=stay_price_hint) }}</button>{% endif %}
             {% endif %}
           </td>
           <td data-label="{{ t('invoice.col.vat') }}" data-vat-col {% if not payer %}hidden{% endif %}>
@@ -314,6 +315,21 @@
   var workspace = document.querySelector(".invoice-workspace");
   var totalEl = document.querySelector("[data-total]");
   var entitySel = document.getElementById("legal_entity_id");
+
+  /* 0888: one tap copies the last price on this property into the stay line. */
+  var usePrice = form.querySelector("[data-use-price]");
+  var priceInput = form.querySelector('input[name="stay_price"]');
+  if (usePrice && priceInput) {
+    var priceHint = document.getElementById("stay-price-hint");
+    usePrice.hidden = false;
+    if (priceHint) priceHint.hidden = true;
+    usePrice.addEventListener("click", function () {
+      priceInput.value = usePrice.getAttribute("data-use-price");
+      priceInput.dispatchEvent(new Event("input", { bubbles: true }));
+      usePrice.hidden = true;
+      priceInput.focus();
+    });
+  }
 
   /* The VAT column answers the seller's VAT status, so it appears and
      disappears with the operator; disabled selects are also never posted. */

@@ -32,7 +32,6 @@ ROUTES = {
     "partF-leon-settings": "/apartments/{first_property}/leon",
     "partF-cleaning-settings": "/cleaning/properties/{first_property}",
     "partF-subscription": "/predplatne",
-    "partF-payments": "/payments",
 }
 # detail and sub-pages: the back header is required (its back goes to the list page)
 BACK_PAGES = {name for name in ROUTES if name not in {"partB-overview", "partB-menu", "partC-properties", "partD-reservations"}}
@@ -281,7 +280,7 @@ def test_0830C_properties_regressions(base, dashboard_rich_host, seeded):
                         bodyVisible: visible(body),
                         markers: summary ? getComputedStyle(summary).listStyleType : null,
                         chevrons: summary ? [...summary.querySelectorAll('svg.ui-how-chevron')].filter(visible).length : 0,
-                        theadVisible: visible(thead),
+                        theadVisible: visible(thead) && [...thead.querySelectorAll('th')].some(th => { const c = getComputedStyle(th).backgroundColor; return c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent'; }),  // 0852: the desktop header row stays (screen readers, list-cards guard) but must not be beige
                         cardBorder: card ? getComputedStyle(card).borderTopWidth : null,
                     };
                 }"""

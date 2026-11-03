@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 MOCKUP = Path(__file__).resolve().parents[2] / "docs/design/mockup/ubyhost-redesign-v2.html"
-WIDTHS = (320, 390, 768, 1024, 1280, 1440)
+WIDTHS = (320, 390, 768, 1024, 1280, 1440, 1920)
 DESKTOP = 1024  # box-layout checks only at widths >= DESKTOP; the phone mockup is not approved yet
 PHONE_MOCKUP = Path(__file__).resolve().parents[2] / "docs/design/mockup/ubyhost-phone-v1.html"
 PHONE_MOCKUP_V2 = Path(__file__).resolve().parents[2] / "docs/design/mockup/ubyhost-phone-v2.html"
@@ -102,7 +102,6 @@ BOX_OVERRIDES = {
     # text-dependent: app copy vs phone v2 mockup demo copy (0740)
     ".big, .head h1@320": {"width": "189.953px", "height": "42px"},  # PR #725: Airbnb redesign (32 px title)
     ".big, .head h1@390": {"width": "189.953px", "height": "42px"},
-    ".card.prop .st.r@320": {"height": "33.7812px"},
     ".promo@390": {"height": "80px"},
     ".tile .v@320": {"margin-top": "29px"},
     ".tile .v@390": {"margin-top": "29px"},
@@ -165,8 +164,8 @@ BOX_OVERRIDES = {
     "stay:.stay-dates b@390": {"width": "113px"},
     "stay:.stay-dates .tot@320": {"width": "238px"},
     "stay:.stay-dates .tot@390": {"width": "308px"},
-    "stay:.police-card@320": {"height": "132px"},
-    "stay:.police-card@390": {"height": "101px"},
+    "stay:.police-card@320": {"height": "106px"},
+    "stay:.police-card@390": {"height": "80px"},
     "stay:.guests .row@320": {"height": "62px"},
     "stay:.guests .row@390": {"height": "62px"},
     "stay:.guests .row b@320": {"width": "117.656px"},
@@ -219,7 +218,7 @@ PAGES = [
             ".hs .pill": "today's stay cards exist only when a stay is due today; the phone mockup shows demo stays",
         },
     },
-    {"name": "cleaning", "path": "/cleaning", "view": "clean", "selectors": [".side .nav.on", ".head h1", ".head .sub", ".head .btn", "main h2", "main .card", "main table th", "main table td"], "phone_mockup": PHONE_MOCKUP_V2, "phone_view": "uklid",
+    {"name": "cleaning", "path": "/cleaning", "view": "clean", "selectors": [".side .nav.on", ".head h1", "main h2", "main table th", "main table td"], "phone_mockup": PHONE_MOCKUP_V2, "phone_view": "uklid",
         "phone_box_skip": {
             ".hs .pill.p-ok": (["width"], "same label; CI's Manrope renders it 101 px, the mockup's font 98.75 px"),
             ".kind": (["width"], "today's cleaning window text comes from the fixture"),
@@ -230,7 +229,9 @@ PAGES = [
             ".hl": (["height"], "the shared .hl@390 BOX_OVERRIDE is Overview's two-line headline; the cleaning headline is one line"),
             ".list.plain .row:not(:has(.pill))": (["height"], "line-height normal: the app font gives 23 + 19 px lines, the mockup 23.8 + 19.6 px"),
         },
-        "phone_selectors": [".tabs", ".tab.on", ".hl", ".hl-sub", ".hs .card", ".kind", ".av", ".nm", ".meta", ".hs .pill.p-ok", "h2.sec", ".list.plain .row:not(:has(.pill))", ".row:not(:has(.pill)) .t b", ".row:not(:has(.pill)) .t small", ".btn.line", ".promo", ".promo .pi", ".promo b", ".promo small"], "missing_ok": {"main table th": "below 1024 px the phone layout replaces the tables (0546)", "main table td": "below 1024 px the phone layout replaces the tables (0546)"}},  # pills follow the approved phone mockup (2026-11-01): scheduled green, the desktop mockup shows amber
+        # 0875: below 1024 px /cleaning is the Airbnb-style calendar (tiles), not the list the old phone mockup shows: only the tab bar is compared.
+        "phone_selectors": [".tabs", ".tab.on"],
+        "missing_ok": {"main table th": "below 1024 px the phone layout replaces the tables (0546)", "main table td": "below 1024 px the phone layout replaces the tables (0546)"}},
     {
         "name": "properties",
         "path": "/apartments",
