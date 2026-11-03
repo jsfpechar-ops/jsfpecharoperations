@@ -38,6 +38,22 @@ SELECTOR_OVERRIDES = {
     ".actbar": {"padding-bottom": "12px", "height": "75px"},
     # tone follows the stay state (0715 mapping); fixture stay is waiting, mockup shows a finished one (0719)
     ".hs .pill": {"color": "rgb(138, 82, 0)", "background-color": "rgb(255, 244, 214)", "border-bottom-color": "rgb(138, 82, 0)"},
+    # PR #725: Airbnb redesign (12 px cards, 16 px table cells, 32 px titles)
+    ".card.prop": {"border-top-left-radius": "12px", "padding-top": "20px", "padding-right": "20px", "padding-bottom": "20px", "padding-left": "20px", "border-bottom-color": "rgb(229, 229, 229)"},
+    ".card.stay": {"border-top-left-radius": "12px", "border-bottom-color": "rgb(229, 229, 229)"},
+    ".card.need": {"padding-top": "16px", "padding-right": "16px", "padding-bottom": "16px", "padding-left": "16px", "border-bottom-color": "rgb(235, 235, 231)"},
+    ".hs .card": {"border-bottom-color": "rgb(235, 235, 231)"},
+    ".card.cal": {"padding-top": "16px", "padding-right": "16px", "padding-bottom": "16px", "padding-left": "16px"},
+    ".cal .bar.b-warn": {"padding-left": "8px", "padding-right": "8px"},
+    ".guest-card": {"border-top-left-radius": "12px", "border-bottom-color": "rgb(229, 229, 229)"},
+    ".stay-dates": {"border-top-left-radius": "12px", "padding-top": "16px", "padding-right": "20px", "padding-bottom": "16px", "padding-left": "20px", "border-bottom-color": "rgb(229, 229, 229)"},
+    # PR #725: Airbnb redesign, per page (the same selector differs between mockup views)
+    "stay_fees:main .card": {"padding-top": "16px", "padding-right": "16px", "padding-bottom": "16px", "padding-left": "16px"},  # PR #725: Airbnb card padding
+    "stay:main .card": {"padding-top": "16px", "padding-right": "20px", "padding-bottom": "16px", "padding-left": "20px", "border-bottom-color": "rgb(229, 229, 229)"},
+    "properties:main table th": {"padding-left": "16px"},
+    "properties:main table td": {"padding-left": "16px", "border-bottom-color": "rgb(229, 229, 229)"},
+    "property:main h1": {"font-size": "32px", "font-weight": "700"},
+    ".police-card": {"border-top-left-radius": "12px", "padding-top": "16px", "padding-right": "20px", "padding-bottom": "16px", "padding-left": "20px", "border-bottom-color": "rgb(229, 229, 229)"},
     # owner 2026-11-01 19:09: smaller pills than the phone mockup
 }
 # style-compared only at computer width (phone design pending)
@@ -68,31 +84,40 @@ BOX_OVERRIDES = {
     "housebook:.mh .big, .head h1@390": {"width": "167.469px"},
     "housebook:.stay .in b@320": {"width": "119.422px"},
     "housebook:.stay .in b@390": {"width": "119.422px"},
-    "housebook:.stay .in small@390": {"width": "210px"},
+    "housebook:.card.stay@320": {"height": "135.984px"},
+    "housebook:.card.stay@390": {"height": "116.984px"},
+    "housebook:.stay .in small@320": {"height": "57px"},
+    "housebook:.stay .in small@390": {"width": "208px", "height": "38px"},  # PR #725: the housebook row text wraps
     # text-dependent: app copy vs phone v2 mockup demo copy (0740)
     ".prop .in b@320": {"width": "93.0469px"},
     ".prop .in b@390": {"width": "93.0469px"},
     ".guest-card .sub@320": {"height": "46px"},
     ".guest-card .sub@390": {"height": "46px"},
-    ".guest-card@320": {"height": "299.8px"},
-    ".guest-card@390": {"height": "299.8px"},
+    ".guest-card@320": {"height": "315.797px"},
+    ".guest-card@390": {"height": "315.797px"},
+    ".card.prop@320": {"height": "106px"},
+    ".card.prop@390": {"height": "106px"},
+    ".card.stay@320": {"height": "97.9844px"},
+    ".card.stay@390": {"height": "97.9844px"},
     # text-dependent: app copy vs phone v2 mockup demo copy (0740)
-    ".big, .head h1@320": {"width": "150.547px"},
-    ".big, .head h1@390": {"width": "150.547px"},
+    ".big, .head h1@320": {"width": "189.953px", "height": "42px"},  # PR #725: Airbnb redesign (32 px title)
+    ".big, .head h1@390": {"width": "189.953px", "height": "42px"},
     ".promo@390": {"height": "80px"},
     ".tile .v@320": {"margin-top": "29px"},
     ".tile .v@390": {"margin-top": "29px"},
-    ".card.need@320": {"height": "180.188px"},
-    ".need .t@320": {"width": "236px"},
-    ".need small@320": {"width": "236px", "height": "52px"},
+    ".card.need@320": {"height": "170.188px"},
+    ".need .t@320": {"width": "246px"},
+    ".need small@320": {"width": "246px", "height": "52px"},
     ".hs .pill@320": {"width": "141.359px"},
     ".kind@320": {"width": "64.5625px"},
     ".nm@320": {"width": "125.5px"},
     ".meta@320": {"width": "125.5px"},
     ".hl@390": {"height": "69px"},
-    ".card.need@390": {"height": "180.188px"},
-    ".need .t@390": {"width": "306px"},
-    ".need small@390": {"width": "306px", "height": "52px"},
+    ".card.need@390": {"height": "170.188px"},
+    ".need .t@390": {"width": "316px"},
+    ".need small@390": {"width": "316px", "height": "52px"},
+    ".card.need .btn@320": {"width": "246px"},
+    ".card.need .btn@390": {"width": "316px"},
     ".hs .pill@390": {"width": "141.359px"},
     ".kind@390": {"width": "64.5625px"},
     ".nm@390": {"width": "125.5px"},
@@ -112,16 +137,18 @@ BOX_OVERRIDES = {
     # stays/stay (0529): text- and data-dependent; fixture copy vs mockup demo copy
     # pill width follows its label ("Chybí 1 host" vs "Čeká na 2 ze 3 hostů")
     # text-dependent: app copy vs phone v2 mockup demo copy (0750)
-    "stays:.mh .big, .head h1@320": {"width": "100.203px"},
-    "stays:.mh .big, .head h1@390": {"width": "100.203px"},
+    "stays:.mh .big, .head h1@320": {"width": "139.609px", "height": "42px"},
+    "stays:.mh .big, .head h1@390": {"width": "139.609px", "height": "42px"},
     # text-dependent (0766): the stays card shows the stay dates with weekdays; values are the app's measured fixture sizes
     "stays:.stay .in small@320": {"width": "72.2656px"},
     "stays:.stay .in small@390": {"width": "72.2656px"},
     "stays:.stay .pill.p-warn@320": {"width": "101.891px"},
     "stays:.stay .pill.p-warn@390": {"width": "101.891px"},
     # text/data-dependent (0765): two stay cards in the check-in window and a dates prefix in .meta
-    "overview:.hs .card@320": {"width": "272px", "height": "299px"},
-    "overview:.hs .card@390": {"width": "272px", "height": "299px"},
+    "overview:.hs .card@320": {"width": "272px", "height": "301px"},
+    "cleaning:.hs .card@320": {"height": "280px"},
+    "overview:.hs .card@390": {"width": "272px", "height": "301px"},
+    "cleaning:.hs .card@390": {"height": "280px"},
     "overview:.nm@320": {"width": "228px"},
     "overview:.nm@390": {"width": "228px"},
     "overview:.meta@320": {"width": "228px", "height": "42px"},
@@ -129,10 +156,16 @@ BOX_OVERRIDES = {
     # fixture property has no check-in/out time, so the facts grid has no time line
     # text-dependent: app copy vs phone v2 mockup demo copy (0751). Values are the app's measured fixture sizes:
     # the stay dates card has no check-in time line in the fixture; the guest rows and police card copy differ from the demo
-    "stay:.stay-dates@320": {"height": "135px"},
-    "stay:.stay-dates@390": {"height": "135px"},
-    "stay:.police-card@320": {"height": "90px"},
-    "stay:.police-card@390": {"height": "90px"},
+    "stay:.stay-dates@320": {"height": "196px"},
+    "stay:.stay-dates@390": {"height": "169px"},
+    "stay:.stay-dates small@320": {"width": "73.8906px"},
+    "stay:.stay-dates small@390": {"width": "113px"},
+    "stay:.stay-dates b@320": {"width": "73.8906px", "height": "54px"},
+    "stay:.stay-dates b@390": {"width": "113px"},
+    "stay:.stay-dates .tot@320": {"width": "238px"},
+    "stay:.stay-dates .tot@390": {"width": "308px"},
+    "stay:.police-card@320": {"height": "106px"},
+    "stay:.police-card@390": {"height": "80px"},
     "stay:.guests .row@320": {"height": "62px"},
     "stay:.guests .row@390": {"height": "62px"},
     "stay:.guests .row b@320": {"width": "117.656px"},
@@ -142,9 +175,11 @@ BOX_OVERRIDES = {
 }
 
 
-def expected_value(selector: str, prop: str, mock_value: str) -> str:
-    """Value the app must have: the override when the selector and property are listed, else the mockup value."""
-    override = SELECTOR_OVERRIDES.get(selector, {}).get(prop)
+def expected_value(selector: str, prop: str, mock_value: str, page: str = "") -> str:
+    """Value the app must have: the page-specific override (page:selector), else the selector override, else the mockup value."""
+    override = SELECTOR_OVERRIDES.get(f"{page}:{selector}", {}).get(prop)
+    if override is None:
+        override = SELECTOR_OVERRIDES.get(selector, {}).get(prop)
     if override is not None:
         return override
     return COLOR_OVERRIDES.get(mock_value, mock_value)
@@ -212,6 +247,7 @@ PAGES = [
             ".prop .in small": "0710 demo property has no address line; the phone card shows the address when one is stored",
             ".card.prop .st.g": "tone depends on the demo property's setup",
             ".card.prop .st.r": "tone depends on the demo property's setup",
+            ".head .sub": "PR #725: Airbnb back header replaces it",
         },
         "phone_box_skip": {
             ".card.prop .st.g": (["width"], "chip label comes from the property's state"),
@@ -228,9 +264,9 @@ PAGES = [
         "phone_selectors": [".tabs", ".tab.on", ".prop-phone-top .round", ".prop-phone-top ~ h1.big", ".prop-phone-sub", ".guest-card", ".guest-card b", ".guest-card .sub", ".guest-pin-value", ".guest-btns .btn", "h2.sec", ".prop-sec > summary", ".prop-sec summary b", ".sec-state", ".dot"],
         "selectors": [  # .guest-card (permalink card) has no mockup counterpart: not compared (0535)
             ".crumb", "main h1", "details", "summary b", "summary small",
-            ".preview h3", ".pv", ".pv .r", ".savebar .btn",
+            ".preview h3", ".pv", ".pv .r",  # 0851: savebar has its own test, test_0851_savebar_browser.py
         ],
-        "missing_ok": {".prop-phone-sub": "0741: the demo property has no street address, so the address line is not rendered"},
+        "missing_ok": {".crumb": "PR #725: Airbnb back header replaces it", "summary small": "PR #725: Airbnb redesign: section summaries have no small caption", ".prop-phone-top .round": "PR #725: Airbnb redesign: the phone property top has no round avatar", ".prop-phone-top ~ h1.big": "PR #725: Airbnb redesign: the phone property top has no big title", ".prop-phone-sub": "0741: the demo property has no street address, so the address line is not rendered"},
         "phone_box_skip": {
             ".guest-pin-value": (["width"], "width follows the PIN digits and the font rendering of the machine"),
         },
@@ -271,6 +307,8 @@ PAGES = [
         "phone_selectors": [".tabs", ".tab.on", ".mh .big, .head h1", ".stays-add", "h2.sec", ".card.stay", ".sav", ".stay .in b", ".stay .in small", ".stay .pill.p-ok", ".stay .pill.p-warn", ".card.stay .chev"],
         "missing_ok": {
             "main .pill.p-ok": "tone depends on data: the test fixture has no reported stay",
+            ".chip": "PR #725: Airbnb redesign: pills replace the .chip filters",
+            ".chip.on": "PR #725: Airbnb redesign: pills replace the .chip filters",
             ".stay .pill.p-ok": "tone depends on data: the test fixture has no reported stay",
             ".stay .pill.p-warn": "tone depends on data: the test fixture has no reported stay",
         },
@@ -294,6 +332,9 @@ PAGES = [
             ".guests .row small", ".police-card", ".police-card b", ".stay-door-card", ".code",
         ],
         "missing_ok": {
+            ".head h1": "PR #725: Airbnb back header replaces it",
+            ".stay-top .round": "PR #725: Airbnb redesign: the phone stay top has no round avatar",
+            ".host-stay-detail h1.big": "PR #725: Airbnb redesign: the phone stay top has no big title",
             ".head .btn.ghost": "the ghost button shows only when a second action applies; depends on the stay's state",
             "main .pill": "the pill follows the stay's submission state; the seeded stay has none yet",
             "main table th": "the submissions table shows only after a submission; the seeded stay has none yet",

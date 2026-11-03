@@ -1,4 +1,5 @@
 {% extends "host_page.html" %}
+{% from "_components.html" import page_help with context %}
 {% set v2 = true %}
 {% set nav = 'calendar' if cal_view else 'dashboard' %}
 {% set how_key = 'dashboard' %}
@@ -59,16 +60,9 @@
   </div>
   <div class="head ov-head"><div>
     {#- 0729: the page's one h1: "Overview" on desktop, the headline on phone. -#}
-    <h1 class="hl{{ ' done' if not ny_lines }}"><span class="ph-hide{{ ' cal-hide' if cal_view }}">{{ t('dashboard.title') }}</span><span class="ph-only">{% if cal_view %}{{ t('nav.calendar') }}{% elif ny_lines %}{{ tp('dashboard.ph.need', ny_lines | length) }}{% else %}{{ t('dashboard.ph.done') }}{% endif %}</span></h1>
+    <h1 class="hl{{ ' done' if not ny_lines }}"><span class="ph-hide{{ ' cal-hide' if cal_view }}">{{ t('dashboard.title') }}{{ page_help('dashboard') }}</span><span class="ph-only">{% if cal_view %}{{ t('nav.calendar') }}{% elif ny_lines %}{{ tp('dashboard.ph.need', ny_lines | length) }}{% else %}{{ t('dashboard.ph.done') }}{% endif %}</span></h1>
     <p class="sub ph-hide{{ ' cal-hide' if cal_view }}">{{ today.isoformat() | date_long(lang) }}</p>
     <div class="ov-quiet ph-hide{{ ' cal-hide' if cal_view }}">
-    <details class="ui-how ov-how ph-hide{{ ' cal-hide' if cal_view }}" data-how="dashboard">
-      <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
-      <div class="ui-how-body">
-        <ol class="ui-how-steps">{% for n in (1, 2, 3) %}<li>{{ t('how.dashboard.' ~ n) }}</li>{% endfor %}</ol>
-        <a class="ui-how-more" href="/guide#overview">{{ t('how.more') }}</a>
-      </div>
-    </details>
     <p class="ov-links ph-hide{{ ' cal-hide' if cal_view }}">
       <a href="/cleaning/new" class="ov-link">+ {{ t('nav.cleaning') }}</a>
       {% if demo_loaded %}<form method="post" action="/demo/reset" class="inline ov-inline ph-hide" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">{{ ui_button(t('demo.clear'), 'quiet', type='submit') }}</form>{% endif %}

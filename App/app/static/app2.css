@@ -1846,6 +1846,238 @@ body.v2 input[type=checkbox][data-toggle-submit]::after{content:"";position:abso
 body.v2 input[type=checkbox][data-toggle-submit]:checked{background:var(--ink)}
 body.v2 input[type=checkbox][data-toggle-submit]:checked::after{transform:translateX(20px)}
 body.v2 input[type=checkbox][data-toggle-submit]:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+/* 0830 shared (start) */
+/* 0830 shared (end) */
+/* 0830B overview+menu (start) */
+/* Overview (dashboard.html): bordered 1 px cards, no shadow, text 16 px inside the edge */
+body.v2 .needs-you-card-item,body.v2 .cal,body.v2 .ov-table{background:#fff;border:1px solid var(--line);box-shadow:none;padding:16px}
+/* Overview today cards keep their phone radius (0729 spec); only the border and the shadow change */
+body.v2 .hs>.card{background:#fff;border:1px solid var(--line);box-shadow:none}
+/* Overview: 12 px between the headline and the date line */
+body.v2 .ov-head .sub{margin-top:12px}
+/* Overview calendar: 12 px between neighbouring stay bars in one row (until the calendar PR replaces this grid) */
+body.v2 .cal .crow .bar{margin:0 6px;padding:0 8px}
+/* Overview calendar: the day grid fits the card at 1024 px, so the day labels stay 16 px inside the edge */
+body.v2 .cal .cgrid{min-width:0;grid-template-columns:112px repeat(14,minmax(36px,1fr))}
+body.v2 .props-card > table :is(th,td):first-child{padding-left:16px}
+body.v2 .props-card > table :is(th,td):last-child{padding-right:16px}
+body.v2 .props-phone .card.prop{border:1px solid #e5e5e5;border-radius:12px;box-shadow:none;padding:20px}
+body.v2 .guest-card{border:1px solid #e5e5e5;border-radius:12px;box-shadow:none;background:#fff}
+body.v2 .guest-card .guest-btns{gap:12px}
+body.v2 .guest-card .guest-pin-copy{margin-top:12px}
+body.v2 .guest-card input.sr-only{visibility:hidden}
+body.v2 .prop-sec label{display:block;margin-bottom:12px}
+body.v2 .prop-sec :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select,textarea){margin-bottom:12px}
+body.v2 .prop-sec p.ui-sub:not([data-link-window-note]):not(:has(strong)),body.v2 .prop-sec .property-group-intro,body.v2 .prop-sec .police-no-credentials{display:none}
+body.v2 .props-phone .in b{white-space:normal;overflow-wrap:anywhere}
+body.v2 .props-card > table thead .sr-only{display:none}
+body.v2 .airbnb-back{width:44px;height:44px;flex-basis:44px}
+body.v2 a.btn.ghost[href="/apartments"]{margin-right:12px}
+body.v2 aside.preview h4{margin-bottom:12px}
+body.v2 aside.preview a.r{display:flex;margin-bottom:12px}
+body.v2 aside.preview .ui-btn,body.v2 aside.preview button{margin-bottom:12px}
+body.v2 .props-head details.ui-how:not([open]) > .ui-how-body{display:none}
+body.v2 .props-head details.ui-how[open] > .ui-how-body{border:0;background:none;box-shadow:none;padding:0}
+body.v2 .props-head details.ui-how > summary{list-style:none;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;min-height:24px;padding:0;border:0;background:none;margin:0}
+body.v2 .props-head details.ui-how > summary::-webkit-details-marker,body.v2 .props-head details.ui-how > summary::marker{display:none;content:""}
+body.v2 .props-head details.ui-how > summary .ui-how-chevron,body.v2 .props-head details.ui-how > summary > span:not(.ui-how-chevron){display:none}
+body.v2 .props-head details.ui-how > summary > svg:not(.ui-how-chevron){display:inline-block}
+body.v2 .props-card thead{display:none}
+body.v2 .props-card{border:1px solid #e5e5e5;border-radius:12px;box-shadow:none;background:#fff}
+body.v2 .props-card > table td{border-bottom:1px solid #e5e5e5}
+/* 0830C properties+property (end) */
+/* 0830D reservations+stay (start) */
+body.v2 .stays-desk{padding:16px}
+body.v2 .host-stay-detail .card{border:1px solid #e5e5e5;border-radius:12px;padding:16px 20px;box-shadow:none}
+body.v2 .stays-phone .card.stay{border:1px solid #e5e5e5;border-radius:12px;padding:16px}
+body.v2 .stays-title-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+body.v2 [data-filter-summary]{display:none}
+body.v2 .stays-head-actions{flex-wrap:wrap;gap:12px}
+body.v2 .stays-head-actions [data-filter-toggle][hidden]{display:none}
+body.v2 .stays-links{display:flex;flex-direction:column;gap:12px;margin-top:16px}
+body.v2 .stays-links .link{display:flex;align-items:center;justify-content:space-between;min-height:64px;padding:0 16px;border:1px solid #e5e5e5;border-radius:12px;color:var(--ink);text-decoration:none;font-size:17px}
+body.v2 .stay-head-cta{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+body.v2 .stay-guests-actions{display:flex;flex-wrap:wrap;gap:12px}
+body.v2 .stays-title-row .help-tip-btn,body.v2 .police-deadline-row .help-tip-btn{min-width:44px;min-height:44px;box-sizing:border-box}
+body.v2 .stays-title-row .help-tip,body.v2 .police-deadline-row .help-tip{position:relative;display:inline-flex;align-items:center}
+body.v2 .stays-title-row .help-tip-body,body.v2 .police-deadline-row .help-tip-body{display:none;position:fixed;z-index:70;left:0;top:100%;box-sizing:border-box;width:min(320px,calc(100vw - 16px));max-width:calc(100vw - 16px);padding:10px 12px;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-popover);font-size:13px;font-weight:400;line-height:1.45;text-align:left}
+body.v2 .stays-title-row .help-tip.is-open>.help-tip-body,body.v2 .police-deadline-row .help-tip.is-open>.help-tip-body,body.v2 .stays-title-row .help-tip:not([data-js]):hover>.help-tip-body,body.v2 .police-deadline-row .help-tip:not([data-js]):hover>.help-tip-body,body.v2 .stays-title-row .help-tip:not([data-js]):focus-within>.help-tip-body,body.v2 .police-deadline-row .help-tip:not([data-js]):focus-within>.help-tip-body{display:block}
+body.v2 .stays-title-row .help-tip-body a,body.v2 .police-deadline-row .help-tip-body a{color:var(--brand-ink);font-weight:650}
+body.v2 .police-deadline-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+body.v2 .stays-phone .in b,body.v2 .stays-phone .in small{white-space:normal;overflow-wrap:anywhere}
+body.v2 .stays-pills .settings-pill:hover{background:#e4e4e4}
+/* 0830D reservations+stay (end) */
+/* 0830E invoices+submission (start) */
+
+/* 0830E page wrapper: phone bottom room for the tab bar; 44 px tap targets; 12 px gaps between neighbours */
+/* closed details keep their content out of layout; the hidden form otherwise sticks out under the tab bar */
+body.v2 .e-page details:not([open]) > :not(summary){display:none}
+body.v2 .e-page .picker-links{margin:24px 0 0;display:flex;flex-wrap:wrap;gap:12px}
+body.v2 .e-page .airbnb-back{width:44px;height:44px;min-width:44px;min-height:44px}
+body.v2 .e-page .help-tip-btn{min-width:44px;min-height:44px}
+body.v2 .e-page .ui-btn-compact{min-height:44px}
+body.v2 .e-page .field-label-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 12px}
+body.v2 .e-page .ui-form-actions,body.v2 .e-page .ui-btn-group,body.v2 .e-page .stay-command-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+body.v2 .e-page .technical-downloads{gap:12px}
+
+/* 0830E: invoice detail, invoice form + stay picker, submission detail (v2). Ported from host.css look; detail pages use the settings back header. */
+body.v2 .stay-command-panel{border:1px solid var(--line,#e5e5e5);border-radius:12px;padding:20px;margin:0 0 24px;background:var(--paper,#fff);box-shadow:none}
+body.v2 .stay-command-main{display:flex;flex-direction:column;gap:16px}
+body.v2 .stay-command-panel .eyebrow{font-size:14px;font-weight:600;color:var(--ink3,#6b6b6b);margin:0 0 4px}
+body.v2 .stay-command-note{margin:0;font-size:16px;line-height:1.5;color:var(--ink,#222)}
+body.v2 .stay-command-actions .ui-btn-group,body.v2 .stay-command-actions .ui-form-actions{display:flex;flex-wrap:wrap;gap:12px}
+body.v2 .stay-command-actions form.inline{margin:0}
+body.v2 .stay-command-panel .ui-banner{margin:16px 0 0}
+body.v2 .stay-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0 0}
+@media (min-width:768px){body.v2 .stay-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}}
+body.v2 .detail-metric{border:1px solid var(--line,#e5e5e5);border-radius:12px;padding:16px;min-width:0}
+body.v2 .metric-label{font-size:14px;color:var(--ink3,#6b6b6b);margin:0 0 8px;overflow-wrap:anywhere}
+body.v2 .metric-value{font-size:24px;font-weight:700;color:var(--ink,#222);overflow-wrap:anywhere}
+body.v2 .metric-value.small-value{font-size:16px}
+body.v2 .report-stamp-value .copy-btn,body.v2 .report-stamp-value button{margin-left:8px}
+body.v2 .report-stamp{overflow-wrap:anywhere}
+body.v2 .report-header-problems{margin:16px 0 0;padding:16px;border:1px solid var(--line,#e5e5e5);border-radius:12px}
+body.v2 .report-header-problems h3{font-size:16px;font-weight:700;margin:0 0 8px}
+body.v2 .report-header-problems ul{margin:0 0 12px;padding-left:20px}
+body.v2 .invoice-document{display:block;min-width:0}
+body.v2 .ui-table-wrap{max-width:100%;overflow-x:auto}
+body.v2 .ui-note-line,body.v2 .invoice-document > p.ui-sub{margin:12px 0 0}
+body.v2 .danger-zone{border:1px solid var(--line,#e5e5e5);border-radius:12px;padding:16px;margin:24px 0 0;background:none}
+body.v2 .danger-zone > summary{font-size:16px;font-weight:700;cursor:pointer;min-height:44px;display:flex;align-items:center}
+body.v2 .danger-zone form{display:flex;flex-direction:column;gap:12px;margin:12px 0 0}
+body.v2 .danger-zone .ui-field{margin:0}
+body.v2 .invoice-cancel-reason input{max-width:100%}
+body.v2 details.technical{border:1px solid var(--line,#e5e5e5);border-radius:12px;padding:16px;margin:24px 0 0;background:none}
+body.v2 details.technical > summary{font-size:16px;font-weight:700;cursor:pointer;min-height:44px;display:flex;align-items:center}
+body.v2 details.technical > h3{font-size:16px;font-weight:700;margin:16px 0 8px}
+body.v2 details.technical dl.kv{display:grid;gap:4px;margin:12px 0 0}
+body.v2 details.technical dl.kv dt{font-size:14px;color:var(--ink3,#6b6b6b)}
+body.v2 details.technical dl.kv dd{margin:0;overflow-wrap:anywhere}
+body.v2 .technical-downloads{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+body.v2 .technical-download{display:inline-flex;align-items:center;gap:8px}
+body.v2 .help-dot{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;border:1px solid var(--line-strong,#bbb);font-size:14px;color:var(--ink3,#6b6b6b);cursor:help}
+body.v2 .code-block{white-space:pre-wrap;overflow-wrap:anywhere;margin:12px 0 0;padding:12px;border-radius:12px;border:1px solid var(--line,#e5e5e5);font-size:14px}
+body.v2 .invoice-items-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:end}
+body.v2 .invoice-items-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+body.v2 .invoice-items-heading h2{margin:0}
+body.v2 .invoice-total{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:16px 0 0}
+body.v2 .invoice-total-label{font-size:16px;font-weight:600}
+body.v2 .invoice-total-value{font-size:24px;font-weight:700}
+body.v2 .invoice-paid-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+body.v2 .invoice-lookup-row,body.v2 .invoice-supplier-meta{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+body.v2 .invoice-lookup-row > *{min-width:0}
+body.v2 .invoice-supplier,body.v2 .invoice-customer{border:1px solid var(--line,#e5e5e5);border-radius:12px;padding:16px;margin:12px 0 0}
+body.v2 .invoice-f-half,body.v2 .invoice-f-city,body.v2 .invoice-f-zip,body.v2 .invoice-f-full{min-width:0}
+@media (min-width:768px){
+  body.v2 .invoice-items-grid{grid-template-columns:minmax(0,3fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)}
+  body.v2 .invoice-paid-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  body.v2 .invoice-buyer-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  body.v2 .invoice-f-full{grid-column:1 / -1}
+}
+
+/* 0830E invoices+submission (end) */
+/* 0830F sub-pages (start) */
+/* 0830F1 (start) */
+body.v2 .setup-wizard-count{font-size:14px;color:var(--ink3);margin-top:4px}
+body.v2 .cleaning-form-page .ui-field>label{display:inline-block;margin-bottom:12px}
+body.v2 .cleaning-form-page .ui-field>.help-tip{margin-left:8px}
+body.v2 .cleaning-form-page .cleaning-actions{margin:12px 0}
+body.v2 .cleaning-form-page .cleaning-panel,body.v2 .cleaning-form-page .cleaning-subsection{margin-top:24px}
+body.v2 .f1-tip .help-tip .help-tip-btn{min-width:44px;min-height:44px}
+body.v2 .f1-list li:last-child{margin-bottom:0}
+body.v2 .f1-terms .f1-terms-link{display:inline-flex;align-items:center;min-height:44px!important}
+body.v2 ul.f1-list{display:block;grid-template-columns:none;columns:auto;gap:0;padding-left:20px}
+body.v2 ul.f1-list>li{display:list-item;margin:0 0 12px}
+body.v2 .f1-leon-terms .settings-value-link{display:inline-flex;align-items:center;min-height:44px}
+/* 0830F1 (end) */
+/* 0830F2 (start) */
+body.v2 .settings-lane [data-payment-services] ul{list-style:none;padding:0;margin:0 0 16px}
+body.v2 .settings-lane [data-payment-services] li{border:1px solid #e5e5e5;border-radius:12px;padding:16px;margin:0 0 12px}
+body.v2 .settings-lane [data-payments-step]{margin:0 0 12px}
+body.v2 .settings-lane .setup-summary-card{border:1px solid #e5e5e5;border-radius:12px;padding:16px;margin:0}
+body.v2 .settings-lane .ui-chip input[type=radio]{margin:0;accent-color:var(--acc)}
+@media (max-width:1023.98px){body.v2 .settings-lane input[type=radio],body.v2 .settings-lane input[type=checkbox]{min-width:44px;min-height:44px}}
+@media (min-width:1024px){body.v2 .settings-lane .ui-chip input[type=radio]{min-width:24px;min-height:24px}}
+body.v2 .settings-lane > .ui-section{margin:0 0 24px}
+body.v2 .settings-lane .ui-chips{display:flex;flex-wrap:wrap;gap:12px}
+body.v2 .settings-lane .ui-chip input[type=radio]{margin:0 12px 0 0}
+@media (max-width:1023.98px){body.v2 .settings-lane .help-tip-btn{min-width:44px;min-height:44px}}
+/* 0830F2 (end) */
+/* 0830F sub-pages (end) */
+/* 0831G page help (start) */
+body .page-help{display:inline-block;flex:0 0 auto;position:relative;vertical-align:middle;margin-left:0;font-weight:400;line-height:1}
+body.v2 summary.page-help-btn{display:inline-flex;flex:0 0 44px;padding:0;justify-content:center;align-items:center;justify-content:center;box-sizing:border-box;width:44px;height:44px;margin:-13px -13px -13px 1px;padding:0;background:none;border:0;vertical-align:top;list-style:none;cursor:pointer}
+body .page-help-btn::-webkit-details-marker{display:none}
+body .page-help-btn::marker{content:""}
+body .page-help-dot{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:18px;height:18px;border:1.5px solid #717171;border-radius:50%;background:#fff;color:#222;font-size:12px;font-weight:700;line-height:1}
+body .page-help-btn:focus-visible .page-help-dot{outline:2px solid #222;outline-offset:3px}
+body .page-help:not([open]) > .page-help-body{display:none}
+body .page-help[open] > .page-help-body{display:block;position:fixed;z-index:60;top:50%;left:50%;transform:translate(-50%,-50%);width:min(320px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow:auto;box-sizing:border-box;padding:16px;background:#fff;color:#222;border:1px solid #ddd;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.12);font-size:15px;font-weight:400;line-height:1.4;text-align:left;text-transform:none;letter-spacing:0;white-space:normal}
+body .page-help-steps{margin:0 0 12px;padding-left:20px}
+body .page-help-steps li{margin:0 0 6px}
+body .page-help-more{display:inline-block;min-height:44px;line-height:44px;color:#222;font-weight:600;text-decoration:underline}
+body.v2 .stays-index-card.stays-links{display:block;gap:0;margin-top:24px;padding:0;border:1px solid #ddd;border-radius:12px;background:#fff;overflow:hidden}
+body.v2 .stays-index-card.stays-links > a.airbnb-index-row{display:flex;align-items:center;gap:16px;min-height:64px;padding:0 16px;box-sizing:border-box;margin:0;border:0;border-radius:0;background:none;color:#222;text-decoration:none;font-size:17px;font-weight:400}
+body.v2 .stays-index-card.stays-links > a.airbnb-index-row + a.airbnb-index-row{border-top:1px solid #ddd}
+body.v2 .stays-index-card.stays-links .airbnb-icon{display:inline-flex;flex:0 0 24px;justify-content:center}
+body.v2 .stays-index-card.stays-links .airbnb-label{flex:1 1 auto;min-width:0}
+body.v2 .stays-index-card.stays-links .airbnb-label small{display:block;font-size:13px;color:#555}
+body.v2 .stays-index-card.stays-links .airbnb-index-row > svg:last-child{flex:0 0 auto}
+body.v2 .ov-head p.sub{margin-bottom:12px}
+body.v2 .ov-head .ov-links{margin-bottom:12px}
+/* 0831G page help (end) */
+/* 0831H details+cleanup (start) */
+/* 0831H: invoice items ported from host2.css 0253/0295 (v2 pages do not load host2.css): grid rows, card stack under the 850 px and 420 px container queries */
+body.v2 #item-rows.invoice-items-grid { display: block; width: 100%; table-layout: fixed; container-type: inline-size; }
+body.v2 .invoice-items-grid thead,
+body.v2 .invoice-items-grid tbody { display: block; width: 100%; }
+body.v2 .invoice-items-grid thead tr,
+body.v2 .invoice-items-grid tbody tr { display: grid; grid-template-columns: minmax(220px, 1fr) 84px 124px 148px 78px 126px; align-items: start; }
+body.v2 .invoice-items-grid thead tr { align-items: stretch; background: var(--surface-2); }
+body.v2 .invoice-items-grid thead th { display: flex; align-items: center; background: transparent; }
+body.v2 .invoice-items-grid th,
+body.v2 .invoice-items-grid td { box-sizing: border-box; min-width: 0; }
+body.v2 .invoice-items-grid td { vertical-align: top; }
+body.v2 .invoice-items-grid input:not([type=hidden]),
+body.v2 .invoice-items-grid select { box-sizing: border-box; width: 100%; min-width: 0; }
+/* Remove matches the v2 inputs: 44 px up to 1023 px, 39 px above */
+body.v2 .invoice-items-grid .row-actions [data-remove-item] { height: 44px; min-height: 44px; box-sizing: border-box; }
+@media (min-width:1024px){ body.v2 .invoice-items-grid .row-actions [data-remove-item] { height: 39px; min-height: 39px; } }
+body.v2 .invoice-items-grid [data-vat-col][hidden] { display: block !important; visibility: hidden; }
+@container (max-width: 850px) {
+  body.v2 .invoice-items-grid thead { display: none; }
+  body.v2 .invoice-items-grid tbody tr { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3) var(--space-4); padding: var(--space-4); border-bottom: 1px solid var(--line); }
+  body.v2 .invoice-items-grid tbody tr:last-child { border-bottom: 0; }
+  body.v2 .invoice-items-grid td { display: block; padding: 0; border: 0; }
+  body.v2 .invoice-items-grid td:first-child,
+  body.v2 .invoice-items-grid td.row-actions { grid-column: 1 / -1; }
+  body.v2 .invoice-items-grid td.row-actions { text-align: left; }
+  body.v2 .invoice-items-grid td.row-actions .ui-btn { margin: 0; }
+  body.v2 .invoice-items-grid td::before { content: attr(data-label); display: block; margin-bottom: var(--space-1); color: var(--ink-3); font-size: var(--size-11); font-weight: 650; letter-spacing: .05em; text-transform: uppercase; }
+  body.v2 .invoice-items-grid td:first-child::before,
+  body.v2 .invoice-items-grid td.row-actions::before { display: none; }
+  body.v2 .invoice-items-grid [data-vat-col][hidden] { display: none !important; }
+}
+@container (max-width: 850px) {
+  body.v2 .invoice-items-grid tbody tr { grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: var(--space-2) var(--space-3); padding: var(--space-3) 0; align-items: end; }
+  body.v2 .invoice-items-grid tbody tr[data-stay-row] { align-items: start; }
+  body.v2 .invoice-items-grid tbody tr > td:first-child { grid-column: 1 / -1; }
+  body.v2 .invoice-items-grid td.row-actions,
+  body.v2 .invoice-items-grid tbody tr > td:last-child { grid-column: -2 / -1; text-align: right; }
+  body.v2 .invoice-workspace.is-payer .invoice-items-grid tbody tr { grid-template-columns: repeat(4, minmax(0, 1fr)) auto; }
+  body.v2 .invoice-items-grid tbody tr > td:last-child:empty { display: none; }
+}
+@container (max-width: 420px) {
+  body.v2 .invoice-items-grid tbody tr { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  body.v2 .invoice-items-grid td.row-actions, body.v2 .invoice-items-grid tbody tr > td:last-child { grid-column: 1 / -1; text-align: left; }
+}
+body.v2 .invoice-items-grid .input-price { max-width: 130px; } /* app.css: stay and extra price share one width */
+body.v2 #item-rows.invoice-items-grid { max-width: 850px; } /* form lane: rows always stack as cards (0295) */
+/* 0831H: the overview/stays header action buttons share the v2 mockup .btn height (37 px) */
+body.v2 .stays-head-actions .btn{height:37px;min-height:37px;box-sizing:border-box}
+@media (max-width:600px){body.v2 .stays-head-actions .btn{height:auto;min-height:44px}}
+/* 0831H details+cleanup (end) */
+
 /* 0789c: 12 px between the Entities setup banner and the help "?" and between archive filter chips */
 body.v2 .settings-help-line + .onboarding-banner-setup{margin-block-start:12px}
 body.v2 .archive-type-filters{gap:12px !important}
@@ -1858,10 +2090,43 @@ body.v2 .settings-lane .set-row,body.v2 .settings-lane .document-links a{display
 body.v2 .settings-lane .document-links{border-top:0;margin-top:0}
 body.v2 .settings-lane .set-row::after,body.v2 .settings-lane .document-links a::after{content:"\203A";flex:0 0 auto;color:var(--ink3);font-size:20px;line-height:1}
 
-/* 0872 merge: help tips inside <details> (property page) stay visible text, no "?" button */
-body.v2 details.prop-sec .help-tip-btn{display:none}
-body.v2 details.prop-sec .help-tip{display:block}
-body.v2 details.prop-sec .help-tip-body,body.v2 details.prop-sec .help-tip[data-js]>.help-tip-body{position:static;display:block;max-width:none;width:auto;margin:2px 0 0;padding:0;background:none;border:0;box-shadow:none;font-size:12px;color:var(--ink3)}
+/* 0833 property editor (v2) */
+body.v2 .property-settings-form .help-tip{display:inline-flex;align-items:center;vertical-align:middle;position:relative}
+body.v2 .property-settings-form .help-tip-btn{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:24px;height:24px;min-width:24px;min-height:24px;padding:0;margin:0 0 0 12px;border:1px solid var(--line);border-radius:50%;background:#fff;color:var(--ink3);font-family:inherit;font-size:12px;font-weight:600;line-height:1;cursor:help;position:relative}
+body.v2 .property-settings-form .help-tip-btn::after{content:"";position:absolute;inset:-13px}
+body.v2 .property-settings-form .help-tip-btn:hover,body.v2 .property-settings-form .help-tip-btn[aria-expanded=true]{background:var(--brand-soft);border-color:var(--brand);color:var(--brand-ink)}
+body.v2 .property-settings-form .help-tip-btn:focus-visible{outline:3px solid var(--brand-ring,var(--brand));outline-offset:2px}
+body.v2 .property-settings-form .help-tip-body{display:none;position:absolute;z-index:70;left:0;top:100%;box-sizing:border-box;width:min(320px,calc(100vw - 16px));max-width:calc(100vw - 16px);padding:10px 12px;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-popover);font-size:13px;font-weight:400;line-height:1.45;text-align:left;white-space:normal;overflow-wrap:anywhere}
+body.v2 .property-settings-form .help-tip-body a{color:var(--brand-ink);font-weight:650}
+body.v2 .property-settings-form .help-tip:not([data-js]):hover>.help-tip-body,body.v2 .property-settings-form .help-tip:not([data-js]):focus-within>.help-tip-body,body.v2 .property-settings-form .help-tip.is-open>.help-tip-body{display:block}
+body.v2 .property-settings-form .help-tip[data-js]>.help-tip-body{position:fixed}
+@media (min-width:1024px){
+body.v2 .property-settings-form .grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+body.v2 .property-settings-form .property-identity-fields>.field{grid-column:1/-1}
+body.v2 .property-settings-form .field input:not([type=checkbox]):not([type=radio]):not([type=hidden]),body.v2 .property-settings-form .field select{width:100%;max-width:none;box-sizing:border-box}
+}
+/* 0850 address suggest (v2) */
+.ruian-suggest[hidden]{display:none}
+.ruian-suggest{list-style:none;margin:6px 0 12px;padding:4px;background:var(--s);border:1px solid var(--line);border-radius:10px;max-width:100%;max-height:264px;overflow-y:auto;box-sizing:border-box}
+.ruian-suggest [role="option"]{min-height:44px;display:flex;align-items:center;padding:8px 10px;border-radius:8px;cursor:pointer;color:var(--ink);font-size:15px;line-height:1.3;overflow-wrap:anywhere}
+.ruian-suggest [role="option"]:hover,.ruian-suggest [role="option"][aria-selected="true"]{background:var(--side2)}
+.ruian-suggest [role="option"][aria-selected="true"]{outline:2px solid var(--acc);outline-offset:-2px}
+/* 0851 property editor savebar: Discard/Cancel as quiet text left, Save as the one coral pill right */
+body.v2 form.property-settings-form .savebar,body.v2 form.property-settings-form:has(details.prop-sec[open]) .savebar{position:sticky;left:auto;right:auto;bottom:0;z-index:20;width:auto;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:16px;margin:24px 0 0;padding:12px 0 calc(12px + env(safe-area-inset-bottom,0px));background:#fff;border-top:1px solid var(--line);white-space:nowrap}
+body.v2 form.property-settings-form .savebar .btn,body.v2 form.property-settings-form:has(details.prop-sec[open]) .savebar .btn{flex:0 0 auto;width:auto;min-width:0;height:48px;min-height:48px;padding:0 24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;font-size:16px;font-weight:600;line-height:1;white-space:nowrap}
+body.v2 form.property-settings-form .savebar .btn.ghost,body.v2 form.property-settings-form:has(details.prop-sec[open]) .savebar .btn.ghost{margin-right:auto;padding:0 12px;background:transparent;border:0;color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+body.v2 form.property-settings-form .savebar .btn[type="submit"],body.v2 form.property-settings-form:has(details.prop-sec[open]) .savebar .btn[type="submit"]{margin-left:auto;min-width:160px;background:var(--acc);color:#fff;border:0}
+body.v2 form.property-settings-form .savebar:has([data-unsaved-reset]:not([hidden])) a.btn.ghost{display:none}
+body.v2 form.property-settings-form .savebar [hidden]{display:none}
+@media (max-width:1023px){body.v2 form.property-settings-form .savebar,body.v2 form.property-settings-form:has(details.prop-sec[open]) .savebar{bottom:calc(var(--tabbar-h) + var(--tabbar-safe));padding-bottom:12px}}
+
+/* 0852 */
+body.v2 a.ui-btn-primary{color:#fff}
+body.v2 .e-page .stay-command-actions .ui-btn-quiet{align-self:stretch;font-size:14px}
+body.v2 #stay-fee-settings > .field:has(> .copyrow){grid-column:1 / -1}
+body.v2 .prop-sec .copyrow{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+body.v2 .prop-sec .copyrow > select#fee-copy-source{margin-bottom:0;flex:1 1 220px;min-width:0}
+@media (max-width:1023px){body.v2 .e-page table.ui-table-stack thead{display:none}}
 /* 0872 CI fixes: table header under its cell, QR download button colour, police sample link wraps, address labels align */
 body.v2 .guide-page .ui-table th.ui-cell-r{width:1%;padding-left:16px;white-space:nowrap}
 body.v2 .guide-page .ui-btn-primary{color:#fff;background:var(--coral-600);border-color:var(--coral-600)}
@@ -1869,3 +2134,12 @@ body.v2 .guide-page .ui-btn-primary>span{color:inherit}
 body.v2 .police-section-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 body.v2 .police-sample-link{max-width:100%;white-space:normal;text-align:left;margin-bottom:0}
 @media (max-width:767px){body.v2 .guide-page .ui-table thead{display:none}}
+/* 0852 merge: invoice picker quick stays and last-price button on the v2 invoice pages */
+body.v2 .ui-section h2.invoice-quick-title{font-size:16px;font-weight:600;margin:0 0 12px}
+body.v2 .ui-section ul.invoice-quick-stays{list-style:none;margin:0 0 24px;padding:0;display:flex;flex-direction:column;gap:12px}
+body.v2 .ui-section .invoice-quick-stays li .ui-btn{display:flex;align-items:center;box-sizing:border-box;width:100%;min-height:44px;padding:8px 16px;justify-content:flex-start;text-align:left;white-space:normal}
+body.v2 .invoice-use-price{margin-top:12px;min-height:44px}
+body.v2 .invoice-use-price[hidden]{display:none}
+body.v2 .props-card thead{display:table-header-group}
+body.v2 .props-card thead,body.v2 .props-card thead th{background:transparent}
+@media (min-width:1024px) and (max-width:1100px){body.v2 .stay-fees-page .card.stays-desk th,body.v2 .stay-fees-page .card.stays-desk td{padding-left:6px;padding-right:6px}}

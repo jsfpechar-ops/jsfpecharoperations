@@ -366,7 +366,7 @@ def test_speed_paths_end_to_end(base, speed_host):
         steps.append("quick link for the stay")
         page.wait_for_url(re.compile(r"reservation_id=\d+"))
         page.wait_for_load_state("networkidle")
-        assert page.locator('input[name="stay_price"]').is_visible()
+        page.locator('input[name="stay_price"]').wait_for(state="visible")
         taps["invoice"] = steps
         assert not [u for u in urls if "/submit" in u]
         context.close()

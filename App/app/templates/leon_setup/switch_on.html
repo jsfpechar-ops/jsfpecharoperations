@@ -1,6 +1,6 @@
 {% extends "leon_setup/_layout.html" %}
 {% block wizard_content %}
-<p class="setup-wizard-lede">{{ t('leon_page.what') }}</p>
+<div class="setup-wizard-lede">{{ t('leon_page.what') }}</div>
 {% if state == 'terms' %}{{ ui_banner('attention', t('leon_page.terms_updated')) }}{% endif %}
 {% if state in ('off', 'terms') %}
 <h2 class="setup-wizard-section-title">{{ t('leon_page.warn_title') }}</h2>
@@ -13,7 +13,7 @@
   <label for="leon-terms">{{ t('leon_page.accept') }} <a href="/guide#leon-terms">{{ t('leon_page.terms_link') }}</a></label></div>
 </form>
 {% else %}
-<p class="setup-wizard-instruction">{{ t('leon_setup.switch_on.already') }}</p>
+<div class="setup-wizard-instruction">{{ t('leon_setup.switch_on.already') }}</div>
 {% endif %}
 {% endblock %}
 {% block wizard_actions %}

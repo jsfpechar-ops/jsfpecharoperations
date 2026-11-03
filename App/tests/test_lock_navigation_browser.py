@@ -188,7 +188,8 @@ def test_lock_setup_flow_keeps_its_place(world):
             box = _in_view(page, "#smart-locks-share")
             assert box["y"] > 0  # a real scroll to the section, not the page top
             assert page.locator("#smart-locks-share .guide-steps li").count() == 3
-            assert page.locator("#smart-locks-share .help-tip-body").first.is_visible()  # v2 hides the button in details (0536 item 6)
+            page.locator("#smart-locks-share .help-tip-btn").first.click()  # "?" stays visible; body opens on tap
+            assert page.locator("#smart-locks-share .help-tip-body").first.is_visible()
             assert page.locator('#smart-locks-share .help-tip-body a[href="/guide#door-codes-share"]').count() == 1
             assert page.locator("#smart-locks-share a.help-link").count() == 0
             _shot(page, f"share-1280-{lang}")

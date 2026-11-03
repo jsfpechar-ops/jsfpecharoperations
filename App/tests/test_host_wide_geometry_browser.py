@@ -518,7 +518,7 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                             "dates_changed_resign alerts are filing gates and must remain non-dismissible"
                         )
                         assert geometry["alertStack"] is None, geometry["alertStack"]
-                    elif name in ("properties", "fee-setup", "property-detail", "property-detail-configured", "guest-links", "automation", "smart-locks", "invoices", "submissions", "housebook", "property-new"):  # v2 pages (0538, 0792): no alert stack
+                    elif name in ("properties", "fee-setup", "property-detail", "property-detail-configured", "guest-links", "automation", "smart-locks", "invoices", "submissions", "housebook", "property-new", "invoice-new-picker", "invoice-new-selected", "invoice-detail", "submission-detail"):  # v2 pages (0538, 0792): no alert stack
                         # 0538: the v2 shell does not render the alert stack (base.html), as on the dashboard
                         assert geometry["alertStack"] is None, (name, lang, width, geometry["alertStack"])
                     else:

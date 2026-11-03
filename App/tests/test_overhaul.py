@@ -506,7 +506,7 @@ def test_filtered_stays_return_path_and_guest_links_workspace():
             f"/reservations/{stays[0]}?return_to=%2Freservations%3Frange%3Dall%26apartment%3D{apartment_id}"
         )
         assert detail.status_code == 200
-        assert "Back to stays" in detail.text
+        assert 'class="airbnb-back"' in detail.text
         assert f"/reservations?range=all&amp;apartment={apartment_id}" in detail.text
 
         links = browser.get(f"/apartments/{apartment_id}")
