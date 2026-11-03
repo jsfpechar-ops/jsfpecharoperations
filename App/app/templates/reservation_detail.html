@@ -1,4 +1,5 @@
 {% extends "host_page.html" %}
+{% from "_components.html" import page_help with context %}
 {% set v2 = true %}
 {% from "_icons.html" import icon with context %}
 {% set nav = 'reservations' %}
@@ -25,9 +26,7 @@
 {% set cell = deadline_cell(progress, check_in) %}
 {% set has_cta = send_controls.send_enabled or progress.status == 'failed' or (progress.status == 'reported' and submissions) %}
 {#- 0528: phone top (below 1024 px). Mockup phone-v1 section pobyt. -#}
-<div class="top stay-top">
-  <a class="round" href="{{ return_to }}" aria-label="{{ t('stay.detail.back') }}">{{ icon('arrow-left', 20) }}</a>
-</div>
+{% with href=return_to, title=(lead_name or reservation.internal_name), help_after=page_help('stay') %}{% include "partials/settings_back_header.html" %}{% endwith %}
 <div class="sub sub-phone">{{ reservation.internal_name }} · {{ source_label(reservation) }}</div>
 <div class="sub-phone stay-pill-line ph-hide">{% if stay_inactive %}<span class="pill">{{ t('stays.filter.state.' ~ reservation.status) if reservation.status != 'active' else t('archive.col.when') }}</span>{% else %}{{ v2_status_pill(cell, progress, reservation) }}{% endif %}</div>
 <div class="card facts stay-dates">
@@ -51,7 +50,7 @@
   {% elif progress.status == 'reported' and submissions %}
     {% set receipt_report = submissions | selectattr('has_receipt') | first %}
     {% if receipt_report %}
-      <a class="btn" href="/submissions/{{ receipt_report.id }}/receipt.pdf">{{ t('reports.detail.download_receipt') }}</a>
+      <a data-turbo="false" class="btn" href="/submissions/{{ receipt_report.id }}/receipt.pdf">{{ t('reports.detail.download_receipt') }}</a>
       <a class="btn ghost" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
     {% else %}
       <a class="btn" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
@@ -60,14 +59,7 @@
 {% endmacro %}
 <div class="head" id="now"><div>
   <div class="crumb"><a href="{{ return_to }}">{{ t('stays.title') }}</a> › {{ lead_name or reservation.internal_name }}</div>
-  <h1 class="big">{{ lead_name or reservation.internal_name }}</h1>
-  <details class="ui-how stays-how ph-hide" data-how="stay">
-    <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
-    <div class="ui-how-body">
-      <ol class="ui-how-steps">{% for n in (1, 2, 3) %}<li>{{ t('how.stay.' ~ n) }}</li>{% endfor %}</ol>
-      <a class="ui-how-more" href="/guide#guests">{{ t('how.more') }}</a>
-    </div>
-  </details>
+  
   <p class="sub">{% if stay_inactive %}<span class="pill">{{ t('stays.filter.state.' ~ reservation.status) if reservation.status != 'active' else t('archive.col.when') }}</span>{% else %}{{ v2_status_pill(cell, progress, reservation) }}{% endif %}<span class="stay-sep"><a href="/apartments/{{ reservation.apartment_id }}">{{ reservation.internal_name }}</a> · {{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</span></p>
 </div>
 <div class="stay-head-actions">
@@ -175,7 +167,7 @@
 
 {% if stay_claim and (stay_claim.state != 'unclaimed' or stay_claim.guest_access_locked_at) %}
 <div class="card stay-claim-line ph-hide" data-stay-claim>
-  <div class="stay-claim-label">{{ t('stay.claim.title') }}</div>
+  <div class="stay-claim-label">{{ t('stay.claim.title') }}{% if stay_claim.state != 'unclaimed' %}{{ help_tip('release-claim-help', t('stay.claim.release_help')) }}{% endif %}</div>
   <p>
     {% if stay_claim.guest_access_locked_at %}
       {{ t('stay.claim.locked') }}
@@ -194,7 +186,6 @@
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
       <button class="btn ghost" type="submit" data-release-claim>{{ t('stay.claim.release') }}</button>
     </form>
-    {{ help_tip('release-claim-help', t('stay.claim.release_help')) }}
   </div>
   {% endif %}
 </div>
@@ -223,7 +214,7 @@
       <td>
         {{ row_menu_begin() }}
           <a class="row-menu-item" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}" role="menuitem">{{ t('stay.detail.guests.edit') }}</a>
-          <a class="row-menu-item" href="/guests/{{ guest.id }}/form.pdf" role="menuitem">{{ t('stay.detail.guests.pdf') }}</a>
+          <a data-turbo="false" class="row-menu-item" href="/guests/{{ guest.id }}/form.pdf" role="menuitem">{{ t('stay.detail.guests.pdf') }}</a>
           <form method="post" action="/guests/{{ guest.id }}/archive" class="row-menu-form"
                 data-confirm data-confirm-message="{{ t('host.delete_to_archived.confirm') }}">
             <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
@@ -288,7 +279,7 @@
   <div id="police-card" class="card police-card{% if progress.status == 'failed' %} police-failed{% endif %}">
     <b>{% if progress.status == 'failed' %}{{ t('hint.failed') }}{% elif send_controls.send_enabled %}{{ tp('stay.detail.ready_count', send_controls.pending_count) }}{% elif progress.not_registered %}{{ tp('host.missing', progress.not_registered) }}{% else %}{{ t(send_controls.send_hint_key, filled=progress.filled, expected=progress.expected) }}{% endif %}</b>
     {% if not stay_inactive and cell.state != 'none' %}
-    <small class="police-deadline">{{ t('stay.detail.metric.deadline') }} {{ deadline_badge(cell) }}{% if deadline %}<span class="ph-hide"> · {{ t('stay.detail.metric.deadline_note', when=deadline.strftime('%d.%m.%Y %H:%M')) }}</span>{% endif %}</small>
+    <span class="police-deadline-row"><small class="police-deadline">{{ t('stay.detail.metric.deadline') }} {{ deadline_badge(cell) }}</small>{% if deadline %}{{ help_tip('police-deadline-help', t('stay.detail.metric.deadline_note', when=deadline.strftime('%d.%m.%Y %H:%M'))) }}{% endif %}</span>
     {% endif %}
   </div>
   {# WP23: the host filed this stay in the UbyPort web application. #}
@@ -337,7 +328,7 @@
             {{ row_menu_begin() }}
               <a class="row-menu-item" href="/submissions/{{ submission.id }}" role="menuitem">{{ t('stay.detail.reports.open') }}</a>
               {% if submission.has_receipt %}
-                <a class="row-menu-item" href="/submissions/{{ submission.id }}/receipt.pdf" role="menuitem">{{ t('reports.receipt') }}</a>
+                <a data-turbo="false" class="row-menu-item" href="/submissions/{{ submission.id }}/receipt.pdf" role="menuitem">{{ t('reports.receipt') }}</a>
               {% endif %}
             {{ row_menu_end() }}
           </td>

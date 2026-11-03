@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ t('pp.book.pay_title') }}{% endblock %}
+{% block content %}
+<main style="max-width:480px;margin:2rem auto;padding:0 1rem;">
+  <h1>{{ t('pp.book.pay_title') }}</h1>
+  <p>{{ t('pp.book.pay_note') }}</p>
+  <p><a class="ui-btn ui-btn-primary" href="{{ pay_url }}" rel="noopener" data-no-prefetch>{{ t('pp.book.pay_button') }} · {{ total }} {{ t('payments.czk') }}</a></p>
+</main>
+{% endblock %}

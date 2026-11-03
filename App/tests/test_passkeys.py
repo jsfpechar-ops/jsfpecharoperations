@@ -114,7 +114,7 @@ def test_adding_a_passkey_stores_only_public_data_audits_and_mails_the_owner():
     client = _signed_in(account)
     authenticator, response = _add(client)
     assert response.status_code == 200, response.text
-    assert response.json()["redirect"].startswith("/settings?msg=")
+    assert response.json()["redirect"].startswith("/settings/security?msg=")
     row = db.query_one("SELECT * FROM passkey WHERE user_account_id = ?", (account["id"],))
     assert row["credential_id"] and row["public_key"] and row["sign_count"] == 0
     assert row["backed_up"] == 1 and row["name"] == "Passkey"
@@ -319,7 +319,7 @@ def test_settings_lists_passkeys_first_in_security():
     account = _account()
     client = _signed_in(account)
     _add(client)
-    html = client.get("/settings").text
+    html = client.get("/settings/security").text
     security = html[html.index('id="settings-security"'):]
     assert security.index("settings-passkeys") < security.index("/account/2fa/setup")
     assert "Passkey" in security and "/account/passkeys/" in security
@@ -435,7 +435,7 @@ def test_a_foreign_passkey_return_falls_back_to_settings():
     options = _post(client, "/account/passkeys/options")
     answer = authenticator.create(options.json())
     response = _post(client, "/account/passkeys", {"credential": answer, "return_to": "https://evil.example/x"})
-    assert response.json()["redirect"].startswith("/settings?msg=")
+    assert response.json()["redirect"].startswith("/settings/security?msg=")
 
 
 # --- moving the host portal to a child domain --------------------------------

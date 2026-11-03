@@ -29,6 +29,10 @@ type paylinkFake struct {
 	status  int
 	links   map[string]map[string]any
 	created map[string]any
+	// gate, when set, holds each POST until it is closed; inCreate is told
+	// (non-blocking) that a POST has arrived.
+	gate     chan struct{}
+	inCreate chan struct{}
 }
 
 func newPaylinkFake(t *testing.T) *paylinkFake {
@@ -39,6 +43,13 @@ func newPaylinkFake(t *testing.T) *paylinkFake {
 	}
 	f.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		raw, _ := io.ReadAll(r.Body)
+		if f.gate != nil && r.Method == http.MethodPost {
+			select {
+			case f.inCreate <- struct{}{}:
+			default:
+			}
+			<-f.gate
+		}
 		f.mu.Lock()
 		defer f.mu.Unlock()
 		f.reqs = append(f.reqs, paylinkReq{r.Method, r.URL.Path, r.Header.Get("Stripe-Account"), string(raw)})
@@ -208,6 +219,72 @@ func TestSendPaymentLinkFresh(t *testing.T) {
 	}
 	if n := onboardInt(t, pool, `SELECT COALESCE(SUM(calls), 0) FROM lock_api_usage`); n != 1 {
 		t.Errorf("calls = %d, want 1", n)
+	}
+}
+
+func TestSendPaymentLinkOverlapCreatesOneLink(t *testing.T) {
+	pool := testPool(t)
+	paylinkSeed(t, pool)
+	fake := newPaylinkFake(t)
+	fake.gate = make(chan struct{})
+	fake.inCreate = make(chan struct{}, 1)
+	ob := paylinkOnboarder(pool, onboardEnv("test", onboardTestKey, nil), fake)
+	type result struct {
+		u   string
+		err error
+	}
+	wait := func(c chan result) result {
+		select {
+		case r := <-c:
+			return r
+		case <-time.After(30 * time.Second):
+			t.Fatal("send did not finish")
+			return result{}
+		}
+	}
+	a := make(chan result, 1)
+	b := make(chan result, 1)
+	go func() {
+		u, err := ob.SendPaymentLink(context.Background(), 1)
+		a <- result{u, err}
+	}()
+	select {
+	case <-fake.inCreate:
+	case <-time.After(10 * time.Second):
+		t.Fatal("first send never reached Stripe")
+	}
+	go func() {
+		u, err := ob.SendPaymentLink(context.Background(), 1)
+		b <- result{u, err}
+	}()
+	time.Sleep(200 * time.Millisecond)
+	// The second send re-reads the row after the first commits, then GETs
+	// the stored link: the fake must say it is still active.
+	fake.configure(func(f *paylinkFake) {
+		f.links["plink_1"] = map[string]any{"id": "plink_1", "url": "https://buy.stripe.test/plink_1", "active": true}
+	})
+	close(fake.gate)
+	ra, rb := wait(a), wait(b)
+	if ra.err != nil || rb.err != nil {
+		t.Fatalf("errors: %v, %v", ra.err, rb.err)
+	}
+	if ra.u != "https://buy.stripe.test/plink_1" || rb.u != "https://buy.stripe.test/plink_1" {
+		t.Errorf("urls = %q, %q, want both plink_1", ra.u, rb.u)
+	}
+	posts := 0
+	for _, r := range fake.requests() {
+		if r.Method == "POST" {
+			posts++
+		}
+	}
+	if posts != 1 {
+		t.Errorf("POSTs = %d, want 1", posts)
+	}
+	if s := paylinkStored(t, pool, 1); s != "plink_1" {
+		t.Errorf("stored link = %q, want plink_1", s)
+	}
+	if n := onboardInt(t, pool, `SELECT COUNT(*) FROM audit WHERE action = 'payment_link_created'`); n != 1 {
+		t.Errorf("audit rows = %d, want 1", n)
 	}
 }
 

@@ -23,6 +23,8 @@ Optional host subdomain: [deployment, exact values and rollback](APP_SUBDOMAIN.m
 
 | Variable | Default | Notes |
 | --- | --- | --- |
+| `UBYHOST_RUIAN_ENABLED` | `1` | Set `0` to turn off the RÚIAN address suggestions on the property form (only the typed text goes to ČÚZK; nothing is stored). |
+| `UBYHOST_RUIAN_URL` | built-in | Override the ČÚZK RÚIAN geocoder URL (unverified default; see `app/ruian.py`). |
 | `UBYHOST_DATA_DIR` | `App/data` | Database, secret key, passport photos. Created at import time with mode `0700`. |
 | `UBYHOST_DB` | `$UBYHOST_DATA_DIR/ubyhost.db` | Full path override for the SQLite file. `App/scripts/backup_data.sh` honours it too, so if you set one you must set it for the backup script as well. |
 | `UBYHOST_SECRET_KEY` | generated once into `$UBYHOST_DATA_DIR/secret_key` | Minimum 32 characters; the process refuses to start if shorter. Signs session/PIN/claim cookies and CSRF tokens, and, while `UBYHOST_DATA_KEY_LEGACY` is on, derives the legacy Fernet key for data at rest. See [OPERATIONS.md](OPERATIONS.md#if-the-secret-key-is-lost-or-rotated). |
@@ -179,7 +181,7 @@ On **Render `ubyhost-staging`**, keep `UBYHOST_UBYPORT_ENV=mock`, set
 | `UBYHOST_STRIPE_SECRET_KEY` | unset | Secret key (`sk_test_...` or `sk_live_...`) matching `UBYHOST_STRIPE_MODE`. Set in Lightsail `.env` or Render Environment only, never in git. Unset means the feature is off even if `UBYHOST_STRIPE_MODE` is set. |
 | `UBYHOST_STRIPE_WEBHOOK_SECRET` | unset | Signing secret (`whsec_...`) for the platform webhook endpoint. Unset means webhooks are logged-and-ignored in tests; in `test`/`live` mode an unset value fails verification loudly. |
 | `UBYHOST_STRIPE_MONTHLY_API_CALLS` | `50000` | Shared monthly cap on Stripe API calls (all hosts), same guard pattern as `UBYHOST_TTLOCK_MONTHLY_CALLS`. `0` removes the cap. |
-| `UBYHOST_GO_PATHS` | unset | Space-separated paths Caddy sends to the Go service (`ubyhost-go`). Unset keeps all traffic on Python (compose sets `/__go_off__`). Never set it to an empty value: Caddy will not start. Add `/webhooks/stripe` only after the owner has checked the Go webhook. |
+| `UBYHOST_GO_PATHS` | unset | Space-separated paths Caddy sends to the Go service (`ubyhost-go`). Unset keeps all traffic on Python (compose sets `/__go_off__`). Never set it to an empty value: Caddy will not start. Put the value in double quotes (`deploy.sh` sources `.env`): `UBYHOST_GO_PATHS="/api/command-palette /dashboard/calendar /payments/qr/*.png"`; `*.png` keeps the QR preview page `/payments/qr/<id>` on Python. Add `/webhooks/stripe` only after the owner has checked the Go webhook. |
 | `UBYHOST_STRIPE_WEBHOOK_SECRET` (Go service too) | unset | `ubyhost-go` reads the same two Stripe variables as the app (`UBYHOST_STRIPE_MODE`, `UBYHOST_STRIPE_WEBHOOK_SECRET`); set the same values for both services. |
 
 ## Guest guide imports (Apify)
@@ -228,7 +230,6 @@ production. **`UBYHOST_STAGING_NO_LOGIN=1`** on staging skips login entirely: ev
 | `UBYHOST_BILLING_BANK_ACCOUNT` | unset | ČSOB account in Czech form (`123456789/0300`), printed on every invoice. |
 | `UBYHOST_BILLING_IBAN` | unset | The same account as IBAN; the QR Platba on the invoice uses it. No invoice is issued without it. |
 | `UBYHOST_BILLING_VAT_STATUS` | `non_payer` | `non_payer` prints "Nejsem plátce DPH"; switch to `payer` only after VAT registration. |
-| `UBYHOST_FOUNDER_SLOTS` | `100` | How many yearly orders get the founder price. |
 
 Payments are matched from a ČSOB statement (GPC or CSV) uploaded on `/admin/fakturace`; there is no bank API and no outbound request. The daily `billing` job (06:00) issues invoices, sends reminders 1 and 7 days after the due date and makes an account read-only after 14. UbyPort filing never waits for a payment.
 

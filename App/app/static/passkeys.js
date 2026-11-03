@@ -4,6 +4,15 @@
    without JavaScript (or WebAuthn) the e-mail link is simply the only way. */
 (function () {
   "use strict";
+  function claimOnce(node, key) {
+    var keys = node._ubyBound || (node._ubyBound = {});
+    if (keys[key]) return false;
+    keys[key] = true;
+    return true;
+  }
+  function onPage(fn) {
+    if (window.UbyHost && window.UbyHost.onPage) window.UbyHost.onPage(fn); else fn();
+  }
 
   var supported = !!(window.PublicKeyCredential && navigator.credentials &&
     typeof navigator.credentials.create === "function");
@@ -192,7 +201,7 @@
         });
       })
       .then(function (data) {
-        window.location.assign(data.redirect || "/settings#settings-security");
+        window.location.assign(data.redirect || "/settings/security#settings-security");
       })
       .catch(function (error) {
         button.disabled = false;
@@ -285,19 +294,20 @@
     if (!supported) return;
 
     document.querySelectorAll("[data-passkey-add]").forEach(function (button) {
+      if (!claimOnce(button, "passkey-add")) return;
       button.addEventListener("click", function () { addPasskey(button); });
     });
 
     var loginButton = document.querySelector("[data-passkey-login-button]");
     var loginForm = document.querySelector("[data-login-form]");
     if (loginButton) {
-      loginButton.addEventListener("click", function () { loginWithButton(loginButton, loginForm); });
+      if (claimOnce(loginButton, "passkey-login")) loginButton.addEventListener("click", function () { loginWithButton(loginButton, loginForm); });
       startConditional(loginForm);
     }
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
+    onPage(init);
   } else {
     init();
   }

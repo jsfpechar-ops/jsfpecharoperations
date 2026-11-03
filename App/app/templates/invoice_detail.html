@@ -1,13 +1,17 @@
 {% extends "host_page.html" %}
 {% set nav = 'invoices' %}
 {% set body_kind = 'detail' %}
-{% from "_components.html" import row_menu_begin, row_menu_end with context %}
+{% set v2 = true %}
+{% from "_components.html" import row_menu_begin, row_menu_end, help_tip with context %}
 {% set cta = 'ui-btn ui-btn-primary' %}
 {% block title %}{{ t('invoice.detail.title', number=invoice.number) }}{% endblock %}
 {% block meta %}{{ invoice.buyer_name }}{% endblock %}
 {% block back_url %}/invoices{% endblock %}
 {% block back_label %}{{ t('nav.invoices') }}{% endblock %}
+{% block page_title %}{% endblock %}
 {% block body %}
+<div class="e-page">
+{% with href='/invoices', title=t('invoice.detail.title', number=invoice.number) %}{% include "partials/settings_back_header.html" %}{% endwith %}
 
 {# The invoice detail follows the stay/report page grammar (C-16 [UX-81]):
    a command panel that says the state and the next step, the facts strip,
@@ -33,7 +37,7 @@
       </div>
       <div class="stay-command-actions">
         <div class="ui-btn-group">
-          <a class="{{ cta }}" href="/invoices/{{ invoice.id }}.pdf">{{ t('invoice.detail.download') }}</a>
+          <a data-turbo="false" class="{{ cta }}" href="/invoices/{{ invoice.id }}.pdf">{{ t('invoice.detail.download') }}</a>
           {% if invoice.kind == 'invoice' and not invoice.marked_paid_at and not invoice.paid_on %}
           <form method="post" action="/invoices/{{ invoice.id }}/paid" class="inline">
             <input type="hidden" name="_csrf" value="{{ csrf_token }}">
@@ -141,7 +145,7 @@
   {% if invoice.kind == 'invoice' and not invoice.corrects_invoice_id %}
   <details class="ui-section danger-zone" id="cancel">
     <summary>{{ t('invoice.cancel') }}</summary>
-    <p class="ui-sub">{{ t('invoice.cancel_help') }}</p>
+    {{ help_tip('invoice-cancel-help', t('invoice.cancel_help')) }}
     <form method="post" action="/invoices/{{ invoice.id }}/cancel"
           data-confirm data-confirm-message="{{ t('confirm.cancel_invoice') }}">
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
@@ -159,5 +163,6 @@
     </form>
   </details>
   {% endif %}
+</div>
 </div>
 {% endblock %}

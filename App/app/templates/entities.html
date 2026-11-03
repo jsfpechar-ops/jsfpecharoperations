@@ -1,17 +1,20 @@
 {% extends "host_page.html" %}
+{% set v2 = true %}
 {% set nav = 'entities' %}
 {% set body_kind = 'list' %}
-{% from "_components.html" import onboarding_banner, row_menu_begin, row_menu_end, row_open, help_tip with context %}
+{% from "_components.html" import onboarding_banner, row_menu_begin, row_menu_end, row_open, help_tip, tip_label with context %}
 {% from "_entity_business_fields.html" import business_form_body, ico_field, register_messages, register_lookup_saved with context %}
 {% from "_entity_invoice_fields.html" import invoice_fields with context %}
 {% from "_ui_layout.html" import ui_section_tabs with context %}
 {% set cta = 'ui-btn ui-btn-primary' %}
 {% block title %}{{ t('entities.title') }}{% endblock %}
-{% block meta %}{{ t('entities.lede') }}{% endblock %}
+{% block page_title %}{% endblock %}{% block meta %}{% endblock %}{% block primary_action %}{% endblock %}{% block secondary_actions %}{% endblock %}
 {% block back_url %}{{ next_path or '/apartments' }}{% endblock %}
 {% block back_label %}{{ t('common.back') if next_path else t('entities.back') }}{% endblock %}
-{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
+{% block tabs %}{% endblock %}
 {% block body %}
+{% include "_host_alerts.html" %}
+{% with help=help_tip('entities-lede-help', t('entities.lede')), href='/settings', title=t('entities.title') %}{% include "partials/settings_back_header.html" %}{% endwith %}
 {{ onboarding_banner(onboarding) }}
 
 {% if edit_entity %}
@@ -19,13 +22,13 @@
     are two forms (their payloads and policies differ, see 0075); each field is
     defined once in its partial. Which business a property uses stays a
     property setting. -#}
-<div class="panel entity-form" id="entity-edit">
+<div class="card entity-form" id="entity-edit">
   <div class="ui-section-h">
     <h2>{{ t('entities.edit', name=edit_entity.name) }}</h2>
     <a class="ui-btn ui-btn-quiet ui-btn-compact" href="{{ next_path or '/entities' }}">{{ t('common.close') }}</a>
   </div>
   <div class="entity-linked" id="entity-linked">
-    <span class="entity-linked-label">{{ t('entities.linked.label') }}</span>
+    <span class="entity-linked-label">{{ t('entities.linked.label') }}</span>{{ help_tip('entity-linked-help', t('entities.linked.help')) }}
     {% if linked_properties %}
       <ul class="entity-linked-list">
         {% for property in linked_properties %}
@@ -35,11 +38,10 @@
     {% else %}
       <span class="ui-sub">{{ t('entities.linked.none') }}</span>
     {% endif %}
-    {{ help_tip('entity-linked-help', t('entities.linked.help')) }}
   </div>
 
   <section class="entity-section" id="entity-business" aria-labelledby="entity-business-title">
-    <h3 class="entity-section-title" id="entity-business-title">{{ t('entities.section.business') }}</h3>
+    <h3 class="entity-section-title" id="entity-business-title">{{ tip_label(t('entities.section.business'), 'entity-business-why-help', t('why.business'), 'span') }}</h3>
     <form method="post" action="/entities/{{ edit_entity.id }}" enctype="multipart/form-data" data-unsaved-guard>
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
       {% if next_path %}<input type="hidden" name="next" value="{{ next_path }}">{% endif %}
@@ -53,7 +55,7 @@
   <section class="entity-section invoice-settings-form" id="entity-invoice" aria-labelledby="entity-invoice-title">
     <div class="entity-section-head">
       <h3 class="entity-section-title" id="entity-invoice-title">{{ t('entities.section.invoice') }}</h3>
-      {{ help_tip('entity-invoice-help', t('invoice.settings.lede')) }}
+      {{ help_tip('entity-invoice-help', t('invoice.settings.lede') ~ ' ' ~ t('entities.invoice.snapshot_hint')) }}
     </div>
     <form method="post" action="/entities/{{ edit_entity.id }}/invoice" data-unsaved-guard>
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
@@ -70,8 +72,8 @@
 {% endif %}
 
 {% if entities %}
-<div class="panel tight scroll-x entities-page list-cards lc-entities">
-  <table class="table-cards">
+<div class="card entities-page">
+  <table class="ui-table ui-table-stack">
     <thead><tr><th class="col-name">{{ t('entities.name') }}</th><th>{{ t('entities.seat') }}</th><th>{{ t('entities.ico') }}</th><th>{{ t('entities.contact') }}</th>
       <th>{{ t('entities.properties') }}</th><th></th></tr></thead>
     <tbody>
@@ -111,14 +113,14 @@
   </table>
 </div>
 {% else %}
-  <div class="panel empty">{{ t('entities.empty') }}</div>
+  <div class="card ui-empty">{{ t('entities.empty') }}</div>
 {% endif %}
 
 {% if archived_entities %}
 <h2>{{ t('entities.archived') }}</h2>
 <p class="ui-sub">{{ t('entities.archived_lede') }}</p>
-<div class="panel tight scroll-x">
-  <table class="table-cards">
+<div class="card">
+  <table class="ui-table ui-table-stack">
     <thead><tr><th class="col-name">{{ t('entities.name') }}</th><th>{{ t('entities.archived') }}</th><th>{{ t('entities.ico') }}</th><th></th></tr></thead>
     <tbody>
     {% for entity in archived_entities %}
@@ -150,10 +152,11 @@
 </div>
 {% endif %}
 
-<div class="panel entity-add" id="entity-add">
-  <h2>{{ t('entities.add') }}</h2>
+<div class="card entity-add" id="entity-add">
+  <h2>{{ tip_label(t('entities.add'), 'entity-add-why-help', t('why.business'), 'span') }}</h2>
   <form method="post" action="/entities" enctype="multipart/form-data">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    {% if next_path %}<input type="hidden" name="next" value="{{ next_path }}">{% endif %}
     {{ business_form_body('new_', new_entity or none, '', ares_error, ares_note) }}
     <div class="actions"><button class="{{ cta }}" type="submit">{{ t('entities.add_action') }}</button></div>
   </form>

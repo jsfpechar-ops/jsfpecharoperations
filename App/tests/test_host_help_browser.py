@@ -88,7 +88,7 @@ def _open_page(context, base, host, lang):
         "(() => { let d = document.querySelector('#permalink_window_days').closest('details');"
         " while (d) { d.open = true; d = d.parentElement.closest('details'); } })()"
     )
-    page.locator(TIP).scroll_into_view_if_needed()  # 0543: the ? button is hidden on the v2 property page
+    page.locator(BTN).scroll_into_view_if_needed()  # PR #725: the hint sits behind the ? button again
     return page
 
 
@@ -128,8 +128,10 @@ def test_help_tip_interactions_aria_and_fit(host, base):
             assert len(ids) == len(set(ids))
             assert page.locator("label[for='permalink_window_days']").count() == 1
 
-            # the hint is visible in its field and inside the viewport
+            # the hint opens from its ? button and stays inside the viewport
+            button.click()
             tip.wait_for(state="visible")
+            assert button.get_attribute("aria-expanded") == "true"
             # 0543: the hint sits in the field's label row (above the input), not under it
             in_row = tip.evaluate(
                 "(el) => { const row = el.closest('.field-label-row');"
@@ -144,6 +146,7 @@ def test_help_tip_interactions_aria_and_fit(host, base):
             for width in (360, 390):
                 touch = _context(browser, host, base, width, has_touch=True)
                 tpage = _open_page(touch, base, host, lang)
+                tpage.locator(BTN).click()
                 tpage.locator(TIP).wait_for(state="visible")
                 assert _inside_viewport(tpage), f"tip overflows at {width}"
                 assert tpage.evaluate(
@@ -164,6 +167,7 @@ def test_help_tip_target_size_and_no_js_reachability(host, base):
         no_js = browser.new_context(java_script_enabled=False, viewport={"width": 390, "height": 800})
         page = no_js.new_page()
         page.set_content(html, wait_until="load")
+        page.locator(BTN).focus()  # PR #725: without JS the hint shows on focus/hover of its ? button
         tip = page.locator(TIP)
         assert tip.count() == 1 and tip.is_visible()
         assert "stay-specific link" in tip.inner_text()

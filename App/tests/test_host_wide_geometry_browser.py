@@ -29,7 +29,7 @@ from tests.conftest import login_as
 WIDE_WIDTHS = (1024, 1280, 1440, 1680, 1920, 2048)
 MOBILE_WIDTHS = (360, 390, 760)
 MOBILE_ROUTE_KEYS = {
-    "dashboard", "stays", "properties", "invoices", "fees-unset", "fees-configured",
+    "dashboard", "stays", "properties", "invoices",
     "invoice-new-picker", "invoice-new-selected", "invoice-settings", "invoice-detail",
     "property-new", "operator-add", "operator-edit", "property-detail",
     "property-detail-configured", "fee-setup", "fee-detail", "stay-detail",
@@ -41,9 +41,9 @@ CAPTURE_ROUTES = {
     "operators": ("/entities", ".entities-page, .panel.empty"),
     "operator-add": ("/entities?new=1", ".entity-add"),
     "operator-edit": ("/entities?edit={entity_id}", ".entity-form"),
-    "invoices": ("/invoices", ".ui-table-wrap, .ui-empty"),
-    "fees-unset": ("/stay-fees?apartment={unconfigured_apartment}", ".panel.tight.scroll-x, .panel.empty"),
-    "fees-configured": ("/stay-fees?apartment={configured_apartment}", ".panel.tight.scroll-x, .panel.empty"),
+    "invoices": ("/invoices", ".stays-desk, .stays-phone, .ui-empty"),
+    # fees-unset: v2 empty state, covered by 0710
+    # fees-configured: v2 card list, covered by 0710
     # 0077/0101: the fee editor is property Settings -> Reporting & fees -> Stay fee.
     "fee-setup": ("/apartments/{unconfigured_apartment}?view=settings&section=reporting", ".property-settings, details.prop-sec#sec-fee"),  # v2 (0538)
     "fee-detail": ("/stay-fees/{configured_apartment}", ".ui-body-detail, .ui-section"),
@@ -58,13 +58,13 @@ CAPTURE_ROUTES = {
     "property-detail": ("/apartments/{property_id}", ".property-detail, .panel"),
     "property-detail-configured": ("/apartments/{configured_apartment}", ".property-detail, .panel"),
     "housebook": ("/housebook?apartment={unconfigured_apartment}&from={today}&to={housebook_end}", ".housebook-page, .panel"),
-    "submissions": ("/submissions", ".ui-table, .ui-empty"),
+    "submissions": ("/submissions", ".stays-desk, .stays-phone, .ui-empty"),
     "submission-detail": ("/submissions/{submission_id}", ".submission-detail, .panel"),
     # 0094: both now live in property Settings; the lane is the tab content.
     "guest-links": ("/apartments/{property_id}?view=settings&section=guests", ".property-views, details.prop-sec"),  # v2 (0538)
     "automation": ("/apartments/{property_id}?view=settings&section=automation", ".property-views, details.prop-sec"),  # v2 (0538)
     "archive": ("/settings/archived", ".ui-section, .ui-empty"),
-    "settings": ("/settings", ".host-property-grid"),
+    "settings": ("/settings", ".settings-lane"),
     "smart-locks": ("/smart-locks", ".ui-body-list, .panel"),
 }
 
@@ -314,7 +314,7 @@ def _capture_geometry(page, result_selector):
             viewport: {width: innerWidth, scrollWidth: document.documentElement.scrollWidth},
             hostLane,
             title: box('.page-header-main h1, .ui-ph-main h1, .host-today-head h1, .head h1'),
-            pageHeader: box('.page-header, .ui-ph, .host-today-head, .head, .crumb, main h1'),
+            pageHeader: box('.airbnb-header, .page-header, .ui-ph, .host-today-head, .head, .crumb, main h1'),
             phTop: box('.ph-top'),
             directBacklink: box('main.wrap.with-sidebar > a.back-link'),
             headerMain: box('.page-header-main, .ui-ph-main, .host-today-head'),
@@ -518,7 +518,7 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                             "dates_changed_resign alerts are filing gates and must remain non-dismissible"
                         )
                         assert geometry["alertStack"] is None, geometry["alertStack"]
-                    elif name in ("properties", "fee-setup", "property-detail", "property-detail-configured", "guest-links", "automation", "smart-locks"):  # v2 property pages (0538)
+                    elif name in ("properties", "fee-setup", "property-detail", "property-detail-configured", "guest-links", "automation", "smart-locks", "invoices", "submissions", "housebook", "property-new", "invoice-new-picker", "invoice-new-selected", "invoice-detail", "submission-detail"):  # v2 pages (0538, 0792): no alert stack
                         # 0538: the v2 shell does not render the alert stack (base.html), as on the dashboard
                         assert geometry["alertStack"] is None, (name, lang, width, geometry["alertStack"])
                     else:
@@ -547,7 +547,7 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                             f"feedback region overlaps local navigation on {name}/{lang}/{width}"
                         )
                     # 0538: the v2 property page header is a crumb and h1, not a full-width bar, so no edge lane to match
-                    v2_header_skip = name in ("fee-setup", "property-detail", "property-detail-configured", "guest-links", "automation")
+                    v2_header_skip = name in ("fee-setup", "property-detail", "property-detail-configured", "guest-links", "automation", "settings")  # 0789: settings index is a back button + h1, not a full-width bar
                     for edge in (() if v2_header_skip else ("left", "right")):
                         delta = round(result[edge] - header[edge], 2)
                         if abs(delta) > 2:
@@ -648,7 +648,7 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                                 if re.fullmatch(r"(?:common|confirm|host)\.[a-z0-9_.-]+", line.strip(), re.IGNORECASE)]
                     assert not raw_keys, f"raw translation key visible on {name}/{lang}/{width}: {raw_keys}"
                     if width in {1440, 1920} or width in MOBILE_WIDTHS or name in {
-                        "dashboard", "stays", "properties", "invoices", "fees-unset", "fees-configured"
+                        "dashboard", "stays", "properties", "invoices"
                     }:
                         page.screenshot(path=str(output_dir / f"after-{name}-{lang}-{width}.png"), full_page=True)
                 context.close()
@@ -832,8 +832,8 @@ def test_collapsed_sidebar_keeps_dashboard_and_stays_lanes_aligned(wide_host, wi
             }])
             page = context.new_page()
             for key, path, selector in (
-                # 0720c: v2 `/` has no sidebar collapse button; the collapse case runs on /settings (old shell).
-                ("settings", "/settings", ".host-property-grid"),
+                # 0720c: v2 `/` has no sidebar collapse button; the collapse case runs on /payments (old shell, 0785a).
+                ("payments", "/payments", ".ui-section"),
                 ("stays", "/reservations", ".stays-desk"),
             ):
                 response = page.goto(f"{wide_base}{path}?lang={lang}")
@@ -965,8 +965,8 @@ def _rail_context(browser, wide_host, wide_base, width, collapsed, **options):
     return context
 
 
-# 0720c: the rail cases run on /settings (old shell, no `v2` set); v2 `/` has no `button[data-sidebar-collapse]`.
-def _rail_page(context, wide_base, path="/settings"):
+# 0720c: the rail cases run on /payments (old shell, no `v2` set, 0785a); v2 `/` has no `button[data-sidebar-collapse]`.
+def _rail_page(context, wide_base, path="/payments"):
     page = context.new_page()
     response = page.goto(f"{wide_base}{path}")
     assert response and response.status == 200

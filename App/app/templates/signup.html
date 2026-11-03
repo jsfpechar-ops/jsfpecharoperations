@@ -30,16 +30,6 @@
       <p class="auth-hint err-text" id="email-error" role="alert">{{ t(error) }}</p>
       {% endif %}
     </div>
-    <div class="auth-field">
-      <label for="workspace">{{ t('signup.workspace') }}</label>
-      <input type="text" id="workspace" name="workspace" required maxlength="120"
-             value="{{ workspace | default('', true) }}" autocomplete="organization"
-             placeholder="{{ t('signup.workspace_ph') }}"
-             {% if error_field == 'workspace' %}aria-invalid="true" aria-describedby="workspace-error"{% endif %}>
-      {% if error_field == 'workspace' %}
-      <p class="auth-hint err-text" id="workspace-error" role="alert">{{ t(error) }}</p>
-      {% endif %}
-    </div>
     <label class="auth-remember">
       <input type="checkbox" name="accept" value="1" required
              {% if error_field == 'accept' %}aria-invalid="true" aria-describedby="accept-error"{% endif %}>
@@ -57,10 +47,10 @@
       <span>{{ box.text }} <a href="{{ box.link_url }}" target="_blank" rel="noopener noreferrer">{{ box.link_label }}</a></span>
     </label>
     {% endfor %}
-    {# Legal position 2: refusing setup tips is one optional, unticked box. #}
+    {# Legal position 2 (owner, 2026-11-02): tips and news only with this optional, unticked box. #}
     <label class="auth-remember">
-      <input type="checkbox" name="onboarding_opt_out" value="1"{% if onboarding_opt_out %} checked{% endif %}>
-      <span>{{ t('signup.onboarding_opt_out') }}</span>
+      <input type="checkbox" name="marketing_opt_in" value="1"{% if marketing_opt_in %} checked{% endif %}>
+      <span>{{ t('signup.marketing_opt_in') }}</span>
     </label>
     {% if turnstile_site_key %}
       <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}"

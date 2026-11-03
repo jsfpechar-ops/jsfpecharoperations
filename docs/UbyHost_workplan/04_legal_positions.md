@@ -97,6 +97,7 @@ These are service e-mails to UbyHost's own customers about finishing setup of a 
 ### What the product must do
 Code:
 - Sign-up form: add an **unchecked** checkbox: "Do not send me setup tips by e-mail". Store `onboarding_emails_opt_out` (bool) and the timestamp.
+  - 2026-11-02 owner decision: signup box changed to unticked marketing opt-in; lawyer to confirm wording
 - Settings page: a toggle "Setup tips by e-mail" (default on, unless the host ticked the opt-out at sign-up).
 - Every onboarding e-mail has a footer with an unsubscribe link carrying a signed token. One click unsubscribes, with no login. Add `List-Unsubscribe` and `List-Unsubscribe-Post: List-Unsubscribe=One-Click` headers.
 - Unsubscribe writes to a suppression table (e-mail hash, timestamp, scope `onboarding`). The mail job checks this table before sending. The flag must never block transactional mail (password reset, UbyPort errors, invoices).

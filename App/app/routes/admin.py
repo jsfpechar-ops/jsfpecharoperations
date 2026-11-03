@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 import re
 import secrets
 import time
@@ -62,6 +63,7 @@ from .. import (
     workflow,
     welcome_back,
 )
+from .. import ruian as ruian_lookup  # 0884
 from ..templating import render
 from .guest_guide import leon_card_state as _leon_card_state  # 0396
 from ..ubyport.client import UbyportError, UbyportTransportError
@@ -80,6 +82,8 @@ from .admin_helpers import kept_signature as _kept_signature
 from .admin_helpers import plural_param as _plural_param
 from .admin_helpers import query_date as _query_date
 from .admin_helpers import query_int as _query_int
+
+log = logging.getLogger("ubyhost.admin")
 
 router = APIRouter(dependencies=[Depends(security.protect_host_post)])
 router.include_router(admin_accounts.router)
@@ -211,9 +215,7 @@ def _lock_property_return(request: Request, return_to: str) -> Optional[str]:
     apartment_id = int(match.group(1))
     if not access.apartment(request, apartment_id):
         return None
-    if match.group(2):
-        # 0203: the setup wizard's lock step; every lock answer returns to it.
-        return f"/apartments/{apartment_id}/setup/door_lock"
+    # 0884: the wizard has no lock step; an old wizard return_to lands on the lock settings.
     return f"/apartments/{apartment_id}?view=settings&section=lock#door-code"
 
 
@@ -251,6 +253,7 @@ _MORE_OPTIONS_FIELDS = frozenset(
         "permalink_window_days",
         "permalink_reachback_days",
         "passport_photo_policy",
+        "ocr_scan",
         "label",
         "own_name",
     }
@@ -436,6 +439,32 @@ def _with_calendar_refresh(request: Request, response):
     return response
 
 
+def _key_rows(rows, today):
+    """0765: phone Today lists every active stay from the day before check-in to 3 days after it."""
+    tomorrow = (today + timedelta(days=1)).isoformat()
+    today_s = today.isoformat()
+    window_start = (today - timedelta(days=3)).isoformat()
+    out = []
+    for row in rows:
+        reservation = row["reservation"]
+        if reservation["status"] != "active":
+            continue
+        date_from = str(reservation["date_from"])[:10]
+        date_to = str(reservation["date_to"])[:10]
+        if not (window_start <= date_from <= tomorrow or date_to == today_s):
+            continue
+        if date_from == tomorrow:
+            kind = "tomorrow"
+        elif date_from == today_s:
+            kind = "today"
+        elif date_to == today_s:
+            kind = "leaves"
+        else:
+            kind = "arrived"
+        out.append(dict(row, nights=_today_nights(reservation), key_kind=kind))
+    return sorted(out, key=lambda row: str(row["reservation"]["date_from"])[:10])
+
+
 @router.get("/")
 def dashboard(request: Request):
     if not auth.current_user(request):
@@ -532,10 +561,12 @@ def dashboard(request: Request):
                 for row in rows
                 if today.isoformat() in (str(row["reservation"]["date_from"])[:10], str(row["reservation"]["date_to"])[:10])
             ],
-            # 0729: phone "All done" line names the next arrival after today.
+            # 0765: phone Today lists every stay in the check-in window, with its kind.
+            "key_rows": _key_rows(rows, today),
+            # 0729/0765: the first stay after tomorrow, shown when the window is empty.
             "next_arrival": min(
-                (row["reservation"] for row in rows if str(row["reservation"]["date_from"])[:10] > today.isoformat()),
-                key=lambda r: str(r["date_from"])[:10],
+                (row for row in rows if str(row["reservation"]["date_from"])[:10] > (today + timedelta(days=1)).isoformat()),
+                key=lambda row: str(row["reservation"]["date_from"])[:10],
                 default=None,
             ),
         },
@@ -1148,6 +1179,10 @@ async def create_entity(request: Request):
     payload["owner_user_id"] = access.owner_id(request)
     entity_id = db.insert("legal_entity", payload)
     _resolve_controller_alerts(entity_id)
+    next_path = _entity_next(_form_str(form, "next"))
+    if next_path:
+        # 0884: "Fill from register" on the wizard's property step returns there.
+        return _back(next_path, msg=_flash(request, "flash.entities.added", name=payload["name"]))
     apartments = access.apartments(request)
     if not apartments:
         return _back(
@@ -1258,6 +1293,18 @@ def delete_entity(entity_id: int, request: Request):
 
 # --- apartments ----------------------------------------------------------
 
+# 0884: must stay above /apartments/{apartment_id}, which would otherwise match it.
+@router.get("/apartments/ruian-suggest")
+def apartments_ruian_suggest(request: Request, q: str = ""):
+    owner = access.owner_id(request)
+    if owner is None:
+        return JSONResponse([], status_code=401)
+    if not ruian_lookup.enabled() or ruian_lookup.usable_query(q) is None or ruian_lookup.rate_limited(owner):
+        return JSONResponse([])
+    ruian_lookup.record_lookup(owner)
+    return JSONResponse(ruian_lookup.suggest(q))
+
+
 @router.get("/apartments")
 def apartments_list(request: Request):
     guard = auth.require_login(request)
@@ -1267,6 +1314,7 @@ def apartments_list(request: Request):
         "SELECT a.*, e.name AS entity_name, "
         "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds, "
         "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1 AND f.last_status = 'error') AS feed_errors, "
+        "  (SELECT COUNT(*) FROM reservation r WHERE r.apartment_id = a.id AND r.status = 'active' AND r.source = 'manual') AS manual_stays, "
         "  (SELECT COUNT(*) FROM reservation r WHERE r.apartment_id = a.id AND r.status = 'active') AS reservations "
         "FROM apartment a LEFT JOIN legal_entity e ON e.id = a.legal_entity_id "
         f"WHERE a.archived_at IS NULL AND {db.null_safe_eq('a.owner_user_id')} ORDER BY a.internal_name",
@@ -1311,6 +1359,7 @@ def apartments_list(request: Request):
         base = f"/apartments/{apartment_id}"
         has_feeds = int(apartment["feeds"] or 0) > 0
         feed_error = int(apartment["feed_errors"] or 0) > 0
+        has_manual_stays = int(apartment["manual_stays"] or 0) > 0
         police_bad = bool(item["issues"]) or apartment_id in auth_failed
         lock_ok = bool(apartment["lock_id"])
         item["chips"] = [
@@ -1321,7 +1370,11 @@ def apartments_list(request: Request):
             },
             {
                 "key": "calendar",
-                "state": "ok" if has_feeds and not feed_error else "bad",
+                "state": (
+                    "ok"
+                    if has_feeds and not feed_error
+                    else "off" if not has_feeds and has_manual_stays else "bad"
+                ),
                 "href": f"{base}?view=bookings#calendars",
             },
             {
@@ -1611,6 +1664,9 @@ def _wizard_step_payload(form, step: str) -> Dict[str, Any]:
         for field in property_setup.STEP_FIELDS["police"]:
             payload[field] = _form_str(form, field)
         payload["uby_mark"] = payload["uby_mark"].upper()
+        if "automation_mode" in form:
+            # 0884: the automation choice cards live on the police step.
+            payload.update(_automation_timing_values(form))
     elif step == "stay_fee":
         payload.update(stay_fee_routes.fee_form_values(form))
     elif step == "door_lock":
@@ -1635,6 +1691,18 @@ def _automation_timing_values(form) -> Dict[str, Any]:
     }
 
 
+def automation_choice_error(form) -> Optional[str]:
+    """0884: the timing save's own checks, for the police step's cards. A flash key or None."""
+    mode = _form_str(form, "automation_mode")
+    if mode not in reporting.AUTOMATION_MODES:
+        return "flash.properties.timing_invalid"
+    if mode == "scheduled":
+        hours = _form_int(form, "submit_after_hours")
+        if hours is None or not 1 <= hours <= 48:
+            return "flash.properties.timing_hours"
+    return None
+
+
 def _apartment_payload(form) -> Dict[str, Any]:
     payload: Dict[str, Any] = {field: _form_str(form, field) for field in APARTMENT_TEXT_FIELDS}
     payload["guest_message"] = payload["guest_message"][:1000]
@@ -1654,6 +1722,7 @@ def _apartment_payload(form) -> Dict[str, Any]:
     payload["passport_photo_policy"] = (
         policy if policy in ("off", "required_foreign") else "off"
     )
+    payload["ocr_scan"] = 1 if _form_str(form, "ocr_scan", "") == "1" else 0
     if "stay_fee_rate_czk" in form:
         # 0077: the one fee normaliser (routes/stay_fees.py).
         payload.update(stay_fee_routes.fee_form_values(form))
@@ -2330,6 +2399,9 @@ def _setup_after_save(
     lock_available = bundle["lock_available"]
     feeds = bundle["feeds"]
     issues = _apartment_issues(apartment)
+    if step == "police" and "automation_mode" in form:
+        # 0884: saving the police step answers the automation question too.
+        property_setup.mark(apartment_id, "automation", "done")
     if step == "property" and property_setup.property_details_complete(apartment):
         property_setup.mark(apartment_id, step, "done")
     elif step == "police" and report_complete:
@@ -2440,6 +2512,11 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
     if not apartment:
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment")), False
     form = _with_lock_tab_hours(form, apartment)
+    if _form_str(form, "setup_step") in property_setup.RETIRED_STEPS:
+        # 0884: a page left open from the old eight-step wizard saves nothing.
+        from .onboarding_wizard import wizard_return_to
+
+        return _back(wizard_return_to(apartment_id, "done")), False
     setup_step = _wizard_setup_step(form)
     if setup_step:
         payload = _wizard_step_payload(form, setup_step)
@@ -2572,6 +2649,14 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
         address_errors = _create_address_errors(merged)
         if address_errors:
             return _refuse_apartment_save(request, apartment, form, None, address_errors), False
+    if setup_step == "police" and "automation_mode" in form:
+        timing_error = automation_choice_error(form)
+        if timing_error:
+            from .onboarding_wizard import refuse_setup_save
+
+            refused = refuse_setup_save(request, apartment, form, operator_error=timing_error)
+            if refused:
+                return refused, False
     password = _form_str(form, "uby_ws_password")
     if setup_step == "police":
         police_errors = _wizard_police_format_errors(apartment, payload, password)
@@ -3368,6 +3453,34 @@ async def reservation_create(request: Request):
             "updated_at": db.utcnow(),
         },
     )
+    # 0883: the claim mail goes out only on the full Create form, only to a valid
+    # guest e-mail, and only when the host typed the guest count. That count is
+    # the declared party size. A blank count would store 1 guest and the guest
+    # would never be asked, so UbyPort would under-report. The calendar
+    # quick-create never sends. A failed send never breaks stay creation.
+    guest_addr = mail.normalise_email(_form_str(form, "guest_email"))
+    party_size = _form_int(form, "expected_guests")
+    if not calendar_json and guest_addr and party_size is not None and party_size >= 1 and mail.mail_enabled():
+        reservation = access.reservation(request, reservation_id)
+        apartment = access.apartment(request, apartment_id)
+        if reservation and apartment:
+            try:
+                ok, _err, _secret = await run_in_threadpool(
+                    lambda: claim.start_claim(
+                        reservation,
+                        apartment,
+                        email=guest_addr,
+                        party_size=party_size,
+                        # The guest's language is not known at this point, so
+                        # the mail is English.
+                        lang="en",
+                    )
+                )
+            except Exception:
+                log.exception("claim mail on stay create failed, reservation=%s", reservation_id)
+                ok = False
+            if ok:
+                db.audit("guest_link_sent_on_create", f"reservation={reservation_id}")
     if calendar_json:
         return JSONResponse(
             {"id": reservation_id, "url": f"/reservations/{reservation_id}?return_to=/"},
@@ -4582,6 +4695,7 @@ def housebook_view(request: Request):
             "date_to": date_to,
             "retention_years": housebook.RETENTION_YEARS,
             "max_inspection_pdfs": housebook.MAX_INSPECTION_PDFS,
+            "period_presets": housebook.period_presets(claim.prague_today()),
         },
     )
 
@@ -4648,8 +4762,15 @@ def menu_view(request: Request):
     )
 
 
+SETTINGS_GROUPS = ("account", "security", "phone", "data", "technical", "help")
+
+
 @router.get("/settings")
 def settings_view(request: Request):
+    return _settings_page(request, "")
+
+
+def _settings_page(request: Request, group: str):
     guard = auth.require_login(request)
     if guard:
         return guard
@@ -4736,8 +4857,19 @@ def settings_view(request: Request):
             "push_available": _push_available(request),
             "push_key": push.public_key() if _push_available(request) else "",
             "push_devices": _own_push_devices(request),
+            "group": group,
         },
     )
+
+
+def _settings_group_view(group: str):
+    def view(request: Request):
+        return _settings_page(request, group)
+    return view
+
+
+for _group in SETTINGS_GROUPS:
+    router.add_api_route(f"/settings/{_group}", _settings_group_view(_group), methods=["GET"])
 
 
 def _push_available(request: Request) -> bool:

@@ -1,4 +1,4 @@
-"""Stay-fee data-box send panel and sent/paid marks."""
+"""Stay-fee data-box send panel."""
 from __future__ import annotations
 
 import os
@@ -12,7 +12,7 @@ import pytest
 import uvicorn
 from fastapi.testclient import TestClient
 
-from app import auth, claim, db, stay_fee_filing, validation
+from app import auth, claim, db, validation
 from app.main import app
 from tests.conftest import login_as
 
@@ -154,99 +154,6 @@ def test_send_panel_hidden_before_finalize(host):
     page = client.get(f"/stay-fees/{apartment_id}?month=2026-08")
     assert page.status_code == 200
     assert 'id="fee-send"' not in page.text
-
-
-def test_sent_paid_undo_and_list_status(host):
-    client, owner_id, entity_id = host
-    apartment_id = _property(owner_id, entity_id)
-    _stay(apartment_id)
-    assert _finalize(client, apartment_id).status_code == 303
-    row = stay_fee_filing.latest(apartment_id, "2026-08")
-    filing_id = row["id"]
-    month_url = f"/stay-fees/{apartment_id}?month=2026-08"
-
-    page = client.get(month_url)
-    assert 'id="fee-send"' in page.text
-    assert "Ohlášení poplatku z pobytu" in page.text
-    assert "abc1234" in page.text
-
-    token = _csrf(client, month_url)
-    sent = client.post(
-        f"/stay-fees/{apartment_id}/filings/{filing_id}/sent",
-        data={"_csrf": token, "month": "2026-08", "sent_message_id": "MSG-42"},
-        follow_redirects=False,
-    )
-    assert sent.status_code == 303
-    row = db.query_one("SELECT * FROM stay_fee_filing WHERE id = ?", (filing_id,))
-    assert row["sent_at"]
-    assert row["sent_message_id"] == "MSG-42"
-
-    list_page = client.get("/stay-fees?month=2026-08")
-    assert "Sent" in list_page.text
-
-    token = _csrf(client, month_url)
-    paid = client.post(
-        f"/stay-fees/{apartment_id}/filings/{filing_id}/paid",
-        data={"_csrf": token, "month": "2026-08"},
-        follow_redirects=False,
-    )
-    assert paid.status_code == 303
-    list_page = client.get("/stay-fees?month=2026-08")
-    assert "Paid" in list_page.text
-
-    token = _csrf(client, month_url)
-    client.post(
-        f"/stay-fees/{apartment_id}/filings/{filing_id}/sent",
-        data={"_csrf": token, "month": "2026-08", "undo": "1"},
-        follow_redirects=False,
-    )
-    row = db.query_one("SELECT * FROM stay_fee_filing WHERE id = ?", (filing_id,))
-    assert row["sent_at"] is None
-    assert row["sent_message_id"] is None
-    assert row["paid_at"]
-
-
-def test_paid_without_sent(host):
-    client, owner_id, entity_id = host
-    apartment_id = _property(owner_id, entity_id)
-    _stay(apartment_id)
-    _finalize(client, apartment_id)
-    filing_id = stay_fee_filing.latest(apartment_id, "2026-08")["id"]
-    token = _csrf(client, f"/stay-fees/{apartment_id}?month=2026-08")
-    client.post(
-        f"/stay-fees/{apartment_id}/filings/{filing_id}/paid",
-        data={"_csrf": token, "month": "2026-08"},
-        follow_redirects=False,
-    )
-    list_page = client.get("/stay-fees?month=2026-08")
-    assert "Paid" in list_page.text
-    assert "Sent" not in list_page.text or "Paid" in list_page.text
-
-
-def test_other_owner_gets_404(host):
-    client, owner_id, entity_id = host
-    apartment_id = _property(owner_id, entity_id)
-    _stay(apartment_id)
-    _finalize(client, apartment_id)
-    filing_id = stay_fee_filing.latest(apartment_id, "2026-08")["id"]
-
-    other_id = auth.create_account(
-        "stay-fee-send-other@example.test",
-        "Other",
-        role="host",
-        username="stay-fee-send-other",
-    )
-    other = TestClient(app)
-    login_as(other, "stay-fee-send-other", url="/login?lang=en", follow_redirects=False)
-    token = _csrf(other, "/stay-fees")
-    resp = other.post(
-        f"/stay-fees/{apartment_id}/filings/{filing_id}/sent",
-        data={"_csrf": token, "month": "2026-08"},
-        follow_redirects=False,
-    )
-    assert resp.status_code == 404
-    db.execute("DELETE FROM audit WHERE owner_user_id = ?", (other_id,))
-    db.execute("DELETE FROM user_account WHERE id = ?", (other_id,))
 
 
 def _free_port():

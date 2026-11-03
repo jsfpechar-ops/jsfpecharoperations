@@ -112,6 +112,16 @@
   // The back button restores this page from the cache with the placeholder
   // still showing, so always start clean.
   window.addEventListener("pageshow", hide);
+  document.addEventListener("turbo:load", hide);
+  // A page swap that lands before DELAY_MS must not show the placeholder on
+  // the new page: drop the pending timer and the minimum before it renders.
+  document.addEventListener("turbo:before-render", function () {
+    window.clearTimeout(timer);
+    window.clearTimeout(safety);
+    timer = null;
+    safety = null;
+    shownAt = 0;
+  });
 
   // For navigations started from script (clickable rows, the command palette).
   window.ubyhostSkeleton = { start: start, hide: hide };

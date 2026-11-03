@@ -1,9 +1,12 @@
 {% extends "host_page.html" %}
+{% set v2 = true %}
+{% block head_extra %}<link rel="stylesheet" href="/static/admin2.css?v=20261102-0893o">{% endblock %}
 {% set nav = 'admin' %}
 {% set body_kind = 'list' %}
 {% from "_ui_layout.html" import ui_section_tabs with context %}
+{% from "_components.html" import tip_label with context %}
 {% block title %}{{ t('home.admin.title') }}{% endblock %}
-{% block meta %}{{ t('home.admin.meta', date=today) }}{% endblock %}
+{% block page_title %}{{ tip_label(self.title(), 'admin-home-help', t('home.admin.meta', date=today), tag='span') }}{% endblock %}
 {% block tabs %}{{ ui_section_tabs() }}{% endblock %}
 {% block body %}
 {% set problems = [
@@ -35,7 +38,7 @@
   <h2>{{ t('admin.today.system') }}</h2>
   <ul>
   {% for row in problems %}
-    <li><a href="/admin/operations#{{ row.anchor }}">{{ row.title }}</a> <span class="ui-badge ui-badge-action">{{ row.count }}</span></li>
+    <li><a data-turbo="false" href="/admin/operations#{{ row.anchor }}">{{ row.title }}</a> <span class="ui-badge ui-badge-action">{{ row.count }}</span></li>
   {% endfor %}
   </ul>
 </section>
@@ -46,10 +49,10 @@
 {{ ui_table_begin([(t('customers.invoice'), ''), (t('customers.amount'), 'r'), (t('home.admin.late'), ''), (t('home.admin.customer'), '')], label=t('home.admin.queue.overdue')) }}
 {% for inv in queue.overdue %}
 <tr class="ui-row">
-  <td class="ui-cell-first" data-card="primary"><a href="/admin/fakturace/{{ inv.id }}.pdf">{{ inv.number }}</a></td>
+  <td class="ui-cell-first" data-card="primary"><a data-turbo="false" href="/admin/fakturace/{{ inv.id }}.pdf">{{ inv.number }}</a></td>
   <td class="ui-cell-r" data-card="meta">{{ inv.total_haler | money_czk }}</td>
   <td data-card="secondary">{{ t('home.admin.days_late', n=inv.days_late) }}</td>
-  <td data-card="badge"><a href="/admin/customers/{{ inv.owner_user_id }}">{{ inv.display_name or inv.owner_user_id }}</a></td>
+  <td data-card="badge"><a data-turbo="false" href="/admin/customers/{{ inv.owner_user_id }}">{{ inv.display_name or inv.owner_user_id }}</a></td>
 </tr>
 {% endfor %}
 {{ ui_table_end() }}
@@ -61,9 +64,9 @@
 {{ ui_table_begin([(t('home.admin.customer'), ''), (t('customers.trial_end'), ''), (t('home.admin.open'), '')], label=t('home.admin.queue.trials')) }}
 {% for row in queue.trials_ending %}
 <tr class="ui-row">
-  <td class="ui-cell-first" data-card="primary"><a href="/admin/customers/{{ row.owner_user_id }}">{{ row.display_name or row.owner_user_id }}</a></td>
+  <td class="ui-cell-first" data-card="primary"><a data-turbo="false" href="/admin/customers/{{ row.owner_user_id }}">{{ row.display_name or row.owner_user_id }}</a></td>
   <td data-card="secondary">{{ fmt_date(row.trial_ends_at) }}</td>
-  <td data-card="meta"><a href="/admin/customers/{{ row.owner_user_id }}">{{ t('home.admin.open') }}</a></td>
+  <td data-card="meta"><a data-turbo="false" href="/admin/customers/{{ row.owner_user_id }}">{{ t('home.admin.open') }}</a></td>
 </tr>
 {% endfor %}
 {{ ui_table_end() }}
@@ -75,9 +78,9 @@
 {{ ui_table_begin([(t('home.admin.customer'), ''), (t('customers.created'), ''), (t('home.admin.open'), '')], label=t('home.admin.queue.unverified')) }}
 {% for row in queue.unverified %}
 <tr class="ui-row">
-  <td class="ui-cell-first" data-card="primary"><a href="/admin/customers/{{ row.id }}">{{ row.display_name or row.username }}</a></td>
+  <td class="ui-cell-first" data-card="primary"><a data-turbo="false" href="/admin/customers/{{ row.id }}">{{ row.display_name or row.username }}</a></td>
   <td data-card="secondary">{{ fmt_date(row.created_at) }}</td>
-  <td data-card="meta"><a href="/admin/customers/{{ row.id }}">{{ t('home.admin.open') }}</a></td>
+  <td data-card="meta"><a data-turbo="false" href="/admin/customers/{{ row.id }}">{{ t('home.admin.open') }}</a></td>
 </tr>
 {% endfor %}
 {{ ui_table_end() }}
@@ -89,7 +92,7 @@
 {{ ui_table_begin([(t('home.admin.customer'), ''), (t('customers.period_end'), '')], label=t('home.admin.queue.ending')) }}
 {% for row in queue.ending %}
 <tr class="ui-row">
-  <td class="ui-cell-first" data-card="primary"><a href="/admin/customers/{{ row.owner_user_id }}">{{ row.display_name or row.owner_user_id }}</a></td>
+  <td class="ui-cell-first" data-card="primary"><a data-turbo="false" href="/admin/customers/{{ row.owner_user_id }}">{{ row.display_name or row.owner_user_id }}</a></td>
   <td data-card="secondary">{{ fmt_date(row.period_end) }}</td>
 </tr>
 {% endfor %}

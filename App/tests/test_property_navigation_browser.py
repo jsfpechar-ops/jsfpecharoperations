@@ -374,7 +374,7 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
         page.fill("#internal_name", "Draft Name Kept")
         _open(page, "messages")
         page.fill("#guest_message", "Draft message kept")
-        page.locator('.crumb a[href="/apartments"]').click()
+        page.locator('a.airbnb-back').click()
         assert page.evaluate("() => document.getElementById('unsaved-dialog').open")
         page.locator("#unsaved-dialog [data-unsaved-stay]").click()
         page.wait_for_timeout(300)

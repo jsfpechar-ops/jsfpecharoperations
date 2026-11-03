@@ -2,11 +2,20 @@
    fragment, shows the writing state, sends on Enter, counts from 500, focuses the answer. */
 (function () {
   "use strict";
-  var panel = document.querySelector("[data-havel-panel]");
-  var page = document.querySelector("[data-havel-page]");
-  var root = panel || page;
-  if (!root) return;
+  // Shared by every handler. refresh() looks these up again after each page swap.
+  var panel = null;
+  var page = null;
+  var root = null;
   var PHONE = window.matchMedia("(max-width: 1023px)");
+  function claimOnce(node, key) {
+    var keys = node._ubyBound || (node._ubyBound = {});
+    if (keys[key]) return false;
+    keys[key] = true;
+    return true;
+  }
+  function onPage(fn) {
+    if (window.UbyHost && window.UbyHost.onPage) window.UbyHost.onPage(fn); else fn();
+  }
 
   function thread() { return root.querySelector("[data-havel-thread]"); }
   function form() { return root.querySelector("[data-havel-form]"); }
@@ -107,6 +116,7 @@
   }
 
   function setDevice() {
+    if (!root) return;
     var d = root.querySelector("[data-havel-device]");
     if (d) d.value = PHONE.matches ? "phone" : "computer";
   }
@@ -291,7 +301,8 @@
     });
   }
 
-  root.addEventListener("submit", function (event) {
+  // Delegated handlers read panel and root at event time, so they keep working after a page swap.
+  function onRootSubmit(event) {
     var nf = event.target.closest ? event.target.closest("[data-havel-next]") : null;
     if (nf) {
       event.preventDefault();
@@ -308,18 +319,19 @@
     var submitter = event.submitter;
     if (submitter && submitter.name === "reset") { clear(); send({ reset: "1", message: "" }); return; }
     send();
-  });
+  }
 
-  root.addEventListener("click", function (event) {
+  function onRootClick(event) {
     var link = event.target.closest ? event.target.closest("[data-havel-topic-link]") : null;
     if (link) { event.preventDefault(); load(link.getAttribute("href"), "replace"); return; }
     var cancel = event.target.closest ? event.target.closest("[data-havel-cancel]") : null;
     if (cancel) { var card = cancel.closest(".havel-card"); if (card) card.remove(); var ta = textarea(); if (ta) ta.focus(); return; }
     var retry = event.target.closest ? event.target.closest("[data-havel-retry]") : null;
     if (retry) { retry.closest(".havel-msg").remove(); send(); }
-  });
+  }
 
-  document.addEventListener("click", function (event) {
+  function onDocumentClick(event) {
+    if (!root) return;
     var launcher = event.target.closest ? event.target.closest('[data-sheet-open="havel-sheet"]') : null;
     if (launcher) {
       opener = launcher;
@@ -333,40 +345,64 @@
     if (sheet && sheet.open) sheet.close();
     if (!panel.open) panel.show();
     ensureForm(function () { hideFab(); focusPanel(); });
-  });
-
-  if (panel) {
-    panel.addEventListener("close", function () {
-      save({ open: false });
-      var f = fab();
-      if (f) f.hidden = false;
-      var back = opener;
-      opener = null;
-      // getClientRects, not offsetParent: the tab bar and the corner button are position: fixed.
-      if (back && document.body.contains(back) && back.getClientRects().length > 0) back.focus();
-      else if (f) f.focus();
-    });
-    // For 0322 (command palette): open with a prefilled question.
-    window.UbyHavel = { open: function (text) {
-      if (!panel.open) panel.show();
-      ensureForm(function () {
-        hideFab();
-        openComposer();
-        var ta = textarea();
-        if (ta) { if (text) ta.value = text; ta.focus(); ta.dispatchEvent(new Event("input")); }
-      });
-    } };
   }
 
-  // 0374: opening the panel saves it as open; the stored chat is restored; sign-out clears it.
-  if (panel && window.MutationObserver) {
-    new MutationObserver(function () { if (panel.open) onOpen(); }).observe(panel, { attributes: true, attributeFilter: ["open"] });
-  }
-  restore();
-  document.addEventListener("submit", function (event) {
+  function onDocumentSubmit(event) {
+    if (!root) return;
     if (event.target && event.target.matches && event.target.matches('form[action="/logout"]')) clear();
-  });
-  setDevice();
-  bindCounter();
-  PHONE.addEventListener("change", setDevice);
+  }
+
+  function onPanelClose() {
+    save({ open: false });
+    var f = fab();
+    if (f) f.hidden = false;
+    var back = opener;
+    opener = null;
+    // getClientRects, not offsetParent: the tab bar and the corner button are position: fixed.
+    if (back && document.body.contains(back) && back.getClientRects().length > 0) back.focus();
+    else if (f) f.focus();
+  }
+
+  // Looks the elements up again on every page (app.js calls it on each start-up), and binds each one once.
+  function refresh() {
+    panel = document.querySelector("[data-havel-panel]");
+    page = document.querySelector("[data-havel-page]");
+    root = panel || page;
+    if (!root) return;
+    if (claimOnce(root, "havelRoot")) {
+      root.addEventListener("submit", onRootSubmit);
+      root.addEventListener("click", onRootClick);
+    }
+    if (panel) {
+      if (claimOnce(panel, "havelPanel")) {
+        panel.addEventListener("close", onPanelClose);
+        // 0374: opening the panel saves it as open; the stored chat is restored; sign-out clears it.
+        if (window.MutationObserver) {
+          new MutationObserver(function () { if (panel.open) onOpen(); }).observe(panel, { attributes: true, attributeFilter: ["open"] });
+        }
+      }
+      // For 0322 (command palette): open with a prefilled question.
+      window.UbyHavel = { open: function (text) {
+        if (!panel) return;
+        if (!panel.open) panel.show();
+        ensureForm(function () {
+          hideFab();
+          openComposer();
+          var ta = textarea();
+          if (ta) { if (text) ta.value = text; ta.focus(); ta.dispatchEvent(new Event("input")); }
+        });
+      } };
+    }
+    if (claimOnce(root, "havelRestore")) restore();
+    setDevice();
+    bindCounter();
+  }
+
+  // Document listeners run once per page load; they check root at event time.
+  if (claimOnce(document, "havelDocument")) {
+    document.addEventListener("click", onDocumentClick);
+    document.addEventListener("submit", onDocumentSubmit);
+    PHONE.addEventListener("change", setDevice);
+  }
+  onPage(refresh);
 })();

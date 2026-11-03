@@ -127,8 +127,9 @@ def test_auto_view_threshold_filter_and_manual_override(calendar_workspace, cale
         for word in ("Reserved", "CLOSED", "Not available", "Blocked"):
             assert page.locator(".cal-week-events").get_by_text(word, exact=False).count() == 0
         assert page.locator(".cal-event-mark").count() == 0
-        assert len(set(page.locator(".cal-week-events .cal-event").evaluate_all(
-            "nodes => nodes.map(node => getComputedStyle(node).backgroundColor)"
+        # 0816: at 1280 px month tiles show stay chips instead of overlay bars.
+        assert len(set(page.locator(".cal-tile-chip").evaluate_all(
+            "nodes => nodes.map(node => getComputedStyle(node).borderLeftColor)"
         ))) >= 2
         more = page.locator('[data-cal-more="2026-10-14"]')
         assert more.is_visible()
@@ -148,9 +149,9 @@ def test_auto_view_threshold_filter_and_manual_override(calendar_workspace, cale
         page.locator("[data-cal-settings-dialog] [data-cal-close]").click()
         page.locator("[data-cal-property]").select_option(str(calendar_workspace["properties"][0]))
         page.wait_for_selector(".cal-week")
-        page.locator("[data-cal-year]").select_option("2028")
-        page.wait_for_selector('[data-cal-day="2028-10-01"]')
-        page.locator("[data-cal-month]").select_option("02")
+        # 0832: month and year selects are hidden in Month scale; the arrows walk from Oct 2026 to Feb 2028.
+        for _ in range(16):
+            page.locator("[data-cal-next]").click()
         page.wait_for_selector('[data-cal-day="2028-02-29"]')
         page.locator('[data-cal-scale="year"]').click()
         page.wait_for_function("() => document.querySelectorAll('.cal-mini-title').length === 12")
@@ -179,6 +180,8 @@ def test_drag_nights_create_persist_and_open_details(calendar_workspace, calenda
         page.mouse.down()
         page.mouse.move(b["x"] + b["width"] / 2, b["y"] + 15, steps=12)
         page.mouse.up()
+        assert page.locator("[data-cal-day-dialog]").is_visible()
+        page.locator("[data-cal-day-add]").click()
         dialog = page.locator("[data-cal-create]")
         assert dialog.is_visible()
         assert page.locator("#cal-arrival").input_value() == "2026-10-26"
@@ -192,7 +195,8 @@ def test_drag_nights_create_persist_and_open_details(calendar_workspace, calenda
             page.locator("[data-cal-save]").click()
         assert saved.value.status == 201
         row_id = saved.value.json()["id"]
-        live_booking = page.locator(f'.cal-week-events .cal-event[data-cal-event="{row_id}"]')
+        page.locator('[data-cal-day="2026-10-26"]').click()
+        live_booking = page.locator(f'[data-cal-day-list] .cal-event[data-cal-event="{row_id}"]')
         live_booking.wait_for(state="visible")
         live_booking.click()
         page.locator("[data-cal-details]").wait_for(state="visible")
@@ -203,8 +207,8 @@ def test_drag_nights_create_persist_and_open_details(calendar_workspace, calenda
         assert page.locator("[data-cal-open]").get_attribute("href").startswith(f"/reservations/{row_id}")
         shot(page, "saved-details-en-1280")
         page.locator("[data-cal-details] [data-cal-close]").click()
-        live_booking = page.locator(f'.cal-week-events .cal-event[data-cal-event="{row_id}"]')
-        live_booking.click()
+        page.locator('[data-cal-day="2026-10-26"]').click()
+        page.locator(f'[data-cal-day-list] .cal-event[data-cal-event="{row_id}"]').click()
         page.locator("[data-cal-details]").wait_for(state="visible")
         assert not errors
         context.close()
@@ -221,6 +225,7 @@ def test_keyboard_selection_cancel_and_overlap_confirmation(calendar_workspace, 
         page.keyboard.press("Shift+ArrowRight")
         page.keyboard.press("Shift+ArrowRight")
         page.keyboard.press("Enter")
+        page.locator("[data-cal-day-add]").click()
         assert page.locator("#cal-arrival").input_value() == "2026-10-12"
         assert page.locator("#cal-departure").input_value() == "2026-10-15"
         page.keyboard.press("Escape")
@@ -232,6 +237,7 @@ def test_keyboard_selection_cancel_and_overlap_confirmation(calendar_workspace, 
         assert not page.locator("[data-cal-create]").is_visible()
         page.locator("[data-cal-settings-dialog] [data-cal-close]").click()
         page.locator('[data-cal-day="2026-10-05"]').click()
+        page.locator("[data-cal-day-add]").click()
         assert page.locator("[data-cal-overlap]").is_visible()
         overlap_arrival = page.locator("#cal-arrival").input_value()
         overlap_departure = page.locator("#cal-departure").input_value()
@@ -311,21 +317,13 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                         page.locator(f'[data-cal-view="{mode}"]').click()
                     page.wait_for_selector(".cal-gantt-row" if mode == "gantt" else ".cal-week")
                     wait_loaded(page)
-                    # Summary (needs you + month line) -> calendar -> detailed action queue, in the same lane.
+                    # 0832: the calendar page is full-page at every width: the summary and "Full calendar" blocks are hidden.
                     boxes = page.evaluate("""() => ['[data-dashboard-refresh="stats"]', '.ov-cal-more', '#calendar'].map(selector => {
                         const r = document.querySelector(selector).getBoundingClientRect();
                         return {top:r.top, bottom:r.bottom, left:r.left, right:r.right, height:r.height};
                     })""")
-                    # 0723: .ov-cal-more is display:none below 1024 px, so its box is all zeros there.
-                    if boxes[1]["height"] == 0:
-                        assert 0 <= boxes[2]["top"] - boxes[0]["bottom"] <= 44, boxes
-                        aligned = [boxes[0], boxes[2]]
-                    else:
-                        assert 0 <= boxes[2]["top"] - boxes[1]["bottom"] <= 44, boxes
-                        aligned = boxes[1:]
-                    for box in aligned:
-                        assert abs(box["left"] - boxes[0]["left"]) <= 2, boxes
-                        assert abs(box["right"] - boxes[0]["right"]) <= 2, boxes
+                    assert boxes[0]["height"] == 0 and boxes[1]["height"] == 0, boxes
+                    assert boxes[2]["height"] > 0, boxes
                     if width >= 768:
                         icon = page.locator("[data-cal-settings] svg").bounding_box()
                         assert icon["width"] >= 18 and icon["height"] >= 18, icon
@@ -334,8 +332,7 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                             heights = page.locator(".cal-week").evaluate_all(
                                 "nodes => nodes.map(node => node.getBoundingClientRect().height)"
                             )
-                            assert max(heights) <= 102, heights
-                            assert boxes[1]["height"] <= 725, boxes
+                            assert max(heights) <= 184, heights  # 0905: 94 px tile + two more stacked stay lanes
                     control_heights = page.locator(
                         ".cal-view-segment, .cal-scale-segment, [data-cal-property], [data-cal-month], "
                         "[data-cal-year], [data-cal-settings], [data-cal-today], [data-cal-prev], [data-cal-next]"
@@ -354,11 +351,10 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                         assert box["width"] >= 43.9 and box["height"] >= 44, box
                     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
                     shot(page, f"{mode}-{locale}-{width}")
-                page.locator('[data-cal-day="2026-10-15"]').click()
-                if width < 768:
-                    assert page.locator("[data-cal-day-dialog]").is_visible()
-                    assert page.locator("[data-cal-day-list] .cal-event").count() >= 1
-                    page.locator("[data-cal-day-add]").click()
+                page.locator('[data-cal-day="2026-10-15"]').click(position={"x": 12, "y": 10})  # 0905: stacked pills cover the tile centre
+                assert page.locator("[data-cal-day-dialog]").is_visible()
+                assert page.locator("[data-cal-day-list] .cal-event").count() >= 1
+                page.locator("[data-cal-day-add]").click()
                 assert page.locator("[data-cal-create]").is_visible()
                 assert page.locator("#cal-arrival").input_value() == "2026-10-15"
                 assert page.locator("#cal-departure").input_value() == "2026-10-16"
@@ -392,23 +388,31 @@ def test_calendar_week_boundary_clips_fractional_checkout_with_continuation_edge
     with sync_api.sync_playwright() as playwright:
         browser = launch(playwright)
         context, page = open_page(browser, ws, calendar_origin, width=1280, locale="en")
-        page.locator("[data-cal-property]").select_option(str(apartment_id))
+        # 0816: bars are week-scale only; the stay crosses the Sunday/Monday row break, so check each row.
+        page.goto(f"{calendar_origin}/?lang=en&cal_date=2026-10-18&cal_view=calendar&cal_scale=week&cal_property={apartment_id}")
         page.wait_for_selector(".cal-week")
-        segments = page.locator(f'.cal-event[data-cal-event="{stay_id}"]')
-        assert segments.count() == 2
-        first, second = segments.nth(0), segments.nth(1)
+        wait_loaded(page)
+        first = page.locator(f'.cal-event[data-cal-event="{stay_id}"]')
+        first.wait_for(state="visible")
+        assert first.count() == 1
         assert first.get_attribute("class").find("continues-end") >= 0
-        assert second.get_attribute("class").find("continues-start") >= 0
-        first_box, second_box = first.bounding_box(), second.bounding_box()
-        sun = page.locator('.cal-day[data-date="2026-10-18"]').bounding_box()
-        mon = page.locator('.cal-day[data-date="2026-10-19"]').last.bounding_box()
-        tue = page.locator('.cal-day[data-date="2026-10-20"]').last.bounding_box()
+        first_box = first.bounding_box()
+        sun = page.locator('.cal-day[data-date="2026-10-18"]').last.bounding_box()
         expected_start = sun["x"] + sun["width"] * 15 / 24
         expected_first_right = sun["x"] + sun["width"]
-        expected_monday = mon["x"]
-        expected_checkout = tue["x"] + tue["width"] * 11 / 24
         assert abs(first_box["x"] - expected_start) <= 4, (first_box, expected_start)
         assert abs(first_box["x"] + first_box["width"] - expected_first_right) <= 4, (first_box, expected_first_right)
+        page.locator("[data-cal-next]").click()
+        wait_loaded(page)
+        second = page.locator(f'.cal-event[data-cal-event="{stay_id}"]')
+        second.wait_for(state="visible")
+        assert second.count() == 1
+        assert second.get_attribute("class").find("continues-start") >= 0
+        second_box = second.bounding_box()
+        mon = page.locator('.cal-day[data-date="2026-10-19"]').last.bounding_box()
+        tue = page.locator('.cal-day[data-date="2026-10-20"]').last.bounding_box()
+        expected_monday = mon["x"]
+        expected_checkout = tue["x"] + tue["width"] * 11 / 24
         assert abs(second_box["x"] - expected_monday) <= 4, (second_box, expected_monday)
         assert abs(second_box["x"] + second_box["width"] - expected_checkout) <= 4, (second_box, expected_checkout)
         shot(page, "checkout-week-boundary-en-1280")
@@ -476,30 +480,39 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         shot(page, "dashboard-cleaning-absent-en")
 
         cleaning_page = context.new_page()
-        cleaning_page.goto(f"{calendar_origin}/cleaning?lang=en&cal_date=2026-10-27")
+        cleaning_page.goto(f"{calendar_origin}/cleaning?lang=en&cal_date=2026-10-27&cal_view=calendar")
         cleaning_page.wait_for_selector("[data-calendar]")
         wait_loaded(cleaning_page)
-        cleaning_page.locator('[data-cal-view="calendar"]').click()
-        cleaning_page.wait_for_selector(".cal-week")
-        wait_loaded(cleaning_page)
+        # 0834: the /cleaning tile calendar shows cleaning tags only, so the saved cleaning is checked
+        # on its day tag (month view) and in that day's sheet.
+        cleaning_tag_day = cleaning_page.locator('.cal-day[data-date="2026-10-27"].has-cleaning')
+        cleaning_tag_day.wait_for(state="visible")
+        assert cleaning_tag_day.locator(".cal-clean-tag").count() >= 1
+        cleaning_tag_day.locator(".cal-day-number").click()
         cleaning_marker = cleaning_page.locator(
-            f'.cal-week-events .cal-event[data-cal-event="{cleaning_event_id}"]'
+            f'[data-cal-day-list] .cal-event[data-cal-event="{cleaning_event_id}"]'
         )
         cleaning_marker.wait_for(state="visible")
-        cleaning_row = cleaning_page.locator(f'#cleaning-{created_cleaning["id"]}')
-        cleaning_row.wait_for(state="visible")
-        assert "Tue 27 Oct" in cleaning_row.inner_text()
+        assert "27" in cleaning_page.locator("[data-cal-day-dialog] #cal-day-title").inner_text()
         shot(cleaning_page, "cleaning-calendar-created-marker-en")
         cleaning_page.close()
 
-        booking = page.locator(f'.cal-event[data-cal-event="{existing_stay}"]:visible')
+        assert page.locator(".cal-tile-chip").count() >= 1
+        page.locator('[data-cal-day="2026-10-21"]').click()
+        booking = page.locator(f'[data-cal-day-list] .cal-event[data-cal-event="{existing_stay}"]')
         assert booking.count() == 1
         booking.click()
         action = page.locator("[data-cal-details] [data-cal-open]")
         assert action.is_visible() and action.inner_text().strip() == "Open stay"
         page.locator("[data-cal-details] [data-cal-close]").click()
+        if page.locator("[data-cal-day-dialog][open]").count():
+            page.locator("[data-cal-day-dialog] [data-cal-close]").click()
 
-        page.locator('[data-calendar-add][data-cal-create-type="stay"]').click()
+        # 0834: after the booking sheet the day click opens the day sheet, whose Add button opens the Stay form.
+        page.locator("[data-cal-day]:visible").first.click()
+        if page.locator("[data-cal-day-dialog][open]").count():
+            page.locator("[data-cal-day-add]").click()
+        page.locator('[data-cal-type-choice="stay"]').click()
         form = page.locator("[data-cal-form]")
         form.locator("#cal-property").select_option(str(ws["properties"][0]))
         arrival, departure = page.evaluate("""today => {
@@ -524,7 +537,7 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         assert page.evaluate("location.pathname") == pathname
         # 0241: the new stay arrives today with no guest form, so "What needs you" gains its line.
         line = page.locator(
-            f'[data-dashboard-refresh="stats"] .todo .card[data-needs-you-stay="{created_stay["id"]}"]'
+            f'[data-dashboard-refresh="stats"] .card[data-needs-you-stay="{created_stay["id"]}"]'
         )
         line.wait_for(state="attached")
         assert "Popup row refresh" in line.text_content()
@@ -542,7 +555,7 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         # Dashboard has no dismissible banner in every fixture; exercise the same
         # scoped binder with a transient banner under the refreshed work region.
         banner_id = page.evaluate("""() => {
-            const root = document.querySelector('[data-dashboard-refresh="work"]');
+            const root = document.querySelector('#calendar');
             const banner = document.createElement("aside");
             banner.className = "dismissible-banner";
             banner.id = "refresh-dismiss-banner";
@@ -559,10 +572,11 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         assert page.locator(f"#{banner_id}").count() == 0
 
         shot(page, "dashboard-calendar-create-refresh-en")
-        if not line_button.is_visible():
-            page.locator('[data-dashboard-refresh="stats"] .needs-you-more > summary').first.click()
+        # 0832: the full calendar has no summary block; open the new stay from its day in the grid.
+        page.locator(f'[data-cal-day="{arrival}"]').click()
+        page.locator(f'[data-cal-day-list] .cal-event[data-cal-event="{created_stay["id"]}"]').click()
         with page.expect_navigation():
-            line_button.click()
+            page.locator("[data-cal-details] [data-cal-open]").click()
         assert page.url.split("?")[0].endswith(f"/reservations/{created_stay['id']}")
         context.close()
         browser.close()
@@ -600,7 +614,7 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
             const normalize = value => (value || "").replace(/\\s+/g, " ").trim();
             return {
                 stats: normalize(document.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
-                rows: [...document.querySelectorAll('[data-dashboard-refresh="stats"] .todo .card[data-needs-you="stay"]')].map(row => ({
+                rows: [...document.querySelectorAll('[data-dashboard-refresh="stats"] .card[data-needs-you="stay"]')].map(row => ({
                     id: row.getAttribute("data-needs-you-stay"),
                     text: normalize(row.textContent)
                 }))
@@ -621,7 +635,8 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
             else:
                 route.continue_()
         page.route("**/*", fail_first_dashboard_html)
-        page.locator('[data-calendar-add][data-cal-create-type="stay"]').click()
+        page.locator("[data-cal-day]:visible").first.click()
+        page.locator('[data-cal-type-choice="stay"]').click()
         form = page.locator("[data-cal-form]")
         form.locator("#cal-property").select_option(str(ws["properties"][0]))
         arrival, departure = page.evaluate("""today => {
@@ -668,7 +683,7 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
             const normalize = value => (value || "").replace(/\\s+/g, " ").trim(); const rowText = row => { const c = row.cloneNode(true); c.querySelectorAll("[data-copy]").forEach(n => n.remove()); return (c.textContent || "").replace(/\\s+/g, " ").trim(); };
             return {
                 stats: normalize(doc.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
-                rows: [...doc.querySelectorAll('[data-dashboard-refresh="stats"] .todo .card[data-needs-you="stay"]')].map(row => ({
+                rows: [...doc.querySelectorAll('[data-dashboard-refresh="stats"] .card[data-needs-you="stay"]')].map(row => ({
                     id: row.getAttribute("data-needs-you-stay"),
                     text: rowText(row)
                 }))
@@ -683,7 +698,7 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
             const normalize = value => (value || "").replace(/\\s+/g, " ").trim(); const rowText = row => { const c = row.cloneNode(true); c.querySelectorAll("[data-copy]").forEach(n => n.remove()); return (c.textContent || "").replace(/\\s+/g, " ").trim(); };
             const actual = {
                 stats: normalize(document.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
-                rows: [...document.querySelectorAll('[data-dashboard-refresh="stats"] .todo .card[data-needs-you="stay"]')].map(row => ({
+                rows: [...document.querySelectorAll('[data-dashboard-refresh="stats"] .card[data-needs-you="stay"]')].map(row => ({
                     id: row.getAttribute("data-needs-you-stay"),
                     text: rowText(row)
                 }))
@@ -806,5 +821,325 @@ def test_explicit_auto_view_survives_reload_over_a_saved_manual_preference(
         page.locator("[data-cal-auto]").check()
         wait_loaded(page)
         assert "cal_view" not in parse_qs(urlsplit(page.url).query)
+        context.close()
+        browser.close()
+
+
+def tile(page, day):
+    # The day cell itself: the [data-cal-day] node or its nearest .cal-day ancestor.
+    return page.locator(f'[data-cal-day="{day}"]').locator(
+        "xpath=ancestor-or-self::*[contains(concat(' ', normalize-space(@class), ' '), ' cal-day ')][1]")
+
+
+TASK_SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0814"
+
+
+def save_task_shot(page, name):
+    """0816 screenshots: written only when UBYHOST_TASK_SHOTS=1, after every dialog and panel is fully opaque."""
+    if os.environ.get("UBYHOST_TASK_SHOTS") != "1":
+        return
+    page.wait_for_function(
+        "() => [...document.querySelectorAll('dialog[open], [data-cal-day-dialog][open]')].every(d => getComputedStyle(d).opacity === '1')"
+    )
+    page.screenshot(path=str(TASK_SHOTS / name), full_page=False)
+
+
+@pytest.mark.parametrize("width", [768, 1024, 1280, 1440])
+def test_month_tiles_and_side_panel(calendar_workspace, calendar_origin, width):
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=width)
+        # 0832: the calendar page is full-page: the dashboard blocks are hidden at every width.
+        page.goto(f"{calendar_origin}/?lang=en&cal_date=2026-10-01&cal_view=calendar")
+        page.wait_for_selector("[data-calendar]")
+        wait_loaded(page)
+        assert page.locator("#needs-action:visible, .ov-cal-more:visible, .hs:visible").count() == 0
+        assert page.evaluate("(() => { const h = document.querySelector('.cal-toolbar h3'); return h.scrollWidth <= h.clientWidth; })()")
+        assert page.locator("[data-cal-settings]").evaluate("node => getComputedStyle(node).backgroundColor") != "rgb(208, 69, 45)"
+        page.locator('[data-cal-view="calendar"]').click()
+        page.wait_for_selector(".cal-week")
+        wait_loaded(page)
+        assert page.locator("[data-cal-month]:visible, [data-cal-year]:visible").count() == 0
+        page.evaluate("window.scrollTo(0, 0)")
+        assert page.locator(".cal-week-events .cal-event").count() == 0
+        heights = page.locator(".cal-week-days .cal-day").evaluate_all(
+            "nodes => nodes.filter(node => node.offsetParent).map(node => node.getBoundingClientRect().height)"
+        )
+        assert min(heights) >= 93, heights  # 0891: Airbnb tiles are 94 px
+        day10 = page.locator('[data-cal-day="2026-10-10"]').bounding_box()
+        day11 = page.locator('[data-cal-day="2026-10-11"]').bounding_box()
+        assert day11["x"] - (day10["x"] + day10["width"]) >= 6, (day10, day11)
+        assert page.locator('[data-cal-day="2026-10-03"] .cal-tile-chip').count() >= 1
+        assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+        save_task_shot(page, f"calendar-{width}.png")
+
+        page.locator('[data-cal-day="2026-10-10"]').click()
+        page.locator('[data-cal-day="2026-10-12"]').click()
+        for day in ("2026-10-10", "2026-10-11", "2026-10-12"):
+            backgrounds = [tile(page, day).evaluate("node => getComputedStyle(node).backgroundColor"),
+                           page.locator(f'[data-cal-day="{day}"]').evaluate("node => getComputedStyle(node).backgroundColor")]
+            assert "rgb(34, 34, 34)" in backgrounds, (day, backgrounds)
+        panel = page.locator("[data-cal-day-dialog]")
+        assert panel.is_visible()
+        assert page.evaluate("document.querySelector('[data-cal-day-dialog]').matches(':modal')") is False
+        box = panel.bounding_box()
+        assert abs(box["x"] + box["width"] - width) <= 1, box
+        last_tile = page.locator('[data-cal-day="2026-10-12"]').bounding_box()
+        assert box["x"] >= last_tile["x"] + last_tile["width"] or box["x"] >= width - 400, (box, last_tile)
+        close = page.locator("[data-cal-day-dialog] [data-cal-close]").bounding_box()
+        assert abs(close["width"] - 40) <= 1 and abs(close["height"] - 40) <= 1, close
+        add = page.locator("[data-cal-day-add]").bounding_box()
+        assert add["height"] >= 44 and box["y"] + box["height"] - (add["y"] + add["height"]) >= 24, (add, box)
+        assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+        panel_left = page.locator("[data-cal-day-dialog]").bounding_box()["x"]
+        for selector in (".cal-toolbar button, .cal-toolbar select", ".cal-heading button, .cal-heading select"):
+            for control in page.locator(selector).all():
+                if control.is_visible():
+                    box = control.bounding_box()
+                    assert box["x"] + box["width"] <= panel_left + 1, (selector, box, panel_left)
+        grid = page.locator(".cal-body").bounding_box()
+        assert grid["x"] + grid["width"] >= panel_left - 24, (grid, panel_left)
+        for selector in ("[data-cal-prev]", "[data-cal-today]", "[data-cal-next]"):
+            assert page.locator(selector).evaluate("node => getComputedStyle(node).backgroundColor") != "rgb(208, 69, 45)", selector
+        assert page.locator("#needs-action:visible, .ov-cal-more:visible, .hs:visible").count() == 0
+        assert page.locator("[data-cal-settings]").evaluate("node => getComputedStyle(node).backgroundColor") != "rgb(208, 69, 45)"
+        assert page.locator("[data-cal-month]:visible, [data-cal-year]:visible").count() == 0
+        assert page.evaluate("(() => { const h = document.querySelector('.cal-toolbar h3'); return h.scrollWidth <= h.clientWidth; })()")
+        if width == 768:
+            # 0891: stays are dark pills over the tiles; the per-day chips are hidden.
+            assert page.locator(".cal-pill").count() >= 1
+            assert page.locator(".cal-tile-chip:visible").count() == 0
+        assert not page.locator(".havel-fab").is_visible()
+        save_task_shot(page, f"calendar-range-{width}.png") if width in (768, 1280) else None
+
+        page.locator("[data-cal-day-add]").click()
+        assert page.locator("[data-cal-create]").is_visible()
+        assert page.locator("#cal-arrival").input_value() == "2026-10-10"
+        assert page.locator("#cal-departure").input_value() == "2026-10-13"
+        create_close = page.locator("[data-cal-create] .cal-close").bounding_box()
+        assert abs(create_close["width"] - 40) <= 1 and abs(create_close["height"] - 40) <= 1, create_close
+        save_task_shot(page, "calendar-create-1280.png") if width == 1280 else None
+        context.close()
+        browser.close()
+
+
+def test_mouse_drag_opens_panel(calendar_workspace, calendar_origin):
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=1280)
+        page.locator('[data-cal-view="calendar"]').click()
+        page.wait_for_selector(".cal-week")
+        wait_loaded(page)
+        page.locator('[data-cal-day="2026-10-05"]').scroll_into_view_if_needed()
+        page.wait_for_timeout(300)  # the dashboard settles its scroll after load
+        first = page.locator('[data-cal-day="2026-10-03"]').bounding_box()
+        last = page.locator('[data-cal-day="2026-10-05"]').bounding_box()
+        page.mouse.move(first["x"] + first["width"] / 2, first["y"] + 15)
+        page.mouse.down()
+        page.mouse.move(last["x"] + last["width"] / 2, last["y"] + 15, steps=12)
+        page.mouse.up()
+        assert page.locator("[data-cal-day-dialog]").is_visible()
+        assert page.evaluate("document.querySelector('[data-cal-day-dialog]').matches(':modal')") is False
+        for day in ("2026-10-03", "2026-10-04", "2026-10-05"):
+            backgrounds = [tile(page, day).evaluate("node => getComputedStyle(node).backgroundColor"),
+                           page.locator(f'[data-cal-day="{day}"]').evaluate("node => getComputedStyle(node).backgroundColor")]
+            assert "rgb(34, 34, 34)" in backgrounds, (day, backgrounds)
+        assert page.locator("[data-cal-create]").is_hidden()
+        context.close()
+        browser.close()
+
+
+def test_calendar_view_hides_today_table_and_alert_stack_0835(calendar_workspace, calendar_origin):
+    # 0835: the full-page calendar at 1280 px shows no Today table and no alert stack.
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=1280)
+        page.goto(f"{calendar_origin}/?lang=en&cal_view=calendar&cal_date=2026-10-01")
+        wait_loaded(page)
+        assert page.locator(".ov-table").first.is_hidden()
+        visible = [node.evaluate("n => { const out = []; for (let e = n; e && out.length < 9; e = e.parentElement) out.push(e.tagName + '.' + e.className + '#' + e.id); return out.join(' > ') }") for node in page.locator("[data-notification]").all() if node.is_visible()]
+        assert not visible, visible
+        context.close()
+        browser.close()
+
+
+# 0891: Airbnb month calendar: one scroll of month sections, rounded tiles, dark stay pills, sticky head, back-to-top.
+SHOTS_0891 = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0891"
+ROWS_0891 = """() => [...document.querySelectorAll('.cal-month .cal-week.is-dots')].map(row => ({
+    s: [...document.querySelectorAll('.cal-month')].indexOf(row.closest('.cal-month')),
+    t: [...row.querySelectorAll('.cal-day[data-date]')].map(tile => { const r = tile.getBoundingClientRect(); return [r.left, r.right, r.top, r.bottom]; })
+})).filter(row => row.t.length)"""
+PILLS_0891 = """() => [...document.querySelectorAll('.cal-pill')].map(pill => {
+    const r = pill.getBoundingClientRect(), all = [...pill.closest('.cal-week').querySelectorAll('.cal-day[data-date]')];
+    const nights = all.filter(t => t.dataset.date >= pill.dataset.calFrom && t.dataset.date < pill.dataset.calTo).map(t => t.getBoundingClientRect());
+    const covered = all.filter(t => { const b = t.getBoundingClientRect(), mid = b.left + b.width / 2; return mid > r.left && mid < r.right; }).length;
+    const want = Math.round((Date.parse(pill.dataset.calTo) - Date.parse(pill.dataset.calFrom)) / 86400000);
+    return {want, nights: nights.length, covered, left: r.left - nights[0].left, right: nights[nights.length - 1].right - r.right,
+            top: r.top - nights[0].top, bottom: nights[0].bottom - r.bottom, half: nights[0].height / 2,
+            color: getComputedStyle(pill).backgroundColor, cut: pill.classList.contains('continues-start')};
+})"""
+FITS_0891 = "document.documentElement.scrollWidth <= innerWidth + 1"
+
+
+def save_0891_shot(page, name):
+    if os.environ.get("UBYHOST_TASK_SHOTS") != "1":
+        return
+    SHOTS_0891.mkdir(parents=True, exist_ok=True)
+    page.evaluate("window.scrollTo(0, 0)")
+    page.wait_for_timeout(300)
+    page.screenshot(path=str(SHOTS_0891 / name), full_page=False)
+
+
+def check_tiles_0891(rows, width, tile_height=None):
+    gap = 12 if width >= 768 else 4
+    assert rows, "no month tiles"
+    for row in rows:
+        for a, b in zip(row["t"], row["t"][1:]):
+            assert abs(b[0] - a[1] - gap) <= 1, ("column gap", width, a, b)
+        if tile_height:
+            # 0905: each extra stacked stay lane adds 44 px; every tile of a row has the same height.
+            heights = {round(t[3] - t[2]) for t in row["t"]}
+            assert len(heights) == 1 and any(abs(heights.copy().pop() - (tile_height + k * 44)) <= 1 for k in range(3)), ("tile height", width, row)
+    for upper, lower in zip(rows, rows[1:]):
+        if upper["s"] == lower["s"]:
+            assert abs(lower["t"][0][2] - upper["t"][0][3] - gap) <= 1, ("row gap", width, upper, lower)
+
+
+@pytest.mark.parametrize("width", [390, 768, 1280])
+def test_0891_airbnb_month_tiles_and_pills(calendar_workspace, calendar_origin, width):
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=width, touch=width < 768)
+        page.goto(f"{calendar_origin}/?lang=en&cal_view=calendar&cal_date=2026-10-01")
+        page.wait_for_selector(".cal-month")
+        wait_loaded(page)
+        page.evaluate("window.scrollTo(0, 0)")
+        page.wait_for_timeout(300)
+        sections = page.locator(".cal-month").evaluate_all("nodes => nodes.map(node => [node.dataset.calSection, node.getAttribute('aria-label')])")
+        assert [s[0] for s in sections] == ["2026-10-01", "2026-11-01", "2026-12-01", "2027-01-01", "2027-02-01", "2027-03-01"], sections
+        assert sections[0][1] == "October 2026", sections
+        assert page.locator('.cal-day[data-date="2026-10-31"]').count() == 1
+        assert page.locator('.cal-day[data-date="2026-11-01"]').count() == 1
+        check_tiles_0891(page.evaluate(ROWS_0891), width, 94 if width >= 768 else None)
+        pills = page.evaluate(PILLS_0891)
+        assert pills, "no stay pills"
+        inset = 8 if width >= 768 else 3
+        for pill in pills:
+            assert pill["want"] == pill["nights"] == pill["covered"], pill
+            assert abs(pill["left"] - (0 if pill["cut"] else inset)) <= 1, pill
+            assert abs(pill["right"]) <= 1, pill
+            assert pill["top"] >= 36 and pill["bottom"] >= 0, pill  # below the day number (0905: stacked lanes)
+            assert pill["color"] == "rgb(34, 34, 34)", pill
+        assert page.locator(".cal-tile-chip:visible, .cal-dots:visible, .cal-week-events").count() == 0
+        if width >= 768:
+            assert page.locator('[data-cal-more="2026-10-14"]').is_visible()
+            weekdays = page.locator("[data-cal-head] > .cal-weekdays span").all_inner_texts()
+            assert len(weekdays) == 7 and weekdays[0] == "Mon", weekdays
+        assert page.evaluate(FITS_0891)
+        save_0891_shot(page, f"calendar-{width}.png")
+        context.close()
+        browser.close()
+
+
+def test_0891_sticky_head_title_follows_scroll_and_back_to_top(calendar_workspace, calendar_origin):
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=1280)
+        page.goto(f"{calendar_origin}/?lang=en&cal_view=calendar&cal_date=2026-10-01")
+        page.wait_for_selector(".cal-month")
+        wait_loaded(page)
+        page.evaluate("window.scrollTo(0, 0)")
+        page.wait_for_timeout(300)
+        top = page.locator("[data-cal-top]")
+        assert top.is_hidden()
+        assert page.locator("[data-cal-period]").inner_text() == "October 2026"
+        page.mouse.move(640, 700)
+        page.mouse.wheel(0, 1800)
+        page.wait_for_function("() => scrollY > 1000")
+        page.wait_for_timeout(300)
+        head = page.locator("[data-cal-head]").bounding_box()
+        assert abs(head["y"]) <= 1, head
+        assert page.locator("[data-cal-head] > .cal-weekdays").is_visible()
+        title = page.locator("[data-cal-period]").inner_text()
+        assert title in ("November 2026", "December 2026", "January 2027"), title
+        assert top.is_visible()
+        box = top.bounding_box()
+        assert abs(box["width"] - 48) <= 1 and box["x"] + box["width"] <= 1280 - 23, box
+        page.locator("[data-cal-next]").click()
+        wait_loaded(page)
+        expected = {"November 2026": "2026-12-01", "December 2026": "2027-01-01", "January 2027": "2027-02-01"}[title]
+        assert page.locator(".cal-month").first.get_attribute("data-cal-section") == expected
+        page.mouse.move(640, 700)
+        page.mouse.wheel(0, 1800)
+        page.wait_for_function("() => scrollY > 1000")
+        page.wait_for_timeout(300)
+        top.click()
+        page.wait_for_function("() => scrollY === 0")
+        assert page.locator("[data-cal-head]").bounding_box()["y"] >= 0
+        context.close()
+        browser.close()
+
+
+@pytest.mark.parametrize("width", [320, 390, 768, 1024, 1280, 1440])
+def test_0891_calendar_no_horizontal_overflow(calendar_workspace, calendar_origin, width):
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=width, touch=width < 768)
+        page.goto(f"{calendar_origin}/?lang=en&cal_view=calendar&cal_date=2026-10-01")
+        page.wait_for_selector(".cal-month")
+        wait_loaded(page)
+        assert page.evaluate(FITS_0891), (width, "top")
+        page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
+        page.wait_for_timeout(300)
+        assert page.evaluate(FITS_0891), (width, "bottom")
+        context.close()
+        browser.close()
+
+
+GEOMETRY_0893 = """() => {
+  const root = document.querySelector('#calendar');
+  const out = {small: [], edge: [], touching: []};
+  const visible = el => { const r = el.getBoundingClientRect(); const s = getComputedStyle(el);
+    return r.width > 1 && r.height > 1 && s.visibility !== 'hidden' && s.display !== 'none'; };
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) {
+    const node = walker.currentNode; if (!node.textContent.trim()) continue;
+    const el = node.parentElement; if (!visible(el) || el.scrollWidth > el.clientWidth + 1) continue;
+    const size = parseFloat(getComputedStyle(el).fontSize);
+    if (size < 12) out.small.push([el.className, node.textContent.trim().slice(0, 20), size]);
+    const range = document.createRange(); range.selectNodeContents(node);
+    const box = range.getBoundingClientRect();
+    if (box.width && (box.left < 8 || box.right > innerWidth - 8)) out.edge.push([el.className, node.textContent.trim().slice(0, 20), Math.round(box.left), Math.round(box.right)]);
+  }
+  const controls = [...root.querySelectorAll('[data-cal-head] button, [data-cal-head] select, [data-cal-head] a')].filter(visible)
+    .map(el => [el, el.getBoundingClientRect()]);
+  const title = root.querySelector('[data-cal-period]');
+  if (title && visible(title)) controls.push([title, title.getBoundingClientRect()]);
+  for (let i = 0; i < controls.length; i++) for (let j = i + 1; j < controls.length; j++) {
+    const [a, p] = controls[i], [b, q] = controls[j];
+    if (a.contains(b) || b.contains(a)) continue;
+    const group = a.closest('.cal-segment');
+    if (group && group === b.closest('.cal-segment')) continue;
+    const dx = Math.max(q.left - p.right, p.left - q.right), dy = Math.max(q.top - p.bottom, p.top - q.bottom);
+    if (Math.max(dx, dy) < 12) out.touching.push([a.className || a.tagName, b.className || b.tagName, Math.round(dx), Math.round(dy)]);
+  }
+  return out;
+}"""
+
+
+@pytest.mark.parametrize("width", [320, 390, 768, 1024, 1280, 1440])
+def test_0893_calendar_text_size_edges_and_header_spacing(calendar_workspace, calendar_origin, width):
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=width, touch=width < 768)
+        page.goto(f"{calendar_origin}/?lang=en&cal_view=calendar&cal_date=2026-10-01")
+        page.wait_for_selector(".cal-month")
+        wait_loaded(page)
+        page.evaluate("window.scrollTo(0, 0)")
+        page.wait_for_timeout(300)
+        found = page.evaluate(GEOMETRY_0893)
+        assert not found["small"], (width, found["small"][:8])
+        assert not found["edge"], (width, found["edge"][:8])
+        assert not found["touching"], (width, found["touching"][:8])
         context.close()
         browser.close()
