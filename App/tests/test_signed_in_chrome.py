@@ -229,7 +229,7 @@ def test_a_stay_that_needs_the_host_gets_one_line_with_one_button(host_with_prop
     try:
         page = host_with_property.get("/?lang=en").text
         line = re.search(
-            rf'<div class="card needs-you-card-item[^"]*"[^>]*data-needs-you-stay="{reservation_id}"[^>]*>(.*?)(?=<div class="card needs-you-card-item[^"]*"|<section|</main>)', page, re.S
+            rf'<li class="card needs-you-item[^"]*"[^>]*data-needs-you-stay="{reservation_id}"[^>]*>(.*?)(?=<li class="card needs-you-item[^"]*"|<section|</main>)', page, re.S
         )
         assert line, "the stay arriving tomorrow has no line"
         assert host_i18n.STRINGS["en"]["needs_you.short.forms"] in line.group(1)

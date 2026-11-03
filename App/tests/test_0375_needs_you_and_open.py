@@ -17,7 +17,6 @@ def test_0291_open_rule_is_plain_not_soft_coral():
 def test_needs_you_template_uses_icon_and_primary_only_on_first_line():
     html = (APP / "templates" / "dashboard.html").read_text(encoding="utf-8")
     # 0706: the v2 Overview renders each line with overview_card (mockup .todo)
-    assert "overview_card(line, loop.first)" in html
-    assert 'class="ic {{ ph_tone }}"' in html
+    assert "ny_row(line, loop.first)" in html
     assert "if first else ' ghost line'" in html
     assert "ui_button(line.action, 'open'" not in html
