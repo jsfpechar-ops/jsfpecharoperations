@@ -998,8 +998,12 @@ def test_wizard_round_screenshots(host, base_url, monkeypatch):
         assert page.locator("#addr_street").input_value() == "Masarykova"
         _shot(page, "15-property-stored-values-en-1280.png")
         page.goto(f"{base_url}/apartments/{tried['id']}/setup/done?lang=en")
-        page.locator("[data-setup-next-step=try_it] button[value=demo]").click()
-        page.wait_for_url("**/l/**")
+        page.locator("[data-setup-next-step=try_it] a").click()
+        page.wait_for_url("**/setup/try_it**")
+        with context.expect_page() as popup:
+            page.locator("#setup-create-demo button").click()
+        popup.value.wait_for_url("**/l/**")
+        popup.value.close()
         page.goto(f"{base_url}/apartments/{tried['id']}/setup/done?lang=en")
         assert demo.demo_stay_for(tried["id"])
         _shot(page, "17-try-it-after-skip-en-1280.png")

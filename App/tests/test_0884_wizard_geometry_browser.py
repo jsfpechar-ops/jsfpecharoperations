@@ -12,21 +12,21 @@ if REQUIRE_BROWSER:
 else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
-from app import auth, db
+from app import auth, db, demo
 from tests.browser_support import chromium_launch_kwargs
 from tests.test_host_geometry import _browser_session_cookie, base  # noqa: F401
 
 SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0884"
 WIDTHS = (320, 390, 768, 1024, 1280, 1440)
-PAGES = ("property", "property-no-business", "calendar", "police", "guest_link", "done")
-SHOT_PAGES = ("property", "property-no-business", "police", "done")
+PAGES = ("property", "property-no-business", "calendar", "police", "guest_link", "done", "try_it", "try_it-open", "try_it-registered")
+SHOT_PAGES = ("property", "property-no-business", "police", "done", "try_it", "try_it-open", "try_it-registered")
 SUGGEST = [{"label": "Synthetická 12/3, Brno", "fields": {
     "addr_street": "Synthetická", "addr_house_no": "12", "addr_orient_no": "3", "addr_zip": "60200",
     "addr_obec": "Brno", "addr_obec_cast": "Černá Pole", "addr_okres": "Brno-město"}}]
 CHECK = r"""() => {
   const root = document.querySelector('.setup-wizard');
   const CARD = '.setup-summary-card, .ui-choice-card, .setup-wizard-note-box, .setup-wizard-celebrate, .wizard-ares';
-  const BTN = 'button, a.ui-btn, input[type=submit]';
+  const BTN = 'button:not(.setup-demo-message-link), a.ui-btn, input[type=submit]';
   const CTRL = 'button, a.ui-btn, input:not([type=hidden]), select, textarea';
   const shown = el => {
     for (let n = el; n && n !== document.body; n = n.parentElement) {
@@ -108,7 +108,13 @@ def test_wizard_pages_keep_their_geometry(base, width, lang):
             for name in PAGES:
                 if (name == "property-no-business") == with_business:
                     continue
-                step = "property" if name == "property-no-business" else name
+                step = "property" if name == "property-no-business" else name.split("-")[0] if name.startswith("try_it") else name
+                if name in ("try_it-open", "try_it-registered") and not demo.demo_stay_for(apartment):
+                    demo.create_demo_stay(apartment)
+                if name == "try_it-registered":
+                    demo._guest(demo.demo_stay_for(apartment)["id"], True, surname="Smith", first_name="John Paul",
+                                birth_date="01011990", nationality="GBR", doc_number="P1234567",
+                                res_street="Baker Street 221B", res_city="London", res_country="GBR", purpose="10")
                 page.goto(f"{base}/apartments/{apartment}/setup/{step}?lang={lang}")
                 page.wait_for_selector(".setup-wizard", timeout=30000)
                 bad = {key: value for key, value in page.evaluate(CHECK).items() if value}
@@ -126,3 +132,29 @@ def test_wizard_pages_keep_their_geometry(base, width, lang):
             context.close()
         browser.close()
     assert not failures, failures
+
+
+def test_try_it_can_be_skipped_or_left_by_click(base):
+    username, apartment = _flat(True)
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        context = browser.new_context(viewport={"width": 390, "height": 900})
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": _browser_session_cookie(username), "url": base + "/"}])
+        page = context.new_page()
+        setup = f"{base}/apartments/{apartment}/setup"
+        page.goto(f"{setup}/done?lang=en")
+        page.locator("[data-setup-next-step=try_it] a").click()
+        page.wait_for_url("**/setup/try_it**")
+        page.get_by_role("link", name="Leave the demo").click()
+        page.wait_for_url("**/setup/done**")
+        demo.create_demo_stay(apartment)
+        page.goto(f"{setup}/try_it?lang=en")
+        page.get_by_role("link", name="Leave the demo").click()
+        page.wait_for_url("**/setup/done**")
+        assert demo.demo_stay_for(apartment)
+        page.goto(f"{setup}/try_it?lang=en")
+        page.locator(".setup-wizard-skip button").click()
+        page.wait_for_url("**/setup/done**")
+        assert demo.demo_stay_for(apartment) is None
+        context.close()
+        browser.close()
