@@ -823,3 +823,8 @@ body.v2 #calendar.dashboard-calendar[data-readonly="false"].has-panel .cal-to-to
   body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-head .cal-segment button { height:44px; min-height:44px; min-width:44px; }
   body.v2 .cleaning-page #calendar.dashboard-calendar[data-readonly="false"] .cal-head .cal-view-segment button { width:44px; min-width:44px; }
 }
+/* 0896: the host cleaning calendar shows the stay pills too (when each stay ends) next to the cleaning chips; the tile is tall enough that they never touch */
+body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-week.is-dots .cal-day { min-height:150px; }
+@media (max-width:767px) {
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-week.is-dots .cal-day { min-height:96px; }
+}

@@ -3,13 +3,8 @@
 {% set meta_description = t('login.meta_description') %}
 {% block auth_body %}
 <section class="auth-card">
-  <div class="auth-title-row">
-    <h1 class="auth-title">{{ t('login.title') }}</h1>
-    <details class="auth-q">
-      <summary aria-label="{{ t('help.tip.label') }}">?</summary>
-      <p class="auth-lede">{{ t('login.lede') }}</p>
-    </details>
-  </div>
+  <h1 class="auth-title">{{ t('login.title') }}</h1>
+  <p class="auth-lede">{{ t('login.lede') }}</p>
 
   {% if error %}
     <div class="auth-alert" role="alert">{{ t(error, email=operator().email) }}</div>
@@ -66,7 +61,7 @@
       <input type="hidden" name="next" value="{{ next if next is defined else request.query_params.get('next', '') }}">
       <div class="auth-field">
         <label for="email">{{ t('login.email') }}</label>
-        <input type="email" id="email" name="email" required autofocus maxlength="254" enterkeyhint="go"
+        <input type="email" id="email" name="email" required autofocus maxlength="254"
                value="{{ email | default('', true) }}"
                autocomplete="{{ 'email webauthn' if passkeys_enabled() else 'email' }}" autocapitalize="none" spellcheck="false"
                placeholder="{{ t('login.email_ph') }}">
@@ -85,9 +80,11 @@
   <details class="auth-help">
     <summary>{{ t('login.help_summary') }}</summary>
     <p class="auth-help-note">{{ t('login.help_body', email=operator().email) }}</p>
-    <p class="auth-help-note">{{ t('login.footnote', email=operator().email) }}</p>
   </details>
 
+  <div class="auth-foot">
+    <p>{{ t('login.footnote', email=operator().email) }}</p>
+  </div>
 </section>
 {% if turnstile_site_key %}
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
