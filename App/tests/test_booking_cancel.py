@@ -177,8 +177,11 @@ def test_partial_refund_moderate_late(site, refunds):
     after = booking_site.get(bid)
     assert after["status"] == "refunded" and int(after["refunded_czk"]) == expected
     assert refunds.created[0]["amount"] == expected * 100
+    corrections = db.query("SELECT id FROM invoice WHERE corrects_invoice_id = ?",
+                           (booking["invoice_id"],))
+    assert len(corrections) == 1
     assert db.query_one("SELECT id FROM audit WHERE action = ? AND owner_user_id = ?",
-                        ("site_invoice_needs_correction", site["oid"])) is not None
+                        ("site_invoice_needs_correction", site["oid"])) is None
 
 
 def test_host_cancel_is_always_full(site, refunds):
