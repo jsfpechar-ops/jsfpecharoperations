@@ -2206,7 +2206,7 @@ body.v2 summary.page-help-btn::-webkit-details-marker{display:none}
 .side .me-menu-list{position:absolute;left:8px;bottom:calc(100% + 12px);z-index:80;width:236px;box-sizing:border-box;padding:8px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 28px rgba(0,0,0,.14)}
 .side .me-menu-list > a,.side .me-menu-list button.nav{display:flex;align-items:center;gap:12px;box-sizing:border-box;width:100%;min-height:44px;padding:10px 12px;border:0;border-radius:10px;background:none;color:var(--ink);font:inherit;font-size:14px;text-align:left;text-decoration:none;cursor:pointer}
 .side .me-menu-list > a:hover,.side .me-menu-list button.nav:hover,.side .me-menu-list > a.on{background:#f4f4f0}
-.side .me-menu-list .support-link{display:block;margin:0;font-size:14px}
+.side .me-menu-list .support-link{margin:0}
 .side .me-menu-list .side-logout{margin:8px 0 0;padding-top:8px;border-top:1px solid var(--line)}
 @media (max-width:767px){body.v2 .side .me-menu{display:none}}
 /* 0896: Reporting column: one pill with one dot; the deadline hint under it is plain grey text, never a second pill */
@@ -2233,3 +2233,4 @@ body.v2 .btn > svg{margin-right:0}
 body.v2 .ov-month{margin-top:12px}
 body.v2 .ov-quiet,body.v2 .ov-links{margin-bottom:12px}
 body.v2 .ov-links:empty{display:none}
+body.v2 details.page-help:not([open]){background:none;box-shadow:none;border-color:transparent}

@@ -39,7 +39,7 @@
       <a role="menuitem" class="{{ 'on' if nav == 'admin' }}" href="/admin" {% if nav == 'admin' %}aria-current="page"{% endif %}>{{ icon('shield', 18) }}{{ t('nav.admin') }}</a>
       {% endif %}
       <a role="menuitem" href="/guide">{{ icon('circle-help', 18) }}{{ t('nav.guide') }}</a>
-      {% if operator().email %}<a role="menuitem" class="support-link" href="mailto:{{ operator().email }}">{{ t('nav.support') }}<small>{{ operator().email }}</small></a>{% endif %}
+      {% if operator().email %}<a role="menuitem" class="support-link" href="mailto:{{ operator().email }}">{{ icon('mail', 18) }}{{ t('nav.support') }}</a>{% endif %}
       <form method="post" action="/logout" class="side-logout"><button class="nav" role="menuitem" type="submit">{{ icon('log-out', 18) }}{{ t('nav.logout') }}</button></form>
     </div>
   </details>
