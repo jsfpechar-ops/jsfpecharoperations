@@ -5532,8 +5532,6 @@ _SIGNUP_STRINGS = {
         "signup.email_ph": "you@example.com",
         "signup.password": "Password",
         "signup.password_hint": "At least 12 characters, with upper- and lowercase letters and a number.",
-        "signup.workspace": "Business or workspace name",
-        "signup.workspace_ph": "For example: Apartments Old Town",
         "signup.accept_before": "I accept the ",
         "signup.accept_terms": "Terms of Service",
         "signup.accept_between": " and the ",
@@ -5550,10 +5548,8 @@ _SIGNUP_STRINGS = {
             "anytime in Settings."
         ),
         "signup.ads_consent_link": "How Google uses data",
-        # Legal position 2, verbatim.
-        "signup.onboarding_opt_out": (
-            "Do not send me setup tips by e-mail (you can change this anytime in Settings)."
-        ),
+        # Legal position 2: unticked marketing opt-in (owner, 2026-11-02).
+        "signup.marketing_opt_in": "Send me tips and news by e-mail",
         "signup.submit": "Create account",
         "signup.have_account": "Already have an account?",
         "signup.login_link": "Log in",
@@ -5932,8 +5928,6 @@ _SIGNUP_STRINGS = {
         "signup.email_ph": "vy@example.com",
         "signup.password": "Heslo",
         "signup.password_hint": "Alespoň 12 znaků, velká i malá písmena a číslice.",
-        "signup.workspace": "Název firmy nebo pracovního prostoru",
-        "signup.workspace_ph": "Například: Apartmány Staré Město",
         "signup.accept_before": "Přijímám ",
         "signup.accept_terms": "obchodní podmínky",
         "signup.accept_between": " a ",
@@ -5948,10 +5942,7 @@ _SIGNUP_STRINGS = {
             "Souhlas můžete kdykoli odvolat v Nastavení."
         ),
         "signup.ads_consent_link": "Jak Google používá data",
-        "signup.onboarding_opt_out": (
-            "Nepřeji si dostávat e-mailem tipy k nastavení (kdykoli to můžete změnit "
-            "v Nastavení)."
-        ),
+        "signup.marketing_opt_in": "Posílejte mi tipy a novinky e-mailem",
         "signup.submit": "Založit účet",
         "signup.have_account": "Už účet máte?",
         "signup.login_link": "Přihlaste se",

@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 MOCKUP = Path(__file__).resolve().parents[2] / "docs/design/mockup/ubyhost-redesign-v2.html"
-WIDTHS = (320, 390, 768, 1024, 1280, 1440)
+WIDTHS = (320, 390, 768, 1024, 1280, 1440, 1920)
 DESKTOP = 1024  # box-layout checks only at widths >= DESKTOP; the phone mockup is not approved yet
 PHONE_MOCKUP = Path(__file__).resolve().parents[2] / "docs/design/mockup/ubyhost-phone-v1.html"
 PHONE_MOCKUP_V2 = Path(__file__).resolve().parents[2] / "docs/design/mockup/ubyhost-phone-v2.html"
