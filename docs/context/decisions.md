@@ -9,10 +9,10 @@ Append-only.
 - 2026-10-08 | Door codes (TTLock pilot): timed codes, test mode until live; full rules in the plan | owner + council-lite | [ttlock-door-codes](../plans/ttlock-door-codes.md)
 - 2026-10-08 | Funnel: in-app dashboard, no JS; Umami public-only | own rows | 0018
 - 2026-10-08 | Stored files: no expiry; invoices 10 y; new file kind brings a storage module | legal risk | [plan](../plans/file-retention.md)
-- 2026-10-08 | Door codes: one 1-min job; no PIN/list/unlock polling; weekly `queryDate` | API budget; type-3 unknown until use | [plan §7](../plans/ttlock-door-codes.md)
+- 2026-10-08 | Door codes: one 1-min job; no PIN/list/unlock polling; weekly `queryDate` | [plan §7](../plans/ttlock-door-codes.md)
 - 2026-10-08 | Invoices per stay only, replaces 09-26 | scope | [plan](../plans/stay-only-invoices.md)
 - 2026-10-08 | Staging: `UBYHOST_STAGING_NO_LOGIN=1` skips login; door-code alert after 10 min | test-only | [ENVIRONMENT](../ENVIRONMENT.md)
-- 2026-10-09 | [workflow] One brief per copy text; replaced brief marked in the same commit; executors skip non-todo; lint warns on brief overlap | brief collisions | [workflow](workflow.md)
+- 2026-10-09 | [workflow] One brief per copy text; replaced briefs marked same commit; lint warns on overlap | [workflow](workflow.md)
 - 2026-10-09 | Waiting guest sees only "You will receive your door code by e-mail." (0024; replaces 0022) | [0022](../tasks/0022-guest-door-code-waiting-messages.md)
 - 2026-10-09 | [workflow] Status `replaced`: a newer brief took over | `blocked` reads as waiting
 - 2026-10-10 | UI decisions continue | cap | [UI](ui-decisions.md)
@@ -33,13 +33,13 @@ Append-only.
 - 2026-10-19 Accessibility: WCAG 2.2 AA, `a11y_guard.js`; no statement page (owner).
 
 - 2026-10-22 [deps] Signature font: self-hosted Dancing Script (OFL) (owner).
-- 2026-10-24 | [deps] `anthropic` 2.3.0 pinned+hashed; model `claude-haiku-5-5`; every call through `App/app/ai.py`, per-feature switch and budget | Havel + guest assistant; one module to swap providers | plan havel-support-assistant, task 0310
+- 2026-10-24 | [deps] `anthropic` 2.3.0 pinned+hashed; `claude-haiku-5-5`; all calls via `App/app/ai.py`, per-feature switch + budget | Havel + guest assistant | plan havel-support-assistant, 0310
 - 2026-10-25 | Invoice "Fill from register" also asks the MFČR VAT register (CRPDPH SOAP); sends DIČ digits only; 24 h cache; no new dependency | owner | [0394](../tasks/0394-vat-register-bank-account.md)
 - 2026-10-26 | Billing phase 1: invoices only, no gateway yet | owner | 0411
 - 2026-10-26 | Unpaid = read-only, filing never blocked | owner | 0415
 - 2026-10-27 | [Max policy](../reports/max-159-fivefold-ai.md); [original layout, 229 monthly](../reports/original-pricing-229.md) | owner
 - 2026-10-27 | Direct payments folded into the FastAPI app; requests first, page booking second; QR rail = tech provider only | owner | plan direct-payments-build-plan, 0425
-- Grafana Cloud free tier (EU) is the subprocessor for operational logs and metrics (PII-free per OPS-3); monitoring containers behind compose profile "monitoring" (owner, 2026-10-27).
+- 2026-10-27 | Grafana Cloud free tier (EU) subprocessor for PII-free logs/metrics (OPS-3); monitoring behind compose profile "monitoring" | owner
 - 2026-10-28 | [deps] `stripe` 16.0.1 pinned+hashed in requirements.lock (owner); every call through `App/app/stripe_connect.py`, shared monthly cap `UBYHOST_STRIPE_MONTHLY_API_CALLS` | 0428
 - 2026-10-28 | Property pages: Apify scrape-first prefill (page + Leon guide, one fetch), page pipeline deterministic, no AI step; host reviews once, then publish | owner | plan property-pages, 0431
 - 2026-10-28 | Property page design: Airbnb-style layout patterns (hero grid, 65ch description, icon amenities); no Airbnb brand assets, fonts or copied CSS | owner | plan property-pages, 0431
@@ -54,9 +54,9 @@ Append-only.
 - 2026-10-30 | [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; Haiku-only execution; manual cutover | 0455–0456
 - 2026-10-31 | Postgres (#592), then Go G1–G6, per-feature rollback, no load-test gate. [workflow] Fable briefs critical items, Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
 - 2026-10-31 | Every change lean: no dead code, no extras; dead code found is removed in its own small commit | owner | plan v4
-- 2026-10-31 | Approval gates waived for the PostgreSQL and Go migration; the bar stays (verified backup, prod-copy rehearsal, per-table counts and hashes, suite green on PG, SQLite and automatic rollback). Owner acts when needed | owner | 0463
-- 2026-10-31 | D1 PostgreSQL self-hosted in Compose on the 8 GB Lightsail (socket, no port, 1 GB cap), not managed; nightly `pg_dump`, restore proven each rehearsal. D2 reviewer on `production`; D3 goose; D4 Postgres job table, `SKIP LOCKED` | owner | 0463, 0464
-- 2026-10-31 | PostgreSQL container: no password, no network (`network_mode: none`, socket volume). [workflow] Before every merge: `git diff --stat origin/main <branch>` vs the brief's Files; one worktree per Haiku | owner, orchestrator | 0463, #606
+- 2026-10-31 | Postgres/Go migration: approval gates waived, bar stays (backup, prod-copy rehearsal, counts/hashes, suite green PG+SQLite, auto rollback) | owner | 0463
+- 2026-10-31 | D1 Postgres self-hosted in Compose on Lightsail (socket, no port, 1 GB cap); nightly pg_dump. D2 reviewer on `production`; D3 goose; D4 job table `SKIP LOCKED` | owner | 0463, 0464
+- 2026-10-31 | PG container: no password, no network (`network_mode: none`, socket). [workflow] Per merge: `git diff --stat` vs brief Files; one worktree per Haiku | owner, orchestrator | 0463, #606
 - 2026-10-31 | [workflow] `test-postgres-full` (app suite on PG 17) gates every merge; SQLite-file tests carry `sqlite_only` | orchestrator | 0462
 - 2026-11-01 | Host redesign: vendored Hotwire Turbo (MIT) for page-body swaps; owner OKs mockups first | owner | #614
 - 2026-10-31 | D3 detail: goose v3.29.0, asset goose_linux_x86_64 (SHA-256 pinned in ci.yml) | owner | 0465b
@@ -68,3 +68,4 @@ Append-only.
 - 2026-11-02 | Booking site: CS/EN, one HMAC link per booking, cancel refunds per policy | owner | 0818-0821
 
 - 2026-11-03 | [workflow] UX gate: threads self-check UX (lint + screenshots) | owner | 0900
+- 2026-11-03 | Guest-paid stay fee: payee = host account; paid once per stay on the guest hub (re-shown on party change, delta after paid); v1 rails IBAN/QR + cash + host-pasted Revolut link (no merchant SDK); Stripe card phase 2; per-property toggle in the fee section + `UBYHOST_STAY_FEE_GUEST_PAY` kill switch | owner | [plan](../plans/stay-fee-guest-payment.md)
