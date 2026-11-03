@@ -2,7 +2,8 @@
 
 Rules live in layout_lint.js: word-per-line wrapping, squeezed labels, stranded
 badges, clipped or truncated text, overlapping text, elements outside the
-viewport, empty buttons and boxes, stray duplicate icons, mixed stylesheets.
+viewport, empty buttons and boxes, stray duplicate icons, mixed stylesheets, and a help "?"
+that is not on the same line as its heading or label (help-stranded).
 
 Host pages must have zero findings. Guest and public pages are report-only.
 Screenshots at 390/768/1280 of every host page go to UBYHOST_SHOTS_DIR/layout-lint
@@ -152,6 +153,9 @@ BAD_PAGE = """<!doctype html><html><head><meta charset=utf-8>
 <button class=btn></button>
 <p class=a>Overlapping name one</p><p class=b>Overlapping name two</p>
 <div style="position:absolute;left:380px;top:200px">Past the edge text</div>
+<div style="margin-top:420px;width:200px"><b>Guest form access</b></div>
+<span class=help-tip><button class=help-tip-btn style="width:18px;height:18px;padding:0">?</button></span>
+<div style="width:300px"><b>Inline label</b><span class=help-tip style="margin-left:6px"><button class=help-tip-btn style="width:18px;height:18px;padding:0">?</button></span></div>
 <span id=icons><svg width=10 height=10><path d="M0 0h10v10z"/></svg><svg width=10 height=10><path d="M0 0h10v10z"/></svg></span>
 </body></html>"""
 
@@ -168,8 +172,12 @@ def test_the_lint_catches_the_known_regressions(wide_base):
         page = browser.new_page(viewport={"width": 390, "height": 800})
         page.goto(wide_base + "/healthz")
         page.set_content(BAD_PAGE)
-        rules = {item[0] for item in page.evaluate(LINT)}
+        found = page.evaluate(LINT)
+        rules = {item[0] for item in found}
+        stranded = [item for item in found if item[0] == "help-stranded"]
         browser.close()
     expected = {"word-per-line", "label-squeezed", "badge-stranded", "clipped-text",
-                "text-overlap", "outside-viewport", "empty-control", "duplicate-icon"}
+                "text-overlap", "outside-viewport", "empty-control", "duplicate-icon", "help-stranded"}
     assert expected <= rules, f"lint missed {sorted(expected - rules)}; saw {sorted(rules)}"
+    # The "?" under its heading is caught; the one right after its label is not.
+    assert len(stranded) == 1 and "Guest form access" not in stranded[0][1], stranded

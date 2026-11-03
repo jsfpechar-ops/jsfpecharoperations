@@ -28,7 +28,7 @@
     <a class="ui-btn ui-btn-quiet ui-btn-compact" href="{{ next_path or '/entities' }}">{{ t('common.close') }}</a>
   </div>
   <div class="entity-linked" id="entity-linked">
-    <span class="entity-linked-label">{{ t('entities.linked.label') }}</span>
+    <span class="entity-linked-label">{{ t('entities.linked.label') }}</span>{{ help_tip('entity-linked-help', t('entities.linked.help')) }}
     {% if linked_properties %}
       <ul class="entity-linked-list">
         {% for property in linked_properties %}
@@ -38,7 +38,6 @@
     {% else %}
       <span class="ui-sub">{{ t('entities.linked.none') }}</span>
     {% endif %}
-    {{ help_tip('entity-linked-help', t('entities.linked.help')) }}
   </div>
 
   <section class="entity-section" id="entity-business" aria-labelledby="entity-business-title">
