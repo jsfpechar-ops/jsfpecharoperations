@@ -113,6 +113,13 @@ on each render (never stored):
   (initial GET and the 422 re-render with the guest's values), so the number
   always reflects what they filled in. No live JS recalculation (rule 6,
   no duplicated exemption logic in the browser).
+- **Residence card field order (owner question, decided):** country → city →
+  street. The two fields the same-obec rule reads (`res_country`, `res_city`)
+  come first, which also matches how the existing nationality→residence sync
+  JS treats `res_country` as the primary field. Pure template reorder in the
+  one residence card of `guest/form.html`; labels, `required`, and
+  `autocomplete` attributes unchanged, validation untouched, and nothing
+  about the fee rule is hinted to the guest.
 - Hub panel shows when the computed due > 0 and all expected guests are
   registered (`remaining <= 0` or no expected count).
 
