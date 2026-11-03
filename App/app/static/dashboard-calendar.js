@@ -1,7 +1,7 @@
 /* UbyHost reservation calendar. Date arithmetic uses UTC date-only values. */
 (function () {
   "use strict";
-  const DAY = 86400000;
+  const DAY = 86400000, MONTHS = 6; // 0891: the Month scale shows MONTHS month sections in one scroll.
   function dateValue(value) { return new Date(value + "T00:00:00Z"); }
   function iso(value) { return value.toISOString().slice(0, 10); }
   function addDays(value, days) { return iso(new Date(dateValue(value).getTime() + days * DAY)); }
@@ -87,6 +87,7 @@
   const shortDate = value => new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", timeZone: "UTC" }).format(dateValue(value));
   const fullDate = value => new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(dateValue(value));
   const monthName = value => new Intl.DateTimeFormat(locale, { month: "long", year: "numeric", timeZone: "UTC" }).format(dateValue(value));
+  const monthOnly = value => new Intl.DateTimeFormat(locale, { month: "long", timeZone: "UTC" }).format(dateValue(value));
   const weekday = value => new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" }).format(dateValue(value));
   const body = $("[data-cal-body]"), message = $("[data-cal-message]");
   const createDialog = $("[data-cal-create]"), form = $("[data-cal-form]");
@@ -115,7 +116,7 @@
   let requestNumber = 0, controller = null, selection = null, suppressClickUntil = 0, dayListEnd = null, touchPress = null;
   let keyboardAnchor = null, dayListDate = null, saving = false, createKind = cleaningMode ? "cleaning" : "stay";
   const focusReturn = new WeakMap();
-  let lastLoadedRange = null;
+  let lastLoadedRange = null, visibleMonth = "";
   function el(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -137,6 +138,7 @@
     if (view() === "gantt") return [monthStart(state.date), moveMonth(state.date, 1)];
     if (state.scale === "week") { const start = monday(state.date); return [start, addDays(start, 7)]; }
     if (state.scale === "year") return [state.date.slice(0, 4) + "-01-01", String(Number(state.date.slice(0, 4)) + 1) + "-01-01"];
+    if (tiles()) return [monthRange(state.date)[0], monthRange(moveMonth(state.date, MONTHS - 1))[1]];
     return monthRange(state.date);
   }
   function rememberURL() {
@@ -276,13 +278,59 @@
       });
     });
   }
+  // 0891: Airbnb stay pills. Whole nights, clipped to the week and to the month section. Lane 0 is drawn;
+  // a day with more stays gets a "+N" button (data-cal-more) that opens the day list.
+  function pillRow(week, until, month) {
+    const monthEnd = month ? moveMonth(month, 1) : until;
+    const from = month && month > week ? month : week, to = monthEnd < until ? monthEnd : until;
+    const overlay = el("div", "cal-pills"), ends = [], hidden = [0, 0, 0, 0, 0, 0, 0];
+    state.events.filter(event => event.kind !== "cleaning" && event.start < to && event.end > from)
+      .sort((a, b) => a.start.localeCompare(b.start) || b.end.localeCompare(a.end) || String(a.id).localeCompare(String(b.id)))
+      .forEach(event => {
+        const left = event.start > from ? event.start : from, right = event.end < to ? event.end : to;
+        let lane = ends.findIndex(last => last <= left);
+        if (lane < 0) lane = ends.length;
+        ends[lane] = right;
+        const column = distance(week, left), span = distance(left, right);
+        if (lane > 0) { for (let index = column; index < column + span; index++) hidden[index]++; return; }
+        const pill = el("a", "cal-pill" + (event.start < from ? " continues-start" : "") + (event.end > to ? " continues-end" : ""));
+        pill.href = event.url; pill.draggable = false;
+        pill.dataset.calEvent = String(event.id); pill.dataset.calFrom = left; pill.dataset.calTo = right;
+        pill.style.gridColumn = String(column + 1) + " / span " + String(span);
+        const name = labelFor(event);
+        pill.title = name + " · " + fullDate(event.start) + " – " + fullDate(event.end);
+        pill.setAttribute("aria-label", pill.title); pill.setAttribute("aria-haspopup", "dialog");
+        pill.append(el("span", "cal-pill-avatar", (name.trim().charAt(0) || "·").toUpperCase()), el("span", "cal-pill-name", name));
+        overlay.append(pill);
+      });
+    hidden.forEach((count, index) => {
+      if (!count) return;
+      const date = addDays(week, index), more = el("button", "cal-pill-more", "+" + String(count));
+      more.type = "button"; more.dataset.calMore = date; more.style.gridColumn = String(index + 1);
+      more.setAttribute("aria-label", fullDate(date) + " · " + format("more", { count }));
+      overlay.append(more);
+    });
+    return overlay;
+  }
   function renderCalendar() {
     const [start, end] = range(), weekdays = el("div", "cal-weekdays");
     for (let day = 0; day < 7; day++) weekdays.append(el("span", "", weekday(addDays(start, day))));
-    body.append(weekdays);
+    const head = $("[data-cal-head]");
+    if (tiles() && head && matchMedia("(min-width:768px)").matches) head.append(weekdays); else body.append(weekdays);
     const mobile = matchMedia("(max-width:760px)").matches, dots = tiles();
     const bookingBudgetDefault = cleaningMode ? 1 : (mobile ? 1 : 2);
-    for (let week = start; week < end; week = addDays(week, 7)) {
+    // 0891: the Month scale is one scroll of MONTHS month sections; outside days are blank cells. Other scales keep one block ("").
+    const months = tiles() ? Array.from({ length: MONTHS }, (_, index) => moveMonth(state.date, index)) : [""];
+    for (const month of months) {
+    let target = body, weekStart = start, weekEnd = end;
+    if (month) {
+      const section = el("section", "cal-month"); section.dataset.calSection = month;
+      section.setAttribute("aria-label", monthName(month));
+      section.append(el("h4", "cal-month-title", month.slice(0, 4) === root.dataset.today.slice(0, 4) ? monthOnly(month) : monthName(month)));
+      body.append(section); target = section;
+      [weekStart, weekEnd] = monthRange(month);
+    }
+    for (let week = weekStart; week < weekEnd; week = addDays(week, 7)) {
       const until = addDays(week, 7);
       const bookings = lanes(state.events.filter(event => event.kind !== "cleaning" && !hostCleaning), week, until);
       const cleanings = lanes(state.events.filter(event => event.kind === "cleaning"), week, until);
@@ -295,8 +343,10 @@
       const days = el("div", "cal-week-days");
       for (let index = 0; index < 7; index++) {
         const date = addDays(week, index), day = el("div", "cal-day");
+        if (date.slice(0, 7) !== (month || state.date).slice(0, 7) && state.scale !== "week") day.classList.add("is-outside");
+        // 0891: a day outside its month section is a blank cell; the day itself lives in its own section.
+        if (month && day.classList.contains("is-outside")) { days.append(day); continue; }
         day.dataset.date = date;
-        if (date.slice(0, 7) !== state.date.slice(0, 7) && state.scale !== "week") day.classList.add("is-outside");
         if (date === root.dataset.today) day.classList.add("is-today");
         if (date < root.dataset.today) day.classList.add("is-past");
         const button = el("button", "cal-day-number"); button.append(el("span", "cal-num", String(dateValue(date).getUTCDate())));
@@ -324,7 +374,7 @@
           button.append(marks);
           const chips = el("div", "cal-tile-chips");
           dayEvents.slice(0, 2).forEach(event => { const chip = el("span", "cal-tile-chip", labelFor(event)); chip.dataset.calColor = propertyColor(event.propertyId); chips.append(chip); });
-          if (dayEvents.length > 2) { const more = el("span", "cal-tile-more", "+" + String(dayEvents.length - 2)); more.dataset.calMore = date; chips.append(more); }
+          // 0891: the stays "+N" is the .cal-pill-more button from pillRow().
           button.append(chips);
           if (dayEvents.length) day.classList.add("has-stays");
         }
@@ -332,7 +382,9 @@
       }
       if (dots) {
         const row = el("div", "cal-week is-dots"); row.style.setProperty("--lanes", "1");
-        row.append(days); body.append(row);
+        row.append(days);
+        if (!hostCleaning) row.append(pillRow(week, until, month));
+        target.append(row);
         continue;
       }
       const overlay = el("div", "cal-week-events");
@@ -406,7 +458,8 @@
         overlay.style.setProperty("--mobile-event-rows", mobileRows.join(" "));
       }
       const row = el("div", "cal-week"); row.style.setProperty("--lanes", String(lanesShown));
-      row.append(days, overlay); body.append(row);
+      row.append(days, overlay); target.append(row);
+    }
     }
   }
   function renderYear() {
@@ -477,6 +530,9 @@
   }
   function render() {
     cancelSelection(); syncControls(); body.replaceChildren();
+    $$("[data-cal-head] > .cal-weekdays").forEach(node => node.remove());
+    visibleMonth = "";
+    const toTop = $("[data-cal-top]"); if (toTop) toTop.hidden = true;
     if (!state.properties.length) { body.append(el("p", "cal-empty", labels.empty_properties)); return; }
     markConflicts();
     if (view() === "gantt") renderGantt(); else if (state.scale === "year") renderYear(); else renderCalendar();
@@ -829,12 +885,17 @@
     const month = target.closest("[data-cal-month-open]");
     if (month) { state.date = month.dataset.calMonthOpen; state.mode = "calendar"; state.scale = "month"; savePreferences(); load(); return; }
     if (target.closest("[data-cal-settings]")) { show(settingsDialog); return; }
-    if (target.closest("[data-cal-today]")) { state.date = root.dataset.today; load(); return; }
+    if (target.closest("[data-cal-top]")) { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+    if (target.closest("[data-cal-today]")) { if (tiles()) window.scrollTo(0, 0); state.date = root.dataset.today; load(); return; }
     const movement = target.closest("[data-cal-prev], [data-cal-next]");
     if (movement) {
       const sign = movement.hasAttribute("data-cal-prev") ? -1 : 1;
+      // 0891: in the Month scroll the arrows step from the month shown in the sticky title.
+      const base = tiles() && visibleMonth ? visibleMonth : state.date;
+      visibleMonth = "";
+      if (tiles()) window.scrollTo(0, 0);
       const next = view() === "calendar" && state.scale === "week" ? addDays(state.date, sign * 7) :
-        moveMonth(state.date, sign * (view() === "calendar" && state.scale === "year" ? 12 : 1));
+        moveMonth(base, sign * (view() === "calendar" && state.scale === "year" ? 12 : 1));
       state.date = next < "1900-01-01" ? "1900-01-01" : next > "2100-12-01" ? "2100-12-01" : next;
       load(); return;
     }
@@ -966,6 +1027,18 @@
       if (!state.loading && lastLoadedRange) { if (phoneDots() && state.scale === "year") load(); else render(); }
       if (createDialog.open) requestAnimationFrame(() => placeCreate(createAnchor));
     },
+    scroll: () => {
+      // 0891: the title follows the month section under the sticky head; the back-to-top button shows after 400 px.
+      if (!document.querySelector("[data-calendar]") || state.loading || !tiles()) return;
+      const head = $("[data-cal-head]");
+      const line = head && getComputedStyle(head).position === "sticky" ? head.getBoundingClientRect().bottom + 1 : 1;
+      let current = "";
+      $$(".cal-month").forEach(section => { if (section.getBoundingClientRect().top <= line) current = section.dataset.calSection; });
+      visibleMonth = current;
+      $("[data-cal-period]").textContent = monthName(current || state.date);
+      const toTop = $("[data-cal-top]");
+      if (toTop) toTop.hidden = window.scrollY < 400;
+    },
     popstate: () => {
       if (!document.querySelector("[data-calendar]")) return;
       const params = new URLSearchParams(location.search);
@@ -980,6 +1053,7 @@
     window._ubyCalendarBound = true;
     window.addEventListener("resize", () => window._ubyCalendarHandlers.resize());
     window.addEventListener("popstate", () => window._ubyCalendarHandlers.popstate());
+    window.addEventListener("scroll", () => window._ubyCalendarHandlers.scroll(), { passive: true });
   }
   $$(".cal-enhanced").forEach(node => { node.hidden = false; });
   $("[data-cal-fallback]").hidden = true;

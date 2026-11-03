@@ -56,12 +56,12 @@
     "v": "20260915a"
   },
   "dashboard-calendar.css": {
-    "sha256": "1922de5addf9c4a48353cc289d91e06ef3b2f542276680f1a91901ed1467c23f",
-    "v": "20261102-0845"
+    "sha256": "8a5d064bbf2590d007efc9d4039a37d1626c3bd775142a59f22e9b05d81f5086",
+    "v": "20261102-0897"
   },
   "dashboard-calendar.js": {
-    "sha256": "31872aa276f076e25df42fba7b4150572656ffa6608df204fdd2013522624866",
-    "v": "20261102-0846"
+    "sha256": "f565417b383e1a0cd36e46d2ee10295415319696ba39c02f1fb6b2f173b74a20",
+    "v": "20261102-0898"
   },
   "docs/ubyport-ws-credential-sample.pdf": {
     "sha256": "0c147cf9c5dd5326612bc4668c5bce853cf300171ca62e3a0bab688c09b75fe6",
