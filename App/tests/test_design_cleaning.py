@@ -27,11 +27,10 @@ def test_cleaning_pages_have_the_v2_shell_and_one_stylesheet(host_with_property)
             # 0732: the phone actbar is gone; the phone share card is a .promo
             assert page.count('class="head cleaning-head"') == 1 and page.count('<a class="btn" href="/cleaning/shares"') == 1 and page.count('class="promo" href="/cleaning/shares"') == 1 and page.count('class="actbar cleaning-phone"') == 0, path
             continue
-        assert page.count("/static/cleaning.css") == 1, path
-        assert page.index("/static/cleaning.css") < page.index("/static/host2.css"), path
-        header = page[page.index('<header class="ui-ph"'):]
-        header = header[: header.index("</header>")]
-        assert 'class="btn' not in header and "cleaning-page-heading" not in page, path
+        # 0804: the sub-pages are on the v2 shell too (tokens.css + app2.css only, no cleaning.css, no host2.css)
+        assert page.count("/static/cleaning.css") == 0 and "/static/host2.css" not in page, path
+        # 0804: the sub-pages draw their own v2 .head (h1 + sub), so there is no ui-ph header
+        assert "cleaning-page-heading" not in page and 'class="head' in page, path
         lane = page[page.index('<div class="ui-page"'): page.index("</main>")]
         assert lane.count("ui-btn-primary") == primaries, path
 

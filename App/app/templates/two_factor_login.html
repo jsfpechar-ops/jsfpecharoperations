@@ -5,15 +5,20 @@
 {% block title %}{{ t('account.2fa.code_title') }}{% endblock %}
 {% block auth_body %}
 <section class="auth-card">
-  <h1 class="auth-title">{{ t('account.2fa.code_title') }}</h1>
-  <p class="auth-lede">{{ t('account.2fa.code_lede') }}</p>
+  <div class="auth-title-row">
+    <h1 class="auth-title">{{ t('account.2fa.code_title') }}</h1>
+    <details class="auth-q">
+      <summary aria-label="{{ t('help.tip.label') }}">?</summary>
+      <p class="auth-lede">{{ t('account.2fa.code_lede') }}</p>
+    </details>
+  </div>
   {% if error %}<div class="auth-alert" role="alert">{{ t(error) }}{% if error == 'auth.error.code_locked' %} <a href="/login">{{ t('auth.error.code_locked_again') }}</a>{% endif %}</div>{% endif %}
   <form method="post" action="/login/2fa" class="auth-form">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <input type="hidden" name="pending" value="{{ pending }}">
     <div class="auth-field">
       <label for="code">{{ t('account.2fa.code_label') }}</label>
-      <input type="text" id="code" name="code" required autofocus
+      <input type="text" id="code" name="code" required autofocus enterkeyhint="done"
              inputmode="numeric" autocomplete="one-time-code" maxlength="12">
     </div>
     <button class="auth-submit" type="submit">{{ t('account.2fa.verify') }}</button>

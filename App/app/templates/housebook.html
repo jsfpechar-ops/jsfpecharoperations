@@ -53,6 +53,11 @@
     {% endif %}
   </p>
 </div>
+<div class="housebook-presets" role="group" aria-label="{{ t('housebook.preset.label') }}">
+  {% for key, start, end in period_presets %}{% set preset_on = date_from == start.isoformat() and date_to == end.isoformat() %}
+  <a class="btn ghost sm{% if preset_on %} is-on{% endif %}" href="/housebook?{% if apartment_id %}apartment={{ apartment_id }}&amp;{% endif %}from={{ start.isoformat() }}&amp;to={{ end.isoformat() }}"{% if preset_on %} aria-current="true"{% endif %}>{{ t(key) }}</a>
+  {% endfor %}
+</div>
 <form id="housebook-filter-panel" method="get" action="/housebook" class="filters ui-section host-filter-panel card" data-filter-panel data-filter-route="day-range">
   <div class="filter-fields">
     <div class="ui-field">
