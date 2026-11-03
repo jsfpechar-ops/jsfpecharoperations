@@ -68,4 +68,4 @@ Append-only.
 - 2026-11-02 | Booking site: CS/EN, one HMAC link per booking, cancel refunds per policy | owner | 0818-0821
 
 - 2026-11-03 | [workflow] UX gate: threads self-check UX (lint + screenshots) | owner | 0900
-- 2026-11-03 | Guest-paid stay fee: payee = host account; paid once per stay on the guest hub (re-shown on party change, delta after paid); v1 rails IBAN/QR + cash + host-pasted Revolut link (no merchant SDK); Stripe card phase 2; per-property toggle in the fee section + `UBYHOST_STAY_FEE_GUEST_PAY` kill switch | owner | [plan](../plans/stay-fee-guest-payment.md)
+- 2026-11-03 | Guest-paid stay fee, lean/read-only: payee = host account; panel on the guest hub when all guests registered, amount computed live (no stored state, no paid tracking, no mark-paid, no webhooks); v1 rails IBAN/QR + host-pasted Revolut link + cash note; per-property toggle in the fee section + `UBYHOST_STAY_FEE_GUEST_PAY` kill switch | owner | [plan](../plans/stay-fee-guest-payment.md)

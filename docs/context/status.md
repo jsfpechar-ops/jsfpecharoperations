@@ -21,7 +21,7 @@ Updated: 2026-11-03.
 - Credential letter to data box ybndqw9. **LAWYER REVIEW** legal v1.7 (0005), if unsigned.
 
 ## Next
-- Plan [stay-fee-guest-payment](../plans/stay-fee-guest-payment.md) scoped with owner; not built yet.
+- Plan [stay-fee-guest-payment](../plans/stay-fee-guest-payment.md) scoped with owner (lean, read-only pay panel); not built yet.
 - Door codes 0037 and 0038 are on main. Next: those owner steps on staging.
 - Plan [file-retention](../plans/file-retention.md): decided, no build now. Lawyer round: Terms/DPA line, not the host's statutory archive.
 - TTLock briefs 0008–0016: [plan](../plans/ttlock-door-codes.md) §11 order. Test first; live after §12 + lawyer (K-L).
