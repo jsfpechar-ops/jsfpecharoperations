@@ -332,7 +332,7 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                             heights = page.locator(".cal-week").evaluate_all(
                                 "nodes => nodes.map(node => node.getBoundingClientRect().height)"
                             )
-                            assert max(heights) <= 140, heights
+                            assert max(heights) <= 184, heights  # 0905: 94 px tile + two more stacked stay lanes
                     control_heights = page.locator(
                         ".cal-view-segment, .cal-scale-segment, [data-cal-property], [data-cal-month], "
                         "[data-cal-year], [data-cal-settings], [data-cal-today], [data-cal-prev], [data-cal-next]"
@@ -351,7 +351,7 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                         assert box["width"] >= 43.9 and box["height"] >= 44, box
                     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
                     shot(page, f"{mode}-{locale}-{width}")
-                page.locator('[data-cal-day="2026-10-15"]').click()
+                page.locator('[data-cal-day="2026-10-15"]').click(position={"x": 12, "y": 10})  # 0905: stacked pills cover the tile centre
                 assert page.locator("[data-cal-day-dialog]").is_visible()
                 assert page.locator("[data-cal-day-list] .cal-event").count() >= 1
                 page.locator("[data-cal-day-add]").click()
@@ -997,7 +997,9 @@ def check_tiles_0891(rows, width, tile_height=None):
         for a, b in zip(row["t"], row["t"][1:]):
             assert abs(b[0] - a[1] - gap) <= 1, ("column gap", width, a, b)
         if tile_height:
-            assert all(abs(t[3] - t[2] - tile_height) <= 1 for t in row["t"]), ("tile height", width, row)
+            # 0905: each extra stacked stay lane adds 44 px; every tile of a row has the same height.
+            heights = {round(t[3] - t[2]) for t in row["t"]}
+            assert len(heights) == 1 and any(abs(heights.copy().pop() - (tile_height + k * 44)) <= 1 for k in range(3)), ("tile height", width, row)
     for upper, lower in zip(rows, rows[1:]):
         if upper["s"] == lower["s"]:
             assert abs(lower["t"][0][2] - upper["t"][0][3] - gap) <= 1, ("row gap", width, upper, lower)
@@ -1026,7 +1028,7 @@ def test_0891_airbnb_month_tiles_and_pills(calendar_workspace, calendar_origin, 
             assert pill["want"] == pill["nights"] == pill["covered"], pill
             assert abs(pill["left"] - (0 if pill["cut"] else inset)) <= 1, pill
             assert abs(pill["right"]) <= 1, pill
-            assert pill["top"] >= pill["half"] and pill["bottom"] >= 0, pill
+            assert pill["top"] >= 36 and pill["bottom"] >= 0, pill  # below the day number (0905: stacked lanes)
             assert pill["color"] == "rgb(34, 34, 34)", pill
         assert page.locator(".cal-tile-chip:visible, .cal-dots:visible, .cal-week-events").count() == 0
         if width >= 768:
