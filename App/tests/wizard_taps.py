@@ -1,6 +1,6 @@
 """0884 section A: baseline measurement of the setup wizard (steps, fields, POSTs).
 
-Measurement only: prints the numbers, asserts nothing about the target.
+Before/after measurement: the wizard needs at most half the steps and POSTs.
 Run: .venv/bin/python -m pytest tests/wizard_taps.py -q -s --tb=short -x 2>&1 | tail -30
 """
 from __future__ import annotations
@@ -105,3 +105,8 @@ def test_wizard_baseline_numbers(host):  # noqa: F811
     print("WIZARD_TAPS " + json.dumps(report, sort_keys=True))
     assert report["steps_defined"] == len(property_setup.STEPS)
     assert visited, "the wizard walk visited no step"
+    # 0884: after-numbers. Steps and POSTs at most half of the eight-step wizard.
+    assert report["steps_defined"] * 2 <= BEFORE["steps_defined"], report
+    assert report["steps_visited"] * 2 <= BEFORE["steps_visited"], report
+    assert report["posts"] * 2 <= BEFORE["posts"], report
+    assert report["required_or_empty_total"] <= BEFORE["required_or_empty_total"], report
