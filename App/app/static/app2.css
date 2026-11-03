@@ -2276,3 +2276,6 @@ body.v2 .row-open::after{content:"\203A";font-size:18px;line-height:1}
 
 /* 0900: the stay head no longer carries the "?" row, so keep the crumb 12 px above the status line */
 body.v2 .host-stay-detail .crumb{margin-bottom:12px}
+body.v2 .airbnb-header>.page-help{margin:0}
+body.v2 .airbnb-header:has(>.page-help)>.airbnb-back{margin-right:calc(100% - 44px)}
+body.v2 .airbnb-header:has(>.page-help)>.airbnb-title{width:auto;flex:0 1 auto;min-width:0}
