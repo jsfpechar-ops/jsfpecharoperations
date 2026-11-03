@@ -44,7 +44,7 @@ No other file may change. Do **not** delete the templates `automation.html`, `st
 
 ### Part 1 (session 1): steps 0-8
 
-**Step 0. Check.** From the repo root: `git status --short | tail -5 && git log --oneline -1 | tail -1`. The tree must be clean. HEAD must be 98913fd3 or a later `0884 step` commit. Otherwise STOP.
+**Step 0. Check.** From the repo root: `git status --short | tail -5 && git log --oneline -1 | tail -1`. The tree must be clean. HEAD must be 98913fd3, a later commit that changes only docs/tasks/0884-*, or a later `0884 step` commit (check with `git diff --stat 98913fd3 -- App | tail -3`: empty or only 0884 step changes). Otherwise STOP.
 
 **Step 1. Baseline (before any app change).** In `App/tests/wizard_taps.py`, in `_measure_page`, replace
 ```python
