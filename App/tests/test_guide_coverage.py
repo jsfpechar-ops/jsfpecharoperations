@@ -28,7 +28,7 @@ def test_every_havel_guide_page_and_menu_link_has_an_anchor(host):
 
 def test_every_guide_section_is_known_to_havel(host):
     html = host.get("/guide").text
-    sections = re.findall(r'<section class="guide-section[^"]*" id="([^"]+)"', html)
+    sections = re.findall(r'<details class="guide-section[^"]*" id="([^"]+)"', html)
     assert len(sections) >= 20
     assert [s for s in sections if s != "demo" and s not in havel.GUIDE_ANCHORS] == []
 

@@ -16,12 +16,12 @@
     "v": "20261027-signup-wrap"
   },
   "app.js": {
-    "sha256": "f77fa7a9026398c495ff582622acc1ed2008b3cf3d040e14bf7bec5b85863102",
-    "v": "20261102-0789c"
+    "sha256": "a916c5bba4b826c9568841b50a2d18dffa9edb2d9745b2abb529a1c0bdf11b05",
+    "v": "20261103-0853"
   },
   "app2.css": {
-    "sha256": "998915f7237c2e5a0a04a7dd20667b29ccb2ee782521b6bd69e3fa2356adfe11",
-    "v": "20261103-0851"
+    "sha256": "cbb6a11e5a5b590a29666c7dc15101be9ce15071beeb1affb24448eea899f0f2",
+    "v": "20261103-0852"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -86,6 +86,10 @@
   "guest.css": {
     "sha256": "52f3b7456d57ca1c9280d2dc8f09ca9526ce9286fcc0a0a74808ee70b802be43",
     "v": "20261102-1205"
+  },
+  "guide.js": {
+    "sha256": "46178439314acfb977c235ee7eab530082a0a5a6bb214f3efac58c388762c1da",
+    "v": "20261102-0829"
   },
   "havel.js": {
     "sha256": "b09f7e3d74c1423a038ba11303572c01625bf7ba6888b59b35aea06e656286f6",

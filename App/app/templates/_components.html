@@ -7,8 +7,8 @@
 {% set UI_DEADLINE_KINDS = {'overdue': 'action', 'urgent': 'attention', 'soon': 'attention', 'done': 'done', 'late': 'neutral'} %}
 {#- 0093 help: one contextual "?" tip beside a field label. Place it OUTSIDE the <label> tag.
     id must be unique on the page; text is escaped; guide_href optional ("/guide#anchor"). -#}
-{% macro help_tip(id, text, guide_href='') %}
-  <span class="help-tip" data-help-tip>
+{%- macro help_tip(id, text, guide_href='') -%}
+<span class="help-tip" data-help-tip>
     <button type="button" class="help-tip-btn" aria-label="{{ t('help.tip.label') }}" aria-expanded="false" aria-controls="{{ id }}">?</button>
     <span class="help-tip-body" id="{{ id }}" role="tooltip">{{ text }}{% if guide_href %} <a href="{{ guide_href }}" aria-label="{{ t('help.tip.more') }}: {{ text | striptags | truncate(50) }}">{{ t('help.tip.more') }}</a>{% endif %}</span>
   </span>
@@ -33,8 +33,7 @@
 
 {% macro field_label(for, text, help_text='', optional=false, guide_href='') %}
   <div class="field-label-row">
-    <label for="{{ for }}">{{ text }}</label>
-    {% if help_text %}{{ help_tip(for ~ '-help', help_text, guide_href) }}{% endif %}
+    <label for="{{ for }}">{{ text }}{% if help_text %}{{ help_tip(for ~ '-help', help_text, guide_href) }}{% endif %}</label>
   </div>
 {% endmacro %}
 
@@ -399,17 +398,18 @@
   {% endif %}
 {% endmacro %}
 
-{% macro onboarding_welcome(onboarding, compact=False) %}
+{% macro onboarding_welcome(onboarding, compact=False, v2=False) %}
   {# On the Overview the "Do this now" block already carries the current step's
      detail and "Have ready" text, so the list below it collapses to one line per
      step and the full checklist stays one click away at /onboarding. #}
   {% set compact_list = compact and onboarding.current and not onboarding.finished %}
-  <section class="onboarding-welcome">
+  <section class="onboarding-welcome"{% if v2 %} data-layout="v2"{% endif %}>
     <header class="onboarding-intro">
-      <img class="onboarding-logo" src="/static/ubyhost-mark.png?v=20261004a" alt="">
+      {% if not v2 %}<img class="onboarding-logo" src="/static/ubyhost-mark.png?v=20261004a" alt="">{% endif %}
       <div>
-        <p class="onboarding-kicker">{{ t('onboarding.kicker') }}</p>
+        {% if not v2 %}<p class="onboarding-kicker">{{ t('onboarding.kicker') }}</p>{% endif %}
         {% if compact %}<h2>{{ t('onboarding.welcome_title') }}</h2>{% else %}<h1>{{ t('onboarding.welcome_title') }}</h1>{% endif %}
+        {% if v2 %}<p class="sub">{{ t('onboarding.progress', done=onboarding.completed, total=onboarding.total) }}</p>{% endif %}
       </div>
       <div class="onboarding-meter" aria-label="{{ t('onboarding.progress', done=onboarding.completed, total=onboarding.total) }}">
         <strong>{{ onboarding.percent }}%</strong>
@@ -425,14 +425,14 @@
             <input type="hidden" name="return_to" value="/">
             <button class="btn ghost small" type="submit">{{ t('onboarding.skip') }}</button>
           </form>
-          <small>{{ t('onboarding.skip_hint') }}</small>
+          {{ help_tip('onboarding-skip-help', t('onboarding.skip_hint')) }}
         {% endif %}
       </div>
     </header>
 
     {% if onboarding.finished %}
       {{ onboarding_finish(onboarding, show_toggle=False) }}
-    {% elif onboarding.current %}
+    {% elif onboarding.current and not v2 %}
       <div class="onboarding-now">
         <div class="onboarding-now-label">
           <span>{{ onboarding.completed + 1 }}</span>
@@ -468,23 +468,24 @@
           <div class="onboarding-step-index" aria-hidden="true">{% if step.done %}✓{% else %}{{ loop.index }}{% endif %}</div>
           <div class="onboarding-step-copy">
             <h3>{{ t('onboarding.' ~ step.id ~ '.title') }}</h3>
-            {% if not compact_list %}
-              <p>{{ t('onboarding.' ~ step.id ~ '.detail') }}</p>
-              <small>{{ t('onboarding.' ~ step.id ~ '.prepare') }}</small>
-            {% endif %}
           </div>
+          {% if v2 %}<div class="onboarding-step-group">{% endif %}
           {% if step.done %}
             <span class="pill green">{{ t('onboarding.step_done') }}</span>
           {% elif onboarding.current and step.id == onboarding.current.id %}
             <span class="onboarding-current-dot" aria-hidden="true"></span>
           {% endif %}
+          {% set step_url = step.url or (onboarding.current.url if onboarding.current and onboarding.current.id == step.id else none) %}{% if v2 and not step.done and step_url %}<a class="btn small onboarding-step-action" href="{{ step_url }}">{{ t('onboarding.' ~ step.id ~ '.action') }}</a>{% endif %}
+          {% if v2 and not step.done and step.manual_url %}<a class="small onboarding-step-manual" href="{{ step.manual_url }}">{{ t('onboarding.' ~ step.id ~ '.manual') }}</a>{% endif %}
           {% if not compact_list %}
             <details>
               <summary>{{ t('onboarding.learn') }}</summary>
+              <p>{{ t('onboarding.' ~ step.id ~ '.detail') }} {{ t('onboarding.' ~ step.id ~ '.prepare') }}</p>
               <p>{{ t('onboarding.' ~ step.id ~ '.why') }}</p>
               <a href="{{ step.learn_url }}">{{ t('nav.guide') }} </a>
             </details>
           {% endif %}
+          {% if v2 %}</div>{% endif %}
         </article>
       {% endfor %}
     </div>
@@ -499,8 +500,7 @@
       <div class="onboarding-demo">
         <div>
           <strong>{{ t('onboarding.demo_title') }}</strong>
-          <p>{{ t('onboarding.demo_body') }}</p>
-          <small>{{ t('onboarding.demo_hint') }}</small>
+          {{ help_tip('onboarding-demo-help', t('onboarding.demo_body') ~ ' ' ~ t('onboarding.demo_hint')) }}
         </div>
         <form method="post" action="/demo">
           <button class="btn" type="submit">{{ t('demo.load') }}</button>

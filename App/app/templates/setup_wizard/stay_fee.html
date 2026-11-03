@@ -1,10 +1,11 @@
 {% extends "setup_wizard/_layout.html" %}
 {% set apartment = draft if draft is defined else apartment %}
+{% block wizard_help %}{% from "_components.html" import help_tip with context %}{{ help_tip('wiz-why-stay_fee', t('why.stay_fee') ~ ' ' ~ t('why.stay_fee_skip')) }}{% endblock %}
 {% block wizard_content %}
 {% if fee_account_error %}
 <p class="err-text" role="alert">{{ t('flash.stay_fees.account_invalid') }}</p>
 {% endif %}
-<p class="setup-wizard-lede">{{ t('why.stay_fee') }} {{ t('why.stay_fee_skip') }}</p>
+
 <form method="post" action="/apartments/{{ apartment.id }}" enctype="multipart/form-data" class="setup-wizard-form" id="stay-fee-form">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="return_to" value="{{ wizard_next_return_to }}">
