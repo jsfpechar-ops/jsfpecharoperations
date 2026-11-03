@@ -211,6 +211,38 @@ def test_a_failed_issue_rerenders_every_typed_value(host):
     assert page.count('name="item_description"') == 2
 
 
+def test_failed_issue_keeps_payment_requested(host):
+    """already_paid=0 must stay Payment requested on a 422 re-render.
+
+    The radio posts "0", which is truthy in Python. Treating it as paid flipped
+    the form to Already paid; the next Issue then stored paid_on.
+    """
+    entity_id = _add_entity()
+    stay_id = make_stay(_owner(), entity_id=entity_id)
+    response = host.post(
+        "/invoices",
+        data={
+            "legal_entity_id": str(entity_id),
+            **stay_form(stay_id),
+            "already_paid": "0",
+            "due_date": "2026-12-01",
+            "buyer_email": "keep@me.test",
+            "item_description": ["Stay"],
+            "item_quantity": ["1"],
+            "item_unit_price": ["1000"],
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 422, response.text[:400]
+    page = response.text
+    paid = page.split('id="already_paid"', 1)[1].split(">", 1)[0]
+    requested = page.split('id="payment_requested"', 1)[1].split(">", 1)[0]
+    assert "checked" not in paid
+    assert "checked" in requested
+    due = page.split('id="due-fields"', 1)[1][:80]
+    assert "hidden" not in due
+
+
 def test_seller_snapshot_presence_semantics():
     entity = {
         "name": "Op s.r.o.", "seat": "Praha", "ico": "04656679", "dic": "CZ1",
