@@ -16,6 +16,10 @@ _TEXT_TYPES = ("text", "email", "tel", "number", "date", "time", "url", "search"
 _SKIP_TYPES = ("hidden", "submit", "button", "reset", "image")
 
 
+# 0884: measured on the eight-step wizard before the change (brief step 1).
+BEFORE = {"steps_defined": 8, "steps_visited": 5, "posts": 5, "fields_total": 32, "required_or_empty_total": 32}
+
+
 class _FieldCounter(HTMLParser):
     """Counts form controls on one step page."""
 
@@ -66,7 +70,9 @@ def _measure_page(client, apartment_id: int, step: str) -> dict:
     if response.status_code != 200:
         return {"status": response.status_code, "controls": 0, "required_or_empty": 0, "choices": 0}
     counter = _FieldCounter()
-    counter.feed(response.text)
+    # Only the wizard body; the app shell's own controls are not wizard work.
+    body = response.text.split("data-setup-wizard", 1)[-1].split('class="setup-wizard-foot"', 1)[0]
+    counter.feed(body)
     return {
         "status": 200,
         "controls": counter.controls,

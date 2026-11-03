@@ -3343,6 +3343,7 @@ STRINGS: Dict[str, str] = {
     "wizard.automation.immediate_detail": "UbyHost gửi ngay khi khách hoàn tất biểu mẫu.",
     "wizard.automation.finish": "Hoàn tất thiết lập",
     "wizard.done.title": "Tóm tắt thiết lập",
+    "wizard.done.next_title": "Việc tiếp theo",
     "wizard.done.go": "Đến chỗ ở của tôi",
     "wizard.summary.calendar": "Đặt phòng & lịch",
     "wizard.summary.try_it": "Bản mẫu biểu mẫu khách",

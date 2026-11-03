@@ -158,6 +158,7 @@
   <h2>{{ tip_label(t('entities.add'), 'entity-add-why-help', t('why.business'), 'span') }}</h2>
   <form method="post" action="/entities" enctype="multipart/form-data">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    {% if next_path %}<input type="hidden" name="next" value="{{ next_path }}">{% endif %}
     {{ business_form_body('new_', new_entity or none, '', ares_error, ares_note) }}
     <div class="actions"><button class="{{ cta }}" type="submit">{{ t('entities.add_action') }}</button></div>
   </form>
