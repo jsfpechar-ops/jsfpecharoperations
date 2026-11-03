@@ -139,13 +139,16 @@ _HELP_TIP_JS = """() => {
     const tip = btn.closest('.help-tip');
     const box = tip && tip.parentElement;
     if (!box) continue;
-    const label = box.tagName === 'LABEL' ? box : [...box.children].find(el => el.tagName === 'LABEL') ||
+    const label = box.tagName === 'LABEL' ? box : box.classList.contains('tip-tail') && box.parentElement.tagName === 'LABEL' ? box.parentElement : [...box.children].find(el => el.tagName === 'LABEL') ||
       (tip.previousElementSibling && tip.previousElementSibling.tagName === 'LABEL' ? tip.previousElementSibling : null);
     const b = btn.getBoundingClientRect();
     if (!label || !b.width) continue;
     const rg = document.createRange();
     // 0872 round 4: the tip now sits inside the label, so measure the label's own text node, not the tip.
-    const ownText = [...label.childNodes].find(n => n.nodeType === 3 && n.textContent.trim());
+    // 0901: the script glues the last word and the tip in a .tip-tail span, so take the last text node outside the tip.
+    const tw = document.createTreeWalker(label, NodeFilter.SHOW_TEXT);
+    let ownText = null;
+    for (let tn = tw.nextNode(); tn; tn = tw.nextNode()) { if (tn.textContent.trim() && !tn.parentElement.closest('.help-tip')) ownText = tn; }
     rg.selectNodeContents(ownText || label);
     const t = rg.getBoundingClientRect();
     if (!t.width) continue;
@@ -174,7 +177,8 @@ _HELP_TIP_SIZE_JS = """() => {
     const b = btn.getBoundingClientRect();
     if (!b.width || !b.height) continue;
     const tip = btn.closest('.help-tip');
-    const wrap = tip && tip.parentElement;
+    let wrap = tip && tip.parentElement;
+    if (wrap && wrap.classList.contains('tip-tail') && !tip.previousElementSibling) wrap = wrap.parentElement;
     let ref = tip && tip.previousElementSibling;
     // 0872 round 3: a tip inside its label or heading (after the text) is measured against that element.
     if (!ref && wrap && /^(LABEL|H1|H2)$/.test(wrap.tagName)) ref = wrap;

@@ -167,7 +167,7 @@
 
 {% if stay_claim and (stay_claim.state != 'unclaimed' or stay_claim.guest_access_locked_at) %}
 <div class="card stay-claim-line ph-hide" data-stay-claim>
-  <div class="stay-claim-label">{{ t('stay.claim.title') }}</div>
+  <div class="stay-claim-label">{{ t('stay.claim.title') }}{% if stay_claim.state != 'unclaimed' %}{{ help_tip('release-claim-help', t('stay.claim.release_help')) }}{% endif %}</div>
   <p>
     {% if stay_claim.guest_access_locked_at %}
       {{ t('stay.claim.locked') }}
@@ -186,7 +186,6 @@
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
       <button class="btn ghost" type="submit" data-release-claim>{{ t('stay.claim.release') }}</button>
     </form>
-    {{ help_tip('release-claim-help', t('stay.claim.release_help')) }}
   </div>
   {% endif %}
 </div>
