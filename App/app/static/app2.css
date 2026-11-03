@@ -2236,3 +2236,4 @@ body.v2 .ov-month{margin-top:12px}
 body.v2 .ov-quiet,body.v2 .ov-links{margin-bottom:12px}
 body.v2 .ov-links:empty{display:none}
 body.v2 details.page-help:not([open]){background:none;box-shadow:none;border-color:transparent}
+body.v2 summary.page-help-btn{position:relative;left:-4px}
