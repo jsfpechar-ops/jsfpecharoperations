@@ -250,7 +250,9 @@ def _form_state(request, form, entity) -> Dict[str, Any]:
         "due_date", "duzp", "note", "buyer_kind",
         "legal_entity_id",
     )}
-    state["already_paid"] = "1" if form.get("already_paid") else "0"
+    # Radio value "0" (Payment requested) is truthy in Python; only "1"/"on"
+    # mean paid. A 422 or fill-* re-render must keep the host's choice.
+    state["already_paid"] = "1" if _form_str(form, "already_paid") in ("1", "on") else "0"
     state["lang"] = _form_str(form, "lang")
     state["item_rows"] = [
         {key: row[key] for key in (
