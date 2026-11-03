@@ -104,15 +104,18 @@ def test_admin_sees_team_and_incidents_in_account_group(admin):
 
 @pytest.mark.parametrize("role", ("host", "admin"))
 @pytest.mark.parametrize("lang", ("en", "cs", "vi"))
-def test_secondary_navigation_landmark_matches_visible_links(role, lang, request):
+def test_account_menu_in_the_sidebar_corner_lists_settings_and_admin_links(role, lang, request):
+    """0896: Settings, Funnel and Admin live in the profile bubble's menu, not in the main sidebar list."""
     client = request.getfixturevalue(role)
     html = client.get(f"/settings?lang={lang}").text
-    nav = re.search(r'<nav class="side-nav side-bottom" aria-label="([^"]+)">', html)
-    assert nav is not None
-    expected = STRINGS[lang]["nav.guide"]
-    if role == "admin":
-        expected += f" / {STRINGS[lang]['nav.admin']}"
-    assert nav.group(1) == expected
+    menu = re.search(r'<details class="me-menu host-account" data-host-account>.*?</details>', html, re.S)
+    assert menu is not None
+    menu = menu.group(0)
+    assert 'href="/settings"' in menu and 'href="/guide"' in menu
+    assert ('href="/admin"' in menu) == (role == "admin")
+    assert ('href="/admin/fakturace#funnel"' in menu) == (role == "admin")
+    main_nav = re.search(r'<nav class="side-nav" aria-label="[^"]+">.*?</nav>', html, re.S).group(0)
+    assert 'href="/settings"' not in main_nav
 
 
 def test_email_change_is_a_visible_form_not_a_disclosure(host):

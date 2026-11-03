@@ -64,7 +64,6 @@
     <p class="sub ph-hide{{ ' cal-hide' if cal_view }}">{{ today.isoformat() | date_long(lang) }}</p>
     <div class="ov-quiet ph-hide{{ ' cal-hide' if cal_view }}">
     <p class="ov-links ph-hide{{ ' cal-hide' if cal_view }}">
-      <a href="/cleaning/new" class="ov-link">+ {{ t('nav.cleaning') }}</a>
       {% if demo_loaded %}<form method="post" action="/demo/reset" class="inline ov-inline ph-hide" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">{{ ui_button(t('demo.clear'), 'quiet', type='submit') }}</form>{% endif %}
     </p>
     </div>

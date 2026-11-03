@@ -27,7 +27,7 @@ def test_the_sidebar_lists_every_destination_with_a_lucide_icon(host_with_proper
     page = host_with_property.get("/payments?lang=en").text
     sidebar = re.search(r'<aside class="ui-sidebar".*?</aside>', page, re.S).group(0)
     for href, icon in (("/", "layout-dashboard"), ("/reservations", "calendar-days"), ("/apartments", "house"), ("/stay-fees", "receipt-text"),
-                       ("/cleaning", "sparkles"), ("/settings", "settings"), ("/guide", "book-open")):
+                       ("/cleaning", "sparkles"), ("/guide", "book-open")):  # 0896: Settings lives in the account menu
         assert re.search(rf'href="{re.escape(href)}"[^>]*>\s*<svg class="ui-icon"[^>]*data-icon="{icon}"', sidebar), href
     assert sidebar.count('aria-current="page"') == 1
     assert "<path" in sidebar and "hand-drawn" not in sidebar

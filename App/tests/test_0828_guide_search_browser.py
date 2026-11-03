@@ -127,7 +127,8 @@ def test_search_still_filters_after_turbo_swap_from_sidebar(base, dashboard_rich
         try:
             page.goto(f"{base}/havel")
             page.wait_for_load_state("networkidle")
-            page.locator('a[href="/guide"]:visible').first.click()
+            page.locator(".me-menu > summary").click()  # 0896: Help lives in the profile menu
+            page.locator('.me-menu-list a[href="/guide"]').click()
             page.wait_for_url("**/guide**")
             page.wait_for_selector("#guide-search:not([hidden])")
             page.fill("#guide-search", "PIN")

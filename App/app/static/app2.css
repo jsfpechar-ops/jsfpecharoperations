@@ -780,6 +780,8 @@ body.v2 .havel-greeting{margin-bottom: var(--space-2);}
 @media (max-width: 767px){
 body.v2 .havel-dialog{position: fixed; inset: auto 0 calc(var(--tabbar-h) + var(--tabbar-safe)) 0; margin: 0; width: 100%; max-width: 100%; box-shadow: var(--shadow-2);}
 body.v2 .havel-dialog .ui-sheet{max-height: 70dvh; height: 70dvh;}
+}
+@media (max-width: 1023px){
 body.v2 .havel-fab{right: var(--space-4); bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--space-4));}
 body.v2:has(.ui-sticky-actions) .havel-fab{bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--control-h) + var(--space-8));}
 }
@@ -2176,6 +2178,68 @@ body.v2 .invoice-use-price[hidden]{display:none}
 body.v2 .props-card thead{display:table-header-group}
 body.v2 .props-card thead,body.v2 .props-card thead th{background:transparent}
 @media (min-width:1024px) and (max-width:1100px){body.v2 .stay-fees-page .card.stays-desk th,body.v2 .stay-fees-page .card.stays-desk td{padding-left:6px;padding-right:6px}}
+/* 0896: notification bubbles (old style back): X sits in the top-right corner, text never runs under it, bubbles never overlap. */
+body.v2 .notification-stack{display:grid;gap:12px;width:100%;max-width:none;margin:0 0 16px;pointer-events:auto}
+body.v2 .notification-bubble{position:relative;box-sizing:border-box;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 2px 8px rgba(32,32,30,.08);overflow:hidden}
+body.v2 .notification-bubble.warning{background:#fffaf0}
+body.v2 .notification-bubble.error,body.v2 .notification-bubble.critical{background:#fff6f5}
+body.v2 .notification-link{display:flex;align-items:flex-start;gap:12px;box-sizing:border-box;padding:12px 56px 12px 12px;min-height:56px;color:var(--ink);text-decoration:none}
+body.v2 .notification-link .grow{min-width:0;flex:1 1 auto;overflow-wrap:anywhere}
+body.v2 .notification-icon{display:grid;place-items:center;flex:0 0 28px;width:28px;height:28px;border-radius:50%;background:#d0452d;color:#fff;font-size:14px;font-weight:700}
+body.v2 .notification-bubble.warning .notification-icon{background:#c98a14}
+body.v2 .notification-bubble.info .notification-icon{background:var(--ink3)}
+body.v2 .notification-bubble strong{display:block;font-size:14px;line-height:1.35;font-weight:650}
+body.v2 .notification-bubble small{display:block;margin-top:2px;color:var(--ink3);font-size:13px;line-height:1.35}
+body.v2 .notification-bubble .notification-action{color:#b3261e;font-weight:650}
+body.v2 .notification-bubble form[data-notification-dismiss],body.v2 .needs-you-card-item .needs-you-dismiss{position:absolute;top:6px;right:6px;margin:0;z-index:2}
+body.v2 .notification-bubble form[data-notification-dismiss] button,body.v2 .needs-you-dismiss button{position:relative;display:block;width:44px;height:44px;min-width:44px;min-height:44px;margin:0;padding:0;border:0;background:transparent;font-size:0;line-height:0;color:transparent;cursor:pointer;text-decoration:none}
+body.v2 .notification-bubble form[data-notification-dismiss] button:before,body.v2 .needs-you-dismiss button:before{content:"";position:absolute;left:50%;top:50%;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:#f0f0ec url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none' stroke='%23222' stroke-width='1.75' stroke-linecap='round'%3E%3Cpath d='M3 3l8 8M11 3l-8 8'/%3E%3C/svg%3E") center/14px 14px no-repeat}
+body.v2 .notification-bubble form[data-notification-dismiss] button:hover:before,body.v2 .needs-you-dismiss button:hover:before{background-color:#e3e3dd}
+body.v2 .notification-bubble form[data-notification-dismiss] button:focus-visible,body.v2 .needs-you-dismiss button:focus-visible{outline:2px solid #222;outline-offset:-4px;border-radius:50%}
+body.v2 .card.needs-you-card-item:has(.needs-you-dismiss){position:relative;padding-right:56px}
+body.v2 .needs-you-card-item .needs-you-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+/* 0896: page help "?" is a plain round button again: no chevron from the generic body.v2 summary rule */
+body.v2 summary.page-help-btn:after,body.v2 details[open] summary.page-help-btn:after{content:none;display:none}
+body.v2 summary.page-help-btn{list-style:none;gap:0;font-size:0}
+body.v2 summary.page-help-btn::-webkit-details-marker{display:none}
+/* 0896: the profile bubble in the sidebar corner opens the account menu (Settings, Funnel, Admin, Help, Log out), like Airbnb */
+.side .me-menu{position:relative;margin-top:auto;margin-bottom:12px;color:var(--ink)}
+.side .me-menu > summary.me{list-style:none;margin:0;padding:10px;cursor:pointer;border-radius:12px;min-height:48px;box-sizing:border-box}
+.side .me-menu > summary.me::-webkit-details-marker{display:none}
+.side .me-menu > summary.me:after{content:none;display:none}
+.side .me-menu > summary.me:hover,.side .me-menu[open] > summary.me{background:#efefea}
+.side .me-menu-list{position:absolute;left:8px;bottom:calc(100% + 12px);z-index:80;width:236px;box-sizing:border-box;padding:8px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 28px rgba(0,0,0,.14)}
+.side .me-menu-list > a,.side .me-menu-list button.nav{display:flex;align-items:center;gap:12px;box-sizing:border-box;width:100%;min-height:44px;padding:10px 12px;border:0;border-radius:10px;background:none;color:var(--ink);font:inherit;font-size:14px;text-align:left;text-decoration:none;cursor:pointer}
+.side .me-menu-list > a:hover,.side .me-menu-list button.nav:hover,.side .me-menu-list > a.on{background:#f4f4f0}
+.side .me-menu-list .support-link{margin:0}
+.side .me-menu-list .side-logout{margin:8px 0 0;padding-top:8px;border-top:1px solid var(--line)}
+@media (max-width:767px){body.v2 .side .me-menu{display:none}}
+/* 0896: Reporting column: one pill with one dot; the deadline hint under it is plain grey text, never a second pill */
+body.v2 .pill > .ui-badge,body.v2 td[data-card="badge"] small .ui-badge{display:inline;height:auto;min-height:0;margin:0;padding:0;border:0;border-radius:0;background:none;color:inherit;font:inherit;font-weight:inherit}
+body.v2 .pill > .ui-badge:before,body.v2 td[data-card="badge"] small .ui-badge:before{content:none;display:none}
+body.v2 td[data-card="badge"] small{display:block;margin-top:6px;color:var(--ink3);font-size:13px;font-weight:500;background:none}
+body.v2 td[data-card="badge"] small .ui-badge{color:var(--ink3)}
+.side .me-menu > summary.me{justify-content:flex-start;gap:10px}
+/* 0896 audit: cleaning tiles are tall enough for two chips plus a stay pill; on phones the stay pill is hidden (too small to tap) */
+body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-week.is-dots .cal-day { min-height:150px; }
+body.v2 #calendar.dashboard-calendar[data-cleaning="true"] .cal-pill-more { display:none !important; }
+@media (max-width:767px) {
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-week.is-dots .cal-day { min-height:96px; }
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-pill { display:none; }
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-pill > * { display:none; }
+}
+/* 0896 audit: icon + label buttons keep a gap; stats line under the needs-you cards keeps 12 px */
+body.v2 .btn svg,body.v2 .filters-btn svg,body.v2 button[data-toggle-filters] svg{margin-right:6px}
+body.v2 .ov-stats,body.v2 .stats-line{margin-top:12px}
+body.v2 [data-filter-toggle]{display:inline-flex;align-items:center;gap:8px}
+body.v2 [data-filter-toggle] svg{margin-right:0}
+body.v2 .btn:has(> svg){display:inline-flex;align-items:center;gap:8px}
+body.v2 .btn > svg{margin-right:0}
+body.v2 .ov-month{margin-top:12px}
+body.v2 .ov-quiet,body.v2 .ov-links{margin-bottom:12px}
+body.v2 .ov-links:empty{display:none}
+body.v2 details.page-help:not([open]){background:none;box-shadow:none;border-color:transparent}
+body.v2 summary.page-help-btn{position:relative;left:-3px}
 /* 0899 audit: one help "?" circle, centred on its glyph. admin2.css gives every help button an invisible
    ::after hit area with inset:-13px; on host pages that inset won over the 18 px ring above and pushed it
    22 px up-left, so a second ghost circle floated beside every "?". The ring is re-stated here with the same
