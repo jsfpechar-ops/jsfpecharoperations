@@ -8,7 +8,7 @@ Append-only.
 - 2026-10-06 | Abbreviation check accepts 5-6 alphanumeric characters | police test abbreviation | validation.py
 - 2026-10-08 | Door codes (TTLock pilot): timed codes, test mode until live; full rules in the plan | owner + council-lite | [ttlock-door-codes](../plans/ttlock-door-codes.md)
 - 2026-10-08 | Funnel: in-app dashboard, no JS; Umami public-only | own rows | 0018
-- 2026-10-08 | Stored files: no expiry; invoices 10 y; first new file kind brings a storage module | tiny saving, legal risk | [plan](../plans/file-retention.md)
+- 2026-10-08 | Stored files: no expiry; invoices 10 y; new file kind brings a storage module | legal risk | [plan](../plans/file-retention.md)
 - 2026-10-08 | Door codes: one 1-min job; no PIN/list/unlock polling; weekly `queryDate` | API budget; type-3 unknown until use | [plan §7](../plans/ttlock-door-codes.md)
 - 2026-10-08 | Invoices per stay only, replaces 09-26 | scope | [plan](../plans/stay-only-invoices.md)
 - 2026-10-08 | Staging: `UBYHOST_STAGING_NO_LOGIN=1` skips login; door-code alert after 10 min | test-only | [ENVIRONMENT](../ENVIRONMENT.md)
@@ -54,14 +54,15 @@ Append-only.
 - 2026-10-30 | [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; Haiku-only execution; manual cutover | 0455–0456
 - 2026-10-31 | Postgres (#592), then Go G1–G6, per-feature rollback, no load-test gate. [workflow] Fable briefs critical items, Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
 - 2026-10-31 | Every change lean: no dead code, no extras; dead code found is removed in its own small commit | owner | plan v4
-- 2026-10-31 | Approval gates waived for the PostgreSQL and Go migration; the bar stays (verified backup, rehearsal on a prod copy, per-table counts and hashes, suite green on PG, SQLite and automatic rollback). Owner acts only where needed | owner | 0463
+- 2026-10-31 | Approval gates waived for the PostgreSQL and Go migration; the bar stays (verified backup, prod-copy rehearsal, per-table counts and hashes, suite green on PG, SQLite and automatic rollback). Owner acts when needed | owner | 0463
 - 2026-10-31 | D1 PostgreSQL self-hosted in Compose on the 8 GB Lightsail (socket, no port, 1 GB cap), not managed; nightly `pg_dump`, restore proven each rehearsal. D2 reviewer on `production`; D3 goose; D4 Postgres job table, `SKIP LOCKED` | owner | 0463, 0464
 - 2026-10-31 | PostgreSQL container: no password, no network (`network_mode: none`, socket volume). [workflow] Before every merge: `git diff --stat origin/main <branch>` vs the brief's Files; one worktree per Haiku | owner, orchestrator | 0463, #606
 - 2026-10-31 | [workflow] `test-postgres-full` (app suite on PG 17) gates every merge; SQLite-file tests carry `sqlite_only` | orchestrator | 0462
-- 2026-11-01 | Host redesign: vendored Hotwire Turbo (MIT) for page-body swaps; owner OKs mockups before build | owner | #614
-- 2026-10-31 | D3 detail: goose v3.29.0, asset goose_linux_x86_64, SHA-256 cc56e2f75532a4dd52f5ef2d31db0121e91079a9c2617bc0ad4e04e2d41c228b | owner | 0465b
-- 2026-11-01 | Go: module go/, stdlib, pgx v5, go-ntlmssp v0.1.1, go-qrcode (11-02); crypto via Python fixtures | owner (waiver) | 0474, 0481, 0684
-- 2026-11-02 | [workflow] Read hook: over 350 lines needs a limit; ALLOW_FULL_READ=1 | owner | 0810
+- 2026-11-01 | Host redesign: vendored Hotwire Turbo (MIT) for page-body swaps; owner OKs mockups first | owner | #614
+- 2026-10-31 | D3 detail: goose v3.29.0, asset goose_linux_x86_64 (SHA-256 pinned in ci.yml) | owner | 0465b
+- 2026-11-01 | Go: module go/, stdlib, pgx v5, go-ntlmssp v0.1.1, go-qrcode (11-02) | owner (waiver) | 0474, 0481, 0684
+- 2026-11-02 | [workflow] Read hook: over 350 lines needs a limit (ALLOW_FULL_READ=1) | owner | 0810
 - 2026-11-02 | Signup box: unticked marketing opt-in; lawyer to confirm | owner | 0836
-- 2026-11-02 | Address autofill from RÚIAN (ČÚZK), server-side, typed text only; "do the official address register" | owner | 0884
+- 2026-11-02 | Address autofill from RÚIAN (ČÚZK), server-side, typed text only | owner | 0884
 - 2026-11-03 | Try it rehearsal: optional page from the finish page, Skip and Leave | owner | 0884
+- 2026-11-02 | Booking site: CS/EN via ?lang=; one HMAC link per booking; guest cancel refunds per policy, host cancel in full | owner | 0818-0821

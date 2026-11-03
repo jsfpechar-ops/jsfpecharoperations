@@ -642,7 +642,7 @@ Run `cd App && .venv/bin/python -m pytest tests/test_booking_cancel.py -q --tb=s
 **Step 9.** Notes and docs. Append to `docs/context/decisions.md`:
 
 ```
-- 2026-11-02 | Booking site cancellation: guest cancels with the signed link and gets the refund per policy automatically; host cancel is always a full refund; a failed refund leaves the booking `cancelled` and is repeated by the host with the same stored amount and idempotency key; a full refund issues the invoice storno, a partial one is left for the host (audit `site_invoice_needs_correction`) | owner (plan), orchestrator | 0821
+- 2026-11-02 | Booking site cancel: guest self-cancel via signed link, refund per policy; host cancel refunds in full | owner | 0821
 ```
 
 Append to `docs/context/known-issues.md`:
@@ -671,13 +671,13 @@ From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -5`. Any skippe
 
 ## 7. Acceptance
 
-- [ ] The three §6 runs pass; the browser run shows `0 skipped`.
-- [ ] `grep -n "refunds.create" App/app/booking_cancel.py` shows `options=` with `stripe_account` and `idempotency_key`, and `params` without `stripe_account`.
-- [ ] After a guest cancel the nights are bookable again (test 1) and a second click refunds nothing (test 1).
-- [ ] A failed refund never loses the booking and never refunds twice (test 5).
-- [ ] `grep -nE 'style=|#[0-9a-fA-F]{3,8}\b' App/app/templates/booking_manage.html App/app/templates/_pp_booking_css.html` prints nothing.
-- [ ] `git diff --stat origin/main` lists only the §3 files.
-- [ ] One 390 px screenshot of the guest page at `docs/tasks/screenshots-0821/guest-390.png`, named in the report.
+- [x] The three §6 runs pass; the browser run shows `0 skipped`.
+- [x] `grep -n "refunds.create" App/app/booking_cancel.py` shows `options=` with `stripe_account` and `idempotency_key`, and `params` without `stripe_account`.
+- [x] After a guest cancel the nights are bookable again (test 1) and a second click refunds nothing (test 1).
+- [x] A failed refund never loses the booking and never refunds twice (test 5).
+- [x] `grep -nE 'style=|#[0-9a-fA-F]{3,8}\b' App/app/templates/booking_manage.html App/app/templates/_pp_booking_css.html` prints nothing.
+- [x] `git diff --stat origin/main` lists only the §3 files.
+- [x] One 390 px screenshot of the guest page at `docs/tasks/screenshots-0821/guest-390.png`, named in the report.
 
 ## 8. Stop and ask
 

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{{ t('bk.h1.' ~ v.state) }} · {{ v.name }}{% endblock %}
+{% block head_extra %}
+<meta name="robots" content="noindex">
+{% include "_pp_booking_css.html" %}
+{% endblock %}
+{% block content %}
+{% macro money(n) %}{{ ('{:,}'.format(n) | replace(',', '&nbsp;')) | safe }}&nbsp;{{ t('payments.czk') }}{% endmacro %}
+{% set base = '/p/' ~ slug ~ '/b/' ~ v.id ~ '/' ~ token %}
+<main class="pp-bk pp-bk-page">
+  <div class="pp-bk-head">
+    <span class="pp-bk-badge" data-tone="{{ v.tone }}">{{ t('bk.badge.' ~ v.state) }}</span>
+    <h1>{{ t('bk.h1.' ~ v.state) }}</h1>
+    <p class="pp-bk-note">{{ t('bk.sub.' ~ v.state, email=v.email, refund=v.refunded) }}</p>
+  </div>
+  {% if error %}<p class="pp-bk-error" role="alert">{{ t('bk.err.' ~ error) }}</p>{% endif %}
+
+  <section class="pp-bk-card">
+    <h2>{{ v.name }}</h2>
+    <div class="pp-bk-row"><span class="pp-bk-note">{{ t('bk.arrive') }}</span><span>{{ v.arrive }}</span></div>
+    <div class="pp-bk-row"><span class="pp-bk-note">{{ t('bk.depart') }}</span><span>{{ v.depart }}</span></div>
+    <div class="pp-bk-row"><span class="pp-bk-note">{{ t('bk.guests') }}</span><span>{{ v.guests }}</span></div>
+    <div class="pp-bk-row pp-bk-total"><span>{{ t('bk.paid') }}</span><span>{{ money(v.total) }}</span></div>
+    {% if v.city_tax %}<p class="pp-bk-note">{{ t('bk.city_tax', amount=v.city_tax) }}</p>{% endif %}
+  </section>
+
+  <section class="pp-bk-card">
+    <h2>{{ t('pp.book.policy_title', name=t('pp.book.policy_name.' ~ v.policy)) }}</h2>
+    <p class="pp-bk-note">{{ t('bk.policy.' ~ v.policy, when=v.deadline) }}</p>
+    {% if v.can_cancel %}
+    <p class="pp-bk-refund">{% if v.refund_now %}{{ t('bk.refund_now', amount=v.refund_now) }}{% else %}{{ t('bk.refund_none') }}{% endif %}</p>
+    <details>
+      <summary>{{ t('bk.cancel.open') }}</summary>
+      <form method="post" action="{{ base }}/cancel?lang={{ lang }}" class="pp-bk-actions">
+        <p class="pp-bk-note">{{ t('bk.cancel.confirm') }}</p>
+        <button class="ui-btn ui-btn-danger" type="submit">{{ t('bk.cancel.button') }}</button>
+      </form>
+    </details>
+    {% endif %}
+  </section>
+
+  <div class="pp-bk-actions">
+    {% if v.has_invoice %}<a class="ui-btn ui-btn-secondary" href="{{ base }}/invoice.pdf" data-no-prefetch>{{ t('bk.invoice') }}</a>{% endif %}
+    {% if v.state == 'paid' %}<a class="ui-btn ui-btn-secondary" href="{{ base }}/calendar.ics" data-no-prefetch>{{ t('bk.calendar') }}</a>{% endif %}
+  </div>
+  <p class="pp-bk-fine">{{ t('bk.link_note') }}</p>
+  <nav class="pp-bk-lang" aria-label="{{ t('pp.lang.label') }}">
+    <a href="{{ base }}?lang=cs" hreflang="cs" lang="cs"{% if lang == 'cs' %} aria-current="true"{% endif %}>CS</a>
+    <a href="{{ base }}?lang=en" hreflang="en" lang="en"{% if lang == 'en' %} aria-current="true"{% endif %}>EN</a>
+  </nav>
+</main>
+{% endblock %}

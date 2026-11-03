@@ -242,12 +242,12 @@ From the repo root: `python3 scripts/design_lint.py 2>&1 | tail -5` and `python3
 
 ## 7. Acceptance
 
-- [ ] The three §6 runs pass; the browser run shows `0 skipped`; `design lint: OK`.
-- [ ] `grep -nE 'style=|<style|#[0-9a-fA-F]{3,8}\b' App/app/templates/booking_site_setup.html` prints nothing.
-- [ ] A host cannot cancel another owner's or another apartment's booking (test 3).
-- [ ] A failed refund can be repeated and refunds once (test 4).
-- [ ] `git diff --stat origin/main` lists only the §3 files.
-- [ ] One 390 px screenshot at `docs/tasks/screenshots-0822/host-390.png`, named in the report.
+- [x] The three §6 runs pass; the browser run shows `0 skipped`; `design lint: OK`.
+- [x] `grep -nE 'style=|<style|#[0-9a-fA-F]{3,8}\b' App/app/templates/booking_site_setup.html` prints nothing.
+- [x] A host cannot cancel another owner's or another apartment's booking (test 3).
+- [x] A failed refund can be repeated and refunds once (test 4).
+- [x] `git diff --stat origin/main` lists only the §3 files.
+- [x] One 390 px screenshot at `docs/tasks/screenshots-0822/host-390.png`, named in the report.
 
 ## 8. Stop and ask
 

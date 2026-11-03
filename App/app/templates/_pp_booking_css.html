@@ -1,0 +1,43 @@
+<style>
+.pp-bk { display: flex; flex-direction: column; gap: var(--space-4); max-width: 520px; margin-top: var(--space-6); }
+.pp-bk-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-3); padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); font-size: var(--size-14); color: var(--ink); }
+.pp-bk-card h2 { margin: 0; font-size: var(--size-16); font-weight: 700; }
+.pp-bk-note { color: var(--ink-2); font-size: var(--size-13); margin: 0; }
+.pp-bk-fine { color: var(--ink-3); font-size: var(--size-12); text-align: center; margin: 0; }
+.pp-bk-months { display: flex; align-items: center; justify-content: space-between; }
+.pp-bk-months strong { font-size: var(--size-15); }
+.pp-bk-nav { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 1px solid var(--line-2); border-radius: var(--radius-2); background: var(--surface); color: var(--ink); text-decoration: none; font-size: var(--size-16); }
+.pp-bk-nav[aria-disabled="true"] { color: var(--ink-3); border-color: var(--line); }
+.pp-bk-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; text-align: center; }
+.pp-bk-dow { font-size: var(--size-12); color: var(--ink-3); }
+.pp-bk-day { display: flex; align-items: center; justify-content: center; min-height: 44px; font-size: var(--size-14); color: var(--ink); text-decoration: none; border-radius: var(--radius-2); }
+a.pp-bk-day:hover { background: var(--surface-2); }
+.pp-bk-day[data-state="past"], .pp-bk-day[data-state="taken"] { color: var(--ink-3); text-decoration: line-through; }
+.pp-bk-day[data-state="range"] { background: var(--accent-soft); border-radius: 0; }
+.pp-bk-day[data-state="start"], .pp-bk-day[data-state="end"] { background: var(--accent); color: var(--on-accent); font-weight: 700; }
+.pp-bk-day[data-state="start"] { border-radius: var(--radius-2) 0 0 var(--radius-2); }
+.pp-bk-day[data-state="end"] { border-radius: 0 var(--radius-2) var(--radius-2) 0; }
+.pp-bk-row { display: flex; justify-content: space-between; gap: var(--space-3); }
+.pp-bk-total { border-top: 1px solid var(--line); padding-top: var(--space-3); font-size: var(--size-16); font-weight: 700; }
+.pp-bk-guests { display: flex; flex-direction: column; gap: var(--space-2); align-items: stretch; }
+.pp-bk-guests .ui-field { display: flex; flex-direction: column; gap: var(--space-1); }
+.pp-bk-guests .ui-input { width: 100%; min-height: 44px; }
+.pp-bk-error { background: var(--accent-soft); border-radius: var(--radius-2); padding: var(--space-3); margin: 0; color: var(--ink); }
+.pp-bk-lang { text-align: center; font-size: var(--size-12); color: var(--ink-3); }
+.pp-bk-lang a { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; color: var(--ink-2); }
+.pp-bk-lang a[aria-current="true"] { color: var(--ink); font-weight: 700; }
+.pp-bk .ui-btn { width: 100%; min-height: 44px; }
+.pp-bk .ui-btn-primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.pp-bk .ui-btn-primary:hover { background: var(--accent-hover); }
+.pp-bk .ui-btn-secondary { background: var(--surface); color: var(--ink); border: 1px solid var(--line-2); }
+@media (max-width: 480px) { .pp-bk { max-width: none; } }
+.pp-bk-page { max-width: 520px; margin: var(--space-6) auto; padding: 0 var(--space-4); }
+.pp-bk h1 { margin: 0; font-size: var(--size-22); line-height: 1.25; }
+.pp-bk-head { display: flex; flex-direction: column; gap: var(--space-2); }
+.pp-bk-badge { align-self: flex-start; border-radius: var(--radius-pill); padding: 3px 10px; font-size: var(--size-12); font-weight: 700; background: var(--st-done-bg); color: var(--st-done-ink); }
+.pp-bk-badge[data-tone="neutral"] { background: var(--surface-2); color: var(--ink-2); }
+.pp-bk-refund { background: var(--surface-2); border-radius: var(--radius-2); padding: var(--space-3); margin: 0; }
+.pp-bk-card summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; font-weight: 700; }
+.pp-bk-actions { display: flex; flex-direction: column; gap: var(--space-2); }
+.pp-bk-page .pp-bk-actions .ui-btn-secondary { display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 100%; min-height: 44px; padding: var(--space-2) var(--space-3); background: var(--surface); color: var(--ink); border: 1px solid var(--line-2); border-radius: var(--radius-2); text-align: center; text-decoration: none; }
+</style>

@@ -518,6 +518,7 @@
   "enforced_templates": [
     "App/app/templates/guest_form_admin.html",
     "App/app/templates/dev_ui.html",
+    "App/app/templates/booking_site_setup.html",
     "App/app/templates/dashboard.html",
     "App/app/templates/reservations.html",
     "App/app/templates/reservation_detail.html",
