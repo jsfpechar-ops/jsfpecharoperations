@@ -44,6 +44,12 @@ rails, plan `direct-payments-build-plan.md`, brief 0425).
    (property page and onboarding wizard property step, where the passport/OCR
    toggles live), behind a global env kill switch
    `UBYHOST_STAY_FEE_GUEST_PAY=off|on` (default off).
+8. **Fee = 0 → show nothing.** When the computed amount is 0 (any reason —
+   minor, >60 nights, same-obec, host-exempt), the estimate card and the hub
+   panel render **nothing at all**: no "no fee due", no exemption reason, ever.
+   The statutory framework may be described generally in the legal notice, but
+   the interactive UI never explains why a guest owes nothing. The host-facing
+   register records the reason (e.g. "resident of the obec").
 
 ## 2. What exists — reuse map
 
@@ -295,12 +301,12 @@ Verified against the code; the material findings:
   `+goose Up`, `IF NOT EXISTS` statements, **and** an
   `INSERT INTO schema_migrations … ON CONFLICT DO NOTHING` for SQLite version
   36 — the build brief must copy that exactly (next: `0036` / `00006`).
-- **Never reveal *why* the fee is 0.** Statutory exemptions (under 18, >60
-  nights) are public law and may be stated (they are in the legal notice). The
-  **same-obec exemption must never be explained to the guest**: when the
-  computed amount is 0 because of residence, the form estimate and hub panel
-  show nothing or a neutral "no fee due" — never "because you live in this
-  city". The register (host-facing) records the reason "resident of the obec".
+- **Never reveal *why* the fee is 0** (owner decision 8). When the computed
+  amount is 0, the form estimate and hub panel render nothing at all — no
+  "no fee due", no reason, for ANY exemption. The **same-obec exemption** is
+  additionally never hinted anywhere in guest copy (the legal notice must not
+  state the residence criterion — see §10). The register (host-facing)
+  records the reason "resident of the obec".
 - **Rate change mid-stay:** the panel uses the current `stay_fee_rate_czk` ×
   counted days; the register splits per period at sealed rates. No rate
   history exists, so the panel states "at the current rate". Accepted for v1
@@ -312,7 +318,57 @@ Verified against the code; the material findings:
 - **Delivery:** PR template sections filled, CI green, merge only via
   `scripts/merge-pr-on-green.sh`, never push to `main` (AGENTS.md rule 8).
 
-## 10. Open questions (not blocking)
+## 10. Counsel draft — `legal_notice_fee_*` copy (research 2026-11-03; human lawyer sign-off still required per repo rules)
+
+Legal grounding checked against public sources: zákon č. 565/1990 Sb. §3
+(renamed "poplatek z pobytu" from 1.1.2020, zákon č. 278/2019 Sb.): poplatník =
+the accommodated guest **not registered for permanent residence in that obec**;
+plátce = the accommodation provider, who collects and remits (§3f); subject =
+paid stay ≤ 60 consecutive days with one provider (§3a); base = commenced days
+excluding the arrival day (§3c); rate set by the obec's OZV, **capped at 50
+Kč/person/day** (§3d, in force since 1.1.2021); statutory exemptions §3b
+(under 18, ZTP/P + guide, hospitalised, seasonal workers, …); evidenční kniha
+duty §3g. Praha: OZV č. 18/2019 Sb. hl. m. Prahy as amended (19/2021) — 50 Kč
+from 1.1.2022. **The copy deliberately omits the residence criterion** so the
+backend exemption stays secret.
+
+CS draft:
+- `legal_notice_fee_title`: "Místní poplatek z pobytu"
+- `legal_notice_fee_body`: "Obec, ve které se ubytováváte, může obecně
+  závaznou vyhláškou zavést místní poplatek z pobytu (zákon č. 565/1990 Sb.).
+  Poplatek platíte vy jako host vašemu ubytovateli; ten ho odvádí obci.
+  Základem poplatku je počet započatých dnů pobytu bez dne počátku pobytu,
+  sazbu určuje obec, nejvýše však 50 Kč za osobu a den. Zákon dále stanoví
+  osvobození od poplatku (např. osoby mladší 18 let) a pobyt delší než 60 po
+  sobě jdoucích dnů u jednoho ubytovatele poplatku nepodléhá. Poplatek platíte
+  přímo ubytovateli podle jeho pokynů — UbyHost platbu nezprostředkovává a
+  nezaznamenává, zda byla zaplacena."
+
+EN draft:
+- `legal_notice_fee_title`: "Municipal stay fee"
+- `legal_notice_fee_body`: "The municipality where you are staying may charge
+  a local stay fee under its by-law (Act No. 565/1990 Coll.). You pay it to
+  your host, who remits it to the municipality. The fee is based on the number
+  of commenced days of stay excluding the arrival day; the rate is set by the
+  municipality and is capped at CZK 50 per person per day. The Act also provides
+  exemptions (for example for persons under 18), and a stay longer than 60
+  consecutive days with one provider is not subject to the fee. You pay your
+  host directly as instructed — UbyHost does not process the payment and does
+  not record whether it was paid."
+
+de/es/fr/uk: faithful translations at build (brief 0901). Ship with a bumped
+`UBYHOST_GUEST_NOTICE_VERSION` (docs/ENVIRONMENT.md:86).
+
+## 11. Briefs (executor tasks, Haiku 5.5, one per session)
+
+| Brief | Scope | Depends on |
+|---|---|---|
+| [0897](../tasks/0897-stay-fee-guest-pay-phase0.md) | phase 0: migration 0036/00006, kill switch, property toggle UI, host i18n | none |
+| [0898](../tasks/0898-stay-fee-charge-computation.md) | `charge_for_reservation()` + same-obec rule in shared logic + tests | 0897 |
+| [0900](../tasks/0900-stay-fee-guest-panel.md) | hub money card + rail picker, form estimate, residence order | 0898 |
+| [0901](../tasks/0901-stay-fee-legal-notice-ruian.md) | legal-notice section + 6-language copy + guest RÚIAN route | 0897 |
+
+## 12. Open questions (not blocking)
 
 1. Counsel: confirm the same-obec exemption rule + its register reason
    wording, and the `legal_notice_fee_*` copy (payee wording, "not tracked"
