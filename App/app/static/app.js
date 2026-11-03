@@ -1948,6 +1948,13 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       if (!parent || parent.classList.contains("tip-tail")) return;
       var prev = tip.previousSibling;
       while (prev && prev.nodeType === 3 && !prev.nodeValue.trim()) prev = prev.previousSibling;
+      if (prev && prev.nodeType === 1 && /^(LABEL|H[1-6]|LEGEND)$/.test(prev.tagName)) {
+        /* the "?" sits beside its label: move it inside, so it wraps with the label's last word */
+        prev.appendChild(tip);
+        parent = prev;
+        prev = tip.previousSibling;
+        while (prev && prev.nodeType === 3 && !prev.nodeValue.trim()) prev = prev.previousSibling;
+      }
       var tail = null;
       if (prev && prev.nodeType === 3) {
         var m = /^([\s\S]*?)(\S+)(\s*)$/.exec(prev.nodeValue);
