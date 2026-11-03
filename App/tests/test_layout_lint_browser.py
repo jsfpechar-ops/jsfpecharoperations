@@ -130,7 +130,11 @@ def test_every_host_page_passes_the_layout_lint(wide_host, wide_base):
     counts: dict[str, int] = {}
     for f in findings:
         counts[f["finding"][0]] = counts.get(f["finding"][0], 0) + 1
-    lines = [f"{f['route']} @{f['width']}: {f['finding']}" for f in findings[:50]]
+    unique: dict[str, list[str]] = {}
+    for f in findings:
+        unique.setdefault(json.dumps(f["finding"][:2]), []).append(f"{f['route']}@{f['width']}")
+    lines = [f"{key} on {', '.join(pages[:4])}{' ...' if len(pages) > 4 else ''} ({len(pages)}x)"
+             for key, pages in list(unique.items())[:60]]
     assert not findings, f"{len(findings)} layout-lint findings {counts}\n" + "\n".join(lines)
 
 

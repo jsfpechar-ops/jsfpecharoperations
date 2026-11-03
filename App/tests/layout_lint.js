@@ -55,6 +55,8 @@
     const text = (el.innerText || own(el)).replace(/\s+/g, ' ').trim();
     const w = words(text);
     if (el.querySelector('input,select,textarea,button')) continue;
+    // a block that stacks several text blocks (name over role) is judged by its children, not as one run of words
+    if ([...el.children].some((c) => !['inline', 'inline-block', 'contents'].includes(getComputedStyle(c).display) && (c.innerText || '').trim())) continue;
     const lines = textLines(el);
     const r = el.getBoundingClientRect();
     const em = parseFloat(s.fontSize) || 14;
