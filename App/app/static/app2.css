@@ -2204,8 +2204,8 @@ body.v2 .pill > .ui-badge,body.v2 td[data-card="badge"] small .ui-badge{display:
 body.v2 .pill > .ui-badge:before,body.v2 td[data-card="badge"] small .ui-badge:before{content:none;display:none}
 body.v2 td[data-card="badge"] small{display:block;margin-top:6px;color:var(--ink3);font-size:13px;font-weight:500;background:none}
 body.v2 td[data-card="badge"] small .ui-badge{color:var(--ink3)}
-body.v2 details.page-help{background:none;border:0;box-shadow:none;border-radius:0;padding:0;margin:0 0 0 6px;min-width:0;min-height:0;overflow:visible}
-body.v2 summary.page-help-btn{justify-content:center}
+body.v2 details.page-help{background:none;border:0;box-shadow:none;border-radius:0;padding:0;margin:0;min-width:0;min-height:0;overflow:visible}
+body.v2 summary.page-help-btn{justify-content:center;margin-left:-4px}
 .side .me-menu > summary.me{justify-content:flex-start;gap:10px}
 /* 0896 audit: cleaning tiles are tall enough for two chips plus a stay pill; on phones the pill is a thin bar without text */
 body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-week.is-dots .cal-day { min-height:150px; }
@@ -2222,3 +2222,5 @@ body.v2 [data-filter-toggle] svg{margin-right:0}
 body.v2 .btn:has(> svg){display:inline-flex;align-items:center;gap:8px}
 body.v2 .btn > svg{margin-right:0}
 body.v2 .ov-month{margin-top:12px}
+body.v2 .ov-quiet,body.v2 .ov-links{margin-bottom:12px}
+body.v2 .ov-links:empty{display:none}
