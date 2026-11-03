@@ -1302,6 +1302,8 @@ body.v2 .cl-v2-props .cleaning-property-row .ui-btn{flex:none;white-space:nowrap
 
 /* 0801 setup wizard (v2) */
 body.v2 .wiz-page{max-width:720px;margin:0;color:var(--ink)}
+body.v2 .wiz-page label{font-size:14px}
+body.v2 .wiz-page .help-tip-btn{font-size:14px}
 body.v2 .wiz-page .setup-wizard-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin:0 0 16px}
 body.v2 .wiz-page .wiz-title{min-width:0;flex:1}
 body.v2 .wiz-page .wiz-count{margin:0 0 8px;font-size:14px;font-weight:600;color:var(--ink3)}
@@ -1351,6 +1353,8 @@ body.v2 .wiz-page .setup-wizard-confetti{display:none}
 body.v2 .wiz-page .setup-wizard-celebrate-copy{display:flex;flex-direction:column;gap:2px}
 body.v2 .wiz-page .setup-wizard-checklist{list-style:none;margin:0;padding:0;display:grid;gap:10px}
 body.v2 .wiz-page .setup-summary-card{display:flex;align-items:center;gap:14px;min-height:72px;padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--s)}
+body.v2 .wiz-page .setup-summary-card{flex-wrap:wrap;row-gap:12px}
+body.v2 .wiz-page .setup-summary-card .setup-summary-copy{min-width:140px}
 body.v2 .wiz-page .setup-summary-icon{width:40px;height:40px;border-radius:50%;background:var(--accs);color:var(--acc);display:grid;place-items:center;flex:none}
 body.v2 .wiz-page .setup-summary-icon svg{width:20px;height:20px}
 body.v2 .wiz-page .setup-summary-copy{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;flex:1}
