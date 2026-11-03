@@ -844,7 +844,7 @@ def test_0842_cleaning_toolbar_one_row_at_1280(workspace, origin):
             assert abs(b["height"] - 40) <= 1, (sel, b)
         title = page.locator(".cleaning-page h3[data-cal-period]").evaluate(
             "e => [getComputedStyle(e).fontSize, getComputedStyle(e).fontWeight]")
-        assert title == ["24px", "700"], title
+        assert title == ["32px", "700"], title  # 0891: Airbnb title size at 1024 px+
         assert page.get_by_role("button", name="Gantt", exact=True).count() == 1
         body = page.locator(".cleaning-page [data-cal-body]").bounding_box()
         assert body["y"] >= max(b["y"] + b["height"] for b in boxes), body
@@ -893,5 +893,47 @@ def test_0842_cleaning_no_horizontal_overflow(workspace, origin, width):
             page.locator('.cleaning-page [data-cal-scale="week"]').click()
             page.wait_for_function("() => document.querySelector('[data-cal-body]')?.getAttribute('aria-busy') === 'false'")
             assert page.evaluate(FITS), (width, "week")
+        context.close()
+        browser.close()
+
+
+# 0891: the host cleaning page uses the Airbnb month scroll with amber cleaning tags and no stay pills.
+SHOTS_0891 = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0891"
+ROWS_0891 = """() => [...document.querySelectorAll('.cal-month .cal-week.is-dots')].map(row => ({
+    s: [...document.querySelectorAll('.cal-month')].indexOf(row.closest('.cal-month')),
+    t: [...row.querySelectorAll('.cal-day[data-date]')].map(tile => { const r = tile.getBoundingClientRect(); return [r.left, r.right, r.top, r.bottom]; })
+})).filter(row => row.t.length)"""
+
+
+@pytest.mark.parametrize("width", [390, 768, 1280])
+def test_0891_cleaning_airbnb_month(workspace, origin, width):
+    ws = workspace
+    with sync_api.sync_playwright() as playwright:
+        browser, context = browser_context(playwright, ws, origin, width)
+        page = context.new_page()
+        page.goto(f"{origin}/cleaning?lang=en&cal_view=calendar&cal_property={ws['home']}")
+        loaded(page)
+        page.wait_for_selector(".cal-month")
+        page.evaluate("window.scrollTo(0, 0)")
+        page.wait_for_timeout(300)
+        assert page.locator(".cal-month").count() == 6
+        assert page.locator(".cal-pill").count() == 0
+        assert page.locator(".cal-day.has-cleaning").count() >= 1
+        gap = 12 if width >= 768 else 4
+        rows = page.evaluate(ROWS_0891)
+        assert rows
+        for row in rows:
+            for a, b in zip(row["t"], row["t"][1:]):
+                assert abs(b[0] - a[1] - gap) <= 1, (width, a, b)
+        if width >= 768:
+            chip = page.locator(".cal-day.has-cleaning .cal-tile-chip.cal-clean-chip").first
+            assert chip.is_visible()
+            assert chip.evaluate("node => getComputedStyle(node).borderTopLeftRadius") == "12px"
+        else:
+            assert page.locator(".cal-day.has-cleaning .cal-clean-tag").first.is_visible()
+        assert page.evaluate(FITS)
+        if os.environ.get("UBYHOST_TASK_SHOTS") == "1":
+            SHOTS_0891.mkdir(parents=True, exist_ok=True)
+            page.screenshot(path=str(SHOTS_0891 / f"cleaning-{width}.png"), full_page=False)
         context.close()
         browser.close()
