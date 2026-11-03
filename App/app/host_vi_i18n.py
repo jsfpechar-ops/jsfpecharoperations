@@ -3304,6 +3304,7 @@ STRINGS: Dict[str, str] = {
     "wizard.title": "Thiết lập %(name)s",
     "wizard.count": "Bước %(n)s / %(total)s · %(step)s",
     "wizard.exit": "Thoát thiết lập",
+    "wizard.try_it.leave": "Rời khỏi bản mẫu",
     "wizard.back": "Quay lại",
     "wizard.skip": "Bỏ qua bước này",
     "wizard.save_continue": "Lưu và tiếp tục",
