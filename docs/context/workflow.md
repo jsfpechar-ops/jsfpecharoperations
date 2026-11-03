@@ -76,6 +76,13 @@ Statuses: `todo → in-progress → review → done`, plus `blocked` (with the r
 - One brief owns each piece of copy. When a new brief replaces an old one, mark the old one `Status: replaced by NNNN` in the same commit that adds the new brief.
 - Anchors are the safety net, not the rule: a brief that runs after a brief it overlaps stops at its first anchor that is no longer there. `context lint` warns when two open briefs name the same file in section 3; the orchestrator says which goes first.
 
+## UX gate
+Owner decision 2026-11-03: the thread that changes UX checks it with Chromium.
+1. From `App/` (`UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/shots`): `.venv/bin/python -m pytest tests/test_layout_lint_browser.py -q -x 2>&1 | tail -30`, 0 skipped. Host pages: zero findings; guest and public: report-only.
+2. Read `/tmp/shots/layout-lint/<page>-{390,768,1280}.png` for each touched page and look for what rules miss.
+3. A new check goes in `tests/layout_lint.js` plus a line in `test_the_lint_catches_the_known_regressions`.
+4. PR body: per page "390: ...; 768: ...; 1280: ...". CI links the screenshots in the job summary.
+
 ## Update triggers
 
 | When this changes | Update |
