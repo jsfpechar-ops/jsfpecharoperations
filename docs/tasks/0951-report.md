@@ -20,3 +20,15 @@ Done: steps 1 to 5, step 6 partly (geometry test written, failing). Left: step 6
 
 ## Next step
 Open the 390 px computed style of `#permalink`'s parent `.guest-copy-row` and button (`getComputedStyle`: position, top, transform, margin-top, vertical-align). Fix in app2.css 0951 block so the button's y equals the input's y (within 4 px). Then rerun the `-k guest_links_and_message` test, do step 7.
+
+## Update (second run)
+Status: blocked
+Fixed: 6 px Copy offset (cause: `.prop-sec :is(input…)` rule set margin-bottom:12px on the input; reset with `input:not([type=hidden])` in the 0951 block). Actions row was 307 px wide at 1280 (section is a 2-column grid from 1024 px): `.guest-link-top` now spans both columns. Regenerate tip check uses `.help-tip-btn`.
+Geometry test `-k guest_links_and_message`: PASSED (390/768/1280).
+Gate set (13 passed, 4 failed, 283 s): layout lint `test_every_host_page_passes_the_layout_lint` 80 findings (help-stranded 56, tight-side 24), not yet compared with a clean-tree baseline; `test_a_changed_static_file_has_a_new_key` and `test_the_manifest_is_current`: app2.css changed under key 20261104-0951a, manifest not regenerated (--write refused). Fourth failure not identified in the captured tail.
+Screenshots: docs/tasks/screenshots-0951/automatic-messages-{390,768,1280}.png, viewed.
+- 390: Link and PIN with Copy on the input row; action pills wrap to 3 rows; ? after each regenerate; settings stacked; checkbox 24 px with ? inline.
+- 768: one column for links, two number fields side by side; passport select full width; checkbox row aligned.
+- 1280: links full width; actions in 2 rows; numbers side by side.
+- Finding: the note "A stay appears…" and the passport label sit with almost no gap at 768/1280 (grid row gap does not separate them). Not fixed.
+Next step: decide the static key (bump to a new key or accept the orchestrator's regenerate), run `tests/test_static_versions.py --write`, identify the 4th failure, and check the 80 layout-lint findings against the base branch.

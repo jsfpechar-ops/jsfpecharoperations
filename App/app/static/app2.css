@@ -2475,7 +2475,7 @@ body.v2 .guest-link-top{display:grid;gap:16px;grid-template-columns:minmax(0,1fr
 body.v2 .guest-link-top .guest-copy-row{display:flex;flex-wrap:nowrap;align-items:center;gap:8px}
 body.v2 .guest-link-top .guest-copy-row input{flex:1 1 auto;min-width:0;width:100%;max-width:none;height:40px;margin:0;text-overflow:ellipsis}
 body.v2 .guest-link-top .guest-copy-row .copy-btn{flex:none;width:auto;min-width:40px;height:40px;min-height:40px;padding:0 12px;margin:0;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:var(--radius-md,8px);white-space:nowrap}
-body.v2 .guest-link-top .guest-link-actions{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:12px;margin:0}
+body.v2 .guest-link-top .guest-link-actions{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-self:stretch;width:100%;gap:12px;margin:0}
 body.v2 .guest-link-top .guest-link-actions .ui-btn{height:40px;min-height:40px;padding:0 14px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
 body.v2 .guest-link-top .guest-link-action{display:inline-flex;align-items:center;gap:6px}
 @media (max-width:1023px){body.v2 .guest-link-top .guest-copy-row :is(input,.copy-btn),body.v2 .guest-link-top .guest-link-actions .ui-btn{height:44px;min-height:44px}body.v2 .guest-link-top .guest-copy-row .copy-btn{min-width:44px}}
@@ -2492,4 +2492,5 @@ body.v2 .passport-scan-row input[type=checkbox]{width:24px;height:24px;min-width
 @media (max-width:767px){body.v2 .guest-link-windows{grid-template-columns:minmax(0,1fr)}}
 body.v2 .fields-wrap .guest-link-top .guest-copy-row .copy-btn{min-height:40px}
 @media (max-width:1023px){body.v2 .fields-wrap .guest-link-top .guest-copy-row .copy-btn{min-height:44px}}
-body.v2 .fields-wrap .guest-link-top .guest-copy-row .copy-btn,body.v2 .fields-wrap .guest-link-top .guest-copy-row input{margin:0;align-self:center}
+body.v2 .fields-wrap .guest-link-top .guest-copy-row .copy-btn,body.v2 .fields-wrap .guest-link-top .guest-copy-row input:not([type=hidden]){margin:0;align-self:center}
+body.v2 .property-section > .guest-link-top{grid-column:1/-1}

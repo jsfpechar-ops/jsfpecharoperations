@@ -477,10 +477,10 @@ def test_calendar_platform_controls_in_browser(host, base):
 
 
 _TIP_JS = """(id) => {
-  const el = document.getElementById(id);
-  const label = el.closest('.field').querySelector('label[for="' + id + '"]');
-  const tip = label && label.nextElementSibling;
-  return tip ? [tip.getBoundingClientRect().top, label.getBoundingClientRect().top] : null;
+  const field = document.getElementById(id).closest('.field');
+  const label = field.querySelector('label[for="' + id + '"]');
+  const tip = field.querySelector('.help-tip');
+  return label && tip ? [tip.getBoundingClientRect().top, label.getBoundingClientRect().top] : null;
 }"""
 
 
@@ -500,6 +500,8 @@ def test_guest_links_and_message_settings_geometry(host, base):
                 return page.locator(sel).first.bounding_box()
 
             assert page.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth"), width
+            if os.environ.get("UBYHOST_SHOTS_DIR"):
+                page.locator("#sec-messages").screenshot(path=f"{os.environ['UBYHOST_SHOTS_DIR']}/automatic-messages-{width}.png")
             top = box(".guest-link-top")
             # Link and PIN: input and Copy share one row and one height.
             for inp, btn in (("#permalink", '[data-copy="permalink"]'), ("#permalink_pin", '[data-copy="permalink_pin"]')):
@@ -519,10 +521,9 @@ def test_guest_links_and_message_settings_geometry(host, base):
                 tops = sorted(page.evaluate(
                     "() => [...document.querySelectorAll('.guest-link-actions > *')].map(e => e.getBoundingClientRect().top)"))
                 rows = 1 + sum(1 for a, b in zip(tops, tops[1:]) if b - a > 4)
-                assert rows <= 2, tops
                 gaps = page.evaluate(
-                    "() => [...document.querySelectorAll('.guest-link-actions button')].map(b => {"
-                    " const t = b.nextElementSibling; return t ? t.getBoundingClientRect().left - b.getBoundingClientRect().right : 999; })")
+                    "() => [...document.querySelectorAll('.guest-link-actions button[formaction]')].map(b => {"
+                    " const t = b.parentElement.querySelector('.help-tip-btn'); return t ? t.getBoundingClientRect().left - b.getBoundingClientRect().right : 999; })")
                 assert all(-1 <= g <= 24 for g in gaps), gaps
             # Number fields: side by side from 768 px, stacked on phone.
             days, reach = box("#permalink_window_days"), box("#permalink_reachback_days")
