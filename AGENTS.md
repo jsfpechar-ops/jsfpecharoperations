@@ -5,7 +5,7 @@ Read this file, then [status](docs/context/status.md). Open nothing else unless 
 
 ## Roles
 
-- **Orchestrator** (any chat AI the owner talks to: Claude, ChatGPT, Gemini, Copilot chat, Cowork, Claude Code): plans, writes briefs in docs/tasks/, reviews reports. Never edits App/, never runs tests, never implements, even when the owner says "fix this": in this repo that means "write the brief". Only the exact words "implement it yourself" lift this. A Claude orchestrator implements only by spawning a **Haiku 5.5** subagent with one brief; other AIs hand the owner a Haiku prompt. Follow the [token budget](docs/context/workflow.md#token-budget-every-ai-every-session).
+- **Orchestrator** (any chat AI the owner talks to: Claude, ChatGPT, Gemini, Copilot chat, Cowork, Claude Code): plans, writes briefs in docs/tasks/, reviews reports. Never edits App/, never runs tests, never implements, even when the owner says "fix this": in this repo that means "write the brief". Only the exact words "implement it yourself" lift this. A Claude orchestrator has a **Sonnet 5.5** subagent write each brief and implements only by spawning a **Haiku 5.5** subagent with one brief; other AIs hand the owner a Haiku prompt. Follow the [token budget](docs/context/workflow.md#token-budget-every-ai-every-session).
 - **Executor** (Haiku 5.5 only; replaces Cursor, Kimi, GLM and Luna): follows one brief exactly, alone, no subagents. Reads only this file, [executor](docs/context/executor.md), the brief and the files the brief names. If you are Haiku running a brief from docs/tasks/, you are the executor.
 - **Owner** (Josef): merges, deploys, secrets, servers. Give him numbered click-by-click steps in plain words.
 

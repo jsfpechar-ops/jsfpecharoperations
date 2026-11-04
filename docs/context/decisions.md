@@ -44,7 +44,7 @@ Append-only.
 - 2026-10-28 | Property pages: Apify scrape-first prefill (page + Leon guide, 1 fetch), deterministic, no AI step; host reviews once | owner | plan property-pages, 0431
 - 2026-10-28 | Property page: Airbnb-style layout patterns (hero grid, 65ch description, icon amenities); no Airbnb brand assets or CSS | owner | plan property-pages, 0431
 - 2026-10-28 | Page photos: download + re-host from the import run (max 10, EXIF stripped), never hotlink; host confirms rights | owner | plan property-pages, 0432
-- 2026-10-28 | Booking widget: Airbnb-style interaction on our calendar/fee logic, no-JS form, Stripe checkout on host account; no dark patterns | owner | plan property-pages, 0434
+- 2026-10-28 | Booking widget: Airbnb-style on our calendar/fee logic, no-JS, Stripe checkout on host account | owner | plan property-pages, 0434
 - 2026-10-28 | Listing pages English-only; no per-listing or per-language translation (OTA copy verbatim) | owner | plan property-pages, 0431/0433
 - 2026-11-02 | OCR: Tesseract only, local, MRZ check digits, Max only; band crop; Paddle if ocr_readrate <90% | owner | test_doc_ocr
 - 2026-10-29 | Trials are extendable by the operator, 1-365 days | owner | 0448
@@ -52,7 +52,7 @@ Append-only.
 - 2026-10-29 | Connect: full Stripe Dashboard + collectors (Express+Stripe preview-only; Express with application liability rejected) | owner | 0439
 
 - 2026-10-30 | [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; Haiku-only execution; manual cutover | 0455–0456
-- 2026-10-31 | Postgres (#592), then Go G1-G6, per-feature rollback, no load test. [workflow] Fable briefs critical items, Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
+- 2026-10-31 | Postgres (#592), then Go G1-G6, per-feature rollback, no load test. [workflow] Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
 - 2026-10-31 | Every change lean: no dead code or extras; dead code goes in its own small commit | owner | plan v4
 - 2026-10-31 | Postgres/Go: approval gates waived, bar stays (backup, rehearsal, hashes, both-DB suite, auto rollback). D1 self-hosted Postgres in Compose (socket, 1 GB cap); nightly `pg_dump`; D2 reviewer on `production`; D3 goose; D4 job table, `SKIP LOCKED`. No password, no network (`network_mode: none`, socket volume). [workflow] Pre-merge: `git diff --stat origin/main <branch>` vs brief Files; one worktree per Haiku | owner, orchestrator | 0463, 0464, #606
 - 2026-10-31 | [workflow] `test-postgres-full` (app suite on PG 17) gates every merge; SQLite-file tests carry `sqlite_only` | orchestrator | 0462
@@ -70,4 +70,5 @@ Append-only.
 - 2026-11-03 | Partial site refund issues a credit note / corrective document for the refunded amount; full refund keeps storno | owner | 0901
 
 - [filing] 2026-11-04: unanswered filings retry 30m/2h/6h/12h, duplicate answer stops; supersedes OD-1 and WP31 (0909). After the 5th attempt: host and support mail and push, once per chain.
-- 2026-11-04 | Stay fee pay v4: QR/IBAN/Revolut/cash, Stripe v2, near miss → host, counsel OK | owner | [plan](../plans/stay-fee-guest-payment.md)
+- 2026-11-04 | Stay fee pay v4 (Stripe v2) | owner | [plan](../plans/stay-fee-guest-payment.md)
+- 2026-11-04 | [workflow] Sonnet writes briefs, Haiku executes | owner | [workflow](workflow.md)

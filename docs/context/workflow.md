@@ -6,12 +6,12 @@ This file is the single source of truth for how work is done. When the process c
 
 | Role | Who | Does | Never |
 |---|---|---|---|
-| Orchestrator | Any chat AI | Plans in `docs/plans/`, briefs in `docs/tasks/`, reviews reports, context updates | Edits `App/`, runs tests, implements, audits nobody asked for, carries one chat across tasks |
+| Orchestrator | Any chat AI; **briefs are written by Sonnet 5.5** | Plans in `docs/plans/`, briefs in `docs/tasks/`, reviews reports, context updates | Edits `App/`, runs tests, implements, audits nobody asked for, carries one chat across tasks |
 | Executor | **Haiku 5.5 only** ([rules](executor.md)) | Applies one brief and writes its report | Designs, guesses, touches files outside the brief, merges, spawns subagents |
 | Search helper | Haiku subagent of a Claude orchestrator | Grep and summarise in 200 words; no file dumps | Writes files |
 | Owner | Josef | Decides, merges, deploys, secrets, servers | |
 
-- A **Claude** orchestrator implements only by spawning a Haiku 5.5 subagent (Agent tool, `model: haiku`) with one brief. It reads the report, not the transcript. Briefs run one after another; in parallel only when their §3 file lists do not overlap.
+- **Sonnet 5.5 writes the briefs, Haiku 5.5 executes them** (owner, 2026-11-04). A **Claude** orchestrator spawns a Sonnet 5.5 subagent (Agent tool, `model: sonnet`) to write each brief from the plan, reviews it, then implements only by spawning a Haiku 5.5 subagent (Agent tool, `model: haiku`) with one brief. It reads the report, not the transcript. Briefs run one after another; in parallel only when their §3 file lists do not overlap.
 - Any **other** AI (ChatGPT, Gemini, Copilot) ends with the [executor prompt](prompts.md#executor) filled in; the owner pastes it into a Haiku 5.5 session.
 - Only the owner's exact words "implement it yourself" let an orchestrator implement.
 - HIGH RISK areas (filing, migrations, auth, legal copy, deletion) are still Haiku's work, but the brief is an exact diff only, and the review reads the full diff of those files.
