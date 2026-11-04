@@ -2487,7 +2487,7 @@ body.v2 .guest-link-windows .link-window-note{margin:0}
 body.v2 .guest-link-windows .field:has(> select),body.v2 .guest-link-windows .passport-scan-row{grid-column:1/-1}
 body.v2 .guest-link-windows select{text-overflow:clip;white-space:normal;height:auto;min-height:40px;padding-top:8px;padding-bottom:8px}
 body.v2 .passport-scan-row{flex-direction:row;align-items:center;gap:8px;min-height:44px}
-body.v2 .passport-scan-row .checkline{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:12px;margin:0;min-height:44px;cursor:pointer}body.v2 .passport-scan-row .checkline > span{min-width:0}body.v2 .passport-scan-row .checkline .help-tip{flex:none;align-self:flex-start}
+body.v2 .passport-scan-row .checkline{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:12px;margin:0;min-height:44px;cursor:pointer}body.v2 .passport-scan-row .checkline > span{min-width:0;flex:0 1 auto}body.v2 .passport-scan-row .checkline .help-tip{flex:none;align-self:flex-start}
 body.v2 .passport-scan-row input[type=checkbox]{width:24px;height:24px;min-width:24px;min-height:24px;margin:0;flex:none}
 @media (max-width:767px){body.v2 .guest-link-windows{grid-template-columns:minmax(0,1fr)}}
 body.v2 .fields-wrap .guest-link-top .guest-copy-row .copy-btn{min-height:40px}
