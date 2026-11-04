@@ -55,7 +55,7 @@
       <td>{{ report_mode_label(submission.mode) }}</td>
       <td class="ui-cell-r">{{ (submission.guest_ids | from_json | length) if submission.guest_ids else 0 }}</td>
       <td><span class="pill {{ outcome_tones.get(submission.state, 'p-bad') }}">{{ t(outcome_keys[submission.state]) if submission.state in outcome_keys else submission.state }}</span></td>
-      <td class="ui-mono">{{ submission.pseudo_stamp or '—' }}</td>
+      <td class="ui-mono stamp-cell" title="{{ submission.pseudo_stamp or '' }}">{{ submission.pseudo_stamp or '—' }}</td>
       <td class="row-actions">{{ row_open('/submissions/' ~ submission.id) }}
         {{ row_menu_begin() }}
           <a class="row-menu-item" href="/submissions/{{ submission.id }}" role="menuitem">{{ t('reports.details') }}</a>

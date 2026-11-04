@@ -196,6 +196,7 @@ BAD_PAGE = """<!doctype html><html><head><meta charset=utf-8>
 <div style="width:340px"><input style="width:150px" aria-label=x></div>
 <fieldset style="width:300px;border:2px groove #888"><legend>Signature</legend>Text</fieldset>
 <div style="width:360px"><div style="border-right:1px solid #ccc;height:40px">Stray</div></div>
+<div class=stay-head-actions style="display:flex;flex-wrap:wrap;width:200px;gap:12px"><button style="width:150px;height:36px">Primary</button><details class=row-menu><summary style="display:inline-block;width:60px;height:36px">&#8942;</summary></details></div>
 <span id=icons><svg width=10 height=10><path d="M0 0h10v10z"/></svg><svg width=10 height=10><path d="M0 0h10v10z"/></svg></span>
 <div id=row style="display:flex;width:300px"><a class=btn style="width:200px;white-space:nowrap">Open communication settings</a><a class=btn style="margin-left:-60px;width:110px;white-space:normal">Skip setup guidance now</a></div>
 <div style="display:flex;gap:4px"><button>One</button><button>Two</button></div>
@@ -234,7 +235,7 @@ def test_the_lint_catches_the_known_regressions(wide_base):
                 "text-overlap", "outside-viewport", "empty-control", "duplicate-icon", "help-stranded",
                 "table-squeezed", "tight-stack", "half-width-input", "legend-overlap", "double-primary", "stray-rule",
                 "button-overlap", "button-wraps", "tight-row",
-                "multiple-save-in-form", "duplicate-heading"}
+                "multiple-save-in-form", "duplicate-heading", "action-row-orphan"}
     assert expected <= rules, f"lint missed {sorted(expected - rules)}; saw {sorted(rules)}"
     assert "header-actions-misaligned" in header_rules, f"lint missed header-actions-misaligned; saw {sorted(header_rules)}"
     # The "?" under its heading is caught; the one right after its label is not.

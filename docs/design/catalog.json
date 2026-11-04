@@ -514,7 +514,10 @@
     "dashboard-missing-list",
     "dashboard-missing-short",
     "ui-table-wrap",
-    "is-overdue"
+    "is-overdue",
+    "is-collapsed",
+    "nowrap",
+    "stamp-cell"
   ],
   "enforced_templates": [
     "App/app/templates/guest_form_admin.html",

@@ -33,7 +33,7 @@ SELECTORS = [
 PAGE_SELECTORS = {
     # v2 stays (0528) dropped the "save this view" button; [data-save-view] stays in SELECTORS for the recorder.
     "reservations": ["#unsaved-dialog", "#confirm-dialog", "[data-feedback-rail]", "[data-saved-views]"],
-    "reservation_detail": ["form[data-inline-edit]"],
+    "reservation_detail": ["#stay-quick-edit"],
     "apartment": ["form[data-unsaved-guard]"],
 }
 

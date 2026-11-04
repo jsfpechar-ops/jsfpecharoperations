@@ -214,6 +214,8 @@ WORDS = {
         "Pro přesné časové okno úklidu nastavte platný čas odjezdu i příjezdu."
     ],
     "overflow_bookings": ["more bookings", "další rezervace"],
+    "overflow_booking_one": ["more booking", "další rezervace"],
+    "overflow_bookings_many": ["more bookings", "dalších rezervací"],
     "overflow_cleanings": ["more cleanings", "další úklidy"],
     "cleaning_summary": ["Cleaning", "Úklid"],
     "booking": [

@@ -65,9 +65,10 @@
 <div class="stay-head-actions">
   <div class="stay-head-cta">{{ stay_cta() }}
   {% if reservation.permalink_token and not stay_inactive %}<button class="btn ph-hide{{ ' ghost' if has_cta }}" type="button" data-copy="stay-link" data-copied-label="{{ t('stay.detail.link_copied') }}" data-stay-header-copy>{{ t('host.copy_guest_form_link') }}</button>{% endif %}</div>
-  {% if claim_resend.enabled %}<form method="post" action="/reservations/{{ reservation.id }}/resend-claim" class="inline"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="btn ghost" type="submit" data-resend-claim title="{{ t('stay.claim.resend_help') }}">{{ t('stay.claim.resend') }}</button></form>{% endif %}
+  {% if claim_resend.enabled %}<form method="post" action="/reservations/{{ reservation.id }}/resend-claim" class="inline ph-hide"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="btn ghost" type="submit" data-resend-claim title="{{ t('stay.claim.resend_help') }}">{{ t('stay.claim.resend') }}</button></form>{% endif %}
       {{ row_menu_begin() }}
         {% if reservation.permalink_token and not stay_inactive %}<button class="row-menu-item ph-only" type="button" role="menuitem" data-copy="stay-link" data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('host.copy_guest_form_link') }}</button>{% endif %}
+        {% if claim_resend.enabled %}<form method="post" action="/reservations/{{ reservation.id }}/resend-claim" class="row-menu-form ph-only"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="row-menu-item" type="submit" role="menuitem">{{ t('stay.claim.resend') }}</button></form>{% endif %}
         {% if not stay_inactive %}<a class="row-menu-item ph-only" href="/payments?reservation_id={{ reservation.id }}#new-request" role="menuitem">{{ t('stays.row.request_payment') }}</a>{% endif %}
         <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">{{ t('stay.detail.cta.add_guest') }}</a>
         {% if stay_invoice %}<a class="row-menu-item" href="/invoices/{{ stay_invoice.id }}" role="menuitem">{{ t('invoice.stay.open', number=stay_invoice.number) }}</a>{% else %}<a class="row-menu-item" href="/invoices/new?reservation_id={{ reservation.id }}" role="menuitem">{{ t('invoice.new') }}</a>{% endif %}
@@ -163,7 +164,7 @@
 <div class="stay-guests-h"><h2 class="sec">{{ t('stay.detail.guests.title') }}<span class="sub ph-hide">{% if progress.expected is not none %}{{ progress.filled }} / {{ progress.expected }}{% elif progress.guests %}{{ progress.guests | length }}{% else %}–{% endif %}</span></h2>
   <div class="stay-guests-actions ph-hide"><a class="btn ghost" href="#stay-quick-edit" data-open-details>{{ t('host.edit_count') }}</a><a class="btn ghost" href="/reservations/{{ reservation.id }}/guests/new">+ {{ t('stay.detail.cta.add_guest') }}</a></div>
 </div>
-{% if lw %}<p class="sub link-window-line ph-hide" data-link-window="{{ lw.state }}"><span class="link-window{{ ' is-later' if lw.state == 'from' }}">{{ t('workflow.link.now') if lw.state == 'now' else t('workflow.link.from', date=lw.opens.isoformat() | date_short) }}</span>{% if lw.state == 'from' %}{{ help_tip('link-window-help', t('workflow.link.why')) }} <button class="btn ghost" type="button" data-copy="stay-link" data-copy-label="{{ t('workflow.link.copy_own') }}" data-copied-label="{{ t('stay.detail.link_copied') }}" data-copy-own-link>{{ t('workflow.link.copy_own') }}</button>{% endif %}</p>{% endif %}
+{% if lw %}<p class="sub link-window-line ph-hide" data-link-window="{{ lw.state }}"><span class="link-window{{ ' is-later' if lw.state == 'from' }}">{{ t('workflow.link.now') if lw.state == 'now' else t('workflow.link.from', date=lw.opens.isoformat() | date_cz) }}</span>{% if lw.state == 'from' %}{{ help_tip('link-window-help', t('workflow.link.why')) }} <button class="btn ghost" type="button" data-copy="stay-link" data-copy-label="{{ t('workflow.link.copy_own') }}" data-copied-label="{{ t('stay.detail.link_copied') }}" data-copy-own-link>{{ t('workflow.link.copy_own') }}</button>{% endif %}</p>{% endif %}
 
 {% if stay_claim and (stay_claim.state != 'unclaimed' or stay_claim.guest_access_locked_at) %}
 <div class="card stay-claim-line ph-hide" data-stay-claim>
@@ -199,7 +200,7 @@
     {% set guest = row.guest %}
     <tr>
       <td>
-        <b>{{ guest.surname or '—' }} {{ guest.first_name or '' }}</b>{% if guest.is_lead %} <span class="pill">{{ t('stay.detail.guests.lead') }}</span>{% endif %}
+        <b>{{ guest.first_name or '' }} {{ guest.surname or '—' }}</b>{% if guest.is_lead %} <span class="pill">{{ t('stay.detail.guests.lead') }}</span>{% endif %}
         {% if guest.note %}<small>{{ t('stay.detail.guests.note', text=guest.note) }}</small>{% endif %}
         {% if guest.entered_by %}<small>{{ t('stay.detail.guests.entered_by') }}: <span>{{ entered_by_label(guest.entered_by) }}</span></small>{% endif %}
         {% for issue in row.issues %}
@@ -242,7 +243,7 @@
     {% set ok = guest.submit_state in ('sent', 'not_required') or (row.complete and guest.submit_state not in ('error', 'blocked')) %}
     <a class="row" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">
       <div class="ic {{ 'ok' if ok else 'warn' }}">{% if ok %}{{ icon('check', 22) }}{% else %}?{% endif %}</div>
-      <div class="t"><b>{{ guest.surname or '—' }} {{ guest.first_name or '' }}</b><small>{% if guest.doc_type %}{{ t('guest.doc_type.' ~ guest.doc_type) }} · {% endif %}{{ guest_state_text(guest, row) }}</small></div>
+      <div class="t"><b>{{ guest.first_name or '' }} {{ guest.surname or '—' }}</b><small>{% if guest.doc_type %}{{ t('guest.doc_type.' ~ guest.doc_type) }} · {% endif %}{{ guest_state_text(guest, row) }}</small></div>
     </a>
   {% endfor %}
   {% for n in range(progress.guests | length + 1, (progress.expected or 0) + 1) %}
@@ -344,37 +345,28 @@
 {# One panel owns both the quick edit and the full settings form, so the
    #stay-quick-edit anchor keeps working and the page ends on a single
    collapsed group instead of two stacked ones. #}
-{% if progress.status == 'reported' and not send_controls.send_enabled %}<div class="allgood">{{ t('hint.all_reported') }}</div>{% endif %}
 {% if door_code %}<section id="door-code"><h2 class="sec">{{ t('stay.detail.door_code.title') }}</h2>
 <div class="card stay-door-card">
+  <div class="ic acc" aria-hidden="true">{{ icon('key-round', 22) }}</div>
 <div>
   {% if door_code.state == 'issued' %}<div class="code">{{ door_code.pin }}</div><small id="door-code-line">{{ door_code.works_from }} – {{ door_code.works_until }}</small>
   {% else %}<p id="door-code-line">{% if door_code.state == 'failed' %}{{ t('stay.detail.door_code.failed') }}{% elif door_code.state == 'delayed' %}{{ t('stay.detail.door_code.delayed') }}{% elif door_code.state == 'preparing' %}{{ t('stay.detail.door_code.preparing') }}{% else %}{{ t('stay.detail.door_code.waiting') }}{% endif %}</p>{% endif %}
 </div>
-  <div class="ic acc" aria-hidden="true">{{ icon('key-round', 22) }}</div>
 </div></section>{% endif %}
 {% if not stay_inactive %}<div class="list ph-hide"><a class="link" href="/payments?reservation_id={{ reservation.id }}#new-request">{{ t('stays.row.request_payment') }}{{ icon('chevron-right', 20) }}</a></div>{% endif %}
 <details class="card stay-settings ph-hide" id="stay-quick-edit">
   <summary><b>{{ t('stay.detail.settings.title') }}</b></summary>
   <p class="ui-sub">{{ t('stay.detail.settings.lede') }} <a href="/apartments/{{ reservation.apartment_id }}?view=settings&amp;section=guests#communication">{{ t('stay.detail.settings.guest_links') }}</a>.</p>
   <h3 class="inline-edit-title">{{ t('stay.detail.inline.title') }}</h3>
-  <form class="inline-edit-bar" method="post" action="/reservations/{{ reservation.id }}/quick-edit"
-        data-inline-edit data-saved="{{ t('stay.detail.inline.saved') }}"
-        data-error="{{ t('stay.detail.inline.error') }}">
-    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-    <label for="quick-summary">
-      <span>{{ t('stay.detail.inline.label') }}</span>
-      <input id="quick-summary" type="text" name="summary" value="{{ reservation.summary or '' }}" maxlength="160">
-    </label>
-    <label for="quick-guests">
-      <span>{{ t('stay.detail.inline.guests') }}</span>
-      <input id="quick-guests" type="number" name="expected_guests_override"
-             value="{{ progress.expected or '' }}" min="{{ [1, progress.guests | length] | max }}" max="60">
-    </label>
-    <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('common.save') }}</button>
-    <span class="inline-edit-status" role="status" aria-live="polite"></span>
-  </form>
   <form method="post" action="/reservations/{{ reservation.id }}" class="settings-grid">
+    <div class="ui-field">
+      <label for="quick-summary">{{ t('stay.detail.inline.label') }}</label>
+      <input id="quick-summary" type="text" name="summary" value="{{ reservation.summary or '' }}" maxlength="160">
+    </div>
+    <div class="ui-field">
+      <label for="quick-guests">{{ t('stay.detail.inline.guests') }}</label>
+      <input id="quick-guests" type="number" name="expected_guests_override" value="{{ progress.expected or '' }}" min="{{ [1, progress.guests | length] | max }}" max="60">
+    </div>
     <div class="ui-field">
       <div class="field-label-row">
         <label for="guest_email">{{ t('stay.detail.settings.email') }} <span class="opt">{{ t('stay.detail.settings.host_only') }}</span></label>
