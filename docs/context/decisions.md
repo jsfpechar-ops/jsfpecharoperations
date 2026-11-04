@@ -72,3 +72,4 @@ Append-only.
 
 - [filing] 2026-11-04: unanswered filings retry 30m/2h/6h/12h, any answer stops; replaces OD-1, WP31 (0909).
 - [auth] 2026-11-04: 30-day sliding session, trusted-device cookie skips login Turnstile
+- [auth] 2026-11-04: log out is per device; log out of all devices is separate; exports and bank details need a login under 10 min old (0947).
