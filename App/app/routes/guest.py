@@ -1226,6 +1226,11 @@ def stay_overview(token: str, reservation_id: int, request: Request):
             "door_code": door_codes.view(reservation, apartment),
         }
     )
+    context["fee_panel"] = (
+        _fee_pay_panel(apartment, reservation, context["t"])
+        if remaining is None or remaining <= 0
+        else None
+    )
     return _with_lang(render_guest(request, "guest/stay.html", context), lang)
 
 
@@ -1539,6 +1544,7 @@ def _form_context(
                 if guest and validation.is_valid_signature(guest["signature_png"])
                 else ""
             ),
+            "fee_estimate": _fee_estimate(apartment, reservation, values or {}),
             "country_groups": codelists.country_groups(lang),
             "purposes": codelists.purpose_options(lang),
             "default_purpose": apartment["default_purpose"] or validation.DEFAULT_PURPOSE,
@@ -2008,3 +2014,72 @@ async def guest_document_scan(token: str, reservation_id: int, request: Request)
     if not any(values.values()):
         return JSONResponse({"kind": "error", "message": translate("ocr_nothing_read")}, status_code=422)
     return JSONResponse({"kind": "values", "values": values})
+
+
+# --- stay-fee money card and form estimate (brief 0910) -----------------------
+
+def _fee_pay_panel(apartment, reservation, t):
+    """Hub money card data, or None. None unless the property collects, the live total is above zero."""
+    from .. import config, payments, stay_fee
+    if not (apartment["stay_fee_collect"] and config.STAY_FEE_GUEST_PAY):
+        return None
+    charge = stay_fee.charge_for_reservation(apartment, reservation)
+    if not charge or charge["total_czk"] <= 0:
+        return None
+    total, rate = int(charge["total_czk"]), int(charge["rate_czk"])
+    vs = f"{int(reservation['id']):010d}"
+    message = f"STAY FEE {vs}"
+    account = ""
+    if apartment["legal_entity_id"]:
+        entity = db.query_one(
+            "SELECT iban, bank_account FROM legal_entity WHERE id = ?",
+            (apartment["legal_entity_id"],),
+        )
+        if entity is not None:
+            if entity["iban"]:
+                account = entity["iban"]
+            elif entity["bank_account"]:
+                account = payments.normalise_account(entity["bank_account"])[1]
+    # Exempt guests (zero counted nights) are left out: the guest never sees who is exempt.
+    persons = [
+        {"days": int(line["liable_nights"]), "amount": int(line["liable_nights"]) * rate}
+        for line in charge["lines"] if line["liable_nights"] > 0
+    ]
+    rails = []
+    for key in (apartment["stay_fee_guest_rails"] or "").split(","):
+        if key == "qr" and account:
+            payload = payments.spayd(account, total, vs, message)
+            rails.append({"key": "qr", "iban": payments.format_iban(account),
+                          "qr": payments.qr_data_uri(payload)})
+        elif key == "iban" and account:
+            rails.append({"key": "iban", "iban": payments.format_iban(account), "qr": ""})
+        elif key == "revolut" and apartment["stay_fee_guest_revolut_link"]:
+            rails.append({"key": "revolut", "link": apartment["stay_fee_guest_revolut_link"]})
+        elif key == "cash":
+            rails.append({"key": "cash",
+                          "note": apartment["stay_fee_guest_cash_note"] or t("fee_cash_default")})
+    return {"total": total, "rate": rate, "persons": persons, "rails": rails,
+            "vs": vs, "message": message}
+
+
+def _fee_estimate(apartment, reservation, values):
+    """Form-end estimate for the guest being typed in (un-saved values), or None when it is zero."""
+    from datetime import date as _date
+    from .. import config, stay_fee
+    if not (apartment["stay_fee_collect"] and config.STAY_FEE_GUEST_PAY and stay_fee.is_active(apartment)):
+        return None
+    guest = {
+        "id": 0, "stay_from": None, "stay_to": None,
+        "birth_date": values.get("birth_date") or None,
+        "fee_host_decision": None, "fee_host_reason": None, "fee_host_reason_enc": None,
+        "res_country": values.get("res_country") or "", "res_city": values.get("res_city") or "",
+    }
+    share = stay_fee.guest_period(guest, reservation, _date.min, _date.max, apartment=apartment)
+    if share is None:
+        return None
+    stay_fee._apply_scope_boundary(share, apartment)
+    days = int(share["liable_nights"])
+    if days <= 0:
+        return None
+    rate = int(apartment["stay_fee_rate_czk"])
+    return {"amount": days * rate, "days": days, "rate": rate}
