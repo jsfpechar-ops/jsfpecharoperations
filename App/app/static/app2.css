@@ -1935,7 +1935,7 @@ body.v2 .stays-title-row .help-tip.is-open>.help-tip-body,body.v2 .police-deadli
 body.v2 .stays-title-row .help-tip-body a,body.v2 .police-deadline-row .help-tip-body a{color:var(--brand-ink);font-weight:650}
 body.v2 .police-deadline-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
 body.v2 .stays-phone .in b,body.v2 .stays-phone .in small{white-space:normal;overflow-wrap:anywhere}
-body.v2 .stays-pills .settings-pill:hover{background:#e4e4e4}
+body.v2 .stays-pills .settings-pill:not(.is-current):hover{background:#e4e4e4}
 /* 0830D reservations+stay (end) */
 /* 0830E invoices+submission (start) */
 
