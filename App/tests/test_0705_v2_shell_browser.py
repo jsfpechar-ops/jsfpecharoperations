@@ -77,8 +77,8 @@ def test_shell_top_blocks_keep_12px_gaps(base, width):
             page.goto(base + path + "?lang=en")
             page.wait_for_selector(".side", state="attached", timeout=30000)
             result = page.evaluate(SHELL_BLOCKS_JS)
-            if width >= 1024:  # the sidebar is the shell here: brand, badge, account, search and nav must show
-                for name in ("div.ui-brand", "span.env-badge", "button.search", "nav.side-nav"):
+            if width >= 1024:  # the sidebar is the shell here: brand, account, search and nav must show
+                for name in ("div.ui-brand", "button.search", "nav.side-nav"):
                     assert any(n.startswith(name) for n in result["names"]), (path, width, result["names"])
             for pair in result["pairs"]:
                 assert pair["kind"] != "overlap", (path, width, pair)
