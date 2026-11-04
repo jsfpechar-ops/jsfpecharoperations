@@ -6,7 +6,7 @@
 {% from "_ui.html" import ui_button, ui_tip with context %}
 {% from "_ui_layout.html" import ui_table_begin, ui_table_end with context %}
 {% block title %}{{ t('payments.title') }}{% endblock %}
-{% block primary_action %}{% if not stripe_off and connect_state.onboarding_state == 'complete' %}{{ ui_button(t('payments.new.title'), 'primary', href='/payments/new') }}{% endif %}{% endblock %}
+{% block primary_action %}{% if not stripe_off %}{{ ui_button(t('payments.overview.request'), 'primary', href='/payments/new') }}{% endif %}{% endblock %}
 {% block tabs %}{% endblock %}
 {% block toolbar %}{% endblock %}
 {% block body %}
