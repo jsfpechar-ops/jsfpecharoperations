@@ -179,7 +179,7 @@ def test_placement_of_guest_link_actions_archive_and_switch(host):
     assert communication.index('id="permalink_pin"') < communication.index("/regenerate-pin")
     archive = _section(html, "sec-archive")
     assert "/archive" in archive and "/archive" not in guests
-    assert html.index('id="archive"') < html.index('class="savebar"')
+    assert html.index('id="archive"') < html.index('class="savebar')
     door = _section(html, "sec-lock")
     assert 'id="door-code"' in door and 'id="door-code"' not in guests
     assert 'role="switch"' in door and "Automatic door codes" in door

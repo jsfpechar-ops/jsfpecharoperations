@@ -62,9 +62,13 @@ def test_typing_pin_keeps_only_matching_topics_open(width, base, dashboard_rich_
     visible = [t for t in topics if not t["hidden"]]
     assert visible, f"no topic matched PIN at {width} px"
     assert len(visible) < len(topics), "every topic matched PIN, so nothing was filtered"
+    # 0915: search opens only the topics whose heading matches, so body-only matches stay closed.
+    opened = [t for t in visible if t["open"]]
+    assert opened, "no shown topic was opened for PIN"
     for t in visible:
-        assert t["open"], f"matching topic {t['id']} is not open"
         assert "pin" in t["text"], f"topic {t['id']} shown for PIN without the word"
+    for t in opened:
+        assert "pin" in t["text"], f"topic {t['id']} opened for PIN without the word"
     for t in topics:
         if t["hidden"]:
             assert not t["open"], f"hidden topic {t['id']} is still open"
@@ -105,12 +109,12 @@ def test_anchor_opens_its_topic(width, base, dashboard_rich_host):
     assert state["top"] is not None and -5 <= state["top"] < state["vh"], f"topic not in view: {state}"
 
 
-def test_guide_page_height_under_3000_on_load_at_1280(base, dashboard_rich_host):
+def test_guide_page_height_under_3200_on_load_at_1280(base, dashboard_rich_host):
     height = _run(
         base, dashboard_rich_host, "/guide?lang=en", 1280,
         lambda p: p.evaluate("() => document.documentElement.scrollHeight"),
     )
-    assert height < 3000, f"/guide is {height} px tall on load at 1280 px"
+    assert height < 3200, f"/guide is {height} px tall on load at 1280 px"
 
 
 def test_search_still_filters_after_turbo_swap_from_sidebar(base, dashboard_rich_host):

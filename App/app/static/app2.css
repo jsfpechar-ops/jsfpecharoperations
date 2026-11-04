@@ -340,6 +340,8 @@ body.v2 .props-phone .cover.c2{background:linear-gradient(135deg,#5c7a4f,#9db58c
 /* 0532 pass 9: from 1024 px a list row is one line (mockup 53 px): the copy button is 24 px, not 60 px. Pass 11: the setup chips may wrap when they do not fit (no sideways scroll); name and address cells are one line with ellipsis */
 @media (min-width:1024px){body.v2 .props-card .setup .st{height:24px}body.v2 .props-card .copy-btn{height:28px;min-height:28px;padding-block:6px}body.v2 .props-card .copy-btn svg{width:16px;height:16px}body.v2 .props-card .row-primary-link .property-identity > span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}body.v2 .props-card > table td:nth-child(1),body.v2 .props-card > table td:nth-child(2){max-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
 @media (min-width:1024px){body.v2 .props-card > table td:nth-child(1) .row-primary-link{display:block;max-width:100%;min-width:0;overflow:hidden}body.v2 .props-card .row-primary-link .property-identity{display:flex;max-width:100%}}
+@media (min-width:1024px){body.v2 .props-card .setup .st{height:24px}body.v2 .props-card .copy-btn{height:28px;min-height:28px;padding-block:6px}body.v2 .props-card .copy-btn svg{width:16px;height:16px}body.v2 .props-card .row-primary-link .property-identity > span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}body.v2 .props-card > table td:nth-child(2){max-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+@media (min-width:1024px){body.v2 .props-card > table td:nth-child(1) .row-primary-link{display:block;max-width:100%;min-width:0;overflow:hidden}}
 @media (min-width:1024px){body.v2 .props-card > table th:nth-child(1),body.v2 .props-card > table td:nth-child(1){width:22%}body.v2 .props-card > table th:nth-child(2),body.v2 .props-card > table td:nth-child(2){width:26%}}
 
 /* 0534 property page */
@@ -606,6 +608,7 @@ body.v2 .copy-label-confirmed{visibility:hidden}
 body.v2 [data-copy].is-copy-confirmed .copy-label-default{visibility:hidden}
 body.v2 [data-copy].is-copy-confirmed .copy-label-confirmed{visibility:visible}
 .host-stay-detail .stay-head-actions .sub{margin:0}
+@media (max-width:1023px){body.v2 .host-stay-detail #now .sub{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;padding-right:52px}body.v2 .host-stay-detail #now .stay-sep{min-width:0}}
 .host-stay-detail .stay-guests-h h2 .sub{font-size:14px;font-weight:600;color:var(--ink3);margin-left:8px}
 @media (max-width:1023px){body.v2 .host-stay-detail input,body.v2 .host-stay-detail select,body.v2 .host-stay-detail textarea,body.v2 .host-stay-detail button,body.v2 .host-stay-detail summary{min-height:44px}}
 @media (min-width:1024px){body.v2 .host-stay-detail input,body.v2 .host-stay-detail select,body.v2 .host-stay-detail textarea,body.v2 .host-stay-detail button,body.v2 .host-stay-detail summary{min-height:36px}}
@@ -655,7 +658,8 @@ body.v2 .host-stay-detail .stay-top{padding-top:8px;margin-bottom:12px}
 body.v2 .host-stay-detail .stay-top .round{width:44px;height:44px;border-radius:50%;background:#f4f3ef;border:0;display:grid;place-items:center}
 body.v2 .host-stay-detail h1.big{font-size:30px;line-height:1.15;font-weight:800;letter-spacing:-.02em;text-align:center;margin:0 8px 6px}
 body.v2 .host-stay-detail .sub-phone{text-align:center;color:var(--ink3);font-size:16px;margin:0 0 24px}
-body.v2 .host-stay-detail .stay-dates{display:grid;grid-template-columns:1fr 1fr;padding:0;border:0;border-radius:24px;margin:0 0 16px}
+/* The police heading clears the fixed bottom action bar by 12 px or more. */
+@media (max-width:1023px){body.v2 .host-stay-detail .stay-reports>h2.sec{margin-top:40px}}
 body.v2 .host-stay-detail .stay-dates>div{padding:18px 20px}
 body.v2 .host-stay-detail .stay-dates>div+div{border-left:1px solid var(--line)}
 body.v2 .host-stay-detail .stay-dates small{display:block;color:var(--ink3);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
@@ -1033,6 +1037,9 @@ body.v2 .setup-continue-card .ui-btn-primary{color:#fff;background:var(--coral-6
 body.v2 .fields-wrap .copyrow > .btn.sm{min-height:48px}
 body.v2 .fields-wrap .copyrow > .btn.sm{vertical-align:middle}
 body.v2 section#stay-fee-settings > fieldset.signature-block{grid-column:1/-1}
+/* 0913 step 3: an empty signature is one "Add signature" button; the empty box is hidden until a signature exists */
+body.v2 .signature-block .signature-locked:has(> [data-signature-preview][hidden]){display:none}
+body.v2 .signature-block > .action-group{width:100%;max-width:100%;display:flex;flex-wrap:wrap;align-items:center;gap:12px;position:static;float:none}
 /* 0791 submissions v2 (start) */
 body.v2 .head-title-row{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2)}
 body.v2 .head-title-row>details.stays-how{position:relative;margin:0}
@@ -2393,6 +2400,27 @@ body.v2 .payments-new .ui-form-actions{display:block;margin-top:8px}body.v2 .pay
 @media (min-width:1024px){body.v2 .payments-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}}
 
 body.v2 .payments-step .ui-btn.ui-btn-compact{min-height:44px!important;height:auto!important;display:inline-flex;align-items:center}body.v2 .payments-step .t>span:first-child{display:flex;flex-wrap:wrap;align-items:center;min-width:0}body.v2 .payments-step .t>span:first-child>b{min-width:0;overflow-wrap:anywhere}body.v2 .payments-step .help-tip{flex:none}
+@media (min-width:1024px){body.v2 #main-content{padding-bottom:calc(var(--control-h) + var(--space-3) + var(--space-6) * 2)}}
+
+/* 0912: stay detail header, one action row, tidy settings */
+body.v2 .host-stay-detail #now .sub{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px}
+body.v2 .host-stay-detail .stay-sep{min-width:0;margin-left:0}
+body.v2 .host-stay-detail #guests{margin-top:12px}
+body.v2 .host-stay-detail .stay-head-actions form.inline{margin:0}
+body.v2 .stay-settings .settings-grid{display:grid;gap:12px}
+body.v2 .stay-settings .ui-field label{display:block;margin-bottom:4px}
+@media (min-width:1024px){
+body.v2 .host-stay-detail .stay-head-actions{flex-wrap:nowrap;justify-content:flex-end;gap:12px}
+body.v2 .host-stay-detail .stay-head-cta{flex-wrap:nowrap;gap:12px}
+}
+body.v2 #stay-fee-settings :is(input, select, textarea){max-width:100%;box-sizing:border-box}
+body.v2 #stay-fee-settings :is(.ui-field, .field, .field-row, .grid > *){min-width:0}
+.nowrap{white-space:nowrap}
+body.v2 .settings-action-row > div:first-child{display:inline-flex;align-items:center;gap:4px;flex-wrap:nowrap}
+@media (max-width:1023px){body.v2 .housebook-page table :is(th,td):first-child{position:sticky;left:0;z-index:1;background:var(--surface)}}
+body.v2 .host-stay-detail .stay-dates{margin:0 0 16px}
+body.v2 .housebook-page .row-menu-trigger{background:#efefeb;color:var(--ink);border:0;font:inherit;font-weight:600;padding:9px 16px;border-radius:999px;cursor:pointer;white-space:nowrap}
+body.v2 .stamp-cell{font-family:var(--font-mono, ui-monospace, monospace);white-space:nowrap;max-width:22ch;overflow:hidden;text-overflow:ellipsis}
 /* 0912: finish card (v2) */
 body.v2 .onboarding-finish{background:var(--s);border:1px solid var(--line);border-radius:12px;padding:20px;display:grid;gap:16px;margin:16px 0}
 @media (max-width:767px){body.v2 .onboarding-finish{padding:16px}}

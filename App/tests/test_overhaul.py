@@ -452,10 +452,11 @@ def test_stay_settings_and_the_quick_edit_share_one_panel():
         body = _browser().get(f"/reservations/{stays[0]}").text
         assert 'id="stay-quick-edit"' in body
         panel = body.split('id="stay-quick-edit"', 1)[1].split("</details>", 1)[0]
-        assert "data-inline-edit" in panel
-        assert 'name="expected_guests_override"' in panel
-        assert 'name="guest_email"' in panel
-        assert 'name="host_note"' in panel
+        # 0912: one form, one Save; the headcount and summary fields sit in the stay settings form
+        assert panel.count('type="submit"') == 1
+        assert 'name="expected_guests_override"' in body
+        assert 'name="guest_email"' in body
+        assert 'name="host_note"' in body
     finally:
         _cleanup()
 

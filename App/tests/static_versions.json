@@ -11,17 +11,21 @@
     "sha256": "9afc536f5842652fcfebd0fb30a88278f84f472b2874ad721a9984b72c01f9d5",
     "v": "20261010a"
   },
+  "app-nojs.css": {
+    "sha256": "ec64b2b3d37d2520adb95b955c23f089bfc28ed0680cfe995f65d36e3f40d7ad",
+    "v": "20261104-1210"
+  },
   "app.css": {
-    "sha256": "e0d77c407de8feb5737ac28015f98ff2e964baf4aa8ec0babe5798179ffe6fcd",
-    "v": "20261027-signup-wrap"
+    "sha256": "ff299f8017315f62d1f7c307e8750efb5a9d57d00a9537fe1d6e97e55bd407ae",
+    "v": "20261104-0916"
   },
   "app.js": {
-    "sha256": "5c4ab7d846b46ab1b7363a0d9f427cadf8e1fc5e103ede4022df042dd3a713dc",
-    "v": "20261104-0100"
+    "sha256": "4f92774118be2aa900d2893961d294b2e6daedcc4f0b05aa1fdd642f33d6de6f",
+    "v": "20261104-1110"
   },
   "app2.css": {
-    "sha256": "95a101ce4eac49d9a3d1db691df530d354e17b46dfc519b6a8c842414c576d1d",
-    "v": "20261104-0946e"
+    "sha256": "ba80c99cd8672937057900ce99417c16e92fc872517577adf23203668ba44abd",
+    "v": "20261104-0946f"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -36,8 +40,8 @@
     "v": "20260918a"
   },
   "cleaning.css": {
-    "sha256": "c034f23c59ea844031d810d68e62d8433820cdfda6490bd593e42bde750e08d2",
-    "v": "20261024-0291"
+    "sha256": "f9d5802a5432eaa3453ce109d2c3056f1f4b23ebe3c3eaac80c66f5f9733c213",
+    "v": "20261104-0916"
   },
   "cleaning.js": {
     "sha256": "2f0be0505681096250e093668bc9b30c7a4eeae2866b34dcb44288ca10ea89b1",
@@ -60,8 +64,8 @@
     "v": "20261104-0908d"
   },
   "dashboard-calendar.js": {
-    "sha256": "cf63e0f363a446f2c453d80a473ab3023d994d1ed5d5dff1e8f0dfcf370b76db",
-    "v": "20261104-0908d"
+    "sha256": "b506d3658670a5796135b196ceb17b44c4e05ef15cea1295c010e532eec8dc1c",
+    "v": "20261104-0916"
   },
   "docs/ubyport-ws-credential-sample.pdf": {
     "sha256": "0c147cf9c5dd5326612bc4668c5bce853cf300171ca62e3a0bab688c09b75fe6",
@@ -88,8 +92,8 @@
     "v": "20261103-0907"
   },
   "guide.js": {
-    "sha256": "46178439314acfb977c235ee7eab530082a0a5a6bb214f3efac58c388762c1da",
-    "v": "20261102-0829"
+    "sha256": "7bc163abd236d8032c1f7a094aadf4993774920b24b4a0817768dd27fa0cefab",
+    "v": "20261104-0916"
   },
   "havel.js": {
     "sha256": "b09f7e3d74c1423a038ba11303572c01625bf7ba6888b59b35aea06e656286f6",

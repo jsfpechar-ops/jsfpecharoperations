@@ -21,7 +21,7 @@
     {% for name, value in card.hidden.items() %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endfor %}
     <dl class="havel-card-facts">
       {% if card.property %}<div><dt class="sr-only">{{ t('stays.add_panel.apartment') }}</dt><dd>{{ ui_pdot(card.property.index, card.property.name) }}</dd></div>{% endif %}
-      {% if card.date_from %}<div><dt class="sr-only">{{ t('stays.add_panel.arrival') }}</dt><dd>{{ card.date_from | weekday }} {{ card.date_from | date_short }}{% if card.date_to %} – {{ card.date_to | weekday }} {{ card.date_to | date_short }}{% endif %}{% if card.start_time %} · {{ card.start_time }}{% if card.end_time %}–{{ card.end_time }}{% endif %}{% endif %}</dd></div>{% endif %}
+      {% if card.date_from %}<div><dt class="sr-only">{{ t('stays.add_panel.arrival') }}</dt><dd>{{ card.date_from | weekday }} {{ card.date_from | date_cz }}{% if card.date_to %} – {{ card.date_to | weekday }} {{ card.date_to | date_cz }}{% endif %}{% if card.start_time %} · {{ card.start_time }}{% if card.end_time %}–{{ card.end_time }}{% endif %}{% endif %}</dd></div>{% endif %}
       {% if card.nights %}<div><dd>{{ t('havel.card.nights', n=card.nights) }}</dd></div>{% endif %}
       {% if card.guests %}<div><dd>{{ t('havel.card.guests', n=card.guests) }}</dd></div>{% endif %}
       {% if card.guest_email %}<div><dd>{{ card.guest_email }}</dd></div>{% endif %}

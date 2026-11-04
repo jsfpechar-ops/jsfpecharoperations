@@ -78,6 +78,7 @@
   const readOnly = root.dataset.readonly === "true";
   const hostCleaning = cleaningMode && !readOnly; // 0815: host cleaning page tiles carry cleaning chips; 0896: stay pills show there too
   const cleaningLabels = JSON.parse(document.querySelector("[data-cleaning-labels]")?.textContent || "{}");
+  const overflowBookingsKey = count => count === 1 ? "overflow_booking_one" : (/^cs/i.test(document.documentElement.lang) && count >= 5 ? "overflow_bookings_many" : "overflow_bookings");
   const $ = selector => root.querySelector(selector);
   const $$ = selector => Array.from(root.querySelectorAll(selector));
   const labels = JSON.parse($("[data-cal-labels]").textContent);
@@ -428,7 +429,7 @@
         if (!moreBookings && !moreCleanings) continue;
         const parts = [];
         if (moreCleanings) parts.push(String(moreCleanings) + " " + (cleaningLabels.overflow_cleanings || labels.more_cleanings));
-        if (moreBookings) parts.push(cleaningMode ? String(moreBookings) + " " + cleaningLabels.overflow_bookings : format("more", { count: moreBookings }));
+        if (moreBookings) parts.push(cleaningMode ? String(moreBookings) + " " + cleaningLabels[overflowBookingsKey(Number(moreBookings))] : format("more", { count: moreBookings }));
         const button = el("button", "cal-more cal-day-summary" + (moreCleanings ? " has-cleaning-overflow" : ""), parts.join(" · "));
         button.type = "button"; button.dataset.calMore = day;
         button.setAttribute("aria-label", fullDate(day) + " · " + parts.join(" · "));

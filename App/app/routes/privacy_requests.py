@@ -1,6 +1,8 @@
 """Host-facing data-subject request register (BE-8)."""
 from __future__ import annotations
 
+import re
+
 from fastapi import APIRouter, Depends, Request
 
 from .. import access, alerts, auth, db, dsr, security
@@ -50,9 +52,12 @@ async def privacy_request_create(request: Request):
         return _back("/privacy-requests", err=_flash(request, "flash.error.bad_dsr"))
     guest_raw = _form_str(form, "guest_id").strip()
     owner_id = access.owner_id(request)
+    received_raw = _form_str(form, "received_at")
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", received_raw):
+        received_raw = received_raw + "T00:00:00+00:00"
     request_id = dsr.create(
         owner_user_id=owner_id,
-        received_at=_form_str(form, "received_at") or db.utcnow(),
+        received_at=received_raw or db.utcnow(),
         channel=channel,
         request_type=request_type,
         subject_kind=subject_kind,

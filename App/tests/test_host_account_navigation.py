@@ -75,14 +75,14 @@ def _group_page(key: str) -> str:
     return f"/settings/{GROUP_PAGE.get(key, key)}"
 
 
-def test_six_groups_in_order_and_index_links_each(host):
-    index = host.get("/settings?lang=en").text
+def test_six_groups_in_order_and_index_links_each(admin, host):
+    index = admin.get("/settings?lang=en").text
     index = index[index.index('class="airbnb-index"'):]
     index = index[: index.index("</nav>")]
     positions = [index.index(f'href="/settings/{key}"') for key in ("account", "security", "data", "technical", "help")]
     assert positions == sorted(positions)
     for key in GROUPS:
-        page = host.get(f"{_group_page(key)}?lang=en").text
+        page = admin.get(f"{_group_page(key)}?lang=en").text
         assert f'id="settings-group-{key}"' in page
         title = STRINGS["en"][f"settings.group.{key}"]
         assert f'id="settings-group-{key}-title">{htmllib.escape(title)}</h2>' in page
@@ -135,8 +135,8 @@ def test_email_change_is_a_visible_form_not_a_disclosure(host):
 
 def test_specialized_actions_stay_distinct(host):
     data = host.get("/settings/data?lang=en").text
-    assert 'action="/settings/purge-expired"' in data
-    assert "data-confirm" in data[data.index('action="/settings/purge-expired"'):][:200]
+    # 0910: with nothing to delete there is no purge button
+    assert 'action="/settings/purge-expired"' not in data
     index = host.get("/settings?lang=en").text + host.get("/settings/help?lang=en").text
     for href in ("/settings/archived", "/privacy-requests", "/guide", "/legal", "/terms", "/privacy", "/dpa"):
         assert f'href="{href}"' in index, href
@@ -156,7 +156,7 @@ def test_business_details_link_lives_in_one_place(host):
 
 def test_routine_helper_text_is_behind_the_question_mark(host):
     expected = {
-        "/settings/security": ("settings-security-help",),
+        "/settings/security": ("settings-passkeys-help",),
         "/settings/data": ("settings-retention-help",),
         "/settings/archived": ("archive-retention-help",),
     }
@@ -169,9 +169,9 @@ def test_routine_helper_text_is_behind_the_question_mark(host):
         assert len(ids) == len(set(ids)), (path, sorted({i for i in ids if ids.count(i) > 1}))
 
 
-def test_czech_groups(host):
+def test_czech_groups(host, admin):
     for key in GROUPS:
-        html = host.get(f"{_group_page(key)}?lang=cs").text
+        html = admin.get(f"{_group_page(key)}?lang=cs").text
         assert STRINGS["cs"][f"settings.group.{key}"] in html
     assert STRINGS["cs"]["settings.business.title"] in _plain(host.get("/settings/account?lang=cs").text)
 
@@ -224,7 +224,7 @@ def test_settings_geometry_and_help_at_widths(live):
                 context = browser.new_context(viewport={"width": width, "height": 900})
                 context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": base + "/"}])
                 page = context.new_page()
-                for key in GROUPS:
+                for key in [g for g in GROUPS if g != "technical"]:
                     page.goto(f"{base}{_group_page(key)}?lang={lang}")
                     overflow = page.evaluate(
                         "document.documentElement.scrollWidth - document.documentElement.clientWidth"
@@ -236,9 +236,9 @@ def test_settings_geometry_and_help_at_widths(live):
                         assert page.locator("#account-new-email").is_visible()
                     if key == "security":
                         # keyboard focus opens a ? tip and it stays inside the viewport
-                        button = page.locator("[aria-controls='settings-security-help']")
+                        button = page.locator("[aria-controls='settings-passkeys-help']")
                         button.focus()
-                        tip = page.locator("#settings-security-help")
+                        tip = page.locator("#settings-passkeys-help")
                         assert tip.is_visible()
                         box = tip.bounding_box()
                         assert box["x"] >= 0 and box["x"] + box["width"] <= width + 0.5
@@ -248,3 +248,13 @@ def test_settings_geometry_and_help_at_widths(live):
                         page.screenshot(path=str(EVIDENCE / f"settings-{key}-{width}-{lang}.png"), full_page=True)
                 context.close()
         browser.close()
+
+
+def test_technical_diagnostics_are_admin_only(host, admin):
+    """0910: hosts keep the audit log and PIN panel, but not endpoints, polling, mail backend or code lists."""
+    host_page = host.get("/settings/technical?lang=en").text
+    assert 'id="settings-audit"' in host_page and 'id="settings-ubyport"' in host_page
+    for hidden in ('id="settings-overview"', 'id="settings-codelists"', 'settings.mail.backend'):
+        assert hidden not in host_page, hidden
+    admin_page = admin.get("/settings/technical?lang=en").text
+    assert 'id="settings-overview"' in admin_page and 'id="settings-codelists"' in admin_page

@@ -20,7 +20,7 @@ from tests.conftest import login_as
 USERNAME = "overview-headcount-host"
 UNKNOWN_EN = "Number of guests not known yet"
 UNKNOWN_CS = "Počet hostů zatím neznáme"
-LIST_DASH = '<span class="muted" aria-hidden="true">–</span><span class="sr-only">{text}</span>'
+LIST_DASH = '<span class="sr-only">{text}</span>'
 
 
 def _cleanup(apartment_id: int) -> None:

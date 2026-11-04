@@ -34,7 +34,7 @@ def test_page_is_one_scroll_page_without_tabs(host):
     assert "property-settings-nav" not in html
     assert 'class="airbnb-back"' in html
     assert "<h1" in html
-    assert 'class="savebar"' in html
+    assert 'class="savebar' in html
 
 
 def test_sections_are_details_in_order(host):

@@ -116,15 +116,15 @@ def _sidebar(page: str) -> str:
 
 
 def test_help_and_support_is_a_labelled_action_in_both_languages():
-    assert host_i18n.STRINGS["en"]["nav.support"] == "Help & support"
-    assert host_i18n.STRINGS["cs"]["nav.support"] == "Nápověda a podpora"
+    assert host_i18n.STRINGS["en"]["nav.support"] == "Contact support"
+    assert host_i18n.STRINGS["cs"]["nav.support"] == "Kontaktovat podporu"
 
 
 def test_the_old_support_sentence_is_not_the_account_action(host_with_property):
-    """The account menu is a Help & support action, not a sentence about needing help."""
+    """The account menu is a Contact support action, not a sentence about needing help."""
     page = host_with_property.get("/reservations?lang=en").text
     assert "Need help with UbyHost?" not in page
-    assert "Help &amp; support" in page
+    assert "Contact support" in page
 
 
 def test_the_support_line_names_the_configured_operator_address(host_with_property):
@@ -132,7 +132,7 @@ def test_the_support_line_names_the_configured_operator_address(host_with_proper
 
     assert config.OPERATOR_EMAIL in page
     assert f'href="mailto:{config.OPERATOR_EMAIL}"' in page
-    assert "Help &amp; support" in page
+    assert "Contact support" in page
 
 
 def test_the_support_line_is_not_part_of_the_legal_link_row(host_with_property):
@@ -146,7 +146,7 @@ def test_the_support_line_is_not_part_of_the_legal_link_row(host_with_property):
 def test_the_support_line_translates(host_with_property):
     page = host_with_property.get("/reservations?lang=cs").text
 
-    assert "Nápověda a podpora" in page
+    assert "Kontaktovat podporu" in page
     assert "Potřebujete pomoc s UbyHostem?" not in page
 
 

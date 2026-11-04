@@ -71,7 +71,7 @@ GUIDE_ANCHORS: Dict[str, str] = {
     "faster": "guide.nav.faster", "faq": "guide.nav.faq", "legal": "guide.nav.legal",
     "finding": "guide.nav.finding", "glossary": "guide.nav.glossary", "cleaning": "guide.nav.cleaning",
     "guest_links": "guide.nav.guest_links", "business": "guide.nav.business", "archive": "guide.nav.archive",
-    "privacy_requests": "guide.nav.privacy_requests",
+    "privacy_requests": "guide.nav.privacy_requests", "payments": "guide.nav.payments",
     "add-property": "guide.setup.add_title", "setup-guide": "guide.setup.wizard_title",
     "connect-calendar": "guide.stays.calendar_title", "add-stay": "guide.stays.add_title",
     "stay-fee-setup": "guide.stay_fee.setup_title", "stay-fee-pay": "guide.stay_fee.pay_title",
