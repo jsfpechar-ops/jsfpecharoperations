@@ -939,6 +939,8 @@ async def entity_invoice_details(entity_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    if not auth.session_is_fresh(request):
+        return _back("/settings/security#settings-security", err=_flash(request, "auth.error.recent_login"))
     entity = access.entity(request, entity_id)
     if not entity or entity["archived_at"]:
         return _back("/entities", err=_flash(request, "flash.error.no_such_entity"))

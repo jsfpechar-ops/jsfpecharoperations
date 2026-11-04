@@ -315,15 +315,33 @@ async def two_factor_login(request: Request):
 
 @router.post("/logout")
 def logout(request: Request):
-    # Cookies are signed, not stored, so clearing this browser's copy alone
-    # would leave a copied cookie valid. Log out ends the account's sessions
-    # everywhere (the real account, also when an admin is impersonating).
+    # Clears this browser's session cookie only; other devices stay signed in.
+    # "Log out of all devices" is POST /account/logout-all.
     account = auth.current_user(request)
     if account:
-        auth.end_all_sessions(account["id"])
         db.audit("logout", actor=account["username"], owner_user_id=account["id"])
     response = RedirectResponse("/login?notice=logged_out", status_code=303)
     auth.clear_session(response)
+    return response
+
+
+@router.post("/account/logout-all")
+def logout_all(request: Request):
+    """Ends the account's sessions on every device, and this device's remembered login."""
+    account = auth.current_user(request)
+    if not account:
+        return RedirectResponse("/login", status_code=303)
+    auth.end_all_sessions(account["id"])
+    db.audit("logout_all", actor=account["username"], owner_user_id=account["id"])
+    response = RedirectResponse("/login?notice=logged_out", status_code=303)
+    auth.clear_session(response)
+    response.delete_cookie(
+        auth.DEVICE_COOKIE,
+        path="/",
+        secure=auth.secure_cookies(),
+        httponly=True,
+        samesite="lax",
+    )
     return response
 
 
@@ -977,6 +995,8 @@ def user_workspace_export(user_id: int, request: Request):
     account, guard = _require_admin(request)
     if guard:
         return guard
+    if not auth.session_is_fresh(request):
+        return _back("/settings/security#settings-security", err=_flash(request, "auth.error.recent_login"))
     target = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
     if not target:
         return _back(f"/admin/customers/{user_id}", err=_flash(request, "flash.error.no_such_user"))

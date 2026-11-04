@@ -54,7 +54,7 @@ Append-only.
 - 2026-10-30 | [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; Haiku-only execution; manual cutover | 0455–0456
 - 2026-10-31 | Postgres (#592), then Go G1-G6, per-feature rollback, no load test. [workflow] Fable briefs critical items, Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
 - 2026-10-31 | Every change lean: no dead code or extras; dead code goes in its own small commit | owner | plan v4
-- 2026-10-31 | Approval gates waived for the Postgres and Go migration; bar stays (verified backup, prod-copy rehearsal, per-table hashes, suite green on both DBs, auto rollback); D1 Postgres self-hosted in Compose on the 8 GB Lightsail (socket, no port, 1 GB cap); nightly `pg_dump`, restore proven; D2 reviewer on `production`; D3 goose; D4 job table, `SKIP LOCKED`. No password, no network (`network_mode: none`, socket volume). [workflow] Pre-merge: `git diff --stat origin/main <branch>` vs brief Files; one worktree per Haiku | owner, orchestrator | 0463, 0464, #606
+- 2026-10-31 | Approval gates waived for the Postgres/Go migration; bar stays (verified backup, prod-copy rehearsal, per-table hashes, suite green on both DBs, auto rollback); D1 Postgres in Compose, socket only, 1 GB cap, nightly `pg_dump`; D2 `production` reviewer; D3 goose; D4 job table, `SKIP LOCKED`; no password, `network_mode: none`. [workflow] Pre-merge: `git diff --stat origin/main <branch>` vs brief Files; one worktree per Haiku | owner, orchestrator | 0463, 0464, #606
 - 2026-10-31 | [workflow] `test-postgres-full` (app suite on PG 17) gates every merge; SQLite-file tests carry `sqlite_only` | orchestrator | 0462
 - 2026-11-01 | Host redesign: vendored Hotwire Turbo (MIT) for page-body swaps; owner OKs mockups first | owner | #614
 - 2026-10-31 | D3 detail: goose v3.29.0, asset goose_linux_x86_64 (SHA-256 pinned) | owner | 0465b
@@ -72,3 +72,4 @@ Append-only.
 
 - [filing] 2026-11-04: unanswered filings retry 30m/2h/6h/12h, any answer stops; replaces OD-1, WP31 (0909).
 - [auth] 2026-11-04: 30-day sliding session, trusted-device cookie skips login Turnstile
+- [auth] 2026-11-04: log out is per device; "all devices" is separate (0947).

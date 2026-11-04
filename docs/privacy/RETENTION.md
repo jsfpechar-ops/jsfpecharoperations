@@ -32,6 +32,7 @@ under the GDPR storage-limitation principle, also a ceiling.
 | Rate-limit events | `rate_limit_event` | created | 24 hours (G-D7); `havel_*` scopes 32 days (Havel weekly and monthly caps, 0320) | `retention.py` rate-limit step | Security |
 | Havel gap questions | `havel_gap` | created | 90 days (0320) | `retention.py` Havel gap step | Storage limitation |
 | Login links | `login_token` (hash, account, address, purpose, times) | expiry | 1 day after expiry; deleted with the account | `retention.py` login-token step (`login_link.purge`) | Security |
+| Trusted-device cookie `ubyhost_device` (account id and random id, signed) | cookie only; nothing stored server-side | 30 days; cleared by "log out of all devices" | cookie expiry; no server-side purge | `auth.py` `DEVICE_COOKIE` | Security |
 | Passkeys | `passkey` | created | until removed by the host or the account is deleted | `retention.py` workspace deletion; cascade | Contract |
 | Urgent-alert devices (push address and keys, encrypted; language; device family; last visit) | `push_subscription` | last visit | 180 days unseen; at once when the host turns alerts off, removes the device, logs out on it, or the push service says it is gone; deleted with the account | `retention.py` push step (`push.purge`); workspace deletion | Contract |
 | Queued urgent alerts (kind, stay date, property name) | `push_outbox` | created | 30 days | `retention.py` push step; workspace deletion | Operations |
