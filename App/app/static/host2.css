@@ -46,7 +46,7 @@
 .host-workspace .ui-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: var(--space-5); height: var(--space-5); border-radius: var(--radius-pill); background: var(--surface); transition: left var(--motion-1) var(--ease-standard); }
 .host-workspace .ui-switch:checked { background: var(--accent); }
 .host-workspace .ui-switch:checked::after { left: calc(100% - var(--space-5) - 2px); }
-.host-workspace .ui-form-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px; padding-top: var(--space-2); }
+.host-workspace .ui-form-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-3); padding-top: var(--space-2); }
 .host-workspace .ui-sticky-actions { display: none; }
 .host-workspace .ui-steps { color: var(--ink-3); font-size: var(--size-14); margin: 0 0 var(--space-4); }
 
@@ -501,7 +501,7 @@ body.host-workspace.sidebar-collapsed .sidebar-collapse .ui-icon { transform: ro
 
 /* 0158: guest-link URLs stay on one line (full URL in the title and the copy button) */
 .host-workspace .property-inline-url { display: block; max-width: 16rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; overflow-wrap: normal; word-break: normal; }
-.host-workspace .cleaning-card-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.host-workspace .cleaning-card-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
 
 /* 0144 settings: moved inline styles */
 .host-workspace .ui-prewrap { white-space: pre-wrap; }
@@ -612,7 +612,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 
 /* 0200: action rows stack full width on phone (GOV.UK). Input rows (a text input in the row) are not action rows. Excluded: the stay Guests header (0199) and the stay page command row. */
 @media (max-width: 760px) {
-  .host-workspace :is(.actions, .action-group, .host-property-save, .setup-wizard-foot, .ui-form-actions, .stay-command-actions):not(:has(> input[type=text])):not(.host-stay-detail #guests .ui-form-actions):not(.host-stay-detail .stay-command-actions) { display: flex; flex-direction: column; align-items: stretch; gap: 12px; }
+  .host-workspace :is(.actions, .action-group, .host-property-save, .setup-wizard-foot, .ui-form-actions, .stay-command-actions):not(:has(> input[type=text])):not(.host-stay-detail #guests .ui-form-actions):not(.host-stay-detail .stay-command-actions) { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-3); }
   .host-workspace :is(.actions, .action-group, .host-property-save, .setup-wizard-foot, .ui-form-actions, .stay-command-actions):not(:has(> input[type=text])):not(.host-stay-detail #guests .ui-form-actions):not(.host-stay-detail .stay-command-actions) > .ui-btn:not(.ui-btn-icon, .row-menu-trigger),
   .host-workspace :is(.actions, .action-group, .host-property-save, .setup-wizard-foot, .ui-form-actions, .stay-command-actions):not(:has(> input[type=text])):not(.host-stay-detail #guests .ui-form-actions):not(.host-stay-detail .stay-command-actions) > form > .ui-btn:not(.ui-btn-icon, .row-menu-trigger) { width: 100%; justify-content: center; min-height: var(--control-h-phone); }
   .host-workspace :is(.actions, .action-group, .host-property-save, .setup-wizard-foot, .ui-form-actions, .stay-command-actions):not(:has(> input[type=text])):not(.host-stay-detail #guests .ui-form-actions):not(.host-stay-detail .stay-command-actions) > form { width: 100%; margin: 0; }
@@ -639,7 +639,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 /* 0200-d: invoice detail actions (.stay-command-actions outside the stay page) are a full-width column on phone; the nested .ui-btn-group stacks its text buttons and links */
 @media (max-width: 760px) {
   .host-workspace .stay-command-actions:not(.host-stay-detail .stay-command-actions) { width: 100%; align-self: stretch; }
-  .host-workspace .stay-command-actions:not(.host-stay-detail .stay-command-actions) > .ui-btn-group { display: flex; flex-direction: column; align-items: stretch; gap: 12px; width: 100%; }
+  .host-workspace .stay-command-actions:not(.host-stay-detail .stay-command-actions) > .ui-btn-group { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-3); width: 100%; }
   .host-workspace .stay-command-actions:not(.host-stay-detail .stay-command-actions) > .ui-btn-group > .ui-btn:not(.ui-btn-icon, .row-menu-trigger),
   .host-workspace .stay-command-actions:not(.host-stay-detail .stay-command-actions) > .ui-btn-group > form > .ui-btn:not(.ui-btn-icon, .row-menu-trigger) { width: 100%; justify-content: center; min-height: var(--control-h-phone); }
   .host-workspace .stay-command-actions:not(.host-stay-detail .stay-command-actions) > .ui-btn-group > form { width: 100%; margin: 0; }
@@ -841,7 +841,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .fee-figures dt { color: var(--ink-3); font-size: var(--size-13); }
 .host-workspace .fee-figures dd { margin: 0; font-size: var(--size-18); font-weight: 600; }
 .host-workspace .fee-figures-total dd { font-size: var(--size-22); }
-.host-workspace .fee-step-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: var(--space-3) 0 0; }
+.host-workspace .fee-step-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin: var(--space-3) 0 0; }
 .host-workspace .fee-qr-amount { font-size: var(--size-22); font-weight: 600; }
 .host-workspace .fee-send-pay { display: grid; grid-template-columns: minmax(0, 1fr) 18rem; gap: var(--space-6); align-items: start; }
 .host-workspace .fee-tasks { margin: 0; padding: 0; list-style: none; counter-reset: fee-task; display: grid; gap: var(--space-5); }
@@ -955,7 +955,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .havel-composer { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--line); }
 .host-workspace .havel-composer textarea { width: 100%; box-sizing: border-box; min-height: calc(var(--control-h) * 2); padding: var(--space-3); border: 1px solid var(--input-border); border-radius: var(--input-radius); font: inherit; font-size: var(--size-15); color: var(--ink); background: var(--surface); resize: vertical; }
 .host-workspace .havel-composer textarea:focus-visible { outline: 0; border-color: var(--accent); box-shadow: var(--focus-ring-2); }
-.host-workspace .havel-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; flex-wrap: wrap; }
+.host-workspace .havel-actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-3); flex-wrap: wrap; }
 .host-workspace .havel-actions .havel-meta { margin: 0 auto 0 0; }
 .host-workspace .havel-meta { margin: 0; font-size: var(--size-13); color: var(--ink-3); }
 .host-workspace .havel-note { font-size: var(--size-12); }
@@ -1032,7 +1032,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .havel-card-change summary::-webkit-details-marker { display: none; }
 .host-workspace .havel-card-change[open] summary { margin-bottom: var(--space-2); }
 .host-workspace .havel-card-change .ui-field { margin-bottom: var(--space-2); }
-.host-workspace .havel-card-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: var(--space-3); flex-wrap: wrap; }
+.host-workspace .havel-card-actions { display: flex; justify-content: flex-end; gap: var(--space-3); margin-top: var(--space-3); flex-wrap: wrap; }
 /* 0319: Havel support card, full width under the reply's links */
 .havel-links .havel-support { flex-basis: 100%; display: grid; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--card-radius); background: var(--surface); }
 .havel-support-title { margin: 0; font-size: var(--size-16); }
@@ -1195,9 +1195,9 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .page-help-more { display: inline-block; min-height: 2.75rem; line-height: 2.75rem; color: var(--ink); font-weight: 600; text-decoration: underline; }
 
 /* 0903: phone and tablet layout pass for the pages still on the host.css family. */
-.host-workspace fieldset>legend{float:left;width:100%;padding:0;margin:0 0 12px;box-sizing:border-box}
+.host-workspace fieldset>legend{float:left;width:100%;padding:0;margin:0 0 var(--space-3);box-sizing:border-box}
 .host-workspace fieldset>legend+*{clear:both}
-.host-workspace .ui-form-actions{gap:12px}
-.host-workspace .ui-section>*+:is(.ui-btn,form){margin-top:12px}
-.host-workspace :is(.account-parts,.fee-adjust-grid){gap:12px}
+.host-workspace .ui-form-actions{gap:var(--space-3)}
+.host-workspace .ui-section>*+:is(.ui-btn,form){margin-top:var(--space-3)}
+.host-workspace :is(.account-parts,.fee-adjust-grid){gap:var(--space-3)}
 .host-workspace .page-help-btn::before{display:none}
