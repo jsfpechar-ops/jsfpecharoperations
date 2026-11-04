@@ -1089,6 +1089,26 @@ def test_0908_stay_bars_start_and_end_halfway_through_their_days(calendar_worksp
     assert abs((b["l"] - a2["r"]) - g) <= 1 and abs(a2["t"] - b["t"]) <= 1, (a2, b)  # touching stays: gap g, same lane
 
 
+def test_0908_sunday_arrival_bar_is_a_full_tap_target_at_768(calendar_workspace, calendar_origin):
+    # 4d: a Sunday arrival is half a cell wide; the bar must still be a 44 px tap target inside its week row
+    property_id = calendar_workspace["properties"][0]
+    make_stay(property_id, "2026-12-06", "2026-12-09", summary="0908 sunday stay", expected_guests_override=2)
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=768, touch=False)
+        page.goto(f"{calendar_origin}/?lang=en&cal_view=calendar&cal_date=2026-12-01")
+        page.wait_for_selector(".cal-month")
+        wait_loaded(page)
+        page.evaluate("window.scrollTo(0, 0)")
+        page.wait_for_timeout(300)
+        pill = page.locator('.cal-pill[data-cal-from="2026-12-06"]').first.bounding_box()
+        row = page.locator(".cal-week", has=page.locator('.cal-pill[data-cal-from="2026-12-06"]')).first.bounding_box()
+        context.close()
+        browser.close()
+    assert pill["width"] >= 44 - 0.5, (pill, row)
+    assert pill["x"] + pill["width"] <= row["x"] + row["width"] + 1, (pill, row)
+
+
 def test_0891_sticky_head_title_follows_scroll_and_back_to_top(calendar_workspace, calendar_origin):
     with sync_api.sync_playwright() as playwright:
         browser = launch(playwright)
