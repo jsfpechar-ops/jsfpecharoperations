@@ -1,4 +1,4 @@
-"""0955 Parts A and B: guest birth date, nationality and document number on the stay page and the stay-fee detail.
+"""0955 Parts A and B: guest birth date and nationality on the stay page (no document number) and the stay-fee detail.
 
 Screenshots: UBYHOST_SHOTS_DIR=<dir> writes calendar-0955-stay-<width>.png and calendar-0955-fee-<width>.png.
 """
@@ -26,7 +26,7 @@ def test_0955_stay_page_shows_guest_details(base, dashboard_rich_host):
             assert line.count() == 1
             text = line.inner_text()
             assert "01.01.1990" in text, (width, text)
-            assert "P1234567" in text, (width, text)
+            assert "P1234567" not in text, (width, text)
             font_px = float(line.evaluate("el => parseFloat(getComputedStyle(el).fontSize)"))
             assert font_px >= 13, (width, font_px)
             name = line.evaluate("el => el.parentElement.querySelector('b').getBoundingClientRect().bottom")

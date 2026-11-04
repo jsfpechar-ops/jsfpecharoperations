@@ -6,7 +6,7 @@ Branch: `fix/0955-calendar-toolbar-stable`. One PR. Do not touch any other file.
 
 ## 1. Objective
 
-Scope: Steps 1-3 (calendar toolbar), Part A (guest birth date, nationality, document number on the stay page),
+Scope: Steps 1-3 (calendar toolbar), Part A (guest birth date and nationality on the stay page; no document number, owner decision),
 Part B (birth date, age at check-in, nationality on the stay-fee detail page), Part C (Back-button test, no
 history change).
 
@@ -121,17 +121,15 @@ or `.cal-week`, then `wait_loaded(page)`):
 
 Use `context.close(); browser.close()` at the end of each test like the existing file.
 
-### Part A: stay page shows birth date, nationality and document number
+### Part A: stay page shows birth date and nationality (no document number)
 
 Owner request: the host sees who the guest is without opening the PDF form. Host-only page.
 
 Facts (checked, do not re-research): the route `reservation_detail` in `App/app/routes/admin.py` (~line 3555)
 builds `guest_rows` from `reporting.reservation_progress(reservation)["guests"]`, which reads
-`SELECT * FROM guest`. The db helpers decrypt on read (`db._hydrate`): `guest.birth_date` (stored as `DDMMYYYY`)
-and `guest.doc_number` are already plaintext in the template. **No route change.** Use the existing template
+`SELECT * FROM guest`. The db helpers decrypt on read (`db._hydrate`): `guest.birth_date` (stored as `DDMMYYYY`) are already plaintext in the template. **No route change.** Use the existing template
 globals: `display_birth_date(value)` (gives `DD.MM.YYYY`, the format of the guest forms), `country_name(code, lang)`,
-`guest_identifier(value, guest_id)` (masks the document number when the viewer may not see identity, e.g. support
-impersonation) and `identity_visible(guest_id)`. Copy the pattern of `App/app/templates/submission_detail.html`
+`identity_visible(guest_id)`. Copy the pattern of `App/app/templates/submission_detail.html`
 line ~126. Existing i18n key `stay.detail.guests.born` ("Date of birth" / "Datum narození" / "Ngày sinh"); no new key.
 
 1. `App/app/templates/reservation_detail.html`, desktop table (`<div class="card guest-table">`, ~line 194). Directly
@@ -140,7 +138,6 @@ line ~126. Existing i18n key `stay.detail.guests.born` ("Date of birth" / "Datum
         {% set id_parts = [] %}
         {% if guest.birth_date and identity_visible(guest.id) %}{% set _ = id_parts.append(t('stay.detail.guests.born') ~ ' ' ~ display_birth_date(guest.birth_date)) %}{% endif %}
         {% if guest.nationality %}{% set _ = id_parts.append(country_name(guest.nationality, lang) or guest.nationality) %}{% endif %}
-        {% if guest.doc_number %}{% set _ = id_parts.append(guest_identifier(guest.doc_number, guest.id)) %}{% endif %}
         {% if id_parts %}<small class="guest-id-line" data-guest-id-line>{{ id_parts | join(' · ') }}</small>{% endif %}
    ```
    It renders as the first `<small>` under the name (the table CSS `.host-stay-detail .guest-table small` is already
@@ -156,8 +153,7 @@ line ~126. Existing i18n key `stay.detail.guests.born` ("Date of birth" / "Datum
    `.host-stay-detail .guest-list .t small{display:block}` and bump that stylesheet's `?v=` in the template that loads
    it (grep `app2.css?v=` in `App/app/templates/`). Otherwise do not touch CSS.
 
-No fine print: the line is guest data, not a hint. Do not add labels for nationality or document; the document type
-stays in its own column.
+No fine print: the line is guest data, not a hint. Do not add labels for nationality. The document number is not shown on the stay page (owner decision: the privacy rule stands).
 
 ### Part B: stay-fee detail shows birth date, age at check-in and nationality
 
@@ -206,8 +202,8 @@ snapshot by `stay_fee_filing`, so adding birth date there would create a new sto
 
 Host-only pages behind `auth.require_login` and the owner checks already there. No new stored field, no new column,
 no migration, no new outbound request, no new dependency. `App/app/retention.py` is unaffected: birth date,
-nationality and document number are existing guest fields with existing retention lines; this change only displays
-them. Doc numbers go through `guest_identifier` and birth dates through `identity_visible`, so the existing masking
+nationality are existing guest fields with existing retention lines; this change only displays
+them. Birth dates go through `identity_visible`, so the existing masking
 still applies. Say this in the PR body in two sentences.
 
 ### Part C: browser Back after three month clicks (test only)
@@ -234,9 +230,9 @@ Add to `App/tests/test_0955_calendar_toolbar_stable_browser.py`:
 5. New file `App/tests/test_0955_guest_details_browser.py`. Copy the imports of
    `App/tests/test_0766_phone_stays_browser.py` (fixtures `base`, `dashboard_rich_host`, helpers `_launch`, `_open_app`,
    `_cookie`; copy `_cookie` too). That fixture's `ready` stay has guest TOMAS NOVAK, birth `01011990`, nationality
-   `GBR`, doc `P1234567`. Test `test_0955_stay_page_shows_guest_details` parametrized `width` in `[390, 768, 1280]`:
+   `GBR`. Test `test_0955_stay_page_shows_guest_details` parametrized `width` in `[390, 768, 1280]`:
    open `f"/reservations/{dashboard_rich_host['ready']}"`; `line = page.locator("[data-guest-id-line]:visible").first`;
-   assert `"01.01.1990"` in its text, and `"P1234567"` in it; assert its computed `font-size` >= 13 px; assert its
+   assert `"01.01.1990"` in its text, and `"P1234567"` not in it (owner decision); assert its computed `font-size` >= 13 px; assert its
    box does not overlap the `b` name box above it. Call `shot(page, f"0955-stay-{width}")` (import `shot` from
    `tests.test_dashboard_calendar_browser`).
 6. In `App/tests/test_stay_fee_detail.py` add (reuse `host`, `_property`, `_stay`):
@@ -299,8 +295,7 @@ PR body: link this brief, the per-width UX notes, and the ticked checklist from 
 - Scale switch does not move the arrows, Today, property, view or settings at 768, 1024, 1280.
 - Today sits left of the arrow pair, at least 20 px away; no control pair closer than 12 px.
 - Phone (< 768) unchanged: Today hidden, arrows right of the title.
-- Stay page at 390, 768 and 1280: each guest shows birth date, nationality and (masked when required) document
-  number on one line under the name.
+- Stay page at 390, 768 and 1280: each guest shows birth date, nationality on one line under the name.
 - Stay-fee detail: each guest line shows birth date, "Age N at check-in" and nationality; nothing new in the stored
   period lines.
 - Back-button test passes and the PR states the observed Back/Forward behaviour (and the follow-up if the place is lost).

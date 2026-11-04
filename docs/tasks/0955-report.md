@@ -7,7 +7,7 @@ Status: review
 - Step 2: two-row grid at >= 768 px. Commit `0955 step 2`.
 - Step 2b (owner decision, no ellipsis): with `.has-panel` at >= 1024 px the period title is `clamp(18px, 18px + (100vw - 1024px) * 0.1, 32px)`, so it stays on one line and reaches 32 px from 1280. Stylesheet `?v=20261104-0955b`. Commit `0955 step 2b`.
 - Step 3: `test_0955_calendar_toolbar_stable_browser.py` (15 tests).
-- Part A: stay page id line (`[data-guest-id-line]`) with birth date, nationality, document number, in desktop table and phone list. Commit `0955 step A`.
+- Part A: stay page id line (`[data-guest-id-line]`) with birth date and nationality, in desktop table and phone list. Document number removed after CI (owner decision: privacy rule stands; test_0525 unchanged). Commit `0955 step A`.
 - Part B: stay-fee detail `data-fee-guest-facts` line; route reads facts for display only; i18n `stay_fees.guest.age` in en/cs/vi. Commit `0955 step B`.
 - Part D: `test_stay_fee_detail.py::test_guest_line_shows_birth_date_age_and_nationality` (passed). `test_0955_guest_details_browser.py` (2 tests, 390/768/1280, passed, 0 skipped). Commit `0955 step D5/D7`.
 - Part C: test not written in this session (see Deviations).
