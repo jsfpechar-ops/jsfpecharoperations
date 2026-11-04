@@ -114,3 +114,49 @@ def test_0547_phone_property_switch_invalid_field_calendar_and_return(base, dash
             browser.close()
             db.execute("DELETE FROM lock_account WHERE owner_user_id = ?", (owner,))
             db.execute("UPDATE apartment SET lock_provider = NULL, lock_id = NULL WHERE id = ?", (apartment_id,))
+
+
+def test_0948_strip_shares_form_edges_and_columns(base, dashboard_rich_host):  # noqa: F811
+    cookie = dashboard_rich_host["client"].cookies.get(auth.SESSION_COOKIE)
+    assert cookie
+    spec = next(s for s in PAGES if s["name"] == "property")
+    path = _path(spec, dashboard_rich_host)
+    with sync_api.sync_playwright() as playwright:
+        browser = _launch(playwright)
+        try:
+            for width, columns in ((390, 2), (768, 3), (1280, 3), (1600, 3)):
+                context, page = _open_app(browser, base, cookie, path, width)
+                try:
+                    strip = page.locator(".prop-strip").bounding_box()
+                    form = page.locator(".form").bounding_box()
+                    assert abs(strip["x"] - form["x"]) <= 1, width
+                    assert abs(strip["x"] + strip["width"] - (form["x"] + form["width"])) <= 1, width
+                    count = page.evaluate(
+                        "getComputedStyle(document.querySelector('.prop-strip')).gridTemplateColumns.split(' ').length"
+                    )
+                    assert count == columns, (width, count)
+                    if width <= 768:
+                        assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), width
+                finally:
+                    context.close()
+        finally:
+            browser.close()
+
+
+def test_0948_police_card_opens_its_section(base, dashboard_rich_host):  # noqa: F811
+    cookie = dashboard_rich_host["client"].cookies.get(auth.SESSION_COOKIE)
+    assert cookie
+    spec = next(s for s in PAGES if s["name"] == "property")
+    path = _path(spec, dashboard_rich_host)
+    with sync_api.sync_playwright() as playwright:
+        browser = _launch(playwright)
+        try:
+            context, page = _open_app(browser, base, cookie, path, 1280)
+            try:
+                assert page.locator("#sec-police[open]").count() == 0
+                page.locator("[data-strip='police']").click()
+                assert page.locator("#sec-police[open]").count() == 1
+            finally:
+                context.close()
+        finally:
+            browser.close()
