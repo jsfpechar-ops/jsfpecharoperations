@@ -359,5 +359,19 @@
     }
   }
 
+  // 11b. One form, one save button (0931). Czech and English labels.
+  const saveRe = /save|uložit|ulozit/i;
+  const submits = all.filter((el) => el.matches('button[type=submit],input[type=submit]') && vis(el));
+  const saves = submits.filter((el) => saveRe.test((el.innerText || el.value || '').trim()));
+  for (const form of new Set(saves.map((b) => b.closest('form')).filter(Boolean))) {
+    const inForm = saves.filter((b) => b.closest('form') === form);
+    if (inForm.length > 1) add('multiple-save-in-form', inForm[1], inForm.length + ' save submit buttons in one form');
+  }
+  for (const bar of all.filter((el) => getComputedStyle(el).position === 'fixed' && el.querySelector('button[type=submit],input[type=submit]'))) {
+    const barSubmit = submits.filter((b) => bar.contains(b));
+    const outside = saves.filter((b) => !bar.contains(b));
+    if (barSubmit.length && outside.length) add('multiple-save-in-form', bar, 'fixed bar holds a submit while another save submit sits outside it');
+  }
+
   return out;
 })()
