@@ -850,7 +850,7 @@ body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"
 [data-cal-color="ink"] { --cal-ink:var(--ink); --cal-fill:var(--surface-2); }
 body.v2 #calendar.dashboard-calendar[data-readonly="false"] .cal-pill[data-cal-color] { background:var(--cal-ink); color:#fff; }
 body.v2 #calendar.dashboard-calendar[data-readonly="false"] .cal-pill[data-cal-color]:hover { background:var(--cal-ink); filter:brightness(.88); }
-body.v2 #calendar.dashboard-calendar[data-readonly="false"] .cal-pill[data-cal-color] .cal-pill-avatar { background:rgba(255,255,255,.24); }
+body.v2 #calendar.dashboard-calendar[data-readonly="false"] .cal-pill[data-cal-color] .cal-pill-avatar { background:rgba(0,0,0,.28); }
 .dashboard-calendar :is(.cal-heading,.cal-toolbar) select[data-cal-property][data-cal-color] {
   padding-left:32px;
   background-image:radial-gradient(circle at 16px 50%, var(--cal-ink) 0 5px, transparent 5.5px), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='m1 1 5 5 5-5' fill='none' stroke='%23625f5a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
