@@ -577,13 +577,13 @@ def test_unknown_setup_step_is_not_a_wizard_page(host):
 def test_overview_guest_link_card_links_to_settings(host):
     """Fix 9: the guest link card shows the copy button once, and does not repeat a status line.
 
-    0544: the overview card is gone; the guest card (section.guest-card) sits on the property page.
+    0544: the overview card is gone; the guest link card sits on the property page (0948: in the status strip).
     """
     flat = _create(host)
     page = host["client"].get(f"/apartments/{flat['id']}?lang=en").text
     assert "Ready · Copy link" not in page
-    assert 'id="property-guest-link-title"' in page
-    assert 'data-copy="property-guest-url"' in page
+    assert 'data-strip="guest"' in page
+    assert 'data-copy="overview-guest-url"' in page
     assert _t("en", "common.copy_link") in page
 
 
@@ -877,9 +877,9 @@ def test_review_fixes_in_the_browser(host, base_url):
         page.wait_for_url("**view=overview**")
         assert page.locator("[data-setup-status]").is_visible()
         _shot(page, "12-overview-hidden-en-1280.png")
-        page.locator("section.guest-card").first.scroll_into_view_if_needed()
+        page.locator(".prop-strip [data-strip='guest']").first.scroll_into_view_if_needed()
         _shot(page, "13-overview-guest-link-en-1280.png")
-        assert page.locator("section.guest-card [data-copy='property-guest-url']").count() >= 1
+        assert page.locator("[data-strip='guest'] [data-copy='overview-guest-url']").count() >= 1
         browser.close()
 
 
@@ -1160,8 +1160,8 @@ def test_wizard_polish_and_overview_cards(host, base_url, monkeypatch, lang, wid
             calendars_summary = page.locator("details#sec-calendars > summary")
             assert calendars_summary.is_visible()
             assert calendars_summary.locator("b").inner_text() == calendars_title
-        link_card = page.locator("section.guest-card")
-        copy_button = link_card.locator('button[data-copy="property-guest-url"]')
+        link_card = page.locator(".prop-strip [data-strip='guest']")
+        copy_button = link_card.locator('button[data-copy="overview-guest-url"]')
         assert copy_button.is_visible()
         label_box = link_card.locator("#property-guest-link-title").bounding_box()
         copy_box = copy_button.bounding_box()
