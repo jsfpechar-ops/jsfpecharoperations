@@ -10617,3 +10617,57 @@ def bilingual_message(key: str, languages: Optional[List[str]] = None, **kwargs)
     costs the host nothing and spares the guest a language they do not read.
     """
     return "\n\n".join(translate(lang, key, **kwargs) for lang in (languages or ["en", "cs"]))
+
+# 0897 phase 0: host controls for guest payment of the stay fee (en, cs, vi).
+_STAY_FEE_GUEST_PAY_STRINGS = {
+    "en": {
+        "stay_fees.guest_pay.title": "Guest pays the stay fee",
+        "stay_fees.guest_pay.off_here": "Turned off on this deployment.",
+        "stay_fees.guest_pay.collect_label": "Ask guests to pay the stay fee",
+        "stay_fees.guest_pay.collect_hint": "Leave this off if Airbnb or Booking already collects the fee for this property.",
+        "stay_fees.guest_pay.rails_label": "How guests can pay",
+        "stay_fees.guest_pay.rail.qr": "QR code",
+        "stay_fees.guest_pay.rail.iban": "Bank transfer",
+        "stay_fees.guest_pay.rail.revolut": "Revolut",
+        "stay_fees.guest_pay.rail.cash": "Cash",
+        "stay_fees.guest_pay.revolut_label": "Revolut link",
+        "stay_fees.guest_pay.revolut_help": "Your revolut.me link, for example https://revolut.me/your-name.",
+        "stay_fees.guest_pay.cash_label": "Cash note",
+        "stay_fees.guest_pay.cash_help": "Where and when guests can pay in cash.",
+        "flash.stay_fees.link_invalid": "Use an https link on revolut.me or revolut.com.",
+    },
+    "cs": {
+        "stay_fees.guest_pay.title": "Poplatek za pobyt platí host",
+        "stay_fees.guest_pay.off_here": "Na tomto serveru vypnuto.",
+        "stay_fees.guest_pay.collect_label": "Žádat hosty o zaplacení poplatku",
+        "stay_fees.guest_pay.collect_hint": "Nechte vypnuté, pokud poplatek za tuto nemovitost už vybírá Airbnb nebo Booking.",
+        "stay_fees.guest_pay.rails_label": "Jak mohou hosté platit",
+        "stay_fees.guest_pay.rail.qr": "QR kód",
+        "stay_fees.guest_pay.rail.iban": "Bankovní převod",
+        "stay_fees.guest_pay.rail.revolut": "Revolut",
+        "stay_fees.guest_pay.rail.cash": "Hotovost",
+        "stay_fees.guest_pay.revolut_label": "Odkaz na Revolut",
+        "stay_fees.guest_pay.revolut_help": "Váš odkaz revolut.me, například https://revolut.me/jmeno.",
+        "stay_fees.guest_pay.cash_label": "Poznámka k hotovosti",
+        "stay_fees.guest_pay.cash_help": "Kde a kdy mohou hosté platit hotově.",
+        "flash.stay_fees.link_invalid": "Použijte odkaz https na revolut.me nebo revolut.com.",
+    },
+    "vi": {
+        "stay_fees.guest_pay.title": "Khách trả phí lưu trú",
+        "stay_fees.guest_pay.off_here": "Đã tắt trên máy chủ này.",
+        "stay_fees.guest_pay.collect_label": "Yêu cầu khách trả phí lưu trú",
+        "stay_fees.guest_pay.collect_hint": "Để tắt nếu Airbnb hoặc Booking đã thu phí cho chỗ này.",
+        "stay_fees.guest_pay.rails_label": "Khách có thể trả bằng cách nào",
+        "stay_fees.guest_pay.rail.qr": "Mã QR",
+        "stay_fees.guest_pay.rail.iban": "Chuyển khoản ngân hàng",
+        "stay_fees.guest_pay.rail.revolut": "Revolut",
+        "stay_fees.guest_pay.rail.cash": "Tiền mặt",
+        "stay_fees.guest_pay.revolut_label": "Liên kết Revolut",
+        "stay_fees.guest_pay.revolut_help": "Liên kết revolut.me của bạn, ví dụ https://revolut.me/ten-ban.",
+        "stay_fees.guest_pay.cash_label": "Ghi chú tiền mặt",
+        "stay_fees.guest_pay.cash_help": "Khách có thể trả tiền mặt ở đâu và khi nào.",
+        "flash.stay_fees.link_invalid": "Dùng liên kết https trên revolut.me hoặc revolut.com.",
+    },
+}
+for _lang, _strings in _STAY_FEE_GUEST_PAY_STRINGS.items():
+    STRINGS.setdefault(_lang, {}).update(_strings)

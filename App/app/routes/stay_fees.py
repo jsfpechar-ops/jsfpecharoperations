@@ -25,7 +25,8 @@ from .. import (
     stay_fee_filing,
     validation,
 )
-from ..templating import render
+from ..templating import render, templates
+from .. import config as app_config
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
 from .admin_helpers import form_str as _form_str
@@ -211,6 +212,48 @@ def stay_fees_list(request: Request):
 # read two different ways.
 FEE_ACCOUNT_RAW = "_stay_fee_account_raw"
 
+# 0897: guest pays the stay fee. Phase 0 stores host settings only.
+GUEST_RAILS = ("qr", "iban", "revolut", "cash")
+GUEST_NOTE_MAX = 300
+GUEST_LINK_RAW = "_stay_fee_guest_link_raw"
+GUEST_LINK_INVALID = "stay_fee_guest_link_invalid"
+GUEST_LINK_HOSTS = ("revolut.me", "revolut.com")
+
+
+def stay_fee_guest_pay_on() -> bool:
+    """The kill switch, read at call time so tests and the template see the same value."""
+    return bool(app_config.STAY_FEE_GUEST_PAY)
+
+
+templates.env.globals["stay_fee_guest_pay_on"] = stay_fee_guest_pay_on
+
+
+def revolut_link_ok(raw: str) -> bool:
+    """https only, host revolut.me or revolut.com (or a subdomain), no userinfo, default port."""
+    try:
+        parts = urlsplit(raw.strip())
+        port = parts.port
+    except ValueError:
+        return False
+    host = (parts.hostname or "").lower()
+    if parts.scheme != "https" or parts.username or parts.password or port not in (None, 443):
+        return False
+    return any(host == base or host.endswith("." + base) for base in GUEST_LINK_HOSTS)
+
+
+def guest_pay_values(form) -> dict:
+    """The guest-pay fields as posted. Rails are a sorted csv of the allowed values."""
+    rails = sorted({value for value in form.getlist("stay_fee_guest_rails") if value in GUEST_RAILS})
+    link = _form_str(form, "stay_fee_guest_revolut_link").strip()
+    note = _form_str(form, "stay_fee_guest_cash_note")[:GUEST_NOTE_MAX].strip()
+    return {
+        "stay_fee_collect": 1 if _form_str(form, "stay_fee_collect") == "1" else 0,
+        "stay_fee_guest_rails": ",".join(rails),
+        "stay_fee_guest_revolut_link": link or None,
+        "stay_fee_guest_cash_note": note or None,
+        GUEST_LINK_RAW: link,
+    }
+
 
 def fee_form_values(form) -> dict:
     """Normalised fee fields. The account is left raw under FEE_ACCOUNT_RAW.
@@ -255,11 +298,17 @@ def fee_form_values(form) -> dict:
             values[FEE_ACCOUNT_RAW] = payments.compose_czech_account(prefix, number, bank)
     elif "stay_fee_council_account" in form:
         values[FEE_ACCOUNT_RAW] = _form_str(form, "stay_fee_council_account")
+    # 0897: with the kill switch off, nothing is read and stored values stay as they are.
+    if app_config.STAY_FEE_GUEST_PAY and "stay_fee_guest_form" in form:
+        values.update(guest_pay_values(form))
     return values
 
 
 def apply_fee_account(values: dict) -> None:
     """Turn the raw account into stored account/IBAN. Raise ValueError when invalid."""
+    raw_link = values.pop(GUEST_LINK_RAW, None)
+    if raw_link and not revolut_link_ok(raw_link):
+        raise ValueError(GUEST_LINK_INVALID)
     raw = values.pop(FEE_ACCOUNT_RAW, None)
     if raw is None:
         return
