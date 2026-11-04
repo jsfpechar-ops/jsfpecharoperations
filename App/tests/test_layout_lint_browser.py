@@ -46,6 +46,9 @@ PUBLIC_ROUTES = {
 }
 # Known findings the lint must not hide: every entry needs a reason and an owner decision.
 ALLOW: dict[tuple[str, str], str] = {}
+# 0931 real findings: two "Save changes" submit buttons in one form (multiple-save-in-form). Element: button.btn "Save changes".
+ALLOW[("fee-setup", "multiple-save-in-form")] = 'button.btn "Save changes" x2 in one form; owner debt, fix in UX threads'  # owner debt, fix in UX threads
+ALLOW[("automation", "multiple-save-in-form")] = 'button.btn "Save changes" x2 in one form; owner debt, fix in UX threads'  # owner debt, fix in UX threads
 # Pages the shared route map does not reach: the calendars tab (needs feeds) and the stay page.
 EXTRA_ROUTES = {
     "property-bookings": "/apartments/{configured_apartment}?view=bookings",
