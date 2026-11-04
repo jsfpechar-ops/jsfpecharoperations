@@ -370,7 +370,6 @@ body.v2 #sec-messages{order:4}
 body.v2 #sec-lock{order:5}
 body.v2 #sec-fee{order:6}
 body.v2 #sec-archive{order:7}
-body.v2 #sec-lock-account{order:8}
 /* 0535 step 2: preview aside. Two columns from 1024 px; below that the aside sits under the sections. */
 body.v2 .form-main{display:flex;flex-direction:column;gap:20px;min-width:0}
 body.v2 .preview{background:#efefeb;border-radius:14px;padding:12px;min-width:0}

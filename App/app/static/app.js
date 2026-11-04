@@ -2096,6 +2096,16 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       form.addEventListener("change", mark);
       form.addEventListener("submit", function () { form._ubySubmitting = true; });
     });
+    // 0952: door-code controls sit outside their form and name it with form="...", so they bubble to document, not to the form.
+    if (!document._ubyOutsideMark) {
+      document._ubyOutsideMark = true;
+      var markOutside = function (event) {
+        var owner = event.target && event.target.form;
+        if (owner && owner.hasAttribute("data-unsaved-guard") && !owner.contains(event.target)) owner.setAttribute("data-dirty", "1");
+      };
+      document.addEventListener("input", markOutside);
+      document.addEventListener("change", markOutside);
+    }
     if (claimNode(window, "initUnsavedForms")) {
       window.addEventListener("beforeunload", function (event) {
         var current = Array.prototype.slice.call(document.querySelectorAll("form[data-unsaved-guard]"));
@@ -2123,9 +2133,14 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
   /* 0543: an aside link to a property section (#sec-*) opens that section; a #sec-* hash opens it on load */
   function initPropSectionLinks() {
     function openSection(hash) {
-      if (!/^#sec-/.test(hash || "")) return;
-      var node = document.getElementById(hash.slice(1));
-      if (node && node.tagName === "DETAILS" && node.classList.contains("prop-sec")) node.open = true;
+      if (!/^#(sec-|door-code$|smart-locks$)/.test(hash || "")) return;
+      var target = document.getElementById(hash.slice(1));
+      // 0952: #door-code and #smart-locks sit inside the #sec-lock accordion: open that one and scroll to the target.
+      var node = target && !/^sec-/.test(target.id) && target.closest ? target.closest("details.prop-sec") : target;
+      if (node && node.tagName === "DETAILS" && node.classList.contains("prop-sec")) {
+        node.open = true;
+        if (target !== node && target.scrollIntoView) target.scrollIntoView();
+      }
     }
     document.querySelectorAll('a[href^="#sec-"]').forEach(function (link) {
       if (!claimNode(link, "initPropSectionLinks")) return;
@@ -2241,6 +2256,19 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       return url.pathname === here.pathname && url.search === here.search && !!url.hash;
     }
 
+    // 0952: same as initUnsavedForms, for controls outside the form: update the Save bar and reset buttons.
+    if (!document._ubyOutsideSync) {
+      document._ubyOutsideSync = true;
+      var syncOutside = function (event) {
+        var owner = event.target && event.target.form;
+        if (owner && forms.indexOf(owner) > -1 && !owner.contains(event.target)) {
+          owner.setAttribute("data-dirty", "1");
+          syncResetButtons();
+        }
+      };
+      document.addEventListener("input", syncOutside);
+      document.addEventListener("change", syncOutside);
+    }
     forms.forEach(function (form) {
       if (!claimNode(form, "initUnsavedDialog")) return;
       form.addEventListener("input", syncResetButtons);
