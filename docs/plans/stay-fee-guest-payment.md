@@ -229,6 +229,59 @@ what they want and the guest picks.
 - The embedded Merchant Web SDK would be a third-party script on a guest page
   (repo rule 2) — another reason it stays out.
 
+### Design options (for owner review before build — Arrival-lane rules apply: light mode, one 640 px column, no sideways scroll from 320 px, exactly one coral action per screen, all 6 languages, `?v=` bump, 390 px screenshot gate)
+
+All options share the same data (live `charge_for_reservation()`), the same
+"fee = 0 → render nothing" rule, and the same rails. They differ only in
+where the picker lives.
+
+**Option A — one "money" card on the stay hub (recommended for v1).**
+Zero new routes; appears in the fixed card order at position 3; re-shows
+automatically when a person is added. Rail picker = an accordion of
+`<details>` rows inside the card; picking a rail reveals its means inline, so
+only one pay control is ever visible (the card's single coral element).
+
+```
+┌─ g-card (money) ────────────────────────────────┐
+│  Municipal stay fee            450 Kč           │  ← serif heading + big amount
+│  3 counted days × 50 Kč · 2 guests              │  ← g-intro muted line
+│  ▸ Per person (3 × 50 Kč, 2 × 75 Kč)            │  ← details.g-summary, quiet
+│                                                 │
+│  ▾ Bank transfer (QR)          ← open row      │
+│     [ QR png ]   IBAN CZ… · VS 0000000123      │  ← copy button (ghost)
+│  ▸ IBAN only                                    │
+│  ▸ Revolut link                                 │
+│  ▸ Card (Stripe link)                           │
+│  ▸ Pay in cash — "at check-in, ask Josef"      │  ← host note text
+│  Why this fee — see the legal information  ›    │  ← one quiet link, no legal repeat
+└─────────────────────────────────────────────────┘
+```
+
+Pros: fewest moving parts, no new page, "smart" re-show for free, consistent
+with the hub's existing cards. Cons: long stays with many guests make the card
+tall on a phone (mitigate: per-person breakdown stays collapsed by default).
+
+**Option B — dedicated pay step `/l/{token}/{reservation_id}/pay`.**
+A full-screen ticket card (strip "Stay fee", big amount, rail list, stub with
+the ONE coral action for the chosen rail). The hub shows a compact card
+"Stay fee 450 Kč — Pay ›" linking to it. Pros: phone-friendly, feels like the
+"end of the flow" moment you originally described, easy to share/re-open.
+Cons: one more route + page to test/screenshot; the hub still needs the
+compact card anyway.
+
+**Option C — hub card, no accordion: all rails visible at once** as quiet
+rows (QR always shown when enabled, links as ghost buttons, cash note last).
+Pros: dead simple, everything visible without interaction (good for elderly
+guests). Cons: several pay-looking controls at once; on 320 px the card gets
+very tall; weaker "guest picks one" semantics.
+
+**Recommendation: A for v1** (leanest, fewest routes), with the per-person
+breakdown collapsed; revisit B if hosts ask for a standalone pay page.
+**Form-end estimate card** (all options): a quiet grey card like the legal
+notice box — one line "Municipal stay fee: about X Kč for you (n days × Y Kč)"
++ "you'll choose how to pay once everyone is registered", no button, no coral,
+hidden when the estimate is 0.
+
 ## 6. Compliance / privacy
 
 - No third-party scripts (Revolut/Stripe are plain external links, QR is our
