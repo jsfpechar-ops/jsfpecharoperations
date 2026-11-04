@@ -27,3 +27,5 @@ A temporary test file used only to take `one-night-390.png` was removed afterwar
 ## Not done
 
 - No commit, no push, no PR.
+
+Update (CI fix, section 4c): bumped the calendar CSS/JS keys in App/app/templates/_dashboard_calendar.html to v=20261104-0908a and regenerated App/tests/static_versions.json. Run: 87 passed, 0 skipped (static versions + the three browser files).
