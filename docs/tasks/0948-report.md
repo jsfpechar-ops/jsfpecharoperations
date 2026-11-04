@@ -1,6 +1,6 @@
 # 0948 report: property page status strip
 
-Status: review (partial: copy-settings button and lint pass; one visual finding open, see Deviations)
+Status: review (polish step 8 applied: equal heights, centered status line, always six cards)
 
 ## Files changed
 - App/app/templates/_property_editor.html, apartment_form.html, _property_create.html, partials/settings_back_header.html (strip, guest card removed, aside cleanup, copy button to header)
@@ -21,10 +21,11 @@ Status: review (partial: copy-settings button and lint pass; one visual finding 
 - 1280: strip 3 columns over the form and Preview; edges match. Copy-settings button not shown: hidden once setup is finished (by design of 0424).
 
 ## Deviations / open
-- Calendars (and other one-line) cards: the status line sits far below the title at 390. Likely cause: `.sc` grid stretches rows to min-height 64px. Fix candidate: `align-content:center` on `body.v2 .prop-strip .sc`. Not applied yet.
+- Step 8 (owner review of 1280 screenshot): `.sc` now uses `align-content:center`, so one-line cards center their title and status; `.prop-strip` uses `grid-auto-rows:1fr`, so all cards share one height. The Guest link card (Copy link button) sets the row height, so at 390 all rows are about 120 px tall.
+- Door code card is always rendered (six cards): `data-state="off"` with the existing "Off" text when no door code or disabled; links to `#sec-lock`. Layout: 2 columns at 390, 3 columns at 768 and 1280, no odd empty slot.
 - Strip below 360 px is one column (layout lint word-per-line failure at 320 px). Brief acceptance says 2 columns below 640; this is a narrow-phone exception.
 - Screenshots were taken from the lint run (route property-detail, EN), not `?lang=cs`.
-- Design-system checklist not ticked; owner-facing copy check not done.
+- Design-system checklist not ticked in step 8 (checklist file not opened in this step); owner-facing copy check not done.
 - Manifest and workflow.css key were fixed in a9e8a861 (not this task's scope).
 
 ## Commits

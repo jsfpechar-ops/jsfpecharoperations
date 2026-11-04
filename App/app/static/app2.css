@@ -2446,8 +2446,8 @@ body.v2 .onboarding-finish-strip{display:flex;flex-wrap:wrap;gap:12px;align-item
 @media (max-width:1023px){body.v2 .onboarding-finish-strip a{white-space:nowrap;min-height:44px;display:inline-flex;align-items:center}}
 
 /* 0948 status strip */
-body.v2 .prop-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 auto 16px;max-width:980px}
-body.v2 .prop-strip .sc{display:grid;grid-template-columns:10px minmax(0,1fr);column-gap:10px;row-gap:2px;align-items:center;min-height:64px;padding:12px;background:#fff;border:1px solid var(--line);border-radius:14px;color:inherit;text-decoration:none}
+body.v2 .prop-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:1fr;gap:10px;margin:0 auto 16px;max-width:980px}
+body.v2 .prop-strip .sc{display:grid;grid-template-columns:10px minmax(0,1fr);column-gap:10px;row-gap:2px;align-items:center;align-content:center;min-height:64px;padding:12px;background:#fff;border:1px solid var(--line);border-radius:14px;color:inherit;text-decoration:none}
 body.v2 .prop-strip div.sc.sc-link{display:block;padding:12px}
 body.v2 .prop-strip .sc:hover{border-color:var(--ink3)}
 body.v2 .prop-strip .sc:focus-visible,body.v2 .prop-strip .sc-main:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
