@@ -199,6 +199,18 @@ def test_anonymous_redirected_to_login(owner):
     assert "/login" in response.headers["location"]
 
 
+def test_legacy_query_params_redirect_to_new_request_page(client, owner, monkeypatch):
+    """0908: deep links with ?service= or ?reservation_id= belong on /payments/new."""
+    monkeypatch.setattr(config, "STRIPE_MODE", "test")
+    _set_state(owner, "complete")
+    response = client.get("/payments?service=damage", follow_redirects=False)
+    assert response.status_code == 303
+    assert response.headers["location"] == "/payments/new?service=damage"
+    response = client.get("/payments?reservation_id=42", follow_redirects=False)
+    assert response.status_code == 303
+    assert response.headers["location"] == "/payments/new?reservation_id=42"
+
+
 def test_connect_button_is_a_plain_link(client, owner, monkeypatch):
     """0442: the Open Stripe button is an anchor to the GET route (plain link
     navigation — the path that works with the PWA layer), never a form POST
