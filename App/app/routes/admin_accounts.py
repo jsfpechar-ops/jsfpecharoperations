@@ -325,6 +325,26 @@ def logout(request: Request):
     return response
 
 
+@router.post("/account/logout-all")
+def logout_all(request: Request):
+    """Ends the account's sessions on every device, and this device's remembered login."""
+    account = auth.current_user(request)
+    if not account:
+        return RedirectResponse("/login", status_code=303)
+    auth.end_all_sessions(account["id"])
+    db.audit("logout_all", actor=account["username"], owner_user_id=account["id"])
+    response = RedirectResponse("/login?notice=logged_out", status_code=303)
+    auth.clear_session(response)
+    response.delete_cookie(
+        auth.DEVICE_COOKIE,
+        path="/",
+        secure=auth.secure_cookies(),
+        httponly=True,
+        samesite="lax",
+    )
+    return response
+
+
 @router.post("/account/onboarding-emails")
 async def onboarding_emails_submit(request: Request):
     """The Settings toggle "Setup tips by e-mail" (WP12, legal position 2).
