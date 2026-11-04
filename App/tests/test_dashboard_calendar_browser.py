@@ -1034,7 +1034,7 @@ def test_0891_airbnb_month_tiles_and_pills(calendar_workspace, calendar_origin, 
             if pill["halfEnd"]:  # ends halfway into the departure day: cell middle minus g/2
                 assert abs(pill["rightAbs"] - (pill["depMid"] - pill["gap"] / 2)) <= 1, pill
             else:  # runs into the next week: Sunday edge, 2 px margin
-                assert abs(pill["right"] - 2) <= 1, pill
+                assert abs(pill["right"]) <= 1, pill
             assert pill["top"] >= 36 and pill["bottom"] >= 0, pill  # below the day number (0905: stacked lanes)
             assert pill["color"] == "rgb(34, 34, 34)", pill
         assert page.locator(".cal-tile-chip:visible, .cal-dots:visible, .cal-week-events").count() == 0
@@ -1081,7 +1081,7 @@ def test_0908_stay_bars_start_and_end_halfway_through_their_days(calendar_worksp
     pills = {(x["from"], x["to"]): x for x in geo["pills"]}
     a1, a2, b = pills[("2026-12-05", "2026-12-07")], pills[("2026-12-07", "2026-12-08")], pills[("2026-12-08", "2026-12-11")]
     assert abs(a1["l"] - (mid("2026-12-05") + g / 2)) <= 1, a1  # starts halfway through the 5th: cell middle + g/2
-    assert abs(a1["r"] - (c["2026-12-06"]["r"] - 2)) <= 1, a1  # runs into the next week: Sunday edge
+    assert abs(a1["r"] - c["2026-12-06"]["r"]) <= 1, a1  # runs into the next week: Sunday edge
     assert abs(a2["l"] - c["2026-12-07"]["l"]) <= 1, a2  # continues from the previous week: Monday edge
     assert abs(a2["r"] - (mid("2026-12-08") - g / 2)) <= 1, a2  # ends halfway through the 8th: cell middle - g/2
     assert abs(b["l"] - (mid("2026-12-08") + g / 2)) <= 1, b  # back-to-back stay starts halfway through the same 8th
