@@ -109,11 +109,11 @@ def test_auto_view_threshold_filter_and_manual_override(calendar_workspace, cale
         page.locator("[data-cal-property]").select_option(str(calendar_workspace["properties"][0]))
         page.wait_for_selector(".cal-week")
         assert page.locator('[data-cal-scale="month"]').get_attribute("aria-pressed") == "true"
-        page.locator('[data-cal-view="gantt"]').click()
-        page.wait_for_selector(".cal-gantt-row")
-        assert page.locator(".cal-gantt-row").count() == 1
+        assert not page.locator(".cal-view-segment").is_visible()
+        assert page.locator(".cal-gantt-row").count() == 0
         page.locator("[data-cal-property]").select_option("")
         page.wait_for_function("() => document.querySelectorAll('.cal-gantt-row').length === 3")
+        assert page.locator(".cal-view-segment").is_visible()
         page.locator('[data-cal-view="calendar"]').click()
         page.wait_for_selector(".cal-week")
         page.reload()
