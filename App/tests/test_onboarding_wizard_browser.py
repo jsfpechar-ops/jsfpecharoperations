@@ -1152,9 +1152,10 @@ def test_wizard_polish_and_overview_cards(host, base_url, monkeypatch, lang, wid
         calendars_title = _t(lang, "property_page.sec.calendars.title")
         if width >= 1024:
             aside = page.locator("aside.preview")
-            calendars_row = aside.locator('a.r[href="#sec-calendars"]')
-            assert calendars_row.locator("span").inner_text() == calendars_title
-            assert aside.locator(".pv .r").count() >= 4
+            calendars_card = page.locator('nav.prop-strip a.sc[data-strip="calendars"]')
+            assert calendars_card.get_attribute("href") == "#sec-calendars"
+            assert calendars_card.locator("b").inner_text() == calendars_title
+            assert page.locator("nav.prop-strip .sc").count() == 6
             assert aside.locator("button[data-copy]").count() == 0
         else:
             calendars_summary = page.locator("details#sec-calendars > summary")
@@ -1163,7 +1164,7 @@ def test_wizard_polish_and_overview_cards(host, base_url, monkeypatch, lang, wid
         link_card = page.locator(".prop-strip [data-strip='guest']")
         copy_button = link_card.locator('button[data-copy="overview-guest-url"]')
         assert copy_button.is_visible()
-        label_box = link_card.locator("#property-guest-link-title").bounding_box()
+        label_box = link_card.locator("b").bounding_box()
         copy_box = copy_button.bounding_box()
         assert label_box and copy_box
         # Label left of the button; when the button wraps, the label sits above it.

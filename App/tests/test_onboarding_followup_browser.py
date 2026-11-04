@@ -175,10 +175,10 @@ def test_current_property_name_demo_label_and_distinct_setup_status(wizard_host,
         _ready(page)
         # 0286 and 0544: the health check is aside rows from 1024 px; below that, the section summaries.
         if width >= 1024:
-            rows = page.locator("aside.preview .pv .r")
+            rows = page.locator("nav.prop-strip a.sc")
             assert rows.count() >= 5
-            assert page.locator("aside.preview a.r[href='#sec-police']").count() == 1
-            assert page.locator("aside.preview a.r[href='#sec-calendars']").count() == 1
+            assert page.locator("nav.prop-strip a.sc[data-strip='police'][href='#sec-police']").count() == 1
+            assert page.locator("nav.prop-strip a.sc[data-strip='calendars'][href='#sec-calendars']").count() == 1
             status = page.locator("[data-setup-status]")
             assert status.is_visible()
             assert not status.evaluate("el => el.open")
