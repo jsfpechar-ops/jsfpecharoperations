@@ -33,6 +33,10 @@ Make the bar end **halfway into the departure day** (the Airbnb look). To keep b
 4. **Overflow guard.** Where the CSS gives the pill `margin:0 0 0 3px` or `margin:0 0 0 8px`, reduce the left margin to 0 for pills that start halfway (`:not(.continues-start)`), because the half cell is the offset now. Keep `.continues-start` as it is. Add 2px of right margin (`margin-right:2px`) so two touching bars never fuse.
 5. **Avatar and name.** The name must still show at 390 px for a 1-night stay (half + half = 1 cell, about 50 px): that is allowed to ellipsize, as today. Do not change font size or height.
 
+## 4b. Gap rule (orchestrator decision, 2026-11-04)
+
+Keep the CSS `column-gap` on the 14-column grid as it is. Because the gap sits between the half-tracks, a bar starts g/2 to the right of the arrival cell's middle and ends g/2 to the left of the departure cell's middle (g = the grid column gap: 4 px phone, 12 px desktop). That is wanted: two touching stays end up exactly one normal day gap apart. So the tests expect: left edge = cell middle + g/2, right edge = cell middle - g/2, 1 px tolerance. Read g from `getComputedStyle(.cal-pills).columnGap`. Fix the new 0908 test and the 0891 right-edge assertion with that rule; change no CSS for it. The brief's earlier "middle of the cell" means these edges.
+
 ## 5. Do not touch
 
 `app2.css` cleaning bars, the dashboard phone tile dots, the list view, the Gantt view, any other test file (except changing one pinned edge number, said in the report).
@@ -43,7 +47,7 @@ From `App/`: `UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium UBYHOST_REQUI
 
 ## 7. Acceptance
 
-- A stay 5 to 8 renders a pill from the middle of the 5th cell to the middle of the 8th (1 px tolerance) at 390 px and 1280 px; the new test pins it.
+- A stay 5 to 8 renders a pill from the middle of the 5th cell plus g/2 to the middle of the 8th minus g/2 (1 px tolerance, step 4b) at 390 px and 1280 px; the new test pins it.
 - A stay that starts in the previous week keeps its left edge on the Monday cell edge; one that runs into the next week keeps its right edge on the Sunday cell edge.
 - Two touching stays (one leaves the 8th, one arrives the 8th) share a lane and do not overlap.
 - The three test files above pass with 0 skipped.
