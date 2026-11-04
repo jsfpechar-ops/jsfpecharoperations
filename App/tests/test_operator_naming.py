@@ -72,9 +72,6 @@ PINNED = [
      "Who runs the accommodation: a company or a self-employed person.",
      "Kdo ubytování provozuje: firma nebo podnikající fyzická osoba."),
     ("entities.add_action", "Add operator", "Přidat provozovatele"),
-    ("entities.email_hint",
-     "Shown to guests as your contact.",
-     "Hostům se zobrazí jako váš kontakt."),
     ("archive.chip.entities_count",
      "Operators (%(count)s)", "Provozovatelé (%(count)s)"),
     ("apartment.form.entity.label",
@@ -298,17 +295,16 @@ def test_the_optional_fields_stay_optional(host):
         assert "*" not in _label_for(page.text, field_id)  # 0204: only required fields carry the star
 
 
-def test_the_contact_email_explains_where_it_shows(host):
+def test_the_contact_email_is_a_plain_field(host):
     page = host.get("/entities?lang=en")
-    assert 'aria-controls="new_contact-email-help"' in page.text
-    assert 'id="new_contact-email-help" role="tooltip">Shown to guests as your contact.</span>' in page.text
-    assert '<div class="hint">Shown to guests as your contact.</div>' not in page.text
+    assert 'new_contact-email-help' not in page.text
+    assert 'Shown to guests as your contact.' not in page.text
 
 
-def test_the_contact_email_explains_itself_in_czech(host):
+def test_the_contact_email_is_a_plain_field_in_czech(host):
     page = host.get("/entities?lang=cs")
-    assert 'aria-controls="new_contact-email-help"' in page.text
-    assert 'id="new_contact-email-help" role="tooltip">Hostům se zobrazí jako váš kontakt.</span>' in page.text
+    assert 'new_contact-email-help' not in page.text
+    assert 'Hostům se zobrazí jako váš kontakt.' not in page.text
 
 
 def test_the_edit_form_asks_for_the_same_required_fields(host):

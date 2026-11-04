@@ -6,7 +6,7 @@
 {%- set pv = property_values or {} %}
 <div class="grid two property-identity-fields">
   <div class="field">
-    {{ field_label('internal_name', t('apartment.form.internal_name.label'), t('apartment.form.internal_name.hint')) }}
+    {{ field_label('internal_name', t('apartment.form.internal_name.label'), t('apartment.form.internal_name.hint'), false, '', true) }}
     <input type="text" id="internal_name" name="internal_name" value="{{ pv.internal_name or '' }}" required
            aria-describedby="internal_name-help{% if name_error %} internal_name-error{% endif %}"{% if name_error %} aria-invalid="true" autofocus{% endif %}>
     {% if name_error %}<p class="err-text" id="internal_name-error" role="alert">{{ t('flash.error.name_required') }}</p>{% endif %}
