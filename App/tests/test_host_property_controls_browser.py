@@ -474,3 +474,75 @@ def test_calendar_platform_controls_in_browser(host, base):
             browser.close()
     finally:
         db.execute("DELETE FROM ical_feed WHERE apartment_id = ?", (apartment,))
+
+
+_TIP_JS = """(id) => {
+  const el = document.getElementById(id);
+  const label = el.closest('.field').querySelector('label[for="' + id + '"]');
+  const tip = label && label.nextElementSibling;
+  return tip ? [tip.getBoundingClientRect().top, label.getBoundingClientRect().top] : null;
+}"""
+
+
+def test_guest_links_and_message_settings_geometry(host, base):
+    apartment = host["apartment"]
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        context = browser.new_context(viewport={"width": 1280, "height": 1000})
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": _session_cookie(host), "url": base + "/"}])
+        page = context.new_page()
+        for width in (390, 768, 1280):
+            page.set_viewport_size({"width": width, "height": 1000})
+            page.goto(f"{base}/apartments/{apartment}?lang=en")
+            page.evaluate("() => { document.getElementById('sec-messages').open = true; }")
+
+            def box(sel):
+                return page.locator(sel).first.bounding_box()
+
+            assert page.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth"), width
+            top = box(".guest-link-top")
+            # Link and PIN: input and Copy share one row and one height.
+            for inp, btn in (("#permalink", '[data-copy="permalink"]'), ("#permalink_pin", '[data-copy="permalink_pin"]')):
+                i, b = box(inp), box(btn)
+                assert abs(i["y"] - b["y"]) <= 4, (width, inp, i, b)
+                assert abs(i["height"] - b["height"]) <= 1, (width, inp)
+                assert b["x"] >= i["x"] + i["width"] - 1, (width, inp)
+            # Every control in the block has one height; at 390 px each is a 44 px touch target.
+            heights = page.evaluate(
+                "() => [...document.querySelectorAll('.guest-link-top .ui-btn, .guest-link-top .copy-btn, "
+                ".guest-link-top .guest-copy-row input')].map(e => e.getBoundingClientRect().height)")
+            assert heights and max(heights) - min(heights) <= 1, (width, heights)
+            if width == 390:
+                assert min(heights) >= 44, heights
+            assert box("#permalink")["width"] >= 0.6 * top["width"], width
+            if width == 1280:
+                tops = sorted(page.evaluate(
+                    "() => [...document.querySelectorAll('.guest-link-actions > *')].map(e => e.getBoundingClientRect().top)"))
+                rows = 1 + sum(1 for a, b in zip(tops, tops[1:]) if b - a > 4)
+                assert rows <= 2, tops
+                gaps = page.evaluate(
+                    "() => [...document.querySelectorAll('.guest-link-actions button')].map(b => {"
+                    " const t = b.nextElementSibling; return t ? t.getBoundingClientRect().left - b.getBoundingClientRect().right : 999; })")
+                assert all(-1 <= g <= 24 for g in gaps), gaps
+            # Number fields: side by side from 768 px, stacked on phone.
+            days, reach = box("#permalink_window_days"), box("#permalink_reachback_days")
+            if width == 390:
+                assert reach["y"] > days["y"] + days["height"] - 1, width
+            else:
+                assert abs(days["y"] - reach["y"]) <= 1, width
+            # Passport select: whole text, full width, its ? on the label row.
+            select, grid = box("#passport_photo_policy"), box(".guest-link-windows")
+            assert page.evaluate("() => { const s = document.getElementById('passport_photo_policy'); return s.scrollWidth <= s.clientWidth; }"), width
+            assert select["width"] >= 0.9 * grid["width"], width
+            tips = page.evaluate(_TIP_JS, "passport_photo_policy")
+            assert tips is None or abs(tips[0] - tips[1]) <= 6, (width, tips)
+            # OCR checkbox: 24 px box, centred on its label, ? on the same row, below the select.
+            cb = box("#ocr_scan")
+            assert 20 <= cb["width"] <= 26 and 20 <= cb["height"] <= 26, (width, cb)
+            text = box("label[for=ocr_scan] span")
+            assert abs((text["y"] + text["height"] / 2) - (cb["y"] + cb["height"] / 2)) <= 3, width
+            assert cb["y"] > select["y"] + select["height"], width
+            if width == 1280:
+                tip_top = page.evaluate(_TIP_JS, "ocr_scan")
+                assert tip_top is not None and abs(tip_top[0] - cb["y"]) <= 6, tip_top
+        browser.close()
