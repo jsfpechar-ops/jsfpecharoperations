@@ -160,3 +160,34 @@ def test_0948_police_card_opens_its_section(base, dashboard_rich_host):  # noqa:
                 context.close()
         finally:
             browser.close()
+
+
+def test_0948_copy_settings_button_sits_in_the_header_row(base, dashboard_rich_host):  # noqa: F811
+    cookie = dashboard_rich_host["client"].cookies.get(auth.SESSION_COOKIE)
+    assert cookie
+    spec = next(s for s in PAGES if s["name"] == "property")
+    path = _path(spec, dashboard_rich_host)
+    with sync_api.sync_playwright() as playwright:
+        browser = _launch(playwright)
+        try:
+            for width in (390, 768, 1280):
+                context, page = _open_app(browser, base, cookie, path, width)
+                try:
+                    button = page.locator(".airbnb-actions .copy-settings-open").first.bounding_box()
+                    title = page.locator("h1").first.bounding_box()
+                    form = page.locator(".form").bounding_box()
+                    assert button["x"] >= form["x"] - 1, width
+                    assert button["x"] + button["width"] <= form["x"] + form["width"] + 1, width
+                    overlaps = not (button["y"] + button["height"] <= title["y"] or title["y"] + title["height"] <= button["y"]
+                                    or button["x"] + button["width"] <= title["x"] or title["x"] + title["width"] <= button["x"])
+                    assert not overlaps, width
+                    if width == 390:
+                        assert button["height"] >= 44, width
+                        assert button["y"] >= title["y"] + title["height"] - 1, width
+                    if width == 390:
+                        page.locator(".airbnb-actions .copy-settings-open").first.click()
+                        assert page.locator("#copy-settings[open]").count() == 1
+                finally:
+                    context.close()
+        finally:
+            browser.close()
