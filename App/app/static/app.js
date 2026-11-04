@@ -2247,7 +2247,10 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     // "change", so tell them; then the form is clean again.
     function discard(form) {
       form.reset();
-      form.querySelectorAll("select, input[type=checkbox], input[type=radio]").forEach(function (el) {
+      // 0952: form.elements also holds controls outside the form that name it with form="...".
+      Array.prototype.slice.call(form.elements).filter(function (el) {
+        return el.matches("select, input[type=checkbox], input[type=radio]");
+      }).forEach(function (el) {
         el.dispatchEvent(new Event("change", { bubbles: true }));
       });
       form.removeAttribute("data-dirty");
