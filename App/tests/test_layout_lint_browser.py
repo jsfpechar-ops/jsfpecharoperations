@@ -46,6 +46,9 @@ PUBLIC_ROUTES = {
 }
 # Known findings the lint must not hide: every entry needs a reason and an owner decision.
 ALLOW: dict[tuple[str, str], str] = {}
+# 0931 real findings: two "Save changes" submit buttons in one form (multiple-save-in-form). Element: button.btn "Save changes".
+ALLOW[("fee-setup", "multiple-save-in-form")] = 'button.btn "Save changes" x2 in one form; owner debt, fix in UX threads'  # owner debt, fix in UX threads
+ALLOW[("automation", "multiple-save-in-form")] = 'button.btn "Save changes" x2 in one form; owner debt, fix in UX threads'  # owner debt, fix in UX threads
 # Pages the shared route map does not reach: the calendars tab (needs feeds) and the stay page.
 EXTRA_ROUTES = {
     "property-bookings": "/apartments/{configured_apartment}?view=bookings",
@@ -190,7 +193,16 @@ BAD_PAGE = """<!doctype html><html><head><meta charset=utf-8>
 <div style="width:360px"><div style="border-right:1px solid #ccc;height:40px">Stray</div></div>
 <div class=stay-head-actions style="display:flex;flex-wrap:wrap;width:200px;gap:12px"><button style="width:150px;height:36px">Primary</button><details class=row-menu><summary style="display:inline-block;width:60px;height:36px">&#8942;</summary></details></div>
 <span id=icons><svg width=10 height=10><path d="M0 0h10v10z"/></svg><svg width=10 height=10><path d="M0 0h10v10z"/></svg></span>
+<form action=/x><button type=submit>Save</button><button type=submit>Uložit</button></form>
+<div style="position:fixed;bottom:0;left:0;width:300px;height:40px;background:#fff"><button type=submit>Confirm</button></div>
+<h2>Guest list</h2><h3>Guest list</h3>
 </body></html>"""
+
+# header-actions-misaligned runs only at 768 px and up, so its sample is a separate page at 1024 px (0931).
+BAD_HEADER_PAGE = """<!doctype html><html><head><meta charset=utf-8></head><body style="margin:0">
+<div class=page-head style="width:900px;display:flex;align-items:center;gap:12px;font:14px sans-serif">
+<h1 style="margin:0">Invoices</h1><button style="height:36px">Export</button><button style="height:52px">Create a new invoice</button>
+</div></body></html>"""
 
 
 def test_the_lint_catches_the_known_regressions(wide_base):
@@ -208,11 +220,15 @@ def test_the_lint_catches_the_known_regressions(wide_base):
         found = page.evaluate(LINT)
         rules = {item[0] for item in found}
         stranded = [item for item in found if item[0] == "help-stranded"]
+        page.set_viewport_size({"width": 1024, "height": 800})
+        page.set_content(BAD_HEADER_PAGE)
+        header_rules = {item[0] for item in page.evaluate(LINT)}
         browser.close()
     expected = {"word-per-line", "label-squeezed", "badge-stranded", "clipped-text",
                 "text-overlap", "outside-viewport", "empty-control", "duplicate-icon", "help-stranded",
                 "table-squeezed", "tight-stack", "half-width-input", "legend-overlap", "double-primary", "stray-rule",
-                "action-row-orphan"}
+                "multiple-save-in-form", "duplicate-heading", "action-row-orphan"}
     assert expected <= rules, f"lint missed {sorted(expected - rules)}; saw {sorted(rules)}"
+    assert "header-actions-misaligned" in header_rules, f"lint missed header-actions-misaligned; saw {sorted(header_rules)}"
     # The "?" under its heading is caught; the one right after its label is not.
     assert len(stranded) == 1 and "Guest form access" not in stranded[0][1], stranded

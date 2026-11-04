@@ -337,6 +337,50 @@
     // a divider between two halves is fine; a rule on the last item, against the card edge, is stray
     if (kids.length && kids[kids.length - 1] === el && rectOf(par).right - r.right < 40 && !el.matches('aside')) add('stray-rule', el, 'right border on the last item');
   }
+  // 11a. Header actions (0931): buttons beside an h1 share one row, same height and centre, one-line labels. Conservative.
+  if (vw >= 768) {
+    const actSel = 'button,a.ui-btn,.btn,.ui-btn';
+    const isAct = (el) => el.matches(actSel) && vis(el) && !skipZone(el) && getComputedStyle(el).position !== 'fixed';
+    for (const h of all.filter((el) => el.tagName === 'H1' && !el.closest('[role=dialog],dialog'))) {
+      let box = h.parentElement;
+      while (box && box !== document.body && ![...box.querySelectorAll(actSel)].some(isAct)) box = box.parentElement;
+      if (!box || box === document.body) continue;
+      const acts = [...box.querySelectorAll(actSel)].filter(isAct);
+      const hr = rectOf(h);
+      const beside = acts.filter((a) => { const r = rectOf(a); return r.top < hr.bottom && r.bottom > hr.top; });
+      if (!beside.length) continue;
+      if (beside.length >= 2) {
+        const r0 = rectOf(beside[0]);
+        const bad = beside.find((b) => { const r = rectOf(b); return Math.abs(r.height - r0.height) > 2 || Math.abs((r.top + r.bottom) / 2 - (r0.top + r0.bottom) / 2) > 4; });
+        if (bad) add('header-actions-misaligned', bad, 'header buttons differ in height or vertical centre');
+      }
+      for (const b of beside) if (textLines(b) > 1) add('header-actions-misaligned', b, 'header button label wraps to two lines');
+      if (beside.length === 1 && box.matches('.page-head') && acts.length > 1) add('header-actions-misaligned', beside[0], 'lone header button beside the h1 while other actions sit elsewhere in .page-head');
+    }
+  }
+
+  // 11b. One form, one save button (0931). Czech and English labels.
+  const saveRe = /save|uložit|ulozit/i;
+  const submits = all.filter((el) => el.matches('button[type=submit],input[type=submit]') && vis(el));
+  const saves = submits.filter((el) => saveRe.test((el.innerText || el.value || '').trim()));
+  for (const form of new Set(saves.map((b) => b.closest('form')).filter(Boolean))) {
+    const inForm = saves.filter((b) => b.closest('form') === form);
+    if (inForm.length > 1) add('multiple-save-in-form', inForm[1], inForm.length + ' save submit buttons in one form');
+  }
+  for (const bar of all.filter((el) => getComputedStyle(el).position === 'fixed' && el.querySelector('button[type=submit],input[type=submit]'))) {
+    const barSubmit = submits.filter((b) => bar.contains(b));
+    const outside = saves.filter((b) => !bar.contains(b));
+    if (barSubmit.length && outside.length) add('multiple-save-in-form', bar, 'fixed bar holds a submit while another save submit sits outside it');
+  }
+
+  // 11c. Two visible headings with the same text on one page (0931). Dialogs and nav excluded.
+  const headSeen = new Map();
+  for (const h of all.filter((el) => /^H[123]$/.test(el.tagName) && !el.closest('[role=dialog],dialog,nav'))) {
+    const t = h.textContent.toLowerCase().trim().replace(/\s+/g, ' ');
+    if (t.length < 3) continue;
+    if (headSeen.has(t)) add('duplicate-heading', h, 'same heading text as an earlier one: "' + t.slice(0, 40) + '"');
+    else headSeen.set(t, h);
+  }
 
   // 10g. Stay detail (0912): the action buttons and the menu trigger share one row; one that sits alone
   // on a line under the primary action row is an orphan.
