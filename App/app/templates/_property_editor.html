@@ -156,22 +156,22 @@
       <div class="guest-link-top">
         <div class="field guest-link-url">
           <label for="permalink">{{ t('property_nav.guest_link') }}</label>
-          <div class="copyrow">
+          <div class="copyrow guest-copy-row">
             <input type="text" id="permalink" readonly value="{{ permalink }}">
             {{ copy_button('permalink') }}
-            <a class="btn sm ghost" href="/l/{{ link_key }}" target="_blank" rel="noopener">{{ t('guest_links.preview') }}</a>
-            <a class="ui-btn ui-btn-quiet ui-btn-compact" href="/apartments/{{ apartment.id }}/guide">{{ t('leon_page.guide_link') }}</a>
           </div>
         </div>
         <div class="field guest-link-pin">
           {{ field_label('permalink_pin', t('guest_links.pin'), t('apartment.form.guest_link.pin_hint')) }}
-          <div class="copyrow pin-row">
+          <div class="copyrow guest-copy-row pin-row">
             <input type="text" id="permalink_pin" name="permalink_pin" value="{{ pin }}" class="mono" aria-describedby="permalink_pin-help"
                    inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="{{ t('apartment.form.guest_link.pin_ph') }}" required>
             {{ copy_button('permalink_pin') }}
           </div>
         </div>
         <div class="guest-link-actions">
+          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/l/{{ link_key }}" target="_blank" rel="noopener">{{ t('guest_links.preview') }}</a>
+          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/apartments/{{ apartment.id }}/guide">{{ t('leon_page.guide_link') }}</a>
           <span class="guest-link-action">
             <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" formmethod="post" formnovalidate
                     formaction="{{ base_url }}/regenerate-pin"
@@ -213,11 +213,8 @@
             <option value="required_foreign" {% if apartment.passport_photo_policy == 'required_foreign' %}selected{% endif %}>{{ t('apartment.form.passport_policy.required') }}</option>
           </select>
         </div>
-        <div class="feature-switch-row" style="display:flex;align-items:last baseline;flex-wrap:nowrap;gap:12px">
-          <label class="checkline" for="ocr_scan" style="margin:0;align-items:center">
-            <input type="checkbox" id="ocr_scan" style="width:24px;height:24px;margin:0;flex:none" name="ocr_scan" value="1" {% if apartment.ocr_scan %}checked{% endif %} aria-describedby="ocr_scan-help">
-            <span>{{ t('apartment.form.ocr_scan.label') }}{{ help_tip('ocr_scan-help', t('apartment.form.ocr_scan.hint')) }}</span>
-          </label>
+        <div class="field passport-scan-row">
+          <label class="checkline" for="ocr_scan"><input type="checkbox" id="ocr_scan" name="ocr_scan" value="1" {% if apartment.ocr_scan %}checked{% endif %} aria-describedby="ocr_scan-help"><span>{{ t('apartment.form.ocr_scan.label') }}</span>{{ help_tip('ocr_scan-help', t('apartment.form.ocr_scan.hint')) }}</label>
         </div>
       </div>
     </section>

@@ -2314,9 +2314,7 @@ body.v2 .wiz-page .ui-choice-card-extra{margin-top:12px}
 /* A destructive action next to a main one is a quiet outlined button, never a second red slab. */
 body.v2 .ui-btn-danger{background:#fff;color:var(--acc-text);border:1.5px solid var(--acc-text)}
 /* Buttons that stack keep 12 px between them. */
-body.v2 :is(.action-group,.guest-link-actions,.setup-wizard-actions){display:flex;flex-wrap:wrap;align-items:center;gap:12px}
-body.v2 .guest-link-actions{flex-direction:column;align-items:flex-start;margin:12px 0 16px}
-body.v2 .guest-link-action{display:inline-flex;align-items:center;gap:8px}
+body.v2 :is(.action-group,.setup-wizard-actions){display:flex;flex-wrap:wrap;align-items:center;gap:12px}
 body.v2 .actions,body.v2 .ui-form-actions{gap:12px}
 /* A legend sits inside its box, above the fields, never on the border line. */
 body.v2 fieldset>legend{float:left;width:100%;padding:0;margin:0 0 12px;box-sizing:border-box}
@@ -2470,3 +2468,35 @@ body.v2 .airbnb-header:has(>.airbnb-actions)>.airbnb-title{width:auto;flex:1 1 0
 body.v2 .airbnb-header:has(>.airbnb-actions)>.airbnb-back{margin-right:0}
 @media (max-width:767px){body.v2 .airbnb-actions{width:100%;margin-left:0}body.v2 .airbnb-actions .copy-settings-open{width:100%;justify-content:center;min-height:44px}body.v2 .airbnb-header:has(>.airbnb-actions)>.airbnb-title{flex:1 1 100%}}
 @media (max-width:359px){body.v2 .prop-strip{grid-template-columns:minmax(0,1fr)}}
+
+/* 0951: guest links block */
+body.v2 .guest-link-top{display:grid;gap:16px;grid-template-columns:minmax(0,1fr);margin-bottom:16px}
+body.v2 .guest-link-top .guest-copy-row{display:flex;flex-wrap:nowrap;align-items:center;gap:12px}
+body.v2 .guest-link-top .guest-copy-row input{flex:1 1 auto;min-width:0;width:100%;max-width:none;height:40px;margin:0;text-overflow:ellipsis}
+body.v2 .guest-link-top .guest-copy-row .copy-btn{flex:none;width:auto;min-width:40px;height:40px;min-height:40px;padding:0 12px;margin:0;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:var(--radius-md,8px);white-space:nowrap}
+body.v2 .guest-link-top .guest-link-actions{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-self:stretch;width:100%;gap:12px;margin:0}
+body.v2 .guest-link-top .guest-link-actions .ui-btn{height:40px;min-height:40px;padding:0 14px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
+body.v2 .guest-link-top .guest-link-action{display:inline-flex;align-items:center;gap:6px}
+@media (max-width:1023px){body.v2 .guest-link-top .guest-copy-row :is(input,.copy-btn),body.v2 .guest-link-top .guest-link-actions .ui-btn{height:44px;min-height:44px}body.v2 .guest-link-top .guest-copy-row .copy-btn{min-width:44px}}
+body.v2 .guest-link-windows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 24px;align-items:start}
+body.v2 .guest-link-windows .field{display:flex;flex-direction:column;gap:6px;min-width:0;margin:0}
+body.v2 .guest-link-windows .field > input,body.v2 .guest-link-windows .field > select{width:100%;max-width:none;margin:0;box-sizing:border-box}
+body.v2 .guest-link-windows .field-label-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:6px;margin:0}
+body.v2 .guest-link-windows .link-window-note{margin:0}
+body.v2 .guest-link-windows .field:has(> select),body.v2 .guest-link-windows .passport-scan-row{grid-column:1/-1}
+body.v2 .guest-link-windows select{text-overflow:clip;white-space:normal;height:auto;min-height:40px;padding-top:8px;padding-bottom:8px}
+body.v2 .passport-scan-row{flex-direction:row;align-items:center;gap:8px;min-height:44px}
+body.v2 .passport-scan-row .checkline{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:12px;margin:0;min-height:44px;cursor:pointer}body.v2 .passport-scan-row .checkline > span{min-width:0;flex:0 1 auto}body.v2 .passport-scan-row .checkline .help-tip{flex:none;align-self:flex-start}
+body.v2 .passport-scan-row input[type=checkbox]{width:24px;height:24px;min-width:24px;min-height:24px;margin:0;flex:none}
+@media (max-width:767px){body.v2 .guest-link-windows{grid-template-columns:minmax(0,1fr)}}
+body.v2 .fields-wrap .guest-link-top .guest-copy-row .copy-btn{min-height:40px}
+@media (max-width:1023px){body.v2 .fields-wrap .guest-link-top .guest-copy-row .copy-btn{min-height:44px}}
+body.v2 .fields-wrap .guest-link-top .guest-copy-row .copy-btn,body.v2 .fields-wrap .guest-link-top .guest-copy-row input:not([type=hidden]){margin:0;align-self:center}
+body.v2 .property-section > .guest-link-top{grid-column:1/-1}
+/* 0951: OCR row keeps its ? on the text line (inline flow) */
+body.v2 .passport-scan-row .checkline{display:block;position:relative;padding-left:36px;margin:0;min-height:0;cursor:pointer;line-height:1.4}
+body.v2 .passport-scan-row .checkline > input[type=checkbox]{position:absolute;left:0;top:2px;width:24px;height:24px;min-width:24px;margin:0}
+body.v2 .passport-scan-row .checkline > span{display:inline;min-width:0}
+body.v2 .passport-scan-row .checkline .help-tip{display:inline-block;vertical-align:middle;margin-left:6px}
+@media (max-width:359px){body.v2 .passport-scan-row .checkline{padding-left:32px}body.v2 .passport-scan-row .checkline .help-tip{margin-left:4px}}
+body.v2 .guest-link-windows .field:has(> select){margin-top:12px}
