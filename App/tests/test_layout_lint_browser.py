@@ -189,7 +189,16 @@ BAD_PAGE = """<!doctype html><html><head><meta charset=utf-8>
 <fieldset style="width:300px;border:2px groove #888"><legend>Signature</legend>Text</fieldset>
 <div style="width:360px"><div style="border-right:1px solid #ccc;height:40px">Stray</div></div>
 <span id=icons><svg width=10 height=10><path d="M0 0h10v10z"/></svg><svg width=10 height=10><path d="M0 0h10v10z"/></svg></span>
+<form action=/x><button type=submit>Save</button><button type=submit>Uložit</button></form>
+<div style="position:fixed;bottom:0;left:0;width:300px;height:40px;background:#fff"><button type=submit>Confirm</button></div>
+<h2>Guest list</h2><h3>Guest list</h3>
 </body></html>"""
+
+# header-actions-misaligned runs only at 768 px and up, so its sample is a separate page at 1024 px (0931).
+BAD_HEADER_PAGE = """<!doctype html><html><head><meta charset=utf-8></head><body style="margin:0">
+<div class=page-head style="width:900px;display:flex;align-items:center;gap:12px;font:14px sans-serif">
+<h1 style="margin:0">Invoices</h1><button style="height:36px">Export</button><button style="height:52px">Create a new invoice</button>
+</div></body></html>"""
 
 
 def test_the_lint_catches_the_known_regressions(wide_base):
@@ -207,10 +216,15 @@ def test_the_lint_catches_the_known_regressions(wide_base):
         found = page.evaluate(LINT)
         rules = {item[0] for item in found}
         stranded = [item for item in found if item[0] == "help-stranded"]
+        page.set_viewport_size({"width": 1024, "height": 800})
+        page.set_content(BAD_HEADER_PAGE)
+        header_rules = {item[0] for item in page.evaluate(LINT)}
         browser.close()
     expected = {"word-per-line", "label-squeezed", "badge-stranded", "clipped-text",
                 "text-overlap", "outside-viewport", "empty-control", "duplicate-icon", "help-stranded",
-                "table-squeezed", "tight-stack", "half-width-input", "legend-overlap", "double-primary", "stray-rule"}
+                "table-squeezed", "tight-stack", "half-width-input", "legend-overlap", "double-primary", "stray-rule",
+                "multiple-save-in-form", "duplicate-heading"}
     assert expected <= rules, f"lint missed {sorted(expected - rules)}; saw {sorted(rules)}"
+    assert "header-actions-misaligned" in header_rules, f"lint missed header-actions-misaligned; saw {sorted(header_rules)}"
     # The "?" under its heading is caught; the one right after its label is not.
     assert len(stranded) == 1 and "Guest form access" not in stranded[0][1], stranded
