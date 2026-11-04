@@ -2171,7 +2171,10 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         returnInput.value = returnInput.value.replace(/([?&]section=)[^&#]*/, "$1" + group);
       });
       // A switch says "Not saved yet" until the form is saved; never "Enabled".
-      form.querySelectorAll("input[data-switch-saved]").forEach(function (input) {
+      // 0952: door-code switches sit outside the form and name it with form="...".
+      Array.prototype.slice.call(document.querySelectorAll("input[data-switch-saved]")).filter(function (input) {
+        return input.form === form;
+      }).forEach(function (input) {
         var status = document.getElementById((input.getAttribute("aria-describedby") || "").split(" ")[0]);
         if (!status) return;
         input.addEventListener("change", function () {
