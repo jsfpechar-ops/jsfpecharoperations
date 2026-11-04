@@ -1,0 +1,50 @@
+{% extends "host_page.html" %}
+{% set nav = 'payments' %}
+{% set how_key = 'payments' %}
+{% set body_kind = 'form' %}
+{% from "_ui.html" import ui_button, ui_tip with context %}
+{% block title %}{{ t('payments.new.title') }}{% endblock %}
+{% block back_url %}/payments{% endblock %}
+{% block back_label %}{{ t('payments.title') }}{% endblock %}
+{% block primary_action %}{% endblock %}
+{% block tabs %}{% endblock %}
+{% block toolbar %}{% endblock %}
+{% block body %}
+<div class="ui-section" id="new-request">
+  <form method="post" action="/payments/requests/new" class="ui-form">
+    <label class="ui-field">
+      <span>{{ t('payments.field.amount') }}</span>
+      <input class="ui-input" type="number" name="amount_czk" min="1" step="1" required{% if prefill %} value="{{ prefill.amount_czk }}"{% endif %}>
+    </label>
+    <fieldset class="ui-field">
+      <legend>{{ t('payments.field.reason') }}</legend>
+      <div class="ui-chips">
+        {% for r in reasons %}<label class="ui-chip"><input type="radio" name="reason" value="{{ r }}" {% if loop.first %}required{% endif %}{% if prefill and r == 'custom' %} checked{% endif %}> {{ t('payments.reason.' ~ r) }}</label>{% endfor %}
+      </div>
+    </fieldset>
+    <label class="ui-field">
+      <span>{{ t('payments.field.note') }}</span>
+      <input class="ui-input" type="text" name="guest_note" maxlength="60"{% if prefill %} value="{{ prefill.name }}"{% endif %}>
+    </label>
+    <label class="ui-field">
+      <span>{{ t('payments.field.stay') }}</span>
+      <select name="reservation_id" class="ui-input">
+        <option value="">{{ t('payments.field.no_stay') }}</option>
+        {% for s in stays %}<option value="{{ s.id }}"{% if selected_reservation_id == s.id %} selected{% endif %}>{{ s.label }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="ui-field">
+      <span>{{ t('payments.field.guest_email') }}</span>
+      <input class="ui-input" type="email" name="guest_email">
+    </label>
+    <fieldset class="ui-field">
+      <legend>{{ t('payments.field.rail') }}</legend>
+      <div class="ui-chips">
+        <label class="ui-chip"><input type="radio" name="rail" value="card" checked> {{ t('payments.rail.card') }}</label>
+        <label class="ui-chip"><input type="radio" name="rail" value="qr"> {{ t('payments.rail.qr') }}</label>
+      </div>
+    </fieldset>
+    {{ ui_button(t('payments.new.save_draft'), 'primary', type='submit') }}
+  </form>
+</div>
+{% endblock %}
