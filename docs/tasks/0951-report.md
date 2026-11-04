@@ -32,3 +32,11 @@ Screenshots: docs/tasks/screenshots-0951/automatic-messages-{390,768,1280}.png, 
 - 1280: links full width; actions in 2 rows; numbers side by side.
 - Finding: the note "A stay appears…" and the passport label sit with almost no gap at 768/1280 (grid row gap does not separate them). Not fixed.
 Next step: decide the static key (bump to a new key or accept the orchestrator's regenerate), run `tests/test_static_versions.py --write`, identify the 4th failure, and check the 80 layout-lint findings against the base branch.
+
+## Update (third run)
+Status: blocked
+Gate set (`test_host_property_controls_browser`, `test_0833`, `test_0541`, `test_layout_lint_browser`, `test_static_versions`, `test_0531`, `test_calmer_forms`): last full run 34 passed, 1 failed, 0 skipped; after the last CSS change the lint file alone: 3 passed, 1 failed (layout lint); property controls file 7 passed in the same run (geometry test passes).
+Fixed: help-tip `?` moved inside the OCR `<label>` (lint `help-stranded` for `tight-side` was caused by 8 px copy gap: now 12 px). `test_property_and_operator_controls` asserted `data-copy="property-guest-url"`, moved to `overview-guest-url` by 0948 (base already broken). Geometry test checks checkbox against first text line. Cache key now 20261104-0951f, manifest current.
+Lint still: 56 `help-stranded` (OCR `?` tip, 8 routes x 7 widths). The lint measures the tip against the label text span; with the tip inside the label it reports "on its own line" at 320 px, 41 px off. Not fixed.
+Screenshots (docs/tasks/screenshots-0951/): 390 viewed: Copy on input row, actions wrap to 3 rows, ? inline; select text second line clipped by the select height (real finding, not fixed). 768/1280 viewed earlier: note and passport label gap now 24 px.
+Next step: in app2.css, make the OCR tip not a lint-stranded element: move `help_tip('ocr_scan-help')` out of the `label` and right after the `<label>` in a `div.passport-scan-row` flex row whose label is `display:contents`-free, or give the span `display:inline` so the lint anchor is the text line; then the select `min-height` to fit two lines (`height:auto`), and rerun lint.
