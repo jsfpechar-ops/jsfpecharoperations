@@ -70,4 +70,4 @@ Append-only.
 - 2026-11-03 | Partial site refund issues a credit note / corrective document for the refunded amount; full refund keeps storno | owner | 0901
 
 - [filing] 2026-11-04: unanswered filings retry 30m/2h/6h/12h, duplicate answer stops; supersedes OD-1 and WP31 (0909). After the 5th attempt: host and support mail and push, once per chain.
-- 2026-11-04 | Stay fee guest pay v4: read-only, QR/IBAN/Revolut/cash (Stripe v2), guest RÚIAN kept, near miss → host; counsel OK (law link) | owner | [plan](../plans/stay-fee-guest-payment.md)
+- 2026-11-04 | Stay fee pay v4: QR/IBAN/Revolut/cash, Stripe v2, near miss → host, counsel OK | owner | [plan](../plans/stay-fee-guest-payment.md)
