@@ -103,7 +103,6 @@
 
 {% if group == 'security' %}{% call settings_group('security', t('settings.group.security')) %}
     <div class="ui-section" id="settings-security">
-      {{ settings_heading('security', t('settings.nav.security'), t('settings.security.lede')) }}
       <div class="settings-action-list" id="settings-passkeys">
         <div class="settings-action-row">
           <div>
@@ -145,10 +144,12 @@
         {% endfor %}
       </div>
       <div class="settings-action-list">
+        {% if current_user.totp_enabled %}
         {% with label=t('settings.account.2fa'), value=t('settings.account.enabled') if current_user.totp_enabled else t('settings.access.off') %}{% include "partials/settings_value_card.html" %}{% endwith %}
+        {% endif %}
         {% if not current_user.totp_enabled %}
         <div class="settings-action-row">
-          {{ help_tip('settings-2fa-help', t('settings.account.2fa_off')) }}
+          <div><strong>{{ t('settings.account.2fa') }}</strong>{{ help_tip('settings-2fa-help', t('settings.account.2fa_off')) }}</div>
           <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/account/2fa/setup">{{ t('settings.account.setup') }}</a>
         </div>
         {% endif %}
