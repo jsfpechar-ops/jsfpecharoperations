@@ -19,15 +19,6 @@
   <div class="needs-you-copy">
     <strong>{{ line.text or line.subject }}</strong>
     {% if line.text %}<span>{{ line.subject }}</span>{% endif %}
-    {% if line.kind == 'paste' %}
-    <details class="needs-you-more" data-paste-check><summary>{{ t('workflow.paste.how') }}</summary>
-      <ul class="needs-you-how">
-        <li>{{ t('workflow.paste.airbnb') }}</li>
-        <li>{{ t('workflow.paste.booking') }}</li>
-        <li>{{ t('workflow.paste.direct') }}</li>
-      </ul>
-    </details>
-    {% endif %}
   </div>
   {% if line.href or line.dismiss_id %}
   <div class="needs-you-actions">
