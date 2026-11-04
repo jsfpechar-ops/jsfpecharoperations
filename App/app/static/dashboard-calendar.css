@@ -807,6 +807,8 @@ body.v2 #calendar.dashboard-calendar[data-readonly="false"].has-panel .cal-to-to
 }
 @media (min-width:1024px) {
   body.v2 #calendar.dashboard-calendar[data-readonly="false"] .cal-head .cal-toolbar h3[data-cal-period] { font-size:32px; line-height:40px; }
+  /* 0910: with the side panel open the calendar column is narrower; the title shrinks (18px at 1024, 32px from 1280) and stays on one line. */
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"].has-panel .cal-head .cal-toolbar h3[data-cal-period] { font-size:clamp(18px, calc(18px + (100vw - 1024px) * 0.1), 32px); }
 }
 /* 0877: tablet touch targets on the cleaning toolbar are at least 44 px (the desktop toolbar stays 40 px). */
 @media (min-width:768px) and (max-width:1023px) {
