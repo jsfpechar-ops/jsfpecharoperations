@@ -12,16 +12,16 @@
     "v": "20261010a"
   },
   "app.css": {
-    "sha256": "e0d77c407de8feb5737ac28015f98ff2e964baf4aa8ec0babe5798179ffe6fcd",
-    "v": "20261027-signup-wrap"
+    "sha256": "ff299f8017315f62d1f7c307e8750efb5a9d57d00a9537fe1d6e97e55bd407ae",
+    "v": "20261104-0916"
   },
   "app.js": {
-    "sha256": "5c4ab7d846b46ab1b7363a0d9f427cadf8e1fc5e103ede4022df042dd3a713dc",
-    "v": "20261104-0100"
+    "sha256": "2912427490a86374f865a0dbbbb969a0662f1b412969c1349602582cebfdb3f1",
+    "v": "20261104-0916"
   },
   "app2.css": {
-    "sha256": "adca1e4e5915fa05266ef29c15738c8a8792021e1e2e59d58c9d959fcaa8c69f",
-    "v": "0903b"
+    "sha256": "63e72e84a9fda63ac99fbcf45ed77b9f02c88057bab21db0e318f3d9c931a31a",
+    "v": "20261104-0916"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -36,8 +36,8 @@
     "v": "20260918a"
   },
   "cleaning.css": {
-    "sha256": "c034f23c59ea844031d810d68e62d8433820cdfda6490bd593e42bde750e08d2",
-    "v": "20261024-0291"
+    "sha256": "f9d5802a5432eaa3453ce109d2c3056f1f4b23ebe3c3eaac80c66f5f9733c213",
+    "v": "20261104-0916"
   },
   "cleaning.js": {
     "sha256": "2f0be0505681096250e093668bc9b30c7a4eeae2866b34dcb44288ca10ea89b1",
@@ -60,8 +60,8 @@
     "v": "20261104-0908d"
   },
   "dashboard-calendar.js": {
-    "sha256": "cf63e0f363a446f2c453d80a473ab3023d994d1ed5d5dff1e8f0dfcf370b76db",
-    "v": "20261104-0908d"
+    "sha256": "b506d3658670a5796135b196ceb17b44c4e05ef15cea1295c010e532eec8dc1c",
+    "v": "20261104-0916"
   },
   "docs/ubyport-ws-credential-sample.pdf": {
     "sha256": "0c147cf9c5dd5326612bc4668c5bce853cf300171ca62e3a0bab688c09b75fe6",
@@ -88,8 +88,8 @@
     "v": "20261103-0907"
   },
   "guide.js": {
-    "sha256": "46178439314acfb977c235ee7eab530082a0a5a6bb214f3efac58c388762c1da",
-    "v": "20261102-0829"
+    "sha256": "7bc163abd236d8032c1f7a094aadf4993774920b24b4a0817768dd27fa0cefab",
+    "v": "20261104-0916"
   },
   "havel.js": {
     "sha256": "b09f7e3d74c1423a038ba11303572c01625bf7ba6888b59b35aea06e656286f6",
