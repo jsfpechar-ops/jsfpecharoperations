@@ -146,7 +146,8 @@ def test_0911_bars_never_cover_cleaning_chips(base, width):  # noqa: F811
                                or chip["y"] + chip["height"] <= box["y"] or box["y"] + box["height"] <= chip["y"])
                 assert not overlap
             cx, cy = chip["x"] + chip["width"] / 2, chip["y"] + chip["height"] / 2
-            hit = page.evaluate("([x, y]) => { const e = document.elementFromPoint(x, y); return !!e && !!e.closest('.cal-clean-chip'); }", [cx, cy])
+            # .cal-tile-chips is pointer-events:none by design, so the hit is the day button under the chip; it must not be a pill.
+            hit = page.evaluate("([x, y]) => { const e = document.elementFromPoint(x, y); return !!e && !e.closest('.cal-pill') && !!e.closest('[data-cal-day=\"2026-11-08\"]'); }", [cx, cy])
             assert hit
         shot(page, f"0911-cleaning-{width}")
         context.close()

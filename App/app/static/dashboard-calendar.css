@@ -860,7 +860,10 @@ body.v2 #calendar.dashboard-calendar[data-readonly="false"] .cal-pill[data-cal-c
 }
 /* 0911: bars on top, chips below (cleaning page, >= 768 px only) */
 @media (min-width:768px) {
-  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-week.is-dots { --cal-num-band:52px; --cal-lane:44px; }
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-week.is-dots { --cal-num-band:52px; --cal-lane:56px; }
   body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-pills { align-content:start; padding-top:var(--cal-num-band); padding-bottom:0; }
-  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-tile-chips { margin-top:calc(var(--cal-num-band) + var(--pl,1) * var(--cal-lane) - 12px - 28px); }
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-tile-chips { margin-top:calc(var(--cal-num-band) + var(--pl,1) * var(--cal-lane) - 12px + 8px - 47px); }
+}
+@media (min-width:1024px) {
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-tile-chips { margin-top:calc(var(--cal-num-band) + var(--pl,1) * var(--cal-lane) - 12px + 8px - 47px - 24px); }
 }
