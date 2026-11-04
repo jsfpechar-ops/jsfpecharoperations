@@ -829,25 +829,32 @@ def test_0835_cleaning_range_shot_1280_mouse_drag(workspace, origin):
         browser.close()
 
 
-ONE_ROW_0842 = ["h3[data-cal-period]", "[data-cal-prev]", "[data-cal-today]", "[data-cal-next]",
-                "[data-cal-property]", "[data-cal-settings]", "[data-cal-scales]"]  # 0911: no view toggle while a property is picked
+ROW1_0842 = ["h3[data-cal-period]", "[data-cal-prev]", "[data-cal-today]", "[data-cal-next]"]  # 0910: title, Today and arrows
+ROW2_0842 = ["[data-cal-property]", "[data-cal-settings]", "[data-cal-scales]"]  # 0911: no view toggle while a property is picked
 FITS = "document.documentElement.scrollWidth <= window.innerWidth"
 
 
-def test_0842_cleaning_toolbar_one_row_at_1280(workspace, origin):
+def test_0842_cleaning_toolbar_stable_two_rows_at_1280(workspace, origin):
     ws = workspace
     with sync_api.sync_playwright() as playwright:
         browser, context = browser_context(playwright, ws, origin, 1280)
         page = context.new_page()
         page.goto(f"{origin}/cleaning?lang=en&cal_view=calendar&cal_property={ws['home']}")
         loaded(page)
-        boxes = [page.locator(".cleaning-page " + sel).first.bounding_box() for sel in ONE_ROW_0842]
-        assert all(boxes), list(zip(ONE_ROW_0842, boxes))
-        assert max(b["y"] for b in boxes) < min(b["y"] + b["height"] for b in boxes), boxes
-        ordered = sorted(boxes, key=lambda b: b["x"])
-        gaps = [round(b["x"] - (a["x"] + a["width"])) for a, b in zip(ordered, ordered[1:])]
-        assert min(gaps) >= 11, gaps
-        for sel, b in zip(ONE_ROW_0842[1:], boxes[1:]):
+        row1 = [page.locator(".cleaning-page " + sel).first.bounding_box() for sel in ROW1_0842]
+        row2 = [page.locator(".cleaning-page " + sel).first.bounding_box() for sel in ROW2_0842]
+        boxes = row1 + row2
+        assert all(boxes), list(zip(ROW1_0842 + ROW2_0842, boxes))
+        for row in (row1, row2):
+            assert max(b["y"] for b in row) < min(b["y"] + b["height"] for b in row), row
+        assert max(b["y"] + b["height"] for b in row1) <= min(b["y"] for b in row2), (row1, row2)
+        assert row1[0]["x"] + row1[0]["width"] <= min(b["x"] for b in row1[1:]), row1  # title left, Today and arrows right
+        assert row2[2]["x"] >= row2[1]["x"] + row2[1]["width"], row2  # scale segment right of settings
+        for row in (row1, row2):
+            ordered = sorted(row, key=lambda b: b["x"])
+            gaps = [round(b["x"] - (a["x"] + a["width"])) for a, b in zip(ordered, ordered[1:])]
+            assert min(gaps) >= 11, gaps
+        for sel, b in zip(ROW1_0842[1:] + ROW2_0842, row1[1:] + row2):
             assert abs(b["height"] - 40) <= 1, (sel, b)
         title = page.locator(".cleaning-page h3[data-cal-period]").evaluate(
             "e => [getComputedStyle(e).fontSize, getComputedStyle(e).fontWeight]")
