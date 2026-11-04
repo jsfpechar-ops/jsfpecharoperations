@@ -338,5 +338,38 @@
     if (kids.length && kids[kids.length - 1] === el && rectOf(par).right - r.right < 40 && !el.matches('aside')) add('stray-rule', el, 'right border on the last item');
   }
 
+  // 11. Action rows at every width: buttons that overlap, wrap, or sit closer than 12 px.
+  const actSel = 'button,a.btn,a.ui-btn,.btn,.ui-btn,input[type=submit]';
+  const acts = all.filter((el) => el.matches(actSel) && !el.matches('.help-tip-btn') && !el.closest('.help-tip,[class*=stepper],[class*=segmented],[role=tablist],[role=group],.tabbar,nav,.tab-bar,.seg,.pills,.chips,.row-menu-panel,summary,.dashboard-calendar,[class*=cal-grid],[class*=cal-day]') && getComputedStyle(el).position !== 'fixed' && vis(el) && !skipZone(el));
+  const rowKey = (el) => {
+    const p = el.parentElement;
+    return p && p.tagName === 'FORM' && p.parentElement ? p.parentElement : p;
+  };
+  const rowsOf = new Map();
+  for (const el of acts) {
+    const k = rowKey(el);
+    if (!k) continue;
+    if (!rowsOf.has(k)) rowsOf.set(k, []);
+    rowsOf.get(k).push(el);
+  }
+  for (const row of rowsOf.values()) {
+    if (row.length < 2) continue;
+    for (let i = 0; i < row.length; i++) {
+      for (let j = i + 1; j < row.length; j++) {
+        const a = row[i], b = row[j];
+        if (a.contains(b) || b.contains(a)) continue;
+        const ra = rectOf(a), rb = rectOf(b);
+        const ox = Math.min(ra.right, rb.right) - Math.max(ra.left, rb.left);
+        const oy = Math.min(ra.bottom, rb.bottom) - Math.max(ra.top, rb.top);
+        const hg = Math.max(rb.left - ra.right, ra.left - rb.right);
+        if (ox > 1 && oy > 1) add('button-overlap', a, 'overlaps ' + name(b));
+        else if (oy > 8 && hg >= -1 && hg < 12) add('tight-row', a, 'less than 12 px from ' + name(b));
+      }
+    }
+    for (const el of row) {
+      if (words(el.textContent || '').length >= 2 && textLines(el) >= 2) add('button-wraps', el, 'label wraps onto ' + textLines(el) + ' lines');
+    }
+  }
+
   return out;
 })()

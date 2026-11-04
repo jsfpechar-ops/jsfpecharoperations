@@ -897,8 +897,10 @@ def dashboard_rows(
 def month_summary(owner_user_id: Optional[int], today: date) -> Dict[str, int]:
     """0520: guests, nights and police reports for the calendar month of today.
 
+    Stays that overlap the month; reported = their guests with submit_state SENT.
     Non-demo stays of the owner's non-archived properties. Dates are compared as
-    ISO strings; nights are added up in Python. One query (dashboard query budget).
+    ISO strings; nights are clipped to the month and added up in Python. One query
+    (dashboard query budget).
     """
     start = today.replace(day=1)
     end = (start + timedelta(days=32)).replace(day=1)
@@ -908,28 +910,22 @@ def month_summary(owner_user_id: Optional[int], today: date) -> Dict[str, int]:
         f"WHERE {scope} AND a.archived_at IS NULL AND COALESCE(r.source, '') != 'demo' "
     )
     rows = db.query(
-        "SELECT 'stay' AS kind, r.date_from AS date_from, r.date_to AS date_to, "
-        "(SELECT COUNT(*) FROM guest g WHERE g.reservation_id = r.id) AS n "
-        f"FROM reservation r {owned}AND r.date_from >= ? AND r.date_from < ? "
-        "UNION ALL "
-        "SELECT 'sent' AS kind, NULL, NULL, COUNT(*) "
-        f"FROM guest g JOIN reservation r ON r.id = g.reservation_id {owned}"
-        "AND g.submit_state = ? AND g.submitted_at >= ? AND g.submitted_at < ?",
-        (owner_user_id, start.isoformat(), end.isoformat(),
-         owner_user_id, SENT, start.isoformat(), end.isoformat()),
+        "SELECT r.date_from AS date_from, r.date_to AS date_to, "
+        "(SELECT COUNT(*) FROM guest g WHERE g.reservation_id = r.id) AS n, "
+        "(SELECT COUNT(*) FROM guest g WHERE g.reservation_id = r.id AND g.submit_state = ?) AS sent "
+        f"FROM reservation r {owned}AND r.date_from < ? AND r.date_to > ?",
+        (SENT, owner_user_id, end.isoformat(), start.isoformat()),
     )
     guests = nights = reported = 0
     for row in rows:
-        if row["kind"] == "sent":
-            reported = int(row["n"])
-            continue
         guests += int(row["n"])
+        reported += int(row["sent"])
         arrive, leave = row["date_from"], row["date_to"]
         if not isinstance(arrive, date):
             arrive = date.fromisoformat(str(arrive)[:10])
         if not isinstance(leave, date):
             leave = date.fromisoformat(str(leave)[:10])
-        nights += max(0, (leave - arrive).days)
+        nights += max(0, (min(leave, end) - max(arrive, start)).days)
     return {"guests": guests, "nights": nights, "reported": reported}
 
 

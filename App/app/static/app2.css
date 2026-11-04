@@ -2351,3 +2351,23 @@ body.v2 .calendar-add-form .actions{margin-bottom:16px}
 @media (min-width:1024px){body.v2 .feed-table td.truncate{max-width:170px}}
 body.v2 .property-feeds{margin-bottom:24px}
 body.v2 .fields-wrap .hint{margin-bottom:12px}
+/* 0909: finish card (v2) */
+body.v2 .onboarding-finish{background:var(--s);border:1px solid var(--line);border-radius:12px;padding:20px;display:grid;gap:16px;margin:16px 0}
+@media (max-width:767px){body.v2 .onboarding-finish{padding:16px}}
+body.v2 .onboarding-finish-intro{display:grid;gap:8px;margin:0}
+body.v2 .onboarding-finish .onboarding-kicker{font-size:12px;font-weight:600;color:var(--ok);margin:0}
+body.v2 .onboarding-finish-title{display:flex;align-items:center;gap:8px}
+body.v2 .onboarding-finish h2{font-size:18px;font-weight:700;margin:0}
+body.v2 .onboarding-finish .lede{font-size:14px;color:var(--ink2);margin:0}
+body.v2 .onboarding-finish-share{display:grid;gap:12px}
+body.v2 .onboarding-finish-field{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px;border:1px solid var(--line);border-radius:12px}
+body.v2 .onboarding-finish-label{font-size:13px;color:var(--ink3);flex:0 0 64px}
+body.v2 .onboarding-finish-field code{flex:1 1 200px;min-width:0;overflow-wrap:anywhere;font-size:14px}
+body.v2 .onboarding-finish-pin{font-size:18px;font-weight:700;letter-spacing:.08em;flex:1 1 auto}
+body.v2 .onboarding-finish-field .copy-btn{flex:none;margin-left:auto}
+body.v2 .onboarding-finish-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+body.v2 .onboarding-finish-actions .ui-btn,body.v2 .onboarding-finish-actions form{white-space:nowrap;flex:none}
+body.v2 .onboarding-finish-actions form{margin:0}
+@media (max-width:767px){body.v2 .onboarding-finish-actions{flex-direction:column;align-items:stretch}body.v2 .onboarding-finish-actions .ui-btn,body.v2 .onboarding-finish-actions form,body.v2 .onboarding-finish-actions form button{width:100%;justify-content:center;min-height:44px}body.v2 .onboarding-finish-actions form button{text-align:center}}
+body.v2 .onboarding-finish-strip{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:12px 16px;border:1px solid var(--line);border-radius:12px;background:var(--s);font-size:14px;margin:12px 0}
+@media (max-width:1023px){body.v2 .onboarding-finish-strip a{white-space:nowrap;min-height:44px;display:inline-flex;align-items:center}}

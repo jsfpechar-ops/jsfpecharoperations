@@ -249,7 +249,7 @@ def test_finished_onboarding_shows_guest_link_and_pin_handoff():
     assert "Guest link and PIN are live" in dashboard.text
     assert guest_slug.current(apartment_id) in dashboard.text
     assert "246810" in dashboard.text
-    assert "edit host message" in dashboard.text
+    assert f'class="ui-btn ui-btn-primary" href="/apartments/{apartment_id}?view=settings&amp;section=guests#communication"' in dashboard.text
     assert "Open communication settings" in dashboard.text
     assert f'href="/apartments/{apartment_id}?view=settings&amp;section=guests#communication"' in dashboard.text
     assert "Skip setup guidance" in dashboard.text
