@@ -302,6 +302,12 @@ real `App/app/static/tokens.css` + `guest.css`, EN copy; the build ships all
 | [stay-fee-guest-payment/mockup-B-pay-step.html](stay-fee-guest-payment/mockup-B-pay-step.html) | Option B — dedicated pay step, radio rails, one coral stub action |
 | [stay-fee-guest-payment/mockup-C-hub-all-rails.html](stay-fee-guest-payment/mockup-C-hub-all-rails.html) | Option C — all rails visible at once |
 | [stay-fee-guest-payment/mockup-D-form-estimate.html](stay-fee-guest-payment/mockup-D-form-estimate.html) | Form-end estimate card (quiet, no button, hidden when 0) |
+
+Rendered screenshots (Playwright chromium, 390 px and 1280 px, device scale 2) live
+in [stay-fee-guest-payment/screenshots/](stay-fee-guest-payment/screenshots/) —
+reviewed 2026-11-04: v3 fixed a fake QR (now a real SPAYD QR png), cramped QR row
+on 390 px (now stacked, centered), missing dividers between rail rows, and
+spacing on option B; re-rendered shots show no remaining issues.
 **Form-end estimate card** (all options): a quiet grey card like the legal
 notice box — one line "Municipal stay fee: about X Kč for you (n days × Y Kč)"
 + "you'll choose how to pay once everyone is registered", no button, no coral,

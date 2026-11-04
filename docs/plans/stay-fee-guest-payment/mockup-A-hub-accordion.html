@@ -18,7 +18,12 @@
     #fee-pay .rail-body { padding: 4px 20px 18px; }
     #fee-pay .qr-row { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
     #fee-pay .qr-row > div { flex: 1; min-width: 180px; }
-    #fee-pay .qr-img { border: 1px solid var(--g-line); border-radius: 8px; width: 132px; height: 132px; }
+    #fee-pay .qr-img { border: 1px solid var(--g-line); border-radius: 8px; width: 148px; height: 148px; }
+    #fee-pay details.g-summary + details.g-summary { border-top: 1px solid var(--g-line); }
+    @media (max-width: 560px) {
+      #fee-pay .qr-row { flex-direction: column; align-items: center; text-align: left; }
+      #fee-pay .qr-row > div { width: 100%; min-width: 0; }
+    }
   </style>
 </head>
 <body>
@@ -80,7 +85,7 @@
         <summary class="g-summary-fold">Bank transfer (QR)</summary>
         <div class="g-summary-body rail-body">
           <div class="qr-row">
-            <img class="qr-img" alt="Payment QR code" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQ4AAAEOAQAAAABQysQIAAACOElEQVR4nO2aQWocQQxFX1sDWWpupNwgRwq5meYoPoBBszSU+Vmoe2JCwAEbE5EpetHQWuhTpa//Vb2JN9bLw1sRcA+5h/zfIUhdSdHP8jRJShWASetfSvcvEZmkiuUJSCklhFX0p5GICqtQxXJZxSJMaRUQAxGdbm8bWF2eT2H17XlD10/P5cNDXFy/n7ic/MfJdfpTyKfl8t4Q1wK4vJwveAL2+HWBlJ+fy7tDfnGd1W8PjOW6Xnia0qTleXC4NBOR7XTHcjUoq1iAT2VvXJJMuYgFqrBCFTa2Hy2wClO2VFiwXHhCDD11EHguz1spWUUT3VBEqliEClw70UnA4FPnknJ5qpASFy5VzGWGA4usmt92scrYU7dcuH7J1B3dYEQ6RIIqVKgCWK4m8ImIXnGdrOuILqIcikjK1e9HV21ymNmPHoBt+25K4OXM85l1/Wp10eNG26d/Ld23VqsgiPbjVizi9mnoqTOlaSdwPE2CaKs+FVFhhSl1qG4pl2t5DqyjfY/wVMXNKDUBrrmOr2jHqmJnbKIJcOgeNUsDJh0dtpXD7H50lE8uz9ara2Q/4qgdWYVeUURroaF71BNvq2jJavt0aIc2EVEvk3YIrp4Pz9V1wD7iJrqIpLyZ2YmI+m6iuyqwuz9p8CT/erYnTosvT5uuZ4iNeNmwp7M+M5cPVkGhoo3SoevG3x+tNuYSfS/WfnYooq6jAvpeLG+j46GIAIg2fT1f3dvTyA673f/QuIfcQ94d8hMzWKfHi4BYNQAAAABJRU5ErkJggg==">
+            <img class="qr-img" alt="Payment QR code" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcIAAAHCAQAAAABUY/ToAAADq0lEQVR4nO2cTY6sSAyEwwMSy0TqA9RRkpuN5khzAzhK3wCWJYFiFnby1/1mpNarKaoUXqDi5xOJZEXaTmcZ8TMb/vghCIgUKVKkSJEiRV6PtLAa2wFDu5h1/thiwFSe6p48WpGXJDNJcgTYp7sBWAx5BNhjMTNraB0qkiSP5DNGK/KS5FT0JX82ZJ9I66aGGKwhMu8GACFQzx+tyCuR9encABjzuNQc2grI4wc4GEBMv+udIt+dTCQwNbQOi1mX7mZdIq174DtFvgOZSPb+czEM7WJAmuNm/qzBHgDJ+Uz+/J0i34oczMyshcdD9udYEfmzcUUCAFjn0bXZ80cr8lKkx0O7BY/hdjcg3V2HONzuxrh2XBZ5re8U+TgSnq5nksgjEBl9IpE5o9yoykyX4mH2r/WdIh9HRl42tCMIEIY018BUzyUb+5gBLMY8fsyW+6eOVuQVSdchF5k8Vq4+JGdEyRFFliLEjkKjdEjkaqX0XLmXsE8z3F9Oc9maksmHRH5DhuZMDZE/a8BdamoITDWANEeJOnOtFL3id4p8BFlUJdGVhn0q05gLj09jJDlWVEwt8hsrPrR5TsnQUJKzMo1V3BOv9Z0i/weyotmNxNDGKfupRsxlqIpf/dZ3inwLMlSFY8XIy0aAHKtoBfEZDJGcxXPSIZF7+0VeVmqMHg9hC4UiV5MPiVwtdIgzypprUZ+8FrDXwBqqD4n8apsO7SpAPSoeJq+IuOGRkXxI5N7Ch9Lekdybohe24vlh+ZDIgxW3iML0LsGPYnWJh2JFVjok8mSlF3Zq/WC5n+Na/rshfOEVi3G40TtD+LzRirwiudcheKGxRM2rGO1Cph5QXibyZKU+BGxVxDjd8vg1UOqhOrXIsx3ysrJ5LBe/KjXGtfio+pDIL3aqD22t976G5gtppdpYFEk+JHJnh9hn7RUaEVNbrLmWShEA6ZDI78jYvzqVLG24kX7wxVjf9bGYu1T/5NGKvBa529cRKpNmWB6X2q8N7QgAlbdSGwBEU/VrfafIR5Pb/34AAPiXNfSNinlcjOTdQqXKdrPX/E6RjyBLPbEHgOkDBJaaSCPMb04tAFQ0pBkY2uqZoxV5RXLfuLju6yhNRIfcHkC5oZha5N5OPrRbnv+yXlZKSMrLRP4rOdzo7dUuS4OZx0ORjU1mystEHm0nLTzokJ/263pZLnqluUzk0XYrHNFgtjWiIcRom8v8mnxI5M6M//3Mt6b/OBcpUqRIkSJFvgn5D25cYtZMivSGAAAAAElFTkSuQmCC">
             <div>
               <dl class="g-summary-list">
                 <dt>IBAN</dt><dd>CZ12 3456 0000 0000 0000 0100</dd>
