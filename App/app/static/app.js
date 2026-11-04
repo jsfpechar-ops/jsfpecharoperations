@@ -913,8 +913,8 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       var addPanel = document.getElementById("add-stay-panel");
       if (addPanel && claimNode(addPanel, "initTogglePanels")) {
         addPanel.classList.remove("hidden");
-        var first = addPanel.querySelector("input, select, textarea");
-        if (first) first.focus();
+        var heading = addPanel.querySelector(".ui-section-h h2");
+        if (heading) { heading.setAttribute("tabindex", "-1"); heading.style.outline = "none"; heading.focus(); }
       }
     }
   }
