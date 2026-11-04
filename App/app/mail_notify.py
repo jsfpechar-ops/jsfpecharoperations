@@ -647,6 +647,11 @@ def build_submission_problem(
     footer = _text(lang, "mail.submission_problem.footer", property=property_name)
     footer_support = _text(lang, "mail.submission_problem.footer_support")
 
+    if state == "unanswered":  # brief 0909: UbyPort did not answer after 5 attempts
+        subject = _text(lang, "mail.submission_problem.subject_unanswered", property=property_name)
+        intro = _text(lang, "mail.submission_problem.intro_unanswered", property=property_name)
+        preheader = _text(lang, "mail.submission_problem.preheader_unanswered")
+        next_steps = _text(lang, "mail.submission_problem.next_unanswered")
     reason_text = _reason_text(state, reason, transport, lang)
     submission_url = _app(f"/submissions/{submission_id}") if submission_id else ""
     stay_urls = [
@@ -832,6 +837,8 @@ def submission_problem(
     reason: str = "",
     transport: bool = False,
     lang: Optional[str] = None,
+    cc_email: Optional[str] = None,
+    idempotency_key: Optional[str] = None,
 ) -> Optional[int]:
     """Queue the host one e-mail about a report UbyPort did not take.
 
@@ -849,6 +856,8 @@ def submission_problem(
             reason=reason,
             transport=transport,
             lang=lang,
+            cc_email=cc_email,
+            idempotency_key=idempotency_key,
         )
     except Exception:
         log.exception(
@@ -867,6 +876,8 @@ def _submission_problem(
     reason: str,
     transport: bool,
     lang: Optional[str],
+    cc_email: Optional[str] = None,
+    idempotency_key: Optional[str] = None,
 ) -> Optional[int]:
     to_email = _entity_contact_email(apartment["legal_entity_id"])
     if not to_email:
@@ -899,13 +910,14 @@ def _submission_problem(
     )
     return mail.enqueue(
         kind="submission_problem",
-        idempotency_key=key,
+        idempotency_key=idempotency_key or key,
         to_email=to_email,
         subject=content["subject"],
         payload=payload,
         reservation_id=stays[0]["id"] if len(stays) == 1 else None,
         apartment_id=apartment["id"],
         owner_user_id=apartment["owner_user_id"],
+        cc_email=cc_email,
     )
 
 

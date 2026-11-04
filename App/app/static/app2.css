@@ -2351,7 +2351,7 @@ body.v2 .calendar-add-form .actions{margin-bottom:16px}
 @media (min-width:1024px){body.v2 .feed-table td.truncate{max-width:170px}}
 body.v2 .property-feeds{margin-bottom:24px}
 body.v2 .fields-wrap .hint{margin-bottom:12px}
-/* 0909: finish card (v2) */
+/* 0912: finish card (v2) */
 body.v2 .onboarding-finish{background:var(--s);border:1px solid var(--line);border-radius:12px;padding:20px;display:grid;gap:16px;margin:16px 0}
 @media (max-width:767px){body.v2 .onboarding-finish{padding:16px}}
 body.v2 .onboarding-finish-intro{display:grid;gap:8px;margin:0}

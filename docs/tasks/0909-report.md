@@ -1,56 +1,29 @@
-# 0909 report
+# 0909 report (Python half, Status: blocked)
 
-Status: review (changes in the working tree, not committed, no PR, per the parent's instruction)
+Branch task/0909-py, worktree /tmp/wt0909py. Go half is in /tmp/wt0909go (not touched here). No push, no PR.
 
-## Files changed
-- `App/app/templates/_components.html`: `onboarding_finish` macro (title row with help_tip, tips list removed, ui-btn classes, data-layout="v2"). Strip markup untouched.
-- `App/app/templates/dashboard.html`: line 96, `ph-hide` removed.
-- `App/app/static/app2.css`: block `/* 0909: finish card (v2) */` appended, plus a small `.onboarding-finish-intro` grid rule.
-- `App/app/templates/base.html`: `app2.css?v=0909`.
-- `App/app/reporting.py`: `month_summary` is one query over overlapping stays; reported = their guests with SENT.
-- `App/tests/test_0520_overview_today.py`: new `test_month_summary_counts_reports_on_the_same_stays`.
-- `App/tests/test_onboarding.py`: line 252 "edit host message" replaced by a check of the primary communication link href (coordinator answer).
-- `App/tests/layout_lint.js`: section 11 (button-overlap, button-wraps, tight-row).
-- `App/tests/test_layout_lint_browser.py`: BAD_PAGE row and expected rules; `test_the_finish_card_passes_the_lint`.
-- `App/tests/static_versions.json`: regenerated (coordinator answer).
-- `docs/design/pages/dashboard.md`: 3-line note.
-- Created ignored `App/.venv` (requirements, requirements-dev, playwright==1.63.0 as CI pins).
+## Done
+- Retry chain (`App/app/reporting.py`): `_unknown_chains` (chain key = sorted guest ids, start at newest original), `_retry_unknown_chains` (gaps 30m/2h/6h/12h, five batches, live-chain and auth/setup guards, card resolved when not in doubt), `_resend_unknown_chain` (guarded `retried_at` claim, free guests with `submit_state != sent`, `submit_for_apartment(..., mode=auto_resend, ignore_schedule=True)`, restore unsent freed guests under lock), `_clock` seam for tests.
+- `apartment_in_doubt` ignores `sent` guests. The unknown-outcome branch no longer mails per attempt.
+- Final notice (after the 5th batch, only while a guest is still held and within 24 h of the last attempt): `mail_notify.submission_problem(..., state="unanswered", cc_email=config.SUPPORT_EMAIL, idempotency_key="submission_unanswered:<id>")` and `push.filing_problem(..., key="unanswered:<id>")`. The `unanswered` variant and `subject/intro/preheader/next_unanswered` texts are in host_i18n.py (en, cs) and host_vi_i18n.py (vi). The brief gives only the content, so the wording is mine and needs a check. The push key override is a new optional `key` on `push.filing_problem`.
+- Dismiss refused while in doubt (`App/app/routes/admin.py`), flash `flash.error.unknown_card_locked` (en from brief; cs and vi mine).
+- Tests: `App/tests/test_stale_submission.py` (WP31 test rewritten to the gap schedule: resends at 2 h, 6 h, 12 h, then stops, no mail); `App/tests/test_submission_retry_chain.py` (new: guest-id order is one chain, a host send starts a fresh chain, two resends of one due chain send once, the fifth attempt mails and pushes once with keys and cc, nothing after five); `App/tests/test_push_events.py` (count of `push.filing_problem(` in reporting.py is now 2, for the final notice).
+- Decisions: `docs/context/decisions.md` compacted to lint OK (wording only; the Postgres 2026-10-31 entries are merged into one line).
 
-## Commands (last lines)
-- Step 3 rows (onboarding, dashboard order, wp28, static): `34 passed` after the fixes.
-- `pytest tests/test_0520_overview_today.py tests/test_dashboard_order.py tests/test_onboarding.py`: `27 passed`.
-- `pytest tests/test_layout_lint_browser.py` (browser env set): `3 passed`, 0 skipped.
-- Host pages row `tests/test_host_*.py tests/test_host_geometry.py`: `206 passed`, 3 failing on re-run (see Deviations).
-- Onboarding row: `316 passed`, 0 skipped.
-- Design guardrails: `11 passed`. Mockup match: `183 passed`, 0 skipped.
-- Static row: `16 passed`. wp28 + 0520: `17 passed`.
-- `python3 scripts/context_lint.py`: `context lint: OK` (warnings only, pre-existing).
+## Tests (App/.venv/bin/python -m pytest <filing row + test_admin_route_split.py test_host_i18n.py test_push*.py> -q)
+- 468 passed, 0 failed.
+- 1 skipped module: `tests/test_push_settings_browser.py` (11 browser tests). Playwright's Chromium download is blocked in this sandbox, so they did not run. The owner or CI must run them.
+- Venv was missing `pypdf` and `pdfplumber` (installed in the venv only; not a repo change). No repo dependency change.
 
-## Section 7
-- [x] 1280: link and PIN as bordered rows, Copy at right, three actions on one line, no bullets, tips behind "?".
-- [~] 390 and 768: card shows, actions stacked full width at 390; at 768 the bottom nav hides the actions in the screenshot (fixed nav, not a card bug).
-- [x] Strip styled as one row with its link.
-- [x] month_summary one query; reported is a subset of guests; new test green.
-- [x] Lint flags the fixture; finish-card test green; layout lint 0 skipped.
-- [x] Six PNGs in `/mnt/project-files/dashboard-finish/`, each opened once.
-- [~] Step 8 rows: all green except the pre-existing failures below.
+## Lint
+- `python3 scripts/context_lint.py`: OK.
 
-## Screenshots
-- finish-390: link and PIN rows, Copy full width under each code (wrap), Open/Preview/Skip stacked; actions sit under the fixed bottom nav in the capture. Code wraps mid-word (overflow-wrap:anywhere).
-- finish-768: rows and Copy at right, actions in one line area behind the bottom nav.
-- finish-1280: clean; two rows, Copy right, three actions on one line, quiet Skip link.
-- strip-390/768/1280: one bordered row with "Setup is done... Show link"; no overlap. Month line 0 guests, 2 nights, 0 reported (correct for the fixture).
+## Not done (Left)
+- Dismiss refusal has no test. Gap-edge cases at 29 and 31 min, the "guest filed by hand during the gap" case, and "crash during a resend" are not new tests (the existing crash test and the gap-schedule test cover parts).
+- Go half: not in this branch.
+- Final notice texts are not checked by a native speaker in cs and vi.
+- Alert #87 root cause unconfirmed. Owner check: `SELECT id, created_at, resolved_at, user_dismissed FROM alert WHERE id = 87;` and `SELECT id, mode, state, created_at, finished_at, guest_ids FROM submission WHERE apartment_id = 5 AND created_at >= '2026-11-01' ORDER BY id;`.
+- `docs/UBYPORT_CORE.md` / `docs/OPERATIONS.md` OD-1 wording: not checked.
 
-## Deviations
-- The step 2 fixtures needed `width:110px;white-space:normal` on the lint row's second link (nowrap from app.css otherwise prevents button-wraps).
-- Pre-existing failures, verified on unmodified HEAD in a temporary worktree (removed): `tests/test_host_fee_navigation.py::test_frozen_report_order_and_forms` and `tests/test_host_ux_acceptance.py` (2 tests) fail on HEAD too. Not fixed; out of scope.
-- `tests/test_host_feedback_browser.py::test_host_copy_feedback_truth_and_geometry` failed once in the row run and passed on its own re-run; treated as flaky.
-- Browser tests rewrite committed evidence PNGs under `docs/tasks/0102-evidence/` and `docs/tasks/screenshots-0410/`. Reverted with git checkout; keep them out of the commit.
-
-## Questions
-- Fix the pre-existing stay-fees and ux_acceptance failures in a separate brief?
-- The 390 Copy buttons wrap under each code; accept, or make them sit beside the PIN?
-
-## Owner steps
-- Commit and open the PR (not done here).
-- After deploy: open the dashboard on phone and laptop, check the card and the month line.
+Status: blocked
+Deviations: Done steps 1 to 5 of the Python half. Left: the test cases listed above, the browser run, the Go half.

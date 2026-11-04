@@ -169,7 +169,7 @@ func ApartmentInDoubt(ctx context.Context, pool *pgxpool.Pool, apartmentID int64
 	err := pool.QueryRow(ctx,
 		`SELECT 1 FROM guest g JOIN reservation r ON r.id = g.reservation_id
 		 WHERE r.apartment_id = $1 AND r.status = 'active' AND r.archived_at IS NULL
-		 AND g.archived_at IS NULL AND g.submission_id IN
+		 AND g.archived_at IS NULL AND g.submit_state != 'sent' AND g.submission_id IN
 		 (SELECT id FROM submission WHERE apartment_id = $2 AND state = 'outcome_unknown')
 		 LIMIT 1`,
 		apartmentID, apartmentID).Scan(&one)

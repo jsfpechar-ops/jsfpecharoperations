@@ -93,7 +93,9 @@ def test_each_event_is_wired_exactly_once_next_to_its_e_mail():
         "icalsync.py": "push.cancelled_with_guests(",
     }
     for name, call in sources.items():
-        assert (APP / name).read_text(encoding="utf-8").count(call) == 1, name
+        # reporting.py also wires the final-notice push (brief 0909), with its own key.
+        expected = 2 if name == "reporting.py" else 1
+        assert (APP / name).read_text(encoding="utf-8").count(call) == expected, name
     # Nothing else in the app queues a push.
     callers = [
         path.name for path in APP.rglob("*.py")

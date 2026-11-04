@@ -227,7 +227,6 @@ func batchOutcomeUnknown(ctx context.Context, d BatchDeps, ref ApartmentRef, sub
 	); err != nil {
 		return BatchResult{}, err
 	}
-	batchMail(ctx, d, ref, subID, "transport_error", msg, true)
 	return BatchResult{SubmissionID: subID, State: "outcome_unknown", Error: msg}, nil
 }
 

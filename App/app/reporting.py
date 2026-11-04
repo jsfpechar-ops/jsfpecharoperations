@@ -1565,7 +1565,7 @@ def apartment_in_doubt(apartment_id: int) -> bool:
         db.query_one(
             "SELECT 1 FROM guest g JOIN reservation r ON r.id = g.reservation_id "
             "WHERE r.apartment_id = ? AND r.status = 'active' AND r.archived_at IS NULL "
-            "AND g.archived_at IS NULL AND g.submission_id IN "
+            "AND g.archived_at IS NULL AND g.submit_state != 'sent' AND g.submission_id IN "
             "(SELECT id FROM submission WHERE apartment_id = ? AND state = 'outcome_unknown') "
             "LIMIT 1",
             (apartment_id, apartment_id),
@@ -1620,9 +1620,9 @@ def submit_batch(
     try:
         result: SubmissionResult = client.submit(header, guests)
     except UbyportOutcomeUnknownError as exc:
-        # The register may already hold this batch. Resending it on a timer
-        # is how duplicates pile up against the host, so it waits for a
-        # person (owner decision OD-1). The envelope is kept as evidence.
+        # The register may already hold this batch. The retry chain resends it
+        # with growing gaps until UbyPort answers (brief 0909). The envelope
+        # is kept as evidence.
         log.error(
             "ubyport_submission_outcome_unknown apartment_id=%s submission_id=%s guest_ids=%s",
             apartment["id"], submission_id, guest_ids, exc_info=True,
@@ -1656,9 +1656,7 @@ def submit_batch(
             apartment_id=apartment["id"],
             params={"property": apartment["internal_name"], "error": str(exc)},
         )
-        mail_notify.submission_problem(
-            apartment, submission_id, state="transport_error", reason=str(exc), transport=True,
-        )
+        # No mail per attempt (brief 0909): the retry chain sends one final notice.
         return {"submitted": 0, "submission_id": submission_id, "state": "outcome_unknown",
                 "error": str(exc)}
     except (UbyportTransportError, UbyportError) as exc:
@@ -1948,10 +1946,8 @@ def recover_stale_submissions(apartment_id: int) -> int:
 def _retry_outcome_unknown_batches(apartment_id: int) -> int:
     """One automatic resend per crash-interrupted batch, only from the scheduler.
 
-    Live unknown outcomes (timeout/5xx after send; the register may already hold
-    them) are not retried here — those wait for a person (OD-1). The resend uses
-    ``AUTO_RESEND_MODE``; if that answer is unclear too, it is not resent again
-    (WP31).
+    Only the crash path lives here. Live unknown outcomes are retried by
+    ``_retry_unknown_chains`` (brief 0909), which this function calls at its end.
     """
     if alerts.open_alert(f"ubyport_auth_failed:{apartment_id}"):
         return 0
@@ -1984,7 +1980,145 @@ def _retry_outcome_unknown_batches(apartment_id: int) -> int:
             continue
         submit_for_apartment(apartment_id, only_guest_ids=guest_ids, mode=AUTO_RESEND_MODE)
         retried += 1
+    retried += _retry_unknown_chains(apartment_id)
     return retried
+
+
+UNKNOWN_RETRY_GAPS = (
+    timedelta(minutes=30), timedelta(hours=2), timedelta(hours=6), timedelta(hours=12),
+)
+UNKNOWN_MAX_ATTEMPTS = 5
+
+
+def _clock() -> datetime:
+    """Tests replace this to move the retry clock."""
+    return datetime.now(timezone.utc)
+
+
+def _unknown_stamp(stamp: str) -> datetime:
+    value = datetime.fromisoformat(stamp)
+    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+
+
+def _unknown_chains(apartment_id: int) -> List[List[Dict[str, Any]]]:
+    """Group the apartment's batches into retry chains (brief 0909, section 2).
+
+    A chain key is the sorted set of guest ids. The chain starts at the newest
+    original batch (mode != auto_resend) with that key, or at the oldest batch
+    when no original is left, and runs through every later batch.
+    """
+    rows = db.query(
+        "SELECT id, mode, state, guest_ids, retried_at, finished_at, error_text "
+        "FROM submission WHERE apartment_id = ? ORDER BY id",
+        (apartment_id,),
+    )
+    groups: Dict[Tuple[int, ...], List[Dict[str, Any]]] = {}
+    for row in rows:
+        key = tuple(sorted(json.loads(row["guest_ids"] or "[]")))
+        if key:
+            groups.setdefault(key, []).append(dict(row))
+    chains = []
+    for batches in groups.values():
+        originals = [b for b in batches if (b["mode"] or "") != AUTO_RESEND_MODE]
+        start = originals[-1]["id"] if originals else batches[0]["id"]
+        chains.append([b for b in batches if b["id"] >= start])
+    return chains
+
+
+def _retry_unknown_chains(apartment_id: int) -> int:
+    """Resend every due unanswered chain of one apartment (brief 0909)."""
+    if alerts.open_alert(f"ubyport_auth_failed:{apartment_id}"):
+        return 0
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    if not apartment:
+        return 0
+    ap_dict = dict(apartment)
+    ap_dict["uby_ws_password"] = db.decrypt_secret(apartment["uby_ws_password_enc"])
+    if validation.errors_only(validation.validate_apartment(ap_dict)):
+        return 0
+    if not apartment_in_doubt(apartment_id):
+        alerts.resolve(f"submission_outcome_unknown:{apartment_id}")  # the host filed by hand
+    now = _clock()
+    resent = 0
+    for chain in _unknown_chains(apartment_id):
+        latest = chain[-1]
+        if any(b["state"] != "outcome_unknown" for b in chain):
+            continue
+        if latest["retried_at"] is not None:
+            continue
+        if latest["error_text"] == STALE_SUBMISSION_REASON and (latest["mode"] or "") != AUTO_RESEND_MODE:
+            continue  # the crash path (_retry_outcome_unknown_batches) owns this one
+        count = len(chain)
+        if count >= UNKNOWN_MAX_ATTEMPTS:
+            _final_notice(apartment, latest)
+            continue
+        if now < _unknown_stamp(latest["finished_at"]) + UNKNOWN_RETRY_GAPS[count - 1]:
+            continue
+        if _resend_unknown_chain(apartment, latest):
+            resent += 1
+    return resent
+
+
+def _final_notice(apartment: Any, latest: Dict[str, Any]) -> None:
+    """After the 5th attempt: one host mail (support cc) and one push while a guest is still held.
+
+    Both carry idempotency keys, so repeated sweeps add nothing (brief 0909, section 4).
+    """
+    if _clock() >= _unknown_stamp(latest["finished_at"]) + timedelta(hours=24):
+        return  # too old: the outbox row may be pruned, so never re-send
+    held = db.query_one(
+        "SELECT COUNT(*) AS n FROM guest WHERE submission_id = ? AND submit_state != ?",
+        (latest["id"], SENT),
+    )
+    if not held or not held["n"]:
+        return
+    mail_notify.submission_problem(
+        apartment, latest["id"], state="unanswered", reason=latest["error_text"] or "",
+        transport=False, cc_email=config.SUPPORT_EMAIL,
+        idempotency_key=f"submission_unanswered:{latest['id']}",
+    )
+    push.filing_problem(apartment, latest["id"], key=f"unanswered:{latest['id']}")
+
+
+def _resend_unknown_chain(apartment: Any, latest: Dict[str, Any]) -> bool:
+    """Free the still-unsent guests of the latest batch and resend them once."""
+    apartment_id = apartment["id"]
+    guest_ids = json.loads(latest["guest_ids"] or "[]")
+    freed: List[int] = []
+    with db.immediate() as cur:
+        db.lock_key(cur, "submit_apartment", apartment_id)
+        cur.execute(
+            "UPDATE submission SET retried_at = ? WHERE id = ? AND retried_at IS NULL AND state = ?",
+            (db.utcnow(), latest["id"], "outcome_unknown"),
+        )
+        if cur.rowcount != 1:
+            return False  # another worker took this retry
+        for guest_id in guest_ids:
+            cur.execute(
+                "UPDATE guest SET submission_id = NULL WHERE id = ? AND submission_id = ? "
+                "AND submit_state != ?",
+                (guest_id, latest["id"], SENT),
+            )
+            if cur.rowcount == 1:
+                freed.append(guest_id)
+    if not freed:
+        return False
+    try:
+        submit_for_apartment(
+            apartment_id, only_guest_ids=freed, mode=AUTO_RESEND_MODE, ignore_schedule=True,
+        )
+    finally:
+        # A freed guest the resend did not take goes back in doubt; the chain
+        # then stops for it because the latest batch has retried_at set.
+        with db.immediate() as cur:
+            db.lock_key(cur, "submit_apartment", apartment_id)
+            for guest_id in freed:
+                cur.execute(
+                    "UPDATE guest SET submission_id = ? WHERE id = ? AND submission_id IS NULL "
+                    "AND submit_state != ?",
+                    (latest["id"], guest_id, SENT),
+                )
+    return True
 
 
 def submit_for_apartment(

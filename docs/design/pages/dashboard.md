@@ -44,4 +44,4 @@ filter. Explicit dates, non-default views/scales and property filters remain in
 the URL and survive reload. Unrelated parameters and the fragment are preserved.
 An explicit auto view is retained when it overrides a saved manual preference.
 
-0909 finish card: link row, PIN row, one primary, one secondary, quiet Skip; tips sit behind the "?". The month line counts stays that overlap the month, and "reported" is their guests.
+0912 finish card: link row, PIN row, one primary, one secondary, quiet Skip; tips sit behind the "?". The month line counts stays that overlap the month, and "reported" is their guests.

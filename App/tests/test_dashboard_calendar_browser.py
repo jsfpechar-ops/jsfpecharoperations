@@ -972,11 +972,14 @@ ROWS_0891 = """() => [...document.querySelectorAll('.cal-month .cal-week.is-dots
 PILLS_0891 = """() => [...document.querySelectorAll('.cal-pill')].map(pill => {
     const r = pill.getBoundingClientRect(), all = [...pill.closest('.cal-week').querySelectorAll('.cal-day[data-date]')];
     const nights = all.filter(t => t.dataset.date >= pill.dataset.calFrom && t.dataset.date < pill.dataset.calTo).map(t => t.getBoundingClientRect());
-    const covered = all.filter(t => { const b = t.getBoundingClientRect(), mid = b.left + b.width / 2; return mid > r.left && mid < r.right; }).length;
+    const covered = all.filter(t => { const b = t.getBoundingClientRect(), over = Math.min(b.right, r.right) - Math.max(b.left, r.left); return t.dataset.date >= pill.dataset.calFrom && t.dataset.date < pill.dataset.calTo && over >= b.width / 4; }).length;
+    const dep = all.find(t => t.dataset.date === pill.dataset.calTo && pill.dataset.calTo.slice(0, 7) === pill.closest('.cal-month').dataset.calSection.slice(0, 7));
     const want = Math.round((Date.parse(pill.dataset.calTo) - Date.parse(pill.dataset.calFrom)) / 86400000);
     return {want, nights: nights.length, covered, left: r.left - nights[0].left, right: nights[nights.length - 1].right - r.right,
             top: r.top - nights[0].top, bottom: nights[0].bottom - r.bottom, half: nights[0].height / 2,
-            color: getComputedStyle(pill).backgroundColor, cut: pill.classList.contains('continues-start')};
+            color: getComputedStyle(pill).backgroundColor, cut: pill.classList.contains('continues-start'),
+            gap: parseFloat(getComputedStyle(pill.parentElement).columnGap) || 0, width: nights[0].width,
+            halfEnd: !!dep, depMid: dep ? dep.getBoundingClientRect().left + dep.getBoundingClientRect().width / 2 : null, rightAbs: r.right};
 })"""
 FITS_0891 = "document.documentElement.scrollWidth <= innerWidth + 1"
 
@@ -1023,11 +1026,15 @@ def test_0891_airbnb_month_tiles_and_pills(calendar_workspace, calendar_origin, 
         check_tiles_0891(page.evaluate(ROWS_0891), width, 94 if width >= 768 else None)
         pills = page.evaluate(PILLS_0891)
         assert pills, "no stay pills"
-        inset = 8 if width >= 768 else 3
         for pill in pills:
+            # 0908: a bar starts halfway into its arrival day and ends halfway into its departure day; 2 px right margin
             assert pill["want"] == pill["nights"] == pill["covered"], pill
-            assert abs(pill["left"] - (0 if pill["cut"] else inset)) <= 1, pill
-            assert abs(pill["right"]) <= 1, pill
+            # the grid line sits after the first half-track, so it is (cell + gap) / 2 from the cell edge
+            assert abs(pill["left"] - (0 if pill["cut"] else (pill["width"] + pill["gap"]) / 2)) <= 1, pill
+            if pill["halfEnd"]:  # ends halfway into the departure day: cell middle minus g/2
+                assert abs(pill["rightAbs"] - (pill["depMid"] - pill["gap"] / 2)) <= 1, pill
+            else:  # runs into the next week: Sunday edge, 2 px margin
+                assert abs(pill["right"]) <= 1, pill
             assert pill["top"] >= 36 and pill["bottom"] >= 0, pill  # below the day number (0905: stacked lanes)
             assert pill["color"] == "rgb(34, 34, 34)", pill
         assert page.locator(".cal-tile-chip:visible, .cal-dots:visible, .cal-week-events").count() == 0
@@ -1039,6 +1046,67 @@ def test_0891_airbnb_month_tiles_and_pills(calendar_workspace, calendar_origin, 
         save_0891_shot(page, f"calendar-{width}.png")
         context.close()
         browser.close()
+
+
+SHOTS_0908 = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0908"
+GEOM_0908 = """() => {
+    const cell = date => { const b = document.querySelector(`.cal-day[data-date="${date}"]`).getBoundingClientRect(); return {l: b.left, r: b.right, w: b.width}; };
+    const pills = [...document.querySelectorAll('.cal-pill')].map(p => { const b = p.getBoundingClientRect(); return {from: p.dataset.calFrom, to: p.dataset.calTo, l: b.left, r: b.right, t: b.top}; });
+    const dates = ['2026-12-05', '2026-12-06', '2026-12-07', '2026-12-08', '2026-12-11'];
+    return {gap: parseFloat(getComputedStyle(document.querySelector('.cal-pills')).columnGap) || 0, cells: Object.fromEntries(dates.map(d => [d, cell(d)])), pills};
+}"""
+
+
+@pytest.mark.parametrize("width", [390, 1280])
+def test_0908_stay_bars_start_and_end_halfway_through_their_days(calendar_workspace, calendar_origin, width):
+    property_id = calendar_workspace["properties"][0]
+    make_stay(property_id, "2026-12-05", "2026-12-08", summary="0908 stay A", expected_guests_override=2)
+    make_stay(property_id, "2026-12-08", "2026-12-11", summary="0908 stay B", expected_guests_override=2)
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=width, touch=width < 768)
+        page.goto(f"{calendar_origin}/?lang=en&cal_view=calendar&cal_date=2026-12-01")
+        page.wait_for_selector(".cal-month")
+        wait_loaded(page)
+        page.evaluate("window.scrollTo(0, 0)")
+        page.wait_for_timeout(300)
+        geo = page.evaluate(GEOM_0908)
+        SHOTS_0908.mkdir(parents=True, exist_ok=True)
+        page.locator(".cal-week", has=page.locator('.cal-pill[data-cal-from="2026-12-07"]')).first.screenshot(path=str(SHOTS_0908 / f"week-{width}.png"))
+        context.close()
+        browser.close()
+    g, c = geo["gap"], geo["cells"]
+    def mid(day):  # middle of a day cell
+        return c[day]["l"] + c[day]["w"] / 2
+    pills = {(x["from"], x["to"]): x for x in geo["pills"]}
+    a1, a2, b = pills[("2026-12-05", "2026-12-07")], pills[("2026-12-07", "2026-12-08")], pills[("2026-12-08", "2026-12-11")]
+    assert abs(a1["l"] - (mid("2026-12-05") + g / 2)) <= 1, a1  # starts halfway through the 5th: cell middle + g/2
+    assert abs(a1["r"] - c["2026-12-06"]["r"]) <= 1, a1  # runs into the next week: Sunday edge
+    assert abs(a2["l"] - c["2026-12-07"]["l"]) <= 1, a2  # continues from the previous week: Monday edge
+    assert abs(a2["r"] - (mid("2026-12-08") - g / 2)) <= 1, a2  # ends halfway through the 8th: cell middle - g/2
+    assert abs(b["l"] - (mid("2026-12-08") + g / 2)) <= 1, b  # back-to-back stay starts halfway through the same 8th
+    assert abs(b["r"] - (mid("2026-12-11") - g / 2)) <= 1, b
+    assert abs((b["l"] - a2["r"]) - g) <= 1 and abs(a2["t"] - b["t"]) <= 1, (a2, b)  # touching stays: gap g, same lane
+
+
+def test_0908_sunday_arrival_bar_is_a_full_tap_target_at_768(calendar_workspace, calendar_origin):
+    # 4d: a Sunday arrival is half a cell wide; the bar must still be a 44 px tap target inside its week row
+    property_id = calendar_workspace["properties"][0]
+    make_stay(property_id, "2026-12-06", "2026-12-09", summary="0908 sunday stay", expected_guests_override=2)
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=768, touch=False)
+        page.goto(f"{calendar_origin}/?lang=en&cal_view=calendar&cal_date=2026-12-01")
+        page.wait_for_selector(".cal-month")
+        wait_loaded(page)
+        page.evaluate("window.scrollTo(0, 0)")
+        page.wait_for_timeout(300)
+        pill = page.locator('.cal-pill[data-cal-from="2026-12-06"]').first.bounding_box()
+        row = page.locator(".cal-week", has=page.locator('.cal-pill[data-cal-from="2026-12-06"]')).first.bounding_box()
+        context.close()
+        browser.close()
+    assert pill["width"] >= 44 - 0.5, (pill, row)
+    assert pill["x"] + pill["width"] <= row["x"] + row["width"] + 1, (pill, row)
 
 
 def test_0891_sticky_head_title_follows_scroll_and_back_to_top(calendar_workspace, calendar_origin):

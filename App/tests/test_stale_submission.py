@@ -248,7 +248,7 @@ def test_automation_skips_a_guest_while_they_still_point_at_outcome_unknown(monk
 
 
 def test_sweep_does_not_retry_a_live_unknown_outcome(monkeypatch):
-    """A timeout after send is OD-1: the host checks UbyPort, the sweep does not resend."""
+    """A timeout after send is retried only after the 30 min gap (brief 0909)."""
     db.init_db()
     apartment_id, submission_id, guest_id, owner_id = _sweep_apartment(monkeypatch)
     db.update("submission", submission_id, {"error_text": "read timed out"})
@@ -414,7 +414,10 @@ def test_a_crashed_filing_is_resent_exactly_once(monkeypatch):
     assert client.calls == 1
 
 
-def test_an_unclear_resend_is_never_resent_automatically(monkeypatch):
+def test_an_unclear_resend_is_retried_on_the_gap_schedule_then_stops(monkeypatch):
+    """Brief 0909: a chain resends with growing gaps and stops at five attempts, mail only at the end."""
+    from datetime import datetime, timedelta, timezone
+
     db.init_db()
     apartment_id, original, guest_id, owner_id, client = _crashed_filing(
         monkeypatch, ["timeout", "timeout", "timeout", "timeout"]
@@ -425,24 +428,26 @@ def test_an_unclear_resend_is_never_resent_automatically(monkeypatch):
         "submission_problem",
         lambda _apartment, submission_id, **kw: mails.append((submission_id, kw["state"])),
     )
+    start = datetime.now(timezone.utc)
+    clock = {"now": start + timedelta(minutes=119)}
+    monkeypatch.setattr(reporting, "_clock", lambda: clock["now"])
 
-    for _ in range(3):
-        reporting.sweep(owner_user_id=owner_id)
-
-    # One resend in three sweeps, not one per sweep.
+    reporting.sweep(owner_user_id=owner_id)  # crash path: attempt 2
     assert client.calls == 1
+    reporting.sweep(owner_user_id=owner_id)  # the 2 h gap is not over
+    assert client.calls == 1
+
+    for offset, calls in ((timedelta(minutes=121), 2), (timedelta(hours=8, minutes=2), 3),
+                          (timedelta(hours=20, minutes=3), 4), (timedelta(hours=60), 4)):
+        clock["now"] = start + offset
+        reporting.sweep(owner_user_id=owner_id)
+        assert client.calls == calls, offset
+
     rows = _batches(apartment_id)
-    assert len(rows) == 2
-    resend = rows[1]
-    assert resend["mode"] == reporting.AUTO_RESEND_MODE
-    assert resend["state"] == "outcome_unknown"
-    assert resend["retried_at"] is None
-    guest = _guest_row(guest_id)
-    assert guest["submit_state"] == reporting.PENDING
-    assert guest["submission_id"] == resend["id"], "the guest stays held on the unclear resend"
-    assert reporting.apartment_in_doubt(apartment_id)
-    assert alerts.open_alert(f"submission_outcome_unknown:{apartment_id}"), "the host is alerted"
-    assert mails == [(resend["id"], "transport_error")], "and mailed once, for the resend"
+    assert len(rows) == 5, "five attempts, never a sixth"
+    assert rows[-1]["state"] == "outcome_unknown"
+    assert mails == [], "no mail per attempt; the final notice is not built yet (brief 0909 section 4)"
+    assert _guest_row(guest_id)["submission_id"] == rows[-1]["id"]
 
 
 def test_a_crash_during_the_resend_is_not_resent_again(monkeypatch):
@@ -494,7 +499,7 @@ def test_the_host_can_still_send_by_hand_after_an_unclear_resend(monkeypatch):
 
 
 def test_a_manual_send_with_an_unclear_outcome_is_not_auto_retried(monkeypatch):
-    """Live timeouts (OD-1) wait for the host; only crash-stuck batches get one sweep resend."""
+    """A manual send is its own batch; the sweep keeps the chain on its own schedule (brief 0909)."""
     db.init_db()
     apartment_id, original, guest_id, owner_id, client = _crashed_filing(
         monkeypatch, ["timeout", "timeout", "ok"]
