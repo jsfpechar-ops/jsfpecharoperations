@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 )
 
 const (
-	paylinkRequestSQL = `SELECT id, owner_user_id, rail, reason, amount_czk, COALESCE(stripe_payment_link_id, '')
+	paylinkRequestSQL = `SELECT id, owner_user_id, rail, reason, amount_czk, COALESCE(stripe_payment_link_id, ''), COALESCE(guest_note, '')
 		FROM payment_request WHERE id = $1`
 	paylinkAccountSQL = `SELECT stripe_account_id, onboarding_state FROM stripe_account WHERE owner_user_id = $1 AND mode = $2`
 	paylinkStampSQL   = `UPDATE payment_request SET stripe_payment_link_id = $1, updated_at = $2 WHERE id = $3`
@@ -37,7 +38,15 @@ type paymentLink struct {
 // paylinkName is payment_links.product_name (lines 26-30): the Czech reason
 // and the request number. An unknown reason falls back to its key, as
 // host_i18n.translate does.
-func paylinkName(reason string, id int64) string {
+func paylinkName(reason, guestNote string, id int64) string {
+	// Python: the note, whitespace collapsed and cut to 60 characters, names a
+	// custom request.
+	if note := []rune(strings.Join(strings.Fields(guestNote), " ")); reason == "custom" && len(note) > 0 {
+		if len(note) > 60 {
+			note = note[:60]
+		}
+		return fmt.Sprintf("%s (žádost č. %d)", string(note), id)
+	}
 	text, ok := reasonCS[reason]
 	if !ok {
 		text = "payments.reason." + reason
@@ -53,8 +62,9 @@ func (s *StripeOnboarder) SendPaymentLink(ctx context.Context, requestID int64) 
 	var (
 		id, owner, amount    int64
 		rail, reason, linkID string
+		note                 string
 	)
-	err := s.Pool.QueryRow(ctx, paylinkRequestSQL, requestID).Scan(&id, &owner, &rail, &reason, &amount, &linkID)
+	err := s.Pool.QueryRow(ctx, paylinkRequestSQL, requestID).Scan(&id, &owner, &rail, &reason, &amount, &linkID, &note)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", nil
 	}
@@ -91,7 +101,7 @@ func (s *StripeOnboarder) SendPaymentLink(ctx context.Context, requestID int64) 
 		return "", err
 	}
 	// Re-read under the lock, so a link stored by an earlier Send is seen.
-	err = tx.QueryRow(ctx, paylinkRequestSQL, requestID).Scan(&id, &owner, &rail, &reason, &amount, &linkID)
+	err = tx.QueryRow(ctx, paylinkRequestSQL, requestID).Scan(&id, &owner, &rail, &reason, &amount, &linkID, &note)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", nil
 	}
@@ -113,7 +123,7 @@ func (s *StripeOnboarder) SendPaymentLink(ctx context.Context, requestID int64) 
 	form.Set("line_items[0][quantity]", "1")
 	form.Set("line_items[0][price_data][currency]", "czk")
 	form.Set("line_items[0][price_data][unit_amount]", strconv.FormatInt(amount*100, 10))
-	form.Set("line_items[0][price_data][product_data][name]", paylinkName(reason, id))
+	form.Set("line_items[0][price_data][product_data][name]", paylinkName(reason, note, id))
 	form.Set("restrictions[completed_sessions][limit]", "1")
 	form.Set("metadata[payment_request_id]", idText)
 	form.Set("payment_intent_data[metadata][payment_request_id]", idText)
