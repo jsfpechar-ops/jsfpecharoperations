@@ -552,8 +552,8 @@ def test_an_unknown_outcome_is_recorded_and_not_refiled_by_the_sweep(monkeypatch
 
     Resending it automatically is how the same guests are declared twice, and a
     duplicate is counted against the host. The batch is parked as
-    ``outcome_unknown`` with the envelope kept as evidence, and a person decides
-    whether to send it again (owner decision OD-1).
+    ``outcome_unknown`` with the envelope kept as evidence; the retry chain
+    sends it again only after the 30 min gap (brief 0909).
     """
     apartment, _reservation, guest_id = _seed("tok-cap-unknown", auto=True)
 
