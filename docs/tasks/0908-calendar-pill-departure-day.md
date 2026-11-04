@@ -45,6 +45,10 @@ Keep the CSS `column-gap` on the 14-column grid as it is. Because the gap sits b
 
 `test_cleaning_browser.py` (layout lint, cleaning page at 768 px) fails with `tap target 41x44 (min 44): <a class="cal-pill continues-end">`: a stay that arrives on a Sunday and runs into the next week is now half a cell wide (41 px). Fix in `dashboard-calendar.css`, in the 768 px and up pill rule only (line ~798, where the pill is 32 px high): `min-width:44px`, and for `.cal-pill.continues-end` add `justify-self:end` so a narrow bar grows to the left and stays inside the week row. Do not change the phone rule (thin 8 px cleaning bars are not tap targets). Then run `test_cleaning_browser.py`, `test_dashboard_calendar_browser.py`, `test_0905_cleaning_calendar_stays_browser.py` and `test_static_versions.py`; if the CSS file changed, bump its `?v=` key again (`20261104-0908b`, `_dashboard_calendar.html` line 2) and rerun `tests/test_static_versions.py --write`. Add to the new 0908 test (or a second one) a Sunday-arrival stay at 768 px that asserts the bar is at least 44 px wide and its right edge is inside the row.
 
+## 4e. Minimum width 48, not 44 (found by CI browser shard 1, 2026-11-04)
+
+After 4d the layout lint reports `clipped-text` on `a.cal-pill.continues-end` at cleaning@768 and cleaning@1024 (`48>44`): the pill's content (24 px avatar + 8 px gap + 4 px left and 12 px right padding) needs 48 px, the min-width gives 44. In the 768 px+ pill rule change `min-width:44px` to `min-width:48px` (44 px tap target still holds). Bump both `?v=` keys to `20261104-0908d`, rerun `tests/test_static_versions.py --write`, and run in full: `tests/test_static_versions.py`, `tests/test_cleaning_browser.py`, `tests/test_dashboard_calendar_browser.py`, `tests/test_0905_cleaning_calendar_stays_browser.py` (0 skipped). The Sunday-arrival test keeps its 44 px floor.
+
 ## 5. Do not touch
 
 `app2.css` cleaning bars, the dashboard phone tile dots, the list view, the Gantt view, any other test file (except changing one pinned edge number, said in the report).
