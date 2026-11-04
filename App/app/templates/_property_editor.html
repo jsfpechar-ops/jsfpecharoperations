@@ -215,11 +215,8 @@
             <option value="required_foreign" {% if apartment.passport_photo_policy == 'required_foreign' %}selected{% endif %}>{{ t('apartment.form.passport_policy.required') }}</option>
           </select>
         </div>
-        <div class="feature-switch-row" style="display:flex;align-items:last baseline;flex-wrap:nowrap;gap:12px">
-          <label class="checkline" for="ocr_scan" style="margin:0;align-items:center">
-            <input type="checkbox" id="ocr_scan" style="width:24px;height:24px;margin:0;flex:none" name="ocr_scan" value="1" {% if apartment.ocr_scan %}checked{% endif %} aria-describedby="ocr_scan-help">
-            <span>{{ t('apartment.form.ocr_scan.label') }}{{ help_tip('ocr_scan-help', t('apartment.form.ocr_scan.hint')) }}</span>
-          </label>
+        <div class="field passport-scan-row">
+          <label class="checkline" for="ocr_scan"><input type="checkbox" id="ocr_scan" name="ocr_scan" value="1" {% if apartment.ocr_scan %}checked{% endif %} aria-describedby="ocr_scan-help"><span>{{ t('apartment.form.ocr_scan.label') }}</span></label>{{ help_tip('ocr_scan-help', t('apartment.form.ocr_scan.hint')) }}
         </div>
       </div>
     </section>
