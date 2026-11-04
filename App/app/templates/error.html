@@ -1,5 +1,10 @@
-{% extends "auth_base.html" %}
+{% extends ("base.html" if current_user and error_kind == 'not_found' else "auth_base.html") %}
 {% block title %}{{ t('error.' ~ error_kind ~ '.title') }} · UbyHost{% endblock %}
+{% block content %}
+<div class="head"><div><h1 class="big">{{ t('error.' ~ error_kind ~ '.title') }}</h1></div></div>
+<p>{{ t('error.' ~ error_kind ~ '.body') }}</p>
+<p><a class="ui-btn ui-btn-primary" href="/">{{ t('error.home') }}</a></p>
+{% endblock %}
 {% block auth_body %}
 <h1>{{ t('error.' ~ error_kind ~ '.title') }}</h1>
 <p class="lede">{{ t('error.' ~ error_kind ~ '.body') }}</p>
