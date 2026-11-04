@@ -417,12 +417,12 @@
         {% if onboarding.dismissed %}
           <form method="post" action="/onboarding/resume">
             <input type="hidden" name="return_to" value="{{ request.url.path }}">
-            <button class="btn ghost small" type="submit">{{ t('onboarding.resume') }}</button>
+            <button class="ui-btn ui-btn-quiet ui-btn-compact" type="submit">{{ t('onboarding.resume') }}</button>
           </form>
         {% else %}
           <form method="post" action="/onboarding/dismiss">
             <input type="hidden" name="return_to" value="/">
-            <button class="btn ghost small" type="submit">{{ t('onboarding.skip') }}</button>
+            <button class="ui-btn ui-btn-quiet ui-btn-compact" type="submit">{{ t('onboarding.skip') }}</button>
           </form>
           {{ help_tip('onboarding-skip-help', t('onboarding.skip_hint')) }}
         {% endif %}
