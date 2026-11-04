@@ -24,10 +24,12 @@ from __future__ import annotations
 
 import csv
 import io
+import re
+import unicodedata
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
-from . import db, payments, reporting, validation
+from . import config, db, payments, reporting, validation
 from .csv_safety import csv_safe
 
 MAX_RATE_CZK = 50        # §3d
@@ -190,10 +192,51 @@ def format_czk(amount: int) -> str:
     return f"{amount:,}".replace(",", " ") + " Kč"
 
 
+# --- same-obec residence (0898) ---------------------------------------------
+# Backend only. Exact match after folding; statutory-city district suffix dropped
+# ("Praha 5", "Praha-Smichov"); Prague folds to Praha. Anything else, a typo
+# included, is not exempt: the form is the guest's own declaration.
+
+STATUTORY_DISTRICT_BASES = (
+    "PRAHA", "PRAGUE", "BRNO", "OSTRAVA", "PLZEN", "OLOMOUC", "LIBEREC",
+    "CESKE BUDEJOVICE", "HRADEC KRALOVE", "USTI NAD LABEM", "PARDUBICE",
+    "ZLIN", "JIHLAVA", "KARLOVY VARY", "OPAVA",
+)
+OBEC_ALIASES = {"PRAGUE": "PRAHA"}
+_DISTRICT_SUFFIX = re.compile(r"^(.+?)(?:\s+\d+|-.+)$")
+
+
+def fold_text(value) -> str:
+    """Diacritics, case and spacing folded (same approach as payments.ascii_upper)."""
+    plain = unicodedata.normalize("NFKD", value or "")
+    plain = "".join(ch for ch in plain if not unicodedata.combining(ch)).upper()
+    return re.sub(r"\s+", " ", plain).strip()
+
+
+def _obec_key(value) -> str:
+    text = fold_text(value)
+    match = _DISTRICT_SUFFIX.match(text)
+    if match and match.group(1).strip() in STATUTORY_DISTRICT_BASES:
+        text = match.group(1).strip()
+    return OBEC_ALIASES.get(text, text)
+
+
+def same_obec_resident(guest, apartment) -> bool:
+    """True only for a CZ resident whose city matches the property's obec exactly."""
+    if guest["res_country"] != validation.CZECH_CODE:
+        return False
+    obec = _obec_key(apartment["addr_obec"])
+    return bool(obec) and _obec_key(guest["res_city"]) == obec
+
+
 # --- per guest --------------------------------------------------------------
 
-def guest_period(guest, reservation, first: date, last: date) -> Optional[Dict[str, Any]]:
-    """One guest's share of one period, or None when no counted day falls in it."""
+def guest_period(guest, reservation, first: date, last: date,
+                 apartment=None) -> Optional[Dict[str, Any]]:
+    """One guest's share of one period, or None when no counted day falls in it.
+
+    With ``apartment`` the same-obec rule applies (0898); without it the output is unchanged.
+    """
     start = validation.parse_iso_date(guest["stay_from"] or reservation["date_from"])
     end = validation.parse_iso_date(guest["stay_to"] or reservation["date_to"])
     if not start or not end or end <= start:
@@ -207,13 +250,16 @@ def guest_period(guest, reservation, first: date, last: date) -> Optional[Dict[s
     liable = exempt = 0
     auto_minor = False
     birth = conservative_birth(guest["birth_date"]) if decision is None else None
+    # 0898: the host's decision always wins; the same-obec rule applies only with no decision.
+    obec_auto = (apartment is not None and decision is None
+                 and same_obec_resident(guest, apartment))
     d = max(start + timedelta(days=1), first)
     end_in_period = min(end, last)
     while d <= end_in_period:
         if status == "not_subject":
             pass
         else:
-            day_status = _day_liability(guest, decision, d, birth)
+            day_status = "exempt" if obec_auto else _day_liability(guest, decision, d, birth)
             if day_status == "liable":
                 liable += 1
             else:
@@ -236,7 +282,7 @@ def guest_period(guest, reservation, first: date, last: date) -> Optional[Dict[s
     # it a second time per guest and period was most of the list page's work.
     if guest.get("fee_host_reason_enc") and not db.is_decrypted(guest):
         reason = db.decrypt_field(guest["fee_host_reason_enc"]) or reason
-    return {
+    share = {
         "guest_id": guest["id"],
         "stay_from": start.isoformat(),
         "stay_to": end.isoformat(),
@@ -249,6 +295,9 @@ def guest_period(guest, reservation, first: date, last: date) -> Optional[Dict[s
         "reason": reason,
         "threshold_nights": stay_nights == THRESHOLD_NIGHTS,
     }
+    if apartment is not None:
+        share["auto_obec_resident"] = obec_auto and status == "exempt"
+    return share
 
 
 # --- per property -----------------------------------------------------------
@@ -281,6 +330,8 @@ def _apply_scope_boundary(share: Dict[str, Any], apartment) -> None:
     share["liable_nights"] = 0
     share["exempt_nights"] = 0
     share["auto_minor"] = False
+    if "auto_obec_resident" in share:
+        share["auto_obec_resident"] = False
 
 
 def property_period(
@@ -316,7 +367,7 @@ def property_period(
             unsigned += 1
             continue
         share = guest_period(row, {"date_from": row["res_from"], "date_to": row["res_to"]},
-                             first, last)
+                             first, last, apartment=apartment)
         if share is None:
             continue
         _apply_scope_boundary(share, apartment)
@@ -347,6 +398,37 @@ def property_period(
         "unsigned_guests": unsigned,
     }
     return _apply_adjustments(period, month)
+
+
+_GUESTS_FOR_RES_SQL = (
+    "SELECT g.*, r.date_from AS res_from, r.date_to AS res_to, r.id AS res_id "
+    "FROM guest g JOIN reservation r ON r.id = g.reservation_id "
+    "WHERE r.apartment_id = ? AND r.id = ? AND r.status = 'active' AND g.archived_at IS NULL "
+    "AND COALESCE(r.source, '') != 'demo' "
+    "ORDER BY COALESCE(g.stay_from, r.date_from), g.id"
+)
+_CHARGE_KEYS = ("guest_id", "liable_nights", "exempt_nights", "status", "auto_minor",
+                "auto_obec_resident")
+
+
+def charge_for_reservation(apartment, reservation) -> Optional[Dict[str, Any]]:
+    """Live amount for one reservation over its whole stay (guest panel and register share this)."""
+    if not is_active(apartment) or not config.STAY_FEE_GUEST_PAY:
+        return None
+    rate = int(apartment["stay_fee_rate_czk"])
+    lines: List[Dict[str, Any]] = []
+    for row in db.query(_GUESTS_FOR_RES_SQL, (apartment["id"], reservation["id"])):
+        if not reporting.guest_has_signature(row):
+            continue
+        share = guest_period(row, {"date_from": row["res_from"], "date_to": row["res_to"]},
+                             date.min, date.max, apartment=apartment)
+        if share is None:
+            continue
+        _apply_scope_boundary(share, apartment)
+        lines.append({key: share[key] for key in _CHARGE_KEYS})
+    liable = sum(line["liable_nights"] for line in lines)
+    return {"total_czk": liable * rate, "liable_nights": liable,
+            "rate_czk": rate, "lines": lines}
 
 
 def _apply_adjustments(period: Dict[str, Any], month: date) -> Dict[str, Any]:

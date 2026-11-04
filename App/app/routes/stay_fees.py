@@ -548,6 +548,7 @@ def _guest_lines(apartment, period):
             and (guest["res_country"] or "").upper() == validation.CZECH_CODE
             and _fold_place(guest["res_city"])
             and _fold_place(guest["res_city"]) == _fold_place(apartment["addr_obec"])
+            and not line.get("auto_obec_resident")
         )
         if line["status"] == "liable":
             status_key = "stay_fees.status.liable"
@@ -565,6 +566,7 @@ def _guest_lines(apartment, period):
             "status_key": status_key,
             "amount_display": stay_fee.format_czk(amount),
             "local_hint": local_hint,
+            "obec_resident": bool(line.get("auto_obec_resident")),
             "review": bool(line.get("auto_minor") or local_hint),
         })
     return lines

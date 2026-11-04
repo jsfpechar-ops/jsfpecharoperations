@@ -54,9 +54,10 @@ rails, plan `direct-payments-build-plan.md`, brief 0425).
 9. **v4 changes (owner, 2026-11-04, after CTO review):** Stripe link moves to
    v2 (card fee ≈ 6–7 % of a typical fee); Revolut stays in v1. The guest
    RÚIAN autocomplete and the residence reorder **stay**: the same-obec check
-   must be reliable. Typo safety comes from three layers (§4): autocomplete
-   fills the official obec name, the backend strips Prague/statutory-city
-   districts, and a near miss is flagged to the host instead of auto-exempted.
+   must be reliable. The backend strips Prague/statutory-city districts and
+   matches exactly after folding; there is no fuzzy matching and no host
+   check (owner, 2026-11-04: the guest form is a legal declaration, a typo is
+   the guest's own error; autocomplete makes typos rare).
 10. **Counsel confirmed (owner, 2026-11-04):** keeping the residence
    exemption out of the guest copy is acceptable, provided the fee notice
    links the full text of zákon č. 565/1990 Sb. so the guest can read every
@@ -126,15 +127,17 @@ on each render (never stored):
   (many are not public at all). So no EU lookup is needed or wanted — the
   comparison is guest's free-text `res_city` (folded) vs the property's
   RÚIAN-sourced `addr_obec` (host autofill, `ruian.py`, 0884), CZ only.
-- **Typo safety (three layers):** (1) the guest RÚIAN autocomplete fills
-  `res_city` with the official `addr_obec` ("Praha", never "Praha 5"); (2)
-  backend folding + district strip + alias map catches free typing like
-  "praha 5"; (3) a **near miss** (Levenshtein ≤ 2 after folding, e.g. "Prha")
-  is **not** auto-exempted — the host register shows "check residence" next
-  to that guest and the host decides via `fee_host_decision`. Never
-  auto-exempt on a fuzzy match: a wrong exemption leaves the host owing the
-  fee to the obec. Residence means permanent residence (trvalý pobyt) — the
-  guest's own declaration on the form, as the law intends.
+- **Typo safety (two layers, no fuzzy matching):** (1) the guest RÚIAN
+  autocomplete fills `res_city` with the official `addr_obec` ("Praha", never
+  "Praha 5"); (2) backend folding + district strip + alias map catches free
+  typing like "praha 5". Anything else, a typo such as "Prha" included, is
+  **not** exempt and raises no flag or task for the host: the guest form is a
+  legal declaration, so a typo is the guest's own error (owner, 2026-11-04). A
+  fuzzy rule would risk a wrong exemption that leaves the host owing the fee to
+  the obec. The host register shows a host-only line "resident of the
+  municipality" on auto-exempt guests so the host can audit it, and
+  `fee_host_decision` still wins both ways. Residence means permanent residence
+  (trvalý pobyt), the guest's own declaration on the form, as the law intends.
 - **Live register change on deploy:** the same-obec rule changes **unsealed**
   periods (list page, `stay_fee_auto` e-mails) — resident guests drop out;
   sealed periods are untouched (§9). Tell hosts in the release note when 0898
@@ -475,8 +478,8 @@ data, no payment state, Revolut (Stripe in v2) is the host's processor —
 1. Counsel (answered 2026-11-04, decision 10): hiding the residence exemption
    is fine with a link to the law in the notice. Still to sign: the final
    `legal_notice_fee_*` wording in all 6 languages before 0911 merges.
-2. Same-obec matching is settled in §4 (autocomplete + district strip + near-miss
-   flag to the host). RÚIAN stays CZ-only; no EU-wide address API is needed
+2. Same-obec matching is settled in §4 (autocomplete + district strip, exact
+   match only, no near-miss handling). RÚIAN stays CZ-only; no EU-wide address API is needed
    (only CZ residents can be exempt).
 3. A pasted Revolut link cannot enforce the exact amount (only the QR
    rail embeds it) — the panel shows the amount next to the link; flagged in

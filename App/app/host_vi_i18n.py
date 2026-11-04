@@ -440,6 +440,7 @@ STRINGS: Dict[str, str] = {
     "stay_fees.scope.save": "Lưu quyết định của chính quyền",
     "stay_fees.decision.reason_placeholder": "vd. đã kiểm tra thẻ ZTP/P; có hộ khẩu tại địa phương này",
     "stay_fees.hint.local_resident": "Thành phố khách khai trùng với địa phương của chỗ ở này. Hãy kiểm tra nơi đăng ký thường trú trên giấy tờ của khách trước khi miễn.",
+    "stay_fees.hint.obec_resident": "Cư dân của địa phương này: được miễn tự động theo thành phố khách đã khai. Đổi bằng quyết định bên dưới.",
     "stay_fees.issue.period_running": "Kỳ này chưa kết thúc. Bản PDF có từ ngày sau khi kỳ kết thúc.",
     "stay_fees.issue.no_vs": "Thêm mã VS mà chính quyền địa phương đã cấp cho bạn.",
     "stay_fees.issue.no_authority": "Thêm tên cơ quan địa phương.",

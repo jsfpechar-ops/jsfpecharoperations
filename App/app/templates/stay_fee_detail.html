@@ -220,6 +220,9 @@
           {% if line.local_hint %}
             <div class="ui-sub fee-hint">{{ t('stay_fees.hint.local_resident') }}</div>
           {% endif %}
+          {% if line.obec_resident %}
+            <div class="ui-sub fee-hint">{{ t('stay_fees.hint.obec_resident') }}</div>
+          {% endif %}
           {% if line.status != 'not_subject' %}
             {{ decision_form(line, line.review) }}
           {% endif %}
