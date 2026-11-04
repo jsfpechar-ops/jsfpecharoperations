@@ -18,7 +18,7 @@ from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
 from urllib.parse import parse_qsl, unquote, urlencode, urlparse, urlsplit, urlunsplit
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from starlette.background import BackgroundTask
 from starlette.concurrency import run_in_threadpool
@@ -4782,6 +4782,10 @@ def _settings_page(request: Request, group: str):
     guard = auth.require_login(request)
     if guard:
         return guard
+    if group == "technical":
+        viewer = auth.current_user(request)
+        if not viewer or viewer["role"] != "admin":
+            raise HTTPException(status_code=404)
     # "Support sessions": when an admin opened this workspace, left it or ran
     # out of time, revealed a guest, and everything done in between.
     audit_filter = "support" if request.query_params.get("audit") == "support" else ""

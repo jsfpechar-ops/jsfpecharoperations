@@ -31,7 +31,7 @@
   {% with href='/privacy-requests', label=t('nav.privacy_requests'), icon_name='mail' %}{% include "partials/settings_index_row.html" %}{% endwith %}
   {% with href='/settings/archived', label=t('settings.nav.archive'), icon_name='archive' %}{% include "partials/settings_index_row.html" %}{% endwith %}
   <div class="airbnb-divider" aria-hidden="true"></div>
-  {% with href='/settings/technical', label=t('settings.group.technical'), icon_name='settings' %}{% include "partials/settings_index_row.html" %}{% endwith %}
+  {% if current_user.role == 'admin' %}{% with href='/settings/technical', label=t('settings.group.technical'), icon_name='settings' %}{% include "partials/settings_index_row.html" %}{% endwith %}{% endif %}
   {% with href='/settings/help', label=t('settings.group.help'), icon_name='circle-help' %}{% include "partials/settings_index_row.html" %}{% endwith %}
 </nav>
 {% endif %}
@@ -253,6 +253,7 @@
       {% with label=t('settings.retention.period'), value=t('settings.retention.years', count=retention_years) %}{% include "partials/settings_value_card.html" %}{% endwith %}
       {% with label=t('settings.retention.cutoff'), value=retention_cutoff.strftime('%d.%m.%Y') %}{% include "partials/settings_value_card.html" %}{% endwith %}
       {% with label=t('settings.retention.expired'), value=expired_records %}{% include "partials/settings_value_card.html" %}{% endwith %}
+      {% if expired_records %}
       <form method="post" action="/settings/purge-expired"
             data-confirm data-confirm-message="{{ t('confirm.purge_expired') }}">
         <button class="ui-btn ui-btn-{{ 'danger' if expired_records else 'secondary' }}" type="submit"
@@ -261,6 +262,7 @@
         </button>
         {{ help_tip('settings-purge-expired-help', t('settings.retention.delete_help')) }}
       </form>
+      {% endif %}
 
       <div class="ui-section" id="settings-data">
         <h3>{{ t('settings.data.title') }}</h3>
@@ -270,7 +272,7 @@
             {% if retention_last_run %}
               {{ retention_last_run.at }},
               {{ t('settings.data.dry_run') if retention_last_run.dry_run else t('settings.data.live') }}
-              {% if retention_last_run.counts %}
+              {% if retention_last_run.counts and current_user.role == 'admin' %}
                 <span class="ui-sub">
                   {% for key, value in retention_last_run.counts.items() %}{{ key }}={{ value }}{{ " " if not loop.last }}{% endfor %}
                 </span>

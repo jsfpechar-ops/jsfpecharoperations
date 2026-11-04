@@ -711,7 +711,7 @@ STRINGS: Dict[str, str] = {
     "env.local": "LOCAL",
     "command.open": "Tìm kiếm hoặc chuyển đến…",
     "command.placeholder": "Tìm lưu trú, chỗ ở, khai báo và thao tác…",
-    "command.empty": "Không tìm thấy mục phù hợp",
+    "command.empty": "Không có kết quả",
     "command.group.pages": "Trang",
     "command.group.actions": "Thao tác",
     "command.property": "Chỗ ở",
