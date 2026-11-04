@@ -489,6 +489,23 @@ def _send_panel_context(apartment, period, group, filing_row: dict) -> dict:
 def _guest_lines(apartment, period):
     """The property's own guest rows, with the status and the local-resident hint."""
     lines = []
+    ids = [line["guest_id"] for line in period["lines"]]
+    facts = {}
+    if ids:
+        marks = ",".join("?" for _ in ids)
+        # Display only: birth date, age and nationality are read, never stored on the line.
+        for row in db.query(
+            "SELECT g.id, g.birth_date_enc, g.nationality, COALESCE(g.stay_from, r.date_from) AS check_in "
+            f"FROM guest g JOIN reservation r ON r.id = g.reservation_id WHERE g.id IN ({marks})",
+            tuple(ids),
+        ):
+            birth = validation.parse_birth_date(row["birth_date"] or "")
+            check_in = validation.parse_iso_date(row["check_in"])
+            facts[row["id"]] = {
+                "birth_display": validation.display_birth_date(row["birth_date"]) if row["birth_date"] else "",
+                "age_at_check_in": validation.age_on(birth, check_in) if birth and check_in else None,
+                "nationality": row["nationality"] or "",
+            }
     for line in period["lines"]:
         if "res_country" in line:
             guest = line
@@ -512,6 +529,7 @@ def _guest_lines(apartment, period):
         amount = line.get("amount_czk", line.get("liable_nights", 0) * rate)
         lines.append({
             **line,
+            **facts.get(line["guest_id"], {"birth_display": "", "age_at_check_in": None, "nationality": ""}),
             "amount_czk": amount,
             "status_key": status_key,
             "amount_display": stay_fee.format_czk(amount),

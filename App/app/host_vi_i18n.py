@@ -419,6 +419,7 @@ STRINGS: Dict[str, str] = {
     "stay_fees.nights": "%(count)s đêm",
     "stay_fees.nights.one": "%(count)s đêm",
     "stay_fees.nights.few": "%(count)s đêm",
+    "stay_fees.guest.age": "%(age)s tuổi khi nhận phòng",
     "stay_fees.status.liable": "Phải nộp",
     "stay_fees.status.exempt": "Được miễn",
     "stay_fees.status.under_18": "Được miễn (dưới 18 tuổi)",
