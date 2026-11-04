@@ -277,6 +277,17 @@ very tall; weaker "guest picks one" semantics.
 
 **Recommendation: A for v1** (leanest, fewest routes), with the per-person
 breakdown collapsed; revisit B if hosts ask for a standalone pay page.
+
+**Renderable mockups** (open from the repo root in a browser — they link the
+real `App/app/static/tokens.css` + `guest.css`, EN copy; the build ships all
+6 languages):
+
+| File | Shows |
+|---|---|
+| [stay-fee-guest-payment/mockup-A-hub-accordion.html](stay-fee-guest-payment/mockup-A-hub-accordion.html) | Option A — hub money card, rail accordion, QR + copy rows |
+| [stay-fee-guest-payment/mockup-B-pay-step.html](stay-fee-guest-payment/mockup-B-pay-step.html) | Option B — dedicated pay step, radio rails, one coral stub action |
+| [stay-fee-guest-payment/mockup-C-hub-all-rails.html](stay-fee-guest-payment/mockup-C-hub-all-rails.html) | Option C — all rails visible at once |
+| [stay-fee-guest-payment/mockup-D-form-estimate.html](stay-fee-guest-payment/mockup-D-form-estimate.html) | Form-end estimate card (quiet, no button, hidden when 0) |
 **Form-end estimate card** (all options): a quiet grey card like the legal
 notice box — one line "Municipal stay fee: about X Kč for you (n days × Y Kč)"
 + "you'll choose how to pay once everyone is registered", no button, no coral,

@@ -1,0 +1,70 @@
+<!doctype html>
+<!-- Mockup B: dedicated pay step page /l/{token}/{reservation_id}/pay.
+     Ticket-style card, one coral action in the stub. Links the real guest.css. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Mockup B — Pay stay fee step</title>
+  <link rel="stylesheet" href="../../../App/app/static/tokens.css">
+  <link rel="stylesheet" href="../../../App/app/static/guest.css">
+</head>
+<body>
+<div class="g-wrap">
+  <div class="g-head">
+    <div class="g-title g-property">
+      <span class="g-property-mark property-tone-1" aria-hidden="true">O</span>
+      <div>
+        <h1>Stay fee</h1>
+        <p class="g-facility">Old Town Loft · 28 Sep – 1 Oct · 3 nights</p>
+      </div>
+    </div>
+    <details class="g-lang"><summary aria-label="Language: English"><span aria-hidden="true">EN</span></summary></details>
+  </div>
+
+  <main id="g-main">
+    <a class="g-back" href="#">Back to your stay</a>
+
+    <div class="g-card" data-guest-step data-step-title="Stay fee">
+      <div class="g-step-head"><h2>Municipal stay fee</h2></div>
+      <p class="g-intro">Your host collects this fee and pays it to the city. 3 counted days × 50 Kč per person, 3 guests.</p>
+      <p style="font-size:2rem;margin:.4rem 0"><strong>450 Kč</strong></p>
+
+      <details class="g-summary">
+        <summary class="g-summary-fold">Per person</summary>
+        <div class="g-summary-body"><dl class="g-summary-list">
+          <dt>Guest 1</dt><dd>150 Kč</dd><dt>Guest 2</dt><dd>150 Kč</dd><dt>Guest 3</dt><dd>150 Kč</dd>
+        </dl></div>
+      </details>
+
+      <div class="g-field" style="margin-top:16px">
+        <span class="field-label-row"><b>How do you want to pay?</b></span>
+        <label class="checkline"><input type="radio" name="rail" checked> Bank transfer (QR)</label>
+        <label class="checkline"><input type="radio" name="rail"> IBAN transfer</label>
+        <label class="checkline"><input type="radio" name="rail"> Revolut</label>
+        <label class="checkline"><input type="radio" name="rail"> Card (Stripe)</label>
+        <label class="checkline"><input type="radio" name="rail"> Cash at check-in</label>
+      </div>
+
+      <!-- revealed content for the chosen rail, then the stub shows ONE coral action -->
+      <div style="border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:12px">
+        <img alt="Payment QR code" width="132" height="132" style="border:1px solid var(--line);border-radius:8px"
+             src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='132' height='132'%3E%3Crect width='132' height='132' fill='%23fff'/%3E%3Cpath d='M8 8h40v40H8zM16 16h24v24H16zM84 8h40v40H84zM92 16h24v24H92zM8 84h40v40H8zM16 92h24v24H16zM56 8h8v8h-8zM72 16h8v8h-8zM56 32h8v8h-8zM8 56h8v8H8zM24 56h8v8h-8zM40 64h8v8h-8zM56 56h24v8H56zM88 56h8v8h-8zM104 64h8v8h-8zM64 72h8v8h-8zM80 80h8v8h-8zM96 88h8v8h-8zM56 96h8v8h-8zM72 104h8v8h-8zM88 112h8v8h-8zM104 104h8v8h-8zM56 120h24v8H56z' fill='%23111'/%3E%3C/svg%3E">
+        <dl class="g-summary-list" style="margin-top:10px">
+          <dt>IBAN</dt><dd>CZ12 3456 0000 0000 0000 0100</dd>
+          <dt>Amount</dt><dd>450.00 Kč</dd><dt>VS</dt><dd>0000000123</dd>
+        </dl>
+      </div>
+
+      <div class="g-wizard-nav" style="display:flex;gap:10px;margin-top:20px">
+        <button class="g-btn ghost" type="button">Back</button>
+        <a class="g-btn" href="https://pay.revolut.com/EXAMPLE" rel="noopener" style="flex:1;text-align:center">Pay 450 Kč</a>
+      </div>
+
+      <p class="g-intro" style="margin-top:14px;font-size:.9rem">Why this fee — see the legal information you confirmed. UbyHost does not process this payment.</p>
+    </div>
+  </main>
+</div>
+</body>
+</html>
