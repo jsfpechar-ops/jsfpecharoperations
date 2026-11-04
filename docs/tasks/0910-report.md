@@ -1,28 +1,39 @@
 # 0910 report
 
-Status: blocked
+Status: review
 
 ## Done
-- Step 1: Today moved before the arrows, class `cal-today`, stylesheet `?v=20261104-0910`. Commit `0910 step 1`.
-- Step 2: calendar head is a two-row grid at >= 768 px (title, Today + arrows; row 2 filters; weekdays row 3). Old `order`/`flex` removed from the four rules, `.cal-today` margin added. Commit `0910 step 2`.
-- Step 3: `App/tests/test_0910_calendar_toolbar_stable_browser.py` (15 tests). Imports `calendar_workspace` and `sync_api` in addition to the brief's list, because pytest needs them in the module namespace.
+- Step 1: Today before the arrows, class `cal-today`, stylesheet `?v=20261104-0910`. Commit `0910 step 1`.
+- Step 2: two-row grid at >= 768 px. Commit `0910 step 2`.
+- Step 2b (owner decision, no ellipsis): with `.has-panel` at >= 1024 px the period title is `clamp(18px, 18px + (100vw - 1024px) * 0.1, 32px)`, so it stays on one line and reaches 32 px from 1280. Stylesheet `?v=20261104-0910b`. Commit `0910 step 2b`.
+- Step 3: `test_0910_calendar_toolbar_stable_browser.py` (15 tests).
+- Part A: stay page id line (`[data-guest-id-line]`) with birth date, nationality, document number, in desktop table and phone list. Commit `0910 step A`.
+- Part B: stay-fee detail `data-fee-guest-facts` line; route reads facts for display only; i18n `stay_fees.guest.age` in en/cs/vi. Commit `0910 step B`.
+- Part D: `test_stay_fee_detail.py::test_guest_line_shows_birth_date_age_and_nationality` (passed). `test_0910_guest_details_browser.py` (2 tests, 390/768/1280, passed, 0 skipped). Commit `0910 step D5/D7`.
+- Part C: test not written in this session (see Deviations).
 
 ## Tests (From App/, 0 skipped)
-- `test_0910_calendar_toolbar_stable_browser.py`: `15 passed in 45.17s`.
-- `test_dashboard_calendar.py` + `test_calendar_*.py` + `test_sample_calendar.py`: `64 passed in 5.19s`.
-- `test_dashboard_calendar_browser.py` + 0905 + 0898: `1 failed, 47 passed`. Failure: `test_month_tiles_and_side_panel[1024]` line 907, `.cal-toolbar h3` has `scrollWidth > clientWidth`. Cause: with the side panel open at 1024 px the calendar column is narrower than the 32 px title plus the 188 px arrow group, so the title is truncated (`overflow:hidden; text-overflow:ellipsis`, as the brief's design says). The old test asserts no clipping. Not fixed: the fix would change the 1024 title rule or the panel layout, which the brief forbids or does not cover.
-- `test_layout_lint_browser.py`: `3 passed in 209.63s`.
+- `test_0910_calendar_toolbar_stable_browser.py`: `15 passed in 40.87s`.
+- `test_dashboard_calendar_browser.py` + 0905 + 0898: `48 passed in 108.48s`, no skips.
+- `test_0910_guest_details_browser.py`: `2 passed in 11.11s`.
+- `test_stay_fee*` + `test_*_i18n.py`: `184 passed` (before the D6 test was added); D6 test: `1 passed`.
+- `test_layout_lint_browser.py`: see Deviations (rerun pending).
+- `python3 scripts/context_lint.py`: `context lint: OK`.
 
-## Screenshots
-- `docs/tasks/screenshots-0910/calendar-0910-768.png`, `-1024.png`, `-1280.png` (test 3, default state, no panel). 1024 checked: Today left of arrows, arrows side by side, filters on row 2, title not clipped.
-- 390 px: not captured (the `-k "0891 and 390"` run wrote no file to that folder).
+## Screenshots (docs/tasks/screenshots-0910/)
+- Calendar 768, 1024, 1280 (`calendar-0910-*.png`).
+- Calendar month 390: `calendar-calendar-en-390.png`. Opened: the month grid fits.
+- Stay page 390, 768, 1280 (`calendar-0910-stay-*.png`). 390 opened: id line on its own line under the name, readable.
+- Stay-fee detail 390, 768, 1280 (`calendar-0910-fee-*.png`). 390 opened: "Date of birth ... · Age 36 at check-in · Germany" sits under each guest name and wraps to 2 lines; readable.
+- Calendar week 390: not captured.
 
 ## Deviations
-Done: steps 1 to 3 (test 1 to 4 run). Left: Parts A, B, D (stay page and stay-fee guest details, their tests, screenshots); 768 and 1280 per-page UX notes; 390 shot; `scripts/context_lint.py`; PR.
+Done: Steps 1 to 3, 2b, A, B, D (D5, D6, D7). Left: Part C test; calendar week 390 shot; layout lint rerun result; PR.
+Shot helper names files with a `calendar-` prefix (from `shot()`), so the stay and fee files carry it too.
+Fee screenshots: the brief's fixture (`test_stay_fee_pay_steps_browser.py`) opens `/stay-fees`, not `/stay-fees/<id>`, so the fee shot test uses the `host` fixture from `test_stay_fee_detail.py` (reuse, no new fixture).
 
 ## Questions
-1. The 1024 side-panel-open title clip: accept truncation with ellipsis, or change the layout (for example let the title wrap or shrink the 32 px rule when a panel is open)?
-2. Part C (Back/Forward) passed as written: Back went to /reservations, Forward restored the April 2026 month.
+None.
 
 ## Owner steps left
-None until the questions are answered.
+None.
