@@ -18,10 +18,10 @@
   <link rel="preload" href="/static/fonts/Manrope-latin.woff2?v=20261101-0495" as="font" type="font/woff2" crossorigin>
   {% if v2 | default(false) %}
   <link rel="stylesheet" href="/static/tokens.css?v=20261101-0495">
-  <link rel="stylesheet" href="/static/app2.css?v=20261103-0897">
+  <link rel="stylesheet" href="/static/app2.css?v=20261104-0911">
   {% else %}
   <link rel="stylesheet" href="/static/tokens.css?v=20261101-0495">
-  <link rel="stylesheet" href="/static/app.css?v=20261027-signup-wrap">
+  <link rel="stylesheet" href="/static/app.css?v=20261104-0911">
   <link rel="stylesheet" href="/static/components.css?v=20261014-0102c">
   {% if show_nav | default(true) %}
   <link rel="stylesheet" href="/static/host.css?v=20261102-0799">
@@ -138,7 +138,7 @@
         <span class="impersonation-handle">@{{ workspace_user.username }}</span>
         {% set support_minutes = impersonation_minutes_left() %}
         {% if support_minutes is not none %}
-          <span class="impersonation-handle" data-impersonation-minutes="{{ support_minutes }}">{{ tp('impersonation.minutes_left', support_minutes) }}</span>
+          <span class="impersonation-handle" data-impersonation-minutes="{{ support_minutes }}">{% if support_minutes >= 120 %}{{ tp('impersonation.hours_left', support_minutes // 60) }}{% else %}{{ tp('impersonation.minutes_left', support_minutes) }}{% endif %}</span>
         {% endif %}
       </div>
       <form method="post" action="/admin/stop-impersonating">
