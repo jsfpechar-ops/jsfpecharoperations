@@ -122,8 +122,7 @@ def test_rows_hover_as_one_surface_and_use_compact_menus(stay_actions_host, stay
 
         if width >= 1440:
             # Old shell: the collapsible sidebar account lives on /settings; v2 Overview has no sidebar account.
-            apartment_id = db.query_one("SELECT id FROM apartment ORDER BY id LIMIT 1")["id"]
-            page.goto(f"{base}/apartments/{apartment_id}/booking-site?lang={lang}")  # an old-shell page (payments is v2 now)
+            page.goto(f"{base}/reservations/{stay_id}/guests/new?lang={lang}")  # an old-shell page that needs no Stripe (payments is v2 now)
             _ready(page)
             page.evaluate("document.body.classList.add('sidebar-collapsed')")
             account = page.locator("[data-host-account] > summary")
