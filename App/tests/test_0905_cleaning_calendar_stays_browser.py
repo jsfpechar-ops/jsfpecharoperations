@@ -33,7 +33,7 @@ def _seed():
     return username
 
 
-@pytest.mark.parametrize("width", [390, 768, 1280])
+@pytest.mark.parametrize("width", [390, 768, 1024, 1280])
 def test_two_overlapping_stays_both_draw_in_a_week_with_cleanings(base, width):
     username = _seed()
     with _sync_playwright().sync_playwright() as playwright:
@@ -50,20 +50,20 @@ def test_two_overlapping_stays_both_draw_in_a_week_with_cleanings(base, width):
         page.wait_for_selector(".cal-week")
         page.wait_for_timeout(500)
         week = page.locator(".cal-week", has=page.locator('[data-date="2026-11-08"]'))
-        if width >= 768:  # phone tiles show every stay as a dot, not as pills
+        if True:
             # The week of 2-8 Nov holds both stays, drawn as two stacked pills, with no "+N" overflow button.
-            names = week.locator(".cal-pill").all_inner_texts()
+            names = week.locator(".cal-pill").evaluate_all("nodes => nodes.map(n => n.getAttribute('aria-label'))")
             assert sum("Cozy" in n for n in names) == 1 and sum("Spacious" in n for n in names) == 1, names
             assert week.locator(".cal-pill-more").count() == 0
-        if os.environ.get("UBYHOST_TASK_SHOTS") == "1" and width in (390, 768, 1280):
+        if os.environ.get("UBYHOST_TASK_SHOTS") == "1" and width in (390, 768, 1024, 1280):
             SHOTS.mkdir(parents=True, exist_ok=True)
             week.scroll_into_view_if_needed()
-            page.screenshot(path=str(SHOTS / f"cleaning-{width}.png"), full_page=True)
+            week.screenshot(path=str(SHOTS / f"cleaning-{width}.png"))
         # The two pills do not overlap each other.
-        if width < 768:  # phone tiles list stays in the day sheet, not as pills
-            browser.close()
-            return
         week.scroll_into_view_if_needed()
         a, b = [week.locator(".cal-pill").nth(i).bounding_box() for i in (0, 1)]
         assert a["y"] + a["height"] <= b["y"] or b["y"] + b["height"] <= a["y"], (a, b)
+        if width < 768:  # Airbnb-style thin bars on the phone, no text
+            assert a["height"] <= 10 and b["height"] <= 10, (a, b)
+            assert week.locator(".cal-pill").first.is_visible()
         browser.close()

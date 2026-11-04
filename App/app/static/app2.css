@@ -2209,11 +2209,14 @@ body.v2 td[data-card="badge"] small{display:block;margin-top:6px;color:var(--ink
 body.v2 td[data-card="badge"] small .ui-badge{color:var(--ink3)}
 .side .me-menu > summary.me{justify-content:flex-start;gap:10px}
 /* 0896 audit: cleaning tiles are tall enough for two chips plus a stay pill; on phones the stay pill is hidden (too small to tap) */
-body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-week.is-dots .cal-day { min-height:150px; }
+body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-week.is-dots .cal-day { min-height:calc(150px + (var(--pl,1) - 1) * 44px); }
 body.v2 #calendar.dashboard-calendar[data-cleaning="true"] .cal-pill-more { display:none !important; }
 @media (max-width:767px) {
-  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-week.is-dots .cal-day { min-height:96px; }
-  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-pill { display:none; }
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-week.is-dots .cal-day { min-height:calc(96px + (var(--pl,1) - 1) * 12px); }
+  /* 0905: Airbnb-style thin stay bars on phone tiles; taps fall through to the tile, the day sheet lists the stays */
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-pills { row-gap:4px; padding-bottom:6px; }
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-pill { height:8px; margin:0 0 0 3px; padding:0; border-radius:4px; pointer-events:none; }
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-pill.continues-start { margin-left:0; border-top-left-radius:0; border-bottom-left-radius:0; }
   body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-pill > * { display:none; }
 }
 /* 0896 audit: icon + label buttons keep a gap; stats line under the needs-you cards keeps 12 px */
