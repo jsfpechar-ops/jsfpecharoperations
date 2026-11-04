@@ -127,7 +127,7 @@ def test_services_fit_a_phone(owner, stripe_env):
     else:
         sync_api = pytest.importorskip("playwright.sync_api")
     payment_services.add(owner, "Úklid navíc", 800)
-    sid = payment_services.add(owner, "Pozdní odjezd", 500)["id"]
+    payment_services.add(owner, "Pozdní odjezd", 500)
     port = _free_port()
     server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error"))
     thread = threading.Thread(target=server.run, daemon=True)
@@ -145,8 +145,8 @@ def test_services_fit_a_phone(owner, stripe_env):
             context.add_cookies([{"name": auth.SESSION_COOKIE, "value": token,
                                   "url": f"http://127.0.0.1:{port}"}])
             page = context.new_page()
-            page.goto(f"http://127.0.0.1:{port}/payments?lang=cs&service={sid}#new-request")
-            assert page.locator("[data-payment-services] li").count() == 2
+            page.goto(f"http://127.0.0.1:{port}/payments?lang=cs")
+            assert page.locator("[data-payment-services] [data-service]").count() == 2
             overflow = page.evaluate(
                 "document.documentElement.scrollWidth - document.documentElement.clientWidth")
             assert overflow <= 0

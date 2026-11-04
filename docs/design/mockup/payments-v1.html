@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="cs"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>UbyHost Platby – návrh</title>
+<style>
+:root{--acc:#d0452d;--acc2:#b83d28;--accs:#fdece8;--ink:#1c1c1a;--ink2:#55554f;--ink3:#6b6b65;--line:#ebebe7;--soft:#f4f3ef;--ok:#167044;--oks:#e6f5ec;--warn:#8a5200;--warns:#fff4d6}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;font-family:Manrope,system-ui,sans-serif;color:var(--ink);font-size:15px;line-height:1.4}
+a{color:inherit;text-decoration:none}
+svg.i{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.wrap{max-width:640px;margin:0 auto;padding:8px 20px 120px}
+.scr{display:none}.scr.on{display:block}
+.mh{display:flex;align-items:center;justify-content:space-between;margin:6px 0 24px}
+.big{font-size:30px;line-height:1.15;font-weight:800;letter-spacing:-.02em;margin:0}
+.round{width:44px;height:44px;border-radius:50%;background:var(--soft);display:grid;place-items:center;flex:none}
+h2.sec{font-size:13px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin:28px 0 12px}
+.card{margin:0 0 14px;background:#fff;border-radius:24px;padding:22px;box-shadow:0 6px 24px rgba(0,0,0,.08),0 0 0 1px rgba(0,0,0,.03)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;border-radius:12px;background:var(--acc);color:#fff;font-weight:700;font-size:16px;border:0;font-family:inherit}
+.btn.line{background:#fff;color:var(--ink);border:1.5px solid var(--ink)}
+.state{display:flex;align-items:center;gap:14px}
+.state .ic{width:44px;height:44px;border-radius:50%;background:var(--oks);color:var(--ok);display:grid;place-items:center;flex:none}
+.state b{display:block;font-size:17px}.state small{display:block;color:var(--ink3);font-size:14px}
+.row{display:flex;align-items:center;gap:16px;min-height:56px;padding:12px 0;width:100%}
+.row + .row{border-top:1px solid var(--line)}
+.row .t{flex:1;min-width:0}.row .t b{display:block;font-size:17px;font-weight:600}.row .t small{display:block;color:var(--ink3);font-size:14px}
+.row .amt{font-weight:800;font-size:17px;white-space:nowrap}
+.mini{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:999px;border:1.5px solid var(--ink);font-weight:700;font-size:14px;background:#fff;white-space:nowrap}
+.rq{display:flex;align-items:center;gap:16px;padding:16px;margin:0 0 14px}
+.rq .in{flex:1;min-width:0}
+.rq .in b{display:block;font-size:17px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rq .in small{display:block;color:var(--ink3);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;margin-top:6px}
+.st:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.st.g{color:var(--ok)}.st.a{color:var(--warn)}.st.n{color:var(--ink3)}
+.rq .amt{font-weight:800;font-size:17px}
+.chev{width:20px;height:20px;color:var(--ink3)}
+.amount{font-size:44px;font-weight:800;letter-spacing:-.02em;text-align:center;border:0;border-bottom:2px solid var(--line);width:100%;padding:8px 0;font-family:inherit;color:var(--ink)}
+.field{display:block;margin:0 0 18px}.field>span{display:block;font-size:13px;font-weight:700;color:var(--ink3);margin-bottom:6px}
+.inp{width:100%;min-height:50px;border:1.5px solid var(--line);border-radius:12px;padding:0 14px;font:inherit;background:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border-radius:999px;background:var(--soft);font-weight:600}
+.chip.on{background:var(--ink);color:#fff}
+.seg2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seg2 .chip{justify-content:center}
+.actbar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:12px 20px 24px;z-index:6}
+.actbar .in{max-width:640px;margin:0 auto}
+.step{display:flex;gap:16px;align-items:flex-start;padding:16px 0}
+.step + .step{border-top:1px solid var(--line)}
+.step .n{width:36px;height:36px;border-radius:50%;background:var(--soft);display:grid;place-items:center;font-weight:800;flex:none}
+.step.done .n{background:var(--oks);color:var(--ok)}
+.step.cur .n{background:var(--acc);color:#fff}
+.step b{display:block;font-size:17px}.step small{display:block;color:var(--ink3);font-size:14px}
+.nav{position:static;justify-content:center;font-size:12px;background:#1c1c1a;color:#fff;padding:0 10px;display:flex;gap:10px}
+.nav a{padding:6px 4px;min-height:44px;display:inline-flex;align-items:center}
+</style></head><body>
+<div class="nav" data-mock-nav><a href="#home">Přehled</a><a href="#new">Nový</a><a href="#setup">Nastavení</a></div>
+
+<main class="wrap">
+<section class="scr" id="home">
+ <div class="mh"><h1 class="big">Platby</h1><a class="round" href="#new" aria-label="Nový požadavek"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></a></div>
+ <div class="card state"><span class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></span><span><b>Platby kartou jsou zapnuté</b><small>Peníze chodí na váš účet</small></span></div>
+ <h2 class="sec">Vaše služby</h2>
+ <div class="card" style="padding:6px 22px">
+  <div class="row"><span class="t"><b>Úklid navíc</b><small>800 Kč</small></span><a class="mini" href="#new">Vyžádat</a></div>
+  <div class="row"><span class="t"><b>Pozdní odjezd</b><small>500 Kč</small></span><a class="mini" href="#new">Vyžádat</a></div>
+  <div class="row"><span class="t"><b>Přidat službu</b><small>Uložte si, co účtujete často</small></span><svg class="i chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+ </div>
+ <h2 class="sec">Požadavky</h2>
+ <a class="card rq" href="#new"><span class="in"><b>Úklid navíc</b><small>Jana Nováková · 3. 11.</small><span class="st g">Zaplaceno</span></span><span class="amt">800 Kč</span></a>
+ <a class="card rq" href="#new"><span class="in"><b>Pozdní odjezd</b><small>Tomáš Král · 2. 11.</small><span class="st a">Čeká na platbu</span></span><span class="amt">500 Kč</span></a>
+ <a class="card rq" href="#new"><span class="in"><b>Poškození</b><small>Bez pobytu · 30. 10.</small><span class="st n">Koncept</span></span><span class="amt">2 400 Kč</span></a>
+ <div class="actbar"><div class="in"><a class="btn" href="#new">Vyžádat platbu</a></div></div>
+</section>
+
+<section class="scr" id="new">
+ <div class="mh"><a class="round" href="#home" aria-label="Zpět"><svg class="i" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></a></div>
+ <h1 class="big" style="text-align:center;margin-bottom:20px">Vyžádat platbu</h1>
+ <label class="field"><span>Částka (Kč)</span><input class="amount" inputmode="numeric" value="800"></label>
+ <div class="field"><span>Za co</span><div class="chips"><span class="chip">Příspěvek na opravu</span><span class="chip">Host navíc</span><span class="chip">Pozdní odjezd</span><span class="chip on">Úklid</span><span class="chip">Poškození</span><span class="chip">Jiné</span></div></div>
+ <label class="field"><span>Pobyt</span><select class="inp"><option>Bez pobytu</option></select></label>
+ <label class="field"><span>E-mail hosta (nepovinné)</span><input class="inp" type="email"></label>
+ <div class="field"><span>Jak host zaplatí</span><div class="seg2"><span class="chip on">Kartou</span><span class="chip">Bankovní QR</span></div></div>
+ <div class="actbar"><div class="in"><a class="btn" href="#home">Získat odkaz</a></div></div>
+</section>
+
+<section class="scr" id="setup">
+ <div class="mh"><h1 class="big">Platby</h1></div>
+ <p style="color:var(--ink2);font-size:16px;margin:0 0 18px">Zapnutí zabere asi 10 minut. Můžete se vrátit kdykoli.</p>
+ <div class="card" style="padding:6px 22px">
+  <div class="step done"><span class="n">✓</span><span><b>Souhlas s podmínkami</b><small>Hotovo</small></span></div>
+  <div class="step done"><span class="n">✓</span><span><b>Vaše údaje</b><small>Novák s.r.o. · novak@example.cz</small></span></div>
+  <div class="step cur"><span class="n">3</span><span><b>Ověření u Stripe</b><small>Stripe se zeptá na doklad a bankovní účet</small></span></div>
+  <div class="step"><span class="n">4</span><span><b>Hotovo</b><small>Platby kartou se zapnou samy</small></span></div>
+ </div>
+ <div class="actbar"><div class="in"><a class="btn" href="#setup">Pokračovat ve Stripe</a></div></div>
+</section>
+</main>
+<script>
+function show(){var h=(location.hash||'#home').slice(1);document.querySelectorAll('.scr').forEach(function(s){s.classList.toggle('on',s.id===h)})}
+addEventListener('hashchange',show);show();
+</script>
+</body></html>

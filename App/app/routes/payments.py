@@ -87,6 +87,9 @@ def payments_page(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    if "service" in request.query_params or "reservation_id" in request.query_params:
+        target = "/payments/new" + (f"?{request.url.query}" if request.url.query else "")
+        return RedirectResponse(target, status_code=303)
     owner_id = access.owner_id(request)
     state = _connect_state(owner_id)
     raw_stay = str(request.query_params.get("reservation_id") or "")
@@ -109,6 +112,31 @@ def payments_page(request: Request):
             ],
             "selected_reservation_id": selected_reservation_id,
             "services": services,
+            "prefill": prefill,
+        },
+    )
+
+
+@router.get("/payments/new")
+def payments_new_page(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    owner_id = access.owner_id(request)
+    raw_stay = str(request.query_params.get("reservation_id") or "")
+    selected_reservation_id = int(raw_stay) if raw_stay.isdigit() else None
+    prefill = payment_services.get(owner_id, str(request.query_params.get("service") or ""))
+    return render(
+        request,
+        "payments_new.html",
+        {
+            "nav": "payments",
+            "how_key": "payments",
+            "reasons": list(payment_request.REASONS),
+            "stays": [
+                {"id": s["id"], "label": _stay_label(s)} for s in _stays(owner_id)
+            ],
+            "selected_reservation_id": selected_reservation_id,
             "prefill": prefill,
         },
     )
@@ -147,14 +175,14 @@ async def payment_request_new(request: Request):
         return guard
     form = await request.form()
     owner_id = access.owner_id(request)
-    back = _back("/payments", err=_flash(request, "payments.err.invalid"))
-    reason = str(form.get("reason") or "").strip()
+    back = _back("/payments/new", err=_flash(request, "payments.err.invalid"))
+    reason =str(form.get("reason") or "").strip()
     if reason not in payment_request.REASONS:
         return back
     raw_amount = str(form.get("amount_czk") or "").strip()
     if not raw_amount.isdigit() or int(raw_amount) < 1:
-        return _back("/payments", err=_flash(request, "payments.err.amount"))
-    stay_raw = str(form.get("reservation_id") or "").strip()
+        return _back("/payments/new", err=_flash(request, "payments.err.amount"))
+    stay_raw =str(form.get("reservation_id") or "").strip()
     reservation_id: int | None = None
     if stay_raw.isdigit():
         stay = db.query_one(

@@ -43,6 +43,7 @@ ROUTES.update({
     "settings-account": "/settings",
     "havel": "/havel",
     "payments": "/payments",
+    "payments-new": "/payments/new",
     "booking-site": "/apartments/{property_id}/booking-site",
 })
 
