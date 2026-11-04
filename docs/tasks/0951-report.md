@@ -40,3 +40,16 @@ Fixed: help-tip `?` moved inside the OCR `<label>` (lint `help-stranded` for `ti
 Lint still: 56 `help-stranded` (OCR `?` tip, 8 routes x 7 widths). The lint measures the tip against the label text span; with the tip inside the label it reports "on its own line" at 320 px, 41 px off. Not fixed.
 Screenshots (docs/tasks/screenshots-0951/): 390 viewed: Copy on input row, actions wrap to 3 rows, ? inline; select text second line clipped by the select height (real finding, not fixed). 768/1280 viewed earlier: note and passport label gap now 24 px.
 Next step: in app2.css, make the OCR tip not a lint-stranded element: move `help_tip('ocr_scan-help')` out of the `label` and right after the `<label>` in a `div.passport-scan-row` flex row whose label is `display:contents`-free, or give the span `display:inline` so the lint anchor is the text line; then the select `min-height` to fit two lines (`height:auto`), and rerun lint.
+
+## Update (fourth run): status review
+Status: review
+Gate: `test_layout_lint_browser.py`, `test_host_property_controls_browser.py`, `test_0833`, `test_0541`, `test_0531`, `test_calmer_forms`: 32 passed, 0 failed, 0 skipped. Lint findings: 0.
+Cache key: 20261104-0951i (keys g, h, i were used while fixing; manifest written, 49 files).
+Accident: a mistaken write emptied base.html in commit 46ee6c04; restored in c44f539e.
+Passport options shortened: EN "Off (default)" / "Required for foreign guests"; CS "Vypnuto (výchozí)" / "Povinné pro cizince"; VI "Tắt (mặc định)" / "Bắt buộc với khách nước ngoài". The long off-explanation is no longer visible; the hint explains the required option only (needs owner review).
+Screenshots (viewed, docs/tasks/screenshots-0951/):
+- 390: Link and PIN each one row with Copy; actions wrap to 3 rows; select shows "Off (default)" whole; ? after labels.
+- 768: links one column; two number fields side by side; note and passport label separated; checkbox row with ? aligned.
+- 1280: same as 768 with wider columns; actions in 2 rows.
+Checklist (design-system): lint green, 0 skipped, copy/Copy on one row, equal heights, 44 px touch targets at 390. Not reviewed: full design-system checklist line by line.
+Next step: owner review of the shortened passport option text.
