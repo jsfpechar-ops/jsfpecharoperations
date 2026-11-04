@@ -91,35 +91,48 @@
       </ul>
       <div class="fee-step-actions"><a class="btn" href="{{ report_url }}">{{ t('stay_fees.pay.fix') }}</a></div>
     {% endif %}
+  {% elif period.step == 3 %}
+    <h3>{{ t('stay_fees.pay.done_title') }}</h3>
+    <div class="fee-step-actions"><a data-turbo="false" class="btn line" href="{{ pdf_url }}" download>{{ t('stay_fees.download_pdf') }}</a></div>
   {% else %}
     <h3>{{ t('stay_fees.pay.step2') }}</h3>
     <div class="fee-send-pay">
-      <ol class="fee-tasks">
-        <li>
-          <strong>{{ t('stay_fees.pay.task_pdf') }}</strong>
-          <a data-turbo="false" class="btn line" href="{{ pdf_url }}" download>{{ t('stay_fees.download_pdf') }}</a>
-        </li>
-        <li>
-          <strong>{{ t('stay_fees.pay.task_send') }}</strong>
-          <a class="btn" href="https://www.mojedatovaschranka.cz/" target="_blank" rel="noopener noreferrer">{{ t('stay_fees.pay.open_databox') }}</a>
-        </li>
-      </ol>
-      <div class="fee-qr-panel">
-      {% if period.pay_total_czk == 0 %}
-        <p>{{ t('stay_fees.pay.nothing') }}</p>
-      {% elif period.pay and period.pay.qr %}
-        <h4 class="fee-qr-title"><span class="fee-qr-n" aria-hidden="true">3</span>{{ t('stay_fees.pay.task_pay') }}</h4>
+    <ol class="fee-tasks">
+      <li>
+        <strong>{{ t('stay_fees.pay.task_pdf') }}</strong>
+        <a data-turbo="false" class="btn line" href="{{ pdf_url }}" download>{{ t('stay_fees.download_pdf') }}</a>
+      </li>
+      <li>
+        <strong>{{ t('stay_fees.pay.task_send') }}</strong>
+        <a class="btn" href="https://www.mojedatovaschranka.cz/" target="_blank" rel="noopener noreferrer">{{ t('stay_fees.pay.open_databox') }}</a>
+      </li>
+    </ol>
+    <div class="fee-qr-panel">
+    {% if period.pay_total_czk == 0 %}
+      <p>{{ t('stay_fees.pay.nothing') }}</p>
+    {% elif period.pay and period.pay.qr %}
+      <h4 class="fee-qr-title"><span class="fee-qr-n" aria-hidden="true">3</span>{{ t('stay_fees.pay.task_pay') }}</h4>
+      <div class="fee-qr-body">
         <img src="{{ period.pay.qr }}" width="176" height="176" alt="{{ t('stay_fees.payment.qr_alt') }}">
-        <p class="fee-qr-amount">{{ period.pay_total_display }}</p>
-        <dl class="fee-qr-meta">
-          <div><dt>{{ t('stay_fees.payment.account') }}</dt><dd><span class="fee-qr-val">{{ period.pay.account or period.pay.iban_display }}</span>{{ copy_inline('fee-acc-' ~ apartment.id, period.pay.account or period.pay.iban_display, t('common.copy')) }}</dd></div>
-          <div><dt>{{ t('stay_fees.payment.vs') }}</dt><dd><span class="fee-qr-val">{{ period.pay.vs }}</span>{{ copy_inline('fee-vs-' ~ apartment.id, period.pay.vs, t('common.copy')) }}</dd></div>
-        </dl>
-      {% else %}
-        <p class="sub">{{ t('stay_fees.pay.no_account') }} <a href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ t('stay_fees.pay.add_account') }}</a></p>
-      {% endif %}
+        <div class="fee-qr-side">
+          <p class="fee-qr-amount">{{ period.pay_total_display }}</p>
+          <dl class="fee-qr-meta">
+            <div><dt>{{ t('stay_fees.payment.account') }}</dt><dd><span class="fee-qr-val">{{ period.pay.account or period.pay.iban_display }}</span>{{ copy_inline('fee-acc-' ~ apartment.id, period.pay.account or period.pay.iban_display, t('common.copy')) }}</dd></div>
+            <div><dt>{{ t('stay_fees.payment.vs') }}</dt><dd><span class="fee-qr-val">{{ period.pay.vs }}</span>{{ copy_inline('fee-vs-' ~ apartment.id, period.pay.vs, t('common.copy')) }}</dd></div>
+          </dl>
+        </div>
       </div>
+    {% else %}
+      <p class="sub">{{ t('stay_fees.pay.no_account') }} <a href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ t('stay_fees.pay.add_account') }}</a></p>
+    {% endif %}
     </div>
+    </div>
+    <form method="post" action="/stay-fees/{{ apartment.id }}/paid" class="fee-step-actions fee-paid-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <input type="hidden" name="month" value="{{ month_q }}">
+      <input type="hidden" name="return_to" value="{{ fee_return }}">
+      <button class="btn ink" type="submit">{{ t('stay_fees.pay.paid_button') }}</button>
+    </form>
   {% endif %}
   </div>
 </section>

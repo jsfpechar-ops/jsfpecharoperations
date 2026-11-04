@@ -186,7 +186,7 @@ def stay_fees_list(request: Request):
     # 0630: step 1 until the period is confirmed, then 2 (send and pay).
     for row in rows:
         if not row.get("unset"):
-            row["step"] = 2 if row.get("frozen") else 1
+            row["step"] = (3 if row.get("paid_at") else 2) if row.get("frozen") else 1
 
     return render(request, "stay_fees.html", {
         "nav": "stay_fees",
@@ -907,3 +907,23 @@ async def stay_fee_finalize(apartment_id: int, request: Request):
     db.audit("stay_fee_finalize", f"apartment_id={apartment['id']} period={key}")
     return _back(back_path, msg=_flash(request, "flash.stay_fees.period_saved"))
 
+
+
+@router.post("/stay-fees/{apartment_id}/paid")
+async def stay_fee_mark_paid(apartment_id: int, request: Request):
+    """The host confirms the period is sent and paid: closes the pay step."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment = access.apartment(request, apartment_id)
+    form = await request.form()
+    month = stay_fee.parse_month(_form_str(form, "month")) or _default_month(claim.prague_today())
+    back_path = fee_return_path(_form_str(form, "return_to"), apartment_id) or f"/stay-fees?month={stay_fee.month_key(month)}"
+    sealed = stay_fee_filing.covering(apartment["id"], month)
+    if not sealed:
+        return _back(back_path, err=_flash(request, "flash.stay_fees.report_blocked"))
+    if not sealed["paid_at"]:
+        now = db.utcnow()
+        db.update("stay_fee_filing", sealed["id"], {"paid_at": now, "sent_at": sealed["sent_at"] or now})
+        db.audit("stay_fee_paid", f"apartment_id={apartment['id']} period={sealed['period_key']}")
+    return _back(back_path, msg=_flash(request, "flash.stay_fees.paid"))
