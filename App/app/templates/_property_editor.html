@@ -387,7 +387,7 @@
 
   {# ---- Automation ---------------------------------------------------- #}
 
-  <div class="savebar">
+  <div class="savebar save-on-dirty">
     <a class="btn ghost" href="/apartments">{{ t('common.cancel') }}</a>
     <button class="btn ghost" type="button" data-unsaved-reset hidden>{{ t('unsaved.discard_changes') }}</button>
     <button class="btn" type="submit">{{ t('common.save_changes') }}</button>
@@ -453,7 +453,7 @@
 {%- set wizard_active = setup_progress and not setup_progress.hidden -%}
 {% if readiness and not wizard_active %}
 <details class="setup-readiness-help" data-setup-status>
-    <summary><span aria-hidden="true">?</span> {{ t('wizard.overview.details') }}</summary>
+    <summary>{{ t('wizard.overview.details') }} <span aria-hidden="true">?</span></summary>
     <section class="readiness">
   <div class="readiness-group">
     <h3 class="readiness-title">{{ t('apartment.form.readiness.invite_title') }}</h3>
