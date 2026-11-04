@@ -11,9 +11,21 @@
     "sha256": "9afc536f5842652fcfebd0fb30a88278f84f472b2874ad721a9984b72c01f9d5",
     "v": "20261010a"
   },
+  "app-nojs.css": {
+    "sha256": "ec64b2b3d37d2520adb95b955c23f089bfc28ed0680cfe995f65d36e3f40d7ad",
+    "v": "20261104-1210"
+  },
   "app.css": {
     "sha256": "ff299f8017315f62d1f7c307e8750efb5a9d57d00a9537fe1d6e97e55bd407ae",
     "v": "20261104-0916"
+  },
+  "app.js": {
+    "sha256": "9e88dbe755f28cec22955ddcb7da1f5fce6ab1adb2d41266f065494303474ad8",
+    "v": "20261104-0960a"
+  },
+  "app2.css": {
+    "sha256": "060c57d9035168e0976158f3693acc300fec3370d8640bd96c411ddbffad7937",
+    "v": "20261104-0951g"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -29,11 +41,15 @@
   },
   "cleaning.css": {
     "sha256": "f9d5802a5432eaa3453ce109d2c3056f1f4b23ebe3c3eaac80c66f5f9733c213",
-    "v": "20261024-0291"
+    "v": "20261104-0916"
   },
   "cleaning.js": {
     "sha256": "2f0be0505681096250e093668bc9b30c7a4eeae2866b34dcb44288ca10ea89b1",
     "v": "20261102-0507"
+  },
+  "command.css": {
+    "sha256": "87586ec608380d557607985a7bc968c245b0ca38709bd8835952c28894c809f8",
+    "v": "20261103-0935"
   },
   "components.css": {
     "sha256": "832cf9f97fe1927f00933c8ca672699a52b98bdf9c272a0a73c9f5d7311d4cde",
@@ -59,6 +75,10 @@
     "sha256": "af1e1865b06ae0dcaecba51cae5e17440cdb97f8a393211ba98caac5e5779f4a",
     "v": "20261004a"
   },
+  "fonts/Manrope-latin.woff2": {
+    "sha256": "a30ddcd349703aff7464c34bef3fffdff405ee50c113440d7c8693c02d210972",
+    "v": "20261101-0495"
+  },
   "guest-enhancements.js": {
     "sha256": "3a916b6481143037c7df5b9bb0bd1d125d29d7a95754d73a5d9f28d2744ec7ee",
     "v": "20261003a"
@@ -70,6 +90,34 @@
   "guest.css": {
     "sha256": "0ab4f3b8e66392a85bc2692e82faf446268380220cb53e2a726dbdbabcb41c18",
     "v": "20261104-0910b"
+  },
+  "guide.js": {
+    "sha256": "7bc163abd236d8032c1f7a094aadf4993774920b24b4a0817768dd27fa0cefab",
+    "v": "20261104-0916"
+  },
+  "havel.js": {
+    "sha256": "b09f7e3d74c1423a038ba11303572c01625bf7ba6888b59b35aea06e656286f6",
+    "v": "20261102-0507"
+  },
+  "host-controls.css": {
+    "sha256": "5f187fafa975e322becf8101dd749d862a5c166f03d74523a738f2fd55a2f93d",
+    "v": "20261014-0102d"
+  },
+  "host-design0123.css": {
+    "sha256": "721e8f1d421655356c824ae55bbe4713843e73fe9b0cc308ea9db085ba9c4572",
+    "v": "20261025-0380"
+  },
+  "host.css": {
+    "sha256": "eaf4f9bb507bfc456a7dabf96e55ac1e40ca685d1c2f8bab7ed5ce317c33d613",
+    "v": "20261104-0951g"
+  },
+  "host.js": {
+    "sha256": "d40a8a60dd73d86313e0e40d3b41a8cd9c18922e05a03cbbec62b7954cb8d66f",
+    "v": "20261102-0507"
+  },
+  "host2.css": {
+    "sha256": "8c6b5f68403976e91d31d408b08ca5aa3251f37885927de6153897ec69defb4e",
+    "v": "20261104-0960h"
   },
   "landing.css": {
     "sha256": "a9218c2d33c3d07d955b0c630d194ef81801834baaed1cb3615387222ce50ba5",
@@ -87,17 +135,25 @@
     "sha256": "4e75d63ea5de86912252b34a8b22fc5d91ed7b7190ad7d623947295e1725c7cd",
     "v": "20261102-0789a"
   },
+  "platform.js": {
+    "sha256": "6bf1c6472dcb2c7427f6a1d269c56945bb9641fcb207c6461a05870555aec782",
+    "v": "20261103-0920"
+  },
   "pricing.js": {
     "sha256": "4ebb282d09e55fcd782087dfd47c494c78f542f6c26648ddb55fc4390fe50b09",
     "v": "20261028-ttlock-month"
   },
   "pwa.js": {
     "sha256": "5e1ed00ab7dcac29b5cb42603b958a14dc3e9af2c5a3af187714d0d1fe494364",
-    "v": "20261102-0507"
+    "v": "20261102-0511"
   },
   "ruian_suggest.js": {
     "sha256": "9975473a4761c06b6aeb421c82931d7e179e78e7659ad26ab9eaab73d8b34660",
     "v": "20261102-0835"
+  },
+  "shell.js": {
+    "sha256": "17d08de32baf5dd03f38508a0f88f4cf09e47e54cea2a0a1dff0421d23e3989b",
+    "v": "20261025-0373"
   },
   "signature.js": {
     "sha256": "9c4170dc81e8d3c61cb1df0417a5193110c5d4496e1281e73bc690f48deb043a",
@@ -113,7 +169,7 @@
   },
   "tokens.css": {
     "sha256": "bada752f7935a7fc7bf01c8fd07d48a9893c472decafd3a4974efc0d1c3220ea",
-    "v": "20261022-0284"
+    "v": "20261103-0920"
   },
   "ubyhost-logo-stacked.png": {
     "sha256": "3f4a4fa5aae52cb2ea45c076ff4ecd26f86c76915852cff2664317d3f7fb50fa",
@@ -126,5 +182,17 @@
   "ubyhost-mark.png": {
     "sha256": "ae71e0a3ab7231aceeadc761b7d98e66f50b97bae22413cbba65f89e17f53e60",
     "v": "20261004a"
+  },
+  "vendor/turbo-8.0.13.js": {
+    "sha256": "bd97ca98e560e0825c57374004f5fb235e2d209c9e7c8a7eccace18e437c0495",
+    "v": "8.0.13"
+  },
+  "wizard.css": {
+    "sha256": "8ef0c7ec0f178b1f896f690d7f529618175091604c67de3915c2c03f99cf3a83",
+    "v": "20261022-0274"
+  },
+  "workflow.css": {
+    "sha256": "9936f8b6b3119962327d0a55f07637c247d63958bfb4e6da0c24b919d870bb69",
+    "v": "20261104-0949w"
   }
 }
