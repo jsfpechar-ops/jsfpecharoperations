@@ -3778,7 +3778,7 @@ STRINGS.update({
     "notification.ubyport_auth_failed.title": "%(property)s: đăng nhập cảnh sát (UBY-WS) bị từ chối.",
     "notification.ubyport_auth_failed.detail": "Khai báo tự động đã tạm dừng để tài khoản cảnh sát của bạn không bị khóa. Nhập lại mật khẩu UBY-WS rồi bấm Lưu và kiểm tra kết nối.",
     "notification.submission_outcome_unknown.title": "%(property)s: chưa rõ cảnh sát đã nhận khai báo hay chưa.",
-    "notification.submission_outcome_unknown.detail": "Không nhận được phản hồi (%(error)s), nên chúng tôi sẽ không tự gửi lại. Hãy kiểm tra trong UbyPort. Nếu thiếu khách ở đó, hãy gửi lại từ lượt lưu trú.",
+    "notification.submission_outcome_unknown.detail": "Không nhận được phản hồi (%(error)s). Hệ thống sẽ tự gửi lại sau 30 phút, 2 giờ, 6 giờ và 12 giờ. Bạn chỉ cần xử lý nếu cảnh báo vẫn mở sau lần gửi lại cuối cùng: khi đó hãy kiểm tra trong UbyPort và gửi lại từ lượt lưu trú.",
     "notification.submission_rejected.title": "%(property)s: cảnh sát không chấp nhận %(count)s hồ sơ khách.",
     "notification.submission_rejected.detail": "Những khách này chưa được khai báo. Sửa các thông tin đánh dấu đỏ trên lượt lưu trú rồi gửi lại. Cần sửa: %(failed)s. Gửi lại cũng không khắc phục được: %(blocked)s.",
     "notification.controller_missing.title": "%(property)s: biểu mẫu khách thiếu thông tin doanh nghiệp.",

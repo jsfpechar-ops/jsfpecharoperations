@@ -422,6 +422,99 @@ func RetryOutcomeUnknownBatches(ctx context.Context, d SweepDeps, aptID int64) (
 		}
 		retried++
 	}
+	n, err := retryUnknownChains(ctx, d, aptID)
+	retried += n
+	if err != nil {
+		return retried, err
+	}
+	return retried, nil
+}
+
+// unknownRetryGaps are the waits, measured from the latest unanswered attempt
+// of a chain, before each automatic resend (decision 2026-11-04). After the last
+// gap the chain stops and the alert stays open for the host.
+var unknownRetryGaps = []time.Duration{30 * time.Minute, 2 * time.Hour, 6 * time.Hour, 12 * time.Hour}
+
+type unknownAttempt struct {
+	id         int64
+	finishedAt time.Time
+	retried    bool
+	stale      bool
+}
+
+// retryUnknownChains resends an unanswered filing when its chain is due. A chain
+// is every unknown batch of one apartment with the same guest_ids text; its
+// attempt count is the number of those batches. Any answer ends the chain,
+// because the newest batch is then no longer unknown.
+func retryUnknownChains(ctx context.Context, d SweepDeps, aptID int64) (int, error) {
+	pool := d.Batch.Pool
+	rows, err := pool.Query(ctx,
+		`SELECT id, COALESCE(guest_ids, ''), finished_at, retried_at IS NOT NULL, `+
+			`COALESCE(error_text, '') = $2 FROM submission `+
+			`WHERE apartment_id = $1 AND state = 'outcome_unknown' ORDER BY id`,
+		aptID, staleSubmissionReason)
+	if err != nil {
+		return 0, err
+	}
+	chains := map[string][]unknownAttempt{}
+	var order []string
+	for rows.Next() {
+		var a unknownAttempt
+		var guestIDs string
+		var finished *time.Time
+		if err := rows.Scan(&a.id, &guestIDs, &finished, &a.retried, &a.stale); err != nil {
+			rows.Close()
+			return 0, err
+		}
+		if finished == nil {
+			continue
+		}
+		a.finishedAt = *finished
+		if _, ok := chains[guestIDs]; !ok {
+			order = append(order, guestIDs)
+		}
+		chains[guestIDs] = append(chains[guestIDs], a)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return 0, err
+	}
+
+	now := sweepNow(d)()
+	retried := 0
+	for _, key := range order {
+		if key == "" {
+			continue
+		}
+		attempts := chains[key]
+		latest := attempts[0]
+		for _, a := range attempts[1:] {
+			if a.finishedAt.After(latest.finishedAt) || (a.finishedAt.Equal(latest.finishedAt) && a.id > latest.id) {
+				latest = a
+			}
+		}
+		// The crash path (stale batches) and answered chains are handled elsewhere.
+		if latest.stale || latest.retried || len(attempts) > len(unknownRetryGaps) {
+			continue
+		}
+		if now.Before(latest.finishedAt.Add(unknownRetryGaps[len(attempts)-1])) {
+			continue
+		}
+		ids, err := parseGuestIDs(&key)
+		if err != nil {
+			return retried, err
+		}
+		if len(ids) == 0 {
+			continue
+		}
+		if err := markBatchRetried(ctx, pool, aptID, latest.id, ids); err != nil {
+			return retried, err
+		}
+		if _, err := SubmitForApartment(ctx, d, aptID, CollectOptions{OnlyGuestIDs: ids}, autoResendMode); err != nil {
+			return retried, err
+		}
+		retried++
+	}
 	return retried, nil
 }
 
