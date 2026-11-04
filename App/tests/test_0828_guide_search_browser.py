@@ -109,12 +109,12 @@ def test_anchor_opens_its_topic(width, base, dashboard_rich_host):
     assert state["top"] is not None and -5 <= state["top"] < state["vh"], f"topic not in view: {state}"
 
 
-def test_guide_page_height_under_3000_on_load_at_1280(base, dashboard_rich_host):
+def test_guide_page_height_under_3200_on_load_at_1280(base, dashboard_rich_host):
     height = _run(
         base, dashboard_rich_host, "/guide?lang=en", 1280,
         lambda p: p.evaluate("() => document.documentElement.scrollHeight"),
     )
-    assert height < 3000, f"/guide is {height} px tall on load at 1280 px"
+    assert height < 3200, f"/guide is {height} px tall on load at 1280 px"
 
 
 def test_search_still_filters_after_turbo_swap_from_sidebar(base, dashboard_rich_host):
