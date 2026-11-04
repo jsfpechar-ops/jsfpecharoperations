@@ -31,7 +31,7 @@
   {% with href='/privacy-requests', label=t('nav.privacy_requests'), icon_name='mail' %}{% include "partials/settings_index_row.html" %}{% endwith %}
   {% with href='/settings/archived', label=t('settings.nav.archive'), icon_name='archive' %}{% include "partials/settings_index_row.html" %}{% endwith %}
   <div class="airbnb-divider" aria-hidden="true"></div>
-  {% if current_user.role == 'admin' %}{% with href='/settings/technical', label=t('settings.group.technical'), icon_name='settings' %}{% include "partials/settings_index_row.html" %}{% endwith %}{% endif %}
+  {% with href='/settings/technical', label=t('settings.group.technical'), icon_name='settings' %}{% include "partials/settings_index_row.html" %}{% endwith %}
   {% with href='/settings/help', label=t('settings.group.help'), icon_name='circle-help' %}{% include "partials/settings_index_row.html" %}{% endwith %}
 </nav>
 {% endif %}
@@ -355,6 +355,7 @@
     <details class="ui-section technical" open id="settings-technical">
       <summary>{{ t('settings.technical.title') }}</summary>
 
+      {% if current_user.role == 'admin' %}
       <h2 id="settings-overview">{{ t('settings.destination.title') }}{{ help_tip('settings-destination-help', t('settings.destination.help')) }}</h2>
       <dl class="kv">
         <dt>{{ t('settings.destination.deployment') }}</dt><dd>{{ deployment_tier | capitalize }}</dd>
@@ -375,11 +376,15 @@
         </div>
       {% endif %}
       
+      {% endif %}
+      {% if current_user.role == 'admin' or (mail_backend == 'console' and console_mail) %}
       <h2 id="settings-mail">{{ t('settings.mail.title') }}{{ help_tip('settings-mail-help', t('settings.mail.help')) }}</h2>
+      {% if current_user.role == 'admin' %}
       <dl class="kv">
         <dt>{{ t('settings.mail.backend') }}</dt>
         <dd class="ui-mono">{{ mail_backend }}</dd>
       </dl>
+      {% endif %}
             {% if mail_backend == 'console' and console_mail %}
         <table class="ui-table">
           <thead>
@@ -419,12 +424,15 @@
         </table>
       {% endif %}
 
+      {% endif %}
+      {% if current_user.role == 'admin' %}
       <h2 id="settings-codelists">{{ t('settings.codelists.title') }}{{ help_tip('settings-codelists-help', t('settings.codelists.help')) }}</h2>
       <dl class="kv">
         <dt>{{ t('settings.codelists.countries') }}</dt><dd>{{ (codelists.countries | datetime_local(seconds=true)) if codelists.countries else t('settings.codelists.bundled') }}</dd>
         <dt>{{ t('settings.codelists.purposes') }}</dt><dd>{{ (codelists.purposes | datetime_local(seconds=true)) if codelists.purposes else t('settings.codelists.bundled') }}</dd>
         <dt>{{ t('settings.codelists.errors') }}</dt><dd>{{ (codelists.errors | datetime_local(seconds=true)) if codelists.errors else t('settings.codelists.not_fetched') }}</dd>
       </dl>
+      {% endif %}
           </details>
 
     <div class="ui-section" id="settings-ubyport">

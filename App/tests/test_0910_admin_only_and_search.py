@@ -54,19 +54,15 @@ def _seed_stay_with_guest(first_name: str, surname: str) -> int:
     return reservation_id
 
 
-def test_technical_settings_is_404_for_a_customer_and_200_for_an_admin(host_with_property):
+def test_technical_diagnostics_are_hidden_from_a_customer_and_shown_to_an_admin(host_with_property):
     _set_role("host")
-    assert host_with_property.get("/settings/technical?lang=en").status_code == 404
+    page = host_with_property.get("/settings/technical?lang=en").text
+    assert 'id="settings-overview"' not in page and 'id="settings-codelists"' not in page
+    assert 'id="settings-audit"' in page
 
     _set_role("admin")
-    assert host_with_property.get("/settings/technical?lang=en").status_code == 200
-
-
-def test_settings_index_has_no_technical_link_for_a_customer(host_with_property):
-    _set_role("host")
-    page = host_with_property.get("/settings?lang=en").text
-
-    assert 'href="/settings/technical"' not in page
+    page = host_with_property.get("/settings/technical?lang=en").text
+    assert 'id="settings-overview"' in page and 'id="settings-codelists"' in page
 
 
 def test_settings_data_hides_the_retention_count_string_from_a_customer(host_with_property):

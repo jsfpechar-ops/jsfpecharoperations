@@ -250,8 +250,11 @@ def test_settings_geometry_and_help_at_widths(live):
         browser.close()
 
 
-def test_technical_page_is_admin_only(host, admin):
-    assert host.get("/settings/technical?lang=en").status_code == 404
-    assert 'href="/settings/technical"' not in host.get("/settings?lang=en").text
-    assert admin.get("/settings/technical?lang=en").status_code == 200
-    assert 'href="/settings/technical"' in admin.get("/settings?lang=en").text
+def test_technical_diagnostics_are_admin_only(host, admin):
+    """0910: hosts keep the audit log and PIN panel, but not endpoints, polling, mail backend or code lists."""
+    host_page = host.get("/settings/technical?lang=en").text
+    assert 'id="settings-audit"' in host_page and 'id="settings-ubyport"' in host_page
+    for hidden in ('id="settings-overview"', 'id="settings-codelists"', 'settings.mail.backend'):
+        assert hidden not in host_page, hidden
+    admin_page = admin.get("/settings/technical?lang=en").text
+    assert 'id="settings-overview"' in admin_page and 'id="settings-codelists"' in admin_page

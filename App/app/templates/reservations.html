@@ -208,7 +208,7 @@
           aria-label="{{ stay_label }} · {{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}">
         <td data-card="primary" data-label="{{ t('stays.table.guest') }}">
           <a class="stay-identity-link" href="{{ stay_href }}">{{ lead_name or (reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else t('stays.row.no_name')) }}</a>
-          <small>{% if progress.expected is not none or progress.guests %}{{ guest_count(progress) }} &middot; {% endif %}{{ source_badge(reservation.source, source_label(reservation)) }}</small>
+          <small>{% if progress.expected is not none or progress.guests %}{{ guest_count(progress) }} &middot; {% else %}<span class="sr-only">{{ t('common.guests_unknown') }}</span>{% endif %}{{ source_badge(reservation.source, source_label(reservation)) }}</small>
         </td>
         <td data-card="meta" data-label="{{ t('stays.table.property') }}">{{ reservation.internal_name }}</td>
         <td class="nowrap" data-card="secondary" data-label="{{ t('stays.table.arrival') }}">{{ reservation.date_from | date_cz }}</td>
