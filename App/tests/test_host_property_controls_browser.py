@@ -541,7 +541,7 @@ def test_guest_links_and_message_settings_geometry(host, base):
             cb = box("#ocr_scan")
             assert 20 <= cb["width"] <= 26 and 20 <= cb["height"] <= 26, (width, cb)
             text = box("label[for=ocr_scan] span")
-            assert abs((text["y"] + text["height"] / 2) - (cb["y"] + cb["height"] / 2)) <= 3, width
+            assert abs(text["y"] - cb["y"]) <= 6, width  # checkbox sits on the first text line
             assert cb["y"] > select["y"] + select["height"], width
             if width == 1280:
                 tip_top = page.evaluate(_TIP_JS, "ocr_scan")
