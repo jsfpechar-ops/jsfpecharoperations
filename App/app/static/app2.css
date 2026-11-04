@@ -2373,10 +2373,7 @@ body.v2 .host-stay-detail .stay-head-cta{flex-wrap:nowrap;gap:12px}
 }
 body.v2 #stay-fee-settings :is(input, select, textarea){max-width:100%;box-sizing:border-box}
 body.v2 #stay-fee-settings :is(.ui-field, .field, .field-row, .grid > *){min-width:0}
-html.has-js body.v2 .savebar.save-on-dirty:not(.is-dirty){display:none}
 .nowrap{white-space:nowrap}
-body.v2 .fee-send-pay .fee-tasks{display:flex;flex-direction:column;gap:24px;padding:0}
-body.v2 .fee-send-pay .fee-tasks > li{display:flex;flex-direction:column;gap:12px}
 body.v2 .settings-action-row > div:first-child{display:inline-flex;align-items:center;gap:4px;flex-wrap:nowrap}
 @media (max-width:1023px){body.v2 .housebook-page table :is(th,td):first-child{position:sticky;left:0;z-index:1;background:var(--surface)}}
 body.v2 .host-stay-detail .stay-dates{margin:0 0 16px}

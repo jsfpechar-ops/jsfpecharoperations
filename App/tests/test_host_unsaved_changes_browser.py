@@ -286,9 +286,7 @@ def test_save_bar_discard_changes_button(browser, base, host, lang, width, heigh
     assert page.input_value("#guest_message") == loaded_message
     assert status.text_content().strip() == loaded_status
     assert not reset.is_visible()
-    # 0913: the save bar shows only after an edit, so once Discard restores the
-    # saved values the bar hides again and focus is no longer on a Save button.
-    assert not page.locator(".savebar").is_visible()
+    assert _focused(page) in (TEXT[lang]["save"], "Save changes", "Uložit změny")
     page.locator("#sec-calendars > summary").click()
     assert not _open(page) and "sec-calendars" in _open_sections(page)
     page.context.close()
