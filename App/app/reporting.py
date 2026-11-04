@@ -1999,7 +1999,7 @@ def _clock() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _as_utc(stamp: str) -> datetime:
+def _unknown_stamp(stamp: str) -> datetime:
     value = datetime.fromisoformat(stamp)
     return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
 
@@ -2054,12 +2054,34 @@ def _retry_unknown_chains(apartment_id: int) -> int:
             continue  # the crash path (_retry_outcome_unknown_batches) owns this one
         count = len(chain)
         if count >= UNKNOWN_MAX_ATTEMPTS:
-            continue  # the final notice is not implemented yet (see report)
-        if now < _as_utc(latest["finished_at"]) + UNKNOWN_RETRY_GAPS[count - 1]:
+            _final_notice(apartment, latest)
+            continue
+        if now < _unknown_stamp(latest["finished_at"]) + UNKNOWN_RETRY_GAPS[count - 1]:
             continue
         if _resend_unknown_chain(apartment, latest):
             resent += 1
     return resent
+
+
+def _final_notice(apartment: Any, latest: Dict[str, Any]) -> None:
+    """After the 5th attempt: one host mail (support cc) and one push while a guest is still held.
+
+    Both carry idempotency keys, so repeated sweeps add nothing (brief 0909, section 4).
+    """
+    if _clock() >= _unknown_stamp(latest["finished_at"]) + timedelta(hours=24):
+        return  # too old: the outbox row may be pruned, so never re-send
+    held = db.query_one(
+        "SELECT COUNT(*) AS n FROM guest WHERE submission_id = ? AND submit_state != ?",
+        (latest["id"], SENT),
+    )
+    if not held or not held["n"]:
+        return
+    mail_notify.submission_problem(
+        apartment, latest["id"], state="unanswered", reason=latest["error_text"] or "",
+        transport=False, cc_email=config.SUPPORT_EMAIL,
+        idempotency_key=f"submission_unanswered:{latest['id']}",
+    )
+    push.filing_problem(apartment, latest["id"], key=f"unanswered:{latest['id']}")
 
 
 def _resend_unknown_chain(apartment: Any, latest: Dict[str, Any]) -> bool:

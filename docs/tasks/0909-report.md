@@ -1,27 +1,29 @@
 # 0909 report (Python half, Status: blocked)
 
-Branch task/0909-py, worktree /tmp/wt0909py. Go half is in /tmp/wt0909go (not touched here).
+Branch task/0909-py, worktree /tmp/wt0909py. Go half is in /tmp/wt0909go (not touched here). No push, no PR.
 
 ## Done
-- `App/app/reporting.py`: `apartment_in_doubt` ignores `sent` guests; the unknown-outcome branch of `submit_batch` no longer mails per attempt; crash-path docstring updated. New `_clock`, `_unknown_chains` (chain key = sorted guest ids), `_retry_unknown_chains` (gaps 30m/2h/6h/12h, 5 attempts, stops on live-chain guards, resolves the card when not in doubt) and `_resend_unknown_chain` (guarded `retried_at` claim, free guests with `submit_state != sent`, `submit_for_apartment(..., mode=auto_resend, ignore_schedule=True)`, restore unsent freed guests under lock).
-- `App/app/routes/admin.py` `dismiss_alert`: refuses `submission_outcome_unknown` while in doubt (409 for fetch, else flash `flash.error.unknown_card_locked`).
-- `App/app/host_i18n.py` (en, cs) and `App/app/host_vi_i18n.py` (vi): `flash.error.unknown_card_locked`. The en text is the brief's; cs and vi are my own translations, needing a native check.
-- Tests rewritten to the new rule: `test_stale_submission.py::test_an_unclear_resend_is_retried_on_the_gap_schedule_then_stops` (replaces the WP31 test, same name pattern, fake clock via `reporting._clock`); docstrings of `test_sweep_does_not_retry_a_live_unknown_outcome`, `test_a_manual_send_with_an_unclear_outcome_is_not_auto_retried`, `test_an_unknown_outcome_is_recorded_and_not_refiled_by_the_sweep` updated (their assertions still hold at real time).
-- Brief `docs/tasks/0909-retry-unknown-outcome.md` restructured to sections 1 Objective, 2 Context, 3 Files, 4 Steps, 5 Do not touch, 6 Commands, 7 Acceptance, 8 Stop and ask, 9 Report, with the Report line. Stale Go draft note removed. Cross-references updated.
-- `docs/context/decisions.md`: one `[filing] 2026-11-04` line (replaces the earlier partial-run line).
+- Retry chain (`App/app/reporting.py`): `_unknown_chains` (chain key = sorted guest ids, start at newest original), `_retry_unknown_chains` (gaps 30m/2h/6h/12h, five batches, live-chain and auth/setup guards, card resolved when not in doubt), `_resend_unknown_chain` (guarded `retried_at` claim, free guests with `submit_state != sent`, `submit_for_apartment(..., mode=auto_resend, ignore_schedule=True)`, restore unsent freed guests under lock), `_clock` seam for tests.
+- `apartment_in_doubt` ignores `sent` guests. The unknown-outcome branch no longer mails per attempt.
+- Final notice (after the 5th batch, only while a guest is still held and within 24 h of the last attempt): `mail_notify.submission_problem(..., state="unanswered", cc_email=config.SUPPORT_EMAIL, idempotency_key="submission_unanswered:<id>")` and `push.filing_problem(..., key="unanswered:<id>")`. The `unanswered` variant and `subject/intro/preheader/next_unanswered` texts are in host_i18n.py (en, cs) and host_vi_i18n.py (vi). The brief gives only the content, so the wording is mine and needs a check. The push key override is a new optional `key` on `push.filing_problem`.
+- Dismiss refused while in doubt (`App/app/routes/admin.py`), flash `flash.error.unknown_card_locked` (en from brief; cs and vi mine).
+- Tests: `App/tests/test_stale_submission.py` (WP31 test rewritten to the gap schedule: resends at 2 h, 6 h, 12 h, then stops, no mail); `App/tests/test_submission_retry_chain.py` (new: guest-id order is one chain, a host send starts a fresh chain, two resends of one due chain send once, the fifth attempt mails and pushes once with keys and cc, nothing after five); `App/tests/test_push_events.py` (count of `push.filing_problem(` in reporting.py is now 2, for the final notice).
+- Decisions: `docs/context/decisions.md` compacted to lint OK (wording only; the Postgres 2026-10-31 entries are merged into one line).
 
-## Tests
-- `App/.venv/bin/python -m pytest tests/test_stale_submission.py tests/test_submission_retry_cap.py tests/test_submission_mail.py tests/test_admin_route_split.py tests/test_host_i18n.py -q`: 94 passed, 0 failed, 0 skipped.
+## Tests (App/.venv/bin/python -m pytest <filing row + test_admin_route_split.py test_host_i18n.py test_push*.py> -q)
+- 468 passed, 0 failed.
+- 1 skipped module: `tests/test_push_settings_browser.py` (11 browser tests). Playwright's Chromium download is blocked in this sandbox, so they did not run. The owner or CI must run them.
+- Venv was missing `pypdf` and `pdfplumber` (installed in the venv only; not a repo change). No repo dependency change.
 
 ## Lint
-- `python3 scripts/context_lint.py`: no brief error. Remaining ERROR: `docs/context/decisions.md` ~2250 tokens over cap 2200 (the file was already at cap; needs one more older line compacted by the orchestrator).
+- `python3 scripts/context_lint.py`: OK.
 
 ## Not done (Left)
-- Final notice: `mail_notify.submission_problem` cc and idempotency_key parameters, `unanswered` variant and its en/cs/vi texts, push `filing_problem` with key `unanswered:<L>`. The chain stops at count 5 with no mail yet.
-- New Python cases from brief section 6 (only the gap-schedule test is new; the 10 cases are not written). Dismiss refusal has no test.
+- Dismiss refusal has no test. Gap-edge cases at 29 and 31 min, the "guest filed by hand during the gap" case, and "crash during a resend" are not new tests (the existing crash test and the gap-schedule test cover parts).
 - Go half: not in this branch.
-- Alert #87 root cause not confirmed. Owner check (brief section 4): `SELECT id, created_at, resolved_at, user_dismissed FROM alert WHERE id = 87;` and `SELECT id, mode, state, created_at, finished_at, guest_ids FROM submission WHERE apartment_id = 5 AND created_at >= '2026-11-01' ORDER BY id;`.
+- Final notice texts are not checked by a native speaker in cs and vi.
+- Alert #87 root cause unconfirmed. Owner check: `SELECT id, created_at, resolved_at, user_dismissed FROM alert WHERE id = 87;` and `SELECT id, mode, state, created_at, finished_at, guest_ids FROM submission WHERE apartment_id = 5 AND created_at >= '2026-11-01' ORDER BY id;`.
 - `docs/UBYPORT_CORE.md` / `docs/OPERATIONS.md` OD-1 wording: not checked.
 
 Status: blocked
-Deviations: Done steps 1 to 4 of the Python half. Left: final notice mail and push, unanswered i18n texts, the new test cases, the decisions cap trim.
+Deviations: Done steps 1 to 5 of the Python half. Left: the test cases listed above, the browser run, the Go half.
