@@ -102,6 +102,17 @@ def test_route_delete(owner, client):
     assert r.status_code == 303
 
 
+def test_service_delete_requires_confirm(owner, client):
+    """0762: removing a saved service must not fire on a single click."""
+    sid = payment_services.add(owner, "Úklid", 800)["id"]
+    page = client.get("/payments?lang=en")
+    assert page.status_code == 200
+    form = page.text[page.text.index(f'/payments/services/{sid}/delete'):][:400]
+    assert "data-confirm" in form
+    assert "data-confirm-message=" in form
+    assert "Remove this service from your list?" in page.text
+
+
 # --- browser: 390 px geometry + screenshot (rule 7) ----------------------------
 
 def _free_port():

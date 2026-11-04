@@ -30,16 +30,18 @@
 | Stays and guests | `App/app/icalsync.py` (feeds), `App/app/claim.py` (guest claim), `App/app/housebook.py`, `App/app/validation.py`, `App/app/passport_photos.py` |
 | Auth and security | `App/app/auth.py` (accounts, sessions, TOTP), `App/app/login_link.py` (e-mail login links), `App/app/passkeys.py` (WebAuthn), `App/app/security.py`, `App/app/access.py`, `App/app/rate_limit.py`, `App/app/turnstile.py`, `App/app/client_ip.py`, `App/app/env_guard.py` |
 | Data | `App/app/db.py`, `App/app/migrations/`, `App/app/retention.py`, `App/app/dsr.py`, `App/app/workspace_export.py` |
-| Money | `App/app/invoices.py`, `App/app/invoice_pdf.py`, `App/app/stay_fee.py`, `App/app/stay_fee_filing.py`, `App/app/stay_fee_remittance_pdf.py` |
+| Money | `App/app/invoices.py`, `App/app/invoice_pdf.py`, `App/app/stay_fee*.py`, `App/app/payment_request.py`, `App/app/payment_services.py`, `App/app/payment_links.py`, `App/app/routes/payments.py` |
 | Mail | `App/app/mail.py` (SES and outbox), `App/app/mail_notify.py`, `App/app/lifecycle_mail.py` |
 | AI | `App/app/ai.py` (the one door to the model API: structured call, usage ledger per day, feature and key, per-feature monthly budget, daily share and per-key cap; nothing else imports the SDK) |
 | Scheduler | `App/app/scheduler.py`, `App/app/worker.py`, `App/app/alerts.py` |
 | Copy (i18n) | `App/app/i18n.py` (guest), `App/app/host_i18n.py` (host, 357 KB: grep it, never read it whole), `App/app/landing_i18n.py`, and the legal `*_i18n.py` files |
-| UI | `App/app/contact_phone.py` (operator phone form/format), `App/app/templates/` (`guest/` = guest pages; `_list_filter.html`/`_date_range.html` = shared host filters), `App/app/static/` (`app.css`, `guest.css`, `tokens.css`, `skeleton.css`, `host.css`, `host-controls.css`; `app.js` = host controls/feedback) |
+| UI | `App/app/contact_phone.py`, `App/app/templates/` (`guest/`; host list filters), `App/app/static/` (`app.js`, host/guest CSS, `vendor/turbo-8.0.13.js`) |
 
 **Large files** (grep, then read ranges only): `App/app/routes/admin.py` (116 KB), `App/app/reporting.py` (100 KB), `App/app/db.py` (69 KB), `App/app/mail_notify.py` (69 KB), `App/app/routes/guest.py` (77 KB).
 
 **Dashboard calendar:** `routes/dashboard_calendar.py` provides bounded, owner-scoped booking data; `_dashboard_calendar.html` and `dashboard-calendar.js`/CSS implement views, selection and dialogs. Manual creation remains in `routes/admin.py`.
+
+**Host Turbo (#709):** With `show_nav`, `base.html` loads Turbo 8; host links swap `<body>`. `app.js` runs `UbyHost.initPage` on `turbo:load`, keeps forms as full loads, and uses `claimNode` / `UbyHost.onPage` so bindings are safe after a swap; mark downloads with `data-turbo="false"`. Details: briefs `0501`–`0508`; tests `test_050*_browser.py`, `test_navigation_prefetch.py`.
 
 **Host property hub:** `apartment_form.html` uses `?view=overview|bookings|settings`; settings select `section=property|guests|reporting|automation|lock`. Guest links and timing are per property; `/apartments#property-summaries` is the cross-property summary.
 

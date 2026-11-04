@@ -168,3 +168,22 @@ def test_qr_payload_rejects_card_rail(owner):
     rid = _create(owner, rail="card")
     with pytest.raises(ValueError):
         payment_request.qr_payload(payment_request.get(rid))
+
+
+def test_guest_token_is_stable_and_binds_variable_symbol(owner):
+    """0763: the public /pay/… URL must change if the VS changes."""
+    _entity(owner, iban="CZ6508000000001921239563")
+    rid = _create(owner, rail="qr")
+    row = payment_request.get(rid)
+    first = payment_request.guest_token(row)
+    assert len(first) == 32
+    assert payment_request.guest_token_ok(row, first)
+    assert not payment_request.guest_token_ok(row, "0" * 32)
+    assert not payment_request.guest_token_ok(row, "")
+    db.execute(
+        "UPDATE payment_request SET variable_symbol = ? WHERE id = ?",
+        ("9999999999", rid),
+    )
+    row2 = payment_request.get(rid)
+    assert payment_request.guest_token(row2) != first
+    assert not payment_request.guest_token_ok(row2, first)

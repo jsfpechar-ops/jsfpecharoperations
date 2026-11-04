@@ -285,7 +285,8 @@
     const from = month && month > week ? month : week, to = monthEnd < until ? monthEnd : until;
     const overlay = el("div", "cal-pills"), ends = [], hidden = [0, 0, 0, 0, 0, 0, 0];
     let shown = 1; // 0905: stays that overlap stack in their own lanes; only a 4th and later stay folds into "+N"
-    const PILL_LANES = matchMedia("(min-width:768px)").matches ? 3 : 1; // phone tiles already show every stay as a dot
+    const thinBars = cleaningMode && !matchMedia("(min-width:768px)").matches; // phone: decorative 8 px bars, not tap targets
+    const PILL_LANES = matchMedia("(min-width:768px)").matches || cleaningMode ? 3 : 1; // the dashboard phone tile shows every stay as a dot; the cleaning page shows thin bars
     state.events.filter(event => event.kind !== "cleaning" && event.start < to && event.end > from)
       .sort((a, b) => a.start.localeCompare(b.start) || b.end.localeCompare(a.end) || String(a.id).localeCompare(String(b.id)))
       .forEach(event => {
@@ -295,14 +296,14 @@
         ends[lane] = right;
         const column = distance(week, left), span = distance(left, right);
         if (lane >= PILL_LANES) { for (let index = column; index < column + span; index++) hidden[index]++; return; }
-        const pill = el("a", "cal-pill" + (event.start < from ? " continues-start" : "") + (event.end > to ? " continues-end" : ""));
-        pill.href = event.url; pill.draggable = false;
+        const pill = el(thinBars ? "span" : "a", "cal-pill" + (event.start < from ? " continues-start" : "") + (event.end > to ? " continues-end" : ""));
+        if (thinBars) pill.setAttribute("role", "img"); else { pill.href = event.url; pill.draggable = false; }
         pill.dataset.calEvent = String(event.id); pill.dataset.calFrom = left; pill.dataset.calTo = right;
         pill.style.gridColumn = String(column + 1) + " / span " + String(span);
         pill.style.gridRow = String(lane + 1); shown = Math.max(shown, lane + 1);
         const name = labelFor(event);
         pill.title = name + " · " + fullDate(event.start) + " – " + fullDate(event.end);
-        pill.setAttribute("aria-label", pill.title); pill.setAttribute("aria-haspopup", "dialog");
+        pill.setAttribute("aria-label", pill.title); if (!thinBars) pill.setAttribute("aria-haspopup", "dialog");
         pill.append(el("span", "cal-pill-avatar", (name.trim().charAt(0) || "·").toUpperCase()), el("span", "cal-pill-name", name));
         overlay.append(pill);
       });
