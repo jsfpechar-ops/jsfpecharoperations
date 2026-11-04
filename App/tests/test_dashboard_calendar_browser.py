@@ -488,7 +488,7 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         cleaning_tag_day = cleaning_page.locator('.cal-day[data-date="2026-10-27"].has-cleaning')
         cleaning_tag_day.wait_for(state="visible")
         assert cleaning_tag_day.locator(".cal-clean-tag").count() >= 1
-        cleaning_tag_day.locator(".cal-day-number").click()
+        cleaning_tag_day.locator(".cal-day-number").click(position={"x": 12, "y": 10})  # 0911: stay bars sit under the day number
         cleaning_marker = cleaning_page.locator(
             f'[data-cal-day-list] .cal-event[data-cal-event="{cleaning_event_id}"]'
         )
@@ -759,12 +759,13 @@ def test_default_calendar_url_is_clean_and_specific_views_survive_reload(
         page.locator("[data-cal-today]").click()
         wait_loaded(page)
         assert "cal_date" not in parse_qs(urlsplit(page.url).query)
+        # 0911: Auto is offered only while no property is picked, so clear the property first.
+        page.locator("[data-cal-property]").select_option("")
+        wait_loaded(page)
         page.locator("[data-cal-settings]").click()
         page.locator("[data-cal-auto]").check()
         wait_loaded(page)
         page.locator("[data-cal-settings-dialog] [data-cal-close]").click()
-        page.locator("[data-cal-property]").select_option("")
-        wait_loaded(page)
         assert parse_qs(urlsplit(page.url).query) == {"lang": ["en"]}
         context.close()
         browser.close()

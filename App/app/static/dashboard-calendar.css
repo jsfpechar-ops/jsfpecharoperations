@@ -867,3 +867,9 @@ body.v2 #calendar.dashboard-calendar[data-readonly="false"] .cal-pill[data-cal-c
 @media (min-width:1024px) {
   body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-tile-chips { margin-top:calc(var(--cal-num-band) + var(--pl,1) * var(--cal-lane) - 12px + 8px - 47px - 24px); }
 }
+/* 0911: a 768-1023 px tile is ~94 px wide, so the "Cleaning" chip drops its icon and shrinks to fit; long labels end in an ellipsis */
+@media (min-width:768px) and (max-width:1023px) {
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-tile-chip.cal-clean-chip { padding:0 6px; font-size:13px; }
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-tile-chip.cal-clean-chip .cal-cleaning-icon { display:none; }
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-tile-chip.cal-clean-chip > span { min-width:0; overflow:hidden; text-overflow:ellipsis; }
+}
