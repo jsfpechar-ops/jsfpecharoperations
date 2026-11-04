@@ -44,14 +44,14 @@
   <h3 class="property-section-title">{{ t('entities.seat_title') }}</h3>
   <p class="hint">{{ t('entities.seat_line') }}</p>
   <div class="field">
-    <label for="{{ prefix }}seat">{{ t('entities.seat') }}</label>
+    <label for="{{ prefix }}seat">{{ t('entities.seat') }}<span class="req-star" aria-hidden="true">*</span></label>
     <input type="text" id="{{ prefix }}seat" name="seat" required
            value="{{ (entity.seat or '') if entity else '' }}"
            placeholder="{{ t('entities.seat_placeholder') }}">
   </div>
   <div class="grid">
     <div class="field">
-      <label for="{{ prefix }}contact_email">{{ t('entities.email') }}</label>
+      <label for="{{ prefix }}contact_email">{{ t('entities.email') }}<span class="req-star" aria-hidden="true">*</span></label>
       <input type="email" id="{{ prefix }}contact_email" name="contact_email" required
              value="{{ (entity.contact_email or '') if entity else '' }}">
     </div>
