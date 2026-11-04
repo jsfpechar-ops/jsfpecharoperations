@@ -279,7 +279,9 @@ very tall; weaker "guest picks one" semantics.
 breakdown collapsed; revisit B if hosts ask for a standalone pay page.
 
 **Standards check for option A (against `docs/DESIGN.md` Arrival lane +
-`guest.css`, mockup A v2):** no nested `g-card` (rails are `details` rows with
+`guest.css`, mockup A v3 after visual review):** real QR PNG data-URI (not a
+placeholder), rails as standard `details.g-summary` rows so the rhythm matches
+the "Per person" row, minimal custom css (amount size, QR row flex, IBAN wrap), no nested `g-card` (rails are `details` rows with
 dividers — a nested card would double the border/shadow); the "why" lives in a
 `details.g-head-help` `?` popover on the card head, not in the main flow
 (non-obvious → `?` rule); exactly one coral action per screen — the default-open

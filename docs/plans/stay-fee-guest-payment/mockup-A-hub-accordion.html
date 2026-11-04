@@ -1,29 +1,24 @@
 <!doctype html>
-<!-- Mockup A v2 (recommended): money card on the stay hub, rail accordion.
-     Standards fixes vs v1: rails are details.g-summary rows (NOT nested g-cards),
-     "?" help popover (details.g-head-help) carries the why, IBAN wraps at 320px,
-     default-open rail is QR with a ghost copy action (zero coral until a pay
-     link's row is open = the screen's single coral action).
+<!-- Mockup A v3 (recommended): money card on the stay hub, rail accordion.
+     v3 fixes after visual review: REAL QR png (data URI), rails use the standard
+     details.g-summary rows (same rhythm as "Per person"), minimal custom css.
      Open from the repo root in a browser; links the real tokens.css + guest.css. -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title>Mockup A v2 — Stay fee on the hub</title>
+  <title>Mockup A v3 — Stay fee on the hub</title>
   <link rel="stylesheet" href="../../../App/app/static/tokens.css">
   <link rel="stylesheet" href="../../../App/app/static/guest.css">
   <style>
-    /* mockup-only helpers; the real build adds equivalents to guest.css */
-    .fee-rails { border-top: 1px solid var(--g-line); }
-    .fee-rails > details { border-bottom: 1px solid var(--g-line); }
-    .fee-rails > details > summary { list-style: none; cursor: pointer; min-height: 44px; padding: 14px 0; font-weight: 700; color: var(--g-ink); }
-    .fee-rails > details > summary::-webkit-details-marker { display: none; }
-    .fee-rails > details > summary::after { content: "▾"; float: right; color: var(--g-muted); font-weight: 400; }
-    .fee-rails > details[open] > summary::after { content: "▴"; }
-    .fee-rails .rail-body { padding: 4px 0 16px; }
-    .fee-rails dd { overflow-wrap: anywhere; }
+    /* mockup-only; the real build adds equivalents to guest.css (?v= bump) */
     .fee-amount { font-size: 1.9rem; letter-spacing: -0.02em; margin: .1rem 0 .5rem; }
+    #fee-pay dd { overflow-wrap: anywhere; }
+    #fee-pay .rail-body { padding: 4px 20px 18px; }
+    #fee-pay .qr-row { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+    #fee-pay .qr-row > div { flex: 1; min-width: 180px; }
+    #fee-pay .qr-img { border: 1px solid var(--g-line); border-radius: 8px; width: 132px; height: 132px; }
   </style>
 </head>
 <body>
@@ -79,15 +74,14 @@
         </div>
       </details>
 
-      <p class="g-intro" style="margin:14px 0 4px">Choose how to pay your host:</p>
+      <p class="g-intro" style="margin:16px 0 0">Choose how to pay your host:</p>
 
-      <div class="fee-rails">
-        <details open>
-          <summary>Bank transfer (QR)</summary>
-          <div class="rail-body" style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
-            <img alt="Payment QR code" width="132" height="132" style="border:1px solid var(--g-line);border-radius:8px"
-                 src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='132' height='132'%3E%3Crect width='132' height='132' fill='%23fff'/%3E%3Cpath d='M8 8h40v40H8zM16 16h24v24H16zM84 8h40v40H84zM92 16h24v24H92zM8 84h40v40H8zM16 92h24v24H16zM56 8h8v8h-8zM72 16h8v8h-8zM56 32h8v8h-8zM8 56h8v8H8zM24 56h8v8h-8zM40 64h8v8h-8zM56 56h24v8H56zM88 56h8v8h-8zM104 64h8v8h-8zM64 72h8v8h-8zM80 80h8v8h-8zM96 88h8v8h-8zM56 96h8v8h-8zM72 104h8v8h-8zM88 112h8v8h-8zM104 104h8v8h-8zM56 120h24v8H56z' fill='%23111'/%3E%3C/svg%3E">
-            <div style="flex:1;min-width:180px">
+      <details class="g-summary" open>
+        <summary class="g-summary-fold">Bank transfer (QR)</summary>
+        <div class="g-summary-body rail-body">
+          <div class="qr-row">
+            <img class="qr-img" alt="Payment QR code" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQ4AAAEOAQAAAABQysQIAAACOElEQVR4nO2aQWocQQxFX1sDWWpupNwgRwq5meYoPoBBszSU+Vmoe2JCwAEbE5EpetHQWuhTpa//Vb2JN9bLw1sRcA+5h/zfIUhdSdHP8jRJShWASetfSvcvEZmkiuUJSCklhFX0p5GICqtQxXJZxSJMaRUQAxGdbm8bWF2eT2H17XlD10/P5cNDXFy/n7ic/MfJdfpTyKfl8t4Q1wK4vJwveAL2+HWBlJ+fy7tDfnGd1W8PjOW6Xnia0qTleXC4NBOR7XTHcjUoq1iAT2VvXJJMuYgFqrBCFTa2Hy2wClO2VFiwXHhCDD11EHguz1spWUUT3VBEqliEClw70UnA4FPnknJ5qpASFy5VzGWGA4usmt92scrYU7dcuH7J1B3dYEQ6RIIqVKgCWK4m8ImIXnGdrOuILqIcikjK1e9HV21ymNmPHoBt+25K4OXM85l1/Wp10eNG26d/Ld23VqsgiPbjVizi9mnoqTOlaSdwPE2CaKs+FVFhhSl1qG4pl2t5DqyjfY/wVMXNKDUBrrmOr2jHqmJnbKIJcOgeNUsDJh0dtpXD7H50lE8uz9ara2Q/4qgdWYVeUURroaF71BNvq2jJavt0aIc2EVEvk3YIrp4Pz9V1wD7iJrqIpLyZ2YmI+m6iuyqwuz9p8CT/erYnTosvT5uuZ4iNeNmwp7M+M5cPVkGhoo3SoevG3x+tNuYSfS/WfnYooq6jAvpeLG+j46GIAIg2fT1f3dvTyA673f/QuIfcQ94d8hMzWKfHi4BYNQAAAABJRU5ErkJggg==">
+            <div>
               <dl class="g-summary-list">
                 <dt>IBAN</dt><dd>CZ12 3456 0000 0000 0000 0100</dd>
                 <dt>Amount</dt><dd>450.00 Kč</dd>
@@ -97,37 +91,41 @@
               <button class="g-btn ghost slim" type="button">Copy payment details</button>
             </div>
           </div>
-        </details>
+        </div>
+      </details>
 
-        <details>
-          <summary>IBAN transfer — no QR</summary>
-          <div class="rail-body"><dl class="g-summary-list">
+      <details class="g-summary">
+        <summary class="g-summary-fold">IBAN transfer — no QR</summary>
+        <div class="g-summary-body rail-body">
+          <dl class="g-summary-list">
             <dt>IBAN</dt><dd>CZ12 3456 0000 0000 0000 0100</dd>
             <dt>Amount</dt><dd>450.00 Kč</dd><dt>VS</dt><dd>0000000123</dd>
-          </dl></div>
-        </details>
+          </dl>
+        </div>
+      </details>
 
-        <details>
-          <summary>Revolut</summary>
-          <div class="rail-body">
-            <p class="g-intro">Open your host's Revolut payment link and pay by card.</p>
-            <a class="g-btn" href="https://pay.revolut.com/EXAMPLE" rel="noopener">Pay 450 Kč with Revolut</a>
-          </div>
-        </details>
+      <details class="g-summary">
+        <summary class="g-summary-fold">Revolut</summary>
+        <div class="g-summary-body rail-body">
+          <p class="g-intro">Open your host's Revolut payment link and pay by card.</p>
+          <a class="g-btn" href="https://pay.revolut.com/EXAMPLE" rel="noopener">Pay 450 Kč with Revolut</a>
+        </div>
+      </details>
 
-        <details>
-          <summary>Card (Stripe link)</summary>
-          <div class="rail-body">
-            <p class="g-intro">Pay by card on your host's Stripe page.</p>
-            <a class="g-btn" href="https://buy.stripe.com/EXAMPLE" rel="noopener">Pay 450 Kč by card</a>
-          </div>
-        </details>
+      <details class="g-summary">
+        <summary class="g-summary-fold">Card (Stripe link)</summary>
+        <div class="g-summary-body rail-body">
+          <p class="g-intro">Pay by card on your host's Stripe page.</p>
+          <a class="g-btn" href="https://buy.stripe.com/EXAMPLE" rel="noopener">Pay 450 Kč by card</a>
+        </div>
+      </details>
 
-        <details>
-          <summary>Cash</summary>
-          <div class="rail-body"><p class="g-intro">Pay in cash at check-in — ask Old Town Loft's host when you arrive.</p></div>
-        </details>
-      </div>
+      <details class="g-summary">
+        <summary class="g-summary-fold">Cash</summary>
+        <div class="g-summary-body rail-body">
+          <p class="g-intro">Pay in cash at check-in — ask Old Town Loft's host when you arrive.</p>
+        </div>
+      </details>
     </div>
 
     <details class="g-card g-summary">
