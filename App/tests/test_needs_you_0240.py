@@ -22,9 +22,9 @@ def _row(stay_id, status, *, days=0, urgency="future", mode="manual", source="ai
     }
 
 
-def _build(rows, cards=(), missing=(), unused=(), lang="en"):
+def _build(rows, cards=(), missing=(), lang="en"):
     queue = {"needs_action": list(rows), "waiting": [], "upcoming": []}
-    return needs_you.build(rows, queue, list(cards), list(missing), list(unused), lang, TODAY)
+    return needs_you.build(rows, queue, list(cards), list(missing), lang, TODAY)
 
 
 def test_calm_when_nothing_needs_the_host():
@@ -70,11 +70,9 @@ def test_an_alert_for_a_stay_with_its_own_line_is_not_repeated():
 def test_setup_and_paste_lines_name_the_property(monkeypatch):
     monkeypatch.setattr("app.demo.is_demo_apartment", lambda apartment: False)  # 0723: no DB in this unit test
     missing = [{"apartment": {"id": 5, "internal_name": "Loft", "legal_entity_id": None}, "missing": [{"key": "ubyport", "anchor": "ubyport"}]}]
-    unused = [{"id": 6, "internal_name": "Studio"}]
-    lines = _build([], missing=missing, unused=unused, lang="cs")["lines"]
+    lines = _build([], missing=missing, lang="cs")["lines"]
     assert lines[0]["subject"] == "Loft" and lines[0]["href"] == "/apartments/5?view=settings&section=reporting#ubyport"
     assert lines[0]["text"] == "Chybí údaje pro policii"
-    assert lines[1]["subject"] == "Studio" and lines[1]["href"].endswith("#communication")
 
 
 def test_demo_stays_never_ask_to_send():
@@ -87,5 +85,5 @@ def test_the_sample_property_gets_no_setup_line():
 
     sample = {"id": 99, "internal_name": demo.DEMO_APARTMENT, "active": 1}
     missing = [{"apartment": sample, "missing": [{"anchor": "ubyport"}]}]
-    built = needs_you.build([], {}, [], missing, [], "en", date(2026, 10, 22))
+    built = needs_you.build([], {}, [], missing, "en", date(2026, 10, 22))
     assert [line for line in built["lines"] if line["kind"] == "setup"] == []

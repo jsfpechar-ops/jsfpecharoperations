@@ -60,7 +60,6 @@ from .. import (
     stay_fee_auto,
     ttlock,
     validation,
-    workflow,
     welcome_back,
 )
 from .. import ruian as ruian_lookup  # 0884
@@ -547,8 +546,6 @@ def dashboard(request: Request):
             "celebration_milestone": milestone,
             "sent_guest_count": sent_count,
             "minutes_saved": minutes_saved,
-            # 0233: remind until a real guest has used the guest link.
-            "link_unused": workflow.link_unused(apartments),
             "welcome_back": welcome,
             "month_summary": reporting.month_summary(owner_user_id, today),
             # 0706: 14-day grid for the overview calendar, built server-side.

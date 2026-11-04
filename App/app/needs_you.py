@@ -2,8 +2,7 @@
 
 Each line is a bold subject, one plain sentence and one button that lands on
 the exact fix. It gathers what used to be separate blocks on the dashboard:
-the alert stack, the stays that need the host, unfinished police setup and
-the paste reminder (0233). It reads only what the dashboard already loaded.
+the alert stack, the stays that need the host, unfinished police setup. It reads only what the dashboard already loaded.
 """
 
 from __future__ import annotations
@@ -103,7 +102,6 @@ def build(
     queue: Dict[str, List[Dict[str, Any]]],
     cards: Iterable[Dict[str, Any]],
     missing_rows: Iterable[Dict[str, Any]],
-    link_unused: Iterable[Any],
     lang: str,
     today: date,
 ) -> Dict[str, Any]:
@@ -164,13 +162,6 @@ def build(
             "setup", "amber", apartment["internal_name"] or "",
             t("needs_you.short.setup"), t("needs_you.action.setup"),
             f"/apartments/{apartment['id']}?{_SETUP_QUERY.get(first, 'view=settings')}#{first}",
-            apartment_id=apartment["id"],
-        ))
-    for apartment in link_unused or []:
-        lines.append(_line(
-            "paste", "amber", apartment["internal_name"] or "",
-            t("needs_you.short.paste"), t("workflow.paste.open"),
-            f"/apartments/{apartment['id']}?view=settings&section=guests#communication",
             apartment_id=apartment["id"],
         ))
     lines.sort(key=lambda line: _TONE_RANK.get(line["tone"], 1))
