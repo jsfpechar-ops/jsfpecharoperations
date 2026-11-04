@@ -216,7 +216,7 @@
           </select>
         </div>
         <div class="field passport-scan-row">
-          <label class="checkline" for="ocr_scan"><input type="checkbox" id="ocr_scan" name="ocr_scan" value="1" {% if apartment.ocr_scan %}checked{% endif %} aria-describedby="ocr_scan-help"><span>{{ t('apartment.form.ocr_scan.label') }}</span></label>{{ help_tip('ocr_scan-help', t('apartment.form.ocr_scan.hint')) }}
+          <label class="checkline" for="ocr_scan"><input type="checkbox" id="ocr_scan" name="ocr_scan" value="1" {% if apartment.ocr_scan %}checked{% endif %} aria-describedby="ocr_scan-help"><span>{{ t('apartment.form.ocr_scan.label') }}</span>{{ help_tip('ocr_scan-help', t('apartment.form.ocr_scan.hint')) }}</label>
         </div>
       </div>
     </section>

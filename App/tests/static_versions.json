@@ -24,8 +24,8 @@
     "v": "20261104-0960a"
   },
   "app2.css": {
-    "sha256": "73a5fb8f0d9d3f3553d01604aa0821984feebf59779f4ec61b4b4671e07ebfd9",
-    "v": "20261104-0951a"
+    "sha256": "cc6ba81369efbf01c51bdb46d7a8c0ecb57f9bd61f0b567980b819c8266939c7",
+    "v": "20261104-0951b"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -109,7 +109,7 @@
   },
   "host.css": {
     "sha256": "eaf4f9bb507bfc456a7dabf96e55ac1e40ca685d1c2f8bab7ed5ce317c33d613",
-    "v": "20261104-0951a"
+    "v": "20261104-0951b"
   },
   "host.js": {
     "sha256": "d40a8a60dd73d86313e0e40d3b41a8cd9c18922e05a03cbbec62b7954cb8d66f",
