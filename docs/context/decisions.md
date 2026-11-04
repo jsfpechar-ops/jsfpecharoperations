@@ -57,3 +57,4 @@ Append-only.
 - 11-04: stay fee pay v4; [workflow] Sonnet briefs, Haiku executes (owner)
 - [dashboard] 2026-11-04: the per-property "No guest has used the link" needs-you card (0233) is removed, not collapsed; the property-page health row stays (brief 0949).
 - [dashboard] 2026-11-04: the "You are ready" card shows only with exactly one property (brief 0949).
+- [ui] 0948: six-card status strip replaces the aside basics and connections cards; standalone guest card removed, its copy button lives in the strip (owner 2026-11-04).

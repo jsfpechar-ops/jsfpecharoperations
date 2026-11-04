@@ -34,3 +34,5 @@ Updated: 2026-11-04.
 
 ## Owner done
 - SES, Turnstile, healthchecks, Better Stack, Cloudflare pre-clearance, autopurge, Render staging, backup drill, 0001 (#281) done.
+
+- 0948 (executor): status strip on the property page done; review partial, see docs/tasks/0948-report.md (Calendars card gap open).
