@@ -2,7 +2,7 @@
 {% set nav = 'payments' %}
 {% set how_key = 'payments' %}
 {% set body_kind = 'list' %}
-{% from "_components.html" import empty_state with context %}
+{% from "_components.html" import empty_state, row_menu_begin, row_menu_end with context %}
 {% from "_ui.html" import ui_button, ui_tip with context %}
 {% from "_ui_layout.html" import ui_table_begin, ui_table_end with context %}
 {% block title %}{{ t('payments.title') }}{% endblock %}
@@ -40,7 +40,7 @@
           {% if step.key == 'details' %}
             {% if setup.entity %}
             <span class="ui-sub">{{ setup.entity.name }}{% if setup.entity.contact_email %} · {{ setup.entity.contact_email }}{% endif %}</span>
-            <a class="setup-summary-action" href="{{ step.href }}">{{ t('payments.setup.details_edit') }}</a>
+            {{ ui_button(t('payments.setup.details_edit'), 'secondary', href=step.href, size='compact') }}
             {% else %}
             <span class="ui-sub">{{ t('payments.setup.details_missing') }}</span>
             {% endif %}
@@ -78,11 +78,17 @@
   <tr class="ui-row" data-service="{{ s.id }}">
     <td class="ui-cell-first" data-card="primary"><strong>{{ s.name }}</strong></td>
     <td class="ui-cell-r" data-card="secondary">{{ s.amount_czk }} {{ t('payments.czk') }}</td>
-    <td class="ui-cell-acts" data-card="actions">
-      <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/payments/new?service={{ s.id }}">{{ t('payments.services.request') }}</a>
-      <form method="post" action="/payments/services/{{ s.id }}/delete" data-confirm data-confirm-message="{{ t('payments.services.remove_confirm') }}" style="display:inline">
-        <button class="ui-btn ui-btn-quiet ui-btn-compact" type="submit">{{ t('payments.services.remove') }}</button>
+    <td class="row-actions" data-card="actions" data-label="">
+    <form method="get" action="/payments/new" class="row-action-form">
+      <input type="hidden" name="service" value="{{ s.id }}">
+      <button class="ui-btn ui-btn-secondary" type="submit">{{ t('payments.services.request_short') }}</button>
+    </form>
+    {{ row_menu_begin() }}
+      <form method="post" action="/payments/services/{{ s.id }}/delete" class="row-menu-form" data-confirm data-confirm-message="{{ t('payments.services.remove_confirm') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <button class="row-menu-item" type="submit" role="menuitem">{{ t('payments.services.remove') }}</button>
       </form>
+    {{ row_menu_end() }}
     </td>
   </tr>
   {% endfor %}
@@ -113,20 +119,32 @@
     <td class="ui-sub" data-card="secondary">{{ req.created_at | date_cz }}</td>
     <td class="ui-cell-r" data-card="meta">{{ req.amount_czk }} {{ t('payments.czk') }}</td>
     <td data-card="badge"><span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('payments.status.' ~ req.status) }}</span></td>
-    <td class="ui-cell-acts row-actions" data-card="actions">
-      {% if req.rail == 'card' and req.status in ['draft', 'sent', 'awaiting_payment'] %}
-      <form method="post" action="/payments/requests/{{ req.id }}/link" style="display:inline">
-        <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('payments.get_link') }}</button>
+    <td class="row-actions" data-card="actions" data-label="">
+      {% set can_link = req.rail == 'card' and req.status in ['draft', 'sent', 'awaiting_payment'] %}
+      {% set can_send = req.status == 'draft' and req.guest_email %}
+      {% set has_qr = req.status == 'draft' and req.rail == 'qr' %}
+      {% if can_link %}
+      <form method="post" action="/payments/requests/{{ req.id }}/link" class="row-action-form">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <button class="ui-btn ui-btn-secondary" type="submit">{{ t('payments.get_link') }}</button>
+      </form>
+      {% elif can_send %}
+      <form method="post" action="/payments/requests/{{ req.id }}/send" class="row-action-form">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <button class="ui-btn ui-btn-secondary" type="submit">{{ t('payments.send') }}</button>
       </form>
       {% endif %}
-      {% if req.status == 'draft' and req.guest_email %}
-      <form method="post" action="/payments/requests/{{ req.id }}/send" style="display:inline">
-        <button class="ui-btn ui-btn-primary ui-btn-compact" type="submit">{{ t('payments.send') }}</button>
-      </form>
-      {% elif req.status == 'draft' and req.rail != 'card' %}
-      <span class="ui-sub">{{ t('payments.need_email') }}</span>
+      {% if (can_send and can_link) or has_qr %}
+      {{ row_menu_begin() }}
+        {% if can_send and can_link %}
+        <form method="post" action="/payments/requests/{{ req.id }}/send" class="row-menu-form">
+          <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+          <button class="row-menu-item" type="submit" role="menuitem">{{ t('payments.send') }}</button>
+        </form>
+        {% endif %}
+        {% if has_qr %}<a class="row-menu-item" href="/payments/qr/{{ req.id }}" role="menuitem">{{ t('payments.qr.preview') }}</a>{% endif %}
+      {{ row_menu_end() }}
       {% endif %}
-      {% if req.status == 'draft' and req.rail == 'qr' %}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="/payments/qr/{{ req.id }}">{{ t('payments.qr.preview') }}</a>{% endif %}
     </td>
   </tr>
   {% endfor %}
