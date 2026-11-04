@@ -299,7 +299,9 @@
         const pill = el(thinBars ? "span" : "a", "cal-pill" + (event.start < from ? " continues-start" : "") + (event.end > to ? " continues-end" : ""));
         if (thinBars) pill.setAttribute("role", "img"); else { pill.href = event.url; pill.draggable = false; }
         pill.dataset.calEvent = String(event.id); pill.dataset.calFrom = left; pill.dataset.calTo = right;
-        pill.style.gridColumn = String(column + 1) + " / span " + String(span);
+        // 0908: half-cell columns. A real arrival starts mid-cell; a departure inside this row ends mid-cell. A stay running into the next row (or from the previous one) keeps the full edge; a departure on the next Monday or the 1st of next month is dropped from that row by event.end > from, so its bar ends at this row's edge with no stub.
+        const startLine = column * 2 + 1 + (event.start >= from ? 1 : 0), endLine = (column + span) * 2 + 1 + (event.end < to && event.end > from ? 1 : 0);
+        pill.style.gridColumn = String(startLine) + " / " + String(endLine);
         pill.style.gridRow = String(lane + 1); shown = Math.max(shown, lane + 1);
         const name = labelFor(event);
         pill.title = name + " · " + fullDate(event.start) + " – " + fullDate(event.end);
@@ -310,7 +312,7 @@
     hidden.forEach((count, index) => {
       if (!count) return;
       const date = addDays(week, index), more = el("button", "cal-pill-more", "+" + String(count));
-      more.type = "button"; more.dataset.calMore = date; more.style.gridColumn = String(index + 1);
+      more.type = "button"; more.dataset.calMore = date; more.style.gridColumn = String(index * 2 + 1) + " / span 2";
       more.setAttribute("aria-label", fullDate(date) + " · " + format("more", { count }));
       overlay.append(more);
     });
