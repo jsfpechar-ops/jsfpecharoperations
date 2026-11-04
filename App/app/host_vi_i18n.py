@@ -4005,7 +4005,7 @@ STRINGS.update({
         "how.invoices.3": "Tải PDF và gửi cho khách.",
         "how.stay_fees.1": "Mỗi chỗ ở có thể yêu cầu khách trả phí lưu trú trên trang lưu trú của họ, nếu Airbnb hoặc Booking chưa thu phí này.",
         "how.stay_fees.2": "Khách chọn mã QR, chuyển khoản, Revolut hoặc tiền mặt trên trang lưu trú và trả trực tiếp cho bạn.",
-        "how.stay_fees.3": "UbyHost chỉ hiển thị cách thanh toán. Hệ thống không nhận tiền và không ghi nhận tiền đã đến hay chưa; bạn vẫn tự nộp báo cáo và phí cho địa phương.",
+        "how.stay_fees.3": "UbyHost chỉ hiển thị cách thanh toán, không nhận hay theo dõi tiền; bạn vẫn tự báo cáo và nộp phí cho địa phương.",
         "how.housebook.1": "Sổ lưu trú ghi mọi khách, theo yêu cầu của luật.",
         "how.housebook.2": "Sổ tự điền từ biểu mẫu của khách.",
         "how.housebook.3": "Xuất PDF hoặc tệp khi cơ quan yêu cầu.",
