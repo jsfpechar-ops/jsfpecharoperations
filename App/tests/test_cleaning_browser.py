@@ -257,7 +257,8 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, w
             "owner_user_id": ws["owner"], "internal_name": "Third test property", "active": 1,
             "created_at": db.utcnow(), "automation_mode": "manual", "checkin_hour": 15, "checkout_hour": 11,
         })
-        page.reload()
+        # Explicit cal_date: a reload could race the calendar's async URL update and open on today.
+        page.goto(f"{origin}/cleaning?lang={lang}&cal_date=2026-10-17")
         loaded(page)
         page.locator('[data-cal-view="gantt"]').click()
         page.wait_for_selector(".cal-gantt-row")
