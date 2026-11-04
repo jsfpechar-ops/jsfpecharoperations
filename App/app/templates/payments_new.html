@@ -12,12 +12,12 @@
 {% block tabs %}{% endblock %}
 {% block toolbar %}{% endblock %}
 {% block body %}
+<div class="payments-page payments-new">
 {% with href='/payments', title=t('payments.new.title') %}{% include "partials/settings_back_header.html" %}{% endwith %}
-<div class="payments-page">
-<div class="card payments-box" id="new-request">
+<div class="payments-form" id="new-request">
   <form method="post" action="/payments/requests/new" class="ui-form">
-    <div class="ui-field"><label for="pay-new-amount_czk">{{ t('payments.field.amount') }}</label>
-      <input id="pay-new-amount_czk" type="number" name="amount_czk" min="1" step="1" required{% if prefill %} value="{{ prefill.amount_czk }}"{% endif %}></div>
+    <div class="ui-field payments-amount"><label for="pay-new-amount_czk">{{ t('payments.field.amount') }}</label>
+      <input id="pay-new-amount_czk" type="number" inputmode="numeric" name="amount_czk" min="1" step="1" required{% if prefill %} value="{{ prefill.amount_czk }}"{% endif %}></div>
     <fieldset class="ui-field">
       <legend>{{ t('payments.new.reason') }}</legend>
       <div class="ui-chips">
@@ -35,7 +35,7 @@
       <input id="pay-new-guest_email" type="email" name="guest_email"></div>
     <fieldset class="ui-field">
       <legend>{{ t('payments.field.rail') }}</legend>
-      <div class="ui-chips">
+      <div class="ui-chips payments-seg">
         <label class="ui-chip"><input type="radio" name="rail" value="card" checked> {{ t('payments.new.rail_card') }}</label>
         <label class="ui-chip"><input type="radio" name="rail" value="qr"> {{ t('payments.new.rail_qr') }}</label>
       </div>

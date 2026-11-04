@@ -3,7 +3,7 @@
 Browser checks (Chromium, 0 skipped with UBYHOST_REQUIRE_BROWSER=1):
 no horizontal scroll, no element outside the viewport, 44 px targets at
 390 px and below, at most one primary button per group. Screenshots at 390 px
-go to docs/tasks/screenshots-0945/.
+go to docs/tasks/screenshots-0946/.
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ from tests.browser_support import chromium_launch_kwargs
 from tests.conftest import login_as
 from test_payments_dashboard import _set_state
 
-SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0945"
+SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0946"
 REQUIRE_BROWSER = os.environ.get("UBYHOST_REQUIRE_BROWSER") == "1"
 WIDTHS = (320, 390, 768, 1024, 1280, 1440, 1920)
 PAGES = (("/payments", "payments"), ("/payments/new", "payments-new"), ("/payments/consent", "payments-consent"))
