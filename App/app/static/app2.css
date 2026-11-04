@@ -2512,3 +2512,6 @@ body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-bottom.single{grid
 body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-demo{display:flex;gap:16px;align-items:center;padding:18px 20px;border:1px solid var(--line);border-radius:12px;background:var(--s)}
 body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-demo p{margin:5px 0 0;color:var(--ink3);font-size:13px}
 @media (max-width:640px){body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-bottom{grid-template-columns:minmax(0,1fr)}}
+body.v2 .onboarding-banner-setup{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:0 0 16px}
+body.v2 .onboarding-banner-setup form{margin:0}
+body.v2 .onboarding-skip-link{background:none;border:0;padding:0;font:inherit;font-size:13px;color:var(--ink3);text-decoration:underline;cursor:pointer;min-height:44px}
