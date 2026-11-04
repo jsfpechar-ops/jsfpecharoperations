@@ -4,15 +4,15 @@ Status: todo
 Executor: Haiku 5.5. Read only AGENTS.md, docs/context/executor.md, this brief and the files named here.
 Branch: `fix/0910-calendar-toolbar-stable`. One PR. Do not touch any other file.
 
+## 1. Objective
+
 Scope: Steps 1-3 (calendar toolbar), Part A (guest birth date, nationality, document number on the stay page),
 Part B (birth date, age at check-in, nationality on the stay-fee detail page), Part C (Back-button test, no
-history change). Files you may change: `App/app/templates/_dashboard_calendar.html`,
-`App/app/static/dashboard-calendar.css`, `App/app/templates/reservation_detail.html`,
-`App/app/templates/stay_fee_detail.html`, `App/app/routes/stay_fees.py`, `App/app/host_i18n.py`,
-`App/app/host_vi_i18n.py`, `App/app/static/app2.css` (only if Part A step 3 needs it), the new test files named
-below, `App/tests/test_stay_fee_detail.py`, `docs/tasks/0910-report.md`, `docs/tasks/screenshots-0910/`.
+history change).
 
-## Problem (reproduced 2026-11-04 in Chromium, `/?cal_view=calendar`)
+## 2. Context
+
+### Problem (reproduced 2026-11-04 in Chromium, `/?cal_view=calendar`)
 
 The host calendar head (`[data-cal-head]`) at >= 768 px is one `display:flex; flex-wrap:wrap; justify-content:flex-end` row
 (`App/app/static/dashboard-calendar.css`, block `@media (min-width:768px)` near line 775). `.cal-heading` and `.cal-toolbar`
@@ -42,7 +42,17 @@ Out of scope (do not fix, already noted in the report): after scrolling the mont
 top (0891 design), so the sticky head returns from y=12 to its in-flow place; the week label mixes formats
 ("2 Nov – 8 November 2026").
 
-## Step 1: template (`App/app/templates/_dashboard_calendar.html`)
+## 3. Files
+
+Files you may change: `App/app/templates/_dashboard_calendar.html`,
+`App/app/static/dashboard-calendar.css`, `App/app/templates/reservation_detail.html`,
+`App/app/templates/stay_fee_detail.html`, `App/app/routes/stay_fees.py`, `App/app/host_i18n.py`,
+`App/app/host_vi_i18n.py`, `App/app/static/app2.css` (only if Part A step 3 needs it), the new test files named
+below, `App/tests/test_stay_fee_detail.py`, `docs/tasks/0910-report.md`, `docs/tasks/screenshots-0910/`.
+
+## 4. Steps
+
+### Step 1: template (`App/app/templates/_dashboard_calendar.html`)
 
 1. In `.cal-navigation`, move the Today button **before** the Prev button and add class `cal-today`. The block becomes:
    ```html
@@ -56,7 +66,7 @@ top (0891 design), so the sticky head returns from y=12 to its in-flow place; th
    (`dashboard-calendar.js` finds the buttons by `data-` attribute).
 2. Line 2: bump the stylesheet version `?v=20261104-0908d` to `?v=20261104-0910`.
 
-## Step 2: CSS (`App/app/static/dashboard-calendar.css`)
+### Step 2: CSS (`App/app/static/dashboard-calendar.css`)
 
 Find the block with `grep -n "@media (min-width:768px)" App/app/static/dashboard-calendar.css` (the one whose first
 rule is `body.v2 #calendar.dashboard-calendar[data-readonly="false"] .cal-head { display:flex; flex-wrap:wrap; ...`).
@@ -80,7 +90,7 @@ Do not change the `@media (min-width:1024px)` 32 px title rule, the phone rules 
 `display:none` there) or the cleaning-page rules. If `.cal-head` has any other visible child at 768 that is not
 placed by the rules above (check in Step 4 screenshots), give it `grid-column:1 / -1` and report it.
 
-## Step 3: new browser test `App/tests/test_0910_calendar_toolbar_stable_browser.py`
+### Step 3: new browser test `App/tests/test_0910_calendar_toolbar_stable_browser.py`
 
 Reuse the fixtures and helpers; copy the import lines from the top of `App/tests/test_dashboard_calendar_browser.py`
 and add `from tests.test_dashboard_calendar_browser import calendar_origin, launch, open_page, wait_loaded, shot, GEOMETRY_0893  # noqa: F401`.
@@ -111,7 +121,7 @@ or `.cal-week`, then `wait_loaded(page)`):
 
 Use `context.close(); browser.close()` at the end of each test like the existing file.
 
-## Part A: stay page shows birth date, nationality and document number
+### Part A: stay page shows birth date, nationality and document number
 
 Owner request: the host sees who the guest is without opening the PDF form. Host-only page.
 
@@ -149,7 +159,7 @@ line ~126. Existing i18n key `stay.detail.guests.born` ("Date of birth" / "Datum
 No fine print: the line is guest data, not a hint. Do not add labels for nationality or document; the document type
 stays in its own column.
 
-## Part B: stay-fee detail shows birth date, age at check-in and nationality
+### Part B: stay-fee detail shows birth date, age at check-in and nationality
 
 The fee depends on age (under 18 exempt), so the host checks it here. Route `stay_fee_detail` in
 `App/app/routes/stay_fees.py` passes `"lines": _guest_lines(apartment, period)` (~line 447); `_guest_lines` is at
@@ -192,7 +202,7 @@ snapshot by `stay_fee_filing`, so adding birth date there would create a new sto
             {% if fee_parts %}<div class="ui-sub" data-fee-guest-facts>{{ fee_parts | join(' · ') }}</div>{% endif %}
    ```
 
-## Privacy (Parts A and B)
+### Privacy (Parts A and B)
 
 Host-only pages behind `auth.require_login` and the owner checks already there. No new stored field, no new column,
 no migration, no new outbound request, no new dependency. `App/app/retention.py` is unaffected: birth date,
@@ -200,7 +210,7 @@ nationality and document number are existing guest fields with existing retentio
 them. Doc numbers go through `guest_identifier` and birth dates through `identity_visible`, so the existing masking
 still applies. Say this in the PR body in two sentences.
 
-## Part C: browser Back after three month clicks (test only)
+### Part C: browser Back after three month clicks (test only)
 
 `App/app/static/dashboard-calendar.js` `rememberURL()` uses `history.replaceState`, so arrow clicks add no history
 entries. Expected: Back leaves the calendar for the previous page; Forward (or reopening) returns to the month the
@@ -219,7 +229,7 @@ Add to `App/tests/test_0910_calendar_toolbar_stable_browser.py`:
    it in the PR under "Back button". If Forward lands on a month other than April 2026 (the user's place is lost),
    do not fix it: write it in the report as follow-up "0910 follow-up: calendar loses place on Forward/Back".
 
-## Part D: tests for Parts A and B
+### Part D: tests for Parts A and B
 
 5. New file `App/tests/test_0910_guest_details_browser.py`. Copy the imports of
    `App/tests/test_0766_phone_stays_browser.py` (fixtures `base`, `dashboard_rich_host`, helpers `_launch`, `_open_app`,
@@ -241,7 +251,17 @@ Add to `App/tests/test_0910_calendar_toolbar_stable_browser.py`:
    `shot(page, f"0910-fee-{width}")`, asserting `[data-fee-guest-facts]` is visible. If no such fixture exists, say
    so in the report and skip the fee screenshots (do not build a new fixture).
 
-## Step 4: run (from `App/`, Chromium is at /opt/pw-browsers)
+## 5. Do not touch
+
+- Any file not listed in section 3 (see also the Branch line at the top).
+- History handling in `App/app/static/dashboard-calendar.js` (Part C is test only).
+- The `@media (min-width:1024px)` 32 px title rule, the phone rules (`max-width:767px`) and the cleaning-page rules (Step 2).
+- The out-of-scope items listed at the end of section 2.
+- No new i18n key, no JS change (Step 1); no new stored field, column, migration, outbound request or dependency (Privacy).
+
+## 6. Commands
+
+### Step 4: run (from `App/`, Chromium is at /opt/pw-browsers)
 
 ```
 export PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=1
@@ -267,13 +287,13 @@ Also rerun `tests/test_0910_guest_details_browser.py` with the same env var and 
 `0910-fee-*` shots (390, 768, 1280): per page and width, write in the PR whether the id line sits under the name on
 its own line, is readable, and keeps 12 px from its neighbours.
 
-## Step 5: PR
+### Step 5: PR
 
 PR body: link this brief, the per-width UX notes, and the ticked checklist from `docs/design/design-system.md`
 (copy its checklist lines; only the items this change touches need prose). Merge only with
 `scripts/merge-pr-on-green.sh`. Write `docs/tasks/0910-report.md` (what changed, test output tails, screenshot paths).
 
-## Done when
+### Done when
 
 - 12 next + 12 prev clicks at 768 and 1024 (Month and Week, en and cs) move no toolbar control by even 0.5 px.
 - Scale switch does not move the arrows, Today, property, view or settings at 768, 1024, 1280.
@@ -288,7 +308,7 @@ PR body: link this brief, the per-width UX notes, and the ticked checklist from 
 
 ## 7. Acceptance
 
-The "Done when" list above is the acceptance list. Each item is ticked in `docs/tasks/0910-report.md` with the command output that proves it.
+The "Done when" list in section 6 is the acceptance list. Each item is ticked in `docs/tasks/0910-report.md` with the command output that proves it.
 
 ## 8. Stop and ask
 
