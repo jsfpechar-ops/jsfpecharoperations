@@ -70,4 +70,5 @@ Append-only.
 - 2026-11-03 | Partial site refund issues a credit note / corrective document for the refunded amount; full refund keeps storno | owner | 0901
 - 2026-11-04 | Go webhook forwards booking-site events to Python; booking logic not ported to Go yet | owner | 0910
 
-- [filing] 2026-11-04: unanswered filings retry 30m/2h/6h/12h, duplicate answer stops; supersedes OD-1 and WP31 (0909). After the 5th attempt: host and support mail and push, once per chain.
+- [filing] 2026-11-04: unanswered filings retry 30m/2h/6h/12h, any answer stops; replaces OD-1, WP31 (0909).
+- [auth] 2026-11-04: 30-day sliding session, trusted-device cookie skips login Turnstile

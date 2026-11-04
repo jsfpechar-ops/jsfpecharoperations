@@ -8,7 +8,7 @@ summarises the threat model, controls, and known limitations.
 | Layer | Control |
 |-------|---------|
 | **Transport** | HTTPS in production (`Secure` cookies are forced for production); Cloudflare **HSTS** (6 months, no preload) on `ubyhost.com` |
-| **Host auth** | Signed session cookie, `HttpOnly`, `SameSite=Strict`, `Secure` on HTTPS, session-version invalidation |
+| **Host auth** | Signed session cookie, `HttpOnly`, `SameSite=Lax`, `Secure` on HTTPS, session-version invalidation |
 | **Host login** | No passwords. A single-use link mailed to the account's address (32 random bytes, stored as SHA-256, 15 minutes, newest link only); the link opens a page with a button, so a mail scanner that fetches it logs nobody in |
 | **Host 2FA** | Optional authenticator-app TOTP as a second step after the link; one-use recovery codes |
 | **Passkeys** | Optional WebAuthn passkeys (py_webauthn): discoverable, user verification required, so a passkey login skips TOTP. RP ID remains the host name of `UBYHOST_PUBLIC_BASE_URL` (never an IP; https or localhost). With `UBYHOST_APP_BASE_URL`, verification accepts exactly the public and configured app origins; the app hostname must be a child of the public hostname. Existing passkeys keep their RP ID. Challenges are stored as SHA-256, single-use, 5 minutes; origin and RP hash are checked (phishing); a sign counter that goes backwards is refused and audited (`passkey_clone_suspected`); every new passkey mails the owner. Only public keys are stored. The e-mail link always remains the recovery path |
@@ -16,6 +16,8 @@ summarises the threat model, controls, and known limitations.
 | **Multi-tenant** | All host routes resolve resources through `access.*` joins on `owner_user_id` |
 | **Secrets** | UbyPort passwords, host TOTP secrets, guest travel-document numbers, birth date, street and town of residence, signatures, the UbyPort request envelope and queued claim secrets encrypted at rest (MultiFernet over `UBYHOST_DATA_KEYS`, separate from the session secret; the old key derived from `SECRET_KEY` is kept for decryption until `scripts/reencrypt.py` has run); `SECRET_KEY` in `data/secret_key` |
 | **Uploads** | Passport photos/PDFs: type/size/magic-byte checks; host-only download route |
+
+Host sessions (0911): the cookie is signed, HttpOnly, Secure on HTTPS and SameSite=Lax, so a link from mail or another app arrives signed in. A remember-me session lasts 30 days without use; each day of use re-signs it with the same login time, and it ends 90 days after the login. A `ubyhost_device` cookie (30 days, HttpOnly, Lax, Secure on HTTPS) lets a browser that signed in before skip the Turnstile on the login form, only when the e-mail matches the account and the IP is not rate-limited. A session_version bump (for example account disablement) ends both cookies' access. The CSRF cookie stays SameSite=Strict.
 
 ## Hardening (application)
 

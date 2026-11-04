@@ -285,6 +285,7 @@ async def cloudflare_connecting_ip(request: Request, call_next):
     else:
         response = await call_next(request)
     security.attach_csrf_cookie(request, response)
+    auth.refresh_session_cookie(request, response)
     if request.url.path.startswith("/cleaning/shared/"):
         response.headers.update({
             "Cache-Control": "no-store", "Referrer-Policy": "no-referrer",

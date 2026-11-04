@@ -232,6 +232,7 @@ def test_a_full_crawl_sets_exactly_the_strictly_necessary_cookies(guest_pin_on):
 def test_the_strictly_necessary_set_is_the_first_party_cookie_inventory():
     assert cookie_inventory.STRICTLY_NECESSARY_COOKIES == {
         "ubyhost_session",
+        "ubyhost_device",
         "ubyhost_csrf",
         "ubyhost_lang",
         "ubyhost_pin",
