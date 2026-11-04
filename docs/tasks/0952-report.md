@@ -36,3 +36,10 @@ Not ticked: I did not run the checklist in docs/design/design-system.md in this 
 ## Next step
 1. Confirm test_0251 aside locator against base 871906ab (run that one test on the base commit in a clean checkout), then fix the selector or the markup.
 2. Tick design-system checklist; add the Smart lock desktop check to the report.
+
+## Update (orchestrator follow-up)
+- test_0251 desktop taps now use the strip cards `nav.prop-strip a.sc[data-strip="door"|"police"][href=...]`. Same intent, no skip. The door card renders only when `door_code` exists in this base (main has bcc6ef3d); the 0251 fixture must be checked after rebase.
+- Same switch in test_onboarding_followup_browser.py (police) and test_property_navigation_browser.py (police).
+- test_property_navigation three_views field check now also counts form-attribute controls: passes.
+- Still failing, stale aside-card tests from 0948 (aside cards removed in base): test_onboarding_followup calendars row, test_property_navigation bookings/overview/tabs tests (aside #sec-basics, #sec-fee, aside .pv .r). Not fixed; calendars and fee rows have no strip card.
+- Design-system checklist: not ticked (not reviewed in this run).

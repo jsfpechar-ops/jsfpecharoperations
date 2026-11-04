@@ -150,6 +150,8 @@ def test_three_views_four_groups_one_editor_and_unique_ids(host):
     property_forms = [f for f in parsed.forms if f["action"] == f"/apartments/{host['apartment']}" and f["method"] == "post"]
     assert len(property_forms) == 1
     names = [name for name, _ in _fields(property_forms[0])]
+    # 0952: door-code controls sit outside the form and name it with form="property-settings-form".
+    names += re.findall(r'<(?:input|select|textarea)\b[^>]*\bform="property-settings-form"[^>]*\bname="([^"]+)"', html)
     assert set(names) == SETTINGS_NAMES, set(names) ^ SETTINGS_NAMES
     assert len(names) == len(set(names)), "a setting is submitted twice"
     calendar = [f for f in parsed.forms if f["action"] == f"/apartments/{host['apartment']}/feeds"]
@@ -384,7 +386,7 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
         assert page.locator("#internal_name").input_value() == "Draft Name Kept"
         assert page.evaluate(_STATE_JS)["marker"] == "same-document"
 
-        page.locator('aside.preview a.r[href="#sec-police"]').click()
+        page.locator('nav.prop-strip a.sc[data-strip="police"][href="#sec-police"]').click()
         assert not page.evaluate("() => document.getElementById('unsaved-dialog').open")
         assert "sec-police" in page.evaluate(_STATE_JS)["open"]
         assert page.evaluate(_STATE_JS)["marker"] == "same-document", "the aside row reloaded the page"
