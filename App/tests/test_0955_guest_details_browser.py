@@ -1,6 +1,6 @@
-"""0910 Parts A and B: guest birth date, nationality and document number on the stay page and the stay-fee detail.
+"""0955 Parts A and B: guest birth date, nationality and document number on the stay page and the stay-fee detail.
 
-Screenshots: UBYHOST_SHOTS_DIR=<dir> writes calendar-0910-stay-<width>.png and calendar-0910-fee-<width>.png.
+Screenshots: UBYHOST_SHOTS_DIR=<dir> writes calendar-0955-stay-<width>.png and calendar-0955-fee-<width>.png.
 """
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ __all__ = ["base", "dashboard_rich_host", "host"]
 _BOX_JS = """(el) => { const r = el.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; }"""
 
 
-def test_0910_stay_page_shows_guest_details(base, dashboard_rich_host):
+def test_0955_stay_page_shows_guest_details(base, dashboard_rich_host):
     for width in (390, 768, 1280):
         with sync_api.sync_playwright() as playwright:
             browser = _launch(playwright)
@@ -32,12 +32,12 @@ def test_0910_stay_page_shows_guest_details(base, dashboard_rich_host):
             name = line.evaluate("el => el.parentElement.querySelector('b').getBoundingClientRect().bottom")
             top = line.evaluate("el => el.getBoundingClientRect().top")
             assert top >= name - 1, (width, name, top)
-            shot(page, f"0910-stay-{width}")
+            shot(page, f"0955-stay-{width}")
             context.close()
             browser.close()
 
 
-def test_0910_fee_page_shows_guest_facts(base, host):
+def test_0955_fee_page_shows_guest_facts(base, host):
     client, owner_id, entity_id = host
     apartment_id = _property(owner_id, entity_id, "Detail Shot Demo")
     _stay(apartment_id, "2026-08-10", "2026-08-14", [{"first_name": "Adult"}, {"first_name": "Kid", "birth_date": "01012015"}])
@@ -50,6 +50,6 @@ def test_0910_fee_page_shows_guest_facts(base, host):
             facts = page.locator("[data-fee-guest-facts]:visible").first
             assert facts.count() == 1
             assert "Age 36 at check-in" in facts.inner_text(), (width, facts.inner_text())
-            shot(page, f"0910-fee-{width}")
+            shot(page, f"0955-fee-{width}")
             context.close()
             browser.close()

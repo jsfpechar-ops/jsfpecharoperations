@@ -1,4 +1,4 @@
-"""0910: the calendar toolbar stays still, Today sits left of the arrows, Back keeps the calendar place."""
+"""0955: the calendar toolbar stays still, Today sits left of the arrows, Back keeps the calendar place."""
 from __future__ import annotations
 
 import pytest
@@ -35,7 +35,7 @@ def _open(playwright, workspace, origin, width, lang):
 @pytest.mark.parametrize("width", [768, 1024])
 @pytest.mark.parametrize("scale", ["month", "week"])
 @pytest.mark.parametrize("lang", ["en", "cs"])
-def test_0910_toolbar_still_across_12_arrow_clicks(calendar_workspace, calendar_origin, width, scale, lang):
+def test_0955_toolbar_still_across_12_arrow_clicks(calendar_workspace, calendar_origin, width, scale, lang):
     with sync_api.sync_playwright() as playwright:
         browser, context, page = _open(playwright, calendar_workspace, calendar_origin, width, lang)
         if scale == "week":
@@ -54,7 +54,7 @@ def test_0910_toolbar_still_across_12_arrow_clicks(calendar_workspace, calendar_
 
 
 @pytest.mark.parametrize("width", [768, 1024, 1280])
-def test_0910_scale_switch_keeps_arrows_and_filters_still(calendar_workspace, calendar_origin, width):
+def test_0955_scale_switch_keeps_arrows_and_filters_still(calendar_workspace, calendar_origin, width):
     with sync_api.sync_playwright() as playwright:
         browser, context, page = _open(playwright, calendar_workspace, calendar_origin, width, "en")
         first = page.evaluate(BOXES)
@@ -69,7 +69,7 @@ def test_0910_scale_switch_keeps_arrows_and_filters_still(calendar_workspace, ca
 
 
 @pytest.mark.parametrize("width", [768, 1024, 1280])
-def test_0910_today_is_not_between_the_arrows(calendar_workspace, calendar_origin, width):
+def test_0955_today_is_not_between_the_arrows(calendar_workspace, calendar_origin, width):
     with sync_api.sync_playwright() as playwright:
         browser, context, page = _open(playwright, calendar_workspace, calendar_origin, width, "en")
         t = page.locator("[data-cal-today]").bounding_box()
@@ -82,12 +82,12 @@ def test_0910_today_is_not_between_the_arrows(calendar_workspace, calendar_origi
         wait_loaded(page)
         today = page.evaluate("() => document.querySelector('#calendar').dataset.today")
         assert page.locator("[data-cal-month]").input_value() == today[5:7]
-        shot(page, f"0910-{width}")
+        shot(page, f"0955-{width}")
         context.close()
         browser.close()
 
 
-def test_0910_back_after_three_month_clicks(calendar_workspace, calendar_origin):
+def test_0955_back_after_three_month_clicks(calendar_workspace, calendar_origin):
     with sync_api.sync_playwright() as playwright:
         browser = launch(playwright)
         context, page = open_page(browser, calendar_workspace, calendar_origin, width=1280, locale="en")

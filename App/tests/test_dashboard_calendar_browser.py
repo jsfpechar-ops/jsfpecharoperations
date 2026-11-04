@@ -488,7 +488,7 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         cleaning_tag_day = cleaning_page.locator('.cal-day[data-date="2026-10-27"].has-cleaning')
         cleaning_tag_day.wait_for(state="visible")
         assert cleaning_tag_day.locator(".cal-clean-tag").count() >= 1
-        cleaning_tag_day.locator(".cal-day-number").click(position={"x": 12, "y": 10})  # 0911: stay bars sit under the day number
+        cleaning_tag_day.locator(".cal-day-number").click(position={"x": 12, "y": 10})  # 0956: stay bars sit under the day number
         cleaning_marker = cleaning_page.locator(
             f'[data-cal-day-list] .cal-event[data-cal-event="{cleaning_event_id}"]'
         )
@@ -759,7 +759,7 @@ def test_default_calendar_url_is_clean_and_specific_views_survive_reload(
         page.locator("[data-cal-today]").click()
         wait_loaded(page)
         assert "cal_date" not in parse_qs(urlsplit(page.url).query)
-        # 0911: Auto is offered only while no property is picked, so clear the property first.
+        # 0956: Auto is offered only while no property is picked, so clear the property first.
         page.locator("[data-cal-property]").select_option("")
         wait_loaded(page)
         page.locator("[data-cal-settings]").click()
@@ -1037,7 +1037,7 @@ def test_0891_airbnb_month_tiles_and_pills(calendar_workspace, calendar_origin, 
             else:  # runs into the next week: Sunday edge, 2 px margin
                 assert abs(pill["right"]) <= 1, pill
             assert pill["top"] >= 36 and pill["bottom"] >= 0, pill  # below the day number (0905: stacked lanes)
-            assert pill["color"], pill  # 0911: colour is per property, see test_0911_each_property_has_one_colour_everywhere
+            assert pill["color"], pill  # 0956: colour is per property, see test_0956_each_property_has_one_colour_everywhere
         assert page.locator(".cal-tile-chip:visible, .cal-dots:visible, .cal-week-events").count() == 0
         if width >= 768:
             assert page.locator('[data-cal-more="2026-10-14"]').is_visible()

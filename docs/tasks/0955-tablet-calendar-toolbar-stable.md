@@ -1,8 +1,8 @@
-# 0910: Calendar toolbar stays still; guest details on the stay and stay-fee pages
+# 0955: Calendar toolbar stays still; guest details on the stay and stay-fee pages
 
 Status: todo
 Executor: Haiku 5.5. Read only AGENTS.md, docs/context/executor.md, this brief and the files named here.
-Branch: `fix/0910-calendar-toolbar-stable`. One PR. Do not touch any other file.
+Branch: `fix/0955-calendar-toolbar-stable`. One PR. Do not touch any other file.
 
 ## 1. Objective
 
@@ -48,7 +48,7 @@ Files you may change: `App/app/templates/_dashboard_calendar.html`,
 `App/app/static/dashboard-calendar.css`, `App/app/templates/reservation_detail.html`,
 `App/app/templates/stay_fee_detail.html`, `App/app/routes/stay_fees.py`, `App/app/host_i18n.py`,
 `App/app/host_vi_i18n.py`, `App/app/static/app2.css` (only if Part A step 3 needs it), the new test files named
-below, `App/tests/test_stay_fee_detail.py`, `docs/tasks/0910-report.md`, `docs/tasks/screenshots-0910/`.
+below, `App/tests/test_stay_fee_detail.py`, `docs/tasks/0955-report.md`, `docs/tasks/screenshots-0955/`.
 
 ## 4. Steps
 
@@ -64,7 +64,7 @@ below, `App/tests/test_stay_fee_detail.py`, `docs/tasks/0910-report.md`, `docs/t
    ```
    Keep the existing i18n key `calendar.today` and both arrow `aria-label`s. No new i18n key. No JS change
    (`dashboard-calendar.js` finds the buttons by `data-` attribute).
-2. Line 2: bump the stylesheet version `?v=20261104-0908d` to `?v=20261104-0910`.
+2. Line 2: bump the stylesheet version `?v=20261104-0908d` to `?v=20261104-0955`.
 
 ### Step 2: CSS (`App/app/static/dashboard-calendar.css`)
 
@@ -90,7 +90,7 @@ Do not change the `@media (min-width:1024px)` 32 px title rule, the phone rules 
 `display:none` there) or the cleaning-page rules. If `.cal-head` has any other visible child at 768 that is not
 placed by the rules above (check in Step 4 screenshots), give it `grid-column:1 / -1` and report it.
 
-### Step 3: new browser test `App/tests/test_0910_calendar_toolbar_stable_browser.py`
+### Step 3: new browser test `App/tests/test_0955_calendar_toolbar_stable_browser.py`
 
 Reuse the fixtures and helpers; copy the import lines from the top of `App/tests/test_dashboard_calendar_browser.py`
 and add `from tests.test_dashboard_calendar_browser import calendar_origin, launch, open_page, wait_loaded, shot, GEOMETRY_0893  # noqa: F401`.
@@ -105,19 +105,19 @@ BOXES = """() => Object.fromEntries(['[data-cal-prev]','[data-cal-next]','[data-
 Tests (each opens `f"{calendar_origin}/?lang={lang}&cal_view=calendar&cal_date=2026-01-01"`, waits for `.cal-month`
 or `.cal-week`, then `wait_loaded(page)`):
 
-1. `test_0910_toolbar_still_across_12_arrow_clicks` parametrized `width` in `[768, 1024]`, `scale` in
+1. `test_0955_toolbar_still_across_12_arrow_clicks` parametrized `width` in `[768, 1024]`, `scale` in
    `["month", "week"]`, `lang` in `["en", "cs"]`. If scale is week click `[data-cal-scale="week"]` and wait.
    Take `base = page.evaluate(BOXES)`. Then 12 times: click `[data-cal-next]`, `wait_loaded(page)`,
    `assert page.evaluate(BOXES) == base, (i, page.locator("[data-cal-period]").inner_text())`. Then 12 times the same
    with `[data-cal-prev]`. Finally `assert not page.evaluate(GEOMETRY_0893)["touching"]` (12 px neighbour rule).
-2. `test_0910_scale_switch_keeps_arrows_and_filters_still` parametrized `width` in `[768, 1024, 1280]`: record BOXES
+2. `test_0955_scale_switch_keeps_arrows_and_filters_still` parametrized `width` in `[768, 1024, 1280]`: record BOXES
    for `[data-cal-prev]`, `[data-cal-next]`, `[data-cal-today]`, `[data-cal-property]`, `.cal-view-segment`,
    `[data-cal-settings]`; click scale week, year, month in turn; after each, those six boxes equal the first record.
-3. `test_0910_today_is_not_between_the_arrows` parametrized `width` in `[768, 1024, 1280]`: with rects `t`, `p`, `n`
+3. `test_0955_today_is_not_between_the_arrows` parametrized `width` in `[768, 1024, 1280]`: with rects `t`, `p`, `n`
    of Today, Prev, Next: `t.right + 20 <= p.left`; `12 <= n.left - p.right <= 16`; `abs(t.top + t.height/2 - (p.top + p.height/2)) <= 1`.
    Then click Today and assert `[data-cal-period]` text is the current month name (`page.evaluate` of the
    `data-today` month is enough: compare `[data-cal-month]` value to `root.dataset.today.slice(5,7)`).
-   Call `shot(page, f"0910-{width}")`.
+   Call `shot(page, f"0955-{width}")`.
 
 Use `context.close(); browser.close()` at the end of each test like the existing file.
 
@@ -216,9 +216,9 @@ still applies. Say this in the PR body in two sentences.
 entries. Expected: Back leaves the calendar for the previous page; Forward (or reopening) returns to the month the
 user was on, because the URL carries `cal_date`. **Do not change history handling.**
 
-Add to `App/tests/test_0910_calendar_toolbar_stable_browser.py`:
+Add to `App/tests/test_0955_calendar_toolbar_stable_browser.py`:
 
-4. `test_0910_back_after_three_month_clicks` (width 1280, `lang=en`). Read `open_page` in
+4. `test_0955_back_after_three_month_clicks` (width 1280, `lang=en`). Read `open_page` in
    `App/tests/test_dashboard_calendar_browser.py` (lines ~60-91) to get the page; then `page.goto(f"{calendar_origin}/reservations")`,
    then `page.goto(f"{calendar_origin}/?lang=en&cal_view=calendar&cal_date=2026-01-01")`, wait for `.cal-month`,
    `wait_loaded(page)`. Click `[data-cal-next]` 3 times with `wait_loaded(page)` after each; record
@@ -227,17 +227,17 @@ Add to `App/tests/test_0910_calendar_toolbar_stable_browser.py`:
    `wait_loaded(page)`; assert `page.locator("[data-cal-month]").input_value() == month`.
    If an assertion fails, change it to match what actually happens, print the observed URL and month, and report
    it in the PR under "Back button". If Forward lands on a month other than April 2026 (the user's place is lost),
-   do not fix it: write it in the report as follow-up "0910 follow-up: calendar loses place on Forward/Back".
+   do not fix it: write it in the report as follow-up "0955 follow-up: calendar loses place on Forward/Back".
 
 ### Part D: tests for Parts A and B
 
-5. New file `App/tests/test_0910_guest_details_browser.py`. Copy the imports of
+5. New file `App/tests/test_0955_guest_details_browser.py`. Copy the imports of
    `App/tests/test_0766_phone_stays_browser.py` (fixtures `base`, `dashboard_rich_host`, helpers `_launch`, `_open_app`,
    `_cookie`; copy `_cookie` too). That fixture's `ready` stay has guest TOMAS NOVAK, birth `01011990`, nationality
-   `GBR`, doc `P1234567`. Test `test_0910_stay_page_shows_guest_details` parametrized `width` in `[390, 768, 1280]`:
+   `GBR`, doc `P1234567`. Test `test_0955_stay_page_shows_guest_details` parametrized `width` in `[390, 768, 1280]`:
    open `f"/reservations/{dashboard_rich_host['ready']}"`; `line = page.locator("[data-guest-id-line]:visible").first`;
    assert `"01.01.1990"` in its text, and `"P1234567"` in it; assert its computed `font-size` >= 13 px; assert its
-   box does not overlap the `b` name box above it. Call `shot(page, f"0910-stay-{width}")` (import `shot` from
+   box does not overlap the `b` name box above it. Call `shot(page, f"0955-stay-{width}")` (import `shot` from
    `tests.test_dashboard_calendar_browser`).
 6. In `App/tests/test_stay_fee_detail.py` add (reuse `host`, `_property`, `_stay`):
    `test_guest_line_shows_birth_date_age_and_nationality`: `_stay(apartment_id, "2026-08-10", "2026-08-14", [{"first_name": "Adult"}, {"first_name": "Kid", "birth_date": "01012015"}])`;
@@ -246,9 +246,9 @@ Add to `App/tests/test_0910_calendar_toolbar_stable_browser.py`:
    unaffected: assert `"birth_display"` not in `str(stay_fee.property_period(apartment, date(2026, 8, 1))["lines"])`
    (import `stay_fee`; load `apartment` with `db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))`).
 7. Screenshot of the fee page: if `App/tests/test_stay_fee_pay_steps_browser.py` has a fixture that opens
-   `/stay-fees/<id>` in Chromium, add `test_0910_fee_page_shot` there-alike in the new file
-   `test_0910_guest_details_browser.py` using that fixture, with a guest that has a birth date, at 390/768/1280 and
-   `shot(page, f"0910-fee-{width}")`, asserting `[data-fee-guest-facts]` is visible. If no such fixture exists, say
+   `/stay-fees/<id>` in Chromium, add `test_0955_fee_page_shot` there-alike in the new file
+   `test_0955_guest_details_browser.py` using that fixture, with a guest that has a birth date, at 390/768/1280 and
+   `shot(page, f"0955-fee-{width}")`, asserting `[data-fee-guest-facts]` is visible. If no such fixture exists, say
    so in the report and skip the fee screenshots (do not build a new fixture).
 
 ## 5. Do not touch
@@ -265,10 +265,10 @@ Add to `App/tests/test_0910_calendar_toolbar_stable_browser.py`:
 
 ```
 export PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=1
-.venv/bin/python -m pytest tests/test_0910_calendar_toolbar_stable_browser.py -q --tb=short -x 2>&1 | tail -30
+.venv/bin/python -m pytest tests/test_0955_calendar_toolbar_stable_browser.py -q --tb=short -x 2>&1 | tail -30
 .venv/bin/python -m pytest tests/test_dashboard_calendar_browser.py tests/test_0905_cleaning_calendar_stays_browser.py tests/test_0898_calendar_names_browser.py -q --tb=short 2>&1 | tail -30
 .venv/bin/python -m pytest tests/test_dashboard_calendar.py tests/test_calendar_*.py tests/test_sample_calendar.py -q --tb=short 2>&1 | tail -30
-.venv/bin/python -m pytest tests/test_0910_guest_details_browser.py -q --tb=short -x 2>&1 | tail -30
+.venv/bin/python -m pytest tests/test_0955_guest_details_browser.py -q --tb=short -x 2>&1 | tail -30
 .venv/bin/python -m pytest tests/test_stay_fee*.py -q --tb=short -x 2>&1 | tail -30
 .venv/bin/python -m pytest tests/test_host_*.py tests/test_host_geometry.py tests/test_design_guardrails_browser.py -q --tb=short 2>&1 | tail -30
 .venv/bin/python -m pytest tests/test_*_i18n.py tests/test_no_em_dashes.py -q --tb=short 2>&1 | tail -30
@@ -279,19 +279,19 @@ All green with **0 skipped** in the browser files. If an existing test asserts t
 `data-cal-today` in `App/tests/`), update only that assertion and say so in the report. From the repo root:
 `python3 scripts/context_lint.py`.
 
-Screenshots: rerun test 3 with `UBYHOST_SHOTS_DIR=/tmp/0910-shots`, plus one 390 px shot (any existing 390 calendar
+Screenshots: rerun test 3 with `UBYHOST_SHOTS_DIR=/tmp/0955-shots`, plus one 390 px shot (any existing 390 calendar
 test with the same env var, e.g. `-k "0891 and 390"`). Open the 390, 768, 1024 and 1280 shots and write per width
 in the PR what you saw (Today left of the arrows with a clear gap; arrows side by side; filters on row 2; title not
-clipped in Month). Copy them into `docs/tasks/screenshots-0910/`.
-Also rerun `tests/test_0910_guest_details_browser.py` with the same env var and open the `0910-stay-*` and
-`0910-fee-*` shots (390, 768, 1280): per page and width, write in the PR whether the id line sits under the name on
+clipped in Month). Copy them into `docs/tasks/screenshots-0955/`.
+Also rerun `tests/test_0955_guest_details_browser.py` with the same env var and open the `0955-stay-*` and
+`0955-fee-*` shots (390, 768, 1280): per page and width, write in the PR whether the id line sits under the name on
 its own line, is readable, and keeps 12 px from its neighbours.
 
 ### Step 5: PR
 
 PR body: link this brief, the per-width UX notes, and the ticked checklist from `docs/design/design-system.md`
 (copy its checklist lines; only the items this change touches need prose). Merge only with
-`scripts/merge-pr-on-green.sh`. Write `docs/tasks/0910-report.md` (what changed, test output tails, screenshot paths).
+`scripts/merge-pr-on-green.sh`. Write `docs/tasks/0955-report.md` (what changed, test output tails, screenshot paths).
 
 ### Done when
 
@@ -308,7 +308,7 @@ PR body: link this brief, the per-width UX notes, and the ticked checklist from 
 
 ## 7. Acceptance
 
-The "Done when" list in section 6 is the acceptance list. Each item is ticked in `docs/tasks/0910-report.md` with the command output that proves it.
+The "Done when" list in section 6 is the acceptance list. Each item is ticked in `docs/tasks/0955-report.md` with the command output that proves it.
 
 ## 8. Stop and ask
 
@@ -316,4 +316,4 @@ Stop and ask the owner (do not guess) when: a step's anchor text is not found; a
 
 ## 9. Report
 
-Write `docs/tasks/0910-report.md` (600 tokens at most) as set out in `docs/context/executor.md`. Set `Status: review` or `Status: blocked`.
+Write `docs/tasks/0955-report.md` (600 tokens at most) as set out in `docs/context/executor.md`. Set `Status: review` or `Status: blocked`.

@@ -132,7 +132,7 @@
       else localStorage.setItem(preferencesKey, displaySettings);
     } catch (_) { /* Optional. */ }
   }
-  // 0911: Gantt only for 3+ properties and never while one property is picked (Josef, 2026-11-04).
+  // 0956: Gantt only for 3+ properties and never while one property is picked (Josef, 2026-11-04).
   function ganttAllowed() { return !state.property && state.properties.length >= 3; }
   function view() { return phoneDots() || !ganttAllowed() ? "calendar" : autoView(state.mode, state.properties.length); }
   function range() {
@@ -226,7 +226,7 @@
       labels.overdue + " · " + labels.status_failed : labels.overdue;
     return labels["status_" + event.status] || labels.booked;
   }
-  // 0911: one tone per property, by position among the active properties sorted by id (design palette, no coral/green/amber).
+  // 0956: one tone per property, by position among the active properties sorted by id (design palette, no coral/green/amber).
   const PROPERTY_TONES = ["teal", "blue", "purple", "indigo", "ink"];
   const toneIndex = new Map(properties.map(item => Number(item.id)).sort((a, b) => a - b).map((id, index) => [String(id), index]));
   function propertyColor(id) { const index = toneIndex.get(String(Number(id))); return PROPERTY_TONES[(index === undefined ? Math.abs(Number(id)) : index) % PROPERTY_TONES.length]; }

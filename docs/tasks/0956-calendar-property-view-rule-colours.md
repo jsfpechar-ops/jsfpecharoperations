@@ -1,9 +1,9 @@
-# 0911: Calendar view rule (Gantt only for 3+ properties, never for one) and one colour per property; stay bars no longer cover cleaning chips
+# 0956: Calendar view rule (Gantt only for 3+ properties, never for one) and one colour per property; stay bars no longer cover cleaning chips
 
 Status: todo
-Depends on: 0910 (same files). Start only when `docs/tasks/0910-report.md` says `Status: review` and
+Depends on: 0955 (same files). Start only when `docs/tasks/0955-report.md` says `Status: review` and
 `git status --short App/` lists no changed file from section 3. Otherwise stop and ask.
-Branch: the current branch, on top of the 0910 commits (do not create one, do not rebase).
+Branch: the current branch, on top of the 0955 commits (do not create one, do not rebase).
 Executor: Haiku 5.5. Read only AGENTS.md, docs/context/executor.md, this brief and the files named here.
 Fits one session: 30 tool calls, 60k tokens. If not done by then, commit, write the report with `Status: blocked`.
 
@@ -101,7 +101,7 @@ You may change only: `App/app/static/dashboard-calendar.js`, `App/app/static/das
 min-height rule at line ~2219 and its cache key if the static-versions test asks), the template(s) that
 `tests/test_static_versions.py` names for the bumped keys, its manifest (via `--write`),
 `App/tests/test_dashboard_calendar_browser.py` (only the lines named in Step A4), the new
-`App/tests/test_0911_calendar_rule_colours_browser.py`, `docs/tasks/0911-report.md`, `docs/tasks/screenshots-0911/`.
+`App/tests/test_0956_calendar_rule_colours_browser.py`, `docs/tasks/0956-report.md`, `docs/tasks/screenshots-0956/`.
 
 ## 4. Steps
 
@@ -109,7 +109,7 @@ min-height rule at line ~2219 and its cache key if the static-versions test asks
 
 1. Directly above `function view()` add:
    ```js
-   // 0911: Gantt only for 3+ properties and never while one property is picked (Josef, 2026-11-04).
+   // 0956: Gantt only for 3+ properties and never while one property is picked (Josef, 2026-11-04).
    function ganttAllowed() { return !state.property && state.properties.length >= 3; }
    ```
    and change `view()` to:
@@ -124,7 +124,7 @@ min-height rule at line ~2219 and its cache key if the static-versions test asks
    $("[data-cal-auto]").closest(".cal-setting").hidden = !ganttAllowed();
    ```
    (Auto only switches between Calendar and Gantt, so it is pointless when Gantt is not offered.)
-3. CSS (`dashboard-calendar.css`, end of file, new block with the comment `/* 0911: view rule */`):
+3. CSS (`dashboard-calendar.css`, end of file, new block with the comment `/* 0956: view rule */`):
    ```css
    .dashboard-calendar :is(.cal-view-segment, .cal-setting)[hidden] { display:none !important; }
    ```
@@ -135,7 +135,7 @@ min-height rule at line ~2219 and its cache key if the static-versions test asks
 
 1. Replace `propertyColor` (line ~224) with:
    ```js
-   // 0911: one tone per property, by position among the active properties sorted by id (design palette, no coral/green/amber).
+   // 0956: one tone per property, by position among the active properties sorted by id (design palette, no coral/green/amber).
    const PROPERTY_TONES = ["teal", "blue", "purple", "indigo", "ink"];
    const toneIndex = new Map(properties.map(item => Number(item.id)).sort((a, b) => a - b).map((id, index) => [String(id), index]));
    function propertyColor(id) { const index = toneIndex.get(String(Number(id))); return PROPERTY_TONES[(index === undefined ? Math.abs(Number(id)) : index) % PROPERTY_TONES.length]; }
@@ -145,7 +145,7 @@ min-height rule at line ~2219 and its cache key if the static-versions test asks
    `pill.dataset.calColor = propertyColor(event.propertyId); pill.dataset.calPropertyId = String(event.propertyId);`.
 3. In `fillProperties(select, all)`, at the end, when `all` is true:
    `if (select.value) select.dataset.calColor = propertyColor(select.value); else delete select.dataset.calColor;`.
-4. CSS (same `0911` block):
+4. CSS (same `0956` block):
    ```css
    [data-cal-color="indigo"] { --cal-ink:var(--indigo); --cal-fill:var(--indigo-bg); }
    [data-cal-color="ink"] { --cal-ink:var(--ink); --cal-fill:var(--surface-2); }
@@ -157,7 +157,7 @@ min-height rule at line ~2219 and its cache key if the static-versions test asks
    cleaning page (`app2.css` ~2225) take the colour from the same `background` rule: check it is not overridden
    (grep `cal-pill` in `app2.css`; if a `background` is set there, report it, do not edit it).
 5. Select dot: grep the select's existing `background-image` (`grep -n "select" App/app/static/app2.css App/app/static/tokens.css | grep -n "background-image\|appearance"`).
-   Add to the 0911 block a rule for `.dashboard-calendar select[data-cal-property][data-cal-color]` with
+   Add to the 0956 block a rule for `.dashboard-calendar select[data-cal-property][data-cal-color]` with
    `padding-left:32px` and a 10 px dot drawn as the **first** background layer:
    `radial-gradient(circle at 16px 50%, var(--cal-ink) 0 5px, transparent 5.5px)`, followed by the existing chevron
    layer copied exactly (with matching comma lists for `background-position`, `background-size`, `background-repeat`).
@@ -166,7 +166,7 @@ min-height rule at line ~2219 and its cache key if the static-versions test asks
 
 ### Part B: bars on top, chips below (cleaning page, >= 768 px only)
 
-1. In `dashboard-calendar.css`, 0911 block, inside `@media (min-width:768px) { ... }`:
+1. In `dashboard-calendar.css`, 0956 block, inside `@media (min-width:768px) { ... }`:
    ```css
    body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-week.is-dots { --cal-num-band:52px; --cal-lane:44px; }
    body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-pills { align-content:start; padding-top:var(--cal-num-band); padding-bottom:0; }
@@ -181,7 +181,7 @@ min-height rule at line ~2219 and its cache key if the static-versions test asks
    The "+N" text (`.cal-tile-more`) under two chips may add 16 px: if the B3 test shows it outside the tile, add
    `16px` to that calc and report it.
 3. Keep `pillRow()` and the 0930 half-day columns untouched; the bar end point does not change.
-4. Bump the `?v=` keys of every changed static file to `20261105-0911` (`_dashboard_calendar.html` lines 2 and
+4. Bump the `?v=` keys of every changed static file to `20261105-0956` (`_dashboard_calendar.html` lines 2 and
    ~173; app2.css where `tests/test_static_versions.py` says), then from `App/`:
    `.venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -30`.
 
@@ -200,7 +200,7 @@ min-height rule at line ~2219 and its cache key if the static-versions test asks
 Change nothing else in that file. If another existing test fails on the old Gantt-for-one behaviour or on the
 `#222` bar colour, change only that assertion and list it in the report.
 
-### Part C: new test `App/tests/test_0911_calendar_rule_colours_browser.py`
+### Part C: new test `App/tests/test_0956_calendar_rule_colours_browser.py`
 
 Imports: copy the top imports of `App/tests/test_dashboard_calendar_browser.py`; add
 `from tests.test_dashboard_calendar_browser import calendar_origin, launch, open_page, wait_loaded, shot  # noqa: F401`,
@@ -209,37 +209,37 @@ Imports: copy the top imports of `App/tests/test_dashboard_calendar_browser.py`;
 `_browser_session_cookie, base  # noqa: F401`. For the 2-property host open pages like the 0905 test does (cookie
 for `_seed()`'s username, `base + path`). Every test ends with `context.close(); browser.close()`.
 
-1. `test_0911_one_property_shows_only_the_calendar` parametrized `path` in `["/", "/cleaning"]`, `width` in `[768, 1280]`
+1. `test_0956_one_property_shows_only_the_calendar` parametrized `path` in `["/", "/cleaning"]`, `width` in `[768, 1280]`
    (3-property workspace): goto `f"{calendar_origin}{path}?lang=en&cal_view=gantt&cal_date=2026-10-01"`; assert
    `.cal-gantt-row` count 3 and `.cal-view-segment` visible. Select `properties[0]`: wait for `.cal-week`; assert
    `.cal-gantt-row` count 0, segment not visible. Reload with `&cal_property=<id>` added: `.cal-week`, segment hidden.
    Select `""`: Gantt rows 3 again, segment visible.
-2. `test_0911_under_three_properties_never_offers_gantt` parametrized `path` in `["/", "/cleaning"]`, `width` in
+2. `test_0956_under_three_properties_never_offers_gantt` parametrized `path` in `["/", "/cleaning"]`, `width` in
    `[768, 1280]` (2-property `_seed()` host): goto `{path}?lang=en&cal_view=gantt&cal_date=2026-11-03`; assert
    `.cal-week` present, `.cal-gantt-row` count 0, `.cal-view-segment` not visible; open `[data-cal-settings]` and
    assert the `[data-cal-auto]` row is not visible.
-3. `test_0911_each_property_has_one_colour_everywhere` width 1280, 3-property workspace, `/`:
+3. `test_0956_each_property_has_one_colour_everywhere` width 1280, 3-property workspace, `/`:
    in Gantt read `{name: getComputedStyle(el, '::before').backgroundColor}` of `.cal-gantt-name[data-cal-color]`
    (rows only, not the header); assert 3 distinct colours and none equals amber `rgb(138, 82, 0)` or the cleaning
    chip background. Click `[data-cal-view="calendar"]`; for each `.cal-pill` assert its `backgroundColor` equals the
    Gantt colour of its property (map via `data-cal-property-id` and the property names in
    `[data-cal-properties]`) and its text colour is `rgb(255, 255, 255)`. Select `properties[1]`: assert the
-   select's computed `backgroundImage` contains `radial-gradient` and that property's colour. `shot(page, "0911-colours-1280")`.
-4. `test_0911_bars_never_cover_cleaning_chips` parametrized `width` in `[768, 1024, 1280]` (`_seed()` host,
+   select's computed `backgroundImage` contains `radial-gradient` and that property's colour. `shot(page, "0956-colours-1280")`.
+4. `test_0956_bars_never_cover_cleaning_chips` parametrized `width` in `[768, 1024, 1280]` (`_seed()` host,
    `/cleaning?lang=en&cal_date=2026-11-03`, wait `.cal-week`, `wait_loaded`). In the week row containing
    `[data-date="2026-11-08"]`: tile `t` = that day; chips = `t.locator(".cal-clean-chip")` (expect 2, both visible);
    pills = the row's `.cal-pill` (expect 2). With `g = parseFloat(getComputedStyle(row .cal-pills).columnGap)`:
    - each pill: `right <= t.x + t.width/2 - g/2 + 1` (0930 end) and `bottom <= row bottom`;
    - no pill box intersects any chip box; each chip `top >= max(pill bottoms) + 7`; each chip `bottom <= t bottom - 11`;
    - `document.elementFromPoint` at each chip's centre is the chip or inside it.
-   `shot(page, f"0911-cleaning-{width}")`.
-5. `test_0911_phone_cleaning_tiles_unchanged` width 390, same page: assert the two thin bars are visible, each
-   `<= 10` px high, and none intersects a `.cal-clean-tag` box in the 8 Nov tile. `shot(page, "0911-cleaning-390")`.
+   `shot(page, f"0956-cleaning-{width}")`.
+5. `test_0956_phone_cleaning_tiles_unchanged` width 390, same page: assert the two thin bars are visible, each
+   `<= 10` px high, and none intersects a `.cal-clean-tag` box in the 8 Nov tile. `shot(page, "0956-cleaning-390")`.
    If it fails before any Part B change too, stop and ask (phone is out of scope).
 
 ## 5. Do not touch
 
-- The 0910 toolbar grid rules, the 0930 half-day columns and lane logic in `pillRow()`, the "+N" button.
+- The 0955 toolbar grid rules, the 0930 half-day columns and lane logic in `pillRow()`, the "+N" button.
 - The phone (`max-width:767px`) cleaning rules in `app2.css`, the dashboard phone dots' layout, the list view layout.
 - `tokens.css` and `host2.css` `--property-*` tokens (used elsewhere; the calendar keeps its own `data-cal-color` map).
 - i18n files: no new key and no copy change. URL handling, history, preferences format.
@@ -250,21 +250,21 @@ for `_seed()`'s username, `base + path`). Every test ends with `context.close();
 From `App/` (Chromium is at /opt/pw-browsers):
 ```
 export PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_REQUIRE_BROWSER=1
-.venv/bin/python -m pytest tests/test_0911_calendar_rule_colours_browser.py -q --tb=short -x -rs 2>&1 | tail -30
-.venv/bin/python -m pytest tests/test_dashboard_calendar_browser.py tests/test_0905_cleaning_calendar_stays_browser.py tests/test_0910_calendar_toolbar_stable_browser.py tests/test_0898_calendar_names_browser.py tests/test_cleaning_browser.py -q --tb=short -rs 2>&1 | tail -30
+.venv/bin/python -m pytest tests/test_0956_calendar_rule_colours_browser.py -q --tb=short -x -rs 2>&1 | tail -30
+.venv/bin/python -m pytest tests/test_dashboard_calendar_browser.py tests/test_0905_cleaning_calendar_stays_browser.py tests/test_0955_calendar_toolbar_stable_browser.py tests/test_0898_calendar_names_browser.py tests/test_cleaning_browser.py -q --tb=short -rs 2>&1 | tail -30
 .venv/bin/python -m pytest tests/test_dashboard_calendar.py tests/test_calendar_*.py tests/test_sample_calendar.py tests/test_cleaning.py tests/test_design_cleaning.py tests/test_static_versions.py -q --tb=short 2>&1 | tail -30
 .venv/bin/python -m pytest tests/test_layout_lint_browser.py -q --tb=short -rs 2>&1 | tail -30
 ```
 All green, **0 skipped** in every browser file. Before Part B, run test 4 once and paste its failure (the
 reproduction) into the report. From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`.
 
-Screenshots: rerun the new file with `UBYHOST_SHOTS_DIR=/tmp/0911-shots`, plus `-k "0891 and (390 or 768)"` from
+Screenshots: rerun the new file with `UBYHOST_SHOTS_DIR=/tmp/0956-shots`, plus `-k "0891 and (390 or 768)"` from
 `test_dashboard_calendar_browser.py` with the same variable for the dashboard at 390/768. Open every shot
 (390, 768, 1024, 1280 for `/cleaning`; 390, 768, 1280 for `/`) and write per page and width what you saw: bar
 colours differ per property and match the Gantt dots; no Gantt toggle when one property is picked; on 8 Nov both
-cleaning chips readable under the bars, 12 px from neighbours; nothing clipped. Copy them to `docs/tasks/screenshots-0911/`.
+cleaning chips readable under the bars, 12 px from neighbours; nothing clipped. Copy them to `docs/tasks/screenshots-0956/`.
 
-Commit on the current branch: `0911: Gantt only for 3+ properties, one colour per property, chips under stay bars`.
+Commit on the current branch: `0956: Gantt only for 3+ properties, one colour per property, chips under stay bars`.
 Do not push, do not open a PR (the orchestrator does, after review).
 
 ## 7. Acceptance
@@ -280,12 +280,12 @@ Do not push, do not open a PR (the orchestrator does, after review).
 
 ## 8. Stop and ask
 
-Stop and ask (do not guess) when: 0910 is not committed (header); an anchor or line named here is not found; a
+Stop and ask (do not guess) when: 0955 is not committed (header); an anchor or line named here is not found; a
 test fails twice after one fix; a browser test is skipped; a screenshot shows a layout problem this brief does not
 cover; a change would touch a file not in section 3; the phone test fails before your change.
 
 ## 9. Report
 
-Write `docs/tasks/0911-report.md` (600 tokens at most) as set out in `docs/context/executor.md`: what changed per
+Write `docs/tasks/0956-report.md` (600 tokens at most) as set out in `docs/context/executor.md`: what changed per
 part, the Part B reproduction and final `calc` values, every existing assertion you changed, test output tails,
 screenshot paths with one line each. Set `Status: review` or `Status: blocked`.

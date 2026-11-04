@@ -1,4 +1,4 @@
-"""0911: Gantt only for 3+ properties, one colour per property, cleaning chips under stay bars."""
+"""0956: Gantt only for 3+ properties, one colour per property, cleaning chips under stay bars."""
 from __future__ import annotations
 
 import json
@@ -37,7 +37,7 @@ def _seed_page(browser, base_url, username, width):
 
 @pytest.mark.parametrize("path", ["/", "/cleaning"])
 @pytest.mark.parametrize("width", [768, 1280])
-def test_0911_one_property_shows_only_the_calendar(calendar_workspace, calendar_origin, path, width):
+def test_0956_one_property_shows_only_the_calendar(calendar_workspace, calendar_origin, path, width):
     with sync_api.sync_playwright() as playwright:
         browser = launch(playwright)
         context, page = _workspace_page(browser, calendar_workspace, calendar_origin, width)
@@ -54,7 +54,7 @@ def test_0911_one_property_shows_only_the_calendar(calendar_workspace, calendar_
         page.wait_for_selector(".cal-week")
         assert page.locator(".cal-gantt-row").count() == 0
         assert not page.locator(".cal-view-segment").is_visible()
-        shot(page, f"0911-one-property-{path.strip('/') or 'home'}-{width}")
+        shot(page, f"0956-one-property-{path.strip('/') or 'home'}-{width}")
         page.locator("[data-cal-property]").select_option("")
         page.wait_for_function("() => document.querySelectorAll('.cal-gantt-row').length === 3")
         assert page.locator(".cal-view-segment").is_visible()
@@ -64,7 +64,7 @@ def test_0911_one_property_shows_only_the_calendar(calendar_workspace, calendar_
 
 @pytest.mark.parametrize("path", ["/", "/cleaning"])
 @pytest.mark.parametrize("width", [768, 1280])
-def test_0911_under_three_properties_never_offers_gantt(base, path, width):  # noqa: F811
+def test_0956_under_three_properties_never_offers_gantt(base, path, width):  # noqa: F811
     username = _seed()
     with sync_api.sync_playwright() as playwright:
         browser = launch(playwright)
@@ -79,7 +79,7 @@ def test_0911_under_three_properties_never_offers_gantt(base, path, width):  # n
         browser.close()
 
 
-def test_0911_each_property_has_one_colour_everywhere(calendar_workspace, calendar_origin):
+def test_0956_each_property_has_one_colour_everywhere(calendar_workspace, calendar_origin):
     with sync_api.sync_playwright() as playwright:
         browser = launch(playwright)
         context, page = _workspace_page(browser, calendar_workspace, calendar_origin, 1280)
@@ -109,13 +109,13 @@ def test_0911_each_property_has_one_colour_everywhere(calendar_workspace, calend
         page.wait_for_selector(".cal-week")
         assert "radial-gradient" in select.evaluate("el => getComputedStyle(el).backgroundImage")
         assert select.get_attribute("data-cal-color") in TONES
-        shot(page, "0911-colours-1280")
+        shot(page, "0956-colours-1280")
         context.close()
         browser.close()
 
 
 @pytest.mark.parametrize("width", [768, 1024, 1280])
-def test_0911_bars_never_cover_cleaning_chips(base, width):  # noqa: F811
+def test_0956_bars_never_cover_cleaning_chips(base, width):  # noqa: F811
     username = _seed()
     with sync_api.sync_playwright() as playwright:
         browser = launch(playwright)
@@ -149,12 +149,12 @@ def test_0911_bars_never_cover_cleaning_chips(base, width):  # noqa: F811
             # .cal-tile-chips is pointer-events:none by design, so the hit is the day button under the chip; it must not be a pill.
             hit = page.evaluate("([x, y]) => { const e = document.elementFromPoint(x, y); return !!e && !e.closest('.cal-pill') && !!e.closest('[data-cal-day=\"2026-11-08\"]'); }", [cx, cy])
             assert hit
-        shot(page, f"0911-cleaning-{width}")
+        shot(page, f"0956-cleaning-{width}")
         context.close()
         browser.close()
 
 
-def test_0911_phone_cleaning_tiles_unchanged(base):  # noqa: F811
+def test_0956_phone_cleaning_tiles_unchanged(base):  # noqa: F811
     username = _seed()
     with sync_api.sync_playwright() as playwright:
         browser = launch(playwright)
@@ -176,6 +176,6 @@ def test_0911_phone_cleaning_tiles_unchanged(base):  # noqa: F811
                 overlap = not (tag_box["x"] + tag_box["width"] <= box["x"] or box["x"] + box["width"] <= tag_box["x"]
                                or tag_box["y"] + tag_box["height"] <= box["y"] or box["y"] + box["height"] <= tag_box["y"])
                 assert not overlap
-        shot(page, "0911-cleaning-390")
+        shot(page, "0956-cleaning-390")
         context.close()
         browser.close()

@@ -531,7 +531,7 @@ def test_detail_heading_uses_the_host_language(host):
 
 
 def test_guest_line_shows_birth_date_age_and_nationality(host):
-    # 0910 Part B: display only. The guest facts are read in the route, not stored on the period line.
+    # 0955 Part B: display only. The guest facts are read in the route, not stored on the period line.
     from app import stay_fee
 
     client, owner_id, entity_id = host
