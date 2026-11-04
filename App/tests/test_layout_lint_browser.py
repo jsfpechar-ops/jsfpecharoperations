@@ -58,6 +58,7 @@ ALLOW[("automation", "multiple-save-in-form")] = 'button.btn "Save changes" x2 i
 EXTRA_ROUTES = {
     "property-bookings": "/apartments/{configured_apartment}?view=bookings",
     "property-bookings-empty": "/apartments/{unconfigured_apartment}?view=bookings",
+    "stay-fees": "/stay-fees",
 }
 # Rules checked inside opened accordions (the older rules already cover each page closed).
 OPEN_RULES = {"table-squeezed", "tight-stack", "tight-side", "half-width-input", "legend-overlap",
@@ -70,8 +71,7 @@ def _out_dir() -> Path:
     return Path(base) / "layout-lint" if base else Path("/tmp/ubyhost-layout-lint")
 
 
-def test_every_host_page_passes_the_layout_lint(wide_host, wide_base):
-    cookie = wide_host["cookie"]
+def _route_map(wide_host):
     subst = dict(
         invoice_id=wide_host["invoice"], entity_id=wide_host["entity"],
         reservation_id=wide_host["reservations"][0], submission_id=wide_host["submission"],
@@ -81,6 +81,12 @@ def test_every_host_page_passes_the_layout_lint(wide_host, wide_base):
         today=wide_host["today"], housebook_end=wide_host["housebook_end"],
     )
     routes = {key: path.format(**subst) for key, path in {**ROUTES, **EXTRA_ROUTES}.items()}
+    return routes
+
+
+def test_every_host_page_passes_the_layout_lint(wide_host, wide_base):
+    cookie = wide_host["cookie"]
+    routes = _route_map(wide_host)
     now = db.utcnow()
     for apartment_id in (wide_host["configured_apartment"], wide_host["unconfigured_apartment"]):
         for label, url in (
@@ -240,6 +246,98 @@ def test_the_lint_catches_the_known_regressions(wide_base):
     assert "header-actions-misaligned" in header_rules, f"lint missed header-actions-misaligned; saw {sorted(header_rules)}"
     # The "?" under its heading is caught; the one right after its label is not.
     assert len(stranded) == 1 and "Guest form access" not in stranded[0][1], stranded
+
+
+HELP_BOX_JS = """() => {
+  const pick = [
+    '.help-tip.is-open > .help-tip-body',
+    'details.page-help[open] > .page-help-body',
+    'details.ui-how[open] .ui-how-body',
+  ];
+  for (const sel of pick) {
+    for (const el of document.querySelectorAll(sel)) {
+      const cs = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
+      if (!r.width || cs.position === 'static') continue;
+      return {sel, left: r.left, right: r.right, width: r.width, vw: document.documentElement.clientWidth};
+    }
+  }
+  return null;
+}"""
+
+
+HELP_FIT_JS = """() => {
+  const pick = [
+    '.help-tip.is-open > .help-tip-body',
+    'details.page-help[open] > .page-help-body',
+    'details.ui-how[open] .ui-how-body',
+  ];
+  for (const sel of pick) {
+    for (const el of document.querySelectorAll(sel)) {
+      const cs = getComputedStyle(el);
+      if (!el.getBoundingClientRect().width || cs.position === 'static') continue;
+      el.scrollIntoView({block: 'center'});
+      const b = el.getBoundingClientRect();
+      const links = el.querySelectorAll('a[href]');
+      const last = links.length ? links[links.length - 1] : el;
+      const l = last.getBoundingClientRect();
+      const vw = document.documentElement.clientWidth;
+      const vh = window.innerHeight;
+      const top = document.elementFromPoint(l.left + l.width / 2, l.top + l.height / 2);
+      const hit = !!top && (top === last || last.contains(top) || el.contains(top));
+      const inside = l.left >= 0 && l.right <= vw && l.top >= 0 && l.bottom <= vh && b.top >= 0 && b.bottom <= vh;
+      return {sel, width: b.width, left: b.left, right: b.right, top: b.top, bottom: b.bottom,
+              last_bottom: l.bottom, inside, hit, vw, vh};
+    }
+  }
+  return null;
+}"""
+
+
+def test_opened_help_stays_inside_the_viewport(wide_host, wide_base):
+    """0912b: an opened page "?" or "?" tooltip keeps a 16 px gutter at 320 and 390 px (never exceeds 360 px),
+    is at least min(360, viewport - 32) - 2 px wide, and its last link is visible after scrolling (not under a fixed bar)."""
+    routes = _route_map(wide_host)
+    bad: list[str] = []
+    with sync_api.sync_playwright() as playwright:
+        try:
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        except Exception:
+            if REQUIRE_BROWSER:
+                raise
+            pytest.skip("Chromium is required for the help-fit check")
+        for width in (320, 390):
+            context = browser.new_context(viewport={"width": width, "height": 800})
+            context.add_cookies([{"name": auth.SESSION_COOKIE, "value": wide_host["cookie"], "url": wide_base + "/"}])
+            page = context.new_page()
+            for name, path in routes.items():
+                sep = "&" if "?" in path else "?"
+                page.goto(f"{wide_base}{path}{sep}lang=en")
+                _wait_for_host_layout(page)
+                _dismiss_optional_security_prompt(page)
+                triggers = page.locator("details.page-help > summary, details.stays-how > summary, .help-tip-btn")
+                for i in range(min(triggers.count(), 12)):
+                    trigger = triggers.nth(i)
+                    if not trigger.is_visible():
+                        continue
+                    trigger.scroll_into_view_if_needed()
+                    trigger.click()
+                    page.wait_for_timeout(120)
+                    box = page.evaluate(HELP_BOX_JS)
+                    if box and (box["left"] < 15.5 or box["right"] > box["vw"] - 15.5 or box["width"] > 360.5):
+                        bad.append(f"{name}@{width} trigger {i}: {box}")
+                    if box:
+                        fit = page.evaluate(HELP_FIT_JS)
+                        need = min(360, width - 32) - 2
+                        if not fit or fit["width"] < need:
+                            bad.append(f"{name}@{width} trigger {i}: too narrow, need >= {need} px: {fit}")
+                        elif not fit["inside"] or not fit["hit"]:
+                            bad.append(f"{name}@{width} trigger {i}: last link cut off or covered after scroll: {fit}")
+                    page.keyboard.press("Escape")
+                    page.evaluate("document.querySelectorAll('details[open].page-help, details[open].ui-how').forEach(d => { d.open = false; })")
+            context.close()
+        browser.close()
+    assert not bad, "opened help leaves the 16 px gutter:\n" + "\n".join(bad[:15])
 
 
 FINISH_SHOTS = Path("/mnt/project-files/dashboard-finish")

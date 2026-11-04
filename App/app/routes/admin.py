@@ -1784,6 +1784,10 @@ async def apartment_create(request: Request):
         )
     _apply_police_defaults(payload, access.entities(request))
     payload.pop("_stay_fee_account_raw", None)
+    # 0897: an invalid Revolut link is cleared on create (the create form does not show the block).
+    guest_link = payload.pop(stay_fee_routes.GUEST_LINK_RAW, None)
+    if guest_link and not stay_fee_routes.revolut_link_ok(guest_link):
+        payload["stay_fee_guest_revolut_link"] = None
     if not payload["guest_message"].strip():
         payload["guest_message"] = _host_text(request, "apartment.form.guest_message.default")
     payload["permalink_token"] = auth.new_permalink_token()
@@ -2207,7 +2211,7 @@ def _refuse_apartment_save(
     )
 
 
-def refuse_fee_save(request: Request, apartment: Dict[str, Any], form):
+def refuse_fee_save(request: Request, apartment: Dict[str, Any], form, link_error: bool = False):
     """0077: show the one fee editor again with what the host typed and the error.
 
     Used by the property save; nothing is written.
@@ -2224,6 +2228,7 @@ def refuse_fee_save(request: Request, apartment: Dict[str, Any], form):
             draft[key] = submitted[key]
     fee_draft = stay_fee_routes.fee_form_values(form)
     fee_draft.pop(stay_fee_routes.FEE_ACCOUNT_RAW, None)
+    fee_draft.pop(stay_fee_routes.GUEST_LINK_RAW, None)
     account_draft = stay_fee_routes.fee_account_draft(form)
     draft.update(fee_draft)
     if "stay_fee_council_account" in form:
@@ -2238,7 +2243,8 @@ def refuse_fee_save(request: Request, apartment: Dict[str, Any], form):
             extra={
                 "draft": draft,
                 "fee_account": account_draft,
-                "fee_account_error": True,
+                "fee_account_error": not link_error,
+                "fee_link_error": link_error,
             },
             status_code=400,
         )
@@ -2258,8 +2264,12 @@ def refuse_fee_save(request: Request, apartment: Dict[str, Any], form):
             "property_view": "settings",
             "settings_section": "reporting",
             "account": account_draft,
-            "fee_account_error": True,
-            "flash_error": _flash(request, "flash.stay_fees.account_invalid"),
+            "fee_account_error": not link_error,
+            "fee_link_error": link_error,
+            "flash_error": _flash(
+                request,
+                "flash.stay_fees.link_invalid" if link_error else "flash.stay_fees.account_invalid",
+            ),
             "fee_return_to": stay_fee_routes.fee_return_path(
                 _form_str(form, "fee_return_to"), apartment["id"]
             ),
@@ -2681,8 +2691,9 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
     if setup_step in ("", "stay_fee"):
         try:
             stay_fee_routes.apply_fee_account(payload)
-        except ValueError:
-            return refuse_fee_save(request, apartment, form), False
+        except ValueError as exc:
+            link_error = str(exc) == stay_fee_routes.GUEST_LINK_INVALID
+            return refuse_fee_save(request, apartment, form, link_error), False
     # AR-18: the refused-login pause exists so the police account is not
     # hammered every ten minutes. Only replacing the credentials may lift it;
     # renaming the property or moving the PIN must not resume the retries.

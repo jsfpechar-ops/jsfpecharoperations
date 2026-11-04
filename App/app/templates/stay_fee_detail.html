@@ -1,7 +1,7 @@
 {% extends "host_page.html" %}
 {% set nav = 'stay_fees' %}
 {% set body_kind = 'detail' %}
-{% from "_components.html" import copy_button, field_label with context %}
+{% from "_components.html" import copy_button, field_label, help_tip with context %}
 {# The header branches below are exclusive: Download PDF (frozen) or Save period is the one coral button. #}
 {% set cta = 'ui-btn ui-btn-primary' %}
 {% block title %}{{ apartment.internal_name }} ({{ ui_period }}){% endblock %}
@@ -224,6 +224,9 @@
           <span class="fee-amount">{{ line.amount_display }}</span>
           {% if line.local_hint %}
             <div class="ui-sub fee-hint">{{ t('stay_fees.hint.local_resident') }}</div>
+          {% endif %}
+          {% if line.obec_resident %}
+            <div class="ui-sub">{{ t('stay_fees.label.obec_resident') }} {{ help_tip('obec-' ~ line.reservation_id, t('stay_fees.hint.obec_resident')) }}</div>
           {% endif %}
           {% if line.status != 'not_subject' %}
             {{ decision_form(line, line.review) }}

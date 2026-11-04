@@ -1500,3 +1500,12 @@ details.g-summary > .g-summary-body { padding: 16px 20px 18px; }
 .g-leon-chip:hover { background: var(--g-accent-soft); }
 .g-leon-chip:focus-visible { outline: 2px solid var(--g-accent); outline-offset: 2px; }
 .g-leon-see { display: inline-block; margin-top: 8px; color: var(--g-accent); font-size: 14.5px; font-weight: 600; }
+
+/* Stay-fee money card on the hub and the form estimate (brief 0910). Tokens only. */
+.g-fee-amount { font-size: 1.9rem; letter-spacing: -0.02em; margin: 0.1rem 0 0.5rem; }
+.g-fee dd, .g-fee-estimate dd { overflow-wrap: break-word; }
+.g-fee-rail { padding: 4px 20px 18px; }
+.g-fee-choose, .g-fee-legal { margin: 16px 0 0; }
+.g-fee-qr { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+.g-fee-qr-img { display: block; width: 176px; max-width: 100%; height: auto; border: 1px solid var(--g-line); }
+.g-fee-qr .g-summary-list { flex: 1 1 180px; min-width: 0; }

@@ -1968,24 +1968,44 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     function place(tip) {
       var btn = tip.querySelector(".help-tip-btn");
       var body = tip.querySelector(".help-tip-body");
-      var margin = 8;
+      var margin = 16; /* 0912b: 16 px gutter on every side, max 360 px, so a tooltip never leaves a 320 px phone */
       var vw = document.documentElement.clientWidth;
       var vh = window.innerHeight;
       var wide = vw >= 1024;
-      if (wide) {
-        body.style.width = Math.min(320, vw - 2 * margin) + "px";
+      var width = Math.min(wide ? 320 : 360, vw - 2 * margin);
+      body.style.width = width + "px";
+      body.style.maxWidth = width + "px";
+      if (!wide) {
+        /* Phones: inline styles beat every page-level rule; the JS owns the position. */
+        body.style.position = "fixed";
+        body.style.right = "auto";
+        body.style.left = "0px";
+        body.style.top = "0px";
       } else {
-        body.style.width = "";
-        body.style.left = "";
+        body.style.position = "";
+        body.style.right = "";
       }
       var r = btn.getBoundingClientRect();
-      var w = body.offsetWidth || Math.min(320, vw - 2 * margin);
+      var w = body.offsetWidth || width;
       var h = body.offsetHeight;
       var left = tip.classList.contains("help-tip-end") ? r.right - w : r.left;
       left = Math.max(margin, Math.min(left, vw - w - margin));
-      var top = r.bottom + 6;
-      if (top + h > vh - margin && r.top - 6 - h >= margin) top = r.top - 6 - h;
-      top = Math.max(margin, Math.min(top, vh - h - margin));
+      /* 0912c: on phones the fixed tab bar covers the bottom of the screen; the visible bottom is above it. */
+      /* 0912f: the floor is the top of the lowest-starting visible fixed element that overlaps the
+         tooltip horizontally (tab bar, chat button), minus 16; the tooltip never covers its own trigger. */
+      var floorY = window.innerHeight - 16;
+      var fixedEls = document.querySelectorAll("nav.tabs, .ui-tabbar, .havel-fab");
+      for (var bi = 0; bi < fixedEls.length; bi++) {
+        var bEl = fixedEls[bi];
+        var bcs = window.getComputedStyle(bEl);
+        if (bcs.position !== "fixed" || bcs.display === "none" || bcs.visibility === "hidden" || bEl.offsetHeight <= 0) continue;
+        var br = bEl.getBoundingClientRect();
+        if (br.right <= left || br.left >= left + w) continue;
+        if (br.top - 16 < floorY) floorY = br.top - 16;
+      }
+      var top = r.bottom + 8;
+      if (top + h > floorY && r.top - 8 - h >= margin) top = r.top - 8 - h;
+      top = Math.max(margin, Math.min(top, floorY - h));
       if (wide) {
         // Desktop: the body is absolutely positioned inside .help-tip, so the viewport
         // coordinates must be made relative to its offset parent (else it drifts right).
@@ -1993,7 +2013,11 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         body.style.left = (left - ob.left) + "px";
         body.style.top = (top - ob.top) + "px";
       } else {
-        body.style.top = top + "px";
+        /* The box sits at left:0 / top:0 now, so its rect is the origin of its containing block
+           (0,0 when fixed to the viewport; non-zero inside a transformed ancestor). Correct for it. */
+        var o = body.getBoundingClientRect();
+        body.style.left = (left - o.left) + "px";
+        body.style.top = (top - o.top) + "px";
       }
     }
     function close(tip) {
@@ -2054,7 +2078,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       });
       function reflow() { if (helpTipState.current) place(helpTipState.current); }
       window.addEventListener("resize", reflow);
-      window.addEventListener("scroll", reflow, true);
+      window.addEventListener("scroll", reflow, { capture: true, passive: true });
     }
   }
 
