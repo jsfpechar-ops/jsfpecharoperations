@@ -430,50 +430,77 @@ func RetryOutcomeUnknownBatches(ctx context.Context, d SweepDeps, aptID int64) (
 	return retried, nil
 }
 
-// unknownRetryGaps are the waits, measured from the latest unanswered attempt
-// of a chain, before each automatic resend (decision 2026-11-04). After the last
-// gap the chain stops and the alert stays open for the host.
+// unknownRetryGaps are the waits, measured from the finish of the latest
+// unanswered attempt of a chain, before each automatic resend (decision
+// 2026-11-04). The fifth attempt is never resent: it gets the final notice.
 var unknownRetryGaps = []time.Duration{30 * time.Minute, 2 * time.Hour, 6 * time.Hour, 12 * time.Hour}
 
-type unknownAttempt struct {
+const (
+	// unknownChainFinal is the attempt count at which a chain stops resending.
+	unknownChainFinal = 5
+	// unknownNoticeWindow keeps the final notice inside the outbox retention.
+	unknownNoticeWindow = 24 * time.Hour
+	// unknownSupportCC is the support copy of the final notice (config.SUPPORT_EMAIL).
+	unknownSupportCC = "support@ubyhost.com"
+)
+
+// chainAttempt is one submission row of an apartment, as the chain sees it.
+type chainAttempt struct {
 	id         int64
-	finishedAt time.Time
+	mode       string
+	state      string
+	errText    string
+	finishedAt *string
 	retried    bool
-	stale      bool
 }
 
-// retryUnknownChains resends an unanswered filing when its chain is due. A chain
-// is every unknown batch of one apartment with the same guest_ids text; its
-// attempt count is the number of those batches. Any answer ends the chain,
-// because the newest batch is then no longer unknown.
+// guestSetKey is the chain key: the sorted guest ids, so the text order of
+// guest_ids never splits a chain.
+func guestSetKey(ids []int64) string {
+	sorted := append([]int64(nil), ids...)
+	for i := 1; i < len(sorted); i++ {
+		for j := i; j > 0 && sorted[j] < sorted[j-1]; j-- {
+			sorted[j], sorted[j-1] = sorted[j-1], sorted[j]
+		}
+	}
+	return fmt.Sprint(sorted)
+}
+
+// retryUnknownChains is the chain step of the sweep. A chain is the batches of
+// one apartment with the same guest set, from the newest original send (mode
+// not auto_resend) on, so a fresh host or sweep send starts a new chain. It is
+// live only while every batch in it is outcome_unknown. A due chain is resent;
+// a chain at the cap gets the final notice. It returns how many batches were
+// resent.
 func retryUnknownChains(ctx context.Context, d SweepDeps, aptID int64) (int, error) {
 	pool := d.Batch.Pool
 	rows, err := pool.Query(ctx,
-		`SELECT id, COALESCE(guest_ids, ''), finished_at, retried_at IS NOT NULL, `+
-			`COALESCE(error_text, '') = $2 FROM submission `+
-			`WHERE apartment_id = $1 AND state = 'outcome_unknown' ORDER BY id`,
-		aptID, staleSubmissionReason)
+		`SELECT id, COALESCE(guest_ids, ''), COALESCE(mode, ''), state, COALESCE(error_text, ''), `+
+			`finished_at, retried_at IS NOT NULL FROM submission WHERE apartment_id = $1 ORDER BY id`,
+		aptID)
 	if err != nil {
 		return 0, err
 	}
-	chains := map[string][]unknownAttempt{}
+	byKey := map[string][]chainAttempt{}
+	keyIDs := map[string][]int64{}
 	var order []string
 	for rows.Next() {
-		var a unknownAttempt
+		var a chainAttempt
 		var guestIDs string
-		var finished *time.Time
-		if err := rows.Scan(&a.id, &guestIDs, &finished, &a.retried, &a.stale); err != nil {
+		if err := rows.Scan(&a.id, &guestIDs, &a.mode, &a.state, &a.errText, &a.finishedAt, &a.retried); err != nil {
 			rows.Close()
 			return 0, err
 		}
-		if finished == nil {
+		ids, err := parseGuestIDs(&guestIDs)
+		if err != nil || len(ids) == 0 {
 			continue
 		}
-		a.finishedAt = *finished
-		if _, ok := chains[guestIDs]; !ok {
-			order = append(order, guestIDs)
+		key := guestSetKey(ids)
+		if _, ok := byKey[key]; !ok {
+			order = append(order, key)
+			keyIDs[key] = ids
 		}
-		chains[guestIDs] = append(chains[guestIDs], a)
+		byKey[key] = append(byKey[key], a)
 	}
 	rows.Close()
 	if err := rows.Err(); err != nil {
@@ -483,39 +510,179 @@ func retryUnknownChains(ctx context.Context, d SweepDeps, aptID int64) (int, err
 	now := sweepNow(d)()
 	retried := 0
 	for _, key := range order {
-		if key == "" {
-			continue
-		}
-		attempts := chains[key]
-		latest := attempts[0]
-		for _, a := range attempts[1:] {
-			if a.finishedAt.After(latest.finishedAt) || (a.finishedAt.Equal(latest.finishedAt) && a.id > latest.id) {
-				latest = a
+		list := byKey[key]
+		start := 0
+		for i := len(list) - 1; i >= 0; i-- {
+			if list[i].mode != autoResendMode {
+				start = i
+				break
 			}
 		}
-		// The crash path (stale batches) and answered chains are handled elsewhere.
-		if latest.stale || latest.retried || len(attempts) > len(unknownRetryGaps) {
+		chain := list[start:]
+		live := true
+		for _, a := range chain {
+			if a.state != "outcome_unknown" {
+				live = false
+				break
+			}
+		}
+		if !live {
 			continue
 		}
-		if now.Before(latest.finishedAt.Add(unknownRetryGaps[len(attempts)-1])) {
+		latest := chain[len(chain)-1]
+		// A stale original not yet resent is the crash path's batch, handled above.
+		if latest.errText == staleSubmissionReason && latest.mode != autoResendMode && !latest.retried {
 			continue
 		}
-		ids, err := parseGuestIDs(&key)
+		if latest.finishedAt == nil {
+			continue
+		}
+		finished, err := time.Parse(time.RFC3339, *latest.finishedAt)
 		if err != nil {
 			return retried, err
 		}
-		if len(ids) == 0 {
+		ids := keyIDs[key]
+		if len(chain) >= unknownChainFinal {
+			if err := unknownFinalNotice(ctx, d, aptID, latest, ids, finished, now); err != nil {
+				return retried, err
+			}
 			continue
 		}
-		if err := markBatchRetried(ctx, pool, aptID, latest.id, ids); err != nil {
+		if latest.retried || now.Before(finished.Add(unknownRetryGaps[len(chain)-1])) {
+			continue
+		}
+		ok, err := resendUnknownChain(ctx, d, aptID, latest.id, ids)
+		if err != nil {
 			return retried, err
 		}
-		if _, err := SubmitForApartment(ctx, d, aptID, CollectOptions{OnlyGuestIDs: ids}, autoResendMode); err != nil {
-			return retried, err
+		if ok {
+			retried++
 		}
-		retried++
+	}
+	if err := resolveUnknownAlert(ctx, d, aptID); err != nil {
+		return retried, err
 	}
 	return retried, nil
+}
+
+// resendUnknownChain resends a due chain's guests that are still in doubt. It
+// returns false when another worker took the batch or no guest is free.
+func resendUnknownChain(ctx context.Context, d SweepDeps, aptID, latestID int64, ids []int64) (bool, error) {
+	pool := d.Batch.Pool
+	freed, err := freeUnknownGuests(ctx, pool, aptID, latestID, ids)
+	if err != nil || len(freed) == 0 {
+		return false, err
+	}
+	yes := true
+	if _, err := SubmitForApartment(ctx, d, aptID, CollectOptions{OnlyGuestIDs: freed, IgnoreSchedule: &yes}, autoResendMode); err != nil {
+		return true, err
+	}
+	return true, repointUnknownGuests(ctx, pool, aptID, latestID, freed)
+}
+
+// freeUnknownGuests is the first step of the resend, in one transaction under
+// the apartment lock: it stamps the latest batch retried, then frees the guests
+// that still point at it and are not filed. Nothing is freed when the stamp
+// finds no batch to take.
+func freeUnknownGuests(ctx context.Context, pool *pgxpool.Pool, aptID, latestID int64, ids []int64) ([]int64, error) {
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+	if err := lockSubmitApartment(ctx, tx, aptID); err != nil {
+		return nil, err
+	}
+	tag, err := tx.Exec(ctx,
+		`UPDATE submission SET retried_at = $1 WHERE id = $2 AND retried_at IS NULL AND state = 'outcome_unknown'`,
+		UTCNow(), latestID)
+	if err != nil {
+		return nil, err
+	}
+	if tag.RowsAffected() == 0 {
+		return nil, nil
+	}
+	var freed []int64
+	for _, gid := range ids {
+		tag, err := tx.Exec(ctx,
+			`UPDATE guest SET submission_id = NULL WHERE id = $1 AND submission_id = $2 AND submit_state != $3`,
+			gid, latestID, collectGuestSent)
+		if err != nil {
+			return nil, err
+		}
+		if tag.RowsAffected() == 1 {
+			freed = append(freed, gid)
+		}
+	}
+	return freed, tx.Commit(ctx)
+}
+
+// repointUnknownGuests is the last step of the resend: a freed guest the resend
+// did not take goes back in doubt on the latest batch.
+func repointUnknownGuests(ctx context.Context, pool *pgxpool.Pool, aptID, latestID int64, freed []int64) error {
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	if err := lockSubmitApartment(ctx, tx, aptID); err != nil {
+		return err
+	}
+	for _, gid := range freed {
+		if _, err := tx.Exec(ctx,
+			`UPDATE guest SET submission_id = $1 WHERE id = $2 AND submission_id IS NULL AND submit_state != $3`,
+			latestID, gid, collectGuestSent); err != nil {
+			return err
+		}
+	}
+	return tx.Commit(ctx)
+}
+
+// unknownFinalNotice queues the final notice for a chain at the cap while a
+// chain guest still waits on the latest attempt. The idempotency keys make the
+// later sweeps add nothing.
+func unknownFinalNotice(ctx context.Context, d SweepDeps, aptID int64, latest chainAttempt, ids []int64, finished, now time.Time) error {
+	if now.Sub(finished) >= unknownNoticeWindow {
+		return nil
+	}
+	pool := d.Batch.Pool
+	var waiting int
+	if err := pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM guest WHERE id = ANY($1) AND submission_id = $2 AND submit_state != 'sent'`,
+		ids, latest.id).Scan(&waiting); err != nil {
+		return err
+	}
+	if waiting == 0 {
+		return nil
+	}
+	apt, err := LoadApartment(ctx, pool, aptID)
+	if err != nil || apt == nil {
+		return err
+	}
+	bd := d.Batch
+	key := fmt.Sprintf("submission_unanswered:%d", latest.id)
+	if _, err := queueSubmissionProblem(ctx, pool, bd.Getenv, bd.AppBaseURL, bd.PublicBaseURL,
+		apt.Ref, latest.id, "unanswered", latest.errText, false, batchNow(bd), unknownSupportCC, key); err != nil {
+		return err
+	}
+	_, err = QueueUnansweredPush(ctx, pool, bd.Getenv, apt.Ref, latest.id)
+	return err
+}
+
+// resolveUnknownAlert closes the in-doubt card once no guest waits on an unknown
+// batch any more (UbyPort answered, or the host filed the guests by hand).
+func resolveUnknownAlert(ctx context.Context, d SweepDeps, aptID int64) error {
+	pool := d.Batch.Pool
+	key := fmt.Sprintf("submission_outcome_unknown:%d", aptID)
+	open, err := openAlert(ctx, pool, key)
+	if err != nil || !open {
+		return err
+	}
+	inDoubt, err := ApartmentInDoubt(ctx, pool, aptID)
+	if err != nil || inDoubt {
+		return err
+	}
+	return ResolveAlert(ctx, pool, key)
 }
 
 // markBatchRetried stamps retried_at and frees the guests for the resend, under

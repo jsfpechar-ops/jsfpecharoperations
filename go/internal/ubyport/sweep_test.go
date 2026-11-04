@@ -250,12 +250,15 @@ func TestRetrySkipsAndGuards(t *testing.T) {
 		retried     any
 		empty       bool
 		alert       bool
+		finished    string
+		wantSent    int
 		wantRetried bool
 	}{
-		{"auto_resend mode is not retried again", "auto_resend", nil, false, false, false},
-		{"retried_at already set is not retried", nil, time.Date(2026, 11, 1, 9, 30, 0, 0, time.UTC), false, false, true},
-		{"empty guest list is marked and not sent", nil, nil, true, false, true},
-		{"open ubyport_auth_failed alert blocks the retry", nil, nil, false, true, false},
+		{"auto_resend stale batch waits for its gap", "auto_resend", nil, false, false, "2026-11-01T09:45:00+00:00", 0, false},
+		{"auto_resend stale batch is resent by the chain once due", "auto_resend", nil, false, false, "2026-11-01T09:00:00+00:00", 1, true},
+		{"retried_at already set is not retried", nil, time.Date(2026, 11, 1, 9, 30, 0, 0, time.UTC), false, false, "", 0, true},
+		{"empty guest list is marked and not sent", nil, nil, true, false, "", 0, true},
+		{"open ubyport_auth_failed alert blocks the retry", nil, nil, false, true, "", 0, false},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -265,6 +268,11 @@ func TestRetrySkipsAndGuards(t *testing.T) {
 				guests = append(guests, collectAddStay(t, pool, ref.ID, nil, nil))
 			}
 			stale := staleBatch(t, pool, ref.ID, guests, c.mode, c.retried, staleSubmissionReason)
+			if c.finished != "" {
+				if _, err := pool.Exec(ctx, `UPDATE submission SET finished_at = $1 WHERE id = $2`, c.finished, stale); err != nil {
+					t.Fatal(err)
+				}
+			}
 			if c.alert {
 				if err := RaiseAlert(ctx, pool, "critical", "ubyport_auth_failed", "login refused", "",
 					fmt.Sprintf("ubyport_auth_failed:%d", ref.ID), &ref.ID, nil, nil, nil); err != nil {
@@ -273,15 +281,222 @@ func TestRetrySkipsAndGuards(t *testing.T) {
 			}
 			s := &sweepSender{}
 			n, err := RetryOutcomeUnknownBatches(ctx, sweepDeps(t, pool, "pw", s), ref.ID)
-			if err != nil || n != 0 {
-				t.Fatalf("retried=%d err=%v, want 0 and no error", n, err)
+			if err != nil || n != c.wantSent {
+				t.Fatalf("retried=%d err=%v, want %d and no error", n, err, c.wantSent)
 			}
-			if len(s.sizes) != 0 {
-				t.Fatalf("sent=%v, want nothing", s.sizes)
+			if len(s.sizes) != c.wantSent {
+				t.Fatalf("sent=%v, want %d batch(es)", s.sizes, c.wantSent)
 			}
 			if got := retriedAtSet(t, pool, stale); got != c.wantRetried {
 				t.Fatalf("retried_at set = %v, want %v", got, c.wantRetried)
 			}
 		})
+	}
+}
+
+// chainStart is the first instant of the chain tests; the sweep clock is faked.
+var chainStart = time.Date(2026, 11, 1, 9, 0, 0, 0, time.UTC)
+
+func chainStamp(at time.Time) string { return at.UTC().Format(time.RFC3339) }
+
+func chainCount(t *testing.T, pool *pgxpool.Pool, query string, args ...any) int {
+	t.Helper()
+	var n int
+	if err := pool.QueryRow(context.Background(), query, args...).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+	return n
+}
+
+// chainBatch stores an unanswered batch as an earlier attempt left it, finished
+// at the given time, and points the guests at it.
+func chainBatch(t *testing.T, pool *pgxpool.Pool, aptID int64, guests []int64, mode any, finished time.Time) int64 {
+	t.Helper()
+	ctx := context.Background()
+	raw, err := json.Marshal(guests)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var sub int64
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO submission (apartment_id, created_at, state, guest_ids, error_text, mode, finished_at)
+		 VALUES ($1, $2, 'outcome_unknown', $3, 'Remote end closed connection without response', $4, $5) RETURNING id`,
+		aptID, chainStart, string(raw), mode, chainStamp(finished)).Scan(&sub); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE guest SET submission_id = $1 WHERE id = ANY($2)`, sub, guests); err != nil {
+		t.Fatal(err)
+	}
+	return sub
+}
+
+// unknownSender answers every batch the way UbyPort does when the connection drops.
+type unknownSender struct {
+	sizes []int
+}
+
+func (s *unknownSender) Submit(ctx context.Context, header map[string]*string, guests []map[string]any) (SubmitResult, error) {
+	s.sizes = append(s.sizes, len(guests))
+	return SubmitResult{}, &Error{Kind: ErrOutcomeUnknown, Msg: "Remote end closed connection without response"}
+}
+
+// chainSweepAt runs one sweep at the fake time at, then stamps the batches it
+// wrote with that time, so the next sweep measures its gaps from them.
+func chainSweepAt(t *testing.T, pool *pgxpool.Pool, d SweepDeps, aptID int64, at time.Time) int {
+	t.Helper()
+	ctx := context.Background()
+	d.Batch.Now = func() time.Time { return at }
+	n, err := RetryOutcomeUnknownBatches(ctx, d, aptID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx,
+		`UPDATE submission SET finished_at = $1 WHERE apartment_id = $2 AND finished_at > $1`,
+		chainStamp(at), aptID); err != nil {
+		t.Fatal(err)
+	}
+	return n
+}
+
+// The gaps 30 min, 2 h, 6 h, 12 h, then the final notice; never a sixth batch.
+func TestChainTimingAndCap(t *testing.T) {
+	pool := claimTestPool(t)
+	ref := sweepFixtureApartment(t, pool, ptrString("host@example.test"))
+	g := collectAddStay(t, pool, ref.ID, nil, nil)
+	at := chainStart
+	chainBatch(t, pool, ref.ID, []int64{g}, nil, at)
+	d := sweepDeps(t, pool, "pw", &unknownSender{})
+	gaps := []time.Duration{30 * time.Minute, 2 * time.Hour, 6 * time.Hour, 12 * time.Hour}
+	for k, gap := range gaps {
+		due := at.Add(gap)
+		if n := chainSweepAt(t, pool, d, ref.ID, due.Add(-time.Minute)); n != 0 {
+			t.Fatalf("attempt %d resent 1 minute before its gap", k+2)
+		}
+		if n := chainSweepAt(t, pool, d, ref.ID, due); n != 1 {
+			t.Fatalf("attempt %d: resent %d at its gap, want 1", k+2, n)
+		}
+		at = due
+	}
+	if got := chainCount(t, pool, `SELECT COUNT(*) FROM submission WHERE apartment_id = $1`, ref.ID); got != 5 {
+		t.Fatalf("batches = %d, want 5", got)
+	}
+	if got := chainCount(t, pool, `SELECT COUNT(*) FROM email_outbox WHERE apartment_id = $1`, ref.ID); got != 0 {
+		t.Fatalf("mail rows before the final notice = %d, want 0", got)
+	}
+	if n := chainSweepAt(t, pool, d, ref.ID, at.Add(time.Hour)); n != 0 {
+		t.Fatalf("resent %d at the cap, want 0", n)
+	}
+	last := chainCount(t, pool, `SELECT MAX(id) FROM submission WHERE apartment_id = $1`, ref.ID)
+	key := fmt.Sprintf("submission_unanswered:%d", last)
+	if got := chainCount(t, pool, `SELECT COUNT(*) FROM email_outbox WHERE idempotency_key = $1 AND cc_email = 'support@ubyhost.com'`, key); got != 1 {
+		t.Fatalf("final notice rows = %d, want 1 with the support copy", got)
+	}
+	chainSweepAt(t, pool, d, ref.ID, at.Add(time.Hour+5*time.Minute))
+	chainSweepAt(t, pool, d, ref.ID, at.Add(time.Hour+10*time.Minute))
+	if got := chainCount(t, pool, `SELECT COUNT(*) FROM email_outbox WHERE idempotency_key = $1`, key); got != 1 {
+		t.Fatalf("final notice rows after two more sweeps = %d, want 1", got)
+	}
+	if got := chainCount(t, pool, `SELECT COUNT(*) FROM submission WHERE apartment_id = $1`, ref.ID); got != 5 {
+		t.Fatalf("batches after the cap = %d, want 5", got)
+	}
+}
+
+// A guest order of [2,1] and a resend of [1,2] are one chain.
+func TestChainKeyIsTextOrderFree(t *testing.T) {
+	pool := claimTestPool(t)
+	ref := sweepFixtureApartment(t, pool, ptrString("host@example.test"))
+	g1 := collectAddStay(t, pool, ref.ID, nil, nil)
+	g2 := collectAddStay(t, pool, ref.ID, nil, nil)
+	chainBatch(t, pool, ref.ID, []int64{g2, g1}, nil, chainStart)
+	d := sweepDeps(t, pool, "pw", &unknownSender{})
+	at := chainStart.Add(30 * time.Minute)
+	if n := chainSweepAt(t, pool, d, ref.ID, at); n != 1 {
+		t.Fatalf("resent %d, want 1", n)
+	}
+	if n := chainSweepAt(t, pool, d, ref.ID, at.Add(time.Hour+59*time.Minute)); n != 0 {
+		t.Fatalf("resent %d before the 2 h gap of one chain", n)
+	}
+	if n := chainSweepAt(t, pool, d, ref.ID, at.Add(2*time.Hour)); n != 1 {
+		t.Fatalf("resent %d at the 2 h gap, want 1", n)
+	}
+}
+
+// A guest filed by hand during the gap is not resent; the other one is.
+func TestChainResendsOnlyGuestsNotFiledByHand(t *testing.T) {
+	ctx := context.Background()
+	pool := claimTestPool(t)
+	ref := sweepFixtureApartment(t, pool, ptrString("host@example.test"))
+	g1 := collectAddStay(t, pool, ref.ID, nil, nil)
+	g2 := collectAddStay(t, pool, ref.ID, nil, nil)
+	chainBatch(t, pool, ref.ID, []int64{g1, g2}, nil, chainStart)
+	if _, err := pool.Exec(ctx, `UPDATE guest SET submit_state = 'sent' WHERE id = $1`, g1); err != nil {
+		t.Fatal(err)
+	}
+	s := &sweepSender{}
+	d := sweepDeps(t, pool, "pw", s)
+	if n := chainSweepAt(t, pool, d, ref.ID, chainStart.Add(30*time.Minute)); n != 1 {
+		t.Fatalf("resent %d, want 1", n)
+	}
+	if len(s.sizes) != 1 || s.sizes[0] != 1 {
+		t.Fatalf("sent=%v, want one batch of one guest", s.sizes)
+	}
+	if got := chainCount(t, pool, `SELECT COUNT(*) FROM guest WHERE id = $1 AND submission_id IS NOT NULL`, g1); got != 1 {
+		t.Fatalf("filed guest was freed")
+	}
+}
+
+// A host send that is unanswered starts a fresh chain: first resend 30 min later.
+func TestChainHostSendStartsFreshChain(t *testing.T) {
+	pool := claimTestPool(t)
+	ref := sweepFixtureApartment(t, pool, ptrString("host@example.test"))
+	g := collectAddStay(t, pool, ref.ID, nil, nil)
+	chainBatch(t, pool, ref.ID, []int64{g}, nil, chainStart)
+	chainBatch(t, pool, ref.ID, []int64{g}, nil, chainStart.Add(time.Hour))
+	d := sweepDeps(t, pool, "pw", &unknownSender{})
+	if n := chainSweepAt(t, pool, d, ref.ID, chainStart.Add(time.Hour+29*time.Minute)); n != 0 {
+		t.Fatalf("resent %d before 30 min after the host send", n)
+	}
+	if n := chainSweepAt(t, pool, d, ref.ID, chainStart.Add(time.Hour+30*time.Minute)); n != 1 {
+		t.Fatalf("resent %d at 30 min after the host send, want 1", n)
+	}
+}
+
+// A second sweep right after a resend does not resend again.
+func TestChainResendsOnceForRepeatedSweeps(t *testing.T) {
+	pool := claimTestPool(t)
+	ref := sweepFixtureApartment(t, pool, ptrString("host@example.test"))
+	g := collectAddStay(t, pool, ref.ID, nil, nil)
+	chainBatch(t, pool, ref.ID, []int64{g}, nil, chainStart)
+	d := sweepDeps(t, pool, "pw", &unknownSender{})
+	at := chainStart.Add(30 * time.Minute)
+	if n := chainSweepAt(t, pool, d, ref.ID, at); n != 1 {
+		t.Fatalf("first sweep resent %d, want 1", n)
+	}
+	if n := chainSweepAt(t, pool, d, ref.ID, at); n != 0 {
+		t.Fatalf("second sweep resent %d, want 0", n)
+	}
+	if got := chainCount(t, pool, `SELECT COUNT(*) FROM submission WHERE apartment_id = $1`, ref.ID); got != 2 {
+		t.Fatalf("batches = %d, want 2", got)
+	}
+}
+
+// Once no guest waits on an unknown batch (filed by hand), the card resolves.
+func TestChainResolvesCardWhenNoGuestWaits(t *testing.T) {
+	ctx := context.Background()
+	pool := claimTestPool(t)
+	ref := sweepFixtureApartment(t, pool, ptrString("host@example.test"))
+	g := collectAddStay(t, pool, ref.ID, nil, nil)
+	chainBatch(t, pool, ref.ID, []int64{g}, nil, chainStart)
+	key := fmt.Sprintf("submission_outcome_unknown:%d", ref.ID)
+	if err := RaiseAlert(ctx, pool, "critical", "submission_outcome_unknown", "x", "", key, &ref.ID, nil, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE guest SET submit_state = 'sent' WHERE id = $1`, g); err != nil {
+		t.Fatal(err)
+	}
+	d := sweepDeps(t, pool, "pw", &unknownSender{})
+	chainSweepAt(t, pool, d, ref.ID, chainStart.Add(time.Minute))
+	if got := chainCount(t, pool, `SELECT COUNT(*) FROM alert WHERE dedupe_key = $1 AND resolved_at IS NULL`, key); got != 0 {
+		t.Fatalf("open card = %d, want 0", got)
 	}
 }
