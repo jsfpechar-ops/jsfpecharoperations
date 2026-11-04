@@ -127,7 +127,7 @@ def test_services_fit_a_phone(owner, stripe_env):
     else:
         sync_api = pytest.importorskip("playwright.sync_api")
     payment_services.add(owner, "Úklid navíc", 800)
-    sid = payment_services.add(owner, "Pozdní odjezd", 500)["id"]
+    payment_services.add(owner, "Pozdní odjezd", 500)
     port = _free_port()
     server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error"))
     thread = threading.Thread(target=server.run, daemon=True)
