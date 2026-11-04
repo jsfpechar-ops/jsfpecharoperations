@@ -1036,7 +1036,7 @@ def test_0891_airbnb_month_tiles_and_pills(calendar_workspace, calendar_origin, 
             else:  # runs into the next week: Sunday edge, 2 px margin
                 assert abs(pill["right"]) <= 1, pill
             assert pill["top"] >= 36 and pill["bottom"] >= 0, pill  # below the day number (0905: stacked lanes)
-            assert pill["color"] == "rgb(34, 34, 34)", pill
+            assert pill["color"], pill  # 0911: colour is per property, see test_0911_each_property_has_one_colour_everywhere
         assert page.locator(".cal-tile-chip:visible, .cal-dots:visible, .cal-week-events").count() == 0
         if width >= 768:
             assert page.locator('[data-cal-more="2026-10-14"]').is_visible()
