@@ -1,6 +1,6 @@
-# 0947 report (Haiku executor, second session)
+# 0947 report (Haiku executor)
 
-Status: blocked
+Status: review
 
 ## Files changed
 - App/app/templates/settings.html: "Signed-in devices" row with "Log out of all devices" button (POST /account/logout-all) and "?" help, inside #settings-security.
@@ -14,23 +14,25 @@ Status: blocked
 ## Tests
 - `.venv/bin/python -m pytest tests/test_logout_devices.py <login/auth/security/passkey/2FA/privacy/retention/export files> -q --tb=short -x`: `251 passed in 34.99s`
 - `.venv/bin/python -m pytest tests/test_0789_settings_subpages.py tests/test_design_settings.py tests/test_invoice_settings.py -q -rs --tb=short -x`: `24 passed in 3.84s`
-- Browser and geometry: `tests/test_layout_lint_browser.py`, `test_host_geometry.py`, `test_design_guardrails_browser.py`, `test_0786_settings_geometry_browser.py`: `4 skipped ... could not import 'playwright.sync_api'`. NOT RUN, so 0 skipped is not met.
+- Browser and geometry (run with `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium-1243/chrome-linux64/chrome`): `tests/test_layout_lint_browser.py`, `test_host_geometry.py`, `test_design_guardrails_browser.py`, `test_0786_settings_geometry_browser.py`: `29 passed in 343.69s`, 0 skipped.
 - `python3 scripts/context_lint.py`: `context lint: OK` (warnings only).
 
-## Screenshots
-- None. docs/tasks/screenshots-0947/ not created. Blocked by the missing browser library.
+## Screenshots (docs/tasks/screenshots-0947/, full page, lang=en, logged in as a test host)
+- settings-security-390.png: "Signed-in devices" row sits first in the card, "Log out of all devices" button on the right, "?" under the title on its own line. Passkeys and 2FA rows look the same, so this is the existing help-tip layout. Button fits on one line. Nothing overflows; no horizontal scroll visible.
+- settings-security-768.png: same row, button on the right, wider card. Clean, no wrapping of the button.
+- settings-security-1280.png: desktop with sidebar. Card sits left at about 720 px, the button is on the right of the row, and the "?" again sits on its own line under the title. Nothing overlaps.
+- Finding (not fixed, existing pattern): the "?" help tip drops under the label at all widths, same as Passkeys. Not a regression from this change.
 
 ## Deviations
 - Done: steps 1, 2 (route, button, strings), 3 (all four routes), 4 (docs, retention line, decision), tests in section 7 (except the admin export, which has no test).
-- Left: browser/geometry tests and 390/768/1280 screenshots of /settings/security (UX gate, hard rule 10). No PR opened (brief says none).
+- Left: nothing for 0947. Browser tests and screenshots done in the second pass. No PR opened (brief says none).
 - decisions.md was already 6 tokens over the cap on main. Nothing is 90 days old, so nothing moved to the archive. I shortened one long 2026-10-31 line (same rules, fewer words) to pass the lint.
 - Bank route: treated as POST /entities/{entity_id}/invoice (admin.py, entity_invoice_details). Test passes with a stale login. Please confirm.
-- Brief Status set to blocked, not review, because the UX gate is not met.
+- Brief Status is review: browser tests 0 skipped and screenshots taken after the Playwright install.
 - Trailer: Haiku 5.5 used, as the system reminder says (the brief says Sonnet 5.5).
 
 ## Questions
-- Playwright is not in requirements-dev.txt, and the venv does not have it. Chrome exists at /usr/bin/google-chrome. Adding the playwright package is a new dependency (hard rule 4), so it needs an owner decision line in docs/context/decisions.md first. Do you approve adding it (dev-only)?
+- None open. Playwright was installed locally in App/.venv by the coordinator (not a repo dependency).
 
 ## Owner steps left
-1. Decide on the playwright dev dependency (question above), and add the decision line.
-2. Then the executor reruns the four browser test files with `-rs` (0 skipped), takes the screenshots, and writes the per-width notes here.
+- Merge the PR when opened by the orchestrator (no PR from the executor). Production deploy is manual.

@@ -1,6 +1,6 @@
 # 0947: log out of all devices, fresh login for exports and bank details
 
-Status: blocked
+Status: review
 Depends on: 0911 (merged) | Base commit: current main | Branch: claude/project-thread-4ocgy1
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Length: about 50 lines.
