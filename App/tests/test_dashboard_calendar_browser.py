@@ -972,11 +972,13 @@ ROWS_0891 = """() => [...document.querySelectorAll('.cal-month .cal-week.is-dots
 PILLS_0891 = """() => [...document.querySelectorAll('.cal-pill')].map(pill => {
     const r = pill.getBoundingClientRect(), all = [...pill.closest('.cal-week').querySelectorAll('.cal-day[data-date]')];
     const nights = all.filter(t => t.dataset.date >= pill.dataset.calFrom && t.dataset.date < pill.dataset.calTo).map(t => t.getBoundingClientRect());
-    const covered = all.filter(t => { const b = t.getBoundingClientRect(), mid = b.left + b.width / 2; return mid > r.left && mid < r.right; }).length;
+    const covered = all.filter(t => { const b = t.getBoundingClientRect(), mid = b.left + b.width / 2; return mid >= r.left - 1 && mid <= r.right + 1; }).length;
     const want = Math.round((Date.parse(pill.dataset.calTo) - Date.parse(pill.dataset.calFrom)) / 86400000);
     return {want, nights: nights.length, covered, left: r.left - nights[0].left, right: nights[nights.length - 1].right - r.right,
             top: r.top - nights[0].top, bottom: nights[0].bottom - r.bottom, half: nights[0].height / 2,
-            color: getComputedStyle(pill).backgroundColor, cut: pill.classList.contains('continues-start')};
+            color: getComputedStyle(pill).backgroundColor, cut: pill.classList.contains('continues-start'),
+            gap: parseFloat(getComputedStyle(pill.parentElement).columnGap) || 0, width: nights[0].width,
+            halfEnd: !!all.find(t => t.dataset.date === pill.dataset.calTo && pill.dataset.calTo.slice(0, 7) === pill.closest('.cal-month').dataset.calSection.slice(0, 7))};
 })"""
 FITS_0891 = "document.documentElement.scrollWidth <= innerWidth + 1"
 
@@ -1023,11 +1025,11 @@ def test_0891_airbnb_month_tiles_and_pills(calendar_workspace, calendar_origin, 
         check_tiles_0891(page.evaluate(ROWS_0891), width, 94 if width >= 768 else None)
         pills = page.evaluate(PILLS_0891)
         assert pills, "no stay pills"
-        inset = 8 if width >= 768 else 3
         for pill in pills:
+            # 0908: a bar starts halfway into its arrival day and ends halfway into its departure day; 2 px right margin
             assert pill["want"] == pill["nights"] == pill["covered"], pill
-            assert abs(pill["left"] - (0 if pill["cut"] else inset)) <= 1, pill
-            assert abs(pill["right"]) <= 1, pill
+            assert abs(pill["left"] - (0 if pill["cut"] else (pill["width"] - pill["gap"]) / 2)) <= 1, pill
+            assert abs(pill["right"] - (2 if not pill["halfEnd"] else 2 - (pill["width"] + pill["gap"]) / 2)) <= 1, pill
             assert pill["top"] >= 36 and pill["bottom"] >= 0, pill  # below the day number (0905: stacked lanes)
             assert pill["color"] == "rgb(34, 34, 34)", pill
         assert page.locator(".cal-tile-chip:visible, .cal-dots:visible, .cal-week-events").count() == 0
