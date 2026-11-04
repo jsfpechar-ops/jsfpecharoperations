@@ -972,7 +972,7 @@ ROWS_0891 = """() => [...document.querySelectorAll('.cal-month .cal-week.is-dots
 PILLS_0891 = """() => [...document.querySelectorAll('.cal-pill')].map(pill => {
     const r = pill.getBoundingClientRect(), all = [...pill.closest('.cal-week').querySelectorAll('.cal-day[data-date]')];
     const nights = all.filter(t => t.dataset.date >= pill.dataset.calFrom && t.dataset.date < pill.dataset.calTo).map(t => t.getBoundingClientRect());
-    const covered = all.filter(t => { const b = t.getBoundingClientRect(), mid = b.left + b.width / 2; return mid >= r.left - 1 && mid <= r.right + 1; }).length;
+    const covered = all.filter(t => { const b = t.getBoundingClientRect(), over = Math.min(b.right, r.right) - Math.max(b.left, r.left); return over >= b.width / 2 - 1; }).length;
     const want = Math.round((Date.parse(pill.dataset.calTo) - Date.parse(pill.dataset.calFrom)) / 86400000);
     return {want, nights: nights.length, covered, left: r.left - nights[0].left, right: nights[nights.length - 1].right - r.right,
             top: r.top - nights[0].top, bottom: nights[0].bottom - r.bottom, half: nights[0].height / 2,
