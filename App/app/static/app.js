@@ -2157,6 +2157,9 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         form.querySelectorAll("[data-unsaved-reset]").forEach(function (button) {
           button.hidden = !isDirty(form);
         });
+        form.querySelectorAll(".savebar").forEach(function (bar) {
+          bar.classList.toggle("is-dirty", isDirty(form));
+        });
       });
     }
 
