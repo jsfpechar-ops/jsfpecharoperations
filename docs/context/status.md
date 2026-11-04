@@ -7,7 +7,7 @@ Updated: 2026-11-04.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
-- 2026-11-04: stay-fee guest pay PR #763: plan v4 + 0897 built (owner-approved shots); next 0898, 0910, 0911, 0912 on the same branch, then auto-merge when CI green (owner).
+- 2026-11-04: PR #763 stay-fee guest pay: 0897 done; 0898, 0910-0912 next, auto-merge when green.
 - 2026-11-04: brief 0930 in review (PR #768): stay bars end mid departure day.
 - 2026-11-03: UX gate live: layout lint (`App/tests/layout_lint.js`) + AGENTS.md rule 10; threads self-check screenshots, owner does not.
 - 2026-11-02: Airbnb pass on login and admin pages (0892-0894) in draft PR #739; 0869 renumbers colliding briefs.
