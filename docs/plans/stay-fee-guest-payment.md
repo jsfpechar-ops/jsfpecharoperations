@@ -436,7 +436,8 @@ CS draft:
   osvobození od poplatku (např. osoby mladší 18 let) a pobyt delší než 60 po
   sobě jdoucích dnů u jednoho ubytovatele poplatku nepodléhá. Poplatek platíte
   přímo ubytovateli podle jeho pokynů — UbyHost platbu nezprostředkovává a
-  nezaznamenává, zda byla zaplacena."
+  nezaznamenává, zda byla zaplacena. Plné znění zákona:
+  https://www.e-sbirka.cz/sb/1990/565."
 
 EN draft:
 - `legal_notice_fee_title`: "Municipal stay fee"
@@ -448,7 +449,7 @@ EN draft:
   exemptions (for example for persons under 18), and a stay longer than 60
   consecutive days with one provider is not subject to the fee. You pay your
   host directly as instructed — UbyHost does not process the payment and does
-  not record whether it was paid. Plné znění zákona: https://www.e-sbirka.cz/sb/1990/565."
+  not record whether it was paid. Full text of the Act: https://www.e-sbirka.cz/sb/1990/565."
 
 de/es/fr/uk: faithful translations at build (brief 0911). Ship with a bumped
 `UBYHOST_GUEST_NOTICE_VERSION` (docs/ENVIRONMENT.md:86).
