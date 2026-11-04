@@ -2515,3 +2515,15 @@ body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-demo p{margin:5px 
 body.v2 .onboarding-banner-setup{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:0 0 16px}
 body.v2 .onboarding-banner-setup form{margin:0}
 body.v2 .onboarding-skip-link{background:none;border:0;padding:0;font:inherit;font-size:13px;color:var(--ink3);text-decoration:underline;cursor:pointer;min-height:44px}
+body.v2 .wiz-page .setup-wizard-meter .setup-wizard-progress{gap:6px}
+body.v2 .wiz-page .setup-wizard-meter .setup-wizard-progress li{flex:1 1 0;width:auto;min-width:0;height:8px;border:1px solid var(--line);border-radius:999px;background:var(--s)}
+body.v2 .wiz-page .setup-wizard-meter .setup-wizard-progress li.is-done{border-color:var(--acc);background:var(--acc)}
+body.v2 .wiz-page .setup-wizard-meter .setup-wizard-progress li.is-current{border-color:var(--acc);background:var(--accs)}
+body.v2 .wiz-page .setup-wizard-meter .setup-wizard-progress li.is-waiting{border-color:var(--amber);background:var(--amber-bg)}
+body.v2 .wiz-page .setup-wizard-meter .setup-wizard-progress li.is-skipped{border-style:dashed;background:var(--s)}
+body.v2 .wiz-page .setup-wizard-ask-icon{width:44px;height:44px;border:1px solid currentColor;border-radius:12px;background:var(--accs);color:var(--acc)}
+body.v2 .wiz-page .setup-wizard-ask-icon .nav-icon{width:24px;height:24px;color:inherit}
+body.v2 .wiz-page .setup-wizard-ask[data-step-tone=blue] .setup-wizard-ask-icon{color:var(--blue);background:var(--blue-bg)}
+body.v2 .wiz-page .setup-wizard-ask[data-step-tone=teal] .setup-wizard-ask-icon{color:var(--teal);background:var(--teal-bg)}
+body.v2 .wiz-page .setup-wizard-ask[data-step-tone=purple] .setup-wizard-ask-icon{color:var(--purple);background:var(--purple-bg)}
+body.v2 .wiz-page .setup-wizard-celebrate-title{color:var(--ink);font-size:18px;line-height:1.25;overflow-wrap:anywhere}
