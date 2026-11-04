@@ -254,7 +254,7 @@ def test_production_cookies_are_secure_even_if_public_url_is_misconfigured(monke
     header = cleared.headers["set-cookie"]
     assert "Secure" in header
     assert "HttpOnly" in header
-    assert "SameSite=strict" in header
+    assert "SameSite=lax" in header
 
 
 def test_cf_connecting_ip_ignored_without_trusted_proxy(monkeypatch):

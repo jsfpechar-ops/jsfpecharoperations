@@ -20,9 +20,18 @@ COOKIE_INVENTORY: Tuple[Dict[str, object], ...] = (
         "surface": "host",
         "purpose": {"en": "Keeps you signed in", "cs": "Udržuje přihlášení"},
         "lifetime": {
-            "en": "Up to 400 days after you sign in, until you log out",
-            "cs": "A\u017e 400 dn\u00ed po p\u0159ihl\u00e1\u0161en\u00ed, dokud se neodhl\u00e1s\u00edte",
+            "en": "30 days without use, 90 days at most after you sign in, until you log out",
+            "cs": "30 dní bez použití, nejdéle 90 dní od přihlášení, dokud se neodhlásíte",
         },
+    },
+    {
+        "name": "ubyhost_device",
+        "set_by": "auth.py:attach_device",
+        "party": "first",
+        "kind": "cookie",
+        "surface": "host",
+        "purpose": {"en": "Recognises this device so login needs no security check", "cs": "Pozná toto zařízení, aby přihlášení nevyžadovalo bezpečnostní kontrolu"},
+        "lifetime": {"en": "30 days, renewed each time you sign in", "cs": "30 dní, obnoví se při každém přihlášení"},
     },
     {
         "name": "ubyhost_csrf",
@@ -35,8 +44,8 @@ COOKIE_INVENTORY: Tuple[Dict[str, object], ...] = (
             "cs": "Chr\u00e1n\u00ed formul\u00e1\u0159e p\u0159ed po\u017eadavky z jin\u00fdch str\u00e1nek",
         },
         "lifetime": {
-            "en": "Matches the session, up to 400 days",
-            "cs": "Shodn\u00e9 s relac\u00ed, a\u017e 400 dn\u00ed",
+            "en": "Matches the session, up to 30 days",
+            "cs": "Shodné s relací, až 30 dní",
         },
     },
     {
@@ -272,6 +281,18 @@ _GUEST_LANGUAGE_TEXT: Dict[str, Dict[str, Dict[str, str]]] = {
             "de": "12 Stunden oder 30 Tage mit „Angemeldet bleiben“",
             "es": "12 horas, o 30 días con «recordarme»",
             "fr": "12 heures, ou 30 jours avec « se souvenir de moi »",
+        },
+    },
+    "ubyhost_device": {
+        "purpose": {
+            "de": "Erkennt dieses Gerät, damit die Anmeldung keine Sicherheitsprüfung braucht",
+            "es": "Reconoce este dispositivo para que el inicio de sesión no requiera verificación",
+            "fr": "Reconnaît cet appareil pour que la connexion ne demande pas de vérification",
+        },
+        "lifetime": {
+            "de": "30 Tage, bei jeder Anmeldung erneuert",
+            "es": "30 días, renovados en cada inicio de sesión",
+            "fr": "30 jours, renouvelés à chaque connexion",
         },
     },
     "ubyhost_csrf": {

@@ -56,12 +56,9 @@ TASKS_JS = """(id) => {
       if (sb.width < 100) f.push(tag + 'label narrower than 100px: ' + sb.width.toFixed(1));
     }
     // (2) label on the same row as the number badge
-    if (W >= 1280) {
+    if (W >= 1024) {
       const dy = Math.abs((sb.top + sb.height / 2) - (lb.top + lb.height / 2));
       if (dy > 24) f.push(tag + 'label centre off li centre by ' + dy.toFixed(1) + 'px');
-    } else if (W >= 1024) {
-      const bb = r(li.querySelector('button, .btn') || li);
-      if (sb.bottom > bb.top + 1 || bb.left < sb.left - 1) f.push(tag + 'label not above its button');
     } else if (sb.top - lb.top > 20) {
       f.push(tag + 'label top ' + (sb.top - lb.top).toFixed(1) + 'px below li top');
     }
