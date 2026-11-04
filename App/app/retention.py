@@ -188,6 +188,7 @@ def _days_ago_iso(days: int) -> str:
     )
 
 
+# 0947: ubyhost_device (cookie: account id and random id, 30 days, nothing stored server-side) needs no purge; it expires with the cookie and "log out of all devices" clears it.
 # 0396: apartment.leon_terms_* (the host's Leon terms acceptance) are kept while the property exists.
 def _audit_retention_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
     """Delete audit rows past the window, but never the acceptance evidence.

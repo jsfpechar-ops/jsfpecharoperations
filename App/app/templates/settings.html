@@ -103,6 +103,17 @@
 
 {% if group == 'security' %}{% call settings_group('security', t('settings.group.security')) %}
     <div class="ui-section" id="settings-security">
+      <div class="settings-action-list" id="settings-logout-all">
+        <div class="settings-action-row">
+          <div>
+            <strong>{{ t('settings.security.devices') }}</strong>
+            {{ help_tip('settings-logout-all-help', t('settings.security.logout_all_help')) }}
+          </div>
+          <form method="post" action="/account/logout-all">
+            <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('settings.security.logout_all') }}</button>
+          </form>
+        </div>
+      </div>
       <div class="settings-action-list" id="settings-passkeys">
         <div class="settings-action-row">
           <div>
