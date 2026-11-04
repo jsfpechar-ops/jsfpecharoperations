@@ -114,6 +114,18 @@ const strHeading = "Your report was not accepted"
 // mail.submission_problem.action_stay
 const strActionStay = "Open the stay"
 
+// mail.submission_problem.subject_unanswered (state "unanswered": the final notice)
+const strSubjectUnanswered = "UbyPort has not answered your report - %(property)s"
+
+// mail.submission_problem.intro_unanswered
+const strIntroUnanswered = "UbyPort did not answer the guest report for %(property)s after 5 tries over about 20 hours. The guests are not confirmed as filed."
+
+// mail.submission_problem.preheader_unanswered
+const strPreheaderUnanswered = "UbyPort did not answer. Check whether the guests are there."
+
+// mail.submission_problem.next_unanswered
+const strNextUnanswered = "Check UbyPort. If the guests are missing there, file them by hand in UbyPort, or press the normal Send on the stay."
+
 // preheaderSpacer is PREHEADER_SPACER: 40 repeats of a figure space, a
 // zero-width no-break space and a combining grapheme joiner.
 var preheaderSpacer = strings.Repeat("\u2007\ufeff\u034f", 40)
@@ -403,6 +415,12 @@ func BuildSubmissionProblem(appBaseURL, publicBaseURL, lang, propertyName, state
 		subject, intro, preheader = strSubjectTransport, strIntroTransport, strPreheaderTransport
 		reasonLabel, nextSteps = strReasonLabelTransport, strNextStepsTransport
 	}
+	nextTransient := strNextTransient
+	if state == "unanswered" {
+		subject, intro, preheader = strSubjectUnanswered, strIntroUnanswered, strPreheaderUnanswered
+		nextSteps = strNextUnanswered
+		nextTransient = ""
+	}
 	m := msg{
 		publicBaseURL: publicBaseURL,
 		propertyName:  propertyName,
@@ -413,7 +431,7 @@ func BuildSubmissionProblem(appBaseURL, publicBaseURL, lang, propertyName, state
 		reasonText:    reasonLine(state, reason, transport),
 		nextLabel:     strNextLabel,
 		nextSteps:     nextSteps,
-		nextTransient: strNextTransient,
+		nextTransient: nextTransient,
 		staysLabel:    strStaysLabel,
 		actionReceipt: strActionDorucenka,
 		footer:        fill(strFooter, propertyName),

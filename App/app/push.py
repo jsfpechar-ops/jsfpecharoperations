@@ -465,7 +465,7 @@ def _day(value: Any) -> str:
         return str(value or "")
 
 
-def filing_problem(apartment: Any, submission_id: Optional[int]) -> int:
+def filing_problem(apartment: Any, submission_id: Optional[int], key: Optional[str] = None) -> int:
     """UbyPort did not accept a report. One push per property and local day."""
     try:
         from . import deadlines, mail_notify
@@ -474,7 +474,7 @@ def filing_problem(apartment: Any, submission_id: Optional[int]) -> int:
         return notify(
             apartment["owner_user_id"],
             "filing_problem",
-            key=f"{apartment['id']}:{deadlines.local_now().date().isoformat()}",
+            key=key or f"{apartment['id']}:{deadlines.local_now().date().isoformat()}",
             url=f"/reservations/{stays[0]['id']}" if len(stays) == 1 else "/reservations",
             params={"property": apartment["internal_name"] or ""},
         )

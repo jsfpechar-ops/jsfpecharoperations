@@ -1534,11 +1534,6 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     var recents = [];
     try { recents = JSON.parse(localStorage.getItem(recentKey) || "[]"); } catch (error) { recents = []; }
 
-    document.querySelectorAll("[data-command-shortcut]").forEach(function (hint) {
-      var platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
-      hint.textContent = /mac|iphone|ipad|ipod/i.test(platform) ? "⌘ K" : "Ctrl K";
-    });
-
     function typingTarget(target) {
       return target && (target.matches("input, textarea, select") || target.isContentEditable);
     }
@@ -1940,6 +1935,39 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
   function initHelpTips() {
     var tips = Array.prototype.slice.call(document.querySelectorAll("[data-help-tip]"));
     if (!tips.length) return;
+
+    /* 0901: a "?" never drops onto its own line. The last word before it (or a short inline element) and the "?"
+       share one no-break box, so a wrapping heading or label breaks before that word instead of before the "?". */
+    tips.forEach(function (tip) {
+      var parent = tip.parentNode;
+      if (!parent || parent.classList.contains("tip-tail")) return;
+      var prev = tip.previousSibling;
+      while (prev && prev.nodeType === 3 && !prev.nodeValue.trim()) prev = prev.previousSibling;
+      if (prev && prev.nodeType === 1 && /^(LABEL|H[1-6]|LEGEND)$/.test(prev.tagName)) {
+        /* the "?" sits beside its label: move it inside, so it wraps with the label's last word */
+        prev.appendChild(tip);
+        parent = prev;
+        prev = tip.previousSibling;
+        while (prev && prev.nodeType === 3 && !prev.nodeValue.trim()) prev = prev.previousSibling;
+      }
+      var tail = null;
+      if (prev && prev.nodeType === 3) {
+        var m = /^([\s\S]*?)(\S+)(\s*)$/.exec(prev.nodeValue);
+        if (!m) return;
+        tail = document.createElement("span");
+        tail.className = "tip-tail";
+        prev.nodeValue = m[1];
+        tail.appendChild(document.createTextNode(m[2]));
+      } else if (prev && prev.nodeType === 1 && /^(SPAN|B|STRONG|EM|A|SMALL|BUTTON)$/.test(prev.tagName) && (prev.textContent || "").length <= 24 && !/flex|grid/.test(window.getComputedStyle(parent).display)) {
+        tail = document.createElement("span");
+        tail.className = "tip-tail";
+        parent.insertBefore(tail, prev);
+        tail.appendChild(prev);
+      }
+      if (!tail) return;
+      if (!tail.parentNode) parent.insertBefore(tail, tip);
+      tail.appendChild(tip);
+    });
 
     function place(tip) {
       var btn = tip.querySelector(".help-tip-btn");

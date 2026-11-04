@@ -284,6 +284,9 @@
     const monthEnd = month ? moveMonth(month, 1) : until;
     const from = month && month > week ? month : week, to = monthEnd < until ? monthEnd : until;
     const overlay = el("div", "cal-pills"), ends = [], hidden = [0, 0, 0, 0, 0, 0, 0];
+    let shown = 1; // 0905: stays that overlap stack in their own lanes; only a 4th and later stay folds into "+N"
+    const thinBars = cleaningMode && !matchMedia("(min-width:768px)").matches; // phone: decorative 8 px bars, not tap targets
+    const PILL_LANES = matchMedia("(min-width:768px)").matches || cleaningMode ? 3 : 1; // the dashboard phone tile shows every stay as a dot; the cleaning page shows thin bars
     state.events.filter(event => event.kind !== "cleaning" && event.start < to && event.end > from)
       .sort((a, b) => a.start.localeCompare(b.start) || b.end.localeCompare(a.end) || String(a.id).localeCompare(String(b.id)))
       .forEach(event => {
@@ -292,24 +295,28 @@
         if (lane < 0) lane = ends.length;
         ends[lane] = right;
         const column = distance(week, left), span = distance(left, right);
-        if (lane > 0) { for (let index = column; index < column + span; index++) hidden[index]++; return; }
-        const pill = el("a", "cal-pill" + (event.start < from ? " continues-start" : "") + (event.end > to ? " continues-end" : ""));
-        pill.href = event.url; pill.draggable = false;
+        if (lane >= PILL_LANES) { for (let index = column; index < column + span; index++) hidden[index]++; return; }
+        const pill = el(thinBars ? "span" : "a", "cal-pill" + (event.start < from ? " continues-start" : "") + (event.end > to ? " continues-end" : ""));
+        if (thinBars) pill.setAttribute("role", "img"); else { pill.href = event.url; pill.draggable = false; }
         pill.dataset.calEvent = String(event.id); pill.dataset.calFrom = left; pill.dataset.calTo = right;
-        pill.style.gridColumn = String(column + 1) + " / span " + String(span);
+        // 0908: half-cell columns. A real arrival starts mid-cell; a departure inside this row ends mid-cell. A stay running into the next row (or from the previous one) keeps the full edge; a departure on the next Monday or the 1st of next month is dropped from that row by event.end > from, so its bar ends at this row's edge with no stub.
+        const startLine = column * 2 + 1 + (event.start >= from ? 1 : 0), endLine = (column + span) * 2 + 1 + (event.end < to && event.end > from ? 1 : 0);
+        pill.style.gridColumn = String(startLine) + " / " + String(endLine);
+        pill.style.gridRow = String(lane + 1); shown = Math.max(shown, lane + 1);
         const name = labelFor(event);
         pill.title = name + " · " + fullDate(event.start) + " – " + fullDate(event.end);
-        pill.setAttribute("aria-label", pill.title); pill.setAttribute("aria-haspopup", "dialog");
+        pill.setAttribute("aria-label", pill.title); if (!thinBars) pill.setAttribute("aria-haspopup", "dialog");
         pill.append(el("span", "cal-pill-avatar", (name.trim().charAt(0) || "·").toUpperCase()), el("span", "cal-pill-name", name));
         overlay.append(pill);
       });
     hidden.forEach((count, index) => {
       if (!count) return;
       const date = addDays(week, index), more = el("button", "cal-pill-more", "+" + String(count));
-      more.type = "button"; more.dataset.calMore = date; more.style.gridColumn = String(index + 1);
+      more.type = "button"; more.dataset.calMore = date; more.style.gridColumn = String(index * 2 + 1) + " / span 2";
       more.setAttribute("aria-label", fullDate(date) + " · " + format("more", { count }));
       overlay.append(more);
     });
+    overlay.dataset.lanes = String(shown);
     return overlay;
   }
   function renderCalendar() {
@@ -383,7 +390,9 @@
       if (dots) {
         const row = el("div", "cal-week is-dots"); row.style.setProperty("--lanes", "1");
         row.append(days);
-        row.append(pillRow(week, until, month));
+        const pills = pillRow(week, until, month);
+        row.style.setProperty("--pl", pills.dataset.lanes);
+        row.append(pills);
         target.append(row);
         continue;
       }

@@ -40,6 +40,7 @@ else:
 
 from app import claim, db, guest_slug, i18n, mail  # noqa: E402
 from tests.browser_support import chromium_launch_kwargs
+from tests.v2_mockup import WIDTHS as GEOMETRY_WIDTHS, spacing_findings  # noqa: E402
 
 
 # Layout rules every guest screen must meet. Each returns a sentence per
@@ -262,6 +263,27 @@ def _shot_0885(page, name: str) -> None:
     page.screenshot(path=str(SHOTS_0885 / name), full_page=True)
 
 
+# 0896: Josef's spacing rules on the open step card (helper in tests/v2_mockup.py).
+GUEST_SPACING = {
+    "scope": "[data-guest-step]:not([hidden])",
+    "cards": ".g-card",
+    "controls": "input:not([type=hidden]), select, textarea, button, a.g-btn, summary:not(details.g-head-help > summary), .g-help-dot",
+    "buttons": "button, a.g-btn, summary:not(details.g-head-help > summary), .g-help-dot",
+    "glyphs": ".g-help-dot",
+    "skip": ".sr-only, .g-sr-only",
+    "fields": ".g-field",
+}
+SHOTS_0896 = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0896"
+
+
+def _shot_0896(page, name: str) -> None:
+    """0896 evidence: person 2, step 1, only when asked to."""
+    if os.environ.get("UBYHOST_0896_SHOTS") != "1":
+        return
+    SHOTS_0896.mkdir(parents=True, exist_ok=True)
+    page.screenshot(path=str(SHOTS_0896 / name), full_page=True)
+
+
 class Guest:
     def __init__(self, page, width, lang="en"):
         self.page = page
@@ -295,6 +317,17 @@ class Guest:
         assert panel_top >= line_bottom, f"{marker}: the panel does not open under the title"
         help_.locator("summary").click()
         assert not help_.evaluate("el => el.open")
+
+    def check_spacing(self, where: str, widths=()):
+        """0896: Josef's spacing rules on the open step, at each width."""
+        page = self.page
+        for width in widths or (self.width,):
+            if widths:
+                page.set_viewport_size({"width": width, "height": 812})
+            for problem in spacing_findings(page, **GUEST_SPACING):
+                self.problems.append(f"{where} at {width}px: {problem}")
+        if widths:
+            page.set_viewport_size({"width": self.width, "height": 812})
 
     def step(self) -> str:
         return self.page.evaluate(
@@ -338,7 +371,12 @@ class Guest:
         t = i18n.translator(self.lang)
         self.check_layout(f"guest {number}, details (empty)")
         assert page.locator('[data-purpose-help="identity"]').is_visible()
-        self.check_help_beside_title("identity", widths=(320, 390, 768))
+        self.check_help_beside_title("identity", widths=GEOMETRY_WIDTHS)
+        all_widths = GEOMETRY_WIDTHS if (self.lang, self.width) == ("en", 390) else ()
+        if number == 2:
+            self.check_spacing("person 2, details", all_widths)
+            if self.lang == "en" and self.width in (390, 1280):
+                _shot_0896(page, f"person2-step1-{self.width}.png")
         if number == 2 and self.lang == "en" and self.width in (390, 1280):
             _shot_0885(page, f"person2-step1-{self.width}.png")
             if self.width == 390:
@@ -361,7 +399,9 @@ class Guest:
         self.check_layout(f"guest {number}, details")
         self.next()
         assert page.locator('[data-purpose-help="address-stay"]').is_visible()
-        self.check_help_beside_title("address-stay")
+        self.check_help_beside_title("address-stay", widths=all_widths if number == 2 else ())
+        if number == 2:
+            self.check_spacing("person 2, home", all_widths)
         if not page.input_value("#res_street"):
             page.fill("#res_street", "Hauptstraße 12")
             page.fill("#res_city", "Berlin")
@@ -369,7 +409,9 @@ class Guest:
         self.check_layout(f"guest {number}, home")
         self.next()
         assert page.locator('[data-purpose-help="signature"]').is_visible()
-        self.check_help_beside_title("signature")
+        self.check_help_beside_title("signature", widths=all_widths if number == 2 else ())
+        if number == 2:
+            self.check_spacing("person 2, signature", all_widths)
         self.sign()
         self.check_layout(f"guest {number}, signature")
         # The legal notice moved onto the signature step and is collapsed by

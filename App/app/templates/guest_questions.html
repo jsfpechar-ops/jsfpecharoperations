@@ -15,8 +15,7 @@
 {% with href=base_url, title=t('guest_questions.title') %}{% include "partials/settings_back_header.html" %}{% endwith %}
 {% with label=t('guest_questions.title'), value=(t('guest_questions.open', n=open_count) if open_count else t('guest_questions.none_open')) %}{% include "partials/settings_value_card.html" %}{% endwith %}
 {% if not questions %}
-<span class="f1-tip">{{ help_tip('guest-questions-empty', t('guest_questions.empty.body')) }}</span>
-{{ ui_empty(t('guest_questions.empty.title'), '', t('guest_guide.title'), base_url, primary=false) }}
+{{ ui_empty(t('guest_questions.empty.title'), '', t('guest_guide.title'), base_url, primary=false, tip=help_tip('guest-questions-empty', t('guest_questions.empty.body'))) }}
 {% else %}
 {{ ui_table_begin([(t('guest_questions.col.question'), ''), (t('guest_questions.col.state'), '')], label=t('guest_questions.title')) }}
 {% for q in questions %}

@@ -173,8 +173,9 @@ func TestSubmitBatchOutcomeUnknown(t *testing.T) {
 	if n := batchOpenAlert(t, pool, fmt.Sprintf("submission_outcome_unknown:%d", ref.ID)); n != 1 {
 		t.Errorf("submission_outcome_unknown open = %d, want 1", n)
 	}
-	if n := effectsCount(t, pool, `SELECT count(*) FROM email_outbox`); n != 1 {
-		t.Errorf("email_outbox rows = %d, want 1", n)
+	// Brief 0909: an unanswered attempt sends no per-attempt host mail; the final notice does.
+	if n := effectsCount(t, pool, `SELECT count(*) FROM email_outbox`); n != 0 {
+		t.Errorf("email_outbox rows = %d, want 0 (no per-attempt mail)", n)
 	}
 }
 

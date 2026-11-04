@@ -84,9 +84,9 @@ def _insert_apartment(internal_name: str, **overrides) -> int:
 def _setup_lines(text: str) -> list[str]:
     """Body of each setup card. 0706: a line is div.card.needs-you-card-item (mockup .todo); 0719 adds the `need` modifier."""
     lines = []
-    for match in re.finditer(r'<div class="card needs-you-card-item[^"]*"[^>]*data-needs-you="setup"[^>]*>', text):
+    for match in re.finditer(r'<li class="card needs-you-item[^"]*"[^>]*data-needs-you="setup"[^>]*>', text):
         stops = [i for i in (
-            text.find('class="card needs-you-card-item', match.end()),
+            text.find('class="card needs-you-item', match.end()),
             text.find("</section>", match.end()),
         ) if i != -1]
         lines.append(text[match.end(): min(stops) if stops else len(text)])
@@ -140,10 +140,10 @@ def test_lines_past_the_fifth_wait_behind_show_more(host):
     page = host.get("/?lang=en")
 
     assert len(_setup_lines(page.text)) == 6
-    assert "Show 2 more" in page.text  # 0706: the v2 Overview shows 4 cards before "show more"
+    assert "Show 1 more" in page.text  # 0902: the list shows 5 rows, the sixth waits
     # 0717: the "show more" details carries ov-section too, so split on the shared prefix.
     before_more = page.text.split('class="needs-you-more', 1)[0]
-    assert len(_setup_lines(before_more)) == 4
+    assert len(_setup_lines(before_more)) == 5
 
 
 def test_inactive_properties_are_omitted(host):

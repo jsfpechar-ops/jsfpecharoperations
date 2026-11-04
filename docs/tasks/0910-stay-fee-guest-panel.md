@@ -1,7 +1,7 @@
-# 0900: guest pay panel on the stay hub + form estimate + residence order
+# 0910: guest pay panel on the stay hub + form estimate + residence order
 
 Status: todo
-Depends on: 0898 | Base commit: 0ece616a (branch vibe/stay-fee-guest-payment-plan-73df64) | Branch: task/0900-stay-fee-guest-panel
+Depends on: 0898 | Base commit: `main` after PR #763 merges | Branch: task/0910-stay-fee-guest-panel
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Plan: [docs/plans/stay-fee-guest-payment.md](../plans/stay-fee-guest-payment.md) (read §4, §5)
 
@@ -24,14 +24,14 @@ stored payment state, no CSP change (external pay URLs are plain `<a>` links).
   `config.STAY_FEE_GUEST_PAY and stay_fee_collect and rate>0` and
   `charge_for_reservation()` returns a total > 0 and all expected guests are
   registered (`remaining is None or remaining <= 0`).
-- Panel data: total, lines (per guest), rate, rails csv, revolut/stripe links,
+- Panel data: total, lines (per guest), rate, rails csv, revolut link,
   cash note, QR payload from `payments.spayd(iban, total, vs, msg)` with
   `iban` from `legal_entity` of the apartment's owner (pattern:
   `payment_request.qr_payload()` ~line 158), VS = `f"{reservation_id:010d}"`,
   QR PNG as data URI via `payments.qr_data_uri()`. If qr/iban enabled but the
   owner has no account, omit those rails at render (plan §9).
 - Rail picker: no-JS-friendly — `<details>` per rail or radio group; buttons
-  for revolut/stripe are `<a class="g-btn" href=... rel="noopener">` (never a
+  for revolut are `<a class="g-btn" href=... rel="noopener">` (never a
   form POST to an external URL — CSP form-action 'self', cf. 0730 comment in
   routes/payments.py). Cash rail shows the host note (default text if empty).
 - Form: `_form_context()` (~1483) in routes/guest.py builds `guest/form.html`
@@ -49,7 +49,7 @@ stored payment state, no CSP change (external pay URLs are plain `<a>` links).
   `?v=` key in `templates/guest/base.html` for every changed guest CSS/JS.
 - Tests: guest-pages rows (`docs/context/rules.md` "Guest pages"):
   `tests/test_guest_browser_e2e.py`, `tests/test_host_geometry.py` — 0 skipped;
-  one 390 px screenshot per changed page into `docs/tasks/screenshots-0900/`;
+  one 390 px screenshot per changed page into `docs/tasks/screenshots-0910/`;
   static_versions via `test_static_versions.py --write`.
 
 ## 3. Files
@@ -64,7 +64,7 @@ stored payment state, no CSP change (external pay URLs are plain `<a>` links).
 | `App/app/i18n.py`, `App/app/guest_uk_i18n.py` | edit | `fee_*` keys, all 6 guest languages |
 | `App/app/templates/guest/base.html` | edit | `?v=` bump if guest css/js changes |
 | `App/app/static/guest*.css` / js if needed | edit | panel styles in guest.css (Arrival lane tokens) |
-| tests + `App/tests/static_versions.json` + `docs/tasks/screenshots-0900/` | create/extend | guest e2e rows, geometry, screenshots |
+| tests + `App/tests/static_versions.json` + `docs/tasks/screenshots-0910/` | create/extend | guest e2e rows, geometry, screenshots |
 
 No other file may change.
 
@@ -79,7 +79,7 @@ No other file may change.
 ## 5. Do not touch
 
 `main.py` CSP (no third-party scripts — plain links only), `_legal_notice.html`
-(that's 0901), db schema, routes other than guest.py, `docs/context/*`, no
+(that's 0911), db schema, routes other than guest.py, `docs/context/*`, no
 commits/push/PR (leave in working tree).
 
 ## 6. Commands
@@ -92,7 +92,7 @@ From `App/`: `.venv/bin/python -m pytest tests/test_guest_browser_e2e.py tests/t
       breakdown and only the enabled rails; total 0 → card absent entirely.
 - [ ] Form estimate card appears when estimate > 0, hidden when 0; residence
       order is country → city → street with identical field names.
-- [ ] Revolut/Stripe buttons are plain external links; QR is a data URI; no
+- [ ] The Revolut button is a plain external links; QR is a data URI; no
       new script-src.
 - [ ] Guest e2e + geometry 0 skipped; 390 px screenshots committed;
       lint OK.
@@ -103,7 +103,7 @@ Per TEMPLATE.md §8.
 
 ## 9. Report
 
-`docs/tasks/0900-report.md` (≤600 tokens), `Status: review`.
+`docs/tasks/0910-report.md` (≤600 tokens), `Status: review`.
 
 ## Risk list (reviewer)
 

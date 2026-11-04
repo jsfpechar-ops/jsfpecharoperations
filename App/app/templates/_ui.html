@@ -97,9 +97,9 @@
 {%- endmacro %}
 
 {#- 7.11 empty state: title, one sentence, one button. -#}
-{% macro ui_empty(title, body='', action_label='', action_href='', primary=true) -%}
+{% macro ui_empty(title, body='', action_label='', action_href='', primary=true, tip='') -%}
 <div class="ui-empty" data-empty-state>
-  <h2>{{ title }}</h2>
+  <h2>{{ title }}{{ tip }}</h2>
   {% if body %}<p>{{ body }}</p>{% endif %}
   {% if action_href %}{{ ui_button(action_label, 'primary' if primary else 'secondary', href=action_href) }}{% endif %}
   {% if caller is defined %}{{ caller() }}{% endif %}

@@ -144,8 +144,7 @@
 
   {% if invoice.kind == 'invoice' and not invoice.corrects_invoice_id %}
   <details class="ui-section danger-zone" id="cancel">
-    <summary>{{ t('invoice.cancel') }}</summary>
-    {{ help_tip('invoice-cancel-help', t('invoice.cancel_help')) }}
+    <summary><span>{{ t('invoice.cancel') }} {{ help_tip('invoice-cancel-help', t('invoice.cancel_help')) }}</span></summary>
     <form method="post" action="/invoices/{{ invoice.id }}/cancel"
           data-confirm data-confirm-message="{{ t('confirm.cancel_invoice') }}">
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">

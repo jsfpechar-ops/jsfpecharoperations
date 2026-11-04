@@ -26,6 +26,7 @@ from tests.browser_support import chromium_launch_kwargs
 OWNER = "browsermanage"
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCREENSHOT = REPO_ROOT / "docs" / "tasks" / "screenshots-0821" / "guest-390.png"
+CORRECTION_SCREENSHOT = REPO_ROOT / "docs" / "tasks" / "screenshots-0901" / "guest-correction-390.png"
 
 
 def _cleanup():
@@ -33,6 +34,8 @@ def _cleanup():
     if not row:
         return
     oid = row["id"]
+    db.execute("DELETE FROM settings WHERE key = ?", ("invoice_purge_unlock",))
+    db.insert("settings", {"key": "invoice_purge_unlock", "value": "1"})
     for a in db.query("SELECT id FROM apartment WHERE owner_user_id = ?", (oid,)):
         db.execute("DELETE FROM site_booking WHERE apartment_id = ?", (a["id"],))
         db.execute("DELETE FROM booking_hold WHERE apartment_id = ?", (a["id"],))
@@ -42,6 +45,12 @@ def _cleanup():
         db.execute("DELETE FROM property_slug_history WHERE apartment_id = ?", (a["id"],))
         db.execute("DELETE FROM property_page WHERE apartment_id = ?", (a["id"],))
         db.execute("DELETE FROM settings WHERE key = ?", (f"booking_site:{a['id']}",))
+    for e in db.query("SELECT id FROM legal_entity WHERE owner_user_id = ?", (oid,)):
+        db.execute("DELETE FROM invoice_item WHERE invoice_id IN "
+                   "(SELECT id FROM invoice WHERE legal_entity_id = ?)", (e["id"],))
+        db.execute("DELETE FROM invoice WHERE legal_entity_id = ?", (e["id"],))
+        db.execute("DELETE FROM invoice_sequence WHERE legal_entity_id = ?", (e["id"],))
+    db.execute("DELETE FROM settings WHERE key = ?", ("invoice_purge_unlock",))
     db.execute("DELETE FROM stripe_account WHERE owner_user_id = ?", (oid,))
     db.execute("DELETE FROM apartment WHERE owner_user_id = ?", (oid,))
     db.execute("DELETE FROM alert WHERE owner_user_id = ?", (oid,))
@@ -80,8 +89,13 @@ def seeded():
     mp.setattr(stripe_connect, "_client", lambda: client)
     auth.create_account(f"{OWNER}@example.test", "Manage Host", username=OWNER)
     oid = int(db.query_one("SELECT id FROM user_account WHERE username = ?", (OWNER,))["id"])
+    entity = db.insert("legal_entity", {"owner_user_id": oid, "name": "Manage Host",
+                                        "seat": "Praha 1", "ico": "04656679",
+                                        "registry_entry": "ŽR", "vat_status": "non_payer",
+                                        "contact_email": "host@example.test",
+                                        "created_at": db.utcnow()})
     aid = int(db.insert("apartment", {"owner_user_id": oid, "internal_name": "Manage Flat",
-                                      "created_at": db.utcnow()}))
+                                      "legal_entity_id": entity, "created_at": db.utcnow()}))
     booking_site.save_settings(aid, {"nightly_price_czk": 1800, "cleaning_fee_czk": 600,
                                      "cancellation_policy": "moderate"})
     property_page.publish_page(aid, published=True)
@@ -180,5 +194,33 @@ def test_guest_cancel_without_javascript(base, seeded):
             page.locator(".ui-btn-danger").click()
             page.wait_for_load_state("load")
             assert page.locator(".pp-bk-badge").inner_text().strip() == "Zrušeno"
+        finally:
+            browser.close()
+
+
+def test_guest_correction_button_390(base, seeded):
+    from app import booking_cancel
+
+    bid = seeded["bid"]
+    if booking_site.get(bid)["status"] == "paid":
+        assert booking_cancel.cancel(bid, by_host=True)["error"] is None
+    invoice_id = int(booking_site.get(bid)["invoice_id"])
+    assert db.query_one("SELECT id FROM invoice WHERE corrects_invoice_id = ?", (invoice_id,))
+    with sync_api.sync_playwright() as playwright:
+        browser = _launch(playwright)
+        try:
+            context = browser.new_context(viewport={"width": 390, "height": 900})
+            page = context.new_page()
+            page.goto(_url(base, seeded))
+            page.wait_for_load_state("load")
+            assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+            links = page.locator(".pp-bk-actions a.ui-btn")
+            labels = [text.strip() for text in links.all_inner_texts()]
+            assert "Faktura (PDF)" in labels and "Opravný doklad (PDF)" in labels
+            for el in links.all():
+                box = el.bounding_box()
+                assert box["height"] >= 44, f"button is {box['height']} px high"
+            CORRECTION_SCREENSHOT.parent.mkdir(parents=True, exist_ok=True)
+            page.screenshot(path=str(CORRECTION_SCREENSHOT), full_page=True)
         finally:
             browser.close()

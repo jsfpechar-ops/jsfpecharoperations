@@ -116,6 +116,7 @@ def test_register_fill_from_the_property_step(host, monkeypatch):  # noqa: F811
     client = host["client"]
     page = client.get(f"/apartments/{apt}/setup/property?lang=en").text
     assert 'id="wizard-ares-form"' in page and 'name="fill_from_register"' in page
+    assert 'data-ruian-suggest' in page and "ruian_suggest.js" in page
     monkeypatch.setattr(invoice_routes, "register_lookup",
                         lambda owner, lang, ico: ({"name": "Register s.r.o.", "seat": "Brno", "dic": "CZ12345678"}, None))
     back = f"/apartments/{apt}/setup/property"

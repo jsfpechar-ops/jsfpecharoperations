@@ -28,6 +28,13 @@ def _off() -> bool:
     return config.STRIPE_MODE not in ("test", "live") and not config.PUBLIC_BASE_URL
 
 
+@router.get("/terms/booking")
+def booking_terms_page(request: Request):
+    """Public guest terms for card bookings (0900). Sets no cookie."""
+    return render(request, "booking_terms.html",
+                  {"show_nav": False, "lang": _page_lang(request)})
+
+
 @router.get("/p/{slug}")
 def property_page_view(request: Request, slug: str):
     scope = "property_page"
@@ -380,6 +387,38 @@ def booking_invoice_pdf(request: Request, slug: str, booking_id: int, token: str
         media_type="application/pdf",
         headers={
             "Content-Disposition": f'attachment; filename="faktura-{number}.pdf"',
+            "Cache-Control": "no-store",
+            "X-Robots-Tag": "noindex",
+        },
+    )
+
+
+@router.get("/p/{slug}/b/{booking_id}/{token}/correction.pdf")
+def booking_correction_pdf(request: Request, slug: str, booking_id: int, token: str):
+    """0901: the credit note of a partial refund, by the signed booking link. 404 otherwise."""
+    scope = "booking_invoice"
+    key = rate_limit.client_key(request, scope)
+    if rate_limit.blocked(scope, key, _RATE_MAX, _RATE_WINDOW):
+        return PlainTextResponse("slow down", status_code=429)
+    rate_limit.record(scope, key)
+    if not booking_site.token_ok(booking_id, token):
+        return Response(status_code=404)
+    booking = booking_site.get(booking_id)
+    if booking is None or not booking.get("invoice_id"):
+        return Response(status_code=404)
+    from .. import invoices
+
+    row = db.query_one(
+        "SELECT id, number FROM invoice WHERE corrects_invoice_id = ? ORDER BY id DESC LIMIT 1",
+        (int(booking["invoice_id"]),),
+    )
+    if row is None:
+        return Response(status_code=404)
+    return Response(
+        invoices.download_pdf(row["id"]),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="opravny-doklad-{row["number"]}.pdf"',
             "Cache-Control": "no-store",
             "X-Robots-Tag": "noindex",
         },

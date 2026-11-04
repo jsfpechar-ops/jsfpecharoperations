@@ -1,7 +1,7 @@
-# 0901: fee legal-notice section + guest i18n + guest RÚIAN autocomplete (CZ)
+# 0911: fee legal-notice section + guest i18n + guest RÚIAN autocomplete (CZ)
 
 Status: todo
-Depends on: 0897 | Base commit: 0ece616a (branch vibe/stay-fee-guest-payment-plan-73df64) | Branch: task/0901-stay-fee-legal-ruian
+Depends on: 0897 | Base commit: `main` after PR #763 merges | Branch: task/0911-stay-fee-legal-ruian
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Plan: [docs/plans/stay-fee-guest-payment.md](../plans/stay-fee-guest-payment.md) (read §5, counsel draft in §10)
 
@@ -16,8 +16,11 @@ Three independent pieces, all guest-facing copy/UX plumbing:
 2. Guest-facing RÚIAN autocomplete in the residence card when country = CZ:
    new token-scoped route `GET /l/{token}/ruian-suggest?q=...` reusing
    `ruian.suggest()`, rate-limited, progressive enhancement only (plain inputs
-   work without JS).
-3. Nothing else. The fee amount UI is 0900; do not touch it here.
+   work without JS). Picking a suggestion fills `res_city` with the
+   suggestion's `addr_obec` (the obec, e.g. "Praha" — never the část obce
+   "Praha 5" / `addr_obec_cast`) and `res_street` with street + number, so
+   the same-obec match in 0898 compares official names, not typing.
+3. Nothing else. The fee amount UI is 0910; do not touch it here.
 
 ## 2. Context
 
@@ -52,7 +55,7 @@ Three independent pieces, all guest-facing copy/UX plumbing:
   the existing plain inputs. Bump `?v=` in `templates/guest/base.html`.
 - Tests: guest-pages rows (`test_guest_browser_e2e.py`, `test_host_geometry.py`,
   0 skipped), i18n completeness test if one exists in the test-map (all
-  languages must have the new keys), screenshots-0901 390 px for the form.
+  languages must have the new keys), screenshots-0911 390 px for the form.
 
 ## 3. Files
 
@@ -64,7 +67,7 @@ Three independent pieces, all guest-facing copy/UX plumbing:
 | `App/app/templates/guest/base.html` | edit | `?v=` bump for changed guest js |
 | `App/app/i18n.py`, `App/app/guest_uk_i18n.py` | edit | new keys, all 6 languages |
 | `App/app/rate_limit.py` usage only | — | call `rate_limit.record`; no edit |
-| tests + screenshots-0901 | create/extend | e2e/geometry 0 skipped, 390 px form screenshot, i18n key parity |
+| tests + screenshots-0911 | create/extend | e2e/geometry 0 skipped, 390 px form screenshot, i18n key parity |
 
 No other file may change.
 
@@ -80,7 +83,7 @@ No other file may change.
 ## 5. Do not touch
 
 CSP in main.py (the suggest call is same-origin fetch — fine), db schema,
-payment rails UI (0900), `docs/context/*`, no commits/push/PR.
+payment rails UI (0910), `docs/context/*`, no commits/push/PR.
 
 ## 6. Commands
 
@@ -92,6 +95,11 @@ From `App/`: `.venv/bin/python -m pytest tests/test_guest_browser_e2e.py tests/t
       still one checkbox; all 6 languages have the keys.
 - [ ] Guest RÚIAN route: 404 when ruian disabled, 429 when rate-limited,
       suggestions only for the token's apartment; no-JS form unchanged.
+- [ ] Picking a suggestion puts `addr_obec` (not `addr_obec_cast`) into
+      `res_city`; typing freely without picking still saves as today.
+- [ ] The fee section ends with a link to the full Act
+      (`https://www.e-sbirka.cz/sb/1990/565`, `rel="noopener"`) in all 6
+      languages (counsel condition, plan §1 decision 10).
 - [ ] Copy contains no residence-criterion wording (grep the strings).
 - [ ] e2e/geometry 0 skipped; lint OK.
 
@@ -102,7 +110,7 @@ wrong; write it in the report instead of improvising copy.
 
 ## 9. Report
 
-`docs/tasks/0901-report.md` (≤600 tokens), `Status: review`.
+`docs/tasks/0911-report.md` (≤600 tokens), `Status: review`.
 
 ## Risk list (reviewer)
 

@@ -520,7 +520,7 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
 .g-wizard-progress .g-bar { height: 6px; }
 .g-wizard-nav {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   margin-top: 18px;
 }
 .g-wizard-nav .g-btn { flex: 1; width: auto; }
@@ -617,6 +617,9 @@ select {
 .g-field .hint.success { color: var(--g-ok); }
 .g-field .err { font-size: 13px; color: var(--g-bad); font-weight: 600; margin-top: 5px; }
 .g-row { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+/* 0896: a row's last field has no bottom margin, so the row keeps the 16 px field rhythm itself */
+.g-row { margin-bottom: 16px; }
+.g-row:last-child { margin-bottom: 0; }
 @media (max-width: 430px) { .g-row { grid-template-columns: 1fr; } }
 
 /* A checkbox is the control a thumb misses most, so the whole row is the
@@ -1170,7 +1173,7 @@ details.g-head-help > .g-intro { margin: 10px 0 0; }
 .g-chip {
   display: inline-block;
   margin-left: 7px;
-  font-size: 11.5px;
+  font-size: 13px;
   font-weight: 650;
   color: var(--g-muted);
   background: var(--g-surface-2);
@@ -1288,8 +1291,10 @@ details.g-summary > .g-summary-body { padding: 16px 20px 18px; }
 
 /* Last look at the answers before they are locked. The "Change" control is a
    quiet text button so it never competes with "Submit my details" below. */
-.g-review-list { margin-bottom: 0; }
-.g-review-list dd { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.g-review-list { margin-bottom: 0; row-gap: 12px; }
+.g-review-list dd { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+/* 0896: 12 px or more between the signature pad's Clear button and the review title */
+.g-review { margin-top: 18px; }
 .g-review-change {
   margin-left: auto;
   min-height: 44px;

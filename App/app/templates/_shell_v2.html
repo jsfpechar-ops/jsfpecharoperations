@@ -15,7 +15,7 @@
   {% endif %}
   <button class="search" type="button" data-command-open style="width:auto;margin-bottom:14px;justify-content:space-between">
     <span style="display:flex;align-items:center;gap:8px">{{ icon('search', 16) }}{{ t('host.search') }}</span>
-    <kbd data-command-shortcut style="font-size:11px;background:#fff;border-radius:5px;padding:1px 6px;color:var(--ink3)">Ctrl K</kbd>
+    <kbd data-command-shortcut style="font-size:11px;background:#fff;border-radius:5px;padding:1px 6px;color:var(--ink3)"><span class="kbd-pc">Ctrl K</span><span class="kbd-mac">⌘ K</span></kbd>
   </button>
   <nav class="side-nav" aria-label="{{ t('a11y.main_navigation') }}">
     <a class="nav{{ ' on' if nav == 'dashboard' }}" href="/" {% if nav == 'dashboard' %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V21H3z"/></svg>{{ t('nav.overview') }}{% if nav_badge is defined and nav_badge %}<span class="badge">{{ nav_badge }}</span>{% endif %}</a>

@@ -444,18 +444,18 @@ The host turns alerts on for one device. No separate consent box, no banner, no 
 
 ### Position
 
-Guests may pay the local stay fee to the **host** from the registration flow. Under zákon č. 565/1990 Sb. §3 the accommodated guest is the poplatník and the accommodation provider is the plátce who collects and remits to the obec (§3f) — so the guest paying the host is the statutory flow, and UbyHost stays a pure technology provider: it never receives or holds funds and does not record whether a payment arrived. The panel is read-only (amount + means: SPAYD QR/IBAN to the host's account, the host's own Revolut/Stripe payment link, or a cash note); nothing about payments is stored, so no new retention and no PSP question.
+Guests may pay the local stay fee to the **host** from the registration flow. Under zákon č. 565/1990 Sb. §3 the accommodated guest is the poplatník and the accommodation provider is the plátce who collects and remits to the obec (§3f) — so the guest paying the host is the statutory flow, and UbyHost stays a pure technology provider: it never receives or holds funds and does not record whether a payment arrived. The panel is read-only (amount + means: SPAYD QR/IBAN to the host's account, the host's own Revolut payment link (Stripe link in v2), or a cash note); nothing about payments is stored, so no new retention and no PSP question.
 
 ### Reasoning
 
-Base = commenced days of stay excluding the arrival day (§3c); rate set by the obec's OZV, capped at 50 Kč/person/day (§3d); statutory exemptions §3b (under 18 etc.); stays over 60 consecutive days are out of scope (§3a); the host keeps the evidenční kniha (§3g, 6 years). Airbnb/Booking collect the fee on-platform for some hosts; hosts who collect themselves needed the means in our guest flow. The same-obec residence exemption is applied backend-only and never disclosed to guests (anti-abuse), recorded host-side in the register.
+Base = commenced days of stay excluding the arrival day (§3c); rate set by the obec's OZV, capped at 50 Kč/person/day (§3d); statutory exemptions §3b (under 18 etc.); stays over 60 consecutive days are out of scope (§3a); the host keeps the evidenční kniha (§3g, 6 years). Airbnb/Booking collect the fee on-platform for some hosts; hosts who collect themselves needed the means in our guest flow. The same-obec residence exemption is applied backend-only and never spelled out in guest copy (anti-abuse), recorded host-side in the register. **Counsel confirmed (owner, 2026-11-04):** acceptable because the fee notice links the full text of the Act (https://www.e-sbirka.cz/sb/1990/565), so every exemption stays available to the guest. Near-miss city spellings are flagged to the host, never auto-exempted.
 
 ### What the product must do
 
 - Legal notice in the guest form (`legal_notice_fee_*`, draft in plan §10) states the duty, payee = host, base, cap, exemptions, and that UbyHost does not process or track the payment; `UBYHOST_GUEST_NOTICE_VERSION` bumped at deploy.
 - Amount computed live from signed guests, identical to the fee register; fee = 0 renders nothing and no reason is ever shown.
-- Payment-link fields validated to https + revolut.com/stripe.com only (anti-phishing); plain external links, no third-party scripts, no CSP change.
-- No payment state, no webhooks, no new subprocessors (Stripe/Revolut contract with the host).
+- Payment-link fields validated to https + revolut.me / revolut.com only (Stripe link in v2) (anti-phishing); plain external links, no third-party scripts, no CSP change.
+- No payment state, no webhooks, no new subprocessors (Revolut, and Stripe in v2, contract with the host).
 
 ### Residual risk
 
@@ -478,4 +478,4 @@ Guest-facing copy must be signed off by counsel (open item 11); the residence-ba
 8. Read the Meta Data Processing Terms and the European Data Transfer Addendum before go-live of the Meta integration (section 6).
 9. Check in Google Ads (Goals > Conversions > Uploads > template) whether the legacy click-conversion file has GBRAID/WBRAID columns; until then, gbraid/wbraid are stored with consent but not exported (section 3).
 10. Web push (section 7): check Apple Inc. and Mozilla Corporation on https://www.dataprivacyframework.gov/list ; if absent, the policy wording already covers it.
-11. Section 8: lawyer sign-off on the `legal_notice_fee_*` guest copy (plan stay-fee-guest-payment §10 draft), the help/guide text (brief 0902), and the ROPA row; confirm the residence-exemption wording stays host-side only.
+11. Section 8: lawyer sign-off on the `legal_notice_fee_*` guest copy (plan stay-fee-guest-payment §10 draft), the help/guide text (brief 0912), and the ROPA row; confirm the residence-exemption wording stays host-side only.

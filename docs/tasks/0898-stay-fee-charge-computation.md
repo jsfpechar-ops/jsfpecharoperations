@@ -1,7 +1,7 @@
 # 0898: stay-fee charge computation + backend same-obec exemption
 
 Status: todo
-Depends on: 0897 | Base commit: 0ece616a (branch vibe/stay-fee-guest-payment-plan-73df64) | Branch: task/0898-stay-fee-charge
+Depends on: 0897 | Base commit: `main` after PR #763 merges | Branch: task/0898-stay-fee-charge
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Plan: [docs/plans/stay-fee-guest-payment.md](../plans/stay-fee-guest-payment.md) (read §4, §9)
 
@@ -29,8 +29,20 @@ register and panel can never disagree. No UI in this brief.
 - Normalisation: diacritics-fold like `payments.ascii_upper()`
   (NFKD, strip combining, upper); compare `fold(res_city) == fold(addr_obec)`
   plus a tiny alias map (`praha`, `prague` → both fold to compare equal to
-  `PRAHA`). Exact match only — a non-match means NO auto-exemption; the host
-  can still set `fee_host_decision='exempt'`.
+  `PRAHA`).
+  Matching (in order, after diacritics/case/whitespace folding): (a) exact
+  match with the property `addr_obec`; (b) Prague and the other statutory
+  cities: strip a trailing district number or `-<part>` ("Praha 5",
+  "Praha-Smíchov", "Brno-střed" → "Praha"/"Brno") and compare again — the
+  obec is the whole city, so a Praha 1 resident staying in Praha 5 is exempt;
+  (c) tiny alias map (Prague → Praha). Anything else → NOT exempt.
+  **Near miss** (Levenshtein ≤ 2 after folding, e.g. "Prha", "Olomuc") → NOT
+  exempt, but the line carries `obec_near_miss=True` and the host fee
+  register (rendered via `routes/stay_fees.py`) shows a quiet "check
+  residence" note next to that guest, so the host decides with
+  `fee_host_decision`. Never auto-exempt on a fuzzy match: a wrong exemption
+  leaves the host owing the fee to the obec.
+  The host can always set `fee_host_decision='exempt'`.
 - **Secrecy rule:** the exemption reason is recorded host-side only
   (e.g. `auto_obec_resident` flag / reason "resident of the obec" in the
   register). Nothing guest-facing may ever mention it (plan §9 item 1).
@@ -42,6 +54,7 @@ register and panel can never disagree. No UI in this brief.
 | Path | Action | What |
 |---|---|---|
 | `App/app/stay_fee.py` | edit | add `fold_text()`, `same_obec_resident(guest, apartment)`, apply in per-guest liability, add `charge_for_reservation()` |
+| `App/app/routes/stay_fees.py` + the fee-register template it renders | edit | quiet "check residence" note per guest line when `obec_near_miss` (host-facing only), host i18n key in `host_i18n.py` |
 | `App/tests/test_stay_fee*.py` (test-map rows for stay_fee) | extend | new cases below |
 
 No other file may change.
@@ -66,11 +79,12 @@ No other file may change.
    (same `_GUESTS_SQL` predicate + `reporting.guest_has_signature`) using
    `guest_period(guest, reservation, stay_from, stay_to)` over the WHOLE stay
    with the apartment threaded, returning
-   `{total_czk, liable_nights, rate_czk, lines: [{guest_id, liable_nights, exempt_nights, status, auto_minor, auto_obec_resident}]}`.
+   `{total_czk, liable_nights, rate_czk, lines: [{guest_id, liable_nights, exempt_nights, status, auto_minor, auto_obec_resident, obec_near_miss}]}`.
 4. Tests (extend the stay_fee test rows): minor exempt; >60 nights not_subject;
    host exempt/charge; CZ resident of the same obec → 0 liable with the obec
    flag; CZ resident of a DIFFERENT obec → liable; foreign resident → liable;
-   fuzzy city spelling ("Praha 1" vs "Praha") → NOT exempt (conservative);
+   "Praha 1" / "Praha-Smíchov" vs property "Praha" → exempt; "Prha" →
+   NOT exempt with `obec_near_miss=True`; "Praha" vs property "Brno" → NOT exempt;
    demo reservation and unsigned guests excluded; kill switch off → None;
    `charge_for_reservation` total == sum of `property_period` liable nights ×
    rate for the stay's months (panel/register consistency pin).

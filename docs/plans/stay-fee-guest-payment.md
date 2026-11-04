@@ -1,6 +1,6 @@
 # Stay fee pay panel — guests pay the host at the end of the guest flow
 
-Status: **scoped with the owner, build not started.** v3 (2026-11-03):
+Status: **scoped with the owner, build not started.** v4 (2026-11-04):
 lean and read-only, and the **guest picks the rail**. UbyHost shows the fee
 amount (calculated from what the guest filled in) and the means to pay;
 it stores no payment state and marks nothing. No new tables, no webhooks,
@@ -19,15 +19,16 @@ rails, plan `direct-payments-build-plan.md`, brief 0425).
 ## 1. Owner decisions (2026-11-03)
 
 1. **Payee = the host's account.** Guest pays the host (IBAN / QR / Revolut /
-   Stripe link / cash); the host remits to the council as today.
+   cash; Stripe link in v2); the host remits to the council as today.
 2. **The guest picks the rail.** The panel lists every rail the host enabled;
    picking one reveals its means (QR, IBAN details, external link, or cash
    instructions). Read-only UI — picking stores nothing (decision 5).
-3. **v1 rails = QR (SPAYD, "pay here") + plain IBAN + Revolut link + Stripe
-   link + cash**, all shown when enabled; IBAN/QR first (free), card links
-   last (see §5 cost table). Links are **host-pasted** (from the host's own
-   Revolut/Stripe dashboard) — no merchant SDK, no API, no third-party
-   script on our pages, no CSP change.
+3. **v1 rails = QR (SPAYD, "pay here") + plain IBAN + Revolut link + cash**,
+   all shown when enabled; IBAN/QR first (free), the Revolut link after (see
+   §5 cost table). The Revolut link is **host-pasted** from the host's own
+   Revolut app (`revolut.me/<name>` or a `*.revolut.com` checkout link) — no
+   merchant SDK, no API, no third-party script, no CSP change. **Stripe
+   payment link: v2** (decision 9).
 4. **Amount is calculated from what the guest filled in**: a per-person
    estimate card at the end of the guest form (dates + birth date), and the
    per-stay total on the guest hub once all expected guests are registered.
@@ -50,6 +51,16 @@ rails, plan `direct-payments-build-plan.md`, brief 0425).
    The statutory framework may be described generally in the legal notice, but
    the interactive UI never explains why a guest owes nothing. The host-facing
    register records the reason (e.g. "resident of the obec").
+9. **v4 changes (owner, 2026-11-04, after CTO review):** Stripe link moves to
+   v2 (card fee ≈ 6–7 % of a typical fee); Revolut stays in v1. The guest
+   RÚIAN autocomplete and the residence reorder **stay**: the same-obec check
+   must be reliable. Typo safety comes from three layers (§4): autocomplete
+   fills the official obec name, the backend strips Prague/statutory-city
+   districts, and a near miss is flagged to the host instead of auto-exempted.
+10. **Counsel confirmed (owner, 2026-11-04):** keeping the residence
+   exemption out of the guest copy is acceptable, provided the fee notice
+   links the full text of zákon č. 565/1990 Sb. so the guest can read every
+   exemption (fine print + link).
 
 ## 2. What exists — reuse map
 
@@ -62,7 +73,7 @@ rails, plan `direct-payments-build-plan.md`, brief 0425).
 | Per-property toggles | `apartment.ocr_scan` (migration `0035` + pg twin `migrations_pg/00005`), `passport_photo_policy` | Same pattern: apartment columns + gate in the guest routes |
 | Property editor / wizard | `templates/_property_editor.html` (fee section includes `_stay_fee_fields.html`), saved via `routes/admin.py` + `routes/stay_fees.py::fee_form_values` | Toggle UI goes into `_stay_fee_fields.html` → appears on the property page and the wizard property step automatically |
 | Legal notice mechanism | `templates/guest/_legal_notice.html` (conditional sections, `legal_ack`), `UBYHOST_GUEST_NOTICE_VERSION` + `notice_version`/`notice_ack_at` on `guest` (`config.py:617`, `docs/ENVIRONMENT.md:86`) | Conditional `legal_notice_fee_*` section; version bump on ship |
-| Migrations | `App/app/migrations/00NN_*.sql` + twin `App/migrations_pg/000NN_*.sql` (next: `0036` / `00006`) | Five `ALTER TABLE` columns only |
+| Migrations | `App/app/migrations/00NN_*.sql` + twin `App/migrations_pg/000NN_*.sql` (next: `0036` / `00006`) | Four `ALTER TABLE` columns only |
 | i18n | guest copy `App/app/i18n.py` (en/cs/de/es/fr) + `guest_uk_i18n.py` (uk); host copy `host_i18n.py` | New keys, all 6 guest languages |
 
 ## 3. Data model (migration `0036` + pg twin `00006`)
@@ -71,14 +82,14 @@ Host configuration only — no guest or payment data is ever stored:
 
 ```sql
 ALTER TABLE apartment ADD COLUMN stay_fee_collect INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE apartment ADD COLUMN stay_fee_guest_rails TEXT NOT NULL DEFAULT '';  -- csv subset of 'qr','iban','revolut','stripe','cash'
-ALTER TABLE apartment ADD COLUMN stay_fee_guest_revolut_link TEXT;  -- validated https, host revolut.com or subdomain
-ALTER TABLE apartment ADD COLUMN stay_fee_guest_stripe_link TEXT;   -- validated https, host stripe.com or subdomain
+ALTER TABLE apartment ADD COLUMN stay_fee_guest_rails TEXT NOT NULL DEFAULT '';  -- csv subset of 'qr','iban','revolut','cash'
+ALTER TABLE apartment ADD COLUMN stay_fee_guest_revolut_link TEXT;  -- validated https, host revolut.me / revolut.com or a subdomain
 ALTER TABLE apartment ADD COLUMN stay_fee_guest_cash_note TEXT;     -- how cash is collected, e.g. "at check-in"
 ```
 
 Link validation on save (https + allow-listed host) — a pasted arbitrary URL
-on a guest page would be a phishing vector. QR variable symbol =
+on a guest page would be a phishing vector. Personal Revolut links live on
+`revolut.me`, so the allow-list must include it. QR variable symbol =
 `f"{reservation_id:010d}"`, unique per stay, so the host can match the
 transfer to the stay in their own banking.
 
@@ -95,7 +106,8 @@ on each render (never stored):
   >60-night stays contribute 0 automatically.
 - **Same-obec rule (backend only):** if `res_country == 'CZ'` and the
   diacritics-folded `res_city` exactly matches the property's `addr_obec`
-  (plus a tiny alias map such as Praha/Prague), the guest is a resident of
+  (after stripping a Prague/statutory-city district suffix — "Praha 5",
+  "Praha-Smíchov", "Brno-střed" — plus a tiny alias map such as Prague → Praha), the guest is a resident of
   the obec and owes no fee (poplatník is not a resident of the obec — see
   `docs/POPLATEK_Z_POBYTU.md`). Implemented in the shared per-guest liability
   so the fee register shows the same exemption (reason: resident of the
@@ -114,6 +126,19 @@ on each render (never stored):
   (many are not public at all). So no EU lookup is needed or wanted — the
   comparison is guest's free-text `res_city` (folded) vs the property's
   RÚIAN-sourced `addr_obec` (host autofill, `ruian.py`, 0884), CZ only.
+- **Typo safety (three layers):** (1) the guest RÚIAN autocomplete fills
+  `res_city` with the official `addr_obec` ("Praha", never "Praha 5"); (2)
+  backend folding + district strip + alias map catches free typing like
+  "praha 5"; (3) a **near miss** (Levenshtein ≤ 2 after folding, e.g. "Prha")
+  is **not** auto-exempted — the host register shows "check residence" next
+  to that guest and the host decides via `fee_host_decision`. Never
+  auto-exempt on a fuzzy match: a wrong exemption leaves the host owing the
+  fee to the obec. Residence means permanent residence (trvalý pobyt) — the
+  guest's own declaration on the form, as the law intends.
+- **Live register change on deploy:** the same-obec rule changes **unsealed**
+  periods (list page, `stay_fee_auto` e-mails) — resident guests drop out;
+  sealed periods are untouched (§9). Tell hosts in the release note when 0898
+  ships.
 - Form-end estimate card: the same math on the **entered, un-saved** form
   values (stay dates + birth date), rendered server-side on every form render
   (initial GET and the 422 re-render with the guest's values), so the number
@@ -144,10 +169,11 @@ on each render (never stored):
 
 **Property settings + wizard.** In the fee section (`_stay_fee_fields.html`):
 switch "Collect the stay fee from guests" (`stay_fee_collect`), rail
-checkboxes (QR / IBAN / Revolut link / Stripe link / Cash), the two link URL
-fields (validated), and the cash-instructions textarea. Saved through the
+checkboxes (QR / IBAN / Revolut link / Cash), the Revolut link field
+(validated), and the cash-instructions textarea. Saved through the
 existing `fee_form_values()` + `routes/admin.py` apartment save path — works
-identically from the property page and the wizard's property step. When
+identically from the property page and the wizard's property step. Under the switch, one muted line: "Leave this off if Airbnb or Booking already
+collects the fee for this property" (no double charging). When
 `UBYHOST_STAY_FEE_GUEST_PAY=off`, the controls render disabled and guest pages
 never show the panel.
 
@@ -189,7 +215,6 @@ radio/`<details>` per enabled rail, each revealing its means:
 - **IBAN** — plain copyable account (IBAN + name), no QR.
 - **Revolut** — `<a class="g-btn" href="…" rel="noopener">` to the host's
   pasted Revolut link, note "you'll see it in the host's Revolut".
-- **Stripe** — same pattern, host's pasted Stripe payment link.
 - **Cash** — the host's cash-instructions text.
 
 The card ends with a one-line pointer to the legal information the guest
@@ -204,14 +229,14 @@ second copy of the legal text. No guest POST endpoints, no state changes.
 | IBAN / SEPA transfer | 0 | VS = reservation id for matching |
 | QR (SPAYD) | 0 | same account, amount embedded |
 | Revolut payment link | ≈1–2% + small fixed, plan-dependent; only on successful transactions, refunds free; settles to the merchant account in ~24 h | host pastes a link created in the Revolut app |
-| Stripe payment link | EEA card **1.5% + €0.25** (~6.3 Kč), premium/corporate EEA 1.9% + €0.25, non-EEA 3.15–3.25% + €0.25, +1–2% FX; disputes $15 | on the host's connected account, application fee 0 |
+| Stripe payment link (**v2**) | EEA card **1.5% + €0.25** (~6.3 Kč), premium/corporate EEA 1.9% + €0.25, non-EEA 3.15–3.25% + €0.25, +1–2% FX; disputes $15 | on the host's connected account, application fee 0 |
 
 For a typical city tax (e.g. 3 nights × 50 Kč = 150 Kč) the **fixed card fee
 dominates**: Stripe costs ≈ 8.5 Kč (EEA) to ≈ 11 Kč (non-EEA), i.e. ~6–7% of
 the fee; Revolut is similar or slightly cheaper; IBAN/QR/cash are free. So
 yes — **Stripe is the most expensive rail for this use case**; it still earns
-its place for international guests who cannot SEPA. Recommended default
-order in the picker: QR → IBAN → Revolut → Stripe → Cash; the host enables
+its place for international guests who cannot SEPA. v1 picker order:
+QR → IBAN → Revolut → Cash (Stripe joins in v2, before Cash); the host enables
 what they want and the guest picks.
 
 ### Revolut deep-dive (developer.revolut.com, checked 2026-11-03)
@@ -251,7 +276,6 @@ only one pay control is ever visible (the card's single coral element).
 │     [ QR png ]   IBAN CZ… · VS 0000000123      │  ← copy button (ghost)
 │  ▸ IBAN only                                    │
 │  ▸ Revolut link                                 │
-│  ▸ Card (Stripe link)                           │
 │  ▸ Pay in cash — "at check-in, ask Josef"      │  ← host note text
 │  Why this fee — see the legal information  ›    │  ← one quiet link, no legal repeat
 └─────────────────────────────────────────────────┘
@@ -261,22 +285,10 @@ Pros: fewest moving parts, no new page, "smart" re-show for free, consistent
 with the hub's existing cards. Cons: long stays with many guests make the card
 tall on a phone (mitigate: per-person breakdown stays collapsed by default).
 
-**Option B — dedicated pay step `/l/{token}/{reservation_id}/pay`.**
-A full-screen ticket card (strip "Stay fee", big amount, rail list, stub with
-the ONE coral action for the chosen rail). The hub shows a compact card
-"Stay fee 450 Kč — Pay ›" linking to it. Pros: phone-friendly, feels like the
-"end of the flow" moment you originally described, easy to share/re-open.
-Cons: one more route + page to test/screenshot; the hub still needs the
-compact card anyway.
-
-**Option C — hub card, no accordion: all rails visible at once** as quiet
-rows (QR always shown when enabled, links as ghost buttons, cash note last).
-Pros: dead simple, everything visible without interaction (good for elderly
-guests). Cons: several pay-looking controls at once; on 320 px the card gets
-very tall; weaker "guest picks one" semantics.
-
-**Recommendation: A for v1** (leanest, fewest routes), with the per-person
-breakdown collapsed; revisit B if hosts ask for a standalone pay page.
+**Chosen: A** (owner review 2026-11-04). Dropped: B (dedicated pay step —
+one more route and page for no gain) and C (all rails open at once — several
+pay-looking controls, very tall at 320 px). Revisit B if hosts ask for a
+standalone pay page.
 
 **Standards check for option A (against `docs/DESIGN.md` Arrival lane +
 `guest.css`, mockup A v3 after visual review):** real QR PNG data-URI (not a
@@ -299,15 +311,12 @@ real `App/app/static/tokens.css` + `guest.css`, EN copy; the build ships all
 | File | Shows |
 |---|---|
 | [stay-fee-guest-payment/mockup-A-hub-accordion.html](stay-fee-guest-payment/mockup-A-hub-accordion.html) | Option A — hub money card, rail accordion, QR + copy rows |
-| [stay-fee-guest-payment/mockup-B-pay-step.html](stay-fee-guest-payment/mockup-B-pay-step.html) | Option B — dedicated pay step, radio rails, one coral stub action |
-| [stay-fee-guest-payment/mockup-C-hub-all-rails.html](stay-fee-guest-payment/mockup-C-hub-all-rails.html) | Option C — all rails visible at once |
 | [stay-fee-guest-payment/mockup-D-form-estimate.html](stay-fee-guest-payment/mockup-D-form-estimate.html) | Form-end estimate card (quiet, no button, hidden when 0) |
 
 Rendered screenshots (Playwright chromium, 390 px and 1280 px, device scale 2) live
 in [stay-fee-guest-payment/screenshots/](stay-fee-guest-payment/screenshots/) —
 reviewed 2026-11-04: v3 fixed a fake QR (now a real SPAYD QR png), cramped QR row
-on 390 px (now stacked, centered), missing dividers between rail rows, and
-spacing on option B; re-rendered shots show no remaining issues.
+on 390 px (now stacked, centered), missing dividers between rail rows, ; re-rendered shots show no remaining issues.
 **Form-end estimate card** (all options): a quiet grey card like the legal
 notice box — one line "Municipal stay fee: about X Kč for you (n days × Y Kč)"
 + "you'll choose how to pay once everyone is registered", no button, no coral,
@@ -315,7 +324,7 @@ hidden when the estimate is 0.
 
 ## 6. Compliance / privacy
 
-- No third-party scripts (Revolut/Stripe are plain external links, QR is our
+- No third-party scripts (the Revolut link is a plain external link, QR is our
   own PNG): no CSP change.
 - Pay-panel and legal-notice copy state: fee owed to the municipality, **you
   pay the host**, host remits it; ubyhost never receives funds and does not
@@ -324,7 +333,7 @@ hidden when the estimate is 0.
   `UBYHOST_GUEST_NOTICE_VERSION`.
 - The same-obec rule is backend-only and never surfaced to guests (copy must
   not hint at it).
-- No new personal data: five columns are host configuration on `apartment` —
+- No new personal data: four columns are host configuration on `apartment` —
   **no `retention.py` / RETENTION.md change**.
 - i18n: guest keys in all 6 languages; host keys in `host_i18n.py`.
 
@@ -332,7 +341,7 @@ hidden when the estimate is 0.
 
 **Phase 0 — config + toggle.** `migrations/0036_stay_fee_guest_pay.sql` +
 `migrations_pg/00006_…sql`; `config.py` (`UBYHOST_STAY_FEE_GUEST_PAY`, default
-off), `.env.example`, `docs/ENVIRONMENT.md`; the five columns; toggle UI in
+off), `.env.example`, `docs/ENVIRONMENT.md`; the four columns; toggle UI in
 `_stay_fee_fields.html` + `fee_form_values()` + admin save (link validation);
 kill-switch gate; host i18n keys.
 
@@ -358,6 +367,7 @@ executor builds.
 - Any payment state: `paid`/`pending` statuses, mark-received/waive actions,
   "collected" figures, register/PDF columns, delta charges, sweeps, audit rows
   for payments, guest receipts / "guest paid" e-mails.
+- Stripe payment link (v2; plan the same allow-list pattern for `buy.stripe.com`).
 - Revolut Merchant API / Web SDK, auto-minted links, and Revolut or Stripe
   webhooks for this feature (no state to update); Stripe link creation on the
   connected account for this feature.
@@ -438,9 +448,9 @@ EN draft:
   exemptions (for example for persons under 18), and a stay longer than 60
   consecutive days with one provider is not subject to the fee. You pay your
   host directly as instructed — UbyHost does not process the payment and does
-  not record whether it was paid."
+  not record whether it was paid. Plné znění zákona: https://www.e-sbirka.cz/sb/1990/565."
 
-de/es/fr/uk: faithful translations at build (brief 0901). Ship with a bumped
+de/es/fr/uk: faithful translations at build (brief 0911). Ship with a bumped
 `UBYHOST_GUEST_NOTICE_VERSION` (docs/ENVIRONMENT.md:86).
 
 ## 11. Briefs (executor tasks, Haiku 5.5, one per session)
@@ -449,28 +459,24 @@ de/es/fr/uk: faithful translations at build (brief 0901). Ship with a bumped
 |---|---|---|
 | [0897](../tasks/0897-stay-fee-guest-pay-phase0.md) | phase 0: migration 0036/00006, kill switch, property toggle UI, host i18n | none |
 | [0898](../tasks/0898-stay-fee-charge-computation.md) | `charge_for_reservation()` + same-obec rule in shared logic + tests | 0897 |
-| [0900](../tasks/0900-stay-fee-guest-panel.md) | hub money card + rail picker, form estimate, residence order | 0898 |
-| [0901](../tasks/0901-stay-fee-legal-notice-ruian.md) | legal-notice section + 6-language copy + guest RÚIAN route | 0897 |
-| [0902](../tasks/0902-stay-fee-help-guide.md) | host help topic (`page_help('stay_fees')`) + guest-guide fact for the fee | 0897 |
+| [0910](../tasks/0910-stay-fee-guest-panel.md) | hub money card + rail picker, form estimate, residence order | 0898 |
+| [0911](../tasks/0911-stay-fee-legal-notice-ruian.md) | legal-notice section + 6-language copy + guest RÚIAN route | 0897 |
+| [0912](../tasks/0912-stay-fee-help-guide.md) | host help topic (`page_help('stay_fees')`) + guest-guide fact for the fee | 0897 |
 
 **Help/legal prep already done in docs (2026-11-03):** ROPA row (no new personal
-data, no payment state, Stripe/Revolut are the host's processors —
+data, no payment state, Revolut (Stripe in v2) is the host's processor —
 `docs/privacy/ROPA.md`), RETENTION row (config-only columns, no payment data —
 `docs/privacy/RETENTION.md`), legal position §8 + open item 11 for counsel
 (`docs/UbyHost_workplan/04_legal_positions.md`), counsel-draft copy in §10.
 
 ## 12. Open questions (not blocking)
 
-1. Counsel: confirm the same-obec exemption rule + its register reason
-   wording, and the `legal_notice_fee_*` copy (payee wording, "not tracked"
-   wording, no hint of the residence rule).
-2. `res_city` is free text — the same-obec match is exact-after-folding only;
-   edge cases (Praha vs Prague vs Hlavní město Praha) go in the small alias
-   map, everything else falls back to the host's manual decision. RÚIAN stays
-   CZ-only (host property autofill); no EU-wide address API is needed, because
-   only CZ residents can be exempt — see §4. A guest-facing RÚIAN suggest is
-   deliberately not added (it would not leak the exemption, but it is scope
-   creep; free text + folding is enough for a conservative match).
-3. Pasted Revolut/Stripe links cannot enforce the exact amount (only the QR
+1. Counsel (answered 2026-11-04, decision 10): hiding the residence exemption
+   is fine with a link to the law in the notice. Still to sign: the final
+   `legal_notice_fee_*` wording in all 6 languages before 0911 merges.
+2. Same-obec matching is settled in §4 (autocomplete + district strip + near-miss
+   flag to the host). RÚIAN stays CZ-only; no EU-wide address API is needed
+   (only CZ residents can be exempt).
+3. A pasted Revolut link cannot enforce the exact amount (only the QR
    rail embeds it) — the panel shows the amount next to the link; flagged in
    the legal copy review.

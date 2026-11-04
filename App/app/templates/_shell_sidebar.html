@@ -9,7 +9,7 @@
     <button class="ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact sidebar-collapse" type="button" data-sidebar-collapse data-label-hide="{{ t('a11y.hide_menu') }}" data-label-show="{{ t('a11y.show_menu') }}" aria-expanded="true" aria-label="{{ t('a11y.hide_menu') }}">{{ icon('panel-left', 16) }}</button>
   </div>
   <span class="env-badge ui-env {{ ubyport_env }}" title="{{ t('env.where_reports_go') }}">{{ t('env.' ~ ubyport_env) }}</span>
-  <button class="ui-search-row" type="button" data-command-open>{{ icon('search', 16) }}<span>{{ t('host.search') }}</span><kbd data-command-shortcut>Ctrl K</kbd></button>
+  <button class="ui-search-row" type="button" data-command-open>{{ icon('search', 16) }}<span>{{ t('host.search') }}</span><kbd data-command-shortcut><span class="kbd-pc">Ctrl K</span><span class="kbd-mac">⌘ K</span></kbd></button>
   <nav class="ui-nav sidebar-nav" aria-label="{{ t('a11y.main_navigation') }}">
     {% for href, icon_name, label, active in [
         ('/', 'layout-dashboard', t('nav.overview'), nav == 'dashboard'),

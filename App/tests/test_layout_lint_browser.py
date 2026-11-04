@@ -2,7 +2,8 @@
 
 Rules live in layout_lint.js: word-per-line wrapping, squeezed labels, stranded
 badges, clipped or truncated text, overlapping text, elements outside the
-viewport, empty buttons and boxes, stray duplicate icons, mixed stylesheets.
+viewport, empty buttons and boxes, stray duplicate icons, mixed stylesheets, and a help "?"
+that is not on the same line as its heading or label (help-stranded).
 
 Host pages must have zero findings. Guest and public pages are report-only.
 Screenshots at 390/768/1280 of every host page go to UBYHOST_SHOTS_DIR/layout-lint
@@ -23,7 +24,7 @@ if REQUIRE_BROWSER:
 else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
-from app import auth
+from app import auth, db
 from tests.browser_support import chromium_launch_kwargs
 from test_design_guardrails_browser import ROUTES
 from test_host_wide_geometry_browser import (  # noqa: F401  (fixtures re-created here)
@@ -45,6 +46,15 @@ PUBLIC_ROUTES = {
 }
 # Known findings the lint must not hide: every entry needs a reason and an owner decision.
 ALLOW: dict[tuple[str, str], str] = {}
+# Pages the shared route map does not reach: the calendars tab (needs feeds) and the stay page.
+EXTRA_ROUTES = {
+    "property-bookings": "/apartments/{configured_apartment}?view=bookings",
+    "property-bookings-empty": "/apartments/{unconfigured_apartment}?view=bookings",
+}
+# Rules checked inside opened accordions (the older rules already cover each page closed).
+OPEN_RULES = {"table-squeezed", "tight-stack", "tight-side", "half-width-input", "legend-overlap",
+              "double-primary", "stray-rule", "help-stranded", "word-per-line", "label-squeezed", "too-narrow"}
+OPEN_ALL = """() => { document.querySelectorAll('details:not(.page-help):not(.me-menu):not(.env-more):not(.ui-how)').forEach((d) => { d.open = true; }); }"""
 
 
 def _out_dir() -> Path:
@@ -62,7 +72,15 @@ def test_every_host_page_passes_the_layout_lint(wide_host, wide_base):
         configured_apartment=wide_host["configured_apartment"],
         today=wide_host["today"], housebook_end=wide_host["housebook_end"],
     )
-    routes = {key: path.format(**subst) for key, path in ROUTES.items()}
+    routes = {key: path.format(**subst) for key, path in {**ROUTES, **EXTRA_ROUTES}.items()}
+    now = db.utcnow()
+    for apartment_id in (wide_host["configured_apartment"], wide_host["unconfigured_apartment"]):
+        for label, url in (
+            ("airbnb", "https://www.airbnb.com/calendar/ical/1793615627809335099.ics?t=cded41ddbd6a45668d34bee5c7f785c4&locale=cs"),
+            ("booking", "https://ical.booking.com/v1/export?t=21983a47-fa4d-4b54-82b8-e042c9118230"),
+        ):
+            db.insert("ical_feed", {"apartment_id": apartment_id, "url": url, "label": label,
+                                    "last_sync_at": now, "last_status": "ok", "active": 1, "created_at": now})
     out = _out_dir()
     out.mkdir(parents=True, exist_ok=True)
     findings: list[dict] = []
@@ -91,6 +109,16 @@ def test_every_host_page_passes_the_layout_lint(wide_host, wide_base):
                     findings.append({"route": name, "width": width, "finding": item})
                 if width in SHOT_WIDTHS:
                     page.screenshot(path=str(out / f"{name}-{width}.png"), full_page=True)
+                # Same page with every accordion open: the fields inside are where the squeezed layouts hide.
+                if page.locator("details:not([open]):not(.page-help):not(.me-menu):not(.env-more):not(.ui-how)").count():
+                    page.evaluate(OPEN_ALL)
+                    page.wait_for_timeout(600)
+                    for item in page.evaluate(LINT):
+                        if (name, item[0]) in ALLOW or item[0] not in OPEN_RULES:
+                            continue
+                        findings.append({"route": f"{name}+open", "width": width, "finding": item})
+                    if width in SHOT_WIDTHS:
+                        page.screenshot(path=str(out / f"{name}+open-{width}.png"), full_page=True)
             context.close()
         # Report-only crawl of guest and public pages (signed out).
         for width in (390, 1280):
@@ -152,6 +180,14 @@ BAD_PAGE = """<!doctype html><html><head><meta charset=utf-8>
 <button class=btn></button>
 <p class=a>Overlapping name one</p><p class=b>Overlapping name two</p>
 <div style="position:absolute;left:380px;top:200px">Past the edge text</div>
+<div style="margin-top:420px;width:200px"><b>Guest form access</b></div>
+<span class=help-tip><button class=help-tip-btn style="width:18px;height:18px;padding:0">?</button></span>
+<div style="width:300px"><b>Inline label</b><span class=help-tip style="margin-left:6px"><button class=help-tip-btn style="width:18px;height:18px;padding:0">?</button></span></div>
+<table style="width:150px;table-layout:fixed;font-size:20px;margin-top:20px;overflow-wrap:anywhere"><tr><td>Airbnb</td><td>Booking</td><td>Remove</td></tr></table>
+<div style="width:340px"><button class=btn style="display:block;width:200px">First</button><button class=btn style="display:block;width:200px;margin-top:4px;background:rgb(210,70,50)">Second</button><button class=btn style="display:block;width:200px;margin-top:20px;background:rgb(210,70,50)">Third</button></div>
+<div style="width:340px"><input style="width:150px" aria-label=x></div>
+<fieldset style="width:300px;border:2px groove #888"><legend>Signature</legend>Text</fieldset>
+<div style="width:360px"><div style="border-right:1px solid #ccc;height:40px">Stray</div></div>
 <span id=icons><svg width=10 height=10><path d="M0 0h10v10z"/></svg><svg width=10 height=10><path d="M0 0h10v10z"/></svg></span>
 </body></html>"""
 
@@ -168,8 +204,13 @@ def test_the_lint_catches_the_known_regressions(wide_base):
         page = browser.new_page(viewport={"width": 390, "height": 800})
         page.goto(wide_base + "/healthz")
         page.set_content(BAD_PAGE)
-        rules = {item[0] for item in page.evaluate(LINT)}
+        found = page.evaluate(LINT)
+        rules = {item[0] for item in found}
+        stranded = [item for item in found if item[0] == "help-stranded"]
         browser.close()
     expected = {"word-per-line", "label-squeezed", "badge-stranded", "clipped-text",
-                "text-overlap", "outside-viewport", "empty-control", "duplicate-icon"}
+                "text-overlap", "outside-viewport", "empty-control", "duplicate-icon", "help-stranded",
+                "table-squeezed", "tight-stack", "half-width-input", "legend-overlap", "double-primary", "stray-rule"}
     assert expected <= rules, f"lint missed {sorted(expected - rules)}; saw {sorted(rules)}"
+    # The "?" under its heading is caught; the one right after its label is not.
+    assert len(stranded) == 1 and "Guest form access" not in stranded[0][1], stranded

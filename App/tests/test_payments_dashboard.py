@@ -91,7 +91,7 @@ def test_every_state_renders_its_copy(client, owner, monkeypatch):
         "none": "Connect your Stripe account",
         "pending": "Stripe is preparing your account",
         "action_required": "Stripe needs one more thing",
-        "complete": "Payments are on",
+        "complete": "Card payments are on",
         "rejected": "Stripe could not approve",
         "disabled": "Stripe has paused",
     }
@@ -171,7 +171,9 @@ def test_foreign_stay_refused(client, owner):
 # --- list ----------------------------------------------------------------------
 
 
-def test_list_shows_drafts_and_empty_state(client, owner):
+def test_list_shows_drafts_and_empty_state(client, owner, monkeypatch):
+    monkeypatch.setattr(config, "STRIPE_MODE", "test")
+    _set_state(owner, "complete")
     response = client.get("/payments")
     assert "No payment requests yet" in response.text
     payment_request.create(
