@@ -2161,9 +2161,10 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     if (form && claimNode(form, "initPropertyPage")) {
       var lastOpened = null;
       var returnInput = form.querySelector("input[data-property-return]");
-      form.addEventListener("toggle", function (event) {
+      // 0952: #sec-lock sits outside the form now, so listen on the document for it too.
+      document.addEventListener("toggle", function (event) {
         var node = event.target;
-        if (node.tagName === "DETAILS" && node.open && node.id && node.matches("details.prop-sec")) lastOpened = node.id;
+        if (node.tagName === "DETAILS" && node.open && node.id && node.matches("details.prop-sec") && (form.contains(node) || node.id === "sec-lock")) lastOpened = node.id;
       }, true);
       form.addEventListener("submit", function () {
         var group = PROPERTY_RETURN_SECTION[lastOpened];
