@@ -13,7 +13,6 @@ else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
 from app import auth
-from tests.browser_support import chromium_launch_kwargs
 from tests.test_dashboard_calendar_browser import calendar_origin, launch, open_page, wait_loaded, shot  # noqa: F401
 from tests.test_dashboard_calendar import calendar_workspace  # noqa: F401
 from tests.test_0905_cleaning_calendar_stays_browser import _seed
