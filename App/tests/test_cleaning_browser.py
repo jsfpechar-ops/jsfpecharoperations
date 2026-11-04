@@ -252,11 +252,13 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, w
         dialog_marker.press("Enter")
         page.locator("[data-cal-details]").wait_for(state="visible")
         page.locator("[data-cal-details] [data-cal-close]").click()
-        # 0956: Gantt is offered only with 3+ active properties, so add an empty third one first.
-        db.insert("apartment", {
-            "owner_user_id": ws["owner"], "internal_name": "Third test property", "active": 1,
-            "created_at": db.utcnow(), "automation_mode": "manual", "checkin_hour": 15, "checkout_hour": 11,
-        })
+        # 0956: Gantt is offered only with 3+ active properties. The workspace can be shared
+        # with the en run, so add an empty third property only when fewer than three exist.
+        if len(cleaning.properties(ws["owner"])) < 3:
+            db.insert("apartment", {
+                "owner_user_id": ws["owner"], "internal_name": "Third test property", "active": 1,
+                "created_at": db.utcnow(), "automation_mode": "manual", "checkin_hour": 15, "checkout_hour": 11,
+            })
         # Explicit cal_date: a reload could race the calendar's async URL update and open on today.
         page.goto(f"{origin}/cleaning?lang={lang}&cal_date=2026-10-17")
         loaded(page)
@@ -265,10 +267,14 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, w
         # 0834: the host gantt draws cleaning markers only, so booking-bar geometry
         # is no longer asserted here. The cleaning time is checked on its marker.
         gantt_marker = page.locator(f'.cal-gantt-events .cal-event.is-gantt-cleaning[data-cal-event="{marker["id"]}"]')
-        slot = page.locator(
+        slot_locator = page.locator(
             f'.cal-gantt-slot[data-date="2026-10-17"][data-property="{marker["propertyId"]}"]'
-        ).bounding_box()
+        )
+        gantt_marker.wait_for(state="visible")
+        slot_locator.wait_for(state="visible")
+        slot = slot_locator.bounding_box()
         box = gantt_marker.bounding_box()
+        assert slot is not None and box is not None, "Gantt slot or cleaning marker has no box"
         assert box["x"] >= slot["x"] and box["x"] + box["width"] <= slot["x"] + slot["width"]
         assert box["width"] >= slot["width"] - 6
         assert gantt_marker.is_visible() and gantt_marker.get_attribute("aria-label")
