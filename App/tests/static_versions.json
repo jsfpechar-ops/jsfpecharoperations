@@ -16,8 +16,8 @@
     "v": "20261027-signup-wrap"
   },
   "app.js": {
-    "sha256": "84985275c6fbcbfd4c0ebcf6aa4163637a3b500919e836693e3292b7962af18e",
-    "v": "20261103-0901f"
+    "sha256": "5c4ab7d846b46ab1b7363a0d9f427cadf8e1fc5e103ede4022df042dd3a713dc",
+    "v": "20261104-0100"
   },
   "app2.css": {
     "sha256": "adca1e4e5915fa05266ef29c15738c8a8792021e1e2e59d58c9d959fcaa8c69f",
@@ -43,9 +43,13 @@
     "sha256": "2f0be0505681096250e093668bc9b30c7a4eeae2866b34dcb44288ca10ea89b1",
     "v": "20261102-0507"
   },
+  "command.css": {
+    "sha256": "87586ec608380d557607985a7bc968c245b0ca38709bd8835952c28894c809f8",
+    "v": "20261103-0935"
+  },
   "components.css": {
-    "sha256": "844da27d439ab6086d6191474f2ac0f394e3b11d5c9367a9a9ebff04bde6d68c",
-    "v": "20261014-0102c"
+    "sha256": "832cf9f97fe1927f00933c8ca672699a52b98bdf9c272a0a73c9f5d7311d4cde",
+    "v": "20261103-0930"
   },
   "csrf.js": {
     "sha256": "84efc595e531ca8b52ae2e7f7da35a40ed5a418624c27fe43b07847f16a11fe4",
@@ -127,6 +131,10 @@
     "sha256": "4e75d63ea5de86912252b34a8b22fc5d91ed7b7190ad7d623947295e1725c7cd",
     "v": "20261102-0789a"
   },
+  "platform.js": {
+    "sha256": "6bf1c6472dcb2c7427f6a1d269c56945bb9641fcb207c6461a05870555aec782",
+    "v": "20261103-0920"
+  },
   "pricing.js": {
     "sha256": "4ebb282d09e55fcd782087dfd47c494c78f542f6c26648ddb55fc4390fe50b09",
     "v": "20261028-ttlock-month"
@@ -156,8 +164,8 @@
     "v": "20261102-0509"
   },
   "tokens.css": {
-    "sha256": "f2ff6d6ad651558d60bc7312d74aca175c9782a27234e9e4505dd7a1f4841961",
-    "v": "20261101-0495"
+    "sha256": "bada752f7935a7fc7bf01c8fd07d48a9893c472decafd3a4974efc0d1c3220ea",
+    "v": "20261103-0920"
   },
   "ubyhost-logo-stacked.png": {
     "sha256": "3f4a4fa5aae52cb2ea45c076ff4ecd26f86c76915852cff2664317d3f7fb50fa",
