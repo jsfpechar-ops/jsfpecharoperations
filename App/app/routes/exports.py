@@ -119,6 +119,8 @@ def guest_export_json(guest_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    if not auth.session_is_fresh(request):
+        return _back("/settings/security#settings-security", err=_flash(request, "auth.error.recent_login"))
     if not access.guest(request, guest_id):
         return Response("Not found.", status_code=404, media_type="text/plain")
     hidden = _identity_hidden(request, f"/guests/{guest_id}", guest_id)
@@ -364,6 +366,8 @@ def settings_workspace_export(request: Request, background_tasks: BackgroundTask
     guard = auth.require_login(request)
     if guard:
         return guard
+    if not auth.session_is_fresh(request):
+        return _back("/settings/security#settings-security", err=_flash(request, "auth.error.recent_login"))
     hidden = _identity_hidden(request, "/settings")
     if hidden:
         return hidden
