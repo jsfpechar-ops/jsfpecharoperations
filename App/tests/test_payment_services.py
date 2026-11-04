@@ -145,8 +145,8 @@ def test_services_fit_a_phone(owner, stripe_env):
             context.add_cookies([{"name": auth.SESSION_COOKIE, "value": token,
                                   "url": f"http://127.0.0.1:{port}"}])
             page = context.new_page()
-            page.goto(f"http://127.0.0.1:{port}/payments?lang=cs&service={sid}#new-request")
-            assert page.locator("[data-payment-services] li").count() == 2
+            page.goto(f"http://127.0.0.1:{port}/payments?lang=cs")
+            assert page.locator("[data-payment-services] [data-service]").count() == 2
             overflow = page.evaluate(
                 "document.documentElement.scrollWidth - document.documentElement.clientWidth")
             assert overflow <= 0

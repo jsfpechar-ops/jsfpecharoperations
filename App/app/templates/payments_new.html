@@ -17,13 +17,13 @@
       <input class="ui-input" type="number" name="amount_czk" min="1" step="1" required{% if prefill %} value="{{ prefill.amount_czk }}"{% endif %}>
     </label>
     <fieldset class="ui-field">
-      <legend>{{ t('payments.field.reason') }}</legend>
+      <legend>{{ t('payments.new.reason') }}</legend>
       <div class="ui-chips">
         {% for r in reasons %}<label class="ui-chip"><input type="radio" name="reason" value="{{ r }}" {% if loop.first %}required{% endif %}{% if prefill and r == 'custom' %} checked{% endif %}> {{ t('payments.reason.' ~ r) }}</label>{% endfor %}
       </div>
     </fieldset>
     <label class="ui-field">
-      <span>{{ t('payments.field.note') }}</span>
+      <span>{{ t('payments.new.note') }}</span>
       <input class="ui-input" type="text" name="guest_note" maxlength="60"{% if prefill %} value="{{ prefill.name }}"{% endif %}>
     </label>
     <label class="ui-field">
@@ -40,11 +40,11 @@
     <fieldset class="ui-field">
       <legend>{{ t('payments.field.rail') }}</legend>
       <div class="ui-chips">
-        <label class="ui-chip"><input type="radio" name="rail" value="card" checked> {{ t('payments.rail.card') }}</label>
-        <label class="ui-chip"><input type="radio" name="rail" value="qr"> {{ t('payments.rail.qr') }}</label>
+        <label class="ui-chip"><input type="radio" name="rail" value="card" checked> {{ t('payments.new.rail_card') }}</label>
+        <label class="ui-chip"><input type="radio" name="rail" value="qr"> {{ t('payments.new.rail_qr') }}</label>
       </div>
     </fieldset>
-    {{ ui_button(t('payments.new.save_draft'), 'primary', type='submit') }}
+    {{ ui_button(t('payments.new.submit'), 'primary', type='submit') }}
   </form>
 </div>
 {% endblock %}

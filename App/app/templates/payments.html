@@ -12,7 +12,7 @@
 {% block body %}
 {% if not stripe_off and connect_state.onboarding_state == 'complete' %}
 <div class="ui-section">
-  <p><span class="ui-badge ui-badge-done" data-tone="green">{{ t('payments.connect.complete') }}</span>
+  <p><span class="ui-badge ui-badge-done" data-tone="green">{{ t('payments.overview.on') }}</span> <span class="ui-sub">{{ t('payments.overview.on_sub') }}</span>
     {{ ui_tip('tip-pay-complete', t('payments.help.stripe_role')) }}</p>
 </div>
 {% else %}
@@ -71,7 +71,7 @@
 {% endif %}
 {% if not stripe_off and connect_state.onboarding_state not in ['rejected', 'disabled'] %}
 <div class="ui-section" data-payment-services>
-  <h2>{{ t('payments.services.title') }}</h2>
+  <h2>{{ t('payments.overview.services') }}</h2>
   {% if services %}
   {{ ui_table_begin([(t('payments.services.name'), ''), (t('payments.field.amount'), 'r'), (t('common.actions'), '')], label=t('payments.services.title')) }}
   {% for s in services %}
@@ -90,7 +90,7 @@
   {% else %}
   <p class="ui-sub">{{ t('payments.services.empty') }}</p>
   {% endif %}
-  <h3>{{ t('payments.services.add') }}</h3>
+  <h3>{{ t('payments.overview.add_service') }}</h3>
   <form method="post" action="/payments/services" class="ui-form">
     <label class="ui-field">
       <span>{{ t('payments.services.name') }}</span>
@@ -104,7 +104,7 @@
   </form>
 </div>
 <div class="ui-section">
-  <h2>{{ t('payments.list.title') }} {{ ui_tip('tip-pay-list', t('payments.help.payout')) }}</h2>
+  <h2>{{ t('payments.overview.requests') }} {{ ui_tip('tip-pay-list', t('payments.help.payout')) }}</h2>
   {% if requests %}
   {{ ui_table_begin([(t('payments.col.reason'), ''), (t('payments.col.date'), ''), (t('payments.col.amount'), 'r'), (t('filter.status'), ''), (t('common.actions'), '')], label=t('payments.list.title')) }}
   {% for req in requests %}
