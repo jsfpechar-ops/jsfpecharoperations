@@ -1972,18 +1972,25 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     function place(tip) {
       var btn = tip.querySelector(".help-tip-btn");
       var body = tip.querySelector(".help-tip-body");
-      var margin = 8;
+      var margin = 16; /* 0912b: 16 px gutter on every side, max 360 px, so a tooltip never leaves a 320 px phone */
       var vw = document.documentElement.clientWidth;
       var vh = window.innerHeight;
       var wide = vw >= 1024;
-      if (wide) {
-        body.style.width = Math.min(320, vw - 2 * margin) + "px";
+      var width = Math.min(wide ? 320 : 360, vw - 2 * margin);
+      body.style.width = width + "px";
+      body.style.maxWidth = width + "px";
+      if (!wide) {
+        /* Phones: inline styles beat every page-level rule; the JS owns the position. */
+        body.style.position = "fixed";
+        body.style.right = "auto";
+        body.style.left = "0px";
+        body.style.top = "0px";
       } else {
-        body.style.width = "";
-        body.style.left = "";
+        body.style.position = "";
+        body.style.right = "";
       }
       var r = btn.getBoundingClientRect();
-      var w = body.offsetWidth || Math.min(320, vw - 2 * margin);
+      var w = body.offsetWidth || width;
       var h = body.offsetHeight;
       var left = tip.classList.contains("help-tip-end") ? r.right - w : r.left;
       left = Math.max(margin, Math.min(left, vw - w - margin));
@@ -1997,7 +2004,11 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         body.style.left = (left - ob.left) + "px";
         body.style.top = (top - ob.top) + "px";
       } else {
-        body.style.top = top + "px";
+        /* The box sits at left:0 / top:0 now, so its rect is the origin of its containing block
+           (0,0 when fixed to the viewport; non-zero inside a transformed ancestor). Correct for it. */
+        var o = body.getBoundingClientRect();
+        body.style.left = (left - o.left) + "px";
+        body.style.top = (top - o.top) + "px";
       }
     }
     function close(tip) {

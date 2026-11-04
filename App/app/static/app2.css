@@ -1211,6 +1211,13 @@ body.v2 .head-title-row>details.stays-how .ui-how-toggle::-webkit-details-marker
 body.v2 .head-title-row>details.stays-how .ui-how-toggle:focus-visible{outline:2px solid #d0452d;outline-offset:2px}
 body.v2 .head-title-row>details.stays-how .ui-how-toggle::after{content:none}
 body.v2 .head-title-row>details.stays-how{background:transparent;border:0;border-radius:0;box-shadow:none}
+/* 0912b: below desktop the page-help box is anchored to the full-width title row, not to the 44 px <details>,
+   so it can never start at the icon and run past the right edge. Max 360 px, 16 px gutter on a 320 px phone. */
+@media (max-width:1023px){
+body.v2 .head-title-row:has(>details.stays-how){position:relative}
+body.v2 .head-title-row>details.stays-how{position:static}
+body.v2 .head-title-row>details.stays-how[open] .ui-how-body{left:0;right:auto;width:min(360px,calc(100vw - 32px));max-width:none;max-height:none}
+}
 @media (min-width:601px){body.v2 .invoices-page form.list-filter .month-step{height:42px;min-height:42px}}
 /* 0818 list filter v2 (end) */
 /* 0820 empty state v2: the action sits centred under its text (host2.css 0176 is not loaded on v2 pages). */
