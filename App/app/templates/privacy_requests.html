@@ -14,7 +14,7 @@
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <div class="ui-pair">
       <div class="ui-field"><label for="received_at">{{ t('privacy_requests.received') }}</label>
-        <input id="received_at" name="received_at" placeholder="2026-01-01T00:00:00+00:00"></div>
+        <input type="date" id="received_at" name="received_at" value=""></div>
       <div class="ui-field"><label for="channel">{{ t('privacy_requests.channel') }}</label>
         <select id="channel" name="channel">
           {% for value in channels %}<option value="{{ value }}">{{ t('privacy_requests.channel.' ~ value) }}</option>{% endfor %}
@@ -43,7 +43,7 @@
     {{ t('privacy_requests.type.' ~ row.request_type) }} &middot; {{ t('privacy_requests.status.' ~ row.status) }}
   </h2>
   <p class="ui-sub">
-    {{ t('privacy_requests.received') }}: {{ row.received_at }}
+    {{ t('privacy_requests.received') }}: {{ row.received_at | date_cz }}
     &middot; {{ t('privacy_requests.due') }}: {{ row.due_at }}
     {% if row.guest_id %}&middot; {{ t('privacy_requests.guest_id') }}: {{ row.guest_id }}{% endif %}
   </p>
