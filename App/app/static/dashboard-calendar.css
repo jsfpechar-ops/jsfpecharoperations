@@ -842,3 +842,25 @@ body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"
 @media (min-width:768px) {
   body.v2 #calendar.dashboard-calendar[data-readonly="false"] .cal-week.is-dots .cal-day { min-height:calc(94px + (var(--pl,1) - 1) * 44px); }
 }
+
+/* 0911: view rule */
+.dashboard-calendar :is(.cal-view-segment, .cal-setting)[hidden] { display:none !important; }
+/* 0911: one colour per property (design palette: no coral, green, amber or red) */
+[data-cal-color="indigo"] { --cal-ink:var(--indigo); --cal-fill:var(--indigo-bg); }
+[data-cal-color="ink"] { --cal-ink:var(--ink); --cal-fill:var(--surface-2); }
+body.v2 #calendar.dashboard-calendar[data-readonly="false"] .cal-pill[data-cal-color] { background:var(--cal-ink); color:#fff; }
+body.v2 #calendar.dashboard-calendar[data-readonly="false"] .cal-pill[data-cal-color]:hover { background:var(--cal-ink); filter:brightness(.88); }
+body.v2 #calendar.dashboard-calendar[data-readonly="false"] .cal-pill[data-cal-color] .cal-pill-avatar { background:rgba(255,255,255,.24); }
+.dashboard-calendar :is(.cal-heading,.cal-toolbar) select[data-cal-property][data-cal-color] {
+  padding-left:32px;
+  background-image:radial-gradient(circle at 16px 50%, var(--cal-ink) 0 5px, transparent 5.5px), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='m1 1 5 5 5-5' fill='none' stroke='%23625f5a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat, no-repeat;
+  background-position:16px 50%, right 8px center;
+  background-size:auto, 12px 8px;
+}
+/* 0911: bars on top, chips below (cleaning page, >= 768 px only) */
+@media (min-width:768px) {
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-week.is-dots { --cal-num-band:52px; --cal-lane:44px; }
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-pills { align-content:start; padding-top:var(--cal-num-band); padding-bottom:0; }
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-tile-chips { margin-top:calc(var(--cal-num-band) + var(--pl,1) * var(--cal-lane) - 12px - 28px); }
+}
