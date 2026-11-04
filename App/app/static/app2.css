@@ -2494,3 +2494,8 @@ body.v2 .fields-wrap .guest-link-top .guest-copy-row .copy-btn{min-height:40px}
 @media (max-width:1023px){body.v2 .fields-wrap .guest-link-top .guest-copy-row .copy-btn{min-height:44px}}
 body.v2 .fields-wrap .guest-link-top .guest-copy-row .copy-btn,body.v2 .fields-wrap .guest-link-top .guest-copy-row input:not([type=hidden]){margin:0;align-self:center}
 body.v2 .property-section > .guest-link-top{grid-column:1/-1}
+/* 0951: OCR row keeps its ? on the text line (inline flow) */
+body.v2 .passport-scan-row .checkline{display:block;position:relative;padding-left:36px;margin:0;min-height:0;cursor:pointer;line-height:1.4}
+body.v2 .passport-scan-row .checkline > input[type=checkbox]{position:absolute;left:0;top:2px;width:24px;height:24px;min-width:24px;margin:0}
+body.v2 .passport-scan-row .checkline > span{display:inline;min-width:0}
+body.v2 .passport-scan-row .checkline .help-tip{display:inline-block;vertical-align:middle;margin-left:6px}
