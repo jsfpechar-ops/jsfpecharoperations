@@ -32,6 +32,8 @@ Done: Steps 1 to 3, 2b, A, B, D (D5, D6, D7). Left: Part C test; calendar week 3
 Shot helper names files with a `calendar-` prefix (from `shot()`), so the stay and fee files carry it too.
 Fee screenshots: the brief's fixture (`test_stay_fee_pay_steps_browser.py`) opens `/stay-fees`, not `/stay-fees/<id>`, so the fee shot test uses the `host` fixture from `test_stay_fee_detail.py` (reuse, no new fixture).
 
+- 0710 mockup match (CI browser shard 4): the phone guest row keeps the id line on its own line; `App/tests/v2_mockup.py` `stay` spec has a documented `phone_box_skip` (row height, `b`/`small` width and height). Josef: guest details must stay visible on phone. `test_0710` stay 320/390 now pass.
+
 ## Questions
 None.
 
