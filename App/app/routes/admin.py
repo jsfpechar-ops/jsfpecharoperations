@@ -3654,8 +3654,13 @@ async def reservation_update(reservation_id: int, request: Request):
         "host_note": _form_str(form, "host_note"),
         "updated_at": db.utcnow(),
     }
+    if "summary" in form:
+        payload["summary"] = _form_str(form, "summary")[:160]
     if "expected_guests_override" in form:
-        payload["expected_guests_override"] = _form_int(form, "expected_guests_override")
+        expected = _form_int(form, "expected_guests_override")
+        if expected is not None and not 1 <= expected <= 60:
+            return JSONResponse({"ok": False}, status_code=422)
+        payload["expected_guests_override"] = expected
     status = _form_str(form, "status")
     if status in ("active", "cancelled", "ignored"):
         payload["status"] = status
