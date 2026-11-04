@@ -409,6 +409,7 @@ STRINGS: Dict[str, str] = {
     "stay_fees.payment.incomplete": "Thiếu thông tin thanh toán",
     "stay_fees.payment.account": "Tài khoản của chính quyền",
     "stay_fees.payment.iban": "IBAN",
+    "stay_fees.payment.amount": "Số tiền (CZK)",
     "stay_fees.payment.vs": "Mã VS (variabilní symbol)",
     "stay_fees.payment.vs_hint": "Chính quyền địa phương cấp mã này cho bạn. Ghi kèm khi thanh toán.",
     "stay_fees.payment.qr_alt": "Mã QR để nộp phí lưu trú cho chính quyền địa phương",

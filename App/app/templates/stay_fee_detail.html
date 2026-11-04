@@ -188,6 +188,15 @@
         </div>
       </div>
       {% if pay.qr %}
+      <div class="ui-field">
+        <label for="fee-amount">{{ t('stay_fees.payment.amount') }}</label>
+        <div class="copyrow">
+          <input type="text" id="fee-amount" readonly value="{{ '%.2f'|format(group.total_czk) }}">
+          {{ copy_button('fee-amount') }}
+        </div>
+      </div>
+      {% endif %}
+      {% if pay.qr %}
         <div class="fee-qr">
           <img src="{{ pay.qr }}" width="176" height="176" alt="{{ t('stay_fees.payment.qr_alt') }}">
           <div>
