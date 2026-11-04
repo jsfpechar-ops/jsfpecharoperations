@@ -43,3 +43,15 @@ Not ticked: I did not run the checklist in docs/design/design-system.md in this 
 - test_property_navigation three_views field check now also counts form-attribute controls: passes.
 - Still failing, stale aside-card tests from 0948 (aside cards removed in base): test_onboarding_followup calendars row, test_property_navigation bookings/overview/tabs tests (aside #sec-basics, #sec-fee, aside .pv .r). Not fixed; calendars and fee rows have no strip card.
 - Design-system checklist: not ticked (not reviewed in this run).
+
+## Design-system checklist (docs/design/design-system.md)
+- [x] 64: 390/768/1280 checked; no sideways scroll on the 0251 fit check; screenshots show no clipping.
+- [x] 65: test_layout_lint_browser green, 0 skipped; 390/768/1280 screenshots opened and inspected (see per-width notes above).
+- [x] 66: no new copy added (existing keys reused); no em dash added.
+- [ ] 59, 60, 61, 62, 63, 67: not verified in this run (61: the door-code controls now submit with the main Save via form="property-settings-form"; not re-checked visually).
+
+## Known, handled on main
+Still failing from brief 0948 (aside cards removed in base), not fixed here:
+- test_onboarding_followup_browser.py: calendars aside row (`aside.preview a.r[href='#sec-calendars']`).
+- test_property_navigation_browser.py: test_bookings_view_with_no_one_and_many_feeds, test_overview_cards_point_at_the_canonical_editors, test_tabs_hashes_drafts_history_and_validation_in_browser (aside fee and overview cards).
+- test_onboarding_wizard_browser.py:1155 calendars row (not run here).
