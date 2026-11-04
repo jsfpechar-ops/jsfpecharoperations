@@ -121,10 +121,10 @@ const strSubjectUnanswered = "UbyPort has not answered your report - %(property)
 const strIntroUnanswered = "UbyPort did not answer the guest report for %(property)s after 5 tries over about 20 hours. The guests are not confirmed as filed."
 
 // mail.submission_problem.preheader_unanswered
-const strPreheaderUnanswered = "Check UbyPort. File the guests by hand there if they are missing."
+const strPreheaderUnanswered = "UbyPort did not answer. Check whether the guests are there."
 
 // mail.submission_problem.next_unanswered
-const strNextUnanswered = "Check UbyPort for these guests. If they are missing, file them by hand there, or open the stay and press the normal Send."
+const strNextUnanswered = "Check UbyPort. If the guests are missing there, file them by hand in UbyPort, or press the normal Send on the stay."
 
 // preheaderSpacer is PREHEADER_SPACER: 40 repeats of a figure space, a
 // zero-width no-break space and a combining grapheme joiner.
