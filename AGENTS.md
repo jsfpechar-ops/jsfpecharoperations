@@ -27,7 +27,7 @@ Read this file, then [status](docs/context/status.md). Open nothing else unless 
 7. Template, CSS or guest-page change: the browser and geometry tests for the changed pages pass with 0 skipped, plus one 390 px screenshot per changed page in the report.
 8. Never push to `main`. Merge only with `scripts/merge-pr-on-green.sh`. Production deploy is manual, done by the owner.
 9. Copy: one explanation lives in one place; no sentence the button already says; write "no tracking cookies", never "no cookies".
-10. UX gate (owner does not review UX; you do): a PR touching a host page merges only after you ran `test_layout_lint_browser.py` green, opened the 390/768/1280 screenshots of each touched page, and wrote per page in the PR what you saw. Never ask the owner, never silence a finding. Tick the [design-system checklist](docs/design/design-system.md#5-checklist-every-ux-thread-paste-into-the-pr-and-tick) in the PR. [Steps](docs/context/workflow.md#ux-gate).
+10. UX gate (owner does not review UX; you do): a PR touching a host page merges only after you ran `test_layout_lint_browser.py` green, opened the 390/768/1280 screenshots of each touched page, and wrote per page in the PR what you saw. Never ask the owner, never silence a finding. Tick the [design-system checklist](docs/design/design-system.md) in the PR. [Steps](docs/context/workflow.md#ux-gate).
 
 ## Test
 
@@ -39,7 +39,7 @@ From `App/`: `.venv/bin/python -m pytest <files from the test-map> -q --tb=short
 |---|---|
 | UbyPort, submission, claim, automation | [UBYPORT_CORE](docs/UBYPORT_CORE.md), [submit_state](docs/OPERATIONS.md#the-submit_state-state-machine) |
 | Guest pages | [Arrival lane](docs/DESIGN.md#guest-registration-arrival-lane-active), [rules: guest pages](docs/context/rules.md#guest-pages) |
-| Host UI | [design-system](docs/design/design-system.md) first (ten rules and the checklist), then [MASTER](docs/design/MASTER.md) (the component's section) and that page's add-on in `docs/design/pages/` |
+| Host UI | [design-system](docs/design/design-system.md) first, then [MASTER](docs/design/MASTER.md) (the component's section) and that page's add-on in `docs/design/pages/` |
 | Database, migrations | [rules: database](docs/context/rules.md#database) |
 | Personal data, retention, legal copy | [RETENTION](docs/privacy/RETENTION.md), [ROPA](docs/privacy/ROPA.md), [legal positions](docs/UbyHost_workplan/04_legal_positions.md#summary-of-decisions) |
 | Auth, sessions, secrets | [SECURITY](docs/SECURITY.md), [rules: secrets](docs/context/rules.md#secrets) |
