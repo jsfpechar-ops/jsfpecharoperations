@@ -83,6 +83,6 @@ def test_strings_exist_in_every_host_language():
     from app import host_i18n
 
     for lang in ("en", "cs", "vi"):
-        for key in ("workflow.title", "workflow.link.from", "workflow.paste.title",
+        for key in ("workflow.title", "workflow.link.from",
                     "wizard.door_lock.question", "wizard.summary.status.not_needed"):
             assert host_i18n.STRINGS[lang].get(key), (lang, key)

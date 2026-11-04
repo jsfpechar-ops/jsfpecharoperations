@@ -1,4 +1,4 @@
-"""0233: the dashboard reminds the host until a guest has used the link."""
+"""0949: the dashboard no longer reminds the host to paste the guest message."""
 
 from __future__ import annotations
 
@@ -14,16 +14,10 @@ def _stay_today(apartment_id: int) -> int:
     })
 
 
-def test_no_card_before_any_stay_reaches_the_link(host):  # noqa: F811
-    _apartment_id()
-    assert "data-paste-check" not in host.get("/?lang=en").text
-
-
-def test_card_shows_until_a_guest_claims_a_stay(host):  # noqa: F811
-    reservation_id = _stay_today(_apartment_id())
-    assert "data-paste-check" in host.get("/?lang=en").text
-    db.insert("reservation_claim", {
-        "reservation_id": reservation_id, "state": "claimed", "token_version": 0,
-        "claimed_at": db.utcnow(), "created_at": db.utcnow(), "updated_at": db.utcnow(),
-    })
-    assert "data-paste-check" not in host.get("/?lang=en").text
+def test_dashboard_never_shows_the_paste_reminder(host):  # noqa: F811
+    _stay_today(_apartment_id())
+    for lang, text in (("en", "No guest has used the link"), ("cs", "Host ještě nepoužil odkaz")):
+        page = host.get(f"/?lang={lang}").text
+        assert "data-paste-check" not in page
+        assert 'data-needs-you="paste"' not in page
+        assert text not in page
