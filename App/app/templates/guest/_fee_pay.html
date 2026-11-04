@@ -27,12 +27,6 @@
           <div class="g-summary-body g-fee-rail">
             <div class="g-fee-qr">
               <img class="g-fee-qr-img" src="{{ rail.qr }}" width="176" height="176" alt="{{ t('fee_qr_alt') }}">
-              <dl class="g-summary-list">
-                <dt>{{ t('fee_iban') }}</dt><dd>{{ rail.iban }}</dd>
-                <dt>{{ t('fee_amount_label') }}</dt><dd>{{ fee_total }}</dd>
-                <dt>{{ t('fee_vs_label') }}</dt><dd>{{ fee_panel.vs }}</dd>
-                <dt>{{ t('fee_message_label') }}</dt><dd>{{ fee_panel.message }}</dd>
-              </dl>
             </div>
           </div>
         {% elif rail.key == 'iban' %}
@@ -42,13 +36,11 @@
               <dt>{{ t('fee_iban') }}</dt><dd>{{ rail.iban }}</dd>
               <dt>{{ t('fee_amount_label') }}</dt><dd>{{ fee_total }}</dd>
               <dt>{{ t('fee_vs_label') }}</dt><dd>{{ fee_panel.vs }}</dd>
-              <dt>{{ t('fee_message_label') }}</dt><dd>{{ fee_panel.message }}</dd>
             </dl>
           </div>
         {% elif rail.key == 'revolut' %}
           <summary class="g-summary-fold">{{ t('fee_rail_revolut') }}</summary>
           <div class="g-summary-body g-fee-rail">
-            <p class="g-intro">{{ t('fee_revolut_intro') }}</p>
             <a class="g-btn" href="{{ rail.link }}" rel="noopener">{{ t('fee_revolut_button', amount=fee_total) }}</a>
           </div>
         {% else %}

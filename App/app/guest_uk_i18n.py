@@ -304,8 +304,6 @@ STRINGS: Dict[str, str] = {
     "fee_iban": "Рахунок (IBAN)",
     "fee_amount_label": "Сума",
     "fee_vs_label": "Змінний символ",
-    "fee_message_label": "Призначення",
-    "fee_revolut_intro": "Відкрийте посилання Revolut господаря та сплатіть карткою.",
     "fee_revolut_button": "Сплатити %(amount)s через Revolut",
     "fee_cash_default": "Сплатіть готівкою по прибутті. Уточніть у господаря, де і коли.",
     "fee_legal_pointer": "Чому діє цей збір: дивіться правову інформацію, яку ви підтвердили.",

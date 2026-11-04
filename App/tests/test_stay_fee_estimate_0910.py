@@ -56,3 +56,11 @@ def test_zero_rate_renders_nothing(monkeypatch):
 def test_property_not_collecting_renders_nothing():
     off = dict(APARTMENT, stay_fee_collect=0)
     assert guest_routes._fee_estimate(off, RESERVATION, _values()) is None
+
+
+def test_fee_qr_payload_carries_plain_vs_and_short_message():
+    from app import payments
+    payload = payments.spayd("CZ6508000000192000145399", 150, "2", "Stay fee 2")
+    assert "*X-VS:2*" in payload
+    assert payload.endswith("MSG:STAY FEE 2")
+    assert "0000000002" not in payload

@@ -2062,8 +2062,8 @@ def _fee_pay_panel(apartment, reservation, t):
     if not charge or charge["total_czk"] <= 0:
         return None
     total, rate = int(charge["total_czk"]), int(charge["rate_czk"])
-    vs = f"{int(reservation['id']):010d}"
-    message = f"STAY FEE {vs}"
+    vs = str(int(reservation["id"]))  # plain id, no zero padding; the bank VS field takes up to 10 digits
+    message = f"Stay fee {vs}"  # goes only into the SPAYD payload; never shown
     account = ""
     if apartment["legal_entity_id"]:
         entity = db.query_one(
@@ -2084,8 +2084,7 @@ def _fee_pay_panel(apartment, reservation, t):
     for key in (apartment["stay_fee_guest_rails"] or "").split(","):
         if key == "qr" and account:
             payload = payments.spayd(account, total, vs, message)
-            rails.append({"key": "qr", "iban": payments.format_iban(account),
-                          "qr": payments.qr_data_uri(payload)})
+            rails.append({"key": "qr", "qr": payments.qr_data_uri(payload)})
         elif key == "iban" and account:
             rails.append({"key": "iban", "iban": payments.format_iban(account), "qr": ""})
         elif key == "revolut" and apartment["stay_fee_guest_revolut_link"]:
@@ -2094,7 +2093,7 @@ def _fee_pay_panel(apartment, reservation, t):
             rails.append({"key": "cash",
                           "note": apartment["stay_fee_guest_cash_note"] or t("fee_cash_default")})
     return {"total": total, "rate": rate, "persons": persons, "rails": rails,
-            "vs": vs, "message": message}
+            "vs": vs}
 
 
 def _fee_estimate(apartment, reservation, values):
