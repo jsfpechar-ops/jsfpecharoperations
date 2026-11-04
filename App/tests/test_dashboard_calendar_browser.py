@@ -1043,6 +1043,47 @@ def test_0891_airbnb_month_tiles_and_pills(calendar_workspace, calendar_origin, 
         browser.close()
 
 
+SHOTS_0908 = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0908"
+GEOM_0908 = """() => {
+    const cell = date => { const b = document.querySelector(`.cal-day[data-date="${date}"]`).getBoundingClientRect(); return {l: b.left, r: b.right, w: b.width}; };
+    const pills = [...document.querySelectorAll('.cal-pill')].map(p => { const b = p.getBoundingClientRect(); return {from: p.dataset.calFrom, to: p.dataset.calTo, l: b.left, r: b.right, t: b.top}; });
+    const dates = ['2026-12-05', '2026-12-06', '2026-12-07', '2026-12-08', '2026-12-11'];
+    return {gap: parseFloat(getComputedStyle(document.querySelector('.cal-pills')).columnGap) || 0, cells: Object.fromEntries(dates.map(d => [d, cell(d)])), pills};
+}"""
+
+
+@pytest.mark.parametrize("width", [390, 1280])
+def test_0908_stay_bars_start_and_end_halfway_through_their_days(calendar_workspace, calendar_origin, width):
+    property_id = calendar_workspace["properties"][0]
+    make_stay(property_id, "2026-12-05", "2026-12-08", summary="0908 stay A", expected_guests_override=2)
+    make_stay(property_id, "2026-12-08", "2026-12-11", summary="0908 stay B", expected_guests_override=2)
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=width, touch=width < 768)
+        page.goto(f"{calendar_origin}/?lang=en&cal_view=calendar&cal_date=2026-12-01")
+        page.wait_for_selector(".cal-month")
+        wait_loaded(page)
+        page.evaluate("window.scrollTo(0, 0)")
+        page.wait_for_timeout(300)
+        geo = page.evaluate(GEOM_0908)
+        SHOTS_0908.mkdir(parents=True, exist_ok=True)
+        page.locator(".cal-week", has=page.locator('.cal-pill[data-cal-from="2026-12-07"]')).first.screenshot(path=str(SHOTS_0908 / f"week-{width}.png"))
+        context.close()
+        browser.close()
+    g, c = geo["gap"], geo["cells"]
+    def half(day):  # the grid's half line inside a day cell (the column gap sits between the two halves)
+        return c[day]["l"] + (c[day]["w"] - g) / 2
+    pills = {(x["from"], x["to"]): x for x in geo["pills"]}
+    a1, a2, b = pills[("2026-12-05", "2026-12-07")], pills[("2026-12-07", "2026-12-08")], pills[("2026-12-08", "2026-12-11")]
+    assert abs(a1["l"] - half("2026-12-05")) <= 1, a1  # starts mid-way through the 5th
+    assert abs(a1["r"] - (c["2026-12-06"]["r"] - 2)) <= 1, a1  # runs into the next week: Sunday edge
+    assert abs(a2["l"] - c["2026-12-07"]["l"]) <= 1, a2  # continues from the previous week: Monday edge
+    assert abs(a2["r"] - (half("2026-12-08") - 2)) <= 1, a2  # ends mid-way through the 8th
+    assert abs(b["l"] - half("2026-12-08")) <= 1, b  # back-to-back stay starts mid-way through the same 8th
+    assert abs(b["r"] - (half("2026-12-11") - 2)) <= 1, b
+    assert abs((b["l"] - a2["r"]) - 2) <= 1 and abs(a2["t"] - b["t"]) <= 1, (a2, b)  # small gap, same lane
+
+
 def test_0891_sticky_head_title_follows_scroll_and_back_to_top(calendar_workspace, calendar_origin):
     with sync_api.sync_playwright() as playwright:
         browser = launch(playwright)
