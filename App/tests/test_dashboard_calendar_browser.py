@@ -972,7 +972,7 @@ ROWS_0891 = """() => [...document.querySelectorAll('.cal-month .cal-week.is-dots
 PILLS_0891 = """() => [...document.querySelectorAll('.cal-pill')].map(pill => {
     const r = pill.getBoundingClientRect(), all = [...pill.closest('.cal-week').querySelectorAll('.cal-day[data-date]')];
     const nights = all.filter(t => t.dataset.date >= pill.dataset.calFrom && t.dataset.date < pill.dataset.calTo).map(t => t.getBoundingClientRect());
-    const covered = all.filter(t => { const b = t.getBoundingClientRect(), over = Math.min(b.right, r.right) - Math.max(b.left, r.left); return over >= b.width / 2 - 1; }).length;
+    const covered = all.filter(t => { const b = t.getBoundingClientRect(), over = Math.min(b.right, r.right) - Math.max(b.left, r.left); return t.dataset.date >= pill.dataset.calFrom && t.dataset.date < pill.dataset.calTo && over >= b.width / 4; }).length;
     const want = Math.round((Date.parse(pill.dataset.calTo) - Date.parse(pill.dataset.calFrom)) / 86400000);
     return {want, nights: nights.length, covered, left: r.left - nights[0].left, right: nights[nights.length - 1].right - r.right,
             top: r.top - nights[0].top, bottom: nights[0].bottom - r.bottom, half: nights[0].height / 2,
@@ -1028,8 +1028,9 @@ def test_0891_airbnb_month_tiles_and_pills(calendar_workspace, calendar_origin, 
         for pill in pills:
             # 0908: a bar starts halfway into its arrival day and ends halfway into its departure day; 2 px right margin
             assert pill["want"] == pill["nights"] == pill["covered"], pill
-            assert abs(pill["left"] - (0 if pill["cut"] else (pill["width"] - pill["gap"]) / 2)) <= 1, pill
-            assert abs(pill["right"] - (2 if not pill["halfEnd"] else 2 - (pill["width"] + pill["gap"]) / 2)) <= 1, pill
+            # the grid line sits after the first half-track, so it is (cell + gap) / 2 from the cell edge
+            assert abs(pill["left"] - (0 if pill["cut"] else (pill["width"] + pill["gap"]) / 2)) <= 1, pill
+            assert abs(pill["right"] - (2 if not pill["halfEnd"] else 2 - pill["gap"] - (pill["width"] + pill["gap"]) / 2)) <= 1, pill
             assert pill["top"] >= 36 and pill["bottom"] >= 0, pill  # below the day number (0905: stacked lanes)
             assert pill["color"] == "rgb(34, 34, 34)", pill
         assert page.locator(".cal-tile-chip:visible, .cal-dots:visible, .cal-week-events").count() == 0
@@ -1071,8 +1072,8 @@ def test_0908_stay_bars_start_and_end_halfway_through_their_days(calendar_worksp
         context.close()
         browser.close()
     g, c = geo["gap"], geo["cells"]
-    def half(day):  # the grid's half line inside a day cell (the column gap sits between the two halves)
-        return c[day]["l"] + (c[day]["w"] - g) / 2
+    def half(day):  # the grid line after the first half-track of a day cell (the column gap comes before it)
+        return c[day]["l"] + (c[day]["w"] + g) / 2
     pills = {(x["from"], x["to"]): x for x in geo["pills"]}
     a1, a2, b = pills[("2026-12-05", "2026-12-07")], pills[("2026-12-07", "2026-12-08")], pills[("2026-12-08", "2026-12-11")]
     assert abs(a1["l"] - half("2026-12-05")) <= 1, a1  # starts mid-way through the 5th
