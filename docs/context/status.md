@@ -7,7 +7,7 @@ Updated: 2026-11-04.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
-- 2026-11-04: brief 0909 in review (PR #768): calendar stay bars end halfway into the departure day (owner request from phone screenshots).
+- 2026-11-04: brief 0930 in review (PR #768): calendar stay bars end halfway into the departure day (owner request from phone screenshots).
 - 2026-11-03: UX gate live: layout lint (`App/tests/layout_lint.js`) + AGENTS.md rule 10; threads self-check screenshots, owner does not.
 - 2026-11-02: Airbnb pass on login and admin pages (0892-0894) in draft PR #739; 0869 renumbers colliding briefs.
 - 2026-11-02: founder plan removed (0820, 0821); schema keeps unused founder column.

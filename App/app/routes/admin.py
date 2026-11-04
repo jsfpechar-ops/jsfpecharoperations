@@ -4717,6 +4717,14 @@ def dismiss_alert(alert_id: int, request: Request):
             return Response(status_code=409)
         return _back(_redirect_path_from_referer(request),
                      err=_flash(request, "flash.error.resign_card_locked"))
+    if row["kind"] == "submission_outcome_unknown":
+        # The card clears by itself when UbyPort answers or the host files by hand (brief 0909).
+        from .. import reporting as _reporting
+        if _reporting.apartment_in_doubt(row["apartment_id"]):
+            if request.headers.get("x-requested-with") == "fetch":
+                return Response(status_code=409)
+            return _back(_redirect_path_from_referer(request),
+                         err=_flash(request, "flash.error.unknown_card_locked"))
     alerts.resolve_by_id(alert_id, user_dismissed=True)
     if row["kind"] == "guest_pin_rotated":
         # One card stands for every property whose PIN was rotated (0148).

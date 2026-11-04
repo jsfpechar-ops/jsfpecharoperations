@@ -1,37 +1,29 @@
-# 0909 report: calendar stay bars end halfway into the departure day
+# 0909 report (Python half, Status: blocked)
 
-Status: review
+Branch task/0909-py, worktree /tmp/wt0909py. Go half is in /tmp/wt0909go (not touched here). No push, no PR.
 
-## Changed
+## Done
+- Retry chain (`App/app/reporting.py`): `_unknown_chains` (chain key = sorted guest ids, start at newest original), `_retry_unknown_chains` (gaps 30m/2h/6h/12h, five batches, live-chain and auth/setup guards, card resolved when not in doubt), `_resend_unknown_chain` (guarded `retried_at` claim, free guests with `submit_state != sent`, `submit_for_apartment(..., mode=auto_resend, ignore_schedule=True)`, restore unsent freed guests under lock), `_clock` seam for tests.
+- `apartment_in_doubt` ignores `sent` guests. The unknown-outcome branch no longer mails per attempt.
+- Final notice (after the 5th batch, only while a guest is still held and within 24 h of the last attempt): `mail_notify.submission_problem(..., state="unanswered", cc_email=config.SUPPORT_EMAIL, idempotency_key="submission_unanswered:<id>")` and `push.filing_problem(..., key="unanswered:<id>")`. The `unanswered` variant and `subject/intro/preheader/next_unanswered` texts are in host_i18n.py (en, cs) and host_vi_i18n.py (vi). The brief gives only the content, so the wording is mine and needs a check. The push key override is a new optional `key` on `push.filing_problem`.
+- Dismiss refused while in doubt (`App/app/routes/admin.py`), flash `flash.error.unknown_card_locked` (en from brief; cs and vi mine).
+- Tests: `App/tests/test_stale_submission.py` (WP31 test rewritten to the gap schedule: resends at 2 h, 6 h, 12 h, then stops, no mail); `App/tests/test_submission_retry_chain.py` (new: guest-id order is one chain, a host send starts a fresh chain, two resends of one due chain send once, the fifth attempt mails and pushes once with keys and cc, nothing after five); `App/tests/test_push_events.py` (count of `push.filing_problem(` in reporting.py is now 2, for the final notice).
+- Decisions: `docs/context/decisions.md` compacted to lint OK (wording only; the Postgres 2026-10-31 entries are merged into one line).
 
-- `App/app/static/dashboard-calendar.css`: removed `margin-right: 2px` from `.cal-pill` (desktop rule line 764, phone rule line 798). Now `margin:0`. `.continues-start { margin-left:0 }` kept.
-- `App/tests/test_dashboard_calendar_browser.py`: 0891 right-edge check and 0909 test use the 4b rule (left = arrival cell middle + g/2, right = departure cell middle - g/2, 1 px tolerance, g from `getComputedStyle(.cal-pills).columnGap`). `PILLS_0891` returns `rightAbs` and `depMid`.
-- Expectation changes (the 2 px margin no longer exists, orchestrator decision):
-  - line ~1037: `abs(pill["right"] - 2)` -> `abs(pill["right"])`
-  - line ~1084: `c["2026-12-06"]["r"] - 2` -> `c["2026-12-06"]["r"]`
+## Tests (App/.venv/bin/python -m pytest <filing row + test_admin_route_split.py test_host_i18n.py test_push*.py> -q)
+- 468 passed, 0 failed.
+- 1 skipped module: `tests/test_push_settings_browser.py` (11 browser tests). Playwright's Chromium download is blocked in this sandbox, so they did not run. The owner or CI must run them.
+- Venv was missing `pypdf` and `pdfplumber` (installed in the venv only; not a repo change). No repo dependency change.
 
-## Test run (from App/)
+## Lint
+- `python3 scripts/context_lint.py`: OK.
 
-`UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_dashboard_calendar_browser.py tests/test_0905_cleaning_calendar_stays_browser.py tests/test_cleaning_browser.py -q --tb=line -rs`
+## Not done (Left)
+- Dismiss refusal has no test. Gap-edge cases at 29 and 31 min, the "guest filed by hand during the gap" case, and "crash during a resend" are not new tests (the existing crash test and the gap-schedule test cover parts).
+- Go half: not in this branch.
+- Final notice texts are not checked by a native speaker in cs and vi.
+- Alert #87 root cause unconfirmed. Owner check: `SELECT id, created_at, resolved_at, user_dismissed FROM alert WHERE id = 87;` and `SELECT id, mode, state, created_at, finished_at, guest_ids FROM submission WHERE apartment_id = 5 AND created_at >= '2026-11-01' ORDER BY id;`.
+- `docs/UBYPORT_CORE.md` / `docs/OPERATIONS.md` OD-1 wording: not checked.
 
-Result: **84 passed, 0 skipped** (3m28s).
-
-A temporary test file used only to take `one-night-390.png` was removed afterwards.
-
-## Screenshots (docs/tasks/screenshots-0909/)
-
-- `week-390.png`: the stay 5 to 8 Dec runs in from the Monday edge (continues from the week before) and ends in the middle of the 8th. The 8 to 11 stay starts in the middle of the 8th, so the two touch with a small gap and do not overlap. "+N" is not shown in this week.
-- `week-1280.png`: stay A starts at the Monday edge and ends at the middle of the 8th. Stay B starts in the middle of the 8th and ends in the middle of the 11th. The gap between them is about 12 px, the desktop column gap. The name is ellipsized, and the same two bars appear in a second row, which is how the screenshot locator captures the week.
-- `one-night-390.png`: a 1-night stay 5 to 6 Dec. The bar starts in the middle of the 5th and ends in the middle of the 6th, and the name is ellipsized ("090...").
-
-## Not done
-
-- No commit, no push, no PR.
-
-Update (CI fix, section 4c): bumped the calendar CSS/JS keys in App/app/templates/_dashboard_calendar.html to v=20261104-0909a and regenerated App/tests/static_versions.json. Run: 87 passed, 0 skipped (static versions + the three browser files).
-
-Update (CI shard 4, section 4d): added min-width:44px to the 768 px pill rule and justify-self:end to .cal-pill.continues-end; bumped both keys to 20261104-0909b. Run of the four files: 85 passed, 3 failed, 0 skipped (test_0891_airbnb_month_tiles_and_pills[768] and [1280]: pill left edge off by 178 px and 123 px; test_0909_stay_bars_start_and_end_halfway_through_their_days[1280]: a1 left edge off by 45 px). Cause: justify-self:end makes the continues-end item size to its content instead of filling its grid span. Status: blocked, stopped per brief section 4d.
-
-Update (4d, final): rule is now `.cal-pill.continues-end { justify-self:end; width:100%; }` (min-width:44px on the base pill rule); both keys 20261104-0909c; static manifest rewritten. Four files in full: 88 passed, 0 skipped, 0 failed (includes the earlier 3 failures and the Sunday-arrival test). Status: review. No commit, no push.
-
-Update (4e, final): pill min-width is now 48px at 768 px+ (44px tap target still holds); both keys 20261104-0909d; static manifest rewritten. Four files in full: 88 passed, 0 failed, 0 skipped, exit 0. Status: review. No commit, no push.
+Status: blocked
+Deviations: Done steps 1 to 5 of the Python half. Left: the test cases listed above, the browser run, the Go half.

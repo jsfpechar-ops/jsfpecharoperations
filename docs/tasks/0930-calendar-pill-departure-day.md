@@ -1,4 +1,4 @@
-# 0909: Calendar stay bars end halfway into the departure day
+# 0930: Calendar stay bars end halfway into the departure day
 
 Status: todo
 Depends on: nothing | Base commit: current main | Branch: the orchestrator's branch (do not create one)
@@ -22,7 +22,7 @@ Make the bar end **halfway into the departure day** (the Airbnb look). To keep b
 - `App/app/static/dashboard-calendar.js` (pill code, lines 286 to 310)
 - `App/app/static/dashboard-calendar.css` (lines 763 to 802)
 - `App/tests/test_dashboard_calendar_browser.py` (one new test)
-- `docs/tasks/0909-report.md` (new)
+- `docs/tasks/0930-report.md` (new)
 
 ## 4. Steps
 1. **Half-cell grid.** Change the `.cal-pills` grid from 7 to 14 columns (`repeat(14,minmax(0,1fr))`, both the phone and the 768 px rules). In the JS, a pill's `gridColumn` becomes: start line `column*2 + 1 + (event.start >= from ? 1 : 0)`, end line `(column+span)*2 + 1 + (event.end < to && event.end > from ? 1 : 0)`, written as `start / end`. In plain words: a real arrival starts at the middle of its cell; a real departure that falls inside this week ends at the middle of its cell; a bar that continues from or into another week keeps the full edge on that side (the existing `continues-start` / `continues-end` classes already square those corners).
@@ -35,19 +35,19 @@ Make the bar end **halfway into the departure day** (the Airbnb look). To keep b
 
 ## 4b. Gap rule (orchestrator decision, 2026-11-04)
 
-Keep the CSS `column-gap` on the 14-column grid as it is. Because the gap sits between the half-tracks, a bar starts g/2 to the right of the arrival cell's middle and ends g/2 to the left of the departure cell's middle (g = the grid column gap: 4 px phone, 12 px desktop). That is wanted: two touching stays end up exactly one normal day gap apart. So the tests expect: left edge = cell middle + g/2, right edge = cell middle - g/2, 1 px tolerance. Read g from `getComputedStyle(.cal-pills).columnGap`. Fix the new 0909 test and the 0891 right-edge assertion with that rule; change no CSS for it. The brief's earlier "middle of the cell" means these edges.
+Keep the CSS `column-gap` on the 14-column grid as it is. Because the gap sits between the half-tracks, a bar starts g/2 to the right of the arrival cell's middle and ends g/2 to the left of the departure cell's middle (g = the grid column gap: 4 px phone, 12 px desktop). That is wanted: two touching stays end up exactly one normal day gap apart. So the tests expect: left edge = cell middle + g/2, right edge = cell middle - g/2, 1 px tolerance. Read g from `getComputedStyle(.cal-pills).columnGap`. Fix the new 0930 test and the 0891 right-edge assertion with that rule; change no CSS for it. The brief's earlier "middle of the cell" means these edges.
 
 ## 4c. Cache keys (found by CI, 2026-11-04)
 
-`dashboard-calendar.css` and `dashboard-calendar.js` changed, so `tests/test_static_versions.py` requires a new `?v=` key for each in every template that loads them, then the manifest rewritten: bump the keys (for example `20261104-0909a`), then from `App/` run `.venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -30`. Run `tests/test_static_versions.py` and the three calendar files again, all passed, 0 skipped.
+`dashboard-calendar.css` and `dashboard-calendar.js` changed, so `tests/test_static_versions.py` requires a new `?v=` key for each in every template that loads them, then the manifest rewritten: bump the keys (for example `20261104-0930a`), then from `App/` run `.venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -30`. Run `tests/test_static_versions.py` and the three calendar files again, all passed, 0 skipped.
 
 ## 4d. Tap target of a Sunday arrival (found by CI browser shard 4, 2026-11-04)
 
-`test_cleaning_browser.py` (layout lint, cleaning page at 768 px) fails with `tap target 41x44 (min 44): <a class="cal-pill continues-end">`: a stay that arrives on a Sunday and runs into the next week is now half a cell wide (41 px). Fix in `dashboard-calendar.css`, in the 768 px and up pill rule only (line ~798, where the pill is 32 px high): `min-width:44px`, and for `.cal-pill.continues-end` add `justify-self:end` so a narrow bar grows to the left and stays inside the week row. Do not change the phone rule (thin 8 px cleaning bars are not tap targets). Then run `test_cleaning_browser.py`, `test_dashboard_calendar_browser.py`, `test_0905_cleaning_calendar_stays_browser.py` and `test_static_versions.py`; if the CSS file changed, bump its `?v=` key again (`20261104-0909b`, `_dashboard_calendar.html` line 2) and rerun `tests/test_static_versions.py --write`. Add to the new 0909 test (or a second one) a Sunday-arrival stay at 768 px that asserts the bar is at least 44 px wide and its right edge is inside the row.
+`test_cleaning_browser.py` (layout lint, cleaning page at 768 px) fails with `tap target 41x44 (min 44): <a class="cal-pill continues-end">`: a stay that arrives on a Sunday and runs into the next week is now half a cell wide (41 px). Fix in `dashboard-calendar.css`, in the 768 px and up pill rule only (line ~798, where the pill is 32 px high): `min-width:44px`, and for `.cal-pill.continues-end` add `justify-self:end` so a narrow bar grows to the left and stays inside the week row. Do not change the phone rule (thin 8 px cleaning bars are not tap targets). Then run `test_cleaning_browser.py`, `test_dashboard_calendar_browser.py`, `test_0905_cleaning_calendar_stays_browser.py` and `test_static_versions.py`; if the CSS file changed, bump its `?v=` key again (`20261104-0930b`, `_dashboard_calendar.html` line 2) and rerun `tests/test_static_versions.py --write`. Add to the new 0930 test (or a second one) a Sunday-arrival stay at 768 px that asserts the bar is at least 44 px wide and its right edge is inside the row.
 
 ## 4e. Minimum width 48, not 44 (found by CI browser shard 1, 2026-11-04)
 
-After 4d the layout lint reports `clipped-text` on `a.cal-pill.continues-end` at cleaning@768 and cleaning@1024 (`48>44`): the pill's content (24 px avatar + 8 px gap + 4 px left and 12 px right padding) needs 48 px, the min-width gives 44. In the 768 px+ pill rule change `min-width:44px` to `min-width:48px` (44 px tap target still holds). Bump both `?v=` keys to `20261104-0909d`, rerun `tests/test_static_versions.py --write`, and run in full: `tests/test_static_versions.py`, `tests/test_cleaning_browser.py`, `tests/test_dashboard_calendar_browser.py`, `tests/test_0905_cleaning_calendar_stays_browser.py` (0 skipped). The Sunday-arrival test keeps its 44 px floor.
+After 4d the layout lint reports `clipped-text` on `a.cal-pill.continues-end` at cleaning@768 and cleaning@1024 (`48>44`): the pill's content (24 px avatar + 8 px gap + 4 px left and 12 px right padding) needs 48 px, the min-width gives 44. In the 768 px+ pill rule change `min-width:44px` to `min-width:48px` (44 px tap target still holds). Bump both `?v=` keys to `20261104-0930d`, rerun `tests/test_static_versions.py --write`, and run in full: `tests/test_static_versions.py`, `tests/test_cleaning_browser.py`, `tests/test_dashboard_calendar_browser.py`, `tests/test_0905_cleaning_calendar_stays_browser.py` (0 skipped). The Sunday-arrival test keeps its 44 px floor.
 
 ## 5. Do not touch
 
@@ -70,4 +70,4 @@ STOP and report if: a line range above no longer matches, `event.end` turns out 
 
 ## 9. Report
 
-`docs/tasks/0909-report.md`. Per rule 7: one 390 px screenshot of the month view with a stay ending mid-week, one with two back-to-back stays on the same day, and one 1280 px; one line each on what you saw. Do not commit, do not push.
+`docs/tasks/0930-report.md`. Per rule 7: one 390 px screenshot of the month view with a stay ending mid-week, one with two back-to-back stays on the same day, and one 1280 px; one line each on what you saw. Do not commit, do not push.

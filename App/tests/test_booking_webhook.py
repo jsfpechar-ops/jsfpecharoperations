@@ -124,6 +124,21 @@ def test_paid_twice_is_idempotent(booking, refunds):
     assert n == 1
 
 
+def test_stale_pending_confirm_does_not_refund_own_reservation(booking, refunds):
+    """Two paid events can both snapshot pending before the date lock.
+
+    The second _confirm must not treat this booking's own reservation as a
+    clash and refund the guest.
+    """
+    booking_webhook._confirm(booking, "pi_hook_1")
+    booking_webhook._confirm(booking, "pi_hook_1")
+    row = booking_site.get(booking["id"])
+    assert row["status"] == "paid" and refunds.created == []
+    n = db.query_one("SELECT COUNT(*) AS n FROM reservation WHERE apartment_id = ?",
+                     (booking["apartment_id"],))["n"]
+    assert n == 1
+
+
 def test_unpaid_async_waits(booking, refunds):
     booking_webhook.handle(_event("checkout.session.completed", status="unpaid"))
     assert booking_site.get(booking["id"])["status"] == "pending"

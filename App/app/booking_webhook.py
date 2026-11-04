@@ -54,6 +54,16 @@ def _confirm(booking: Dict[str, Any], payment_intent: str) -> None:
     reservation_id: Optional[int] = None
     with db.immediate() as cur:
         db.lock_key(cur, "booking_site_dates", int(booking["apartment_id"]))
+        # handle() copies status before this lock. Stripe often delivers
+        # completed and async_payment_succeeded together, so a second call
+        # still looks pending. Without this re-read, the reservation we just
+        # wrote looks like a double booking and the guest is refunded in full.
+        cur.execute(
+            "SELECT status FROM site_booking WHERE id = ?", (booking["id"],)
+        )
+        live = cur.fetchone()
+        if live is None or live["status"] not in ("pending", "expired"):
+            return
         cur.execute(
             "SELECT id FROM reservation WHERE apartment_id = ? AND status = 'active'"
             " AND date_from < ? AND date_to > ?",
