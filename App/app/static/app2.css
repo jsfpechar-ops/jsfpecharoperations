@@ -1035,6 +1035,9 @@ body.v2 .setup-continue-card .ui-btn-primary{color:#fff;background:var(--coral-6
 body.v2 .fields-wrap .copyrow > .btn.sm{min-height:48px}
 body.v2 .fields-wrap .copyrow > .btn.sm{vertical-align:middle}
 body.v2 section#stay-fee-settings > fieldset.signature-block{grid-column:1/-1}
+/* 0913 step 3: an empty signature is one "Add signature" button; the empty box is hidden until a signature exists */
+body.v2 .signature-block .signature-locked:has(> [data-signature-preview][hidden]){display:none}
+body.v2 .signature-block > .action-group{width:100%;max-width:100%;display:flex;flex-wrap:wrap;align-items:center;gap:12px;position:static;float:none}
 /* 0791 submissions v2 (start) */
 body.v2 .head-title-row{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2)}
 body.v2 .head-title-row>details.stays-how{position:relative;margin:0}
