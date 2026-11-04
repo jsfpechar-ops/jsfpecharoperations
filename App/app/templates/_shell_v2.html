@@ -4,7 +4,7 @@
 {% set properties_nav = nav in ('apartments', 'guest_links', 'automation', 'entities', 'smart_locks') %}
 <aside class="side" id="app-sidebar">
   <div class="ui-brand"><a class="logo" href="/" aria-label="UbyHost"><img class="mark" src="/static/ubyhost-mark.png?v=20261004a" alt="" width="22" height="22"><span>UbyHost</span></a></div>
-  <span class="env-badge ui-env {{ ubyport_env }}" title="{{ t('env.where_reports_go') }}">{{ t('env.' ~ ubyport_env) }}</span>
+  {% if ubyport_env != 'prod' or (current_user and current_user.role == 'admin') %}<span class="env-badge ui-env {{ ubyport_env }}" title="{{ t('env.where_reports_go') }}">{{ t('env.' ~ ubyport_env) }}</span>{% endif %}
   {% if current_user %}
   <a class="org" href="/settings">
     <i>{{ (workspace_user.display_name or workspace_user.username)[:1] | upper }}</i>
