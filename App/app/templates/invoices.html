@@ -57,7 +57,7 @@
     <tbody>
     {% for inv in invoices %}
       <tr class="clickable-row" data-href="/invoices/{{ inv.id }}" tabindex="0" role="link" aria-label="{{ inv.number }} · {{ inv.buyer_name }}">
-        <td><a href="/invoices/{{ inv.id }}">{{ inv.number }}</a></td>
+        <td class="nowrap"><a href="/invoices/{{ inv.id }}">{{ inv.number }}</a></td>
         <td><small>{{ inv.issue_date | date_cz }}</small></td>
         <td class="col-name" title="{{ inv.buyer_name }}">{{ inv.buyer_name }}</td>
         <td><small>{{ t('invoice.kind.' ~ inv.kind) }}</small></td>
