@@ -95,7 +95,7 @@ def test_calendar_and_large_list_geometry_and_filtering(workspace, origin, width
         assert tagged.count() >= 1
         chip = tagged.first.locator(".cal-tile-chip.cal-clean-chip")
         assert chip.is_visible() and chip.locator("svg").count() >= 1
-        page.locator('.cal-day[data-date="2026-10-19"] .cal-day-number').click()
+        page.locator('.cal-day[data-date="2026-10-19"] .cal-day-number').click(position={"x": 12, "y": 10})  # 0956: stay bars sit under the day number, so click the number band
         dialog = page.locator("[data-cal-day-dialog]")
         assert dialog.is_visible()
         dialog_markers = dialog.locator(".cal-day-list .cal-event.is-cleaning-marker")
@@ -252,15 +252,29 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, w
         dialog_marker.press("Enter")
         page.locator("[data-cal-details]").wait_for(state="visible")
         page.locator("[data-cal-details] [data-cal-close]").click()
+        # 0956: Gantt is offered only with 3+ active properties. The workspace can be shared
+        # with the en run, so add an empty third property only when fewer than three exist.
+        if len(cleaning.properties(ws["owner"])) < 3:
+            db.insert("apartment", {
+                "owner_user_id": ws["owner"], "internal_name": "Third test property", "active": 1,
+                "created_at": db.utcnow(), "automation_mode": "manual", "checkin_hour": 15, "checkout_hour": 11,
+            })
+        # Explicit cal_date: a reload could race the calendar's async URL update and open on today.
+        page.goto(f"{origin}/cleaning?lang={lang}&cal_date=2026-10-17")
+        loaded(page)
         page.locator('[data-cal-view="gantt"]').click()
         page.wait_for_selector(".cal-gantt-row")
         # 0834: the host gantt draws cleaning markers only, so booking-bar geometry
         # is no longer asserted here. The cleaning time is checked on its marker.
         gantt_marker = page.locator(f'.cal-gantt-events .cal-event.is-gantt-cleaning[data-cal-event="{marker["id"]}"]')
-        slot = page.locator(
+        slot_locator = page.locator(
             f'.cal-gantt-slot[data-date="2026-10-17"][data-property="{marker["propertyId"]}"]'
-        ).bounding_box()
+        )
+        gantt_marker.wait_for(state="visible")
+        slot_locator.wait_for(state="visible")
+        slot = slot_locator.bounding_box()
         box = gantt_marker.bounding_box()
+        assert slot is not None and box is not None, "Gantt slot or cleaning marker has no box"
         assert box["x"] >= slot["x"] and box["x"] + box["width"] <= slot["x"] + slot["width"]
         assert box["width"] >= slot["width"] - 6
         assert gantt_marker.is_visible() and gantt_marker.get_attribute("aria-label")
@@ -335,7 +349,7 @@ def test_missing_code_is_omitted_from_host_list_and_calendar_dialog(workspace, o
         loaded(page)
         assert page.locator(".cleaning-section .cleaning-access").count() == 0
         assert page.locator(".cleaning-section").get_by_text("Door code unavailable", exact=False).count() == 0
-        page.locator(".cal-day.has-cleaning .cal-day-number").first.click()
+        page.locator(".cal-day.has-cleaning .cal-day-number").first.click(position={"x": 12, "y": 10})  # 0956: stay bars sit under the day number, so click the number band
         block = page.locator('[data-cal-day-dialog] .cal-event[data-event-kind="cleaning"]').first
         block.click()
         assert page.locator("[data-cal-details]").is_visible()
@@ -383,7 +397,7 @@ def test_host_crud_and_drag_change_cleanings_without_moving_bookings(workspace, 
         created_id = created.value.json()["id"]
         assert page.evaluate("location.pathname") == pathname
         page.locator('.cal-day[data-date="2026-10-23"].has-cleaning').wait_for(state="visible")
-        page.locator('.cal-day[data-date="2026-10-23"] .cal-day-number').click()
+        page.locator('.cal-day[data-date="2026-10-23"] .cal-day-number').click(position={"x": 12, "y": 10})  # 0956: stay bars sit under the day number, so click the number band
         marker = page.locator(f'[data-cal-day-list] .cal-event[data-cal-event="cleaning:{created_id}"]')
         marker.wait_for(state="visible")
         marker.click()
@@ -646,7 +660,7 @@ def test_cleaning_chip_label_starts_with_cleaning(workspace, origin):
             loaded(page)
             # 0834: tile chips show the start time, so the "Cleaning" label is
             # checked in the day sheet, where each cleaning marker carries it.
-            page.locator(".cal-day.has-cleaning .cal-day-number").first.click()
+            page.locator(".cal-day.has-cleaning .cal-day-number").first.click(position={"x": 12, "y": 10})  # 0956: stay bars sit under the day number, so click the number band
             labels = page.locator("[data-cal-day-dialog] .cal-day-list .cal-cleaning-label")
             assert labels.count() > 0
             for index in range(labels.count()):
@@ -822,30 +836,37 @@ def test_0835_cleaning_range_shot_1280_mouse_drag(workspace, origin):
         browser.close()
 
 
-ONE_ROW_0842 = ["h3[data-cal-period]", "[data-cal-prev]", "[data-cal-today]", "[data-cal-next]",
-                "[data-cal-property]", ".cal-view-segment", "[data-cal-settings]", "[data-cal-scales]"]
+ROW1_0842 = ["h3[data-cal-period]", "[data-cal-prev]", "[data-cal-today]", "[data-cal-next]"]  # 0955: title, Today and arrows
+ROW2_0842 = ["[data-cal-property]", "[data-cal-settings]", "[data-cal-scales]"]  # 0956: no view toggle while a property is picked
 FITS = "document.documentElement.scrollWidth <= window.innerWidth"
 
 
-def test_0842_cleaning_toolbar_one_row_at_1280(workspace, origin):
+def test_0842_cleaning_toolbar_stable_two_rows_at_1280(workspace, origin):
     ws = workspace
     with sync_api.sync_playwright() as playwright:
         browser, context = browser_context(playwright, ws, origin, 1280)
         page = context.new_page()
         page.goto(f"{origin}/cleaning?lang=en&cal_view=calendar&cal_property={ws['home']}")
         loaded(page)
-        boxes = [page.locator(".cleaning-page " + sel).first.bounding_box() for sel in ONE_ROW_0842]
-        assert all(boxes), list(zip(ONE_ROW_0842, boxes))
-        assert max(b["y"] for b in boxes) < min(b["y"] + b["height"] for b in boxes), boxes
-        ordered = sorted(boxes, key=lambda b: b["x"])
-        gaps = [round(b["x"] - (a["x"] + a["width"])) for a, b in zip(ordered, ordered[1:])]
-        assert min(gaps) >= 11, gaps
-        for sel, b in zip(ONE_ROW_0842[1:], boxes[1:]):
+        row1 = [page.locator(".cleaning-page " + sel).first.bounding_box() for sel in ROW1_0842]
+        row2 = [page.locator(".cleaning-page " + sel).first.bounding_box() for sel in ROW2_0842]
+        boxes = row1 + row2
+        assert all(boxes), list(zip(ROW1_0842 + ROW2_0842, boxes))
+        for row in (row1, row2):
+            assert max(b["y"] for b in row) < min(b["y"] + b["height"] for b in row), row
+        assert max(b["y"] + b["height"] for b in row1) <= min(b["y"] for b in row2), (row1, row2)
+        assert row1[0]["x"] + row1[0]["width"] <= min(b["x"] for b in row1[1:]), row1  # title left, Today and arrows right
+        assert row2[2]["x"] >= row2[1]["x"] + row2[1]["width"], row2  # scale segment right of settings
+        for row in (row1, row2):
+            ordered = sorted(row, key=lambda b: b["x"])
+            gaps = [round(b["x"] - (a["x"] + a["width"])) for a, b in zip(ordered, ordered[1:])]
+            assert min(gaps) >= 11, gaps
+        for sel, b in zip(ROW1_0842[1:] + ROW2_0842, row1[1:] + row2):
             assert abs(b["height"] - 40) <= 1, (sel, b)
         title = page.locator(".cleaning-page h3[data-cal-period]").evaluate(
             "e => [getComputedStyle(e).fontSize, getComputedStyle(e).fontWeight]")
         assert title == ["32px", "700"], title  # 0891: Airbnb title size at 1024 px+
-        assert page.get_by_role("button", name="Gantt", exact=True).count() == 1
+        assert page.get_by_role("button", name="Gantt", exact=True).count() == 0  # 0956: one property, no Gantt
         body = page.locator(".cleaning-page [data-cal-body]").bounding_box()
         assert body["y"] >= max(b["y"] + b["height"] for b in boxes), body
         head = [page.locator(f'.cleaning-head a[href="{href}"]').bounding_box()

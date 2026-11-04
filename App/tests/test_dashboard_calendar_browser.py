@@ -109,11 +109,11 @@ def test_auto_view_threshold_filter_and_manual_override(calendar_workspace, cale
         page.locator("[data-cal-property]").select_option(str(calendar_workspace["properties"][0]))
         page.wait_for_selector(".cal-week")
         assert page.locator('[data-cal-scale="month"]').get_attribute("aria-pressed") == "true"
-        page.locator('[data-cal-view="gantt"]').click()
-        page.wait_for_selector(".cal-gantt-row")
-        assert page.locator(".cal-gantt-row").count() == 1
+        assert not page.locator(".cal-view-segment").is_visible()
+        assert page.locator(".cal-gantt-row").count() == 0
         page.locator("[data-cal-property]").select_option("")
         page.wait_for_function("() => document.querySelectorAll('.cal-gantt-row').length === 3")
+        assert page.locator(".cal-view-segment").is_visible()
         page.locator('[data-cal-view="calendar"]').click()
         page.wait_for_selector(".cal-week")
         page.reload()
@@ -488,7 +488,7 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         cleaning_tag_day = cleaning_page.locator('.cal-day[data-date="2026-10-27"].has-cleaning')
         cleaning_tag_day.wait_for(state="visible")
         assert cleaning_tag_day.locator(".cal-clean-tag").count() >= 1
-        cleaning_tag_day.locator(".cal-day-number").click()
+        cleaning_tag_day.locator(".cal-day-number").click(position={"x": 12, "y": 10})  # 0956: stay bars sit under the day number
         cleaning_marker = cleaning_page.locator(
             f'[data-cal-day-list] .cal-event[data-cal-event="{cleaning_event_id}"]'
         )
@@ -759,12 +759,13 @@ def test_default_calendar_url_is_clean_and_specific_views_survive_reload(
         page.locator("[data-cal-today]").click()
         wait_loaded(page)
         assert "cal_date" not in parse_qs(urlsplit(page.url).query)
+        # 0956: Auto is offered only while no property is picked, so clear the property first.
+        page.locator("[data-cal-property]").select_option("")
+        wait_loaded(page)
         page.locator("[data-cal-settings]").click()
         page.locator("[data-cal-auto]").check()
         wait_loaded(page)
         page.locator("[data-cal-settings-dialog] [data-cal-close]").click()
-        page.locator("[data-cal-property]").select_option("")
-        wait_loaded(page)
         assert parse_qs(urlsplit(page.url).query) == {"lang": ["en"]}
         context.close()
         browser.close()
@@ -1036,7 +1037,7 @@ def test_0891_airbnb_month_tiles_and_pills(calendar_workspace, calendar_origin, 
             else:  # runs into the next week: Sunday edge, 2 px margin
                 assert abs(pill["right"]) <= 1, pill
             assert pill["top"] >= 36 and pill["bottom"] >= 0, pill  # below the day number (0905: stacked lanes)
-            assert pill["color"] == "rgb(34, 34, 34)", pill
+            assert pill["color"], pill  # 0956: colour is per property, see test_0956_each_property_has_one_colour_everywhere
         assert page.locator(".cal-tile-chip:visible, .cal-dots:visible, .cal-week-events").count() == 0
         if width >= 768:
             assert page.locator('[data-cal-more="2026-10-14"]').is_visible()

@@ -201,6 +201,10 @@
     <tr>
       <td>
         <b>{{ guest.first_name or '' }} {{ guest.surname or '—' }}</b>{% if guest.is_lead %} <span class="pill">{{ t('stay.detail.guests.lead') }}</span>{% endif %}
+        {% set id_parts = [] %}
+        {% if guest.birth_date and identity_visible(guest.id) %}{% set _ = id_parts.append(t('stay.detail.guests.born') ~ ' ' ~ display_birth_date(guest.birth_date)) %}{% endif %}
+        {% if guest.nationality %}{% set _ = id_parts.append(country_name(guest.nationality, lang) or guest.nationality) %}{% endif %}
+        {% if id_parts %}<small class="guest-id-line" data-guest-id-line>{{ id_parts | join(' · ') }}</small>{% endif %}
         {% if guest.note %}<small>{{ t('stay.detail.guests.note', text=guest.note) }}</small>{% endif %}
         {% if guest.entered_by %}<small>{{ t('stay.detail.guests.entered_by') }}: <span>{{ entered_by_label(guest.entered_by) }}</span></small>{% endif %}
         {% for issue in row.issues %}
@@ -241,9 +245,12 @@
   {% for row in guest_rows %}
     {% set guest = row.guest %}
     {% set ok = guest.submit_state in ('sent', 'not_required') or (row.complete and guest.submit_state not in ('error', 'blocked')) %}
+    {% set id_parts = [] %}
+    {% if guest.birth_date and identity_visible(guest.id) %}{% set _ = id_parts.append(t('stay.detail.guests.born') ~ ' ' ~ display_birth_date(guest.birth_date)) %}{% endif %}
+    {% if guest.nationality %}{% set _ = id_parts.append(country_name(guest.nationality, lang) or guest.nationality) %}{% endif %}
     <a class="row" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">
       <div class="ic {{ 'ok' if ok else 'warn' }}">{% if ok %}{{ icon('check', 22) }}{% else %}?{% endif %}</div>
-      <div class="t"><b>{{ guest.first_name or '' }} {{ guest.surname or '—' }}</b><small>{% if guest.doc_type %}{{ t('guest.doc_type.' ~ guest.doc_type) }} · {% endif %}{{ guest_state_text(guest, row) }}</small></div>
+      <div class="t"><b>{{ guest.first_name or '' }} {{ guest.surname or '—' }}</b>{% if id_parts %}<small class="guest-id-line" data-guest-id-line>{{ id_parts | join(' · ') }}</small>{% endif %}<small>{% if guest.doc_type %}{{ t('guest.doc_type.' ~ guest.doc_type) }} · {% endif %}{{ guest_state_text(guest, row) }}</small></div>
     </a>
   {% endfor %}
   {% for n in range(progress.guests | length + 1, (progress.expected or 0) + 1) %}
