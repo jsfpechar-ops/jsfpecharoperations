@@ -927,6 +927,7 @@ STRINGS: Dict[str, str] = {
     "flash.error.hand_filing_undo_closed": "Không thể hủy đánh dấu này nữa. Chỉ hủy được trong vòng 24 giờ.",
     "flash.error.no_such_guest": "Khách này không còn tồn tại.",
     "flash.error.resign_card_locked": "Thẻ này tự biến mất khi khách ký lại, hoặc khi bạn tự gửi lượt lưu trú.",
+    "flash.error.unknown_card_locked": "Thẻ này tự biến mất khi UbyPort phản hồi, hoặc khi bạn tự khai báo khách thủ công.",
     "flash.error.guest_changed_retry": "Khách này đang được gửi đến UbyPort đúng lúc đó. Hãy mở lại khách và thực hiện lại thay đổi.",
     "flash.error.no_such_housebook_guest": "Mục trong sổ khách lưu trú này không còn tồn tại.",
     "flash.error.no_such_entity": "Đơn vị vận hành này không còn tồn tại.",

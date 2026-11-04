@@ -70,4 +70,5 @@ Append-only.
 - 2026-11-03 | [workflow] UX gate: threads self-check UX (lint + screenshots) | owner | 0900
 - 2026-11-03 | Booking terms: own text modeled on marketplace guest terms (structure only), CS+EN, /terms/booking, versioned | owner | 0900
 - 2026-11-03 | Partial site refund issues a credit note / corrective document for the refunded amount; full refund keeps storno | owner | 0901
-- [filing] 2026-11-04: unanswered filings retry 30m/2h/6h/12h, duplicate answer stops, supersedes OD-1. After the 4th resend gets no answer: one e-mail to the host (support cc) and push, once per chain (owner change, same day).
+
+- [filing] 2026-11-04: unanswered filings retry 30m/2h/6h/12h, duplicate answer stops; supersedes OD-1 and WP31 (0909). After the 5th attempt: host and support mail and push, once per chain (not built yet).
