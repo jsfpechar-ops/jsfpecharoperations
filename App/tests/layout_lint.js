@@ -337,6 +337,27 @@
     // a divider between two halves is fine; a rule on the last item, against the card edge, is stray
     if (kids.length && kids[kids.length - 1] === el && rectOf(par).right - r.right < 40 && !el.matches('aside')) add('stray-rule', el, 'right border on the last item');
   }
+  // 11a. Header actions (0931): buttons beside an h1 share one row, same height and centre, one-line labels. Conservative.
+  if (vw >= 768) {
+    const actSel = 'button,a.ui-btn,.btn,.ui-btn';
+    const isAct = (el) => el.matches(actSel) && vis(el) && !skipZone(el) && getComputedStyle(el).position !== 'fixed';
+    for (const h of all.filter((el) => el.tagName === 'H1' && !el.closest('[role=dialog],dialog'))) {
+      let box = h.parentElement;
+      while (box && box !== document.body && ![...box.querySelectorAll(actSel)].some(isAct)) box = box.parentElement;
+      if (!box || box === document.body) continue;
+      const acts = [...box.querySelectorAll(actSel)].filter(isAct);
+      const hr = rectOf(h);
+      const beside = acts.filter((a) => { const r = rectOf(a); return r.top < hr.bottom && r.bottom > hr.top; });
+      if (!beside.length) continue;
+      if (beside.length >= 2) {
+        const r0 = rectOf(beside[0]);
+        const bad = beside.find((b) => { const r = rectOf(b); return Math.abs(r.height - r0.height) > 2 || Math.abs((r.top + r.bottom) / 2 - (r0.top + r0.bottom) / 2) > 4; });
+        if (bad) add('header-actions-misaligned', bad, 'header buttons differ in height or vertical centre');
+      }
+      for (const b of beside) if (textLines(b) > 1) add('header-actions-misaligned', b, 'header button label wraps to two lines');
+      if (beside.length === 1 && box.matches('.page-head') && acts.length > 1) add('header-actions-misaligned', beside[0], 'lone header button beside the h1 while other actions sit elsewhere in .page-head');
+    }
+  }
 
   return out;
 })()
