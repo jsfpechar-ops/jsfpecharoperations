@@ -595,3 +595,135 @@ def test_the_czech_pages_have_no_english_left(live_server, browser):
         ) == "Vaše údaje"
     finally:
         context.close()
+
+
+# --- stay-fee money card and form estimate (brief 0910) ----------------------
+
+SIGNED_PNG = "data:image/png;base64,iVBORw0KGgo="
+
+
+def _fee_seed(token: str, rate: int = 50, signed: bool = True):
+    """A stay whose property collects a fee, every enabled rail set up. With ``signed`` one
+    foreign adult has signed; no headcount is declared, so the hub card shows."""
+    stay = _seed(token)
+    row = db.query_one("SELECT apartment_id FROM reservation WHERE id = ?", (stay,))
+    apt = db.query_one("SELECT legal_entity_id FROM apartment WHERE id = ?", (row["apartment_id"],))
+    db.update("apartment", row["apartment_id"], {
+        "stay_fee_collect": 1,
+        "stay_fee_rate_czk": rate,
+        "stay_fee_guest_rails": "qr,iban,revolut,cash",
+        "stay_fee_guest_revolut_link": "https://revolut.me/guest-e2e",
+        "stay_fee_guest_cash_note": "",
+    })
+    db.update("legal_entity", apt["legal_entity_id"], {"iban": "CZ6508000000192000145399"})
+    if not signed:
+        return stay
+    now = db.utcnow()
+    db.insert("guest", {
+        "reservation_id": stay,
+        "first_name": "Ada",
+        "surname": "Guest",
+        "birth_date": "01011980",
+        "nationality": "DEU",
+        "res_country": "DEU",
+        "res_city": "Berlin",
+        "signature_png": SIGNED_PNG,
+        "created_at": now,
+        "updated_at": now,
+    })
+    return stay
+
+
+@pytest.mark.parametrize("width", [320, 390, 768, 1280])
+def test_fee_card_shows_with_qr_rail_open_and_enabled_rails(live_server, browser, monkeypatch, width):
+    from app import config
+
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    monkeypatch.setattr(config, "GUEST_PIN_REQUIRED", False)  # the hub otherwise shows the PIN page
+    from app import mail
+
+    # The seeded guest never went through the claim mail, so the claim page would
+    # show before the hub. Same switch test_0376_ai_gates.py uses.
+    monkeypatch.setattr(mail, "mail_enabled", lambda: False)
+    token = f"browser-fee-card-{width}"
+    stay = _fee_seed(token)
+    page = browser.new_page(viewport={"width": width, "height": 800})
+    try:
+        page.goto(f"{live_server}/l/{token}/{stay}?lang=en")
+        card = page.locator("#fee-pay")
+        assert card.count() == 1, page.inner_text("body")[:400]
+        assert card.is_visible()
+        assert card.locator("details.g-summary").filter(has=page.locator(".g-fee-rail")).count() == 4
+        assert card.locator("details[open] .g-fee-qr-img").count() == 1
+        assert card.locator(".g-fee-qr-img").is_visible()
+        qr_rail = card.locator("details.g-summary").filter(has=page.locator(".g-fee-qr-img"))
+        assert qr_rail.locator(".g-fee-rail").inner_text().strip() == ""  # QR only: nothing to type
+        card.locator("summary.g-summary-fold", has_text="Bank transfer").click()
+        iban_rail = card.locator("details.g-summary").filter(has_text="Bank transfer")
+        iban_text = iban_rail.locator(".g-fee-rail").inner_text()
+        assert "Variable symbol" in iban_text and str(int(stay)) in iban_text
+        assert "Message" not in iban_text
+        assert f"{int(stay):010d}" not in card.inner_text()
+        card.locator("summary.g-summary-fold", has_text="Revolut").click()
+        assert "Open your host" not in card.inner_text()
+        assert card.get_by_role("link", name="Revolut", exact=False).count() == 1
+        assert "0000000" not in card.inner_text()
+        assert page.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth")
+    finally:
+        page.close()
+
+
+def test_fee_card_absent_when_the_fee_is_zero(live_server, browser, monkeypatch):
+    from app import config
+
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    monkeypatch.setattr(config, "GUEST_PIN_REQUIRED", False)  # the hub otherwise shows the PIN page
+    from app import mail
+
+    # The seeded guest never went through the claim mail, so the claim page would
+    # show before the hub. Same switch test_0376_ai_gates.py uses.
+    monkeypatch.setattr(mail, "mail_enabled", lambda: False)
+    token = "browser-fee-zero"
+    stay = _fee_seed(token, rate=0)
+    page = browser.new_page(viewport={"width": 390, "height": 800})
+    try:
+        page.goto(f"{live_server}/l/{token}/{stay}?lang=en")
+        # Not vacuous: the hub itself rendered (the seeded guest is listed, no redirect to the form).
+        assert "/new" not in page.url, page.url
+        assert "Person 1" in page.inner_text("body"), page.inner_text("body")[:400]
+        assert page.locator("#fee-pay").count() == 0
+    finally:
+        page.close()
+
+
+def test_form_estimate_line_shows_when_the_estimate_is_above_zero(live_server, browser, monkeypatch):
+    """The estimate is computed from the entered values, so the form is posted with them
+    (noValidate skips the browser's required checks; the server re-renders with the values)."""
+    from app import config
+
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    monkeypatch.setattr(config, "GUEST_PIN_REQUIRED", False)  # the hub otherwise shows the PIN page
+    from app import mail
+
+    # The seeded guest never went through the claim mail, so the claim page would
+    # show before the hub. Same switch test_0376_ai_gates.py uses.
+    monkeypatch.setattr(mail, "mail_enabled", lambda: False)
+    token = "browser-fee-estimate"
+    stay = _fee_seed(token, signed=False)
+    page = browser.new_page(viewport={"width": 390, "height": 800})
+    try:
+        page.goto(f"{live_server}/l/{token}/{stay}/new?lang=en")
+        page.evaluate("""() => {
+            const form = document.querySelector('form[action*="/save"]');
+            form.noValidate = true;
+            document.querySelector('#birth_date').value = '01.01.1980';
+            document.querySelector('#res_country').value = 'DEU';
+        }""")
+        # The Save button sits in a later wizard step, so submit the form itself
+        # (noValidate above keeps the browser's required checks out of the way).
+        with page.expect_navigation():
+            page.evaluate("() => document.querySelector('form[action*=\"/save\"]').requestSubmit()")
+        assert page.locator("#fee-estimate").count() == 1
+        assert page.locator("#fee-estimate").is_visible()
+    finally:
+        page.close()

@@ -345,6 +345,10 @@ STRIPE_SECRET_KEY = os.environ.get("UBYHOST_STRIPE_SECRET_KEY", "").strip()
 STRIPE_WEBHOOK_SECRET = os.environ.get("UBYHOST_STRIPE_WEBHOOK_SECRET", "").strip()
 STRIPE_MONTHLY_API_CALLS = int(os.environ.get("UBYHOST_STRIPE_MONTHLY_API_CALLS", "50000"))
 
+# Stay-fee guest payment (brief 0897). Off unless set to "on". While off the
+# host fee controls are disabled and saves cannot turn them on.
+STAY_FEE_GUEST_PAY = os.environ.get("UBYHOST_STAY_FEE_GUEST_PAY", "off").strip().lower() == "on"
+
 # Guest guide imports through Apify (brief 0347). Off until the token is set;
 # the token is env only. The run cap is shared by every host on the instance.
 APIFY_TOKEN = os.environ.get("UBYHOST_APIFY_TOKEN", "").strip()

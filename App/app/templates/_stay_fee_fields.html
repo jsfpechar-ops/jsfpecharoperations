@@ -61,4 +61,35 @@
   </details>
   {% endif %}
 </div>
+{#- 0897 phase 0: the guest pays the stay fee. Off on this deployment unless UBYHOST_STAY_FEE_GUEST_PAY=on; then the block is disabled and a save ignores it. -#}
+{%- set guest_pay_on = stay_fee_guest_pay_on() -%}
+{%- set guest_rails = (apartment.stay_fee_guest_rails or '').split(',') -%}
+<div class="fee-setup-section" id="stay-fee-guest-pay">
+  <{{ fee_heading|default('h4') }} class="property-subsection-title">4. {{ t('stay_fees.guest_pay.title') }}</{{ fee_heading|default('h4') }}>
+  <input type="hidden" name="stay_fee_guest_form" value="1">
+  {% if not guest_pay_on %}<p class="muted small" id="stay-fee-guest-off">{{ t('stay_fees.guest_pay.off_here') }}</p>{% endif %}
+  <fieldset class="stay-fee-guest-fields"{% if not guest_pay_on %} disabled{% endif %}>
+    <div class="stay-fee-switch-row">
+      <label class="checkline stay-fee-switch" for="stay_fee_collect">
+        <input type="checkbox" id="stay_fee_collect" name="stay_fee_collect" value="1" {% if apartment.stay_fee_collect %}checked{% endif %} aria-describedby="stay_fee_collect-help">
+        <span>{{ t('stay_fees.guest_pay.collect_label') }}{{ help_tip('stay_fee_collect-help', t('stay_fees.guest_pay.collect_hint')) }}</span>
+      </label>
+    </div>
+    <fieldset class="stay-fee-rails">
+      <legend class="small">{{ t('stay_fees.guest_pay.rails_label') }}</legend>
+      {% for rail in ['qr', 'iban', 'revolut', 'cash'] %}
+      <label class="checkline stay-fee-rail"><input type="checkbox" name="stay_fee_guest_rails" value="{{ rail }}"{% if rail in guest_rails %} checked{% endif %}> <span>{{ t('stay_fees.guest_pay.rail.' ~ rail) }}</span></label>
+      {% endfor %}
+    </fieldset>
+    <div class="field{% if not fee_link_error %} stay-fee-rail-revolut{% endif %}">
+      {{ field_label('stay_fee_guest_revolut_link', t('stay_fees.guest_pay.revolut_label'), t('stay_fees.guest_pay.revolut_help')) }}
+      <input type="url" id="stay_fee_guest_revolut_link" name="stay_fee_guest_revolut_link" aria-describedby="stay_fee_guest_revolut_link-help{% if fee_link_error %} stay-fee-link-error{% endif %}" maxlength="200" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="https://revolut.me/" value="{{ apartment.stay_fee_guest_revolut_link or '' }}"{% if fee_link_error %} aria-invalid="true"{% endif %}>
+      {% if fee_link_error %}<p class="err-text small" id="stay-fee-link-error" role="alert">{{ t('flash.stay_fees.link_invalid') }}</p>{% endif %}
+    </div>
+    <div class="field stay-fee-rail-cash">
+      {{ field_label('stay_fee_guest_cash_note', t('stay_fees.guest_pay.cash_label'), t('stay_fees.guest_pay.cash_help')) }}
+      <textarea id="stay_fee_guest_cash_note" name="stay_fee_guest_cash_note" aria-describedby="stay_fee_guest_cash_note-help" maxlength="300" rows="2">{{ apartment.stay_fee_guest_cash_note or '' }}</textarea>
+    </div>
+  </fieldset>
+</div>
 {% include "_fee_signature_fields.html" %}

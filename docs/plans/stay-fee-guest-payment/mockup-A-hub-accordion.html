@@ -1,0 +1,142 @@
+<!doctype html>
+<!-- Mockup A v3 (recommended): money card on the stay hub, rail accordion.
+     v3 fixes after visual review: REAL QR png (data URI), rails use the standard
+     details.g-summary rows (same rhythm as "Per person"), minimal custom css.
+     Open from the repo root in a browser; links the real tokens.css + guest.css. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Mockup A v3 — Stay fee on the hub</title>
+  <link rel="stylesheet" href="../../../App/app/static/tokens.css">
+  <link rel="stylesheet" href="../../../App/app/static/guest.css">
+  <style>
+    /* mockup-only; the real build adds equivalents to guest.css (?v= bump) */
+    .fee-amount { font-size: 1.9rem; letter-spacing: -0.02em; margin: .1rem 0 .5rem; }
+    #fee-pay dd { overflow-wrap: anywhere; }
+    #fee-pay .rail-body { padding: 4px 20px 18px; }
+    #fee-pay .qr-row { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+    #fee-pay .qr-row > div { flex: 1; min-width: 180px; }
+    #fee-pay .qr-img { border: 1px solid var(--g-line); border-radius: 8px; width: 148px; height: 148px; }
+    #fee-pay details.g-summary + details.g-summary { border-top: 1px solid var(--g-line); }
+    @media (max-width: 560px) {
+      #fee-pay .qr-row { flex-direction: column; align-items: center; text-align: left; }
+      #fee-pay .qr-row > div { width: 100%; min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+<div class="g-wrap">
+  <div class="g-head">
+    <div class="g-title g-property">
+      <span class="g-property-mark property-tone-1" aria-hidden="true">O</span>
+      <div>
+        <h1>Your stay</h1>
+        <p class="g-facility">Old Town Loft</p>
+      </div>
+    </div>
+    <details class="g-lang"><summary aria-label="Language: English"><span aria-hidden="true">EN</span></summary></details>
+  </div>
+
+  <main id="g-main">
+    <div class="g-card g-stay-summary">
+      <strong>28 Sep – 1 Oct</strong>
+      <span>3 nights</span>
+    </div>
+
+    <div class="g-card">
+      <div class="g-big-ok">
+        <div class="mark">✓</div>
+        <h2>Everyone is registered</h2>
+        <p class="g-intro">Your details were sent as required by law.</p>
+      </div>
+    </div>
+
+    <!-- THE NEW MONEY CARD (position 3 in the fixed order) -->
+    <div class="g-card" id="fee-pay">
+      <div class="g-step-head">
+        <h2>Municipal stay fee</h2>
+        <details class="g-head-help">
+          <summary aria-label="About this fee"><span class="g-help-dot" aria-hidden="true">?</span></summary>
+          <p class="g-intro">The city charges this fee for short stays. You pay it to your
+          host, who passes it on to the city. UbyHost does not process the payment and does
+          not record whether it arrived. Full text: the legal information you confirmed in
+          the form.</p>
+        </details>
+      </div>
+      <p class="g-intro">3 counted days × 50 Kč per person · 3 guests</p>
+      <p class="fee-amount"><strong>450 Kč</strong></p>
+
+      <details class="g-summary">
+        <summary class="g-summary-fold">Per person — 3 × 150 Kč</summary>
+        <div class="g-summary-body">
+          <dl class="g-summary-list">
+            <dt>Guest 1</dt><dd>3 days × 50 Kč = 150 Kč</dd>
+            <dt>Guest 2</dt><dd>3 days × 50 Kč = 150 Kč</dd>
+            <dt>Guest 3</dt><dd>3 days × 50 Kč = 150 Kč</dd>
+          </dl>
+        </div>
+      </details>
+
+      <p class="g-intro" style="margin:16px 0 0">Choose how to pay your host:</p>
+
+      <details class="g-summary" open>
+        <summary class="g-summary-fold">Bank transfer (QR)</summary>
+        <div class="g-summary-body rail-body">
+          <div class="qr-row">
+            <img class="qr-img" alt="Payment QR code" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcIAAAHCAQAAAABUY/ToAAADq0lEQVR4nO2cTY6sSAyEwwMSy0TqA9RRkpuN5khzAzhK3wCWJYFiFnby1/1mpNarKaoUXqDi5xOJZEXaTmcZ8TMb/vghCIgUKVKkSJEiRV6PtLAa2wFDu5h1/thiwFSe6p48WpGXJDNJcgTYp7sBWAx5BNhjMTNraB0qkiSP5DNGK/KS5FT0JX82ZJ9I66aGGKwhMu8GACFQzx+tyCuR9encABjzuNQc2grI4wc4GEBMv+udIt+dTCQwNbQOi1mX7mZdIq174DtFvgOZSPb+czEM7WJAmuNm/qzBHgDJ+Uz+/J0i34oczMyshcdD9udYEfmzcUUCAFjn0bXZ80cr8lKkx0O7BY/hdjcg3V2HONzuxrh2XBZ5re8U+TgSnq5nksgjEBl9IpE5o9yoykyX4mH2r/WdIh9HRl42tCMIEIY018BUzyUb+5gBLMY8fsyW+6eOVuQVSdchF5k8Vq4+JGdEyRFFliLEjkKjdEjkaqX0XLmXsE8z3F9Oc9maksmHRH5DhuZMDZE/a8BdamoITDWANEeJOnOtFL3id4p8BFlUJdGVhn0q05gLj09jJDlWVEwt8hsrPrR5TsnQUJKzMo1V3BOv9Z0i/weyotmNxNDGKfupRsxlqIpf/dZ3inwLMlSFY8XIy0aAHKtoBfEZDJGcxXPSIZF7+0VeVmqMHg9hC4UiV5MPiVwtdIgzypprUZ+8FrDXwBqqD4n8apsO7SpAPSoeJq+IuOGRkXxI5N7Ch9Lekdybohe24vlh+ZDIgxW3iML0LsGPYnWJh2JFVjok8mSlF3Zq/WC5n+Na/rshfOEVi3G40TtD+LzRirwiudcheKGxRM2rGO1Cph5QXibyZKU+BGxVxDjd8vg1UOqhOrXIsx3ysrJ5LBe/KjXGtfio+pDIL3aqD22t976G5gtppdpYFEk+JHJnh9hn7RUaEVNbrLmWShEA6ZDI78jYvzqVLG24kX7wxVjf9bGYu1T/5NGKvBa529cRKpNmWB6X2q8N7QgAlbdSGwBEU/VrfafIR5Pb/34AAPiXNfSNinlcjOTdQqXKdrPX/E6RjyBLPbEHgOkDBJaaSCPMb04tAFQ0pBkY2uqZoxV5RXLfuLju6yhNRIfcHkC5oZha5N5OPrRbnv+yXlZKSMrLRP4rOdzo7dUuS4OZx0ORjU1mystEHm0nLTzokJ/263pZLnqluUzk0XYrHNFgtjWiIcRom8v8mnxI5M6M//3Mt6b/OBcpUqRIkSJFvgn5D25cYtZMivSGAAAAAElFTkSuQmCC">
+            <div>
+              <dl class="g-summary-list">
+                <dt>IBAN</dt><dd>CZ12 3456 0000 0000 0000 0100</dd>
+                <dt>Amount</dt><dd>450.00 Kč</dd>
+                <dt>VS</dt><dd>0000000123</dd>
+                <dt>Message</dt><dd>STAY FEE 0000000123</dd>
+              </dl>
+              <button class="g-btn ghost slim" type="button">Copy payment details</button>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="g-summary">
+        <summary class="g-summary-fold">IBAN transfer — no QR</summary>
+        <div class="g-summary-body rail-body">
+          <dl class="g-summary-list">
+            <dt>IBAN</dt><dd>CZ12 3456 0000 0000 0000 0100</dd>
+            <dt>Amount</dt><dd>450.00 Kč</dd><dt>VS</dt><dd>0000000123</dd>
+          </dl>
+        </div>
+      </details>
+
+      <details class="g-summary">
+        <summary class="g-summary-fold">Revolut</summary>
+        <div class="g-summary-body rail-body">
+          <p class="g-intro">Open your host's Revolut payment link and pay by card.</p>
+          <a class="g-btn" href="https://pay.revolut.com/EXAMPLE" rel="noopener">Pay 450 Kč with Revolut</a>
+        </div>
+      </details>
+
+      <details class="g-summary">
+        <summary class="g-summary-fold">Card (Stripe link)</summary>
+        <div class="g-summary-body rail-body">
+          <p class="g-intro">Pay by card on your host's Stripe page.</p>
+          <a class="g-btn" href="https://buy.stripe.com/EXAMPLE" rel="noopener">Pay 450 Kč by card</a>
+        </div>
+      </details>
+
+      <details class="g-summary">
+        <summary class="g-summary-fold">Cash</summary>
+        <div class="g-summary-body rail-body">
+          <p class="g-intro">Pay in cash at check-in — ask Old Town Loft's host when you arrive.</p>
+        </div>
+      </details>
+    </div>
+
+    <details class="g-card g-summary">
+      <summary class="g-summary-fold">Guest 1 · saved</summary>
+    </details>
+  </main>
+</div>
+</body>
+</html>

@@ -27,6 +27,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 import posixpath
 import re
 from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, doc_ocr, door_codes, guest_slug, guest_uk_i18n, host_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n, workflow
+from .. import ruian as ruian_lookup  # 0911: guest RUIAN suggestions
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
 from .admin_helpers import kept_signature as _kept_signature
@@ -1048,6 +1049,30 @@ async def verify_pin(token: str, request: Request):
 
 # Registered before /l/{token}/{reservation_id}, otherwise "privacy" is parsed
 # as a reservation id and the guest gets a validation error instead of a page.
+@router.get("/l/{token}/ruian-suggest")
+def ruian_suggest(token: str, request: Request, q: str = ""):
+    """0911: RUIAN address suggestions for the guest's residence card (the form asks for CZ only).
+    Progressive enhancement: the form works without it. Same guards as the other guest GETs.
+    Must stay above /l/{token}/{reservation_id}, which would otherwise match it."""
+    lang = _language(request)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
+    pin_guard = _require_pin(request, token, lang)
+    if pin_guard:
+        return pin_guard
+    if not ruian_lookup.enabled():
+        return JSONResponse({"error": "not_found"}, status_code=404)
+    if ruian_lookup.usable_query(q) is None:
+        return JSONResponse([])
+    key = rate_limit.client_key(request, f"ruian_guest:{_lock_token(token)}")
+    if rate_limit.blocked("ruian_guest", key, 120) or ruian_lookup.rate_limited(apartment["owner_user_id"]):
+        return JSONResponse({"error": "rate_limited"}, status_code=429)
+    rate_limit.record("ruian_guest", key)
+    ruian_lookup.record_lookup(apartment["owner_user_id"])
+    return JSONResponse(ruian_lookup.suggest(q))
+
+
 @router.get("/l/{token}/privacy")
 def privacy_notice(token: str, request: Request):
     lang = _language(request)
@@ -1225,6 +1250,11 @@ def stay_overview(token: str, reservation_id: int, request: Request):
             ),
             "door_code": door_codes.view(reservation, apartment),
         }
+    )
+    context["fee_panel"] = (
+        _fee_pay_panel(apartment, reservation, context["t"])
+        if remaining is None or remaining <= 0
+        else None
     )
     return _with_lang(render_guest(request, "guest/stay.html", context), lang)
 
@@ -1509,6 +1539,16 @@ def _form_context(
         else _guest_link(token, reservation["id"]) + "/new"
     )
     context["lang_urls"] = _lang_urls(request, form_path)
+    # 0911: the fee notice shows with the host's collect switch on and a rate; the
+    # suggest URL is set only while the RUIAN lookup is enabled (the form uses it for CZ).
+    context["fee_notice"] = bool(
+        config.STAY_FEE_GUEST_PAY
+        and apartment["stay_fee_collect"]
+        and (apartment["stay_fee_rate_czk"] or 0) > 0
+    )
+    context["ruian_suggest_url"] = (
+        _guest_link(token) + "/ruian-suggest" if ruian_lookup.enabled() else None
+    )
     context["privacy_url"] = (
         _guest_link(token)
         + "/privacy"
@@ -1539,6 +1579,7 @@ def _form_context(
                 if guest and validation.is_valid_signature(guest["signature_png"])
                 else ""
             ),
+            "fee_estimate": _fee_estimate(apartment, reservation, values or {}),
             "country_groups": codelists.country_groups(lang),
             "purposes": codelists.purpose_options(lang),
             "default_purpose": apartment["default_purpose"] or validation.DEFAULT_PURPOSE,
@@ -2008,3 +2049,71 @@ async def guest_document_scan(token: str, reservation_id: int, request: Request)
     if not any(values.values()):
         return JSONResponse({"kind": "error", "message": translate("ocr_nothing_read")}, status_code=422)
     return JSONResponse({"kind": "values", "values": values})
+
+
+# --- stay-fee money card and form estimate (brief 0910) -----------------------
+
+def _fee_pay_panel(apartment, reservation, t):
+    """Hub money card data, or None. None unless the property collects, the live total is above zero."""
+    from .. import config, payments, stay_fee
+    if not (apartment["stay_fee_collect"] and config.STAY_FEE_GUEST_PAY):
+        return None
+    charge = stay_fee.charge_for_reservation(apartment, reservation)
+    if not charge or charge["total_czk"] <= 0:
+        return None
+    total, rate = int(charge["total_czk"]), int(charge["rate_czk"])
+    vs = str(int(reservation["id"]))  # plain id, no zero padding; the bank VS field takes up to 10 digits
+    message = f"Stay fee {vs}"  # goes only into the SPAYD payload; never shown
+    account = ""
+    if apartment["legal_entity_id"]:
+        entity = db.query_one(
+            "SELECT iban, bank_account FROM legal_entity WHERE id = ?",
+            (apartment["legal_entity_id"],),
+        )
+        if entity is not None:
+            if entity["iban"]:
+                account = entity["iban"]
+            elif entity["bank_account"]:
+                account = payments.normalise_account(entity["bank_account"])[1]
+    # Exempt guests (zero counted nights) are left out: the guest never sees who is exempt.
+    persons = [
+        {"days": int(line["liable_nights"]), "amount": int(line["liable_nights"]) * rate}
+        for line in charge["lines"] if line["liable_nights"] > 0
+    ]
+    rails = []
+    for key in (apartment["stay_fee_guest_rails"] or "").split(","):
+        if key == "qr" and account:
+            payload = payments.spayd(account, total, vs, message)
+            rails.append({"key": "qr", "qr": payments.qr_data_uri(payload)})
+        elif key == "iban" and account:
+            rails.append({"key": "iban", "iban": payments.format_iban(account), "qr": ""})
+        elif key == "revolut" and apartment["stay_fee_guest_revolut_link"]:
+            rails.append({"key": "revolut", "link": apartment["stay_fee_guest_revolut_link"]})
+        elif key == "cash":
+            rails.append({"key": "cash",
+                          "note": apartment["stay_fee_guest_cash_note"] or t("fee_cash_default")})
+    return {"total": total, "rate": rate, "persons": persons, "rails": rails,
+            "vs": vs}
+
+
+def _fee_estimate(apartment, reservation, values):
+    """Form-end estimate for the guest being typed in (un-saved values), or None when it is zero."""
+    from datetime import date as _date
+    from .. import config, stay_fee
+    if not (apartment["stay_fee_collect"] and config.STAY_FEE_GUEST_PAY and stay_fee.is_active(apartment)):
+        return None
+    guest = {
+        "id": 0, "stay_from": None, "stay_to": None,
+        "birth_date": values.get("birth_date") or None,
+        "fee_host_decision": None, "fee_host_reason": None, "fee_host_reason_enc": None,
+        "res_country": values.get("res_country") or "", "res_city": values.get("res_city") or "",
+    }
+    share = stay_fee.guest_period(guest, reservation, _date.min, _date.max, apartment=apartment)
+    if share is None:
+        return None
+    stay_fee._apply_scope_boundary(share, apartment)
+    days = int(share["liable_nights"])
+    if days <= 0:
+        return None
+    rate = int(apartment["stay_fee_rate_czk"])
+    return {"amount": days * rate, "days": days, "rate": rate}

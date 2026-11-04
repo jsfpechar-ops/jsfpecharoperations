@@ -1,0 +1,48 @@
+<!doctype html>
+<!-- Mockup D: end of the guest form — quiet estimate card above the signature card.
+     Hidden entirely when the estimate is 0. Links the real guest.css. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Mockup D — form-end fee estimate</title>
+  <link rel="stylesheet" href="../../../App/app/static/tokens.css">
+  <link rel="stylesheet" href="../../../App/app/static/guest.css">
+</head>
+<body>
+<div class="g-wrap">
+  <div class="g-head">
+    <div class="g-title g-property">
+      <span class="g-property-mark property-tone-1" aria-hidden="true">O</span>
+      <div>
+        <h1>Guest 1 of 3</h1>
+        <p class="g-facility">Old Town Loft</p>
+      </div>
+    </div>
+    <details class="g-lang"><summary aria-label="Language: English"><span aria-hidden="true">EN</span></summary></details>
+  </div>
+
+  <main id="g-main">
+    <form>
+      <!-- …earlier steps: details, document, home address, signature… -->
+
+      <!-- NEW: quiet estimate card, no button, no coral -->
+      <div class="g-card" id="fee-estimate" style="background:var(--bg-soft)">
+        <h2>Municipal stay fee</h2>
+        <p class="g-intro">About <strong>150 Kč</strong> for you (3 counted days × 50 Kč).
+        You'll choose how to pay the host once everyone is registered.</p>
+      </div>
+
+      <div class="g-card" data-guest-step data-step-title="Sign">
+        <div class="g-step-head"><h2>Sign</h2></div>
+        <div class="g-sign">
+          <canvas id="sig-canvas" width="300" height="120" style="border:1px solid var(--line);border-radius:8px;width:100%"></canvas>
+        </div>
+        <button class="g-btn" type="submit" style="margin-top:16px">Save and continue</button>
+      </div>
+    </form>
+  </main>
+</div>
+</body>
+</html>

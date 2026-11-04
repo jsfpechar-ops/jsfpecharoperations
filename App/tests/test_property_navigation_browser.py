@@ -36,6 +36,7 @@ NO_JS_LOADS = (
 
 # The successful controls of the one property form, by name.
 SETTINGS_NAMES = {
+    "stay_fee_guest_form", "stay_fee_guest_revolut_link", "stay_fee_guest_cash_note",  # 0897: always in the form
     "signature_drawn", "signature_name", "fee_signature_section", "signature_file", "return_to", "_csrf", "internal_name", "city_en", "legal_entity_id", "data_controller_entity_id",
     "addr_okres", "addr_obec", "addr_obec_cast", "addr_street", "addr_house_no", "addr_orient_no", "addr_zip",
     "notes", "permalink_pin", "guest_message", "permalink_window_days",

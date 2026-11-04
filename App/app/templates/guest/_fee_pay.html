@@ -1,0 +1,57 @@
+{# Stay-fee money card (brief 0910), position 3 on the hub. Read-only: no form, no
+   state. Included only when the route found a live total above zero (fee_panel). #}
+{% set fee_total = t('fee_amount', amount=fee_panel.total) %}
+<div class="g-card g-fee" id="fee-pay">
+  <h2>{{ t('fee_title') }}</h2>
+  <p class="g-intro">{{ t('fee_rate_line', rate=fee_panel.rate) }}</p>
+  <p class="g-fee-amount"><strong>{{ fee_total }}</strong></p>
+
+  <details class="g-summary">
+    <summary class="g-summary-fold">{{ t('fee_per_person') }}</summary>
+    <div class="g-summary-body">
+      <dl class="g-summary-list">
+        {% for person in fee_panel.persons %}
+          <dt>{{ t('fee_guest_n', n=loop.index) }}</dt>
+          <dd>{{ t('fee_person_line', days=person.days, rate=fee_panel.rate, amount=person.amount) }}</dd>
+        {% endfor %}
+      </dl>
+    </div>
+  </details>
+
+  {% if fee_panel.rails %}
+    <p class="g-intro g-fee-choose">{{ t('fee_choose') }}</p>
+    {% for rail in fee_panel.rails %}
+      <details class="g-summary"{% if loop.first %} open{% endif %}>
+        {% if rail.key == 'qr' %}
+          <summary class="g-summary-fold">{{ t('fee_rail_qr') }}</summary>
+          <div class="g-summary-body g-fee-rail">
+            <div class="g-fee-qr">
+              <img class="g-fee-qr-img" src="{{ rail.qr }}" width="176" height="176" alt="{{ t('fee_qr_alt') }}">
+            </div>
+          </div>
+        {% elif rail.key == 'iban' %}
+          <summary class="g-summary-fold">{{ t('fee_rail_iban') }}</summary>
+          <div class="g-summary-body g-fee-rail">
+            <dl class="g-summary-list">
+              <dt>{{ t('fee_iban') }}</dt><dd>{{ rail.iban }}</dd>
+              <dt>{{ t('fee_amount_label') }}</dt><dd>{{ fee_total }}</dd>
+              <dt>{{ t('fee_vs_label') }}</dt><dd>{{ fee_panel.vs }}</dd>
+            </dl>
+          </div>
+        {% elif rail.key == 'revolut' %}
+          <summary class="g-summary-fold">{{ t('fee_rail_revolut') }}</summary>
+          <div class="g-summary-body g-fee-rail">
+            <a class="g-btn" href="{{ rail.link }}" rel="noopener">{{ t('fee_revolut_button', amount=fee_total) }}</a>
+          </div>
+        {% else %}
+          <summary class="g-summary-fold">{{ t('fee_rail_cash') }}</summary>
+          <div class="g-summary-body g-fee-rail">
+            <p class="g-intro">{{ rail.note }}</p>
+          </div>
+        {% endif %}
+      </details>
+    {% endfor %}
+  {% endif %}
+
+  <p class="g-intro g-fee-legal">{{ t('fee_legal_pointer') }}</p>
+</div>
