@@ -158,22 +158,22 @@
       <div class="guest-link-top">
         <div class="field guest-link-url">
           <label for="permalink">{{ t('property_nav.guest_link') }}</label>
-          <div class="copyrow">
+          <div class="copyrow guest-copy-row">
             <input type="text" id="permalink" readonly value="{{ permalink }}">
             {{ copy_button('permalink') }}
-            <a class="btn sm ghost" href="/l/{{ link_key }}" target="_blank" rel="noopener">{{ t('guest_links.preview') }}</a>
-            <a class="ui-btn ui-btn-quiet ui-btn-compact" href="/apartments/{{ apartment.id }}/guide">{{ t('leon_page.guide_link') }}</a>
           </div>
         </div>
         <div class="field guest-link-pin">
           {{ field_label('permalink_pin', t('guest_links.pin'), t('apartment.form.guest_link.pin_hint')) }}
-          <div class="copyrow pin-row">
+          <div class="copyrow guest-copy-row pin-row">
             <input type="text" id="permalink_pin" name="permalink_pin" value="{{ pin }}" class="mono" aria-describedby="permalink_pin-help"
                    inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="{{ t('apartment.form.guest_link.pin_ph') }}" required>
             {{ copy_button('permalink_pin') }}
           </div>
         </div>
         <div class="guest-link-actions">
+          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/l/{{ link_key }}" target="_blank" rel="noopener">{{ t('guest_links.preview') }}</a>
+          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/apartments/{{ apartment.id }}/guide">{{ t('leon_page.guide_link') }}</a>
           <span class="guest-link-action">
             <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" formmethod="post" formnovalidate
                     formaction="{{ base_url }}/regenerate-pin"
