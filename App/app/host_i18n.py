@@ -7787,6 +7787,10 @@ _PROPERTY_NAV_0094_STRINGS = {
         "property_page.sec.fee.sub": "How much is paid to the municipality",
         "property_page.sec.archive.title": "Archive",
         "property_page.preview.title": "Preview",
+        "property_page.strip.aria": "Property status",
+        "property_page.strip.guest_off": "No link yet",
+        "property_page.strip.operator_missing": "Operator missing",
+
         "property_page.preview.connections": "Connections",
         "property_page.sec.archive.sub": "Hide the property from the list",
         "property_page.sec.calendars.title": "Calendars",
@@ -7822,6 +7826,10 @@ _PROPERTY_NAV_0094_STRINGS = {
         "property_page.sec.fee.sub": "Kolik se platí obci",
         "property_page.sec.archive.title": "Archivovat",
         "property_page.preview.title": "Náhled",
+        "property_page.strip.aria": "Stav nemovitosti",
+        "property_page.strip.guest_off": "Odkaz zatím není",
+        "property_page.strip.operator_missing": "Chybí provozovatel",
+
         "property_page.preview.connections": "Napojení",
         "property_page.sec.archive.sub": "Skrýt nemovitost ze seznamu",
         "property_page.sec.calendars.title": "Kalendáře",

@@ -3207,6 +3207,10 @@ STRINGS: Dict[str, str] = {
     "property_page.sec.fee.sub": "Số tiền nộp cho thành phố",
     "property_page.sec.archive.title": "Lưu trữ",
     "property_page.preview.title": "Xem trước",
+    "property_page.strip.aria": "Trạng thái chỗ ở",
+    "property_page.strip.guest_off": "Chưa có liên kết",
+    "property_page.strip.operator_missing": "Thiếu đơn vị vận hành",
+
     "property_page.preview.connections": "Kết nối",
     "property_page.sec.archive.sub": "Ẩn chỗ ở khỏi danh sách",
     "property_page.sec.calendars.title": "Lịch",
