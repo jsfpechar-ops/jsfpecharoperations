@@ -14,8 +14,8 @@ else:
 from tests.test_0508_page_swap_browser import new_context, open_page, seed
 from tests.test_dashboard_calendar_browser import calendar_origin, calendar_workspace, launch  # noqa: F401,F811
 
-# The sidebar page that still uses the old stylesheet set (body has no "v2" class).
-OLD_PAGE = "/payments"
+# A page that still uses the old stylesheet set (body has no "v2" class): the booking-site setup (no sidebar link leads there, so it is visited like a link click).
+OLD_PAGE = "/apartments/{apartment_id}/booking-site"
 STYLESHEETS = "() => [...document.querySelectorAll('link[rel=stylesheet]')].map((l) => l.getAttribute('href').split('?')[0].split('/').pop())"
 
 
@@ -32,8 +32,9 @@ def test_old_stylesheet_page_and_back_never_mix_sets(calendar_workspace, calenda
         assert "app.css" not in sheets(page)
         assert page.evaluate("() => document.body.classList.contains('v2')")
 
-        page.locator(f'#app-sidebar a[href="{OLD_PAGE}"]').first.click()
-        page.wait_for_function("(p) => location.pathname === p", arg=OLD_PAGE, timeout=15000)
+        old_page = OLD_PAGE.format(apartment_id=calendar_workspace["properties"][0])
+        page.evaluate("(p) => window.Turbo.visit(p)", old_page)
+        page.wait_for_function("(p) => location.pathname === p", arg=old_page, timeout=15000)
         page.wait_for_load_state()
         names = sheets(page)
         assert not ("app.css" in names and "app2.css" in names), names

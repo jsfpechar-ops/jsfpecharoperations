@@ -137,8 +137,12 @@ def test_phone_launcher_and_sheet(origin):
         page.wait_for_selector("#havel-sheet[open]", state="detached")
         # The close event saves open:false a moment after the attribute goes; leaving first would restore it open.
         page.wait_for_function("() => { const s = sessionStorage.getItem('ubyhost.havel.chat'); return !s || JSON.parse(s).open === false; }")
-        # 0720: v2 phone has no More sheet (the Menu tab replaces it); this tail checks the old shell's More menu on /payments (0785a).
-        page.goto(origin[0] + "/payments")
+        # 0720: v2 phone has no More sheet (the Menu tab replaces it); this tail checks the old shell's More menu on the booking-site page (0785a).
+        from tests.test_submission_retry_cap import USERNAME
+        owner = db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))["id"]
+        apartment_id = db.insert("apartment", {"internal_name": "Havel Flat", "owner_user_id": owner, "permalink_token": "havelflat1",
+                                               "automation_mode": "manual", "active": 1, "created_at": db.utcnow()})
+        page.goto(origin[0] + f"/apartments/{apartment_id}/booking-site")  # an old-shell page (payments is v2 now)
         page.locator("[data-sheet-open='more-sheet']").click()
         page.locator("#more-sheet[open] [data-havel-more]").click()
         page.locator("#havel-sheet[open]").wait_for()
