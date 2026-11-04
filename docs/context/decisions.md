@@ -75,3 +75,4 @@ Append-only.
 - [auth] 2026-11-04: log out is per device; "all devices" is separate (0947).
 - 11-04: stay fee pay v4; [workflow] Sonnet briefs, Haiku executes (owner)
 - [dashboard] 2026-11-04: the per-property "No guest has used the link" needs-you card (0233) is removed, not collapsed; one card per property was too many. The property-page health row stays. Source: brief 0949.
+- [dashboard] 2026-11-04: the "You are ready" card shows only with exactly one property; per-property alternative left to the owner. Source: brief 0949.

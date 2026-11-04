@@ -17,6 +17,7 @@ Master version: 2.0.0. Adds only.
 - `banner(attention)`: property setup missing (existing `missing_report_display` lines, one banner, one `secondary` "Finish setup")
 - `calendar`: existing month / week / Gantt, stays only, controls restyled as `tabs` and `secondary compact` buttons
 - No "guest link not used" reminder card: removed in 0949; the guest message is reached from the property page.
+- "You are ready" card (onboarding finish): shown only with exactly one property (0949).
 - `list_section` "Needs you now (n)": at most 5 `row`s: primary = dates; secondary = property + stay label; badge = task; menu = Open, Add guest, Open guest form, Copy guest form link, Delete; "View all stays" link in the section title row
 - onboarding banner and finish card stay as `banner(neutral)` and an `empty_state`-styled card
 - badges: `action` = guest missing, failed filing (overdue "!"), check report; `attention` = deadline within 24 h; `done` = filed on time; `neutral` = not required

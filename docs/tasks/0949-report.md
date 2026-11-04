@@ -1,6 +1,6 @@
 # 0949 report: paste reminder removed from the dashboard
 
-Status: in progress. Steps 1-7 done, step 8 (part B: "You are ready" card only with one property) pending or in progress, see the commit list.
+Status: review. Steps 1-8 done (part B: the "You are ready" card shows only with exactly one property).
 
 ## Commits (branch claude/friendly-albattani-ndmdji, not pushed)
 - Step 1: 4a6f70a9 (needs_you.py, admin.py, dashboard.html, test_needs_you_0240.py, brief Files line)
@@ -9,12 +9,14 @@ Status: in progress. Steps 1-7 done, step 8 (part B: "You are ready" card only w
 - Step 4: b5dacb6b (workflow.css, app2.css, base.html ?v=, static_versions.json, catalog.json)
 - Step 5: 8dbe81c4 (test_paste_check_0233.py rewritten, test_workflow_0230.py tuple, test_host_quiet_dashboard_browser.py block)
 - Step 6: 5a58b88c (screenshots in docs/tasks/screenshots-0949/)
-- Step 7: this commit (docs, `.needs-you-how` selector removed: grep showed no other use)
+- Step 7: a11857b2 (docs, `.needs-you-how` selector removed: grep showed no other use)
+- Step 8: this commit (onboarding.py guard; test_onboarding.py helper suffix and test_finish_card_only_with_one_property; decision line)
 
 ## Tests (0 skipped in all browser runs)
 - test_needs_you_0240.py: 7 passed
 - Step 5 set (paste_check_0233, workflow_0230, workflow_strip_0232, wizard_try_it_0884, property_health_0244): 20 passed
 - test_host_quiet_dashboard_browser.py + test_layout_lint_browser.py + test_static_versions.py: 9 passed, 0 skipped
+- Step 8 (test_onboarding.py + test_dashboard_order.py): 22 passed
 - test_host_i18n.py: 3 failed, 11 passed. Same 3 fail on a clean tree ("no such table: apartment"). Known, not caused by this change.
 
 ## Assertions changed
@@ -42,11 +44,13 @@ Status: in progress. Steps 1-7 done, step 8 (part B: "You are ready" card only w
 ## Deviations
 - Step 1 grep expected no other callers; test_needs_you_0240.py had two. Fixed per orchestrator decision.
 - Step 3 grep also matches workflow.short.paste (not dead); kept.
-- Step 7 ran context_lint: decisions.md is ~2253 tokens, cap 2200. Cause: the new decision line. The 90-day archive rule moves nothing (oldest line 2026-10-06). Needs a split or compaction decision from the orchestrator. Not done here: decisions.md is append-only.
+- Context lint: decisions.md is ~2291 tokens after step 8, cap 2200 (was ~2253 after step 7). Cause: the new decision line. The 90-day archive rule moves nothing (oldest line 2026-10-06). Needs a split or compaction decision from the orchestrator. Not done here: decisions.md is append-only.
 - status.md link to this report resolves once this file exists.
 
 ## Open question (owner)
 - Should anything replace the reminder (for example one calm line on the property page)? Not built; the property-page health row covers it.
 
 ## Owner steps left
-- None for steps 1-7. Merge through scripts/merge-pr-on-green.sh only after CI is green.
+- Part B: decide whether a per-property link/PIN row should replace the card (not built).
+- decisions.md is over its 2200-token cap (see Deviations); a split or compaction decision is needed.
+- Merge through scripts/merge-pr-on-green.sh only after CI is green.

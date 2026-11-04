@@ -206,7 +206,8 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
     completed = sum(1 for step in steps if step["done"])
     finished = completed == len(steps)
     finish = None
-    if finished and first_apartment:
+    # 0949: one property only; with several the card would show just the first one's link and PIN.
+    if finished and first_apartment and apartment_count == 1:
         token = first_apartment["permalink_slug"] or guest_slug.link_key(first_apartment)
         policy = first_apartment["passport_photo_policy"] or "off"
         finish = {

@@ -180,17 +180,17 @@ def test_onboarding_can_be_reopened_as_a_full_page():
     assert "Want to learn before entering real details?" in page.text
 
 
-def _ready_apartment(owner_id: int, entity_id: int) -> int:
-    """Apartment that clears validation so onboarding can finish all five steps."""
+def _ready_apartment(owner_id: int, entity_id: int, n: int = 1) -> int:
+    """Apartment that clears validation so onboarding can finish all five steps. n > 1 makes a distinct copy (0949)."""
     return db.insert(
         "apartment",
         {
             "legal_entity_id": entity_id,
             "owner_user_id": owner_id,
-            "internal_name": "Ready Studio",
-            "uby_idub": "100227887600",
+            "internal_name": "Ready Studio" if n == 1 else f"Ready Studio {n}",
+            "uby_idub": f"10022788760{n - 1}",
             "uby_mark": "CZGFW",
-            "uby_name": "Ready Studio",
+            "uby_name": "Ready Studio" if n == 1 else f"Ready Studio {n}",
             "uby_contact": "host@example.com",
             "addr_okres": "Praha 2",
             "addr_obec": "Praha",
@@ -203,7 +203,7 @@ def _ready_apartment(owner_id: int, entity_id: int) -> int:
             "uby_ws_password_enc": db.encrypt_secret("demo-password"),
             "automation_mode": "manual",
             "submit_after_hours": 24,
-            "permalink_token": "finishlink99",
+            "permalink_token": f"finishlink{98 + n}",
             "permalink_pin": "246810",
             "passport_photo_policy": "off",
             "guest_message": "Welcome — please register before arrival.",
@@ -258,6 +258,35 @@ def test_finished_onboarding_shows_guest_link_and_pin_handoff():
     assert checklist.status_code == 200
     assert 'class="onboarding-finish"' in checklist.text
     assert "All five checks are done" in checklist.text
+
+
+def test_finish_card_only_with_one_property():
+    owner_id = auth.create_account("onboard-one@example.test", "", role="host", username="onboard-one")
+    entity_id = _entity(owner_id)
+    first_id = _ready_apartment(owner_id, entity_id, 4)
+    db.insert("ical_feed", {"apartment_id": first_id, "url": "https://example.com/one.ics", "label": "Airbnb", "active": 1, "created_at": db.utcnow()})
+    account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
+    client = TestClient(app)
+    client.cookies.set(auth.SESSION_COOKIE, auth.issue_session(owner_id, account["session_version"]))
+
+    progress = onboarding.progress(owner_id)
+    assert progress["finished"] is True
+    assert progress["finish"] is not None
+    assert 'class="onboarding-finish"' in client.get("/").text
+
+    for n in (5, 6):
+        apartment_id = _ready_apartment(owner_id, entity_id, n)
+        db.insert("ical_feed", {"apartment_id": apartment_id, "url": f"https://example.com/{n}.ics", "label": "Airbnb", "active": 1, "created_at": db.utcnow()})
+
+    progress = onboarding.progress(owner_id)
+    assert progress["finished"] is True
+    assert progress["finish"] is None
+    dashboard = client.get("/")
+    assert dashboard.status_code == 200
+    assert 'class="onboarding-finish"' not in dashboard.text
+    assert 'class="onboarding-finish-strip"' not in dashboard.text
+    assert "/onboarding/dismiss" not in dashboard.text
+    assert client.get("/onboarding").status_code == 200
 
 
 def test_host_can_skip_and_restore_setup_guidance():
