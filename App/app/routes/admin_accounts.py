@@ -995,6 +995,8 @@ def user_workspace_export(user_id: int, request: Request):
     account, guard = _require_admin(request)
     if guard:
         return guard
+    if not auth.session_is_fresh(request):
+        return _back("/settings/security#settings-security", err=_flash(request, "auth.error.recent_login"))
     target = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
     if not target:
         return _back(f"/admin/customers/{user_id}", err=_flash(request, "flash.error.no_such_user"))
