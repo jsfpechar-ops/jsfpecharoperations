@@ -15,7 +15,7 @@
 
 {% macro ico_field(input_id, value, context='business') %}
   <div class="field">
-    <label for="{{ input_id }}">{{ t('entities.ico') }}</label>
+    <label for="{{ input_id }}">{{ t('entities.ico') }}{% if context != 'lookup' %}<span class="req-star" aria-hidden="true">*</span>{% endif %}</label>
     <div class="action-group" style="align-items:flex-end">
       <input type="text" id="{{ input_id }}" name="ico" inputmode="numeric"
              {%- if context == 'lookup' %} maxlength="8"{% else %} required{% endif %}
@@ -36,7 +36,7 @@
     </div>
   </div>
   <div class="field">
-    <label for="{{ prefix }}name">{{ t('entities.name') }}</label>
+    <label for="{{ prefix }}name">{{ t('entities.name') }}<span class="req-star" aria-hidden="true">*</span></label>
     <input type="text" id="{{ prefix }}name" name="name" required
            value="{{ (entity.name if entity else '') }}"
            placeholder="{{ t('entities.name_placeholder') }}">

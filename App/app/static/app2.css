@@ -2527,3 +2527,4 @@ body.v2 .wiz-page .setup-wizard-ask[data-step-tone=blue] .setup-wizard-ask-icon{
 body.v2 .wiz-page .setup-wizard-ask[data-step-tone=teal] .setup-wizard-ask-icon{color:var(--teal);background:var(--teal-bg)}
 body.v2 .wiz-page .setup-wizard-ask[data-step-tone=purple] .setup-wizard-ask-icon{color:var(--purple);background:var(--purple-bg)}
 body.v2 .wiz-page .setup-wizard-celebrate-title{color:var(--ink);font-size:18px;line-height:1.25;overflow-wrap:anywhere}
+body.v2 .req-star{color:var(--red);font-weight:700;margin-inline-start:2px}

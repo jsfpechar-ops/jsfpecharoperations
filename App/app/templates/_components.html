@@ -36,9 +36,9 @@
 </div>
 {% endmacro %}
 
-{% macro field_label(for, text, help_text='', optional=false, guide_href='') %}
+{% macro field_label(for, text, help_text='', optional=false, guide_href='', required=false) %}
   <div class="field-label-row">
-    <label for="{{ for }}">{{ text }}{% if help_text %}{{ help_tip(for ~ '-help', help_text, guide_href) }}{% endif %}</label>
+    <label for="{{ for }}">{{ text }}{% if required %}<span class="req-star" aria-hidden="true">*</span>{% endif %}{% if help_text %}{{ help_tip(for ~ '-help', help_text, guide_href) }}{% endif %}</label>
   </div>
 {% endmacro %}
 
@@ -417,12 +417,12 @@
         {% if onboarding.dismissed %}
           <form method="post" action="/onboarding/resume">
             <input type="hidden" name="return_to" value="{{ request.url.path }}">
-            <button class="ui-btn ui-btn-quiet ui-btn-compact" type="submit">{{ t('onboarding.resume') }}</button>
+            <button class="onboarding-skip-link" type="submit">{{ t('onboarding.resume') }}</button>
           </form>
         {% else %}
           <form method="post" action="/onboarding/dismiss">
             <input type="hidden" name="return_to" value="/">
-            <button class="ui-btn ui-btn-quiet ui-btn-compact" type="submit">{{ t('onboarding.skip') }}</button>
+            <button class="onboarding-skip-link" type="submit">{{ t('onboarding.skip') }}</button>
           </form>
           {{ help_tip('onboarding-skip-help', t('onboarding.skip_hint')) }}
         {% endif %}
