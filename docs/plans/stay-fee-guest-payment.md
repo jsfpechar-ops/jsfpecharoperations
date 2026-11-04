@@ -278,6 +278,18 @@ very tall; weaker "guest picks one" semantics.
 **Recommendation: A for v1** (leanest, fewest routes), with the per-person
 breakdown collapsed; revisit B if hosts ask for a standalone pay page.
 
+**Standards check for option A (against `docs/DESIGN.md` Arrival lane +
+`guest.css`, mockup A v2):** no nested `g-card` (rails are `details` rows with
+dividers — a nested card would double the border/shadow); the "why" lives in a
+`details.g-head-help` `?` popover on the card head, not in the main flow
+(non-obvious → `?` rule); exactly one coral action per screen — the default-open
+QR rail shows only a ghost Copy, and a pay link's coral `g-btn` appears only
+inside its own opened row; IBAN `dd` gets `overflow-wrap: anywhere` so 320 px
+never scrolls sideways; per-person breakdown uses the existing
+`details.g-summary`; card sits at the fixed "money" position 3; light mode,
+tokens only, `?v=` bump on guest.css; native `<details>` = no JS needed;
+all strings via `t()` in 6 languages; 390 px screenshot gate at build.
+
 **Renderable mockups** (open from the repo root in a browser — they link the
 real `App/app/static/tokens.css` + `guest.css`, EN copy; the build ships all
 6 languages):
