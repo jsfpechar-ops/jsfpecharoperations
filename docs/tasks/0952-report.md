@@ -1,31 +1,38 @@
 # 0952 report
 
-Status: blocked (budget cap reached; resume at "Next step")
+Status: blocked (one browser test fails, probably pre-existing; see Next step)
 
-## Commits (branch par-0952, not pushed, no PR)
-- 2b64ecc8 steps 2-3: unsaved guard (document-level listener for form-attribute controls), #door-code/#smart-locks open #sec-lock and scroll, drop sec-lock-account CSS order
-- bc805d4f step 1: one `#sec-lock` outside the property form; door-code controls carry form="property-settings-form"
-- e55ffb48 step 4: tests/test_0952_lock_section.py (one section, no duplicate ids, with and without lock panel); old DOM and CSS order assertions in test_0534 updated
-- 3c604bb9, 71262dbb: door-code switch status and discard follow form-attribute controls; app.js key 20261104-0952k (orchestrator asked for 0952j; 0952j was refused by the static versions tool once app.js changed again)
-- 322afa88: earlier blocked report (superseded by this file)
+## Commits (par-0952, not pushed, no PR)
+- 2b64ecc8 guard, #door-code/#smart-locks anchors, CSS order cleanup
+- bc805d4f one `#sec-lock` outside the property form (form="property-settings-form" on door-code controls)
+- e55ffb48 tests/test_0952_lock_section.py; test_0534 order assertions updated
+- 3c604bb9, 71262dbb, 1d commit: switch status, discard, return-section tracking follow form-attribute controls
+- this commit: tests/test_0952_lock_section_browser.py, screenshots, report
 
-## Tests
-- test_host_unsaved_changes_browser.py: 15 passed, 0 skipped (after 71262dbb)
-- test_0534, test_0952_lock_section, test_0530, test_property_hub, test_host_properties_navigation: pass (non-browser)
-- Earlier browser run (before 3c604bb9/71262dbb): layout lint, 0251, 0541, 0199, host geometry, static versions all passed with 0 skipped; not rerun after the last two commits.
-- Lint: F841 at tests/test_0541_property_page_phone_browser.py:168 (`spec`), a line this change does not touch; not yet checked against the base commit.
+## Browser run (after the last JS fix, 0 skipped)
+test_layout_lint_browser, 0541, unsaved-changes, 0199, host_geometry, static_versions, 0952 browser file: 35 passed, 1 failed.
+- Failed: test_0251 test_overview_cards_and_tablet_menu_on_touch, locator `aside.preview a.r[href="#sec-lock"]` never appears. No `a.r` link to `#sec-lock` exists in base templates (base has only `a.sc` in the strip). Failed in the first run too. Probably a stale selector; not confirmed on the base commit.
+- New tests: door edit outside the form sets data-dirty; `#door-code` and `#smart-locks` open `#sec-lock`; 0 skipped.
 
-## Not done
-- Browser test for editing a door-code control outside the form and asserting the dirty/unsaved state: not written (needs a lock-account fixture).
-- Browser anchor test for #door-code / #smart-locks (step 2 asserts): not written.
-- Screenshots at 390/768/1280 with the lock section open, and per-width notes: not taken.
-- Design-system checklist, status line, decision line: not done (decision for orchestrator: `[ui] 0952 lock section is one accordion outside the property form; door-code controls use form="property-settings-form"`).
+## Lint
+F841 `spec` at test_0541_property_page_phone_browser.py:168 exists in base 871906ab too. Left unchanged.
+
+## Screenshots (docs/tasks/screenshots-0952/, one per width, lock section open, `?view=settings&section=lock`)
+- 390: Smart lock section scrolled into view; Door-code access times, check-in/out selects, Digital door lock switch, lock select visible; nothing clipped in the crop.
+- 768: Smart lock between Automatic messages and Stay fee; single accordion; controls in one column; nothing clipped.
+- 1280: same order; two-column door-code grid; "How it works" and connect block visible; nothing clipped.
+- Only one Smart lock section in the page (test asserts one `id="sec-lock"`, no `sec-lock-account`, no duplicate ids).
+
+## Design-system checklist
+Not ticked: I did not run the checklist in docs/design/design-system.md in this session.
 
 ## Deviations
 - Sub-block small headings not added; existing headings kept.
-- app.js cache key is 20261104-0952k, not 0952j.
+- app.js key is 20261104-0952m (0952j and 0952k were superseded by JS fixes).
+
+## Decision line for orchestrator
+[ui] 0952 lock section is one accordion outside the property form; door-code controls use form="property-settings-form"
 
 ## Next step
-1. Rerun `tests/test_layout_lint_browser.py tests/test_0251_tablet_browser.py tests/test_0541_property_page_phone_browser.py tests/test_0199_phone_geometry_browser.py tests/test_host_geometry.py` from App/ with 0 skipped.
-2. Add the guard browser test and the anchor browser test, then take the three screenshots and write per-width notes.
-3. Check F841 against the base commit.
+1. Confirm test_0251 aside locator against base 871906ab (run that one test on the base commit in a clean checkout), then fix the selector or the markup.
+2. Tick design-system checklist; add the Smart lock desktop check to the report.
