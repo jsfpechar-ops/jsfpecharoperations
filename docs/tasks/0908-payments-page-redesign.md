@@ -1,6 +1,6 @@
-# 0903: Payments page in the phone v2 design
+# 0908: Payments page in the phone v2 design
 
-Status: open. Owner OK on the mockup: 2026-11-04 (Josef, "Ok"). Executor: Haiku 5.5, two runs (steps 1-4, then 5-8).
+Status: todo. Owner OK on the mockup: 2026-11-04 (Josef, "Ok"). Executor: Haiku 5.5, two runs (steps 1-4, then 5-8).
 Mockup (the visual target, Czech copy is final): `docs/design/mockup/payments-v1.html`. Open it with `#home`, `#new`, `#setup`.
 Read first: AGENTS.md, docs/context/executor.md, docs/design/MASTER.md section 7 (grep `### 7.3`, `### 7.5`, `### 7.11`, `### 7.14`), docs/design/pages/payments.md.
 
@@ -29,11 +29,11 @@ Screens:
 5. Add the new `payments.*` keys to `app/host_i18n.py` in Czech and English with matching keys (Czech wording as in the mockup, English natural, no "Connect/KYC/payout/webhook"). Literal keys only in `_flash(` calls. Run `.venv/bin/python -m pytest tests/test_host_i18n.py -q 2>&1 | tail -10` after `tests/test_payments_dashboard.py`.
 6. Update `docs/design/pages/payments.md` (keep under 40 lines, no px, no colours): add `/payments/new`, the dialog, the redirect rule.
 7. Fix the tests from step 1 and run the test-map row "Payments dashboard + rails" plus the design row: `.venv/bin/python -m pytest tests/test_payments_dashboard.py tests/test_payment_services.py tests/test_payment_request_model.py tests/test_stripe_connect.py tests/test_payment_links.py tests/test_payment_qr.py tests/test_payments_setup_browser.py -q -x 2>&1 | tail -30`.
-8. Geometry and browser (Chromium, 0 skipped): extend `tests/test_payments_setup_browser.py` (or add `tests/test_payments_layout_browser.py`) so, for `/payments` in states setup / complete-with-services-and-requests / empty, and for `/payments/new`, at widths 320, 390, 768, 1024, 1280, 1440: no horizontal scroll, no element outside the viewport, every button/input/chip/row at least 44 px high at 390 and below, no clipped primary text, the one primary button per group. Then: `UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/shots .venv/bin/python -m pytest tests/test_layout_lint_browser.py -q -x 2>&1 | tail -30` (add `/payments/new` to ROUTES in `tests/test_design_guardrails_browser.py`). Expected: green, 0 skipped. Copy `/tmp/shots/layout-lint/payments*-{390,768,1280}.png` to `docs/tasks/screenshots-0903/`.
+8. Geometry and browser (Chromium, 0 skipped): extend `tests/test_payments_setup_browser.py` (or add `tests/test_payments_layout_browser.py`) so, for `/payments` in states setup / complete-with-services-and-requests / empty, and for `/payments/new`, at widths 320, 390, 768, 1024, 1280, 1440: no horizontal scroll, no element outside the viewport, every button/input/chip/row at least 44 px high at 390 and below, no clipped primary text, the one primary button per group. Then: `UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/shots .venv/bin/python -m pytest tests/test_layout_lint_browser.py -q -x 2>&1 | tail -30` (add `/payments/new` to ROUTES in `tests/test_design_guardrails_browser.py`). Expected: green, 0 skipped. Copy `/tmp/shots/layout-lint/payments*-{390,768,1280}.png` to `docs/tasks/screenshots-0908/`.
 
 ## 4. Acceptance
 - All commands above green, 0 skipped; lint findings zero.
-- Report `docs/tasks/0903-report.md`: per page "390: ...; 768: ...; 1280: ..." (what you saw), Deviations list, token note. Draft PR, branch `task/0903-payments-redesign`, never push to main.
+- Report `docs/tasks/0908-report.md`: per page "390: ...; 768: ...; 1280: ..." (what you saw), Deviations list, token note. Draft PR, branch `task/0908-payments-redesign`, never push to main.
 
 ## 5. Owner steps
 After merge and deploy, open /payments on the phone once; nothing else to do.
