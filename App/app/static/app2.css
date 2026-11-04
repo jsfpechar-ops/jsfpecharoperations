@@ -2144,3 +2144,6 @@ body.v2 .props-card thead{display:table-header-group}
 body.v2 .props-card thead,body.v2 .props-card thead th{background:transparent}
 @media (min-width:1024px) and (max-width:1100px){body.v2 .stay-fees-page .card.stays-desk th,body.v2 .stay-fees-page .card.stays-desk td{padding-left:6px;padding-right:6px}}
 body.v2 .settings-action-row > div:first-child{display:inline-flex;align-items:center;gap:4px;flex-wrap:nowrap}
+body.v2 .housebook-page table :is(th,td):first-child{position:sticky;left:0;background:var(--surface);z-index:1}
+body.v2 .housebook-page .row-menu-trigger{background:#efefeb;color:var(--ink);border:0;font:inherit;font-weight:600;padding:9px 16px;border-radius:999px;cursor:pointer;white-space:nowrap}
+body.v2 .stamp-cell{font-family:var(--font-mono, ui-monospace, monospace);white-space:nowrap;max-width:22ch;overflow:hidden;text-overflow:ellipsis}
