@@ -22,7 +22,10 @@ def _check_one_section(html):
     assert html.count('id="sec-lock"') == 1
     assert 'sec-lock-account' not in html
     title = SUMMARY_TITLE.search(html).group(1)
-    assert title and html.count(f"<b>{title}</b>") == 1
+    start = html.index('id="sec-lock"')
+    summary = html[start:html.index("</summary>", start)]
+    assert title and summary.count(f"<b>{title}</b>") == 1
+    assert html.count('data-strip="door"') == 1
     assert _dup_ids(html) == []
     return title
 
