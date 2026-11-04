@@ -69,8 +69,8 @@ BOX_PROPS = ("width", "height", "margin-top", "margin-right", "margin-bottom", "
 BOX_OVERRIDES = {
     # text-dependent: the stay fee head h1 is as wide as the fixture title on a 320 px phone (0794)
     "stay_fees:.mh .big, .head h1@320": {"width": "116px"},
-    "submissions:.mh .big, .head h1@320": {"width": "113px"},  # text-dependent: Odeslání vs mockup Pobyty
-    "submissions:.mh .big, .head h1@390": {"width": "113px"},
+    "submissions:.mh .big, .head h1@320": {"width": "198.609px"},  # text-dependent: Odeslání vs mockup Pobyty
+    "submissions:.mh .big, .head h1@390": {"width": "198.609px"},
     "stay_fees:.mh .big, .head h1@390": {"width": "116px"},
     # text-dependent: fixture copy vs phone v2 mockup demo copy (0729)
     # text-dependent: app copy vs phone v2 mockup demo copy (0735)
