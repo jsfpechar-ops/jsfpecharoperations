@@ -25,6 +25,11 @@ else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
 from app import auth, db
+from app.main import app
+from datetime import date, timedelta
+import secrets
+from fastapi.testclient import TestClient
+from tests.conftest import login_as
 from tests.browser_support import chromium_launch_kwargs
 from test_design_guardrails_browser import ROUTES
 from test_host_wide_geometry_browser import (  # noqa: F401  (fixtures re-created here)
@@ -197,7 +202,10 @@ BAD_PAGE = """<!doctype html><html><head><meta charset=utf-8>
 <div style="width:340px"><input style="width:150px" aria-label=x></div>
 <fieldset style="width:300px;border:2px groove #888"><legend>Signature</legend>Text</fieldset>
 <div style="width:360px"><div style="border-right:1px solid #ccc;height:40px">Stray</div></div>
+<div class=stay-head-actions style="display:flex;flex-wrap:wrap;width:200px;gap:12px"><button style="width:150px;height:36px">Primary</button><details class=row-menu><summary style="display:inline-block;width:60px;height:36px">&#8942;</summary></details></div>
 <span id=icons><svg width=10 height=10><path d="M0 0h10v10z"/></svg><svg width=10 height=10><path d="M0 0h10v10z"/></svg></span>
+<div id=row style="display:flex;width:300px"><a class=btn style="width:200px;white-space:nowrap">Open communication settings</a><a class=btn style="margin-left:-60px;width:110px;white-space:normal">Skip setup guidance now</a></div>
+<div style="display:flex;gap:4px"><button>One</button><button>Two</button></div>
 <form action=/x><button type=submit>Save</button><button type=submit>Uložit</button></form>
 <div style="position:fixed;bottom:0;left:0;width:300px;height:40px;background:#fff"><button type=submit>Confirm</button></div>
 <h2>Guest list</h2><h3>Guest list</h3>
@@ -232,7 +240,8 @@ def test_the_lint_catches_the_known_regressions(wide_base):
     expected = {"word-per-line", "label-squeezed", "badge-stranded", "clipped-text",
                 "text-overlap", "outside-viewport", "empty-control", "duplicate-icon", "help-stranded",
                 "table-squeezed", "tight-stack", "half-width-input", "legend-overlap", "double-primary", "stray-rule",
-                "multiple-save-in-form", "duplicate-heading"}
+                "button-overlap", "button-wraps", "tight-row",
+                "multiple-save-in-form", "duplicate-heading", "action-row-orphan"}
     assert expected <= rules, f"lint missed {sorted(expected - rules)}; saw {sorted(rules)}"
     assert "header-actions-misaligned" in header_rules, f"lint missed header-actions-misaligned; saw {sorted(header_rules)}"
     # The "?" under its heading is caught; the one right after its label is not.
@@ -329,3 +338,83 @@ def test_opened_help_stays_inside_the_viewport(wide_host, wide_base):
             context.close()
         browser.close()
     assert not bad, "opened help leaves the 16 px gutter:\n" + "\n".join(bad[:15])
+
+
+FINISH_SHOTS = Path("/mnt/project-files/dashboard-finish")
+
+
+def _fresh_finish_host(wide_base):
+    """A brand-new host: one entity, one ready property, one stay in ten days."""
+    db.init_db()
+    suffix = secrets.token_hex(4)
+    username = f"finish-card-{suffix}"
+    owner_id = auth.create_account(
+        f"{username}@example.test", "Finish Card Fixture", role="host", username=username
+    )
+    now = db.utcnow()
+    entity_id = db.insert("legal_entity", {
+        "name": "Finish s.r.o.", "seat": "Praha", "ico": "12345678",
+        "contact_email": "host@finish.test", "owner_user_id": owner_id, "created_at": now,
+    })
+    apartment_id = db.insert("apartment", {
+        "legal_entity_id": entity_id, "owner_user_id": owner_id, "internal_name": "Finish Flat",
+        "permalink_token": f"finish{suffix}", "permalink_pin": "1234",
+        "automation_mode": "manual", "submit_after_hours": 24, "active": 1, "created_at": now,
+        "uby_idub": "100227887600", "uby_mark": "CZGFW", "uby_name": "Finish Flat",
+        "uby_contact": "host@finish.test", "addr_okres": "Praha 2", "addr_obec": "Praha",
+        "addr_obec_cast": "Vinohrady", "addr_street": "Korunní", "addr_house_no": "1234",
+        "addr_orient_no": "12a", "addr_zip": "12000", "uby_ws_user": "UBY-WS12cdef",
+        "uby_ws_password_enc": db.encrypt_secret("demo-password"),
+    })
+    client = TestClient(app)
+    response = login_as(client, username, url="/login?lang=en", follow_redirects=False)
+    assert response.status_code == 303, response.text
+    cookie = client.cookies.get(auth.SESSION_COOKIE)
+    assert cookie
+    return {"cookie": cookie, "apartment": apartment_id, "suffix": suffix}
+
+
+def _add_stay(host, days_from_today: int, label: str) -> None:
+    start = date.today() + timedelta(days=days_from_today)
+    db.insert("reservation", {
+        "apartment_id": host["apartment"], "source": "manual", "uid": f"finish-{host['suffix']}-{label}",
+        "date_from": start.isoformat(), "date_to": (start + timedelta(days=2)).isoformat(),
+        "status": "active", "created_at": db.utcnow(), "updated_at": db.utcnow(),
+    })
+
+
+def test_the_finish_card_passes_the_lint(wide_base):
+    host = _fresh_finish_host(wide_base)
+    FINISH_SHOTS.mkdir(parents=True, exist_ok=True)
+    _add_stay(host, 10, "ahead")
+    problems = []
+    with sync_api.sync_playwright() as playwright:
+        try:
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        except Exception:
+            if REQUIRE_BROWSER:
+                raise
+            pytest.skip("Chromium is required for the layout lint")
+        context = browser.new_context()
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": host["cookie"], "url": wide_base + "/"}])
+        for width in (390, 768, 1280):
+            page = context.new_page()
+            page.set_viewport_size({"width": width, "height": 900})
+            page.goto(f"{wide_base}/?lang=en")
+            card = page.locator("section.onboarding-finish")
+            assert card.is_visible(), f"finish card not visible at {width}"
+            problems += [(f"finish {width}", item) for item in page.evaluate(LINT)]
+            page.screenshot(path=str(FINISH_SHOTS / f"finish-{width}.png"), full_page=True)
+            page.close()
+        _add_stay(host, -5, "overdue")
+        for width in (390, 768, 1280):
+            page = context.new_page()
+            page.set_viewport_size({"width": width, "height": 900})
+            page.goto(f"{wide_base}/?lang=en")
+            strip = page.locator(".onboarding-finish-strip")
+            assert strip.is_visible(), f"finish strip not visible at {width}"
+            problems += [(f"strip {width}", item) for item in page.evaluate(LINT)]
+            page.screenshot(path=str(FINISH_SHOTS / f"strip-{width}.png"), full_page=True)
+            page.close()
+        browser.close()
+    assert not problems, "layout lint findings: " + repr(problems)

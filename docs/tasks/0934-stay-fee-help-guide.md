@@ -1,7 +1,7 @@
-# 0912: help topic + guest-guide fact for the stay-fee collection panel
+# 0934: help topic + guest-guide fact for the stay-fee collection panel
 
 Status: todo
-Depends on: 0897 | Base commit: `main` after PR #763 merges | Branch: task/0912-stay-fee-help-guide
+Depends on: 0897 | Base commit: `main` after PR #763 merges | Branch: task/0934-stay-fee-help-guide
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Plan: [docs/plans/stay-fee-guest-payment.md](../plans/stay-fee-guest-payment.md) (§5, §10)
 
@@ -36,7 +36,7 @@ Make the in-app help and the guest guide "know" about guest-paid stay fees:
   when off, the fact is hidden. Never mention exemption reasons.
 - Rules: light mode; EN+CS same commit (here all host + 6 guest languages);
   guest pages: `test_guest_browser_e2e.py` + `test_host_geometry.py` 0 skipped,
-  390 px screenshots into `docs/tasks/screenshots-0912/`; bump `?v=` in
+  390 px screenshots into `docs/tasks/screenshots-0934/`; bump `?v=` in
   `templates/guest/base.html` if guest js/css changes; host pages need the
   geometry test + screenshots per rules.md.
 
@@ -50,7 +50,7 @@ Make the in-app help and the guest guide "know" about guest-paid stay fees:
 | `App/app/templates/guest/guide.html` | edit | render the fact card |
 | `App/app/templates/` guide editor screen | edit | host sets the fact answer |
 | `App/app/i18n.py`, `App/app/guest_uk_i18n.py` | edit | `guide_fact_stay_fee*` keys, 6 languages |
-| tests + `App/tests/static_versions.json` + `docs/tasks/screenshots-0912/` | create/extend | guest e2e/geometry 0 skipped, host geometry, screenshots |
+| tests + `App/tests/static_versions.json` + `docs/tasks/screenshots-0934/` | create/extend | guest e2e/geometry 0 skipped, host geometry, screenshots |
 
 No other file may change.
 
@@ -63,7 +63,7 @@ No other file may change.
 
 ## 5. Do not touch
 
-Fee panel UI (0910), legal notice (0911), CSP, db schema, `docs/context/*`,
+Fee panel UI (0932), legal notice (0933), CSP, db schema, `docs/context/*`,
 no commits/push/PR.
 
 ## 6. Commands
@@ -83,7 +83,7 @@ Per TEMPLATE.md §8.
 
 ## 9. Report
 
-`docs/tasks/0912-report.md` (≤600 tokens), `Status: review`.
+`docs/tasks/0934-report.md` (≤600 tokens), `Status: review`.
 
 ## Risk list (reviewer)
 

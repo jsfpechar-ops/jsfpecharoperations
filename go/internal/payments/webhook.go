@@ -8,6 +8,7 @@
 package payments
 
 import (
+	"bytes"
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
@@ -85,6 +86,14 @@ func WebhookHandler(pool *pgxpool.Pool, getenv func(string) string, now func() t
 	mode := strings.ToLower(strings.TrimSpace(getenv("UBYHOST_STRIPE_MODE")))
 	secret := strings.TrimSpace(getenv("UBYHOST_STRIPE_WEBHOOK_SECRET"))
 	live := mode == "test" || mode == "live"
+	pyURL := strings.TrimSpace(getenv("UBYHOST_PY_WEBHOOK_URL"))
+	if pyURL == "" {
+		pyURL = "http://ubyhost:8080/webhooks/stripe"
+	}
+	client := &http.Client{
+		Timeout:       20 * time.Second,
+		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
+	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -129,6 +138,10 @@ func WebhookHandler(pool *pgxpool.Pool, getenv func(string) string, now func() t
 		if err != nil {
 			log.Printf("stripe webhook signature rejected")
 			text(w, http.StatusBadRequest, "bad signature")
+			return
+		}
+		if isBookingEvent(event) {
+			forwardToPython(w, r, client, pyURL, raw)
 			return
 		}
 		if err := processEvent(ctx, pool, event, mode, stampAt(at)); err != nil {
@@ -424,6 +437,52 @@ func boolInt(b bool) int {
 		return 1
 	}
 	return 0
+}
+
+// isBookingEvent is booking_webhook.is_booking_event: one of the four checkout
+// types AND a truthy metadata.site_booking_id. Such events go to Python only.
+func isBookingEvent(ev stripeEvent) bool {
+	switch ev.Type {
+	case "checkout.session.completed", "checkout.session.async_payment_succeeded",
+		"checkout.session.expired", "checkout.session.async_payment_failed":
+	default:
+		return false
+	}
+	meta, _ := ev.Data.Object["metadata"].(map[string]any)
+	return truthy(meta["site_booking_id"])
+}
+
+// forwardToPython sends the exact raw body and the Stripe headers to Python's
+// webhook and answers with Python's status and body. One attempt; Stripe retries.
+func forwardToPython(w http.ResponseWriter, r *http.Request, client *http.Client, target string, raw []byte) {
+	req, err := http.NewRequestWithContext(r.Context(), http.MethodPost, target, bytes.NewReader(raw))
+	if err != nil {
+		log.Printf("stripe webhook forward setup failed: %v", err)
+		text(w, http.StatusBadGateway, "forward failed")
+		return
+	}
+	for _, h := range []string{"Stripe-Signature", "Content-Type", "CF-Connecting-IP"} {
+		if v := r.Header.Get(h); v != "" {
+			req.Header.Set(h, v)
+		}
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("stripe webhook forward failed: %v", err)
+		text(w, http.StatusBadGateway, "forward failed")
+		return
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 64<<10))
+	if err != nil {
+		log.Printf("stripe webhook forward body read failed: %v", err)
+		text(w, http.StatusBadGateway, "forward failed")
+		return
+	}
+	if resp.StatusCode != http.StatusOK || string(body) != "ok" {
+		log.Printf("stripe webhook forwarded to python: status=%d body=%q", resp.StatusCode, string(body))
+	}
+	text(w, resp.StatusCode, string(body))
 }
 
 // truthy is Python truthiness for the JSON values Stripe sends.

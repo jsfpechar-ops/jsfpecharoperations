@@ -141,12 +141,14 @@ async def login_submit(request: Request):
     if config.DEPLOYMENT == "staging" and auth.staging_expected_password():
         return again("auth.error.staging_password", 403)
 
-    if not turnstile.verify(request, form.get("cf-turnstile-response"), "host_login"):
+    ip_key = rate_limit.client_key(request)
+    # A trusted device (current device cookie for this e-mail, not rate-limited) skips Turnstile.
+    trusted = bool(email) and auth.trusted_device(request, email) and not login_link.request_blocked(ip_key, email)
+    if not trusted and not turnstile.verify(request, form.get("cf-turnstile-response"), "host_login"):
         return again("auth.error.turnstile", 403)
     if not email:
         return again("auth.error.email_invalid", 400)
 
-    ip_key = rate_limit.client_key(request)
     if login_link.request_blocked(ip_key, email):
         return again("auth.error.link_rate_limited", 429)
     login_link.record_request(ip_key, email)
@@ -214,6 +216,7 @@ def _finish_login(
         auth.issue_session(account["id"], account["session_version"], remember=remember),
         remember=remember,
     )
+    auth.attach_device(response, account)
     _keep_login_language(request, response)
     db.execute("UPDATE user_account SET last_login_at = ? WHERE id = ?", (db.utcnow(), account["id"]))
     db.audit(action, f"method={method}", actor=account["username"], owner_user_id=account["id"])

@@ -913,8 +913,8 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       var addPanel = document.getElementById("add-stay-panel");
       if (addPanel && claimNode(addPanel, "initTogglePanels")) {
         addPanel.classList.remove("hidden");
-        var first = addPanel.querySelector("input, select, textarea");
-        if (first) first.focus();
+        var heading = addPanel.querySelector(".ui-section-h h2");
+        if (heading) { heading.setAttribute("tabindex", "-1"); heading.style.outline = "none"; heading.focus(); }
       }
     }
   }
@@ -1146,7 +1146,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       var setCaption = function () {
         var caption = range.querySelector("[data-range-caption]");
         if (!caption) return;
-        var formatter = new Intl.DateTimeFormat(document.documentElement.lang || undefined, { day: "numeric", month: "short", year: "numeric" });
+        var formatter = { format: function (d) { return String(d.getDate()).padStart(2, "0") + "." + String(d.getMonth() + 1).padStart(2, "0") + "." + d.getFullYear(); } };
         caption.textContent = draftFrom && draftUntil ? formatter.format(parse(draftFrom)) + " – " + formatter.format(parse(draftUntil)) : draftFrom ? formatter.format(parse(draftFrom)) + " – …" : draftUntil ? "… – " + formatter.format(parse(draftUntil)) : trigger.dataset.allDates || "";
       };
       var render = function () {
@@ -1630,22 +1630,15 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
 
     function render(query) {
       if (!results || !items) return;
-      var words = String(query || "").toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);
+      function fold(s) { return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLocaleLowerCase(); }
+      var words = fold(query).trim().split(/\s+/).filter(Boolean);
       function fuzzyScore(haystack, word) {
-        var cursor = -1;
-        var score = 0;
-        for (var i = 0; i < word.length; i += 1) {
-          var next = haystack.indexOf(word.charAt(i), cursor + 1);
-          if (next < 0) return -1;
-          score += next - cursor;
-          cursor = next;
-        }
-        return score;
+        return haystack.indexOf(word);
       }
       var askHavel = null;
       visible = items.map(function (item) {
         if (item.havel) { askHavel = item; return null; }
-        var haystack = [item.label, item.meta, item.group, item.keywords].join(" ").toLocaleLowerCase();
+        var haystack = fold([item.label, item.meta, item.group, item.keywords].join(" "));
         var scores = words.map(function (word) { return fuzzyScore(haystack, word); });
         if (scores.some(function (score) { return score < 0; })) return null;
         var id = item.url || item.label;
@@ -1661,8 +1654,10 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       selected = 0;
       results.textContent = "";
       results.removeAttribute("aria-busy");
+      var noMatch = false;
       if (!visible.length && askHavel && words.length) {
         var asked = String(query || "").trim();
+        noMatch = true;
         visible = [{ label: askHavel.label + ": " + asked, group: askHavel.group, url: askHavel.url, havel: true, query: asked }];
       }
       if (!visible.length) {
@@ -1672,6 +1667,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         results.appendChild(empty);
         return;
       }
+      if (noMatch) { var none = document.createElement("p"); none.className = "command-empty"; none.textContent = results.getAttribute("data-empty") || ""; results.appendChild(none); }
       visible.forEach(function (item, index) {
         var option = document.createElement("button");
         option.type = "button";
@@ -2222,6 +2218,9 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       forms.forEach(function (form) {
         form.querySelectorAll("[data-unsaved-reset]").forEach(function (button) {
           button.hidden = !isDirty(form);
+        });
+        form.querySelectorAll(".savebar").forEach(function (bar) {
+          bar.classList.toggle("is-dirty", isDirty(form));
         });
       });
     }

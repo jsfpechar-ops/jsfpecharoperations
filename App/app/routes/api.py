@@ -89,14 +89,25 @@ def command_palette(request: Request):
         "ORDER BY r.date_from DESC LIMIT 80",
         (owner_user_id, owner_user_id),
     )
+    def _cz(d) -> str:
+        s = str(d)[:10]
+        return f"{s[8:10]}.{s[5:7]}.{s[:4]}"
+
+    stay_ids = [int(r["id"]) for r in reservations]
+    names: dict = {}
+    if stay_ids:
+        marks = ", ".join("?" for _ in stay_ids)
+        for g in db.query(f"SELECT reservation_id, first_name, surname FROM guest WHERE reservation_id IN ({marks})", tuple(stay_ids)):
+            names.setdefault(int(g["reservation_id"]), []).append(f"{g['first_name'] or ''} {g['surname'] or ''}".strip())
     for stay in reservations:
+        guest_names = names.get(int(stay["id"]), [])
         items.append({
-            "label": f"{stay['internal_name']} · {stay['date_from']} – {stay['date_to']}",
-            "meta": stay["summary"] or t("command.stay"),
+            "label": f"{stay['internal_name']} · {_cz(stay['date_from'])} – {_cz(stay['date_to'])}",
+            "meta": guest_names[0] if guest_names else (stay["summary"] or t("command.stay")),
             "group": t("nav.stays"),
             "url": f"/reservations/{stay['id']}",
             "tone": int(stay["apartment_id"]) % 10,
-            "keywords": stay["summary"] or "",
+            "keywords": " ".join([stay["summary"] or "", *guest_names]),
         })
     submissions = db.query(
         "SELECT s.id, s.apartment_id, s.created_at, s.state, a.internal_name "

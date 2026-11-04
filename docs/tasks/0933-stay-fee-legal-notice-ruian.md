@@ -1,7 +1,7 @@
-# 0911: fee legal-notice section + guest i18n + guest RÚIAN autocomplete (CZ)
+# 0933: fee legal-notice section + guest i18n + guest RÚIAN autocomplete (CZ)
 
 Status: todo
-Depends on: 0897 | Base commit: `main` after PR #763 merges | Branch: task/0911-stay-fee-legal-ruian
+Depends on: 0897 | Base commit: `main` after PR #763 merges | Branch: task/0933-stay-fee-legal-ruian
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Plan: [docs/plans/stay-fee-guest-payment.md](../plans/stay-fee-guest-payment.md) (read §5, counsel draft in §10)
 
@@ -20,7 +20,7 @@ Three independent pieces, all guest-facing copy/UX plumbing:
    suggestion's `addr_obec` (the obec, e.g. "Praha" — never the část obce
    "Praha 5" / `addr_obec_cast`) and `res_street` with street + number, so
    the same-obec match in 0898 compares official names, not typing.
-3. Nothing else. The fee amount UI is 0910; do not touch it here.
+3. Nothing else. The fee amount UI is 0932; do not touch it here.
 
 ## 2. Context
 
@@ -55,7 +55,7 @@ Three independent pieces, all guest-facing copy/UX plumbing:
   the existing plain inputs. Bump `?v=` in `templates/guest/base.html`.
 - Tests: guest-pages rows (`test_guest_browser_e2e.py`, `test_host_geometry.py`,
   0 skipped), i18n completeness test if one exists in the test-map (all
-  languages must have the new keys), screenshots-0911 390 px for the form.
+  languages must have the new keys), screenshots-0933 390 px for the form.
 
 ## 3. Files
 
@@ -67,7 +67,7 @@ Three independent pieces, all guest-facing copy/UX plumbing:
 | `App/app/templates/guest/base.html` | edit | `?v=` bump for changed guest js |
 | `App/app/i18n.py`, `App/app/guest_uk_i18n.py` | edit | new keys, all 6 languages |
 | `App/app/rate_limit.py` usage only | — | call `rate_limit.record`; no edit |
-| tests + screenshots-0911 | create/extend | e2e/geometry 0 skipped, 390 px form screenshot, i18n key parity |
+| tests + screenshots-0933 | create/extend | e2e/geometry 0 skipped, 390 px form screenshot, i18n key parity |
 
 No other file may change.
 
@@ -83,7 +83,7 @@ No other file may change.
 ## 5. Do not touch
 
 CSP in main.py (the suggest call is same-origin fetch — fine), db schema,
-payment rails UI (0910), `docs/context/*`, no commits/push/PR.
+payment rails UI (0932), `docs/context/*`, no commits/push/PR.
 
 ## 6. Commands
 
@@ -110,7 +110,7 @@ wrong; write it in the report instead of improvising copy.
 
 ## 9. Report
 
-`docs/tasks/0911-report.md` (≤600 tokens), `Status: review`.
+`docs/tasks/0933-report.md` (≤600 tokens), `Status: review`.
 
 ## Risk list (reviewer)
 

@@ -202,3 +202,20 @@ def test_month_summary_ignores_demo_stays_and_other_owners(host):
     _guest(own, "Own Guest")
     assert reporting.month_summary(owner_id, today) == {"guests": 1, "nights": 2, "reported": 0}
     assert reporting.month_summary(other_id, today) == {"guests": 1, "nights": 5, "reported": 1}
+
+
+def test_month_summary_counts_reports_on_the_same_stays(host):
+    today = deadlines.local_now().date()
+    start = today.replace(day=1)
+    owner_id = _owner_id(USERNAME)
+    mine = _property(owner_id, "overviewtoday7")
+
+    # Arrived on the last day of last month, still in house on the 1st and 2nd.
+    spill = _stay(mine, "spill-1", start - timedelta(days=1), 3)
+    _guest(spill, "Spill Guest A", reporting.SENT, db.utcnow())
+    _guest(spill, "Spill Guest B", reporting.SENT, db.utcnow())
+    # Ended last month: not counted at all.
+    gone = _stay(mine, "gone-1", start - timedelta(days=6), 3)
+    _guest(gone, "Gone Guest", reporting.SENT, db.utcnow())
+
+    assert reporting.month_summary(owner_id, today) == {"guests": 2, "nights": 2, "reported": 2}

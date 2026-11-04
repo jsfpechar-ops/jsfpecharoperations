@@ -106,7 +106,7 @@
       {% if apartment.archived_at %}
       <div class="setup-item">
         <div class="grow">
-          <strong>{{ t('apartments.archived.when') }} {{ apartment.archived_at[:10] }}</strong>
+          <strong>{{ t('apartments.archived.when') }} {{ apartment.archived_at | date_cz }}</strong>
           <div class="ui-sub">{{ t('apartment.form.archived_help') }}</div>
         </div>
         <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" formmethod="post" formnovalidate
@@ -177,7 +177,7 @@
                  value="{{ apartment.permalink_window_days }}">
           {%- set link_next = next_stay_window(apartment) if apartment.id else none %}
           {%- if link_next %}
-          <p class="ui-sub link-window-note" data-link-window-note>{% if link_next.stay and link_next.window and link_next.window.state == 'now' %}{{ t('workflow.link.next_stay_now', stay=link_next.stay.date_from | date_short) }}{% elif link_next.stay and link_next.window %}{{ t('workflow.link.next_stay', stay=link_next.stay.date_from | date_short, date=link_next.window.opens.isoformat() | date_short) }}{% else %}{{ tp('workflow.link.no_stay', link_next.days) }}{% endif %}</p>
+          <p class="ui-sub link-window-note" data-link-window-note>{% if link_next.stay and link_next.window and link_next.window.state == 'now' %}{{ t('workflow.link.next_stay_now', stay=link_next.stay.date_from | date_cz) }}{% elif link_next.stay and link_next.window %}{{ t('workflow.link.next_stay', stay=link_next.stay.date_from | date_cz, date=link_next.window.opens.isoformat() | date_cz) }}{% else %}{{ tp('workflow.link.no_stay', link_next.days) }}{% endif %}</p>
           {%- endif %}
         </div>
         <div class="field">
@@ -387,7 +387,7 @@
 
   {# ---- Automation ---------------------------------------------------- #}
 
-  <div class="savebar">
+  <div class="savebar save-on-dirty">
     <a class="btn ghost" href="/apartments">{{ t('common.cancel') }}</a>
     <button class="btn ghost" type="button" data-unsaved-reset hidden>{{ t('unsaved.discard_changes') }}</button>
     <button class="btn" type="submit">{{ t('common.save_changes') }}</button>
@@ -453,7 +453,7 @@
 {%- set wizard_active = setup_progress and not setup_progress.hidden -%}
 {% if readiness and not wizard_active %}
 <details class="setup-readiness-help" data-setup-status>
-    <summary><span aria-hidden="true">?</span> {{ t('wizard.overview.details') }}</summary>
+    <summary>{{ t('wizard.overview.details') }} <span aria-hidden="true">?</span></summary>
     <section class="readiness">
   <div class="readiness-group">
     <h3 class="readiness-title">{{ t('apartment.form.readiness.invite_title') }}</h3>

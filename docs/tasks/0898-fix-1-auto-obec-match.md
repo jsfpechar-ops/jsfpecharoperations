@@ -111,5 +111,5 @@ Per TEMPLATE.md §8, plus: the register line dicts do not carry `auto_obec_resid
 
 ## Owner steps
 
-1. Nothing to run. The orchestrator will add this line to `docs/context/decisions.md`: "2026-11-04 [stay-fee] Same-obec exemption is automatic and exact-match only (fold + statutory-city district strip + Prague alias, CZ residents, host decision wins). No fuzzy matching, no 'Check residence' task, no municipality data file: the guest form is a legal declaration and a typo is the guest's own error; RÚIAN autocomplete (0911) makes typos rare."
+1. Nothing to run. The orchestrator will add this line to `docs/context/decisions.md`: "2026-11-04 [stay-fee] Same-obec exemption is automatic and exact-match only (fold + statutory-city district strip + Prague alias, CZ residents, host decision wins). No fuzzy matching, no 'Check residence' task, no municipality data file: the guest form is a legal declaration and a typo is the guest's own error; RÚIAN autocomplete (0933) makes typos rare."
 2. Host comms note (from 0898): live fee periods drop same-obec residents after deploy; sealed filings are unchanged. A guest who typed their own town wrongly is charged.

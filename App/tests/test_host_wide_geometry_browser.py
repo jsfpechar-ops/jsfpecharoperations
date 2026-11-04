@@ -832,8 +832,8 @@ def test_collapsed_sidebar_keeps_dashboard_and_stays_lanes_aligned(wide_host, wi
             }])
             page = context.new_page()
             for key, path, selector in (
-                # 0720c: v2 `/` has no sidebar collapse button; the collapse case runs on /payments (old shell, 0785a).
-                ("payments", "/payments", ".ui-section"),
+                # 0720c: v2 `/` has no sidebar collapse button; the collapse case runs on the booking-site old shell (0785a).
+                ("booking-site", f"/apartments/{wide_host['apartments'][0]}/booking-site", ".ui-section"),
                 ("stays", "/reservations", ".stays-desk"),
             ):
                 response = page.goto(f"{wide_base}{path}?lang={lang}")
@@ -965,8 +965,12 @@ def _rail_context(browser, wide_host, wide_base, width, collapsed, **options):
     return context
 
 
-# 0720c: the rail cases run on /payments (old shell, no `v2` set, 0785a); v2 `/` has no `button[data-sidebar-collapse]`.
-def _rail_page(context, wide_base, path="/payments"):
+# 0720c: the rail cases run on the booking-site page (old shell, no `v2` set, 0785a); v2 `/` has no `button[data-sidebar-collapse]`.
+def _old_shell_path(wide_host):
+    return f"/apartments/{wide_host['apartments'][0]}/booking-site"
+
+
+def _rail_page(context, wide_base, path):
     page = context.new_page()
     response = page.goto(f"{wide_base}{path}")
     assert response and response.status == 200
@@ -988,7 +992,7 @@ def test_sidebar_click_slides_the_rail_and_flips_the_toggle(wide_host, wide_base
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         for width in (1280, 2000):
             context = _rail_context(browser, wide_host, wide_base, width, collapsed=False)
-            page = _rail_page(context, wide_base)
+            page = _rail_page(context, wide_base, _old_shell_path(wide_host))
             open_facts = page.evaluate(RAIL_FACTS)
             assert open_facts["width"] == 240 and open_facts["marginLeft"] == 240, open_facts
             assert not open_facts["iconFlipped"], open_facts
@@ -1025,7 +1029,7 @@ def test_sidebar_restore_and_resize_never_animate(wide_host, wide_base):
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = _rail_context(browser, wide_host, wide_base, 2000, collapsed=True)
-        page = _rail_page(context, wide_base)
+        page = _rail_page(context, wide_base, _old_shell_path(wide_host))
         facts = page.evaluate(RAIL_FACTS)
         assert facts["width"] == 64 and facts["marginLeft"] == 64 and facts["iconFlipped"], facts
         expected = {
@@ -1056,7 +1060,7 @@ def test_tablet_rail_toggle_slides_the_overlay_only(wide_host, wide_base):
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = _rail_context(browser, wide_host, wide_base, 1024, collapsed=False, has_touch=True)
-        page = _rail_page(context, wide_base)
+        page = _rail_page(context, wide_base, _old_shell_path(wide_host))
         rail = page.evaluate(RAIL_FACTS)
         assert rail["width"] == 64 and rail["marginLeft"] == 64 and rail["iconFlipped"], rail
         sample = page.evaluate(CLICK_AND_SAMPLE)
@@ -1078,7 +1082,7 @@ def test_sidebar_click_respects_reduced_motion(wide_host, wide_base):
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = _rail_context(browser, wide_host, wide_base, 1280, collapsed=False, reduced_motion="reduce")
-        page = _rail_page(context, wide_base)
+        page = _rail_page(context, wide_base, _old_shell_path(wide_host))
         sample = page.evaluate(CLICK_AND_SAMPLE)
         assert sample["transitions"] == [] and sample["mainTransitions"] == [], sample
         facts = _settled(page)

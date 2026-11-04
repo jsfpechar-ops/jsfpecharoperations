@@ -1,7 +1,7 @@
-# 0910: guest pay panel on the stay hub + form estimate + residence order
+# 0932: guest pay panel on the stay hub + form estimate + residence order
 
 Status: todo
-Depends on: 0898 | Base commit: `main` after PR #763 merges | Branch: task/0910-stay-fee-guest-panel
+Depends on: 0898 | Base commit: `main` after PR #763 merges | Branch: task/0932-stay-fee-guest-panel
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Plan: [docs/plans/stay-fee-guest-payment.md](../plans/stay-fee-guest-payment.md) (read §4, §5)
 
@@ -49,7 +49,7 @@ stored payment state, no CSP change (external pay URLs are plain `<a>` links).
   `?v=` key in `templates/guest/base.html` for every changed guest CSS/JS.
 - Tests: guest-pages rows (`docs/context/rules.md` "Guest pages"):
   `tests/test_guest_browser_e2e.py`, `tests/test_host_geometry.py` — 0 skipped;
-  one 390 px screenshot per changed page into `docs/tasks/screenshots-0910/`;
+  one 390 px screenshot per changed page into `docs/tasks/screenshots-0932/`;
   static_versions via `test_static_versions.py --write`.
 
 ## 3. Files
@@ -64,7 +64,7 @@ stored payment state, no CSP change (external pay URLs are plain `<a>` links).
 | `App/app/i18n.py`, `App/app/guest_uk_i18n.py` | edit | `fee_*` keys, all 6 guest languages |
 | `App/app/templates/guest/base.html` | edit | `?v=` bump if guest css/js changes |
 | `App/app/static/guest*.css` / js if needed | edit | panel styles in guest.css (Arrival lane tokens) |
-| tests + `App/tests/static_versions.json` + `docs/tasks/screenshots-0910/` | create/extend | guest e2e rows, geometry, screenshots |
+| tests + `App/tests/static_versions.json` + `docs/tasks/screenshots-0932/` | create/extend | guest e2e rows, geometry, screenshots |
 
 No other file may change.
 
@@ -79,7 +79,7 @@ No other file may change.
 ## 5. Do not touch
 
 `main.py` CSP (no third-party scripts — plain links only), `_legal_notice.html`
-(that's 0911), db schema, routes other than guest.py, `docs/context/*`, no
+(that's 0933), db schema, routes other than guest.py, `docs/context/*`, no
 commits/push/PR (leave in working tree).
 
 ## 6. Commands
@@ -103,7 +103,7 @@ Per TEMPLATE.md §8.
 
 ## 9. Report
 
-`docs/tasks/0910-report.md` (≤600 tokens), `Status: review`.
+`docs/tasks/0932-report.md` (≤600 tokens), `Status: review`.
 
 ## Risk list (reviewer)
 

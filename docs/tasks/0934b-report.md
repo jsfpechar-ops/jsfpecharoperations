@@ -1,12 +1,12 @@
-# 0912b report
+# 0934b report
 
 Status: review
 
 ## Files changed
 - App/app/templates/stay_fees.html: deleted line 230 `<h2 class="sec">{{ t('stay_fees.title') }}</h2>` (duplicate heading, orchestrator decision).
 - docs/design/design-system.md: line 31 (Help "?" row) gained "16 px gutter; app.js place() and the layout-lint test enforce it."
-- docs/tasks/screenshots-0912b/: 8 PNGs (help-open-{320,390,768,1280}.png, help-tip-{320,390,768,1280}.png).
-- docs/tasks/0912b-help-popover-fit-390.md: Status set to in-progress for this run.
+- docs/tasks/screenshots-0934b/: 8 PNGs (help-open-{320,390,768,1280}.png, help-tip-{320,390,768,1280}.png).
+- docs/tasks/0934b-help-popover-fit-390.md: Status set to in-progress for this run.
 - Earlier changes, unchanged in this run: App/app/static/app.js, App/app/static/app2.css, App/app/templates/base.html, App/tests/static_versions.json, App/tests/test_layout_lint_browser.py.
 - No commit, no push, no branch. No PNG outside the screenshot folder changed. Temporary test file deleted.
 
@@ -42,9 +42,9 @@ Status: review
 ## Owner steps left
 None.
 
-## 0912c run (fix attempt, blocked)
+## 0934c run (fix attempt, blocked)
 - App/app/static/app2.css line 1219: stays-how opened box now `left:0;right:auto;width:min(360px,calc(100vw - 32px));max-width:none;max-height:none`.
-- base.html `?v=20261104-0912c`; static_versions.json regenerated (48 files).
+- base.html `?v=20261104-0934c`; static_versions.json regenerated (48 files).
 - test_opened_help_stays_inside_the_viewport: added width floor `min(360, vw-32)-2` and a scroll-then-check of the last link (inside viewport and not covered).
 - Command: `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_layout_lint_browser.py tests/test_host_geometry.py tests/test_static_versions.py tests/test_stay_fee*.py -q --tb=short -rs`: 214 passed, 1 failed, 0 skipped.
 - Failure 1 (fix not complete, in the named block): stay-fees box at 320 is 288 px wide (ok) but spans 20 to 308 px, so the right gutter is 12 px. Title row starts at 20 px; `left:0` anchors to that. Needs a measured offset or another anchor.

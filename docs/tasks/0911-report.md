@@ -1,36 +1,37 @@
-# 0911 report
+# 0911 report: persistent login, Turnstile only on a new device
 
 Status: review
-Branch: vibe/stay-fee-guest-payment-plan-73df64 (no commit, push or PR, per the executor rules)
 
-## Done
-- Fee section in `templates/guest/_legal_notice.html`, shown when `fee_notice` is true (`UBYHOST_STAY_FEE_GUEST_PAY` on, `stay_fee_collect`, rate > 0). Title, body, then a link to `https://www.e-sbirka.cz/sb/1990/565` (`rel="noopener" target="_blank"`) as the last element. The URL is not in the body text. Six languages.
-- Guest RÚIAN route `GET /l/{token}/ruian-suggest` (`routes/guest.py`, same guards as the other guest GETs). 404 when RÚIAN is disabled, 429 when rate-limited. Declared above `/l/{token}/{reservation_id}`.
-- Picker JS inline in `form.html`, CZ only (`CZE`). Picking fills `res_city` with `addr_obec` and `res_street` with street, house number and "/orientation number" when present. Plain inputs work without JS.
-- Six new keys in all six guest languages (`i18n.py`, `guest_uk_i18n.py`). en and cs use the counsel text without the URL. de, es, fr and uk are my translations and need lawyer sign-off.
+## Lifetimes
+- `ubyhost_session` (remember-me): 30 days without use. Each day of use re-signs it with the same login time (`iat`). Absolute cap: 90 days after sign-in, then sign in again. Non-remember 12 h path unchanged.
+- `ubyhost_csrf`: follows the session constant, now 30 days.
+- `ubyhost_device` (new, HttpOnly, Lax, Secure on HTTPS): 30 days, renewed at each successful login. Valid only while its stored `sv` equals the account's `session_version`.
 
-## New outbound request (AGENTS.md rule 2)
-The server calls the RÚIAN find service (ČÚZK) through `ruian.suggest()` when a guest types a CZ residence street. Reason: the same-obec exemption (plan §1, decision 9) compares official obec names, so autocomplete prevents typos. The browser calls only the same-origin route. No CSP change.
+## What changed
+- `App/app/auth.py`: session cookie SameSite=lax (set and clear); sliding 30 d / 90 d cap; `refresh_session_cookie`; device cookie `attach_device` and `trusted_device`.
+- `App/app/main.py`: middleware re-signs the session cookie (once a day). Skipped when the response already sets or clears the cookie.
+- `App/app/routes/admin_accounts.py`: `_finish_login` sets the device cookie; `login_submit` skips Turnstile only for a trusted device whose IP is not rate-limited. Other paths unchanged (staging password path, signup, guest, reset).
+- `App/app/cookie_inventory.py`, `App/app/guest_uk_i18n.py`: `ubyhost_device` row (EN/CS, guest DE/ES/FR, UK); session and CSRF lifetimes updated.
+- `docs/SECURITY.md` (auth row and one paragraph), `docs/context/decisions.md` (one `[auth]` line).
+- Tests: `App/tests/test_login_session_persistence.py` (new, 12 tests); updated `test_security.py`, `test_accounts.py` (SameSite), `test_privacy_first.py`, `test_cookie_inventory.py`.
+- Template `login.html`: not changed. It has no submit-blocking JS, so the widget renders and the server skips the check for trusted devices.
 
-## Tests (App/, all with UBYHOST_REQUIRE_BROWSER=1)
-1. `tests/test_0911_guest_fee_ruian.py`: 5 passed, 0 skipped.
-2. `tests/test_guest_browser_e2e.py`: 23 passed, 0 skipped.
-3. `tests/test_host_geometry.py tests/test_layout_lint_browser.py`: 4 passed, 0 skipped.
-4. `python3 scripts/context_lint.py`: OK (warnings are about other briefs).
+## Tests
+- `.venv/bin/python -m pytest tests/test_login*.py tests/test_auth*.py tests/test_security*.py tests/test_cookie*.py tests/test_privacy_first.py -q` (from App/): `127 passed`, 0 skipped.
+- Brief's list plus signup and new file: `121 passed`, 0 skipped.
+- Environment: `App/.venv` had no project packages; installed `requirements.txt` and `requirements-dev.txt` into it.
 
-## Screenshots (docs/tasks/screenshots-0911/)
-- form-390-en-legal.png: fee section and link visible, link ends the section, nothing clipped. The sticky progress bar and "Save details" overlap text in the element capture; a capture artifact, not checked by scrolling.
-- form-1280-en-legal.png: fee section, link and checkbox readable, nothing clipped.
-- form-390-cs-legal.png: Czech copy fits, link wraps to two lines, no clipping; same sticky overlap.
-- residence-390-ruian.png: suggestion fits the card at 390 px; Continue is the only coral action. The street field shows a red border (focus state). The first capture had bare bullets, fixed by CSSOM list styling, then re-shot.
+## Sensitive actions (not changed)
+- Gated by a fresh session (`session_is_fresh`): 2FA setup (`/account/2fa/setup`), login-address change (`/account/email`), passkey add (`/account/passkeys`, options) and delete.
+- Gated by a current authenticator code: `/account/2fa/disable`.
+- Session only (no fresh or code check found): payment services and requests (`/payments/...`), workspace export (`/settings/workspace-export`), guest export (`/guests/{id}/export.json`), admin user export and e-mail (admin role only). `/account/2fa/move` not checked.
 
-## Deviations
-- The link is its own element with key `legal_notice_fee_link`, so the URL is not inside the body text.
-- No `base.html` `?v=` bump: the JS is inline in `form.html`, and no static file changed.
-- Tests unhide the wizard steps (`_show_all_steps`), set the `combobox` country through the hidden select, and enable RÚIAN explicitly.
-- Temporary capture test deleted. No 360 or 768 screenshots taken.
+## Deviations and questions
+- Session refresh runs only on requests where `current_user` ran, so a page that does not load the user does not extend the session.
+- Privacy test literal: `ubyhost_device` added to the strictly-necessary set, because every first-party cookie row is in it. Owner to confirm.
+- `App/app/retention.py` not changed: the test does not require a line, but the rule for new personal-data fields may. The cookie holds account id and a random id. Owner to decide.
+- No "log out everywhere" button exists; SECURITY.md describes the session_version bump only.
+- Browser and geometry tests not run: no template change.
 
-## Owner steps
-1. Lawyer sign-off on the counsel text (plan §10), including the de, es, fr and uk translations. I found no legal error in the draft and did not change its substance.
-2. Bump `UBYHOST_GUEST_NOTICE_VERSION` at deploy.
-3. Merge only through `scripts/merge-pr-on-green.sh`.
+## Owner steps left
+- Confirm the two questions above (privacy set, retention line) before merge.

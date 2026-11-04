@@ -454,7 +454,7 @@ EN draft:
   host directly as instructed — UbyHost does not process the payment and does
   not record whether it was paid. Full text of the Act: https://www.e-sbirka.cz/sb/1990/565."
 
-de/es/fr/uk: faithful translations at build (brief 0911). Ship with a bumped
+de/es/fr/uk: faithful translations at build (brief 0933). Ship with a bumped
 `UBYHOST_GUEST_NOTICE_VERSION` (docs/ENVIRONMENT.md:86).
 
 ## 11. Briefs (executor tasks, Haiku 5.5, one per session)
@@ -463,9 +463,9 @@ de/es/fr/uk: faithful translations at build (brief 0911). Ship with a bumped
 |---|---|---|
 | [0897](../tasks/0897-stay-fee-guest-pay-phase0.md) | phase 0: migration 0036/00006, kill switch, property toggle UI, host i18n | none |
 | [0898](../tasks/0898-stay-fee-charge-computation.md) | `charge_for_reservation()` + same-obec rule in shared logic + tests | 0897 |
-| [0910](../tasks/0910-stay-fee-guest-panel.md) | hub money card + rail picker, form estimate, residence order | 0898 |
-| [0911](../tasks/0911-stay-fee-legal-notice-ruian.md) | legal-notice section + 6-language copy + guest RÚIAN route | 0897 |
-| [0912](../tasks/0912-stay-fee-help-guide.md) | host help topic (`page_help('stay_fees')`) + guest-guide fact for the fee | 0897 |
+| [0932](../tasks/0932-stay-fee-guest-panel.md) | hub money card + rail picker, form estimate, residence order | 0898 |
+| [0933](../tasks/0933-stay-fee-legal-notice-ruian.md) | legal-notice section + 6-language copy + guest RÚIAN route | 0897 |
+| [0934](../tasks/0934-stay-fee-help-guide.md) | host help topic (`page_help('stay_fees')`) + guest-guide fact for the fee | 0897 |
 
 **Help/legal prep already done in docs (2026-11-03):** ROPA row (no new personal
 data, no payment state, Revolut (Stripe in v2) is the host's processor —
@@ -477,7 +477,7 @@ data, no payment state, Revolut (Stripe in v2) is the host's processor —
 
 1. Counsel (answered 2026-11-04, decision 10): hiding the residence exemption
    is fine with a link to the law in the notice. Still to sign: the final
-   `legal_notice_fee_*` wording in all 6 languages before 0911 merges.
+   `legal_notice_fee_*` wording in all 6 languages before 0933 merges.
 2. Same-obec matching is settled in §4 (autocomplete + district strip, exact
    match only, no near-miss handling). RÚIAN stays CZ-only; no EU-wide address API is needed
    (only CZ residents can be exempt).

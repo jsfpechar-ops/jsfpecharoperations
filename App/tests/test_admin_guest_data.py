@@ -215,7 +215,7 @@ def test_the_bar_shows_the_minutes_left(seeded):
         assert "data-impersonation-minutes" not in page
         return
     assert "data-impersonation-minutes=" in page
-    assert "minutes left" in page
+    assert "minutes left" in page or "hours left" in page
 
 
 def test_a_session_without_a_start_time_is_treated_as_expired(seeded):

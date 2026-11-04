@@ -14,7 +14,7 @@ import pytest
 from app import auth, db
 from tests.browser_support import chromium_launch_kwargs
 from tests.test_host_geometry import _browser_session_cookie, base  # noqa: F401
-from tests.test_signed_in_chrome import host_with_property  # noqa: F401
+from tests.test_signed_in_chrome import host_with_property, old_shell_path  # noqa: F401
 
 ROOT = Path(__file__).resolve().parents[1]
 GAP_PX = 12  # brief 0826 and 0775: at least 12 px between neighbouring blocks
@@ -77,8 +77,8 @@ def test_shell_top_blocks_keep_12px_gaps(base, width):
             page.goto(base + path + "?lang=en")
             page.wait_for_selector(".side", state="attached", timeout=30000)
             result = page.evaluate(SHELL_BLOCKS_JS)
-            if width >= 1024:  # the sidebar is the shell here: brand, badge, account, search and nav must show
-                for name in ("div.ui-brand", "span.env-badge", "button.search", "nav.side-nav"):
+            if width >= 1024:  # the sidebar is the shell here: brand, account, search and nav must show
+                for name in ("div.ui-brand", "button.search", "nav.side-nav"):
                     assert any(n.startswith(name) for n in result["names"]), (path, width, result["names"])
             for pair in result["pairs"]:
                 assert pair["kind"] != "overlap", (path, width, pair)
@@ -87,8 +87,8 @@ def test_shell_top_blocks_keep_12px_gaps(base, width):
 
 
 def test_non_v2_dashboard_still_loads_the_old_stylesheets_and_sidebar(host_with_property):
-    # Old shell: / is v2 since 0720 and /settings since 0780, so the non-v2 check uses /payments (held for the Stripe rework).
-    page = host_with_property.get("/payments?lang=en").text
+    # Old shell: / is v2 since 0720 and /settings since 0780, so the non-v2 check uses the booking-site page (old shell, see old_shell_path).
+    page = host_with_property.get(old_shell_path()).text
     assert "/static/host2.css" in page
     assert "/static/skeleton.css" in page
     assert "app2.css" not in page

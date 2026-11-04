@@ -8,7 +8,7 @@ def test_stays_list_has_the_v2_header_toolbar_and_table(host_with_property):
     page = host_with_property.get("/reservations?range=all&lang=en").text
     assert page.count("<h1") == 1 and 'data-body-kind="list"' in page
     assert 'class="settings-pills"' in page and 'class="chips' not in page
-    assert 'data-filter-toggle aria-expanded="true" aria-controls="stays-filter-panel" hidden' in page
+    assert 'data-filter-toggle aria-expanded="false" aria-controls="stays-filter-panel" hidden' in page
     assert 'class="ui-table ui-table-stack"' in page or "data-empty-state" in page
     assert 'id="add-stay-panel" class="action-panel hidden stays-panel"' in page
     assert 'data-toggle-panel="add-stay-panel"' in page

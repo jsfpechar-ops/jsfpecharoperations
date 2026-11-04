@@ -478,4 +478,4 @@ Guest-facing copy must be signed off by counsel (open item 11); the residence-ba
 8. Read the Meta Data Processing Terms and the European Data Transfer Addendum before go-live of the Meta integration (section 6).
 9. Check in Google Ads (Goals > Conversions > Uploads > template) whether the legacy click-conversion file has GBRAID/WBRAID columns; until then, gbraid/wbraid are stored with consent but not exported (section 3).
 10. Web push (section 7): check Apple Inc. and Mozilla Corporation on https://www.dataprivacyframework.gov/list ; if absent, the policy wording already covers it.
-11. Section 8: lawyer sign-off on the `legal_notice_fee_*` guest copy (plan stay-fee-guest-payment §10 draft), the help/guide text (brief 0912), and the ROPA row; confirm the residence-exemption wording stays host-side only.
+11. Section 8: lawyer sign-off on the `legal_notice_fee_*` guest copy (plan stay-fee-guest-payment §10 draft), the help/guide text (brief 0934), and the ROPA row; confirm the residence-exemption wording stays host-side only.

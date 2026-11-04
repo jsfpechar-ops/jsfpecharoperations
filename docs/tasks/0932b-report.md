@@ -1,4 +1,4 @@
-# 0910b report
+# 0932b report
 
 Status: review
 
@@ -9,12 +9,12 @@ Status: review
 - App/app/templates/guest/_fee_pay.html: QR rail is image only, IBAN rail has no Message row, Revolut intro removed
 - App/tests/test_guest_browser_e2e.py: new assertions in the fee card test
 - App/tests/test_stay_fee_estimate_0910.py: SPAYD/VS unit test
-- New, untracked: docs/tasks/screenshots-0910b/ (5 PNG), this report
+- New, untracked: docs/tasks/screenshots-0932b/ (5 PNG), this report
 - Not touched: guest.css (no ?v= bump), payments.py, host files, migrations.
 
 ## 2. Commands
 - `cd App && .venv/bin/python -m pytest tests/test_stay_fee_estimate_0910.py -q --tb=short -x`: 12 passed, 0 failed, 0 skipped.
-- `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_guest_browser_e2e.py tests/test_stay_fee_estimate_0910.py tests/test_layout_lint_browser.py -q --tb=short -rs -k "fee or layout or stay_fee or lint or 0910"`: 20 passed, 18 deselected, 0 failed, 0 skipped. Ran in the background, took 263 s.
+- `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_guest_browser_e2e.py tests/test_stay_fee_estimate_0910.py tests/test_layout_lint_browser.py -q --tb=short -rs -k "fee or layout or stay_fee or lint or 0932"`: 20 passed, 18 deselected, 0 failed, 0 skipped. Ran in the background, took 263 s.
 - Temporary screenshot test (file deleted afterwards): 1 passed; all 5 screenshots `scrollWidth <= innerWidth` True.
 - `python3 scripts/context_lint.py`: context lint OK (only pre-existing WARN lines).
 - Grep `fee_message_label|fee_revolut_intro` in App/app: no hits (outside pycache). Catalogs import cleanly.

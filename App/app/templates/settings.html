@@ -103,7 +103,6 @@
 
 {% if group == 'security' %}{% call settings_group('security', t('settings.group.security')) %}
     <div class="ui-section" id="settings-security">
-      {{ settings_heading('security', t('settings.nav.security'), t('settings.security.lede')) }}
       <div class="settings-action-list" id="settings-passkeys">
         <div class="settings-action-row">
           <div>
@@ -145,10 +144,12 @@
         {% endfor %}
       </div>
       <div class="settings-action-list">
+        {% if current_user.totp_enabled %}
         {% with label=t('settings.account.2fa'), value=t('settings.account.enabled') if current_user.totp_enabled else t('settings.access.off') %}{% include "partials/settings_value_card.html" %}{% endwith %}
+        {% endif %}
         {% if not current_user.totp_enabled %}
         <div class="settings-action-row">
-          {{ help_tip('settings-2fa-help', t('settings.account.2fa_off')) }}
+          <div><strong>{{ t('settings.account.2fa') }}</strong>{{ help_tip('settings-2fa-help', t('settings.account.2fa_off')) }}</div>
           <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/account/2fa/setup">{{ t('settings.account.setup') }}</a>
         </div>
         {% endif %}
@@ -253,6 +254,7 @@
       {% with label=t('settings.retention.period'), value=t('settings.retention.years', count=retention_years) %}{% include "partials/settings_value_card.html" %}{% endwith %}
       {% with label=t('settings.retention.cutoff'), value=retention_cutoff.strftime('%d.%m.%Y') %}{% include "partials/settings_value_card.html" %}{% endwith %}
       {% with label=t('settings.retention.expired'), value=expired_records %}{% include "partials/settings_value_card.html" %}{% endwith %}
+      {% if expired_records %}
       <form method="post" action="/settings/purge-expired"
             data-confirm data-confirm-message="{{ t('confirm.purge_expired') }}">
         <button class="ui-btn ui-btn-{{ 'danger' if expired_records else 'secondary' }}" type="submit"
@@ -261,6 +263,7 @@
         </button>
         {{ help_tip('settings-purge-expired-help', t('settings.retention.delete_help')) }}
       </form>
+      {% endif %}
 
       <div class="ui-section" id="settings-data">
         <h3>{{ t('settings.data.title') }}</h3>
@@ -270,7 +273,7 @@
             {% if retention_last_run %}
               {{ retention_last_run.at }},
               {{ t('settings.data.dry_run') if retention_last_run.dry_run else t('settings.data.live') }}
-              {% if retention_last_run.counts %}
+              {% if retention_last_run.counts and current_user.role == 'admin' %}
                 <span class="ui-sub">
                   {% for key, value in retention_last_run.counts.items() %}{{ key }}={{ value }}{{ " " if not loop.last }}{% endfor %}
                 </span>
@@ -352,6 +355,7 @@
     <details class="ui-section technical" open id="settings-technical">
       <summary>{{ t('settings.technical.title') }}</summary>
 
+      {% if current_user.role == 'admin' %}
       <h2 id="settings-overview">{{ t('settings.destination.title') }}{{ help_tip('settings-destination-help', t('settings.destination.help')) }}</h2>
       <dl class="kv">
         <dt>{{ t('settings.destination.deployment') }}</dt><dd>{{ deployment_tier | capitalize }}</dd>
@@ -372,11 +376,15 @@
         </div>
       {% endif %}
       
+      {% endif %}
+      {% if current_user.role == 'admin' or (mail_backend == 'console' and console_mail) %}
       <h2 id="settings-mail">{{ t('settings.mail.title') }}{{ help_tip('settings-mail-help', t('settings.mail.help')) }}</h2>
+      {% if current_user.role == 'admin' %}
       <dl class="kv">
         <dt>{{ t('settings.mail.backend') }}</dt>
         <dd class="ui-mono">{{ mail_backend }}</dd>
       </dl>
+      {% endif %}
             {% if mail_backend == 'console' and console_mail %}
         <table class="ui-table">
           <thead>
@@ -416,12 +424,15 @@
         </table>
       {% endif %}
 
+      {% endif %}
+      {% if current_user.role == 'admin' %}
       <h2 id="settings-codelists">{{ t('settings.codelists.title') }}{{ help_tip('settings-codelists-help', t('settings.codelists.help')) }}</h2>
       <dl class="kv">
         <dt>{{ t('settings.codelists.countries') }}</dt><dd>{{ (codelists.countries | datetime_local(seconds=true)) if codelists.countries else t('settings.codelists.bundled') }}</dd>
         <dt>{{ t('settings.codelists.purposes') }}</dt><dd>{{ (codelists.purposes | datetime_local(seconds=true)) if codelists.purposes else t('settings.codelists.bundled') }}</dd>
         <dt>{{ t('settings.codelists.errors') }}</dt><dd>{{ (codelists.errors | datetime_local(seconds=true)) if codelists.errors else t('settings.codelists.not_fetched') }}</dd>
       </dl>
+      {% endif %}
           </details>
 
     <div class="ui-section" id="settings-ubyport">

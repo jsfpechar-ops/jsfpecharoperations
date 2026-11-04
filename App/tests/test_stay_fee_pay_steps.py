@@ -52,3 +52,26 @@ def test_return_to_outside_the_fee_pages_is_ignored(host):
         follow_redirects=False,
     )
     assert response.headers["location"].startswith(f"/stay-fees/{apartment_id}?month=2026-08")
+
+
+def test_paid_button_closes_the_pay_step(host):
+    client, owner_id, entity_id = host
+    apartment_id = _property(owner_id, entity_id, "Vivus Apartment with Balcony & Garage")
+    _stay(apartment_id, "2026-08-10", "2026-08-14", [{}])
+    page = client.get("/stay-fees?month=2026-08&lang=en").text
+    client.post(
+        f"/stay-fees/{apartment_id}/finalize",
+        data={"_csrf": _csrf(page), "month": "2026-08", "confirm_collected": "1",
+              "return_to": "/stay-fees?month=2026-08"},
+    )
+    page = client.get("/stay-fees?month=2026-08&lang=en").text
+    assert f'/stay-fees/{apartment_id}/paid' in page
+    response = client.post(
+        f"/stay-fees/{apartment_id}/paid",
+        data={"_csrf": _csrf(page), "month": "2026-08", "return_to": "/stay-fees?month=2026-08"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    page = client.get("/stay-fees?month=2026-08&lang=en").text
+    assert 'data-fee-step="3"' in page and "Sent and paid" in page
+    assert 'class="fee-qr-panel"' not in page

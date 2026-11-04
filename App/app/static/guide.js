@@ -53,9 +53,19 @@
       }
       var match = fold(topic.textContent).indexOf(q) !== -1;
       topic.hidden = !match;
-      topic.open = match;
+      topic.open = match && fold((topic.querySelector("summary") || topic).textContent).indexOf(q) !== -1;
       if (match) shown += 1;
     });
+    if (q) {
+      var anyOpen = false;
+      var firstShown = null;
+      topics().forEach(function (topic) {
+        if (topic.hidden) return;
+        if (!firstShown) firstShown = topic;
+        if (topic.open) anyOpen = true;
+      });
+      if (firstShown && !anyOpen) firstShown.open = true;
+    }
     if (empty) empty.hidden = !(q && shown === 0);
   }
 

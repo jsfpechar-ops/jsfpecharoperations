@@ -1,7 +1,7 @@
-# 0912b: help popover and "?" tooltip stay inside the phone screen
+# 0934b: help popover and "?" tooltip stay inside the phone screen
 
 Status: review
-Depends on: 0912 (blocked on exactly this defect; its copy and fee-register label are already on this branch) | Base commit: current HEAD of `vibe/stay-fee-guest-payment-plan-73df64` | Branch: this branch (checked out). No commit, no push: the orchestrator commits.
+Depends on: 0934 (blocked on exactly this defect; its copy and fee-register label are already on this branch) | Base commit: current HEAD of `vibe/stay-fee-guest-payment-plan-73df64` | Branch: this branch (checked out). No commit, no push: the orchestrator commits.
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -10,7 +10,7 @@ At 390 px the page "?" popover on the stay-fee page runs past the right edge and
 
 ## 2. Context
 
-Rules: design-system rule 7 and the Help "?" row ("Popover opens next to the icon, max 360 px, fits the 390 px screen"); AGENTS.md hard rules 6 (light mode, no JS needed for auth forms) and 7 (browser + geometry tests 0 skipped, one 390 px screenshot per changed page). Evidence: `docs/tasks/0912-report.md`, `docs/tasks/screenshots-0912/help-390.png` and `fee-row-tip-390.png`.
+Rules: design-system rule 7 and the Help "?" row ("Popover opens next to the icon, max 360 px, fits the 390 px screen"); AGENTS.md hard rules 6 (light mode, no JS needed for auth forms) and 7 (browser + geometry tests 0 skipped, one 390 px screenshot per changed page). Evidence: `docs/tasks/0934-report.md`, `docs/tasks/screenshots-0934/help-390.png` and `fee-row-tip-390.png`.
 
 There are two shared components. Both are verified by reading the code; the first by matching the screenshot numbers.
 
@@ -79,8 +79,8 @@ The no-JS case is unchanged: `.help-tip:not([data-js])` keeps the CSS-only `:foc
 | `App/tests/static_versions.json` | regenerate | `.venv/bin/python tests/test_static_versions.py --write` |
 | `App/tests/test_layout_lint_browser.py` | edit | New test `test_opened_help_stays_inside_the_viewport` (+ small shared route helper) |
 | `docs/design/design-system.md` | edit | Help "?" row (line 31): add "16 px gutter; app.js place() and the layout-lint test enforce it." |
-| `docs/tasks/screenshots-0912b/*.png` | add | 8 screenshots (see 6) |
-| `docs/tasks/0912b-report.md` | add | The report (section 9 of TEMPLATE) |
+| `docs/tasks/screenshots-0934b/*.png` | add | 8 screenshots (see 6) |
+| `docs/tasks/0934b-report.md` | add | The report (section 9 of TEMPLATE) |
 
 No other file may change. `layout_lint.js` is not needed. Throwaway scripts go in the scratchpad directory, not in the repo.
 
@@ -91,7 +91,7 @@ No other file may change. `layout_lint.js` is not needed. Throwaway scripts go i
 2. **Fix A, `app2.css`.** Insert this block on its own lines directly after line 1213 (`body.v2 .head-title-row>details.stays-how{background:transparent;...}`). It later wins over line 1040 at equal specificity, and beats `host2.css:715` (`.host-workspace .ui-how-body{max-width:40rem}`) because it is more specific. The title row is a full-width flex row (`app2.css:1037`), so the box spans the page column below the title, never past either edge:
 
 ```css
-/* 0912b: below desktop the page-help box is anchored to the full-width title row, not to the 44 px <details>,
+/* 0934b: below desktop the page-help box is anchored to the full-width title row, not to the 44 px <details>,
    so it can never start at the icon and run past the right edge. Max 360 px, 16 px gutter on a 320 px phone. */
 @media (max-width:1023px){
 body.v2 .head-title-row:has(>details.stays-how){position:relative}
@@ -106,7 +106,7 @@ body.v2 .head-title-row>details.stays-how[open] .ui-how-body{left:0;right:0;widt
     function place(tip) {
       var btn = tip.querySelector(".help-tip-btn");
       var body = tip.querySelector(".help-tip-body");
-      var margin = 16; /* 0912b: 16 px gutter on every side, max 360 px, so a tooltip never leaves a 320 px phone */
+      var margin = 16; /* 0934b: 16 px gutter on every side, max 360 px, so a tooltip never leaves a 320 px phone */
       var vw = document.documentElement.clientWidth;
       var vh = window.innerHeight;
       var wide = vw >= 1024;
@@ -147,7 +147,7 @@ body.v2 .head-title-row>details.stays-how[open] .ui-how-body{left:0;right:0;widt
     }
 ```
 
-4. **Cache keys.** In `App/app/templates/base.html` change `app2.css?v=0897c` to `app2.css?v=20261104-0912b` and `app.js?v=20261104-0100` to `app.js?v=20261104-0912b`. Then, from `App/`: `.venv/bin/python tests/test_static_versions.py --write | tail -30`, and check `git diff --stat` shows only `static_versions.json` entries for `app.js` and `app2.css` changed (new sha256 and `v`).
+4. **Cache keys.** In `App/app/templates/base.html` change `app2.css?v=0897c` to `app2.css?v=20261104-0934b` and `app.js?v=20261104-0100` to `app.js?v=20261104-0934b`. Then, from `App/`: `.venv/bin/python tests/test_static_versions.py --write | tail -30`, and check `git diff --stat` shows only `static_versions.json` entries for `app.js` and `app2.css` changed (new sha256 and `v`).
 
 5. **Lint test, `App/tests/test_layout_lint_browser.py`.** (a) Extract the route-building lines at the top of `test_every_host_page_passes_the_layout_lint` (the `subst = dict(...)` and `routes = {...}` statements) into `def _route_map(wide_host): ... return routes` placed above it, and call it from there; behaviour must not change. (b) Check `grep -n 'stay' App/tests/test_design_guardrails_browser.py` for the stay-fee list route; if `/stay-fees` is not in `ROUTES`/`EXTRA_ROUTES`, add `"stay-fees": "/stay-fees"` to `EXTRA_ROUTES`. (c) Add this test at the end of the file:
 
@@ -171,7 +171,7 @@ HELP_BOX_JS = """() => {
 
 
 def test_opened_help_stays_inside_the_viewport(wide_host, wide_base):
-    """0912b: an opened page "?" or "?" tooltip keeps a 16 px gutter at 320 and 390 px (and never exceeds 360 px)."""
+    """0934b: an opened page "?" or "?" tooltip keeps a 16 px gutter at 320 and 390 px (and never exceeds 360 px)."""
     routes = _route_map(wide_host)
     bad: list[str] = []
     with sync_api.sync_playwright() as playwright:
@@ -210,18 +210,18 @@ def test_opened_help_stays_inside_the_viewport(wide_host, wide_base):
 
 Before step 2 changes are applied this test must FAIL on the stay-fees, invoices, reports or housebook route (prove it: run it once with `git stash` of the CSS and JS edits only if you still have budget; otherwise state in the report that the failing run was not done). After steps 2 and 3 it must pass.
 
-6. **Screenshots (not committed as scripts).** Write a throwaway Playwright script in the scratchpad that reuses the `wide_host`/`wide_base` fixtures the same way, or run it as a temporary test file in `App/tests/` that you delete afterwards. For each of 320, 390, 768, 1280 take two screenshots (viewport shot, not full page) into `docs/tasks/screenshots-0912b/`:
+6. **Screenshots (not committed as scripts).** Write a throwaway Playwright script in the scratchpad that reuses the `wide_host`/`wide_base` fixtures the same way, or run it as a temporary test file in `App/tests/` that you delete afterwards. For each of 320, 390, 768, 1280 take two screenshots (viewport shot, not full page) into `docs/tasks/screenshots-0934b/`:
    - `help-open-<w>.png`: `/stay-fees`, click `details.stays-how > summary`.
-   - `fee-row-tip-<w>.png`: the stay-fee register row with the "Resident of this municipality" `?` tooltip open. That row comes from brief 0912 (`stay_fee_detail.html`, key `stay_fees.label.obec_resident`). Find a seeding helper with `grep -ln 'obec_resident\|Resident of this municipality' App/tests/*.py` and reuse it. If you cannot get the row seeded within 6 tool calls, take the tooltip shot on any page with a `.help-tip-btn` and say so in the report.
+   - `fee-row-tip-<w>.png`: the stay-fee register row with the "Resident of this municipality" `?` tooltip open. That row comes from brief 0934 (`stay_fee_detail.html`, key `stay_fees.label.obec_resident`). Find a seeding helper with `grep -ln 'obec_resident\|Resident of this municipality' App/tests/*.py` and reuse it. If you cannot get the row seeded within 6 tool calls, take the tooltip shot on any page with a `.help-tip-btn` and say so in the report.
    Open every screenshot with Read and write one line per image in the report: fits or not.
 
 7. **Design-system line** in `docs/design/design-system.md` line 31 (Help "?" row), append the sentence from section 3. Then `python3 scripts/design_lint.py | tail -30` and `python3 scripts/context_lint.py | tail -30`.
 
-8. Write `docs/tasks/0912b-report.md` (max 600 tokens, section 9 of TEMPLATE), set `Status: review`. Do not commit, do not push.
+8. Write `docs/tasks/0934b-report.md` (max 600 tokens, section 9 of TEMPLATE), set `Status: review`. Do not commit, do not push.
 
 ## 5. Do not touch
 
-`App/app/templates/_components.html` (the macro markup stays), `layout_lint.js`, any other CSS or JS file, `host_i18n.py` and the other 0912 files, `static/guest*` and guest pages. No new dependency, no inline `<style>`, no raw colours. Hard rules 6 (light mode only; auth forms still work without JS) and 7 apply. The no-JS CSS paths (`.help-tip:not([data-js])`, native `<details>`) must keep working: do not add JS-only gating.
+`App/app/templates/_components.html` (the macro markup stays), `layout_lint.js`, any other CSS or JS file, `host_i18n.py` and the other 0934 files, `static/guest*` and guest pages. No new dependency, no inline `<style>`, no raw colours. Hard rules 6 (light mode only; auth forms still work without JS) and 7 apply. The no-JS CSS paths (`.help-tip:not([data-js])`, native `<details>`) must keep working: do not add JS-only gating.
 
 ## 6. Commands
 
@@ -242,7 +242,7 @@ Expect: all passed, `0 skipped` (no `s` in the summary, no SKIPPED lines from `-
 - [ ] `test_opened_help_stays_inside_the_viewport` exists, passes at 320 and 390 on every host route, and covers `details.stays-how` and `.help-tip-btn`.
 - [ ] Layout lint and geometry commands in section 6: green, 0 skipped.
 - [ ] `base.html` `?v=` bumped for `app2.css` and `app.js`; `static_versions.json` regenerated; `test_static_versions.py` green.
-- [ ] 8 screenshots in `docs/tasks/screenshots-0912b/` (help open and fee-row tooltip at 320, 390, 768, 1280), each opened and described in the report; every opened box sits at least 16 px inside both screen edges at 320 and 390.
+- [ ] 8 screenshots in `docs/tasks/screenshots-0934b/` (help open and fee-row tooltip at 320, 390, 768, 1280), each opened and described in the report; every opened box sits at least 16 px inside both screen edges at 320 and 390.
 - [ ] Opened help box on `/stay-fees` at 390: text fully readable, "More in the guide" visible, box not wider than 360 px.
 - [ ] Design-system line added; design and context lints OK.
 - [ ] No file outside section 3 changed (`git status --short` checked); no commit, no push.
@@ -253,7 +253,7 @@ Stop and write the report as `blocked` if: an excerpt is not found verbatim; a t
 
 ## 9. Report
 
-Write `docs/tasks/0912b-report.md` as in TEMPLATE section 9: files changed (`git diff --stat`), each command with the last 5 output lines, section 7 ticked, one line per screenshot (fits or not), deviations, questions, owner steps left (none expected).
+Write `docs/tasks/0934b-report.md` as in TEMPLATE section 9: files changed (`git diff --stat`), each command with the last 5 output lines, section 7 ticked, one line per screenshot (fits or not), deviations, questions, owner steps left (none expected).
 
 ## Risk list (for the reviewer)
 

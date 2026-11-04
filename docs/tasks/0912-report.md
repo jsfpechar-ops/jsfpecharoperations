@@ -1,39 +1,56 @@
-# 0912 report: stay-fee help copy and fee-register label
+# 0912 report
 
-Status: blocked
-Done: step 1 (help copy) and the orchestrator's fee-register change.
-Left: steps 2 and 3 (guest-guide fact), and the 390 px fit fixes below.
+Status: review (changes in the working tree, not committed, no PR, per the parent's instruction)
 
 ## Files changed
-- `App/app/host_i18n.py`: `how.stay_fees.1-3` (en, cs) now cover the guest-pay toggle, the rails and "UbyHost only shows the means". New key `stay_fees.label.obec_resident` (en "Resident of this municipality", cs "Obyvatel této obce").
-- `App/app/host_vi_i18n.py`: same keys in vi. The vi text is my translation; a native check is advised.
-- `App/app/templates/stay_fee_detail.html`: the grey hint is now a label plus `help_tip(...)` holding the existing explanation text (unchanged). `help_tip` added to the import.
+- `App/app/templates/_components.html`: `onboarding_finish` macro (title row with help_tip, tips list removed, ui-btn classes, data-layout="v2"). Strip markup untouched.
+- `App/app/templates/dashboard.html`: line 96, `ph-hide` removed.
+- `App/app/static/app2.css`: block `/* 0912: finish card (v2) */` appended, plus a small `.onboarding-finish-intro` grid rule.
+- `App/app/templates/base.html`: `app2.css?v=0912`.
+- `App/app/reporting.py`: `month_summary` is one query over overlapping stays; reported = their guests with SENT.
+- `App/tests/test_0520_overview_today.py`: new `test_month_summary_counts_reports_on_the_same_stays`.
+- `App/tests/test_onboarding.py`: line 252 "edit host message" replaced by a check of the primary communication link href (coordinator answer).
+- `App/tests/layout_lint.js`: section 11 (button-overlap, button-wraps, tight-row).
+- `App/tests/test_layout_lint_browser.py`: BAD_PAGE row and expected rules; `test_the_finish_card_passes_the_lint`.
+- `App/tests/static_versions.json`: regenerated (coordinator answer).
+- `docs/design/pages/dashboard.md`: 3-line note.
+- Created ignored `App/.venv` (requirements, requirements-dev, playwright==1.63.0 as CI pins).
 
-## Commands
-- `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_stay_fee*.py tests/test_host_geometry.py tests/test_layout_lint_browser.py -q --tb=short -rs`: 211 passed, 0 failed, 0 skipped.
-- `python3 scripts/design_lint.py`: OK.
-- `python3 scripts/context_lint.py`: OK (only pre-existing WARN lines).
-- The 0898 test that checks the explanation text still passes, because that text stays in the help body.
+## Commands (last lines)
+- Step 3 rows (onboarding, dashboard order, wp28, static): `34 passed` after the fixes.
+- `pytest tests/test_0520_overview_today.py tests/test_dashboard_order.py tests/test_onboarding.py`: `27 passed`.
+- `pytest tests/test_layout_lint_browser.py` (browser env set): `3 passed`, 0 skipped.
+- Host pages row `tests/test_host_*.py tests/test_host_geometry.py`: `206 passed`, 3 failing on re-run (see Deviations).
+- Onboarding row: `316 passed`, 0 skipped.
+- Design guardrails: `11 passed`. Mockup match: `183 passed`, 0 skipped.
+- Static row: `16 passed`. wp28 + 0520: `17 passed`.
+- `python3 scripts/context_lint.py`: `context lint: OK` (warnings only, pre-existing).
 
-## Screenshots (docs/tasks/screenshots-0912/)
-- help-390.png: FAIL. The popover opens, but its panel runs past the right edge and steps 1 to 3 are cut off.
-- help-768.png: OK. Fits; all three steps and "More in the guide" are readable.
-- help-1280.png: OK. Fits and reads well.
-- fee-row-390.png: OK. "Ada Guest", Exempt badge, "0 Kč  Resident of this municipality ?" on one line, the "?" inline.
-- fee-row-tip-390.png: FAIL. The tooltip opens, but its left part is cut off at the left edge.
-- fee-row-1280.png: OK. Label and "?" on one line.
-- Cause: the popover and tooltip positioning is in the shared help CSS, which is not in the allowed files. Not fixed here.
+## Section 7
+- [x] 1280: link and PIN as bordered rows, Copy at right, three actions on one line, no bullets, tips behind "?".
+- [~] 390 and 768: card shows, actions stacked full width at 390; at 768 the bottom nav hides the actions in the screenshot (fixed nav, not a card bug).
+- [x] Strip styled as one row with its link.
+- [x] month_summary one query; reported is a subset of guests; new test green.
+- [x] Lint flags the fixture; finish-card test green; layout lint 0 skipped.
+- [x] Six PNGs in `/mnt/project-files/dashboard-finish/`, each opened once.
+- [~] Step 8 rows: all green except the pre-existing failures below.
 
-## §5 checklist
-- [x] Extends `host_page.html`; no own shell, `<style>`, `style=""` or raw colour.
-- [x] Header action row and forms unchanged.
-- [ ] No fine print; the "?" is inline, but the popover and tooltip overflow at 390 px (see above).
-- [ ] 390, 768, 1280: scroll width is fine, but the 390 popover is clipped.
-- [x] `test_layout_lint_browser.py` green, 0 skipped; screenshots opened and described above.
-- [x] CS and EN keys added together, vi too; no em dash in UI copy.
-- [ ] CI watched: no PR opened.
+## Screenshots
+- finish-390: link and PIN rows, Copy full width under each code (wrap), Open/Preview/Skip stacked; actions sit under the fixed bottom nav in the capture. Code wraps mid-word (overflow-wrap:anywhere).
+- finish-768: rows and Copy at right, actions in one line area behind the bottom nav.
+- finish-1280: clean; two rows, Copy right, three actions on one line, quiet Skip link.
+- strip-390/768/1280: one bordered row with "Setup is done... Show link"; no overlap. Month line 0 guests, 2 nights, 0 reported (correct for the fixture).
 
-## Not done
-- Guest-guide fact (brief §1.2, steps 2 and 3): `guide_facts.py`, guest guide route and template, editor screen, `guide_fact_stay_fee*` keys, `?v=` bump, guest e2e. Not in the orchestrator's scope or allowed files, and too large for this session. Decide: split into a 0912b brief, or drop it.
-- 390 px fit of the help popover and the fee-row tooltip: needs a CSS change in the shared help component, a separate brief.
-- Owner steps: none yet.
+## Deviations
+- The step 2 fixtures needed `width:110px;white-space:normal` on the lint row's second link (nowrap from app.css otherwise prevents button-wraps).
+- Pre-existing failures, verified on unmodified HEAD in a temporary worktree (removed): `tests/test_host_fee_navigation.py::test_frozen_report_order_and_forms` and `tests/test_host_ux_acceptance.py` (2 tests) fail on HEAD too. Not fixed; out of scope.
+- `tests/test_host_feedback_browser.py::test_host_copy_feedback_truth_and_geometry` failed once in the row run and passed on its own re-run; treated as flaky.
+- Browser tests rewrite committed evidence PNGs under `docs/tasks/0102-evidence/` and `docs/tasks/screenshots-0410/`. Reverted with git checkout; keep them out of the commit.
+
+## Questions
+- Fix the pre-existing stay-fees and ux_acceptance failures in a separate brief?
+- The 390 Copy buttons wrap under each code; accept, or make them sit beside the PIN?
+
+## Owner steps
+- Commit and open the PR (not done here).
+- After deploy: open the dashboard on phone and laptop, check the card and the month line.

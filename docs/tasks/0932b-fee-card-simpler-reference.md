@@ -1,13 +1,13 @@
-# 0910b: fee card, simpler reference (no typing for the guest)
+# 0932b: fee card, simpler reference (no typing for the guest)
 
 Status: todo
-Depends on: 0910 | Base commit: current branch `vibe/stay-fee-guest-payment-plan-73df64` (HEAD ac83583a plus the uncommitted 0910/0912b/0912c work; do not revert or touch it) | Branch: current
+Depends on: 0932 | Base commit: current branch `vibe/stay-fee-guest-payment-plan-73df64` (HEAD ac83583a plus the uncommitted 0932/0934b/0934c work; do not revert or touch it) | Branch: current
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 No commit, no push: the orchestrator commits.
 
 ## 1. Objective
 
-Owner request 2026-11-04: "Keep the reference smaller or maybe not at all, I want it smoother." The guest fee card (brief 0910) shows Variable symbol `0000000002` and Message `STAY FEE 0000000002` and asks Revolut payers to type it. Make the reference plain and invisible wherever a machine carries it: the QR carries VS and message itself, only the bank-transfer row shows a short VS, Revolut shows nothing to type.
+Owner request 2026-11-04: "Keep the reference smaller or maybe not at all, I want it smoother." The guest fee card (brief 0932) shows Variable symbol `0000000002` and Message `STAY FEE 0000000002` and asks Revolut payers to type it. Make the reference plain and invisible wherever a machine carries it: the QR carries VS and message itself, only the bank-transfer row shows a short VS, Revolut shows nothing to type.
 
 ## 2. Context (decisions, owner-approved)
 
@@ -65,7 +65,7 @@ i18n keys in `App/app/i18n.py` (en ~L344-346, cs ~L1062-1064, de ~L1737-1739, es
 | App/app/templates/guest/_fee_pay.html | edit | QR rail: QR only (amount stays in the card header and on the Revolut button; keep an `<img>` plus the amount line only if section 4 step 2 says so); IBAN rail: drop Message row; Revolut: drop intro |
 | App/app/i18n.py | edit | delete `fee_message_label`, `fee_revolut_intro` in en, cs, de, es, fr |
 | App/app/guest_uk_i18n.py | edit | delete the same two keys |
-| App/app/static/guest.css | edit only if needed | `.g-fee-qr` becomes a lone centred image; if CSS changes, bump `guest.css?v=` in `App/app/templates/guest/base.html` (currently `20261104-0910b`, use `20261104-0910c`) and run `.venv/bin/python scripts/...` exactly as 0910 did: `tests/static_versions.json` rewritten with `--write`, then `tests/test_static_versions.py` must pass |
+| App/app/static/guest.css | edit only if needed | `.g-fee-qr` becomes a lone centred image; if CSS changes, bump `guest.css?v=` in `App/app/templates/guest/base.html` (currently `20261104-0932b`, use `20261104-0910c`) and run `.venv/bin/python scripts/...` exactly as 0932 did: `tests/static_versions.json` rewritten with `--write`, then `tests/test_static_versions.py` must pass |
 | App/tests/test_guest_browser_e2e.py | edit | `test_fee_card_shows_with_qr_rail_open_and_enabled_rails`: new row assertions |
 | App/tests/test_stay_fee_estimate_0910.py | edit | add the SPAYD/VS unit test |
 
@@ -117,11 +117,11 @@ def test_fee_qr_payload_carries_plain_vs_and_short_message():
 
 ## 5. Do not touch
 
-`App/app/payments.py`, `App/app/stay_fee.py`, anything under `App/app/migrations/`, host templates and host CSS/JS (the uncommitted 0912b/0912c work), `docs/`, `.env`. Hard rules that apply: light mode only; no new dependency; no new outbound request; no tracking cookies; no personal data stored (the VS is the reservation id, nothing new); `?v=` bump only if `guest.css` changed.
+`App/app/payments.py`, `App/app/stay_fee.py`, anything under `App/app/migrations/`, host templates and host CSS/JS (the uncommitted 0934b/0934c work), `docs/`, `.env`. Hard rules that apply: light mode only; no new dependency; no new outbound request; no tracking cookies; no personal data stored (the VS is the reservation id, nothing new); `?v=` bump only if `guest.css` changed.
 
 ## 6. Commands (from `App/`; foreground only; each ends `| tail -30`)
 
-Seeded guest tests need `mail.mail_enabled` monkeypatched False, as already in the three fee tests (0910); copy that if you add a seeded test.
+Seeded guest tests need `mail.mail_enabled` monkeypatched False, as already in the three fee tests (0932); copy that if you add a seeded test.
 
 1. Quick: `.venv/bin/python -m pytest tests/test_stay_fee_estimate_0910.py -q --tb=short -x 2>&1 | tail -30` -> all pass.
 2. Full set for this change: `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_guest_browser_e2e.py tests/test_stay_fee_estimate_0910.py tests/test_layout_lint_browser.py -q --tb=short -rs 2>&1 | tail -30` -> all pass, `0 skipped` in the summary line.
@@ -135,7 +135,7 @@ Seeded guest tests need `mail.mail_enabled` monkeypatched False, as already in t
 - [ ] Command 2: all pass, 0 skipped.
 - [ ] Rendered card: QR rail is the image alone; IBAN rail shows IBAN, amount, `Variable symbol` with the plain id and no Message; Revolut rail shows only the button; cash unchanged.
 - [ ] No `0000000` string anywhere in the rendered card (`card.inner_text()`).
-- [ ] Screenshots in `docs/tasks/screenshots-0910b/` (create the folder; take them with a small throwaway Playwright script in the scratchpad dir, or by reusing the e2e fixtures with `page.screenshot`; do not commit the script): `hub-fee-card-320.png` and `hub-fee-card-390.png` (QR rail open), `iban-open-390.png`, `revolut-open-390.png`, `hub-cs-390.png` (Czech, `?lang=cs`, card visible with a rail open). Look at each file with Read; in the report write one line per image on what you saw (QR not clipped, no horizontal scroll, one coral action, Czech labels not cut off).
+- [ ] Screenshots in `docs/tasks/screenshots-0932b/` (create the folder; take them with a small throwaway Playwright script in the scratchpad dir, or by reusing the e2e fixtures with `page.screenshot`; do not commit the script): `hub-fee-card-320.png` and `hub-fee-card-390.png` (QR rail open), `iban-open-390.png`, `revolut-open-390.png`, `hub-cs-390.png` (Czech, `?lang=cs`, card visible with a rail open). Look at each file with Read; in the report write one line per image on what you saw (QR not clipped, no horizontal scroll, one coral action, Czech labels not cut off).
 - [ ] No host page was touched, so the host UX gate (rule 10) does not apply; guest rule 7 is covered by the three test files above plus the screenshots.
 
 ## 8. Stop and ask
@@ -147,13 +147,13 @@ Stop, and write the report, if:
 - you reach 25 tool calls or about 50k tokens (write the report as `blocked`, see executor.md);
 - a new dependency seems needed;
 - a file outside section 3 needs a change (including `payments.py`);
-- section 5 would be touched, or the uncommitted 0912b/0912c host work shows up in your diff;
+- section 5 would be touched, or the uncommitted 0934b/0934c host work shows up in your diff;
 - a step is unclear;
 - you need push, merge, secrets, SSH or deploy.
 
 ## 9. Report
 
-Write `docs/tasks/0910b-report.md` (600 tokens at most) and set `Status: review`. The report has: 1. files changed (`git diff --stat` limited to the section 3 files); 2. each command with the last 5 lines of output; 3. section 7 ticked, with the per-image screenshot lines; 4. deviations (for example the optional panel-level assertion skipped); 5. questions; 6. owner steps left (none expected).
+Write `docs/tasks/0932b-report.md` (600 tokens at most) and set `Status: review`. The report has: 1. files changed (`git diff --stat` limited to the section 3 files); 2. each command with the last 5 lines of output; 3. section 7 ticked, with the per-image screenshot lines; 4. deviations (for example the optional panel-level assertion skipped); 5. questions; 6. owner steps left (none expected).
 
 ## Risk list (for the reviewer)
 

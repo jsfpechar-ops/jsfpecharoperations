@@ -1,11 +1,11 @@
-# 0912c report
+# 0934c report
 
 Status: review
 
 ## 1. Files changed (uncommitted, this run and the earlier run on disk)
 - App/app/static/host2.css line 1193: `.host-workspace .page-help[open] > .page-help-body` width `min(20rem, calc(100vw - 2rem))` -> `min(360px, calc(100vw - 32px))`. Also max-height `calc(100vh - 2rem)` -> `calc(100vh - 32px)` (same value; deviation, see 6).
 - App/app/static/app.js `place()`: floorY from first visible fixed element of `nav.tabs, .ui-tabbar` (its top minus 16), else `innerHeight - 16`.
-- App/app/templates/base.html: host2.css `?v=20261104-0911` -> `20261104-0912d`; app.js `?v=20261104-0912d` -> `20261104-0912e`.
+- App/app/templates/base.html: host2.css `?v=20261104-0933` -> `20261104-0912d`; app.js `?v=20261104-0912d` -> `20261104-0912e`.
 - App/tests/static_versions.json: regenerated (48 files).
 - Earlier run, still on disk: app2.css line 1219 `left:-4px` (fix 1); line 2040 `min(360px` (fix 2). Both grep-verified (count 1).
 - No commit, no push, no branch. Test file not edited.
@@ -24,7 +24,7 @@ Status: review
 - Screenshots: not taken (step 7 not reached).
 
 ## 4. Not done
-Screenshots (step 7). Brief Status and 0912b Status left as they were (not set to review).
+Screenshots (step 7). Brief Status and 0934b Status left as they were (not set to review).
 
 ## 5. Questions for the orchestrator
 1. Tooltips at 390 on setup pages: decide whether `place()` must also re-place on scroll and resize, and whether `a.havel-fab` (fixed bottom) joins the floor. Not decided by the brief; test not relaxed.

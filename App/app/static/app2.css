@@ -340,6 +340,8 @@ body.v2 .props-phone .cover.c2{background:linear-gradient(135deg,#5c7a4f,#9db58c
 /* 0532 pass 9: from 1024 px a list row is one line (mockup 53 px): the copy button is 24 px, not 60 px. Pass 11: the setup chips may wrap when they do not fit (no sideways scroll); name and address cells are one line with ellipsis */
 @media (min-width:1024px){body.v2 .props-card .setup .st{height:24px}body.v2 .props-card .copy-btn{height:28px;min-height:28px;padding-block:6px}body.v2 .props-card .copy-btn svg{width:16px;height:16px}body.v2 .props-card .row-primary-link .property-identity > span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}body.v2 .props-card > table td:nth-child(1),body.v2 .props-card > table td:nth-child(2){max-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
 @media (min-width:1024px){body.v2 .props-card > table td:nth-child(1) .row-primary-link{display:block;max-width:100%;min-width:0;overflow:hidden}body.v2 .props-card .row-primary-link .property-identity{display:flex;max-width:100%}}
+@media (min-width:1024px){body.v2 .props-card .setup .st{height:24px}body.v2 .props-card .copy-btn{height:28px;min-height:28px;padding-block:6px}body.v2 .props-card .copy-btn svg{width:16px;height:16px}body.v2 .props-card .row-primary-link .property-identity > span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}body.v2 .props-card > table td:nth-child(2){max-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+@media (min-width:1024px){body.v2 .props-card > table td:nth-child(1) .row-primary-link{display:block;max-width:100%;min-width:0;overflow:hidden}}
 @media (min-width:1024px){body.v2 .props-card > table th:nth-child(1),body.v2 .props-card > table td:nth-child(1){width:22%}body.v2 .props-card > table th:nth-child(2),body.v2 .props-card > table td:nth-child(2){width:26%}}
 
 /* 0534 property page */
@@ -606,6 +608,7 @@ body.v2 .copy-label-confirmed{visibility:hidden}
 body.v2 [data-copy].is-copy-confirmed .copy-label-default{visibility:hidden}
 body.v2 [data-copy].is-copy-confirmed .copy-label-confirmed{visibility:visible}
 .host-stay-detail .stay-head-actions .sub{margin:0}
+@media (max-width:1023px){body.v2 .host-stay-detail #now .sub{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;padding-right:52px}body.v2 .host-stay-detail #now .stay-sep{min-width:0}}
 .host-stay-detail .stay-guests-h h2 .sub{font-size:14px;font-weight:600;color:var(--ink3);margin-left:8px}
 @media (max-width:1023px){body.v2 .host-stay-detail input,body.v2 .host-stay-detail select,body.v2 .host-stay-detail textarea,body.v2 .host-stay-detail button,body.v2 .host-stay-detail summary{min-height:44px}}
 @media (min-width:1024px){body.v2 .host-stay-detail input,body.v2 .host-stay-detail select,body.v2 .host-stay-detail textarea,body.v2 .host-stay-detail button,body.v2 .host-stay-detail summary{min-height:36px}}
@@ -655,7 +658,8 @@ body.v2 .host-stay-detail .stay-top{padding-top:8px;margin-bottom:12px}
 body.v2 .host-stay-detail .stay-top .round{width:44px;height:44px;border-radius:50%;background:#f4f3ef;border:0;display:grid;place-items:center}
 body.v2 .host-stay-detail h1.big{font-size:30px;line-height:1.15;font-weight:800;letter-spacing:-.02em;text-align:center;margin:0 8px 6px}
 body.v2 .host-stay-detail .sub-phone{text-align:center;color:var(--ink3);font-size:16px;margin:0 0 24px}
-body.v2 .host-stay-detail .stay-dates{display:grid;grid-template-columns:1fr 1fr;padding:0;border:0;border-radius:24px;margin:0 0 16px}
+/* The police heading clears the fixed bottom action bar by 12 px or more. */
+@media (max-width:1023px){body.v2 .host-stay-detail .stay-reports>h2.sec{margin-top:40px}}
 body.v2 .host-stay-detail .stay-dates>div{padding:18px 20px}
 body.v2 .host-stay-detail .stay-dates>div+div{border-left:1px solid var(--line)}
 body.v2 .host-stay-detail .stay-dates small{display:block;color:var(--ink3);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
@@ -1033,6 +1037,9 @@ body.v2 .setup-continue-card .ui-btn-primary{color:#fff;background:var(--coral-6
 body.v2 .fields-wrap .copyrow > .btn.sm{min-height:48px}
 body.v2 .fields-wrap .copyrow > .btn.sm{vertical-align:middle}
 body.v2 section#stay-fee-settings > fieldset.signature-block{grid-column:1/-1}
+/* 0913 step 3: an empty signature is one "Add signature" button; the empty box is hidden until a signature exists */
+body.v2 .signature-block .signature-locked:has(> [data-signature-preview][hidden]){display:none}
+body.v2 .signature-block > .action-group{width:100%;max-width:100%;display:flex;flex-wrap:wrap;align-items:center;gap:12px;position:static;float:none}
 /* 0791 submissions v2 (start) */
 body.v2 .head-title-row{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2)}
 body.v2 .head-title-row>details.stays-how{position:relative;margin:0}
@@ -1103,15 +1110,15 @@ body.v2 .stay-fees-page .fee-figures-total dd{font-size:22px}
 body.v2 .stay-fees-page .fee-step-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0 0}
 body.v2 .stay-fees-page .fee-step-issues{margin:0 0 12px;padding-left:20px}
 body.v2 .stay-fees-page .card.fee-pay{padding:16px}
-body.v2 .stay-fees-page .fee-send-pay{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:24px;align-items:start;max-width:960px}
+body.v2 .stay-fees-page .fee-send-pay{max-width:720px;display:grid;gap:16px}body.v2 .stay-fees-page .fee-qr-body{display:grid;grid-template-columns:176px minmax(0,1fr);gap:24px;align-items:center;justify-self:stretch}body.v2 .stay-fees-page .fee-qr-side{display:grid;gap:12px;min-width:0}body.v2 .stay-fees-page .fee-paid-form .btn{background:var(--ink);border-color:var(--ink);color:#fff}body.v2 .stay-fees-page .fee-paid-form .btn{min-height:44px;padding:0 18px;border-radius:12px;font-weight:600}
 body.v2 .stay-fees-page .fee-tasks{margin:0;padding:0;list-style:none;counter-reset:fee-task;display:grid;gap:12px}
 body.v2 .stay-fees-page .fee-tasks li{counter-increment:fee-task;display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:12px;min-width:0;min-height:44px;padding-top:12px;border-top:1px solid var(--line)}
 body.v2 .stay-fees-page .fee-tasks li:first-child{padding-top:0;border-top:0}
 body.v2 .stay-fees-page .fee-tasks li::before{content:counter(fee-task);width:28px;height:28px;border-radius:50%;background:var(--accs);color:var(--acc-text);display:grid;place-items:center;font-weight:700;font-size:14px}
 body.v2 .stay-fees-page .fee-qr-n{flex:none;width:28px;height:28px;border-radius:50%;background:var(--accs);color:var(--acc-text);display:inline-grid;place-items:center;font-weight:700;font-size:14px}
 body.v2 .stay-fees-page .fee-tasks strong{min-width:0;font-size:16px;font-weight:700;line-height:1.35}
-body.v2 .stay-fees-page .fee-send-pay .btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:12px;font-size:15px;font-weight:600;box-sizing:border-box;white-space:nowrap}
-body.v2 .stay-fees-page .fee-send-pay .btn.line{background:#fff;color:var(--ink);border:1px solid var(--ink)}
+body.v2 .stay-fees-page .fee-step .btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:12px;font-size:15px;font-weight:600;box-sizing:border-box;white-space:nowrap}
+body.v2 .stay-fees-page .fee-step .btn.line{background:#fff;color:var(--ink);border:1px solid var(--ink)}
 body.v2 .stay-fees-page .fee-qr-panel{min-width:0;display:grid;gap:12px;justify-items:center;padding:16px;border:1px solid var(--line);border-radius:16px;background:#fff}
 body.v2 .stay-fees-page .fee-qr-panel p,body.v2 .stay-fees-page .fee-qr-panel p.sub{margin:0;font-size:14px}
 body.v2 .stay-fees-page .fee-qr-title{justify-self:stretch;display:flex;align-items:center;gap:12px;margin:0;font-size:16px;font-weight:700}
@@ -1123,10 +1130,8 @@ body.v2 .stay-fees-page .fee-qr-meta dt{grid-column:1;grid-row:1;color:var(--ink
 body.v2 .stay-fees-page .fee-qr-meta dd{display:contents}
 body.v2 .stay-fees-page .fee-qr-val{grid-column:1;grid-row:2;min-width:0;font-size:16px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
 body.v2 .stay-fees-page .fee-qr-meta .btn.small[data-copy]{grid-column:2;grid-row:1 / span 2;width:auto;min-width:44px;min-height:44px;padding:0 14px;border-radius:12px;background:#fff;color:var(--ink);border:1px solid var(--ink3);font-size:14px;font-weight:600}
-@media (min-width:1024px) and (max-width:1279px){body.v2 .stay-fees-page .fee-tasks li{grid-template-columns:28px minmax(0,1fr)}body.v2 .stay-fees-page .fee-tasks li .btn{grid-column:2;justify-self:start}}
-@media (min-width:1024px){body.v2 .stay-fees-page .fee-send-pay{align-items:stretch}body.v2 .stay-fees-page .fee-tasks{height:100%;display:flex;flex-direction:column}body.v2 .stay-fees-page .fee-tasks li{flex:1 1 0}body.v2 .stay-fees-page .fee-tasks li:last-child{border-bottom:1px solid var(--line)}}
 @media (max-width:1023px){
-  body.v2 .stay-fees-page .fee-send-pay{grid-template-columns:minmax(0,1fr)}body.v2 .stay-fees-page .fee-qr-panel{order:-1;padding:0;border:0;border-radius:0}body.v2 .stay-fees-page .fee-qr-n{display:none}
+  body.v2 .stay-fees-page .fee-qr-body{grid-template-columns:minmax(0,1fr);justify-items:center}body.v2 .stay-fees-page .fee-qr-side{justify-self:stretch;justify-items:center}body.v2 .stay-fees-page .fee-qr-n{display:none}body.v2 .stay-fees-page .fee-paid-form .btn{display:flex;width:100%;justify-content:center;min-height:50px;font-size:16px}
   body.v2 .stay-fees-page .fee-tasks li{grid-template-columns:28px minmax(0,1fr)}body.v2 .stay-fees-page .fee-tasks li .btn{grid-column:1 / -1;min-height:50px;font-size:16px}
   body.v2 .stay-fees-page .fee-tasks .btn,body.v2 .stay-fees-page .fee-step-actions .btn{display:flex;justify-content:center;width:100%}
 }
@@ -2189,8 +2194,8 @@ body.v2 .notification-bubble small{display:block;margin-top:2px;color:var(--ink3
 body.v2 .notification-bubble .notification-action{color:#b3261e;font-weight:650}
 body.v2 .notification-bubble form[data-notification-dismiss],body.v2 .needs-you-item .needs-you-dismiss{position:absolute;top:6px;right:6px;margin:0;z-index:2}
 body.v2 .notification-bubble form[data-notification-dismiss] button,body.v2 .needs-you-dismiss button{position:relative;display:block;width:44px;height:44px;min-width:44px;min-height:44px;margin:0;padding:0;border:0;background:transparent;font-size:0;line-height:0;color:transparent;cursor:pointer;text-decoration:none}
-body.v2 .notification-bubble form[data-notification-dismiss] button:before,body.v2 .needs-you-dismiss button:before{content:"";position:absolute;left:50%;top:50%;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:#f0f0ec url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none' stroke='%23222' stroke-width='1.75' stroke-linecap='round'%3E%3Cpath d='M3 3l8 8M11 3l-8 8'/%3E%3C/svg%3E") center/14px 14px no-repeat}
-body.v2 .notification-bubble form[data-notification-dismiss] button:hover:before,body.v2 .needs-you-dismiss button:hover:before{background-color:#e3e3dd}
+body.v2 .notification-bubble form[data-notification-dismiss] button:before,body.v2 .needs-you-dismiss button:before{content:"";position:absolute;left:50%;top:50%;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none' stroke='%236b6b65' stroke-width='1.75' stroke-linecap='round'%3E%3Cpath d='M3 3l8 8M11 3l-8 8'/%3E%3C/svg%3E") center/14px 14px no-repeat}
+body.v2 .notification-bubble form[data-notification-dismiss] button:hover:before,body.v2 .needs-you-dismiss button:hover:before{background-color:#f0f0ec}
 body.v2 .notification-bubble form[data-notification-dismiss] button:focus-visible,body.v2 .needs-you-dismiss button:focus-visible{outline:2px solid #222;outline-offset:-4px;border-radius:50%}
 body.v2 .needs-you-item .needs-you-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
 /* 0896: page help "?" is a plain round button again: no chevron from the generic body.v2 summary rule */
@@ -2290,6 +2295,9 @@ body.v2 .needs-you-item[data-tone="red"] > .needs-you-copy > strong::before{back
 body.v2 .needs-you-item[data-tone="amber"] > .needs-you-copy > strong::before{background:#b26a00}
 body.v2 .needs-you-item details:not([open]) > :not(summary){display:none}
 body.v2 .needs-you-item:has(.needs-you-dismiss){padding-right:56px}
+/* 0910x: on desktop every row keeps the same 56 px right slot, so the buttons line up whether or not a row has a dismiss X; the X is centred in the row */
+@media (min-width:1024px){body.v2 #needs-action .needs-you-item{padding-right:56px}body.v2 .needs-you-item .needs-you-dismiss{top:50%;transform:translateY(-50%)}}
+@media (max-width:1023px){body.v2 .needs-you-item:has(.needs-you-dismiss){padding-right:16px}body.v2 .needs-you-item:has(.needs-you-dismiss) .needs-you-copy{padding-right:32px}}
 body.v2 .needs-you-item .needs-you-copy{min-width:0;overflow-wrap:anywhere}
 body.v2 .needs-you-item .needs-you-copy strong{display:block;font-weight:700}
 body.v2 .needs-you-item .needs-you-copy span{display:block;margin-top:2px;color:var(--ink3);font-size:13px}
@@ -2362,7 +2370,7 @@ body.v2 .fields-wrap .hint{margin-bottom:12px}
 body.v2 .stay-fee-guest-fields{border:0;margin:0;padding:0;min-width:0}
 body.v2 .stay-fee-guest-fields .stay-fee-switch-row{margin:0 0 var(--space-4)}
 body.v2 .stay-fee-guest-fields .stay-fee-switch{display:flex;align-items:center;gap:var(--space-3);margin:0;min-height:var(--control-h-phone)}
-body.v2 .stay-fee-guest-fields .checkline input[type=checkbox]{width:1.25rem;height:1.25rem;margin:0;flex:none}
+body.v2 .stay-fee-guest-fields .checkline input[type=checkbox]{width:24px;height:24px;min-width:24px;min-height:24px;margin:0;flex:none}
 body.v2 .stay-fee-guest-fields .stay-fee-rails{border:0;margin:0 0 var(--space-4);padding:0;min-width:0}
 body.v2 .stay-fee-guest-fields .stay-fee-rails > legend{margin:0 0 var(--space-2)}
 body.v2 .stay-fee-guest-fields .stay-fee-rail{display:flex;align-items:center;gap:var(--space-3);margin:0;min-height:var(--control-h-phone);border-top:1px solid var(--line)}
@@ -2373,5 +2381,89 @@ body.v2 .stay-fee-guest-fields .field-label-row > label{margin:0}
 body.v2 .stay-fee-guest-fields:not(:has(input[name="stay_fee_guest_rails"][value="revolut"]:checked)) .stay-fee-rail-revolut{display:none}
 body.v2 .stay-fee-guest-fields:not(:has(input[name="stay_fee_guest_rails"][value="cash"]:checked)) .stay-fee-rail-cash{display:none}
 body.v2 .stay-fee-guest-fields .help-tip{position:relative}
-body.v2 .stay-fee-guest-fields .help-tip-btn{position:relative;width:1.3rem;height:1.3rem;min-width:1.3rem;min-height:1.3rem;padding:0}
+body.v2 .stay-fee-guest-fields .help-tip-btn{position:relative;width:24px;height:24px;min-width:24px;min-height:24px;padding:0}
 body.v2 .stay-fee-guest-fields .help-tip-btn::before{content:"";position:absolute;top:50%;left:50%;width:3.15rem;height:3.15rem;transform:translate(-50%,-50%)}
+/* 0945 payments (v2) */
+body.v2 .payments-page h2{font-size:17px;font-weight:700;margin:28px 0 12px}
+body.v2 .payments-box{padding:20px 22px;margin:0 0 16px}
+body.v2 .payments-box>h2:first-child{margin-top:0}
+body.v2 .payments-page .setup-wizard-checklist{list-style:none;margin:16px 0;padding:0;display:grid;gap:12px}
+body.v2 .payments-page .setup-summary-card{display:flex;flex-wrap:wrap;align-items:center;gap:12px 14px;padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--s)}
+body.v2 .payments-page .setup-summary-icon{width:40px;height:40px;border-radius:50%;background:var(--accs);color:var(--acc-text);display:grid;place-items:center;flex:none}
+body.v2 .payments-page .setup-summary-copy{display:flex;flex-direction:column;align-items:flex-start;gap:12px;min-width:0;flex:1}
+body.v2 .payments-page .ui-chips{display:flex;flex-wrap:wrap;gap:12px}
+body.v2 .payments-page .ui-chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border:1px solid #d9d9d4;border-radius:999px;background:var(--s);color:var(--ink);font-size:15px;font-weight:600;cursor:pointer}
+body.v2 .payments-page .ui-chip:has(input:checked){border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+body.v2 .payments-page .card.stay form{margin:0}
+body.v2 .payments-page a[target="_blank"]{display:inline-flex;align-items:center;min-height:44px}
+/* 0946 payments mockup fidelity (v2) */
+body.v2 .payments-state{display:flex;align-items:center;gap:14px;padding:18px 22px}body.v2 .payments-state-ic{width:44px;height:44px;border-radius:50%;background:var(--oks);color:var(--ok);display:grid;place-items:center;flex:none}
+body.v2 .payments-state .t,body.v2 .payments-row .t,body.v2 .payments-step .t{flex:1;min-width:0}body.v2 .payments-state b{display:block;font-size:17px;font-weight:700}
+body.v2 .payments-state small,body.v2 .payments-row small,body.v2 .payments-step small{display:block;color:var(--ink3);font-size:14px;margin-top:2px}body.v2 .payments-cols h2{font-size:13px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin:28px 0 12px}
+body.v2 .payments-list{padding:6px 22px}body.v2 .payments-row{display:flex;align-items:center;gap:12px;min-height:56px;padding:12px 0}
+body.v2 .payments-row+.payments-row,body.v2 .payments-row+.payments-add{border-top:1px solid var(--line)}body.v2 .payments-row b{display:block;font-size:17px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.v2 .payments-row form,body.v2 .payments-acts form{margin:0}body.v2 .payments-mini{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:999px;border:1.5px solid var(--ink);background:#fff;color:var(--ink);font:inherit;font-size:14px;font-weight:700;white-space:nowrap;cursor:pointer}
+body.v2 .payments-add>summary{list-style:none;cursor:pointer}body.v2 .payments-add>summary::-webkit-details-marker{display:none}
+body.v2 .payments-add[open]>summary svg{transform:rotate(90deg)}body.v2 .payments-add-form{padding:0 0 16px}
+body.v2 .payments-add{background:none;border:0;border-radius:0;margin:0}body.v2 .payments-add>summary{padding:12px 0;min-height:56px}body.v2 .payments-add>summary::before,body.v2 .payments-add>summary::after{content:none}body.v2 .payments-add .ui-field input{width:100%;box-sizing:border-box}
+body.v2 .payments-add-grid{display:grid;grid-template-columns:minmax(0,1fr) 120px;gap:12px}body.v2 .payments-add-form .ui-form-actions{display:flex;margin-top:12px}
+body.v2 .payments-page .card.stay{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;padding:16px;margin:0 0 14px}body.v2 .payments-page .card.stay .in{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start}
+body.v2 .payments-page .card.stay .in b{font-size:17px;font-weight:700;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}body.v2 .payments-page .card.stay .in small{color:var(--ink3);font-size:14px}
+body.v2 .payments-page .card.stay .pill{display:inline-flex;align-items:center;gap:6px;background:none;padding:0;margin-top:6px;font-size:13px;font-weight:700}body.v2 .payments-page .card.stay .pill:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+body.v2 .payments-page .card.stay .pill.p-ok{color:var(--ok)}body.v2 .payments-page .card.stay .pill.p-warn{color:var(--warn)}body.v2 .payments-page .card.stay .pill.p-n{color:var(--ink3)}body.v2 .payments-amt{font-weight:800;font-size:17px;white-space:nowrap}
+body.v2 .payments-acts{display:flex;flex-wrap:wrap;align-items:center;gap:12px;width:100%}body.v2 .payments-acts:not(:has(*)){display:none}
+body.v2 .payments-steps{list-style:none;margin:8px 0 20px;padding:0}body.v2 .payments-step{display:flex;gap:16px;align-items:flex-start;padding:16px 0}
+body.v2 .payments-step+.payments-step{border-top:1px solid var(--line)}body.v2 .payments-step-n{width:36px;height:36px;border-radius:50%;background:#f4f3ef;display:grid;place-items:center;font-weight:800;flex:none}
+body.v2 .payments-step.is-done .payments-step-n{background:var(--oks);color:var(--ok)}body.v2 .payments-step.is-cur .payments-step-n{background:var(--acc);color:#fff}
+body.v2 .payments-step b{font-size:17px}body.v2 .payments-step .ui-btn{margin-top:12px}
+body.v2 .payments-new{max-width:560px;margin:0 auto}body.v2 .payments-new fieldset.ui-field{border:0;margin:0 0 18px;padding:0;min-width:0}
+body.v2 .payments-new legend,body.v2 .payments-new .ui-field>label{display:block;font-size:13px;font-weight:700;color:var(--ink3);margin:0 0 6px;padding:0}body.v2 .payments-new .payments-amount input[type=number][name=amount_czk][id]{width:100%;min-height:64px;font:inherit;font-size:44px;font-weight:800;letter-spacing:-.02em;text-align:center;border:0;border-bottom:2px solid var(--line);border-radius:0;background:none;padding:8px 0;color:var(--ink);appearance:textfield;-moz-appearance:textfield}
+body.v2 .payments-amount input::-webkit-inner-spin-button,body.v2 .payments-amount input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}body.v2 .payments-new .payments-amount input[type=number][name=amount_czk][id]:focus{outline:0;border-bottom-color:var(--acc);box-shadow:0 2px 0 0 var(--acc)}
+body.v2 .payments-new .ui-chip{position:relative;border:0;background:#f4f3ef;padding:0 18px;box-shadow:none}body.v2 .payments-new .ui-chip input{position:absolute;left:0;top:0;width:1px;height:1px;margin:0;opacity:0}
+body.v2 .payments-new .ui-chip:has(input:checked){background:var(--ink);color:#fff;box-shadow:none}body.v2 .payments-new .ui-chip:has(input:focus-visible){outline:2px solid var(--acc);outline-offset:2px}
+body.v2 .payments-seg{display:grid;grid-template-columns:1fr 1fr}body.v2 .payments-seg .ui-chip{justify-content:center}
+body.v2 .payments-new .ui-form-actions{display:block;margin-top:8px}body.v2 .payments-new .ui-form-actions .ui-btn{width:100%;min-height:50px;justify-content:center}
+@media (min-width:1024px){body.v2 .payments-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}}
+
+body.v2 .payments-step .ui-btn.ui-btn-compact{min-height:44px!important;height:auto!important;display:inline-flex;align-items:center}body.v2 .payments-step .t>span:first-child{display:flex;flex-wrap:wrap;align-items:center;min-width:0}body.v2 .payments-step .t>span:first-child>b{min-width:0;overflow-wrap:anywhere}body.v2 .payments-step .help-tip{flex:none}
+@media (min-width:1024px){body.v2 #main-content{padding-bottom:calc(var(--control-h) + var(--space-3) + var(--space-6) * 2)}}
+
+/* 0912: stay detail header, one action row, tidy settings */
+body.v2 .host-stay-detail #now .sub{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px}
+body.v2 .host-stay-detail .stay-sep{min-width:0;margin-left:0}
+body.v2 .host-stay-detail #guests{margin-top:12px}
+body.v2 .host-stay-detail .stay-head-actions form.inline{margin:0}
+body.v2 .stay-settings .settings-grid{display:grid;gap:12px}
+body.v2 .stay-settings .ui-field label{display:block;margin-bottom:4px}
+@media (min-width:1024px){
+body.v2 .host-stay-detail .stay-head-actions{flex-wrap:nowrap;justify-content:flex-end;gap:12px}
+body.v2 .host-stay-detail .stay-head-cta{flex-wrap:nowrap;gap:12px}
+}
+body.v2 #stay-fee-settings :is(input, select, textarea){max-width:100%;box-sizing:border-box}
+body.v2 #stay-fee-settings :is(.ui-field, .field, .field-row, .grid > *){min-width:0}
+.nowrap{white-space:nowrap}
+body.v2 .settings-action-row > div:first-child{display:inline-flex;align-items:center;gap:4px;flex-wrap:nowrap}
+@media (max-width:1023px){body.v2 .housebook-page table :is(th,td):first-child{position:sticky;left:0;z-index:1;background:var(--surface)}}
+body.v2 .host-stay-detail .stay-dates{margin:0 0 16px}
+body.v2 .housebook-page .row-menu-trigger{background:#efefeb;color:var(--ink);border:0;font:inherit;font-weight:600;padding:9px 16px;border-radius:999px;cursor:pointer;white-space:nowrap}
+body.v2 .stamp-cell{font-family:var(--font-mono, ui-monospace, monospace);white-space:nowrap;max-width:22ch;overflow:hidden;text-overflow:ellipsis}
+/* 0912: finish card (v2) */
+body.v2 .onboarding-finish{background:var(--s);border:1px solid var(--line);border-radius:12px;padding:20px;display:grid;gap:16px;margin:16px 0}
+@media (max-width:767px){body.v2 .onboarding-finish{padding:16px}}
+body.v2 .onboarding-finish-intro{display:grid;gap:8px;margin:0}
+body.v2 .onboarding-finish .onboarding-kicker{font-size:12px;font-weight:600;color:var(--ok);margin:0}
+body.v2 .onboarding-finish-title{display:flex;align-items:center;gap:8px}
+body.v2 .onboarding-finish h2{font-size:18px;font-weight:700;margin:0}
+body.v2 .onboarding-finish .lede{font-size:14px;color:var(--ink2);margin:0}
+body.v2 .onboarding-finish-share{display:grid;gap:12px}
+body.v2 .onboarding-finish-field{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px;border:1px solid var(--line);border-radius:12px}
+body.v2 .onboarding-finish-label{font-size:13px;color:var(--ink3);flex:0 0 64px}
+body.v2 .onboarding-finish-field code{flex:1 1 200px;min-width:0;overflow-wrap:anywhere;font-size:14px}
+body.v2 .onboarding-finish-pin{font-size:18px;font-weight:700;letter-spacing:.08em;flex:1 1 auto}
+body.v2 .onboarding-finish-field .copy-btn{flex:none;margin-left:auto}
+body.v2 .onboarding-finish-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+body.v2 .onboarding-finish-actions .ui-btn,body.v2 .onboarding-finish-actions form{white-space:nowrap;flex:none}
+body.v2 .onboarding-finish-actions form{margin:0}
+@media (max-width:767px){body.v2 .onboarding-finish-actions{flex-direction:column;align-items:stretch}body.v2 .onboarding-finish-actions .ui-btn,body.v2 .onboarding-finish-actions form,body.v2 .onboarding-finish-actions form button{width:100%;justify-content:center;min-height:44px}body.v2 .onboarding-finish-actions form button{text-align:center}}
+body.v2 .onboarding-finish-strip{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:12px 16px;border:1px solid var(--line);border-radius:12px;background:var(--s);font-size:14px;margin:12px 0}
+@media (max-width:1023px){body.v2 .onboarding-finish-strip a{white-space:nowrap;min-height:44px;display:inline-flex;align-items:center}}

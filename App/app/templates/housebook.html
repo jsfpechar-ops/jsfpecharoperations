@@ -15,7 +15,7 @@
 {% block toolbar %}{% endblock %}
 {% block body %}
 {% macro reported_pill(row, show_date) -%}
-  {% if row.reported == 'yes' %}<span class="pill p-ok">{{ t('status.reported') }}</span>{% if show_date %}<small>{{ row.reported_at[:10] }}</small>{% endif %}
+  {% if row.reported == 'yes' %}<span class="pill p-ok">{{ t('status.reported') }}</span>{% if show_date %}<small>{{ row.reported_at | date_cz }}</small>{% endif %}
   {% elif row.reported.startswith('not required') %}<span class="pill p-n">{{ t('status.not_required') }}</span>
   {% elif row.reported == 'NO - rejected, cannot be corrected' %}<span class="pill p-bad">{{ t('stay.detail.guests.rejected_final') }}</span>
   {% elif row.reported.startswith('NO') %}<span class="pill p-bad">{{ t('submission.rejected') }}</span>
@@ -102,7 +102,7 @@
         {# Two deliberate lines beat three ragged ones in a column this narrow. #}
         <td class="col-name" data-label="{{ t('housebook.guest') }}"><strong>{{ row.surname }}</strong><br>
           <span class="small">{{ row.first_name }}</span></td>
-        <td class="nowrap small" data-label="{{ t('housebook.born') }}">{{ row.birth_date }}</td>
+        <td class="nowrap small" data-label="{{ t('housebook.born') }}">{{ row.birth_date | date_cz }}</td>
         <td class="small" data-label="{{ t('housebook.nationality') }}">{{ row.nationality }}</td>
         <td class="mono small" data-label="{{ t('housebook.document') }}">{{ guest_identifier(row.doc_number, row._guest_id) }}{% if row.visa_number %}<br>{{ t('housebook.visa', number=guest_identifier(row.visa_number, row._guest_id)) }}{% endif %}</td>
         <td class="small col-address" data-label="{{ t('housebook.residence') }}">{{ row.residence or '—' }}</td>
@@ -156,7 +156,7 @@
         <td class="nowrap small" data-label="{{ t('housebook.stay') }}">{{ row.stay_from | date_cz }}<br>{{ row.stay_to | date_cz }}</td>
         <td data-label="{{ t('housebook.apartment') }}">{{ property_identity(row._apartment_id, row.apartment, true) }}</td>
         <td data-label="{{ t('housebook.guest') }}"><strong>{{ row.surname }}</strong> {{ row.first_name }}</td>
-        <td class="small muted" data-label="{{ t('housebook.archived') }}">{{ row.archived_at[:10] }}</td>
+        <td class="small muted" data-label="{{ t('housebook.archived') }}">{{ row.archived_at | date_cz }}</td>
         <td class="nowrap" data-label="">
           <form method="post" action="/guests/{{ row._guest_id }}/unarchive" class="inline">
             <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('common.restore') }}</button>
