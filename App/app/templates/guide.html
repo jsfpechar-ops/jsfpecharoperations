@@ -8,7 +8,7 @@
 {% block meta %}{% endblock %}
 {% block body %}
 
-{% set sections = ['finding', 'overview', 'statuses', 'setup', 'business', 'stays', 'cleaning', 'guests', 'guest_links', 'reporting', 'filters', 'housebook', 'stay_fee', 'invoices', 'settings', 'archive', 'privacy_requests', 'door-codes', 'faster', 'faq', 'glossary', 'legal'] + (['demo'] if demo_available else []) %}
+{% set sections = ['finding', 'overview', 'statuses', 'setup', 'business', 'stays', 'cleaning', 'guests', 'guest_links', 'reporting', 'filters', 'housebook', 'stay_fee', 'invoices', 'payments', 'settings', 'archive', 'privacy_requests', 'door-codes', 'faster', 'faq', 'glossary', 'legal'] + (['havel'] if havel_on else []) + (['demo'] if demo_available else []) %}
 {% from "_components.html" import help_tip with context %}<div class="head guide-head"><div><div class="heading-with-tip"><h1 class="big">{{ t('guide.title') }}{{ help_tip('guide-lede-help', t('guide.lede')) }}</h1></div></div>{% if havel_on %}{{ ui_button(t('havel.launcher'), 'secondary', href='/havel', icon_name='message-circle-question', attrs='data-sheet-open="havel-sheet" data-havel-launcher') }}{% endif %}</div>
 <div class="guide-layout">
   <nav class="guide-nav card" aria-label="{{ t('guide.title') }}">
@@ -223,6 +223,11 @@
       <ul>{% for n in range(1, 4) %}<li>{{ t('guide.invoices.wrong' ~ n) }}</li>{% endfor %}</ul>
     </details>
 
+    <details class="guide-section card ui-section ui-section-plain guide-topic" id="payments">
+      <summary><h2>{{ t('guide.nav.payments') }}</h2></summary>
+      <p>{{ t('guide.payments.body') }}</p>
+    </details>
+
     <details class="guide-section card ui-section ui-section-plain guide-topic" id="settings">
       <summary><h2>{{ t('guide.nav.settings') }}</h2></summary>
       <p>{{ t('guide.settings.body') }}</p>
@@ -328,6 +333,13 @@
         <p class="ui-sub">{{ t('guide.legal.disclaimer_body') }}</p>
       </div>
     </details>
+
+    {% if havel_on %}
+    <details class="guide-section card ui-section ui-section-plain guide-topic" id="havel">
+      <summary><h2>{{ t('guide.nav.havel') }}</h2></summary>
+      <p>{{ t('guide.havel.body') }}</p>
+    </details>
+    {% endif %}
 
     {% if demo_available %}
     <details class="guide-section card ui-section ui-section-plain guide-topic" id="demo">
