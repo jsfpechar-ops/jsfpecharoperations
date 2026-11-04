@@ -556,7 +556,7 @@ def attach_session(response, token: str, remember: bool = False) -> None:
         token,
         max_age=session_max_age({"rm": 1} if remember else None),
         httponly=True,
-        samesite="strict",
+        samesite="lax",
         secure=secure_cookies(),
         path="/",
     )
@@ -568,7 +568,7 @@ def clear_session(response) -> None:
         path="/",
         secure=secure_cookies(),
         httponly=True,
-        samesite="strict",
+        samesite="lax",
     )
 
 
