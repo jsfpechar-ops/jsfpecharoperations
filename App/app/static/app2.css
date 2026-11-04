@@ -2189,8 +2189,8 @@ body.v2 .notification-bubble small{display:block;margin-top:2px;color:var(--ink3
 body.v2 .notification-bubble .notification-action{color:#b3261e;font-weight:650}
 body.v2 .notification-bubble form[data-notification-dismiss],body.v2 .needs-you-item .needs-you-dismiss{position:absolute;top:6px;right:6px;margin:0;z-index:2}
 body.v2 .notification-bubble form[data-notification-dismiss] button,body.v2 .needs-you-dismiss button{position:relative;display:block;width:44px;height:44px;min-width:44px;min-height:44px;margin:0;padding:0;border:0;background:transparent;font-size:0;line-height:0;color:transparent;cursor:pointer;text-decoration:none}
-body.v2 .notification-bubble form[data-notification-dismiss] button:before,body.v2 .needs-you-dismiss button:before{content:"";position:absolute;left:50%;top:50%;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:#f0f0ec url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none' stroke='%23222' stroke-width='1.75' stroke-linecap='round'%3E%3Cpath d='M3 3l8 8M11 3l-8 8'/%3E%3C/svg%3E") center/14px 14px no-repeat}
-body.v2 .notification-bubble form[data-notification-dismiss] button:hover:before,body.v2 .needs-you-dismiss button:hover:before{background-color:#e3e3dd}
+body.v2 .notification-bubble form[data-notification-dismiss] button:before,body.v2 .needs-you-dismiss button:before{content:"";position:absolute;left:50%;top:50%;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none' stroke='%236b6b65' stroke-width='1.75' stroke-linecap='round'%3E%3Cpath d='M3 3l8 8M11 3l-8 8'/%3E%3C/svg%3E") center/14px 14px no-repeat}
+body.v2 .notification-bubble form[data-notification-dismiss] button:hover:before,body.v2 .needs-you-dismiss button:hover:before{background-color:#f0f0ec}
 body.v2 .notification-bubble form[data-notification-dismiss] button:focus-visible,body.v2 .needs-you-dismiss button:focus-visible{outline:2px solid #222;outline-offset:-4px;border-radius:50%}
 body.v2 .needs-you-item .needs-you-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
 /* 0896: page help "?" is a plain round button again: no chevron from the generic body.v2 summary rule */
@@ -2290,6 +2290,9 @@ body.v2 .needs-you-item[data-tone="red"] > .needs-you-copy > strong::before{back
 body.v2 .needs-you-item[data-tone="amber"] > .needs-you-copy > strong::before{background:#b26a00}
 body.v2 .needs-you-item details:not([open]) > :not(summary){display:none}
 body.v2 .needs-you-item:has(.needs-you-dismiss){padding-right:56px}
+/* 0910x: on desktop every row keeps the same 56 px right slot, so the buttons line up whether or not a row has a dismiss X; the X is centred in the row */
+@media (min-width:1024px){body.v2 #needs-action .needs-you-item{padding-right:56px}body.v2 .needs-you-item .needs-you-dismiss{top:50%;transform:translateY(-50%)}}
+@media (max-width:1023px){body.v2 .needs-you-item:has(.needs-you-dismiss){padding-right:16px}body.v2 .needs-you-item:has(.needs-you-dismiss) .needs-you-copy{padding-right:32px}}
 body.v2 .needs-you-item .needs-you-copy{min-width:0;overflow-wrap:anywhere}
 body.v2 .needs-you-item .needs-you-copy strong{display:block;font-weight:700}
 body.v2 .needs-you-item .needs-you-copy span{display:block;margin-top:2px;color:var(--ink3);font-size:13px}
