@@ -373,5 +373,14 @@
     if (barSubmit.length && outside.length) add('multiple-save-in-form', bar, 'fixed bar holds a submit while another save submit sits outside it');
   }
 
+  // 11c. Two visible headings with the same text on one page (0931). Dialogs and nav excluded.
+  const headSeen = new Map();
+  for (const h of all.filter((el) => /^H[123]$/.test(el.tagName) && !el.closest('[role=dialog],dialog,nav'))) {
+    const t = h.textContent.toLowerCase().trim().replace(/\s+/g, ' ');
+    if (t.length < 3) continue;
+    if (headSeen.has(t)) add('duplicate-heading', h, 'same heading text as an earlier one: "' + t.slice(0, 40) + '"');
+    else headSeen.set(t, h);
+  }
+
   return out;
 })()
