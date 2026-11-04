@@ -37,6 +37,10 @@ Make the bar end **halfway into the departure day** (the Airbnb look). To keep b
 
 Keep the CSS `column-gap` on the 14-column grid as it is. Because the gap sits between the half-tracks, a bar starts g/2 to the right of the arrival cell's middle and ends g/2 to the left of the departure cell's middle (g = the grid column gap: 4 px phone, 12 px desktop). That is wanted: two touching stays end up exactly one normal day gap apart. So the tests expect: left edge = cell middle + g/2, right edge = cell middle - g/2, 1 px tolerance. Read g from `getComputedStyle(.cal-pills).columnGap`. Fix the new 0908 test and the 0891 right-edge assertion with that rule; change no CSS for it. The brief's earlier "middle of the cell" means these edges.
 
+## 4c. Cache keys (found by CI, 2026-11-04)
+
+`dashboard-calendar.css` and `dashboard-calendar.js` changed, so `tests/test_static_versions.py` requires a new `?v=` key for each in every template that loads them, then the manifest rewritten: bump the keys (for example `20261104-0908a`), then from `App/` run `.venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -30`. Run `tests/test_static_versions.py` and the three calendar files again, all passed, 0 skipped.
+
 ## 5. Do not touch
 
 `app2.css` cleaning bars, the dashboard phone tile dots, the list view, the Gantt view, any other test file (except changing one pinned edge number, said in the report).
