@@ -2143,3 +2143,4 @@ body.v2 .invoice-use-price[hidden]{display:none}
 body.v2 .props-card thead{display:table-header-group}
 body.v2 .props-card thead,body.v2 .props-card thead th{background:transparent}
 @media (min-width:1024px) and (max-width:1100px){body.v2 .stay-fees-page .card.stays-desk th,body.v2 .stay-fees-page .card.stays-desk td{padding-left:6px;padding-right:6px}}
+body.v2 #main-content{padding-bottom:calc(var(--control-h) + var(--space-3) + var(--space-6) * 2)}
