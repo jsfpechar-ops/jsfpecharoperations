@@ -214,7 +214,7 @@ def test_more_preserves_each_page_kind_and_sheet_links_work(base, engine, width,
                     if shots and width == 390:
                         folder = Path(shots)
                         folder.mkdir(parents=True, exist_ok=True)
-                        name = path.split("?")[0].strip("/").replace("/", "-") or "dashboard"
+                        name = (path or "booking-site").split("?")[0].strip("/").replace("/", "-") or "dashboard"
                         page.screenshot(path=str(folder / f"more-{engine}-{name}-390.png"))
                     page.locator("#more-sheet [data-sheet-close]").click()
                 elif close_method == "escape":
