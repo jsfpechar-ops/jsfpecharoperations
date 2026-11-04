@@ -192,6 +192,16 @@ func StaysForSubmission(ctx context.Context, pool *pgxpool.Pool, submissionID in
 func QueueSubmissionProblemMail(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string,
 	appBaseURL, publicBaseURL string, apt ApartmentRef, submissionID int64,
 	state, reason string, transport bool, now time.Time) (int64, error) {
+	return queueSubmissionProblem(ctx, pool, getenv, appBaseURL, publicBaseURL, apt, submissionID,
+		state, reason, transport, now, "", "")
+}
+
+// queueSubmissionProblem is QueueSubmissionProblemMail with two optional
+// parameters: cc is the support copy ("" for none), key the idempotency key (""
+// keeps submission_problem:<apartment>:<state>:<date>).
+func queueSubmissionProblem(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string,
+	appBaseURL, publicBaseURL string, apt ApartmentRef, submissionID int64,
+	state, reason string, transport bool, now time.Time, cc, key string) (int64, error) {
 	// mail.py mail_enabled: UBYHOST_MAIL_BACKEND is console or ses.
 	backend := strings.ToLower(strings.TrimSpace(getenv("UBYHOST_MAIL_BACKEND")))
 	if backend != "console" && backend != "ses" {
@@ -229,7 +239,9 @@ func QueueSubmissionProblemMail(ctx context.Context, pool *pgxpool.Pool, getenv 
 	if err != nil {
 		return 0, err
 	}
-	key := fmt.Sprintf("submission_problem:%d:%s:%s", apt.ID, state, date)
+	if key == "" {
+		key = fmt.Sprintf("submission_problem:%d:%s:%s", apt.ID, state, date)
+	}
 	var reservationID *int64
 	if len(stays) == 1 {
 		id := stays[0].ID
@@ -238,7 +250,7 @@ func QueueSubmissionProblemMail(ctx context.Context, pool *pgxpool.Pool, getenv 
 	return EnqueueMail(ctx, pool, OutboxMail{
 		Kind: "submission_problem", Key: key, ReservationID: reservationID,
 		ApartmentID: &apt.ID, OwnerUserID: apt.OwnerUserID, To: to,
-		Subject: content.Subject, Text: content.Text, HTML: content.HTML,
+		Subject: content.Subject, Text: content.Text, HTML: content.HTML, CC: cc,
 	})
 }
 
@@ -270,6 +282,26 @@ func QueueFilingProblemPush(ctx context.Context, pool *pgxpool.Pool, getenv func
 		AlertParams{"property": cutRunes(apt.InternalName, pushParamMax)})
 }
 
+// QueueUnansweredPush is push.filing_problem for the final unanswered notice,
+// key unanswered:<submission>, so a same-day rejection push cannot swallow it.
+func QueueUnansweredPush(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string,
+	apt ApartmentRef, submissionID int64) (int, error) {
+	if !pushEnabled(getenv) || apt.OwnerUserID == nil || *apt.OwnerUserID == 0 {
+		return 0, nil
+	}
+	stays, err := StaysForSubmission(ctx, pool, submissionID)
+	if err != nil {
+		return 0, err
+	}
+	url := "/reservations"
+	if len(stays) == 1 {
+		url = fmt.Sprintf("/reservations/%d", stays[0].ID)
+	}
+	return QueuePush(ctx, pool, getenv, *apt.OwnerUserID, "filing_problem",
+		fmt.Sprintf("unanswered:%d", submissionID), url,
+		AlertParams{"property": cutRunes(apt.InternalName, pushParamMax)})
+}
+
 // OutboxMail is one email_outbox row to queue. A nil ReservationID is NULL.
 // To must already be normalised; Text and HTML are the bodies, Subject is cut
 // to 200 runes by EnqueueMail.
@@ -280,6 +312,7 @@ type OutboxMail struct {
 	ApartmentID   *int64
 	OwnerUserID   *int64
 	To            string
+	CC            string
 	Subject       string
 	Text          string
 	HTML          string
@@ -299,15 +332,20 @@ func EnqueueMail(ctx context.Context, pool *pgxpool.Pool, m OutboxMail) (int64, 
 	if !errors.Is(err, pgx.ErrNoRows) {
 		return 0, errNotifyMail
 	}
+	var ccParam *string
+	if m.CC != "" {
+		cc := m.CC
+		ccParam = &cc
+	}
 	ts := UTCNow()
 	var id int64
 	err = pool.QueryRow(ctx,
 		`INSERT INTO email_outbox (idempotency_key, kind, reservation_id, apartment_id, owner_user_id,
 		   to_email, cc_email, subject, payload, state, attempts, next_attempt_at, created_at, updated_at)
-		 VALUES ($1, $2, $3, $4, $5, $6, NULL, $7, $8, 'queued', 0, $9, $9, $9)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'queued', 0, $10, $10, $10)
 		 RETURNING id`,
 		m.Key, m.Kind, m.ReservationID, m.ApartmentID, m.OwnerUserID, m.To,
-		cutRunes(m.Subject, mailSubjectMax), m.payloadJSON(), ts,
+		ccParam, cutRunes(m.Subject, mailSubjectMax), m.payloadJSON(), ts,
 	).Scan(&id)
 	if err == nil {
 		return id, nil
