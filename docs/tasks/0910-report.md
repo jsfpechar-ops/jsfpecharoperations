@@ -17,7 +17,7 @@ Status: review
 - `test_dashboard_calendar_browser.py` + 0905 + 0898: `48 passed in 108.48s`, no skips.
 - `test_0910_guest_details_browser.py`: `2 passed in 11.11s`.
 - `test_stay_fee*` + `test_*_i18n.py`: `184 passed` (before the D6 test was added); D6 test: `1 passed`.
-- `test_layout_lint_browser.py`: see Deviations (rerun pending).
+- `test_layout_lint_browser.py`: `3 passed in 209.62s`, 0 skipped.
 - `python3 scripts/context_lint.py`: `context lint: OK`.
 
 ## Screenshots (docs/tasks/screenshots-0910/)
@@ -28,7 +28,7 @@ Status: review
 - Calendar week 390: not captured.
 
 ## Deviations
-Done: Steps 1 to 3, 2b, A, B, D (D5, D6, D7). Left: Part C test; calendar week 390 shot; layout lint rerun result; PR.
+Done: Steps 1 to 3, 2b, A, B, D (D5, D6, D7). Left: Part C test; calendar week 390 shot; PR.
 Shot helper names files with a `calendar-` prefix (from `shot()`), so the stay and fee files carry it too.
 Fee screenshots: the brief's fixture (`test_stay_fee_pay_steps_browser.py`) opens `/stay-fees`, not `/stay-fees/<id>`, so the fee shot test uses the `host` fixture from `test_stay_fee_detail.py` (reuse, no new fixture).
 
