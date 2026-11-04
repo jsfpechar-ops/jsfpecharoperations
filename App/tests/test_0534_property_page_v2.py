@@ -41,8 +41,9 @@ def test_sections_are_details_in_order(host):
     client, apartment_id = host
     names = [name for name, _ in _sections(_page(client, apartment_id))]
     # 0536: the fixture has no door codes, but the lock section is always rendered
-    # (connect text only). DOM order; v2 CSS puts them in mockup order.
-    assert names == ["basics", "archive", "messages", "lock", "police", "fee", "calendars"]
+    # (connect text only). DOM order; v2 CSS puts them in mockup order (0952: the one lock
+    # section sits after the property form, so it is last in the DOM).
+    assert names == ["basics", "archive", "messages", "police", "fee", "calendars", "lock"]
 
 
 def test_0536_setup_continue_is_the_first_aside_card(host):
@@ -128,7 +129,7 @@ def test_settings_form_still_saves_a_field(host):
 
 
 # 0535: the mockup order is CSS only (DOM order stays); the aside links to the sections.
-MOCKUP_ORDER = {"basics": 1, "police": 2, "calendars": 3, "messages": 4, "lock": 5, "fee": 6, "archive": 7, "lock-account": 8}
+MOCKUP_ORDER = {"basics": 1, "police": 2, "calendars": 3, "messages": 4, "lock": 5, "fee": 6, "archive": 7}
 APP2_CSS = Path(__file__).resolve().parents[1] / "app" / "static" / "app2.css"
 
 
