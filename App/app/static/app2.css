@@ -347,7 +347,6 @@ body.v2 .props-phone .cover.c2{background:linear-gradient(135deg,#5c7a4f,#9db58c
 /* 0534 property page */
 body.v2 .form{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;max-width:980px;margin:0 auto}
 body.v2 .crumb{color:var(--ink3);font-size:12px;margin-bottom:4px}
-body.v2 .guest-card{padding:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px}
 body.v2 details{background:var(--s);border:1px solid var(--line);border-radius:12px;margin-bottom:10px}
 body.v2 summary{list-style:none;padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
 body.v2 summary::-webkit-details-marker{display:none}
@@ -407,10 +406,6 @@ body.v2 .copy-btn .copy-label-default{display:inline}
 body.v2 .copy-btn [data-copy-label-slot]{display:none}
 body.v2 .copy-btn.copied [data-copy-label-slot]{display:inline}
 body.v2 .copy-btn.copied .copy-label-default{display:none}
-body.v2 .guest-card .copy-btn{position:relative;overflow:hidden}
-body.v2 .guest-card .copy-btn [data-copy-state-icon]{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none}
-body.v2 .guest-card .copy-btn.copied [data-copy-state-icon]{opacity:1}
-body.v2 .guest-card .copy-btn [data-copy-state-icon] svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 @media (max-width:639px){
   body.v2 .fields{grid-template-columns:minmax(0,1fr)}
 }
@@ -984,14 +979,6 @@ body.v2 .dot.n{background:#c9c9c3}
   body.v2 .prop-phone-only{display:block}
   body.v2 .dot{display:block;width:10px;height:10px;border-radius:50%;flex:0 0 10px}
   body.v2 .sec-state{display:block;color:var(--ink3);font-size:14px;line-height:1.35;margin-top:0}
-  body.v2 .guest-card{display:block;padding:22px;margin:0 0 16px;background:#fff;border:0;border-radius:24px;box-shadow:0 6px 24px rgba(0,0,0,.08),0 0 0 1px rgba(0,0,0,.03)}
-  body.v2 .guest-card b{display:block;font-size:13px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em}
-  body.v2 .guest-card .guest-pin{display:flex;align-items:baseline;justify-content:space-between;border-top:1px solid var(--line);padding-top:14px;margin-bottom:16px}
-  body.v2 .guest-card .guest-pin-label{font-size:15px;color:var(--ink3)}
-  body.v2 .guest-card .guest-pin-value{font-size:22px;font-weight:800;line-height:1.4;letter-spacing:.12em}
-  body.v2 .guest-card .guest-btns{display:flex;flex-direction:column;gap:10px}
-  body.v2 .guest-card .sub{font-size:17px;font-weight:700;color:var(--ink);margin:6px 0 14px;overflow-wrap:anywhere;word-break:break-all}
-  body.v2 .guest-card .copy-btn{width:100%;justify-content:center}
   body.v2 .prop-sec > summary{display:grid;grid-template-columns:10px minmax(0,1fr) 20px;column-gap:16px;align-items:center;min-height:64px;padding:12px 0;border-bottom:0}
   body.v2 .prop-sec > summary > .dot{grid-column:1;grid-row:1/3}
   body.v2 .prop-sec > summary > div{grid-column:2;grid-row:1;min-width:0}
@@ -1005,12 +992,7 @@ body.v2 .dot.n{background:#c9c9c3}
   body.v2 .property-settings-form .savebar .btn[type="submit"]{flex-basis:100%}
   body.v2:has(.property-settings-form details.prop-sec[open]) .havel-fab{display:none}
   body.v2 .ov-how[data-how="property"]{display:none}
-  body.v2 .guest-card .copy-btn{min-height:50px;height:auto;padding:0;gap:8px;white-space:normal;border-radius:12px;font-size:16px;font-weight:700}
   /* 0741: copy link is the coral filled button, copy PIN the white outlined one; (0,6,1)+ beats the primary v2 .btn text rule (0,5,1) without !important */
-  body.v2 .guest-card .guest-btns > .copy-btn:not(.soft):not(.ghost){color:#fff;background:var(--acc);border:0}
-  body.v2 .guest-card .guest-pin-copy .copy-btn:not(.soft):not(.ghost){color:var(--ink);background:#fff;border:1.5px solid var(--ink)}
-  body.v2 .guest-card .copy-btn > svg{display:block;width:18px;height:18px;flex:0 0 18px}
-  body.v2 .guest-card .copy-btn .sr-only{position:static;width:auto;height:auto;margin:0;overflow:visible;clip:auto;white-space:nowrap}
   body.v2 details.prop-sec{border:0;border-radius:0;box-shadow:none;background:transparent;padding:0;margin:0}
   body.v2 #sec-archive > summary{border-bottom:0}
   body.v2 .property-settings-form .savebar{flex-wrap:nowrap}
@@ -1892,10 +1874,6 @@ body.v2 .cal .cgrid{min-width:0;grid-template-columns:112px repeat(14,minmax(36p
 body.v2 .props-card > table :is(th,td):first-child{padding-left:16px}
 body.v2 .props-card > table :is(th,td):last-child{padding-right:16px}
 body.v2 .props-phone .card.prop{border:1px solid #e5e5e5;border-radius:12px;box-shadow:none;padding:20px}
-body.v2 .guest-card{border:1px solid #e5e5e5;border-radius:12px;box-shadow:none;background:#fff}
-body.v2 .guest-card .guest-btns{gap:12px}
-body.v2 .guest-card .guest-pin-copy{margin-top:12px}
-body.v2 .guest-card input.sr-only{visibility:hidden}
 body.v2 .prop-sec label{display:block;margin-bottom:12px}
 body.v2 .prop-sec :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select,textarea){margin-bottom:12px}
 body.v2 .prop-sec p.ui-sub:not([data-link-window-note]):not(:has(strong)),body.v2 .prop-sec .property-group-intro,body.v2 .prop-sec .police-no-credentials{display:none}
@@ -2466,3 +2444,22 @@ body.v2 .onboarding-finish-actions form{margin:0}
 @media (max-width:767px){body.v2 .onboarding-finish-actions{flex-direction:column;align-items:stretch}body.v2 .onboarding-finish-actions .ui-btn,body.v2 .onboarding-finish-actions form,body.v2 .onboarding-finish-actions form button{width:100%;justify-content:center;min-height:44px}body.v2 .onboarding-finish-actions form button{text-align:center}}
 body.v2 .onboarding-finish-strip{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:12px 16px;border:1px solid var(--line);border-radius:12px;background:var(--s);font-size:14px;margin:12px 0}
 @media (max-width:1023px){body.v2 .onboarding-finish-strip a{white-space:nowrap;min-height:44px;display:inline-flex;align-items:center}}
+
+/* 0948 status strip */
+body.v2 .prop-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 auto 16px;max-width:980px}
+body.v2 .prop-strip .sc{display:grid;grid-template-columns:10px minmax(0,1fr);column-gap:10px;row-gap:2px;align-items:center;min-height:64px;padding:12px;background:#fff;border:1px solid var(--line);border-radius:14px;color:inherit;text-decoration:none}
+body.v2 .prop-strip div.sc.sc-link{display:block;padding:12px}
+body.v2 .prop-strip .sc:hover{border-color:var(--ink3)}
+body.v2 .prop-strip .sc:focus-visible,body.v2 .prop-strip .sc-main:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+body.v2 .prop-strip .sd{grid-row:1/3;width:10px;height:10px;border-radius:50%;background:#c9c9c3}
+body.v2 .prop-strip .sc[data-state="ok"] .sd{background:var(--ok)}
+body.v2 .prop-strip .sc[data-state="warn"] .sd{background:var(--warn)}
+body.v2 .prop-strip .sc[data-state="bad"] .sd{background:var(--bad)}
+body.v2 .prop-strip .sc b{grid-column:2;font-size:14px;font-weight:600;line-height:1.3;min-width:0;overflow-wrap:anywhere}
+body.v2 .prop-strip .sc small{grid-column:2;font-size:13px;color:var(--ink3);line-height:1.3;min-width:0;overflow-wrap:anywhere}
+body.v2 .prop-strip .sc small.is-problem{color:var(--bad);font-weight:600}
+@media (min-width:640px){body.v2 .prop-strip{grid-template-columns:repeat(3,minmax(0,1fr))}}
+body.v2 .prop-strip .sc-main{display:grid;grid-template-columns:10px minmax(0,1fr);column-gap:10px;row-gap:2px;align-items:center;color:inherit;text-decoration:none;min-width:0}
+body.v2 .prop-strip .sc-main b,body.v2 .prop-strip .sc-main small{grid-column:2}
+body.v2 .prop-strip .sc-actions{margin-top:8px;padding-left:20px}
+body.v2 .prop-strip .sc-actions .btn{min-height:44px}
