@@ -49,3 +49,15 @@ Moved from docs/context/decisions.md during compaction.
 - 2026-10-24 Guide Quick answers screen (owner).
 - 2026-10-29 | 0448: legacy hosts get an immediate plan start with the first invoice issued now, no trial | owner | 0448
 - 2026-10-29 | Discounts reissue an unpaid invoice with the discount applied | owner | 0448
+- 2026-10-08 | Funnel: in-app dashboard, no JS; Umami public-only | own rows | 0018
+- 2026-10-08 | Stored files: no expiry; invoices 10 y; new file kind brings a storage module | legal risk | [plan](../plans/file-retention.md)
+- 2026-10-09 | Waiting guest sees only "You will receive your door code by e-mail." (0024; replaces 0022) | [0022](../tasks/0022-guest-door-code-waiting-messages.md)
+- 2026-10-10 | UI decisions continue | cap | [UI](ui-decisions.md)
+- 2026-10-10 | Taken type-3 period: `add` only, host warned; no shift or reuse; deleted untyped code is dead | staging | [0037](../tasks/0037-door-code-taken-period.md)
+- 2026-10-11 | Facility abbreviation: suffix after UBY-WS_ | owner | [0043](../tasks/0043-police-setup-fewer-fields.md)
+- 2026-10-11 | Web-service credential request: data box ybndqw9, Ředitelství služby cizinecké policie | owner | [0044](../tasks/0044-ws-request-letter.md)
+- 2026-10-12 | Host UX: [UI](ui-decisions.md), 0087–0094 | owner; staging first
+- 2026-10-22 [deps] Signature font: self-hosted Dancing Script (OFL) (owner).
+- 2026-10-27 | [Max policy](../reports/max-159-fivefold-ai.md); [original layout, 229 monthly](../reports/original-pricing-229.md) | owner
+- 2026-10-27 | Direct payments folded into FastAPI; requests first, page booking second; QR rail = tech provider only | owner | plan direct-payments-build-plan, 0425
+- 2026-11-02 | [workflow] Read hook: 350+ lines needs a limit | owner | 0810
