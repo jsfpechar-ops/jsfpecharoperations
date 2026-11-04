@@ -232,6 +232,13 @@
              autocomplete="address-line1" required value="{{ val('res_street') }}">
       {{ err_for('res_street') }}
     </div>
+    {% if ruian_suggest_url %}
+    <div id="ruian-suggest" hidden>
+      <p class="hint" id="ruian-suggest-hint">{{ t('ruian_suggest_hint') }}</p>
+      <ul id="ruian-suggest-list" aria-label="{{ t('ruian_suggest_label') }}"></ul>
+      <p class="hint" id="ruian-suggest-none" hidden>{{ t('ruian_suggest_none') }}</p>
+    </div>
+    {% endif %}
   </div>
 
   {% if require_passport %}
@@ -441,4 +448,61 @@
   }
 })();
 </script>
+{% if ruian_suggest_url %}
+<script>
+(function () {
+  var country = document.getElementById('res_country');
+  var street = document.getElementById('res_street');
+  var city = document.getElementById('res_city');
+  var box = document.getElementById('ruian-suggest');
+  var list = document.getElementById('ruian-suggest-list');
+  var none = document.getElementById('ruian-suggest-none');
+  var url = {{ ruian_suggest_url|tojson }};
+  if (!country || !street || !city || !box || !list || !none) return;
+  var timer = null, seq = 0;
+  function isCz() { return country.value === 'CZE'; }
+  function hide() { box.hidden = true; list.innerHTML = ''; none.hidden = true; }
+  function pick(s) {
+    var f = s.fields || {};
+    // The obec (addr_obec), never the cast of a city (addr_obec_cast): the backend compares obec names.
+    if (f.addr_obec) city.value = f.addr_obec;
+    var line = f.addr_street || '';
+    if (f.addr_house_no) line += ' ' + f.addr_house_no;
+    if (f.addr_orient_no) line += '/' + f.addr_orient_no;
+    if (line.trim()) street.value = line.trim();
+    hide();
+  }
+  function render(items) {
+    list.innerHTML = '';
+    list.style.listStyle = 'none'; list.style.margin = '0 0 0.75em'; list.style.padding = '0';
+    none.hidden = items.length > 0;
+    items.forEach(function (s) {
+      var li = document.createElement('li');
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = s.label;
+      b.style.cssText = 'display:block;width:100%;text-align:left;padding:0.6em 0.75em;margin:0 0 0.5em;border:1px solid currentColor;border-radius:6px;background:transparent;font:inherit;color:inherit;cursor:pointer;';
+      b.addEventListener('click', function () { pick(s); });
+      li.appendChild(b);
+      list.appendChild(li);
+    });
+    box.hidden = false;
+  }
+  function search() {
+    if (!isCz()) { hide(); return; }
+    var q = (street.value + ' ' + city.value).trim();
+    if (q.length < 3) { hide(); return; }
+    var mine = ++seq;
+    fetch(url + '?q=' + encodeURIComponent(q), { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (items) { if (mine === seq && Array.isArray(items)) render(items); })
+      .catch(function () { /* the plain inputs keep working */ });
+  }
+  function later() { clearTimeout(timer); timer = setTimeout(search, 300); }
+  street.addEventListener('input', later);
+  city.addEventListener('input', later);
+  country.addEventListener('change', search);
+})();
+</script>
+{% endif %}
 {% endblock %}

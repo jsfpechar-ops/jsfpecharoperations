@@ -27,6 +27,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 import posixpath
 import re
 from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, doc_ocr, door_codes, guest_slug, guest_uk_i18n, host_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n, workflow
+from .. import ruian as ruian_lookup  # 0911: guest RUIAN suggestions
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
 from .admin_helpers import kept_signature as _kept_signature
@@ -1048,6 +1049,30 @@ async def verify_pin(token: str, request: Request):
 
 # Registered before /l/{token}/{reservation_id}, otherwise "privacy" is parsed
 # as a reservation id and the guest gets a validation error instead of a page.
+@router.get("/l/{token}/ruian-suggest")
+def ruian_suggest(token: str, request: Request, q: str = ""):
+    """0911: RUIAN address suggestions for the guest's residence card (the form asks for CZ only).
+    Progressive enhancement: the form works without it. Same guards as the other guest GETs.
+    Must stay above /l/{token}/{reservation_id}, which would otherwise match it."""
+    lang = _language(request)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
+    pin_guard = _require_pin(request, token, lang)
+    if pin_guard:
+        return pin_guard
+    if not ruian_lookup.enabled():
+        return JSONResponse({"error": "not_found"}, status_code=404)
+    if ruian_lookup.usable_query(q) is None:
+        return JSONResponse([])
+    key = rate_limit.client_key(request, f"ruian_guest:{_lock_token(token)}")
+    if rate_limit.blocked("ruian_guest", key, 120) or ruian_lookup.rate_limited(apartment["owner_user_id"]):
+        return JSONResponse({"error": "rate_limited"}, status_code=429)
+    rate_limit.record("ruian_guest", key)
+    ruian_lookup.record_lookup(apartment["owner_user_id"])
+    return JSONResponse(ruian_lookup.suggest(q))
+
+
 @router.get("/l/{token}/privacy")
 def privacy_notice(token: str, request: Request):
     lang = _language(request)
@@ -1514,6 +1539,16 @@ def _form_context(
         else _guest_link(token, reservation["id"]) + "/new"
     )
     context["lang_urls"] = _lang_urls(request, form_path)
+    # 0911: the fee notice shows with the host's collect switch on and a rate; the
+    # suggest URL is set only while the RUIAN lookup is enabled (the form uses it for CZ).
+    context["fee_notice"] = bool(
+        config.STAY_FEE_GUEST_PAY
+        and apartment["stay_fee_collect"]
+        and (apartment["stay_fee_rate_czk"] or 0) > 0
+    )
+    context["ruian_suggest_url"] = (
+        _guest_link(token) + "/ruian-suggest" if ruian_lookup.enabled() else None
+    )
     context["privacy_url"] = (
         _guest_link(token)
         + "/privacy"

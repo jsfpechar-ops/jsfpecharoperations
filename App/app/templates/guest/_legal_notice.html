@@ -14,6 +14,12 @@
       <p class="legal-passport-text">{{ t('legal_notice_passport_body') }}</p>
     {% endif %}
 
+    {% if fee_notice %}
+      <h3 id="legal-fee-section">{{ t('legal_notice_fee_title') }}</h3>
+      <p class="legal-fee-text">{{ t('legal_notice_fee_body') }}</p>
+      <p class="legal-fee-link"><a href="https://www.e-sbirka.cz/sb/1990/565" rel="noopener" target="_blank">{{ t('legal_notice_fee_link') }}</a></p>
+    {% endif %}
+
     <h3>{{ t('legal_notice_reporting_title') }}</h3>
     <p>{{ t('legal_notice_reporting_body') }}</p>
 
