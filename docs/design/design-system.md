@@ -28,7 +28,7 @@ Look: Wolt style (`mockup/ubyhost-redesign-v2.html`), our sand neutrals plus the
 | Badges | Always a word. Green only for verified data; amber = look; coral = you must act; grey = waiting. |
 | Empty state | Title, next step, one button. No illustration. |
 | Banners | One at a time, full lane width, plain surface with a status dot; never coral fill. |
-| Help "?" | Rule 7. Popover opens next to the icon, max 360 px, fits the 390 px screen. |
+| Help "?" | Rule 7. Popover opens next to the icon, max 360 px, fits the 390 px screen. 16 px gutter; app.js place() and the layout-lint test enforce it. |
 | Page header | Back link (phone), title, one meta line at most, action row (rule 4). |
 
 ## 3. Behaviour by size
