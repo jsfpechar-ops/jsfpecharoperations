@@ -2096,6 +2096,16 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       form.addEventListener("change", mark);
       form.addEventListener("submit", function () { form._ubySubmitting = true; });
     });
+    // 0952: door-code controls sit outside their form and name it with form="...", so they bubble to document, not to the form.
+    if (!document._ubyOutsideMark) {
+      document._ubyOutsideMark = true;
+      var markOutside = function (event) {
+        var owner = event.target && event.target.form;
+        if (owner && owner.hasAttribute("data-unsaved-guard") && !owner.contains(event.target)) owner.setAttribute("data-dirty", "1");
+      };
+      document.addEventListener("input", markOutside);
+      document.addEventListener("change", markOutside);
+    }
     if (claimNode(window, "initUnsavedForms")) {
       window.addEventListener("beforeunload", function (event) {
         var current = Array.prototype.slice.call(document.querySelectorAll("form[data-unsaved-guard]"));
@@ -2123,9 +2133,14 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
   /* 0543: an aside link to a property section (#sec-*) opens that section; a #sec-* hash opens it on load */
   function initPropSectionLinks() {
     function openSection(hash) {
-      if (!/^#sec-/.test(hash || "")) return;
-      var node = document.getElementById(hash.slice(1));
-      if (node && node.tagName === "DETAILS" && node.classList.contains("prop-sec")) node.open = true;
+      if (!/^#(sec-|door-code$|smart-locks$)/.test(hash || "")) return;
+      var target = document.getElementById(hash.slice(1));
+      // 0952: #door-code and #smart-locks sit inside the #sec-lock accordion: open that one and scroll to the target.
+      var node = target && !/^sec-/.test(target.id) && target.closest ? target.closest("details.prop-sec") : target;
+      if (node && node.tagName === "DETAILS" && node.classList.contains("prop-sec")) {
+        node.open = true;
+        if (target !== node && target.scrollIntoView) target.scrollIntoView();
+      }
     }
     document.querySelectorAll('a[href^="#sec-"]').forEach(function (link) {
       if (!claimNode(link, "initPropSectionLinks")) return;
@@ -2146,9 +2161,10 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     if (form && claimNode(form, "initPropertyPage")) {
       var lastOpened = null;
       var returnInput = form.querySelector("input[data-property-return]");
-      form.addEventListener("toggle", function (event) {
+      // 0952: #sec-lock sits outside the form now, so listen on the document for it too.
+      document.addEventListener("toggle", function (event) {
         var node = event.target;
-        if (node.tagName === "DETAILS" && node.open && node.id && node.matches("details.prop-sec")) lastOpened = node.id;
+        if (node.tagName === "DETAILS" && node.open && node.id && node.matches("details.prop-sec") && (form.contains(node) || node.id === "sec-lock")) lastOpened = node.id;
       }, true);
       form.addEventListener("submit", function () {
         var group = PROPERTY_RETURN_SECTION[lastOpened];
@@ -2156,7 +2172,10 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         returnInput.value = returnInput.value.replace(/([?&]section=)[^&#]*/, "$1" + group);
       });
       // A switch says "Not saved yet" until the form is saved; never "Enabled".
-      form.querySelectorAll("input[data-switch-saved]").forEach(function (input) {
+      // 0952: door-code switches sit outside the form and name it with form="...".
+      Array.prototype.slice.call(document.querySelectorAll("input[data-switch-saved]")).filter(function (input) {
+        return input.form === form;
+      }).forEach(function (input) {
         var status = document.getElementById((input.getAttribute("aria-describedby") || "").split(" ")[0]);
         if (!status) return;
         input.addEventListener("change", function () {
@@ -2229,7 +2248,10 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     // "change", so tell them; then the form is clean again.
     function discard(form) {
       form.reset();
-      form.querySelectorAll("select, input[type=checkbox], input[type=radio]").forEach(function (el) {
+      // 0952: form.elements also holds controls outside the form that name it with form="...".
+      Array.prototype.slice.call(form.elements).filter(function (el) {
+        return el.matches("select, input[type=checkbox], input[type=radio]");
+      }).forEach(function (el) {
         el.dispatchEvent(new Event("change", { bubbles: true }));
       });
       form.removeAttribute("data-dirty");
@@ -2241,6 +2263,19 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       return url.pathname === here.pathname && url.search === here.search && !!url.hash;
     }
 
+    // 0952: same as initUnsavedForms, for controls outside the form: update the Save bar and reset buttons.
+    if (!document._ubyOutsideSync) {
+      document._ubyOutsideSync = true;
+      var syncOutside = function (event) {
+        var owner = event.target && event.target.form;
+        if (owner && forms.indexOf(owner) > -1 && !owner.contains(event.target)) {
+          owner.setAttribute("data-dirty", "1");
+          syncResetButtons();
+        }
+      };
+      document.addEventListener("input", syncOutside);
+      document.addEventListener("change", syncOutside);
+    }
     forms.forEach(function (form) {
       if (!claimNode(form, "initUnsavedDialog")) return;
       form.addEventListener("input", syncResetButtons);

@@ -155,6 +155,8 @@ def test_three_views_four_groups_one_editor_and_unique_ids(host):
     property_forms = [f for f in parsed.forms if f["action"] == f"/apartments/{host['apartment']}" and f["method"] == "post"]
     assert len(property_forms) == 1
     names = [name for name, _ in _fields(property_forms[0])]
+    # 0952: door-code controls sit outside the form and name it with form="property-settings-form".
+    names += re.findall(r'<(?:input|select|textarea)\b[^>]*\bform="property-settings-form"[^>]*\bname="([^"]+)"', html)
     assert set(names) == SETTINGS_NAMES, set(names) ^ SETTINGS_NAMES
     assert len(names) == len(set(names)), "a setting is submitted twice"
     calendar = [f for f in parsed.forms if f["action"] == f"/apartments/{host['apartment']}/feeds"]
