@@ -44,7 +44,7 @@
   </h2>
   <p class="ui-sub">
     {{ t('privacy_requests.received') }}: {{ row.received_at | date_cz }}
-    &middot; {{ t('privacy_requests.due') }}: {{ row.due_at }}
+    &middot; {{ t('privacy_requests.due') }}: {{ row.due_at | datetime_local }}
     {% if row.guest_id %}&middot; {{ t('privacy_requests.guest_id') }}: {{ row.guest_id }}{% endif %}
   </p>
   <form method="post" action="/privacy-requests/{{ row.id }}">

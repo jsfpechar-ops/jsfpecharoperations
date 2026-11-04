@@ -54,7 +54,7 @@
             </a>
           </td>
           <td data-label="{{ t('archive.col.property') }}">{{ reservation.internal_name }}</td>
-          <td class="ui-sub" data-label="{{ t('archive.col.when') }}">{{ reservation.archived_at[:10] }}</td>
+          <td class="ui-sub" data-label="{{ t('archive.col.when') }}">{{ reservation.archived_at | date_cz }}</td>
           <td class="nowrap row-actions" data-label="">{{ row_open('/reservations/' ~ reservation.id) }}
             {{ row_menu_begin() }}
               <a class="row-menu-item" href="/reservations/{{ reservation.id }}" role="menuitem">{{ t('common.open') }}</a>
@@ -91,7 +91,7 @@
           <td data-label="{{ t('archive.col.property') }}">
             <a class="row-primary-link" href="/apartments/{{ apartment.id }}">{{ apartment.internal_name }}</a>
           </td>
-          <td class="ui-sub" data-label="{{ t('archive.col.when') }}">{{ apartment.archived_at[:10] }}</td>
+          <td class="ui-sub" data-label="{{ t('archive.col.when') }}">{{ apartment.archived_at | date_cz }}</td>
           <td class="ui-num" data-label="{{ t('archive.col.stays_count') }}">{{ apartment.reservations }}</td>
           <td class="nowrap row-actions" data-label="">{{ row_open('/apartments/' ~ apartment.id) }}
             {{ row_menu_begin() }}
@@ -130,7 +130,7 @@
           <td class="ui-sub nowrap" data-label="{{ t('archive.col.stay') }}">{{ row.stay_from | date_cz }}<br>{{ row.stay_to | date_cz }}</td>
           <td data-label="{{ t('archive.col.property') }}">{{ row.apartment }}</td>
           <td data-label="{{ t('archive.col.guest') }}"><strong>{{ row.surname }}</strong> {{ row.first_name }}</td>
-          <td class="ui-sub" data-label="{{ t('archive.col.when') }}">{{ row.archived_at[:10] }}</td>
+          <td class="ui-sub" data-label="{{ t('archive.col.when') }}">{{ row.archived_at | date_cz }}</td>
           <td class="nowrap" data-label="">
             <form method="post" action="/guests/{{ row._guest_id }}/unarchive" class="inline">
               <input type="hidden" name="return_to" value="/settings/archived{% if item_type != 'all' %}?type={{ item_type }}{% endif %}">
@@ -164,7 +164,7 @@
           <td data-label="{{ t('archive.col.name') }}">
             <a class="row-primary-link" href="/entities?edit={{ entity.id }}">{{ entity.name }}</a>
           </td>
-          <td class="ui-sub" data-label="{{ t('archive.col.when') }}">{{ entity.archived_at[:10] }}</td>
+          <td class="ui-sub" data-label="{{ t('archive.col.when') }}">{{ entity.archived_at | date_cz }}</td>
           <td class="ui-mono" data-label="IČO">{{ entity.ico or '—' }}</td>
           <td class="nowrap row-actions" data-label="">{{ row_open('/entities?edit=' ~ entity.id) }}
             {{ row_menu_begin() }}
