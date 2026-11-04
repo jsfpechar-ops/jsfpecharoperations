@@ -6,22 +6,22 @@ step 1 old onboarding card look; step 2 banner (primary + quiet underlined skip)
 
 ## Tests
 - test_wizard_old_look_0953.py: 4 pass.
-- test_wizard_old_look_0953_browser.py: 3 pass (390, 768, 1280), 0 skipped.
+- test_wizard_old_look_0953_browser.py: 3 pass (390, 768, 1280), 0 skipped; now also checks the demo card (text >= 60% at 640+, button full width under 640, no overlap).
 - test_0884_wizard_geometry_browser.py + test_layout_lint_browser.py + test_operator_naming.py + test_static_versions.py: 51 pass after the fixes below.
 - Test-map run: 348 pass, 27 fail in test_property_navigation_browser.py and test_onboarding_wizard_browser.py on stale selectors (#property-guest-link-title, #sec-calendars, #sec-basics). Known, handled by orchestrator; not touched.
 - Known: test_host_i18n 'no such table: apartment' not run here.
 
-## Screenshots (docs/tasks/screenshots-0953/)
-- 390, viewed: checklist card has kicker, logo, 0%, bar, underlined skip; property step shows 4-segment strip and red stars; police shows stars on IDUB, login, abbreviation, facility name; operator form shows "Operator: registered seat" heading with stars on seat and e-mail; Stays shows primary "Continue setup" and underlined skip.
-- 768, viewed: operator form (entities). Not viewed: checklist, property, police, apartments.
-- 1280, viewed: checklist (card, primary, skip, step cards); property (strip, stars, two headings distinct). Not viewed: police, entities, apartments.
-- Finding: the "?" help tip on the checklist sits below the skip link (not fixed).
+## Screenshots (docs/tasks/screenshots-0953/, retaken after the demo-card fix)
+- 390, all viewed: checklist card (kicker, logo, 0%, bar, underlined skip); demo card now stacks: text full width, "Explore with demo data" full width below; property step (4-segment strip, stars); police (stars on IDUB, login, abbreviation, facility name); operator form ("Operator: registered seat", stars on seat and e-mail); Stays (primary "Continue setup", underlined skip).
+- 768, all viewed: checklist (demo text about 60%, button right, "?" inline); property; police; Stays. Operator form viewed earlier. No flaw.
+- 1280, all viewed: checklist; property; police (strip, stars); operator form; Properties (banner, primary, skip) fine.
+- Flaws noted, not fixed: (a) the "?" help tip on the checklist card sits below the skip link, not beside it; (b) on Properties at 1280 the "Add a second way in?" box (pre-existing 2FA prompt, not in 0953) is squeezed: "Use an authenticator app" and "Not now" are misaligned at the bottom of the page.
 
 ## Required stars applied
 Property: internal_name, legal_entity_id, addr_house_no, addr_zip, addr_obec, checkin_hour, checkout_hour. Police: uby_idub, uby_mark, uby_name, uby_ws_user. Operator: name, ico (business), seat, contact_email. Server does not require seat or e-mail; starred because the form is HTML-required (owner-approved by orchestrator).
 
 ## Deviations
-- app2 cache key: 0953b to 0953f (test_static_versions refuses changed content under one key).
+- app2 cache key: 0953b to 0953i (test_static_versions refuses changed content under one key; the orchestrator asked for 0953f, but f was already used by the section-note change, so the key went on).
 - Seat heading is a p, not h3: the entities page renders the business form twice (edit and new), so layout-lint flagged duplicate headings.
 - ui-btn-quiet untouched; skip links use onboarding-skip-link.
 

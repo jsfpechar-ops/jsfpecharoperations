@@ -2529,3 +2529,7 @@ body.v2 .wiz-page .setup-wizard-ask[data-step-tone=purple] .setup-wizard-ask-ico
 body.v2 .wiz-page .setup-wizard-celebrate-title{color:var(--ink);font-size:18px;line-height:1.25;overflow-wrap:anywhere}
 body.v2 .req-star{color:var(--red);font-weight:700;margin-inline-start:2px}
 body.v2 .section-note{font-size:14px;color:var(--ink3);margin:0 0 8px}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-demo{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:center}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-demo form{margin:0}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-demo button{width:100%}
+@media (min-width:640px){body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-demo{grid-template-columns:minmax(0,62%) minmax(0,1fr);gap:16px}body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-demo button{width:auto}}

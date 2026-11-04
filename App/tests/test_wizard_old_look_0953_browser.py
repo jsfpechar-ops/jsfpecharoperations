@@ -35,6 +35,16 @@ CHECK = r"""(page) => {
       if (parseFloat(fill.style.width) > 0 && fill.getBoundingClientRect().width <= 0) bad.push(['meter fill', fill.style.width]);
     }
   }
+  if (page === 'checklist') {
+    const card = document.querySelector('.onboarding-demo');
+    if (card) {
+      const text = card.firstElementChild.getBoundingClientRect(), btn = card.querySelector('form button').getBoundingClientRect(), box = card.getBoundingClientRect(), cs = getComputedStyle(card), inner = box.width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      if (innerWidth >= 640 && text.width < 0.6 * inner) bad.push(['demo text width', Math.round(text.width), Math.round(inner)]);
+      const overlap = Math.min(text.right, btn.right) - Math.max(text.left, btn.left) > 1 && Math.min(text.bottom, btn.bottom) - Math.max(text.top, btn.top) > 1;
+      if (overlap) bad.push(['demo button overlaps text']);
+      if (innerWidth < 640 && btn.width < 0.9 * inner) bad.push(['demo button not full width', Math.round(btn.width)]);
+    }
+  }
   for (const k of document.querySelectorAll('.onboarding-skip-link')) {
     if (!shown(k)) continue;
     const cs = getComputedStyle(k);
