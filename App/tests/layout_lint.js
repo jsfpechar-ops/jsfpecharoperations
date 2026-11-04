@@ -201,7 +201,9 @@
   }
   // 9. A help "?" sits inline right after its heading or label: same line, no more than 32 px away. Never on its own line.
   const tipCircle = (tip) => {
-    const b = tip.querySelector('.help-tip-btn') || tip;
+    const dot = tip.querySelector('.page-help-dot');
+    if (dot) { const d = dot.getBoundingClientRect(); return {left: d.left, right: d.right, cy: d.top + d.height / 2}; }
+    const b = tip.querySelector('.help-tip-btn,.page-help-btn') || tip;
     const r = b.getBoundingClientRect();
     const mobile = r.width >= 40;
     const cx = mobile ? r.left + 9 : r.left + r.width / 2;
@@ -219,7 +221,7 @@
     for (let n = dir < 0 ? start.previousSibling : start.nextSibling; n; n = dir < 0 ? n.previousSibling : n.nextSibling) {
       if (n.nodeType === 3 && n.textContent.trim()) return n;
       if (n.nodeType === 1) {
-        if (n.matches('.help-tip,script,style,template') || !vis(n)) continue;
+        if (n.matches('.help-tip,.page-help,script,style,template') || !vis(n)) continue;
         const cs = getComputedStyle(n);
         if (cs.position === 'absolute' || cs.position === 'fixed') continue;
         if ((n.innerText || '').trim() || n.querySelector('svg,img') || n.matches('button,a,input,select')) return n;
@@ -227,8 +229,8 @@
     }
     return null;
   };
-  for (const tip of document.body.querySelectorAll('.help-tip')) {
-    if (!vis(tip.querySelector('.help-tip-btn') || tip) || skipZone(tip) || tip.closest('[data-lint-ignore]')) continue;
+  for (const tip of document.body.querySelectorAll('.help-tip,details.page-help')) {
+    if (!vis(tip.querySelector('.help-tip-btn,.page-help-btn') || tip) || skipZone(tip) || tip.closest('[data-lint-ignore]')) continue;
     const c = tipCircle(tip);
     let cur = tip, prev = null, next = null;
     for (let up = 0; up < 3 && cur && cur !== document.body; up++, cur = cur.parentElement) {
@@ -245,6 +247,95 @@
     const cid = (tip.querySelector('[aria-controls]') || tip).getAttribute('aria-controls') || '';
     if (!sameLine) add('help-stranded', tip, '#' + cid + ' on its own line, ' + Math.round(Math.abs(c.cy - (ar.top + ar.bottom) / 2)) + 'px off its label');
     else if (gap > 32 || gap < -4) add('help-stranded', tip, '#' + cid + ' ' + Math.round(gap) + 'px from its label');
+  }
+
+  // 10. Phone and tablet (below 1024 px) patterns that read as "broken" even when nothing overlaps.
+  const narrow = vw < 1024;
+  const ctlSel = 'button,a.btn,a.ui-btn,.btn,.ui-btn,input:not([type=hidden]):not([type=checkbox]):not([type=radio]),select,textarea';
+  const rectOf = (el) => el.getBoundingClientRect();
+  // 10a. A table cell whose text is cut into one or two letters per line (a squeezed table).
+  for (const cell of document.body.querySelectorAll('td,th')) {
+    if (!vis(cell) || skipZone(cell)) continue;
+    const text = (cell.innerText || '').replace(/\s+/g, ' ').trim();
+    if (text.length < 4 || text.length > 30 || /[/:?=]/.test(text)) continue;
+    const r = rectOf(cell);
+    const lines = textLines(cell);
+    const longest = Math.max(...words(text).map((x) => x.length));
+    if (lines >= 2 && lines > words(text).length && longest >= 4) add('table-squeezed', cell, lines + ' lines for "' + text.slice(0, 18) + '"', Math.round(r.width) + 'px wide');
+  }
+  // 10b. Controls and labels stacked (or side by side) closer than 12 px.
+  if (narrow) {
+    const ctls = all.filter((el) => el.matches(ctlSel) && !el.closest('.help-tip,[class*=stepper],[class*=segmented],[role=tablist],[role=group],.tabbar,nav,.tab-bar,.seg,.pills,.chips,.row-menu-panel,summary,.dashboard-calendar,[class*=cal-grid],[class*=cal-day]') && !el.matches('[class*=cal-day]'));
+    const rs = ctls.map(rectOf);
+    for (let i = 0; i < ctls.length; i++) {
+      for (let j = i + 1; j < ctls.length; j++) {
+        if (ctls[i].contains(ctls[j]) || ctls[j].contains(ctls[i])) continue;
+        const a = rs[i], b = rs[j];
+        const hOverlap = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+        const vOverlap = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+        const vgap = Math.max(a.top, b.top) - Math.min(a.bottom, b.bottom);
+        const hgap = Math.max(a.left, b.left) - Math.min(a.right, b.right);
+        const fixed = (el) => getComputedStyle(el).position === 'fixed' || el.closest('[style*="position: fixed"]');
+        if (fixed(ctls[i]) || fixed(ctls[j])) continue;
+        if (hOverlap > 8 && vgap < 12 && vgap > -1 && vOverlap <= 0) add('tight-stack', ctls[j], 'only ' + Math.max(0, Math.round(vgap)) + 'px below "' + (ctls[i].innerText || ctls[i].name || '').trim().slice(0, 20) + '"');
+        else if (vOverlap > 8 && hgap < 12 && hgap > -1 && hOverlap <= 0) add('tight-side', ctls[j], 'only ' + Math.max(0, Math.round(hgap)) + 'px beside "' + (ctls[i].innerText || ctls[i].name || '').trim().slice(0, 20) + '"');
+      }
+    }
+    // a label or line of text right under a button
+    for (const lab of all.filter((el) => el.matches('label,legend,h2,h3,h4,.field-label-row'))) {
+      const lr = rectOf(lab);
+      for (const c of ctls) {
+        if (!c.matches('button,a.btn,a.ui-btn,.btn,.ui-btn') || c.contains(lab) || lab.contains(c)) continue;
+        const cr = rectOf(c);
+        const hOverlap = Math.min(lr.right, cr.right) - Math.max(lr.left, cr.left);
+        const gap = lr.top - cr.bottom;
+        if (hOverlap > 8 && gap >= -1 && gap < 12 && getComputedStyle(c).position !== 'fixed') add('tight-stack', lab, 'label only ' + Math.max(0, Math.round(gap)) + 'px below button "' + (c.innerText || '').trim().slice(0, 20) + '"', 'at y=' + Math.round(lr.top + scrollY) + ' button ' + (c.className || c.tagName));
+      }
+    }
+    // 10c. Half-width inputs on a phone: a field that could fill its column but stops short.
+    if (vw < 768) {
+      for (const inp of all.filter((el) => el.matches('input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=color]):not([type=submit]):not([type=button]),select,textarea'))) {
+        const par = inp.parentElement;
+        if (!par || inp.closest('.help-tip,[data-lint-ignore]')) continue;
+        const ps = getComputedStyle(par);
+        const pr = rectOf(par);
+        const avail = pr.width - parseFloat(ps.paddingLeft) - parseFloat(ps.paddingRight);
+        const ir = rectOf(inp);
+        if (avail < 240) continue;
+        // same-row siblings make a deliberate row (value + unit, from + to)
+        const sibs = [...par.children].filter((c) => c !== inp && vis(c) && Math.abs(rectOf(c).top - ir.top) < ir.height && c.getBoundingClientRect().left > ir.right - 1);
+        if (sibs.length || ps.display.includes('flex') && ps.flexDirection.startsWith('row') && par.children.length > 1) continue;
+        if (ir.width < avail * 0.9 && ir.width > 0) add('half-width-input', inp, Math.round(ir.width) + 'px of ' + Math.round(avail) + 'px');
+      }
+    }
+  }
+  // 10d. A fieldset legend straddling its border line.
+  for (const fs of document.body.querySelectorAll('fieldset')) {
+    const lg = [...fs.children].find((c) => c.tagName === 'LEGEND');
+    if (!lg || !vis(lg) || !vis(fs) || skipZone(fs)) continue;
+    const fr = rectOf(fs), lr = rectOf(lg), fcs = getComputedStyle(fs);
+    const bw = parseFloat(fcs.borderTopWidth) || 0;
+    if (bw > 0 && fcs.borderTopStyle !== 'none' && lr.top < fr.top + bw && lr.bottom > fr.top) add('legend-overlap', lg, 'legend sits on the border line of its fieldset');
+  }
+  // 10e. Two filled red/primary buttons side by side or stacked in one place: only one is the primary action.
+  const filled = (el) => { const c = getComputedStyle(el).backgroundColor.match(/\d+(\.\d+)?/g) || []; return c.length >= 3 && +(c[3] ?? 1) > 0.9 && +c[0] > 150 && +c[1] < 100 && +c[2] < 100; };
+  for (const parent of new Set(all.filter((el) => el.matches('button,a.ui-btn,.btn,.ui-btn') && filled(el)).map((el) => el.closest('.actions,form,div,section,li,p,td') || el.parentElement))) {
+    const reds = [...parent.querySelectorAll('button,a.ui-btn,.btn,.ui-btn')].filter((el) => vis(el) && filled(el) && getComputedStyle(el).position !== 'fixed');
+    if (reds.length >= 2) add('double-primary', reds[1], reds.length + ' red filled buttons together; one must be secondary');
+  }
+  // 10f. A stray one-sided vertical rule inside a card (a border-right on the last cell).
+  for (const el of all) {
+    if (el.matches('table,thead,tbody,tr,td,th,button,input,select,textarea,a')) continue;
+    const s = getComputedStyle(el);
+    const r = rectOf(el);
+    if (r.height < 20 || r.width < 20) continue;
+    const bR = parseFloat(s.borderRightWidth) > 0 && s.borderRightStyle !== 'none';
+    const bL = parseFloat(s.borderLeftWidth) > 0 && s.borderLeftStyle !== 'none';
+    const par = el.parentElement;
+    if (!par || !bR || bL || !narrow) continue;
+    const kids = [...par.children].filter(vis);
+    // a divider between two halves is fine; a rule on the last item, against the card edge, is stray
+    if (kids.length && kids[kids.length - 1] === el && rectOf(par).right - r.right < 40 && !el.matches('aside')) add('stray-rule', el, 'right border on the last item');
   }
 
   return out;

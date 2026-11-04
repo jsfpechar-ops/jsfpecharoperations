@@ -2305,3 +2305,49 @@ body.v2 .ui-choice-card-label .help-tip{position:relative;z-index:2}
 body.v2 .wiz-page .ui-choice-cards{display:flex;flex-direction:column;gap:12px;margin-bottom:12px}
 body.v2 .host-workspace .ui-empty .help-tip-btn,body.v2 .ui-empty h2 .help-tip-btn{background:transparent!important;box-shadow:none!important;border:0!important}
 body.v2 .wiz-page .ui-choice-card-extra{margin-top:12px}
+
+/* 0903: phone and tablet layout pass. Recurring mistakes, fixed once for every host page. */
+/* Tables that cannot fit become labelled cards below 1024 px (calendar feeds). */
+@media (max-width:1023px){
+  body.v2 .scroll-x:has(.feed-table){overflow:visible}
+  body.v2 .feed-table,body.v2 .feed-table tbody{display:block;width:100%}
+  body.v2 .feed-table thead{display:none}
+  body.v2 .feed-table tr{display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding:16px 0;border-bottom:1px solid var(--line)}
+  body.v2 .feed-table tr:last-child{border-bottom:0}
+  body.v2 .feed-table td{display:block;width:100%;min-width:0;padding:0;border:0;white-space:normal}
+  body.v2 .feed-table td::before{content:attr(data-label);display:block;margin-bottom:2px;color:var(--ink3);font-size:14px}
+  body.v2 .feed-table td[data-label=""]::before{display:none}
+  body.v2 .feed-table td.truncate{max-width:none;overflow-wrap:anywhere;white-space:normal;text-overflow:clip}
+  body.v2 .feed-table td.row-actions form{display:inline-flex}
+}
+/* A destructive action next to a main one is a quiet outlined button, never a second red slab. */
+body.v2 .ui-btn-danger{background:#fff;color:var(--acc-text);border:1.5px solid var(--acc-text)}
+/* Buttons that stack keep 12 px between them. */
+body.v2 :is(.action-group,.guest-link-actions,.setup-wizard-actions){display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+body.v2 .guest-link-actions{flex-direction:column;align-items:flex-start;margin:12px 0 16px}
+body.v2 .guest-link-action{display:inline-flex;align-items:center;gap:8px}
+body.v2 .actions,body.v2 .ui-form-actions{gap:12px}
+/* A legend sits inside its box, above the fields, never on the border line. */
+body.v2 fieldset>legend{float:left;width:100%;padding:0;margin:0 0 12px;box-sizing:border-box}
+body.v2 fieldset>legend+*{clear:both}
+/* The facts card draws a rule between the two halves only. */
+body.v2 .host-stay-detail .stay-dates .tot{border-right:0}
+/* Fields fill their column on a phone. */
+@media (max-width:767px){
+  body.v2 .field>:is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file]):not([type=range]),select,textarea){width:100%;max-width:none;box-sizing:border-box}
+}
+body.v2 .prop-sec :is(.actions,.action-group){margin-bottom:16px}
+body.v2 .police-section-head{margin-bottom:16px}
+body.v2 .wiz-page :is(.setup-wizard-foot,.setup-wizard-actions){gap:12px}
+@media (max-width:767px){body.v2 .wiz-page .setup-wizard-foot{gap:12px}}
+body.v2 .wiz-page .police-section-head{margin-bottom:16px}
+body.v2 .stays-desk td.nowrap,body.v2 .feed-table td.nowrap{white-space:nowrap}
+body.v2 .fields-wrap :is(.actions,.action-group){margin-bottom:16px}
+@media (min-width:1024px){
+  body.v2 .feed-table td.truncate{max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
+@media (min-width:1024px) and (max-width:1180px){body.v2 .invoices-page .stays-desk th,body.v2 .invoices-page .stays-desk td{padding-left:6px;padding-right:6px}}
+body.v2 .calendar-add-form .actions{margin-bottom:16px}
+@media (min-width:1024px){body.v2 .feed-table td.truncate{max-width:170px}}
+body.v2 .property-feeds{margin-bottom:24px}
+body.v2 .fields-wrap .hint{margin-bottom:12px}

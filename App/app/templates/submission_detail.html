@@ -71,7 +71,7 @@
 
   {% if submission.error_text %}
     <div class="ui-banner ui-banner-attention">
-      <div class="grow"><strong>{{ t('reports.detail.transport_error') }}</strong><small>{{ submission.error_text }}</small></div>
+      <div class="grow"><strong>{{ t('reports.detail.transport_error') }}</strong> <small>{{ submission.error_text }}</small></div>
     </div>
   {% endif %}
 
@@ -155,8 +155,7 @@
 </section>
 
 <details class="panel technical">
-  <summary>{{ t('reports.detail.technical') }}</summary>
-  {{ help_tip('report-technical-help', t('reports.detail.technical_help')) }}
+  <summary><span>{{ t('reports.detail.technical') }} {{ help_tip('report-technical-help', t('reports.detail.technical_help')) }}</span></summary>
   <dl class="kv">
     <dt>{{ t('reports.detail.endpoint') }}</dt>
     <dd class="ui-mono">{{ submission.endpoint or '—' }}</dd>
