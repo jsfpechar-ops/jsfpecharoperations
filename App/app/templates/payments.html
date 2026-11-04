@@ -1,22 +1,67 @@
 {% extends "host_page.html" %}
+{% set v2 = true %}
 {% set nav = 'payments' %}
 {% set how_key = 'payments' %}
 {% set body_kind = 'list' %}
-{% from "_components.html" import empty_state, row_menu_begin, row_menu_end with context %}
-{% from "_ui.html" import ui_button, ui_tip with context %}
-{% from "_ui_layout.html" import ui_table_begin, ui_table_end with context %}
+{% from "_components.html" import empty_state, row_menu_begin, row_menu_end, help_tip with context %}
+{% from "_ui.html" import ui_button with context %}
+{% from "_icons.html" import icon with context %}
+{% macro svc_actions(s) -%}
+    <form method="get" action="/payments/new" class="row-action-form">
+      <input type="hidden" name="service" value="{{ s.id }}">
+      <button class="btn ghost sm" type="submit">{{ t('payments.services.request_short') }}</button>
+    </form>
+    {{ row_menu_begin() }}
+      <form method="post" action="/payments/services/{{ s.id }}/delete" class="row-menu-form" data-confirm data-confirm-message="{{ t('payments.services.remove_confirm') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <button class="row-menu-item" type="submit" role="menuitem">{{ t('payments.services.remove') }}</button>
+      </form>
+    {{ row_menu_end() }}
+{%- endmacro %}
+{% macro req_actions(req) -%}
+      {% set can_link = req.rail == 'card' and req.status in ['draft', 'sent', 'awaiting_payment'] %}
+      {% set can_send = req.status == 'draft' and req.guest_email %}
+      {% set has_qr = req.status == 'draft' and req.rail == 'qr' %}
+      {% if can_link %}
+      <form method="post" action="/payments/requests/{{ req.id }}/link" class="row-action-form">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <button class="btn ghost sm" type="submit">{{ t('payments.get_link') }}</button>
+      </form>
+      {% elif can_send %}
+      <form method="post" action="/payments/requests/{{ req.id }}/send" class="row-action-form">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <button class="btn ghost sm" type="submit">{{ t('payments.send') }}</button>
+      </form>
+      {% endif %}
+      {% if (can_send and can_link) or has_qr %}
+      {{ row_menu_begin() }}
+        {% if can_send and can_link %}
+        <form method="post" action="/payments/requests/{{ req.id }}/send" class="row-menu-form">
+          <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+          <button class="row-menu-item" type="submit" role="menuitem">{{ t('payments.send') }}</button>
+        </form>
+        {% endif %}
+        {% if has_qr %}<a class="row-menu-item" href="/payments/qr/{{ req.id }}" role="menuitem">{{ t('payments.qr.preview') }}</a>{% endif %}
+      {{ row_menu_end() }}
+      {% endif %}
+{%- endmacro %}
 {% block title %}{{ t('payments.title') }}{% endblock %}
-{% block primary_action %}{% if not stripe_off %}{{ ui_button(t('payments.overview.request'), 'primary', href='/payments/new') }}{% endif %}{% endblock %}
+{% block page_title %}{% endblock %}{% block meta %}{% endblock %}{% block primary_action %}{% endblock %}{% block secondary_actions %}{% endblock %}
 {% block tabs %}{% endblock %}
 {% block toolbar %}{% endblock %}
 {% block body %}
+<div class="payments-page">
+<div class="head stays-head"><div class="head-title-row"><h1 class="big">{{ t('payments.title') }}</h1>
+  <details class="ui-how stays-how" data-how="payments">
+    <summary class="ui-how-toggle" aria-label="{{ t('how.toggle') }}">{{ icon('circle-help', 16) }}</summary>
+    <div class="ui-how-body"><ol class="ui-how-steps">{% for n in (1, 2, 3) %}<li>{{ t('how.payments.' ~ n) }}</li>{% endfor %}</ol></div>
+  </details></div>{% if not stripe_off %}<div class="stays-head-actions"><a class="btn" href="/payments/new">{{ t('payments.overview.request') }}</a></div><a class="round stays-add ph-only" href="/payments/new" aria-label="{{ t('payments.overview.request') }}">{{ icon('plus', 22) }}</a>{% endif %}</div>
 {% if not stripe_off and connect_state.onboarding_state == 'complete' %}
-<div class="ui-section">
-  <p><span class="ui-badge ui-badge-done" data-tone="green">{{ t('payments.overview.on') }}</span> <span class="ui-sub">{{ t('payments.overview.on_sub') }}</span>
-    {{ ui_tip('tip-pay-complete', t('payments.help.stripe_role')) }}</p>
-</div>
+<section class="card payments-box">
+  <p><span class="pill p-ok">{{ t('payments.overview.on') }}</span>{{ help_tip('pay-help-on', t('payments.overview.on_sub') ~ ' ' ~ t('payments.help.stripe_role')) }}</p>
+</section>
 {% else %}
-<div class="ui-section">
+<section class="card payments-box">
   <h2>{{ t('payments.connect.title') }}</h2>
   {% if stripe_off %}
   <p>{{ t('payments.connect.off') }}</p>
@@ -25,29 +70,21 @@
   <p>{{ t('payments.connect.support') }}</p>
   {% else %}
   <p>{{ t('payments.connect.' ~ connect_state.onboarding_state) }}</p>
-  <p>{{ t('payments.setup.lead') }}</p>
-  <ul class="setup-wizard-checklist host-property-grid" data-payments-setup>
+  <ul class="setup-wizard-checklist" data-payments-setup>
     {% for step in setup.steps %}
     <li class="is-{{ step.status }}" data-payments-step="{{ step.key }}">
       <div class="host-property-card host-property-card-static setup-summary-card">
         <span class="setup-summary-icon" aria-hidden="true">{{ loop.index }}</span>
         <div class="setup-summary-copy">
-          <strong>{{ t('payments.setup.step.' ~ step.key) }}</strong>
-          <span class="ui-badge ui-badge-{{ 'done' if step.status == 'done' else 'attention' if step.status == 'attention' else 'neutral' }}" data-tone="{{ 'green' if step.status == 'done' else 'amber' if step.status == 'attention' else 'grey' }}">
-            {% if step.status == 'done' %}<span aria-hidden="true">✓</span>{% endif %}
-            {{ t('payments.setup.badge.' ~ step.status) }}
-          </span>
+          <span><strong>{{ t('payments.setup.step.' ~ step.key) }}</strong>{% if step.key in ['stripe', 'live'] %}{{ help_tip('pay-help-' ~ step.key, t('payments.setup.' ~ step.key ~ '_help')) }}{% endif %}</span>
+          <span class="pill {{ 'p-ok' if step.status == 'done' else 'p-warn' if step.status == 'attention' else 'p-n' }}">{{ t('payments.setup.badge.' ~ step.status) }}</span>
           {% if step.key == 'details' %}
             {% if setup.entity %}
-            <span class="ui-sub">{{ setup.entity.name }}{% if setup.entity.contact_email %} · {{ setup.entity.contact_email }}{% endif %}</span>
+            <span>{{ setup.entity.name }}{% if setup.entity.contact_email %} · {{ setup.entity.contact_email }}{% endif %}</span>
             {{ ui_button(t('payments.setup.details_edit'), 'secondary', href=step.href, size='compact') }}
             {% else %}
-            <span class="ui-sub">{{ t('payments.setup.details_missing') }}</span>
+            <span>{{ t('payments.setup.details_missing') }}</span>
             {% endif %}
-          {% elif step.key == 'stripe' %}
-            <span class="ui-sub">{{ t('payments.setup.stripe_help') }}</span>
-          {% elif step.key == 'live' %}
-            <span class="ui-sub">{{ t('payments.setup.live_help') }}</span>
           {% endif %}
         </div>
       </div>
@@ -67,91 +104,52 @@
                href='/payments/connect/start', attrs='target="_blank" rel="noopener"') }}
   {% endif %}
   {% endif %}
-</div>
+</section>
 {% endif %}
 {% if not stripe_off and connect_state.onboarding_state not in ['rejected', 'disabled'] %}
-<div class="ui-section" data-payment-services>
-  <h2>{{ t('payments.overview.services') }}</h2>
+<section data-payment-services>
+  <h2>{{ t('payments.overview.services') }}{{ help_tip('pay-help-services', t('payments.services.empty')) }}</h2>
   {% if services %}
-  {{ ui_table_begin([(t('payments.services.name'), ''), (t('payments.field.amount'), 'r'), (t('common.actions'), '')], label=t('payments.services.title')) }}
+  <div class="stays-phone">
   {% for s in services %}
-  <tr class="ui-row" data-service="{{ s.id }}">
-    <td class="ui-cell-first" data-card="primary"><strong>{{ s.name }}</strong></td>
-    <td class="ui-cell-r" data-card="secondary">{{ s.amount_czk }} {{ t('payments.czk') }}</td>
-    <td class="row-actions" data-card="actions" data-label="">
-    <form method="get" action="/payments/new" class="row-action-form">
-      <input type="hidden" name="service" value="{{ s.id }}">
-      <button class="ui-btn ui-btn-secondary" type="submit">{{ t('payments.services.request_short') }}</button>
-    </form>
-    {{ row_menu_begin() }}
-      <form method="post" action="/payments/services/{{ s.id }}/delete" class="row-menu-form" data-confirm data-confirm-message="{{ t('payments.services.remove_confirm') }}">
-        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-        <button class="row-menu-item" type="submit" role="menuitem">{{ t('payments.services.remove') }}</button>
-      </form>
-    {{ row_menu_end() }}
-    </td>
-  </tr>
+  <div class="card stay"><span class="in"><b>{{ s.name }}</b><small>{{ s.amount_czk }} {{ t('payments.czk') }}</small></span>{{ svc_actions(s) }}</div>
   {% endfor %}
-  {{ ui_table_end() }}
-  {% else %}
-  <p class="ui-sub">{{ t('payments.services.empty') }}</p>
+  </div>
+  <div class="card stays-desk"><table aria-label="{{ t('payments.services.title') }}">
+  <thead><tr><th>{{ t('payments.services.name') }}</th><th>{{ t('payments.field.amount') }}</th><th>{{ t('common.actions') }}</th></tr></thead>
+  <tbody>
+  {% for s in services %}
+  <tr data-service="{{ s.id }}"><td><strong>{{ s.name }}</strong></td><td>{{ s.amount_czk }} {{ t('payments.czk') }}</td><td class="row-actions">{{ svc_actions(s) }}</td></tr>
+  {% endfor %}
+  </tbody></table></div>
   {% endif %}
-  <h3>{{ t('payments.overview.add_service') }}</h3>
-  <form method="post" action="/payments/services" class="ui-form">
-    <label class="ui-field">
-      <span>{{ t('payments.services.name') }}</span>
-      <input class="ui-input" type="text" name="name" maxlength="60" required>
-    </label>
-    <label class="ui-field">
-      <span>{{ t('payments.field.amount') }}</span>
-      <input class="ui-input" type="number" name="amount_czk" min="1" step="1" required>
-    </label>
-    {{ ui_button(t('payments.services.add'), 'secondary', type='submit') }}
-  </form>
-</div>
-<div class="ui-section">
-  <h2>{{ t('payments.overview.requests') }} {{ ui_tip('tip-pay-list', t('payments.help.payout')) }}</h2>
+</section>
+<section class="card payments-box"><h2>{{ t('payments.overview.add_service') }}</h2><form method="post" action="/payments/services">
+  <div class="ui-pair">
+    <div class="ui-field"><label for="pay-svc-name">{{ t('payments.services.name') }}</label><input id="pay-svc-name" type="text" name="name" maxlength="60" required></div>
+    <div class="ui-field"><label for="pay-svc-amount">{{ t('payments.field.amount') }}</label><input id="pay-svc-amount" type="number" name="amount_czk" min="1" step="1" required></div>
+  </div>
+  <div class="ui-form-actions">{{ ui_button(t('payments.services.add'), 'secondary', type='submit') }}</div>
+</form></section>
+<section>
+  <h2>{{ t('payments.overview.requests') }}{{ help_tip('pay-help-list', t('payments.help.payout')) }}</h2>
   {% if requests %}
-  {{ ui_table_begin([(t('payments.col.reason'), ''), (t('payments.col.date'), ''), (t('payments.col.amount'), 'r'), (t('filter.status'), ''), (t('common.actions'), '')], label=t('payments.list.title')) }}
+  <div class="stays-phone">
   {% for req in requests %}
-  <tr class="ui-row">
-    <td class="ui-cell-first" data-card="primary">{% if req.reason == 'custom' and req.guest_note %}{{ req.guest_note }}{% else %}{{ t('payments.reason.' ~ req.reason) }}{% endif %}</td>
-    <td class="ui-sub" data-card="secondary">{{ req.created_at | date_cz }}</td>
-    <td class="ui-cell-r" data-card="meta">{{ req.amount_czk }} {{ t('payments.czk') }}</td>
-    <td data-card="badge"><span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('payments.status.' ~ req.status) }}</span></td>
-    <td class="row-actions" data-card="actions" data-label="">
-      {% set can_link = req.rail == 'card' and req.status in ['draft', 'sent', 'awaiting_payment'] %}
-      {% set can_send = req.status == 'draft' and req.guest_email %}
-      {% set has_qr = req.status == 'draft' and req.rail == 'qr' %}
-      {% if can_link %}
-      <form method="post" action="/payments/requests/{{ req.id }}/link" class="row-action-form">
-        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-        <button class="ui-btn ui-btn-secondary" type="submit">{{ t('payments.get_link') }}</button>
-      </form>
-      {% elif can_send %}
-      <form method="post" action="/payments/requests/{{ req.id }}/send" class="row-action-form">
-        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-        <button class="ui-btn ui-btn-secondary" type="submit">{{ t('payments.send') }}</button>
-      </form>
-      {% endif %}
-      {% if (can_send and can_link) or has_qr %}
-      {{ row_menu_begin() }}
-        {% if can_send and can_link %}
-        <form method="post" action="/payments/requests/{{ req.id }}/send" class="row-menu-form">
-          <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-          <button class="row-menu-item" type="submit" role="menuitem">{{ t('payments.send') }}</button>
-        </form>
-        {% endif %}
-        {% if has_qr %}<a class="row-menu-item" href="/payments/qr/{{ req.id }}" role="menuitem">{{ t('payments.qr.preview') }}</a>{% endif %}
-      {{ row_menu_end() }}
-      {% endif %}
-    </td>
-  </tr>
+  <div class="card stay"><span class="in"><b>{% if req.reason == 'custom' and req.guest_note %}{{ req.guest_note }}{% else %}{{ t('payments.reason.' ~ req.reason) }}{% endif %}</b><small>{{ req.created_at | date_cz }} &middot; {{ req.amount_czk }} {{ t('payments.czk') }}</small><span class="pill p-n">{{ t('payments.status.' ~ req.status) }}</span></span>{{ req_actions(req) }}</div>
   {% endfor %}
-  {{ ui_table_end() }}
+  </div>
+  <div class="card stays-desk"><table aria-label="{{ t('payments.list.title') }}">
+  <thead><tr><th>{{ t('payments.col.reason') }}</th><th>{{ t('payments.col.date') }}</th><th>{{ t('payments.col.amount') }}</th><th>{{ t('filter.status') }}</th><th>{{ t('common.actions') }}</th></tr></thead>
+  <tbody>
+  {% for req in requests %}
+  <tr><td><strong>{% if req.reason == 'custom' and req.guest_note %}{{ req.guest_note }}{% else %}{{ t('payments.reason.' ~ req.reason) }}{% endif %}</strong></td><td>{{ req.created_at | date_cz }}</td><td>{{ req.amount_czk }} {{ t('payments.czk') }}</td><td><span class="pill p-n">{{ t('payments.status.' ~ req.status) }}</span></td><td class="row-actions">{{ req_actions(req) }}</td></tr>
+  {% endfor %}
+  </tbody></table></div>
   {% else %}
-  {{ empty_state(t('payments.list.empty_title'), t('payments.list.empty'), '', '', primary=false) }}
+  {{ empty_state(t('payments.list.empty_title')) }}
   {% endif %}
-</div>
+</section>
 {% endif %}
+</div>
 {% endblock %}

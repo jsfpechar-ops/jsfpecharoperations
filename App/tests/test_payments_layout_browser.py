@@ -3,7 +3,7 @@
 Browser checks (Chromium, 0 skipped with UBYHOST_REQUIRE_BROWSER=1):
 no horizontal scroll, no element outside the viewport, 44 px targets at
 390 px and below, at most one primary button per group. Screenshots at 390 px
-go to docs/tasks/screenshots-0908/.
+go to docs/tasks/screenshots-0945/.
 """
 from __future__ import annotations
 
@@ -24,10 +24,10 @@ from tests.browser_support import chromium_launch_kwargs
 from tests.conftest import login_as
 from test_payments_dashboard import _set_state
 
-SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0908"
+SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0945"
 REQUIRE_BROWSER = os.environ.get("UBYHOST_REQUIRE_BROWSER") == "1"
-WIDTHS = (320, 390, 768, 1024, 1280, 1440)
-PAGES = (("/payments", "payments"), ("/payments/new", "payments-new"))
+WIDTHS = (320, 390, 768, 1024, 1280, 1440, 1920)
+PAGES = (("/payments", "payments"), ("/payments/new", "payments-new"), ("/payments/consent", "payments-consent"))
 
 OVERFLOW_JS = "document.documentElement.scrollWidth - document.documentElement.clientWidth"
 OUTSIDE_JS = """() => {
@@ -142,8 +142,8 @@ def test_payments_pages_fit_every_width(state, monkeypatch):
                         problems.append(f"{where}: more than one primary button in the body")
                     if page.evaluate(HEADER_PRIMARY_JS) > 1:
                         problems.append(f"{where}: more than one primary button in the header")
-                    if width == 390:
-                        page.screenshot(path=str(SHOTS / f"{slug}-{state}-390.png"), full_page=True)
+                    if width in (390, 768, 1280):
+                        page.screenshot(path=str(SHOTS / f"{slug}-{state}-{width}.png"), full_page=True)
             browser.close()
     finally:
         server.should_exit = True

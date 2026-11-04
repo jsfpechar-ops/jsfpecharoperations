@@ -1,42 +1,38 @@
 {% extends "host_page.html" %}
+{% set v2 = true %}
 {% set nav = 'payments' %}
 {% set how_key = 'payments' %}
 {% set body_kind = 'form' %}
 {% from "_ui.html" import ui_button, ui_tip with context %}
 {% block title %}{{ t('payments.new.title') }}{% endblock %}
-{% block back_url %}/payments{% endblock %}
-{% block back_label %}{{ t('payments.title') }}{% endblock %}
+{% block page_title %}{% endblock %}
+{% block meta %}{% endblock %}
 {% block primary_action %}{% endblock %}
+{% block secondary_actions %}{% endblock %}
 {% block tabs %}{% endblock %}
 {% block toolbar %}{% endblock %}
 {% block body %}
-<div class="ui-section" id="new-request">
+{% with href='/payments', title=t('payments.new.title') %}{% include "partials/settings_back_header.html" %}{% endwith %}
+<div class="payments-page">
+<div class="card payments-box" id="new-request">
   <form method="post" action="/payments/requests/new" class="ui-form">
-    <label class="ui-field">
-      <span>{{ t('payments.field.amount') }}</span>
-      <input class="ui-input" type="number" name="amount_czk" min="1" step="1" required{% if prefill %} value="{{ prefill.amount_czk }}"{% endif %}>
-    </label>
+    <div class="ui-field"><label for="pay-new-amount_czk">{{ t('payments.field.amount') }}</label>
+      <input id="pay-new-amount_czk" type="number" name="amount_czk" min="1" step="1" required{% if prefill %} value="{{ prefill.amount_czk }}"{% endif %}></div>
     <fieldset class="ui-field">
       <legend>{{ t('payments.new.reason') }}</legend>
       <div class="ui-chips">
         {% for r in reasons %}<label class="ui-chip"><input type="radio" name="reason" value="{{ r }}" {% if loop.first %}required{% endif %}{% if prefill and r == 'custom' %} checked{% endif %}> {{ t('payments.reason.' ~ r) }}</label>{% endfor %}
       </div>
     </fieldset>
-    <label class="ui-field">
-      <span>{{ t('payments.new.note') }}</span>
-      <input class="ui-input" type="text" name="guest_note" maxlength="60"{% if prefill %} value="{{ prefill.name }}"{% endif %}>
-    </label>
-    <label class="ui-field">
-      <span>{{ t('payments.field.stay') }}</span>
-      <select name="reservation_id" class="ui-input">
+    <div class="ui-field"><label for="pay-new-guest_note">{{ t('payments.new.note') }}</label>
+      <input id="pay-new-guest_note" type="text" name="guest_note" maxlength="60"{% if prefill %} value="{{ prefill.name }}"{% endif %}></div>
+    <div class="ui-field"><label for="pay-new-reservation_id">{{ t('payments.field.stay') }}</label>
+      <select id="pay-new-reservation_id" name="reservation_id">
         <option value="">{{ t('payments.field.no_stay') }}</option>
         {% for s in stays %}<option value="{{ s.id }}"{% if selected_reservation_id == s.id %} selected{% endif %}>{{ s.label }}</option>{% endfor %}
-      </select>
-    </label>
-    <label class="ui-field">
-      <span>{{ t('payments.field.guest_email') }}</span>
-      <input class="ui-input" type="email" name="guest_email">
-    </label>
+      </select></div>
+    <div class="ui-field"><label for="pay-new-guest_email">{{ t('payments.field.guest_email') }}</label>
+      <input id="pay-new-guest_email" type="email" name="guest_email"></div>
     <fieldset class="ui-field">
       <legend>{{ t('payments.field.rail') }}</legend>
       <div class="ui-chips">
@@ -44,7 +40,8 @@
         <label class="ui-chip"><input type="radio" name="rail" value="qr"> {{ t('payments.new.rail_qr') }}</label>
       </div>
     </fieldset>
-    {{ ui_button(t('payments.new.submit'), 'primary', type='submit') }}
+    <div class="ui-form-actions">{{ ui_button(t('payments.new.submit'), 'primary', type='submit') }}</div>
   </form>
+</div>
 </div>
 {% endblock %}
