@@ -41,6 +41,8 @@
            value="{{ (entity.name if entity else '') }}"
            placeholder="{{ t('entities.name_placeholder') }}">
   </div>
+  <h3 class="property-section-title">{{ t('entities.seat_title') }}</h3>
+  <p class="hint">{{ t('entities.seat_line') }}</p>
   <div class="field">
     <label for="{{ prefix }}seat">{{ t('entities.seat') }}</label>
     <input type="text" id="{{ prefix }}seat" name="seat" required

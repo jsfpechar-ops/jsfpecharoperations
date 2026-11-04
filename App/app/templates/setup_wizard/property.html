@@ -41,6 +41,7 @@
   {% include "_property_operator.html" %}
   {% if entities %}<div class="setup-wizard-instruction property-operator-hint"><a href="/entities{{ '?edit=' ~ apartment.legal_entity_id if apartment.legal_entity_id else '' }}">{{ t('host.business') }} </a> {{ help_tip('legal_entity_id-help', t('apartment.form.entity.hint')) }}</div>{% endif %}
   <h3 class="property-section-title">{{ t('apartment.form.address.title') }}</h3>
+  <p class="hint">{{ t('apartment.form.address.line') }}</p>
   
   {% include "_property_address_fields.html" %}
 </form>
