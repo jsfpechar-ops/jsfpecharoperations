@@ -15,7 +15,7 @@ from app import auth, db
 from tests.browser_support import chromium_launch_kwargs
 from tests.test_host_geometry import _browser_session_cookie, base  # noqa: F401
 
-PAGES = ("/payments",)  # "/", "/reservations", "/settings", "/invoices", "/onboarding" are the v2 shell: see test_0709/test_0710/test_0792/test_0800
+PAGES = ("/apartments/{apartment_id}/booking-site",)  # old-shell page (host_page.html, no v2) # "/", "/reservations", "/settings", "/invoices", "/onboarding" are the v2 shell: see test_0709/test_0710/test_0792/test_0800
 HAS_PRIMARY = ()  # migrated page headers with a primary action; the rest are checked when present
 PRIMARY_BG = "rgb(173, 73, 66)"  # --accent = --coral-600 #ad4942
 SECONDARY_BORDER = "rgb(201, 201, 194)"  # --line-strong = --sand-400 #c9c9c2
@@ -41,15 +41,15 @@ def _account():
     username = f"lane{secrets.token_hex(3)}"
     owner = auth.create_account(f"{username}@example.test", "Lane", role="host", username=username)
     entity = db.insert("legal_entity", {"name": "Lane s.r.o.", "owner_user_id": owner, "created_at": db.utcnow()})
-    db.insert("apartment", {"internal_name": "Lane flat", "owner_user_id": owner, "legal_entity_id": entity,
+    apartment_id = db.insert("apartment", {"internal_name": "Lane flat", "owner_user_id": owner, "legal_entity_id": entity,
                             "permalink_token": f"ln{secrets.token_hex(4)}", "active": 1, "created_at": db.utcnow()})
-    return username
+    return username, apartment_id
 
 
 @pytest.mark.parametrize("width", [1280, 2000])
 @pytest.mark.parametrize("collapsed", [False, True])
 def test_main_starts_right_of_the_rail_and_header_buttons_keep_v2_styles(base, width, collapsed):
-    username = _account()
+    username, apartment_id = _account()
     cookie = _browser_session_cookie(username)
     with sync_api.sync_playwright() as playwright:
         try:
@@ -65,7 +65,7 @@ def test_main_starts_right_of_the_rail_and_header_buttons_keep_v2_styles(base, w
         page = context.new_page()
         rail_w = 64 if collapsed else 240
         for path in PAGES:
-            page.goto(base + path + "?lang=en")
+            page.goto(base + path.format(apartment_id=apartment_id) + "?lang=en")
             page.wait_for_selector("#main-content", timeout=30000)
             assert page.evaluate("document.body.classList.contains('sidebar-collapsed')") is collapsed, path
             page.wait_for_function(  # app.css animates margin-left for 0.26 s

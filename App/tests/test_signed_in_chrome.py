@@ -58,6 +58,12 @@ def empty_host():
         _cleanup()
 
 
+def old_shell_path() -> str:
+    """An old-shell page (host_page.html without v2): the booking-site setup of the fixture property."""
+    row = db.query_one("SELECT id FROM apartment WHERE internal_name = ?", ("Chrome Flat",))
+    return f"/apartments/{row['id']}/booking-site?lang=en"
+
+
 @pytest.fixture
 def host_with_property():
     """A host with one property, so Overview is not the zero state."""
@@ -130,7 +136,7 @@ def test_the_support_line_names_the_configured_operator_address(host_with_proper
 
 
 def test_the_support_line_is_not_part_of_the_legal_link_row(host_with_property):
-    footer = _sidebar(host_with_property.get("/payments?lang=en").text)  # old-shell rail; v2 pages use .side
+    footer = _sidebar(host_with_property.get(old_shell_path()).text)  # old-shell rail; v2 pages use .side
     # Support lives in the account disclosure, keeping the default rail short.
     account = re.search(r'<details class="host-account".*?</details>', footer, re.S).group(0)
     assert 'mailto:' in account
