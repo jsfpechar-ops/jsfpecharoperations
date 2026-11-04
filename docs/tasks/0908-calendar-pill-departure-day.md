@@ -41,6 +41,10 @@ Keep the CSS `column-gap` on the 14-column grid as it is. Because the gap sits b
 
 `dashboard-calendar.css` and `dashboard-calendar.js` changed, so `tests/test_static_versions.py` requires a new `?v=` key for each in every template that loads them, then the manifest rewritten: bump the keys (for example `20261104-0908a`), then from `App/` run `.venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -30`. Run `tests/test_static_versions.py` and the three calendar files again, all passed, 0 skipped.
 
+## 4d. Tap target of a Sunday arrival (found by CI browser shard 4, 2026-11-04)
+
+`test_cleaning_browser.py` (layout lint, cleaning page at 768 px) fails with `tap target 41x44 (min 44): <a class="cal-pill continues-end">`: a stay that arrives on a Sunday and runs into the next week is now half a cell wide (41 px). Fix in `dashboard-calendar.css`, in the 768 px and up pill rule only (line ~798, where the pill is 32 px high): `min-width:44px`, and for `.cal-pill.continues-end` add `justify-self:end` so a narrow bar grows to the left and stays inside the week row. Do not change the phone rule (thin 8 px cleaning bars are not tap targets). Then run `test_cleaning_browser.py`, `test_dashboard_calendar_browser.py`, `test_0905_cleaning_calendar_stays_browser.py` and `test_static_versions.py`; if the CSS file changed, bump its `?v=` key again (`20261104-0908b`, `_dashboard_calendar.html` line 2) and rerun `tests/test_static_versions.py --write`. Add to the new 0908 test (or a second one) a Sunday-arrival stay at 768 px that asserts the bar is at least 44 px wide and its right edge is inside the row.
+
 ## 5. Do not touch
 
 `app2.css` cleaning bars, the dashboard phone tile dots, the list view, the Gantt view, any other test file (except changing one pinned edge number, said in the report).
