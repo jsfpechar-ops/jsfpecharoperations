@@ -37,12 +37,6 @@
 .link-window-line { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-1); margin: var(--space-1) 0 0; }
 .link-window-note { margin: var(--space-2) 0 0; }
 
-.paste-check { display: grid; gap: var(--space-2); margin: 0 0 var(--space-4); padding: var(--space-4); border: 1px solid var(--border-strong); border-left: 4px solid var(--amber); border-radius: var(--radius-md); background: var(--surface); }
-.paste-check h2 { margin: 0; font-size: var(--text-md); }
-.paste-check p { margin: 0; }
-.paste-check summary { display: inline-flex; align-items: center; min-height: 44px; cursor: pointer; font-weight: 600; }
-.paste-check ul { display: grid; gap: var(--space-1); margin: 0 0 var(--space-2); padding-left: var(--space-5); }
-.paste-check-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
 .lock-choice { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-3); margin: var(--space-3) 0; }
 .lock-choice-form { margin: 0; }
@@ -60,8 +54,7 @@
 }
 
 .journey > summary:focus-visible,
-.lock-choice-option:focus-visible,
-.paste-check summary:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.lock-choice-option:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
 
 /* 0240 (idea N): "What needs you". One bordered card, one bordered line per
    thing, a coloured left edge for how urgent it is (the words say it too). */
@@ -80,9 +73,6 @@
 .needs-you-more { margin-top: var(--space-2); }
 .needs-you-more > summary { display: inline-flex; align-items: center; min-height: 44px; cursor: pointer; font-weight: 600; }
 .needs-you-more > .needs-you-list, .needs-you-how { margin-top: var(--space-2); }
-/* 0246: the paste how-to sits in its line, under the sentence, full width. */
-.needs-you-item > .needs-you-more { grid-column: 1 / -1; grid-row: 2; margin-top: 0; }
-.needs-you-how { display: grid; gap: var(--space-1); margin-bottom: 0; padding-left: var(--space-5); }
 .needs-you-calm { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); margin: 0; color: var(--ink); }
 .needs-you-calm svg { color: var(--green-700); }
 .needs-you-calm span { color: var(--ink-secondary); }
