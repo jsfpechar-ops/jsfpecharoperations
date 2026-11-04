@@ -51,7 +51,7 @@
   </div>
   <div class="grid">
     <div class="field">
-      <div class="field-label-row"><label for="{{ prefix }}contact_email">{{ t('entities.email') }}</label>{{ help_tip(prefix ~ 'contact-email-help', t('entities.email_hint')) }}</div>
+      <label for="{{ prefix }}contact_email">{{ t('entities.email') }}</label>
       <input type="email" id="{{ prefix }}contact_email" name="contact_email" required
              value="{{ (entity.contact_email or '') if entity else '' }}">
     </div>

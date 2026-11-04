@@ -2083,7 +2083,6 @@ STRINGS: Dict[str, str] = {
     "entities.ico": "Mã số doanh nghiệp (IČO)",
     "entities.dic": "Mã số thuế (DIČ)",
     "entities.email": "Email liên hệ cho các yêu cầu về dữ liệu",
-    "entities.email_hint": "Hiển thị cho khách làm thông tin liên hệ của bạn.",
     "entities.phone": "Điện thoại",
     "entities.bank.label": "Tài khoản ngân hàng nhận thanh toán của khách",
     "entities.bank.hint": "Định dạng Séc (tiền tố-số/mã ngân hàng) hoặc IBAN.",
