@@ -243,7 +243,7 @@
     {% set ok = guest.submit_state in ('sent', 'not_required') or (row.complete and guest.submit_state not in ('error', 'blocked')) %}
     <a class="row" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">
       <div class="ic {{ 'ok' if ok else 'warn' }}">{% if ok %}{{ icon('check', 22) }}{% else %}?{% endif %}</div>
-      <div class="t"><b>{{ guest.surname or '—' }} {{ guest.first_name or '' }}</b><small>{% if guest.doc_type %}{{ t('guest.doc_type.' ~ guest.doc_type) }} · {% endif %}{{ guest_state_text(guest, row) }}</small></div>
+      <div class="t"><b>{{ guest.first_name or '' }} {{ guest.surname or '—' }}</b><small>{% if guest.doc_type %}{{ t('guest.doc_type.' ~ guest.doc_type) }} · {% endif %}{{ guest_state_text(guest, row) }}</small></div>
     </a>
   {% endfor %}
   {% for n in range(progress.guests | length + 1, (progress.expected or 0) + 1) %}

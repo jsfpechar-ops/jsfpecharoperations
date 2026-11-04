@@ -338,5 +338,21 @@
     if (kids.length && kids[kids.length - 1] === el && rectOf(par).right - r.right < 40 && !el.matches('aside')) add('stray-rule', el, 'right border on the last item');
   }
 
+  // 10g. Stay detail (0912): the action buttons and the menu trigger share one row; one that sits alone
+  // on a line under the primary action row is an orphan.
+  for (const row of document.querySelectorAll('.stay-head-actions')) {
+    if (!vis(row)) continue;
+    const acts = [...row.querySelectorAll('button,a.btn,.row-menu > summary,details > summary')].filter((el) => vis(el) && !skipZone(el) && getComputedStyle(el).position !== 'fixed');
+    if (acts.length < 2) continue;
+    const tops = acts.map((el) => rectOf(el).top);
+    const first = Math.min(...tops);
+    for (const el of acts) {
+      const top = rectOf(el).top;
+      if (top - first <= 4) continue;
+      const sharesLine = acts.some((other) => other !== el && Math.abs(rectOf(other).top - top) <= 4);
+      if (!sharesLine) add('action-row-orphan', el, 'sits alone on its own line below the action row');
+    }
+  }
+
   return out;
 })()
