@@ -28,7 +28,7 @@ Create: `App/app/templates/payments_new.html`, `docs/tasks/0908-report.md`, `doc
 ## 4. Steps
 
 ### Run 1 (templates and routes)
-1. `cd App && grep -n '"/payments' app/main.py` and read the `/payments` GET handler and the `payment_request_new` POST handler (lines 85-190, in two ranges). Add `GET /payments/new` that builds the same context the old form used (`stays`, `reasons`, `prefill`, `selected_reservation_id`) and renders `payments_new.html`. Add the 303 redirect at the top of the `/payments` handler. Run: `.venv/bin/python -m pytest tests/test_payments_dashboard.py -q -x 2>&1 | tail -20` (expect failures only in tests that fetch the old form on `/payments`; note them for step 7).
+1. `cd App && grep -n '"/payments' app/routes/payments.py` and read the `/payments` GET handler and the `payment_request_new` POST handler (lines 85-190, in two ranges). Add `GET /payments/new` that builds the same context the old form used (`stays`, `reasons`, `prefill`, `selected_reservation_id`) and renders `payments_new.html`. Add the 303 redirect at the top of the `/payments` handler. Run: `.venv/bin/python -m pytest tests/test_payments_dashboard.py -q -x 2>&1 | tail -20` (expect failures only in tests that fetch the old form on `/payments`; note them for step 7).
 2. Rewrite `app/templates/payments.html` per section 1 (overview). Keep `data-payments-setup`, `data-payments-step`, `data-payment-services` attributes (tests use them).
 3. Create `app/templates/payments_new.html` per section 1. Keep `id="new-request"` on the form.
 4. Commit: `git add` the named files only (never `git add -A`). Run: `python3 ../scripts/context_lint.py | tail -20`.
