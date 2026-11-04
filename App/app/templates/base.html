@@ -141,7 +141,7 @@
         <span class="impersonation-handle">@{{ workspace_user.username }}</span>
         {% set support_minutes = impersonation_minutes_left() %}
         {% if support_minutes is not none %}
-          <span class="impersonation-handle" data-impersonation-minutes="{{ support_minutes }}">{{ tp('impersonation.minutes_left', support_minutes) }}</span>
+          <span class="impersonation-handle" data-impersonation-minutes="{{ support_minutes }}">{% if support_minutes >= 120 %}{{ tp('impersonation.hours_left', support_minutes // 60) }}{% else %}{{ tp('impersonation.minutes_left', support_minutes) }}{% endif %}</span>
         {% endif %}
       </div>
       <form method="post" action="/admin/stop-impersonating">
