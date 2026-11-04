@@ -55,7 +55,7 @@ def test_production_does_not_show_a_persistent_warning(client, env):
     assert "Live police reporting" not in page.text
 
 
-def test_production_shows_a_quiet_named_sidebar_badge(client, env):
+def test_production_shows_no_sidebar_badge_even_to_an_admin(client, env):
     env("prod")
     username = "quiet-production-ui"
     if not db.query_one("SELECT id FROM user_account WHERE username = ?", (username,)):
@@ -64,11 +64,7 @@ def test_production_shows_a_quiet_named_sidebar_badge(client, env):
 
     page = client.get("/")
 
-    assert 'class="env-badge ui-env prod"' in page.text
-    assert "Production" in page.text
-    # The badge sits below the logo row, never inside it (it used to cover "UbyHost").
-    sidebar = page.text.split('id="app-sidebar"', 1)[1].split("</aside>", 1)[0]
-    assert sidebar.index('class="ui-brand"') < sidebar.index('class="env-badge ui-env prod"')
+    assert 'class="env-badge' not in page.text
 
 
 def test_a_test_environment_is_not_shouted_about(client, env):
