@@ -2463,3 +2463,10 @@ body.v2 .prop-strip .sc-main{display:grid;grid-template-columns:10px minmax(0,1f
 body.v2 .prop-strip .sc-main b,body.v2 .prop-strip .sc-main small{grid-column:2}
 body.v2 .prop-strip .sc-actions{margin-top:8px;padding-left:20px}
 body.v2 .prop-strip .sc-actions .btn{min-height:44px}
+body.v2 .airbnb-actions{display:flex;gap:10px;align-items:center;margin-left:auto}
+body.v2 .prop-new-head{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+body.v2 .prop-new-head .airbnb-actions{margin-left:auto}
+body.v2 .airbnb-header:has(>.airbnb-actions){flex-wrap:wrap}
+body.v2 .airbnb-header:has(>.airbnb-actions)>.airbnb-title{width:auto;flex:1 1 0;min-width:0}
+body.v2 .airbnb-header:has(>.airbnb-actions)>.airbnb-back{margin-right:0}
+@media (max-width:767px){body.v2 .airbnb-actions{width:100%;margin-left:0}body.v2 .airbnb-actions .copy-settings-open{width:100%;justify-content:center;min-height:44px}body.v2 .airbnb-header:has(>.airbnb-actions)>.airbnb-title{flex:1 1 100%}}

@@ -27,10 +27,9 @@
   ('automation', t('property_nav.group.automation')),
 ] %}
 
-{% if copy_property_peers or copied_from_name %}
+{% if copied_from_name %}
 <div class="copy-settings-bar">
-  {% if copied_from_name %}<p class="ui-sub" role="status">{{ t('apartment.form.copy_from.notice', name=copied_from_name) }}</p>{% endif %}
-  {% if copy_property_peers %}{% with copy_action=base_url, copy_section=settings_section %}{% include "_copy_settings_dialog.html" %}{% endwith %}{% endif %}
+  <p class="ui-sub" role="status">{{ t('apartment.form.copy_from.notice', name=copied_from_name) }}</p>
 </div>
 {% endif %}
 
