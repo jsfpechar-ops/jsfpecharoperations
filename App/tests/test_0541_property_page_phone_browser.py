@@ -166,7 +166,7 @@ def test_0948_copy_settings_button_sits_in_the_header_row(base, dashboard_rich_h
     cookie = dashboard_rich_host["client"].cookies.get(auth.SESSION_COOKIE)
     assert cookie
     spec = next(s for s in PAGES if s["name"] == "property")
-    path = _path(spec, dashboard_rich_host)
+    path = "/apartments/new"  # copy is offered on the new page; settings hide it once setup is finished
     with sync_api.sync_playwright() as playwright:
         browser = _launch(playwright)
         try:
@@ -175,7 +175,7 @@ def test_0948_copy_settings_button_sits_in_the_header_row(base, dashboard_rich_h
                 try:
                     button = page.locator(".airbnb-actions .copy-settings-open").first.bounding_box()
                     title = page.locator("h1").first.bounding_box()
-                    form = page.locator(".form").bounding_box()
+                    form = page.locator(".property-create-lane").bounding_box()
                     assert button["x"] >= form["x"] - 1, width
                     assert button["x"] + button["width"] <= form["x"] + form["width"] + 1, width
                     overlaps = not (button["y"] + button["height"] <= title["y"] or title["y"] + title["height"] <= button["y"]
