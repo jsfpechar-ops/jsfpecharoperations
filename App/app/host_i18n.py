@@ -7791,7 +7791,6 @@ _PROPERTY_NAV_0094_STRINGS = {
         "property_page.strip.guest_off": "No link yet",
         "property_page.strip.operator_missing": "Operator missing",
 
-        "property_page.preview.connections": "Connections",
         "property_page.sec.archive.sub": "Hide the property from the list",
         "property_page.sec.calendars.title": "Calendars",
         "property_page.sec.calendars.sub": "Airbnb and Booking",
@@ -7830,7 +7829,6 @@ _PROPERTY_NAV_0094_STRINGS = {
         "property_page.strip.guest_off": "Odkaz zatím není",
         "property_page.strip.operator_missing": "Chybí provozovatel",
 
-        "property_page.preview.connections": "Napojení",
         "property_page.sec.archive.sub": "Skrýt nemovitost ze seznamu",
         "property_page.sec.calendars.title": "Kalendáře",
         "property_page.sec.calendars.sub": "Airbnb a Booking",

@@ -3211,7 +3211,6 @@ STRINGS: Dict[str, str] = {
     "property_page.strip.guest_off": "Chưa có liên kết",
     "property_page.strip.operator_missing": "Thiếu đơn vị vận hành",
 
-    "property_page.preview.connections": "Kết nối",
     "property_page.sec.archive.sub": "Ẩn chỗ ở khỏi danh sách",
     "property_page.sec.calendars.title": "Lịch",
     "property_page.sec.calendars.sub": "Airbnb và Booking",
