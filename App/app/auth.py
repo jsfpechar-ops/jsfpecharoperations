@@ -29,8 +29,14 @@ from . import acceptance, config, db, host_i18n
 SESSION_COOKIE = "ubyhost_session"
 SESSION_MAX_AGE = 60 * 60 * 12
 # Long-lived host sessions (logout or session_version bump still ends them).
-# 400 days matches common browser persistent-cookie limits.
-SESSION_REMEMBER_MAX_AGE = 60 * 60 * 24 * 400
+# Sliding: unused for 30 days ends the session; each use re-signs the cookie
+# (refresh_session_cookie). An absolute cap of 90 days counts from the login.
+SESSION_REMEMBER_MAX_AGE = 60 * 60 * 24 * 30
+SESSION_ABSOLUTE_MAX_AGE = 60 * 60 * 24 * 90
+SESSION_REFRESH_AFTER = 60 * 60 * 24
+# Trusted device: a browser that signed in before skips the login Turnstile.
+DEVICE_COOKIE = "ubyhost_device"
+DEVICE_MAX_AGE = 60 * 60 * 24 * 30
 TWO_FACTOR_PENDING_MAX_AGE = 10 * 60
 # An admin inside a host's workspace is sent back to their own view after this
 # long. The start time travels in the signed session payload ("ast"). Set
@@ -235,6 +241,8 @@ def issue_session(
     # Login time, not signature time. Re-issuing the cookie (2FA, impersonation)
     # must copy this or a stolen older cookie looks like a login from just now.
     payload["iat"] = int(time.time() if issued_at is None else issued_at)
+    # Last re-sign time; refresh_session_cookie re-issues once a day.
+    payload["rf"] = int(time.time())
     if remember:
         payload["rm"] = 1
     if workspace_user_id and workspace_user_id != user_id:
@@ -265,6 +273,8 @@ def _session_payload(token: Optional[str]) -> Optional[dict[str, Any]]:
     try:
         payload = _serializer().loads(token, max_age=SESSION_REMEMBER_MAX_AGE)
         if not isinstance(payload, dict):
+            return None
+        if payload.get("rm") and time.time() - int(payload.get("iat", 0)) > SESSION_ABSOLUTE_MAX_AGE:
             return None
         # Non-remember sessions expire with the shorter cookie lifetime even
         # though the signed payload could otherwise be replayed for 30 days.
@@ -556,10 +566,32 @@ def attach_session(response, token: str, remember: bool = False) -> None:
         token,
         max_age=session_max_age({"rm": 1} if remember else None),
         httponly=True,
-        samesite="strict",
+        samesite="lax",
         secure=secure_cookies(),
         path="/",
     )
+
+
+def refresh_session_cookie(request, response) -> None:
+    """Sliding session: re-sign a remember-me cookie at most once a day, same iat."""
+    payload = getattr(request.state, "session_payload", None) or {}
+    if not payload.get("rm") or not payload.get("uid"):
+        return
+    if time.time() - int(payload.get("rf", payload.get("iat", 0))) < SESSION_REFRESH_AFTER:
+        return
+    # Login, logout or 2FA already set or cleared the cookie in this response.
+    if any(value.startswith(f"{SESSION_COOKIE}=") for value in response.headers.getlist("set-cookie")):
+        return
+    token = issue_session(
+        int(payload["uid"]),
+        int(payload.get("sv", 0)),
+        workspace_user_id=payload.get("as"),
+        remember=True,
+        impersonation_started_at=payload.get("ast"),
+        revealed_guest_ids=payload.get("rv"),
+        issued_at=int(payload["iat"]),
+    )
+    attach_session(response, token, remember=True)
 
 
 def clear_session(response) -> None:
@@ -568,7 +600,49 @@ def clear_session(response) -> None:
         path="/",
         secure=secure_cookies(),
         httponly=True,
-        samesite="strict",
+        samesite="lax",
+    )
+
+
+def _device_serializer() -> URLSafeTimedSerializer:
+    return URLSafeTimedSerializer(config.secret_key(), salt="ubyhost-device")
+
+
+def attach_device(response, account) -> None:
+    """Remember this browser for the account; the device cookie survives logout."""
+    token = _device_serializer().dumps({
+        "uid": int(account["id"]),
+        "sv": int(account["session_version"]),
+        "did": secrets.token_urlsafe(16),
+    })
+    response.set_cookie(
+        DEVICE_COOKIE,
+        token,
+        max_age=DEVICE_MAX_AGE,
+        httponly=True,
+        samesite="lax",
+        secure=secure_cookies(),
+        path="/",
+    )
+
+
+def trusted_device(request, email: str) -> bool:
+    """True when the device cookie belongs to the account for this e-mail and is current."""
+    token = request.cookies.get(DEVICE_COOKIE)
+    if not token or not email:
+        return False
+    try:
+        payload = _device_serializer().loads(token, max_age=DEVICE_MAX_AGE)
+    except Exception:
+        return False
+    if not isinstance(payload, dict):
+        return False
+    account = account_by_email(email)
+    return bool(
+        account
+        and int(account["active"]) == 1
+        and int(payload.get("uid", -1)) == int(account["id"])
+        and int(payload.get("sv", -1)) == int(account["session_version"])
     )
 
 
