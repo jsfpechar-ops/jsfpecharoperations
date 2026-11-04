@@ -2351,3 +2351,15 @@ body.v2 .calendar-add-form .actions{margin-bottom:16px}
 @media (min-width:1024px){body.v2 .feed-table td.truncate{max-width:170px}}
 body.v2 .property-feeds{margin-bottom:24px}
 body.v2 .fields-wrap .hint{margin-bottom:12px}
+
+/* 0912: stay detail header, one action row, tidy settings */
+body.v2 .host-stay-detail #now .sub{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px}
+body.v2 .host-stay-detail .stay-sep{min-width:0;margin-left:0}
+body.v2 .host-stay-detail #guests{margin-top:12px}
+body.v2 .host-stay-detail .stay-head-actions form.inline{margin:0}
+body.v2 .stay-settings .settings-grid{display:grid;gap:12px}
+body.v2 .stay-settings .ui-field label{display:block;margin-bottom:4px}
+@media (min-width:1024px){
+body.v2 .host-stay-detail .stay-head-actions{flex-wrap:nowrap;justify-content:flex-end;gap:12px}
+body.v2 .host-stay-detail .stay-head-cta{flex-wrap:nowrap;gap:12px}
+}
