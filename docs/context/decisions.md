@@ -71,3 +71,4 @@ Append-only.
 - 2026-11-04 | Go webhook forwards booking-site events to Python; booking logic not ported to Go yet | owner | 0910
 
 - [filing] 2026-11-04: unanswered filings retry 30m/2h/6h/12h, duplicate answer stops; supersedes OD-1 and WP31 (0909). After the 5th attempt: host and support mail and push, once per chain.
+- [auth] 2026-11-04: persistent 30-day sliding session, 90-day cap, SameSite lax, trusted-device cookie skips login Turnstile (0911)

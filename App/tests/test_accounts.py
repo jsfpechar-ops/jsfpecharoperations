@@ -466,7 +466,7 @@ def test_remember_me_sets_persistent_session_cookie():
         session_header = next(h for h in set_cookie if h.startswith(f"{auth.SESSION_COOKIE}="))
         assert f"Max-Age={auth.SESSION_REMEMBER_MAX_AGE}" in session_header
         assert "HttpOnly" in session_header
-        assert "SameSite=strict" in session_header
+        assert "SameSite=lax" in session_header
 
         payload = auth._session_payload(cookie)
         assert payload and payload.get("rm") == 1

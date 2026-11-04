@@ -1,32 +1,37 @@
 # 0911 report: persistent login, Turnstile only on a new device
 
-Status: blocked
+Status: review
 
-## Done
-- Step 1 (session cookie SameSite=lax): `App/app/auth.py`, `attach_session` and `clear_session` now use `samesite="lax"` (2 lines). httponly, Secure and path unchanged. `security.py` CSRF cookie untouched.
+## Lifetimes
+- `ubyhost_session` (remember-me): 30 days without use. Each day of use re-signs it with the same login time (`iat`). Absolute cap: 90 days after sign-in, then sign in again. Non-remember 12 h path unchanged.
+- `ubyhost_csrf`: follows the session constant, now 30 days.
+- `ubyhost_device` (new, HttpOnly, Lax, Secure on HTTPS): 30 days, renewed at each successful login. Valid only while its stored `sv` equals the account's `session_version`.
+
+## What changed
+- `App/app/auth.py`: session cookie SameSite=lax (set and clear); sliding 30 d / 90 d cap; `refresh_session_cookie`; device cookie `attach_device` and `trusted_device`.
+- `App/app/main.py`: middleware re-signs the session cookie (once a day). Skipped when the response already sets or clears the cookie.
+- `App/app/routes/admin_accounts.py`: `_finish_login` sets the device cookie; `login_submit` skips Turnstile only for a trusted device whose IP is not rate-limited. Other paths unchanged (staging password path, signup, guest, reset).
+- `App/app/cookie_inventory.py`, `App/app/guest_uk_i18n.py`: `ubyhost_device` row (EN/CS, guest DE/ES/FR, UK); session and CSRF lifetimes updated.
+- `docs/SECURITY.md` (auth row and one paragraph), `docs/context/decisions.md` (one `[auth]` line).
+- Tests: `App/tests/test_login_session_persistence.py` (new, 12 tests); updated `test_security.py`, `test_accounts.py` (SameSite), `test_privacy_first.py`, `test_cookie_inventory.py`.
+- Template `login.html`: not changed. It has no submit-blocking JS, so the widget renders and the server skips the check for trusted devices.
 
 ## Tests
-- Not run. `App/.venv` does not exist and the system Python has no project dependencies (`itsdangerous`, `fastapi`, `pytest` missing). The brief's test command could not start. Step 1 is unverified; do not merge it before the test set passes.
-- Test set to run once the venv exists: `tests/test_login_hardening.py tests/test_login_acceptance.py tests/test_security.py tests/test_security_hardening.py tests/test_privacy_first.py tests/test_cookie_inventory.py tests/test_staging_password_login.py`.
+- `.venv/bin/python -m pytest tests/test_login*.py tests/test_auth*.py tests/test_security*.py tests/test_cookie*.py tests/test_privacy_first.py -q` (from App/): `127 passed`, 0 skipped.
+- Brief's list plus signup and new file: `121 passed`, 0 skipped.
+- Environment: `App/.venv` had no project packages; installed `requirements.txt` and `requirements-dev.txt` into it.
 
-## Left (steps 2 to 8, not started)
-- Step 2: sliding 30-day session, 90-day cap from `iat`, re-issue after 24 h.
-- Step 3: `ubyhost_device` trusted-device cookie and Turnstile skip in `login_submit`.
-- Step 4: Turnstile on signup, reset, guest forms unchanged (nothing to do yet).
-- Step 5: rotation and "log out everywhere" check.
-- Step 6: list of sensitive actions that rely only on the session (not yet checked).
-- Step 7: `App/app/cookie_inventory.py` entry and `App/app/retention.py` if required.
-- Step 8: `decisions.md` line and `docs/SECURITY.md` session paragraph.
-- Tests in `App/tests/test_login_session_persistence.py` (file not created).
+## Sensitive actions (not changed)
+- Gated by a fresh session (`session_is_fresh`): 2FA setup (`/account/2fa/setup`), login-address change (`/account/email`), passkey add (`/account/passkeys`, options) and delete.
+- Gated by a current authenticator code: `/account/2fa/disable`.
+- Session only (no fresh or code check found): payment services and requests (`/payments/...`), workspace export (`/settings/workspace-export`), guest export (`/guests/{id}/export.json`), admin user export and e-mail (admin role only). `/account/2fa/move` not checked.
 
-## Deviations
-- Done: step 1 only. Left: steps 2 to 8. Not started because the test environment is missing.
-
-## Questions for the owner
-1. Step 2 says "current_user flow (or the existing middleware)". Which one? Notes: `auth.current_user` already reads `request.state.session_payload`, and `auth.issue_session` sets `iat`. Re-issuing needs a response object, which `current_user` does not have, so the middleware in `App/app/main.py` (`cloudflare_connecting_ip`) looks like the right place. Confirm before I write it.
-2. Step 3 leaves the login widget behaviour open (renders but does not block vs. not rendered). Pick one.
-3. Login is an e-mail link (`login_link.issue`, `login_submit` sends mail); the "Turnstile on every POST /login" finding matches this. Confirm the device cookie should skip Turnstile on sending the link, not on opening it.
+## Deviations and questions
+- Session refresh runs only on requests where `current_user` ran, so a page that does not load the user does not extend the session.
+- Privacy test literal: `ubyhost_device` added to the strictly-necessary set, because every first-party cookie row is in it. Owner to confirm.
+- `App/app/retention.py` not changed: the test does not require a line, but the rule for new personal-data fields may. The cookie holds account id and a random id. Owner to decide.
+- No "log out everywhere" button exists; SECURITY.md describes the session_version bump only.
+- Browser and geometry tests not run: no template change.
 
 ## Owner steps left
-- Create the test environment (`App/.venv` with `requirements-dev.txt`) or tell me the command to use.
-- Decide questions 1 to 3.
+- Confirm the two questions above (privacy set, retention line) before merge.
