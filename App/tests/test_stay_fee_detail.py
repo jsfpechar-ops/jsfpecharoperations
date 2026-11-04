@@ -528,3 +528,23 @@ def test_detail_heading_uses_the_host_language(host):
     assert "Srpen 2026" not in english.text
     assert czech.status_code == 200
     assert "Language Demo (Srpen 2026)" in czech.text
+
+
+def test_guest_line_shows_birth_date_age_and_nationality(host):
+    # 0910 Part B: display only. The guest facts are read in the route, not stored on the period line.
+    from app import stay_fee
+
+    client, owner_id, entity_id = host
+    apartment_id = _property(owner_id, entity_id, "Detail Facts Demo")
+    _stay(apartment_id, "2026-08-10", "2026-08-14", [
+        {"first_name": "Adult"},
+        {"first_name": "Kid", "birth_date": "01012015"},
+    ])
+
+    response = client.get(f"/stay-fees/{apartment_id}?month=2026-08&lang=en")
+
+    assert response.status_code == 200
+    for text in ("01.01.1990", "Age 36 at check-in", "01.01.2015", "Age 11 at check-in", "Germany"):
+        assert text in response.text
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    assert "birth_display" not in str(stay_fee.property_period(apartment, date(2026, 8, 1))["lines"])
