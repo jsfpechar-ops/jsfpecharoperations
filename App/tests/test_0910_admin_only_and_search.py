@@ -107,4 +107,4 @@ def test_stays_filter_panel_arrives_collapsed_in_the_server_html(host_with_prope
     form = re.search(r'<form id="stays-filter-panel"[^>]*>', page)
     assert form is not None
     assert "is-collapsed" in form.group(0)
-    assert "<noscript><style>html body form#stays-filter-panel.is-collapsed{display:block}</style></noscript>" in page
+    assert "app-nojs.css" in host_with_property.get("/reservations?lang=en").text

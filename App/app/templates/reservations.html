@@ -134,7 +134,6 @@
     <a class="ui-btn ui-btn-quiet" href="{{ '/reservations?range=archive' if show_archive else '/reservations?range=all' }}">{{ t('host.filter.reset') }}</a>
   </div>
 </form>
-<noscript><style>html body form#stays-filter-panel.is-collapsed{display:block}</style></noscript>
 {% endif %}
 
 {% macro stay_group(reservation) -%}
