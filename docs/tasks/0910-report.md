@@ -1,6 +1,6 @@
 # 0910 report
 
-Status: blocked
+Status: review. Lint fixed by the orchestrator (decisions.md wording).
 
 ## Files changed
 - go/internal/payments/webhook.go: booking check after verifyEvent, forwardToPython, isBookingEvent, client and UBYHOST_PY_WEBHOOK_URL in WebhookHandler (imports: bytes)
