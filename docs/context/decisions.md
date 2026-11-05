@@ -60,3 +60,4 @@ Append-only.
 - [ui] 0948: six-card status strip replaces the aside basics and connections cards; standalone guest card removed, its copy button lives in the strip (owner 2026-11-04).
 - [ui] 2026-11-04: Smart lock is one accordion (#sec-lock) outside the property form; its controls use form="property-settings-form" and the unsaved guard counts them. Source: brief 0952.
 - [wizard] 2026-11-04: wizard shows the old look on the current 4-step flow; red star marks mandatory fields; operator e-mail has no purpose text. Source: brief 0953.
+- [ui] 2026-11-04: TTLock step one says eAdmin; Smart lock shows a status block with Turn on/off (door_code.state is the one source). Source: brief 0954.
