@@ -14,18 +14,28 @@ from app import auth, config, db
 from app.main import app
 from app.routes import stay_fees as stay_fee_routes
 from tests.conftest import login_as
+from datetime import timedelta
+from app import claim
+from tests.conftest import complete_guest_claim
+from tests.test_endtoend import SIGNATURE
 
 USERNAME = "stay-fee-guest-0897"
 GOOD_LINK = "https://revolut.me/jan"
 
 
 def _cleanup():
+    # Delete all apartments for test users and all related data
     for user in db.query("SELECT id FROM user_account WHERE username = ?", (USERNAME,)):
         owner_id = user["id"]
+        # Delete related records for apartments
+        for apt in db.query("SELECT id FROM apartment WHERE owner_user_id = ?", (owner_id,)):
+            apt_id = apt["id"]
+            # Delete related records
+            db.execute("DELETE FROM guest WHERE reservation_id IN (SELECT id FROM reservation WHERE apartment_id = ?)", (apt_id,))
+            db.execute("DELETE FROM reservation_claim WHERE reservation_id IN (SELECT id FROM reservation WHERE apartment_id = ?)", (apt_id,))
+            db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apt_id,))
+        # Delete apartments (we reuse the user and entity across tests)
         db.execute("DELETE FROM apartment WHERE owner_user_id = ?", (owner_id,))
-        db.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (owner_id,))
-        db.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner_id,))
-        db.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
 
 
 def _property_data(entity_id: int, **overrides):
@@ -52,12 +62,25 @@ def _property_data(entity_id: int, **overrides):
 def host(monkeypatch):
     db.init_db()
     _cleanup()
-    owner_id = auth.create_account(f"{USERNAME}@example.test", "Guest Pay Host", username=USERNAME)
-    entity_id = db.insert("legal_entity", {
-        "name": "Guest Pay s.r.o.", "owner_user_id": owner_id, "created_at": db.utcnow(),
-        "iban": "CZ6508000000192000145399",
-        "bank_account": "19-2000145399/0800",
-    })
+    # Try to get existing user, else create
+    try:
+        existing_user = db.query_one(
+            "SELECT id FROM user_account WHERE username = ?", (USERNAME,)
+        )
+        owner_id = existing_user["id"]
+    except Exception:
+        owner_id = auth.create_account(f"{USERNAME}@example.test", "Guest Pay Host", username=USERNAME)
+    try:
+        existing_entity = db.query_one(
+            "SELECT id FROM legal_entity WHERE owner_user_id = ?", (owner_id,)
+        )
+        entity_id = existing_entity["id"]
+    except Exception:
+        entity_id = db.insert("legal_entity", {
+            "name": "Guest Pay s.r.o.", "owner_user_id": owner_id, "created_at": db.utcnow(),
+            "iban": "CZ6508000000192000145399",
+            "bank_account": "19-2000145399/0800",
+        })
     client = TestClient(app)
     assert login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False).status_code == 303
     created = client.post("/apartments", data=_property_data(entity_id), follow_redirects=False)
@@ -430,3 +453,127 @@ def test_the_qr_option_says_it_is_for_czech_and_slovak_guests_only(host, monkeyp
     monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
     page = client.get(f"/apartments/{apartment_id}?lang=en")
     assert "Only Czech and Slovak guests see and can use this." in page.text
+
+
+def _drop_stays(apartment_id):
+    db.execute(
+        "DELETE FROM reservation_claim WHERE reservation_id IN "
+        "(SELECT id FROM reservation WHERE apartment_id = ?)",
+        (apartment_id,),
+    )
+    db.execute(
+        "DELETE FROM guest WHERE reservation_id IN "
+        "(SELECT id FROM reservation WHERE apartment_id = ?)",
+        (apartment_id,),
+    )
+    db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment_id,))
+
+
+def _enable_collect(client, apartment_id):
+    saved = _save(client, apartment_id, guest={
+        "stay_fee_collect": "1",
+        "stay_fee_guest_rails": ["qr", "iban", "revolut", "cash"],
+        "stay_fee_guest_revolut_link": GOOD_LINK,
+        "stay_fee_guest_cash_note": "At reception",
+    })
+    assert saved.status_code == 303, saved.text
+
+
+def _new_stay(apartment_id, *, source=""):
+    today = claim.prague_today()
+    now = db.utcnow()
+    data = {
+        "apartment_id": apartment_id,
+        "uid": f"fee-{apartment_id}-{source or 'real'}-{today.isoformat()}-{now}",
+        "date_from": today.isoformat(),
+        "date_to": (today + timedelta(days=3)).isoformat(),
+        "status": "active",
+        "created_at": now,
+        "updated_at": now,
+    }
+    if source:
+        data["source"] = source
+    return db.insert("reservation", data)
+
+
+def _guest_post(client, token, rid, *, city, country, surname):
+    page = client.get(f"/l/{token}/{rid}/new?lang=en")
+    data = {
+        "surname": surname,
+        "first_name": "Jan",
+        "birth_date": "1.1.1990",
+        "nationality": country,
+        "doc_number": "123456789",
+        "res_street": "Main 1",
+        "res_city": city,
+        "res_country": country,
+        "purpose": "10",
+        "signature": SIGNATURE,
+        "legal_ack": "1",
+    }
+    if 'name="csrf-token"' in page.text:
+        data["_csrf"] = page.text.split('name="csrf-token" content="')[1].split('"')[0]
+    return client.post(f"/l/{token}/{rid}/save?lang=en", data=data, follow_redirects=False)
+
+
+def test_form_save_shows_payment_after_the_last_guest_and_not_before(host, monkeypatch):
+    """Claim and POST the real form. One of two guests: no card. Both: card and #fee-pay."""
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    _enable_collect(client, apartment_id)
+    apt = db.query_one("SELECT permalink_token FROM apartment WHERE id = ?", (apartment_id,))
+    token = apt["permalink_token"]
+    rid = _new_stay(apartment_id)
+    guest = TestClient(app)
+    try:
+        complete_guest_claim(guest, token, rid, party_size=2)
+        first = _guest_post(guest, token, rid, city="Brno", country="CZE", surname="First")
+        assert first.status_code == 303, first.text[:500]
+        assert "#fee-pay" not in first.headers["location"]
+        hub = guest.get(first.headers["location"].split("#")[0], follow_redirects=True)
+        assert 'id="fee-pay"' not in hub.text
+        second = _guest_post(guest, token, rid, city="Brno", country="CZE", surname="Second")
+        assert second.status_code == 303, second.text[:500]
+        assert "#fee-pay" in second.headers["location"]
+        done = guest.get(second.headers["location"].split("#")[0], follow_redirects=True)
+        assert 'id="fee-pay"' in done.text
+        assert "Revolut" in done.text
+    finally:
+        _drop_stays(apartment_id)
+
+
+def test_form_save_on_a_demo_stay_still_shows_payment(host, monkeypatch):
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    _enable_collect(client, apartment_id)
+    apt = db.query_one("SELECT permalink_token FROM apartment WHERE id = ?", (apartment_id,))
+    rid = _new_stay(apartment_id, source="demo")
+    db.update("reservation", rid, {"declared_guests": 1})
+    try:
+        saved = _guest_post(client, apt["permalink_token"], rid, city="Brno", country="CZE", surname="Demo")
+        assert saved.status_code == 303, saved.text[:500]
+        assert "#fee-pay" in saved.headers["location"]
+        hub = client.get(saved.headers["location"].split("#")[0], follow_redirects=True)
+        assert 'id="fee-pay"' in hub.text
+    finally:
+        _drop_stays(apartment_id)
+
+
+def test_a_guest_from_the_same_municipality_sees_no_fee_card(host, monkeypatch):
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    _enable_collect(client, apartment_id)
+    apt = db.query_one("SELECT permalink_token FROM apartment WHERE id = ?", (apartment_id,))
+    token = apt["permalink_token"]
+    rid = _new_stay(apartment_id)
+    guest = TestClient(app)
+    try:
+        complete_guest_claim(guest, token, rid, party_size=1)
+        saved = _guest_post(guest, token, rid, city="Praha", country="CZE", surname="Local")
+        assert saved.status_code == 303, saved.text[:500]
+        assert "#fee-pay" not in saved.headers["location"]
+        hub = guest.get(saved.headers["location"].split("#")[0], follow_redirects=True)
+        assert 'id="fee-pay"' not in hub.text
+        assert "Local" in hub.text or "LOCAL" in hub.text
+    finally:
+        _drop_stays(apartment_id)
