@@ -1,6 +1,6 @@
 # 0958 report (continuation: 0958-cont-1)
 
-Status: blocked (C01 verified; host group has 5 failures, all pre-existing on base)
+Status: blocked. Blocking defect at 768-1023 px (approved patch regression); host group has 5 pre-existing failures.
 Branch: codex/0958-calendar-type-state | Base: 7b0355c | Head: see git log (steps 1-3 + report)
 Environment: Python 3.12.3, requirements.lock + requirements-dev.txt, playwright 1.63.0 (CI pin).
 
@@ -38,3 +38,20 @@ Probe (temporary, deleted): before Escape the create dialog is open; after Escap
 ## Owner actions
 - Decide whether the 5 pre-existing host failures are a separate fix or a rebaseline.
 - Push when accepted: `git push origin codex/0958-calendar-type-state` (already pushed up to step 2; push new commits).
+
+## Blocking defect: labels invisible at 768 px (measured)
+Probe (temporary, deleted), dashboard Stay at 768 px:
+- Inactive Cleaning: color rgb(255,255,255) on background rgb(255,255,255). Label invisible.
+- Selected Stay: color rgb(255,255,255) on rgb(249,233,231). Contrast about 1.1:1.
+- Cause: `body.v2 .btn:not(.line):not(.soft):not(.ghost)` (max-width 1023px, specificity about 0,5,1) sets white text. The approved `.cal-create-types .btn[aria-pressed]` rules are 0,3,0, so they lose.
+- On base the inactive pill was a coral button with white text (readable). The approved patch made it white-on-white at this width.
+- The selected-state colour loss also exists on base, but the approved patch has made the inactive state worse.
+- 390 px (phone rule wins) and 1280 px (v2 rule does not apply) are not affected by this cause.
+
+Proposed fix, NOT applied (needs owner approval as a second patch):
+  `body.v2 .cal-create-types .btn:not(.line):not(.soft):not(.ghost)[aria-pressed="false"] { color:var(--ink); }`
+  plus the matching `[aria-pressed="true"]` line, then re-run the 12 regression cases and add a 768 and 1024 colour assertion.
+Alternative: add class `line` to the two type buttons in the template (touches markup; not in the brief).
+
+## Owner decision needed
+- Approve the second CSS rule (or the template class alternative). Then the rest of the brief can be finished in one pass.
