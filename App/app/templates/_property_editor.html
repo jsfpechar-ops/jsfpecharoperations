@@ -380,6 +380,14 @@
         <button class="ui-btn {{ 'ui-btn-primary' if door_code.state == 'off' else 'ui-btn-secondary' }}" type="submit">{{ t('smart_locks.turn_on') if door_code.state == 'off' else t('smart_locks.turn_off') }}</button>
       </form>
     </div>
+    {% elif door_code %}
+    {#- 0964: no lock connected yet. Same state source as the top pill (door_code.state); one next action, or the workspace limitation. -#}
+    <div class="lock-state" id="lock-setup-state" data-state="{{ door_code.state }}" role="status">
+      <i class="sd" aria-hidden="true"></i>
+      <div class="lock-state-text"><b>{{ t({'off': 'smart_locks.state_off', 'times': 'smart_locks.state_times', 'offline': 'smart_locks.state_offline'}.get(door_code.state, 'smart_locks.state_on')) }}</b>
+        <small>{% if lock_panel and lock_panel.smart_locks_enabled %}{{ t('apartment.form.door_code.connect_first') }}{% else %}{{ t('wizard.door_lock.unavailable') }}{% endif %}</small></div>
+      {% if lock_panel and lock_panel.smart_locks_enabled %}<a class="ui-btn ui-btn-primary" href="#door-code">{{ t('smart_locks.setup') }}</a>{% endif %}
+    </div>
     {% endif %}
     {% if door_code %}
     {% include "_door_code_window.html" %}
@@ -413,6 +421,10 @@
     <input form="property-settings-form" type="hidden" name="door_code_section" value="1">
     {% else %}
     <p class="ui-sub">{{ t('smart_locks.lede') }}</p>
+    <div class="lock-state" id="lock-unavailable" data-state="off" role="status">
+      <i class="sd" aria-hidden="true"></i>
+      <div class="lock-state-text"><b>{{ t('smart_locks.state_off') }}</b><small>{{ t('wizard.door_lock.unavailable') }}</small></div>
+    </div>
     {% endif %}
     {% if door_code and lock_panel and lock_panel.smart_locks_enabled %}
   <section class="panel property-section ui-section" id="{% if door_code.account and door_code.locks %}smart-locks{% else %}door-code{% endif %}">

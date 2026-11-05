@@ -2589,3 +2589,11 @@ body.v2 form.property-settings-form .btn,body.v2 form.property-settings-form .ui
   body.v2 .ui-body-detail:has(> aside.preview) > aside.preview{grid-column:2;grid-row:1;align-self:start;position:sticky;top:24px;z-index:1}
 }
 @media (max-width:1023px){body.v2 .ui-body-detail:has(> aside.preview) > aside.preview{position:static}}
+/* 0964 connection states: a lock row without a lock, and calendar rows whose URL never sets the width */
+.lock-state > .ui-btn{margin-left:auto}
+.lock-state small{color:var(--ink3)}
+body.v2 .feed-table td.feed-url{min-width:0;max-width:none;white-space:normal}
+body.v2 .feed-table td.feed-url::before{display:none}
+body.v2 .feed-url-details{min-width:0;margin-bottom:8px}
+body.v2 .feed-url-details summary{cursor:pointer;min-height:44px;display:inline-flex;align-items:center}
+body.v2 .feed-url-value{display:block;max-width:100%;overflow-wrap:anywhere;word-break:break-all;white-space:normal}
