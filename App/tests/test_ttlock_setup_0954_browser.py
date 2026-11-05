@@ -1,10 +1,16 @@
 """0954 browser: the Smart lock status block at 390, 768 and 1280 px, in each state."""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
-from playwright import sync_api
+
+REQUIRE_BROWSER = os.environ.get("UBYHOST_REQUIRE_BROWSER") == "1"
+if REQUIRE_BROWSER:
+    import playwright.sync_api as sync_api
+else:
+    sync_api = pytest.importorskip("playwright.sync_api")
 
 from app import db
 from tests.browser_support import chromium_launch_kwargs

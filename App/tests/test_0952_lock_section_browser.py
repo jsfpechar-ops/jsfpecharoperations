@@ -6,7 +6,13 @@ import os
 from pathlib import Path
 from unittest.mock import patch
 
-from playwright import sync_api
+import pytest
+
+REQUIRE_BROWSER = os.environ.get("UBYHOST_REQUIRE_BROWSER") == "1"
+if REQUIRE_BROWSER:
+    import playwright.sync_api as sync_api
+else:
+    sync_api = pytest.importorskip("playwright.sync_api")
 
 from app import auth, config, db
 from tests.test_0541_property_page_phone_browser import (  # noqa: F401  (0541 browser fixtures)
