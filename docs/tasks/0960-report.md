@@ -1,53 +1,54 @@
 # 0960 report
 
-Status: blocked
+Status: review
 
-## Reason
+## Changed files (`git diff de537cb3 --stat`)
 
-Command 4 (`pytest tests/test_cleaning*.py -q -x`) fails after step 1. The test
-`tests/test_cleaning_browser.py::test_add_stay_and_cleaning_dialogs_open_centred_in_both_tabs[1280-800]`
-asserts that the Add stay and Add cleaning dialogs share the same top edge (within 8 px). Measured: stay top 75.5 px, cleaning top 151 px. Both are centred at cy=400, so the heights differ by about 151 px. The likely cause is the brief's first new rule, `#calendar .cal-create-popover > form { min-height:0; }`, which removes the fixed height that made both modes equal. This is an inference from the numbers, not confirmed by a separate run. The test was not changed. The brief says to stop at a failing command after one fix, and any fix needs a CSS choice the brief does not cover. The test ran only once (`-x` stopped it); I did not re-run it. Commands 5 and the rest of command 4 were not run because of the tool-call cap.
+- App/app/static/dashboard-calendar.css (8 +)
+- App/app/static/dashboard-calendar.js (4 +-)
+- App/app/templates/_dashboard_calendar.html (6 +-)
+- App/tests/static_versions.json (8 +-)
+- App/tests/test_dashboard_calendar_browser.py (76 +)
+- App/tests/test_cleaning_browser.py (2 +-, step 4, outside section 3, see deviations)
+- docs/tasks/0960-calendar-create-actions.md (brief status line)
+- docs/tasks/0960-report.md
 
 ## Commands
 
-| # | Command | Result |
-|---|---|---|
-| 1 | `test_dashboard_calendar_browser.py -k "0960 or 0958 or reclamps"` | 26 passed, 0 failed, 0 skipped |
-| 2 | `test_dashboard_calendar.py test_calendar_*.py test_sample_calendar.py` | 64 passed, 0 skipped |
-| 3 | `test_dashboard_calendar_browser.py` (full) | 63 passed, 0 skipped |
-| 4 | `test_cleaning*.py -x` | 55 passed, 1 failed (the test above), stopped by `-x` |
-| 5 | `test_static_versions.py test_wp07_cache_heartbeats.py` | not run |
-| 6 | `python3 scripts/context_lint.py` | OK (existing WARN lines about open briefs only) |
+1. `test_dashboard_calendar_browser.py -k "0960 or 0958 or reclamps"`: 26 passed, 0 skipped (earlier run, not repeated here)
+2. `test_dashboard_calendar.py test_calendar_*.py test_sample_calendar.py`: 64 passed, 0 skipped (earlier run)
+3. `test_dashboard_calendar_browser.py`: 63 passed, 0 skipped (earlier run)
+4. `tests/test_cleaning*.py -q --tb=short -rs`, fresh DB: 80 passed, 0 failed, 0 skipped. Last lines: two progress lines (90 %, 100 %), `80 passed in 549.45s (0:09:09)`.
+5. `test_static_versions.py test_wp07_cache_heartbeats.py -q -x`: 16 passed, 0 skipped
+6. `python3 scripts/context_lint.py`: OK (WARN lines only: open-brief overlaps and "9 commits touched App/ after status.md")
 
-## Commits (branch codex/0960-b02-calendar-create, not pushed)
+## Centring decision
 
-- a79c4ff3 0960 step 1
-- e2de183d 0960 step 2
-- 264f1eff 0960 step 3
-- this commit: report and status line (blocked)
-
-## Screenshots (in /tmp/ubyhost-b02, from command 1)
-
-- calendar-0960-dashboard-stay-en-390.png: Add stay sheet; Cancel is white with grey border on the left, Create stay coral on the right, one row; Label is light-bordered and matches Guests; the Guests field has a red outline.
-- calendar-0960-dashboard-cleaning-en-390.png: Add cleaning; Cancel and Create cleaning on one row; no empty block under the form.
-- calendar-0960-cleaning-stay-en-390.png: Cleaning page, Add stay; same row layout and no clipping.
-- calendar-0960-cleaning-cleaning-cs-390.png: Add cleaning (CS); "Zrušit" and "Vytvořit úklid" fit on one row.
-- calendar-0960-dashboard-stay-en-768.png: centred dialog; row layout correct.
-- calendar-0960-cleaning-cleaning-cs-768.png: centred dialog; CS buttons fit.
-- calendar-0960-dashboard-stay-en-1280.png: centred dialog; row layout correct.
-- calendar-0960-cleaning-cleaning-cs-1280.png: centred dialog; CS buttons fit.
-- calendar-0960-dashboard-stay-cs-1280.png: "Zrušit" and "Vytvořit pobyt" fit on one row.
-
-Not inspected: the other 15 of 24 screenshots.
+Replaced `abs(first["top"] - second["top"]) <= 8` with a centre check on each dialog: `abs(first["cy"] - first["vy"]) <= 8 and abs(second["cy"] - second["vy"]) <= 8`. Both dialogs are read by `[data-cal-create]` through `CREATE_CENTRE_JS` in `_assert_dialog_centred`. The top comparison fails by design once the form is `min-height:0`, because the two modes differ in height. CSS unchanged.
 
 ## Acceptance (section 7)
 
-- [x] Step 1 applied with `git apply --check` clean; commits 0960 step 1..3.
-- [ ] Commands 1 to 6 green: 1, 2, 3 green; 4 failed; 5 not run; 6 green.
-- [ ] Section 6b: nine named images viewed; the bullets were not checked against the other 15.
-- [ ] `git diff de537cb3 --stat`: not run.
-- [x] Nothing printed from guest data.
+- [x] Steps 1 to 3 committed (a79c4ff3, e2de183d, 264f1eff); step 4 committed (94d53eb7).
+- [x] Commands 1 to 6 green, 0 skipped (1 to 3 not rerun this session).
+- [x] All 24 `calendar-0960-*` screenshots viewed.
+- [ ] Diff stat lists only section 3 files: `App/tests/test_cleaning_browser.py` is also changed (step 4).
+- [x] No guest data printed.
 
-## Questions
+## Screenshots (all 24 viewed)
 
-1. Should the centring test be updated, or should the dialog keep equal heights (a `min-height` on the form, as before)? Both are outside this brief.
+- All sizes, EN and CS: Cancel is white with a grey border on the left, Create is coral on the right, one row, same positions in stay and cleaning. No clipping, no horizontal scrollbar, no overlap, no empty block under the cleaning form. Label input matches Guests.
+- 390: CS "Zrušit" and "Vytvořit pobyt/úklid" fit on one row.
+- 768: dialog centred, one row, CS fits.
+- 1280: dialog centred, one row.
+- Red outline on Guests in stay mode is a focus state, not validation. The test focuses `#cal-guests` just before each stay screenshot, and cleaning shots (no focus) show no outline. No submit happened and no error text shows.
+- Cleaning day-cell name is not visible in screenshots. Command 1 asserts "Add cleaning" / "Přidat úklid" (not run this session).
+
+## Deviations
+
+- Step 4 edits `App/tests/test_cleaning_browser.py`, outside section 3, as the orchestrator decided.
+- Commands 1 to 3 and the 0960 screenshots come from the earlier run; the code they test is unchanged since step 3.
+
+## Done / Left
+
+- Done: steps 1 to 5, all commands, screenshots.
+- Left: push `codex/0960-b02-calendar-create` and open the PR (owner or orchestrator). Not pushed.
