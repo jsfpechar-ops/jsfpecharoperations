@@ -1,6 +1,6 @@
 # 0971: One success pattern and independent cleaning save forms (batch B13: X02, C07)
 
-Status: blocked (executor stopped at the token checkpoint after step 1; steps 2 to 4 left, see docs/tasks/0971-report.md)
+Status: blocked (6c host row: 85 passed, 3 failed in test_host_wide_geometry_browser.py, not on the known list; full reruns died silently; see docs/tasks/0971-report.md)
 Depends on: none | Base commit: 7b0355c45ccdd2557a28edfcfe228aa1dc766e36 | Branch: codex/0971-b13-feedback
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
