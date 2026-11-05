@@ -1,6 +1,6 @@
 # 0973: Leon setup hierarchy (labelled four-step progress, property line, readable terms)
 
-Status: blocked (see docs/tasks/0973-report.md)
+Status: blocked (the shared help button covers the primary button at 390 and 768 px; see docs/tasks/0973-report.md)
 Depends on: B03, B08, B14 (run on the base commit anyway; this brief touches none of their files) | Base commit: 7b0355c45ccdd2557a28edfcfe228aa1dc766e36 | Branch: codex/0973-b15-leon-setup
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
