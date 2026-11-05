@@ -43,7 +43,8 @@ def test_sections_are_details_in_order(host):
     # 0536: the fixture has no door codes, but the lock section is always rendered
     # (connect text only). DOM order; v2 CSS puts them in mockup order (0952: the one lock
     # section sits after the property form, so it is last in the DOM).
-    assert names == ["basics", "archive", "messages", "police", "fee", "calendars", "lock"]
+    # 0963: archive is a direct button row (id sec-archive), no longer a details section.
+    assert names == ["basics", "messages", "police", "fee", "calendars", "lock"]
 
 
 def test_0536_setup_continue_is_the_first_aside_card(host):
@@ -143,7 +144,7 @@ def test_rendered_sections_show_in_mockup_order(host):
     client, apartment_id = host
     names = [name for name, _ in _sections(_page(client, apartment_id))]
     visible = sorted(names, key=lambda name: MOCKUP_ORDER[name])
-    assert visible == ["basics", "police", "calendars", "messages", "lock", "fee", "archive"]
+    assert visible == ["basics", "police", "calendars", "messages", "lock", "fee"]
 
 
 def test_aside_has_cards_and_links_to_each_section(host):
