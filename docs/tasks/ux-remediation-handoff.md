@@ -78,3 +78,18 @@ Plan source: UX review and remediation plan (review uploads: 9e66688c-ux-remedia
 - Most Chromium visual checks for most batches (see each report).
 - No integrated build exists, so batch branches have never been tested together.
 - Nothing is pushed to main or deployed.
+
+## Integration status (branch codex/ux-remediation-handoff, head 3ae2f0be)
+
+- All 18 batch branch heads are contained in this branch. Batch code is INCOMPLETE and UNTESTED together. Each batch's own status is in its brief and report.
+- Merge conflicts resolved by hand: `App/app/templates/base.html` (cache keys: newest batch kept per conflict; app2.css key bumped to `20261105-0971c`), `App/app/static/app2.css` (both sides' blocks kept), `App/app/static/dashboard-calendar.css` (both sides kept), `App/app/templates/_dashboard_calendar.html` (B09 keys), `App/tests/test_host_property_controls_browser.py` (both sides' tests kept), `App/tests/test_dashboard_calendar_browser.py` (both sides kept; a `finally` block re-added after the 0960 test).
+- `App/tests/static_versions.json` regenerated with `--write` (50 files). Static version and heartbeat tests: 16 passed.
+
+## Open items found at integration (not fixed)
+
+1. B09: the auto-merged branch removed the `assert max(heights) <= 184` line in the 0905 test and rewrote the tile-height assertion. The approved change was 184 to 226 in one assertion only. Check the rewrite is intended before B09 is finished.
+2. `docs/tasks/0972-help-settings.md` is about 13,600 tokens, over the 12,000 cap, so `scripts/context_lint.py` reports ERROR. Split the brief (the B14 brief) before merging to main.
+3. `git diff --check` reports trailing whitespace in branch-authored docs: `0963-property-wrappers.md`, `0968-stay-list-scope.md`, `0971-feedback-forms.md`. Likely intended markdown line breaks; check before merge.
+4. The app2.css key `20261105-0971c` was bumped at integration because the generator refused the previous key. It is the only template that references app2.css. Confirm it is acceptable.
+5. B11: final report says blocked on four `test_host_ux_acceptance.py` failures that also fail on base (door-code editor and three others). Owner decision on deselecting them, or a fix.
+6. B17 F01: the door-code editor test (same as item 5) also blocks F01. Decide once for both.
