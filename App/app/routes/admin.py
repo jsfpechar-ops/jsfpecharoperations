@@ -745,6 +745,23 @@ async def smart_locks_setup(request: Request):
     )
 
 
+def _default_on_first_lock(owner_id, lock_id: str) -> None:
+    """0954: a first connection with one lock turns on door codes for the one
+    property that is ready (both times set, never had a lock). Never guesses."""
+    rows = db.query(
+        "SELECT id FROM apartment WHERE owner_user_id = ? AND lock_provider IS NULL "
+        "AND lock_id IS NULL AND checkin_hour IS NOT NULL AND checkout_hour IS NOT NULL",
+        (owner_id,),
+    )
+    if len(rows) != 1:
+        return
+    apartment_id = rows[0]["id"]
+    if _properties_using_lock(owner_id, lock_id, apartment_id):
+        return
+    db.update("apartment", apartment_id, {"lock_provider": "ttlock", "lock_id": lock_id})
+    db.audit("door_codes_on", f"apartment={apartment_id}")
+
+
 @router.post("/smart-locks/refresh")
 async def smart_locks_refresh(request: Request):
     guard = auth.require_login(request)
@@ -778,6 +795,8 @@ async def smart_locks_refresh(request: Request):
     if not locks:
         return _back(share, msg=_flash(request, "flash.ok.smart_locks_none_yet"))
     count = len(locks)
+    if count == 1:
+        _default_on_first_lock(owner_id, locks[0]["lock_id"])
     # Found from a property: back to that property's lock section to choose
     # one. Nothing is assigned or switched on here.
     target = _lock_property_return(request, return_to) or _smart_locks_url(request, return_to, "list")
@@ -2288,6 +2307,41 @@ def refuse_fee_save(request: Request, apartment: Dict[str, Any], form, link_erro
         },
         status_code=400,
     )
+
+
+@router.post("/apartments/{apartment_id}/door-codes")
+async def apartment_door_codes(apartment_id: int, request: Request):
+    """0954: the Turn on / Turn off buttons in the Smart lock section. No JavaScript."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment = access.apartment(request, apartment_id)
+    if not apartment or not ttlock.allowed_for(apartment["owner_user_id"]):
+        return _back("/apartments", err=_flash(request, "flash.error.smart_locks_unavailable"))
+    form = await request.form()
+    here = f"/apartments/{apartment_id}?view=settings&section=lock#sec-lock"
+    owner_id = apartment["owner_user_id"]
+    mode = _form_str(form, "mode")
+    if mode == "off":
+        # Keeps lock_id and every issued code; only new codes stop.
+        db.update("apartment", apartment_id, {"lock_provider": None})
+        db.audit("door_codes_off", f"apartment={apartment_id}")
+        return _back(here)
+    if mode != "on":
+        return _back(here)
+    ctx = _door_code_context(apartment, apartment_id)
+    if ctx is None:
+        return _back(here, err=_flash(request, "flash.error.smart_locks_unavailable"))
+    lock_id = apartment["lock_id"] or ctx["default_lock_id"]
+    if not lock_id or lock_id not in [lock["lock_id"] for lock in ctx["locks"]]:
+        return _back(here, err=_flash(request, "flash.error.door_code_lock"))
+    if _properties_using_lock(owner_id, lock_id, apartment_id):
+        return _back(here, err=_flash(request, "flash.error.door_code_lock_taken"))
+    if apartment["checkin_hour"] is None or apartment["checkout_hour"] is None:
+        return _back(here, err=_flash(request, "why.times_missing"))
+    db.update("apartment", apartment_id, {"lock_provider": "ttlock", "lock_id": lock_id})
+    db.audit("door_codes_on", f"apartment={apartment_id}")
+    return _back(here)
 
 
 @router.post("/apartments/{apartment_id}")
