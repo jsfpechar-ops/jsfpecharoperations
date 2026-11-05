@@ -1212,3 +1212,52 @@ def test_0893_calendar_text_size_edges_and_header_spacing(calendar_workspace, ca
         assert not found["touching"], (width, found["touching"][:8])
         context.close()
         browser.close()
+
+
+@pytest.mark.parametrize("width", [390, 768, 1280])
+@pytest.mark.parametrize("locale", ["en", "cs"])
+@pytest.mark.parametrize("entry", ["dashboard", "cleaning"])
+def test_0958_record_type_selection_is_visually_unambiguous(
+    calendar_workspace, calendar_origin, width, locale, entry
+):
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(
+            browser, calendar_workspace, calendar_origin, width=width,
+            locale=locale, touch=width < 768,
+        )
+        try:
+            path = "/cleaning" if entry == "cleaning" else "/"
+            page.goto(f"{calendar_origin}{path}?lang={locale}&cal_date=2026-10-01&cal_view=calendar")
+            page.wait_for_selector(".cal-week")
+            wait_loaded(page)
+            page.locator('[data-cal-day="2026-10-10"]').click(position={"x": 8, "y": 8})
+            if page.locator("[data-cal-day-add]").is_visible():
+                page.locator("[data-cal-day-add]").click()
+            dialog = page.locator("[data-cal-create]")
+            dialog.wait_for(state="visible")
+            for kind in ("stay", "cleaning", "stay"):
+                choice = dialog.locator(f'[data-cal-type-choice="{kind}"]')
+                choice.focus()
+                choice.press("Space")
+                other = "cleaning" if kind == "stay" else "stay"
+                assert choice.get_attribute("aria-pressed") == "true"
+                assert dialog.locator(f'[data-cal-type-choice="{other}"]').get_attribute("aria-pressed") == "false"
+                assert dialog.locator("[data-cal-stay-fields]").is_visible() == (kind == "stay")
+                assert dialog.locator("[data-cal-cleaning-fields]").is_visible() == (kind == "cleaning")
+                page.wait_for_function("""() => {
+                    const dialog = document.querySelector('[data-cal-create]');
+                    const color = selector => getComputedStyle(dialog.querySelector(selector)).backgroundColor;
+                    return color('[data-cal-type-choice][aria-pressed="true"]') !==
+                        color('[data-cal-type-choice][aria-pressed="false"]') &&
+                        color('[data-cal-type-choice][aria-pressed="false"]') !== color('[data-cal-save]');
+                }""")
+                if kind == "cleaning" and locale == "en" and width == 390:
+                    shot(page, f"0958-{entry}-cleaning-{locale}-{width}")
+            if locale == "en" or width == 390:
+                shot(page, f"0958-{entry}-stay-{locale}-{width}")
+            page.keyboard.press("Escape")
+            assert dialog.is_hidden()
+        finally:
+            context.close()
+            browser.close()

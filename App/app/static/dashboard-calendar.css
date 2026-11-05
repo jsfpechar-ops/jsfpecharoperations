@@ -470,6 +470,8 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
 .cal-create-types { display:flex; gap:6px; margin:0 0 14px; }
 .cal-create-types .btn { min-height:42px; }
 .cal-create-types .btn[aria-pressed="true"] { border-color:var(--brand-ink); background:var(--brand-soft); color:var(--ink); font-weight:750; }
+.cal-create-types .btn[aria-pressed="false"] { border-color:var(--line); background:var(--surface); color:var(--ink); }
+.cal-create-types .btn[aria-pressed="false"]:hover:not(:disabled) { background:var(--surface-2); }
 .cal-create-popover textarea { box-sizing:border-box; width:100%; min-height:86px; resize:vertical; }
 .cal-create-popover [data-cal-cleaning-fields][hidden],
 .cal-create-popover [data-cal-stay-fields][hidden] { display:none; }
