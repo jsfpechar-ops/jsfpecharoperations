@@ -307,7 +307,7 @@ _GUESTS_SQL = (
     "FROM guest g JOIN reservation r ON r.id = g.reservation_id "
     "WHERE r.apartment_id = ? AND r.status = 'active' AND g.archived_at IS NULL "
     # 0100: the setup guide's demo stay (demo.DEMO_STAY_SOURCE) owes no fee.
-    "AND COALESCE(r.source, '') != 'demo' "
+    "{demo_filter}"
     "AND COALESCE(g.stay_from, r.date_from) <= ? AND COALESCE(g.stay_to, r.date_to) >= ? "
     "ORDER BY COALESCE(g.stay_from, r.date_from), g.id"
 )
@@ -404,20 +404,25 @@ _GUESTS_FOR_RES_SQL = (
     "SELECT g.*, r.date_from AS res_from, r.date_to AS res_to, r.id AS res_id "
     "FROM guest g JOIN reservation r ON r.id = g.reservation_id "
     "WHERE r.apartment_id = ? AND r.id = ? AND r.status = 'active' AND g.archived_at IS NULL "
-    "AND COALESCE(r.source, '') != 'demo' "
+    "{demo_filter}"
     "ORDER BY COALESCE(g.stay_from, r.date_from), g.id"
 )
 _CHARGE_KEYS = ("guest_id", "liable_nights", "exempt_nights", "status", "auto_minor",
                 "auto_obec_resident")
 
 
-def charge_for_reservation(apartment, reservation) -> Optional[Dict[str, Any]]:
-    """Live amount for one reservation over its whole stay (guest panel and register share this)."""
+def charge_for_reservation(apartment, reservation, *, include_demo: bool = False) -> Optional[Dict[str, Any]]:
+    """Live amount for one reservation over its whole stay.
+
+    The guest card passes include_demo=True so the host can preview payment on
+    the setup-guide stay. Council totals keep the default and still skip demo.
+    """
     if not is_active(apartment) or not config.STAY_FEE_GUEST_PAY:
         return None
     rate = int(apartment["stay_fee_rate_czk"])
     lines: List[Dict[str, Any]] = []
-    for row in db.query(_GUESTS_FOR_RES_SQL, (apartment["id"], reservation["id"])):
+    demo_filter = "" if include_demo else "AND COALESCE(r.source, '') != 'demo' "
+    for row in db.query(_GUESTS_FOR_RES_SQL.format(demo_filter=demo_filter), (apartment["id"], reservation["id"])):
         if not reporting.guest_has_signature(row):
             continue
         share = guest_period(row, {"date_from": row["res_from"], "date_to": row["res_to"]},
@@ -562,7 +567,7 @@ def unsigned_stays(
     rows = db.query(
         "SELECT g.* FROM guest g JOIN reservation r ON r.id = g.reservation_id "
         "WHERE r.apartment_id = ? AND r.status = 'active' AND g.archived_at IS NULL "
-        "AND COALESCE(r.source, '') != 'demo' "
+        "{demo_filter}"
         "AND COALESCE(g.stay_from, r.date_from) <= ? AND COALESCE(g.stay_to, r.date_to) >= ?",
         (apartment_id, last.isoformat(), first.isoformat()),
     )
