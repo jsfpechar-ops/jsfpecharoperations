@@ -24,8 +24,8 @@
     "v": "20261104-0955g"
   },
   "app2.css": {
-    "sha256": "08a3b7d5ae541fb5e8649b6da0625867e956a3ace055d2060699fa6a034f5568",
-    "v": "20261105-guestpay1"
+    "sha256": "982b1c1685456833fa0c799c652fdbf5c4a6088668d970f1205caa1d7dfaff8c",
+    "v": "20261105-guestpay2"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -166,6 +166,10 @@
   "skeleton.js": {
     "sha256": "37160a722bb10d28ebf4aa12a6783a478699364651f12f415042f236f2f6d79b",
     "v": "20261102-0509"
+  },
+  "stay-fee-guest-pay.js": {
+    "sha256": "3bd43372c157533368e978ff841e47e5a4038e9d8496a1c5722b1784075dde27",
+    "v": "20261105-gp2"
   },
   "tokens.css": {
     "sha256": "bada752f7935a7fc7bf01c8fd07d48a9893c472decafd3a4974efc0d1c3220ea",

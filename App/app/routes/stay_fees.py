@@ -8,7 +8,7 @@ from datetime import date
 from urllib.parse import parse_qsl, quote, urlencode, urlsplit
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import RedirectResponse, Response
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 
 from .. import (
     access,
@@ -127,6 +127,38 @@ def _detail_filter(selected_month: date, today: date, apartment_id: int) -> dict
     }
 
 
+
+@router.post("/stay-fees/{apartment_id}/guest-pay-preview")
+async def guest_pay_preview(apartment_id: int, request: Request):
+    """Live sample QR for the guest-pay block: what the host typed, nothing is saved."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment = access.apartment(request, apartment_id)
+    if not apartment or not stay_fee_guest_pay_on():
+        return JSONResponse({"ok": False}, status_code=404)
+    form = await request.form()
+    typed = _form_str(form, "account").strip()
+    entity = None
+    if apartment["legal_entity_id"]:
+        entity = db.query_one(
+            "SELECT id, bank_account, iban FROM legal_entity WHERE id = ?",
+            (apartment["legal_entity_id"],),
+        )
+    try:
+        rate = int(_form_str(form, "rate") or 0) or None
+    except ValueError:
+        rate = None
+    ctx = guest_pay_operator_context(
+        apartment, entity, draft_account=typed, sample_rate=rate,
+    )
+    return JSONResponse({
+        "ok": bool(ctx["has_account"]),
+        "invalid": bool(typed) and not ctx["has_account"],
+        "account": ctx["account_display"],
+        "qr": ctx["preview_qr"],
+    })
+
 @router.get("/stay-fees")
 def stay_fees_list(request: Request):
     guard = auth.require_login(request)
@@ -221,6 +253,7 @@ GUEST_LINK_HOSTS = ("revolut.me", "revolut.com")
 GUEST_OPERATOR_ACCOUNT_RAW = "_stay_fee_guest_operator_account_raw"
 GUEST_OPERATOR_ACCOUNT_INVALID = "stay_fee_guest_operator_account_invalid"
 GUEST_OPERATOR_SAMPLE_VS = "1234567890"
+GUEST_RATE_REQUIRED = "stay_fee_guest_rate_required"
 
 
 def stay_fee_guest_pay_on() -> bool:
@@ -252,7 +285,11 @@ def guest_pay_values(form) -> dict:
         rails.append("revolut")
         rails.sort()
     note = _form_str(form, "stay_fee_guest_cash_note")[:GUEST_NOTE_MAX].strip()
+    default_rail = _form_str(form, "stay_fee_guest_default_rail")
+    if default_rail not in rails:
+        default_rail = ""
     return {
+        "stay_fee_guest_default_rail": default_rail,
         "stay_fee_collect": 1 if _form_str(form, "stay_fee_collect") == "1" else 0,
         "stay_fee_guest_rails": ",".join(rails),
         "stay_fee_guest_revolut_link": link or None,
@@ -383,6 +420,7 @@ def guest_pay_operator_context(
     entity,
     *,
     draft_account: str = "",
+    sample_rate=None,
 ) -> dict:
     """Host preview for QR/bank-transfer rails: sample QR and the operator account."""
     from .. import payments
@@ -402,15 +440,14 @@ def guest_pay_operator_context(
     }
     if not stay_fee_guest_pay_on():
         return empty
-    if not guest_pay_rails_need_account(apartment.get("stay_fee_guest_rails") or ""):
-        return empty
     existing_hidden = _entity_payment_account(entity)
-    field_value = (draft_account or existing_hidden or "").strip()
+    shown = (entity.get("bank_account") if entity else "") or existing_hidden
+    field_value = (draft_account or shown or "").strip()
     account_display, spayd_account = _resolved_operator_account(entity, draft_account)
     has_account = bool(spayd_account)
     preview_qr = ""
     if has_account:
-        rate = int(apartment.get("stay_fee_rate_czk") or 0) or 50
+        rate = int(sample_rate if sample_rate is not None else (apartment.get("stay_fee_rate_czk") or 0)) or 50
         sample_amount = min(max(rate, 1), 50)
         payload = payments.spayd(
             spayd_account,
@@ -427,6 +464,24 @@ def guest_pay_operator_context(
         "field_value": field_value,
         "existing_hidden": existing_hidden,
     }
+
+
+
+def check_guest_pay_rate(apartment, values: dict) -> None:
+    """Asking guests to pay needs the fee per person per night: refuse the save without it."""
+    if not app_config.STAY_FEE_GUEST_PAY:
+        return
+    if not values.get("stay_fee_collect"):
+        return
+    if hasattr(apartment, "keys") and not hasattr(apartment, "get"):
+        apartment = dict(apartment)
+    rate = values.get("stay_fee_rate_czk", apartment.get("stay_fee_rate_czk"))
+    try:
+        rate = int(rate or 0)
+    except (TypeError, ValueError):
+        rate = 0
+    if rate <= 0:
+        raise ValueError(GUEST_RATE_REQUIRED)
 
 
 def apply_guest_operator_account(apartment, form, values: dict) -> None:

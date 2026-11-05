@@ -277,3 +277,104 @@ def test_qr_rail_shows_preview_when_operator_has_iban(host, monkeypatch):
     assert 'id="stay-fee-guest-preview"' in page.text
     assert "data:image/png;base64," in page.text
     assert "CZ65 0800" in page.text or "CZ650800" in page.text
+
+
+def test_stored_operator_account_shows_before_any_rail_is_saved(host, monkeypatch):
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    page = client.get(f"/apartments/{apartment_id}?view=settings&section=reporting&lang=en")
+    assert page.status_code == 200
+    assert 'value="CZ6508000000192000145399"' in page.text or 'value="19-2000145399/0800"' in page.text
+    assert "data:image/png;base64," in page.text
+    assert "hidden" not in page.text.split('id="stay-fee-guest-preview"')[1].split(">")[0]
+
+
+def _csrf(client, apartment_id):
+    page = client.get(f"/apartments/{apartment_id}?lang=en")
+    return page.text.split('name="csrf-token" content="')[1].split('"')[0]
+
+
+def test_live_preview_endpoint_returns_a_qr_for_a_typed_account(host, monkeypatch):
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    token = _csrf(client, apartment_id)
+    ok = client.post(
+        f"/stay-fees/{apartment_id}/guest-pay-preview",
+        data={"account": "19-2000145399/0800", "rate": "30"},
+        headers={"x-csrf-token": token},
+    )
+    assert ok.status_code == 200
+    body = ok.json()
+    assert body["ok"] is True and body["qr"].startswith("data:image/png;base64,")
+    assert body["account"].replace(" ", "").startswith("CZ")
+    bad = client.post(
+        f"/stay-fees/{apartment_id}/guest-pay-preview",
+        data={"account": "123"},
+        headers={"x-csrf-token": token},
+    ).json()
+    assert bad["ok"] is False and bad["invalid"] is True
+
+
+def test_live_preview_endpoint_is_off_with_the_kill_switch(host, monkeypatch):
+    client, apartment_id = host
+    token = _csrf(client, apartment_id)
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", False)
+    response = client.post(
+        f"/stay-fees/{apartment_id}/guest-pay-preview",
+        data={"account": "19-2000145399/0800"},
+        headers={"x-csrf-token": token},
+    )
+    assert response.status_code == 404
+
+
+def _save_rate(client, apartment_id, rate, collect=True):
+    page = client.get(f"/apartments/{apartment_id}?lang=en")
+    token = page.text.split('name="csrf-token" content="')[1].split('"')[0]
+    entity = db.query_one("SELECT legal_entity_id FROM apartment WHERE id = ?", (apartment_id,))
+    data = _property_data(entity["legal_entity_id"], _csrf=token, stay_fee_rate_czk=str(rate), stay_fee_vs="123456")
+    data["stay_fee_guest_form"] = "1"
+    data["stay_fee_guest_rails"] = ["cash"]
+    if collect:
+        data["stay_fee_collect"] = "1"
+    return client.post(f"/apartments/{apartment_id}", data=data, follow_redirects=False)
+
+
+def test_asking_guests_to_pay_without_a_rate_is_refused(host, monkeypatch):
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    response = _save_rate(client, apartment_id, 0)
+    assert response.status_code == 400
+    assert "per person per night" in response.text
+    assert _stored(apartment_id)["stay_fee_collect"] in (0, None)
+
+
+def test_asking_guests_to_pay_with_a_rate_saves(host, monkeypatch):
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    assert _save_rate(client, apartment_id, 30).status_code == 303
+    assert _stored(apartment_id)["stay_fee_collect"] == 1
+
+
+def test_a_zero_rate_is_fine_while_guests_are_not_asked_to_pay(host, monkeypatch):
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    assert _save_rate(client, apartment_id, 0, collect=False).status_code == 303
+
+
+def test_default_rail_is_saved_only_when_that_rail_is_enabled(host, monkeypatch):
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    ok = _save(client, apartment_id, guest={
+        "stay_fee_guest_rails": ["qr", "revolut"],
+        "stay_fee_guest_default_rail": "revolut",
+        "stay_fee_guest_revolut_link": GOOD_LINK,
+    })
+    assert ok.status_code == 303, ok.text
+    row = db.query_one("SELECT stay_fee_guest_default_rail FROM apartment WHERE id = ?", (apartment_id,))
+    assert row["stay_fee_guest_default_rail"] == "revolut"
+    _save(client, apartment_id, guest={
+        "stay_fee_guest_rails": ["qr"],
+        "stay_fee_guest_default_rail": "cash",
+    })
+    row = db.query_one("SELECT stay_fee_guest_default_rail FROM apartment WHERE id = ?", (apartment_id,))
+    assert row["stay_fee_guest_default_rail"] == ""

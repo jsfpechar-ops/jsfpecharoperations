@@ -75,48 +75,46 @@
         <span>{{ t('stay_fees.guest_pay.collect_label') }}{{ help_tip('stay_fee_collect-help', t('stay_fees.guest_pay.collect_hint')) }}</span>
       </label>
     </div>
+    {%- set rate_missing = not (apartment.stay_fee_rate_czk or 0) or (fee_rate_error is defined and fee_rate_error) -%}
+    <p class="err-text small stay-fee-rate-warning" id="stay-fee-rate-warning" role="alert" data-rate-warning{% if not (fee_rate_error is defined and fee_rate_error) %} hidden{% endif %}>{{ t('stay_fees.guest_pay.rate_warning') }}</p>
     <fieldset class="stay-fee-rails">
       <legend class="small">{{ t('stay_fees.guest_pay.rails_label') }}</legend>
       {% for rail in ['qr', 'iban', 'revolut', 'cash'] %}
       <label class="checkline stay-fee-rail"><input type="checkbox" name="stay_fee_guest_rails" value="{{ rail }}"{% if rail in guest_rails %} checked{% endif %}> <span>{{ t('stay_fees.guest_pay.rail.' ~ rail) }}</span></label>
       {% endfor %}
     </fieldset>
+    <div class="field stay-fee-default-rail">
+      {{ field_label('stay_fee_guest_default_rail', t('stay_fees.guest_pay.default_label'), t('stay_fees.guest_pay.default_help')) }}
+      <select id="stay_fee_guest_default_rail" name="stay_fee_guest_default_rail" aria-describedby="stay_fee_guest_default_rail-help">
+        <option value=""{% if not apartment.stay_fee_guest_default_rail %} selected{% endif %}>{{ t('stay_fees.guest_pay.default_auto') }}</option>
+        {% for rail in ['qr', 'iban', 'revolut', 'cash'] %}
+        <option value="{{ rail }}"{% if apartment.stay_fee_guest_default_rail == rail %} selected{% endif %}>{{ t('stay_fees.guest_pay.rail.' ~ rail) }}</option>
+        {% endfor %}
+      </select>
+    </div>
     {%- set gpo = guest_pay_operator if guest_pay_operator is defined else {} -%}
-    <div class="stay-fee-guest-operator">
+    {%- set gpo_err = fee_operator_account_error is defined and fee_operator_account_error -%}
+    <div class="stay-fee-guest-operator" data-guest-pay-operator data-preview-url="/stay-fees/{{ apartment.id }}/guest-pay-preview">
       <p class="ui-sub">{{ t('stay_fees.guest_pay.operator_lede') }}</p>
-      {% if gpo.get('has_account') and gpo.get('preview_qr') %}
-      <div class="stay-fee-guest-preview" id="stay-fee-guest-preview">
-        <p class="small"><strong>{{ t('stay_fees.guest_pay.operator_account_label') }}</strong></p>
-        <p class="stay-fee-guest-account">{{ gpo.account_display }}</p>
-        <div class="stay-fee-guest-qr">
-          <img src="{{ gpo.preview_qr }}" width="176" height="176" alt="{{ t('stay_fees.guest_pay.preview_qr_alt') }}">
-        </div>
-        <p class="muted small">{{ t('stay_fees.guest_pay.preview_sample_note') }}</p>
-      </div>
-      {% endif %}
-      {% if not gpo.get('has_account') %}
-      <input type="hidden" name="_stay_fee_guest_operator_existing" value="{{ gpo.get('existing_hidden') or '' }}">
-      {% if fee_operator_account_error is defined and fee_operator_account_error %}
+      {% if gpo_err %}
       <p class="err-text small" id="stay-fee-guest-operator-error" role="alert">{{ t('flash.stay_fees.operator_account_required') }}</p>
       {% endif %}
       <div class="field">
         {{ field_label('stay_fee_guest_operator_account', t('stay_fees.guest_pay.operator_account_label'), t('stay_fees.guest_pay.operator_account_help')) }}
         <input type="text" id="stay_fee_guest_operator_account" name="stay_fee_guest_operator_account" autocomplete="off" spellcheck="false" maxlength="42"
-               aria-describedby="stay_fee_guest_operator_account-help{% if fee_operator_account_error is defined and fee_operator_account_error %} stay-fee-guest-operator-error{% endif %}"
-               value="{{ gpo.get('field_value') or '' }}"{% if fee_operator_account_error is defined and fee_operator_account_error %} aria-invalid="true"{% endif %}>
-      </div>
-      {% else %}
-      <details class="fee-more stay-fee-guest-operator-change">
-        <summary>{{ t('stay_fees.guest_pay.operator_change') }}</summary>
-        <input type="hidden" name="_stay_fee_guest_operator_existing" value="{{ gpo.get('existing_hidden') or '' }}">
-        <div class="field">
-          {{ field_label('stay_fee_guest_operator_account', t('stay_fees.guest_pay.operator_account_label'), t('stay_fees.guest_pay.operator_account_help')) }}
-          <input type="text" id="stay_fee_guest_operator_account" name="stay_fee_guest_operator_account" autocomplete="off" spellcheck="false" maxlength="42"
-                 aria-describedby="stay_fee_guest_operator_account-help" value="{{ gpo.get('field_value') or '' }}">
-        </div>
+               aria-describedby="stay_fee_guest_operator_account-help stay-fee-guest-preview-status{% if gpo_err %} stay-fee-guest-operator-error{% endif %}"
+               value="{{ gpo.get('field_value') or '' }}"{% if gpo_err %} aria-invalid="true"{% endif %}>
         <p class="muted small">{{ t('stay_fees.guest_pay.operator_invoice_note') }}</p>
-      </details>
-      {% endif %}
+      </div>
+      <p class="err-text small" id="stay-fee-guest-preview-status" role="status" aria-live="polite" data-preview-invalid hidden>{{ t('flash.stay_fees.account_invalid') }}</p>
+      <div class="stay-fee-guest-preview" id="stay-fee-guest-preview" data-preview-box{% if not (gpo.get('has_account') and gpo.get('preview_qr')) %} hidden{% endif %}>
+        <p class="small"><strong>{{ t('stay_fees.guest_pay.preview_title') }}</strong></p>
+        <p class="stay-fee-guest-account" data-preview-account>{{ gpo.get('account_display') or '' }}</p>
+        <div class="stay-fee-guest-qr">
+          <img src="{{ gpo.get('preview_qr') or '' }}" width="176" height="176" alt="{{ t('stay_fees.guest_pay.preview_qr_alt') }}" data-preview-qr>
+        </div>
+        <p class="muted small">{{ t('stay_fees.guest_pay.preview_sample_note') }}</p>
+      </div>
     </div>
     <div class="field{% if not fee_link_error %} stay-fee-rail-revolut{% endif %}">
       {{ field_label('stay_fee_guest_revolut_link', t('stay_fees.guest_pay.revolut_label'), t('stay_fees.guest_pay.revolut_help')) }}
@@ -130,3 +128,4 @@
   </fieldset>
 </div>
 {% include "_fee_signature_fields.html" %}
+<script src="/static/stay-fee-guest-pay.js?v=20261105-gp2" defer data-turbo-track="reload"></script>

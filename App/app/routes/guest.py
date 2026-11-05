@@ -1251,10 +1251,11 @@ def stay_overview(token: str, reservation_id: int, request: Request):
             "door_code": door_codes.view(reservation, apartment),
         }
     )
-    fee_panel = _fee_pay_panel(apartment, reservation, context["t"])
-    if fee_panel and remaining is not None and remaining > 0:
-        fee_panel = {**fee_panel, "provisional": True}
-    context["fee_panel"] = fee_panel
+    context["fee_panel"] = (
+        _fee_pay_panel(apartment, reservation, context["t"], _qr_offered(request, reservation))
+        if remaining is not None and remaining <= 0
+        else None
+    )
     return _with_lang(render_guest(request, "guest/stay.html", context), lang)
 
 
@@ -1580,8 +1581,8 @@ def _form_context(
             ),
             "fee_estimate": _fee_estimate(apartment, reservation, values or {}),
             "fee_panel": (
-                _fee_pay_panel(apartment, reservation, context["t"])
-                if remaining is None or remaining <= 0
+                _fee_pay_panel(apartment, reservation, context["t"], _qr_offered(request, reservation))
+                if remaining is not None and remaining <= 0
                 else None
             ),
             "country_groups": codelists.country_groups(lang),
@@ -1989,15 +1990,19 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     )
 
     destination = _guest_link(token, reservation_id)
+    fragment = ""
     if continue_to_next:
         destination += "/new"
-    else:
-        panel = _fee_pay_panel(apartment, fresh_reservation, i18n.translator(lang))
+    elif missing == 0:
+        panel = _fee_pay_panel(
+            apartment, fresh_reservation, i18n.translator(lang),
+            _qr_offered(request, fresh_reservation),
+        )
         if panel and panel.get("rails"):
-            destination += "#fee-pay"
+            fragment = "#fee-pay"
 
     response = RedirectResponse(
-        destination + _lang_q(lang, "&saved=1"), status_code=303
+        destination + _lang_q(lang, "&saved=1") + fragment, status_code=303
     )
     _remember_owned(response, _owned_ids(request) + [saved_id])
     return _with_lang(response, lang)
@@ -2061,7 +2066,23 @@ async def guest_document_scan(token: str, reservation_id: int, request: Request)
 
 # --- stay-fee money card and form estimate (brief 0910) -----------------------
 
-def _fee_pay_panel(apartment, reservation, t):
+QR_NATIONALITIES = ("CZE", "SVK")
+RAIL_ORDER = ("qr", "iban", "revolut", "cash")
+
+
+def _qr_offered(request, reservation) -> bool:
+    """The Czech payment QR is for Czech and Slovak guests. It follows the people
+    registered on this device, or the whole stay when none are."""
+    rows = db.query(
+        "SELECT id, nationality FROM guest WHERE reservation_id = ? AND archived_at IS NULL",
+        (reservation["id"],),
+    )
+    owned = set(_owned_ids(request))
+    pool = [row for row in rows if row["id"] in owned] or list(rows)
+    return any((row["nationality"] or "").upper() in QR_NATIONALITIES for row in pool)
+
+
+def _fee_pay_panel(apartment, reservation, t, qr_ok=True):
     """Hub money card data, or None. None unless the property collects, the live total is above zero."""
     from .. import config, payments, stay_fee
     if not (apartment["stay_fee_collect"] and config.STAY_FEE_GUEST_PAY):
@@ -2089,8 +2110,13 @@ def _fee_pay_panel(apartment, reservation, t):
         for line in charge["lines"] if line["liable_nights"] > 0
     ]
     rails = []
-    for key in (apartment["stay_fee_guest_rails"] or "").split(","):
-        if key == "qr" and account:
+    enabled = {part for part in (apartment["stay_fee_guest_rails"] or "").split(",") if part}
+    first = apartment["stay_fee_guest_default_rail"] or ""
+    order = ([first] if first in RAIL_ORDER else []) + [key for key in RAIL_ORDER if key != first]
+    for key in order:
+        if key not in enabled:
+            continue
+        if key == "qr" and account and qr_ok:
             payload = payments.spayd(account, total, vs, message)
             rails.append({"key": "qr", "qr": payments.qr_data_uri(payload)})
         elif key == "iban" and account:
