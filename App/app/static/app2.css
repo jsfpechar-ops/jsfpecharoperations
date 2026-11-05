@@ -2575,3 +2575,10 @@ html.has-js body.v2 .savebar[data-for="property-settings-form"]:not(.is-dirty){d
 html:has(.property-settings-form):has(.savebar[data-for]){--savebar-h:72px;scroll-padding-bottom:calc(var(--savebar-h) + 16px)}
 @media (max-width:1023px){html:has(.property-settings-form):has(.savebar[data-for]){--tabbar-h:84px;scroll-padding-bottom:calc(var(--savebar-h) + var(--tabbar-h) + var(--tabbar-safe,0px) + 16px)}}
 body.v2 form.property-settings-form .btn,body.v2 form.property-settings-form .ui-btn,body.v2 .savebar .btn{min-height:44px;height:auto}
+/* 0955 preview sticky: the Preview aside is column 2 of the detail body, so it can stick for the whole page */
+@media (min-width:1024px){
+  body.v2 .ui-body-detail:has(> aside.preview){display:grid;grid-template-columns:minmax(0,1fr) 300px;align-items:start}
+  body.v2 .ui-body-detail:has(> aside.preview) > .form{grid-column:1;grid-row:1;min-width:0;grid-template-columns:minmax(0,1fr)}
+  body.v2 .ui-body-detail:has(> aside.preview) > aside.preview{grid-column:2;grid-row:1;align-self:start;position:sticky;top:24px;z-index:1}
+}
+@media (max-width:1023px){body.v2 .ui-body-detail:has(> aside.preview) > aside.preview{position:static}}
