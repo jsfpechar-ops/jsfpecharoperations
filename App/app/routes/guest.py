@@ -1539,6 +1539,9 @@ def _form_context(
         else _guest_link(token, reservation["id"]) + "/new"
     )
     context["lang_urls"] = _lang_urls(request, form_path)
+    # 0959: the menu on this page posts the open form here, so a language
+    # change keeps what the guest typed. Nothing is stored.
+    context["lang_relang_url"] = _guest_link(token, reservation["id"]) + "/relang"
     # 0911: the fee notice shows with the host's collect switch on and a rate; the
     # suggest URL is set only while the RUIAN lookup is enabled (the form uses it for CZ).
     context["fee_notice"] = bool(
@@ -1696,6 +1699,83 @@ def guest_form_edit(token: str, reservation_id: int, guest_id: int, request: Req
         ),
         lang,
     )
+
+
+@router.post("/l/{token}/{reservation_id}/relang")
+async def guest_form_relang(token: str, reservation_id: int, request: Request):
+    """0959: draw the open form again in another language, keeping the answers.
+
+    The language menu posts the form here with ``?lang=`` set to the new
+    language. The answers are read from this one request and drawn back into
+    the form; nothing is stored and no answer goes into a URL. A drawn
+    signature and the acknowledgement tick are left out on purpose: they attest
+    to text the guest can no longer see. A chosen photo cannot be refilled.
+    """
+    lang = _language(request)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
+    pin_guard = _require_pin(request, token, lang)
+    if pin_guard:
+        return pin_guard
+    reservation = _reservation_for_guest(apartment, reservation_id, request)
+    if not reservation:
+        return _unavailable(request, lang, "stay_gone", 404, token)
+    throttle = _throttle_guest_post(request, token, "guest_relang", lang)
+    if throttle:
+        return throttle
+    claim_guard = _require_claim_session(request, reservation, token, lang)
+    if claim_guard:
+        return _with_lang(claim_guard, lang)
+
+    form = await request.form()
+    existing = None
+    raw_id = (form.get("guest_id") or "").strip()
+    if raw_id.isdigit() and int(raw_id) in _owned_ids(request):
+        existing = db.query_one(
+            "SELECT * FROM guest WHERE id = ? AND reservation_id = ?",
+            (int(raw_id), reservation_id),
+        )
+    if existing:
+        if existing["submit_state"] == reporting.SENT:
+            return _unavailable(request, lang, "already_filed", 403, token)
+        if existing["restricted_at"] or reporting.guest_form_locked(existing, reservation):
+            return _unavailable(request, lang, "form_locked", 403, token)
+
+    raw = _guest_form_raw(form, apartment)
+    values = validation.normalise_guest(raw, clamp=False)
+    stay_from, stay_to = _stay_dates_from_form(
+        form, (reservation["date_from"], reservation["date_to"])
+    )
+    context = _form_context(
+        request,
+        apartment,
+        reservation,
+        existing,
+        lang,
+        values=values,
+        back_url=_form_back_url(token, apartment, reservation_id, lang, editing=bool(existing)),
+        token=token,
+    )
+    context["values"].update(
+        {
+            "stay_from": stay_from,
+            "stay_to": stay_to,
+            "child_in_passport": bool(form.get("child_in_passport")),
+            "parent_doc_number": form.get("parent_doc_number") or "",
+            "party_size": (form.get("party_size") or "").strip(),
+            "signature": "",
+            "legal_ack": "",
+        }
+    )
+    # 0959: the typed text goes back exactly as the guest wrote it. Upper-casing
+    # and spacing happen at save time only; the normalised values above still
+    # drive which steps are shown.
+    typed_fields = ("surname", "first_name", "doc_number", "visa_number", "res_street", "res_city")
+    context["values"].update({field: raw.get(field) or "" for field in typed_fields})
+    step = (form.get("_step") or "").strip()
+    context["start_step"] = int(step) if step.isdigit() and len(step) <= 2 else 0
+    return _with_lang(render_guest(request, "guest/form.html", context), lang)
 
 
 @router.post("/l/{token}/{reservation_id}/save")
