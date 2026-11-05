@@ -266,3 +266,27 @@ def test_phone_stays_filters_are_visible_and_preserve_selection(playwright_api, 
             page.screenshot(path=str(target / f"stays-archive-{lang}-{width}.png"), full_page=False)
     finally:
         browser.close()
+
+
+@pytest.mark.parametrize("width", (320, 390))
+def test_phone_stays_pills_keep_12px_gap_when_wrapped(playwright_api, host, base, width):
+    path = f"/reservations?status=all&apartment={host['apartment']}"
+    browser, page = _open(playwright_api, host, base, path, width, lang="en")
+    try:
+        page.evaluate("() => document.fonts.ready")
+        gaps = page.locator(".stays-pills .settings-pill").evaluate_all("""pills => {
+            const boxes = pills.map(p => p.getBoundingClientRect());
+            let min = Infinity;
+            for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
+                const a = boxes[i], b = boxes[j];
+                const dx = Math.max(0, b.left - a.right, a.left - b.right);
+                const dy = Math.max(0, b.top - a.bottom, a.top - b.bottom);
+                min = Math.min(min, Math.max(dx, dy));
+            }
+            return {min, rows: new Set(boxes.map(b => Math.round(b.top))).size};
+        }""")
+        assert gaps["rows"] > 1, gaps
+        # 11.5 px tolerance for sub-pixel layout, same as test_0830 (design rule: 12 px)
+        assert gaps["min"] >= 11.5, gaps
+    finally:
+        browser.close()

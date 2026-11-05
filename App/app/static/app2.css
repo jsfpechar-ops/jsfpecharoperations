@@ -1841,7 +1841,7 @@ body.v2 .settings-pill{flex:0 0 auto;display:inline-flex;align-items:center;min-
 body.v2 .settings-pill.is-current{background:var(--ink);color:#fff}
 /* 0950-fix-1: opt-in wrapping keeps every Stays filter visible on phones. */
 @media (max-width:767px){
-  body.v2 .settings-pills[data-wrap-on-phone]{flex-wrap:wrap;gap:var(--space-3);overflow:visible}
+  body.v2 .settings-pills[data-wrap-on-phone]{flex-wrap:wrap;overflow:visible}
 }
 /* 0789b: a checkbox with data-toggle-submit is a 51x31 switch (ink when on) */
 body.v2 .settings-toggle-form{margin:0}
