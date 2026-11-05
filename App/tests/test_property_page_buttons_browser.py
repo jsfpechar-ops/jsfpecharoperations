@@ -114,3 +114,64 @@ def test_the_dirty_bar_is_visible_clear_of_the_tab_bar_and_help_bubble(browser, 
     page.screenshot(path=str(SHOT_DIR / f"property-save-bar-{width}.png"), full_page=False)
     page.context.close()
     db.execute("UPDATE apartment SET internal_name = ? WHERE id = ?", (NAME, host["apartment"]))
+
+
+def test_an_invalid_field_keeps_the_edits_and_the_bar_and_cancel_clears_it(browser, base, host):  # noqa: F811
+    url = f"{base}/apartments/{host['apartment']}"
+    page = _page(browser, base, host)
+    page.goto(f"{url}?view=settings&section=property&lang=en")
+    loaded_house = page.input_value("#addr_house_no")
+    page.fill("#internal_name", "Invalid O1 edit")
+    page.fill("#addr_house_no", "")
+    page.locator(SAVE).click()
+    page.wait_for_timeout(300)
+    assert page.url.split("#")[0].startswith(url), "an invalid form must not post"
+    invalid = page.evaluate("() => { const e = document.getElementById('addr_house_no'); return !e.checkValidity(); }")
+    assert invalid, "house number is required in the browser"
+    assert page.input_value("#internal_name") == "Invalid O1 edit"
+    assert page.locator(BAR).is_visible()
+    assert _stored(host, "internal_name") == NAME
+    page.locator(CANCEL).click()
+    assert page.input_value("#addr_house_no") == loaded_house
+    assert page.input_value("#internal_name") == NAME
+    assert not page.locator(BAR).is_visible()
+    assert page.evaluate("() => document.getElementById('addr_house_no').checkValidity()")
+    assert page.native_dialogs == []
+    page.context.close()
+
+
+def test_tab_from_the_last_field_reaches_cancel_then_save(browser, base, host):  # noqa: F811
+    url = f"{base}/apartments/{host['apartment']}"
+    page = _page(browser, base, host)
+    page.goto(f"{url}?view=settings&section=property&lang=en")
+    page.fill("#internal_name", "Keys O1 edit")
+    page.focus("#internal_name")
+    stops = []
+    for _ in range(200):
+        page.keyboard.press("Tab")
+        info = page.evaluate("""() => { const a = document.activeElement; const bar = document.querySelector(".savebar[data-for='property-settings-form']");
+            return {cancel: a.matches('[data-unsaved-reset]'), save: a.matches('button[type=submit][form="property-settings-form"]'),
+                    before: !!(bar.compareDocumentPosition(a) & Node.DOCUMENT_POSITION_PRECEDING), label: a.tagName + '#' + (a.id || a.name || '')}; }""")
+        if info["cancel"]:
+            break
+        stops.append(info["label"])
+    assert info["cancel"], "Tab never reached Cancel after the form fields"
+    assert stops, "Tab did not visit a form field first"
+    page.keyboard.press("Tab")
+    nxt = page.evaluate("() => document.activeElement.matches('button[type=submit][form=\"property-settings-form\"]')")
+    assert nxt, "Tab after Cancel did not reach Save changes"
+    page.context.close()
+
+
+def test_escape_neither_discards_nor_leaves_the_page(browser, base, host):  # noqa: F811
+    url = f"{base}/apartments/{host['apartment']}"
+    page = _page(browser, base, host)
+    page.goto(f"{url}?view=settings&section=property&lang=en")
+    page.fill("#internal_name", "Escape O1 edit")
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(200)
+    assert page.input_value("#internal_name") == "Escape O1 edit"
+    assert page.locator(BAR).is_visible()
+    assert page.url.split("#")[0].startswith(url)
+    assert _stored(host, "internal_name") == NAME
+    page.context.close()
