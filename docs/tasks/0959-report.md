@@ -1,32 +1,41 @@
-# 0959 report (executor)
+# 0959 report (executor, steps 3 and 4)
 
-Status: blocked. The regression test failed a second time after the name-case fix. It now fails at the switch back to English (line 810), not at the name check.
+Status: blocked. The regression test fails at the switch from the Czech page back to EN. Cause: a product bug in the submit guard, not the discard guard. Not a test fault.
 
 ## Changed files
-Code and tests: App/app/routes/guest.py, App/app/templates/guest/base.html, App/app/templates/guest/form.html, App/app/templates/_signature_script.html, App/app/static/guest.css, App/app/static/signature.js, App/app/i18n.py, App/app/guest_uk_i18n.py, App/tests/test_guest_browser_e2e.py, App/tests/static_versions.json (regenerated with --write). Commit c9103eef.
+- App/tests/test_guest_browser_e2e.py: added test_0959_discard_warning_cancel_keeps_draft. The regression test is unchanged (the planned dialog change was not applied, see Deviations).
+- docs/tasks/0959-report.md (this file), docs/tasks/0959-guest-draft-language.md (blocked reason).
+- Commits: 0959 step 3 (test), 0959 step 4 (report), 0959 status (brief reason). Nothing pushed.
 
-Fix applied (guest.py, relang route only): surname, first_name, doc_number, visa_number, res_street, res_city are drawn from the raw posted values. Normalised values still drive step logic. normalise_name, validation.py and the save path are unchanged.
+## Commands (pass / fail / skip)
+- `pytest tests/test_guest_browser_e2e.py -k 0959`: 1 passed (cancel test), 1 failed (regression, line 810), 0 skipped.
+- `pytest tests/test_guest_*.py tests/test_guest_browser_e2e.py` (guest row): 569 passed, 1 failed (same regression test), 0 skipped.
+- `pytest tests/test_static_versions.py tests/test_wp07_cache_heartbeats.py`: 16 passed, 0 failed, 0 skipped.
+- `python3 scripts/context_lint.py`: OK (WARN lines pre-existing, not from this change).
+- `git diff --check`: clean. No static asset changed, so no version regeneration.
 
-## Commands
-- test_guest_browser_e2e.py -k 0959: FAIL (1 failed, 0 passed, 0 skipped). Timeout 30000 ms at line 810 (expect_navigation on switch to EN). Lines before it pass, including the Czech name and surname checks.
-- test_static_versions.py + test_wp07_cache_heartbeats.py: PASS 16, FAIL 0, SKIP 0.
-- Guest test-map rows, context_lint, git diff --check: NOT RUN (stop rule).
+## Product finding (exact observed behaviour)
+- After the Accept switch to CS, the signature is empty, the tick is unchecked and there is no photo input file.
+- Clicking EN on that page sends no request, opens no dialog, leaves the URL at /relang?lang=cs, and the navigation times out after 30 s.
+- Cause (from code): App/app/static/signature.js, form submit listener (about lines 127 to 140), calls preventDefault when the signature hidden field is empty. The language menu buttons are submit buttons with formaction, so the switch is cancelled.
+- The discard guard (signature.js about line 635) did not fire here. That is correct: nothing was drawn, ticked or chosen.
+- Inferred, not tested: a guest who has not drawn a signature cannot switch language with JS on. The brief says the switch works without a drawn signature. Decision needed.
 
 ## Acceptance
-- New test passes: not met.
-- Czech and German step counts: not verified.
-- Guest test-map rows: not verified.
-- Static and cache tests: met.
-- Screenshots: 0959-review-cs-390/768/1280.png exist. Only 390 was inspected: name kept as typed, step 3 of 3, Czech labels, no overflow. Open language menu at 390 not captured.
-- Diff only in section 3 files: met (plus i18n and test files listed above).
+- Discard warning asks before losing a drawn signature, tick or photo: met for the signature and tick (cancel test passes, dialog text is the CS lang_draft_warning).
+- Switch back to EN keeps draft and step: not met (blocked by the finding above).
+- Other acceptance items: not verified (the brief's full list was not re-checked in this run).
 
-## Likely cause (not fixed, outside the decision)
-signature.js confirm guard: `(drawn || ticked || picked) && !window.confirm(...)`. The test's dialog handler calls pytest.fail on any dialog, so a confirm on the CS to EN switch hangs. Owner or orchestrator to decide: fix the guard state after a redraw, or change the test expectation.
+## Screenshots (in /tmp/ubyhost-b01, not in repo)
+- 390 CS (0959-review-cs-390.png): step 3 of 3 Podpis. Name case kept ("Synthetica Testovic"). The summary shows 4 rows; the birth date row is not visible (cause not checked). No horizontal overflow seen. Full-width save button.
+- 768 CS (0959-review-cs-768.png): all five summary rows, birth date "1. ledna 1980" present, name case kept, no overflow.
+- 1280 CS (0959-review-cs-1280.png): two columns with step list (Vaše údaje Hotovo, Trvalé bydliště Hotovo, 3 Podpis), all rows present, no overflow.
+- EN pages and the open language menu at 390: not captured. Not verified.
 
 ## Deviations
-- Commit trailer is Claude Co-Authored-By per the harness instruction, not Codex.
-- Step 1 committed although the test fails, per the brief order. Status is blocked.
+- The planned change (accept the dialog on CS to EN and assert the warning) was not applied. The dialog never appears in that state, so that assertion would always fail.
+- Commit trailers: the brief asked for a Codex trailer. I used the Claude Co-Authored-By and Claude-Session trailers required by the session attribution.
 
 ## Done / Left
-Done: relang fix, static regen and checks, 390 CS review inspected.
-Left: confirm-guard decision, 768/1280 inspection, EN/CS/DE step checks, menu screenshot, test-map rows, lint.
+- Done: cancel test added and passing; guest row run; lint and diff check.
+- Left: decide the signature submit guard (signature.js) so the switch works without a drawn signature; then rerun the regression test; EN and menu screenshots; full acceptance check. Owner to decide.

@@ -1,6 +1,6 @@
 # 0959: Keep the guest draft when the language changes
 
-Status: blocked - the 0959 test fails at the switch back to EN (confirm guard, line 810); see docs/tasks/0959-report.md.
+Status: blocked - the 0959 regression test fails at the switch back to EN from the Czech page: the signature.js submit guard cancels the switch when no signature is drawn (product finding); see docs/tasks/0959-report.md.
 Depends on: none (batch B01) | Base commit: 7b0355c | Branch: codex/0959-guest-draft-language
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, checkpoint 60k tokens
 
