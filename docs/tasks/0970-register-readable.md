@@ -1,6 +1,6 @@
 # 0970: make the house book readable without touching statutory output
 
-Status: review
+Status: blocked
 Depends on: B11 (run on the base commit below; files are narrow) | Base commit: 7b0355c45ccdd2557a28edfcfe228aa1dc766e36 | Branch: codex/0970-b12-register
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Worktree: /tmp/ubyhost-b12-worktree (already created)
 
