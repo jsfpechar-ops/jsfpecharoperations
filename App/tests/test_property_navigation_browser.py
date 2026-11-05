@@ -40,7 +40,7 @@ SETTINGS_NAMES = {
     "signature_drawn", "signature_name", "fee_signature_section", "signature_file", "return_to", "_csrf", "internal_name", "city_en", "legal_entity_id", "data_controller_entity_id",
     "addr_okres", "addr_obec", "addr_obec_cast", "addr_street", "addr_house_no", "addr_orient_no", "addr_zip",
     "notes", "permalink_pin", "guest_message", "permalink_window_days",
-    "permalink_reachback_days", "passport_photo_policy", "door_code_section", "door_codes_fields", "door_codes",
+    "permalink_reachback_days", "passport_photo_policy", "door_code_section",
     "lock_id", "checkin_hour", "checkout_hour", "lock_checkin_hour", "lock_checkout_hour", "uby_idub", "uby_ws_user", "uby_ws_password", "uby_mark",
     "uby_name", "uby_contact", "stay_fee_rate_czk", "stay_fee_cadence", "stay_fee_vs", "stay_fee_council_account",
     "_stay_fee_account_existing", "stay_fee_authority_name",
@@ -190,8 +190,8 @@ def test_placement_of_guest_link_actions_archive_and_switch(host):
     assert html.index('id="archive"') < html.index('class="savebar')
     door = _section(html, "sec-lock")
     assert 'id="door-code"' in door and 'id="door-code"' not in guests
-    assert 'role="switch"' in door and "Automatic door codes" in door
-    assert ">Enabled</span>" in door
+    assert "/door-codes" in door and "Automatic door codes" in door  # 0954: buttons, no switch
+    assert ">Enabled</small>" in door  # 0954: the section state line, the switch is gone
     assert door.count('href="/guide#door-codes"') == 1
     assert "Create a door code for each stay" not in html
 
@@ -437,16 +437,10 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
         page.wait_for_load_state()
         assert "sec-police" in page.evaluate(_STATE_JS)["open"], page.url
 
-        # The door-code switch says "Not saved yet" until it is saved.
+        # 0954: the status block replaces the switch; there is no checkbox left to toggle.
         page.goto(f"{url}?view=settings&section=lock&lang=en")
-        status = page.locator("#door_codes-status")
-        assert status.inner_text() == "Enabled"
-        page.locator("#door_codes").click()
-        page.wait_for_timeout(200)
-        assert status.inner_text() == "Not saved yet"
-        page.locator("#door_codes").click()
-        page.wait_for_timeout(200)
-        assert status.inner_text() == "Enabled"
+        assert page.locator(".lock-state").get_attribute("data-state") in ("on", "off", "offline", "times")
+        assert page.locator("#door_codes").count() == 0
         browser.close()
 
 
@@ -549,12 +543,13 @@ def test_shared_timing_pair_is_owned_by_properties(host, base):
         assert page.locator('#property-settings-form [name="checkout_hour"]').count() == 1
         assert page.locator('#arrival-departure').is_visible()
         _open(page, "lock")
-        page.locator('label[for="door_codes"]').click()  # the lock pickers show with the door-code switch on
+        # 0954: the lock pickers are always shown; the switch that hid them is gone.
         # 0414: the Door lock section has its own pickers (lock_*), kept in sync with these.
         assert page.locator('#sec-lock [name="checkin_hour"]').count() == 0
         assert page.locator('#sec-lock [name="checkout_hour"]').count() == 0
-        assert page.locator('#sec-lock [name="lock_checkin_hour"]').is_visible()
-        assert page.locator('#sec-lock [name="lock_checkout_hour"]').is_visible()
+        # 0954: wait for the picker to show; the details section opens with a short transition.
+        page.locator('#sec-lock [name="lock_checkin_hour"]').wait_for(state="visible", timeout=5000)
+        page.locator('#sec-lock [name="lock_checkout_hour"]').wait_for(state="visible", timeout=5000)
         page.locator('#lock_checkin_hour').select_option('16')
         assert page.locator('#checkin_hour').input_value() == '16'
         browser.close()

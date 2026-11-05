@@ -192,5 +192,7 @@ def test_a_missing_lock_account_does_not_switch_codes_off(two_properties):
 def test_the_lock_form_posts_the_fields_marker_when_the_box_is_shown(two_properties):
     _, _, (a, _) = two_properties
     page = _client().get(f"/apartments/{a}").text
-    assert 'name="door_codes_fields"' in page
-    assert 'name="door_codes"' in page
+    # 0954: the switch is gone; the Turn on / Turn off buttons post to their own route.
+    assert 'name="door_codes_fields"' not in page
+    assert 'name="door_codes"' not in page
+    assert f'action="/apartments/{a}/door-codes"' in page
