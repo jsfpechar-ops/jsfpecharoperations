@@ -2397,6 +2397,9 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     initPropSectionLinks();
     initPropertyPage();
     initCopy();
+    // 0955: widgets that disable or fill fields first, so the dirty baseline is their settled state.
+    initAutomationFields();
+    initControllerFields();
     initUnsavedForms();
     initUnsavedDialog();
     initSectionNotice();
