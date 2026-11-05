@@ -1,40 +1,32 @@
-# 0959 report
+# 0959 report (executor)
 
-Status: blocked. Reason: the regression test fails on the first name's letter case. `/relang` re-draws the answers through `validation.normalise_guest`, and `normalise_name` (App/app/validation.py:279) uppercases names by design. The typed first name comes back upper-cased, but the brief's test asserts the typed case.
+Status: blocked. The regression test failed a second time after the name-case fix. It now fails at the switch back to English (line 810), not at the name check.
 
-Branch: codex/0959-guest-draft-language, base 7b0355c. Worktree HEAD: afe7e133 (brief commit).
+## Changed files
+Code and tests: App/app/routes/guest.py, App/app/templates/guest/base.html, App/app/templates/guest/form.html, App/app/templates/_signature_script.html, App/app/static/guest.css, App/app/static/signature.js, App/app/i18n.py, App/app/guest_uk_i18n.py, App/tests/test_guest_browser_e2e.py, App/tests/static_versions.json (regenerated with --write). Commit c9103eef.
 
-Changed, NOT committed (step 1 withheld because the test does not pass): App/app/routes/guest.py, App/app/templates/guest/base.html, App/app/templates/guest/form.html, App/app/templates/_signature_script.html, App/app/static/guest.css, App/app/static/signature.js, App/app/i18n.py, App/app/guest_uk_i18n.py, App/tests/test_guest_browser_e2e.py (test appended), App/tests/static_versions.json. All are in the brief's section 3 list. App/.venv is a symlink to the 0958 venv and is not committed.
+Fix applied (guest.py, relang route only): surname, first_name, doc_number, visa_number, res_street, res_city are drawn from the raw posted values. Normalised values still drive step logic. normalise_name, validation.py and the save path are unchanged.
 
-Commands:
-- `.venv/bin/python -c "import app.routes.guest"`: no output, pass.
-- `node --check app/static/signature.js`: no output, pass.
-- `tests/test_static_versions.py --write`: wrote 49 files, pass.
-- `tests/test_static_versions.py` (brief's check run): prints usage, because the script has no check mode. Brief command is wrong; not verified.
-- `pytest tests/test_guest_browser_e2e.py -k 0959`: 1 failed, 0 passed, 23 deselected, 0 skipped. Last lines: `E   AssertionError: assert 'SYNTHETICA' == 'Synthetica'` (test line 791), `1 failed, 23 deselected in 7.15s`.
-- Guest test-map rows: not run (stopped at the failing test).
-- `python3 scripts/context_lint.py`: "context lint: OK", exit 0.
-- `git diff --check`: no output, exit 0.
+## Commands
+- test_guest_browser_e2e.py -k 0959: FAIL (1 failed, 0 passed, 0 skipped). Timeout 30000 ms at line 810 (expect_navigation on switch to EN). Lines before it pass, including the Czech name and surname checks.
+- test_static_versions.py + test_wp07_cache_heartbeats.py: PASS 16, FAIL 0, SKIP 0.
+- Guest test-map rows, context_lint, git diff --check: NOT RUN (stop rule).
 
-Acceptance:
-1. New test passes: NOT MET (fails on name case before the step check).
-2. Czech 3 steps / German longer list: NOT VERIFIED (test stopped first).
-3. Test-map guest rows, cache tests: NOT VERIFIED.
-4. Screenshots 390/768/1280 and open-menu shot: NOT MET (folder /tmp/ubyhost-b01 empty).
-5. `git diff --stat` only section 3 files: MET.
+## Acceptance
+- New test passes: not met.
+- Czech and German step counts: not verified.
+- Guest test-map rows: not verified.
+- Static and cache tests: met.
+- Screenshots: 0959-review-cs-390/768/1280.png exist. Only 390 was inspected: name kept as typed, step 3 of 3, Czech labels, no overflow. Open language menu at 390 not captured.
+- Diff only in section 3 files: met (plus i18n and test files listed above).
 
-Screenshots: none taken, nothing seen.
+## Likely cause (not fixed, outside the decision)
+signature.js confirm guard: `(drawn || ticked || picked) && !window.confirm(...)`. The test's dialog handler calls pytest.fail on any dialog, so a confirm on the CS to EN switch hangs. Owner or orchestrator to decide: fix the guard state after a redraw, or change the test expectation.
 
-Deviations:
-- Brief static-version check command is invalid (see above).
-- Commit trailers: the session attribution rule requires Claude trailers; I used those instead of the brief's Codex trailer and no-model-name rule for the report and status commits.
-- Anchors, helpers and CSRF: all verified. The router-level `protect_guest_post` covers the new POST, and the form includes `_csrf`. `_guest_form_raw` and `_stay_dates_from_form` are aliases in routes/guest.py.
+## Deviations
+- Commit trailer is Claude Co-Authored-By per the harness instruction, not Codex.
+- Step 1 committed although the test fails, per the brief order. Status is blocked.
 
-Done: edits applied, import and JS syntax checks pass, static manifest regenerated, lint and diff check pass.
-
-Left (owner decision needed, or orchestrator decision):
-A. Keep typed name case on `/relang` (re-draw raw values for names, normalise only on save), or
-B. Make the test compare names case-insensitively.
-Then run the guest rows, take the three screenshots and the open-menu shot, and commit step 1.
-
-Owner actions: none.
+## Done / Left
+Done: relang fix, static regen and checks, 390 CS review inspected.
+Left: confirm-guard decision, 768/1280 inspection, EN/CS/DE step checks, menu screenshot, test-map rows, lint.
