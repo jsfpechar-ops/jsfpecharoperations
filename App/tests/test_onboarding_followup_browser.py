@@ -179,12 +179,8 @@ def test_current_property_name_demo_label_and_distinct_setup_status(wizard_host,
             assert rows.count() >= 5
             assert page.locator("nav.prop-strip a.sc[data-strip='police'][href='#sec-police']").count() == 1
             assert page.locator("nav.prop-strip a.sc[data-strip='calendars'][href='#sec-calendars']").count() == 1
-            status = page.locator("[data-setup-status]")
-            assert status.is_visible()
-            assert not status.evaluate("el => el.open")
-            status.locator("summary").click()
-            status.locator(".readiness").wait_for(state="visible")  # 0401: the fold-out slides open
-            status.locator("summary").click()
+            assert page.locator("[data-setup-status]").count() == 0  # 0962: the checklist details are gone
+            assert page.locator("nav.prop-strip .sc").count() == 6
         else:
             rows = page.locator("details.prop-sec > summary")
             assert rows.count() >= 4
