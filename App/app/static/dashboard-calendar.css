@@ -877,3 +877,11 @@ body.v2 #calendar.dashboard-calendar[data-readonly="false"] .cal-pill[data-cal-c
   body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-tile-chip.cal-clean-chip .cal-cleaning-icon { display:none; }
   body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-tile-chip.cal-clean-chip > span { min-width:0; overflow:hidden; text-overflow:ellipsis; }
 }
+
+/* 0960: one action row in both create modes. Cancel is quiet, Create is the only coral button. */
+#calendar .cal-create-popover > form { min-height:0; }
+#calendar .cal-create-popover .cal-dialog-actions { display:flex; flex-direction:row; flex-wrap:nowrap; justify-content:flex-end; align-items:stretch; gap:8px; margin-top:20px; }
+#calendar .cal-create-popover .cal-dialog-actions .btn { box-sizing:border-box; min-height:44px; height:44px; margin:0; }
+#calendar .cal-create-popover .cal-dialog-actions .btn.soft { flex:0 0 96px; width:96px; min-width:96px; padding:0; border:1px solid var(--line-2); background:var(--surface); color:var(--ink); }
+#calendar .cal-create-popover .cal-dialog-actions .btn.soft:hover:not(:disabled) { background:var(--surface-2); }
+#calendar .cal-create-popover .cal-dialog-actions .btn.primary { flex:1 1 0; width:auto; min-width:0; }

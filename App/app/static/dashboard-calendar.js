@@ -368,7 +368,7 @@
         if (date < root.dataset.today) day.classList.add("is-past");
         const button = el("button", "cal-day-number"); button.append(el("span", "cal-num", String(dateValue(date).getUTCDate())));
         button.type = "button"; button.dataset.calDay = date;
-        button.setAttribute("aria-label", format("select_day", { date: fullDate(date) }));
+        button.setAttribute("aria-label", cleaningMode ? labels.add_cleaning + " · " + fullDate(date) : format("select_day", { date: fullDate(date) }));
         button.title = labels.keyboard;
         if (dots && hostCleaning) {
           const dayCleanings = state.events.filter(event => event.kind === "cleaning" && displayOverlap(event, date, addDays(date, 1)));
@@ -528,7 +528,7 @@
       for (let index = 0; index < number; index++) {
         const day = addDays(start, index), button = el("button", "cal-gantt-slot");
         button.type = "button"; button.dataset.date = day; button.dataset.property = String(property.id);
-        button.dataset.calDay = day; button.setAttribute("aria-label", property.name + " · " + format("select_day", { date: fullDate(day) }));
+        button.dataset.calDay = day; button.setAttribute("aria-label", property.name + " · " + (cleaningMode ? labels.add_cleaning + " · " + fullDate(day) : format("select_day", { date: fullDate(day) })));
         if ([0, 6].includes(dateValue(day).getUTCDay())) button.classList.add("is-weekend");
         if (day === root.dataset.today) button.classList.add("is-today");
         days.append(button);
