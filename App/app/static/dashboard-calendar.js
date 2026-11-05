@@ -319,14 +319,17 @@
         pill.append(el("span", "cal-pill-avatar", (name.trim().charAt(0) || "·").toUpperCase()), el("span", "cal-pill-name", name));
         overlay.append(pill);
       });
+    // 0967: on the host calendar at 768 px and up the "+N" badge gets its own last grid row under the stay lanes, so it never covers a bar.
+    const overflowLane = !cleaningMode && matchMedia("(min-width:768px)").matches && hidden.some(Boolean);
     hidden.forEach((count, index) => {
       if (!count) return;
       const date = addDays(week, index), more = el("button", "cal-pill-more", "+" + String(count));
       more.type = "button"; more.dataset.calMore = date; more.style.gridColumn = String(index * 2 + 1) + " / span 2";
+      if (overflowLane) more.style.gridRow = String(shown + 1);
       more.setAttribute("aria-label", fullDate(date) + " · " + format("more", { count }));
       overlay.append(more);
     });
-    overlay.dataset.lanes = String(shown);
+    overlay.dataset.lanes = String(shown + (overflowLane ? 1 : 0));
     return overlay;
   }
   function renderCalendar() {

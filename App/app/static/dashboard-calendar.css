@@ -877,3 +877,19 @@ body.v2 #calendar.dashboard-calendar[data-readonly="false"] .cal-pill[data-cal-c
   body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-tile-chip.cal-clean-chip .cal-cleaning-icon { display:none; }
   body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-tile-chip.cal-clean-chip > span { min-width:0; overflow:hidden; text-overflow:ellipsis; }
 }
+
+/* 0967: host calendar orientation and overflow legibility (month tiles, 768 px and up; the phone dot tiles and the cleaning page are unchanged).
+   1. The "+N" badge sits in its own last grid row under the stay lanes (JS gives it row lanes+1), so it never covers a bar.
+   2. The first month caption repeats the period title above it, so it is hidden; later months keep their caption.
+   3. When the week is too narrow for a readable name (side panel open, narrow window) the bars show only the avatar; the full name stays in the title, the aria-label and the day panel. */
+@media (min-width:768px) {
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="false"] .cal-pill-more { align-self:end; justify-self:end; height:24px; min-height:24px; margin:0 4px 0 0; line-height:24px; }
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="false"] .cal-month:first-of-type .cal-month-title { display:none; }
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="false"] .cal-week.is-dots { container:calweek / inline-size; }
+  @container calweek (max-width:687px) {
+    body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="false"] .cal-pill-name { display:none; }
+    body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="false"] .cal-pill { min-width:32px; padding:0 4px; }
+  }
+  /* A keyboard ring that shows on the dark bars and badges and on the white and dark tiles. */
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="false"] :is(.cal-pill, .cal-pill-more):focus-visible { outline:2px solid #fff; outline-offset:0; box-shadow:0 0 0 4px #222; }
+}
