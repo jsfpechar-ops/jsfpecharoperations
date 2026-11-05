@@ -430,3 +430,103 @@ def test_the_qr_option_says_it_is_for_czech_and_slovak_guests_only(host, monkeyp
     monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
     page = client.get(f"/apartments/{apartment_id}?lang=en")
     assert "Only Czech and Slovak guests see and can use this." in page.text
+
+
+# --- 0958: the guest card as the guest sees it, through the real save route ----
+
+def _enable_guest_card(monkeypatch):
+    from app import mail
+
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    monkeypatch.setattr(config, "GUEST_PIN_REQUIRED", False)
+    monkeypatch.setattr(mail, "mail_enabled", lambda: False)
+
+
+def _guest_stay(apartment_id, rails, declared=1):
+    from datetime import timedelta
+    from app import claim
+
+    token = db.query_one("SELECT permalink_token FROM apartment WHERE id = ?", (apartment_id,))["permalink_token"]
+    today = claim.prague_today()
+    now = db.utcnow()
+    stay = db.insert("reservation", {
+        "apartment_id": apartment_id, "source": "airbnb", "uid": f"0958-{apartment_id}-{declared}-{rails}",
+        "date_from": today.isoformat(), "date_to": (today + timedelta(days=3)).isoformat(),
+        "status": "active", "declared_guests": declared, "created_at": now, "updated_at": now,
+    })
+    db.update("apartment", apartment_id, {
+        "stay_fee_collect": 1, "stay_fee_rate_czk": 50, "stay_fee_guest_rails": rails,
+        "stay_fee_guest_revolut_link": "", "stay_fee_guest_cash_note": "",
+    })
+    return token, stay
+
+
+def _guest_saves(guest, token, stay, nationality="GBR", **overrides):
+    from tests.test_endtoend import guest_form_data, passport_files
+
+    return guest.post(
+        f"/l/{token}/{stay}/save",
+        data=guest_form_data(nationality=nationality, **overrides),
+        files=passport_files(nationality),
+        follow_redirects=False,
+    )
+
+
+def test_0958_one_gbr_guest_with_iban_only_sees_iban_and_no_qr(host, monkeypatch):
+    from tests.conftest import complete_guest_claim
+
+    _enable_guest_card(monkeypatch)
+    client, apartment_id = host
+    token, stay = _guest_stay(apartment_id, "iban")
+    guest = TestClient(app)
+    complete_guest_claim(guest, token, stay, party_size=1)
+    response = _guest_saves(guest, token, stay)
+    assert response.status_code == 303, response.text
+    assert response.headers["location"].endswith("#fee-pay")
+    page = guest.get(f"/l/{token}/{stay}?lang=en")
+    assert 'id="fee-pay"' in page.text
+    assert "5399" in page.text
+    assert "g-fee-qr-img" not in page.text
+
+
+def test_0958_one_cze_guest_from_abroad_sees_iban_and_qr(host, monkeypatch):
+    from tests.conftest import complete_guest_claim
+
+    _enable_guest_card(monkeypatch)
+    client, apartment_id = host
+    token, stay = _guest_stay(apartment_id, "qr")
+    guest = TestClient(app)
+    complete_guest_claim(guest, token, stay, party_size=1)
+    response = _guest_saves(guest, token, stay, nationality="CZE", res_country="GBR", res_city="London")
+    assert response.status_code == 303, response.text
+    assert response.headers["location"].endswith("#fee-pay")
+    page = guest.get(f"/l/{token}/{stay}?lang=en")
+    assert "5399" in page.text
+    assert "g-fee-qr-img" in page.text
+
+
+def test_0958_card_waits_until_both_declared_guests_have_registered(host, monkeypatch):
+    from tests.conftest import complete_guest_claim
+
+    _enable_guest_card(monkeypatch)
+    client, apartment_id = host
+    token, stay = _guest_stay(apartment_id, "iban", declared=2)
+    guest = TestClient(app)
+    complete_guest_claim(guest, token, stay, party_size=2)
+    assert _guest_saves(guest, token, stay).status_code == 303
+    assert 'id="fee-pay"' not in guest.get(f"/l/{token}/{stay}?lang=en").text
+    assert _guest_saves(guest, token, stay, surname="Second", doc_number="P7654321").status_code == 303
+    assert 'id="fee-pay"' in guest.get(f"/l/{token}/{stay}?lang=en").text
+
+
+def test_0958_czech_resident_of_the_property_municipality_sees_no_card(host, monkeypatch):
+    from tests.conftest import complete_guest_claim
+
+    _enable_guest_card(monkeypatch)
+    client, apartment_id = host
+    token, stay = _guest_stay(apartment_id, "iban")
+    guest = TestClient(app)
+    complete_guest_claim(guest, token, stay, party_size=1)
+    response = _guest_saves(guest, token, stay, nationality="CZE", res_country="CZE", res_city="Praha")
+    assert response.status_code == 303, response.text
+    assert 'id="fee-pay"' not in guest.get(f"/l/{token}/{stay}?lang=en").text
