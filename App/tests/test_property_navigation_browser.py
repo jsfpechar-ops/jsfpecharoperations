@@ -667,7 +667,7 @@ def test_b04_copy_link_feedback_stays_inside_the_guest_pill(host, base):
                 assert button.inner_text().strip() == "Copy link"
                 button.click()
                 page.wait_for_function(
-                    "() => document.querySelector('nav.prop-strip .sc-link button[data-copy]').textContent.trim() === 'Copied'",
+                    "() => { const b = document.querySelector('nav.prop-strip .sc-link button[data-copy]'); const s = b && b.querySelector('.copy-label-confirmed'); return !!s && b.classList.contains('is-copy-confirmed') && s.textContent.trim() === 'Copied'; }",
                     timeout=3000,
                 )
                 facts = page.evaluate(_B04_STRIP_JS)
@@ -694,7 +694,7 @@ def test_b04_keyboard_enter_on_each_pill_opens_its_section(host, base):
                     outline = page.evaluate("() => getComputedStyle(document.activeElement).outlineStyle")
                     assert outline != "none", (width, href)
                     page.keyboard.press("Enter")
-                    page.wait_for_function("(id) => document.getElementById(id).open", href[1:], timeout=3000)
+                    page.wait_for_function("(id) => document.getElementById(id).open", arg=href[1:], timeout=3000)
                 # Tab walks the pills in reading order: pill, pill, pill's link, its Copy link button, next pill.
                 page.locator("nav.prop-strip a").first.focus()
                 seen = []
