@@ -1257,7 +1257,7 @@ def test_0958_record_type_selection_is_visually_unambiguous(
             if locale == "en" or width == 390:
                 shot(page, f"0958-{entry}-stay-{locale}-{width}")
             page.keyboard.press("Escape")
-            assert dialog.is_hidden()
+            dialog.wait_for(state="hidden")
         finally:
             context.close()
             browser.close()
