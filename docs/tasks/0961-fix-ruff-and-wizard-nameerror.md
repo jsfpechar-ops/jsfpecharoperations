@@ -1,5 +1,5 @@
 # 0961: fix CI ruff errors and the wizard NameError (executor: Haiku 5.5, alone)
-Status: todo
+Status: review
 
 ## 1. Objective
 PR 789 CI `test` job fails on `ruff check app tests tools --select E9,F63,F7,F82,F401,F841` (4 errors). One is a real runtime bug: the setup wizard would raise NameError.

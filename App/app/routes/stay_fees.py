@@ -517,7 +517,7 @@ def check_guest_pay_setup(apartment, values: dict) -> None:
 
 def apply_guest_operator_account(apartment, form, values: dict) -> None:
     """Persist the operator bank account when QR or bank transfer is enabled."""
-    from .. import db, payments
+    from .. import db
 
     if not hasattr(apartment, "get"):
         apartment = dict(apartment)

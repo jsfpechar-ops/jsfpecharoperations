@@ -387,6 +387,13 @@ def test_the_setup_wizard_does_not_ask_about_guest_payment(host, monkeypatch):
     assert 'id="stay-fee-guest-pay"' not in page.text
 
 
+def test_the_setup_wizard_renders_guest_pay_operator_with_flag_on(host, monkeypatch):
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    page = client.get(f"/apartments/{apartment_id}/setup/stay_fee?lang=en")
+    assert page.status_code == 200
+
+
 def _save_collect(client, apartment_id, rails, link="", rate=30):
     page = client.get(f"/apartments/{apartment_id}?lang=en")
     token = page.text.split('name="csrf-token" content="')[1].split('"')[0]

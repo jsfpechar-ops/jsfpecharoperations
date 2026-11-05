@@ -36,7 +36,6 @@ def wizard_setup_prefix(apartment_id: int) -> str:
 
 def _admin_helpers():
     from . import admin as admin_routes
-    from . import stay_fees as stay_fee_routes
 
     return admin_routes
 
@@ -65,6 +64,8 @@ def _wizard_context(
     request: Request, apartment_id: int, step: str, extra: Optional[Dict[str, Any]] = None
 ) -> Tuple[Optional[Dict[str, Any]], Optional[Any]]:
     admin_routes = _admin_helpers()
+    from . import stay_fees as stay_fee_routes
+
     apartment = admin_routes._ensure_apartment_pin(access.apartment(request, apartment_id))
     if not apartment:
         return None, _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))

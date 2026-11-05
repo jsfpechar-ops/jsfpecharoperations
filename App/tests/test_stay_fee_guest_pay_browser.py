@@ -35,7 +35,6 @@ def test_stored_account_and_live_preview_without_reload(host, base, monkeypatch)
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = _context(browser, base, host)
         page = context.new_page()
-        marker = {"n": 0}
         _open_fee(page, url)
         page.evaluate("() => { window.__same = true; }")
         page.check("#stay_fee_collect")
