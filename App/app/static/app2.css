@@ -2332,20 +2332,31 @@ body.v2 .calendar-add-form .actions{margin-bottom:16px}
 @media (min-width:1024px){body.v2 .feed-table td.truncate{max-width:170px}}
 body.v2 .property-feeds{margin-bottom:24px}
 body.v2 .fields-wrap .hint{margin-bottom:12px}
-/* 0897: stay-fee guest pay block. Plain rows, no inner card, tokens only. */
+/* 0897: stay-fee guest pay block. A switch, then one card per way to pay; details sit inside their card. */
 body.v2 .stay-fee-guest-fields{border:0;margin:0;padding:0;min-width:0}
-body.v2 .stay-fee-guest-fields .stay-fee-switch-row{margin:0 0 var(--space-4)}
-body.v2 .stay-fee-guest-fields .stay-fee-switch{display:flex;align-items:center;gap:var(--space-3);margin:0;min-height:var(--control-h-phone)}
-body.v2 .stay-fee-guest-fields .checkline input[type=checkbox]{width:24px;height:24px;min-width:24px;min-height:24px;margin:0;flex:none}
-body.v2 .stay-fee-guest-fields .stay-fee-rails{border:0;margin:0 0 var(--space-4);padding:0;min-width:0}
-body.v2 .stay-fee-guest-fields .stay-fee-rails > legend{margin:0 0 var(--space-2)}
-body.v2 .stay-fee-guest-fields .stay-fee-rail{display:flex;align-items:center;gap:var(--space-3);margin:0;min-height:var(--control-h-phone);border-top:1px solid var(--line)}
-body.v2 .stay-fee-guest-fields .stay-fee-rail:last-of-type{border-bottom:1px solid var(--line)}
-body.v2 .stay-fee-guest-fields .field{margin:0 0 var(--space-4)}
-body.v2 .stay-fee-guest-fields .field-label-row{margin:0 0 var(--space-2)}
-body.v2 .stay-fee-guest-fields .field-label-row > label{margin:0}
-body.v2 .stay-fee-guest-fields:not(:has(input[name="stay_fee_guest_rails"][value="revolut"]:checked)) .stay-fee-rail-revolut{display:none}
-body.v2 .stay-fee-guest-fields:not(:has(input[name="stay_fee_guest_rails"][value="cash"]:checked)) .stay-fee-rail-cash{display:none}
+body.v2 .stay-fee-guest-fields .gp-switch{display:flex;align-items:center;gap:var(--space-3);margin:0 0 var(--space-5);padding:0;min-height:var(--control-h-phone)}
+body.v2 .gp:not(:has(#stay_fee_collect:checked)) .gp-body{display:none}
+body.v2 .gp-warning{margin:0 0 var(--space-4);padding:var(--space-3) var(--space-4);border-radius:12px;background:var(--accs)}
+body.v2 .gp-methods{border:0;margin:0 0 var(--space-5);padding:0;min-width:0}
+body.v2 .gp-methods > legend{margin:0 0 var(--space-3);padding:0}
+body.v2 .gp-card{margin:0 0 var(--space-4);padding:0 var(--space-5);border:1px solid var(--line);border-radius:16px;background:#fff}
+body.v2 .stay-fee-guest-fields .gp-check{display:flex;align-items:center;gap:var(--space-3);margin:0;padding:var(--space-4) 0;min-height:var(--control-h-phone)}
+body.v2 .stay-fee-guest-fields .gp-check + .gp-check{border-top:1px solid var(--line)}
+body.v2 .gp-detail{padding:var(--space-5) 0 var(--space-1);border-top:1px solid var(--line)}
+body.v2 .gp-detail .field{margin:0 0 var(--space-4)}
+body.v2 .gp-detail .ui-sub{margin:0 0 var(--space-4)}
+body.v2 .gp-note{margin:var(--space-3) 0 0}
+body.v2 .gp-default{margin:0 0 var(--space-4)}
+body.v2 .gp-default select{margin-top:var(--space-2)}
+body.v2 .gp:not(:has(input[name="stay_fee_guest_rails"][value="revolut"]:checked)) .gp-revolut{display:none}
+body.v2 .gp:not(:has(input[name="stay_fee_guest_rails"][value="cash"]:checked)) .gp-cash{display:none}
+body.v2 .gp:not(:has(input[name="stay_fee_guest_rails"][value="qr"]:checked)):not(:has(input[name="stay_fee_guest_rails"][value="iban"]:checked)) .gp-account{display:none}
+body.v2 .gp-preview{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-5);margin:0 0 var(--space-4);padding:var(--space-4);border-radius:14px;background:var(--bg)}
+body.v2 .gp-preview[hidden]{display:none}
+body.v2 .gp-preview img{flex:none;background:#fff;padding:var(--space-2);border-radius:10px}
+body.v2 .gp-preview-text{flex:1 1 200px;min-width:0}
+body.v2 .gp-account-number{margin:0 0 var(--space-3);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+body.v2 .gp .checkline input[type=checkbox]{width:24px;height:24px;min-width:24px;min-height:24px;margin:0;flex:none}
 body.v2 .stay-fee-guest-fields .help-tip{position:relative}
 body.v2 .stay-fee-guest-fields .help-tip-btn{position:relative;width:24px;height:24px;min-width:24px;min-height:24px;padding:0}
 body.v2 .stay-fee-guest-fields .help-tip-btn::before{content:"";position:absolute;top:50%;left:50%;width:3.15rem;height:3.15rem;transform:translate(-50%,-50%)}
@@ -2589,3 +2600,13 @@ body.v2 form.property-settings-form .btn,body.v2 form.property-settings-form .ui
   body.v2 .ui-body-detail:has(> aside.preview) > aside.preview{grid-column:2;grid-row:1;align-self:start;position:sticky;top:24px;z-index:1}
 }
 @media (max-width:1023px){body.v2 .ui-body-detail:has(> aside.preview) > aside.preview{position:static}}
+/* 0897: the property Save bar floats as a pill over the content, always within reach. */
+body.v2 .savebar[data-for="property-settings-form"]{bottom:var(--space-4);padding:10px 16px;border:1px solid var(--line);border-radius:20px;box-shadow:0 8px 24px rgba(20,20,20,.14)}
+@media (max-width:1023px){body.v2 .savebar[data-for="property-settings-form"]{bottom:calc(var(--tabbar-h) + var(--tabbar-safe) + var(--space-2));padding-bottom:10px}}
+body.v2 .stay-fee-guest-fields :is(.gp-switch,.gp-check) > span{line-height:1.3}
+body.v2 .stay-fee-guest-fields :is(.gp-switch,.gp-check) input[type=checkbox]{margin:0}
+body.v2 .gp-detail .field:last-child{margin-bottom:var(--space-3)}
+body.v2 .gp-rail-note{display:block;margin-top:var(--space-1);font-weight:400}
+@media (min-width:1024px){body.v2 .stay-fee-guest-fields .gp-switch{min-height:24px}}
+/* 0897: the last word and its "?" are one nowrap box; as an inline-block it keeps the same text baseline as the words before it (inline, the middle-aligned "?" nudged that word by a fraction of a pixel). */
+body.v2 .field-label-row .tip-tail{display:inline-block}

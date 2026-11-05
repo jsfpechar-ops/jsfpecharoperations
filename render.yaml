@@ -26,6 +26,9 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.12.14"
+      # Staging only; production stays off until 0897 gaps are closed
+      - key: UBYHOST_STAY_FEE_GUEST_PAY
+        value: "on"
       - key: UBYHOST_DEPLOYMENT
         value: staging
       - key: UBYHOST_UBYPORT_ENV

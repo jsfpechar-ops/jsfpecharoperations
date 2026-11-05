@@ -599,13 +599,22 @@ def test_the_czech_pages_have_no_english_left(live_server, browser):
 
 # --- stay-fee money card and form estimate (brief 0910) ----------------------
 
-SIGNED_PNG = "data:image/png;base64,iVBORw0KGgo="
+import base64 as _b64
+
+SIGNED_PNG = "data:image/png;base64," + _b64.b64encode(
+    bytes.fromhex(
+        "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4"
+        "890000000a49444154789c6300010000050001od7a1f0000000049454e44ae42"
+        "6082".replace("od", "0d")
+    )
+).decode()
 
 
-def _fee_seed(token: str, rate: int = 50, signed: bool = True):
+def _fee_seed(token: str, rate: int = 50, signed: bool = True, nationality: str = "CZE", declared: int = 1):
     """A stay whose property collects a fee, every enabled rail set up. With ``signed`` one
-    foreign adult has signed; no headcount is declared, so the hub card shows."""
+    adult has signed and the declared headcount is met, so the hub card shows."""
     stay = _seed(token)
+    db.update("reservation", stay, {"declared_guests": declared})
     row = db.query_one("SELECT apartment_id FROM reservation WHERE id = ?", (stay,))
     apt = db.query_one("SELECT legal_entity_id FROM apartment WHERE id = ?", (row["apartment_id"],))
     db.update("apartment", row["apartment_id"], {
@@ -624,14 +633,28 @@ def _fee_seed(token: str, rate: int = 50, signed: bool = True):
         "first_name": "Ada",
         "surname": "Guest",
         "birth_date": "01011980",
-        "nationality": "DEU",
+        "nationality": nationality,
+        "doc_number": "123456789",
+        "res_street": "Hauptstrasse 1",
         "res_country": "DEU",
         "res_city": "Berlin",
+        "purpose": "10",
         "signature_png": SIGNED_PNG,
         "created_at": now,
         "updated_at": now,
     })
     return stay
+
+
+SHOTS_0958 = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0958"
+
+
+def _shot_0958(page, name: str) -> None:
+    """0958 evidence: written only when UBYHOST_0958_SHOTS=1 is set."""
+    if os.environ.get("UBYHOST_0958_SHOTS") != "1":
+        return
+    SHOTS_0958.mkdir(parents=True, exist_ok=True)
+    page.screenshot(path=str(SHOTS_0958 / name), full_page=True)
 
 
 @pytest.mark.parametrize("width", [320, 390, 768, 1280])
@@ -653,15 +676,17 @@ def test_fee_card_shows_with_qr_rail_open_and_enabled_rails(live_server, browser
         card = page.locator("#fee-pay")
         assert card.count() == 1, page.inner_text("body")[:400]
         assert card.is_visible()
-        assert card.locator("details.g-summary").filter(has=page.locator(".g-fee-rail")).count() == 4
+        assert card.locator("details.g-summary").filter(has=page.locator(".g-fee-rail")).count() == 3
+        if width == 390:
+            _shot_0958(page, "guest-hub-fee-card-390.png")
         assert card.locator("details[open] .g-fee-qr-img").count() == 1
         assert card.locator(".g-fee-qr-img").is_visible()
         qr_rail = card.locator("details.g-summary").filter(has=page.locator(".g-fee-qr-img"))
-        assert qr_rail.locator(".g-fee-rail").inner_text().strip() == ""  # QR only: nothing to type
-        card.locator("summary.g-summary-fold", has_text="Bank transfer").click()
+        assert "Browser Test s.r.o." in qr_rail.locator(".g-fee-rail").inner_text()  # QR and who gets the money; nothing to type
         iban_rail = card.locator("details.g-summary").filter(has_text="Bank transfer")
         iban_text = iban_rail.locator(".g-fee-rail").inner_text()
         assert "Variable symbol" in iban_text and str(int(stay)) in iban_text
+        assert "Browser Test s.r.o." in iban_text
         assert "Message" not in iban_text
         assert f"{int(stay):010d}" not in card.inner_text()
         card.locator("summary.g-summary-fold", has_text="Revolut").click()
@@ -669,6 +694,62 @@ def test_fee_card_shows_with_qr_rail_open_and_enabled_rails(live_server, browser
         assert card.get_by_role("link", name="Revolut", exact=False).count() == 1
         assert "0000000" not in card.inner_text()
         assert page.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth")
+    finally:
+        page.close()
+
+
+def test_fee_card_hides_the_qr_for_guests_who_are_not_czech_or_slovak(live_server, browser, monkeypatch):
+    from app import config, mail
+
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    monkeypatch.setattr(config, "GUEST_PIN_REQUIRED", False)
+    monkeypatch.setattr(mail, "mail_enabled", lambda: False)
+    token = "browser-fee-gbr"
+    stay = _fee_seed(token, nationality="GBR")
+    page = browser.new_page(viewport={"width": 390, "height": 800})
+    try:
+        page.goto(f"{live_server}/l/{token}/{stay}?lang=en")
+        card = page.locator("#fee-pay")
+        assert card.count() == 1, page.inner_text("body")[:400]
+        assert card.locator(".g-fee-qr-img").count() == 0
+        assert card.locator("details.g-summary").filter(has=page.locator(".g-fee-rail")).count() == 3
+    finally:
+        page.close()
+
+
+def test_fee_card_waits_until_every_expected_guest_is_registered(live_server, browser, monkeypatch):
+    from app import config, mail
+
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    monkeypatch.setattr(config, "GUEST_PIN_REQUIRED", False)
+    monkeypatch.setattr(mail, "mail_enabled", lambda: False)
+    token = "browser-fee-waits"
+    stay = _fee_seed(token, declared=2)
+    page = browser.new_page(viewport={"width": 390, "height": 800})
+    try:
+        page.goto(f"{live_server}/l/{token}/{stay}?lang=en")
+        assert "Person 1" in page.inner_text("body"), page.inner_text("body")[:400]
+        assert page.locator("#fee-pay").count() == 0
+    finally:
+        page.close()
+
+
+def test_fee_card_opens_the_hosts_default_rail_first(live_server, browser, monkeypatch):
+    from app import config, mail
+
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    monkeypatch.setattr(config, "GUEST_PIN_REQUIRED", False)
+    monkeypatch.setattr(mail, "mail_enabled", lambda: False)
+    token = "browser-fee-default-rail"
+    stay = _fee_seed(token)
+    row = db.query_one("SELECT apartment_id FROM reservation WHERE id = ?", (stay,))
+    db.update("apartment", row["apartment_id"], {"stay_fee_guest_default_rail": "revolut"})
+    page = browser.new_page(viewport={"width": 390, "height": 800})
+    try:
+        page.goto(f"{live_server}/l/{token}/{stay}?lang=en")
+        first = page.locator("#fee-pay details.g-summary").filter(has=page.locator(".g-fee-rail")).first
+        assert "Revolut" in first.locator("summary").inner_text()
+        assert first.get_attribute("open") is not None
     finally:
         page.close()
 
@@ -725,5 +806,6 @@ def test_form_estimate_line_shows_when_the_estimate_is_above_zero(live_server, b
             page.evaluate("() => document.querySelector('form[action*=\"/save\"]').requestSubmit()")
         assert page.locator("#fee-estimate").count() == 1
         assert page.locator("#fee-estimate").is_visible()
+        _shot_0958(page, "form-estimate-390.png")
     finally:
         page.close()

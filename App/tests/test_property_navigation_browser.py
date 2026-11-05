@@ -36,7 +36,6 @@ NO_JS_LOADS = (
 
 # The successful controls of the one property form, by name.
 SETTINGS_NAMES = {
-    "stay_fee_guest_form", "stay_fee_guest_revolut_link", "stay_fee_guest_cash_note",  # 0897: always in the form
     "signature_drawn", "signature_name", "fee_signature_section", "signature_file", "return_to", "_csrf", "internal_name", "city_en", "legal_entity_id", "data_controller_entity_id",
     "addr_okres", "addr_obec", "addr_obec_cast", "addr_street", "addr_house_no", "addr_orient_no", "addr_zip",
     "notes", "permalink_pin", "guest_message", "permalink_window_days",
@@ -142,6 +141,25 @@ def _section(html, sec_id):
 
 
 # --- markup and server state -------------------------------------------------
+
+
+GUEST_PAY_NAMES = {
+    "stay_fee_guest_form", "stay_fee_guest_revolut_link", "stay_fee_guest_cash_note",
+    "stay_fee_guest_operator_account", "stay_fee_guest_default_rail",
+}
+
+
+def test_guest_pay_controls_exist_only_when_the_deployment_has_them_on(host, monkeypatch):
+    from app import config
+
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    html = _page(host, "?lang=en")
+    property_forms = [f for f in _forms(html).forms if f["action"] == f"/apartments/{host['apartment']}" and f["method"] == "post"]
+    names = {name for name, _ in _fields(property_forms[0])}
+    assert GUEST_PAY_NAMES <= names
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", False)
+    off = _page(host, "?lang=en")
+    assert 'id="stay-fee-guest-pay"' not in off and "Turned off on this deployment" not in off
 
 
 def test_three_views_four_groups_one_editor_and_unique_ids(host):

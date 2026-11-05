@@ -307,6 +307,7 @@
     {% include "guest/_legal_notice.html" %}
 
     {% if fee_estimate %}{% include "guest/_fee_estimate.html" %}{% endif %}
+    {% if fee_panel %}{% include "guest/_fee_pay.html" %}{% endif %}
 
     <button class="g-btn" type="submit">
       {{ t(save_action_key) }}
