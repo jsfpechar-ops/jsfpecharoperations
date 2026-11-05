@@ -2187,6 +2187,8 @@ STRINGS: Dict[str, str] = {
     "smart_locks.warn_ekey": "Không dùng eKeys hoặc Send eKey. eKey thông thường chỉ mở được cửa, không tạo được mã cửa.",
     "smart_locks.connected": "Đã kết nối. UbyHost có thể tạo mã cửa trên khóa này.",
     "smart_locks.reauth": "TTLock không còn chấp nhận kết nối này. Hãy gỡ rồi thiết lập lại.",
+    "smart_locks.state_times": "Mã cửa tự động: đang chờ giờ nhận và trả phòng",
+    "smart_locks.state_offline": "Mã cửa tự động: khóa ngoại tuyến",
     "smart_locks.state_on": "Mã cửa tự động: Bật",
     "smart_locks.state_off": "Mã cửa tự động: Đã tắt",
     "smart_locks.turn_off": "Tắt",

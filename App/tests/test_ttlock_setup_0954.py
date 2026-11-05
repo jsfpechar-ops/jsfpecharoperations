@@ -71,11 +71,15 @@ def test_state_block_matches_the_state(ttl, hosts, flats, state):
         assert 'value="on"' in block.group(2) and "Turn on" in block.group(2)
         assert "ui-btn-primary" in block.group(2)
     if state == "offline":
+        assert "Automatic door codes: lock offline" in block.group(2)
         assert "Lock offline" in block.group(2)
         assert 'value="off"' in block.group(2)
+        assert "Automatic door codes: On" not in block.group(2)
     if state == "times":
+        assert "Automatic door codes: waiting for check-in and check-out times" in block.group(2)
         assert "Set check-in and check-out times first" in block.group(2)
         assert 'value="off"' in block.group(2)
+        assert "Automatic door codes: On" not in block.group(2)
 
 
 def test_warning_line_only_when_off_and_a_time_is_missing(ttl, hosts, flats):
