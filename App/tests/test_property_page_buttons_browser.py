@@ -14,7 +14,7 @@ import pytest
 from app import db
 from tests.test_host_unsaved_changes_browser import NAME, _page, _stored, base, browser, host  # noqa: F401
 
-SHOT_DIR = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0955"
+SHOT_DIR = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0957"
 BAR = ".savebar[data-for='property-settings-form']"
 SAVE = f"{BAR} button[type=submit]"
 CANCEL = f"{BAR} [data-unsaved-reset]"
