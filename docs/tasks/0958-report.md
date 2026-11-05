@@ -1,6 +1,6 @@
 # 0958 report (executor: Haiku 5.5)
 
-Status: blocked (UX gate not met: browser tests could not run, no screenshots taken)
+Status: review (browser tests and 390 px screenshots later run in brief 0959: 8 fee browser tests pass)
 
 Files changed: App/app/routes/guest.py, App/app/templates/guest/_fee_pay.html, App/app/templates/guest/_fee_estimate.html, App/app/i18n.py, App/app/guest_uk_i18n.py, render.yaml, App/tests/test_stay_fee_guest_pay_0897.py, App/tests/test_guest_browser_e2e.py. No static files changed, so no `?v=` bump.
 

@@ -1,5 +1,10 @@
 # 0958: guest pay, guest-side fixes (executor: Haiku 5.5, alone)
+Status: review
 
+## 1. Objective
+Guest-side fixes for guest pay of the stay fee.
+
+## 2. Context (research done; do not redo)
 Read AGENTS.md, docs/context/executor.md, this brief. Touch only: `App/app/routes/guest.py`,
 `App/app/templates/guest/_fee_pay.html`, `_fee_estimate.html`, `App/app/i18n.py`,
 `App/app/guest_uk_i18n.py`, `render.yaml`, `App/tests/test_stay_fee_guest_pay_0897.py`,
@@ -12,7 +17,10 @@ returns a card with no methods ("no rails" text), and no `#fee-pay` anchor; (2) 
 whose city equals the property's `addr_obec` is auto-exempt, total is 0, card silently absent. (2) is correct
 behaviour, keep it. Also `render.yaml` lacks the flag, so staging never shows the feature.
 
-## Do
+## 3. Files
+Listed in the touch list above.
+
+## 4. Steps
 1. **One bank method.** In `_fee_pay_panel` treat stored `qr` as `iban` (a property that stored `qr,iban` or `qr`
    gets one `iban` rail). The `iban` rail carries `iban`, `payee`, and `qr` (data URI) only when `account` and
    `qr_ok` (CZ/SK guest). Template `_fee_pay.html`: for the `iban` rail show the QR image above the details when
@@ -36,8 +44,20 @@ behaviour, keep it. Also `render.yaml` lacks the flag, so staging never shows th
    the property obec: no card. Do not leave `test_zz_*` files.
 6. Bump `?v=` keys for any changed static file, then `.venv/bin/python tests/test_static_versions.py --write`.
 
-## Run (only these)
+## 5. Do not touch
+Host files owned by brief 0959.
+
+## 6. Commands
 `.venv/bin/python -m pytest tests/test_stay_fee_guest_pay_0897.py tests/test_static_versions.py -q --tb=short -x -p no:cacheprovider 2>&1 | tail -30`
 and, with `UBYHOST_REQUIRE_BROWSER=1`, `tests/test_guest_browser_e2e.py -k fee`. Add one 390 px screenshot of the
 hub fee card and of the form estimate card to the report. Write `docs/tasks/0958-report.md` (10 lines max).
 Commit, push to the current branch only. No PR.
+
+## 7. Acceptance
+Listed tests pass with 0 skipped; 390 px screenshots in the report.
+
+## 8. Stop and ask
+If a step needs a file outside the touch list, stop and ask.
+
+## 9. Report
+Write `docs/tasks/0958-report.md` (10 lines max) with a Status line.
