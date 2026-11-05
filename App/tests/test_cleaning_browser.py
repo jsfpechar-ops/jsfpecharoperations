@@ -643,7 +643,7 @@ def test_add_stay_and_cleaning_dialogs_open_centred_in_both_tabs(workspace, orig
                     shot(page, f"add-{kind}-{width}{'-scrolled' if scrolled else ''}")
                     page.locator(f'[data-cal-type-choice="{other}"]').click()
                     second = _assert_dialog_centred(page, f"{other} tab scrolled={scrolled}")
-                    assert abs(first["top"] - second["top"]) <= 8, (first, second)
+                    assert abs(first["cy"] - first["vy"]) <= 8 and abs(second["cy"] - second["vy"]) <= 8, (first, second)
                     page.locator("[data-cal-create] .cal-close").click()
                     page.wait_for_function("() => !document.querySelector('[data-cal-create]').open")
         finally:

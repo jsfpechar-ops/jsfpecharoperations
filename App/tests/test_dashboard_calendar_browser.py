@@ -1212,3 +1212,137 @@ def test_0893_calendar_text_size_edges_and_header_spacing(calendar_workspace, ca
         assert not found["touching"], (width, found["touching"][:8])
         context.close()
         browser.close()
+
+
+@pytest.mark.parametrize("width", [390, 768, 1280])
+@pytest.mark.parametrize("locale", ["en", "cs"])
+@pytest.mark.parametrize("entry", ["dashboard", "cleaning"])
+def test_0958_record_type_selection_is_visually_unambiguous(
+    calendar_workspace, calendar_origin, width, locale, entry
+):
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(
+            browser, calendar_workspace, calendar_origin, width=width,
+            locale=locale, touch=width < 768,
+        )
+        try:
+            path = "/cleaning" if entry == "cleaning" else "/"
+            page.goto(f"{calendar_origin}{path}?lang={locale}&cal_date=2026-10-01&cal_view=calendar")
+            page.wait_for_selector(".cal-week")
+            wait_loaded(page)
+            page.locator('[data-cal-day="2026-10-10"]').click(position={"x": 8, "y": 8})
+            if page.locator("[data-cal-day-add]").is_visible():
+                page.locator("[data-cal-day-add]").click()
+            dialog = page.locator("[data-cal-create]")
+            dialog.wait_for(state="visible")
+            for kind in ("stay", "cleaning", "stay"):
+                choice = dialog.locator(f'[data-cal-type-choice="{kind}"]')
+                choice.focus()
+                choice.press("Space")
+                other = "cleaning" if kind == "stay" else "stay"
+                assert choice.get_attribute("aria-pressed") == "true"
+                assert dialog.locator(f'[data-cal-type-choice="{other}"]').get_attribute("aria-pressed") == "false"
+                assert dialog.locator("[data-cal-stay-fields]").is_visible() == (kind == "stay")
+                assert dialog.locator("[data-cal-cleaning-fields]").is_visible() == (kind == "cleaning")
+                page.wait_for_function("""() => {
+                    const dialog = document.querySelector('[data-cal-create]');
+                    const color = selector => getComputedStyle(dialog.querySelector(selector)).backgroundColor;
+                    return color('[data-cal-type-choice][aria-pressed="true"]') !==
+                        color('[data-cal-type-choice][aria-pressed="false"]') &&
+                        color('[data-cal-type-choice][aria-pressed="false"]') !== color('[data-cal-save]');
+                }""")
+                for state in ("true", "false"):
+                    label = dialog.locator(f'[data-cal-type-choice][aria-pressed="{state}"]')
+                    ratio = label.evaluate(r"""e => {
+                        const lum = c => { const v = c.match(/[\d.]+/g).slice(0, 3).map(n => { n /= 255; return n <= 0.03928 ? n / 12.92 : ((n + 0.055) / 1.055) ** 2.4; }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
+                        const opaque = node => { for (let n = node; n; n = n.parentElement) { const c = getComputedStyle(n).backgroundColor; if (c !== "rgba(0, 0, 0, 0)") return c; } return "rgb(255, 255, 255)"; };
+                        const fg = lum(getComputedStyle(e).color), bg = lum(opaque(e));
+                        return (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05);
+                    }""")
+                    assert ratio >= 4.5, (width, locale, entry, kind, state, ratio)
+                if kind == "cleaning" and locale == "en" and width == 390:
+                    shot(page, f"0958-{entry}-cleaning-{locale}-{width}")
+            if locale == "en" or width == 390:
+                shot(page, f"0958-{entry}-stay-{locale}-{width}")
+            page.keyboard.press("Escape")
+            dialog.wait_for(state="hidden")
+        finally:
+            context.close()
+            browser.close()
+
+
+@pytest.mark.parametrize("width", [390, 768, 1280])
+@pytest.mark.parametrize("locale", ["en", "cs"])
+@pytest.mark.parametrize("entry", ["dashboard", "cleaning"])
+def test_0960_create_actions_label_input_and_cleaning_day_name(
+    calendar_workspace, calendar_origin, width, locale, entry
+):
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(
+            browser, calendar_workspace, calendar_origin, width=width,
+            locale=locale, touch=width < 768,
+        )
+        try:
+            path = "/cleaning" if entry == "cleaning" else "/"
+            page.goto(f"{calendar_origin}{path}?lang={locale}&cal_date=2026-10-01&cal_view=calendar")
+            page.wait_for_selector(".cal-week")
+            wait_loaded(page)
+            day = page.locator('[data-cal-day="2026-10-10"]')
+            name = day.get_attribute("aria-label")
+            if entry == "cleaning":
+                assert name.startswith("Add cleaning" if locale == "en" else "Přidat úklid"), name
+                assert "stay" not in name.lower() and "pobyt" not in name.lower(), name
+            else:
+                assert name.startswith("Add a stay" if locale == "en" else "Přidat pobyt"), name
+            day.click(position={"x": 8, "y": 8})
+            if page.locator("[data-cal-day-add]").is_visible():
+                page.locator("[data-cal-day-add]").click()
+            dialog = page.locator("[data-cal-create]")
+            dialog.wait_for(state="visible")
+            boxes = {}
+            for kind in ("stay", "cleaning"):
+                dialog.locator(f'[data-cal-type-choice="{kind}"]').click()
+                data = page.evaluate("""() => {
+                    const dialog = document.querySelector('[data-cal-create]');
+                    const read = node => {
+                        const box = node.getBoundingClientRect(), css = getComputedStyle(node);
+                        return {x: Math.round(box.x - dialog.getBoundingClientRect().x), w: Math.round(box.width), h: Math.round(box.height),
+                            bg: css.backgroundColor, border: css.borderTopWidth + css.borderTopStyle, radius: css.borderTopLeftRadius};
+                    };
+                    const buttons = [...dialog.querySelectorAll('.cal-dialog-actions .btn')].filter(b => b.offsetParent);
+                    const filled = [...dialog.querySelectorAll('button.btn')].filter(b => b.offsetParent &&
+                        getComputedStyle(b).backgroundColor === getComputedStyle(dialog.querySelector('[data-cal-save]')).backgroundColor);
+                    return {cancel: read(dialog.querySelector('.cal-dialog-actions .btn.soft')), save: read(dialog.querySelector('[data-cal-save]')),
+                        filled: filled.map(b => b.hasAttribute('data-cal-save')), count: buttons.length,
+                        overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+                        dialogOverflow: dialog.scrollWidth > dialog.clientWidth,
+                        label: dialog.querySelector('#cal-label') && dialog.querySelector('#cal-label').offsetParent ? read(dialog.querySelector('#cal-label')) : null,
+                        guests: dialog.querySelector('#cal-guests').offsetParent ? read(dialog.querySelector('#cal-guests')) : null};
+                }""")
+                boxes[kind] = data
+                assert data["count"] == 2 and data["filled"] == [True], (kind, data)
+                assert data["cancel"]["bg"] != data["save"]["bg"], (kind, data)
+                assert data["cancel"]["h"] == data["save"]["h"], (kind, data)
+                assert data["cancel"]["x"] < data["save"]["x"], (kind, data)
+                assert not data["overflow"] and not data["dialogOverflow"], (kind, data)
+                if kind == "stay":
+                    assert data["label"]["h"] == data["guests"]["h"], data
+                    assert data["label"]["border"] == data["guests"]["border"] == "1pxsolid", data
+                    assert data["label"]["radius"] == data["guests"]["radius"] != "0px", data
+                    page.locator("#cal-label").focus()
+                    label_ring = page.evaluate("() => { const c = getComputedStyle(document.querySelector('#cal-label')); return c.outlineColor + c.outlineWidth + c.outlineStyle; }")
+                    page.locator("#cal-guests").focus()
+                    guests_ring = page.evaluate("() => { const c = getComputedStyle(document.querySelector('#cal-guests')); return c.outlineColor + c.outlineWidth + c.outlineStyle; }")
+                    assert label_ring == guests_ring, (label_ring, guests_ring)
+                shot(page, f"0960-{entry}-{kind}-{locale}-{width}")
+            assert boxes["stay"]["cancel"]["x"] == boxes["cleaning"]["cancel"]["x"]
+            assert boxes["stay"]["cancel"]["w"] == boxes["cleaning"]["cancel"]["w"]
+            assert boxes["stay"]["save"]["x"] == boxes["cleaning"]["save"]["x"]
+            assert boxes["stay"]["save"]["w"] == boxes["cleaning"]["save"]["w"]
+            page.keyboard.press("Escape")
+            dialog.wait_for(state="hidden")
+        finally:
+            context.close()
+            browser.close()
