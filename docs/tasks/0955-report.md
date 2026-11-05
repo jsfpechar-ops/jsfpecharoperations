@@ -88,3 +88,17 @@ Status: blocked
 - Webkit: untested locally (CI only): all new browser tests.
 - Not done: step 10 (sticky Preview aside, 1024+, with its test; needs a property whose setup is unfinished), design-system checklist tick, the decision line in docs/context/decisions.md, the 390/768/1280 UX screenshots with per-width notes for the PR.
 - Next step: step 10: write App/tests/test_property_preview_sticky_browser.py (1280 and 1440: scroll 1200, aside top 0-120, no overlap with the Save row, static below 1024) with a property whose setup is unfinished, then the design checklist, the decision line, and the PR.
+
+## Chat 7 (final: step 10, UX gate, regression)
+Status: review (pending owner merge decision; CI not yet run; webkit untested locally)
+- Step 10: Preview aside sticky from 1024 px (the detail body is now the two-column grid; the aside is column 2). App/tests/test_property_preview_sticky_browser.py: 3 passed, 0 skipped (1280, 1440: aside top 0-120 after scrolling 1200, sticky; 768: static). An empty aside is not sticky (the grid rule needs the aside to exist).
+- UX notes (viewed):
+  - 390, dirty: Save row sits above the tab bar, Cancel left, Save right; the focused field stays above the row. Help bubble hidden on phone.
+  - 768, dirty: same layout as phone; the tab bar is still shown below 1024 px; no sideways scroll.
+  - 1280, dirty: Preview aside beside the sections, Save row under the main column, clear of the help bubble.
+  - 1280, clean: no Save row (hidden until a field differs).
+  - 390 and 768 clean were not viewed; the audit asserts the bar is hidden there.
+- Regression (24 files, background): 245 passed, 3 failed. The 3 were stale expectations (Save bar hidden until dirty; savebar regex); fixed in tests 4ccddedb; re-run of the 3: 6 passed, 0 skipped.
+- Checklist ticked where verified (design-system.md): one Save, no sideways scroll, layout lint, CS/EN keys (none added). Left open: header row, help "?" placement, 12 px spacing, CI watched.
+- Decision line added (decisions.md); context lint OK.
+- Next step for the owner: merge when CI is green; before merge, confirm the 0955 PR description carries these per-width notes.
