@@ -309,8 +309,8 @@ def test_setup_checklist_is_a_padded_card(wide_host, wide_base):
         assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
         _wait_for_host_layout(page)
         _dismiss_optional_security_prompt(page)
-        # Fails the test if the checklist is absent: the configured fixture property must show it.
-        page.wait_for_selector("[data-setup-status]", timeout=5000)
+        # 0962: the six pills are the one readiness summary; the checklist details are gone.
+        page.wait_for_selector("nav.prop-strip", timeout=5000)
         facts = page.evaluate(
             """() => ({
                 box: !!document.querySelector('.host-checklist'),
@@ -321,7 +321,7 @@ def test_setup_checklist_is_a_padded_card(wide_host, wide_base):
         print(f"setup health measured: {facts}")
         assert not facts["box"], "the separate health check box is back"
         assert facts["dots"] >= 4, f"only {facts['dots']} cards carry a health dot"
-        assert facts["details"], "the checklist details are missing"
+        assert not facts["details"], "the checklist details are back"
         context.close()
         browser.close()
 

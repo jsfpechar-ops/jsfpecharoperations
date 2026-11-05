@@ -125,11 +125,6 @@ def _open_ids(html):
     return [m.group(1) for m in re.finditer(r'<details class="prop-sec" id="(sec-[\w-]+)"( open)?>', html) if m.group(2)]
 
 
-def _aside(html):
-    start = html.index('<aside class="preview"')
-    return html[start:html.index("</aside>", start)]
-
-
 def _strip(html):
     start = html.index('<nav class="prop-strip"')
     return html[start:html.index("</nav>", start)]
@@ -162,8 +157,8 @@ def test_three_views_four_groups_one_editor_and_unique_ids(host):
     calendar = [f for f in parsed.forms if f["action"] == f"/apartments/{host['apartment']}/feeds"]
     assert len(calendar) == 1
     assert _open_ids(html) == ["sec-basics"]
-    # No suggested portal message and no shadow form in the aside.
-    aside = _aside(html)
+    # No suggested portal message and no shadow form in the status strip.
+    aside = _strip(html)
     assert "message-template" not in html and "copy_message" not in html
     assert "property-settings-form" not in aside and 'id="calendar-add"' not in aside
 
@@ -271,7 +266,7 @@ def test_overview_cards_point_at_the_canonical_editors(host):
     strip = _strip(html)
     for anchor in ("#sec-basics", "#sec-police", "#sec-fee", "#sec-calendars", "#sec-lock"):
         assert f'href="{anchor}"' in strip, anchor
-    assert "Ready to report" in _aside(html)
+    assert "Ready to report" in strip
 
 
 # --- browser ----------------------------------------------------------------
@@ -329,15 +324,15 @@ _STATE_JS = """() => ({
 _FIT_JS = """() => {
   const vw = document.documentElement.clientWidth;
   const bad = [];
-  for (const el of document.querySelectorAll('aside.preview a.r, .prop-sec summary, .prop-sec .ui-btn, .prop-sec input, .prop-sec select, .prop-sec h2, .prop-sec h3')) {
+  for (const el of document.querySelectorAll('.prop-after-strip a.r, nav.prop-strip .sc, .prop-sec summary, .prop-sec .ui-btn, .prop-sec input, .prop-sec select, .prop-sec h2, .prop-sec h3')) {
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height) continue;
     if (r.right > vw + 1 || r.left < -1) bad.push(el.id || el.textContent.trim().slice(0, 30));
   }
-  const aside = document.querySelector('aside.preview').getBoundingClientRect();
+  const strip = document.querySelector('nav.prop-strip').getBoundingClientRect();
   const form = document.querySelector('#property-settings-form').getBoundingClientRect();
   return {scroll: document.documentElement.scrollWidth, vw, bad,
-          railSide: aside.width > 0 && (aside.right <= form.left + 1 || aside.left >= form.right - 1)};
+          railSide: strip.width > 0 && strip.bottom <= form.top + 1};
 }"""
 
 

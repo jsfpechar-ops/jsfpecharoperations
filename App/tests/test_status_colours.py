@@ -251,7 +251,7 @@ def test_the_property_readiness_lists_missing_setup_items(host):
     page = client.get(f"/apartments/{apartment_id}")
     assert page.status_code == 200
     assert 'class="readiness-item' in page.text
-    assert "✗" in page.text
+    assert 'data-missing="' in page.text
 
 
 def test_the_property_readiness_is_not_a_red_pill(host):

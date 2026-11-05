@@ -46,12 +46,13 @@ def test_sections_are_details_in_order(host):
     assert names == ["basics", "archive", "messages", "police", "fee", "calendars", "lock"]
 
 
-def test_0536_setup_continue_is_the_first_aside_card(host):
+def test_0536_setup_continue_is_the_first_card_under_the_pills(host):
     client, apartment_id = host
     html = _page(client, apartment_id)
-    start = html.index('<aside class="preview"')
-    aside = html[start:html.index("</aside>", start)]
-    assert "setup-continue-card" in aside
+    start = html.index('<div class="prop-after-strip">')
+    cards = html[start:html.index('<div class="form prop-form-single">', start)]
+    assert "setup-continue-card" in cards
+    assert "<aside" not in html[html.index('<nav class="prop-strip"'):]
 
 
 def _strip(html):
