@@ -1,6 +1,6 @@
 # 0962: Property readiness as the first compact overview (batch B04: P01, P02, P03)
 
-Status: todo
+Status: blocked (steps 0 to 3 done; two B04 browser tests fail, see docs/tasks/0962-report.md)
 Depends on: B03 (shell), not yet landed; this brief is built on the base below and the orchestrator rebases/merges after B03 | Base commit: 7b0355c45ccdd2557a28edfcfe228aa1dc766e36 | Branch: codex/0962-b04-property-readiness
 Executor: Haiku 5.5 | Worktree: /tmp/ubyhost-b04-worktree | Fits one session: no. Expect a checkpoint after step 3 (see §8, executor.md "at the cap").
 
