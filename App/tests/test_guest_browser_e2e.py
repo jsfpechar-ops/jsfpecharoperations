@@ -727,3 +727,228 @@ def test_form_estimate_line_shows_when_the_estimate_is_above_zero(live_server, b
         assert page.locator("#fee-estimate").is_visible()
     finally:
         page.close()
+
+
+def test_0959_changing_language_keeps_the_draft_the_step_and_leaves_no_trace(
+    live_server, browser, monkeypatch
+):
+    """G01: EN -> CS -> EN keeps what was typed and the step; a drawn signature
+    asks first and Cancel keeps the draft; no answer reaches a URL or storage."""
+    from app import config
+
+    monkeypatch.setattr(config, "GUEST_PIN_REQUIRED", False)
+    monkeypatch.setattr(mail, "mail_enabled", lambda: False)
+    token = "browser-0959-lang"
+    stay = _fee_seed(token, signed=False)
+    page = browser.new_page(viewport={"width": 390, "height": 812})
+    # Only page navigations and the language-switch request are checked for
+    # typed values; the RUIAN address-suggest fetch is out of scope for 0959.
+    urls = []
+    page.on(
+        "request",
+        lambda request: urls.append(request.url)
+        if request.is_navigation_request() or "/relang" in request.url
+        else None,
+    )
+    secrets = ["Synthetica", "Testovic", "SYN0959X", "Examplova 5", "Testov"]
+    guest = Guest(page, 390)
+
+    def progress():
+        return [int(n) for n in re.findall(r"\d+", page.inner_text("[data-wizard-label]"))[:2]]
+
+    def pick(lang):
+        page.locator("[data-lang-menu] summary").click()
+        page.locator(f'[data-lang-draft][lang="{lang}"]').click()
+
+    try:
+        page.goto(f"{live_server}/l/{token}/{stay}/new?lang=en")
+        page.fill("#first_name", secrets[0])
+        page.fill("#surname", secrets[1])
+        page.click("#birth_date")
+        page.keyboard.type("01011980")
+        guest.pick_country("nationality", "CZE")
+        page.fill("#doc_number", secrets[2])
+        guest.next()
+        page.fill("#res_street", secrets[3])
+        page.fill("#res_city", secrets[4])
+        page.evaluate("() => { document.querySelector('#res_country').value = 'CZE'; }")
+        guest.next()
+        before = progress()
+        assert before[0] == before[1], before  # on the last step; Czech has no photo step
+        guest.sign()
+        page.check("#legal_ack")
+
+        # Cancel: the warning appears, nothing is lost, no navigation happens.
+        messages = []
+        page.once("dialog", lambda dialog: (messages.append(dialog.message), dialog.dismiss()))
+        pick("cs")
+        page.wait_for_timeout(300)
+        assert messages == [i18n.translator("en")("lang_draft_warning")], messages
+        assert page.get_attribute("html", "lang") == "en"
+        assert page.input_value("#first_name") == secrets[0]
+        assert page.eval_on_selector("#signature", "e => e.value").startswith("data:image/png")
+        assert page.is_checked("#legal_ack")
+
+        # Accept: Czech page, same answers, same step, signature and tick asked again.
+        page.once("dialog", lambda dialog: dialog.accept())
+        with page.expect_navigation():
+            page.locator(f'[data-lang-draft][lang="cs"]').click()
+        assert page.get_attribute("html", "lang") == "cs"
+        assert progress() == before, (progress(), before)
+        assert page.input_value("#first_name") == secrets[0]
+        assert page.input_value("#surname") == secrets[1]
+        assert page.input_value("#birth_date") == "01.01.1980"
+        assert page.input_value("#nationality") == "CZE"
+        assert page.input_value("#doc_number") == secrets[2]
+        assert page.input_value("#res_street") == secrets[3]
+        assert page.input_value("#res_city") == secrets[4]
+        assert page.eval_on_selector("#signature", "e => e.value") == ""
+        assert not page.is_checked("#legal_ack")
+
+        # Back to English with nothing to lose: no warning, still the same.
+        shots = os.environ.get("UBYHOST_SHOTS_DIR")
+        if shots:
+            Path(shots).mkdir(parents=True, exist_ok=True)
+            for width in (390, 768, 1280):
+                page.set_viewport_size({"width": width, "height": 900})
+                page.screenshot(path=str(Path(shots) / f"0959-review-cs-{width}.png"), full_page=True)
+            page.set_viewport_size({"width": 390, "height": 812})
+        page.once("dialog", lambda dialog: pytest.fail("no warning expected"))
+        with page.expect_navigation():
+            pick("en")
+        assert page.get_attribute("html", "lang") == "en"
+        assert progress() == before
+        assert page.input_value("#surname") == secrets[1]
+        assert page.input_value("#nationality") == "CZE"
+
+        # Step 1 of a foreign nationality keeps its longer step count.
+        page.locator("[data-guest-step]:not([hidden]) .g-wizard-nav button.secondary").first.click()
+        page.locator("[data-guest-step]:not([hidden]) .g-wizard-nav button.secondary").first.click()
+        guest.pick_country("nationality", "DEU")
+        page.fill("#first_name", secrets[0])
+        pick("cs")
+        page.wait_for_load_state()
+        assert page.input_value("#nationality") == "DEU"
+        assert page.input_value("#first_name") == secrets[0]
+
+        assert not [u for u in urls if any(s.lower() in u.lower() for s in secrets)], urls
+        assert "01.01.1980" not in " ".join(urls) and "01011980" not in " ".join(urls)
+        assert page.evaluate("() => [localStorage.length, sessionStorage.length]") == [0, 0]
+        assert not any(
+            any(s in cookie["value"] for s in secrets) for cookie in page.context.cookies()
+        )
+    finally:
+        page.close()
+
+
+def test_0959_language_switch_works_without_a_signature(live_server, browser, monkeypatch):
+    """0959: with no signature and no tick, the language button still posts the
+    open form back (the signature guard must not stop it) and asks nothing."""
+    from app import config
+
+    monkeypatch.setattr(config, "GUEST_PIN_REQUIRED", False)
+    monkeypatch.setattr(mail, "mail_enabled", lambda: False)
+    token = "browser-0959-nosig"
+    stay = _fee_seed(token, signed=False)
+    page = browser.new_page(viewport={"width": 390, "height": 812})
+    secrets = ["Synthetica", "Testovic", "SYN0959X", "Examplova 5", "Testov"]
+    guest = Guest(page, 390, lang="cs")
+    dialogs = []
+    page.on("dialog", lambda dialog: (dialogs.append(dialog.message), dialog.dismiss()))
+
+    def progress():
+        return [int(n) for n in re.findall(r"\d+", page.inner_text("[data-wizard-label]"))[:2]]
+
+    try:
+        page.goto(f"{live_server}/l/{token}/{stay}/new?lang=cs")
+        page.fill("#first_name", secrets[0])
+        page.fill("#surname", secrets[1])
+        page.click("#birth_date")
+        page.keyboard.type("01011980")
+        guest.pick_country("nationality", "CZE")
+        page.fill("#doc_number", secrets[2])
+        guest.next()
+        page.fill("#res_street", secrets[3])
+        page.fill("#res_city", secrets[4])
+        page.evaluate("() => { document.querySelector('#res_country').value = 'CZE'; }")
+        guest.next()
+        before = progress()
+        assert before[0] == before[1], before  # on the last step, no signature, no tick
+        assert page.eval_on_selector("#signature", "e => e.value") == ""
+        assert not page.is_checked("#legal_ack")
+
+        page.locator("[data-lang-menu] summary").click()
+        with page.expect_navigation():
+            page.locator('[data-lang-draft][lang="en"]').click()
+        assert page.get_attribute("html", "lang") == "en"
+        assert i18n.translator("en")("review_title") in page.inner_text("body")
+        assert progress() == before, (progress(), before)
+        assert page.input_value("#first_name") == secrets[0]
+        assert page.input_value("#surname") == secrets[1]
+        assert page.input_value("#birth_date") == "01.01.1980"
+        assert page.input_value("#nationality") == "CZE"
+        assert page.input_value("#doc_number") == secrets[2]
+        assert page.input_value("#res_street") == secrets[3]
+        assert page.input_value("#res_city") == secrets[4]
+        assert dialogs == [], dialogs
+    finally:
+        page.close()
+
+
+def test_0959_discard_warning_cancel_keeps_draft(live_server, browser, monkeypatch):
+    """0959: a drawn signature asks before a language switch; Cancel keeps the
+    page as it was (same language, same answers, same URL, no navigation)."""
+    from app import config
+
+    monkeypatch.setattr(config, "GUEST_PIN_REQUIRED", False)
+    monkeypatch.setattr(mail, "mail_enabled", lambda: False)
+    token = "browser-0959-cancel"
+    stay = _fee_seed(token, signed=False)
+    page = browser.new_page(viewport={"width": 390, "height": 812})
+    secrets = ["Synthetica", "Testovic", "SYN0959X", "Examplova 5", "Testov"]
+    guest = Guest(page, 390)
+
+    def pick(lang):
+        page.locator("[data-lang-menu] summary").click()
+        page.locator(f'[data-lang-draft][lang="{lang}"]').click()
+
+    try:
+        page.goto(f"{live_server}/l/{token}/{stay}/new?lang=en")
+        page.fill("#first_name", secrets[0])
+        page.fill("#surname", secrets[1])
+        page.click("#birth_date")
+        page.keyboard.type("01011980")
+        guest.pick_country("nationality", "CZE")
+        page.fill("#doc_number", secrets[2])
+        guest.next()
+        page.fill("#res_street", secrets[3])
+        page.fill("#res_city", secrets[4])
+        page.evaluate("() => { document.querySelector('#res_country').value = 'CZE'; }")
+        guest.next()
+        guest.sign()
+        page.check("#legal_ack")
+
+        # A drawn signature asks first; Accept moves to the Czech page.
+        page.once("dialog", lambda dialog: dialog.accept())
+        with page.expect_navigation():
+            pick("cs")
+        assert page.get_attribute("html", "lang") == "cs"
+        assert page.input_value("#first_name") == secrets[0]
+
+        # Draw again on the Czech page, then Cancel the switch back.
+        guest.sign()
+        page.check("#legal_ack")
+        messages = []
+        page.once("dialog", lambda dialog: (messages.append(dialog.message), dialog.dismiss()))
+        pick("en")
+        page.wait_for_timeout(300)
+        assert messages == [i18n.translator("cs")("lang_draft_warning")], messages
+        assert page.url.endswith("/relang?lang=cs"), page.url
+        assert page.get_attribute("html", "lang") == "cs"
+        assert page.input_value("#first_name") == secrets[0]
+        assert page.input_value("#surname") == secrets[1]
+        assert page.input_value("#res_city") == secrets[4]
+        assert page.eval_on_selector("#signature", "e => e.value").startswith("data:image/png")
+        assert page.is_checked("#legal_ack")
+    finally:
+        page.close()

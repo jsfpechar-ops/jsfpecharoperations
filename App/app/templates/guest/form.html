@@ -48,12 +48,15 @@
   </div>
 {% endif %}
 
-<form method="post" action="/l/{{ token }}/{{ reservation.id }}/save?lang={{ lang }}"
+<form id="guest-form" method="post" action="/l/{{ token }}/{{ reservation.id }}/save?lang={{ lang }}"
       enctype="multipart/form-data" data-guest-wizard
+      data-start-step="{{ start_step | default(0) }}"
+      data-lang-warning="{{ t('lang_draft_warning') }}"
       data-next-label="{{ t('next_step') }}" data-back-label="{{ t('previous_step') }}"
       data-progress-label="{{ t('form_step_progress', current='__CURRENT__', total='__TOTAL__') }}"
       data-progress-title="{{ t('form_step_progress_title', progress='__PROGRESS__', title='__TITLE__') }}">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" id="form-step" name="_step" value="">
   {% if guest %}<input type="hidden" name="guest_id" value="{{ guest.id }}">{% endif %}
   <input type="hidden" name="stay_from"
          value="{{ values.get('stay_from') or (guest.stay_from if guest and guest.stay_from else reservation.date_from) }}">
