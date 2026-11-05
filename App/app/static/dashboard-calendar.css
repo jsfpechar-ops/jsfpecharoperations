@@ -890,6 +890,12 @@ body.v2 #calendar.dashboard-calendar[data-readonly="false"] .cal-pill[data-cal-c
     body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="false"] .cal-pill-name { display:none; }
     body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="false"] .cal-pill { min-width:32px; padding:0 4px; }
   }
+  /* A one-night bar in a wide week can still be a sliver (a Sunday arrival is about 48 to 60 px). The bar is the size container: its name goes
+     when the readable part would be under 36 px (bar width minus 48 px of padding, avatar and gap, so the bar must be 84 px or more), and only the avatar shows. */
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="false"] .cal-pill { container-type:inline-size; }
+  @container (max-width:67px) {
+    body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="false"] .cal-pill-name { display:none; }
+  }
   /* A keyboard ring that shows on the dark bars and badges and on the white and dark tiles. */
   body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="false"] :is(.cal-pill, .cal-pill-more):focus-visible { outline:2px solid #fff; outline-offset:0; box-shadow:0 0 0 4px #222; }
 }
