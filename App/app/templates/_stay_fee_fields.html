@@ -80,7 +80,7 @@
       <fieldset class="gp-methods">
         <legend class="small">{{ t('stay_fees.guest_pay.rails_label') }}</legend>
         <div class="gp-card">
-          <label class="gp-check checkline"><input type="checkbox" name="stay_fee_guest_rails" value="qr"{% if 'qr' in guest_rails %} checked{% endif %}> <span>{{ t('stay_fees.guest_pay.rail.qr') }}</span></label>
+          <label class="gp-check checkline"><input type="checkbox" name="stay_fee_guest_rails" value="qr"{% if 'qr' in guest_rails %} checked{% endif %}> <span>{{ t('stay_fees.guest_pay.rail.qr') }}<small class="muted gp-rail-note">{{ t('stay_fees.guest_pay.qr_note') }}</small></span></label>
           <label class="gp-check checkline"><input type="checkbox" name="stay_fee_guest_rails" value="iban"{% if 'iban' in guest_rails %} checked{% endif %}> <span>{{ t('stay_fees.guest_pay.rail.iban') }}</span></label>
           <div class="gp-detail gp-account" data-guest-pay-operator data-preview-url="/stay-fees/{{ apartment.id }}/guest-pay-preview">
             <p class="ui-sub">{{ t('stay_fees.guest_pay.operator_lede') }}</p>

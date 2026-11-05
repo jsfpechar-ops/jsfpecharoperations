@@ -423,3 +423,10 @@ def test_the_bank_account_is_not_required_while_collection_is_off(host, monkeypa
     db.update("legal_entity", entity["legal_entity_id"], {"iban": None, "bank_account": None})
     response = _save(client, apartment_id, guest={"stay_fee_guest_rails": ["qr"]})
     assert response.status_code == 303, response.text
+
+
+def test_the_qr_option_says_it_is_for_czech_and_slovak_guests_only(host, monkeypatch):
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    page = client.get(f"/apartments/{apartment_id}?lang=en")
+    assert "Only Czech and Slovak guests see and can use this." in page.text

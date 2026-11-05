@@ -114,3 +114,30 @@ def test_each_method_shows_its_details_and_the_switch_hides_all(host, base, monk
         mobile.screenshot(path=str(SHOTS / "guest-pay-settings-390.png"))
         assert mobile.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth")
         browser.close()
+
+
+_LABEL_STYLE = """(id) => {
+  const l = document.querySelector('label[for=' + id + ']');
+  const cs = getComputedStyle(l);
+  const tail = l.querySelector('.tip-tail');
+  return {fs: cs.fontSize, fw: cs.fontWeight, ls: cs.letterSpacing, lh: cs.lineHeight, mb: cs.marginBottom,
+          rowMb: getComputedStyle(l.parentElement).marginBottom, tail: tail ? getComputedStyle(tail).display : null};
+}"""
+
+
+def test_section_four_labels_look_like_the_labels_in_sections_one_to_three(host, base, monkeypatch):  # noqa: F811
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    url = f"{base}/apartments/{host['apartment']}?lang=en"
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        page = _context(browser, base, host).new_page()
+        _open_fee(page, url)
+        page.check("#stay_fee_collect")
+        for rail in ("iban", "revolut", "cash"):
+            page.locator(f"input[name='stay_fee_guest_rails'][value='{rail}']").check()
+        reference = page.evaluate(_LABEL_STYLE, "stay_fee_council_account")
+        assert reference["tail"] == "inline-block"
+        for field in ("stay_fee_guest_operator_account", "stay_fee_guest_revolut_link",
+                      "stay_fee_guest_cash_note", "stay_fee_guest_default_rail"):
+            assert page.evaluate(_LABEL_STYLE, field) == reference, field
+        browser.close()
