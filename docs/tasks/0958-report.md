@@ -14,7 +14,7 @@ Environment: Python 3.12.3, requirements.lock + requirements-dev.txt, playwright
 - Calendar group (feed-DNS file included): 214 passed, 1 failed, 0 skipped. The failure is test_feed_dns_pinning (IPv6 not supported in the sandbox).
 - Host group + design guardrails + layout lint + 0710 (no -x): 419 passed, 5 failed, 0 skipped. Failures: test_host_fee_navigation::test_frozen_report_order_and_forms and four in test_host_ux_acceptance.py (lines 338, 615, 642, 721). All five fail identically on base (base run of ux_acceptance: 4 failed; fee-nav fails on base).
 - Layout-lint test: passed inside the host group (no findings reported).
-- Static versions and cache heartbeats: see the run recorded in the session log.
+- Static versions and cache heartbeats: 16 passed, 0 failed, 0 skipped.
 - context_lint.py: OK. git diff --check: clean.
 
 ## Acceptance
@@ -32,5 +32,5 @@ Environment: Python 3.12.3, requirements.lock + requirements-dev.txt, playwright
 
 ## Owner actions
 - Decide whether to accept review with the 5 pre-existing host failures or open a separate brief to fix them.
-- Push new commits: `git push origin codex/0958-calendar-type-state` (the branch is on origin up to f46b741 plus later commits; push again).
+- Pushed: codex/0958-calendar-type-state at 2b3d937 (no further push needed unless you change the branch).
 - Open a PR only after you accept the review.
