@@ -5,6 +5,13 @@
   <h2>{{ t('fee_title') }}</h2>
   <p class="g-intro">{{ t('fee_rate_line', rate=fee_panel.rate) }}</p>
   <p class="g-fee-amount"><strong>{{ fee_total }}</strong></p>
+  <details class="g-fee-what">
+    <summary class="g-fee-what-toggle" aria-label="{{ t('fee_what_is_this') }}">?</summary>
+    <div class="g-fee-what-body">
+      <p class="g-intro">{{ t('legal_notice_fee_body') }}</p>
+      <p><a href="https://www.e-sbirka.cz/sb/1990/565" rel="noopener" target="_blank">{{ t('legal_notice_fee_link') }}</a></p>
+    </div>
+  </details>
 
   <details class="g-summary">
     <summary class="g-summary-fold">{{ t('fee_per_person') }}</summary>
