@@ -1,6 +1,6 @@
 # 0958: Correct the calendar record-type appearance
 
-Status: in-progress
+Status: blocked
 Depends on: none (independent B02a) | Base commit: 7b0355c45ccdd2557a28edfcfe228aa1dc766e36 | Branch: codex/0958-calendar-type-state
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, checkpoint 60k tokens
 
