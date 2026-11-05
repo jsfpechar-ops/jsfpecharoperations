@@ -55,7 +55,7 @@ def test_hover_changes_every_clickable_thing(base):
         ("/apartments", ".props-card table tbody tr.clickable-row"),
         ("/reservations?range=all", "tbody tr.clickable-row"),
         ("/", "[data-needs-you-go]"),
-        (f"/apartments/{flat}?view=overview", "aside.preview .pv .r"),
+        (f"/apartments/{flat}?view=overview", "nav.prop-strip a.sc"),  # 0948: the status strip replaced the Preview rows
         ("/reservations?range=all", "a.settings-pill:not([aria-current])"),
     ]
     problems = []

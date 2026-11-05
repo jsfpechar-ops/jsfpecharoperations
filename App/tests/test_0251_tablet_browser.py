@@ -29,7 +29,7 @@ CARD_JS = """() => {
     const el = document.elementFromPoint(x, y);
     return !!(el && el.closest('a, .host-property-card-actions'));
   };
-  return [...document.querySelectorAll('aside.preview .pv .r')].map(card => {
+  return [...document.querySelectorAll('nav.prop-strip a.sc')].map(card => {  // 0948: the status strip replaced the Preview rows
     card.scrollIntoView({block: 'center'});
     const r = card.getBoundingClientRect();
     const pill = card.querySelector('.host-property-card-open');
