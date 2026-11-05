@@ -952,3 +952,335 @@ def test_0959_discard_warning_cancel_keeps_draft(live_server, browser, monkeypat
         assert page.is_checked("#legal_ack")
     finally:
         page.close()
+
+
+# --- 0965 (B07): the review, the legal acknowledgement and the save action ---
+
+_B07_LONG = {
+    "first": "Maximiliana-Alexandra",
+    "surname": "Hohenzollern-Sigmaringen-Vondrackova",
+    "doc": "SYN0965LONGDOCUMENT27",
+    "street": "Nábřeží Svobodného Československa 1234/56",
+    "city": "Dolní Lhota u Dlouhého Města nad Labem",
+}
+
+_B07_GEOMETRY_JS = r"""
+() => {
+  const R = el => el.getBoundingClientRect();
+  const step = document.querySelector('[data-guest-step]:not([hidden])');
+  const rows = [...step.querySelectorAll('.g-review-row')].map(row => {
+    const dt = row.querySelector('dt'), value = row.querySelector('.g-review-value');
+    const edit = row.querySelector('.g-review-change'), r = R(row);
+    return {
+      label: dt.textContent.trim(), value: value.textContent.trim(),
+      dtBottom: R(dt).bottom, dtLeft: R(dt).left,
+      valueTop: R(value).top, valueLeft: R(value).left, valueRight: R(value).right,
+      editLeft: R(edit).left, editRight: R(edit).right, editH: R(edit).height,
+      rowRight: r.right,
+    };
+  });
+  const legal = step.querySelector('.g-legal-notice'), review = step.querySelector('.g-review');
+  const cs = getComputedStyle(legal);
+  return {
+    rows,
+    overflow: document.documentElement.scrollWidth - window.innerWidth,
+    legalBorders: [cs.borderLeftWidth, cs.borderRightWidth, cs.borderBottomWidth, cs.borderTopWidth],
+    legalRadius: cs.borderTopLeftRadius, legalShadow: cs.boxShadow,
+    reviewBottom: R(review).bottom, legalTop: R(legal).top,
+    nestedCards: [...step.querySelectorAll('.g-card')].filter(c => !c.classList.contains('g-legal-notice')).length,
+  };
+}
+"""
+
+_B07_ACK_JS = r"""
+() => {
+  const rgb = value => {
+    const nums = (value.match(/-?[\d.]+/g) || []).map(Number);
+    return value.startsWith('color(') ? nums.slice(0, 3).map(n => n * 255) : nums.slice(0, 3);
+  };
+  const wrap = document.querySelector('.legal-ack');
+  const cs = getComputedStyle(document.querySelector('#legal_ack').closest('.checkline'));
+  return {
+    border: rgb(cs.borderTopColor), background: rgb(cs.backgroundColor),
+    outlineStyle: cs.outlineStyle, outlineWidth: parseFloat(cs.outlineWidth), outline: rgb(cs.outlineColor),
+    invalidClass: wrap.classList.contains('is-invalid'),
+    ariaInvalid: document.querySelector('#legal_ack').getAttribute('aria-invalid'),
+  };
+}
+"""
+
+_B07_STICKY_JS = r"""
+() => {
+  const R = el => el.getBoundingClientRect();
+  const step = document.querySelector('[data-guest-step]:not([hidden])');
+  const btn = step.querySelector(':scope > .g-btn[type=submit]');
+  const rows = [...step.querySelectorAll('.g-review-row')];
+  const legal = [...step.querySelectorAll('.g-legal-text > summary, .g-legal-text[open] p, .legal-ack .checkline')];
+  const active = document.activeElement;
+  return {
+    position: getComputedStyle(btn).position, btnTop: R(btn).top, btnBottom: R(btn).bottom,
+    btnHeight: R(btn).height, viewport: window.innerHeight,
+    pad: parseFloat(getComputedStyle(document.documentElement).scrollPaddingBottom) || 0,
+    lastRowBottom: R(rows[rows.length - 1]).bottom,
+    legalBottoms: legal.map(e => R(e).bottom),
+    activeTop: R(active).top, activeBottom: R(active).bottom, activeId: active.id || '',
+  };
+}
+"""
+
+
+def _b07_redder(color, margin):
+    return color[0] - max(color[1], color[2]) >= margin
+
+
+def _b07_greener(color, margin):
+    return color[1] - max(color[0], color[2]) >= margin
+
+
+def _b07_shot(page, lang, width, name):
+    shots = os.environ.get("UBYHOST_SHOTS_DIR")
+    if not shots:
+        return
+    Path(shots).mkdir(parents=True, exist_ok=True)
+    page.screenshot(path=str(Path(shots) / f"0965-{lang}-{width}-{name}.png"), full_page=False)
+
+
+def _b07_open_review(live_server, browser, monkeypatch, token, lang, width):
+    """Person 1 of 3, long synthetic answers, on the signature step with a drawn signature."""
+    from app import config
+
+    monkeypatch.setattr(config, "GUEST_PIN_REQUIRED", False)
+    monkeypatch.setattr(mail, "mail_enabled", lambda: False)
+    stay = _seed(token)
+    db.update("reservation", stay, {"expected_guests_override": 3})
+    page = browser.new_page(viewport={"width": width, "height": 812})
+    guest = Guest(page, width, lang)
+    page.goto(f"{live_server}/l/{token}/{stay}/new?lang=en")
+    page.fill("#first_name", _B07_LONG["first"])
+    page.fill("#surname", _B07_LONG["surname"])
+    page.click("#birth_date")
+    page.keyboard.type("01011980")
+    guest.pick_country("nationality", "DEU")
+    page.fill("#doc_number", _B07_LONG["doc"])
+    guest.next()
+    page.fill("#res_street", _B07_LONG["street"])
+    page.fill("#res_city", _B07_LONG["city"])
+    guest.next()
+    if lang != "en":
+        # The language menu keeps the draft and the step (0959).
+        page.locator("[data-lang-menu] summary").click()
+        with page.expect_navigation():
+            page.locator(f'[data-lang-draft][lang="{lang}"]').click()
+        assert page.get_attribute("html", "lang") == lang
+    assert guest.step() == i18n.translator(lang)("signature")
+    guest.sign()
+    return page, guest, stay
+
+
+@pytest.mark.parametrize(("lang", "width"), [(l, w) for l in ("en", "cs") for w in (390, 768, 1280)])
+def test_0965_review_is_one_surface_with_aligned_fact_rows(live_server, browser, monkeypatch, lang, width):
+    """G04 + G03: one card, label / value / aligned Edit rows, a divider before the legal part,
+    a short save action with the person progress apart, a quiet Back."""
+    t = i18n.translator(lang)
+    page, guest, _stay = _b07_open_review(live_server, browser, monkeypatch, f"b07-rows-{lang}-{width}", lang, width)
+    try:
+        page.locator(".g-review").scroll_into_view_if_needed()
+        geo = page.evaluate(_B07_GEOMETRY_JS)
+        rows = geo["rows"]
+        assert len(rows) == 5, [r["label"] for r in rows]
+        # The birth-date row missing at 390 px in Czech (seen in 0959) is an acceptance item here.
+        birth = [r for r in rows if t("birth_date").strip() in r["label"]]
+        assert len(birth) == 1 and birth[0]["value"] == "01.01.1980", rows
+        assert rows[0]["value"] == f"{_B07_LONG['first']} {_B07_LONG['surname']}"
+        assert rows[-1]["value"].startswith(_B07_LONG["street"]) and _B07_LONG["city"] in rows[-1]["value"]
+        assert geo["overflow"] <= 1, f"the page scrolls sideways by {geo['overflow']}px"
+        for row in rows:
+            assert row["dtBottom"] <= row["valueTop"] + 1, f"label is not above the value: {row['label']}"
+            assert abs(row["dtLeft"] - row["valueLeft"]) <= 1, row["label"]
+            assert row["valueRight"] <= row["editLeft"] + 0.5, f"value runs under Edit: {row['label']}"
+            assert row["editRight"] <= row["rowRight"] + 0.5, row["label"]
+            assert row["editH"] >= 44, row["label"]
+        edges = [row["editRight"] for row in rows]
+        assert max(edges) - min(edges) <= 1, f"Edit actions are not aligned: {edges}"
+        # One outer surface: the legal part has no frame of its own, only a divider.
+        assert geo["legalBorders"][:3] == ["0px", "0px", "0px"], geo["legalBorders"]
+        assert geo["legalBorders"][3] == "1px", geo["legalBorders"]
+        assert geo["legalRadius"] == "0px" and geo["legalShadow"] == "none"
+        assert geo["reviewBottom"] <= geo["legalTop"] + 1
+        assert geo["nestedCards"] == 0, "a card sits inside the step card"
+        _b07_shot(page, lang, width, "review-legal-closed")
+
+        # The short action and the person progress, apart.
+        submit = page.locator("[data-guest-step]:not([hidden]) > .g-btn[type=submit]")
+        assert submit.inner_text().strip() == t("save_continue_next")
+        assert submit.evaluate("el => el.getBoundingClientRect().height") <= 64, "the action wraps"
+        note = page.locator("[data-guest-step]:not([hidden]) > .g-save-note")
+        assert note.inner_text().strip() == t("person_progress", current=1, total=3)
+        back = page.locator("[data-guest-step]:not([hidden]) .g-wizard-nav .g-btn.secondary")
+        assert back.count() == 1
+        sizes = page.evaluate(
+            "([b, s]) => [document.querySelector(b), document.querySelector(s)].map(e => e.getBoundingClientRect().width)",
+            ["[data-guest-step]:not([hidden]) .g-wizard-nav .g-btn.secondary",
+             "[data-guest-step]:not([hidden]) > .g-btn[type=submit]"],
+        )
+        assert sizes[0] < sizes[1] * 0.6, f"Back is as wide as the action: {sizes}"
+        assert back.evaluate("el => getComputedStyle(el).backgroundColor") == "rgba(0, 0, 0, 0)"
+        assert back.evaluate("el => el.getBoundingClientRect().height") >= 44
+
+        # Legal open: still no frame, nothing sideways.
+        page.locator(".g-legal-text > summary").click()
+        assert page.locator(".g-legal-text").evaluate("el => el.open")
+        assert page.evaluate(_B07_GEOMETRY_JS)["overflow"] <= 1
+        _b07_shot(page, lang, width, "review-legal-open")
+    finally:
+        page.close()
+
+
+@pytest.mark.parametrize(("lang", "width"), [(l, w) for l in ("en", "cs") for w in (390, 768, 1280)])
+def test_0965_acknowledgement_is_neutral_then_positive_and_red_only_after_a_failed_submit(
+    live_server, browser, monkeypatch, lang, width
+):
+    """G02: unchecked neutral, focus ring visible, attempted-invalid red, checked green, never red."""
+    page, _guest, _stay = _b07_open_review(live_server, browser, monkeypatch, f"b07-ack-{lang}-{width}", lang, width)
+    try:
+        page.locator("#legal_ack").scroll_into_view_if_needed()
+        idle = page.evaluate(_B07_ACK_JS)
+        assert not idle["invalidClass"] and idle["ariaInvalid"] is None
+        assert not _b07_redder(idle["border"], 30) and not _b07_greener(idle["border"], 8), idle
+        assert not _b07_redder(idle["background"], 5) and not _b07_greener(idle["background"], 5), idle
+
+        # Attempted submit with the box empty: the browser blocks it, the row turns red.
+        page.locator("[data-guest-step]:not([hidden]) > .g-btn[type=submit]").click()
+        assert "/save" not in page.url
+        bad = page.evaluate(_B07_ACK_JS)
+        assert bad["invalidClass"] and bad["ariaInvalid"] == "true", bad
+        assert _b07_redder(bad["border"], 30) and _b07_redder(bad["background"], 5), bad
+        _b07_shot(page, lang, width, "ack-attempted-invalid")
+
+        # Ticked: the error look is gone and the row is quietly positive.
+        page.check("#legal_ack")
+        page.mouse.move(2, 2)
+        ok = page.evaluate(_B07_ACK_JS)
+        assert not ok["invalidClass"] and ok["ariaInvalid"] is None, ok
+        assert _b07_greener(ok["border"], 8) and _b07_greener(ok["background"], 5), ok
+        assert not _b07_redder(ok["border"], 30) and not _b07_redder(ok["background"], 5), ok
+        page.locator(".g-legal-text > summary").click()
+        assert page.evaluate(_B07_ACK_JS)["border"] == ok["border"], "opening the legal text changed the tick"
+        _b07_shot(page, lang, width, "ack-checked-legal-open")
+
+        # Keyboard focus: a visible ring that is not the error colour, on a ticked and an empty box.
+        for ticked in (True, False):
+            if not ticked:
+                page.uncheck("#legal_ack")
+            page.focus(".g-review-change")
+            for _ in range(24):
+                page.keyboard.press("Tab")
+                if page.evaluate("() => document.activeElement.id") == "legal_ack":
+                    break
+            assert page.evaluate("() => document.activeElement.id") == "legal_ack"
+            ring = page.evaluate(_B07_ACK_JS)
+            assert ring["outlineStyle"] != "none" and ring["outlineWidth"] >= 2, ring
+            assert not _b07_redder(ring["outline"], 30), ring
+            if ticked:
+                assert not _b07_redder(ring["border"], 30), ring
+            _b07_shot(page, lang, width, f"ack-focus-{'checked' if ticked else 'empty'}")
+        page.check("#legal_ack")
+
+        # Success: the same synthetic data saves (disposable test database, manual mode, no filing).
+        page.locator("[data-guest-step]:not([hidden]) > .g-btn[type=submit]").click()
+        page.wait_for_load_state()
+        assert "/save" not in page.url, page.inner_text(".g-err") if page.locator(".g-err").count() else page.url
+        strip = page.locator(".g-saved-strip")
+        assert strip.count() == 1 and i18n.translator(lang)("person_saved") in strip.inner_text()
+        _b07_shot(page, lang, width, "saved")
+    finally:
+        page.close()
+
+
+@pytest.mark.parametrize(("lang", "width"), [("en", 390), ("cs", 390), ("en", 768), ("en", 1280)])
+def test_0965_sticky_action_never_covers_review_legal_text_or_focus(live_server, browser, monkeypatch, lang, width):
+    """G03: measured with getBoundingClientRect at the bottom of the page and after Tab."""
+    page, _guest, _stay = _b07_open_review(live_server, browser, monkeypatch, f"b07-sticky-{lang}-{width}", lang, width)
+    try:
+        for legal_open in (False, True):
+            if legal_open:
+                page.locator(".g-legal-text > summary").click()
+            page.evaluate("() => window.scrollTo({top: document.documentElement.scrollHeight, behavior: 'instant'})")
+            page.wait_for_timeout(250)
+            m = page.evaluate(_B07_STICKY_JS)
+            if width <= 560:
+                assert m["position"] == "sticky", m
+                assert m["pad"] >= 96, f"no scroll padding for the sticky action: {m['pad']}"
+            assert m["btnBottom"] <= m["viewport"] + 1, "the action is cut off at the bottom"
+            assert m["lastRowBottom"] <= m["btnTop"] + 1 or m["lastRowBottom"] < 0, "the action covers the last fact row"
+            for bottom in m["legalBottoms"]:
+                assert bottom <= m["btnTop"] + 1, f"the action covers legal text (legal_open={legal_open}): {m}"
+            _b07_shot(page, lang, width, f"bottom-legal-{'open' if legal_open else 'closed'}")
+        # Tab from the top of the review to the acknowledgement: the focused control stays clear of the bar.
+        page.evaluate("() => document.querySelector('.g-review').scrollIntoView({block: 'start', behavior: 'instant'})")
+        page.focus(".g-review-change")
+        seen = []
+        for _ in range(24):
+            page.keyboard.press("Tab")
+            page.wait_for_timeout(60)
+            m = page.evaluate(_B07_STICKY_JS)
+            seen.append(m["activeId"])
+            overlap = m["activeTop"] < m["btnBottom"] and m["activeBottom"] > m["btnTop"]
+            assert not overlap, f"the sticky action covers the focused control {m['activeId']!r}: {m}"
+            if m["activeId"] == "legal_ack":
+                break
+        assert seen[-1] == "legal_ack", seen
+    finally:
+        page.close()
+
+
+@pytest.mark.parametrize("lang", ["en", "cs"])
+def test_0965_every_edit_returns_to_its_step_and_keeps_the_data(live_server, browser, monkeypatch, lang):
+    """Edit from the review lands on the owning step, focus on the field, nothing typed is lost."""
+    t = i18n.translator(lang)
+    page, guest, _stay = _b07_open_review(live_server, browser, monkeypatch, f"b07-edit-{lang}", lang, 390)
+    try:
+        signature = page.eval_on_selector("#signature", "e => e.value")
+        assert signature.startswith("data:image/png")
+        before = page.evaluate("() => [...document.querySelectorAll('.g-review-row')].map(r => r.textContent)")
+        owners = [t("your_details")] * 4 + [t("residence_title")]
+        focus_ids = ["first_name", "birth_date", "", "doc_number", "res_street"]
+        assert len(before) == 5
+        for index in range(5):
+            page.locator(".g-review-change").nth(index).scroll_into_view_if_needed()
+            page.locator(".g-review-change").nth(index).click()
+            page.wait_for_timeout(900)
+            assert guest.step() == owners[index], (index, guest.step())
+            if focus_ids[index]:
+                assert page.evaluate("() => document.activeElement.id") == focus_ids[index], index
+            assert page.input_value("#first_name") == _B07_LONG["first"]
+            assert page.input_value("#surname") == _B07_LONG["surname"]
+            assert page.input_value("#birth_date") == "01.01.1980"
+            assert page.input_value("#nationality") == "DEU"
+            assert page.input_value("#doc_number") == _B07_LONG["doc"]
+            assert page.input_value("#res_street") == _B07_LONG["street"]
+            assert page.input_value("#res_city") == _B07_LONG["city"]
+            assert page.eval_on_selector("#signature", "e => e.value") == signature
+            while guest.step() != t("signature"):
+                guest.next()
+            assert page.evaluate("() => [...document.querySelectorAll('.g-review-row')].map(r => r.textContent)") == before
+    finally:
+        page.close()
+
+
+def test_0965_shortened_save_action_exists_in_all_six_guest_languages():
+    """The one action key is short in every language and no longer says "continue to the next person"."""
+    old = {
+        "en": "Save and continue to the next person",
+        "cs": "Uložit a pokračovat k další osobě",
+        "de": "Speichern und mit der nächsten Person fortfahren",
+        "es": "Guardar y continuar con la siguiente persona",
+        "fr": "Enregistrer et continuer avec la personne suivante",
+        "uk": "Зберегти й перейти до наступної особи",
+    }
+    assert set(old) == set(i18n.LANGUAGES)
+    for lang, previous in old.items():
+        label = i18n.STRINGS[lang]["save_continue_next"]
+        assert label and label != previous, lang
+        assert len(label) <= 26, (lang, label)
+    assert len({i18n.STRINGS[lang]["save_continue_next"] for lang in old}) == 6
