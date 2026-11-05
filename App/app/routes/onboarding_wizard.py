@@ -36,6 +36,7 @@ def wizard_setup_prefix(apartment_id: int) -> str:
 
 def _admin_helpers():
     from . import admin as admin_routes
+    from . import stay_fees as stay_fee_routes
 
     return admin_routes
 
@@ -142,6 +143,14 @@ def _wizard_context(
         "link_key": link_key,
         "pin": apartment["permalink_pin"] or "",
         "fee_account": payments.czech_account_parts(apartment["stay_fee_council_account"] or ""),
+        "guest_pay_operator": (
+            stay_fee_routes.guest_pay_operator_context(
+                apartment,
+                next((row for row in entities if row["id"] == apartment.get("legal_entity_id")), None),
+            )
+            if step == "stay_fee"
+            else None
+        ),
         "has_password": bool(apartment["uby_ws_password_enc"]),
         "calendar_platforms": admin_routes.CALENDAR_PLATFORMS,
         "setup_demo": setup_demo,

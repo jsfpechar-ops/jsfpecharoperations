@@ -55,6 +55,8 @@ def host(monkeypatch):
     owner_id = auth.create_account(f"{USERNAME}@example.test", "Guest Pay Host", username=USERNAME)
     entity_id = db.insert("legal_entity", {
         "name": "Guest Pay s.r.o.", "owner_user_id": owner_id, "created_at": db.utcnow(),
+        "iban": "CZ6508000000192000145399",
+        "bank_account": "19-2000145399/0800",
     })
     client = TestClient(app)
     assert login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False).status_code == 303
@@ -203,3 +205,60 @@ def test_cash_note_is_capped_at_300_characters(host, monkeypatch):
     monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
     _save(client, apartment_id, guest={"stay_fee_guest_cash_note": "a" * 400})
     assert len(_stored(apartment_id)["stay_fee_guest_cash_note"]) == 300
+
+
+def test_qr_rail_without_operator_account_refuses_save(host, monkeypatch):
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    entity = db.query_one("SELECT legal_entity_id FROM apartment WHERE id = ?", (apartment_id,))
+    db.update(
+        "legal_entity",
+        entity["legal_entity_id"],
+        {"iban": None, "bank_account": None},
+    )
+    response = _save(
+        client,
+        apartment_id,
+        guest={"stay_fee_guest_rails": ["qr"], "stay_fee_guest_operator_account": ""},
+    )
+    assert response.status_code == 400
+    assert "Enter your business bank account" in response.text
+
+
+def test_qr_rail_saves_operator_account_on_legal_entity(host, monkeypatch):
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    entity = db.query_one("SELECT legal_entity_id FROM apartment WHERE id = ?", (apartment_id,))
+    account = "19-2000145399/0800"
+    response = _save(
+        client,
+        apartment_id,
+        guest={
+            "stay_fee_guest_rails": ["qr", "iban"],
+            "stay_fee_guest_operator_account": account,
+        },
+    )
+    assert response.status_code == 303, response.text
+    row = db.query_one(
+        "SELECT bank_account, iban FROM legal_entity WHERE id = ?",
+        (entity["legal_entity_id"],),
+    )
+    assert row["bank_account"] == "19-2000145399/0800"
+    assert (row["iban"] or "").startswith("CZ")
+
+
+def test_qr_rail_shows_preview_when_operator_has_iban(host, monkeypatch):
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    entity = db.query_one("SELECT legal_entity_id FROM apartment WHERE id = ?", (apartment_id,))
+    db.update(
+        "legal_entity",
+        entity["legal_entity_id"],
+        {"iban": "CZ6508000000192000145399", "bank_account": "19-2000145399/0800"},
+    )
+    _save(client, apartment_id, guest={"stay_fee_guest_rails": ["qr"]})
+    page = client.get(f"/apartments/{apartment_id}?view=settings&section=reporting&lang=en")
+    assert page.status_code == 200
+    assert 'id="stay-fee-guest-preview"' in page.text
+    assert "data:image/png;base64," in page.text
+    assert "CZ65 0800" in page.text or "CZ650800" in page.text

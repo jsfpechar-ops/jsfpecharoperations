@@ -218,6 +218,9 @@ GUEST_NOTE_MAX = 300
 GUEST_LINK_RAW = "_stay_fee_guest_link_raw"
 GUEST_LINK_INVALID = "stay_fee_guest_link_invalid"
 GUEST_LINK_HOSTS = ("revolut.me", "revolut.com")
+GUEST_OPERATOR_ACCOUNT_RAW = "_stay_fee_guest_operator_account_raw"
+GUEST_OPERATOR_ACCOUNT_INVALID = "stay_fee_guest_operator_account_invalid"
+GUEST_OPERATOR_SAMPLE_VS = "1234567890"
 
 
 def stay_fee_guest_pay_on() -> bool:
@@ -329,6 +332,140 @@ def fee_account_draft(form) -> dict:
         "bank": _form_str(form, "account_bank"),
         "iban": "",
     }
+
+
+
+def guest_pay_rails_need_account(rails_csv: str) -> bool:
+    rails = {part for part in (rails_csv or "").split(",") if part}
+    return "qr" in rails or "iban" in rails
+
+
+def _entity_payment_account(entity) -> str:
+    if not entity:
+        return ""
+    if not hasattr(entity, "get"):
+        entity = dict(entity)
+    if entity.get("iban"):
+        return entity["iban"]
+    if entity.get("bank_account"):
+        return entity["bank_account"]
+    return ""
+
+
+def _resolved_operator_account(entity, draft_account: str = "") -> tuple[str, str]:
+    """Return (display account, iban-or-account for SPAYD) or empty strings when unknown."""
+    from .. import payments
+
+    raw = (draft_account or "").strip()
+    if raw:
+        try:
+            _domestic, iban = payments.normalise_account(raw)
+            return payments.format_iban(iban), iban
+        except ValueError:
+            return "", ""
+    stored = _entity_payment_account(entity)
+    if not stored:
+        return "", ""
+    if entity and entity.get("iban"):
+        return payments.format_iban(stored), stored
+    try:
+        _domestic, iban = payments.normalise_account(stored)
+        return payments.format_iban(iban), iban
+    except ValueError:
+        return stored, stored
+
+
+def guest_pay_operator_context(
+    apartment,
+    entity,
+    *,
+    draft_account: str = "",
+) -> dict:
+    """Host preview for QR/bank-transfer rails: sample QR and the operator account."""
+    from .. import payments
+
+    if not hasattr(apartment, "get"):
+        apartment = dict(apartment)
+    if entity is not None and not hasattr(entity, "get"):
+        entity = dict(entity)
+
+    empty = {
+        "needs_account": False,
+        "has_account": False,
+        "account_display": "",
+        "preview_qr": "",
+        "field_value": "",
+        "existing_hidden": "",
+    }
+    if not stay_fee_guest_pay_on():
+        return empty
+    if not guest_pay_rails_need_account(apartment.get("stay_fee_guest_rails") or ""):
+        return empty
+    existing_hidden = _entity_payment_account(entity)
+    field_value = (draft_account or existing_hidden or "").strip()
+    account_display, spayd_account = _resolved_operator_account(entity, draft_account)
+    has_account = bool(spayd_account)
+    preview_qr = ""
+    if has_account:
+        rate = int(apartment.get("stay_fee_rate_czk") or 0) or 50
+        sample_amount = min(max(rate, 1), 50)
+        payload = payments.spayd(
+            spayd_account,
+            sample_amount,
+            GUEST_OPERATOR_SAMPLE_VS,
+            "Stay fee sample",
+        )
+        preview_qr = payments.qr_data_uri(payload)
+    return {
+        "needs_account": True,
+        "has_account": has_account,
+        "account_display": account_display,
+        "preview_qr": preview_qr,
+        "field_value": field_value,
+        "existing_hidden": existing_hidden,
+    }
+
+
+def apply_guest_operator_account(apartment, form, values: dict) -> None:
+    """Persist the operator bank account when QR or bank transfer is enabled."""
+    from .. import db, payments
+
+    if not hasattr(apartment, "get"):
+        apartment = dict(apartment)
+
+    if not app_config.STAY_FEE_GUEST_PAY:
+        values.pop(GUEST_OPERATOR_ACCOUNT_RAW, None)
+        return
+    rails = values.get("stay_fee_guest_rails")
+    if rails is None and "stay_fee_guest_form" in form:
+        rails = guest_pay_values(form).get("stay_fee_guest_rails", "")
+    if not guest_pay_rails_need_account(rails or ""):
+        values.pop(GUEST_OPERATOR_ACCOUNT_RAW, None)
+        return
+    raw = values.pop(GUEST_OPERATOR_ACCOUNT_RAW, None)
+    entity_id = apartment.get("legal_entity_id")
+    if not entity_id:
+        raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
+    entity = db.query_one(
+        "SELECT id, bank_account, iban FROM legal_entity WHERE id = ?",
+        (entity_id,),
+    )
+    if not entity:
+        raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
+    if raw is None:
+        if not _entity_payment_account(entity):
+            raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
+        return
+    if not raw.strip():
+        if _entity_payment_account(entity):
+            return
+        raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
+    try:
+        bank_account, iban = payments.normalise_account(raw.strip())
+    except ValueError as exc:
+        raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID) from exc
+    db.update("legal_entity", entity_id, {"bank_account": bank_account, "iban": iban})
+
 
 
 def fee_return_path(raw, apartment_id: int) -> str:
