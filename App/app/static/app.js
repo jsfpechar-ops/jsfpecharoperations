@@ -369,12 +369,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         button.appendChild(stack);
       }
     }
-    var icon = document.createElement("span");
-    icon.className = "copy-state-icon";
-    icon.setAttribute("data-copy-state-icon", "");
-    icon.setAttribute("aria-hidden", "true");
-    icon.innerHTML = '<svg viewBox="0 0 24 24" focusable="false"><path d="m5 12 4 4L19 6"/></svg>';
-    button.appendChild(icon);
+    // 0971: no badge over the button; the label swaps to "Copied" in place and keeps the button's size.
   }
 
   function initCopy() {
@@ -2405,6 +2400,34 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     n.focus({ preventScroll: true });
   }
 
+  // 0971: one dismiss control on every inline success notice (success_notice macro, section notice, cleaning notice).
+  function initSuccessNotices() {
+    if (!document.body.classList.contains("host-workspace")) return;
+    var root = feedbackRoot();
+    var label = (root && root.getAttribute("data-dismiss-label")) || "Dismiss notification";
+    Array.prototype.forEach.call(document.querySelectorAll("[data-success-notice], .section-notice.ok, p.cleaning-notice"), function (notice) {
+      if (!claimNode(notice, "initSuccessNotices")) return;
+      var close = notice.querySelector("[data-success-dismiss]");
+      if (!close) {
+        close = document.createElement("button");
+        close.type = "button";
+        close.className = "success-notice-close";
+        close.setAttribute("data-success-dismiss", "");
+        close.setAttribute("aria-label", label);
+        close.textContent = "\u00d7";
+        notice.appendChild(close);
+      }
+      close.addEventListener("click", function () {
+        var section = notice.closest("section");
+        var heading = (section && section.querySelector("h2")) || document.querySelector("main h1, h1");
+        notice.remove();
+        if (!heading) return;
+        if (!heading.hasAttribute("tabindex")) heading.setAttribute("tabindex", "-1");
+        heading.focus({ preventScroll: true });
+      });
+    });
+  }
+
   function initPage() {
     initPhoneDefaultClosed();
     initPropSectionLinks();
@@ -2416,6 +2439,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     initUnsavedForms();
     initUnsavedDialog();
     initSectionNotice();
+    initSuccessNotices();
     initHelpTips();
     initBirthDateInputs();
     initRowMenus();

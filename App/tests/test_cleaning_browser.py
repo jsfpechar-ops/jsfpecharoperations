@@ -958,3 +958,186 @@ def test_0891_cleaning_airbnb_month(workspace, origin, width):
             page.screenshot(path=str(SHOTS_0891 / f"cleaning-{width}.png"), full_page=False)
         context.close()
         browser.close()
+
+
+# ---- 0971: one success pattern, independent cleaning save forms ----
+
+_NOTICE_FIXTURE = """
+document.addEventListener('readystatechange', () => {
+  if (document.readyState !== 'interactive') return;
+  const main = document.querySelector('main') || document.body;
+  const long = 'Averyveryveryveryverylongunbrokensuccesstext'.repeat(6);
+  main.insertAdjacentHTML('afterbegin',
+    '<div id="fx-section" class="banner ok section-notice" role="status" tabindex="-1" data-section-notice><span class="grow">' + long + '</span></div>' +
+    '<p id="fx-cleaning" class="cleaning-notice" role="status">Saved.</p>');
+  const rail = document.querySelector('[data-feedback-rail]');
+  if (rail) rail.insertAdjacentHTML('beforeend',
+    '<div id="fx-toast" class="toast" data-toast data-toast-kind="success"><span class="grow">Saved.</span>' +
+    '<button type="button" data-toast-close aria-label="Dismiss">\\u00d7</button></div>');
+  const src = document.createElement('input');
+  src.id = 'fx-copy-source'; src.className = 'sr-only'; src.value = 'synthetic-link'; src.readOnly = true;
+  const btn = document.createElement('button');
+  btn.id = 'fx-copy'; btn.type = 'button'; btn.className = 'btn small'; btn.dataset.copy = 'fx-copy-source';
+  btn.dataset.copyLabel = 'Copy link'; btn.dataset.copiedLabel = document.documentElement.lang === 'cs' ? 'Zkopírováno' : 'Copied';
+  btn.textContent = 'Copy link';
+  main.append(src, btn);
+});
+"""
+
+
+def _saved_state(ws):
+    prop = cleaning.properties(ws["owner"], [ws["home"]])[0]
+    return prop["cleaning_instructions"], cleaning._code(prop)["value"]
+
+
+@pytest.mark.parametrize("width", [390, 768, 1280])
+@pytest.mark.parametrize("lang", ["en", "cs"])
+def test_0971_each_cleaning_save_commits_only_its_own_form(workspace, origin, width, lang):
+    ws = workspace
+    url = f"{origin}/cleaning/properties/{ws['home']}?lang={lang}"
+    with sync_api.sync_playwright() as playwright:
+        browser, context = browser_context(playwright, ws, origin, width=width)
+        try:
+            page = context.new_page()
+            page.goto(url)
+            page.wait_for_selector("form[aria-label]")
+            forms = page.locator("form.cleaning-panel[aria-label]")
+            assert forms.count() == 2
+            geometry = page.evaluate("""() => {
+              const [a, b] = Array.from(document.querySelectorAll('form.cleaning-panel[aria-label]'));
+              const ba = a.querySelector('button[type=submit]'), bb = b.querySelector('button[type=submit]');
+              const ra = ba.getBoundingClientRect(), rb = bb.getBoundingClientRect();
+              return { nested: a.contains(b) || b.contains(a), submits: [a.querySelectorAll('button[type=submit]').length, b.querySelectorAll('button[type=submit]').length],
+                sameClass: ba.className === bb.className, sameHeight: Math.abs(ra.height - rb.height) < 1,
+                boxed: [a, b].map((f) => getComputedStyle(f).borderTopWidth !== '0px' || getComputedStyle(f).boxShadow !== 'none'),
+                overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+                actions: [a.getAttribute('action'), b.getAttribute('action')] };
+            }""")
+            assert not geometry["nested"] and geometry["submits"] == [1, 1], geometry
+            assert geometry["sameClass"] and geometry["sameHeight"], geometry
+            assert geometry["boxed"] == [True, True] and not geometry["overflow"], geometry
+            shot(page, f"0971-settings-{lang}-{width}")
+            before_text, before_code = _saved_state(ws)
+            # Save instructions with an unsaved manual code typed in the other form.
+            page.fill("#property-instructions", "0971 instructions only")
+            page.fill("#manual-code", "UNSAVED-1")
+            page.locator("form[aria-label] button[type=submit]").first.click()
+            page.wait_for_url("**notice=saved**")
+            text, code = _saved_state(ws)
+            assert text == "0971 instructions only" and code == before_code, (text, code, before_code)
+            # Save the manual code with an unsaved instruction edit typed in the other form.
+            page.fill("#property-instructions", "UNSAVED instructions")
+            page.fill("#manual-code", "7710")
+            page.locator("form[aria-label] button[type=submit]").nth(1).click()
+            page.wait_for_url("**notice=saved**")
+            text, code = _saved_state(ws)
+            assert text == "0971 instructions only" and code == "7710", (text, code)
+            assert page.locator("[data-success-notice]").count() == 1
+            assert page.locator("[data-success-notice] [role=button], [data-success-notice] button").count() == 1
+        finally:
+            browser.close()
+
+
+@pytest.mark.parametrize("width", [390, 768, 1280])
+@pytest.mark.parametrize("lang", ["en", "cs"])
+def test_0971_success_notices_share_one_pattern_and_dismiss(workspace, origin, width, lang):
+    ws = workspace
+    with sync_api.sync_playwright() as playwright:
+        browser, context = browser_context(playwright, ws, origin, width=width)
+        try:
+            context.add_init_script(_NOTICE_FIXTURE)
+            page = context.new_page()
+            page.goto(f"{origin}/cleaning/properties/{ws['home']}?lang={lang}&notice=saved")
+            page.wait_for_selector("[data-success-notice]")
+            page.wait_for_selector("#fx-section [data-success-dismiss]", state="attached")
+            page.wait_for_selector("#fx-cleaning [data-success-dismiss]", state="attached")
+            look = page.evaluate("""() => {
+              const pick = (el) => { const s = getComputedStyle(el); const r = el.getBoundingClientRect();
+                const b = el.querySelector('[data-success-dismiss]').getBoundingClientRect();
+                return { border: s.borderLeftWidth + s.borderLeftColor, radius: s.borderTopLeftRadius, bg: s.backgroundColor, size: s.fontSize,
+                  mark: getComputedStyle(el, '::before').content, inside: r.left >= 0 && r.right <= innerWidth + 0.5 && b.right <= r.right + 0.5 && b.left >= r.left,
+                  close: [Math.round(b.width), Math.round(b.height)] }; };
+              return { macro: pick(document.querySelector('[data-success-notice]')), section: pick(document.querySelector('#fx-section')),
+                cleaning: pick(document.querySelector('#fx-cleaning')),
+                toast: (() => { const i = document.querySelector('#fx-toast .feedback-card-icon'); return i ? [i.textContent, Math.round(i.getBoundingClientRect().width)] : null; })(),
+                overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+                live: document.querySelectorAll('[data-feedback-live]').length };
+            }""")
+            for key in ("section", "cleaning"):
+                for field in ("border", "radius", "bg", "size", "mark"):
+                    assert look[key][field] == look["macro"][field], (key, field, look)
+            for key in ("macro", "section", "cleaning"):
+                assert look[key]["inside"] and look[key]["close"] == [44, 44], (key, look)
+            assert look["toast"] == ["✓", 24], look
+            assert not look["overflow"] and look["live"] == 1, look
+            assert page.locator("[role=status][data-success-notice]").count() == 1
+            shot(page, f"0971-notices-{lang}-{width}")
+            # Pointer dismiss.
+            page.locator("#fx-section [data-success-dismiss]").click()
+            assert page.locator("#fx-section").count() == 0
+            # Keyboard dismiss: Tab to the macro notice's button, press Enter; focus lands on a heading.
+            page.locator("[data-success-notice] [data-success-dismiss]").focus()
+            page.keyboard.press("Enter")
+            assert page.locator("[data-success-notice]").count() == 0
+            assert page.evaluate("document.activeElement && /^H[12]$/.test(document.activeElement.tagName)")
+            page.locator("#fx-cleaning [data-success-dismiss]").focus()
+            page.keyboard.press("Space")
+            assert page.locator("#fx-cleaning").count() == 0
+        finally:
+            browser.close()
+
+
+@pytest.mark.parametrize("width", [390, 768, 1280])
+@pytest.mark.parametrize("lang", ["en", "cs"])
+def test_0971_copy_link_keeps_size_and_label_and_does_not_stack(workspace, origin, width, lang):
+    ws = workspace
+    with sync_api.sync_playwright() as playwright:
+        browser, context = browser_context(playwright, ws, origin, width=width)
+        try:
+            context.add_init_script("""Object.defineProperty(navigator, 'clipboard', { configurable: true,
+              value: { writeText: () => Promise.resolve() } });""" + _NOTICE_FIXTURE)
+            page = context.new_page()
+            page.goto(f"{origin}/cleaning/properties/{ws['home']}?lang={lang}")
+            page.wait_for_selector("#fx-copy")
+            button = page.locator("#fx-copy")
+            before = button.bounding_box()
+            copied = "Zkopírováno" if lang == "cs" else "Copied"
+            for _ in range(3):
+                button.click()
+                page.wait_for_function("(c) => document.querySelector('#fx-copy').getAttribute('aria-label') === c", arg=copied)
+            after = button.bounding_box()
+            assert after["width"] == pytest.approx(before["width"], abs=0.5)
+            assert after["height"] == pytest.approx(before["height"], abs=0.5)
+            state = page.evaluate("""() => ({ icons: document.querySelectorAll('[data-copy-state-icon]').length,
+              toasts: document.querySelectorAll('[data-feedback-rail] [data-toast]:not(#fx-toast)').length,
+              live: document.querySelector('[data-feedback-live]').textContent,
+              visible: Array.from(document.querySelectorAll('#fx-copy .copy-label-default, #fx-copy .copy-label-confirmed')).map(
+                (n) => getComputedStyle(n).visibility + ':' + n.textContent.trim()) })""")
+            assert state["icons"] == 0 and state["toasts"] == 0, state
+            page.wait_for_timeout(100)
+            assert page.evaluate("document.querySelector('[data-feedback-live]').textContent") == copied
+            assert any(item == f"visible:{copied}" for item in state["visible"]), state
+            shot(page, f"0971-copy-{lang}-{width}")
+            page.wait_for_function("() => !document.querySelector('#fx-copy').classList.contains('is-copy-confirmed')", timeout=4000)
+            assert "Copy link" in button.inner_text()
+        finally:
+            browser.close()
+
+
+@pytest.mark.parametrize("width", [390, 1280])
+def test_0971_cleaning_list_notice_is_one_dismissible_success_notice(workspace, origin, width):
+    ws = workspace
+    with sync_api.sync_playwright() as playwright:
+        browser, context = browser_context(playwright, ws, origin, width=width)
+        try:
+            page = context.new_page()
+            page.goto(f"{origin}/cleaning?lang=en&notice=saved")
+            page.wait_for_selector("p.cleaning-notice [data-success-dismiss]")
+            assert page.locator("p.cleaning-notice").count() == 1
+            assert page.locator("p.cleaning-notice [data-success-dismiss]").count() == 1
+            assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")
+            shot(page, f"0971-list-notice-{width}")
+            page.locator("p.cleaning-notice [data-success-dismiss]").click()
+            assert page.locator("p.cleaning-notice").count() == 0
+        finally:
+            browser.close()
