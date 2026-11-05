@@ -240,7 +240,7 @@ STRINGS: Dict[str, str] = {
     "previous_step": "Назад",
     "guest_save_changes": "Зберегти зміни",
     "guest_save_details": "Зберегти дані",
-    "save_continue_next": "Зберегти й перейти до наступної особи",
+    "save_continue_next": "Зберегти особу",
     "submit_registration": "Надіслати реєстрацію",
     "person_saved": "Попередню особу збережено.",
     "add_person": "Додати особу",

@@ -373,10 +373,17 @@ function initSignature() {
       list.textContent = "";
       if (!rows.length) { card.hidden = true; return; }
       rows.forEach(function (row) {
+        // One row per fact: the label above, the value and its Edit action
+        // on one line below. A div around a dt/dd pair is valid in a dl.
+        var item = document.createElement("div");
+        item.className = "g-review-row";
         var dt = document.createElement("dt");
         dt.textContent = row.label;
         var dd = document.createElement("dd");
-        dd.appendChild(document.createTextNode(row.value));
+        var value = document.createElement("span");
+        value.className = "g-review-value";
+        value.textContent = row.value;
+        dd.appendChild(value);
         var button = document.createElement("button");
         button.type = "button";
         button.className = "g-review-change";
@@ -389,14 +396,34 @@ function initSignature() {
           row.target.scrollIntoView({ behavior: "smooth", block: "center" });
         });
         dd.appendChild(button);
-        list.appendChild(dt);
-        list.appendChild(dd);
+        item.appendChild(dt);
+        item.appendChild(dd);
+        list.appendChild(item);
       });
       card.hidden = false;
     }
 
     form.addEventListener("guest-wizard:shown", build);
     build();
+  }
+
+  /* A ticked acknowledgement is a finished answer, not a mistake. The red
+     look is kept for an attempted submit with the box still empty: the browser
+     fires "invalid" on it then, and ticking the box clears the mark again. */
+  function initLegalAck() {
+    var box = document.getElementById("legal_ack");
+    if (!box) return;
+    var wrap = box.closest(".legal-ack");
+    if (!wrap) return;
+    box.addEventListener("invalid", function () {
+      wrap.classList.add("is-invalid");
+      box.setAttribute("aria-invalid", "true");
+    });
+    box.addEventListener("change", function () {
+      if (!box.checked) return;
+      wrap.classList.remove("is-invalid");
+      box.removeAttribute("aria-invalid");
+    });
   }
 
   function focusFirstError() {
@@ -717,6 +744,7 @@ function initSignature() {
     initCheckinRail();
     initErrorSummary();
     initGuestReview();
+    initLegalAck();
     focusFirstError();
   });
 })();
