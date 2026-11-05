@@ -186,7 +186,7 @@ def test_found_locks_return_to_the_hosts_own_property_lock_section(hosts, monkey
         client = _client(USERS[0])
         response = _post(client, "/smart-locks/refresh", return_to=f"/apartments/{own}", section="share")
         location = response.headers["location"]
-        assert location.startswith(f"/apartments/{own}?") and location.endswith("#door-code")
+        assert location.startswith(f"/apartments/{own}?") and location.endswith("#sec-lock")
         row = db.query_one("SELECT lock_provider, lock_id FROM apartment WHERE id = ?", (own,))
         assert row["lock_provider"] is None and row["lock_id"] is None
         for bad in (f"/apartments/{foreign}", "https://evil.example/apartments/1", "//evil.example"):

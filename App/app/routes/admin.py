@@ -184,7 +184,7 @@ def _lock_tab_url(request: Request, return_to: str, anchor: str) -> str:
     """0195: lock feedback lands on a Door lock tab: the named own property, else the first active one."""
     own = _lock_property_return(request, return_to)
     if own:
-        return f"{own.split('#', 1)[0]}#{anchor}"
+        return f"{own.split('#', 1)[0]}#sec-lock"
     first = next((row for row in access.apartments(request) if row["active"]), None)
     if first is None:
         return "/apartments"
@@ -215,7 +215,7 @@ def _lock_property_return(request: Request, return_to: str) -> Optional[str]:
     if not access.apartment(request, apartment_id):
         return None
     # 0884: the wizard has no lock step; an old wizard return_to lands on the lock settings.
-    return f"/apartments/{apartment_id}?view=settings&section=lock&sec=lock#door-code"
+    return f"/apartments/{apartment_id}?view=settings&section=lock&sec=lock#sec-lock"
 
 
 def _apartment_with_secret(apartment) -> Dict[str, Any]:
