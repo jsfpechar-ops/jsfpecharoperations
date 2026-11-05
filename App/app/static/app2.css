@@ -2637,3 +2637,9 @@ body.v2 .feed-url-details{min-width:0;margin-bottom:8px}
 body.v2 .feed-url-details summary{cursor:pointer;min-height:44px;display:inline-flex;align-items:center}
 body.v2 .feed-url-value{display:block;max-width:100%;overflow-wrap:anywhere;word-break:break-all;white-space:normal}
 body.v2 .feed-url-details:not([open])>.feed-url-value{visibility:hidden}
+/* 0968: the stays filter panel on desktop is one row: the fields, then Apply and Cancel. Reset filters lives under the scope line. */
+@media (min-width:1024px){
+  body.v2 form.stays-filter:not(.is-collapsed){display:flex;align-items:flex-end;gap:16px;flex-wrap:nowrap}
+  body.v2 form.stays-filter .filter-fields{flex:1 1 auto;min-width:0}
+  body.v2 form.stays-filter .filter-panel-actions{flex:none;margin:0}
+}
