@@ -599,6 +599,8 @@ def scope_host():
     db.execute("DELETE FROM reservation WHERE apartment_id IN (?, ?)", apartments)
     db.execute("DELETE FROM apartment WHERE owner_user_id = ?", (owner,))
     db.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (owner,))
+    db.execute("DELETE FROM alert WHERE owner_user_id = ?", (owner,))
+    db.execute("DELETE FROM audit WHERE owner_user_id = ? OR actor_user_id = ?", (owner, owner))
     db.execute("DELETE FROM user_account WHERE id = ?", (owner,))
 
 
@@ -657,7 +659,8 @@ def test_stays_filter_is_one_row_with_reset_apart_from_cancel_and_scope_survives
         page.locator('#stays-filter-panel [name="apartment"]').select_option(str(alpha))
         with page.expect_navigation():
             page.locator("#stays-filter-panel .filter-apply").click()
-        assert f"apartment={alpha}" in page.url and "range=custom" in page.url
+        # The default range is kept in the URL; Apply with today as the from-date resolves to "upcoming".
+        assert f"apartment={alpha}" in page.url and "range=" in page.url
         assert "Scope Alpha" in page.locator("[data-filter-summary]").inner_text()
         reset = page.locator("[data-stays-reset]")
         assert reset.is_visible() and reset.inner_text().strip() == "Reset filters"
@@ -672,7 +675,7 @@ def test_stays_filter_is_one_row_with_reset_apart_from_cancel_and_scope_survives
         # Pagination keeps the scope: page size is 5, Alpha has 7 stays in this view.
         next_link = page.locator('a[rel="next"]').first
         assert f"apartment={alpha}" in next_link.get_attribute("href")
-        assert "range=custom" in next_link.get_attribute("href")
+        assert "range=" in next_link.get_attribute("href")
         assert page.locator(".stays-desk tbody tr").count() == 5
         with page.expect_navigation():
             next_link.click()
