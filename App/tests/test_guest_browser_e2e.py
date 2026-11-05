@@ -1090,7 +1090,9 @@ def test_0965_review_is_one_surface_with_aligned_fact_rows(live_server, browser,
         assert len(rows) == 5, [r["label"] for r in rows]
         # The birth-date row missing at 390 px in Czech (seen in 0959) is an acceptance item here.
         birth = [r for r in rows if t("birth_date").strip() in r["label"]]
-        assert len(birth) == 1 and birth[0]["value"] == "01.01.1980", rows
+        # The review shows the date in the app's long format (base initBirthDate, Intl day/month/year).
+        birth_value = "1 January 1980" if lang == "en" else "1. ledna 1980"
+        assert len(birth) == 1 and birth[0]["value"] == birth_value, rows
         assert rows[0]["value"] == f"{_B07_LONG['first']} {_B07_LONG['surname']}"
         assert rows[-1]["value"].startswith(_B07_LONG["street"]) and _B07_LONG["city"] in rows[-1]["value"]
         assert geo["overflow"] <= 1, f"the page scrolls sideways by {geo['overflow']}px"
