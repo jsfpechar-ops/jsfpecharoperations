@@ -147,7 +147,7 @@ def _wizard_context(
         "guest_pay_operator": (
             stay_fee_routes.guest_pay_operator_context(
                 apartment,
-                next((row for row in entities if row["id"] == apartment.get("legal_entity_id")), None),
+                next((row for row in entities if row["id"] == apartment["legal_entity_id"]), None),
             )
             if step == "stay_fee"
             else None

@@ -394,6 +394,14 @@ def test_the_setup_wizard_renders_guest_pay_operator_with_flag_on(host, monkeypa
     assert page.status_code == 200
 
 
+def test_the_setup_wizard_stay_fee_post_with_flag_on_does_not_500(host, monkeypatch):
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    base = f"/apartments/{apartment_id}/setup"
+    posted = client.post(base, data={"step": "stay_fee", "action": "skip"}, follow_redirects=False)
+    assert posted.status_code < 500
+
+
 def _save_collect(client, apartment_id, rails, link="", rate=30):
     page = client.get(f"/apartments/{apartment_id}?lang=en")
     token = page.text.split('name="csrf-token" content="')[1].split('"')[0]
