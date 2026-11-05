@@ -355,8 +355,6 @@ body.v2 summary small{color:var(--ink3)}
 body.v2 summary:after{content:"\2304";color:var(--ink3);font-size:18px}
 body.v2 details[open] summary:after{transform:rotate(180deg)}
 body.v2 .fields{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
-body.v2 .savebar{position:fixed;right:24px;bottom:20px;display:flex;gap:8px}
-@media (max-width:600px){body.v2 .savebar{left:12px;right:12px;bottom:12px;flex-wrap:wrap;justify-content:flex-end}}
 /* 0535: onboarding 'all steps' link spacing (was an inline style) */
 .onb-more{margin-top:10px}
 
@@ -944,7 +942,6 @@ body.v2 .fields-wrap{padding:0 16px 16px}
 body.v2 .setup-continue-card p{font-size:13px;margin:0 0 8px}
 body.v2 .setup-continue-card .actions{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
 body.v2 .setup-continue-card .ui-btn{min-height:32px;padding:4px 12px;font-size:13px}
-@media (min-width:601px){body.v2 .savebar{right:calc(var(--control-h) + var(--space-3) + var(--space-6));white-space:nowrap}}
 /* 0544: above the sticky preview aside from 1024 px; the Havel FAB (z 40) and dialog (z 60) stay above the bar. */
 body.v2 .savebar .ui-btn,body.v2 .savebar .btn{width:auto;white-space:nowrap}
 @media (min-width:1024px){
@@ -985,19 +982,11 @@ body.v2 .dot.n{background:#c9c9c3}
   body.v2 .prop-sec > summary > div > small{display:none}
   body.v2 .prop-sec > summary > .sec-state{grid-column:2;grid-row:2}
   body.v2 .prop-sec > summary:after{grid-column:3;grid-row:1/3}
-  body.v2 .property-settings-form .savebar{display:none}
-  body.v2 .property-settings-form:has(details.prop-sec[open]) .savebar{display:flex;flex-wrap:wrap;gap:8px;left:12px;right:12px;bottom:calc(var(--tabbar-h) + var(--tabbar-safe) + 8px);z-index:10}
-  body.v2 .property-settings-form .savebar .btn{flex:1 1 30%;white-space:normal;text-align:center;justify-content:center}
-  body.v2 .property-settings-form .savebar .btn[type="submit"]{flex-basis:100%}
   body.v2:has(.property-settings-form details.prop-sec[open]) .havel-fab{display:none}
   body.v2 .ov-how[data-how="property"]{display:none}
   /* 0741: copy link is the coral filled button, copy PIN the white outlined one; (0,6,1)+ beats the primary v2 .btn text rule (0,5,1) without !important */
   body.v2 details.prop-sec{border:0;border-radius:0;box-shadow:none;background:transparent;padding:0;margin:0}
   body.v2 #sec-archive > summary{border-bottom:0}
-  body.v2 .property-settings-form .savebar{flex-wrap:nowrap}
-  body.v2 .property-settings-form .savebar .btn{flex:1 1 0;min-width:0;width:auto}
-  body.v2 .property-settings-form .savebar .btn[type="submit"]{flex-basis:0}
-  body.v2 .property-settings-form .savebar:has([data-unsaved-reset]:not([hidden])) .btn.ghost:not([data-unsaved-reset]){display:none}
 }
 /* 0543: CI browser fixes on the property page and its dialogs */
 body.v2 aside.preview .pv a.r:hover,body.v2 aside.preview .pv a.r:focus-visible{background:#f6f6f4;border-radius:8px}
@@ -2119,13 +2108,12 @@ body.v2 .property-settings-form .field input:not([type=checkbox]):not([type=radi
 .ruian-suggest [role="option"]:hover,.ruian-suggest [role="option"][aria-selected="true"]{background:var(--side2)}
 .ruian-suggest [role="option"][aria-selected="true"]{outline:2px solid var(--acc);outline-offset:-2px}
 /* 0851 property editor savebar: Discard/Cancel as quiet text left, Save as the one coral pill right */
-body.v2 form.property-settings-form .savebar,body.v2 form.property-settings-form:has(details.prop-sec[open]) .savebar{position:sticky;left:auto;right:auto;bottom:0;z-index:20;width:auto;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:16px;margin:24px 0 0;padding:12px 0 calc(12px + env(safe-area-inset-bottom,0px));background:#fff;border-top:1px solid var(--line);white-space:nowrap}
-body.v2 form.property-settings-form .savebar .btn,body.v2 form.property-settings-form:has(details.prop-sec[open]) .savebar .btn{flex:0 0 auto;width:auto;min-width:0;height:48px;min-height:48px;padding:0 24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;font-size:16px;font-weight:600;line-height:1;white-space:nowrap}
-body.v2 form.property-settings-form .savebar .btn.ghost,body.v2 form.property-settings-form:has(details.prop-sec[open]) .savebar .btn.ghost{margin-right:auto;padding:0 12px;background:transparent;border:0;color:var(--ink);text-decoration:underline;text-underline-offset:3px}
-body.v2 form.property-settings-form .savebar .btn[type="submit"],body.v2 form.property-settings-form:has(details.prop-sec[open]) .savebar .btn[type="submit"]{margin-left:auto;min-width:160px;background:var(--acc);color:#fff;border:0}
-body.v2 form.property-settings-form .savebar:has([data-unsaved-reset]:not([hidden])) a.btn.ghost{display:none}
-body.v2 form.property-settings-form .savebar [hidden]{display:none}
-@media (max-width:1023px){body.v2 form.property-settings-form .savebar,body.v2 form.property-settings-form:has(details.prop-sec[open]) .savebar{bottom:calc(var(--tabbar-h) + var(--tabbar-safe));padding-bottom:12px}}
+body.v2 .savebar[data-for="property-settings-form"],body.v2 .savebar[data-for="property-settings-form"]{position:sticky;left:auto;right:auto;bottom:0;z-index:20;width:auto;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:16px;margin:24px 0 0;padding:12px 0 calc(12px + env(safe-area-inset-bottom,0px));background:#fff;border-top:1px solid var(--line);white-space:nowrap}
+body.v2 .savebar[data-for="property-settings-form"] .btn,body.v2 .savebar[data-for="property-settings-form"] .btn{flex:0 0 auto;width:auto;min-width:0;height:48px;min-height:48px;padding:0 24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;font-size:16px;font-weight:600;line-height:1;white-space:nowrap}
+body.v2 .savebar[data-for="property-settings-form"] .btn.ghost,body.v2 .savebar[data-for="property-settings-form"] .btn.ghost{margin-right:auto;padding:0 12px;background:transparent;border:0;color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+body.v2 .savebar[data-for="property-settings-form"] .btn[type="submit"],body.v2 .savebar[data-for="property-settings-form"] .btn[type="submit"]{margin-left:auto;min-width:160px;background:var(--acc);color:#fff;border:0}
+body.v2 .savebar[data-for="property-settings-form"] [hidden]{display:none}
+@media (max-width:1023px){body.v2 .savebar[data-for="property-settings-form"],body.v2 .savebar[data-for="property-settings-form"]{bottom:calc(var(--tabbar-h) + var(--tabbar-safe));padding-bottom:12px}}
 
 /* 0852 */
 body.v2 a.ui-btn-primary{color:#fff}
@@ -2574,3 +2562,9 @@ body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-demo button{width:
 /* 0955 section notice */
 body.v2 .section-notice{margin:0 0 var(--space-4);padding:14px 16px;min-height:44px;font-size:16px;line-height:1.4;scroll-margin-top:96px;display:flex;align-items:flex-start;gap:10px;border-left-width:4px}
 body.v2 .section-notice::before{content:"";flex:0 0 10px;height:10px;margin-top:6px;border-radius:50%;background:currentColor}
+/* 0955 save row last: the Save row is the last block of the property page, sticky above the tab bar */
+body.v2 .savebar[data-for="property-settings-form"]{position:sticky;bottom:0;display:flex;visibility:visible}
+@media (max-width:1023px){body.v2 .savebar[data-for="property-settings-form"]{bottom:calc(var(--tabbar-h) + var(--tabbar-safe))}body.v2:has(.property-settings-form) .havel-fab{bottom:calc(var(--tabbar-h) + var(--tabbar-safe) + var(--control-h) + var(--space-8))}}
+@media (min-width:1024px){body.v2 .savebar[data-for="property-settings-form"]{padding-right:calc(var(--control-h) + var(--space-6))}}
+/* 0955 save bar: hidden until a control really differs from its loaded value (JS on); always shown without JS */
+html.has-js body.v2 .savebar[data-for="property-settings-form"]:not(.is-dirty){display:none}

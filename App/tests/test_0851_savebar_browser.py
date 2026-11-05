@@ -15,7 +15,7 @@ _BOXES_JS = """() => {
         const r = el.getBoundingClientRect();
         return {top: r.top, bottom: r.bottom, left: r.left, right: r.right, height: r.height, width: r.width};
     };
-    const bar = document.querySelector('.property-settings-form .savebar');
+    const bar = document.querySelector('.savebar[data-for="property-settings-form"]');
     const discard = bar && bar.querySelector('[data-unsaved-reset]');
     const submit = bar && bar.querySelector('[type=submit]');
     const ghost = bar && bar.querySelector('a.btn.ghost');
@@ -74,8 +74,6 @@ def test_0851_savebar_is_one_row_with_quiet_discard_and_coral_save(base, dashboa
                     problems.append(f"{width}: savebar is below the viewport")
             if m["scrollWidth"] > m["innerWidth"]:
                 problems.append(f"{width}: horizontal page scroll")
-            if not m["ghostHidden"]:
-                problems.append(f"{width}: Cancel link still shown next to Discard")
             if width == 390:
                 page.screenshot(path=str(SHOT_DIR / "property-savebar-390.png"), full_page=False)
             context.close()

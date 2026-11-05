@@ -2086,12 +2086,27 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
   /* 0076: a page with several independent forms (the business editor's
      Business details and Invoice details). Saving one form, or leaving the
      page, asks first when another of them holds unsaved changes. */
+  // 0955: dirty means a control differs from its loaded value; typing the original back clears it.
+  function formSnapshot(form) {
+    var rows = [];
+    new FormData(form).forEach(function (value, key) {
+      rows.push([key, value instanceof File ? "file:" + value.name : String(value)]);
+    });
+    return JSON.stringify(rows.sort());
+  }
+  function recomputeDirty(form) {
+    if (!form._ubyBase) return;
+    var dirty = form.getAttribute("data-dirty-start") === "1" || formSnapshot(form) !== form._ubyBase;
+    if (dirty) form.setAttribute("data-dirty", "1"); else form.removeAttribute("data-dirty");
+  }
+
   function initUnsavedForms() {
     var forms = Array.prototype.slice.call(document.querySelectorAll("form[data-unsaved-guard]"));
     if (!forms.length) return;
     forms.forEach(function (form) {
       if (!claimNode(form, "initUnsavedForms")) return;
-      var mark = function () { form.setAttribute("data-dirty", "1"); };
+      form._ubyBase = formSnapshot(form);
+      var mark = function () { recomputeDirty(form); };
       form.addEventListener("input", mark);
       form.addEventListener("change", mark);
       form.addEventListener("submit", function () { form._ubySubmitting = true; });
@@ -2101,7 +2116,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       document._ubyOutsideMark = true;
       var markOutside = function (event) {
         var owner = event.target && event.target.form;
-        if (owner && owner.hasAttribute("data-unsaved-guard") && !owner.contains(event.target)) owner.setAttribute("data-dirty", "1");
+        if (owner && owner.hasAttribute("data-unsaved-guard") && !owner.contains(event.target)) recomputeDirty(owner);
       };
       document.addEventListener("input", markOutside);
       document.addEventListener("change", markOutside);
@@ -2244,9 +2259,6 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     // The "Discard changes" button beside Save shows only while its form is dirty.
     function syncResetButtons() {
       forms.forEach(function (form) {
-        resetButtons(form).forEach(function (button) {
-          button.hidden = !isDirty(form);
-        });
         formBars(form).concat(Array.prototype.slice.call(form.querySelectorAll(".savebar"))).forEach(function (bar) {
           bar.classList.toggle("is-dirty", isDirty(form));
         });
@@ -2263,7 +2275,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       }).forEach(function (el) {
         el.dispatchEvent(new Event("change", { bubbles: true }));
       });
-      form.removeAttribute("data-dirty");
+      recomputeDirty(form);
     }
 
     // True when following this link keeps the draft on screen.
@@ -2278,7 +2290,6 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       var syncOutside = function (event) {
         var owner = event.target && event.target.form;
         if (owner && forms.indexOf(owner) > -1 && !owner.contains(event.target)) {
-          owner.setAttribute("data-dirty", "1");
           syncResetButtons();
         }
       };
@@ -2290,11 +2301,12 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       form.addEventListener("input", syncResetButtons);
       form.addEventListener("change", syncResetButtons);
       resetButtons(form).forEach(function (button) {
-        button.addEventListener("click", function () {
+        button.addEventListener("click", function (event) {
+          // After a failed save the page holds the posted values: the link reloads the saved page.
+          if (form.getAttribute("data-dirty-start") === "1") return;
+          event.preventDefault();
           discard(form);
           syncResetButtons();
-          var save = form.querySelector(".savebar [type=submit]") || form.querySelector(".actions [type=submit]");
-          if (save) save.focus();
         });
       });
     });

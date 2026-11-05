@@ -59,7 +59,7 @@
 </nav>
 <div class="form">
 <div class="form-main">
-<form method="post" action="{{ base_url }}" enctype="multipart/form-data" class="property-settings-form" id="property-settings-form" data-property-settings-form data-unsaved-guard>
+<form method="post" action="{{ base_url }}" enctype="multipart/form-data" class="property-settings-form" id="property-settings-form" data-property-settings-form data-unsaved-guard{% if operator_error %} data-dirty-start="1"{% endif %}>
   <p class="required-legend">{{ t('common.required_legend') }}</p>
   <input type="hidden" name="return_to" value="{{ base_url }}?view=settings&amp;section={{ settings_section }}" data-property-return>
   {% if fee_return_to %}<input type="hidden" name="fee_return_to" value="{{ fee_return_to }}">{% endif %}
@@ -429,8 +429,7 @@
   </div>
 </details>
   <div class="savebar save-on-dirty" data-for="property-settings-form">
-    <a class="btn ghost" href="/apartments">{{ t('common.cancel') }}</a>
-    <button class="btn ghost" type="button" data-unsaved-reset hidden>{{ t('unsaved.discard_changes') }}</button>
+    <a class="btn ghost" href="{{ base_url }}" data-unsaved-reset>{{ t('common.cancel') }}</a>
     <button class="btn" type="submit" form="property-settings-form">{{ t('common.save_changes') }}</button>
   </div>
 </div>
