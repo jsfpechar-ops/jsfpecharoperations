@@ -311,6 +311,9 @@
 
     {% if fee_estimate %}{% include "guest/_fee_estimate.html" %}{% endif %}
 
+    {% if person_number and expected_people %}
+      <p class="g-save-note">{{ t('person_progress', current=person_number, total=expected_people) }}</p>
+    {% endif %}
     <button class="g-btn" type="submit">
       {{ t(save_action_key) }}
     </button>
