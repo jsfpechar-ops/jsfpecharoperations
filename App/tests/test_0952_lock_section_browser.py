@@ -61,14 +61,18 @@ def test_0952_door_code_edit_outside_form_marks_it_dirty(base, dashboard_rich_ho
                 page.goto(f"{base}{apartment}?view=settings&section=lock&lang=en")
                 page.wait_for_load_state("networkidle")
                 form = page.locator("form#property-settings-form")
-                # The switch sits outside the form and names it with form="...".
-                assert page.evaluate("document.getElementById('door_codes').form.id") == "property-settings-form"
-                assert page.evaluate("!document.getElementById('property-settings-form').contains(document.getElementById('door_codes'))")
+                # The check-in time select sits outside the form and names it with form="...".
+                assert page.evaluate("document.getElementById('lock_checkin_hour').form.id") == "property-settings-form"
+                assert page.evaluate("!document.getElementById('property-settings-form').contains(document.getElementById('lock_checkin_hour'))")
                 assert form.get_attribute("data-dirty") is None
-                page.locator('label[for="door_codes"]').click()
+                # The Turn on / Turn off buttons submit their own forms: focusing one is no edit of the property form.
+                page.locator(".lock-state-form button").first.focus()
+                assert form.get_attribute("data-dirty") is None
+                loaded = page.input_value("#lock_checkin_hour")
+                page.select_option("#lock_checkin_hour", "23" if loaded != "23" else "22")
                 page.wait_for_timeout(200)
                 assert form.get_attribute("data-dirty") == "1"
-                assert page.locator("#door_codes-status").text_content().strip() == "Not saved yet"
+                assert page.locator(".savebar[data-for='property-settings-form']").is_visible()
             finally:
                 context.close()
                 browser.close()
