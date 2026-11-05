@@ -2087,7 +2087,7 @@ def _fee_pay_panel(apartment, reservation, t, qr_ok=True):
     from .. import config, payments, stay_fee
     if not (apartment["stay_fee_collect"] and config.STAY_FEE_GUEST_PAY):
         return None
-    charge = stay_fee.charge_for_reservation(apartment, reservation)
+    charge = stay_fee.charge_for_reservation(apartment, reservation, include_demo=True)
     if not charge or charge["total_czk"] <= 0:
         return None
     total, rate = int(charge["total_czk"]), int(charge["rate_czk"])
