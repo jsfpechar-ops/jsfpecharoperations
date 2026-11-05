@@ -329,3 +329,42 @@ def test_host_copy_feedback_truth_and_geometry(base):
         assert no_js_page.locator("[data-feedback-rail]").get_attribute("aria-live") == "off"
         no_js.close()
         browser.close()
+
+
+def test_0971_repeated_copy_has_no_badge_and_no_stacked_feedback(base):
+    username = f"feedback{secrets.token_hex(4)}"
+    auth.create_account(f"{username}@example.test", "Feedback QA", role="host", username=username)
+    session = _session_cookie(username)
+    fixture = """
+      Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.resolve() } });
+      document.addEventListener('DOMContentLoaded', () => {
+        const main = document.querySelector('main') || document.body;
+        const src = document.createElement('input'); src.id = 'c971-src'; src.className = 'sr-only'; src.value = 'x'; src.readOnly = true;
+        const b = document.createElement('button'); b.id = 'c971'; b.type = 'button'; b.dataset.copy = 'c971-src';
+        b.dataset.copiedLabel = 'Copied'; b.textContent = 'Copy link'; main.append(src, b);
+      });
+    """
+    with sync_api.sync_playwright() as playwright:
+        try:
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        except Exception as exc:
+            if REQUIRE_BROWSER:
+                raise
+            pytest.skip(f"Chromium is not available: {exc}")
+        context = browser.new_context(viewport={"width": 390, "height": 844})
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": session, "url": base + "/"}])
+        context.add_init_script(fixture)
+        page = context.new_page()
+        page.goto(f"{base}/settings?lang=en")
+        page.wait_for_selector("#c971")
+        button = page.locator("#c971")
+        before = button.bounding_box()
+        for _ in range(3):
+            button.click()
+        after = button.bounding_box()
+        assert after["width"] == pytest.approx(before["width"], abs=0.5)
+        assert page.locator("[data-copy-state-icon]").count() == 0
+        assert page.locator("[data-feedback-rail] [data-toast]").count() == 0
+        page.wait_for_timeout(100)
+        assert page.locator("[data-feedback-live]").inner_text() == "Copied"
+        browser.close()

@@ -301,6 +301,15 @@
   </span>
 {% endmacro %}
 
+{# 0971: the one compact success notice. role=status announces it; the dismiss button is the same on every page; one optional next action. #}
+{% macro success_notice(text, next_href='', next_label='') %}
+<div class="success-notice" role="status" data-success-notice>
+  <span class="success-notice-text">{{ text }}</span>
+  {% if next_href and next_label %}<a class="success-notice-next" href="{{ next_href }}">{{ next_label }}</a>{% endif %}
+  <button type="button" class="success-notice-close" data-success-dismiss aria-label="{{ t('a11y.dismiss_notification') }}">&times;</button>
+</div>
+{% endmacro %}
+
 {% macro copy_icon() %}
 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
   <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4"/>

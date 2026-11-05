@@ -20,12 +20,12 @@
     "v": "20261104-0916"
   },
   "app.js": {
-    "sha256": "80d94311cc712de68b9e70b00285c370e22b22e90219ae61483d94c83a3734c6",
-    "v": "20261104-0955g"
+    "sha256": "574e827531b706c8b3d0f2dc7c17eac26f19daf771d1190a284caa387ac82d0f",
+    "v": "20261105-0971a"
   },
   "app2.css": {
-    "sha256": "57d86cdead74221a45087f390a79be6f5b054b6a195b703c0a9e5469f2867d88",
-    "v": "20261105-0968a"
+    "sha256": "751089d43509101abdc8f30b9c2e82311fcff9e28fc6c222c54b1b7a2c800cbe",
+    "v": "20261105-0971b"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -60,12 +60,12 @@
     "v": "20260915a"
   },
   "dashboard-calendar.css": {
-    "sha256": "b954129bbdd0d263226ae589c68fd3e0c293e70e10827225d07fb366fb471e53",
-    "v": "20261105-0967b"
+    "sha256": "fccd8f835006333de8d732b09f660b2c92e1cb6515ce98eaac426076ab11600d",
+    "v": "20261105-0956e"
   },
   "dashboard-calendar.js": {
-    "sha256": "50fc2a79fdb2afd12d422daa165cae4d00277d897eb0fa8ac8a01d6c2be4e4bd",
-    "v": "20261105-0967a"
+    "sha256": "327c1375ba47ad6b040b9e301a5696bf9fa9b0ce3a5fd46678f0a36f773a6bf1",
+    "v": "20261105-0956b"
   },
   "docs/ubyport-ws-credential-sample.pdf": {
     "sha256": "0c147cf9c5dd5326612bc4668c5bce853cf300171ca62e3a0bab688c09b75fe6",
