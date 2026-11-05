@@ -1,6 +1,6 @@
 # 0974: Operator Customers and Billing layouts (B16, findings A01, A02)
 
-Status: todo
+Status: blocked (tool-call cap; host guard run incomplete; 6 of 19 screenshots inspected)
 Depends on: B03, B14, B15 (not needed; run on base) | Base commit: 7b0355c45ccdd2557a28edfcfe228aa1dc766e36 | Branch: codex/0974-b16-operator
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
