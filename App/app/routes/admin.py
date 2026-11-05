@@ -1998,10 +1998,25 @@ def _door_code_context(apartment, apartment_id: int) -> Optional[Dict[str, Any]]
     free_locks = [lock for lock in locks if not lock["used_by"]]
     selected = next((lock for lock in locks if lock["lock_id"] == apartment["lock_id"]), None)
     cin, cout = apartment["checkin_hour"], apartment["checkout_hour"]
+    enabled = apartment["lock_provider"] == "ttlock"
+    # 0954: the one state every surface reads (strip card, health row, lock section).
+    online = bool(account and account["status"] == "ok" and selected)
+    if not enabled:
+        state = "off"
+    elif cin is None or cout is None:
+        state = "times"
+    elif not online:
+        state = "offline"
+    else:
+        state = "on"
     return {
         "account": account,
         "locks": locks,
-        "enabled": apartment["lock_provider"] == "ttlock",
+        "enabled": enabled,
+        "state": state,
+        "first_lock": bool(
+            apartment["lock_provider"] != "ttlock" and not apartment["lock_id"] and len(free_locks) == 1
+        ),
         "lock_id": apartment["lock_id"],
         "default_lock_id": free_locks[0]["lock_id"] if len(free_locks) == 1 else "",
         # 0400: 0 means every connected lock serves another property.

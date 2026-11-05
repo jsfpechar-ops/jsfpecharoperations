@@ -92,8 +92,8 @@ def test_after_connecting_three_essentials_and_every_tap_in_the_guide(hosts, fla
     page = client.get(f"/apartments/{flats[0]}?view=settings&section=lock&lang=en").text
     assert "hjhfa_uhaaaa" in page
     for words in (
-        "In the TTLock app, open your lock and tap Authorized Admin (eAdmin in some app versions).",
-        "In the Recipient field, where TTLock expects an e-mail or phone number, paste your UbyHost name from above.",
+        "In the TTLock app, add UbyHost as eAdmin of your lock: open the lock, tap Authorized Admin (eAdmin).",
+        "In Recipient, paste your UbyHost name from above.",
         "Come back here and tap Check connection.",
         "Check connection",
         "Only the owner of the lock can do this.",

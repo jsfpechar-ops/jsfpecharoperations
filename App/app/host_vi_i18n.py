@@ -3876,6 +3876,9 @@ STRINGS.update({
     "health.door": "Mã cửa",
     "health.door.ok": "Mã cửa được gửi tự động.",
     "health.door.off": "Đã tắt.",
+    "health.door.times": "Thêm giờ nhận phòng và trả phòng.",
+    "health.door.offline": "Khóa ngoại tuyến.",
+    "health.door.fix": "Mở mục khóa",
 })
 
 # 0245 (ideas E and R): the day-before reminder and the door-code button.

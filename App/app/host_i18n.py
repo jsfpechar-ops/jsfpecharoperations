@@ -8939,6 +8939,9 @@ _HEALTH_0244_STRINGS = {
         "health.door": "Door codes",
         "health.door.ok": "Door codes go out by themselves.",
         "health.door.off": "Turned off.",
+        "health.door.times": "Add check-in and check-out times.",
+        "health.door.offline": "Lock offline.",
+        "health.door.fix": "Open the lock section",
     },
     "cs": {
         "health.title": "Kontrola nastavení",
@@ -8971,6 +8974,9 @@ _HEALTH_0244_STRINGS = {
         "health.door": "Kódy ke dveřím",
         "health.door.ok": "Kódy ke dveřím odcházejí samy.",
         "health.door.off": "Vypnuto.",
+        "health.door.times": "Doplňte čas příjezdu a odjezdu.",
+        "health.door.offline": "Zámek je offline.",
+        "health.door.fix": "Otevřít sekci zámku",
     },
 }
 for _lang, _strings in _HEALTH_0244_STRINGS.items():
