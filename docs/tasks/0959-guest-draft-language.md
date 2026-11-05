@@ -1,6 +1,6 @@
 # 0959: Keep the guest draft when the language changes
 
-Status: todo
+Status: blocked - the test fails on name case: /relang re-draws names uppercased (validation.normalise_name), the test asserts the typed case. See docs/tasks/0959-report.md.
 Depends on: none (batch B01) | Base commit: 7b0355c | Branch: codex/0959-guest-draft-language
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, checkpoint 60k tokens
 
