@@ -52,7 +52,7 @@
         </div>
         <form method="post" action="/account/email" class="settings-move-form settings-email-form">
           <div class="ui-field">
-            {{ field_label('account-new-email', t('settings.account.email_new'), t('settings.account.email_hint')) }}
+            <div class="field-label-row"><label for="account-new-email">{{ t('settings.account.email_new') }}{{ help_tip('account-new-email-help', t('settings.account.email_hint'), '', t('settings.account.email_new')) }}</label></div>
             <input id="account-new-email" name="email" type="email" required maxlength="254"
                    autocomplete="email" autocapitalize="none" spellcheck="false"
                    aria-describedby="account-new-email-help">

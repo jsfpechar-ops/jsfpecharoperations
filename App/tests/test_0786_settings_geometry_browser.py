@@ -570,7 +570,8 @@ def test_0972_passkeys_and_help_labels_are_not_repeated(admin_0972):
     assert security.count(">Passkeys<") == 1
     assert ">Registered<" in security
     helppage = client.get("/settings/help?lang=en").text
-    assert ">User guide<" in helppage and ">Open user guide<" in helppage
+    # the label's last word sits in a tip-nowrap span, so match the visible text, not one markup run
+    assert "User guide" in " ".join(re.sub(r"<[^>]+>", " ", helppage).split()) and ">Open user guide<" in helppage
     assert 'href="/guide" aria-label=' not in helppage
     cs = client.get("/settings/help?lang=cs").text
     assert ">Otevřít příručku<" in cs
@@ -638,6 +639,8 @@ def test_0972_help_opens_by_pointer_and_keyboard_and_stays_in_the_viewport(admin
                     problems.append(f"{where}: Escape did not close the help")
                 if not state["focusOnBtn"]:
                     problems.append(f"{where}: focus did not return to the help button after Escape")
+                # move the pointer off the page so a scroll cannot slide another ? under it (pointerenter would open that one)
+                page.mouse.move(0, 0)
                 # keyboard: reach the button with Tab, so :focus-visible applies
                 page.evaluate("() => { document.activeElement && document.activeElement.blur(); window.scrollTo(0, 0); }")
                 reached = False
