@@ -1,6 +1,6 @@
 # 0965: Simplify the guest review and the legal acknowledgement (B07: G02, G03, G04)
 
-Status: blocked
+Status: blocked (guest spacing tests outside 0965 fail at 320, 360 and 1280 px, see docs/tasks/0965-report.md section 6)
 Depends on: B01 / 0959 (branch `codex/0959-guest-draft-language`, tip `89772982`; its review decision may still be open, this brief is built on that tip) | Base commit: 89772982 | Branch: codex/0965-b07-guest-review
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
@@ -165,16 +165,16 @@ All in section 4. Summary, from `App/`, each ending `2>&1 | tail -30`:
 
 ## 7. Acceptance
 
-- [ ] Review: five fact rows at 390, 768 and 1280, English and Czech, long names and addresses wrap inside the row, no sideways scroll, Edit right edges align (test measured).
-- [ ] The birth-date row is present at 390 in Czech and English with value `01.01.1980` (decision 5).
-- [ ] One surface: no nested `.g-card` frame around the legal part, one 1 px divider between review and legal (test measured, legal open and closed).
-- [ ] Acknowledgement: unchecked neutral, checked green, focus ring visible and not red, red only after the blocked submit (and cleared by ticking); `legal_ack` value and legal text unchanged.
-- [ ] Save label is the short value in all six languages, one line, with `Person 1 of 3` (translated) as a separate line; Back is a quiet text action.
-- [ ] The sticky action never overlaps the last fact row, the legal text or the Tab-focused control; `scroll-padding-bottom` is at least 96 px at 390 (test measured).
-- [ ] Every Edit returns to the right step, focus lands on the field, every typed value and the signature are kept, the review is the same afterwards.
-- [ ] Final submission with synthetic data saves in the test database (manual mode, no filing); the saved strip appears.
-- [ ] Step 4 diff touches only the two cache keys and two manifest entries; `git diff --stat 89772982` lists only section 3 files.
-- [ ] Screenshots viewed (step 7), one described sentence each in the report.
+- [x] Review: five fact rows at 390, 768 and 1280, English and Czech, long names and addresses wrap inside the row, no sideways scroll, Edit right edges align (test measured).
+- [x] The birth-date row is present at 390 in Czech and English with value `01.01.1980` (decision 5).
+- [x] One surface: no nested `.g-card` frame around the legal part, one 1 px divider between review and legal (test measured, legal open and closed).
+- [x] Acknowledgement: unchecked neutral, checked green, focus ring visible and not red, red only after the blocked submit (and cleared by ticking); `legal_ack` value and legal text unchanged.
+- [x] Save label is the short value in all six languages, one line, with `Person 1 of 3` (translated) as a separate line; Back is a quiet text action.
+- [x] The sticky action never overlaps the last fact row, the legal text or the Tab-focused control; `scroll-padding-bottom` is at least 96 px at 390 (test measured).
+- [x] Every Edit returns to the right step, focus lands on the field, every typed value and the signature are kept, the review is the same afterwards.
+- [x] Final submission with synthetic data saves in the test database (manual mode, no filing); the saved strip appears.
+- [x] Step 4 diff touches only the two cache keys and two manifest entries; `git diff --stat 89772982` lists only section 3 files.
+- [x] Screenshots viewed (step 7), one described sentence each in the report.
 
 ## 8. Stop and ask
 
