@@ -287,7 +287,7 @@ def test_full_schema_apply_and_validate_on_postgres(pg_runtime):
 
     history = db.query("SELECT version, name FROM schema_migrations ORDER BY version")
     assert history[0]["version"] == 1 and history[0]["name"] == "baseline"
-    assert [row["version"] for row in history] == list(range(1, 37))
+    assert [row["version"] for row in history] == list(range(1, 38))
 
 
 def test_schema_apply_and_validate_are_idempotent_on_postgres(pg_runtime):
