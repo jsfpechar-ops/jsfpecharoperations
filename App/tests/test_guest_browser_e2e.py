@@ -1037,6 +1037,21 @@ def _b07_greener(color, margin):
     return color[1] - max(color[0], color[2]) >= margin
 
 
+# The acknowledgement colours ease over 0.14 s (guest.css). Read the settled colour,
+# not the first frame of the transition (probe 0965 step 1: settled values are the
+# brief's neutral, red and green; the first frame is the old colour).
+_B07_SETTLE_JS = r"""
+() => Promise.race([
+  Promise.all(document.getAnimations().map(a => a.finished.catch(() => null))),
+  new Promise(resolve => setTimeout(resolve, 1500)),
+])
+"""
+
+
+def _b07_settle(page):
+    page.evaluate(_B07_SETTLE_JS)
+
+
 def _b07_shot(page, lang, width, name):
     shots = os.environ.get("UBYHOST_SHOTS_DIR")
     if not shots:
@@ -1154,6 +1169,7 @@ def test_0965_acknowledgement_is_neutral_then_positive_and_red_only_after_a_fail
         # Attempted submit with the box empty: the browser blocks it, the row turns red.
         page.locator("[data-guest-step]:not([hidden]) > .g-btn[type=submit]").click()
         assert "/save" not in page.url
+        _b07_settle(page)
         bad = page.evaluate(_B07_ACK_JS)
         assert bad["invalidClass"] and bad["ariaInvalid"] == "true", bad
         assert _b07_redder(bad["border"], 30) and _b07_redder(bad["background"], 5), bad
@@ -1162,11 +1178,13 @@ def test_0965_acknowledgement_is_neutral_then_positive_and_red_only_after_a_fail
         # Ticked: the error look is gone and the row is quietly positive.
         page.check("#legal_ack")
         page.mouse.move(2, 2)
+        _b07_settle(page)
         ok = page.evaluate(_B07_ACK_JS)
         assert not ok["invalidClass"] and ok["ariaInvalid"] is None, ok
         assert _b07_greener(ok["border"], 8) and _b07_greener(ok["background"], 5), ok
         assert not _b07_redder(ok["border"], 30) and not _b07_redder(ok["background"], 5), ok
         page.locator(".g-legal-text > summary").click()
+        _b07_settle(page)
         assert page.evaluate(_B07_ACK_JS)["border"] == ok["border"], "opening the legal text changed the tick"
         _b07_shot(page, lang, width, "ack-checked-legal-open")
 
@@ -1180,6 +1198,7 @@ def test_0965_acknowledgement_is_neutral_then_positive_and_red_only_after_a_fail
                 if page.evaluate("() => document.activeElement.id") == "legal_ack":
                     break
             assert page.evaluate("() => document.activeElement.id") == "legal_ack"
+            _b07_settle(page)
             ring = page.evaluate(_B07_ACK_JS)
             assert ring["outlineStyle"] != "none" and ring["outlineWidth"] >= 2, ring
             assert not _b07_redder(ring["outline"], 30), ring
