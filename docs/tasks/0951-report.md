@@ -15,6 +15,7 @@ Done: steps 1 to 5, step 6 partly (geometry test written, failing). Left: step 6
 `-k guest_links_and_message` at 390: FAILED. `#permalink` input y=1202.2, its `[data-copy=permalink]` button y=1208.2, both 44 px high. Button sits 6 px low; cause not found (margin:0 and align-self:center did not fix it).
 
 ## Deviations
+- Deviation (orchestrator decision): the four guest-link actions cannot fit one row at 1280 px, so they are an even 2 x 2 grid from 768 px; phone layout unchanged. Brief line 9 updated to match.
 - Steps 6 and 7 not complete: no screenshots, no report tests run, no docs lines (property add-on, decisions, status).
 - Decision line for orchestrator: none yet.
 

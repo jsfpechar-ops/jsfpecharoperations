@@ -6,7 +6,7 @@ Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens. Two chats: ch
 ## 1. Objective
 Owner screenshots of `/apartments/<id>`, section "Automatic messages": the Guest links block is "extremely ugly" and the settings below it are misaligned. Same controls and behaviour, less height, aligned, v2 design system ([design-system](../design/design-system.md) rules 3, 4, 7, 8 and the Buttons / Forms / Help rows):
 1. Link and PIN: label above, then ONE row: input (fills the column) + compact Copy button of the same height as the input. Never wraps to a second row, also at 390 px.
-2. Secondary actions (Preview as a guest, Open the guest guide, Generate a new PIN, Generate a new link): ONE quiet action row under the two values. All same size (compact secondary), same baseline, text vertically centred, no round blobs. Each regenerate button keeps its "?" tip directly after the button.
+2. Secondary actions (Preview as a guest, Open the guest guide, Generate a new PIN, Generate a new link): a 2 x 2 grid of equal buttons from 768 px, stacked on phone, under the two values. All same size (compact secondary), same baseline, text vertically centred, no round blobs. Each regenerate button keeps its "?" tip directly after the button.
 3. Settings below: aligned fields, ? directly after the label, hint under its own field, select text not cut, passport-scan checkbox a proper checkbox row.
 4. No new text, no new i18n keys.
 

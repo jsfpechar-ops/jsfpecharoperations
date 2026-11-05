@@ -2465,6 +2465,7 @@ body.v2 .guest-link-top .guest-copy-row .copy-btn{flex:none;width:auto;min-width
 body.v2 .guest-link-top .guest-link-actions{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-self:stretch;width:100%;gap:12px;margin:0}
 body.v2 .guest-link-top .guest-link-actions .ui-btn{height:40px;min-height:40px;padding:0 14px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
 body.v2 .guest-link-top .guest-link-action{display:inline-flex;align-items:center;gap:6px}
+@media (min-width:768px){body.v2 .guest-link-top .guest-link-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));row-gap:var(--space-4);column-gap:var(--space-3)}body.v2 .guest-link-top .guest-link-actions > *{display:flex;align-items:center;gap:0;min-width:0}body.v2 .guest-link-top .guest-link-actions .help-tip{margin-left:0}body.v2 .guest-link-top .guest-link-actions > a.ui-btn{margin-inline-end:32px}body.v2 .guest-link-top .guest-link-actions .ui-btn{flex:1 1 auto;min-width:0;width:auto}body.v2 .guest-link-top .guest-link-actions .help-tip-btn{flex:0 0 auto}}
 @media (max-width:1023px){body.v2 .guest-link-top .guest-copy-row :is(input,.copy-btn),body.v2 .guest-link-top .guest-link-actions .ui-btn{height:44px;min-height:44px}body.v2 .guest-link-top .guest-copy-row .copy-btn{min-width:44px}}
 body.v2 .guest-link-windows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 24px;align-items:start}
 body.v2 .guest-link-windows .field{display:flex;flex-direction:column;gap:6px;min-width:0;margin:0}
