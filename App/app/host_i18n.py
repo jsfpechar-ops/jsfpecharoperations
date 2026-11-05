@@ -7816,6 +7816,9 @@ _PROPERTY_NAV_0094_STRINGS = {
         "property_page.strip.operator_missing": "Operator missing",
 
         "property_page.sec.archive.sub": "Hide the property from the list",
+        "property_page.archive.button": "Archive property",
+        "property_page.police.connection": "Connection to UbyPort",
+        "property_page.police.facility": "Accommodation facility",
         "property_page.sec.calendars.title": "Calendars",
         "property_page.sec.calendars.sub": "Airbnb and Booking",
         "property_nav.group.property": "Property information",
@@ -7854,6 +7857,9 @@ _PROPERTY_NAV_0094_STRINGS = {
         "property_page.strip.operator_missing": "Chybí provozovatel",
 
         "property_page.sec.archive.sub": "Skrýt nemovitost ze seznamu",
+        "property_page.archive.button": "Archivovat nemovitost",
+        "property_page.police.connection": "Připojení k UbyPortu",
+        "property_page.police.facility": "Ubytovací zařízení",
         "property_page.sec.calendars.title": "Kalendáře",
         "property_page.sec.calendars.sub": "Airbnb a Booking",
         "property_nav.group.property": "Údaje o ubytování",

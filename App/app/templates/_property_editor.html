@@ -123,32 +123,20 @@
 
   </div>
   </details>
-<details class="prop-sec" id="sec-archive"{% if inline_flash_section == 'archive' %} open{% endif %}><summary><span class="dot {{ 'n' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.archive.title') }}</b></div><small class="sec-state">{{ t('property_page.sec.archive.sub') }}</small></summary>
-  <div class="fields-wrap">
+<div class="prop-archive-row" id="sec-archive">
   {{ section_notice('archive') }}
-    <section class="panel property-section ui-section property-archive" id="archive">
-      {% if apartment.archived_at %}
-      <div class="setup-item">
-        <div class="grow">
-          <strong>{{ t('apartments.archived.when') }} {{ apartment.archived_at | date_cz }}</strong>
-          <div class="ui-sub">{{ t('apartment.form.archived_help') }}</div>
-        </div>
-        <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" formmethod="post" formnovalidate
-                formaction="{{ base_url }}/unarchive">{{ t('common.restore') }}</button>
-      </div>
-      {% else %}
-      <div class="setup-item">
-        <div class="grow">
-          <strong>{{ t('apartment.form.archive_title') }}</strong> {{ help_tip('archive-help', t('apartment.form.archive_help')) }}
-        </div>
-        <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" formmethod="post" formnovalidate
-                formaction="{{ base_url }}/archive"
-                data-confirm data-confirm-message="{{ t('host.delete_to_archived.confirm') }}">{{ t('common.archive') }}</button>
-      </div>
-      {% endif %}
-    </section>
+  <div class="prop-archive-actions" id="archive">
+    {% if apartment.archived_at %}
+    <p class="prop-archive-note"><strong>{{ t('apartments.archived.when') }} {{ apartment.archived_at | date_cz }}</strong> <span class="ui-sub">{{ t('apartment.form.archived_help') }}</span></p>
+    <button class="ui-btn ui-btn-secondary" type="submit" formmethod="post" formnovalidate
+            formaction="{{ base_url }}/unarchive">{{ t('common.restore') }}</button>
+    {% else %}
+    <button class="ui-btn ui-btn-secondary" type="submit" formmethod="post" formnovalidate
+            formaction="{{ base_url }}/archive"
+            data-confirm data-confirm-message="{{ t('host.delete_to_archived.confirm') }}">{{ t('property_page.archive.button') }}</button>{{ help_tip('archive-help', t('apartment.form.archive_help')) }}
+    {% endif %}
   </div>
-  </details>
+</div>
 
   {# ---- Guest experience ---------------------------------------------- #}
 <details class="prop-sec" id="sec-messages"{% if inline_flash_section == 'messages' %} open{% endif %}{% if settings_section == 'guests' %} open{% endif %}><summary><span class="dot {{ 'n' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.messages.title') }}</b></div><small class="sec-state">{{ t('property_page.sec.messages.sub') }}</small></summary>
@@ -232,7 +220,7 @@
   <div class="fields-wrap">
   {{ section_notice('police') }}
     <section class="panel property-section ui-section" id="ubyport">
-      <div class="field-label-row police-section-head"><h2 class="property-section-title">{{ t('host.reporting') }}{{ help_tip('ubyport-help', t('apartment.form.ubyport.credentials_help_heading'), '/guide#ubyport-credentials') }}</h2>
+      <div class="field-label-row police-section-head"><h2 class="property-section-title">{{ t('property_page.police.connection') }}{{ help_tip('ubyport-help', t('apartment.form.ubyport.credentials_help_heading'), '/guide#ubyport-credentials') }}</h2>
         <a class="ui-btn ui-btn-secondary ui-btn-compact police-sample-link" id="police-sample-link" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.sample_link') }}</a></div>
       <p class="ui-sub">{{ t('why.police') }}</p>
       <p class="ui-sub"><a href="{{ base_url }}?view=settings&amp;section=automation#automation">{{ t('automation.timing_title') }} </a></p>
@@ -256,6 +244,7 @@
       </div>
       <p class="small muted police-no-credentials">{{ t('apartment.form.ubyport.no_credentials') }}
         <a href="https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/jake-jsou-moznosti-zasilani-dat-aplikaci-ubyport" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.no_credentials_link') }}</a></p>
+      <div class="field-label-row"><h2 class="property-section-title">{{ t('property_page.police.facility') }}</h2></div>
       <div class="grid">
         {{ text_field('uby_mark', t('apartment.form.ubyport.mark_label'), apartment.uby_mark, t('apartment.form.ubyport.mark_hint'), false, 6) }}
       </div>
@@ -308,7 +297,6 @@
   <div class="fields-wrap">
   {{ section_notice('fee') }}
     <section class="panel property-section ui-section" id="stay-fee-settings">
-      <div class="field-label-row"><h2 class="property-section-title">{{ t('apartment.form.stay_fee.heading') }}{{ help_tip('stay-fee-help', t('apartment.form.stay_fee.lede')) }}</h2></div>
       <p class="ui-sub">{{ t('why.stay_fee') }}</p>
       {% if fee_return_to %}
       <p class="small fee-return-note"><a href="{{ fee_return_to }}"> {{ t('stay_fees.setup.back_to_report') }}</a></p>
