@@ -88,6 +88,14 @@ def test_list_and_picker_link_to_settings(world):
     assert details in picker
 
 
+def test_empty_list_says_invoices_come_from_a_stay(world):
+    html = world["client"].get("/invoices?lang=en").text
+    empty = html[html.index("data-empty-state"):]
+    assert "No invoices yet" in empty
+    assert "<p>An invoice is always issued for a stay.</p>" in empty
+    assert "ui-btn" not in empty[: empty.index("</div>")]  # the head still carries the action (0818)
+
+
 def test_builder_shows_stay_and_unfolds_options_without_changing_fields(world):
     client = world["client"]
     html = client.get(f"/invoices/new?reservation_id={world['stay']}&entity={world['entity']}").text
