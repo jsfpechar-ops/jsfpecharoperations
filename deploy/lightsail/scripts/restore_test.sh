@@ -17,7 +17,7 @@
 # A count "matches" when the restored value lies between the live counts read
 # just before and just after the restore. The app keeps writing during the
 # drill, and the replica trails the live file by up to one sync-interval
-# (10 s), so the script waits RESTORE_TEST_SETTLE_SECONDS (default 15) after the
+# (default 60 s), so the script waits RESTORE_TEST_SETTLE_SECONDS (default 75) after the
 # first live reading before it restores.
 #
 # RESTORE_TEST_LOCAL=1 runs the same steps with the litestream and sqlite3
@@ -30,7 +30,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "${ROOT}"
 
 TABLES="user_account legal_entity apartment reservation guest submission"
-SETTLE="${RESTORE_TEST_SETTLE_SECONDS:-15}"
+SETTLE="${RESTORE_TEST_SETTLE_SECONDS:-75}"
 case "${SETTLE}" in
   ''|*[!0-9]*) echo "RESTORE_TEST_SETTLE_SECONDS must be a whole number of seconds." >&2; exit 1 ;;
 esac
