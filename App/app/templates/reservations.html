@@ -98,6 +98,12 @@
 <div class="stays-pills">{% with wrap_on_phone=true %}{% include "partials/settings_pills.html" %}{% endwith %}</div>
 </div>
 <p class="sub ph-hide" data-filter-summary>{{ stay_summary }}</p>
+{% set overdue_scope = namespace(count=0) %}
+{% if date_range == 'upcoming' and not show_archive and not report %}
+  {% for row in rows %}{% set ended_on = parse_iso_date(row.reservation.date_to) %}{% if ended_on and ended_on < today() %}{% set overdue_scope.count = overdue_scope.count + 1 %}{% endif %}{% endfor %}
+{% endif %}
+{% if overdue_scope.count %}<p class="sub" data-stays-overdue-note>{{ t('stays.scope.overdue_note') }}</p>{% endif %}
+{% if apartment_id or status != 'active' or date_range == 'custom' %}<p class="sub ph-hide stays-scope-reset"><a data-stays-reset href="{{ '/reservations?range=archive' if show_archive else '/reservations?range=all' }}">{{ t('stays.filter.reset_scope') }}</a></p>{% endif %}
 <div class="saved-views" data-saved-views data-label="{{ t('stays.filter.saved_views') }}"></div>
 
 {% if show_archive %}
@@ -131,7 +137,6 @@
   <div class="filter-panel-actions">
     <button class="ui-btn ui-btn-primary filter-apply" type="submit" name="range" value="custom">{{ t('host.filter.apply_filters') }}</button>
     <button class="ui-btn ui-btn-quiet" type="button" data-filter-cancel hidden>{{ t('confirm.cancel') }}</button>
-    <a class="ui-btn ui-btn-quiet" href="{{ '/reservations?range=archive' if show_archive else '/reservations?range=all' }}">{{ t('host.filter.reset') }}</a>
   </div>
 </form>
 {% endif %}
@@ -152,7 +157,7 @@
   {% set group_rows = [] %}
   {% for row in rows if stay_group(row.reservation) | trim == key %}{% set _ = group_rows.append(row) %}{% endfor %}
   {% if group_rows %}
-  <h2 class="sec">{{ t(label_key) }}</h2>
+  <h2 class="sec">{{ t('stays.grp.overdue' if key == 'earlier' and date_range == 'upcoming' else label_key) }}</h2>
     {% for row in group_rows %}
       {% set reservation = row.reservation %}
       {% set progress = row.progress %}
