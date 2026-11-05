@@ -1,6 +1,6 @@
 # 0975-a03: Operations alerts: readable label first, raw code kept
 
-Status: todo
+Status: blocked (not started in this chat: the executor checkpoint was reached on the F01 brief, see docs/tasks/0975-a03-report.md)
 Depends on: B01 to B16 merged (master plan B17) | Base commit: 7b0355c45ccdd2557a28edfcfe228aa1dc766e36 | Branch: task/0975-a03
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
