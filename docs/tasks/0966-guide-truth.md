@@ -1,6 +1,6 @@
 # 0966: Guide completion and empty questions tell the truth (B08, L02, L04)
 
-Status: todo
+Status: blocked (executor step 2: literal checks not met: diff stat 6 files incl. brief; em-dash grep prints 1 from the brief's own checklist line; see docs/tasks/0966-report.md)
 Depends on: none (B03, B07 assumed merged upstream) | Base commit: 7b0355c45ccdd2557a28edfcfe228aa1dc766e36 | Branch: codex/0966-b08-guide-truth
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
