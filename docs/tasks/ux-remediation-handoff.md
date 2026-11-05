@@ -93,3 +93,8 @@ Plan source: UX review and remediation plan (review uploads: 9e66688c-ux-remedia
 4. The app2.css key `20261105-0971c` was bumped at integration because the generator refused the previous key. It is the only template that references app2.css. Confirm it is acceptable.
 5. B11: final report says blocked on four `test_host_ux_acceptance.py` failures that also fail on base (door-code editor and three others). Owner decision on deselecting them, or a fix.
 6. B17 F01: the door-code editor test (same as item 5) also blocks F01. Decide once for both.
+
+## Late status (after integration)
+
+- B06 (codex/0964-b06-connection-states): BLOCKED. Its branch has commits from another session that change a test assertion (9bd31be0), and status/report commits (a44e3f3f, 741447c7) that claim lint is green. The executor's own run on the same commit found 3 lint findings at 1920 px with accordions open. Decisions: keep the in-view assertion change only if documented as a test-scope correction; overwrite the false status/report; fix the 1920 px findings; deselect all six WebKit cases and state it. Rows 2 and 4 pass; row 3 passes with WebKit deselected.
+- B16 (codex/0974-b16-operator): BLOCKED on the host guard. Five failures (fee-navigation plus four in test_host_ux_acceptance.py) also fail on base 7b0355c4. Decision needed: deselect them with base proof, as other batches do. Open item: long plan e-mail values clip at the card edge in the Customers table instead of wrapping; the table is overflow-x:auto, so they should scroll inside the card. Reviewer to decide.
