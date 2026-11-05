@@ -482,7 +482,8 @@
     "invoice-quick-stays",
     "invoice-use-price",
     "fee-bulk",
-    "fee-copy"
+    "fee-copy",
+    "guest-id-line"
   ],
   "hooks": [
     "sr-only",

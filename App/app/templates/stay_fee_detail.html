@@ -214,6 +214,11 @@
           <div>
             <a href="/reservations/{{ line.reservation_id }}">{{ line.name }}</a>
             <div class="ui-sub">{{ line.stay_from }} – {{ line.stay_to }} · {{ tp('stay_fees.nights', line.nights) }}</div>
+            {% set fee_parts = [] %}
+            {% if line.birth_display and identity_visible(line.guest_id) %}{% set _ = fee_parts.append(t('stay.detail.guests.born') ~ ' ' ~ line.birth_display) %}{% endif %}
+            {% if line.age_at_check_in is not none %}{% set _ = fee_parts.append(t('stay_fees.guest.age', age=line.age_at_check_in)) %}{% endif %}
+            {% if line.nationality %}{% set _ = fee_parts.append(country_name(line.nationality, lang) or line.nationality) %}{% endif %}
+            {% if fee_parts %}<div class="ui-sub" data-fee-guest-facts>{{ fee_parts | join(' · ') }}</div>{% endif %}
           </div>
           <span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t(line.status_key) }}</span>
           <span class="fee-amount">{{ line.amount_display }}</span>

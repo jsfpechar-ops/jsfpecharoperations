@@ -132,7 +132,9 @@
       else localStorage.setItem(preferencesKey, displaySettings);
     } catch (_) { /* Optional. */ }
   }
-  function view() { return phoneDots() ? "calendar" : autoView(state.mode, state.property ? 1 : state.properties.length); }
+  // 0956: Gantt only for 3+ properties and never while one property is picked (Josef, 2026-11-04).
+  function ganttAllowed() { return !state.property && state.properties.length >= 3; }
+  function view() { return phoneDots() || !ganttAllowed() ? "calendar" : autoView(state.mode, state.properties.length); }
   function range() {
     if (view() === "gantt" && cleaningMode) return [state.date,
       state.date === root.dataset.rangeFrom && root.dataset.rangeTo ? root.dataset.rangeTo : addDays(state.date, 30)];
@@ -176,6 +178,7 @@
       const option = el("option", "", property.name); option.value = String(property.id); select.append(option);
     });
     if (Array.from(select.options).some(option => option.value === chosen)) select.value = chosen;
+    if (all) { if (select.value) select.dataset.calColor = propertyColor(select.value); else delete select.dataset.calColor; }
   }
   // Native selects retain platform keyboard navigation and localized month names.
   for (let month = 1; month <= 12; month++) {
@@ -191,6 +194,8 @@
     $$("[data-cal-view]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.calView === currentView)));
     $$("[data-cal-scale]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.calScale === state.scale)));
     $("[data-cal-scales]").hidden = currentView === "gantt";
+    $(".cal-view-segment").hidden = !ganttAllowed();
+    $("[data-cal-auto]").closest(".cal-setting").hidden = !ganttAllowed();
     $("[data-cal-month]").value = state.date.slice(5, 7);
     $("[data-cal-month]").hidden = currentView === "calendar" && state.scale === "year";
     $("[data-cal-year]").value = state.date.slice(0, 4);
@@ -221,7 +226,10 @@
       labels.overdue + " · " + labels.status_failed : labels.overdue;
     return labels["status_" + event.status] || labels.booked;
   }
-  function propertyColor(id) { return ["teal", "blue", "purple"][Math.abs(Number(id)) % 3]; }
+  // 0956: one tone per property, by position among the active properties sorted by id (design palette, no coral/green/amber).
+  const PROPERTY_TONES = ["teal", "blue", "purple", "indigo", "ink"];
+  const toneIndex = new Map(properties.map(item => Number(item.id)).sort((a, b) => a - b).map((id, index) => [String(id), index]));
+  function propertyColor(id) { const index = toneIndex.get(String(Number(id))); return PROPERTY_TONES[(index === undefined ? Math.abs(Number(id)) : index) % PROPERTY_TONES.length]; }
   // 0815: the host cleaning page uses the host calendar tiles; the shared cleaner page (read-only) keeps its list.
   function phoneDots() { return !(cleaningMode && readOnly) && matchMedia("(max-width:767px)").matches; }
   function tiles() { return !(cleaningMode && readOnly) && view() === "calendar" && state.scale === "month"; }
@@ -300,6 +308,7 @@
         const pill = el(thinBars ? "span" : "a", "cal-pill" + (event.start < from ? " continues-start" : "") + (event.end > to ? " continues-end" : ""));
         if (thinBars) pill.setAttribute("role", "img"); else { pill.href = event.url; pill.draggable = false; }
         pill.dataset.calEvent = String(event.id); pill.dataset.calFrom = left; pill.dataset.calTo = right;
+        pill.dataset.calColor = propertyColor(event.propertyId); pill.dataset.calPropertyId = String(event.propertyId);
         // 0908: half-cell columns. A real arrival starts mid-cell; a departure inside this row ends mid-cell. A stay running into the next row (or from the previous one) keeps the full edge; a departure on the next Monday or the 1st of next month is dropped from that row by event.end > from, so its bar ends at this row's edge with no stub.
         const startLine = column * 2 + 1 + (event.start >= from ? 1 : 0), endLine = (column + span) * 2 + 1 + (event.end < to && event.end > from ? 1 : 0);
         pill.style.gridColumn = String(startLine) + " / " + String(endLine);

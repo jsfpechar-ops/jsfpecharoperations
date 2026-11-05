@@ -320,6 +320,11 @@ PAGES = [
     },
     {
         "name": "stay",
+        "phone_box_skip": {
+            ".guests .row": (["height"], "0955 Part A: the phone guest row shows birth date and nationality on their own line under the name (Josef: guest details must stay visible on phone), so the row is taller than the mockup row and its subtitle is wider"),
+            ".guests .row b": (["width"], "0955 Part A: the phone guest row shows birth date and nationality on their own line under the name (Josef: guest details must stay visible on phone), so the row is taller than the mockup row and its subtitle is wider"),
+            ".guests .row small": (["width", "height"], "0955 Part A: the phone guest row shows birth date and nationality on their own line under the name (Josef: guest details must stay visible on phone), so the row is taller than the mockup row and its subtitle is wider"),
+        },
         "path": "/reservations/{stay_id}",  # resolved in the test: an active stay with one guest of the rich host
         "view": "stay",
         "phone_view": "pobyt",

@@ -2186,7 +2186,7 @@ body.v2 td[data-card="badge"] small{display:block;margin-top:6px;color:var(--ink
 body.v2 td[data-card="badge"] small .ui-badge{color:var(--ink3)}
 .side .me-menu > summary.me{justify-content:flex-start;gap:10px}
 /* 0896 audit: cleaning tiles are tall enough for two chips plus a stay pill; on phones the stay pill is hidden (too small to tap) */
-body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-week.is-dots .cal-day { min-height:calc(150px + (var(--pl,1) - 1) * 44px); }
+body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-week.is-dots .cal-day { min-height:calc(52px + var(--pl,1) * 56px + 60px); }
 body.v2 #calendar.dashboard-calendar[data-cleaning="true"] .cal-pill-more { display:none !important; }
 @media (max-width:767px) {
   body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-week.is-dots .cal-day { min-height:calc(96px + (var(--pl,1) - 1) * 12px); }
