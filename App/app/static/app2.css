@@ -2597,3 +2597,4 @@ body.v2 .feed-table td.feed-url::before{display:none}
 body.v2 .feed-url-details{min-width:0;margin-bottom:8px}
 body.v2 .feed-url-details summary{cursor:pointer;min-height:44px;display:inline-flex;align-items:center}
 body.v2 .feed-url-value{display:block;max-width:100%;overflow-wrap:anywhere;word-break:break-all;white-space:normal}
+body.v2 .feed-url-details:not([open])>.feed-url-value{display:none}
