@@ -14,13 +14,14 @@ from tests.test_host_unsaved_changes_browser import _page, base, browser, host  
 
 WIDTHS = [(390, 844), (768, 1024), (1280, 900)]
 BAR = ".savebar[data-for='property-settings-form']"
-MEASURE = """() => {
+# docs/design/design-system.md, the "Touch target" row: 44 px phone and tablet, 40 px desktop.
+MEASURE = """(minH) => {
   const vis = el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden'; };
   const small = [], wide = [];
   document.querySelectorAll('.property-settings-form .btn, .property-settings-form .ui-btn, .prop-sec > summary, .savebar .btn').forEach(el => {
     if (!vis(el)) return;
     const r = el.getBoundingClientRect();
-    if (r.height < 43) small.push(((el.textContent || '').trim().slice(0, 30)) + ' ' + Math.round(r.height));
+    if (r.height < minH - 0.5) small.push(((el.textContent || '').trim().slice(0, 30)) + ' ' + Math.round(r.height));
   });
   document.querySelectorAll('.property-settings-form input, .property-settings-form select, .property-settings-form textarea, .property-settings-form .btn').forEach(el => {
     if (!vis(el)) return;
@@ -32,10 +33,12 @@ MEASURE = """() => {
 COVER = """(id) => {
   const el = document.getElementById(id), bar = document.querySelector(".savebar[data-for='property-settings-form']");
   if (!el || !bar) return null;
+  // blur first: a user arrives by Tab or click, which fires focusin; re-focusing a focused field does not.
+  if (document.activeElement) document.activeElement.blur();
   el.focus();
   const f = el.getBoundingClientRect(), b = bar.getBoundingClientRect();
   const under = bar.offsetParent !== null && f.bottom > b.top + 1 && f.top < b.bottom - 1 && getComputedStyle(bar).display !== 'none';
-  return {under, field: Math.round(f.top), bar: Math.round(b.top)};
+  return {under, field: Math.round(f.top), bar: Math.round(b.top), pad: getComputedStyle(document.documentElement).scrollPaddingBottom, sy: Math.round(scrollY), ih: innerHeight, sh: document.documentElement.scrollHeight};
 }"""
 
 
@@ -50,7 +53,7 @@ def test_property_page_click_through_audit(browser, base, host, width, height, t
     page.evaluate("() => document.querySelectorAll('details.prop-sec').forEach(d => { d.open = true; })")
     page.wait_for_timeout(200)
     page.screenshot(path=f"{shots}/audit-{width}-1-open.png", full_page=False)
-    m = page.evaluate(MEASURE)
+    m = page.evaluate(MEASURE, 44 if width < 1024 else 40)
     if m["sw"] > m["iw"]:
         problems.append(f"{width}: horizontal scroll {m['sw']} > {m['iw']}")
     if m["small"]:
@@ -68,7 +71,7 @@ def test_property_page_click_through_audit(browser, base, host, width, height, t
     for field in ["internal_name", "addr_house_no", "addr_zip", "addr_obec"]:
         result = page.evaluate(COVER, field)
         if result and result["under"]:
-            problems.append(f"{width}: #{field} sits under the Save row")
+            problems.append(f"{width}: #{field} sits under the Save row {result}")
     page.evaluate("() => document.getElementById('addr_zip') && document.getElementById('addr_zip').focus()")
     page.wait_for_timeout(200)
     page.screenshot(path=f"{shots}/audit-{width}-3-focus.png", full_page=False)

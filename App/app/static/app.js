@@ -2124,13 +2124,15 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     // 0955: a focused field under the sticky Save row scrolls clear of it (scroll-padding alone does not move a visible field).
     if (!document._ubyFocusClear) {
       document._ubyFocusClear = true;
-      document.addEventListener("focusin", function (event) {
-        var field = event.target;
+      var keepClear = function (field) {
         if (!field || !field.closest || !field.closest("#property-settings-form")) return;
         var bar = document.querySelector(".savebar[data-for='property-settings-form']");
         if (!bar || getComputedStyle(bar).display === "none") return;
         field.scrollIntoView({ block: "nearest" });
-      });
+      };
+      document.addEventListener("focusin", function (event) { keepClear(event.target); });
+      // The bar appears on the first edit, after the field already has focus.
+      document.addEventListener("input", function (event) { keepClear(event.target); });
     }
     if (claimNode(window, "initUnsavedForms")) {
       window.addEventListener("beforeunload", function (event) {
