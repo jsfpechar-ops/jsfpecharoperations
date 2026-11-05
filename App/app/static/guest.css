@@ -1220,6 +1220,70 @@ details.g-head-help > .g-intro { margin: 10px 0 0; }
 }
 .g-legal-notice .checkline span { font-size: 14px; line-height: 1.5; }
 
+/* 0965: on the signature step the review, the legal fold and the
+   acknowledgement share the step's one card. The legal notice loses its own
+   frame and is set off by a single divider. */
+[data-guest-step] > .g-legal-notice {
+  border: 0;
+  border-top: 1px solid var(--g-line);
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  margin: 18px 0 16px;
+  padding: 4px 0 0;
+}
+[data-guest-step] > .g-review[hidden] + .g-legal-notice {
+  border-top: 0;
+  margin-top: 16px;
+  padding-top: 0;
+}
+[data-guest-step] > .g-legal-notice .g-legal-text > summary {
+  border-top: 0;
+  margin-top: 0;
+  padding-top: 0;
+}
+/* The acknowledgement is neutral until ticked, then quietly positive (green,
+   the colour reserved for "done"). Red belongs to an attempted submit with the
+   box empty (.is-invalid from signature.js, or the server's own .err). */
+.g-legal-notice .legal-ack { border-top: 0; padding-top: 0; }
+.g-legal-notice .legal-ack .checkline {
+  background: var(--g-surface);
+  border-color: var(--g-line-2);
+}
+.g-legal-notice .legal-ack .checkline input[type=checkbox] { accent-color: var(--g-ok); }
+.g-legal-notice .legal-ack:not(.is-invalid) .checkline:has(input:checked) {
+  background: var(--g-ok-soft);
+  border-color: color-mix(in srgb, var(--g-ok) 45%, var(--g-line));
+}
+.g-legal-notice .legal-ack .checkline:has(input:focus-visible) {
+  outline: 2px solid var(--g-ink);
+  outline-offset: 2px;
+}
+.g-legal-notice .legal-ack.is-invalid .checkline,
+.g-legal-notice .legal-ack:has(> .err) .checkline {
+  background: var(--g-bad-soft);
+  border-color: var(--g-bad);
+}
+
+/* The person progress sits above the action, so the button needs only a verb. */
+.g-save-note { margin: 14px 0 8px; color: var(--g-muted); font-size: 13.5px; font-weight: 600; text-align: center; }
+/* Back on the step that submits: a quiet text action under the primary one. */
+[data-guest-step] > .g-btn[type="submit"] ~ .g-wizard-nav { margin-top: 6px; justify-content: center; }
+[data-guest-step] > .g-btn[type="submit"] ~ .g-wizard-nav .g-btn.secondary {
+  flex: 0 0 auto;
+  width: auto;
+  min-height: 44px;
+  padding: 8px 14px;
+  background: none;
+  border-color: transparent;
+  color: var(--g-muted);
+  font-size: 14.5px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+[data-guest-step] > .g-btn[type="submit"] ~ .g-wizard-nav .g-btn.secondary:hover { background: none; color: var(--g-ink); }
+
 /* --- footer / misc ----------------------------------------------------- */
 
 .g-foot { font-size: 12.5px; color: var(--g-muted); text-align: center; margin-top: 26px; }
@@ -1300,8 +1364,20 @@ details.g-summary > .g-summary-body { padding: 16px 20px 18px; }
 
 /* Last look at the answers before they are locked. The "Change" control is a
    quiet text button so it never competes with "Submit my details" below. */
-.g-review-list { margin-bottom: 0; row-gap: 12px; }
-.g-review-list dd { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.g-review-list { display: block; margin-bottom: 0; }
+/* 0965: one fact per row: the label above, the value and one aligned Edit
+   action on the line below, a hairline between rows. */
+.g-review-row { padding: 10px 0; border-top: 1px solid var(--g-line); }
+.g-review-row:first-child { border-top: 0; padding-top: 0; }
+.g-review-row dt { margin: 0 0 2px; color: var(--g-muted); font-size: 13px; font-weight: 600; }
+.g-review-row dd {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+}
+.g-review-value { min-width: 0; overflow-wrap: anywhere; font-size: 16px; line-height: 1.4; }
 /* 0896: 12 px or more between the signature pad's Clear button and the review title */
 .g-review { margin-top: 18px; }
 .g-review-change {
@@ -1358,9 +1434,14 @@ details.g-summary > .g-summary-body { padding: 16px 20px 18px; }
 /* The submit button is the whole point of the page; on a phone it should
    never be the thing you have to scroll to find. */
 @media (max-width: 560px) {
+  /* 0965: the sticky action is about 52 px plus its 12 px offset and the
+     home-indicator inset. Anything focused or scrolled to is kept clear of
+     it, and the page ends with the same room, so no text, error or control
+     is left underneath. */
+  html { scroll-padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
   [data-guest-step] > .g-btn[type="submit"] {
     position: sticky;
-    bottom: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     box-shadow: 0 1px 2px rgba(22, 25, 27, 0.1), 0 10px 28px rgba(22, 25, 27, 0.2);
   }
 }
