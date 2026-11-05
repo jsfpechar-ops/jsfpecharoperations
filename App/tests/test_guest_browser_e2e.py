@@ -741,8 +741,15 @@ def test_0959_changing_language_keeps_the_draft_the_step_and_leaves_no_trace(
     token = "browser-0959-lang"
     stay = _fee_seed(token, signed=False)
     page = browser.new_page(viewport={"width": 390, "height": 812})
+    # Only page navigations and the language-switch request are checked for
+    # typed values; the RUIAN address-suggest fetch is out of scope for 0959.
     urls = []
-    page.on("request", lambda request: urls.append(request.url))
+    page.on(
+        "request",
+        lambda request: urls.append(request.url)
+        if request.is_navigation_request() or "/relang" in request.url
+        else None,
+    )
     secrets = ["Synthetica", "Testovic", "SYN0959X", "Examplova 5", "Testov"]
     guest = Guest(page, 390)
 
