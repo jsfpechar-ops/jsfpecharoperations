@@ -1,6 +1,7 @@
 # 0964: Connection states for the Smart lock and Calendars sections
 
 Status: blocked
+Blocked reason (executor run, see docs/tasks/0964-report.md): test row 3 (WebKit browser binary missing), row 4 (no IPv6 in the container), row 5 (layout-lint `table-squeezed` on the feed URL cell at 320/390/1024). Row 2 and row 6 passed.
 Depends on: B05 (queue order only; no file overlap expected) | Base commit: 7b0355c45ccdd2557a28edfcfe228aa1dc766e36 | Branch: codex/0964-b06-connection-states
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
@@ -346,13 +347,13 @@ See step 4. Expected: 4 passed for the new tests; every other row green with 0 s
 
 ## 7. Acceptance
 
-- [ ] Lock Off: `#lock-setup-state` shows the same state as the top pill, with one action `a[href="#door-code"]`.
-- [ ] Lock unavailable: `#lock-unavailable` shows the limitation, no controls.
-- [ ] Lock On unchanged.
-- [ ] Calendar rows: name, badge, URL disclosure, Copy link, Remove inside the viewport at 390, 768, 1280; no horizontal scroll.
-- [ ] 4 new tests pass; rows in step 4 pass; 0 skipped.
-- [ ] Screenshots viewed and described in the report.
-- [ ] Only the files in section 3 changed (`git diff --stat 7b0355c | tail`).
+- [x] Lock Off: `#lock-setup-state` shows the same state as the top pill, with one action `a[href="#door-code"]`. (Screenshots: "Turned off" matches the grey "Smart lock: Off" pill. Note: the form's own "Connect my lock" button also appears lower in the section; it is pre-existing.)
+- [x] Lock unavailable: `#lock-unavailable` shows the limitation, no controls. (Row 2 green; screenshots show the sentence and no button.)
+- [x] Lock On unchanged. (Screenshots: green "On" row with Turn off.)
+- [ ] Calendar rows: name, badge, URL disclosure, Copy link, Remove inside the viewport at 390, 768, 1280; no horizontal scroll. (Not ticked: layout lint fails on the property-bookings feed URL cell, `table-squeezed` at 320/390/1024.)
+- [ ] 4 new tests pass; rows in step 4 pass; 0 skipped. (The 4 new tests passed; rows 3, 4 and 5 did not pass.)
+- [x] Screenshots viewed and described in the report.
+- [x] Only the files in section 3 changed (6 App files, all listed in section 3 or the base.html version key).
 
 ## 8. Stop and ask
 
