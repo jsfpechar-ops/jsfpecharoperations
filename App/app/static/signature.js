@@ -125,6 +125,9 @@ function initSignature() {
     var form = canvas.closest("form");
     if (form) {
       form.addEventListener("submit", function (event) {
+        // 0959: the language buttons (data-lang-draft) post the open form to
+        // /relang. They need no signature, so they must not hit this guard.
+        if (event.submitter && event.submitter.hasAttribute("data-lang-draft")) return;
         if (!hidden.value) {
           event.preventDefault();
           // The signature step is not always the one on screen, and its

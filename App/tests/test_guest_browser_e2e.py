@@ -834,6 +834,60 @@ def test_0959_changing_language_keeps_the_draft_the_step_and_leaves_no_trace(
         page.close()
 
 
+def test_0959_language_switch_works_without_a_signature(live_server, browser, monkeypatch):
+    """0959: with no signature and no tick, the language button still posts the
+    open form back (the signature guard must not stop it) and asks nothing."""
+    from app import config
+
+    monkeypatch.setattr(config, "GUEST_PIN_REQUIRED", False)
+    monkeypatch.setattr(mail, "mail_enabled", lambda: False)
+    token = "browser-0959-nosig"
+    stay = _fee_seed(token, signed=False)
+    page = browser.new_page(viewport={"width": 390, "height": 812})
+    secrets = ["Synthetica", "Testovic", "SYN0959X", "Examplova 5", "Testov"]
+    guest = Guest(page, 390, lang="cs")
+    dialogs = []
+    page.on("dialog", lambda dialog: (dialogs.append(dialog.message), dialog.dismiss()))
+
+    def progress():
+        return [int(n) for n in re.findall(r"\d+", page.inner_text("[data-wizard-label]"))[:2]]
+
+    try:
+        page.goto(f"{live_server}/l/{token}/{stay}/new?lang=cs")
+        page.fill("#first_name", secrets[0])
+        page.fill("#surname", secrets[1])
+        page.click("#birth_date")
+        page.keyboard.type("01011980")
+        guest.pick_country("nationality", "CZE")
+        page.fill("#doc_number", secrets[2])
+        guest.next()
+        page.fill("#res_street", secrets[3])
+        page.fill("#res_city", secrets[4])
+        page.evaluate("() => { document.querySelector('#res_country').value = 'CZE'; }")
+        guest.next()
+        before = progress()
+        assert before[0] == before[1], before  # on the last step, no signature, no tick
+        assert page.eval_on_selector("#signature", "e => e.value") == ""
+        assert not page.is_checked("#legal_ack")
+
+        page.locator("[data-lang-menu] summary").click()
+        with page.expect_navigation():
+            page.locator('[data-lang-draft][lang="en"]').click()
+        assert page.get_attribute("html", "lang") == "en"
+        assert i18n.translator("en")("review_title") in page.inner_text("body")
+        assert progress() == before, (progress(), before)
+        assert page.input_value("#first_name") == secrets[0]
+        assert page.input_value("#surname") == secrets[1]
+        assert page.input_value("#birth_date") == "01.01.1980"
+        assert page.input_value("#nationality") == "CZE"
+        assert page.input_value("#doc_number") == secrets[2]
+        assert page.input_value("#res_street") == secrets[3]
+        assert page.input_value("#res_city") == secrets[4]
+        assert dialogs == [], dialogs
+    finally:
+        page.close()
+
+
 def test_0959_discard_warning_cancel_keeps_draft(live_server, browser, monkeypatch):
     """0959: a drawn signature asks before a language switch; Cancel keeps the
     page as it was (same language, same answers, same URL, no navigation)."""
