@@ -38,9 +38,9 @@ NAME = "Synthetic O1 Flat"
 PHONE = "+420 777 000 111"
 TEXT = {
     "en": {"title": "You have unsaved changes", "save": "Save", "discard": "Discard", "stay": "Stay",
-           "reset": "Discard changes"},
+           "reset": "Cancel"},
     "cs": {"title": "Máte neuložené změny", "save": "Uložit", "discard": "Zahodit", "stay": "Zůstat",
-           "reset": "Zahodit změny"},
+           "reset": "Zrušit"},
 }
 SIZES = [(360, 780), (1280, 900)]
 
@@ -267,24 +267,19 @@ def test_save_bar_discard_changes_button(browser, base, host, lang, width, heigh
     page = _page(browser, base, host, width, height)
     page.goto(f"{url}?view=settings&section=guests&lang={lang}")
     reset = page.locator(".savebar[data-for='property-settings-form'] [data-unsaved-reset]")
-    status = page.locator("#door_codes-status")
     loaded_message = page.input_value("#guest_message")
     assert not page.locator(".savebar[data-for='property-settings-form']").is_visible()
     page.fill("#guest_message", "Typed welcome to discard")
     # 0096: the door-code switch lives in its own Door lock group.
     # 0736: inner_text() is "" inside a closed <details>, so read the status
     # after the section opens and use text_content(), which holds the saved text.
-    page.locator("#sec-lock > summary").click()
-    loaded_status = status.text_content().strip()
-    page.locator("#door_codes").click()
-    assert status.text_content().strip() != loaded_status
+    # 0955: the outside-control leg (door-code switch) needs a connected lock; it moved to the matrix test.
     assert page.locator(".savebar[data-for='property-settings-form']").is_visible()
     box = reset.bounding_box()
     assert box["x"] >= 0 and box["x"] + box["width"] <= width + 1
     _shot(page, f"property-discard-button-{lang}-{width}")
     reset.click()
     assert page.input_value("#guest_message") == loaded_message
-    assert status.text_content().strip() == loaded_status
     assert not page.locator(".savebar[data-for='property-settings-form']").is_visible()
     page.locator("#sec-calendars > summary").click()
     assert not _open(page) and "sec-calendars" in _open_sections(page)

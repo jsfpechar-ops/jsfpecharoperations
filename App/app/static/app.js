@@ -2275,6 +2275,8 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       }).forEach(function (el) {
         el.dispatchEvent(new Event("change", { bubbles: true }));
       });
+      // Cancel is the new loaded state: the reset values become the base for the next edit.
+      if (form.getAttribute("data-dirty-start") !== "1") form._ubyBase = formSnapshot(form);
       recomputeDirty(form);
     }
 
@@ -2303,7 +2305,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       resetButtons(form).forEach(function (button) {
         button.addEventListener("click", function (event) {
           // After a failed save the page holds the posted values: the link reloads the saved page.
-          if (form.getAttribute("data-dirty-start") === "1") return;
+          if (form.getAttribute("data-dirty-start") === "1") { form._ubySubmitting = true; return; }
           event.preventDefault();
           discard(form);
           syncResetButtons();
@@ -2333,6 +2335,8 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       var link = event.target.closest && event.target.closest("a[href]");
       if (!link || dialog.contains(link)) return;
+      // 0955: Cancel resets the form in place; it is not a page change to guard.
+      if (link.hasAttribute("data-unsaved-reset")) return;
       if ((link.target && link.target !== "_self") || link.hasAttribute("download")) return;
       if (!dirtyForms().length) return;
       var url;

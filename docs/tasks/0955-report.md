@@ -45,3 +45,14 @@ Status: blocked
 - Browser run: 10 failed, 8 passed (test_property_notices_0955, test_0851_savebar_browser, test_host_unsaved_changes_browser). Failures: `test_property_settings_save_discard_stay` still asserts the old "Discard changes" / "Zahodit změny" button text (en/cs, 360/1280); the rest not yet read.
 - Not done: step 6 test fixes, Save bar screenshots at 390/768/1280, step 7 matrix test, step 8 and later.
 - Next step: in `App/tests/test_host_unsaved_changes_browser.py` update `test_property_settings_save_discard_stay` to the Cancel label (`common.cancel`: Cancel / Zrušit), then rerun the three files from App/ and read the remaining failures before step 7.
+
+## Chat 3 (fixing the 10 red tests)
+Status: blocked
+Result: test_host_unsaved_changes_browser + test_0851_savebar_browser + test_property_notices_0955: 18 passed, 0 failed, 0 skipped.
+- (A) test_property_settings_save_discard_stay x4: label. Updated TEXT to Cancel / Zrušit (owner's wording).
+- (A) test_save_bar_discard_changes_button x4: `#door_codes-status` removed by 0954 (27b17ea7); the door-code switch exists only with a connected lock and moved to the setup wizard. Outside-control leg removed from this test; to be covered in step 7 with a lock fixture.
+- (B) test_save_bar_discard_changes_button x4 (after the above): real page bug. The document leave-guard caught the Cancel link and opened the unsaved dialog. Fix: app.js skips `[data-unsaved-reset]` links in the guard.
+- (B) test_property_rail_and_back_links... and test_keyboard_only_flow: real bug. Discard reset then re-marked the form dirty (base from page load differed after reset), so the guard asked again. Fix: Cancel/discard rebases the base to the reset state (not with data-dirty-start).
+- Keys: app.js 20261104-0955d (via --write).
+Not done: step 6 remaining checks (no-JS link reload test), Save-bar screenshots at 390/768/1280, step 7 matrix, steps 8 to 10.
+Next step: add the outside-control leg (lock fixture from test_smart_locks_page `_connect`) and the no-JS reload check to test_host_unsaved_changes_browser, then screenshots, then step 7.
