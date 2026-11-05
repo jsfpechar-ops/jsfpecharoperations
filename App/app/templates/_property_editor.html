@@ -369,7 +369,7 @@
       <i class="sd" aria-hidden="true"></i>
       <div class="lock-state-text"><b>{{ t({'off': 'smart_locks.state_off', 'times': 'smart_locks.state_times', 'offline': 'smart_locks.state_offline'}.get(door_code.state, 'smart_locks.state_on')) }}</b>
         {% if door_code.state == 'on' %}<small>{{ t('smart_locks.online') }}</small>
-        {% elif door_code.state == 'offline' %}<small>{{ t('smart_locks.offline') }}{% if door_code.account.status != 'ok' %} {{ t('smart_locks.reauth') }}{% endif %}</small>
+        {% elif door_code.state == 'offline' %}{% if door_code.account.status != 'ok' %}<small>{{ t('smart_locks.reauth') }}</small>{% endif %}
         {% elif door_code.state == 'times' %}<small>{{ t('smart_locks.times_required') }}</small>{% endif %}</div>
       <form method="post" action="/apartments/{{ apartment.id }}/door-codes" class="lock-state-form">
         <input type="hidden" name="return_to" value="/apartments/{{ apartment.id }}?view=settings&amp;section=lock#sec-lock">

@@ -72,7 +72,7 @@ def test_state_block_matches_the_state(ttl, hosts, flats, state):
         assert "ui-btn-primary" in block.group(2)
     if state == "offline":
         assert "Automatic door codes: lock offline" in block.group(2)
-        assert "Lock offline" in block.group(2)
+        assert "TTLock no longer accepts this connection" in block.group(2)
         assert 'value="off"' in block.group(2)
         assert "Automatic door codes: On" not in block.group(2)
     if state == "times":
