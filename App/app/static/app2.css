@@ -2595,6 +2595,9 @@ body.v2 .prop-archive-row{padding:4px 0 8px}
 body.v2 .prop-archive-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 body.v2 .prop-archive-actions .ui-btn{min-height:44px}
 body.v2 .prop-archive-note{margin:0;flex:1 1 240px;min-width:0}
+/* the "?" stays in the same group as its button (wraps with it, never alone); on phones its box is the 44 px tap target (the 0833 property-settings-form rule gives 24 px) */
+body.v2 .prop-archive-action{display:inline-flex;align-items:center;flex-wrap:nowrap;max-width:100%}
+@media (max-width:1023px){body.v2 .prop-archive-action .help-tip-btn{width:44px;height:44px;min-width:44px;min-height:44px}}
 body.v2 .ui-dialog.copy-settings-dialog{border:0;padding:0;background:transparent;max-width:none;width:min(var(--dialog-w),calc(100vw - var(--space-8)))}
 body.v2 .ui-dialog.copy-settings-dialog::backdrop{background:var(--scrim)}
 body.v2 .copy-settings-dialog .ui-sheet{background:var(--surface);border-radius:var(--sheet-radius);padding:var(--space-6);box-shadow:var(--shadow-3);max-height:calc(100dvh - var(--space-8));overflow:auto;box-sizing:border-box}

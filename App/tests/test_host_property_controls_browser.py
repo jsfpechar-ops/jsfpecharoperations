@@ -625,6 +625,8 @@ def test_0963_fee_and_police_headings_and_archive_button(host, base):
                         assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), label
                         page.mouse.move(0, 0)  # 0963: a hover left by an earlier click must not open the tip
                         page.evaluate("document.activeElement && document.activeElement.blur()")
+                        # The scroll above put the "?" under the still pointer, so JS opened the tip; leaving it closes it after 150 ms.
+                        page.locator("#archive-help").wait_for(state="hidden")
                         assert not page.locator("#archive-help").is_visible(), label  # the tip stays closed until asked
                         if lang == "en":
                             _shot_0963(page, f"archive-{width}")

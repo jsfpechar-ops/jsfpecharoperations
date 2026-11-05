@@ -131,9 +131,11 @@
     <button class="ui-btn ui-btn-secondary" type="submit" formmethod="post" formnovalidate
             formaction="{{ base_url }}/unarchive">{{ t('common.restore') }}</button>
     {% else %}
+    <span class="prop-archive-action">
     <button class="ui-btn ui-btn-secondary" type="submit" formmethod="post" formnovalidate
             formaction="{{ base_url }}/archive"
             data-confirm data-confirm-message="{{ t('host.delete_to_archived.confirm') }}">{{ t('property_page.archive.button') }}</button>{{ help_tip('archive-help', t('apartment.form.archive_help')) }}
+    </span>
     {% endif %}
   </div>
 </div>
