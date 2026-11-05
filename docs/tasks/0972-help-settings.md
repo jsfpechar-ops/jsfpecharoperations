@@ -1,6 +1,6 @@
 # 0972: Align help, headings and account status copy (batch B14: X03, X04, F02, F03)
 
-Status: todo
+Status: blocked (executor handed over at the token checkpoint after step 1; steps 2 to 4 not run; see docs/tasks/0972-report.md)
 Depends on: B13 (master plan; nothing in the repo to wait for) | Base commit: 7b0355c45ccdd2557a28edfcfe228aa1dc766e36 | Branch: codex/0972-b14-help-settings
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
