@@ -140,6 +140,8 @@ def test_charge_excludes_demo_unsigned_and_respects_the_kill_switch(owner, monke
     demo = _stay(aid, "2026-08-10", "2026-08-14", [{}])
     db.update("reservation", demo, {"source": "demo"})
     assert stay_fee.charge_for_reservation(_apt(aid), {"id": demo})["lines"] == []
+    shown = stay_fee.charge_for_reservation(_apt(aid), {"id": demo}, include_demo=True)
+    assert shown["lines"] and shown["total_czk"] > 0
 
 
 def test_charge_total_matches_the_live_register(owner, monkeypatch):
