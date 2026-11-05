@@ -832,3 +832,62 @@ def test_0959_changing_language_keeps_the_draft_the_step_and_leaves_no_trace(
         )
     finally:
         page.close()
+
+
+def test_0959_discard_warning_cancel_keeps_draft(live_server, browser, monkeypatch):
+    """0959: a drawn signature asks before a language switch; Cancel keeps the
+    page as it was (same language, same answers, same URL, no navigation)."""
+    from app import config
+
+    monkeypatch.setattr(config, "GUEST_PIN_REQUIRED", False)
+    monkeypatch.setattr(mail, "mail_enabled", lambda: False)
+    token = "browser-0959-cancel"
+    stay = _fee_seed(token, signed=False)
+    page = browser.new_page(viewport={"width": 390, "height": 812})
+    secrets = ["Synthetica", "Testovic", "SYN0959X", "Examplova 5", "Testov"]
+    guest = Guest(page, 390)
+
+    def pick(lang):
+        page.locator("[data-lang-menu] summary").click()
+        page.locator(f'[data-lang-draft][lang="{lang}"]').click()
+
+    try:
+        page.goto(f"{live_server}/l/{token}/{stay}/new?lang=en")
+        page.fill("#first_name", secrets[0])
+        page.fill("#surname", secrets[1])
+        page.click("#birth_date")
+        page.keyboard.type("01011980")
+        guest.pick_country("nationality", "CZE")
+        page.fill("#doc_number", secrets[2])
+        guest.next()
+        page.fill("#res_street", secrets[3])
+        page.fill("#res_city", secrets[4])
+        page.evaluate("() => { document.querySelector('#res_country').value = 'CZE'; }")
+        guest.next()
+        guest.sign()
+        page.check("#legal_ack")
+
+        # A drawn signature asks first; Accept moves to the Czech page.
+        page.once("dialog", lambda dialog: dialog.accept())
+        with page.expect_navigation():
+            pick("cs")
+        assert page.get_attribute("html", "lang") == "cs"
+        assert page.input_value("#first_name") == secrets[0]
+
+        # Draw again on the Czech page, then Cancel the switch back.
+        guest.sign()
+        page.check("#legal_ack")
+        messages = []
+        page.once("dialog", lambda dialog: (messages.append(dialog.message), dialog.dismiss()))
+        pick("en")
+        page.wait_for_timeout(300)
+        assert messages == [i18n.translator("cs")("lang_draft_warning")], messages
+        assert page.url.endswith("/relang?lang=cs"), page.url
+        assert page.get_attribute("html", "lang") == "cs"
+        assert page.input_value("#first_name") == secrets[0]
+        assert page.input_value("#surname") == secrets[1]
+        assert page.input_value("#res_city") == secrets[4]
+        assert page.eval_on_selector("#signature", "e => e.value").startswith("data:image/png")
+        assert page.is_checked("#legal_ack")
+    finally:
+        page.close()
