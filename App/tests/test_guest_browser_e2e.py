@@ -646,6 +646,17 @@ def _fee_seed(token: str, rate: int = 50, signed: bool = True, nationality: str 
     return stay
 
 
+SHOTS_0958 = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0958"
+
+
+def _shot_0958(page, name: str) -> None:
+    """0958 evidence: written only when UBYHOST_0958_SHOTS=1 is set."""
+    if os.environ.get("UBYHOST_0958_SHOTS") != "1":
+        return
+    SHOTS_0958.mkdir(parents=True, exist_ok=True)
+    page.screenshot(path=str(SHOTS_0958 / name), full_page=True)
+
+
 @pytest.mark.parametrize("width", [320, 390, 768, 1280])
 def test_fee_card_shows_with_qr_rail_open_and_enabled_rails(live_server, browser, monkeypatch, width):
     from app import config
@@ -666,6 +677,8 @@ def test_fee_card_shows_with_qr_rail_open_and_enabled_rails(live_server, browser
         assert card.count() == 1, page.inner_text("body")[:400]
         assert card.is_visible()
         assert card.locator("details.g-summary").filter(has=page.locator(".g-fee-rail")).count() == 3
+        if width == 390:
+            _shot_0958(page, "guest-hub-fee-card-390.png")
         assert card.locator("details[open] .g-fee-qr-img").count() == 1
         assert card.locator(".g-fee-qr-img").is_visible()
         qr_rail = card.locator("details.g-summary").filter(has=page.locator(".g-fee-qr-img"))
@@ -793,5 +806,6 @@ def test_form_estimate_line_shows_when_the_estimate_is_above_zero(live_server, b
             page.evaluate("() => document.querySelector('form[action*=\"/save\"]').requestSubmit()")
         assert page.locator("#fee-estimate").count() == 1
         assert page.locator("#fee-estimate").is_visible()
+        _shot_0958(page, "form-estimate-390.png")
     finally:
         page.close()
