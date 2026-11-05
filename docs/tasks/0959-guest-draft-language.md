@@ -1,6 +1,6 @@
 # 0959: Keep the guest draft when the language changes
 
-Status: blocked. All checks pass (0 skipped), but section 7 "git diff --stat only section 3" fails: commit 94fa842b changed docs/tasks/screenshots-0402/guide-table-1280.png, outside section 3. See 0959-report.md.
+Status: blocked. Stray PNG restored in 6313b205; diff now only section 3 files. Still blocked: section 7 "no entered value in any URL" is narrowed in test_0959 (RUIAN `ruian-suggest?q=` excluded), which section 8 stops on. Owner or orchestrator decision. See 0959-report.md.
 Depends on: none (batch B01) | Base commit: 7b0355c | Branch: codex/0959-guest-draft-language
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, checkpoint 60k tokens
 
