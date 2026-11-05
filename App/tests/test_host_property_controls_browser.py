@@ -708,6 +708,7 @@ def test_0964_calendar_rows_keep_state_and_actions_with_a_long_url(host, base):
                 _shot_0964(page, f"calendars-collapsed-{width}")
                 # Opening the long URL wraps it inside its cell and never pushes an action out of view.
                 page.locator(".feed-table summary").first.click()
+                page.wait_for_selector(f"#feed-url-{healthy}", state="visible", timeout=5000)
                 assert page.locator(f"#feed-url-{healthy}").is_visible()
                 fit = page.evaluate(_IN_VIEW_0964, ".feed-table .row-actions .ui-btn, .feed-table .copy-btn, .feed-url-value")
                 assert not fit["bad"], (width, fit)
