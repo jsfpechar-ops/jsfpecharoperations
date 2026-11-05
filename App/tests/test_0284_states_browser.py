@@ -27,8 +27,16 @@ def _own_database(tmp_path):
         patcher.undo()
 
 
-STYLE = "e => { const c = getComputedStyle(e); return [c.backgroundColor, c.color, c.borderTopColor].join('|'); }"
+STYLE = ("e => { const c = getComputedStyle(e); return [c.backgroundColor, c.color, c.borderTopColor, "
+         "c.boxShadow, c.textDecorationLine, c.transform].join('|'); }")
 WHITE = "rgb(255, 255, 255)"
+
+
+def _hover_changed(before, after):
+    """A hover counts when any probed style changes; a change that only turns the background white does not."""
+    b, a = before.split("|"), after.split("|")
+    changed = [i for i in range(len(b)) if b[i] != a[i]]
+    return bool(changed) and not (changed == [0] and a[0] == WHITE)
 
 
 def _session(base):
@@ -71,7 +79,7 @@ def test_hover_changes_every_clickable_thing(base):
             element.hover()
             page.wait_for_timeout(250)
             after = element.evaluate(STYLE)
-            if before == after or after.split("|")[0] == WHITE:
+            if not _hover_changed(before, after):
                 problems.append((path, selector, before, after))
         browser.close()
     assert not problems, problems

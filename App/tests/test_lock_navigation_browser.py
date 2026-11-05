@@ -228,16 +228,18 @@ def test_lock_setup_flow_keeps_its_place(world):
             assert page.locator("#sec-lock").is_visible()
             _in_view(page, "#sec-lock")
             row = db.query_one("SELECT lock_provider FROM apartment WHERE id = ?", (apartment,))
-            assert row["lock_provider"] is None  # nothing assigned or switched on
+            # 0954: the first found lock turns automatic codes on for the one ready property (never a saved choice;
+            # the no-times case is covered by tests/test_ttlock_setup_0954.py).
+            assert row["lock_provider"] == "ttlock"
             page.goto(f"{base}/apartments/{apartment}?view=settings&section=lock&lang={lang}#door-code")
             _settle(page)
             _in_view(page, "#door-code")
             _shot(page, f"property-door-code-1280-{lang}")
-            page.select_option("#lock_id", LOCK_A["lock_id"])
-            page.locator(".savebar button[type=submit]").click()
-            _settle(page)
+            # 0954: the first found lock is already saved with automatic codes on, so the form shows it as chosen
+            # and is clean (no save bar). Re-selecting it would change nothing.
+            assert page.input_value("#lock_id") == LOCK_A["lock_id"]
             row = db.query_one("SELECT lock_provider, lock_id FROM apartment WHERE id = ?", (apartment,))
-            assert row["lock_id"] == LOCK_A["lock_id"] and row["lock_provider"] is None
+            assert row["lock_id"] == LOCK_A["lock_id"] and row["lock_provider"] == "ttlock"
 
             # Back navigation returns to the lock page section history.
             page.go_back()
