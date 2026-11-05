@@ -1682,6 +1682,8 @@ STRINGS: Dict[str, str] = {
     "housebook.signed": "Đã ký",
     "housebook.reported": "Đã khai báo",
     "housebook.visa": "thị thực %(number)s",
+    "housebook.details": "Chi tiết",
+    "housebook.details_for": "Chi tiết của %(name)s",
     "housebook.signed_yes": "Đã ký",
     "housebook.signed_no": "Chưa ký",
     "housebook.not_sent": "Chưa gửi",
