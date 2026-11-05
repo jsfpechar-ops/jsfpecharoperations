@@ -258,10 +258,19 @@ def guide_quick_done(request: Request, apartment_id: int):
         (host_i18n.translate(lang, f"guest_guide.kind.{r['kind']}.title"), " ".join(lines[r["kind"]]))
         for r in rows if r["kind"] in lines
     ]
+    open_cards = [r for r in rows if r["state"] in ("missing", "check")]
+    progress = guest_guide.progress(apartment_id)
+    # 0966: what guests can see comes from progress["live"] (the same gate as for_guest).
+    if not answered:
+        guide_state = "none"
+    elif not progress["live"]:
+        guide_state = "saved"
+    else:
+        guide_state = "partial" if open_cards else "live"
     return _render(
         request, "guest_guide_quick_done.html", apartment=apartment, answered=answered,
-        open_cards=[r for r in rows if r["state"] in ("missing", "check")],
-        progress=guest_guide.progress(apartment_id), next_id=_next_open(apartment_id, 0),
+        open_cards=open_cards, guide_state=guide_state,
+        progress=progress, next_id=_next_open(apartment_id, 0),
         first_step=guide_facts.STEPS[0],
     )
 
