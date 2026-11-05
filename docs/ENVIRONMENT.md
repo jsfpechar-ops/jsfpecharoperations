@@ -177,7 +177,7 @@ On **Render `ubyhost-staging`**, keep `UBYHOST_UBYPORT_ENV=mock`, set
 
 | Variable | Default | Notes |
 | --- | --- | --- |
-| `UBYHOST_STAY_FEE_GUEST_PAY` | `off` | `on` shows the stay-fee guest payment settings to hosts (fee section of the property editor). `off` disables those controls and makes saves ignore them. Phase 0 has no guest-facing change. |
+| `UBYHOST_STAY_FEE_GUEST_PAY` | `off` | `on` shows the stay-fee guest payment settings to hosts and, after every expected guest is registered, the payment card on the guest hub when the live total is above zero. `off` hides those controls and makes saves ignore them. Leave it off in production until the owner turns it on. |
 | `UBYHOST_STRIPE_MODE` | `off` | `off`, `test` or `live`. `off` hides all payment-request UI and endpoints; `test` uses Stripe test keys; `live` uses live keys. Never set `live` before the sandbox checklist and the lawyer sign-off pass. |
 | `UBYHOST_STRIPE_SECRET_KEY` | unset | Secret key (`sk_test_...` or `sk_live_...`) matching `UBYHOST_STRIPE_MODE`. Set in Lightsail `.env` or Render Environment only, never in git. Unset means the feature is off even if `UBYHOST_STRIPE_MODE` is set. |
 | `UBYHOST_STRIPE_WEBHOOK_SECRET` | unset | Signing secret (`whsec_...`) for the platform webhook endpoint. Unset means webhooks are logged-and-ignored in tests; in `test`/`live` mode an unset value fails verification loudly. |

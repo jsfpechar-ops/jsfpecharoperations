@@ -63,3 +63,4 @@ Append-only.
 - [ui] 2026-11-04: TTLock step one says eAdmin; Smart lock shows a status block with Turn on/off (door_code.state is the one source). Source: brief 0954.
 - [ui] 2026-11-05: property notices are inline banners in their section; the Save row closes the form and sticks; Preview sticks from 1024 px. Source: brief 0957.
 - [ui] 2026-11-05: PR #786 owner confirms no check-in/out times on stay detail, four wizard steps, accepted/listed TTLock connection sufficient for Lock online; Stays filters wrap on phones so all options are visible (0950-fix-1).
+- [stay-fee] 2026-11-05: guest payment has no "Automatic" method; one bank method (IBAN) with a QR only for Czech and Slovak guests; the fee card also shows on the host's demo stay; a same-municipality guest still sees no card (0897-fix-1, 0897-fix-2).

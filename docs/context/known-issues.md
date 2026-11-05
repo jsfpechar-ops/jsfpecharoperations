@@ -96,3 +96,4 @@
 - K-PK0290: passkey fix open.
 - K-CF01: mid-session challenge: see CLOUDFLARE Rule 3.
 - K-PG-ORDER: goose tests fail after icalsync locally; CI OK.
+- K-0897: guest pay open: invoice-account reuse, Postgres 00007, Slovak QR, mark-paid, mail link, add-person total, lawyer sign-off.
