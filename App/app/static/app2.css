@@ -2561,3 +2561,13 @@ body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-demo{display:grid;
 body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-demo form{margin:0}
 body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-demo button{width:100%}
 @media (min-width:640px){body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-demo{grid-template-columns:minmax(0,62%) minmax(0,1fr);gap:16px}body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-demo button{width:auto}}
+/* 0954 ttlock */
+.lock-state{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:12px 16px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.lock-state .sd{width:10px;height:10px;border-radius:50%;background:var(--line);flex:none}
+.lock-state-text{display:grid;gap:2px;min-width:0}
+.lock-state[data-state=on]{border-color:var(--green);background:var(--green-bg)}
+.lock-state[data-state=on] .sd{background:var(--green)}
+.lock-state[data-state=offline],.lock-state[data-state=times]{border-color:var(--amber);background:var(--amber-bg)}
+.lock-state[data-state=offline] .sd,.lock-state[data-state=times] .sd{background:var(--amber)}
+.lock-state form{margin:0 0 0 auto}
+@media (max-width:1023px){.lock-state form,.lock-state .ui-btn{width:100%}}

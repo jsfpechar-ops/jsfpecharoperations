@@ -361,38 +361,40 @@
   </div>
 </details>
   {# ---- Door lock (0096: its own group; optional) ---------------------- #}
-<details class="prop-sec" id="sec-lock"{% if settings_section == 'lock' %} open{% endif %}><summary><span class="dot {{ 'g' if door_code and door_code.enabled else 'n' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.lock.title') }}</b></div><small class="sec-state">{{ t('property_nav.switch_enabled') if door_code and door_code.enabled else t('property_nav.switch_off') }}</small></summary>
+<details class="prop-sec" id="sec-lock"{% if settings_section == 'lock' %} open{% endif %}><summary><span class="dot {{ 'g' if door_code and door_code.state == 'on' else 'n' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.lock.title') }}</b></div><small class="sec-state">{{ t('property_nav.switch_enabled') if door_code and door_code.state == 'on' else t('property_nav.switch_off') }}</small></summary>
   <div class="fields-wrap">
     <p class="property-group-intro">{{ t('why.door_lock') }}</p>
+    {% if door_code and door_code.account and door_code.locks %}
+    <div class="lock-state" data-state="{{ door_code.state }}" role="status">
+      <i class="sd" aria-hidden="true"></i>
+      <div class="lock-state-text"><b>{{ t('smart_locks.state_off') if door_code.state == 'off' else t('smart_locks.state_on') }}</b>
+        {% if door_code.state == 'on' %}<small>{{ t('smart_locks.online') }}</small>
+        {% elif door_code.state == 'offline' %}<small>{{ t('smart_locks.offline') }}{% if door_code.account.status != 'ok' %} {{ t('smart_locks.reauth') }}{% endif %}</small>
+        {% elif door_code.state == 'times' %}<small>{{ t('smart_locks.times_required') }}</small>{% endif %}</div>
+      <form method="post" action="/apartments/{{ apartment.id }}/door-codes" class="lock-state-form">
+        <input type="hidden" name="return_to" value="/apartments/{{ apartment.id }}?view=settings&amp;section=lock#sec-lock">
+        <input type="hidden" name="mode" value="{{ 'on' if door_code.state == 'off' else 'off' }}">
+        <button class="ui-btn {{ 'ui-btn-primary' if door_code.state == 'off' else 'ui-btn-secondary' }}" type="submit">{{ t('smart_locks.turn_on') if door_code.state == 'off' else t('smart_locks.turn_off') }}</button>
+      </form>
+    </div>
+    {% endif %}
     {% if door_code %}
     {% include "_door_code_window.html" %}
     {% if door_code.account and door_code.locks %}
     <section class="panel property-section ui-section" id="door-code">
       <p class="ui-sub">{{ t('why.times') }}</p>
       {% if lock_times_error %}<p class="err-text" id="door-code-times-error" role="alert">{{ t('why.times_missing') }}</p>{% endif %}
-      {% set switch_on = door_switch_posted if door_switch_posted is defined else door_code.enabled %}
       {#- 0414: the times live here too, so a host turning on door codes never leaves the tab. -#}
       <div class="grid two" data-lock-times>
         {% for name, label in [('checkin_hour', 'apartment.form.door_code.checkin'), ('checkout_hour', 'apartment.form.door_code.checkout')] %}
         <div class="field"><label for="lock_{{ name }}">{{ t(label) }}</label>
-          <select form="property-settings-form" id="lock_{{ name }}" name="lock_{{ name }}" data-hour-twin="{{ name }}"{% if switch_on %} required{% endif %}{% if lock_times_error %} aria-invalid="true" aria-describedby="door-code-times-error"{% endif %}><option value="">{{ t('apartment.form.door_code.choose') }}</option>
+          <select form="property-settings-form" id="lock_{{ name }}" name="lock_{{ name }}" data-hour-twin="{{ name }}"{% if lock_times_error %} aria-invalid="true" aria-describedby="door-code-times-error"{% endif %}><option value="">{{ t('apartment.form.door_code.choose') }}</option>
             {% for h in range(24) %}<option value="{{ h }}" {% if apartment[name]|string == h|string %}selected{% endif %}>{{ '%02d:00' % h }}</option>{% endfor %}
           </select></div>
         {% endfor %}
       </div>
       <div class="field-label-row"><h2 class="property-section-title">{{ t('host.door_code') }}{{ help_tip('door-code-help', t('apartment.form.door_code.lede') ~ ' ' ~ t('apartment.form.door_code.manual'), '/guide#door-codes') }}</h2></div>
         {% if door_code.test_mode %}<p class="ui-sub"><strong>{{ t('apartment.form.door_code.test_mode') }}</strong></p>{% endif %}
-        <input form="property-settings-form" type="hidden" name="door_codes_fields" value="1">
-        <div class="feature-switch-row">
-          <label class="switch feature-switch" for="door_codes">
-            <input form="property-settings-form" type="checkbox" role="switch" id="door_codes" name="door_codes" value="1" {% if switch_on %}checked{% endif %}
-                   data-switch-saved="{{ '1' if door_code.enabled else '0' }}" aria-describedby="door_codes-status">
-            <span>{{ t('property_nav.door_switch') }}</span>
-          </label>
-          <span class="switch-status{% if switch_on != door_code.enabled %} is-unsaved{% elif door_code.enabled %} is-on{% endif %}" id="door_codes-status" aria-live="polite"
-                data-on="{{ t('property_nav.switch_enabled') }}" data-off="{{ t('property_nav.switch_off') }}"
-                data-unsaved="{{ t('property_nav.switch_unsaved') }}">{% if switch_on != door_code.enabled %}{{ t('property_nav.switch_unsaved') }}{% elif door_code.enabled %}{{ t('property_nav.switch_enabled') }}{% else %}{{ t('property_nav.switch_off') }}{% endif %}</span>
-        </div>
         <div class="field" style="max-width:320px"><label for="lock_id">{{ t('apartment.form.door_code.lock') }}</label>
           <select form="property-settings-form" id="lock_id" name="lock_id"><option value="">{{ t('apartment.form.door_code.choose') }}</option>
             {% for lock in door_code.locks %}<option value="{{ lock.lock_id }}" {% if lock.used_by and lock.lock_id != door_code.lock_id %}disabled{% endif %} {% if lock.lock_id == door_code.lock_id or (not door_code.lock_id and lock.lock_id == door_code.default_lock_id) %}selected{% endif %}>{{ lock.alias }} ({{ t('smart_locks.lock_id', id=lock.lock_id) }}){% if lock.used_by %} · {{ t('apartment.form.door_code.in_use', property=lock.used_by) }}{% endif %}</option>{% endfor %}
