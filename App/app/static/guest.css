@@ -1246,7 +1246,9 @@ details.g-head-help > .g-intro { margin: 10px 0 0; }
    the colour reserved for "done"). Red belongs to an attempted submit with the
    box empty (.is-invalid from signature.js, or the server's own .err). */
 .g-legal-notice .legal-ack { border-top: 0; padding-top: 0; }
+/* 15 px padding plus the 1 px border keeps the text 16 px from the notice edge. */
 .g-legal-notice .legal-ack .checkline {
+  padding: 14px 15px;
   background: var(--g-surface);
   border-color: var(--g-line-2);
 }
@@ -1266,9 +1268,9 @@ details.g-head-help > .g-intro { margin: 10px 0 0; }
 }
 
 /* The person progress sits above the action, so the button needs only a verb. */
-.g-save-note { margin: 14px 0 8px; color: var(--g-muted); font-size: 13.5px; font-weight: 600; text-align: center; }
-/* Back on the step that submits: a quiet text action under the primary one. */
-[data-guest-step] > .g-btn[type="submit"] ~ .g-wizard-nav { margin-top: 6px; justify-content: center; }
+.g-save-note { margin: 14px 0 12px; color: var(--g-muted); font-size: 13.5px; font-weight: 600; text-align: center; }
+/* Back on the step that submits: a quiet text action under the primary one, 12 px below it. */
+[data-guest-step] > .g-btn[type="submit"] ~ .g-wizard-nav { margin-top: 12px; justify-content: center; }
 [data-guest-step] > .g-btn[type="submit"] ~ .g-wizard-nav .g-btn.secondary {
   flex: 0 0 auto;
   width: auto;
@@ -1369,7 +1371,8 @@ details.g-summary > .g-summary-body { padding: 16px 20px 18px; }
    action on the line below, a hairline between rows. */
 .g-review-row { padding: 10px 0; border-top: 1px solid var(--g-line); }
 .g-review-row:first-child { border-top: 0; padding-top: 0; }
-.g-review-row dt { margin: 0 0 2px; color: var(--g-muted); font-size: 13px; font-weight: 600; }
+/* 12 px under a label keeps a long label clear of the Edit action beside the value. */
+.g-review-row dt { margin: 0 0 12px; color: var(--g-muted); font-size: 13px; font-weight: 600; }
 .g-review-row dd {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
