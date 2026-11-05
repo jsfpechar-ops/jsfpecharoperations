@@ -1,6 +1,6 @@
 # 0969: Reduce repeated alert stacks without losing urgency (B11, finding S03)
 
-Status: todo
+Status: blocked (4 pre-existing failures in test_host_ux_acceptance.py, also on base 7b0355c; see docs/tasks/0969-report.md)
 Depends on: none (B03, B10 are merged in the base) | Base commit: 7b0355c45ccdd2557a28edfcfe228aa1dc766e36 | Branch: codex/0969-b11-alerts
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
