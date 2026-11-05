@@ -2570,3 +2570,7 @@ body.v2 .savebar[data-for="property-settings-form"]{position:sticky;bottom:0;dis
 html.has-js body.v2 .savebar[data-for="property-settings-form"]:not(.is-dirty){display:none}
 /* 0955: on desktop the Save row spans the main column under the sections, not the preview column */
 @media (min-width:1024px){body.v2 .form > .savebar[data-for="property-settings-form"]{grid-column:1 / -1}}
+/* 0955 audit: focus scrolls a field clear of the Save row; property buttons keep a 44 px target */
+@media (max-width:1023px){html:has(.property-settings-form){scroll-padding-bottom:calc(var(--tabbar-h) + var(--tabbar-safe) + var(--control-h) + var(--space-8))}}
+@media (min-width:1024px){html:has(.property-settings-form){scroll-padding-bottom:calc(var(--control-h) + var(--space-12))}}
+body.v2 form.property-settings-form .btn,body.v2 form.property-settings-form .ui-btn,body.v2 .savebar .btn{min-height:44px;height:auto}

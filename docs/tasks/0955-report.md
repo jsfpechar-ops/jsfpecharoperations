@@ -67,3 +67,12 @@ Status: review-not-yet (steps 8 to 10 open)
 - Keys: app.js 0955e, app2.css 0955e.
 Documented gaps (not covered): validation-error path of Save, business editor save/cancel, keyboard order from last field to Save/Cancel, Escape on the bar, webkit (CI only), sticky-only-while-dirty checked by the bar hidden state, not by scroll position.
 Next step: step 8 (click-through audit at 390/768/1280 with test_property_page_audit_browser.py), then step 9 fixes and the UX gate.
+
+## Chat 5 (gaps closed, step 8 audit)
+Status: blocked
+- Gaps closed (buttons file, 10 tests): validation (empty house number blocked by the browser, edits kept, bar stays, nothing persisted, Cancel restores and clears); Tab walk from the form reaches Cancel then Save; Escape keeps the edit and the page. Business editor: covered by test_business_editor_save_discard_stay (unsaved-leave asks), not repeated here.
+- Audit (test_property_page_audit_browser.py, 3 widths): 1 passed (768), 2 failed (390, 1280). Findings:
+  1. 390: focused #internal_name and #addr_obec sit under the sticky Save row. Fix added (focusin scrolls the field clear of the bar, app.js; scroll-padding in app2.css). Still failing: check the bar's position on phone.
+  2. 1280: small targets 40 px: "Copy" x2 (guest link card), "Preview as a guest", "Open the guest guide", "Generate a new PIN". Min-height rule added to form buttons; these controls keep 40 px (their class sets height elsewhere). Still failing.
+- Keys: app.js 0955f, app2.css 0955g.
+- Next step: find the CSS that sets 40 px on .copy-btn and the guest-card buttons (grep -n "copy-btn{" app/static/app2.css), add min-height 44 with a higher-specificity selector, then check the phone bar position with a screenshot of audit-390-3-focus.png in the scratchpad. Then step 9 fixes and the UX gate.

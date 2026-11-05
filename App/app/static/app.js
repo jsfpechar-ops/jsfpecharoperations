@@ -2121,6 +2121,17 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       document.addEventListener("input", markOutside);
       document.addEventListener("change", markOutside);
     }
+    // 0955: a focused field under the sticky Save row scrolls clear of it (scroll-padding alone does not move a visible field).
+    if (!document._ubyFocusClear) {
+      document._ubyFocusClear = true;
+      document.addEventListener("focusin", function (event) {
+        var field = event.target;
+        if (!field || !field.closest || !field.closest("#property-settings-form")) return;
+        var bar = document.querySelector(".savebar[data-for='property-settings-form']");
+        if (!bar || getComputedStyle(bar).display === "none") return;
+        field.scrollIntoView({ block: "nearest" });
+      });
+    }
     if (claimNode(window, "initUnsavedForms")) {
       window.addEventListener("beforeunload", function (event) {
         var current = Array.prototype.slice.call(document.querySelectorAll("form[data-unsaved-guard]"));
