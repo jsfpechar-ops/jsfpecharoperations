@@ -1049,7 +1049,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "res_street": "Ulice a číslo",
         "res_city": "Město",
         "fee_title": "Poplatek za pobyt",
-        "fee_intro": "Toto je místní poplatek z pobytu, který ukládá zákon č. 565/1990 Sb. Váš ubytovatel ho vybírá a předává obci. Prosíme, zaplaťte ho hned jedním z níže uvedených způsobů. Děkujeme!",
+        "fee_intro": "Toto je místní poplatek z pobytu, který ukládá zákon č. 565/1990 Sb. Váš hostitel ho vybírá a předává obci. Prosíme, zaplaťte ho hned jedním z níže uvedených způsobů. Děkujeme!",
         "fee_rate_line": "%(rate)s Kč na osobu za každou započitatelnou noc",
         "fee_amount": "%(amount)s Kč",
         "fee_per_person": "Na osobu",

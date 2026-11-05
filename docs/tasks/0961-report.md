@@ -5,3 +5,4 @@ Ruff (E9,F63,F7,F82,F401,F841): All checks passed. Pytest 0897: 46 passed. test_
 Scope addition (coordinator): schema version 36 -> 37 in test_db_postgres.py and test_migrations.py; unsupported-source test now drops MAX(version) row. Postgres tests NOT run locally (no Postgres here).
 Deviations: no PR opened (user instruction). Commit attribution uses Haiku 5.5 per system reminder, not Sonnet 5.5 as the brief says.
 Follow-up: test_db_postgres.py:290 history range(1, 37) -> range(1, 38) (versions 1..37); no other same-history lists found (test_connection_reuse.py:276 range(1, 33) left alone). Postgres tests still not run locally.
+Copy follow-up: cs fee_intro 'ubytovatel' -> 'hostitel' (only non-legal cs key with the word); uk all_done_body_fee added; all six language key sets now match. Guest tests 99 passed; ruff clean; context lint OK.
