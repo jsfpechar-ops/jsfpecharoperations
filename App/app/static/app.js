@@ -2230,15 +2230,24 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     var pendingLink = null;
 
     function isDirty(form) { return form.getAttribute("data-dirty") === "1"; }
+    // 0955: the property Save bar sits outside its form, linked by data-for="<form id>".
+    function formBars(form) {
+      return form.id ? Array.prototype.slice.call(document.querySelectorAll('.savebar[data-for="' + form.id + '"]')) : [];
+    }
+    function resetButtons(form) {
+      var out = Array.prototype.slice.call(form.querySelectorAll("[data-unsaved-reset]"));
+      formBars(form).forEach(function (bar) { out = out.concat(Array.prototype.slice.call(bar.querySelectorAll("[data-unsaved-reset]"))); });
+      return out;
+    }
     function dirtyForms() { return forms.filter(isDirty); }
 
     // The "Discard changes" button beside Save shows only while its form is dirty.
     function syncResetButtons() {
       forms.forEach(function (form) {
-        form.querySelectorAll("[data-unsaved-reset]").forEach(function (button) {
+        resetButtons(form).forEach(function (button) {
           button.hidden = !isDirty(form);
         });
-        form.querySelectorAll(".savebar").forEach(function (bar) {
+        formBars(form).concat(Array.prototype.slice.call(form.querySelectorAll(".savebar"))).forEach(function (bar) {
           bar.classList.toggle("is-dirty", isDirty(form));
         });
       });
@@ -2280,7 +2289,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       if (!claimNode(form, "initUnsavedDialog")) return;
       form.addEventListener("input", syncResetButtons);
       form.addEventListener("change", syncResetButtons);
-      form.querySelectorAll("[data-unsaved-reset]").forEach(function (button) {
+      resetButtons(form).forEach(function (button) {
         button.addEventListener("click", function () {
           discard(form);
           syncResetButtons();

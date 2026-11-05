@@ -355,11 +355,6 @@
 
   {# ---- Automation ---------------------------------------------------- #}
 
-  <div class="savebar save-on-dirty">
-    <a class="btn ghost" href="/apartments">{{ t('common.cancel') }}</a>
-    <button class="btn ghost" type="button" data-unsaved-reset hidden>{{ t('unsaved.discard_changes') }}</button>
-    <button class="btn" type="submit">{{ t('common.save_changes') }}</button>
-  </div>
 </form>
 <details class="prop-sec" id="sec-calendars"{% if inline_flash_section == 'calendars' %} open{% endif %}{% if property_view == 'bookings' %} open{% endif %}><summary><span class="dot {{ 'r' if calendar_errors else ('g' if feeds_count else 'n') }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.calendars.title') }}</b></div><small class="sec-state">{{ tp('apartment.form.calendars_count', feeds_count) }}</small></summary>
   <div class="fields-wrap">
@@ -433,6 +428,11 @@
     {% endif %}
   </div>
 </details>
+  <div class="savebar save-on-dirty" data-for="property-settings-form">
+    <a class="btn ghost" href="/apartments">{{ t('common.cancel') }}</a>
+    <button class="btn ghost" type="button" data-unsaved-reset hidden>{{ t('unsaved.discard_changes') }}</button>
+    <button class="btn" type="submit" form="property-settings-form">{{ t('common.save_changes') }}</button>
+  </div>
 </div>
 <aside class="preview" aria-labelledby="property-preview-title">
   <h3 id="property-preview-title">{{ t('property_page.preview.title') }}</h3>
