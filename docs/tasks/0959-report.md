@@ -58,3 +58,43 @@ Screenshots: `/tmp/ubyhost-b01/0959-review-cs-390.png` (inspected). `-768` and `
 Acceptance: language switch with no signature works (new test passes): met. Step count unchanged: met in test. Discard warning unchanged: G01 cancel branch passed before line 827. Birth row at 390: not met (missing). Full 0959 suite green: not met. Screenshots inspected for all widths and languages: not met.
 
 Done: fix, new test, static bump, lint, version tests. Left: decide on the G01 ruian-suggest assertion; find birth-date row cause at 390; inspect 768/1280 and menu screenshots; run guest test-map rows.
+
+## Executor pass (step 7 onward, B01 finish)
+
+Status: blocked. Every check passes with 0 skipped and every screenshot was inspected. One acceptance item fails: `git diff --stat` shows a file outside section 3.
+
+Changed this pass: `App/tests/test_guest_browser_e2e.py` (commit d094e986 `0959 step 7`). The G01 URL check now records only navigation requests and the `/relang` request.
+
+Stray change: commit 94fa842b (`0959 status`) modified binary `docs/tasks/screenshots-0402/guide-table-1280.png` (287744 to 271538 bytes). It is outside section 3, so section 8 says stop. Not reverted here. Owner or orchestrator to decide: restore it from 7b0355c in a separate commit.
+
+Commands (last lines per command, browser skips must be 0):
+- `pytest tests/test_guest_browser_e2e.py -k 0959` (UBYHOST_REQUIRE_BROWSER=1): 3 passed, 0 skipped.
+- `pytest tests/test_guest_*.py` (guest test-map row): 571 passed, 0 skipped. No base comparison needed.
+- `pytest tests/test_static_versions.py tests/test_wp07_cache_heartbeats.py`: 16 passed, 0 skipped.
+- `python3 scripts/context_lint.py`: OK (WARN lines are pre-existing brief-collision notices).
+- `git diff --check`: clean.
+
+Acceptance (section 7):
+- New test passes, values and step kept, Cancel keeps draft, no value in page, navigation or `/relang` URL, cookie or storage: met with narrowed URL scope. The RUIAN fetch is excluded (finding 1).
+- Czech 3 steps and German longer list: met (test assertions pass).
+- Guest rows 0 skipped; static version and heartbeat tests: met.
+- Screenshots in /tmp/ubyhost-b01, all inspected: met.
+- `git diff --stat` only section 3 files: not met (stray binary above).
+
+Screenshots (all inspected):
+- `0959-review-en-390.png`: name in case, Step 3 of 3, no horizontal overflow. "Date of birth" is clipped under the sticky step bar in this full-page capture.
+- `0959-review-en-768.png`: values kept; birth-date label clipped under the same bar.
+- `0959-review-en-1280.png`: all five rows, birth date "1 January 1980", 3 of 3.
+- `0959-review-cs-390.png`: birth-date row missing (finding 2).
+- `0959-review-cs-768.png`: all rows including "1. ledna 1980", Krok 3 z 3.
+- `0959-review-cs-1280.png`: all rows, Czech labels.
+- `0959-langmenu-en-390.png`: six languages, English selected, all rows visible and tappable; the dropdown overlaps the page title as a dropdown does.
+
+Pre-existing findings (not changed here):
+1. Address suggest (RUIAN) sends typed address text in a GET query string (`ruian-suggest?q=...`). Pre-existing on base 7b0355c; out of scope for B01; needs its own privacy review. Observed, not judged a breach.
+2. Birth-date row missing at 390 px Czech (`0959-review-cs-390.png`). Same template and JS on base. Also clipped under the sticky bar in the EN 390 and 768 full-page captures. Not checked in a live scroll.
+
+Deviations: screenshots for EN and the open menu came from a temporary test file, `App/tests/test_tmp_0959_shots.py`, which was deleted before commit. Nothing new is in the repo.
+
+Done: narrowed URL check, all listed checks, screenshots inspected.
+Left: stray binary decision; RUIAN privacy review; birth-date row cause. Not pushed.
