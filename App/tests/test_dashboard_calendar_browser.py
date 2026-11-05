@@ -1001,9 +1001,9 @@ def check_tiles_0891(rows, width, tile_height=None):
         for a, b in zip(row["t"], row["t"][1:]):
             assert abs(b[0] - a[1] - gap) <= 1, ("column gap", width, a, b)
         if tile_height:
-            # 0905: each extra stacked stay lane adds 44 px; every tile of a row has the same height.
+            # 0905: each extra stacked stay lane adds 44 px (0967: the +N lane is the fourth); every tile of a row has the same height.
             heights = {round(t[3] - t[2]) for t in row["t"]}
-            assert len(heights) == 1 and any(abs(heights.copy().pop() - (tile_height + k * 44)) <= 1 for k in range(3)), ("tile height", width, row)
+            assert len(heights) == 1 and any(abs(heights.copy().pop() - (tile_height + k * 44)) <= 1 for k in range(4)), ("tile height", width, row)
     for upper, lower in zip(rows, rows[1:]):
         if upper["s"] == lower["s"]:
             assert abs(lower["t"][0][2] - upper["t"][0][3] - gap) <= 1, ("row gap", width, upper, lower)
@@ -1267,6 +1267,179 @@ def test_0958_record_type_selection_is_visually_unambiguous(
                 shot(page, f"0958-{entry}-stay-{locale}-{width}")
             page.keyboard.press("Escape")
             dialog.wait_for(state="hidden")
+        finally:
+            context.close()
+            browser.close()
+
+
+# 0967: calendar orientation (one named H1, no repeated month caption) and a +N lane that never covers a bar.
+NAV_NAME_0967 = {"en": "Calendar", "cs": "Kalendář"}
+DENSE_DAYS_0967 = ["2026-10-14", "2026-10-15", "2026-10-16", "2026-10-17", "2026-10-18"]
+PANEL_OPEN_0967 = "() => [...document.querySelectorAll('[data-cal-day-dialog][open]')].every(d => getComputedStyle(d).opacity === '1')"
+OVERFLOW_0967 = r"""(day) => {
+    const badge = document.querySelector(`.cal-pill-more[data-cal-more="${day}"]`);
+    if (!badge) return null;
+    const week = badge.closest('.cal-week'), tile = week.querySelector(`.cal-day[data-date="${day}"]`);
+    const b = badge.getBoundingClientRect(), t = tile.getBoundingClientRect();
+    const pills = [...week.querySelectorAll('.cal-pill')];
+    return {
+        count: parseInt(badge.textContent.replace(/\D/g, ''), 10),
+        covering: pills.filter(p => p.dataset.calFrom <= day && day < p.dataset.calTo).length,
+        badgeTop: b.top, lowestBar: Math.max(...pills.map(p => p.getBoundingClientRect().bottom)),
+        inside: b.left >= t.left - 1 && b.right <= t.right + 1 && b.top >= t.top - 1 && b.bottom <= t.bottom + 1,
+    };
+}"""
+NAMES_0967 = """() => [...document.querySelectorAll('.cal-pill-name')]
+    .filter(node => getComputedStyle(node).display !== 'none').map(node => Math.round(node.getBoundingClientRect().width))"""
+
+
+def overlaps_0967(page, first, second):
+    """Pairs of visible boxes (first vs second) that share more than half a pixel in both directions, per week row."""
+    return page.evaluate("""([first, second]) => {
+        const hit = (a, b) => Math.min(a.right, b.right) - Math.max(a.left, b.left) > 0.5 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 0.5;
+        const visible = node => node.offsetParent !== null && getComputedStyle(node).visibility !== 'hidden';
+        const found = [];
+        document.querySelectorAll('.cal-week').forEach(week => {
+            const a = [...week.querySelectorAll(first)].filter(visible), b = [...week.querySelectorAll(second)].filter(visible);
+            a.forEach(x => b.forEach(y => { if (x !== y && hit(x.getBoundingClientRect(), y.getBoundingClientRect())) found.push([x.textContent, y.textContent]); }));
+        });
+        return found;
+    }""", [first, second])
+
+
+def open_month_0967(page, origin, locale="en", date="2026-10-01"):
+    page.goto(f"{origin}/?lang={locale}&cal_view=calendar&cal_date={date}")
+    page.wait_for_selector(".cal-month")
+    wait_loaded(page)
+    page.evaluate("window.scrollTo(0, 0)")
+    page.wait_for_timeout(300)
+
+
+@pytest.mark.parametrize("locale", ["en", "cs"])
+@pytest.mark.parametrize("width", [390, 768, 1280])
+def test_0967_calendar_page_has_one_named_heading_and_no_repeated_month(calendar_workspace, calendar_origin, width, locale):
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=width, locale=locale, touch=width < 768)
+        try:
+            open_month_0967(page, calendar_origin, locale)
+            headings = page.locator("h1:visible")
+            assert headings.count() == 1, headings.all_inner_texts()
+            assert headings.first.inner_text().strip() == NAV_NAME_0967[locale]
+            h1, head = headings.first.bounding_box(), page.locator("[data-cal-head]").bounding_box()
+            assert h1["width"] > 40 and h1["height"] > 16 and h1["y"] + h1["height"] <= head["y"] + 1, (h1, head)
+            assert headings.first.evaluate("node => node.scrollWidth <= node.clientWidth + 1")
+            assert page.locator("[data-cal-period]").inner_text().strip()
+            if width >= 768:
+                titles = page.locator(".cal-month-title")
+                assert titles.first.is_hidden() and titles.nth(1).is_visible()  # the first caption repeats the period title
+            assert page.evaluate(FITS_0891)
+            shot(page, f"0967-heading-{locale}-{width}")
+        finally:
+            context.close()
+            browser.close()
+
+
+@pytest.mark.parametrize("width", [390, 768, 1280])
+def test_0967_overflow_badge_has_its_own_lane_and_counts_match_the_day_list(calendar_workspace, calendar_origin, width):
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=width, touch=width < 768)
+        try:
+            open_month_0967(page, calendar_origin)
+            if width < 768:  # the phone keeps its dot tiles and the day sheet; no badge is drawn
+                assert page.locator(".cal-pill-more:visible").count() == 0
+                return
+            assert overlaps_0967(page, ".cal-pill-more", ".cal-pill") == []
+            measured = {}
+            for day in DENSE_DAYS_0967:
+                info = page.evaluate(OVERFLOW_0967, day)
+                assert info and info["count"] >= 1 and info["covering"] <= 3, (day, info)
+                assert info["inside"], (day, info)
+                assert info["badgeTop"] >= info["lowestBar"] - 0.5, (day, info)  # the badge lane is under every bar of the week
+                measured[day] = info
+            shot(page, f"0967-overflow-{width}")
+            for day, info in measured.items():
+                page.locator(f'.cal-pill-more[data-cal-more="{day}"]').click()
+                page.wait_for_selector("[data-cal-day-dialog]", state="visible")
+                page.wait_for_function(PANEL_OPEN_0967)
+                items = page.locator('[data-cal-day-list] .cal-event:not([data-event-kind="cleaning"])').count()
+                assert items == info["covering"] + info["count"], (day, items, info)  # hidden count + drawn bars = the day list
+                page.locator("[data-cal-day-dialog] [data-cal-close]").click()
+                page.locator("[data-cal-day-dialog]").wait_for(state="hidden")
+        finally:
+            context.close()
+            browser.close()
+
+
+@pytest.mark.parametrize("width", [768, 1024, 1280])
+def test_0967_open_day_panel_never_crushes_booking_text(calendar_workspace, calendar_origin, width):
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=width)
+        try:
+            open_month_0967(page, calendar_origin)
+            for state in ("closed", "open"):
+                if state == "open":
+                    page.locator('.cal-pill-more[data-cal-more="2026-10-16"]').click()
+                    page.wait_for_selector("[data-cal-day-dialog]", state="visible")
+                    page.wait_for_function(PANEL_OPEN_0967)
+                    for item in page.locator("[data-cal-day-list] .cal-event").all():
+                        assert item.bounding_box()["width"] >= 200  # the panel list keeps full, wrapped names
+                    assert page.locator('.cal-pill-more[data-cal-more="2026-10-16"]').is_visible()
+                assert page.locator(".cal-pill").count() >= 3
+                names = page.evaluate(NAMES_0967)
+                assert all(width_ >= 36 for width_ in names), (state, names)  # a name is readable or not drawn; never a fragment
+                assert overlaps_0967(page, ".cal-pill-more", ".cal-pill") == []
+                assert page.evaluate(FITS_0891)
+                shot(page, f"0967-panel-{state}-{width}")
+            page.locator("[data-cal-day-dialog] [data-cal-close]").click()
+            page.locator("[data-cal-day-dialog]").wait_for(state="hidden")
+        finally:
+            context.close()
+            browser.close()
+
+
+@pytest.mark.parametrize("width", [768, 1280])
+def test_0967_scales_navigation_and_keyboard_focus(calendar_workspace, calendar_origin, width):
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=width)
+        try:
+            open_month_0967(page, calendar_origin, date="2026-10-14")
+            for scale in ("week", "year", "month"):
+                page.locator(f'[data-cal-scale="{scale}"]').click()
+                wait_loaded(page)
+                assert page.locator("h1:visible").count() == 1
+                assert page.locator("[data-cal-period]").inner_text().strip()
+                assert overlaps_0967(page, ".cal-more", ".cal-event") == []
+                if scale == "week":
+                    assert page.locator(".cal-more:visible").count() >= 1
+                    shot(page, f"0967-week-{width}")
+                if scale == "year":
+                    assert page.locator(".cal-mini-title").count() == 12
+                    assert page.locator("[data-cal-period]").inner_text().strip() == "2026"
+                    shot(page, f"0967-year-{width}")
+            page.evaluate("window.scrollTo(0, 0)")
+            page.locator("[data-cal-next]").click()
+            wait_loaded(page)
+            assert page.locator("[data-cal-period]").inner_text() == "November 2026"
+            page.locator("[data-cal-prev]").click()
+            wait_loaded(page)
+            assert page.locator("[data-cal-period]").inner_text() == "October 2026"
+            page.locator("[data-cal-today]").click()
+            wait_loaded(page)
+            page.evaluate("window.scrollTo(0, 0)")
+            assert page.locator("[data-cal-period]").inner_text() == page.locator(".cal-month").first.get_attribute("aria-label")
+            open_month_0967(page, calendar_origin)
+            badge = page.locator('.cal-pill-more[data-cal-more="2026-10-16"]')
+            badge.focus()
+            page.keyboard.press("Shift+Tab")
+            page.keyboard.press("Tab")  # a key press, so :focus-visible applies
+            assert badge.evaluate("node => node === document.activeElement")
+            ring = badge.evaluate("node => { const s = getComputedStyle(node); return [s.outlineStyle, parseFloat(s.outlineWidth), s.boxShadow]; }")
+            assert (ring[0] != "none" and ring[1] >= 2) or ring[2] != "none", ring
+            shot(page, f"0967-focus-{width}")
         finally:
             context.close()
             browser.close()
