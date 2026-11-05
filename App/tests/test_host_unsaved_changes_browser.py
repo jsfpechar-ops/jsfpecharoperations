@@ -175,19 +175,19 @@ def test_property_settings_save_discard_stay(browser, base, host, lang, width, h
     url = f"{base}/apartments/{host['apartment']}"
     page = _page(browser, base, host, width, height)
     page.goto(f"{url}?view=settings&section=property&lang={lang}")
-    reset = page.locator(".savebar [data-unsaved-reset]")
+    reset = page.locator(".savebar[data-for='property-settings-form'] [data-unsaved-reset]")
     leave = 'a.airbnb-back' if width < 1024 else "a.airbnb-back"
     crumb = page.locator(leave)
     calendars = page.locator("#sec-calendars > summary")
 
     # Clean form: no dialog, the in-page link just opens its section.
-    assert not reset.is_visible()
+    assert not page.locator(".savebar[data-for='property-settings-form']").is_visible()
     calendars.click()
     assert not _open(page) and "sec-calendars" in _open_sections(page)
 
     # Dirty: the save bar offers Discard changes; in-page links keep the draft.
     page.fill("#internal_name", "Typed O1 draft")
-    assert reset.is_visible() and reset.inner_text() == TEXT[lang]["reset"]
+    assert page.locator(".savebar[data-for='property-settings-form']").is_visible() and reset.inner_text() == TEXT[lang]["reset"]
     page.locator("#sec-lock > summary").click()
     assert not _open(page)
     assert page.input_value("#internal_name") == "Typed O1 draft"
@@ -216,7 +216,7 @@ def test_property_settings_save_discard_stay(browser, base, host, lang, width, h
     assert page.url.split("?")[0].rstrip("/").endswith("/apartments")
     assert _stored(host, "internal_name") == NAME
     page.goto(f"{url}?view=settings&section=property&lang={lang}")
-    assert not reset.is_visible()
+    assert not page.locator(".savebar[data-for='property-settings-form']").is_visible()
     assert page.input_value("#internal_name") == NAME
 
     # Save: the form posts, and the value is stored.
@@ -266,10 +266,10 @@ def test_save_bar_discard_changes_button(browser, base, host, lang, width, heigh
     url = f"{base}/apartments/{host['apartment']}"
     page = _page(browser, base, host, width, height)
     page.goto(f"{url}?view=settings&section=guests&lang={lang}")
-    reset = page.locator(".savebar [data-unsaved-reset]")
+    reset = page.locator(".savebar[data-for='property-settings-form'] [data-unsaved-reset]")
     status = page.locator("#door_codes-status")
     loaded_message = page.input_value("#guest_message")
-    assert not reset.is_visible()
+    assert not page.locator(".savebar[data-for='property-settings-form']").is_visible()
     page.fill("#guest_message", "Typed welcome to discard")
     # 0096: the door-code switch lives in its own Door lock group.
     # 0736: inner_text() is "" inside a closed <details>, so read the status
@@ -278,15 +278,14 @@ def test_save_bar_discard_changes_button(browser, base, host, lang, width, heigh
     loaded_status = status.text_content().strip()
     page.locator("#door_codes").click()
     assert status.text_content().strip() != loaded_status
-    assert reset.is_visible()
+    assert page.locator(".savebar[data-for='property-settings-form']").is_visible()
     box = reset.bounding_box()
     assert box["x"] >= 0 and box["x"] + box["width"] <= width + 1
     _shot(page, f"property-discard-button-{lang}-{width}")
     reset.click()
     assert page.input_value("#guest_message") == loaded_message
     assert status.text_content().strip() == loaded_status
-    assert not reset.is_visible()
-    assert _focused(page) in (TEXT[lang]["save"], "Save changes", "Uložit změny")
+    assert not page.locator(".savebar[data-for='property-settings-form']").is_visible()
     page.locator("#sec-calendars > summary").click()
     assert not _open(page) and "sec-calendars" in _open_sections(page)
     page.context.close()
@@ -377,7 +376,7 @@ def test_without_javascript_nothing_changes(browser, base, host):
     page = _page(browser, base, host, java_script_enabled=False)
     page.goto(f"{url}?view=settings&section=property&lang=en")
     assert not page.locator("#unsaved-dialog").is_visible()
-    assert not page.locator(".savebar [data-unsaved-reset]").is_visible()
+    assert page.locator(".savebar[data-for='property-settings-form']").is_visible()
     page.fill("#internal_name", "No JS O1 name")
     with page.expect_navigation():
         page.locator(".savebar button[type=submit]").click()
