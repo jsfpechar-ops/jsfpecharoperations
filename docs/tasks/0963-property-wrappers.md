@@ -1,6 +1,6 @@
 # 0963: Remove redundant property wrappers and headings (batch B05: P04, P05, P06, P09)
 
-Status: blocked (archive help tip visible in test_0963_fee_and_police_headings_and_archive_button, see 0963-report.md)
+Status: blocked (row 4a: 4 and row 5: 1 failing test, all also failing on base 7b0355c; see 0963-report.md)
 Depends on: B04 (merge order only; this brief is built on base 7b0355c and touches no B04 hunk) | Base commit: 7b0355c45ccdd2557a28edfcfe228aa1dc766e36 | Branch: codex/0963-b05-property-wrappers
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
