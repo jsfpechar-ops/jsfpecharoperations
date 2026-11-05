@@ -2360,6 +2360,13 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
   window.UbyHost = window.UbyHost || {};
   window.UbyHost.onPage = function (fn) { pageHooks.push(fn); if (pageStarted) fn(); };
 
+  function initSectionNotice() {
+    var n = document.querySelector("[data-section-notice]");
+    if (!n || !claimNode(n, "initSectionNotice")) return;
+    n.scrollIntoView({ block: "center" });
+    n.focus({ preventScroll: true });
+  }
+
   function initPage() {
     initPhoneDefaultClosed();
     initPropSectionLinks();
@@ -2367,6 +2374,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     initCopy();
     initUnsavedForms();
     initUnsavedDialog();
+    initSectionNotice();
     initHelpTips();
     initBirthDateInputs();
     initRowMenus();

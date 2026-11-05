@@ -2571,3 +2571,6 @@ body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-demo button{width:
 .lock-state[data-state=offline] .sd,.lock-state[data-state=times] .sd{background:var(--amber)}
 .lock-state form{margin:0 0 0 auto}
 @media (max-width:1023px){.lock-state form,.lock-state .ui-btn{width:100%}}
+/* 0955 section notice */
+body.v2 .section-notice{margin:0 0 var(--space-4);padding:14px 16px;min-height:44px;font-size:16px;line-height:1.4;scroll-margin-top:96px;display:flex;align-items:flex-start;gap:10px;border-left-width:4px}
+body.v2 .section-notice::before{content:"";flex:0 0 10px;height:10px;margin-top:6px;border-radius:50%;background:currentColor}
