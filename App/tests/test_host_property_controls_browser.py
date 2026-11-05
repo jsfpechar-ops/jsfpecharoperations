@@ -686,3 +686,165 @@ def test_0963_copy_chooser_uses_the_common_dialog_and_cancel_keeps_form_data(hos
                         context.close()
         finally:
             browser.close()
+# --- 0964: connection states (smart lock off/on/unavailable, calendar rows) ----
+
+_SHOT_DIR_0964 = os.environ.get("UBYHOST_SHOTS_DIR")
+_PILL_0964 = {"on": "ok", "off": "off"}
+_LONG_URL_0964 = "https://example.invalid/ical/" + "synthetic-token-" * 20 + ".ics"
+_NO_SIDEWAYS_0964 = "() => document.documentElement.scrollWidth - document.documentElement.clientWidth"
+_IN_VIEW_0964 = """(selector) => {
+  const vw = document.documentElement.clientWidth;
+  const nodes = [...document.querySelectorAll(selector)];
+  return {count: nodes.length, vw, bad: nodes.filter(el => {
+    const r = el.getBoundingClientRect();
+    return !r.width || !r.height || r.left < -1 || r.right > vw + 1;
+  }).map(el => el.id || el.className)};
+}"""
+
+
+def _shot_0964(page, name):
+    if _SHOT_DIR_0964:
+        Path(_SHOT_DIR_0964).mkdir(parents=True, exist_ok=True)
+        page.screenshot(path=str(Path(_SHOT_DIR_0964) / f"0964-{name}.png"), full_page=True)
+
+
+def _lock_page_0964(playwright, base, host, width, lang="en"):
+    browser = playwright.chromium.launch(**chromium_launch_kwargs())
+    context = browser.new_context(viewport={"width": width, "height": 900})
+    context.add_cookies([{"name": auth.SESSION_COOKIE, "value": _session_cookie(host), "url": base + "/"}])
+    page = context.new_page()
+    page.goto(f"{base}/apartments/{host['apartment']}?view=settings&lang={lang}")
+    page.evaluate("() => { document.getElementById('sec-lock').open = true; }")
+    return browser, page
+
+
+def _lock_env_0964(monkeypatch, allowed):
+    from app import config, ttlock
+
+    monkeypatch.setattr(config, "DOOR_CODES_ENABLED", True)
+    monkeypatch.setattr(config, "TTLOCK_CLIENT_ID", "cid")
+    monkeypatch.setattr(config, "TTLOCK_CLIENT_SECRET", "csecret")
+    monkeypatch.setattr(ttlock, "allowed_for", lambda owner_user_id: allowed)
+
+
+def _assert_lock_state_matches_pill_0964(page, state_selector, expected_state):
+    pill = page.get_attribute(".prop-strip .sc[data-strip='door']", "data-state")
+    block = page.locator(state_selector)
+    assert block.is_visible()
+    assert block.get_attribute("data-state") == expected_state
+    assert pill == _PILL_0964.get(expected_state, "bad"), (pill, expected_state)
+    return block
+
+
+def test_0964_lock_off_explains_and_offers_one_action(host, base, monkeypatch):
+    _lock_env_0964(monkeypatch, True)
+    db.execute("UPDATE apartment SET lock_provider = NULL, lock_id = NULL WHERE id = ?", (host["apartment"],))
+    with sync_api.sync_playwright() as playwright:
+        for width in (390, 768, 1280):
+            browser, page = _lock_page_0964(playwright, base, host, width)
+            try:
+                block = _assert_lock_state_matches_pill_0964(page, "#lock-setup-state", "off")
+                assert "Turned off" in block.inner_text()
+                assert "TTLock" in block.inner_text()
+                action = block.locator("a.ui-btn[href='#door-code']")
+                assert action.count() == 1 and action.is_visible()
+                assert block.locator("form, input, button").count() == 0  # no lock command, no credential edit here
+                fit = page.evaluate(_IN_VIEW_0964, "#lock-setup-state, #lock-setup-state a")
+                assert fit["count"] == 2 and not fit["bad"], fit
+                assert page.evaluate(_NO_SIDEWAYS_0964) <= 1, width
+                _shot_0964(page, f"lock-off-{width}")
+            finally:
+                browser.close()
+
+
+def test_0964_lock_on_with_mock_fixture_keeps_its_controls(host, base, monkeypatch):
+    import json
+
+    from tests.property_host_fixture import LOCK
+
+    _lock_env_0964(monkeypatch, True)
+    db.insert("lock_account", {"owner_user_id": host["owner"], "provider": "ttlock", "username": "synthetic_0964",
+                               "status": "ok", "locks_json": json.dumps([LOCK]),
+                               "created_at": db.utcnow(), "updated_at": db.utcnow()})
+    db.execute("UPDATE apartment SET lock_provider = 'ttlock', lock_id = ?, checkin_hour = 15, checkout_hour = 10 WHERE id = ?",
+               (LOCK["lock_id"], host["apartment"]))
+    try:
+        with sync_api.sync_playwright() as playwright:
+            for width in (390, 768, 1280):
+                browser, page = _lock_page_0964(playwright, base, host, width)
+                try:
+                    block = _assert_lock_state_matches_pill_0964(page, ".lock-state[data-state='on']", "on")
+                    assert page.locator("#lock-setup-state, #lock-unavailable").count() == 0
+                    assert block.locator(".lock-state-form button").is_visible()
+                    assert page.evaluate(_NO_SIDEWAYS_0964) <= 1, width
+                    _shot_0964(page, f"lock-on-{width}")
+                finally:
+                    browser.close()
+    finally:
+        db.execute("DELETE FROM lock_account WHERE owner_user_id = ?", (host["owner"],))
+        db.execute("UPDATE apartment SET lock_provider = NULL, lock_id = NULL, checkin_hour = NULL, checkout_hour = NULL WHERE id = ?",
+                   (host["apartment"],))
+
+
+def test_0964_lock_unavailable_states_the_workspace_limitation(host, base, monkeypatch):
+    _lock_env_0964(monkeypatch, False)
+    with sync_api.sync_playwright() as playwright:
+        for width in (390, 768, 1280):
+            browser, page = _lock_page_0964(playwright, base, host, width)
+            try:
+                block = _assert_lock_state_matches_pill_0964(page, "#lock-unavailable", "off")
+                assert "Door codes are not enabled on this deployment." in block.inner_text()
+                assert block.locator("form, input, button, a").count() == 0
+                assert page.evaluate(_NO_SIDEWAYS_0964) <= 1, width
+                _shot_0964(page, f"lock-unavailable-{width}")
+            finally:
+                browser.close()
+
+
+def test_0964_calendar_rows_keep_state_and_actions_with_a_long_url(host, base):
+    apartment = host["apartment"]
+    now = db.utcnow()
+    healthy = db.insert("ical_feed", {
+        "apartment_id": apartment, "url": _LONG_URL_0964, "label": "booking", "own_name": "",
+        "active": 1, "last_status": "ok", "last_sync_at": now, "created_at": now,
+    })
+    failed = db.insert("ical_feed", {
+        "apartment_id": apartment, "url": "https://example.invalid/failed.ics", "label": "airbnb", "own_name": "",
+        "active": 1, "last_status": "error", "last_error": "Synthetic feed unreachable", "created_at": now,
+    })
+    try:
+        with sync_api.sync_playwright() as playwright:
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
+            context = browser.new_context(viewport={"width": 1280, "height": 900})
+            context.add_cookies([{"name": auth.SESSION_COOKIE, "value": _session_cookie(host), "url": base + "/"}])
+            page = context.new_page()
+            for width in (390, 768, 1280):
+                page.set_viewport_size({"width": width, "height": 900})
+                page.goto(f"{base}/apartments/{apartment}?view=bookings&lang=en")
+                assert page.locator("#sec-calendars[open]").count() == 1
+                rows = page.locator(".feed-table tbody tr")
+                assert rows.count() == 2
+                assert page.locator(".feed-table td[data-label='Last sync'] [data-tone='red']").is_visible()
+                assert page.locator(".feed-table td[data-label='Last sync'] [data-tone='green']").is_visible()
+                assert "Synthetic feed unreachable" in page.locator(".feed-table").inner_text()
+                # Name, state, URL control, copy and Remove are all in view while the URL is collapsed.
+                fit = page.evaluate(_IN_VIEW_0964, ".feed-table td strong, .feed-table [data-tone], .feed-table summary, .feed-table .copy-btn, .feed-table .row-actions .ui-btn")
+                assert fit["count"] >= 10 and not fit["bad"], (width, fit)
+                assert page.locator(".feed-url-details[open]").count() == 0
+                assert not page.locator(f"#feed-url-{healthy}").is_visible()
+                assert page.get_attribute(f".feed-table .copy-btn[data-copy='feed-url-{healthy}']", "data-copy")
+                assert page.evaluate(_NO_SIDEWAYS_0964) <= 1, width
+                _shot_0964(page, f"calendars-collapsed-{width}")
+                # Opening the long URL wraps it inside its cell and never pushes an action out of view.
+                page.locator(".feed-table summary").first.click()
+                page.wait_for_selector(f"#feed-url-{healthy}", state="visible", timeout=5000)
+                assert page.locator(f"#feed-url-{healthy}").is_visible()
+                fit = page.evaluate(_IN_VIEW_0964, ".feed-table .row-actions .ui-btn, .feed-table .copy-btn, .feed-url-details[open] .feed-url-value")
+                assert not fit["bad"], (width, fit)
+                assert page.evaluate(_NO_SIDEWAYS_0964) <= 1, width
+                wrap = page.evaluate("() => { const w = document.querySelector('.feed-table').closest('.scroll-x'); return w.scrollWidth - w.clientWidth; }")
+                assert wrap <= 1, (width, wrap)
+                _shot_0964(page, f"calendars-open-{width}")
+            browser.close()
+    finally:
+        db.execute("DELETE FROM ical_feed WHERE id IN (?, ?)", (healthy, failed))
