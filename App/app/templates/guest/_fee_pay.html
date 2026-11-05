@@ -22,17 +22,14 @@
     <p class="g-intro g-fee-choose">{{ t('fee_choose') }}</p>
     {% for rail in fee_panel.rails %}
       <details class="g-summary"{% if loop.first %} open{% endif %}>
-        {% if rail.key == 'qr' %}
-          <summary class="g-summary-fold">{{ t('fee_rail_qr') }}</summary>
+        {% if rail.key == 'iban' %}
+          <summary class="g-summary-fold">{{ t('fee_rail_iban') }}</summary>
           <div class="g-summary-body g-fee-rail">
+            {% if rail.qr %}
             <div class="g-fee-qr">
               <img class="g-fee-qr-img" src="{{ rail.qr }}" width="176" height="176" alt="{{ t('fee_qr_alt') }}">
             </div>
-            {% if fee_panel.payee %}<p class="g-intro g-fee-payee">{{ t('fee_payee') }}: {{ fee_panel.payee }}</p>{% endif %}
-          </div>
-        {% elif rail.key == 'iban' %}
-          <summary class="g-summary-fold">{{ t('fee_rail_iban') }}</summary>
-          <div class="g-summary-body g-fee-rail">
+            {% endif %}
             <dl class="g-summary-list">
               {% if fee_panel.payee %}<dt>{{ t('fee_payee') }}</dt><dd>{{ fee_panel.payee }}</dd>{% endif %}
               <dt>{{ t('fee_iban') }}</dt><dd>{{ rail.iban }}</dd>

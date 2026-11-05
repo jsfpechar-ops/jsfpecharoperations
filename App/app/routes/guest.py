@@ -2067,7 +2067,7 @@ async def guest_document_scan(token: str, reservation_id: int, request: Request)
 # --- stay-fee money card and form estimate (brief 0910) -----------------------
 
 QR_NATIONALITIES = ("CZE", "SVK")
-RAIL_ORDER = ("qr", "iban", "revolut", "cash")
+RAIL_ORDER = ("iban", "revolut", "cash")
 
 
 def _qr_offered(request, reservation) -> bool:
@@ -2113,16 +2113,22 @@ def _fee_pay_panel(apartment, reservation, t, qr_ok=True):
     ]
     rails = []
     enabled = {part for part in (apartment["stay_fee_guest_rails"] or "").split(",") if part}
+    # A stored "qr" is the bank rail: it becomes one "iban" rail, with the QR on it.
+    if "qr" in enabled:
+        enabled.add("iban")
     first = apartment["stay_fee_guest_default_rail"] or ""
+    if first == "qr":
+        first = "iban"
     order = ([first] if first in RAIL_ORDER else []) + [key for key in RAIL_ORDER if key != first]
     for key in order:
         if key not in enabled:
             continue
-        if key == "qr" and account and qr_ok:
-            payload = payments.spayd(account, total, vs, message)
-            rails.append({"key": "qr", "qr": payments.qr_data_uri(payload)})
-        elif key == "iban" and account:
-            rails.append({"key": "iban", "iban": payments.format_iban(account), "qr": ""})
+        if key == "iban" and account:
+            qr = ""
+            if qr_ok:
+                payload = payments.spayd(account, total, vs, message)
+                qr = payments.qr_data_uri(payload)
+            rails.append({"key": "iban", "iban": payments.format_iban(account), "qr": qr})
         elif key == "revolut" and apartment["stay_fee_guest_revolut_link"]:
             rails.append({"key": "revolut", "link": apartment["stay_fee_guest_revolut_link"]})
         elif key == "cash":
