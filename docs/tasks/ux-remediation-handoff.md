@@ -1,62 +1,79 @@
-# UX remediation: handoff (incomplete, draft)
+# UX remediation: handoff (incomplete, do not merge)
 
-Status: handoff. Nothing here is merged, nothing is deployed, and no batch is fully finished.
+Status: handoff. Nothing here is merged, integrated or deployed. No batch is fully finished and no integration build exists.
 Base: `7b0355c45ccdd2557a28edfcfe228aa1dc766e36` (origin/main, #786).
-Plan: the UX review and remediation plan (review uploads 9e66688c-ux-remediation, b33c8519-design-brief, ac0148e7-report).
+Plan source: UX review and remediation plan (review uploads: 9e66688c-ux-remediation, b33c8519-design-brief, ac0148e7-report, dd4af45a-improvement-plan).
 
-Each batch lives on its own branch with a brief `docs/tasks/09NN-*.md` and a report. Branches are not merged into each other yet.
+## How the work is organised
 
-## Batch state
+- Each batch B01 to B18 has its own branch `codex/09NN-*` from base, a brief `docs/tasks/09NN-*.md` (committed on that branch) and a report `docs/tasks/09NN-report.md`.
+- Batch branches are not merged into each other. Several touch the same shared files, so an integration pass will conflict: `App/app/static/app2.css`, `App/app/templates/base.html` (cache-key bumps), `App/tests/static_versions.json` (regenerated manifest), `App/app/host_i18n.py` and `host_vi_i18n.py`.
+- Worktrees live under `/tmp/ubyhost-bNN-worktree` in the session that produced them. They do not survive a new session. Recreate from the branch with `git worktree add /tmp/ubyhost-bNN-worktree codex/09NN-...`.
+- Code commits below are the commits on each branch that touch `App/`, counted from base.
 
-| Batch | Branch | Head | State |
-|---|---|---|---|
-| B01 guest draft on language change | codex/0959-guest-draft-language | a7e827df | review. One documented exception: the RUIAN address-suggest GET query carries typed text (pre-existing; needs a privacy review). |
-| B02 calendar create actions | codex/0960-b02-calendar-create | 65a7a65a | review. Centring test now compares centres, not tops (content-sized dialogs kept). |
-| B03 host shell on detailed forms | codex/0961-b03-host-shell | 56c2951c | blocked. Needs split: 0961a (guest form) and 0961b (invoice form). Not run. |
-| B04 property readiness | codex/0962-b04-property-readiness | d03fc45e | blocked. Two new tests were failing; fixes in progress. Fee-navigation test pre-existing on base. |
-| B05 property wrappers | codex/0963-b05-property-wrappers | 40088a45 | blocked. Test race fixed (wait for hidden); tip markup fix pending; uncommitted edits in worktree. |
-| B06 connection states | codex/0964-b06-connection-states | c1e378a9 | blocked. Feed-URL layout fix committed; rows 3-5 and 1280 base comparison pending. WebKit and IPv6 are environment deselections. |
-| B07 guest review and legal | codex/0965-b07-guest-review | b7954474 | blocked. Spacing guards at 320/360/1280 fail; CSS fix pending; two unidentified failures. |
-| B08 guide truth | codex/0966-b08-guide-truth | 014780b4 | accepted by orchestrator (all 30 screenshots reviewed). Brief status line still says blocked: two literal checks are artifacts (em dash in the brief's own checklist; file count includes the brief). |
-| B09 calendar orientation | codex/0967-b09-calendar-orient | 8e133cfb | blocked. Bound 184 to 226 approved. 768 px narrow-name failure cause found (0 px name on a one-night bar left by an earlier test); CSS fix uncommitted; repeat runs were killed. |
-| B10 stay list scope | codex/0968-b10-stay-list | 229825ea | blocked. Host suite not complete; failures not yet named (full run killed). Three i18n failures pre-existing. |
-| B11 alert stacks | codex/0969-b11-alerts | b2132982 | incomplete. Fee-navigation base proof done; chunks B and C, 3d and screenshots pending. |
-| B12 register readability | codex/0970-b12-register | 91e2f9a5 | blocked. Duplicate popover labels fixed (d34d2f44); row A geometry never finished. Vietnamese yes/no translation missing. |
-| B13 feedback and cleaning forms | codex/0971-b13-feedback | 89fed7f3 | blocked. Host row 85 passed, 3 failed in test_host_wide_geometry_browser.py (pass alone); two full reruns died. Needs a clean run. |
-| B14 help and settings | codex/0972-b14-help-settings | 5bde965e | blocked. Run pending after the executor's checkpoint. |
-| B15 Leon setup | codex/0973-b15-leon-setup | 5462f567 | blocked. Remaining checks and the nav-overlap decision pending; uncommitted edits. Legal warning split needs a legal read. |
-| B16 operator layouts | codex/0974-b16-operator | 77a6b788 | blocked. Host guard and clipping decision pending. |
-| B17 backlog (F01, A03) | codex/0975-b17-backlog | 5ad5222c | F01 blocked on the door-code editor test (fails on base too; decision needed). A03 not started. |
-| B18 audience verification | codex/0976-b18-audience | 27a2ea20 | review (verification only). Owner policy decisions pending. |
+## Batch table (verified at handoff)
+
+| Batch | Branch | Head | Code commits | Brief status | Where it stands | Next step |
+|---|---|---|---|---|---|---|
+| B01 guest draft on language change | codex/0959-guest-draft-language | a7e827df | 4 | review | Language switch re-draws the typed values and keeps the step. Signature guard skips language submits. Discard warning works. Exception: RUIAN address-suggest sends typed address in a GET query (pre-existing, not changed). | Privacy review of RUIAN (open decision 5). Otherwise ready for integration. |
+| B02 calendar create actions | codex/0960-b02-calendar-create | 65a7a65a | 8 | review | Cancel is a quiet secondary button beside Create in one row at every width. Label input matches Guests. Cleaning day-cell names say cleaning. Centring test compares centres, not tops (content-sized dialogs kept). 24 screenshots reviewed. | Integrate. Commands 1 to 3 were not rerun after the centring change. |
+| B03 host shell on detailed forms | codex/0961-b03-host-shell | 56c2951c | 0 (brief only) | todo | Root cause: `v2` flag decides the shell. Turning it on drops about 25 classes that exist only in the old stylesheets. Brief says STOP and split. | Write 0961a (guest form) and 0961b (invoice form), each porting its classes into `app2.css`. Run both. |
+| B04 property readiness | codex/0962-b04-property-readiness | d03fc45e | 4 | blocked | Six pills and Preview removal in place. Two new tests were failing: a wait_for_function TypeError (test bug) and the copy-link "Copied" check. Fix run was in progress when work was stopped. P01 (owner's narrow column) not reproduced on base. Fee-navigation test is pre-existing. | Rerun `-k b04` with zero skips, then rows 2 to 6, then screenshots. |
+| B05 property wrappers | codex/0963-b05-property-wrappers | 40088a45 | 4 | blocked | Stay fee heading, police subsections, direct Archive button and copy-chooser styling in place. Test race (archive tip read before close timer) diagnosed as test-only; wait-for-hidden fix pending. Real defect: tip markup causes 98 layout-lint findings at 320 px and a 24 px tap target; fix pending. The 0963 tests passed 20 of 20 in one later run. | Apply the markup fix (keep tip next to its label, 44 px hit area), rerun rows 2 to 5, screenshots, then commit `0963 step 4`. |
+| B06 connection states | codex/0964-b06-connection-states | c1e378a9 | 7 | blocked | Smart lock Off shows the top-pill status and one action. Calendar URL moved into a disclosure. Feed-URL layout fix committed (57d7c6ef) after lint found table squeezing. Four new tests pass. | Rows 3 to 5 (WebKit and IPv6 are environment deselections, state them), lint zero findings, check 1280 px lock-tile word breaking against base 7b0355c. |
+| B07 guest review and legal | codex/0965-b07-guest-review | b7954474 | 12 | blocked | Review surface, aligned rows, neutral acknowledgement, shorter save label, birth-date row fixed. Acknowledgement colours verified correct (settle wait added to test, step 8). Guest spacing guards at 320, 360 and 1280 px fail after this change; two more failures unidentified. | Meet the existing spacing guards in `guest.css` without changing any threshold (inset at least 16 px at 320/360; gaps at least 12 px). Identify the two unknown failures first. |
+| B08 guide completion truth | codex/0966-b08-guide-truth | 014780b4 | 1 | blocked (line still says blocked) | Accepted by the orchestrator: completion message follows the real state (none, saved, partial, live), empty questions page has one state. All 30 screenshots reviewed. Every test row passed with zero skips. Two literal checks fail only because of the brief's own text (an em dash in its checklist, and the file count includes the brief). | Flip the status line to review, or accept as-is. Open item: "0 of 17 cards answered" subline next to a populated quick-answers list (out of scope, observation only). |
+| B09 calendar orientation | codex/0967-b09-calendar-orient | 8e133cfb | 8 | blocked | H1 fix, +N overflow lane, narrow-width container query. Bound 184 to 226 approved (committed). 768 px failure found: a 0 px name on a one-night bar left by an earlier test; real layout defect at that width. Fix is UNCOMMITTED in the worktree (3 files: CSS container query, template key 0967b, manifest). Repeat runs were killed. | Commit the pending fix (`git -C /tmp/ubyhost-b09-worktree diff`), run the 0967 browser file twice with fresh DBs, then checks 2 to 7, then the 18 screenshots, then `0967 step 6`. |
+| B10 stay list scope | codex/0968-b10-stay-list | 229825ea | 3 | blocked | Tab label "Upcoming, current & overdue" with note, Apply and Cancel in one row, Reset as a link. Panel height at 1280 measured 393 px with no before-value. Command 3 (host suite) not passing: fee-navigation test fails on base; other failures not yet named (full run killed). Three i18n tests fail with `no such table` on base too. | Run command 3 as background chunks, name every failure, base-prove any outside B10 files, then command 5 (lint) and screenshots. Vietnamese strings not covered by a test. |
+| B11 alert stacks | codex/0969-b11-alerts | b2132982 | 2 | todo (brief line not updated) | Compact alert lines and workspace labelling in place. Fee-navigation test proven pre-existing on base (deselected). Passing so far: alert browser 6 of 6, alert and deadline set 100 of 100, chunk A 26 of 26. Chunks B and C, the non-browser set, and screenshots not done. | Run chunks B and C in background, then 3d, then the screenshots, then `0969 step 4`. |
+| B12 register readability | codex/0970-b12-register | 91e2f9a5 | 3 | blocked | Table cut to five columns, facts in a same-page popover, export CSV byte-identical (740 bytes). Duplicate popover labels fixed (d34d2f44): Signed now shows Yes/No. Row A (geometry, test_host_geometry and two others) never finished. Vietnamese has no yes/no keys, so it falls back to English. | Rerun row A in a fresh session with a fresh DB. Decide the Vietnamese translation. |
+| B13 feedback forms | codex/0971-b13-feedback | 89fed7f3 | 1 | blocked | Success notice macro, dismiss on existing notices, copy-link keeps its size, separate cleaning Save cards. Cleaning, copy and notice row 170 of 170 pass. Host row (6c): 85 passed, 3 failed in `test_host_wide_geometry_browser.py`; each passes alone and the whole file passes alone; two full reruns died. Screenshots: one red-button and layout concern noted by the executor. | Get one clean full 6c run (zero failures, zero skips). If the three failures recur, run that file on base to decide. Then 6d lint and screenshots. |
+| B14 help and settings | codex/0972-b14-help-settings | 5bde965e | 3 | blocked | Help icons beside labels with contextual names, page-help panel out of the H1, mail status from runtime. Brief run stopped at a checkpoint after step 1; restarted once, result not recorded. | Check the restarted run's result; if none, rerun from step 2. Native-review Czech and Vietnamese strings. |
+| B15 Leon setup | codex/0973-b15-leon-setup | 5462f567 | 1 | blocked | Layout bug reproduced: `wiz-page` class missing, so stepper and heading styles did not apply. Fix in: labelled four-step stepper, property line below the heading, legal points split 2 visible and 4 disclosed. Leon rows 76 of 76, layout lint 4 of 4. v2 mockup row and guide browser row not finished. Bottom nav overlaps a card on two screenshots: possibly a capture artifact, not proven. | Finish the v2 and guide rows, lint, decide the nav overlap by viewport capture, then the 28 unopened screenshots. Legal split needs a legal read. |
+| B16 operator layouts | codex/0974-b16-operator | 77a6b788 | 2 | blocked | Customers metrics balanced, create-host form in its own row, Billing controls aligned with existing components. Commands 1, 2, 4 and 5 passed. Host guard (command 3) not complete. Long plan e-mail is clipped, not wrapped, in the Customers table. | Run the host guard in the background, inspect the remaining screenshots (CS, empty, invalid-submit), decide whether clipping breaks the brief's long-value rule. |
+| B17 backlog (F01 and A03) | codex/0975-b17-backlog | 5ad5222c | 1 | blocked | F01 (empty invoice state): patch applied; rows fail on a door-code editor test (fails on base too), and rows 3 and 4 not finished. A03 (readable alert kinds): not started. | Decide the door-code test (open decision 4). Then rows 3 and 4 for F01, then A03 from scratch. |
+| B18 audience verification | codex/0976-b18-audience | 27a2ea20 | 1 (test files) | todo (line not updated; report says done) | Verification only. Matrix: QR door readable for `everyone`; booked readable only inside the stay window; host hidden everywhere. No leak reproduced. Guest suite 568 of 568. | Owner policy decisions (open decision 1). No production change. |
 
 ## Open decisions for the owner
 
-1. B18 audience default: `booked` for access cards? Leave existing cards? Preselect or blank? Code-pattern warning?
-2. B15 legal warnings: split 2 visible / 4 disclosed. Needs a legal read.
-3. B12 Vietnamese yes/no keys: translation decision.
-4. B17 door-code editor test: deselect (fails on base) or fix the feature?
-5. RUIAN address-suggest: typed text in a GET query string. Separate privacy review.
-6. Pre-existing base failures: `test_host_fee_navigation.py::test_frozen_report_order_and_forms` ("Your records"), the three i18n `no such table` tests, IPv6 feed-DNS test, WebKit not installed in this sandbox.
+1. B18 audience default: `booked` for access cards? Leave existing published cards alone? Preselect booked or leave blank? Add a warning when a code-like pattern is entered with `everyone`?
+2. B15 legal warnings: show 2 points and disclose 4. Needs a legal read.
+3. B12 Vietnamese yes/no keys: translation.
+4. B17 door-code editor test: fails on base. Deselect it, or fix the door-code feature?
+5. RUIAN address-suggest: sends typed address in a GET query. Separate privacy review.
+6. B03 split (0961a and 0961b): approve the split.
+
+## Pre-existing failures on base 7b0355c (recorded, not fixed by this work)
+
+- `test_host_fee_navigation.py::test_frozen_report_order_and_forms` ("Your records" not in page). Fails on base. Deselected in batch runs with proof.
+- `test_host_i18n.py` three tests (`no such table`). Fails on base.
+- `test_invoice_autofill.py::test_invoice_buyer_block_spacing_0896` (selectNodeContents TypeError). Fails on base.
+- `test_dashboard_calendar_browser` / `test_feed_dns_pinning`: needs IPv6, not available in this sandbox.
+- WebKit browser not installed in this sandbox (`en-webkit` cases). CI runs them.
+- `test_each_property_setting_has_exactly_one_editable_control` (door codes): fails on base.
 
 ## Rules for the next session
 
-- Do not push to main. Do not merge without `scripts/merge-pr-on-green.sh` and owner approval.
-- Commit trailer: `Co-authored-by: Codex <noreply@openai.com>`. No model names in commit messages.
-- Every test run: a unique `UBYHOST_DB` file; browser runs also `UBYHOST_REQUIRE_BROWSER=1` and a unique `UBYHOST_SHOTS_DIR`.
-- Test runs rewrite some tracked screenshots under `docs/tasks`. Revert them before committing (`git checkout -- <path>`), never stage them.
-- Run long browser groups in the background with a log file and poll it; foreground calls time out around 10 minutes.
-- Never report a check as passed unless it ran with zero skipped (environment deselections must be stated).
+- Never push to main. Merge only through `scripts/merge-pr-on-green.sh` and with owner approval. Production deploy is manual, by the owner.
+- Commit trailer: `Co-authored-by: Codex <noreply@openai.com>`. No model names in commit messages or PR text.
+- Every browser test run: its own `UBYHOST_DB` file. Browser runs also need `UBYHOST_REQUIRE_BROWSER=1` and their own `UBYHOST_SHOTS_DIR`.
+- Test runs rewrite some tracked screenshots under `docs/tasks/`. Revert them before committing (`git checkout -- <path>`), never stage them.
+- Run long browser groups in the background with a log file and poll it. A foreground command longer than about 10 minutes is killed.
+- A check counts as passed only with zero skipped tests. Any deselection must be named in the report, with its base proof.
+- Stop and report on the same failure twice; do not weaken assertions or thresholds to pass.
 
 ## Resume order
 
-1. Decide the open items above.
-2. Finish the blocked batches with a clean run each: B06, B09, B12 (row A), B13 (6c), B05, B04, B07, B15, B16, B14, B10, B11, B17 (F01 then A03).
-3. Write B03's split briefs (0961a, 0961b) and run them.
-4. Integrate the review-ready branches (B01, B02, B08, B18, and whichever finish) into one integration branch. Expect conflicts on `static_versions.json`, `base.html` cache keys and `app2.css`.
-5. Run the full Chromium checks on the integrated result, look at the 390/768/1280 screenshots for every changed page, and only then open the real PR.
+1. Settle the six open decisions above.
+2. Commit B09's pending fix and finish B09.
+3. Finish the blocked batches with one clean run each: B06, B07, B05, B04, B12 (row A), B13 (6c), B16, B15, B14, B10, B11, B17 (F01 then A03).
+4. Write and run B03's split briefs (0961a, 0961b).
+5. Flip stale brief status lines (B08, B11, B18) to match their reports.
+6. Integrate: create an integration branch from base and merge the review-ready branches (B01, B02, B08, B18, then the others as they finish). Resolve the conflicts on the shared files above and regenerate `static_versions.json`.
+7. Run the full Chromium checks on the integrated branch, review the 390, 768 and 1280 screenshots of every changed page, and only then move this draft PR out of draft for review.
 
 ## Not verified
 
-- Chromium visual checks for most batches (screenshots not all reviewed).
-- No integrated build exists yet; batch branches have not been tested together.
-- Nothing has been pushed to main or deployed.
+- Most Chromium visual checks for most batches (see each report).
+- No integrated build exists, so batch branches have never been tested together.
+- Nothing is pushed to main or deployed.
