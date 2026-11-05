@@ -377,6 +377,11 @@ def test_without_javascript_nothing_changes(browser, base, host):
         page.locator(".savebar button[type=submit]").click()
     assert _stored(host, "internal_name") == "No JS O1 name"
     page.goto(f"{url}?view=settings&section=property&lang=en")
+    page.fill("#internal_name", "No JS cancel")
+    with page.expect_navigation():
+        page.locator(".savebar a[data-unsaved-reset]").click()
+    assert page.input_value("#internal_name") == "No JS O1 name"
+    assert page.url.split("?")[0].endswith(f"/apartments/{host['apartment']}")
     page.fill("#internal_name", "No JS unsaved")
     with page.expect_navigation():
         page.locator('a.airbnb-back').click()
@@ -385,3 +390,26 @@ def test_without_javascript_nothing_changes(browser, base, host):
     page.context.close()
     db.execute("UPDATE apartment SET internal_name = ? WHERE id = ?", (NAME, host["apartment"]))
 
+
+@pytest.mark.parametrize("width,height", SIZES)
+def test_outside_lock_control_counts_and_the_lock_buttons_do_not(browser, base, host, width, height):
+    url = f"{base}/apartments/{host['apartment']}"
+    page = _page(browser, base, host, width, height)
+    page.goto(f"{url}?view=settings&section=lock&lang=en")
+    bar = page.locator(".savebar[data-for='property-settings-form']")
+    cancel = page.locator(".savebar[data-for='property-settings-form'] [data-unsaved-reset]")
+    assert not bar.is_visible()
+    # The Turn on / Turn off buttons submit their own forms: focusing them is no edit of the property form.
+    page.locator(".lock-state-form button").first.focus()
+    assert page.get_attribute("#property-settings-form", "data-dirty") is None
+    assert not bar.is_visible()
+    loaded = page.input_value("#lock_checkin_hour")
+    page.select_option("#lock_checkin_hour", "23" if loaded != "23" else "22")
+    assert page.get_attribute("#property-settings-form", "data-dirty") == "1"
+    assert bar.is_visible()
+    cancel.click()
+    assert page.input_value("#lock_checkin_hour") == loaded
+    assert not bar.is_visible()
+    assert page.url.split("#")[0] == f"{url}?view=settings&section=lock&lang=en"
+    assert int(_stored(host, "checkin_hour")) == 15
+    page.context.close()
