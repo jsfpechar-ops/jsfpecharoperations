@@ -1,6 +1,6 @@
 # 0959: Keep the guest draft when the language changes
 
-Status: blocked. Stray PNG restored in 6313b205; diff now only section 3 files. Still blocked: section 7 "no entered value in any URL" is narrowed in test_0959 (RUIAN `ruian-suggest?q=` excluded), which section 8 stops on. Owner or orchestrator decision. See 0959-report.md.
+Status: review
 Depends on: none (batch B01) | Base commit: 7b0355c | Branch: codex/0959-guest-draft-language
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, checkpoint 60k tokens
 
@@ -458,3 +458,13 @@ Write `docs/tasks/0959-report.md` (600 tokens at most): files changed (`git diff
 ## Owner steps
 
 None for this brief.
+
+## Accepted exception
+
+Orchestrator decision (final): B01 is accepted as `review` with this one exception to section 7.
+
+- The RUIAN address-suggest GET query (`ruian-suggest?q=...`) carries typed address text.
+- Pre-existing on base 7b0355c, not introduced by B01. Out of scope for B01.
+- Needs a separate privacy review.
+- Every URL the language switch creates (page URLs, navigation requests, the `/relang` request) carries no entered value.
+- The birth-date row missing at 390 px in Czech is pre-existing and also out of scope.
