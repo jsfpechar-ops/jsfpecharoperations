@@ -16,7 +16,7 @@ Commands (last lines):
 - guest-hub-fee-card-390.png: Stay fee card, 150 CZK, "Bank transfer" open with QR, recipient, IBAN, amount, VS; Revolut and Cash collapsed. Three rails, merged IBAN with QR, as intended.
 - form-estimate-390.png: "150 CZK for you (3 counted nights x 50 CZK)" line renders under the form's Stay fee card.
 
-Deviations: all steps in one commit (8ca3f9d) instead of one per step. Brief §4: derive_missing_bic not reused (stay_fees saves no BIC); apply_account_payload reused. Revolut-free guests: ordinary. operator_invoice_note text replaced with the brief's sentence (en/vi/cs). Vietnamese help text left in English as before.
+Deviations: all steps in one commit (8ca3f9d) instead of one per step. Brief §4: derive_missing_bic not reused (stay_fees saves no BIC); apply_account_payload reused. operator_invoice_note text replaced with the brief's sentence (en/vi/cs). Vietnamese help text left in English as before.
 
 Questions: none.
 Owner steps left: review and merge via scripts/merge-pr-on-green.sh (no PR opened, per brief). Production deploy is manual.

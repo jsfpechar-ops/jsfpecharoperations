@@ -96,3 +96,5 @@
 - K-PK0290: passkey fix open.
 - K-CF01: mid-session challenge: see CLOUDFLARE Rule 3.
 - K-PG-ORDER: goose tests fail after icalsync locally; CI OK.
+
+- 0897 guest pay (2026-11-05), still open: Slovak banking apps may not read the Czech SPAYD QR (PAY by square) and CZK from a EUR account costs the guest; migration 00007 (Postgres) never run on Postgres; no host "mark as paid" feeding the stay-fee filing; no payment link in the guest completion e-mail; total can change after payment when "Add another person" is used; form estimate cannot know later host exemptions (no caveat text yet); native review of cs/vi/de/es/fr/uk copy; legal sign-off. A Czech resident of the property's obec is auto-exempt, so no fee card shows (by design, silent).
