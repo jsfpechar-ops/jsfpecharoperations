@@ -9280,11 +9280,13 @@ _SUMMARY_0280_STRINGS = {
         "notification.summary.count": "%(n)s alerts need you",
         "notification.summary.more": "%(n)s more alerts",
         "notification.summary.open": "Open the dashboard",
+        "notification.workspace.label": "Workspace alert, another property",
     },
     "cs": {
         "notification.summary.count": "Upozornění k vyřízení: %(n)s",
         "notification.summary.more": "Další upozornění: %(n)s",
         "notification.summary.open": "Otevřít přehled",
+        "notification.workspace.label": "Upozornění pracovního prostoru, jiné ubytování",
     },
 }
 for _lang, _strings in _SUMMARY_0280_STRINGS.items():

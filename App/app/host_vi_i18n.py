@@ -4026,6 +4026,7 @@ STRINGS.update({
     "notification.summary.count": "%(n)s cảnh báo cần bạn xử lý",
     "notification.summary.more": "Thêm %(n)s cảnh báo",
     "notification.summary.open": "Mở trang tổng quan",
+    "notification.workspace.label": "Cảnh báo chung của không gian làm việc, chỗ ở khác",
 })
 
 # 0282: the locked signature and its signing dialog.
