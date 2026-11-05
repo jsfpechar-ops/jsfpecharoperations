@@ -1,7 +1,7 @@
 # 0897-fix-2: one bank method, no Automatic, audit the operator account
 
-Status: todo
-Depends on: 0897-fix-1. Start only after `docs/tasks/0897-fix-1-fee-card-after-last-guest.md` says `Status: review`. Then this brief. 0897-fix-3 waits until this report is `Status: review`.
+Status: replaced by 0959
+Depends on: none. Do not run. The same host-side work is already on `claude/zealous-johnson-kjnz4e` in brief 0959 (commit 8ca3f9de).
 Base: branch `cursor/guest-pay-operator-preview-237c`. Stay on it. Do not push. Do not open a PR.
 Executor: Haiku | Report: docs/tasks/0897-fix-2-report.md
 

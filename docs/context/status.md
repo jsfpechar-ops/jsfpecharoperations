@@ -9,7 +9,7 @@ Updated: 2026-11-05.
 ## Now
 - 2026-11-04: 0949 paste card removed (part B open): [report](../tasks/0949-report.md).
 - 11-05: #786 filters implemented; validation blocked (workspace): [report](../tasks/0950-fix-1-report.md).
-- 11-05: guest-pay briefs 0897-fix-1, then -2, then -3.
+- 11-05: 0897-fix-1 is the demo-stay fee card. UX is 0958/0959.
 - 2026-11-04: brief 0930 in review (PR #768): stay bars end mid departure day.
 - 2026-11-03: UX gate live: layout lint (`App/tests/layout_lint.js`) + AGENTS.md rule 10; threads self-check screenshots, owner does not.
 - 2026-11-02: Airbnb pass on login and admin pages (0892-0894) in draft PR #739; 0869 renumbers colliding briefs.

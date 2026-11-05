@@ -1,7 +1,7 @@
 # 0897-fix-3: estimate sentence and a legal question mark beside the amount
 
-Status: todo
-Depends on: 0897-fix-2. Start only after that brief's file says `Status: review`.
+Status: replaced by 0958
+Depends on: none. Do not run. The estimate copy and the legal question mark are already on `claude/zealous-johnson-kjnz4e` in brief 0958.
 Base: branch `cursor/guest-pay-operator-preview-237c`. Stay on it. Do not push. Do not open a PR.
 Executor: Haiku | Report: docs/tasks/0897-fix-3-report.md
 
