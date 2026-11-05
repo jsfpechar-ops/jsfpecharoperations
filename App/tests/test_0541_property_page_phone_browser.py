@@ -54,17 +54,13 @@ def test_0547_phone_property_switch_invalid_field_calendar_and_return(base, dash
         browser = _launch(playwright)
         context, page = _open_app(browser, base, cookie, apartment, 390)
         try:
-            # 0547: the door-code switch status changes on toggle and returns when toggled back.
+            # 0954: the status block replaces the switch; its one button is a form submit.
             page.goto(f"{base}{apartment}?view=settings&section=lock&lang=en")
             page.wait_for_load_state("networkidle")
-            status = page.locator("#door_codes-status")
-            before = status.text_content().strip()
-            page.locator('label[for="door_codes"]').click()
-            page.wait_for_timeout(200)
-            assert status.text_content().strip() == "Not saved yet"
-            page.locator('label[for="door_codes"]').click()
-            page.wait_for_timeout(200)
-            assert status.text_content().strip() == before
+            block = page.locator(".lock-state")
+            assert block.get_attribute("data-state") in ("on", "off", "offline", "times")
+            assert block.locator("button").count() == 1
+            assert page.locator("#door_codes").count() == 0
 
             # 0547: an invalid required field in a closed section opens that section on submit.
             page.goto(f"{base}{apartment}?lang=en")
