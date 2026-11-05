@@ -1,5 +1,5 @@
 # 0960: guest fee card, short "why" and a kind "please pay" (executor: Haiku 5.5, alone)
-Status: todo
+Status: review
 
 ## 1. Objective
 On the guest stay page the stay-fee card says, in plain visible text (not hidden in the "?" disclosure), why the fee exists and kindly asks the guest to pay it now. The guest must understand it is required by law.

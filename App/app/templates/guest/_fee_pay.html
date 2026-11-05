@@ -3,6 +3,7 @@
 {% set fee_total = t('fee_amount', amount=fee_panel.total) %}
 <div class="g-card g-fee" id="fee-pay">
   <h2>{{ t('fee_title') }}</h2>
+  <p class="g-intro">{{ t('fee_intro') }}</p>
   <p class="g-intro">{{ t('fee_rate_line', rate=fee_panel.rate) }}</p>
   <p class="g-fee-amount"><strong>{{ fee_total }}</strong></p>
   <details class="g-fee-what">
@@ -61,5 +62,4 @@
     <p class="g-intro g-fee-no-rails">{{ t('fee_no_rails') }}</p>
   {% endif %}
 
-  <p class="g-intro g-fee-legal">{{ t('fee_legal_pointer') }}</p>
 </div>
