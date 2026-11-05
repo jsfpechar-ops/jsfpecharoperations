@@ -710,7 +710,7 @@ def test_0964_calendar_rows_keep_state_and_actions_with_a_long_url(host, base):
                 page.locator(".feed-table summary").first.click()
                 page.wait_for_selector(f"#feed-url-{healthy}", state="visible", timeout=5000)
                 assert page.locator(f"#feed-url-{healthy}").is_visible()
-                fit = page.evaluate(_IN_VIEW_0964, ".feed-table .row-actions .ui-btn, .feed-table .copy-btn, .feed-url-value")
+                fit = page.evaluate(_IN_VIEW_0964, ".feed-table .row-actions .ui-btn, .feed-table .copy-btn, .feed-url-details[open] .feed-url-value")
                 assert not fit["bad"], (width, fit)
                 assert page.evaluate(_NO_SIDEWAYS_0964) <= 1, width
                 wrap = page.evaluate("() => { const w = document.querySelector('.feed-table').closest('.scroll-x'); return w.scrollWidth - w.clientWidth; }")
