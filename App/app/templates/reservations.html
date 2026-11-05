@@ -95,7 +95,7 @@
 {% set _ = stays_pills.append({'label': t('stays.chip.archive'), 'href': '/reservations?range=archive&status=' ~ status ~ '&apartment=' ~ (apartment_id or ''), 'current': show_archive}) %}
 {% set pills = stays_pills %}
 {% set aria_label = t('stays.title') %}
-<div class="stays-pills">{% include "partials/settings_pills.html" %}</div>
+<div class="stays-pills">{% with wrap_on_phone=true %}{% include "partials/settings_pills.html" %}{% endwith %}</div>
 </div>
 <p class="sub ph-hide" data-filter-summary>{{ stay_summary }}</p>
 <div class="saved-views" data-saved-views data-label="{{ t('stays.filter.saved_views') }}"></div>

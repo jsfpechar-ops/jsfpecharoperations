@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-11-04.
+Updated: 2026-11-05.
 
 ## Production
 - Magic-link 1–2 done; checked; access log off.
@@ -8,7 +8,7 @@ Updated: 2026-11-04.
 
 ## Now
 - 2026-11-04: 0949 paste card removed (part B open): [report](../tasks/0949-report.md).
-- 11-04: 0950 done, review: [report](../tasks/0950-report.md).
+- 11-05: PR #786 owner decisions recorded; mobile Stays filters implemented, validation blocked by workspace startup: [report](../tasks/0950-fix-1-report.md).
 - 11-04: PR #763 stay fee: 0897 done; 0898, 0932-0934 done; merging on green.
 - 2026-11-04: brief 0930 in review (PR #768): stay bars end mid departure day.
 - 2026-11-03: UX gate live: layout lint (`App/tests/layout_lint.js`) + AGENTS.md rule 10; threads self-check screenshots, owner does not.

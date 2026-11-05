@@ -8,6 +8,7 @@ import socket
 import threading
 import time
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 
@@ -110,7 +111,7 @@ def base(host):
     thread.join(timeout=5)
 
 
-def _open(playwright, host, base, path, width):
+def _open(playwright, host, base, path, width, lang="en"):
     browser = playwright.chromium.launch(**chromium_launch_kwargs())
     context = browser.new_context(
         viewport={"width": width, "height": 1000},
@@ -122,7 +123,7 @@ def _open(playwright, host, base, path, width):
         "url": base + "/",
     }])
     page = context.new_page()
-    page.goto(base + path + ("&" if "?" in path else "?") + "lang=en")
+    page.goto(base + path + ("&" if "?" in path else "?") + "lang=" + lang)
     page.wait_for_load_state("networkidle")
     return browser, page
 
@@ -183,5 +184,85 @@ def test_archive_current_pill_stays_dark_on_hover_and_focus(playwright_api, host
         _assert_current_pill_dark(page, ".settings-pill.is-current")
         current.focus()
         _assert_current_pill_dark(page, ".settings-pill.is-current")
+    finally:
+        browser.close()
+
+
+def _assert_phone_filters_fit(page):
+    nav = page.locator(".stays-pills .settings-pills")
+    assert nav.locator(".settings-pill").count() == 5
+    geometry = nav.evaluate("""el => {
+        const bounds = el.getBoundingClientRect();
+        return {
+            left: bounds.left, right: bounds.right,
+            clientWidth: el.clientWidth, scrollWidth: el.scrollWidth,
+            viewportWidth: innerWidth,
+            pageWidth: document.documentElement.scrollWidth,
+            pills: [...el.querySelectorAll('.settings-pill')].map(pill => {
+                const box = pill.getBoundingClientRect();
+                const range = document.createRange();
+                range.selectNodeContents(pill);
+                const text = range.getBoundingClientRect();
+                return {
+                    label: pill.textContent.trim(), left: box.left, right: box.right,
+                    top: box.top, width: box.width, height: box.height,
+                    textLeft: text.left, textRight: text.right,
+                    textLines: range.getClientRects().length
+                };
+            })
+        };
+    }""")
+    assert geometry["scrollWidth"] <= geometry["clientWidth"] + 1, geometry
+    assert geometry["pageWidth"] <= geometry["viewportWidth"] + 1, geometry
+    assert geometry["left"] >= 0 and geometry["right"] <= geometry["viewportWidth"] + 1, geometry
+    for pill in geometry["pills"]:
+        assert pill["width"] >= 44 and pill["height"] >= 44, pill
+        assert pill["left"] >= geometry["left"] - 1, pill
+        assert pill["right"] <= geometry["right"] + 1, pill
+        assert pill["textLeft"] >= pill["left"] - 1, pill
+        assert pill["textRight"] <= pill["right"] + 1, pill
+        assert pill["textLines"] == 1, pill
+    assert max(pill["top"] for pill in geometry["pills"]) > min(
+        pill["top"] for pill in geometry["pills"]
+    ), "phone filters should wrap instead of hiding options in a scroller"
+
+
+@pytest.mark.parametrize("width", (320, 390))
+@pytest.mark.parametrize("lang", ("cs", "en"))
+def test_phone_stays_filters_are_visible_and_preserve_selection(playwright_api, host, base, width, lang):
+    path = f"/reservations?status=all&apartment={host['apartment']}"
+    browser, page = _open(playwright_api, host, base, path, width, lang=lang)
+    try:
+        page.evaluate("() => document.fonts.ready")
+        _assert_phone_filters_fit(page)
+        pills = page.locator(".stays-pills .settings-pill")
+        pills.first.focus()
+        for index in range(1, pills.count()):
+            page.keyboard.press("Tab")
+            assert pills.nth(index).evaluate("el => el === document.activeElement")
+        _assert_phone_filters_fit(page)
+        shots = os.environ.get("UBYHOST_SHOTS_DIR")
+        if shots:
+            target = Path(shots) / "0950-fix-1"
+            target.mkdir(parents=True, exist_ok=True)
+            page.screenshot(path=str(target / f"stays-{lang}-{width}.png"), full_page=False)
+
+        pills.last.click()
+        page.wait_for_url(re.compile(r"range=archive"))
+        page.wait_for_load_state("networkidle")
+        query = parse_qs(urlparse(page.url).query)
+        assert query["range"] == ["archive"]
+        assert query["status"] == ["all"]
+        assert query["apartment"] == [str(host["apartment"])]
+        assert page.locator(".stays-pills .settings-pill.is-current").count() == 1
+        assert page.locator(".stays-pills .settings-pill").last.get_attribute("aria-current") == "page"
+        _assert_phone_filters_fit(page)
+        current = page.locator(".stays-pills .settings-pill.is-current")
+        current.hover()
+        _assert_current_pill_dark(page, ".stays-pills .settings-pill.is-current")
+        current.focus()
+        _assert_current_pill_dark(page, ".stays-pills .settings-pill.is-current")
+        if shots:
+            page.screenshot(path=str(target / f"stays-archive-{lang}-{width}.png"), full_page=False)
     finally:
         browser.close()

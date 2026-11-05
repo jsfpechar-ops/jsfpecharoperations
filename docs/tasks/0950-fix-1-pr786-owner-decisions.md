@@ -1,8 +1,8 @@
 # 0950-fix-1: finish PR #786 owner decisions and mobile Stays filters
-Status: todo
+Status: blocked (implementation committed; browser checks, screenshot review and merge require a functioning workspace)
 Depends on: 0950; continue PR #786 on `claude/friendly-albattani-ndmdji`.
 Owner decisions: 2026-11-05.
-Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens is tight for 8 steps; steps 1-3 and 4-8 may be two chats. One commit per step; at the cap commit what passes and list the step left.
+Executor: Codex, authorized directly by the owner on 2026-11-05: "you implement it". Runtime validation is blocked by workspace startup.
 
 ## 1. Objective
 Close the four owner questions in PR #786. Make every Stays filter visible on a phone without a horizontal swipe.
@@ -21,7 +21,8 @@ Read AGENTS.md, docs/context/executor.md, the Stays/shared-pill row of docs/cont
 
 Implementation is limited to the shared filter-pill component/style used by Stays and archive; identify its existing definition before editing. Known relevant files:
 - App/app/static/app2.css
-- App/app/templates/_components.html (only if an explicit shared wrap modifier is necessary)
+- App/app/templates/partials/settings_pills.html (shared definition identified during implementation)
+- App/app/templates/reservations.html (opt in to phone wrapping)
 - App/app/static/host.css (only if this is where the shared component is defined)
 - App/tests/test_host_pill_state_browser.py
 - App/tests/static_versions.json (only if required by the static-version mechanism)
@@ -35,7 +36,7 @@ Implementation is limited to the shared filter-pill component/style used by Stay
    `body.v2 .stays-pills .settings-pill:not(.is-current):hover{background:#e4e4e4}`
    Preserve this hover behavior. If the anchor changed, stop and report.
 2. In the existing shared filter-pill component, implement wrapping for the Stays/archive filter variant at phone widths. Prefer an existing wrapping option; otherwise add a shared modifier and apply it to that variant. Do not change every settings-navigation strip without checking its consumers. Do not mask overflow, truncate labels, shrink text, or add an isolated page-specific override. Preserve filter links, counts, query parameters, selection semantics and focus behavior.
-3. Extend the existing pill browser coverage with a regression assertion at 320 and 390 px in CS and EN, including non-zero counts. Assert that all filters are fully visible inside the available width, the strip itself has no horizontal scroll, the page has no horizontal overflow, each tap target is at least 44 px high, and selecting a filter still works. Keep the current hover/focus tests. Exercise the archive consumer too.
+3. Extend the existing pill browser coverage with a regression assertion at 320 and 390 px in CS and EN, including the Stays archive view. Stays labels have no counts; do not add synthetic counts. Assert that all filters are fully visible inside the available width, the strip itself has no horizontal scroll, the page has no horizontal overflow, each tap target is at least 44 px high, and selecting a filter still works. Keep the current hover/focus tests. Exercise the archive consumer too.
 4. Run only the relevant test-map row plus the existing pill, static-version and layout-lint checks (command in section 6). Expected: green with 0 skipped. Run any additional geometry files named by the relevant test-map row; do not run the full suite.
 5. Capture and OPEN Stays screenshots at 390, 768 and 1280 px and archive screenshots if its appearance changes. Record what is visible at each width in the report. Include the phone screenshot in the report and tick only verified design-system checklist items.
 6. Record decisions 1-4 above in docs/context/decisions.md, update status in at most five lines, and resolve the documented mobile-pill finding in known-issues if present. Keep the absent-stay-times mockup exemption documented as an accepted owner decision.
@@ -59,7 +60,7 @@ Do not edit guest stay templates, wizard step logic, TTLock backend logic or unr
 - The final head has fresh green CI, with failures/cancellations investigated.
 
 ## 8. Stop and ask
-- If the shared definition is in another file, stop and report its path before changing it.
+- Shared definition confirmed in App/app/templates/partials/settings_pills.html; file list corrected above.
 - If the anchor changed, stop and report.
 - Do not claim a screenshot was inspected or a test passed without doing it.
 
