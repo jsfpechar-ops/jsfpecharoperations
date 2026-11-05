@@ -156,7 +156,8 @@ BOX_OVERRIDES = {
     "stay:.stay-dates@390": {"height": "169px"},
     "stay:.stay-dates small@320": {"width": "73.8906px"},
     "stay:.stay-dates small@390": {"width": "113px"},
-    "stay:.stay-dates b@320": {"width": "73.8906px", "height": "54px"},
+    # 0957: 54px was the two-line height of the arrival date when the PR #725 fixture was measured; today the same cell shows "Fri 6. 11." on one line (28px at line-height 1.4)
+    "stay:.stay-dates b@320": {"width": "73.8906px", "height": "28px"},
     "stay:.stay-dates b@390": {"width": "113px"},
     "stay:.stay-dates .tot@320": {"width": "238px"},
     "stay:.stay-dates .tot@390": {"width": "308px"},
@@ -321,6 +322,7 @@ PAGES = [
     {
         "name": "stay",
         "phone_box_skip": {
+            ".stay-dates": (["height"], "0957: app .stay-dates sits in a card with 16/20 padding (the mockup block has none) and does not render the mockup's check-in/out time lines (\"from 14:00 / until 11:00\"); the two differences offset, so the container height is only approximately equal. Owner decides whether the app should show the times."),
             ".guests .row": (["height"], "0955 Part A: the phone guest row shows birth date and nationality on their own line under the name (Josef: guest details must stay visible on phone), so the row is taller than the mockup row and its subtitle is wider"),
             ".guests .row b": (["width"], "0955 Part A: the phone guest row shows birth date and nationality on their own line under the name (Josef: guest details must stay visible on phone), so the row is taller than the mockup row and its subtitle is wider"),
             ".guests .row small": (["width", "height"], "0955 Part A: the phone guest row shows birth date and nationality on their own line under the name (Josef: guest details must stay visible on phone), so the row is taller than the mockup row and its subtitle is wider"),

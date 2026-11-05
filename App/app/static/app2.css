@@ -655,7 +655,7 @@ body.v2 .host-stay-detail .sub-phone{text-align:center;color:var(--ink3);font-si
 body.v2 .host-stay-detail .stay-dates>div{padding:18px 20px}
 body.v2 .host-stay-detail .stay-dates>div+div{border-left:1px solid var(--line)}
 body.v2 .host-stay-detail .stay-dates small{display:block;color:var(--ink3);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
-body.v2 .host-stay-detail .stay-dates b{display:block;font-size:20px;font-weight:800;letter-spacing:-.01em;margin-top:4px}
+body.v2 .host-stay-detail .stay-dates b{display:block;font-size:20px;font-weight:800;letter-spacing:-.01em;line-height:1.4;margin-top:4px}
 body.v2 .host-stay-detail .stay-dates .tot{grid-column:1/-1;border-left:0;border-top:1px solid var(--line);padding:14px 20px;text-align:center;color:var(--ink2);font-size:15px;font-weight:600}
 body.v2 .host-stay-detail .guests .row{display:flex;align-items:center;gap:16px;min-height:56px;padding:10px 0;border-bottom:0}
 body.v2 .host-stay-detail .guests .ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex:none;font-weight:800;font-size:15px}
