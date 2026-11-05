@@ -547,6 +547,10 @@ def test_guest_links_and_message_settings_geometry(host, base):
             text = box("label[for=ocr_scan] span")
             assert abs(text["y"] - cb["y"]) <= 6, width  # checkbox sits on the first text line
             assert cb["y"] > select["y"] + select["height"], width
+            assert abs(cb["x"] - select["x"]) <= 2, (width, cb, select)  # checkbox left-aligned with the fields
+            note = box("[data-link-window-note]")
+            label = box("label[for=passport_photo_policy]")
+            assert label["y"] - (note["y"] + note["height"]) >= 12, (width, note, label)  # design-system gap under the hint
             if width == 1280:
                 tip_top = page.evaluate(_TIP_JS, "ocr_scan")
                 assert tip_top is not None and abs(tip_top[0] - cb["y"]) <= 6, tip_top
