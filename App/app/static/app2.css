@@ -2568,3 +2568,5 @@ body.v2 .savebar[data-for="property-settings-form"]{position:sticky;bottom:0;dis
 @media (min-width:1024px){body.v2 .savebar[data-for="property-settings-form"]{padding-right:calc(var(--control-h) + var(--space-6))}}
 /* 0955 save bar: hidden until a control really differs from its loaded value (JS on); always shown without JS */
 html.has-js body.v2 .savebar[data-for="property-settings-form"]:not(.is-dirty){display:none}
+/* 0955: on desktop the Save row spans the main column under the sections, not the preview column */
+@media (min-width:1024px){body.v2 .form > .savebar[data-for="property-settings-form"]{grid-column:1 / -1}}

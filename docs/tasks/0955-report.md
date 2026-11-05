@@ -56,3 +56,14 @@ Result: test_host_unsaved_changes_browser + test_0851_savebar_browser + test_pro
 - Keys: app.js 20261104-0955d (via --write).
 Not done: step 6 remaining checks (no-JS link reload test), Save-bar screenshots at 390/768/1280, step 7 matrix, steps 8 to 10.
 Next step: add the outside-control leg (lock fixture from test_smart_locks_page `_connect`) and the no-JS reload check to test_host_unsaved_changes_browser, then screenshots, then step 7.
+
+## Chat 4 (outside leg, screenshots, step 7 matrix)
+Status: review-not-yet (steps 8 to 10 open)
+- Outside leg (ba5b9a54): lock time select (form= bound) marks the bar; Turn on/off form buttons do not; no-JS Cancel reloads saved page. Pass.
+- Screenshots (docs/tasks/screenshots-0955/property-save-bar-{390,768,1280}.png), viewed: 390 and 768 bar above the tab bar, Save visible. 1280 bar was in the preview column; fixed (grid-column 1 / -1 on desktop); now under the sections, clear of the help bubble.
+- Step 7 matrix test_property_page_buttons_browser.py: 7 tests (save persists, cancel restores and persists nothing, typing back hides bar and asks nothing, outside lock time saves, bar layout at 390/768/1280).
+- Page fix: initAutomationFields and initControllerFields run before the dirty baseline (submit_after_hours was disabled after the snapshot).
+- Counts: buttons file 7 passed; unsaved + 0851 + notices + buttons: 27 passed, 0 failed, 0 skipped (before the desktop grid CSS fix; buttons re-run after it: 7 passed).
+- Keys: app.js 0955e, app2.css 0955e.
+Documented gaps (not covered): validation-error path of Save, business editor save/cancel, keyboard order from last field to Save/Cancel, Escape on the bar, webkit (CI only), sticky-only-while-dirty checked by the bar hidden state, not by scroll position.
+Next step: step 8 (click-through audit at 390/768/1280 with test_property_page_audit_browser.py), then step 9 fixes and the UX gate.
