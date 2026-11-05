@@ -550,3 +550,176 @@ def test_shared_timing_pair_is_owned_by_properties(host, base):
         browser.close()
 
 
+# --- 0962 (B04): six status pills lead the page; Preview/checklist is gone -----
+
+_B04_NAMES = {
+    "cs": "Prostorný třípokojový byt v historickém centru Českého Krumlova s výhledem na zámek a řeku Vltavu",
+    "en": "Spacious three-bedroom apartment in the historic centre of Cesky Krumlov with castle and river views",
+}
+_B04_ORDER = ["calendars", "guest", "police", "business", "fee", "door"]
+_B04_SHOTS = Path(os.environ.get("UBYHOST_SHOTS_DIR") or "/tmp/ubyhost-b04")
+
+_B04_STRIP_JS = """() => {
+  const strip = document.querySelector('nav.prop-strip');
+  const pills = [...strip.querySelectorAll('.sc')];
+  const r = (el) => el.getBoundingClientRect();
+  const bad = [];
+  const probe = document.createElement('span');
+  document.body.appendChild(probe);
+  for (const el of strip.querySelectorAll('.sc b, .sc small')) {
+    const cs = getComputedStyle(el);
+    probe.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font:' + cs.font + ';letter-spacing:' + cs.letterSpacing;
+    for (const word of el.textContent.trim().split(/\\s+/)) {
+      probe.textContent = word;
+      if (probe.getBoundingClientRect().width > el.clientWidth + 0.5) bad.push('split:' + word);
+    }
+  }
+  probe.remove();
+  for (const el of pills) {
+    if (el.scrollWidth > el.clientWidth + 1) bad.push('clipped-x:' + el.dataset.strip);
+    if (el.scrollHeight > el.clientHeight + 1) bad.push('clipped-y:' + el.dataset.strip);
+  }
+  for (let i = 0; i < pills.length; i++) {
+    for (let j = i + 1; j < pills.length; j++) {
+      const a = r(pills[i]), b = r(pills[j]);
+      if (a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1) bad.push('overlap:' + i + '/' + j);
+    }
+  }
+  const copy = strip.querySelector('.sc-link button[data-copy]');
+  const link = strip.querySelector('.sc-link');
+  if (!copy || !link) bad.push('copy-missing');
+  else {
+    const c = r(copy), l = r(link);
+    if (c.left < l.left - 0.5 || c.right > l.right + 0.5 || c.bottom > l.bottom + 0.5) bad.push('copy-outside-guest-pill');
+  }
+  const title = document.querySelector('.airbnb-title, h1');
+  const firstSection = document.querySelector('details.prop-sec');
+  return {
+    bad, count: pills.length, order: pills.map((p) => p.dataset.strip),
+    scroll: document.documentElement.scrollWidth, vw: document.documentElement.clientWidth,
+    stripTop: r(strip).top, stripBottom: r(strip).bottom, titleBottom: r(title).bottom,
+    sectionTop: firstSection ? r(firstSection).top : null,
+    preview: document.querySelectorAll('aside.preview, .setup-readiness-help, [data-setup-status], #readiness-permalink').length,
+  };
+}"""
+
+
+def test_b04_no_preview_or_checklist_and_one_copy_link(host):
+    html = _page(host, "?lang=en")
+    for gone in ('<aside class="preview"', "property-preview-title", "setup-readiness-help", "data-setup-status", "readiness-permalink"):
+        assert gone not in html, gone
+    assert html.count('data-copy="overview-guest-url"') == 1
+    strip = _strip(html)
+    keys = re.findall(r'data-strip="(\w+)"', strip)
+    assert keys == _B04_ORDER, keys
+    assert html.index('<nav class="prop-strip"') < html.index('<div class="form prop-form-single">') < html.index('id="sec-basics"')
+
+
+def test_b04_missing_items_are_explained_inside_their_section(host):
+    db.update("apartment", host["apartment"], {"uby_idub": "", "addr_zip": ""})
+    html = _page(host, "?lang=en")
+    police = _section(html, "sec-police")
+    assert 'data-missing="police"' in police and "Missing: IDUB" in police
+    basics = _section(html, "sec-basics")
+    assert 'data-missing="basics"' in basics and "Missing: Postcode" in basics
+    # one source: the same readiness items, no second list in the strip
+    assert "Missing:" not in _strip(html)
+
+
+@pytest.mark.parametrize("lang", ["cs", "en"])
+def test_b04_pills_lead_the_page_with_long_names(host, base, lang):
+    _B04_SHOTS.mkdir(parents=True, exist_ok=True)
+    db.update("apartment", host["apartment"], {"internal_name": _B04_NAMES[lang]})
+    url = f"{base}/apartments/{host['apartment']}?lang={lang}"
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        try:
+            page = _context(browser, base, host).new_page()
+            for width in (390, 768, 1280, 1440):
+                page.set_viewport_size({"width": width, "height": 900})
+                page.goto(url)
+                page.wait_for_selector("nav.prop-strip .sc")
+                facts = page.evaluate(_B04_STRIP_JS)
+                where = (lang, width, facts)
+                assert facts["count"] == 6 and facts["order"] == _B04_ORDER, where
+                assert not facts["bad"], where
+                assert facts["scroll"] <= facts["vw"], where
+                assert facts["preview"] == 0, where
+                assert facts["stripTop"] >= facts["titleBottom"] - 1, where
+                assert facts["sectionTop"] is None or facts["sectionTop"] >= facts["stripBottom"] - 1, where
+                page.screenshot(path=str(_B04_SHOTS / f"b04-{lang}-{width}-longname.png"), full_page=False)
+        finally:
+            browser.close()
+
+
+def test_b04_copy_link_feedback_stays_inside_the_guest_pill(host, base):
+    _B04_SHOTS.mkdir(parents=True, exist_ok=True)
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        try:
+            context = _context(browser, base, host)
+            context.grant_permissions(["clipboard-read", "clipboard-write"], origin=base)
+            page = context.new_page()
+            for width in (390, 1280):
+                page.set_viewport_size({"width": width, "height": 900})
+                page.goto(f"{base}/apartments/{host['apartment']}?lang=en")
+                button = page.locator("nav.prop-strip .sc-link button[data-copy]")
+                assert button.inner_text().strip() == "Copy link"
+                button.click()
+                page.wait_for_function(
+                    "() => document.querySelector('nav.prop-strip .sc-link button[data-copy]').textContent.trim() === 'Copied'",
+                    timeout=3000,
+                )
+                facts = page.evaluate(_B04_STRIP_JS)
+                assert not facts["bad"], (width, facts)
+                page.screenshot(path=str(_B04_SHOTS / f"b04-copied-{width}.png"), full_page=False)
+        finally:
+            browser.close()
+
+
+def test_b04_keyboard_enter_on_each_pill_opens_its_section(host, base):
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        try:
+            page = _context(browser, base, host).new_page()
+            for width in (390, 1280):
+                page.set_viewport_size({"width": width, "height": 900})
+                page.goto(f"{base}/apartments/{host['apartment']}?lang=en")
+                links = page.locator("nav.prop-strip a")
+                assert links.count() == 6
+                for index in range(6):
+                    href = links.nth(index).get_attribute("href")
+                    page.evaluate("() => document.querySelectorAll('details.prop-sec').forEach((d) => { d.open = false; })")
+                    links.nth(index).focus()
+                    outline = page.evaluate("() => getComputedStyle(document.activeElement).outlineStyle")
+                    assert outline != "none", (width, href)
+                    page.keyboard.press("Enter")
+                    page.wait_for_function("(id) => document.getElementById(id).open", href[1:], timeout=3000)
+                # Tab walks the pills in reading order: pill, pill, pill's link, its Copy link button, next pill.
+                page.locator("nav.prop-strip a").first.focus()
+                seen = []
+                for _ in range(7):
+                    page.keyboard.press("Tab")
+                    seen.append(page.evaluate("() => document.activeElement.dataset.strip || document.activeElement.closest('[data-strip]')?.dataset.strip || document.activeElement.tagName"))
+                assert seen[:3] == ["guest", "guest", "police"], seen
+        finally:
+            browser.close()
+
+
+def test_b04_pill_opens_incomplete_section_with_its_missing_note(host, base):
+    db.update("apartment", host["apartment"], {"uby_idub": ""})
+    _B04_SHOTS.mkdir(parents=True, exist_ok=True)
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        try:
+            page = _context(browser, base, host).new_page()
+            page.set_viewport_size({"width": 390, "height": 900})
+            page.goto(f"{base}/apartments/{host['apartment']}?lang=en")
+            page.evaluate("() => document.querySelectorAll('details.prop-sec').forEach((d) => { d.open = false; })")
+            page.locator('nav.prop-strip a[data-strip="police"]').click()
+            note = page.locator('#sec-police [data-missing="police"]')
+            note.wait_for(state="visible", timeout=3000)
+            assert "Missing: IDUB" in note.inner_text()
+            page.screenshot(path=str(_B04_SHOTS / "b04-incomplete-police-390.png"), full_page=False)
+        finally:
+            browser.close()
