@@ -46,13 +46,14 @@ def test_a_czech_host_reads_the_preview_label_in_czech(host):  # noqa: F811
 
 
 def test_the_preview_sits_next_to_the_guest_link(host):  # noqa: F811
-    """0094: the suggested message is gone; Preview sits beside the link's Copy."""
+    """0094: the suggested message is gone; Preview sits beside the link's Copy.
+    0951: Preview moved to the action row under the link and PIN, so the order is link < PIN < Preview."""
     text = _property_page(host, "en").text
     preview = text.index(host_i18n.STRINGS["en"]["guest_links.preview"])
     link = text.index('id="permalink"')
     pin = text.index('id="permalink_pin"')
 
-    assert link < preview < pin
+    assert link < pin < preview
 
 
 def test_the_preview_targets_the_guest_side_not_the_host_property_page(host):  # noqa: F811

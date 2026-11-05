@@ -58,3 +58,5 @@ Append-only.
 - [dashboard] 2026-11-04: the per-property "No guest has used the link" needs-you card (0233) is removed, not collapsed; the property-page health row stays (brief 0949).
 - [dashboard] 2026-11-04: the "You are ready" card shows only with exactly one property (brief 0949).
 - [ui] 0948: six-card status strip replaces the aside basics and connections cards; standalone guest card removed, its copy button lives in the strip (owner 2026-11-04).
+- [ui] 2026-11-04: Smart lock is one accordion (#sec-lock) outside the property form; its controls use form="property-settings-form" and the unsaved guard counts them. Source: brief 0952.
+- [wizard] 2026-11-04: wizard shows the old look on the current 4-step flow; red star marks mandatory fields; operator e-mail has no purpose text. Source: brief 0953.
