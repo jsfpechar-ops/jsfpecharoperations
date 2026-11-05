@@ -45,6 +45,13 @@
 {%- set p_bad = p_state in ['bad', 'warn'] -%}
 {%- set b_state = hc['business'].state if 'business' in hc else ('ok' if apartment.legal_entity_id else 'bad') -%}
 {%- set b_bad = b_state in ['bad', 'warn'] -%}
+{#- 0962: the six pills are the one readiness summary. What a pill still lacks is listed inside its own section, from the same `readiness` object (no second calculation). -#}
+{%- set miss = {'basics': [], 'police': [], 'calendars': []} -%}
+{%- if readiness -%}
+{%- for item in readiness.invite if not item.done -%}{%- set _ = miss['calendars' if item.anchor == 'calendars' else 'basics'].append(item) -%}{%- endfor -%}
+{%- for item in readiness.report if not item.done -%}{%- set _ = miss['basics' if item.anchor == 'address' else 'police'].append(item) -%}{%- endfor -%}
+{%- endif -%}
+{% macro section_missing(items, key) %}{% if items %}<div class="prop-sec-missing" data-missing="{{ key }}" role="note"><ul class="readiness-list">{% for item in items %}<li class="readiness-item"><a href="#{{ item.anchor }}">{{ t('apartment.form.readiness.missing') }} {{ t('apartment.form.readiness.item.' ~ item.key) }}</a>{% if item.message %}<span class="readiness-why">{{ validation_message(item.message) }}</span>{% endif %}</li>{% endfor %}</ul></div>{% endif %}{% endmacro %}
 <nav class="prop-strip" aria-label="{{ t('property_page.strip.aria') }}">
   <a class="sc" href="#sec-calendars" data-strip="calendars" data-state="{{ cal_state }}"><i class="sd" aria-hidden="true"></i><b>{{ t('property_page.sec.calendars.title') }}</b><small{% if cal_bad %} class="is-problem"{% endif %}>{% if cal_bad %}{{ t(hc['calendar'].text_key) if 'calendar' in hc else t('apartment.form.feed.status.error') }}{% elif calendar_errors %}{{ t('apartment.form.feed.status.error') }}{% else %}{{ tp('apartment.form.calendars_count', feeds_count) }}{% endif %}</small></a>
   {%- if permalink %}
@@ -57,7 +64,30 @@
   <a class="sc" href="#sec-fee" data-strip="fee" data-state="{{ 'ok' if apartment.stay_fee_rate_czk else 'off' }}"><i class="sd" aria-hidden="true"></i><b>{{ t('property_page.sec.fee.title') }}</b><small>{% if apartment.stay_fee_rate_czk %}{{ apartment.stay_fee_rate_czk }} Kč{% else %}{{ t('apartments.chip_state.off') }}{% endif %}</small></a>
   <a class="sc" href="#sec-lock" data-strip="door" data-state="{{ {'on': 'ok', 'off': 'off'}.get(door_code.state, 'bad') if door_code else 'off' }}"><i class="sd" aria-hidden="true"></i><b>{{ t('property_page.sec.lock.title') }}</b><small>{{ t('property_nav.switch_enabled') if door_code and door_code.state == 'on' else t('health.door.times') if door_code and door_code.state == 'times' else t('health.door.offline') if door_code and door_code.state == 'offline' else t('property_nav.switch_off') }}</small></a>
 </nav>
-<div class="form">
+<div class="prop-after-strip">
+{% if setup_progress and not setup_progress.hidden %}
+<section class="pv setup-continue-card" aria-label="{{ t('wizard.continue_card_aria') }}">
+  <p>{{ t('wizard.continue_card', done=setup_progress.done, total=setup_progress.total) }}
+    {% if setup_progress.reporting_waiting %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ t('setup_guide.reporting.waiting_item') }}</span>{% endif %}
+  </p>
+  <div class="actions">
+    <a class="ui-btn ui-btn-primary" href="{{ setup_progress.continue_url }}">{{ t('wizard.continue') }}</a>
+    <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <button class="ui-btn ui-btn-quiet" type="submit" name="action" value="hide" formnovalidate>{{ t('setup_guide.hide') }}</button>
+    </form>
+  </div>
+</section>
+{% elif setup_hidden %}
+<form method="post" action="/apartments/{{ apartment.id }}/setup" class="property-setup-show">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <button class="link-button" type="submit" name="action" value="show">{{ t('setup_guide.show') }}</button>
+</form>
+{% endif %}
+  {%- set wizard_active = setup_progress and not setup_progress.hidden -%}
+  {% if leon_card %}<div class="pv"><a class="r" href="{{ base_url }}/leon{% if leon_card != 'on' %}/setup{% endif %}" data-leon-card="{{ leon_card }}"><span>{{ t('leon_page.title') }}</span>{{ t('leon_page.card.' ~ leon_card) }}</a></div>{% endif %}
+</div>
+<div class="form prop-form-single">
 <div class="form-main">
 <form method="post" action="{{ base_url }}" enctype="multipart/form-data" class="property-settings-form" id="property-settings-form" data-property-settings-form data-unsaved-guard{% if operator_error %} data-dirty-start="1"{% endif %}>
   <p class="required-legend">{{ t('common.required_legend') }}</p>
@@ -74,6 +104,7 @@
 <details class="prop-sec" id="sec-basics"{% if inline_flash_section == 'basics' %} open{% endif %}{% if property_view != 'bookings' and (not settings_section or settings_section == 'property') %} open{% endif %}><summary><span class="dot {{ 'g' if address_text else 'r' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.basics.title') }}</b></div><small class="sec-state">{{ address_text or t('property_nav.address_missing') }}</small></summary>
   <div class="fields-wrap">
   {{ section_notice('basics') }}
+  {{ section_missing(miss['basics'], 'basics') }}
     <section class="panel property-section ui-section" id="basics">
       {% include "_property_identity_fields.html" %}
       {% set operator_current = apartment.legal_entity_id %}
@@ -154,6 +185,7 @@
 <details class="prop-sec" id="sec-messages"{% if inline_flash_section == 'messages' %} open{% endif %}{% if settings_section == 'guests' %} open{% endif %}><summary><span class="dot {{ 'n' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.messages.title') }}</b></div><small class="sec-state">{{ t('property_page.sec.messages.sub') }}</small></summary>
   <div class="fields-wrap">
   {{ section_notice('messages') }}
+  {% if g_bad %}<div class="prop-sec-missing" data-missing="messages" role="note"><p>{{ t(hc['guest_link'].text_key) }}</p></div>{% endif %}
     <section class="panel property-section ui-section" id="communication">
       <div class="field-label-row"><h2 class="property-section-title">{{ t('nav.guest_links') }}{{ help_tip('communication-help', t('guest_links.lede') ~ ' ' ~ t('apartment.form.guest_link.message_help'), '/guide#guests') }}</h2></div>
       <p class="ui-sub">{{ t('why.guest_link') }}</p>
@@ -231,6 +263,7 @@
 <details class="prop-sec" id="sec-police"{% if inline_flash_section == 'police' %} open{% endif %}{% if settings_section in ['reporting', 'automation'] %} open{% endif %}><summary><span class="dot {{ 'g' if police_ok else 'r' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.police.title') }}</b></div><small class="sec-state">{{ t('property_nav.report_ready') if police_ok else tp('property_nav.report_missing', report_missing) }}</small></summary>
   <div class="fields-wrap">
   {{ section_notice('police') }}
+  {{ section_missing(miss['police'], 'police') }}
     <section class="panel property-section ui-section" id="ubyport">
       <div class="field-label-row police-section-head"><h2 class="property-section-title">{{ t('host.reporting') }}{{ help_tip('ubyport-help', t('apartment.form.ubyport.credentials_help_heading'), '/guide#ubyport-credentials') }}</h2>
         <a class="ui-btn ui-btn-secondary ui-btn-compact police-sample-link" id="police-sample-link" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.sample_link') }}</a></div>
@@ -359,6 +392,7 @@
 <details class="prop-sec" id="sec-calendars"{% if inline_flash_section == 'calendars' %} open{% endif %}{% if property_view == 'bookings' %} open{% endif %}><summary><span class="dot {{ 'r' if calendar_errors else ('g' if feeds_count else 'n') }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.calendars.title') }}</b></div><small class="sec-state">{{ tp('apartment.form.calendars_count', feeds_count) }}</small></summary>
   <div class="fields-wrap">
   {{ section_notice('calendars') }}
+  {{ section_missing(miss['calendars'], 'calendars') }}
 {% include "_property_calendars.html" %}
   </div>
 </details>
@@ -366,6 +400,7 @@
 <details class="prop-sec" id="sec-lock"{% if inline_flash_section == 'lock' %} open{% endif %}{% if settings_section == 'lock' %} open{% endif %}><summary><span class="dot {{ 'g' if door_code and door_code.state == 'on' else 'n' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.lock.title') }}</b></div><small class="sec-state">{{ t('property_nav.switch_enabled') if door_code and door_code.state == 'on' else t('property_nav.switch_off') }}</small></summary>
   <div class="fields-wrap">
   {{ section_notice('lock') }}
+  {% if door_code and door_code.state in ['offline', 'times'] %}<div class="prop-sec-missing" data-missing="lock" role="note"><p>{{ t('health.door.offline') if door_code.state == 'offline' else t('health.door.times') }}</p></div>{% endif %}
     <p class="property-group-intro">{{ t('why.door_lock') }}</p>
     {% if door_code and door_code.account and door_code.locks %}
     <div class="lock-state" data-state="{{ door_code.state }}" role="status">
@@ -433,68 +468,4 @@
     <button class="btn" type="submit" form="property-settings-form">{{ t('common.save_changes') }}</button>
   </div>
 </div>
-<aside class="preview" aria-labelledby="property-preview-title">
-  <h3 id="property-preview-title">{{ t('property_page.preview.title') }}</h3>
-{% if setup_progress and not setup_progress.hidden %}
-<section class="pv setup-continue-card" aria-label="{{ t('wizard.continue_card_aria') }}">
-  <p>{{ t('wizard.continue_card', done=setup_progress.done, total=setup_progress.total) }}
-    {% if setup_progress.reporting_waiting %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ t('setup_guide.reporting.waiting_item') }}</span>{% endif %}
-  </p>
-  <div class="actions">
-    <a class="ui-btn ui-btn-primary" href="{{ setup_progress.continue_url }}">{{ t('wizard.continue') }}</a>
-    <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
-      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-      <button class="ui-btn ui-btn-quiet" type="submit" name="action" value="hide" formnovalidate>{{ t('setup_guide.hide') }}</button>
-    </form>
-  </div>
-</section>
-{% elif setup_hidden %}
-<form method="post" action="/apartments/{{ apartment.id }}/setup" class="property-setup-show">
-  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-  <button class="link-button" type="submit" name="action" value="show">{{ t('setup_guide.show') }}</button>
-</form>
-{% endif %}
-  {%- set wizard_active = setup_progress and not setup_progress.hidden -%}
-  {% if leon_card %}<div class="pv"><a class="r" href="{{ base_url }}/leon{% if leon_card != 'on' %}/setup{% endif %}" data-leon-card="{{ leon_card }}"><span>{{ t('leon_page.title') }}</span>{{ t('leon_page.card.' ~ leon_card) }}</a></div>{% endif %}
-  {% if readiness and not wizard_active %}<div class="pv">
-{%- set wizard_active = setup_progress and not setup_progress.hidden -%}
-{% if readiness and not wizard_active %}
-<details class="setup-readiness-help" data-setup-status>
-    <summary>{{ t('wizard.overview.details') }} <span aria-hidden="true">?</span></summary>
-    <section class="readiness">
-  <div class="readiness-group">
-    <h3 class="readiness-title">{{ t('apartment.form.readiness.invite_title') }}</h3>
-    <ul class="readiness-list">
-      {% for item in readiness.invite %}
-      <li class="readiness-item{% if item.done %} is-done{% endif %}">
-        <span class="readiness-mark" aria-hidden="true">{{ '✓' if item.done else '✗' }}</span>
-        {% if item.done %}{{ t('apartment.form.readiness.item.' ~ item.key) }}
-        {% else %}<a href="#{{ item.anchor }}">{{ t('apartment.form.readiness.missing') }} {{ t('apartment.form.readiness.item.' ~ item.key) }}</a>{% endif %}
-      </li>
-      {% endfor %}
-    </ul>
-    {% if readiness.invite_ready %}
-    <p class="readiness-ready">{{ t('apartment.form.readiness.invite_ready') }}</p>
-    {% if not setup_finished %}{{ copy_inline('readiness-permalink', permalink, t('apartment.form.readiness.copy_link')) }}{% endif %}
-    {% endif %}
-  </div>
-  <div class="readiness-group">
-    <h3 class="readiness-title">{{ t('apartment.form.readiness.report_title') }}</h3>
-    <ul class="readiness-list">
-      {% for item in readiness.report %}
-      <li class="readiness-item{% if item.done %} is-done{% endif %}">
-        <span class="readiness-mark" aria-hidden="true">{{ '✓' if item.done else '✗' }}</span>
-        {% if item.done %}{{ t('apartment.form.readiness.item.' ~ item.key) }}
-        {% else %}<a href="#{{ item.anchor }}">{{ t('apartment.form.readiness.missing') }} {{ t('apartment.form.readiness.item.' ~ item.key) }}</a>
-          {% if item.message %}<span class="readiness-why">{{ validation_message(item.message) }}</span>{% endif %}
-        {% endif %}
-      </li>
-      {% endfor %}
-    </ul>
-  </div>
-</section>
-</details>
-{% endif %}
-  </div>{% endif %}
-</aside>
 </div>
