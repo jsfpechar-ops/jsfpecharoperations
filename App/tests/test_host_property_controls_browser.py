@@ -555,3 +555,134 @@ def test_guest_links_and_message_settings_geometry(host, base):
                 tip_top = page.evaluate(_TIP_JS, "ocr_scan")
                 assert tip_top is not None and abs(tip_top[0] - cb["y"]) <= 6, tip_top
         browser.close()
+
+
+# --- 0963: one Stay fee heading, one police title, direct Archive, copy chooser on the common dialog ---
+
+SHOTS_0963 = Path(os.environ.get("UBYHOST_SHOTS_DIR", "/tmp/ubyhost-b05"))
+
+
+def _shot_0963(page, name):
+    SHOTS_0963.mkdir(parents=True, exist_ok=True)
+    page.screenshot(path=str(SHOTS_0963 / f"{name}.png"), full_page=False)
+
+
+def _open_page_0963(browser, base, host, path, width):
+    context = browser.new_context(viewport={"width": width, "height": 900}, has_touch=width < 700)
+    context.add_cookies([{"name": auth.SESSION_COOKIE, "value": _session_cookie(host), "url": base}])
+    page = context.new_page()
+    page.goto(f"{base}{path}")
+    page.wait_for_load_state("networkidle")
+    return context, page
+
+
+def test_0963_fee_and_police_headings_and_archive_button(host, base):
+    apartment = host["apartment"]
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        try:
+            for lang, fee_title, police_title, connection, facility, archive_label in (
+                ("en", "Stay fee", "Foreigner police", "Connection to UbyPort", "Accommodation facility", "Archive property"),
+                ("cs", "Poplatek z pobytu", "Cizinecká policie", "Připojení k UbyPortu", "Ubytovací zařízení", "Archivovat nemovitost"),
+            ):
+                for width in (390, 768, 1280):
+                    context, page = _open_page_0963(browser, base, host, f"/apartments/{apartment}?lang={lang}", width)
+                    try:
+                        label = (lang, width)
+                        # Stay fee: the accordion title once, no inner duplicate; opens and closes.
+                        fee = page.locator("#sec-fee")
+                        fee.locator("> summary").click()
+                        assert fee.evaluate("e => e.open") is True, label
+                        assert fee_title in fee.locator("> summary b").inner_text(), label
+                        inner = [" ".join(h.split()).lower() for h in fee.locator("h2, h3").all_text_contents()]
+                        assert not any(h.startswith(fee_title.lower()) for h in inner), (label, inner)
+                        assert fee.locator("h2.property-section-title").count() == 0, label
+                        assert fee.locator("#stay-fee-settings").count() == 1, label
+                        fee.locator("> summary").click()
+                        assert fee.evaluate("e => e.open") is False, label
+                        # Police: one title, three meaningful subsections, no synonym heading.
+                        police = page.locator("#sec-police")
+                        police.locator("> summary").click()
+                        assert police.evaluate("e => e.open") is True, label
+                        assert police_title in police.locator("> summary b").inner_text(), label
+                        heads = [" ".join(h.split()) for h in police.locator("h2.property-section-title").all_text_contents()]
+                        assert len(heads) == 3, (label, heads)
+                        assert heads[0].startswith(connection) and heads[1].startswith(facility), (label, heads)
+                        assert not any(h.startswith(("Police reporting", "Hlášení policii")) for h in heads), (label, heads)
+                        assert police.locator("#police-sample-link").count() == 1, label
+                        if width == 390:
+                            _shot_0963(page, f"police-open-{lang}-390")
+                        police.locator("> summary").click()
+                        assert police.evaluate("e => e.open") is False, label
+                        # Archive: a direct secondary button, no accordion, not clipped.
+                        assert page.locator("details#sec-archive").count() == 0, label
+                        button = page.locator("#archive button[formaction$='/archive']")
+                        assert button.count() == 1 and button.inner_text().strip() == archive_label, label
+                        assert "ui-btn-secondary" in button.get_attribute("class"), label
+                        button.scroll_into_view_if_needed()
+                        box = button.bounding_box()
+                        assert box and box["x"] >= 0 and box["x"] + box["width"] <= width + 1 and box["height"] >= 40, (label, box)
+                        assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), label
+                        page.mouse.move(0, 0)  # 0963: a hover left by an earlier click must not open the tip
+                        page.evaluate("document.activeElement && document.activeElement.blur()")
+                        # The scroll above put the "?" under the still pointer, so JS opened the tip; leaving it closes it after 150 ms.
+                        page.locator("#archive-help").wait_for(state="hidden")
+                        assert not page.locator("#archive-help").is_visible(), label  # the tip stays closed until asked
+                        if lang == "en":
+                            _shot_0963(page, f"archive-{width}")
+                            # Click -> existing confirmation -> Cancel changes nothing.
+                            url_before = page.url
+                            button.click()
+                            dialog = page.locator("#confirm-dialog")
+                            dialog.wait_for(state="visible")
+                            assert dialog.locator("[data-confirm-cancel]").is_visible(), label
+                            if width == 390:
+                                _shot_0963(page, "archive-confirm-390")
+                            dialog.locator("[data-confirm-cancel]").click()
+                            dialog.wait_for(state="hidden")
+                            assert page.url == url_before, label
+                            row = db.query_one("SELECT archived_at, active FROM apartment WHERE id = ?", (apartment,))
+                            assert row["archived_at"] is None and row["active"] == 1, label
+                    finally:
+                        context.close()
+        finally:
+            browser.close()
+
+
+def test_0963_copy_chooser_uses_the_common_dialog_and_cancel_keeps_form_data(host, base):
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        try:
+            for lang in ("en", "cs"):
+                for width in (390, 768, 1280):
+                    context, page = _open_page_0963(browser, base, host, f"/apartments/new?lang={lang}", width)
+                    try:
+                        label = (lang, width)
+                        name = page.locator("input[name='internal_name']").first
+                        name.fill("Keep me 0963")
+                        page.locator(".airbnb-actions .copy-settings-open").first.click()
+                        dialog = page.locator("#copy-settings")
+                        dialog.wait_for(state="visible")
+                        page.wait_for_timeout(500)
+                        style = dialog.evaluate(
+                            """d => { const s = d.querySelector('.ui-sheet'); const c = getComputedStyle(d), k = getComputedStyle(s);
+                                      const r = d.getBoundingClientRect(); const q = s.getBoundingClientRect();
+                                      return {border: c.borderTopWidth, radius: k.borderTopLeftRadius, bg: k.backgroundColor,
+                                              left: r.left, right: r.right, top: q.top, bottom: q.bottom,
+                                              vw: document.documentElement.clientWidth, vh: innerHeight}; }""")
+                        assert style["border"] == "0px", (label, style)
+                        assert style["radius"] != "0px" and style["bg"] == "rgb(255, 255, 255)", (label, style)
+                        assert style["left"] >= -1 and style["right"] <= style["vw"] + 1, (label, style)
+                        assert style["top"] >= -1 and style["bottom"] <= style["vh"] + 1, (label, style)
+                        assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), label
+                        select = dialog.locator("select#copy_from")
+                        select.select_option(index=0)
+                        assert select.input_value(), label
+                        _shot_0963(page, f"copy-dialog-{lang}-{width}")
+                        dialog.locator("[data-sheet-close]").click()
+                        dialog.wait_for(state="hidden")
+                        assert name.input_value() == "Keep me 0963", label
+                    finally:
+                        context.close()
+        finally:
+            browser.close()

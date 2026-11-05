@@ -1,8 +1,4 @@
 {
-  "admin2-operator-0974.css": {
-    "sha256": "64318b649212ad2dfabeb93a13043b4c7bdf4181bbe015ece27f302ebf6cccff",
-    "v": "20261105-0974a"
-  },
   "admin2-system.css": {
     "sha256": "71375d0cbcd5e0cef2b3e8a07c08a3b87520ef186ee4d324e1b5213ec9b228d6",
     "v": "20261102-0894e"
@@ -28,8 +24,8 @@
     "v": "20261104-0955g"
   },
   "app2.css": {
-    "sha256": "4a81f079e96bcaf4287173c70d7dd29d68a6076216ad1c6ab8f3c0b8606c01a7",
-    "v": "20261105-0962a"
+    "sha256": "3c8dc4326fb8308db78b3d7fadb90630153a9713e56e7911255d6ebee6120e88",
+    "v": "20261105-0963b"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -64,12 +60,12 @@
     "v": "20260915a"
   },
   "dashboard-calendar.css": {
-    "sha256": "ecff125c822741c1693c4661acfc945e4f85fbaf0c9b7ec7e3959f7806ff55a6",
-    "v": "20261105-0960a"
+    "sha256": "fccd8f835006333de8d732b09f660b2c92e1cb6515ce98eaac426076ab11600d",
+    "v": "20261105-0956e"
   },
   "dashboard-calendar.js": {
-    "sha256": "18798dc8a56fbbacf43ea3410a948fe44b94dabac742e2e00922a42439f355df",
-    "v": "20261105-0960a"
+    "sha256": "327c1375ba47ad6b040b9e301a5696bf9fa9b0ce3a5fd46678f0a36f773a6bf1",
+    "v": "20261105-0956b"
   },
   "docs/ubyport-ws-credential-sample.pdf": {
     "sha256": "0c147cf9c5dd5326612bc4668c5bce853cf300171ca62e3a0bab688c09b75fe6",
@@ -92,8 +88,8 @@
     "v": "20261025-0393b"
   },
   "guest.css": {
-    "sha256": "79820170c499bab2a7be82e0913c3354046bbf64a88b80a3ac775e0674709aee",
-    "v": "20261105-0965b"
+    "sha256": "0ab4f3b8e66392a85bc2692e82faf446268380220cb53e2a726dbdbabcb41c18",
+    "v": "20261104-0910b"
   },
   "guide.js": {
     "sha256": "7bc163abd236d8032c1f7a094aadf4993774920b24b4a0817768dd27fa0cefab",
@@ -160,8 +156,8 @@
     "v": "20261025-0373"
   },
   "signature.js": {
-    "sha256": "1d6de35c4a6011c7a99ba3c3223f901bca00eea18e110cd930e0708efa163fa7",
-    "v": "20261105-0965a"
+    "sha256": "9c4170dc81e8d3c61cb1df0417a5193110c5d4496e1281e73bc690f48deb043a",
+    "v": "20261021-0196"
   },
   "skeleton.css": {
     "sha256": "4685a64e9b7d3fc56680e55c6772d6d8b6c9dcaf8c9b1655ec0d17cebe70d46f",
