@@ -248,6 +248,9 @@ def guest_pay_values(form) -> dict:
     """The guest-pay fields as posted. Rails are a sorted csv of the allowed values."""
     rails = sorted({value for value in form.getlist("stay_fee_guest_rails") if value in GUEST_RAILS})
     link = _form_str(form, "stay_fee_guest_revolut_link").strip()
+    if link and revolut_link_ok(link) and "revolut" not in rails:
+        rails.append("revolut")
+        rails.sort()
     note = _form_str(form, "stay_fee_guest_cash_note")[:GUEST_NOTE_MAX].strip()
     return {
         "stay_fee_collect": 1 if _form_str(form, "stay_fee_collect") == "1" else 0,

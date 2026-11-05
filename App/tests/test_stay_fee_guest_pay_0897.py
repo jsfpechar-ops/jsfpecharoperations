@@ -207,6 +207,21 @@ def test_cash_note_is_capped_at_300_characters(host, monkeypatch):
     assert len(_stored(apartment_id)["stay_fee_guest_cash_note"]) == 300
 
 
+def test_revolut_link_adds_revolut_rail_when_checkbox_omitted(host, monkeypatch):
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    response = _save(
+        client,
+        apartment_id,
+        guest={
+            "stay_fee_guest_rails": ["qr"],
+            "stay_fee_guest_revolut_link": GOOD_LINK,
+        },
+    )
+    assert response.status_code == 303, response.text
+    assert "revolut" in _stored(apartment_id)["stay_fee_guest_rails"]
+
+
 def test_qr_rail_without_operator_account_refuses_save(host, monkeypatch):
     client, apartment_id = host
     monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)

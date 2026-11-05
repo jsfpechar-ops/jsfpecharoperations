@@ -20,6 +20,9 @@
 
   {% if fee_panel.rails %}
     <p class="g-intro g-fee-choose">{{ t('fee_choose') }}</p>
+    {% if fee_panel.provisional %}
+    <p class="g-intro g-fee-provisional">{{ t('fee_provisional') }}</p>
+    {% endif %}
     {% for rail in fee_panel.rails %}
       <details class="g-summary"{% if loop.first %} open{% endif %}>
         {% if rail.key == 'qr' %}
@@ -51,6 +54,8 @@
         {% endif %}
       </details>
     {% endfor %}
+  {% else %}
+    <p class="g-intro g-fee-no-rails">{{ t('fee_no_rails') }}</p>
   {% endif %}
 
   <p class="g-intro g-fee-legal">{{ t('fee_legal_pointer') }}</p>

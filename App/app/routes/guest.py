@@ -1251,11 +1251,10 @@ def stay_overview(token: str, reservation_id: int, request: Request):
             "door_code": door_codes.view(reservation, apartment),
         }
     )
-    context["fee_panel"] = (
-        _fee_pay_panel(apartment, reservation, context["t"])
-        if remaining is None or remaining <= 0
-        else None
-    )
+    fee_panel = _fee_pay_panel(apartment, reservation, context["t"])
+    if fee_panel and remaining is not None and remaining > 0:
+        fee_panel = {**fee_panel, "provisional": True}
+    context["fee_panel"] = fee_panel
     return _with_lang(render_guest(request, "guest/stay.html", context), lang)
 
 
@@ -1580,6 +1579,11 @@ def _form_context(
                 else ""
             ),
             "fee_estimate": _fee_estimate(apartment, reservation, values or {}),
+            "fee_panel": (
+                _fee_pay_panel(apartment, reservation, context["t"])
+                if remaining is None or remaining <= 0
+                else None
+            ),
             "country_groups": codelists.country_groups(lang),
             "purposes": codelists.purpose_options(lang),
             "default_purpose": apartment["default_purpose"] or validation.DEFAULT_PURPOSE,
@@ -1987,6 +1991,10 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     destination = _guest_link(token, reservation_id)
     if continue_to_next:
         destination += "/new"
+    else:
+        panel = _fee_pay_panel(apartment, fresh_reservation, i18n.translator(lang))
+        if panel and panel.get("rails"):
+            destination += "#fee-pay"
 
     response = RedirectResponse(
         destination + _lang_q(lang, "&saved=1"), status_code=303
