@@ -20,12 +20,22 @@
     var syncDefault = function () {
       var on = {};
       railBoxes.forEach(function (box) { on[box.value] = box.checked; });
+      var first = null;
+      var ticked = 0;
       defaultRail.querySelectorAll("option[data-rail]").forEach(function (option) {
         var enabled = !!on[option.dataset.rail];
         option.disabled = !enabled;
         option.hidden = !enabled;
-        if (!enabled && option.selected) defaultRail.value = "";
+        if (enabled) {
+          ticked += 1;
+          if (first === null) first = option;
+        }
       });
+      var current = defaultRail.options[defaultRail.selectedIndex];
+      if (first && (!current || current.disabled)) first.selected = true;
+      if (!first) defaultRail.value = "";
+      var field = defaultRail.closest(".gp-default");
+      if (field) field.hidden = ticked < 2;
     };
     railBoxes.forEach(function (box) { box.addEventListener("change", syncDefault); });
     syncDefault();

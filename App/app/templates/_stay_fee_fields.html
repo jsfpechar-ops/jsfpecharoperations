@@ -63,7 +63,10 @@
 </div>
 {#- 0897: collect the stay fee from guests. Hidden when this deployment has it off and in the setup wizard (which asks four boxes only). The switch hides everything under it; each method's details sit under that method. -#}
 {%- if stay_fee_guest_pay_on() and not fee_required -%}
-{%- set guest_rails = (apartment.stay_fee_guest_rails or '').split(',') -%}
+{%- set guest_rails = (apartment.stay_fee_guest_rails or '').replace('qr', 'iban').split(',') -%}
+{%- set stored_default = (apartment.stay_fee_guest_default_rail or '').replace('qr', 'iban') -%}
+{%- set ordered_rails = ['iban', 'revolut', 'cash']|select('in', guest_rails)|list -%}
+{%- set default_sel = stored_default if stored_default in ordered_rails else (ordered_rails[0] if ordered_rails else '') -%}
 {%- set gpo = guest_pay_operator if guest_pay_operator is defined else {} -%}
 {%- set gpo_err = fee_operator_account_error is defined and fee_operator_account_error -%}
 {%- set rate_err = fee_rate_error is defined and fee_rate_error -%}
@@ -80,7 +83,6 @@
       <fieldset class="gp-methods">
         <legend class="small">{{ t('stay_fees.guest_pay.rails_label') }}</legend>
         <div class="gp-card">
-          <label class="gp-check checkline"><input type="checkbox" name="stay_fee_guest_rails" value="qr"{% if 'qr' in guest_rails %} checked{% endif %}> <span>{{ t('stay_fees.guest_pay.rail.qr') }}<small class="muted gp-rail-note">{{ t('stay_fees.guest_pay.qr_note') }}</small></span></label>
           <label class="gp-check checkline"><input type="checkbox" name="stay_fee_guest_rails" value="iban"{% if 'iban' in guest_rails %} checked{% endif %}> <span>{{ t('stay_fees.guest_pay.rail.iban') }}</span></label>
           <div class="gp-detail gp-account" data-guest-pay-operator data-preview-url="/stay-fees/{{ apartment.id }}/guest-pay-preview">
             <p class="ui-sub">{{ t('stay_fees.guest_pay.operator_lede') }}</p>
@@ -101,6 +103,7 @@
                 <p class="muted small">{{ t('stay_fees.guest_pay.preview_sample_note') }}</p>
               </div>
             </div>
+            <p class="muted small gp-rail-note">{{ t('stay_fees.guest_pay.qr_note') }}</p>
           </div>
         </div>
         <div class="gp-card">
@@ -126,9 +129,8 @@
       <div class="field gp-default">
         {{ field_label('stay_fee_guest_default_rail', t('stay_fees.guest_pay.default_label'), t('stay_fees.guest_pay.default_help')) }}
         <select id="stay_fee_guest_default_rail" name="stay_fee_guest_default_rail" aria-describedby="stay_fee_guest_default_rail-help">
-          <option value=""{% if not apartment.stay_fee_guest_default_rail %} selected{% endif %}>{{ t('stay_fees.guest_pay.default_auto') }}</option>
-          {% for rail in ['qr', 'iban', 'revolut', 'cash'] %}
-          <option value="{{ rail }}" data-rail="{{ rail }}"{% if apartment.stay_fee_guest_default_rail == rail %} selected{% endif %}{% if rail not in guest_rails %} disabled hidden{% endif %}>{{ t('stay_fees.guest_pay.rail.' ~ rail) }}</option>
+          {% for rail in ['iban', 'revolut', 'cash'] %}
+          <option value="{{ rail }}" data-rail="{{ rail }}"{% if default_sel == rail %} selected{% endif %}{% if rail not in guest_rails %} disabled hidden{% endif %}>{{ t('stay_fees.guest_pay.rail.' ~ rail) }}</option>
           {% endfor %}
         </select>
       </div>
@@ -137,4 +139,4 @@
 </div>
 {%- endif -%}
 {% include "_fee_signature_fields.html" %}
-<script src="/static/stay-fee-guest-pay.js?v=20261105-gp3" defer data-turbo-track="reload"></script>
+<script src="/static/stay-fee-guest-pay.js?v=20261105-gp4" defer data-turbo-track="reload"></script>

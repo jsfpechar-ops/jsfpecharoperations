@@ -245,7 +245,7 @@ def stay_fees_list(request: Request):
 FEE_ACCOUNT_RAW = "_stay_fee_account_raw"
 
 # 0897: guest pays the stay fee. Phase 0 stores host settings only.
-GUEST_RAILS = ("qr", "iban", "revolut", "cash")
+GUEST_RAILS = ("iban", "revolut", "cash")
 GUEST_NOTE_MAX = 300
 GUEST_LINK_RAW = "_stay_fee_guest_link_raw"
 GUEST_LINK_INVALID = "stay_fee_guest_link_invalid"
@@ -279,15 +279,18 @@ def revolut_link_ok(raw: str) -> bool:
 
 def guest_pay_values(form) -> dict:
     """The guest-pay fields as posted. Rails are a sorted csv of the allowed values."""
-    rails = sorted({value for value in form.getlist("stay_fee_guest_rails") if value in GUEST_RAILS})
+    posted = {"iban" if value == "qr" else value for value in form.getlist("stay_fee_guest_rails")}
+    rails = sorted(value for value in posted if value in GUEST_RAILS)
     link = _form_str(form, "stay_fee_guest_revolut_link").strip()
     if link and revolut_link_ok(link) and "revolut" not in rails:
         rails.append("revolut")
         rails.sort()
     note = _form_str(form, "stay_fee_guest_cash_note")[:GUEST_NOTE_MAX].strip()
     default_rail = _form_str(form, "stay_fee_guest_default_rail")
+    if default_rail == "qr":
+        default_rail = "iban"
     if default_rail not in rails:
-        default_rail = ""
+        default_rail = next((rail for rail in GUEST_RAILS if rail in rails), "")
     return {
         "stay_fee_guest_default_rail": default_rail,
         "stay_fee_collect": 1 if _form_str(form, "stay_fee_collect") == "1" else 0,
@@ -476,6 +479,19 @@ GUEST_SETUP_FLASH = {
 }
 
 
+def _operator_account_on_file(apartment, values: dict) -> bool:
+    """A posted account, or the one already stored on the legal entity."""
+    if (values.get(GUEST_OPERATOR_ACCOUNT_RAW) or "").strip():
+        return True
+    entity_id = apartment.get("legal_entity_id")
+    if not entity_id:
+        return False
+    from .. import db
+
+    entity = db.query_one("SELECT id, bank_account, iban FROM legal_entity WHERE id = ?", (entity_id,))
+    return bool(entity and _entity_payment_account(entity))
+
+
 def check_guest_pay_setup(apartment, values: dict) -> None:
     """Asking guests to pay needs a fee rate, at least one way to pay, and a link for Revolut."""
     if not app_config.STAY_FEE_GUEST_PAY or not values.get("stay_fee_collect"):
@@ -495,6 +511,8 @@ def check_guest_pay_setup(apartment, values: dict) -> None:
     link = values.get("stay_fee_guest_revolut_link", apartment.get("stay_fee_guest_revolut_link"))
     if "revolut" in rails and not (link or values.get(GUEST_LINK_RAW)):
         raise ValueError(GUEST_REVOLUT_REQUIRED)
+    if "iban" in rails and not _operator_account_on_file(apartment, values):
+        raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
 
 
 def apply_guest_operator_account(apartment, form, values: dict) -> None:
@@ -531,11 +549,19 @@ def apply_guest_operator_account(apartment, form, values: dict) -> None:
         if _entity_payment_account(entity):
             return
         raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
-    try:
-        bank_account, iban = payments.normalise_account(raw.strip())
-    except ValueError as exc:
-        raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID) from exc
+    from .invoices import apply_account_payload
+
+    detail = {"bank_account": raw.strip()}
+    if not apply_account_payload(detail, {}, entity, accept_parts=False):
+        raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
+    bank_account, iban = detail["bank_account"], detail["iban"]
+    old_account = entity.get("bank_account") or ""
+    old_iban = entity.get("iban") or ""
     db.update("legal_entity", entity_id, {"bank_account": bank_account, "iban": iban})
+    if (bank_account, iban) != (old_account, old_iban):
+        old_tail = (old_iban or old_account)[-4:] or "none"
+        new_tail = (iban or bank_account)[-4:]
+        db.audit("guest_operator_account_changed", f"entity={entity_id} old=...{old_tail} new=...{new_tail}")
 
 
 

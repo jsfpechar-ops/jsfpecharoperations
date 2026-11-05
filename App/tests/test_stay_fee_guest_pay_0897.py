@@ -133,7 +133,7 @@ def test_flag_on_saves_the_guest_fields(host, monkeypatch):
     assert response.status_code == 303, response.text
     stored = _stored(apartment_id)
     assert stored["stay_fee_collect"] == 1
-    assert stored["stay_fee_guest_rails"] == "cash,qr,revolut"
+    assert stored["stay_fee_guest_rails"] == "cash,iban,revolut"
     assert stored["stay_fee_guest_revolut_link"] == GOOD_LINK
     assert stored["stay_fee_guest_cash_note"] == "Pay at reception"
 
@@ -154,7 +154,7 @@ def test_flag_on_switch_off_is_a_checkbox_that_stores_zero(host, monkeypatch):
     _save(client, apartment_id, guest={"stay_fee_guest_rails": ["qr"]})
     stored = _stored(apartment_id)
     assert stored["stay_fee_collect"] == 0
-    assert stored["stay_fee_guest_rails"] == "qr"
+    assert stored["stay_fee_guest_rails"] == "iban"
 
 
 @pytest.mark.parametrize("bad", [
@@ -376,7 +376,7 @@ def test_default_rail_is_saved_only_when_that_rail_is_enabled(host, monkeypatch)
         "stay_fee_guest_default_rail": "cash",
     })
     row = db.query_one("SELECT stay_fee_guest_default_rail FROM apartment WHERE id = ?", (apartment_id,))
-    assert row["stay_fee_guest_default_rail"] == ""
+    assert row["stay_fee_guest_default_rail"] == "iban"
 
 
 def test_the_setup_wizard_does_not_ask_about_guest_payment(host, monkeypatch):

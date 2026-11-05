@@ -39,7 +39,7 @@ def test_stored_account_and_live_preview_without_reload(host, base, monkeypatch)
         _open_fee(page, url)
         page.evaluate("() => { window.__same = true; }")
         page.check("#stay_fee_collect")
-        page.locator("input[name='stay_fee_guest_rails'][value='qr']").check()
+        page.locator("input[name='stay_fee_guest_rails'][value='iban']").check()
         box = page.locator("#stay-fee-guest-preview")
         assert not box.is_visible()
         page.fill("#stay_fee_guest_operator_account", "19-2000145399/0800")
@@ -101,7 +101,7 @@ def test_each_method_shows_its_details_and_the_switch_hides_all(host, base, monk
         assert sorted(enabled) == ["iban", "revolut"]
         page.select_option("#stay_fee_guest_default_rail", "revolut")
         page.locator("input[name='stay_fee_guest_rails'][value='revolut']").uncheck()
-        assert page.input_value("#stay_fee_guest_default_rail") == ""
+        assert page.input_value("#stay_fee_guest_default_rail") == "iban"
         SHOTS.mkdir(parents=True, exist_ok=True)
         page.locator("input[name='stay_fee_guest_rails'][value='cash']").check()
         page.locator("#stay-fee-guest-pay").scroll_into_view_if_needed()
