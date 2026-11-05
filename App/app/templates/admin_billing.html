@@ -2,7 +2,7 @@
     Data: routes/admin_billing.py, app/billing_admin.py, app/bank_import.py. -#}
 {% extends "host_page.html" %}
 {% set v2 = true %}
-{% block head_extra %}<link rel="stylesheet" href="/static/admin2.css?v=20261102-0893o"><link rel="stylesheet" href="/static/admin2-system.css?v=20261102-0894e">{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="/static/admin2.css?v=20261102-0893o"><link rel="stylesheet" href="/static/admin2-system.css?v=20261102-0894e"><link rel="stylesheet" href="/static/admin2-operator-0974.css?v=20261105-0974a">{% endblock %}
 {% from "_components.html" import tip_label with context %}
 {% set nav = 'billing_admin' %}
 {% set body_kind = 'detail' %}
@@ -47,18 +47,16 @@
 </tr>
 <tr class="ui-row ui-row-actions">
   <td colspan="4">
-    <form method="post" action="/admin/fakturace/{{ inv.id }}/zaplaceno" class="ui-form-actions">
+    <form method="post" action="/admin/fakturace/{{ inv.id }}/zaplaceno" class="admin-controls">
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-      <label class="admin-label" for="paid-{{ inv.id }}">{{ t('billing.admin.paid.date') }}</label>
-      <input class="ui-input" type="date" id="paid-{{ inv.id }}" name="paid_on" value="{{ today }}" required>
+      {{ ui_field('paid-' ~ inv.id, t('billing.admin.paid.date'), name='paid_on', value=today, type='date', attrs='required') }}
       {{ ui_button(t('billing.admin.paid.submit'), 'secondary', type='submit') }}
     </form>
     <details>
       <summary>{{ t('billing.admin.storno.open') }}</summary>
-      <form method="post" action="/admin/fakturace/{{ inv.id }}/storno" class="ui-form-actions">
+      <form method="post" action="/admin/fakturace/{{ inv.id }}/storno" class="admin-controls">
         <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-        <label class="admin-label" for="reason-{{ inv.id }}">{{ t('billing.admin.storno.reason') }}</label>
-        <input class="ui-input" type="text" id="reason-{{ inv.id }}" name="reason" maxlength="200" required>
+        {{ ui_field('reason-' ~ inv.id, t('billing.admin.storno.reason'), name='reason', attrs='maxlength="200" required') }}
         {{ ui_button(t('billing.admin.storno.submit'), 'danger', type='submit') }}
       </form>
     </details>
@@ -70,11 +68,10 @@
 {% endcall %}
 
 {% call ui_section(tip_label(t('billing.admin.month.title'), 'month-help', t('billing.admin.month.export_help'), tag='span'), id='month') %}
-<form method="get" action="/admin/fakturace" class="ui-form-actions">
-  <label class="admin-label" for="month-pick">{{ t('billing.admin.month.pick') }}</label>
-  <input class="ui-input" type="month" id="month-pick" name="mesic" value="{{ month }}">
-  {{ ui_button(t('billing.admin.month.show'), 'secondary', type='submit') }}
-  {{ ui_button(t('billing.admin.month.export'), 'primary', href='/admin/fakturace/export?mesic=' ~ month) }}
+<form method="get" action="/admin/fakturace" class="admin-controls">
+  {{ ui_field('month-pick', t('billing.admin.month.pick'), name='mesic', value=month, type='month') }}
+  {{ ui_button(t('billing.admin.month.show'), 'primary', type='submit') }}
+  {{ ui_button(t('billing.admin.month.export'), 'secondary', href='/admin/fakturace/export?mesic=' ~ month, icon_name='download', attrs='download') }}
 </form>
 {% if invoices %}
 {{ ui_table_begin([(t('billing.admin.col.number'), ''), (t('billing.admin.col.buyer'), ''), (t('billing.admin.col.amount'), 'r'), (t('billing.admin.col.state'), 'r')], label=t('billing.admin.month.title')) }}
@@ -95,16 +92,13 @@
 <details class="ui-section" id="reports"><summary>{{ t('billing.admin.reports') }}</summary>
 
 {% call ui_section(t('billing.admin.portfolio.title'), id='portfolio') %}
-<form method="get" action="/admin/fakturace" class="ui-form-actions" data-billing-admin-portfolio-filter>
-  <label class="admin-label" for="portfolio-q">{{ t('billing.admin.portfolio.search') }}</label>
-  <input class="ui-input" type="search" id="portfolio-q" name="q" value="{{ q }}" placeholder="{{ t('billing.admin.portfolio.search_placeholder') }}">
-  <label class="admin-label" for="portfolio-state">{{ t('billing.admin.portfolio.state') }}</label>
-  <select class="ui-input" id="portfolio-state" name="state">
-    <option value="">{{ t('billing.admin.portfolio.all') }}</option>
-    {% for s in states %}<option value="{{ s }}"{% if state == s %} selected{% endif %}>{{ t('billing.plan.state.' ~ s) }}</option>{% endfor %}
-  </select>
-  {{ ui_button(t('billing.admin.portfolio.show'), 'secondary', type='submit') }}
-  {{ ui_button(t('billing.admin.portfolio.export_all'), 'primary', href='/admin/fakturace/export-vse') }}
+{% set state_options = [('', t('billing.admin.portfolio.all'))] %}
+{% for s in states %}{% set _ = state_options.append((s, t('billing.plan.state.' ~ s))) %}{% endfor %}
+<form method="get" action="/admin/fakturace" class="admin-controls" data-billing-admin-portfolio-filter>
+  {{ ui_field('portfolio-q', t('billing.admin.portfolio.search'), name='q', value=q, type='search', placeholder=t('billing.admin.portfolio.search_placeholder')) }}
+  {{ ui_select('portfolio-state', t('billing.admin.portfolio.state'), state_options, selected=state or '', name='state') }}
+  {{ ui_button(t('billing.admin.portfolio.show'), 'primary', type='submit') }}
+  {{ ui_button(t('billing.admin.portfolio.export_all'), 'secondary', href='/admin/fakturace/export-vse', icon_name='download', attrs='download') }}
 </form>
 {% set shown = [] %}
 {% for c in cockpit.customers %}
@@ -151,11 +145,10 @@
 {% endcall %}
 
 {% call ui_section(tip_label(t('billing.admin.statement.title'), 'statement-help', t('billing.admin.statement.help'), tag='span'), id='statement') %}
-<form method="post" action="/admin/fakturace/vypis" enctype="multipart/form-data" data-billing-admin-statement>
+<form method="post" action="/admin/fakturace/vypis" enctype="multipart/form-data" class="admin-controls" data-billing-admin-statement>
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-  <label class="admin-label" for="statement-file">{{ t('billing.admin.statement.file') }}</label>
-  <input class="ui-input" type="file" id="statement-file" name="statement" accept=".gpc,.csv,.txt" required>
-  <div class="ui-form-actions">{{ ui_button(t('billing.admin.statement.submit'), 'primary', type='submit') }}</div>
+  {{ ui_field('statement-file', t('billing.admin.statement.file'), name='statement', type='file', attrs='accept=".gpc,.csv,.txt" required') }}
+  {{ ui_button(t('billing.admin.statement.submit'), 'primary', type='submit') }}
 </form>
 {% endcall %}
 
