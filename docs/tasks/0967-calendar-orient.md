@@ -1,6 +1,6 @@
 # 0967: restore calendar orientation and overflow legibility (B09: C02, C03)
 
-Status: todo
+Status: blocked (check 1 stopped at existing test_calendar_geometry_locales_and_screenshots line 335: max tile height 226 > 184; see docs/tasks/0967-report.md)
 Depends on: 0958 (colour fix, this branch's base); B02 (codex/0960-b02-calendar-create) shares calendar files, merge order is the owner's | Base commit: de537cb3 | Branch: codex/0967-b09-calendar-orient
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
