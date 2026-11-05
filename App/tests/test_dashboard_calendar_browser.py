@@ -1252,6 +1252,15 @@ def test_0958_record_type_selection_is_visually_unambiguous(
                         color('[data-cal-type-choice][aria-pressed="false"]') &&
                         color('[data-cal-type-choice][aria-pressed="false"]') !== color('[data-cal-save]');
                 }""")
+                for state in ("true", "false"):
+                    label = dialog.locator(f'[data-cal-type-choice][aria-pressed="{state}"]')
+                    ratio = label.evaluate(r"""e => {
+                        const lum = c => { const v = c.match(/[\d.]+/g).slice(0, 3).map(n => { n /= 255; return n <= 0.03928 ? n / 12.92 : ((n + 0.055) / 1.055) ** 2.4; }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
+                        const opaque = node => { for (let n = node; n; n = n.parentElement) { const c = getComputedStyle(n).backgroundColor; if (c !== "rgba(0, 0, 0, 0)") return c; } return "rgb(255, 255, 255)"; };
+                        const fg = lum(getComputedStyle(e).color), bg = lum(opaque(e));
+                        return (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05);
+                    }""")
+                    assert ratio >= 4.5, (width, locale, entry, kind, state, ratio)
                 if kind == "cleaning" and locale == "en" and width == 390:
                     shot(page, f"0958-{entry}-cleaning-{locale}-{width}")
             if locale == "en" or width == 390:
