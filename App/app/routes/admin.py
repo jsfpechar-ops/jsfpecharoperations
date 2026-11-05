@@ -215,7 +215,7 @@ def _lock_property_return(request: Request, return_to: str) -> Optional[str]:
     if not access.apartment(request, apartment_id):
         return None
     # 0884: the wizard has no lock step; an old wizard return_to lands on the lock settings.
-    return f"/apartments/{apartment_id}?view=settings&section=lock#door-code"
+    return f"/apartments/{apartment_id}?view=settings&section=lock&sec=lock#door-code"
 
 
 def _apartment_with_secret(apartment) -> Dict[str, Any]:

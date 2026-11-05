@@ -1,0 +1,10 @@
+{# 0955: the action result, inside the section the host acted in. Server-rendered, no JavaScript needed. #}
+{% macro section_notice(section) %}
+{% if inline_flash_section == section %}
+  {% if flash_error %}
+  <div class="banner err section-notice" role="alert" tabindex="-1" data-section-notice><span class="grow">{{ flash_error }}</span></div>
+  {% elif flash %}
+  <div class="banner ok section-notice" role="status" tabindex="-1" data-section-notice><span class="grow">{{ flash }}</span></div>
+  {% endif %}
+{% endif %}
+{% endmacro %}
