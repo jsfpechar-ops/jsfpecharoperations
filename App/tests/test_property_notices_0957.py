@@ -1,9 +1,7 @@
-"""0955: a lock action result shows inside its section, once, and the Save row ends the property page."""
+"""0957: a lock action result shows inside its section, once, and the Save row ends the property page."""
 from __future__ import annotations
 
 import re
-
-import pytest
 
 from app import ttlock
 from tests.test_smart_locks_page import USERS, _client, _connect, _post, flats, hosts  # noqa: F401

@@ -161,7 +161,6 @@ def test_0948_police_card_opens_its_section(base, dashboard_rich_host):  # noqa:
 def test_0948_copy_settings_button_sits_in_the_header_row(base, dashboard_rich_host):  # noqa: F811
     cookie = dashboard_rich_host["client"].cookies.get(auth.SESSION_COOKIE)
     assert cookie
-    spec = next(s for s in PAGES if s["name"] == "property")
     path = "/apartments/new"  # copy is offered on the new page; settings hide it once setup is finished
     with sync_api.sync_playwright() as playwright:
         browser = _launch(playwright)

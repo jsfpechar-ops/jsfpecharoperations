@@ -518,9 +518,6 @@ def test_guest_links_and_message_settings_geometry(host, base):
                 assert min(heights) >= 44, heights
             assert box("#permalink")["width"] >= 0.6 * top["width"], width
             if width == 1280:
-                tops = sorted(page.evaluate(
-                    "() => [...document.querySelectorAll('.guest-link-actions > *')].map(e => e.getBoundingClientRect().top)"))
-                rows = 1 + sum(1 for a, b in zip(tops, tops[1:]) if b - a > 4)
                 gaps = page.evaluate(
                     "() => [...document.querySelectorAll('.guest-link-actions button[formaction]')].map(b => {"
                     " const t = b.parentElement.querySelector('.help-tip-btn'); return t ? t.getBoundingClientRect().left - b.getBoundingClientRect().right : 999; })")
