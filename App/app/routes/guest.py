@@ -2094,12 +2094,14 @@ def _fee_pay_panel(apartment, reservation, t, qr_ok=True):
     vs = str(int(reservation["id"]))  # plain id, no zero padding; the bank VS field takes up to 10 digits
     message = f"Stay fee {vs}"  # goes only into the SPAYD payload; never shown
     account = ""
+    payee = ""
     if apartment["legal_entity_id"]:
         entity = db.query_one(
-            "SELECT iban, bank_account FROM legal_entity WHERE id = ?",
+            "SELECT iban, bank_account, name FROM legal_entity WHERE id = ?",
             (apartment["legal_entity_id"],),
         )
         if entity is not None:
+            payee = (entity["name"] or "").strip()
             if entity["iban"]:
                 account = entity["iban"]
             elif entity["bank_account"]:
@@ -2127,7 +2129,7 @@ def _fee_pay_panel(apartment, reservation, t, qr_ok=True):
             rails.append({"key": "cash",
                           "note": apartment["stay_fee_guest_cash_note"] or t("fee_cash_default")})
     return {"total": total, "rate": rate, "persons": persons, "rails": rails,
-            "vs": vs}
+            "vs": vs, "payee": payee}
 
 
 def _fee_estimate(apartment, reservation, values):

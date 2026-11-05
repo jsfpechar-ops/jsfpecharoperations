@@ -1509,3 +1509,4 @@ details.g-summary > .g-summary-body { padding: 16px 20px 18px; }
 .g-fee-qr { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
 .g-fee-qr-img { display: block; width: 176px; max-width: 100%; height: auto; border: 1px solid var(--g-line); }
 .g-fee-qr .g-summary-list { flex: 1 1 180px; min-width: 0; }
+.g-fee-payee { margin: 8px 0 0; }

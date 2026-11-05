@@ -467,13 +467,20 @@ def guest_pay_operator_context(
 
 
 
-def check_guest_pay_rate(apartment, values: dict) -> None:
-    """Asking guests to pay needs the fee per person per night: refuse the save without it."""
-    if not app_config.STAY_FEE_GUEST_PAY:
+GUEST_RAILS_REQUIRED = "stay_fee_guest_rails_required"
+GUEST_REVOLUT_REQUIRED = "stay_fee_guest_revolut_required"
+GUEST_SETUP_FLASH = {
+    GUEST_RATE_REQUIRED: "flash.stay_fees.rate_required",
+    GUEST_RAILS_REQUIRED: "flash.stay_fees.rails_required",
+    GUEST_REVOLUT_REQUIRED: "flash.stay_fees.revolut_required",
+}
+
+
+def check_guest_pay_setup(apartment, values: dict) -> None:
+    """Asking guests to pay needs a fee rate, at least one way to pay, and a link for Revolut."""
+    if not app_config.STAY_FEE_GUEST_PAY or not values.get("stay_fee_collect"):
         return
-    if not values.get("stay_fee_collect"):
-        return
-    if hasattr(apartment, "keys") and not hasattr(apartment, "get"):
+    if not hasattr(apartment, "get"):
         apartment = dict(apartment)
     rate = values.get("stay_fee_rate_czk", apartment.get("stay_fee_rate_czk"))
     try:
@@ -482,6 +489,12 @@ def check_guest_pay_rate(apartment, values: dict) -> None:
         rate = 0
     if rate <= 0:
         raise ValueError(GUEST_RATE_REQUIRED)
+    rails = {part for part in (values.get("stay_fee_guest_rails") or "").split(",") if part}
+    if not rails:
+        raise ValueError(GUEST_RAILS_REQUIRED)
+    link = values.get("stay_fee_guest_revolut_link", apartment.get("stay_fee_guest_revolut_link"))
+    if "revolut" in rails and not (link or values.get(GUEST_LINK_RAW)):
+        raise ValueError(GUEST_REVOLUT_REQUIRED)
 
 
 def apply_guest_operator_account(apartment, form, values: dict) -> None:
@@ -491,7 +504,7 @@ def apply_guest_operator_account(apartment, form, values: dict) -> None:
     if not hasattr(apartment, "get"):
         apartment = dict(apartment)
 
-    if not app_config.STAY_FEE_GUEST_PAY:
+    if not app_config.STAY_FEE_GUEST_PAY or not values.get("stay_fee_collect"):
         values.pop(GUEST_OPERATOR_ACCOUNT_RAW, None)
         return
     rails = values.get("stay_fee_guest_rails")

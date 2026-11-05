@@ -14,6 +14,23 @@
     syncRate();
   }
 
+  var defaultRail = document.getElementById("stay_fee_guest_default_rail");
+  var railBoxes = document.querySelectorAll('input[name="stay_fee_guest_rails"]');
+  if (defaultRail && railBoxes.length) {
+    var syncDefault = function () {
+      var on = {};
+      railBoxes.forEach(function (box) { on[box.value] = box.checked; });
+      defaultRail.querySelectorAll("option[data-rail]").forEach(function (option) {
+        var enabled = !!on[option.dataset.rail];
+        option.disabled = !enabled;
+        option.hidden = !enabled;
+        if (!enabled && option.selected) defaultRail.value = "";
+      });
+    };
+    railBoxes.forEach(function (box) { box.addEventListener("change", syncDefault); });
+    syncDefault();
+  }
+
   var root = document.querySelector("[data-guest-pay-operator]");
   if (!root) return;
   var input = root.querySelector("#stay_fee_guest_operator_account");

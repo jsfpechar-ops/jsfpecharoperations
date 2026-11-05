@@ -99,14 +99,13 @@ def _set_stored(apartment_id):
     )
 
 
-def test_flag_off_renders_the_block_disabled(host, monkeypatch):
+def test_flag_off_hides_the_block(host, monkeypatch):
     client, apartment_id = host
     monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", False)
     page = client.get(f"/apartments/{apartment_id}?lang=en")
     assert page.status_code == 200
-    assert 'id="stay-fee-guest-pay"' in page.text
-    assert "Turned off on this deployment." in page.text
-    assert 'class="stay-fee-guest-fields" disabled' in page.text
+    assert 'id="stay-fee-guest-pay"' not in page.text
+    assert "Turned off on this deployment" not in page.text
 
 
 def test_flag_off_ignores_posted_guest_fields_and_keeps_stored_values(host, monkeypatch):
@@ -234,7 +233,7 @@ def test_qr_rail_without_operator_account_refuses_save(host, monkeypatch):
     response = _save(
         client,
         apartment_id,
-        guest={"stay_fee_guest_rails": ["qr"], "stay_fee_guest_operator_account": ""},
+        guest={"stay_fee_collect": "1", "stay_fee_guest_rails": ["qr"], "stay_fee_guest_operator_account": ""},
     )
     assert response.status_code == 400
     assert "Enter your business bank account" in response.text
@@ -378,3 +377,49 @@ def test_default_rail_is_saved_only_when_that_rail_is_enabled(host, monkeypatch)
     })
     row = db.query_one("SELECT stay_fee_guest_default_rail FROM apartment WHERE id = ?", (apartment_id,))
     assert row["stay_fee_guest_default_rail"] == ""
+
+
+def test_the_setup_wizard_does_not_ask_about_guest_payment(host, monkeypatch):
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    page = client.get(f"/apartments/{apartment_id}/setup/stay_fee?lang=en")
+    assert page.status_code == 200
+    assert 'id="stay-fee-guest-pay"' not in page.text
+
+
+def _save_collect(client, apartment_id, rails, link="", rate=30):
+    page = client.get(f"/apartments/{apartment_id}?lang=en")
+    token = page.text.split('name="csrf-token" content="')[1].split('"')[0]
+    entity = db.query_one("SELECT legal_entity_id FROM apartment WHERE id = ?", (apartment_id,))
+    data = _property_data(entity["legal_entity_id"], _csrf=token, stay_fee_rate_czk=str(rate), stay_fee_vs="123456")
+    data["stay_fee_guest_form"] = "1"
+    data["stay_fee_collect"] = "1"
+    data["stay_fee_guest_rails"] = rails
+    if link:
+        data["stay_fee_guest_revolut_link"] = link
+    return client.post(f"/apartments/{apartment_id}", data=data, follow_redirects=False)
+
+
+def test_collecting_with_no_way_to_pay_is_refused(host, monkeypatch):
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    response = _save_collect(client, apartment_id, [])
+    assert response.status_code == 400
+    assert "Pick at least one way" in response.text
+
+
+def test_revolut_without_a_link_is_refused(host, monkeypatch):
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    response = _save_collect(client, apartment_id, ["revolut"])
+    assert response.status_code == 400
+    assert "Revolut link" in response.text
+
+
+def test_the_bank_account_is_not_required_while_collection_is_off(host, monkeypatch):
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    entity = db.query_one("SELECT legal_entity_id FROM apartment WHERE id = ?", (apartment_id,))
+    db.update("legal_entity", entity["legal_entity_id"], {"iban": None, "bank_account": None})
+    response = _save(client, apartment_id, guest={"stay_fee_guest_rails": ["qr"]})
+    assert response.status_code == 303, response.text

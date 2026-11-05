@@ -303,6 +303,7 @@ STRINGS: Dict[str, str] = {
     "fee_rail_cash": "Готівка",
     "fee_qr_alt": "QR-код для оплати у банківському застосунку",
     "fee_iban": "Рахунок (IBAN)",
+    "fee_payee": "Одержувач",
     "fee_amount_label": "Сума",
     "fee_vs_label": "Змінний символ",
     "fee_revolut_button": "Сплатити %(amount)s через Revolut",
