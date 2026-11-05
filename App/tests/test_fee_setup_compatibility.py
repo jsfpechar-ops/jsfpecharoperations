@@ -360,7 +360,7 @@ def live(host):
 
 
 def _save(page):
-    page.locator('#property-settings-form .savebar button[type="submit"]').click()
+    page.locator('.savebar[data-for="property-settings-form"] button[type="submit"]').click()
     page.wait_for_load_state("networkidle")
 
 
