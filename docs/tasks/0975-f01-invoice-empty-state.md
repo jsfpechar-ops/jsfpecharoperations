@@ -1,6 +1,6 @@
 # 0975-f01: Invoice empty state says where invoices come from
 
-Status: todo
+Status: blocked (two pre-existing test failures, see docs/tasks/0975-f01-report.md)
 Depends on: B01 to B16 merged (master plan B17) | Base commit: 7b0355c45ccdd2557a28edfcfe228aa1dc766e36 | Branch: task/0975-f01
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
