@@ -76,7 +76,7 @@
 {% if filter_active %}
 {{ empty_state(t('filter.no_results'), '', filter_reset_href, t('filter.reset'), primary=false) }}
 {% else %}
-{{ empty_state(t('invoices.empty_title')) }}
+{{ empty_state(t('invoices.empty_title'), t('invoice.picker.lede')) }}
 {% endif %}
 {% endif %}
 </div>
