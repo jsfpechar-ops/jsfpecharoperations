@@ -332,7 +332,8 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                             heights = page.locator(".cal-week").evaluate_all(
                                 "nodes => nodes.map(node => node.getBoundingClientRect().height)"
                             )
-                            assert max(heights) <= 184, heights  # 0905: 94 px tile + two more stacked stay lanes
+                            # the bound includes the +N overflow lane added by 0967 (C03)
+                            assert max(heights) <= 226, heights  # 0905: 94 px tile + two more stacked stay lanes
                     control_heights = page.locator(
                         ".cal-view-segment, .cal-scale-segment, [data-cal-property], [data-cal-month], "
                         "[data-cal-year], [data-cal-settings], [data-cal-today], [data-cal-prev], [data-cal-next]"
