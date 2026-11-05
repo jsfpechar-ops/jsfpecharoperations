@@ -76,3 +76,15 @@ Status: blocked
   2. 1280: small targets 40 px: "Copy" x2 (guest link card), "Preview as a guest", "Open the guest guide", "Generate a new PIN". Min-height rule added to form buttons; these controls keep 40 px (their class sets height elsewhere). Still failing.
 - Keys: app.js 0955f, app2.css 0955g.
 - Next step: find the CSS that sets 40 px on .copy-btn and the guest-card buttons (grep -n "copy-btn{" app/static/app2.css), add min-height 44 with a higher-specificity selector, then check the phone bar position with a screenshot of audit-390-3-focus.png in the scratchpad. Then step 9 fixes and the UX gate.
+
+## Chat 6 (audit green, UX gate part)
+Status: blocked
+- Audit test_property_page_audit_browser.py: 3 passed at 390/768/1280, 0 skipped. Thresholds from docs/design/design-system.md "Touch target" row: 44 px below 1024, 40 px at 1024 and up (the test comment cites it).
+- Findings fixed: (1) 390: focused field under the sticky Save row. Causes: scroll-padding rule lost to the havel rule on specificity, and the tab bar height was undefined on html. Now html:has(...):has(.savebar) carries --savebar-h 72px and the tab bar 84px. (2) focus or first edit keeps the field clear of the bar (app.js keepClear on focusin and input). (3) 1280 targets: spec threshold 40 px, no change to desktop buttons.
+- Buttons matrix: 10 passed, 0 skipped (save, cancel, typing back, outside lock time, layout at 3 widths, validation, Tab walk, Escape).
+- Layout lint (test_layout_lint_browser.py): 4 passed, 0 skipped.
+- context_lint: OK. Keys: app.js 0955g, app2.css 0955j.
+- Viewed: audit-390-3-focus.png (postcode clear above the Save row, Save above the tab bar); property-save-bar-1280.png earlier.
+- Webkit: untested locally (CI only): all new browser tests.
+- Not done: step 10 (sticky Preview aside, 1024+, with its test; needs a property whose setup is unfinished), design-system checklist tick, the decision line in docs/context/decisions.md, the 390/768/1280 UX screenshots with per-width notes for the PR.
+- Next step: step 10: write App/tests/test_property_preview_sticky_browser.py (1280 and 1440: scroll 1200, aside top 0-120, no overlap with the Save row, static below 1024) with a property whose setup is unfinished, then the design checklist, the decision line, and the PR.
