@@ -1,6 +1,6 @@
 # 0897-fix-1: show the stay-fee card after the last guest, including the demo stay
 
-Status: todo
+Status: review
 Depends on: none. This brief goes first. Do not start 0897-fix-2 until this brief's report is `Status: review`.
 Base: branch `cursor/guest-pay-operator-preview-237c` at `18903f8e`. Stay on this branch. Do not create a branch. Do not push. Do not open a PR.
 Executor: Haiku | Report: docs/tasks/0897-fix-1-report.md
