@@ -130,3 +130,97 @@ def test_setup_wizard_in_a_browser(live_server, browser, host, base, leon_offere
         page.screenshot(path=str(OUT / "done-390.png"), full_page=True)
     finally:
         context.close()
+
+
+# --- 0973: the labelled four-step progress, the property line apart from the title, the terms ---
+import os  # noqa: E402
+import tempfile  # noqa: E402
+
+OUT_0973 = Path(os.environ.get("UBYHOST_SHOTS_DIR", tempfile.gettempdir())) / "0973-leon-setup"
+LONG_NAME = "Penthouse Vinohrady with a very long property name above the river Vltava"
+STEPS_0973 = ("import", "cards", "try", "done")
+
+
+def _stepper(page):
+    return page.evaluate(
+        """() => {
+          const ol = document.querySelector('[data-leon-stepper]');
+          const items = [...ol.querySelectorAll(':scope > li')];
+          const box = ol.getBoundingClientRect();
+          return {
+            states: items.map(li => li.getAttribute('data-state')),
+            labels: items.map(li => li.querySelector('.fee-stepper-label').textContent.trim()),
+            current: items.filter(li => li.getAttribute('aria-current') === 'step').length,
+            listStyle: getComputedStyle(items[0]).listStyleType,
+            clipped: items.some(li => { const l = li.querySelector('.fee-stepper-label'); return l.scrollWidth > l.clientWidth + 1; }),
+            inView: box.left >= 0 && box.right <= window.innerWidth,
+            display: getComputedStyle(ol).display,
+            broken: items.some(li => {
+              const l = li.querySelector('.fee-stepper-label');
+              const name = l.firstChild.textContent.trim();
+              if (name.includes(' ')) return false;
+              const r = document.createRange(); r.selectNodeContents(l.firstChild);
+              return new Set([...r.getClientRects()].map(x => Math.round(x.top))).size > 1;
+            }),
+          };
+        }"""
+    )
+
+
+@pytest.mark.parametrize("lang", ["en", "cs"])
+def test_setup_progress_and_terms_0973(live_server, browser, host, base, leon_offered, monkeypatch, lang):  # noqa: F811
+    OUT_0973.mkdir(parents=True, exist_ok=True)
+    apt = leon_offered
+    db.execute("UPDATE apartment SET internal_name = ? WHERE id = ?", (LONG_NAME, apt))
+    monkeypatch.setattr(guest_guide, "progress", _progress(False))
+    for width in (390, 768, 1280):
+        context = _context(browser, base, host, width, 900)
+        try:
+            page = context.new_page()
+            db.execute("UPDATE apartment SET leon_enabled = 0, leon_terms_version = NULL WHERE id = ?", (apt,))
+            page.goto(f"{base}/apartments/{apt}/leon/setup/switch_on?lang={lang}")
+            _settle(page)
+            st = _stepper(page)
+            assert st["states"] == ["current", "todo", "todo", "todo"], st
+            assert st["current"] == 1 and st["listStyle"] == "none" and st["display"] == "flex", st
+            assert all(st["labels"]) and len(st["labels"]) == 4 and not st["clipped"] and not st["broken"] and st["inView"], st
+            # The page title is the setup heading; the property name is its own line outside the heading.
+            assert page.locator("h1").inner_text().strip() not in ("", LONG_NAME)
+            assert LONG_NAME not in page.locator("h1").inner_text()
+            assert page.locator("[data-leon-setup-property]").inner_text().strip() == LONG_NAME
+            assert page.locator("[data-leon-setup-property]").evaluate("e => !e.closest('h1')")
+            assert page.locator("[data-leon-exit-note]").is_visible()
+            # One primary action; the agreement stays visible and required; the extra terms expand.
+            assert page.locator(".ui-btn-primary").count() == 1
+            assert page.locator("#leon-terms").is_visible() and page.locator("#leon-terms").get_attribute("required") is not None
+            more = page.locator("[data-leon-terms-more]")
+            assert more.evaluate("e => e.open") is False
+            page.screenshot(path=str(OUT_0973 / f"switch_on-{lang}-{width}.png"), full_page=True)
+            more.locator("summary").click()
+            assert more.evaluate("e => e.open") is True and more.locator("li").count() == 4
+            assert page.locator("#leon-terms").is_visible()
+            assert _no_overflow(page)
+            page.screenshot(path=str(OUT_0973 / f"switch_on-{lang}-{width}-open.png"), full_page=True)
+            # Nothing is accepted here: the box stays unticked and the form is not submitted.
+            assert not page.locator("#leon-terms").is_checked()
+
+            # The later steps are reached by setting the sandbox workspace's own flag, not by accepting terms.
+            db.execute("UPDATE apartment SET leon_enabled = 1, leon_terms_version = ? WHERE id = ?", (leon.LEON_TERMS_VERSION, apt))
+            for step in STEPS_0973:
+                page.goto(f"{base}/apartments/{apt}/leon/setup/{step}?lang={lang}")
+                _settle(page)
+                st = _stepper(page)
+                if step == "done":
+                    assert st["states"] == ["done"] * 4 and st["current"] == 0, st
+                else:
+                    at = STEPS_0973.index(step) + 1
+                    assert st["states"][at] == "current" and st["current"] == 1 and st["states"][0] == "done", (step, st)
+                    assert "current" not in st["states"][:at] + st["states"][at + 1:], (step, st)
+                assert all(st["labels"]) and not st["clipped"] and not st["broken"] and st["inView"] and st["listStyle"] == "none", (step, st)
+                assert _no_overflow(page)
+                assert page.locator("a.ui-btn-secondary", has_text=page.locator(".setup-wizard-exit a").inner_text()).count() >= 1
+                if step != "done":
+                    assert page.locator("[data-leon-exit-note]").is_visible()
+                page.screenshot(path=str(OUT_0973 / f"{step}-{lang}-{width}.png"), full_page=True)
+        finally:
+            context.close()
