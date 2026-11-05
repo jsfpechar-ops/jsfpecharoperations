@@ -4590,7 +4590,7 @@ _INTERFACE_STRINGS = {
         "entities.name_placeholder": "As in the commercial or trade register",
         "entities.seat": "Registered seat",
         "entities.seat_title": "Operator: registered seat",
-        "entities.seat_line": "Your own business address, as in the register. Not the accommodation.",
+        "entities.seat_line": "Your registered business seat. Not the accommodation.",
         "entities.seat_placeholder": "Street, number, postcode, city",
         "entities.ico": "Company ID (IČO)",
         "entities.dic": "Tax ID (DIČ)",

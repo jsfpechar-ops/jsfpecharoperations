@@ -2079,7 +2079,7 @@ STRINGS: Dict[str, str] = {
     "entities.name_placeholder": "Như trong sổ đăng ký thương mại hoặc đăng ký kinh doanh",
     "entities.seat": "Địa chỉ trụ sở",
     "entities.seat_title": "Đơn vị vận hành: trụ sở",
-    "entities.seat_line": "Địa chỉ kinh doanh của bạn theo đăng ký. Không phải cơ sở lưu trú.",
+    "entities.seat_line": "Trụ sở kinh doanh theo đăng ký. Không phải cơ sở lưu trú.",
     "entities.seat_placeholder": "Đường, số nhà, mã bưu chính, thành phố",
     "entities.ico": "Mã số doanh nghiệp (IČO)",
     "entities.dic": "Mã số thuế (DIČ)",
