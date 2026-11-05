@@ -414,7 +414,7 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
 
         # A field the browser refuses in a closed section is revealed and focused.
         page.goto(f"{url}?lang=en")
-        page.evaluate("() => { document.getElementById('permalink_pin').value = '12'; }")
+        page.evaluate("() => { document.getElementById('permalink_pin').value = '12'; document.getElementById('permalink_pin').dispatchEvent(new Event('input', { bubbles: true })); }")
         page.locator(".savebar button[type=submit]").click()
         page.wait_for_timeout(100)
         assert "sec-messages" in page.evaluate(_STATE_JS)["open"]

@@ -24,7 +24,7 @@ def test_settings_save_row_is_a_save_bar_with_save_last(host):
     client, apartment_id = host
     text = client.get(f"/apartments/{apartment_id}?view=settings&lang=en").text
     match = re.search(
-        r'<div class="savebar[^"]*">(.*?)</div>', text, re.S
+        r'<div class="savebar[^"]*"[^>]*>(.*?)</div>', text, re.S
     )
     assert match, "settings save row must carry savebar"
     tags = re.findall(r"<(?:button|a)\b[^>]*>", match.group(1))

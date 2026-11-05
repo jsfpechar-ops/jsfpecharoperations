@@ -69,7 +69,7 @@ def test_0547_phone_property_switch_invalid_field_calendar_and_return(base, dash
             # On a phone the save bar shows only while a section is open, so open basics first.
             page.locator("#sec-basics > summary").click()
             assert page.locator("#sec-messages[open]").count() == 0
-            page.evaluate("document.getElementById('permalink_pin').value = ''")
+            page.evaluate("document.getElementById('permalink_pin').value = ''; document.getElementById('permalink_pin').dispatchEvent(new Event('input', { bubbles: true }))")
             page.locator(".savebar button[type=submit]").click()
             page.wait_for_timeout(300)
             assert page.locator("#sec-messages[open]").count() == 1
