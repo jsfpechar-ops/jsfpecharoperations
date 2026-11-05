@@ -1,6 +1,6 @@
 # 0964: Connection states for the Smart lock and Calendars sections
 
-Status: todo
+Status: blocked
 Depends on: B05 (queue order only; no file overlap expected) | Base commit: 7b0355c45ccdd2557a28edfcfe228aa1dc766e36 | Branch: codex/0964-b06-connection-states
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
