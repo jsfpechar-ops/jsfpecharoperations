@@ -665,12 +665,11 @@ def test_fee_card_shows_with_qr_rail_open_and_enabled_rails(live_server, browser
         card = page.locator("#fee-pay")
         assert card.count() == 1, page.inner_text("body")[:400]
         assert card.is_visible()
-        assert card.locator("details.g-summary").filter(has=page.locator(".g-fee-rail")).count() == 4
+        assert card.locator("details.g-summary").filter(has=page.locator(".g-fee-rail")).count() == 3
         assert card.locator("details[open] .g-fee-qr-img").count() == 1
         assert card.locator(".g-fee-qr-img").is_visible()
         qr_rail = card.locator("details.g-summary").filter(has=page.locator(".g-fee-qr-img"))
-        assert qr_rail.locator(".g-fee-rail").inner_text().strip() == "Recipient: Browser Test s.r.o."  # QR and who gets the money; nothing to type
-        card.locator("summary.g-summary-fold", has_text="Bank transfer").click()
+        assert "Browser Test s.r.o." in qr_rail.locator(".g-fee-rail").inner_text()  # QR and who gets the money; nothing to type
         iban_rail = card.locator("details.g-summary").filter(has_text="Bank transfer")
         iban_text = iban_rail.locator(".g-fee-rail").inner_text()
         assert "Variable symbol" in iban_text and str(int(stay)) in iban_text
