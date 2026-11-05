@@ -40,7 +40,7 @@ SETTINGS_NAMES = {
     "signature_drawn", "signature_name", "fee_signature_section", "signature_file", "return_to", "_csrf", "internal_name", "city_en", "legal_entity_id", "data_controller_entity_id",
     "addr_okres", "addr_obec", "addr_obec_cast", "addr_street", "addr_house_no", "addr_orient_no", "addr_zip",
     "notes", "permalink_pin", "guest_message", "permalink_window_days",
-    "permalink_reachback_days", "passport_photo_policy", "door_code_section", "door_codes_fields", "door_codes",
+    "permalink_reachback_days", "passport_photo_policy", "door_code_section",
     "lock_id", "checkin_hour", "checkout_hour", "lock_checkin_hour", "lock_checkout_hour", "uby_idub", "uby_ws_user", "uby_ws_password", "uby_mark",
     "uby_name", "uby_contact", "stay_fee_rate_czk", "stay_fee_cadence", "stay_fee_vs", "stay_fee_council_account",
     "_stay_fee_account_existing", "stay_fee_authority_name",
@@ -130,6 +130,11 @@ def _aside(html):
     return html[start:html.index("</aside>", start)]
 
 
+def _strip(html):
+    start = html.index('<nav class="prop-strip"')
+    return html[start:html.index("</nav>", start)]
+
+
 def _section(html, sec_id):
     start = html.index(f'id="{sec_id}"')
     end = html.find('<details class="prop-sec"', start + 1)
@@ -150,6 +155,8 @@ def test_three_views_four_groups_one_editor_and_unique_ids(host):
     property_forms = [f for f in parsed.forms if f["action"] == f"/apartments/{host['apartment']}" and f["method"] == "post"]
     assert len(property_forms) == 1
     names = [name for name, _ in _fields(property_forms[0])]
+    # 0952: door-code controls sit outside the form and name it with form="property-settings-form".
+    names += re.findall(r'<(?:input|select|textarea)\b[^>]*\bform="property-settings-form"[^>]*\bname="([^"]+)"', html)
     assert set(names) == SETTINGS_NAMES, set(names) ^ SETTINGS_NAMES
     assert len(names) == len(set(names)), "a setting is submitted twice"
     calendar = [f for f in parsed.forms if f["action"] == f"/apartments/{host['apartment']}/feeds"]
@@ -183,8 +190,8 @@ def test_placement_of_guest_link_actions_archive_and_switch(host):
     assert html.index('id="archive"') < html.index('class="savebar')
     door = _section(html, "sec-lock")
     assert 'id="door-code"' in door and 'id="door-code"' not in guests
-    assert 'role="switch"' in door and "Automatic door codes" in door
-    assert ">Enabled</span>" in door
+    assert "/door-codes" in door and "Automatic door codes" in door  # 0954: buttons, no switch
+    assert ">Enabled</small>" in door  # 0954: the section state line, the switch is gone
     assert door.count('href="/guide#door-codes"') == 1
     assert "Create a door code for each stay" not in html
 
@@ -244,8 +251,8 @@ def test_bookings_view_with_no_one_and_many_feeds(host):
     many = _page(host, "?view=bookings&lang=en")
     assert many.count('/delete"') >= 2
     overview = _page(host, "?lang=en")
-    aside = _aside(overview)
-    assert 'href="#sec-calendars"' in aside and 'class="is-bad"' in aside  # 0286: a calendar problem shows on its aside row
+    strip = _strip(overview)
+    assert 'data-strip="calendars"' in strip and 'href="#sec-calendars"' in strip and "is-problem" in strip  # 0286: a calendar problem shows on its strip card
     # A calendar removal returns to the Bookings view.
     feed_id = db.query_one("SELECT id FROM ical_feed WHERE apartment_id = ? ORDER BY id LIMIT 1", (host["apartment"],))["id"]
     removed = host["client"].post(f"/feeds/{feed_id}/delete", follow_redirects=False)
@@ -261,10 +268,10 @@ def test_the_kept_e_mail_link_opens_its_settings_group(host):
 
 def test_overview_cards_point_at_the_canonical_editors(host):
     html = _page(host, "?lang=en")
-    aside = _aside(html)
+    strip = _strip(html)
     for anchor in ("#sec-basics", "#sec-police", "#sec-fee", "#sec-calendars", "#sec-lock"):
-        assert f'href="{anchor}"' in aside, anchor
-    assert "Ready to report" in aside
+        assert f'href="{anchor}"' in strip, anchor
+    assert "Ready to report" in _aside(html)
 
 
 # --- browser ----------------------------------------------------------------
@@ -384,7 +391,7 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
         assert page.locator("#internal_name").input_value() == "Draft Name Kept"
         assert page.evaluate(_STATE_JS)["marker"] == "same-document"
 
-        page.locator('aside.preview a.r[href="#sec-police"]').click()
+        page.locator('nav.prop-strip a.sc[data-strip="police"][href="#sec-police"]').click()
         assert not page.evaluate("() => document.getElementById('unsaved-dialog').open")
         assert "sec-police" in page.evaluate(_STATE_JS)["open"]
         assert page.evaluate(_STATE_JS)["marker"] == "same-document", "the aside row reloaded the page"
@@ -401,13 +408,13 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
           window.addEventListener('click', e => window.__modClicks.push([e.ctrlKey, e.defaultPrevented]));
         }""")
         page.context.on("page", lambda popup: popup.close())
-        page.locator('aside.preview a.r[href="#sec-fee"]').click(modifiers=["Control"])
+        page.locator('nav.prop-strip a.sc[data-strip="fee"][href="#sec-fee"]').click(modifiers=["Control"])
         assert page.evaluate("() => window.__modClicks") == [[True, False]]
         assert page.evaluate(_STATE_JS)["marker"] == "m2", "the ctrl-click navigated this tab"
 
         # A field the browser refuses in a closed section is revealed and focused.
         page.goto(f"{url}?lang=en")
-        page.evaluate("() => { document.getElementById('permalink_pin').value = '12'; }")
+        page.evaluate("() => { document.getElementById('permalink_pin').value = '12'; document.getElementById('permalink_pin').dispatchEvent(new Event('input', { bubbles: true })); }")
         page.locator(".savebar button[type=submit]").click()
         page.wait_for_timeout(100)
         assert "sec-messages" in page.evaluate(_STATE_JS)["open"]
@@ -430,16 +437,10 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
         page.wait_for_load_state()
         assert "sec-police" in page.evaluate(_STATE_JS)["open"], page.url
 
-        # The door-code switch says "Not saved yet" until it is saved.
+        # 0954: the status block replaces the switch; there is no checkbox left to toggle.
         page.goto(f"{url}?view=settings&section=lock&lang=en")
-        status = page.locator("#door_codes-status")
-        assert status.inner_text() == "Enabled"
-        page.locator("#door_codes").click()
-        page.wait_for_timeout(200)
-        assert status.inner_text() == "Not saved yet"
-        page.locator("#door_codes").click()
-        page.wait_for_timeout(200)
-        assert status.inner_text() == "Enabled"
+        assert page.locator(".lock-state").get_attribute("data-state") in ("on", "off", "offline", "times")
+        assert page.locator("#door_codes").count() == 0
         browser.close()
 
 
@@ -542,12 +543,13 @@ def test_shared_timing_pair_is_owned_by_properties(host, base):
         assert page.locator('#property-settings-form [name="checkout_hour"]').count() == 1
         assert page.locator('#arrival-departure').is_visible()
         _open(page, "lock")
-        page.locator('label[for="door_codes"]').click()  # the lock pickers show with the door-code switch on
+        # 0954: the lock pickers are always shown; the switch that hid them is gone.
         # 0414: the Door lock section has its own pickers (lock_*), kept in sync with these.
         assert page.locator('#sec-lock [name="checkin_hour"]').count() == 0
         assert page.locator('#sec-lock [name="checkout_hour"]').count() == 0
-        assert page.locator('#sec-lock [name="lock_checkin_hour"]').is_visible()
-        assert page.locator('#sec-lock [name="lock_checkout_hour"]').is_visible()
+        # 0954: wait for the picker to show; the details section opens with a short transition.
+        page.locator('#sec-lock [name="lock_checkin_hour"]').wait_for(state="visible", timeout=5000)
+        page.locator('#sec-lock [name="lock_checkout_hour"]').wait_for(state="visible", timeout=5000)
         page.locator('#lock_checkin_hour').select_option('16')
         assert page.locator('#checkin_hour').input_value() == '16'
         browser.close()

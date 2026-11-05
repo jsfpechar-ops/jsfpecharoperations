@@ -184,8 +184,16 @@ def test_lock_setup_flow_keeps_its_place(world):
             page.check("#terms")
             page.locator("#smart-locks-setup button[type=submit]").click()
             _settle(page)
-            assert page.url.endswith("#smart-locks-share")
-            box = _in_view(page, "#smart-locks-share")
+            # 0952/0957: the result lands on the one Smart lock section, with its notice inline.
+            assert page.url.endswith("#sec-lock")
+            assert "sec=lock" in page.url and "msg=" in page.url
+            assert page.locator("#sec-lock[open]").count() == 1
+            notice = page.locator("#sec-lock [data-section-notice]")
+            assert notice.count() == 1 and notice.first.is_visible()
+            assert notice.first.inner_text().strip() == (
+                "Set up. Now share your locks." if lang == "en" else "Nastaveno. Teď sdílejte své zámky."
+            )
+            box = _in_view(page, "#sec-lock")
             assert box["y"] > 0  # a real scroll to the section, not the page top
             assert page.locator("#smart-locks-share .guide-steps li").count() == 3
             page.locator("#smart-locks-share .help-tip-btn").first.click()  # "?" stays visible; body opens on tap
@@ -194,10 +202,18 @@ def test_lock_setup_flow_keeps_its_place(world):
             assert page.locator("#smart-locks-share a.help-link").count() == 0
             _shot(page, f"share-1280-{lang}")
 
-            # No lock shared yet: stays on the sharing section.
+            # No lock shared yet: stays on the sharing section, with the notice inline in #sec-lock.
             page.locator("#smart-locks-share button[type=submit]").click()
             _settle(page)
-            assert page.url.endswith("#smart-locks-share")
+            assert page.url.endswith("#sec-lock")
+            assert page.locator("#sec-lock[open]").count() == 1
+            notice = page.locator("#sec-lock [data-section-notice]")
+            assert notice.count() == 1 and notice.first.is_visible()
+            assert notice.first.inner_text().strip() == (
+                "No lock found yet. In the TTLock app, add UbyHost as Authorized Admin (steps 2 to 7 above), then check again."
+                if lang == "en"
+                else "Zatím nebyl nalezen žádný zámek. V aplikaci TTLock přidejte UbyHost jako Autorizovaného správce (kroky 2 až 7 výše) a zkontrolujte znovu."
+            )
             _in_view(page, "#smart-locks-share")
 
             # One admin-shared lock found: back to the property's expanded lock section.
@@ -207,20 +223,23 @@ def test_lock_setup_flow_keeps_its_place(world):
             # 0190: the lock flows return to the Properties page section, not the property.
             # 0195: the flow lands on the property's Door lock tab.
             assert page.url.startswith(f"{base}/apartments/{apartment}?view=settings&section=lock")
-            assert page.url.endswith("#door-code")  # a found lock opens the property's lock choice
-            assert page.locator("#door-code").is_visible()
-            _in_view(page, "#door-code")
+            assert page.url.endswith("#sec-lock")  # 0952/0957: a found lock opens the one lock section
+            assert page.locator("#sec-lock[open]").count() == 1
+            assert page.locator("#sec-lock").is_visible()
+            _in_view(page, "#sec-lock")
             row = db.query_one("SELECT lock_provider FROM apartment WHERE id = ?", (apartment,))
-            assert row["lock_provider"] is None  # nothing assigned or switched on
+            # 0954: the first found lock turns automatic codes on for the one ready property (never a saved choice;
+            # the no-times case is covered by tests/test_ttlock_setup_0954.py).
+            assert row["lock_provider"] == "ttlock"
             page.goto(f"{base}/apartments/{apartment}?view=settings&section=lock&lang={lang}#door-code")
             _settle(page)
             _in_view(page, "#door-code")
             _shot(page, f"property-door-code-1280-{lang}")
-            page.select_option("#lock_id", LOCK_A["lock_id"])
-            page.locator(".savebar button[type=submit]").click()
-            _settle(page)
+            # 0954: the first found lock is already saved with automatic codes on, so the form shows it as chosen
+            # and is clean (no save bar). Re-selecting it would change nothing.
+            assert page.input_value("#lock_id") == LOCK_A["lock_id"]
             row = db.query_one("SELECT lock_provider, lock_id FROM apartment WHERE id = ?", (apartment,))
-            assert row["lock_id"] == LOCK_A["lock_id"] and row["lock_provider"] is None
+            assert row["lock_id"] == LOCK_A["lock_id"] and row["lock_provider"] == "ttlock"
 
             # Back navigation returns to the lock page section history.
             page.go_back()
@@ -248,8 +267,8 @@ def test_many_locks_list_and_add_more_sections(world):
                 _settle(page)
                 page.locator("#smart-locks-list button[type=submit]").first.click()
                 _settle(page)
-                assert page.url.endswith("#door-code")  # 0195: found locks open the property's lock choice
-                _in_view(page, "#door-code")
+                assert page.url.endswith("#sec-lock")  # 0195/0952: found locks open the property's one lock section
+                _in_view(page, "#sec-lock")
                 assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
                 _shot(page, f"list-{width}-{lang}")
                 page.goto(f"{base}/apartments/{apartment}?view=settings&section=lock&lang={lang}#smart-locks-add-more")
@@ -258,9 +277,12 @@ def test_many_locks_list_and_add_more_sections(world):
                 world["fake"].fail_kind = "budget"
                 page.locator("#smart-locks-add-more button[type=submit]").click()
                 _settle(page)
-                assert page.url.endswith("#smart-locks-add-more")
-                assert page.locator("details#smart-locks-add-more").evaluate("d => d.open")
-                _in_view(page, "#smart-locks-add-more")
+                # 0957: a failed action stays on the one lock section, with the real error inline.
+                assert page.url.endswith("#sec-lock")
+                assert page.locator("#sec-lock[open]").count() == 1
+                notice = page.locator("#sec-lock [data-section-notice][role=alert]")
+                assert notice.count() == 1 and notice.first.is_visible()
+                _in_view(page, "#sec-lock")
                 _shot(page, f"add-more-{width}-{lang}")
                 world["fake"].fail_kind = None
                 context.close()
@@ -294,7 +316,7 @@ def test_share_section_without_javascript_and_foreign_returns(world):
         _settle(page)
         # 0195: a foreign return lands on the host's own property's Door lock tab.
         assert page.url.startswith(f"{base}/apartments/{world['apartment']}?view=settings&section=lock")
-        assert page.url.endswith("#door-code")
+        assert page.url.endswith("#sec-lock")
         assert urlsplit(page.url).path.rstrip('/').split('/')[-1] != str(world["foreign"])
         context.close()
         browser.close()

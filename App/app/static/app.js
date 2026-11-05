@@ -2086,16 +2086,54 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
   /* 0076: a page with several independent forms (the business editor's
      Business details and Invoice details). Saving one form, or leaving the
      page, asks first when another of them holds unsaved changes. */
+  // 0955: dirty means a control differs from its loaded value; typing the original back clears it.
+  function formSnapshot(form) {
+    var rows = [];
+    new FormData(form).forEach(function (value, key) {
+      rows.push([key, value instanceof File ? "file:" + value.name : String(value)]);
+    });
+    return JSON.stringify(rows.sort());
+  }
+  function recomputeDirty(form) {
+    if (!form._ubyBase) return;
+    var dirty = form.getAttribute("data-dirty-start") === "1" || formSnapshot(form) !== form._ubyBase;
+    if (dirty) form.setAttribute("data-dirty", "1"); else form.removeAttribute("data-dirty");
+  }
+
   function initUnsavedForms() {
     var forms = Array.prototype.slice.call(document.querySelectorAll("form[data-unsaved-guard]"));
     if (!forms.length) return;
     forms.forEach(function (form) {
       if (!claimNode(form, "initUnsavedForms")) return;
-      var mark = function () { form.setAttribute("data-dirty", "1"); };
+      form._ubyBase = formSnapshot(form);
+      var mark = function () { recomputeDirty(form); };
       form.addEventListener("input", mark);
       form.addEventListener("change", mark);
       form.addEventListener("submit", function () { form._ubySubmitting = true; });
     });
+    // 0952: door-code controls sit outside their form and name it with form="...", so they bubble to document, not to the form.
+    if (!document._ubyOutsideMark) {
+      document._ubyOutsideMark = true;
+      var markOutside = function (event) {
+        var owner = event.target && event.target.form;
+        if (owner && owner.hasAttribute("data-unsaved-guard") && !owner.contains(event.target)) recomputeDirty(owner);
+      };
+      document.addEventListener("input", markOutside);
+      document.addEventListener("change", markOutside);
+    }
+    // 0955: a focused field under the sticky Save row scrolls clear of it (scroll-padding alone does not move a visible field).
+    if (!document._ubyFocusClear) {
+      document._ubyFocusClear = true;
+      var keepClear = function (field) {
+        if (!field || !field.closest || !field.closest("#property-settings-form")) return;
+        var bar = document.querySelector(".savebar[data-for='property-settings-form']");
+        if (!bar || getComputedStyle(bar).display === "none") return;
+        field.scrollIntoView({ block: "nearest" });
+      };
+      document.addEventListener("focusin", function (event) { keepClear(event.target); });
+      // The bar appears on the first edit, after the field already has focus.
+      document.addEventListener("input", function (event) { keepClear(event.target); });
+    }
     if (claimNode(window, "initUnsavedForms")) {
       window.addEventListener("beforeunload", function (event) {
         var current = Array.prototype.slice.call(document.querySelectorAll("form[data-unsaved-guard]"));
@@ -2123,9 +2161,14 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
   /* 0543: an aside link to a property section (#sec-*) opens that section; a #sec-* hash opens it on load */
   function initPropSectionLinks() {
     function openSection(hash) {
-      if (!/^#sec-/.test(hash || "")) return;
-      var node = document.getElementById(hash.slice(1));
-      if (node && node.tagName === "DETAILS" && node.classList.contains("prop-sec")) node.open = true;
+      if (!/^#(sec-|door-code$|smart-locks$)/.test(hash || "")) return;
+      var target = document.getElementById(hash.slice(1));
+      // 0952: #door-code and #smart-locks sit inside the #sec-lock accordion: open that one and scroll to the target.
+      var node = target && !/^sec-/.test(target.id) && target.closest ? target.closest("details.prop-sec") : target;
+      if (node && node.tagName === "DETAILS" && node.classList.contains("prop-sec")) {
+        node.open = true;
+        if (target !== node && target.scrollIntoView) target.scrollIntoView();
+      }
     }
     document.querySelectorAll('a[href^="#sec-"]').forEach(function (link) {
       if (!claimNode(link, "initPropSectionLinks")) return;
@@ -2146,9 +2189,10 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     if (form && claimNode(form, "initPropertyPage")) {
       var lastOpened = null;
       var returnInput = form.querySelector("input[data-property-return]");
-      form.addEventListener("toggle", function (event) {
+      // 0952: #sec-lock sits outside the form now, so listen on the document for it too.
+      document.addEventListener("toggle", function (event) {
         var node = event.target;
-        if (node.tagName === "DETAILS" && node.open && node.id && node.matches("details.prop-sec")) lastOpened = node.id;
+        if (node.tagName === "DETAILS" && node.open && node.id && node.matches("details.prop-sec") && (form.contains(node) || node.id === "sec-lock")) lastOpened = node.id;
       }, true);
       form.addEventListener("submit", function () {
         var group = PROPERTY_RETURN_SECTION[lastOpened];
@@ -2156,7 +2200,10 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         returnInput.value = returnInput.value.replace(/([?&]section=)[^&#]*/, "$1" + group);
       });
       // A switch says "Not saved yet" until the form is saved; never "Enabled".
-      form.querySelectorAll("input[data-switch-saved]").forEach(function (input) {
+      // 0952: door-code switches sit outside the form and name it with form="...".
+      Array.prototype.slice.call(document.querySelectorAll("input[data-switch-saved]")).filter(function (input) {
+        return input.form === form;
+      }).forEach(function (input) {
         var status = document.getElementById((input.getAttribute("aria-describedby") || "").split(" ")[0]);
         if (!status) return;
         input.addEventListener("change", function () {
@@ -2211,15 +2258,21 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     var pendingLink = null;
 
     function isDirty(form) { return form.getAttribute("data-dirty") === "1"; }
+    // 0955: the property Save bar sits outside its form, linked by data-for="<form id>".
+    function formBars(form) {
+      return form.id ? Array.prototype.slice.call(document.querySelectorAll('.savebar[data-for="' + form.id + '"]')) : [];
+    }
+    function resetButtons(form) {
+      var out = Array.prototype.slice.call(form.querySelectorAll("[data-unsaved-reset]"));
+      formBars(form).forEach(function (bar) { out = out.concat(Array.prototype.slice.call(bar.querySelectorAll("[data-unsaved-reset]"))); });
+      return out;
+    }
     function dirtyForms() { return forms.filter(isDirty); }
 
     // The "Discard changes" button beside Save shows only while its form is dirty.
     function syncResetButtons() {
       forms.forEach(function (form) {
-        form.querySelectorAll("[data-unsaved-reset]").forEach(function (button) {
-          button.hidden = !isDirty(form);
-        });
-        form.querySelectorAll(".savebar").forEach(function (bar) {
+        formBars(form).concat(Array.prototype.slice.call(form.querySelectorAll(".savebar"))).forEach(function (bar) {
           bar.classList.toggle("is-dirty", isDirty(form));
         });
       });
@@ -2229,10 +2282,15 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     // "change", so tell them; then the form is clean again.
     function discard(form) {
       form.reset();
-      form.querySelectorAll("select, input[type=checkbox], input[type=radio]").forEach(function (el) {
+      // 0952: form.elements also holds controls outside the form that name it with form="...".
+      Array.prototype.slice.call(form.elements).filter(function (el) {
+        return el.matches("select, input[type=checkbox], input[type=radio]");
+      }).forEach(function (el) {
         el.dispatchEvent(new Event("change", { bubbles: true }));
       });
-      form.removeAttribute("data-dirty");
+      // Cancel is the new loaded state: the reset values become the base for the next edit.
+      if (form.getAttribute("data-dirty-start") !== "1") form._ubyBase = formSnapshot(form);
+      recomputeDirty(form);
     }
 
     // True when following this link keeps the draft on screen.
@@ -2241,16 +2299,29 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       return url.pathname === here.pathname && url.search === here.search && !!url.hash;
     }
 
+    // 0952: same as initUnsavedForms, for controls outside the form: update the Save bar and reset buttons.
+    if (!document._ubyOutsideSync) {
+      document._ubyOutsideSync = true;
+      var syncOutside = function (event) {
+        var owner = event.target && event.target.form;
+        if (owner && forms.indexOf(owner) > -1 && !owner.contains(event.target)) {
+          syncResetButtons();
+        }
+      };
+      document.addEventListener("input", syncOutside);
+      document.addEventListener("change", syncOutside);
+    }
     forms.forEach(function (form) {
       if (!claimNode(form, "initUnsavedDialog")) return;
       form.addEventListener("input", syncResetButtons);
       form.addEventListener("change", syncResetButtons);
-      form.querySelectorAll("[data-unsaved-reset]").forEach(function (button) {
-        button.addEventListener("click", function () {
+      resetButtons(form).forEach(function (button) {
+        button.addEventListener("click", function (event) {
+          // After a failed save the page holds the posted values: the link reloads the saved page.
+          if (form.getAttribute("data-dirty-start") === "1") { form._ubySubmitting = true; return; }
+          event.preventDefault();
           discard(form);
           syncResetButtons();
-          var save = form.querySelector(".savebar [type=submit]") || form.querySelector(".actions [type=submit]");
-          if (save) save.focus();
         });
       });
     });
@@ -2277,6 +2348,8 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       var link = event.target.closest && event.target.closest("a[href]");
       if (!link || dialog.contains(link)) return;
+      // 0955: Cancel resets the form in place; it is not a page change to guard.
+      if (link.hasAttribute("data-unsaved-reset")) return;
       if ((link.target && link.target !== "_self") || link.hasAttribute("download")) return;
       if (!dirtyForms().length) return;
       var url;
@@ -2325,13 +2398,24 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
   window.UbyHost = window.UbyHost || {};
   window.UbyHost.onPage = function (fn) { pageHooks.push(fn); if (pageStarted) fn(); };
 
+  function initSectionNotice() {
+    var n = document.querySelector("[data-section-notice]");
+    if (!n || !claimNode(n, "initSectionNotice")) return;
+    n.scrollIntoView({ block: "center" });
+    n.focus({ preventScroll: true });
+  }
+
   function initPage() {
     initPhoneDefaultClosed();
     initPropSectionLinks();
     initPropertyPage();
     initCopy();
+    // 0955: widgets that disable or fill fields first, so the dirty baseline is their settled state.
+    initAutomationFields();
+    initControllerFields();
     initUnsavedForms();
     initUnsavedDialog();
+    initSectionNotice();
     initHelpTips();
     initBirthDateInputs();
     initRowMenus();

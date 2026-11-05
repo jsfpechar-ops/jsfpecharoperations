@@ -41,8 +41,9 @@ def test_sections_are_details_in_order(host):
     client, apartment_id = host
     names = [name for name, _ in _sections(_page(client, apartment_id))]
     # 0536: the fixture has no door codes, but the lock section is always rendered
-    # (connect text only). DOM order; v2 CSS puts them in mockup order.
-    assert names == ["basics", "archive", "messages", "lock", "police", "fee", "calendars"]
+    # (connect text only). DOM order; v2 CSS puts them in mockup order (0952: the one lock
+    # section sits after the property form, so it is last in the DOM).
+    assert names == ["basics", "archive", "messages", "police", "fee", "calendars", "lock"]
 
 
 def test_0536_setup_continue_is_the_first_aside_card(host):
@@ -51,16 +52,26 @@ def test_0536_setup_continue_is_the_first_aside_card(host):
     start = html.index('<aside class="preview"')
     aside = html[start:html.index("</aside>", start)]
     assert "setup-continue-card" in aside
-    assert aside.index('class="pv setup-continue-card"') < aside.index('class="pv"')
+
+
+def _strip(html):
+    start = html.index('<nav class="prop-strip"')
+    return html[start:html.index("</nav>", start)]
+
+
+def _guest_strip(html):
+    strip = _strip(html)
+    start = strip.index('data-strip="guest"')
+    return strip[start:strip.index('data-strip="police"', start)]
 
 
 def test_0536_guest_card_copy_is_coral_and_has_no_copied_slot(host):
     client, apartment_id = host
     html = _page(client, apartment_id)
-    start = html.index('class="card guest-card"')
-    card = html[start:html.index("</section>", start)]
-    assert 'class="btn sm copy-btn"' in card
-    assert 'class="copy-label-default"' in card
+    card = _guest_strip(html)
+    assert 'data-copy="overview-guest-url"' in card
+    assert 'id="overview-guest-url"' in card
+    assert 'class="card guest-card"' not in html
 
 
 def test_0536_lock_section_is_always_rendered(host):
@@ -118,7 +129,7 @@ def test_settings_form_still_saves_a_field(host):
 
 
 # 0535: the mockup order is CSS only (DOM order stays); the aside links to the sections.
-MOCKUP_ORDER = {"basics": 1, "police": 2, "calendars": 3, "messages": 4, "lock": 5, "fee": 6, "archive": 7, "lock-account": 8}
+MOCKUP_ORDER = {"basics": 1, "police": 2, "calendars": 3, "messages": 4, "lock": 5, "fee": 6, "archive": 7}
 APP2_CSS = Path(__file__).resolve().parents[1] / "app" / "static" / "app2.css"
 
 
@@ -138,11 +149,23 @@ def test_rendered_sections_show_in_mockup_order(host):
 def test_aside_has_cards_and_links_to_each_section(host):
     client, apartment_id = host
     html = _page(client, apartment_id)
-    start = html.index('<aside class="preview"')
-    aside = html[start:html.index("</aside>", start)]
-    assert aside.count('class="pv"') >= 2
-    for key in ("basics", "police", "calendars", "lock", "fee"):
-        assert f'href="#sec-{key}"' in aside, key
+    strip = _strip(html)
+    for key in ("calendars", "messages", "police", "basics", "fee"):
+        assert f'href="#sec-{key}"' in strip, key
+    for sec in re.findall(r'href="#(sec-[a-z]+)"', strip):
+        assert f'id="{sec}"' in html, sec
+    assert html.index('<nav class="prop-strip"') < html.index('class="form"')
+
+
+def test_strip_flags_missing_operator(host):
+    client, apartment_id = host
+    db.update("apartment", apartment_id, {"legal_entity_id": None})
+    html = client.get(f"/apartments/{apartment_id}?lang=en").text
+    card = _strip(html)
+    card = card[card.index('data-strip="business"'):]
+    card = card[:card.index("</a>")]
+    assert 'class="is-problem"' in card
+    assert "Operator missing" in card
 
 
 def test_0541_every_section_row_has_a_dot_and_a_state(host):
@@ -154,20 +177,15 @@ def test_0541_every_section_row_has_a_dot_and_a_state(host):
         assert 'class="dot ' in row and 'sec-state' in row
 
 
-def _guest_card(html):
-    start = html.index('class="card guest-card"')
-    return html[start:html.index("</section>", start)]
 
 
 def test_0545_guest_card_shows_pin_and_copy_button(host):
     client, apartment_id = host
     db.update("apartment", apartment_id, {"permalink_pin": "482915"})
-    card = _guest_card(_page(client, apartment_id))
-    assert 'id="property-guest-pin"' in card
-    assert 'value="482915"' in card
-    assert "guest-pin-value" in card
-    assert "copy_button" not in card
-    assert card.count('class="btn sm copy-btn"') == 2
+    html = _page(client, apartment_id)
+    assert 'data-copy="overview-guest-url"' in _guest_strip(html)
+    assert "482915" not in _guest_strip(html)
+    assert 'value="482915"' in html
 
 
 def test_0545_guest_card_has_no_pin_when_property_has_none(host, monkeypatch):
@@ -177,7 +195,6 @@ def test_0545_guest_card_has_no_pin_when_property_has_none(host, monkeypatch):
     # the page backfills a PIN on every load; patch that out to reach the empty state
     monkeypatch.setattr(admin, "_ensure_apartment_pin", lambda apartment: apartment)
     db.update("apartment", apartment_id, {"permalink_pin": None})
-    card = _guest_card(_page(client, apartment_id))
-    assert "property-guest-pin" not in card
-    assert "guest-pin" not in card
-    assert card.count('class="btn sm copy-btn"') == 1
+    html = _page(client, apartment_id)
+    assert 'data-copy="overview-guest-url"' in _guest_strip(html)
+    assert "property-guest-pin" not in html

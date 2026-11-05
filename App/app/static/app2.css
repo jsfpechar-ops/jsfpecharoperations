@@ -347,7 +347,6 @@ body.v2 .props-phone .cover.c2{background:linear-gradient(135deg,#5c7a4f,#9db58c
 /* 0534 property page */
 body.v2 .form{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;max-width:980px;margin:0 auto}
 body.v2 .crumb{color:var(--ink3);font-size:12px;margin-bottom:4px}
-body.v2 .guest-card{padding:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px}
 body.v2 details{background:var(--s);border:1px solid var(--line);border-radius:12px;margin-bottom:10px}
 body.v2 summary{list-style:none;padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
 body.v2 summary::-webkit-details-marker{display:none}
@@ -356,8 +355,6 @@ body.v2 summary small{color:var(--ink3)}
 body.v2 summary:after{content:"\2304";color:var(--ink3);font-size:18px}
 body.v2 details[open] summary:after{transform:rotate(180deg)}
 body.v2 .fields{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
-body.v2 .savebar{position:fixed;right:24px;bottom:20px;display:flex;gap:8px}
-@media (max-width:600px){body.v2 .savebar{left:12px;right:12px;bottom:12px;flex-wrap:wrap;justify-content:flex-end}}
 /* 0535: onboarding 'all steps' link spacing (was an inline style) */
 .onb-more{margin-top:10px}
 
@@ -371,7 +368,6 @@ body.v2 #sec-messages{order:4}
 body.v2 #sec-lock{order:5}
 body.v2 #sec-fee{order:6}
 body.v2 #sec-archive{order:7}
-body.v2 #sec-lock-account{order:8}
 /* 0535 step 2: preview aside. Two columns from 1024 px; below that the aside sits under the sections. */
 body.v2 .form-main{display:flex;flex-direction:column;gap:20px;min-width:0}
 body.v2 .preview{background:#efefeb;border-radius:14px;padding:12px;min-width:0}
@@ -407,10 +403,6 @@ body.v2 .copy-btn .copy-label-default{display:inline}
 body.v2 .copy-btn [data-copy-label-slot]{display:none}
 body.v2 .copy-btn.copied [data-copy-label-slot]{display:inline}
 body.v2 .copy-btn.copied .copy-label-default{display:none}
-body.v2 .guest-card .copy-btn{position:relative;overflow:hidden}
-body.v2 .guest-card .copy-btn [data-copy-state-icon]{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none}
-body.v2 .guest-card .copy-btn.copied [data-copy-state-icon]{opacity:1}
-body.v2 .guest-card .copy-btn [data-copy-state-icon] svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 @media (max-width:639px){
   body.v2 .fields{grid-template-columns:minmax(0,1fr)}
 }
@@ -663,7 +655,7 @@ body.v2 .host-stay-detail .sub-phone{text-align:center;color:var(--ink3);font-si
 body.v2 .host-stay-detail .stay-dates>div{padding:18px 20px}
 body.v2 .host-stay-detail .stay-dates>div+div{border-left:1px solid var(--line)}
 body.v2 .host-stay-detail .stay-dates small{display:block;color:var(--ink3);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
-body.v2 .host-stay-detail .stay-dates b{display:block;font-size:20px;font-weight:800;letter-spacing:-.01em;margin-top:4px}
+body.v2 .host-stay-detail .stay-dates b{display:block;font-size:20px;font-weight:800;letter-spacing:-.01em;line-height:1.4;margin-top:4px}
 body.v2 .host-stay-detail .stay-dates .tot{grid-column:1/-1;border-left:0;border-top:1px solid var(--line);padding:14px 20px;text-align:center;color:var(--ink2);font-size:15px;font-weight:600}
 body.v2 .host-stay-detail .guests .row{display:flex;align-items:center;gap:16px;min-height:56px;padding:10px 0;border-bottom:0}
 body.v2 .host-stay-detail .guests .ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex:none;font-weight:800;font-size:15px}
@@ -950,7 +942,6 @@ body.v2 .fields-wrap{padding:0 16px 16px}
 body.v2 .setup-continue-card p{font-size:13px;margin:0 0 8px}
 body.v2 .setup-continue-card .actions{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
 body.v2 .setup-continue-card .ui-btn{min-height:32px;padding:4px 12px;font-size:13px}
-@media (min-width:601px){body.v2 .savebar{right:calc(var(--control-h) + var(--space-3) + var(--space-6));white-space:nowrap}}
 /* 0544: above the sticky preview aside from 1024 px; the Havel FAB (z 40) and dialog (z 60) stay above the bar. */
 body.v2 .savebar .ui-btn,body.v2 .savebar .btn{width:auto;white-space:nowrap}
 @media (min-width:1024px){
@@ -984,14 +975,6 @@ body.v2 .dot.n{background:#c9c9c3}
   body.v2 .prop-phone-only{display:block}
   body.v2 .dot{display:block;width:10px;height:10px;border-radius:50%;flex:0 0 10px}
   body.v2 .sec-state{display:block;color:var(--ink3);font-size:14px;line-height:1.35;margin-top:0}
-  body.v2 .guest-card{display:block;padding:22px;margin:0 0 16px;background:#fff;border:0;border-radius:24px;box-shadow:0 6px 24px rgba(0,0,0,.08),0 0 0 1px rgba(0,0,0,.03)}
-  body.v2 .guest-card b{display:block;font-size:13px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em}
-  body.v2 .guest-card .guest-pin{display:flex;align-items:baseline;justify-content:space-between;border-top:1px solid var(--line);padding-top:14px;margin-bottom:16px}
-  body.v2 .guest-card .guest-pin-label{font-size:15px;color:var(--ink3)}
-  body.v2 .guest-card .guest-pin-value{font-size:22px;font-weight:800;line-height:1.4;letter-spacing:.12em}
-  body.v2 .guest-card .guest-btns{display:flex;flex-direction:column;gap:10px}
-  body.v2 .guest-card .sub{font-size:17px;font-weight:700;color:var(--ink);margin:6px 0 14px;overflow-wrap:anywhere;word-break:break-all}
-  body.v2 .guest-card .copy-btn{width:100%;justify-content:center}
   body.v2 .prop-sec > summary{display:grid;grid-template-columns:10px minmax(0,1fr) 20px;column-gap:16px;align-items:center;min-height:64px;padding:12px 0;border-bottom:0}
   body.v2 .prop-sec > summary > .dot{grid-column:1;grid-row:1/3}
   body.v2 .prop-sec > summary > div{grid-column:2;grid-row:1;min-width:0}
@@ -999,24 +982,11 @@ body.v2 .dot.n{background:#c9c9c3}
   body.v2 .prop-sec > summary > div > small{display:none}
   body.v2 .prop-sec > summary > .sec-state{grid-column:2;grid-row:2}
   body.v2 .prop-sec > summary:after{grid-column:3;grid-row:1/3}
-  body.v2 .property-settings-form .savebar{display:none}
-  body.v2 .property-settings-form:has(details.prop-sec[open]) .savebar{display:flex;flex-wrap:wrap;gap:8px;left:12px;right:12px;bottom:calc(var(--tabbar-h) + var(--tabbar-safe) + 8px);z-index:10}
-  body.v2 .property-settings-form .savebar .btn{flex:1 1 30%;white-space:normal;text-align:center;justify-content:center}
-  body.v2 .property-settings-form .savebar .btn[type="submit"]{flex-basis:100%}
   body.v2:has(.property-settings-form details.prop-sec[open]) .havel-fab{display:none}
   body.v2 .ov-how[data-how="property"]{display:none}
-  body.v2 .guest-card .copy-btn{min-height:50px;height:auto;padding:0;gap:8px;white-space:normal;border-radius:12px;font-size:16px;font-weight:700}
   /* 0741: copy link is the coral filled button, copy PIN the white outlined one; (0,6,1)+ beats the primary v2 .btn text rule (0,5,1) without !important */
-  body.v2 .guest-card .guest-btns > .copy-btn:not(.soft):not(.ghost){color:#fff;background:var(--acc);border:0}
-  body.v2 .guest-card .guest-pin-copy .copy-btn:not(.soft):not(.ghost){color:var(--ink);background:#fff;border:1.5px solid var(--ink)}
-  body.v2 .guest-card .copy-btn > svg{display:block;width:18px;height:18px;flex:0 0 18px}
-  body.v2 .guest-card .copy-btn .sr-only{position:static;width:auto;height:auto;margin:0;overflow:visible;clip:auto;white-space:nowrap}
   body.v2 details.prop-sec{border:0;border-radius:0;box-shadow:none;background:transparent;padding:0;margin:0}
   body.v2 #sec-archive > summary{border-bottom:0}
-  body.v2 .property-settings-form .savebar{flex-wrap:nowrap}
-  body.v2 .property-settings-form .savebar .btn{flex:1 1 0;min-width:0;width:auto}
-  body.v2 .property-settings-form .savebar .btn[type="submit"]{flex-basis:0}
-  body.v2 .property-settings-form .savebar:has([data-unsaved-reset]:not([hidden])) .btn.ghost:not([data-unsaved-reset]){display:none}
 }
 /* 0543: CI browser fixes on the property page and its dialogs */
 body.v2 aside.preview .pv a.r:hover,body.v2 aside.preview .pv a.r:focus-visible{background:#f6f6f4;border-radius:8px}
@@ -1869,6 +1839,10 @@ body.v2 .settings-value-link{display:inline-flex;align-items:center;gap:4px;colo
 body.v2 .settings-pills{display:flex;flex-wrap:nowrap;gap:12px;overflow-x:auto;margin:0 0 24px;padding-bottom:4px}
 body.v2 .settings-pill{flex:0 0 auto;display:inline-flex;align-items:center;min-height:44px;padding:0 20px;border-radius:999px;background:#f2f2f2;color:var(--ink);text-decoration:none;font-size:15px;font-weight:600;white-space:nowrap}
 body.v2 .settings-pill.is-current{background:var(--ink);color:#fff}
+/* 0950-fix-1: opt-in wrapping keeps every Stays filter visible on phones. */
+@media (max-width:767px){
+  body.v2 .settings-pills[data-wrap-on-phone]{flex-wrap:wrap;overflow:visible}
+}
 /* 0789b: a checkbox with data-toggle-submit is a 51x31 switch (ink when on) */
 body.v2 .settings-toggle-form{margin:0}
 body.v2 input[type=checkbox][data-toggle-submit]{appearance:none;-webkit-appearance:none;position:relative;flex:0 0 auto;width:51px;height:31px;margin:0;border-radius:31px;background:#e0e0e0;cursor:pointer;transition:background .15s}
@@ -1892,10 +1866,6 @@ body.v2 .cal .cgrid{min-width:0;grid-template-columns:112px repeat(14,minmax(36p
 body.v2 .props-card > table :is(th,td):first-child{padding-left:16px}
 body.v2 .props-card > table :is(th,td):last-child{padding-right:16px}
 body.v2 .props-phone .card.prop{border:1px solid #e5e5e5;border-radius:12px;box-shadow:none;padding:20px}
-body.v2 .guest-card{border:1px solid #e5e5e5;border-radius:12px;box-shadow:none;background:#fff}
-body.v2 .guest-card .guest-btns{gap:12px}
-body.v2 .guest-card .guest-pin-copy{margin-top:12px}
-body.v2 .guest-card input.sr-only{visibility:hidden}
 body.v2 .prop-sec label{display:block;margin-bottom:12px}
 body.v2 .prop-sec :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select,textarea){margin-bottom:12px}
 body.v2 .prop-sec p.ui-sub:not([data-link-window-note]):not(:has(strong)),body.v2 .prop-sec .property-group-intro,body.v2 .prop-sec .police-no-credentials{display:none}
@@ -1935,7 +1905,7 @@ body.v2 .stays-title-row .help-tip.is-open>.help-tip-body,body.v2 .police-deadli
 body.v2 .stays-title-row .help-tip-body a,body.v2 .police-deadline-row .help-tip-body a{color:var(--brand-ink);font-weight:650}
 body.v2 .police-deadline-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
 body.v2 .stays-phone .in b,body.v2 .stays-phone .in small{white-space:normal;overflow-wrap:anywhere}
-body.v2 .stays-pills .settings-pill:hover{background:#e4e4e4}
+body.v2 .stays-pills .settings-pill:not(.is-current):hover{background:#e4e4e4}
 /* 0830D reservations+stay (end) */
 /* 0830E invoices+submission (start) */
 
@@ -2142,13 +2112,12 @@ body.v2 .property-settings-form .field input:not([type=checkbox]):not([type=radi
 .ruian-suggest [role="option"]:hover,.ruian-suggest [role="option"][aria-selected="true"]{background:var(--side2)}
 .ruian-suggest [role="option"][aria-selected="true"]{outline:2px solid var(--acc);outline-offset:-2px}
 /* 0851 property editor savebar: Discard/Cancel as quiet text left, Save as the one coral pill right */
-body.v2 form.property-settings-form .savebar,body.v2 form.property-settings-form:has(details.prop-sec[open]) .savebar{position:sticky;left:auto;right:auto;bottom:0;z-index:20;width:auto;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:16px;margin:24px 0 0;padding:12px 0 calc(12px + env(safe-area-inset-bottom,0px));background:#fff;border-top:1px solid var(--line);white-space:nowrap}
-body.v2 form.property-settings-form .savebar .btn,body.v2 form.property-settings-form:has(details.prop-sec[open]) .savebar .btn{flex:0 0 auto;width:auto;min-width:0;height:48px;min-height:48px;padding:0 24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;font-size:16px;font-weight:600;line-height:1;white-space:nowrap}
-body.v2 form.property-settings-form .savebar .btn.ghost,body.v2 form.property-settings-form:has(details.prop-sec[open]) .savebar .btn.ghost{margin-right:auto;padding:0 12px;background:transparent;border:0;color:var(--ink);text-decoration:underline;text-underline-offset:3px}
-body.v2 form.property-settings-form .savebar .btn[type="submit"],body.v2 form.property-settings-form:has(details.prop-sec[open]) .savebar .btn[type="submit"]{margin-left:auto;min-width:160px;background:var(--acc);color:#fff;border:0}
-body.v2 form.property-settings-form .savebar:has([data-unsaved-reset]:not([hidden])) a.btn.ghost{display:none}
-body.v2 form.property-settings-form .savebar [hidden]{display:none}
-@media (max-width:1023px){body.v2 form.property-settings-form .savebar,body.v2 form.property-settings-form:has(details.prop-sec[open]) .savebar{bottom:calc(var(--tabbar-h) + var(--tabbar-safe));padding-bottom:12px}}
+body.v2 .savebar[data-for="property-settings-form"],body.v2 .savebar[data-for="property-settings-form"]{position:sticky;left:auto;right:auto;bottom:0;z-index:20;width:auto;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:16px;margin:24px 0 0;padding:12px 0 calc(12px + env(safe-area-inset-bottom,0px));background:#fff;border-top:1px solid var(--line);white-space:nowrap}
+body.v2 .savebar[data-for="property-settings-form"] .btn,body.v2 .savebar[data-for="property-settings-form"] .btn{flex:0 0 auto;width:auto;min-width:0;height:48px;min-height:48px;padding:0 24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;font-size:16px;font-weight:600;line-height:1;white-space:nowrap}
+body.v2 .savebar[data-for="property-settings-form"] .btn.ghost,body.v2 .savebar[data-for="property-settings-form"] .btn.ghost{margin-right:auto;padding:0 12px;background:transparent;border:0;color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+body.v2 .savebar[data-for="property-settings-form"] .btn[type="submit"],body.v2 .savebar[data-for="property-settings-form"] .btn[type="submit"]{margin-left:auto;min-width:160px;background:var(--acc);color:#fff;border:0}
+body.v2 .savebar[data-for="property-settings-form"] [hidden]{display:none}
+@media (max-width:1023px){body.v2 .savebar[data-for="property-settings-form"],body.v2 .savebar[data-for="property-settings-form"]{bottom:calc(var(--tabbar-h) + var(--tabbar-safe));padding-bottom:12px}}
 
 /* 0852 */
 body.v2 a.ui-btn-primary{color:#fff}
@@ -2306,7 +2275,6 @@ body.v2 .needs-you-item .needs-you-actions{display:flex;flex-wrap:wrap;align-ite
 @media (min-width:1024px){body.v2 .needs-you-item{grid-template-columns:minmax(0,1fr) auto}}
 @media (max-width:1023px){body.v2 .needs-you-item{border-radius:24px}body.v2 .needs-you-item .needs-you-actions{width:100%}body.v2 .needs-you-item .needs-you-actions .btn{flex:1;min-width:0;min-height:44px;display:flex;align-items:center;justify-content:center}}
 @media (min-width:1024px){body.v2 .needs-you-item .needs-you-actions{margin-top:0}body.v2 .needs-you-item .needs-you-actions .btn{flex:none;display:inline-flex;align-items:center;justify-content:center;padding:0 20px;min-height:44px;font-size:15px}}
-.needs-you-how,.needs-you-how li{font-size:14px;line-height:1.45}
 /* 0901: a help "?" always sits inline right after its heading or label, never on its own line (lint rule help-stranded) */
 body.v2 .stay-claim-label{display:block}
 body.v2 .ui-choice-card>.ui-choice-card-label:has(+ .help-tip){flex:0 1 auto;max-width:calc(100% - 64px)}
@@ -2338,9 +2306,7 @@ body.v2 .wiz-page .ui-choice-card-extra{margin-top:12px}
 /* A destructive action next to a main one is a quiet outlined button, never a second red slab. */
 body.v2 .ui-btn-danger{background:#fff;color:var(--acc-text);border:1.5px solid var(--acc-text)}
 /* Buttons that stack keep 12 px between them. */
-body.v2 :is(.action-group,.guest-link-actions,.setup-wizard-actions){display:flex;flex-wrap:wrap;align-items:center;gap:12px}
-body.v2 .guest-link-actions{flex-direction:column;align-items:flex-start;margin:12px 0 16px}
-body.v2 .guest-link-action{display:inline-flex;align-items:center;gap:8px}
+body.v2 :is(.action-group,.setup-wizard-actions){display:flex;flex-wrap:wrap;align-items:center;gap:12px}
 body.v2 .actions,body.v2 .ui-form-actions{gap:12px}
 /* A legend sits inside its box, above the fields, never on the border line. */
 body.v2 fieldset>legend{float:left;width:100%;padding:0;margin:0 0 12px;box-sizing:border-box}
@@ -2467,3 +2433,159 @@ body.v2 .onboarding-finish-actions form{margin:0}
 @media (max-width:767px){body.v2 .onboarding-finish-actions{flex-direction:column;align-items:stretch}body.v2 .onboarding-finish-actions .ui-btn,body.v2 .onboarding-finish-actions form,body.v2 .onboarding-finish-actions form button{width:100%;justify-content:center;min-height:44px}body.v2 .onboarding-finish-actions form button{text-align:center}}
 body.v2 .onboarding-finish-strip{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:12px 16px;border:1px solid var(--line);border-radius:12px;background:var(--s);font-size:14px;margin:12px 0}
 @media (max-width:1023px){body.v2 .onboarding-finish-strip a{white-space:nowrap;min-height:44px;display:inline-flex;align-items:center}}
+
+/* 0948 status strip */
+body.v2 .prop-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:1fr;gap:10px;margin:0 auto 16px;max-width:980px}
+body.v2 .prop-strip .sc{display:grid;grid-template-columns:10px minmax(0,1fr);column-gap:10px;row-gap:2px;align-items:center;align-content:center;min-height:64px;padding:12px;background:#fff;border:1px solid var(--line);border-radius:14px;color:inherit;text-decoration:none}
+body.v2 .prop-strip div.sc.sc-link{display:block;padding:12px}
+body.v2 .prop-strip .sc:hover{border-color:var(--ink3)}
+body.v2 .prop-strip .sc:focus-visible,body.v2 .prop-strip .sc-main:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+body.v2 .prop-strip .sd{grid-row:1/3;width:10px;height:10px;border-radius:50%;background:#c9c9c3}
+body.v2 .prop-strip .sc[data-state="ok"] .sd{background:var(--ok)}
+body.v2 .prop-strip .sc[data-state="warn"] .sd{background:var(--warn)}
+body.v2 .prop-strip .sc[data-state="bad"] .sd{background:var(--bad)}
+body.v2 .prop-strip .sc b{grid-column:2;font-size:14px;font-weight:600;line-height:1.3;min-width:0;overflow-wrap:anywhere}
+body.v2 .prop-strip .sc small{grid-column:2;font-size:13px;color:var(--ink3);line-height:1.3;min-width:0;overflow-wrap:anywhere}
+body.v2 .prop-strip .sc small.is-problem{color:var(--bad);font-weight:600}
+@media (min-width:640px){body.v2 .prop-strip{grid-template-columns:repeat(3,minmax(0,1fr))}}
+body.v2 .prop-strip .sc-main{display:grid;grid-template-columns:10px minmax(0,1fr);column-gap:10px;row-gap:2px;align-items:center;color:inherit;text-decoration:none;min-width:0}
+body.v2 .prop-strip .sc-main b,body.v2 .prop-strip .sc-main small{grid-column:2}
+@media (max-width:1023px){body.v2 .prop-strip .sc-main{min-height:var(--control-h-phone,44px);align-content:center}}
+body.v2 .prop-strip .sc-actions{margin-top:8px;padding-left:20px}
+body.v2 .prop-strip .sc-actions .btn{min-height:44px}
+body.v2 .airbnb-actions{display:flex;gap:10px;align-items:center;margin-left:auto}
+body.v2 .prop-new-head{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+body.v2 .prop-new-head .airbnb-actions{margin-left:auto}
+body.v2 .airbnb-header:has(>.airbnb-actions){flex-wrap:wrap}
+body.v2 .airbnb-header:has(>.airbnb-actions)>.airbnb-title{width:auto;flex:1 1 0;min-width:0}
+body.v2 .airbnb-header:has(>.airbnb-actions)>.airbnb-back{margin-right:0}
+@media (max-width:767px){body.v2 .airbnb-actions{width:100%;margin-left:0}body.v2 .airbnb-actions .copy-settings-open{width:100%;justify-content:center;min-height:44px}body.v2 .airbnb-header:has(>.airbnb-actions)>.airbnb-title{flex:1 1 100%}}
+@media (max-width:359px){body.v2 .prop-strip{grid-template-columns:minmax(0,1fr)}}
+
+/* 0951: guest links block */
+body.v2 .guest-link-top{display:grid;gap:16px;grid-template-columns:minmax(0,1fr);margin-bottom:16px}
+body.v2 .guest-link-top .guest-copy-row{display:flex;flex-wrap:nowrap;align-items:center;gap:12px}
+body.v2 .guest-link-top .guest-copy-row input{flex:1 1 auto;min-width:0;width:100%;max-width:none;height:40px;margin:0;text-overflow:ellipsis}
+body.v2 .guest-link-top .guest-copy-row .copy-btn{flex:none;width:auto;min-width:40px;height:40px;min-height:40px;padding:0 12px;margin:0;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:var(--radius-md,8px);white-space:nowrap}
+body.v2 .guest-link-top .guest-link-actions{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-self:stretch;width:100%;gap:12px;margin:0}
+body.v2 .guest-link-top .guest-link-actions .ui-btn{height:40px;min-height:40px;padding:0 14px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
+body.v2 .guest-link-top .guest-link-action{display:inline-flex;align-items:center;gap:6px}
+@media (min-width:768px){body.v2 .guest-link-top .guest-link-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));row-gap:var(--space-4);column-gap:var(--space-3)}body.v2 .guest-link-top .guest-link-actions > *{display:flex;align-items:center;gap:0;min-width:0}body.v2 .guest-link-top .guest-link-actions .help-tip{margin-left:0}body.v2 .guest-link-top .guest-link-actions > a.ui-btn{margin-inline-end:32px}body.v2 .guest-link-top .guest-link-actions .ui-btn{flex:1 1 auto;min-width:0;width:auto}body.v2 .guest-link-top .guest-link-actions .help-tip-btn{flex:0 0 auto}}
+@media (max-width:1023px){body.v2 .guest-link-top .guest-copy-row :is(input,.copy-btn),body.v2 .guest-link-top .guest-link-actions .ui-btn{height:44px;min-height:44px}body.v2 .guest-link-top .guest-copy-row .copy-btn{min-width:44px}}
+body.v2 .guest-link-windows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 24px;align-items:start}
+body.v2 .guest-link-windows .field{display:flex;flex-direction:column;gap:6px;min-width:0;margin:0}
+body.v2 .guest-link-windows .field > input,body.v2 .guest-link-windows .field > select{width:100%;max-width:none;margin:0;box-sizing:border-box}
+body.v2 .guest-link-windows .field-label-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:6px;margin:0}
+body.v2 .guest-link-windows .link-window-note{margin:0}
+body.v2 .guest-link-windows .field:has(> select),body.v2 .guest-link-windows .passport-scan-row{grid-column:1/-1}
+body.v2 .guest-link-windows select{text-overflow:clip;white-space:normal;height:auto;min-height:40px;padding-top:8px;padding-bottom:8px}
+body.v2 .passport-scan-row{flex-direction:column;align-items:stretch;gap:0;min-height:44px}
+body.v2 .passport-scan-row .checkline{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:12px;margin:0;min-height:44px;cursor:pointer}body.v2 .passport-scan-row .checkline > span{min-width:0;flex:0 1 auto}body.v2 .passport-scan-row .checkline .help-tip{flex:none;align-self:flex-start}
+body.v2 .passport-scan-row input[type=checkbox]{width:24px;height:24px;min-width:24px;min-height:24px;margin:0;flex:none}
+@media (max-width:767px){body.v2 .guest-link-windows{grid-template-columns:minmax(0,1fr)}}
+body.v2 .fields-wrap .guest-link-top .guest-copy-row .copy-btn{min-height:40px}
+@media (max-width:1023px){body.v2 .fields-wrap .guest-link-top .guest-copy-row .copy-btn{min-height:44px}}
+body.v2 .fields-wrap .guest-link-top .guest-copy-row .copy-btn,body.v2 .fields-wrap .guest-link-top .guest-copy-row input:not([type=hidden]){margin:0;align-self:center}
+body.v2 .property-section > .guest-link-top{grid-column:1/-1}
+/* 0951: OCR row keeps its ? on the text line (inline flow) */
+body.v2 .passport-scan-row .checkline{display:block;position:relative;padding-left:36px;margin:0;min-height:0;cursor:pointer;line-height:1.4}
+body.v2 .passport-scan-row .checkline > input[type=checkbox]{position:absolute;left:0;top:2px;width:24px;height:24px;min-width:24px;margin:0}
+body.v2 .passport-scan-row .checkline > span{display:inline;min-width:0}
+body.v2 .passport-scan-row .checkline .help-tip{display:inline-block;vertical-align:middle;margin-left:6px}
+@media (max-width:359px){body.v2 .passport-scan-row .checkline{padding-left:32px}body.v2 .passport-scan-row .checkline .help-tip{margin-left:4px}}
+/* 0951: the 951 .property-section .grid rule zeroes the row gap; the 16 px gap under the next-stay hint is set here */
+body.v2 .property-section .guest-link-windows{row-gap:var(--space-4)}
+/* 0953 wizard old look */
+body.v2 .onboarding-welcome:not([data-layout=v2]){display:grid;gap:18px;max-width:880px;margin:0 auto}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-intro{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:20px;align-items:center;padding:24px;border:1px solid var(--line);border-radius:16px;background:radial-gradient(circle at 100% 0,var(--accs),transparent 45%),var(--s)}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-intro .onboarding-logo{width:64px;margin:0}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-kicker{margin:0 0 5px;color:var(--acc-text);font-size:11px;font-weight:750;letter-spacing:.09em;text-transform:uppercase}
+body.v2 .onboarding-welcome:not([data-layout=v2]) h1,body.v2 .onboarding-welcome:not([data-layout=v2]) h2{margin:0;color:var(--ink);font-size:22px;line-height:1.15;letter-spacing:-.02em}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .lede{margin:10px 0 0;color:var(--ink2)}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-meter{display:grid;min-width:120px;gap:3px;text-align:right}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-meter strong{color:var(--ink);font-size:26px;line-height:1}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-meter span{color:var(--ink3);font-size:12px}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-meter div{height:4px;margin-top:8px;overflow:hidden;border-radius:999px;background:var(--bg)}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-meter i{display:block;height:100%;border-radius:inherit;background:var(--acc)}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-meter form{margin-top:9px}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-now{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:18px;align-items:center;padding:22px 24px;border-left:4px solid var(--acc);border-radius:12px;background:var(--accs)}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-now-label{display:grid;justify-items:center;gap:4px}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-now-label span{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--acc);color:var(--s);font-weight:750}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-now-label small{color:var(--acc-text);font-size:10px;font-weight:700;text-transform:uppercase}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-now h2{font-size:19px}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-now p{margin:4px 0 0}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-now-actions{display:grid;justify-items:center;gap:7px}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-finish-line{margin:8px 0 -4px;color:var(--ink3);font-size:13px;text-align:center}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-steps{display:grid;gap:10px}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-step{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px 14px;align-items:center;padding:16px 18px;border:1px solid var(--line);border-radius:12px;background:var(--s);margin:0}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-step.is-current{background:var(--accs)}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-step.is-done{background:color-mix(in srgb,var(--ok-soft) 26%,var(--s))}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-step-index{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--s);border:1px solid var(--line);color:var(--ink3);font-size:13px;font-weight:700}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-step.is-done .onboarding-step-index{background:var(--ok-soft);border-color:var(--ok-soft);color:var(--ok)}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-step.is-current .onboarding-step-index{background:var(--acc);border-color:var(--acc);color:var(--s)}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-step h3{margin:0;font-size:15px}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-step p{margin:3px 0 0;font-size:13.5px;color:var(--ink3);line-height:1.45}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-step-copy small{color:var(--ink3)}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-step details{grid-column:2 / -1;font-size:13px}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-step details summary{width:fit-content;color:var(--acc-text);cursor:pointer;font-weight:650}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-current-dot{width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 4px var(--accs)}
+@media (max-width:640px){body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-intro{grid-template-columns:minmax(0,1fr);padding:18px}body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-now{grid-template-columns:minmax(0,1fr);padding:18px}body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-meter{text-align:left}}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-bottom{display:grid;grid-template-columns:1fr 1.35fr;gap:12px}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-bottom.single{grid-template-columns:minmax(0,1fr)}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-demo{display:flex;gap:16px;align-items:center;padding:18px 20px;border:1px solid var(--line);border-radius:12px;background:var(--s)}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-demo p{margin:5px 0 0;color:var(--ink3);font-size:13px}
+@media (max-width:640px){body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-bottom{grid-template-columns:minmax(0,1fr)}}
+body.v2 .onboarding-banner-setup{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:0 0 16px}
+body.v2 .onboarding-banner-setup form{margin:0}
+body.v2 .onboarding-skip-link{background:none;border:0;padding:0;font:inherit;font-size:13px;color:var(--ink3);text-decoration:underline;cursor:pointer;min-height:44px}
+body.v2 .wiz-page .setup-wizard-meter .setup-wizard-progress{gap:6px}
+body.v2 .wiz-page .setup-wizard-meter .setup-wizard-progress li{flex:1 1 0;width:auto;min-width:0;height:8px;border:1px solid var(--line);border-radius:999px;background:var(--s)}
+body.v2 .wiz-page .setup-wizard-meter .setup-wizard-progress li.is-done{border-color:var(--acc);background:var(--acc)}
+body.v2 .wiz-page .setup-wizard-meter .setup-wizard-progress li.is-current{border-color:var(--acc);background:var(--accs)}
+body.v2 .wiz-page .setup-wizard-meter .setup-wizard-progress li.is-waiting{border-color:var(--amber);background:var(--amber-bg)}
+body.v2 .wiz-page .setup-wizard-meter .setup-wizard-progress li.is-skipped{border-style:dashed;background:var(--s)}
+body.v2 .wiz-page .setup-wizard-ask-icon{width:44px;height:44px;border:1px solid currentColor;border-radius:12px;background:var(--accs);color:var(--acc)}
+body.v2 .wiz-page .setup-wizard-ask-icon .nav-icon{width:24px;height:24px;color:inherit}
+body.v2 .wiz-page .setup-wizard-ask[data-step-tone=blue] .setup-wizard-ask-icon{color:var(--blue);background:var(--blue-bg)}
+body.v2 .wiz-page .setup-wizard-ask[data-step-tone=teal] .setup-wizard-ask-icon{color:var(--teal);background:var(--teal-bg)}
+body.v2 .wiz-page .setup-wizard-ask[data-step-tone=purple] .setup-wizard-ask-icon{color:var(--purple);background:var(--purple-bg)}
+body.v2 .wiz-page .setup-wizard-celebrate-title{color:var(--ink);font-size:18px;line-height:1.25;overflow-wrap:anywhere}
+body.v2 .req-star{color:var(--red);font-weight:700;margin-inline-start:2px}
+body.v2 .section-note{font-size:14px;color:var(--ink3);margin:0 0 8px}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-demo{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:center}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-demo form{margin:0}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-demo button{width:100%}
+@media (min-width:640px){body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-demo{grid-template-columns:minmax(0,62%) minmax(0,1fr);gap:16px}body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-demo button{width:auto}}
+/* 0954 ttlock */
+.lock-state{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:12px 16px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.lock-state .sd{width:10px;height:10px;border-radius:50%;background:var(--line);flex:none}
+.lock-state-text{display:grid;gap:2px;min-width:0}
+.lock-state[data-state=on]{border-color:var(--green);background:var(--green-bg)}
+.lock-state[data-state=on] .sd{background:var(--green)}
+.lock-state[data-state=offline],.lock-state[data-state=times]{border-color:var(--amber);background:var(--amber-bg)}
+.lock-state[data-state=offline] .sd,.lock-state[data-state=times] .sd{background:var(--amber)}
+.lock-state form{margin:0 0 0 auto}
+@media (max-width:1023px){.lock-state form,.lock-state .ui-btn{width:100%}}
+/* 0955 section notice */
+body.v2 .section-notice{margin:0 0 var(--space-4);padding:14px 16px;min-height:44px;font-size:16px;line-height:1.4;scroll-margin-top:96px;display:flex;align-items:flex-start;gap:10px;border-left-width:4px}
+body.v2 .section-notice::before{content:"";flex:0 0 10px;height:10px;margin-top:6px;border-radius:50%;background:currentColor}
+/* 0955 save row last: the Save row is the last block of the property page, sticky above the tab bar */
+body.v2 .savebar[data-for="property-settings-form"]{position:sticky;bottom:0;display:flex;visibility:visible}
+@media (max-width:1023px){body.v2 .savebar[data-for="property-settings-form"]{bottom:calc(var(--tabbar-h) + var(--tabbar-safe))}body.v2:has(.property-settings-form) .havel-fab{bottom:calc(var(--tabbar-h) + var(--tabbar-safe) + var(--control-h) + var(--space-8))}}
+@media (min-width:1024px){body.v2 .savebar[data-for="property-settings-form"]{padding-right:calc(var(--control-h) + var(--space-6))}}
+/* 0955 save bar: hidden until a control really differs from its loaded value (JS on); always shown without JS */
+html.has-js body.v2 .savebar[data-for="property-settings-form"]:not(.is-dirty){display:none}
+/* 0955: on desktop the Save row spans the main column under the sections, not the preview column */
+@media (min-width:1024px){body.v2 .form > .savebar[data-for="property-settings-form"]{grid-column:1 / -1}}
+/* 0955 audit: focus scrolls a field clear of the Save row; property buttons keep a 44 px target */
+/* 0955: the scrolling root keeps a focused field clear of the Save row (72 px) and, below 1024 px, the tab bar too */
+html:has(.property-settings-form):has(.savebar[data-for]){--savebar-h:72px;scroll-padding-bottom:calc(var(--savebar-h) + 16px)}
+@media (max-width:1023px){html:has(.property-settings-form):has(.savebar[data-for]){--tabbar-h:84px;scroll-padding-bottom:calc(var(--savebar-h) + var(--tabbar-h) + var(--tabbar-safe,0px) + 16px)}}
+body.v2 form.property-settings-form .btn,body.v2 form.property-settings-form .ui-btn,body.v2 .savebar .btn{min-height:44px;height:auto}
+/* 0955 preview sticky: the Preview aside is column 2 of the detail body, so it can stick for the whole page */
+@media (min-width:1024px){
+  body.v2 .ui-body-detail:has(> aside.preview){display:grid;grid-template-columns:minmax(0,1fr) 300px;align-items:start}
+  body.v2 .ui-body-detail:has(> aside.preview) > .form{grid-column:1;grid-row:1;min-width:0;grid-template-columns:minmax(0,1fr)}
+  body.v2 .ui-body-detail:has(> aside.preview) > aside.preview{grid-column:2;grid-row:1;align-self:start;position:sticky;top:24px;z-index:1}
+}
+@media (max-width:1023px){body.v2 .ui-body-detail:has(> aside.preview) > aside.preview{position:static}}

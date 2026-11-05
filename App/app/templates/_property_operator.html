@@ -13,7 +13,7 @@
   {%- set op_selected = none -%}
 {%- endif %}
 <div class="field property-operator" id="operator-picker">
-  <label for="legal_entity_id">{{ t('apartment.form.entity.label') }}</label>
+  <label for="legal_entity_id">{{ t('apartment.form.entity.label') }}<span class="req-star" aria-hidden="true">*</span></label>
   <select id="legal_entity_id" name="legal_entity_id" required
           {%- if op_error or not entities %} aria-describedby="operator-message"{% endif %}
           {%- if op_error %} aria-invalid="true"{% endif %}>

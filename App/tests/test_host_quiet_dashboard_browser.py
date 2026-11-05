@@ -370,16 +370,11 @@ def test_dashboard_rich_needs_you_order_cap_and_geometry(dashboard_rich_host, ba
                     total = len(tones)
                     shown = page.locator("#needs-action .needs-you-list:first-of-type > .card.need").evaluate_all("nodes => nodes.filter(n => n.offsetParent).length")
                     assert shown == min(total, cap), (label, shown, total)
-                    more = page.locator(".needs-you-more:not([data-paste-check]) > summary")
+                    more = page.locator(".needs-you-more > summary")
                     assert more.count() == (1 if total > cap else 0), label
                     if total > cap:
                         assert str(total - cap) in more.inner_text(), (label, more.inner_text())
-                    paste_line = page.locator('.card.need[data-needs-you="paste"]')
-                    if paste_line.count() and paste_line.first.is_visible():
-                        how = paste_line.first.locator("[data-paste-check] > summary")
-                        assert how.is_visible(), label
-                        how_box, copy_box = how.bounding_box(), paste_line.first.locator(".needs-you-copy > strong").bounding_box()
-                        assert how_box["y"] >= copy_box["y"] + copy_box["height"] - 1, (label, how_box, copy_box)
+                    assert page.locator('.card.need[data-needs-you="paste"]').count() == 0, label
                     assert page.locator('.card.need[data-needs-you="setup"]', has_text="(demo)").count() == 0, label
 
                     # Header: one primary action, no overflow menu (0520).

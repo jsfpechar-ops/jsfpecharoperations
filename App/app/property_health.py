@@ -104,8 +104,14 @@ def checks(
         rows.append(_row("business", "receipt", "ok", "health.business.ok"))
 
     if door_code is not None:
-        if door_code.get("enabled"):
+        # 0954: door_code["state"] is the single source; the strip card reads it too.
+        state = door_code.get("state")
+        if state == "on":
             rows.append(_row("door", "key-round", "ok", "health.door.ok"))
+        elif state == "times":
+            rows.append(_row("door", "key-round", "bad", "health.door.times", "health.door.fix", f"{base}?view=settings&section=lock#sec-lock"))
+        elif state == "offline":
+            rows.append(_row("door", "key-round", "bad", "health.door.offline", "health.door.fix", f"{base}?view=settings&section=lock#sec-lock"))
         else:
             rows.append(_row("door", "key-round", "off", "health.door.off"))
     return rows

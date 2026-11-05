@@ -44,20 +44,24 @@ def _row(page, href):
     return match.group(0)
 
 
+def _strip_card(page, key):
+    start = page.index(f'data-strip="{key}"')
+    return page[start:page.index("</a>", start)]
+
+
 def test_cards_carry_the_health_and_the_box_is_gone():
     client, flat = _client()
     for lang in ("en", "cs", "vi"):
         page = client.get(f"/apartments/{flat}?view=overview&lang={lang}").text
         assert 'class="panel host-checklist"' not in page and 'class="health-row"' not in page, lang
-        assert 'class="pv"' in page, lang
+        assert 'data-strip="police"' in page, lang
         for href in ("#sec-calendars", "#sec-police"):
             assert f'href="{href}"' in page, (lang, href)
-        assert 'data-state=' in _row(page, "#sec-police"), lang
+        assert 'data-state=' in _strip_card(page, "police"), lang
 
 
 def test_a_problem_row_opens_the_fix_section():
     client, flat = _client()
     db.execute("UPDATE ical_feed SET last_status = 'error' WHERE apartment_id = ?", (flat,))
     page = client.get(f"/apartments/{flat}?view=overview&lang=en").text
-    row = _row(page, "#sec-calendars")
-    assert 'class="is-bad"' in row
+    assert 'class="is-problem"' in _strip_card(page, "calendars")

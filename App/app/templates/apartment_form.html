@@ -17,15 +17,15 @@
 {% set draft = draft or {} %}
 {% set copy_property_peers = copy_property_peers or [] %}
 {% if not editing %}
-<div class="head prop-new-head prop-new"><div><div class="heading-with-tip prop-name-tip"><h1 class="big">{% set parts = (t('property_create.title')).rsplit(' ', 1) %}{% if parts|length == 2 %}{{ parts[0] }} {% endif %}<span class="nowrap">{{ parts[-1] }}{{ help_tip('property-create-lede-help', t('property_create.lede') ~ ' ' ~ t('common.required_legend')) }}</span></h1></div></div></div>
+<div class="head prop-new-head prop-new"><div><div class="heading-with-tip prop-name-tip"><h1 class="big">{% set parts = (t('property_create.title')).rsplit(' ', 1) %}{% if parts|length == 2 %}{{ parts[0] }} {% endif %}<span class="nowrap">{{ parts[-1] }}{{ help_tip('property-create-lede-help', t('property_create.lede') ~ ' ' ~ t('common.required_legend')) }}</span></h1></div></div><div class="airbnb-actions">{% if copy_property_peers %}{% with copy_action='/apartments/new', copy_section='' %}{% include "_copy_settings_dialog.html" %}{% endwith %}{% endif %}</div></div>
 {% include "_property_create.html" %}
 {% else %}
 {% set base_url = '/apartments/' ~ apartment.id %}
 {# 0534: one scroll page, no tabs. Each section is a plain details; ?view= and ?section= pick what is open without JavaScript. #}
-{% with href='/apartments', title=apartment.internal_name, help=page_help('property') %}{% include "partials/settings_back_header.html" %}{% endwith %}
+{% set header_actions %}{% if copy_property_peers %}{% with copy_action=base_url, copy_section=settings_section|default('') %}{% include "_copy_settings_dialog.html" %}{% endwith %}{% endif %}{% endset %}
+{% with href='/apartments', title=apartment.internal_name, help=page_help('property'), actions=header_actions %}{% include "partials/settings_back_header.html" %}{% endwith %}
 {% set prop_addr = [((apartment.addr_street or '') ~ ' ' ~ (apartment.addr_house_no or '')) | trim, apartment.addr_obec or ''] | select | join(', ') %}
 {% if prop_addr and prop_addr.strip() %}<div class="sub prop-phone-sub">{{ prop_addr }}</div>{% endif %}
-{% if permalink %}<section class="card guest-card" aria-labelledby="property-guest-link-title"><div><b id="property-guest-link-title">{{ t('property_page.guest_link.title') }}</b><div class="sub">{{ permalink }}</div>{% if pin %}<div class="guest-pin"><span class="guest-pin-label">{{ t('guest_links.pin') }}</span> <span class="guest-pin-value">{{ pin }}</span></div>{% endif %}</div><input class="sr-only" type="text" id="property-guest-url" readonly value="{{ permalink }}" tabindex="-1" aria-hidden="true">{% if pin %}<input class="sr-only" type="text" id="property-guest-pin" readonly value="{{ pin }}" tabindex="-1" aria-hidden="true">{% endif %}<div class="guest-btns">{{ copy_button('property-guest-url', t('common.copy_link'), true) }}{% if pin %}<div class="guest-pin-copy">{{ copy_button('property-guest-pin', t('property_page.guest_link.copy_pin'), true) }}</div>{% endif %}</div></section>{% endif %}
 {% include "_property_editor.html" %}
 {% endif %}
 {% endblock %}

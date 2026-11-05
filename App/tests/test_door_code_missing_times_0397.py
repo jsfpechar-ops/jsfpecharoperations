@@ -38,11 +38,15 @@ def test_lock_tab_save_without_times_stays_on_the_lock_tab(two_properties):
     assert 'id="door-code-times-error" role="alert"' in page
     assert "Set them first." in page
     assert re.search(r'<details class="prop-sec" id="sec-lock"[^>]*\bopen\b', page)
-    switch = re.search(r'<input type="checkbox" role="switch" id="door_codes"[^>]*>', page).group(0)
-    assert "checked" in switch
+    # 0954: the switch is gone; the status block is the control. The refused save persisted
+    # nothing, so the block honestly reads "off" with the Turn on button, and the error is
+    # tied to the time pickers.
+    status = re.search(r'<div class="lock-state" data-state="(\w+)" role="status">', page)
+    assert status and status.group(1) == "off"
+    assert re.search(r'<input type="hidden" name="mode" value="on">', page)
+    assert 'aria-describedby="door-code-times-error"' in page
     option = re.search(r'<option value="%s"[^>]*>' % LOCK["lock_id"], page).group(0)
     assert "selected" in option
-    assert "Not saved yet" in page or "is-unsaved" in page
     assert _apartment(a)["lock_provider"] is None
 
 

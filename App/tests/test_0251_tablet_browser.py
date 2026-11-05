@@ -29,7 +29,7 @@ CARD_JS = """() => {
     const el = document.elementFromPoint(x, y);
     return !!(el && el.closest('a, .host-property-card-actions'));
   };
-  return [...document.querySelectorAll('aside.preview .pv .r')].map(card => {
+  return [...document.querySelectorAll('nav.prop-strip a.sc')].map(card => {  // 0948: the status strip replaced the Preview rows
     card.scrollIntoView({block: 'center'});
     const r = card.getBoundingClientRect();
     const pill = card.querySelector('.host-property-card-open');
@@ -108,7 +108,7 @@ def test_overview_cards_and_tablet_menu_on_touch(host, base):
             # 2. Tapping the guest card opens the guests group; police reporting
             #    opens the reporting group.
             if desktop:
-                page.locator('aside.preview a.r[href="#sec-lock"]').tap(position={"x": 8, "y": 8})
+                page.locator('nav.prop-strip a.sc[data-strip="door"][href="#sec-lock"]').tap(position={"x": 8, "y": 8})
                 page.wait_for_url("**#sec-lock**")
             else:
                 page.locator("#sec-lock > summary").tap()
@@ -117,7 +117,7 @@ def test_overview_cards_and_tablet_menu_on_touch(host, base):
             page.goto(url)
             page.wait_for_timeout(50)
             if desktop:
-                page.locator('aside.preview a.r[href="#sec-police"]').tap(position={"x": 8, "y": 8})
+                page.locator('nav.prop-strip a.sc[data-strip="police"][href="#sec-police"]').tap(position={"x": 8, "y": 8})
                 page.wait_for_url("**#sec-police**")
             else:
                 page.locator("#sec-police > summary").tap()

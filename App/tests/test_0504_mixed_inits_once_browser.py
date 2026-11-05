@@ -126,7 +126,16 @@ def test_unsaved_before_unload_still_works_after_two_runs(calendar_workspace, ca
         assert page.locator(GUARD).count() > 0
 
         # Mark the first guarded form dirty with the input event its own handler listens for.
-        page.locator(GUARD).first.dispatch_event("input")
+        # 0955: dirty means a value differs from the loaded one, so change a real field first.
+        page.evaluate(
+            """() => {
+                const f = document.querySelector(%r);
+                const i = Array.from(f.querySelectorAll('input:not([type=hidden]):not([type=file]):not([type=checkbox]):not([type=radio]), textarea'))
+                    .find(e => !e.disabled && !e.readOnly);
+                i.value = i.value + '9';
+                i.dispatchEvent(new Event('input', {bubbles: true}));
+            }""" % GUARD
+        )
         assert page.evaluate(BEFORE_UNLOAD_JS) is True
 
         # A submitting form is not unsaved: the prompt is off, and the flag is cleared.

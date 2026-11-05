@@ -10,21 +10,21 @@ from tests.test_property_hub import host, two_properties  # noqa: F401  (fixture
 def test_property_page_has_guest_link_card_with_one_copy_button(host):
     client, apartment_id = host
     text = client.get(f"/apartments/{apartment_id}?lang=en").text
-    assert 'class="card guest-card"' in text
-    assert text.count('data-copy="property-guest-url"') == 1
+    assert 'data-strip="guest"' in text
+    assert text.count('data-copy="overview-guest-url"') == 1
 
 
-def test_overview_no_longer_has_its_own_guest_url_copy(host):
+def test_overview_has_one_guest_url_copy_in_the_strip(host):
     client, apartment_id = host
     text = client.get(f"/apartments/{apartment_id}?view=overview&lang=en").text
-    assert "overview-guest-url" not in text
+    assert text.count('data-copy="overview-guest-url"') == 1
 
 
 def test_settings_save_row_is_a_save_bar_with_save_last(host):
     client, apartment_id = host
     text = client.get(f"/apartments/{apartment_id}?view=settings&lang=en").text
     match = re.search(
-        r'<div class="savebar[^"]*">(.*?)</div>', text, re.S
+        r'<div class="savebar[^"]*"[^>]*>(.*?)</div>', text, re.S
     )
     assert match, "settings save row must carry savebar"
     tags = re.findall(r"<(?:button|a)\b[^>]*>", match.group(1))

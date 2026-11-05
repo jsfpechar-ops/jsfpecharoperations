@@ -54,17 +54,13 @@ def test_0547_phone_property_switch_invalid_field_calendar_and_return(base, dash
         browser = _launch(playwright)
         context, page = _open_app(browser, base, cookie, apartment, 390)
         try:
-            # 0547: the door-code switch status changes on toggle and returns when toggled back.
+            # 0954: the status block replaces the switch; its one button is a form submit.
             page.goto(f"{base}{apartment}?view=settings&section=lock&lang=en")
             page.wait_for_load_state("networkidle")
-            status = page.locator("#door_codes-status")
-            before = status.text_content().strip()
-            page.locator('label[for="door_codes"]').click()
-            page.wait_for_timeout(200)
-            assert status.text_content().strip() == "Not saved yet"
-            page.locator('label[for="door_codes"]').click()
-            page.wait_for_timeout(200)
-            assert status.text_content().strip() == before
+            block = page.locator(".lock-state")
+            assert block.get_attribute("data-state") in ("on", "off", "offline", "times")
+            assert block.locator("button").count() == 1
+            assert page.locator("#door_codes").count() == 0
 
             # 0547: an invalid required field in a closed section opens that section on submit.
             page.goto(f"{base}{apartment}?lang=en")
@@ -73,7 +69,7 @@ def test_0547_phone_property_switch_invalid_field_calendar_and_return(base, dash
             # On a phone the save bar shows only while a section is open, so open basics first.
             page.locator("#sec-basics > summary").click()
             assert page.locator("#sec-messages[open]").count() == 0
-            page.evaluate("document.getElementById('permalink_pin').value = ''")
+            page.evaluate("document.getElementById('permalink_pin').value = ''; document.getElementById('permalink_pin').dispatchEvent(new Event('input', { bubbles: true }))")
             page.locator(".savebar button[type=submit]").click()
             page.wait_for_timeout(300)
             assert page.locator("#sec-messages[open]").count() == 1
@@ -114,3 +110,79 @@ def test_0547_phone_property_switch_invalid_field_calendar_and_return(base, dash
             browser.close()
             db.execute("DELETE FROM lock_account WHERE owner_user_id = ?", (owner,))
             db.execute("UPDATE apartment SET lock_provider = NULL, lock_id = NULL WHERE id = ?", (apartment_id,))
+
+
+def test_0948_strip_shares_form_edges_and_columns(base, dashboard_rich_host):  # noqa: F811
+    cookie = dashboard_rich_host["client"].cookies.get(auth.SESSION_COOKIE)
+    assert cookie
+    spec = next(s for s in PAGES if s["name"] == "property")
+    path = _path(spec, dashboard_rich_host)
+    with sync_api.sync_playwright() as playwright:
+        browser = _launch(playwright)
+        try:
+            for width, columns in ((390, 2), (768, 3), (1280, 3), (1600, 3)):
+                context, page = _open_app(browser, base, cookie, path, width)
+                try:
+                    strip = page.locator(".prop-strip").bounding_box()
+                    form = page.locator(".form").bounding_box()
+                    assert abs(strip["x"] - form["x"]) <= 1, width
+                    assert abs(strip["x"] + strip["width"] - (form["x"] + form["width"])) <= 1, width
+                    count = page.evaluate(
+                        "getComputedStyle(document.querySelector('.prop-strip')).gridTemplateColumns.split(' ').length"
+                    )
+                    assert count == columns, (width, count)
+                    if width <= 768:
+                        assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), width
+                finally:
+                    context.close()
+        finally:
+            browser.close()
+
+
+def test_0948_police_card_opens_its_section(base, dashboard_rich_host):  # noqa: F811
+    cookie = dashboard_rich_host["client"].cookies.get(auth.SESSION_COOKIE)
+    assert cookie
+    spec = next(s for s in PAGES if s["name"] == "property")
+    path = _path(spec, dashboard_rich_host)
+    with sync_api.sync_playwright() as playwright:
+        browser = _launch(playwright)
+        try:
+            context, page = _open_app(browser, base, cookie, path, 1280)
+            try:
+                assert page.locator("#sec-police[open]").count() == 0
+                page.locator("[data-strip='police']").click()
+                assert page.locator("#sec-police[open]").count() == 1
+            finally:
+                context.close()
+        finally:
+            browser.close()
+
+
+def test_0948_copy_settings_button_sits_in_the_header_row(base, dashboard_rich_host):  # noqa: F811
+    cookie = dashboard_rich_host["client"].cookies.get(auth.SESSION_COOKIE)
+    assert cookie
+    path = "/apartments/new"  # copy is offered on the new page; settings hide it once setup is finished
+    with sync_api.sync_playwright() as playwright:
+        browser = _launch(playwright)
+        try:
+            for width in (390, 768, 1280):
+                context, page = _open_app(browser, base, cookie, path, width)
+                try:
+                    button = page.locator(".airbnb-actions .copy-settings-open").first.bounding_box()
+                    title = page.locator("h1").first.bounding_box()
+                    form = page.locator(".property-create-lane").bounding_box()
+                    assert button["x"] >= form["x"] - 1, width
+                    assert button["x"] + button["width"] <= form["x"] + form["width"] + 1, width
+                    overlaps = not (button["y"] + button["height"] <= title["y"] or title["y"] + title["height"] <= button["y"]
+                                    or button["x"] + button["width"] <= title["x"] or title["x"] + title["width"] <= button["x"])
+                    assert not overlaps, width
+                    if width == 390:
+                        assert button["height"] >= 44, width
+                        assert button["y"] >= title["y"] + title["height"] - 1, width
+                    if width == 390:
+                        page.locator(".airbnb-actions .copy-settings-open").first.click()
+                        assert page.locator("#copy-settings[open]").count() == 1
+                finally:
+                    context.close()
+        finally:
+            browser.close()

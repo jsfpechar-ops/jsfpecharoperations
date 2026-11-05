@@ -91,10 +91,6 @@ BOX_OVERRIDES = {
     # text-dependent: app copy vs phone v2 mockup demo copy (0740)
     ".prop .in b@320": {"width": "93.0469px"},
     ".prop .in b@390": {"width": "93.0469px"},
-    ".guest-card .sub@320": {"height": "46px"},
-    ".guest-card .sub@390": {"height": "46px"},
-    ".guest-card@320": {"height": "315.797px"},
-    ".guest-card@390": {"height": "315.797px"},
     ".card.prop@320": {"height": "106px"},
     ".card.prop@390": {"height": "106px"},
     ".card.stay@320": {"height": "97.9844px"},
@@ -160,7 +156,8 @@ BOX_OVERRIDES = {
     "stay:.stay-dates@390": {"height": "169px"},
     "stay:.stay-dates small@320": {"width": "73.8906px"},
     "stay:.stay-dates small@390": {"width": "113px"},
-    "stay:.stay-dates b@320": {"width": "73.8906px", "height": "54px"},
+    # 0957: 54px was the two-line height of the arrival date when the PR #725 fixture was measured; today the same cell shows "Fri 6. 11." on one line (28px at line-height 1.4)
+    "stay:.stay-dates b@320": {"width": "73.8906px", "height": "28px"},
     "stay:.stay-dates b@390": {"width": "113px"},
     "stay:.stay-dates .tot@320": {"width": "238px"},
     "stay:.stay-dates .tot@390": {"width": "308px"},
@@ -268,15 +265,14 @@ PAGES = [
         "view": "prop",
         "phone_view": "nemovitost",  # 0541: phone property screen (0540 section 2)
         "phone_mockup": PHONE_MOCKUP_V2,  # 0741: phone v2 property page (Airbnb style)
-        "phone_selectors": [".tabs", ".tab.on", ".prop-phone-top .round", ".prop-phone-top ~ h1.big", ".prop-phone-sub", ".guest-card", ".guest-card b", ".guest-card .sub", ".guest-pin-value", ".guest-btns .btn", "h2.sec", ".prop-sec > summary", ".prop-sec summary b", ".sec-state", ".dot"],
+        "phone_selectors": [".tabs", ".tab.on", ".prop-phone-top .round", ".prop-phone-top ~ h1.big", ".prop-phone-sub", ".guest-btns .btn", "h2.sec", ".prop-sec > summary", ".prop-sec summary b", ".sec-state", ".dot"],
         "selectors": [  # .guest-card (permalink card) has no mockup counterpart: not compared (0535)
             ".crumb", "main h1", "details", "summary b", "summary small",
             ".preview h3", ".pv", ".pv .r",  # 0851: savebar has its own test, test_0851_savebar_browser.py
         ],
-        "missing_ok": {".crumb": "PR #725: Airbnb back header replaces it", "summary small": "PR #725: Airbnb redesign: section summaries have no small caption", ".prop-phone-top .round": "PR #725: Airbnb redesign: the phone property top has no round avatar", ".prop-phone-top ~ h1.big": "PR #725: Airbnb redesign: the phone property top has no big title", ".prop-phone-sub": "0741: the demo property has no street address, so the address line is not rendered"},
-        "phone_box_skip": {
-            ".guest-pin-value": (["width"], "width follows the PIN digits and the font rendering of the machine"),
-        },
+        "missing_ok": {".crumb": "PR #725: Airbnb back header replaces it", ".pv .r": "0948: aside basics and connections cards moved into the status strip", ".guest-btns .btn": "0948: guest card moved into the status strip", "summary small": "PR #725: Airbnb redesign: section summaries have no small caption", ".prop-phone-top .round": "PR #725: Airbnb redesign: the phone property top has no round avatar", ".prop-phone-top ~ h1.big": "PR #725: Airbnb redesign: the phone property top has no big title", ".prop-phone-sub": "0741: the demo property has no street address, so the address line is not rendered"},
+        # 0948: the guest link card moved into the status strip; its selectors are not compared here.
+        "phone_box_skip": {},
     },
     {
         "name": "menu",
@@ -326,6 +322,7 @@ PAGES = [
     {
         "name": "stay",
         "phone_box_skip": {
+            ".stay-dates": (["height"], "0957: app .stay-dates sits in a card with 16/20 padding (the mockup block has none) and does not render the mockup's check-in/out time lines (\"from 14:00 / until 11:00\"); the two differences offset, so the container height is only approximately equal. Owner decides whether the app should show the times."),
             ".guests .row": (["height"], "0955 Part A: the phone guest row shows birth date and nationality on their own line under the name (Josef: guest details must stay visible on phone), so the row is taller than the mockup row and its subtitle is wider"),
             ".guests .row b": (["width"], "0955 Part A: the phone guest row shows birth date and nationality on their own line under the name (Josef: guest details must stay visible on phone), so the row is taller than the mockup row and its subtitle is wider"),
             ".guests .row small": (["width", "height"], "0955 Part A: the phone guest row shows birth date and nationality on their own line under the name (Josef: guest details must stay visible on phone), so the row is taller than the mockup row and its subtitle is wider"),

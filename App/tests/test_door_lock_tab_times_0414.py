@@ -25,11 +25,26 @@ def _base(apartment_id, entity):
     }
 
 
+def _select_tag(page, element_id):
+    """The opening <select> tag with this id; attribute order does not matter (0952 adds form=)."""
+    for match in re.finditer(r"<select\b[^>]*>", page):
+        if re.search(rf'\bid="{element_id}"', match.group(0)):
+            return match.group(0)
+    return None
+
+
+def _select_block(page, element_id):
+    match = re.search(rf"<select\b[^>]*\bid=\"{element_id}\"[^>]*>.*?</select>", page, re.S)
+    return match.group(0) if match else ""
+
+
 def test_lock_tab_shows_the_time_pickers(two_properties):
     _, _, (a, _) = two_properties
     page = _client().get(f"/apartments/{a}?view=settings&section=lock").text
     for name in ("lock_checkin_hour", "lock_checkout_hour"):
-        assert re.search(rf'<select id="{name}" name="{name}"', page)
+        tag = _select_tag(page, name)
+        assert tag is not None
+        assert f'name="{name}"' in tag
     assert "Edit in Properties" not in page
 
 
@@ -47,9 +62,9 @@ def test_pickers_are_required_while_codes_are_on(two_properties):
     _, entity, (a, _) = two_properties
     db.update("apartment", a, {"checkin_hour": 15, "checkout_hour": 10, "lock_provider": "ttlock", "lock_id": LOCK["lock_id"]})
     page = _client().get(f"/apartments/{a}?view=settings&section=lock").text
-    select = re.search(r'<select id="lock_checkin_hour"[^>]*>', page).group(0)
-    assert "required" in select
-    assert re.search(r'<select id="lock_checkin_hour".*?<option value="15" selected', page, re.S)
+    for name in ("lock_checkin_hour", "lock_checkout_hour"):
+        assert re.search(r"\srequired[\s>]", _select_tag(page, name) or "")
+    assert re.search(r"<option value=\"15\" selected", _select_block(page, "lock_checkin_hour"))
 
 
 def test_missing_times_on_the_lock_tab_are_refused_inline(two_properties):

@@ -10,9 +10,6 @@
 {%- set property_values = draft -%}
 <div class="property-create-lane prop-new"><div class="property-create">
   <div class="property-create-main">
-    {% if copy_property_peers %}
-    <div class="copy-settings-bar">{% with copy_action='/apartments/new', copy_section='' %}{% include "_copy_settings_dialog.html" %}{% endwith %}</div>
-    {% endif %}
     {% if copied_from_name %}
     <p class="panel property-create-copied" role="status">{{ t('apartment.form.copy_from.notice', name=copied_from_name) }}
       <a href="/apartments/new">{{ t('property_create.copy_clear') }}</a>

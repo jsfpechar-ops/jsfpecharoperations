@@ -577,13 +577,13 @@ def test_unknown_setup_step_is_not_a_wizard_page(host):
 def test_overview_guest_link_card_links_to_settings(host):
     """Fix 9: the guest link card shows the copy button once, and does not repeat a status line.
 
-    0544: the overview card is gone; the guest card (section.guest-card) sits on the property page.
+    0544: the overview card is gone; the guest link card sits on the property page (0948: in the status strip).
     """
     flat = _create(host)
     page = host["client"].get(f"/apartments/{flat['id']}?lang=en").text
     assert "Ready · Copy link" not in page
-    assert 'id="property-guest-link-title"' in page
-    assert 'data-copy="property-guest-url"' in page
+    assert 'data-strip="guest"' in page
+    assert 'data-copy="overview-guest-url"' in page
     assert _t("en", "common.copy_link") in page
 
 
@@ -877,9 +877,9 @@ def test_review_fixes_in_the_browser(host, base_url):
         page.wait_for_url("**view=overview**")
         assert page.locator("[data-setup-status]").is_visible()
         _shot(page, "12-overview-hidden-en-1280.png")
-        page.locator("section.guest-card").first.scroll_into_view_if_needed()
+        page.locator(".prop-strip [data-strip='guest']").first.scroll_into_view_if_needed()
         _shot(page, "13-overview-guest-link-en-1280.png")
-        assert page.locator("section.guest-card [data-copy='property-guest-url']").count() >= 1
+        assert page.locator("[data-strip='guest'] [data-copy='overview-guest-url']").count() >= 1
         browser.close()
 
 
@@ -1152,18 +1152,19 @@ def test_wizard_polish_and_overview_cards(host, base_url, monkeypatch, lang, wid
         calendars_title = _t(lang, "property_page.sec.calendars.title")
         if width >= 1024:
             aside = page.locator("aside.preview")
-            calendars_row = aside.locator('a.r[href="#sec-calendars"]')
-            assert calendars_row.locator("span").inner_text() == calendars_title
-            assert aside.locator(".pv .r").count() >= 4
+            calendars_card = page.locator('nav.prop-strip a.sc[data-strip="calendars"]')
+            assert calendars_card.get_attribute("href") == "#sec-calendars"
+            assert calendars_card.locator("b").inner_text() == calendars_title
+            assert page.locator("nav.prop-strip .sc").count() == 6
             assert aside.locator("button[data-copy]").count() == 0
         else:
             calendars_summary = page.locator("details#sec-calendars > summary")
             assert calendars_summary.is_visible()
             assert calendars_summary.locator("b").inner_text() == calendars_title
-        link_card = page.locator("section.guest-card")
-        copy_button = link_card.locator('button[data-copy="property-guest-url"]')
+        link_card = page.locator(".prop-strip [data-strip='guest']")
+        copy_button = link_card.locator('button[data-copy="overview-guest-url"]')
         assert copy_button.is_visible()
-        label_box = link_card.locator("#property-guest-link-title").bounding_box()
+        label_box = link_card.locator("b").bounding_box()
         copy_box = copy_button.bounding_box()
         assert label_box and copy_box
         # Label left of the button; when the button wraps, the label sits above it.
@@ -1227,7 +1228,7 @@ def test_phone_guest_sharing_and_clear_setup_actions(host, base_url, lang, width
         page.goto(f"{base_url}/apartments?lang={lang}")
         continue_button = page.locator(".onboarding-banner-setup-link")
         assert continue_button.is_visible()
-        assert "ui-btn-secondary" in continue_button.get_attribute("class").split()
+        assert "ui-btn-primary" in continue_button.get_attribute("class").split()
         assert continue_button.get_attribute("href") != "/onboarding/dismiss"
         assert continue_button.evaluate("(el) => getComputedStyle(el).backgroundColor") != "rgba(0, 0, 0, 0)"
         _shot(page, f"28-continue-setup-{tag}.png")

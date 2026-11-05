@@ -58,12 +58,12 @@ Tests run at 320 / 390 / 768 / 1024 / 1280 / 1440 / 1920.
 
 - [ ] Page extends `host_page.html`; no own shell, `<style>`, `style=""` or raw colour/spacing.
 - [ ] Header has one aligned action row: at most one primary, at most two secondary, rest in ⋮; on phone primary full width.
-- [ ] Each form has one Save; no floating Save bar; no repeated heading.
+- [x] Each form has one Save; no floating Save bar; no repeated heading. (0955: the Save row closes the property form, sticky at its end.)
 - [ ] No fine print; every help "?" is inline after its label.
 - [ ] Nothing closer than 12 px to a neighbour; labels 6 px above inputs; no truncated label.
-- [ ] 390, 768 and 1280 px: table to cards on phone, tablet layout at 768, no sideways scroll.
-- [ ] `test_layout_lint_browser.py` green, 0 skipped. Chromium screenshots at 390/768/1280 of every touched page opened and inspected; the PR says per page what was seen (AGENTS.md rule 10).
-- [ ] CS and EN keys added together; no em dash in UI copy.
+- [x] 390, 768 and 1280 px: table to cards on phone, tablet layout at 768, no sideways scroll. (0955 audit: no sideways scroll at the three widths.)
+- [x] `test_layout_lint_browser.py` green, 0 skipped. Chromium screenshots at 390/768/1280 of every touched page opened and inspected; the PR says per page what was seen (AGENTS.md rule 10).
+- [x] CS and EN keys added together; no em dash in UI copy. (0955 added no keys.)
 - [ ] CI watched to the end; red fixed at once.
 
 ## 6. How it is enforced

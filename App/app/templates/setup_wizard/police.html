@@ -3,7 +3,7 @@
 {% from "_components.html" import field_label, help_tip, choice_card with context %}
 {% macro text_field(name, label, value, help='', optional=false, maxlength=none, required=false) %}
   <div class="field">
-    {{ field_label(name, label, help, optional) }}
+    {{ field_label(name, label, help, optional, '', required) }}
     <input type="text" id="{{ name }}" name="{{ name }}" value="{{ value or '' }}"
            {%- if maxlength %} maxlength="{{ maxlength }}"{% endif %}
            {%- if required %} required{% endif %}>
@@ -39,7 +39,7 @@
       <input type="password" id="uby_ws_password" name="uby_ws_password" autocomplete="new-password"{% if has_password %} placeholder="••••••••"{% else %} required{% endif %}>
     </div>
   </div>
-  <div class="grid">{{ text_field('uby_mark', t('apartment.form.ubyport.mark_label'), values.uby_mark, t('apartment.form.ubyport.mark_hint'), false, 6) }}</div>
+  <div class="grid">{{ text_field('uby_mark', t('apartment.form.ubyport.mark_label'), values.uby_mark, t('apartment.form.ubyport.mark_hint'), false, 6, true) }}</div>
   <div class="grid two">
     {%- set facility_help -%}{{ t('apartment.form.ubyport.name_hint') }} <span class="facility-example"><span class="facility-example-label">{{ t('apartment.form.ubyport.name_example') }}</span>Ubytovací zařízení: <mark>BYT Č. [2] FIKTVNÍ 1234/56 (PRAHA,</mark> PRAHA 2, FIKTVNÍ, 1234/56)</span>{%- endset %}
     {{ text_field('uby_name', t('automation.facility_name'), values.uby_name, facility_help, false, 35, true) }}

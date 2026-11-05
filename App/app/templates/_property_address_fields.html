@@ -7,7 +7,7 @@
 {%- set address_errors = address_errors or {} -%}
 {% macro address_input(name, label, help='', optional=false, maxlength=none, inputmode='', required=false, extra='') %}
   <div class="field">
-    {{ field_label(name, label, help, optional) }}
+    {{ field_label(name, label, help, optional, '', required) }}
     {%- set described = ([name ~ '-help'] if help else []) + ([name ~ '-error'] if address_errors.get(name) else []) %}
     <input type="text" id="{{ name }}" name="{{ name }}" value="{{ pv[name] or '' }}"
            {%- if maxlength %} maxlength="{{ maxlength }}"{% endif %}
