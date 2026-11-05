@@ -36,3 +36,12 @@ None.
 
 ## Next step
 Step 4 (Save row structure), chat 2: `grep -n "savebar\|</form>" App/app/templates/_property_editor.html`, then move the savebar after the last `</details>` with `form="property-settings-form"`.
+
+## Chat 2 (steps 4 to 6)
+Status: blocked
+- Step 4 done (d54e5e1a): Save bar moved after the last section, `data-for` and `form=` link, reset lookups include it.
+- Steps 5 and 5a: CSS pruned and Save row rules appended (commit afa3daf5, with step 6). Server test test_property_notices_0955.py: 2 passed. Deviation: bar sits before `<aside class="preview">`, not after the last `</details>` (the readiness card is in the aside).
+- Step 6 code (afa3daf5, 20097211): snapshot-based dirty state, Cancel is one `a[data-unsaved-reset]` linking to base_url (reset in place with JS, link without JS), Discard button removed, bar hidden unless `.is-dirty` when JS is on.
+- Browser run: 10 failed, 8 passed (test_property_notices_0955, test_0851_savebar_browser, test_host_unsaved_changes_browser). Failures: `test_property_settings_save_discard_stay` still asserts the old "Discard changes" / "Zahodit změny" button text (en/cs, 360/1280); the rest not yet read.
+- Not done: step 6 test fixes, Save bar screenshots at 390/768/1280, step 7 matrix test, step 8 and later.
+- Next step: in `App/tests/test_host_unsaved_changes_browser.py` update `test_property_settings_save_discard_stay` to the Cancel label (`common.cancel`: Cancel / Zrušit), then rerun the three files from App/ and read the remaining failures before step 7.
