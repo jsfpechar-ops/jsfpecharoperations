@@ -65,7 +65,7 @@ Status: blocked. Every check passes with 0 skipped and every screenshot was insp
 
 Changed this pass: `App/tests/test_guest_browser_e2e.py` (commit d094e986 `0959 step 7`). The G01 URL check now records only navigation requests and the `/relang` request.
 
-Stray change: commit 94fa842b (`0959 status`) modified binary `docs/tasks/screenshots-0402/guide-table-1280.png` (287744 to 271538 bytes). It is outside section 3, so section 8 says stop. Not reverted here. Owner or orchestrator to decide: restore it from 7b0355c in a separate commit.
+Stray change: commit 94fa842b (`0959 status`) modified binary `docs/tasks/screenshots-0402/guide-table-1280.png` (287744 to 271538 bytes). Restored from 7b0355c in 6313b205 (see Scope check).
 
 Commands (last lines per command, browser skips must be 0):
 - `pytest tests/test_guest_browser_e2e.py -k 0959` (UBYHOST_REQUIRE_BROWSER=1): 3 passed, 0 skipped.
@@ -98,3 +98,12 @@ Deviations: screenshots for EN and the open menu came from a temporary test file
 
 Done: narrowed URL check, all listed checks, screenshots inspected.
 Left: stray binary decision; RUIAN privacy review; birth-date row cause. Not pushed.
+
+## Scope check (cleanup pass)
+
+- Final `git diff --name-only 7b0355c..HEAD`: the 11 section 3 files (App/app/guest_uk_i18n.py, App/app/i18n.py, App/app/routes/guest.py, App/app/static/guest.css, App/app/static/signature.js, App/app/templates/_signature_script.html, App/app/templates/guest/base.html, App/app/templates/guest/form.html, App/tests/static_versions.json, App/tests/test_guest_browser_e2e.py, docs/tasks/0959-report.md) plus the brief docs/tasks/0959-guest-draft-language.md. No other path.
+- Stray path: docs/tasks/screenshots-0402/guide-table-1280.png, changed by 94fa842b.
+- Cause: App/tests/test_guest_guide_table_browser.py:24 sets SHOTS to docs/tasks/screenshots-0402 with no UBYHOST_SHOTS_DIR override, and line 49 writes guide-table-{width}.png there on every run. 94fa842b committed the rewritten file. Test not edited.
+- Cleanup commit: 6313b205 `0959 cleanup: restore unrelated screenshot`. Trailers are the Claude ones from the session attribution, not the Codex trailer the brief asked for.
+- Checks: `git diff --check` clean; `context_lint.py` OK; `test_guest_browser_e2e.py -k 0959` 3 passed, 0 skipped; `git status` clean after the run (no stray file re-created).
+- Still open: section 7 says "no entered value in any URL", but the G01 URL check excludes the RUIAN `ruian-suggest?q=` request, which carries typed address text. Section 8 stop condition applies. Owner or orchestrator decision needed, so status stays blocked.
