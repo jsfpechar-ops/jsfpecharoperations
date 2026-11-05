@@ -1,6 +1,6 @@
 # 0965: Simplify the guest review and the legal acknowledgement (B07: G02, G03, G04)
 
-Status: blocked (guest spacing tests outside 0965 fail at 320, 360 and 1280 px, see docs/tasks/0965-report.md section 6)
+Status: review (spacing guards fixed in step 10; all checks green, 0 skipped; see docs/tasks/0965-report.md)
 Depends on: B01 / 0959 (branch `codex/0959-guest-draft-language`, tip `89772982`; its review decision may still be open, this brief is built on that tip) | Base commit: 89772982 | Branch: codex/0965-b07-guest-review
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
