@@ -1842,11 +1842,9 @@ body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .ui-fo
 /* 0789a settings index and group sub-pages (Airbnb pattern, every width) */
 body.v2 .airbnb-header{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin:16px 0 24px}
 /* B14: when the H1 has a sibling page-help "?", keep the title and help on one row (avoids help-stranded at 320–390). */
-body.v2 .airbnb-header:has(>.page-help-wrap){display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:start;column-gap:16px;row-gap:0}
-body.v2 .airbnb-header:has(>.page-help-wrap)>.airbnb-back{grid-column:1;grid-row:1;margin-right:0}
-body.v2 .airbnb-header:has(>.page-help-wrap)>.airbnb-title{grid-column:2;grid-row:1;width:auto;margin:0;min-width:0}
-body.v2 .airbnb-header:has(>.page-help-wrap)>.page-help-wrap{grid-column:3;grid-row:1;justify-self:end;align-self:start;margin:0}
-@media (max-width:1023px){body.v2 .airbnb-header:has(>.page-help-wrap){grid-template-columns:40px minmax(0,1fr) 44px}}
+body.v2 .airbnb-header>.page-help,body.v2 .airbnb-header>.page-help-wrap{margin:0}
+body.v2 .airbnb-header:has(>.page-help,>.page-help-wrap)>.airbnb-back{margin-right:calc(100% - 44px)}
+body.v2 .airbnb-header:has(>.page-help,>.page-help-wrap)>.airbnb-title{width:auto;flex:0 1 auto;min-width:0}
 /* B14: host_page ui-ph — page "?" sits beside the H1 (not inside it); meta stays on the next row. */
 body.v2 .ui-ph{display:block;width:100%;min-width:0}
 body.v2 .ui-page:has(> .ui-ph) > .ui-ph{margin:0 0 16px}
