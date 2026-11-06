@@ -51,7 +51,7 @@ def test_0536_setup_continue_is_the_first_card_under_the_pills(host):
     client, apartment_id = host
     html = _page(client, apartment_id)
     start = html.index('<div class="prop-after-strip">')
-    cards = html[start:html.index('<div class="form prop-form-single">', start)]
+    cards = html[start:html.index('<div class="form prop-form-single property-detail">', start)]
     assert "setup-continue-card" in cards
     assert "<aside" not in html[html.index('<nav class="prop-strip"'):]
 
@@ -156,7 +156,7 @@ def test_aside_has_cards_and_links_to_each_section(host):
         assert f'href="#sec-{key}"' in strip, key
     for sec in re.findall(r'href="#(sec-[a-z]+)"', strip):
         assert f'id="{sec}"' in html, sec
-    assert html.index('<nav class="prop-strip"') < html.index('class="form prop-form-single"')
+    assert html.index('<nav class="prop-strip"') < html.index('class="form prop-form-single property-detail"')
 
 
 def test_strip_flags_missing_operator(host):
