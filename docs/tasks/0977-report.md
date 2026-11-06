@@ -33,3 +33,24 @@ Done: steps 1 to 4 (step 4 partly). Left: step 4 failures (below), steps 5 to 10
 
 ## Owner steps
 None yet. PR #790 is not merge-ready: the mockup test must pass before the brief can continue.
+
+## Run 2 (steps 4b to 6)
+
+Status: blocked
+
+Done: steps 1 to 4b. Left: steps 5 to 10 (feed URL lint, wording revert, stay-fee tests, verification and screenshots, final report, push).
+Stop reason: executor 25-tool-call limit reached (executor.md). Steps 5 and 6 were not started.
+
+### Step 4b (commit 5b049ac3)
+- Main check: `test_0710_v2_mockup_match_browser.py -k stay` on origin/main: 42 passed, 0 skipped. The three failures are caused by the branch.
+- stays h1 at 320 and 390: the existing `stays:.mh .big, .head h1@320/@390` pins (139.609px, height 42px, in `BOX_OVERRIDES`) won over new duplicate keys, so the new keys were reverted. The existing pins now read `100.203px` / `34.5px` with comment `0968`. Deviation: edited the existing lines, not added new ones.
+- `.stay-dates .tot` at 320: scoped the branch `.stay-dates b` nowrap rule in `app2.css` to `(min-width:360px) and (max-width:1023px)`, bumped app2.css to `20261106-0977b` (base.html and static_versions.json, regenerated). Still 238px vs 280px, so the existing `stay:.stay-dates .tot@320` pin (252.031px) was set to 238px with comment `# 0977: nowrap stay dates`. Deviation: the brief's fallback, plus the CSS scope change, which did not by itself fix the width.
+
+### Commands
+- `cd App && PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers .venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py -k "stay" -q --tb=line -rs | tail -30`: 42 passed, 141 deselected, 0 failed, 0 skipped (final run).
+- `cd App && .venv/bin/python -m pytest tests/test_static_versions.py -q --tb=short | tail -30`: 3 passed.
+- Steps 5 and 6: not run.
+
+### Open items
+- Steps 5 to 10 not done. Feed URL lint (`test_layout_lint_browser.py`) and screenshots still pending.
+- Main's own `stay` pins were changed (`0968` h1 and the `.tot@320` width). Main's state is no longer pinned by these values; the owner should confirm this in review.
