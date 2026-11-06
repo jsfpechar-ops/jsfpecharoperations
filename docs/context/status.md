@@ -14,7 +14,7 @@ Updated: 2026-11-06.
 - 2026-11-04: brief 0930 in review (PR #768): stay bars end mid departure day.
 - 2026-11-03: UX gate live: layout lint (`App/tests/layout_lint.js`) + AGENTS.md rule 10; threads self-check screenshots, owner does not.
 - 2026-11-02: Airbnb pass on login and admin pages (0892-0894) in draft PR #739; 0869 renumbers colliding briefs.
-- 2026-11-01: **Production on PostgreSQL** since 2026-10-31 23:56Z (39 s downtime; SQLite kept at `/data/ubyhost.db`, rollback `./scripts/pg-cutover.sh rollback`). Go merged, off in prod until `go` is in `COMPOSE_PROFILES` and a kind in `UBYHOST_GO_JOB_KINDS`: G1a, container, G3a billing_snapshot, G3b stripe_sweep, G5a request bytes (#621-#634). G5b responses (#635), G5c transport + claim (#640), G5d-1 outcome decision (0482). Next: G5d-2 onward ([plan v4](../plans/postgresql/migration-plan-v4.md)).
+- 2026-11-01: **PostgreSQL** in prod since 2026-10-31 (SQLite kept at `/data/ubyhost.db`; rollback `./scripts/pg-cutover.sh rollback`). Go jobs off until enabled via `COMPOSE_PROFILES` / `UBYHOST_GO_JOB_KINDS` (batch #621-#640, 0482). Next: G5d-2+ ([plan v4](../plans/postgresql/migration-plan-v4.md)).
 - Billing ON in production (`UBYHOST_BILLING_ENABLED=1`, 2026-10-29; #561, #565).
 - Stripe: onboarding live; extras merged (#701, #705, #706). **Owner:** deploy. Next: booking site v1.
 - 0290 passkey CI/phone; #435 merge; TTLock #434 CI pending. #432 subdomain live; root login/calendar review pending.
