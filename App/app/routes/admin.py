@@ -2269,6 +2269,7 @@ def refuse_fee_save(request: Request, apartment: Dict[str, Any], form, *, link_e
     fee_draft = stay_fee_routes.fee_form_values(form)
     fee_draft.pop(stay_fee_routes.FEE_ACCOUNT_RAW, None)
     fee_draft.pop(stay_fee_routes.GUEST_LINK_RAW, None)
+    fee_draft.pop(stay_fee_routes.GUEST_OPERATOR_ACCOUNT_RAW, None)
     account_draft = stay_fee_routes.fee_account_draft(form)
     draft.update(fee_draft)
     entities = access.entities(request)
@@ -2794,9 +2795,14 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
         try:
             stay_fee_routes.apply_fee_account(payload)
             stay_fee_routes.check_guest_pay_setup(apartment, payload)
-            stay_fee_routes.apply_guest_operator_account(apartment, form, payload)
+            stay_fee_routes.apply_guest_operator_account(apartment, form, payload, request)
         except ValueError as exc:
             msg = str(exc)
+            if msg == stay_fee_routes.GUEST_OPERATOR_ACCOUNT_STALE:
+                return _back(
+                    "/settings/security#settings-security",
+                    err=_flash(request, "auth.error.recent_login"),
+                ), False
             link_error = msg == stay_fee_routes.GUEST_LINK_INVALID
             operator_account_error = msg == stay_fee_routes.GUEST_OPERATOR_ACCOUNT_INVALID
             rate_error = msg == stay_fee_routes.GUEST_RATE_REQUIRED
