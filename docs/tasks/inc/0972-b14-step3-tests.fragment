@@ -1,0 +1,296 @@
+
+
+# ---------------------------------------------------------------------------
+# 0972 (B14): help beside its label, contextual help names, short H1, honest mail
+# status, plural-aware activity copy and no duplicated Passkeys/Help labels.
+# ---------------------------------------------------------------------------
+import os
+import re
+from pathlib import Path
+
+from app import config
+from app.host_i18n import STRINGS as HOST_STRINGS_0972, translate_plural
+
+SHOTS_0972 = Path(os.environ.get("UBYHOST_SHOTS_DIR") or "/tmp/ubyhost-b14")
+GROUPS_0972 = ("account", "security", "technical", "help")
+VIEWS_0972 = [(lang, width) for lang in ("en", "cs") for width in (390, 768, 1280)]
+NAME_PREFIX_0972 = {"en": "Help with ", "cs": "Nápověda: "}
+
+PLACEMENT_JS_0972 = """
+() => {
+  const out = [];
+  for (const btn of document.querySelectorAll('.help-tip-btn')) {
+    if (!btn.getClientRects().length) continue;
+    const name = btn.getAttribute('aria-label') || '';
+    const anchor = btn.closest('.tip-label, h1, h2, h3, label, strong, .settings-toggle-label, .settings-value-label');
+    if (!anchor) { out.push({name, problem: 'no label around the help button'}); continue; }
+    const walker = document.createTreeWalker(anchor, NodeFilter.SHOW_TEXT);
+    let last = null, node;
+    while ((node = walker.nextNode())) {
+      if (node.textContent.trim() && !node.parentElement.closest('.help-tip')) last = node;
+    }
+    if (!last) { out.push({name, problem: 'label has no text'}); continue; }
+    const range = document.createRange();
+    range.selectNodeContents(last);
+    const rects = [...range.getClientRects()].filter(r => r.height > 0);
+    const line = rects[rects.length - 1];
+    const b = btn.getBoundingClientRect();
+    const mid = b.top + b.height / 2;
+    out.push({name, label: anchor.textContent.trim().slice(0, 40), problem: (mid >= line.top - 8 && mid <= line.bottom + 8) ? '' : 'help button is not on the last line of its label'});
+  }
+  return out;
+}
+"""
+
+TIP_STATE_JS_0972 = """
+(id) => {
+  const body = document.getElementById(id);
+  const btn = document.querySelector('[aria-controls="' + id + '"]');
+  const r = body.getBoundingClientRect();
+  const shown = getComputedStyle(body).display !== 'none' && r.width > 0;
+  const cs = getComputedStyle(btn);
+  return {
+    shown, expanded: btn.getAttribute('aria-expanded'),
+    left: r.left, right: r.right, top: r.top, bottom: r.bottom,
+    vw: document.documentElement.clientWidth, vh: window.innerHeight,
+    focusOnBtn: document.activeElement === btn,
+    outlineStyle: cs.outlineStyle, outlineWidth: parseFloat(cs.outlineWidth) || 0,
+    scrollW: document.documentElement.scrollWidth,
+  };
+}
+"""
+
+
+@pytest.fixture(scope="module")
+def admin_0972():
+    db.init_db()
+    username = f"b14-0972-{secrets.token_hex(4)}"
+    owner_id = auth.create_account(f"{username}@example.test", "B14 0972", role="admin", username=username)
+    apartment_id = int(db.insert("apartment", {
+        "owner_user_id": owner_id, "internal_name": "B14 Flat", "created_at": db.utcnow(),
+    }))
+    client = TestClient(app)
+    response = login_as(client, username, url="/login?lang=en", follow_redirects=False)
+    assert response.status_code == 303, response.text
+    yield {"client": client, "owner": owner_id, "apartment": apartment_id}  # rows stay: other tests share the test DB
+
+
+def _open_0972(playwright, base, admin, width, lang, path):
+    browser = playwright.chromium.launch(**chromium_launch_kwargs())
+    context = browser.new_context(viewport={"width": width, "height": 900})
+    cookie = admin["client"].cookies.get(auth.SESSION_COOKIE)
+    context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": base + "/"}])
+    page = context.new_page()
+    sep = "&" if "?" in path else "?"
+    page.goto(f"{base}{path}{sep}lang={lang}")
+    return browser, context, page
+
+
+def _shot_0972(page, name):
+    SHOTS_0972.mkdir(parents=True, exist_ok=True)
+    page.screenshot(path=str(SHOTS_0972 / f"{name}.png"), full_page=True)
+
+
+def _h1_0972(html):
+    match = re.search(r'<h1 class="airbnb-title">(.*?)</h1>', html, re.S)
+    assert match, "no airbnb-title h1 on the page"
+    return match.group(1)
+
+
+# --- copy and markup tests (no browser needed, but run in the same module) ---
+
+@pytest.mark.parametrize("lang", ("en", "cs"))
+def test_0972_activity_copy_is_plural_aware(lang):
+    one = translate_plural(lang, "settings.audit.recent", 1)
+    many = translate_plural(lang, "settings.audit.recent", 5)
+    zero = translate_plural(lang, "settings.audit.recent", 0)
+    assert "(1 " in one and "(5 " in many and "(0 " in zero
+    assert one != many
+    if lang == "en":
+        assert one.endswith("(1 event)") and many.endswith("(5 events)") and zero.endswith("(0 events)")
+    else:
+        assert one.endswith("(1 událost)") and translate_plural(lang, "settings.audit.recent", 3).endswith("(3 události)")
+        assert many.endswith("(5 událostí)")
+
+
+def test_0972_technical_page_uses_the_plural_form_for_its_count(admin_0972):
+    html = admin_0972["client"].get("/settings/technical?lang=en").text
+    match = re.search(r"Recent activity \((\d+) (event|events)\)", html)
+    assert match, "recent-activity heading not found"
+    assert match.group(2) == ("event" if match.group(1) == "1" else "events")
+
+
+def test_0972_h1_is_the_short_title_only(admin_0972):
+    client = admin_0972["client"]
+    for group, title in (("account", "Account"), ("security", "Security"), ("technical", "Technical"), ("help", "Help")):
+        h1 = _h1_0972(client.get(f"/settings/{group}?lang=en").text)
+        assert h1.strip() == title, (group, h1)
+    h1 = _h1_0972(client.get(f"/apartments/{admin_0972['apartment']}?lang=en").text)
+    assert "page-help" not in h1 and "<details" not in h1 and "<ol" not in h1, h1
+    assert h1.strip() == "B14 Flat", h1
+
+
+def test_0972_property_help_is_a_sibling_of_the_h1(admin_0972):
+    html = admin_0972["client"].get(f"/apartments/{admin_0972['apartment']}?lang=en").text
+    after = html.split("</h1>", 1)[1]
+    assert after.lstrip().startswith('<details class="page-help"'), after[:200]
+
+
+def test_0972_every_settings_help_button_has_its_own_name(admin_0972):
+    client = admin_0972["client"]
+    for lang, prefix in NAME_PREFIX_0972.items():
+        for group in GROUPS_0972:
+            html = client.get(f"/settings/{group}?lang={lang}").text
+            names = re.findall(r'class="help-tip-btn" aria-label="([^"]*)"', html)
+            assert names, (group, lang)
+            assert all(n.startswith(prefix) and len(n) > len(prefix) for n in names), (group, lang, names)
+            assert len(set(names)) == len(names), (group, lang, names)
+
+
+def test_0972_passkeys_and_help_labels_are_not_repeated(admin_0972):
+    client = admin_0972["client"]
+    security = client.get("/settings/security?lang=en").text
+    assert security.count(">Passkeys<") == 1
+    assert ">Registered<" in security
+    helppage = client.get("/settings/help?lang=en").text
+    assert ">User guide<" in helppage and ">Open user guide<" in helppage
+    assert 'href="/guide" aria-label=' not in helppage
+    cs = client.get("/settings/help?lang=cs").text
+    assert ">Otevřít příručku<" in cs
+
+
+@pytest.mark.parametrize("backend", ("disabled", "console", "ses"))
+@pytest.mark.parametrize("lang", ("en", "cs"))
+def test_0972_mail_status_reports_the_runtime_backend(admin_0972, monkeypatch, backend, lang):
+    monkeypatch.setattr(config, "MAIL_BACKEND", backend)
+    html = admin_0972["client"].get(f"/settings/technical?lang={lang}").text
+    assert f'data-mail-backend="{backend}"' in html
+    assert HOST_STRINGS_0972[lang][f"settings.mail.status.{backend}"] in html
+    for other in {"disabled", "console", "ses"} - {backend}:
+        assert HOST_STRINGS_0972[lang][f"settings.mail.status.{other}"] not in html
+    assert "Staging uses the console backend" not in html and "Production stays disabled" not in html
+
+
+# --- Chromium: placement, keyboard, viewport, H1, mail status ---
+
+@pytest.mark.parametrize("lang,width", VIEWS_0972)
+def test_0972_help_stays_beside_its_label_with_a_contextual_name(admin_0972, base, lang, width):
+    problems = []
+    with sync_api.sync_playwright() as playwright:
+        for group in GROUPS_0972:
+            browser, context, page = _open_0972(playwright, base, admin_0972, width, lang, f"/settings/{group}")
+            for item in page.evaluate(PLACEMENT_JS_0972):
+                if item["problem"]:
+                    problems.append(f"{group} {lang} {width}: {item['problem']}: {item.get('label') or item['name']}")
+                if not item["name"].startswith(NAME_PREFIX_0972[lang]):
+                    problems.append(f"{group} {lang} {width}: generic help name {item['name']!r}")
+            if page.evaluate("() => document.documentElement.scrollWidth > document.documentElement.clientWidth"):
+                problems.append(f"{group} {lang} {width}: page scrolls sideways")
+            _shot_0972(page, f"settings-{group}-{lang}-{width}")
+            context.close()
+            browser.close()
+    assert not problems, "\n".join(problems[:30])
+
+
+@pytest.mark.parametrize("lang,width", [("en", 390), ("en", 768), ("en", 1280), ("cs", 390)])
+def test_0972_help_opens_by_pointer_and_keyboard_and_stays_in_the_viewport(admin_0972, base, lang, width):
+    problems = []
+    with sync_api.sync_playwright() as playwright:
+        for group in GROUPS_0972:
+            browser, context, page = _open_0972(playwright, base, admin_0972, width, lang, f"/settings/{group}")
+            buttons = [b for b in page.locator(".help-tip-btn").all() if b.is_visible()]
+            assert buttons, f"{group}: no visible help button"
+            for pick, btn in (("first", buttons[0]), ("last", buttons[-1])):
+                tip_id = btn.get_attribute("aria-controls")
+                where = f"{group} {lang} {width} {pick} ({tip_id})"
+                btn.evaluate("e => e.scrollIntoView({block: 'center'})")
+                # pointer
+                btn.click()
+                state = page.evaluate(TIP_STATE_JS_0972, tip_id)
+                if not (state["shown"] and state["expanded"] == "true"):
+                    problems.append(f"{where}: click did not open the help")
+                if state["left"] < -0.5 or state["right"] > state["vw"] + 0.5:
+                    problems.append(f"{where}: popover leaves the viewport sideways ({state['left']:.0f}..{state['right']:.0f} of {state['vw']})")
+                if state["top"] < -0.5 or state["bottom"] > state["vh"] + 0.5:
+                    problems.append(f"{where}: popover leaves the viewport vertically ({state['top']:.0f}..{state['bottom']:.0f} of {state['vh']})")
+                if group == "security" and pick == "first" and lang == "en" and width == 390:
+                    _shot_0972(page, "help-open-pointer-security-390")
+                page.keyboard.press("Escape")
+                state = page.evaluate(TIP_STATE_JS_0972, tip_id)
+                if state["shown"] or state["expanded"] != "false":
+                    problems.append(f"{where}: Escape did not close the help")
+                if not state["focusOnBtn"]:
+                    problems.append(f"{where}: focus did not return to the help button after Escape")
+                # keyboard: reach the button with Tab, so :focus-visible applies
+                page.evaluate("() => { document.activeElement && document.activeElement.blur(); window.scrollTo(0, 0); }")
+                reached = False
+                for _ in range(150):
+                    page.keyboard.press("Tab")
+                    if page.evaluate("(id) => document.activeElement && document.activeElement.getAttribute('aria-controls') === id", tip_id):
+                        reached = True
+                        break
+                if not reached:
+                    problems.append(f"{where}: Tab never reached the help button")
+                    continue
+                state = page.evaluate(TIP_STATE_JS_0972, tip_id)
+                if state["outlineStyle"] == "none" or state["outlineWidth"] < 1:
+                    problems.append(f"{where}: focus ring not visible on the help button")
+                page.keyboard.press("Enter")
+                state = page.evaluate(TIP_STATE_JS_0972, tip_id)
+                if not (state["shown"] and state["expanded"] == "true"):
+                    problems.append(f"{where}: Enter did not open the help")
+                if state["left"] < -0.5 or state["right"] > state["vw"] + 0.5:
+                    problems.append(f"{where}: keyboard-opened popover leaves the viewport sideways")
+                page.keyboard.press("Escape")
+                state = page.evaluate(TIP_STATE_JS_0972, tip_id)
+                if state["shown"] or not state["focusOnBtn"]:
+                    problems.append(f"{where}: keyboard Escape did not close and return focus")
+                page.keyboard.press("Enter")
+                page.keyboard.press("Tab")
+                state = page.evaluate(TIP_STATE_JS_0972, tip_id)
+                if state["shown"] or state["focusOnBtn"]:
+                    problems.append(f"{where}: Tab did not move on and close the help")
+            context.close()
+            browser.close()
+    assert not problems, "\n".join(problems[:30])
+
+
+@pytest.mark.parametrize("lang,width", VIEWS_0972)
+def test_0972_property_h1_stays_short_while_its_help_is_open(admin_0972, base, lang, width):
+    path = f"/apartments/{admin_0972['apartment']}"
+    problems = []
+    with sync_api.sync_playwright() as playwright:
+        browser, context, page = _open_0972(playwright, base, admin_0972, width, lang, path)
+        summary = page.locator(".airbnb-header > .page-help > summary").first
+        if not summary.count():
+            problems.append("no .airbnb-header > .page-help > summary beside the property H1")
+        else:
+            summary.click()
+            h1 = page.evaluate("() => document.querySelector('h1.airbnb-title').textContent.trim()")
+            if h1 != "B14 Flat":
+                problems.append(f"H1 text is {h1!r}")
+            if page.evaluate("() => !!document.querySelector('h1.airbnb-title details, h1.airbnb-title .page-help-body')"):
+                problems.append("help content sits inside the H1")
+            box = page.evaluate("""() => { const r = document.querySelector('.page-help-body').getBoundingClientRect();
+                return {left: r.left, right: r.right, vw: document.documentElement.clientWidth}; }""")
+            if box["left"] < -0.5 or box["right"] > box["vw"] + 0.5:
+                problems.append(f"page help leaves the viewport sideways: {box}")
+            _shot_0972(page, f"property-help-open-{lang}-{width}")
+        context.close()
+        browser.close()
+    assert not problems, "\n".join(problems)
+
+
+@pytest.mark.parametrize("lang,width", VIEWS_0972)
+def test_0972_mail_status_with_mail_disabled_in_the_browser(admin_0972, base, monkeypatch, lang, width):
+    monkeypatch.setattr(config, "MAIL_BACKEND", "disabled")
+    with sync_api.sync_playwright() as playwright:
+        browser, context, page = _open_0972(playwright, base, admin_0972, width, lang, "/settings/technical")
+        status = page.locator("#settings-mail-status")
+        assert status.is_visible()
+        assert status.inner_text().strip() == HOST_STRINGS_0972[lang]["settings.mail.status.disabled"]
+        assert page.evaluate("() => document.documentElement.scrollWidth <= document.documentElement.clientWidth")
+        status.scroll_into_view_if_needed()
+        _shot_0972(page, f"technical-mail-disabled-{lang}-{width}")
+        context.close()
+        browser.close()

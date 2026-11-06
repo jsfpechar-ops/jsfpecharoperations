@@ -639,6 +639,7 @@ def test_page_families_through_rail_cards_search_and_back(acc, base):
             page.go_back()
             page.wait_for_url(re.compile(rf"/apartments/{p1}"))
             _settle(page)
+            page.locator("details#sec-basics").first.wait_for(state="visible", timeout=15000)
             assert page.locator("details#sec-basics").is_visible()
             # Search -> Stay fees -> report period -> Back.
             page.locator("[data-command-open]:visible").first.click()
@@ -651,6 +652,8 @@ def test_page_families_through_rail_cards_search_and_back(acc, base):
             page.wait_for_url(re.compile(rf"/stay-fees/{p1}\?month="))
             page.go_back()
             page.wait_for_url(re.compile(r"/stay-fees(\?.*)?$"))
+            _settle(page)
+            page.locator('a[href^="/stay-fees/"]').first.wait_for(state="visible", timeout=15000)
             # Rail -> Invoices -> issued invoice -> its stay -> Back.
             page.locator('a[href="/invoices"]').first.click()
             page.wait_for_url(re.compile(r"/invoices(\?.*)?$"))
@@ -659,6 +662,8 @@ def test_page_families_through_rail_cards_search_and_back(acc, base):
             page.wait_for_url(re.compile(rf"/reservations/{acc['stay']}"))
             page.go_back()
             page.wait_for_url(re.compile(rf"/invoices/{acc['invoice']}"))
+            _settle(page)
+            page.locator(f'a[href^="/reservations/{acc["stay"]}"]').first.wait_for(state="visible", timeout=15000)
             # Account menu reaches Settings; the archive and guide stay reachable.
             for path in ("/settings", "/settings/archived", "/guide", "/housebook", "/submissions"):
                 response = page.goto(f"{base}{path}?lang={lang}")

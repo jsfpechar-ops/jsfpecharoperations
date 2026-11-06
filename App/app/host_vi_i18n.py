@@ -875,6 +875,8 @@ STRINGS: Dict[str, str] = {
     "housebook.preset.this_month": "Tháng này",
     "housebook.preset.last_month": "Tháng trước",
     "housebook.preset.this_year": "Năm nay",
+    "customers.yes": "Có",
+    "customers.no": "Không",
     "stay_fees.copy.label": "Sao chép thiết lập phí",
     "flash.stay_fees.already_saved": "Kỳ này đã được lưu. Nếu cần thay đổi, hãy bắt đầu điều chỉnh.",
     "flash.stay_fees.confirm_collected": "Xác nhận rằng bạn đã kiểm tra số tiền thực thu.",
