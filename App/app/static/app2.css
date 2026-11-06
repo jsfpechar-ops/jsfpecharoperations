@@ -2672,12 +2672,12 @@ body.v2 .fields-wrap .guest-link-top .guest-copy-row .copy-btn{min-height:40px}
 @media (max-width:1023px){body.v2 .fields-wrap .guest-link-top .guest-copy-row .copy-btn{min-height:44px}}
 body.v2 .fields-wrap .guest-link-top .guest-copy-row .copy-btn,body.v2 .fields-wrap .guest-link-top .guest-copy-row input:not([type=hidden]){margin:0;align-self:center}
 body.v2 .property-section > .guest-link-top{grid-column:1/-1}
-/* 0951: OCR row keeps its ? on the text line (inline flow) */
-body.v2 .passport-scan-row .checkline{display:block;position:relative;padding-left:36px;margin:0;min-height:0;cursor:pointer;line-height:1.4}
-body.v2 .passport-scan-row .checkline > input[type=checkbox]{position:absolute;left:0;top:6px;width:24px;height:24px;min-width:24px;margin:0}
-body.v2 .passport-scan-row .checkline > span{display:inline;min-width:0}
-body.v2 .passport-scan-row .checkline .help-tip{display:inline-block;vertical-align:middle;margin-left:6px}
-@media (max-width:359px){body.v2 .passport-scan-row .checkline{padding-left:32px}body.v2 .passport-scan-row .checkline .help-tip{margin-left:4px}}
+/* 0991: OCR row uses flex so a 44 px ? cannot shift label text (vertical-align:middle on inline flow did). */
+body.v2 .passport-scan-row .checkline{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:12px;margin:0;min-height:0;padding-left:0;position:static;cursor:pointer;line-height:1.4}
+body.v2 .passport-scan-row .checkline > input[type=checkbox]{position:static;left:auto;top:auto;width:24px;height:24px;min-width:24px;min-height:24px;margin:0;flex:none}
+body.v2 .passport-scan-row .checkline > span{display:block;min-width:0;flex:0 1 auto;line-height:1.4}
+body.v2 .passport-scan-row .checkline .help-tip{display:block;flex:none;align-self:flex-start;margin-left:0;margin-top:0}
+@media (max-width:359px){body.v2 .passport-scan-row .checkline{gap:8px}}
 /* 0951: the 951 .property-section .grid rule zeroes the row gap; the 16 px gap under the next-stay hint is set here */
 body.v2 .property-section .guest-link-windows{row-gap:var(--space-4)}
 /* 0953 wizard old look */
