@@ -752,7 +752,7 @@ def test_0959_changing_language_keeps_the_draft_the_step_and_leaves_no_trace(
         if request.is_navigation_request() or "/relang" in request.url
         else None,
     )
-    secrets = ["Synthetica", "Testovic", "SYN0959X", "Examplova 5", "Testov"]
+    sample = ["Synthetica", "Testovic", "SYN0959X", "Examplova 5", "Testov"]
     guest = Guest(page, 390)
 
     def progress():
@@ -764,15 +764,15 @@ def test_0959_changing_language_keeps_the_draft_the_step_and_leaves_no_trace(
 
     try:
         page.goto(f"{live_server}/l/{token}/{stay}/new?lang=en")
-        page.fill("#first_name", secrets[0])
-        page.fill("#surname", secrets[1])
+        page.fill("#first_name", sample[0])
+        page.fill("#surname", sample[1])
         page.click("#birth_date")
         page.keyboard.type("01011980")
         guest.pick_country("nationality", "CZE")
-        page.fill("#doc_number", secrets[2])
+        page.fill("#doc_number", sample[2])
         guest.next()
-        page.fill("#res_street", secrets[3])
-        page.fill("#res_city", secrets[4])
+        page.fill("#res_street", sample[3])
+        page.fill("#res_city", sample[4])
         page.evaluate("() => { document.querySelector('#res_country').value = 'CZE'; }")
         guest.next()
         before = progress()
@@ -787,7 +787,7 @@ def test_0959_changing_language_keeps_the_draft_the_step_and_leaves_no_trace(
         page.wait_for_timeout(300)
         assert messages == [i18n.translator("en")("lang_draft_warning")], messages
         assert page.get_attribute("html", "lang") == "en"
-        assert page.input_value("#first_name") == secrets[0]
+        assert page.input_value("#first_name") == sample[0]
         assert page.eval_on_selector("#signature", "e => e.value").startswith("data:image/png")
         assert page.is_checked("#legal_ack")
 
@@ -797,13 +797,13 @@ def test_0959_changing_language_keeps_the_draft_the_step_and_leaves_no_trace(
             page.locator(f'[data-lang-draft][lang="cs"]').click()
         assert page.get_attribute("html", "lang") == "cs"
         assert progress() == before, (progress(), before)
-        assert page.input_value("#first_name") == secrets[0]
-        assert page.input_value("#surname") == secrets[1]
+        assert page.input_value("#first_name") == sample[0]
+        assert page.input_value("#surname") == sample[1]
         assert page.input_value("#birth_date") == "01.01.1980"
         assert page.input_value("#nationality") == "CZE"
-        assert page.input_value("#doc_number") == secrets[2]
-        assert page.input_value("#res_street") == secrets[3]
-        assert page.input_value("#res_city") == secrets[4]
+        assert page.input_value("#doc_number") == sample[2]
+        assert page.input_value("#res_street") == sample[3]
+        assert page.input_value("#res_city") == sample[4]
         assert page.eval_on_selector("#signature", "e => e.value") == ""
         assert not page.is_checked("#legal_ack")
 
@@ -820,24 +820,24 @@ def test_0959_changing_language_keeps_the_draft_the_step_and_leaves_no_trace(
             pick("en")
         assert page.get_attribute("html", "lang") == "en"
         assert progress() == before
-        assert page.input_value("#surname") == secrets[1]
+        assert page.input_value("#surname") == sample[1]
         assert page.input_value("#nationality") == "CZE"
 
         # Step 1 of a foreign nationality keeps its longer step count.
         page.locator("[data-guest-step]:not([hidden]) .g-wizard-nav button.secondary").first.click()
         page.locator("[data-guest-step]:not([hidden]) .g-wizard-nav button.secondary").first.click()
         guest.pick_country("nationality", "DEU")
-        page.fill("#first_name", secrets[0])
+        page.fill("#first_name", sample[0])
         pick("cs")
         page.wait_for_load_state()
         assert page.input_value("#nationality") == "DEU"
-        assert page.input_value("#first_name") == secrets[0]
+        assert page.input_value("#first_name") == sample[0]
 
-        assert not [u for u in urls if any(s.lower() in u.lower() for s in secrets)], urls
+        assert not [u for u in urls if any(s.lower() in u.lower() for s in sample)], urls
         assert "01.01.1980" not in " ".join(urls) and "01011980" not in " ".join(urls)
         assert page.evaluate("() => [localStorage.length, sessionStorage.length]") == [0, 0]
         assert not any(
-            any(s in cookie["value"] for s in secrets) for cookie in page.context.cookies()
+            any(s in cookie["value"] for s in sample) for cookie in page.context.cookies()
         )
     finally:
         page.close()
@@ -853,7 +853,7 @@ def test_0959_language_switch_works_without_a_signature(live_server, browser, mo
     token = f"browser-0959-nosig-{secrets.token_hex(4)}"
     stay = _fee_seed(token, signed=False)
     page = browser.new_page(viewport={"width": 390, "height": 812})
-    secrets = ["Synthetica", "Testovic", "SYN0959X", "Examplova 5", "Testov"]
+    sample = ["Synthetica", "Testovic", "SYN0959X", "Examplova 5", "Testov"]
     guest = Guest(page, 390, lang="cs")
     dialogs = []
     page.on("dialog", lambda dialog: (dialogs.append(dialog.message), dialog.dismiss()))
@@ -863,15 +863,15 @@ def test_0959_language_switch_works_without_a_signature(live_server, browser, mo
 
     try:
         page.goto(f"{live_server}/l/{token}/{stay}/new?lang=cs")
-        page.fill("#first_name", secrets[0])
-        page.fill("#surname", secrets[1])
+        page.fill("#first_name", sample[0])
+        page.fill("#surname", sample[1])
         page.click("#birth_date")
         page.keyboard.type("01011980")
         guest.pick_country("nationality", "CZE")
-        page.fill("#doc_number", secrets[2])
+        page.fill("#doc_number", sample[2])
         guest.next()
-        page.fill("#res_street", secrets[3])
-        page.fill("#res_city", secrets[4])
+        page.fill("#res_street", sample[3])
+        page.fill("#res_city", sample[4])
         page.evaluate("() => { document.querySelector('#res_country').value = 'CZE'; }")
         guest.next()
         before = progress()
@@ -885,13 +885,13 @@ def test_0959_language_switch_works_without_a_signature(live_server, browser, mo
         assert page.get_attribute("html", "lang") == "en"
         assert i18n.translator("en")("review_title") in page.inner_text("body")
         assert progress() == before, (progress(), before)
-        assert page.input_value("#first_name") == secrets[0]
-        assert page.input_value("#surname") == secrets[1]
+        assert page.input_value("#first_name") == sample[0]
+        assert page.input_value("#surname") == sample[1]
         assert page.input_value("#birth_date") == "01.01.1980"
         assert page.input_value("#nationality") == "CZE"
-        assert page.input_value("#doc_number") == secrets[2]
-        assert page.input_value("#res_street") == secrets[3]
-        assert page.input_value("#res_city") == secrets[4]
+        assert page.input_value("#doc_number") == sample[2]
+        assert page.input_value("#res_street") == sample[3]
+        assert page.input_value("#res_city") == sample[4]
         assert dialogs == [], dialogs
     finally:
         page.close()
@@ -907,7 +907,7 @@ def test_0959_discard_warning_cancel_keeps_draft(live_server, browser, monkeypat
     token = f"browser-0959-cancel-{secrets.token_hex(4)}"
     stay = _fee_seed(token, signed=False)
     page = browser.new_page(viewport={"width": 390, "height": 812})
-    secrets = ["Synthetica", "Testovic", "SYN0959X", "Examplova 5", "Testov"]
+    sample = ["Synthetica", "Testovic", "SYN0959X", "Examplova 5", "Testov"]
     guest = Guest(page, 390)
 
     def pick(lang):
@@ -916,15 +916,15 @@ def test_0959_discard_warning_cancel_keeps_draft(live_server, browser, monkeypat
 
     try:
         page.goto(f"{live_server}/l/{token}/{stay}/new?lang=en")
-        page.fill("#first_name", secrets[0])
-        page.fill("#surname", secrets[1])
+        page.fill("#first_name", sample[0])
+        page.fill("#surname", sample[1])
         page.click("#birth_date")
         page.keyboard.type("01011980")
         guest.pick_country("nationality", "CZE")
-        page.fill("#doc_number", secrets[2])
+        page.fill("#doc_number", sample[2])
         guest.next()
-        page.fill("#res_street", secrets[3])
-        page.fill("#res_city", secrets[4])
+        page.fill("#res_street", sample[3])
+        page.fill("#res_city", sample[4])
         page.evaluate("() => { document.querySelector('#res_country').value = 'CZE'; }")
         guest.next()
         guest.sign()
@@ -935,7 +935,7 @@ def test_0959_discard_warning_cancel_keeps_draft(live_server, browser, monkeypat
         with page.expect_navigation():
             pick("cs")
         assert page.get_attribute("html", "lang") == "cs"
-        assert page.input_value("#first_name") == secrets[0]
+        assert page.input_value("#first_name") == sample[0]
 
         # Draw again on the Czech page, then Cancel the switch back.
         guest.sign()
@@ -947,9 +947,9 @@ def test_0959_discard_warning_cancel_keeps_draft(live_server, browser, monkeypat
         assert messages == [i18n.translator("cs")("lang_draft_warning")], messages
         assert page.url.endswith("/relang?lang=cs"), page.url
         assert page.get_attribute("html", "lang") == "cs"
-        assert page.input_value("#first_name") == secrets[0]
-        assert page.input_value("#surname") == secrets[1]
-        assert page.input_value("#res_city") == secrets[4]
+        assert page.input_value("#first_name") == sample[0]
+        assert page.input_value("#surname") == sample[1]
+        assert page.input_value("#res_city") == sample[4]
         assert page.eval_on_selector("#signature", "e => e.value").startswith("data:image/png")
         assert page.is_checked("#legal_ack")
     finally:

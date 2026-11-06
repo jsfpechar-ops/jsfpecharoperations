@@ -20,8 +20,10 @@
 {% endif %}
 {% endblock %}
 {% block secondary_actions %}{{ header_actions }}{% endblock %}
+{# Property edit: header back to /apartments (unsaved dialog + 0830 geometry). Explicit ph_back so href is never the property URL. #}
 {% block back_url %}/apartments{% endblock %}
 {% block back_label %}{% if not editing %}{{ t('nav.properties') }}{% endif %}{% endblock %}
+{% block ph_back %}<a class="ui-ph-back airbnb-back" href="/apartments">{{ icon('arrow-left', 16) }}<span>{{ self.back_label() | trim or t('common.back') }}</span></a>{% endblock %}
 {% block body %}
 {% from "_components.html" import copy_button, source_badge, field_label, help_tip, sync_calendars_button with context %}
 {% from "_icons.html" import icon with context %}

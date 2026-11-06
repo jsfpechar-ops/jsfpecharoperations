@@ -38,8 +38,8 @@ Plan source: UX review and remediation plan (review uploads: 9e66688c-ux-remedia
 
 ### Full browser verification (`test_*browser*.py`)
 
-- **Running** (tmux `ubyhost-full-chromium`, log `/tmp/ubyhost-chromium-full.log`): `UBYHOST_DB=/tmp/ubyhost-full-chromium.db`, `UBYHOST_SHOTS_DIR=/tmp/ubyhost-full-chromium-shots`, `UBYHOST_REQUIRE_BROWSER=1`, **Chromium + WebKit** (Playwright `webkit` + system deps installed — not deselected for “missing WebKit”).
-- Replace this sentence with **passed / failed / skipped** counts from the log when complete. Requirement: **0 skipped** unless deselection is named with base proof.
+- **Latest full Chromium run** (log **`/tmp/ubyhost-browser-final-f7f0.log`**, fresh `UBYHOST_DB` / `UBYHOST_SHOTS_DIR`, `UBYHOST_REQUIRE_BROWSER=1`): **1503 passed, 26 failed, 0 skipped** (~42 min). Real exit: **`PYTEST_EXIT:1`** (failures remain). Failing groups include `test_0710_v2_mockup_match_browser` (.hl margins, properties/stays headings), `test_0729_phone_today_geometry_browser` (today lane), `test_0833_property_editor_browser` (tap target), `test_0890_speed_pages_browser` (invoice form control-over-text), `test_a11y_guard_browser` (contrast + sig canvas focus). Property-detail **0830 partC** and related unsaved/back tests were fixed on this branch (explicit `ph_back` to `/apartments`, `app2` gap); re-run the full glob after pulling.
+- Earlier snapshot (**`/tmp/ubyhost-chromium-full-recheck.log`**): 1489 passed, 40 failed (same requirement: count skips from log; 0 skipped there).
 
 ### Human review screenshots (DESIGN.md: spacing, tap targets ≥44px, hierarchy, buttons)
 
@@ -56,10 +56,9 @@ Copied to store **`/cursor/stores/bc-28288bf2-47f9-474f-9b23-be49bcaa5d94/media/
 | `reservations-phone390.png` | 390 | Stays list density; row tap targets; filters vs content hierarchy. |
 | `guide-phone390.png` | 390 | Host guest guide workspace: typography, section cards, primary actions (guest-facing copy). |
 | `calendar-0967-heading-en-390.png` | 390 | Host calendar: H1 + overflow lane + controls; spacing and button hierarchy at phone width. |
+| `guest-new-en-390.png` | 390 | Host **guests/new** (add guest): form shell + primary actions at phone width (EN). |
 
 Tablet **820** shots in the run align with **768** for layout checks where no dedicated 768 asset exists for a given route.
-
-**Guest-new / guest form:** no single named PNG landed in `/tmp/ubyhost-full-chromium-shots` under this run’s prefix; spot-check when a `guests/new` or `0139` capture appears, or extend the shot path in `test_design_guest_admin` / related browser tests.
 
 ## Owner decisions (2026-11-06)
 
@@ -114,8 +113,8 @@ Items 1–9 supersede the earlier “open decisions” list until implementation
 
 ## Integration status (branch `codex/ux-remediation-handoff`)
 
-- All 18 batch branch heads are contained in this branch. **Full `test_*browser*.py` suite:** in progress — tmux `ubyhost-full-chromium`, log `/tmp/ubyhost-chromium-full.log`, fresh DB and shots (see batch table above).
-- Recent app integration (**commit `e6094132`**): `host_page` back link **`class="ui-ph-back airbnb-back"`** (CSS prevents duplicate round-pill styling); **`guest_questions.empty.body`** no longer repeats the empty-state title (0966); **`test_ttlock_setup_0954_browser`** targets the correct lock tile; **`app2.css`** cache key **`20261106-ui-ph-airbnb-back`**; **`App/tests/static_versions.json`** regenerated (50 files).
+- All 18 batch branch heads are contained in this branch. **Full `test_*browser*.py` suite:** last log **`/tmp/ubyhost-browser-final-f7f0.log`** — **1503 passed, 26 failed, 0 skipped** (see **Full browser verification** above).
+- **This push:** property settings **`apartment_form.html`** uses an explicit **`{% block ph_back %}`** with **`href="/apartments"`** (discard/navigation + 0830 back-vs-h1 geometry); **`app2.css`** adds **12px** vertical gap between back row and title on `#property-settings-form` pages and bumps cache to **`20261106-property-ph-gap12`**; unsaved-changes / property-button tests target **`header.ui-ph a.ui-ph-back.airbnb-back`**; B04 keyboard tab order allows **`BODY`** after strip focus; 0959 renames inner list **`sample`** to avoid shadowing **`secrets`**.
 - Merge conflicts were resolved earlier on this branch (shared files listed in prior handoff revisions); subsequent commits keep `static_versions.json` in sync with template `?v=` keys.
 
 ## Open items found at integration (not fixed)

@@ -2595,6 +2595,7 @@ body.v2 .ui-page[data-body-kind="detail"]:has(#property-settings-form) > .ui-ph 
 body.v2 .ui-page[data-body-kind="detail"]:has(#property-settings-form) > .ui-ph .ui-ph-main {
   min-width: 0;
   width: 100%;
+  gap: 12px; /* 0830: back row → title row ≥12px */
 }
 
 @media (min-width:1024px){

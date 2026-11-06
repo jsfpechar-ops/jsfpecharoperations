@@ -66,7 +66,7 @@ def test_typing_the_original_value_back_hides_the_bar_and_asks_nothing(browser, 
     assert page.locator(BAR).is_visible()
     _edit_name(page, loaded)
     assert not page.locator(BAR).is_visible()
-    page.locator('a.airbnb-back[href="/apartments"]').click()
+    page.locator('header.ui-ph a.ui-ph-back.airbnb-back').click()
     assert page.locator("#unsaved-dialog").evaluate("d => d.open") is False
     assert "/apartments" in page.url
     assert _stored(host, "internal_name") == NAME
