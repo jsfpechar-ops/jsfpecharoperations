@@ -1,6 +1,6 @@
 # 0963: access log `kind=` for prefetch and background polls
 
-Status: todo (resume: steps 1-4 are committed; run Step 4b, then steps 5-7; orchestrator amendment 2026-11-06)
+Status: review
 Depends on: 0962 (run after 0962 on the same branch; no file overlap expected, but re-grep every anchor) | Base commit: HEAD of claude/zealous-planck-raxu4v | Branch: claude/zealous-planck-raxu4v (already checked out; do not create another)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

@@ -37,3 +37,29 @@ Status: blocked. Executor stopped per brief §8: a test pins the old `?v=` keys,
 
 - Decide on the manifest update above, then resume at step 5.
 - After deploy, follow the owner steps in the brief (Grafana queries).
+
+## Resume
+
+Steps 1-4 were already committed. Done in this resume:
+
+- Step 4b (approved amendment): `App/tests/static_versions.json` regenerated. Only the `cleaning.js` and `dashboard-calendar.js` entries changed (v `20261106-0963`). `tests/test_static_versions.py` passes. Commit `be66008`.
+- Step 5: four `kind=` tests appended to `App/tests/test_access_log.py`. Commit `5d32efc`.
+- Step 6: OPERATIONS.md Logs section gained the `kind=` paragraph and the three Grafana query bullets (13 insertions). Commit `ac61361`.
+- Step 7 and the §6 rows: see the test runs below.
+
+Test runs (last lines, verbatim):
+
+- `tests/test_static_versions.py`: `3 passed in 0.10s`
+- `tests/test_access_log.py tests/test_perf_logging.py`: `18 passed in 1.23s`
+- `tests/test_access_log.py tests/test_perf_logging.py tests/test_metrics_0427.py`: `22 passed in 1.30s`
+- `tests/test_cleaning*.py tests/test_calendar_*.py tests/test_dashboard_calendar*.py -rs`: `99 passed, 2 skipped in 7.58s`. The 2 skips are `test_cleaning_browser.py:18` and `test_dashboard_calendar_browser.py:17`: `could not import 'playwright.sync_api'`. Not run. Playwright is not in `App/.venv`, and system python3 has neither playwright nor pytest. Nothing was installed.
+- `python3 scripts/context_lint.py`: `context lint: OK` (warnings only, all about other open briefs and the status update).
+
+Brief §7 status: plain-line and kind tests pass; prefetch-wins test passes; both script tags carry the new key; OPERATIONS.md documents `kind=` and the queries; lint OK. Not re-verified in this resume: the `grep -n background` count (3 lines) from step 3. The browser tests above are not run, so the 0-skipped rule is not met.
+
+Deviations:
+
+- The two browser tests skip because Playwright is missing. Owner or CI must run them before merge.
+- Commit trailer: the owner's instruction named Claude Opus 5.5, so that name is used.
+
+Owner steps left: unchanged from the brief (Grafana queries after deploy).
