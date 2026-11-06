@@ -2478,6 +2478,18 @@ body.v2 .prop-after-strip{display:flex;flex-direction:column;gap:8px;max-width:9
 body.v2 .prop-after-strip:empty{display:none}
 body.v2 .prop-after-strip .pv{margin-bottom:0}
 @media (min-width:1024px){body.v2 .form.prop-form-single{grid-template-columns:minmax(0,1fr)}}
+/* 0534/0751: match property page header to the 980px form column (v2 loads app2.css, not host2.css). */
+body.v2 .ui-page[data-body-kind="detail"]:has(#property-settings-form) > .ui-ph {
+  max-width: 980px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+body.v2 .ui-page[data-body-kind="detail"]:has(#property-settings-form) > .ui-ph .ui-ph-main {
+  flex: 1 1 0;
+  min-width: 0;
+}
 body.v2 .prop-sec-missing{margin:0 0 12px;padding:10px 12px;background:#fff;border:1px solid var(--line);border-radius:10px;font-size:14px;line-height:1.35}
 body.v2 .prop-sec-missing p{margin:0}
 body.v2 .prop-sec-missing .readiness-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
