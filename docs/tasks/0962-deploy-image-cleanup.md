@@ -1,6 +1,6 @@
 # 0962: Deploy prunes old Docker images and build cache
 
-Status: todo
+Status: in-progress
 Depends on: none | Base commit: 97ccfc5 | Branch: claude/zealous-planck-raxu4v (already checked out; do not create another)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

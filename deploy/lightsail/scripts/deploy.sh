@@ -51,6 +51,9 @@ rollback() {
   if docker image inspect ubyhost:previous >/dev/null 2>&1; then
     docker tag ubyhost:previous ubyhost:local
   fi
+  if docker image inspect ubyhost-go:previous >/dev/null 2>&1; then
+    docker tag ubyhost-go:previous ubyhost-go:local
+  fi
   docker compose up -d --no-build --remove-orphans || true
   docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile || true
   if public_ok; then
