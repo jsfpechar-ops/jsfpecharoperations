@@ -170,6 +170,23 @@ def test_no_lock_yet_stays_on_sharing(hosts, flats, monkeypatch):
     assert response.headers["location"].endswith("#smart-locks-share")
 
 
+def test_own_property_refresh_feedback_lands_on_sec_lock_not_stale_hash(hosts, flats, monkeypatch):
+    """0952/786: a valid property return_to must open #sec-lock, not an old #door-code hash."""
+    _connect(hosts[0], "hjhfa_uhaaaa")
+
+    def fail(_account_id):
+        raise ttlock.TTLockError("synthetic", kind="reauth")
+
+    monkeypatch.setattr(ttlock, "check_locks", fail)
+    stale = f"/apartments/{flats[0]}?view=settings&section=lock#door-code"
+    response = _post(_client(USERS[0]), "/smart-locks/refresh", return_to=stale, section="list")
+    location = response.headers["location"]
+    assert location.startswith(f"/apartments/{flats[0]}?view=settings&section=lock")
+    assert location.endswith("#sec-lock")
+    assert "#door-code" not in location
+    assert "err=" in location
+
+
 def test_found_locks_return_to_the_hosts_own_property_lock_section(hosts, monkeypatch):
     _connect(hosts[0], "hjhfa_uhaaaa")
     found = [{"lock_id": "1", "alias": "Door A", "battery": 90, "tz_offset_ms": 3600000}]
