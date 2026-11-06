@@ -765,6 +765,7 @@ body.v2 .havel-dialog .ui-sheet{max-height: 70dvh; height: 70dvh;}
 @media (max-width: 1023px){
 body.v2 .havel-fab{right: var(--space-4); bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--space-4));}
 body.v2:has(.ui-sticky-actions) .havel-fab{bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--control-h) + var(--space-8));}
+body.v2:has([data-leon-setup]) .havel-fab{bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--control-h) + var(--space-8) + var(--space-4));}
 }
 body.v2 .havel-card{margin-top: var(--space-2); max-width: 100%;}
 body.v2 .havel-card-title{margin: 0 0 var(--space-2); font-size: var(--size-15); font-weight: 600; color: var(--ink);}
