@@ -251,7 +251,7 @@ Passport photos are **not** in the DB backup. After restore, unverified uploads 
 
 | Layer | How often | Kept | Used for |
 |---|---|---|---|
-| Litestream → S3 | continuous (10 s), full snapshot daily, check daily | 7 days | main recovery, including a new instance |
+| Litestream → S3 | continuous (default 60 s sync), full snapshot daily, check weekly | 7 days | main recovery, including a new instance |
 | `backup.sh` on the volume | daily 03:00 UTC | `UBYHOST_BACKUP_RETENTION_DAYS` (set `7` in production `.env`) | quick restore on the same server |
 | `backup-gdrive.sh` | weekly | 30 days | copy outside AWS |
 | Lightsail automatic snapshots | daily | 7 | keep on: the only copy of the whole server (`.env`, origin certs, cron, photos) and the fastest full restore; billed per GB, so a 7-day local retention keeps them small |
@@ -350,6 +350,8 @@ docker compose exec ubyhost du -sh /data /data/passport_photos /data/backups
 ```
 
 Photos grow until hosts verify IDs or the 30-day stale sweep runs. Snapshots are age-encrypted with time-based retention; see `deploy/lightsail/README.md`. Docker logs: `docker compose logs --since 24h ubyhost`. Install `/etc/logrotate.d/ubyhost` as printed by `setup-server.sh` for `/var/log/ubyhost-*.log`.
+
+Every successful deploy runs `docker image prune -f` and `docker builder prune -f --filter until=72h`, so old app images and stale build cache do not fill the disk. Never run `docker image prune -a` or `docker system prune`: they delete `ubyhost:previous` (the rollback image) and the pinned service images. If the disk is above 70% between deploys, run the two commands by hand and check `docker system df`.
 
 Lightsail **snapshots** of the whole instance are a useful extra (not a substitute for `backup.sh` + Drive).
 

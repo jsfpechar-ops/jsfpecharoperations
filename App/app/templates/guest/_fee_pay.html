@@ -3,8 +3,16 @@
 {% set fee_total = t('fee_amount', amount=fee_panel.total) %}
 <div class="g-card g-fee" id="fee-pay">
   <h2>{{ t('fee_title') }}</h2>
+  <p class="g-intro">{{ t('fee_intro') }}</p>
   <p class="g-intro">{{ t('fee_rate_line', rate=fee_panel.rate) }}</p>
   <p class="g-fee-amount"><strong>{{ fee_total }}</strong></p>
+  <details class="g-fee-what">
+    <summary class="g-fee-what-toggle" aria-label="{{ t('fee_what_is_this') }}">?</summary>
+    <div class="g-fee-what-body">
+      <p class="g-intro">{{ t('legal_notice_fee_body') }}</p>
+      <p><a href="https://www.e-sbirka.cz/sb/1990/565" rel="noopener" target="_blank">{{ t('legal_notice_fee_link') }}</a></p>
+    </div>
+  </details>
 
   <details class="g-summary">
     <summary class="g-summary-fold">{{ t('fee_per_person') }}</summary>
@@ -22,17 +30,16 @@
     <p class="g-intro g-fee-choose">{{ t('fee_choose') }}</p>
     {% for rail in fee_panel.rails %}
       <details class="g-summary"{% if loop.first %} open{% endif %}>
-        {% if rail.key == 'qr' %}
-          <summary class="g-summary-fold">{{ t('fee_rail_qr') }}</summary>
+        {% if rail.key == 'iban' %}
+          <summary class="g-summary-fold">{{ t('fee_rail_iban') }}</summary>
           <div class="g-summary-body g-fee-rail">
+            {% if rail.qr %}
             <div class="g-fee-qr">
               <img class="g-fee-qr-img" src="{{ rail.qr }}" width="176" height="176" alt="{{ t('fee_qr_alt') }}">
             </div>
-          </div>
-        {% elif rail.key == 'iban' %}
-          <summary class="g-summary-fold">{{ t('fee_rail_iban') }}</summary>
-          <div class="g-summary-body g-fee-rail">
+            {% endif %}
             <dl class="g-summary-list">
+              {% if fee_panel.payee %}<dt>{{ t('fee_payee') }}</dt><dd>{{ fee_panel.payee }}</dd>{% endif %}
               <dt>{{ t('fee_iban') }}</dt><dd>{{ rail.iban }}</dd>
               <dt>{{ t('fee_amount_label') }}</dt><dd>{{ fee_total }}</dd>
               <dt>{{ t('fee_vs_label') }}</dt><dd>{{ fee_panel.vs }}</dd>
@@ -51,7 +58,8 @@
         {% endif %}
       </details>
     {% endfor %}
+  {% else %}
+    <p class="g-intro g-fee-no-rails">{{ t('fee_no_rails') }}</p>
   {% endif %}
 
-  <p class="g-intro g-fee-legal">{{ t('fee_legal_pointer') }}</p>
 </div>

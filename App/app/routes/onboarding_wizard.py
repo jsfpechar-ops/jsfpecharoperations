@@ -64,6 +64,8 @@ def _wizard_context(
     request: Request, apartment_id: int, step: str, extra: Optional[Dict[str, Any]] = None
 ) -> Tuple[Optional[Dict[str, Any]], Optional[Any]]:
     admin_routes = _admin_helpers()
+    from . import stay_fees as stay_fee_routes
+
     apartment = admin_routes._ensure_apartment_pin(access.apartment(request, apartment_id))
     if not apartment:
         return None, _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
@@ -142,6 +144,14 @@ def _wizard_context(
         "link_key": link_key,
         "pin": apartment["permalink_pin"] or "",
         "fee_account": payments.czech_account_parts(apartment["stay_fee_council_account"] or ""),
+        "guest_pay_operator": (
+            stay_fee_routes.guest_pay_operator_context(
+                apartment,
+                next((row for row in entities if row["id"] == apartment["legal_entity_id"]), None),
+            )
+            if step == "stay_fee"
+            else None
+        ),
         "has_password": bool(apartment["uby_ws_password_enc"]),
         "calendar_platforms": admin_routes.CALENDAR_PLATFORMS,
         "setup_demo": setup_demo,

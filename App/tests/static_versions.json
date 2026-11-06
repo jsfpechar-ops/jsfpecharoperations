@@ -48,8 +48,8 @@
     "v": "20261104-0916"
   },
   "cleaning.js": {
-    "sha256": "2f0be0505681096250e093668bc9b30c7a4eeae2866b34dcb44288ca10ea89b1",
-    "v": "20261102-0507"
+    "sha256": "f9c50c0da3bf5723db6e331f2baa7c8566c004ce163d47c0ada430d228e0ea9c",
+    "v": "20261106-0963"
   },
   "command.css": {
     "sha256": "87586ec608380d557607985a7bc968c245b0ca38709bd8835952c28894c809f8",
@@ -170,6 +170,10 @@
   "skeleton.js": {
     "sha256": "37160a722bb10d28ebf4aa12a6783a478699364651f12f415042f236f2f6d79b",
     "v": "20261102-0509"
+  },
+  "stay-fee-guest-pay.js": {
+    "sha256": "f5faaee7c257693be66fd215811188d5814aee36e54d85e87a771337545ab2a8",
+    "v": "20261105-gp4"
   },
   "tokens.css": {
     "sha256": "bada752f7935a7fc7bf01c8fd07d48a9893c472decafd3a4974efc0d1c3220ea",

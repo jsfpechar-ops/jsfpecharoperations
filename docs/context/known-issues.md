@@ -96,3 +96,5 @@
 - K-PK0290: passkey fix open.
 - K-CF01: mid-session challenge: see CLOUDFLARE Rule 3.
 - K-PG-ORDER: goose tests fail after icalsync locally; CI OK.
+
+- 0897 guest pay gaps: Slovak QR, PG migration 00007 unrun, no mark-as-paid, no e-mail link, copy review, legal sign-off.

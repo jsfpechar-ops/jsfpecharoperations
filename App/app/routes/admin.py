@@ -1800,6 +1800,7 @@ async def apartment_create(request: Request):
         )
     _apply_police_defaults(payload, access.entities(request))
     payload.pop("_stay_fee_account_raw", None)
+    payload.pop(stay_fee_routes.GUEST_OPERATOR_ACCOUNT_RAW, None)
     # 0897: an invalid Revolut link is cleared on create (the create form does not show the block).
     guest_link = payload.pop(stay_fee_routes.GUEST_LINK_RAW, None)
     if guest_link and not stay_fee_routes.revolut_link_ok(guest_link):
@@ -2130,6 +2131,13 @@ def _render_apartment_detail(
                 if peer["id"] != apartment["id"]
                 and int(peer["stay_fee_rate_czk"] or 0) > 0
             ],
+            "guest_pay_operator": stay_fee_routes.guest_pay_operator_context(
+                apartment,
+                next(
+                    (row for row in entities if row["id"] == apartment["legal_entity_id"]),
+                    None,
+                ),
+            ),
             **copy_ctx,
             "apartment": apartment,
             "operator_error": operator_error,
@@ -2243,7 +2251,7 @@ def _refuse_apartment_save(
     )
 
 
-def refuse_fee_save(request: Request, apartment: Dict[str, Any], form, link_error: bool = False):
+def refuse_fee_save(request: Request, apartment: Dict[str, Any], form, *, link_error: bool = False, operator_account_error: bool = False, rate_error: bool = False, setup_flash: Optional[str] = None):
     """0077: show the one fee editor again with what the host typed and the error.
 
     Used by the property save; nothing is written.
@@ -2263,6 +2271,19 @@ def refuse_fee_save(request: Request, apartment: Dict[str, Any], form, link_erro
     fee_draft.pop(stay_fee_routes.GUEST_LINK_RAW, None)
     account_draft = stay_fee_routes.fee_account_draft(form)
     draft.update(fee_draft)
+    entities = access.entities(request)
+    operator_entity = next(
+        (row for row in entities if row["id"] == draft["legal_entity_id"]),
+        None,
+    )
+    operator_draft = (
+        _form_str(form, "stay_fee_guest_operator_account")
+        if "stay_fee_guest_operator_account" in form
+        else ""
+    )
+    guest_pay_operator = stay_fee_routes.guest_pay_operator_context(
+        draft, operator_entity, draft_account=operator_draft,
+    )
     if "stay_fee_council_account" in form:
         draft["stay_fee_council_account"] = _form_str(form, "stay_fee_council_account")
         draft["stay_fee_council_iban"] = None
@@ -2275,8 +2296,11 @@ def refuse_fee_save(request: Request, apartment: Dict[str, Any], form, link_erro
             extra={
                 "draft": draft,
                 "fee_account": account_draft,
-                "fee_account_error": not link_error,
+                "fee_account_error": not link_error and not operator_account_error and not rate_error and not setup_flash,
                 "fee_link_error": link_error,
+                "fee_rate_error": rate_error,
+                "fee_operator_account_error": operator_account_error,
+                "guest_pay_operator": guest_pay_operator,
             },
             status_code=400,
         )
@@ -2296,11 +2320,22 @@ def refuse_fee_save(request: Request, apartment: Dict[str, Any], form, link_erro
             "property_view": "settings",
             "settings_section": "reporting",
             "account": account_draft,
-            "fee_account_error": not link_error,
+            "fee_account_error": not link_error and not operator_account_error and not rate_error and not setup_flash,
             "fee_link_error": link_error,
+            "fee_rate_error": rate_error,
+            "fee_operator_account_error": operator_account_error,
+            "guest_pay_operator": guest_pay_operator,
             "flash_error": _flash(
                 request,
-                "flash.stay_fees.link_invalid" if link_error else "flash.stay_fees.account_invalid",
+                "flash.stay_fees.link_invalid"
+                if link_error
+                else setup_flash
+                if setup_flash
+                else (
+                    "flash.stay_fees.operator_account_required"
+                    if operator_account_error
+                    else "flash.stay_fees.account_invalid"
+                ),
             ),
             "fee_return_to": stay_fee_routes.fee_return_path(
                 _form_str(form, "fee_return_to"), apartment["id"]
@@ -2758,9 +2793,23 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
     if setup_step in ("", "stay_fee"):
         try:
             stay_fee_routes.apply_fee_account(payload)
+            stay_fee_routes.check_guest_pay_setup(apartment, payload)
+            stay_fee_routes.apply_guest_operator_account(apartment, form, payload)
         except ValueError as exc:
-            link_error = str(exc) == stay_fee_routes.GUEST_LINK_INVALID
-            return refuse_fee_save(request, apartment, form, link_error), False
+            msg = str(exc)
+            link_error = msg == stay_fee_routes.GUEST_LINK_INVALID
+            operator_account_error = msg == stay_fee_routes.GUEST_OPERATOR_ACCOUNT_INVALID
+            rate_error = msg == stay_fee_routes.GUEST_RATE_REQUIRED
+            setup_flash = stay_fee_routes.GUEST_SETUP_FLASH.get(msg)
+            return refuse_fee_save(
+                request,
+                apartment,
+                form,
+                link_error=link_error,
+                operator_account_error=operator_account_error,
+                rate_error=rate_error,
+                setup_flash=setup_flash,
+            ), False
     # AR-18: the refused-login pause exists so the police account is not
     # hammered every ten minutes. Only replacing the credentials may lift it;
     # renaming the property or moving the PIN must not resume the retries.

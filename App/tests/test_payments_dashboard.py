@@ -144,7 +144,8 @@ def test_invalid_reason_refused(client, owner):
         follow_redirects=False,
     )
     assert response.status_code == 303
-    assert "err=" in response.headers["location"]
+    location = response.headers["location"]
+    assert location.startswith("/payments/new?") and "err=" in location
     assert payment_request.for_owner(owner) == []
 
 
@@ -155,7 +156,18 @@ def test_bad_amount_refused(client, owner):
         follow_redirects=False,
     )
     assert response.status_code == 303
-    assert "err=" in response.headers["location"]
+    location = response.headers["location"]
+    assert location.startswith("/payments/new?") and "err=" in location
+
+
+def test_new_request_page_prefills_service_from_query(client, owner, monkeypatch):
+    """0908: validation errors and the form itself live on /payments/new."""
+    monkeypatch.setattr(config, "STRIPE_MODE", "test")
+    _set_state(owner, "complete")
+    response = client.get("/payments/new?service=damage&lang=en")
+    assert response.status_code == 200
+    assert 'action="/payments/requests/new"' in response.text
+    assert 'value="damage"' in response.text or "damage" in response.text
 
 
 def test_foreign_stay_refused(client, owner):

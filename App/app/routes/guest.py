@@ -1252,8 +1252,8 @@ def stay_overview(token: str, reservation_id: int, request: Request):
         }
     )
     context["fee_panel"] = (
-        _fee_pay_panel(apartment, reservation, context["t"])
-        if remaining is None or remaining <= 0
+        _fee_pay_panel(apartment, reservation, context["t"], _qr_offered(request, reservation))
+        if remaining is not None and remaining <= 0
         else None
     )
     return _with_lang(render_guest(request, "guest/stay.html", context), lang)
@@ -1583,6 +1583,11 @@ def _form_context(
                 else ""
             ),
             "fee_estimate": _fee_estimate(apartment, reservation, values or {}),
+            "fee_panel": (
+                _fee_pay_panel(apartment, reservation, context["t"], _qr_offered(request, reservation))
+                if remaining is not None and remaining <= 0
+                else None
+            ),
             "country_groups": codelists.country_groups(lang),
             "purposes": codelists.purpose_options(lang),
             "default_purpose": apartment["default_purpose"] or validation.DEFAULT_PURPOSE,
@@ -2065,11 +2070,19 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     )
 
     destination = _guest_link(token, reservation_id)
+    fragment = ""
     if continue_to_next:
         destination += "/new"
+    elif missing == 0:
+        panel = _fee_pay_panel(
+            apartment, fresh_reservation, i18n.translator(lang),
+            _qr_offered(request, fresh_reservation),
+        )
+        if panel and panel.get("rails"):
+            fragment = "#fee-pay"
 
     response = RedirectResponse(
-        destination + _lang_q(lang, "&saved=1"), status_code=303
+        destination + _lang_q(lang, "&saved=1") + fragment, status_code=303
     )
     _remember_owned(response, _owned_ids(request) + [saved_id])
     return _with_lang(response, lang)
@@ -2133,7 +2146,23 @@ async def guest_document_scan(token: str, reservation_id: int, request: Request)
 
 # --- stay-fee money card and form estimate (brief 0910) -----------------------
 
-def _fee_pay_panel(apartment, reservation, t):
+QR_NATIONALITIES = ("CZE", "SVK")
+RAIL_ORDER = ("iban", "revolut", "cash")
+
+
+def _qr_offered(request, reservation) -> bool:
+    """The Czech payment QR is for Czech and Slovak guests. It follows the people
+    registered on this device, or the whole stay when none are."""
+    rows = db.query(
+        "SELECT id, nationality FROM guest WHERE reservation_id = ? AND archived_at IS NULL",
+        (reservation["id"],),
+    )
+    owned = set(_owned_ids(request))
+    pool = [row for row in rows if row["id"] in owned] or list(rows)
+    return any((row["nationality"] or "").upper() in QR_NATIONALITIES for row in pool)
+
+
+def _fee_pay_panel(apartment, reservation, t, qr_ok=True):
     """Hub money card data, or None. None unless the property collects, the live total is above zero."""
     from .. import config, payments, stay_fee
     if not (apartment["stay_fee_collect"] and config.STAY_FEE_GUEST_PAY):
@@ -2145,12 +2174,14 @@ def _fee_pay_panel(apartment, reservation, t):
     vs = str(int(reservation["id"]))  # plain id, no zero padding; the bank VS field takes up to 10 digits
     message = f"Stay fee {vs}"  # goes only into the SPAYD payload; never shown
     account = ""
+    payee = ""
     if apartment["legal_entity_id"]:
         entity = db.query_one(
-            "SELECT iban, bank_account FROM legal_entity WHERE id = ?",
+            "SELECT iban, bank_account, name FROM legal_entity WHERE id = ?",
             (apartment["legal_entity_id"],),
         )
         if entity is not None:
+            payee = (entity["name"] or "").strip()
             if entity["iban"]:
                 account = entity["iban"]
             elif entity["bank_account"]:
@@ -2161,19 +2192,30 @@ def _fee_pay_panel(apartment, reservation, t):
         for line in charge["lines"] if line["liable_nights"] > 0
     ]
     rails = []
-    for key in (apartment["stay_fee_guest_rails"] or "").split(","):
-        if key == "qr" and account:
-            payload = payments.spayd(account, total, vs, message)
-            rails.append({"key": "qr", "qr": payments.qr_data_uri(payload)})
-        elif key == "iban" and account:
-            rails.append({"key": "iban", "iban": payments.format_iban(account), "qr": ""})
+    enabled = {part for part in (apartment["stay_fee_guest_rails"] or "").split(",") if part}
+    # A stored "qr" is the bank rail: it becomes one "iban" rail, with the QR on it.
+    if "qr" in enabled:
+        enabled.add("iban")
+    first = apartment["stay_fee_guest_default_rail"] or ""
+    if first == "qr":
+        first = "iban"
+    order = ([first] if first in RAIL_ORDER else []) + [key for key in RAIL_ORDER if key != first]
+    for key in order:
+        if key not in enabled:
+            continue
+        if key == "iban" and account:
+            qr = ""
+            if qr_ok:
+                payload = payments.spayd(account, total, vs, message)
+                qr = payments.qr_data_uri(payload)
+            rails.append({"key": "iban", "iban": payments.format_iban(account), "qr": qr})
         elif key == "revolut" and apartment["stay_fee_guest_revolut_link"]:
             rails.append({"key": "revolut", "link": apartment["stay_fee_guest_revolut_link"]})
         elif key == "cash":
             rails.append({"key": "cash",
                           "note": apartment["stay_fee_guest_cash_note"] or t("fee_cash_default")})
     return {"total": total, "rate": rate, "persons": persons, "rails": rails,
-            "vs": vs}
+            "vs": vs, "payee": payee}
 
 
 def _fee_estimate(apartment, reservation, values):

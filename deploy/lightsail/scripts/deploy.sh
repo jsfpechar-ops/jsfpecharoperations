@@ -51,6 +51,9 @@ rollback() {
   if docker image inspect ubyhost:previous >/dev/null 2>&1; then
     docker tag ubyhost:previous ubyhost:local
   fi
+  if docker image inspect ubyhost-go:previous >/dev/null 2>&1; then
+    docker tag ubyhost-go:previous ubyhost-go:local
+  fi
   docker compose up -d --no-build --remove-orphans || true
   docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile || true
   if public_ok; then
@@ -201,6 +204,10 @@ fi
 if docker image inspect ubyhost:local >/dev/null 2>&1; then
   docker tag ubyhost:local ubyhost:previous
   echo "Kept the running image as ubyhost:previous for rollback."
+fi
+if docker image inspect ubyhost-go:local >/dev/null 2>&1; then
+  docker tag ubyhost-go:local ubyhost-go:previous
+  echo "Kept the running Go image as ubyhost-go:previous for rollback."
 fi
 
 # 0422: the GitHub deploy builds the image from the commit CI passed, pushes it
@@ -404,3 +411,10 @@ fi
 
 # 0710: this commit is now the rollback target.
 git rev-parse HEAD > .deployed-sha
+
+# 0962: success is final. Drop dangling images (the old ubyhost:local of each
+# deploy) and build cache older than 72 hours. Never -a: it would delete
+# ubyhost:previous and digest-pinned service images. A failed prune is ignored.
+docker image prune -f >/dev/null 2>&1 || true
+docker builder prune -f --filter until=72h >/dev/null 2>&1 || true
+echo "Pruned dangling Docker images and build cache older than 72h."

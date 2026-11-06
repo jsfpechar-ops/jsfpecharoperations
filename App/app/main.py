@@ -334,6 +334,23 @@ def _access_route(request: Request) -> str:
     return getattr(route, "path", None) or "<unmatched>"
 
 
+def _access_kind(request: Request) -> str:
+    """` kind=prefetch` or ` kind=poll` for background requests, else ``""``.
+
+    Reads two header names only; never logs a header value. Prefetch wins.
+    """
+    try:
+        headers = request.headers
+        purpose = f"{headers.get('x-sec-purpose', '')} {headers.get('sec-purpose', '')}"
+        if "prefetch" in purpose.lower():
+            return " kind=prefetch"
+        if headers.get("x-uby-background", "").strip() == "1":
+            return " kind=poll"
+    except Exception:  # noqa: BLE001 - logging must never break a request
+        pass
+    return ""
+
+
 def _log_access(
     request: Request,
     status_code: int,
@@ -347,7 +364,7 @@ def _log_access(
     # q, db_ms and lock_ms are counts and durations only; they carry nothing
     # from the request, so the line stays as PII-free as the route template.
     log_access.info(
-        "method=%s route=%s status=%s ms=%d q=%d db_ms=%d lock_ms=%d",
+        "method=%s route=%s status=%s ms=%d q=%d db_ms=%d lock_ms=%d%s",
         request.method,
         _access_route(request),
         status_code,
@@ -355,6 +372,7 @@ def _log_access(
         stats.queries,
         int(stats.db_seconds * 1000),
         int(stats.lock_seconds * 1000),
+        _access_kind(request),
     )
 
 

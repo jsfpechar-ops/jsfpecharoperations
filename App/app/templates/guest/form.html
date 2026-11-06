@@ -310,6 +310,7 @@
     {% include "guest/_legal_notice.html" %}
 
     {% if fee_estimate %}{% include "guest/_fee_estimate.html" %}{% endif %}
+    {% if fee_panel %}{% include "guest/_fee_pay.html" %}{% endif %}
 
     {% if person_number and expected_people %}
       <p class="g-save-note">{{ t('person_progress', current=person_number, total=expected_people) }}</p>

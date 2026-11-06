@@ -160,7 +160,8 @@ You can use **both** Drive and S3 (two cron lines). Pick one off-site copy if yo
 The `litestream` service (image `litestream/litestream:0.5.17`, config
 `litestream.yml`) streams every change of `/data/ubyhost.db` to
 `s3://$LITESTREAM_S3_BUCKET/$LITESTREAM_S3_PATH` in `eu-central-1`, about
-every 10 seconds. That is the data-loss window if the VM is lost. The nightly
+every 60 seconds by default (`LITESTREAM_SYNC_INTERVAL`; set 120s or 300s in
+`.env` to cut S3 request cost further). That is the data-loss window if the VM is lost. The nightly
 age-encrypted backup above stays as a second, independent copy.
 
 What the replica does **not** hold:
@@ -227,6 +228,21 @@ Run `./scripts/restore_test.sh` again once per quarter. It restores the
 newest replica into a temporary file inside a throwaway container, checks
 `PRAGMA integrity_check`, compares row counts of the main tables with the live
 database and deletes the copy. Non-zero exit on any mismatch.
+
+### S3 request cost (Pro tuning)
+
+Litestream bill is almost always **PUT/LIST requests**, not stored GB. Defaults:
+`LITESTREAM_SYNC_INTERVAL=60s` and `LITESTREAM_VALIDATION_INTERVAL=168h` (weekly check).
+To cut cost further, set in production `.env` before `./scripts/deploy.sh`:
+
+```bash
+LITESTREAM_SYNC_INTERVAL=120s
+# or LITESTREAM_SYNC_INTERVAL=300s
+LITESTREAM_VALIDATION_INTERVAL=168h
+```
+
+Tradeoff: if the VM dies without warning, you can lose up to that many seconds of
+database changes off-site (local daily backup still covers longer gaps).
 
 ### Runbook: the VM is lost
 

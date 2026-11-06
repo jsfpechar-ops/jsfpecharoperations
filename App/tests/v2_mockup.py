@@ -157,6 +157,7 @@ BOX_OVERRIDES = {
     "stay:.stay-dates small@320": {"width": "80.0156px"},
     "stay:.stay-dates small@390": {"width": "113px"},
     # 0957: 54px was the two-line height of the arrival date when the PR #725 fixture was measured; today the same cell shows "Fri 6. 11." on one line (28px at line-height 1.4)
+    # 0964: 320 px has equal columns, 12 px cell padding and a screen-reader-only weekday, so the width no longer depends on the date text
     "stay:.stay-dates b@320": {"width": "80.0156px", "height": "28px"},
     "stay:.stay-dates b@390": {"width": "113px"},
     "stay:.stay-dates .tot@320": {"width": "252.031px"},

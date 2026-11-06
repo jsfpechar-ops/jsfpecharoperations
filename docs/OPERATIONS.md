@@ -581,11 +581,24 @@ The app writes **one PII-free access line per request** (OPS-3), from the
 
     method=GET route=/l/{token} status=200 ms=42
 
+Background requests get one extra field at the end of the line:
+`... lock_ms=0 kind=prefetch` (link prefetch: header `X-Sec-Purpose` or
+`Sec-Purpose` contains `prefetch`) or `... lock_ms=0 kind=poll` (header
+`X-Uby-Background: 1`, sent by the cleaning calendar's timer and focus
+refresh). Prefetch wins if both are present. A human request has no `kind=`
+and its line is unchanged. The Havel panel is user-driven and is not tagged.
+
 - **`route` is the matched route template**, e.g. `/l/{token}` or
   `/<unmatched>`. The raw path, query string, client IP, user agent and headers
   are never logged, so a guest permalink token or an e-mail address cannot end
   up in a log line.
 - `/static/*` and `/healthz` are skipped.
+- **Grafana (Loki) queries**, container `ubyhost-ubyhost-1`:
+  - Real feature usage (7 days):
+    `sum by (method, route) (count_over_time({container="ubyhost-ubyhost-1"} |= "method=" != "kind=" != "route=/metrics" != "route=/sw.js" != "route=/manifest.webmanifest" != "route=<unmatched>" | regexp `method=(?P<method>[A-Z]+) route=(?P<route>\S+)` [7d]))`
+  - Background share (7 days):
+    `sum by (kind) (count_over_time({container="ubyhost-ubyhost-1"} |= "kind=" | regexp `kind=(?P<kind>\w+)` [7d]))`
+  - Signup funnel: the first query, filtered to `route=/signup ` and compared for GET against POST.
 - uvicorn's own access log is disabled in the production image
   (`--no-access-log` in the `Dockerfile`), because it would print the raw
   request line. `UBYHOST_ACCESS_LOG=0` switches the app line off as well.
