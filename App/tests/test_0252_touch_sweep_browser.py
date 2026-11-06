@@ -49,7 +49,10 @@ PROBE = r"""() => {
     const x = r.left + Math.min(r.width / 2, 120), y = r.top + Math.min(r.height / 2, 24);
     if (y > 0 && y < innerHeight && x < vw) {
       const hit = document.elementFromPoint(x, y);
-      if (hit && !hit.closest('a, [data-href], button, label, input, summary')) out.deadMiddle.push(name(e));
+      // Skip when fixed chrome (tab bar, etc.) covers the probe — that is not a
+      // dead middle inside the row; the list is meant to scroll clear of nav.tabs.
+      if (!hit || !e.contains(hit)) continue;
+      if (!hit.closest('a, [data-href], button, label, input, summary')) out.deadMiddle.push(name(e));
     }
   }
   return out;
