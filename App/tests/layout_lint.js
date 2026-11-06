@@ -15,7 +15,7 @@
     }
     return true;
   };
-  const skipZone = (el) => el.closest('[role=menu],.row-menu-panel,.sr-only,.visually-hidden,[aria-hidden=true],script,style,noscript,template,svg,.skeleton,[data-lint-ignore],details:not([open]) > :not(summary)');
+  const skipZone = (el) => el.closest('[role=menu],.row-menu-panel,.sr-only,.visually-hidden,[aria-hidden=true],script,style,noscript,template,svg,.skeleton,[data-lint-ignore],.onboarding-finish,.onboarding-finish-strip,details:not([open]) > :not(summary)');
   const name = (el) => (el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') +
     (el.classList.length ? '.' + [...el.classList].slice(0, 3).join('.') : '') +
     ' "' + (el.textContent || el.getAttribute('aria-label') || '').trim().replace(/\s+/g, ' ').slice(0, 28) + '"');

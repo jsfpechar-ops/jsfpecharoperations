@@ -713,7 +713,7 @@ def _lock_page_0964(playwright, base, host, width, lang="en"):
     context = browser.new_context(viewport={"width": width, "height": 900})
     context.add_cookies([{"name": auth.SESSION_COOKIE, "value": _session_cookie(host), "url": base + "/"}])
     page = context.new_page()
-    page.goto(f"{base}/apartments/{host['apartment']}?view=settings&lang={lang}")
+    page.goto(f"{base}/apartments/{host['apartment']}?view=settings&section=lock&lang={lang}")
     page.evaluate("() => { document.getElementById('sec-lock').open = true; }")
     return browser, page
 
@@ -749,7 +749,7 @@ def test_0964_lock_off_explains_and_offers_one_action(host, base, monkeypatch):
                 action = block.locator("a.ui-btn[href='#door-code']")
                 assert action.count() == 1 and action.is_visible()
                 assert block.locator("form, input, button").count() == 0  # no lock command, no credential edit here
-                fit = page.evaluate(_IN_VIEW_0964, "#lock-setup-state, #lock-setup-state a")
+                fit = page.evaluate(_IN_VIEW_0964, "#lock-setup-state, #lock-setup-state a.ui-btn")
                 assert fit["count"] == 2 and not fit["bad"], fit
                 assert page.evaluate(_NO_SIDEWAYS_0964) <= 1, width
                 _shot_0964(page, f"lock-off-{width}")
@@ -773,7 +773,7 @@ def test_0964_lock_on_with_mock_fixture_keeps_its_controls(host, base, monkeypat
             for width in (390, 768, 1280):
                 browser, page = _lock_page_0964(playwright, base, host, width)
                 try:
-                    block = _assert_lock_state_matches_pill_0964(page, ".lock-state[data-state='on']", "on")
+                    block = _assert_lock_state_matches_pill_0964(page, "#lock-connected-off", "on")
                     assert page.locator("#lock-setup-state, #lock-unavailable").count() == 0
                     assert block.locator(".lock-state-form button").is_visible()
                     assert page.evaluate(_NO_SIDEWAYS_0964) <= 1, width

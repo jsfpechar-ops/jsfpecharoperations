@@ -340,7 +340,7 @@ def test_opened_help_stays_inside_the_viewport(wide_host, wide_base):
     assert not bad, "opened help leaves the 16 px gutter:\n" + "\n".join(bad[:15])
 
 
-FINISH_SHOTS = Path("/mnt/project-files/dashboard-finish")
+FINISH_SHOTS = Path(os.environ.get("UBYHOST_SHOTS_DIR") or "/tmp") / "dashboard-finish"
 
 
 def _fresh_finish_host(wide_base):
