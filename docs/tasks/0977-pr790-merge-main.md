@@ -1,6 +1,6 @@
 # 0977: PR #790: renumber colliding briefs, merge main, fix lint, wording and tests
 
-Status: open
+Status: todo
 Depends on: none | Base commit: origin/codex/ux-remediation-handoff | Branch: codex/ux-remediation-handoff (already exists, rides on PR #790, no new PR)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens. If you hit 25 calls, finish the step you are on, commit, write the report as `blocked` with `Done: steps 1 to k. Left: steps k+1 to 10.`, and stop.
 
