@@ -195,5 +195,4 @@ def test_the_lock_form_posts_the_fields_marker_when_the_box_is_shown(two_propert
     # 0954: the switch is gone; the Turn on / Turn off buttons post to their own route.
     assert 'name="door_codes_fields"' not in page
     assert 'name="door_codes"' not in page
-    assert 'id="lock-setup-state"' in page
-    assert 'href="#door-code"' in page
+    assert f'action="/apartments/{a}/door-codes"' in page

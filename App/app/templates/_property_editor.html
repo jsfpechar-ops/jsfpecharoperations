@@ -427,8 +427,7 @@
   {{ section_notice('lock') }}
   {% if door_code and door_code.state in ['offline', 'times'] %}<div class="prop-sec-missing" data-missing="lock" role="note"><p>{{ t('health.door.offline') if door_code.state == 'offline' else t('health.door.times') }}</p></div>{% endif %}
     <p class="property-group-intro">{{ t('why.door_lock') }}</p>
-    {#- 0984: "off" with a TTLock account still uses the setup row (one link to #door-code), not the connected tile. -#}
-    {% if door_code and door_code.account and door_code.locks and door_code.state != 'off' %}
+    {% if door_code and door_code.account and door_code.locks %}
     <div class="lock-state" id="lock-connected-off" data-state="{{ door_code.state }}" role="status">
       <i class="sd" aria-hidden="true"></i>
       <div class="lock-state-text"><b>{{ t({'off': 'smart_locks.state_off', 'times': 'smart_locks.state_times', 'offline': 'smart_locks.state_offline'}.get(door_code.state, 'smart_locks.state_on')) }}</b>

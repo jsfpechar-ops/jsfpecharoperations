@@ -61,17 +61,14 @@ def test_state_block_matches_the_state(ttl, hosts, flats, state):
     block = _block(page)
     assert block and block.group(1) == state
     assert 'id="door_codes"' not in page
-    if state != "off":  # 0987 run 2: off with a connected lock shows the setup row (no form)
-        assert f'action="/apartments/{flats[0]}/door-codes"' in block.group(2)
-    else:
-        assert 'href="#door-code"' in page
+    assert f'action="/apartments/{flats[0]}/door-codes"' in block.group(2)
     if state == "on":
         assert "Automatic door codes: On" in block.group(2)
         assert "Lock online" in block.group(2)
         assert 'value="off"' in block.group(2) and "Turn off" in block.group(2)
     if state == "off":
         assert "Automatic door codes: Turned off" in block.group(2)
-        assert 'href="#door-code"' in page  # 0987 run 2: off shows the setup row, no Turn on form
+        assert 'value="on"' in block.group(2) and "Turn on" in block.group(2)
         assert "ui-btn-primary" in block.group(2)
     if state == "offline":
         assert "Automatic door codes: lock offline" in block.group(2)
