@@ -2029,7 +2029,8 @@ body.v2 .ui-page .muted{color:var(--muted)}
 body.v2 .ui-page .signature-pad{border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface);overflow:hidden}
 body.v2 .ui-page .signature-pad canvas{display:block;width:100%;height:160px;touch-action:none;background:var(--surface);cursor:crosshair}
 body.v2 .ui-page .signature-pad-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 12px;border-top:1px solid var(--line);background:var(--surface-2);font-size:13px}
-body.v2 .ui-page .signature-pad-bar button{border:0;background:none;color:var(--brand);font:inherit;font-weight:650;cursor:pointer}
+body.v2 .ui-page .signature-pad-bar button:not(.ui-btn){border:0;background:none;color:var(--brand);font:inherit;font-weight:650;cursor:pointer}
+body.v2 .ui-page .signature-pad canvas:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 body.v2 .ui-page .passport-preview{margin:12px 0;max-width:420px}
 body.v2 .ui-page .passport-preview img{display:block;width:100%;border-radius:8px;border:1px solid var(--border)}
 body.v2 .ui-page .passport-preview-pdf-link{margin:0}
@@ -2056,8 +2057,8 @@ body.v2 .invoice-lookup-row input{flex:1 1 auto;min-width:0;max-width:12rem}
 body.v2 .invoice-lookup-row .ui-btn{flex:0 0 auto;min-height:0;height:auto;align-self:stretch}
 body.v2 .invoice-lookup-guest{display:flex;align-items:center;gap:var(--space-3)}
 body.v2 .invoice-lookup-ico > label{margin-bottom:var(--space-3)}
-body.v2 .invoice-form .help-tip-btn{width:18px;height:18px}
-body.v2 .invoice-form .help-tip-btn::after{inset:-13px}
+body.v2 .invoice-form .help-tip-btn{width:18px;height:18px;min-width:18px;min-height:18px;margin:0}
+body.v2 .invoice-form .help-tip-btn::after{content:"";position:absolute;inset:-13px -13px -13px 0}
 body.v2 .invoice-buyer-fields{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
 body.v2 .invoice-buyer-fields > .ui-field{margin:0;min-width:0;grid-column:1 / -1}
 body.v2 .invoice-f-full{grid-column:1 / -1}
@@ -2143,8 +2144,8 @@ body .page-help-btn::-webkit-details-marker{display:none}
 body .page-help-btn::marker{content:""}
 body .page-help-dot{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:18px;height:18px;border:1.5px solid #717171;border-radius:50%;background:#fff;color:#222;font-size:12px;font-weight:700;line-height:1}
 body .page-help-btn:focus-visible .page-help-dot{outline:2px solid #222;outline-offset:3px}
-body .page-help-wrap:not(:has(.page-help[open])) > .page-help-body{display:none}
-body .page-help-wrap:has(.page-help[open]) > .page-help-body{display:block;position:fixed;z-index:60;left:50%;top:50%;right:auto;transform:translate(-50%,-50%);width:min(360px,calc(100vw - 32px));max-height:calc(100vh - 32px);margin:0;overflow:auto;box-sizing:border-box;padding:16px;background:#fff;color:#222;border:1px solid #ddd;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.12);font-size:15px;font-weight:400;line-height:1.4;text-align:left;text-transform:none;letter-spacing:0;white-space:normal}
+body .page-help:not([open]) > .page-help-body{display:none}
+body .page-help[open] > .page-help-body{display:block;position:fixed;z-index:60;left:50%;top:50%;right:auto;transform:translate(-50%,-50%);width:min(360px,calc(100vw - 32px));max-height:calc(100vh - 32px);margin:0;overflow:auto;box-sizing:border-box;padding:16px;background:#fff;color:#222;border:1px solid #ddd;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.12);font-size:15px;font-weight:400;line-height:1.4;text-align:left;text-transform:none;letter-spacing:0;white-space:normal}
 body .page-help-steps{margin:0 0 12px;padding-left:20px}
 body .page-help-steps li{margin:0 0 6px}
 body .page-help-more{display:inline-block;min-height:44px;line-height:44px;color:#222;font-weight:600;text-decoration:underline}
@@ -2771,7 +2772,8 @@ body.v2 .prop-archive-actions .ui-btn{min-height:44px}
 body.v2 .prop-archive-note{margin:0;flex:1 1 240px;min-width:0}
 /* the "?" stays in the same group as its button (wraps with it, never alone); on phones its box is the 44 px tap target (the 0833 property-settings-form rule gives 24 px) */
 body.v2 .prop-archive-action{display:inline-flex;align-items:center;flex-wrap:nowrap;max-width:100%}
-@media (max-width:1023px){body.v2 .prop-archive-action .help-tip-btn{width:44px;height:44px;min-width:44px;min-height:44px}}
+/* 0990: keep archive tip glyph 24px; expand tap via ::after like other property tips */
+@media (max-width:1023px){body.v2 .prop-archive-action .help-tip-btn{width:24px;height:24px;min-width:24px;min-height:24px}body.v2 .prop-archive-action .help-tip-btn::after{content:"";position:absolute;inset:-10px}}
 body.v2 .ui-dialog.copy-settings-dialog{border:0;padding:0;background:transparent;max-width:none;width:min(var(--dialog-w),calc(100vw - var(--space-8)))}
 body.v2 .ui-dialog.copy-settings-dialog::backdrop{background:var(--scrim)}
 body.v2 .copy-settings-dialog .ui-sheet{background:var(--surface);border-radius:var(--sheet-radius);padding:var(--space-6);box-shadow:var(--shadow-3);max-height:calc(100dvh - var(--space-8));overflow:auto;box-sizing:border-box}

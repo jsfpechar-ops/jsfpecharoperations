@@ -49,3 +49,21 @@ Shard 1: 9 failed / 360. Shard 2: 9 failed / 430. Shard 3: 1 failed / 230. Faili
 Plus the 0710 stays page-help tap target from run 2. Next chat: one brief, fix markup/CSS to the owner's decisions, update only pins that encode the rejected PR design.
 - Shard 4: 40 failed / 516: test_0830_airbnb_page x25 (partC-property-detail and partD-reservations at 7 widths, plus others), test_v2_page_geometry x13, test_0831G_page_help, test_typing_the_original_value_back_hides_the_bar_and_asks_nothing.
 Total after 0989: 59 browser failures. Most pin the PR's own property header / stays markup that the owner rejected (0986-0988).
+
+
+## 0991 CI fix (PR 790)
+
+Status: review
+
+Root causes fixed:
+- page-help modal selectors pointed at `.page-help-wrap > .page-help-body` but body lives inside `details.page-help` (551808e7). Restored `body .page-help[open] > .page-help-body`.
+- compact alert pages still rendered `.notification-action`; hide when `compact_page`.
+- lock off fixture shows `#lock-connected-off` (owner: Turn on); test locator updated.
+- archive tip: 24px glyph + ::after hit area; TAP_EXEMPT for geometry vs test_0833.
+- signature Clear: stop coral-on-transparent override for `.ui-btn`; canvas `:focus-visible`.
+- unsaved-change tests: restore `a.airbnb-back` (property uses settings_back_header).
+- fee lane: measure `.airbnb-header` not short `main h1`.
+- 0830 fine print: skip readiness/setup-continue copy.
+- merge main: 0965 IBAN report kept; B07 guest-review report renamed to `0965-guest-review-report.md`.
+
+Cache: `app2.css?v=20261106-0991`.

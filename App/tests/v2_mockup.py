@@ -60,7 +60,12 @@ SELECTOR_OVERRIDES = {
 # style-compared only at computer width (phone design pending)
 DESKTOP_ONLY = {".side", ".side .nav", ".side .nav.on"}
 # calendar bars are 28 px tall: a dense 14-day timeline; WCAG 2.5.8 needs 24 px, and every stay is also a full-size row in the Dnes table and the stays list
-TAP_EXEMPT_BELOW_DESKTOP = {".cal .bar": "dense 14-day timeline; 28 px meets WCAG 2.5.8 (24 px); every stay is also a full-size row in the Dnes table and the stays list"}
+TAP_EXEMPT_BELOW_DESKTOP = {
+    ".cal .bar": "dense 14-day timeline; 28 px meets WCAG 2.5.8 (24 px); every stay is also a full-size row in the Dnes table and the stays list",
+    # 0991: property editor tips keep a 24 px glyph; ::after expands the hit area to ≥44 px (test_0833).
+    ".property-settings-form .help-tip-btn": "24 px glyph with ::after hit area to 44 px",
+    ".prop-archive-action .help-tip-btn": "24 px glyph with ::after hit area to 44 px",
+}
 
 
 # app selector -> mockup selector at phone widths (the phone mockup calls the action bar .bar)

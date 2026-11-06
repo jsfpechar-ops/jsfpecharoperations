@@ -149,7 +149,8 @@ _AUDIT_JS = """(isBack) => {
 
   // no fine print: any visible element (any tag) whose OWN text (its direct text nodes, not its children) is longer
   // than 60 characters, outside help bodies, open help panels, headings, input labels, table cells and form fields
-  const SKIP_FINE = 'h1, h2, h3, h4, h5, h6, label, td, th, table, textarea, input, select, option, script, style';
+  // 0991: readiness/setup-continue copy names what is missing (owner: card below the grid); not decorative fine print.
+  const SKIP_FINE = 'h1, h2, h3, h4, h5, h6, label, td, th, table, textarea, input, select, option, script, style, .readiness-why, .readiness-item, .prop-sec-missing, .setup-continue-card';
   // .env-banner is the shell's practice-mode safety alert (base.html, _env_banner.html), shown only when UBYPORT_ENV is mock
   const HELP_PANEL = '.help-tip-body, .help-tip, .env-banner, details[open].ui-how, details[open].page-help, .page-help-wrap:has(details.page-help[open]) > .page-help-body, details[open].stays-how, details[open].help-panel';
   for (const el of [root, ...root.querySelectorAll('*')]) {

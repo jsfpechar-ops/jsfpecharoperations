@@ -62,7 +62,8 @@ def test_status_block_fits_and_shows_its_state(base, host, state, width):  # noq
             page.goto(f"{base}/apartments/{host['apartment']}?view=settings&section=lock&lang=en")
             section = page.locator("#sec-lock")
             section.locator(".lock-state").wait_for(state="visible", timeout=5000)
-            block = section.locator("#lock-connected-off" if state != "off" else "#lock-setup-state")
+            # 0987 owner: connected + codes off shows Turn on (#lock-connected-off). Fixture has account+locks.
+            block = section.locator("#lock-connected-off")
             assert block.get_attribute("data-state") == state
             # No horizontal page scroll at this width.
             overflow = page.evaluate("() => document.documentElement.scrollWidth - window.innerWidth")

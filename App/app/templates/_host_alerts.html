@@ -32,7 +32,7 @@
           <strong>{{ alert.display_title or alert.message }}</strong>
           {% if alert.display_reason %}<small>{{ alert.display_reason }}</small>{% endif %}
           {% if alert.id in held.outside %}<small class="notification-scope" data-workspace-label>{{ t('notification.workspace.label') }}</small>{% endif %}
-          {% if alert.action_label_key and not (alert.id in held.outside) %}<small class="notification-action">{{ t(alert.action_label_key) }}</small>{% endif %}
+          {% if alert.action_label_key and not compact_page and not (alert.id in held.outside) %}<small class="notification-action">{{ t(alert.action_label_key) }}</small>{% endif %}
         </span>
       {% if alert.action_href %}</a>{% else %}</div>{% endif %}
       {% if alert.kind != 'dates_changed_resign' %}

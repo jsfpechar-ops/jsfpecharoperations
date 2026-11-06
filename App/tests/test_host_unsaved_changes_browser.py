@@ -177,7 +177,7 @@ def test_property_settings_save_discard_stay(browser, base, host, lang, width, h
     page = _page(browser, base, host, width, height)
     page.goto(f"{url}?view=settings&section=property&lang={lang}")
     reset = page.locator(".savebar[data-for='property-settings-form'] [data-unsaved-reset]")
-    leave = 'header.ui-ph a.ui-ph-back.airbnb-back'
+    leave = 'a.airbnb-back'
     crumb = page.locator(leave)
     calendars = page.locator("#sec-calendars > summary")
 
@@ -241,7 +241,7 @@ def test_property_rail_and_back_links_ask_and_cards_into_settings_do_not(browser
     page.locator('.me-menu-list a[href="/settings"]').click()
     assert _open(page)
     page.keyboard.press("Escape")
-    page.locator('header.ui-ph a.ui-ph-back.airbnb-back').click()
+    page.locator('a.airbnb-back[href="/apartments"]').click()
     assert _open(page)
     page.locator("#unsaved-dialog [data-unsaved-stay]").click()
     assert "/apartments/" in page.url and page.input_value("#internal_name") == "Rail O1 draft"
@@ -288,7 +288,7 @@ def test_save_bar_discard_changes_button(browser, base, host, lang, width, heigh
 
 
 def test_keyboard_only_flow(browser, base, host):
-    leave = 'header.ui-ph a.ui-ph-back.airbnb-back'
+    leave = 'a.airbnb-back'
     url = f"{base}/apartments/{host['apartment']}"
     page = _page(browser, base, host)
     page.goto(f"{url}?view=settings&section=property&lang=en")
@@ -296,7 +296,7 @@ def test_keyboard_only_flow(browser, base, host):
     page.keyboard.press("End")
     page.keyboard.type(" keyed")
     typed = page.input_value("#internal_name")
-    page.focus("header.ui-ph a.ui-ph-back.airbnb-back")
+    page.focus("a.airbnb-back")
     page.keyboard.press("Enter")
     assert _open(page) and _focused(page) == "unsavedStay:"
     # Tab stays inside the dialog, both ways.
@@ -386,7 +386,7 @@ def test_without_javascript_nothing_changes(browser, base, host):
     assert page.url.split("?")[0].endswith(f"/apartments/{host['apartment']}")
     page.fill("#internal_name", "No JS unsaved")
     with page.expect_navigation():
-        page.locator('header.ui-ph a.ui-ph-back.airbnb-back').click()
+        page.locator('a.airbnb-back[href="/apartments"]').click()
     assert urlparse(page.url).path.rstrip("/") == "/apartments"
     assert _stored(host, "internal_name") == "No JS O1 name"
     page.context.close()
