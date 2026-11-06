@@ -82,3 +82,37 @@ Done: steps 5 and 6. Left: steps 7 to 10 (stay-fee tests, verification and scree
 ### Open items
 - Steps 7 to 10 not started: stay-fee tests, `context_lint`, screenshots at 390/768/1280, design-system checklist, final report, push.
 - Push of this run's commit is in the next step.
+
+## Run 4 (steps 7 to 10)
+
+Status: blocked
+
+Done: step 7 (commit a38b7059, 4 tests added, route code unchanged); step 8 rows 1, 2, 3, 4, 5 run; step 9 report; step 10 push attempted. Left: screenshots were copied but NOT viewed (tool budget), so the per-page UX notes and the design-system checklist are not done; the invoice test and 4 mockup pins are open (below).
+
+### Step 7: tests for filing sent/paid routes (commit a38b7059)
+- Added `_filing`, `_token`, `_mark`, `_row` helpers and 4 tests at the end of `App/tests/test_stay_fee_detail.py` (no new file, no route change).
+- `pytest tests/test_stay_fee_detail.py -q --tb=short -x`: 26 passed, 0 failed, 0 skipped.
+- Row 3 (`pytest tests/test_invoice_*.py tests/test_stay_fee*.py`): first run with -x: 1 failed, 14 passed, 2 skipped. Full rerun without -x: 1 failed, 350 passed, 2 skipped (skips: `test_invoice_autofill.py:383` and `:452`, "set UBYHOST_SHOTS_DIR"; env not set in this row, not a code skip).
+- Failure: `test_invoice_autofill.py::test_invoice_buyer_block_spacing_0896` (layout at 320, 1024, 1280 px: `.ui-choice-card` text 0 px from edge, `input#buyer_ico` controls 10.5 px apart, `p.hint` 12 px). Not a named brief item; not fixed (would mean CSS outside the brief). Stop rule applied.
+
+### Step 8: verification
+- Row 1 `test_layout_lint_browser.py` (UBYHOST_REQUIRE_BROWSER=1): 4 passed, 0 failed, 0 skipped.
+- Row 2 `test_0710_v2_mockup_match_browser.py test_host_stay_detail_layout_browser.py test_host_property_controls_browser.py -rs`: 4 failed, 191 passed. Seen failures: `overview at 390 px` (`.hl` margins 0 vs mockup 8/28/8 px), `properties at 320 px` and `properties at 390 px` (`.big, .head h1` width 150.547 vs 142.391 px). The fourth failure was not read. Skips not visible in tail output (not verified). Not changed.
+- Row 3 `test_static_versions.py test_wp07_cache_heartbeats.py test_stay_fee_detail.py test_validation.py test_validation_i18n.py`: 79 passed, 0 failed, 0 skipped (1 PIL DecompressionBombWarning).
+- Row 4 `go test ./internal/validation/...`: ok (cached).
+- Row 5 `python3 scripts/context_lint.py`: "context lint: OK" (WARN lines are informational).
+
+### Screenshots (copied, not viewed)
+- Copied to `docs/tasks/screenshots-0977/`: stay-detail-390.png, stay-detail-768.png, stay-detail-1280.png, setup-calendar-390.png, setup-calendar-768.png, setup-calendar-1280.png (from `/tmp/shots/layout-lint/`; `setup-calendar` is the property calendars page).
+- No `stay-detail-320` file exists.
+- Per-page notes ("390: ...; 768: ...; 1280: ...") and the `.stay-dates .tot` check: NOT written. Design-system checklist: NOT ticked.
+
+### Deviations
+- Step 7 row 3 failure and step 8 row 2 failures are outside the brief's named pins; not fixed (executor rule: no fixing unnamed areas).
+- Screenshots copied without viewing (budget at 21 tool calls).
+
+### Questions
+- Are the invoice buyer-block spacing failure and the mockup `overview`/`properties` pins present on origin/main? Not checked.
+
+### Owner steps
+None. PR #790 is not merge-ready. The next run must: view the six screenshots, fix or justify the four browser failures, and run the invoice row with `UBYHOST_SHOTS_DIR` set.
