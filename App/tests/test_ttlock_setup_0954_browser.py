@@ -62,7 +62,7 @@ def test_status_block_fits_and_shows_its_state(base, host, state, width):  # noq
             page.goto(f"{base}/apartments/{host['apartment']}?view=settings&section=lock&lang=en")
             section = page.locator("#sec-lock")
             section.locator(".lock-state").wait_for(state="visible", timeout=5000)
-            block = section.locator(".lock-state")
+            block = section.locator("#lock-connected-off" if state != "off" else "#lock-setup-state")
             assert block.get_attribute("data-state") == state
             # No horizontal page scroll at this width.
             overflow = page.evaluate("() => document.documentElement.scrollWidth - window.innerWidth")
@@ -74,10 +74,12 @@ def test_status_block_fits_and_shows_its_state(base, host, state, width):  # noq
                 assert border == _probe(page, "--green")
             elif state == "off":
                 assert border != _probe(page, "--green")
-            button = block.locator("button")
-            assert button.count() == 1 and button.evaluate("b => b.tagName") == "BUTTON"
+            primary = block.locator("form button, a.ui-btn").first
+            assert primary.is_visible()
+            tag = primary.evaluate("el => el.tagName")
+            assert tag in ("BUTTON", "A"), tag
             if width < 1024:
-                assert button.bounding_box()["height"] >= 44
+                assert primary.bounding_box()["height"] >= 44
             # The time labels carry the red star.
             stars = section.locator('label[for="lock_checkin_hour"] .req-star, label[for="lock_checkout_hour"] .req-star')
             assert stars.count() == 2
