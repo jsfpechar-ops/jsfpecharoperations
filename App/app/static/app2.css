@@ -1721,12 +1721,14 @@ body.v2 .entities-page{margin:0 0 16px;container:entities-list / inline-size}
   body.v2 .entities-page>table.ui-table td[data-label=""]::before{content:none}
   body.v2 .entities-page>table.ui-table td.row-actions{justify-content:flex-start;flex-wrap:wrap;gap:8px}
   body.v2 .entities-page>table.ui-table td.row-actions{flex-wrap:nowrap}
+  body.v2 .entities-page>table.ui-table td.row-actions{margin-top:8px;padding-top:12px;border-top:1px solid var(--line)}
 }
 body.v2 .entities-page td.row-actions .row-menu{display:inline-flex;vertical-align:middle}
 body.v2 .entities-page td.row-actions>.ui-btn{vertical-align:middle}
 body.v2 .entities-page td.row-actions .ui-btn,body.v2 .entities-page td.row-actions .row-menu-trigger{height:36px;min-height:36px;box-sizing:border-box}
 body.v2 .entities-page td.row-actions .row-menu-trigger{width:36px;min-width:36px;padding:0;border-radius:50%}
 @media (max-width:1023px){body.v2 .entities-page td.row-actions .ui-btn,body.v2 .entities-page td.row-actions .row-menu-trigger{height:44px;min-height:44px}body.v2 .entities-page td.row-actions .row-menu-trigger{width:44px;min-width:44px}}
+body.v2 .entities-page td.row-actions .ui-btn{display:inline-flex;align-items:center;justify-content:center;line-height:1.2;padding-top:0;padding-bottom:0}
 body.v2 .entity-form .field,body.v2 .entity-add .field{max-width:480px}
 body.v2 .entity-form .operator-phone,body.v2 .entity-add .operator-phone{display:flex;align-items:stretch;gap:8px}
 body.v2 .entity-form .operator-phone-number,body.v2 .entity-add .operator-phone-number{flex:1 1 auto;min-width:0}
