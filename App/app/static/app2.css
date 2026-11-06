@@ -1861,6 +1861,9 @@ body.v2 .ui-ph-main>.ui-ph-title-row>h1{flex:1 1 auto;min-width:0;margin:0;font-
 body.v2 .ui-ph-main>.ui-ph-title-row>.page-help-wrap{flex:0 0 auto;margin-left:auto;align-self:flex-start;display:inline-flex;align-items:flex-start}
 body.v2 .airbnb-back{width:40px;height:40px;border-radius:50%;background:#f2f2f2;color:var(--ink);display:inline-flex;align-items:center;justify-content:center;text-decoration:none;flex:0 0 40px}
 body.v2 .airbnb-title{width:100%;margin:0;font-size:32px;font-weight:700;color:var(--ink)}
+body.v2 .airbnb-title-row{display:flex;align-items:flex-end;gap:8px;flex:1 1 100%;min-width:0}
+body.v2 .airbnb-title-row>.airbnb-title{flex:0 1 auto;width:auto;min-width:0}
+body.v2 .airbnb-title-row>.page-help-wrap{flex:none;margin-bottom:6px}
 body.v2 .airbnb-index{display:block}
 body.v2 .settings-lane .airbnb-index-row{display:flex;align-items:center;gap:16px;min-height:64px;color:var(--ink);text-decoration:none;font-size:17px}
 body.v2 .airbnb-index-row .airbnb-label{flex:1 1 auto}

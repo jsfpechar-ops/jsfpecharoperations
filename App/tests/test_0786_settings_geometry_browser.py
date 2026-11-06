@@ -684,7 +684,7 @@ def test_0972_property_h1_stays_short_while_its_help_is_open(admin_0972, base, l
     problems = []
     with sync_api.sync_playwright() as playwright:
         browser, context, page = _open_0972(playwright, base, admin_0972, width, lang, path)
-        summary = page.locator(".ui-ph-title-row > .page-help-wrap .page-help > summary, .airbnb-header > .page-help-wrap .page-help > summary").first
+        summary = page.locator(".ui-ph-title-row > .page-help-wrap .page-help > summary, .airbnb-title-row > .page-help-wrap .page-help > summary, .airbnb-header > .page-help-wrap .page-help > summary").first
         if not summary.count():
             problems.append("no .page-help-wrap .page-help > summary beside the property H1")
         else:
@@ -694,7 +694,7 @@ def test_0972_property_h1_stays_short_while_its_help_is_open(admin_0972, base, l
                 problems.append(f"H1 text is {h1!r}")
             if page.evaluate("() => !!document.querySelector('.ui-ph-title-row h1 details, .ui-ph-title-row h1 .page-help-body, h1.airbnb-title details, h1.airbnb-title .page-help-body')"):
                 problems.append("help content sits inside the H1")
-            box = page.evaluate("""() => { const n = document.querySelector('.page-help-wrap:has(details.page-help[open]) > .page-help-body');
+            box = page.evaluate("""() => { const n = document.querySelector('.page-help-wrap:has(details.page-help[open]) .page-help-body');
                 if (!n) return {left: 0, right: 0, vw: document.documentElement.clientWidth, missing: true};
                 const r = n.getBoundingClientRect();
                 return {left: r.left, right: r.right, vw: document.documentElement.clientWidth}; }""")
