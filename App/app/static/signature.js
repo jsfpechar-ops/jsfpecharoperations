@@ -125,7 +125,7 @@ function initSignature() {
     var form = canvas.closest("form");
     if (form) {
       form.addEventListener("submit", function (event) {
-        // 0959: the language buttons (data-lang-draft) post the open form to
+        // 0979: the language buttons (data-lang-draft) post the open form to
         // /relang. They need no signature, so they must not hit this guard.
         if (event.submitter && event.submitter.hasAttribute("data-lang-draft")) return;
         if (!hidden.value) {
@@ -491,7 +491,7 @@ function initSignature() {
 
     var steps = stepsFor();
     var errorAt = steps.findIndex(function (step) { return step.querySelector(".bad, .err:not(:empty)"); });
-    // 0959: after a language change the server hands back the step the guest
+    // 0979: after a language change the server hands back the step the guest
     // was on; a step with an error still wins, so nothing invalid is hidden.
     var startAt = parseInt(form.getAttribute("data-start-step") || "0", 10);
     var active = errorAt >= 0 ? errorAt : Math.max(0, Math.min(isNaN(startAt) ? 0 : startAt, steps.length - 1));
@@ -646,7 +646,7 @@ function initSignature() {
     show(active, false);
   }
 
-  /* 0959: the language menu on the form posts the open form back (see
+  /* 0979: the language menu on the form posts the open form back (see
      guest_form_relang). A drawn signature, the acknowledgement tick and a
      chosen photo are not carried over, so ask first; Cancel leaves the page
      and every answer exactly as it is. Nothing is stored anywhere. */

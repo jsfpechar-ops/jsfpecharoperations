@@ -1,4 +1,4 @@
-# 0958: Correct the calendar record-type appearance
+# 0978: Correct the calendar record-type appearance
 
 Status: blocked
 Depends on: none (independent B02a) | Base commit: 7b0355c45ccdd2557a28edfcfe228aa1dc766e36 | Branch: codex/0958-calendar-type-state
@@ -45,9 +45,9 @@ Pasted rules: use one primary action; preserve visible focus and disabled states
 | App/app/templates/_dashboard_calendar.html | edit | Bump only this stylesheet's cache key |
 | App/tests/test_dashboard_calendar_browser.py | edit | Append the complete supplied test |
 | App/tests/static_versions.json | regenerate | Only dashboard-calendar.css version/hash entry changes |
-| docs/tasks/0958-calendar-type-state.md | copy/status | This brief; update its status only |
-| docs/tasks/0958-calendar-type-state.patch | copy/read | Exact approved implementation patch; do not alter |
-| docs/tasks/0958-report.md | create | Executor report, max 600 tokens |
+| docs/tasks/0978-calendar-type-state.md | copy/status | This brief; update its status only |
+| docs/tasks/0978-calendar-type-state.patch | copy/read | Exact approved implementation patch; do not alter |
+| docs/tasks/0978-report.md | create | Executor report, max 600 tokens |
 
 Environment-only: App/.venv may be created from the existing approved dependency files as described below; never stage it. Screenshots go under /tmp/ubyhost-0958, never the public repo. No other files may change.
 
@@ -55,21 +55,21 @@ Also permitted to read: AGENTS.md, docs/context/status.md, docs/context/executor
 
 ## 4. Steps
 
-1. Use your current repository, not any macOS path from the earlier prompt. The upload must contain this brief and 0958-calendar-type-state.patch. Copy only those two files into the current repository's docs/tasks/ if needed; this is permitted bootstrap work, not an App edit. Verify the named base exists and create an isolated worktree there. Preserve current HEAD and all unrelated work.
+1. Use your current repository, not any macOS path from the earlier prompt. The upload must contain this brief and 0978-calendar-type-state.patch. Copy only those two files into the current repository's docs/tasks/ if needed; this is permitted bootstrap work, not an App edit. Verify the named base exists and create an isolated worktree there. Preserve current HEAD and all unrelated work.
 ```sh
 git cat-file -t 7b0355c45ccdd2557a28edfcfe228aa1dc766e36 2>&1 | tail -30
 git worktree add -b codex/0958-calendar-type-state /tmp/ubyhost-0958-worktree 7b0355c45ccdd2557a28edfcfe228aa1dc766e36 2>&1 | tail -30
-cp docs/tasks/0958-calendar-type-state.md docs/tasks/0958-calendar-type-state.patch /tmp/ubyhost-0958-worktree/docs/tasks/ 2>&1 | tail -30
+cp docs/tasks/0978-calendar-type-state.md docs/tasks/0978-calendar-type-state.patch /tmp/ubyhost-0958-worktree/docs/tasks/ 2>&1 | tail -30
 ```
 Expected: commit type, clean isolated worktree and two delivered files. If branch/path exists, stop rather than deleting or resetting it. Use /tmp/ubyhost-0958-worktree for remaining work; set the copied brief to in-progress. No original checkout is needed.
 
 2. Verify the anchors, then check and apply the supplied exact patch from the new repository root.
 ```sh
-git apply --check docs/tasks/0958-calendar-type-state.patch 2>&1 | tail -30
-git apply docs/tasks/0958-calendar-type-state.patch 2>&1 | tail -30
+git apply --check docs/tasks/0978-calendar-type-state.patch 2>&1 | tail -30
+git apply docs/tasks/0978-calendar-type-state.patch 2>&1 | tail -30
 git diff --check 2>&1 | tail -30
 ```
-Expected: patch applies without fuzz/errors and whitespace check is clean. Never substitute a guessed selector or broad CSS fix. Commit only these source/test changes and the copied brief/patch using message `0958 step 1`, ending with `Co-authored-by: Codex <noreply@openai.com>`.
+Expected: patch applies without fuzz/errors and whitespace check is clean. Never substitute a guessed selector or broad CSS fix. Commit only these source/test changes and the copied brief/patch using message `0978 step 1`, ending with `Co-authored-by: Codex <noreply@openai.com>`.
 
 3. From the isolated worktree's App directory, reuse its .venv if present. Otherwise create an isolated environment and install the repository's existing approved dependencies using the CI recipe. These are environment setup commands, not permission to add/change dependencies or lockfiles. Python 3.12 is the CI version; use the available compatible Python and report its version. If installation fails, report the concrete blocker; do not alter pins or invent another package source.
 ```sh
@@ -85,7 +85,7 @@ Run creation/install only when the needed environment is absent. If Chromium rep
 .venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -30
 git diff -- tests/static_versions.json 2>&1 | tail -30
 ```
-Expected: only the CSS version/hash record changes. Commit the manifest as `0958 step 2`, with the Codex trailer.
+Expected: only the CSS version/hash record changes. Commit the manifest as `0978 step 2`, with the Codex trailer.
 
 4. Run section 6's scoped checks. Inspect the saved screenshots for both changed surfaces and types; report actual appearance at each width. In Chromium, also confirm the selected cue, inactive hover, visible keyboard focus and Escape cancellation. No live integration is needed. Do not retake reference screenshots repeatedly or change the unrelated Cancel/label/dialog layout problems.
 
@@ -131,7 +131,7 @@ Stop and report if an anchor or base is missing, a selector/fixture no longer ap
 
 ## 9. Report
 
-Write docs/tasks/0958-report.md, at most 600 tokens: status; branch/base; changed files; each command with its last five lines and explicit pass/fail/skip count; acceptance checklist; Dashboard and Cleaning screenshot observations at 390/768/1280; deviations; synthetic-data/reset status; Done/Left steps; owner actions.
+Write docs/tasks/0978-report.md, at most 600 tokens: status; branch/base; changed files; each command with its last five lines and explicit pass/fail/skip count; acceptance checklist; Dashboard and Cleaning screenshot observations at 390/768/1280; deviations; synthetic-data/reset status; Done/Left steps; owner actions.
 
 State that G01 and C04/C05/C06 remain queued. Keep screenshots and synthetic links outside the public repo. If all checks pass, set this brief to review and hand over the branch/report; otherwise set blocked with the concrete reason. No push, merge, production action or claim of a completed PR without evidence.
 

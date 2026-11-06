@@ -731,7 +731,7 @@ def test_form_estimate_line_shows_when_the_estimate_is_above_zero(live_server, b
         page.close()
 
 
-def test_0959_changing_language_keeps_the_draft_the_step_and_leaves_no_trace(
+def test_0979_changing_language_keeps_the_draft_the_step_and_leaves_no_trace(
     live_server, browser, monkeypatch
 ):
     """G01: EN -> CS -> EN keeps what was typed and the step; a drawn signature
@@ -744,7 +744,7 @@ def test_0959_changing_language_keeps_the_draft_the_step_and_leaves_no_trace(
     stay = _fee_seed(token, signed=False)
     page = browser.new_page(viewport={"width": 390, "height": 812})
     # Only page navigations and the language-switch request are checked for
-    # typed values; the RUIAN address-suggest fetch is out of scope for 0959.
+    # typed values; the RUIAN address-suggest fetch is out of scope for 0979.
     urls = []
     page.on(
         "request",
@@ -813,7 +813,7 @@ def test_0959_changing_language_keeps_the_draft_the_step_and_leaves_no_trace(
             Path(shots).mkdir(parents=True, exist_ok=True)
             for width in (390, 768, 1280):
                 page.set_viewport_size({"width": width, "height": 900})
-                page.screenshot(path=str(Path(shots) / f"0959-review-cs-{width}.png"), full_page=True)
+                page.screenshot(path=str(Path(shots) / f"0979-review-cs-{width}.png"), full_page=True)
             page.set_viewport_size({"width": 390, "height": 812})
         page.once("dialog", lambda dialog: pytest.fail("no warning expected"))
         with page.expect_navigation():
@@ -843,8 +843,8 @@ def test_0959_changing_language_keeps_the_draft_the_step_and_leaves_no_trace(
         page.close()
 
 
-def test_0959_language_switch_works_without_a_signature(live_server, browser, monkeypatch):
-    """0959: with no signature and no tick, the language button still posts the
+def test_0979_language_switch_works_without_a_signature(live_server, browser, monkeypatch):
+    """0979: with no signature and no tick, the language button still posts the
     open form back (the signature guard must not stop it) and asks nothing."""
     from app import config
 
@@ -897,8 +897,8 @@ def test_0959_language_switch_works_without_a_signature(live_server, browser, mo
         page.close()
 
 
-def test_0959_discard_warning_cancel_keeps_draft(live_server, browser, monkeypatch):
-    """0959: a drawn signature asks before a language switch; Cancel keeps the
+def test_0979_discard_warning_cancel_keeps_draft(live_server, browser, monkeypatch):
+    """0979: a drawn signature asks before a language switch; Cancel keeps the
     page as it was (same language, same answers, same URL, no navigation)."""
     from app import config
 
@@ -1084,7 +1084,7 @@ def _b07_open_review(live_server, browser, monkeypatch, token, lang, width):
     page.fill("#res_city", _B07_LONG["city"])
     guest.next()
     if lang != "en":
-        # The language menu keeps the draft and the step (0959).
+        # The language menu keeps the draft and the step (0979).
         page.locator("[data-lang-menu] summary").click()
         with page.expect_navigation():
             page.locator(f'[data-lang-draft][lang="{lang}"]').click()
@@ -1105,7 +1105,7 @@ def test_0965_review_is_one_surface_with_aligned_fact_rows(live_server, browser,
         geo = page.evaluate(_B07_GEOMETRY_JS)
         rows = geo["rows"]
         assert len(rows) == 5, [r["label"] for r in rows]
-        # The birth-date row missing at 390 px in Czech (seen in 0959) is an acceptance item here.
+        # The birth-date row missing at 390 px in Czech (seen in 0979) is an acceptance item here.
         birth = [r for r in rows if t("birth_date").strip() in r["label"]]
         # The review shows the date in the app's long format (base initBirthDate, Intl day/month/year).
         birth_value = "1 January 1980" if lang == "en" else "1. ledna 1980"

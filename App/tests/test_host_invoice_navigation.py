@@ -101,7 +101,7 @@ def test_builder_shows_stay_and_unfolds_options_without_changing_fields(world):
     html = client.get(f"/invoices/new?reservation_id={world['stay']}&entity={world['entity']}").text
     assert f'href="/reservations/{world["stay"]}"' in html
     form = html[html.index('class="invoice-form"'):html.index("</form>", html.index('class="invoice-form"'))]
-    # Optional settings (language, note): native disclosure, open by default (0961).
+    # Optional settings (language, note): native disclosure, open by default (0981).
     assert '<details class="invoice-more" open>' in form
     assert 'id="invoice-items-help"' in html
     for name in ("lang", "note", "buyer_name", "stay_price", "_csrf", "reservation_id", "legal_entity_id"):

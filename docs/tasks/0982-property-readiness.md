@@ -1,6 +1,6 @@
-# 0962: Property readiness as the first compact overview (batch B04: P01, P02, P03)
+# 0982: Property readiness as the first compact overview (batch B04: P01, P02, P03)
 
-Status: blocked (steps 0 to 3 done; two B04 browser tests fail, see docs/tasks/0962-report.md)
+Status: blocked (steps 0 to 3 done; two B04 browser tests fail, see docs/tasks/0982-report.md)
 Depends on: B03 (shell), not yet landed; this brief is built on the base below and the orchestrator rebases/merges after B03 | Base commit: 7b0355c45ccdd2557a28edfcfe228aa1dc766e36 | Branch: codex/0962-b04-property-readiness
 Executor: Haiku 5.5 | Worktree: /tmp/ubyhost-b04-worktree | Fits one session: no. Expect a checkpoint after step 3 (see §8, executor.md "at the cap").
 
@@ -33,7 +33,7 @@ Rules: AGENTS.md hard rules 1, 6, 7, 9, 10. Readiness, filing and lock-online pr
 | tests/test_property_navigation_browser.py | append tests (patch 03) + stale edits (patch 02) | The B04 tests (the host browser file that already covers the property page); stale edits: remove `_aside`, `_FIT_JS` aside refs |
 | tests/test_0251_tablet_browser.py, test_0396_leon_opt_in_browser.py, test_0534_property_page_v2.py, test_0541_property_page_phone_browser.py, test_design_guardrails_browser.py, test_onboarding_followup_browser.py, test_onboarding_wizard_browser.py, test_property_preview_sticky_browser.py (rewritten), test_property_readiness.py, test_status_colours.py, v2_mockup.py | stale-assertion edits only (patch 02) | Replace assertions about the removed Preview aside / checklist with assertions about the pills |
 
-No other file may change. Patches live in `docs/tasks/0962-patches/` (part of the brief; never edit them).
+No other file may change. Patches live in `docs/tasks/0982-patches/` (part of the brief; never edit them).
 
 | Patch | sha256 |
 |---|---|
@@ -43,16 +43,16 @@ No other file may change. Patches live in `docs/tasks/0962-patches/` (part of th
 
 ## 4. Steps
 
-Work in `/tmp/ubyhost-b04-worktree` (already on branch `codex/0962-b04-property-readiness`). Every command ends `2>&1 | tail -30`. Commit after each step with the message `0962 step k`.
+Work in `/tmp/ubyhost-b04-worktree` (already on branch `codex/0962-b04-property-readiness`). Every command ends `2>&1 | tail -30`. Commit after each step with the message `0982 step k`.
 
-0. **Venv and P01 baseline.** From the worktree root: `[ -e App/.venv ] || ln -s /tmp/ubyhost-0958-worktree/App/.venv App/.venv`. Check the base: `git rev-parse HEAD` must start `7b0355c`. Verify patches: `sha256sum docs/tasks/0962-patches/*.patch` equals §3. Then measure the baseline: `git apply docs/tasks/0962-patches/03-new-tests.patch` (it applies alone on base), run from `App/`:
+0. **Venv and P01 baseline.** From the worktree root: `[ -e App/.venv ] || ln -s /tmp/ubyhost-0958-worktree/App/.venv App/.venv`. Check the base: `git rev-parse HEAD` must start `7b0355c`. Verify patches: `sha256sum docs/tasks/0982-patches/*.patch` equals §3. Then measure the baseline: `git apply docs/tasks/0982-patches/03-new-tests.patch` (it applies alone on base), run from `App/`:
    `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/ubyhost-b04 .venv/bin/python -m pytest tests/test_property_navigation_browser.py -k "b04_pills_lead" -q --tb=short -x -rs 2>&1 | tail -30`
    Expected on base: FAIL (the `facts` dict in the message shows `preview` greater than 0). Write down from that dict: `count`, `order`, `stripTop`, `sectionTop`, `preview`. If `stripTop` is above `sectionTop` and `order` has six items, the owner's collapsed-column arrangement is NOT reproduced. Then `git checkout -- App/tests/test_property_navigation_browser.py`. Do not commit step 0.
-1. **Source patch.** `git apply --whitespace=error docs/tasks/0962-patches/01-source.patch`. If it fails: STOP. Then from `App/`: `.venv/bin/python -c "from app.templating import templates; templates.env.get_template('_property_editor.html'); templates.env.get_template('apartment_form.html'); print('compiled')" 2>&1 | tail -30` must print `compiled`. Commit `0962 step 1`.
-2. **Stale assertions.** `git apply --whitespace=error docs/tasks/0962-patches/02-stale-tests.patch`. Commit `0962 step 2`.
-3. **New tests.** `git apply --whitespace=error docs/tasks/0962-patches/03-new-tests.patch`. Commit `0962 step 3`. (This is the usual checkpoint: if you are at ~25 tool calls, write the report as `blocked` with `Done: steps 0 to 3. Left: step 4 and 5.`)
+1. **Source patch.** `git apply --whitespace=error docs/tasks/0982-patches/01-source.patch`. If it fails: STOP. Then from `App/`: `.venv/bin/python -c "from app.templating import templates; templates.env.get_template('_property_editor.html'); templates.env.get_template('apartment_form.html'); print('compiled')" 2>&1 | tail -30` must print `compiled`. Commit `0982 step 1`.
+2. **Stale assertions.** `git apply --whitespace=error docs/tasks/0982-patches/02-stale-tests.patch`. Commit `0982 step 2`.
+3. **New tests.** `git apply --whitespace=error docs/tasks/0982-patches/03-new-tests.patch`. Commit `0982 step 3`. (This is the usual checkpoint: if you are at ~25 tool calls, write the report as `blocked` with `Done: steps 0 to 3. Left: step 4 and 5.`)
 4. **Run §6 commands in order.** One fix attempt per failing test, inside the files of §3 only (see §8 for what is allowed). After any CSS tweak run `.venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -30` and keep the key `20261105-0962a`.
-5. **Screenshots and report.** Open every file under `/tmp/ubyhost-b04` once with the image reader and describe it in one line in the report (see §7). Write `docs/tasks/0962-report.md` (600 tokens at most), set `Status: review` in this brief, commit `0962 report`. Do not push, do not open a PR: the owner steps below do that.
+5. **Screenshots and report.** Open every file under `/tmp/ubyhost-b04` once with the image reader and describe it in one line in the report (see §7). Write `docs/tasks/0982-report.md` (600 tokens at most), set `Status: review` in this brief, commit `0982 report`. Do not push, do not open a PR: the owner steps below do that.
 
 ### What the patch does (for your review of the diff, do not retype)
 
@@ -103,7 +103,7 @@ Stop and write the report (`blocked` where it applies) if:
 
 ## 9. Report
 
-`docs/tasks/0962-report.md`, 600 tokens at most: 1. `git diff --stat`. 2. Each command with the last 5 lines. 3. §7 ticked. 4. Step 0 P01 facts. 5. One line per screenshot. 6. Deviations, questions, owner steps left. Then set `Status: review`.
+`docs/tasks/0982-report.md`, 600 tokens at most: 1. `git diff --stat`. 2. Each command with the last 5 lines. 3. §7 ticked. 4. Step 0 P01 facts. 5. One line per screenshot. 6. Deviations, questions, owner steps left. Then set `Status: review`.
 
 ## Risk list (for the reviewer)
 

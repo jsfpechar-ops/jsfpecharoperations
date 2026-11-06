@@ -1539,7 +1539,7 @@ def _form_context(
         else _guest_link(token, reservation["id"]) + "/new"
     )
     context["lang_urls"] = _lang_urls(request, form_path)
-    # 0959: the menu on this page posts the open form here, so a language
+    # 0979: the menu on this page posts the open form here, so a language
     # change keeps what the guest typed. Nothing is stored.
     context["lang_relang_url"] = _guest_link(token, reservation["id"]) + "/relang"
     # 0911: the fee notice shows with the host's collect switch on and a rate; the
@@ -1703,7 +1703,7 @@ def guest_form_edit(token: str, reservation_id: int, guest_id: int, request: Req
 
 @router.post("/l/{token}/{reservation_id}/relang")
 async def guest_form_relang(token: str, reservation_id: int, request: Request):
-    """0959: draw the open form again in another language, keeping the answers.
+    """0979: draw the open form again in another language, keeping the answers.
 
     The language menu posts the form here with ``?lang=`` set to the new
     language. The answers are read from this one request and drawn back into
@@ -1768,7 +1768,7 @@ async def guest_form_relang(token: str, reservation_id: int, request: Request):
             "legal_ack": "",
         }
     )
-    # 0959: the typed text goes back exactly as the guest wrote it. Upper-casing
+    # 0979: the typed text goes back exactly as the guest wrote it. Upper-casing
     # and spacing happen at save time only; the normalised values above still
     # drive which steps are shown.
     typed_fields = ("surname", "first_name", "doc_number", "visa_number", "res_street", "res_city")

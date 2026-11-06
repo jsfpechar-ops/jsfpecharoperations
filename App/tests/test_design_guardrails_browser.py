@@ -309,7 +309,7 @@ def test_setup_checklist_is_a_padded_card(wide_host, wide_base):
         assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
         _wait_for_host_layout(page)
         _dismiss_optional_security_prompt(page)
-        # 0962: the six pills are the one readiness summary; the checklist details are gone.
+        # 0982: the six pills are the one readiness summary; the checklist details are gone.
         page.wait_for_selector("nav.prop-strip", timeout=5000)
         facts = page.evaluate(
             """() => ({

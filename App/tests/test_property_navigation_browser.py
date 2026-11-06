@@ -330,7 +330,7 @@ _FIT_JS = """() => {
     if (r.right > vw + 1 || r.left < -1) bad.push(el.id || el.textContent.trim().slice(0, 30));
   }
   const strip = document.querySelector('nav.prop-strip').getBoundingClientRect();
-  // 0962: no preview aside; the strip sits above the whole form column (.form.prop-form-single).
+  // 0982: no preview aside; the strip sits above the whole form column (.form.prop-form-single).
   const formCol = document.querySelector('.form.prop-form-single');
   const form = (formCol || document.querySelector('#property-settings-form')).getBoundingClientRect();
   return {scroll: document.documentElement.scrollWidth, vw, bad,
@@ -552,7 +552,7 @@ def test_shared_timing_pair_is_owned_by_properties(host, base):
         browser.close()
 
 
-# --- 0962 (B04): six status pills lead the page; Preview/checklist is gone -----
+# --- 0982 (B04): six status pills lead the page; Preview/checklist is gone -----
 
 _B04_NAMES = {
     "cs": "Prostorný třípokojový byt v historickém centru Českého Krumlova s výhledem na zámek a řeku Vltavu",

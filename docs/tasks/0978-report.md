@@ -1,15 +1,15 @@
-# 0958 report (final)
+# 0978 report (final)
 
 Status: review. All C01 checks pass. The host group has 5 failures that are identical on base; decision needed (see Owner actions).
-Branch: codex/0958-calendar-type-state | Base: 7b0355c | Commits: 0958 step 1 to step 4, cont-1 brief, report.
+Branch: codex/0958-calendar-type-state | Base: 7b0355c | Commits: 0978 step 1 to step 4, cont-1 brief, report.
 Environment: Python 3.12.3, requirements.lock + requirements-dev.txt, playwright 1.63.0 (CI pin).
 
 ## Fixes
 - Escape: the test was wrong. The app closes the create dialog on Escape (cancel not prevented, close fires). The test now waits for the dialog to hide (step 3).
-- 768-1023 px labels: a global v2 button rule made both record-type labels white (inactive white-on-white, selected about 1.1:1). Fixed with two scoped ink colour rules (step 4, approved). Cache key bumped to 0958b; manifest regenerated.
+- 768-1023 px labels: a global v2 button rule made both record-type labels white (inactive white-on-white, selected about 1.1:1). Fixed with two scoped ink colour rules (step 4, approved). Cache key bumped to 0978b; manifest regenerated.
 
 ## Commands (pass/fail/skip)
-- 0958 regression, 12 cases incl. label contrast >= 4.5:1 at 390/768/1280: 12 passed, 0 failed, 0 skipped.
+- 0978 regression, 12 cases incl. label contrast >= 4.5:1 at 390/768/1280: 12 passed, 0 failed, 0 skipped.
 - Cleaning group: 80 passed, 0 failed, 0 skipped.
 - Calendar group (feed-DNS file included): 214 passed, 1 failed, 0 skipped. The failure is test_feed_dns_pinning (IPv6 not supported in the sandbox).
 - Host group + design guardrails + layout lint + 0710 (no -x): 419 passed, 5 failed, 0 skipped. Failures: test_host_fee_navigation::test_frozen_report_order_and_forms and four in test_host_ux_acceptance.py (lines 338, 615, 642, 721). All five fail identically on base (base run of ux_acceptance: 4 failed; fee-nav fails on base).

@@ -24,6 +24,6 @@ Not inspected: customers-populated-cs-{390,768,1280}, customers-empty-{en,cs}-{3
 
 Acceptance not verified: empty-state and CS screenshots; host guard tests; Customers long-name wrap (clipped, not wrapped); unpaid-invoice forms (known gap, empty fixtures).
 
-Deviations: diff files written to /tmp/ubyhost-b16/ (not /tmp/); App/.venv symlinked to the 0958 venv; the commit trailer carries both the Codex and the Claude attribution lines.
+Deviations: diff files written to /tmp/ubyhost-b16/ (not /tmp/); App/.venv symlinked to the 0978 venv; the commit trailer carries both the Codex and the Claude attribution lines.
 
 Owner steps: none until the review is complete.

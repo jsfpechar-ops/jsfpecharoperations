@@ -96,7 +96,7 @@ def test_overview_cards_and_tablet_menu_on_touch(host, base):
             # 0543: from 1024 px the v2 aside is the nav; below it the phone rows (details.prop-sec) are.
             desktop = width >= 1024
             if desktop:
-                assert page.locator("nav.prop-strip").first.is_visible(), width  # 0962: the pills replace the Preview aside
+                assert page.locator("nav.prop-strip").first.is_visible(), width  # 0982: the pills replace the Preview aside
             for card in cards:
                 assert card["centre"] and card["corner"] and card["pill"], (width, card)
             fits = page.evaluate(

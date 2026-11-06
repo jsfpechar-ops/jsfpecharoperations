@@ -18,8 +18,8 @@ Plan source: UX review and remediation plan (review uploads: 9e66688c-ux-remedia
 | Batch | Theme | Final status |
 |---|---|---|
 | B01 | Guest draft on language change | **Integrated.** Language switch + discard path in tree; RUIAN GET query called out under owner decisions (accepted). |
-| B02 | Calendar create actions | **Integrated.** Create/Cancel row and calendar dialog behaviour in tree; re-run 0960 browser file after any calendar CSS conflict. |
-| B03 | Host shell on detailed forms | **Integrated.** Detailed forms use v2 shell work merged on handoff; follow **Resume order** if 0961a/0961b gaps remain. |
+| B02 | Calendar create actions | **Integrated.** Create/Cancel row and calendar dialog behaviour in tree; re-run 0980 browser file after any calendar CSS conflict. |
+| B03 | Host shell on detailed forms | **Integrated.** Detailed forms use v2 shell work merged on handoff; follow **Resume order** if 0981a/0981b gaps remain. |
 | B04 | Property readiness | **Integrated.** Strip, save bar, readiness copy; property-row browser run was green on earlier handoff snapshot — re-confirm on `e6094132` after full suite. |
 | B05 | Property wrappers (stay fee, police, archive) | **Integrated.** Markup/tap-target fixes in tree; pre-existing `test_host_ux_acceptance` / stay-320 items may still fail on base (see **Open items**). |
 | B06 | Connection states (lock, calendar URL, feeds) | **Integrated.** Lock states + feed disclosure in tree; full lint/webkit run on handoff still required. |
@@ -70,7 +70,7 @@ Resolved by owner; implement in the batches below (see internal note `b04-and-ow
 4. **B12:** Vietnamese yes/no = **"Có" / "Không"** (recommended).
 5. **Door-code editor / B17 / B11:** **Fix the feature** (TTLock smart-lock flow — confirm in code/tests); do **not** deselect the test.
 6. **RUIAN GET query:** **Accepted** as-is; record in **B01** report.
-7. **B03:** Split **approved** — implement **0961a** (guest form) and **0961b** (invoice form).
+7. **B03:** Split **approved** — implement **0981a** (guest form) and **0981b** (invoice form).
 8. **B05 and B11:** **Fix** listed pre-existing failures (not deselect), with base proof of prior failure.
 9. **B16:** Fix the **five host-guard** failures; long e-mail in Customers: use **recommended** option (vs clipping).
 
@@ -100,7 +100,7 @@ Items 1–9 supersede the earlier “open decisions” list until implementation
 1. Settle the six open decisions above.
 2. Commit B09's pending fix and finish B09.
 3. Finish the blocked batches with one clean run each: B06, B07, B05, B04, B12 (row A), B13 (6c), B16, B15, B14, B10, B11, B17 (F01 then A03).
-4. Write and run B03's split briefs (0961a, 0961b).
+4. Write and run B03's split briefs (0981a, 0981b).
 5. Flip stale brief status lines (B08, B11, B18) to match their reports.
 6. Integrate: create an integration branch from base and merge the review-ready branches (B01, B02, B08, B18, then the others as they finish). Resolve the conflicts on the shared files above and regenerate `static_versions.json`.
 7. Run the full Chromium checks on the integrated branch, review the 390, 768 and 1280 screenshots of every changed page, and only then move this draft PR out of draft for review.
@@ -114,14 +114,14 @@ Items 1–9 supersede the earlier “open decisions” list until implementation
 ## Integration status (branch `codex/ux-remediation-handoff`)
 
 - All 18 batch branch heads are contained in this branch. **Full `test_*browser*.py` suite:** last log **`/tmp/ubyhost-browser-final-f7f0.log`** — **1503 passed, 26 failed, 0 skipped** (see **Full browser verification** above).
-- **This push:** property settings **`apartment_form.html`** uses an explicit **`{% block ph_back %}`** with **`href="/apartments"`** (discard/navigation + 0830 back-vs-h1 geometry); **`app2.css`** adds **12px** vertical gap between back row and title on `#property-settings-form` pages and bumps cache to **`20261106-property-ph-gap12`**; unsaved-changes / property-button tests target **`header.ui-ph a.ui-ph-back.airbnb-back`**; B04 keyboard tab order allows **`BODY`** after strip focus; 0959 renames inner list **`sample`** to avoid shadowing **`secrets`**.
+- **This push:** property settings **`apartment_form.html`** uses an explicit **`{% block ph_back %}`** with **`href="/apartments"`** (discard/navigation + 0830 back-vs-h1 geometry); **`app2.css`** adds **12px** vertical gap between back row and title on `#property-settings-form` pages and bumps cache to **`20261106-property-ph-gap12`**; unsaved-changes / property-button tests target **`header.ui-ph a.ui-ph-back.airbnb-back`**; B04 keyboard tab order allows **`BODY`** after strip focus; 0979 renames inner list **`sample`** to avoid shadowing **`secrets`**.
 - Merge conflicts were resolved earlier on this branch (shared files listed in prior handoff revisions); subsequent commits keep `static_versions.json` in sync with template `?v=` keys.
 
 ## Open items found at integration (not fixed)
 
 1. B09: the auto-merged branch removed the `assert max(heights) <= 184` line in the 0905 test and rewrote the tile-height assertion. The approved change was 184 to 226 in one assertion only. Check the rewrite is intended before B09 is finished.
 2. `docs/tasks/0972-help-settings.md` is about 13,600 tokens, over the 12,000 cap, so `scripts/context_lint.py` reports ERROR. Split the brief (the B14 brief) before merging to main.
-3. `git diff --check` reports trailing whitespace in branch-authored docs: `0963-property-wrappers.md`, `0968-stay-list-scope.md`, `0971-feedback-forms.md`. Likely intended markdown line breaks; check before merge.
+3. `git diff --check` reports trailing whitespace in branch-authored docs: `0983-property-wrappers.md`, `0968-stay-list-scope.md`, `0971-feedback-forms.md`. Likely intended markdown line breaks; check before merge.
 4. The app2.css key `20261105-0971c` was bumped at integration because the generator refused the previous key. It is the only template that references app2.css. Confirm it is acceptable.
 5. B11: final report says blocked on four `test_host_ux_acceptance.py` failures that also fail on base (door-code editor and three others). Owner decision on deselecting them, or a fix.
 6. B17 F01: the door-code editor test (same as item 5) also blocks F01. Decide once for both.

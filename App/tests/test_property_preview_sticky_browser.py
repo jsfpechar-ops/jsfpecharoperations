@@ -1,4 +1,4 @@
-"""0962: the property page has no Preview aside any more (it was 0955's sticky right column).
+"""0982: the property page has no Preview aside any more (it was 0955's sticky right column).
 
 The six status pills are the only readiness summary and sit above the form at every width.
 Synthetic data only. Chromium only here; CI also runs webkit (untested locally).

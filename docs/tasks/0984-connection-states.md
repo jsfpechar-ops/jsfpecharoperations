@@ -1,7 +1,7 @@
-# 0964: Connection states for the Smart lock and Calendars sections
+# 0984: Connection states for the Smart lock and Calendars sections
 
 Status: blocked
-Blocked reason (executor run, see docs/tasks/0964-report.md): test row 3 (WebKit browser binary missing), row 4 (no IPv6 in the container), row 5 (layout-lint `table-squeezed` on the feed URL cell at 320/390/1024). Row 2 and row 6 passed.
+Blocked reason (executor run, see docs/tasks/0984-report.md): test row 3 (WebKit browser binary missing), row 4 (no IPv6 in the container), row 5 (layout-lint `table-squeezed` on the feed URL cell at 320/390/1024). Row 2 and row 6 passed.
 Depends on: B05 (queue order only; no file overlap expected) | Base commit: 7b0355c45ccdd2557a28edfcfe228aa1dc766e36 | Branch: codex/0964-b06-connection-states
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
@@ -28,11 +28,11 @@ Current anchors (each must be found with `grep -nF`; not found means STOP, secti
 |---|---|---|
 | App/app/templates/_property_editor.html | edit | lock-off/unavailable state blocks |
 | App/app/templates/_property_calendars.html | edit | URL cell becomes details plus Copy link |
-| App/app/static/app2.css | edit | scoped 0964 rules appended |
+| App/app/static/app2.css | edit | scoped 0984 rules appended |
 | App/app/templates/base.html | edit | bump `app2.css?v=` key only (required by test_static_versions; outside the original file list; flagged by the orchestrator, needed for the cache key) |
 | App/tests/test_host_property_controls_browser.py | append | four browser tests |
 | App/tests/static_versions.json | regenerate | via `--write` |
-| docs/tasks/0964-report.md | create | report |
+| docs/tasks/0984-report.md | create | report |
 
 No other file may change. No change to lock provisioning, door-code logic, calendar sync, feed validation, routes or i18n.
 
@@ -44,7 +44,7 @@ Setup (one command, no commit): `cd /tmp/ubyhost-b06-worktree/App && ln -s /tmp/
 
 Write the patch to /tmp/ubyhost-b06/src.patch (`mkdir -p /tmp/ubyhost-b06`) with the heredoc below, then `cd /tmp/ubyhost-b06-worktree && git apply --check /tmp/ubyhost-b06/src.patch && git apply /tmp/ubyhost-b06/src.patch && git diff --stat | tail -8`. If `--check` fails: STOP.
 
-Commit: `git add App/app/templates App/app/static/app2.css && git commit -m "0964 step 1"`.
+Commit: `git add App/app/templates App/app/static/app2.css && git commit -m "0984 step 1"`.
 
 ````
 diff --git a/App/app/static/app2.css b/App/app/static/app2.css
@@ -55,7 +55,7 @@ index 66fbf0f5..dc2c6ac1 100644
    body.v2 .ui-body-detail:has(> aside.preview) > aside.preview{grid-column:2;grid-row:1;align-self:start;position:sticky;top:24px;z-index:1}
  }
  @media (max-width:1023px){body.v2 .ui-body-detail:has(> aside.preview) > aside.preview{position:static}}
-+/* 0964 connection states: a lock row without a lock, and calendar rows whose URL never sets the width */
++/* 0984 connection states: a lock row without a lock, and calendar rows whose URL never sets the width */
 +.lock-state > .ui-btn{margin-left:auto}
 +.lock-state small{color:var(--ink3)}
 +body.v2 .feed-table td.feed-url{min-width:0;max-width:none;white-space:normal}
@@ -91,7 +91,7 @@ index c3b23826..cb5c4365 100644
        </form>
      </div>
 +    {% elif door_code %}
-+    {#- 0964: no lock connected yet. Same state source as the top pill (door_code.state); one next action, or the workspace limitation. -#}
++    {#- 0984: no lock connected yet. Same state source as the top pill (door_code.state); one next action, or the workspace limitation. -#}
 +    <div class="lock-state" id="lock-setup-state" data-state="{{ door_code.state }}" role="status">
 +      <i class="sd" aria-hidden="true"></i>
 +      <div class="lock-state-text"><b>{{ t({'off': 'smart_locks.state_off', 'times': 'smart_locks.state_times', 'offline': 'smart_locks.state_offline'}.get(door_code.state, 'smart_locks.state_on')) }}</b>
@@ -132,7 +132,7 @@ index 45ca7693..eb216937 100644
 
 ### Step 2: browser tests
 
-Same method with /tmp/ubyhost-b06/tests.patch, then `git apply --check` and `git apply`. Commit: `git add App/tests/test_host_property_controls_browser.py && git commit -m "0964 step 2"`.
+Same method with /tmp/ubyhost-b06/tests.patch, then `git apply --check` and `git apply`. Commit: `git add App/tests/test_host_property_controls_browser.py && git commit -m "0984 step 2"`.
 
 ````
 diff --git a/App/tests/test_host_property_controls_browser.py b/App/tests/test_host_property_controls_browser.py
@@ -145,13 +145,13 @@ index 12b572e2..b17d83c1 100644
          browser.close()
 +
 +
-+# --- 0964: connection states (smart lock off/on/unavailable, calendar rows) ----
++# --- 0984: connection states (smart lock off/on/unavailable, calendar rows) ----
 +
-+_SHOT_DIR_0964 = os.environ.get("UBYHOST_SHOTS_DIR")
-+_PILL_0964 = {"on": "ok", "off": "off"}
-+_LONG_URL_0964 = "https://example.invalid/ical/" + "synthetic-token-" * 20 + ".ics"
-+_NO_SIDEWAYS_0964 = "() => document.documentElement.scrollWidth - document.documentElement.clientWidth"
-+_IN_VIEW_0964 = """(selector) => {
++_SHOT_DIR_0984 = os.environ.get("UBYHOST_SHOTS_DIR")
++_PILL_0984 = {"on": "ok", "off": "off"}
++_LONG_URL_0984 = "https://example.invalid/ical/" + "synthetic-token-" * 20 + ".ics"
++_NO_SIDEWAYS_0984 = "() => document.documentElement.scrollWidth - document.documentElement.clientWidth"
++_IN_VIEW_0984 = """(selector) => {
 +  const vw = document.documentElement.clientWidth;
 +  const nodes = [...document.querySelectorAll(selector)];
 +  return {count: nodes.length, vw, bad: nodes.filter(el => {
@@ -161,13 +161,13 @@ index 12b572e2..b17d83c1 100644
 +}"""
 +
 +
-+def _shot_0964(page, name):
-+    if _SHOT_DIR_0964:
-+        Path(_SHOT_DIR_0964).mkdir(parents=True, exist_ok=True)
-+        page.screenshot(path=str(Path(_SHOT_DIR_0964) / f"0964-{name}.png"), full_page=True)
++def _shot_0984(page, name):
++    if _SHOT_DIR_0984:
++        Path(_SHOT_DIR_0984).mkdir(parents=True, exist_ok=True)
++        page.screenshot(path=str(Path(_SHOT_DIR_0984) / f"0984-{name}.png"), full_page=True)
 +
 +
-+def _lock_page_0964(playwright, base, host, width, lang="en"):
++def _lock_page_0984(playwright, base, host, width, lang="en"):
 +    browser = playwright.chromium.launch(**chromium_launch_kwargs())
 +    context = browser.new_context(viewport={"width": width, "height": 900})
 +    context.add_cookies([{"name": auth.SESSION_COOKIE, "value": _session_cookie(host), "url": base + "/"}])
@@ -177,7 +177,7 @@ index 12b572e2..b17d83c1 100644
 +    return browser, page
 +
 +
-+def _lock_env_0964(monkeypatch, allowed):
++def _lock_env_0984(monkeypatch, allowed):
 +    from app import config, ttlock
 +
 +    monkeypatch.setattr(config, "DOOR_CODES_ENABLED", True)
@@ -186,43 +186,43 @@ index 12b572e2..b17d83c1 100644
 +    monkeypatch.setattr(ttlock, "allowed_for", lambda owner_user_id: allowed)
 +
 +
-+def _assert_lock_state_matches_pill_0964(page, state_selector, expected_state):
++def _assert_lock_state_matches_pill_0984(page, state_selector, expected_state):
 +    pill = page.get_attribute(".prop-strip .sc[data-strip='door']", "data-state")
 +    block = page.locator(state_selector)
 +    assert block.is_visible()
 +    assert block.get_attribute("data-state") == expected_state
-+    assert pill == _PILL_0964.get(expected_state, "bad"), (pill, expected_state)
++    assert pill == _PILL_0984.get(expected_state, "bad"), (pill, expected_state)
 +    return block
 +
 +
-+def test_0964_lock_off_explains_and_offers_one_action(host, base, monkeypatch):
-+    _lock_env_0964(monkeypatch, True)
++def test_0984_lock_off_explains_and_offers_one_action(host, base, monkeypatch):
++    _lock_env_0984(monkeypatch, True)
 +    db.execute("UPDATE apartment SET lock_provider = NULL, lock_id = NULL WHERE id = ?", (host["apartment"],))
 +    with sync_api.sync_playwright() as playwright:
 +        for width in (390, 768, 1280):
-+            browser, page = _lock_page_0964(playwright, base, host, width)
++            browser, page = _lock_page_0984(playwright, base, host, width)
 +            try:
-+                block = _assert_lock_state_matches_pill_0964(page, "#lock-setup-state", "off")
++                block = _assert_lock_state_matches_pill_0984(page, "#lock-setup-state", "off")
 +                assert "Turned off" in block.inner_text()
 +                assert "TTLock" in block.inner_text()
 +                action = block.locator("a.ui-btn[href='#door-code']")
 +                assert action.count() == 1 and action.is_visible()
 +                assert block.locator("form, input, button").count() == 0  # no lock command, no credential edit here
-+                fit = page.evaluate(_IN_VIEW_0964, "#lock-setup-state, #lock-setup-state a")
++                fit = page.evaluate(_IN_VIEW_0984, "#lock-setup-state, #lock-setup-state a")
 +                assert fit["count"] == 2 and not fit["bad"], fit
-+                assert page.evaluate(_NO_SIDEWAYS_0964) <= 1, width
-+                _shot_0964(page, f"lock-off-{width}")
++                assert page.evaluate(_NO_SIDEWAYS_0984) <= 1, width
++                _shot_0984(page, f"lock-off-{width}")
 +            finally:
 +                browser.close()
 +
 +
-+def test_0964_lock_on_with_mock_fixture_keeps_its_controls(host, base, monkeypatch):
++def test_0984_lock_on_with_mock_fixture_keeps_its_controls(host, base, monkeypatch):
 +    import json
 +
 +    from tests.property_host_fixture import LOCK
 +
-+    _lock_env_0964(monkeypatch, True)
-+    db.insert("lock_account", {"owner_user_id": host["owner"], "provider": "ttlock", "username": "synthetic_0964",
++    _lock_env_0984(monkeypatch, True)
++    db.insert("lock_account", {"owner_user_id": host["owner"], "provider": "ttlock", "username": "synthetic_0984",
 +                               "status": "ok", "locks_json": json.dumps([LOCK]),
 +                               "created_at": db.utcnow(), "updated_at": db.utcnow()})
 +    db.execute("UPDATE apartment SET lock_provider = 'ttlock', lock_id = ?, checkin_hour = 15, checkout_hour = 10 WHERE id = ?",
@@ -230,13 +230,13 @@ index 12b572e2..b17d83c1 100644
 +    try:
 +        with sync_api.sync_playwright() as playwright:
 +            for width in (390, 768, 1280):
-+                browser, page = _lock_page_0964(playwright, base, host, width)
++                browser, page = _lock_page_0984(playwright, base, host, width)
 +                try:
-+                    block = _assert_lock_state_matches_pill_0964(page, ".lock-state[data-state='on']", "on")
++                    block = _assert_lock_state_matches_pill_0984(page, ".lock-state[data-state='on']", "on")
 +                    assert page.locator("#lock-setup-state, #lock-unavailable").count() == 0
 +                    assert block.locator(".lock-state-form button").is_visible()
-+                    assert page.evaluate(_NO_SIDEWAYS_0964) <= 1, width
-+                    _shot_0964(page, f"lock-on-{width}")
++                    assert page.evaluate(_NO_SIDEWAYS_0984) <= 1, width
++                    _shot_0984(page, f"lock-on-{width}")
 +                finally:
 +                    browser.close()
 +    finally:
@@ -245,26 +245,26 @@ index 12b572e2..b17d83c1 100644
 +                   (host["apartment"],))
 +
 +
-+def test_0964_lock_unavailable_states_the_workspace_limitation(host, base, monkeypatch):
-+    _lock_env_0964(monkeypatch, False)
++def test_0984_lock_unavailable_states_the_workspace_limitation(host, base, monkeypatch):
++    _lock_env_0984(monkeypatch, False)
 +    with sync_api.sync_playwright() as playwright:
 +        for width in (390, 768, 1280):
-+            browser, page = _lock_page_0964(playwright, base, host, width)
++            browser, page = _lock_page_0984(playwright, base, host, width)
 +            try:
-+                block = _assert_lock_state_matches_pill_0964(page, "#lock-unavailable", "off")
++                block = _assert_lock_state_matches_pill_0984(page, "#lock-unavailable", "off")
 +                assert "Door codes are not enabled on this deployment." in block.inner_text()
 +                assert block.locator("form, input, button, a").count() == 0
-+                assert page.evaluate(_NO_SIDEWAYS_0964) <= 1, width
-+                _shot_0964(page, f"lock-unavailable-{width}")
++                assert page.evaluate(_NO_SIDEWAYS_0984) <= 1, width
++                _shot_0984(page, f"lock-unavailable-{width}")
 +            finally:
 +                browser.close()
 +
 +
-+def test_0964_calendar_rows_keep_state_and_actions_with_a_long_url(host, base):
++def test_0984_calendar_rows_keep_state_and_actions_with_a_long_url(host, base):
 +    apartment = host["apartment"]
 +    now = db.utcnow()
 +    healthy = db.insert("ical_feed", {
-+        "apartment_id": apartment, "url": _LONG_URL_0964, "label": "booking", "own_name": "",
++        "apartment_id": apartment, "url": _LONG_URL_0984, "label": "booking", "own_name": "",
 +        "active": 1, "last_status": "ok", "last_sync_at": now, "created_at": now,
 +    })
 +    failed = db.insert("ical_feed", {
@@ -287,22 +287,22 @@ index 12b572e2..b17d83c1 100644
 +                assert page.locator(".feed-table td[data-label='Last sync'] [data-tone='green']").is_visible()
 +                assert "Synthetic feed unreachable" in page.locator(".feed-table").inner_text()
 +                # Name, state, URL control, copy and Remove are all in view while the URL is collapsed.
-+                fit = page.evaluate(_IN_VIEW_0964, ".feed-table td strong, .feed-table [data-tone], .feed-table summary, .feed-table .copy-btn, .feed-table .row-actions .ui-btn")
++                fit = page.evaluate(_IN_VIEW_0984, ".feed-table td strong, .feed-table [data-tone], .feed-table summary, .feed-table .copy-btn, .feed-table .row-actions .ui-btn")
 +                assert fit["count"] >= 10 and not fit["bad"], (width, fit)
 +                assert page.locator(".feed-url-details[open]").count() == 0
 +                assert not page.locator(f"#feed-url-{healthy}").is_visible()
 +                assert page.get_attribute(f".feed-table .copy-btn[data-copy='feed-url-{healthy}']", "data-copy")
-+                assert page.evaluate(_NO_SIDEWAYS_0964) <= 1, width
-+                _shot_0964(page, f"calendars-collapsed-{width}")
++                assert page.evaluate(_NO_SIDEWAYS_0984) <= 1, width
++                _shot_0984(page, f"calendars-collapsed-{width}")
 +                # Opening the long URL wraps it inside its cell and never pushes an action out of view.
 +                page.locator(".feed-table summary").first.click()
 +                assert page.locator(f"#feed-url-{healthy}").is_visible()
-+                fit = page.evaluate(_IN_VIEW_0964, ".feed-table .row-actions .ui-btn, .feed-table .copy-btn, .feed-url-value")
++                fit = page.evaluate(_IN_VIEW_0984, ".feed-table .row-actions .ui-btn, .feed-table .copy-btn, .feed-url-value")
 +                assert not fit["bad"], (width, fit)
-+                assert page.evaluate(_NO_SIDEWAYS_0964) <= 1, width
++                assert page.evaluate(_NO_SIDEWAYS_0984) <= 1, width
 +                wrap = page.evaluate("() => { const w = document.querySelector('.feed-table').closest('.scroll-x'); return w.scrollWidth - w.clientWidth; }")
 +                assert wrap <= 1, (width, wrap)
-+                _shot_0964(page, f"calendars-open-{width}")
++                _shot_0984(page, f"calendars-open-{width}")
 +            browser.close()
 +    finally:
 +        db.execute("DELETE FROM ical_feed WHERE id IN (?, ?)", (healthy, failed))
@@ -311,13 +311,13 @@ index 12b572e2..b17d83c1 100644
 
 ### Step 3: static version manifest
 
-From App/: `.venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -30`, then `git diff --stat App/tests/static_versions.json | tail -3` (only the `app2.css` entry changes). Commit: `git add App/tests/static_versions.json && git commit -m "0964 step 3"`.
+From App/: `.venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -30`, then `git diff --stat App/tests/static_versions.json | tail -3` (only the `app2.css` entry changes). Commit: `git add App/tests/static_versions.json && git commit -m "0984 step 3"`.
 
 ### Step 4: run the tests
 
 From App/, each command ends `2>&1 | tail -30`; add `-rs` to browser runs and require 0 skipped. Set once per command: `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/ubyhost-b06`.
 
-1. New tests: `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/ubyhost-b06 .venv/bin/python -m pytest tests/test_host_property_controls_browser.py -k 0964 -q -rs --tb=short -x 2>&1 | tail -30` (expect 4 passed).
+1. New tests: `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/ubyhost-b06 .venv/bin/python -m pytest tests/test_host_property_controls_browser.py -k 0984 -q -rs --tb=short -x 2>&1 | tail -30` (expect 4 passed).
 2. Host row: `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/ubyhost-b06 .venv/bin/python -m pytest tests/test_host_property_controls_browser.py tests/test_host_geometry.py tests/test_wp28_geometry.py tests/test_wp28_ui_sweep.py tests/test_0952_lock_section.py tests/test_0952_lock_section_browser.py tests/test_0534_property_page_v2.py -q -rs --tb=short -x 2>&1 | tail -30`.
 3. Smart-lock and door-code row: `.venv/bin/python -m pytest tests/test_door_code*.py tests/test_ttlock*.py tests/test_smart_locks_page.py -q --tb=short -x 2>&1 | tail -30`.
 4. Calendar row: `.venv/bin/python -m pytest tests/test_icalsync.py tests/test_ical_skip_unchanged.py tests/test_feed_*.py tests/test_dashboard_calendar*.py tests/test_calendar_*.py tests/test_sample_calendar.py -q --tb=short -x 2>&1 | tail -30`.
@@ -328,7 +328,7 @@ A test fails: read the last 30 lines, fix once (only inside section 3 files), re
 
 ### Step 5: Chromium UX check (decide pass or fail per line)
 
-Screenshots land in /tmp/ubyhost-b06 (named `0964-lock-off-390.png`, `lock-on`, `lock-unavailable`, `calendars-collapsed`, `calendars-open`, each at 390, 768, 1280). Open each once with Read and write one sentence per image in the report: what you saw, then PASS or FAIL.
+Screenshots land in /tmp/ubyhost-b06 (named `0984-lock-off-390.png`, `lock-on`, `lock-unavailable`, `calendars-collapsed`, `calendars-open`, each at 390, 768, 1280). Open each once with Read and write one sentence per image in the report: what you saw, then PASS or FAIL.
 
 - Lock Off (390/768/1280): state label "Automatic door codes: Turned off", one sentence explaining a lock must be connected, one primary "Connect my lock" link; nothing clipped; the status dot colour matches the top "Smart lock" pill.
 - Lock On (mock lock account): green state row with the Turn off button, unchanged from before.
@@ -368,11 +368,11 @@ Stop, and write the report (Status: blocked), if:
 
 ## 9. Report
 
-Write `docs/tasks/0964-report.md` (600 tokens at most): files changed (`git diff --stat`), each command with its last 5 lines, section 7 ticked, one sentence per screenshot with PASS/FAIL, deviations, questions, owner steps left (none expected). Set `Status: review` in this brief, then `git add docs/tasks/0964-report.md docs/tasks/0964-connection-states.md && git commit -m "0964 report"`. Do not push or open a PR.
+Write `docs/tasks/0984-report.md` (600 tokens at most): files changed (`git diff --stat`), each command with its last 5 lines, section 7 ticked, one sentence per screenshot with PASS/FAIL, deviations, questions, owner steps left (none expected). Set `Status: review` in this brief, then `git add docs/tasks/0984-report.md docs/tasks/0984-connection-states.md && git commit -m "0984 report"`. Do not push or open a PR.
 
 ## Risk list (for the reviewer)
 
-`_property_editor.html` (new `elif door_code` and `else` blocks), `_property_calendars.html` (URL cell), the 0964 block in `app2.css`. Known limit: when the account has no plan for door codes, the limitation sentence says "not enabled on this deployment" (same string the setup wizard uses); a plan-specific reason needs a backend flag and a new i18n key, so it is a separate brief.
+`_property_editor.html` (new `elif door_code` and `else` blocks), `_property_calendars.html` (URL cell), the 0984 block in `app2.css`. Known limit: when the account has no plan for door codes, the limitation sentence says "not enabled on this deployment" (same string the setup wizard uses); a plan-specific reason needs a backend flag and a new i18n key, so it is a separate brief.
 
 ## Owner steps
 

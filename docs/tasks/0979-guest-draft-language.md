@@ -1,4 +1,4 @@
-# 0959: Keep the guest draft when the language changes
+# 0979: Keep the guest draft when the language changes
 
 Status: review
 Depends on: none (batch B01) | Base commit: 7b0355c | Branch: codex/0959-guest-draft-language
@@ -8,7 +8,7 @@ Executor: Haiku 5.5 | Fits one session: 30 tool calls, checkpoint 60k tokens
 
 Switching language on the guest check-in form (finding G01) must keep the typed identity, birth date, nationality, document, address and visa/purpose values, and the step the guest is on. Today the menu entries are plain `<a href="/new?lang=cs">` links, so the browser reloads an empty form (nationality lost, so the step count also jumps from 3 to 4).
 
-Not in scope: any other batch, 0958 calendar work, filing, signature payload meaning, retention, schema, dependencies, the host UI.
+Not in scope: any other batch, 0978 calendar work, filing, signature payload meaning, retention, schema, dependencies, the host UI.
 
 ## 2. Context
 
@@ -93,7 +93,7 @@ Rules that apply: AGENTS.md hard rules 2, 3, 5 (no SQL change here), 6, 7 (brows
 | app/guest_uk_i18n.py | edit | same key, uk |
 | tests/test_guest_browser_e2e.py | append | one regression test |
 | tests/static_versions.json | regenerate | via the script, not by hand |
-| docs/tasks/0959-report.md | create | report |
+| docs/tasks/0979-report.md | create | report |
 
 Anything else = STOP. (`routes/guest.py` and the i18n files are listed because the chosen approach needs a route and one warning sentence in every guest language; the language-parity test requires all six.)
 
@@ -104,7 +104,7 @@ Anything else = STOP. (`routes/guest.py` and the i18n files are listed because t
 1a. Replace `    context["lang_urls"] = _lang_urls(request, form_path)` with:
 ```
     context["lang_urls"] = _lang_urls(request, form_path)
-    # 0959: the menu on this page posts the open form here, so a language
+    # 0979: the menu on this page posts the open form here, so a language
     # change keeps what the guest typed. Nothing is stored.
     context["lang_relang_url"] = _guest_link(token, reservation["id"]) + "/relang"
 ```
@@ -113,7 +113,7 @@ Anything else = STOP. (`routes/guest.py` and the i18n files are listed because t
 ```
 @router.post("/l/{token}/{reservation_id}/relang")
 async def guest_form_relang(token: str, reservation_id: int, request: Request):
-    """0959: draw the open form again in another language, keeping the answers.
+    """0979: draw the open form again in another language, keeping the answers.
 
     The language menu posts the form here with ``?lang=`` set to the new
     language. The answers are read from this one request and drawn back into
@@ -191,7 +191,7 @@ Run: `.venv/bin/python -c "import app.routes.guest" 2>&1 | tail -30` (from App/)
 ```
         {% for code, url in lang_urls.items() %}
         {% if lang_relang_url %}
-        {# 0959: on the form the entry posts the open form back, so the typed answers survive; see guest_form_relang. #}
+        {# 0979: on the form the entry posts the open form back, so the typed answers survive; see guest_form_relang. #}
         <button type="submit" form="guest-form" formaction="{{ lang_relang_url }}?lang={{ code }}" formnovalidate data-lang-draft class="{{ 'on' if lang == code }}"{% if lang == code %} aria-current="true"{% endif %} lang="{{ code }}">{{ guest_endonyms[code] }}</button>
         {% else %}
         <a href="{{ url }}" class="{{ 'on' if lang == code }}"{% if lang == code %} aria-current="true"{% endif %} hreflang="{{ code }}" lang="{{ code }}">{{ guest_endonyms[code] }}</a>
@@ -248,7 +248,7 @@ Replace the 14 lines quoted in section 2 (from `.g-lang-list a {` to the `.g-lan
 4a. Replace the `var active = Math.max(0, steps.findIndex(...));` line with:
 ```
     var errorAt = steps.findIndex(function (step) { return step.querySelector(".bad, .err:not(:empty)"); });
-    // 0959: after a language change the server hands back the step the guest
+    // 0979: after a language change the server hands back the step the guest
     // was on; a step with an error still wins, so nothing invalid is hidden.
     var startAt = parseInt(form.getAttribute("data-start-step") || "0", 10);
     var active = errorAt >= 0 ? errorAt : Math.max(0, Math.min(isNaN(startAt) ? 0 : startAt, steps.length - 1));
@@ -259,7 +259,7 @@ Replace the 14 lines quoted in section 2 (from `.g-lang-list a {` to the `.g-lan
 ```
 4c. Insert this function immediately before `  function initCheckinRail() {` (find the line with `grep -nF "function initCheckinRail"`; if a comment block `/* The wide check-in layout ...` sits directly above it, insert above that comment instead):
 ```
-  /* 0959: the language menu on the form posts the open form back (see
+  /* 0979: the language menu on the form posts the open form back (see
      guest_form_relang). A drawn signature, the acknowledgement tick and a
      chosen photo are not carried over, so ask first; Cancel leaves the page
      and every answer exactly as it is. Nothing is stored anywhere. */
@@ -308,7 +308,7 @@ Check: `grep -c '"lang_draft_warning"' app/i18n.py` prints 5; same grep on `app/
 ### Step 6: regression test (append to the end of `tests/test_guest_browser_e2e.py`)
 
 ```
-def test_0959_changing_language_keeps_the_draft_the_step_and_leaves_no_trace(
+def test_0979_changing_language_keeps_the_draft_the_step_and_leaves_no_trace(
     live_server, browser, monkeypatch
 ):
     """G01: EN -> CS -> EN keeps what was typed and the step; a drawn signature
@@ -383,7 +383,7 @@ def test_0959_changing_language_keeps_the_draft_the_step_and_leaves_no_trace(
             Path(shots).mkdir(parents=True, exist_ok=True)
             for width in (390, 768, 1280):
                 page.set_viewport_size({"width": width, "height": 900})
-                page.screenshot(path=str(Path(shots) / f"0959-review-cs-{width}.png"), full_page=True)
+                page.screenshot(path=str(Path(shots) / f"0979-review-cs-{width}.png"), full_page=True)
             page.set_viewport_size({"width": 390, "height": 812})
         page.once("dialog", lambda dialog: pytest.fail("no warning expected"))
         with page.expect_navigation():
@@ -420,27 +420,27 @@ From `App/`: `.venv/bin/python tests/test_static_versions.py --write 2>&1 | tail
 
 ## 5. Do not touch
 
-`guest/archive/`, host templates, `reporting`, `validation`, `db`, migrations, `retention.py`, requirements, `.env`, any other batch or 0958 file. No localStorage, sessionStorage or cookie for draft content. No SQL. Never push or merge.
+`guest/archive/`, host templates, `reporting`, `validation`, `db`, migrations, `retention.py`, requirements, `.env`, any other batch or 0978 file. No localStorage, sessionStorage or cookie for draft content. No SQL. Never push or merge.
 
 ## 6. Commands
 
 Setup if `App/.venv` is missing: `ln -s /tmp/ubyhost-0958-worktree/App/.venv /tmp/ubyhost-b01-worktree/App/.venv`. Work in `/tmp/ubyhost-b01-worktree`, branch `codex/0959-guest-draft-language` (verify with `git branch --show-current`). Then from `App/`:
 ```
 export UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/ubyhost-b01
-.venv/bin/python -m pytest tests/test_guest_browser_e2e.py -k 0959 -q --tb=short -x -rs 2>&1 | tail -30
+.venv/bin/python -m pytest tests/test_guest_browser_e2e.py -k 0979 -q --tb=short -x -rs 2>&1 | tail -30
 .venv/bin/python -m pytest tests/test_guest_*.py tests/test_static_versions.py tests/test_wp07_cache_heartbeats.py tests/test_privacy_first.py tests/test_cookie_inventory.py -q --tb=short -x -rs 2>&1 | tail -30
 ```
 From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30` and `git diff --check 2>&1 | tail -30`.
 Expected: all pass, `0 skipped`; lint and diff-check print nothing alarming.
 Commit 1 (after these pass), from the repo root:
-`git add App/app App/tests && git commit -m "0959 step 1" -m "Keep the guest draft when the language changes." -m "Co-authored-by: Codex <noreply@openai.com>"`
+`git add App/app App/tests && git commit -m "0979 step 1" -m "Keep the guest draft when the language changes." -m "Co-authored-by: Codex <noreply@openai.com>"`
 
 ## 7. Acceptance
 
 - [ ] The new test passes: EN to CS to EN keeps values and step; Cancel keeps the draft; no entered value in any URL, cookie or storage.
 - [ ] Czech nationality gives 3 steps before and after; German keeps its longer list (test and `progress()`).
 - [ ] Guest rows of the test-map pass, 0 skipped; static version and cache heartbeat tests pass.
-- [ ] Screenshots exist in `/tmp/ubyhost-b01`: `0959-review-cs-390.png`, `-768`, `-1280` (opened and looked at once: the language menu rows, the review list, no overflow). Also take, with a small throwaway script outside the repo or by opening the menu in the test, one 390 px shot of the open language menu on the form step and look at it once. Nothing is saved in the repo.
+- [ ] Screenshots exist in `/tmp/ubyhost-b01`: `0979-review-cs-390.png`, `-768`, `-1280` (opened and looked at once: the language menu rows, the review list, no overflow). Also take, with a small throwaway script outside the repo or by opening the menu in the test, one 390 px shot of the open language menu on the form step and look at it once. Nothing is saved in the repo.
 - [ ] `git diff --stat` shows only section 3 files.
 
 ## 8. Stop and ask
@@ -449,7 +449,7 @@ Stop and write the report as `blocked` if: an anchor is not found verbatim; a co
 
 ## 9. Report
 
-Write `docs/tasks/0959-report.md` (600 tokens at most): files changed (`git diff --stat`), each command with its last 5 lines, section 7 ticked, deviations, questions, owner steps (none expected; the owner merges and deploys). Describe, never print, guest data. Set `Status: review`. Commit: `git add docs/tasks/0959-report.md && git commit -m "0959 step 2" -m "Report." -m "Co-authored-by: Codex <noreply@openai.com>"`. No push, no PR (the orchestrator does that).
+Write `docs/tasks/0979-report.md` (600 tokens at most): files changed (`git diff --stat`), each command with its last 5 lines, section 7 ticked, deviations, questions, owner steps (none expected; the owner merges and deploys). Describe, never print, guest data. Set `Status: review`. Commit: `git add docs/tasks/0979-report.md && git commit -m "0979 step 2" -m "Report." -m "Co-authored-by: Codex <noreply@openai.com>"`. No push, no PR (the orchestrator does that).
 
 ## Risk list (for the reviewer)
 

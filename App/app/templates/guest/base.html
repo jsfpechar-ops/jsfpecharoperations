@@ -35,7 +35,7 @@
       <div class="g-lang-list" role="group" aria-label="{{ t('language_label') }}">
         {% for code, url in lang_urls.items() %}
         {% if lang_relang_url %}
-        {# 0959: on the form the entry posts the open form back, so the typed answers survive; see guest_form_relang. #}
+        {# 0979: on the form the entry posts the open form back, so the typed answers survive; see guest_form_relang. #}
         <button type="submit" form="guest-form" formaction="{{ lang_relang_url }}?lang={{ code }}" formnovalidate data-lang-draft class="{{ 'on' if lang == code }}"{% if lang == code %} aria-current="true"{% endif %} lang="{{ code }}">{{ guest_endonyms[code] }}</button>
         {% else %}
         <a href="{{ url }}" class="{{ 'on' if lang == code }}"{% if lang == code %} aria-current="true"{% endif %} hreflang="{{ code }}" lang="{{ code }}">{{ guest_endonyms[code] }}</a>

@@ -15,7 +15,7 @@ Left: command 1 green with 0 skipped; commands 2 to 7; UX gate for the 0967 shot
 ## Files changed
 - Steps 1 to 3: dashboard.html 1 line; dashboard-calendar.css +16; dashboard-calendar.js +5/-1; _dashboard_calendar.html 2 lines; static_versions.json (matches patch); test_dashboard_calendar_browser.py.
 - Step 4: App/tests/test_dashboard_calendar_browser.py, 2 lines changed (bound and comment only).
-- `git diff --stat main...HEAD` lists 12 files, including docs/tasks/0958-* and the 0967 brief and report. Those are not §3 files; they come from the branch base, not from this batch. Not changed by me.
+- `git diff --stat main...HEAD` lists 12 files, including docs/tasks/0978-* and the 0967 brief and report. Those are not §3 files; they come from the branch base, not from this batch. Not changed by me.
 
 ## Commands
 1. `tests/test_dashboard_calendar_browser.py -rs -x -q --tb=short` with the §6 env: FAIL, twice.
@@ -55,7 +55,7 @@ The run stopped at the 768 panel test, so these 10 exist: heading-{en,cs}-{390,7
 ## Deviations
 - HEAD at start was 61508ab4 (brief commit on top of de537cb3). Worked on top of it.
 - Step 4 changed a bound in an existing test (line 335, 184 to 226) on the orchestrator's approval, with the comment above it.
-- Created App/.venv symlink to the 0958 venv (git-ignored) in an earlier batch step.
+- Created App/.venv symlink to the 0978 venv (git-ignored) in an earlier batch step.
 - Tracked PNG tests rewrite (docs/tasks/screenshots-0908/week-1280.png) were reverted with `git checkout` after each run; nothing staged.
 
 ## Questions

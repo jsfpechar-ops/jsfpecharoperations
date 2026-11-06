@@ -1,7 +1,7 @@
 # 0967: restore calendar orientation and overflow legibility (B09: C02, C03)
 
 Status: blocked (check 1 stopped at existing test_calendar_geometry_locales_and_screenshots line 335: max tile height 226 > 184; see docs/tasks/0967-report.md)
-Depends on: 0958 (colour fix, this branch's base); B02 (codex/0960-b02-calendar-create) shares calendar files, merge order is the owner's | Base commit: de537cb3 | Branch: codex/0967-b09-calendar-orient
+Depends on: 0978 (colour fix, this branch's base); B02 (codex/0960-b02-calendar-create) shares calendar files, merge order is the owner's | Base commit: de537cb3 | Branch: codex/0967-b09-calendar-orient
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -10,7 +10,7 @@ The dashboard calendar page gets a visible, non-empty H1 ("Calendar", the naviga
 
 ## 2. Context
 
-Worktree `/tmp/ubyhost-b09-worktree` already exists on the branch above (created by the orchestrator, based on 0958). All paths below are relative to the repo root unless they start with `App/`. Rules that apply: AGENTS.md hard rules 6 (light mode), 7 (browser + geometry tests, 0 skipped, one 390 px screenshot per changed page), 10 (UX gate: you look at screenshots and write what you saw).
+Worktree `/tmp/ubyhost-b09-worktree` already exists on the branch above (created by the orchestrator, based on 0978). All paths below are relative to the repo root unless they start with `App/`. Rules that apply: AGENTS.md hard rules 6 (light mode), 7 (browser + geometry tests, 0 skipped, one 390 px screenshot per changed page), 10 (UX gate: you look at screenshots and write what you saw).
 
 What is wrong today (verified by reading):
 
@@ -209,7 +209,7 @@ index 3f479295..f7cca121 100644
      for upper, lower in zip(rows, rows[1:]):
          if upper["s"] == lower["s"]:
              assert abs(lower["t"][0][2] - upper["t"][0][3] - gap) <= 1, ("row gap", width, upper, lower)
-@@ -1270,3 +1270,176 @@ def test_0958_record_type_selection_is_visually_unambiguous(
+@@ -1270,3 +1270,176 @@ def test_0978_record_type_selection_is_visually_unambiguous(
          finally:
              context.close()
              browser.close()

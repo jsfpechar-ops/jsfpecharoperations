@@ -1218,7 +1218,7 @@ def test_0893_calendar_text_size_edges_and_header_spacing(calendar_workspace, ca
 @pytest.mark.parametrize("width", [390, 768, 1280])
 @pytest.mark.parametrize("locale", ["en", "cs"])
 @pytest.mark.parametrize("entry", ["dashboard", "cleaning"])
-def test_0958_record_type_selection_is_visually_unambiguous(
+def test_0978_record_type_selection_is_visually_unambiguous(
     calendar_workspace, calendar_origin, width, locale, entry
 ):
     with sync_api.sync_playwright() as playwright:
@@ -1263,9 +1263,9 @@ def test_0958_record_type_selection_is_visually_unambiguous(
                     }""")
                     assert ratio >= 4.5, (width, locale, entry, kind, state, ratio)
                 if kind == "cleaning" and locale == "en" and width == 390:
-                    shot(page, f"0958-{entry}-cleaning-{locale}-{width}")
+                    shot(page, f"0978-{entry}-cleaning-{locale}-{width}")
             if locale == "en" or width == 390:
-                shot(page, f"0958-{entry}-stay-{locale}-{width}")
+                shot(page, f"0978-{entry}-stay-{locale}-{width}")
             page.keyboard.press("Escape")
             dialog.wait_for(state="hidden")
         finally:
@@ -1276,7 +1276,7 @@ def test_0958_record_type_selection_is_visually_unambiguous(
 @pytest.mark.parametrize("width", [390, 768, 1280])
 @pytest.mark.parametrize("locale", ["en", "cs"])
 @pytest.mark.parametrize("entry", ["dashboard", "cleaning"])
-def test_0960_create_actions_label_input_and_cleaning_day_name(
+def test_0980_create_actions_label_input_and_cleaning_day_name(
     calendar_workspace, calendar_origin, width, locale, entry
 ):
     with sync_api.sync_playwright() as playwright:
@@ -1337,7 +1337,7 @@ def test_0960_create_actions_label_input_and_cleaning_day_name(
                     page.locator("#cal-guests").focus()
                     guests_ring = page.evaluate("() => { const c = getComputedStyle(document.querySelector('#cal-guests')); return c.outlineColor + c.outlineWidth + c.outlineStyle; }")
                     assert label_ring == guests_ring, (label_ring, guests_ring)
-                shot(page, f"0960-{entry}-{kind}-{locale}-{width}")
+                shot(page, f"0980-{entry}-{kind}-{locale}-{width}")
             assert boxes["stay"]["cancel"]["x"] == boxes["cleaning"]["cancel"]["x"]
             assert boxes["stay"]["cancel"]["w"] == boxes["cleaning"]["cancel"]["w"]
             assert boxes["stay"]["save"]["x"] == boxes["cleaning"]["save"]["x"]

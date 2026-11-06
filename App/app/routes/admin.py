@@ -1860,7 +1860,7 @@ def _property_view_state(
     view = extra.get("property_view") or request.query_params.get("view") or ""
     section = extra.get("settings_section") or request.query_params.get("section") or ""
     if section not in PROPERTY_SETTINGS_SECTIONS:
-        # 0964: keep ?section=lock when TTLock is off-plan; lock section still renders #lock-unavailable.
+        # 0984: keep ?section=lock when TTLock is off-plan; lock section still renders #lock-unavailable.
         section = ""
     if view not in PROPERTY_VIEWS:
         view = "settings" if section else "overview"

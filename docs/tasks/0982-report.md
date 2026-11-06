@@ -1,17 +1,17 @@
-# 0962 report (B04, executor run)
+# 0982 report (B04, executor run)
 
 Status: blocked. Done: steps 0 to 3. Left: step 4 (commands 2 to 6, two failing tests) and step 5 (screenshot review).
 
 ## 1. Base check (deviation)
 
-- HEAD is `b6cd5a4` ("0962 brief"), which adds only the brief and the three patches (docs/tasks, +920). Its parent is `7b0355c`, the brief's base. The step 0 check "HEAD starts 7b0355c" therefore fails literally; the parent check passes. The patches apply cleanly. Flag for the orchestrator.
+- HEAD is `b6cd5a4` ("0982 brief"), which adds only the brief and the three patches (docs/tasks, +920). Its parent is `7b0355c`, the brief's base. The step 0 check "HEAD starts 7b0355c" therefore fails literally; the parent check passes. The patches apply cleanly. Flag for the orchestrator.
 - Patch sha256 values match §3.
 
 ## 2. Commits
 
-- `3dc3c064` 0962 step 1 (patch 01, compiles)
-- `f475a2d0` 0962 step 2 (patch 02)
-- `d1399e82` 0962 step 3 (patch 03)
+- `3dc3c064` 0982 step 1 (patch 01, compiles)
+- `f475a2d0` 0982 step 2 (patch 02)
+- `d1399e82` 0982 step 3 (patch 03)
 
 ## 3. git diff --stat (App, against 7b0355c)
 

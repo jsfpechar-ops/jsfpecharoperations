@@ -1,4 +1,4 @@
-# 0960 report
+# 0980 report
 
 Status: review
 
@@ -10,12 +10,12 @@ Status: review
 - App/tests/static_versions.json (8 +-)
 - App/tests/test_dashboard_calendar_browser.py (76 +)
 - App/tests/test_cleaning_browser.py (2 +-, step 4, outside section 3, see deviations)
-- docs/tasks/0960-calendar-create-actions.md (brief status line)
-- docs/tasks/0960-report.md
+- docs/tasks/0980-calendar-create-actions.md (brief status line)
+- docs/tasks/0980-report.md
 
 ## Commands
 
-1. `test_dashboard_calendar_browser.py -k "0960 or 0958 or reclamps"`: 26 passed, 0 skipped (earlier run, not repeated here)
+1. `test_dashboard_calendar_browser.py -k "0980 or 0978 or reclamps"`: 26 passed, 0 skipped (earlier run, not repeated here)
 2. `test_dashboard_calendar.py test_calendar_*.py test_sample_calendar.py`: 64 passed, 0 skipped (earlier run)
 3. `test_dashboard_calendar_browser.py`: 63 passed, 0 skipped (earlier run)
 4. `tests/test_cleaning*.py -q --tb=short -rs`, fresh DB: 80 passed, 0 failed, 0 skipped. Last lines: two progress lines (90 %, 100 %), `80 passed in 549.45s (0:09:09)`.
@@ -46,7 +46,7 @@ Replaced `abs(first["top"] - second["top"]) <= 8` with a centre check on each di
 ## Deviations
 
 - Step 4 edits `App/tests/test_cleaning_browser.py`, outside section 3, as the orchestrator decided.
-- Commands 1 to 3 and the 0960 screenshots come from the earlier run; the code they test is unchanged since step 3.
+- Commands 1 to 3 and the 0980 screenshots come from the earlier run; the code they test is unchanged since step 3.
 
 ## Done / Left
 

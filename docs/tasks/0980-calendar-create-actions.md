@@ -1,7 +1,7 @@
-# 0960: calendar create dialog actions, label input, cleaning day-cell name
+# 0980: calendar create dialog actions, label input, cleaning day-cell name
 
-Status: review: all commands green with 0 skipped; centring assertion changed in step 4 (see docs/tasks/0960-report.md)
-Depends on: 0958 (already in the base) | Base commit: de537cb3 | Branch: codex/0960-b02-calendar-create
+Status: review: all commands green with 0 skipped; centring assertion changed in step 4 (see docs/tasks/0980-report.md)
+Depends on: 0978 (already in the base) | Base commit: de537cb3 | Branch: codex/0960-b02-calendar-create
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -10,7 +10,7 @@ Batch B02 findings C04, C05, C06. In the Add stay / Add cleaning dialog, Create 
 
 ## 2. Context
 
-Worktree `/tmp/ubyhost-b02-worktree`, branch above, already created from 0958 (its `aria-pressed` and `body.v2` colour rules stay as they are; do not duplicate them). `App/.venv` is a symlink to `/tmp/ubyhost-0958-worktree/App/.venv`.
+Worktree `/tmp/ubyhost-b02-worktree`, branch above, already created from 0978 (its `aria-pressed` and `body.v2` colour rules stay as they are; do not duplicate them). `App/.venv` is a symlink to `/tmp/ubyhost-0958-worktree/App/.venv`.
 
 Measured causes (Chromium, current code):
 - Desktop (1280): Cancel is `btn soft` but `.btn.soft` has no desktop rule, so `app2.css` `.btn{background:var(--acc)}` paints it coral, 79 px wide, while Create is 430 px wide. Mobile (390) Cancel is grey and both are full-width stacked. Two layouts, and Cancel competes with Create.
@@ -36,7 +36,7 @@ Anchors (each must be found with `grep -nF`; if not, STOP, section 8):
 | App/app/static/dashboard-calendar.js | edit | two aria-label lines |
 | App/tests/test_dashboard_calendar_browser.py | append | one test at end of file |
 | App/tests/static_versions.json | regenerate | by the script |
-| docs/tasks/0960-report.md | create | report |
+| docs/tasks/0980-report.md | create | report |
 
 No other file may change.
 
@@ -57,7 +57,7 @@ index 63ed2ec7..0676efe9 100644
    body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-tile-chip.cal-clean-chip > span { min-width:0; overflow:hidden; text-overflow:ellipsis; }
  }
 +
-+/* 0960: one action row in both create modes. Cancel is quiet, Create is the only coral button. */
++/* 0980: one action row in both create modes. Cancel is quiet, Create is the only coral button. */
 +#calendar .cal-create-popover > form { min-height:0; }
 +#calendar .cal-create-popover .cal-dialog-actions { display:flex; flex-direction:row; flex-wrap:nowrap; justify-content:flex-end; align-items:stretch; gap:8px; margin-top:20px; }
 +#calendar .cal-create-popover .cal-dialog-actions .btn { box-sizing:border-box; min-height:44px; height:44px; margin:0; }
@@ -120,7 +120,7 @@ git diff --stat | tail -10
 
 Expected: three files, 13 insertions and 5 deletions. `--check` fails: STOP.
 
-Commit: `git add -A App && git commit -m "0960 step 1"`.
+Commit: `git add -A App && git commit -m "0980 step 1"`.
 
 ### Step 2: append the test
 
@@ -130,7 +130,7 @@ Append this block exactly at the end of `App/tests/test_dashboard_calendar_brows
 @pytest.mark.parametrize("width", [390, 768, 1280])
 @pytest.mark.parametrize("locale", ["en", "cs"])
 @pytest.mark.parametrize("entry", ["dashboard", "cleaning"])
-def test_0960_create_actions_label_input_and_cleaning_day_name(
+def test_0980_create_actions_label_input_and_cleaning_day_name(
     calendar_workspace, calendar_origin, width, locale, entry
 ):
     with sync_api.sync_playwright() as playwright:
@@ -191,7 +191,7 @@ def test_0960_create_actions_label_input_and_cleaning_day_name(
                     page.locator("#cal-guests").focus()
                     guests_ring = page.evaluate("() => { const c = getComputedStyle(document.querySelector('#cal-guests')); return c.outlineColor + c.outlineWidth + c.outlineStyle; }")
                     assert label_ring == guests_ring, (label_ring, guests_ring)
-                shot(page, f"0960-{entry}-{kind}-{locale}-{width}")
+                shot(page, f"0980-{entry}-{kind}-{locale}-{width}")
             assert boxes["stay"]["cancel"]["x"] == boxes["cleaning"]["cancel"]["x"]
             assert boxes["stay"]["cancel"]["w"] == boxes["cleaning"]["cancel"]["w"]
             assert boxes["stay"]["save"]["x"] == boxes["cleaning"]["save"]["x"]
@@ -203,21 +203,21 @@ def test_0960_create_actions_label_input_and_cleaning_day_name(
             browser.close()
 ```
 
-Check: `grep -c "def test_0960" App/tests/test_dashboard_calendar_browser.py` prints 1. Commit: `git add -A App && git commit -m "0960 step 2"`.
+Check: `grep -c "def test_0980" App/tests/test_dashboard_calendar_browser.py` prints 1. Commit: `git add -A App && git commit -m "0980 step 2"`.
 
 ### Step 3: regenerate the cache manifest
 
-From `App/`: `.venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -3`. Expected diff in `tests/static_versions.json`: only the `dashboard-calendar.css` and `dashboard-calendar.js` entries (new sha256, `v` = `20261105-0960a`). Commit: `git add -A App && git commit -m "0960 step 3"`.
+From `App/`: `.venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -3`. Expected diff in `tests/static_versions.json`: only the `dashboard-calendar.css` and `dashboard-calendar.js` entries (new sha256, `v` = `20261105-0960a`). Commit: `git add -A App && git commit -m "0980 step 3"`.
 
 ## 5. Do not touch
 
-Record-type logic and C01 selected-state CSS from 0958, date logic, overlap rules, creation endpoints, cleaning logic, `host_i18n.py`, any other CSS or template. Hard rules from AGENTS.md: light mode only, no new dependency, no push, merge or deploy.
+Record-type logic and C01 selected-state CSS from 0978, date logic, overlap rules, creation endpoints, cleaning logic, `host_i18n.py`, any other CSS or template. Hard rules from AGENTS.md: light mode only, no new dependency, no push, merge or deploy.
 
 ## 6. Commands
 
 From `App/`, each with `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/ubyhost-b02` in front, ending `-rs --tb=short 2>&1 | tail -30`. Zero skipped. One command at a time; the browser files are slow, so use a long timeout or run in the background and read the output file.
 
-1. `.venv/bin/python -m pytest tests/test_dashboard_calendar_browser.py -k "0960 or 0958 or reclamps" -q -x`
+1. `.venv/bin/python -m pytest tests/test_dashboard_calendar_browser.py -k "0980 or 0978 or reclamps" -q -x`
    Expected: 26 passed (12 + 12 + 2), 0 skipped.
 2. `.venv/bin/python -m pytest tests/test_dashboard_calendar.py tests/test_calendar_*.py tests/test_sample_calendar.py -q -x`
 3. `.venv/bin/python -m pytest tests/test_dashboard_calendar_browser.py -q -x`
@@ -229,7 +229,7 @@ A command fails: read the last 30 lines, fix once, rerun. Fails again: STOP.
 
 ## 6b. Chromium UX checks (these make the batch pass or fail)
 
-The new test writes screenshots to `/tmp/ubyhost-b02/calendar-0960-<entry>-<kind>-<locale>-<width>.png` (entry dashboard or cleaning, kind stay or cleaning, locale en or cs, width 390, 768, 1280). Open with the Read tool at least these, and say in the report for each what you saw in one sentence: `0960-dashboard-stay-en-390`, `0960-dashboard-cleaning-en-390`, `0960-cleaning-stay-en-390`, `0960-cleaning-cleaning-cs-390`, `0960-dashboard-stay-en-768`, `0960-cleaning-cleaning-cs-768`, `0960-dashboard-stay-en-1280`, `0960-cleaning-cleaning-cs-1280`, `0960-dashboard-stay-cs-1280`. The test already asserts the rest of the 36 combinations (Add stay and Add cleaning, from Dashboard and Cleaning, 390/768/1280, EN and CS). Required in every image:
+The new test writes screenshots to `/tmp/ubyhost-b02/calendar-0960-<entry>-<kind>-<locale>-<width>.png` (entry dashboard or cleaning, kind stay or cleaning, locale en or cs, width 390, 768, 1280). Open with the Read tool at least these, and say in the report for each what you saw in one sentence: `0980-dashboard-stay-en-390`, `0980-dashboard-cleaning-en-390`, `0980-cleaning-stay-en-390`, `0980-cleaning-cleaning-cs-390`, `0980-dashboard-stay-en-768`, `0980-cleaning-cleaning-cs-768`, `0980-dashboard-stay-en-1280`, `0980-cleaning-cleaning-cs-1280`, `0980-dashboard-stay-cs-1280`. The test already asserts the rest of the 36 combinations (Add stay and Add cleaning, from Dashboard and Cleaning, 390/768/1280, EN and CS). Required in every image:
 
 - Create is the only coral filled button. Cancel is white with a thin grey border.
 - Cancel and Create sit on one row at the bottom, Cancel left (96 px wide, 44 px high), Create fills the rest; identical positions in Add stay and Add cleaning.
@@ -241,7 +241,7 @@ Any image that fails a bullet: STOP and report with the filename. Never silence 
 
 ## 7. Acceptance
 
-- [ ] Step 1 applied with `git apply --check` clean; 3 commits `0960 step 1..3`.
+- [ ] Step 1 applied with `git apply --check` clean; 3 commits `0980 step 1..3`.
 - [ ] Commands 1 to 6 all green, 0 skipped.
 - [ ] Section 6b screenshots viewed and described, all bullets true.
 - [ ] `git diff de537cb3 --stat` lists only the files in section 3.
@@ -253,7 +253,7 @@ Stop, and write the report, if: an anchor is not found; `git apply --check` fail
 
 ## 9. Report
 
-Write `docs/tasks/0960-report.md` (600 tokens at most): `git diff --stat`, each command with its last 5 lines, section 7 ticked, one sentence per viewed screenshot, deviations, questions. Set `Status: review`. Do not push; hand the branch name to the orchestrator.
+Write `docs/tasks/0980-report.md` (600 tokens at most): `git diff --stat`, each command with its last 5 lines, section 7 ticked, one sentence per viewed screenshot, deviations, questions. Set `Status: review`. Do not push; hand the branch name to the orchestrator.
 
 ## Risk list (for the reviewer)
 

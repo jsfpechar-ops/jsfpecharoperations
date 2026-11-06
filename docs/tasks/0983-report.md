@@ -1,13 +1,13 @@
-# 0963 report (B05: P04, P05, P06, P09)
+# 0983 report (B05: P04, P05, P06, P09)
 
 Status: blocked
 
 Reason: row 4a has 4 failures and row 5 has 1 failure. All 5 also fail on base 7b0355c (proof below), so they are not caused by this batch. The brief's gate is "every row passes", so the orchestrator decides.
 
 ## Commits (branch codex/0963-b05-property-wrappers)
-- 40088a45 `0963 step 4`: test race wait fix, archive "?" markup and CSS fix, app2.css key 0963b, static manifest regenerated.
-- `0963 step 5`: this report (SHA in the final reply).
-- `0963 status`: brief status line set to blocked.
+- 40088a45 `0983 step 4`: test race wait fix, archive "?" markup and CSS fix, app2.css key 0983b, static manifest regenerated.
+- `0983 step 5`: this report (SHA in the final reply).
+- `0983 status`: brief status line set to blocked.
 
 ## Test race (diagnosis accepted)
 The scroll under a still pointer opened the archive tip through JS. The test asserted before the 150 ms close timer. Fix: `page.locator("#archive-help").wait_for(state="hidden")` before the unchanged assertion.
@@ -24,7 +24,7 @@ The scroll under a still pointer opened the archive tip through JS. The test ass
 ## Rows (zero skipped in every row)
 | Row | Result |
 |---|---|
-| 0963 + 0534 (the 2 new tests are in the browser file) | 20 passed, 4 deselected |
+| 0983 + 0534 (the 2 new tests are in the browser file) | 20 passed, 4 deselected |
 | 2a static and property | 73 passed |
 | 2b property, onboarding, first | 335 passed |
 | 3 copy and i18n | 46 passed |
@@ -49,11 +49,11 @@ Harness notes: rows 2b and 4a were killed once (exit 143) and rerun. Row 3 on a 
 - police-open-cs-390: "Připojení k UbyPortu" heading with the sample link beside it, then the IDUB and credential fields, then the "Ubytovací zařízení" subsection heading.
 - copy-dialog-en-390 and cs-390: bottom sheet inside the viewport, rounded top corners, no dark border; Copy and Cancel visible.
 - copy-dialog-en-768 and en-1280: rounded white dialog, Copy and Cancel, no square border.
-- Stay fee heading: no dedicated screenshot; the accordion title is confirmed by the passing 0963 test.
+- Stay fee heading: no dedicated screenshot; the accordion title is confirmed by the passing 0983 test.
 - 320 px archive tip: covered by the geometry and lint tests (no separate screenshot).
 
 ## Section 7 ticks
-- [x] Stay fee: one title, numbered settings first (0963 test passed; no separate screenshot).
+- [x] Stay fee: one title, numbered settings first (0983 test passed; no separate screenshot).
 - [~] Police: subsection headings confirmed in police-open-cs-390 only; the EN crop does not show them.
 - [x] Archive: no accordion, one button, confirm opens; Cancel path covered by the test.
 - [x] Copy chooser: rounded surface at 390, 768 and 1280, bottom sheet at 390.

@@ -1,7 +1,7 @@
 # 0965: Simplify the guest review and the legal acknowledgement (B07: G02, G03, G04)
 
 Status: review (spacing guards fixed in step 10; all checks green, 0 skipped; see docs/tasks/0965-report.md)
-Depends on: B01 / 0959 (branch `codex/0959-guest-draft-language`, tip `89772982`; its review decision may still be open, this brief is built on that tip) | Base commit: 89772982 | Branch: codex/0965-b07-guest-review
+Depends on: B01 / 0979 (branch `codex/0959-guest-draft-language`, tip `89772982`; its review decision may still be open, this brief is built on that tip) | Base commit: 89772982 | Branch: codex/0965-b07-guest-review
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -24,7 +24,7 @@ Decisions already taken (do not reopen):
 2. The save label keeps the key `save_continue_next` and gets a shorter value in all six guest languages (en, cs, de, es, fr in `App/app/i18n.py`, uk in `App/app/guest_uk_i18n.py`). The person progress reuses the existing key `person_progress` (all six languages already have it). No new key.
 3. Red for the acknowledgement is set by `.is-invalid` (added by `signature.js` on the browser's `invalid` event, removed when ticked) or by the server's own `.err` inside `.legal-ack`. The visible error text for an attempted submit is the browser's own bubble; the server error text is unchanged.
 4. Cache keys: `guest.css` and `signature.js` get key `20261105-0965a` in `App/app/templates/guest/base.html` and `App/app/templates/_signature_script.html`. Those two templates are not in the allowlist of the batch plan but the cache-key rule and `test_static_versions.py` require them; they are in section 3.
-5. The birth-date row missing from the 390 px Czech review (seen in 0959, cause never found, code identical to base) IS covered by this batch because every row is rebuilt here. It is an explicit acceptance item (section 7): the test asserts the row exists with value `01.01.1980` at 390, 768 and 1280, in English and Czech. Hypothesis, unverified: a sticky bar covered the row in a full-page screenshot. If the test finds the row really absent from the DOM, STOP (section 8); do not fix the grouping code.
+5. The birth-date row missing from the 390 px Czech review (seen in 0979, cause never found, code identical to base) IS covered by this batch because every row is rebuilt here. It is an explicit acceptance item (section 7): the test asserts the row exists with value `01.01.1980` at 390, 768 and 1280, in English and Czech. Hypothesis, unverified: a sticky bar covered the row in a full-page screenshot. If the test finds the row really absent from the DOM, STOP (section 8); do not fix the grouping code.
 
 ### Current anchors (each must be found verbatim before its step, else STOP)
 
@@ -45,7 +45,7 @@ Decisions already taken (do not reopen):
 
 `App/app/i18n.py` / `guest_uk_i18n.py`: the six `"save_continue_next": "..."` lines (old values are in the patch).
 
-`App/tests/test_guest_browser_e2e.py`: ends with `test_0959_discard_warning_cancel_keeps_draft` (954 lines); the patch appends after its last line. Helpers it uses and must find: `def _seed(`, `class Guest:`, `def pick_country`, `def sign(self)`, `def next(self)`, `def step(self)`.
+`App/tests/test_guest_browser_e2e.py`: ends with `test_0979_discard_warning_cancel_keeps_draft` (954 lines); the patch appends after its last line. Helpers it uses and must find: `def _seed(`, `class Guest:`, `def pick_country`, `def sign(self)`, `def next(self)`, `def step(self)`.
 
 Structure facts the CSS relies on (do not change): the signature step is a `.g-card[data-guest-step]` holding `.g-review`, `.g-legal-notice`, the submit button and (appended by `signature.js`) `.g-wizard-nav` with the Back button, in that order.
 
@@ -114,7 +114,7 @@ Expected diff: base.html (2 lines), `_signature_script.html` (1 line), `static_v
 
 ### Step 5. Tests (append only)
 
-Anchor: `grep -c "def test_0959" App/tests/test_guest_browser_e2e.py` is 3, and the file ends at line 954. Apply and commit:
+Anchor: `grep -c "def test_0979" App/tests/test_guest_browser_e2e.py` is 3, and the file ends at line 954. Apply and commit:
 ```
 cd /tmp/ubyhost-b07-worktree && F=docs/tasks/0965-guest-review.md; awk '/^PATCH-p5-BEGIN$/{f=1;next}/^PATCH-p5-END$/{f=0}f' $F > /tmp/0965-p5.patch && git apply --check /tmp/0965-p5.patch && git apply /tmp/0965-p5.patch
 python3 -m py_compile App/tests/test_guest_browser_e2e.py && git diff --stat | tail -5 && git add -A App/tests && git commit -q -m "0965 step 5" -m "Browser tests for review, acknowledgement, sticky bar, Edit." -m "Co-authored-by: Codex <noreply@openai.com>"
@@ -491,7 +491,7 @@ diff --git a/App/tests/test_guest_browser_e2e.py b/App/tests/test_guest_browser_
 index e8ad7548..c549fd15 100644
 --- a/App/tests/test_guest_browser_e2e.py
 +++ b/App/tests/test_guest_browser_e2e.py
-@@ -952,3 +952,335 @@ def test_0959_discard_warning_cancel_keeps_draft(live_server, browser, monkeypat
+@@ -952,3 +952,335 @@ def test_0979_discard_warning_cancel_keeps_draft(live_server, browser, monkeypat
          assert page.is_checked("#legal_ack")
      finally:
          page.close()
@@ -610,7 +610,7 @@ index e8ad7548..c549fd15 100644
 +    page.fill("#res_city", _B07_LONG["city"])
 +    guest.next()
 +    if lang != "en":
-+        # The language menu keeps the draft and the step (0959).
++        # The language menu keeps the draft and the step (0979).
 +        page.locator("[data-lang-menu] summary").click()
 +        with page.expect_navigation():
 +            page.locator(f'[data-lang-draft][lang="{lang}"]').click()
@@ -631,7 +631,7 @@ index e8ad7548..c549fd15 100644
 +        geo = page.evaluate(_B07_GEOMETRY_JS)
 +        rows = geo["rows"]
 +        assert len(rows) == 5, [r["label"] for r in rows]
-+        # The birth-date row missing at 390 px in Czech (seen in 0959) is an acceptance item here.
++        # The birth-date row missing at 390 px in Czech (seen in 0979) is an acceptance item here.
 +        birth = [r for r in rows if t("birth_date").strip() in r["label"]]
 +        assert len(birth) == 1 and birth[0]["value"] == "01.01.1980", rows
 +        assert rows[0]["value"] == f"{_B07_LONG['first']} {_B07_LONG['surname']}"

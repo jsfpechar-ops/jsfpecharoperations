@@ -68,7 +68,7 @@ def test_stay_detail_groups_facts_and_wraps(stay_actions_host, stay_actions_base
 
 
 def test_add_guest_and_invoice_forms_keep_the_v2_host_shell(stay_actions_host, stay_actions_base):
-    """0961: guest admin + detailed invoice stay on the v2 shell (sidebar, font, content lane)."""
+    """0981: guest admin + detailed invoice stay on the v2 shell (sidebar, font, content lane)."""
     cookie = stay_actions_host["client"].cookies.get(auth.SESSION_COOKIE)
     assert cookie
     stay = stay_actions_host["ids"]["ready"]

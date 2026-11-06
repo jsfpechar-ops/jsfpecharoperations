@@ -43,7 +43,7 @@ def test_sections_are_details_in_order(host):
     # 0536: the fixture has no door codes, but the lock section is always rendered
     # (connect text only). DOM order; v2 CSS puts them in mockup order (0952: the one lock
     # section sits after the property form, so it is last in the DOM).
-    # 0963: archive is a direct button row (id sec-archive), no longer a details section.
+    # 0983: archive is a direct button row (id sec-archive), no longer a details section.
     assert names == ["basics", "messages", "police", "fee", "calendars", "lock"]
 
 

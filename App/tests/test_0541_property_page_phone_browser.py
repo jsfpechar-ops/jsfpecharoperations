@@ -120,7 +120,7 @@ def test_0948_strip_shares_form_edges_and_columns(base, dashboard_rich_host):  #
     with sync_api.sync_playwright() as playwright:
         browser = _launch(playwright)
         try:
-            for width, max_rows in ((390, 3), (768, 3), (1280, 1), (1600, 1)):  # 0962: the pills wrap as flex rows
+            for width, max_rows in ((390, 3), (768, 3), (1280, 1), (1600, 1)):  # 0982: the pills wrap as flex rows
                 context, page = _open_app(browser, base, cookie, path, width)
                 try:
                     strip = page.locator(".prop-strip").bounding_box()

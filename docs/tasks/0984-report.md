@@ -1,4 +1,4 @@
-# 0964 report (B06, connection states)
+# 0984 report (B06, connection states)
 
 Status: blocked
 
@@ -6,11 +6,11 @@ Reason: test row 3 failed (WebKit browser binary not installed in /opt/pw-browse
 
 ## Commits (branch codex/0964-b06-connection-states, base 7b0355c)
 
-- 1106e97a 0964 step 1: templates, app2.css 0964 block, app2.css version key in base.html
-- da7f3cf7 0964 step 2: four browser tests
-- fd94de4e 0964 step 3: static_versions.json (app2.css entry only)
-- 8a78b72f 0964 step 2 fix: test-only wait before an `is_visible` check in the calendar test
-- 1c6648f2 0964 report (prior session)
+- 1106e97a 0984 step 1: templates, app2.css 0984 block, app2.css version key in base.html
+- da7f3cf7 0984 step 2: four browser tests
+- fd94de4e 0984 step 3: static_versions.json (app2.css entry only)
+- 8a78b72f 0984 step 2 fix: test-only wait before an `is_visible` check in the calendar test
+- 1c6648f2 0984 report (prior session)
 
 ## Files changed (vs base 7b0355c)
 

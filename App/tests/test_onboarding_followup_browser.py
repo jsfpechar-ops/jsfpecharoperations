@@ -181,7 +181,7 @@ def test_current_property_name_demo_label_and_distinct_setup_status(wizard_host,
             assert rows.count() >= 5
             assert page.locator("nav.prop-strip a.sc[data-strip='police'][href='#sec-police']").count() == 1
             assert page.locator("nav.prop-strip a.sc[data-strip='calendars'][href='#sec-calendars']").count() == 1
-            assert page.locator("[data-setup-status]").count() == 0  # 0962: the checklist details are gone
+            assert page.locator("[data-setup-status]").count() == 0  # 0982: the checklist details are gone
             assert page.locator("nav.prop-strip .sc").count() == 6
         else:
             rows = page.locator("details.prop-sec > summary")

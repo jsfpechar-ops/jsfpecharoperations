@@ -1154,7 +1154,7 @@ def test_wizard_polish_and_overview_cards(host, base_url, monkeypatch, lang, wid
             assert calendars_card.get_attribute("href") == "#sec-calendars"
             assert calendars_card.locator("b").inner_text() == calendars_title
             assert page.locator("nav.prop-strip .sc").count() == 6
-            assert page.locator("aside.preview").count() == 0  # 0962: the Preview aside is gone
+            assert page.locator("aside.preview").count() == 0  # 0982: the Preview aside is gone
         else:
             calendars_summary = page.locator("details#sec-calendars > summary")
             assert calendars_summary.is_visible()

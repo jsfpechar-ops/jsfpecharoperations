@@ -1,7 +1,7 @@
 # 0968: Stays list scope label and compact filter row
 
 Status: blocked (command 4 fails on base 7b0355c4 too; see report)
-Depends on: B09 (0958), not needed to run | Base commit: 7b0355c45ccdd2557a28edfcfe228aa1dc766e36 | Branch: codex/0968-b10-stay-list
+Depends on: B09 (0978), not needed to run | Base commit: 7b0355c45ccdd2557a28edfcfe228aa1dc766e36 | Branch: codex/0968-b10-stay-list
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Read this brief in ranges of 150 lines (a hook blocks whole-file reads over 350 lines).
 

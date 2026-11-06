@@ -954,7 +954,7 @@ body.v2 .property-section-title{font-size:14px;font-weight:600}
 body.v2 .fields-wrap{padding:0 16px 16px}
 body.v2 .setup-continue-card p{font-size:13px;margin:0 0 8px}
 body.v2 .setup-continue-card .actions{display:flex;flex-direction:column;align-items:flex-start;gap:12px}
-/* 0962: compact pill on desktop only; narrow viewports use 44 px via generic body.v2 .ui-btn. */
+/* 0982: compact pill on desktop only; narrow viewports use 44 px via generic body.v2 .ui-btn. */
 @media (min-width:1024px){body.v2 .setup-continue-card .ui-btn{min-height:32px;padding:4px 12px;font-size:13px}}
 @media (max-width:1023px){body.v2 .setup-continue-card .ui-btn{padding:9px 16px;font-size:inherit}}
 /* 0544: above the sticky preview aside from 1024 px; the Havel FAB (z 40) and dialog (z 60) stay above the bar. */
@@ -2011,7 +2011,7 @@ body.v2 .invoice-customer .ui-choice-card{display:flex;flex-wrap:wrap;align-item
 body.v2 .invoice-customer .ui-choice-card-label{display:flex;align-items:center;gap:12px;margin:0}
 body.v2 .invoice-customer .ui-choice-card-label>strong{display:inline-flex;align-items:center;gap:12px;flex-wrap:wrap}
 body.v2 .invoice-f-half,body.v2 .invoice-f-city,body.v2 .invoice-f-zip,body.v2 .invoice-f-full{min-width:0}
-/* 0961a/b guest admin + detailed invoice: classes that lived only in app.css / host.css / host2.css before v2 shell */
+/* 0981a/b guest admin + detailed invoice: classes that lived only in app.css / host.css / host2.css before v2 shell */
 body.v2 .ui-page .muted{color:var(--muted)}
 body.v2 .ui-page .signature-pad{border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface);overflow:hidden}
 body.v2 .ui-page .signature-pad canvas{display:block;width:100%;height:160px;touch-action:none;background:var(--surface);cursor:crosshair}
@@ -2553,7 +2553,7 @@ body.v2 .onboarding-finish-strip{display:flex;flex-wrap:wrap;gap:12px;align-item
 @media (max-width:1023px){body.v2 .onboarding-finish-strip a{white-space:nowrap;min-height:44px;display:inline-flex;align-items:center}}
 
 /* 0948 status strip */
-/* 0962: six compact status pills, the first content group under the title. Flex wrap: one row when it fits, clean rows otherwise; words never split. */
+/* 0982: six compact status pills, the first content group under the title. Flex wrap: one row when it fits, clean rows otherwise; words never split. */
 body.v2 .prop-strip{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin:0 auto 16px;max-width:980px}
 body.v2 .prop-strip .sc{flex:1 1 140px;min-width:0;display:grid;grid-template-columns:10px minmax(0,1fr);column-gap:8px;row-gap:0;align-items:center;align-content:center;min-height:52px;padding:8px 12px;background:#fff;border:1px solid var(--line);border-radius:12px;color:inherit;text-decoration:none;box-sizing:border-box}
 body.v2 .prop-strip div.sc.sc-link{display:block;flex-basis:176px}
@@ -2579,7 +2579,7 @@ body.v2 .airbnb-header:has(>.airbnb-actions)>.airbnb-title{width:auto;flex:1 1 0
 body.v2 .airbnb-header:has(>.airbnb-actions)>.airbnb-back{margin-right:0}
 @media (max-width:767px){body.v2 .airbnb-actions{width:100%;margin-left:0}body.v2 .airbnb-actions .copy-settings-open{width:100%;justify-content:center;min-height:44px}body.v2 .airbnb-header:has(>.airbnb-actions)>.airbnb-title{flex:1 1 100%}}
 @media (max-width:359px){body.v2 .prop-strip .sc,body.v2 .prop-strip div.sc.sc-link{flex-basis:100%}}
-/* 0962: cards that used to sit in the Preview aside (setup continue, Leon) now sit under the pills; the Preview/checklist panel is gone. */
+/* 0982: cards that used to sit in the Preview aside (setup continue, Leon) now sit under the pills; the Preview/checklist panel is gone. */
 body.v2 .prop-after-strip{display:flex;flex-direction:column;gap:8px;max-width:980px;margin:0 auto 16px}
 body.v2 .prop-after-strip:empty{display:none}
 body.v2 .prop-after-strip .pv{margin-bottom:0}
@@ -2738,7 +2738,7 @@ body.v2 form.property-settings-form .btn,body.v2 form.property-settings-form .ui
 }
 @media (max-width:1023px){body.v2 .ui-body-detail:has(> aside.preview) > aside.preview{position:static}}
 
-/* 0963: the direct Archive property row, and the copy-property chooser on the common dialog surface (v2 pages do not load host2.css) */
+/* 0983: the direct Archive property row, and the copy-property chooser on the common dialog surface (v2 pages do not load host2.css) */
 body.v2 .prop-archive-row{padding:4px 0 8px}
 body.v2 .prop-archive-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 body.v2 .prop-archive-actions .ui-btn{min-height:44px}
@@ -2765,7 +2765,7 @@ body.v2 .copy-settings-dialog .copy-settings-actions .ui-btn{min-height:44px}
   body.v2 .copy-settings-dialog .ui-sheet-handle{display:block;width:var(--space-8);height:var(--space-1);border-radius:var(--radius-pill);background:var(--line-strong);margin:var(--space-1) auto var(--space-4)}
   body.v2 .copy-settings-dialog .copy-settings-actions .ui-btn{flex:1 1 0}
 }
-/* 0964 connection states: a lock row without a lock, and calendar rows whose URL never sets the width */
+/* 0984 connection states: a lock row without a lock, and calendar rows whose URL never sets the width */
 .lock-state > .ui-btn{margin-left:auto}
 .lock-state small{color:var(--ink3)}
 body.v2 .feed-table td.feed-url{min-width:0;max-width:none;white-space:normal}

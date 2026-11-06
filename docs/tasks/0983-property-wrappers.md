@@ -1,6 +1,6 @@
-# 0963: Remove redundant property wrappers and headings (batch B05: P04, P05, P06, P09)
+# 0983: Remove redundant property wrappers and headings (batch B05: P04, P05, P06, P09)
 
-Status: blocked (row 4a: 4 and row 5: 1 failing test, all also failing on base 7b0355c; see 0963-report.md)
+Status: blocked (row 4a: 4 and row 5: 1 failing test, all also failing on base 7b0355c; see 0983-report.md)
 Depends on: B04 (merge order only; this brief is built on base 7b0355c and touches no B04 hunk) | Base commit: 7b0355c45ccdd2557a28edfcfe228aa1dc766e36 | Branch: codex/0963-b05-property-wrappers
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
@@ -51,13 +51,13 @@ Known pre-existing failure on the base commit (verified): `tests/test_reporting_
 | App/tests/static_versions.json | regenerate | by the script in step 4, never by hand |
 | App/tests/test_0534_property_page_v2.py | edit | two asserts: archive is no longer a details section |
 | App/tests/test_host_property_controls_browser.py | append | 2 browser tests, EN+CS, 390/768/1280 |
-| docs/tasks/0963-report.md | create | report |
+| docs/tasks/0983-report.md | create | report |
 
 `App/app/templates/_copy_settings_dialog.html` is allowed but needs no change. No other file may change. No new dependency, no SQL, no migration.
 
 ## 4. Steps
 
-Setup (once): `ln -s /tmp/ubyhost-0958-worktree/App/.venv App/.venv` (if the link exists, skip). Then `mkdir -p /tmp/ubyhost-b05`. Commit after each step with message `0963 step k`.
+Setup (once): `ln -s /tmp/ubyhost-0958-worktree/App/.venv App/.venv` (if the link exists, skip). Then `mkdir -p /tmp/ubyhost-b05`. Commit after each step with message `0983 step k`.
 
 Each patch is saved with a heredoc and applied from the worktree root. Check first with `--check`. A failed check is a STOP (the file drifted).
 
@@ -168,7 +168,7 @@ index b265a7d7..cf0f99d3 100644
          "property_nav.group.property": "Údaje o ubytování",
 PATCH_EOF
 git apply --check /tmp/ubyhost-b05/2.patch && git apply /tmp/ubyhost-b05/2.patch
-git add -A App && git commit -q -m "0963 step 1" 2>&1 | tail -3
+git add -A App && git commit -q -m "0983 step 1" 2>&1 | tail -3
 ```
 
 ### Step 2: stylesheet and cache key
@@ -184,7 +184,7 @@ index 66fbf0f5..5a475106 100644
  }
  @media (max-width:1023px){body.v2 .ui-body-detail:has(> aside.preview) > aside.preview{position:static}}
 +
-+/* 0963: the direct Archive property row, and the copy-property chooser on the common dialog surface (v2 pages do not load host2.css) */
++/* 0983: the direct Archive property row, and the copy-property chooser on the common dialog surface (v2 pages do not load host2.css) */
 +body.v2 .prop-archive-row{padding:4px 0 8px}
 +body.v2 .prop-archive-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 +body.v2 .prop-archive-actions .ui-btn{min-height:44px}
@@ -227,7 +227,7 @@ index 45ca7693..076078d2 100644
 PATCH_EOF
 git apply --check /tmp/ubyhost-b05/4.patch && git apply /tmp/ubyhost-b05/4.patch
 cd App && .venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -3 && cd ..
-git add -A App && git commit -q -m "0963 step 2" 2>&1 | tail -3
+git add -A App && git commit -q -m "0983 step 2" 2>&1 | tail -3
 ```
 
 If B04 has already merged and `git apply --check` on 4.patch fails because the key differs, STOP and report (do not guess a key).
@@ -245,7 +245,7 @@ index 896ccab1..006dd71e 100644
      # (connect text only). DOM order; v2 CSS puts them in mockup order (0952: the one lock
      # section sits after the property form, so it is last in the DOM).
 -    assert names == ["basics", "archive", "messages", "police", "fee", "calendars", "lock"]
-+    # 0963: archive is a direct button row (id sec-archive), no longer a details section.
++    # 0983: archive is a direct button row (id sec-archive), no longer a details section.
 +    assert names == ["basics", "messages", "police", "fee", "calendars", "lock"]
  
  
@@ -272,17 +272,17 @@ index 12b572e2..0484993e 100644
          browser.close()
 +
 +
-+# --- 0963: one Stay fee heading, one police title, direct Archive, copy chooser on the common dialog ---
++# --- 0983: one Stay fee heading, one police title, direct Archive, copy chooser on the common dialog ---
 +
-+SHOTS_0963 = Path(os.environ.get("UBYHOST_SHOTS_DIR", "/tmp/ubyhost-b05"))
-+
-+
-+def _shot_0963(page, name):
-+    SHOTS_0963.mkdir(parents=True, exist_ok=True)
-+    page.screenshot(path=str(SHOTS_0963 / f"{name}.png"), full_page=False)
++SHOTS_0983 = Path(os.environ.get("UBYHOST_SHOTS_DIR", "/tmp/ubyhost-b05"))
 +
 +
-+def _open_page_0963(browser, base, host, path, width):
++def _shot_0983(page, name):
++    SHOTS_0983.mkdir(parents=True, exist_ok=True)
++    page.screenshot(path=str(SHOTS_0983 / f"{name}.png"), full_page=False)
++
++
++def _open_page_0983(browser, base, host, path, width):
 +    context = browser.new_context(viewport={"width": width, "height": 900}, has_touch=width < 700)
 +    context.add_cookies([{"name": auth.SESSION_COOKIE, "value": _session_cookie(host), "url": base}])
 +    page = context.new_page()
@@ -291,7 +291,7 @@ index 12b572e2..0484993e 100644
 +    return context, page
 +
 +
-+def test_0963_fee_and_police_headings_and_archive_button(host, base):
++def test_0983_fee_and_police_headings_and_archive_button(host, base):
 +    apartment = host["apartment"]
 +    with sync_api.sync_playwright() as playwright:
 +        browser = playwright.chromium.launch(**chromium_launch_kwargs())
@@ -301,7 +301,7 @@ index 12b572e2..0484993e 100644
 +                ("cs", "Poplatek z pobytu", "Cizinecká policie", "Připojení k UbyPortu", "Ubytovací zařízení", "Archivovat nemovitost"),
 +            ):
 +                for width in (390, 768, 1280):
-+                    context, page = _open_page_0963(browser, base, host, f"/apartments/{apartment}?lang={lang}", width)
++                    context, page = _open_page_0983(browser, base, host, f"/apartments/{apartment}?lang={lang}", width)
 +                    try:
 +                        label = (lang, width)
 +                        # Stay fee: the accordion title once, no inner duplicate; opens and closes.
@@ -326,7 +326,7 @@ index 12b572e2..0484993e 100644
 +                        assert not any(h.startswith(("Police reporting", "Hlášení policii")) for h in heads), (label, heads)
 +                        assert police.locator("#police-sample-link").count() == 1, label
 +                        if width == 390:
-+                            _shot_0963(page, f"police-open-{lang}-390")
++                            _shot_0983(page, f"police-open-{lang}-390")
 +                        police.locator("> summary").click()
 +                        assert police.evaluate("e => e.open") is False, label
 +                        # Archive: a direct secondary button, no accordion, not clipped.
@@ -341,7 +341,7 @@ index 12b572e2..0484993e 100644
 +                        page.evaluate("document.activeElement && document.activeElement.blur()")
 +                        assert not page.locator("#archive-help").is_visible(), label  # the tip stays closed until asked
 +                        if lang == "en":
-+                            _shot_0963(page, f"archive-{width}")
++                            _shot_0983(page, f"archive-{width}")
 +                            # Click -> existing confirmation -> Cancel changes nothing.
 +                            url_before = page.url
 +                            button.click()
@@ -349,7 +349,7 @@ index 12b572e2..0484993e 100644
 +                            dialog.wait_for(state="visible")
 +                            assert dialog.locator("[data-confirm-cancel]").is_visible(), label
 +                            if width == 390:
-+                                _shot_0963(page, "archive-confirm-390")
++                                _shot_0983(page, "archive-confirm-390")
 +                            dialog.locator("[data-confirm-cancel]").click()
 +                            dialog.wait_for(state="hidden")
 +                            assert page.url == url_before, label
@@ -361,17 +361,17 @@ index 12b572e2..0484993e 100644
 +            browser.close()
 +
 +
-+def test_0963_copy_chooser_uses_the_common_dialog_and_cancel_keeps_form_data(host, base):
++def test_0983_copy_chooser_uses_the_common_dialog_and_cancel_keeps_form_data(host, base):
 +    with sync_api.sync_playwright() as playwright:
 +        browser = playwright.chromium.launch(**chromium_launch_kwargs())
 +        try:
 +            for lang in ("en", "cs"):
 +                for width in (390, 768, 1280):
-+                    context, page = _open_page_0963(browser, base, host, f"/apartments/new?lang={lang}", width)
++                    context, page = _open_page_0983(browser, base, host, f"/apartments/new?lang={lang}", width)
 +                    try:
 +                        label = (lang, width)
 +                        name = page.locator("input[name='internal_name']").first
-+                        name.fill("Keep me 0963")
++                        name.fill("Keep me 0983")
 +                        page.locator(".airbnb-actions .copy-settings-open").first.click()
 +                        dialog = page.locator("#copy-settings")
 +                        dialog.wait_for(state="visible")
@@ -390,17 +390,17 @@ index 12b572e2..0484993e 100644
 +                        select = dialog.locator("select#copy_from")
 +                        select.select_option(index=0)
 +                        assert select.input_value(), label
-+                        _shot_0963(page, f"copy-dialog-{lang}-{width}")
++                        _shot_0983(page, f"copy-dialog-{lang}-{width}")
 +                        dialog.locator("[data-sheet-close]").click()
 +                        dialog.wait_for(state="hidden")
-+                        assert name.input_value() == "Keep me 0963", label
++                        assert name.input_value() == "Keep me 0983", label
 +                    finally:
 +                        context.close()
 +        finally:
 +            browser.close()
 PATCH_EOF
 git apply --check /tmp/ubyhost-b05/6.patch && git apply /tmp/ubyhost-b05/6.patch
-git add -A App && git commit -q -m "0963 step 3" 2>&1 | tail -3
+git add -A App && git commit -q -m "0983 step 3" 2>&1 | tail -3
 ```
 
 ### Step 4: run the commands in section 6, then screenshots, then the report (section 9).
@@ -417,7 +417,7 @@ Run from `App/`. Always with `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/u
 cd /tmp/ubyhost-b05-worktree/App
 export UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/ubyhost-b05
 # 1. the new tests (expect 2 passed)
-.venv/bin/python -m pytest tests/test_host_property_controls_browser.py -k 0963 -q -rs --tb=short -x 2>&1 | tail -30
+.venv/bin/python -m pytest tests/test_host_property_controls_browser.py -k 0983 -q -rs --tb=short -x 2>&1 | tail -30
 # 2. static and property rows (expect all passed)
 .venv/bin/python -m pytest tests/test_static_versions.py tests/test_wp07_cache_heartbeats.py tests/test_0534_property_page_v2.py tests/test_property_navigation_browser.py tests/test_ubyport_sample_pdf.py tests/test_copy_property_settings.py tests/test_0913_property_stay_fee.py -q -rs --tb=short -x 2>&1 | tail -30
 .venv/bin/python -m pytest tests/test_property_*.py tests/test_onboarding*.py tests/test_first_*.py -q -rs --tb=short -x 2>&1 | tail -30
@@ -453,7 +453,7 @@ Stop and write the report (Status: blocked) if: an anchor in section 2 is not fo
 
 ## 9. Report
 
-Write `docs/tasks/0963-report.md` (600 tokens at most): files changed (`git diff --stat 7b0355c..HEAD`), each command with its last 5 lines, section 7 ticked with one sentence per screenshot, Deviations (include the pre-existing 0097 failure), Questions, owner steps left. Set `Status: review` at the top of this brief. Commit both as `0963 report`. Do not push or open a PR.
+Write `docs/tasks/0983-report.md` (600 tokens at most): files changed (`git diff --stat 7b0355c..HEAD`), each command with its last 5 lines, section 7 ticked with one sentence per screenshot, Deviations (include the pre-existing 0097 failure), Questions, owner steps left. Set `Status: review` at the top of this brief. Commit both as `0983 report`. Do not push or open a PR.
 
 ## Risk list (for the reviewer)
 
