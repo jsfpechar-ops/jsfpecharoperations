@@ -44,3 +44,7 @@ Status: review
 
 ## Owner steps left
 - Merge PR #791 with `scripts/merge-pr-on-green.sh` once CI is green.
+
+## Orchestrator review (2026-11-06)
+
+Screenshots 320 and 390 checked: dates on one line, no overflow. Pre-existing finding for a follow-up brief: the Havel help button (`.havel-fab`) overlaps the right end of the "Send to UbyPort" bar at 320 and 390 px.
