@@ -36,3 +36,14 @@ Status: blocked
 - Test ares failure: check whether it fails on main.
 - Part A still open.
 - Status stays blocked; no PR opened.
+
+## CI after 0989 (orchestrator, head f22f287e, browser shards; shard 4 pending)
+
+Shard 1: 9 failed / 360. Shard 2: 9 failed / 430. Shard 3: 1 failed / 230. Failing tests (likely from 0986-0988: alert "Open the stay" on compact pages, lock off row, property header and save bar):
+- test_many_alerts_keep_every_deadline_and_fold_only_non_filing; test_one_alert_is_large_on_stays_and_compact_elsewhere (0987 D: `compact_page` dropped)
+- test_status_block_fits_and_shows_its_state[off-390/768/1280] (0987 lock: connected+off now shows Turn on)
+- test_0833_property_editor_help_headings_and_width; test_property_rail_and_back_links_ask_and_cards_into_settings_do_not; test_property_settings_save_discard_stay[en/cs, 360/1280] (0986 header)
+- test_speed_pages_geometry[invoice-form-320/390/768]
+- test_keyboard_focus_is_visible_and_not_covered; test_without_javascript_nothing_changes; test_every_page_passes_the_page_checks; test_keyboard_only_flow
+- test_direct_fee_backlinks_align_with_page_lane (section wider than header)
+Plus the 0710 stays page-help tap target from run 2. Next chat: one brief, fix markup/CSS to the owner's decisions, update only pins that encode the rejected PR design.
