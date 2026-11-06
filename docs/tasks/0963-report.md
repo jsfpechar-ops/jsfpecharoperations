@@ -63,3 +63,12 @@ Deviations:
 - Commit trailer: the owner's instruction named Claude Opus 5.5, so that name is used.
 
 Owner steps left: unchanged from the brief (Grafana queries after deploy).
+
+## Orchestrator review (2026-11-06)
+
+Code reviewed (main.py `_access_kind`, calendar `load(background)`): OK. Browser tests skipped locally (no Playwright in .venv); CI runs them before merge.
+
+Production findings from the same session, for a later brief:
+- `settings`: ~13k updates on 40 rows in 6 days (a write every ~40 s from a loop).
+- `guest`, `cleaning_event`, `alert`: 100k+ full-table scans each. Harmless at 9 properties; add indexes or stop the loops before scaling.
+- Signup: 33 GET /signup (all 200), 0 POST in 7 days. Real-visitor count to be checked in PostHog.
