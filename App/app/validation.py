@@ -1065,7 +1065,7 @@ def validate_apartment(ap: Dict[str, Optional[str]]) -> List[Issue]:
 
     user = (ap.get("uby_ws_user") or "").strip()
     if not user:
-        issues.append(Issue("uby_ws_user", "UbyPort web-service login is required for automatic reporting."))
+        issues.append(Issue("uby_ws_user", "UbyPort web login required for automatic reporting."))
     elif not _WS_USER_RE.match(user):
         issues.append(
             Issue(

@@ -546,7 +546,7 @@ func ValidateApartment(ap map[string]string) []Issue {
 
 	user := get("uby_ws_user")
 	if user == "" {
-		issues = append(issues, Issue{"uby_ws_user", "UbyPort web-service login is required for automatic reporting.", severityError})
+		issues = append(issues, Issue{"uby_ws_user", "UbyPort web login required for automatic reporting.", severityError})
 	} else if !wsUserRE.MatchString(user) {
 		issues = append(issues, Issue{"uby_ws_user", webServiceLoginWarningText, severityWarning})
 	}

@@ -18,7 +18,7 @@
   {% if page_title_html %}
   <header class="ui-ph" data-list-title-row>
     <div class="ui-ph-main">
-      {% if page_back %}<a class="ui-ph-back airbnb-back" href="{{ page_back }}">{{ icon('arrow-left', 16) }}<span>{{ self.back_label() | trim or t('common.back') }}</span></a>{% endif %}
+      {% if page_back %}<a class="ui-ph-back" href="{{ page_back }}">{{ icon('arrow-left', 16) }}<span>{{ self.back_label() | trim or t('common.back') }}</span></a>{% endif %}
       <div class="ui-ph-title-row">
         <h1>{{ page_title_html }}</h1>
         {% if how_key | default('') %}{{ page_help(how_key | default('')) }}{% endif %}

@@ -110,7 +110,7 @@ CS_MESSAGES: Dict[str, str] = {
     "Postcode is required.": "Vyplňte PSČ.",
     "Postcode must be exactly 5 digits.": "PSČ má přesně 5 číslic.",
     "Municipality is required.": "Vyplňte obec.",
-    "UbyPort web-service login is required for automatic reporting.": (
+    "UbyPort web login required for automatic reporting.": (
         "Pro automatické hlášení je potřeba přihlašovací jméno k webové službě UbyPort."
     ),
     "Web-service logins look like UBY-WS123abc (production) or uby-tws1ab45 (test). "

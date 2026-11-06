@@ -151,7 +151,7 @@ _AUDIT_JS = """(isBack) => {
   // than 60 characters, outside help bodies, open help panels, headings, input labels, table cells and form fields
   const SKIP_FINE = 'h1, h2, h3, h4, h5, h6, label, td, th, table, textarea, input, select, option, script, style';
   // .env-banner is the shell's practice-mode safety alert (base.html, _env_banner.html), shown only when UBYPORT_ENV is mock
-  const HELP_PANEL = '.help-tip-body, .help-tip, .env-banner, details[open].ui-how, details[open].page-help, details[open].stays-how, details[open].help-panel';
+  const HELP_PANEL = '.help-tip-body, .help-tip, .env-banner, details[open].ui-how, details[open].page-help, .page-help-wrap:has(details.page-help[open]) > .page-help-body, details[open].stays-how, details[open].help-panel';
   for (const el of [root, ...root.querySelectorAll('*')]) {
     if (el.matches(SKIP_FINE) || el.closest(SKIP_FINE + ', ' + HELP_PANEL)) continue;
     if (!vis(el)) continue;

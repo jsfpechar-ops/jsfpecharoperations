@@ -563,7 +563,9 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                                 "candidate": direct_backlink, "delta": delta})
                     # 0751: the phone v2 stay page centres its title (Airbnb style), so no left lane below 1024 px
                     phone_centred_title = name == "stay-detail" and width < 1024
-                    if title and result and not phone_dashboard and not phone_centred_title and abs(result["left"] - title["left"]) > 2:
+                    # Same routes as v2_header_skip: crumb + h1 inset need not match the result lane edge.
+                    if (title and result and not phone_dashboard and not phone_centred_title and not v2_header_skip
+                            and abs(result["left"] - title["left"]) > 2):
                         mismatches.append({"route": name, "locale": lang, "width": width,
                             "lane": "pageHeader.titleLeft", "result": result, "candidate": title})
                     lane = geometry["result"]
