@@ -2573,23 +2573,24 @@ body.v2 .onboarding-finish-strip{display:flex;flex-wrap:wrap;gap:12px;align-item
 
 /* 0948 status strip */
 /* 0982: six compact status pills, the first content group under the title. Flex wrap: one row when it fits, clean rows otherwise; words never split. */
-body.v2 .prop-strip{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin:0 auto 16px;max-width:980px}
-body.v2 .prop-strip .sc{flex:1 1 140px;min-width:0;display:grid;grid-template-columns:10px minmax(0,1fr);column-gap:8px;row-gap:0;align-items:center;align-content:center;min-height:52px;padding:8px 12px;background:#fff;border:1px solid var(--line);border-radius:12px;color:inherit;text-decoration:none;box-sizing:border-box}
-body.v2 .prop-strip div.sc.sc-link{display:block;flex-basis:176px}
+body.v2 .prop-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:1fr;gap:10px;margin:0 auto 16px;max-width:980px}
+@media (min-width:640px){body.v2 .prop-strip{grid-template-columns:repeat(3,minmax(0,1fr))}}
+body.v2 .prop-strip .sc{display:grid;grid-template-columns:10px minmax(0,1fr);column-gap:10px;row-gap:2px;align-items:center;align-content:center;min-height:64px;padding:12px;background:#fff;border:1px solid var(--line);border-radius:14px;color:inherit;text-decoration:none}
+body.v2 .prop-strip div.sc.sc-link{display:block;padding:12px}
 body.v2 .prop-strip .sc:hover{border-color:var(--ink3)}
 body.v2 nav.prop-strip a.sc:focus,body.v2 nav.prop-strip a.sc:focus-visible,body.v2 nav.prop-strip a.sc-main:focus,body.v2 nav.prop-strip a.sc-main:focus-visible{outline:2px solid var(--ink)!important;outline-offset:2px}
 body.v2 .prop-strip .sd{grid-row:1/3;width:10px;height:10px;border-radius:50%;background:#c9c9c3}
 body.v2 .prop-strip .sc[data-state="ok"] .sd{background:var(--ok)}
 body.v2 .prop-strip .sc[data-state="warn"] .sd{background:var(--warn)}
 body.v2 .prop-strip .sc[data-state="bad"] .sd{background:var(--bad)}
-body.v2 .prop-strip .sc b{grid-column:2;font-size:14px;font-weight:600;line-height:1.25;min-width:0;overflow-wrap:break-word;word-break:normal;hyphens:manual}
-body.v2 .prop-strip .sc small{grid-column:2;font-size:13px;color:var(--ink3);line-height:1.25;min-width:0;overflow-wrap:break-word;word-break:normal;hyphens:manual}
+body.v2 .prop-strip .sc b{grid-column:2;font-size:14px;font-weight:600;line-height:1.3;min-width:0;overflow-wrap:anywhere}
+body.v2 .prop-strip .sc small{grid-column:2;font-size:13px;color:var(--ink3);line-height:1.3;min-width:0;overflow-wrap:anywhere}
 body.v2 .prop-strip .sc small.is-problem{color:var(--bad);font-weight:600}
-body.v2 .prop-strip .sc-main{display:grid;grid-template-columns:10px minmax(0,1fr);column-gap:8px;row-gap:0;align-items:center;color:inherit;text-decoration:none;min-width:0}
+body.v2 .prop-strip .sc-main{display:grid;grid-template-columns:10px minmax(0,1fr);column-gap:10px;row-gap:2px;align-items:center;color:inherit;text-decoration:none;min-width:0}
 body.v2 .prop-strip .sc-main b,body.v2 .prop-strip .sc-main small{grid-column:2}
 @media (max-width:1023px){body.v2 .prop-strip .sc-main{min-height:var(--control-h-phone,44px);align-content:center}}
-body.v2 .prop-strip .sc-actions{margin-top:6px;padding-left:18px;min-width:0}
-body.v2 .prop-strip .sc-actions .btn{display:block;width:100%;max-width:100%;min-height:44px;padding:6px 8px;box-sizing:border-box;font-size:13px;line-height:1.2;white-space:normal;overflow-wrap:break-word;text-align:center}
+body.v2 .prop-strip .sc-actions{margin-top:8px;padding-left:20px}
+body.v2 .prop-strip .sc-actions .btn{min-height:44px}
 body.v2 .airbnb-actions{display:flex;gap:10px;align-items:center;margin-left:auto}
 body.v2 .prop-new-head{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
 body.v2 .prop-new-head .airbnb-actions{margin-left:auto}
@@ -2597,7 +2598,7 @@ body.v2 .airbnb-header:has(>.airbnb-actions){flex-wrap:wrap}
 body.v2 .airbnb-header:has(>.airbnb-actions)>.airbnb-title{width:auto;flex:1 1 0;min-width:0}
 body.v2 .airbnb-header:has(>.airbnb-actions)>.airbnb-back{margin-right:0}
 @media (max-width:767px){body.v2 .airbnb-actions{width:100%;margin-left:0}body.v2 .airbnb-actions .copy-settings-open{width:100%;justify-content:center;min-height:44px}body.v2 .airbnb-header:has(>.airbnb-actions)>.airbnb-title{flex:1 1 100%}}
-@media (max-width:359px){body.v2 .prop-strip .sc,body.v2 .prop-strip div.sc.sc-link{flex-basis:100%}}
+@media (max-width:359px){body.v2 .prop-strip{grid-template-columns:minmax(0,1fr)}}
 /* 0982: cards that used to sit in the Preview aside (setup continue, Leon) now sit under the pills; the Preview/checklist panel is gone. */
 body.v2 .prop-after-strip{display:flex;flex-direction:column;gap:8px;max-width:980px;margin:0 auto 16px}
 body.v2 .prop-after-strip:empty{display:none}
