@@ -125,6 +125,9 @@ function initSignature() {
     var form = canvas.closest("form");
     if (form) {
       form.addEventListener("submit", function (event) {
+        // 0979: the language buttons (data-lang-draft) post the open form to
+        // /relang. They need no signature, so they must not hit this guard.
+        if (event.submitter && event.submitter.hasAttribute("data-lang-draft")) return;
         if (!hidden.value) {
           event.preventDefault();
           // The signature step is not always the one on screen, and its
@@ -370,10 +373,17 @@ function initSignature() {
       list.textContent = "";
       if (!rows.length) { card.hidden = true; return; }
       rows.forEach(function (row) {
+        // One row per fact: the label above, the value and its Edit action
+        // on one line below. A div around a dt/dd pair is valid in a dl.
+        var item = document.createElement("div");
+        item.className = "g-review-row";
         var dt = document.createElement("dt");
         dt.textContent = row.label;
         var dd = document.createElement("dd");
-        dd.appendChild(document.createTextNode(row.value));
+        var value = document.createElement("span");
+        value.className = "g-review-value";
+        value.textContent = row.value;
+        dd.appendChild(value);
         var button = document.createElement("button");
         button.type = "button";
         button.className = "g-review-change";
@@ -386,14 +396,34 @@ function initSignature() {
           row.target.scrollIntoView({ behavior: "smooth", block: "center" });
         });
         dd.appendChild(button);
-        list.appendChild(dt);
-        list.appendChild(dd);
+        item.appendChild(dt);
+        item.appendChild(dd);
+        list.appendChild(item);
       });
       card.hidden = false;
     }
 
     form.addEventListener("guest-wizard:shown", build);
     build();
+  }
+
+  /* A ticked acknowledgement is a finished answer, not a mistake. The red
+     look is kept for an attempted submit with the box still empty: the browser
+     fires "invalid" on it then, and ticking the box clears the mark again. */
+  function initLegalAck() {
+    var box = document.getElementById("legal_ack");
+    if (!box) return;
+    var wrap = box.closest(".legal-ack");
+    if (!wrap) return;
+    box.addEventListener("invalid", function () {
+      wrap.classList.add("is-invalid");
+      box.setAttribute("aria-invalid", "true");
+    });
+    box.addEventListener("change", function () {
+      if (!box.checked) return;
+      wrap.classList.remove("is-invalid");
+      box.removeAttribute("aria-invalid");
+    });
   }
 
   function focusFirstError() {
@@ -460,7 +490,11 @@ function initSignature() {
     }
 
     var steps = stepsFor();
-    var active = Math.max(0, steps.findIndex(function (step) { return step.querySelector(".bad, .err:not(:empty)"); }));
+    var errorAt = steps.findIndex(function (step) { return step.querySelector(".bad, .err:not(:empty)"); });
+    // 0979: after a language change the server hands back the step the guest
+    // was on; a step with an error still wins, so nothing invalid is hidden.
+    var startAt = parseInt(form.getAttribute("data-start-step") || "0", 10);
+    var active = errorAt >= 0 ? errorAt : Math.max(0, Math.min(isNaN(startAt) ? 0 : startAt, steps.length - 1));
     // The entry the page loaded on is the starting point for the back gesture;
     // it replaces rather than pushes so the guest is not trapped in the wizard.
     var pushed = active;
@@ -508,6 +542,7 @@ function initSignature() {
     function show(index, focus) {
       steps = stepsFor();
       active = Math.max(0, Math.min(index, steps.length - 1));
+      form.setAttribute("data-active-step", String(active));
       // The OS back gesture used to leave the page and throw the whole form
       // away. Every step gets its own history entry, so back now steps back.
       if (active !== pushed) {
@@ -611,6 +646,35 @@ function initSignature() {
     show(active, false);
   }
 
+  /* 0979: the language menu on the form posts the open form back (see
+     guest_form_relang). A drawn signature, the acknowledgement tick and a
+     chosen photo are not carried over, so ask first; Cancel leaves the page
+     and every answer exactly as it is. Nothing is stored anywhere. */
+  function initLanguageDraft() {
+    var form = document.getElementById("guest-form");
+    if (!form) return;
+    var buttons = document.querySelectorAll("[data-lang-draft]");
+    Array.prototype.forEach.call(buttons, function (button) {
+      button.addEventListener("click", function (event) {
+        var signature = document.getElementById("signature");
+        var ack = document.getElementById("legal_ack");
+        var photo = document.getElementById("passport_photo");
+        var drawn = !!(signature && signature.value && signature.value !== signature.defaultValue);
+        var ticked = !!(ack && ack.checked);
+        var picked = !!(photo && photo.files && photo.files.length);
+        if ((drawn || ticked || picked) && !window.confirm(form.getAttribute("data-lang-warning") || "")) {
+          event.preventDefault();
+          return;
+        }
+        // What is dropped need not travel.
+        if (drawn) signature.value = "";
+        if (picked) photo.value = "";
+        var step = document.getElementById("form-step");
+        if (step) step.value = form.getAttribute("data-active-step") || "0";
+      });
+    });
+  }
+
   /* The wide check-in layout shows the stay summary and the step list beside
      the active form. The list is built from the same data-step-title elements
      the wizard walks, so it can never disagree with the bar, and each visited
@@ -676,9 +740,11 @@ function initSignature() {
     initVisaVisibility();
     initPinReturn();
     initGuestWizard();
+    initLanguageDraft();
     initCheckinRail();
     initErrorSummary();
     initGuestReview();
+    initLegalAck();
     focusFirstError();
   });
 })();

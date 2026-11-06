@@ -356,7 +356,7 @@ def test_filter_draft_calendar_and_month_grid_commit_once(host, base):
         assert "Filter Property Two" in page.locator("[data-filter-summary]").inner_text()
         page.goto(base + f"/reservations?range=custom&archive_scope=1&apartment={host['apartments'][1]}&status=cancelled&lang=en")
         assert "range=archive" in page.locator('.settings-pills .settings-pill.is-current').get_attribute("href")
-        assert page.locator('#stays-filter-panel a').filter(has_text="Reset").get_attribute("href") == "/reservations?range=archive"
+        assert page.locator("[data-stays-reset]").get_attribute("href") == "/reservations?range=archive"
         assert not page_errors, "browser script errors: " + " | ".join(page_errors)
 
         page.goto(base + f"/invoices?status=paid&q=Sample&apartment={host['apartments'][0]}&lang=en")
@@ -508,4 +508,212 @@ def test_filter_geometry_and_popovers_stay_inside_the_viewport_in_english_and_cz
                 assert selected_month.evaluate("element => getComputedStyle(element).backgroundColor") == "rgb(249, 233, 231)"  # v2 --brand-soft
                 _capture(page, f"invoices-selected-month-{lang}-{width}-month-grid")
         assert not page_errors, "browser script errors: " + " | ".join(page_errors)
+        browser.close()
+
+
+# ---------------------------------------------------------------------------
+# 0968: the default Stays tab says it includes overdue stays; the filter panel
+# is one compact row; Reset filters sits under the scope line, away from Cancel.
+# ---------------------------------------------------------------------------
+from datetime import date, timedelta
+
+from app import deadlines, reporting
+
+SCOPE_LABEL = {"en": "Upcoming & current", "cs": "Nadcházející"}
+
+
+def _past_deadline_arrival():
+    now = deadlines.local_now()
+    for back in range(10, 21):
+        candidate = date.today() - timedelta(days=back)
+        if deadlines.reporting_deadline(candidate) < now:
+            return candidate
+    pytest.fail("no past-deadline arrival found")
+
+
+def _shots_dir() -> Path:
+    target = Path(os.environ.get("UBYHOST_SHOTS_DIR") or "/tmp/ubyhost-b10")
+    target.mkdir(parents=True, exist_ok=True)
+    return target
+
+
+@pytest.fixture(scope="module")
+def scope_host():
+    db.init_db()
+    username = f"scope-{secrets.token_hex(4)}"
+    owner = auth.create_account(
+        f"{username}@example.test", "Scope Test", role="host", username=username
+    )
+    entity = db.insert("legal_entity", {
+        "name": "Scope Test s.r.o.", "owner_user_id": owner, "created_at": db.utcnow(),
+    })
+    apartments = []
+    for name in ("Scope Alpha", "Scope Beta"):
+        apartments.append(db.insert("apartment", {
+            "internal_name": name, "owner_user_id": owner, "legal_entity_id": entity,
+            "permalink_token": f"scope{secrets.token_hex(4)}", "automation_mode": "manual",
+            "active": 1, "created_at": db.utcnow(),
+        }))
+    alpha, beta = apartments
+    now = db.utcnow()
+    today = date.today()
+    ids = {}
+
+    def add(key, apartment_id, start, end, archived_at=None):
+        ids[key] = db.insert("reservation", {
+            "apartment_id": apartment_id, "source": "manual",
+            "uid": f"scope-{key}-{secrets.token_hex(3)}",
+            "date_from": start.isoformat(), "date_to": end.isoformat(),
+            "summary": f"Scope {key} stay", "status": "active",
+            "expected_guests_override": 1, "archived_at": archived_at,
+            "created_at": now, "updated_at": now,
+        })
+        return ids[key]
+
+    arrival = _past_deadline_arrival()
+    overdue = add("overdue", alpha, arrival, arrival + timedelta(days=3))
+    db.insert("guest", {
+        "reservation_id": overdue, "surname": "SCOPEOVERDUE", "first_name": "ANNA",
+        "birth_date": "01011990", "nationality": "DEU", "doc_number": "P9988772",
+        "res_street": "Hauptstrasse 5", "res_city": "Berlin", "res_country": "DEU",
+        "purpose": "10", "is_lead": 1, "entered_by": "guest", "signature_png": "imported",
+        "signed_at": now, "passport_photo_at": now, "identity_verified_at": now,
+        "stay_from": arrival.isoformat(), "stay_to": (arrival + timedelta(days=3)).isoformat(),
+        "submit_state": reporting.PENDING, "created_at": now, "updated_at": now,
+    })
+    add("current", alpha, today - timedelta(days=1), today + timedelta(days=2))
+    for index in range(5):
+        start = today + timedelta(days=10 + index * 4)
+        add(f"future{index}", alpha, start, start + timedelta(days=2))
+    add("beta", beta, today + timedelta(days=12), today + timedelta(days=14))
+    add("archived", alpha, today + timedelta(days=60), today + timedelta(days=62), archived_at=now)
+    client = TestClient(app)
+    response = login_as(client, username, url="/login?lang=en", follow_redirects=False)
+    assert response.status_code == 303, response.text
+    yield {"client": client, "owner": owner, "apartments": apartments, "ids": ids}
+    db.execute("DELETE FROM guest WHERE reservation_id IN (?)", (overdue,))
+    db.execute("DELETE FROM reservation WHERE apartment_id IN (?, ?)", apartments)
+    db.execute("DELETE FROM apartment WHERE owner_user_id = ?", (owner,))
+    db.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (owner,))
+    db.execute("DELETE FROM alert WHERE owner_user_id = ?", (owner,))
+    db.execute("DELETE FROM audit WHERE owner_user_id = ? OR actor_user_id = ?", (owner, owner))
+    db.execute("DELETE FROM user_account WHERE id = ?", (owner,))
+
+
+def test_default_stays_tab_label_names_overdue_and_the_note_only_shows_there(scope_host):
+    client, ids = scope_host["client"], scope_host["ids"]
+    for lang in ("en", "cs"):
+        page = client.get(f"/reservations?lang={lang}").text
+        label = SCOPE_LABEL[lang].replace("&", "&amp;")
+        assert f'aria-current="page">{label}<' in page
+        assert f"/reservations/{ids['overdue']}" in page, "overdue stay must stay visible"
+        assert f"/reservations/{ids['current']}" in page
+        assert f"/reservations/{ids['archived']}" not in page
+    assert f"/reservations/{ids['archived']}" in client.get("/reservations?range=archive&lang=en").text
+
+
+def test_stays_filter_is_one_row_with_reset_apart_from_cancel_and_scope_survives_paging(scope_host, base):
+    apartments = scope_host["apartments"]
+    alpha, beta = apartments
+    shots = _shots_dir()
+    with sync_api.sync_playwright() as playwright:
+        browser, _context, page = _browser_context(playwright, scope_host, base, width=1280)
+        errors = []
+        page.on("pageerror", lambda error: errors.append(str(error)))
+        page.goto(base + "/reservations?lang=en")
+        page.locator("[data-filter-toggle]").click()
+        panel = page.locator("#stays-filter-panel")
+        settle_motion(page)
+        assert panel.is_visible()
+        # No link in the action row: Apply and Cancel only.
+        assert page.locator("#stays-filter-panel .filter-panel-actions a").count() == 0
+        apply_box = page.locator("#stays-filter-panel .filter-apply").bounding_box()
+        cancel_box = page.locator("#stays-filter-panel [data-filter-cancel]").bounding_box()
+        fields_box = page.locator("#stays-filter-panel .filter-fields").bounding_box()
+        actions_box = page.locator("#stays-filter-panel .filter-panel-actions").bounding_box()
+        panel_box = panel.bounding_box()
+        (shots / "heights.txt").write_text(f"panel_height_1280={round(panel_box['height'])}\n", encoding="utf-8")
+        assert abs(apply_box["y"] - cancel_box["y"]) <= 2, "Apply and Cancel share one row"
+        # Compact: the actions sit in the same row as the fields, not under them.
+        assert actions_box["y"] < fields_box["y"] + fields_box["height"] - 4, (actions_box, fields_box)
+        page.screenshot(path=str(shots / "filter-open-en-1280.png"), full_page=True)
+
+        # Cancel restores the draft and closes the panel without navigating.
+        before_url = page.url
+        page.locator('#stays-filter-panel [name="apartment"]').select_option(str(alpha))
+        page.locator("#stays-filter-panel [data-filter-cancel]").click()
+        assert not panel.is_visible()
+        assert page.url == before_url
+        assert page.locator('#stays-filter-panel [name="apartment"]').input_value() == ""
+
+        # Apply: scope stays visible, Reset filters is above the panel and far from Cancel.
+        page.locator("[data-filter-toggle]").click()
+        page.locator('#stays-filter-panel [name="apartment"]').select_option(str(alpha))
+        with page.expect_navigation():
+            page.locator("#stays-filter-panel .filter-apply").click()
+        # The default range is kept in the URL; Apply with today as the from-date resolves to "upcoming".
+        assert f"apartment={alpha}" in page.url and "range=" in page.url
+        assert "Scope Alpha" in page.locator("[data-filter-summary]").inner_text()
+        reset = page.locator("[data-stays-reset]")
+        assert reset.is_visible() and reset.inner_text().strip() == "Reset filters"
+        page.locator("[data-filter-toggle]").click()
+        settle_motion(page)
+        reset_box = reset.bounding_box()
+        cancel_box = page.locator("#stays-filter-panel [data-filter-cancel]").bounding_box()
+        assert reset_box["y"] + reset_box["height"] <= panel.bounding_box()["y"] + 1
+        assert cancel_box["y"] - (reset_box["y"] + reset_box["height"]) >= 40, "Reset and Cancel are not adjacent"
+        page.screenshot(path=str(shots / "filter-applied-en-1280.png"), full_page=True)
+
+        # Pagination keeps the scope: page size is 5, Alpha has 7 stays in this view.
+        next_link = page.locator('a[rel="next"]').first
+        assert f"apartment={alpha}" in next_link.get_attribute("href")
+        assert "range=" in next_link.get_attribute("href")
+        assert page.locator(".stays-desk tbody tr").count() == 5
+        with page.expect_navigation():
+            next_link.click()
+        assert "page=2" in page.url and f"apartment={alpha}" in page.url
+        assert page.locator(".stays-desk tbody tr").count() == 2
+        assert "Scope Alpha" in page.locator("[data-filter-summary]").inner_text()
+        assert page.locator(f'a[href^="/reservations/{scope_host["ids"]["beta"]}?"]').count() == 0
+
+        # Reset filters leaves the scope and the link goes away.
+        with page.expect_navigation():
+            page.locator("[data-stays-reset]").click()
+        assert "range=all" in page.url and "apartment=" not in page.url
+        assert page.locator("[data-stays-reset]").count() == 0
+
+        # Empty filtered result keeps the way back.
+        page.goto(base + f"/reservations?range=custom&apartment={beta}&from=2000-01-01&to=2000-01-02&lang=en")
+        assert page.locator(".stays-desk tbody tr").count() == 0
+        assert page.get_by_text("No stay matches this filter.").first.is_visible()
+        assert page.locator("[data-stays-reset]").is_visible()
+        page.screenshot(path=str(shots / "filter-empty-en-1280.png"), full_page=True)
+        assert not errors, errors
+        browser.close()
+
+
+def test_stays_default_tab_label_is_not_clipped_at_phone_tablet_and_desktop_in_english_and_czech(scope_host, base):
+    shots = _shots_dir()
+    with sync_api.sync_playwright() as playwright:
+        browser, _context, page = _browser_context(playwright, scope_host, base, width=1280)
+        for width in (390, 768, 1280):
+            page.set_viewport_size({"width": width, "height": 1000})
+            for lang in ("en", "cs"):
+                page.goto(base + f"/reservations?lang={lang}")
+                current = page.locator(".stays-pills [aria-current=page]").first
+                assert " ".join(current.inner_text().split()) == SCOPE_LABEL[lang], f"{width}px {lang}"
+                geometry = page.evaluate(
+                    """() => {
+                      const root = document.documentElement;
+                      const pill = document.querySelector('.stays-pills [aria-current=page]');
+                      const box = pill.getBoundingClientRect();
+                      return {
+                        pageOverflow: root.scrollWidth > root.clientWidth + 1,
+                        pillClipped: pill.scrollWidth > pill.clientWidth + 1 || box.left < -1 || box.right > root.clientWidth + 1,
+                      };
+                    }"""
+                )
+                assert not geometry["pageOverflow"], f"{width}px {lang}: page overflow"
+                assert not geometry["pillClipped"], f"{width}px {lang}: tab label clipped"
+                page.screenshot(path=str(shots / f"stays-default-{lang}-{width}.png"), full_page=True)
         browser.close()

@@ -201,6 +201,24 @@
   </div>
   <p class="ui-sub">{{ t('stay_fees.payment.footnote') }}</p>
 </section>
+{% if frozen and filing_row %}
+<section class="ui-section" id="fee-records" aria-labelledby="fee-records-title">
+  <h2 id="fee-records-title">{{ t('stay_fees.records.title') }}</h2>
+  <p class="ui-sub">{{ t('stay_fees.records.lede') }}</p>
+  <div class="fee-records-actions action-group">
+    <form method="post" action="/stay-fees/{{ apartment.id }}/filings/{{ filing_row.id }}/sent" class="inline-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <input type="hidden" name="month" value="{{ month_key }}">
+      <button class="ui-btn ui-btn-secondary" type="submit">{{ t('stay_fees.records.mark_sent') }}</button>
+    </form>
+    <form method="post" action="/stay-fees/{{ apartment.id }}/filings/{{ filing_row.id }}/paid" class="inline-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <input type="hidden" name="month" value="{{ month_key }}">
+      <button class="ui-btn ui-btn-secondary" type="submit">{{ t('stay_fees.records.mark_paid') }}</button>
+    </form>
+  </div>
+</section>
+{% endif %}
 
 <section class="ui-section" id="guests">
   <div class="ui-section-h">

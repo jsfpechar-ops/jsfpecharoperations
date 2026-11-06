@@ -17,7 +17,7 @@
 {{ onboarding_banner(onboarding) }}
 
 {% if rows %}
-<div class="head props-head"><div><h1>{{ t('apartments.title') }}{{ page_help('properties') }}</h1></div><a class="btn" href="/apartments/new">{{ t('apartments.add') }}</a><a class="round props-add ph-only" href="/apartments/new" aria-label="{{ t('apartments.add') }}">{{ icon('plus', 22) }}</a></div>
+<div class="head props-head"><div class="props-title-row"><h1>{{ t('apartments.title') }}</h1>{{ page_help('properties') }}</div><a class="btn" href="/apartments/new">{{ t('apartments.add') }}</a><a class="round props-add ph-only" href="/apartments/new" aria-label="{{ t('apartments.add') }}">{{ icon('plus', 22) }}</a></div>
 <div class="card props-card"><table>
     <thead>
       <tr><th>{{ t('apartments.table.property') }}</th><th>{{ t('apartments.table.address') }}</th><th>{{ t('apartments.table.setup') }}</th>

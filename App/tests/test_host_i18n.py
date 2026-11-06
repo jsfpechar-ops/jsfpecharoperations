@@ -3,10 +3,18 @@ from __future__ import annotations
 
 import re
 
+import pytest
 from fastapi.testclient import TestClient
 
-from app import host_i18n
+from app import db, host_i18n
 from app.main import app
+
+
+@pytest.fixture(autouse=True)
+def _host_i18n_db():
+    """0626: /language and signed-in pages need the schema; this file ran without init on base."""
+    db.init_db()
+    yield
 
 
 def test_normalise_language_accepts_supported_codes_and_falls_back():

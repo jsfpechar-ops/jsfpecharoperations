@@ -14,16 +14,14 @@
 {% block primary_action %}{% endblock %}
 {% block body %}
 <div class="guide-page">
-<div class="head guide-hd"><div><a class="guide-back" href="{{ base_url }}">{{ t('guest_guide.title') }}</a><h1 class="big">{{ t('guest_guide.quick.done_title') }}</h1><p class="sub">{{ t('guest_guide.progress', answered=progress.answered, total=progress.cards) }}</p></div><div class="guide-acts"><a class="btn line" href="{{ base_url ~ '/quick/' ~ first_step }}">{{ t('guest_guide.quick.edit') }}</a>{% if next_id %}<a class="btn" href="{{ base_url ~ '/' ~ next_id }}">{{ t('guest_guide.quick.write') }}</a>{% else %}<a class="btn" href="{{ base_url }}">{{ t('guest_guide.quick.back') }}</a>{% endif %}</div></div>
-{{ ui_banner('neutral', t('guest_guide.quick.done_lede')) }}
-{% call ui_section(t('guest_guide.quick.answers_title'), id='quick-answers') %}
+<div class="head guide-hd"><div><a class="guide-back" href="{{ base_url }}">{{ t('guest_guide.title') }}</a><h1 class="big">{{ t('guest_guide.quick.done_title') }}</h1><p class="sub">{{ t('guest_guide.progress', answered=progress.answered, total=progress.cards) }}</p></div><div class="guide-acts"><a class="btn line" href="{{ base_url ~ '/quick/' ~ first_step }}">{{ t('guest_guide.quick.edit') }}</a>{% if next_id and guide_state != 'none' %}<a class="btn" href="{{ base_url ~ '/' ~ next_id }}">{{ t('guest_guide.quick.write') }}</a>{% else %}<a class="btn" href="{{ base_url }}">{{ t('guest_guide.quick.back') }}</a>{% endif %}</div></div>
+{{ ui_banner('attention' if guide_state in ('none', 'saved') else 'neutral', t('guest_guide.quick.done_' ~ guide_state)) }}
 {% if answered %}
+{% call ui_section(t('guest_guide.quick.answers_title'), id='quick-answers') %}
 {% set pairs = [] %}{% for title, text in answered %}{% set _ = pairs.append((title, text | e)) %}{% endfor %}
 {{ ui_facts(pairs) }}
-{% else %}
-<p class="ui-sub">{{ t('guest_guide.quick.no_answers') }}</p>
-{% endif %}
 {% endcall %}
+{% endif %}
 {% call ui_section(t('guest_guide.quick.missing_title'), id='quick-missing') %}
 {% if open_cards %}
 {{ help_tip('guide-quick-missing-help', t('guest_guide.quick.missing_lede')) }}

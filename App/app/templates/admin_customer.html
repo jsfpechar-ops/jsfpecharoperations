@@ -1,6 +1,6 @@
 {% extends "host_page.html" %}
 {% set v2 = true %}
-{% block head_extra %}<link rel="stylesheet" href="/static/admin2.css?v=20261102-0893o">{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="/static/admin2.css?v=20261106-0893q">{% endblock %}
 {% set nav = 'users' %}
 {% set body_kind = 'detail' %}
 {% from "_ui_layout.html" import ui_section_tabs with context %}
@@ -10,6 +10,8 @@
 {% block tabs %}{{ ui_section_tabs() }}{% endblock %}
 {% block back_url %}/admin/customers{% endblock %}
 {% block back_label %}{{ t('customers.title') }}{% endblock %}
+{# 0893: round 40×40 control with icon only (labels on separate line in tests). #}
+{% block ph_back %}<a class="ui-ph-back airbnb-back" href="{{ self.back_url() | trim }}" aria-label="{{ self.back_label() | trim }}">{{ icon('arrow-left', 20) }}</a>{% endblock %}
 {% block secondary_actions %}
 {{ ui_button(t('customers.payments'), 'secondary', href='/admin/fakturace') }}
 {% endblock %}

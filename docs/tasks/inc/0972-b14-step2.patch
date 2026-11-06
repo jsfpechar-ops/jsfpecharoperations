@@ -1,0 +1,351 @@
+diff --git a/App/app/host_i18n.py b/App/app/host_i18n.py
+index b265a7d7..64f1bc5d 100644
+--- a/App/app/host_i18n.py
++++ b/App/app/host_i18n.py
+@@ -30,6 +30,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "lang.switch": "Language",
+         "nav.guide": "Help",
+         "help.tip.label": "Help",
++        "help.tip.label_for": "Help with %(topic)s",
+         "help.tip.more": "Read more",
+         "nav.operations": "Operations",
+         "nav.records": "Records",
+@@ -2526,6 +2527,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "housebook.legal_footnote": "Správcem údajů hostů jste vy. UbyHost poskytuje jen software: nejde o právní poradenství a neodpovídá za údaje zadané vámi nebo hosty ani za způsob jeho použití.",
+         "nav.guide": "Nápověda",
+         "help.tip.label": "Nápověda",
++        "help.tip.label_for": "Nápověda: %(topic)s",
+         "help.tip.more": "Číst více",
+         "send.this_stay": "Odeslat tento pobyt",
+         "send.all_ready": "Odeslat všechny připravené",
+@@ -4943,7 +4945,11 @@ _INTERFACE_STRINGS = {
+         "settings.destination.help": "The target and public URL come from server environment variables, so they cannot be changed by an accidental click.",
+         "settings.mail.title": "Guest e-mails",
+         "settings.mail.backend": "Mail backend",
+-        "settings.mail.help": "Staging uses the console backend: messages are stored here so you can copy claim links. Production stays disabled until SES is signed off.",
++        "settings.mail.help": "Guest e-mails such as claim links. The line below says what this installation does now.",
++        "settings.mail.status.disabled": "Sending is off: no guest e-mail leaves this installation.",
++        "settings.mail.status.console": "Not delivered: messages are kept below for claim links.",
++        "settings.mail.status.ses": "Sending is on through Amazon SES.",
++        "settings.mail.status.unknown": "Mail status is unknown.",
+         "settings.mail.preview": "Preview the HTML e-mail",
+         "settings.mail.to": "To",
+         "settings.mail.subject": "Subject",
+@@ -4984,6 +4990,8 @@ _INTERFACE_STRINGS = {
+         "settings.privacy_incomplete": "The guest privacy notice is incomplete.",
+         "settings.audit.help": "Important changes, archives, PIN rotations and police submissions are recorded here.",
+         "settings.audit.recent": "Recent activity (%(count)s events)",
++        "settings.audit.recent.one": "Recent activity (%(count)s event)",
++        "settings.audit.recent.few": "Recent activity (%(count)s events)",
+         "settings.audit.when": "When",
+         "settings.audit.who": "Who",
+         "settings.audit.as_admin": "as admin %(name)s",
+@@ -5779,7 +5787,11 @@ _INTERFACE_STRINGS = {
+         "settings.destination.help": "Cíl a veřejná URL pocházejí z proměnných serveru, takže je nelze změnit náhodným kliknutím.",
+         "settings.mail.title": "E-maily hostům",
+         "settings.mail.backend": "E-mailový backend",
+-        "settings.mail.help": "Staging používá konzoli: zprávy se ukládají sem, abyste mohli zkopírovat odkazy na převzetí. Produkce zůstává vypnutá, dokud nebude SES schválené.",
++        "settings.mail.help": "E-maily hostům, například odkazy na převzetí. Řádek níže říká, co tato instalace dělá teď.",
++        "settings.mail.status.disabled": "Odesílání je vypnuté: žádný e-mail hostům neodchází.",
++        "settings.mail.status.console": "Nedoručuje se: zprávy jsou uložené níže pro odkazy.",
++        "settings.mail.status.ses": "Odesílání je zapnuté přes Amazon SES.",
++        "settings.mail.status.unknown": "Stav pošty není znám.",
+         "settings.mail.preview": "Náhled HTML e-mailu",
+         "settings.mail.to": "Komu",
+         "settings.mail.subject": "Předmět",
+@@ -5820,6 +5832,8 @@ _INTERFACE_STRINGS = {
+         "settings.privacy_incomplete": "Informace o zpracování údajů hosta není úplná.",
+         "settings.audit.help": "Důležité změny, archivace, změny PIN a policejní hlášení se zapisují zde.",
+         "settings.audit.recent": "Nedávná aktivita (%(count)s událostí)",
++        "settings.audit.recent.one": "Nedávná aktivita (%(count)s událost)",
++        "settings.audit.recent.few": "Nedávná aktivita (%(count)s události)",
+         "settings.audit.when": "Kdy",
+         "settings.audit.who": "Kdo",
+         "settings.audit.as_admin": "jako administrátor %(name)s",
+@@ -7293,6 +7307,7 @@ _PASSKEY_STRINGS = {
+         "login.passkey": "Log in with a passkey",
+         "login.passkey_or": "or get a login link by e-mail",
+         "passkeys.title": "Passkeys",
++        "passkeys.count_label": "Registered",
+         "passkeys.help": "Log in with Face ID, a fingerprint or your device PIN instead of opening your inbox. The e-mail link keeps working, so losing a device never locks you out.",
+         "passkeys.add": "Add a passkey",
+         "passkeys.unsupported": "This browser cannot create passkeys. Try your phone, or a current Safari, Chrome, Edge or Firefox.",
+@@ -7342,6 +7357,7 @@ _PASSKEY_STRINGS = {
+         "login.passkey": "Přihlásit se pomocí klíče (passkey)",
+         "login.passkey_or": "nebo si nechte poslat odkaz e-mailem",
+         "passkeys.title": "Přístupové klíče (passkeys)",
++        "passkeys.count_label": "Zaregistrováno",
+         "passkeys.help": "Přihlaste se pomocí Face ID, otisku prstu nebo PINu zařízení, bez otvírání schránky. Odkaz e-mailem dál funguje, takže ztráta zařízení vás nikdy nezamkne.",
+         "passkeys.add": "Přidat klíč",
+         "passkeys.unsupported": "Tento prohlížeč neumí vytvořit přístupový klíč. Zkuste telefon nebo aktuální Safari, Chrome, Edge či Firefox.",
+@@ -7714,7 +7730,8 @@ _SETTINGS_GROUP_STRINGS = {
+         "settings.privacy.requests_help": "Requests from guests about their data, and their deadlines.",
+         "settings.privacy.requests_action": "Open requests",
+         "settings.help.guide_help": "Step-by-step guides, and how to reach support.",
+-        "settings.help.guide_action": "Open",
++        "settings.help.guide_action": "Open user guide",
++        "settings.help.guide_label": "User guide",
+     },
+     "cs": {
+         "settings.index_label": "Sekce nastavení",
+@@ -7732,7 +7749,8 @@ _SETTINGS_GROUP_STRINGS = {
+         "settings.privacy.requests_help": "Žádosti hostů o jejich údaje a jejich lhůty.",
+         "settings.privacy.requests_action": "Otevřít žádosti",
+         "settings.help.guide_help": "Návody krok za krokem a kontakt na podporu.",
+-        "settings.help.guide_action": "Otevřít",
++        "settings.help.guide_action": "Otevřít příručku",
++        "settings.help.guide_label": "Příručka",
+     },
+ }
+ for _lang, _strings in _SETTINGS_GROUP_STRINGS.items():
+diff --git a/App/app/host_vi_i18n.py b/App/app/host_vi_i18n.py
+index 28f23a46..107eba05 100644
+--- a/App/app/host_vi_i18n.py
++++ b/App/app/host_vi_i18n.py
+@@ -293,6 +293,7 @@ STRINGS: Dict[str, str] = {
+     "lang.switch": "Ngôn ngữ",
+     "nav.guide": "Trợ giúp",
+     "help.tip.label": "Trợ giúp",
++    "help.tip.label_for": "Trợ giúp: %(topic)s",
+     "help.tip.more": "Xem thêm",
+     "nav.operations": "Vận hành",
+     "nav.records": "Hồ sơ",
+@@ -2388,7 +2389,11 @@ STRINGS: Dict[str, str] = {
+     "settings.destination.help": "Đích và URL công khai lấy từ biến môi trường của máy chủ, nên không thể bị thay đổi do bấm nhầm.",
+     "settings.mail.title": "Email cho khách",
+     "settings.mail.backend": "Phương thức gửi thư",
+-    "settings.mail.help": "Staging dùng phương thức console: thư được lưu ở đây để bạn sao chép liên kết xác nhận. Bản chính thức tắt cho đến khi SES được duyệt.",
++    "settings.mail.help": "Email cho khách, như liên kết xác nhận. Dòng bên dưới cho biết bản cài đặt này đang làm gì.",
++    "settings.mail.status.disabled": "Đang tắt gửi thư: không có email nào gửi tới khách.",
++    "settings.mail.status.console": "Không gửi đi: thư được giữ bên dưới để lấy liên kết.",
++    "settings.mail.status.ses": "Đang gửi thư qua Amazon SES.",
++    "settings.mail.status.unknown": "Chưa rõ trạng thái thư.",
+     "settings.mail.preview": "Xem trước email HTML",
+     "settings.mail.to": "Đến",
+     "settings.mail.subject": "Tiêu đề",
+@@ -2429,6 +2434,8 @@ STRINGS: Dict[str, str] = {
+     "settings.privacy_incomplete": "Thông báo quyền riêng tư cho khách chưa đầy đủ.",
+     "settings.audit.help": "Các thay đổi quan trọng, lưu trữ, đổi mã PIN và khai báo cảnh sát được ghi lại ở đây.",
+     "settings.audit.recent": "Hoạt động gần đây (%(count)s sự kiện)",
++    "settings.audit.recent.one": "Hoạt động gần đây (%(count)s sự kiện)",
++    "settings.audit.recent.few": "Hoạt động gần đây (%(count)s sự kiện)",
+     "settings.audit.when": "Thời gian",
+     "settings.audit.who": "Người thực hiện",
+     "settings.audit.as_admin": "với tư cách quản trị viên %(name)s",
+@@ -3104,6 +3111,7 @@ STRINGS: Dict[str, str] = {
+     "login.passkey": "Đăng nhập bằng passkey",
+     "login.passkey_or": "hoặc nhận liên kết đăng nhập qua e-mail",
+     "passkeys.title": "Passkey",
++    "passkeys.count_label": "Đã đăng ký",
+     "passkeys.help": "Đăng nhập bằng Face ID, vân tay hoặc mã PIN thiết bị thay vì mở hộp thư. Liên kết e-mail vẫn dùng được, nên mất thiết bị cũng không khóa bạn khỏi tài khoản.",
+     "passkeys.add": "Thêm passkey",
+     "passkeys.unsupported": "Trình duyệt này không tạo được passkey. Hãy thử trên điện thoại, hoặc Safari, Chrome, Edge hay Firefox bản mới.",
+@@ -3183,7 +3191,8 @@ STRINGS: Dict[str, str] = {
+     "settings.privacy.requests_help": "Yêu cầu của khách về dữ liệu của họ, và thời hạn xử lý.",
+     "settings.privacy.requests_action": "Mở yêu cầu",
+     "settings.help.guide_help": "Hướng dẫn từng bước, và cách liên hệ hỗ trợ.",
+-    "settings.help.guide_action": "Mở Trợ giúp",
++    "settings.help.guide_action": "Mở hướng dẫn sử dụng",
++    "settings.help.guide_label": "Hướng dẫn sử dụng",
+     "property_create.title": "Thêm chỗ ở",
+     "property_create.lede": "Bắt đầu với thông tin cơ bản. Kết nối dịch vụ khi bạn cần.",
+     "property_create.details": "Thông tin chỗ ở",
+diff --git a/App/app/templates/_components.html b/App/app/templates/_components.html
+index c4288baf..ad71a798 100644
+--- a/App/app/templates/_components.html
++++ b/App/app/templates/_components.html
+@@ -7,9 +7,9 @@
+ {% set UI_DEADLINE_KINDS = {'overdue': 'action', 'urgent': 'attention', 'soon': 'attention', 'done': 'done', 'late': 'neutral'} %}
+ {#- 0093 help: one contextual "?" tip beside a field label. Place it OUTSIDE the <label> tag.
+     id must be unique on the page; text is escaped; guide_href optional ("/guide#anchor"). -#}
+-{%- macro help_tip(id, text, guide_href='') -%}
++{%- macro help_tip(id, text, guide_href='', label='') -%}
+ <span class="help-tip" data-help-tip>
+-    <button type="button" class="help-tip-btn" aria-label="{{ t('help.tip.label') }}" aria-expanded="false" aria-controls="{{ id }}">?</button>
++    <button type="button" class="help-tip-btn" aria-label="{{ t('help.tip.label_for', topic=label) if label else t('help.tip.label') }}" aria-expanded="false" aria-controls="{{ id }}">?</button>
+     <span class="help-tip-body" id="{{ id }}" role="tooltip">{{ text }}{% if guide_href %} <a href="{{ guide_href }}" aria-label="{{ t('help.tip.more') }}: {{ text | striptags | truncate(50) }}">{{ t('help.tip.more') }}</a>{% endif %}</span>
+   </span>
+ {% endmacro %}
+@@ -22,7 +22,7 @@
+ {#- Label text with its "?" tip kept on the last word, so the tip never wraps alone to a new line. -#}
+ {% macro tip_label(text, id, help, tag='strong') -%}
+ {%- set words = text.rsplit(' ', 1) -%}
+-<{{ tag }} class="tip-label">{% if words | length > 1 %}{{ words[0] }} {% endif %}<span class="tip-nowrap">{{ words[-1] }}{{ help_tip(id, help) }}</span></{{ tag }}>
++<{{ tag }} class="tip-label">{% if words | length > 1 %}{{ words[0] }} {% endif %}<span class="tip-nowrap">{{ words[-1] }}{{ help_tip(id, help, '', text) }}</span></{{ tag }}>
+ {%- endmacro %}
+ {#- 0410: one option card. The label is stretched over the whole bordered card, so a
+     tap anywhere selects; the "?" and any extra field (call block) sit above it. No JS. -#}
+@@ -542,7 +542,7 @@
+ {% macro settings_heading(key, title, help_text='', guide_href='') %}
+   <div class="settings-heading">
+     <h3>{{ title }}</h3>
+-    {% if help_text %}{{ help_tip('settings-' ~ key ~ '-help', help_text, guide_href) }}{% endif %}
++    {% if help_text %}{{ help_tip('settings-' ~ key ~ '-help', help_text, guide_href, title) }}{% endif %}
+   </div>
+ {% endmacro %}
+ 
+diff --git a/App/app/templates/partials/settings_back_header.html b/App/app/templates/partials/settings_back_header.html
+index 2cf85658..b48b7427 100644
+--- a/App/app/templates/partials/settings_back_header.html
++++ b/App/app/templates/partials/settings_back_header.html
+@@ -1,6 +1,7 @@
+ {%- from "_icons.html" import icon with context -%}
+ <div class="airbnb-header">
+   <a class="airbnb-back" href="{{ href }}" aria-label="{{ t('common.back') }}">{{ icon('arrow-left', 20) }}</a>
+-  <h1 class="airbnb-title">{% if help %}{% set words = title.rsplit(' ', 1) %}{% if words | length > 1 %}{{ words[0] }} {% endif %}<span class="tip-nowrap">{{ words[-1] }}{{ help }}</span>{% else %}{{ title }}{% endif %}</h1>{% if help_after %}{{ help_after }}{% endif %}
++  {%- set help_is_page = help and 'page-help' in help -%}
++<h1 class="airbnb-title">{% if help and not help_is_page %}{% set words = title.rsplit(' ', 1) %}{% if words | length > 1 %}{{ words[0] }} {% endif %}<span class="tip-nowrap">{{ words[-1] }}{{ help }}</span>{% else %}{{ title }}{% endif %}</h1>{% if help_is_page %}{{ help }}{% endif %}{% if help_after %}{{ help_after }}{% endif %}
+ {% if actions %}<div class="airbnb-actions">{{ actions }}</div>{% endif %}
+ </div>
+diff --git a/App/app/templates/partials/settings_toggle_row.html b/App/app/templates/partials/settings_toggle_row.html
+index 13cd92be..037ae364 100644
+--- a/App/app/templates/partials/settings_toggle_row.html
++++ b/App/app/templates/partials/settings_toggle_row.html
+@@ -2,6 +2,6 @@
+     `control` is the captured form control (the checkbox), `help_text` is optional. -#}
+ {%- from "_components.html" import help_tip with context -%}
+ <div class="settings-toggle-row">
+-  <span class="settings-toggle-label">{{ label }}{% if help_text %}{{ help_tip(help_id, help_text) }}{% endif %}</span>
++  <span class="settings-toggle-label">{{ label }}{% if help_text %}{{ help_tip(help_id, help_text, '', label) }}{% endif %}</span>
+   <span class="settings-toggle-control">{{ control }}</span>
+ </div>
+diff --git a/App/app/templates/partials/settings_value_card.html b/App/app/templates/partials/settings_value_card.html
+index b2974166..ced7af16 100644
+--- a/App/app/templates/partials/settings_value_card.html
++++ b/App/app/templates/partials/settings_value_card.html
+@@ -2,7 +2,7 @@
+ {%- from "_icons.html" import icon with context -%}
+ {%- from "_components.html" import help_tip with context -%}
+ <div class="settings-value-card">
+-  <span class="settings-value-label">{{ label }}{% if help_text %} {{ help_tip(help_id, help_text) }}{% endif %}</span>
++  <span class="settings-value-label">{{ label }}{% if help_text %} {{ help_tip(help_id, help_text, '', label) }}{% endif %}</span>
+   <strong class="settings-value">{{ value }}</strong>
+   {% if href %}<a class="settings-value-link" href="{{ href }}">{{ link_label }} {{ icon('chevron-right', 20) }}</a>{% endif %}
+ </div>
+diff --git a/App/app/templates/settings.html b/App/app/templates/settings.html
+index cb672259..544a189a 100644
+--- a/App/app/templates/settings.html
++++ b/App/app/templates/settings.html
+@@ -83,17 +83,11 @@
+         {% endif %}
+         {% if current_user.role == 'admin' %}
+           <div class="settings-action-row">
+-            <div>
+-              <strong>{{ t('settings.account.users') }}</strong>
+-              {{ help_tip('settings-users-help', t('settings.account.users_help')) }}
+-            </div>
++            <div>{{ tip_label(t('settings.account.users'), 'settings-users-help', t('settings.account.users_help')) }}</div>
+             <a data-turbo="false" class="ui-btn ui-btn-secondary ui-btn-compact" href="/admin/customers">{{ t('settings.account.users_action') }}</a>
+           </div>
+           <div class="settings-action-row">
+-            <div>
+-              <strong>{{ t('users.incidents_link') }}</strong>
+-              {{ help_tip('settings-incidents-help', t('settings.account.incidents_help')) }}
+-            </div>
++            <div>{{ tip_label(t('users.incidents_link'), 'settings-incidents-help', t('settings.account.incidents_help')) }}</div>
+             <a data-turbo="false" class="ui-btn ui-btn-secondary ui-btn-compact" href="/admin/incidents">{{ t('settings.account.incidents_action') }}</a>
+           </div>
+         {% endif %}
+@@ -105,10 +99,7 @@
+     <div class="ui-section" id="settings-security">
+       <div class="settings-action-list" id="settings-logout-all">
+         <div class="settings-action-row">
+-          <div>
+-            <strong>{{ t('settings.security.devices') }}</strong>
+-            {{ help_tip('settings-logout-all-help', t('settings.security.logout_all_help')) }}
+-          </div>
++          <div>{{ tip_label(t('settings.security.devices'), 'settings-logout-all-help', t('settings.security.logout_all_help')) }}</div>
+           <form method="post" action="/account/logout-all">
+             <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('settings.security.logout_all') }}</button>
+           </form>
+@@ -116,10 +107,7 @@
+       </div>
+       <div class="settings-action-list" id="settings-passkeys">
+         <div class="settings-action-row">
+-          <div>
+-            <strong>{{ t('passkeys.title') }}</strong>
+-            {{ help_tip('settings-passkeys-help', t('passkeys.help') ~ (' ' ~ t('passkeys.unavailable') if not passkeys_available else '')) }}
+-          </div>
++          <div>{{ tip_label(t('passkeys.title'), 'settings-passkeys-help', t('passkeys.help') ~ (' ' ~ t('passkeys.unavailable') if not passkeys_available else '')) }}</div>
+           {% if passkeys_available %}
+             <button class="ui-btn ui-btn-primary ui-btn-compact" type="button" data-passkey-add data-passkey-supported hidden>{{ t('passkeys.add') }}</button>
+           {% endif %}
+@@ -128,7 +116,7 @@
+           <p class="ui-sub" data-passkey-unsupported>{{ t('passkeys.unsupported') }}</p>
+           <p class="ui-sub err-text" data-passkey-error data-generic="{{ t('passkeys.error.failed') }}" role="alert" hidden></p>
+         {% endif %}
+-        {% with label=t('passkeys.title'), value=(passkeys or []) | length %}{% include "partials/settings_value_card.html" %}{% endwith %}
++        {% with label=t('passkeys.count_label'), value=(passkeys or []) | length %}{% include "partials/settings_value_card.html" %}{% endwith %}
+         {% for key in passkeys %}
+           <div class="settings-action-row passkey-row">
+             <div>
+@@ -160,7 +148,7 @@
+         {% endif %}
+         {% if not current_user.totp_enabled %}
+         <div class="settings-action-row">
+-          <div><strong>{{ t('settings.account.2fa') }}</strong>{{ help_tip('settings-2fa-help', t('settings.account.2fa_off')) }}</div>
++          <div>{{ tip_label(t('settings.account.2fa'), 'settings-2fa-help', t('settings.account.2fa_off')) }}</div>
+           <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/account/2fa/setup">{{ t('settings.account.setup') }}</a>
+         </div>
+         {% endif %}
+@@ -216,10 +204,7 @@
+       {% if push_available %}
+       <div class="settings-action-list" id="settings-alerts" data-push-row data-push-key="{{ push_key }}">
+         <div class="settings-action-row">
+-          <div>
+-            <strong>{{ t('push.title') }}</strong>
+-            {{ help_tip('settings-push-help', t('push.help')) }}
+-          </div>
++          <div>{{ tip_label(t('push.title'), 'settings-push-help', t('push.help')) }}</div>
+           <div class="settings-row-actions">
+             <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" data-push-on hidden>{{ t('push.on') }}</button>
+             <span class="ui-badge ui-badge-done" data-tone="green" data-push-state-on hidden>{{ t('push.state_on') }}</span>
+@@ -367,7 +352,7 @@
+       <summary>{{ t('settings.technical.title') }}</summary>
+ 
+       {% if current_user.role == 'admin' %}
+-      <h2 id="settings-overview">{{ t('settings.destination.title') }}{{ help_tip('settings-destination-help', t('settings.destination.help')) }}</h2>
++      <h2 id="settings-overview">{{ t('settings.destination.title') }}{{ help_tip('settings-destination-help', t('settings.destination.help'), '', t('settings.destination.title')) }}</h2>
+       <dl class="kv">
+         <dt>{{ t('settings.destination.deployment') }}</dt><dd>{{ deployment_tier | capitalize }}</dd>
+         <dt>{{ t('settings.destination.target') }}</dt><dd>{{ t('settings.destination.production') if ubyport_env == 'prod' else (ubyport_env | upper) }}</dd>
+@@ -389,7 +374,8 @@
+       
+       {% endif %}
+       {% if current_user.role == 'admin' or (mail_backend == 'console' and console_mail) %}
+-      <h2 id="settings-mail">{{ t('settings.mail.title') }}{{ help_tip('settings-mail-help', t('settings.mail.help')) }}</h2>
++      <h2 id="settings-mail">{{ t('settings.mail.title') }}{{ help_tip('settings-mail-help', t('settings.mail.help'), '', t('settings.mail.title')) }}</h2>
++      <p class="ui-sub" id="settings-mail-status" data-mail-backend="{{ mail_backend }}">{{ t('settings.mail.status.' ~ mail_backend) if mail_backend in ('disabled', 'console', 'ses') else t('settings.mail.status.unknown') }}</p>
+       {% if current_user.role == 'admin' %}
+       <dl class="kv">
+         <dt>{{ t('settings.mail.backend') }}</dt>
+@@ -437,7 +423,7 @@
+ 
+       {% endif %}
+       {% if current_user.role == 'admin' %}
+-      <h2 id="settings-codelists">{{ t('settings.codelists.title') }}{{ help_tip('settings-codelists-help', t('settings.codelists.help')) }}</h2>
++      <h2 id="settings-codelists">{{ t('settings.codelists.title') }}{{ help_tip('settings-codelists-help', t('settings.codelists.help'), '', t('settings.codelists.title')) }}</h2>
+       <dl class="kv">
+         <dt>{{ t('settings.codelists.countries') }}</dt><dd>{{ (codelists.countries | datetime_local(seconds=true)) if codelists.countries else t('settings.codelists.bundled') }}</dd>
+         <dt>{{ t('settings.codelists.purposes') }}</dt><dd>{{ (codelists.purposes | datetime_local(seconds=true)) if codelists.purposes else t('settings.codelists.bundled') }}</dd>
+@@ -456,7 +442,7 @@
+ 
+     <details class="ui-section technical" open id="settings-audit">
+       <summary>{{ t('settings.nav.audit') }}</summary>
+-            <h2>{{ t('settings.audit.recent', count=audit_count) }}</h2>
++            <h2>{{ tp('settings.audit.recent', audit_count) }}</h2>
+       {% set audit_pills = [
+         {'label': t('settings.audit.filter_all'), 'href': '/settings/technical#settings-audit', 'current': not audit_filter},
+         {'label': t('settings.audit.filter_support'), 'href': '/settings/technical?audit=support#settings-audit', 'current': audit_filter == 'support'}
+@@ -487,9 +473,9 @@
+       <div class="settings-action-list">
+         <div class="settings-action-row">
+           <div>
+-            {{ tip_label(t('nav.guide'), 'settings-guide-help', t('settings.help.guide_help')) }}
++            {{ tip_label(t('settings.help.guide_label'), 'settings-guide-help', t('settings.help.guide_help')) }}
+           </div>
+-          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/guide" aria-label="{{ t('settings.help.guide_action') }} {{ t('help.tip.label') | lower }}">{{ t('settings.help.guide_action') }}</a>
++          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/guide">{{ t('settings.help.guide_action') }}</a>
+         </div>
+       </div>
+     </div>

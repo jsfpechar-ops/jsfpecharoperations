@@ -444,6 +444,7 @@
     "airbnb-index-row",
     "airbnb-label",
     "airbnb-title",
+    "airbnb-title-row",
     "set-row",
     "set-row-v",
     "settings-action-row",
@@ -487,7 +488,14 @@
     "airbnb-actions",
     "req-star",
     "section-note",
-    "wd"
+    "wd",
+    "stays-scope-reset",
+    "col-more",
+    "col-guest",
+    "housebook-facts",
+    "housebook-fact",
+    "fee-records-actions",
+    "field-label-row"
   ],
   "hooks": [
     "sr-only",
@@ -1215,6 +1223,7 @@
     "App/app/static/wizard.css"
   ],
   "class_notes": {
+    "airbnb-title-row": "settings header: H1 with its page help beside it, help outside the H1 (0988)",
     "ph-top": "phone v2 top block (0729)",
     "seg": "phone v2 pill switch",
     "hl": "phone v2 centred headline",
@@ -1318,6 +1327,13 @@
     "stay-fees-toolbar": "Month filter row of the stay fee list (0796).",
     "fee-pay-h": "Step heading inside the stay fee two-step pay box (0794).",
     "head-title-row": "v2 page head row: h1 with the help ? disclosure on the same line (0816, owner rule).",
-    "wd": "stay detail weekday in the date facts; screen-reader-only below 360 px (0964)"
+    "wd": "stay detail weekday in the date facts; screen-reader-only below 360 px (0964)",
+    "stays-scope-reset": "Reset filters link under the stays scope line (0968).",
+    "col-more": "House book register column: row popover trigger (0970).",
+    "col-guest": "House book register column: guest name (0970).",
+    "housebook-facts": "House book register: facts list in the row popover (0970).",
+    "housebook-fact": "House book register: one fact in the row popover (0970).",
+    "fee-records-actions": "Stay fee detail: Your records sent/paid buttons row (0974 stay-fee records).",
+    "field-label-row": "Label with its help ? kept on one line (settings, 0897)."
   }
 }

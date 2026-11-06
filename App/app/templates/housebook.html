@@ -81,37 +81,49 @@
 </form>
 
 {% if rows %}
-{# The register is eleven columns of legal record. It keeps every word whole
-   and scrolls sideways inside its own card when the viewport is narrower
-   than the row; the shaded edge shows there is more to the right. #}
+{# 0970: the table keeps four operational columns and a Details column. The other
+   stored facts sit in a same-page popover opened from that cell; the CSV and the PDF
+   forms are built elsewhere and still carry every column. The labels follow
+   the interface language; the stored codes are only shown beside them. #}
 <div class="card stays-desk housebook-scroll scroll-x" tabindex="0" role="region" aria-label="{{ t('housebook.title') }}">
   <table class="housebook-table">
     <thead>
       <tr>
-        <th class="col-stay">{{ t('housebook.stay') }}</th><th class="col-property">{{ t('housebook.apartment') }}</th><th class="col-name">{{ t('housebook.guest') }}</th><th class="col-born">{{ t('housebook.born') }}</th><th>{{ t('housebook.nationality') }}</th>
-        <th class="col-doc">{{ t('housebook.document') }}</th><th class="col-address">{{ t('housebook.residence') }}</th>
-        <th class="col-purpose">{{ t('housebook.purpose') }}</th><th>{{ t('housebook.signed') }}</th>
-        <th class="col-reported">{{ t('housebook.reported') }}</th><th><span class="sr-only">{{ t('common.actions') }}</span></th>
+        <th class="col-stay">{{ t('housebook.stay') }}</th><th class="col-property">{{ t('housebook.apartment') }}</th><th class="col-name">{{ t('housebook.guest') }}</th>
+        <th class="col-reported">{{ t('housebook.reported') }}</th><th class="col-more">{{ t('housebook.details') }}</th><th><span class="sr-only">{{ t('common.actions') }}</span></th>
       </tr>
     </thead>
     <tbody>
     {% for row in rows %}
+      {% set nationality_text = (country_name(row.nationality, lang) ~ ' (' ~ row.nationality ~ ')') if row.nationality else '—' %}
+      {% set res_parts = [] %}
+      {% if row._res_street %}{% set _ = res_parts.append(row._res_street) %}{% endif %}
+      {% if row._res_city %}{% set _ = res_parts.append(row._res_city) %}{% endif %}
+      {% if row._res_country %}{% set _ = res_parts.append(country_name(row._res_country, lang) ~ ' (' ~ row._res_country ~ ')') %}{% endif %}
       <tr class="clickable-row" data-href="/guests/{{ row._guest_id }}?return_to=/housebook" tabindex="0" role="link">
         <td class="nowrap small" data-label="{{ t('housebook.stay') }}">{{ row.stay_from | date_cz }}<br>{{ row.stay_to | date_cz }}</td>
         <td class="small col-property" data-label="{{ t('housebook.apartment') }}">{{ property_identity(row._apartment_id, row.apartment, true, truncate=true) }}</td>
-        {# Two deliberate lines beat three ragged ones in a column this narrow. #}
-        <td class="col-name" data-label="{{ t('housebook.guest') }}"><strong>{{ row.surname }}</strong><br>
+        {# Two deliberate lines. No col-name class on the cell: that rule clips a long surname to an ellipsis, and the register must show it whole. #}
+        <td class="col-guest" data-label="{{ t('housebook.guest') }}"><strong>{{ row.surname }}</strong><br>
           <span class="small">{{ row.first_name }}</span></td>
-        <td class="nowrap small" data-label="{{ t('housebook.born') }}">{{ row.birth_date | date_cz }}</td>
-        <td class="small" data-label="{{ t('housebook.nationality') }}">{{ row.nationality }}</td>
-        <td class="mono small" data-label="{{ t('housebook.document') }}">{{ guest_identifier(row.doc_number, row._guest_id) }}{% if row.visa_number %}<br>{{ t('housebook.visa', number=guest_identifier(row.visa_number, row._guest_id)) }}{% endif %}</td>
-        <td class="small col-address" data-label="{{ t('housebook.residence') }}">{{ row.residence or '—' }}</td>
-        <td class="small col-purpose" data-label="{{ t('housebook.purpose') }}">{{ row.purpose }}</td>
-        <td class="small nowrap" data-label="{{ t('housebook.signed') }}">{% if row.signed == 'yes' %}<span class="pill p-ok">{{ t('housebook.signed_yes') }}</span>
-          {% else %}<span class="pill p-warn">{{ t('housebook.signed_no') }}</span>{% endif %}</td>
         {# The stored values double as the CSV column, which the importer reads
            back, so they stay as they are and only the label changes here. #}
         <td class="small col-reported" data-label="{{ t('housebook.reported') }}">{{ reported_pill(row, true) }}</td>
+        <td class="small col-more" data-label="{{ t('housebook.details') }}">
+          {% set facts_id = 'housebook-facts-' ~ row._guest_id %}
+          {% set full_name = ((row.first_name or '') ~ ' ' ~ (row.surname or '')) | trim %}
+          <button class="ui-btn ui-btn-quiet ui-btn-compact" type="button" popovertarget="{{ facts_id }}" aria-label="{{ t('housebook.details_for', name=full_name) }}">{{ t('housebook.details') }}</button>
+          <div id="{{ facts_id }}" class="card housebook-facts" popover>
+            <p><strong>{{ full_name }}</strong></p>
+            <p class="small housebook-fact"><span class="muted">{{ t('housebook.born') }}:</span> {{ row.birth_date | date_cz }}</p>
+            <p class="small housebook-fact"><span class="muted">{{ t('housebook.nationality') }}:</span> {{ nationality_text }}</p>
+            <p class="small housebook-fact"><span class="muted">{{ t('housebook.document') }}:</span> <span class="mono">{{ guest_identifier(row.doc_number, row._guest_id) }}{% if row.visa_number %}, {{ t('housebook.visa', number=guest_identifier(row.visa_number, row._guest_id)) }}{% endif %}</span></p>
+            <p class="small housebook-fact"><span class="muted">{{ t('housebook.residence') }}:</span> {{ res_parts | join(', ') or '—' }}</p>
+            <p class="small housebook-fact"><span class="muted">{{ t('housebook.purpose') }}:</span> {{ purpose_label(row._purpose_code, lang) or '—' }}</p>
+            <p class="small housebook-fact"><span class="muted">{{ t('housebook.signed') }}:</span> {% if row.signed == 'yes' %}<span class="pill p-ok">{{ t('customers.yes') }}</span>{% else %}<span class="pill p-warn">{{ t('customers.no') }}</span>{% endif %}</p>
+            <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" popovertarget="{{ facts_id }}" popovertargetaction="hide">{{ t('common.close') }}</button>
+          </div>
+        </td>
         <td class="nowrap row-actions" data-label="">{{ row_open('/guests/' ~ row._guest_id ~ '?return_to=/housebook') }}
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="/guests/{{ row._guest_id }}?return_to=/housebook" role="menuitem">{{ t('common.edit') }}</a>

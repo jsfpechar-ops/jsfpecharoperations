@@ -319,14 +319,17 @@
         pill.append(el("span", "cal-pill-avatar", (name.trim().charAt(0) || "·").toUpperCase()), el("span", "cal-pill-name", name));
         overlay.append(pill);
       });
+    // 0967: on the host calendar at 768 px and up the "+N" badge gets its own last grid row under the stay lanes, so it never covers a bar.
+    const overflowLane = !cleaningMode && matchMedia("(min-width:768px)").matches && hidden.some(Boolean);
     hidden.forEach((count, index) => {
       if (!count) return;
       const date = addDays(week, index), more = el("button", "cal-pill-more", "+" + String(count));
       more.type = "button"; more.dataset.calMore = date; more.style.gridColumn = String(index * 2 + 1) + " / span 2";
+      if (overflowLane) more.style.gridRow = String(shown + 1);
       more.setAttribute("aria-label", fullDate(date) + " · " + format("more", { count }));
       overlay.append(more);
     });
-    overlay.dataset.lanes = String(shown);
+    overlay.dataset.lanes = String(shown + (overflowLane ? 1 : 0));
     return overlay;
   }
   function renderCalendar() {
@@ -368,7 +371,7 @@
         if (date < root.dataset.today) day.classList.add("is-past");
         const button = el("button", "cal-day-number"); button.append(el("span", "cal-num", String(dateValue(date).getUTCDate())));
         button.type = "button"; button.dataset.calDay = date;
-        button.setAttribute("aria-label", format("select_day", { date: fullDate(date) }));
+        button.setAttribute("aria-label", cleaningMode ? labels.add_cleaning + " · " + fullDate(date) : format("select_day", { date: fullDate(date) }));
         button.title = labels.keyboard;
         if (dots && hostCleaning) {
           const dayCleanings = state.events.filter(event => event.kind === "cleaning" && displayOverlap(event, date, addDays(date, 1)));
@@ -528,7 +531,7 @@
       for (let index = 0; index < number; index++) {
         const day = addDays(start, index), button = el("button", "cal-gantt-slot");
         button.type = "button"; button.dataset.date = day; button.dataset.property = String(property.id);
-        button.dataset.calDay = day; button.setAttribute("aria-label", property.name + " · " + format("select_day", { date: fullDate(day) }));
+        button.dataset.calDay = day; button.setAttribute("aria-label", property.name + " · " + (cleaningMode ? labels.add_cleaning + " · " + fullDate(day) : format("select_day", { date: fullDate(day) })));
         if ([0, 6].includes(dateValue(day).getUTCDay())) button.classList.add("is-weekend");
         if (day === root.dataset.today) button.classList.add("is-today");
         days.append(button);

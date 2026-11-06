@@ -16,6 +16,7 @@ import socket
 import threading
 import time
 from pathlib import Path
+from urllib.parse import urlparse
 
 import pytest
 import uvicorn
@@ -176,7 +177,7 @@ def test_property_settings_save_discard_stay(browser, base, host, lang, width, h
     page = _page(browser, base, host, width, height)
     page.goto(f"{url}?view=settings&section=property&lang={lang}")
     reset = page.locator(".savebar[data-for='property-settings-form'] [data-unsaved-reset]")
-    leave = 'a.airbnb-back' if width < 1024 else "a.airbnb-back"
+    leave = 'a.airbnb-back'
     crumb = page.locator(leave)
     calendars = page.locator("#sec-calendars > summary")
 
@@ -213,7 +214,7 @@ def test_property_settings_save_discard_stay(browser, base, host, lang, width, h
     crumb.click()
     with page.expect_navigation():
         page.locator("#unsaved-dialog [data-unsaved-discard]").click()
-    assert page.url.split("?")[0].rstrip("/").endswith("/apartments")
+    assert urlparse(page.url).path.rstrip("/") == "/apartments"
     assert _stored(host, "internal_name") == NAME
     page.goto(f"{url}?view=settings&section=property&lang={lang}")
     assert not page.locator(".savebar[data-for='property-settings-form']").is_visible()
@@ -287,6 +288,7 @@ def test_save_bar_discard_changes_button(browser, base, host, lang, width, heigh
 
 
 def test_keyboard_only_flow(browser, base, host):
+    leave = 'a.airbnb-back'
     url = f"{base}/apartments/{host['apartment']}"
     page = _page(browser, base, host)
     page.goto(f"{url}?view=settings&section=property&lang=en")
@@ -310,13 +312,13 @@ def test_keyboard_only_flow(browser, base, host):
     page.keyboard.press("Shift+Tab")
     assert _focused(page) == "unsavedStay:"
     page.keyboard.press("Enter")  # Stay
-    assert not _open(page) and _focus_is(page, "a.airbnb-back")
+    assert not _open(page) and _focus_is(page, leave)
     assert page.input_value("#internal_name") == typed
     page.keyboard.press("Enter")
     page.keyboard.press("Tab")
     with page.expect_navigation():
         page.keyboard.press("Enter")  # Discard
-    assert page.url.split("?")[0].rstrip("/").endswith("/apartments")
+    assert urlparse(page.url).path.rstrip("/") == "/apartments"
     assert _stored(host, "internal_name") != typed
     page.context.close()
 
@@ -384,8 +386,8 @@ def test_without_javascript_nothing_changes(browser, base, host):
     assert page.url.split("?")[0].endswith(f"/apartments/{host['apartment']}")
     page.fill("#internal_name", "No JS unsaved")
     with page.expect_navigation():
-        page.locator('a.airbnb-back').click()
-    assert page.url.split("?")[0].rstrip("/").endswith("/apartments")
+        page.locator('a.airbnb-back[href="/apartments"]').click()
+    assert urlparse(page.url).path.rstrip("/") == "/apartments"
     assert _stored(host, "internal_name") == "No JS O1 name"
     page.context.close()
     db.execute("UPDATE apartment SET internal_name = ? WHERE id = ?", (NAME, host["apartment"]))

@@ -1,6 +1,6 @@
 {%- from "_icons.html" import icon with context -%}
 <div class="airbnb-header">
   <a class="airbnb-back" href="{{ href }}" aria-label="{{ t('common.back') }}">{{ icon('arrow-left', 20) }}</a>
-  <h1 class="airbnb-title">{% if help %}{% set words = title.rsplit(' ', 1) %}{% if words | length > 1 %}{{ words[0] }} {% endif %}<span class="tip-nowrap">{{ words[-1] }}{{ help }}</span>{% else %}{{ title }}{% endif %}</h1>{% if help_after %}{{ help_after }}{% endif %}
+  {% if help and 'page-help-wrap' in help %}<div class="airbnb-title-row"><h1 class="airbnb-title">{{ title }}</h1>{{ help }}</div>{% else %}<h1 class="airbnb-title">{% if help %}{% set words = title.rsplit(' ', 1) %}{% if words | length > 1 %}{{ words[0] }} {% endif %}<span class="tip-nowrap">{{ words[-1] }}{{ help }}</span>{% else %}{{ title }}{% endif %}</h1>{% endif %}{% if help_after %}{{ help_after }}{% endif %}
 {% if actions %}<div class="airbnb-actions">{{ actions }}</div>{% endif %}
 </div>

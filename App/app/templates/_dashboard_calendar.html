@@ -1,5 +1,5 @@
 {# Calendar data is fetched from an owner-scoped endpoint, never embedded in browser storage. #}
-<link rel="stylesheet" href="/static/dashboard-calendar.css?v=20261105-0956e">
+<link rel="stylesheet" href="/static/dashboard-calendar.css?v=20261106-0977">
 <section id="calendar" class="dashboard-calendar" data-calendar data-today="{{ today.isoformat() }}" data-source="{{ calendar_source | default('/dashboard/calendar') }}" data-cleaning="{{ 'true' if calendar_cleaning | default(false) else 'false' }}" data-readonly="{{ 'true' if calendar_readonly | default(false) else 'false' }}" data-calendar-date="{{ calendar_date | default('') }}" data-range-from="{{ calendar_from | default('') }}" data-range-to="{{ calendar_to | default('') }}" data-lang="{{ lang }}" aria-labelledby="calendar-title">
   <div class="cal-head" data-cal-head>
   <div class="cal-heading">
@@ -51,7 +51,7 @@
         <p class="cal-field-error" data-cal-error-for="date_to"></p>
         <p class="cal-nights" data-cal-nights></p>
         <div class="field"><label for="cal-guests">{{ t('stays.add_panel.guests') }} <span class="opt">{{ t('common.optional') }}</span></label><input id="cal-guests" name="expected_guests" type="number" min="1" max="60"><p class="cal-field-error" data-cal-error-for="expected_guests"></p></div>
-        <div class="field"><label for="cal-label">{{ t('stays.add_panel.label') }} <span class="opt">{{ t('common.optional') }}</span></label><input id="cal-label" name="summary" maxlength="500"></div>
+        <div class="field"><label for="cal-label">{{ t('stays.add_panel.label') }} <span class="opt">{{ t('common.optional') }}</span></label><input id="cal-label" name="summary" type="text" maxlength="500"></div>
         <div class="field"><label for="cal-email">{{ t('stays.add_panel.email') }} <span class="opt">{{ t('common.optional') }}</span></label><input id="cal-email" name="guest_email" type="email" maxlength="254"></div>
         <div class="cal-overlap" data-cal-overlap hidden><p>{{ t('calendar.overlap') }}</p><label><input type="checkbox" name="allow_overlap" value="1"> {{ t('calendar.overlap_confirm') }}</label></div>
       </div>
@@ -170,4 +170,4 @@
   <script type="application/json" data-cal-properties>[{% for apartment in apartments if apartment.active %}{{ {'id': apartment.id, 'name': apartment.internal_name} | tojson }}{% if not loop.last %},{% endif %}{% endfor %}]</script>
   <script type="application/json" data-cal-labels>{{ calendar_labels | tojson }}</script>
 </section>
-<script src="/static/dashboard-calendar.js?v=20261106-0963" defer></script>
+<script src="/static/dashboard-calendar.js?v=20261106-0977" defer></script>

@@ -145,17 +145,17 @@ def test_0948_strip_shares_form_edges_and_columns(base, dashboard_rich_host):  #
     with sync_api.sync_playwright() as playwright:
         browser = _launch(playwright)
         try:
-            for width, columns in ((390, 2), (768, 3), (1280, 3), (1600, 3)):
+            for width, max_rows in ((390, 3), (768, 3), (1280, 2), (1600, 2)):  # 0982: the pills wrap as flex rows; 0986: main property layout restored (2-column tiles at 390, 3 columns from 640 px)
                 context, page = _open_app(browser, base, cookie, path, width)
                 try:
                     strip = page.locator(".prop-strip").bounding_box()
                     form = page.locator(".form").bounding_box()
                     assert abs(strip["x"] - form["x"]) <= 1, width
                     assert abs(strip["x"] + strip["width"] - (form["x"] + form["width"])) <= 1, width
-                    count = page.evaluate(
-                        "getComputedStyle(document.querySelector('.prop-strip')).gridTemplateColumns.split(' ').length"
+                    rows = page.evaluate(
+                        "new Set([...document.querySelectorAll('.prop-strip .sc')].map((el) => Math.round(el.getBoundingClientRect().top))).size"
                     )
-                    assert count == columns, (width, count)
+                    assert rows <= max_rows, (width, rows)
                     if width <= 768:
                         assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), width
                 finally:

@@ -470,6 +470,10 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
 .cal-create-types { display:flex; gap:6px; margin:0 0 14px; }
 .cal-create-types .btn { min-height:42px; }
 .cal-create-types .btn[aria-pressed="true"] { border-color:var(--brand-ink); background:var(--brand-soft); color:var(--ink); font-weight:750; }
+.cal-create-types .btn[aria-pressed="false"] { border-color:var(--line); background:var(--surface); color:var(--ink); }
+.cal-create-types .btn[aria-pressed="false"]:hover:not(:disabled) { background:var(--surface-2); }
+body.v2 .cal-create-types .btn:not(.line):not(.soft):not(.ghost)[aria-pressed="true"] { color:var(--ink); }
+body.v2 .cal-create-types .btn:not(.line):not(.soft):not(.ghost)[aria-pressed="false"] { color:var(--ink); }
 .cal-create-popover textarea { box-sizing:border-box; width:100%; min-height:86px; resize:vertical; }
 .cal-create-popover [data-cal-cleaning-fields][hidden],
 .cal-create-popover [data-cal-stay-fields][hidden] { display:none; }
@@ -872,4 +876,33 @@ body.v2 #calendar.dashboard-calendar[data-readonly="false"] .cal-pill[data-cal-c
   body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-tile-chip.cal-clean-chip { padding:0 6px; font-size:13px; }
   body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-tile-chip.cal-clean-chip .cal-cleaning-icon { display:none; }
   body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-tile-chip.cal-clean-chip > span { min-width:0; overflow:hidden; text-overflow:ellipsis; }
+}
+
+/* 0980: one action row in both create modes. Cancel is quiet, Create is the only coral button. */
+#calendar .cal-create-popover > form { min-height:0; }
+#calendar .cal-create-popover .cal-dialog-actions { display:flex; flex-direction:row; flex-wrap:nowrap; justify-content:flex-end; align-items:stretch; gap:8px; margin-top:20px; }
+#calendar .cal-create-popover .cal-dialog-actions .btn { box-sizing:border-box; min-height:44px; height:44px; margin:0; }
+#calendar .cal-create-popover .cal-dialog-actions .btn.soft { flex:0 0 96px; width:96px; min-width:96px; padding:0; border:1px solid var(--line-2); background:var(--surface); color:var(--ink); }
+#calendar .cal-create-popover .cal-dialog-actions .btn.soft:hover:not(:disabled) { background:var(--surface-2); }
+#calendar .cal-create-popover .cal-dialog-actions .btn.primary { flex:1 1 0; width:auto; min-width:0; }
+/* 0967: host calendar orientation and overflow legibility (month tiles, 768 px and up; the phone dot tiles and the cleaning page are unchanged).
+   1. The "+N" badge sits in its own last grid row under the stay lanes (JS gives it row lanes+1), so it never covers a bar.
+   2. The first month caption repeats the period title above it, so it is hidden; later months keep their caption.
+   3. When the week is too narrow for a readable name (side panel open, narrow window) the bars show only the avatar; the full name stays in the title, the aria-label and the day panel. */
+@media (min-width:768px) {
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="false"] .cal-pill-more { align-self:end; justify-self:end; height:24px; min-height:24px; margin:0 4px 0 0; line-height:24px; }
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="false"] .cal-month:first-of-type .cal-month-title { display:none; }
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="false"] .cal-week.is-dots { container:calweek / inline-size; }
+  @container calweek (max-width:687px) {
+    body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="false"] .cal-pill-name { display:none; }
+    body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="false"] .cal-pill { min-width:32px; padding:0 4px; }
+  }
+  /* A one-night bar in a wide week can still be a sliver (a Sunday arrival is about 48 to 60 px). The bar is the size container: its name goes
+     when the readable part would be under 36 px (bar width minus 48 px of padding, avatar and gap, so the bar must be 84 px or more), and only the avatar shows. */
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="false"] .cal-pill { container-type:inline-size; }
+  @container (max-width:67px) {
+    body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="false"] .cal-pill-name { display:none; }
+  }
+  /* A keyboard ring that shows on the dark bars and badges and on the white and dark tiles. */
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="false"] :is(.cal-pill, .cal-pill-more):focus-visible { outline:2px solid #fff; outline-offset:0; box-shadow:0 0 0 4px #222; }
 }

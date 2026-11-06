@@ -89,6 +89,14 @@ WORDS = {
         "Save",
         "Uložit"
     ],
+    "save_instructions": [
+        "Save instructions",
+        "Uložit pokyny"
+    ],
+    "save_manual_code": [
+        "Save manual code",
+        "Uložit ruční kód"
+    ],
     "cancel": [
         "Cancel",
         "Zrušit"

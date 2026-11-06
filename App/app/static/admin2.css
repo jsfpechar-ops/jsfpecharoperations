@@ -1,7 +1,9 @@
 /* 0893: admin pages in the Airbnb pattern. Loaded only by admin templates (head_extra). Light mode only. */
 body.v2 .ui-ph h1{font-size:32px;line-height:1.2;font-weight:700;color:#222}
-body.v2 .ui-ph-back{width:40px;height:40px;border-radius:50%;background:#f2f2f2;color:#222;display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;text-decoration:none}
-body.v2 .ui-ph-back span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* Host pages use a text + icon back link (app2.css `a.ui-ph-back`); operator console keeps the round 40×40 control. */
+body.admin-workspace.v2 a.ui-ph-back.airbnb-back{width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important;border-radius:50%!important;background:#f2f2f2!important;color:#222!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;margin-bottom:16px!important;text-decoration:none!important;flex:0 0 40px!important;padding:0!important;gap:0!important;font-size:0!important;line-height:0!important;font-weight:400!important}
+body.admin-workspace.v2 a.ui-ph-back.airbnb-back span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+body.admin-workspace.v2 .ui-body nav.ui-form-actions .ui-btn{font-size:16px;line-height:1.2}
 body.v2 .ui-tabs{display:flex;gap:12px;overflow-x:auto;border:0;padding:4px 0;margin:0 0 24px}
 body.v2 .ui-tabs .ui-tab{display:inline-flex;align-items:center;min-height:44px;padding:0 20px;border-radius:999px;border:0;background:#f2f2f2;color:#222;font-weight:600;white-space:nowrap;text-decoration:none}
 body.v2 .ui-tabs .ui-tab::after{display:none}
