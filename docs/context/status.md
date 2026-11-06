@@ -7,6 +7,7 @@ Updated: 2026-11-06.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
+- 11-06: PR #790 (branch codex/ux-remediation-handoff): 0977 merged main, renumbered 0958-0964 to 0978-0984, tests green. Blocked on feed URL box padding (390): write brief 0985. [report](../tasks/0977-report.md).
 - 11-06: disk 50→8% (stale images). 0962 prune, 0963 log `kind=`: review on branch zealous-planck-raxu4v. **Owner:** merge, deploy, 0962 Grafana steps.
 - 2026-11-04: 0949 paste card removed (part B open): [report](../tasks/0949-report.md).
 - 11-05: #786 filters implemented; validation blocked (workspace): [report](../tasks/0950-fix-1-report.md).

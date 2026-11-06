@@ -162,3 +162,11 @@ Done: step 12 item 3 run. Left: `scripts/context_lint.py` fails (below). Owner s
 - `python3 scripts/context_lint.py`: FAIL. `docs/context/known-issues.md` ~2566 tokens > cap 2500. No docs changed in this run; not fixed (fix is split or compact known-issues.md). Status stays blocked until it passes.
 - Screenshots: `docs/tasks/screenshots-0977/property-calendars-{390,768,1280}.png` are copies of `/tmp/shots/layout-lint/property-detail-configured+open-{390,768,1280}.png` (property overview with the Calendars accordion opened by the lint's OPEN_ALL). The lint has no dedicated calendars-tab shot (EXTRA_ROUTES has only property-bookings, property-bookings-empty, stay-fees). The closed variant was the only one I looked at (390, shows the Calendars card "2 calendars"); the open variant was copied but not viewed. The setup-calendar-* files are the wizard and were not used.
 - Brief header Status line set from `todo` to `blocked`.
+
+## Orchestrator review (after run 7)
+
+- Tests: mockup/stay/property/invoice spacing 196 passed; invoice autofill 21 passed; layout lint 4 passed; static versions 16 passed; all 0 skipped. Context lint OK after dropping the 0977 known-issues line (branch fixes that test; file was over its cap).
+- Stay detail 390: dates and "1 guest · 2 nights" on one line, centred. Pre-existing on main: Havel FAB overlaps the right end of "Send to UbyPort". 1280: no gap between the guest table and "Police reporting".
+- Invoice 390 (guest and company): buyer card padded, IČO row spaced, nothing clipped; the "?" after Company sits wide of its label (cosmetic).
+- Property calendars 390 (open): the feed URL text in the expanded "URL" box starts flush at the box's left edge (no inner padding) and the caret touches "URL"; the inner "Calendars" heading repeats the accordion title. Not silenced: needs brief 0985 before merge.
+- Not merge-ready until 0985 (feed URL box padding, caret gap; optionally Havel FAB clearance) is done.
