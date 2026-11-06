@@ -2603,6 +2603,7 @@ body.v2 .airbnb-header:has(>.airbnb-actions)>.airbnb-back{margin-right:0}
 body.v2 .prop-after-strip{display:flex;flex-direction:column;gap:8px;max-width:980px;margin:0 auto 16px}
 body.v2 .prop-after-strip:empty{display:none}
 body.v2 .prop-after-strip .pv{margin-bottom:0}
+body.v2 .prop-after-strip .setup-continue-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;margin:0}
 @media (min-width:1024px){body.v2 .form.prop-form-single{grid-template-columns:minmax(0,1fr)}}
 /* 0534/0751: match property page header to the 980px form column (v2 loads app2.css, not host2.css). */
 body.v2 .ui-page[data-body-kind="detail"]:has(#property-settings-form) > .ui-ph {
