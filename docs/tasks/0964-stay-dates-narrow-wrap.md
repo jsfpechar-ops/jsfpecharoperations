@@ -1,6 +1,6 @@
 # 0964: Stay dates card: keep each date on one line at 320 px
 
-Status: todo
+Status: review
 Depends on: none | Base commit: a2fa3a8 | Branch: claude/zealous-planck-raxu4v (already checked out, rides on PR #791, no new PR)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

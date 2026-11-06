@@ -154,10 +154,11 @@ BOX_OVERRIDES = {
     # the stay dates card has no check-in time line in the fixture; the guest rows and police card copy differ from the demo
     "stay:.stay-dates@320": {"height": "196px"},
     "stay:.stay-dates@390": {"height": "169px"},
-    "stay:.stay-dates small@320": {"width": "73.8906px"},
+    "stay:.stay-dates small@320": {"width": "94px"},
     "stay:.stay-dates small@390": {"width": "113px"},
     # 0957: 54px was the two-line height of the arrival date when the PR #725 fixture was measured; today the same cell shows "Fri 6. 11." on one line (28px at line-height 1.4)
-    "stay:.stay-dates b@320": {"width": "73.8906px", "height": "28px"},
+    # 0964: 320 px has equal columns, 12 px cell padding and a screen-reader-only weekday, so the width no longer depends on the date text
+    "stay:.stay-dates b@320": {"width": "94px", "height": "28px"},
     "stay:.stay-dates b@390": {"width": "113px"},
     "stay:.stay-dates .tot@320": {"width": "238px"},
     "stay:.stay-dates .tot@390": {"width": "308px"},
