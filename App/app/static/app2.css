@@ -2152,7 +2152,7 @@ body .page-help-btn::marker{content:""}
 body .page-help-dot{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:18px;height:18px;border:1.5px solid #717171;border-radius:50%;background:#fff;color:#222;font-size:12px;font-weight:700;line-height:1}
 body .page-help-btn:focus-visible .page-help-dot{outline:2px solid #222;outline-offset:3px}
 body .page-help:not([open]) > .page-help-body{display:none}
-body .page-help[open] > .page-help-body{display:block;position:fixed;z-index:60;left:50%;top:50%;right:auto;transform:translate(-50%,-50%);width:min(360px,calc(100vw - 32px));max-height:calc(100vh - 32px);margin:0;overflow:auto;box-sizing:border-box;padding:16px;background:#fff;color:#222;border:1px solid #ddd;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.12);font-size:15px;font-weight:400;line-height:1.4;text-align:left;text-transform:none;letter-spacing:0;white-space:normal}
+body .page-help[open] > .page-help-body{display:block;position:fixed;z-index:60;left:0;right:0;top:50%;width:min(360px,calc(100% - 32px));max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);margin:0 auto;transform:translateY(-50%);overflow:auto;box-sizing:border-box;padding:16px;background:#fff;color:#222;border:1px solid #ddd;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.12);font-size:15px;font-weight:400;line-height:1.4;text-align:left;text-transform:none;letter-spacing:0;white-space:normal}
 body .page-help-steps{margin:0 0 12px;padding-left:20px}
 body .page-help-steps li{margin:0 0 6px}
 body .page-help-more{display:inline-block;min-height:44px;line-height:44px;color:#222;font-weight:600;text-decoration:underline}
