@@ -112,7 +112,7 @@ Items 1–9 supersede the earlier “open decisions” list until implementation
 - No integrated build exists, so batch branches have never been tested together.
 - Nothing is pushed to main or deployed.
 
-## Integration status (branch codex/ux-remediation-handoff, head a91bf17a)
+## Integration status (branch codex/ux-remediation-handoff, head bae26b5e)
 
 - All 18 batch branch heads are contained in this branch. **Full `test_*browser*.py` suite:** in progress — tmux `ubyhost-full-chromium`, log `/tmp/ubyhost-chromium-full.log`, fresh DB and shots (see batch table above).
 - Recent integration fixes on **`e6094132`** (docs at **`a91bf17a`**): `host_page` back link **`class="ui-ph-back airbnb-back"`** (CSS prevents duplicate round-pill styling); **`guest_questions.empty.body`** no longer repeats the empty-state title (0966); **`test_ttlock_setup_0954_browser`** targets the correct lock tile; **`app2.css`** cache key **`20261106-ui-ph-airbnb-back`**; **`App/tests/static_versions.json`** regenerated (50 files).
