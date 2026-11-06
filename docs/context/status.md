@@ -8,7 +8,7 @@ Updated: 2026-11-06.
 - PostgreSQL since 2026-10-31; SQLite at `/data/ubyhost.db`. Billing ON. Go off until `COMPOSE_PROFILES` + `UBYHOST_GO_JOB_KINDS`.
 
 ## Now
-- 11-06: #790 0991 CI fixes (page-help, alerts, lock, a11y). Awaiting green → merge. [report](../tasks/0988-report.md).
+- 11-06: #790 integration + `934a3d49` (overview mockup margins, property help 44px, cache). Six-file browser slice green (243/243). Full Chromium+WebKit `test_*browser*.py` still open. [handoff](../tasks/ux-remediation-handoff.md).
 - 11-06: 0962/0963 merged (#791). **Owner:** deploy, Grafana.
 - UX gate live (layout lint + AGENTS rule 10). Stripe onboarding live; extras merged. **Owner:** deploy; booking site v1 next.
 
