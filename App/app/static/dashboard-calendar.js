@@ -557,7 +557,7 @@
     if (view() === "gantt") renderGantt(); else if (state.scale === "year") renderYear(); else renderCalendar();
     if (!state.events.length) body.append(el("p", "cal-empty", labels.empty));
   }
-  async function load() {
+  async function load(background) {
     const number = ++requestNumber;
     if (phoneDots() && state.scale === "year") state.scale = "month";
     if (controller) controller.abort();
@@ -566,7 +566,7 @@
     const [from, to] = range(), params = new URLSearchParams({ from, to, lang: root.dataset.lang });
     if (state.property) params.set("property", state.property);
     try {
-      const response = await fetch((root.dataset.source || "/dashboard/calendar") + "?" + params.toString(), { signal: controller.signal, headers: { Accept: "application/json" }, cache: "no-store" });
+      const response = await fetch((root.dataset.source || "/dashboard/calendar") + "?" + params.toString(), { signal: controller.signal, headers: background === true ? { Accept: "application/json", "X-Uby-Background": "1" } : { Accept: "application/json" }, cache: "no-store" });
       if (number !== requestNumber) return;
       if (response.redirected || response.status === 401 || response.status === 403) throw new Error("session");
       if (!response.ok || !(response.headers.get("content-type") || "").includes("application/json")) {
@@ -1078,7 +1078,7 @@
   $("[data-cal-fallback]").hidden = true;
   fillProperties(form.elements.apartment_id, false);
   setCreateKind(cleaningMode ? "cleaning" : "stay");
-  root.addEventListener("calendar:refresh", load);
+  root.addEventListener("calendar:refresh", event => load(Boolean(event.detail && event.detail.background)));
   if (cleaningMode) {
     $("[data-cal-day-add]").hidden = readOnly;
     if (!readOnly) $("[data-cal-day-add]").textContent = labels.add_cleaning;
