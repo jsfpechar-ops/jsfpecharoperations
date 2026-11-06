@@ -54,3 +54,31 @@ Stop reason: executor 25-tool-call limit reached (executor.md). Steps 5 and 6 we
 ### Open items
 - Steps 5 to 10 not done. Feed URL lint (`test_layout_lint_browser.py`) and screenshots still pending.
 - Main's own `stay` pins were changed (`0968` h1 and the `.tot@320` width). Main's state is no longer pinned by these values; the owner should confirm this in review.
+
+## Run 3 (steps 5 and 6)
+
+Status: in-progress
+
+Done: steps 5 and 6. Left: steps 7 to 10 (stay-fee tests, verification and screenshots, final report, push).
+
+### Step 5: feed URL cell, layout lint
+- Lint command (`test_layout_lint_browser.py`, 390/768/1280 browser run): 4 passed, 0 failed, 0 skipped. No `table-squeezed` finding on `td.feed-url` appeared, so the expected CSS fix was not needed. No edit to `app2.css`, no `static_versions` regeneration, no commit for step 5.
+- Step 5.3 (mockup re-check): `cd App && PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers .venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py -k "stay" -q --tb=short -rs`: 42 passed, 141 deselected, 0 failed, 0 skipped.
+
+### Step 6: validation wording revert (commit b819600c)
+- Anchor grep before the edit: 6 source lines (validation.py 1, validation_i18n.py 1, host_vi_i18n.py 1, validation.go 1, golden.json 2). Two gitignored `.pyc` files also matched; not committed.
+- sed applied to the five files. `grep -rn "web login required" App go` after the edit: no output.
+- `grep -rln "web login required" App/tests docs/context`: no hits (no stop needed).
+- `scripts/validation_golden.py` regenerated the golden: only the two sed-edited lines differ in `go/`.
+- `cd go && go test ./internal/validation/...`: ok.
+- `cd App && .venv/bin/python -m pytest tests/test_validation.py tests/test_validation_i18n.py tests/test_ubyport_*.py -q --tb=short -x`: 76 passed, 0 failed, 0 skipped (3 warnings, unrelated).
+- Commit: `0977 step 6: restore web-service login wording (Python and Go parity)`, 5 files, 6 insertions and 6 deletions.
+
+### Deviations
+- Step 5: the brief expected `table-squeezed` findings. None occurred, so steps 5.2, 5.4 and 5.5 were skipped (nothing to change).
+- Step 6: the sed also renamed the English key in `App/app/host_vi_i18n.py`. Its Vietnamese value was left unchanged, as the brief says.
+- Pytest and browser runs were backgrounded because the lint run exceeded the 120 s foreground timeout. Output was read from the task file.
+
+### Open items
+- Steps 7 to 10 not started: stay-fee tests, `context_lint`, screenshots at 390/768/1280, design-system checklist, final report, push.
+- Push of this run's commit is in the next step.
