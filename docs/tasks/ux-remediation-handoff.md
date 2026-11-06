@@ -13,7 +13,7 @@ Plan source: UX review and remediation plan (review uploads: 9e66688c-ux-remedia
 
 ## Batch final status (B01–B18), integration branch `codex/ux-remediation-handoff`
 
-Integration head: **`dd40a1bb`** (see **Integration status** below). Each batch’s code is merged into this branch; remaining work is verification (full browser run), owner decisions, and any failures that still reproduce on base.
+Integration head: **`4bc69fe5`** (see **Integration status** below). Each batch’s code is merged into this branch; remaining work is verification (full browser run), owner decisions, and any failures that still reproduce on base.
 
 | Batch | Theme | Final status |
 |---|---|---|
@@ -112,10 +112,10 @@ Items 1–9 supersede the earlier “open decisions” list until implementation
 - No integrated build exists, so batch branches have never been tested together.
 - Nothing is pushed to main or deployed.
 
-## Integration status (branch codex/ux-remediation-handoff, head dd40a1bb)
+## Integration status (branch codex/ux-remediation-handoff, head 4bc69fe5)
 
 - All 18 batch branch heads are contained in this branch. **Full `test_*browser*.py` suite:** in progress — tmux `ubyhost-full-chromium`, log `/tmp/ubyhost-chromium-full.log`, fresh DB and shots (see batch table above).
-- Recent integration fixes on **`e6094132`** (docs at **`dd40a1bb`**): `host_page` back link **`class="ui-ph-back airbnb-back"`** (CSS prevents duplicate round-pill styling); **`guest_questions.empty.body`** no longer repeats the empty-state title (0966); **`test_ttlock_setup_0954_browser`** targets the correct lock tile; **`app2.css`** cache key **`20261106-ui-ph-airbnb-back`**; **`App/tests/static_versions.json`** regenerated (50 files).
+- Recent integration fixes on **`e6094132`** (docs at **`4bc69fe5`**): `host_page` back link **`class="ui-ph-back airbnb-back"`** (CSS prevents duplicate round-pill styling); **`guest_questions.empty.body`** no longer repeats the empty-state title (0966); **`test_ttlock_setup_0954_browser`** targets the correct lock tile; **`app2.css`** cache key **`20261106-ui-ph-airbnb-back`**; **`App/tests/static_versions.json`** regenerated (50 files).
 - Merge conflicts were resolved earlier on this branch (shared files listed in prior handoff revisions); subsequent commits keep `static_versions.json` in sync with template `?v=` keys.
 
 ## Open items found at integration (not fixed)
