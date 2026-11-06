@@ -444,7 +444,7 @@ def test_the_qr_option_says_it_is_for_czech_and_slovak_guests_only(host, monkeyp
     client, apartment_id = host
     monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
     page = client.get(f"/apartments/{apartment_id}?lang=en")
-    assert "Only Czech and Slovak guests see and can use this." in page.text
+    assert "Guests from any country see the IBAN. Only Czech and Slovak guests also get a payment QR code." in page.text
 
 
 # --- 0958: the guest card as the guest sees it, through the real save route ----

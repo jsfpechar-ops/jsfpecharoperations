@@ -1,5 +1,5 @@
 # 0962: host note under bank transfer is wrong, IBAN is for every guest (executor: Haiku 5.5, alone)
-Status: todo
+Status: review
 
 ## 1. Objective
 In Settings > Stay fee > "Collect from guests" > Bank transfer (IBAN), the note says "Only Czech and Slovak guests see and can use this." That reads as if the whole bank transfer is limited. It is not: the IBAN details show to guests of every country (any EU guest can pay by IBAN); only the payment QR code (Czech SPAYD) is limited to Czech and Slovak guests.
