@@ -73,6 +73,21 @@ def shot(page, name):
         page.screenshot(path=str(Path(directory) / f"cleaning-{name}.png"), full_page=True)
 
 
+def _client_geometry_box(locator):
+    """Geometry for an element that may sit in a scroll container (gantt track).
+
+    Playwright's bounding_box() can return None when the node is not considered
+    layout-visible even though getBoundingClientRect() has size (CI flake).
+    """
+    locator.scroll_into_view_if_needed()
+    return locator.evaluate(
+        """node => {
+          const r = node.getBoundingClientRect();
+          return {x: r.x, y: r.y, width: r.width, height: r.height};
+        }"""
+    )
+
+
 @pytest.mark.parametrize("width", [768, 1024, 1280])
 @pytest.mark.parametrize("lang", ["en", "cs"])
 def test_calendar_and_large_list_geometry_and_filtering(workspace, origin, width, lang):
@@ -280,9 +295,10 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, w
                 f'.cal-gantt-events .cal-event.is-gantt-cleaning[data-cal-event="{marker["id"]}"]',
             ],
         )
-        slot = slot_locator.bounding_box()
-        box = gantt_marker.bounding_box()
-        assert slot is not None and box is not None, "Gantt slot or cleaning marker has no box"
+        slot = _client_geometry_box(slot_locator)
+        box = _client_geometry_box(gantt_marker)
+        assert slot["width"] > 0 and slot["height"] > 0 and box["width"] > 0 and box["height"] > 0, (
+            "Gantt slot or cleaning marker has no usable box")
         assert box["x"] >= slot["x"] and box["x"] + box["width"] <= slot["x"] + slot["width"]
         assert box["width"] >= slot["width"] - 6
         assert gantt_marker.is_visible() and gantt_marker.get_attribute("aria-label")
@@ -290,10 +306,11 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, w
         short_markers = [page.locator(f'.cal-gantt-events .cal-event.is-gantt-cleaning[data-cal-event="cleaning:{job_id}"]')
                          for job_id in short_jobs]
         assert all(item.is_visible() for item in short_markers)
-        short_boxes = [item.bounding_box() for item in short_markers]
+        short_boxes = [_client_geometry_box(item) for item in short_markers]
         assert abs(short_boxes[0]["y"] - short_boxes[1]["y"]) >= 20
-        short_slot = page.locator(f'.cal-gantt-slot[data-date="2026-10-25"][data-property="{ws["home"]}"]').bounding_box()
-        assert all(box["width"] >= short_slot["width"] - 6 for box in short_boxes)
+        short_slot = _client_geometry_box(
+            page.locator(f'.cal-gantt-slot[data-date="2026-10-25"][data-property="{ws["home"]}"]'))
+        assert all(b["width"] >= short_slot["width"] - 6 for b in short_boxes)
         shot(page, f"day-marker-gantt-{lang}-{width}")
         _, token = cleaning.new_share(ws["owner"], [marker["propertyId"]])
         page.goto(f"{origin}/cleaning/shared/{token}?lang={lang}&from=2026-09-28&to=2026-11-02")
