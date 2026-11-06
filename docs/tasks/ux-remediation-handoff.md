@@ -13,7 +13,7 @@ Plan source: UX review and remediation plan (review uploads: 9e66688c-ux-remedia
 
 ## Batch final status (B01–B18), integration branch `codex/ux-remediation-handoff`
 
-Integration head: **`2a0b2a0a`** (see **Integration status** below). Each batch’s code is merged into this branch; remaining work is verification (full browser run), owner decisions, and any failures that still reproduce on base.
+**Branch:** `codex/ux-remediation-handoff` (see PR **#790** for the current git tip). **App/template integration commit for back-link + i18n + 0954 fixes:** **`e6094132`**. Each batch’s code is merged into this branch; remaining work is verification (full browser run), owner decisions, and any failures that still reproduce on base.
 
 | Batch | Theme | Final status |
 |---|---|---|
@@ -83,7 +83,7 @@ Items 1–9 supersede the earlier “open decisions” list until implementation
 - `test_host_i18n.py` three tests (`no such table`). Fails on base.
 - `test_invoice_autofill.py::test_invoice_buyer_block_spacing_0896` (selectNodeContents TypeError). Fails on base.
 - `test_dashboard_calendar_browser` / `test_feed_dns_pinning`: needs IPv6, not available in this sandbox.
-- WebKit browser not installed in this sandbox (`en-webkit` cases). CI runs them.
+- Earlier agent sandboxes skipped WebKit (`en-webkit` cases) when the browser binary was missing. For the **current** full `test_*browser*.py` run on `codex/ux-remediation-handoff`, Playwright WebKit + `playwright install-deps webkit` were installed so parametrized Chromium/WebKit tests are **not** deselected for a missing engine.
 - `test_each_property_setting_has_exactly_one_editable_control` (door codes): fails on base.
 
 ## Rules for the next session
@@ -112,10 +112,10 @@ Items 1–9 supersede the earlier “open decisions” list until implementation
 - No integrated build exists, so batch branches have never been tested together.
 - Nothing is pushed to main or deployed.
 
-## Integration status (branch codex/ux-remediation-handoff, head 2a0b2a0a)
+## Integration status (branch `codex/ux-remediation-handoff`)
 
 - All 18 batch branch heads are contained in this branch. **Full `test_*browser*.py` suite:** in progress — tmux `ubyhost-full-chromium`, log `/tmp/ubyhost-chromium-full.log`, fresh DB and shots (see batch table above).
-- Recent integration fixes on **`e6094132`** (docs at **`2a0b2a0a`**): `host_page` back link **`class="ui-ph-back airbnb-back"`** (CSS prevents duplicate round-pill styling); **`guest_questions.empty.body`** no longer repeats the empty-state title (0966); **`test_ttlock_setup_0954_browser`** targets the correct lock tile; **`app2.css`** cache key **`20261106-ui-ph-airbnb-back`**; **`App/tests/static_versions.json`** regenerated (50 files).
+- Recent app integration (**commit `e6094132`**): `host_page` back link **`class="ui-ph-back airbnb-back"`** (CSS prevents duplicate round-pill styling); **`guest_questions.empty.body`** no longer repeats the empty-state title (0966); **`test_ttlock_setup_0954_browser`** targets the correct lock tile; **`app2.css`** cache key **`20261106-ui-ph-airbnb-back`**; **`App/tests/static_versions.json`** regenerated (50 files).
 - Merge conflicts were resolved earlier on this branch (shared files listed in prior handoff revisions); subsequent commits keep `static_versions.json` in sync with template `?v=` keys.
 
 ## Open items found at integration (not fixed)
