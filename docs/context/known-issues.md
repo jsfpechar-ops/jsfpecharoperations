@@ -98,3 +98,4 @@
 - K-PG-ORDER: goose tests fail after icalsync locally; CI OK.
 
 - 0897 guest pay gaps: Slovak QR, PG migration 00007 unrun, no mark-as-paid, no e-mail link, copy review, legal sign-off.
+- 0977 step 11: `test_invoice_autofill.py::test_invoice_buyer_block_spacing_0896` also fails on origin/main (Playwright `selectNodeContents` TypeError, buyer-block element absent on main). Branch (codex/ux-remediation-handoff): `.ui-choice-card` text 0 px from edge, `input#buyer_ico` controls 10.5 px apart, `p.hint` 12 px (320/1024/1280). Pre-existing on main; not fixed.

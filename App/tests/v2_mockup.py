@@ -98,6 +98,9 @@ BOX_OVERRIDES = {
     # text-dependent: app copy vs phone v2 mockup demo copy (0740)
     ".big, .head h1@320": {"width": "189.953px", "height": "42px"},  # PR #725: Airbnb redesign (32 px title)
     ".big, .head h1@390": {"width": "189.953px", "height": "42px"},
+    # 0977 step 11: commit 551808e7 moved the page-help icon out of the properties h1 (props-title-row) on purpose
+    "properties:.big, .head h1@320": {"width": "150.547px", "height": "34.5px"},
+    "properties:.big, .head h1@390": {"width": "150.547px", "height": "34.5px"},
     ".promo@390": {"height": "80px"},
     ".tile .v@320": {"margin-top": "29px"},
     ".tile .v@390": {"margin-top": "29px"},

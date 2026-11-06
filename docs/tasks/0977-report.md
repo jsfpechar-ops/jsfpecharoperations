@@ -116,3 +116,21 @@ Done: step 7 (commit a38b7059, 4 tests added, route code unchanged); step 8 rows
 
 ### Owner steps
 None. PR #790 is not merge-ready. The next run must: view the six screenshots, fix or justify the four browser failures, and run the invoice row with `UBYHOST_SHOTS_DIR` set.
+
+## Run 5 (step 11: triage)
+
+Status: blocked
+
+Done: step 11 items 1 to 5. Left: the two overview `.hl` failures (stopped per step 11.3).
+
+Per test (main = `origin/main` worktree, same command):
+- `test_v2_page_matches_mockup_styles[overview-320]` and `[overview-390]`: passes on main; fails on branch. `.hl` margin-right 0 vs 8 px, margin-bottom 0 vs 28 px, margin-left 0 vs 8 px. Caused by commit 551808e7 (`ov-title-row` wrapper around the dashboard h1). Action: STOPPED, not pinned, per step 11.3.
+- `test_v2_page_matches_mockup_styles[properties-320]` and `[properties-390]`: passes on main; fails on branch. `.big, .head h1` width 150.547 vs 142.391 px, height 34.5 = 34.5 px. Caused by commit 551808e7 (`props-title-row`, page-help icon moved out of h1 on purpose). Action: pinned in `App/tests/v2_mockup.py` as `properties:.big, .head h1@320|390` (width 150.547px, height 34.5px). Deviation: commit 551808e7 has no brief number, so the comment names the commit SHA; the key is page-scoped because no properties key existed for this selector.
+- `test_invoice_autofill.py::test_invoice_buyer_block_spacing_0896`: fails on main too (Playwright `selectNodeContents` TypeError) and on branch (`guest at 320px: text 0.0 px from the edge of div.ui-choice-card (min 16)`). Pre-existing on main: known-issues line added. Not fixed.
+
+Counts:
+- Item 1 rerun (branch): 3 failed, 193 passed, 0 skipped (overview-320, overview-390, invoice).
+- Item 4 rerun (`test_invoice_autofill.py`, screenshots on): 1 failed, 20 passed, 0 skipped.
+
+Deviations: screenshots written to the session scratchpad instead of `/tmp/shots`. Worktree removed.
+Owner steps: none. Overview `.hl` finding needs a decision (pin or fix the wrapper) before PR #790 can go green.
