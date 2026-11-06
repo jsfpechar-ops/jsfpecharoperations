@@ -6,7 +6,6 @@ import re
 import pytest
 from fastapi.testclient import TestClient
 
-from app import guest_guide
 from app.main import app
 from tests.conftest import login_as
 from tests.test_guest_guide_view import TOKEN, _cards, _go_live, _qr, _stay, ws  # noqa: F401
@@ -24,7 +23,7 @@ def _selected(html: str) -> str:
 
 def _levels(ws, visibility):
     """(editor default, QR sees it, booked-window stay sees it, outside-window stay sees it)."""
-    cards = _go_live(ws["home"], keys={"steps": SYNTHETIC, "visibility": visibility})
+    _go_live(ws["home"], keys={"steps": SYNTHETIC, "visibility": visibility})
     qr = ws["client"].get(f"/g/{_qr(ws)}?lang=en").text
     inside = ws["client"].get(f"/l/{TOKEN}/{_stay(ws['home'], 0)}/guide?lang=en").text
     outside = ws["client"].get(f"/l/{TOKEN}/{_stay(ws['home'], 30)}/guide?lang=en").text

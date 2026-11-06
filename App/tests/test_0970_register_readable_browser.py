@@ -27,7 +27,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, validation
 from app.main import app
-from tests.browser_support import chromium_launch_kwargs, settle_motion
+from tests.browser_support import chromium_launch_kwargs
 from tests.conftest import login_as
 from tests.v2_mockup import geometry_findings
 
