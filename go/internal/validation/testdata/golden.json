@@ -903,7 +903,7 @@
    "issues": [
     [
      "uby_ws_user",
-     "UbyPort web login required for automatic reporting.",
+     "UbyPort web-service login is required for automatic reporting.",
      "error"
     ]
    ],
@@ -1095,7 +1095,7 @@
     ],
     [
      "uby_ws_user",
-     "UbyPort web login required for automatic reporting.",
+     "UbyPort web-service login is required for automatic reporting.",
      "error"
     ],
     [

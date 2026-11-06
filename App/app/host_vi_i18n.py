@@ -198,7 +198,7 @@ VALIDATION: Dict[str, str] = {
     "Postcode is required.": "Mã bưu chính là bắt buộc.",
     "Postcode must be exactly 5 digits.": "Mã bưu chính phải có đúng 5 chữ số.",
     "Municipality is required.": "Xã/phường là bắt buộc.",
-    "UbyPort web login required for automatic reporting.": "Cần tên đăng nhập web-service UbyPort để khai báo tự động.",
+    "UbyPort web-service login is required for automatic reporting.": "Cần tên đăng nhập web-service UbyPort để khai báo tự động.",
     "Web-service logins look like UBY-WS123abc (production) or uby-tws1ab45 (test). The ub1234567 login is for the web form and will not work here.": "Tên đăng nhập web-service có dạng UBY-WS123abc (chính thức) hoặc uby-tws1ab45 (thử nghiệm). Tên đăng nhập ub1234567 dành cho biểu mẫu web và không dùng được ở đây.",
     "UbyPort web-service password is required.": "Mật khẩu web-service UbyPort là bắt buộc.",
     "No property manager is attached, so guests have no named contact for questions about their stay.": "Chưa gắn người quản lý chỗ ở, nên khách không có người liên hệ cụ thể khi có câu hỏi về lượt lưu trú.",
