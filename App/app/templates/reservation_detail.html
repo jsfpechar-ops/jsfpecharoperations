@@ -30,8 +30,8 @@
 <div class="sub sub-phone">{{ reservation.internal_name }} · {{ source_label(reservation) }}</div>
 <div class="sub-phone stay-pill-line ph-hide">{% if stay_inactive %}<span class="pill">{{ t('stays.filter.state.' ~ reservation.status) if reservation.status != 'active' else t('archive.col.when') }}</span>{% else %}{{ v2_status_pill(cell, progress, reservation) }}{% endif %}</div>
 <div class="card facts stay-dates">
-  <div><small>{{ t('stays.table.arrival') }}</small><b>{{ reservation.date_from | weekday }} {{ reservation.date_from | date_short }}</b></div>
-  <div><small>{{ t('stays.table.departure') }}</small><b>{{ reservation.date_to | weekday }} {{ reservation.date_to | date_short }}</b></div>
+  <div><small>{{ t('stays.table.arrival') }}</small><b><span class="wd">{{ reservation.date_from | weekday }}</span> {{ reservation.date_from | date_short }}</b></div>
+  <div><small>{{ t('stays.table.departure') }}</small><b><span class="wd">{{ reservation.date_to | weekday }}</span> {{ reservation.date_to | date_short }}</b></div>
   <div class="tot">{{ tp('stay.detail.facts.guests', progress.expected if progress.expected is not none else (progress.guests | length)) }} · {{ tp('stays.table.nights', nights(reservation.date_from, reservation.date_to)) }}</div>
 </div>
 {% macro stay_cta() %}

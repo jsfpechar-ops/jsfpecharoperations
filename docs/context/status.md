@@ -1,12 +1,13 @@
 # Status
 
-Updated: 2026-11-05.
+Updated: 2026-11-06.
 
 ## Production
 - Magic-link 1–2 done; checked; access log off.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
+- 11-06: disk 50→8% (stale images). 0962 prune, 0963 log `kind=`: review on branch zealous-planck-raxu4v. **Owner:** merge, deploy, 0962 Grafana steps.
 - 2026-11-04: 0949 paste card removed (part B open): [report](../tasks/0949-report.md).
 - 11-05: #786 filters implemented; validation blocked (workspace): [report](../tasks/0950-fix-1-report.md).
 - 11-04: PR #763 stay fee: 0897 done; 0898, 0932-0934 done; merging on green.
@@ -14,7 +15,6 @@ Updated: 2026-11-05.
 - 2026-11-03: UX gate live: layout lint (`App/tests/layout_lint.js`) + AGENTS.md rule 10; threads self-check screenshots, owner does not.
 - 2026-11-02: Airbnb pass on login and admin pages (0892-0894) in draft PR #739; 0869 renumbers colliding briefs.
 - 2026-11-01: **Production on PostgreSQL** since 2026-10-31 23:56Z (39 s downtime; SQLite kept at `/data/ubyhost.db`, rollback `./scripts/pg-cutover.sh rollback`). Go merged, off in prod until `go` is in `COMPOSE_PROFILES` and a kind in `UBYHOST_GO_JOB_KINDS`: G1a, container, G3a billing_snapshot, G3b stripe_sweep, G5a request bytes (#621-#634). G5b responses (#635), G5c transport + claim (#640), G5d-1 outcome decision (0482). Next: G5d-2 onward ([plan v4](../plans/postgresql/migration-plan-v4.md)).
-- Billing cockpit merged (#561), 0448 merged (#565). Decisions 2026-10-29 in decisions.md.
 - Billing ON in production (`UBYHOST_BILLING_ENABLED=1`, 2026-10-29; #561, #565).
 - Stripe: onboarding live; extras merged (#701, #705, #706). **Owner:** deploy. Next: booking site v1.
 - 0290 passkey CI/phone; #435 merge; TTLock #434 CI pending. #432 subdomain live; root login/calendar review pending.
@@ -33,4 +33,4 @@ Updated: 2026-11-05.
 - Stale signed dates (K-F18). HIGH RISK filing: K-F02, K-F03, K-F07; secret rotation K-S10.
 
 ## Owner done
-- SES, Turnstile, healthchecks, Better Stack, Cloudflare pre-clearance, autopurge, Render staging, backup drill, 0001 (#281) done.
+- SES, Turnstile, monitoring, staging, backup drill, 0001 done.

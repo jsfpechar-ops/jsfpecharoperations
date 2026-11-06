@@ -486,7 +486,8 @@
     "guest-id-line",
     "airbnb-actions",
     "req-star",
-    "section-note"
+    "section-note",
+    "wd"
   ],
   "hooks": [
     "sr-only",
@@ -1316,6 +1317,7 @@
     "stay-fees-page": "Page scope for the v2 Poplatek z pobytu list (0794).",
     "stay-fees-toolbar": "Month filter row of the stay fee list (0796).",
     "fee-pay-h": "Step heading inside the stay fee two-step pay box (0794).",
-    "head-title-row": "v2 page head row: h1 with the help ? disclosure on the same line (0816, owner rule)."
+    "head-title-row": "v2 page head row: h1 with the help ? disclosure on the same line (0816, owner rule).",
+    "wd": "stay detail weekday in the date facts; screen-reader-only below 360 px (0964)"
   }
 }

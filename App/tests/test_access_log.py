@@ -63,3 +63,31 @@ def test_the_access_log_can_be_switched_off(monkeypatch, caplog):
     with caplog.at_level(logging.INFO, logger=ACCESS_LOGGER):
         TestClient(app).get("/")
     assert _records(caplog) == []
+
+
+def _line_for(caplog, **headers) -> str:
+    db.init_db()
+    with caplog.at_level(logging.INFO, logger=ACCESS_LOGGER):
+        TestClient(app).get("/", headers=headers)
+    lines = _records(caplog)
+    assert lines
+    return lines[-1]
+
+
+def test_a_plain_request_line_has_no_kind(caplog):
+    line = _line_for(caplog)
+    assert "kind=" not in line
+    assert line.endswith(tuple("0123456789"))  # still ends with lock_ms=<n>
+
+
+def test_prefetch_requests_are_tagged(caplog):
+    assert _line_for(caplog, **{"X-Sec-Purpose": "prefetch"}).endswith(" kind=prefetch")
+
+
+def test_sec_purpose_prefetch_wins_over_background(caplog):
+    line = _line_for(caplog, **{"Sec-Purpose": "Prefetch;anonymous-client-ip", "X-Uby-Background": "1"})
+    assert line.endswith(" kind=prefetch")
+
+
+def test_background_polls_are_tagged(caplog):
+    assert _line_for(caplog, **{"X-Uby-Background": "1"}).endswith(" kind=poll")
