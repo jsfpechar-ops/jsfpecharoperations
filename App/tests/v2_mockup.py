@@ -21,6 +21,7 @@ STYLE_PROPS = (
 COLOR_OVERRIDES = {"rgb(212, 71, 47)": "rgb(208, 69, 45)", "rgb(138, 138, 132)": "rgb(107, 107, 101)"}
 # accessibility (AA contrast, 12 px minimum), 2026-11-01
 SELECTOR_OVERRIDES = {
+    "property:.pv": {"border-top-left-radius": "14px", "border-bottom-color": "rgb(235, 235, 231)"},  # 0986: main property layout restored; the setup card uses the tile style (14 px radius, --line border)
     # 0535: property page summary text is 12 px (geometry guard: no text under 12 px); the mockup uses 11.67 px
     "summary small": {"font-size": "12px"},
     # 0541: the demo property has no address, so the basics dot is red (r) in the app; the mockup shows green

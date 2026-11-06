@@ -1,6 +1,6 @@
 # 0986: property page: restore main's header and status tiles, keep the setup card, fix the feed URL box
 
-Status: todo
+Status: blocked
 Depends on: 0985 | Base commit: origin/codex/ux-remediation-handoff | Branch: codex/ux-remediation-handoff
 Executor: Haiku 5.5 | Fits one session: 25 tool calls.
 
