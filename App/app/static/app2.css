@@ -1847,9 +1847,8 @@ body.v2 .settings-pill.is-current{background:var(--ink);color:#fff}
 @media (max-width:1023px){
   body.v2 .settings-pills[data-wrap-on-phone]{flex-wrap:wrap;overflow:visible}
 }
-/* 0968/B10: long CS copy on stays chips still wraps within 320 px; shave gap and padding only here. */
+/* 0968/B10: long CS copy on stays chips still wraps within 320 px (keep 12px flex gap). */
 @media (max-width:400px){
-  body.v2 .stays-pills .settings-pills[data-wrap-on-phone]{gap:8px}
   body.v2 .stays-pills .settings-pills[data-wrap-on-phone] .settings-pill{padding:0 14px;font-size:14px}
 }
 /* 0789b: a checkbox with data-toggle-submit is a 51x31 switch (ink when on) */
