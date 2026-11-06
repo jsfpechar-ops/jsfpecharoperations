@@ -37,7 +37,7 @@ Four fixes on the branch, most important first: (A) the property page "?" sits i
 9. F. Verification (below, section 6). Geometry pins (`v2_mockup.py` `overview:.hl`, property title pins) change only to the measured value, only where main's markup was restored, comment `# 0987: main markup restored`.
 10. Screenshots and report: copy `property-detail-configured-390.png`, `stays-390.png`, `settings-390.png`, `dashboard-390.png` (names as in `ls /tmp/shots-0987/layout-lint/ | grep 390 | head -40`) into `docs/tasks/screenshots-0987/`. Write `docs/tasks/0987-report.md`: `Status: review` only if every command is green, else `blocked` with `Done: steps 1 to k. Left: ...`. Set this brief's Status to match. Commit `0987: PR 790 CI green, property help in h1, simpler stays copy`, `git push -u origin codex/ux-remediation-handoff 2>&1 | tail -3` (no force, never main, no PR).
 
-### Run 2 amendment (orchestrator, after run 1): lock tab, owner-approved
+### Run 2 amendment (orchestrator, after run 1): lock tab (orchestrator decision; owner saw the screenshots and did not pick)
 
 Run 1 left 6 failures (test_ttlock_setup_0954 x4, test_door_code_missing_times_0397, test_door_code_one_lock_one_property). Decisions:
 1. Lock connected, codes off: restore main's behaviour. In `App/app/templates/_property_editor.html` (~line 431) change `{% if door_code and door_code.account and door_code.locks and door_code.state != 'off' %}` to `{% if door_code and door_code.account and door_code.locks %}` and delete the 0984 comment line above it. The `#lock-setup-state` "Connect my lock" row then shows only when no lock is connected. Screenshot comparison was shown to the owner; PR 790's row told connected hosts to connect again.
