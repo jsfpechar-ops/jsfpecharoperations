@@ -205,6 +205,10 @@ if docker image inspect ubyhost:local >/dev/null 2>&1; then
   docker tag ubyhost:local ubyhost:previous
   echo "Kept the running image as ubyhost:previous for rollback."
 fi
+if docker image inspect ubyhost-go:local >/dev/null 2>&1; then
+  docker tag ubyhost-go:local ubyhost-go:previous
+  echo "Kept the running Go image as ubyhost-go:previous for rollback."
+fi
 
 # 0422: the GitHub deploy builds the image from the commit CI passed, pushes it
 # to GHCR and passes it here as UBYHOST_IMAGE, so the server only pulls. A
