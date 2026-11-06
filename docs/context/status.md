@@ -7,7 +7,7 @@ Updated: 2026-11-06.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
-- 11-06: #790: 0977 merged main, briefs 0958-0964 → 0978-0984, green; needs 0985 (feed URL padding). [report](../tasks/0977-report.md).
+- 11-06: #790 (codex/ux-remediation-handoff): 0977-0988 done; owner accepted design. Left: 0710 stays page-help tap target, fee backlink lane, "?" sits far right of property title. [0988 report](../tasks/0988-report.md).
 - 11-06: 0962 prune, 0963 log `kind=` merged (#791). **Owner:** deploy, 0962 Grafana steps.
 - 2026-11-04: 0949 paste card removed (part B open): [report](../tasks/0949-report.md).
 - 11-05: #786 filters implemented; validation blocked (workspace): [report](../tasks/0950-fix-1-report.md).
