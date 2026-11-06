@@ -1,4 +1,4 @@
-# 0962: host note under bank transfer is wrong, IBAN is for every guest (executor: Haiku 5.5, alone)
+# 0965: host note under bank transfer is wrong, IBAN is for every guest (executor: Haiku 5.5, alone)
 Status: review
 
 ## 1. Objective
@@ -31,4 +31,4 @@ Tests pass, 0 skipped; lint clean.
 If the same wrong claim is in guest-facing copy, stop and report instead of changing it.
 
 ## 9. Report
-Write `docs/tasks/0962-report.md` (5 lines max) with a Status line; set this brief's Status to review. Commit (message ends with "Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>" and "Claude-Session: https://claude.ai/code/session_014N5J8MeH3Hk3RVuTWKDVVn"), push to `claude/zealous-johnson-kjnz4e` only. No PR.
+Write `docs/tasks/0965-report.md` (5 lines max) with a Status line; set this brief's Status to review. Commit (message ends with "Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>" and "Claude-Session: https://claude.ai/code/session_014N5J8MeH3Hk3RVuTWKDVVn"), push to `claude/zealous-johnson-kjnz4e` only. No PR.
