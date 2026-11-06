@@ -5,33 +5,27 @@
 {% set nav = 'apartments' %}
 {% set how_key = 'property' %}
 {% set body_kind = 'detail' if editing else 'form' %}
-{# Editing: use host_page ui-ph (design v2) so geometry tests see .ui-ph on /apartments/{id}. Create keeps the legacy inline head (empty page_title hides ui-ph). #}
-{% set property_prefill = property_prefill or {} %}
-{% set draft = draft or {} %}
-{% set copy_property_peers = copy_property_peers or [] %}
-{% set base_url = '/apartments/' ~ apartment.id if editing else '' %}
-{% set header_actions %}{% if editing and copy_property_peers %}{% with copy_action=base_url, copy_section=settings_section|default('') %}{% include "_copy_settings_dialog.html" %}{% endwith %}{% endif %}{% endset %}
 {% block title %}{{ apartment.internal_name if editing else t('property_create.title') }}{% endblock %}
-{% block page_title %}{% if editing %}{{ apartment.internal_name }}{% endif %}{% endblock %}
-{% block meta %}
-{% if editing %}
-{% set prop_addr = [((apartment.addr_street or '') ~ ' ' ~ (apartment.addr_house_no or '')) | trim, apartment.addr_obec or ''] | select | join(', ') %}
-{% if prop_addr and prop_addr.strip() %}<span class="sub prop-phone-sub">{{ prop_addr }}</span>{% endif %}
-{% endif %}
-{% endblock %}
-{% block secondary_actions %}{{ header_actions }}{% endblock %}
-{# Property edit: header back to /apartments (unsaved dialog + 0830 geometry). Explicit ph_back so href is never the property URL. #}
-{% block back_url %}/apartments{% endblock %}
+{% block page_title %}{% endblock %}
+{% block meta %}{% endblock %}
+{% block back_url %}{% if not editing %}/apartments{% endif %}{% endblock %}
 {% block back_label %}{% if not editing %}{{ t('nav.properties') }}{% endif %}{% endblock %}
-{% block ph_back %}<a class="ui-ph-back airbnb-back" href="/apartments">{{ icon('arrow-left', 16) }}<span>{{ self.back_label() | trim or t('common.back') }}</span></a>{% endblock %}
 {% block body %}
 {% from "_components.html" import copy_button, source_badge, field_label, help_tip, sync_calendars_button with context %}
 {% from "_icons.html" import icon with context %}
+{% set property_prefill = property_prefill or {} %}
+{% set draft = draft or {} %}
+{% set copy_property_peers = copy_property_peers or [] %}
 {% if not editing %}
 <div class="head prop-new-head prop-new"><div><div class="heading-with-tip prop-name-tip"><h1 class="big">{% set parts = (t('property_create.title')).rsplit(' ', 1) %}{% if parts|length == 2 %}{{ parts[0] }} {% endif %}<span class="nowrap">{{ parts[-1] }}{{ help_tip('property-create-lede-help', t('property_create.lede') ~ ' ' ~ t('common.required_legend')) }}</span></h1></div></div><div class="airbnb-actions">{% if copy_property_peers %}{% with copy_action='/apartments/new', copy_section='' %}{% include "_copy_settings_dialog.html" %}{% endwith %}{% endif %}</div></div>
 {% include "_property_create.html" %}
 {% else %}
+{% set base_url = '/apartments/' ~ apartment.id %}
 {# 0534: one scroll page, no tabs. Each section is a plain details; ?view= and ?section= pick what is open without JavaScript. #}
+{% set header_actions %}{% if copy_property_peers %}{% with copy_action=base_url, copy_section=settings_section|default('') %}{% include "_copy_settings_dialog.html" %}{% endwith %}{% endif %}{% endset %}
+{% with href='/apartments', title=apartment.internal_name, help=page_help('property'), actions=header_actions %}{% include "partials/settings_back_header.html" %}{% endwith %}
+{% set prop_addr = [((apartment.addr_street or '') ~ ' ' ~ (apartment.addr_house_no or '')) | trim, apartment.addr_obec or ''] | select | join(', ') %}
+{% if prop_addr and prop_addr.strip() %}<div class="sub prop-phone-sub">{{ prop_addr }}</div>{% endif %}
 {% include "_property_editor.html" %}
 {% endif %}
 {% endblock %}
