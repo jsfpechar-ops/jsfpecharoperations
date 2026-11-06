@@ -235,6 +235,15 @@ Run 4 left 5 failures. For each, decide main vs branch, then act. Use one worktr
 4. Rerun item 1's command: target 0 failed, 0 skipped. Then rerun the invoice row with screenshots so the 2 skips run: `cd App && UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/shots PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers .venv/bin/python -m pytest tests/test_invoice_autofill.py -q --tb=line -rs 2>&1 | tail -15`.
 5. Commit `0977 step 11: triage remaining failures`, add a "Run 5" section to the report (per test: main or branch, action), push.
 
+### Step 12 (orchestrator amendment after run 5): overview pin, invoice buyer block fix
+
+1. Overview `.hl` margins (overview-320, overview-390, branch only): commit 551808e7 moved the h1 into `.ov-title-row` and moved the margin `0 8px 28px` from `h1.hl` to the row (`app2.css`, the `.ov-title-row` rule near line 922), so the page looks the same. Pin the `.hl` margins to the app value in `App/tests/v2_mockup.py`: edit the existing `overview:` key for `.hl` at 320/390 if one exists, otherwise add page-scoped keys in the same format as the `properties:` keys from run 5. Comment: `# 551808e7: the 0 8px 28px margin moved from h1.hl to .ov-title-row`. First confirm with `grep -n "ov-title-row{" App/app/static/app2.css | tail -3` that the row really has `margin:0 8px 28px`; if not, stop.
+2. Invoice buyer block (`test_invoice_autofill.py::test_invoice_buyer_block_spacing_0896`, real finding on the branch: "guest at 320px: text 0.0 px from the edge of div.ui-choice-card (min 16)"; run 4 also saw `input#buyer_ico` controls 10.5 px apart and `p.hint` at 12 px). Fix the CSS, do not edit the test. Read the test's assertions first (`grep -n "min\|assert" App/tests/test_invoice_autofill.py | sed -n '/0896/,$p' | head -30`). Change only the `body.v2 .invoice-customer ...` rules in `App/app/static/app2.css` (near line 2016): give the choice card inner padding of at least 16 px, keep at least 16 px between the buyer IČO controls and 16 px above `p.hint` where the test asks for it. Bump the app2.css key to `20261106-0977c` (base.html and static_versions.json, regenerate as in step 3). Rerun only that test until it passes, at most 3 tries; still failing: stop and report the last message.
+3. Rerun step 11 item 1 and item 4 commands, then `test_layout_lint_browser.py` (step 8 row 1) and `test_static_versions.py`. Target: 0 failed, 0 skipped everywhere.
+4. Copy the invoice form `-390`, `-768`, `-1280` screenshots from the item 4 run's `UBYHOST_SHOTS_DIR` into `docs/tasks/screenshots-0977/` (names starting `invoice-`).
+5. In `docs/context/known-issues.md`, the line run 5 added for the invoice test: change it to say only that origin/main's copy of the test errors with the Range TypeError and the branch fixes it in 0977.
+6. Commit `0977 step 12: overview pin, invoice buyer block spacing`. Report: add a "Run 6" section; set the top Status to `review` only if item 3 is fully green. Push.
+
 ## 5. Do not touch
 
 - main's own briefs, reports and screenshots (`0958` to `0964` files that came from main), main's `0964:` comments and CSS block.
