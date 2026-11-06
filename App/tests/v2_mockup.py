@@ -133,8 +133,9 @@ BOX_OVERRIDES = {
     # stays/stay (0529): text- and data-dependent; fixture copy vs mockup demo copy
     # pill width follows its label ("Chybí 1 host" vs "Čeká na 2 ze 3 hostů")
     # text-dependent: app copy vs phone v2 mockup demo copy (0750)
-    "stays:.mh .big, .head h1@320": {"width": "139.609px", "height": "42px"},
-    "stays:.mh .big, .head h1@390": {"width": "139.609px", "height": "42px"},
+    # text-dependent: the help button sits beside the stays title, not inside it (0968)
+    "stays:.mh .big, .head h1@320": {"width": "100.203px", "height": "34.5px"},
+    "stays:.mh .big, .head h1@390": {"width": "100.203px", "height": "34.5px"},
     # text-dependent (0766): the stays card shows the stay dates with weekdays; values are the app's measured fixture sizes
     "stays:.stay .in small@320": {"width": "72.2656px"},
     "stays:.stay .in small@390": {"width": "72.2656px"},
@@ -161,7 +162,8 @@ BOX_OVERRIDES = {
     # 0964: 320 px has equal columns, 12 px cell padding and a screen-reader-only weekday, so the width no longer depends on the date text
     "stay:.stay-dates b@320": {"width": "94px", "height": "28px"},
     "stay:.stay-dates b@390": {"width": "113px"},
-    "stay:.stay-dates .tot@320": {"width": "252.031px"},
+    # 0977: nowrap stay dates
+    "stay:.stay-dates .tot@320": {"width": "238px"},
     "stay:.stay-dates .tot@390": {"width": "308px"},
     "stay:.police-card@320": {"height": "106px"},
     "stay:.police-card@390": {"height": "80px"},
