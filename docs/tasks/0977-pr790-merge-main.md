@@ -223,6 +223,18 @@ Write `docs/tasks/0977-report.md` (600 tokens at most): `Status: review` (or `bl
 
 `git push origin codex/ux-remediation-handoff 2>&1 | tail -30`. Normal push only: never `--force`, never `main`. After a non-fast-forward rejection: stop and report (do not rebase or force). Retry only on a network error (2 s, 4 s, 8 s, 16 s). The PR #790 CI re-runs on the push; the owner merges with `scripts/merge-pr-on-green.sh` when green.
 
+### Step 11 (orchestrator amendment after run 4): triage the remaining failures
+
+Run 4 left 5 failures. For each, decide main vs branch, then act. Use one worktree: `git worktree add -q ../m0977 origin/main 2>&1 | tail -3`; run main's copy from `../m0977/App` with `/home/user/jsfpecharoperations/App/.venv/bin/python`; remove it at the end with `git worktree remove --force ../m0977`.
+
+1. List the failures exactly on the branch (one call): `cd App && PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers .venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py tests/test_host_stay_detail_layout_browser.py tests/test_host_property_controls_browser.py "tests/test_invoice_autofill.py::test_invoice_buyer_block_spacing_0896" -q --tb=line -rfs 2>&1 | grep -E "FAILED|SKIPPED|passed|failed" | tail -30`.
+2. Run the same command in the main worktree. A test that also fails on main: do not fix it; add one line to `docs/context/known-issues.md` (match the file's format) naming the test and the measured values, and list it in the report as "pre-existing on main".
+3. A test that fails only on the branch:
+   - `v2_mockup` width/height/margin pin where the branch changed the markup or text on purpose (find the commit with `git log --oneline origin/main..HEAD -S '<selector or class>' -- App/app/templates App/app/static | tail -5`): update the existing pin in `App/tests/v2_mockup.py` (edit the existing key, never add a duplicate key) with the measured app value and a comment naming the brief number from that commit.
+   - Anything else (invoice buyer block layout findings, `.hl` margins 0 vs 8/28/8, a lint-style finding): do NOT pin or silence. Stop, and in the report give the test, the measured values, and the branch commit that caused it (`git log` as above).
+4. Rerun item 1's command: target 0 failed, 0 skipped. Then rerun the invoice row with screenshots so the 2 skips run: `cd App && UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/shots PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers .venv/bin/python -m pytest tests/test_invoice_autofill.py -q --tb=line -rs 2>&1 | tail -15`.
+5. Commit `0977 step 11: triage remaining failures`, add a "Run 5" section to the report (per test: main or branch, action), push.
+
 ## 5. Do not touch
 
 - main's own briefs, reports and screenshots (`0958` to `0964` files that came from main), main's `0964:` comments and CSS block.
