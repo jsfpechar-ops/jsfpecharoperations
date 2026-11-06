@@ -103,9 +103,8 @@ print("total", n)
 
 ### Step 2: merge main
 
-1. `git merge origin/main 2>&1 | tail -30`. Expected conflicts in exactly these files and no others: `App/app/static/app2.css`, `App/app/templates/base.html`, `App/app/templates/guest/base.html`, `App/app/templates/_dashboard_calendar.html`, `App/tests/static_versions.json`. List them: `git diff --name-only --diff-filter=U | tail -30`. Any `docs/tasks/*` conflict, or any other file: run `git merge --abort 2>&1 | tail -3` and stop (section 8).
-2. The four cache-key files: take the branch side for now (step 3 sets the final value): `git checkout --ours App/app/templates/base.html App/app/templates/guest/base.html App/app/templates/_dashboard_calendar.html App/tests/static_versions.json 2>&1 | tail -3`.
-   Caution: `--ours` drops main's non-conflicting changes inside those files only if git had already auto-merged them; a checkout of a conflicted path takes the branch version of the whole file. So afterwards check main's changes are not lost: `git diff origin/main -- App/app/templates/base.html App/app/templates/guest/base.html App/app/templates/_dashboard_calendar.html | grep '^[-+]' | grep -v '^[-+][-+]' | head -30 | cut -c1-160`. Only branch changes may show (the branch's own edits and `?v=` strings). A `-` line that is clearly a main change (not the branch's) means main edited another line in the file: copy that line back by hand, then continue.
+1. `git merge origin/main 2>&1 | tail -30`. Expected conflicts in exactly these files and no others: `App/app/static/app2.css`, `App/app/templates/base.html`, `App/app/templates/guest/base.html`, `App/app/templates/_dashboard_calendar.html`, `App/tests/static_versions.json`, `App/tests/v2_mockup.py`. List them: `git diff --name-only --diff-filter=U | tail -30`. Any `docs/tasks/*` conflict, or any other file: run `git merge --abort 2>&1 | tail -3` and stop (section 8).
+2. The cache-key files and `v2_mockup.py`: resolve by hand, never with `git checkout --ours`/`--theirs` (that takes the whole file and drops main's other edits). In each of `App/app/templates/base.html`, `App/app/templates/guest/base.html`, `App/app/templates/_dashboard_calendar.html` (1 block each), `App/tests/static_versions.json` (3 blocks) and `App/tests/v2_mockup.py` (1 block): keep the branch side (between `<<<<<<<` and `=======`), delete main's side and the three marker lines. Step 3 sets the final `?v=`/sha256 values; step 4 re-measures the `v2_mockup.py` widths. Check: `grep -c '^<<<<<<<\|^=======\|^>>>>>>>' <file>` prints 0 for each.
 3. `app2.css`: `grep -n '^<<<<<<<\|^=======\|^>>>>>>>' App/app/static/app2.css | tail -30`. Expected 2 conflict blocks.
    - Block 1 (~line 667), the stay-dates rules. Branch side: `@media (max-width:1023px){body.v2 .host-stay-detail .stay-dates b{white-space:nowrap}}`. Main side: the 0964 block at 320 px (equal columns, 12 px cell padding, `.wd` screen-reader only). Keep BOTH: branch rule first, then main's block. Delete only the three marker lines.
    - Block 2 (~line 2759): branch side holds the 0983 archive/copy dialog, 0984 connection states and feed-url, 0968 stays filter, 0971 success pattern rules; main side holds the 0897 property save-bar pill, stay-fee-guest-fields and the tip-tail block. Keep BOTH sides in full (branch side first, then main side). Delete only the marker lines. No rule dropped.
@@ -260,7 +259,7 @@ Stop, write the report (`blocked`), and do not guess if:
 ## Risk list (for the reviewer)
 
 - The mechanical renumber touches about 390 references across 45 files; `.patch` files, cache keys, branch names and tmp paths are skipped by design. Check `git diff --stat HEAD~N` of step 1 for non-comment code changes (it should be comments, test names and screenshot names only).
-- `git checkout --ours` of the three templates: main's other edits to those files must survive (check in step 2.2).
+- Conflict files are resolved block by block (step 2.2); no whole-file checkout.
 - The feed URL fix is a measured CSS floor; check the property calendars page at 1024 px for sideways scroll.
 - The wording revert reverses a branch change on purpose; the parity check is the golden regeneration.
 
