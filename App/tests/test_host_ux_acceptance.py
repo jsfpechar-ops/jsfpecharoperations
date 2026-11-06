@@ -59,7 +59,7 @@ PROPERTY_SETTINGS = {
     "internal_name", "legal_entity_id", "data_controller_entity_id",  # 0204: city_en follows the address town
     "addr_okres", "addr_obec", "addr_obec_cast", "addr_street", "addr_house_no", "addr_orient_no", "addr_zip",
     "notes", "permalink_pin", "guest_message", "permalink_window_days",
-    "permalink_reachback_days", "passport_photo_policy", "door_codes", "lock_id", "checkin_hour",
+    "permalink_reachback_days", "passport_photo_policy", "lock_id", "checkin_hour",
     "checkout_hour", "uby_idub", "uby_ws_user", "uby_ws_password", "uby_mark", "uby_name", "uby_contact",
     "stay_fee_rate_czk", "stay_fee_cadence", "stay_fee_vs", "stay_fee_council_account",
     "stay_fee_authority_name", "stay_fee_authority_address", "stay_fee_authority_contact",
@@ -700,7 +700,7 @@ def test_keyboard_reaches_rail_tabs_and_editor_with_visible_focus(acc, base):
         assert {"#sec-basics", "#sec-lock"} <= seen, seen
         assert {"permalink_pin", "guest_message"} <= seen, seen
         assert not unseen_focus, unseen_focus[:5]
-        # 0096: the door-code switch is in its own Door lock group, one sub-nav link away.
+        # 0954: door codes toggle posts to /apartments/<id>/door-codes; the lock picker is the editable control here.
         assert "#sec-lock" in seen, seen
         page.goto(f"{base}/apartments/{acc['p1']}?view=settings&section=lock&lang=cs")
         _settle(page)
@@ -715,10 +715,10 @@ def test_keyboard_reaches_rail_tabs_and_editor_with_visible_focus(acc, base):
               const cs = getComputedStyle(el);
               return {id: el.id, tag: el.tagName, ring: (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) || cs.boxShadow !== 'none',
                       inView: r.bottom > 0 && r.top < innerHeight}; }""")
-            if info["id"] == "door_codes" or info["tag"] == "BODY":
+            if info["id"] == "lock_id" or info["tag"] == "BODY":
                 reached = info
                 break
-        assert reached and reached["id"] == "door_codes" and reached["inView"] and reached["ring"], reached
+        assert reached and reached["id"] == "lock_id" and reached["inView"] and reached["ring"], reached
         # Search opens from the keyboard and Escape returns focus to the trigger.
         page.locator("[data-command-open]:visible").first.focus()
         page.keyboard.press("Enter")
