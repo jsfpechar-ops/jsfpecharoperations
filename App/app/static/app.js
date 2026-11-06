@@ -2143,26 +2143,13 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     }
   }
 
-  /* 0540: on narrow viewports, close sec-basics only when the server did not leave it open
-     (?section= / hash still skip). */
-  /* 0568: bfcache restore can leave #sec-basics closed after Back; re-open on bare /apartments/{id}. */
-  function initPropertyOverviewBasicsPageshow() {
-    if (!claimNode(window, "initPropertyOverviewBasicsPageshow")) return;
-    window.addEventListener("pageshow", function (event) {
-      if (!event.persisted) return;
-      if (!/^\/apartments\/\d+\/?$/.test(window.location.pathname)) return;
-      if (/[?&](section|view)=/.test(window.location.search) || window.location.hash) return;
-      var basics = document.getElementById("sec-basics");
-      if (basics && basics.tagName === "DETAILS") basics.open = true;
-    });
-  }
-
+  /* 0540: on the phone the property page opens with every section closed, as the mockup.
+     Only a section opened by default (no ?section=) is closed; a requested one stays open. */
   function initPhoneDefaultClosed() {
     if (!window.matchMedia("(max-width: 1023px)").matches) return;
     if (/[?&](section|view)=/.test(window.location.search) || window.location.hash) return;
     document.querySelectorAll("details#sec-basics").forEach(function (node) {
       if (!claimNode(node, "initPhoneDefaultClosed")) return;
-      if (node.hasAttribute("open")) return;
       node.removeAttribute("open");
     });
   }
@@ -2443,7 +2430,6 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
 
   function initPage() {
     initPhoneDefaultClosed();
-    initPropertyOverviewBasicsPageshow();
     initPropSectionLinks();
     initPropertyPage();
     initCopy();
