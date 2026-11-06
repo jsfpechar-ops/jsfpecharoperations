@@ -30,7 +30,7 @@
 <div class="ui-choice-card">
   <label class="ui-choice-card-label">
     <input type="{{ type }}" name="{{ name }}" value="{{ value }}"{% if checked %} checked{% endif %}>
-    <strong>{{ label }}</strong>{% if help_text %}{{ help_tip(help_id, help_text) }}{% endif %}
+    {% if help_text %}{{ tip_label(label, help_id, help_text, 'strong') }}{% else %}<strong>{{ label }}</strong>{% endif %}
   </label>
   {% if caller is defined %}<div class="ui-choice-card-extra">{{ caller() }}</div>{% endif %}
 </div>
