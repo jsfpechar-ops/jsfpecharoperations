@@ -272,6 +272,14 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, w
         )
         gantt_marker.wait_for(state="visible")
         slot_locator.wait_for(state="visible")
+        # Layout can paint the gantt after the first frame; avoid null bounding boxes (flaky on cs; repro on base 7b0355c).
+        page.wait_for_function(
+            'sel => {\n              const slot = document.querySelector(sel[0]);\n              const mark = document.querySelector(sel[1]);\n              if (!slot || !mark) return false;\n              const a = slot.getBoundingClientRect();\n              const b = mark.getBoundingClientRect();\n              return a.width > 0 && a.height > 0 && b.width > 0 && b.height > 0;\n            }',
+            arg=[
+                f'.cal-gantt-slot[data-date="2026-10-17"][data-property="{marker["propertyId"]}"]',
+                f'.cal-gantt-events .cal-event.is-gantt-cleaning[data-cal-event="{marker["id"]}"]',
+            ],
+        )
         slot = slot_locator.bounding_box()
         box = gantt_marker.bounding_box()
         assert slot is not None and box is not None, "Gantt slot or cleaning marker has no box"

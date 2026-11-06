@@ -2168,6 +2168,17 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     document.querySelectorAll('a[href^="#sec-"]').forEach(function (link) {
       if (!claimNode(link, "initPropSectionLinks")) return;
       link.addEventListener("click", function () { openSection(link.getAttribute("href")); });
+      /* Keyboard: activate opens the section like click (B04 Enter key from Playwright; hash sync can race in CI). */
+      link.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        var h = link.getAttribute("href");
+        if (!h || h.charAt(0) !== "#") return;
+        e.preventDefault();
+        openSection(h);
+        try {
+          history.replaceState(null, "", window.location.pathname + window.location.search + h);
+        } catch (_) {}
+      });
     });
     if (window.location.hash) openSection(window.location.hash);
     if (claimNode(window, "initPropSectionLinks")) {

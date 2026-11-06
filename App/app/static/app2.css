@@ -919,8 +919,8 @@ body.v2 .csv-export-dialog .actions .btn{width:100%;min-width:0;min-height:44px;
   body.v2 .head h1.hl{font-size:30px;line-height:1.15;font-weight:800;letter-spacing:-.02em;text-align:center;margin:0 8px 28px}
   body.v2 .head h1.hl.done{margin-top:120px}
   body.v2 .ov-head{display:block;margin:0;padding:0}
-  body.v2 .ov-head .ov-title-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin:0 8px 28px}
-  body.v2 .head .ov-title-row h1.hl{margin:0}
+  body.v2 .ov-head .ov-title-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 14px;margin:0 8px 28px}
+  body.v2 .head .ov-title-row h1.hl{margin:0 8px 28px}
   body.v2 .ov-title-row>.page-help-wrap{align-items:center}
   body.v2 .ov-head > .btn{display:none}
   body.v2 .hl-sub{text-align:center;color:var(--ink3);font-size:16px;margin:-16px 0 28px}
@@ -2057,8 +2057,15 @@ body.v2 .invoice-lookup-row input{flex:1 1 auto;min-width:0;max-width:12rem}
 body.v2 .invoice-lookup-row .ui-btn{flex:0 0 auto;min-height:0;height:auto;align-self:stretch}
 body.v2 .invoice-lookup-guest{display:flex;align-items:center;gap:var(--space-3)}
 body.v2 .invoice-lookup-ico > label{margin-bottom:var(--space-3)}
-body.v2 .invoice-form .help-tip-btn{width:18px;height:18px;min-width:18px;min-height:18px;margin:0}
-body.v2 .invoice-form .help-tip-btn::after{content:"";position:absolute;inset:-13px -13px -13px 0}
+/* 0890: field_label row — no negative margins over label text or inputs */
+body.v2 .invoice-form .help-tip-btn{width:24px;height:24px;min-width:24px;min-height:24px;margin:0 0 0 10px;padding:0;box-sizing:border-box}
+body.v2 .invoice-form .help-tip-btn::after{inset:0;border:1px solid var(--line)}
+@media (max-width:1023px){body.v2 .invoice-form .help-tip-btn{margin:0 0 0 8px}}
+/* Host add-guest signature: contrast + focus (a11y guard) */
+body.v2 .signature-pad canvas#sig-canvas:focus-visible{outline:3px solid var(--brand-ring,var(--brand));outline-offset:2px}
+body.v2 .signature-pad-bar #sig-clear.ui-btn-secondary{color:var(--brand-ink);border-color:var(--line-strong);background:var(--surface)}
+body.v2 .signature-pad-bar #sig-clear.ui-btn-secondary:focus-visible{outline:3px solid var(--brand-ring,var(--brand));outline-offset:2px}
+body.v2 #stay-fee-guest-off.muted.small{color:var(--ink-500)}
 body.v2 .invoice-buyer-fields{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
 body.v2 .invoice-buyer-fields > .ui-field{margin:0;min-width:0;grid-column:1 / -1}
 body.v2 .invoice-f-full{grid-column:1 / -1}
@@ -2229,6 +2236,8 @@ body.v2 .property-settings-form .help-tip-btn{display:inline-flex;align-items:ce
 body.v2 .property-settings-form .help-tip-btn::after{content:"";position:absolute;inset:-13px}
 body.v2 .property-settings-form .help-tip-btn:hover,body.v2 .property-settings-form .help-tip-btn[aria-expanded=true]{background:var(--brand-soft);border-color:var(--brand);color:var(--brand-ink)}
 body.v2 .property-settings-form .help-tip-btn:focus-visible{outline:3px solid var(--brand-ring,var(--brand));outline-offset:2px}
+/* Phone/tablet: property detail still matches settings-lane :has() rules that force 24×24; override so geometry + 0833 agree on 44px (WCAG min target). */
+@media (max-width:1023px){body.v2 .property-settings-form .help-tip-btn{width:44px;height:44px;min-width:44px;min-height:44px;margin:0 0 0 8px}}
 body.v2 .property-settings-form .help-tip-body{display:none;position:absolute;z-index:70;left:0;top:100%;box-sizing:border-box;width:min(320px,calc(100vw - 16px));max-width:calc(100vw - 16px);padding:10px 12px;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-popover);font-size:13px;font-weight:400;line-height:1.45;text-align:left;white-space:normal;overflow-wrap:anywhere}
 body.v2 .property-settings-form .help-tip-body a{color:var(--brand-ink);font-weight:650}
 body.v2 .property-settings-form .help-tip:not([data-js]):hover>.help-tip-body,body.v2 .property-settings-form .help-tip:not([data-js]):focus-within>.help-tip-body,body.v2 .property-settings-form .help-tip.is-open>.help-tip-body{display:block}
@@ -2356,6 +2365,7 @@ body.v2 .property-settings-form button.help-tip-btn::after,body.v2:has(.settings
   body.v2 button.help-tip-btn::after{left:0;top:13px;transform:none}
   body.v2 .property-settings-form button.help-tip-btn,body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) button.help-tip-btn{padding:0}
 }
+
 /* 0899 audit: the tab bar shows up to 1023 px, but the Havel button only lifted above it up to 767 px, so at tablet
    widths it covered the Menu tab. */
 @media (min-width:768px) and (max-width:1023px){
@@ -2584,7 +2594,7 @@ body.v2 .prop-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));g
 body.v2 .prop-strip .sc{display:grid;grid-template-columns:10px minmax(0,1fr);column-gap:10px;row-gap:2px;align-items:center;align-content:center;min-height:64px;padding:12px;background:#fff;border:1px solid var(--line);border-radius:14px;color:inherit;text-decoration:none}
 body.v2 .prop-strip div.sc.sc-link{display:block;padding:12px}
 body.v2 .prop-strip .sc:hover{border-color:var(--ink3)}
-body.v2 nav.prop-strip a.sc:focus,body.v2 nav.prop-strip a.sc:focus-visible,body.v2 nav.prop-strip a.sc-main:focus,body.v2 nav.prop-strip a.sc-main:focus-visible{outline:2px solid var(--ink)!important;outline-offset:2px}
+body.v2 nav.prop-strip a.sc:focus,body.v2 nav.prop-strip a.sc:focus-visible,body.v2 nav.prop-strip a.sc-main:focus,body.v2 nav.prop-strip a.sc-main:focus-visible{outline:2px solid var(--ink)!important;outline-offset:2px;box-shadow:0 0 0 2px var(--ink)}
 body.v2 .prop-strip .sd{grid-row:1/3;width:10px;height:10px;border-radius:50%;background:#c9c9c3}
 body.v2 .prop-strip .sc[data-state="ok"] .sd{background:var(--ok)}
 body.v2 .prop-strip .sc[data-state="warn"] .sd{background:var(--warn)}

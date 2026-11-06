@@ -92,8 +92,13 @@ def test_0833_property_editor_help_headings_and_width(base, dashboard_rich_host,
             for i in range(buttons.count()):
                 btn = buttons.nth(i)
                 box = btn.bounding_box()
-                if not 16 <= box["width"] <= 26 or not 16 <= box["height"] <= 26:
-                    problems.append(f"{width}: ? #{i} is {box['width']:.0f}x{box['height']:.0f} px")
+                # Phone/tablet: WCAG 2.5.8 + v2_mockup geometry expect a 44px tap target; desktop keeps a compact glyph.
+                if width < 1024:
+                    if box["width"] < 44 or box["height"] < 44:
+                        problems.append(f"{width}: ? #{i} is {box['width']:.0f}x{box['height']:.0f} px")
+                else:
+                    if not 16 <= box["width"] <= 26 or not 16 <= box["height"] <= 26:
+                        problems.append(f"{width}: ? #{i} is {box['width']:.0f}x{box['height']:.0f} px")
                 radius = btn.evaluate("e => getComputedStyle(e).borderRadius")
                 if radius not in ("50%", "9999px"):
                     problems.append(f"{width}: ? #{i} is not round ({radius})")

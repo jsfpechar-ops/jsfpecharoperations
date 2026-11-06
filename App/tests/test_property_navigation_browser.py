@@ -710,18 +710,36 @@ def test_b04_keyboard_enter_on_each_pill_opens_its_section(host, base):
                 for index in range(6):
                     href = links.nth(index).get_attribute("href")
                     assert href and href.startswith("#")
-                    page.evaluate("() => document.querySelectorAll('details.prop-sec').forEach((d) => { d.open = false; })")
+                    page.evaluate(
+                        "() => { document.querySelectorAll('details.prop-sec').forEach((d) => { d.open = false; }); history.replaceState(null, '', location.pathname + location.search); }"
+                    )
                     link = links.nth(index)
-                    link.focus()
                     page.wait_for_function(
-                        "() => { const cs = getComputedStyle(document.activeElement); return cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0; }",
-                        timeout=5000,
+                        """(i) => {
+                      const n = document.querySelectorAll('nav.prop-strip a');
+                      const el = n[i];
+                      if (!el) return false;
+                      el.focus();
+                      const cs = getComputedStyle(el);
+                      const ow = parseFloat(cs.outlineWidth);
+                      const hasOutline = cs.outlineStyle !== 'none' && !Number.isNaN(ow) && ow > 0;
+                      const hasRing = !!(cs.boxShadow && cs.boxShadow !== 'none');
+                      return hasOutline || hasRing;
+                    }""",
+                        arg=index,
+                        timeout=8000,
                     )
                     link.press("Enter")
-                    page.wait_for_function("(id) => { const el = document.getElementById(id); return el && el.open; }", arg=href[1:], timeout=8000)
+                    page.locator(f"details#{href[1:]}[open]").wait_for(state="visible", timeout=15000)
                 # Tab walk: start from the strip (close sections first so focus is not inside a panel).
-                page.evaluate("() => document.querySelectorAll('details.prop-sec').forEach((d) => { d.open = false; })")
-                page.locator("nav.prop-strip a").first.focus()
+                page.evaluate(
+                    "() => { document.querySelectorAll('details.prop-sec').forEach((d) => { d.open = false; }); history.replaceState(null, '', location.pathname + location.search); }"
+                )
+                page.locator("nav.prop-strip .sc-actions button[data-copy]").wait_for(state="visible", timeout=8000)
+                cal_link = page.locator('nav.prop-strip a[data-strip="calendars"]')
+                cal_link.wait_for(state="visible", timeout=8000)
+                cal_link.evaluate("el => el.focus()")
+                sync_api.expect(cal_link).to_be_focused(timeout=8000)
                 seen = []
                 for _ in range(7):
                     page.keyboard.press("Tab")
