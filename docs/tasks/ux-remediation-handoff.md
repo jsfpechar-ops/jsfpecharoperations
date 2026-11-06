@@ -54,10 +54,12 @@ Copied to store **`/cursor/stores/bc-28288bf2-47f9-474f-9b23-be49bcaa5d94/media/
 | `property-help-open-en-390.png` | 390 | Property settings: section help pattern, controls, 44px-ish targets on help close / fields. |
 | `property-help-open-en-768.png` | 768 | Same page at tablet width: title row vs content width, help panel. |
 | `reservations-phone390.png` | 390 | Stays list density; row tap targets; filters vs content hierarchy. |
-| `guide-phone390.png` | 390 | Guest guide shell: typography, section cards, primary actions. |
-| `invoices-phone390.png` | 390 | Invoices list: empty/header treatment and button prominence. |
+| `guide-phone390.png` | 390 | Host guest guide workspace: typography, section cards, primary actions (guest-facing copy). |
+| `calendar-0967-heading-en-390.png` | 390 | Host calendar: H1 + overflow lane + controls; spacing and button hierarchy at phone width. |
 
 Tablet **820** shots in the run align with **768** for layout checks where no dedicated 768 asset exists for a given route.
+
+**Guest-new / guest form:** no single named PNG landed in `/tmp/ubyhost-full-chromium-shots` under this run’s prefix; spot-check when a `guests/new` or `0139` capture appears, or extend the shot path in `test_design_guest_admin` / related browser tests.
 
 ## Owner decisions (2026-11-06)
 
