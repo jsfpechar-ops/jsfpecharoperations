@@ -63,3 +63,4 @@ Append-only.
 - [ui] 2026-11-04: TTLock step one says eAdmin; Smart lock shows a status block with Turn on/off (door_code.state is the one source). Source: brief 0954.
 - [ui] 2026-11-05: property notices are inline banners in their section; the Save row closes the form and sticks; Preview sticks from 1024 px. Source: brief 0957.
 - [ui] 2026-11-05: PR #786 owner confirms no check-in/out times on stay detail, four wizard steps, accepted/listed TTLock connection sufficient for Lock online; Stays filters wrap on phones so all options are visible (0950-fix-1).
+- [ui] 2026-11-06 [owner]: property page keeps main's header and tile grid; the setup progress card sits full width below the grid (0986).
