@@ -411,3 +411,10 @@ fi
 
 # 0710: this commit is now the rollback target.
 git rev-parse HEAD > .deployed-sha
+
+# 0962: success is final. Drop dangling images (the old ubyhost:local of each
+# deploy) and build cache older than 72 hours. Never -a: it would delete
+# ubyhost:previous and digest-pinned service images. A failed prune is ignored.
+docker image prune -f >/dev/null 2>&1 || true
+docker builder prune -f --filter until=72h >/dev/null 2>&1 || true
+echo "Pruned dangling Docker images and build cache older than 72h."
