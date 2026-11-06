@@ -16,3 +16,23 @@ Status: blocked
 
 ## Owner steps
 - Confirm the test_0972 locator change above.
+
+## Run 2
+Status: blocked
+
+- Step 4 (cache key): `app2.css?v=20261106-0988` in base.html; static_versions.json regenerated (51 files); test_static_versions.py: 3 passed. Commit c82789c0.
+- Part A (entity card buttons): not fixed. Measured at 390 px on /entities (wide_host fixture), main and branch give identical boxes: first `td.row-actions` at y 592 to 644, previous `td.num` at y 565 to 592, tr fixed height 230px (content 228), no overflow, no overlap. Cause not reproduced, so no CSS change was made. Scratch test and worktree removed.
+- Coordinator item: `test_direct_fee_backlinks_align_with_page_lane` locator restored to main's line 767 (`.page-header, .ui-ph, .head, .crumb, main h1`). The timeout is gone, but the assertion at line 771 now fails: `section.x + width` 971 > header right edge 804 + 2. Cause not analysed: the header matched is main's element, and the fee section is wider. Owner or the UX thread must decide whether the layout or the pin is wrong. Assertion not weakened.
+- Section 6:
+  - ruff (E9,F63,F7,F82,F401,F841): All checks passed.
+  - non-browser `pytest tests --ignore-glob=*browser*` -x: 1 failed, 398 passed, stopped at `tests/test_ares.py::test_entities_fill_does_not_save` (not a file this brief touches; stopped per brief §8).
+  - browser trio (layout_lint, 0786, host_property_controls): 62 passed, 0 failed, 0 skipped.
+  - test_0710 subset (`propert or overview or stays or settings or operator`): 13 failed, 51 passed. Failures: `page-help-more` tap target 31x96 (min 44) and "main content ends under the tab bar" on stays at 390 and 768 px, among others. Likely from part B (page help beside the H1). Not fixed; list pending the rerun below.
+  - design_lint: OK. context_lint: OK.
+- Screenshots: not copied yet (the 0710 rerun was still in progress when the cap was reached); docs/tasks/screenshots-0988/ does not exist.
+
+## Owner / coordinator steps left
+- Decide the fee backlinks alignment (line 771) and the 0710 `page-help-more` / stays failures.
+- Test ares failure: check whether it fails on main.
+- Part A still open.
+- Status stays blocked; no PR opened.

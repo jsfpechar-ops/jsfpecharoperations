@@ -764,7 +764,7 @@ def test_direct_fee_backlinks_align_with_page_lane(wide_host, wide_base):
                 assert response and response.status == 200
                 page.wait_for_load_state("networkidle")
                 assert f"/apartments/{wide_host['unconfigured_apartment']}?view=settings&section=reporting" in page.url
-                header = page.locator(".ui-ph:visible").first.bounding_box()
+                header = page.locator(".page-header, .ui-ph, .head, .crumb, main h1").first.bounding_box()
                 section = page.locator("#stay-fee-settings").bounding_box()
                 assert header and section and section["width"] > 0
                 assert section["x"] >= header["x"] - 2
