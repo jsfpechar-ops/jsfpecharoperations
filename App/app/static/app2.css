@@ -2013,9 +2013,13 @@ body.v2 .invoice-lookup-row,body.v2 .invoice-supplier-meta{display:flex;flex-wra
 body.v2 .invoice-lookup-row > *{min-width:0}
 body.v2 .invoice-supplier,body.v2 .invoice-customer{border:1px solid var(--line,#e5e5e5);border-radius:12px;padding:16px;margin:12px 0 0}
 body.v2 .invoice-customer .ui-toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}
-body.v2 .invoice-customer .ui-choice-card{display:flex;flex-wrap:wrap;align-items:center;column-gap:12px;row-gap:4px}
+body.v2 .invoice-customer .ui-choice-card{display:flex;flex-wrap:wrap;align-items:center;column-gap:12px;row-gap:4px;padding:16px}
 body.v2 .invoice-customer .ui-choice-card-label{display:flex;align-items:center;gap:12px;margin:0}
 body.v2 .invoice-customer .ui-choice-card-label>strong{display:inline-flex;align-items:center;gap:12px;flex-wrap:wrap}
+body.v2 .invoice-customer .invoice-lookup{padding:16px}
+body.v2 .invoice-customer .invoice-lookup-row{gap:12px}
+body.v2 .invoice-customer .help-tip{margin-left:15px}
+body.v2 .invoice-customer .hint{font-size:13px}
 body.v2 .invoice-f-half,body.v2 .invoice-f-city,body.v2 .invoice-f-zip,body.v2 .invoice-f-full{min-width:0}
 /* 0981a/b guest admin + detailed invoice: classes that lived only in app.css / host.css / host2.css before v2 shell */
 body.v2 .ui-page .muted{color:var(--muted)}

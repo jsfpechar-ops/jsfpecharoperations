@@ -153,6 +153,9 @@ BOX_OVERRIDES = {
     "overview:.nm@390": {"width": "228px"},
     "overview:.meta@320": {"width": "228px", "height": "42px"},
     "overview:.meta@390": {"width": "228px", "height": "42px"},
+    # 551808e7: the 0 8px 28px margin moved from h1.hl to .ov-title-row
+    "overview:.hl@320": {"margin-right": "0px", "margin-bottom": "0px", "margin-left": "0px"},
+    "overview:.hl@390": {"margin-right": "0px", "margin-bottom": "0px", "margin-left": "0px"},
     # fixture property has no check-in/out time, so the facts grid has no time line
     # text-dependent: app copy vs phone v2 mockup demo copy (0751). Values are the app's measured fixture sizes:
     # the stay dates card has no check-in time line in the fixture; the guest rows and police card copy differ from the demo

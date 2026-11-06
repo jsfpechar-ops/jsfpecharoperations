@@ -134,3 +134,19 @@ Counts:
 
 Deviations: screenshots written to the session scratchpad instead of `/tmp/shots`. Worktree removed.
 Owner steps: none. Overview `.hl` finding needs a decision (pin or fix the wrapper) before PR #790 can go green.
+
+## Run 6 (step 12: overview pin, invoice buyer block spacing)
+
+Status: blocked
+
+Done: step 12 items 1, 2, 4 (partly), 5 and 6. Left: step 12 item 3 `test_layout_lint_browser.py` and `test_static_versions.py` (not run: executor call cap). Owner steps: none.
+
+- Item 1: `ov-title-row` margin `0 8px 28px` confirmed (app2.css line 922). Pinned `overview:.hl@320` and `overview:.hl@390` in `App/tests/v2_mockup.py` to the measured branch values (margin 0px on all three sides), comment names 551808e7.
+- Item 2 CSS (app2.css, scoped to `body.v2 .invoice-customer`): `.ui-choice-card` gets `padding:16px` (added to the existing rule); new rules after `.ui-choice-card-label>strong`: `.invoice-lookup{padding:16px}`, `.invoice-lookup-row{gap:12px}`, `.help-tip{margin-left:15px}`, `.hint{font-size:13px}`. Key `20261106-0977e` (base.html, static_versions.json regenerated). Deviation: key bumped to 0977d and 0977e because the version script refuses a changed app2.css under the same key.
+- Item 2 test `test_invoice_buyer_block_spacing_0896`: 1 passed, 0 skipped (after 4 CSS iterations; the test file is unchanged).
+- Item 3 run A (`test_0710_v2_mockup_match_browser.py`, `test_host_stay_detail_layout_browser.py`, `test_host_property_controls_browser.py`, invoice 0896): 196 passed, 0 failed, 0 skipped.
+- Item 3 run B (`test_invoice_autofill.py`, UBYHOST_REQUIRE_BROWSER=1, shots on): 21 passed, 0 failed, 0 skipped.
+- Item 3 not run: `test_layout_lint_browser.py`, `test_static_versions.py`. Status stays blocked until they pass.
+- Item 4: copied invoice `-390`, `-768`, `-1280` PNGs to `docs/tasks/screenshots-0977/` (see commit).
+- Item 5: known-issues line for the invoice test rewritten (origin/main Range TypeError; branch fixed in 0977).
+
