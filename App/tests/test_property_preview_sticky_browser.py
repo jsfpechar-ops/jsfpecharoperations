@@ -10,7 +10,7 @@ import pytest
 from tests.test_host_unsaved_changes_browser import _page, base, browser, host  # noqa: F401
 
 
-@pytest.mark.parametrize("width,height", [(768, 1024), (1280, 900), (1440, 900)])
+@pytest.mark.parametrize("width,height", [(390, 844), (768, 1024), (1280, 900), (1440, 900)])
 def test_the_preview_aside_is_gone_and_the_pills_lead(browser, base, host, width, height):  # noqa: F811
     url = f"{base}/apartments/{host['apartment']}"
     page = _page(browser, base, host, width, height)
@@ -18,6 +18,6 @@ def test_the_preview_aside_is_gone_and_the_pills_lead(browser, base, host, width
     assert page.locator("aside.preview, .setup-readiness-help, [data-setup-status]").count() == 0
     strip = page.locator("nav.prop-strip")
     assert strip.is_visible() and strip.locator(".sc").count() == 6
-    form = page.locator("#property-settings-form").bounding_box()
-    assert strip.bounding_box()["y"] < form["y"]
+    form = page.locator(".form.prop-form-single").bounding_box()
+    assert form and strip.bounding_box()["y"] < form["y"]
     page.context.close()

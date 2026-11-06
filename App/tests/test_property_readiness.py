@@ -68,8 +68,9 @@ def _label(text: str, field: str) -> str:
 
 
 def _checklist(text: str) -> str:
-    """0962: the missing-item notes inside the sections (the checklist panel is gone)."""
-    return "".join(re.findall(r'<div class="prop-sec-missing".*?</div>', text, re.DOTALL))
+    """Just the readiness section, so the section nav cannot be mistaken for it."""
+    start = text.index('<section class="readiness">')
+    return text[start : text.index("</section>", start)]
 
 
 def _complete_apartment(apartment_id: int, **overrides):

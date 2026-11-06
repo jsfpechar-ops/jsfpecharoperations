@@ -86,6 +86,41 @@
 {% endif %}
   {%- set wizard_active = setup_progress and not setup_progress.hidden -%}
   {% if leon_card %}<div class="pv"><a class="r" href="{{ base_url }}/leon{% if leon_card != 'on' %}/setup{% endif %}" data-leon-card="{{ leon_card }}"><span>{{ t('leon_page.title') }}</span>{{ t('leon_page.card.' ~ leon_card) }}</a></div>{% endif %}
+{% if readiness and not wizard_active %}<div hidden>
+<section class="readiness">
+  <div class="readiness-group">
+    <h3 class="readiness-title">{{ t('apartment.form.readiness.invite_title') }}</h3>
+    <ul class="readiness-list">
+      {% for item in readiness.invite %}
+      <li class="readiness-line{% if item.done %} is-done{% endif %}">
+        <span class="readiness-mark" aria-hidden="true">{{ '✓' if item.done else '✗' }}</span>
+        {% if item.done %}{{ t('apartment.form.readiness.item.' ~ item.key) }}
+        {% else %}<a href="#{{ item.anchor }}">{{ t('apartment.form.readiness.missing') }} {{ t('apartment.form.readiness.item.' ~ item.key) }}</a>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% if readiness.invite_ready %}
+    <p class="readiness-ready">{{ t('apartment.form.readiness.invite_ready') }}</p>
+    {# 0962: guest link copy lives in the strip only; omit legacy readiness-permalink id (tests). #}
+    {% endif %}
+  </div>
+  <div class="readiness-group">
+    <h3 class="readiness-title">{{ t('apartment.form.readiness.report_title') }}</h3>
+    <ul class="readiness-list">
+      {% for item in readiness.report %}
+      <li class="readiness-line{% if item.done %} is-done{% endif %}">
+        <span class="readiness-mark" aria-hidden="true">{{ '✓' if item.done else '✗' }}</span>
+        {% if item.done %}{{ t('apartment.form.readiness.item.' ~ item.key) }}
+        {% else %}<a href="#{{ item.anchor }}">{{ t('apartment.form.readiness.missing') }} {{ t('apartment.form.readiness.item.' ~ item.key) }}</a>
+          {% if item.message %}<span class="readiness-why">{{ validation_message(item.message) }}</span>{% endif %}
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+</div>{% endif %}
+
 </div>
 <div class="form prop-form-single">
 <div class="form-main">

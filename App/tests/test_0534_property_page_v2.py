@@ -156,7 +156,7 @@ def test_aside_has_cards_and_links_to_each_section(host):
         assert f'href="#sec-{key}"' in strip, key
     for sec in re.findall(r'href="#(sec-[a-z]+)"', strip):
         assert f'id="{sec}"' in html, sec
-    assert html.index('<nav class="prop-strip"') < html.index('class="form"')
+    assert html.index('<nav class="prop-strip"') < html.index('class="form prop-form-single"')
 
 
 def test_strip_flags_missing_operator(host):

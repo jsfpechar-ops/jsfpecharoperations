@@ -330,9 +330,11 @@ _FIT_JS = """() => {
     if (r.right > vw + 1 || r.left < -1) bad.push(el.id || el.textContent.trim().slice(0, 30));
   }
   const strip = document.querySelector('nav.prop-strip').getBoundingClientRect();
-  const form = document.querySelector('#property-settings-form').getBoundingClientRect();
+  // 0962: no preview aside; the strip sits above the whole form column (.form.prop-form-single).
+  const formCol = document.querySelector('.form.prop-form-single');
+  const form = (formCol || document.querySelector('#property-settings-form')).getBoundingClientRect();
   return {scroll: document.documentElement.scrollWidth, vw, bad,
-          railSide: strip.width > 0 && strip.bottom <= form.top + 1};
+          railSide: strip.width > 0 && formCol && strip.bottom <= form.top + 1};
 }"""
 
 
@@ -689,13 +691,18 @@ def test_b04_keyboard_enter_on_each_pill_opens_its_section(host, base):
                 assert links.count() == 6
                 for index in range(6):
                     href = links.nth(index).get_attribute("href")
+                    assert href and href.startswith("#")
                     page.evaluate("() => document.querySelectorAll('details.prop-sec').forEach((d) => { d.open = false; })")
-                    links.nth(index).focus()
-                    outline = page.evaluate("() => getComputedStyle(document.activeElement).outlineStyle")
-                    assert outline != "none", (width, href)
-                    page.keyboard.press("Enter")
-                    page.wait_for_function("(id) => document.getElementById(id).open", arg=href[1:], timeout=3000)
-                # Tab walks the pills in reading order: pill, pill, pill's link, its Copy link button, next pill.
+                    link = links.nth(index)
+                    link.focus()
+                    page.wait_for_function(
+                        "() => { const cs = getComputedStyle(document.activeElement); return cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0; }",
+                        timeout=5000,
+                    )
+                    link.press("Enter")
+                    page.wait_for_function("(id) => { const el = document.getElementById(id); return el && el.open; }", arg=href[1:], timeout=8000)
+                # Tab walk: start from the strip (close sections first so focus is not inside a panel).
+                page.evaluate("() => document.querySelectorAll('details.prop-sec').forEach((d) => { d.open = false; })")
                 page.locator("nav.prop-strip a").first.focus()
                 seen = []
                 for _ in range(7):
