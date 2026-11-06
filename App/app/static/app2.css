@@ -2676,7 +2676,7 @@ body.v2 .property-section > .guest-link-top{grid-column:1/-1}
 body.v2 .passport-scan-row .checkline{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:12px;margin:0;min-height:0;padding-left:0;position:static;cursor:pointer;line-height:1.4}
 body.v2 .passport-scan-row .checkline > input[type=checkbox]{position:static;left:auto;top:auto;width:24px;height:24px;min-width:24px;min-height:24px;margin:0;flex:none}
 body.v2 .passport-scan-row .checkline > span{display:block;min-width:0;flex:0 1 auto;line-height:1.4}
-body.v2 .passport-scan-row .checkline .help-tip{display:block;flex:none;align-self:flex-start;margin-left:0;margin-top:0}
+body.v2 .passport-scan-row .checkline .help-tip{display:inline-flex;flex:none;align-self:center;margin-left:0;margin-top:0;vertical-align:middle}
 @media (max-width:359px){body.v2 .passport-scan-row .checkline{gap:8px}}
 /* 0951: the 951 .property-section .grid rule zeroes the row gap; the 16 px gap under the next-stay hint is set here */
 body.v2 .property-section .guest-link-windows{row-gap:var(--space-4)}

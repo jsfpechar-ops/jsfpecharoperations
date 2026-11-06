@@ -4,7 +4,7 @@
     experience, Reporting & fees, Automation. A group that is not selected is only
     hidden from view; its controls stay enabled and are always submitted.
     0096: Door lock is its own group (only where door codes exist). -#}
-{%- from "_components.html" import copy_button, copy_inline, field_label, help_tip, source_badge, sync_calendars_button with context -%}
+{%- from "_components.html" import copy_button, copy_inline, field_label, help_tip, source_badge, sync_calendars_button, tip_label with context -%}
 {%- set feeds_count = (feeds or []) | length -%}
 {%- set calendar_errors = (feeds or []) | selectattr('last_status', 'equalto', 'error') | list | length -%}
 {%- set police_ok = (health or []) | selectattr('key', 'equalto', 'police') | selectattr('state', 'equalto', 'ok') | list | length -%}
@@ -275,7 +275,7 @@
           </select>
         </div>
         <div class="field passport-scan-row">
-          <label class="checkline" for="ocr_scan"><input type="checkbox" id="ocr_scan" name="ocr_scan" value="1" {% if apartment.ocr_scan %}checked{% endif %} aria-describedby="ocr_scan-help"><span>{{ t('apartment.form.ocr_scan.label') }}</span>{{ help_tip('ocr_scan-help', t('apartment.form.ocr_scan.hint')) }}</label>
+          <label class="checkline" for="ocr_scan"><input type="checkbox" id="ocr_scan" name="ocr_scan" value="1" {% if apartment.ocr_scan %}checked{% endif %} aria-describedby="ocr_scan-help">{{ tip_label(t('apartment.form.ocr_scan.label'), 'ocr_scan-help', t('apartment.form.ocr_scan.hint'), 'span') }}</label>
         </div>
       </div>
     </section>
