@@ -351,6 +351,8 @@ docker compose exec ubyhost du -sh /data /data/passport_photos /data/backups
 
 Photos grow until hosts verify IDs or the 30-day stale sweep runs. Snapshots are age-encrypted with time-based retention; see `deploy/lightsail/README.md`. Docker logs: `docker compose logs --since 24h ubyhost`. Install `/etc/logrotate.d/ubyhost` as printed by `setup-server.sh` for `/var/log/ubyhost-*.log`.
 
+Every successful deploy runs `docker image prune -f` and `docker builder prune -f --filter until=72h`, so old app images and stale build cache do not fill the disk. Never run `docker image prune -a` or `docker system prune`: they delete `ubyhost:previous` (the rollback image) and the pinned service images. If the disk is above 70% between deploys, run the two commands by hand and check `docker system df`.
+
 Lightsail **snapshots** of the whole instance are a useful extra (not a substitute for `backup.sh` + Drive).
 
 ## Updating after code changes
