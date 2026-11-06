@@ -510,7 +510,10 @@ def _shot_0972(page, name):
 
 def _h1_0972(html):
     match = re.search(r'<h1 class="airbnb-title">(.*?)</h1>', html, re.S)
-    assert match, "no airbnb-title h1 on the page"
+    if match:
+        return match.group(1)
+    match = re.search(r'<div class="ui-ph-title-row"[^>]*>\s*<h1>(.*?)</h1>', html, re.S)
+    assert match, "no settings or ui-ph title h1 on the page"
     return match.group(1)
 
 
@@ -550,7 +553,7 @@ def test_0972_h1_is_the_short_title_only(admin_0972):
 def test_0972_property_help_is_a_sibling_of_the_h1(admin_0972):
     html = admin_0972["client"].get(f"/apartments/{admin_0972['apartment']}?lang=en").text
     after = html.split("</h1>", 1)[1]
-    assert after.lstrip().startswith('<details class="page-help"'), after[:200]
+    assert after.lstrip().startswith('<span class="page-help-wrap"'), after[:200]
 
 
 def test_0972_every_settings_help_button_has_its_own_name(admin_0972):
@@ -681,19 +684,23 @@ def test_0972_property_h1_stays_short_while_its_help_is_open(admin_0972, base, l
     problems = []
     with sync_api.sync_playwright() as playwright:
         browser, context, page = _open_0972(playwright, base, admin_0972, width, lang, path)
-        summary = page.locator(".airbnb-header > .page-help > summary").first
+        summary = page.locator(".ui-ph-title-row > .page-help-wrap .page-help > summary, .airbnb-header > .page-help-wrap .page-help > summary").first
         if not summary.count():
-            problems.append("no .airbnb-header > .page-help > summary beside the property H1")
+            problems.append("no .page-help-wrap .page-help > summary beside the property H1")
         else:
             summary.click()
-            h1 = page.evaluate("() => document.querySelector('h1.airbnb-title').textContent.trim()")
+            h1 = page.evaluate("() => { const n = document.querySelector('h1.airbnb-title') || document.querySelector('.ui-ph-title-row h1'); return n ? n.textContent.trim() : ''; }")
             if h1 != "B14 Flat":
                 problems.append(f"H1 text is {h1!r}")
-            if page.evaluate("() => !!document.querySelector('h1.airbnb-title details, h1.airbnb-title .page-help-body')"):
+            if page.evaluate("() => !!document.querySelector('.ui-ph-title-row h1 details, .ui-ph-title-row h1 .page-help-body, h1.airbnb-title details, h1.airbnb-title .page-help-body')"):
                 problems.append("help content sits inside the H1")
-            box = page.evaluate("""() => { const r = document.querySelector('.page-help-body').getBoundingClientRect();
+            box = page.evaluate("""() => { const n = document.querySelector('.page-help-wrap:has(details.page-help[open]) > .page-help-body');
+                if (!n) return {left: 0, right: 0, vw: document.documentElement.clientWidth, missing: true};
+                const r = n.getBoundingClientRect();
                 return {left: r.left, right: r.right, vw: document.documentElement.clientWidth}; }""")
-            if box["left"] < -0.5 or box["right"] > box["vw"] + 0.5:
+            if box.get("missing"):
+                problems.append(f"page help body not found open: {box}")
+            elif box["left"] < -0.5 or box["right"] > box["vw"] + 0.5:
                 problems.append(f"page help leaves the viewport sideways: {box}")
             _shot_0972(page, f"property-help-open-{lang}-{width}")
         context.close()

@@ -251,7 +251,7 @@ def test_the_lint_catches_the_known_regressions(wide_base):
 HELP_BOX_JS = """() => {
   const pick = [
     '.help-tip.is-open > .help-tip-body',
-    'details.page-help[open] > .page-help-body',
+    '.page-help-wrap:has(details.page-help[open]) > .page-help-body',
     'details.ui-how[open] .ui-how-body',
   ];
   for (const sel of pick) {
@@ -269,7 +269,7 @@ HELP_BOX_JS = """() => {
 HELP_FIT_JS = """() => {
   const pick = [
     '.help-tip.is-open > .help-tip-body',
-    'details.page-help[open] > .page-help-body',
+    '.page-help-wrap:has(details.page-help[open]) > .page-help-body',
     'details.ui-how[open] .ui-how-body',
   ];
   for (const sel of pick) {

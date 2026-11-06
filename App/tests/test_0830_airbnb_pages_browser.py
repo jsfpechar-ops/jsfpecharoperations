@@ -271,7 +271,7 @@ def test_0830C_properties_regressions(base, dashboard_rich_host, seeded):
                     const sub = [...document.querySelectorAll('.props-head p.sub')].filter(visible).length;
                     const how = document.querySelector('details.page-help[data-how="properties"]');
                     const summary = how ? how.querySelector('summary') : null;
-                    const body = how ? how.querySelector('.page-help-body') : null;
+                    const wrap = how && how.closest('.page-help-wrap'); const body = wrap ? wrap.querySelector(':scope > .page-help-body') : null;
                     const thead = document.querySelector('.props-card thead');
                     const card = document.querySelector('.props-card');
                     return {
@@ -324,10 +324,14 @@ def test_0831G_page_help(base, dashboard_rich_host, seeded):
                     box = button.bounding_box()
                     title = page.evaluate(
                         """() => {
-                            const h1 = document.querySelector('h1');
+                            const row = document.querySelector('.props-title-row') || document.querySelector('.stays-title-row');
+                            const h1 = row ? row.querySelector('h1') : document.querySelector('h1');
+                            if (!h1) return {right: 0, mid: 0};
                             const walker = document.createTreeWalker(h1, NodeFilter.SHOW_TEXT);
                             let node = null;
                             while ((node = walker.nextNode())) { if (node.textContent.trim()) break; }
+                            const hr = h1.getBoundingClientRect();
+                            if (!node) return {right: hr.right, mid: (hr.top + hr.bottom) / 2};
                             const range = document.createRange();
                             range.selectNodeContents(node);
                             const r = range.getBoundingClientRect();
@@ -358,7 +362,7 @@ def test_0831G_page_help(base, dashboard_rich_host, seeded):
                     viewport = page.viewport_size
                     if not body.is_visible() or pb["x"] < 0 or pb["x"] + pb["width"] > viewport["width"]:
                         info = page.evaluate(
-                            """() => { const d = document.querySelector('.page-help'); const b = d && d.querySelector('.page-help-body');
+                            """() => { const d = document.querySelector('.page-help'); const wrap = d && d.closest('.page-help-wrap'); const b = wrap && wrap.querySelector(':scope > .page-help-body');
                             const r = b ? b.getBoundingClientRect() : null;
                             return {open: d && d.open, display: b && getComputedStyle(b).display, rect: r && [r.x, r.y, r.width, r.height],
                               n: document.querySelectorAll('.page-help').length, vis: b && getComputedStyle(b).visibility, op: b && getComputedStyle(b).opacity, cv: b && getComputedStyle(b.parentElement).contentVisibility, anim: document.getAnimations().length}; }"""

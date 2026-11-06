@@ -332,6 +332,14 @@ body.v2 .props-card tbody tr.clickable-row{cursor:pointer}
   body.v2 .props-phone .chev{width:20px;height:20px;color:var(--ink3);flex:none}
 }
 @media (min-width:1024px){body.v2 .props-phone{display:none}}
+/* title row + inline page-help: all viewports */
+body.v2 .props-head .props-title-row{display:flex;align-items:center;flex-wrap:nowrap;gap:0}
+body.v2 .stays-title-row{display:flex;align-items:center;flex-wrap:nowrap;gap:0;column-gap:0}
+body.v2 .props-title-row{gap:0}
+body.v2 .props-head .props-title-row>h1,body.v2 .stays-title-row>h1{min-width:0;flex:1 1 auto;margin:0}
+body.v2 .props-title-row>.page-help-wrap,body.v2 .stays-title-row>.page-help-wrap{align-items:center;margin-left:-4px;flex:none}
+body.v2 .props-title-row>.page-help-wrap .page-help summary.page-help-btn,body.v2 .stays-title-row>.page-help-wrap .page-help summary.page-help-btn{margin:-13px -13px -13px 0}
+
 /* 0533 pass 3: below 1024 px the properties page shows the mockup's round add button above the title instead of the full-width button */
 @media (max-width:1023px){body.v2 .props-head .btn{display:none}}
 body.v2 .props-phone .cover.c0{background:linear-gradient(135deg,#d0452d,#e9836f)}
@@ -766,7 +774,7 @@ body.v2 .havel-dialog .ui-sheet{max-height: 70dvh; height: 70dvh;}
 @media (max-width: 1023px){
 body.v2 .havel-fab{right: var(--space-4); bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--space-4));}
 body.v2:has(.ui-sticky-actions) .havel-fab{bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--control-h) + var(--space-8));}
-body.v2:has([data-leon-setup]) .havel-fab{bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--control-h) + var(--space-8) + var(--space-4));}
+body.v2:has([data-leon-setup]) .havel-fab{bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + 2 * var(--control-h) + var(--space-8) + var(--space-6));}
 }
 body.v2 .havel-card{margin-top: var(--space-2); max-width: 100%;}
 body.v2 .havel-card-title{margin: 0 0 var(--space-2); font-size: var(--size-15); font-weight: 600; color: var(--ink);}
@@ -905,6 +913,9 @@ body.v2 .csv-export-dialog .actions .btn{width:100%;min-width:0;min-height:44px;
   body.v2 .head h1.hl{font-size:30px;line-height:1.15;font-weight:800;letter-spacing:-.02em;text-align:center;margin:0 8px 28px}
   body.v2 .head h1.hl.done{margin-top:120px}
   body.v2 .ov-head{display:block;margin:0;padding:0}
+  body.v2 .ov-head .ov-title-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin:0 8px 28px}
+  body.v2 .head .ov-title-row h1.hl{margin:0}
+  body.v2 .ov-title-row>.page-help-wrap{align-items:center}
   body.v2 .ov-head > .btn{display:none}
   body.v2 .hl-sub{text-align:center;color:var(--ink3);font-size:16px;margin:-16px 0 28px}
   body.v2 .needs-you-actions{margin-top:14px}
@@ -1823,6 +1834,19 @@ body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .ui-fo
 
 /* 0789a settings index and group sub-pages (Airbnb pattern, every width) */
 body.v2 .airbnb-header{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin:16px 0 24px}
+/* B14: when the H1 has a sibling page-help "?", keep the title and help on one row (avoids help-stranded at 320–390). */
+body.v2 .airbnb-header:has(>.page-help-wrap){display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:start;column-gap:16px;row-gap:0}
+body.v2 .airbnb-header:has(>.page-help-wrap)>.airbnb-back{grid-column:1;grid-row:1;margin-right:0}
+body.v2 .airbnb-header:has(>.page-help-wrap)>.airbnb-title{grid-column:2;grid-row:1;width:auto;margin:0;min-width:0}
+body.v2 .airbnb-header:has(>.page-help-wrap)>.page-help-wrap{grid-column:3;grid-row:1;justify-self:end;align-self:start;margin:0}
+@media (max-width:1023px){body.v2 .airbnb-header:has(>.page-help-wrap){grid-template-columns:40px minmax(0,1fr) 44px}}
+/* B14: host_page ui-ph — page "?" sits beside the H1 (not inside it); meta stays on the next row. */
+body.v2 .ui-ph-main{display:flex;flex-wrap:wrap;align-items:flex-start;column-gap:16px;row-gap:8px}
+body.v2 .ui-ph-main>.ui-ph-back{flex:0 0 auto;align-self:flex-start}
+body.v2 .ui-ph-main>.ui-ph-title-row{display:flex;flex-wrap:wrap;align-items:flex-start;flex:1 1 0;min-width:0;gap:16px}
+body.v2 .ui-ph-main>.ui-ph-title-row>h1{flex:1 1 auto;min-width:0;margin:0;font-size:32px;font-weight:700;color:var(--ink)}
+body.v2 .ui-ph-main>.ui-ph-title-row>.page-help-wrap{flex:0 0 auto;margin-left:auto;align-self:flex-start;display:inline-flex;align-items:flex-start}
+body.v2 .ui-ph-main>.ui-ph-meta{flex:1 1 100%;margin:0}
 body.v2 .airbnb-back{width:40px;height:40px;border-radius:50%;background:#f2f2f2;color:var(--ink);display:inline-flex;align-items:center;justify-content:center;text-decoration:none;flex:0 0 40px}
 body.v2 .airbnb-title{width:100%;margin:0;font-size:32px;font-weight:700;color:var(--ink)}
 body.v2 .airbnb-index{display:block}
@@ -1898,7 +1922,6 @@ body.v2 .props-card > table td{border-bottom:1px solid #e5e5e5}
 body.v2 .stays-desk{padding:16px}
 body.v2 .host-stay-detail .card{border:1px solid #e5e5e5;border-radius:12px;padding:16px 20px;box-shadow:none}
 body.v2 .stays-phone .card.stay{border:1px solid #e5e5e5;border-radius:12px;padding:16px}
-body.v2 .stays-title-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
 body.v2 [data-filter-summary]{display:none}
 body.v2 .stays-head-actions{flex-wrap:wrap;gap:12px}
 body.v2 .stays-head-actions [data-filter-toggle][hidden]{display:none}
@@ -2017,14 +2040,14 @@ body.v2 .settings-lane .ui-chip input[type=radio]{margin:0 12px 0 0}
 /* 0830F2 (end) */
 /* 0830F sub-pages (end) */
 /* 0831G page help (start) */
-body .page-help{display:inline-block;flex:0 0 auto;position:relative;vertical-align:middle;margin-left:0;font-weight:400;line-height:1}
+body .page-help-wrap{display:inline-flex;flex:0 0 auto;align-items:flex-start;position:relative;vertical-align:middle;margin-left:0;font-weight:400;line-height:1}body .page-help{display:inline-block;flex:0 0 auto;position:relative;vertical-align:middle;margin:0;font-weight:400;line-height:1}
 body.v2 summary.page-help-btn{display:inline-flex;flex:0 0 44px;padding:0;justify-content:center;align-items:center;justify-content:center;box-sizing:border-box;width:44px;height:44px;margin:-13px -13px -13px 1px;padding:0;background:none;border:0;vertical-align:top;list-style:none;cursor:pointer}
 body .page-help-btn::-webkit-details-marker{display:none}
 body .page-help-btn::marker{content:""}
 body .page-help-dot{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:18px;height:18px;border:1.5px solid #717171;border-radius:50%;background:#fff;color:#222;font-size:12px;font-weight:700;line-height:1}
 body .page-help-btn:focus-visible .page-help-dot{outline:2px solid #222;outline-offset:3px}
-body .page-help:not([open]) > .page-help-body{display:none}
-body .page-help[open] > .page-help-body{display:block;position:fixed;z-index:60;top:50%;left:50%;transform:translate(-50%,-50%);width:min(360px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow:auto;box-sizing:border-box;padding:16px;background:#fff;color:#222;border:1px solid #ddd;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.12);font-size:15px;font-weight:400;line-height:1.4;text-align:left;text-transform:none;letter-spacing:0;white-space:normal}
+body .page-help-wrap:not(:has(.page-help[open])) > .page-help-body{display:none}
+body .page-help-wrap:has(.page-help[open]) > .page-help-body{display:block;position:fixed;z-index:60;left:50%;top:50%;right:auto;transform:translate(-50%,-50%);width:min(360px,calc(100vw - 32px));max-height:calc(100vh - 32px);margin:0;overflow:auto;box-sizing:border-box;padding:16px;background:#fff;color:#222;border:1px solid #ddd;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.12);font-size:15px;font-weight:400;line-height:1.4;text-align:left;text-transform:none;letter-spacing:0;white-space:normal}
 body .page-help-steps{margin:0 0 12px;padding-left:20px}
 body .page-help-steps li{margin:0 0 6px}
 body .page-help-more{display:inline-block;min-height:44px;line-height:44px;color:#222;font-weight:600;text-decoration:underline}
@@ -2260,9 +2283,7 @@ body.v2 .row-open::after{content:"\203A";font-size:18px;line-height:1}
 
 /* 0900: the stay head no longer carries the "?" row, so keep the crumb 12 px above the status line */
 body.v2 .host-stay-detail .crumb{margin-bottom:12px}
-body.v2 .airbnb-header>.page-help{margin:0}
-body.v2 .airbnb-header:has(>.page-help)>.airbnb-back{margin-right:calc(100% - 44px)}
-body.v2 .airbnb-header:has(>.page-help)>.airbnb-title{width:auto;flex:0 1 auto;min-width:0}
+body.v2 .airbnb-header>.page-help-wrap{margin:0}
 @media (max-width:1023px){body.v2 .host-stay-detail>.head{min-height:1px}}
 
 /* 0902: "Potřebuje vás" is one list: a full-width row per item, first 5 visible, the rest behind one toggle.

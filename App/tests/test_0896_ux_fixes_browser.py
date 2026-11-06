@@ -80,8 +80,10 @@ def test_page_help_is_a_plain_round_question_mark_without_chevron(base, width):
         browser, page = _page(playwright, base, width, username)
         page.goto(base + "/reservations?lang=en")
         page.wait_for_selector(".page-help-btn", state="attached", timeout=30000)
-        info = page.evaluate("""() => { const b = document.querySelector('.page-help-btn'); const d = b.querySelector('.page-help-dot').getBoundingClientRect(); const r = b.getBoundingClientRect();
-            return {after: getComputedStyle(b, '::after').content, w: r.width, dot: d.width, right: r.right, dright: d.right, h1: b.closest('h1').getBoundingClientRect().right}; }""")
+        info = page.evaluate("""() => { const b = document.querySelector('.page-help-btn'); const d = b.querySelector('.page-help-dot'); const dr = d.getBoundingClientRect(); const r = b.getBoundingClientRect();
+            const row = b.closest('.stays-title-row') || b.closest('.props-title-row'); const h1 = row && row.querySelector('h1');
+            const hr = h1 ? h1.getBoundingClientRect() : {right: 0};
+            return {after: getComputedStyle(b, '::after').content, w: r.width, dot: dr.width, right: r.right, dright: dr.right, h1: hr.right}; }""")
         assert info["after"] in ("none", "normal"), info
         assert info["dot"] <= 20 and info["w"] <= 44
         _shot(page, "help", width)
