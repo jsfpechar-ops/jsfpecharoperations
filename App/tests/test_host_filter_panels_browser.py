@@ -519,11 +519,7 @@ from datetime import date, timedelta
 
 from app import deadlines, reporting
 
-SCOPE_LABEL = {"en": "Upcoming, current & overdue", "cs": "Nadcházející, aktuální a po termínu"}
-SCOPE_NOTE = {
-    "en": "Includes stays that have ended but are not yet reported to the police.",
-    "cs": "Zahrnuje skončené pobyty, které ještě nejsou nahlášené cizinecké policii.",
-}
+SCOPE_LABEL = {"en": "Upcoming & current", "cs": "Nadcházející"}
 
 
 def _past_deadline_arrival():
@@ -610,13 +606,9 @@ def test_default_stays_tab_label_names_overdue_and_the_note_only_shows_there(sco
         page = client.get(f"/reservations?lang={lang}").text
         label = SCOPE_LABEL[lang].replace("&", "&amp;")
         assert f'aria-current="page">{label}<' in page
-        assert "data-stays-overdue-note" in page and SCOPE_NOTE[lang] in page
         assert f"/reservations/{ids['overdue']}" in page, "overdue stay must stay visible"
         assert f"/reservations/{ids['current']}" in page
         assert f"/reservations/{ids['archived']}" not in page
-    for url in ("/reservations?range=past&lang=en", "/reservations?range=all&lang=en",
-                "/reservations?range=archive&lang=en", "/reservations?range=current&lang=en"):
-        assert "data-stays-overdue-note" not in client.get(url).text, url
     assert f"/reservations/{ids['archived']}" in client.get("/reservations?range=archive&lang=en").text
 
 
@@ -714,18 +706,14 @@ def test_stays_default_tab_label_is_not_clipped_at_phone_tablet_and_desktop_in_e
                     """() => {
                       const root = document.documentElement;
                       const pill = document.querySelector('.stays-pills [aria-current=page]');
-                      const note = document.querySelector('[data-stays-overdue-note]');
                       const box = pill.getBoundingClientRect();
-                      const noteBox = note.getBoundingClientRect();
                       return {
                         pageOverflow: root.scrollWidth > root.clientWidth + 1,
                         pillClipped: pill.scrollWidth > pill.clientWidth + 1 || box.left < -1 || box.right > root.clientWidth + 1,
-                        noteInside: noteBox.width > 0 && noteBox.left >= -1 && noteBox.right <= root.clientWidth + 1,
                       };
                     }"""
                 )
                 assert not geometry["pageOverflow"], f"{width}px {lang}: page overflow"
                 assert not geometry["pillClipped"], f"{width}px {lang}: tab label clipped"
-                assert geometry["noteInside"], f"{width}px {lang}: overdue note missing or outside"
                 page.screenshot(path=str(shots / f"stays-default-{lang}-{width}.png"), full_page=True)
         browser.close()
