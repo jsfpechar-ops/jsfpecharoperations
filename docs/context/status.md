@@ -7,11 +7,10 @@ Updated: 2026-11-06.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
-- 11-06: PR #790 (branch codex/ux-remediation-handoff): 0977 merged main, renumbered 0958-0964 to 0978-0984, tests green. Blocked on feed URL box padding (390): write brief 0985. [report](../tasks/0977-report.md).
-- 11-06: disk 50→8% (stale images). 0962 prune, 0963 log `kind=`: review on branch zealous-planck-raxu4v. **Owner:** merge, deploy, 0962 Grafana steps.
+- 11-06: #790: 0977 merged main, briefs 0958-0964 → 0978-0984, green; needs 0985 (feed URL padding). [report](../tasks/0977-report.md).
+- 11-06: 0962 prune, 0963 log `kind=` merged (#791). **Owner:** deploy, 0962 Grafana steps.
 - 2026-11-04: 0949 paste card removed (part B open): [report](../tasks/0949-report.md).
 - 11-05: #786 filters implemented; validation blocked (workspace): [report](../tasks/0950-fix-1-report.md).
-- 11-04: PR #763 stay fee: 0897 done; 0898, 0932-0934 done; merging on green.
 - 2026-11-04: brief 0930 in review (PR #768): stay bars end mid departure day.
 - 2026-11-03: UX gate live: layout lint (`App/tests/layout_lint.js`) + AGENTS.md rule 10; threads self-check screenshots, owner does not.
 - 2026-11-02: Airbnb pass on login and admin pages (0892-0894) in draft PR #739; 0869 renumbers colliding briefs.
