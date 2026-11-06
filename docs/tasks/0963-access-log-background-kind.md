@@ -1,6 +1,6 @@
 # 0963: access log `kind=` for prefetch and background polls
 
-Status: blocked
+Status: todo (resume: steps 1-4 are committed; run Step 4b, then steps 5-7; orchestrator amendment 2026-11-06)
 Depends on: 0962 (run after 0962 on the same branch; no file overlap expected, but re-grep every anchor) | Base commit: HEAD of claude/zealous-planck-raxu4v | Branch: claude/zealous-planck-raxu4v (already checked out; do not create another)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
@@ -57,6 +57,7 @@ Anchor 6, `docs/OPERATIONS.md` section `## Logs` contains the line `    method=G
 | App/app/static/dashboard-calendar.js | edit | `load(background)` sends `X-Uby-Background: 1` |
 | App/app/templates/_cleaning_screen.html | edit | `?v=20261106-0963` |
 | App/app/templates/_dashboard_calendar.html | edit | `?v=20261106-0963` |
+| App/tests/static_versions.json | regenerate | new sha256 and `v` for cleaning.js and dashboard-calendar.js (Step 4b only) |
 | App/tests/test_access_log.py | edit | 3 new tests |
 | docs/OPERATIONS.md | edit | document `kind=` and the LogQL queries |
 | docs/tasks/0963-report.md | create | report |
@@ -111,6 +112,8 @@ Step 3. `App/app/static/dashboard-calendar.js`, three one-line edits:
 (`=== true` matters: other callers pass a click event or nothing and must stay unmarked.) Command: `grep -n 'background' App/app/static/dashboard-calendar.js | tail -30`. Expected: exactly 3 matching lines (the signature, the fetch, the listener). Commit `0963 step 3`.
 
 Step 4. Cache-busters. In `App/app/templates/_cleaning_screen.html` change `cleaning.js?v=20261102-0507` to `cleaning.js?v=20261106-0963`; in `App/app/templates/_dashboard_calendar.html` change `dashboard-calendar.js?v=20261105-0956b` to `dashboard-calendar.js?v=20261106-0963`. Then check no test pins the old keys: `grep -rn '20261102-0507\|20261105-0956b' App/tests | tail -30`. Expected: no output for these two script names (if a test pins one, STOP and report). Commit `0963 step 4`.
+
+Step 4b (orchestrator amendment). `App/tests/static_versions.json` pins the old keys; regenerating it is approved. From `App/`: `.venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -30`, then `git diff --stat -- tests/static_versions.json | tail -5` (expected: only that file, only the cleaning.js and dashboard-calendar.js entries change; if any other entry changes, STOP), then `.venv/bin/python -m pytest tests/test_static_versions.py -q --tb=short -x 2>&1 | tail -30` (expected: all passed). Commit `0963 step 4b`.
 
 Step 5. `App/tests/test_access_log.py`: append at the end of the file:
 ```python
