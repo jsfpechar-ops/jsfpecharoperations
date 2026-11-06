@@ -108,8 +108,8 @@ BOX_OVERRIDES = {
     "properties:.big, .head h1@320": {"width": "150.547px", "height": "34.5px"},
     "properties:.big, .head h1@390": {"width": "150.547px", "height": "34.5px"},
     # 0729 dashboard: one visible .hl on phone; widths from geometry, margins on .ov-title-row (551808e7)
-    "overview:.hl@320": {"width": "248px", "height": "69px", "margin-left": "0px", "margin-right": "0px", "margin-bottom": "0px"},
-    "overview:.hl@390": {"width": "318px", "height": "69px", "margin-left": "0px", "margin-right": "0px", "margin-bottom": "0px"},
+    "overview:.hl@320": {"width": "248px", "height": "69px", "margin-left": "8px", "margin-right": "8px", "margin-bottom": "28px"},
+    "overview:.hl@390": {"width": "318px", "height": "69px", "margin-left": "8px", "margin-right": "8px", "margin-bottom": "28px"},
     ".promo@390": {"height": "80px"},
     ".tile .v@320": {"margin-top": "29px"},
     ".tile .v@390": {"margin-top": "29px"},
