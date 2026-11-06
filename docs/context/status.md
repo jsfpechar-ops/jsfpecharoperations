@@ -1,12 +1,13 @@
 # Status
 
-Updated: 2026-11-05.
+Updated: 2026-11-06.
 
 ## Production
 - Magic-link 1–2 done; checked; access log off.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
+- 11-06: prod disk 50%→8% (66 GB stale images pruned by hand). 0962 deploy prune + Go rollback image, 0963 access-log `kind=` (prefetch/poll): review on `claude/zealous-planck-raxu4v`; browser tests to CI. **Owner:** PR, merge, deploy, Grafana disk alert + CPU unit (0962 owner steps).
 - 2026-11-04: 0949 paste card removed (part B open): [report](../tasks/0949-report.md).
 - 11-05: #786 filters implemented; validation blocked (workspace): [report](../tasks/0950-fix-1-report.md).
 - 11-04: PR #763 stay fee: 0897 done; 0898, 0932-0934 done; merging on green.

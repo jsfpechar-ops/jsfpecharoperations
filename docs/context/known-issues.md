@@ -98,3 +98,6 @@
 - K-PG-ORDER: goose tests fail after icalsync locally; CI OK.
 
 - 0897 guest pay gaps: Slovak QR, PG migration 00007 unrun, no mark-as-paid, no e-mail link, copy review, legal sign-off.
+- K-OPS-DISK (11-06): deploys never pruned images; disk 14%→50% in 6 days. Fixed by 0962 once deployed; until then prune by hand (docs/LIGHTSAIL.md).
+- K-PERF-SETTINGS (11-06): `settings` table ~13k updates on 40 rows in 6 days (a write every ~40 s from a loop); `guest`, `cleaning_event`, `alert` read by full scans ~100k+ times. Harmless at 9 properties; fix before scaling.
+- K-GROWTH-SIGNUP (11-06): 33 GET /signup (all 200), 0 POST in 7 days. Page works; real-visitor count unknown (check PostHog).
