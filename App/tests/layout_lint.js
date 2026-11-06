@@ -241,7 +241,9 @@
     }
     const anchor = prev || next;
     if (!anchor) continue;
-    const ar = anchorRect(anchor, !!prev);
+    // After checkline label: anchor is the <span> text; use first line (wrapped labels have multi-line rects).
+    const lastLine = !!prev && !tip.closest('label.checkline');
+    const ar = anchorRect(anchor, lastLine);
     if (!ar) continue;
     const sameLine = c.cy >= ar.top - 3 && c.cy <= ar.bottom + 3;
     const gap = prev ? c.left - ar.right : ar.left - c.right;
