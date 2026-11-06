@@ -50,7 +50,7 @@ def _strip_state(page):
 
 
 def _block(page):
-    m = re.search(r'<div class="lock-state" data-state="([^"]+)" role="status">(.*?)</form>', page, re.S)
+    m = re.search(r'<div class="lock-state"(?: id="[^"]+")? data-state="([^"]+)" role="status">(.*?)</form>', page, re.S)
     return m
 
 
