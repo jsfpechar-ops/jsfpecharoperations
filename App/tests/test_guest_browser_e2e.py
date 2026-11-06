@@ -22,6 +22,7 @@ Run it locally:
 """
 import os
 import re
+import secrets
 import socket
 import threading
 import time
@@ -483,8 +484,9 @@ def test_the_readable_link_takes_the_group_through_the_same_flow(live_server, br
     _register_a_group_of_three(live_server, browser, width, f"browser-slug-{width}", readable=True)
 
 
-def _register_a_group_of_three(live_server, browser, width, token, readable, lang="en"):
+def _register_a_group_of_three(live_server, browser, width, token_prefix, readable, lang="en"):
     db.execute("DELETE FROM rate_limit_event")
+    token = f"{token_prefix}-{secrets.token_hex(4)}"
     stay = _seed(token)
     key = token
     if readable:
@@ -569,7 +571,7 @@ def _register_a_group_of_three(live_server, browser, width, token, readable, lan
 
 
 def test_the_czech_pages_have_no_english_left(live_server, browser):
-    token = "browser-e2e-cs"
+    token = f"browser-e2e-cs-{secrets.token_hex(4)}"
     db.execute("DELETE FROM rate_limit_event")
     stay = _seed(token)
     context = browser.new_context(viewport={"width": 375, "height": 812}, locale="cs-CZ")
@@ -645,7 +647,7 @@ def test_fee_card_shows_with_qr_rail_open_and_enabled_rails(live_server, browser
     # The seeded guest never went through the claim mail, so the claim page would
     # show before the hub. Same switch test_0376_ai_gates.py uses.
     monkeypatch.setattr(mail, "mail_enabled", lambda: False)
-    token = f"browser-fee-card-{width}"
+    token = f"browser-fee-card-{width}-{secrets.token_hex(4)}"
     stay = _fee_seed(token)
     page = browser.new_page(viewport={"width": width, "height": 800})
     try:
@@ -683,7 +685,7 @@ def test_fee_card_absent_when_the_fee_is_zero(live_server, browser, monkeypatch)
     # The seeded guest never went through the claim mail, so the claim page would
     # show before the hub. Same switch test_0376_ai_gates.py uses.
     monkeypatch.setattr(mail, "mail_enabled", lambda: False)
-    token = "browser-fee-zero"
+    token = f"browser-fee-zero-{secrets.token_hex(4)}"
     stay = _fee_seed(token, rate=0)
     page = browser.new_page(viewport={"width": 390, "height": 800})
     try:
@@ -708,7 +710,7 @@ def test_form_estimate_line_shows_when_the_estimate_is_above_zero(live_server, b
     # The seeded guest never went through the claim mail, so the claim page would
     # show before the hub. Same switch test_0376_ai_gates.py uses.
     monkeypatch.setattr(mail, "mail_enabled", lambda: False)
-    token = "browser-fee-estimate"
+    token = f"browser-fee-estimate-{secrets.token_hex(4)}"
     stay = _fee_seed(token, signed=False)
     page = browser.new_page(viewport={"width": 390, "height": 800})
     try:
@@ -738,7 +740,7 @@ def test_0959_changing_language_keeps_the_draft_the_step_and_leaves_no_trace(
 
     monkeypatch.setattr(config, "GUEST_PIN_REQUIRED", False)
     monkeypatch.setattr(mail, "mail_enabled", lambda: False)
-    token = "browser-0959-lang"
+    token = f"browser-0959-lang-{secrets.token_hex(4)}"
     stay = _fee_seed(token, signed=False)
     page = browser.new_page(viewport={"width": 390, "height": 812})
     # Only page navigations and the language-switch request are checked for
@@ -848,7 +850,7 @@ def test_0959_language_switch_works_without_a_signature(live_server, browser, mo
 
     monkeypatch.setattr(config, "GUEST_PIN_REQUIRED", False)
     monkeypatch.setattr(mail, "mail_enabled", lambda: False)
-    token = "browser-0959-nosig"
+    token = f"browser-0959-nosig-{secrets.token_hex(4)}"
     stay = _fee_seed(token, signed=False)
     page = browser.new_page(viewport={"width": 390, "height": 812})
     secrets = ["Synthetica", "Testovic", "SYN0959X", "Examplova 5", "Testov"]
@@ -902,7 +904,7 @@ def test_0959_discard_warning_cancel_keeps_draft(live_server, browser, monkeypat
 
     monkeypatch.setattr(config, "GUEST_PIN_REQUIRED", False)
     monkeypatch.setattr(mail, "mail_enabled", lambda: False)
-    token = "browser-0959-cancel"
+    token = f"browser-0959-cancel-{secrets.token_hex(4)}"
     stay = _fee_seed(token, signed=False)
     page = browser.new_page(viewport={"width": 390, "height": 812})
     secrets = ["Synthetica", "Testovic", "SYN0959X", "Examplova 5", "Testov"]

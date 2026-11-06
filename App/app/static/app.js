@@ -2403,6 +2403,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
   // 0971: one dismiss control on every inline success notice (success_notice macro, section notice, cleaning notice).
   function initSuccessNotices() {
     if (!document.body.classList.contains("host-workspace")) return;
+    if (document.body.classList.contains("admin-workspace")) return;
     var root = feedbackRoot();
     var label = (root && root.getAttribute("data-dismiss-label")) || "Dismiss notification";
     Array.prototype.forEach.call(document.querySelectorAll("[data-success-notice], .section-notice.ok, p.cleaning-notice"), function (notice) {

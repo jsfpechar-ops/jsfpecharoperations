@@ -8,8 +8,8 @@
     "v": "20261102-0894e"
   },
   "admin2.css": {
-    "sha256": "e26e64477ffa0b1ccec98d3384ea79675f0d587a89aa9749fdeda6a102ae6ef5",
-    "v": "20261102-0893o"
+    "sha256": "18fe13718405ee854ceae5d1da7a4c10e89caef628a3fe83d78c646c2f39fa03",
+    "v": "20261106-0893q"
   },
   "analytics-optout.js": {
     "sha256": "9afc536f5842652fcfebd0fb30a88278f84f472b2874ad721a9984b72c01f9d5",
@@ -24,8 +24,8 @@
     "v": "20261104-0916"
   },
   "app.js": {
-    "sha256": "574e827531b706c8b3d0f2dc7c17eac26f19daf771d1190a284caa387ac82d0f",
-    "v": "20261106-uxr-revert-phone"
+    "sha256": "92e17044950fe1be5907b86c1ffa4d5f09f6cdcb39ab089c5c8d8d80d626bd43",
+    "v": "20261106-admin-dismiss"
   },
   "app2.css": {
     "sha256": "fd7edc07c4c45f09a57200b53a1e9c87a829c24d6fae2ccdaae5996cca80885e",

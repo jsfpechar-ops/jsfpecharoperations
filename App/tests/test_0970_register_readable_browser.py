@@ -34,7 +34,8 @@ from tests.v2_mockup import geometry_findings
 PREFIX = "reg-0970-"
 SIGNATURE = "data:image/png;base64,AAAA"
 SHOTS = Path(os.environ.get("UBYHOST_SHOTS_DIR") or "/tmp/ubyhost-b12")
-GOLDEN = Path(os.environ.get("UBYHOST_B12_EXPORT_GOLDEN") or "/tmp/ubyhost-b12/export-before.csv")
+_FIXTURES = Path(__file__).resolve().parent / "fixtures" / "export-before-0970.csv"
+GOLDEN = Path(os.environ.get("UBYHOST_B12_EXPORT_GOLDEN") or str(_FIXTURES))
 LONG_SURNAME = "Kowalczyk-Nowakowska"
 LONG_PROPERTY = "Rooftop Suite Vinohrady Residence"
 

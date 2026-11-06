@@ -125,17 +125,19 @@ def test_rows_hover_as_one_surface_and_use_compact_menus(stay_actions_host, stay
             page.goto(f"{base}/reservations/{stay_id}/guests/new?lang={lang}")  # an old-shell page that needs no Stripe (payments is v2 now)
             _ready(page)
             page.evaluate("document.body.classList.add('sidebar-collapsed')")
-            account = page.locator("[data-host-account] > summary")
-            avatar = account.locator(".sidebar-user-avatar")
+            account = page.locator("[data-host-account] > summary.me")
+            avatar = account.locator("i").first
             assert account.get_attribute("aria-label")
             assert "⌃" not in account.inner_text()
-            center = lambda box: box["x"] + box["width"] / 2
-            assert abs(center(account.bounding_box()) - center(avatar.bounding_box())) <= 1
-            assert avatar.locator("..").evaluate("el => el.scrollWidth <= el.clientWidth")
+            vcenter = lambda box: box["y"] + box["height"] / 2
+            ab, av = account.bounding_box(), avatar.bounding_box()
+            assert abs(vcenter(ab) - vcenter(av)) <= 2
+            assert av["x"] >= ab["x"] - 1 and av["x"] + av["width"] <= ab["x"] + ab["width"] + 1
+            assert account.evaluate("el => el.scrollWidth <= el.clientWidth")
             account.focus()
             page.keyboard.press("Enter")
             assert page.locator("[data-host-account]").evaluate("el => el.open")
-            assert page.locator(".host-account-menu").is_visible()
+            assert page.locator(".me-menu-list").is_visible()
             _shot(page, f"38-centered-account-{lang}-{width}.png")
             page.keyboard.press("Escape")
             assert not page.locator("[data-host-account]").evaluate("el => el.open")

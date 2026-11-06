@@ -594,7 +594,7 @@ _B04_STRIP_JS = """() => {
     const c = r(copy), l = r(link);
     if (c.left < l.left - 0.5 || c.right > l.right + 0.5 || c.bottom > l.bottom + 0.5) bad.push('copy-outside-guest-pill');
   }
-  const title = document.querySelector('.airbnb-title, h1');
+  const title = document.querySelector('.ui-ph h1.airbnb-title, .ui-ph h1, h1.airbnb-title, h1');
   const firstSection = document.querySelector('details.prop-sec');
   return {
     bad, count: pills.length, order: pills.map((p) => p.dataset.strip),
