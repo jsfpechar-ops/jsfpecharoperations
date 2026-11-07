@@ -42,6 +42,7 @@ MOVED_PATHS = {
         ("GET", "/guests/{guest_id}/export.json"),
         ("GET", "/submissions/receipts.zip"),
         ("GET", "/submissions/{submission_id}/receipt.pdf"),
+        ("GET", "/reservations/{reservation_id}/dorucenka.zip"),
         ("GET", "/submissions/{submission_id}/errors.pdf"),
         ("GET", "/submissions/{submission_id}/{which}.xml"),
         ("GET", "/housebook.csv"),

@@ -166,3 +166,42 @@ Status: review
 1. **Rails columns**: shared with stay-fee guest pay (brief 0996); not separate `booking_pay_*` unless owner wants a follow-up migration.
 2. **Layout lint**: no unfixable findings; booking-site not in default EXTRA_ROUTES (pre-existing); host lint green.
 3. **Deploy**: owner applies PG migration **39** / goose **00010** (not brief's 0038/00009 numbers on this branch).
+
+## Review fixes (briefs 1001–1005)
+
+**1001:** Pay-mode choice on the live `/p/<slug>` form (hidden `direct`, dual radios, checkout default); `pp.book.send_direct` EN/CS; real-page tests. `test_db_postgres` already `range(1, 40)` on branch.
+
+**1002:** Direct-specific cancel/confirm mail keys; booking list uses `Cancel booking` for direct rows; tests assert no card-refund wording.
+
+**1003:** Guest `site_booking_request_guest` mail with payment rails; `property_page_requested` uses `pp-bk-card` + property name.
+
+**1004:** Booking-site pay form uses `ui_check` + section help; Mark paid secondary/shorter; decline expired direct rows; `expire_requests` tolerates concurrent confirm; layout lint green (fixture + CI).
+
+**1005:** Photo move row `pp-photo-moves`, CSRF on move/delete, phone More → Booking sites; `host.css` cache bump.
+
+**UX after-screenshots:** `/opt/cursor/artifacts/pr803-after/` (6 PNGs: `/p/` booking + booking-site attempts at 390/768/1280). `REVIEW.md` and before-screenshots were not on this VM.
+
+**Not run here:** `test_db_postgres.py` (needs PostgreSQL); CI `test-postgres` expected green via range fix.
+
+**Stop-and-ask:** Should cash-direct booking holds last longer than 24 hours? (Owner decision; mail/page copy still says 24 h.)
+
+## 1005: Photo reorder row and phone nav
+
+Status: review | Branch: `task/0999-property-rules-map`
+
+### Summary
+
+Replaced inline flex on the photo reorder row with `.pp-photo-moves` (`--space-3` gap), dropped `ui-btn-compact` on ↑/↓, added `_csrf` to `photo-move` and `photo-delete` forms, added **Booking site** to the phone More menu (`_shell_tabbar.html`).
+
+### Tests
+
+- Bundle §6: **38 passed**
+- `test_layout_lint_browser.py` + `test_host_geometry.py`: **6 passed**, 0 skipped
+- `design_lint.py`, `context_lint.py`: OK
+- `test_db_postgres.py`: not run (no PostgreSQL on VM)
+
+### UX gate
+
+Screenshots: `/opt/cursor/artifacts/pr803-after-1005/` (`property-page-{390,768,1280}.png`, `phone-more-menu-390.png`). REVIEW.md was absent on VM.
+
+390 page: photo strip with spaced arrow controls; More menu shows Booking site. 768/1280: same row; no `gap:4px`. Ad-hoc lint on property page: no `tight-side` between ↑/↓; optional `tight-side` beside delete × on 390/768 (pre-existing overlay, not this row).

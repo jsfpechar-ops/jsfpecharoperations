@@ -85,7 +85,7 @@
 </form>
 {% endif %}
   {%- set wizard_active = setup_progress and not setup_progress.hidden -%}
-  {% if leon_card %}<div class="pv"><a class="r" href="{{ base_url }}/leon{% if leon_card != 'on' %}/setup{% endif %}" data-leon-card="{{ leon_card }}"><span>{{ t('leon_page.title') }}</span>{{ t('leon_page.card.' ~ leon_card) }}</a></div>{% endif %}
+  {% if leon_card %}<div class="pv"><a class="r" href="{{ base_url }}/leon{% if leon_card != 'on' %}/setup{% endif %}" data-leon-card="{{ leon_card }}"><span>{{ t('leon_page.title') }} <small>{{ t('leon_page.card.hint') }}</small></span>{{ t('leon_page.card.' ~ leon_card) }}</a></div>{% endif %}
 {% if readiness and not wizard_active %}<div hidden>
 <section class="readiness">
   <div class="readiness-group">
@@ -488,7 +488,7 @@
     {% if door_code and lock_panel and lock_panel.smart_locks_enabled %}
   <section class="panel property-section ui-section" id="{% if door_code.account and door_code.locks %}smart-locks{% else %}door-code{% endif %}">
     {% if not (door_code.account and door_code.locks) %}
-    <h2 class="property-section-title">{{ t('smart_locks.title') }}</h2>
+    <h2 class="property-section-title sr-only">{{ t('smart_locks.title') }}</h2>
     <p class="ui-sub">{{ t('smart_locks.lede') }}</p>
     {% endif %}
     {% with account=lock_panel.account, receiver=lock_panel.receiver, locks=lock_panel.locks, fetched_at=lock_panel.fetched_at, reauth=lock_panel.reauth, return_to=lock_panel.return_to, properties_using=lock_panel.properties_using %}

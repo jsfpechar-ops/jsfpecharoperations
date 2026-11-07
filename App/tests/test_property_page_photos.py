@@ -13,7 +13,7 @@ import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from app import db, property_page
+from app import auth, db, property_page
 from app.main import app
 from tests.conftest import login_as
 
@@ -39,8 +39,10 @@ def _cleanup():
         db.execute("DELETE FROM guide_import WHERE apartment_id = ?", (a["id"],))
     db.execute("DELETE FROM apartment WHERE owner_user_id = ?", (oid,))
     db.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (oid,))
-    db.execute("DELETE FROM login_token WHERE user_account_id = ?", (oid,))
     db.execute("DELETE FROM audit WHERE owner_user_id = ?", (oid,))
+    db.execute("DELETE FROM alert WHERE owner_user_id = ?", (oid,))
+    db.execute("DELETE FROM rate_limit_event", ())
+    db.execute("DELETE FROM login_token WHERE user_account_id = ?", (oid,))
     db.execute("DELETE FROM user_account WHERE id = ?", (oid,))
 
 
@@ -48,8 +50,8 @@ def _cleanup():
 def owner():
     db.init_db()
     _cleanup()
-    oid = db.insert("user_account", {"username": OWNER, "password_hash": "x",
-                                     "created_at": db.utcnow()})
+    auth.create_account(f"{OWNER}@example.test", "Photo Host", username=OWNER)
+    oid = int(db.query_one("SELECT id FROM user_account WHERE username = ?", (OWNER,))["id"])
     aid = db.insert("apartment", {"owner_user_id": oid, "internal_name": "Photo Flat",
                                   "created_at": db.utcnow()})
     property_page.page_for(aid)
@@ -62,6 +64,21 @@ def owner():
             if target.is_file():
                 target.unlink()
         _cleanup()
+
+
+@pytest.fixture
+def client(owner):
+    client = TestClient(app)
+    response = login_as(client, OWNER, url="/login?lang=en", follow_redirects=False)
+    assert response.status_code == 303
+    return client
+
+
+_PHOTO_MOVE_CSRF_RE = re.compile(
+    r'<form method="post" action="/apartments/\d+/page/photo-move">\s*'
+    r'<input type="hidden" name="_csrf" value="([^"]+)"',
+    re.MULTILINE,
+)
 
 
 class _FakeResponse:
@@ -170,6 +187,27 @@ def test_move_photo_edges_and_unknown_are_noops(owner):
     property_page.move_photo(owner, "/photos/property/b.jpg", "sideways")
     assert json.loads(property_page.page_for(owner)["photos_json"]) == before
     assert len(before) == 3
+
+
+def test_photo_move_row_markup_and_no_js_csrf_post(owner, client):
+    paths = ["/photos/property/first.jpg", "/photos/property/second.jpg"]
+    db.execute(
+        "UPDATE property_page SET photos_json = ? WHERE apartment_id = ?",
+        (json.dumps(paths), owner),
+    )
+    html = client.get(f"/apartments/{owner}/page?lang=en").text
+    assert "gap:4px" not in html
+    assert 'class="pp-photo-moves"' in html
+    match = _PHOTO_MOVE_CSRF_RE.search(html)
+    assert match, "photo-move form must include _csrf"
+    token = match.group(1)
+    response = client.post(
+        f"/apartments/{owner}/page/photo-move",
+        data={"path": paths[1], "dir": "up", "_csrf": token},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert json.loads(property_page.page_for(owner)["photos_json"]) == [paths[1], paths[0]]
 
 
 def test_move_keeps_the_cap_and_the_files(owner):

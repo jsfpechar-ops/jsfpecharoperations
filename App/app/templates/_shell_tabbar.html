@@ -3,7 +3,7 @@
 {% from "_icons.html" import icon with context %}
 {% set stays_nav = nav in ('reservations', 'submissions', 'housebook') %}
 {% set properties_nav = nav in ('apartments', 'guest_links', 'automation', 'entities', 'smart_locks') %}
-{% set more_nav = nav in ('invoices', 'payments', 'stay_fees', 'settings', 'admin', 'guide') %}
+{% set more_nav = nav in ('invoices', 'payments', 'stay_fees', 'booking_sites', 'settings', 'admin', 'guide') %}
 <nav class="ui-tabbar" aria-label="{{ t('a11y.main_navigation') }}">
   <a href="/" {% if nav == 'dashboard' %}aria-current="page"{% endif %}><span class="ui-tabbar-ic">{{ icon('layout-dashboard', 24) }}</span><span>{{ t('nav.overview') }}</span>{% if nav_action_count is defined and nav_action_count %}<span class="ui-nav-count">{{ nav_action_count if nav_action_count < 10 else '9+' }}</span>{% endif %}</a>
   <a href="/reservations" {% if stays_nav %}aria-current="page"{% endif %}><span class="ui-tabbar-ic">{{ icon('calendar-days', 24) }}</span><span>{{ t('nav.stays') }}</span></a>

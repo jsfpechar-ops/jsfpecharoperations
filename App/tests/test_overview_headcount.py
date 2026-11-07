@@ -140,7 +140,7 @@ def test_a_known_headcount_shows_the_count(host):
     try:
         page = host.get("/reservations?lang=en").text
 
-        assert "0 / 3" in page
+        assert "0 of 3" in page
     finally:
         _cleanup(apartment)
 

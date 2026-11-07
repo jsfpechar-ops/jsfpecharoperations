@@ -1555,4 +1555,4 @@ body.host-workspace {
 @media (max-width: 640px){.host-workspace .property-savebar > *{flex:1}}
 .host-workspace .property-section.ui-section{border-radius:12px}
 
-.pp-photo-moves { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-2); }
+.host-workspace .pp-photo-moves { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-2); }
