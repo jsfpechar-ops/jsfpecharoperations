@@ -2909,3 +2909,6 @@ body.v2 .impersonation-bar .btn{white-space:nowrap}
 .cal-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:baseline}
 .cal-legend .l-ok i{background:var(--ok)}.cal-legend .l-warn i{background:var(--warn)}.cal-legend .l-grey i{background:#c9c9c3}
 .cd small{display:block;font-size:10px;font-weight:400;color:var(--ink3)}
+/* 0995: the feed URL is shown, clipped with an ellipsis; the full text stays in title and in the copy button */
+body.v2 .feed-table .feed-url-value{display:block;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:1023px){body.v2 .feed-table .feed-url-value{max-width:100%}}
