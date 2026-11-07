@@ -363,6 +363,12 @@ body.v2 summary b{display:block}
 body.v2 summary small{color:var(--ink3)}
 body.v2 summary:after{content:"\2304";color:var(--ink3);font-size:18px}
 body.v2 details[open] summary:after{transform:rotate(180deg)}
+/* 1005: shared disclosure card; 16 px inside, fields full width of the padded area */
+body.v2 details.ui-details-box{padding:0;overflow:hidden}
+body.v2 details.ui-details-box > summary{padding:14px 16px;min-height:44px;box-sizing:border-box}
+body.v2 details.ui-details-box > :not(summary){margin:0 16px 12px;min-width:0;max-width:calc(100% - 32px);box-sizing:border-box}
+body.v2 details.ui-details-box > :not(summary):last-child{margin-bottom:16px}
+body.v2 details.ui-details-box input,body.v2 details.ui-details-box select,body.v2 details.ui-details-box textarea{width:100%;max-width:100%;box-sizing:border-box}
 body.v2 .fields{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
 /* 0535: onboarding 'all steps' link spacing (was an inline style) */
 .onb-more{margin-top:10px}
