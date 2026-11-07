@@ -2779,6 +2779,7 @@ body.v2 form.property-settings-form .btn,body.v2 form.property-settings-form .ui
 body.v2 .prop-archive-row{padding:4px 0 8px}
 body.v2 .prop-archive-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 body.v2 .prop-archive-actions .ui-btn{min-height:44px}
+@media (max-width:1023px){body.v2 .guest-admin-form .ui-form-actions>.ui-btn.ui-btn-quiet{min-width:44px;min-height:44px;padding:10px 12px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center}}
 body.v2 .prop-archive-note{margin:0;flex:1 1 240px;min-width:0}
 /* the "?" stays next to Archive; 0833 measures layout box — match other property-settings-form tips at 44px on phone/tablet */
 body.v2 .prop-archive-action{display:inline-flex;align-items:center;flex-wrap:nowrap;max-width:100%}
