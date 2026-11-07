@@ -136,3 +136,47 @@ def test_photo_route_serves_rehosted_file(owner):
     assert response.headers["content-type"] == "image/jpeg"
     assert client.get("/photos/property/../../etc/passwd").status_code == 404
     assert client.get("/photos/property/notahexname.jpg").status_code == 404
+
+
+def _three_photos(owner):
+    db.execute(
+        "UPDATE property_page SET photos_json = ? WHERE apartment_id = ?",
+        (json.dumps(["/photos/property/a.jpg", "/photos/property/b.jpg", "/photos/property/c.jpg"]), owner),
+    )
+
+
+def test_move_photo_down_and_up(owner):
+    _three_photos(owner)
+    property_page.move_photo(owner, "/photos/property/b.jpg", "up")
+    assert json.loads(property_page.page_for(owner)["photos_json"]) == [
+        "/photos/property/b.jpg", "/photos/property/a.jpg", "/photos/property/c.jpg",
+    ]
+    property_page.move_photo(owner, "/photos/property/b.jpg", "down")
+    assert json.loads(property_page.page_for(owner)["photos_json"]) == [
+        "/photos/property/a.jpg", "/photos/property/b.jpg", "/photos/property/c.jpg",
+    ]
+
+
+def test_move_photo_edges_and_unknown_are_noops(owner):
+    _three_photos(owner)
+    before = json.loads(property_page.page_for(owner)["photos_json"])
+    property_page.move_photo(owner, "/photos/property/a.jpg", "up")
+    property_page.move_photo(owner, "/photos/property/c.jpg", "down")
+    property_page.move_photo(owner, "/photos/property/nope.jpg", "up")
+    property_page.move_photo(owner, "/photos/property/b.jpg", "sideways")
+    assert json.loads(property_page.page_for(owner)["photos_json"]) == before
+    assert len(before) == 3
+
+
+def test_move_keeps_the_cap_and_the_files(owner):
+    paths = [f"/photos/property/p{i}.jpg" for i in range(10)]
+    db.execute(
+        "UPDATE property_page SET photos_json = ? WHERE apartment_id = ?",
+        (json.dumps(paths), owner),
+    )
+    listing_before = sorted(property_page.photos_dir().iterdir(), key=lambda p: p.name)
+    property_page.move_photo(owner, paths[5], "up")
+    photos = json.loads(property_page.page_for(owner)["photos_json"])
+    assert len(photos) <= property_page.MAX_PAGE_PHOTOS
+    listing_after = sorted(property_page.photos_dir().iterdir(), key=lambda p: p.name)
+    assert listing_before == listing_after
