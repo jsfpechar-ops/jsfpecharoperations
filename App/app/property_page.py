@@ -266,6 +266,25 @@ def download_listing_photos(apartment_id: int, urls: list) -> int:
     return len(stored)
 
 
+def move_photo(apartment_id: int, path: str, direction: str) -> None:
+    """Swap one photo with its neighbour; rewrites the order only (0 = hero)."""
+    page = _page_row(apartment_id)
+    if page is None or direction not in ("up", "down"):
+        return
+    photos = _json.loads(page["photos_json"] or "[]")
+    if path not in photos:
+        return
+    i = photos.index(path)
+    j = i - 1 if direction == "up" else i + 1
+    if j < 0 or j >= len(photos):
+        return
+    photos[i], photos[j] = photos[j], photos[i]
+    db.execute(
+        "UPDATE property_page SET photos_json = ?, updated_at = ? WHERE apartment_id = ?",
+        (_json.dumps(photos, ensure_ascii=False), db.utcnow(), apartment_id),
+    )
+
+
 def delete_photo(apartment_id: int, path: str) -> None:
     page = _page_row(apartment_id)
     if page is None:
