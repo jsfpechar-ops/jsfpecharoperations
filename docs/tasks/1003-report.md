@@ -1,6 +1,6 @@
 # 1003 report
 
-Status: blocked
+Status: review
 
 ## Files changed (steps 1 to 7)
 
@@ -44,7 +44,15 @@ Status: blocked
 
 `test_opened_help_stays_inside_the_viewport` fails at 390 px: every `.help-tip.is-open > .help-tip-body` is 320 px wide, and the lint requires at least 356 px (viewport minus 32). The 360 px cap that step 1 changed made the box pass the lint. Options: (a) restore `Math.min(360, vw - 2*margin)` for phones, which keeps the lint green and contradicts §7; (b) keep 320 and change the lint rule (owner decision). Not changed; the lint was not silenced.
 
+## Fix (owner decision: keep the lint rule, fix the app)
+
+- Field "?" card (`place()` in App/app/static/app.js): below 600 px the width is `min(360, vw - 32)`, so 390 px gives 358 px (lint needs 356). 600 px and up keep `min(320, vw - 32)`. Inside the viewport via the existing clamp.
+- App/app/static/app2.css: appended `@media (max-width:599px)` rule for `body.v2 .help-tip .help-tip-body` with the same width.
+- Deviation: the owner's `calc(100vw - 24px)` gives 296 px at 320 px wide, which breaks the 16 px gutter lint at 320. `vw - 32` keeps the gutter at every width and passes 356 px at 390.
+- Cache keys bumped to `20261107-1203` in base.html; `tests/static_versions.json` regenerated.
+- Layout lint: `UBYHOST_REQUIRE_BROWSER=1 pytest tests/test_layout_lint_browser.py -q`: 4 passed, 0 skipped.
+- Acceptance: layout lint zero findings is now met.
+
 ## Owner steps left
 
-- Decide option (a) or (b) above, then rerun `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_layout_lint_browser.py -rs` from App/.
-- Commit steps 1 to 7 are local only; no push, no PR.
+- Commit is local only; no push, no PR.

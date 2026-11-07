@@ -1967,7 +1967,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       var vw = document.documentElement.clientWidth;
       var vh = window.innerHeight;
       var wide = vw >= 1024;
-      var width = Math.min(320, vw - 2 * margin);
+      var width = vw < 600 ? Math.min(360, vw - 2 * margin) : Math.min(320, vw - 2 * margin); /* 1003 fix: 390 px phone gets 358 px, lint needs >= 356 */
       body.style.width = width + "px";
       body.style.maxWidth = width + "px";
       if (!wide) {

@@ -294,7 +294,8 @@ def test_1003_help_tip_opens_under_its_button_on_hover_and_focus(host, base):
             above = 0 <= b["y"] - (t["y"] + t["height"]) <= 16
             assert below or above, (width, b, t)
             assert 0 <= t["x"] and t["x"] + t["width"] <= width - 8 + 0.5, (width, t)
-            assert t["width"] <= 320.5, (width, t)
+            max_w = 360.5 if width < 600 else 320.5  # 1003 fix: phones 356 to 360 px, wider 320 px
+            assert t["width"] <= max_w, (width, t)
             page.keyboard.press("Escape")
             tip.wait_for(state="hidden")
             context.close()

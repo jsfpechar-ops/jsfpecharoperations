@@ -2974,3 +2974,5 @@ body.v2 dialog:focus,body.v2 dialog:focus-visible{outline:0}
 body.v2 .csv-export-dialog input:focus,body.v2 .csv-export-dialog select:focus{outline:0}
 body.v2 .csv-export-dialog input:focus-visible,body.v2 .csv-export-dialog select:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-color:var(--acc)}
 body.v2 .csv-export-dialog .ui-btn:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+/* 1003 fix: field "?" card on phones, same width as app.js place() */
+@media (max-width:599px){body.v2 .help-tip .help-tip-body{width:min(360px,calc(100vw - 32px));max-width:calc(100vw - 32px)}}
