@@ -37,8 +37,8 @@
   </div>
   {% else %}
   <div class="ui-chips havel-chips" role="group" aria-label="{{ t('havel.topics_title') }}">
-    {% for tp in havel_topics %}<a class="ui-chip havel-chip" href="/havel?topic={{ tp.id }}" data-havel-topic-link>{{ icon(tp.icon, 16) }}{{ t(tp.label) }}</a>{% endfor %}
-    <a class="ui-chip havel-chip" href="/havel?ask=1" data-havel-topic-link data-havel-other>{{ icon('pencil', 16) }}{{ t('havel.topic.other') }}</a>
+    {% for tp in havel_topics %}<a class="ui-chip havel-chip" href="/havel?topic={{ tp.id }}" data-havel-topic-link><span class="havel-chip-ico" aria-hidden="true">{{ icon(tp.icon, 16) }}</span><span class="havel-chip-text">{{ t(tp.label) }}</span></a>{% endfor %}
+    <a class="ui-chip havel-chip" href="/havel?ask=1" data-havel-topic-link data-havel-other><span class="havel-chip-ico" aria-hidden="true">{{ icon('pencil', 16) }}</span><span class="havel-chip-text">{{ t('havel.topic.other') }}</span></a>
   </div>
   {% endif %}
 </div>
