@@ -2816,6 +2816,7 @@ body.v2 details.prop-sec{border:0;border-radius:0;background:transparent;margin-
 body.v2 details.prop-sec>summary{padding-left:0;padding-right:0}
 body.v2 details.prop-sec>summary:after{content:"";width:8px;height:8px;margin-right:6px;border:0;border-right:2px solid var(--ink3);border-bottom:2px solid var(--ink3);transform:rotate(45deg);transition:transform .15s;font-size:0;color:transparent;align-self:center}
 body.v2 details.prop-sec[open]>summary:after{transform:rotate(-135deg)}
+body.v2 details.prop-sec:not([open])>:not(summary){display:none}
 body.v2 .feed-url-details{border:0;border-radius:0;background:transparent;margin:0 0 var(--space-2);padding:0;display:block}
 body.v2 .feed-url-details>summary{padding:0;min-height:44px;justify-content:flex-start;font-weight:600;color:var(--ink2)}
 body.v2 .feed-url-details>summary:after{content:"";width:6px;height:6px;margin-left:8px;border:0;border-right:2px solid var(--ink3);border-bottom:2px solid var(--ink3);transform:rotate(45deg);font-size:0;color:transparent}
