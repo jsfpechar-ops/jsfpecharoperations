@@ -200,7 +200,7 @@
     {% set guest = row.guest %}
     <tr>
       <td>
-        <b><a href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">{{ guest.first_name or '' }} {{ guest.surname or '—' }}</a></b>{% if guest.is_lead %} <span class="pill">{{ t('stay.detail.guests.lead') }}</span>{% endif %}
+        <b><a class="guest-name-link" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">{{ guest.first_name or '' }} {{ guest.surname or '—' }}</a></b>{% if guest.is_lead %} <span class="pill">{{ t('stay.detail.guests.lead') }}</span>{% endif %}
         {% set id_parts = [] %}
         {% if guest.birth_date and identity_visible(guest.id) %}{% set _ = id_parts.append(t('stay.detail.guests.born') ~ ' ' ~ display_birth_date(guest.birth_date)) %}{% endif %}
         {% if guest.nationality %}{% set _ = id_parts.append(country_name(guest.nationality, lang) or guest.nationality) %}{% endif %}

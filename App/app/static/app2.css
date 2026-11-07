@@ -156,7 +156,7 @@ body.v2 .crow{grid-auto-rows:44px}
 .ov-inline{display:inline}
 .ov-section{margin-bottom:28px}
 .ov-more{margin-top:12px}
-.ov-cal-more{margin:0 0 28px}
+.ov-cal-more{margin:16px 0 28px}
 .ov-cal-link{color:var(--ink3);font-size:13px}
 .ic-red,.ic[data-ic=red]{background:var(--bads);color:var(--bad)}
 .ic-amber,.ic[data-ic=amber]{background:var(--warns);color:var(--warn)}
@@ -2916,7 +2916,8 @@ body.v2 .impersonation-handle{font-size:13px;color:var(--ink3)}
 body.v2 .impersonation-bar form{margin:0;flex:0 0 auto}
 body.v2 .impersonation-bar .btn{white-space:nowrap}
 /* 0993: dashboard calendar legend and bar tooltips */
-.cd small{display:block;font-size:10px;font-weight:400;color:var(--ink3)}
+.guest-name-link{display:inline-block;min-height:24px;line-height:24px}
+.cd small{display:block;font-size:12px;font-weight:400;color:var(--ink3)}
 /* 0995: the feed URL is shown, clipped with an ellipsis; the full text stays in title and in the copy button */
 body.v2 .feed-table .feed-url-value{display:block;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (max-width:1023px){body.v2 .feed-table .feed-url-value{max-width:100%}}

@@ -47,3 +47,12 @@ Status: review
 ## Owner steps left
 
 - Review the screenshots, then open the PR and merge via `scripts/merge-pr-on-green.sh`.
+
+## CI fixes
+
+- design lint: added `stay-noname`, `stay-noname-action`, `havel-chip-ico`, `havel-chip-text`, `havel-close` (and `guest-name-link`, see below) to `docs/design/catalog.json` with a `class_notes` line each. `python3 scripts/design_lint.py` prints `design lint: OK`.
+- `App/app/static/app2.css`: `.cd small` font-size 10px to 12px (layout-lint text 10px, partB-overview 1920 px, `7.11.` day hint).
+- `App/app/static/app2.css`: `.ov-cal-more` top margin 0 to 16px, so "Full calendar" is 16px below the paragraph above (partB-overview at all widths).
+- `App/app/templates/reservation_detail.html` + `app2.css`: the guest name link in the stay guests table got class `guest-name-link` (`inline-block`, min-height 24px). It was 19px tall (tap target min 24, partD-stay-detail at 1024 to 1920 px). Catalog entry added.
+- Cache key: `base.html` app2.css `?v=20261107-1102`; `tests/static_versions.json` regenerated.
+- Browser tests: `test_0830_airbnb_pages_browser.py` partB-overview and partD-stay-detail, 14 of 14 pass after the fixes. The other 92 tests in the three named files passed before the fixes.
