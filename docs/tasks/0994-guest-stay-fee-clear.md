@@ -1,14 +1,14 @@
-# 0993: Guest stay fee, clear and calm
+# 0994: Guest stay fee, clear and calm
 
 Status: todo
-Depends on: none | Base commit: 915081a3 (origin/main) | Branch: task/0993-guest-stay-fee-clear
+Depends on: none | Base commit: 915081a3 (origin/main) | Branch: task/0994-guest-stay-fee-clear
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (Step 7, Copy buttons, is optional; if you reach 22 calls, skip it and say so)
 
 ## 1. Objective
 
 Replace the small stay-fee estimate card on the guest form Check step, and the dense fee card on the stay page, with one calm "fee box" look: big amount, one plain panel ("You do not pay now." or "Please pay now."), large tap targets, one short "Why do I pay this?" fold. The guest must see at once whether they pay now and how much.
 
-Owner approved the design from static mockups. They are in `docs/tasks/screenshots-0993/`: `mockup.html` (open `?s=hub` for the stay page, `?open=1` for folds open), `mock-check-390.png`, `mock-check-390-open.png`, `mock-hub-390.png`. Read `mockup.html` for exact sizes.
+Owner approved the design from static mockups. They are in `docs/tasks/screenshots-0994/`: `mockup.html` (open `?s=hub` for the stay page, `?open=1` for folds open), `mock-check-390.png`, `mock-check-390-open.png`, `mock-hub-390.png`. Read `mockup.html` for exact sizes.
 
 ## 2. Context
 
@@ -70,7 +70,7 @@ No other file may change. Read the files only at the named lines.
 
 ## 4. Steps
 
-1. **Branch.** `git fetch origin && git checkout -b task/0993-guest-stay-fee-clear origin/main 2>&1 | tail -30`. Expected: branch created from main. Do not touch `pr798`.
+1. **Branch.** `git fetch origin && git checkout -b task/0994-guest-stay-fee-clear origin/main 2>&1 | tail -30`. Expected: branch created from main. Do not touch `pr798`.
 2. **Tokens and CSS.** `grep -n -- "--info\|--blue-bg" App/app/static/tokens.css | tail -30`. Use `--g-surface-2`/existing tokens if a soft grey-blue exists; otherwise define in `guest.css` on `.g-fee-box`: `--fee-bg:#f3f4f8; --fee-line:#d9dbe5;` (mockup values). Add to `guest.css` (end of the fee block near line ~1598), sized as in `mockup.html`: `.g-fee-box` (bg, 1px border, radius 16px, padding 20px, margin-bottom 16px, no coral); `.g-fee-box h3` 19px; `.g-fee-amt` 34px/800/ink; `.g-fee-calc` 17px ink (not muted, no text-transform); `.g-fee-panel` (flex, gap 12px, white, radius 12px, padding 14px; `.g-fee-panel--pay` border 2px ink); `.g-fee-fold` (border-top, `summary` list-style none, min-height 48px, flex, 700, `::-webkit-details-marker` none, `summary::before` 26px ring with CSS-drawn + via two linear-gradients, open state drops the vertical bar, see mockup lines 40-42); `.g-fee-opt` (white, 2px border, radius 14px; `summary` min-height 60px, 18px/800, `.g-fee-radio` 24px ring, open state 7px ink border); `.g-fee-iban span{white-space:nowrap}`; `.g-fee-copy` min-height 44px. All body text at least 17px. Delete `.g-fee-estimate dd` from the line-1599 rule (keep `.g-fee dd`; if `.g-fee` is no longer used in templates after Step 4, replace with `.g-fee-box dd`). Delete `.g-fee-amount` only after `grep -rn "g-fee-amount" App/app` shows no use.
 3. **Screen 1 template.** Replace the whole of `_fee_estimate.html` with:
    `<section class="g-fee-box" id="fee-estimate" aria-labelledby="fee-estimate-h">` containing `<h3 id="fee-estimate-h">{{ t('fee_box_you') }}</h3>`, `<p class="g-fee-amt">{{ t('fee_amount', amount=fee_estimate.amount) }}</p>`, `<p class="g-fee-calc">{{ t('fee_calc_you', days=fee_estimate.days, rate=fee_estimate.rate) }}</p>`, then `<div class="g-fee-panel">` with an inline 24px SVG green check (`aria-hidden="true"`, from mockup line ~86) and `<span><b>{{ t('fee_later_title') }}</b> {{ t('fee_later_body') }}</span>`, then the fold `<details class="g-fee-fold"><summary>{{ t('fee_why') }}</summary><p>{{ t('fee_why_body') }}</p><p><a href="https://www.e-sbirka.cz/sb/1990/565" rel="noopener" target="_blank">{{ t('fee_law_link') }}</a></p></details></section>`. To avoid duplicate markup, put the fold in `guest/_fee_why.html` (new file, add to §3 list) and `{% include %}` it from both templates.
@@ -78,13 +78,13 @@ No other file may change. Read the files only at the named lines.
 5. **Screen 2 template.** Rewrite `_fee_pay.html`, keeping `id="fee-pay"` but on `<section class="g-fee-box" ...>` (drop `g-card`): h3 `fee_box_group`; `.g-fee-amt` = `fee_total`; calc line: `{% set nights = fee_panel.persons|map(attribute='days')|unique|list %}` and if `fee_panel.persons|length > 1 and nights|length == 1` show `t('fee_calc_group', guests=fee_panel.persons|length, days=nights[0], rate=fee_panel.rate)`, else show the existing `t('fee_rate_line', rate=fee_panel.rate)`. No route change. Then `.g-fee-panel.g-fee-panel--pay` with a dark "!" SVG (aria-hidden) and `fee_now_title` / `fee_now_body`. Then each rail as `<details class="g-fee-opt g-summary"{% if loop.first %} open{% endif %}><summary class="g-summary-fold"><span class="g-fee-radio" aria-hidden="true"></span>...label...</summary>` with the existing body (`g-summary-body g-fee-rail`, QR `g-fee-qr` + `g-fee-qr-img`, payee/IBAN/amount/VS `<dl>`, Revolut link, cash note) unchanged except: wrap the IBAN as `<span>` groups of 4 (`{% for g in rail.iban.split() %}<span>{{ g }}</span> {% endfor %}`; if `rail.iban` has no spaces, group it with Jinja slicing `rail.iban|batch(4)`), and remove `.g-summary-fold::after` clash (set `.g-fee-opt > summary::after{display:none}`, check against guest.css line ~1345). Keep `fee_no_rails` branch. Remove the `fee_choose` paragraph and the `fee_intro` paragraph. After the rails: fold `fee_per_person` with the existing persons `<dl>` (class `g-fee-fold`), then `{% include "guest/_fee_why.html" %}`. Revolut button: `grep -n "g-btn" App/app/templates/guest/stay.html App/app/templates/guest/_*.html | head`; if another coral `g-btn` shows on the same hub screen, give the Revolut link the existing secondary button class (`grep -n "g-btn-secondary\|g-btn--" App/app/static/guest.css`); else leave it.
 6. **i18n.** Add the table keys to all six language blocks. Remove `fee_intro`, `fee_what_is_this`, `fee_estimate_title`, `fee_estimate_body`, `fee_choose` from all blocks, each only after `grep -rn "<key>" App/app App/tests` shows no remaining use outside i18n files. Keep `fee_title` and `fee_rate_line` if still used (grep). Command: `cd App && .venv/bin/python -m pytest tests/test_*_i18n.py tests/test_no_em_dashes.py tests/test_copy_cleanup.py tests/test_flash_literals.py -q --tb=short -x 2>&1 | tail -30`.
 7. **Copy buttons (optional, progressive enhancement).** In `guest-enhancements.js` add at most 30 lines: for each `#fee-pay [data-copy]` element (add `data-copy="{{ value }}"` on the IBAN `<dd>` and VS `<dd>` in the template, plain digits/letters without spaces), append a `<button type="button" class="g-fee-copy">` labelled from `data-copy-label` (`t('fee_copy')`), on click `navigator.clipboard.writeText(value)` then set a `<span role="status" aria-live="polite" class="g-sr">` text to `data-copied` (`t('fee_copied')`) for 2 s. Without JS the value stays selectable text. If `.g-sr` (or the existing visually-hidden class) is not found with `grep -n "sr-only\|g-sr\|visually" App/app/static/guest.css`, STOP this step and skip it. No new dependency, no network.
-8. **Cache keys.** Bump `guest.css?v=` (and `guest-enhancements.js?v=` if Step 7 ran) in `App/app/templates/guest/base.html` to `20261107-0993`, and mirror in `App/tests/static_versions.json` (`grep -n "guest" App/tests/static_versions.json`).
+8. **Cache keys.** Bump `guest.css?v=` (and `guest-enhancements.js?v=` if Step 7 ran) in `App/app/templates/guest/base.html` to `20261107-0994`, and mirror in `App/tests/static_versions.json` (`grep -n "guest" App/tests/static_versions.json`).
 9. **Tests.** In `test_guest_browser_e2e.py` (a) fee-estimate test (~809): assert `page.locator("#legal-notice #fee-estimate").count() == 0`; assert `page.evaluate("() => document.getElementById('fee-estimate').compareDocumentPosition(document.getElementById('legal-notice')) & Node.DOCUMENT_POSITION_FOLLOWING")` is truthy; assert `page.get_by_text("You do not pay now.").is_visible()`; (b) hub test (~678): add `assert card.get_by_text("Please pay now.").is_visible()` and `assert card.locator("details.g-fee-fold").count() == 2`. Keep the existing assertions (count 3 `g-summary` rails). Then run section 6.
 10. **Screenshots.** Use the existing `_shot_0958` outputs (`form-estimate-390.png`, `guest-hub-fee-card-390.png`); take 768 as well. Open each once, compare with `mock-check-390.png` / `mock-hub-390.png`, and write one line per page on what you saw (amount alone, panel, fold icons, no horizontal scroll, one coral button).
 
 ## 5. Do not touch
 
-`App/app/routes/guest.py` and every route; `_legal_notice.html` (the legal text and acknowledgement stay complete); everything from PR 798 / #790 listed in §2; `signature.js`; host templates; `docs/tasks/screenshots-0993/`. No new dependency, no third-party script, no new stored data. Light mode only. No coral inside the fee box.
+`App/app/routes/guest.py` and every route; `_legal_notice.html` (the legal text and acknowledgement stay complete); everything from PR 798 / #790 listed in §2; `signature.js`; host templates; `docs/tasks/screenshots-0994/`. No new dependency, no third-party script, no new stored data. Light mode only. No coral inside the fee box.
 
 ## 6. Commands
 
@@ -117,7 +117,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/0993-report.md` (600 tokens at most), `Status: review`, then open one PR. Include: files changed, last 5 lines per command, §7 ticked, Deviations, Questions (list "liable nights differ from stay nights: copy not decided" and "paid status: out of scope"), owner steps left.
+Write `docs/tasks/0994-report.md` (600 tokens at most), `Status: review`, then open one PR. Include: files changed, last 5 lines per command, §7 ticked, Deviations, Questions (list "liable nights differ from stay nights: copy not decided" and "paid status: out of scope"), owner steps left.
 
 ## Risk list (for the reviewer)
 
