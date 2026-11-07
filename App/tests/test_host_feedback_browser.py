@@ -1,4 +1,5 @@
 """Real Chromium checks for host copy results and transient feedback."""
+import json
 import os
 import secrets
 import socket
@@ -230,7 +231,14 @@ def test_host_copy_feedback_truth_and_geometry(base):
         page.evaluate("sessionStorage.removeItem('__fullFeedbackRail')")
         page.reload()
 
-        page.route("**/api/command-palette", lambda route: route.fulfill(json={"items": [{"label": "Copy guest link", "copy": "https://example.test/guest-secret", "group": "Actions"}]}))
+        page.route(
+            "**/api/command-palette",
+            lambda route: route.fulfill(
+                status=200,
+                content_type="application/json",
+                body=json.dumps({"items": [{"label": "Copy guest link", "copy": "https://example.test/guest-secret", "group": "Actions"}]}),
+            ),
+        )
         page.evaluate("window.__copyMode = 'reject'")
         for command_width in (360, 1280):
             page.set_viewport_size({"width": command_width, "height": 900})

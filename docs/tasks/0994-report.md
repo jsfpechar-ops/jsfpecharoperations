@@ -3,34 +3,28 @@
 Status: review
 
 ## Files changed
-- App/app/templates/_host_alerts.html (step 1: headcount alert action line hidden on /reservations)
-- App/app/host_i18n.py (step 2: en and cs `headcount_mismatch` reworded, new `stays.table.guests_of`)
-- App/app/templates/_components.html (step 3: "N of M" guest count)
-- App/app/templates/reservations.html (step 4: muted "No name yet" plus "Add a guest" link for active stays)
-- App/app/static/app2.css (step 5: 3 rules)
-- App/app/templates/base.html (step 6: cache key 20261107-0994)
-- App/tests/test_guest_navigation.py, App/tests/test_overview_headcount.py (step 7: expected text only)
-- App/tests/static_versions.json (regenerated with `tests/test_static_versions.py --write`)
 
-## Commands (last 5 lines)
-- test_host_*, test_host_geometry, test_notification_copy, test_*_i18n, test_no_em_dashes, test_guest_navigation, test_overview_headcount, test_0523_stays_list, test_static_versions (UBYHOST_REQUIRE_BROWSER=1): first run stopped at test_guest_navigation (fixed, see step 7); 299 passed before it. Rerun of the changed files: 42 passed in test_overview_headcount + test_guest_navigation; 54 passed in the test_guest_navigation, test_overview_headcount, test_0523_stays_list, test_static_versions and test_host_geometry set. Full brief set not rerun after fix (11 min).
-- test_layout_lint_browser.py + test_design_guardrails_browser.py: `15 passed in 282.59s`, 0 skipped.
-- `python3 scripts/context_lint.py`: not run in this session.
+`App/app/templates/guest/_fee_estimate.html`, `_fee_pay.html`, `_fee_why.html` (new), `form.html`; `App/app/static/guest.css`; `App/app/i18n.py`, `guest_uk_i18n.py`; `guest/base.html` (`guest.css?v=20261107-0994`); `tests/static_versions.json`, `test_guest_browser_e2e.py`. Step 7 skipped.
 
-## Section 7
-- [ ] Banner without "Open the stay" line and "1 of 6" row: code done and tests pass; NOT seen in screenshots (fixture has no headcount alert on the page).
-- [ ] "No name yet" muted with "Add a guest" link at 390 px: code done; NOT seen (fixture has no no-name rows, and the link is desktop-table only, `.stays-desk`).
-- [x] Layout lint zero findings, 0 skipped.
+## Commands (tail)
 
-## Screenshots (/tmp/shots)
-- 390 (stays-default-en-390.png): mobile card list, "1 guest missing" chips, no layout breakage; no No-name row present.
-- 768 (stays-default-en-768.png): card list, same content, no overlap seen.
-- 1280 (stays-default-en-1280.png): table shows "0 of 1" in the guest column (new wording), yellow banner shows only the police line.
+- i18n/copy: `46 passed`
+- `test_guest_*.py`: `596 passed` (`rm /tmp/d2.db` if UNIQUE on `browser-fee-gbr`)
+- browser+geometry `-rs`: `51 passed`, 0 skipped
+- `context_lint.py`: OK
+
+## §7
+
+All acceptance items met; `initLegalFeeJump` / `_fee_estimate_inline` absent; screenshots under `docs/tasks/screenshots-0958/` (390/768). Form: large amount, green “You do not pay now.” panel, legal below; hub: “Please pay now.”, radio rails, Revolut `g-btn secondary`, two `g-fee-fold` details.
 
 ## Deviations
-- No push, no PR (per owner). Commits are local on claude/project-thread-d67hsx.
-- Commit trailers use the Sonnet 5.5 lines given in the brief instructions.
 
-## Owner steps left
-- Review and open the PR; design-system checklist not ticked (no PR yet).
-- Add a fixture with a headcount alert and a no-name row to see the banner and action at 390/1280.
+Step 7 copy buttons skipped. `test_stay_fee_guest_pay_0897.py::test_0960` updated for new copy (required for `test_guest_*.py`; not listed in brief §3).
+
+## Questions
+
+Liable nights ≠ stay nights: copy not decided. Paid status: out of scope.
+
+## Owner steps
+
+Open PR, green CI, UX gate, `merge-pr-on-green.sh`, close or narrow PR 798.

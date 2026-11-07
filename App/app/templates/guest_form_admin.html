@@ -66,7 +66,7 @@
   </div>
 {% endif %}
 
-<form method="post" action="{{ ('/guests/' ~ guest.id) if editing else ('/reservations/' ~ reservation.id ~ '/guests') }}">
+<form method="post" class="guest-admin-form" action="{{ ('/guests/' ~ guest.id) if editing else ('/reservations/' ~ reservation.id ~ '/guests') }}">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <div class="ui-section">
     <h2>{{ t('guest.admin.identity.title') }}</h2>

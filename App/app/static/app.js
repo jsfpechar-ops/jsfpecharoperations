@@ -2162,8 +2162,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       var node = target && !/^sec-/.test(target.id) && target.closest ? target.closest("details.prop-sec") : target;
       if (node && node.tagName === "DETAILS" && node.classList.contains("prop-sec")) {
         node.open = true;
-        var goTo = target && target !== node ? target : node;
-        if (goTo.scrollIntoView) goTo.scrollIntoView();
+        if (target !== node && target.scrollIntoView) target.scrollIntoView();
       }
     }
     document.querySelectorAll('a[href^="#sec-"]').forEach(function (link) {
@@ -2181,7 +2180,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         } catch (_) {}
       });
     });
-    if (window.location.hash) { openSection(window.location.hash); window.addEventListener("load", function () { openSection(window.location.hash); }); }
+    if (window.location.hash) openSection(window.location.hash);
     if (claimNode(window, "initPropSectionLinks")) {
       window.addEventListener("hashchange", function () { openSection(window.location.hash); });
     }
