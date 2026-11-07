@@ -59,11 +59,22 @@
   <div style="display:flex;flex-wrap:wrap;gap:8px;">
     {% for p in page_photos %}
     <div style="position:relative">
+      {% set first = loop.first %}{% set last = loop.last %}
       <img src="{{ p }}" alt="{{ t('payments.page.photo_alt') }} {{ loop.index }}" width="120" height="90" style="object-fit:cover;border-radius:8px;">
       <form method="post" action="/apartments/{{ apartment.id }}/page/photo-delete" data-confirm data-confirm-message="{{ t('payments.page.photo_delete_confirm') }}" style="position:absolute;top:4px;right:4px;">
         <input type="hidden" name="path" value="{{ p }}">
         <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" aria-label="{{ t('payments.page.photo_delete') }}">×</button>
       </form>
+      <div style="display:flex;gap:4px;margin-top:4px;align-items:center;">
+        {% if first %}<span class="ui-sub">{{ t('payments.page.photo_main') }}</span>{% endif %}
+        {% for d, glyph, key in (('up', '↑', 'payments.page.photo_up'), ('down', '↓', 'payments.page.photo_down')) %}
+        <form method="post" action="/apartments/{{ apartment.id }}/page/photo-move">
+          <input type="hidden" name="path" value="{{ p }}">
+          <input type="hidden" name="dir" value="{{ d }}">
+          <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" aria-label="{{ t(key) }}"{% if (d == 'up' and first) or (d == 'down' and last) %} disabled{% endif %}>{{ glyph }}</button>
+        </form>
+        {% endfor %}
+      </div>
     </div>
     {% endfor %}
   </div>
