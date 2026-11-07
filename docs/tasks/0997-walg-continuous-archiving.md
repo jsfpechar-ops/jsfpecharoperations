@@ -1,65 +1,76 @@
-# 0997: WAL-G continuous archiving, image, compose, shipper, tests, decision
+# 0997: WAL-G continuous archiving, sidecar image, compose, shipper, tests, decision
 
 Status: todo
-Depends on: 0996 | Base commit: 47640cf | Branch: task/0997-walg-archiving
+Depends on: 0995, 0996 (run after both) | Base commit: 47640cf | Branch: task/0997-walg-archiving
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
-Split: this brief is the image, compose, config, shipper script, tests and decision. Brief 0998 (check script, base-backup script, runbook, owner rollout) depends on it. **Do not deploy 0997 alone**: the owner deploys after 0998 is merged, with the owner steps in 0998.
+Split: this brief is the sidecar image, compose, shipper script, tests and decision. Brief 0998 (monitor, base-backup script, runbook, owner rollout and drills) depends on it. **Do not deploy 0997 alone**: the owner deploys after 0998 is merged, with the rollout in 0998. Merging 0997 alone changes nothing in production: archiving stays off until the owner sets `UBYHOST_PG_ARCHIVE=on` (0998 rollout).
+
+Reviewer note (2026-11-07): redesigned from the first draft. The production postgres service keeps its pinned Alpine image unchanged (no base-image switch, no collation risk, rollback is two `.env` lines). Only the new `walg` sidecar uses a Debian image, because WAL-G release binaries are built for glibc, not musl.
 
 ## 1. Objective
 
-Give the production Postgres continuous WAL archiving to S3 (eu-central-1) through WAL-G, so the owner can restore to any minute of the last 7 days. The daily age-encrypted `pg_dump` backups stay unchanged; this adds point-in-time recovery on top.
+Give the production Postgres continuous WAL archiving to S3 (eu-central-1) through WAL-G, so the owner can restore to any minute of the last 7 days (data loss at most about 5 minutes). The daily age-encrypted `pg_dump` backups stay unchanged and stay the primary backup.
 
 ## 2. Context
 
-Rules: AGENTS.md rule 4 (new dependency needs an owner decision line), rule 2 (privacy: new outbound request needs its reason in the PR), rule 3 (no secrets in the repo), rule 5.
+Rules: AGENTS.md rule 4 (new dependency needs an owner decision line), rule 2 (new outbound request needs its reason in the PR), rule 3 (no secrets, bucket name or account id in the repo), rule 5.
 
-**Owner decision (2026-11-07, in chat):** the owner approved WAL-G on the condition that the cost stays small, unlike Litestream, whose S3 read-back traffic was high. WAL-G only writes (PUT) and lists; it never reads back during normal running. `archive_timeout=300` caps PUT requests at 288 a day, about 8,600 a month, about USD 0.05.
+**Owner decision (2026-11-07, in chat):** the owner approved WAL-G on the condition that the cost stays small, unlike Litestream, whose S3 read-back traffic was high. WAL-G only writes (PUT) and lists in normal running. `archive_timeout=300` caps PUT requests at about 288 a day, about USD 0.05 a month.
 
-**Design deviation from the request, and why.** The postgres service has `network_mode: none` (no network at all). `wal-g wal-push` cannot reach S3 from inside it. Opening the network on the database container would break the trust boundary written in the compose comment. So: Postgres copies each finished WAL segment into a local spool volume (`archive_command` is a plain `cp`), and a separate `walg` sidecar container, which has network but no listening port, ships the spool to S3 with `wal-g wal-push`. The sidecar also runs the daily `wal-g backup-push` (0998). Consequence for monitoring: `pg_stat_archiver` only proves the copy into the spool, so 0998's check also watches the spool age.
+**Design, and why.**
 
-**Anchor 1, `deploy/lightsail/docker-compose.yml`, the pinned image line (copy it verbatim into the Dockerfile `FROM`):**
+- The postgres service has `network_mode: none` and its image stays exactly `postgres:16-alpine@sha256:0cefaabd...` (the compose comment's trust boundary; `App/tests/test_pg_cutover_script.py` asserts both). Postgres never runs wal-g.
+- `archive_command` copies each finished WAL file into a local spool volume `ubyhost-walspool` **durably**: copy to `<name>.tmp`, `sync` the file, rename to the final name, `sync` the directory, and only then exit 0. If the final name already exists with identical bytes (Postgres retries after a crash) it exits 0; with different bytes it exits non-zero, so Postgres keeps the WAL in `pg_wal` and the 0998 monitor alerts. Nothing is ever overwritten silently.
+- Archiving is switched by `UBYHOST_PG_ARCHIVE` from `.env` (default `off`), so staging and local stacks that share this compose file are unchanged and do not fill a spool.
+- A `walg` sidecar (compose profile `walg`, image `ubyhost-walg:local` built from `deploy/lightsail/walg/`, Debian `postgres:16.x-bookworm` + checksum-verified WAL-G) has network on the project's default network, no port. `walg-ship.sh` runs `wal-g wal-push` per spool file, oldest first, and deletes a spool file **only after wal-push exited 0** (upload confirmed). It runs as uid/gid 70, the postgres uid of the Alpine image, so it can read the spool and the read-only data directory.
+- The daily `wal-g backup-push` (0998) runs in the sidecar. It needs (a) a Postgres connection: through the shared socket volume `ubyhost-pgsock` (`PGHOST=/var/run/postgresql`, user `ubyhost`, trust auth on the socket, exactly how the app connects; no password exists or is added), and (b) the data files: through `ubyhost-pgdata` mounted read-only. `pg_backup_stop` waits until the WAL the backup needs is archived (copied to the spool); the shipper then uploads it.
+- Restores run the Debian image's Postgres in a scratch container with network and `restore_command = 'wal-g wal-fetch %f %p'` (0998 runbook); a real restore is brought back into production as a `pg_dump` through the existing `pg-restore.sh`, so the production data directory never meets a glibc Postgres.
+
+**Anchor 1, `deploy/lightsail/docker-compose.yml`, the postgres command line (unchanged by 0995 and 0996; verified 2026-11-07):**
 
 ```
-    image: postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
-```
-
-**Anchor 2, the same file, the postgres service lines you replace:**
-
-```
-    network_mode: none
     command: ["postgres", "-c", "listen_addresses=", "-c", "shared_buffers=256MB", "-c", "max_connections=50", "-c", "log_min_duration_statement=1000"]
 ```
 
-**Anchor 3, same file, volumes:**
+**Anchor 2, same file, the postgres volumes (the only place these two lines follow each other):**
 
 ```
       - ubyhost-pgdata:/var/lib/postgresql/data
       - ubyhost-pgsock:/var/run/postgresql
 ```
 
-**Anchor 4, same file, end of file:**
+**Anchor 3, same file, the start of the app service:**
+
+```
+  ubyhost:
+    build:
+      context: ../..
+```
+
+**Anchor 4, same file, in the top-level `volumes:` block (NOT the end of the file: `caddy-data`, `caddy-config` and `networks:` follow):**
 
 ```
   ubyhost-pgsock:
     name: ubyhost-pgsock
 ```
 
-**Owner-supplied WAL-G values (the owner fills this block before the brief runs). Never invent any of them. I could not verify a version or checksum offline.**
+**Owner-supplied values (the orchestrator pastes them here before the brief runs). Never invent any of them.**
 
 ```
-WALG_VERSION=PENDING
-WALG_ASSET=PENDING      (the exact release file name for Alpine/musl on amd64, a .tar.gz)
-WALG_SHA256=PENDING     (64 hex characters from the official release page)
+PG_DEBIAN_IMAGE=PENDING  (postgres:16.N-bookworm@sha256:<64 hex>, same 16.N as production)
+WALG_VERSION=PENDING     (release tag, like v3.0.5)
+WALG_ASSET=PENDING       (the wal-g-pg-ubuntu-22.04-amd64 or -20.04-amd64 .tar.gz file name; never 24.04)
+WALG_SHA256=PENDING      (64 lowercase hex characters)
 ```
 
-If any value still says `PENDING`, **STOP at step 1** and hand the owner the commands in the Owner steps section below. The server is x86_64.
+If any value still says `PENDING`, **STOP at step 1** and put the "Owner steps (before this brief runs)" below into your report as `blocked`.
 
-Why a pinned checksum: the build downloads a binary that will hold the backup encryption key and the S3 credentials. A build that cannot verify its download must fail.
+Why pinned checksum and digest: the image holds the backup encryption key and S3 credentials at run time. A build that cannot verify its download must fail.
 
-Retention (confirmed against `docs/privacy/RETENTION.md`, row "Encrypted backups": 30 days local and off-site): WAL archives and base backups keep 7 days (`wal-g delete retain FULL 7`), shorter than the 30-day window, so erased personal data is gone from them in at most 10 days (7 plus the S3 lifecycle safety net). 0998 adds the RETENTION row.
+Retention (`docs/privacy/RETENTION.md`, row "Encrypted backups": 30 days local/off-site): WAL and base backups keep 7 days (`wal-g delete retain FULL 7`), S3 lifecycle deletes after 10 days as a safety net, so both stay inside 30 days. 0998 adds the RETENTION row.
 
-Environment variable names the sidecar reads from `.env.walg` (git-ignored by the existing `.env.*` rule; the owner creates it on the server, 0998): `WALG_S3_PREFIX`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `WALG_COMPRESSION_METHOD`, `WALG_LIBSODIUM_KEY`, `WALG_LIBSODIUM_KEY_TRANSFORM`, `PGHOST`, `PGUSER`, `PGDATABASE`. This brief commits no values.
+Variables the sidecar reads from `.env.walg` (git-ignored by the existing `.env.*` rule in `.gitignore`; the owner creates it on the server, 0998): `WALG_S3_PREFIX`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `WALG_COMPRESSION_METHOD`, `WALG_LIBSODIUM_KEY`, `WALG_LIBSODIUM_KEY_TRANSFORM`, `WALG_UPLOAD_CONCURRENCY`, `PGHOST`, `PGUSER`, `PGDATABASE`. This brief commits no values.
 
 **Context-rollout upload (orchestrator):** put files flat in the rollout bundle folder under docs/plans (no subfolder). MANIFEST and place_files script at that root.
 
@@ -67,58 +78,72 @@ Environment variable names the sidecar reads from `.env.walg` (git-ignored by th
 
 | Path | Action | What |
 |---|---|---|
-| deploy/lightsail/postgres-walg/Dockerfile | create | pinned postgres image plus checksum-verified WAL-G, spool dir |
-| deploy/lightsail/postgres-walg/walg-ship.sh | create | loop that ships spooled WAL files with `wal-g wal-push` |
-| deploy/lightsail/docker-compose.yml | edit | build the postgres image, archive settings, spool volume, `walg` service |
-| App/tests/test_pg_backup_scripts.py | edit | append static and stub tests for the above |
+| deploy/lightsail/walg/Dockerfile | create | Debian Postgres 16 image (pinned digest) plus checksum-verified WAL-G |
+| deploy/lightsail/walg/walg-ship.sh | create | loop that ships spooled WAL with `wal-g wal-push`, deletes only after success |
+| deploy/lightsail/docker-compose.yml | edit | archive flags, spool volume on postgres, `walg` service, volume declaration |
+| App/tests/test_pg_backup_scripts.py | edit | append static and stub tests |
 | docs/context/decisions.md | edit | append one `[backup]` line |
 
 No other file may change.
 
 ## 4. Steps
 
-1. Read the "Owner-supplied WAL-G values" block in section 2. If any value is `PENDING`, STOP (section 8) and put the owner commands from "Owner steps" in your report as `blocked`. Command: `grep -n PENDING docs/tasks/0997-walg-continuous-archiving.md | tail -30`. Expected: the three lines show real values; otherwise stop.
+1. Check the owner values. Command: `grep -c '^[A-Z_0-9]*=PENDING' docs/tasks/0997-walg-continuous-archiving.md | tail -30`. Expected: `0` (the four value lines in section 2 hold real values). Anything else: STOP.
 
-2. Confirm anchors 1 to 4 exist. Command: `grep -n 'image: postgres:16-alpine@sha256:0cefaabd\|network_mode: none\|name: ubyhost-pgsock' deploy/lightsail/docker-compose.yml | tail -30`. Expected: three hits. Any missing: STOP.
+2. Confirm the anchors. Command: `grep -n 'log_min_duration_statement=1000"\]\|ubyhost-pgdata:/var/lib/postgresql/data$\|^  ubyhost:$\|name: ubyhost-pgsock\|image: postgres:16-alpine@sha256:0cefaabd' deploy/lightsail/docker-compose.yml | tail -30`. Expected: five hits (command, pgdata volume, `ubyhost:`, `name: ubyhost-pgsock`, the image line). Any missing: STOP.
 
-3. Create `deploy/lightsail/postgres-walg/Dockerfile` with this content, replacing the three `<...>` with the owner values from step 1:
+3. Create `deploy/lightsail/walg/Dockerfile`, replacing the four `<...>` with the owner values from section 2:
 
 ```dockerfile
-# 0997: the pinned Postgres image plus WAL-G. Used by the postgres service
-# (archive_command copies WAL into /walspool) and the walg sidecar (ships it to S3).
-FROM postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
+# 0997: image for the walg sidecar only (compose profile "walg"). The production
+# postgres service keeps its pinned Alpine image and never runs wal-g. Debian
+# (glibc) because the WAL-G release binaries are built for glibc. The Postgres 16
+# binaries here are used only by the restore drill (docs/OPERATIONS.md).
+FROM <PG_DEBIAN_IMAGE>
 ARG WALG_VERSION=<WALG_VERSION>
 ARG WALG_ASSET=<WALG_ASSET>
 ARG WALG_SHA256=<WALG_SHA256>
 RUN set -eu \
- && apk add --no-cache ca-certificates \
- && wget -q -O /tmp/walg.tgz "https://github.com/wal-g/wal-g/releases/download/${WALG_VERSION}/${WALG_ASSET}" \
- && echo "${WALG_SHA256}  /tmp/walg.tgz" | sha256sum -c - \
- && tar -xzf /tmp/walg.tgz -C /tmp \
- && install -m 0755 "$(find /tmp -maxdepth 2 -type f -name 'wal-g*' ! -name '*.tgz' | head -1)" /usr/local/bin/wal-g \
- && rm -rf /tmp/walg.tgz /tmp/wal-g* \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates curl \
+ && rm -rf /var/lib/apt/lists/* \
+ && curl -fsSL -o /tmp/walg.tar.gz "https://github.com/wal-g/wal-g/releases/download/${WALG_VERSION}/${WALG_ASSET}" \
+ && echo "${WALG_SHA256}  /tmp/walg.tar.gz" | sha256sum -c - \
+ && mkdir /tmp/walg \
+ && tar -xzf /tmp/walg.tar.gz -C /tmp/walg \
+ && install -m 0755 "$(find /tmp/walg -type f | head -1)" /usr/local/bin/wal-g \
+ && rm -rf /tmp/walg /tmp/walg.tar.gz \
  && wal-g --version
-RUN mkdir -p /walspool && chown postgres:postgres /walspool && chmod 700 /walspool
 COPY walg-ship.sh /usr/local/bin/walg-ship.sh
 RUN chmod 0755 /usr/local/bin/walg-ship.sh
 ```
 
-Command: `grep -c 'sha256sum -c' deploy/lightsail/postgres-walg/Dockerfile`. Expected: `1`.
+Command: `grep -c 'sha256sum -c\|^FROM postgres:16\.[0-9]*-bookworm@sha256:[0-9a-f]\{64\}$' deploy/lightsail/walg/Dockerfile | tail -30`. Expected: `2`.
 
-4. Create `deploy/lightsail/postgres-walg/walg-ship.sh` with this content. `WALG_SHIP_ONCE=1` is for the tests.
+4. Create `deploy/lightsail/walg/walg-ship.sh` with this content (`WALG_SHIP_ONCE=1` is for the tests):
 
 ```sh
 #!/bin/sh
 # 0997: ship finished WAL files from the spool to S3 with wal-g, oldest first.
-# Postgres copies each segment into the spool (archive_command); this container has
-# the network. A file is deleted only after wal-push succeeded, so a failure
-# keeps it and retries; the spool grows and 0998's walg-check.sh alerts.
+# The postgres container (no network) copies each finished file into the spool
+# (archive_command); this container has the network. A spool file is deleted
+# only after `wal-g wal-push` exited 0 (upload confirmed). A failure keeps it and
+# retries; 0998's walg-check.sh alerts when a file stays too long.
 set -u
 SPOOL="${WALG_SPOOL:-/walspool}"
 INTERVAL="${WALG_SHIP_INTERVAL:-15}"
 
 ship_once() {
-  for f in $(ls -1 "$SPOOL" 2>/dev/null | grep -Ev '\.tmp$' | sort); do
+  if [ -z "${WALG_S3_PREFIX:-}" ]; then
+    echo "walg-ship: WALG_S3_PREFIX is not set (is .env.walg missing?); shipping nothing" >&2
+    return 1
+  fi
+  # Only finished WAL names (segments, timeline history, backup labels): skips
+  # *.tmp copies in progress and anything else that may appear in the spool.
+  for f in $(ls -1 "$SPOOL" 2>/dev/null \
+      | grep -E '^[0-9A-F]{24}$|^[0-9A-F]{24}\.[0-9A-F]{8}\.backup$|^[0-9A-F]{8}\.history$' \
+      | LC_ALL=C sort); do
+    [ -f "$SPOOL/$f" ] || continue
     if wal-g wal-push "$SPOOL/$f"; then
       rm -f "$SPOOL/$f"
     else
@@ -139,19 +164,11 @@ while true; do
 done
 ```
 
-Command: `chmod +x deploy/lightsail/postgres-walg/walg-ship.sh && sh -n deploy/lightsail/postgres-walg/walg-ship.sh && echo ok | tail -30`. Expected: `ok`.
+Command: `chmod +x deploy/lightsail/walg/walg-ship.sh && sh -n deploy/lightsail/walg/walg-ship.sh && echo ok | tail -30`. Expected: `ok`.
 
-5. Edit `deploy/lightsail/docker-compose.yml`, postgres service, one edit each:
+5. Edit `deploy/lightsail/docker-compose.yml`, one edit per sub-step. Do not touch the `image:` line or `network_mode: none`.
 
-   a. Replace the line `    image: postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab` with:
-
-```
-    build:
-      context: ./postgres-walg
-    image: ubyhost-postgres-walg:local
-```
-
-   b. Replace the `command:` line (anchor 2) with this one (the `network_mode: none` line above it stays exactly as is):
+   a. Replace the anchor 1 line (the whole `    command: [...]` line) with:
 
 ```
     command:
@@ -164,31 +181,49 @@ Command: `chmod +x deploy/lightsail/postgres-walg/walg-ship.sh && sh -n deploy/l
       - max_connections=50
       - -c
       - log_min_duration_statement=1000
-      # 0997: WAL archiving. No network here, so archive_command only copies into
-      # the spool; the walg service ships it to S3. archive_timeout=300 forces a
-      # segment at least every 5 minutes (about USD 0.05 a month in PUT requests).
+      # 0997: WAL archiving, on only when .env sets UBYHOST_PG_ARCHIVE=on
+      # (production). No network here: archive_command only copies each WAL file
+      # durably into the spool (tmp, sync, rename, sync dir; identical re-copy is
+      # ok, a different file fails); the walg service ships it to S3.
+      # archive_timeout=300: a segment at least every 5 minutes when there is
+      # activity (about USD 0.05 a month in PUT requests).
       - -c
-      - archive_mode=on
+      - archive_mode=${UBYHOST_PG_ARCHIVE:-off}
       - -c
       - archive_timeout=300
       - -c
-      - archive_command=test ! -f /walspool/%f && cp %p /walspool/%f.tmp && mv /walspool/%f.tmp /walspool/%f
+      - 'archive_command=if [ -f /walspool/%f ]; then cmp -s %p /walspool/%f; else cp %p /walspool/%f.tmp && sync /walspool/%f.tmp && mv /walspool/%f.tmp /walspool/%f && sync /walspool; fi'
 ```
 
-   c. After the line `      - ubyhost-pgsock:/var/run/postgresql` that follows `ubyhost-pgdata:/var/lib/postgresql/data` (first occurrence only), add `      - ubyhost-walspool:/walspool`.
+   b. Replace the two anchor 2 lines with these three (the third is new):
 
-   d. Insert this new service directly before the line `  ubyhost:` (the app service):
+```
+      - ubyhost-pgdata:/var/lib/postgresql/data
+      - ubyhost-pgsock:/var/run/postgresql
+      - ubyhost-walspool:/walspool
+```
+
+   c. Insert this block directly before the anchor 3 lines (keep one blank line between it and `  ubyhost:`):
 
 ```yaml
-  # 0997: ships WAL to S3 and runs the daily base backup (0998). Has network, no
-  # listening port. Reads the database only through the socket and a read-only
-  # data directory. Credentials and the encryption key come from .env.walg
-  # (root-only on the server, never in git).
+  # 0997: WAL-G sidecar, started only with COMPOSE_PROFILES containing walg
+  # (production). Ships the WAL spool to S3 and runs the daily base backup
+  # (0998). Default project network (not web), no port. Reaches Postgres only
+  # through the socket volume (trust auth, like the app) and a read-only data
+  # mount, as uid 70 = postgres in the Alpine image. Keys come from .env.walg
+  # (root-only on the server, never in git); without it the shipper only logs
+  # errors and the WAL waits in the spool.
   walg:
-    image: ubyhost-postgres-walg:local
+    profiles: ["walg"]
+    build:
+      context: ./walg
+    image: ubyhost-walg:local
     restart: unless-stopped
-    user: postgres
-    env_file: .env.walg
+    init: true
+    user: "70:70"
+    env_file:
+      - path: .env.walg
+        required: false
     command: ["/usr/local/bin/walg-ship.sh"]
     depends_on:
       postgres:
@@ -199,7 +234,7 @@ Command: `chmod +x deploy/lightsail/postgres-walg/walg-ship.sh && sh -n deploy/l
       - ubyhost-walspool:/walspool
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
-    mem_limit: 256m
+    mem_limit: 512m
     logging:
       driver: json-file
       options:
@@ -208,55 +243,85 @@ Command: `chmod +x deploy/lightsail/postgres-walg/walg-ship.sh && sh -n deploy/l
 
 ```
 
-   e. At the end of the file (anchor 4), append:
+   d. Replace the two anchor 4 lines with these four:
 
 ```
+  ubyhost-pgsock:
+    name: ubyhost-pgsock
   ubyhost-walspool:
     name: ubyhost-walspool
 ```
 
-Command: `cd deploy/lightsail && grep -n 'walg\|walspool\|archive_' docker-compose.yml | tail -30`. Expected: lines for the build, the `archive_*` flags, three `walspool` volume entries (postgres, walg, top-level) and the `walg:` service. Do NOT run `docker compose config` with a real `.env`; if you check syntax, use `python3 -c "import yaml,sys;yaml.safe_load(open('deploy/lightsail/docker-compose.yml'))" | tail -30` from the repo root. Expected: no output.
+Command: `python3 -c "import yaml;d=yaml.safe_load(open('deploy/lightsail/docker-compose.yml'));print(sorted(d['volumes']));print(d['services']['walg']['profiles'], d['services']['postgres']['image'][:28])" 2>&1 | tail -30`. Expected: the volume list contains `ubyhost-walspool`, then `['walg'] postgres:16-alpine@sha256:0ce`. Do NOT run `docker compose config` (no `.env` here).
 
-6. Append tests to the end of `App/tests/test_pg_backup_scripts.py`. First `grep -n '^import\|^from' App/tests/test_pg_backup_scripts.py | tail -30` (expected: `os`, `shutil`, `subprocess`, `Path`, `pytest` already imported; add `import re` at the top only if missing). Append:
+6. Append tests to the end of `App/tests/test_pg_backup_scripts.py`. First `grep -n '^import\|^from' App/tests/test_pg_backup_scripts.py | tail -30`; add `import re` after `import os` only if missing. Then append:
 
 ```python
 COMPOSE = ROOT / "deploy/lightsail/docker-compose.yml"
-WALG_DIR = ROOT / "deploy/lightsail/postgres-walg"
-PINNED = "postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab"
+WALG_DIR = ROOT / "deploy/lightsail/walg"
+PINNED_PG = "postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab"
 
 
-def postgres_block():
-    text = COMPOSE.read_text()
-    start = text.index("\n  postgres:\n")
-    return text[start:text.index("\n  walg:\n")]
+def compose_services():
+    yaml = pytest.importorskip("yaml")
+    return yaml.safe_load(COMPOSE.read_text())["services"]
 
 
-def test_walg_dockerfile_uses_pinned_image_and_verifies_checksum():
+def archive_command():
+    command = compose_services()["postgres"]["command"]
+    return next(p for p in command if p.startswith("archive_command=")).split("=", 1)[1]
+
+
+def test_walg_dockerfile_pins_debian_postgres_and_verifies_checksum():
     text = (WALG_DIR / "Dockerfile").read_text()
-    assert f"FROM {PINNED}" in text
+    assert re.search(r"^FROM postgres:16\.\d+-bookworm@sha256:[0-9a-f]{64}$", text, re.M)
     assert "sha256sum -c" in text
-    match = re.search(r"ARG WALG_SHA256=([0-9a-f]{64})\n", text)
-    assert match, "WALG_SHA256 must be 64 lowercase hex characters, never PENDING"
-    assert re.search(r"ARG WALG_VERSION=v\d+\.\d+\.\d+", text)
+    assert re.search(r"^ARG WALG_SHA256=[0-9a-f]{64}$", text, re.M), "never PENDING"
+    assert re.search(r"^ARG WALG_VERSION=v\d+\.\d+\.\d+$", text, re.M)
+    assert re.search(r"^ARG WALG_ASSET=wal-g-pg-ubuntu-(20|22)\.04-amd64\.tar\.gz$", text, re.M)
 
 
-def test_postgres_service_archives_but_stays_off_the_network():
-    block = postgres_block()
-    assert "network_mode: none" in block
-    for flag in ("archive_mode=on", "archive_timeout=300", "archive_command=test ! -f /walspool/%f"):
-        assert flag in block
-    assert "wal-g" not in block  # the database container never talks to S3
-    assert "ubyhost-walspool:/walspool" in block
+def test_postgres_keeps_its_image_and_no_network_and_archives_to_the_spool():
+    pg = compose_services()["postgres"]
+    assert pg["image"] == PINNED_PG
+    assert pg["network_mode"] == "none"
+    assert "archive_mode=${UBYHOST_PG_ARCHIVE:-off}" in pg["command"]
+    assert "archive_timeout=300" in pg["command"]
+    assert "wal-g" not in " ".join(pg["command"])  # the database container never talks to S3
+    assert "ubyhost-walspool:/walspool" in pg["volumes"]
 
 
-def test_walg_sidecar_has_no_secrets_in_compose():
-    text = COMPOSE.read_text()
-    walg = text[text.index("\n  walg:\n"):text.index("\n  ubyhost:\n")]
-    assert "env_file: .env.walg" in walg
-    assert "network_mode" not in walg
-    assert "ports" not in walg and "expose" not in walg
-    assert "ubyhost-pgdata:/var/lib/postgresql/data:ro" in walg
-    for forbidden in ("AWS_SECRET", "AKIA", "LIBSODIUM_KEY="):
+def test_archive_command_copies_durably_and_never_overwrites(tmp_path):
+    spool = tmp_path / "walspool"
+    spool.mkdir()
+    wal = tmp_path / "000000010000000000000007"
+    wal.write_bytes(b"x" * 4096)
+    cmd = archive_command().replace("/walspool", str(spool)).replace("%p", str(wal)).replace("%f", wal.name)
+
+    def run():
+        return subprocess.run(["sh", "-c", cmd], capture_output=True, text=True, timeout=30)
+
+    first = run()
+    assert first.returncode == 0, first.stderr
+    assert (spool / wal.name).read_bytes() == wal.read_bytes()
+    assert not (spool / f"{wal.name}.tmp").exists()
+    assert run().returncode == 0  # Postgres may retry the same file after a crash
+    (spool / wal.name).write_bytes(b"different")
+    assert run().returncode != 0  # a different file with the same name is an error
+    assert (spool / wal.name).read_bytes() == b"different"
+
+
+def test_walg_sidecar_is_profiled_unprivileged_and_has_no_secrets():
+    walg = compose_services()["walg"]
+    assert walg["profiles"] == ["walg"]
+    assert walg["user"] == "70:70"
+    assert walg["env_file"] == [{"path": ".env.walg", "required": False}]
+    assert "ubyhost-pgdata:/var/lib/postgresql/data:ro" in walg["volumes"]
+    assert "ubyhost-pgsock:/var/run/postgresql" in walg["volumes"]
+    for key in ("ports", "expose", "network_mode", "networks", "environment"):
+        assert key not in walg
+    text = COMPOSE.read_text() + (WALG_DIR / "Dockerfile").read_text()
+    for forbidden in ("AWS_SECRET", "AKIA", "LIBSODIUM_KEY=", "s3://"):
         assert forbidden not in text
 
 
@@ -265,13 +330,13 @@ def test_walg_ship_script_syntax():
     assert result.returncode == 0, result.stderr
 
 
-@pytest.mark.parametrize("push_ok", [True, False])
-def test_walg_ship_deletes_only_after_a_good_push(tmp_path, push_ok):
+def run_ship(tmp_path, push_ok, prefix="s3://test-bucket/postgres-wal"):
     spool = tmp_path / "spool"
     spool.mkdir()
     (spool / "000000010000000000000002").write_text("w2")
     (spool / "000000010000000000000001").write_text("w1")
     (spool / "000000010000000000000003.tmp").write_text("half")
+    (spool / "walg_status").mkdir()
     bindir = tmp_path / "bin"
     bindir.mkdir()
     stub = bindir / "wal-g"
@@ -279,57 +344,75 @@ def test_walg_ship_deletes_only_after_a_good_push(tmp_path, push_ok):
     stub.chmod(0o755)
     log = tmp_path / "stub.log"
     env = {"PATH": f"{bindir}{os.pathsep}{os.environ['PATH']}", "STUB_LOG": str(log),
-           "PUSH_OK": "1" if push_ok else "0", "WALG_SPOOL": str(spool), "WALG_SHIP_ONCE": "1"}
+           "PUSH_OK": "1" if push_ok else "0", "WALG_SPOOL": str(spool), "WALG_SHIP_ONCE": "1",
+           "WALG_S3_PREFIX": prefix}
     result = subprocess.run(["sh", str(WALG_DIR / "walg-ship.sh")], env=env,
                             capture_output=True, text=True, timeout=30)
-    pushed = log.read_text().splitlines()
+    pushed = log.read_text().splitlines() if log.exists() else []
+    return result, spool, pushed
+
+
+@pytest.mark.parametrize("push_ok", [True, False])
+def test_walg_ship_deletes_only_after_a_good_push(tmp_path, push_ok):
+    result, spool, pushed = run_ship(tmp_path, push_ok)
     assert (spool / "000000010000000000000003.tmp").exists()  # never shipped
+    assert (spool / "walg_status").is_dir()  # not a WAL name: ignored
     if push_ok:
-        assert result.returncode == 0
+        assert result.returncode == 0, result.stderr
         assert [p.rsplit("/", 1)[-1] for p in pushed] == ["000000010000000000000001", "000000010000000000000002"]
-        assert sorted(p.name for p in spool.iterdir()) == ["000000010000000000000003.tmp"]
+        assert sorted(p.name for p in spool.iterdir()) == ["000000010000000000000003.tmp", "walg_status"]
     else:
         assert result.returncode == 1
         assert len(pushed) == 1  # stops at the first failure, oldest first
         assert (spool / "000000010000000000000001").exists() and (spool / "000000010000000000000002").exists()
+
+
+def test_walg_ship_refuses_without_a_destination(tmp_path):
+    result, spool, pushed = run_ship(tmp_path, True, prefix="")
+    assert result.returncode == 1
+    assert pushed == []
+    assert (spool / "000000010000000000000001").exists()
 ```
 
-Command: `cd App && .venv/bin/python -m pytest tests/test_pg_backup_scripts.py -q --tb=short -x 2>&1 | tail -30`. Expected: all pass. If `test_walg_dockerfile_uses_pinned_image_and_verifies_checksum` fails because a value is not real, STOP: do not weaken the test.
+Command: `cd App && .venv/bin/python -m pytest tests/test_pg_backup_scripts.py tests/test_pg_cutover_script.py tests/test_wp32_container_sizing.py -q --tb=short -x 2>&1 | tail -30`. Expected: all pass, 0 skipped. If `test_walg_dockerfile_pins_debian_postgres_and_verifies_checksum` fails because a value is not real, STOP: never weaken a test.
 
-7. Append one line to the end of `docs/context/decisions.md` (use the same `| ... |` style as the lines above it):
+7. Append one line at the end of `docs/context/decisions.md`, in the same format as the 0996 line just above it (`- 2026-11-07 | [backup] ... | owner | ...`; check with `tail -3 docs/context/decisions.md | cut -c1-120`):
 
 ```
-- 2026-11-07 | [backup] WAL-G approved by the owner (new dependency, rule 4): continuous WAL archiving and point-in-time recovery for the production Postgres to S3 eu-central-1, on top of the daily age-encrypted pg_dump, which stays. Condition: small cost, unlike Litestream whose S3 read-back traffic was high; WAL-G only writes and lists, archive_timeout=300 gives about USD 0.05 a month in PUT requests. Postgres keeps network_mode none and spools WAL locally; a walg sidecar ships it. WAL and base backups keep 7 days, inside the 30-day backup window | owner | [0997](../tasks/0997-walg-continuous-archiving.md), 0998
+- 2026-11-07 | [backup] WAL-G approved by the owner (new dependency, rule 4): continuous WAL archiving and point-in-time recovery of the production Postgres to S3 eu-central-1, on top of the daily age-encrypted pg_dump, which stays primary. Condition: small cost, unlike Litestream; WAL-G only writes and lists, archive_timeout=300 is about USD 0.05 a month in PUT requests. Postgres keeps its pinned Alpine image and network_mode none and copies WAL durably into a local spool; a walg sidecar (Debian Postgres 16 image, glibc WAL-G binary, profile walg, uid 70) ships it and runs the daily base backup over the socket. Switched by UBYHOST_PG_ARCHIVE. WAL and base backups keep 7 days, S3 lifecycle 10 days, inside the 30-day backup window | owner | [0997](../tasks/0997-walg-continuous-archiving.md), 0998
 ```
 
-8. Lint and shell checks. Commands: `python3 scripts/context_lint.py 2>&1 | tail -30` (expected: no new error) and `shellcheck -S error deploy/lightsail/postgres-walg/walg-ship.sh 2>&1 | tail -30` (expected: no output; if `shellcheck` is not installed, say so in the report, do not install).
+Command: `tail -1 docs/context/decisions.md | cut -c1-60 | tail -30`. Expected: `- 2026-11-07 | [backup] WAL-G approved by the owner (new de`.
+
+8. Lint and shell checks. Commands: `python3 scripts/context_lint.py 2>&1 | tail -30` (expected: no new error) and `shellcheck -S error deploy/lightsail/walg/walg-ship.sh 2>&1 | tail -30` (expected: no output; if `shellcheck` is not installed, say so in the report, do not install).
 
 ## 5. Do not touch
 
-`deploy/lightsail/scripts/*` (0998 owns them), `backup.sh`, `pg-restore.sh`, `deploy.sh`, `docs/OPERATIONS.md`, `docs/privacy/RETENTION.md` (0998), `.env*` files, `.gitignore`. Rules 3 (no secrets, no real bucket name, no key), 4 (done by the decision line) and 5 apply. Do not remove `network_mode: none`. Do not change the pinned digest. Do not run docker.
+`deploy/lightsail/scripts/*` (0998 owns the new ones; `backup.sh`, `pg-restore.sh`, `deploy.sh`, `preflight.sh` stay as they are), `docs/OPERATIONS.md`, `docs/privacy/RETENTION.md`, `docs/ENVIRONMENT.md`, `docs/LIGHTSAIL.md` (0998), `.env*` files, `.gitignore`, `App/app/`, the other tests. Rules 3 (no secrets, no real bucket name, account id or key), 4 (done by the decision line) and 5 apply. Do not change the postgres `image:` line, `network_mode: none`, `environment:` or the healthcheck. Do not run docker.
 
 ## 6. Commands
 
-Only the test-map rows for deploy scripts and compose: the pytest line in step 6, `shellcheck` in step 8, `python3 scripts/context_lint.py`. Each ends `| tail -30`. Never the full suite.
+Only: the pytest line in step 6, `shellcheck` in step 8, `python3 scripts/context_lint.py`. Each ends `| tail -30`. Never the full suite.
 
 ## 7. Acceptance
 
-- [ ] The Dockerfile `FROM` line equals the compose image line from before the change (digest `0cefaabd...5731ab`), and has a 64-hex checksum and `sha256sum -c`.
-- [ ] The postgres service still has `network_mode: none`, and has `archive_mode=on`, `archive_timeout=300` and the spool `archive_command`.
-- [ ] The `walg` service has `env_file: .env.walg`, a read-only data mount, no ports.
-- [ ] `grep -rn 'AKIA\|LIBSODIUM_KEY=' deploy docs/tasks/0997* | tail -30` shows nothing.
-- [ ] The pytest line in step 6 passes; context lint shows no new error.
+- [ ] `grep -c 'image: postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab' deploy/lightsail/docker-compose.yml` prints `1`, and `network_mode: none` is still in the postgres service.
+- [ ] The Dockerfile `FROM` is `postgres:16.N-bookworm@sha256:<64 hex>`, with a 64-hex `WALG_SHA256` and `sha256sum -c`.
+- [ ] The postgres command has `archive_mode=${UBYHOST_PG_ARCHIVE:-off}`, `archive_timeout=300` and the spool `archive_command` (tested by `test_archive_command_copies_durably_and_never_overwrites`).
+- [ ] The `walg` service has profile `walg`, `user: "70:70"`, `.env.walg` with `required: false`, a read-only data mount, no ports.
+- [ ] `grep -rn 'AKIA\|LIBSODIUM_KEY=[0-9a-f]\|s3://' deploy/lightsail/docker-compose.yml deploy/lightsail/walg | tail -30` shows nothing.
+- [ ] The pytest line in step 6 passes with 0 skipped; context lint shows no new error.
 - [ ] The decision line is the last line of decisions.md.
 
 ## 8. Stop and ask
 
 Stop, and write the report, if:
 
-- an excerpt (anchors 1 to 4) is not found;
-- any WALG value in section 2 is `PENDING`;
+- an anchor (1 to 4) is not found;
+- any owner value in section 2 is `PENDING`;
 - a test fails twice;
 - you reach 25 tool calls or about 50k tokens (write the report as `blocked`, see executor.md);
-- a new dependency other than the WAL-G binary seems needed;
+- a new dependency other than the WAL-G binary and the Debian Postgres base image seems needed;
 - a file outside section 3 needs a change;
 - section 5 would be touched;
 - a step is unclear;
@@ -344,19 +427,24 @@ Write `docs/tasks/0997-report.md` (600 tokens at most) and set `Status: review`.
 3. Section 7 ticked.
 4. Deviations.
 5. Questions.
-6. Owner steps left: "deploy only after 0998 is merged".
+6. Owner steps left: "deploy only after 0998 is merged, with the 0998 rollout".
 
-PR text must say, for rule 2: the new outbound request is the `walg` container writing to the owner's S3 bucket (eu-central-1) and the build-time download of the WAL-G release from github.com; reason: point-in-time recovery; data sent: client-side encrypted WAL, nothing readable by AWS.
+PR text must say, for rule 2: the new outbound requests are the `walg` container writing to the owner's dedicated S3 bucket (eu-central-1), and the build-time downloads of the WAL-G release from github.com and of `ca-certificates`/`curl` from the Debian mirror; reason: point-in-time recovery; data sent: WAL and base backups encrypted on the server with libsodium before upload, nothing readable by AWS.
 
 ## Risk list (for the reviewer)
 
-`deploy/lightsail/docker-compose.yml` (production database command and volumes; `network_mode: none` kept), `deploy/lightsail/postgres-walg/Dockerfile` (pinned digest, checksum), `deploy/lightsail/postgres-walg/walg-ship.sh` (deletes spool files only after a good push).
+`deploy/lightsail/docker-compose.yml` (production database command: the `archive_command` string, `archive_mode` default `off`; image and `network_mode: none` unchanged), `deploy/lightsail/walg/Dockerfile` (pinned digest, checksum), `deploy/lightsail/walg/walg-ship.sh` (deletes spool files only after a good push; name filter).
 
-## Owner steps
+## Owner steps (before this brief runs; only while section 2 says PENDING)
 
-Only needed if section 2 still says `PENDING`. In plain words:
+In plain words. You need SSH to the server; about 15 minutes.
 
-1. Open https://github.com/wal-g/wal-g/releases in your browser and pick the newest release that is not marked pre-release. Write down its tag, like `v3.0.x`. Tell the orchestrator: "verified on the release page" is your word, not mine.
-2. In that release's file list, find the Alpine (musl) build for Postgres on amd64. If there is no Alpine asset, tell the orchestrator: then the Dockerfile must change to a Debian-based Postgres image, which is a decision for you (new base image, new digest).
-3. On the same page, open the checksum file for that asset (a `.sha256` file next to it) and copy the 64-character hash. If the release has no checksum file, run on your laptop: `curl -fsSL -o walg.tgz https://github.com/wal-g/wal-g/releases/download/<TAG>/<ASSET>` then `sha256sum walg.tgz`. Compare it with the hash shown on the release page or in the release notes if there is one.
-4. Send the three values (tag, asset file name, hash) to the orchestrator, who pastes them into section 2. Check once that the asset's notes list libsodium encryption support; if not, tell the orchestrator before continuing.
+1. On the server: `cd /opt/ubyhost/deploy/lightsail && docker compose exec -T postgres postgres --version`. It prints something like `postgres (PostgreSQL) 16.10`. Write down the `16.N` number.
+2. `docker compose exec -T postgres id -u postgres`. It must print `70`. If not, stop and tell the orchestrator (the sidecar's `user: "70:70"` depends on it).
+3. `docker compose version`. It must be `v2.24.0` or newer (the `required: false` setting needs it). Do the same on the staging server. If older, stop and tell the orchestrator.
+4. `docker pull postgres:16.N-bookworm` (your number from step 1), then `docker image inspect --format '{{index .RepoDigests 0}}' postgres:16.N-bookworm`. It prints `postgres@sha256:` and 64 characters. Your `PG_DEBIAN_IMAGE` is `postgres:16.N-bookworm@sha256:<those 64 characters>`.
+5. In your browser open https://github.com/wal-g/wal-g/releases. Take the newest release that is **not** marked "Pre-release". Its tag (like `v3.0.5`) is `WALG_VERSION`.
+6. In that release, click **Assets**. Find the file whose name is `wal-g-pg-ubuntu-22.04-amd64.tar.gz` (if there is no 22.04 one, take `wal-g-pg-ubuntu-20.04-amd64.tar.gz`). Never take a `24.04` file: it needs a newer system library than Debian 12 has. That name is `WALG_ASSET`.
+7. On the server: `cd /tmp && curl -fsSLO https://github.com/wal-g/wal-g/releases/download/<TAG>/<ASSET> && sha256sum <ASSET>`. Then compare the 64 characters with the "sha256:" value GitHub shows next to the asset on the release page, or, if the release has a file `<ASSET>.sha256`, with `curl -fsSL https://github.com/wal-g/wal-g/releases/download/<TAG>/<ASSET>.sha256`. They must be identical. That is `WALG_SHA256`. If they differ, stop and tell the orchestrator.
+8. Check that the binary runs on the Debian image: `docker run --rm -v /tmp/<ASSET>:/w.tgz:ro postgres:16.N-bookworm sh -c 'mkdir /x && tar -xzf /w.tgz -C /x && "$(find /x -type f | head -1)" --version'`. It must print a WAL-G version. If it says `GLIBC_2.xx not found` or a missing `.so` library, try the 20.04 asset from step 6; if that fails too, stop and tell the orchestrator. Then `rm /tmp/<ASSET>`.
+9. Send the four values (`PG_DEBIAN_IMAGE`, `WALG_VERSION`, `WALG_ASSET`, `WALG_SHA256`) to the orchestrator, who pastes them into section 2. None of them is a secret.
