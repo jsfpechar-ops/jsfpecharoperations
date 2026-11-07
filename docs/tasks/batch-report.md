@@ -6,11 +6,12 @@
 
 | Item | State |
 |------|--------|
-| **Briefs done** | **1001–1005** (PR #803 review fixes), merged with `origin/task/0999-property-rules-map` |
-| **Brief in progress** | None |
-| **Branch** | `task/0999-property-rules-map` @ `ddc30f99` (pushed; tracks `origin`) |
-| **PR** | [#803](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/803) — ready for CI/coordinator PR-body sync from “Review fixes” below |
-| **Next chat** | Await owner on **24h cash hold**; optional dedicated `100x-report.md` files; confirm CI `test-postgres` on PR |
+| **Worker (1001–1004)** | **1001–1004 done** (commits `1da64065` … `cae8ece9` + merge); tests re-run 2026-11-08 OK |
+| **Worker (1005)** | Parallel composer-2.5 owns **1005** — see `## 1005` below (do not edit from 1001–1004 worker) |
+| **Brief in progress** | None on 1001–1004 |
+| **Branch** | `task/0999-property-rules-map` @ `55478aa6` (pull before each push; no force/rebase) |
+| **PR** | [#803](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/803) — PR body: sync **1001–1004** headings below + parallel **1005** |
+| **Next chat** | Owner: **24h cash hold**? CI **`test-postgres`** (not run on VM) |
 
 ## 1000: Property page photo reorder
 
@@ -179,23 +180,49 @@ Status: review
 2. **Layout lint**: no unfixable findings; booking-site not in default EXTRA_ROUTES (pre-existing); host lint green.
 3. **Deploy**: owner applies PG migration **39** / goose **00010** (not brief's 0038/00009 numbers on this branch).
 
-## Review fixes (briefs 1001–1005)
+## 1001: Request-to-book reachable
 
-**1001:** Pay-mode choice on the live `/p/<slug>` form (hidden `direct`, dual radios, checkout default); `pp.book.send_direct` EN/CS; real-page tests. `test_db_postgres` already `range(1, 40)` on branch.
+Status: review | Worker: composer-2.5 (1001–1004 lane) | Commit: `1da64065`
 
-**1002:** Direct-specific cancel/confirm mail keys; booking list uses `Cancel booking` for direct rows; tests assert no card-refund wording.
+Pay-mode on live `/p/<slug>` form; `pp.book.send_direct` EN/CS; checkout defaults sole mode. `test_db_postgres` already `range(1, 40)` on branch (not re-run here).
 
-**1003:** Guest `site_booking_request_guest` mail with payment rails; `property_page_requested` uses `pp-bk-card` + property name.
+**Review fixes (PR body):** Cash-only shows Send booking request; stripe+direct gets radios; real-page tests.
 
-**1004:** Booking-site pay form uses `ui_check` + section help; Mark paid secondary/shorter; decline expired direct rows; `expire_requests` tolerates concurrent confirm; layout lint green (fixture + CI).
+**Tests:** `82 passed` (1001 §6 bundle, 2026-11-08).
 
-**1005:** Photo move row `pp-photo-moves`, CSRF on move/delete, phone More → Booking sites; `host.css` cache bump.
+## 1002: Direct booking refund copy
 
-**UX after-screenshots:** `/opt/cursor/artifacts/pr803-after/` (6 PNGs: `/p/` booking + booking-site attempts at 390/768/1280). `REVIEW.md` and before-screenshots were not on this VM.
+Status: review | Commit: `ff611c6e`
 
-**Not run here:** `test_db_postgres.py` (needs PostgreSQL); CI `test-postgres` expected green via range fix.
+Direct cancel/confirm mail keys; `Cancel booking` on direct rows in booking list.
 
-**Stop-and-ask:** Should cash-direct booking holds last longer than 24 hours? (Owner decision; mail/page copy still says 24 h.)
+**Review fixes (PR body):** Guest/host mails avoid card refund wording; confirm mail says confirmed not paid.
+
+**Tests:** `90 passed` (1002 §6 bundle). `test_layout_lint_browser.py` green earlier this stack.
+
+## 1003: Direct request guest mail and page
+
+Status: review | Commit: `f2cce8c8`
+
+`site_booking_request_guest` mail; `property_page_requested` uses `pp-bk-card` + property name.
+
+**Review fixes (PR body):** Guest gets payment rails by mail; request page styled like public booking card.
+
+**Tests:** `49 passed` (1003 §6 bundle).
+
+## 1004: Booking-site direct host UX
+
+Status: review | Commits: `cae8ece9`, `378ccad5`
+
+Pay form `ui_check` + section help; Mark paid secondary; decline expired direct; safer `expire_requests`.
+
+**Review fixes (PR body):** No coral in list; shorter Mark paid; expired direct declinable.
+
+**Tests:** `82 passed` (1004 §6); `design_lint.py` OK.
+
+**Shared (1001–1004):** REVIEW.md absent on VM. After shots attempt: `/opt/cursor/artifacts/pr803-after/`. **`test_db_postgres.py`:** not run (needs PostgreSQL).
+
+**Stop-and-ask (1001–1004):** Should cash-direct holds stay **24 hours** or longer?
 
 ## 1005: Photo reorder row and phone nav
 
