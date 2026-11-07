@@ -26,7 +26,7 @@
       {% else %}{{ ui_badge('neutral', t('bsite.badge.wait')) }}{% endif %}
       {# the current step's one action button goes here, see below #}
       {% if row.current and not row.done %}
-        {% if row.key == 'stripe' %}{{ ui_button(t('bsite.act.stripe'), 'secondary', href='/payments', size='compact') }}
+        {% if row.key == 'pay' %}{{ ui_button(t('bsite.act.pay'), 'secondary', href='#pay', size='compact') }}
         {% elif row.key == 'page' %}{{ ui_button(t('bsite.act.page'), 'secondary', href='/apartments/' ~ apartment.id ~ '/page', size='compact') }}
         {% elif row.key == 'price' or row.key == 'policy' %}{{ ui_button(t('bsite.act.price'), 'secondary', href='#rules', size='compact') }}
         {% elif row.key == 'calendar' %}{{ ui_button(t('bsite.act.calendar'), 'secondary', href='#ical', size='compact') }}
@@ -36,6 +36,21 @@
   </div>
   {% endfor %}
 </dl>
+{% endcall %}
+
+{% call ui_section(t('bsite.step.pay'), id='pay') %}
+<p class="ui-sub">{{ t('bsite.pay.lead') }} <a href="/payments">{{ t('bsite.act.stripe') }}</a></p>
+<form method="post" action="/apartments/{{ apartment.id }}/booking-site/pay">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <label class="gp-check checkline"><input type="checkbox" name="rails" value="iban"{% if 'iban' in pay.ticked %} checked{% endif %}> <span>{{ t('stay_fees.guest_pay.rail.iban') }}</span></label>
+  {% if not pay.iban_ok %}<p class="ui-sub">{{ t('bsite.pay.no_account') }}</p>{% endif %}
+  <label class="gp-check checkline"><input type="checkbox" name="rails" value="revolut"{% if 'revolut' in pay.ticked %} checked{% endif %}> <span>{{ t('stay_fees.guest_pay.rail.revolut') }}</span></label>
+  {{ ui_field('revolut_link', t('stay_fees.guest_pay.revolut_label'), value=pay.revolut_link, type='url', attrs='inputmode="url"') }}
+  <label class="gp-check checkline"><input type="checkbox" name="rails" value="cash"{% if 'cash' in pay.ticked %} checked{% endif %}> <span>{{ t('stay_fees.guest_pay.rail.cash') }}</span></label>
+  {{ ui_field('cash_note', t('stay_fees.guest_pay.cash_label'), value=pay.cash_note, attrs='maxlength="300"') }}
+  <p class="ui-sub">{{ t('bsite.pay.shared') }}</p>
+  {{ ui_button(t('common.save'), 'primary', type='submit') }}
+</form>
 {% endcall %}
 
 {% call ui_section(t('bsite.rules.title'), id='rules') %}
