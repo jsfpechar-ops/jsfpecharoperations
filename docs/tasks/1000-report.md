@@ -32,3 +32,11 @@ Commits (local, not pushed): `1000 step 1` to `step 6`, `1000 step 7`, then the 
 
 ## Owner steps left
 - Capture and check the dashboard (1280 "?" placement), stays add-stay panel and guest-details pages at 390/768/1280 before merge.
+
+## UX check (follow-up run, 20:42 UTC)
+- Required legend and stars: seen on the add-guest form (`guest-new-390.png`, add-stay flow). Red `*` on Surname and Citizenship; "Fields marked * are required." visible above the first field. Legend is visible where the form has required fields.
+- Dashboard 1280 (`dashboard-en-1280-open.png`): "?" sits inline after the "Dashboard" title; no required fields on this page, so no legend expected. Looked at, no issue seen.
+- Reservations 390 (`0950/reservations-390.png`): the add-stay panel is not open in this shot; not confirmed on the add-stay panel itself.
+- Havel 390 (`layout-lint/havel-390.png`, copied to /mnt/project-files/ux-shots/havel-390.png): topic list shows "Calendars" (new short label), one per row.
+- Not re-verified: the Havel dialog grid after the equal-height CSS change (dialog screenshot `havel-open-390.png` predates it). Needs one fresh dialog screenshot.
+- Not captured: guest details page at 768/1280.
