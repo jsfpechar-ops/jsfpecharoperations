@@ -337,7 +337,7 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
 .cleaning-page .dashboard-calendar .cal-event.is-cleaning-marker {
   box-sizing:border-box; display:flex; align-items:center; gap:4px;
   height:var(--event-height,22px); min-height:0; max-height:none; margin:0 1px; padding:0 7px 0 5px;
-  border:1px solid var(--status-action-border); border-left:3px solid var(--amber); border-radius:6px;
+  border:1px solid var(--status-action-border); border-radius:6px;
   background:var(--amber-bg); color:var(--status-action-ink);
   font-size:11px; font-weight:600; line-height:1; box-shadow:none; overflow:hidden;
 }
