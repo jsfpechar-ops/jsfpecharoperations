@@ -12,19 +12,14 @@
 {{ ui_banner('attention', t('bsite.max_only'), t('bsite.max_cta'), '/predplatne') }}
 {% endif %}
 {% if rows %}
-{% call ui_section(t('bsite.title')) %}
-<dl class="ui-facts">
-  {% for row in rows %}
-  <div>
-    <dt>{{ row.internal_name }}</dt>
-    <dd>
-      {% if row.published %}{{ ui_badge('done', t('bsite.list.live')) }}{% else %}{{ ui_badge('neutral', t('bsite.list.off')) }}{% endif %}
-      {{ ui_button(t('bsite.list.open'), 'secondary', href='/apartments/' ~ row.id ~ '/booking-site', size='compact') }}
-    </dd>
-  </div>
-  {% endfor %}
-</dl>
+{% for row in rows %}
+{% call ui_section(row.internal_name) %}
+<div class="ui-btn-group">
+  {% if row.published %}{{ ui_badge('done', t('bsite.list.live')) }}{% else %}{{ ui_badge('neutral', t('bsite.list.off')) }}{% endif %}
+  {{ ui_button(t('bsite.list.open'), 'secondary', href='/apartments/' ~ row.id ~ '/booking-site', size='compact') }}
+</div>
 {% endcall %}
+{% endfor %}
 {% else %}
 <p>{{ t('bsite.list.empty') }}</p>
 {% endif %}
