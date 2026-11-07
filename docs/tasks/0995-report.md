@@ -1,6 +1,8 @@
 # 0995 report
 
-Status: blocked
+Status: review
+
+Note: the #sec-messages deep-link step is deferred (owner decision: out of scope). Its test was removed in 1000 (see known-issues K-U17).
 
 ## Files changed
 - App/app/static/app2.css, App/app/templates/_property_calendars.html, App/app/templates/_property_editor.html, App/app/host_i18n.py, App/app/static/app.js, App/app/templates/base.html (steps 1 to 7)

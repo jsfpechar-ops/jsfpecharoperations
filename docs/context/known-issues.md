@@ -90,6 +90,7 @@
 | K-T01 | Low open | Tests | Order-dependent tests (also 3 in test_host_i18n.py) | [0080](../tasks/0080-report.md) |
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
 | K-PG04 | Low open | scripts/reencrypt_data_key.py | Refuses to write on PG (no verified backup source); fix before the first PG key rotation | 0462 |
+| K-U17 | Low open | Property page, #sec-messages | #sec-messages deep link on the property page lands on the calendars section after late layout shifts (3 scrollIntoView calls run before content settles); needs a re-scroll after layout settles; test attempt removed in 0995. | 0995 |
 
 - K-UI-CACHE: bump `?v=` on edits; 1y cache (0172).
 - K-NAV-418: 3 host_i18n tests fail. K-CHECKIN #435, K-MORE #436 undeployed.
