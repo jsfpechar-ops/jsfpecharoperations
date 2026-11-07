@@ -747,10 +747,10 @@ def test_0984_lock_off_explains_and_offers_one_action(host, base, monkeypatch):
                 assert "Turned off" in block.inner_text()
                 assert "TTLock" in block.inner_text()
                 action = block.locator("a.ui-btn[href='#door-code']")
-                assert action.count() == 1 and action.is_visible()
+                assert action.count() == 0  # 0996: the one action is the setup form's submit below the terms line
                 assert block.locator("form, input, button").count() == 0  # no lock command, no credential edit here
-                fit = page.evaluate(_IN_VIEW_0984, "#lock-setup-state, #lock-setup-state a.ui-btn")
-                assert fit["count"] == 2 and not fit["bad"], fit
+                fit = page.evaluate(_IN_VIEW_0984, "#lock-setup-state")
+                assert fit["count"] == 1 and not fit["bad"], fit
                 assert page.evaluate(_NO_SIDEWAYS_0984) <= 1, width
                 _shot_0984(page, f"lock-off-{width}")
             finally:
