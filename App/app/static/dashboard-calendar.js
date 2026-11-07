@@ -664,7 +664,7 @@
     }
     container.append(el("h3", "cal-detail-property", event.property));
     const placeholder = /^(?:[!⚠]\s*)?(?:closed(?:\s*[-–]\s*not available)?|not available|airbnb\s*\(not available\)|blocked|unavailable)$/iu.test((event.label || "").trim());
-    if (event.label) container.append(el("p", "cal-detail-label", placeholder ? labels.blocked : event.label));
+    if (event.label && !placeholder) container.append(el("p", "cal-detail-label", event.label));
     const facts = el("dl", "cal-detail-facts");
     const guestCount = event.complete === 0 ? labels.no_forms : (event.expected === null ? String(event.complete) : String(event.complete) + " / " + String(event.expected));
     [[labels.arrival, fullDate(event.start)], [labels.departure, fullDate(event.end)],
