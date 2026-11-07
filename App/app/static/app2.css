@@ -466,6 +466,8 @@ body.v2 .stays-how > summary{list-style:none;cursor:pointer;display:inline-flex;
 body.v2 .stays-how > summary::-webkit-details-marker{display:none}
 .stays-links{margin-top:12px}
 .stays-desk .stay-identity-link{display:inline-block;min-height:24px}
+.stays-desk .stay-noname{color:var(--ink3)}
+.stays-desk .stay-noname-action{display:inline-block;margin-left:10px;font-size:13px;color:var(--ink);text-decoration:underline;min-height:24px}
 body.v2 .stays-filter select,body.v2 .stays-filter input:not([type=hidden]){border:1px solid #dcdcd7;border-radius:8px;padding:9px 10px}
 @media (max-width:1023px){
   .stays-head{display:block}
@@ -502,6 +504,7 @@ body.v2 .stays-filter select,body.v2 .stays-filter input:not([type=hidden]){bord
   body.v2 .stays-pager .ui-btn{display:inline-flex;align-items:center}
   body.v2 .stays-panel select,body.v2 .stays-panel input:not([type=hidden]){min-height:44px}
   .stays-desk .stay-identity-link{min-height:44px}
+  .stays-desk .stay-noname-action{min-height:44px;display:inline-flex;align-items:center}
 }
 @media (min-width:1024px){
   body.v2 .stays-filter select,body.v2 .stays-filter input:not([type=hidden]),body.v2 .stays-filter .ui-btn,body.v2 .stays-panel .ui-btn,body.v2 .stays-pager .ui-btn{min-height:36px}
