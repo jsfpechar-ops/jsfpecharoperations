@@ -2894,3 +2894,15 @@ body.v2 .gp-rail-note{display:block;margin-top:var(--space-1);font-weight:400}
 @media (min-width:1024px){body.v2 .stay-fee-guest-fields .gp-switch{min-height:24px}}
 /* 0897: the last word and its "?" are one nowrap box; as an inline-block it keeps the same text baseline as the words before it (inline, the middle-aligned "?" nudged that word by a fraction of a pixel). */
 body.v2 .field-label-row .tip-tail{display:inline-block}
+/* 0993: preview banner, v2 pages do not load app.css */
+body.v2 .impersonation-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 16px;margin:0 0 20px;padding:12px 16px;border:1px solid var(--line);border-radius:12px;background:var(--s)}
+body.v2 .impersonation-copy{flex:1 1 240px;min-width:0;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;font-size:14px}
+body.v2 .impersonation-eyebrow{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--acc-text)}
+body.v2 .impersonation-handle{font-size:13px;color:var(--ink3)}
+body.v2 .impersonation-bar form{margin:0;flex:0 0 auto}
+body.v2 .impersonation-bar .btn{white-space:nowrap}
+/* 0993: dashboard calendar legend and bar tooltips */
+.cal-legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:8px 0 0;font-size:13px;color:var(--ink3)}
+.cal-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:baseline}
+.cal-legend .l-ok i{background:var(--ok)}.cal-legend .l-warn i{background:var(--warn)}.cal-legend .l-grey i{background:#c9c9c3}
+.cd small{display:block;font-size:10px;font-weight:400;color:var(--ink3)}
