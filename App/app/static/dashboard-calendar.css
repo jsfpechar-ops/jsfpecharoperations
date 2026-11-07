@@ -712,7 +712,6 @@ body:has(.dashboard-calendar.has-panel) .havel-fab { display:none !important; }
 .cal-hide { display:none !important; }
 @media (min-width:768px) {
   /* 0891: the 0832 two-row grid head moved to the .cal-head flex row in the 0891 block. */
-  .dashboard-calendar[data-readonly="false"]:has([data-cal-view="calendar"][aria-pressed="true"]):has([data-cal-scale="month"][aria-pressed="true"]) :is([data-cal-month],[data-cal-year]) { display:none; }
   .dashboard-calendar[data-readonly="false"] .cal-heading-actions .cal-settings.btn.soft { background:#f2f2f0; color:var(--ink); height:40px; min-height:40px; }
   .dashboard-calendar[data-readonly="false"] :is(.cal-heading-actions, .cal-toolbar-options) select { height:40px; min-height:40px; }
 }
