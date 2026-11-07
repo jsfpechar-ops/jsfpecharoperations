@@ -3,37 +3,34 @@
 Status: blocked
 
 ## Files changed
-- App/app/static/app2.css (steps 1, 2, 4)
-- App/app/templates/_property_calendars.html (step 3)
-- App/app/templates/_property_editor.html, App/app/host_i18n.py (step 5)
-- App/app/static/app.js (step 6)
-- App/app/templates/base.html (step 7)
+- App/app/static/app2.css, App/app/templates/_property_calendars.html, App/app/templates/_property_editor.html, App/app/host_i18n.py, App/app/static/app.js, App/app/templates/base.html (steps 1 to 7)
 - App/tests/static_versions.json (manifest regenerated)
-- App/tests/test_host_property_deeplink_browser.py (step 8, new)
+- App/tests/test_host_property_deeplink_browser.py (new; step 8; settle-wait added in step 9)
+- App/tests/test_host_property_controls_browser.py (step 9: count 10 to 8, feed-url-details selectors removed, URL asserted visible)
 
-Commits are local only (not pushed, no PR): "0995 step 1", "0995 step 4", "0995 step 2", "0995 step 3", "0995 step 5", "0995 step 6", "0995 step 7", "0995 step 7 manifest", "0995 step 8".
+Local commits only, nothing pushed, no PR. Latest: "0995 step 9" (daaea8c).
 
-## Commands
-1. `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_property_*.py tests/test_host_*.py tests/test_host_geometry.py tests/test_host_property_deeplink_browser.py -q -rs --tb=short -x`
-   Result: 1 failed, 357 passed, stopped at first failure.
-   `E   AssertionError: (390, {'count': 8, 'vw': 390, 'bad': []})` / `assert (8 >= 10)`
-   Cause: test_host_property_controls_browser.py line 832 expects 10 fit elements. The URL collapse is gone, so there are 8. Line 842 selects `.feed-url-details[open] .feed-url-value`, which no longer exists. Fixing this needs a change to that test file, which brief section 3 does not list.
-2. `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_host_property_deeplink_browser.py -q -rs --tb=short`
-   Result: 1 failed. `assert 0 <= summary["y"] <= 900` with `{'y': -426.296875, 'height': 52}` at 1280 x 900. The section summary ends up above the viewport. Not verified: the test checks as soon as details.open is true, possibly before the load-event scroll.
+## Commands (from App/)
+1. `tests/test_host_property_controls_browser.py`: 10 passed, 0 skipped (42 s).
+2. `tests/test_host_property_deeplink_browser.py`: FAILED. `assert 0 <= summary["y"] <= 900` with y = -531 at 1280 x 900, after the scroll-settle wait.
+3. `tests/test_layout_lint_browser.py`: 4 passed, 0 skipped (242 s).
+Not run: the brief's full first and second command sets, context lint, the design-guardrails browser test.
 
-## Not run
-Second command set, context lint, UX gate, screenshots. No screenshots were taken.
+## Deep-link cause (not fixed)
+Instrumented run: scrollIntoView is called on `#sec-messages` three times (host.js revealTarget, app.js openSection on load and on the load event, app.js openTarget). Target is at scrollY 1501 when first scrolled. Afterwards the section's document position moves from about 1501 to 1773 and scrollY keeps rising to about 2300, so the summary ends above the viewport. Content above the section keeps growing after load, and nothing re-scrolls. A minimal fix is not identified; the test is not satisfied.
+
+## Screenshots (property-detail, layout-lint)
+- 390: Guest link card wraps; "Copy link" sits on its own row under the status text. Leon row is below the fold, not checked.
+- 768: "Copy link" sits under the status text in the narrow card, not beside the label. Acceptable, not clipped.
+- 1280: "Copy link" on the same row as the Guest link label and status, right side. Matches the brief.
+Focus ring not captured in these screenshots.
 
 ## Deviations
-- Brief line numbers were off (focus rule at 2600, not 2597; .sc-actions at 2611). All anchors matched verbatim, so I applied them by text.
-- Step 2's flex:1 1 140px went on the `.sc-main` rule (the brief said line 2605, which is a different rule).
-- Step 4 was committed before steps 2 and 3 because of a scripting error. Content matches the brief.
-- The test imports the host and base fixtures from test_host_property_controls_browser.py instead of copying them.
-- The dead `.feed-url-details` rules in app2.css (around lines 2813 to 2817) were left in place.
+- Step 9 test edits go beyond the owner's answer: the removed collapse-click lines and the collapsed-state asserts were dropped, since the URL is now always visible.
+- Commit "0995 step 9" has the trailer Co-Authored-By: Claude Sonnet 5.5.
 
 ## Questions
-1. OK to change line 842 of test_host_property_controls_browser.py (and the count at line 832) to match the new markup?
-2. How should the deep-link test wait for the load-event scroll?
+1. Approve a deeper change to app.js deep-link scrolling (for example, re-scroll after late layout settles), or a different approach?
 
 ## Owner steps left
-None until the questions above are answered.
+None until question 1 is answered.
