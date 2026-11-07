@@ -2502,6 +2502,16 @@ body.v2 .gp .checkline input[type=checkbox]{width:24px;height:24px;min-width:24p
 body.v2 .stay-fee-guest-fields .help-tip{position:relative}
 body.v2 .stay-fee-guest-fields .help-tip-btn{position:relative;width:24px;height:24px;min-width:24px;min-height:24px;padding:0}
 body.v2 .stay-fee-guest-fields .help-tip-btn::before{content:"";position:absolute;top:50%;left:50%;width:3.15rem;height:3.15rem;transform:translate(-50%,-50%)}
+/* Stay fee: optional council details and guest-pay cards need inset fields, not borders on borders. */
+body.v2 #stay-fee-council details.fee-more{margin-top:var(--space-4)}
+body.v2 #stay-fee-council details.fee-more>summary{padding:var(--space-4) var(--space-5)}
+body.v2 #stay-fee-council details.fee-more>.field{margin:0;padding:0 var(--space-5)}
+body.v2 #stay-fee-council details.fee-more>.field:first-of-type{padding-top:var(--space-2)}
+body.v2 #stay-fee-council details.fee-more>.field:last-child{padding-bottom:var(--space-5)}
+body.v2 #stay-fee-council details.fee-more>.field+.field{margin-top:var(--space-4)}
+body.v2 #stay-fee-guest-pay .gp-card{padding:0 var(--space-5) var(--space-5)}
+body.v2 #stay-fee-guest-pay .gp-detail{padding:var(--space-5) 0 0;border-top:1px solid var(--line);margin-top:0}
+body.v2 #stay-fee-guest-pay .gp-detail .field:last-child{margin-bottom:0}
 /* 0945 payments (v2) */
 body.v2 .payments-page h2{font-size:17px;font-weight:700;margin:28px 0 12px}
 body.v2 .payments-box{padding:20px 22px;margin:0 0 16px}
