@@ -85,7 +85,7 @@
 </form>
 {% endif %}
   {%- set wizard_active = setup_progress and not setup_progress.hidden -%}
-  {% if leon_card %}<div class="pv"><a class="r" href="{{ base_url }}/leon{% if leon_card != 'on' %}/setup{% endif %}" data-leon-card="{{ leon_card }}"><span>{{ t('leon_page.title') }}</span>{{ t('leon_page.card.' ~ leon_card) }}</a></div>{% endif %}
+  {% if leon_card %}<div class="pv"><a class="r" href="{{ base_url }}/leon{% if leon_card != 'on' %}/setup{% endif %}" data-leon-card="{{ leon_card }}"><span>{{ t('leon_page.title') }} <small>{{ t('leon_page.card.hint') }}</small></span>{{ t('leon_page.card.' ~ leon_card) }}</a></div>{% endif %}
 {% if readiness and not wizard_active %}<div hidden>
 <section class="readiness">
   <div class="readiness-group">
