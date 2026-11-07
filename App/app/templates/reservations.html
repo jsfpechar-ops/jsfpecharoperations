@@ -207,7 +207,10 @@
       <tr class="clickable-row" data-href="{{ stay_href }}" tabindex="0" role="link"
           aria-label="{{ stay_label }} · {{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}">
         <td data-card="primary" data-label="{{ t('stays.table.guest') }}">
-          <a class="stay-identity-link" href="{{ stay_href }}">{{ lead_name or (reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else t('stays.row.no_name')) }}</a>
+          {% set shown_name = lead_name or (reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else '') %}
+          {% if shown_name %}<a class="stay-identity-link" href="{{ stay_href }}">{{ shown_name }}</a>
+          {% else %}<a class="stay-identity-link stay-noname" href="{{ stay_href }}">{{ t('stays.row.no_name') }}</a>
+          {% if reservation.status == 'active' %}<a class="stay-noname-action" href="/reservations/{{ reservation.id }}/guests/new">{{ t('stays.row.add_guest') }}</a>{% endif %}{% endif %}
           <small>{% if progress.expected is not none or progress.guests %}{{ guest_count(progress) }} &middot; {% else %}<span class="sr-only">{{ t('common.guests_unknown') }}</span>{% endif %}{{ source_badge(reservation.source, source_label(reservation)) }}</small>
         </td>
         <td data-card="meta" data-label="{{ t('stays.table.property') }}">{{ reservation.internal_name }}</td>
