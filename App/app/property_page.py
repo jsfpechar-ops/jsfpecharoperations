@@ -384,4 +384,8 @@ def widget_ready(apartment_id: int) -> bool:
     if not booking_site.site_allowed(int(row["owner_user_id"])):
         return False
     account = stripe_connect.account_for_owner(int(row["owner_user_id"]))
-    return account is not None and account["onboarding_state"] == "complete"
+    if account is not None and account["onboarding_state"] == "complete":
+        return True
+    from . import booking_rails
+
+    return booking_rails.ready(apartment_id)

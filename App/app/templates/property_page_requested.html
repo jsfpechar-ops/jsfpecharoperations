@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ t('pp.book.req_title') }}{% endblock %}
+{% block content %}
+<main class="ui-narrow">
+  <h1>{{ t('pp.book.req_title') }}</h1>
+  <p>{{ t('pp.book.req_lead', dates=dates, total=total) }}</p>
+  {% for r in rails %}
+  <section class="ui-card">
+    {% if r.key == 'iban' %}
+      <h2>{{ t('stay_fees.guest_pay.rail.iban') }}</h2>
+      <p class="ui-mono">{{ r.iban }}</p>
+      <p>{{ t('pp.book.req_vs', vs=r.vs, amount=r.amount) }}</p>
+      <img src="{{ r.qr }}" alt="{{ t('pp.book.req_qr_alt') }}" width="200" height="200">
+    {% elif r.key == 'revolut' %}
+      <h2>{{ t('stay_fees.guest_pay.rail.revolut') }}</h2>
+      <p><a class="ui-btn ui-btn-primary" href="{{ r.link }}" rel="noopener noreferrer" data-no-prefetch>{{ t('pp.book.req_revolut') }}</a></p>
+    {% else %}
+      <h2>{{ t('stay_fees.guest_pay.rail.cash') }}</h2>
+      <p>{{ r.note or t('pp.book.req_cash_default') }}</p>
+    {% endif %}
+  </section>
+  {% endfor %}
+  <p class="ui-sub">{{ t('pp.book.req_hold') }}</p>
+</main>
+{% endblock %}

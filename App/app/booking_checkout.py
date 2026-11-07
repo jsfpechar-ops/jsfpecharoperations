@@ -122,3 +122,48 @@ def start(apartment_id: int, slug: str, q: Dict[str, Any], *,
         owner_user_id=owner,
     )
     return {"url": str(session["url"]), "booking_id": int(booking["id"])}
+
+
+REQUEST_HOURS = 24
+
+
+def start_direct(apartment_id: int, q: Dict[str, Any], *, guest_name: str,
+                 guest_email: str, lang: str) -> Dict[str, Any]:
+    """{"booking": row} or {"error": "taken"|"unavailable"}. Holds the dates for
+    24 hours and stores a `requested` booking. No reservation yet (0998)."""
+    from . import booking_rails
+
+    apartment = db.query_one("SELECT owner_user_id FROM apartment WHERE id = ?", (apartment_id,))
+    if apartment is None or not booking_rails.ready(apartment_id):
+        return {"error": "unavailable"}
+    hold_id = hold_dates(apartment_id, q["date_from"], q["date_to"], minutes=REQUEST_HOURS * 60)
+    if hold_id is None:
+        return {"error": "taken"}
+    expires = (datetime.now(timezone.utc) + timedelta(hours=REQUEST_HOURS)).strftime(
+        "%Y-%m-%dT%H:%M:%SZ")
+    booking = booking_site.create_pending(
+        apartment_id, int(apartment["owner_user_id"]), q, guest_name=guest_name,
+        guest_email=guest_email, lang=lang, hold_id=hold_id, status="requested",
+        pay_method="direct", request_expires_at=expires,
+    )
+    db.audit("site_booking_requested", f"id={booking['id']}",
+             owner_user_id=int(apartment["owner_user_id"]))
+    from . import booking_direct
+
+    booking_direct.notify_request(booking)
+    return {"booking": booking}
+
+
+def expire_requests() -> int:
+    """Scheduler job: requests not confirmed within 24 h expire and free their dates."""
+    now = db.utcnow()
+    rows = db.query(
+        "SELECT id, hold_id FROM site_booking WHERE status = 'requested'"
+        " AND request_expires_at IS NOT NULL AND request_expires_at <= ?", (now,))
+    done = 0
+    for row in rows:
+        if booking_site.set_status(int(row["id"]), "expired"):
+            done += 1
+        if row["hold_id"]:
+            db.execute("DELETE FROM booking_hold WHERE id = ?", (row["hold_id"],))
+    return done

@@ -32,6 +32,15 @@
     <input type="hidden" name="date_to" value="{{ q.date_to }}">
     <input type="hidden" name="guests" value="{{ q.guests }}">
     <input type="hidden" name="lang" value="{{ lang }}">
+    {% if page.pay_modes|length > 1 %}
+    <fieldset class="ui-field">
+      <legend class="ui-label">{{ t('pp.book.pay_mode') }}</legend>
+      <label class="checkline"><input type="radio" name="pay_mode" value="stripe" checked> <span>{{ t('pp.book.mode.stripe') }}</span></label>
+      <label class="checkline"><input type="radio" name="pay_mode" value="direct"> <span>{{ t('pp.book.mode.direct') }}</span></label>
+    </fieldset>
+    {% else %}
+    <input type="hidden" name="pay_mode" value="{{ page.pay_modes[0] if page.pay_modes else 'stripe' }}">
+    {% endif %}
     <button class="ui-btn ui-btn-primary" type="submit">{{ t('pp.book.send_request') }}</button>
   </form>
   <p class="ui-sub">{{ t('pp.book.request_note') }}</p>

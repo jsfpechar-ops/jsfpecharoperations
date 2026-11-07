@@ -15,7 +15,7 @@ from ..templating import render
 from datetime import date
 from urllib.parse import urlencode
 
-from .. import (booking_calendar, booking_cancel, booking_checkout, booking_manage, booking_site,
+from .. import (booking_calendar, booking_cancel, booking_checkout, booking_manage, booking_rails, booking_site,
                 config, db, host_i18n, property_page, rate_limit)
 
 router = APIRouter()
@@ -62,6 +62,7 @@ def property_page_view(request: Request, slug: str):
         page["book_error"] = ""
     if page["bookable"]:
         page["booking"] = _booking_view(slug, apartment_id, lang, request.query_params)
+        page["pay_modes"] = booking_rails.pay_modes(apartment_id, _owner_of(apartment_id))
     # Only the page's own words are translated (owner decision 2 Nov 2026,
     # booking site v1); the host's listing copy stays verbatim.
     return render(request, "property_page.html",
@@ -305,6 +306,10 @@ def _book_error(slug: str, kind: str, lang: str = "cs", form=None) -> Response:
     return RedirectResponse(f"/p/{slug}?{urlencode(query)}#book", status_code=303)
 
 
+def _owner_of(apartment_id: int) -> int:
+    return int(db.query_one("SELECT owner_user_id FROM apartment WHERE id = ?", (apartment_id,))["owner_user_id"])
+
+
 @router.post("/p/{slug}/checkout")
 async def property_page_checkout(request: Request, slug: str):
     """Hold + pending booking + Stripe session, then a page with one link to
@@ -338,6 +343,24 @@ async def property_page_checkout(request: Request, slug: str):
     # A page opened before the terms text changed must not be accepted.
     if str(form.get("terms_version") or booking_site.TERMS_VERSION) != booking_site.TERMS_VERSION:
         return _book_error(slug, "terms", lang, form)
+    mode = str(form.get("pay_mode") or "stripe")
+    modes = booking_rails.pay_modes(apartment_id, _owner_of(apartment_id))
+    if mode not in modes:
+        return _book_error(slug, "unavailable", lang, form)
+    if mode == "direct":
+        sent = booking_checkout.start_direct(apartment_id, q, guest_name=name,
+                                             guest_email=email, lang=lang)
+        if sent.get("error"):
+            return _book_error(slug, sent["error"], lang, form)
+        booking = sent["booking"]
+        response = render(request, "property_page_requested.html", {
+            "page": _page_context(apartment_id) or {}, "show_nav": False, "lang": lang,
+            "booking": booking, "rails": booking_rails.guest_view(apartment_id, booking),
+            "dates": f"{q['date_from']} – {q['date_to']}", "total": q["total_czk"],
+        })
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["X-Robots-Tag"] = "noindex"
+        return response
     result = booking_checkout.start(apartment_id, slug, q, guest_name=name,
                                     guest_email=email, lang=lang)
     if result.get("error"):
