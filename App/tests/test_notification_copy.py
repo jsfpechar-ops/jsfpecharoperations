@@ -44,9 +44,9 @@ def test_deadline_reason_is_one_compact_line():
     now = datetime(2026, 9, 15, 12, 0)
     en = alerts.deadline_reason("en", check_in, progress, now=now)
     cs = alerts.deadline_reason("cs", check_in, progress, now=now)
-    assert " · " in en and "0/2" in en
+    assert " · " in en and "0 of 2" in en
     assert "Overdue" in en
-    assert " · " in cs and "0/2" in cs
+    assert " · " in cs and "0 z 2" in cs
     assert "Po termínu" in cs
     assert "guest form" not in en.lower()
     assert "Status:" not in en
@@ -112,7 +112,7 @@ def test_present_rebuilds_stay_title_with_czech_dates(monkeypatch):
     assert "stay from" not in shown["display_title"]
     assert "Status:" not in shown["display_detail"]
     assert "guest form" not in shown["display_detail"].lower()
-    assert "0/2" in shown["display_detail"]
+    assert "0 of 2" in shown["display_detail"]
 
     shown_cs = alerts.present(alert, "cs")
     assert "Karlín Loft (demo)" in shown_cs["display_title"]

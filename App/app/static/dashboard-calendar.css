@@ -906,3 +906,8 @@ body.v2 #calendar.dashboard-calendar[data-readonly="false"] .cal-pill[data-cal-c
   /* A keyboard ring that shows on the dark bars and badges and on the white and dark tiles. */
   body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="false"] :is(.cal-pill, .cal-pill-more):focus-visible { outline:2px solid #fff; outline-offset:0; box-shadow:0 0 0 4px #222; }
 }
+/* 0998: mobile polish. No UA focus box on the scripted-focus body, calm close-button focus, room under the last row for the floating buttons. */
+.dashboard-calendar .cal-body:focus{outline:0}
+.dashboard-calendar .cal-dialog button.cal-close:focus:not(:focus-visible){outline:0;box-shadow:none}
+.dashboard-calendar .cal-dialog button.cal-close:focus-visible{outline:0;box-shadow:var(--focus-ring-2)}
+@media (max-width:767px){.dashboard-calendar .cal-body{padding-bottom:140px}}

@@ -12,7 +12,9 @@
 from __future__ import annotations
 
 import base64
+import io
 import re
+import zipfile
 
 import pytest
 from fastapi.testclient import TestClient
@@ -339,7 +341,56 @@ def test_stay_page_offers_the_doručenka(client, seeded):
     db.execute("DELETE FROM guest WHERE id = ?", (seeded["pending"],))
     db.update("reservation", seeded["reservation"], {"declared_guests": 2})
     page = client.get(f"/reservations/{seeded['reservation']}?lang=en").text
-    assert f'href="/submissions/{seeded["with_pdf"]}/receipt.pdf">Download Doručenka (PDF)</a>' in page
+    assert f'href="/reservations/{seeded["reservation"]}/dorucenka.zip">Download Doručenka (PDF)</a>' in page
+
+
+def _second_receipt(seeded):
+    now = db.utcnow()
+    apartment = db.query_one(
+        "SELECT apartment_id FROM reservation WHERE id = ?", (seeded["reservation"],)
+    )["apartment_id"]
+    second = db.insert(
+        "submission",
+        {
+            "apartment_id": apartment,
+            "created_at": now,
+            "finished_at": now,
+            "state": "ok",
+            "guest_ids": f"[{seeded['by_hand']}]",
+            "receipt_pdf": base64.b64encode(b"%PDF-1.4 second").decode(),
+            "pseudo_stamp": "C94208F8-DA48-4F07-BBF9-95CB757B41F7",
+        },
+    )
+    db.update("guest", seeded["by_hand"], {"submission_id": second})
+    return second
+
+
+def test_stay_receipts_with_one_receipt_is_the_pdf(client, seeded):
+    response = client.get(f"/reservations/{seeded['reservation']}/dorucenka.zip")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert response.content == b"%PDF-1.4 receipt"
+
+
+def test_stay_receipts_with_two_receipts_is_a_zip_of_two(client, seeded):
+    second = _second_receipt(seeded)
+    response = client.get(f"/reservations/{seeded['reservation']}/dorucenka.zip")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/zip"
+    names = zipfile.ZipFile(io.BytesIO(response.content)).namelist()
+    assert len(names) == 2
+    assert all(re.fullmatch(r"dorucenka-\d+-\d{4}-\d{2}-\d{2}\.pdf", n) for n in names)
+    assert any(n.startswith(f"dorucenka-{seeded['with_pdf']}-") for n in names)
+    assert any(n.startswith(f"dorucenka-{second}-") for n in names)
+
+
+def test_stay_receipts_of_another_hosts_stay_are_denied(client, seeded):
+    auth.create_account("wp25-other@example.test", "WP25 Other", username="wp25-other")
+    other = TestClient(app)
+    assert login_as(other, "wp25-other", url="/login?lang=en", follow_redirects=False).status_code == 303
+    response = other.get(f"/reservations/{seeded['reservation']}/dorucenka.zip")
+    assert response.status_code == 404
+    assert b"%PDF" not in response.content
 
 
 # --- house book -------------------------------------------------------------
