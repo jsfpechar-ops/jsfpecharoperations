@@ -679,8 +679,12 @@ def test_fee_card_shows_with_qr_rail_open_and_enabled_rails(live_server, browser
         assert card.count() == 1, page.inner_text("body")[:400]
         assert card.is_visible()
         assert card.locator("details.g-summary").filter(has=page.locator(".g-fee-rail")).count() == 3
+        assert card.get_by_text("Please pay now.").is_visible()
+        assert card.locator("details.g-fee-fold").count() == 2
         if width == 390:
             _shot_0958(page, "guest-hub-fee-card-390.png")
+        if width == 768:
+            _shot_0958(page, "guest-hub-fee-card-768.png")
         assert card.locator("details[open] .g-fee-qr-img").count() == 1
         assert card.locator(".g-fee-qr-img").is_visible()
         qr_rail = card.locator("details.g-summary").filter(has=page.locator(".g-fee-qr-img"))
@@ -779,7 +783,8 @@ def test_fee_card_absent_when_the_fee_is_zero(live_server, browser, monkeypatch)
         page.close()
 
 
-def test_form_estimate_line_shows_when_the_estimate_is_above_zero(live_server, browser, monkeypatch):
+@pytest.mark.parametrize("width", [390, 768])
+def test_form_estimate_line_shows_when_the_estimate_is_above_zero(live_server, browser, monkeypatch, width):
     """The estimate is computed from the entered values, so the form is posted with them
     (noValidate skips the browser's required checks; the server re-renders with the values)."""
     from app import config
@@ -793,7 +798,7 @@ def test_form_estimate_line_shows_when_the_estimate_is_above_zero(live_server, b
     monkeypatch.setattr(mail, "mail_enabled", lambda: False)
     token = f"browser-fee-estimate-{secrets.token_hex(4)}"
     stay = _fee_seed(token, signed=False)
-    page = browser.new_page(viewport={"width": 390, "height": 800})
+    page = browser.new_page(viewport={"width": width, "height": 800})
     try:
         page.goto(f"{live_server}/l/{token}/{stay}/new?lang=en")
         page.evaluate("""() => {
@@ -806,9 +811,15 @@ def test_form_estimate_line_shows_when_the_estimate_is_above_zero(live_server, b
         # (noValidate above keeps the browser's required checks out of the way).
         with page.expect_navigation():
             page.evaluate("() => document.querySelector('form[action*=\"/save\"]').requestSubmit()")
+        assert page.locator("#legal-notice #fee-estimate").count() == 0
+        assert page.evaluate("""() => document.getElementById('fee-estimate').compareDocumentPosition(document.getElementById('legal-notice')) & Node.DOCUMENT_POSITION_FOLLOWING""")
+        assert page.get_by_text("You do not pay now.").is_visible()
         assert page.locator("#fee-estimate").count() == 1
         assert page.locator("#fee-estimate").is_visible()
-        _shot_0958(page, "form-estimate-390.png")
+        if width == 390:
+            _shot_0958(page, "form-estimate-390.png")
+        if width == 768:
+            _shot_0958(page, "form-estimate-768.png")
     finally:
         page.close()
 
