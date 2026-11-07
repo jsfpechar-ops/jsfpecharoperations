@@ -94,12 +94,13 @@
   {% set wd = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'] if lang == 'cs' else ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'] %}
   <div class="scroll-x ov-cal-block{{ ' ph-hide cal-hide' if cal_view }}">
   <div class="card cal ov-section">
-    <div class="cgrid"><div></div>{% for d in cal_days %}<div class="cd{{ ' today' if loop.first }}">{{ wd[d.weekday()] }} {{ d.day }}</div>{% endfor %}</div>
+    <div class="cgrid"><div></div>{% for d in cal_days %}<div class="cd{{ ' today' if loop.first }}">{{ wd[d.weekday()] }} {{ d.day }}{% if loop.first or d.day == 1 %}<small>{{ d.day }}.{{ d.month }}.</small>{% endif %}</div>{% endfor %}</div>
     {% for row in cal_rows %}
-    <div class="cgrid crow"><div class="cn" title="{{ row.name }}">{{ row.name }}</div>{% for bar in row.bars %}<a class="bar {{ bar.css }}" data-c1="{{ bar.col_start }}" data-c2="{{ bar.col_end }}" data-row="{{ bar.row }}"{% if bar.overdue %} data-overdue{% endif %} href="{{ bar.url }}">{{ bar.label }}</a>{% endfor %}</div>
+    <div class="cgrid crow"><div class="cn" title="{{ row.name }}">{{ row.name }}</div>{% for bar in row.bars %}<a class="bar {{ bar.css }}" data-c1="{{ bar.col_start }}" data-c2="{{ bar.col_end }}" data-row="{{ bar.row }}" title="{{ bar.title }}"{% if bar.overdue %} data-overdue{% endif %} href="{{ bar.url }}">{{ bar.label }}</a>{% endfor %}</div>
     {% endfor %}
   </div>
   </div>
+  <p class="cal-legend ov-cal-block{{ ' ph-hide cal-hide' if cal_view }}"><span class="l-ok"><i></i>{{ t('dashboard.calendar.legend.done') }}</span><span class="l-warn"><i></i>{{ t('dashboard.calendar.legend.action') }}</span><span class="l-grey"><i></i>{{ t('dashboard.calendar.legend.grey') }}</span></p>
   <p class="ov-cal-more ov-cal-block{{ ' ph-hide cal-hide' if cal_view }}"><a href="/?cal_view=calendar" class="ov-cal-link">{{ t('dashboard.calendar.full') }}</a></p>
   {% if cal_view %}{% include "_dashboard_calendar.html" %}{% endif %}
 
