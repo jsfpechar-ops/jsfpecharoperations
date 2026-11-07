@@ -495,6 +495,30 @@ def _bsite_apartment(request: Request, apartment_id: int):
     return row, owner_id
 
 
+@router.get("/booking-sites")
+def booking_sites(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    owner_id = access.owner_id(request)
+    from .. import booking_site
+
+    rows = db.query(
+        "SELECT a.id, a.internal_name, COALESCE(p.published, 0) AS published "
+        "FROM apartment a LEFT JOIN property_page p ON p.apartment_id = a.id "
+        f"WHERE {db.null_safe_eq('a.owner_user_id')} AND a.archived_at IS NULL AND a.active = 1 "
+        "ORDER BY a.internal_name, a.id",
+        (owner_id,),
+    )
+    if len(rows) == 1:
+        return RedirectResponse(f"/apartments/{rows[0]['id']}/booking-site", status_code=303)
+    return render(
+        request,
+        "booking_sites.html",
+        {"nav": "booking_sites", "rows": rows, "allowed": booking_site.site_allowed(owner_id)},
+    )
+
+
 @router.get("/apartments/{apartment_id}/booking-site")
 def booking_site_setup(request: Request, apartment_id: int):
     guard = auth.require_login(request)
@@ -507,7 +531,7 @@ def booking_site_setup(request: Request, apartment_id: int):
     from .. import payments as payments_mod
 
     context: Dict[str, Any] = {
-        "nav": "properties", "apartment": apartment,
+        "nav": "booking_sites", "apartment": apartment,
         "allowed": booking_site.site_allowed(owner_id),
     }
     if context["allowed"]:

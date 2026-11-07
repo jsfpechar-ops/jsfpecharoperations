@@ -1,0 +1,31 @@
+{% extends "host_page.html" %}
+{% from "_ui.html" import ui_button, ui_badge with context %}
+{% from "_ui_layout.html" import ui_section, ui_banner with context %}
+{% set nav = 'booking_sites' %}
+{% set body_kind = 'list' %}
+{% block title %}{{ t('bsite.title') }}{% endblock %}
+{% block primary_action %}{% endblock %}
+{% block tabs %}{% endblock %}
+{% block toolbar %}{% endblock %}
+{% block body %}
+{% if not allowed %}
+{{ ui_banner('attention', t('bsite.max_only'), t('bsite.max_cta'), '/predplatne') }}
+{% endif %}
+{% if rows %}
+{% call ui_section(t('bsite.title')) %}
+<dl class="ui-facts">
+  {% for row in rows %}
+  <div>
+    <dt>{{ row.internal_name }}</dt>
+    <dd>
+      {% if row.published %}{{ ui_badge('done', t('bsite.list.live')) }}{% else %}{{ ui_badge('neutral', t('bsite.list.off')) }}{% endif %}
+      {{ ui_button(t('bsite.list.open'), 'secondary', href='/apartments/' ~ row.id ~ '/booking-site', size='compact') }}
+    </dd>
+  </div>
+  {% endfor %}
+</dl>
+{% endcall %}
+{% else %}
+<p>{{ t('bsite.list.empty') }}</p>
+{% endif %}
+{% endblock %}
