@@ -1217,6 +1217,10 @@
     ],
     "App/app/templates/admin_operations.html": [
       "checkline"
+    ],
+    "App/app/templates/booking_site_setup.html": [
+      "checkline",
+      "gp-check"
     ]
   },
   "enforced_stylesheets": [
