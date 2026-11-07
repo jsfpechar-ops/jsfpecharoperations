@@ -37,6 +37,21 @@ def test_property_deeplink_opens_guest_experience_and_card_row(host, base):
             page.wait_for_function(
                 "() => { const d = document.getElementById('sec-messages'); return d && d.open; }"
             )
+            # Wait for the deep-link scroll to settle: scrollY unchanged for two frames, or give up after 3 s.
+            page.wait_for_function(
+                """() => new Promise(resolve => {
+                    let last = -1, stable = 0;
+                    const start = performance.now();
+                    const tick = () => {
+                        const y = window.scrollY;
+                        if (y === last) stable += 1; else { stable = 0; last = y; }
+                        if (stable >= 2 || performance.now() - start > 3000) return resolve(true);
+                        requestAnimationFrame(tick);
+                    };
+                    requestAnimationFrame(tick);
+                })""",
+                timeout=5000,
+            )
             # The section summary must sit inside the viewport after the deep link scroll.
             summary = page.locator("#sec-messages > summary").first.bounding_box()
             assert summary is not None
