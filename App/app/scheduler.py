@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import fcntl
 import functools
+from datetime import datetime, timezone
 import logging
 import threading
 import time
@@ -105,13 +106,46 @@ def job_intervals() -> dict:
 
 JOB_LAST_OK_PREFIX = "job_last_ok:"
 
+# A job that runs more often than this records its last success at most once
+# per window. Writing every run turned the settings table into a hot table
+# (about 2,200 updates a day, 0990). The Operations page adds the same window
+# to its late threshold, see ``late_after_minutes``.
+LAST_OK_WRITE_MINUTES = 15
+
+
+def late_after_minutes(interval_minutes: int) -> int:
+    """Age in minutes after which a job's last success counts as late."""
+    slack = LAST_OK_WRITE_MINUTES if interval_minutes < LAST_OK_WRITE_MINUTES else 0
+    return 2 * interval_minutes + slack
+
+
+def _last_ok_is_fresh(job_id: str, key: str) -> bool:
+    """True when the stored success is younger than the write window."""
+    minutes = job_intervals().get(job_id)
+    if minutes is None or minutes >= LAST_OK_WRITE_MINUTES:
+        return False
+    stored = db.get_setting(key)
+    if not stored:
+        return False
+    try:
+        parsed = datetime.fromisoformat(stored)
+    except ValueError:
+        return False
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    age = (datetime.now(timezone.utc) - parsed).total_seconds()
+    return 0 <= age < LAST_OK_WRITE_MINUTES * 60
+
 
 def _job_ok(job_id: str) -> None:
     alerts.resolve(f"job_failed:{job_id}")
     # Nothing else records a successful run, and a scheduler that silently
     # stopped looks exactly like one with nothing to do (WP10).
+    key = f"{JOB_LAST_OK_PREFIX}{job_id}"
     try:
-        db.set_setting(f"{JOB_LAST_OK_PREFIX}{job_id}", db.utcnow())
+        if _last_ok_is_fresh(job_id, key):
+            return
+        db.set_setting(key, db.utcnow())
     except Exception:
         log.warning("could not record the last success of job %s", job_id, exc_info=True)
 

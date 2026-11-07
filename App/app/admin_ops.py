@@ -231,7 +231,7 @@ def job_health() -> Dict[str, Any]:
                 "interval_minutes": minutes,
                 "last_ok": last_ok,
                 "age_minutes": age,
-                "late": age is None or age > 2 * minutes,
+                "late": age is None or age > scheduler.late_after_minutes(minutes),
                 "failed": failed_at is not None,
                 "failed_age_minutes": age_minutes(failed_at, now),
             }
