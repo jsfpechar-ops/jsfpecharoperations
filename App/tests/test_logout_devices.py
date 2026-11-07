@@ -104,3 +104,70 @@ def test_bank_details_change_needs_a_recent_login(monkeypatch):
 
     assert response.status_code == 303
     assert _recent_login_redirect(response)
+
+
+def _entity_for(username: str, **fields) -> int:
+    owner_id = db.query_one("SELECT id FROM user_account WHERE username = ?", (username,))["id"]
+    values = {
+        "name": "Devices s.r.o.",
+        "owner_user_id": owner_id,
+        "bank_account": "123/0600",
+        "iban": "CZ9106000000000000000123",
+        "created_at": db.utcnow(),
+    }
+    values.update(fields)
+    return db.insert("legal_entity", values)
+
+
+def test_identity_post_cannot_change_bank_with_a_stale_session(monkeypatch):
+    """POST /entities/{id} also writes bank_account; 0947 only guarded /invoice."""
+    username = _new_host()
+    entity_id = _entity_for(username)
+    client = _signed_in(username)
+    monkeypatch.setattr(auth, "FRESH_LOGIN_SECONDS", -1)
+
+    stolen = client.post(
+        f"/entities/{entity_id}",
+        data={"name": "Devices s.r.o.", "bank_account": "19-2000781379/0800"},
+        follow_redirects=False,
+    )
+
+    assert stolen.status_code == 303
+    assert _recent_login_redirect(stolen)
+    row = db.query_one("SELECT bank_account, iban FROM legal_entity WHERE id = ?", (entity_id,))
+    assert row["bank_account"] == "123/0600"
+    assert row["iban"] == "CZ9106000000000000000123"
+
+
+def test_identity_post_still_saves_the_name_when_the_session_is_stale(monkeypatch):
+    username = _new_host()
+    entity_id = _entity_for(username)
+    client = _signed_in(username)
+    monkeypatch.setattr(auth, "FRESH_LOGIN_SECONDS", -1)
+
+    response = client.post(
+        f"/entities/{entity_id}",
+        data={"name": "Renamed s.r.o."},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert not _recent_login_redirect(response)
+    assert db.query_one("SELECT name FROM legal_entity WHERE id = ?", (entity_id,))["name"] == "Renamed s.r.o."
+
+
+def test_identity_post_changes_bank_when_the_login_is_fresh():
+    username = _new_host()
+    entity_id = _entity_for(username)
+    client = _signed_in(username)
+
+    response = client.post(
+        f"/entities/{entity_id}",
+        data={"name": "Devices s.r.o.", "bank_account": "19-2000781379/0800"},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert not _recent_login_redirect(response)
+    row = db.query_one("SELECT bank_account FROM legal_entity WHERE id = ?", (entity_id,))
+    assert row["bank_account"] == "19-2000781379/0800"
