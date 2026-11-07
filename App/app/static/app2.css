@@ -2930,3 +2930,13 @@ body.v2 .checkline{display:flex;gap:10px;align-items:flex-start;font-size:14px;m
 body.v2 .checkline input{width:auto;margin-top:3px;accent-color:var(--acc)}
 body.v2 #smart-locks-setup form{display:grid;gap:4px;justify-items:start}
 @media (max-width:599px){body.v2 .ui-dialog.signature-dialog{width:calc(100vw - 16px)}body.v2 .ui-dialog.signature-dialog .ui-sheet{padding:12px}}
+/* 0999: Havel panel restyle. Scoped to the dialog so the /havel page keeps its own list. */
+body.v2 .havel-dialog .ui-sheet{border-radius:22px 22px 0 0;box-shadow:0 -6px 28px rgba(20,20,18,.14),0 2px 8px rgba(20,20,18,.06)}
+@media (min-width:768px){body.v2 .havel-dialog .ui-sheet{border-radius:22px}}
+body.v2 .havel-dialog .havel-topics .havel-chips{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+body.v2 .havel-dialog .havel-topics .havel-chips>.havel-chip[data-havel-topic-link]:not([data-havel-ask-open]){display:flex;align-items:center;gap:10px;box-sizing:border-box;min-height:48px;padding:8px 12px;border-radius:14px;border:1px solid var(--line);background:var(--sand-50);color:var(--ink);font-weight:500;font-size:var(--size-15);line-height:1.25;text-align:left;white-space:normal;overflow-wrap:anywhere}
+body.v2 .havel-dialog .havel-topics .havel-chips>.havel-chip:hover{background:var(--sand-100);color:var(--ink)}
+body.v2 .havel-dialog .havel-chip-ico{flex:none;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:var(--coral-100);color:var(--accent-ink)}
+body.v2 .havel-dialog .havel-chip-text{min-width:0}
+body.v2 .havel-dialog .havel-close{width:44px;height:44px;min-width:44px;min-height:44px;border-radius:50%;background:var(--sand-150);color:var(--ink)}
+body.v2 .havel-dialog .havel-close:focus-visible{outline:0;box-shadow:var(--focus-ring-2)}
