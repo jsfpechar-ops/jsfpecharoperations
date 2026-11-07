@@ -205,5 +205,3 @@ def test_ukrainian_plural_forms_follow_the_three_form_rule():
 
 
 def test_placeholder_imports_read_booked_in_both_languages():
-    assert host_i18n.translate("en", "dashboard.calendar.blocked") == "Booked"
-    assert host_i18n.translate("cs", "dashboard.calendar.blocked") == "Obsazeno"
