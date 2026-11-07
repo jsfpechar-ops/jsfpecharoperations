@@ -1,5 +1,17 @@
 # Batch report (PR #803 stack)
 
+## Handoff (composer-2.5, 2026-11-08 UTC)
+
+**Context rule (owner):** On **composer-2.5**, start a new chat at ~**160k context** (replaces the old 60k checkpoint for this model). Before handover: **push** the branch and append a short note here (done / in progress / branch).
+
+| Item | State |
+|------|--------|
+| **Briefs done** | **1001–1005** (PR #803 review fixes), merged with `origin/task/0999-property-rules-map` |
+| **Brief in progress** | None |
+| **Branch** | `task/0999-property-rules-map` @ `ddc30f99` (pushed; tracks `origin`) |
+| **PR** | [#803](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/803) — ready for CI/coordinator PR-body sync from “Review fixes” below |
+| **Next chat** | Await owner on **24h cash hold**; optional dedicated `100x-report.md` files; confirm CI `test-postgres` on PR |
+
 ## 1000: Property page photo reorder
 
 Status: review
