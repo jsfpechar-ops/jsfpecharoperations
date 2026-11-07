@@ -607,9 +607,11 @@ def test_0960_fee_card_says_why_and_asks_to_pay_in_plain_text(host, monkeypatch)
     complete_guest_claim(guest, token, stay, party_size=1)
     assert _guest_saves(guest, token, stay).status_code == 303
     en = guest.get(f"/l/{token}/{stay}?lang=en").text
-    assert "This is a local stay fee required by Czech law (Act No. 565/1990 Coll.)" in en
-    assert en.index("This is a local stay fee") < en.index('class="g-fee-amount"')
+    assert "Please pay now." in en
+    assert "Czech towns charge a small fee for each night you stay." in en
+    assert en.index('class="g-fee-amt"') < en.index("Please pay now.")
     assert "Why this fee applies" not in en
     cs = guest.get(f"/l/{token}/{stay}?lang=cs").text
-    assert "místní poplatek z pobytu, který ukládá zákon č. 565/1990 Sb." in cs
+    assert "Zaplaťte prosím teď." in cs
+    assert "Česká města vybírají malý poplatek za každou noc pobytu." in cs
     assert "Proč tento poplatek platíte" not in cs

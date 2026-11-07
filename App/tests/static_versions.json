@@ -28,8 +28,8 @@
     "v": "20261106-pr790-ux-js"
   },
   "app2.css": {
-    "sha256": "079ae1ffc3e7b9fbe2d7c5c8d501730d7519c4eed32b32cee1902e5ada1ae729",
-    "v": "20261106-pr790-ocr-tip2"
+    "sha256": "3e2000af5199f0200d651e61666289aae4c7da2a7ec3201f06112c1360b4f672",
+    "v": "20261107-prop-sec-collapse"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -92,8 +92,8 @@
     "v": "20261025-0393b"
   },
   "guest.css": {
-    "sha256": "70eb4a8e8d52087c9f5672501e8aa59cbdd3da6fdc58bfc103892847b0fceb46",
-    "v": "20261106-0977"
+    "sha256": "08a3f2e0c7ae68671038671b7a0e1418e92e0c5f2c46236d6b5c4502e79be8df",
+    "v": "20261107-0994"
   },
   "guide.js": {
     "sha256": "7bc163abd236d8032c1f7a094aadf4993774920b24b4a0817768dd27fa0cefab",
