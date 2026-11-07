@@ -1604,43 +1604,49 @@ details.g-summary > .g-summary-body { padding: 16px 20px 18px; }
 .g-fee-qr .g-summary-list { flex: 1 1 180px; min-width: 0; }
 .g-fee-payee { margin: 8px 0 0; }
 
-/* Form stay-fee estimate: quiet panel + legal fold aligned with .g-legal-text */
-.g-fee-estimate { padding: 22px 20px 20px; }
-.g-fee-estimate-head { margin-bottom: 14px; }
-.g-fee-estimate-head h2 { margin-bottom: 6px; }
-.g-fee-estimate-kicker {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.45;
-  color: var(--g-muted);
-}
-.g-fee-estimate-panel {
-  box-sizing: border-box;
-  padding: 18px 16px 16px;
-  border: 1px solid var(--g-line);
-  border-radius: 12px;
-  background: var(--g-surface-2, #f6f6f4);
-  text-align: center;
-}
-.g-fee-estimate-panel .g-fee-amount {
+/* Form stay-fee estimate sits inside #legal-notice (not a pay card). */
+.g-fee-estimate-inline {
   margin: 0 0 4px;
-  font-size: 2.05rem;
-  letter-spacing: -0.03em;
+  padding: 14px 0 16px;
+  border-top: 1px solid var(--g-line);
 }
-.g-fee-estimate-meta {
+.g-fee-estimate-inline-title {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--g-ink);
+  letter-spacing: -0.01em;
+}
+.g-fee-estimate-badge {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--g-muted);
+  text-transform: lowercase;
+}
+.g-fee-estimate-facts {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+.g-fee-estimate-facts dd strong {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--g-ink);
+}
+.g-fee-estimate-legal-ref {
   margin: 0;
   font-size: 13.5px;
-  line-height: 1.4;
-  color: var(--g-muted);
 }
-.g-fee-estimate-legal { margin-top: 14px; }
-.g-fee-estimate-legal > summary {
-  margin-top: 0;
+.g-legal-fee-jump {
+  color: var(--g-accent);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.g-legal-notice:has(.g-fee-estimate-inline) .g-legal-text > summary {
   border-top: 0;
+  margin-top: 0;
   padding-top: 0;
 }
-.g-fee-estimate-legal .g-intro { font-size: 14px; margin-bottom: 12px; }
-.g-fee-estimate-legal .g-law { margin: 0; font-size: 13.5px; }
 /* Hub stay-fee card */
 #fee-pay .g-fee-amount { margin-bottom: 4px; }
 #fee-pay details.g-summary.g-fee-legal-fold { margin-top: 12px; }

@@ -35,6 +35,8 @@
     {% endif %}
   </details>
 
+  {% if fee_estimate %}{% include "guest/_fee_estimate_inline.html" %}{% endif %}
+
   <div class="g-field legal-ack">
     <label class="checkline" for="legal_ack">
       <input type="checkbox" id="legal_ack" name="legal_ack" value="1" required

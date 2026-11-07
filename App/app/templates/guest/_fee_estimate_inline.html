@@ -1,0 +1,24 @@
+{# Brief 0910: estimate lives inside #legal-notice, not a separate payment card. #}
+{% set fee_amount = t('fee_amount', amount=fee_estimate.amount) %}
+<div class="g-fee-estimate-inline" id="fee-estimate">
+  <h3 class="g-fee-estimate-inline-title">{{ t('fee_estimate_title') }} <span class="g-fee-estimate-badge">{{ t('fee_estimate_badge') }}</span></h3>
+  <dl class="g-summary-list g-fee-estimate-facts">
+    <div>
+      <dt>{{ t('fee_estimate_row_amount') }}</dt>
+      <dd><strong>{{ fee_amount }}</strong></dd>
+    </div>
+    <div>
+      <dt>{{ t('fee_estimate_row_basis') }}</dt>
+      <dd>{{ t('fee_estimate_nights', days=fee_estimate.days, rate=fee_estimate.rate) }}</dd>
+    </div>
+    <div>
+      <dt>{{ t('fee_estimate_row_payment') }}</dt>
+      <dd>{{ t('fee_estimate_when') }}</dd>
+    </div>
+  </dl>
+  {% if fee_notice %}
+    <p class="g-fee-estimate-legal-ref g-intro">
+      <a href="#legal-fee-section" class="g-legal-fee-jump" data-legal-fee-jump>{{ t('fee_estimate_see_law') }}</a>
+    </p>
+  {% endif %}
+</div>

@@ -426,6 +426,26 @@ function initSignature() {
     });
   }
 
+
+  function initLegalFeeJump() {
+    document.querySelectorAll("[data-legal-fee-jump]").forEach(function (link) {
+      link.addEventListener("click", function (event) {
+        var card = link.closest("#legal-notice");
+        if (!card) return;
+        var details = card.querySelector("details.g-legal-text");
+        var target = card.querySelector("#legal-fee-section");
+        if (!details || !target) return;
+        event.preventDefault();
+        details.open = true;
+        target.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        if (typeof target.focus === "function") {
+          if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+          target.focus({ preventScroll: true });
+        }
+      });
+    });
+  }
+
   function focusFirstError() {
     var first = document.querySelector(".g-field .bad, .g-sign .err:not(:empty)");
     if (!first) return;
@@ -745,6 +765,7 @@ function initSignature() {
     initErrorSummary();
     initGuestReview();
     initLegalAck();
+    initLegalFeeJump();
     focusFirstError();
   });
 })();

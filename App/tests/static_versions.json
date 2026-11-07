@@ -92,8 +92,8 @@
     "v": "20261025-0393b"
   },
   "guest.css": {
-    "sha256": "3feec64516fda96fbe05a2194a720314633ad0c7e641904442125e031ae4a21f",
-    "v": "20261107-fee-form-v2"
+    "sha256": "251378e08896ef2a23a647987e1dfc40884934f722a30aaa0218d65bfa61ef27",
+    "v": "20261107-fee-legal-merge"
   },
   "guide.js": {
     "sha256": "7bc163abd236d8032c1f7a094aadf4993774920b24b4a0817768dd27fa0cefab",
@@ -160,8 +160,8 @@
     "v": "20261025-0373"
   },
   "signature.js": {
-    "sha256": "6bd9881a563e83234768c096eb9e49ac31ff684b97a75f332946d100f11b3467",
-    "v": "20261106-0977"
+    "sha256": "39b3ba8f96fb4bd8bf2e4d08786157f566aafffdbe18212f822d3ded27534ae0",
+    "v": "20261107-fee-legal-merge"
   },
   "skeleton.css": {
     "sha256": "4685a64e9b7d3fc56680e55c6772d6d8b6c9dcaf8c9b1655ec0d17cebe70d46f",
