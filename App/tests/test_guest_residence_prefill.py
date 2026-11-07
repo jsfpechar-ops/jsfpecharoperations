@@ -186,6 +186,7 @@ def test_the_address_comes_from_the_most_recent_completed_guest():
         }
         assert values.get("surname") == "SMITH"
         assert "first_name" not in values and "birth_date" not in values
+        assert "stay_from" not in values and "stay_to" not in values
         assert name == "John Paul Smith"
     finally:
         _cleanup()
@@ -297,6 +298,81 @@ def test_the_address_fields_use_the_autocomplete_tokens_that_fit_them():
         assert "street-address" not in street
         country = re.search(r"<select[^>]*id=\"res_country\"[^>]*>", page).group(0)
         assert 'autocomplete="country"' in country
+    finally:
+        _cleanup()
+
+
+def _hidden_stay_dates(page: str) -> tuple[str, str]:
+    stay_from = re.search(r'name="stay_from"[^>]*value="([^"]*)"', page, re.S)
+    stay_to = re.search(r'name="stay_to"[^>]*value="([^"]*)"', page, re.S)
+    assert stay_from and stay_to, "hidden stay date fields missing from the guest form"
+    return stay_from.group(1), stay_to.group(1)
+
+
+def _person_one_left_early(reservation, guest_id) -> str:
+    """Host/calendar shortened person 1 inside the live booking window."""
+    early = (claim.prague_today() + timedelta(days=1)).isoformat()
+    db.execute(
+        "UPDATE guest SET stay_from = ?, stay_to = ? WHERE id = ?",
+        (reservation["date_from"], early, guest_id),
+    )
+    return early
+
+
+def test_prefill_does_not_copy_a_shortened_stay_window():
+    """Person 1 leaving early must not become person 2's hidden UbyPort dates."""
+    try:
+        _browser, reservation, rows = _first_person_done("en")
+        early = _person_one_left_early(reservation, rows[0]["id"])
+        values, _name = guest._residence_prefill(
+            _request_owning([rows[0]["id"]]), reservation
+        )
+        assert values.get("surname") == "SMITH"
+        assert values["res_street"] == "Baker Street 221B"
+        assert "stay_from" not in values
+        assert "stay_to" not in values
+        assert early != reservation["date_to"]
+    finally:
+        _cleanup()
+
+
+def test_second_person_is_filed_for_the_booking_not_person_ones_short_stay():
+    """GET /new plus save must send the booking window to UbyPort as cFrom/cUntil."""
+    try:
+        browser, reservation, rows = _first_person_done("en")
+        early = _person_one_left_early(reservation, rows[0]["id"])
+        page = browser.get(f"/l/{TOKEN}/{reservation['id']}/new?lang=en").text
+        stay_from, stay_to = _hidden_stay_dates(page)
+        assert stay_from == reservation["date_from"]
+        assert stay_to == reservation["date_to"]
+        assert stay_to != early
+        payload = dict(PAYLOAD)
+        payload.update(
+            {
+                "first_name": "Jane",
+                "doc_number": "P7654321",
+                "stay_from": stay_from,
+                "stay_to": stay_to,
+            }
+        )
+        response = browser.post(
+            f"/l/{TOKEN}/{reservation['id']}/save?lang=en", data=payload
+        )
+        assert response.status_code in (200, 303), response.text[:500]
+        people = db.query(
+            "SELECT * FROM guest WHERE reservation_id = ? ORDER BY id",
+            (reservation["id"],),
+        )
+        assert len(people) == 2
+        jane = people[1]
+        assert jane["first_name"] == "JANE"
+        assert jane["stay_from"] == reservation["date_from"]
+        assert jane["stay_to"] == reservation["date_to"]
+        from app import reporting
+
+        filed = reporting.guest_payload(jane, reservation)
+        assert filed["cFrom"].startswith(reservation["date_from"])
+        assert filed["cUntil"].startswith(reservation["date_to"])
     finally:
         _cleanup()
 
