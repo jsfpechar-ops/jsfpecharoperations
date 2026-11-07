@@ -190,3 +190,33 @@ def test_setup_page_buttons(owner):
     page = owner["client"].get(f"/apartments/{owner['aid']}/booking-site?lang=en")
     assert page.status_code == 200
     assert "Confirm and mark paid" in page.text
+
+
+def test_host_cancel_direct_mail_has_no_card_refund(owner, monkeypatch):
+    booking = _requested(owner)
+    booking_direct.confirm(int(booking["id"]), owner["oid"])
+    captured: list[dict] = []
+
+    def _enqueue(**kwargs):
+        captured.append(kwargs)
+
+    from app import mail
+    monkeypatch.setattr(mail, "enqueue", _enqueue)
+    booking_cancel.cancel(int(booking["id"]), by_host=True)
+    texts = [m["payload"].get("text", "") for m in captured]
+    blob = "\n".join(texts).lower()
+    assert "card" not in blob and "kartu" not in blob
+    assert "refunded to the guest" not in blob and "vráceno hostovi" not in blob
+
+
+def test_direct_confirm_mail_says_confirmed_not_paid(owner):
+    booking = _requested(owner)
+    booking_direct.confirm(int(booking["id"]), owner["oid"])
+    row = db.query_one(
+        "SELECT payload FROM email_outbox WHERE kind = ? ORDER BY id DESC",
+        ("site_booking_confirmed",),
+    )
+    import json
+    payload = json.loads(row["payload"])
+    text = payload.get("text", "")
+    assert "Paid:" not in text and "Zaplaceno:" not in text

@@ -125,7 +125,7 @@
         <form method="post" action="/apartments/{{ apartment.id }}/booking-site/cancel" data-confirm data-confirm-message="{{ t('bsite.bookings.confirm_direct' if b.direct else 'bsite.bookings.confirm') }}">
           <input type="hidden" name="_csrf" value="{{ csrf_token }}">
           <input type="hidden" name="booking_id" value="{{ b.id }}">
-          {{ ui_button(t('bsite.bookings.retry') if b.can_retry else t('bsite.bookings.cancel'), 'danger', type='submit', size='compact') }}
+          {{ ui_button(t('bsite.bookings.retry') if b.can_retry else (t('bsite.bookings.cancel_direct') if b.direct else t('bsite.bookings.cancel')), 'danger', type='submit', size='compact') }}
         </form>
         {% endif %}
       </dd>

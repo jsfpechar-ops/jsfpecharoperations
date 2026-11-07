@@ -163,7 +163,9 @@ def _mail_confirmed(booking: Dict[str, Any], reservation_id: int) -> None:
     facts = _facts(booking, apartment, lang)
     key = guest_slug.link_key(apartment) if apartment else ""
     link = f"{config.PUBLIC_BASE_URL.rstrip('/')}/l/{key}/{reservation_id}" if key else ""
-    text = host_i18n.translate(lang, "site_booking.mail.guest_text", **facts)
+    text_key = ("site_booking.mail.guest_text_direct" if booking.get("pay_method") == "direct"
+                else "site_booking.mail.guest_text")
+    text = host_i18n.translate(lang, text_key, **facts)
     if link:
         text += "\n\n" + host_i18n.translate(lang, "site_booking.mail.guest_register", link=link)
     text += "\n\n" + host_i18n.translate(

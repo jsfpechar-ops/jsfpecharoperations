@@ -142,7 +142,10 @@ def _mail_cancelled(booking: Dict[str, Any], amount: int, by_host: bool) -> None
     lang = booking["lang"] if booking["lang"] in ("cs", "en") else "cs"
     facts = booking_webhook._facts(booking, apartment, lang)
     facts["refund"] = amount
-    if by_host:
+    direct = booking.get("pay_method") == "direct"
+    if by_host and direct:
+        guest_key = "site_booking.mail.cancel_guest_direct"
+    elif by_host:
         guest_key = "site_booking.mail.cancel_guest_by_host"
     elif amount > 0:
         guest_key = "site_booking.mail.cancel_guest_refund"
@@ -162,7 +165,8 @@ def _mail_cancelled(booking: Dict[str, Any], amount: int, by_host: bool) -> None
     if host_email:
         host_facts = booking_webhook._facts(booking, apartment, "cs")
         host_facts["refund"] = amount
-        host_key = ("site_booking.mail.cancel_host_by_host" if by_host
+        host_key = ("site_booking.mail.cancel_host_direct" if by_host and direct
+                    else "site_booking.mail.cancel_host_by_host" if by_host
                     else "site_booking.mail.cancel_host_by_guest")
         mail.enqueue(
             kind="site_booking_host",
