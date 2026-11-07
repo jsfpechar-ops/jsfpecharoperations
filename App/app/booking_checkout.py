@@ -151,6 +151,7 @@ def start_direct(apartment_id: int, q: Dict[str, Any], *, guest_name: str,
     from . import booking_direct
 
     booking_direct.notify_request(booking)
+    booking_direct.notify_request_guest(booking)
     return {"booking": booking}
 
 

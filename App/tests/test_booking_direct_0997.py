@@ -198,6 +198,34 @@ def test_real_page_offers_direct_only(owner, monkeypatch):
     assert "Request sent" in response.text
 
 
+def test_direct_request_sends_guest_mail(owner, monkeypatch):
+    monkeypatch.setattr(config, "STRIPE_MODE", "off")
+    db.update("apartment", owner, {"stay_fee_guest_rails": "cash"})
+    captured: list[dict] = []
+
+    def _enqueue(**kwargs):
+        captured.append(kwargs)
+
+    from app import mail
+    monkeypatch.setattr(mail, "enqueue", _enqueue)
+    client = _client()
+    slug = _slug(owner)
+    assert client.post(f"/p/{slug}/checkout", data=_checkout_payload()).status_code == 200
+    guest = [m for m in captured if m.get("kind") == "site_booking_request_guest"]
+    assert len(guest) == 1
+    assert guest[0]["to_email"] == "anna@example.test"
+    assert "cash" in guest[0]["payload"]["text"].lower() or "hotov" in guest[0]["payload"]["text"].lower()
+
+
+def test_requested_page_uses_booking_card_styles(owner, monkeypatch):
+    monkeypatch.setattr(config, "STRIPE_MODE", "off")
+    db.update("apartment", owner, {"stay_fee_guest_rails": "cash"})
+    client = _client()
+    html = client.post(f"/p/{_slug(owner)}/checkout", data=_checkout_payload()).text
+    assert "pp-bk-card" in html
+    assert "ui-narrow" not in html
+
+
 def test_real_page_offers_both_modes(owner, monkeypatch):
     monkeypatch.setattr(config, "STRIPE_MODE", "test")
     db.update("apartment", owner, {"stay_fee_guest_rails": "cash"})

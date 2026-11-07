@@ -107,3 +107,35 @@ def notify_request(booking: Dict[str, Any]) -> None:
         )
     except Exception:
         log.exception("site booking %s: request mail failed", booking.get("id"))
+
+
+def notify_request_guest(booking: Dict[str, Any]) -> None:
+    """The guest's copy of the payment details. Best effort."""
+    try:
+        from . import booking_rails, booking_webhook
+
+        apartment = booking_webhook._apartment(booking)
+        lang = booking["lang"] if booking["lang"] in ("cs", "en") else "cs"
+        facts = booking_webhook._facts(booking, apartment, lang)
+        lines = []
+        for rail in booking_rails.guest_view(int(booking["apartment_id"]), booking):
+            if rail["key"] == "iban":
+                lines.append(host_i18n.translate(lang, "site_booking.mail.request_guest_iban",
+                                                 iban=rail["iban"], vs=rail["vs"], amount=rail["amount"]))
+            elif rail["key"] == "revolut":
+                lines.append(host_i18n.translate(lang, "site_booking.mail.request_guest_revolut", link=rail["link"]))
+            else:
+                lines.append(rail["note"] or host_i18n.translate(lang, "pp.book.req_cash_default"))
+        facts["ways"] = "\n\n".join(lines)
+        mail.enqueue(
+            kind="site_booking_request_guest",
+            idempotency_key=f"site_booking:{booking['id']}:request_guest",
+            to_email=booking["guest_email"],
+            subject=host_i18n.translate(lang, "site_booking.mail.request_guest_subject", **facts),
+            payload={"text": host_i18n.translate(lang, "site_booking.mail.request_guest_text", **facts),
+                     "lang": lang, "reply_to": booking_webhook._host_email(apartment)},
+            apartment_id=int(booking["apartment_id"]),
+            owner_user_id=int(booking["owner_user_id"]),
+        )
+    except Exception:
+        log.exception("site booking %s: guest request mail failed", booking.get("id"))
