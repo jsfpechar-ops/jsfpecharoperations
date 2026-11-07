@@ -607,8 +607,10 @@ async def booking_site_save(request: Request, apartment_id: int):
     try:
         booking_site.save_settings(apartment_id, booking_setup.parse_form(form))
     except ValueError as exc:
-        err_key = "bsite.err." + booking_setup.error_field(exc)
-        return _back(here + "#rules", err=_flash(request, err_key))
+        return _back(
+            here + "#rules",
+            err=_flash(request, f"bsite.err.{booking_setup.error_field(exc)}"),
+        )
     return _back(here, msg=_flash(request, "payments.page.saved"))
 
 
@@ -632,7 +634,7 @@ async def booking_site_pay(request: Request, apartment_id: int):
     try:
         values = booking_rails.parse_form(form, apartment_id)
     except ValueError as exc:
-        return _back(here + "#pay", err=_flash(request, "bsite.err." + str(exc)))
+        return _back(here + "#pay", err=_flash(request, f"bsite.err.{exc}"))
     db.update("apartment", apartment_id, values)
     return _back(here, msg=_flash(request, "payments.page.saved"))
 
@@ -660,7 +662,11 @@ async def _direct_action(request: Request, apartment_id: int, action: str):
         return _back(here, err=_flash(request, "bsite.err.direct_taken"))
     if result["error"]:
         return _back(here, err=_flash(request, "bsite.err.not_cancellable"))
-    return _back(here, msg=_flash(request, "bsite.flash.direct_" + action))
+    flash_key = {
+        "confirm": "bsite.flash.direct_confirm",
+        "decline": "bsite.flash.direct_decline",
+    }[action]
+    return _back(here, msg=_flash(request, flash_key))
 
 
 @router.post("/apartments/{apartment_id}/booking-site/confirm")

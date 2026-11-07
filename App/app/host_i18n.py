@@ -7462,6 +7462,7 @@ _PASSKEY_STRINGS = {
         "notification.mail_kind.site_booking_confirmed": "booking confirmation",
         "notification.mail_kind.site_booking_refunded": "booking refund",
         "notification.mail_kind.site_booking_host": "new website booking",
+        "notification.mail_kind.site_booking_request_host": "booking request awaiting payment",
     },
     "cs": {
         "login.passkey": "Přihlásit se pomocí klíče (passkey)",
@@ -7512,6 +7513,7 @@ _PASSKEY_STRINGS = {
         "notification.mail_kind.site_booking_confirmed": "potvrzení rezervace",
         "notification.mail_kind.site_booking_refunded": "vrácení platby za rezervaci",
         "notification.mail_kind.site_booking_host": "nová rezervace z webu",
+        "notification.mail_kind.site_booking_request_host": "poptávka čeká na platbu",
     },
 }
 for _lang, _strings in _PASSKEY_STRINGS.items():
