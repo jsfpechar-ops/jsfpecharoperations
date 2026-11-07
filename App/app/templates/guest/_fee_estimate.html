@@ -1,12 +1,16 @@
 {# Form-end estimate (brief 0910). Included only when fee_estimate is above zero. No button. #}
+{% set fee_amount = t('fee_amount', amount=fee_estimate.amount) %}
 <div class="g-card g-fee-estimate" id="fee-estimate">
   <h2>{{ t('fee_estimate_title') }}</h2>
-  <p class="g-intro">{{ t('fee_estimate_body', amount=t('fee_amount', amount=fee_estimate.amount), days=fee_estimate.days, rate=fee_estimate.rate) }}</p>
-  <details class="g-fee-what">
-    <summary class="g-fee-what-toggle" aria-label="{{ t('fee_what_is_this') }}">?</summary>
-    <div class="g-fee-what-body">
+  <p class="g-intro">{{ t('fee_rate_line', rate=fee_estimate.rate) }}</p>
+  <p class="g-fee-amount"><strong>{{ fee_amount }}</strong></p>
+  <p class="g-intro">{{ t('fee_estimate_nights', days=fee_estimate.days, rate=fee_estimate.rate) }}</p>
+  <p class="g-intro">{{ t('fee_estimate_when') }}</p>
+  <details class="g-summary g-fee-legal-fold">
+    <summary class="g-summary-fold">{{ t('fee_what_is_this') }}</summary>
+    <div class="g-summary-body">
       <p class="g-intro">{{ t('legal_notice_fee_body') }}</p>
-      <p><a href="https://www.e-sbirka.cz/sb/1990/565" rel="noopener" target="_blank">{{ t('legal_notice_fee_link') }}</a></p>
+      <p class="g-law"><a href="https://www.e-sbirka.cz/sb/1990/565" rel="noopener" target="_blank">{{ t('legal_notice_fee_link') }}</a></p>
     </div>
   </details>
 </div>

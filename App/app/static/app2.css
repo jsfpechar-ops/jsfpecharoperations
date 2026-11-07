@@ -967,7 +967,7 @@ body.v2 .setup-continue-card .actions{display:flex;flex-direction:column;align-i
 body.v2 .savebar .ui-btn,body.v2 .savebar .btn{width:auto;white-space:nowrap}
 @media (min-width:1024px){
   body.v2 .property-section{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
-  body.v2 .property-section > :is(h3,p,.hint,.grid,.field-label-row,.actions,.preview-hint){grid-column:1/-1}
+  body.v2 .property-section > :is(h2,.property-section-title,h3,p,.hint,.grid,.field-label-row,.actions,.preview-hint,.ui-section){grid-column:1/-1}
   body.v2 .property-section .field:has(textarea){grid-column:1/-1}
   body.v2 .property-section .grid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
   body.v2 .property-section .grid > .field{margin:0}

@@ -1603,3 +1603,11 @@ details.g-summary > .g-summary-body { padding: 16px 20px 18px; }
 .g-fee-qr-img { display: block; width: 176px; max-width: 100%; height: auto; border: 1px solid var(--g-line); }
 .g-fee-qr .g-summary-list { flex: 1 1 180px; min-width: 0; }
 .g-fee-payee { margin: 8px 0 0; }
+
+/* Stay-fee cards: legal fold matches other guest summaries */
+.g-fee-estimate .g-fee-amount,
+#fee-pay .g-fee-amount { margin-bottom: 4px; }
+.g-fee-estimate details.g-summary,
+#fee-pay details.g-summary.g-fee-legal-fold { margin-top: 12px; }
+.g-fee-estimate details.g-summary + details.g-summary,
+#fee-pay details.g-summary.g-fee-legal-fold + details.g-summary { margin-top: 0; }
