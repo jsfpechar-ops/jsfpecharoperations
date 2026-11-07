@@ -3764,7 +3764,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "bsite.bookings.empty": "Zat\u00edm \u017e\u00e1dn\u00e1 rezervace z webu.",
         "bsite.bookings.status.requested": "\u010cek\u00e1 na platbu",
         "bsite.bookings.status.expired": "Vypr\u0161elo",
-        "bsite.bookings.mark_paid": "Potvrdit a ozna\u010dit jako zaplaceno",
+        "bsite.bookings.mark_paid": "Označit zaplaceno",
         "bsite.bookings.decline": "Zam\u00edtnout",
         "bsite.bookings.confirm_paid": "Host v\u00e1m zaplatil. T\u00edm se term\u00edn rezervuje a host dostane e-mail.",
         "bsite.bookings.confirm_decline": "Zam\u00edtnout popt\u00e1vku a uvolnit term\u00edn?",
