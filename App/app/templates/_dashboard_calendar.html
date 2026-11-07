@@ -137,7 +137,6 @@
   'guests': t('calendar.guests'),
   'unknown': t('calendar.unknown'),
   'no_forms': t('calendar.no_forms'),
-  'blocked': t('dashboard.calendar.blocked'),
   'manual': t('calendar.manual'),
   'imported': t('calendar.imported'),
   'source': t('calendar.source'),
@@ -172,4 +171,4 @@
   <script type="application/json" data-cal-properties>[{% for apartment in apartments if apartment.active %}{{ {'id': apartment.id, 'name': apartment.internal_name} | tojson }}{% if not loop.last %},{% endif %}{% endfor %}]</script>
   <script type="application/json" data-cal-labels>{{ calendar_labels | tojson }}</script>
 </section>
-<script src="/static/dashboard-calendar.js?v=20261107-0998" defer></script>
+<script src="/static/dashboard-calendar.js?v=20261107-1001" defer></script>
