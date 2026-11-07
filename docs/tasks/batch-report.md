@@ -4,6 +4,8 @@
 
 **Context rule (owner):** On **composer-2.5**, start a new chat at ~**160k context** (replaces the old 60k checkpoint for this model). Before handover: **push** the branch and append a short note here (done / in progress / branch).
 
+**Main merge (owner):** `origin/main` merged into this branch (`8116d3f7`); **pull before each push**. Stack report: **`0999-property-rules-report.md`** (not `0999-report.md` = Havel). Our briefs: **`1004-booking-site-direct-host-ux`**, **`1005-photo-reorder-row-and-phone-nav`** — not main’s `1004-ux-*` / `1005-ux-*`.
+
 | Item | State |
 |------|--------|
 | **Worker (1001–1004)** | **1001–1004 done** (commits `1da64065` … `cae8ece9` + merge); tests re-run 2026-11-08 OK |
