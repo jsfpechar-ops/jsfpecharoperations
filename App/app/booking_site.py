@@ -23,7 +23,7 @@ from . import db
 PRAGUE = ZoneInfo("Europe/Prague")
 POLICIES = ("non_refundable", "flexible", "moderate")
 NOTICE_DAYS = (0, 1, 2, 3, 7)
-STATUSES = ("pending", "paid", "expired", "cancelled", "refunded", "clash_refunded")
+STATUSES = ("pending", "requested", "paid", "expired", "cancelled", "refunded", "clash_refunded")
 MAX_NIGHTS = 30
 MAX_PRICE_CZK = 1_000_000
 MAX_GUESTS = 60
@@ -281,9 +281,13 @@ def manage_url(booking: Dict[str, Any]) -> str:
 
 def create_pending(apartment_id: int, owner_user_id: int, q: Dict[str, Any], *,
                    guest_name: str, guest_email: str, lang: str,
-                   hold_id: Optional[int]) -> Dict[str, Any]:
+                   hold_id: Optional[int], status: str = "pending",
+                   pay_method: str = "stripe",
+                   request_expires_at: Optional[str] = None) -> Dict[str, Any]:
     """A pending booking from a good quote. Returns the row plus the one-time
     cancel token (only its hash is stored)."""
+    if status not in ("pending", "requested"):
+        raise ValueError(status)
     if q.get("error"):
         raise ValueError("quote has an error")
     token = secrets.token_urlsafe(24)
@@ -292,7 +296,9 @@ def create_pending(apartment_id: int, owner_user_id: int, q: Dict[str, Any], *,
         "apartment_id": apartment_id,
         "owner_user_id": owner_user_id,
         "hold_id": hold_id,
-        "status": "pending",
+        "pay_method": pay_method if pay_method in ("stripe", "direct") else "stripe",
+        "request_expires_at": request_expires_at,
+        "status": status,
         "date_from": q["date_from"],
         "date_to": q["date_to"],
         "guests": q["guests"],
@@ -330,6 +336,7 @@ def by_session(session_id: str) -> Optional[Dict[str, Any]]:
 
 _TRANSITIONS = {
     "pending": {"paid", "expired", "clash_refunded"},
+    "requested": {"paid", "expired", "cancelled"},
     "paid": {"cancelled", "refunded", "clash_refunded"},
     "cancelled": {"refunded"},
     "expired": {"paid", "clash_refunded"},
