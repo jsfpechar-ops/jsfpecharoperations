@@ -465,6 +465,25 @@ async def property_page_save(request: Request, apartment_id: int):
     return _back(f"/apartments/{apartment_id}/page", msg=_flash(request, "payments.page.saved"))
 
 
+@router.post("/apartments/{apartment_id}/page/photo-move")
+async def property_page_photo_move(request: Request, apartment_id: int):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    owner_id = access.owner_id(request)
+    apartment = db.query_one(
+        "SELECT id FROM apartment WHERE id = ? AND owner_user_id = ?",
+        (apartment_id, owner_id),
+    )
+    if apartment is None:
+        return Response(status_code=404)
+    form = await request.form()
+    from .. import property_page as pp
+
+    pp.move_photo(apartment_id, str(form.get("path") or ""), str(form.get("dir") or ""))
+    return _back(f"/apartments/{apartment_id}/page")
+
+
 @router.post("/apartments/{apartment_id}/page/photo-delete")
 async def property_page_photo_delete(request: Request, apartment_id: int):
     guard = auth.require_login(request)
