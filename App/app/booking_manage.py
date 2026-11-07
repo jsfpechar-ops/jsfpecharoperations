@@ -42,7 +42,7 @@ def view(booking: Dict[str, Any], lang: str) -> Dict[str, Any]:
     status = booking["status"]
     state = "refunded" if status == "refunded" else status
     nights = int(booking["nights"])
-    can_cancel = status == "paid" and not booking_cancel.started(booking)
+    can_cancel = (status == "paid" and booking.get("pay_method") != "direct" and not booking_cancel.started(booking))
     return {
         "id": int(booking["id"]),
         "state": state,
@@ -82,8 +82,10 @@ def calendar_ics(booking: Dict[str, Any], name: str) -> str:
 def host_rows(apartment_id: int, limit: int = 20) -> List[Dict[str, Any]]:
     """The host's recent site bookings: short name, dates, total, status, actions."""
     rows = db.query(
-        "SELECT * FROM site_booking WHERE apartment_id = ? AND status IN ('paid', 'cancelled',"
-        " 'refunded', 'clash_refunded') ORDER BY date_from DESC, id DESC LIMIT ?",
+        "SELECT * FROM site_booking WHERE apartment_id = ? AND status IN ('requested', 'expired',"
+        " 'paid', 'cancelled', 'refunded', 'clash_refunded')"
+        " AND (status != 'expired' OR pay_method = 'direct')"
+        " ORDER BY date_from DESC, id DESC LIMIT ?",
         (apartment_id, limit),
     )
     out = []
@@ -96,6 +98,9 @@ def host_rows(apartment_id: int, limit: int = 20) -> List[Dict[str, Any]]:
             "id": int(b["id"]), "name": short, "status": b["status"],
             "dates": f"{d_from.day}.–{d_to.day}. {d_to.month}.",
             "total": int(b["total_czk"]),
+            "direct": b["pay_method"] == "direct",
+            "can_confirm": b["pay_method"] == "direct" and b["status"] in ("requested", "expired"),
+            "can_decline": b["pay_method"] == "direct" and b["status"] == "requested",
             "can_cancel": b["status"] == "paid",
             "can_retry": b["status"] == "cancelled" and not int(b["refunded_czk"] or 0),
         })

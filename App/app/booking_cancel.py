@@ -36,11 +36,15 @@ def cancel(booking_id: int, *, by_host: bool, now: Optional[datetime] = None) ->
     booking = booking_site.get(booking_id)
     if booking is None:
         return {"error": "not_found"}
+    if booking.get("pay_method") == "direct" and not by_host:
+        return {"error": "not_cancellable"}
     owner = int(booking["owner_user_id"])
     if booking["status"] == "paid":
         if not by_host and started(booking, now):
             return {"error": "started"}
         amount = refund_now(booking, by_host=by_host, now=now)
+        if booking.get("pay_method") == "direct":
+            amount = 0
         db.set_setting(_intent_key(booking_id), f"{amount}:{'h' if by_host else 'g'}")
         if not booking_site.set_status(booking_id, "cancelled", cancelled_at=db.utcnow()):
             return {"error": "busy"}

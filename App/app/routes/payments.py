@@ -636,6 +636,42 @@ async def booking_site_pay(request: Request, apartment_id: int):
     db.update("apartment", apartment_id, values)
     return _back(here, msg=_flash(request, "payments.page.saved"))
 
+
+
+async def _direct_action(request: Request, apartment_id: int, action: str):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment, owner_id = _bsite_apartment(request, apartment_id)
+    if apartment is None:
+        return Response(status_code=404)
+    from .. import booking_direct, booking_site
+
+    here = f"/apartments/{apartment_id}/booking-site"
+    form = await request.form()
+    raw = str(form.get("booking_id") or "")
+    booking = booking_site.get(int(raw)) if raw.isdigit() else None
+    if booking is None or int(booking["apartment_id"]) != apartment_id:
+        return Response(status_code=404)
+    result = getattr(booking_direct, action)(int(booking["id"]), owner_id)
+    if result["error"] == "not_found":
+        return Response(status_code=404)
+    if result["error"] == "taken":
+        return _back(here, err=_flash(request, "bsite.err.direct_taken"))
+    if result["error"]:
+        return _back(here, err=_flash(request, "bsite.err.not_cancellable"))
+    return _back(here, msg=_flash(request, "bsite.flash.direct_" + action))
+
+
+@router.post("/apartments/{apartment_id}/booking-site/confirm")
+async def booking_site_confirm(request: Request, apartment_id: int):
+    return await _direct_action(request, apartment_id, "confirm")
+
+
+@router.post("/apartments/{apartment_id}/booking-site/decline")
+async def booking_site_decline(request: Request, apartment_id: int):
+    return await _direct_action(request, apartment_id, "decline")
+
 @router.post("/apartments/{apartment_id}/booking-site/cancel")
 async def booking_site_cancel(request: Request, apartment_id: int):
     """0821: the host cancels a site booking; the guest is refunded in full."""
