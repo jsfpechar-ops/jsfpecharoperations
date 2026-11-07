@@ -5,7 +5,6 @@
 {% from "_icons.html" import icon with context %}
 {% if not havel_answer and not havel_topic_data %}
 <div class="havel-msg havel-msg-havel havel-greeting" data-havel-greeting>
-  <div class="havel-who"><span class="havel-avatar" aria-hidden="true">{{ icon('message-circle-question', 16) }}</span><span class="havel-name">{{ t('havel.name') }}</span></div>
   <div class="havel-bubble"><p>{{ t('havel.intro') }}</p></div>
 </div>
 {% endif %}
