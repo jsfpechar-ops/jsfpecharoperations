@@ -111,6 +111,14 @@ def test_logged_out_redirects_to_login():
     assert "/login" in response.headers["location"]
 
 
+def test_phone_tabbar_links_booking_sites():
+    client, _, _ids = _host("A")
+    html = client.get("/apartments?lang=en").text
+    menu = html.split('class="ui-menu-item"', 1)[0] if 'ui-menu-item' in html else html
+    assert 'href="/booking-sites"' in html
+    assert 'ui-menu-item' in html and "/booking-sites" in html
+
+
 def test_setup_page_highlights_booking_site_row():
     client, _, ids = _host("A")
     response = client.get(f"/apartments/{ids[0]}/booking-site?lang=en")

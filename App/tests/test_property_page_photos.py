@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import io
 import json
+import re
 
 import pytest
 from fastapi.testclient import TestClient
@@ -14,6 +15,7 @@ from PIL import Image
 
 from app import db, property_page
 from app.main import app
+from tests.conftest import login_as
 
 OWNER = "photohost"
 
@@ -37,6 +39,8 @@ def _cleanup():
         db.execute("DELETE FROM guide_import WHERE apartment_id = ?", (a["id"],))
     db.execute("DELETE FROM apartment WHERE owner_user_id = ?", (oid,))
     db.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (oid,))
+    db.execute("DELETE FROM login_token WHERE user_account_id = ?", (oid,))
+    db.execute("DELETE FROM audit WHERE owner_user_id = ?", (oid,))
     db.execute("DELETE FROM user_account WHERE id = ?", (oid,))
 
 
@@ -180,3 +184,31 @@ def test_move_keeps_the_cap_and_the_files(owner):
     assert len(photos) <= property_page.MAX_PAGE_PHOTOS
     listing_after = sorted(property_page.photos_dir().iterdir(), key=lambda p: p.name)
     assert listing_before == listing_after
+
+
+def test_photo_move_markup_and_nojs_post(owner):
+    _three_photos(owner)
+    db.execute("UPDATE user_account SET email = ? WHERE username = ?", (f"{OWNER}@example.test", OWNER))
+    client = TestClient(app)
+    login_as(client, OWNER, url="/login?lang=en")
+    html = client.get(f"/apartments/{owner}/page?lang=en").text
+    assert "gap:4px" not in html
+    assert 'action="/apartments/' in html and "photo-move" in html
+    path = "/photos/property/b.jpg"
+    m = re.search(
+        rf'name="_csrf" value="([^"]+)".*?name="path" value="{re.escape(path)}".*?name="dir" value="down"',
+        html,
+        re.DOTALL,
+    )
+    assert m, "photo-move form for b.jpg missing"
+    r = client.post(
+        f"/apartments/{owner}/page/photo-move",
+        data={"path": path, "dir": "down", "_csrf": m.group(1)},
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    assert json.loads(property_page.page_for(owner)["photos_json"]) == [
+        "/photos/property/a.jpg",
+        "/photos/property/c.jpg",
+        "/photos/property/b.jpg",
+    ]
