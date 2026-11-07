@@ -1,17 +1,55 @@
 """0995: Booking site sidebar item and the /booking-sites list."""
 import secrets
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app import auth, billing, config, db, property_page
 from app.main import app
 from tests.test_stay_fee_detail import login_as
 
+_BSL_OWNERS: list[str] = []
+
+
+def _cleanup_owner(username: str) -> None:
+    row = db.query_one("SELECT id FROM user_account WHERE username = ?", (username,))
+    if not row:
+        return
+    oid = row["id"]
+    for a in db.query("SELECT id FROM apartment WHERE owner_user_id = ?", (oid,)):
+        aid = a["id"]
+        db.execute("DELETE FROM property_slug_history WHERE apartment_id = ?", (aid,))
+        db.execute("DELETE FROM property_slug WHERE apartment_id = ?", (aid,))
+        db.execute("DELETE FROM property_page WHERE apartment_id = ?", (aid,))
+    db.execute("DELETE FROM billing_account WHERE owner_user_id = ?", (oid,))
+    db.execute("DELETE FROM apartment WHERE owner_user_id = ?", (oid,))
+    db.execute("DELETE FROM login_token WHERE user_account_id = ?", (oid,))
+    db.execute("DELETE FROM user_account WHERE id = ?", (oid,))
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _booking_site_db():
+    db.init_db()
+    _BSL_OWNERS.clear()
+    yield
+    for username in list(_BSL_OWNERS):
+        try:
+            _cleanup_owner(username)
+        except Exception:
+            pass
+    for row in db.query("SELECT id FROM apartment WHERE internal_name LIKE 'Flat %'"):
+        aid = row["id"]
+        db.execute("DELETE FROM property_slug_history WHERE apartment_id = ?", (aid,))
+        db.execute("DELETE FROM property_slug WHERE apartment_id = ?", (aid,))
+        db.execute("DELETE FROM property_page WHERE apartment_id = ?", (aid,))
+        db.execute("DELETE FROM apartment WHERE id = ?", (aid,))
+    _BSL_OWNERS.clear()
+
 
 def _host(apartments):
-    db.init_db()
     username = f"bsl-{secrets.token_hex(4)}"
     auth.create_account(f"{username}@example.test", "Site List", username=username)
+    _BSL_OWNERS.append(username)
     oid = int(db.query_one("SELECT id FROM user_account WHERE username = ?", (username,))["id"])
     ids = [
         int(db.insert("apartment", {
