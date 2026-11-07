@@ -1,7 +1,6 @@
 """0995: Booking site sidebar item and the /booking-sites list."""
 import secrets
 
-import pytest
 from fastapi.testclient import TestClient
 
 from app import auth, billing, config, db, property_page
