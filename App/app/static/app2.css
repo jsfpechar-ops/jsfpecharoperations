@@ -2929,3 +2929,4 @@ body.v2 .signature-dialog-actions{justify-content:flex-end}
 body.v2 .checkline{display:flex;gap:10px;align-items:flex-start;font-size:14px;margin:0 0 12px}
 body.v2 .checkline input{width:auto;margin-top:3px;accent-color:var(--acc)}
 body.v2 #smart-locks-setup form{display:grid;gap:4px;justify-items:start}
+@media (max-width:599px){body.v2 .ui-dialog.signature-dialog{width:calc(100vw - 16px)}body.v2 .ui-dialog.signature-dialog .ui-sheet{padding:12px}}
