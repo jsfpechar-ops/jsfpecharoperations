@@ -111,3 +111,58 @@ Design-system checklist: reused tokens/components, no CSS, light mode, no JS.
 
 ### Questions
 None. Owner steps: after merge and deploy, check the sidebar item on a Free and a Max account. 390 px shot: /opt/cursor/artifacts/0995-booking-sites-390.png (not committed).
+
+## 0996: Booking site direct pay setup
+
+Status: review
+
+### Summary
+- Migrations `0039_site_booking_direct.sql` / `00010_site_booking_direct.sql` (branch had 0038/00009 taken; PG schema version **39**; `test_db_postgres.py` + `test_migrations.py` bumped).
+- `booking_rails.py`, setup step `pay`, `#pay` form, `create_pending` supports `requested` + `pay_method`.
+- **Rails share stay-fee columns** (`stay_fee_guest_*` on `apartment`); owner pre-approved in brief 0996 risk list.
+
+### Commands (last lines)
+- `test_booking_site.py test_booking_direct_0996.py test_property_page.py test_stripe_connect.py test_host_i18n.py`: 100 passed.
+- `test_migrations.py`: green after LATEST 39.
+- `test_layout_lint_browser.py` + `test_host_geometry.py`: 6 passed, 0 skipped.
+- `context_lint.py`: OK (compacted duplicate 0986 decision line + test-map row).
+
+### UX (`/apartments/<id>/booking-site`, #pay)
+390/768/1280 (layout-lint host crawl + HTML verified "How guests pay"): cash/iban/revolut checkboxes stack; Save primary; step list shows "How guests pay"; no horizontal scroll; bottom nav on phone.
+
+### Deviations
+- `test_booking_setup.py` `stripe`→`pay` (brief §3 listed only `test_booking_site.py`; needed for green setup tests).
+
+## 0997: Guest request flow
+
+Status: review
+
+### Commands
+- `test_booking_direct_0997.py` + 0996 bundle + property_page + booking_widget + stripe + host_i18n: 102 passed.
+
+### Guest pages
+- `/p/<slug>` book form: pay-mode radios when Stripe+direct; hidden field when one mode.
+- `property_page_requested.html`: IBAN/QR/VS, Revolut link, cash note, 24h hold copy once.
+- `expire_requests` scheduler job added.
+
+### Screenshots (report-only)
+390: narrow book form, pay-mode fieldset above submit. Request page: stacked rail cards, QR 200px. 768/1280: same structure, comfortable width.
+
+## 0998: Host confirm / decline
+
+Status: review
+
+### Commands
+- Full direct stack + property_page + stripe + host_i18n: **102 passed**.
+- UX gate: `test_layout_lint_browser.py` + `test_host_geometry.py` + `test_design_guardrails_browser.py`: **17 passed**, 0 skipped, 0 findings.
+
+### UX (`/apartments/<id>/booking-site`, bookings list with `requested`)
+390: status "Waiting for payment"; compact Mark paid / Decline buttons beside badge; three actions wrap without overlap. 768: buttons inline in row. 1280: sidebar + list readable; direct cancel confirm uses no-auto-refund copy.
+
+### Deviations
+- `App/app/mail.py`: added `site_booking_request_host` to `KINDS` (brief mail kind not in allowlist; required for `notify_request`).
+
+### Stop-and-ask (coordinator)
+1. **Rails columns**: shared with stay-fee guest pay (brief 0996); not separate `booking_pay_*` unless owner wants a follow-up migration.
+2. **Layout lint**: no unfixable findings; booking-site not in default EXTRA_ROUTES (pre-existing); host lint green.
+3. **Deploy**: owner applies PG migration **39** / goose **00010** (not brief's 0038/00009 numbers on this branch).
