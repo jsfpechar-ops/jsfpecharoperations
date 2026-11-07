@@ -28,8 +28,8 @@
     "v": "20261106-pr790-ux-js"
   },
   "app2.css": {
-    "sha256": "079ae1ffc3e7b9fbe2d7c5c8d501730d7519c4eed32b32cee1902e5ada1ae729",
-    "v": "20261106-pr790-ocr-tip2"
+    "sha256": "82dc3cb825d3208c8d1b27e20652ba90a617a7847e2294e1adf2dcbbbcd62d7a",
+    "v": "20261107-calendars-ui2"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -92,7 +92,7 @@
     "v": "20261025-0393b"
   },
   "guest.css": {
-    "sha256": "08a3f2e0c7ae68671038671b7a0e1418e92e0c5f2c46236d6b5c4502e79be8df",
+    "sha256": "7f44e702e7a10c1ee387015323176363dd305bb3d24b34d418138ca32e7b5335",
     "v": "20261107-0994"
   },
   "guide.js": {

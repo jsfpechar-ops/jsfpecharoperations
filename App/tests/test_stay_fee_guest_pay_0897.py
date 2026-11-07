@@ -609,7 +609,7 @@ def test_0960_fee_card_says_why_and_asks_to_pay_in_plain_text(host, monkeypatch)
     en = guest.get(f"/l/{token}/{stay}?lang=en").text
     assert "Please pay now." in en
     assert "Czech towns charge a small fee for each night you stay." in en
-    assert en.index("Please pay now.") < en.index('class="g-fee-amt"')
+    assert en.index('class="g-fee-amt"') < en.index("Please pay now.")
     assert "Why this fee applies" not in en
     cs = guest.get(f"/l/{token}/{stay}?lang=cs").text
     assert "Zaplaťte prosím teď." in cs

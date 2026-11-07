@@ -2812,6 +2812,18 @@ body.v2 .feed-url-details summary{cursor:pointer;min-height:44px;display:inline-
 body.v2 .feed-url-details summary{gap:8px}
 body.v2 .feed-url-value{display:block;max-width:100%;overflow-wrap:anywhere;word-break:break-all;white-space:normal}
 body.v2 .feed-url-details:not([open])>.feed-url-value{visibility:hidden}
+<<<<<<< Updated upstream
+=======
+body.v2 details.prop-sec{border:0;border-radius:0;background:transparent;margin-bottom:0;box-shadow:none}
+body.v2 details.prop-sec>summary{padding-left:0;padding-right:0}
+body.v2 details.prop-sec>summary:after{content:"";width:8px;height:8px;margin-right:6px;border:0;border-right:2px solid var(--ink3);border-bottom:2px solid var(--ink3);transform:rotate(45deg);transition:transform .15s;font-size:0;color:transparent;align-self:center}
+body.v2 details.prop-sec[open]>summary:after{transform:rotate(-135deg)}
+body.v2 .feed-url-details{border:0;border-radius:0;background:transparent;margin:0 0 var(--space-2);padding:0;display:block}
+body.v2 .feed-url-details>summary{padding:0;min-height:44px;justify-content:flex-start;font-weight:600;color:var(--ink2)}
+body.v2 .feed-url-details>summary:after{content:"";width:6px;height:6px;margin-left:8px;border:0;border-right:2px solid var(--ink3);border-bottom:2px solid var(--ink3);transform:rotate(45deg);font-size:0;color:transparent}
+body.v2 .feed-url-details[open]>summary:after{transform:rotate(-135deg)}
+body.v2 .feed-url-value{margin-top:var(--space-2);padding:var(--space-3);border:1px solid var(--line);border-radius:10px;background:var(--s)}
+>>>>>>> Stashed changes
 /* 0968: the stays filter panel on desktop is one row: the fields, then Apply and Cancel. Reset filters lives under the scope line. */
 @media (min-width:1024px){
   body.v2 form.stays-filter:not(.is-collapsed){display:flex;align-items:flex-end;gap:16px;flex-wrap:nowrap}
@@ -2894,3 +2906,4 @@ body.v2 .gp-rail-note{display:block;margin-top:var(--space-1);font-weight:400}
 @media (min-width:1024px){body.v2 .stay-fee-guest-fields .gp-switch{min-height:24px}}
 /* 0897: the last word and its "?" are one nowrap box; as an inline-block it keeps the same text baseline as the words before it (inline, the middle-aligned "?" nudged that word by a fraction of a pixel). */
 body.v2 .field-label-row .tip-tail{display:inline-block}
+body.v2 #sec-calendars .property-view-head .field-label-row{display:none}

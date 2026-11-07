@@ -248,7 +248,7 @@ def test_the_guest_form_has_no_nested_form_and_no_verify_form():
 
         # Counting alone cannot see the bug: the nesting swaps a close tag for
         # an open one and the totals still match. Look inside the main form.
-        main_open = html.index(f'<form method="post" action="/guests/{guest_id}"')
+        main_open = html.index(f'<form method="post" class="guest-admin-form" action="/guests/{guest_id}"')
         main_close = html.index("</form>", main_open)
         nested = html[main_open + 1 : main_close]
         assert "<form" not in nested, "no form may open inside the main guest form"

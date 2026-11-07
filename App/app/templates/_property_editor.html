@@ -446,7 +446,6 @@
       <i class="sd" aria-hidden="true"></i>
       <div class="lock-state-text"><b>{{ t({'off': 'smart_locks.state_off', 'times': 'smart_locks.state_times', 'offline': 'smart_locks.state_offline'}.get(door_code.state, 'smart_locks.state_on')) }}</b>
         <small>{% if lock_panel and lock_panel.smart_locks_enabled %}{{ t('apartment.form.door_code.connect_first') }}{% else %}{{ t('wizard.door_lock.unavailable') }}{% endif %}</small></div>
-      {% if lock_panel and lock_panel.smart_locks_enabled %}<a class="ui-btn ui-btn-primary" href="#door-code">{{ t('smart_locks.setup') }}</a>{% endif %}
     </div>
     {% endif %}
     {% if door_code %}

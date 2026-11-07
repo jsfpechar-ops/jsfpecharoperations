@@ -34,7 +34,7 @@ def test_edit_guest_page_keeps_save_as_the_first_submit_button():
         guest_id = _host_guest(stay_id)
         page = _host_client(owner_id).get(f"/guests/{guest_id}?lang=en").text
         _assert_v2_form_shell(page, stay_id)
-        main = page[page.index(f'<form method="post" action="/guests/{guest_id}"'):]
+        main = page[page.index(f'<form method="post" class="guest-admin-form" action="/guests/{guest_id}"'):]
         main = main[: main.index("</form>")]
         # Enter in a field submits with the first submit button: that must be Save, not Restrict.
         assert main.index('class="ui-btn ui-btn-primary" type="submit"') < main.index("formaction=")
