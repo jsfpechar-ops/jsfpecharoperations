@@ -243,11 +243,17 @@ def test_qr_rail_saves_operator_account_on_legal_entity(host, monkeypatch):
     client, apartment_id = host
     monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
     entity = db.query_one("SELECT legal_entity_id FROM apartment WHERE id = ?", (apartment_id,))
+    db.update(
+        "legal_entity",
+        entity["legal_entity_id"],
+        {"iban": None, "bank_account": None},
+    )
     account = "19-2000145399/0800"
     response = _save(
         client,
         apartment_id,
         guest={
+            "stay_fee_collect": "1",
             "stay_fee_guest_rails": ["qr", "iban"],
             "stay_fee_guest_operator_account": account,
         },
@@ -259,6 +265,50 @@ def test_qr_rail_saves_operator_account_on_legal_entity(host, monkeypatch):
     )
     assert row["bank_account"] == "19-2000145399/0800"
     assert (row["iban"] or "").startswith("CZ")
+
+
+def test_guest_pay_operator_account_change_needs_a_recent_login(host, monkeypatch):
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    monkeypatch.setattr(auth, "FRESH_LOGIN_SECONDS", -1)
+    entity = db.query_one("SELECT legal_entity_id FROM apartment WHERE id = ?", (apartment_id,))
+    response = _save(
+        client,
+        apartment_id,
+        guest={
+            "stay_fee_collect": "1",
+            "stay_fee_guest_rails": ["iban"],
+            "stay_fee_guest_operator_account": "19-2000781379/0800",
+        },
+    )
+    location = response.headers["location"]
+    assert response.status_code == 303
+    assert location.startswith("/settings/security?err=")
+    assert location.endswith("#settings-security")
+    row = db.query_one(
+        "SELECT bank_account FROM legal_entity WHERE id = ?",
+        (entity["legal_entity_id"],),
+    )
+    assert row["bank_account"] == "19-2000145399/0800"
+
+
+def test_guest_pay_unchanged_operator_account_saves_on_a_stale_session(host, monkeypatch):
+    """The operator field is always posted; an unchanged account must not demand a fresh login."""
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    monkeypatch.setattr(auth, "FRESH_LOGIN_SECONDS", -1)
+    response = _save(
+        client,
+        apartment_id,
+        guest={
+            "stay_fee_collect": "1",
+            "stay_fee_guest_rails": ["iban"],
+            "stay_fee_guest_operator_account": "19-2000145399/0800",
+        },
+    )
+    assert response.status_code == 303, response.text
+    assert not response.headers["location"].startswith("/settings/security")
+    assert _stored(apartment_id)["stay_fee_collect"] == 1
 
 
 def test_qr_rail_shows_preview_when_operator_has_iban(host, monkeypatch):

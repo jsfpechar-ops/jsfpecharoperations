@@ -252,6 +252,7 @@ GUEST_LINK_INVALID = "stay_fee_guest_link_invalid"
 GUEST_LINK_HOSTS = ("revolut.me", "revolut.com")
 GUEST_OPERATOR_ACCOUNT_RAW = "_stay_fee_guest_operator_account_raw"
 GUEST_OPERATOR_ACCOUNT_INVALID = "stay_fee_guest_operator_account_invalid"
+GUEST_OPERATOR_ACCOUNT_STALE = "stay_fee_guest_operator_account_stale"
 GUEST_OPERATOR_SAMPLE_VS = "1234567890"
 GUEST_RATE_REQUIRED = "stay_fee_guest_rate_required"
 
@@ -291,7 +292,7 @@ def guest_pay_values(form) -> dict:
         default_rail = "iban"
     if default_rail not in rails:
         default_rail = next((rail for rail in GUEST_RAILS if rail in rails), "")
-    return {
+    values = {
         "stay_fee_guest_default_rail": default_rail,
         "stay_fee_collect": 1 if _form_str(form, "stay_fee_collect") == "1" else 0,
         "stay_fee_guest_rails": ",".join(rails),
@@ -299,6 +300,11 @@ def guest_pay_values(form) -> dict:
         "stay_fee_guest_cash_note": note or None,
         GUEST_LINK_RAW: link,
     }
+    # HTML posts stay_fee_guest_operator_account; apply_guest_operator_account
+    # only persists this internal key. Absent means leave the stored account.
+    if "stay_fee_guest_operator_account" in form:
+        values[GUEST_OPERATOR_ACCOUNT_RAW] = _form_str(form, "stay_fee_guest_operator_account")
+    return values
 
 
 def fee_form_values(form) -> dict:
@@ -515,8 +521,13 @@ def check_guest_pay_setup(apartment, values: dict) -> None:
         raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
 
 
-def apply_guest_operator_account(apartment, form, values: dict) -> None:
-    """Persist the operator bank account when QR or bank transfer is enabled."""
+def apply_guest_operator_account(apartment, form, values: dict, request) -> None:
+    """Persist the operator bank account when QR or bank transfer is enabled.
+
+    A change of payout destination needs a fresh login (same rule as
+    POST /entities/{id}/invoice). Re-posting the account already on file does
+    not; the property form always sends the field.
+    """
     from .. import db
 
     if not hasattr(apartment, "get"):
@@ -541,6 +552,8 @@ def apply_guest_operator_account(apartment, form, values: dict) -> None:
     )
     if not entity:
         raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
+    if not hasattr(entity, "get"):
+        entity = dict(entity)
     if raw is None:
         if not _entity_payment_account(entity):
             raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
@@ -555,13 +568,22 @@ def apply_guest_operator_account(apartment, form, values: dict) -> None:
     if not apply_account_payload(detail, {}, entity, accept_parts=False):
         raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
     bank_account, iban = detail["bank_account"], detail["iban"]
+    existing = _entity_payment_account(entity)
+    if existing:
+        try:
+            _, existing_iban = payments.normalise_account(existing)
+        except ValueError:
+            existing_iban = ""
+        if existing_iban == iban:
+            return
+    if not auth.session_is_fresh(request):
+        raise ValueError(GUEST_OPERATOR_ACCOUNT_STALE)
     old_account = entity.get("bank_account") or ""
     old_iban = entity.get("iban") or ""
     db.update("legal_entity", entity_id, {"bank_account": bank_account, "iban": iban})
-    if (bank_account, iban) != (old_account, old_iban):
-        old_tail = (old_iban or old_account)[-4:] or "none"
-        new_tail = (iban or bank_account)[-4:]
-        db.audit("guest_operator_account_changed", f"entity={entity_id} old=...{old_tail} new=...{new_tail}")
+    old_tail = (old_iban or old_account)[-4:] or "none"
+    new_tail = (iban or bank_account)[-4:]
+    db.audit("guest_operator_account_changed", f"entity={entity_id} old=...{old_tail} new=...{new_tail}")
 
 
 
