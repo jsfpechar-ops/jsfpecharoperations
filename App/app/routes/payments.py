@@ -547,7 +547,7 @@ def booking_site_setup(request: Request, apartment_id: int):
     apartment, owner_id = _bsite_apartment(request, apartment_id)
     if apartment is None:
         return Response(status_code=404)
-    from .. import booking_manage, booking_setup, booking_site, property_page as pp
+    from .. import booking_manage, booking_rails, booking_setup, booking_site, property_page as pp
     from .. import payments as payments_mod
 
     context: Dict[str, Any] = {
@@ -575,6 +575,7 @@ def booking_site_setup(request: Request, apartment_id: int):
                 for value in booking_setup.NOTICE_OPTIONS
             ],
             policies=booking_site.POLICIES,
+            pay=booking_rails.setup_view(apartment_id),
             bookings=booking_manage.host_rows(apartment_id),
         )
     return render(request, "booking_site_setup.html", context)
@@ -610,6 +611,30 @@ async def booking_site_save(request: Request, apartment_id: int):
         return _back(here + "#rules", err=_flash(request, err_key))
     return _back(here, msg=_flash(request, "payments.page.saved"))
 
+
+
+
+@router.post("/apartments/{apartment_id}/booking-site/pay")
+async def booking_site_pay(request: Request, apartment_id: int):
+    """0996: save the direct payment rails of the booking site."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment, owner_id = _bsite_apartment(request, apartment_id)
+    if apartment is None:
+        return Response(status_code=404)
+    from .. import booking_rails, booking_site
+
+    here = f"/apartments/{apartment_id}/booking-site"
+    if not booking_site.site_allowed(owner_id):
+        return _back(here, err=_flash(request, "bsite.err.not_max"))
+    form = await request.form()
+    try:
+        values = booking_rails.parse_form(form, apartment_id)
+    except ValueError as exc:
+        return _back(here + "#pay", err=_flash(request, "bsite.err." + str(exc)))
+    db.update("apartment", apartment_id, values)
+    return _back(here, msg=_flash(request, "payments.page.saved"))
 
 @router.post("/apartments/{apartment_id}/booking-site/cancel")
 async def booking_site_cancel(request: Request, apartment_id: int):
