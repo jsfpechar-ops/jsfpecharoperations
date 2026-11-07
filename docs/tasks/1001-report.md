@@ -56,3 +56,5 @@ Status: review
 - `App/app/templates/reservation_detail.html` + `app2.css`: the guest name link in the stay guests table got class `guest-name-link` (`inline-block`, min-height 24px). It was 19px tall (tap target min 24, partD-stay-detail at 1024 to 1920 px). Catalog entry added.
 - Cache key: `base.html` app2.css `?v=20261107-1102`; `tests/static_versions.json` regenerated.
 - Browser tests: `test_0830_airbnb_pages_browser.py` partB-overview and partD-stay-detail, 14 of 14 pass after the fixes. The other 92 tests in the three named files passed before the fixes.
+
+a11y fix: Copy link button (tbody .btn.sm.ghost.copy-btn) was opacity 0 until row hover, so keyboard focus was invisible. Added `body.v2 tbody tr .btn.sm.ghost.copy-btn:focus-visible` (opacity 1, 2px #d0452d outline, offset 2px) in app2.css; cache key bumped to 20261107-1103. Row focus rule from 1001 untouched.
