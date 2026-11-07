@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--canvas:#f7f7f5;--surface:#fff;--ink:#20201e;--muted:#5f5f5a;--line:#deded9;--brand:#c85a52;--green:#167044;--green-bg:#e6f5ec;--info:#f3f4f8;--info-line:#d9dbe5}
+*{box-sizing:border-box}
+body{margin:0;background:var(--canvas);font-family:Manrope,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);font-size:17px;line-height:1.45}
+.bar{position:sticky;top:0;background:var(--ink);color:#fff;padding:12px 16px 0}
+.bar .row{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:17px}
+.bar .lang{font-size:14px;font-weight:700;opacity:.9}
+.bar .route{font-size:13px;letter-spacing:.06em;opacity:.85;margin:4px 0 10px}
+.bar .prog{height:3px;background:#444;margin:0 -16px}.bar .prog i{display:block;height:3px;background:var(--brand);width:var(--p,90%)}
+main{max-width:680px;margin:0 auto;padding:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px}
+.strip{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand);margin-bottom:6px}
+h2{font-size:24px;margin:0 0 12px;line-height:1.25}
+.rev{margin:0}.rev div{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.rev dt{color:var(--muted);font-size:15px}.rev dd{margin:0;font-weight:700;text-align:right}
+.rev a{display:block;color:var(--ink);font-size:15px;font-weight:700;text-underline-offset:3px;margin-top:2px}
+/* fee box */
+.fee{background:var(--info);border:1px solid var(--info-line);border-radius:16px;padding:20px;margin-bottom:16px}
+.fee h3{margin:0;font-size:19px;line-height:1.3}
+.amt{font-size:34px;font-weight:800;line-height:1.1;margin:10px 0 4px}
+.calc{margin:0 0 16px}
+.panel{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border-radius:12px;padding:14px;margin-bottom:12px}
+.panel svg{flex:none;margin-top:2px}.panel b{display:block}
+.panel.pay{border:2px solid var(--ink)}
+details.fold{border-top:1px solid var(--info-line)}
+details.fold summary{list-style:none;min-height:52px;display:flex;align-items:center;gap:12px;font-weight:700;cursor:pointer}
+details.fold summary::-webkit-details-marker{display:none}
+details.fold summary:before{content:"";width:26px;height:26px;border-radius:50%;border:2px solid var(--ink);flex:none;background:linear-gradient(var(--ink),var(--ink)) center/11px 2px no-repeat,linear-gradient(var(--ink),var(--ink)) center/2px 11px no-repeat}
+details.fold[open] summary:before{background:linear-gradient(var(--ink),var(--ink)) center/11px 2px no-repeat}
+details.fold p{margin:0 0 12px}
+details.fold a{color:var(--ink);font-weight:700;text-underline-offset:3px}
+.people{margin:0 0 12px}.people div{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--info-line)}.people dd{margin:0;font-weight:700}
+/* pay options */
+.opt{background:var(--surface);border:2px solid var(--line);border-radius:14px;margin-top:12px}
+.opt summary{list-style:none;min-height:60px;padding:0 16px;display:flex;align-items:center;gap:12px;font-weight:800;font-size:18px;cursor:pointer}
+.opt summary::-webkit-details-marker{display:none}
+.opt summary .r{width:24px;height:24px;border-radius:50%;border:2px solid #555;flex:none}
+.opt[open]{border-color:var(--ink)}.opt[open] summary .r{border:7px solid var(--ink)}
+.opt .body{padding:0 16px 16px}
+.qr{width:176px;height:176px;background:
+ repeating-linear-gradient(90deg,#20201e 0 8px,#fff 8px 16px),#fff;border:8px solid #fff;outline:1px solid var(--line);margin:4px 0 14px;
+ -webkit-mask:repeating-linear-gradient(0deg,#000 0 8px,transparent 8px 12px)}
+.facts{margin:0}.facts div{padding:8px 0;border-top:1px solid var(--line)}.facts dt{font-size:15px;color:var(--muted)}.facts dd{margin:2px 0 0;font-weight:800;font-size:18px;overflow-wrap:anywhere}.facts dd span{white-space:nowrap}
+.copy{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border:2px solid var(--ink);border-radius:10px;font-weight:800;font-size:16px;margin-top:6px;background:#fff}
+.legal{background:#f1f1ee;border-radius:16px;padding:0 18px;font-weight:700;margin-bottom:16px;min-height:60px;display:flex;align-items:center;gap:10px}
+.legal:before{content:"▸";color:var(--muted)}
+.ack{border:2px solid var(--brand);border-radius:14px;padding:16px;display:flex;gap:14px;background:#fff;margin-bottom:16px}
+.ack i{width:28px;height:28px;border:2px solid #555;border-radius:6px;flex:none}
+.stub{display:flex;gap:10px}
+.btn{flex:1;background:var(--brand);color:#fff;border-radius:14px;text-align:center;font-size:18px;font-weight:800;min-height:56px;display:flex;align-items:center;justify-content:center}
+.back{min-height:56px;padding:0 18px;border:2px solid var(--line);border-radius:14px;display:flex;align-items:center;font-weight:800;background:#fff}
+.stamp{display:inline-flex;align-items:center;gap:8px;color:var(--green);background:var(--green-bg);border-radius:999px;padding:6px 14px;font-weight:800;font-size:15px;margin-bottom:10px}
+.hide{display:none}
+</style></head><body>
+<header class="bar"><div class="row"><span>Old Town Loft</span><span class="lang">EN | CS</span></div><div class="route">28 SEP → 1 OCT · 3 NIGHTS</div><div class="prog"><i id="prog"></i></div></header>
+
+<main id="check">
+  <section class="card">
+    <div class="strip">Guest 1 of 3</div>
+    <h2>Check your details</h2>
+    <dl class="rev">
+      <div><dt>Name</dt><dd>Marie Nováková<a href="#">Change</a></dd></div>
+      <div><dt>Date of birth</dt><dd>14. 3. 1952<a href="#">Change</a></dd></div>
+      <div><dt>Home address</dt><dd>Lindenstraße 4, Dresden<a href="#">Change</a></dd></div>
+    </dl>
+  </section>
+
+  <section class="fee" aria-labelledby="fee-h">
+    <h3 id="fee-h">Local stay fee for you</h3>
+    <p class="amt">150 CZK</p>
+    <p class="calc">3 nights × 50 CZK</p>
+    <div class="panel">
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#167044"/><path d="M7 12.5l3.2 3.2L17 9" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span><b>You do not pay now.</b>When everyone in your group has registered, you choose how to pay.</span>
+    </div>
+    <details class="fold" id="why1">
+      <summary>Why do I pay this?</summary>
+      <p>Czech towns charge a small fee for each night you stay. Your host collects it and pays it to the town.</p>
+      <p><a href="#">Read the law (Act 565/1990)</a></p>
+    </details>
+  </section>
+
+  <div class="legal">Legal information</div>
+  <div class="ack"><i></i><span>I have read the information above and confirm my details are true.</span></div>
+  <div class="stub"><div class="back">Back</div><div class="btn">Submit</div></div>
+</main>
+
+<main id="hub" class="hide">
+  <section class="card">
+    <span class="stamp">✓ All 3 guests registered</span>
+    <h2>Your stay</h2>
+    <p style="margin:0;color:var(--muted)">Keep this page. It is your confirmation.</p>
+  </section>
+
+  <section class="fee" aria-labelledby="fee-h2">
+    <h3 id="fee-h2">Local stay fee for your group</h3>
+    <p class="amt">450 CZK</p>
+    <p class="calc">3 guests · 3 nights × 50 CZK each</p>
+    <div class="panel pay">
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#20201e"/><path d="M12 6.5v6.5M12 16.6v.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>
+      <span><b>Please pay now.</b>Choose one way below. You only pay once for the whole group.</span>
+    </div>
+
+    <details class="opt" open>
+      <summary><span class="r" aria-hidden="true"></span>Bank transfer or QR code</summary>
+      <div class="body">
+        <div class="qr" role="img" aria-label="Payment QR code for your banking app"></div>
+        <dl class="facts">
+          <div><dt>Pay to</dt><dd>Old Town Loft s.r.o.</dd></div>
+          <div><dt>Account (IBAN)</dt><dd><span>CZ65 0800</span> <span>0000 1920</span> <span>0014 5399</span></dd><span class="copy">Copy</span></div>
+          <div><dt>Amount</dt><dd>450 CZK</dd></div>
+          <div><dt>Reference (VS)</dt><dd>2809001</dd><span class="copy">Copy</span></div>
+        </dl>
+      </div>
+    </details>
+    <details class="opt"><summary><span class="r" aria-hidden="true"></span>Revolut</summary></details>
+    <details class="opt" style="margin-bottom:12px"><summary><span class="r" aria-hidden="true"></span>Cash on arrival</summary></details>
+
+    <details class="fold" id="per">
+      <summary>See the amount for each guest</summary>
+      <dl class="people"><div><dt>Guest 1</dt><dd>150 CZK</dd></div><div><dt>Guest 2</dt><dd>150 CZK</dd></div><div><dt>Guest 3</dt><dd>150 CZK</dd></div></dl>
+    </details>
+    <details class="fold" id="why2">
+      <summary>Why do I pay this?</summary>
+      <p>Czech towns charge a small fee for each night you stay. Your host collects it and pays it to the town.</p>
+      <p><a href="#">Read the law (Act 565/1990)</a></p>
+    </details>
+  </section>
+</main>
+<script>
+const q=new URLSearchParams(location.search);
+if(q.get("s")==="hub"){check.classList.add("hide");hub.classList.remove("hide");prog.style.width="100%"}
+if(q.get("open")){document.querySelectorAll("details.fold").forEach(d=>d.open=true)}
+</script>
+</body></html>
