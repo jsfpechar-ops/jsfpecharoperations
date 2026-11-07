@@ -638,9 +638,11 @@ def test_page_families_through_rail_cards_search_and_back(acc, base):
             # Back returns to the property overview.
             page.go_back()
             page.wait_for_url(re.compile(rf"/apartments/{p1}"))
+            page.wait_for_load_state("domcontentloaded")
+            page.locator("details#sec-basics").first.wait_for(state="attached", timeout=15000)
             _settle(page)
-            page.locator("details#sec-basics").first.wait_for(state="visible", timeout=15000)
-            assert page.locator("details#sec-basics").is_visible()
+            assert page.locator("details#sec-basics").count() == 1
+            assert page.locator("details#sec-basics > summary").is_visible()
             # Search -> Stay fees -> report period -> Back.
             page.locator("[data-command-open]:visible").first.click()
             page.locator("[data-command-input]").fill(search_term)
