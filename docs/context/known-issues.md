@@ -8,9 +8,9 @@
 |---|---|---|---|---|
 | K-DOM01 | Pending | App URLs | CI + phone check | owner |
 | K-F01 | High open | reporting.py:1356-1413, ubyport/client.py:166 | Non-401 4xx retried each sweep, uncapped | P A28-29 |
-| K-F02 | High open HR | icalsync.py date-move UPDATE ~498 | Date move ignores submission_claim; may move guest mid-send | P A24 |
+| K-F02 | High open HR | icalsync.py date-move ~498 | Date move ignores submission_claim; may move guest mid-send | P A24 |
 | K-F03 | Med open HR | icalsync.py ~805-830 | Lone vanished future booking stays "suspect" forever | P A19 |
-| K-F04 | Med open | icalsync.py | Duplicate feeds create two stays; one overdue forever | P A22 |
+| K-F04 | Med open | icalsync.py | Duplicate feeds: two stays, one overdue forever | P A22 |
 | K-F05 | Med open | icalsync.py, routes/admin.py | Manual and scheduled sync clash on UNIQUE; loser marked error | P A23 |
 | K-F06 | Med open | validation.py country_codes() | Some police country codes missing; Kosovo XKX unconfirmed | P A27 |
 | K-F07 | Low open HR | routes/guest.py immediate mode | Guest save waits for UbyPort (60 s+) | P A75 |
@@ -19,49 +19,49 @@
 | K-F10 | Low open | routes/admin.py calendar delete | Deleted calendar's future stays stay active and alert | P A34 |
 | K-F11 | Med open | reporting.py:829-845 | Surplus blank guest form blocks automatic filing | F |
 | K-F12 | Med accepted | reporting.py | ID check dropped (PR #331); host verifies documents | F |
-| K-F13 | Med open | production | 112 = accepted late. Never resend; `reconcile_accepted_codes.py` dry run, then `--apply` | F |
-| K-F14 | Med unverified | reporting.py due_for_automatic_send | 48 h send cap not compared with the legal deadline | AR-06 |
+| K-F13 | Med open | production | 112 = accepted late; never resend. `reconcile_accepted_codes.py` dry run, then `--apply`. | F |
+| K-F14 | Med unverified | reporting.py due_for_automatic_send | 48 h send cap not compared with legal deadline | AR-06 |
 | K-F15 | Med unverified | icalsync.py ~750 | Vanished bookings may keep a live guest link | AR-27 |
 | K-F16 | Med unverified | icalsync.py ~549-642 | Date-move reconcile not atomic; re-sign alert can be lost | AR-38 |
 | K-F17 | Low unverified | reporting.py claim TTL; :1683 recover_stale_submissions | Lease may expire in slow batches | P A16, A30 |
-| K-F19 | Low open | codelists.py error_severities | Before a successful Refresh only 1/112/150 are known | police A1-A2 |
-| K-F18 | High decision HR | reporting.py:859 signature_dates_stale | Stale signed dates: keep the safety net or restore re-signing (T48–T50)? | P Q6 |
-| K-L01 | High decision | retention.py:218,237 | Deletion 30+30 days and Terms s19 export wording need a lawyer | P Q9, G G-D11 |
-| K-L02 | High decision | retention.py ~306 | Termination deletes legal_acceptance rows; G-D7 says keep 3 years | F BE-10 |
+| K-F19 | Low open | codelists.py error_severities | Before a successful Refresh only 1/112/150 known | police A1-A2 |
+| K-F18 | High decision HR | reporting.py:859 signature_dates_stale | Stale signed dates: keep safety net or restore re-signing (T48–T50)? | P Q6 |
+| K-L01 | High decision | retention.py:218,237 | Deletion 30+30 days; Terms s19 export wording: lawyer needed | P Q9, G G-D11 |
+| K-L02 | High decision | retention.py ~306 | Termination deletes legal_acceptance rows; G-D7 says keep 3 yrs | F BE-10 |
 | K-L03 | High decision | retention.py, housebook.py expired_guest_ids | Retention anchor per guest vs 6 years from the last entry | G G-D4 |
-| K-L04 | High decision | reporting.py guest_signature_issue | Foreigners under 15 may be exempt; a signature is forced | C |
-| K-L05 | High decision | passport_photos.py | Legal basis for ID image copies and drawn signatures | C P0 2-3 |
-| K-L06 | High decision | deadlines.py add_working_days | Inclusive working-day reading of §100(c) needs counsel | F D3 |
+| K-L04 | High decision | reporting.py guest_signature_issue | Foreigners under 15 may be exempt; signature forced | C |
+| K-L05 | High decision | passport_photos.py | Legal basis: ID image copies, drawn signatures | C P0 2-3 |
+| K-L06 | High decision | deadlines.py add_working_days | §100(c) inclusive working-day reading needs counsel | F D3 |
 | K-L07 | Med decision | privacy_policy_i18n.py §8 | Logging section describes old logging | G OPS-3 |
 | K-L08 | Med decision | cookie and banner copy | Cloudflare cookie names unverified; no-banner wording unapproved | G MK-2/3 |
-| K-L09 | Med decision | docs/UbyHost_workplan/compliance/00_README.md | DSR/incident retention; Terms §17.2 liability floor | compliance |
+| K-L09 | Med decision | UbyHost_workplan/compliance/00_README.md | DSR/incident retention; Terms §17.2 liability floor | compliance |
 | K-L10 | Med decision | stay_fee.py | 60-night boundary; GDPR Art. 9 for disability exemptions | X |
-| K-P01 | High decision | access.py, auth.py (#280) | Admin preview unmasked, reason optional: align the DPIA/DPA text | AR |
-| K-P02 | High open | docs/vendors/README.md, ROPA | Support-mailbox provider has no subprocessor row and no DPA | G LD-4 |
-| K-P03 | High open | backup-gdrive.sh | Drive backups need a Workspace DPA or removal; DPA §11 lists Render | G OPS-2 |
-| K-P04 | Med open | db.py guests | Names, birth date and address in plaintext at rest | F W2.2 |
-| K-P05 | Med open | db.py | Dead plaintext doc_number/visa_number columns not dropped | G BE-11 |
+| K-P01 | High decision | access.py, auth.py (#280) | Admin preview unmasked, reason optional; align DPIA/DPA text | AR |
+| K-P02 | High open | docs/vendors/README.md, ROPA | Support-mailbox provider: no subprocessor row, no DPA | G LD-4 |
+| K-P03 | High open | backup-gdrive.sh | Drive backups need Workspace DPA or removal; DPA §11 lists Render | G OPS-2 |
+| K-P04 | Med open | db.py guests | Names, birth date, address in plaintext at rest | F W2.2 |
+| K-P05 | Med open | db.py | Dead plaintext doc_number/visa_number columns remain | G BE-11 |
 | K-P06 | Low open | routes/stay_fees.py:576 | fee_host_reason_reference unencrypted | P A46 |
 | K-P07 | Med open | docs/vendors/README.md | Vendor DPA evidence is only a README | G LD-9 |
-| K-P08 | Med decision | posthog_sync.py | Account deletion leaves the PostHog person; by hand for now | 0039 |
-| K-S01 | Med open | .cursor/mcp.json | Agents hold a production Cloudflare MCP (removed by task 0001) | AR-41 |
+| K-P08 | Med decision | posthog_sync.py | Account deletion leaves the PostHog person; manual for now | 0039 |
+| K-S01 | Med open | .cursor/mcp.json | Agents held a production Cloudflare MCP (removed by 0001) | AR-41 |
 | K-S02 | Med open | server egress | SSRF DNS-rebinding residual; needs egress deny rules | S UH-11 |
 | K-S03 | Med accepted | routes/guest.py | One link + PIN reveals dates of overlapping stays | S UH-21 |
 | K-S04 | Med unverified | routes/guest.py claim routes | Claim routes skip the reach-back bound (id oracle) | R #106 |
 | K-S05 | Med unverified | admin console | Admin console shows working guest claim links | F W2.4 |
 | K-S06 | Low open | main.py:167 | CSP script-src allows 'unsafe-inline' | P A42 |
-| K-S07 | Low decision | auth.py:498,618 | BOOTSTRAP_ADMIN=0 with no accounts may leave the host UI open | P A47 |
+| K-S07 | Low decision | auth.py:498,618 | BOOTSTRAP_ADMIN=0, no accounts: host UI may stay open | P A47 |
 | K-S08 | Low unverified | rate_limit.py:79 | No per-account login lockout across addresses | P A44 |
-| K-S09 | Low open | deploy-production.yml | GITHUB_TOKEN stays in the server's git remote | P A58 |
-| K-S10 | High decision | server .env | Owner: confirm UBYHOST_SECRET_KEY was rotated after the history leak | AR-01 |
+| K-S09 | Low open | deploy-production.yml | GITHUB_TOKEN stays in server's git remote | P A58 |
+| K-S10 | High decision | server .env | Owner: confirm UBYHOST_SECRET_KEY rotated after history leak | AR-01 |
 | K-I02 | Low open | invoices.py:51-63 _parse_decimal | "1.000" parses as 1 | X |
 | K-I03 | Low open | invoices.py cancel | Concurrent cancel returns 500 | P A10 |
-| K-I04 | Low open | invoices.py | Unvalidated duzp/due/correction dates return 500 | P A11 |
-| K-I05 | Low open | invoices.py:299 | Invoice year from the server date, not Prague | P A12 |
+| K-I04 | Low open | invoices.py | Unvalidated duzp/due/correction dates give 500 | P A11 |
+| K-I05 | Low open | invoices.py:299 | Invoice year from server date, not Prague | P A12 |
 | K-I06 | Low unverified | invoice_pdf.py | PDF floors the unit price; the web page rounds | P A13 |
 | K-I07 | Low unverified | routes/stay_fees.py | Cadence switch may orphan adjustments | P A15 |
 | K-I08 | Low open | stay_fee.py _day_liability | "Charge" files a minor with a blank reason | P A08 |
-| K-I09 | Med unverified | invoices.py:validate_for_issue | Buyer address unchecked; verify ordinary VAT invoice requirements | UI §3 |
+| K-I09 | Med unverified | invoices.py:validate_for_issue | Buyer address unchecked; verify VAT invoice requirements | UI §3 |
 | K-U01 | High decision | product.html:49,113, landing.html:72,189 | CTAs dead-end at /login while sign-up is off | UX UX-9 |
 | K-U02 | Med unverified | routes/guest.py PIN gate | A wrong PIN loses the #c= claim secret | UX M-3 |
 | K-U03 | Med open | signature.js:515, settings.html:250 | Back skips validation; recovery-code field numeric-only on iOS | UX M-5, M-1 |
@@ -73,24 +73,24 @@
 | K-U11 | Med open | host.css | Geometry checked locally; CI/staging pending | [0040](../tasks/0040-host-wide-geometry-audit.md) |
 | K-U12 | Med open | reservations.html, dashboard.html | 1280px overflow; mobile menu closes | [0041](../tasks/0041-host-stay-actions.md) |
 | K-U13 | Med review | browser tests | CI import 0042; UI fails | 0042 |
-| K-O01 | High open | server crontab | Backup and off-site crons aren't in the repo; verify on the server | AR-04 |
-| K-O02 | Med open | docker-compose.yml:14 | Floating image tag; check rollback on a real deploy | AR-03 |
+| K-O01 | High open | server crontab | Backup and off-site crons are not in the repo; verify on server | AR-04 |
+| K-O02 | Med open | docker-compose.yml:14 | Floating image tag; check rollback on real deploy | AR-03 |
 | K-O03 | Med open | reporting.py:702 dashboard_rows | N+1 queries and double decrypts | P A50-51 |
 | K-O04 | Low open | requirements.txt, Caddyfile | Pillow undeclared; dev deps use >=; no HSTS includeSubDomains | P A59, A61 |
-| K-O05 | Med open | db.py periodic scans | Scans cover all stays ever, so cost grows with retention | AR-43 |
+| K-O05 | Med open | db.py periodic scans | Scans cover all stays ever; cost grows with retention | AR-43 |
 | K-W01 | Med decision | GitHub repo | ~30 stale PRs; owner task 0001 step 12 APPLY=1; keep #278 #279 | 0001 |
 | K-ML01 | Low open | App/app/static/app.js | Unused reset-password JS (0003) | magic-link HANDOFF |
 | K-ML02 | Low open | App/app/host_i18n.py | Unused `login.password*` i18n keys | magic-link HANDOFF |
-| K-ML03 | Low open | docs/UbyHost_workplan/compliance/01, 03 | Compliance docs partly updated; lawyer review pending | task 0005 |
-| K-ML04 | Low open | login limit | Address 3/15 min budget exhaustible; account-only limits expose accounts | 0006 |
-| K-D02 | Low open | door_codes `_handle_moves` | Move replace: gateway retry every 15 min, no cap; guest keeps old PIN | 0037 |
-| K-D03 | Med decision | door_codes `_handle_moves` | Move permission/reauth/config/disabled: no retry after access fixed (0037) | 0037 |
-| K-D04 | High open | door_codes `issue`, `_handle_moves` | Same-hours rebooking can get a cancelled PIN via `get` | [0069](../tasks/0069-same-period-shared-pin.md) |
+| K-ML03 | Low open | UbyHost_workplan/compliance/01, 03 | Compliance docs partly updated; lawyer review due | task 0005 |
+| K-ML04 | Low open | login limit | Address 3/15 min budget exhaustible; account-only limits leak accounts | 0006 |
+| K-D02 | Low open | door_codes `_handle_moves` | Move replace: gateway retried every 15 min, uncapped; guest keeps old PIN | 0037 |
+| K-D03 | Med decision | door_codes `_handle_moves` | Move permission/reauth/config/disabled: no retry once access fixed (0037) | 0037 |
+| K-D04 | High open | door_codes `issue`, `_handle_moves` | Same-hours rebooking can get cancelled PIN via `get` | [0069](../tasks/0069-same-period-shared-pin.md) |
 | K-U15 | Med review | Host forms/navigation | Staging fixed; 0084 incl. K-U14; owner review | [plan](../plans/host-ux-combined-staging.md) |
 | K-T01 | Low open | Tests | Order-dependent tests (also 3 in test_host_i18n.py) | [0080](../tasks/0080-report.md) |
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
-| K-PG04 | Low open | scripts/reencrypt_data_key.py | Refuses to write on PG (no verified backup source); fix before the first PG key rotation | 0462 |
-| K-U17 | Low open | Property page, #sec-messages | #sec-messages deep link on the property page lands on the calendars section after late layout shifts (3 scrollIntoView calls run before content settles); needs a re-scroll after layout settles; test attempt removed in 0995. | 0995 |
+| K-PG04 | Low open | scripts/reencrypt_data_key.py | Refuses on PG (no verified backup source); fix before first PG key rotation | 0462 |
+| K-U17 | Low open | Property page, #sec-messages | #sec-messages deep link lands on calendars after late layout shifts; needs a re-scroll. | 0995 |
 
 - K-UI-CACHE: bump `?v=` on edits; 1y cache (0172).
 - K-NAV-418: 3 host_i18n tests fail. K-CHECKIN #435, K-MORE #436 undeployed.
@@ -98,4 +98,4 @@
 - K-CF01: mid-session challenge: see CLOUDFLARE Rule 3.
 - K-PG-ORDER: goose tests fail after icalsync locally; CI OK.
 
-- 0897 guest pay gaps: Slovak QR, PG migration 00007 unrun, no mark-as-paid, no e-mail link, copy review, legal sign-off.
+- 0897 guest pay gaps: Slovak QR, PG migration 00007 unrun, no mark-as-paid, no e-mail link, copy, legal sign-off.
