@@ -45,6 +45,10 @@
       <span>{{ t('payments.page.amenities') }}</span>
       <textarea class="ui-input" name="amenities" rows="6">{{ (page.amenities_json or '') | replace('["', '') | replace('", "', '&#10;') | replace('"]', '') }}</textarea>
     </label>
+    <label class="ui-field">
+      <span>{{ t('pp.rules') }}</span>
+      <textarea class="ui-input" name="house_rules" rows="6">{{ page.house_rules or '' }}</textarea>
+    </label>
     <button class="ui-btn ui-btn-primary" type="submit">{{ t('common.save') }}</button>
   </div>
 </form>

@@ -205,12 +205,21 @@ def _page_context(apartment_id: int):
         if (row["title"] or row["steps"] or row["watch_out"])
     ]
     c = dict(content) if content is not None else {}
+    from urllib.parse import quote
+
+    where = " ".join(p for p in (apartment["addr_obec"], apartment["addr_obec_cast"]) if p)
+    # Town and district only; the street and number never leave the host side.
+    map_url = f"https://mapy.cz/zakladni?q={quote(where)}" if where else ""
     return {
         "name": apartment["internal_name"],
         "district": " · ".join(
             p for p in (apartment["addr_obec"], apartment["addr_obec_cast"]) if p
         ),
         "description": c.get("description") or "",
+        "house_rules": [
+            ln.strip() for ln in (c.get("house_rules") or "").splitlines() if ln.strip()
+        ],
+        "map_url": map_url,
         "checkin_text": c.get("checkin_text") or "",
         "checkout_text": c.get("checkout_text") or "",
         "photos": json.loads(c.get("photos_json") or "[]"),

@@ -455,6 +455,7 @@ async def property_page_save(request: Request, apartment_id: int):
     pp.save_page(
         apartment_id,
         description=str(form.get("description") or "").strip(),
+        house_rules=str(form.get("house_rules") or "").strip()[:4000],
         amenities=[
             ln.strip()
             for ln in str(form.get("amenities") or "").splitlines()

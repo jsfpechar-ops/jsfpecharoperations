@@ -160,6 +160,10 @@ def prefill_from_import(apartment_id: int, import_row: Dict[str, Any]) -> None:
         updates["checkout_text"] = str(data["checkOut"])
     if not page["amenities_json"] and isinstance(data.get("amenities"), list):
         updates["amenities_json"] = _json.dumps(data["amenities"], ensure_ascii=False)
+    if not page.get("house_rules") and isinstance(data.get("houseRules"), list):
+        rules = "\n".join(str(r).strip() for r in data["houseRules"] if str(r).strip())
+        if rules:
+            updates["house_rules"] = rules
     if updates:
         sets = ", ".join(f"{k} = ?" for k in updates)
         db.execute(
@@ -168,15 +172,17 @@ def prefill_from_import(apartment_id: int, import_row: Dict[str, Any]) -> None:
         )
 
 
-def save_page(apartment_id: int, *, description: str, amenities: list) -> None:
+def save_page(apartment_id: int, *, description: str, amenities: list,
+              house_rules: str = "") -> None:
     """The host's review-screen save: overwrites, this is the host writing."""
     page_for(apartment_id)
     db.execute(
-        "UPDATE property_page SET description = ?, amenities_json = ?, updated_at = ?"
-        " WHERE apartment_id = ?",
+        "UPDATE property_page SET description = ?, amenities_json = ?,"
+        " house_rules = ?, updated_at = ? WHERE apartment_id = ?",
         (
             description or None,
             _json.dumps(amenities, ensure_ascii=False) if amenities else None,
+            house_rules or None,
             db.utcnow(),
             apartment_id,
         ),

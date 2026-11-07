@@ -24,7 +24,7 @@
   </section>
   <section class="pp-main">
     <h1>{{ page.name }}</h1>
-    <p class="pp-location">{{ page.district }}</p>
+    <p class="pp-location">{{ page.district }}{% if page.map_url %} · <a href="{{ page.map_url }}" target="_blank" rel="noopener noreferrer">{{ t('pp.map') }}</a>{% endif %}</p>
     {% if page.checkin_text or page.checkout_text %}
     <p class="pp-times">
       {% if page.checkin_text %}<span>{{ t('pp.checkin') }}: <strong>{{ page.checkin_text }}</strong></span>{% endif %}
@@ -46,6 +46,12 @@
     <h2>{{ t('pp.amenities') }}</h2>
     <ul class="pp-amenities">
       {% for a in page.amenities %}<li>{{ a }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    {% if page.house_rules %}
+    <h2>{{ t('pp.rules') }}</h2>
+    <ul class="pp-amenities">
+      {% for r in page.house_rules %}<li>{{ r }}</li>{% endfor %}
     </ul>
     {% endif %}
     {% if page.cards %}
