@@ -1,6 +1,6 @@
 # 0992: Let Cloudflare cache the public marketing pages for 5 minutes
 
-Status: todo
+Status: review
 Depends on: none | Base commit: f0a7fa3f | Branch: claude/zealous-planck-raxu4v
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Overlap: 0990 (settings write loop) and 0991 (indexes) must not touch main.py or templating.py; if either has, stop at the first missing anchor (§8).

@@ -218,6 +218,40 @@ def _harden(response, public_analytics: bool = False):
     return response
 
 
+_EDGE_CACHE_CONTROL = "public, max-age=0, s-maxage=300"
+
+
+def _apply_edge_cache(request: Request, response) -> None:
+    """0992: let Cloudflare keep a public marketing page for 5 minutes.
+
+    Only a plain GET/HEAD with no query string, no session cookie and no
+    language cookie, answered 200 by a page that opted in
+    (``request.state.edge_cacheable``). The edge cache key ignores cookies, so
+    anything that varies by cookie or query must stay private. The anonymous
+    CSRF cookie is dropped (no public page has a form); any other Set-Cookie
+    keeps the page private.
+    """
+    if not getattr(request.state, "edge_cacheable", False):
+        return
+    if request.method not in {"GET", "HEAD"} or response.status_code != 200:
+        return
+    if request.url.query:
+        return
+    if auth.SESSION_COOKIE in request.cookies or host_i18n.LANG_COOKIE in request.cookies:
+        return
+    csrf_prefix = f"{security.CSRF_COOKIE}=".encode("latin-1")
+    kept = [
+        (key, value) for key, value in response.raw_headers
+        if not (key.lower() == b"set-cookie" and value.startswith(csrf_prefix))
+    ]
+    if any(key.lower() == b"set-cookie" for key, _ in kept):
+        return
+    # In place: Starlette caches response.headers on this same list, so a new
+    # list would silently drop the Cache-Control set below.
+    response.raw_headers[:] = kept
+    response.headers["Cache-Control"] = _EDGE_CACHE_CONTROL
+
+
 def _is_guest_path(request: Request) -> bool:
     """A guest link (``/l/...``): its error pages speak the guest's language."""
     return request.url.path == "/l" or request.url.path.startswith("/l/")
@@ -292,6 +326,7 @@ async def cloudflare_connecting_ip(request: Request, call_next):
             "X-Robots-Tag": "noindex, nofollow",
         })
     _harden(response, public_analytics=analytics.is_public_page(request))
+    _apply_edge_cache(request, response)
     # Everything outside /static carries passport numbers, addresses and
     # signatures. Guests hand the phone back and hosts share laptops, so these
     # pages must not sit in history, the back/forward cache, or a proxy.
@@ -410,7 +445,8 @@ def sample_airbnb_calendar():
 
 
 @app.get("/robots.txt", include_in_schema=False)
-def robots():
+def robots(request: Request):
+    request.state.edge_cacheable = True
     return Response(seo.robots_txt(), media_type="text/plain; charset=utf-8")
 
 
@@ -473,7 +509,8 @@ def offline_page(request: Request):
 
 
 @app.get("/sitemap.xml", include_in_schema=False)
-def sitemap():
+def sitemap(request: Request):
+    request.state.edge_cacheable = True
     return Response(seo.sitemap_xml(), media_type="application/xml")
 
 
