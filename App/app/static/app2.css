@@ -156,7 +156,7 @@ body.v2 .crow{grid-auto-rows:44px}
 .ov-inline{display:inline}
 .ov-section{margin-bottom:28px}
 .ov-more{margin-top:12px}
-.ov-cal-more{margin:-16px 0 28px}
+.ov-cal-more{margin:0 0 28px}
 .ov-cal-link{color:var(--ink3);font-size:13px}
 .ic-red,.ic[data-ic=red]{background:var(--bads);color:var(--bad)}
 .ic-amber,.ic[data-ic=amber]{background:var(--warns);color:var(--warn)}
@@ -2902,7 +2902,7 @@ body.v2 .impersonation-handle{font-size:13px;color:var(--ink3)}
 body.v2 .impersonation-bar form{margin:0;flex:0 0 auto}
 body.v2 .impersonation-bar .btn{white-space:nowrap}
 /* 0993: dashboard calendar legend and bar tooltips */
-.cal-legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:8px 0 0;font-size:13px;color:var(--ink3)}
+.cal-legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:8px 0 6px;font-size:13px;color:var(--ink3)}
 .cal-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:baseline}
 .cal-legend .l-ok i{background:var(--ok)}.cal-legend .l-warn i{background:var(--warn)}.cal-legend .l-grey i{background:#c9c9c3}
 .cd small{display:block;font-size:10px;font-weight:400;color:var(--ink3)}
