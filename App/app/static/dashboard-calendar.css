@@ -684,6 +684,7 @@ body.v2 .cal-create-types .btn:not(.line):not(.soft):not(.ghost)[aria-pressed="f
 }
 @media (min-width:1024px) {
   .dashboard-calendar[data-readonly="false"] .cal-week-days .cal-day { min-height:112px; }
+  .dashboard-calendar[data-readonly="false"] dialog[data-cal-day-dialog] { z-index:20; box-shadow:-12px 0 32px rgba(32,32,30,.14); }
 }
 @media (min-width:768px) {
   .dashboard-calendar[data-readonly="false"] [data-cal-day-add] { display:block; width:100%; min-height:48px; margin:0; border-radius:12px; }
@@ -698,7 +699,7 @@ body.v2 .cal-create-types .btn:not(.line):not(.soft):not(.ghost)[aria-pressed="f
   .dashboard-calendar[data-readonly="false"] .cal-toolbar .cal-navigation { grid-column:2; grid-row:1; gap:12px; }
   .dashboard-calendar[data-readonly="false"] .cal-toolbar h3 { grid-column:1; grid-row:1; min-width:0; margin:0; text-align:left; font-size:24px; line-height:32px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .dashboard-calendar[data-readonly="false"] .cal-toolbar-options { grid-column:3; grid-row:1; gap:12px; }
-  .dashboard-calendar[data-readonly="false"].has-panel { margin-right:calc(360px + 16px - 36px); } /* 0818: desktop wrap gutter measured 36 px */
+  .dashboard-calendar[data-readonly="false"].has-panel { margin-right:0; } /* 1004: at 1024 px and up the day panel overlays the grid; the grid keeps its full width */
   .dashboard-calendar[data-readonly="false"].has-panel .cal-body { padding-right:0; }
 }
 @media (min-width:768px) and (max-width:1023px) {

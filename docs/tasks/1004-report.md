@@ -13,3 +13,13 @@ Command 4 (`python3 scripts/context_lint.py`): OK.
 Questions: Should the 0891 pill test be fixed in its own brief?
 
 Owner steps left: none yet; merge waits on the test decision and the unfinished UX gate.
+
+## Session 2 (extra request, lint, cache keys)
+
+Done: Extra request: `App/app/static/dashboard-calendar.css` at 1024 px and up, `.has-panel` no longer sets the 360 px margin-right, so the day panel (`dialog[data-cal-day-dialog]`, already fixed right, 360 px) overlays the grid; added z-index 20 and a soft left shadow. Tablet 768 to 1023 px gutter unchanged; bottom sheet below 768 unchanged. Cache keys: `_dashboard_calendar.html` `dashboard-calendar.css?v=20261107-1205`, `base.html` `app2.css?v=20261107-1205`, `App/tests/static_versions.json` rewritten by `test_static_versions.py --write`. Design lint: OK (no new classes).
+
+Command 2 (`test_layout_lint_browser.py`, browser required): 4 passed, 0 skipped. Command 3 (`test_cleaning_browser.py`, `test_0956_calendar_rule_colours_browser.py`, `test_static_versions.py`): 78 passed, 0 skipped. `python3 scripts/context_lint.py`: OK.
+
+Not done: (1) Screenshots `calendar-month-1280.png`, `calendar-week-1280.png`, `cleaning-panel-1280.png` were NOT produced. Session login for a standalone script failed (session cookie not set on the test client; with the staging no-login patch the pages timed out in `loaded()`). Not in /mnt/project-files/ux-shots. (2) Grid width before/after the panel opens is unmeasured. (3) `test_dashboard_calendar_browser.py` not re-run after the CSS change. (4) Sections of the test file (command 1) for the 0818 gutter not re-run.
+
+Owner steps left: none. Next: a follow-up brief for the screenshots and the grid-width check; run `test_dashboard_calendar_browser.py` with browser required.

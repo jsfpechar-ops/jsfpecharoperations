@@ -29,7 +29,7 @@
   },
   "app2.css": {
     "sha256": "8011c16a3a41e8455f79749b3a892987d105d6da0d999d5d555c766c41706c56",
-    "v": "20261107-1203"
+    "v": "20261107-1205"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -64,8 +64,8 @@
     "v": "20260915a"
   },
   "dashboard-calendar.css": {
-    "sha256": "3bf64c8c14580a981a5d5b87d871cb2ce5d4689cd4d4f87b55dd14d9644f2356",
-    "v": "20261107-0998"
+    "sha256": "7887aa2d8f12e6bb6d39cbfdeb4c4bd14c6286ed73f186d272c49cc578c7176c",
+    "v": "20261107-1205"
   },
   "dashboard-calendar.js": {
     "sha256": "6673d3df8f4bc7449e356e716e83b81270515d188375e5e2b68aea333a3327e2",
