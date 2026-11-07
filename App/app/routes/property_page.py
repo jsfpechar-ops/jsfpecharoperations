@@ -343,8 +343,8 @@ async def property_page_checkout(request: Request, slug: str):
     # A page opened before the terms text changed must not be accepted.
     if str(form.get("terms_version") or booking_site.TERMS_VERSION) != booking_site.TERMS_VERSION:
         return _book_error(slug, "terms", lang, form)
-    mode = str(form.get("pay_mode") or "stripe")
     modes = booking_rails.pay_modes(apartment_id, _owner_of(apartment_id))
+    mode = str(form.get("pay_mode") or (modes[0] if len(modes) == 1 else "stripe"))
     if mode not in modes:
         return _book_error(slug, "unavailable", lang, form)
     if mode == "direct":

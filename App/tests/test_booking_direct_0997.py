@@ -162,3 +162,52 @@ def test_no_stripe_call(owner, monkeypatch):
     monkeypatch.setattr(stripe_connect, "_api", boom)
     client = _client()
     assert client.post(f"/p/{_slug(owner)}/checkout", data=_checkout_payload()).status_code == 200
+
+
+def _page_query():
+    return {
+        "lang": "en",
+        "month": "2026-12",
+        "date_from": "2026-12-10",
+        "date_to": "2026-12-13",
+        "guests": "2",
+    }
+
+
+def test_real_page_offers_direct_only(owner, monkeypatch):
+    monkeypatch.setattr(config, "STRIPE_MODE", "off")
+    db.update("apartment", owner, {"stay_fee_guest_rails": "cash"})
+    client = _client()
+    slug = _slug(owner)
+    html = client.get(f"/p/{slug}", params=_page_query()).text
+    assert 'name="pay_mode" value="direct"' in html
+    assert "Send booking request" in html
+    assert "by card" not in html.lower()
+    post = {
+        "date_from": "2026-12-10",
+        "date_to": "2026-12-13",
+        "guests": "2",
+        "lang": "en",
+        "terms_version": booking_site.TERMS_VERSION,
+        "guest_name": "Anna Hostova",
+        "guest_email": "anna@example.test",
+        "terms": "1",
+    }
+    response = client.post(f"/p/{slug}/checkout", data=post)
+    assert response.status_code == 200
+    assert "Request sent" in response.text
+
+
+def test_real_page_offers_both_modes(owner, monkeypatch):
+    monkeypatch.setattr(config, "STRIPE_MODE", "test")
+    db.update("apartment", owner, {"stay_fee_guest_rails": "cash"})
+    oid = db.query_one("SELECT owner_user_id FROM apartment WHERE id = ?", (owner,))["owner_user_id"]
+    now = db.utcnow()
+    db.insert("stripe_account", {
+        "owner_user_id": oid, "stripe_account_id": "acct_both", "mode": "test",
+        "onboarding_state": "complete", "charges_enabled": 1, "payouts_enabled": 1,
+        "created_at": now, "updated_at": now,
+    })
+    client = _client()
+    html = client.get(f"/p/{_slug(owner)}", params=_page_query()).text
+    assert html.count('type="radio" name="pay_mode"') == 2

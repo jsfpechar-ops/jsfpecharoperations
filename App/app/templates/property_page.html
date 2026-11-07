@@ -128,8 +128,22 @@
           <input class="ui-input" type="email" name="guest_email" autocomplete="email" required></label>
         <label class="ui-check"><input type="checkbox" name="terms" value="1" required><span>{{ t('pp.book.terms') }}</span></label>
         <p class="pp-bk-note"><a href="/terms/booking?lang={{ lang }}" target="_blank" rel="noopener">{{ t('pp.book.terms_read') }}</a></p>
+        {% set modes = page.pay_modes or ['stripe'] %}
+        {% if modes|length > 1 %}
+        <fieldset class="ui-field">
+          <legend class="ui-label">{{ t('pp.book.pay_mode') }}</legend>
+          <label class="ui-check"><input type="radio" name="pay_mode" value="stripe" checked><span>{{ t('pp.book.mode.stripe') }}</span></label>
+          <label class="ui-check"><input type="radio" name="pay_mode" value="direct"><span>{{ t('pp.book.mode.direct') }}</span></label>
+        </fieldset>
+        <button class="ui-btn ui-btn-primary" type="submit">{{ t('pp.book.send_request') }}</button>
+        {% elif modes[0] == 'direct' %}
+        <input type="hidden" name="pay_mode" value="direct">
+        <button class="ui-btn ui-btn-primary" type="submit">{{ t('pp.book.send_direct') }}</button>
+        {% else %}
+        <input type="hidden" name="pay_mode" value="stripe">
         <button class="ui-btn ui-btn-primary" type="submit">{{ t('pp.book.pay_card', total=b.q.total_czk) }}</button>
         <p class="pp-bk-fine">{{ t('pp.book.stripe_note') }}</p>
+        {% endif %}
       </form>
       {% endif %}
 
