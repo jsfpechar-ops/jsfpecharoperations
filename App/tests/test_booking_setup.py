@@ -91,14 +91,14 @@ def test_steps_start_open_and_advance(owner, stripe_mode):
     rows = booking_setup.steps(aid, owner)
     assert len(rows) == 6
     assert [r["current"] for r in rows].count(True) == 1
-    assert next(r for r in rows if r["current"])["key"] == "stripe"
+    assert next(r for r in rows if r["current"])["key"] == "pay"
     assert not booking_setup.can_publish(rows)
 
     _connect_stripe(owner)
     booking_site.save_settings(aid, {"nightly_price_czk": 1800})
     rows = booking_setup.steps(aid, owner)
     done = {r["key"]: r["done"] for r in rows}
-    assert done["stripe"] and done["price"] and done["policy"]
+    assert done["pay"] and done["price"] and done["policy"]
     assert next(r for r in rows if r["current"])["key"] == "page"
     assert booking_setup.can_publish(rows)
 
