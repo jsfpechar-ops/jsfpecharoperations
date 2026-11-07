@@ -1,4 +1,4 @@
-# 1001: Havel and Leon speak in the first person
+# 1006: Havel and Leon speak in the first person
 
 Status: review
 Depends on: none | Base commit: 47640cf3 | Branch: claude/project-thread-hog1em
@@ -101,7 +101,7 @@ Copy only, no layout change. The Havel panel text is short; no new screenshot re
 
 ## 9. Report
 
-`docs/tasks/1001-report.md` as in executor.md. Commit each step as `1001 step k`. Do not push or open a PR; the orchestrator does that.
+`docs/tasks/1006-report.md` as in executor.md. Commit each step as `1006 step k`. Do not push or open a PR; the orchestrator does that.
 
 ## 8. Stop and ask
 

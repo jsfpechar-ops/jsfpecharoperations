@@ -17,7 +17,7 @@
     <div class="havel-head">
       <span class="havel-avatar" aria-hidden="true">{{ icon('message-circle-question', 20) }}</span>
       <div class="havel-head-text"><h2 id="havel-title" tabindex="-1">{{ t('havel.name') }}</h2><p>{{ t('havel.subtitle') }}</p></div>
-      <button class="ui-btn ui-btn-quiet ui-btn-icon" type="button" data-sheet-close aria-label="{{ t('havel.close') }}">{{ icon('x', 20) }}</button>
+      <button class="ui-btn ui-btn-quiet ui-btn-icon havel-close" type="button" data-sheet-close aria-label="{{ t('havel.close') }}">{{ icon('x', 20) }}</button>
     </div>
     <div class="havel-thread" role="log" aria-live="polite" data-havel-thread>
       {% include "_havel_topics.html" %}
