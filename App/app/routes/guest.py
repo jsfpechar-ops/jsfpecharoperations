@@ -229,7 +229,7 @@ def _residence_prefill(request: Request, reservation) -> tuple:
         values = {"res_street": street, "res_city": city, "res_country": country}
         # 0838: family name usually matches too. Shown in the form for the guest
         # to confirm or change; nothing is saved until they submit. Stay dates
-        # stay on the booking — the guest cannot see or edit those hidden fields.
+        # stay on the booking: the guest cannot see or edit those hidden fields.
         surname = (row["surname"] or "").strip()
         if surname:
             values["surname"] = surname
