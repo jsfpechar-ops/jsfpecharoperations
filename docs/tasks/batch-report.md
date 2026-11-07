@@ -89,3 +89,25 @@ None.
 1. Merge the batch PR with `scripts/merge-pr-on-green.sh` after CI is green.
 2. Deploy as usual (no migration).
 3. On `/apartments/<id>/page`, move a photo up and confirm the public page hero updates.
+
+## 0995 Booking site sidebar
+
+Status: review. Files: host_i18n.py (5+1 keys cs/en), `_shell_sidebar.html`, routes/payments.py (`/booking-sites`, setup nav), new `booking_sites.html`, `booking_site_setup.html` nav, new `test_booking_site_host.py` (6 tests), `test_layout_lint_browser.py` (EXTRA_ROUTES).
+
+### Commands
+- Row "Booking site" (host, booking_site, property_page, stripe_connect): 73 passed.
+- Host pages + geometry with `UBYHOST_REQUIRE_BROWSER=1`: 244 passed, 0 skipped.
+- `test_layout_lint_browser.py`: 4 passed, 0 findings.
+- `context_lint.py`: OK.
+
+### UX gate (booking-sites)
+390: one card per property, name wraps, badge and "Set up" side by side, sidebar absent (tab bar). 768: same cards, no overlap. 1280: sidebar shows "Booking site" highlighted, Properties not; cards full width, badge and button compact.
+Design-system checklist: reused tokens/components, no CSS, light mode, no JS.
+
+### Deviations
+- Icon: `globe` not in `_icons.html`, used `external-link`.
+- Brief's single `ui-facts` list failed layout lint (duplicate-heading with the page title, tight-stack of stacked "Set up" buttons at 768). Fixed inside the template: no wrapping section, one `ui_section` per property with badge and button in `ui-btn-group`. No CSS or ALLOW change.
+- First host-pages run showed 1 unexplained failure (not reproduced twice; later full run 244 passed).
+
+### Questions
+None. Owner steps: after merge and deploy, check the sidebar item on a Free and a Max account. 390 px shot: /opt/cursor/artifacts/0995-booking-sites-390.png (not committed).
