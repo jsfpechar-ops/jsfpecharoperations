@@ -162,10 +162,10 @@ def test_job_ok_records_the_last_success_and_late_jobs_show():
     scheduler._job_ok("mail")
     stored = db.get_setting(scheduler.JOB_LAST_OK_PREFIX + "mail")
     assert stored and admin_ops.age_minutes(stored) == 0
-    old = (datetime.now(timezone.utc) - timedelta(minutes=11)).replace(microsecond=0).isoformat()
+    old = (datetime.now(timezone.utc) - timedelta(minutes=30)).replace(microsecond=0).isoformat()
     db.set_setting(scheduler.JOB_LAST_OK_PREFIX + "mail", old)
     rows = {row["job_id"]: row for row in admin_ops.job_health()["rows"]}
-    assert rows["mail"]["late"] is True  # 11 min > 2 x 5 min
+    assert rows["mail"]["late"] is True  # 30 min > 2 x 5 min + 15 min write window
     assert rows["ical"]["late"] is True  # never recorded
     scheduler._job_ok("ical")
     rows = {row["job_id"]: row for row in admin_ops.job_health()["rows"]}

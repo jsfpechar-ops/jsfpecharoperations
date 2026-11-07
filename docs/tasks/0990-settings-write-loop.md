@@ -1,6 +1,6 @@
 # 0990: stop the settings write loop (job_last_ok heartbeat)
 
-Status: todo
+Status: review
 Depends on: none | Base commit: origin/main at branch creation | Branch: claude/zealous-planck-raxu4v (stay on it)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
