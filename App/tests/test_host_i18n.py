@@ -204,4 +204,3 @@ def test_ukrainian_plural_forms_follow_the_three_form_rule():
     assert host_i18n.plural_key("night", 12, "uk") == "night"
 
 
-def test_placeholder_imports_read_booked_in_both_languages():

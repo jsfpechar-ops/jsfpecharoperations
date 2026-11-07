@@ -192,6 +192,7 @@ body.v2 .btn.copy-btn:focus-visible{outline:2px solid #d0452d;outline-offset:2px
 body.v2 .ui-btn.copy-btn:focus-visible{outline:2px solid #d0452d;outline-offset:2px}
 /* 1001: a clickable row shows a ring only when a link or control inside is keyboard-focused, never on mouse focus or hover */
 .clickable-row:focus-within{outline:0}
+.clickable-row:focus-visible{outline:2px solid var(--acc);outline-offset:-2px;border-radius:8px}
 .clickable-row:has(:focus-visible){outline:2px solid var(--acc);outline-offset:-2px;border-radius:8px}
 body.v2 [data-needs-you-go]:hover{background:#b83a24}
 /* 0901: never a stretched-link overlay on the shell-v2 dashboard (it covered the page when workflow.css leaked in) */
