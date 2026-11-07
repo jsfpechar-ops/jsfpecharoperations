@@ -50,7 +50,7 @@
   {% elif progress.status == 'reported' and submissions %}
     {% set receipt_report = submissions | selectattr('has_receipt') | first %}
     {% if receipt_report %}
-      <a data-turbo="false" class="btn" href="/submissions/{{ receipt_report.id }}/receipt.pdf">{{ t('reports.detail.download_receipt') }}</a>
+      <a data-turbo="false" class="btn" href="/reservations/{{ reservation.id }}/dorucenka.zip">{{ t('reports.detail.download_receipt') }}</a>
       <a class="btn ghost" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
     {% else %}
       <a class="btn" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
