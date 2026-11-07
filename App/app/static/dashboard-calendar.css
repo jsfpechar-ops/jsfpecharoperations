@@ -702,6 +702,9 @@ body.v2 .cal-create-types .btn:not(.line):not(.soft):not(.ghost)[aria-pressed="f
   .dashboard-calendar[data-readonly="false"].has-panel { margin-right:0; } /* 1004: at 1024 px and up the day panel overlays the grid; the grid keeps its full width */
   .dashboard-calendar[data-readonly="false"].has-panel .cal-body { padding-right:0; }
 }
+@media (min-width:1024px) {
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"].has-panel .cal-head { margin-right:376px; } /* 1004 panel fix: heading and toolbar stop 16 px before the 360 px day panel; the grid keeps its full width */
+}
 @media (min-width:768px) and (max-width:1023px) {
   .dashboard-calendar[data-readonly="false"].has-panel { margin-right:calc(320px + 16px - 20px); } /* 0818: tablet wrap gutter measured 20 px */
   .dashboard-calendar[data-readonly="false"] .cal-tile-chips { gap:3px; }
