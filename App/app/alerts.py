@@ -553,11 +553,16 @@ SYSTEM_ALERT_KINDS = frozenset({"job_failed", "turnstile_unavailable", "ttlock_b
 
 
 def open_alerts(owner_user_id: Optional[int] = None) -> List:
-    marks = ", ".join("?" for _ in SYSTEM_ALERT_KINDS)
-    rows = db.query(
-        f"SELECT * FROM alert WHERE resolved_at IS NULL AND ("
-        f"? IS NULL OR owner_user_id = ? OR kind IN ({marks})) "
-        "ORDER BY created_at DESC",
-        (owner_user_id, owner_user_id, *SYSTEM_ALERT_KINDS),
-    )
+    # Two query shapes (0993): a `? IS NULL OR ...` test hides owner_user_id from the planner.
+    if owner_user_id is None:
+        rows = db.query(
+            "SELECT * FROM alert WHERE resolved_at IS NULL ORDER BY created_at DESC"
+        )
+    else:
+        marks = ", ".join("?" for _ in SYSTEM_ALERT_KINDS)
+        rows = db.query(
+            "SELECT * FROM alert WHERE resolved_at IS NULL AND ("
+            f"owner_user_id = ? OR kind IN ({marks})) ORDER BY created_at DESC",
+            (owner_user_id, *SYSTEM_ALERT_KINDS),
+        )
     return sorted(rows, key=lambda r: LEVEL_ORDER.get(r["level"], 9))
