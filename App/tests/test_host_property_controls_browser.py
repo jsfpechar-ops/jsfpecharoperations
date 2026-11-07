@@ -555,3 +555,296 @@ def test_guest_links_and_message_settings_geometry(host, base):
                 tip_top = page.evaluate(_TIP_JS, "ocr_scan")
                 assert tip_top is not None and abs(tip_top[0] - cb["y"]) <= 6, tip_top
         browser.close()
+
+
+# --- 0983: one Stay fee heading, one police title, direct Archive, copy chooser on the common dialog ---
+
+SHOTS_0983 = Path(os.environ.get("UBYHOST_SHOTS_DIR", "/tmp/ubyhost-b05"))
+
+
+def _shot_0983(page, name):
+    SHOTS_0983.mkdir(parents=True, exist_ok=True)
+    page.screenshot(path=str(SHOTS_0983 / f"{name}.png"), full_page=False)
+
+
+def _open_page_0983(browser, base, host, path, width):
+    context = browser.new_context(viewport={"width": width, "height": 900}, has_touch=width < 700)
+    context.add_cookies([{"name": auth.SESSION_COOKIE, "value": _session_cookie(host), "url": base}])
+    page = context.new_page()
+    page.goto(f"{base}{path}")
+    page.wait_for_load_state("networkidle")
+    return context, page
+
+
+def test_0983_fee_and_police_headings_and_archive_button(host, base):
+    apartment = host["apartment"]
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        try:
+            for lang, fee_title, police_title, connection, facility, archive_label in (
+                ("en", "Stay fee", "Foreigner police", "Connection to UbyPort", "Accommodation facility", "Archive property"),
+                ("cs", "Poplatek z pobytu", "Cizinecká policie", "Připojení k UbyPortu", "Ubytovací zařízení", "Archivovat nemovitost"),
+            ):
+                for width in (390, 768, 1280):
+                    context, page = _open_page_0983(browser, base, host, f"/apartments/{apartment}?lang={lang}", width)
+                    try:
+                        label = (lang, width)
+                        # Stay fee: the accordion title once, no inner duplicate; opens and closes.
+                        fee = page.locator("#sec-fee")
+                        fee.locator("> summary").click()
+                        assert fee.evaluate("e => e.open") is True, label
+                        assert fee_title in fee.locator("> summary b").inner_text(), label
+                        inner = [" ".join(h.split()).lower() for h in fee.locator("h2, h3").all_text_contents()]
+                        assert not any(h.startswith(fee_title.lower()) for h in inner), (label, inner)
+                        assert fee.locator("h2.property-section-title").count() == 0, label
+                        assert fee.locator("#stay-fee-settings").count() == 1, label
+                        fee.locator("> summary").click()
+                        assert fee.evaluate("e => e.open") is False, label
+                        # Police: one title, three meaningful subsections, no synonym heading.
+                        police = page.locator("#sec-police")
+                        police.locator("> summary").click()
+                        assert police.evaluate("e => e.open") is True, label
+                        assert police_title in police.locator("> summary b").inner_text(), label
+                        heads = [" ".join(h.split()) for h in police.locator("h2.property-section-title").all_text_contents()]
+                        assert len(heads) == 3, (label, heads)
+                        assert heads[0].startswith(connection) and heads[1].startswith(facility), (label, heads)
+                        assert not any(h.startswith(("Police reporting", "Hlášení policii")) for h in heads), (label, heads)
+                        assert police.locator("#police-sample-link").count() == 1, label
+                        if width == 390:
+                            _shot_0983(page, f"police-open-{lang}-390")
+                        police.locator("> summary").click()
+                        assert police.evaluate("e => e.open") is False, label
+                        # Archive: a direct secondary button, no accordion, not clipped.
+                        assert page.locator("details#sec-archive").count() == 0, label
+                        button = page.locator("#archive button[formaction$='/archive']")
+                        assert button.count() == 1 and button.inner_text().strip() == archive_label, label
+                        assert "ui-btn-secondary" in button.get_attribute("class"), label
+                        button.scroll_into_view_if_needed()
+                        box = button.bounding_box()
+                        assert box and box["x"] >= 0 and box["x"] + box["width"] <= width + 1 and box["height"] >= 40, (label, box)
+                        assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), label
+                        page.mouse.move(0, 0)  # 0983: a hover left by an earlier click must not open the tip
+                        page.evaluate("document.activeElement && document.activeElement.blur()")
+                        # The scroll above put the "?" under the still pointer, so JS opened the tip; leaving it closes it after 150 ms.
+                        page.locator("#archive-help").wait_for(state="hidden")
+                        assert not page.locator("#archive-help").is_visible(), label  # the tip stays closed until asked
+                        if lang == "en":
+                            _shot_0983(page, f"archive-{width}")
+                            # Click -> existing confirmation -> Cancel changes nothing.
+                            url_before = page.url
+                            button.click()
+                            dialog = page.locator("#confirm-dialog")
+                            dialog.wait_for(state="visible")
+                            assert dialog.locator("[data-confirm-cancel]").is_visible(), label
+                            if width == 390:
+                                _shot_0983(page, "archive-confirm-390")
+                            dialog.locator("[data-confirm-cancel]").click()
+                            dialog.wait_for(state="hidden")
+                            assert page.url == url_before, label
+                            row = db.query_one("SELECT archived_at, active FROM apartment WHERE id = ?", (apartment,))
+                            assert row["archived_at"] is None and row["active"] == 1, label
+                    finally:
+                        context.close()
+        finally:
+            browser.close()
+
+
+def test_0983_copy_chooser_uses_the_common_dialog_and_cancel_keeps_form_data(host, base):
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        try:
+            for lang in ("en", "cs"):
+                for width in (390, 768, 1280):
+                    context, page = _open_page_0983(browser, base, host, f"/apartments/new?lang={lang}", width)
+                    try:
+                        label = (lang, width)
+                        name = page.locator("input[name='internal_name']").first
+                        name.fill("Keep me 0983")
+                        page.locator(".airbnb-actions .copy-settings-open").first.click()
+                        dialog = page.locator("#copy-settings")
+                        dialog.wait_for(state="visible")
+                        page.wait_for_timeout(500)
+                        style = dialog.evaluate(
+                            """d => { const s = d.querySelector('.ui-sheet'); const c = getComputedStyle(d), k = getComputedStyle(s);
+                                      const r = d.getBoundingClientRect(); const q = s.getBoundingClientRect();
+                                      return {border: c.borderTopWidth, radius: k.borderTopLeftRadius, bg: k.backgroundColor,
+                                              left: r.left, right: r.right, top: q.top, bottom: q.bottom,
+                                              vw: document.documentElement.clientWidth, vh: innerHeight}; }""")
+                        assert style["border"] == "0px", (label, style)
+                        assert style["radius"] != "0px" and style["bg"] == "rgb(255, 255, 255)", (label, style)
+                        assert style["left"] >= -1 and style["right"] <= style["vw"] + 1, (label, style)
+                        assert style["top"] >= -1 and style["bottom"] <= style["vh"] + 1, (label, style)
+                        assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), label
+                        select = dialog.locator("select#copy_from")
+                        select.select_option(index=0)
+                        assert select.input_value(), label
+                        _shot_0983(page, f"copy-dialog-{lang}-{width}")
+                        dialog.locator("[data-sheet-close]").click()
+                        dialog.wait_for(state="hidden")
+                        assert name.input_value() == "Keep me 0983", label
+                    finally:
+                        context.close()
+        finally:
+            browser.close()
+# --- 0984: connection states (smart lock off/on/unavailable, calendar rows) ----
+
+_SHOT_DIR_0984 = os.environ.get("UBYHOST_SHOTS_DIR")
+_PILL_0984 = {"on": "ok", "off": "off"}
+_LONG_URL_0984 = "https://example.invalid/ical/" + "synthetic-token-" * 20 + ".ics"
+_NO_SIDEWAYS_0984 = "() => document.documentElement.scrollWidth - document.documentElement.clientWidth"
+_IN_VIEW_0984 = """(selector) => {
+  const vw = document.documentElement.clientWidth;
+  const nodes = [...document.querySelectorAll(selector)];
+  return {count: nodes.length, vw, bad: nodes.filter(el => {
+    const r = el.getBoundingClientRect();
+    return !r.width || !r.height || r.left < -1 || r.right > vw + 1;
+  }).map(el => el.id || el.className)};
+}"""
+
+
+def _shot_0984(page, name):
+    if _SHOT_DIR_0984:
+        Path(_SHOT_DIR_0984).mkdir(parents=True, exist_ok=True)
+        page.screenshot(path=str(Path(_SHOT_DIR_0984) / f"0984-{name}.png"), full_page=True)
+
+
+def _lock_page_0984(playwright, base, host, width, lang="en"):
+    browser = playwright.chromium.launch(**chromium_launch_kwargs())
+    context = browser.new_context(viewport={"width": width, "height": 900})
+    context.add_cookies([{"name": auth.SESSION_COOKIE, "value": _session_cookie(host), "url": base + "/"}])
+    page = context.new_page()
+    page.goto(f"{base}/apartments/{host['apartment']}?view=settings&section=lock&lang={lang}")
+    page.evaluate("() => { document.getElementById('sec-lock').open = true; }")
+    return browser, page
+
+
+def _lock_env_0984(monkeypatch, allowed):
+    from app import config, ttlock
+
+    monkeypatch.setattr(config, "DOOR_CODES_ENABLED", True)
+    monkeypatch.setattr(config, "TTLOCK_CLIENT_ID", "cid")
+    monkeypatch.setattr(config, "TTLOCK_CLIENT_SECRET", "csecret")
+    monkeypatch.setattr(ttlock, "allowed_for", lambda owner_user_id: allowed)
+
+
+def _assert_lock_state_matches_pill_0984(page, state_selector, expected_state):
+    pill = page.get_attribute(".prop-strip .sc[data-strip='door']", "data-state")
+    block = page.locator(state_selector)
+    assert block.is_visible()
+    assert block.get_attribute("data-state") == expected_state
+    assert pill == _PILL_0984.get(expected_state, "bad"), (pill, expected_state)
+    return block
+
+
+def test_0984_lock_off_explains_and_offers_one_action(host, base, monkeypatch):
+    _lock_env_0984(monkeypatch, True)
+    db.execute("UPDATE apartment SET lock_provider = NULL, lock_id = NULL WHERE id = ?", (host["apartment"],))
+    with sync_api.sync_playwright() as playwright:
+        for width in (390, 768, 1280):
+            browser, page = _lock_page_0984(playwright, base, host, width)
+            try:
+                block = _assert_lock_state_matches_pill_0984(page, "#lock-setup-state", "off")
+                assert "Turned off" in block.inner_text()
+                assert "TTLock" in block.inner_text()
+                action = block.locator("a.ui-btn[href='#door-code']")
+                assert action.count() == 1 and action.is_visible()
+                assert block.locator("form, input, button").count() == 0  # no lock command, no credential edit here
+                fit = page.evaluate(_IN_VIEW_0984, "#lock-setup-state, #lock-setup-state a.ui-btn")
+                assert fit["count"] == 2 and not fit["bad"], fit
+                assert page.evaluate(_NO_SIDEWAYS_0984) <= 1, width
+                _shot_0984(page, f"lock-off-{width}")
+            finally:
+                browser.close()
+
+
+def test_0984_lock_on_with_mock_fixture_keeps_its_controls(host, base, monkeypatch):
+    import json
+
+    from tests.property_host_fixture import LOCK
+
+    _lock_env_0984(monkeypatch, True)
+    db.insert("lock_account", {"owner_user_id": host["owner"], "provider": "ttlock", "username": "synthetic_0984",
+                               "status": "ok", "locks_json": json.dumps([LOCK]),
+                               "created_at": db.utcnow(), "updated_at": db.utcnow()})
+    db.execute("UPDATE apartment SET lock_provider = 'ttlock', lock_id = ?, checkin_hour = 15, checkout_hour = 10 WHERE id = ?",
+               (LOCK["lock_id"], host["apartment"]))
+    try:
+        with sync_api.sync_playwright() as playwright:
+            for width in (390, 768, 1280):
+                browser, page = _lock_page_0984(playwright, base, host, width)
+                try:
+                    block = _assert_lock_state_matches_pill_0984(page, "#lock-connected-off", "on")
+                    assert page.locator("#lock-setup-state, #lock-unavailable").count() == 0
+                    assert block.locator(".lock-state-form button").is_visible()
+                    assert page.evaluate(_NO_SIDEWAYS_0984) <= 1, width
+                    _shot_0984(page, f"lock-on-{width}")
+                finally:
+                    browser.close()
+    finally:
+        db.execute("DELETE FROM lock_account WHERE owner_user_id = ?", (host["owner"],))
+        db.execute("UPDATE apartment SET lock_provider = NULL, lock_id = NULL, checkin_hour = NULL, checkout_hour = NULL WHERE id = ?",
+                   (host["apartment"],))
+
+
+def test_0984_lock_unavailable_states_the_workspace_limitation(host, base, monkeypatch):
+    _lock_env_0984(monkeypatch, False)
+    with sync_api.sync_playwright() as playwright:
+        for width in (390, 768, 1280):
+            browser, page = _lock_page_0984(playwright, base, host, width)
+            try:
+                block = _assert_lock_state_matches_pill_0984(page, "#lock-unavailable", "off")
+                assert "Door codes are not enabled on this deployment." in block.inner_text()
+                assert block.locator("form, input, button, a").count() == 0
+                assert page.evaluate(_NO_SIDEWAYS_0984) <= 1, width
+                _shot_0984(page, f"lock-unavailable-{width}")
+            finally:
+                browser.close()
+
+
+def test_0984_calendar_rows_keep_state_and_actions_with_a_long_url(host, base):
+    apartment = host["apartment"]
+    now = db.utcnow()
+    healthy = db.insert("ical_feed", {
+        "apartment_id": apartment, "url": _LONG_URL_0984, "label": "booking", "own_name": "",
+        "active": 1, "last_status": "ok", "last_sync_at": now, "created_at": now,
+    })
+    failed = db.insert("ical_feed", {
+        "apartment_id": apartment, "url": "https://example.invalid/failed.ics", "label": "airbnb", "own_name": "",
+        "active": 1, "last_status": "error", "last_error": "Synthetic feed unreachable", "created_at": now,
+    })
+    try:
+        with sync_api.sync_playwright() as playwright:
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
+            context = browser.new_context(viewport={"width": 1280, "height": 900})
+            context.add_cookies([{"name": auth.SESSION_COOKIE, "value": _session_cookie(host), "url": base + "/"}])
+            page = context.new_page()
+            for width in (390, 768, 1280):
+                page.set_viewport_size({"width": width, "height": 900})
+                page.goto(f"{base}/apartments/{apartment}?view=bookings&lang=en")
+                assert page.locator("#sec-calendars[open]").count() == 1
+                rows = page.locator(".feed-table tbody tr")
+                assert rows.count() == 2
+                assert page.locator(".feed-table td[data-label='Last sync'] [data-tone='red']").is_visible()
+                assert page.locator(".feed-table td[data-label='Last sync'] [data-tone='green']").is_visible()
+                assert "Synthetic feed unreachable" in page.locator(".feed-table").inner_text()
+                # Name, state, URL control, copy and Remove are all in view while the URL is collapsed.
+                fit = page.evaluate(_IN_VIEW_0984, ".feed-table td strong, .feed-table [data-tone], .feed-table summary, .feed-table .copy-btn, .feed-table .row-actions .ui-btn")
+                assert fit["count"] >= 10 and not fit["bad"], (width, fit)
+                assert page.locator(".feed-url-details[open]").count() == 0
+                assert not page.locator(f"#feed-url-{healthy}").is_visible()
+                assert page.get_attribute(f".feed-table .copy-btn[data-copy='feed-url-{healthy}']", "data-copy")
+                assert page.evaluate(_NO_SIDEWAYS_0984) <= 1, width
+                _shot_0984(page, f"calendars-collapsed-{width}")
+                # Opening the long URL wraps it inside its cell and never pushes an action out of view.
+                page.locator(".feed-table summary").first.click()
+                page.wait_for_selector(f"#feed-url-{healthy}", state="visible", timeout=5000)
+                assert page.locator(f"#feed-url-{healthy}").is_visible()
+                fit = page.evaluate(_IN_VIEW_0984, ".feed-table .row-actions .ui-btn, .feed-table .copy-btn, .feed-url-details[open] .feed-url-value")
+                assert not fit["bad"], (width, fit)
+                assert page.evaluate(_NO_SIDEWAYS_0984) <= 1, width
+                wrap = page.evaluate("() => { const w = document.querySelector('.feed-table').closest('.scroll-x'); return w.scrollWidth - w.clientWidth; }")
+                assert wrap <= 1, (width, wrap)
+                _shot_0984(page, f"calendars-open-{width}")
+            browser.close()
+    finally:
+        db.execute("DELETE FROM ical_feed WHERE id IN (?, ?)", (healthy, failed))

@@ -164,6 +164,12 @@ def _housebook_export_row(row: Dict[str, Any]) -> Dict[str, Any]:
         "reported": reported,
         "reported_at": (row["manual_filed_at"] if by_hand else row["submitted_at"]) or "",
         "stamp": stamp,
+        # 0970: raw values for the on-screen register only. The CSV reads
+        # HOUSEBOOK_COLUMNS and never sees keys that start with an underscore.
+        "_purpose_code": row["purpose"] or "",
+        "_res_street": row["res_street"] or "",
+        "_res_city": row["res_city"] or "",
+        "_res_country": (row["res_country"] or "").upper(),
         "_guest_id": row["id"],
         "_apartment_id": row["apartment_id"],
     }

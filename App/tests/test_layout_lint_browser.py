@@ -251,7 +251,7 @@ def test_the_lint_catches_the_known_regressions(wide_base):
 HELP_BOX_JS = """() => {
   const pick = [
     '.help-tip.is-open > .help-tip-body',
-    'details.page-help[open] > .page-help-body',
+    '.page-help-wrap:has(details.page-help[open]) > .page-help-body',
     'details.ui-how[open] .ui-how-body',
   ];
   for (const sel of pick) {
@@ -269,7 +269,7 @@ HELP_BOX_JS = """() => {
 HELP_FIT_JS = """() => {
   const pick = [
     '.help-tip.is-open > .help-tip-body',
-    'details.page-help[open] > .page-help-body',
+    '.page-help-wrap:has(details.page-help[open]) > .page-help-body',
     'details.ui-how[open] .ui-how-body',
   ];
   for (const sel of pick) {
@@ -340,7 +340,7 @@ def test_opened_help_stays_inside_the_viewport(wide_host, wide_base):
     assert not bad, "opened help leaves the 16 px gutter:\n" + "\n".join(bad[:15])
 
 
-FINISH_SHOTS = Path("/mnt/project-files/dashboard-finish")
+FINISH_SHOTS = Path(os.environ.get("UBYHOST_SHOTS_DIR") or "/tmp") / "dashboard-finish"
 
 
 def _fresh_finish_host(wide_base):

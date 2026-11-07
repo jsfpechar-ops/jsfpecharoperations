@@ -1,0 +1,245 @@
+diff --git a/App/app/static/app2.css b/App/app/static/app2.css
+index 66fbf0f5..8814e8a6 100644
+--- a/App/app/static/app2.css
++++ b/App/app/static/app2.css
+@@ -2435,24 +2435,24 @@ body.v2 .onboarding-finish-strip{display:flex;flex-wrap:wrap;gap:12px;align-item
+ @media (max-width:1023px){body.v2 .onboarding-finish-strip a{white-space:nowrap;min-height:44px;display:inline-flex;align-items:center}}
+ 
+ /* 0948 status strip */
+-body.v2 .prop-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:1fr;gap:10px;margin:0 auto 16px;max-width:980px}
+-body.v2 .prop-strip .sc{display:grid;grid-template-columns:10px minmax(0,1fr);column-gap:10px;row-gap:2px;align-items:center;align-content:center;min-height:64px;padding:12px;background:#fff;border:1px solid var(--line);border-radius:14px;color:inherit;text-decoration:none}
+-body.v2 .prop-strip div.sc.sc-link{display:block;padding:12px}
++/* 0962: six compact status pills, the first content group under the title. Flex wrap: one row when it fits, clean rows otherwise; words never split. */
++body.v2 .prop-strip{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin:0 auto 16px;max-width:980px}
++body.v2 .prop-strip .sc{flex:1 1 140px;min-width:0;display:grid;grid-template-columns:10px minmax(0,1fr);column-gap:8px;row-gap:0;align-items:center;align-content:center;min-height:52px;padding:8px 12px;background:#fff;border:1px solid var(--line);border-radius:12px;color:inherit;text-decoration:none;box-sizing:border-box}
++body.v2 .prop-strip div.sc.sc-link{display:block;flex-basis:176px}
+ body.v2 .prop-strip .sc:hover{border-color:var(--ink3)}
+ body.v2 .prop-strip .sc:focus-visible,body.v2 .prop-strip .sc-main:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+ body.v2 .prop-strip .sd{grid-row:1/3;width:10px;height:10px;border-radius:50%;background:#c9c9c3}
+ body.v2 .prop-strip .sc[data-state="ok"] .sd{background:var(--ok)}
+ body.v2 .prop-strip .sc[data-state="warn"] .sd{background:var(--warn)}
+ body.v2 .prop-strip .sc[data-state="bad"] .sd{background:var(--bad)}
+-body.v2 .prop-strip .sc b{grid-column:2;font-size:14px;font-weight:600;line-height:1.3;min-width:0;overflow-wrap:anywhere}
+-body.v2 .prop-strip .sc small{grid-column:2;font-size:13px;color:var(--ink3);line-height:1.3;min-width:0;overflow-wrap:anywhere}
++body.v2 .prop-strip .sc b{grid-column:2;font-size:14px;font-weight:600;line-height:1.25;min-width:0;overflow-wrap:break-word;word-break:normal;hyphens:manual}
++body.v2 .prop-strip .sc small{grid-column:2;font-size:13px;color:var(--ink3);line-height:1.25;min-width:0;overflow-wrap:break-word;word-break:normal;hyphens:manual}
+ body.v2 .prop-strip .sc small.is-problem{color:var(--bad);font-weight:600}
+-@media (min-width:640px){body.v2 .prop-strip{grid-template-columns:repeat(3,minmax(0,1fr))}}
+-body.v2 .prop-strip .sc-main{display:grid;grid-template-columns:10px minmax(0,1fr);column-gap:10px;row-gap:2px;align-items:center;color:inherit;text-decoration:none;min-width:0}
++body.v2 .prop-strip .sc-main{display:grid;grid-template-columns:10px minmax(0,1fr);column-gap:8px;row-gap:0;align-items:center;color:inherit;text-decoration:none;min-width:0}
+ body.v2 .prop-strip .sc-main b,body.v2 .prop-strip .sc-main small{grid-column:2}
+ @media (max-width:1023px){body.v2 .prop-strip .sc-main{min-height:var(--control-h-phone,44px);align-content:center}}
+-body.v2 .prop-strip .sc-actions{margin-top:8px;padding-left:20px}
+-body.v2 .prop-strip .sc-actions .btn{min-height:44px}
++body.v2 .prop-strip .sc-actions{margin-top:6px;padding-left:18px;min-width:0}
++body.v2 .prop-strip .sc-actions .btn{display:block;width:100%;max-width:100%;min-height:44px;padding:6px 8px;box-sizing:border-box;font-size:13px;line-height:1.2;white-space:normal;overflow-wrap:break-word;text-align:center}
+ body.v2 .airbnb-actions{display:flex;gap:10px;align-items:center;margin-left:auto}
+ body.v2 .prop-new-head{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+ body.v2 .prop-new-head .airbnb-actions{margin-left:auto}
+@@ -2460,7 +2460,18 @@ body.v2 .airbnb-header:has(>.airbnb-actions){flex-wrap:wrap}
+ body.v2 .airbnb-header:has(>.airbnb-actions)>.airbnb-title{width:auto;flex:1 1 0;min-width:0}
+ body.v2 .airbnb-header:has(>.airbnb-actions)>.airbnb-back{margin-right:0}
+ @media (max-width:767px){body.v2 .airbnb-actions{width:100%;margin-left:0}body.v2 .airbnb-actions .copy-settings-open{width:100%;justify-content:center;min-height:44px}body.v2 .airbnb-header:has(>.airbnb-actions)>.airbnb-title{flex:1 1 100%}}
+-@media (max-width:359px){body.v2 .prop-strip{grid-template-columns:minmax(0,1fr)}}
++@media (max-width:359px){body.v2 .prop-strip .sc,body.v2 .prop-strip div.sc.sc-link{flex-basis:100%}}
++/* 0962: cards that used to sit in the Preview aside (setup continue, Leon) now sit under the pills; the Preview/checklist panel is gone. */
++body.v2 .prop-after-strip{display:flex;flex-direction:column;gap:8px;max-width:980px;margin:0 auto 16px}
++body.v2 .prop-after-strip:empty{display:none}
++body.v2 .prop-after-strip .pv{margin-bottom:0}
++@media (min-width:1024px){body.v2 .form.prop-form-single{grid-template-columns:minmax(0,1fr)}}
++body.v2 .prop-sec-missing{margin:0 0 12px;padding:10px 12px;background:#fff;border:1px solid var(--line);border-radius:10px;font-size:14px;line-height:1.35}
++body.v2 .prop-sec-missing p{margin:0}
++body.v2 .prop-sec-missing .readiness-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
++body.v2 .prop-sec-missing .readiness-item{margin:0;padding:0}
++body.v2 .prop-sec-missing .readiness-item a{font-weight:600;color:var(--bad)}
++body.v2 .prop-sec-missing .readiness-why{display:block;color:var(--ink3);font-size:13px}
+ 
+ /* 0951: guest links block */
+ body.v2 .guest-link-top{display:grid;gap:16px;grid-template-columns:minmax(0,1fr);margin-bottom:16px}
+diff --git a/App/app/templates/_property_editor.html b/App/app/templates/_property_editor.html
+index c3b23826..3e47d04f 100644
+--- a/App/app/templates/_property_editor.html
++++ b/App/app/templates/_property_editor.html
+@@ -45,6 +45,13 @@
+ {%- set p_bad = p_state in ['bad', 'warn'] -%}
+ {%- set b_state = hc['business'].state if 'business' in hc else ('ok' if apartment.legal_entity_id else 'bad') -%}
+ {%- set b_bad = b_state in ['bad', 'warn'] -%}
++{#- 0962: the six pills are the one readiness summary. What a pill still lacks is listed inside its own section, from the same `readiness` object (no second calculation). -#}
++{%- set miss = {'basics': [], 'police': [], 'calendars': []} -%}
++{%- if readiness -%}
++{%- for item in readiness.invite if not item.done -%}{%- set _ = miss['calendars' if item.anchor == 'calendars' else 'basics'].append(item) -%}{%- endfor -%}
++{%- for item in readiness.report if not item.done -%}{%- set _ = miss['basics' if item.anchor == 'address' else 'police'].append(item) -%}{%- endfor -%}
++{%- endif -%}
++{% macro section_missing(items, key) %}{% if items %}<div class="prop-sec-missing" data-missing="{{ key }}" role="note"><ul class="readiness-list">{% for item in items %}<li class="readiness-item"><a href="#{{ item.anchor }}">{{ t('apartment.form.readiness.missing') }} {{ t('apartment.form.readiness.item.' ~ item.key) }}</a>{% if item.message %}<span class="readiness-why">{{ validation_message(item.message) }}</span>{% endif %}</li>{% endfor %}</ul></div>{% endif %}{% endmacro %}
+ <nav class="prop-strip" aria-label="{{ t('property_page.strip.aria') }}">
+   <a class="sc" href="#sec-calendars" data-strip="calendars" data-state="{{ cal_state }}"><i class="sd" aria-hidden="true"></i><b>{{ t('property_page.sec.calendars.title') }}</b><small{% if cal_bad %} class="is-problem"{% endif %}>{% if cal_bad %}{{ t(hc['calendar'].text_key) if 'calendar' in hc else t('apartment.form.feed.status.error') }}{% elif calendar_errors %}{{ t('apartment.form.feed.status.error') }}{% else %}{{ tp('apartment.form.calendars_count', feeds_count) }}{% endif %}</small></a>
+   {%- if permalink %}
+@@ -57,7 +64,30 @@
+   <a class="sc" href="#sec-fee" data-strip="fee" data-state="{{ 'ok' if apartment.stay_fee_rate_czk else 'off' }}"><i class="sd" aria-hidden="true"></i><b>{{ t('property_page.sec.fee.title') }}</b><small>{% if apartment.stay_fee_rate_czk %}{{ apartment.stay_fee_rate_czk }} Kč{% else %}{{ t('apartments.chip_state.off') }}{% endif %}</small></a>
+   <a class="sc" href="#sec-lock" data-strip="door" data-state="{{ {'on': 'ok', 'off': 'off'}.get(door_code.state, 'bad') if door_code else 'off' }}"><i class="sd" aria-hidden="true"></i><b>{{ t('property_page.sec.lock.title') }}</b><small>{{ t('property_nav.switch_enabled') if door_code and door_code.state == 'on' else t('health.door.times') if door_code and door_code.state == 'times' else t('health.door.offline') if door_code and door_code.state == 'offline' else t('property_nav.switch_off') }}</small></a>
+ </nav>
+-<div class="form">
++<div class="prop-after-strip">
++{% if setup_progress and not setup_progress.hidden %}
++<section class="pv setup-continue-card" aria-label="{{ t('wizard.continue_card_aria') }}">
++  <p>{{ t('wizard.continue_card', done=setup_progress.done, total=setup_progress.total) }}
++    {% if setup_progress.reporting_waiting %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ t('setup_guide.reporting.waiting_item') }}</span>{% endif %}
++  </p>
++  <div class="actions">
++    <a class="ui-btn ui-btn-primary" href="{{ setup_progress.continue_url }}">{{ t('wizard.continue') }}</a>
++    <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
++      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
++      <button class="ui-btn ui-btn-quiet" type="submit" name="action" value="hide" formnovalidate>{{ t('setup_guide.hide') }}</button>
++    </form>
++  </div>
++</section>
++{% elif setup_hidden %}
++<form method="post" action="/apartments/{{ apartment.id }}/setup" class="property-setup-show">
++  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
++  <button class="link-button" type="submit" name="action" value="show">{{ t('setup_guide.show') }}</button>
++</form>
++{% endif %}
++  {%- set wizard_active = setup_progress and not setup_progress.hidden -%}
++  {% if leon_card %}<div class="pv"><a class="r" href="{{ base_url }}/leon{% if leon_card != 'on' %}/setup{% endif %}" data-leon-card="{{ leon_card }}"><span>{{ t('leon_page.title') }}</span>{{ t('leon_page.card.' ~ leon_card) }}</a></div>{% endif %}
++</div>
++<div class="form prop-form-single">
+ <div class="form-main">
+ <form method="post" action="{{ base_url }}" enctype="multipart/form-data" class="property-settings-form" id="property-settings-form" data-property-settings-form data-unsaved-guard{% if operator_error %} data-dirty-start="1"{% endif %}>
+   <p class="required-legend">{{ t('common.required_legend') }}</p>
+@@ -74,6 +104,7 @@
+ <details class="prop-sec" id="sec-basics"{% if inline_flash_section == 'basics' %} open{% endif %}{% if property_view != 'bookings' and (not settings_section or settings_section == 'property') %} open{% endif %}><summary><span class="dot {{ 'g' if address_text else 'r' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.basics.title') }}</b></div><small class="sec-state">{{ address_text or t('property_nav.address_missing') }}</small></summary>
+   <div class="fields-wrap">
+   {{ section_notice('basics') }}
++  {{ section_missing(miss['basics'], 'basics') }}
+     <section class="panel property-section ui-section" id="basics">
+       {% include "_property_identity_fields.html" %}
+       {% set operator_current = apartment.legal_entity_id %}
+@@ -154,6 +185,7 @@
+ <details class="prop-sec" id="sec-messages"{% if inline_flash_section == 'messages' %} open{% endif %}{% if settings_section == 'guests' %} open{% endif %}><summary><span class="dot {{ 'n' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.messages.title') }}</b></div><small class="sec-state">{{ t('property_page.sec.messages.sub') }}</small></summary>
+   <div class="fields-wrap">
+   {{ section_notice('messages') }}
++  {% if g_bad %}<div class="prop-sec-missing" data-missing="messages" role="note"><p>{{ t(hc['guest_link'].text_key) }}</p></div>{% endif %}
+     <section class="panel property-section ui-section" id="communication">
+       <div class="field-label-row"><h2 class="property-section-title">{{ t('nav.guest_links') }}{{ help_tip('communication-help', t('guest_links.lede') ~ ' ' ~ t('apartment.form.guest_link.message_help'), '/guide#guests') }}</h2></div>
+       <p class="ui-sub">{{ t('why.guest_link') }}</p>
+@@ -231,6 +263,7 @@
+ <details class="prop-sec" id="sec-police"{% if inline_flash_section == 'police' %} open{% endif %}{% if settings_section in ['reporting', 'automation'] %} open{% endif %}><summary><span class="dot {{ 'g' if police_ok else 'r' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.police.title') }}</b></div><small class="sec-state">{{ t('property_nav.report_ready') if police_ok else tp('property_nav.report_missing', report_missing) }}</small></summary>
+   <div class="fields-wrap">
+   {{ section_notice('police') }}
++  {{ section_missing(miss['police'], 'police') }}
+     <section class="panel property-section ui-section" id="ubyport">
+       <div class="field-label-row police-section-head"><h2 class="property-section-title">{{ t('host.reporting') }}{{ help_tip('ubyport-help', t('apartment.form.ubyport.credentials_help_heading'), '/guide#ubyport-credentials') }}</h2>
+         <a class="ui-btn ui-btn-secondary ui-btn-compact police-sample-link" id="police-sample-link" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.sample_link') }}</a></div>
+@@ -359,6 +392,7 @@
+ <details class="prop-sec" id="sec-calendars"{% if inline_flash_section == 'calendars' %} open{% endif %}{% if property_view == 'bookings' %} open{% endif %}><summary><span class="dot {{ 'r' if calendar_errors else ('g' if feeds_count else 'n') }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.calendars.title') }}</b></div><small class="sec-state">{{ tp('apartment.form.calendars_count', feeds_count) }}</small></summary>
+   <div class="fields-wrap">
+   {{ section_notice('calendars') }}
++  {{ section_missing(miss['calendars'], 'calendars') }}
+ {% include "_property_calendars.html" %}
+   </div>
+ </details>
+@@ -366,6 +400,7 @@
+ <details class="prop-sec" id="sec-lock"{% if inline_flash_section == 'lock' %} open{% endif %}{% if settings_section == 'lock' %} open{% endif %}><summary><span class="dot {{ 'g' if door_code and door_code.state == 'on' else 'n' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.lock.title') }}</b></div><small class="sec-state">{{ t('property_nav.switch_enabled') if door_code and door_code.state == 'on' else t('property_nav.switch_off') }}</small></summary>
+   <div class="fields-wrap">
+   {{ section_notice('lock') }}
++  {% if door_code and door_code.state in ['offline', 'times'] %}<div class="prop-sec-missing" data-missing="lock" role="note"><p>{{ t('health.door.offline') if door_code.state == 'offline' else t('health.door.times') }}</p></div>{% endif %}
+     <p class="property-group-intro">{{ t('why.door_lock') }}</p>
+     {% if door_code and door_code.account and door_code.locks %}
+     <div class="lock-state" data-state="{{ door_code.state }}" role="status">
+@@ -433,68 +468,4 @@
+     <button class="btn" type="submit" form="property-settings-form">{{ t('common.save_changes') }}</button>
+   </div>
+ </div>
+-<aside class="preview" aria-labelledby="property-preview-title">
+-  <h3 id="property-preview-title">{{ t('property_page.preview.title') }}</h3>
+-{% if setup_progress and not setup_progress.hidden %}
+-<section class="pv setup-continue-card" aria-label="{{ t('wizard.continue_card_aria') }}">
+-  <p>{{ t('wizard.continue_card', done=setup_progress.done, total=setup_progress.total) }}
+-    {% if setup_progress.reporting_waiting %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ t('setup_guide.reporting.waiting_item') }}</span>{% endif %}
+-  </p>
+-  <div class="actions">
+-    <a class="ui-btn ui-btn-primary" href="{{ setup_progress.continue_url }}">{{ t('wizard.continue') }}</a>
+-    <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
+-      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+-      <button class="ui-btn ui-btn-quiet" type="submit" name="action" value="hide" formnovalidate>{{ t('setup_guide.hide') }}</button>
+-    </form>
+-  </div>
+-</section>
+-{% elif setup_hidden %}
+-<form method="post" action="/apartments/{{ apartment.id }}/setup" class="property-setup-show">
+-  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+-  <button class="link-button" type="submit" name="action" value="show">{{ t('setup_guide.show') }}</button>
+-</form>
+-{% endif %}
+-  {%- set wizard_active = setup_progress and not setup_progress.hidden -%}
+-  {% if leon_card %}<div class="pv"><a class="r" href="{{ base_url }}/leon{% if leon_card != 'on' %}/setup{% endif %}" data-leon-card="{{ leon_card }}"><span>{{ t('leon_page.title') }}</span>{{ t('leon_page.card.' ~ leon_card) }}</a></div>{% endif %}
+-  {% if readiness and not wizard_active %}<div class="pv">
+-{%- set wizard_active = setup_progress and not setup_progress.hidden -%}
+-{% if readiness and not wizard_active %}
+-<details class="setup-readiness-help" data-setup-status>
+-    <summary>{{ t('wizard.overview.details') }} <span aria-hidden="true">?</span></summary>
+-    <section class="readiness">
+-  <div class="readiness-group">
+-    <h3 class="readiness-title">{{ t('apartment.form.readiness.invite_title') }}</h3>
+-    <ul class="readiness-list">
+-      {% for item in readiness.invite %}
+-      <li class="readiness-item{% if item.done %} is-done{% endif %}">
+-        <span class="readiness-mark" aria-hidden="true">{{ '✓' if item.done else '✗' }}</span>
+-        {% if item.done %}{{ t('apartment.form.readiness.item.' ~ item.key) }}
+-        {% else %}<a href="#{{ item.anchor }}">{{ t('apartment.form.readiness.missing') }} {{ t('apartment.form.readiness.item.' ~ item.key) }}</a>{% endif %}
+-      </li>
+-      {% endfor %}
+-    </ul>
+-    {% if readiness.invite_ready %}
+-    <p class="readiness-ready">{{ t('apartment.form.readiness.invite_ready') }}</p>
+-    {% if not setup_finished %}{{ copy_inline('readiness-permalink', permalink, t('apartment.form.readiness.copy_link')) }}{% endif %}
+-    {% endif %}
+-  </div>
+-  <div class="readiness-group">
+-    <h3 class="readiness-title">{{ t('apartment.form.readiness.report_title') }}</h3>
+-    <ul class="readiness-list">
+-      {% for item in readiness.report %}
+-      <li class="readiness-item{% if item.done %} is-done{% endif %}">
+-        <span class="readiness-mark" aria-hidden="true">{{ '✓' if item.done else '✗' }}</span>
+-        {% if item.done %}{{ t('apartment.form.readiness.item.' ~ item.key) }}
+-        {% else %}<a href="#{{ item.anchor }}">{{ t('apartment.form.readiness.missing') }} {{ t('apartment.form.readiness.item.' ~ item.key) }}</a>
+-          {% if item.message %}<span class="readiness-why">{{ validation_message(item.message) }}</span>{% endif %}
+-        {% endif %}
+-      </li>
+-      {% endfor %}
+-    </ul>
+-  </div>
+-</section>
+-</details>
+-{% endif %}
+-  </div>{% endif %}
+-</aside>
+ </div>
+diff --git a/App/app/templates/base.html b/App/app/templates/base.html
+index 45ca7693..4ee2c353 100644
+--- a/App/app/templates/base.html
++++ b/App/app/templates/base.html
+@@ -19,7 +19,7 @@
+   <link rel="preload" href="/static/fonts/Manrope-latin.woff2?v=20261101-0495" as="font" type="font/woff2" crossorigin>
+   {% if v2 | default(false) %}
+   <link rel="stylesheet" data-turbo-track="reload" href="/static/tokens.css?v=20261103-0920">
+-  <link rel="stylesheet" data-turbo-track="reload" href="/static/app2.css?v=20261105-0961a">
++  <link rel="stylesheet" data-turbo-track="reload" href="/static/app2.css?v=20261105-0962a">
+   {% if show_nav | default(true) %}<link rel="stylesheet" data-turbo-track="reload" href="/static/command.css?v=20261103-0935">{% endif %}
+   {% else %}
+   <link rel="stylesheet" data-turbo-track="reload" href="/static/tokens.css?v=20261103-0920">
+diff --git a/App/tests/static_versions.json b/App/tests/static_versions.json
+index b0642a2f..0bccb677 100644
+--- a/App/tests/static_versions.json
++++ b/App/tests/static_versions.json
+@@ -24,8 +24,8 @@
+     "v": "20261104-0955g"
+   },
+   "app2.css": {
+-    "sha256": "a8e8ad2f73bc500286699708512164cbf450b540f856bda609b5d1cc76b531bf",
+-    "v": "20261105-0961a"
++    "sha256": "4a81f079e96bcaf4287173c70d7dd29d68a6076216ad1c6ab8f3c0b8606c01a7",
++    "v": "20261105-0962a"
+   },
+   "apple-touch-icon.png": {
+     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",

@@ -125,17 +125,19 @@ def test_rows_hover_as_one_surface_and_use_compact_menus(stay_actions_host, stay
             page.goto(f"{base}/reservations/{stay_id}/guests/new?lang={lang}")  # an old-shell page that needs no Stripe (payments is v2 now)
             _ready(page)
             page.evaluate("document.body.classList.add('sidebar-collapsed')")
-            account = page.locator("[data-host-account] > summary")
-            avatar = account.locator(".sidebar-user-avatar")
+            account = page.locator("[data-host-account] > summary.me")
+            avatar = account.locator("i").first
             assert account.get_attribute("aria-label")
             assert "⌃" not in account.inner_text()
-            center = lambda box: box["x"] + box["width"] / 2
-            assert abs(center(account.bounding_box()) - center(avatar.bounding_box())) <= 1
-            assert avatar.locator("..").evaluate("el => el.scrollWidth <= el.clientWidth")
+            vcenter = lambda box: box["y"] + box["height"] / 2
+            ab, av = account.bounding_box(), avatar.bounding_box()
+            assert abs(vcenter(ab) - vcenter(av)) <= 2
+            assert av["x"] >= ab["x"] - 1 and av["x"] + av["width"] <= ab["x"] + ab["width"] + 1
+            assert account.evaluate("el => el.scrollWidth <= el.clientWidth")
             account.focus()
             page.keyboard.press("Enter")
             assert page.locator("[data-host-account]").evaluate("el => el.open")
-            assert page.locator(".host-account-menu").is_visible()
+            assert page.locator(".me-menu-list").is_visible()
             _shot(page, f"38-centered-account-{lang}-{width}.png")
             page.keyboard.press("Escape")
             assert not page.locator("[data-host-account]").evaluate("el => el.open")
@@ -179,12 +181,8 @@ def test_current_property_name_demo_label_and_distinct_setup_status(wizard_host,
             assert rows.count() >= 5
             assert page.locator("nav.prop-strip a.sc[data-strip='police'][href='#sec-police']").count() == 1
             assert page.locator("nav.prop-strip a.sc[data-strip='calendars'][href='#sec-calendars']").count() == 1
-            status = page.locator("[data-setup-status]")
-            assert status.is_visible()
-            assert not status.evaluate("el => el.open")
-            status.locator("summary").click()
-            status.locator(".readiness").wait_for(state="visible")  # 0401: the fold-out slides open
-            status.locator("summary").click()
+            assert page.locator("[data-setup-status]").count() == 0  # 0982: the checklist details are gone
+            assert page.locator("nav.prop-strip .sc").count() == 6
         else:
             rows = page.locator("details.prop-sec > summary")
             assert rows.count() >= 4

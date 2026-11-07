@@ -548,3 +548,102 @@ def test_guest_line_shows_birth_date_age_and_nationality(host):
         assert text in response.text
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
     assert "birth_display" not in str(stay_fee.property_period(apartment, date(2026, 8, 1))["lines"])
+
+
+def _filing(apartment_id, period_key="2026-08"):
+    return db.insert("stay_fee_filing", {
+        "apartment_id": apartment_id, "period_key": period_key, "cadence": "monthly",
+        "rate_czk": 50, "liable_days": 4, "exempt_days": 0, "total_due_czk": 200,
+        "total_collected_czk": 200, "pdf_enc": db.encrypt_blob(b"%PDF-1.4 x"),
+        "csv_enc": db.encrypt_blob(b"a;b"), "payload_enc": db.encrypt_field("{}"),
+        "created_at": db.utcnow(),
+    })
+
+
+def _token(client, apartment_id, month="2026-08"):
+    page = client.get(f"/stay-fees/{apartment_id}?month={month}")
+    return page.text.split('name="csrf-token" content="')[1].split('"')[0]
+
+
+def _mark(client, apartment_id, filing_id, action, month="2026-08"):
+    token = _token(client, apartment_id, month)
+    return client.post(f"/stay-fees/{apartment_id}/filings/{filing_id}/{action}",
+                       data={"_csrf": token, "month": month}, follow_redirects=False)
+
+
+def _row(filing_id):
+    return db.query_one("SELECT sent_at, paid_at FROM stay_fee_filing WHERE id = ?", (filing_id,))
+
+
+def test_filing_sent_sets_sent_at_once(host):
+    client, owner_id, entity_id = host
+    apt = _property(owner_id, entity_id, "Mark Demo")
+    fid = _filing(apt)
+
+    first_response = _mark(client, apt, fid, "sent")
+    assert first_response.status_code == 303
+    assert _row(fid)["sent_at"]
+    assert _row(fid)["paid_at"] is None
+    first = _row(fid)["sent_at"]
+
+    second_response = _mark(client, apt, fid, "sent")
+    assert second_response.status_code == 303
+    assert _row(fid)["sent_at"] == first
+
+
+def test_filing_paid_sets_paid_at_and_sent_at(host):
+    client, owner_id, entity_id = host
+    apt = _property(owner_id, entity_id, "Paid Demo")
+
+    fresh = _filing(apt)
+    assert _mark(client, apt, fresh, "paid").status_code == 303
+    assert _row(fresh)["paid_at"]
+    assert _row(fresh)["sent_at"]
+
+    sent_first = _filing(apt, period_key="2026-07")
+    assert _mark(client, apt, sent_first, "sent", month="2026-07").status_code == 303
+    sent_at = _row(sent_first)["sent_at"]
+    assert sent_at
+    assert _mark(client, apt, sent_first, "paid", month="2026-07").status_code == 303
+    assert _row(sent_first)["sent_at"] == sent_at
+    paid_at = _row(sent_first)["paid_at"]
+    assert paid_at
+
+    assert _mark(client, apt, sent_first, "paid", month="2026-07").status_code == 303
+    assert _row(sent_first)["paid_at"] == paid_at
+
+
+def test_another_hosts_filing_cannot_be_marked(host):
+    client, owner_id, entity_id = host
+    own_apt = _property(owner_id, entity_id, "Own Demo")
+    other_id = auth.create_account("stay-fee-detail-other@example.test", "Other Demo", role="host", username="stay-fee-detail-other")
+    other_entity_id = db.insert("legal_entity", {
+        "name": "Other Demo s.r.o.",
+        "owner_user_id": other_id,
+        "created_at": db.utcnow(),
+    })
+    other_apt = _property(other_id, other_entity_id, "Other Private Demo")
+    other_fid = _filing(other_apt)
+    token = _token(client, own_apt)
+
+    for action in ("sent", "paid"):
+        response = client.post(
+            f"/stay-fees/{other_apt}/filings/{other_fid}/{action}",
+            data={"_csrf": token, "month": "2026-08"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+    assert _row(other_fid)["sent_at"] is None
+    assert _row(other_fid)["paid_at"] is None
+
+
+def test_filing_id_from_another_apartment_is_rejected(host):
+    client, owner_id, entity_id = host
+    apt_a = _property(owner_id, entity_id, "Apartment A Demo")
+    apt_b = _property(owner_id, entity_id, "Apartment B Demo")
+    fid_b = _filing(apt_b)
+
+    assert _mark(client, apt_a, fid_b, "sent").status_code == 303
+    assert _mark(client, apt_a, fid_b, "paid").status_code == 303
+    assert _row(fid_b)["sent_at"] is None
+    assert _row(fid_b)["paid_at"] is None

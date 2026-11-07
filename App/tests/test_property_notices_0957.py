@@ -33,5 +33,6 @@ def test_the_save_row_is_one_bar_after_the_sections_and_before_the_preview(hosts
     html = _failed_refresh_page(hosts, flats, monkeypatch)
     assert html.count('class="savebar') == 1
     bar = html.index('class="savebar')
-    assert html.index('id="sec-lock"') < bar < html.index('<aside class="preview"')
+    # 0982: Preview aside removed; save bar follows the lock section (form ends before calendars/lock).
+    assert html.index('id="sec-lock"') < bar
     assert re.search(r'<button class="btn" type="submit" form="property-settings-form">', html)

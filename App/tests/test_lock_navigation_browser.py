@@ -188,7 +188,7 @@ def test_lock_setup_flow_keeps_its_place(world):
             assert page.url.endswith("#sec-lock")
             assert "sec=lock" in page.url and "msg=" in page.url
             assert page.locator("#sec-lock[open]").count() == 1
-            notice = page.locator("#sec-lock [data-section-notice]")
+            notice = page.locator("#sec-lock [data-section-notice] .grow")
             assert notice.count() == 1 and notice.first.is_visible()
             assert notice.first.inner_text().strip() == (
                 "Set up. Now share your locks." if lang == "en" else "Nastaveno. Teď sdílejte své zámky."
@@ -207,7 +207,7 @@ def test_lock_setup_flow_keeps_its_place(world):
             _settle(page)
             assert page.url.endswith("#sec-lock")
             assert page.locator("#sec-lock[open]").count() == 1
-            notice = page.locator("#sec-lock [data-section-notice]")
+            notice = page.locator("#sec-lock [data-section-notice] .grow")
             assert notice.count() == 1 and notice.first.is_visible()
             assert notice.first.inner_text().strip() == (
                 "No lock found yet. In the TTLock app, add UbyHost as Authorized Admin (steps 2 to 7 above), then check again."

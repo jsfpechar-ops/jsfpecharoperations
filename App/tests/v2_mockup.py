@@ -21,6 +21,7 @@ STYLE_PROPS = (
 COLOR_OVERRIDES = {"rgb(212, 71, 47)": "rgb(208, 69, 45)", "rgb(138, 138, 132)": "rgb(107, 107, 101)"}
 # accessibility (AA contrast, 12 px minimum), 2026-11-01
 SELECTOR_OVERRIDES = {
+    "property:.pv": {"border-top-left-radius": "14px", "border-bottom-color": "rgb(235, 235, 231)"},  # 0986: main property layout restored; the setup card uses the tile style (14 px radius, --line border)
     # 0535: property page summary text is 12 px (geometry guard: no text under 12 px); the mockup uses 11.67 px
     "summary small": {"font-size": "12px"},
     # 0541: the demo property has no address, so the basics dot is red (r) in the app; the mockup shows green
@@ -59,7 +60,12 @@ SELECTOR_OVERRIDES = {
 # style-compared only at computer width (phone design pending)
 DESKTOP_ONLY = {".side", ".side .nav", ".side .nav.on"}
 # calendar bars are 28 px tall: a dense 14-day timeline; WCAG 2.5.8 needs 24 px, and every stay is also a full-size row in the Dnes table and the stays list
-TAP_EXEMPT_BELOW_DESKTOP = {".cal .bar": "dense 14-day timeline; 28 px meets WCAG 2.5.8 (24 px); every stay is also a full-size row in the Dnes table and the stays list"}
+TAP_EXEMPT_BELOW_DESKTOP = {
+    ".cal .bar": "dense 14-day timeline; 28 px meets WCAG 2.5.8 (24 px); every stay is also a full-size row in the Dnes table and the stays list",
+    # 0991: property editor tips keep a 24 px glyph; ::after expands the hit area to ≥44 px (test_0833).
+    ".property-settings-form .help-tip-btn": "24 px glyph with ::after hit area to 44 px",
+    ".prop-archive-action .help-tip-btn": "24 px glyph with ::after hit area to 44 px",
+}
 
 
 # app selector -> mockup selector at phone widths (the phone mockup calls the action bar .bar)
@@ -98,6 +104,12 @@ BOX_OVERRIDES = {
     # text-dependent: app copy vs phone v2 mockup demo copy (0740)
     ".big, .head h1@320": {"width": "189.953px", "height": "42px"},  # PR #725: Airbnb redesign (32 px title)
     ".big, .head h1@390": {"width": "189.953px", "height": "42px"},
+    # 0977 step 11: commit 551808e7 moved the page-help icon out of the properties h1 (props-title-row) on purpose
+    "properties:.big, .head h1@320": {"width": "150.547px", "height": "34.5px"},
+    "properties:.big, .head h1@390": {"width": "150.547px", "height": "34.5px"},
+    # 0729 dashboard: one visible .hl on phone; widths from geometry, margins on .ov-title-row (551808e7)
+    "overview:.hl@320": {"width": "248px", "height": "69px", "margin-left": "8px", "margin-right": "8px", "margin-bottom": "28px"},
+    "overview:.hl@390": {"width": "318px", "height": "69px", "margin-left": "8px", "margin-right": "8px", "margin-bottom": "28px"},
     ".promo@390": {"height": "80px"},
     ".tile .v@320": {"margin-top": "29px"},
     ".tile .v@390": {"margin-top": "29px"},
@@ -133,8 +145,10 @@ BOX_OVERRIDES = {
     # stays/stay (0529): text- and data-dependent; fixture copy vs mockup demo copy
     # pill width follows its label ("Chybí 1 host" vs "Čeká na 2 ze 3 hostů")
     # text-dependent: app copy vs phone v2 mockup demo copy (0750)
-    "stays:.mh .big, .head h1@320": {"width": "139.609px", "height": "42px"},
-    "stays:.mh .big, .head h1@390": {"width": "139.609px", "height": "42px"},
+    # text-dependent: the help button sits beside the stays title, not inside it (0968)
+    "stays:.mh .big, .head h1@320": {"width": "100.203px", "height": "34.5px"},
+    "stays:.mh .big, .head h1@390": {"width": "100.203px", "height": "34.5px"},
+
     # text-dependent (0766): the stays card shows the stay dates with weekdays; values are the app's measured fixture sizes
     "stays:.stay .in small@320": {"width": "72.2656px"},
     "stays:.stay .in small@390": {"width": "72.2656px"},
@@ -149,17 +163,22 @@ BOX_OVERRIDES = {
     "overview:.nm@390": {"width": "228px"},
     "overview:.meta@320": {"width": "228px", "height": "42px"},
     "overview:.meta@390": {"width": "228px", "height": "42px"},
+    # 551808e7: margins on .overview:.hl are merged into overview:.hl@* above
     # fixture property has no check-in/out time, so the facts grid has no time line
     # text-dependent: app copy vs phone v2 mockup demo copy (0751). Values are the app's measured fixture sizes:
     # the stay dates card has no check-in time line in the fixture; the guest rows and police card copy differ from the demo
     "stay:.stay-dates@320": {"height": "196px"},
     "stay:.stay-dates@390": {"height": "169px"},
-    "stay:.stay-dates small@320": {"width": "73.8906px"},
+    "stay:.stay-dates small@320": {"width": "94px"},
     "stay:.stay-dates small@390": {"width": "113px"},
     # 0957: 54px was the two-line height of the arrival date when the PR #725 fixture was measured; today the same cell shows "Fri 6. 11." on one line (28px at line-height 1.4)
-    "stay:.stay-dates b@320": {"width": "73.8906px", "height": "28px"},
+    # 0977: re-measured after merging main (equal columns + 12px cell padding at 320px).
+    # 0964: 320 px has equal columns, 12 px cell padding and a screen-reader-only weekday, so the width no longer depends on the date text
+    "stay:.stay-dates b@320": {"width": "94px", "height": "28px"},
     "stay:.stay-dates b@390": {"width": "113px"},
+    # 0977: nowrap stay dates
     "stay:.stay-dates .tot@320": {"width": "238px"},
+
     "stay:.stay-dates .tot@390": {"width": "308px"},
     "stay:.police-card@320": {"height": "106px"},
     "stay:.police-card@390": {"height": "80px"},
@@ -270,7 +289,7 @@ PAGES = [
             ".crumb", "main h1", "details", "summary b", "summary small",
             ".preview h3", ".pv", ".pv .r",  # 0851: savebar has its own test, test_0851_savebar_browser.py
         ],
-        "missing_ok": {".crumb": "PR #725: Airbnb back header replaces it", ".pv .r": "0948: aside basics and connections cards moved into the status strip", ".guest-btns .btn": "0948: guest card moved into the status strip", "summary small": "PR #725: Airbnb redesign: section summaries have no small caption", ".prop-phone-top .round": "PR #725: Airbnb redesign: the phone property top has no round avatar", ".prop-phone-top ~ h1.big": "PR #725: Airbnb redesign: the phone property top has no big title", ".prop-phone-sub": "0741: the demo property has no street address, so the address line is not rendered"},
+        "missing_ok": {".crumb": "PR #725: Airbnb back header replaces it", ".preview h3": "0982: the Preview/checklist panel is removed", ".pv": "0982: the Preview aside is removed", ".pv .r": "0948: aside basics and connections cards moved into the status strip", ".guest-btns .btn": "0948: guest card moved into the status strip", "summary small": "PR #725: Airbnb redesign: section summaries have no small caption", ".prop-phone-top .round": "PR #725: Airbnb redesign: the phone property top has no round avatar", ".prop-phone-top ~ h1.big": "PR #725: Airbnb redesign: the phone property top has no big title", ".prop-phone-sub": "0741: the demo property has no street address, so the address line is not rendered"},
         # 0948: the guest link card moved into the status strip; its selectors are not compared here.
         "phone_box_skip": {},
     },

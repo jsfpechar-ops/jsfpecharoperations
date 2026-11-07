@@ -515,16 +515,23 @@ INVOICE_SPACING = {
 # the "?" on the Company card: an 18 px ring on the label's line, 12 to 16 px after its last word, 44 px tap area
 INVOICE_HELP_JS = """
 () => [...document.querySelectorAll('.invoice-customer .help-tip-btn')].filter(b => b.getClientRects().length).map(btn => {
-  const label = btn.closest('.help-tip').previousElementSibling;
+  const tip = btn.closest('.help-tip');
+  let label = tip.previousElementSibling;
+  if (!label || label.nodeType !== 1) {
+    label = tip.previousSibling;
+    while (label && label.nodeType !== 1) label = label.previousSibling;
+  }
+  if (!label || label.nodeType !== 1) return null;
   const range = document.createRange();
   range.selectNodeContents(label);
   const lines = [...range.getClientRects()].filter(r => r.width > 0 && r.height > 0);
   const line = lines[lines.length - 1];
+  if (!line) return null;
   const b = btn.getBoundingClientRect();
   const hit = -parseFloat(getComputedStyle(btn, '::after').left);
   return {label: label.textContent.trim(), ring: b.width, tap: b.width + 2 * hit,
           gap: b.left - line.right, centre: Math.abs((b.top + b.bottom) / 2 - (line.top + line.bottom) / 2)};
-})
+}).filter(Boolean)
 """
 
 

@@ -65,3 +65,40 @@ def test_stay_detail_groups_facts_and_wraps(stay_actions_host, stay_actions_base
                         page.screenshot(path=str(EVIDENCE / f"stay-detail-{locale}-{width}.png"), full_page=True)
         context.close()
         browser.close()
+
+
+def test_add_guest_and_invoice_forms_keep_the_v2_host_shell(stay_actions_host, stay_actions_base):
+    """0981: guest admin + detailed invoice stay on the v2 shell (sidebar, font, content lane)."""
+    cookie = stay_actions_host["client"].cookies.get(auth.SESSION_COOKIE)
+    assert cookie
+    stay = stay_actions_host["ids"]["ready"]
+    urls = {
+        "stay": f"/reservations/{stay}",
+        "guest": f"/reservations/{stay}/guests/new",
+        "invoice": f"/invoices/new?reservation_id={stay}",
+    }
+    probe = """(() => ({v2: document.body.classList.contains('v2'),
+        sidebar: !!document.querySelector('#app-sidebar'),
+        font: getComputedStyle(document.body).fontFamily,
+        left: Math.round(document.querySelector('#main-content').getBoundingClientRect().left),
+        path: location.pathname}))()"""
+    with sync_api.sync_playwright() as playwright:
+        browser = _browser(playwright)
+        context = browser.new_context(viewport={"width": 1280, "height": 900})
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": stay_actions_base + "/"}])
+        page = context.new_page()
+        for locale in ("en", "cs"):
+            for width in (390, 768, 1280):
+                page.set_viewport_size({"width": width, "height": 900})
+                seen = {}
+                for key, url in urls.items():
+                    page.goto(f"{stay_actions_base}{url}{'&' if '?' in url else '?'}lang={locale}")
+                    page.wait_for_load_state("networkidle")
+                    seen[key] = page.evaluate(probe)
+                    assert seen[key]["path"] == url.split("?")[0], (key, width, seen[key])
+                    assert seen[key]["v2"] and seen[key]["sidebar"], (key, width, locale)
+                    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1"), (key, width)
+                for key in ("guest", "invoice"):
+                    assert seen[key]["font"] == seen["stay"]["font"], (key, width)
+                    assert seen[key]["left"] == seen["stay"]["left"], (key, width)
+        browser.close()

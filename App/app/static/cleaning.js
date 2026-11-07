@@ -46,7 +46,7 @@
     const current = document.querySelector("[data-calendar][data-cleaning='true']");
     const currentList = document.querySelector("[data-cleaning-list]");
     if (current && !current.saving && !document.hidden && !document.querySelector("dialog[open]") &&
-        currentList && !currentList.contains(document.activeElement)) current.dispatchEvent(new Event("calendar:refresh"));
+        currentList && !currentList.contains(document.activeElement)) current.dispatchEvent(new CustomEvent("calendar:refresh", { detail: { background: true } }));
   }
   if (!window._ubyCleaningBound) {
     window._ubyCleaningBound = true;

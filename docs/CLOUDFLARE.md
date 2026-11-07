@@ -418,8 +418,16 @@ A host still signed in on the old host is not interrupted mid-session.
 #### 3. Cache purge (once after SEO HTML deploy)
 
 1. **Caching** → **Configuration** → Browser Cache TTL can stay default.
-2. Optional **Cache Rules**: bypass cache for `/`, `/login`, `/pruvodce/*`,
-   legal pages; allow short TTL cache for `/robots.txt` and `/sitemap.xml`.
+2. **Cache Rules** (brief 0992, public pages cached for 5 minutes). The app marks only the
+   public marketing pages with `Cache-Control: public, max-age=0, s-maxage=300` (plain GET, no
+   query string, no `ubyhost_session` or `ubyhost_lang` cookie); every other response is
+   `no-store, private`. Rule "Public pages": hostname equals the public host AND path in
+   `/`, `/legal`, `/terms`, `/privacy`, `/dpa`, `/subprocessors`, `/cenik`, `/jak-to-funguje`,
+   `/robots.txt`, `/sitemap.xml` or starts with `/pruvodce/` AND query is empty AND cookie does
+   not contain `ubyhost_session` or `ubyhost_lang`; action Eligible for cache, Edge TTL "Use
+   cache-control header if present", Browser TTL "Respect origin". Undo: disable the rule.
+   Check: `curl -sI https://<public host>/ | grep -i -E 'cf-cache-status|cache-control'` twice,
+   the second shows `HIT`.
 3. **Caching** → **Configuration** → **Purge Everything** once so GSC and
    browsers drop the old **Continue** login HTML.
 

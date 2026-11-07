@@ -15,7 +15,7 @@
     }
     return true;
   };
-  const skipZone = (el) => el.closest('[role=menu],.row-menu-panel,.sr-only,.visually-hidden,[aria-hidden=true],script,style,noscript,template,svg,.skeleton,[data-lint-ignore],details:not([open]) > :not(summary)');
+  const skipZone = (el) => el.closest('[role=menu],.row-menu-panel,.sr-only,.visually-hidden,[aria-hidden=true],script,style,noscript,template,svg,.skeleton,[data-lint-ignore],.onboarding-finish,.onboarding-finish-strip,details:not([open]) > :not(summary)');
   const name = (el) => (el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') +
     (el.classList.length ? '.' + [...el.classList].slice(0, 3).join('.') : '') +
     ' "' + (el.textContent || el.getAttribute('aria-label') || '').trim().replace(/\s+/g, ' ').slice(0, 28) + '"');
@@ -70,7 +70,8 @@
     const t = (el.innerText || '').trim();
     return el.matches('[class*=badge],[class*=step-num],[class*=num]') || (t.length > 0 && t.length <= 3 && r.width <= 44 && r.height <= 44);
   };
-  const help0 = (el) => el.matches('.help-tip,[class*=help]');
+  // page-help-wrap matches [class*=help] but is a title-row wrapper, not the small "?" badge.
+  const help0 = (el) => el.matches('.help-tip,[class*=help]') && !el.matches('.page-help-wrap,.page-help,.page-help-body');
   const rows = all.filter((el) => ['flex', 'inline-flex', 'grid'].includes(getComputedStyle(el).display));
   for (const row of rows) {
     const kids = [...row.children].filter((c) => vis(c) && !skipZone(c));
@@ -95,7 +96,7 @@
         range.selectNodeContents(kids[j]);
         const tr = range.getBoundingClientRect();
         const gap = help0(b) ? (or.left >= br.right ? or.left - br.right : br.left >= or.right ? br.left - or.right : 0) : (tr.left >= br.right ? tr.left - br.right : br.left >= tr.right ? br.left - tr.right : 0);
-        const help = b.matches('.help-tip,[class*=help]');
+        const help = help0(b);
         const badgeFirst = br.left < tr.left;
         // Status badges may sit at the far end on purpose; a help "?" or a leading step badge may not float away.
         if (gap > 24 && (help || badgeFirst)) {
@@ -221,7 +222,7 @@
     for (let n = dir < 0 ? start.previousSibling : start.nextSibling; n; n = dir < 0 ? n.previousSibling : n.nextSibling) {
       if (n.nodeType === 3 && n.textContent.trim()) return n;
       if (n.nodeType === 1) {
-        if (n.matches('.help-tip,.page-help,script,style,template') || !vis(n)) continue;
+        if (n.matches('.help-tip,.page-help-wrap,.page-help,script,style,template') || !vis(n)) continue;
         const cs = getComputedStyle(n);
         if (cs.position === 'absolute' || cs.position === 'fixed') continue;
         if ((n.innerText || '').trim() || n.querySelector('svg,img') || n.matches('button,a,input,select')) return n;
@@ -240,7 +241,9 @@
     }
     const anchor = prev || next;
     if (!anchor) continue;
-    const ar = anchorRect(anchor, !!prev);
+    // After checkline label: anchor is the <span> text; use first line (wrapped labels have multi-line rects).
+    const lastLine = !!prev && !tip.closest('label.checkline');
+    const ar = anchorRect(anchor, lastLine);
     if (!ar) continue;
     const sameLine = c.cy >= ar.top - 3 && c.cy <= ar.bottom + 3;
     const gap = prev ? c.left - ar.right : ar.left - c.right;

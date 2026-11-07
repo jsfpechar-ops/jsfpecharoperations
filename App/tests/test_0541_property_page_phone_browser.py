@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from app import auth, config, db
 from tests.test_0710_v2_mockup_match_browser import (  # noqa: F401  (0541 browser fixtures)
     _open_app,
@@ -112,6 +114,29 @@ def test_0547_phone_property_switch_invalid_field_calendar_and_return(base, dash
             db.execute("UPDATE apartment SET lock_provider = NULL, lock_id = NULL WHERE id = ?", (apartment_id,))
 
 
+@pytest.mark.parametrize("width", (390, 768))
+def test_status_strip_guest_link_meets_44px_touch_target(base, dashboard_rich_host, width):  # noqa: F811
+    """0950-fix: the Guest link card in the status strip must stay at least 44 px tall below 1024 px."""
+    cookie = dashboard_rich_host["client"].cookies.get(auth.SESSION_COOKIE)
+    assert cookie
+    spec = next(s for s in PAGES if s["name"] == "property")
+    path = _path(spec, dashboard_rich_host)
+    with sync_api.sync_playwright() as playwright:
+        browser = _launch(playwright)
+        try:
+            context, page = _open_app(browser, base, cookie, path, width)
+            try:
+                page.evaluate("() => document.fonts.ready")
+                card = page.locator('nav.prop-strip [data-strip="guest"]')
+                card.first.wait_for(state="visible")
+                box = card.first.bounding_box()
+                assert box and box["height"] >= 44, (width, box)
+            finally:
+                context.close()
+        finally:
+            browser.close()
+
+
 def test_0948_strip_shares_form_edges_and_columns(base, dashboard_rich_host):  # noqa: F811
     cookie = dashboard_rich_host["client"].cookies.get(auth.SESSION_COOKIE)
     assert cookie
@@ -120,17 +145,17 @@ def test_0948_strip_shares_form_edges_and_columns(base, dashboard_rich_host):  #
     with sync_api.sync_playwright() as playwright:
         browser = _launch(playwright)
         try:
-            for width, columns in ((390, 2), (768, 3), (1280, 3), (1600, 3)):
+            for width, max_rows in ((390, 3), (768, 3), (1280, 2), (1600, 2)):  # 0982: the pills wrap as flex rows; 0986: main property layout restored (2-column tiles at 390, 3 columns from 640 px)
                 context, page = _open_app(browser, base, cookie, path, width)
                 try:
                     strip = page.locator(".prop-strip").bounding_box()
                     form = page.locator(".form").bounding_box()
                     assert abs(strip["x"] - form["x"]) <= 1, width
                     assert abs(strip["x"] + strip["width"] - (form["x"] + form["width"])) <= 1, width
-                    count = page.evaluate(
-                        "getComputedStyle(document.querySelector('.prop-strip')).gridTemplateColumns.split(' ').length"
+                    rows = page.evaluate(
+                        "new Set([...document.querySelectorAll('.prop-strip .sc')].map((el) => Math.round(el.getBoundingClientRect().top))).size"
                     )
-                    assert count == columns, (width, count)
+                    assert rows <= max_rows, (width, rows)
                     if width <= 768:
                         assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), width
                 finally:

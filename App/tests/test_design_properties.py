@@ -19,7 +19,7 @@ def test_property_page_keeps_local_tabs_without_section_tabs(host_with_property)
     assert match
     detail = host_with_property.get(match.group(1) + "?lang=en").text
     assert 'id="sec-basics"' in detail and "data-sub-tabs" not in detail
-    assert 'id="sec-basics"' in detail and 'class="airbnb-back"' in detail
+    assert 'id="sec-basics"' in detail and "airbnb-back" in detail
     assert 'data-body-kind="detail"' in detail and "nav_icon" not in detail
 
 

@@ -8,19 +8,23 @@
 {% block meta %}{% endblock %}
 {% block body %}
 <div class="settings-lane">
-{% with href='/apartments/' ~ apartment.id ~ '/leon', title=t('leon_setup.title', name=apartment.internal_name) %}{% include "partials/settings_back_header.html" %}{% endwith %}
-<div class="setup-wizard" data-leon-setup data-leon-setup-step="{{ step }}">
+{% with href='/apartments/' ~ apartment.id ~ '/leon', title=t('leon_setup.heading') %}{% include "partials/settings_back_header.html" %}{% endwith %}
+<div class="setup-wizard wiz-page" data-leon-setup data-leon-setup-step="{{ step }}">
   <div class="setup-wizard-head">
-    <div class="setup-wizard-meter">
-      <ol class="setup-wizard-progress" aria-hidden="true">
-        {% for s in steps %}
-        <li class="is-{{ 'done' if s in done_steps else 'current' if s == step else 'todo' }}"></li>
-        {% endfor %}
-      </ol>
-      <p class="setup-wizard-done-count">{{ t('wizard.done_count', n=done_steps|length, total=total) }}</p>
-      {% if number %}<div class="setup-wizard-count">{{ t('leon_setup.count', n=number, total=total, step=t('leon_setup.step.' ~ step)) }}</div>{% endif %}
-    </div>
+    <p class="ui-sub" data-leon-setup-property>{{ apartment.internal_name }}</p>
     <div class="setup-wizard-exit"><a class="ui-btn ui-btn-secondary" href="/apartments/{{ apartment.id }}">{{ t('wizard.exit') }}</a></div>
+  </div>
+  <div class="setup-wizard-meter stay-fees-page">
+    <ol class="fee-stepper" data-leon-stepper aria-label="{% if number %}{{ t('leon_setup.count', n=number, total=total, step=t('leon_setup.step.' ~ step)) }}{% else %}{{ t('leon_setup.done.title') }}{% endif %}">
+      {% for s in steps %}
+      {% set s_state = 'done' if step == 'done' else 'current' if s == step else 'done' if s in done_steps else 'todo' %}
+      <li class="fee-stepper-item" data-state="{{ s_state }}"{% if s_state == 'current' %} aria-current="step"{% endif %}>
+        <span class="fee-stepper-dot" aria-hidden="true">{% if s_state == 'done' %}&#10003;{% else %}{{ loop.index }}{% endif %}</span>
+        <span class="fee-stepper-label">{{ t('leon_setup.short.' ~ s) }}{% if s_state == 'done' %}<span class="sr-only"> {{ t('leon_setup.step_done') }}</span>{% endif %}</span>
+      </li>
+      {% endfor %}
+    </ol>
+    {% if step != 'done' %}<p class="ui-sub" data-leon-exit-note>{{ t('leon_setup.exit_note.switch_on' if step == 'switch_on' else 'leon_setup.exit_note.later') }}</p>{% endif %}
   </div>
   <div class="setup-wizard-body">
     {% set step_icons = {'switch_on': 'message-circle-question', 'import': 'download', 'cards': 'book-open', 'try': 'send'} %}

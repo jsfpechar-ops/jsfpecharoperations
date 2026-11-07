@@ -50,7 +50,7 @@ def _strip_state(page):
 
 
 def _block(page):
-    m = re.search(r'<div class="lock-state" data-state="([^"]+)" role="status">(.*?)</form>', page, re.S)
+    m = re.search(r'<div class="lock-state"(?: id="[^"]+")? data-state="([^"]+)" role="status">(.*?)</form>', page, re.S)
     return m
 
 
@@ -143,6 +143,18 @@ def test_turn_on_with_both_times_sets_ttlock(ttl, hosts, flats):
     _client(USERS[0]).post(f"/apartments/{flats[0]}/door-codes", data={"mode": "on"}, follow_redirects=False)
     row = db.query_one("SELECT lock_provider, lock_id FROM apartment WHERE id = ?", (flats[0],))
     assert row["lock_provider"] == "ttlock" and row["lock_id"] == "101"
+
+
+def test_unknown_mode_leaves_door_codes_unchanged(ttl, hosts, flats):
+    _connect(hosts[0], "hjhfa_uhaaaa", locks=[LOCK])
+    _set_apartment(flats[0], lock_provider="ttlock", lock_id="101", checkin_hour=15, checkout_hour=11)
+    response = _client(USERS[0]).post(
+        f"/apartments/{flats[0]}/door-codes", data={"mode": "toggle"}, follow_redirects=False
+    )
+    assert response.status_code in (302, 303)
+    assert response.headers["location"].endswith("#sec-lock")
+    row = db.query_one("SELECT lock_provider FROM apartment WHERE id = ?", (flats[0],))
+    assert row["lock_provider"] == "ttlock"
 
 
 def test_turn_on_refuses_a_lock_used_by_another_property(ttl, hosts, flats):

@@ -252,6 +252,7 @@ GUEST_LINK_INVALID = "stay_fee_guest_link_invalid"
 GUEST_LINK_HOSTS = ("revolut.me", "revolut.com")
 GUEST_OPERATOR_ACCOUNT_RAW = "_stay_fee_guest_operator_account_raw"
 GUEST_OPERATOR_ACCOUNT_INVALID = "stay_fee_guest_operator_account_invalid"
+GUEST_OPERATOR_ACCOUNT_STALE = "stay_fee_guest_operator_account_stale"
 GUEST_OPERATOR_SAMPLE_VS = "1234567890"
 GUEST_RATE_REQUIRED = "stay_fee_guest_rate_required"
 
@@ -291,7 +292,7 @@ def guest_pay_values(form) -> dict:
         default_rail = "iban"
     if default_rail not in rails:
         default_rail = next((rail for rail in GUEST_RAILS if rail in rails), "")
-    return {
+    values = {
         "stay_fee_guest_default_rail": default_rail,
         "stay_fee_collect": 1 if _form_str(form, "stay_fee_collect") == "1" else 0,
         "stay_fee_guest_rails": ",".join(rails),
@@ -299,6 +300,11 @@ def guest_pay_values(form) -> dict:
         "stay_fee_guest_cash_note": note or None,
         GUEST_LINK_RAW: link,
     }
+    # HTML posts stay_fee_guest_operator_account; apply_guest_operator_account
+    # only persists this internal key. Absent means leave the stored account.
+    if "stay_fee_guest_operator_account" in form:
+        values[GUEST_OPERATOR_ACCOUNT_RAW] = _form_str(form, "stay_fee_guest_operator_account")
+    return values
 
 
 def fee_form_values(form) -> dict:
@@ -515,8 +521,13 @@ def check_guest_pay_setup(apartment, values: dict) -> None:
         raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
 
 
-def apply_guest_operator_account(apartment, form, values: dict) -> None:
-    """Persist the operator bank account when QR or bank transfer is enabled."""
+def apply_guest_operator_account(apartment, form, values: dict, request) -> None:
+    """Persist the operator bank account when QR or bank transfer is enabled.
+
+    A change of payout destination needs a fresh login (same rule as
+    POST /entities/{id}/invoice). Re-posting the account already on file does
+    not; the property form always sends the field.
+    """
     from .. import db
 
     if not hasattr(apartment, "get"):
@@ -541,6 +552,8 @@ def apply_guest_operator_account(apartment, form, values: dict) -> None:
     )
     if not entity:
         raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
+    if not hasattr(entity, "get"):
+        entity = dict(entity)
     if raw is None:
         if not _entity_payment_account(entity):
             raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
@@ -555,13 +568,22 @@ def apply_guest_operator_account(apartment, form, values: dict) -> None:
     if not apply_account_payload(detail, {}, entity, accept_parts=False):
         raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
     bank_account, iban = detail["bank_account"], detail["iban"]
+    existing = _entity_payment_account(entity)
+    if existing:
+        try:
+            _, existing_iban = payments.normalise_account(existing)
+        except ValueError:
+            existing_iban = ""
+        if existing_iban == iban:
+            return
+    if not auth.session_is_fresh(request):
+        raise ValueError(GUEST_OPERATOR_ACCOUNT_STALE)
     old_account = entity.get("bank_account") or ""
     old_iban = entity.get("iban") or ""
     db.update("legal_entity", entity_id, {"bank_account": bank_account, "iban": iban})
-    if (bank_account, iban) != (old_account, old_iban):
-        old_tail = (old_iban or old_account)[-4:] or "none"
-        new_tail = (iban or bank_account)[-4:]
-        db.audit("guest_operator_account_changed", f"entity={entity_id} old=...{old_tail} new=...{new_tail}")
+    old_tail = (old_iban or old_account)[-4:] or "none"
+    new_tail = (iban or bank_account)[-4:]
+    db.audit("guest_operator_account_changed", f"entity={entity_id} old=...{old_tail} new=...{new_tail}")
 
 
 
@@ -734,6 +756,7 @@ def stay_fee_detail(apartment_id: int, request: Request):
         "filing_version": period.get("version") if period else None,
         "exempt_categories": stay_fee.EXEMPT_CATEGORIES,
         "send_panel": send_panel,
+        "filing_row": filing_row,
         **_fee_links(f"/stay-fees/{apartment_id}?month={stay_fee.month_key(selected_month)}"),
     })
 
@@ -1230,3 +1253,62 @@ async def stay_fee_mark_paid(apartment_id: int, request: Request):
         db.update("stay_fee_filing", sealed["id"], {"paid_at": now, "sent_at": sealed["sent_at"] or now})
         db.audit("stay_fee_paid", f"apartment_id={apartment['id']} period={sealed['period_key']}")
     return _back(back_path, msg=_flash(request, "flash.stay_fees.paid"))
+
+
+def _filing_for_month(apartment_id: int, month: date, filing_id: int):
+    row = db.query_one(
+        "SELECT * FROM stay_fee_filing WHERE id = ? AND apartment_id = ? AND superseded_at IS NULL",
+        (filing_id, apartment_id),
+    )
+    if not row:
+        return None
+    keys = stay_fee_filing.overlap_keys(row["cadence"], month)
+    if row["period_key"] not in keys:
+        return None
+    return row
+
+
+@router.post("/stay-fees/{apartment_id}/filings/{filing_id}/sent")
+async def stay_fee_mark_filing_sent(apartment_id: int, filing_id: int, request: Request):
+    """Idempotent: records that the host sent the filing (manual tracking)."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment = access.apartment(request, apartment_id)
+    if not apartment:
+        return _back("/stay-fees", err=_flash(request, "flash.error.no_such_apartment"))
+    form = await request.form()
+    month = stay_fee.parse_month(_form_str(form, "month")) or _default_month(claim.prague_today())
+    back = f"/stay-fees/{apartment_id}?month={stay_fee.month_key(month)}"
+    row = _filing_for_month(apartment_id, month, filing_id)
+    if not row:
+        return _back(back, err=_flash(request, "flash.stay_fees.report_blocked"))
+    if not row["sent_at"]:
+        db.update("stay_fee_filing", row["id"], {"sent_at": db.utcnow()})
+        db.audit("stay_fee_sent", f"apartment_id={apartment_id} filing_id={row['id']}")
+    return _back(back, msg=_flash(request, "flash.stay_fees.marked_sent"))
+
+
+@router.post("/stay-fees/{apartment_id}/filings/{filing_id}/paid")
+async def stay_fee_mark_filing_paid(apartment_id: int, filing_id: int, request: Request):
+    """Idempotent: records payment; also sets sent when missing."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment = access.apartment(request, apartment_id)
+    if not apartment:
+        return _back("/stay-fees", err=_flash(request, "flash.error.no_such_apartment"))
+    form = await request.form()
+    month = stay_fee.parse_month(_form_str(form, "month")) or _default_month(claim.prague_today())
+    back = f"/stay-fees/{apartment_id}?month={stay_fee.month_key(month)}"
+    row = _filing_for_month(apartment_id, month, filing_id)
+    if not row:
+        return _back(back, err=_flash(request, "flash.stay_fees.report_blocked"))
+    now = db.utcnow()
+    if not row["paid_at"]:
+        db.update(
+            "stay_fee_filing", row["id"],
+            {"paid_at": now, "sent_at": row["sent_at"] or now},
+        )
+        db.audit("stay_fee_paid_detail", f"apartment_id={apartment_id} filing_id={row['id']}")
+    return _back(back, msg=_flash(request, "flash.stay_fees.marked_paid"))

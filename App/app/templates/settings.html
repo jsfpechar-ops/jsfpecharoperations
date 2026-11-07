@@ -52,7 +52,7 @@
         </div>
         <form method="post" action="/account/email" class="settings-move-form settings-email-form">
           <div class="ui-field">
-            {{ field_label('account-new-email', t('settings.account.email_new'), t('settings.account.email_hint')) }}
+            <div class="field-label-row"><label for="account-new-email">{{ t('settings.account.email_new') }}{{ help_tip('account-new-email-help', t('settings.account.email_hint'), '', t('settings.account.email_new')) }}</label></div>
             <input id="account-new-email" name="email" type="email" required maxlength="254"
                    autocomplete="email" autocapitalize="none" spellcheck="false"
                    aria-describedby="account-new-email-help">
@@ -83,17 +83,11 @@
         {% endif %}
         {% if current_user.role == 'admin' %}
           <div class="settings-action-row">
-            <div>
-              <strong>{{ t('settings.account.users') }}</strong>
-              {{ help_tip('settings-users-help', t('settings.account.users_help')) }}
-            </div>
+            <div>{{ tip_label(t('settings.account.users'), 'settings-users-help', t('settings.account.users_help')) }}</div>
             <a data-turbo="false" class="ui-btn ui-btn-secondary ui-btn-compact" href="/admin/customers">{{ t('settings.account.users_action') }}</a>
           </div>
           <div class="settings-action-row">
-            <div>
-              <strong>{{ t('users.incidents_link') }}</strong>
-              {{ help_tip('settings-incidents-help', t('settings.account.incidents_help')) }}
-            </div>
+            <div>{{ tip_label(t('users.incidents_link'), 'settings-incidents-help', t('settings.account.incidents_help')) }}</div>
             <a data-turbo="false" class="ui-btn ui-btn-secondary ui-btn-compact" href="/admin/incidents">{{ t('settings.account.incidents_action') }}</a>
           </div>
         {% endif %}
@@ -105,10 +99,7 @@
     <div class="ui-section" id="settings-security">
       <div class="settings-action-list" id="settings-logout-all">
         <div class="settings-action-row">
-          <div>
-            <strong>{{ t('settings.security.devices') }}</strong>
-            {{ help_tip('settings-logout-all-help', t('settings.security.logout_all_help')) }}
-          </div>
+          <div>{{ tip_label(t('settings.security.devices'), 'settings-logout-all-help', t('settings.security.logout_all_help')) }}</div>
           <form method="post" action="/account/logout-all">
             <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('settings.security.logout_all') }}</button>
           </form>
@@ -116,10 +107,7 @@
       </div>
       <div class="settings-action-list" id="settings-passkeys">
         <div class="settings-action-row">
-          <div>
-            <strong>{{ t('passkeys.title') }}</strong>
-            {{ help_tip('settings-passkeys-help', t('passkeys.help') ~ (' ' ~ t('passkeys.unavailable') if not passkeys_available else '')) }}
-          </div>
+          <div>{{ tip_label(t('passkeys.title'), 'settings-passkeys-help', t('passkeys.help') ~ (' ' ~ t('passkeys.unavailable') if not passkeys_available else '')) }}</div>
           {% if passkeys_available %}
             <button class="ui-btn ui-btn-primary ui-btn-compact" type="button" data-passkey-add data-passkey-supported hidden>{{ t('passkeys.add') }}</button>
           {% endif %}
@@ -128,7 +116,7 @@
           <p class="ui-sub" data-passkey-unsupported>{{ t('passkeys.unsupported') }}</p>
           <p class="ui-sub err-text" data-passkey-error data-generic="{{ t('passkeys.error.failed') }}" role="alert" hidden></p>
         {% endif %}
-        {% with label=t('passkeys.title'), value=(passkeys or []) | length %}{% include "partials/settings_value_card.html" %}{% endwith %}
+        {% with label=t('passkeys.count_label'), value=(passkeys or []) | length %}{% include "partials/settings_value_card.html" %}{% endwith %}
         {% for key in passkeys %}
           <div class="settings-action-row passkey-row">
             <div>
@@ -160,7 +148,7 @@
         {% endif %}
         {% if not current_user.totp_enabled %}
         <div class="settings-action-row">
-          <div><strong>{{ t('settings.account.2fa') }}</strong>{{ help_tip('settings-2fa-help', t('settings.account.2fa_off')) }}</div>
+          <div>{{ tip_label(t('settings.account.2fa'), 'settings-2fa-help', t('settings.account.2fa_off')) }}</div>
           <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/account/2fa/setup">{{ t('settings.account.setup') }}</a>
         </div>
         {% endif %}
@@ -216,10 +204,7 @@
       {% if push_available %}
       <div class="settings-action-list" id="settings-alerts" data-push-row data-push-key="{{ push_key }}">
         <div class="settings-action-row">
-          <div>
-            <strong>{{ t('push.title') }}</strong>
-            {{ help_tip('settings-push-help', t('push.help')) }}
-          </div>
+          <div>{{ tip_label(t('push.title'), 'settings-push-help', t('push.help')) }}</div>
           <div class="settings-row-actions">
             <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" data-push-on hidden>{{ t('push.on') }}</button>
             <span class="ui-badge ui-badge-done" data-tone="green" data-push-state-on hidden>{{ t('push.state_on') }}</span>
@@ -367,7 +352,7 @@
       <summary>{{ t('settings.technical.title') }}</summary>
 
       {% if current_user.role == 'admin' %}
-      <h2 id="settings-overview">{{ t('settings.destination.title') }}{{ help_tip('settings-destination-help', t('settings.destination.help')) }}</h2>
+      <h2 id="settings-overview">{{ t('settings.destination.title') }}{{ help_tip('settings-destination-help', t('settings.destination.help'), '', t('settings.destination.title')) }}</h2>
       <dl class="kv">
         <dt>{{ t('settings.destination.deployment') }}</dt><dd>{{ deployment_tier | capitalize }}</dd>
         <dt>{{ t('settings.destination.target') }}</dt><dd>{{ t('settings.destination.production') if ubyport_env == 'prod' else (ubyport_env | upper) }}</dd>
@@ -389,7 +374,8 @@
       
       {% endif %}
       {% if current_user.role == 'admin' or (mail_backend == 'console' and console_mail) %}
-      <h2 id="settings-mail">{{ t('settings.mail.title') }}{{ help_tip('settings-mail-help', t('settings.mail.help')) }}</h2>
+      <h2 id="settings-mail">{{ t('settings.mail.title') }}{{ help_tip('settings-mail-help', t('settings.mail.help'), '', t('settings.mail.title')) }}</h2>
+      <p class="ui-sub" id="settings-mail-status" data-mail-backend="{{ mail_backend }}">{{ t('settings.mail.status.' ~ mail_backend) if mail_backend in ('disabled', 'console', 'ses') else t('settings.mail.status.unknown') }}</p>
       {% if current_user.role == 'admin' %}
       <dl class="kv">
         <dt>{{ t('settings.mail.backend') }}</dt>
@@ -437,7 +423,7 @@
 
       {% endif %}
       {% if current_user.role == 'admin' %}
-      <h2 id="settings-codelists">{{ t('settings.codelists.title') }}{{ help_tip('settings-codelists-help', t('settings.codelists.help')) }}</h2>
+      <h2 id="settings-codelists">{{ t('settings.codelists.title') }}{{ help_tip('settings-codelists-help', t('settings.codelists.help'), '', t('settings.codelists.title')) }}</h2>
       <dl class="kv">
         <dt>{{ t('settings.codelists.countries') }}</dt><dd>{{ (codelists.countries | datetime_local(seconds=true)) if codelists.countries else t('settings.codelists.bundled') }}</dd>
         <dt>{{ t('settings.codelists.purposes') }}</dt><dd>{{ (codelists.purposes | datetime_local(seconds=true)) if codelists.purposes else t('settings.codelists.bundled') }}</dd>
@@ -456,7 +442,7 @@
 
     <details class="ui-section technical" open id="settings-audit">
       <summary>{{ t('settings.nav.audit') }}</summary>
-            <h2>{{ t('settings.audit.recent', count=audit_count) }}</h2>
+            <h2>{{ tp('settings.audit.recent', audit_count) }}</h2>
       {% set audit_pills = [
         {'label': t('settings.audit.filter_all'), 'href': '/settings/technical#settings-audit', 'current': not audit_filter},
         {'label': t('settings.audit.filter_support'), 'href': '/settings/technical?audit=support#settings-audit', 'current': audit_filter == 'support'}
@@ -487,9 +473,9 @@
       <div class="settings-action-list">
         <div class="settings-action-row">
           <div>
-            {{ tip_label(t('nav.guide'), 'settings-guide-help', t('settings.help.guide_help')) }}
+            {{ tip_label(t('settings.help.guide_label'), 'settings-guide-help', t('settings.help.guide_help')) }}
           </div>
-          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/guide" aria-label="{{ t('settings.help.guide_action') }} {{ t('help.tip.label') | lower }}">{{ t('settings.help.guide_action') }}</a>
+          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/guide">{{ t('settings.help.guide_action') }}</a>
         </div>
       </div>
     </div>

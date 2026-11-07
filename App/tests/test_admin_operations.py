@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 from fastapi.testclient import TestClient
 
-from app import admin_ops, auth, config, db, demo, reporting, scheduler
+from app import admin_ops, alerts, auth, config, db, demo, reporting, scheduler
 from app.main import app
 from tests.conftest import login_as
 
@@ -103,6 +103,23 @@ def test_admin_sees_every_section_and_no_guest_identity(monkeypatch):
     assert "Hlášení vyžadující pozornost" in czech
 
 
+def test_alert_kinds_read_in_plain_words_with_the_raw_code_kept(monkeypatch):
+    _account("admin", "admin")
+    db.execute("DELETE FROM alert WHERE dedupe_key LIKE 'wp10-ops-%'")
+    for kind in ("headcount_mismatch", "unmapped_kind_zz"):
+        alerts.raise_alert("warning", kind, "x", dedupe_key=f"wp10-ops-{kind}")
+    try:
+        client = _login("admin")
+        english = client.get("/admin/operations?lang=en").text
+        assert "Guest forms missing" in english
+        assert "<code" in english and "headcount_mismatch" in english  # raw code stays
+        assert "unmapped_kind_zz" in english  # no label: the code is all there is
+        assert "ops.alert_kind" not in english
+        assert "Chybí formuláře hostů" in client.get("/admin/operations?lang=cs").text
+    finally:
+        db.execute("DELETE FROM alert WHERE dedupe_key LIKE 'wp10-ops-%'")
+
+
 def test_filings_are_one_row_per_stay_with_the_worst_state():
     host_id = _account("filings", "host")
     now = db.utcnow()
@@ -145,10 +162,10 @@ def test_job_ok_records_the_last_success_and_late_jobs_show():
     scheduler._job_ok("mail")
     stored = db.get_setting(scheduler.JOB_LAST_OK_PREFIX + "mail")
     assert stored and admin_ops.age_minutes(stored) == 0
-    old = (datetime.now(timezone.utc) - timedelta(minutes=11)).replace(microsecond=0).isoformat()
+    old = (datetime.now(timezone.utc) - timedelta(minutes=30)).replace(microsecond=0).isoformat()
     db.set_setting(scheduler.JOB_LAST_OK_PREFIX + "mail", old)
     rows = {row["job_id"]: row for row in admin_ops.job_health()["rows"]}
-    assert rows["mail"]["late"] is True  # 11 min > 2 x 5 min
+    assert rows["mail"]["late"] is True  # 30 min > 2 x 5 min + 15 min write window
     assert rows["ical"]["late"] is True  # never recorded
     scheduler._job_ok("ical")
     rows = {row["job_id"]: row for row in admin_ops.job_health()["rows"]}

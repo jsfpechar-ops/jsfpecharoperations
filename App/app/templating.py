@@ -740,6 +740,13 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
     # WP09: set here, never from a route's context, so only the allowed public
     # templates can ever get a tag (and the matching CSP in main._harden).
     data["analytics_tag"] = analytics.tag() if analytics.mark_public_page(request, name) else None
+    # 0992: the public marketing pages carry nothing about the visitor, so the
+    # middleware may let Cloudflare keep them for a few minutes (main._apply_edge_cache).
+    # The test is the same template set the PostHog tag uses; one list, one place.
+    if name in analytics.PUBLIC_ANALYTICS_TEMPLATES:
+        request.state.edge_cacheable = True
+    if name.startswith("admin_"):
+        data.setdefault("admin_workspace", True)
     response = templates.TemplateResponse(request, name, data, status_code=status_code)
     # Arriving on a ?lang= link (the hreflang URLs search engines index) is as
     # much a choice as clicking the switcher, so it survives the next click.

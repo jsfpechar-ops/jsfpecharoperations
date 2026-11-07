@@ -998,6 +998,20 @@ def _entity_post_payload(form) -> Dict[str, Any]:
     return payload
 
 
+_BANK_FORM_KEYS = (
+    "bank_account",
+    "iban",
+    "account_prefix",
+    "account_number",
+    "account_bank",
+)
+
+
+def _form_sets_bank(form) -> bool:
+    """True when this POST carries a bank account field (0947: needs a fresh login)."""
+    return any(key in form for key in _BANK_FORM_KEYS)
+
+
 def _entity_details_payload(request: Request, payload: Dict[str, Any], form):
     """Normalise the detail fields a POST actually carried.
 
@@ -1005,6 +1019,15 @@ def _entity_details_payload(request: Request, payload: Dict[str, Any], form):
     form sent it, so the short operator form can update the identity block
     without wiping the stored details. Returns an error or None.
     """
+    # 0947 guarded POST /entities/{id}/invoice; this helper is the other write
+    # path for bank_account (the identity POST). A stale 30-day session must
+    # not redirect payouts or stay-fee QR payments to a new account.
+    if _form_sets_bank(form) and not auth.session_is_fresh(request):
+        return _back(
+            "/settings/security#settings-security",
+            err=_flash(request, "auth.error.recent_login"),
+        )
+
     ico = (payload.get("ico") or "").strip()
     if ico and not validation.ico_ok(ico):
         return _back(
@@ -1860,7 +1883,8 @@ def _property_view_state(
     extra = extra or {}
     view = extra.get("property_view") or request.query_params.get("view") or ""
     section = extra.get("settings_section") or request.query_params.get("section") or ""
-    if section not in PROPERTY_SETTINGS_SECTIONS or (section == "lock" and not lock_available):
+    if section not in PROPERTY_SETTINGS_SECTIONS:
+        # 0984: keep ?section=lock when TTLock is off-plan; lock section still renders #lock-unavailable.
         section = ""
     if view not in PROPERTY_VIEWS:
         view = "settings" if section else "overview"
@@ -2268,6 +2292,7 @@ def refuse_fee_save(request: Request, apartment: Dict[str, Any], form, *, link_e
     fee_draft = stay_fee_routes.fee_form_values(form)
     fee_draft.pop(stay_fee_routes.FEE_ACCOUNT_RAW, None)
     fee_draft.pop(stay_fee_routes.GUEST_LINK_RAW, None)
+    fee_draft.pop(stay_fee_routes.GUEST_OPERATOR_ACCOUNT_RAW, None)
     account_draft = stay_fee_routes.fee_account_draft(form)
     draft.update(fee_draft)
     entities = access.entities(request)
@@ -2793,9 +2818,14 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
         try:
             stay_fee_routes.apply_fee_account(payload)
             stay_fee_routes.check_guest_pay_setup(apartment, payload)
-            stay_fee_routes.apply_guest_operator_account(apartment, form, payload)
+            stay_fee_routes.apply_guest_operator_account(apartment, form, payload, request)
         except ValueError as exc:
             msg = str(exc)
+            if msg == stay_fee_routes.GUEST_OPERATOR_ACCOUNT_STALE:
+                return _back(
+                    "/settings/security#settings-security",
+                    err=_flash(request, "auth.error.recent_login"),
+                ), False
             link_error = msg == stay_fee_routes.GUEST_LINK_INVALID
             operator_account_error = msg == stay_fee_routes.GUEST_OPERATOR_ACCOUNT_INVALID
             rate_error = msg == stay_fee_routes.GUEST_RATE_REQUIRED

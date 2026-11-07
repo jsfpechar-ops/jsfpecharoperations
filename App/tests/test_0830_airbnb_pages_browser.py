@@ -149,9 +149,10 @@ _AUDIT_JS = """(isBack) => {
 
   // no fine print: any visible element (any tag) whose OWN text (its direct text nodes, not its children) is longer
   // than 60 characters, outside help bodies, open help panels, headings, input labels, table cells and form fields
-  const SKIP_FINE = 'h1, h2, h3, h4, h5, h6, label, td, th, table, textarea, input, select, option, script, style';
+  // 0991: readiness/setup-continue copy names what is missing (owner: card below the grid); not decorative fine print.
+  const SKIP_FINE = 'h1, h2, h3, h4, h5, h6, label, td, th, table, textarea, input, select, option, script, style, .readiness-why, .readiness-item, .prop-sec-missing, .setup-continue-card';
   // .env-banner is the shell's practice-mode safety alert (base.html, _env_banner.html), shown only when UBYPORT_ENV is mock
-  const HELP_PANEL = '.help-tip-body, .help-tip, .env-banner, details[open].ui-how, details[open].page-help, details[open].stays-how, details[open].help-panel';
+  const HELP_PANEL = '.help-tip-body, .help-tip, .env-banner, details[open].ui-how, details[open].page-help, .page-help-wrap:has(details.page-help[open]) > .page-help-body, details[open].stays-how, details[open].help-panel';
   for (const el of [root, ...root.querySelectorAll('*')]) {
     if (el.matches(SKIP_FINE) || el.closest(SKIP_FINE + ', ' + HELP_PANEL)) continue;
     if (!vis(el)) continue;
@@ -271,7 +272,7 @@ def test_0830C_properties_regressions(base, dashboard_rich_host, seeded):
                     const sub = [...document.querySelectorAll('.props-head p.sub')].filter(visible).length;
                     const how = document.querySelector('details.page-help[data-how="properties"]');
                     const summary = how ? how.querySelector('summary') : null;
-                    const body = how ? how.querySelector('.page-help-body') : null;
+                    const wrap = how && how.closest('.page-help-wrap'); const body = wrap ? wrap.querySelector(':scope > .page-help-body') : null;
                     const thead = document.querySelector('.props-card thead');
                     const card = document.querySelector('.props-card');
                     return {
@@ -324,10 +325,14 @@ def test_0831G_page_help(base, dashboard_rich_host, seeded):
                     box = button.bounding_box()
                     title = page.evaluate(
                         """() => {
-                            const h1 = document.querySelector('h1');
+                            const row = document.querySelector('.props-title-row') || document.querySelector('.stays-title-row');
+                            const h1 = row ? row.querySelector('h1') : document.querySelector('h1');
+                            if (!h1) return {right: 0, mid: 0};
                             const walker = document.createTreeWalker(h1, NodeFilter.SHOW_TEXT);
                             let node = null;
                             while ((node = walker.nextNode())) { if (node.textContent.trim()) break; }
+                            const hr = h1.getBoundingClientRect();
+                            if (!node) return {right: hr.right, mid: (hr.top + hr.bottom) / 2};
                             const range = document.createRange();
                             range.selectNodeContents(node);
                             const r = range.getBoundingClientRect();
@@ -358,7 +363,7 @@ def test_0831G_page_help(base, dashboard_rich_host, seeded):
                     viewport = page.viewport_size
                     if not body.is_visible() or pb["x"] < 0 or pb["x"] + pb["width"] > viewport["width"]:
                         info = page.evaluate(
-                            """() => { const d = document.querySelector('.page-help'); const b = d && d.querySelector('.page-help-body');
+                            """() => { const d = document.querySelector('.page-help'); const wrap = d && d.closest('.page-help-wrap'); const b = wrap && wrap.querySelector(':scope > .page-help-body');
                             const r = b ? b.getBoundingClientRect() : null;
                             return {open: d && d.open, display: b && getComputedStyle(b).display, rect: r && [r.x, r.y, r.width, r.height],
                               n: document.querySelectorAll('.page-help').length, vis: b && getComputedStyle(b).visibility, op: b && getComputedStyle(b).opacity, cv: b && getComputedStyle(b.parentElement).contentVisibility, anim: document.getAnimations().length}; }"""

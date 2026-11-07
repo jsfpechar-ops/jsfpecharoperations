@@ -32,7 +32,7 @@ def test_page_is_one_scroll_page_without_tabs(host):
     assert "data-property-views" not in html
     assert "data-settings-group" not in html
     assert "property-settings-nav" not in html
-    assert 'class="airbnb-back"' in html
+    assert "airbnb-back" in html
     assert "<h1" in html
     assert 'class="savebar' in html
 
@@ -43,15 +43,17 @@ def test_sections_are_details_in_order(host):
     # 0536: the fixture has no door codes, but the lock section is always rendered
     # (connect text only). DOM order; v2 CSS puts them in mockup order (0952: the one lock
     # section sits after the property form, so it is last in the DOM).
-    assert names == ["basics", "archive", "messages", "police", "fee", "calendars", "lock"]
+    # 0983: archive is a direct button row (id sec-archive), no longer a details section.
+    assert names == ["basics", "messages", "police", "fee", "calendars", "lock"]
 
 
-def test_0536_setup_continue_is_the_first_aside_card(host):
+def test_0536_setup_continue_is_the_first_card_under_the_pills(host):
     client, apartment_id = host
     html = _page(client, apartment_id)
-    start = html.index('<aside class="preview"')
-    aside = html[start:html.index("</aside>", start)]
-    assert "setup-continue-card" in aside
+    start = html.index('<div class="prop-after-strip">')
+    cards = html[start:html.index('<div class="form prop-form-single property-detail">', start)]
+    assert "setup-continue-card" in cards
+    assert "<aside" not in html[html.index('<nav class="prop-strip"'):]
 
 
 def _strip(html):
@@ -143,7 +145,7 @@ def test_rendered_sections_show_in_mockup_order(host):
     client, apartment_id = host
     names = [name for name, _ in _sections(_page(client, apartment_id))]
     visible = sorted(names, key=lambda name: MOCKUP_ORDER[name])
-    assert visible == ["basics", "police", "calendars", "messages", "lock", "fee", "archive"]
+    assert visible == ["basics", "police", "calendars", "messages", "lock", "fee"]
 
 
 def test_aside_has_cards_and_links_to_each_section(host):
@@ -154,7 +156,7 @@ def test_aside_has_cards_and_links_to_each_section(host):
         assert f'href="#sec-{key}"' in strip, key
     for sec in re.findall(r'href="#(sec-[a-z]+)"', strip):
         assert f'id="{sec}"' in html, sec
-    assert html.index('<nav class="prop-strip"') < html.index('class="form"')
+    assert html.index('<nav class="prop-strip"') < html.index('class="form prop-form-single property-detail"')
 
 
 def test_strip_flags_missing_operator(host):

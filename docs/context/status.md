@@ -1,36 +1,25 @@
 # Status
 
-Updated: 2026-11-05.
+Updated: 2026-11-07.
 
 ## Production
 - Magic-link 1–2 done; checked; access log off.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
+- PostgreSQL since 2026-10-31; SQLite at `/data/ubyhost.db`. Billing ON. Go off until `COMPOSE_PROFILES` + `UBYHOST_GO_JOB_KINDS`.
 
 ## Now
-- 2026-11-04: 0949 paste card removed (part B open): [report](../tasks/0949-report.md).
-- 11-05: #786 filters implemented; validation blocked (workspace): [report](../tasks/0950-fix-1-report.md).
-- 11-04: PR #763 stay fee: 0897 done; 0898, 0932-0934 done; merging on green.
-- 2026-11-04: brief 0930 in review (PR #768): stay bars end mid departure day.
-- 2026-11-03: UX gate live: layout lint (`App/tests/layout_lint.js`) + AGENTS.md rule 10; threads self-check screenshots, owner does not.
-- 2026-11-02: Airbnb pass on login and admin pages (0892-0894) in draft PR #739; 0869 renumbers colliding briefs.
-- 2026-11-01: **Production on PostgreSQL** since 2026-10-31 23:56Z (39 s downtime; SQLite kept at `/data/ubyhost.db`, rollback `./scripts/pg-cutover.sh rollback`). Go merged, off in prod until `go` is in `COMPOSE_PROFILES` and a kind in `UBYHOST_GO_JOB_KINDS`: G1a, container, G3a billing_snapshot, G3b stripe_sweep, G5a request bytes (#621-#634). G5b responses (#635), G5c transport + claim (#640), G5d-1 outcome decision (0482). Next: G5d-2 onward ([plan v4](../plans/postgresql/migration-plan-v4.md)).
-- Billing cockpit merged (#561), 0448 merged (#565). Decisions 2026-10-29 in decisions.md.
-- Billing ON in production (`UBYHOST_BILLING_ENABLED=1`, 2026-10-29; #561, #565).
-- Stripe: onboarding live; extras merged (#701, #705, #706). **Owner:** deploy. Next: booking site v1.
-- 0290 passkey CI/phone; #435 merge; TTLock #434 CI pending. #432 subdomain live; root login/calendar review pending.
-- Foolproof 0230-0278, reset 0165-0183 (#405); phone app + alerts (0219, 0225-0229, #421). **Owner:** deploy, phone.
-- Langs 0196: vi host app, uk guest form. **Owner:** add `uk` to `UBYHOST_GUEST_LANGS`; deploy.
-- AI crawler block 0195: Terms §11 TDM v1.7, lawyer to confirm. Cleaning 0104: #396 CI/staging review.
-- Credential letter to data box ybndqw9. **LAWYER REVIEW** legal v1.7 (0005), if unsigned.
+- 11-06: #790: OCR `tip_label` + inline-flex `help-tip` (layout-lint `help-stranded` @320); cache `20261106-pr790-ocr-tip2`. Full browser glob open. [handoff](../tasks/ux-remediation-handoff.md).
+- 11-06: #791 merged. 11-07: 0990-0992 (settings throttle, PG indexes 00008, edge cache) in review. **Owner:** deploy, `pg_schema.py apply`, CF rule, Grafana.
+- UX gate live (layout lint + AGENTS rule 10). Stripe onboarding live; extras merged. **Owner:** deploy; booking site v1 next.
 
 ## Next
-- Door codes 0037 and 0038 are on main. Next: those owner steps on staging.
-- Plan [file-retention](../plans/file-retention.md): decided, no build now. Lawyer round: Terms/DPA line, not the host's statutory archive.
-- TTLock briefs 0008–0016: [plan](../plans/ttlock-door-codes.md) §11 order. Test first; live after §12 + lawyer (K-L).
+- Door codes 0037–0038 on main → owner staging steps.
+- TTLock 0008–0016: [plan](../plans/ttlock-door-codes.md) §11; live after §12 + lawyer (K-L).
+- File-retention: decided, no build; lawyer Terms/DPA line.
 
 ## Blocked: needs owner, lawyer or council
-- Lawyer review of legal texts (0005 and K-L rows in [known-issues](known-issues.md)).
-- Stale signed dates (K-F18). HIGH RISK filing: K-F02, K-F03, K-F07; secret rotation K-S10.
+- Lawyer: legal texts (0005, K-L). Stale signed dates (K-F18). Filing HIGH RISK: K-F02, K-F03, K-F07; secrets K-S10.
+- Owner: `uk` in `UBYHOST_GUEST_LANGS`; phone/passkey deploy; AI crawler Terms §11 confirm.
 
 ## Owner done
-- SES, Turnstile, healthchecks, Better Stack, Cloudflare pre-clearance, autopurge, Render staging, backup drill, 0001 (#281) done.
+- SES, Turnstile, monitoring, staging, backup drill, 0001 done.

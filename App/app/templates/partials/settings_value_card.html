@@ -2,7 +2,7 @@
 {%- from "_icons.html" import icon with context -%}
 {%- from "_components.html" import help_tip with context -%}
 <div class="settings-value-card">
-  <span class="settings-value-label">{{ label }}{% if help_text %} {{ help_tip(help_id, help_text) }}{% endif %}</span>
+  <span class="settings-value-label">{{ label }}{% if help_text %} {{ help_tip(help_id, help_text, '', label) }}{% endif %}</span>
   <strong class="settings-value">{{ value }}</strong>
   {% if href %}<a class="settings-value-link" href="{{ href }}">{{ link_label }} {{ icon('chevron-right', 20) }}</a>{% endif %}
 </div>

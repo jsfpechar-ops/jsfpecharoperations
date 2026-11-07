@@ -2,6 +2,6 @@
     `control` is the captured form control (the checkbox), `help_text` is optional. -#}
 {%- from "_components.html" import help_tip with context -%}
 <div class="settings-toggle-row">
-  <span class="settings-toggle-label">{{ label }}{% if help_text %}{{ help_tip(help_id, help_text) }}{% endif %}</span>
+  <span class="settings-toggle-label">{{ label }}{% if help_text %}{{ help_tip(help_id, help_text, '', label) }}{% endif %}</span>
   <span class="settings-toggle-control">{{ control }}</span>
 </div>

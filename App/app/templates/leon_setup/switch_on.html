@@ -4,13 +4,17 @@
 {% if state == 'terms' %}{{ ui_banner('attention', t('leon_page.terms_updated')) }}{% endif %}
 {% if state in ('off', 'terms') %}
 <h2 class="setup-wizard-section-title">{{ t('leon_page.warn_title') }}</h2>
-<ul>{% for n in range(1, 7) %}<li>{{ t('leon_page.warn' ~ n) }}</li>{% endfor %}</ul>
+<ul data-leon-terms-key>{% for n in (1, 5) %}<li>{{ t('leon_page.warn' ~ n) }}</li>{% endfor %}</ul>
+<details class="setup-wizard-more" data-leon-terms-more>
+  <summary>{{ t('leon_setup.terms_more') }}</summary>
+  <ul>{% for n in (2, 3, 4, 6) %}<li>{{ t('leon_page.warn' ~ n) }}</li>{% endfor %}</ul>
+</details>
 <form method="post" action="/apartments/{{ apartment.id }}/leon" id="leon-setup-on">
 <input type="hidden" name="_csrf" value="{{ csrf_token }}">
 <input type="hidden" name="action" value="on">
 <input type="hidden" name="next" value="setup">
 <div class="checkline"><input type="checkbox" id="leon-terms" name="terms" value="1" required>
-  <label for="leon-terms">{{ t('leon_page.accept') }} <a href="/guide#leon-terms">{{ t('leon_page.terms_link') }}</a></label></div>
+  <label for="leon-terms">{{ t('leon_page.accept') }} <a href="/guide#leon-terms" target="_blank" rel="noopener">{{ t('leon_page.terms_link') }}</a></label></div>
 </form>
 {% else %}
 <div class="setup-wizard-instruction">{{ t('leon_setup.switch_on.already') }}</div>

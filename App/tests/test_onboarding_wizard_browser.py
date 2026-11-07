@@ -297,7 +297,7 @@ def test_overview_checklist_when_guide_hidden(host):
     )
     page = client.get(f"/apartments/{flat['id']}?view=overview&lang=en").text
     assert "setup-continue-card" not in page
-    assert 'data-setup-status' in page or 'class="readiness"' in page
+    assert 'class="prop-strip"' in page
 
 
 def test_overview_checklist_without_stored_setup_state(host):
@@ -333,9 +333,8 @@ def test_overview_checklist_without_stored_setup_state(host):
     )
     page = host["client"].get(f"/apartments/{apt_id}?view=overview&lang=en").text
     assert (
-        'data-setup-status' in page
+        'class="prop-strip"' in page
         or 'class="panel host-setup-complete"' in page
-        or 'class="readiness"' in page
     )
 
 
@@ -780,7 +779,7 @@ def test_waiting_hide_show_and_demo_exclusion(host):
     hidden_page = client.get(f"{base}?view=overview&lang=en").text
     assert 'value="show"' in hidden_page
     assert "setup-continue-card" not in hidden_page
-    assert 'data-setup-status' in hidden_page
+    assert 'class="prop-strip"' in hidden_page
     assert 'class="panel host-setup-complete"' not in hidden_page
     shown = client.post(setup, data={"action": "show"}, follow_redirects=False)
     assert shown.headers["location"].rstrip("/").endswith("/setup")
@@ -819,7 +818,7 @@ def test_waiting_hide_show_and_demo_exclusion(host):
     assert property_setup.load(legacy) is None
     legacy_page = client.get(f"/apartments/{legacy}?view=overview&lang=en").text
     assert "setup-continue-card" not in legacy_page
-    assert 'data-setup-status' in legacy_page
+    assert 'class="prop-strip"' in legacy_page
     assert 'class="panel host-setup-complete"' not in legacy_page
 
 
@@ -875,7 +874,7 @@ def test_review_fixes_in_the_browser(host, base_url):
         _shot(page, "11-police-error-en-1280.png")
         page.locator("form.setup-wizard-exit button").click()
         page.wait_for_url("**view=overview**")
-        assert page.locator("[data-setup-status]").is_visible()
+        assert page.locator("nav.prop-strip").is_visible()
         _shot(page, "12-overview-hidden-en-1280.png")
         page.locator(".prop-strip [data-strip='guest']").first.scroll_into_view_if_needed()
         _shot(page, "13-overview-guest-link-en-1280.png")
@@ -1151,12 +1150,11 @@ def test_wizard_polish_and_overview_cards(host, base_url, monkeypatch, lang, wid
         page.goto(f"{base_url}/apartments/{flat['id']}?view=settings&section=guests&lang={lang}")
         calendars_title = _t(lang, "property_page.sec.calendars.title")
         if width >= 1024:
-            aside = page.locator("aside.preview")
             calendars_card = page.locator('nav.prop-strip a.sc[data-strip="calendars"]')
             assert calendars_card.get_attribute("href") == "#sec-calendars"
             assert calendars_card.locator("b").inner_text() == calendars_title
             assert page.locator("nav.prop-strip .sc").count() == 6
-            assert aside.locator("button[data-copy]").count() == 0
+            assert page.locator("aside.preview").count() == 0  # 0982: the Preview aside is gone
         else:
             calendars_summary = page.locator("details#sec-calendars > summary")
             assert calendars_summary.is_visible()

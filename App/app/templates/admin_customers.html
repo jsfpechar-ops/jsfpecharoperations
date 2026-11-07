@@ -1,6 +1,6 @@
 {% extends "host_page.html" %}
 {% set v2 = true %}
-{% block head_extra %}<link rel="stylesheet" href="/static/admin2.css?v=20261102-0893o">{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="/static/admin2.css?v=20261106-0893q"><link rel="stylesheet" href="/static/admin2-operator-0974.css?v=20261105-0974a">{% endblock %}
 {% set nav = 'users' %}
 {% set body_kind = 'list' %}
 {% from "_ui_layout.html" import ui_section_tabs with context %}
@@ -34,7 +34,7 @@
 {% for value in ['legacy', 'unverified', 'trialing', 'ending', 'active', 'overdue'] %}
 {% set _ = stats.append((href(state=value, q='', plan=''), summary.get(value, 0), t('customers.ending') if value == 'ending' else t('customers.state.' ~ value))) %}
 {% endfor %}
-{{ ui_stats(stats, label=t('customers.overview')) }}
+<div class="customers-metrics">{{ ui_stats(stats, label=t('customers.overview')) }}</div>
 <p class="ui-sub">{{ t('customers.as_of', date=today) }}</p>
 {% if customers %}
 {{ ui_table_begin([(t('customers.customer'), ''), (t('customers.properties'), 'r'), (t('customers.plan'), ''), (t('customers.state'), ''), (t('customers.period'), ''), (t('common.actions'), '')], label=t('customers.title')) }}
@@ -54,6 +54,7 @@
 {% if newer_url %}{{ ui_button(t('customers.newer'), 'secondary', href=newer_url) }}{% endif %}
 {% if older_url %}{{ ui_button(t('customers.older'), 'secondary', href=older_url) }}{% endif %}
 {% if newer_url or older_url %}{{ ui_button(t('customers.reset'), 'quiet', href=href()) }}{% endif %}
+</nav>
 
 <section class="ui-section" id="create-host">
   <h2>{{ tip_label(t('users.create.title'), 'create-host-help', t('users.create.lede'), tag='span') }}</h2>
@@ -68,8 +69,7 @@
              autocapitalize="none" spellcheck="false">
       <div class="ui-help">{{ t('users.email.create_hint') }}</div>
     </div>
-    <button class="ui-btn ui-btn-primary" type="submit">{{ t('users.create.submit') }}</button>
+    <div class="ui-form-actions"><button class="ui-btn ui-btn-primary" type="submit">{{ t('users.create.submit') }}</button></div>
   </form>
 </section>
-</nav>
 {% endblock %}
