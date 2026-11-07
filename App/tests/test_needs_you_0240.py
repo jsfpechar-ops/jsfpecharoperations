@@ -87,3 +87,9 @@ def test_the_sample_property_gets_no_setup_line():
     missing = [{"apartment": sample, "missing": [{"anchor": "ubyport"}]}]
     built = needs_you.build([], {}, [], missing, "en", date(2026, 10, 22))
     assert [line for line in built["lines"] if line["kind"] == "setup"] == []
+
+
+def test_a_stay_that_ends_today_no_longer_asks_guests_to_register():
+    assert _build([_row(5, "awaiting_guest", days=-2)])["lines"] == []  # date_to == TODAY
+    lines = _build([_row(6, "awaiting_guest", days=-1)])["lines"]  # date_to == TODAY + 1
+    assert [line["stay_id"] for line in lines] == [6]
