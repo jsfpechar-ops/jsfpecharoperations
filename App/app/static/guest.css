@@ -1603,3 +1603,51 @@ details.g-summary > .g-summary-body { padding: 16px 20px 18px; }
 .g-fee-qr-img { display: block; width: 176px; max-width: 100%; height: auto; border: 1px solid var(--g-line); }
 .g-fee-qr .g-summary-list { flex: 1 1 180px; min-width: 0; }
 .g-fee-payee { margin: 8px 0 0; }
+
+/* Form stay-fee estimate sits inside #legal-notice (not a pay card). */
+.g-fee-estimate-inline {
+  margin: 0 0 4px;
+  padding: 14px 0 16px;
+  border-top: 1px solid var(--g-line);
+}
+.g-fee-estimate-inline-title {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--g-ink);
+  letter-spacing: -0.01em;
+}
+.g-fee-estimate-badge {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--g-muted);
+  text-transform: lowercase;
+}
+.g-fee-estimate-facts {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+.g-fee-estimate-facts dd strong {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--g-ink);
+}
+.g-fee-estimate-legal-ref {
+  margin: 0;
+  font-size: 13.5px;
+}
+.g-legal-fee-jump {
+  color: var(--g-accent);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.g-legal-notice:has(.g-fee-estimate-inline) .g-legal-text > summary {
+  border-top: 0;
+  margin-top: 0;
+  padding-top: 0;
+}
+/* Hub stay-fee card */
+#fee-pay .g-fee-amount { margin-bottom: 4px; }
+#fee-pay details.g-summary.g-fee-legal-fold { margin-top: 12px; }
+#fee-pay details.g-summary.g-fee-legal-fold + details.g-summary { margin-top: 0; }

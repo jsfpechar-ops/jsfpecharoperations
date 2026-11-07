@@ -967,7 +967,7 @@ body.v2 .setup-continue-card .actions{display:flex;flex-direction:column;align-i
 body.v2 .savebar .ui-btn,body.v2 .savebar .btn{width:auto;white-space:nowrap}
 @media (min-width:1024px){
   body.v2 .property-section{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
-  body.v2 .property-section > :is(h3,p,.hint,.grid,.field-label-row,.actions,.preview-hint){grid-column:1/-1}
+  body.v2 .property-section > :is(h2,.property-section-title,h3,p,.hint,.grid,.field-label-row,.actions,.preview-hint,.ui-section){grid-column:1/-1}
   body.v2 .property-section .field:has(textarea){grid-column:1/-1}
   body.v2 .property-section .grid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
   body.v2 .property-section .grid > .field{margin:0}
@@ -2502,6 +2502,16 @@ body.v2 .gp .checkline input[type=checkbox]{width:24px;height:24px;min-width:24p
 body.v2 .stay-fee-guest-fields .help-tip{position:relative}
 body.v2 .stay-fee-guest-fields .help-tip-btn{position:relative;width:24px;height:24px;min-width:24px;min-height:24px;padding:0}
 body.v2 .stay-fee-guest-fields .help-tip-btn::before{content:"";position:absolute;top:50%;left:50%;width:3.15rem;height:3.15rem;transform:translate(-50%,-50%)}
+/* Stay fee: optional council details and guest-pay cards need inset fields, not borders on borders. */
+body.v2 #stay-fee-council details.fee-more{margin-top:var(--space-4)}
+body.v2 #stay-fee-council details.fee-more>summary{padding:var(--space-4) var(--space-5)}
+body.v2 #stay-fee-council details.fee-more>.field{margin:0;padding:0 var(--space-5)}
+body.v2 #stay-fee-council details.fee-more>.field:first-of-type{padding-top:var(--space-2)}
+body.v2 #stay-fee-council details.fee-more>.field:last-child{padding-bottom:var(--space-5)}
+body.v2 #stay-fee-council details.fee-more>.field+.field{margin-top:var(--space-4)}
+body.v2 #stay-fee-guest-pay .gp-card{padding:0 var(--space-5) var(--space-5)}
+body.v2 #stay-fee-guest-pay .gp-detail{padding:var(--space-5) 0 0;border-top:1px solid var(--line);margin-top:0}
+body.v2 #stay-fee-guest-pay .gp-detail .field:last-child{margin-bottom:0}
 /* 0945 payments (v2) */
 body.v2 .payments-page h2{font-size:17px;font-weight:700;margin:28px 0 12px}
 body.v2 .payments-box{padding:20px 22px;margin:0 0 16px}
@@ -2779,6 +2789,7 @@ body.v2 form.property-settings-form .btn,body.v2 form.property-settings-form .ui
 body.v2 .prop-archive-row{padding:4px 0 8px}
 body.v2 .prop-archive-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 body.v2 .prop-archive-actions .ui-btn{min-height:44px}
+@media (max-width:1023px){body.v2 .guest-admin-form .ui-form-actions>.ui-btn.ui-btn-quiet{min-width:44px;min-height:44px;padding:10px 12px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center}}
 body.v2 .prop-archive-note{margin:0;flex:1 1 240px;min-width:0}
 /* the "?" stays next to Archive; 0833 measures layout box — match other property-settings-form tips at 44px on phone/tablet */
 body.v2 .prop-archive-action{display:inline-flex;align-items:center;flex-wrap:nowrap;max-width:100%}
@@ -2812,6 +2823,21 @@ body.v2 .feed-url-details summary{cursor:pointer;min-height:44px;display:inline-
 body.v2 .feed-url-details summary{gap:8px}
 body.v2 .feed-url-value{display:block;max-width:100%;overflow-wrap:anywhere;word-break:break-all;white-space:normal}
 body.v2 .feed-url-details:not([open])>.feed-url-value{visibility:hidden}
+/* Calendars in property settings: one section title, quiet chevrons, no nested details chrome. */
+body.v2 #sec-calendars .property-view-head{margin:0 0 var(--space-4);align-items:flex-start}
+body.v2 #sec-calendars .property-view-head .field-label-row{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+body.v2 #sec-calendars .property-view-head .actions{margin-left:auto}
+body.v2 #sec-calendars .property-feeds .panel{margin-bottom:var(--space-4)}
+body.v2 #sec-calendars .calendar-add-form{margin-top:var(--space-2)}
+body.v2 details.prop-sec{border:0;border-radius:0;background:transparent;margin-bottom:0;box-shadow:none}
+body.v2 details.prop-sec>summary{padding-left:0;padding-right:0}
+body.v2 details.prop-sec>summary:after{content:"";width:8px;height:8px;margin-right:6px;border:0;border-right:2px solid var(--ink3);border-bottom:2px solid var(--ink3);transform:rotate(45deg);transition:transform .15s;font-size:0;color:transparent;align-self:center}
+body.v2 details.prop-sec[open]>summary:after{transform:rotate(-135deg)}
+body.v2 .feed-url-details{border:0;border-radius:0;background:transparent;margin:0 0 var(--space-2);padding:0;display:block}
+body.v2 .feed-url-details>summary{padding:0;min-height:44px;justify-content:flex-start;font-weight:600;color:var(--ink2)}
+body.v2 .feed-url-details>summary:after{content:"";width:6px;height:6px;margin-left:8px;border:0;border-right:2px solid var(--ink3);border-bottom:2px solid var(--ink3);transform:rotate(45deg);font-size:0;color:transparent}
+body.v2 .feed-url-details[open]>summary:after{transform:rotate(-135deg)}
+body.v2 .feed-url-value{margin-top:var(--space-2);padding:var(--space-3);border:1px solid var(--line);border-radius:10px;background:var(--s)}
 /* 0968: the stays filter panel on desktop is one row: the fields, then Apply and Cancel. Reset filters lives under the scope line. */
 @media (min-width:1024px){
   body.v2 form.stays-filter:not(.is-collapsed){display:flex;align-items:flex-end;gap:16px;flex-wrap:nowrap}
