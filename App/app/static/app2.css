@@ -2912,3 +2912,20 @@ body.v2 .impersonation-bar .btn{white-space:nowrap}
 /* 0995: the feed URL is shown, clipped with an ellipsis; the full text stays in title and in the copy button */
 body.v2 .feed-table .feed-url-value{display:block;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (max-width:1023px){body.v2 .feed-table .feed-url-value{max-width:100%}}
+/* 0996: signature dialog and terms line on v2 pages (host2.css and app.css are not loaded there) */
+body.v2 .ui-dialog.signature-dialog{border:0;padding:0;background:transparent;max-width:none;width:min(720px,calc(100vw - 32px));margin:auto}
+body.v2 .ui-dialog.signature-dialog::backdrop{background:var(--scrim,rgba(32,32,30,.4))}
+body.v2 .ui-dialog.signature-dialog .ui-sheet{background:var(--surface);border-radius:16px;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,.18);max-height:calc(100dvh - 32px);overflow:auto}
+body.v2 .signature-dialog .ui-sheet-handle{display:none}
+body.v2 .signature-dialog h2{margin:0 0 12px;font-size:18px;font-weight:700}
+body.v2 .signature-modes{display:flex;gap:8px;margin:0 0 12px}
+body.v2 .signature-modes .ui-tab{min-height:44px;padding:0 16px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);font:inherit;font-weight:600;cursor:pointer}
+body.v2 .signature-modes .ui-tab[aria-selected="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+body.v2 .signature-dialog .signature-dialog-pad{display:block;width:100%;height:clamp(160px,32vh,260px);margin:12px 0;border:1px solid var(--line);border-radius:10px;background:#fff;touch-action:none}
+body.v2 .signature-dialog .signature-typed-preview{touch-action:auto}
+body.v2 .signature-dialog .action-group{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+body.v2 .signature-dialog-actions{justify-content:flex-end}
+@media (max-width:599px){body.v2 .signature-dialog-actions{flex-direction:column;align-items:stretch}}
+body.v2 .checkline{display:flex;gap:10px;align-items:flex-start;font-size:14px;margin:0 0 12px}
+body.v2 .checkline input{width:auto;margin-top:3px;accent-color:var(--acc)}
+body.v2 #smart-locks-setup form{display:grid;gap:4px;justify-items:start}
