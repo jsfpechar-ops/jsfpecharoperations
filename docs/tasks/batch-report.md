@@ -166,3 +166,24 @@ Status: review
 1. **Rails columns**: shared with stay-fee guest pay (brief 0996); not separate `booking_pay_*` unless owner wants a follow-up migration.
 2. **Layout lint**: no unfixable findings; booking-site not in default EXTRA_ROUTES (pre-existing); host lint green.
 3. **Deploy**: owner applies PG migration **39** / goose **00010** (not brief's 0038/00009 numbers on this branch).
+
+## 1005: Photo reorder row and phone nav
+
+Status: review | Branch: `task/0999-property-rules-map`
+
+### Summary
+
+Replaced inline flex on the photo reorder row with `.pp-photo-moves` (`--space-3` gap), dropped `ui-btn-compact` on ↑/↓, added `_csrf` to `photo-move` and `photo-delete` forms, added **Booking site** to the phone More menu (`_shell_tabbar.html`).
+
+### Tests
+
+- Bundle §6: **38 passed**
+- `test_layout_lint_browser.py` + `test_host_geometry.py`: **6 passed**, 0 skipped
+- `design_lint.py`, `context_lint.py`: OK
+- `test_db_postgres.py`: not run (no PostgreSQL on VM)
+
+### UX gate
+
+Screenshots: `/opt/cursor/artifacts/pr803-after-1005/` (`property-page-{390,768,1280}.png`, `phone-more-menu-390.png`). REVIEW.md was absent on VM.
+
+390 page: photo strip with spaced arrow controls; More menu shows Booking site. 768/1280: same row; no `gap:4px`. Ad-hoc lint on property page: no `tight-side` between ↑/↓; optional `tight-side` beside delete × on 390/768 (pre-existing overlay, not this row).

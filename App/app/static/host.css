@@ -1554,3 +1554,5 @@ body.host-workspace {
 .host-workspace .property-savebar{position:sticky;bottom:0;display:flex;justify-content:flex-end;gap:8px;padding:12px 0;background:var(--surface-page, #f6f6f4);border-top:1px solid var(--border, #ebebe7);z-index:5}
 @media (max-width: 640px){.host-workspace .property-savebar > *{flex:1}}
 .host-workspace .property-section.ui-section{border-radius:12px}
+
+.host-workspace .pp-photo-moves { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-2); }

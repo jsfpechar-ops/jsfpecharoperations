@@ -117,3 +117,9 @@ def test_setup_page_highlights_booking_site_row():
     assert response.status_code == 200
     assert 'aria-current="page"' in _row(response.text, "/booking-sites")
     assert 'aria-current="page"' not in _row(response.text, "/apartments")
+
+
+def test_phone_more_menu_links_booking_sites():
+    client, _, _ = _host("A")
+    html = client.get("/?lang=en").text
+    assert 'class="ui-menu-item" href="/booking-sites"' in html
