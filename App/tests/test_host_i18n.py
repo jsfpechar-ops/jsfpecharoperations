@@ -202,3 +202,8 @@ def test_language_endpoint_accepts_vietnamese():
 def test_ukrainian_plural_forms_follow_the_three_form_rule():
     assert host_i18n.plural_key("night", 21, "uk") == "night.one"
     assert host_i18n.plural_key("night", 12, "uk") == "night"
+
+
+def test_placeholder_imports_read_booked_in_both_languages():
+    assert host_i18n.translate("en", "dashboard.calendar.blocked") == "Booked"
+    assert host_i18n.translate("cs", "dashboard.calendar.blocked") == "Obsazeno"
