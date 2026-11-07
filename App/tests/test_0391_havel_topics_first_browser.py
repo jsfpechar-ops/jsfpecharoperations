@@ -14,8 +14,8 @@ origin = hb.origin
 _context = hb._context
 
 SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0391"
-ASK_PROMPT = "What is still unclear? Write it below and I'll look into it."
-OTHER_PROMPT = "Write your issue in a few words and I'll look into it."
+ASK_PROMPT = "What is still unclear? Write it below and I will look into it."
+OTHER_PROMPT = "Write your issue in a few words and I will look into it."
 
 
 def _open(page):
