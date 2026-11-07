@@ -77,7 +77,6 @@ body.v2 .hidden{display:none!important}
 tbody tr:hover{background:#fdf6f4!important}
 .cd.today{background:var(--accs);border-radius:8px}
 .head h1:after{content:"";display:block;width:28px;height:3px;border-radius:2px;background:var(--acc);margin-top:8px}
-tbody tr .btn.sm.ghost{opacity:0;transition:opacity .15s}tbody tr:hover .btn.sm.ghost{opacity:1}
 .btn,.chip,tbody tr,.tile{transition:background .15s,transform .1s,box-shadow .15s}
 .btn:active{transform:scale(.97)}.btn:hover{filter:brightness(1.05)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -1051,7 +1050,6 @@ body.v2 .invoices-page form#list-filter-panel{margin-bottom:16px}
 body.v2 .invoices-page input[type=month]{min-height:40px;box-sizing:border-box;padding:9px 10px;border:1px solid #dcdcd7;border-radius:8px;font:inherit}
 body.v2 .invoices-page .ui-empty .ui-btn{display:inline-flex;align-items:center;min-height:44px}
 body.v2 .invoices-page tbody tr .btn.sm.ghost:focus-visible{opacity:1;transition:none}
-body.v2 tbody tr .btn.sm.ghost.copy-btn:focus-visible{opacity:1;transition:none;outline:2px solid #d0452d;outline-offset:2px}
 /* 0792 invoices v2 (end) */
 /* 0793 housebook v2 (start) */
 body.v2 .housebook-page .stays-phone .card.stay{padding:16px}

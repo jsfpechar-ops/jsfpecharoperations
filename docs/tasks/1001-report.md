@@ -58,3 +58,6 @@ Status: review
 - Browser tests: `test_0830_airbnb_pages_browser.py` partB-overview and partD-stay-detail, 14 of 14 pass after the fixes. The other 92 tests in the three named files passed before the fixes.
 
 a11y fix: Copy link button (tbody .btn.sm.ghost.copy-btn) was opacity 0 until row hover, so keyboard focus was invisible. Added `body.v2 tbody tr .btn.sm.ghost.copy-btn:focus-visible` (opacity 1, 2px #d0452d outline, offset 2px) in app2.css; cache key bumped to 20261107-1103. Row focus rule from 1001 untouched.
+
+
+Hover-only buttons removed: app2.css line 80 (`tbody tr .btn.sm.ghost` opacity 0 and its `tr:hover` reveal) deleted, so Copy link is always visible. Line 1054 (`copy-btn:focus-visible` opacity override) deleted; the standard ring at line 191 still gives the 2px accent ring. The media-query hover rule at ~311 did not exist (only its 1001 comment remained, left in place). Other row-hover reveals not changed: components.css:62 (`tbody tr:hover .row-actions>*` opacity 1, row-actions only). Cache key 20261107-2238; static_versions.json regenerated. Tests: a11y_guard, host_property_controls, layout_lint, host_geometry: 20 passed, 0 skipped (layout_lint re-run alone for fresh shots; test_calendar_platform_controls not needed). Screenshots /tmp/shots/layout-lint/properties-1280.png shows Copy link visible on both rows; stays-1280.png no regression.
