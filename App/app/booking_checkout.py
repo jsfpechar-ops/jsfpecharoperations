@@ -163,8 +163,12 @@ def expire_requests() -> int:
         " AND request_expires_at IS NOT NULL AND request_expires_at <= ?", (now,))
     done = 0
     for row in rows:
-        if booking_site.set_status(int(row["id"]), "expired"):
+        try:
+            moved = booking_site.set_status(int(row["id"]), "expired")
+        except ValueError:
+            continue
+        if moved:
             done += 1
-        if row["hold_id"]:
+        if moved and row["hold_id"]:
             db.execute("DELETE FROM booking_hold WHERE id = ?", (row["hold_id"],))
     return done

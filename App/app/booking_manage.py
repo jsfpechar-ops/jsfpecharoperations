@@ -100,7 +100,7 @@ def host_rows(apartment_id: int, limit: int = 20) -> List[Dict[str, Any]]:
             "total": int(b["total_czk"]),
             "direct": b["pay_method"] == "direct",
             "can_confirm": b["pay_method"] == "direct" and b["status"] in ("requested", "expired"),
-            "can_decline": b["pay_method"] == "direct" and b["status"] == "requested",
+            "can_decline": b["pay_method"] == "direct" and b["status"] in ("requested", "expired"),
             "can_cancel": b["status"] == "paid",
             "can_retry": b["status"] == "cancelled" and not int(b["refunded_czk"] or 0),
         })

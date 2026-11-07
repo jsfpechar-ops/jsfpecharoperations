@@ -1644,7 +1644,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "bsite.bookings.empty": "No bookings from the site yet.",
         "bsite.bookings.status.requested": "Waiting for payment",
         "bsite.bookings.status.expired": "Expired",
-        "bsite.bookings.mark_paid": "Confirm and mark paid",
+        "bsite.bookings.mark_paid": "Mark paid",
         "bsite.bookings.decline": "Decline",
         "bsite.bookings.confirm_paid": "The guest has paid you. This books the dates and e-mails the guest.",
         "bsite.bookings.confirm_decline": "Decline this request and free the dates?",

@@ -1,5 +1,6 @@
 {% extends "host_page.html" %}
-{% from "_ui.html" import ui_button, ui_badge, ui_field, ui_select with context %}
+{% from "_ui.html" import ui_button, ui_badge, ui_field, ui_select, ui_check with context %}
+{% from "_components.html" import help_tip with context %}
 {% from "_ui_layout.html" import ui_section, ui_facts, ui_banner with context %}
 {% from "_components.html" import choice_card, copy_button with context %}
 {% set nav = 'booking_sites' %}
@@ -38,17 +39,16 @@
 </dl>
 {% endcall %}
 
-{% call ui_section(t('bsite.step.pay'), id='pay') %}
-<p class="ui-sub">{{ t('bsite.pay.lead') }} <a href="/payments">{{ t('bsite.act.stripe') }}</a></p>
+{% set pay_tip = help_tip('bsite-pay-help', t('bsite.pay.lead') ~ ' ' ~ t('bsite.pay.shared')) %}
+{% call ui_section(t('bsite.step.pay'), id='pay', tip=pay_tip, actions=ui_button(t('bsite.act.stripe'), 'secondary', href='/payments', size='compact')) %}
 <form method="post" action="/apartments/{{ apartment.id }}/booking-site/pay">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-  <label class="gp-check checkline"><input type="checkbox" name="rails" value="iban"{% if 'iban' in pay.ticked %} checked{% endif %}> <span>{{ t('stay_fees.guest_pay.rail.iban') }}</span></label>
-  {% if not pay.iban_ok %}<p class="ui-sub">{{ t('bsite.pay.no_account') }}</p>{% endif %}
-  <label class="gp-check checkline"><input type="checkbox" name="rails" value="revolut"{% if 'revolut' in pay.ticked %} checked{% endif %}> <span>{{ t('stay_fees.guest_pay.rail.revolut') }}</span></label>
+  {% if not pay.iban_ok %}{{ ui_banner('attention', t('bsite.pay.no_account')) }}{% endif %}
+  {{ ui_check('rail-iban', t('stay_fees.guest_pay.rail.iban'), name='rails', value='iban', checked='iban' in pay.ticked) }}
+  {{ ui_check('rail-revolut', t('stay_fees.guest_pay.rail.revolut'), name='rails', value='revolut', checked='revolut' in pay.ticked) }}
   {{ ui_field('revolut_link', t('stay_fees.guest_pay.revolut_label'), value=pay.revolut_link, type='url', attrs='inputmode="url"') }}
-  <label class="gp-check checkline"><input type="checkbox" name="rails" value="cash"{% if 'cash' in pay.ticked %} checked{% endif %}> <span>{{ t('stay_fees.guest_pay.rail.cash') }}</span></label>
+  {{ ui_check('rail-cash', t('stay_fees.guest_pay.rail.cash'), name='rails', value='cash', checked='cash' in pay.ticked) }}
   {{ ui_field('cash_note', t('stay_fees.guest_pay.cash_label'), value=pay.cash_note, attrs='maxlength="300"') }}
-  <p class="ui-sub">{{ t('bsite.pay.shared') }}</p>
   {{ ui_button(t('common.save'), 'primary', type='submit') }}
 </form>
 {% endcall %}
@@ -106,12 +106,13 @@
     <div>
       <dt>{{ b.name }} · {{ b.dates }} · {{ b.total }} {{ t('payments.czk') }}</dt>
       <dd>
+        <div class="ui-btn-group">
         {{ ui_badge('done' if b.status == 'paid' else 'neutral', t('bsite.bookings.status.' ~ b.status)) }}
         {% if b.can_confirm %}
         <form method="post" action="/apartments/{{ apartment.id }}/booking-site/confirm" data-confirm data-confirm-message="{{ t('bsite.bookings.confirm_paid') }}">
           <input type="hidden" name="_csrf" value="{{ csrf_token }}">
           <input type="hidden" name="booking_id" value="{{ b.id }}">
-          {{ ui_button(t('bsite.bookings.mark_paid'), 'primary', type='submit', size='compact') }}
+          {{ ui_button(t('bsite.bookings.mark_paid'), 'secondary', type='submit', size='compact') }}
         </form>
         {% endif %}
         {% if b.can_decline %}
@@ -128,6 +129,7 @@
           {{ ui_button(t('bsite.bookings.retry') if b.can_retry else (t('bsite.bookings.cancel_direct') if b.direct else t('bsite.bookings.cancel')), 'danger', type='submit', size='compact') }}
         </form>
         {% endif %}
+        </div>
       </dd>
     </div>
     {% endfor %}

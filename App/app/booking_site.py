@@ -339,7 +339,7 @@ _TRANSITIONS = {
     "requested": {"paid", "expired", "cancelled"},
     "paid": {"cancelled", "refunded", "clash_refunded"},
     "cancelled": {"refunded"},
-    "expired": {"paid", "clash_refunded"},
+    "expired": {"paid", "clash_refunded", "cancelled"},
     "refunded": set(),
     "clash_refunded": set(),
 }

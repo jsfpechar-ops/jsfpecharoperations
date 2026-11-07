@@ -73,9 +73,13 @@ def decline(booking_id: int, owner_user_id: int) -> Dict[str, Any]:
     if (booking is None or int(booking["owner_user_id"]) != owner_user_id
             or booking["pay_method"] != "direct"):
         return {"error": "not_found"}
-    if booking["status"] != "requested":
+    if booking["status"] not in ("requested", "expired"):
         return {"error": "not_confirmable"}
-    if not booking_site.set_status(booking_id, "cancelled", cancelled_at=db.utcnow()):
+    try:
+        moved = booking_site.set_status(booking_id, "cancelled", cancelled_at=db.utcnow())
+    except ValueError:
+        return {"error": "not_confirmable"}
+    if not moved:
         return {"error": "not_confirmable"}
     if booking["hold_id"]:
         db.execute("DELETE FROM booking_hold WHERE id = ?", (booking["hold_id"],))

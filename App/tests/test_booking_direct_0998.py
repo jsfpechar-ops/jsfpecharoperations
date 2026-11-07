@@ -189,7 +189,26 @@ def test_setup_page_buttons(owner):
     _requested(owner)
     page = owner["client"].get(f"/apartments/{owner['aid']}/booking-site?lang=en")
     assert page.status_code == 200
-    assert "Confirm and mark paid" in page.text
+    assert "Mark paid" in page.text
+
+
+def test_decline_expired_direct_row(owner):
+    booking = _requested(owner)
+    db.execute("UPDATE site_booking SET status = ?, request_expires_at = ? WHERE id = ?",
+               ("expired", "2000-01-01T00:00:00Z", int(booking["id"])))
+    assert booking_direct.decline(int(booking["id"]), owner["oid"])["error"] is None
+    assert db.query_one("SELECT status FROM site_booking WHERE id = ?", (booking["id"],))["status"] == "cancelled"
+
+
+def test_expire_requests_skips_paid_row(owner):
+    booking = _requested(owner)
+    db.execute(
+        "UPDATE site_booking SET request_expires_at = ? WHERE id = ?",
+        ("2000-01-01T00:00:00Z", int(booking["id"])),
+    )
+    booking_direct.confirm(int(booking["id"]), owner["oid"])
+    assert booking_checkout.expire_requests() == 0
+    assert db.query_one("SELECT status FROM site_booking WHERE id = ?", (booking["id"],))["status"] == "paid"
 
 
 def test_host_cancel_direct_mail_has_no_card_refund(owner, monkeypatch):

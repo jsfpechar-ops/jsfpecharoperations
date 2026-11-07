@@ -1340,5 +1340,8 @@
     "housebook-fact": "House book register: one fact in the row popover (0970).",
     "fee-records-actions": "Stay fee detail: Your records sent/paid buttons row (0974 stay-fee records).",
     "field-label-row": "Label with its help ? kept on one line (settings, 0897)."
+  },
+  "page_classes": {
+    "App/app/templates/booking_site_setup.html": []
   }
 }
