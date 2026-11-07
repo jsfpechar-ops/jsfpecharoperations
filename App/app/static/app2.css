@@ -958,7 +958,6 @@ body.v2 .ov-how[data-how="property"]{background:none;border:0;margin:0 0 8px;dis
 body.v2 .ov-how[data-how="property"] > summary{padding:0;display:inline-flex;gap:6px;justify-content:flex-start;min-height:24px;color:var(--ink2);font-size:13px}
 body.v2 .ov-how[data-how="property"] > summary:after{display:none}
 body.v2 #sec-basics > .fields-wrap > .property-section > h3:first-child,body.v2 #basics > h3:first-child{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-body.v2 .required-legend{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 body.v2 .property-section-title{font-size:14px;font-weight:600}
 body.v2 .fields-wrap{padding:0 16px 16px}
 body.v2 .setup-continue-card p{font-size:13px;margin:0 0 8px}
@@ -991,7 +990,7 @@ body.v2 .dot.g{background:var(--ok)}
 body.v2 .dot.r{background:var(--acc)}
 body.v2 .dot.n{background:#c9c9c3}
 @media (max-width:1023px){
-  body.v2 .crumb,body.v2 .required-legend,body.v2 aside.preview{display:none}
+  body.v2 .crumb,body.v2 aside.preview{display:none}
   body.v2 .prop-phone-top{display:flex;padding:8px 0 0;margin-bottom:12px}
   body.v2 .prop-phone-top .round{width:44px;height:44px;border:0;border-radius:50%;background:#f4f3ef;display:grid;place-items:center}
   body.v2 .prop-phone-top ~ h1.big{font-size:30px;line-height:1.15;font-weight:800;letter-spacing:-.02em;text-align:center;margin:0 8px 6px}
