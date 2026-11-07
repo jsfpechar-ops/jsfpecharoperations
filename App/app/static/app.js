@@ -2086,29 +2086,24 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     var hoverOk = window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)");
     function place(d) {
       var body = d.querySelector(".page-help-body");
-      var dot = d.querySelector(".page-help-dot") || d.querySelector("summary");
-      if (!body || !dot || !d.open) return;
+      var wrap = d.closest(".page-help-wrap") || d;
+      if (!body || !d.open) return;
       var m = 8;
       var vw = document.documentElement.clientWidth;
       var vh = window.innerHeight;
       var w = Math.min(320, vw - 2 * m);
+      body.style.position = "absolute"; /* CSS: .page-help-wrap is the containing block, so the box moves with its ? */
       body.style.width = w + "px";
       body.style.maxWidth = w + "px";
-      body.style.position = "fixed";
       body.style.right = "auto";
       body.style.margin = "0";
       body.style.transform = "none";
+      body.style.top = "calc(100% + 8px)";
       body.style.left = "0px";
-      body.style.top = "0px";
-      var r = dot.getBoundingClientRect();
+      var wr = wrap.getBoundingClientRect();
       var h = body.offsetHeight;
-      var left = Math.max(m, Math.min(r.left - 8, vw - w - m));
-      var top = r.bottom + 8;
-      if (top + h > vh - m && r.top - 8 - h >= m) top = r.top - 8 - h;
-      top = Math.max(m, Math.min(top, vh - h - m));
-      var o = body.getBoundingClientRect(); /* origin of the containing block (non-zero inside a transformed ancestor) */
-      body.style.left = (left - o.left) + "px";
-      body.style.top = (top - o.top) + "px";
+      body.style.left = Math.max(m - wr.left, Math.min(0, vw - m - w - wr.left)) + "px"; /* keep inside the viewport */
+      if (wr.bottom + 8 + h > vh - m && wr.top - 8 - h >= m) body.style.top = (-(h + 8)) + "px"; /* flip above if no room below */
     }
     function close(d) {
       d.open = false;

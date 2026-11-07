@@ -271,3 +271,31 @@ def test_converted_hints_are_tips_not_always_visible_text(host):
         assert 'id="property-create-address-help"' in cs
     finally:
         _drop_host_pages(host, entity)
+
+
+def test_1003_help_tip_opens_under_its_button_on_hover_and_focus(host, base):
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        for width in (390, 1280):
+            context = _context(browser, host, base, width)
+            page = _open_page(context, base, host, "en")
+            button = page.locator(BTN)
+            tip = page.locator(TIP)
+            if width == 1280:
+                button.hover()
+                tip.wait_for(state="visible")
+                assert button.get_attribute("aria-expanded") == "true"
+                page.mouse.move(2, 2)
+                tip.wait_for(state="hidden", timeout=2000)
+            button.click()
+            tip.wait_for(state="visible")
+            b, t = button.bounding_box(), tip.bounding_box()
+            below = 0 <= t["y"] - (b["y"] + b["height"]) <= 16
+            above = 0 <= b["y"] - (t["y"] + t["height"]) <= 16
+            assert below or above, (width, b, t)
+            assert 0 <= t["x"] and t["x"] + t["width"] <= width - 8 + 0.5, (width, t)
+            assert t["width"] <= 320.5, (width, t)
+            page.keyboard.press("Escape")
+            tip.wait_for(state="hidden")
+            context.close()
+        browser.close()
