@@ -940,7 +940,7 @@ def test_a_short_party_is_flagged_once_the_stay_has_started():
         assert "Waiting for guest forms" in row["detail"]
         card = alerts.present(row, "cs")
         assert "Čeká se na formuláře hostů" in card["display_detail"]
-        assert "1/60" in card["display_detail"]
+        assert "1 z 60" in card["display_detail"]
 
         # The host fixes the declared party; the warning is stale at once.
         db.execute("UPDATE reservation SET declared_guests = 1 WHERE id = ?", (stay,))

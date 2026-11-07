@@ -255,6 +255,61 @@ def submission_receipt(submission_id: int, request: Request):
     return _pdf_response(row["receipt_pdf"] if row else None, f"dorucenka-{submission_id}.pdf")
 
 
+def _build_stay_receipts_zip(rows: List[Any], dest_path: str) -> int:
+    """Write one stay's stored Doručenka PDFs, named dorucenka-<submission_id>-<date>.pdf."""
+    import zipfile
+
+    count = 0
+    with zipfile.ZipFile(dest_path, "w", zipfile.ZIP_DEFLATED) as archive:
+        for row in rows:
+            try:
+                raw = base64.b64decode(row["receipt_pdf"])
+            except Exception:
+                continue
+            date_part = (row["created_at"] or "")[:10] or "report"
+            archive.writestr(f"dorucenka-{row['id']}-{date_part}.pdf", raw)
+            count += 1
+    return count
+
+
+@router.get("/reservations/{reservation_id}/dorucenka.zip")
+def stay_receipts(reservation_id: int, request: Request, background_tasks: BackgroundTasks):
+    """Every stored Doručenka of one stay: the PDF itself when there is one, else a zip."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    hidden = _dorucenka_hidden(request, f"/reservations/{reservation_id}")
+    if hidden:
+        return hidden
+    reservation = access.reservation(request, reservation_id, "r.id, r.apartment_id")
+    rows = []
+    if reservation:
+        rows = db.query(
+            "SELECT id, created_at, receipt_pdf FROM submission WHERE id IN ("
+            "  SELECT DISTINCT submission_id FROM guest WHERE reservation_id = ? AND submission_id IS NOT NULL"
+            "  UNION SELECT DISTINCT receipt_submission_id FROM guest"
+            "  WHERE reservation_id = ? AND receipt_submission_id IS NOT NULL"
+            ") AND apartment_id = ? AND receipt_pdf IS NOT NULL AND TRIM(receipt_pdf) != '' "
+            "ORDER BY created_at DESC",
+            (reservation_id, reservation_id, reservation["apartment_id"]),
+        )
+    if reservation and rows:
+        detail = f"reservation_id={reservation_id} which=receipts count={len(rows)}"
+        if auth.impersonating(request):
+            detail += " while_supporting=1"
+        db.audit("export_submission_pdf", detail)
+    if len(rows) == 1:
+        return _pdf_response(rows[0]["receipt_pdf"], f"dorucenka-{rows[0]['id']}.pdf")
+    response = _zip_download(
+        background_tasks,
+        rows,
+        _build_stay_receipts_zip,
+        f"dorucenky-{reservation_id}-{datetime.now().strftime('%Y%m%d')}.zip",
+    ) if rows else None
+    # No stored receipt (or not this host's stay): the same 404 text as the single route.
+    return response or _pdf_response(None, f"dorucenka-{reservation_id}.pdf")
+
+
 @router.get("/submissions/{submission_id}/errors.pdf")
 def submission_errors(submission_id: int, request: Request):
     guard = auth.require_login(request)

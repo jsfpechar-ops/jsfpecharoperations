@@ -827,19 +827,17 @@ def test_0984_calendar_rows_keep_state_and_actions_with_a_long_url(host, base):
                 assert page.locator(".feed-table td[data-label='Last sync'] [data-tone='red']").is_visible()
                 assert page.locator(".feed-table td[data-label='Last sync'] [data-tone='green']").is_visible()
                 assert "Synthetic feed unreachable" in page.locator(".feed-table").inner_text()
-                # Name, state, URL control, copy and Remove are all in view while the URL is collapsed.
+                # Name, state, URL, copy and Remove are all in view.
                 fit = page.evaluate(_IN_VIEW_0984, ".feed-table td strong, .feed-table [data-tone], .feed-table summary, .feed-table .copy-btn, .feed-table .row-actions .ui-btn")
-                assert fit["count"] >= 10 and not fit["bad"], (width, fit)
-                assert page.locator(".feed-url-details[open]").count() == 0
-                assert not page.locator(f"#feed-url-{healthy}").is_visible()
+                assert fit["count"] >= 8 and not fit["bad"], (width, fit)
+                assert page.locator(f"#feed-url-{healthy}").is_visible()
                 assert page.get_attribute(f".feed-table .copy-btn[data-copy='feed-url-{healthy}']", "data-copy")
                 assert page.evaluate(_NO_SIDEWAYS_0984) <= 1, width
                 _shot_0984(page, f"calendars-collapsed-{width}")
-                # Opening the long URL wraps it inside its cell and never pushes an action out of view.
-                page.locator(".feed-table summary").first.click()
+                # The long URL is clipped inside its cell and never pushes an action out of view.
                 page.wait_for_selector(f"#feed-url-{healthy}", state="visible", timeout=5000)
                 assert page.locator(f"#feed-url-{healthy}").is_visible()
-                fit = page.evaluate(_IN_VIEW_0984, ".feed-table .row-actions .ui-btn, .feed-table .copy-btn, .feed-url-details[open] .feed-url-value")
+                fit = page.evaluate(_IN_VIEW_0984, ".feed-table .row-actions .ui-btn, .feed-table .copy-btn, .feed-url-value")
                 assert not fit["bad"], (width, fit)
                 assert page.evaluate(_NO_SIDEWAYS_0984) <= 1, width
                 wrap = page.evaluate("() => { const w = document.querySelector('.feed-table').closest('.scroll-x'); return w.scrollWidth - w.clientWidth; }")

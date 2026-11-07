@@ -70,9 +70,10 @@
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <div class="ui-section">
     <h2>{{ t('guest.admin.identity.title') }}</h2>
+    <p class="required-legend">{{ t('common.required_legend') }}</p>
     <div class="ui-pair">
       <div class="ui-field">
-        <label for="surname">{{ t('guest.admin.surname') }}</label>
+        <label for="surname">{{ t('guest.admin.surname') }}<span class="req-star" aria-hidden="true">*</span></label>
         <input class="{{ bad('surname') }}" type="text" id="surname" name="surname"{{ lock() }} maxlength="50" required
                value="{{ field_val('surname') }}">
         {{ err_for('surname') }}
@@ -95,7 +96,7 @@
         {{ err_for('birth_date') }}
       </div>
       <div class="ui-field">
-        <label for="nationality">{{ t('stay.detail.guests.nationality') }}</label>
+        <label for="nationality">{{ t('stay.detail.guests.nationality') }}<span class="req-star" aria-hidden="true">*</span></label>
         <select class="{{ bad('nationality') }}" id="nationality" name="nationality"{{ lock() }} required>
           <option value="">{{ t('common.select') }}</option>
           {% for country in countries %}

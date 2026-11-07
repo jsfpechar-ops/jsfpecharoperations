@@ -496,7 +496,13 @@
     "housebook-facts",
     "housebook-fact",
     "fee-records-actions",
-    "field-label-row"
+    "field-label-row",
+    "stay-noname",
+    "stay-noname-action",
+    "havel-chip-ico",
+    "havel-chip-text",
+    "havel-close",
+    "guest-name-link"
   ],
   "hooks": [
     "sr-only",
@@ -1339,6 +1345,12 @@
     "housebook-facts": "House book register: facts list in the row popover (0970).",
     "housebook-fact": "House book register: one fact in the row popover (0970).",
     "fee-records-actions": "Stay fee detail: Your records sent/paid buttons row (0974 stay-fee records).",
-    "field-label-row": "Label with its help ? kept on one line (settings, 0897)."
+    "field-label-row": "Label with its help ? kept on one line (settings, 0897).",
+    "stay-noname": "stays list: grey 'no name yet' text in the guest cell (0830-stays)",
+    "stay-noname-action": "stays list: 'add guest' text link beside the no-name label",
+    "havel-chip-ico": "Havel topic chip: icon tile inside the chip",
+    "havel-chip-text": "Havel topic chip: label text inside the chip",
+    "havel-close": "Havel panel: round close button in the header",
+    "guest-name-link": "stay detail: guest name link in the guests table, 24px tap height (CI fix on 1001)"
   }
 }
