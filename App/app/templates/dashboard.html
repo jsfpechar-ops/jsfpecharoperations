@@ -100,7 +100,6 @@
     {% endfor %}
   </div>
   </div>
-  <p class="cal-legend ov-cal-block{{ ' ph-hide cal-hide' if cal_view }}"><span class="l-ok"><i></i>{{ t('dashboard.calendar.legend.done') }}</span><span class="l-warn"><i></i>{{ t('dashboard.calendar.legend.action') }}</span><span class="l-grey"><i></i>{{ t('dashboard.calendar.legend.grey') }}</span></p>
   <p class="ov-cal-more ov-cal-block{{ ' ph-hide cal-hide' if cal_view }}"><a href="/?cal_view=calendar" class="ov-cal-link">{{ t('dashboard.calendar.full') }}</a></p>
   {% if cal_view %}{% include "_dashboard_calendar.html" %}{% endif %}
 
