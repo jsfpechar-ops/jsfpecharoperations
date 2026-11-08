@@ -1,6 +1,6 @@
 # 1030 report
 
-Status: blocked (one test red, see Finish pass)
+Status: review
 
 ## Steps
 - Steps 1 to 4: done. Step 4 test file green: `tests/test_property_*.py tests/test_*_i18n.py tests/test_no_em_dashes.py` gives `229 passed, 1 warning` (earlier run `230 passed` in step 5 run), 0 skipped.
@@ -29,3 +29,11 @@ Continue at step 5 (help pruning), then step 7 (cache keys), then step 8 (layout
 - Tests: 303 passed, 1 failed (`test_property_page_buttons_browser.py:112` "the help bubble covers Save"); layout lint 4 passed. 0 skipped.
 - Open: fix that test; the "SETTINGS" eyebrow above the card at 768 is still visible (not `.prop-phone-only`).
 - Shots: /mnt/project-files/ux-shots/editor-redesign/editor-{390,768,1280,1280-fixline,1280-stayfee}-v2.png
+
+## Finish pass 2 (2026-11-08)
+- Help bubble covered Save at 1280: caused by the wider 1280 editor (right edge under the fixed bubble). Fix: editor max-width min(1000px, 100% - 64px). Test unchanged, green.
+- "SETTINGS" eyebrow at >=768 was `h2.sec.prop-phone-only` inside the form, kept visible by a more specific rule; hidden at >=768.
+- Fix line after a failed save names every invalid or blank required field by its clean label, then any server missing item not covered by those fields. Example: "Fix 5 fields: House number (č. popisné), Postcode, Variable symbol (from the council), Council account, Stays arriving (calendar or manual)". New test `tests/test_property_fixline_browser.py`.
+- Keys: app2.css 1030h, app.js 1030f.
+- Tests: required set 305 passed, 0 skipped; layout lint 4 passed. context_lint OK.
+- Shots: /mnt/project-files/ux-shots/editor-redesign/editor-{390,768,1280,1280-fixline,1280-stayfee}-v3.png
