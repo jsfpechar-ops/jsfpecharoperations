@@ -20,3 +20,9 @@ Status: blocked
 
 ## Commit
 Local commit only. Nothing pushed.
+
+## Note: browser shard 2 flake (test_calendar_platform_controls_in_browser)
+
+- Root cause (not CSS): `#label` sits inside `details#sec-calendars.prop-sec`, which is closed by default. `app.js` `initPage` is bound to `turbo:load` when Turbo is loaded, and that event fires after the `load` event that `page.goto` waits for. The handler opens `#sec-calendars` and removes `is-collapsed`. The test calls `is_visible()` with no wait, so on a slow runner it can run first (CI run 42434064573, shard 2, line 443, `cs`).
+- Local check: the 1008 CSS rules do not hide the field. Computed display, visibility, opacity and height were visible at 360, 390 and 1280 in both languages. The real test file passed 3 times locally.
+- Fix options (not applied here, need a decision): (a) run `initPage` on `DOMContentLoaded` for the first load, or (b) have the test wait for `#label` to be visible. Option (b) edits a test, so it needs the owner's approval.
