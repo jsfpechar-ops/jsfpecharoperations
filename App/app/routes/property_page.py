@@ -15,7 +15,7 @@ from ..templating import render
 from datetime import date
 from urllib.parse import urlencode
 
-from .. import (booking_calendar, booking_cancel, booking_checkout, booking_manage, booking_site,
+from .. import (booking_calendar, booking_cancel, booking_checkout, booking_manage, booking_rails, booking_site,
                 config, db, host_i18n, property_page, rate_limit)
 
 router = APIRouter()
@@ -62,6 +62,7 @@ def property_page_view(request: Request, slug: str):
         page["book_error"] = ""
     if page["bookable"]:
         page["booking"] = _booking_view(slug, apartment_id, lang, request.query_params)
+        page["pay_modes"] = booking_rails.pay_modes(apartment_id, _owner_of(apartment_id))
     # Only the page's own words are translated (owner decision 2 Nov 2026,
     # booking site v1); the host's listing copy stays verbatim.
     return render(request, "property_page.html",
@@ -205,12 +206,21 @@ def _page_context(apartment_id: int):
         if (row["title"] or row["steps"] or row["watch_out"])
     ]
     c = dict(content) if content is not None else {}
+    from urllib.parse import quote
+
+    where = " ".join(p for p in (apartment["addr_obec"], apartment["addr_obec_cast"]) if p)
+    # Town and district only; the street and number never leave the host side.
+    map_url = f"https://mapy.cz/zakladni?q={quote(where)}" if where else ""
     return {
         "name": apartment["internal_name"],
         "district": " · ".join(
             p for p in (apartment["addr_obec"], apartment["addr_obec_cast"]) if p
         ),
         "description": c.get("description") or "",
+        "house_rules": [
+            ln.strip() for ln in (c.get("house_rules") or "").splitlines() if ln.strip()
+        ],
+        "map_url": map_url,
         "checkin_text": c.get("checkin_text") or "",
         "checkout_text": c.get("checkout_text") or "",
         "photos": json.loads(c.get("photos_json") or "[]"),
@@ -296,6 +306,10 @@ def _book_error(slug: str, kind: str, lang: str = "cs", form=None) -> Response:
     return RedirectResponse(f"/p/{slug}?{urlencode(query)}#book", status_code=303)
 
 
+def _owner_of(apartment_id: int) -> int:
+    return int(db.query_one("SELECT owner_user_id FROM apartment WHERE id = ?", (apartment_id,))["owner_user_id"])
+
+
 @router.post("/p/{slug}/checkout")
 async def property_page_checkout(request: Request, slug: str):
     """Hold + pending booking + Stripe session, then a page with one link to
@@ -329,6 +343,18 @@ async def property_page_checkout(request: Request, slug: str):
     # A page opened before the terms text changed must not be accepted.
     if str(form.get("terms_version") or booking_site.TERMS_VERSION) != booking_site.TERMS_VERSION:
         return _book_error(slug, "terms", lang, form)
+    modes = booking_rails.pay_modes(apartment_id, _owner_of(apartment_id))
+    mode = str(form.get("pay_mode") or (modes[0] if len(modes) == 1 else "stripe"))
+    if mode not in modes:
+        return _book_error(slug, "unavailable", lang, form)
+    if mode == "direct":
+        sent = booking_checkout.start_direct(apartment_id, q, guest_name=name,
+                                             guest_email=email, lang=lang)
+        if sent.get("error"):
+            return _book_error(slug, sent["error"], lang, form)
+        booking = sent["booking"]
+        from urllib.parse import urlsplit
+        return RedirectResponse(urlsplit(booking_site.manage_url(booking)).path, status_code=303)
     result = booking_checkout.start(apartment_id, slug, q, guest_name=name,
                                     guest_email=email, lang=lang)
     if result.get("error"):
@@ -425,11 +451,15 @@ def booking_correction_pdf(request: Request, slug: str, booking_id: int, token: 
     )
 
 
-def _booking_or_none(booking_id: int, token: str):
+def _booking_or_none(booking_id: int, token: str, open_requests: bool = False):
     if not booking_site.token_ok(booking_id, token):
         return None
     booking = booking_site.get(booking_id)
-    if booking is None or booking["status"] not in booking_manage.VISIBLE:
+    if booking is None:
+        return None
+    if open_requests and booking.get("pay_method") == "direct" and booking["status"] in ("requested", "expired"):
+        return booking
+    if booking["status"] not in booking_manage.VISIBLE:
         return None
     return booking
 
@@ -455,10 +485,22 @@ def booking_manage_page(request: Request, slug: str, booking_id: int, token: str
     slow = _manage_throttle(request, "booking_manage")
     if slow:
         return slow
-    booking = _booking_or_none(booking_id, token)
+    booking = _booking_or_none(booking_id, token, open_requests=True)
     if booking is None:
         return Response(status_code=404)
     lang = _manage_lang(request, booking)
+    if booking.get("pay_method") == "direct" and booking["status"] in ("requested", "expired"):
+        from .. import booking_webhook
+        apartment_id = int(booking["apartment_id"])
+        response = render(request, "property_page_requested.html", {
+            "page": _page_context(apartment_id) or {}, "show_nav": False, "lang": lang,
+            "booking": booking, "rails": booking_rails.guest_view(apartment_id, booking),
+            "dates": booking_webhook._dates(booking, lang), "total": int(booking["total_czk"]),
+            "expired": booking["status"] == "expired",
+        })
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["X-Robots-Tag"] = "noindex"
+        return response
     error = request.query_params.get("e", "")
     response = render(request, "booking_manage.html", {
         "show_nav": False, "lang": lang, "slug": slug, "token": token,

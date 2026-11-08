@@ -35,6 +35,8 @@ KINDS = (
     "site_booking_confirmed",
     "site_booking_refunded",
     "site_booking_host",
+    "site_booking_request_host",
+    "site_booking_request_guest",
     "completion",
     "submission_problem",
     "invoice_issued",
@@ -96,10 +98,12 @@ GUEST_KINDS = (
     "door_code",
     "site_booking_confirmed",
     "site_booking_refunded",
+    "site_booking_request_guest",
 )
 HOST_KINDS = (
     "reminder_host",
     "site_booking_host",
+    "site_booking_request_host",
     "submission_problem",
     "workspace_deletion",
     "cancelled_with_guests",

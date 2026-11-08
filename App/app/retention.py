@@ -49,6 +49,10 @@ _OWNER_SCOPE = "(? IS NULL OR a.owner_user_id = ?)"
 # accommodation record; the invoice repeats them); deleted with the apartment
 # or the workspace by the foreign-key cascade. Used only for that booking's
 # confirmation, invoice and cancellation mails.
+
+# 0996: site_booking.pay_method / request_expires_at hold no personal data.
+# A direct request (status requested/expired) keeps the same name and e-mail
+# under the 0814 rule above.
 # 0421: stripe_account holds no personal data beyond the owner reference; it
 # mirrors onboarding status (no keys, no documents) and is deleted with the workspace.
 

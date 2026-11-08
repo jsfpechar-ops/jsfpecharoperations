@@ -59,6 +59,7 @@ EXTRA_ROUTES = {
     "property-bookings": "/apartments/{configured_apartment}?view=bookings",
     "property-bookings-empty": "/apartments/{unconfigured_apartment}?view=bookings",
     "stay-fees": "/stay-fees",
+    "booking-sites": "/booking-sites",
 }
 # Rules checked inside opened accordions (the older rules already cover each page closed).
 OPEN_RULES = {"table-squeezed", "tight-stack", "tight-side", "half-width-input", "legend-overlap",

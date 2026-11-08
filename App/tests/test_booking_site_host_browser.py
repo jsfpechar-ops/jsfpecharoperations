@@ -25,6 +25,8 @@ GUARD = (Path(__file__).parent / "design_guard.js").read_text()
 SHOT_DIR = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0819"
 
 SMALL_TARGETS_JS = """() => Array.from(document.querySelectorAll('button, a.ui-btn, input:not([type=hidden]), select'))
+  // A help-tip button is 24px drawn; its 44px hit area is the ::after overlay (host.css).
+  .filter(el => !el.matches('.help-tip-btn'))
   .filter(el => el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden')
   .map(el => {
     // A radio or checkbox is hit through its wrapping label, so measure that.

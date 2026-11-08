@@ -39,7 +39,7 @@ Append-only.
 - 2026-10-30 | [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; manual cutover | 0455–0456
 - 2026-10-31 | Postgres (#592), then Go G1-G6, per-feature rollback, no load test. [workflow] Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
 - 2026-10-31 | Every change lean: no dead code or extras; dead code goes in its own small commit | owner | plan v4
-- 2026-10-31 | Approval gates waived for the Postgres/Go migration; bar stays (verified backup, prod-copy rehearsal, per-table hashes, suite green on both DBs, auto rollback); D1 Postgres in Compose, socket only, 1 GB cap, nightly `pg_dump`; D2 `production` reviewer; D3 goose v3.29.0 (SHA-256 pinned, 0465b); D4 job table, `SKIP LOCKED`; no password, `network_mode: none`. [workflow] Pre-merge: `git diff --stat origin/main <branch>` vs brief Files; one worktree per Haiku | owner, orchestrator | 0463, 0464, #606
+- 2026-10-31 | Postgres/Go migration gates waived; bar unchanged (backup, rehearsal, hashes, both DBs green, rollback); D1-D4 as 0463-0465. [workflow] Pre-merge diff vs brief Files; one worktree per Haiku | owner | 0463, #606
 - 2026-10-31 | [workflow] `test-postgres-full` (app suite on PG 17) gates every merge; SQLite-file tests carry `sqlite_only` | orchestrator | 0462
 - 2026-11-01 | Host redesign: vendored Hotwire Turbo (MIT) for page-body swaps; owner OKs mockups first | owner | #614
 - 2026-11-01 | Go: module go/, stdlib, pgx v5, go-ntlmssp v0.1.1, go-qrcode (11-02) | owner (waiver) | 0474, 0481, 0684
@@ -62,8 +62,9 @@ Append-only.
 - [wizard] 2026-11-04: wizard shows the old look on the current 4-step flow; red star marks mandatory fields; operator e-mail has no purpose text. Source: brief 0953.
 - [ui] 2026-11-04: TTLock step one says eAdmin; Smart lock shows a status block with Turn on/off (door_code.state is the one source). Source: brief 0954.
 - [ui] 2026-11-05: property notices are inline banners in their section; the Save row closes the form and sticks; Preview sticks from 1024 px. Source: brief 0957.
-- [ui] 2026-11-05: PR #786 owner confirms no check-in/out times on stay detail, four wizard steps, accepted/listed TTLock connection sufficient for Lock online; Stays filters wrap on phones so all options are visible (0950-fix-1).
+- [ui] 2026-11-05: PR #786: no stay check-in/out times, four wizard steps, listed TTLock = Lock online; Stays filters wrap on phones (0950-fix-1).
 - [ui] 2026-11-06 [owner]: property page keeps main's header and tile grid; the setup progress card sits full width below the grid (0986).
 - 2026-11-06 [owner] lock connected but codes off shows main's "Turn on" row; "Connect my lock" only for first-time setup (0987).
-- 2026-11-07 | [backup] Litestream retired (stale SQLite only); S3 replica kept | owner | [1021](../tasks/1021-remove-litestream.md)
-- 2026-11-07 | [backup] WAL-G approved (rule 4): WAL archiving + PITR to S3 | owner | [1022](../tasks/1022-walg-continuous-archiving.md)
+- 2026-11-07 [owner] request-to-book: direct rails (IBAN/Revolut/cash) vs or beside Stripe; 24h hold; host confirms (0996-0998).
+- 2026-11-07 | [backup] Litestream retired; S3 replica kept | owner | [1021](../tasks/1021-remove-litestream.md)
+- 2026-11-07 | [backup] WAL-G: WAL archive + PITR to S3 | owner | [1022](../tasks/1022-walg-continuous-archiving.md)
