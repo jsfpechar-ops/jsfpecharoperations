@@ -224,7 +224,7 @@
           </div>
         </div>
         <div class="field guest-link-pin">
-          {{ field_label('permalink_pin', t('guest_links.pin'), t('apartment.form.guest_link.pin_hint')) }}
+          {{ field_label('permalink_pin', t('guest_links.pin'), t('apartment.form.guest_link.pin_hint'), false, '', true) }}
           <div class="copyrow guest-copy-row pin-row">
             <input type="text" id="permalink_pin" name="permalink_pin" value="{{ pin }}" class="mono" aria-describedby="permalink_pin-help"
                    inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="{{ t('apartment.form.guest_link.pin_ph') }}" required>
