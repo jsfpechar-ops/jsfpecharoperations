@@ -3,6 +3,12 @@
   "classes": [
     "ui-details-box",
     "ui-section-card",
+    "ui-upgrade-card",
+    "ui-upgrade-name",
+    "ui-upgrade-price",
+    "ui-upgrade-strip",
+    "ui-addon-row",
+    "ui-addon-text",
     "ui-section-head",
     "ui-kv",
     "ui-kv-row",

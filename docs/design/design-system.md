@@ -70,6 +70,8 @@ Tests run at 320 / 390 / 768 / 1024 / 1280 / 1440 / 1920.
 
 Copied from the Wolt company-settings page. One narrow column (`ui-page-narrow`, max 720 px). Each section is ONE card (`ui-section-card`: white, 1 px `--line`, radius 12, no shadow, padding 16). The head (`ui-section-head`, or the `ui_section` macro's `ui-section-h`) holds the title on the left with its help "?" right after it, and at most one small action on the right. Fields are a quiet two-column list (`ui-kv` / `ui-kv-row`, or `ui_facts` inside `ui-page-narrow`): muted label 40 %, value right, 12 px row padding, 1 px divider between rows, stacked below 600 px. Notes are a small grey `ui-note-strip`. No card in a card, no heavy outlines, no chevron collapse for a simple section.
 
+Upgrade blocks inside a card (billing): ONE highlighted card for the other plan (`ui-upgrade-card`: `--accs` tint, 1.5 px `--acc` border, plan name, real price, one full-width primary button, no pill unless the copy exists); a slim `ui-upgrade-strip` for the yearly saving; each add-on a bordered `ui-addon-row` (title, one line, secondary Add/Remove). Never more than one upgrade card per page.
+
 Checklist for new pages:
 - [ ] Help "?" sits beside the title (never on its own, never at the row end).
 - [ ] The whole row is clickable; no separate arrow.
