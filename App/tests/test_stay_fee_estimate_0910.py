@@ -64,3 +64,35 @@ def test_fee_qr_payload_carries_plain_vs_and_short_message():
     assert "*X-VS:2*" in payload
     assert payload.endswith("MSG:STAY FEE 2")
     assert "0000000002" not in payload
+
+
+def test_obec_rule_for_the_form_carries_the_folded_obec_and_tables():
+    import json
+    rule = json.loads(guest_routes._fee_obec_rule({"addr_obec": "Praha"}))
+    assert rule["obec"] == "PRAHA" and rule["country"] == "CZE"
+    assert rule["aliases"]["PRAGUE"] == "PRAHA" and "PRAHA" in rule["bases"]
+    assert guest_routes._fee_obec_rule({"addr_obec": ""}) == ""
+
+
+def test_estimate_is_drawn_from_the_page_load_values_only():
+    """Root cause of the Prague guest still shown 100 CZK: a new form is rendered with empty
+    values, so the estimate cannot know the home city typed later; signature.js hides it."""
+    assert guest_routes._fee_estimate(APARTMENT, RESERVATION, {})["amount"] > 0
+    typed = _values(res_country="CZE", res_city="Prague")
+    assert guest_routes._fee_estimate(APARTMENT, RESERVATION, typed) is None
+    assert guest_routes._fee_estimate(APARTMENT, RESERVATION, _values(res_country="CZE", res_city="Prahaa"))
+
+
+def test_form_script_folds_like_the_backend():
+    import json, shutil, subprocess, pathlib
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("node missing")
+    src = (pathlib.Path(guest_routes.__file__).resolve().parents[1] / "static" / "signature.js").read_text()
+    start = src.index("function fold(text)")
+    end = src.index("var country = document.getElementById(\"res_country\")")
+    rule = json.loads(guest_routes._fee_obec_rule({"addr_obec": "Praha"}))
+    js = ("var rule=%s;%s;for (const c of process.argv.slice(1)) console.log(key(c));" % (json.dumps(rule), src[start:end]))
+    out = subprocess.run([node, "-e", js, "Prague", "Praha 2", "Praha-Vinohrady", "Brno", "Prahaa"],
+                         capture_output=True, text=True, check=True).stdout.split()
+    assert out == ["PRAHA", "PRAHA", "PRAHA", "BRNO", "PRAHAA"]

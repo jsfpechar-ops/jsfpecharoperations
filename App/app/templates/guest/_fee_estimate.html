@@ -1,5 +1,5 @@
 {# Form Check step estimate (brief 0993). Included only when fee_estimate is above zero. #}
-<section class="g-fee-box" id="fee-estimate" aria-labelledby="fee-estimate-h">
+<section class="g-fee-box" id="fee-estimate"{% if fee_obec_rule %} data-obec-rule="{{ fee_obec_rule }}"{% endif %} aria-labelledby="fee-estimate-h">
   <h3 id="fee-estimate-h">{{ t('fee_box_you') }}</h3>
   <p class="g-fee-amt">{{ t('fee_amount', amount=fee_estimate.amount) }}</p>
   <p class="g-fee-calc">{{ t('fee_calc_you', days=fee_estimate.days, rate=fee_estimate.rate) }}</p>

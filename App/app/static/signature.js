@@ -368,7 +368,33 @@ function initSignature() {
       return rows;
     }
 
+    /* 0898: the estimate is drawn when the page loads, before the guest has typed
+       a home address. A resident of the property's municipality pays nothing, so
+       hide the box once the typed address matches (same folding as stay_fee._obec_key). */
+    function syncFeeBox() {
+      var box = document.getElementById("fee-estimate");
+      var raw = box && box.getAttribute("data-obec-rule");
+      if (!raw) return;
+      var rule;
+      try { rule = JSON.parse(raw); } catch (e) { return; }
+      function fold(text) {
+        var plain = String(text || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+        return plain.toUpperCase().replace(/\s+/g, " ").trim();
+      }
+      function key(text) {
+        var t = fold(text);
+        var m = /^(.+?)(?:\s+\d+|-.+)$/.exec(t);
+        if (m && rule.bases.indexOf(m[1].trim()) !== -1) t = m[1].trim();
+        return rule.aliases[t] || t;
+      }
+      var country = document.getElementById("res_country");
+      var city = document.getElementById("res_city");
+      box.hidden = !!(country && city && country.value === rule.country &&
+                      key(city.value) === rule.obec);
+    }
+
     function build() {
+      syncFeeBox();
       var rows = collect();
       list.textContent = "";
       if (!rows.length) { card.hidden = true; return; }

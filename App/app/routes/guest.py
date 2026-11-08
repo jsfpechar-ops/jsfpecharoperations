@@ -1586,6 +1586,7 @@ def _form_context(
                 else ""
             ),
             "fee_estimate": _fee_estimate(apartment, reservation, values or {}),
+            "fee_obec_rule": _fee_obec_rule(apartment),
             "fee_panel": (
                 _fee_pay_panel(apartment, reservation, context["t"], _qr_offered(request, reservation))
                 if remaining is not None and remaining <= 0
@@ -2219,6 +2220,19 @@ def _fee_pay_panel(apartment, reservation, t, qr_ok=True):
                           "note": apartment["stay_fee_guest_cash_note"] or t("fee_cash_default")})
     return {"total": total, "rate": rate, "persons": persons, "rails": rails,
             "vs": vs, "payee": payee}
+
+
+def _fee_obec_rule(apartment) -> str:
+    """JSON for signature.js: the same-obec key and folding tables (0898), so the Check step
+    hides the estimate for a resident of the property's municipality while the guest types."""
+    import json
+    from .. import stay_fee
+    obec = stay_fee._obec_key(apartment["addr_obec"])
+    if not obec:
+        return ""
+    return json.dumps({"obec": obec, "country": validation.CZECH_CODE,
+                       "bases": list(stay_fee.STATUTORY_DISTRICT_BASES),
+                       "aliases": stay_fee.OBEC_ALIASES})
 
 
 def _fee_estimate(apartment, reservation, values):
