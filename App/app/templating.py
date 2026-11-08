@@ -718,6 +718,11 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
     data["inline_flash_section"] = (
         inline_section if inline_section.isalpha() and re.fullmatch(r"/apartments/\d+", request.url.path) else ""
     )
+    # 1024: a property save redirects with ?saved=1; the editor shows "Saved" beside the Save bar.
+    data["editor_saved"] = bool(
+        request.query_params.get("saved") == "1"
+        and re.fullmatch(r"/apartments/\d+", request.url.path)
+    )
     # Presentation hints are emitted only by ``back()`` for translated host
     # flash helpers. Direct/plain query messages stay neutral information.
     # The base shell consumes these only for its host flash toast; errors keep

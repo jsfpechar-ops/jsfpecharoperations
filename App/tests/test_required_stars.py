@@ -17,7 +17,7 @@ CTRL = re.compile(r"<(?:input|select|textarea)\b.*?>", re.S)
 REQ = re.compile(r"(?<![-\w])required\b")
 ID = re.compile(r'\bid="([^"]+)"')
 LABEL_STAR = re.compile(r'<label\b[^>]*\bfor="([^"]+)"[^>]*>[^<]*<span class="req-star"')
-TAIL = r"(?:true|required|fee_required|not has_password)"
+TAIL = r"(?:true|required|fee_required|fee_needed|not has_password)"
 
 
 def _text(name):

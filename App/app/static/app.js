@@ -2499,6 +2499,56 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     n.focus({ preventScroll: true });
   }
 
+  // 1024: a failed property save opens the section with the first error, scrolls to it and focuses it; a saved page keeps the banner in view.
+  function initSaveSummary() {
+    var s = document.querySelector("[data-save-summary]");
+    if (!s || !claimNode(s, "initSaveSummary")) return;
+    var id = s.getAttribute("data-first-error");
+    if (!id) {
+      s.scrollIntoView({ block: "nearest" });
+      return;
+    }
+    var t = document.getElementById(id);
+    if (!t) {
+      s.scrollIntoView({ block: "center" });
+      s.focus({ preventScroll: true });
+      return;
+    }
+    var sec = t.closest("details");
+    if (sec) sec.open = true;
+    t.scrollIntoView({ block: "center" });
+    t.focus({ preventScroll: true });
+  }
+
+  // 1024: in the editor the stay-fee boxes the app needs get a star and aria-required while the rate is above 0.
+  function initStayFeeStars() {
+    var rate = document.getElementById("stay_fee_rate_czk");
+    if (!rate || !document.getElementById("property-settings-form") || !document.getElementById("sec-fee")) return;
+    if (!claimNode(rate, "initStayFeeStars")) return;
+    function sync() {
+      var needed = parseFloat(rate.value) > 0;
+      ["stay_fee_vs", "stay_fee_council_account", "stay_fee_authority_name"].forEach(function (id) {
+        var input = document.getElementById(id);
+        var label = document.querySelector('label[for="' + id + '"]');
+        if (!input || !label) return;
+        input.setAttribute("aria-required", needed ? "true" : "false");
+        var star = label.querySelector(".req-star");
+        if (needed && !star) {
+          star = document.createElement("span");
+          star.className = "req-star";
+          star.setAttribute("aria-hidden", "true");
+          star.textContent = "*";
+          var tip = label.querySelector(".help-tip, button");
+          if (tip) label.insertBefore(star, tip);
+          else label.appendChild(star);
+        } else if (!needed && star) {
+          star.remove();
+        }
+      });
+    }
+    rate.addEventListener("input", sync);
+  }
+
   // 0971: one dismiss control on every inline success notice (success_notice macro, section notice, cleaning notice).
   function initSuccessNotices() {
     if (!document.body.classList.contains("host-workspace")) return;
@@ -2539,6 +2589,8 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     initUnsavedForms();
     initUnsavedDialog();
     initSectionNotice();
+    initSaveSummary();
+    initStayFeeStars();
     initSuccessNotices();
     initHelpTips();
     initPageHelp();
