@@ -2,39 +2,34 @@
 
 Status: blocked
 
-## Stopped at step 7 (brief §8)
+## Done
 
-Step 7 says: "If a helper is absent, STOP rather than inventing fixtures." The helpers it names are not in `App/tests/test_billing_self_service.py`. They exist in `App/tests/test_billing_order.py` (`host` fixture line 24, `_set` line 43) and `login_as` in `App/tests/conftest.py` line 155. `test_billing_order.py` is not in brief §3, so I did not edit it.
+- Steps 1 to 6 committed locally: route `upgrade` context, 8 EN and CS keys, Change block replaced, app2.css 1007 block, cache bump to `20261108-1007` (base.html and static_versions.json), catalog and design-system 5b.
+- Step 1 bug fixed in a second commit: my first insert dropped the `quote = billing_order.quote(...)` line, which caused a NameError on /predplatne. Restored.
+- Step 7: test `test_the_change_card_shows_the_real_upgrade_and_keeps_the_forms` appended to `App/tests/test_billing_order.py` (per coordinator decision; uses its `host` and `_set`).
 
-Question for the owner: put the new test in `test_billing_self_service.py` with copied `host`/`_set` fixtures, or allow the test in `test_billing_order.py`? Then the executor can run steps 7 to 11.
+## Commands
 
-## Files changed (local commits, nothing pushed)
+- `.venv/bin/python -m pytest tests/test_billing_self_service.py tests/test_billing_order.py tests/test_0416_plan_page_browser.py tests/test_host_i18n.py -q --tb=short -x -rs`: `47 passed, 1 warning`, no skips listed.
+- `python3 scripts/design_lint.py`: `design lint: OK`.
+- `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_layout_lint_browser.py -q -x -rs` (step 8): started in background, output still empty after about 15 minutes. NO RESULT YET. Output file: /tmp/claude-0/-home-user-jsfpecharoperations/19736c2f-d76f-5062-a390-a7e0df73a878/tasks/bze6mvc2r.output
+- `python3 scripts/context_lint.py`: not run (it was chained after the layout test).
 
-- `App/app/routes/billing.py` (step 1): `upgrade` context added.
-- `App/app/host_i18n.py` (step 2): 8 keys, EN and CS.
-- `App/app/templates/billing_plan.html` (step 3): Change block replaced; `billing-change-row` count 0.
-- `App/app/static/app2.css` (step 4): 1007 block appended.
-- `App/app/templates/base.html`, `App/tests/static_versions.json` (step 5): `app2.css` bumped to `20261108-1007`, sha256 recomputed.
-- `docs/design/catalog.json`, `docs/design/design-system.md` (step 6): six class names; paragraph before "Checklist for new pages:".
+## Not done
 
-## Commands run
-
-- `python3 -c "import app.routes.billing"` (from `App/`): no output.
-- `.venv/bin/python -m pytest tests/test_host_i18n.py -q --tb=short -x 2>&1 | tail -30`: `14 passed, 1 warning in 1.46s`.
-- `python3 scripts/design_lint.py 2>&1 | tail -30`: `design lint: OK` (run twice).
-- `python3 -c "import json;json.load(...)"` on catalog.json and static_versions.json: no error.
-
-Not run: steps 8 (billing and layout-lint tests), 9 (screenshots), 10 (copy to `/mnt/project-files/ux-shots/wolt/`), 11 (context_lint). The rendered `/predplatne` page has not been checked.
+- Step 9: no screenshots taken (390/768/1280). Nothing was looked at.
+- Step 10: nothing copied to `/mnt/project-files/ux-shots/wolt/`.
+- Step 11 completed only in part (this report). Brief status not changed.
+- Tool-call cap reached (30), so the executor stopped here.
 
 ## Deviations
 
-- Steps 1 to 3 edits were applied with a small Python script using the brief's exact text, not the Edit tool. Temporary scripts were in `$HOME` and deleted.
-- Each step is a separate commit (`1007 step k`); steps 5 and 6 share one commit.
-- Brief §10 asks for `git add` of 1006 files. Nothing from 1006 was uncommitted (`git status` showed only the untracked `docs/tasks/1008-...` file), so there was nothing to add.
-- Executor guide says to open one PR. Brief §10 says no PR, so none was opened.
+- Steps 1 to 3 edited with a Python script using the brief's exact text, not the Edit tool.
+- Each step is its own commit (`1007 step k`); steps 5 and 6 share one.
+- No PR, no push (brief §10).
 
 ## Owner steps left
 
-- Decide the test location (see question above).
-- Then rerun the executor for steps 7 to 11, or run them yourself with the commands in brief §6.
-- Push and PR are not done: `git push` is for the owner after review.
+- Read the layout-lint result, then run `python3 scripts/context_lint.py` from the repo root.
+- Take the 390/768/1280 screenshots of /predplatne and review them (UX gate, rule 10) before any merge.
+- Run `git push` yourself after review. No push was done here.
