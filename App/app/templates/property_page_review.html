@@ -56,18 +56,17 @@
   <h3>{{ t('payments.page.photos') }}</h3>
   <p class="ui-sub">{{ t('payments.page.photos_notice') }}</p>
   {% if page_photos %}
-  <div style="display:flex;flex-wrap:wrap;gap:8px;">
+  <div class="pp-photo-grid">
     {% for p in page_photos %}
-    <div style="position:relative">
+    <div class="pp-photo-tile">
       {% set first = loop.first %}{% set last = loop.last %}
-      <img src="{{ p }}" alt="{{ t('payments.page.photo_alt') }} {{ loop.index }}" width="120" height="90" style="object-fit:cover;border-radius:8px;">
-      <form method="post" action="/apartments/{{ apartment.id }}/page/photo-delete" data-confirm data-confirm-message="{{ t('payments.page.photo_delete_confirm') }}" style="position:absolute;top:4px;right:4px;">
+      <img src="{{ p }}" alt="{{ t('payments.page.photo_alt') }} {{ loop.index }}" width="120" height="90">
+      <form method="post" action="/apartments/{{ apartment.id }}/page/photo-delete" data-confirm data-confirm-message="{{ t('payments.page.photo_delete_confirm') }}" class="pp-photo-del">
         <input type="hidden" name="_csrf" value="{{ csrf_token }}">
         <input type="hidden" name="path" value="{{ p }}">
         <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" aria-label="{{ t('payments.page.photo_delete') }}">×</button>
       </form>
       <div class="pp-photo-moves">
-        {% if first %}<span class="ui-sub">{{ t('payments.page.photo_main') }}</span>{% endif %}
         {% for d, glyph, key in (('up', '↑', 'payments.page.photo_up'), ('down', '↓', 'payments.page.photo_down')) %}
         <form method="post" action="/apartments/{{ apartment.id }}/page/photo-move">
           <input type="hidden" name="_csrf" value="{{ csrf_token }}">
@@ -77,6 +76,7 @@
         </form>
         {% endfor %}
       </div>
+      {% if first %}<p class="ui-sub pp-photo-main">{{ t('payments.page.photo_main') }}</p>{% endif %}
     </div>
     {% endfor %}
   </div>
