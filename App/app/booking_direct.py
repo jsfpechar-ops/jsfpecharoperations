@@ -156,12 +156,14 @@ def notify_request_guest(booking: Dict[str, Any]) -> None:
             else:
                 lines.append(rail["note"] or host_i18n.translate(lang, "pp.book.req_cash_default"))
         facts["ways"] = "\n\n".join(lines)
+        facts["link"] = booking_site.manage_url(booking)
         mail.enqueue(
             kind="site_booking_request_guest",
             idempotency_key=f"site_booking:{booking['id']}:request_guest",
             to_email=booking["guest_email"],
             subject=host_i18n.translate(lang, "site_booking.mail.request_guest_subject", **facts),
-            payload={"text": host_i18n.translate(lang, "site_booking.mail.request_guest_text", **facts),
+            payload={"text": host_i18n.translate(lang, "site_booking.mail.request_guest_text", **facts)
+                     + "\n\n" + host_i18n.translate(lang, "site_booking.mail.request_guest_link", link=facts["link"]),
                      "lang": lang, "reply_to": booking_webhook._host_email(apartment)},
             apartment_id=int(booking["apartment_id"]),
             owner_user_id=int(booking["owner_user_id"]),
