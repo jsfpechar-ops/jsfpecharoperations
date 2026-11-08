@@ -41,11 +41,18 @@ def view(booking: Dict[str, Any], lang: str) -> Dict[str, Any]:
                              (booking["apartment_id"],))
     status = booking["status"]
     state = "refunded" if status == "refunded" else status
+    direct = booking.get("pay_method") == "direct"
+    sub = state
+    if direct and status == "cancelled":
+        state = sub = "declined" if not booking.get("paid_at") else "cancelled"
+        if state == "cancelled":
+            sub = "cancelled_direct"
     nights = int(booking["nights"])
     can_cancel = (status == "paid" and booking.get("pay_method") != "direct" and not booking_cancel.started(booking))
     return {
         "id": int(booking["id"]),
         "state": state,
+        "sub": sub,
         "tone": "done" if status == "paid" else "neutral",
         "name": (apartment["internal_name"] if apartment else "") or "",
         "arrive": day_label(booking["date_from"], lang),
@@ -56,7 +63,7 @@ def view(booking: Dict[str, Any], lang: str) -> Dict[str, Any]:
         "email": mask_email(booking["guest_email"] or ""),
         "city_tax": int(s["city_tax_czk"]) * int(booking["guests"]) * nights,
         "policy": booking["cancellation_policy"],
-        "direct": booking.get("pay_method") == "direct",
+        "direct": direct,
         "deadline": deadline_label(booking, s["checkin_hour"], lang),
         "can_cancel": can_cancel,
         "refund_now": booking_cancel.refund_now(booking, by_host=False) if can_cancel else 0,

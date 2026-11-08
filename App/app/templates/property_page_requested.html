@@ -21,6 +21,6 @@
     {% endif %}
   </section>
   {% endfor %}
-  <p class="ui-sub">{{ t('pp.book.req_hold') }}</p>
+  <p class="ui-sub">{{ t('pp.book.req_expired') if expired else t('pp.book.req_hold') }}</p>
 </section></main>
 {% endblock %}

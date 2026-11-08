@@ -286,3 +286,42 @@ def test_direct_confirm_host_mail_not_paid(owner, monkeypatch):
     assert len(host) == 1
     text = host[0]["payload"]["text"]
     assert "Paid" not in text and "Zaplaceno" not in text
+
+
+def _guest_page(booking) -> str:
+    from urllib.parse import urlparse
+    path = urlparse(booking_site.manage_url(booking_site.get(booking["id"]))).path
+    guest = TestClient(app)
+    response = guest.get(f"{path}?lang=en")
+    assert response.status_code == 200
+    return response.text
+
+
+def test_declined_guest_page_says_declined(owner):
+    booking = _requested(owner)
+    assert booking_direct.decline(int(booking["id"]), owner["oid"])["error"] is None
+    body = _guest_page(booking)
+    assert "Request declined" in body
+    assert "nothing is refunded" not in body.lower()
+    assert "You paid the host directly" not in body
+
+
+def test_host_cancelled_direct_page_says_host_refunds(owner, monkeypatch):
+    booking = _requested(owner)
+    booking_direct.confirm(int(booking["id"]), owner["oid"])
+    from app import stripe_connect
+    monkeypatch.setattr(stripe_connect, "_api", lambda: (_ for _ in ()).throw(RuntimeError("stripe")))
+    assert booking_cancel.cancel(int(booking["id"]), by_host=True)["error"] is None
+    body = _guest_page(booking)
+    assert "The host cancelled this booking" in body
+    assert "nothing is refunded" not in body.lower()
+
+
+def test_expired_request_page_has_no_hold_line(owner):
+    booking = _requested(owner)
+    db.execute("UPDATE site_booking SET request_expires_at = ? WHERE id = ?",
+               ("2000-01-01T00:00:00Z", int(booking["id"])))
+    assert booking_checkout.expire_requests() == 1
+    body = _guest_page(booking)
+    assert "24-hour hold has passed" in body
+    assert "held for 24 hours" not in body

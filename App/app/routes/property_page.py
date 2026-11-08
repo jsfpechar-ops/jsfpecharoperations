@@ -496,6 +496,7 @@ def booking_manage_page(request: Request, slug: str, booking_id: int, token: str
             "page": _page_context(apartment_id) or {}, "show_nav": False, "lang": lang,
             "booking": booking, "rails": booking_rails.guest_view(apartment_id, booking),
             "dates": booking_webhook._dates(booking, lang), "total": int(booking["total_czk"]),
+            "expired": booking["status"] == "expired",
         })
         response.headers["Cache-Control"] = "no-store"
         response.headers["X-Robots-Tag"] = "noindex"

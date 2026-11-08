@@ -11,7 +11,7 @@
   <div class="pp-bk-head">
     <span class="pp-bk-badge" data-tone="{{ v.tone }}">{{ t('bk.badge.' ~ v.state) }}</span>
     <h1>{{ t('bk.h1.' ~ v.state) }}</h1>
-    <p class="pp-bk-note">{{ t('bk.sub.' ~ v.state, email=v.email, refund=v.refunded) }}</p>
+    <p class="pp-bk-note">{{ t('bk.sub.' ~ v.sub, email=v.email, refund=v.refunded) }}</p>
   </div>
   {% if error %}<p class="pp-bk-error" role="alert">{{ t('bk.err.' ~ error) }}</p>{% endif %}
 
@@ -24,6 +24,7 @@
     {% if v.city_tax %}<p class="pp-bk-note">{{ t('bk.city_tax', amount=v.city_tax) }}</p>{% endif %}
   </section>
 
+  {% if not (v.direct and v.state != 'paid') %}
   <section class="pp-bk-card">
     <h2>{{ t('pp.book.policy_title', name=t('pp.book.policy_name.' ~ v.policy)) }}</h2>
     <p class="pp-bk-note">{{ t('bk.policy.direct') if v.direct else t('bk.policy.' ~ v.policy, when=v.deadline) }}</p>
@@ -38,6 +39,7 @@
     </details>
     {% endif %}
   </section>
+  {% endif %}
 
   <div class="pp-bk-actions">
     {% if v.has_invoice %}<a class="ui-btn ui-btn-secondary" href="{{ base }}/invoice.pdf" data-no-prefetch>{{ t('bk.invoice') }}</a>{% endif %}
