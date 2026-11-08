@@ -451,11 +451,15 @@ def booking_correction_pdf(request: Request, slug: str, booking_id: int, token: 
     )
 
 
-def _booking_or_none(booking_id: int, token: str):
+def _booking_or_none(booking_id: int, token: str, open_requests: bool = False):
     if not booking_site.token_ok(booking_id, token):
         return None
     booking = booking_site.get(booking_id)
-    if booking is None or booking["status"] not in booking_manage.VISIBLE:
+    if booking is None:
+        return None
+    if open_requests and booking.get("pay_method") == "direct" and booking["status"] in ("requested", "expired"):
+        return booking
+    if booking["status"] not in booking_manage.VISIBLE:
         return None
     return booking
 
@@ -481,7 +485,7 @@ def booking_manage_page(request: Request, slug: str, booking_id: int, token: str
     slow = _manage_throttle(request, "booking_manage")
     if slow:
         return slow
-    booking = _booking_or_none(booking_id, token)
+    booking = _booking_or_none(booking_id, token, open_requests=True)
     if booking is None:
         return Response(status_code=404)
     lang = _manage_lang(request, booking)
