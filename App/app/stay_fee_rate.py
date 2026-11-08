@@ -60,14 +60,27 @@ def is_uniform(schedule: Schedule, first: date, last: date) -> bool:
     return len(rates) == 1
 
 
+def _rows_schedule(apartment_id: int) -> Schedule:
+    rows = db.query(
+        "SELECT effective_from, rate_czk FROM stay_fee_rate "
+        "WHERE apartment_id = ? ORDER BY effective_from",
+        (apartment_id,),
+    )
+    return [(date.fromisoformat(row["effective_from"]), int(row["rate_czk"])) for row in rows]
+
+
 def record(apartment_id: int, rate: int, effective_from: date,
-           *, today: Optional[date] = None) -> bool:
+           *, previous: Optional[int] = None, today: Optional[date] = None) -> bool:
     """Store a rate effective from ``effective_from`` (never in the past).
 
-    Returns False when the rate in force on that day already equals ``rate``.
-    A same-date row with another rate is updated in place. An apartment with no
-    history gets its first row at EPOCH holding the current column rate, so the
-    old rate keeps applying to earlier nights.
+    Returns True when a dated row was added or changed, False when the rate in
+    force on that day already equals ``rate``. A same-date row with another
+    rate is updated in place.
+
+    An apartment with no history first gets a baseline row at EPOCH so earlier
+    nights keep the rate they had: ``previous`` (the column value before the
+    save), else the current column. A baseline of 0 means no fee was set up,
+    so the first rate ever applies from the beginning, as the flat rate did.
     """
     today = today or date.today()
     if effective_from < today:
@@ -76,14 +89,16 @@ def record(apartment_id: int, rate: int, effective_from: date,
         "SELECT id, stay_fee_rate_czk FROM apartment WHERE id = ?", (apartment_id,))
     if apartment is None:
         raise ValueError("no apartment")
-    if not db.query(
-            "SELECT 1 FROM stay_fee_rate WHERE apartment_id = ? LIMIT 1", (apartment_id,)):
+    schedule = _rows_schedule(apartment_id)
+    if not schedule:
+        base = int(apartment["stay_fee_rate_czk"] or 0) if previous is None else int(previous)
+        base = base if base > 0 else int(rate)
         db.execute(
             "INSERT INTO stay_fee_rate (apartment_id, rate_czk, effective_from, created_at) "
             "VALUES (?, ?, ?, ?)",
-            (apartment_id, int(apartment["stay_fee_rate_czk"] or 0), EPOCH, db.utcnow()),
+            (apartment_id, base, EPOCH, db.utcnow()),
         )
-    schedule = schedule_for(apartment, today)
+        schedule = [(date.fromisoformat(EPOCH), base)]
     if rate_on(schedule, effective_from) == int(rate):
         return False
     db.execute(

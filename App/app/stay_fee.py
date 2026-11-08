@@ -431,7 +431,9 @@ def charge_for_reservation(apartment, reservation) -> Optional[Dict[str, Any]]:
         return None
     schedule = stay_fee_rate.schedule_for(apartment)
     lines: List[Dict[str, Any]] = []
+    stay = None
     for row in db.query(_GUESTS_FOR_RES_SQL, (apartment["id"], reservation["id"])):
+        stay = stay or (row["res_from"], row["res_to"])
         share = guest_period(row, {"date_from": row["res_from"], "date_to": row["res_to"]},
                              date.min, date.max, apartment=apartment, schedule=schedule)
         if share is None:
@@ -440,8 +442,10 @@ def charge_for_reservation(apartment, reservation) -> Optional[Dict[str, Any]]:
         lines.append({key: share[key] for key in _CHARGE_KEYS})
     liable = sum(line["liable_nights"] for line in lines)
     total = sum(line["amount_czk"] for line in lines)
-    last_night = validation.parse_iso_date(reservation["date_to"]) or date.today()
-    first_night = (validation.parse_iso_date(reservation["date_from"]) or date.today()) + timedelta(days=1)
+    # Callers may pass only {"id": ...}: the stay dates come from the query.
+    res_from, res_to = stay or (None, None)
+    last_night = validation.parse_iso_date(res_to) or date.today()
+    first_night = (validation.parse_iso_date(res_from) or date.today()) + timedelta(days=1)
     return {"total_czk": total, "liable_nights": liable,
             "rate_czk": stay_fee_rate.rate_on(schedule, last_night), "lines": lines,
             "mixed": not stay_fee_rate.is_uniform(schedule, first_night, last_night)}
