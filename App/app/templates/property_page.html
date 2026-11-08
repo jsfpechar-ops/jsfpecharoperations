@@ -130,8 +130,8 @@
         <p class="pp-bk-note"><a href="/terms/booking?lang={{ lang }}" target="_blank" rel="noopener">{{ t('pp.book.terms_read') }}</a></p>
         {% set modes = page.pay_modes or ['stripe'] %}
         {% if modes|length > 1 %}
-        <fieldset class="ui-field">
-          <legend class="ui-label">{{ t('pp.book.pay_mode') }}</legend>
+        <fieldset class="pp-bk-pay">
+          <legend>{{ t('pp.book.pay_mode') }}</legend>
           <label class="ui-check"><input type="radio" name="pay_mode" value="stripe" checked><span>{{ t('pp.book.mode.stripe') }}</span></label>
           <label class="ui-check"><input type="radio" name="pay_mode" value="direct"><span>{{ t('pp.book.mode.direct') }}</span></label>
         </fieldset>
