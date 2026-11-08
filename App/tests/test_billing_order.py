@@ -230,3 +230,21 @@ def test_existing_white_label_contract_survives_reordering_and_plan_change(host)
     billing_order.change(host["owner"], "plan", "max", confirm=True)
     assert billing.account(host["owner"])["addon_whitelabel"] == 1
     assert billing_invoices.get(result["invoice_id"])["total_haler"] == invoice["total_haler"]
+
+
+def test_the_change_card_shows_the_real_upgrade_and_keeps_the_forms(host):
+    client = TestClient(app)
+    login_as(client, host["username"], url="/login?lang=en")
+    _set(host["owner"], status="active", plan="standard", billing_interval="month")
+    page = client.get("/predplatne?lang=en").text
+    assert "ui-upgrade-card" in page
+    assert "Switch to Max" in page
+    assert "ui-upgrade-strip" in page
+    assert "Pay yearly" in page
+    assert "ui-addon-row" in page
+    assert page.count('action="/predplatne/zmena"') == 3
+    _set(host["owner"], status="active", plan="max", billing_interval="month")
+    page = client.get("/predplatne?lang=en").text
+    assert "ui-upgrade-card" not in page
+    assert "Switch to Standard" in page
+    assert "ui-addon-row" not in page

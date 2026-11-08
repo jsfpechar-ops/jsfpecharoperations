@@ -28,11 +28,11 @@ shows. Do not edit production from this page; the owner deploys manually
 ## Backups
 
 - Script: `App/scripts/backup_data.sh` — snapshots SQLite, tars `ubyhost.db` with `secret_key` and `initial_admin_credentials`, encrypts to the age recipient in `UBYHOST_BACKUP_AGE_RECIPIENT`; production with no recipient fails closed (`docs/OPERATIONS.md § Backup and restore`).
-- Off-site: `deploy/lightsail/scripts/backup-s3.sh` (rclone copy of `*.age`, refuses plaintext; `deploy/lightsail/`). Litestream replicates the WAL to S3 (`deploy/lightsail/litestream.yml`, `deploy/lightsail/docker-compose.yml` litestream service).
+- Off-site: `deploy/lightsail/scripts/backup-s3.sh` (rclone copy of `*.age`, refuses plaintext; `deploy/lightsail/`).
 - Retention: `UBYHOST_BACKUP_RETENTION_DAYS` default 30 (`docs/OPERATIONS.md`).
 - Last run record: `$BACKUP_ROOT/.last_success.json`. Monitoring hook: `UBYHOST_BACKUP_PING_URL`.
 - Schedule: `⚠️ UNKNOWN` — no cron/timer for `backup_data.sh` found in this pass. Check `deploy/lightsail/scripts/` and the server crontab.
-- Locations: server volume `/data/backups`; Google Drive `UbyHost-backups`; S3 bucket (name is `⚠️ UNKNOWN` in this pass; read `deploy/lightsail/litestream.yml` on the server). Source: `docs/OPERATIONS.md`.
+- Locations: server volume `/data/backups`; Google Drive `UbyHost-backups`; S3 bucket (name is `⚠️ UNKNOWN` in this pass; read `UBYHOST_S3_BUCKET` in the server `.env`). Source: `docs/OPERATIONS.md`.
 - Restore: `deploy/lightsail/scripts/restore.sh` with `AGE_IDENTITY_FILE` (never inside the volume); full procedure in [LIGHTSAIL.md § Restore runbook](LIGHTSAIL.md#restore-runbook-same-instance).
 - **Tested?** The last `restore-drill.yml` run succeeded on 2026-10-26 (GitHub Actions, checked via `gh run list`). That is the only run visible; it does not show what was restored. The `docs/OPERATIONS.md` quarterly full-restore check is `⚠️ UNKNOWN` until the owner confirms it against a real snapshot.
 - **Scheduled backups (confirmed in scripts):** `deploy/lightsail/scripts/setup-server.sh:72-76` and `finish-bootstrap.sh:70` install crontab entries: daily `backup.sh` at 03:00 UTC and `backup-gdrive.sh` on Sundays at 04:00. Whether the crontab is installed on the live server is `⚠️ UNKNOWN`.

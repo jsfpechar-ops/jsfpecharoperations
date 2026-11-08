@@ -12,11 +12,12 @@
 {%- set address_text = [((apartment.addr_street or '') ~ ' ' ~ (apartment.addr_house_no or '')) | trim, apartment.addr_obec or ''] | select | join(', ') -%}
 {%- set base_url = '/apartments/' ~ apartment.id -%}
 {%- set property_values = apartment -%}
-{% macro text_field(name, label, value, help='', optional=false, maxlength=none) %}
+{% macro text_field(name, label, value, help='', optional=false, maxlength=none, required=false) %}
   <div class="field">
-    {{ field_label(name, label, help, optional) }}
+    {{ field_label(name, label, help, optional, '', required) }}
     <input type="text" id="{{ name }}" name="{{ name }}" value="{{ value or '' }}"
            {%- if maxlength %} maxlength="{{ maxlength }}"{% endif %}
+           {%- if required %} aria-required="true"{% endif %}
            {%- if help %} aria-describedby="{{ name }}-help"{% endif %}>
   </div>
 {% endmacro %}
@@ -136,7 +137,7 @@
 
   {# ---- Property information ---------------------------------------- #}
 <h2 class="sec prop-phone-only">{{ t('nav.settings') }}</h2>
-<details class="prop-sec" id="sec-basics"{% if inline_flash_section == 'basics' %} open{% endif %}{% if property_view != 'bookings' and (not settings_section or settings_section == 'property') %} open{% endif %}><summary><span class="dot {{ 'g' if address_text else 'r' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.basics.title') }}</b></div><small class="sec-state">{{ address_text or t('property_nav.address_missing') }}</small></summary>
+<details class="prop-sec" id="sec-basics"{% if inline_flash_section == 'basics' %} open{% endif %}{% if (property_view != 'bookings' and (not settings_section or settings_section == 'property')) or (save_errors and save_errors|selectattr('section','equalto','basics')|list) %} open{% endif %}><summary><span class="dot {{ 'g' if address_text else 'r' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.basics.title') }}</b></div><small class="sec-state">{{ address_text or t('property_nav.address_missing') }}</small></summary>
   <div class="fields-wrap">
   {{ section_notice('basics') }}
   {{ section_missing(miss['basics'], 'basics') }}
@@ -154,14 +155,14 @@
           <option value="{{ entity.id }}" {% if controller_current == entity.id %}selected{% endif %}>{{ entity.name }}</option>
           {% endfor %}
         </select>
-        {% if operator_error == 'flash.error.no_such_controller' %}<p class="err-text" id="controller-message" role="alert">{{ t(operator_error) }}</p>{% endif %}
+        {% if operator_error == 'flash.error.no_such_controller' %}<p class="err-text" id="controller-message" role="alert" data-field-error>{{ t(operator_error) }}</p>{% endif %}
       </div>
     </section>
 
     <section class="panel property-section ui-section" id="arrival-departure">
       <h2 class="property-section-title">{{ t('apartment.form.door_code.checkin') }} / {{ t('apartment.form.door_code.checkout') }}</h2>
       <p class="ui-sub">{{ t('why.times') }}</p>
-      {% if shared_time_error %}<p class="err-text" role="alert">{{ t(shared_time_error) }}</p>{% endif %}
+      {% if shared_time_error %}<p class="err-text" role="alert" data-field-error>{{ t(shared_time_error) }}</p>{% endif %}
       <div class="grid two">
         {% for name, label in [('checkin_hour', 'apartment.form.door_code.checkin'), ('checkout_hour', 'apartment.form.door_code.checkout')] %}
         <div class="field"><label for="{{ name }}">{{ t(label) }}</label>
@@ -207,7 +208,7 @@
 </div>
 
   {# ---- Guest experience ---------------------------------------------- #}
-<details class="prop-sec" id="sec-messages"{% if inline_flash_section == 'messages' %} open{% endif %}{% if settings_section == 'guests' %} open{% endif %}><summary><span class="dot {{ 'n' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.messages.title') }}</b></div><small class="sec-state">{{ t('property_page.sec.messages.sub') }}</small></summary>
+<details class="prop-sec" id="sec-messages"{% if inline_flash_section == 'messages' %} open{% endif %}{% if (settings_section == 'guests') or (save_errors and save_errors|selectattr('section','equalto','messages')|list) %} open{% endif %}><summary><span class="dot {{ 'n' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.messages.title') }}</b></div><small class="sec-state">{{ t('property_page.sec.messages.sub') }}</small></summary>
   <div class="fields-wrap">
   {{ section_notice('messages') }}
   {% if g_bad %}<div class="prop-sec-missing" data-missing="messages" role="note"><p>{{ t(hc['guest_link'].text_key) }}</p></div>{% endif %}
@@ -223,7 +224,7 @@
           </div>
         </div>
         <div class="field guest-link-pin">
-          {{ field_label('permalink_pin', t('guest_links.pin'), t('apartment.form.guest_link.pin_hint')) }}
+          {{ field_label('permalink_pin', t('guest_links.pin'), t('apartment.form.guest_link.pin_hint'), false, '', true) }}
           <div class="copyrow guest-copy-row pin-row">
             <input type="text" id="permalink_pin" name="permalink_pin" value="{{ pin }}" class="mono" aria-describedby="permalink_pin-help"
                    inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="{{ t('apartment.form.guest_link.pin_ph') }}" required>
@@ -285,7 +286,7 @@
 
 
   {# ---- Reporting & fees ---------------------------------------------- #}
-<details class="prop-sec" id="sec-police"{% if inline_flash_section == 'police' %} open{% endif %}{% if settings_section in ['reporting', 'automation'] %} open{% endif %}><summary><span class="dot {{ 'g' if police_ok else 'r' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.police.title') }}</b></div><small class="sec-state">{{ t('property_nav.report_ready') if police_ok else tp('property_nav.report_missing', report_missing) }}</small></summary>
+<details class="prop-sec" id="sec-police"{% if inline_flash_section == 'police' %} open{% endif %}{% if (settings_section in ['reporting', 'automation']) or (save_errors and save_errors|selectattr('section','equalto','police')|list) %} open{% endif %}><summary><span class="dot {{ 'g' if police_ok else 'r' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.police.title') }}</b></div><small class="sec-state">{{ t('property_nav.report_ready') if police_ok else tp('property_nav.report_missing', report_missing) }}</small></summary>
   <div class="fields-wrap">
   {{ section_notice('police') }}
   {{ section_missing(miss['police'], 'police') }}
@@ -295,14 +296,14 @@
       <p class="ui-sub">{{ t('why.police') }}</p>
       <p class="ui-sub"><a href="{{ base_url }}?view=settings&amp;section=automation#automation">{{ t('automation.timing_title') }} </a></p>
       <div class="grid">
-        {{ text_field('uby_idub', 'IDUB', apartment.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14) }}
+        {{ text_field('uby_idub', 'IDUB', apartment.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14, required=true) }}
       </div>
       <div class="grid two">
-        {{ text_field('uby_ws_user', t('automation.login'), apartment.uby_ws_user, t('apartment.form.ubyport.login_hint')) }}
+        {{ text_field('uby_ws_user', t('automation.login'), apartment.uby_ws_user, t('apartment.form.ubyport.login_hint'), required=true) }}
         <div class="field">
-          {{ field_label('uby_ws_password', t('automation.password'), t('apartment.form.ubyport.password_help')) }}
+          {{ field_label('uby_ws_password', t('automation.password'), t('apartment.form.ubyport.password_help'), false, '', not has_password) }}
           <input type="password" id="uby_ws_password" name="uby_ws_password" autocomplete="new-password"
-                 {% if has_password %}placeholder="••••••••" {% endif %}aria-describedby="uby_ws_password-help uby_ws_password-hint">
+                 {% if has_password %}placeholder="••••••••" {% endif %}{% if not has_password %}aria-required="true" {% endif %}aria-describedby="uby_ws_password-help uby_ws_password-hint">
           <div class="hint" id="uby_ws_password-hint">
             {% if has_password %}
             {{ t('apartment.form.ubyport.password_edit_hint') }}
@@ -316,11 +317,11 @@
         <a href="https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/jake-jsou-moznosti-zasilani-dat-aplikaci-ubyport" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.no_credentials_link') }}</a></p>
       <div class="field-label-row"><h2 class="property-section-title">{{ t('property_page.police.facility') }}</h2></div>
       <div class="grid">
-        {{ text_field('uby_mark', t('apartment.form.ubyport.mark_label'), apartment.uby_mark, t('apartment.form.ubyport.mark_hint'), false, 6) }}
+        {{ text_field('uby_mark', t('apartment.form.ubyport.mark_label'), apartment.uby_mark, t('apartment.form.ubyport.mark_hint'), false, 6, required=true) }}
       </div>
       <div class="grid two">
         {%- set facility_help -%}{{ t('apartment.form.ubyport.name_hint') }} <span class="facility-example"><span class="facility-example-label">{{ t('apartment.form.ubyport.name_example') }}</span>Ubytovací zařízení: <mark>BYT Č. [2] FIKTVNÍ 1234/56 (PRAHA,</mark> PRAHA 2, FIKTVNÍ, 1234/56)</span>{%- endset %}
-        {{ text_field('uby_name', t('automation.facility_name'), apartment.uby_name, facility_help, false, 35) }}
+        {{ text_field('uby_name', t('automation.facility_name'), apartment.uby_name, facility_help, false, 35, required=true) }}
         {{ text_field('uby_contact', t('automation.contact'), apartment.uby_contact, t('apartment.form.ubyport.contact_hint'), true, 50) }}
       </div>
       <div class="actions">
@@ -363,7 +364,7 @@
     </section>
   </div>
   </details>
-<details class="prop-sec" id="sec-fee"{% if inline_flash_section == 'fee' %} open{% endif %}{% if settings_section == 'reporting' %} open{% endif %}><summary><span class="dot {{ 'g' if apartment.stay_fee_rate_czk else 'n' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.fee.title') }}</b></div><small class="sec-state">{{ apartment.stay_fee_rate_czk ~ ' Kč' if apartment.stay_fee_rate_czk else t('apartments.chip_state.off') }}</small></summary>
+<details class="prop-sec" id="sec-fee"{% if inline_flash_section == 'fee' %} open{% endif %}{% if (settings_section == 'reporting') or (save_errors and save_errors|selectattr('section','equalto','fee')|list) %} open{% endif %}><summary><span class="dot {{ 'g' if apartment.stay_fee_rate_czk else 'n' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.fee.title') }}</b></div><small class="sec-state">{{ apartment.stay_fee_rate_czk ~ ' Kč' if apartment.stay_fee_rate_czk else t('apartments.chip_state.off') }}</small></summary>
   <div class="fields-wrap">
   {{ section_notice('fee') }}
     <section class="panel property-section ui-section" id="stay-fee-settings">
@@ -414,7 +415,7 @@
   {# ---- Automation ---------------------------------------------------- #}
 
 </form>
-<details class="prop-sec" id="sec-calendars"{% if inline_flash_section == 'calendars' %} open{% endif %}{% if property_view == 'bookings' %} open{% endif %}><summary><span class="dot {{ 'r' if calendar_errors else ('g' if feeds_count else 'n') }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.calendars.title') }}</b></div><small class="sec-state">{{ tp('apartment.form.calendars_count', feeds_count) }}</small></summary>
+<details class="prop-sec" id="sec-calendars"{% if inline_flash_section == 'calendars' %} open{% endif %}{% if (property_view == 'bookings') or (save_errors and save_errors|selectattr('section','equalto','calendars')|list) %} open{% endif %}><summary><span class="dot {{ 'r' if calendar_errors else ('g' if feeds_count else 'n') }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.calendars.title') }}</b></div><small class="sec-state">{{ tp('apartment.form.calendars_count', feeds_count) }}</small></summary>
   <div class="fields-wrap">
   {{ section_notice('calendars') }}
   {{ section_missing(miss['calendars'], 'calendars') }}
@@ -422,7 +423,7 @@
   </div>
 </details>
   {# ---- Door lock (0096: its own group; optional) ---------------------- #}
-<details class="prop-sec" id="sec-lock"{% if inline_flash_section == 'lock' %} open{% endif %}{% if settings_section == 'lock' %} open{% endif %}><summary><span class="dot {{ 'g' if door_code and door_code.state == 'on' else 'n' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.lock.title') }}</b></div><small class="sec-state">{{ t('property_nav.switch_enabled') if door_code and door_code.state == 'on' else t('property_nav.switch_off') }}</small></summary>
+<details class="prop-sec" id="sec-lock"{% if inline_flash_section == 'lock' %} open{% endif %}{% if (settings_section == 'lock') or (save_errors and save_errors|selectattr('section','equalto','lock')|list) %} open{% endif %}><summary><span class="dot {{ 'g' if door_code and door_code.state == 'on' else 'n' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.lock.title') }}</b></div><small class="sec-state">{{ t('property_nav.switch_enabled') if door_code and door_code.state == 'on' else t('property_nav.switch_off') }}</small></summary>
   <div class="fields-wrap">
   {{ section_notice('lock') }}
   {% if door_code and door_code.state in ['offline', 'times'] %}<div class="prop-sec-missing" data-missing="lock" role="note"><p>{{ t('health.door.offline') if door_code.state == 'offline' else t('health.door.times') }}</p></div>{% endif %}
@@ -453,7 +454,7 @@
     {% if door_code.account and door_code.locks %}
     <section class="panel property-section ui-section" id="door-code">
       <p class="ui-sub">{{ t('why.times') }}</p>
-      {% if lock_times_error %}<p class="err-text" id="door-code-times-error" role="alert">{{ t('why.times_missing') }}</p>{% endif %}
+      {% if lock_times_error %}<p class="err-text" id="door-code-times-error" role="alert" data-field-error>{{ t('why.times_missing') }}</p>{% endif %}
       {#- 0414: the times live here too, so a host turning on door codes never leaves the tab. -#}
       {% if not lock_times_error and door_code.state == 'off' and (door_code.checkin_hour is none or door_code.checkout_hour is none) %}<p class="err-text" id="lock-times-required" role="note">{{ t('smart_locks.times_required') }}</p>{% endif %}
       <div class="grid two" data-lock-times>
@@ -498,6 +499,8 @@
     {% endif %}
   </div>
 </details>
+  {% if save_errors %}<div class="banner err section-notice save-summary" role="alert" tabindex="-1" data-save-summary data-first-error="{{ save_errors[0].target }}"><span class="grow">{{ tp('property_page.save_failed', save_errors|length) }}</span> <a href="#{{ save_errors[0].target }}">{{ t('property_page.save_failed_go') }}</a></div>
+  {% elif flash and editor_saved %}<div class="banner ok section-notice save-summary" role="status" tabindex="-1" data-save-summary><span class="grow">{{ flash }}</span></div>{% endif %}
   <div class="savebar save-on-dirty" data-for="property-settings-form">
     <a class="btn ghost" href="{{ base_url }}" data-unsaved-reset>{{ t('common.cancel') }}</a>
     <button class="btn" type="submit" form="property-settings-form">{{ t('common.save_changes') }}</button>

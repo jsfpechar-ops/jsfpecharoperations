@@ -11,7 +11,7 @@
   <input type="hidden" name="return_to" value="{{ wizard_next_return_to }}">
   <input type="hidden" name="setup_step" value="calendar">
   <div class="field">
-    <label for="label">{{ t('calendar.platform_label') }}</label>
+    <label for="label">{{ t('calendar.platform_label') }}<span class="req-star" aria-hidden="true">*</span></label>
     <select id="label" name="label" required{% if feed_errors.label %} aria-invalid="true"{% endif %}>
       <option value="" disabled {% if feed_draft.label not in calendar_platforms | map('first') | list %}selected{% endif %}>{{ t('calendar.choose_platform') }}</option>
       {% for key, name in calendar_platforms %}
@@ -26,7 +26,7 @@
     {% if feed_errors.label_other %}<p class="err-text" id="label-other-error" role="alert">{{ feed_errors.label_other }}</p>{% endif %}
   </div>
   <div class="field">
-    {{ field_label('url', t('apartment.form.calendars.url_label'), t('apartment.form.calendars.url_hint'), false, '/guide#stays') }}
+    {{ field_label('url', t('apartment.form.calendars.url_label'), t('apartment.form.calendars.url_hint'), false, '/guide#stays', true) }}
     <input type="url" id="url" name="url" required value="{{ feed_draft.url or '' }}" placeholder="{{ t('apartment.form.calendars.url_ph') }}">
     {% if feed_errors.url %}<p class="err-text" role="alert">{{ feed_errors.url }}</p>{% endif %}
   </div>

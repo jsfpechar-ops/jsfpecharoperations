@@ -54,6 +54,7 @@ NON_FEE = {
     "automation_mode": "manual",
     "default_purpose": "10",
     "addr_obec": "Praha",
+    "addr_street": "Synthetic",
     "addr_house_no": "12",
     "addr_zip": "11000",
 }
@@ -299,7 +300,7 @@ def test_fee_editor_is_the_only_one_and_shows_the_council_block(host):
     apartment_id = _property(owner_id, entity_id, stay_fee_rate_czk=20)
     page = client.get(f"/apartments/{apartment_id}?view=settings&section=reporting&lang=en").text
     section = page.split('id="stay-fee-settings"', 1)[1].split("</section>", 1)[0]
-    assert section.count('<details class="fee-more"') == 1  # 0239: print-only office details fold
+    assert section.count('<details class="fee-more') == 1  # 0239: print-only office details fold
     assert 'id="stay-fee-council"' in section
     assert section.count('name="stay_fee_rate_czk"') == 1
     assert page.count('name="stay_fee_authority_name"') == 1

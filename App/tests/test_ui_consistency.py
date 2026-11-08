@@ -52,6 +52,7 @@ def host(client):
             "internal_name": APARTMENT_NAME,
             "city_en": "Prague",
             "addr_obec": "Praha",
+            "addr_street": "Synthetic",
             "addr_house_no": "12",
             "addr_zip": "11000",
             "uby_name": REGISTERED_NAME,

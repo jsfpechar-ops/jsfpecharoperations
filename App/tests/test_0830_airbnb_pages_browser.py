@@ -361,6 +361,13 @@ def test_0831G_page_help(base, dashboard_rich_host, seeded):
                     settle_motion(page)
                     pb = body.bounding_box()
                     viewport = page.viewport_size
+                    dot_box = page.locator(".page-help-dot").first.bounding_box()
+                    gap_below = pb["y"] - (dot_box["y"] + dot_box["height"])
+                    gap_above = dot_box["y"] - (pb["y"] + pb["height"])
+                    if not (0 <= gap_below <= 24 or 0 <= gap_above <= 24):
+                        problems.append(f"{path} {width}: help body is not anchored to its ? ({gap_below:.0f}/{gap_above:.0f})")
+                    if pb["width"] > 320.5:
+                        problems.append(f"{path} {width}: help body is {pb['width']:.0f} px wide")
                     if not body.is_visible() or pb["x"] < 0 or pb["x"] + pb["width"] > viewport["width"]:
                         info = page.evaluate(
                             """() => { const d = document.querySelector('.page-help'); const wrap = d && d.closest('.page-help-wrap'); const b = wrap && wrap.querySelector(':scope > .page-help-body');

@@ -293,7 +293,7 @@ def test_country_names_and_purposes_follow_the_guest_language(lang, germany, cze
 # The property-form sentences are host copy and stay EN/CS.
 _HOST_ONLY = (
     "IDUB", "The facility abbreviation", "The abbreviation", "Accommodation facility",
-    "Facility name", "House number", "Orientation number", "Postcode", "Municipality",
+    "Facility name", "House number", "Street", "Orientation number", "Postcode", "Municipality",
     "UbyPort", "Web-service", "No property manager",
 )
 

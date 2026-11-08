@@ -25,7 +25,6 @@ LIGHTSAIL_DOC = REPO_ROOT / "docs" / "LIGHTSAIL.md"
 EXPECTED_MEM = {
     "ubyhost": "${UBYHOST_WEB_MEM:-2g}",
     "worker": "${UBYHOST_WORKER_MEM:-1g}",
-    "litestream": "${UBYHOST_LITESTREAM_MEM:-256m}",
     "caddy": "${UBYHOST_CADDY_MEM:-256m}",
 }
 
@@ -43,7 +42,7 @@ def _expand(value: str, env: dict[str, str]) -> str:
 
 def test_compose_file_is_valid_yaml_with_the_expected_services():
     services = _compose()["services"]
-    for name in ("ubyhost", "worker", "litestream", "caddy", "mock-ubyport"):
+    for name in ("ubyhost", "worker", "caddy", "mock-ubyport"):
         assert name in services
 
 
@@ -59,20 +58,17 @@ def test_memory_defaults_expand_and_can_be_lowered_from_env():
     assert defaults == {
         "ubyhost": "2g",
         "worker": "1g",
-        "litestream": "256m",
         "caddy": "256m",
     }
     staging = {
         "UBYHOST_WEB_MEM": "896m",
         "UBYHOST_WORKER_MEM": "448m",
-        "UBYHOST_LITESTREAM_MEM": "128m",
         "UBYHOST_CADDY_MEM": "128m",
     }
     lowered = {n: _expand(services[n]["mem_limit"], staging) for n in EXPECTED_MEM}
     assert lowered == {
         "ubyhost": "896m",
         "worker": "448m",
-        "litestream": "128m",
         "caddy": "128m",
     }
 
@@ -118,7 +114,7 @@ def test_entrypoint_refuses_a_bad_worker_count(workers):
 def test_env_example_and_docs_describe_the_8gb_server():
     env_example = ENV_EXAMPLE.read_text(encoding="utf-8")
     assert "UBYHOST_WEB_WORKERS=4" in env_example
-    for var in ("UBYHOST_WEB_MEM", "UBYHOST_WORKER_MEM", "UBYHOST_LITESTREAM_MEM", "UBYHOST_CADDY_MEM"):
+    for var in ("UBYHOST_WEB_MEM", "UBYHOST_WORKER_MEM", "UBYHOST_CADDY_MEM"):
         assert var in env_example
     # The code default for local snapshots stays 30; 7 is documented.
     assert "UBYHOST_BACKUP_RETENTION_DAYS=30" in env_example

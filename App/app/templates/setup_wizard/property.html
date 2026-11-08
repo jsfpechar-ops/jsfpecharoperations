@@ -15,7 +15,7 @@
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="next" value="/apartments/{{ apartment.id }}/setup/property">
   <div class="field">
-    <label for="wizard-ares-ico">{{ t('entities.ico') }}</label>
+    <label for="wizard-ares-ico">{{ t('entities.ico') }}<span class="req-star" aria-hidden="true">*</span></label>
     <input type="text" id="wizard-ares-ico" name="ico" inputmode="numeric" maxlength="8" autocomplete="off" required>
   </div>
   <button class="ui-btn ui-btn-secondary" type="submit" name="fill_from_register" value="1">{{ t('ares.fill') }}</button>

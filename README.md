@@ -22,7 +22,7 @@ One Docker image (`Dockerfile`, `python:3.12-slim`, pinned by digest) runs as
 three roles selected by `UBYHOST_ROLE`: `web` (uvicorn, 2–4 workers, no
 scheduler), `worker` (`python -m app.worker`, runs all background jobs), and
 `all` (local development only). Both share one SQLite file on a Docker volume,
-replicated to S3 by Litestream. Background jobs (APScheduler) fill the mail
+backed up daily as encrypted pg_dump files (daily S3 copy, weekly Drive copy). Background jobs (APScheduler) fill the mail
 outbox, poll iCal feeds, and submit to UbyPort. Details and diagram:
 [`docs/architecture.md`](docs/architecture.md).
 
@@ -71,7 +71,7 @@ Versions from `App/requirements.txt` and `App/requirements.lock`:
 | AI | anthropic SDK; Mistral is an alternative provider | 2.3.0 | `App/requirements.txt`, `App/app/config.py:355` |
 | Payments | stripe | 16.0.1 | `App/requirements.txt` |
 | Storage/mail | boto3 (SES only) | 1.43.118 | `App/requirements.txt`, `App/app/mail.py` |
-| Backups | Litestream | 0.5.17 | `deploy/lightsail/docker-compose.yml` |
+| Backups | `backup.sh` pg_dump, age, rclone | n/a | `deploy/lightsail/scripts/backup.sh` |
 | Proxy | Caddy | 2 (alpine, digest-pinned) | `deploy/lightsail/docker-compose.yml` |
 | Monitoring | Grafana Alloy, node-exporter, cAdvisor | v1.10.1 / v1.9.1 / v0.55.1 | `deploy/lightsail/docker-compose.yml` |
 | Migrations | Custom SQL runner (not Alembic) | — | `App/app/db.py:1124-1260`, `App/app/migrations/` |
@@ -86,7 +86,7 @@ Versions from `App/requirements.txt` and `App/requirements.lock`:
 ├── docker-entrypoint.sh                start-up guard, then exec "$@"
 ├── render.yaml / render_start.sh       Render staging blueprint (rootDir App)
 ├── requirements.txt                    Render entry; includes App/requirements.txt
-├── deploy/lightsail/                   production compose, Caddy, Litestream, scripts
+├── deploy/lightsail/                   production compose, Caddy, scripts
 ├── .github/workflows/                  CI, deploy, backup restore drill, security
 ├── scripts/                            repo-level tools (context lint, merge helper)
 ├── docs/                               documentation (see index below)

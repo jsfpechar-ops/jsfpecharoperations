@@ -1967,7 +1967,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       var vw = document.documentElement.clientWidth;
       var vh = window.innerHeight;
       var wide = vw >= 1024;
-      var width = Math.min(wide ? 320 : 360, vw - 2 * margin);
+      var width = vw < 600 ? Math.min(360, vw - 2 * margin) : Math.min(320, vw - 2 * margin); /* 1003 fix: 390 px phone gets 358 px, lint needs >= 356 */
       body.style.width = width + "px";
       body.style.maxWidth = width + "px";
       if (!wide) {
@@ -2072,6 +2072,94 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         if (helpTipState.current && !helpTipState.current.contains(e.target)) close(helpTipState.current);
       });
       function reflow() { if (helpTipState.current) place(helpTipState.current); }
+      window.addEventListener("resize", reflow);
+      window.addEventListener("scroll", reflow, { capture: true, passive: true });
+    }
+  }
+
+  /* 1003: the page "?" (details.page-help). Mouse: hover or keyboard focus opens it under the dot (above if no room),
+     leaving closes after 150 ms, click pins it. Touch: tap toggles, tap outside closes. Esc closes. No JS: native details. */
+  var pageHelpState = { current: null, timer: null };
+  function initPageHelp() {
+    var items = Array.prototype.slice.call(document.querySelectorAll("details.page-help"));
+    if (!items.length) return;
+    var hoverOk = window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)");
+    function place(d) {
+      var body = d.querySelector(".page-help-body");
+      var wrap = d.closest(".page-help-wrap") || d;
+      if (!body || !d.open) return;
+      var m = 8;
+      var vw = document.documentElement.clientWidth;
+      var vh = window.innerHeight;
+      var w = Math.min(320, vw - 2 * m);
+      body.style.position = "absolute"; /* CSS: .page-help-wrap is the containing block, so the box moves with its ? */
+      body.style.width = w + "px";
+      body.style.maxWidth = w + "px";
+      body.style.right = "auto";
+      body.style.margin = "0";
+      body.style.transform = "none";
+      body.style.top = "calc(100% + 8px)";
+      body.style.left = "0px";
+      var wr = wrap.getBoundingClientRect();
+      var h = body.offsetHeight;
+      body.style.left = Math.max(m - wr.left, Math.min(0, vw - m - w - wr.left)) + "px"; /* keep inside the viewport */
+      if (wr.bottom + 8 + h > vh - m && wr.top - 8 - h >= m) body.style.top = (-(h + 8)) + "px"; /* flip above if no room below */
+    }
+    function close(d) {
+      d.open = false;
+      d.removeAttribute("data-pinned");
+      if (pageHelpState.current === d) pageHelpState.current = null;
+    }
+    function show(d, pinned) {
+      if (pageHelpState.current && pageHelpState.current !== d) close(pageHelpState.current);
+      window.clearTimeout(pageHelpState.timer);
+      pageHelpState.current = d;
+      d.open = true;
+      if (pinned) d.setAttribute("data-pinned", "1");
+      place(d);
+    }
+    function closeSoon(d) {
+      window.clearTimeout(pageHelpState.timer);
+      pageHelpState.timer = window.setTimeout(function () {
+        if (!d.hasAttribute("data-pinned") && !d.contains(document.activeElement)) close(d);
+      }, 150);
+    }
+    items.forEach(function (d) {
+      if (!claimNode(d, "initPageHelp")) return;
+      var summary = d.querySelector("summary");
+      d.addEventListener("toggle", function () { if (d.open) place(d); });
+      if (summary) {
+        summary.addEventListener("click", function (e) {
+          e.preventDefault(); /* we own open/close, so hover and click never fight over the native toggle */
+          if (d.open && d.hasAttribute("data-pinned")) close(d);
+          else show(d, true);
+        });
+        summary.addEventListener("focus", function () {
+          if (hoverOk && hoverOk.matches && summary.matches(":focus-visible")) show(d, false);
+        });
+      }
+      d.addEventListener("pointerenter", function (e) {
+        if (e.pointerType === "mouse" && hoverOk && hoverOk.matches) show(d, false);
+      });
+      d.addEventListener("pointerleave", function (e) {
+        if (e.pointerType === "mouse" && hoverOk && hoverOk.matches) closeSoon(d);
+      });
+      d.addEventListener("focusout", function (e) {
+        if (!d.contains(e.relatedTarget) && !d.hasAttribute("data-pinned")) close(d);
+      });
+    });
+    if (claimNode(document, "initPageHelp")) {
+      document.addEventListener("keydown", function (e) {
+        if (e.key !== "Escape" || !pageHelpState.current) return;
+        var d = pageHelpState.current;
+        close(d);
+        var s = d.querySelector("summary");
+        if (s) s.focus();
+      });
+      document.addEventListener("click", function (e) {
+        if (pageHelpState.current && !pageHelpState.current.contains(e.target)) close(pageHelpState.current);
+      });
+      function reflow() { if (pageHelpState.current) place(pageHelpState.current); }
       window.addEventListener("resize", reflow);
       window.addEventListener("scroll", reflow, { capture: true, passive: true });
     }
@@ -2411,6 +2499,56 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     n.focus({ preventScroll: true });
   }
 
+  // 1024: a failed property save opens the section with the first error, scrolls to it and focuses it; a saved page keeps the banner in view.
+  function initSaveSummary() {
+    var s = document.querySelector("[data-save-summary]");
+    if (!s || !claimNode(s, "initSaveSummary")) return;
+    var id = s.getAttribute("data-first-error");
+    if (!id) {
+      s.scrollIntoView({ block: "nearest" });
+      return;
+    }
+    var t = document.getElementById(id);
+    if (!t) {
+      s.scrollIntoView({ block: "center" });
+      s.focus({ preventScroll: true });
+      return;
+    }
+    var sec = t.closest("details");
+    if (sec) sec.open = true;
+    t.scrollIntoView({ block: "center" });
+    t.focus({ preventScroll: true });
+  }
+
+  // 1024: in the editor the stay-fee boxes the app needs get a star and aria-required while the rate is above 0.
+  function initStayFeeStars() {
+    var rate = document.getElementById("stay_fee_rate_czk");
+    if (!rate || !document.getElementById("property-settings-form") || !document.getElementById("sec-fee")) return;
+    if (!claimNode(rate, "initStayFeeStars")) return;
+    function sync() {
+      var needed = parseFloat(rate.value) > 0;
+      ["stay_fee_vs", "stay_fee_council_account", "stay_fee_authority_name"].forEach(function (id) {
+        var input = document.getElementById(id);
+        var label = document.querySelector('label[for="' + id + '"]');
+        if (!input || !label) return;
+        input.setAttribute("aria-required", needed ? "true" : "false");
+        var star = label.querySelector(".req-star");
+        if (needed && !star) {
+          star = document.createElement("span");
+          star.className = "req-star";
+          star.setAttribute("aria-hidden", "true");
+          star.textContent = "*";
+          var tip = label.querySelector(".help-tip, button");
+          if (tip && tip.parentNode) tip.parentNode.insertBefore(star, tip);
+          else label.appendChild(star);
+        } else if (!needed && star) {
+          star.remove();
+        }
+      });
+    }
+    rate.addEventListener("input", sync);
+  }
+
   // 0971: one dismiss control on every inline success notice (success_notice macro, section notice, cleaning notice).
   function initSuccessNotices() {
     if (!document.body.classList.contains("host-workspace")) return;
@@ -2451,8 +2589,11 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     initUnsavedForms();
     initUnsavedDialog();
     initSectionNotice();
+    initSaveSummary();
+    initStayFeeStars();
     initSuccessNotices();
     initHelpTips();
+    initPageHelp();
     initBirthDateInputs();
     initRowMenus();
     initClickableRows();
