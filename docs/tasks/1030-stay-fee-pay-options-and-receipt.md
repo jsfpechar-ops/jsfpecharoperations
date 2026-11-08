@@ -1,6 +1,6 @@
 # 1030: Stay-fee pay box shows all options; receipt mail shows what is due
 
-Status: ready. Executor: Haiku 5.5. Branch: the current branch, do not push.
+Status: review. Executor: Haiku 5.5. Branch: the current branch, do not push.
 Do NOT touch the stay-fee preview/recalculation code (another thread owns it): `stay_fee.py`, `_fee_estimate.html`, `signature.js`, `_fee_obec_rule`, `_fee_typed_guest`, `_fee_liable_days`.
 
 ## Why
