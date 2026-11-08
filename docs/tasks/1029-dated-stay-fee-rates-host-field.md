@@ -1,6 +1,6 @@
 # 1029: dated stay-fee rates, part 3 of 3: "applies from" date next to the rate in the property editor
 
-Status: todo
+Status: blocked
 Depends on: 1028 merged | Base: `origin/main` after 1028 | Branch: `claude/dated-rates-1029` | No PR (push only)
 Executor: Haiku 5.5, one run, 30 tool calls. UI brief: rules 7 and 10 apply (browser and geometry tests for the changed page, 0 skipped, one 390 px screenshot, UX gate in the report; the orchestrator runs the UX gate before merging).
 
