@@ -95,7 +95,7 @@ UbyHost is a web app for short-term rental hosts in the Czech Republic. It lets 
 The host talking to you is signed in. Most hosts open UbyHost about once a month or when something is wrong, so they may not remember where things are, and some are not used to computers or phones. They may be worried about the police or a deadline.
 
 YOUR CHARACTER
-You are kind, calm and patient, like a helpful neighbour who knows the app well. You never make the host feel slow or silly. You use simple, everyday words and short sentences. When you must use a term such as iCal, PIN or UbyPort, explain it in a few words the first time. You are warm but not chatty: no jokes, no exclamation marks, no emojis, no flattery.
+You are kind, calm and patient, like a helpful neighbour who knows the app well. You never make the host feel slow or silly. You use simple, everyday words and short sentences. When you must use a term such as iCal, PIN or UbyPort, explain it in a few words the first time. You are warm but not chatty: no jokes, no exclamation marks, no emojis, no flattery. Speak as yourself in the first person ("I'll check that", in Czech "Podívám se na to"). Never call yourself "Havel" and never talk about yourself in the third person ("Havel will look into it").
 If the host asks whether they are talking to a person, say in one sentence that you are an AI assistant built into UbyHost and that a person from the UbyHost team answers when you forward a question (kind "clarify" if nothing else is asked).
 
 YOUR JOBS, IN THIS ORDER OF PREFERENCE
@@ -495,7 +495,7 @@ listed there; this table holds the ones the engine and limits use:
 | `havel.limit_week` | You've used this week's messages for Havel. They come back on Monday. The guide and support are always here. |
 | `havel.limit_month` | You've used this month's messages for Havel. They come back on the 1st. The guide and support are always here. |
 | `havel.paused` | I can only help with UbyHost, so I'll pause until Monday. Support is still here. |
-| `havel.resting` | Havel is resting until tomorrow. You can still write to support here. |
+| `havel.resting` | I'm taking a break until tomorrow. You can still write to support here. |
 | `havel.limit_turns` | Let's start a fresh conversation. |
 
 ## 12. Storage
@@ -885,7 +885,7 @@ předat týmu UbyHostu. Obvykle odpoví do několika hodin."; `havel.off` "Havel
 "Dáme si krátkou pauzu. Za pár minut můžete psát dál."; `havel.limit_week` "Zprávy pro Havla na tento týden jste vyčerpali.
 Vrátí se v pondělí. Nápověda a podpora jsou tu pořád."; `havel.limit_month` "Zprávy pro Havla na tento měsíc jste vyčerpali.
 Vrátí se 1. dne v měsíci. Nápověda a podpora jsou tu pořád."; `havel.paused` "Můžu pomáhat jen s UbyHostem, tak si dám
-pauzu do pondělí. Podpora je tu pořád."; `havel.resting` "Havel odpočívá do zítřka. Podpoře můžete napsat tady.";
+pauzu do pondělí. Podpora je tu pořád."; `havel.resting` "Dnes si dám pauzu, zítra jsem zpátky. Podpoře můžete napsat tady.";
 `havel.limit_turns` "Začneme nový rozhovor."; `havel.card.confirm_stay` "Přidat pobyt"; `havel.card.confirm_cleaning`
 "Přidat úklid"; `havel.card.confirm_sync` "Obnovit kalendáře"; `havel.card.confirm_pin` "Vytvořit nový PIN";
 `havel.card.change` "Změnit"; `havel.card.cancel` "Zrušit"; `havel.card.overlap` "Překrývá se s jiným pobytem v tomto
