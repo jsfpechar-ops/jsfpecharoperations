@@ -23,14 +23,20 @@ def flat(rate: Any) -> Schedule:
 
 def schedule_for(apartment: Any, today: Optional[date] = None) -> Schedule:
     """The apartment's rate schedule, sorted by effective date."""
+    column = int(apartment["stay_fee_rate_czk"] or 0)
+    try:
+        apartment_id = apartment["id"]
+    except (KeyError, IndexError):
+        apartment_id = None
+    if apartment_id is None:
+        return flat(column)  # not saved yet: no history can exist
     rows = db.query(
         "SELECT effective_from, rate_czk FROM stay_fee_rate "
         "WHERE apartment_id = ? ORDER BY effective_from",
-        (apartment["id"],),
+        (apartment_id,),
     )
-    column = int(apartment["stay_fee_rate_czk"] or 0)
     if not rows:
-        return [(date.min, column)]
+        return flat(column)
     schedule: Schedule = [
         (date.fromisoformat(row["effective_from"]), int(row["rate_czk"])) for row in rows
     ]
