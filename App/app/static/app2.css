@@ -3041,7 +3041,7 @@ body.v2 .form.prop-form-single .savebar[data-for="property-settings-form"]{order
 @media (min-width:1024px){body.v2 .prop-strip{max-width:776px;margin-left:auto;margin-right:auto}}
 body.v2 .pv:has(>a[data-leon-card]){max-width:inherit;width:100%;box-sizing:border-box;margin-inline:0;font-size:14px}
 body.v2 .pv:has(>a[data-leon-card]) .r,body.v2 .pv:has(>a[data-leon-card]) .r small{font-size:14px}
-body.v2 .form.prop-form-single .ui-btn-secondary{background:#fff;border:1px solid var(--line);box-shadow:none;min-height:44px}
+body.v2 .form.prop-form-single .ui-btn-secondary{background:#fff;border:1px solid var(--line);box-shadow:none}
 body.v2 .form.prop-form-single details.prop-sec,body.v2 .form.prop-form-single #sec-archive,body.v2 .prop-strip{width:100%;box-sizing:border-box}
 }
 /* 1013: phones, new billing blocks stay visible but plain (no tinted box, no card). */
