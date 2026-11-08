@@ -914,8 +914,9 @@ def _guest_lines(apartment, period):
             status_key = "stay_fees.status.exempt"
         else:
             status_key = "stay_fees.status.not_subject"
-        rate = period.get("rate_czk", 0)
-        amount = line.get("amount_czk", line.get("liable_nights", 0) * rate)
+        # 1031: the amount guest_period/property_period computed for this guest (per night
+        # rates across a rate change); no second flat-rate calculation here.
+        amount = line["amount_czk"]
         lines.append({
             **line,
             **facts.get(line["guest_id"], {"birth_display": "", "age_at_check_in": None, "nationality": ""}),
