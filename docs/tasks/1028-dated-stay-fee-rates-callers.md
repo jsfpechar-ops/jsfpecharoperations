@@ -1,6 +1,6 @@
 # 1028: dated stay-fee rates, part 2 of 3: call sites, save hook, guest estimate
 
-Status: ready
+Status: todo
 Depends on: 1027 merged | Base: `origin/main` after 1027 | Branch: `claude/dated-rates-1028` | No PR (push only)
 Executor: Haiku 5.5, one run, 30 tool calls. No template or CSS change in this brief (the host date field is 1029).
 
