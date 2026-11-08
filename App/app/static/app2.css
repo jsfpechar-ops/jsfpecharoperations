@@ -3035,3 +3035,10 @@ body.v2 .form.prop-form-single #sec-archive .prop-archive-actions .ui-btn-second
 body.v2 .form.prop-form-single .savebar[data-for="property-settings-form"]{order:100}
 @media (min-width:1024px){body.v2 .prop-strip{max-width:776px;margin-left:auto;margin-right:auto}}
 }
+/* 1013: phones, new billing blocks stay visible but plain (no tinted box, no card). */
+@media (max-width:767px){
+body.v2 .ui-upgrade-card,body.v2 .ui-upgrade-strip,body.v2 .ui-addon-row{display:grid;gap:8px;margin:0 0 12px}
+body.v2 .ui-upgrade-card .ui-upgrade-name,body.v2 .ui-upgrade-card .ui-upgrade-price,body.v2 .ui-upgrade-card .ui-sub{margin:0}
+body.v2 .ui-upgrade-card .ui-upgrade-price{font-weight:700}
+body.v2 .ui-upgrade-card .ui-btn,body.v2 .ui-upgrade-strip .ui-btn,body.v2 .ui-addon-row .ui-btn{width:100%;justify-content:center}
+}
