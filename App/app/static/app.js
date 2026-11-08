@@ -2558,10 +2558,12 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       if (!fix) return;
       var seen = {};
       var items = [];
+      var names = {};
       layout.querySelectorAll(".prop-sec-missing a[href^='#']").forEach(function (a) {
         var id = a.getAttribute("href").slice(1);
         if (!id || seen[id]) return;
         seen[id] = true;
+        names[id] = a.getAttribute("data-fix-label") || "";
         items.push(id);
       });
       fix.textContent = "";
@@ -2579,7 +2581,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         link.href = "#" + id;
         var text = label ? label.cloneNode(true) : null;
         if (text) text.querySelectorAll(".help-tip,.req-star").forEach(function (n) { n.remove(); });
-        link.textContent = (text ? text.textContent : id).replace(/\s+/g, " ").trim();
+        link.textContent = (names[id] || (text ? text.textContent : id)).replace(/\s+/g, " ").trim();
         link.addEventListener("click", function (e) {
           e.preventDefault();
           goTo(id);
@@ -2594,7 +2596,8 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         var hashEl = location.hash.length > 1 ? document.getElementById(location.hash.slice(1)) : null;
         var start = sectionFor(hashEl) || layout.querySelector("details.prop-sec[open]") || layout.querySelector("details.prop-sec");
         showSection(start);
-        if (start && location.hash !== "#" + start.id) history.replaceState(null, "", "#" + start.id);
+        // A load without a hash keeps the page at the top (a written hash made openTarget scroll past the title).
+        if (start && hashEl && location.hash !== "#" + start.id) history.replaceState(null, "", "#" + start.id);
       }
       fixLine();
     }
