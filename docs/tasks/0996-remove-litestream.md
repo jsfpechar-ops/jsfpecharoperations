@@ -1,7 +1,7 @@
 # 0996: Retire Litestream
 
-Status: todo
-Depends on: 0995 | Base commit: <fill from `git rev-parse --short HEAD` after 0995 is merged> | Branch: task/0996-remove-litestream
+Status: blocked
+Depends on: 0995 | Base commit: 661f5e5 | Branch: claude/eloquent-mendel-vd8mfi
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -157,7 +157,7 @@ Command: `bash -n deploy/lightsail/scripts/restore.sh && grep -ci litestream dep
 16. `test_wp32_container_sizing.py`. Read `grep -n -i litestream App/tests/test_wp32_container_sizing.py` (6 hits). Delete the line `    "litestream": "${UBYHOST_LITESTREAM_MEM:-256m}",`. Change `for name in ("ubyhost", "worker", "litestream", "caddy", "mock-ubyport"):` to `for name in ("ubyhost", "worker", "caddy", "mock-ubyport"):`. Delete the line `        "litestream": "256m",`, the line `        "UBYHOST_LITESTREAM_MEM": "128m",` and the line `        "litestream": "128m",`. In the tuple `for var in ("UBYHOST_WEB_MEM", "UBYHOST_WORKER_MEM", "UBYHOST_LITESTREAM_MEM", "UBYHOST_CADDY_MEM"):` remove `"UBYHOST_LITESTREAM_MEM", `. Read the three edited test bodies (about 60 lines) and check no dict is left with a trailing syntax error. Command: `cd App && .venv/bin/python -m pytest tests/test_wp32_container_sizing.py -q --tb=short -x 2>&1 | tail -30`. Expected: all passed, 0 skipped. If a test asserts a total that included 256m, STOP and report (section 8).
 
 17. `deploy/lightsail/README.md`. Run `grep -n -i litestream deploy/lightsail/README.md` (31 hits).
- a. Replace the sentence `Once Litestream replicates to S3, set **7**: Litestream plus S3 versioning` / `is the long-term copy, and 30 local full copies only fill the disk.` (item 3 of the backup list) with `Lower it (for example **7**) if 30 local full copies fill the disk; the S3 and Drive copies are the long-term ones.`
+ a. Nothing to change: brief 0995 already rewrote this sentence (README lines 44-45, `Production uses **7**: the daily S3 copy ...`). Check: `grep -n 'Once Litestream replicates' deploy/lightsail/README.md | tail -3` prints nothing.
  b. Delete the whole section from `## Litestream: continuous S3 replica (WP05)` up to, not including, `## Staging server (Step 0)`. This includes its replica restore steps and the closing paragraph that starts `If the replica is unusable, fall back to the newest age-encrypted snapshot`. In its place put exactly:
 ```
 ## Backups and recovery (Litestream retired 2026-11-07)
@@ -171,7 +171,7 @@ Litestream is gone. The app runs on PostgreSQL, so recovery is the age-encrypted
  Command: `grep -ci litestream deploy/lightsail/README.md | tail -30`. Expected: `2` (only the new heading and the sentence `Litestream is gone.`).
 
 18. `docs/LIGHTSAIL.md`. Run `grep -n -i litestream docs/LIGHTSAIL.md` (8 hits).
- a. Delete the table row starting `| Litestream → S3 | continuous (default 60 s sync)`. Replace it with `| `backup.sh` pg_dump on the S3 copy | daily (brief 0995) | see `backup-s3.sh` | off-site copy; Litestream was retired on 2026-11-07 |`.
+ a. Delete the table row starting `| Litestream → S3 (being retired, brief 0996;`. Replace it with `| `backup.sh` pg_dump on the S3 copy | daily (brief 0995) | see `backup-s3.sh` | off-site copy; Litestream was retired on 2026-11-07 |`.
  b. Rebuild step 5: replace the text from `5. Restore the database. **From Litestream (preferred, newest data):**` through the closing triple backtick of the following `docker compose run ... litestream restore ...` code block and the line `   Then go to step 7. **From a Drive copy instead:**` with `5. Restore the database from the newest dump (S3 or Drive copy): run `./scripts/pg-restore.sh <stamp>` as in the backup section. **For an old SQLite snapshot instead:**`. Keep the Drive-copy code block that follows unchanged.
  c. Delete the table row starting `| Litestream `mem_limit` | `UBYHOST_LITESTREAM_MEM``.
  d. In the row starting `| Local snapshots kept | `UBYHOST_BACKUP_RETENTION_DAYS`` replace `` `7` once Litestream replicates (default `30`) `` with `` `7` (default `30`) ``.

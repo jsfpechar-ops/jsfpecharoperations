@@ -66,3 +66,4 @@ Append-only.
 - [ui] 2026-11-06 [owner]: property page keeps main's header and tile grid; the setup progress card sits full width below the grid (0986).
 - [ui] 2026-11-06 [owner]: property page keeps main's header and tile grid; the setup progress card sits full width below the grid (0986).
 - 2026-11-06 [owner] lock connected but codes off shows main's "Turn on" row; "Connect my lock" only for first-time setup (0987).
+- 2026-11-07 | [backup] Litestream retired: it replicated only the stale SQLite file after the PostgreSQL cutover and pulled about 0.35 GB/hour from S3. Recovery is pg_dump in the encrypted snapshot (daily and pre-deploy), weekly Drive, daily S3. Old S3 replica kept as archive; owner deletes it after 30 days | owner | [0996](../tasks/0996-remove-litestream.md)

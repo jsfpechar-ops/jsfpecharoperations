@@ -63,17 +63,6 @@ rollback() {
   fi
 }
 
-# shellcheck disable=SC1091
-source "$(dirname "$0")/litestream_env.sh"
-if [ "${litestream_enabled}" = "1" ]; then
-  case ",${COMPOSE_PROFILES:-}," in
-    *,litestream,*) ;;
-    *)
-      export COMPOSE_PROFILES="${COMPOSE_PROFILES:+$COMPOSE_PROFILES,}litestream"
-      ;;
-  esac
-fi
-
 for var in UBYHOST_DOMAIN ACME_EMAIL UBYHOST_PUBLIC_BASE_URL; do
   if [ -z "${!var:-}" ]; then
     echo "Required variable ${var} is empty in .env" >&2

@@ -261,7 +261,7 @@ Passport photos are **not** in the DB backup. After restore, unverified uploads 
 
 | Layer | How often | Kept | Used for |
 |---|---|---|---|
-| Litestream → S3 (being retired, brief 0996; replicates the old SQLite file, not PostgreSQL) | continuous | 7 days | not a recovery path since the move to PostgreSQL |
+| `backup.sh` pg_dump on the S3 copy | daily (brief 0995) | see `backup-s3.sh` | off-site copy; Litestream was retired on 2026-11-07 |
 | `backup.sh` on the volume | daily 03:00 UTC | `UBYHOST_BACKUP_RETENTION_DAYS` (set `7` in production `.env`) | quick restore on the same server |
 | `backup-s3.sh` | daily 03:30 UTC | 30 days (bucket lifecycle rule) | main off-site copy, including a new instance |
 | `backup-gdrive.sh` | weekly | 30 days | second copy outside AWS |
@@ -282,16 +282,7 @@ Passport photos are **not** in the DB backup. After restore, unverified uploads 
 2. Copy `.env` (do not commit it) and `caddy/certs/origin*.pem` from the old host or a secrets store. **Before the first deploy**, set `UBYHOST_SECRET_KEY` in `.env` to the production key from the password manager: with it empty, `deploy.sh` generates a new key and the restored guest data and UBY-WS passwords cannot be decrypted.
 3. `./scripts/deploy.sh` once so volume `ubyhost-data` exists.
 4. `docker compose stop ubyhost`
-5. Restore the database. **From Litestream (preferred, newest data):** `.env` must have the `LITESTREAM_*` values and `COMPOSE_PROFILES=litestream`. Then:
-
-```bash
-docker compose stop worker litestream
-docker compose run --rm --no-deps -T --entrypoint sh litestream -c \
-  'rm -rf /data/ubyhost.db /data/ubyhost.db-wal /data/ubyhost.db-shm /data/.ubyhost.db-litestream &&
-   litestream restore -config /etc/litestream.yml -o /data/ubyhost.db "$LITESTREAM_DB_PATH"'
-```
-
-   Then go to step 7. **From a Drive copy instead:** place `ubyhost.db` and `secret_key` on the host and run:
+5. Restore the database from the newest dump (S3 or Drive copy): run `./scripts/pg-restore.sh <stamp>` as in the backup section. **For an old SQLite snapshot instead:** place `ubyhost.db` and `secret_key` on the host and run:
 
 ```bash
 docker run --rm -v ubyhost-data:/data -v "$PWD/restore-in":/backup alpine \
@@ -305,7 +296,7 @@ docker run --rm -v ubyhost-data:/data -v "$PWD/restore-in":/backup alpine \
 7. `./scripts/deploy.sh` then `./scripts/status.sh` and a login test.
 8. Point Cloudflare A record at the **new** static IP. Keep Full (strict).
 
-**Rebuild drill (once a quarter).** Run steps 1 to 7 on a throwaway instance, skip step 8, sign in through `curl --resolve` or a hosts-file entry, and note how long it took in [status](context/status.md). Delete the instance afterwards. The drill proves the replica, the `.env` copy and the password-manager key together; `restore_test.sh` only proves the replica.
+**Rebuild drill (once a quarter).** Run steps 1 to 7 on a throwaway instance, skip step 8, sign in through `curl --resolve` or a hosts-file entry, and note how long it took in [status](context/status.md). Delete the instance afterwards. The drill proves the dump, the `.env` copy and the password-manager key together.
 
 ## Scheduler
 
@@ -326,9 +317,9 @@ Production: Lightsail **8 GB RAM, 2 vCPUs, 160 GB SSD**. Every value is set in
 | Web workers (uvicorn) | `UBYHOST_WEB_WORKERS` | `4` (image default `2`) | `2` |
 | Web `mem_limit` | `UBYHOST_WEB_MEM` | `2g` (default) | `896m` |
 | Worker `mem_limit` | `UBYHOST_WORKER_MEM` | `1g` (default) | `448m` |
-| Litestream `mem_limit` | `UBYHOST_LITESTREAM_MEM` | `256m` (default) | `128m` |
+
 | Caddy `mem_limit` | `UBYHOST_CADDY_MEM` | `256m` (default) | `128m` |
-| Local snapshots kept | `UBYHOST_BACKUP_RETENTION_DAYS` | `7` once Litestream replicates (default `30`) | `7` |
+| Local snapshots kept | `UBYHOST_BACKUP_RETENTION_DAYS` | `7` (default `30`) | `7` |
 
 - Four workers on two vCPUs: requests mostly wait on SQLite, UbyPort or mail,
   so two per core keeps the CPUs busy. SQLite still has one writer at a time.

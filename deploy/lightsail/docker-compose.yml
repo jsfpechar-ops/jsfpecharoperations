@@ -68,7 +68,7 @@ services:
       retries: 3
       start_period: 25s
     # WP32: sized for the 8 GB / 2 vCPU production server. Web 2g + worker 1g
-    # + litestream 256m + caddy 256m leaves over 4 GB for the OS, Docker and
+    # + caddy 256m leaves over 4 GB for the OS, Docker and
     # the page cache that serves SQLite reads. Each limit is a cap, not a
     # reservation; a smaller server (staging) sets lower values in .env.
     mem_limit: ${UBYHOST_WEB_MEM:-2g}
@@ -170,46 +170,6 @@ services:
     networks:
       - web
 
-  # WP05: continuous replication of the SQLite database to S3. Runs as the
-  # app's uid on the same volume, so it can read the database and write its
-  # .ubyhost.db-litestream metadata next to it. Only the variables it needs are
-  # passed in, not the whole .env (which holds the app's secret key).
-  litestream:
-    profiles: ["litestream"]
-    # Pinned by tag and digest (multi-arch index of litestream/litestream:0.5.17).
-    image: litestream/litestream:0.5.17@sha256:4b02b9859a6b6b4087d8b8944e15f7e984bd7957cba322bbeee38b0e27b9656a
-    restart: unless-stopped
-    user: "10001:10001"
-    command: ["replicate", "-config", "/etc/litestream.yml"]
-    # Litestream pushes the last WAL frames on SIGTERM (shutdown-sync-timeout 30s).
-    stop_grace_period: 40s
-    environment:
-      LITESTREAM_DB_PATH: ${UBYHOST_DB:-/data/ubyhost.db}
-      LITESTREAM_ACCESS_KEY_ID: ${LITESTREAM_ACCESS_KEY_ID:-}
-      LITESTREAM_SECRET_ACCESS_KEY: ${LITESTREAM_SECRET_ACCESS_KEY:-}
-      LITESTREAM_S3_BUCKET: ${LITESTREAM_S3_BUCKET:-}
-      LITESTREAM_S3_PATH: ${LITESTREAM_S3_PATH:-ubyhost/production}
-      LITESTREAM_S3_REGION: ${LITESTREAM_S3_REGION:-eu-central-1}
-      LITESTREAM_HEARTBEAT_URL: ${LITESTREAM_HEARTBEAT_URL:-}
-      LITESTREAM_SYNC_INTERVAL: ${LITESTREAM_SYNC_INTERVAL:-60s}
-      LITESTREAM_VALIDATION_INTERVAL: ${LITESTREAM_VALIDATION_INTERVAL:-168h}
-    volumes:
-      - ubyhost-data:/data
-      - ./litestream.yml:/etc/litestream.yml:ro
-    mem_limit: ${UBYHOST_LITESTREAM_MEM:-256m}
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "5"
-    # The app creates the database (and the volume with uid 10001 ownership)
-    # on first start; Litestream must not start before that.
-    depends_on:
-      ubyhost:
-        condition: service_healthy
-    networks:
-      - web
-
   # Step 0: the mock UbyPort for the staging server only. Started only when
   # .env sets COMPOSE_PROFILES=staging; production never runs it. The image
   # leaves mock_ubyport out (.dockerignore), so the code is mounted from the
@@ -270,16 +230,16 @@ services:
       - web
 
   # OBS-1 (brief 0425): observability stack, started only with
-  # COMPOSE_PROFILES=monitoring (combine: COMPOSE_PROFILES=litestream,monitoring).
+  # COMPOSE_PROFILES=monitoring.
   # Ships container logs to Grafana Cloud Loki and host/container metrics to
   # Prometheus — see docs/OBSERVABILITY.md.
   alloy:
     profiles: ["monitoring"]
-    # Pinned by digest (repo convention, like litestream/caddy).
+    # Pinned by digest (repo convention, like caddy).
     image: grafana/alloy:v1.10.1@sha256:582f5a5169cd67a2bdbf98777c1a6f596203f573cdef5c021749fd3279605768
     restart: unless-stopped
     command: ["run", "/etc/alloy/config.alloy", "--server.http.listen-addr=0.0.0.0:12345"]
-    # Same pattern as litestream: only the variables this service needs.
+    # Only the variables this service needs are passed in, not the whole .env.
     environment:
       GRAFANA_PROM_URL: ${GRAFANA_PROM_URL:-}
       GRAFANA_PROM_USER: ${GRAFANA_PROM_USER:-}
