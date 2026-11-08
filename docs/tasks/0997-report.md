@@ -1,6 +1,6 @@
 # 0997 report (executor)
 
-Status: blocked
+Status: done after 0997-fix-1 (asset-name test corrected)
 
 ## 1. Files changed (git diff --cached --stat)
 

@@ -1,6 +1,6 @@
 # 0996: Retire Litestream
 
-Status: blocked
+Status: review (lint cap fixed by orchestrator in a follow-up commit)
 Depends on: 0995 | Base commit: 661f5e5 | Branch: claude/eloquent-mendel-vd8mfi
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

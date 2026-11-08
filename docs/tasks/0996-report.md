@@ -1,6 +1,6 @@
 # 0996 report: Litestream retired (BLOCKED at acceptance)
 
-Status: blocked. Context lint fails, so nothing was pushed. Committed locally only.
+Status: review; decisions.md cap fixed by orchestrator, see git log
 
 ## 1. Files changed (`git diff --stat HEAD`)
 
