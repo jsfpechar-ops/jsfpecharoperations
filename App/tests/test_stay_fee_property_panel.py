@@ -42,7 +42,7 @@ def _form_data(**overrides):
         "addr_okres": "",
         "addr_obec": "Praha",
         "addr_obec_cast": "",
-        "addr_street": "",
+        "addr_street": "Synthetic",
         "addr_house_no": "12",
         "addr_orient_no": "",
         "addr_zip": "11000",
