@@ -2230,12 +2230,15 @@ def _fee_obec_rule(apartment) -> str:
     hides the estimate for a resident of the property's municipality while the guest types."""
     import json
     from .. import stay_fee
-    obec = stay_fee._obec_key(apartment["addr_obec"])
+    obec = stay_fee._obec_key(stay_fee.property_obec(apartment))
     if not obec:
         return ""
     return json.dumps({"obec": obec, "country": validation.CZECH_CODE,
-                       "bases": list(stay_fee.STATUTORY_DISTRICT_BASES),
-                       "aliases": stay_fee.OBEC_ALIASES})
+                       "bases": list(stay_fee.OBEC_SUFFIX_BASES),
+                       "aliases": stay_fee.OBEC_ALIASES,
+                       "prefixes": list(stay_fee.OFFICIAL_PREFIXES),
+                       "okres": list(stay_fee.OKRES_NOT_OBEC),
+                       "after": stay_fee.OBEC_AFTER_BASE})
 
 
 def _fee_typed_guest(reservation, values, guest=None):

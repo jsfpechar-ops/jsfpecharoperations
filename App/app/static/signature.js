@@ -422,10 +422,27 @@ function initSignature() {
         return plain.toUpperCase().replace(/\s+/g, " ").trim();
       }
       function key(text) {
-        var t = fold(text);
-        var m = /^(.+?)(?:\s+\d+|-.+)$/.exec(t);
-        if (m && rule.bases.indexOf(m[1].trim()) !== -1) t = m[1].trim();
-        return rule.aliases[t] || t;
+        // 1031: same steps as stay_fee._obec_key; the tables and the pattern come from the server.
+        var t = fold(text).replace(/\s*-\s*/g, "-");
+        var after = new RegExp("^(?:" + rule.after + ")");
+        function base(s) {
+          for (var i = 0; i < rule.bases.length; i++) {
+            var b = rule.bases[i];
+            if (s.indexOf(b) === 0 && after.test(s.slice(b.length))) return b;
+          }
+          return null;
+        }
+        for (var p = 0; p < rule.prefixes.length; p++) {
+          var rest = t.slice(rule.prefixes[p].length).trim();
+          if (t.indexOf(rule.prefixes[p]) === 0 && base(rest)) { t = rest; break; }
+        }
+        for (var k = 0; k < rule.okres.length; k++) {
+          var n = rule.okres[k];
+          if (t.indexOf(n) === 0 && !/[A-Z]/.test(t.charAt(n.length))) return t;
+        }
+        var found = base(t);
+        if (found) t = found;
+        return Object.prototype.hasOwnProperty.call(rule.aliases, t) ? rule.aliases[t] : t;
       }
       var country = document.getElementById("res_country");
       var city = document.getElementById("res_city");
