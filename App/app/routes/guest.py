@@ -31,7 +31,6 @@ from .. import ruian as ruian_lookup  # 0911: guest RUIAN suggestions
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
 from .admin_helpers import kept_signature as _kept_signature
-from .admin_helpers import stay_dates_from_form as _stay_dates_from_form
 
 router = APIRouter(dependencies=[Depends(security.protect_guest_post)])
 
@@ -1710,6 +1709,14 @@ def guest_form_edit(token: str, reservation_id: int, guest_id: int, request: Req
     )
 
 
+def _locked_stay_dates(reservation, existing):
+    """1026: guest-submitted stay dates are locked. The posted stay_from/stay_to are
+    ignored: the stored stay (host or earlier save) or else the booking's own dates."""
+    if existing is not None and existing["stay_from"] and existing["stay_to"]:
+        return existing["stay_from"], existing["stay_to"]
+    return reservation["date_from"], reservation["date_to"]
+
+
 @router.post("/l/{token}/{reservation_id}/relang")
 async def guest_form_relang(token: str, reservation_id: int, request: Request):
     """0979: draw the open form again in another language, keeping the answers.
@@ -1753,9 +1760,7 @@ async def guest_form_relang(token: str, reservation_id: int, request: Request):
 
     raw = _guest_form_raw(form, apartment)
     values = validation.normalise_guest(raw, clamp=False)
-    stay_from, stay_to = _stay_dates_from_form(
-        form, (reservation["date_from"], reservation["date_to"])
-    )
+    stay_from, stay_to = _locked_stay_dates(reservation, existing)
     context = _form_context(
         request,
         apartment,
@@ -1843,9 +1848,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     # Un-clamped so an over-long name is reported back to the guest instead of
     # being cut mid-word and filed against a passport it no longer matches.
     values = validation.normalise_guest(raw, clamp=False)
-    stay_from, stay_to = _stay_dates_from_form(
-        form, (reservation["date_from"], reservation["date_to"])
-    )
+    stay_from, stay_to = _locked_stay_dates(reservation, existing)
     signature = _kept_signature(form.get("signature"), existing["signature_png"] if existing else None)
 
     party_raw = (form.get("party_size") or "").strip()
