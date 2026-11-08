@@ -455,6 +455,15 @@ def _rate_segments(period: Dict[str, Any]) -> List[List[int]]:
             nights[rate] = nights.get(rate, 0) + count
     base = int(period["rate_czk"])
     nights[base] = nights.get(base, 0) + period["adjustment_bed_days"]
+    # A removal larger than the last-day-rate nights takes the rest off the
+    # other rates, highest first (liable_nights is clamped at 0, so it fits).
+    deficit = -nights[base] if nights[base] < 0 else 0
+    if deficit:
+        nights[base] = 0
+        for rate in sorted(nights, reverse=True):
+            take = min(deficit, nights[rate])
+            nights[rate] -= take
+            deficit -= take
     return sorted([r, n] for r, n in nights.items() if n > 0) or [[base, 0]]
 
 
@@ -471,9 +480,10 @@ def _apply_adjustments(period: Dict[str, Any], month: date) -> Dict[str, Any]:
     period["adjustment_bed_days"] = liable - guest_nights
     period["adjustments"] = rows
     period["liable_nights"] = liable
-    guest_amount = sum(line["amount_czk"] for line in period["lines"])
-    period["total_czk"] = guest_amount + period["adjustment_bed_days"] * period["rate_czk"]
     period["rate_segments"] = _rate_segments(period)
+    # Sum of the segments: guest nights at their own rates plus bed-days at the
+    # last-day rate. With one rate this is liable * rate, as before.
+    period["total_czk"] = sum(rate * nights for rate, nights in period["rate_segments"])
     period["period_key"] = key
     return period
 
@@ -642,14 +652,17 @@ def hlaseni(group, issued_on: date) -> Dict[str, Any]:
         # adjustment (bed-days added or removed without naming guests) is part
         # of that number, not a line of its own: the office receives what is
         # due, and the adjustment history stays in UbyHost (owner, 2026-10-06).
-        liable = period["liable_nights"]
-        rows.append({
-            "property_name": period["apartment"]["internal_name"],
-            "property_address": property_address(period["apartment"]),
-            "liable_nights": liable,
-            "rate_czk": period["rate_czk"],
-            "amount_czk": liable * period["rate_czk"],
-        })
+        # A period that spans a rate change gets one row per rate (1027), so
+        # nights x rate == amount holds on every row. Pairs are [rate, nights].
+        segments = period.get("rate_segments") or [[period["rate_czk"], period["liable_nights"]]]
+        for rate, nights in segments:
+            rows.append({
+                "property_name": period["apartment"]["internal_name"],
+                "property_address": property_address(period["apartment"]),
+                "liable_nights": nights,
+                "rate_czk": rate,
+                "amount_czk": nights * rate,
+            })
         for line in period["lines"]:
             if line["exempt_nights"]:
                 # A guest who turns 18 inside the period is "liable" overall
