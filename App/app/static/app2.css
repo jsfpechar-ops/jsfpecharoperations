@@ -3031,7 +3031,10 @@ body.v2 .form.prop-form-single details.prop-sec .property-section-title{margin:0
 body.v2 .form.prop-form-single details.prop-sec .field{margin:0 0 16px}
 body.v2 .form.prop-form-single details.prop-sec .field:last-child{margin-bottom:0}
 body.v2 .form.prop-form-single details.prop-sec .ui-details-box{margin:12px 0 0}
-body.v2 .form.prop-form-single details.prop-sec label{font-size:14px;font-weight:600;line-height:1.3;margin:0 0 6px}
+/* 1014c: 12 px from every label to its input (geometry test 0830); 16 px between fields. */
+body.v2 .form.prop-form-single details.prop-sec label{font-size:14px;font-weight:600;line-height:1.3;margin:0 0 12px}
+body.v2 .form.prop-form-single details.prop-sec .field-label-row{margin:0 0 12px}
+body.v2 .form.prop-form-single details.prop-sec .field-label-row > label,body.v2 .form.prop-form-single details.prop-sec label:has(> input:is([type=checkbox],[type=radio])){margin-bottom:0}
 body.v2 .form.prop-form-single details.prop-sec :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select,textarea){margin:0}
 /* 1014b: one 16 px rhythm. The section and two-column grids own the gap; fields and the business link add no margin of their own. */
 body.v2 .form.prop-form-single details.prop-sec .property-section .grid{row-gap:16px}
