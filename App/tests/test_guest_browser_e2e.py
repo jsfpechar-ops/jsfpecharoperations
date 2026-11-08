@@ -1453,3 +1453,134 @@ def test_0965_shortened_save_action_exists_in_all_six_guest_languages():
         assert label and label != previous, lang
         assert len(label) <= 26, (lang, label)
     assert len({i18n.STRINGS[lang]["save_continue_next"] for lang in old}) == 6
+
+# --- 1031: the Check box follows every edit (minor, same town, other town) -----------------
+
+SHOTS_1031 = Path("/mnt/project-files/ux-shots/stayfee-sametown")
+_ADULT_1031, _MINOR_1031 = "15062001", "15062010"
+
+
+def _open_1031(live_server, browser, monkeypatch, token, addr_obec, city, city_en=None):
+    """A Czech guest on the Check step (signature step, signed), property in ``addr_obec``."""
+    from app import config
+
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    monkeypatch.setattr(config, "GUEST_PIN_REQUIRED", False)
+    monkeypatch.setattr(mail, "mail_enabled", lambda: False)
+    stay = _fee_seed(token, signed=False)
+    row = db.query_one("SELECT apartment_id FROM reservation WHERE id = ?", (stay,))
+    db.update("apartment", row["apartment_id"], {"addr_obec": addr_obec, "city_en": city_en})
+    page = browser.new_page(viewport={"width": 390, "height": 812})
+    guest = Guest(page, 390, "en")
+    page.goto(f"{live_server}/l/{token}/{stay}/new?lang=en")
+    page.fill("#first_name", "Test")
+    page.fill("#surname", "Sametown")
+    page.click("#birth_date")
+    page.keyboard.type(_ADULT_1031)
+    guest.pick_country("nationality", "CZE")
+    page.fill("#doc_number", "123456789")
+    guest.next()
+    page.fill("#res_street", "Testovaci 1")
+    page.fill("#res_city", city)
+    if page.input_value("#res_country") != "CZE":
+        guest.pick_country("res_country", "CZE")
+    guest.next()
+    assert guest.step() == i18n.translator("en")("signature")
+    guest.sign()
+    return page, guest, stay
+
+
+def _box_1031(page):
+    """[hidden, amount text, data-fee-live, data-obec-rule] of the Check box."""
+    page.wait_for_timeout(300)
+    return page.evaluate("""() => {
+        const b = document.getElementById('fee-estimate');
+        if (!b) return [true, '', null, null];
+        return [b.hidden, b.querySelector('.g-fee-amt').textContent.trim(),
+                b.getAttribute('data-fee-live'), b.getAttribute('data-obec-rule')];
+    }""")
+
+
+def _change_1031(page, guest, row, field, value):
+    """Change on Check row ``row`` (1 = birth date, 4 = home address), type, go back to Check."""
+    sign = i18n.translator("en")("signature")
+    page.locator(".g-review-change").nth(row).scroll_into_view_if_needed()
+    page.locator(".g-review-change").nth(row).click()
+    page.wait_for_timeout(900)
+    page.fill(field, "")
+    if field == "#birth_date":
+        page.click(field)
+        page.keyboard.type(value)
+    else:
+        page.fill(field, value)
+    while guest.step() != sign:
+        guest.next()
+
+
+def test_1031_check_box_follows_every_change(live_server, browser, monkeypatch):
+    """Owner's case: Prague flat, 3 nights x 50. Same town -> hidden; other town -> 150;
+    minor -> hidden; every Change re-counts. Saved charge = last box."""
+    from app import stay_fee
+
+    token = f"browser-1031-{secrets.token_hex(4)}"
+    page, guest, stay = _open_1031(live_server, browser, monkeypatch, token, "Praha", "Prague")
+    try:
+        steps = [
+            (None, None, None, True),                      # adult, Prague: same town
+            (4, "#res_city", "Brno", False),               # adult, other town: 150
+            (1, "#birth_date", _MINOR_1031, True),         # minor, Brno
+            (1, "#birth_date", _ADULT_1031, False),        # adult again, Brno: 150
+            (4, "#res_city", "Praha 3 - Žižkov", True),    # district form of the same town
+            (4, "#res_city", "Brno", False),
+            (4, "#res_city", "Prague", True),              # back to the owner's case
+        ]
+        for row, field, value, want_hidden in steps:
+            if row is not None:
+                _change_1031(page, guest, row, field, value)
+            hidden, amount, live, rule = _box_1031(page)
+            seen = (row, value, hidden, amount, live, rule)
+            assert hidden == want_hidden, seen
+            if not want_hidden:
+                assert amount == "150 CZK", seen
+            if value == "Brno" and row == 4:
+                SHOTS_1031.mkdir(parents=True, exist_ok=True)
+                page.screenshot(path=str(SHOTS_1031 / "check-othertown-390.png"), full_page=True)
+        SHOTS_1031.mkdir(parents=True, exist_ok=True)
+        page.screenshot(path=str(SHOTS_1031 / "check-sametown-390.png"), full_page=True)
+        # Save with the last values (adult, Prague) and check the stored charge equals the box: 0.
+        page.check("#legal_ack")
+        page.locator("form[action*='/save'] button[type=submit]").last.click()
+        page.wait_for_load_state("networkidle")
+        res = db.query_one("SELECT * FROM reservation WHERE id = ?", (stay,))
+        apt = db.query_one("SELECT * FROM apartment WHERE id = ?", (res["apartment_id"],))
+        assert db.query_one("SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ?", (stay,))["n"] == 1
+        assert stay_fee.charge_for_reservation(apt, res)["total_czk"] == 0
+    finally:
+        page.close()
+    row = db.query_one("SELECT * FROM reservation WHERE id = ?", (stay,))
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (row["apartment_id"],))
+    assert stay_fee.same_obec_resident({"res_country": "CZE", "res_city": "Prague"}, apartment)
+
+
+def test_1031_official_name_and_district_form_hide_the_box(live_server, browser, monkeypatch):
+    token = f"browser-1031b-{secrets.token_hex(4)}"
+    page, _guest, _stay = _open_1031(live_server, browser, monkeypatch, token,
+                                     "Hlavní město Praha", "Praha 1 - Staré Město")
+    try:
+        assert _box_1031(page)[0] is True, _box_1031(page)
+    finally:
+        page.close()
+
+
+def test_1031_unknown_property_town_shows_the_amount_and_says_why(live_server, browser, monkeypatch):
+    token = f"browser-1031c-{secrets.token_hex(4)}"
+    page, _guest, _stay = _open_1031(live_server, browser, monkeypatch, token, "", "Prague", city_en=None)
+    try:
+        hidden, amount, _live, rule = _box_1031(page)
+        assert (hidden, amount, rule) == (False, "150 CZK", None)
+        assert page.locator("#fee-obec-unknown").count() == 1
+        page.locator("#fee-estimate").scroll_into_view_if_needed()
+        SHOTS_1031.mkdir(parents=True, exist_ok=True)
+        page.screenshot(path=str(SHOTS_1031 / "check-unknown-town-390.png"), full_page=True)
+    finally:
+        page.close()
