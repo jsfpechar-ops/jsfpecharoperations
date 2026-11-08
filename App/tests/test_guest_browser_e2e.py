@@ -1545,8 +1545,40 @@ def test_1031_check_box_follows_every_change(live_server, browser, monkeypatch):
                 page.screenshot(path=str(SHOTS_1031 / "check-othertown-390.png"), full_page=True)
         SHOTS_1031.mkdir(parents=True, exist_ok=True)
         page.screenshot(path=str(SHOTS_1031 / "check-sametown-390.png"), full_page=True)
+        # Save with the last values (adult, Prague) and check the stored charge equals the box: 0.
+        page.check("#legal_ack")
+        page.locator("form[action*='/save'] button[type=submit]").last.click()
+        page.wait_for_load_state("networkidle")
+        res = db.query_one("SELECT * FROM reservation WHERE id = ?", (stay,))
+        apt = db.query_one("SELECT * FROM apartment WHERE id = ?", (res["apartment_id"],))
+        assert db.query_one("SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ?", (stay,))["n"] == 1
+        assert stay_fee.charge_for_reservation(apt, res)["total_czk"] == 0
     finally:
         page.close()
     row = db.query_one("SELECT * FROM reservation WHERE id = ?", (stay,))
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (row["apartment_id"],))
     assert stay_fee.same_obec_resident({"res_country": "CZE", "res_city": "Prague"}, apartment)
+
+
+def test_1031_official_name_and_district_form_hide_the_box(live_server, browser, monkeypatch):
+    token = f"browser-1031b-{secrets.token_hex(4)}"
+    page, _guest, _stay = _open_1031(live_server, browser, monkeypatch, token,
+                                     "Hlavní město Praha", "Praha 1 - Staré Město")
+    try:
+        assert _box_1031(page)[0] is True, _box_1031(page)
+    finally:
+        page.close()
+
+
+def test_1031_unknown_property_town_shows_the_amount_and_says_why(live_server, browser, monkeypatch):
+    token = f"browser-1031c-{secrets.token_hex(4)}"
+    page, _guest, _stay = _open_1031(live_server, browser, monkeypatch, token, "", "Prague", city_en=None)
+    try:
+        hidden, amount, _live, rule = _box_1031(page)
+        assert (hidden, amount, rule) == (False, "150 CZK", None)
+        assert page.locator("#fee-obec-unknown").count() == 1
+        page.locator("#fee-estimate").scroll_into_view_if_needed()
+        SHOTS_1031.mkdir(parents=True, exist_ok=True)
+        page.screenshot(path=str(SHOTS_1031 / "check-unknown-town-390.png"), full_page=True)
+    finally:
+        page.close()
