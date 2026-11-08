@@ -52,13 +52,12 @@ def test_onboarding_no_longer_counts_wizard_steps():
     assert property_step["url"] in ("/apartments/new", "/entities")
     apartment_id = _apartment(owner_id, "tokbanner01")
     progress = onboarding.progress(owner_id)
-    # wizard_step stays a readiness indicator; the banner names no step count.
+    # wizard_step stays a readiness indicator; the banner shows the step count.
     assert progress["wizard_step"] == "address"
     assert progress["wizard_total_steps"] == len(onboarding.WIZARD_STEPS)
     assert progress["setup_url"] == f"/apartments/{apartment_id}?view=settings&section=property#address"
-    for lang in ("en", "cs"):
-        line = host_i18n.translate(lang, "setup.banner.line", step=1, total=5)
-        assert "5" not in line and "1" not in line
+    assert host_i18n.translate("en", "setup.banner.line", step=1, total=5) == "Setup 1 of 5 · Continue"
+    assert host_i18n.translate("cs", "setup.banner.line", step=1, total=5) == "Nastavení 1 z 5 · Pokračovat"
 
 
 def test_wizard_step_progress_and_banner_target():

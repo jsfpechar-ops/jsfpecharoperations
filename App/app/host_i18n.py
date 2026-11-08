@@ -7961,7 +7961,7 @@ _PROPERTY_CREATE_0092_STRINGS = {
         "property_create.created_title": "Property created. What next?",
         "property_create.created_manual": "Add stay manually",
         "property_create.created_continue": "Continue to overview",
-        "setup.banner.line": "Continue setup",
+        "setup.banner.line": "Setup %(step)s of %(total)s · Continue",
     },
     "cs": {
         "property_create.title": "Přidat ubytování",
@@ -7985,7 +7985,7 @@ _PROPERTY_CREATE_0092_STRINGS = {
         "property_create.created_title": "Ubytování je vytvořené. Co dál?",
         "property_create.created_manual": "Přidat pobyt ručně",
         "property_create.created_continue": "Pokračovat na přehled",
-        "setup.banner.line": "Pokračovat v nastavení",
+        "setup.banner.line": "Nastavení %(step)s z %(total)s · Pokračovat",
     },
 }
 for _lang, _strings in _PROPERTY_CREATE_0092_STRINGS.items():
