@@ -12,11 +12,12 @@
 {%- set address_text = [((apartment.addr_street or '') ~ ' ' ~ (apartment.addr_house_no or '')) | trim, apartment.addr_obec or ''] | select | join(', ') -%}
 {%- set base_url = '/apartments/' ~ apartment.id -%}
 {%- set property_values = apartment -%}
-{% macro text_field(name, label, value, help='', optional=false, maxlength=none) %}
+{% macro text_field(name, label, value, help='', optional=false, maxlength=none, required=false) %}
   <div class="field">
-    {{ field_label(name, label, help, optional) }}
+    {{ field_label(name, label, help, optional, '', required) }}
     <input type="text" id="{{ name }}" name="{{ name }}" value="{{ value or '' }}"
            {%- if maxlength %} maxlength="{{ maxlength }}"{% endif %}
+           {%- if required %} aria-required="true"{% endif %}
            {%- if help %} aria-describedby="{{ name }}-help"{% endif %}>
   </div>
 {% endmacro %}
@@ -295,14 +296,14 @@
       <p class="ui-sub">{{ t('why.police') }}</p>
       <p class="ui-sub"><a href="{{ base_url }}?view=settings&amp;section=automation#automation">{{ t('automation.timing_title') }} </a></p>
       <div class="grid">
-        {{ text_field('uby_idub', 'IDUB', apartment.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14) }}
+        {{ text_field('uby_idub', 'IDUB', apartment.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14, required=true) }}
       </div>
       <div class="grid two">
-        {{ text_field('uby_ws_user', t('automation.login'), apartment.uby_ws_user, t('apartment.form.ubyport.login_hint')) }}
+        {{ text_field('uby_ws_user', t('automation.login'), apartment.uby_ws_user, t('apartment.form.ubyport.login_hint'), required=true) }}
         <div class="field">
-          {{ field_label('uby_ws_password', t('automation.password'), t('apartment.form.ubyport.password_help')) }}
+          {{ field_label('uby_ws_password', t('automation.password'), t('apartment.form.ubyport.password_help'), false, '', not has_password) }}
           <input type="password" id="uby_ws_password" name="uby_ws_password" autocomplete="new-password"
-                 {% if has_password %}placeholder="••••••••" {% endif %}aria-describedby="uby_ws_password-help uby_ws_password-hint">
+                 {% if has_password %}placeholder="••••••••" {% endif %}{% if not has_password %}aria-required="true" {% endif %}aria-describedby="uby_ws_password-help uby_ws_password-hint">
           <div class="hint" id="uby_ws_password-hint">
             {% if has_password %}
             {{ t('apartment.form.ubyport.password_edit_hint') }}
@@ -316,11 +317,11 @@
         <a href="https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/jake-jsou-moznosti-zasilani-dat-aplikaci-ubyport" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.no_credentials_link') }}</a></p>
       <div class="field-label-row"><h2 class="property-section-title">{{ t('property_page.police.facility') }}</h2></div>
       <div class="grid">
-        {{ text_field('uby_mark', t('apartment.form.ubyport.mark_label'), apartment.uby_mark, t('apartment.form.ubyport.mark_hint'), false, 6) }}
+        {{ text_field('uby_mark', t('apartment.form.ubyport.mark_label'), apartment.uby_mark, t('apartment.form.ubyport.mark_hint'), false, 6, required=true) }}
       </div>
       <div class="grid two">
         {%- set facility_help -%}{{ t('apartment.form.ubyport.name_hint') }} <span class="facility-example"><span class="facility-example-label">{{ t('apartment.form.ubyport.name_example') }}</span>Ubytovací zařízení: <mark>BYT Č. [2] FIKTVNÍ 1234/56 (PRAHA,</mark> PRAHA 2, FIKTVNÍ, 1234/56)</span>{%- endset %}
-        {{ text_field('uby_name', t('automation.facility_name'), apartment.uby_name, facility_help, false, 35) }}
+        {{ text_field('uby_name', t('automation.facility_name'), apartment.uby_name, facility_help, false, 35, required=true) }}
         {{ text_field('uby_contact', t('automation.contact'), apartment.uby_contact, t('apartment.form.ubyport.contact_hint'), true, 50) }}
       </div>
       <div class="actions">
