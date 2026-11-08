@@ -1851,6 +1851,9 @@ async def apartment_create(request: Request):
     password = _form_str(form, "uby_ws_password")
     payload["uby_ws_password_enc"] = db.encrypt_secret(password) if password else None
     apartment_id = db.insert("apartment", payload)
+    if "stay_fee_rate_czk" in payload:
+        # 1028: the first rate applies from the beginning (dated history row).
+        stay_fee_routes.record_rate_change(apartment_id, payload["stay_fee_rate_czk"], form, previous=0)
     guest_slug.ensure(db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,)))
     db.audit("apartment_created", f"id={apartment_id}")
     # 0096: a new property starts its guided setup at the calendar.
@@ -2936,6 +2939,10 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
             if _form_str(form, "lock_id"):
                 payload["lock_id"] = _form_str(form, "lock_id")
     db.update("apartment", apartment_id, payload)
+    if "stay_fee_rate_czk" in payload:
+        # 1028: a changed rate gets a dated row; earlier nights keep the old rate.
+        stay_fee_routes.record_rate_change(apartment_id, payload["stay_fee_rate_czk"], form,
+                                           previous=apartment["stay_fee_rate_czk"])
     if credentials_changed:
         alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
     if (payload.get("internal_name") or "") != (apartment["internal_name"] or ""):

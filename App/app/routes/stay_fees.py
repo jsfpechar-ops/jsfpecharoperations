@@ -23,6 +23,7 @@ from .. import (
     stay_fee_adjustment,
     stay_fee_auto,
     stay_fee_filing,
+    stay_fee_rate,
     validation,
 )
 from ..templating import render, templates
@@ -305,6 +306,26 @@ def guest_pay_values(form) -> dict:
     if "stay_fee_guest_operator_account" in form:
         values[GUEST_OPERATOR_ACCOUNT_RAW] = _form_str(form, "stay_fee_guest_operator_account")
     return values
+
+
+def record_rate_change(apartment_id: int, new_rate, form, *, previous=None) -> None:
+    """Store a dated rate row after a save that wrote stay_fee_rate_czk (1028).
+
+    ``stay_fee_rate_from`` (ISO date) picks the first night of the new rate;
+    empty, invalid or in the past means today: a rate never applies backwards.
+    ``previous`` is the column before the save, kept for the earlier nights.
+    An unchanged rate writes nothing.
+    """
+    today = claim.prague_today()
+    new_rate = int(new_rate or 0)
+    if previous is not None and int(previous or 0) == new_rate:
+        return
+    try:
+        effective_from = date.fromisoformat(_form_str(form, "stay_fee_rate_from"))
+    except ValueError:
+        effective_from = today
+    stay_fee_rate.record(apartment_id, new_rate, max(effective_from, today),
+                         previous=previous, today=today)
 
 
 def fee_form_values(form) -> dict:

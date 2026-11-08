@@ -99,6 +99,8 @@ def record(apartment_id: int, rate: int, effective_from: date,
     if not schedule:
         base = int(apartment["stay_fee_rate_czk"] or 0) if previous is None else int(previous)
         base = base if base > 0 else int(rate)
+        if base <= 0:
+            return False  # no fee set up and none being set: nothing to date
         db.execute(
             "INSERT INTO stay_fee_rate (apartment_id, rate_czk, effective_from, created_at) "
             "VALUES (?, ?, ?, ?)",
