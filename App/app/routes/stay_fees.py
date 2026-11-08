@@ -777,7 +777,7 @@ def stay_fee_detail(apartment_id: int, request: Request):
             stay_fee_filing.period_anchor(sealed),
             live_only=True,
             cadence=sealed["cadence"],
-            rate=sealed["rate_czk"],
+            rate=stay_fee_filing.correction_rate(apartment, sealed),
         )
     else:
         period = stay_fee.property_period(apartment, selected_month, live_only=correcting)
@@ -1027,7 +1027,8 @@ async def stay_fee_adjustment_add(apartment_id: int, request: Request):
         cadence = sealed["cadence"]
         calc_month = stay_fee_filing.period_anchor(sealed)
         period = stay_fee.property_period(
-            apartment, calc_month, live_only=True, cadence=cadence, rate=sealed["rate_czk"],
+            apartment, calc_month, live_only=True, cadence=cadence,
+            rate=stay_fee_filing.correction_rate(apartment, sealed),
         )
         key = stay_fee_filing.period_key(cadence, calc_month)
     else:
@@ -1251,7 +1252,7 @@ async def stay_fee_finalize(apartment_id: int, request: Request):
         calc_month = month
     checked = stay_fee_auto.check(
         apartment, calc_month, today, cadence=cadence,
-        rate=sealed["rate_czk"] if correcting else None,
+        rate=stay_fee_filing.correction_rate(apartment, sealed) if correcting else None,
     )
     period, group, issues = checked["period"], checked["group"], checked["issues"]
     if issues:
@@ -1259,8 +1260,9 @@ async def stay_fee_finalize(apartment_id: int, request: Request):
     key = stay_fee_filing.period_key(group["cadence"], group["first"])
     if stay_fee_filing.latest(apartment["id"], key) and not correcting:
         return _back(back_path, err=_flash(request, "flash.stay_fees.already_saved"))
-    # The stored rate must be the one the total was calculated with.
-    rate = period["rate_czk"] if period else stay_fee.clamp_rate(apartment["stay_fee_rate_czk"])
+    # The total must be calculated the same way it was checked: per night at
+    # the dated rates, or a legacy flat period at its sealed rate (1028).
+    rate = stay_fee_filing.correction_rate(apartment, sealed) if correcting else None
     collected: dict[int, int] = {}
     if period:
         for line in period["lines"]:
