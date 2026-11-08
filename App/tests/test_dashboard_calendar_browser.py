@@ -1032,7 +1032,11 @@ def test_0891_airbnb_month_tiles_and_pills(calendar_workspace, calendar_origin, 
             # 0908: a bar starts halfway into its arrival day and ends halfway into its departure day; 2 px right margin
             assert pill["want"] == pill["nights"] == pill["covered"], pill
             # the grid line sits after the first half-track, so it is (cell + gap) / 2 from the cell edge
-            assert abs(pill["left"] - (0 if pill["cut"] else (pill["width"] + pill["gap"]) / 2)) <= 1, pill
+            expected_left = 0 if pill["cut"] else (pill["width"] + pill["gap"]) / 2
+            if not pill["cut"] and not pill["halfEnd"] and abs(pill["right"]) <= 1 and pill["nights"] == 1 and pill["gap"] >= 12:  # gap 12 = the 768 px and up layout
+                # 0908 4d: a Sunday arrival is only half a cell wide, so the bar grows to its 48 px min-width (.cal-pill) inside the row; a stay another test left in the shared workspace can put one here
+                expected_left = min(expected_left, pill["width"] - 48)
+            assert abs(pill["left"] - expected_left) <= 1, pill
             if pill["halfEnd"]:  # ends halfway into the departure day: cell middle minus g/2
                 assert abs(pill["rightAbs"] - (pill["depMid"] - pill["gap"] / 2)) <= 1, pill
             else:  # runs into the next week: Sunday edge, 2 px margin
