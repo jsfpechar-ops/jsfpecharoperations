@@ -3256,7 +3256,7 @@ label { color: var(--ink-secondary); font-weight: 620; }
   box-shadow: none;
 }
 .security-prompt-option:hover { border-color: var(--border-strong); background: #faf9f7; }
-.security-prompt-option:focus-visible { outline: 2px solid var(--brand-action); outline-offset: 2px; }
+.security-prompt-option:focus-visible { outline: 2px solid var(--brand-action); outline-offset: 0; }
 .security-prompt-option:disabled { opacity: .6; cursor: default; }
 .security-prompt-option-text { display: grid; gap: 2px; flex: 1 1 auto; min-width: 0; }
 .security-prompt-option-title { font-size: 16px; font-weight: 600; line-height: 1.3; }

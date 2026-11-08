@@ -3089,7 +3089,7 @@ body.v2 .security-prompt-option {
   cursor: pointer; box-shadow: none;
 }
 body.v2 .security-prompt-option:hover { border-color: #c9c9c2; background: #faf9f7; }
-body.v2 .security-prompt-option:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+body.v2 .security-prompt-option:focus-visible { outline: 2px solid var(--acc); outline-offset: 0; }
 body.v2 .security-prompt-option:disabled { opacity: .6; cursor: default; }
 body.v2 .security-prompt-option-text { display: grid; gap: 2px; flex: 1 1 auto; min-width: 0; }
 body.v2 .security-prompt-option-title { font-size: 16px; font-weight: 600; line-height: 1.3; }
