@@ -1,6 +1,6 @@
 # 1031 report
 
-Status: blocked (Done: steps 0 to 1, step 2 red and stopped. Left: steps 2 to 9.)
+Status: blocked (Done: steps 0 to 8. Step 9: test_guest_host_noun.py fails on the cs copy of fee_obec_unknown. Left: step 9 rerun and the report commit after that decision.)
 
 Part 1 (district forms): 6875e53b.
 
@@ -34,3 +34,18 @@ The failure: `tests/test_stay_fee_obec_0898.py::test_typo_is_liable_and_has_no_f
 1. On the server, check the deployed commit includes this branch (and 0898 `9af79325`, 1025 `02929cad`).
 2. Run in production: `SELECT id, internal_name, addr_obec, city_en, stay_fee_rate_czk, stay_fee_collect FROM apartment;` and `SELECT apartment_id, effective_from, rate_czk FROM stay_fee_rate ORDER BY apartment_id, effective_from;` and send the Prague flat row (no guest data).
 3. On the phone, open the guest link once after the deploy (new `?v=20261108-1031` key forces the new script; not yet bumped, step 4).
+
+## Session 2 results (steps 2 to 8)
+- Step 2: "PRAGA" alias dropped (coordinator decision). obec tests: 146 passed, 1 deselected.
+- Step 3: server rule and JS key fold like stay_fee._obec_key. 149 passed (incl. JS parity test).
+- Step 4: live nights across a rate change, box re-count listeners, cache keys 20261108-1031. 165 passed.
+- Step 5: fee_obec_unknown key in six languages. 80 passed.
+- Step 6: tests/test_stay_fee_sametown_1031.py: 25 passed. Fee-number guard: no fee read in the save handler.
+- Step 8: browser 1031: 3 passed, 0 skipped.
+- Step 9: test_stay_fee*/invoice/static_versions: 557 passed, 2 skipped (skips not from this change, not checked further). context_lint: OK.
+  test_guest_*.py: stopped at 262 passed, 1 failed (test_guest_host_noun.py::test_no_guest_ui_or_mail_copy_calls_the_host_ubytovatel: `fee_obec_unknown` in cs contains "Ubytovatel", the forbidden host noun). Brief copy kept unchanged, so this needs an owner/coordinator decision (reword cs copy, or allow the word in that key). Remaining guest files not run.
+
+## Screenshots (390 px)
+- /mnt/project-files/ux-shots/stayfee-sametown/check-sametown-390.png: box hidden, amount absent; Submit bar overlaps the Czechia row (sticky button in full-page capture).
+- /mnt/project-files/ux-shots/stayfee-sametown/check-othertown-390.png: box shows 150 CZK, 3 nights x 50 CZK, no overlap in the box.
+- /mnt/project-files/ux-shots/stayfee-sametown/check-unknown-town-390.png: 150 CZK plus the honest sentence; sticky step bar drawn over content in full-page capture.
