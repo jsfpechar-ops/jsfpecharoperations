@@ -7884,6 +7884,10 @@ _PROPERTY_NAV_0094_STRINGS = {
         "property_page.sec.archive.title": "Archive",
         "property_page.preview.title": "Preview",
         "property_page.strip.aria": "Property status",
+        "property_page.save_failed": "Not saved: fix %(n)s fields. Nothing was changed.",
+        "property_page.save_failed.one": "Not saved: fix %(n)s field. Nothing was changed.",
+        "property_page.save_failed.few": "Not saved: fix %(n)s fields. Nothing was changed.",
+        "property_page.save_failed_go": "Go to the first one",
         "property_page.strip.guest_off": "No link yet",
         "property_page.strip.operator_missing": "Operator missing",
 
@@ -7925,6 +7929,10 @@ _PROPERTY_NAV_0094_STRINGS = {
         "property_page.sec.archive.title": "Archivovat",
         "property_page.preview.title": "Náhled",
         "property_page.strip.aria": "Stav nemovitosti",
+        "property_page.save_failed": "Neuloženo: opravte pole (%(n)s). Nic se nezměnilo.",
+        "property_page.save_failed.one": "Neuloženo: opravte %(n)s pole. Nic se nezměnilo.",
+        "property_page.save_failed.few": "Neuloženo: opravte %(n)s pole. Nic se nezměnilo.",
+        "property_page.save_failed_go": "Přejít na první",
         "property_page.strip.guest_off": "Odkaz zatím není",
         "property_page.strip.operator_missing": "Chybí provozovatel",
 

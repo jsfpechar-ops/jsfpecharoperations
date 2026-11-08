@@ -2215,6 +2215,11 @@ def _render_property_detail(
     )
 
 
+def _save_error(section: str, target: str) -> Dict[str, str]:
+    """1024: one failed field: the accordion that holds it and the input to focus."""
+    return {"section": section, "target": target}
+
+
 def _refuse_apartment_save(
     request: Request,
     apartment: Dict[str, Any],
@@ -2262,6 +2267,21 @@ def _refuse_apartment_save(
         "address_errors": address_errors or {},
         "shared_time_error": shared_time_error,
     }
+    save_errors = [_save_error("basics", name) for name in (address_errors or {})]
+    if operator_error:
+        save_errors.append(
+            _save_error(
+                "basics",
+                "data_controller_entity_id"
+                if operator_error == "flash.error.no_such_controller"
+                else "legal_entity_id",
+            )
+        )
+    if shared_time_error:
+        save_errors.append(_save_error("basics", "checkin_hour"))
+    if lock_times_error:
+        save_errors.append(_save_error("lock", "lock_checkin_hour"))
+    extra["save_errors"] = save_errors
     if lock_times_error:
         # 0397: door codes need both times; stay on the Door lock tab with
         # the switch and the lock the host chose.
@@ -2283,6 +2303,22 @@ def _refuse_apartment_save(
         if (operator_error or address_errors or shared_time_error or lock_times_error)
         else 200,
     )
+
+
+def _fee_save_errors(link_error: bool, operator_account_error: bool, rate_error: bool, setup_flash: Optional[str]):
+    """1024: the failed stay-fee fields, in page order, for the summary above the Save bar."""
+    if setup_flash:
+        return []
+    errors = []
+    if not (link_error or operator_account_error or rate_error):
+        errors.append(_save_error("fee", "stay_fee_council_account"))
+    if operator_account_error:
+        errors.append(_save_error("fee", "stay_fee_guest_operator_account"))
+    if link_error:
+        errors.append(_save_error("fee", "stay_fee_guest_revolut_link"))
+    if rate_error:
+        errors.append(_save_error("fee", "stay_fee_collect"))
+    return errors
 
 
 def refuse_fee_save(request: Request, apartment: Dict[str, Any], form, *, link_error: bool = False, operator_account_error: bool = False, rate_error: bool = False, setup_flash: Optional[str] = None):
@@ -2355,6 +2391,7 @@ def refuse_fee_save(request: Request, apartment: Dict[str, Any], form, *, link_e
             "property_view": "settings",
             "settings_section": "reporting",
             "account": account_draft,
+            "save_errors": _fee_save_errors(link_error, operator_account_error, rate_error, setup_flash),
             "fee_account_error": not link_error and not operator_account_error and not rate_error and not setup_flash,
             "fee_link_error": link_error,
             "fee_rate_error": rate_error,
@@ -2461,7 +2498,10 @@ async def apartment_update(apartment_id: int, request: Request):
     )
     if wizard_response is not None:
         return wizard_response
-    return _back(return_to, msg=msg)
+    # 1024: ?saved=1 lets the page show "Saved" beside the Save bar instead of a toast.
+    path, hash_, fragment = return_to.partition("#")
+    path += ("&" if "?" in path else "?") + "saved=1"
+    return _back(path + hash_ + fragment, msg=msg)
 
 
 def _lock_section_refusal(request: Request, apartment_id: int, form, error_key: str):

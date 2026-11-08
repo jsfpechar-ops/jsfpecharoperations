@@ -17,7 +17,7 @@ CTRL = re.compile(r"<(?:input|select|textarea)\b.*?>", re.S)
 REQ = re.compile(r"(?<![-\w])required\b")
 ID = re.compile(r'\bid="([^"]+)"')
 LABEL_STAR = re.compile(r'<label\b[^>]*\bfor="([^"]+)"[^>]*>[^<]*<span class="req-star"')
-TAIL = r"(?:true|required|fee_required|not has_password)"
+TAIL = r"(?:true|required|fee_required|fee_needed|not has_password)"
 
 
 def _text(name):
@@ -93,3 +93,16 @@ def test_one_legend_per_form_and_wizard_calendar_step_shows_it():
         assert _text(name).count("required_legend") == 1, name
     layout = _text("setup_wizard/_layout.html")
     assert re.search(r"wizard_step in \([^)]*'calendar'[^)]*\).*required_legend", layout)
+
+
+def test_editor_stay_fee_fields_star_follows_the_rate():
+    text = _text("_stay_fee_fields.html")
+    assert "set fee_needed = fee_required or" in text
+    for fid in ("stay_fee_vs", "stay_fee_council_account", "stay_fee_authority_name"):
+        line = next(ln for ln in text.splitlines() if f"field_label('{fid}'" in ln)
+        assert re.search(r"'',\s*fee_needed\)", line), fid
+        tag = next(tag for cid, tag in _controls(text) if cid == fid)
+        assert """aria-required="{{ 'true' if fee_needed else 'false' }}\"""" in tag, fid
+    rate_line = next(ln for ln in text.splitlines() if "field_label('stay_fee_rate_czk'" in ln)
+    assert "fee_required)" in rate_line and "fee_needed" not in rate_line
+
