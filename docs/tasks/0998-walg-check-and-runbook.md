@@ -1,7 +1,7 @@
 # 0998: WAL-G monitor, daily base backup, restore drills, runbook, owner rollout
 
-Status: todo
-Depends on: 0997 (merged) | Base commit: 47640cf | Branch: task/0998-walg-runbook
+Status: review
+Depends on: 0997 | Base commit: bab714e | Branch: claude/eloquent-mendel-vd8mfi
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
