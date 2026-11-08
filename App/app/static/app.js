@@ -2577,7 +2577,9 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         var label = target && target.querySelector("label");
         var link = document.createElement("a");
         link.href = "#" + id;
-        link.textContent = (label ? label.textContent : id).replace(/\s+/g, " ").trim();
+        var text = label ? label.cloneNode(true) : null;
+        if (text) text.querySelectorAll(".help-tip,.req-star").forEach(function (n) { n.remove(); });
+        link.textContent = (text ? text.textContent : id).replace(/\s+/g, " ").trim();
         link.addEventListener("click", function (e) {
           e.preventDefault();
           goTo(id);
