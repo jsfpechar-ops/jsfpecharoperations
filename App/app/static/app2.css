@@ -3100,3 +3100,25 @@ body.v2 .prop-wide-only{display:none}
 /* 1030: one slim fix line, wide only */
 body.v2 .prop-fixline{margin:0 0 24px;color:var(--bad);font-size:14px}
 body.v2 .prop-fixline a{color:var(--bad);font-weight:600}
+
+/* 1030 fix: the section list is column 1 for the whole editor; every other child (fix line, cards) flows in column 2, so no empty grid row. */
+@media (min-width:1024px){
+  body.v2 .prop-layout>.prop-nav{grid-column:1;grid-row:1 / span 99}
+  body.v2 .prop-layout>:not(.prop-nav){grid-column:2}
+}
+/* 1030 fix: the required-legend note is redundant at >=768 (the * marks stay). */
+@media (min-width:768px){
+  body.v2 .required-legend{display:none}
+}
+/* 1030 fix: at >=768 the section card header is the title only (the sub-line and the state dot repeat the list). */
+@media (min-width:768px){
+  body.v2 .prop-sec>summary .sec-state,body.v2 .prop-sec>summary .dot{display:none}
+}
+/* 1030 fix: the flat card has no chevron at >=768 (a stray glyph rendered under the title). */
+@media (min-width:768px){
+  body.v2 details.prop-sec>summary::after{display:none}
+}
+/* 1030 fix: at >=1024 the content column fills the space beside the section list (max 1000 px total). */
+@media (min-width:1024px){
+  body.v2 .prop-layout{grid-template-columns:220px minmax(0,1fr);max-width:1000px}
+}
