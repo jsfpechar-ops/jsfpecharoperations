@@ -3061,3 +3061,6 @@ body.v2 .ui-upgrade-card .ui-upgrade-name,body.v2 .ui-upgrade-card .ui-upgrade-p
 body.v2 .ui-upgrade-card .ui-upgrade-price{font-weight:700}
 body.v2 .ui-upgrade-card .ui-btn,body.v2 .ui-upgrade-strip .ui-btn,body.v2 .ui-addon-row .ui-btn{width:100%;justify-content:center}
 }
+
+/* 1029: the rate and "Applies from" inputs share one line when their labels wrap differently (768 px and up). */
+@media (min-width:768px){.fee-setup-section .grid.two{align-items:end}}

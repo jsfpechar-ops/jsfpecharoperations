@@ -2195,7 +2195,7 @@ def _fee_pay_panel(apartment, reservation, t, qr_ok=True):
                 account = payments.normalise_account(entity["bank_account"])[1]
     # Exempt guests (zero counted nights) are left out: the guest never sees who is exempt.
     persons = [
-        {"days": int(line["liable_nights"]), "amount": int(line["liable_nights"]) * rate}
+        {"days": int(line["liable_nights"]), "amount": int(line["amount_czk"])}
         for line in charge["lines"] if line["liable_nights"] > 0
     ]
     rails = []
@@ -2272,6 +2272,20 @@ def _fee_liable_days(apartment, reservation, typed) -> int:
     return int(share["liable_nights"])
 
 
+def _fee_liable_amount(apartment, reservation, typed, schedule=None):
+    """(counted nights, amount): each night priced at the dated rate in force (1028)."""
+    from datetime import date as _date
+    from .. import stay_fee, stay_fee_rate
+    if schedule is None:
+        schedule = stay_fee_rate.schedule_for(apartment)
+    share = stay_fee.guest_period(typed, reservation, _date.min, _date.max,
+                                  apartment=apartment, schedule=schedule)
+    if share is None:
+        return 0, 0
+    stay_fee._apply_scope_boundary(share, apartment)
+    return int(share["liable_nights"]), int(share["amount_czk"])
+
+
 def _fee_estimate(apartment, reservation, values, guest=None):
     """Form-end estimate for the guest being typed in (un-saved values), or None when it is zero.
 
@@ -2280,7 +2294,8 @@ def _fee_estimate(apartment, reservation, values, guest=None):
     same-obec rule, 0898/1025). It is None when the host has decided for this
     guest: the decision wins and the page cannot know it any better.
     """
-    from .. import config, stay_fee
+    from datetime import timedelta as _timedelta
+    from .. import config, stay_fee, stay_fee_rate
     if not (apartment["stay_fee_collect"] and config.STAY_FEE_GUEST_PAY and stay_fee.is_active(apartment)):
         return None
     try:
@@ -2291,14 +2306,26 @@ def _fee_estimate(apartment, reservation, values, guest=None):
         return None  # 0100: the demo stay owes no fee, and the pay step never asks for one
     typed = _fee_typed_guest(reservation, values or {}, guest)
     rate = int(apartment["stay_fee_rate_czk"])
-    days = _fee_liable_days(apartment, reservation, typed)
+    schedule = stay_fee_rate.schedule_for(apartment)
+    stay_from = typed["stay_from"] or reservation["date_from"]
+    stay_to = typed["stay_to"] or reservation["date_to"]
+    first_night = validation.parse_iso_date(stay_from)
+    last_night = validation.parse_iso_date(stay_to)
+    # The rate shown is the one on the last night, as on the pay panel; it is
+    # the column rate unless a dated rate row says otherwise.
+    if last_night is not None:
+        rate = stay_fee_rate.rate_on(schedule, last_night)
+    days, amount = _fee_liable_amount(apartment, reservation, typed, schedule)
     live = None
-    if typed["fee_host_decision"] not in stay_fee.DECISIONS:
-        live = {"from": typed["stay_from"] or reservation["date_from"],
-                "to": typed["stay_to"] or reservation["date_to"], "rate": rate}
+    # signature.js multiplies by one rate: across a rate change it would be
+    # wrong, so the page keeps the server amount instead (1028).
+    uniform = (first_night is None or last_night is None
+               or stay_fee_rate.is_uniform(schedule, first_night + _timedelta(days=1), last_night))
+    if typed["fee_host_decision"] not in stay_fee.DECISIONS and uniform:
+        live = {"from": stay_from, "to": stay_to, "rate": rate}
     if days <= 0:
         return None
-    return {"amount": days * rate, "days": days, "rate": rate, "live": live, "hidden": False}
+    return {"amount": amount, "days": days, "rate": rate, "live": live, "hidden": False}
 
 
 def _fee_box(apartment, reservation, values, guest=None):
