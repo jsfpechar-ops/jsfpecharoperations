@@ -1560,13 +1560,18 @@ def _refuse_apartment_create(
 
 def _create_address_errors(payload: Dict[str, Any]) -> Dict[str, str]:
     """The police address is required: at create and on every Settings save
-    (owner, 2026-10-13). Municipality, house number and postcode must be
+    (owner, 2026-10-13). Municipality, house number, postcode and street must be
     present and every typed component must pass the per-field check before
     anything is written. Saved exactly as typed."""
     errors: Dict[str, str] = {}
     for issue in validation.errors_only(validation.validate_apartment(dict(payload))):
         if issue.field in _ADDRESS_ONLY_FIELDS:
             errors.setdefault(issue.field, issue.message)
+    # Owner decision 2026-11-08: the street is mandatory on the forms. Deliberately NOT in
+    # validation.validate_apartment, which is the UbyPort submit gate: existing apartments
+    # without a street must keep filing (reporting.py sends uStr as optional).
+    if not (payload.get("addr_street") or "").strip():
+        errors.setdefault("addr_street", "Street is required.")
     return errors
 
 

@@ -193,6 +193,7 @@ VALIDATION: Dict[str, str] = {
     "Accommodation facility name is required.": "Tên cơ sở lưu trú là bắt buộc.",
     "Facility name must be at most 35 characters.": "Tên cơ sở tối đa 35 ký tự.",
     "House number is required.": "Số nhà là bắt buộc.",
+    "Street is required.": "Tên đường là bắt buộc.",
     "House number is up to 4 digits, optionally with E for an evidence number.": "Số nhà tối đa 4 chữ số, có thể kèm chữ E nếu là số đăng ký tạm (evidenční číslo).",
     "Orientation number is up to 3 digits plus one optional letter.": "Số định hướng (číslo orientační) tối đa 3 chữ số, có thể kèm một chữ cái.",
     "Postcode is required.": "Mã bưu chính là bắt buộc.",
