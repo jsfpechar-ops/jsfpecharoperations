@@ -43,7 +43,7 @@
 .cal-day-number { display:block; min-height:26px; height:26px; width:100%; border:0; background:transparent; padding:4px 6px; text-align:right; font:inherit; font-size:11px; line-height:18px; color:var(--ink-secondary); cursor:pointer; }
 .cal-day.is-today .cal-day-number { color:var(--teal); font-weight:750; }
 .cal-day.is-outside .cal-day-number { color:var(--ink-muted); opacity:.65; }
-.cal-week-events { position:absolute; left:1px; right:1px; top:28px; display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); grid-auto-rows:var(--event-height); row-gap:2px; pointer-events:none; }
+.cal-week-events { position:absolute; left:1px; right:1px; top:40px; display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); grid-auto-rows:var(--event-height); row-gap:2px; pointer-events:none; }
 .cal-week-events { grid-template-rows:var(--desktop-event-rows); }
 [data-cal-color="teal"] { --cal-ink:var(--teal); --cal-fill:var(--teal-bg); }
 [data-cal-color="blue"] { --cal-ink:var(--blue); --cal-fill:var(--blue-bg); }
@@ -337,7 +337,7 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
 .cleaning-page .dashboard-calendar .cal-event.is-cleaning-marker {
   box-sizing:border-box; display:flex; align-items:center; gap:4px;
   height:var(--event-height,22px); min-height:0; max-height:none; margin:0 1px; padding:0 7px 0 5px;
-  border:1px solid var(--status-action-border); border-left:3px solid var(--amber); border-radius:6px;
+  border:1px solid var(--status-action-border); border-radius:6px;
   background:var(--amber-bg); color:var(--status-action-ink);
   font-size:11px; font-weight:600; line-height:1; box-shadow:none; overflow:hidden;
 }
@@ -684,6 +684,7 @@ body.v2 .cal-create-types .btn:not(.line):not(.soft):not(.ghost)[aria-pressed="f
 }
 @media (min-width:1024px) {
   .dashboard-calendar[data-readonly="false"] .cal-week-days .cal-day { min-height:112px; }
+  .dashboard-calendar[data-readonly="false"] dialog[data-cal-day-dialog] { z-index:20; box-shadow:-12px 0 32px rgba(32,32,30,.14); }
 }
 @media (min-width:768px) {
   .dashboard-calendar[data-readonly="false"] [data-cal-day-add] { display:block; width:100%; min-height:48px; margin:0; border-radius:12px; }
@@ -698,8 +699,11 @@ body.v2 .cal-create-types .btn:not(.line):not(.soft):not(.ghost)[aria-pressed="f
   .dashboard-calendar[data-readonly="false"] .cal-toolbar .cal-navigation { grid-column:2; grid-row:1; gap:12px; }
   .dashboard-calendar[data-readonly="false"] .cal-toolbar h3 { grid-column:1; grid-row:1; min-width:0; margin:0; text-align:left; font-size:24px; line-height:32px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .dashboard-calendar[data-readonly="false"] .cal-toolbar-options { grid-column:3; grid-row:1; gap:12px; }
-  .dashboard-calendar[data-readonly="false"].has-panel { margin-right:calc(360px + 16px - 36px); } /* 0818: desktop wrap gutter measured 36 px */
+  .dashboard-calendar[data-readonly="false"].has-panel { margin-right:0; } /* 1004: at 1024 px and up the day panel overlays the grid; the grid keeps its full width */
   .dashboard-calendar[data-readonly="false"].has-panel .cal-body { padding-right:0; }
+}
+@media (min-width:1024px) {
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"].has-panel .cal-head { margin-right:376px; } /* 1004 panel fix: heading and toolbar stop 16 px before the 360 px day panel; the grid keeps its full width */
 }
 @media (min-width:768px) and (max-width:1023px) {
   .dashboard-calendar[data-readonly="false"].has-panel { margin-right:calc(320px + 16px - 20px); } /* 0818: tablet wrap gutter measured 20 px */
@@ -712,7 +716,6 @@ body:has(.dashboard-calendar.has-panel) .havel-fab { display:none !important; }
 .cal-hide { display:none !important; }
 @media (min-width:768px) {
   /* 0891: the 0832 two-row grid head moved to the .cal-head flex row in the 0891 block. */
-  .dashboard-calendar[data-readonly="false"]:has([data-cal-view="calendar"][aria-pressed="true"]):has([data-cal-scale="month"][aria-pressed="true"]) :is([data-cal-month],[data-cal-year]) { display:none; }
   .dashboard-calendar[data-readonly="false"] .cal-heading-actions .cal-settings.btn.soft { background:#f2f2f0; color:var(--ink); height:40px; min-height:40px; }
   .dashboard-calendar[data-readonly="false"] :is(.cal-heading-actions, .cal-toolbar-options) select { height:40px; min-height:40px; }
 }

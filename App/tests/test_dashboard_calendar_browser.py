@@ -861,7 +861,7 @@ def test_month_tiles_and_side_panel(calendar_workspace, calendar_origin, width):
         page.locator('[data-cal-view="calendar"]').click()
         page.wait_for_selector(".cal-week")
         wait_loaded(page)
-        assert page.locator("[data-cal-month]:visible, [data-cal-year]:visible").count() == 0
+        assert page.locator("[data-cal-month]:visible, [data-cal-year]:visible").count() == 2
         page.evaluate("window.scrollTo(0, 0)")
         assert page.locator(".cal-week-events .cal-event").count() == 0
         heights = page.locator(".cal-week-days .cal-day").evaluate_all(
@@ -905,7 +905,7 @@ def test_month_tiles_and_side_panel(calendar_workspace, calendar_origin, width):
             assert page.locator(selector).evaluate("node => getComputedStyle(node).backgroundColor") != "rgb(208, 69, 45)", selector
         assert page.locator("#needs-action:visible, .ov-cal-more:visible, .hs:visible").count() == 0
         assert page.locator("[data-cal-settings]").evaluate("node => getComputedStyle(node).backgroundColor") != "rgb(208, 69, 45)"
-        assert page.locator("[data-cal-month]:visible, [data-cal-year]:visible").count() == 0
+        assert page.locator("[data-cal-month]:visible, [data-cal-year]:visible").count() == 2
         assert page.evaluate("(() => { const h = document.querySelector('.cal-toolbar h3'); return h.scrollWidth <= h.clientWidth; })()")
         if width == 768:
             # 0891: stays are dark pills over the tiles; the per-day chips are hidden.
