@@ -3717,7 +3717,7 @@ STRINGS.update({
     "common.required_legend": "Các trường có dấu * là bắt buộc.",
     "entity.signature.heading": "Chữ ký (không bắt buộc)",
     "entity.signature.scope": "Được in trên mọi báo cáo phí lưu trú, bạn không cần ký tay. Nếu không có, tên bạn nhập sẽ được in.",
-    "apartment.form.addr.street_hint": "Điền nếu đường có tên. Ở làng không có tên đường, chỉ cần số nhà.",
+    "apartment.form.addr.street_hint": "Tên đường, không kèm số nhà. Ở làng không có tên đường, hãy nhập tên làng.",
     "wizard.guest_link.message_title": "Mẫu tin nhắn cho khách",
     "wizard.guest_link.message_step1": "Thay các phần trong [ngoặc vuông] bằng thông tin của bạn: giao chìa khóa, chỉ đường, giờ yên tĩnh.",
     "wizard.guest_link.message_step2": "Dán vào tin nhắn tự động mà Airbnb hoặc Booking.com gửi sau mỗi lượt đặt. UbyHost không gửi tin nhắn này.",

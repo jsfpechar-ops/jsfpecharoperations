@@ -20,7 +20,7 @@
   </div>
 {% endmacro %}
 <div class="grid property-address-grid">
-  {{ address_input('addr_street', t('apartment.form.addr.street'), t('apartment.form.addr.street_hint'), true, 48, extra='data-ruian-suggest') }}
+  {{ address_input('addr_street', t('apartment.form.addr.street'), t('apartment.form.addr.street_hint'), false, 48, '', true, extra='data-ruian-suggest') }}
   {{ address_input('addr_house_no', t('apartment.form.addr.house_no'), t('apartment.form.addr.house_no_hint'), false, 5, '', true) }}
   {{ address_input('addr_orient_no', t('apartment.form.addr.orient_no'), t('apartment.form.addr.orient_no_hint'), true, 4) }}
   {{ address_input('addr_zip', t('apartment.form.addr.zip'), t('apartment.form.addr.zip_hint'), false, 6, 'numeric', true) }}
