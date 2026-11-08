@@ -3282,6 +3282,8 @@ STRINGS: Dict[str, str] = {
     "apartment.form.ubyport.no_credentials_link": "Các cách gửi dữ liệu UbyPort (policie.gov.cz)",
     "apartment.form.ubyport.password_help": "Mật khẩu đi kèm tên đăng nhập web-service. Trong thư về web-service, đó là dòng “Přístupové heslo:”. Sao chép chính xác.",
     "apartment.form.stay_fee.rate_help": "Số tiền mỗi khách mỗi đêm theo quy định về phí lưu trú của địa phương (obecně závazná vyhláška o místním poplatku z pobytu), thường có trên trang web của chính quyền địa phương. Tối đa 50 Kč. Nhập 0 để tắt phí lưu trú.",
+    "apartment.form.stay_fee.rate_from_label": "Áp dụng từ",
+    "apartment.form.stay_fee.rate_from_help": "Các đêm trước ngày này giữ mức cũ. Để ngày hôm nay nếu mức mới bắt đầu ngay.",
     "apartment.form.stay_fee.cadence_help": "Tần suất chính quyền địa phương yêu cầu báo cáo và thanh toán, theo quy định của họ: hằng tháng hoặc hằng quý.",
     "apartment.form.stay_fee.vs_help": "Số chính quyền địa phương cấp cho bạn để nộp phí lưu trú, thường có trong xác nhận đăng ký hoặc thư của họ. Tối đa 10 chữ số. Các chỗ ở cùng đơn vị vận hành và cùng mã sẽ dùng chung một báo cáo.",
     "apartment.form.stay_fee.account_help": "Tài khoản ngân hàng của chính quyền địa phương để nộp phí lưu trú, lấy từ trang web hoặc thư của họ. Định dạng Séc: tiền tố (nếu có), số tài khoản, mã ngân hàng. Dùng cho mã QR thanh toán.",

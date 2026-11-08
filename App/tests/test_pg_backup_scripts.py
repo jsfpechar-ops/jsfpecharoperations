@@ -202,6 +202,13 @@ def test_walg_dockerfile_pins_debian_postgres_and_verifies_checksum():
     assert re.search(r"^ARG WALG_ASSET=wal-g-pg-(20|22)\.04-amd64\.tar\.gz$", text, re.M)
 
 
+def test_walg_dockerfile_has_a_passwd_entry_for_uid_70():
+    # compose runs the walg service as 70:70; wal-g fails with "unknown userid 70" without it
+    text = (WALG_DIR / "Dockerfile").read_text()
+    assert re.search(r"^RUN groupadd -g 70 \w+ && useradd -u 70 -g 70 ", text, re.M)
+    assert compose_services()["walg"]["user"] == "70:70"
+
+
 def test_postgres_keeps_its_image_and_no_network_and_archives_to_the_spool():
     pg = compose_services()["postgres"]
     assert pg["image"] == PINNED_PG

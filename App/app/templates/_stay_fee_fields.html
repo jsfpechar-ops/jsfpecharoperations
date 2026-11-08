@@ -12,6 +12,11 @@
       <input type="number" id="stay_fee_rate_czk" name="stay_fee_rate_czk" aria-describedby="stay_fee_rate_czk-help" min="0" max="50" step="1"
              value="{{ apartment.stay_fee_rate_czk or 0 }}"{% if fee_required %} required{% endif %}>
     </div>
+    {#- 1029: the date the new rate starts; the server clamps a past date to today. Editor only, and only when a rate is set. -#}
+    {% if not fee_required and (apartment.stay_fee_rate_czk or 0) > 0 %}<div class="field">
+      {{ field_label('stay_fee_rate_from', t('apartment.form.stay_fee.rate_from_label'), t('apartment.form.stay_fee.rate_from_help'), false) }}
+      <input type="date" id="stay_fee_rate_from" name="stay_fee_rate_from" aria-describedby="stay_fee_rate_from-help" min="{{ rate_from_default }}" value="{{ rate_from_default }}">
+    </div>{% endif %}
     {% if not fee_required %}<div class="field">
       {{ field_label('stay_fee_cadence', t('apartment.form.stay_fee.cadence_label'), t('apartment.form.stay_fee.cadence_help')) }}
       <select id="stay_fee_cadence" name="stay_fee_cadence" aria-describedby="stay_fee_cadence-help">

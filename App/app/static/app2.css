@@ -3133,3 +3133,6 @@ body.v2 .prop-layout>nav.prop-nav{display:none}
   /* the editor column starts under the page title (no centred 776 px column beside the section list) */
   body.v2 .form.prop-form-single,body.v2 .ui-page[data-body-kind="detail"]:has(#property-settings-form) > .ui-body-detail > .form.prop-form-single.property-detail{max-width:min(1000px,calc(100% - 64px));margin-left:0;margin-right:auto}
 }
+
+/* 1029: the rate and "Applies from" inputs share one line when their labels wrap differently (768 px and up). */
+@media (min-width:768px){.fee-setup-section .grid.two{align-items:end}}

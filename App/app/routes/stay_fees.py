@@ -23,6 +23,7 @@ from .. import (
     stay_fee_adjustment,
     stay_fee_auto,
     stay_fee_filing,
+    stay_fee_rate,
     validation,
 )
 from ..templating import render, templates
@@ -305,6 +306,31 @@ def guest_pay_values(form) -> dict:
     if "stay_fee_guest_operator_account" in form:
         values[GUEST_OPERATOR_ACCOUNT_RAW] = _form_str(form, "stay_fee_guest_operator_account")
     return values
+
+
+def rate_from_default() -> str:
+    """Today in Prague, ISO: the default and the minimum of the "applies from" field."""
+    return claim.prague_today().isoformat()
+
+
+def record_rate_change(apartment_id: int, new_rate, form, *, previous=None) -> None:
+    """Store a dated rate row after a save that wrote stay_fee_rate_czk (1028).
+
+    ``stay_fee_rate_from`` (ISO date) picks the first night of the new rate;
+    empty, invalid or in the past means today: a rate never applies backwards.
+    ``previous`` is the column before the save, kept for the earlier nights.
+    An unchanged rate writes nothing.
+    """
+    today = claim.prague_today()
+    new_rate = int(new_rate or 0)
+    if previous is not None and int(previous or 0) == new_rate:
+        return
+    try:
+        effective_from = date.fromisoformat(_form_str(form, "stay_fee_rate_from"))
+    except ValueError:
+        effective_from = today
+    stay_fee_rate.record(apartment_id, new_rate, max(effective_from, today),
+                         previous=previous, today=today)
 
 
 def fee_form_values(form) -> dict:
@@ -777,7 +803,7 @@ def stay_fee_detail(apartment_id: int, request: Request):
             stay_fee_filing.period_anchor(sealed),
             live_only=True,
             cadence=sealed["cadence"],
-            rate=sealed["rate_czk"],
+            rate=stay_fee_filing.correction_rate(apartment, sealed),
         )
     else:
         period = stay_fee.property_period(apartment, selected_month, live_only=correcting)
@@ -1027,7 +1053,8 @@ async def stay_fee_adjustment_add(apartment_id: int, request: Request):
         cadence = sealed["cadence"]
         calc_month = stay_fee_filing.period_anchor(sealed)
         period = stay_fee.property_period(
-            apartment, calc_month, live_only=True, cadence=cadence, rate=sealed["rate_czk"],
+            apartment, calc_month, live_only=True, cadence=cadence,
+            rate=stay_fee_filing.correction_rate(apartment, sealed),
         )
         key = stay_fee_filing.period_key(cadence, calc_month)
     else:
@@ -1251,7 +1278,7 @@ async def stay_fee_finalize(apartment_id: int, request: Request):
         calc_month = month
     checked = stay_fee_auto.check(
         apartment, calc_month, today, cadence=cadence,
-        rate=sealed["rate_czk"] if correcting else None,
+        rate=stay_fee_filing.correction_rate(apartment, sealed) if correcting else None,
     )
     period, group, issues = checked["period"], checked["group"], checked["issues"]
     if issues:
@@ -1259,8 +1286,9 @@ async def stay_fee_finalize(apartment_id: int, request: Request):
     key = stay_fee_filing.period_key(group["cadence"], group["first"])
     if stay_fee_filing.latest(apartment["id"], key) and not correcting:
         return _back(back_path, err=_flash(request, "flash.stay_fees.already_saved"))
-    # The stored rate must be the one the total was calculated with.
-    rate = period["rate_czk"] if period else stay_fee.clamp_rate(apartment["stay_fee_rate_czk"])
+    # The total must be calculated the same way it was checked: per night at
+    # the dated rates, or a legacy flat period at its sealed rate (1028).
+    rate = stay_fee_filing.correction_rate(apartment, sealed) if correcting else None
     collected: dict[int, int] = {}
     if period:
         for line in period["lines"]:

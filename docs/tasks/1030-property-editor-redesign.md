@@ -1,7 +1,7 @@
 # 1030 Property editor redesign (wide screens)
 
 Status: todo. Executor: Haiku 5.5. Read AGENTS.md, docs/context/executor.md, this brief. Open only files named here.
-Report: write `docs/tasks/1030-report.md` (600 tokens max), set `Status: review` or `blocked`, open one PR.
+Report: write `docs/tasks/1030-editor-redesign-report.md` (600 tokens max), set `Status: review` or `blocked`, open one PR.
 Branch: `claude/editor-redesign` from `origin/main` in a fresh worktree:
 `git fetch origin main && git worktree add ../ubyhost-1030 -b claude/editor-redesign origin/main`, work only there. Never push to main.
 
@@ -106,4 +106,4 @@ The per-step test commands above, run from `App/`, each ending `2>&1 | tail -30`
 Anchor not found, a test fails twice, or a step needs a file not named here: STOP, write the report with `Status: blocked`, ask. Do not guess. Owner steps after merge: none besides the usual manual deploy.
 
 ## 9. Report
-Write `docs/tasks/1030-report.md` (600 tokens max): files changed, each command with last 5 lines, section 7 ticked, Deviations, Questions. Then `Status: review` and one PR.
+Write `docs/tasks/1030-editor-redesign-report.md` (600 tokens max): files changed, each command with last 5 lines, section 7 ticked, Deviations, Questions. Then `Status: review` and one PR.
