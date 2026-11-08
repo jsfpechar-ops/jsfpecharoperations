@@ -58,10 +58,10 @@ Rules: AGENTS.md rule 4 (new dependency needs an owner decision line), rule 2 (n
 **Owner-supplied values (the orchestrator pastes them here before the brief runs). Never invent any of them.**
 
 ```
-PG_DEBIAN_IMAGE=PENDING  (postgres:16.N-bookworm@sha256:<64 hex>, same 16.N as production)
-WALG_VERSION=PENDING     (release tag, like v3.0.5)
-WALG_ASSET=PENDING       (the wal-g-pg-ubuntu-22.04-amd64 or -20.04-amd64 .tar.gz file name; never 24.04)
-WALG_SHA256=PENDING      (64 lowercase hex characters)
+PG_DEBIAN_IMAGE=postgres:16.15-bookworm@sha256:5264710be20f409750ac6dc4e5706dcef929c87e241605463f0f9aefa932a8d9
+WALG_VERSION=v3.0.9
+WALG_ASSET=wal-g-pg-22.04-amd64.tar.gz
+WALG_SHA256=4f03ee4679db7f660bfd1b2b8291ac5df247cd2ec48074b60c112f4897299f24
 ```
 
 If any value still says `PENDING`, **STOP at step 1** and put the "Owner steps (before this brief runs)" below into your report as `blocked`.
@@ -379,10 +379,10 @@ Command: `cd App && .venv/bin/python -m pytest tests/test_pg_backup_scripts.py t
 7. Append one line at the end of `docs/context/decisions.md`, in the same format as the 0996 line just above it (`- 2026-11-07 | [backup] ... | owner | ...`; check with `tail -3 docs/context/decisions.md | cut -c1-120`):
 
 ```
-- 2026-11-07 | [backup] WAL-G approved by the owner (new dependency, rule 4): continuous WAL archiving and point-in-time recovery of the production Postgres to S3 eu-central-1, on top of the daily age-encrypted pg_dump, which stays primary. Condition: small cost, unlike Litestream; WAL-G only writes and lists, archive_timeout=300 is about USD 0.05 a month in PUT requests. Postgres keeps its pinned Alpine image and network_mode none and copies WAL durably into a local spool; a walg sidecar (Debian Postgres 16 image, glibc WAL-G binary, profile walg, uid 70) ships it and runs the daily base backup over the socket. Switched by UBYHOST_PG_ARCHIVE. WAL and base backups keep 7 days, S3 lifecycle 10 days, inside the 30-day backup window | owner | [0997](../tasks/0997-walg-continuous-archiving.md), 0998
+- 2026-11-07 | [backup] WAL-G approved (rule 4): WAL archiving + PITR to S3 | owner | [0997](../tasks/0997-walg-continuous-archiving.md)
 ```
 
-Command: `tail -1 docs/context/decisions.md | cut -c1-60 | tail -30`. Expected: `- 2026-11-07 | [backup] WAL-G approved by the owner (new de`.
+Command: `tail -1 docs/context/decisions.md | cut -c1-60 | tail -30`. Expected: `- 2026-11-07 | [backup] WAL-G approved (rule 4)`.
 
 8. Lint and shell checks. Commands: `python3 scripts/context_lint.py 2>&1 | tail -30` (expected: no new error) and `shellcheck -S error deploy/lightsail/walg/walg-ship.sh 2>&1 | tail -30` (expected: no output; if `shellcheck` is not installed, say so in the report, do not install).
 
