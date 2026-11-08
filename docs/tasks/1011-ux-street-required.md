@@ -1,6 +1,6 @@
 # 1011: Property street (`addr_street`) becomes mandatory, with the red star
 
-Status: todo
+Status: blocked
 Depends on: 1010 (PR 809, branch `claude/required-stars`, already holds `tests/test_required_stars.py`) | Base: branch `claude/required-stars` | Branch: `claude/street-required` (create it from `claude/required-stars`; `git checkout claude/required-stars && git checkout -b claude/street-required`)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
