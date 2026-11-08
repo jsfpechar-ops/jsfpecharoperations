@@ -3086,6 +3086,8 @@ body.v2 .prop-wide-only{display:none}
   body.v2 .prop-layout.is-tabbed .prop-nav a.is-current{background:var(--accs)}
   /* 1030 step 5: the fix line replaces the per-section missing lists at wide widths (DOM kept for the fix line) */
   body.v2 .prop-sec-missing .readiness-list{display:none}
+  /* 1030 step 5: at wide widths only the help icons with information stay (basics 1, guest links 2, UbyPort/police 3, stay fee 1, smart lock 1). Phone unchanged. */
+  body.v2 .help-tip:has(#archive-help),body.v2 .help-tip:has(#regenerate-pin-help),body.v2 .help-tip:has(#regenerate-link-help),body.v2 .help-tip:has(#guest_message-help),body.v2 .help-tip:has(#permalink_window_days-help),body.v2 .help-tip:has(#permalink_reachback_days-help),body.v2 .help-tip:has(#passport_photo_policy-help){display:none}
 }
 
 /* 1030: one slim fix line, wide only */

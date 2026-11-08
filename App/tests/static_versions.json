@@ -24,12 +24,12 @@
     "v": "20261104-0916"
   },
   "app.js": {
-    "sha256": "696f9f040eb74ad3ca20260f0824c24d0b2bccab57537d7fac76f6afc5e02f92",
-    "v": "20261108-1024"
+    "sha256": "f59783f1c65603f119c68520bc7214567c3340c9b9b20f7f213a4bdac46e4b9f",
+    "v": "20261108-1030"
   },
   "app2.css": {
-    "sha256": "79c571a19b7446889ca006dc8e791467fb1b1efa07eb00c64b4a4731f5641e9e",
-    "v": "20261108-1014f"
+    "sha256": "fd07e90432b3af366363a0e225c29eff12c268f94dfb987e91c1843d455a715a",
+    "v": "20261108-1030"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
