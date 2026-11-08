@@ -1,6 +1,6 @@
 # 1024: property editor: Stay fee stars, failed-save summary that opens and focuses the first error, clear Saved
 
-Status: todo
+Status: review
 Depends on: none | Base: `origin/main` (NOT the wolt branch) | Branch: `claude/save-errors` | No PR (push the branch only; the orchestrator opens it)
 Executor: Haiku 5.5 may stall on step 4 (JS) and step 6 (browser tests); if it reaches 30 tool calls before step 7, hand over per workflow "at the cap". A bigger model (Sonnet 5.5) is recommended for this brief. Fits one session: 30 tool calls, 60k tokens (tight)
 
