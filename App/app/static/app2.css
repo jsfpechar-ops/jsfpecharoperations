@@ -3065,3 +3065,8 @@ body.v2 .ui-upgrade-card .ui-btn,body.v2 .ui-upgrade-strip .ui-btn,body.v2 .ui-a
 /* 1030: section list is wide-only */
 body.v2 .prop-wide-only{display:none}
 @media (min-width:768px){body.v2 .prop-wide-only{display:block}}
+
+/* 1030: at >=768 the status strip and the Continue setup box are replaced by the section list */
+@media (min-width:768px){
+  body.v2 nav.prop-strip,body.v2 section.setup-continue-card{display:none}
+}
