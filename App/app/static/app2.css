@@ -3086,9 +3086,9 @@ body.v2 .prop-wide-only{display:none}
   body.v2 .prop-layout.is-tabbed .prop-nav a.is-current{background:var(--accs)}
   /* 1030: 768 to 1279 px: section list above the form as chips, one column (the form needs the width) */
   @media (max-width:1279px){
-    body.v2 .prop-layout{grid-template-columns:minmax(0,1fr);gap:16px;padding-inline:24px}
+    body.v2 .prop-layout{grid-template-columns:minmax(0,1fr);gap:16px;padding-inline:0}
     body.v2 .prop-nav{position:static;display:flex;flex-wrap:wrap;gap:8px}
-    body.v2 .prop-nav a{flex:1 1 auto;justify-content:center}
+    body.v2 .prop-nav a{flex:0 0 auto;justify-content:flex-start;background:#fff;border:1px solid var(--line)}
     body.v2 .prop-sec .guest-link-action + .guest-link-action{margin-left:12px}
   }
   /* 1030 step 5: the fix line replaces the per-section missing lists at wide widths (DOM kept for the fix line) */
@@ -3098,6 +3098,9 @@ body.v2 .prop-wide-only{display:none}
   /* 1030 step 5: at wide widths only the help icons with information stay (basics 1, guest links 2, UbyPort/police 3, stay fee 1, smart lock 1). Phone unchanged. */
   body.v2 .help-tip:has(#archive-help),body.v2 .help-tip:has(#regenerate-pin-help),body.v2 .help-tip:has(#regenerate-link-help),body.v2 .help-tip:has(#guest_message-help),body.v2 .help-tip:has(#permalink_window_days-help),body.v2 .help-tip:has(#permalink_reachback_days-help),body.v2 .help-tip:has(#passport_photo_policy-help),body.v2 .help-tip:has(#legal_entity_id-help){display:none}
 }
+
+/* 1030 fix: the phone-only "Settings" eyebrow is stray text beside the section list */
+@media (min-width:768px){body.v2 .prop-phone-only{display:none}}
 
 /* 1030: one slim fix line, wide only */
 body.v2 .prop-fixline{margin:0 0 12px;color:var(--bad);font-size:14px;line-height:1.45}
