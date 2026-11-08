@@ -1,6 +1,6 @@
 # 1027: dated stay-fee rates, part 1 of 3: migration, rate module, per-night pricing (backend)
 
-Status: todo
+Status: blocked
 Depends on: none | Base: `origin/main` | Branch: `claude/dated-rates-1027` | No PR (push the branch only; the orchestrator opens it)
 Series: 1027 (this) then 1028 (call sites + save hook) then 1029 (host form field). Merge in order. Alone, 1027 changes no behaviour: nothing writes history after the backfill, so every period has one rate.
 Executor: Haiku 5.5, one run, 30 tool calls.
