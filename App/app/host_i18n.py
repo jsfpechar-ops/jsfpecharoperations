@@ -366,7 +366,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "onboarding.demo_hint": "Available only in mock/demo environments. Clear it whenever you are done.",
         "setup.banner.aria": "First-flat setup",
-        "setup.banner.line": "Setup %(step)s of %(total)s · Continue",
+        "setup.banner.line": "Continue setup",
         "demo.load": "Explore with demo data",
         "demo.load_detail": "Two sample properties. Nothing is sent to the police.",
         "demo.clear": "Clear demo data",
@@ -2510,7 +2510,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "onboarding.demo_hint": "Jen pro ukázkové/mock prostředí. Po dokončení je můžete kdykoli smazat.",
         "setup.banner.aria": "Nastavení prvního ubytování",
-        "setup.banner.line": "Nastavení %(step)s z %(total)s · Pokračovat",
+        "setup.banner.line": "Pokračovat v nastavení",
         "demo.load": "Prohlédnout s ukázkovými daty",
         "demo.load_detail": "Dvě ukázková ubytování. Na policii se nic neodešle.",
         "demo.clear": "Smazat ukázková data",
@@ -7961,7 +7961,7 @@ _PROPERTY_CREATE_0092_STRINGS = {
         "property_create.created_title": "Property created. What next?",
         "property_create.created_manual": "Add stay manually",
         "property_create.created_continue": "Continue to overview",
-        "setup.banner.line": "Setup %(step)s of %(total)s · Continue",
+        "setup.banner.line": "Continue setup",
     },
     "cs": {
         "property_create.title": "Přidat ubytování",
@@ -7985,7 +7985,7 @@ _PROPERTY_CREATE_0092_STRINGS = {
         "property_create.created_title": "Ubytování je vytvořené. Co dál?",
         "property_create.created_manual": "Přidat pobyt ručně",
         "property_create.created_continue": "Pokračovat na přehled",
-        "setup.banner.line": "Nastavení %(step)s z %(total)s · Pokračovat",
+        "setup.banner.line": "Pokračovat v nastavení",
     },
 }
 for _lang, _strings in _PROPERTY_CREATE_0092_STRINGS.items():
