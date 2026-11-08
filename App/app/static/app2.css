@@ -363,6 +363,12 @@ body.v2 summary b{display:block}
 body.v2 summary small{color:var(--ink3)}
 body.v2 summary:after{content:"\2304";color:var(--ink3);font-size:18px}
 body.v2 details[open] summary:after{transform:rotate(180deg)}
+/* 1005: shared disclosure card; 16 px inside, fields full width of the padded area */
+body.v2 details.ui-details-box{padding:0;overflow:hidden}
+body.v2 details.ui-details-box > summary{padding:14px 16px;min-height:44px;box-sizing:border-box}
+body.v2 details.ui-details-box > :not(summary){margin:0 16px 12px;min-width:0;max-width:calc(100% - 32px);box-sizing:border-box}
+body.v2 details.ui-details-box > :not(summary):last-child{margin-bottom:16px}
+body.v2 details.ui-details-box input,body.v2 details.ui-details-box select,body.v2 details.ui-details-box textarea{width:100%;max-width:100%;box-sizing:border-box}
 body.v2 .fields{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
 /* 0535: onboarding 'all steps' link spacing (was an inline style) */
 .onb-more{margin-top:10px}
@@ -1610,7 +1616,7 @@ body.v2 .help-tip-body{display:none}
 body.v2 .tip-nowrap{white-space:nowrap}
 body.v2 .tip-nowrap .help-tip-body{white-space:normal}
 body.v2 .ui-section-h>h2:has(>.help-tip){display:flex;align-items:last baseline}
-body.v2 .help-tip.is-open>.help-tip-body,body.v2 .help-tip:not([data-js]):focus-within>.help-tip-body{display:block;position:absolute;z-index:70;left:0;top:100%;margin:6px 0 0;box-sizing:border-box;width:min(320px,calc(100vw - 32px));padding:10px 12px;background:var(--s);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.12);font-size:13px;font-weight:400;line-height:1.45;text-align:left;white-space:normal}
+body.v2 .help-tip.is-open>.help-tip-body,body.v2 .help-tip:not([data-js]):focus-within>.help-tip-body{display:block;position:absolute;z-index:70;left:0;top:100%;margin:6px 0 0;box-sizing:border-box;width:min(320px,calc(100vw - 16px));padding:12px 14px;background:var(--s);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-2);font-size:14px;font-weight:400;line-height:1.45;text-align:left;white-space:normal}
 @media (max-width:1023px){body.v2 .help-tip.is-open>.help-tip-body{position:fixed;left:16px;right:16px;width:auto;top:auto}}
 @media (min-width:1024px){body.v2 .help-tip-end>.help-tip-body{left:auto;right:0}}
 /* 0828 guide search (v2) */
@@ -2159,6 +2165,18 @@ body .page-help[open] > .page-help-body{display:block;position:fixed;z-index:60;
 body .page-help-steps{margin:0 0 12px;padding-left:20px}
 body .page-help-steps li{margin:0 0 6px}
 body .page-help-more{display:inline-block;min-height:44px;line-height:44px;color:#222;font-weight:600;text-decoration:underline}
+body .page-help-wrap{position:relative}
+/* 1003: one help card. Page "?" opens under its dot (JS sets left/top; this is the no-JS fallback under the button). */
+body .page-help[open]>.page-help-body{position:absolute;left:0;right:auto;top:100%;margin:8px 0 0;transform:none;width:min(320px,calc(100vw - 16px));max-width:calc(100vw - 16px);max-height:min(70vh,calc(100vh - 16px));padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);box-shadow:var(--shadow-2);font-size:14px;line-height:1.45}
+body :is(.page-help-body,.help-tip-body) :is(p,ol,ul){margin:0 0 8px}
+body :is(.page-help-body,.help-tip-body) :is(ol,ul){padding-left:18px}
+body :is(.page-help-body,.help-tip-body) li{margin:0 0 6px;padding-left:2px}
+body :is(.page-help-body,.help-tip-body) li:last-child{margin-bottom:0}
+body :is(.page-help-body,.help-tip-body) :is(p,ol,ul):last-child{margin-bottom:0}
+body .page-help-body .page-help-more,body .help-tip-body a{display:inline-flex;align-items:center;gap:4px;min-height:32px;margin-top:4px;color:var(--accent-ink);font-weight:500;line-height:1.45;text-decoration:none}
+body .page-help-body .page-help-more::after{content:"\2192";font-weight:400}
+body .page-help-body .page-help-more:hover,body .help-tip-body a:hover{text-decoration:underline}
+body .page-help-body .page-help-more:focus-visible,body .help-tip-body a:focus-visible{outline:0;box-shadow:var(--focus-ring-2);border-radius:4px}
 body.v2 .stays-index-card.stays-links{display:block;gap:0;margin-top:24px;padding:0;border:1px solid #ddd;border-radius:12px;background:#fff;overflow:hidden}
 body.v2 .stays-index-card.stays-links > a.airbnb-index-row{display:flex;align-items:center;gap:16px;min-height:64px;padding:0 16px;box-sizing:border-box;margin:0;border:0;border-radius:0;background:none;color:#222;text-decoration:none;font-size:17px;font-weight:400}
 body.v2 .stays-index-card.stays-links > a.airbnb-index-row + a.airbnb-index-row{border-top:1px solid #ddd}
@@ -2962,3 +2980,5 @@ body.v2 dialog:focus,body.v2 dialog:focus-visible{outline:0}
 body.v2 .csv-export-dialog input:focus,body.v2 .csv-export-dialog select:focus{outline:0}
 body.v2 .csv-export-dialog input:focus-visible,body.v2 .csv-export-dialog select:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-color:var(--acc)}
 body.v2 .csv-export-dialog .ui-btn:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+/* 1003 fix: field "?" card on phones, same width as app.js place() */
+@media (max-width:599px){body.v2 .help-tip .help-tip-body{width:min(360px,calc(100vw - 32px));max-width:calc(100vw - 32px)}}
