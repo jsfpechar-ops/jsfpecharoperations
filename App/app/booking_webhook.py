@@ -183,12 +183,14 @@ def _mail_confirmed(booking: Dict[str, Any], reservation_id: int) -> None:
         )
     if host_email:
         host_facts = _facts(booking, apartment, "cs")
+        host_key = ("site_booking.mail.host_text_direct" if booking.get("pay_method") == "direct"
+                    else "site_booking.mail.host_text")
         mail.enqueue(
             kind="site_booking_host",
             idempotency_key=f"site_booking:{booking['id']}:host_new",
             to_email=host_email,
             subject=host_i18n.translate("cs", "site_booking.mail.host_subject", **host_facts),
-            payload={"text": host_i18n.translate("cs", "site_booking.mail.host_text", **host_facts),
+            payload={"text": host_i18n.translate("cs", host_key, **host_facts),
                      "lang": "cs"},
             reservation_id=reservation_id,
             apartment_id=int(booking["apartment_id"]),

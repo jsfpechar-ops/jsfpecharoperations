@@ -107,7 +107,7 @@
       <dt>{{ b.name }} · {{ b.dates }} · {{ b.total }} {{ t('payments.czk') }}</dt>
       <dd>
         <div class="ui-btn-group">
-        {{ ui_badge('done' if b.status == 'paid' else 'neutral', t('bsite.bookings.status.' ~ b.status)) }}
+        {{ ui_badge('done' if b.status == 'paid' else 'neutral', t('bsite.bookings.status.' ~ b.status_key)) }}
         {% if b.can_confirm %}
         <form method="post" action="/apartments/{{ apartment.id }}/booking-site/confirm" data-confirm data-confirm-message="{{ t('bsite.bookings.confirm_paid') }}">
           <input type="hidden" name="_csrf" value="{{ csrf_token }}">

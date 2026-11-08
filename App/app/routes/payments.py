@@ -700,7 +700,8 @@ async def booking_site_cancel(request: Request, apartment_id: int):
         return _back(here, err=_flash(request, "bsite.err.cancel_failed"))
     if result["error"]:
         return _back(here, err=_flash(request, "bsite.err.not_cancellable"))
-    return _back(here, msg=_flash(request, "bsite.flash.cancelled"))
+    flash_key = "bsite.flash.cancelled_direct" if booking.get("pay_method") == "direct" else "bsite.flash.cancelled"
+    return _back(here, msg=_flash(request, flash_key))
 
 
 # --- one-time payments consent (0624) ------------------------------------------

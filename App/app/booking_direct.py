@@ -73,18 +73,43 @@ def decline(booking_id: int, owner_user_id: int) -> Dict[str, Any]:
     if (booking is None or int(booking["owner_user_id"]) != owner_user_id
             or booking["pay_method"] != "direct"):
         return {"error": "not_found"}
-    if booking["status"] not in ("requested", "expired"):
-        return {"error": "not_confirmable"}
-    try:
-        moved = booking_site.set_status(booking_id, "cancelled", cancelled_at=db.utcnow())
-    except ValueError:
-        return {"error": "not_confirmable"}
-    if not moved:
-        return {"error": "not_confirmable"}
+    with db.immediate() as cur:
+        db.lock_key(cur, "booking_site_dates", int(booking["apartment_id"]))
+        cur.execute(
+            "UPDATE site_booking SET status = 'cancelled', cancelled_at = ?, updated_at = ?"
+            " WHERE id = ? AND status IN ('requested', 'expired')",
+            (db.utcnow(), db.utcnow(), booking_id))
+        if cur.rowcount != 1:
+            return {"error": "not_confirmable"}
     if booking["hold_id"]:
         db.execute("DELETE FROM booking_hold WHERE id = ?", (booking["hold_id"],))
     db.audit("site_booking_declined", f"id={booking_id}", owner_user_id=owner_user_id)
+    _mail_declined(booking)
     return {"error": None}
+
+
+def _mail_declined(booking: Dict[str, Any]) -> None:
+    """Tell the guest the host declined, so they do not pay. Best effort."""
+    try:
+        from . import booking_webhook
+
+        if not booking["guest_email"]:
+            return
+        apartment = booking_webhook._apartment(booking)
+        lang = booking["lang"] if booking["lang"] in ("cs", "en") else "cs"
+        facts = booking_webhook._facts(booking, apartment, lang)
+        mail.enqueue(
+            kind="site_booking_refunded",
+            idempotency_key=f"site_booking:{booking['id']}:declined",
+            to_email=booking["guest_email"],
+            subject=host_i18n.translate(lang, "site_booking.mail.declined_subject", **facts),
+            payload={"text": host_i18n.translate(lang, "site_booking.mail.declined_text", **facts),
+                     "lang": lang, "reply_to": booking_webhook._host_email(apartment)},
+            apartment_id=int(booking["apartment_id"]),
+            owner_user_id=int(booking["owner_user_id"]),
+        )
+    except Exception:
+        log.exception("site booking %s: decline mail failed", booking.get("id"))
 
 
 def notify_request(booking: Dict[str, Any]) -> None:
