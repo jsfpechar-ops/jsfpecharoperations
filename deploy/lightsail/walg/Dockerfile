@@ -19,3 +19,4 @@ RUN set -eu \
  && wal-g --version
 COPY walg-ship.sh /usr/local/bin/walg-ship.sh
 RUN chmod 0755 /usr/local/bin/walg-ship.sh
+RUN groupadd -g 70 walg && useradd -u 70 -g 70 -M -d /tmp -s /usr/sbin/nologin walg
