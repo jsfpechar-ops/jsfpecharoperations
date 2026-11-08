@@ -247,7 +247,7 @@ def test_full_schema_apply_and_validate_on_postgres(pg_runtime):
     assert config.DB_BACKEND == "postgresql"
     status = db.postgres_schema_status()
     assert status["current"] is True
-    assert status["actual_version"] == db.expected_schema_version() == 37
+    assert status["actual_version"] == db.expected_schema_version() == 39
     assert status["expected_tables"] == 68 and status["actual_tables"] == 69  # + job (goose 00003, PostgreSQL only)
     assert status["missing_tables"] == 0 and status["extra_tables"] == 1  # job
     assert status["column_mismatches"] == 0
@@ -287,7 +287,7 @@ def test_full_schema_apply_and_validate_on_postgres(pg_runtime):
 
     history = db.query("SELECT version, name FROM schema_migrations ORDER BY version")
     assert history[0]["version"] == 1 and history[0]["name"] == "baseline"
-    assert [row["version"] for row in history] == list(range(1, 38))
+    assert [row["version"] for row in history] == list(range(1, 40))
 
 
 def test_schema_apply_and_validate_are_idempotent_on_postgres(pg_runtime):
@@ -306,7 +306,7 @@ def test_schema_apply_and_validate_are_idempotent_on_postgres(pg_runtime):
     ):
         assert apply_status[key] == before[key] == after[key], key
     assert after["current"] is True
-    assert db.schema_version() == 37
+    assert db.schema_version() == 39
     connection = db.connect()
     try:
         trigger_count = connection.execute_native(
@@ -315,7 +315,7 @@ def test_schema_apply_and_validate_are_idempotent_on_postgres(pg_runtime):
     finally:
         connection.close()
     assert trigger_count == 6
-    assert db.query_one("SELECT COUNT(*) AS n FROM schema_migrations")["n"] == 37
+    assert db.query_one("SELECT COUNT(*) AS n FROM schema_migrations")["n"] == 39
 
 
 def test_pg_schema_cli_reports_and_applies_the_current_schema(pg_runtime, tmp_path):
@@ -331,7 +331,7 @@ def test_pg_schema_cli_reports_and_applies_the_current_schema(pg_runtime, tmp_pa
         timeout=120,
     )
     assert plan.returncode == 0, plan.stderr[-1000:]
-    assert "schema version 37 is planned" in plan.stdout
+    assert "schema version 39 is planned" in plan.stdout
 
     apply = subprocess.run(
         [*base, "apply", "--expect-database", expected_database],
@@ -342,7 +342,7 @@ def test_pg_schema_cli_reports_and_applies_the_current_schema(pg_runtime, tmp_pa
         timeout=180,
     )
     assert apply.returncode == 0, apply.stderr[-1000:]
-    assert "version=37" in apply.stdout and "tables=69" in apply.stdout
+    assert "version=39" in apply.stdout and "tables=69" in apply.stdout
 
     wrong = subprocess.run(
         [*base, "check", "--expect-database", "definitely-not-this-database"],
@@ -1052,7 +1052,7 @@ def test_transfer_copies_and_verifies_every_table(transfer_workspace):
     assert payload["tables"]["invoice_item"]["rows"] == 1
     assert payload["tables"]["stay_fee_filing"]["rows"] == 1
     assert payload["tables"]["rate_limit_event"]["rows"] == 1
-    assert payload["tables"]["schema_migrations"]["rows"] == 37
+    assert payload["tables"]["schema_migrations"]["rows"] == 39
     assert sum(1 for entry in payload["tables"].values() if entry["rows"] == 0) >= 40
 
 
@@ -1065,7 +1065,7 @@ def test_transfer_report_contains_no_raw_values_or_secrets(transfer_workspace):
     assert "postgresql://" not in combined
     assert transfer_workspace["payload"]["source_identity"] == {
         "path_name": "source.sqlite",
-        "schema_version": 37,
+        "schema_version": 39,
     }
     assert transfer_workspace["payload"]["target_database"] == TARGET["database"]
 

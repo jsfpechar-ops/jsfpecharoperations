@@ -15,6 +15,7 @@ from . import (
     alerts,
     billing_analytics,
     claim,
+    booking_checkout,
     config,
     db,
     door_codes,
@@ -278,6 +279,7 @@ def _job_mail() -> None:
     items: dict = {}
     for name, step in (
         ("expire_holds", claim.expire_holds),
+        ("expire_requests", booking_checkout.expire_requests),
         ("drain", mail.drain),
         ("reminders", claim.sweep_reminders),
         # Once a day and only with UBYHOST_LIFECYCLE_MAIL=1 (WP12).

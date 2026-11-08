@@ -36,11 +36,15 @@ def cancel(booking_id: int, *, by_host: bool, now: Optional[datetime] = None) ->
     booking = booking_site.get(booking_id)
     if booking is None:
         return {"error": "not_found"}
+    if booking.get("pay_method") == "direct" and not by_host:
+        return {"error": "not_cancellable"}
     owner = int(booking["owner_user_id"])
     if booking["status"] == "paid":
         if not by_host and started(booking, now):
             return {"error": "started"}
         amount = refund_now(booking, by_host=by_host, now=now)
+        if booking.get("pay_method") == "direct":
+            amount = 0
         db.set_setting(_intent_key(booking_id), f"{amount}:{'h' if by_host else 'g'}")
         if not booking_site.set_status(booking_id, "cancelled", cancelled_at=db.utcnow()):
             return {"error": "busy"}
@@ -138,7 +142,10 @@ def _mail_cancelled(booking: Dict[str, Any], amount: int, by_host: bool) -> None
     lang = booking["lang"] if booking["lang"] in ("cs", "en") else "cs"
     facts = booking_webhook._facts(booking, apartment, lang)
     facts["refund"] = amount
-    if by_host:
+    direct = booking.get("pay_method") == "direct"
+    if by_host and direct:
+        guest_key = "site_booking.mail.cancel_guest_direct"
+    elif by_host:
         guest_key = "site_booking.mail.cancel_guest_by_host"
     elif amount > 0:
         guest_key = "site_booking.mail.cancel_guest_refund"
@@ -158,7 +165,8 @@ def _mail_cancelled(booking: Dict[str, Any], amount: int, by_host: bool) -> None
     if host_email:
         host_facts = booking_webhook._facts(booking, apartment, "cs")
         host_facts["refund"] = amount
-        host_key = ("site_booking.mail.cancel_host_by_host" if by_host
+        host_key = ("site_booking.mail.cancel_host_direct" if by_host and direct
+                    else "site_booking.mail.cancel_host_by_host" if by_host
                     else "site_booking.mail.cancel_host_by_guest")
         mail.enqueue(
             kind="site_booking_host",

@@ -1,8 +1,9 @@
 {% extends "host_page.html" %}
-{% from "_ui.html" import ui_button, ui_badge, ui_field, ui_select with context %}
+{% from "_ui.html" import ui_button, ui_badge, ui_field, ui_select, ui_check with context %}
+{% from "_components.html" import help_tip with context %}
 {% from "_ui_layout.html" import ui_section, ui_facts, ui_banner with context %}
 {% from "_components.html" import choice_card, copy_button with context %}
-{% set nav = 'properties' %}
+{% set nav = 'booking_sites' %}
 {% set body_kind = 'form' %}
 {% block title %}{{ t('bsite.title') }} · {{ apartment.internal_name }}{% endblock %}
 {% block back_url %}/apartments/{{ apartment.id }}/page{% endblock %}
@@ -26,7 +27,7 @@
       {% else %}{{ ui_badge('neutral', t('bsite.badge.wait')) }}{% endif %}
       {# the current step's one action button goes here, see below #}
       {% if row.current and not row.done %}
-        {% if row.key == 'stripe' %}{{ ui_button(t('bsite.act.stripe'), 'secondary', href='/payments', size='compact') }}
+        {% if row.key == 'pay' %}{{ ui_button(t('bsite.act.pay'), 'secondary', href='#pay', size='compact') }}
         {% elif row.key == 'page' %}{{ ui_button(t('bsite.act.page'), 'secondary', href='/apartments/' ~ apartment.id ~ '/page', size='compact') }}
         {% elif row.key == 'price' or row.key == 'policy' %}{{ ui_button(t('bsite.act.price'), 'secondary', href='#rules', size='compact') }}
         {% elif row.key == 'calendar' %}{{ ui_button(t('bsite.act.calendar'), 'secondary', href='#ical', size='compact') }}
@@ -36,6 +37,20 @@
   </div>
   {% endfor %}
 </dl>
+{% endcall %}
+
+{% set pay_tip = help_tip('bsite-pay-help', t('bsite.pay.lead') ~ ' ' ~ t('bsite.pay.shared')) %}
+{% call ui_section(t('bsite.step.pay'), id='pay', tip=pay_tip, actions=ui_button(t('bsite.act.stripe'), 'secondary', href='/payments', size='compact')) %}
+<form method="post" action="/apartments/{{ apartment.id }}/booking-site/pay">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  {% if not pay.iban_ok %}{{ ui_banner('attention', t('bsite.pay.no_account')) }}{% endif %}
+  {{ ui_check('rail-iban', t('stay_fees.guest_pay.rail.iban'), name='rails', value='iban', checked='iban' in pay.ticked) }}
+  {{ ui_check('rail-revolut', t('stay_fees.guest_pay.rail.revolut'), name='rails', value='revolut', checked='revolut' in pay.ticked) }}
+  {{ ui_field('revolut_link', t('stay_fees.guest_pay.revolut_label'), value=pay.revolut_link, type='url', attrs='inputmode="url"') }}
+  {{ ui_check('rail-cash', t('stay_fees.guest_pay.rail.cash'), name='rails', value='cash', checked='cash' in pay.ticked) }}
+  {{ ui_field('cash_note', t('stay_fees.guest_pay.cash_label'), value=pay.cash_note, attrs='maxlength="300"') }}
+  {{ ui_button(t('common.save'), 'primary', type='submit') }}
+</form>
 {% endcall %}
 
 {% call ui_section(t('bsite.rules.title'), id='rules') %}
@@ -86,19 +101,35 @@
 {% endcall %}
 {% call ui_section(t('bsite.bookings.title')) %}
   {% if bookings %}
-  <dl class="ui-facts">
+  <dl class="ui-facts bsite-bookings">
     {% for b in bookings %}
     <div>
       <dt>{{ b.name }} · {{ b.dates }} · {{ b.total }} {{ t('payments.czk') }}</dt>
       <dd>
-        {{ ui_badge('done' if b.status == 'paid' else 'neutral', t('bsite.bookings.status.' ~ b.status)) }}
-        {% if b.can_cancel or b.can_retry %}
-        <form method="post" action="/apartments/{{ apartment.id }}/booking-site/cancel" data-confirm data-confirm-message="{{ t('bsite.bookings.confirm') }}">
+        <div class="ui-btn-group">
+        {{ ui_badge('done' if b.status == 'paid' else 'neutral', t('bsite.bookings.status.' ~ b.status_key)) }}
+        {% if b.can_confirm %}
+        <form method="post" action="/apartments/{{ apartment.id }}/booking-site/confirm" data-confirm data-confirm-message="{{ t('bsite.bookings.confirm_paid') }}">
           <input type="hidden" name="_csrf" value="{{ csrf_token }}">
           <input type="hidden" name="booking_id" value="{{ b.id }}">
-          {{ ui_button(t('bsite.bookings.retry') if b.can_retry else t('bsite.bookings.cancel'), 'danger', type='submit', size='compact') }}
+          {{ ui_button(t('bsite.bookings.mark_paid'), 'secondary', type='submit', size='compact') }}
         </form>
         {% endif %}
+        {% if b.can_decline %}
+        <form method="post" action="/apartments/{{ apartment.id }}/booking-site/decline" data-confirm data-confirm-message="{{ t('bsite.bookings.confirm_decline') }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+          <input type="hidden" name="booking_id" value="{{ b.id }}">
+          {{ ui_button(t('bsite.bookings.decline'), 'secondary', type='submit', size='compact') }}
+        </form>
+        {% endif %}
+        {% if b.can_cancel or b.can_retry %}
+        <form method="post" action="/apartments/{{ apartment.id }}/booking-site/cancel" data-confirm data-confirm-message="{{ t('bsite.bookings.confirm_direct' if b.direct else 'bsite.bookings.confirm') }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+          <input type="hidden" name="booking_id" value="{{ b.id }}">
+          {{ ui_button(t('bsite.bookings.retry') if b.can_retry else (t('bsite.bookings.cancel_direct') if b.direct else t('bsite.bookings.cancel')), 'danger', type='submit', size='compact') }}
+        </form>
+        {% endif %}
+        </div>
       </dd>
     </div>
     {% endfor %}

@@ -4,9 +4,9 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List
 
-from . import booking_site, db, property_page, stripe_connect
+from . import booking_rails, booking_site, db, property_page, stripe_connect
 
-ORDER = ("stripe", "page", "price", "policy", "calendar", "publish")
+ORDER = ("pay", "page", "price", "policy", "calendar", "publish")
 ERR_FIELDS = ("nightly_price_czk", "cleaning_fee_czk", "min_nights", "max_guests",
               "cancellation_policy", "advance_notice_days")
 # "<days>" or "<0>:<cutoff hour>" (same-day booking until that hour, Prague).
@@ -28,7 +28,8 @@ def steps(apartment_id: int, owner_user_id: int) -> List[Dict[str, Any]]:
     account = stripe_connect.account_for_owner(owner_user_id)
     photos = json.loads(page["photos_json"] or "[]")
     done = {
-        "stripe": bool(account and account["onboarding_state"] == "complete"),
+        "pay": bool(account and account["onboarding_state"] == "complete")
+        or booking_rails.ready(apartment_id),
         "page": bool(photos) and bool((page["description"] or "").strip()),
         "price": int(s["nightly_price_czk"] or 0) > 0,
         "policy": db.get_setting(f"booking_site:{int(apartment_id)}") is not None,
@@ -40,9 +41,9 @@ def steps(apartment_id: int, owner_user_id: int) -> List[Dict[str, Any]]:
 
 
 def can_publish(rows: List[Dict[str, Any]]) -> bool:
-    """Stripe connected and a price set; the other steps are advice."""
+    """Stripe connected or one direct rail set, and a price set; the other steps are advice."""
     done = {row["key"]: row["done"] for row in rows}
-    return bool(done["stripe"] and done["price"])
+    return bool(done["pay"] and done["price"])
 
 
 def notice_value(s: Dict[str, Any]) -> str:

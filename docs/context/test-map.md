@@ -32,10 +32,11 @@ Run only the row for the area you changed, from `App/`, always ending `-q --tb=s
 | Operator customer dashboard | `test_admin_customers.py test_host_*.py test_design_guardrails_browser.py` (browser checks 0 skipped) |
 | Direct payments, Stripe Connect | `test_payment_request_model.py test_stripe_connect.py` |
 | Payments dashboard + rails | `test_payments_dashboard.py test_payment_request_model.py test_stripe_connect.py test_payment_links.py test_payment_qr.py test_payment_services.py` |
-| Public property pages | `test_property_slug.py test_property_page.py test_property_page_photos.py test_property_page_meta.py` (+ browser/geometry row when templates land) |
-| v2 pages (any page with `{% set v2 = true %}`) | `tests/test_0710_v2_mockup_match_browser.py` (browser, 0 skipped; styles vs mockup and geometry at 320-1440 px) |
+| Public property pages | `test_property_slug.py test_property_page.py test_property_page_photos.py test_property_page_meta.py test_property_page_rules.py` |
+| v2 pages (`{% set v2 = true %}`) | `tests/test_0710_v2_mockup_match_browser.py` (browser, 0 skipped; geometry 320-1440 px) |
 | Page booking widget | `test_booking_widget.py test_property_page.py test_stripe_connect.py test_payment_request_model.py` |
 | Booking site (rules, checkout, webhook, iCal) | `test_booking_site.py test_property_page.py test_stripe_connect.py` |
+| Booking site direct pay | `test_booking_direct_*.py test_booking_site.py test_host_i18n.py` |
 | Deploy scripts, Caddyfile, compose | `shellcheck -S error deploy/lightsail/scripts/*.sh`; CI job `caddy` validates both Caddyfiles with the compose caddy service |
 | A module with no row | `tests/test_<module name>*.py`; none exists: `-k <module name>` |
 | Read guard hook (`scripts/hooks/`, `.claude/settings.json`) | `tests/test_read_guard_hook.py` |
