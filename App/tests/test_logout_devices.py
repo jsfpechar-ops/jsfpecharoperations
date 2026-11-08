@@ -171,3 +171,48 @@ def test_identity_post_changes_bank_when_the_login_is_fresh():
     assert not _recent_login_redirect(response)
     row = db.query_one("SELECT bank_account FROM legal_entity WHERE id = ?", (entity_id,))
     assert row["bank_account"] == "19-2000781379/0800"
+
+
+def test_identity_post_cannot_change_iban_with_a_stale_session(monkeypatch):
+    username = _new_host()
+    entity_id = _entity_for(username)
+    client = _signed_in(username)
+    monkeypatch.setattr(auth, "FRESH_LOGIN_SECONDS", -1)
+
+    stolen = client.post(
+        f"/entities/{entity_id}",
+        data={"name": "Devices s.r.o.", "iban": "CZ1753060000000012345678"},
+        follow_redirects=False,
+    )
+
+    assert stolen.status_code == 303
+    assert _recent_login_redirect(stolen)
+    row = db.query_one("SELECT iban FROM legal_entity WHERE id = ?", (entity_id,))
+    assert row["iban"] == "CZ9106000000000000000123"
+
+
+def test_identity_post_cannot_change_split_account_with_a_stale_session(monkeypatch):
+    """The invoice-style prefix/number/bank fields also count as a bank write."""
+    username = _new_host()
+    entity_id = _entity_for(username)
+    client = _signed_in(username)
+    monkeypatch.setattr(auth, "FRESH_LOGIN_SECONDS", -1)
+
+    stolen = client.post(
+        f"/entities/{entity_id}",
+        data={
+            "name": "Devices s.r.o.",
+            "account_prefix": "19",
+            "account_number": "2000781379",
+            "account_bank": "0800",
+        },
+        follow_redirects=False,
+    )
+
+    assert stolen.status_code == 303
+    assert _recent_login_redirect(stolen)
+    row = db.query_one(
+        "SELECT bank_account, iban FROM legal_entity WHERE id = ?", (entity_id,)
+    )
+    assert row["bank_account"] == "123/0600"
+    assert row["iban"] == "CZ9106000000000000000123"

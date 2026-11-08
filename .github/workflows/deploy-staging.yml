@@ -2,7 +2,7 @@ name: Deploy staging
 
 # Deploys any branch to the staging Lightsail server (Step 0): its own
 # instance, domain, .env (UBYHOST_DEPLOYMENT=staging, COMPOSE_PROFILES=staging
-# for the mock UbyPort service) and its own Litestream prefix. Never real guest
+# for the mock UbyPort service). Never real guest
 # data. Every HIGH RISK work package is deployed here and clicked through
 # before it is merged.
 #

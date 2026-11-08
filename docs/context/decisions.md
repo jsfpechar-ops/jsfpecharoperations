@@ -66,3 +66,5 @@ Append-only.
 - [ui] 2026-11-06 [owner]: property page keeps main's header and tile grid; the setup progress card sits full width below the grid (0986).
 - 2026-11-06 [owner] lock connected but codes off shows main's "Turn on" row; "Connect my lock" only for first-time setup (0987).
 - 2026-11-07 [owner] booking site request-to-book: direct rails (IBAN/Revolut/cash) instead of or beside Stripe; 24h hold; host confirms manually (0996-0998).
+- 2026-11-07 | [backup] Litestream retired (stale SQLite only); S3 replica kept | owner | [1021](../tasks/1021-remove-litestream.md)
+- 2026-11-07 | [backup] WAL-G approved (rule 4): WAL archiving + PITR to S3 | owner | [1022](../tasks/1022-walg-continuous-archiving.md)

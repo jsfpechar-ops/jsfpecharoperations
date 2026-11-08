@@ -467,6 +467,7 @@ def test_create_offers_the_calendar_first_and_works_without_js(host, base):
         page.fill("#internal_name", "Synthetic Early Calendar Flat")
         page.fill("#addr_obec", "Praha")
         page.fill("#addr_house_no", "12")
+        page.fill("#addr_street", "Synthetic")
         page.fill("#addr_zip", "11000")
         page.select_option("#legal_entity_id", str(host["entities"][0]))
         for field, value in (("addr_obec", "Brno"), ("addr_house_no", "12"), ("addr_zip", "602 00")):

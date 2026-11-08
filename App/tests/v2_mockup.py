@@ -54,8 +54,16 @@ SELECTOR_OVERRIDES = {
     "properties:main table th": {"padding-left": "16px"},
     "properties:main table td": {"padding-left": "16px", "border-bottom-color": "rgb(229, 229, 229)"},
     "property:main h1": {"font-size": "32px", "font-weight": "700"},
+    # owner decision 2026-11-08 (Josef's laptop screenshots): section titles need an inset; desktop summary title 16px/700 like the section headings (phones use ".prop-sec summary b")
+    "property:summary b": {"font-size": "16px", "font-weight": "700"},
     ".police-card": {"border-top-left-radius": "12px", "padding-top": "16px", "padding-right": "20px", "padding-bottom": "16px", "padding-left": "20px", "border-bottom-color": "rgb(229, 229, 229)"},
     # owner 2026-11-01 19:09: smaller pills than the phone mockup
+}
+# Overrides that apply only from 768 px up (the phone mockup is still compared at 768; phones below 768 keep the mockup values).
+WIDE_OVERRIDES = {
+    # owner decision 2026-11-08 (Josef's laptop screenshots): section titles need an inset; 16 px like the fields, title 16px/700
+    "property:.prop-sec > summary": {"padding-top": "14px", "padding-right": "16px", "padding-bottom": "14px", "padding-left": "16px"},
+    "property:.prop-sec summary b": {"font-weight": "700"},
 }
 # style-compared only at computer width (phone design pending)
 DESKTOP_ONLY = {".side", ".side .nav", ".side .nav.on"}

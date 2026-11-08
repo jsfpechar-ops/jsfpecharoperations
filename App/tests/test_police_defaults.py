@@ -65,6 +65,7 @@ def _valid_apartment_fields(entity_id: int, **overrides):
         "uby_contact": "host@police-defaults.test",
         "uby_ws_user": "UBY-WSab12cd",
         "uby_ws_password_enc": db.encrypt_secret("secret"),
+        "addr_street": "Synthetic",
         "addr_house_no": "1",
         "addr_zip": "120 00",
         "addr_obec": "Praha",
@@ -151,6 +152,7 @@ def test_create_applies_defaults_from_login_and_operator(host):
             "uby_idub": "123456789012",
             "uby_ws_user": "UBY-WSab12cd",
             "uby_ws_password": "secret",
+            "addr_street": "Synthetic",
             "addr_house_no": "1",
             "addr_zip": "120 00",
             "addr_obec": "Praha",
@@ -193,7 +195,7 @@ def test_save_keeps_a_stored_facility_name_and_does_not_fill_a_blank_one(host):
         token = page.text.split('name="_csrf" value="', 1)[1].split('"', 1)[0]
         form = {key: (row[key] or "") for key in (
             "internal_name", "uby_idub", "uby_mark", "uby_name", "uby_contact", "uby_ws_user",
-            "addr_house_no", "addr_zip", "addr_obec")}
+            "addr_street", "addr_house_no", "addr_zip", "addr_obec")}
         form.update({"_csrf": token, "legal_entity_id": str(entity_id)})
         response = host.post(f"/apartments/{apartment_id}", data=form, follow_redirects=False)
         assert response.status_code == 303, response.text
