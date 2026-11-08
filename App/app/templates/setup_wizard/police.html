@@ -35,7 +35,7 @@
   <div class="grid two">
     {{ text_field('uby_ws_user', t('automation.login'), values.uby_ws_user, t('apartment.form.ubyport.login_hint'), false, none, true) }}
     <div class="field">
-      {{ field_label('uby_ws_password', t('automation.password'), t('apartment.form.ubyport.password_help')) }}
+      {{ field_label('uby_ws_password', t('automation.password'), t('apartment.form.ubyport.password_help'), false, '', not has_password) }}
       <input type="password" id="uby_ws_password" name="uby_ws_password" autocomplete="new-password"{% if has_password %} placeholder="••••••••"{% else %} required{% endif %}>
     </div>
   </div>
