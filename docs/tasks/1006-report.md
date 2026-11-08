@@ -2,53 +2,62 @@
 
 Status: review
 
-## Files changed (uncommitted, no commit, no push, no PR)
-- App/app/static/app2.css: 1006 block appended (ui-page-narrow, ui-section-card, ui-section-head, ui-kv, ui-kv-row, ui-note-strip)
-- App/app/templates/base.html: app2.css?v=20261107-1207 -> 20261108-1001
-- App/app/templates/billing_plan.html: settings-lane also gets ui-page-narrow; status shown as ui_badge pill; tip= moved into the titles of Change, Cancel and Invoices
-- docs/design/catalog.json: 6 class names added
-- docs/design/design-system.md: section 5b with checklist added before section 6
-- docs/tasks/1006-report.md: this file
-- The temporary screenshot test was created and deleted again. Property editor template (step 7) was reverted, see below.
+## Files changed (local commits, not pushed, no PR)
 
-`git status --short`: M app2.css, base.html, billing_plan.html, catalog.json, design-system.md; ?? docs/tasks/1006-ux-wolt-style-cards.md
+- App/app/routes/admin.py: placeholder pill shows platform name, `· N`, or empty with title (step 1)
+- App/app/templates/dashboard.html: legend line removed (step 2)
+- App/app/static/dashboard-calendar.js: placeholder never shown in sheet (step 3)
+- App/app/templates/_dashboard_calendar.html: `blocked` label removed, js key 20261107-1006 (step 4)
+- App/app/host_i18n.py: 8 keys removed, en and cs (step 5)
+- App/tests/test_host_i18n.py: 2 asserts removed, emptied test function removed (step 6)
+- App/app/static/app2.css: copy-link always visible, legend rules removed, calm focus rules (steps 7 to 9)
+- App/app/templates/base.html: app2.css key 20261107-1011 (step 10)
+- App/app/templates/reservation_detail.html: guest name links to guest page (step 11)
+- App/tests/static_versions.json: regenerated with `--write`
 
-## Commands (last lines)
-- `python3 scripts/design_lint.py`: "design lint: OK"
-- `python3 scripts/context_lint.py`: "context lint: OK"
-- billing/property/host pytest (App/): `342 passed` after reverting step 7
-- Before revert, one failure: tests/test_property_navigation_browser.py:177 (`_open_ids`) pins the exact markup `<details class="prop-sec" id=...>`. Changing the class broke it. Fixing it needs a test file outside brief section 3, so step 7 was reverted.
-- Layout lint (UBYHOST_REQUIRE_BROWSER=1, UBYHOST_SHOTS_DIR=/tmp/shots): `4 passed`, 0 skipped, no findings reported.
+## Commands (last 5 lines)
 
-## What I saw
-- Plan and billing 390: one white card per section, narrow, single column. Title with "?" beside it (Your plan, Change, Cancel). Facts stacked label above value. Status "Active" is a small grey pill. Cancel button right aligned in its card. The Change buttons are stacked and right aligned, which is legible but not compact. In the full-page capture the fixed bottom nav and help bubble overlap content; that is a screenshot artifact, not a layout fault.
-- Plan and billing 1280: 720 px centred column, label/value rows with dividers, Change buttons stacked right, Cancel card. No stray "?". Invoices section not shown: the test account has no invoices.
-- 768: layout lint shot taken; not opened by me.
-- Property editor: step 7 reverted, so the editor is unchanged. The screenshots are from the layout-lint run (property-detail-configured+open). At 1280 they are about 6000 px tall and at 390 about 9400 px; the viewer downscaled them, so I could not verify details. Nothing obviously broken was seen at that scale.
+- Mapped pytest, UBYHOST_REQUIRE_BROWSER=1: `162 passed, 1 warning in 303.33s`, no skips.
+- Layout lint: `4 passed in 235.96s`, zero findings, no skips.
+- `python3 scripts/context_lint.py`: see the commit output below.
 
-## Screenshots
-- /mnt/project-files/ux-shots/wolt/billing-390.png
-- /mnt/project-files/ux-shots/wolt/billing-1280.png
-- /mnt/project-files/ux-shots/wolt/property-390.png
-- /mnt/project-files/ux-shots/wolt/property-1280.png
+## Section 7
+
+- [x] Pill copy removed; tests pass (visual check of pills not done, see below).
+- [ ] Copy link visible at 1280 without hover: NOT verified. The properties shot shows no copy-link button; the test targets /apartments.
+- [ ] No heavy outline on mouse use: NOT verified visually. Covered by the focus CSS and a passing controls test.
+- [x] Guest name is a link to the same URL as "Edit details"; menu markup unchanged.
+- [x] Layout lint zero findings, 0 skipped.
+- [ ] Design-system checklist: not ticked (no PR opened).
+
+## Screenshots reviewed
+
+- properties-1280: list rows, no copy-link button visible, no focus ring visible.
+- dashboard-390: top section fine, no legend line visible in crop.
+- stay-detail-390: guest name shown in the guest row, cut off by the bottom nav in the shot.
+- Not opened: 768 and 1280 for dashboard, calendar and stay detail; 390 for properties.
 
 ## Deviations
-- Step 7 (property editor class change) reverted, because of the test pin above.
-- Cache key used is 20261108-1001 (as instructed).
-- Test-map run only; no full suite.
+
+- base.html key is 1011, not 1010: app2.css changed again (row focus fix).
+- Added `.clickable-row:focus-visible` ring. Brief rules alone failed test_host_controls_browser.py:226 (row.focus() must show an outline).
+- Legend comment `/* 0993 */` kept: a `.cd small` rule still sits under it.
+- Done: steps 1 to 11. Left: owner review, PR and merge, check copy-link at 1280 on /apartments.
 
 ## Owner steps left
-1. Open the four screenshots and approve or reject.
-2. Decide whether to brief a test update (test_property_navigation_browser.py:124 regex) so the six `prop-sec` sections can get ui-section-card.
-3. If approved: commit and open the PR yourself, or ask for a commit brief.
 
-## Verification (second run, 2026-11-08)
-- base.html app2.css key: 20261108-1003; `tests/test_static_versions.py --write` run (51 files).
-- `.venv/bin/python -m pytest tests/test_layout_lint_browser.py`: 4 passed, 0 skipped.
-- Billing/plan tests (test_0416_plan_page_browser.py, test_billing_enforcement.py, test_billing_order.py): 30 passed.
-- `python3 scripts/design_lint.py`: OK. `python3 scripts/context_lint.py`: OK.
-- Fresh billing shots (active Standard account, 390 and 1280): no horizontal overflow (scrollWidth equals viewport at both widths).
-- 390 px: page title left edge matches the card edge. Change buttons wrap to two rows (flex wrap), no stray icons beyond the "?" tips. The fixed bottom nav covers part of the full-page capture; this is a screenshot artifact.
-- 1280 px: title and cards share the 720 px column left edge. Change buttons sit in one row. Cancel button right aligned in its card.
-- Screenshots copied to /mnt/project-files/ux-shots/wolt/billing-390.png and billing-1280.png.
-- The temporary shoot test was created and deleted again.
+- Review the screenshots, then open the PR and merge via `scripts/merge-pr-on-green.sh`.
+
+## CI fixes
+
+- design lint: added `stay-noname`, `stay-noname-action`, `havel-chip-ico`, `havel-chip-text`, `havel-close` (and `guest-name-link`, see below) to `docs/design/catalog.json` with a `class_notes` line each. `python3 scripts/design_lint.py` prints `design lint: OK`.
+- `App/app/static/app2.css`: `.cd small` font-size 10px to 12px (layout-lint text 10px, partB-overview 1920 px, `7.11.` day hint).
+- `App/app/static/app2.css`: `.ov-cal-more` top margin 0 to 16px, so "Full calendar" is 16px below the paragraph above (partB-overview at all widths).
+- `App/app/templates/reservation_detail.html` + `app2.css`: the guest name link in the stay guests table got class `guest-name-link` (`inline-block`, min-height 24px). It was 19px tall (tap target min 24, partD-stay-detail at 1024 to 1920 px). Catalog entry added.
+- Cache key: `base.html` app2.css `?v=20261107-1102`; `tests/static_versions.json` regenerated.
+- Browser tests: `test_0830_airbnb_pages_browser.py` partB-overview and partD-stay-detail, 14 of 14 pass after the fixes. The other 92 tests in the three named files passed before the fixes.
+
+a11y fix: Copy link button (tbody .btn.sm.ghost.copy-btn) was opacity 0 until row hover, so keyboard focus was invisible. Added `body.v2 tbody tr .btn.sm.ghost.copy-btn:focus-visible` (opacity 1, 2px #d0452d outline, offset 2px) in app2.css; cache key bumped to 20261107-1103. Row focus rule from 1006 untouched.
+
+
+Hover-only buttons removed: app2.css line 80 (`tbody tr .btn.sm.ghost` opacity 0 and its `tr:hover` reveal) deleted, so Copy link is always visible. Line 1054 (`copy-btn:focus-visible` opacity override) deleted; the standard ring at line 191 still gives the 2px accent ring. The media-query hover rule at ~311 did not exist (only its 1006 comment remained, left in place). Other row-hover reveals not changed: components.css:62 (`tbody tr:hover .row-actions>*` opacity 1, row-actions only). Cache key 20261107-2238; static_versions.json regenerated. Tests: a11y_guard, host_property_controls, layout_lint, host_geometry: 20 passed, 0 skipped (layout_lint re-run alone for fresh shots; test_calendar_platform_controls not needed). Screenshots /tmp/shots/layout-lint/properties-1280.png shows Copy link visible on both rows; stays-1280.png no regression.
