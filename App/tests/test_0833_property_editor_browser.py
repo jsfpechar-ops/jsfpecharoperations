@@ -162,6 +162,7 @@ _ERR_GEOMETRY_JS = """() => {
 def _shot(page, name, width):
     if SHOTS_1024:
         Path(SHOTS_1024).mkdir(parents=True, exist_ok=True)
+        page.screenshot(path=str(Path(SHOTS_1024) / f"{name}-{width}-full.png"), full_page=True)
         page.screenshot(path=str(Path(SHOTS_1024) / f"{name}-{width}.png"))
 
 

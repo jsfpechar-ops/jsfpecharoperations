@@ -7888,7 +7888,6 @@ _PROPERTY_NAV_0094_STRINGS = {
         "property_page.save_failed.one": "Not saved: fix %(n)s field. Nothing was changed.",
         "property_page.save_failed.few": "Not saved: fix %(n)s fields. Nothing was changed.",
         "property_page.save_failed_go": "Go to the first one",
-        "property_page.saved": "Saved",
         "property_page.strip.guest_off": "No link yet",
         "property_page.strip.operator_missing": "Operator missing",
 
@@ -7934,7 +7933,6 @@ _PROPERTY_NAV_0094_STRINGS = {
         "property_page.save_failed.one": "Neuloženo: opravte %(n)s pole. Nic se nezměnilo.",
         "property_page.save_failed.few": "Neuloženo: opravte %(n)s pole. Nic se nezměnilo.",
         "property_page.save_failed_go": "Přejít na první",
-        "property_page.saved": "Uloženo",
         "property_page.strip.guest_off": "Odkaz zatím není",
         "property_page.strip.operator_missing": "Chybí provozovatel",
 

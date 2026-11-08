@@ -3253,7 +3253,6 @@ STRINGS: Dict[str, str] = {
     "property_page.save_failed.one": "Chưa lưu: hãy sửa %(n)s ô. Chưa có gì bị thay đổi.",
     "property_page.save_failed.few": "Chưa lưu: hãy sửa %(n)s ô. Chưa có gì bị thay đổi.",
     "property_page.save_failed_go": "Đến ô đầu tiên",
-    "property_page.saved": "Đã lưu",
     "property_page.strip.guest_off": "Chưa có liên kết",
     "property_page.strip.operator_missing": "Thiếu đơn vị vận hành",
 

@@ -300,8 +300,8 @@ def test_a_valid_stay_fee_save_is_stored_and_confirmed(host):
     assert row["stay_fee_vs"] == "1342900493"
     assert row["stay_fee_council_account"]
     page = host.get(response.headers["location"] + "&lang=en").text
-    assert 'class="banner ok save-summary"' in page and "data-save-summary" in page
-    assert 'class="banner err save-summary"' not in page
+    assert 'banner ok section-notice save-summary' in page and "data-save-summary" in page
+    assert 'banner err' not in page
     assert page.count("Saved") >= 1
 
 
