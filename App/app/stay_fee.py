@@ -208,7 +208,7 @@ STATUTORY_DISTRICT_BASES = (
 )
 # Names guests type for Czech towns -> the Czech name, folded (1031, owner list).
 OBEC_ALIASES = {
-    "PRAGUE": "PRAHA", "PRAG": "PRAHA", "PRAGA": "PRAHA",
+    "PRAGUE": "PRAHA", "PRAG": "PRAHA",
     "BRUNN": "BRNO", "PILSEN": "PLZEN", "BUDWEIS": "CESKE BUDEJOVICE",
     "OSTRAU": "OSTRAVA", "MAHRISCH OSTRAU": "OSTRAVA", "MAHRISCH-OSTRAU": "OSTRAVA",
     "MORAVIAN OSTRAVA": "OSTRAVA", "MORAVSKA OSTRAVA": "OSTRAVA",

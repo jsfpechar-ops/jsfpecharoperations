@@ -13,7 +13,7 @@ CZ = validation.CZECH_CODE
 
 FOLDS = [
     ("Praha", "PRAHA"), ("praha", "PRAHA"), ("  PRAHA  ", "PRAHA"), ("Prague", "PRAHA"),
-    ("Prag", "PRAHA"), ("Praga", "PRAHA"), ("Prague 3", "PRAHA"), ("Praha 5", "PRAHA"),
+    ("Prag", "PRAHA"), ("Prague 3", "PRAHA"), ("Praha 5", "PRAHA"),
     ("Praha 1 - Staré Město", "PRAHA"), ("Praha 3 - Žižkov", "PRAHA"),
     ("Praha, Staré Město", "PRAHA"), ("Praha 5 (Smíchov)", "PRAHA"), ("Praha-Smíchov", "PRAHA"),
     ("Praha - Vinohrady", "PRAHA"), ("Praha Vinohrady", "PRAHA"), ("Praha 5 Brno", "PRAHA"),
