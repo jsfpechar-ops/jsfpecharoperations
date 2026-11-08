@@ -13,7 +13,7 @@ Updated: 2026-11-08.
 - UX gate live (layout lint + AGENTS rule 10). Stripe onboarding live; extras merged. **Owner:** deploy; booking site v1 next.
 - 11-08: backups PR #805 (1020-1023) in review: daily S3, Litestream removed, WAL-G sidecar + PITR runbook. **Owner:** WAL-G needs .env.walg + IAM + quiet-hour deploy; restore drill before trusting it.
 
-- 11-08: 1030 stay-fee pay box (no radios, all ways visible) + receipt mail with total and calculation, draft PR. Method used is never claimed (app cannot know). **Owner:** review, deploy.
+- 11-08: 1032 stay-fee pay box (no radios, all ways visible) + receipt mail with total and calculation, draft PR. Method used is never claimed (app cannot know). **Owner:** review, deploy.
 
 ## Next
 - Door codes 0037–0038 on main → owner staging steps.

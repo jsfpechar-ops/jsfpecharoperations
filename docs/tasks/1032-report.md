@@ -1,4 +1,4 @@
-# 1030 report
+# 1032 report
 
 Status: review
 
@@ -8,7 +8,7 @@ Status: review
 - `064ed194` step 3: `App/app/i18n.py`, `App/app/guest_uk_i18n.py` (fee_now_body)
 - `0a71eb3b` step 4: `App/app/mail_notify.py`, `App/app/claim.py`, receipt keys in `App/app/i18n.py`, `App/app/guest_uk_i18n.py`
 - `fbd75572` step 5: `App/tests/test_guest_mail.py` (3 receipt tests); `App/app/i18n.py`, `App/app/guest_uk_i18n.py` (payment-details sentence moved into `mail_completion_fee_ways`, 6 languages)
-- step 6: `docs/tasks/screenshots-1030/receipt.txt`, `docs/tasks/screenshots-1030/receipt.html`
+- step 6: `docs/tasks/screenshots-1032/receipt.txt`, `docs/tasks/screenshots-1032/receipt.html`
 - step 7: this report
 
 ## Commands
@@ -42,4 +42,4 @@ Status: review
 3. Push the branch and open the PR after the browser run is green.
 
 ## Follow-up by orchestrator
-Browser tests ran with UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium and a local-only playwright in the venv (no requirements change). Updated test_guest_browser_e2e.py selectors (details to div.g-fee-opt). Fee tests 8 passed; pay-box screenshots in screenshots-1030/.
+Browser tests ran with UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium and a local-only playwright in the venv (no requirements change). Updated test_guest_browser_e2e.py selectors (details to div.g-fee-opt). Fee tests 8 passed; pay-box screenshots in screenshots-1032/.

@@ -1,4 +1,4 @@
-# 1030: Stay-fee pay box shows all options; receipt mail shows what is due
+# 1032: Stay-fee pay box shows all options; receipt mail shows what is due
 
 Status: review. Executor: Haiku 5.5. Branch: the current branch, do not push.
 Do NOT touch the stay-fee preview/recalculation code (another thread owns it): `stay_fee.py`, `_fee_estimate.html`, `signature.js`, `_fee_obec_rule`, `_fee_typed_guest`, `_fee_liable_days`.
@@ -54,16 +54,16 @@ The stay-fee preview and recalculation code: `stay_fee.py`, `_fee_estimate.html`
 From `App/`:
 `.venv/bin/python -m pytest tests/test_guest_mail.py tests/test_guest_languages.py tests/test_mail_label_case.py tests/test_mail_side_padding.py -q --tb=short -x 2>&1 | tail -30`
 Then the test-map row for guest pages (`grep -n guest docs/context/test-map.md`, run that row only; browser/geometry tests with `-rs`, 0 skipped).
-Screenshots: the guest hub with the pay box at 390, 768, 1280 into `docs/tasks/screenshots-1030/`. Also render the English receipt (text + html) of a 2-night, 1-guest, all-rails case into `docs/tasks/screenshots-1030/receipt.txt` and `receipt.html`.
+Screenshots: the guest hub with the pay box at 390, 768, 1280 into `docs/tasks/screenshots-1032/`. Also render the English receipt (text + html) of a 2-night, 1-guest, all-rails case into `docs/tasks/screenshots-1032/receipt.txt` and `receipt.html`.
 
 ## 7. Acceptance
 - [ ] No radio marks; all enabled options visible at once
 - [ ] Receipt shows total, per-guest calc, ways, VS; no method claim
 - [ ] Tests pass, 0 skipped; screenshots saved
-- [ ] Report written to `docs/tasks/1030-report.md`
+- [ ] Report written to `docs/tasks/1032-report.md`
 
 ## 8. Stop and ask
 If an anchor is not found, or a key is already defined elsewhere.
 
 ## 9. Report
-See [1030-report](1030-report.md).
+See [1032-report](1032-report.md).
