@@ -36,7 +36,19 @@ def _page(request: Request, owner: int, values: Dict[str, Any], *, errors=None, 
           preview: Optional[Dict[str, Any]] = None, status_code: int = 200):
     acc = billing.account(owner)
     ok = values.get("plan") in billing.PLANS and values.get("billing_interval") in billing.INTERVALS
-    quote = billing_order.quote(owner, values) if ok else None
+    upgrade = None
+    if acc and acc.get("plan") in billing.PLANS and acc.get("billing_interval") in billing.INTERVALS:
+        n = billing_order.apartments(owner)
+        lock, brand = bool(acc.get("addon_ttlock")), bool(acc.get("addon_whitelabel"))
+        other = "standard" if acc["plan"] == "max" else "max"
+        month = billing.quote(n, acc["plan"], "month", ttlock=lock, whitelabel=brand)["total"]
+        year = billing.quote(n, acc["plan"], "year", ttlock=lock, whitelabel=brand)["total"]
+        upgrade = {
+            "price": _kc(billing.quote(n, other, acc["billing_interval"], ttlock=lock and other != "max",
+                                       whitelabel=brand)["total"]),
+            "save_pct": round(100 * (12 * month - year) / (12 * month)) if month else 0,
+            "ttlock_price": billing.TTLOCK["month"],
+        }
     return render(request, "billing_plan.html", {
         "acc": acc,
         "values": values,
@@ -49,6 +61,7 @@ def _page(request: Request, owner: int, values: Dict[str, Any], *, errors=None, 
         "trial_ends": validation.fmt_date((acc or {}).get("trial_ends_at") or ""),
         "period_end": validation.fmt_date((acc or {}).get("period_end") or ""),
         "invoices": billing_invoices.for_owner(owner) if acc else [],
+        "upgrade": upgrade,
     }, status_code=status_code)
 
 
