@@ -66,7 +66,7 @@ def _mixed() -> tuple:
 
 
 def test_backfill_row_exists_and_totals_identical():
-    sql = (Path(__file__).resolve().parents[1] / "app/migrations/0038_stay_fee_rate_history.sql").read_text()
+    sql = (Path(__file__).resolve().parents[1] / "app/migrations/0040_stay_fee_rate_history.sql").read_text()
     assert "'2000-01-01'" in sql and "ON CONFLICT" in sql
     plain = _apartment(30)
     _stay(plain["id"])

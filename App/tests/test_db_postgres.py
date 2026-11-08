@@ -247,7 +247,7 @@ def test_full_schema_apply_and_validate_on_postgres(pg_runtime):
     assert config.DB_BACKEND == "postgresql"
     status = db.postgres_schema_status()
     assert status["current"] is True
-    assert status["actual_version"] == db.expected_schema_version() == 39
+    assert status["actual_version"] == db.expected_schema_version() == 40
     assert status["expected_tables"] == 68 and status["actual_tables"] == 69  # + job (goose 00003, PostgreSQL only)
     assert status["missing_tables"] == 0 and status["extra_tables"] == 1  # job
     assert status["column_mismatches"] == 0
@@ -306,7 +306,7 @@ def test_schema_apply_and_validate_are_idempotent_on_postgres(pg_runtime):
     ):
         assert apply_status[key] == before[key] == after[key], key
     assert after["current"] is True
-    assert db.schema_version() == 39
+    assert db.schema_version() == 40
     connection = db.connect()
     try:
         trigger_count = connection.execute_native(
@@ -315,7 +315,7 @@ def test_schema_apply_and_validate_are_idempotent_on_postgres(pg_runtime):
     finally:
         connection.close()
     assert trigger_count == 6
-    assert db.query_one("SELECT COUNT(*) AS n FROM schema_migrations")["n"] == 39
+    assert db.query_one("SELECT COUNT(*) AS n FROM schema_migrations")["n"] == 40
 
 
 def test_pg_schema_cli_reports_and_applies_the_current_schema(pg_runtime, tmp_path):
@@ -1052,7 +1052,7 @@ def test_transfer_copies_and_verifies_every_table(transfer_workspace):
     assert payload["tables"]["invoice_item"]["rows"] == 1
     assert payload["tables"]["stay_fee_filing"]["rows"] == 1
     assert payload["tables"]["rate_limit_event"]["rows"] == 1
-    assert payload["tables"]["schema_migrations"]["rows"] == 39
+    assert payload["tables"]["schema_migrations"]["rows"] == 40
     assert sum(1 for entry in payload["tables"].values() if entry["rows"] == 0) >= 40
 
 
