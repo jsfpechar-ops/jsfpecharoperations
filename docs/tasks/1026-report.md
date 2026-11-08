@@ -46,3 +46,7 @@ Status: review (Task C not done, owner decision needed: see Left)
 - Task C: owner decision (see above).
 - Screenshot: `/mnt/project-files/ux-shots/stayfee-rules/pay-390.png` NOT written. The only 390 px pay image the test makes is the host stay-fee page, not the guest pay step, so I did not copy it. Needs a guest pay-step 390 px shot.
 - Owner: review the Task D money change before merge.
+
+- CI fix (PR #815): changed `tests/test_p3_review_repro.py::test_unparseable_stay_date_is_refused` (3 params: garbage, 2026-02-30, 31.12.2099) and renamed it `test_unreadable_posted_stay_date_is_ignored_and_booking_dates_kept`.
+- Why: it pinned the old 422 refusal of a bad posted stay_from; task 2 locks stay dates (guest.py::_locked_stay_dates), so the save now returns 303 and keeps the booking dates. Owner approved the lock; the lock itself is unchanged.
+- No other listed test failed (the 3 CI failures were all these parametrized cases). Listed set + test_stay_fee_rules_1026.py: 283 passed.
