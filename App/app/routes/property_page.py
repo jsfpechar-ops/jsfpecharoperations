@@ -485,6 +485,17 @@ def booking_manage_page(request: Request, slug: str, booking_id: int, token: str
     if booking is None:
         return Response(status_code=404)
     lang = _manage_lang(request, booking)
+    if booking.get("pay_method") == "direct" and booking["status"] in ("requested", "expired"):
+        from .. import booking_webhook
+        apartment_id = int(booking["apartment_id"])
+        response = render(request, "property_page_requested.html", {
+            "page": _page_context(apartment_id) or {}, "show_nav": False, "lang": lang,
+            "booking": booking, "rails": booking_rails.guest_view(apartment_id, booking),
+            "dates": booking_webhook._dates(booking, lang), "total": int(booking["total_czk"]),
+        })
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["X-Robots-Tag"] = "noindex"
+        return response
     error = request.query_params.get("e", "")
     response = render(request, "booking_manage.html", {
         "show_nav": False, "lang": lang, "slug": slug, "token": token,
