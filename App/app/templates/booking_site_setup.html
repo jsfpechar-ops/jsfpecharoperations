@@ -101,7 +101,7 @@
 {% endcall %}
 {% call ui_section(t('bsite.bookings.title')) %}
   {% if bookings %}
-  <dl class="ui-facts">
+  <dl class="ui-facts bsite-bookings">
     {% for b in bookings %}
     <div>
       <dt>{{ b.name }} · {{ b.dates }} · {{ b.total }} {{ t('payments.czk') }}</dt>
