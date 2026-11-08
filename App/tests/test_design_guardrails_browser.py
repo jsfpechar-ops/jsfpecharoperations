@@ -310,8 +310,7 @@ def test_setup_checklist_is_a_padded_card(wide_host, wide_base):
         _wait_for_host_layout(page)
         _dismiss_optional_security_prompt(page)
         # 0982: the six pills are the one readiness summary; the checklist details are gone.
-        # Owner decision 2026-11-08: property editor redesigned at >=768px (brief 1030); phone unchanged. The strip is hidden at wide widths; the section health dots remain.
-        page.wait_for_selector("details.prop-sec > summary .dot", state="attached", timeout=5000)
+        page.wait_for_selector("nav.prop-strip", timeout=5000)
         facts = page.evaluate(
             """() => ({
                 box: !!document.querySelector('.host-checklist'),

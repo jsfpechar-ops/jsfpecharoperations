@@ -17,12 +17,9 @@ def test_the_preview_aside_is_gone_and_the_pills_lead(browser, base, host, width
     page.goto(f"{url}?view=settings&section=property&lang=en")
     assert page.locator("aside.preview, .setup-readiness-help, [data-setup-status]").count() == 0
     strip = page.locator("nav.prop-strip")
-    # Owner decision 2026-11-08: property editor redesigned at >=768px (brief 1030). The status strip is hidden there; the section list (.prop-nav) replaces it.
-    if width < 768:
-        assert strip.is_visible() and strip.locator(".sc").count() == 6
-        form = page.locator(".form.prop-form-single").bounding_box()
-        assert form and strip.bounding_box()["y"] < form["y"]
-    else:
-        assert not strip.is_visible()
-        assert page.locator(".prop-nav a").count() == 6
+    # Owner decision 2026-11-08: 6 pills as switcher (brief 1030); the section list (.prop-nav) never shows.
+    assert strip.is_visible() and strip.locator(".sc").count() == 6
+    form = page.locator(".form.prop-form-single").bounding_box()
+    assert form and strip.bounding_box()["y"] < form["y"]
+    assert not page.locator(".prop-nav").is_visible()
     page.context.close()

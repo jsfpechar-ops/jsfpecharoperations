@@ -37,3 +37,13 @@ Continue at step 5 (help pruning), then step 7 (cache keys), then step 8 (layout
 - Keys: app2.css 1030h, app.js 1030f.
 - Tests: required set 305 passed, 0 skipped; layout lint 4 passed. context_lint OK.
 - Shots: /mnt/project-files/ux-shots/editor-redesign/editor-{390,768,1280,1280-fixline,1280-stayfee}-v3.png
+
+## Finish pass 3: 6 pills as switcher (owner decision 2026-11-08)
+- At >=768 the six status pills (nav.prop-strip) are back and are the section switcher: a pill click or Enter/Space shows that one section, writes the hash, sets aria-current and highlights the pill. Guest link's main area opens Automatic messages; its Copy link button keeps its own action. All six sections are covered, so there is no 7th link.
+- The left section list (.prop-nav) never shows; the Continue setup box stays hidden at >=768.
+- Layout at >=768: title, pills (3 per row at 768, 1024 and 1280), fix line, one card in a single 16 px-gap column. At >=1024 pills and editor start under the title, max width min(1000px, 100% - 64px).
+- The older keyboard handler on `a[href^="#sec-"]` prevented the click at wide widths; it now clicks the pill there.
+- Test pins updated to "6 pills as switcher": navigation (pill clicks, strip checks at 390/768/1280/1440, keyboard test at 390 and 1280), preview_sticky (strip visible at every width, .prop-nav hidden), guardrails (waits for the strip again).
+- Keys: app2.css 1030k, app.js 1030h.
+- Tests: required set 305 passed, 0 skipped; layout lint 4 passed. No overflow at 768/1024/1280.
+- Shots: /mnt/project-files/ux-shots/editor-redesign/editor-{768,1280,1280-fixline,1280-stayfee}-v4.png (390 unchanged: editor-390-v3.png)

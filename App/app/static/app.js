@@ -2259,6 +2259,12 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       /* Keyboard: activate opens the section like click (B04 Enter key from Playwright; hash sync can race in CI). */
       link.addEventListener("keydown", function (e) {
         if (e.key !== "Enter" && e.key !== " ") return;
+        // 1030: at >=768 px a pill is the section switcher, so the key does what a click does.
+        if (link.closest("nav.prop-strip,.prop-nav") && window.matchMedia("(min-width:768px)").matches) {
+          e.preventDefault();
+          link.click();
+          return;
+        }
         var h = link.getAttribute("href");
         if (!h || h.charAt(0) !== "#") return;
         e.preventDefault();
@@ -2525,6 +2531,8 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     var layout = document.querySelector(".prop-layout");
     if (!layout || !claimNode(layout, "initPropertyTabs")) return;
     var nav = layout.querySelector(".prop-nav");
+    // owner decision 2026-11-08: the six status pills are the section switcher at >=768 px.
+    var strip = document.querySelector("nav.prop-strip");
     var fix = layout.querySelector("[data-prop-fixline]");
     var mq = window.matchMedia("(min-width:768px)");
     function sectionFor(el) {
@@ -2540,11 +2548,17 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         d.classList.toggle("is-current", d === sec);
       });
       sec.open = true;
-      if (nav) {
-        nav.querySelectorAll("a").forEach(function (a) {
-          a.classList.toggle("is-current", a.getAttribute("href") === "#" + sec.id);
+      [nav, strip].forEach(function (list) {
+        if (!list) return;
+        list.querySelectorAll("a[href^='#sec-']").forEach(function (a) {
+          var on = a.getAttribute("href") === "#" + sec.id;
+          a.classList.toggle("is-current", on);
+          if (on) a.setAttribute("aria-current", "true");
+          else a.removeAttribute("aria-current");
+          var card = a.closest(".sc");
+          if (card) card.classList.toggle("is-current", on);
         });
-      }
+      });
     }
     function goTo(id) {
       var target = document.getElementById(id);
@@ -2623,9 +2637,10 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     // the stay-fee stars are set by a later init, so the line is built once more after it
     window.setTimeout(fixLine, 0);
     if (mq.addEventListener) mq.addEventListener("change", apply);
-    if (nav) {
-      nav.addEventListener("click", function (e) {
-        var a = e.target.closest("a");
+    [nav, strip].forEach(function (list) {
+      if (!list) return;
+      list.addEventListener("click", function (e) {
+        var a = e.target.closest("a[href^='#sec-']");
         if (!a || !mq.matches || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
         var sec = sectionFor(document.getElementById(a.getAttribute("href").slice(1)));
         if (!sec) return;
@@ -2633,7 +2648,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         showSection(sec);
         history.replaceState(null, "", "#" + sec.id);
       });
-    }
+    });
   }
 
   // 1024: in the editor the stay-fee boxes the app needs get a star and aria-required while the rate is above 0.
