@@ -1813,6 +1813,7 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
         "site_booking_refunded",
         "site_booking_host",
         "site_booking_request_host",
+        "site_booking_request_guest",
         "completion",
         "submission_problem",
         "invoice_issued",
