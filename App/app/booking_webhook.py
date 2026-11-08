@@ -168,8 +168,10 @@ def _mail_confirmed(booking: Dict[str, Any], reservation_id: int) -> None:
     text = host_i18n.translate(lang, text_key, **facts)
     if link:
         text += "\n\n" + host_i18n.translate(lang, "site_booking.mail.guest_register", link=link)
+    manage_key = ("site_booking.mail.guest_manage_direct" if booking.get("pay_method") == "direct"
+                  else "site_booking.mail.guest_manage")
     text += "\n\n" + host_i18n.translate(
-        lang, "site_booking.mail.guest_manage", link=booking_site.manage_url(booking))
+        lang, manage_key, link=booking_site.manage_url(booking))
     if booking["guest_email"]:
         mail.enqueue(
             kind="site_booking_confirmed",
