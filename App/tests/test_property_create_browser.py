@@ -71,6 +71,7 @@ def _form(**overrides):
         "addr_obec": "Praha",
         "addr_house_no": "12",
         "addr_zip": "11000",
+        "addr_street": "Synthetic",
     }
     data.update(overrides)
     return data
@@ -268,7 +269,7 @@ def test_copy_is_an_explicit_choice_and_survives_a_refusal():
     assert '<input type="hidden" name="automation_mode" value="scheduled">' in refused.text
     created = host["client"].post(
         "/apartments", data={**hidden, "internal_name": "Copied Loft", "legal_entity_id": str(host["entities"][0]),
-              "addr_obec": "Praha", "addr_house_no": "12", "addr_zip": "11000"},
+              "addr_obec": "Praha", "addr_house_no": "12", "addr_zip": "11000", "addr_street": "Synthetic"},
         follow_redirects=False,
     )
     assert created.status_code == 303
@@ -429,6 +430,7 @@ def test_create_page_fits_and_follow_ups_move_below_when_narrow(base):
         page.locator("#addr_zip").fill("11000")
         page.locator("#addr_obec").fill("Praha")
         page.locator("#addr_house_no").fill("12")
+        page.locator("#addr_street").fill("Synthetic")
         page.locator(".property-create-actions .ui-btn-primary").click()
         page.wait_for_load_state()
         assert "/setup/calendar" in page.url
@@ -453,6 +455,7 @@ def test_create_page_works_without_javascript(base):
         page.locator("#internal_name").fill("Synthetic No-JS Flat")
         page.locator("#addr_obec").fill("Praha")
         page.locator("#addr_house_no").fill("12")
+        page.locator("#addr_street").fill("Synthetic")
         page.locator("#addr_zip").fill("11000")
         page.locator(".property-create-actions .ui-btn-primary").click()
         page.wait_for_load_state()
