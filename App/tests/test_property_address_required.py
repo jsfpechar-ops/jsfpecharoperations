@@ -212,6 +212,17 @@ def test_create_without_street_is_refused():
     assert _count(host) == 0
 
 
+def test_create_without_street_shows_a_czech_error_message():
+    host = _host()
+    response = host["client"].post(
+        "/apartments?lang=cs", data=_form(host, addr_street=""), follow_redirects=False
+    )
+    assert response.status_code == 400
+    assert 'id="addr_street-error"' in response.text
+    assert "Vyplňte ulici." in response.text
+    assert _count(host) == 0
+
+
 def test_forged_create_without_street_field_is_refused():
     host = _host()
     data = _form(host)
