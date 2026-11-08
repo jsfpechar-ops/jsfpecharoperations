@@ -1,28 +1,38 @@
 # 1029 report
 
-Status: blocked (stopped at brief §8, first bullet, before any edit). No code, template, i18n or test change was made.
+Status: blocked (one browser assertion fails at 1280 px, see Open finding). Branch `claude/fee-rate-dates`, no PR.
 
-## Done
+## What changed
 
-- Step 0 check: `App/app/routes/stay_fees.py` has the 1028 helper `record_rate_change` reading `stay_fee_rate_from`. Branch is `claude/fee-rate-dates` at 72a30a66, clean tree.
-- Deviation from the brief's step 0: owner's instruction names branch `claude/fee-rate-dates` on this worktree, so I did not run `git checkout -B claude/dated-rates-1029 origin/main`. No PR.
+- `App/app/routes/stay_fees.py`: new `rate_from_default()` returns today (Prague, ISO).
+- `App/app/routes/admin.py`: `rate_from_default` added to both `apartment_form.html` render contexts (new and edit).
+- `App/app/templates/_stay_fee_fields.html`: one `.field` after the rate field, editor only (`not fee_required`) and only when the rate is above 0. Native `type="date"`, `min` and `value` = today, label "Applies from" (i18n key `apartment.form.stay_fee.rate_from_label`), help `rate_from_help`. No JS.
+- `App/app/host_i18n.py` (EN, CS), `App/app/host_vi_i18n.py` (VI): the two keys.
+- `App/tests/test_stay_fee_rate_field_1029.py`: new, 5 tests.
 
-## Why I stopped
+## Commands (last lines)
 
-The field needs `today` for `value` and `min`. `_stay_fee_fields.html` has no `today` and no Jinja global provides it (`App/app/templating.py` has no date global). The partial is included from `App/app/templates/_property_editor.html` (via `apartment_form.html`), which is rendered from two sites in `App/app/routes/admin.py` (around lines 1500 and 2136). Passing `rate_from_default` there means touching `admin.py` at two places, which is outside the files the brief names and past the 2-file limit in §8. I did not guess.
+- `pytest tests/test_stay_fee_rate_field_1029.py tests/test_required_stars.py tests/test_property_form_save.py`: 25 passed (before the browser test was added).
+- `UBYHOST_REQUIRE_BROWSER=1 pytest tests/test_stay_fee_rate_field_1029.py tests/test_layout_lint_browser.py tests/test_0833_property_editor_browser.py tests/test_static_versions.py tests/test_host_i18n.py -rs`: 28 passed, 0 skipped, 1 error (the new browser test had a fixture import error at that time, since fixed).
+- `pytest tests/test_stay_fee_rate_field_1029.py -k 1029 -rs`: 4 passed, 1 failed: `1280: date field not visible`.
+- `static_versions`: passed. No static file changed, so no cache bump.
 
-## Question for the owner or orchestrator
+## Open finding
 
-Allow a one-line `rate_from_default` (today, Prague date) in both `apartment_form.html` render contexts in `App/app/routes/admin.py`? Or should the partial get `today` another way? Once answered, the brief can run from step 1.
+The browser test asserts `is_visible()` on `#stay_fee_rate_from` after opening `#sec-fee`. It passes at 390 and 768 and fails at 1280. The 1280 screenshot shows the field visible next to the rate, so this looks like a test or locator problem, not a layout one. Not investigated further (executor cap).
 
-## Not done
+## Screenshots (in /mnt/project-files/ux-shots/rate-date/, not committed)
 
-- Step 1 tests, step 2 template and i18n (EN, CS, VI keys), step 3 test run, step 4 screenshots at 390/768/1280 (owner asked for `/mnt/project-files/ux-shots/rate-date/`), step 5 push of the feature commit.
+- 390 px: "Applies from" under the rate, date input full width, label and "?" on one row. The "?" is a large 44 px circle with a gap from the label (same as the rate field, so it is the house style, not this field). The bottom nav covers the help line at the foot of the crop (capture artifact).
+- 768 px: same stack as 390, one column, no horizontal scroll. Same large "?".
+- 1280 px: rate and "Applies from" side by side in the first grid row, cadence below. Field and label not clipped.
+- Chrome shows the native date as mm/dd/yyyy (browser locale). The house rule is dd.mm.yyyy. Native date input follows the browser, so it cannot be forced from the template.
 
-## Commands
+## Design checklist
 
-None run beyond the grep anchors (all found: `_stay_fee_fields.html` rate field, `apartment.form.stay_fee.rate_help` in `host_i18n.py` and `host_vi_i18n.py`).
+Rule 9 (one explanation): help text is in the tip only. Light mode, no JS, no new dependency.
 
-## Owner steps left
+## Owner or orchestrator steps left
 
-- Answer the question above, then re-run brief 1029 from step 1.
+- Decide on the 1280 test failure (fix the locator or accept), then merge gate per rule 10.
+- Decide whether the native date format (mm/dd/yyyy in en-US browsers) is acceptable.

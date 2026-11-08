@@ -1499,6 +1499,7 @@ def _render_apartment_new(
         request,
         "apartment_form.html",
         {
+            "rate_from_default": stay_fee_routes.rate_from_default(),
             "apartment": None,
             "entities": entities,
             "selected_entity_id": selected_entity_id,
@@ -2135,6 +2136,7 @@ def _render_apartment_detail(
         request,
         "apartment_form.html",
         {
+            "rate_from_default": stay_fee_routes.rate_from_default(),
             "apartment": apartment,
             "fee_signature": _fee_signature_context(request, apartment),
             "door_code": door_code,

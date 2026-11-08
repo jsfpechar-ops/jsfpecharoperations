@@ -308,6 +308,11 @@ def guest_pay_values(form) -> dict:
     return values
 
 
+def rate_from_default() -> str:
+    """Today in Prague, ISO: the default and the minimum of the "applies from" field."""
+    return claim.prague_today().isoformat()
+
+
 def record_rate_change(apartment_id: int, new_rate, form, *, previous=None) -> None:
     """Store a dated rate row after a save that wrote stay_fee_rate_czk (1028).
 
