@@ -1,35 +1,35 @@
 # 1007 report
 
-Status: blocked
+Status: review
 
 ## Done
 
-- Steps 1 to 6 committed locally: route `upgrade` context, 8 EN and CS keys, Change block replaced, app2.css 1007 block, cache bump to `20261108-1007` (base.html and static_versions.json), catalog and design-system 5b.
-- Step 1 bug fixed in a second commit: my first insert dropped the `quote = billing_order.quote(...)` line, which caused a NameError on /predplatne. Restored.
-- Step 7: test `test_the_change_card_shows_the_real_upgrade_and_keeps_the_forms` appended to `App/tests/test_billing_order.py` (per coordinator decision; uses its `host` and `_set`).
+- Steps 1 to 7 committed locally (`1007 step 1` to `1007 step 7`, plus the step 1 fix commit).
+- Step 8: `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_layout_lint_browser.py -q -x -rs`. Green, 0 skipped. Earlier stale run (pid 14460) killed first.
+- Step 9: screenshots of /predplatne (active standard, monthly, lang=en) taken and viewed.
+- Step 10: copied to `/mnt/project-files/ux-shots/wolt/billing-upgrade-390.png`, `billing-upgrade-768.png`, `billing-upgrade-1280.png`.
+- Step 11: `python3 scripts/context_lint.py` returns `context lint: OK` (WARN lines are pre-existing notes).
 
-## Commands
+## Commands (last lines)
 
-- `.venv/bin/python -m pytest tests/test_billing_self_service.py tests/test_billing_order.py tests/test_0416_plan_page_browser.py tests/test_host_i18n.py -q --tb=short -x -rs`: `47 passed, 1 warning`, no skips listed.
-- `python3 scripts/design_lint.py`: `design lint: OK`.
-- `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_layout_lint_browser.py -q -x -rs` (step 8): started in background, output still empty after about 15 minutes. NO RESULT YET. Output file: /tmp/claude-0/-home-user-jsfpecharoperations/19736c2f-d76f-5062-a390-a7e0df73a878/tasks/bze6mvc2r.output
-- `python3 scripts/context_lint.py`: not run (it was chained after the layout test).
+- Step 8 layout lint: `....  [100%]`, `4 passed in 236.75s (0:03:56)`, `EXIT=0`.
+- Step 8 full log: /tmp/claude-0/-home-user-jsfpecharoperations/19736c2f-d76f-5062-a390-a7e0df73a878/scratchpad/layout_1007.log
+- Step 9 shots: temporary test file, deleted after use. Its teardown raised an FK error from the scratch fixture; the screenshots were already written.
+- `python3 scripts/context_lint.py`: `context lint: OK`.
 
-## Not done
+## Per page (what I saw)
 
-- Step 9: no screenshots taken (390/768/1280). Nothing was looked at.
-- Step 10: nothing copied to `/mnt/project-files/ux-shots/wolt/`.
-- Step 11 completed only in part (this report). Brief status not changed.
-- Tool-call cap reached (30), so the executor stopped here.
+- 390: Change card shows the Max upgrade tinted with a 1.5 px border and a full-width "Switch to Max" button. Yearly strip stacks, with "Pay yearly" full width below the text. TTLock add-on row is bordered with a full-width Add. Cancel card intact. No sideways scroll visible. The fixed bottom tab bar and help button sit over content only because a full-page capture places fixed elements mid-page.
+- 768: Upgrade card and inline strip read cleanly. Add-on row and Cancel card intact. Same fixed-element capture effect at the bottom.
+- 1280: Upgrade card, strip with inline button, add-on row and Cancel card all aligned in the content column. Nothing clipped.
+- No CSS change made; nothing was clearly broken.
 
 ## Deviations
 
-- Steps 1 to 3 edited with a Python script using the brief's exact text, not the Edit tool.
-- Each step is its own commit (`1007 step k`); steps 5 and 6 share one.
-- No PR, no push (brief §10).
+- Step 10 commit: no code changed in this run, so only the report is committed. The §3 files were already committed in steps 1 to 7; no 1006 files were uncommitted.
+- Not pushed, no PR (brief §10).
 
 ## Owner steps left
 
-- Read the layout-lint result, then run `python3 scripts/context_lint.py` from the repo root.
-- Take the 390/768/1280 screenshots of /predplatne and review them (UX gate, rule 10) before any merge.
-- Run `git push` yourself after review. No push was done here.
+- Review the three screenshots (UX gate, rule 10) before any merge.
+- Push and open the PR yourself after review.

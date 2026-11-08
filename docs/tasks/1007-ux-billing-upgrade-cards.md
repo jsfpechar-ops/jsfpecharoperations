@@ -1,6 +1,6 @@
 # 1007: Plan and billing "Change" card: marketing-style upgrade card, yearly strip, add-on row
 
-Status: todo
+Status: review
 Depends on: 1006 (its uncommitted edits in billing_plan.html and app2.css must be in the working tree; if `ui-page-narrow` is missing from billing_plan.html line 17, STOP) | Base commit: working tree after 1006 | Branch: current branch (do NOT create another)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
