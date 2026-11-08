@@ -1,6 +1,6 @@
 # 1030 report
 
-Status: blocked
+Status: review
 
 ## Files changed (local commits on claude/project-thread-73qjig, not pushed)
 - `df4b8a2b` step 1: `App/app/templates/guest/_fee_pay.html`
@@ -40,3 +40,6 @@ Status: blocked
 1. Decide whether `playwright` may be added to the dev requirements (needs a decisions.md line).
 2. If yes: `cd App && .venv/bin/pip install playwright && .venv/bin/python -m playwright install chromium`, then the browser run and screenshots (or let CI run them).
 3. Push the branch and open the PR after the browser run is green.
+
+## Follow-up by orchestrator
+Browser tests ran with UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium and a local-only playwright in the venv (no requirements change). Updated test_guest_browser_e2e.py selectors (details to div.g-fee-opt). Fee tests 8 passed; pay-box screenshots in screenshots-1030/.
