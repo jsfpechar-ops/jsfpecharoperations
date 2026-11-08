@@ -1586,6 +1586,7 @@ def _form_context(
             ),
             "fee_estimate": _fee_box(apartment, reservation, values or {}, guest),
             "fee_obec_rule": _fee_obec_rule(apartment),
+            "fee_obec_unknown": not _fee_obec_rule(apartment),
             "fee_panel": (
                 _fee_pay_panel(apartment, reservation, context["t"], _qr_offered(request, reservation))
                 if remaining is not None and remaining <= 0
@@ -2230,12 +2231,15 @@ def _fee_obec_rule(apartment) -> str:
     hides the estimate for a resident of the property's municipality while the guest types."""
     import json
     from .. import stay_fee
-    obec = stay_fee._obec_key(apartment["addr_obec"])
+    obec = stay_fee._obec_key(stay_fee.property_obec(apartment))
     if not obec:
         return ""
     return json.dumps({"obec": obec, "country": validation.CZECH_CODE,
-                       "bases": list(stay_fee.STATUTORY_DISTRICT_BASES),
-                       "aliases": stay_fee.OBEC_ALIASES})
+                       "bases": list(stay_fee.OBEC_SUFFIX_BASES),
+                       "aliases": stay_fee.OBEC_ALIASES,
+                       "prefixes": list(stay_fee.OFFICIAL_PREFIXES),
+                       "okres": list(stay_fee.OKRES_NOT_OBEC),
+                       "after": stay_fee.OBEC_AFTER_BASE})
 
 
 def _fee_typed_guest(reservation, values, guest=None):
@@ -2317,12 +2321,19 @@ def _fee_estimate(apartment, reservation, values, guest=None):
         rate = stay_fee_rate.rate_on(schedule, last_night)
     days, amount = _fee_liable_amount(apartment, reservation, typed, schedule)
     live = None
-    # signature.js multiplies by one rate: across a rate change it would be
-    # wrong, so the page keeps the server amount instead (1028).
+    # One rate: signature.js multiplies; across a rate change it adds the per-night rates (1031).
     uniform = (first_night is None or last_night is None
                or stay_fee_rate.is_uniform(schedule, first_night + _timedelta(days=1), last_night))
-    if typed["fee_host_decision"] not in stay_fee.DECISIONS and uniform:
+    if typed["fee_host_decision"] not in stay_fee.DECISIONS:
         live = {"from": stay_from, "to": stay_to, "rate": rate}
+        if not uniform:
+            # 1031: across a rate change send each counted night's rate, so the script can
+            # still drop a child's or a resident's nights instead of freezing the box.
+            live["nights"] = {
+                (first_night + _timedelta(days=k)).isoformat():
+                    stay_fee_rate.rate_on(schedule, first_night + _timedelta(days=k))
+                for k in range(1, (last_night - first_night).days + 1)
+            }
     if days <= 0:
         return None
     return {"amount": amount, "days": days, "rate": rate, "live": live, "hidden": False}

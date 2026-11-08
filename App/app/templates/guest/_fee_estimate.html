@@ -4,6 +4,7 @@
   <h3 id="fee-estimate-h">{{ t('fee_box_you') }}</h3>
   <p class="g-fee-amt">{{ t('fee_amount', amount=fee_estimate.amount) }}</p>
   <p class="g-fee-calc">{{ t('fee_calc_you', days=fee_estimate.days, rate=fee_estimate.rate) }}</p>
+  {% if fee_obec_unknown %}<p id="fee-obec-unknown">{{ t('fee_obec_unknown') }}</p>{% endif %}
   <div class="g-fee-panel">
     <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#167044"/><path d="M7 12.5l3.2 3.2L17 9" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <span><b>{{ t('fee_later_title') }}</b> {{ t('fee_later_body') }}</span>

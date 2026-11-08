@@ -92,7 +92,7 @@ def test_guest_estimate_across_a_rate_change(monkeypatch):
     apartment, reservation = _mixed()
     estimate = guest_routes._fee_estimate(_guest_apartment(apartment), reservation, {})
     assert estimate["amount"] == 140 and estimate["days"] == 4
-    assert estimate["live"] is None
+    assert sum(estimate["live"]["nights"].values()) == 140 and len(estimate["live"]["nights"]) == 4
 
 
 def test_guest_estimate_single_rate_keeps_live(monkeypatch):
