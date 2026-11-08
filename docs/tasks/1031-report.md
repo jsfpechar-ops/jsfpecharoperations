@@ -1,6 +1,6 @@
 # 1031 report
 
-Status: blocked (Done: steps 0 to 8. Step 9: test_guest_host_noun.py fails on the cs copy of fee_obec_unknown. Left: step 9 rerun and the report commit after that decision.)
+Status: review (steps 0 to 9 done; the owner merges, the orchestrator opens the PR).
 
 Part 1 (district forms): 6875e53b.
 
@@ -49,3 +49,15 @@ The failure: `tests/test_stay_fee_obec_0898.py::test_typo_is_liable_and_has_no_f
 - /mnt/project-files/ux-shots/stayfee-sametown/check-sametown-390.png: box hidden, amount absent; Submit bar overlaps the Czechia row (sticky button in full-page capture).
 - /mnt/project-files/ux-shots/stayfee-sametown/check-othertown-390.png: box shows 150 CZK, 3 nights x 50 CZK, no overlap in the box.
 - /mnt/project-files/ux-shots/stayfee-sametown/check-unknown-town-390.png: 150 CZK plus the honest sentence; sticky step bar drawn over content in full-page capture.
+
+## Session 3 (decisions applied)
+- Host noun: cs `fee_obec_unknown` now says "Hostitel to ověří." (guest copy uses "hostitel"; guard not loosened). `test_guest_host_noun.py`: 6 passed.
+- Guest files `tests/test_guest_*.py -rs`: 602 passed, 0 skipped (final code, 330 s).
+- Stay fee, invoice and static-version set `-rs`: first run 557 passed, 2 skipped. The 2 skips were `tests/test_invoice_autofill.py:383` and `:452`, skipped because `UBYHOST_SHOTS_DIR` was unset (acceptance screenshots). Rerun with `UBYHOST_SHOTS_DIR` set: 560 passed, 0 skipped.
+- context_lint: OK.
+
+## Step 7: duplicate arithmetic (classified)
+- `App/app/stay_fee.py:466` `"total_czk": liable * rate`: calls shared function. `liable` is the sum of `guest_period` shares; one flat rate per period here is the same as before (per-rate split is in `_rate_segments`). No change.
+- `App/app/stay_fee.py:725` `"amount_czk": nights * rate`: calls shared function. Rows come from the period's `rate_segments`, one row per rate; per facility, not per guest. No change.
+- `App/app/stay_fee_remittance_pdf.py:86` `if nights * rate != amount`: validation of the submitted report payload, not a fee calculation. No change.
+- `App/app/routes/stay_fees.py:918` `amount = line.get("amount_czk", liable_nights * rate)`: separate arithmetic for the same guest. It used a flat period rate when the line lacked `amount_czk`, which would be wrong across a rate change. Fixed: now `amount = line["amount_czk"]` (the amount `property_period` computed; it sets it for every line, `stay_fee.py` 363 and 441). Test: `App/tests/test_stay_fee_sametown_1031.py::test_period_lines_carry_their_own_amount_and_the_total_is_their_sum` (the lines sum to `charge_for_reservation`). Stay-fee/invoice/guest tests stay green.

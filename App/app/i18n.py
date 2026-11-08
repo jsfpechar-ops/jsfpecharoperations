@@ -1080,7 +1080,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "fee_box_you": "Místní poplatek za pobyt pro vás",
         "fee_box_group": "Místní poplatek za pobyt pro vaši skupinu",
         "fee_calc_you": "%(days)s nocí × %(rate)s Kč",
-        "fee_obec_unknown": "Máte-li trvalý pobyt ve stejné obci, kde je ubytování, poplatek neplatíte. Ubytovatel to ověří.",
+        "fee_obec_unknown": "Máte-li trvalý pobyt ve stejné obci, kde je ubytování, poplatek neplatíte. Hostitel to ověří.",
         "fee_calc_group": "%(guests)s hostů · %(days)s nocí × %(rate)s Kč za každého",
         "fee_later_title": "Teď neplatíte.",
         "fee_later_body": "Až se zaregistruje celá vaše skupina, vyberete si, jak zaplatit.",

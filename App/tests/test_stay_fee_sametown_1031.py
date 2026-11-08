@@ -139,3 +139,19 @@ def test_preview_pay_panel_charge_and_register_agree(flat, obec):  # noqa: F811
     previews = [guest_routes._fee_estimate(apartment, res, {"birth_date": b, "res_country": "CZE", "res_city": c})
                 for b, c in (("15.06.2010", "Prague"), ("15.06.2001", "Prague"), ("15.06.2001", "Brno"))]
     assert sum(p["amount"] for p in previews if p) == charge["total_czk"]
+
+
+def test_period_lines_carry_their_own_amount_and_the_total_is_their_sum(flat):  # noqa: F811
+    """1031 step 7: the register and the stay-fee page read each guest's amount from the
+    shared period; the lines add up to the same total the charge gives."""
+    cz = {"nationality": "CZE", "res_country": "CZE"}
+    res = _stay(flat, "2026-07-01", "2026-07-04", [
+        dict(cz, birth_date="15062010", res_city="Prague"),
+        dict(cz, birth_date="15062001", res_city="Prague"),
+        dict(cz, birth_date="15062001", res_city="Brno"),
+    ])
+    apartment = _apt(flat)
+    period = stay_fee.property_period(apartment, date(2026, 7, 1), live_only=True)
+    mine = [line for line in period["lines"] if line["reservation_id"] == res["id"]]
+    assert mine and all("amount_czk" in line for line in mine)
+    assert sum(line["amount_czk"] for line in mine) == stay_fee.charge_for_reservation(apartment, res)["total_czk"]
