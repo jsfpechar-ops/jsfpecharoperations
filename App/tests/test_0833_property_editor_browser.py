@@ -139,3 +139,104 @@ def test_0833_property_editor_help_headings_and_width(base, dashboard_rich_host,
             context.close()
         browser.close()
     assert not problems, problems
+
+
+SHOTS_1024 = os.environ.get("UBYHOST_SHOTS_1024")
+
+_ERR_GEOMETRY_JS = """() => {
+    const a = document.activeElement;
+    const err = document.getElementById('stay-fee-account-error');
+    const bar = document.querySelector('.savebar');
+    const r = err.getBoundingClientRect();
+    const b = bar.getBoundingClientRect();
+    const barVisible = getComputedStyle(bar).display !== 'none' && b.height > 0;
+    const sum = document.querySelector('[data-save-summary]');
+    const sr = sum.getBoundingClientRect();
+    return {active: a && a.id, open: document.getElementById('sec-fee').open,
+            errTop: r.top, errBottom: r.bottom, barTop: b.top, barVisible: barVisible,
+            vh: window.innerHeight, summaryVisible: sr.height > 0 && getComputedStyle(sum).visibility !== 'hidden',
+            summaryText: sum.textContent.trim(), errText: err.textContent.trim()};
+}"""
+
+
+def _shot(page, name, width):
+    if SHOTS_1024:
+        Path(SHOTS_1024).mkdir(parents=True, exist_ok=True)
+        page.screenshot(path=str(Path(SHOTS_1024) / f"{name}-{width}.png"))
+
+
+def _fill_address(page):
+    """The seeded property has no address yet; the browser would refuse the save."""
+    for name, value in (("addr_street", "Synthetic"), ("addr_house_no", "12"), ("addr_zip", "12000"), ("addr_obec", "Praha")):
+        page.fill(f"#{name}", value)
+
+
+def _fee_cookie_and_id(dashboard_rich_host):
+    from app import auth
+
+    cookie = dashboard_rich_host["client"].cookies.get(auth.SESSION_COOKIE)
+    assert cookie
+    return cookie, _placeholders(dashboard_rich_host)["first_property"]
+
+
+def test_1024_save_error_opens_scrolls_and_focuses(base, dashboard_rich_host, seeded):  # noqa: F811
+    from playwright import sync_api
+
+    cookie, apartment_id = _fee_cookie_and_id(dashboard_rich_host)
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        for width in WIDTHS_0833:
+            context, page = _open_settings(browser, base, cookie, apartment_id, width)
+            page.set_viewport_size({"width": width, "height": 844 if width == 390 else 1000})
+            page.evaluate("() => { const d = document.getElementById('sec-fee'); d.open = true; }")
+            page.fill("#stay_fee_rate_czk", "50")
+            assert page.locator('label[for="stay_fee_vs"] .req-star').count() == 1
+            assert page.get_attribute("#stay_fee_council_account", "aria-required") == "true"
+            page.evaluate("() => { document.getElementById('sec-fee').open = false; }")
+            page.evaluate("() => { document.getElementById('sec-fee').open = true; }")
+            _fill_address(page)
+            page.fill("#stay_fee_council_account", "123")
+            page.evaluate("() => { document.getElementById('sec-fee').open = false; }")
+            page.locator(".savebar button[type=submit]").click()
+            page.wait_for_selector("[data-save-summary]")
+            page.wait_for_load_state("networkidle")
+            settle_motion(page)
+            got = page.evaluate(_ERR_GEOMETRY_JS)
+            assert got["active"] == "stay_fee_council_account", got
+            assert got["open"], got
+            assert got["summaryVisible"] and "Not saved" in got["summaryText"], got
+            assert 0 <= got["errTop"] and got["errBottom"] <= got["vh"], got
+            if got["barVisible"]:
+                assert got["errBottom"] <= got["barTop"], got
+            _shot(page, "failed", width)
+            context.close()
+        browser.close()
+
+
+def test_1024_saved_banner_is_visible_after_a_valid_save(base, dashboard_rich_host, seeded):  # noqa: F811
+    from playwright import sync_api
+
+    cookie, apartment_id = _fee_cookie_and_id(dashboard_rich_host)
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        for width in WIDTHS_0833:
+            context, page = _open_settings(browser, base, cookie, apartment_id, width)
+            page.evaluate("() => { document.getElementById('sec-fee').open = true; }")
+            _fill_address(page)
+            page.fill("#stay_fee_rate_czk", "50")
+            page.fill("#stay_fee_vs", "1342900493")
+            page.fill("#stay_fee_council_account", "19-2000145399/0800")
+            page.fill("#stay_fee_authority_name", f"Mesto Test {width}")
+            page.locator(".savebar button[type=submit]").click()
+            page.wait_for_selector("[data-save-summary]")
+            page.wait_for_load_state("networkidle")
+            settle_motion(page)
+            banner = page.locator("[data-save-summary]")
+            assert banner.is_visible()
+            assert "banner ok" in banner.get_attribute("class")
+            assert "Saved" in banner.inner_text()
+            assert page.locator("[data-toast]").count() == 0
+            assert banner.evaluate("e => { const r = e.getBoundingClientRect(); return r.top >= 0 && r.bottom <= window.innerHeight; }")
+            _shot(page, "saved", width)
+            context.close()
+        browser.close()

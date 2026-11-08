@@ -2539,7 +2539,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
           star.setAttribute("aria-hidden", "true");
           star.textContent = "*";
           var tip = label.querySelector(".help-tip, button");
-          if (tip) label.insertBefore(star, tip);
+          if (tip && tip.parentNode) tip.parentNode.insertBefore(star, tip);
           else label.appendChild(star);
         } else if (!needed && star) {
           star.remove();
