@@ -18,7 +18,9 @@ The rules, in one place (zákon č. 565/1990 Sb.):
 * Exempt: under 18 on the arrival day (§3b(1)(b)), or the host chose
   ``exempt`` (with a reason). ``charge`` forces liable - the correction for a
   wrong birth date, never a way to charge a real minor.
-* Counted guests: a signed form, on an active stay, not archived.
+* Counted guests: on an active stay, not archived. A missing signature does not
+  drop a guest from the fee (the fee follows the stay); it only raises the
+  ``unsigned`` flag.
 """
 from __future__ import annotations
 
@@ -365,7 +367,6 @@ def property_period(
     for row in db.query(_GUESTS_SQL, (apartment["id"], last.isoformat(), first.isoformat())):
         if not reporting.guest_has_signature(row):
             unsigned += 1
-            continue
         share = guest_period(row, {"date_from": row["res_from"], "date_to": row["res_to"]},
                              first, last, apartment=apartment)
         if share is None:
@@ -418,8 +419,6 @@ def charge_for_reservation(apartment, reservation) -> Optional[Dict[str, Any]]:
     rate = int(apartment["stay_fee_rate_czk"])
     lines: List[Dict[str, Any]] = []
     for row in db.query(_GUESTS_FOR_RES_SQL, (apartment["id"], reservation["id"])):
-        if not reporting.guest_has_signature(row):
-            continue
         share = guest_period(row, {"date_from": row["res_from"], "date_to": row["res_to"]},
                              date.min, date.max, apartment=apartment)
         if share is None:
@@ -545,7 +544,7 @@ def _period_line_issues(apartment, period) -> List[str]:
 def unsigned_stays(
     apartment_id: int, first: date, last: date, period: Optional[Dict[str, Any]] = None
 ) -> int:
-    """Guests in the period with no signature yet (they are left out of the fee).
+    """Guests in the period with no signature yet (they are still in the fee; this only flags them).
 
     ``period`` is the live ``property_period`` for the same property and dates
     when the caller has it; its count comes from the same rows, so no second

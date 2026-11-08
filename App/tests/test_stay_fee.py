@@ -161,11 +161,11 @@ def test_property_period_counts(owner):
     aid = _apartment(owner, ent, "Apartmán Vinohrady")
     _stay(aid, "2026-08-10", "2026-08-14", [{}, {}, {"birth_date": "01012015"}])
     _stay(aid, "2026-08-30", "2026-09-03", [{}])
-    _stay(aid, "2026-08-20", "2026-08-22", [{"signature_png": None}])        # unsigned
+    _stay(aid, "2026-08-20", "2026-08-22", [{"signature_png": None}])        # unsigned: counted
     _stay(aid, "2026-08-20", "2026-08-25", [{}], status="cancelled")
     _stay(aid, "2026-08-20", "2026-08-25", [{"archived_at": db.utcnow()}])  # archived guest
     period = stay_fee.property_period(_apt(aid), AUG)
-    assert (period["liable_nights"], period["exempt_nights"], period["total_czk"]) == (9, 4, 450)
+    assert (period["liable_nights"], period["exempt_nights"], period["total_czk"]) == (11, 4, 550)
     assert stay_fee.property_period(_apt(aid), date(2026, 9, 1))["liable_nights"] == 3
 
 

@@ -145,7 +145,7 @@ def test_group_pay_panel_qr_and_register_agree(flat, monkeypatch):
         {"res_country": "CZE", "res_city": "Praha 7", "nationality": "CZE"},  # same obec: 0
         {"fee_host_decision": "exempt", "fee_host_reason": "ZTP/P"},           # host: 0
         {"stay_from": "2026-07-31", "stay_to": "2026-08-02"},   # own shorter stay: 2
-        {"signature_png": None},                                 # unsigned: not counted
+        {"signature_png": None},                                 # unsigned: counted (fee follows the stay)
         {"archived_at": db.utcnow()},                            # archived: not counted
     ])
     apartment = _apt(flat)
@@ -158,10 +158,10 @@ def test_group_pay_panel_qr_and_register_agree(flat, monkeypatch):
 
     monkeypatch.setattr(payments, "spayd", spy)
     panel = guest_routes._fee_pay_panel(apartment, res, lambda key, **kw: key)
-    expected_nights = 5 + 4 + 2
+    expected_nights = 5 + 4 + 2 + 5
     assert panel["total"] == expected_nights * RATE
     assert sum(person["amount"] for person in panel["persons"]) == panel["total"]
-    assert sorted(person["days"] for person in panel["persons"]) == [2, 4, 5]
+    assert sorted(person["days"] for person in panel["persons"]) == [2, 4, 5, 5]
     assert captured["amount"] == panel["total"]
     assert captured["vs"] == str(res["id"]) == panel["vs"]
     assert payments.spayd("CZ6508000000192000145399", panel["total"], "1", "x").count(
@@ -169,7 +169,7 @@ def test_group_pay_panel_qr_and_register_agree(flat, monkeypatch):
     # The council register (July + August) sums to exactly what the guests were asked for.
     assert _register_total(apartment, date(2026, 7, 1), 2) == (panel["total"], expected_nights)
     july = stay_fee.property_period(apartment, date(2026, 7, 1), live_only=True)
-    assert july["liable_nights"] == 2 + 1  # adult 30 + 31 Jul, the new adult 31 Jul only
+    assert july["liable_nights"] == 2 + 1 + 2  # adult 30 + 31 Jul, the new adult 31 Jul, the unsigned adult 30 + 31 Jul
 
 
 def test_pay_panel_uses_the_rate_at_payment_time(flat):
