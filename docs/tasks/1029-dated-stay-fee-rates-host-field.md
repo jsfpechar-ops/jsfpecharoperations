@@ -14,7 +14,11 @@ Behaviour:
 - Server already ignores a past date; the `min` is only a hint.
 - Copy rule: one explanation in one place, no sentence the button already says.
 
-## 2. Files
+## 2. Context
+
+Design decisions are stated in section 1; do not re-audit. Facts and anchors are named in the steps.
+
+## 3. Files
 
 | Path | Action |
 |---|---|
@@ -25,7 +29,7 @@ Behaviour:
 | App/app/templates/base.html, App/tests/static_versions.json | only if a static file changed (none expected) |
 | docs/tasks/1029-report.md, docs/tasks/screenshots-1029/ | create (390 px screenshot of the property editor Stay fee section) |
 
-## 3. Steps
+## 4. Steps
 
 Conventions as 1027. Before editing, open `docs/design/design-system.md` checklist headings only (`grep -n '^## \|^- \[' ... | head -40`) and tick the relevant items in the report.
 
@@ -36,16 +40,28 @@ Conventions as 1027. Before editing, open `docs/design/design-system.md` checkli
 4. Screenshot at 390 px of the open Stay fee section (copy the screenshot helper from `test_0833_property_editor_browser.py`), save under `docs/tasks/screenshots-1029/`, look at it once, describe in the report what you saw (field visible, label not clipped, no horizontal scroll). Do not retake.
 5. Report, `Status: review`, push `claude/dated-rates-1029`. No PR.
 
-## 4. Acceptance
+## 5. Do not touch
+
+anything other than the fee-fields partial, the two i18n files, the route context line and the new test.
+
+## 6. Commands
+
+From `App/`: the tests named in step 3, with `-rs`; browser and layout tests must show 0 skipped.
+
+## 7. Acceptance
 
 - [ ] Date field appears only in the editor for a property with a rate above 0; none in the wizard.
 - [ ] Works without JavaScript; no new JS, no new dependency.
 - [ ] i18n parity EN/CS/VI (the i18n parity test passes).
 - [ ] Layout lint and editor browser tests green, 0 skipped; 390 px screenshot in the report.
 
-## 5. If unsure, STOP and report
+## 8. Stop and ask
 
 - The fee fields partial is rendered somewhere with no `today` and no way to pass it without touching more than 2 files.
 - An i18n parity or layout-lint finding appears: never silence it; report the finding text.
 - A browser test is skipped (skipped means broken).
 - 25 tool calls reached: commit, report `Status: blocked`.
+
+## 9. Report
+
+Per `docs/context/executor.md`, plus the UX-gate notes (what you saw per page at 390 px).

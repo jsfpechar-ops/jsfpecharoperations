@@ -17,7 +17,11 @@ Design (decided; do not redesign):
 - A period with two rates keeps ONE sealed `rate_czk` column (the rate on the period's last day, informational) plus the true per-rate nights in the sealed payload; the PDF facility row is split into one row per rate so `nights x rate == amount` still holds.
 - Aggregate bed-day adjustments (`_apply_adjustments`) are priced at the period's last-day rate. Owner may veto: see Questions.
 
-## 2. Files
+## 2. Context
+
+Design decisions are stated in section 1; do not re-audit. Facts and anchors are named in the steps.
+
+## 3. Files
 
 | Path | Action |
 |---|---|
@@ -31,7 +35,7 @@ Design (decided; do not redesign):
 
 Do not touch routes, templates, retention.py (table has no personal data; it cascades with the apartment) or `db.SCHEMA`/`db.ADDED_COLUMNS`.
 
-## 3. Steps
+## 4. Steps
 
 Anchors: `grep -nF "<text>" <file> | tail -30`; not found: STOP. Every command ends with `| tail -30`. Commit each step as `1027 step k`; the message ends with the two attribution lines from the system reminder. From `App/` run tests with `.venv/bin/python -m pytest ... -q --tb=short -x 2>&1 | tail -30`.
 
@@ -99,7 +103,15 @@ ON CONFLICT (apartment_id, effective_from) DO NOTHING;
 
 9. Write `docs/tasks/1027-report.md` (600 tokens max, per executor.md), set `Status: review` in this brief, commit `1027 report`, `git push -u origin claude/dated-rates-1027 2>&1 | tail -3`. Do not open a PR.
 
-## 4. Acceptance
+## 5. Do not touch
+
+routes, templates, retention.py, `db.SCHEMA`, `db.ADDED_COLUMNS`, `apartment.stay_fee_rate_czk` (stays), anything not in Files.
+
+## 6. Commands
+
+From `App/`: `.venv/bin/python -m pytest tests/test_stay_fee_rate_dates_1027.py -q --tb=short -x 2>&1 | tail -30`, then the test-map row "Invoices, stay fee": `tests/test_stay_fee*.py tests/test_invoice_*.py`. Repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`.
+
+## 7. Acceptance
 
 - [ ] Migration files exist, numbers 0038 / 00009, backfill row `2000-01-01` per apartment with a rate above 0.
 - [ ] No rate history, or one backfilled row: every total identical to before (existing stay-fee tests unchanged and green).
@@ -108,7 +120,7 @@ ON CONFLICT (apartment_id, effective_from) DO NOTHING;
 - [ ] Over-60-night stay still owes 0 (amount zeroed in `_apply_scope_boundary`).
 - [ ] No new dependency; SQL only through `db`; no files outside section 2.
 
-## 5. If unsure, STOP and report (do not guess)
+## 8. Stop and ask
 
 - Any anchor not found, or `_apply_adjustments` has more than one caller.
 - A migration number is taken, or `init_db` does not pick the new SQLite file up.
@@ -118,7 +130,9 @@ ON CONFLICT (apartment_id, effective_from) DO NOTHING;
 - An existing test fails after step 3 for a reason you cannot fix with one change inside the files in section 2.
 - You reach 25 tool calls: commit what is done, write the report with `Status: blocked`, `Done: steps 1 to k. Left: ...`.
 
-## 6. Questions for the owner (put in the report, do not block on them)
+## 9. Report
+
+Per `docs/context/executor.md`. Also put these owner questions in the report (do not block on them):
 
 1. Bed-day adjustments (hosts adding/removing bed-days without naming guests) are priced at the rate on the period's last day. Acceptable?
 2. The PDF shows one facility row per rate for a period that spans a rate change. Acceptable to the office?

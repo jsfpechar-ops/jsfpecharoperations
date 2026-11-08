@@ -13,7 +13,11 @@ Rules (decided):
 - When a save changes the rate, call `stay_fee_rate.record(apartment_id, new_rate, effective_from)`. `effective_from` = form field `stay_fee_rate_from` (ISO date) if present and valid, else today. A past date is clamped to today (never an error, never retroactive). First-ever rate: `record` itself uses 2000-01-01.
 - Guest estimate: amount is per night; the JS live recalculation (`live`) is switched off (`None`) when the stay spans two rates, because signature.js multiplies by one rate.
 
-## 2. Files
+## 2. Context
+
+Design decisions are stated in section 1; do not re-audit. Facts and anchors are named in the steps.
+
+## 3. Files
 
 | Path | Action |
 |---|---|
@@ -24,7 +28,7 @@ Rules (decided):
 | App/tests/test_stay_fee_rate_dates_1028.py | create (step 4) |
 | docs/tasks/1028-report.md | create |
 
-## 3. Steps
+## 4. Steps
 
 Same conventions as 1027 (anchors with `grep -nF`, STOP when missing, commit `1028 step k`, attribution lines, `| tail -30`). Step 0: clean tree, `git checkout -B claude/dated-rates-1028 origin/main`; `ls App/app/stay_fee_rate.py` must exist, else STOP (1027 not merged).
 
@@ -53,7 +57,15 @@ Same conventions as 1027 (anchors with `grep -nF`, STOP when missing, commit `10
    - guest estimate (`_fee_estimate`, import as in `test_stay_fee_rules_1026.py`) over a rate change: amount per night, `live is None`; over a single rate: `live` present, unchanged amount.
    Run these plus the test-map row `.venv/bin/python -m pytest tests/test_stay_fee*.py tests/test_invoice_*.py tests/test_property_form_save.py -q --tb=short 2>&1 | tail -30`. Commit, report, `Status: review`, push `claude/dated-rates-1028`. No PR.
 
-## 4. Acceptance
+## 5. Do not touch
+
+templates, JS, CSS, i18n, `stay_fee.py` pricing logic (1027), migrations, guest-page markup.
+
+## 6. Commands
+
+From `App/`: `.venv/bin/python -m pytest tests/test_stay_fee*.py tests/test_invoice_*.py tests/test_property_form_save.py -q --tb=short 2>&1 | tail -30` (test-map row "Invoices, stay fee" plus the editor save tests).
+
+## 7. Acceptance
 
 - [ ] New seal and the daily auto-seal price per night and store the last-day rate plus segments.
 - [ ] Corrections of a sealed period: legacy flat rate kept, mixed period priced per night.
@@ -61,14 +73,16 @@ Same conventions as 1027 (anchors with `grep -nF`, STOP when missing, commit `10
 - [ ] Guest estimate/pay total per night; live JS estimate off for a stay across a rate change.
 - [ ] No template, JS or CSS changed; no new dependency.
 
-## 5. If unsure, STOP and report
+## 8. Stop and ask
 
 - More than 4 apartment write sites for the rate, or one you cannot follow in 2 reads.
 - `correcting` branch variables differ from the names above and the replacement is not obvious.
 - A test needs the guest page markup changed (that is a UI change: report it, do not do it).
 - 25 tool calls reached: commit, report `Status: blocked` with `Done: steps 1 to k. Left: ...`.
 
-## 6. Questions for the owner (report)
+## 9. Report
+
+Per `docs/context/executor.md`. Also put these owner questions in the report:
 
 1. The guest pay panel shows "N CZK per person for each counted night" with the last-night rate. For a stay across a rate change that line is slightly off while the total is right. Hide the line in that case (needs a guest-page change and browser tests, a follow-up brief)?
 2. Booking-site city tax display (`booking_site.py`) keeps using the current column rate. Leave?
