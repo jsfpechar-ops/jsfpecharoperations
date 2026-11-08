@@ -1,5 +1,7 @@
 # 1031: Redesign the "Add a second way in?" prompt
 
+Status: review
+
 Executor: Haiku 5.5. Read AGENTS.md, docs/context/executor.md, this brief. Nothing else.
 Branch: `claude/project-thread-2fhk70` (already checked out). Do not push; the orchestrator pushes.
 
