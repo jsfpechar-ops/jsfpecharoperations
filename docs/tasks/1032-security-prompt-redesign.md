@@ -1,4 +1,4 @@
-# 1031: Redesign the "Add a second way in?" prompt
+# 1032: Redesign the "Add a second way in?" prompt
 
 Status: review
 
@@ -15,7 +15,7 @@ Both stylesheets apply: `app.css` (non-v2 pages) and `app2.css` (`body.v2`, host
 
 ## 3. Files
 
-`App/app/templates/base.html`, `App/app/static/app.css`, `App/app/static/app2.css`, `docs/tasks/screenshots-1031/`.
+`App/app/templates/base.html`, `App/app/static/app.css`, `App/app/static/app2.css`, `docs/tasks/screenshots-1032/`.
 
 ## 5. Do not touch
 
@@ -133,7 +133,7 @@ Then grep `-nF "body.v2 .btn"` is NOT needed. But check that no later rule resty
 
 ### Step 3: look at it (real-browser check)
 
-From `App/`, start the app the way `docs/context/test-map.md` or an existing browser test does (grep `security-prompt-later` in `App/tests/test_host_quiet_dashboard_browser.py` to see how it logs in and reaches the dialog; copy that setup into a throwaway script `/tmp/shot_1031.py`, not committed). Take one screenshot of the open dialog each at 390x844, 768x1024, 1280x800, English and Czech (`cs`), save to `docs/tasks/screenshots-1031/` as `prompt-<lang>-<width>.png`. Open each and check: no overlap, options equal width and height, title wraps cleanly, nothing clipped at 390 px, no horizontal scroll. Also screenshot once at 390 px with JavaScript disabled to confirm the dialog is still readable.
+From `App/`, start the app the way `docs/context/test-map.md` or an existing browser test does (grep `security-prompt-later` in `App/tests/test_host_quiet_dashboard_browser.py` to see how it logs in and reaches the dialog; copy that setup into a throwaway script `/tmp/shot_1032.py`, not committed). Take one screenshot of the open dialog each at 390x844, 768x1024, 1280x800, English and Czech (`cs`), save to `docs/tasks/screenshots-1032/` as `prompt-<lang>-<width>.png`. Open each and check: no overlap, options equal width and height, title wraps cleanly, nothing clipped at 390 px, no horizontal scroll. Also screenshot once at 390 px with JavaScript disabled to confirm the dialog is still readable.
 
 If a screenshot shows a defect, fix the CSS once and retake. Second failure: STOP and report.
 
@@ -153,5 +153,5 @@ An anchor is not found, `showError` does not find the error box, a test fails tw
 
 ## 9. Report
 
-Write `docs/tasks/1031-report.md`: Status, files changed, test output tail, per screenshot one line on what you saw. Commit steps as `1031 step 1`, `1031 step 2`, `1031 report`.
+Write `docs/tasks/1032-report.md`: Status, files changed, test output tail, per screenshot one line on what you saw. Commit steps as `1032 step 1`, `1032 step 2`, `1032 report`.
 
