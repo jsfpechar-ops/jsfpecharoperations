@@ -3084,8 +3084,8 @@ body.v2 .prop-wide-only{display:none}
   body.v2 .prop-sec>summary::marker{content:""}
   body.v2 .prop-layout.is-tabbed .prop-sec:not(.is-current){display:none}
   body.v2 .prop-layout.is-tabbed .prop-nav a.is-current{background:var(--accs)}
-  /* 1030: 768 to 1023 px: section list above the form, one column (the form needs the width) */
-  @media (max-width:1023px){
+  /* 1030: 768 to 1279 px: section list above the form as chips, one column (the form needs the width) */
+  @media (max-width:1279px){
     body.v2 .prop-layout{grid-template-columns:minmax(0,1fr);gap:16px;padding-inline:24px}
     body.v2 .prop-nav{position:static;display:flex;flex-wrap:wrap;gap:8px}
     body.v2 .prop-nav a{flex:1 1 auto;justify-content:center}
@@ -3102,7 +3102,7 @@ body.v2 .prop-fixline{margin:0 0 24px;color:var(--bad);font-size:14px}
 body.v2 .prop-fixline a{color:var(--bad);font-weight:600}
 
 /* 1030 fix: the section list is column 1 for the whole editor; every other child (fix line, cards) flows in column 2, so no empty grid row. */
-@media (min-width:1024px){
+@media (min-width:1280px){
   body.v2 .prop-layout>.prop-nav{grid-column:1;grid-row:1 / span 99}
   body.v2 .prop-layout>:not(.prop-nav){grid-column:2}
 }
@@ -3118,7 +3118,7 @@ body.v2 .prop-fixline a{color:var(--bad);font-weight:600}
 @media (min-width:768px){
   body.v2 details.prop-sec>summary::after{display:none}
 }
-/* 1030 fix: at >=1024 the content column fills the space beside the section list (max 1000 px total). */
-@media (min-width:1024px){
+/* 1030 fix: at >=1280 the content column fills the space beside the section list (max 1000 px total). */
+@media (min-width:1280px){
   body.v2 .prop-layout{grid-template-columns:220px minmax(0,1fr);max-width:1000px}
 }
