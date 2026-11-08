@@ -293,3 +293,89 @@ def test_walg_ship_refuses_without_a_destination(tmp_path):
     assert result.returncode == 1
     assert pushed == []
     assert (spool / "000000010000000000000001").exists()
+
+
+CHECK_DOCKER_STUB = r"""#!/usr/bin/env bash
+echo "$*" >> "$STUB_LOG"
+case "$*" in
+  *"ps -q --status running walg"*) [ "${WALG_RUNNING:-1}" = 1 ] && echo walgid ;;
+  *pg_stat_archiver*) echo "${ARCH_ROW:-60|0}" ;;
+  *"stat -c %Y"*) [ -n "${SPOOL_MTIME:-}" ] && echo "$SPOOL_MTIME" ;;
+  *"du -sm /walspool"*) echo "${SPOOL_MB:-1}" ;;
+  *"du -sm /var/lib/postgresql/data/pg_wal"*) echo "${PGWAL_MB:-100}" ;;
+  *"backup-push"*) [ "${BACKUP_FAIL:-0}" = 1 ] && exit 1 ;;
+esac
+exit 0
+"""
+
+
+def make_check_tree(tmp_path):
+    root = tmp_path / "deploy" / "lightsail"
+    (root / "scripts").mkdir(parents=True)
+    for name in ("walg-check.sh", "walg-backup.sh"):
+        shutil.copy(SCRIPTS / name, root / "scripts" / name)
+    (root / ".env").write_text("")
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    (bindir / "docker").write_text(CHECK_DOCKER_STUB)
+    (bindir / "docker").chmod(0o755)
+    curl = bindir / "curl"
+    curl.write_text('#!/usr/bin/env bash\necho "curl $*" >> "$STUB_LOG"\n')
+    curl.chmod(0o755)
+    return root, bindir, tmp_path / "stub.log"
+
+
+def run_walg(script, tmp_path, extra=None):
+    root, bindir, log = make_check_tree(tmp_path)
+    env = {"PATH": f"{bindir}{os.pathsep}{os.environ['PATH']}", "STUB_LOG": str(log),
+           "WALG_CHECK_STATE": str(tmp_path / "state"),
+           "UBYHOST_WALG_PING_URL": "https://ping.invalid/check",
+           "UBYHOST_WALG_BACKUP_PING_URL": "https://ping.invalid/base"}
+    env.update(extra or {})
+    result = subprocess.run(["bash", str(root / "scripts" / script)], cwd=root, env=env,
+                            capture_output=True, text=True, timeout=60, stdin=subprocess.DEVNULL)
+    return result, calls(log)
+
+
+@pytest.mark.parametrize("script", ["walg-check.sh", "walg-backup.sh"])
+def test_walg_scripts_pass_bash_syntax(script):
+    result = subprocess.run(["bash", "-n", str(SCRIPTS / script)], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize("extra,expected_fail", [
+    ({}, False),
+    ({"ARCH_ROW": "4000|0"}, True),      # last archive older than 30 minutes
+    ({"ARCH_ROW": "-1|0"}, True),        # never archived (UBYHOST_PG_ARCHIVE not on)
+    ({"PGWAL_MB": "6000"}, True),        # pg_wal over 5 GB
+    ({"SPOOL_MB": "3000"}, True),        # spool over 2 GB
+    ({"SPOOL_MTIME": "1000"}, True),     # spool file from 1970: upload stuck
+    ({"WALG_RUNNING": "0"}, True),       # sidecar down
+])
+def test_walg_check_exit_codes(tmp_path, extra, expected_fail):
+    result, recorded = run_walg("walg-check.sh", tmp_path, extra)
+    assert (result.returncode != 0) == expected_fail, result.stderr
+    assert ("ping.invalid/check" in recorded) == (not expected_fail)  # dead-man ping only when healthy
+    assert "wal-g" not in recorded  # the monitor never calls WAL-G or S3
+
+
+def test_walg_check_flags_rising_failed_count(tmp_path):
+    (tmp_path / "state").write_text("2")
+    result, _ = run_walg("walg-check.sh", tmp_path, {"ARCH_ROW": "60|5"})
+    assert result.returncode == 1
+    assert "failed_count rose" in result.stderr
+
+
+def test_walg_backup_pushes_then_retains_seven_then_pings(tmp_path):
+    result, recorded = run_walg("walg-backup.sh", tmp_path)
+    assert result.returncode == 0, result.stderr
+    push = recorded.index("exec -T walg wal-g backup-push /var/lib/postgresql/data")
+    delete = recorded.index("exec -T walg wal-g delete retain FULL 7 --confirm")
+    assert push < delete < recorded.index("ping.invalid/base")
+
+
+def test_walg_backup_failure_deletes_nothing_and_does_not_ping(tmp_path):
+    result, recorded = run_walg("walg-backup.sh", tmp_path, {"BACKUP_FAIL": "1"})
+    assert result.returncode != 0
+    assert "delete retain" not in recorded
+    assert "ping.invalid" not in recorded
