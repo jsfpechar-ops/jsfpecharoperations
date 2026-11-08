@@ -3061,3 +3061,7 @@ body.v2 .ui-upgrade-card .ui-upgrade-name,body.v2 .ui-upgrade-card .ui-upgrade-p
 body.v2 .ui-upgrade-card .ui-upgrade-price{font-weight:700}
 body.v2 .ui-upgrade-card .ui-btn,body.v2 .ui-upgrade-strip .ui-btn,body.v2 .ui-addon-row .ui-btn{width:100%;justify-content:center}
 }
+
+/* 1030: section list is wide-only */
+body.v2 .prop-wide-only{display:none}
+@media (min-width:768px){body.v2 .prop-wide-only{display:block}}

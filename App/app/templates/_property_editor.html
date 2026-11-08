@@ -125,6 +125,15 @@
 </div>
 <div class="form prop-form-single property-detail">
 <div class="form-main">
+<div class="prop-layout">
+<nav class="prop-nav prop-wide-only" aria-label="{{ t('nav.settings') }}">
+<a href="#sec-basics"><span class="dot {{ 'g' if address_text else 'r' }}" aria-hidden="true"></span>{{ t('property_page.sec.basics.title') }}</a>
+<a href="#sec-police"><span class="dot {{ 'g' if police_ok else 'r' }}" aria-hidden="true"></span>{{ t('property_page.sec.police.title') }}</a>
+<a href="#sec-calendars"><span class="dot {{ 'r' if calendar_errors else ('g' if feeds_count else 'n') }}" aria-hidden="true"></span>{{ t('property_page.sec.calendars.title') }}</a>
+<a href="#sec-messages"><span class="dot n" aria-hidden="true"></span>{{ t('property_page.sec.messages.title') }}</a>
+<a href="#sec-lock"><span class="dot {{ 'g' if door_code and door_code.state == 'on' else 'n' }}" aria-hidden="true"></span>{{ t('property_page.sec.lock.title') }}</a>
+<a href="#sec-fee"><span class="dot {{ 'g' if apartment.stay_fee_rate_czk else 'n' }}" aria-hidden="true"></span>{{ t('property_page.sec.fee.title') }}</a>
+</nav>
 <form method="post" action="{{ base_url }}" enctype="multipart/form-data" class="property-settings-form" id="property-settings-form" data-property-settings-form data-unsaved-guard{% if operator_error %} data-dirty-start="1"{% endif %}>
   <p class="required-legend">{{ t('common.required_legend') }}</p>
   <input type="hidden" name="return_to" value="{{ base_url }}?view=settings&amp;section={{ settings_section }}" data-property-return>
@@ -499,6 +508,7 @@
     {% endif %}
   </div>
 </details>
+</div>
   {% if save_errors %}<div class="banner err section-notice save-summary" role="alert" tabindex="-1" data-save-summary data-first-error="{{ save_errors[0].target }}"><span class="grow">{{ tp('property_page.save_failed', save_errors|length) }}</span> <a href="#{{ save_errors[0].target }}">{{ t('property_page.save_failed_go') }}</a></div>
   {% elif flash and editor_saved %}<div class="banner ok section-notice save-summary" role="status" tabindex="-1" data-save-summary><span class="grow">{{ flash }}</span></div>{% endif %}
   <div class="savebar save-on-dirty" data-for="property-settings-form">
