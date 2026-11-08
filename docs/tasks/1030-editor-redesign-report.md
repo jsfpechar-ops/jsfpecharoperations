@@ -47,3 +47,12 @@ Continue at step 5 (help pruning), then step 7 (cache keys), then step 8 (layout
 - Keys: app2.css 1030k, app.js 1030h.
 - Tests: required set 305 passed, 0 skipped; layout lint 4 passed. No overflow at 768/1024/1280.
 - Shots: /mnt/project-files/ux-shots/editor-redesign/editor-{768,1280,1280-fixline,1280-stayfee}-v4.png (390 unchanged: editor-390-v3.png)
+
+## Merge with main and Stay fee wide fix (2026-11-08)
+- Merged origin/main (merge commit, no rebase). Kept both sides: 1030 layout plus #817's "Applies from" field and its CSS. main has its own docs/tasks/1030-report.md (walg task), so this report moved to docs/tasks/1030-editor-redesign-report.md and the brief points here.
+- Pins (owner decision 2026-11-08, 6 pills as switcher): test_stay_fee_rate_field_1029.py selects Stay fee by its pill at >=768; test_0710 mockup match accepts the wide card header (light divider; no h2.sec, .sec-state, .dot at >=768) via WIDE_OVERRIDES and WIDE_MISSING_OK in tests/v2_mockup.py.
+- Stay fee at 1280 to 1800: reproduced (a long council name and a wide saved signature pushed inputs, the signature and "2. Pay the council" past the card; More details sat 16 px in from the fields). Not fixed by main. Fixed at >=1024 only: shrinkable grid tracks, min-width:0 on the signature fieldset, the image capped at 100%, More details and Signature as plain blocks on the field left edge. New test tests/test_stay_fee_section_wide_1032_browser.py (1280/1440/1600/1800). 390/768 unchanged.
+- Keys: app2.css 1032b, app.js 1030i.
+- Shots: /mnt/project-files/ux-shots/editor-redesign/stay-fee-{1440,1800}-v5.png
+- Saved signature: shown whole at every width (max-height 160 px, max-width 100%, aspect kept, object-fit contain); the Edit pad draws a saved signature scaled to fit instead of stretched (host.js). Stored format unchanged. Test `test_saved_signature_fits_whole_and_edit_redraws_it` (1440/1800, device scale 2, corner strokes, save, reload, Edit, redraw). Keys: app2.css 1032c, host.js 1032a.
+- Shots: /mnt/project-files/ux-shots/editor-redesign/stay-fee-signature-{1440,1800}-v5.png

@@ -83,3 +83,85 @@ def test_stay_fee_section_fits_its_card_and_nested_blocks_align(host, base):  # 
                 page.locator("#sec-fee").screenshot(path=str(Path(SHOTS) / f"stay-fee-{width}-v5.png"))
         browser.close()
     assert not problems, problems
+
+
+_SIG_FACTS = """() => {
+  const card = document.querySelector('#sec-fee .fields-wrap');
+  const img = document.querySelector('#sec-fee img.signature-locked-img');
+  const c = card.getBoundingClientRect(), r = img.getBoundingClientRect();
+  return {inside: r.left >= c.left - 1 && r.right <= c.right + 1 && r.top >= c.top - 1 && r.bottom <= c.bottom + 1,
+          w: r.width, h: r.height, nw: img.naturalWidth, nh: img.naturalHeight, src: img.getAttribute('src') || ''};
+}"""
+
+
+def _draw_corners(page):
+    """Strokes near all four corners of the pad, so a crop on any side would lose ink."""
+    box = page.locator("#sec-fee dialog[open] [data-signature-panel=draw] canvas").bounding_box()
+    assert box and box["width"] > 100 and box["height"] > 60, box
+    pad = 6
+    corners = [(box["x"] + pad, box["y"] + pad), (box["x"] + box["width"] - pad, box["y"] + pad),
+               (box["x"] + box["width"] - pad, box["y"] + box["height"] - pad), (box["x"] + pad, box["y"] + box["height"] - pad)]
+    page.mouse.move(*corners[0])
+    page.mouse.down()
+    for x, y in corners[1:] + corners[:1]:
+        page.mouse.move(x, y, steps=8)
+    page.mouse.up()
+
+
+def _check_preview(page, width, problems, when):
+    page.wait_for_function("() => { const i = document.querySelector('#sec-fee img.signature-locked-img'); return i && !i.hidden && i.complete && i.naturalWidth > 0; }")
+    facts = page.evaluate(_SIG_FACTS)
+    if not facts["inside"]:
+        problems.append((width, when, "signature outside the card", facts))
+    if abs(facts["w"] / facts["h"] - facts["nw"] / facts["nh"]) * facts["h"] > 1:
+        problems.append((width, when, "aspect ratio changed", facts))
+    return facts
+
+
+def test_saved_signature_fits_whole_and_edit_redraws_it(host, base):  # noqa: F811
+    db.execute("UPDATE apartment SET stay_fee_rate_czk = 30, stay_fee_authority_name = 'Synthetic Council' WHERE id = ?", (host["apartment"],))
+    db.execute("UPDATE legal_entity SET signature_png_enc = NULL WHERE id = ?", (host["entities"][0],))
+    problems = []
+    url = f"{base}/apartments/{host['apartment']}?view=settings&lang=en"
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        for width in (1440, 1800):
+            page = _context(browser, base, host, device_scale_factor=2).new_page()
+            page.set_viewport_size({"width": width, "height": 1000})
+            page.goto(url)
+            page.locator('nav.prop-strip a[href="#sec-fee"]').click()
+            page.locator("#sec-fee [data-signature-open]").click()
+            _draw_corners(page)
+            page.locator("#sec-fee [data-signature-use]").click()
+            _check_preview(page, width, problems, "drawn")
+            with page.expect_navigation():
+                page.evaluate("() => { const f = document.getElementById('property-settings-form'); f.noValidate = true; f.requestSubmit(); }")
+            page.goto(url)
+            page.locator('nav.prop-strip a[href="#sec-fee"]').click()
+            saved = _check_preview(page, width, problems, "saved")
+            if not saved["src"].startswith("data:image/"):
+                problems.append((width, "signature not saved"))
+            # Edit opens the pad with the saved ink drawn whole (not stretched): ink near the left and right edges of the drawn area.
+            page.locator("#sec-fee [data-signature-open]").click()
+            page.wait_for_timeout(200)
+            ink = page.evaluate("""() => {
+              const c = document.querySelector('#sec-fee dialog[open] [data-signature-panel=draw] canvas');
+              const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+              let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 0) n++;
+              return n;
+            }""")
+            if not ink:
+                problems.append((width, "edit pad shows no saved ink"))
+            page.locator("#sec-fee [data-signature-clear]").click()
+            _draw_corners(page)
+            page.locator("#sec-fee [data-signature-use]").click()
+            _check_preview(page, width, problems, "redrawn")
+            if SHOTS:
+                Path(SHOTS).mkdir(parents=True, exist_ok=True)
+                page.locator("#sec-fee fieldset.signature-block").scroll_into_view_if_needed()
+                page.wait_for_function("() => !document.querySelector('dialog[open]')")
+                page.wait_for_timeout(500)
+                page.screenshot(path=str(Path(SHOTS) / f"stay-fee-signature-{width}-v5.png"))
+            page.context.close()
+        browser.close()
+    assert not problems, problems

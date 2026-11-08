@@ -100,7 +100,13 @@
       box.ctx.strokeStyle = SIGNATURE_INK;
       if (!draft) return;
       var image = new Image();
-      image.onload = function () { box.ctx.drawImage(image, 0, 0, box.width, box.height); };
+      // 1032: a saved signature keeps its aspect ratio and fits the pad whole (it was stretched or cropped).
+      image.onload = function () {
+        var scale = Math.min(box.width / image.naturalWidth, box.height / image.naturalHeight) || 1;
+        var w = image.naturalWidth * scale;
+        var h = image.naturalHeight * scale;
+        box.ctx.drawImage(image, (box.width - w) / 2, (box.height - h) / 2, w, h);
+      };
       image.src = draft;
     }
     function writeName(ctx, width, height) {
