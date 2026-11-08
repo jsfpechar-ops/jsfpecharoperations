@@ -3163,3 +3163,38 @@ body.v2 .onboarding-banner-setup .onboarding-banner-setup-link {
   body.v2 .onboarding-banner-setup .onboarding-banner-setup-link,
   body.v2 .onboarding-banner-setup .onboarding-skip-link { min-height: 44px; }
 }
+
+/* First-run welcome card polish (1031 fixes 1-4) */
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-finish-line,
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-finish-line {
+  text-align: left;
+}
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step.is-current .onboarding-step-index {
+  background: var(--surface); color: var(--acc); box-shadow: inset 0 0 0 1px var(--acc);
+}
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-current-dot { display: none; }
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-group { display: contents; }
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step details {
+  flex: 0 0 100%; box-sizing: border-box; margin: 0; padding: 0 0 0 40px; border: 0; background: none; box-shadow: none;
+}
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step details summary {
+  display: inline; width: auto; min-height: 0; margin: 0; padding: 0; border: 0; background: none; box-shadow: none;
+  color: var(--ink2); font-size: 13px; font-weight: 600; text-decoration: underline; cursor: pointer; list-style: none;
+}
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step details summary::-webkit-details-marker { display: none; }
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step details > :not(summary) {
+  margin: 6px 0 0; font-size: 13px; color: var(--ink2);
+}
+.onboarding-welcome .onboarding-demo { padding: 16px; gap: 12px; }
+.onboarding-welcome .onboarding-demo > div:first-child {
+  display: flex; align-items: center; flex-wrap: nowrap; gap: 6px; min-width: 0;
+}
+.onboarding-welcome .onboarding-demo > div:first-child strong { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 639px) {
+  .onboarding-welcome .onboarding-demo { flex-direction: column; align-items: stretch; }
+  .onboarding-welcome .onboarding-demo form .btn { width: 100%; justify-content: center; min-height: 44px; }
+}
+.onboarding-welcome .onboarding-demo { padding: 0; border: 0; background: none; }
+.onboarding-welcome .onboarding-demo form .btn {
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line); box-shadow: none;
+}
