@@ -88,7 +88,10 @@ def test_1029_date_field_shows_at_each_width(base, dashboard_rich_host, seeded):
             if field.count() == 0:
                 problems.append(f"{width}: no date field in the property editor")
             else:
-                if not field.first.is_visible():
+                try:
+                    # The fee section opens with a height transition; wait for it instead of checking at once.
+                    field.first.wait_for(state="visible", timeout=5000)
+                except sync_api.TimeoutError:
                     problems.append(f"{width}: date field not visible")
                 if page.evaluate("document.documentElement.scrollWidth > window.innerWidth"):
                     problems.append(f"{width}: horizontal scroll")
