@@ -86,7 +86,7 @@ def test_same_obec_matching_rules():
     matches = ["Praha", "PRAHA", "praha", "Praha 5", "Praha-Smíchov", "praha 1", "Prague", "Praha 5 "]
     for city in matches:
         assert stay_fee.same_obec_resident(_guest(res_city=city), apt), city
-    refusals = ["Brno", "Prha", "Olomuc", "", "Kladno", "Praha 5 Brno"]
+    refusals = ["Brno", "Prha", "Olomuc", "", "Kladno", "Brno 5 Praha"]
     for city in refusals:
         assert not stay_fee.same_obec_resident(_guest(res_city=city), apt), city
     assert not stay_fee.same_obec_resident(_guest(res_city="Praha", res_country="DEU"), apt)

@@ -200,18 +200,41 @@ def format_czk(amount: int) -> str:
 # included, is not exempt: the form is the guest's own declaration.
 
 STATUTORY_DISTRICT_BASES = (
-    "PRAHA", "PRAGUE", "BRNO", "OSTRAVA", "PLZEN", "OLOMOUC", "LIBEREC",
-    "CESKE BUDEJOVICE", "HRADEC KRALOVE", "USTI NAD LABEM", "PARDUBICE",
-    "ZLIN", "JIHLAVA", "KARLOVY VARY", "OPAVA",
+    "PRAHA", "BRNO", "CESKE BUDEJOVICE", "DECIN", "FRYDEK-MISTEK", "HAVIROV",
+    "HRADEC KRALOVE", "CHOMUTOV", "JABLONEC NAD NISOU", "JIHLAVA", "KARLOVY VARY",
+    "KARVINA", "KLADNO", "LIBEREC", "MLADA BOLESLAV", "MOST", "OLOMOUC", "OPAVA",
+    "OSTRAVA", "PARDUBICE", "PLZEN", "PROSTEJOV", "PREROV", "TEPLICE", "TRINEC",
+    "USTI NAD LABEM", "ZLIN",
 )
-OBEC_ALIASES = {"PRAGUE": "PRAHA"}
-_OBEC_PREFIXES = ("HLAVNI MESTO ", "HL. M. ", "HL.M. ", "STATUTARNI MESTO ", "MESTO ")
-_STATUTORY_BASE = re.compile(
-    r"^(" + "|".join(re.escape(base) for base in sorted(STATUTORY_DISTRICT_BASES, key=len, reverse=True))
-    + r")(?:\s*\d+)?\s*(?:$|[-,(])"
-)
-# "Praha-Vychod" / "Praha-Zapad" are separate districts (okres), not the city.
-_OKRES_SUFFIX = re.compile(r"-\s*(?:VYCHOD|ZAPAD)(?![A-Z])")
+# Names guests type for Czech towns -> the Czech name, folded (1031, owner list).
+OBEC_ALIASES = {
+    "PRAGUE": "PRAHA", "PRAG": "PRAHA", "PRAGA": "PRAHA",
+    "BRUNN": "BRNO", "PILSEN": "PLZEN", "BUDWEIS": "CESKE BUDEJOVICE",
+    "OSTRAU": "OSTRAVA", "MAHRISCH OSTRAU": "OSTRAVA", "MAHRISCH-OSTRAU": "OSTRAVA",
+    "MORAVIAN OSTRAVA": "OSTRAVA", "MORAVSKA OSTRAVA": "OSTRAVA",
+    "KARLSBAD": "KARLOVY VARY", "CARLSBAD": "KARLOVY VARY",
+    "MARIENBAD": "MARIANSKE LAZNE", "FRANZENSBAD": "FRANTISKOVY LAZNE",
+    "OLMUTZ": "OLOMOUC", "REICHENBERG": "LIBEREC", "AUSSIG": "USTI NAD LABEM",
+    "KONIGGRATZ": "HRADEC KRALOVE", "PARDUBITZ": "PARDUBICE", "IGLAU": "JIHLAVA",
+    "TROPPAU": "OPAVA", "TEPLITZ": "TEPLICE", "KOMOTAU": "CHOMUTOV", "TETSCHEN": "DECIN",
+    "JUNGBUNZLAU": "MLADA BOLESLAV", "GABLONZ": "JABLONEC NAD NISOU",
+    "PROSSNITZ": "PROSTEJOV", "PRERAU": "PREROV", "BRUX": "MOST",
+    "KRUMAU": "CESKY KRUMLOV", "KUTTENBERG": "KUTNA HORA", "ZNAIM": "ZNOJMO",
+}
+# The official long name of a statutory city; dropped only when such a city follows.
+# Never "MESTO " or "OBEC " alone: "Město Albrechtice" is its own town.
+OFFICIAL_PREFIXES = ("HLAVNI MESTO ", "HL. M. ", "HL.M. ", "HL M ", "STATUTARNI MESTO ")
+# Okres (district) names that start with a city name but are not that city.
+OKRES_NOT_OBEC = ("PRAHA-VYCHOD", "PRAHA-ZAPAD", "BRNO-VENKOV", "PLZEN-JIH", "PLZEN-SEVER")
+# What may follow a city name in a city-part form. signature.js uses this same text.
+OBEC_AFTER_BASE = r"$|\s*\d|-|\s*,|\s*\(| (?!(?:NAD|POD|U|NA|PRI)(?: |$))[A-Z]"
+_AFTER_BASE = re.compile("(?:" + OBEC_AFTER_BASE + ")")
+OBEC_SUFFIX_BASES = tuple(sorted(
+    set(STATUTORY_DISTRICT_BASES)
+    | {name for name, target in OBEC_ALIASES.items() if target in STATUTORY_DISTRICT_BASES},
+    key=lambda name: (-len(name), name),
+))
+_OKRES_NEXT_LETTER = re.compile(r"[A-Z]")
 
 
 def fold_text(value) -> str:
@@ -221,24 +244,47 @@ def fold_text(value) -> str:
     return re.sub(r"\s+", " ", plain).strip()
 
 
+def _suffix_base(text: str) -> Optional[str]:
+    for base in OBEC_SUFFIX_BASES:
+        if text.startswith(base) and _AFTER_BASE.match(text, len(base)):
+            return base
+    return None
+
+
 def _obec_key(value) -> str:
-    text = fold_text(value)
-    for prefix in _OBEC_PREFIXES:
-        if text.startswith(prefix):
-            text = text[len(prefix):]
+    """The town a typed name means, folded (1031 rules; signature.js key() mirrors this)."""
+    text = re.sub(r"\s*-\s*", "-", fold_text(value))
+    for prefix in OFFICIAL_PREFIXES:
+        rest = text[len(prefix):].strip()
+        if text.startswith(prefix) and _suffix_base(rest):
+            text = rest
             break
-    if not _OKRES_SUFFIX.search(text):
-        match = _STATUTORY_BASE.match(text)
-        if match:
-            text = match.group(1)
+    for name in OKRES_NOT_OBEC:
+        if text.startswith(name) and not _OKRES_NEXT_LETTER.match(text[len(name):]):
+            return text
+    base = _suffix_base(text)
+    if base:
+        text = base
     return OBEC_ALIASES.get(text, text)
 
 
+def property_obec(apartment) -> str:
+    """The property's town: addr_obec, else the town the host typed in city_en (1031)."""
+    for key in ("addr_obec", "city_en"):
+        try:
+            value = apartment[key]
+        except (KeyError, IndexError):
+            value = None
+        if value and str(value).strip():
+            return str(value)
+    return ""
+
+
 def same_obec_resident(guest, apartment) -> bool:
-    """True only for a CZ resident whose city matches the property's obec exactly."""
+    """True only for a CZ resident whose city is the property's town (1031 folding rules)."""
     if guest["res_country"] != validation.CZECH_CODE:
         return False
-    obec = _obec_key(apartment["addr_obec"])
+    obec = _obec_key(property_obec(apartment))
     return bool(obec) and _obec_key(guest["res_city"]) == obec
 
 
