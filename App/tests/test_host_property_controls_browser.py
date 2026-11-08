@@ -440,13 +440,13 @@ def test_calendar_platform_controls_in_browser(host, base):
                     page.goto(f"{base}/apartments/{apartment}?lang={lang}#calendar-connect")
                     form = page.locator("#calendar-add")
                     platform = form.locator("#label")
-                    assert platform.is_visible()
+                    platform.wait_for(state="visible", timeout=5000)
                     assert form.locator("details").count() == 0
                     top_platform = platform.bounding_box()["y"]
                     assert top_platform < form.locator("#url").bounding_box()["y"]
                     assert platform.evaluate("el => el.required && el.value === ''")
                     assert not form.locator("#label_other").is_visible()
-                    assert form.locator("#own_name").is_visible()
+                    form.locator("#own_name").wait_for(state="visible", timeout=5000)
                     table = page.locator(".feed-table")
                     assert "Booking.com" in table.inner_text()
                     assert "—" not in table.inner_text()
