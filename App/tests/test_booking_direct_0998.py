@@ -239,3 +239,50 @@ def test_direct_confirm_mail_says_confirmed_not_paid(owner):
     payload = json.loads(row["payload"])
     text = payload.get("text", "")
     assert "Paid:" not in text and "Zaplaceno:" not in text
+
+
+def test_decline_after_confirm_keeps_paid(owner):
+    booking = _requested(owner)
+    assert booking_direct.confirm(int(booking["id"]), owner["oid"])["error"] is None
+    assert booking_direct.decline(int(booking["id"]), owner["oid"]) == {"error": "not_confirmable"}
+    assert db.query_one("SELECT status FROM site_booking WHERE id = ?", (booking["id"],))["status"] == "paid"
+
+
+def test_declined_direct_row_has_no_retry(owner):
+    booking = _requested(owner)
+    assert booking_direct.decline(int(booking["id"]), owner["oid"])["error"] is None
+    row = next(r for r in booking_manage.host_rows(owner["aid"]) if r["id"] == int(booking["id"]))
+    assert row["can_retry"] is False
+    assert row["status_key"] == "cancelled_direct"
+
+
+def test_decline_mails_guest(owner, monkeypatch):
+    booking = _requested(owner)
+    captured: list[dict] = []
+
+    def _enqueue(**kwargs):
+        captured.append(kwargs)
+
+    from app import mail
+    monkeypatch.setattr(mail, "enqueue", _enqueue)
+    assert booking_direct.decline(int(booking["id"]), owner["oid"])["error"] is None
+    declined = [m for m in captured if m["idempotency_key"].endswith(":declined")]
+    assert len(declined) == 1
+    assert declined[0]["to_email"] == "jan@example.test"
+
+
+def test_direct_confirm_host_mail_not_paid(owner, monkeypatch):
+    booking = _requested(owner)
+    captured: list[dict] = []
+
+    def _enqueue(**kwargs):
+        captured.append(kwargs)
+
+    from app import booking_webhook, mail
+    monkeypatch.setattr(mail, "enqueue", _enqueue)
+    monkeypatch.setattr(booking_webhook, "_host_email", lambda apartment: "host@example.test")
+    assert booking_direct.confirm(int(booking["id"]), owner["oid"])["error"] is None
+    host = [m for m in captured if m["kind"] == "site_booking_host"]
+    assert len(host) == 1
+    text = host[0]["payload"]["text"]
+    assert "Paid" not in text and "Zaplaceno" not in text
