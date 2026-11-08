@@ -327,6 +327,9 @@ them; Render does.
 | `UBYHOST_BACKUP_AGE_RECIPIENT` | unset | `App/scripts/backup_data.sh` — public `age1...` recipient the snapshot is encrypted to. **Required when `UBYHOST_DEPLOYMENT=production`**; the run fails closed without it |
 | `UBYHOST_BACKUP_RETENTION_DAYS` | `30` | `App/scripts/backup_data.sh` — snapshots older than this many days are removed; the newest is always kept. Set `7` if the disk fills |
 | `UBYHOST_BACKUP_PING_URL` | unset | `deploy/lightsail/scripts/backup.sh` — pinged after each successful daily backup. Required in production: `preflight.sh` refuses to deploy while it is empty. |
+| `UBYHOST_PG_ARCHIVE` | `off` | `deploy/lightsail/docker-compose.yml` postgres `archive_mode`. Production sets `on` together with `walg` in `COMPOSE_PROFILES` (runbook: OPERATIONS.md, "WAL-G continuous archiving and point-in-time recovery"). Changing it restarts Postgres. |
+| `UBYHOST_WALG_PING_URL` | unset | `deploy/lightsail/scripts/walg-check.sh` — pinged only when archiving is healthy (every 10 minutes); its own dead-man check, separate from the backup one. |
+| `UBYHOST_WALG_BACKUP_PING_URL` | unset | `deploy/lightsail/scripts/walg-backup.sh` — pinged after each successful daily WAL-G base backup; a third dead-man check (daily period). |
 | `AGE_IDENTITY_FILE` | unset | `restore.sh` — host path to the age private identity used to decrypt an encrypted snapshot; never inside the volume |
 | `RESTORE_CONFIRM` | unset | `restore.sh` — `yes` skips the interactive confirmation prompt |
 | `UBYHOST_S3_BUCKET` | unset | `backup-s3.sh` |
