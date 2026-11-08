@@ -69,6 +69,7 @@ def _payload(**overrides):
         "internal_name": "Default Flat",
         "addr_city": "Praha",
         "addr_obec": "Praha",
+        "addr_street": "Synthetic",
         "addr_house_no": "12",
         "addr_zip": "120 00",
         "uby_idub": "123456789012",

@@ -54,6 +54,7 @@ NON_FEE = {
     "automation_mode": "manual",
     "default_purpose": "10",
     "addr_obec": "Praha",
+    "addr_street": "Synthetic",
     "addr_house_no": "12",
     "addr_zip": "11000",
 }
