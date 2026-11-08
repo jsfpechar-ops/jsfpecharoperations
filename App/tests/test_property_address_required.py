@@ -200,3 +200,52 @@ def test_create_page_marks_the_three_parts_required_and_the_rest_optional():
         assert " required" in tag and 'aria-required="true"' in tag, (lang, "addr_street")
         label = re.search(r'<label for="addr_street">(.*?)</label>', page, re.S).group(1)
         assert optional not in label, (lang, "addr_street")
+
+
+# Owner decision 2026-11-08: the street is mandatory on the forms, but not in validate_apartment (UbyPort gate).
+def test_create_without_street_is_refused():
+    host = _host()
+    for street in ("", "   "):
+        response = host["client"].post("/apartments", data=_form(host, addr_street=street), follow_redirects=False)
+        assert response.status_code == 400, repr(street)
+        assert 'id="addr_street-error"' in response.text, repr(street)
+    assert _count(host) == 0
+
+
+def test_forged_create_without_street_field_is_refused():
+    host = _host()
+    data = _form(host)
+    data.pop("addr_street")
+    response = host["client"].post("/apartments", data=data, follow_redirects=False)
+    assert response.status_code == 400
+    assert _count(host) == 0
+
+
+def test_editor_save_clearing_the_street_is_refused_and_nothing_changes():
+    host = _host()
+    apartment_id = _stored(host, addr_street="Old Street")
+    before = _address(apartment_id)
+    response = host["client"].post(
+        f"/apartments/{apartment_id}", data=_form(host, addr_street=""), follow_redirects=False
+    )
+    assert response.status_code == 400
+    assert 'id="addr_street-error"' in response.text
+    assert _address(apartment_id) == before
+
+
+def test_existing_apartment_without_street_still_validates_for_ubyport():
+    from app import validation
+
+    issues = validation.validate_apartment(_form({"entity": 1}, addr_street=""))
+    assert not [issue for issue in issues if issue.field == "addr_street"]
+
+
+def test_a_save_without_address_fields_keeps_working_for_a_street_less_apartment():
+    host = _host()
+    apartment_id = _stored(host)
+    response = host["client"].post(
+        f"/apartments/{apartment_id}",
+        data={"internal_name": "Street Less Rename", "legal_entity_id": str(host["entity"])},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
