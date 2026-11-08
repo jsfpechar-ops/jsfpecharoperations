@@ -1,6 +1,6 @@
 # 1006: Direct bookings: decline race, cancelled-row state, decline mail, host copy
 
-Status: todo
+Status: review
 Depends on: none (on top of PR 803) | Base commit: 6217fcc8 | Branch: task/0999-property-rules-map (same PR)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
