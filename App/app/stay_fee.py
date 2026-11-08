@@ -205,7 +205,13 @@ STATUTORY_DISTRICT_BASES = (
     "ZLIN", "JIHLAVA", "KARLOVY VARY", "OPAVA",
 )
 OBEC_ALIASES = {"PRAGUE": "PRAHA"}
-_DISTRICT_SUFFIX = re.compile(r"^(.+?)(?:\s+\d+|-.+)$")
+_OBEC_PREFIXES = ("HLAVNI MESTO ", "HL. M. ", "HL.M. ", "STATUTARNI MESTO ", "MESTO ")
+_STATUTORY_BASE = re.compile(
+    r"^(" + "|".join(re.escape(base) for base in sorted(STATUTORY_DISTRICT_BASES, key=len, reverse=True))
+    + r")(?:\s*\d+)?\s*(?:$|[-,(])"
+)
+# "Praha-Vychod" / "Praha-Zapad" are separate districts (okres), not the city.
+_OKRES_SUFFIX = re.compile(r"-\s*(?:VYCHOD|ZAPAD)(?![A-Z])")
 
 
 def fold_text(value) -> str:
@@ -217,9 +223,14 @@ def fold_text(value) -> str:
 
 def _obec_key(value) -> str:
     text = fold_text(value)
-    match = _DISTRICT_SUFFIX.match(text)
-    if match and match.group(1).strip() in STATUTORY_DISTRICT_BASES:
-        text = match.group(1).strip()
+    for prefix in _OBEC_PREFIXES:
+        if text.startswith(prefix):
+            text = text[len(prefix):]
+            break
+    if not _OKRES_SUFFIX.search(text):
+        match = _STATUTORY_BASE.match(text)
+        if match:
+            text = match.group(1)
     return OBEC_ALIASES.get(text, text)
 
 
