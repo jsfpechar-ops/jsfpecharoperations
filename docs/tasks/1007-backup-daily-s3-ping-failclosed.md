@@ -1,8 +1,8 @@
-# 0995: Daily off-site S3 backup, fail-closed Postgres dump, dead-man ping docs
+# 1007: Daily off-site S3 backup, fail-closed Postgres dump, dead-man ping docs
 
 Status: review
-Note: step 10 (the K-BKP-S3-403 known-issues line) and its grep in step 11 were NOT applied (known-issues cap); see 0995-fix-1. Skip them.
-Depends on: none | Base commit: 47640cf | Branch: task/0995-backup-daily-s3
+Note: step 10 (the K-BKP-S3-403 known-issues line) and its grep in step 11 were NOT applied (known-issues cap); see 1007-fix-1. Skip them.
+Depends on: none | Base commit: 47640cf | Branch: task/1007-backup-daily-s3
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -11,7 +11,7 @@ In production, `backup.sh` must exit 1 (and send no ping) whenever no PostgreSQL
 
 ## 2. Context
 
-Rules: AGENTS.md rule 2 (new outbound request needs its reason in the PR), rule 3 (no secrets, bucket names, account ids or ping URLs in the repo), rule 4 (no new dependency). RETENTION (`docs/privacy/RETENTION.md` line 44): encrypted backups are kept "30 days local/off-site (G-D3)"; off-site expiry on S3 is a bucket lifecycle rule. Production local retention is `UBYHOST_BACKUP_RETENTION_DAYS=7` (docs/LIGHTSAIL.md, backup-layers table). Postgres has been the live DB since 2026-10-31. Litestream is being retired by brief 0996, which runs AFTER this one: here only say "being retired", do not remove it.
+Rules: AGENTS.md rule 2 (new outbound request needs its reason in the PR), rule 3 (no secrets, bucket names, account ids or ping URLs in the repo), rule 4 (no new dependency). RETENTION (`docs/privacy/RETENTION.md` line 44): encrypted backups are kept "30 days local/off-site (G-D3)"; off-site expiry on S3 is a bucket lifecycle rule. Production local retention is `UBYHOST_BACKUP_RETENTION_DAYS=7` (docs/LIGHTSAIL.md, backup-layers table). Postgres has been the live DB since 2026-10-31. Litestream is being retired by brief 1008, which runs AFTER this one: here only say "being retired", do not remove it.
 
 Facts (checked against the scripts, do not re-check):
 
@@ -117,7 +117,7 @@ Excerpt H, `docs/context/known-issues.md`:
 | `docs/OPERATIONS.md` | edit | True local retention and off-site expiry |
 | `docs/context/known-issues.md` | edit | Observation about the first S3 run 403 |
 
-No other file may change, except this brief's `Status:` line and the new report `docs/tasks/0995-report.md`. Status (`docs/context/status.md`) is updated by the orchestrator, not you.
+No other file may change, except this brief's `Status:` line and the new report `docs/tasks/1007-report.md`. Status (`docs/context/status.md`) is updated by the orchestrator, not you.
 
 Tool-call budget: read each file once (a range of 150 lines or fewer around the excerpt), then edit. Steps 3 to 10 have no own command: step 11 checks them all in one command.
 
@@ -126,7 +126,7 @@ Tool-call budget: read each file once (a range of 150 lines or fewer around the 
 1. In `deploy/lightsail/scripts/backup.sh`, directly above Excerpt A0, insert this block (with a blank line after it):
 
 ```bash
-# Brief 0995: in production on PostgreSQL, never take or prune a snapshot while postgres is down.
+# Brief 1007: in production on PostgreSQL, never take or prune a snapshot while postgres is down.
 # A run without the dump would age out the last good dumps. Exits before backup_data.sh and before the ping.
 if [ "${UBYHOST_DEPLOYMENT:-}" = "production" ] && [ -n "${UBYHOST_DATABASE_URL:-}" ] \
   && [ -z "$(docker compose ps -q --status running postgres 2>/dev/null)" ]; then
@@ -139,7 +139,7 @@ fi
    Then, directly above Excerpt A, insert this block (with a blank line after it):
 
 ```bash
-# Brief 0995: production must never finish without a PostgreSQL dump. The snapshot above is kept; no ping is sent.
+# Brief 1007: production must never finish without a PostgreSQL dump. The snapshot above is kept; no ping is sent.
 if [ "${UBYHOST_DEPLOYMENT:-}" = "production" ]; then
   if [ -z "${UBYHOST_DATABASE_URL:-}" ]; then
     echo "Refusing to finish: UBYHOST_DATABASE_URL is unset in production, so no PostgreSQL dump was taken." >&2
@@ -224,7 +224,7 @@ In production `backup.sh` exits 1 and sends no ping when no PostgreSQL dump can 
 4. `docs/LIGHTSAIL.md`: replace the three lines of Excerpt D with these four lines (one Edit):
 
 ```
-| Litestream → S3 (being retired, brief 0996; replicates the old SQLite file, not PostgreSQL) | continuous | 7 days | not a recovery path since the move to PostgreSQL |
+| Litestream → S3 (being retired, brief 1008; replicates the old SQLite file, not PostgreSQL) | continuous | 7 days | not a recovery path since the move to PostgreSQL |
 | `backup.sh` on the volume | daily 03:00 UTC | `UBYHOST_BACKUP_RETENTION_DAYS` (set `7` in production `.env`) | quick restore on the same server |
 | `backup-s3.sh` | daily 03:30 UTC | 30 days (bucket lifecycle rule) | main off-site copy, including a new instance |
 | `backup-gdrive.sh` | weekly | 30 days | second copy outside AWS |
@@ -272,7 +272,7 @@ In production `backup.sh` exits 1 and sends no ping when no PostgreSQL dump can 
 10. `docs/context/known-issues.md`: directly after the line of Excerpt H, add this one line:
 
 ```
-- K-BKP-S3-403: Observation (not a bug yet). The first S3 off-site run on 1 Nov got a 403, then succeeded on retry. Recheck the S3 log after the first daily runs (brief 0995); if the 403 repeats, check the IAM policy for the bucket and prefix.
+- K-BKP-S3-403: Observation (not a bug yet). The first S3 off-site run on 1 Nov got a 403, then succeeded on retry. Recheck the S3 log after the first daily runs (brief 1007); if the 403 repeats, check the IAM policy for the bucket and prefix.
 ```
 
    Command: none (step 11).
@@ -289,7 +289,7 @@ grep -n "30 3 \* \* \*\|main recovery\|Drive uploads do not prune\|Once Litestre
 
 ## 5. Do not touch
 
-`deploy/lightsail/scripts/backup-s3.sh`, `backup-gdrive.sh`, `deploy.sh`, `pg-cutover.sh`, `App/scripts/backup_data.sh`, `App/app/`, Litestream files and the `docs/LIGHTSAIL.md` restore sections (brief 0996 removes Litestream), `docs/context/status.md`, `docs/privacy/RETENTION.md`, `.env.example`. The Drive cron line stays `0 4 * * 0`. Rules 2-4 and 8 of AGENTS.md. No ping URL, bucket name or AWS account id anywhere in the repo (the test uses `https://ping.invalid/x`, which is not a real host).
+`deploy/lightsail/scripts/backup-s3.sh`, `backup-gdrive.sh`, `deploy.sh`, `pg-cutover.sh`, `App/scripts/backup_data.sh`, `App/app/`, Litestream files and the `docs/LIGHTSAIL.md` restore sections (brief 1008 removes Litestream), `docs/context/status.md`, `docs/privacy/RETENTION.md`, `.env.example`. The Drive cron line stays `0 4 * * 0`. Rules 2-4 and 8 of AGENTS.md. No ping URL, bucket name or AWS account id anywhere in the repo (the test uses `https://ping.invalid/x`, which is not a real host).
 
 ## 6. Commands
 
@@ -297,7 +297,7 @@ grep -n "30 3 \* \* \*\|main recovery\|Drive uploads do not prune\|Once Litestre
 - `shellcheck -S error deploy/lightsail/scripts/backup.sh 2>&1 | tail -30` -> no output (if shellcheck is not installed, skip and say so in the report).
 - `python3 scripts/context_lint.py 2>&1 | tail -30` (repo root) -> passes.
 - `git diff -U0 -- docs deploy | grep -nE '^\+.*([0-9]{12}|hc-ping\.com/|ping\.invalid|s3://)' | tail -30` -> no output.
-- `git status --short | tail -30` -> only the six files of section 3, this brief, and `docs/tasks/0995-report.md`.
+- `git status --short | tail -30` -> only the six files of section 3, this brief, and `docs/tasks/1007-report.md`.
 
 ## 7. Acceptance
 
@@ -323,7 +323,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/0995-report.md` (600 tokens at most) and set `Status: review`. The report has:
+Write `docs/tasks/1007-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
 1. The files changed (`git diff --stat`).
 2. Each command, with the last 5 lines of its output.
@@ -337,7 +337,7 @@ Write `docs/tasks/0995-report.md` (600 tokens at most) and set `Status: review`.
 - `deploy/lightsail/scripts/backup.sh`: guard 1 must sit above `backup_data.sh` (no snapshot, no pruning while postgres is down), guard 2 above the dump `if`, both before the ping. Outside production nothing changes.
 - Consequence the orchestrator accepted by sending this brief: a production server on SQLite (`UBYHOST_DATABASE_URL` unset, for example after `pg-cutover.sh rollback`) now gets a failing nightly backup (snapshot still kept, no ping, healthchecks alert), `deploy.sh` refuses to deploy, and `pg-cutover.sh rehearse`/`cutover` refuse in production. The cutover is done (2026-10-31), so this is the intended alarm.
 - Doc fix for the orchestrator (not in this brief): `docs/privacy/RETENTION.md` line 44, "Kept" cell `30 days local/off-site (G-D3)` should read `7 days local in production (code default 30); 30 days off-site: S3 lifecycle rule, Drive pruned by backup-gdrive.sh (G-D3)`, and the enforcement cell should add `; backup-gdrive.sh rclone delete --min-age`. Also the header comment in `backup-s3.sh` (line 6) still says the lifecycle rule uses `UBYHOST_BACKUP_RETENTION_DAYS`; it should say 30 days.
-- Brief 0996 later removes Litestream text from the same docs (overlapping files: 0995 goes first).
+- Brief 1008 later removes Litestream text from the same docs (overlapping files: 1007 goes first).
 - PR text: add "New outbound request: dead-man ping to healthchecks.io after each successful backup, so a silently stopped backup is noticed. No new request is added by this PR's code; the ping already exists, this PR documents it and makes production fail before it when the PostgreSQL dump is missing."
 
 ## Owner steps

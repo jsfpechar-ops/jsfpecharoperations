@@ -140,7 +140,7 @@
     <span class="guest-count" title="{{ t('stays.table.guests') }}">
       {{ icon('users', 16) }}
       <span class="sr-only">{{ t('stays.table.guests') }}:</span>
-      {% if progress.expected is not none %}{{ progress.filled }} / {{ progress.expected }}{% else %}{{ progress.guests | length }}{% endif %}
+      {% if progress.expected is not none %}{{ t('stays.table.guests_of', filled=progress.filled, expected=progress.expected) }}{% else %}{{ progress.guests | length }}{% endif %}
     </span>
   {% elif placeholder %}
     <span class="muted" aria-hidden="true">–</span><span class="sr-only">{{ t('common.guests_unknown') }}</span>

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 0998: daily WAL-G base backup, then keep the newest 7 (7 days). Cron 04:30 UTC,
+# 1010: daily WAL-G base backup, then keep the newest 7 (7 days). Cron 04:30 UTC,
 # after backup.sh and the S3 copy (docs/LIGHTSAIL.md). The pg_dump backup stays
 # the primary copy; this is the point-in-time path. Runbook: docs/OPERATIONS.md.
 # A failed backup-push stops here: nothing is deleted and no ping is sent.

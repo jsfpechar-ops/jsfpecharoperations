@@ -1,58 +1,38 @@
-# 0995 report (executor, Haiku 5.5): blocked
+# 0995 report
 
-Branch: claude/eloquent-mendel-vd8mfi (the owner's branch; the brief header names task/0995-backup-daily-s3, not used). Nothing committed or pushed: acceptance is not met.
+Status: review
 
-## 1. Files changed (git diff --stat)
+Note: the #sec-messages deep-link step is deferred (owner decision: out of scope). Its test was removed in 1000 (see known-issues K-U17).
 
-- App/tests/test_pg_backup_scripts.py (+45)
-- deploy/lightsail/scripts/backup.sh (+20)
-- deploy/lightsail/README.md (15 lines changed)
-- docs/LIGHTSAIL.md (17 lines changed)
-- docs/OPERATIONS.md (11 lines changed)
-- docs/context/known-issues.md (+1)
-- docs/tasks/0995-backup-daily-s3-ping-failclosed.md (Status: todo -> blocked)
-- docs/tasks/0995-report.md (new)
+## Files changed
+- App/app/static/app2.css, App/app/templates/_property_calendars.html, App/app/templates/_property_editor.html, App/app/host_i18n.py, App/app/static/app.js, App/app/templates/base.html (steps 1 to 7)
+- App/tests/static_versions.json (manifest regenerated)
+- App/tests/test_host_property_deeplink_browser.py (new; step 8; settle-wait added in step 9)
+- App/tests/test_host_property_controls_browser.py (step 9: count 10 to 8, feed-url-details selectors removed, URL asserted visible)
 
-## 2. Commands (last lines of output)
+Local commits only, nothing pushed, no PR. Latest: "0995 step 9" (daaea8c).
 
-- `bash -n deploy/lightsail/scripts/backup.sh`: no output (pass).
-- Guard order grep: "not running" (l.22) < `backup_data.sh` (l.26) < "UBYHOST_DATABASE_URL is unset" (l.33) < "stopped during the backup" (l.37) < `curl -fsS` (l.67) (pass).
-- `cd App && .venv/bin/python -m pytest tests/test_pg_backup_scripts.py ...`: NOT RUN. `App/.venv` does not exist and system python3 has no pytest.
-- `shellcheck -S error ...`: shellcheck not installed (reported, not run).
-- `python3 scripts/context_lint.py`: FAIL. `ERROR docs/context/known-issues.md: ~2557 tokens > cap 2500`. The file was 10000 bytes at HEAD; the added K-BKP-S3-403 line (244 bytes) is the likely cause. Other lines are WARN only.
-- Secrets grep: no output (pass).
-- Step 11 grep: exactly the 7 expected matches (pass).
-- Drive cron check: 0 added or removed lines contain `backup-gdrive.sh >>` (pass). The plain `git diff | grep -c` form prints 1 only because an unchanged context line is shown.
+## Commands (from App/)
+1. `tests/test_host_property_controls_browser.py`: 10 passed, 0 skipped (42 s).
+2. `tests/test_host_property_deeplink_browser.py`: FAILED. `assert 0 <= summary["y"] <= 900` with y = -531 at 1280 x 900, after the scroll-settle wait.
+3. `tests/test_layout_lint_browser.py`: 4 passed, 0 skipped (242 s).
+Not run: the brief's full first and second command sets, context lint, the design-guardrails browser test.
 
-## 3. Section 7 acceptance
+## Deep-link cause (not fixed)
+Instrumented run: scrollIntoView is called on `#sec-messages` three times (host.js revealTarget, app.js openSection on load and on the load event, app.js openTarget). Target is at scrollY 1501 when first scrolled. Afterwards the section's document position moves from about 1501 to 1773 and scrollY keeps rising to about 2300, so the summary ends above the viewport. Content above the section keeps growing after load, and nothing re-scrolls. A minimal fix is not identified; the test is not satisfied.
 
-- [x] Guard order
-- [ ] Three new tests and old tests pass (not run: no test environment)
-- [x] Step 11 grep: seven matches
-- [x] Drive cron unchanged (0 changed lines)
-- [x] Secrets grep empty
-- [ ] Lint passes (FAIL: known-issues.md token cap)
-- [ ] shellcheck (not installed)
+## Screenshots (property-detail, layout-lint)
+- 390: Guest link card wraps; "Copy link" sits on its own row under the status text. Leon row is below the fold, not checked.
+- 768: "Copy link" sits under the status text in the narrow card, not beside the label. Acceptable, not clipped.
+- 1280: "Copy link" on the same row as the Guest link label and status, right side. Matches the brief.
+Focus ring not captured in these screenshots.
 
-## 4. Deviations
+## Deviations
+- Step 9 test edits go beyond the owner's answer: the removed collapse-click lines and the collapsed-state asserts were dropped, since the URL is now always visible.
+- Commit "0995 step 9" has the trailer Co-Authored-By: Claude Sonnet 5.5.
 
-- Every step anchor was found verbatim; all edits applied in one pass.
-- The step 11 grep's expected "Drive" check reads 1 on the plain diff because of a context line; the changed-line count is 0.
+## Questions
+1. Approve a deeper change to app.js deep-link scrolling (for example, re-scroll after late layout settles), or a different approach?
 
-## 5. Questions
-
-- Accept the known-issues.md token cap failure, or compact that file? Compacting is outside this brief.
-- Where is the App venv (`App/.venv`) to be set up? Creating it needs a dependency decision.
-
-## 6. Owner steps left
-
-- The brief's "Owner steps" (crontab change, healthchecks.io check, `.env` ping URL, S3 lifecycle rule). Not run by the executor.
-
-## Fix-1 results (0995-fix-1)
-
-- Files changed in this step: `docs/tasks/0995-backup-daily-s3-ping-failclosed.md` (Note line under Status), `docs/tasks/0995-report.md`, `docs/tasks/0995-fix-1.md` (Status).
-- Venv: `App/.venv` created; `requirements-dev.txt` alone lacks runtime deps (`requests` missing in conftest), so `requirements.txt` was also installed from the repo's own pinned file. Deviation, no new dependency.
-- `cd App && .venv/bin/python -m pytest tests/test_pg_backup_scripts.py -q --tb=short -x -rs 2>&1 | tail -30` last line: `13 passed in 0.41s` (0 skipped).
-- `python3 scripts/context_lint.py 2>&1 | tail -5` last line: `context lint: OK`.
-- `git status --short | grep -c '\.venv' | tail -3` prints `0`.
-- §7: K-BKP-S3-403 count 0 [x]; backup tests 0 skipped [x]; lint OK [x]; commit and clean tree [pending commit].
+## Owner steps left
+None until question 1 is answered.

@@ -1,51 +1,40 @@
-# 0998 report: WAL-G monitor, daily base backup, runbook
+# 0998 report
 
 Status: review
 
-## 1. Files changed
+## Files changed
+- App/app/host_i18n.py: "Booked"/"Obsazeno" wording, new key calendar.no_forms (en and cs)
+- App/app/templates/_dashboard_calendar.html: labels no_forms and blocked; CSS key 20261107-0998; JS key 20261107-0998
+- App/app/static/dashboard-calendar.js: placeholder label to "Booked"; guest line "No guest forms yet" when 0 forms
+- App/app/static/dashboard-calendar.css: focus and bottom-padding rules appended
+- App/tests/test_host_i18n.py: one assertion (Booked / Obsazeno)
+- App/tests/static_versions.json: regenerated with --write
 
-- `deploy/lightsail/scripts/walg-check.sh` (new, monitor)
-- `deploy/lightsail/scripts/walg-backup.sh` (new, daily base backup, keep 7)
-- `App/tests/test_pg_backup_scripts.py` (stub tests appended)
-- `docs/OPERATIONS.md` (one subsection, before "Purging pre-OPS-1")
-- `docs/privacy/RETENTION.md` (one WAL-G row)
-- `docs/ENVIRONMENT.md` (three rows)
-- `docs/LIGHTSAIL.md` (two cron lines and a link)
-- `docs/tasks/0998-report.md` (this file), brief Status set to review
+## Commands (last 5 lines)
+- test_dashboard_calendar, browser, i18n, em dashes, static versions (`UBYHOST_REQUIRE_BROWSER=1`, `-rs`): `147 passed, 1 warning in 153.44s`, 0 skipped
+- test_layout_lint_browser.py + test_design_guardrails_browser.py: `15 passed in 285.09s`, 0 skipped
 
-Commits: step 2 `7aa830f`, step 3 `ef7542f`, step 4 `8df0d65`, step 5 `3f22727`, step 6 `b596231`, step 7 `b471155`, step 8 `56f87b7`.
+## Section 7
+- [x] Booked/Obsazeno wording and legend "Booked or waiting" (seen on dashboard 1280 shot)
+- [ ] Sheet "No guest forms yet": not visually verified
+- [ ] Calendar page 390/768/1280 screenshots: not produced (see Deviations)
+- [x] Layout lint zero findings, 0 skipped
 
-## 2. Commands (last lines)
+## Screenshots (observed, dashboard shots only)
+- 390: stays and check-in cards readable; bottom tab bar and help button visible; no blue border seen.
+- 768: layout clean; calendar card not in view.
+- 1280: calendar bars show "Airbnb", "Stay", "Stay · 1"; legend "Booked or waiting" present.
 
-- Step 1 anchor grep: six counts, all `1`.
-- Step 4: `cd App && .venv/bin/python -m pytest tests/test_pg_backup_scripts.py -q --tb=short -x` gave `33 passed in 0.63s`.
-- Step 5: `grep -c 'WAL-G' docs/privacy/RETENTION.md` gave `1`.
-- Step 6: `grep -c 'UBYHOST_PG_ARCHIVE\|UBYHOST_WALG_PING_URL\|UBYHOST_WALG_BACKUP_PING_URL' docs/ENVIRONMENT.md` gave `3`.
-- Step 7: the cron grep gave `2`.
-- Step 8: headings present (`###` at line 564, six `####`), all above `### Purging pre-OPS-1`.
-- Step 9: `python3 scripts/context_lint.py` gave `context lint: OK` (warnings only, none new from this brief).
-- Step 9: `shellcheck` gave `command not found`.
-- Step 9: pytest as above, `33 passed`.
+## Not attempted
+Pill spill past day edge, shorter pill labels, hiding floating buttons (padding only).
 
-## 3. Section 7 acceptance
+## Deviations
+- Anchor for dashboard-calendar.js was at line 666, not 667; text matched verbatim.
+- The test required the JS cache key bumped too (`dashboard-calendar.js?v=`), done in the same template.
+- The i18n test went in App/tests/test_host_i18n.py (no file referenced the keys before).
+- Test run modified docs/tasks/screenshots-0908 PNGs; restored with git checkout, not committed.
+- Calendar-page (`?cal_view=calendar`) screenshots and sheet check were not done; lint shots taken were dashboard pages.
+- Not pushed; no PR. Commits are local on claude/project-thread-d67hsx.
 
-- [x] walg-check exit-code tests pass (in the 33).
-- [x] walg-backup order and failure tests pass.
-- [x] OPERATIONS subsection has all listed parts.
-- [x] RETENTION, ENVIRONMENT, LIGHTSAIL rows and cron lines present.
-- [ ] Secret grep: no match in files this brief added. `docs/SES.md` lines 110 and 189 match `AKIA` (pre-existing placeholder text, not this brief). Not changed.
-- [ ] shellcheck not run (not installed here).
-
-## 4. Deviations
-
-- Done: steps 1 to 9. Left: none. Went past the 25-call checkpoint in executor.md to finish the current step and the lint, then wrote this report.
-- Step 9 shellcheck not run: tool missing.
-
-## 5. Questions
-
-- None.
-
-## 6. Owner steps left
-
-- `docs/OPERATIONS.md`, "WAL-G continuous archiving and point-in-time recovery", "Owner rollout" steps 1 to 17, including drill 1 and drill 2. Do not rely on WAL-G until drill 2 passes.
-- Not done by the executor: no push to main, no deploy, no secrets, no AWS.
+## Owner steps left
+Review and merge through scripts/merge-pr-on-green.sh once a PR is opened; look at the calendar sheet on a phone.

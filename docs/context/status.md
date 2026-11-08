@@ -11,7 +11,7 @@ Updated: 2026-11-08.
 - 11-06: #790: OCR `tip_label` + inline-flex `help-tip` (layout-lint `help-stranded` @320); cache `20261106-pr790-ocr-tip2`. Full browser glob open. [handoff](../tasks/ux-remediation-handoff.md).
 - 11-06: #791 merged. 11-07: 0990-0992 (settings throttle, PG indexes 00008, edge cache) in review. **Owner:** deploy, `pg_schema.py apply`, CF rule, Grafana.
 - UX gate live (layout lint + AGENTS rule 10). Stripe onboarding live; extras merged. **Owner:** deploy; booking site v1 next.
-- 11-08: backups PR #805 (0995-0998) in review: daily S3, Litestream removed, WAL-G sidecar + PITR runbook. **Owner:** WAL-G needs .env.walg + IAM + quiet-hour deploy; restore drill before trusting it.
+- 11-08: backups PR #805 (1007-1010) in review: daily S3, Litestream removed, WAL-G sidecar + PITR runbook. **Owner:** WAL-G needs .env.walg + IAM + quiet-hour deploy; restore drill before trusting it.
 
 ## Next
 - Door codes 0037–0038 on main → owner staging steps.

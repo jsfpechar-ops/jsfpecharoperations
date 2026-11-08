@@ -1,10 +1,10 @@
-# 0997: WAL-G continuous archiving, sidecar image, compose, shipper, tests, decision
+# 1009: WAL-G continuous archiving, sidecar image, compose, shipper, tests, decision
 
 Status: review
-Depends on: 0995, 0996 (run after both) | Base commit: 47640cf | Branch: task/0997-walg-archiving
+Depends on: 1007, 1008 (run after both) | Base commit: 47640cf | Branch: task/1009-walg-archiving
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
-Split: this brief is the sidecar image, compose, shipper script, tests and decision. Brief 0998 (monitor, base-backup script, runbook, owner rollout and drills) depends on it. **Do not deploy 0997 alone**: the owner deploys after 0998 is merged, with the rollout in 0998. Merging 0997 alone changes nothing in production: archiving stays off until the owner sets `UBYHOST_PG_ARCHIVE=on` (0998 rollout).
+Split: this brief is the sidecar image, compose, shipper script, tests and decision. Brief 1010 (monitor, base-backup script, runbook, owner rollout and drills) depends on it. **Do not deploy 1009 alone**: the owner deploys after 1010 is merged, with the rollout in 1010. Merging 1009 alone changes nothing in production: archiving stays off until the owner sets `UBYHOST_PG_ARCHIVE=on` (1010 rollout).
 
 Reviewer note (2026-11-07): redesigned from the first draft. The production postgres service keeps its pinned Alpine image unchanged (no base-image switch, no collation risk, rollback is two `.env` lines). Only the new `walg` sidecar uses a Debian image, because WAL-G release binaries are built for glibc, not musl.
 
@@ -21,13 +21,13 @@ Rules: AGENTS.md rule 4 (new dependency needs an owner decision line), rule 2 (n
 **Design, and why.**
 
 - The postgres service has `network_mode: none` and its image stays exactly `postgres:16-alpine@sha256:0cefaabd...` (the compose comment's trust boundary; `App/tests/test_pg_cutover_script.py` asserts both). Postgres never runs wal-g.
-- `archive_command` copies each finished WAL file into a local spool volume `ubyhost-walspool` **durably**: copy to `<name>.tmp`, `sync` the file, rename to the final name, `sync` the directory, and only then exit 0. If the final name already exists with identical bytes (Postgres retries after a crash) it exits 0; with different bytes it exits non-zero, so Postgres keeps the WAL in `pg_wal` and the 0998 monitor alerts. Nothing is ever overwritten silently.
+- `archive_command` copies each finished WAL file into a local spool volume `ubyhost-walspool` **durably**: copy to `<name>.tmp`, `sync` the file, rename to the final name, `sync` the directory, and only then exit 0. If the final name already exists with identical bytes (Postgres retries after a crash) it exits 0; with different bytes it exits non-zero, so Postgres keeps the WAL in `pg_wal` and the 1010 monitor alerts. Nothing is ever overwritten silently.
 - Archiving is switched by `UBYHOST_PG_ARCHIVE` from `.env` (default `off`), so staging and local stacks that share this compose file are unchanged and do not fill a spool.
 - A `walg` sidecar (compose profile `walg`, image `ubyhost-walg:local` built from `deploy/lightsail/walg/`, Debian `postgres:16.x-bookworm` + checksum-verified WAL-G) has network on the project's default network, no port. `walg-ship.sh` runs `wal-g wal-push` per spool file, oldest first, and deletes a spool file **only after wal-push exited 0** (upload confirmed). It runs as uid/gid 70, the postgres uid of the Alpine image, so it can read the spool and the read-only data directory.
-- The daily `wal-g backup-push` (0998) runs in the sidecar. It needs (a) a Postgres connection: through the shared socket volume `ubyhost-pgsock` (`PGHOST=/var/run/postgresql`, user `ubyhost`, trust auth on the socket, exactly how the app connects; no password exists or is added), and (b) the data files: through `ubyhost-pgdata` mounted read-only. `pg_backup_stop` waits until the WAL the backup needs is archived (copied to the spool); the shipper then uploads it.
-- Restores run the Debian image's Postgres in a scratch container with network and `restore_command = 'wal-g wal-fetch %f %p'` (0998 runbook); a real restore is brought back into production as a `pg_dump` through the existing `pg-restore.sh`, so the production data directory never meets a glibc Postgres.
+- The daily `wal-g backup-push` (1010) runs in the sidecar. It needs (a) a Postgres connection: through the shared socket volume `ubyhost-pgsock` (`PGHOST=/var/run/postgresql`, user `ubyhost`, trust auth on the socket, exactly how the app connects; no password exists or is added), and (b) the data files: through `ubyhost-pgdata` mounted read-only. `pg_backup_stop` waits until the WAL the backup needs is archived (copied to the spool); the shipper then uploads it.
+- Restores run the Debian image's Postgres in a scratch container with network and `restore_command = 'wal-g wal-fetch %f %p'` (1010 runbook); a real restore is brought back into production as a `pg_dump` through the existing `pg-restore.sh`, so the production data directory never meets a glibc Postgres.
 
-**Anchor 1, `deploy/lightsail/docker-compose.yml`, the postgres command line (unchanged by 0995 and 0996; verified 2026-11-07):**
+**Anchor 1, `deploy/lightsail/docker-compose.yml`, the postgres command line (unchanged by 1007 and 1008; verified 2026-11-07):**
 
 ```
     command: ["postgres", "-c", "listen_addresses=", "-c", "shared_buffers=256MB", "-c", "max_connections=50", "-c", "log_min_duration_statement=1000"]
@@ -68,9 +68,9 @@ If any value still says `PENDING`, **STOP at step 1** and put the "Owner steps (
 
 Why pinned checksum and digest: the image holds the backup encryption key and S3 credentials at run time. A build that cannot verify its download must fail.
 
-Retention (`docs/privacy/RETENTION.md`, row "Encrypted backups": 30 days local/off-site): WAL and base backups keep 7 days (`wal-g delete retain FULL 7`), S3 lifecycle deletes after 10 days as a safety net, so both stay inside 30 days. 0998 adds the RETENTION row.
+Retention (`docs/privacy/RETENTION.md`, row "Encrypted backups": 30 days local/off-site): WAL and base backups keep 7 days (`wal-g delete retain FULL 7`), S3 lifecycle deletes after 10 days as a safety net, so both stay inside 30 days. 1010 adds the RETENTION row.
 
-Variables the sidecar reads from `.env.walg` (git-ignored by the existing `.env.*` rule in `.gitignore`; the owner creates it on the server, 0998): `WALG_S3_PREFIX`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `WALG_COMPRESSION_METHOD`, `WALG_LIBSODIUM_KEY`, `WALG_LIBSODIUM_KEY_TRANSFORM`, `WALG_UPLOAD_CONCURRENCY`, `PGHOST`, `PGUSER`, `PGDATABASE`. This brief commits no values.
+Variables the sidecar reads from `.env.walg` (git-ignored by the existing `.env.*` rule in `.gitignore`; the owner creates it on the server, 1010): `WALG_S3_PREFIX`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `WALG_COMPRESSION_METHOD`, `WALG_LIBSODIUM_KEY`, `WALG_LIBSODIUM_KEY_TRANSFORM`, `WALG_UPLOAD_CONCURRENCY`, `PGHOST`, `PGUSER`, `PGDATABASE`. This brief commits no values.
 
 **Context-rollout upload (orchestrator):** put files flat in the rollout bundle folder under docs/plans (no subfolder). MANIFEST and place_files script at that root.
 
@@ -88,14 +88,14 @@ No other file may change.
 
 ## 4. Steps
 
-1. Check the owner values. Command: `grep -c '^[A-Z_0-9]*=PENDING' docs/tasks/0997-walg-continuous-archiving.md | tail -30`. Expected: `0` (the four value lines in section 2 hold real values). Anything else: STOP.
+1. Check the owner values. Command: `grep -c '^[A-Z_0-9]*=PENDING' docs/tasks/1009-walg-continuous-archiving.md | tail -30`. Expected: `0` (the four value lines in section 2 hold real values). Anything else: STOP.
 
 2. Confirm the anchors. Command: `grep -n 'log_min_duration_statement=1000"\]\|ubyhost-pgdata:/var/lib/postgresql/data$\|^  ubyhost:$\|name: ubyhost-pgsock\|image: postgres:16-alpine@sha256:0cefaabd' deploy/lightsail/docker-compose.yml | tail -30`. Expected: five hits (command, pgdata volume, `ubyhost:`, `name: ubyhost-pgsock`, the image line). Any missing: STOP.
 
 3. Create `deploy/lightsail/walg/Dockerfile`, replacing the four `<...>` with the owner values from section 2:
 
 ```dockerfile
-# 0997: image for the walg sidecar only (compose profile "walg"). The production
+# 1009: image for the walg sidecar only (compose profile "walg"). The production
 # postgres service keeps its pinned Alpine image and never runs wal-g. Debian
 # (glibc) because the WAL-G release binaries are built for glibc. The Postgres 16
 # binaries here are used only by the restore drill (docs/OPERATIONS.md).
@@ -124,11 +124,11 @@ Command: `grep -c 'sha256sum -c\|^FROM postgres:16\.[0-9]*-bookworm@sha256:[0-9a
 
 ```sh
 #!/bin/sh
-# 0997: ship finished WAL files from the spool to S3 with wal-g, oldest first.
+# 1009: ship finished WAL files from the spool to S3 with wal-g, oldest first.
 # The postgres container (no network) copies each finished file into the spool
 # (archive_command); this container has the network. A spool file is deleted
 # only after `wal-g wal-push` exited 0 (upload confirmed). A failure keeps it and
-# retries; 0998's walg-check.sh alerts when a file stays too long.
+# retries; 1010's walg-check.sh alerts when a file stays too long.
 set -u
 SPOOL="${WALG_SPOOL:-/walspool}"
 INTERVAL="${WALG_SHIP_INTERVAL:-15}"
@@ -181,7 +181,7 @@ Command: `chmod +x deploy/lightsail/walg/walg-ship.sh && sh -n deploy/lightsail/
       - max_connections=50
       - -c
       - log_min_duration_statement=1000
-      # 0997: WAL archiving, on only when .env sets UBYHOST_PG_ARCHIVE=on
+      # 1009: WAL archiving, on only when .env sets UBYHOST_PG_ARCHIVE=on
       # (production). No network here: archive_command only copies each WAL file
       # durably into the spool (tmp, sync, rename, sync dir; identical re-copy is
       # ok, a different file fails); the walg service ships it to S3.
@@ -206,9 +206,9 @@ Command: `chmod +x deploy/lightsail/walg/walg-ship.sh && sh -n deploy/lightsail/
    c. Insert this block directly before the anchor 3 lines (keep one blank line between it and `  ubyhost:`):
 
 ```yaml
-  # 0997: WAL-G sidecar, started only with COMPOSE_PROFILES containing walg
+  # 1009: WAL-G sidecar, started only with COMPOSE_PROFILES containing walg
   # (production). Ships the WAL spool to S3 and runs the daily base backup
-  # (0998). Default project network (not web), no port. Reaches Postgres only
+  # (1010). Default project network (not web), no port. Reaches Postgres only
   # through the socket volume (trust auth, like the app) and a read-only data
   # mount, as uid 70 = postgres in the Alpine image. Keys come from .env.walg
   # (root-only on the server, never in git); without it the shipper only logs
@@ -376,10 +376,10 @@ def test_walg_ship_refuses_without_a_destination(tmp_path):
 
 Command: `cd App && .venv/bin/python -m pytest tests/test_pg_backup_scripts.py tests/test_pg_cutover_script.py tests/test_wp32_container_sizing.py -q --tb=short -x 2>&1 | tail -30`. Expected: all pass, 0 skipped. If `test_walg_dockerfile_pins_debian_postgres_and_verifies_checksum` fails because a value is not real, STOP: never weaken a test.
 
-7. Append one line at the end of `docs/context/decisions.md`, in the same format as the 0996 line just above it (`- 2026-11-07 | [backup] ... | owner | ...`; check with `tail -3 docs/context/decisions.md | cut -c1-120`):
+7. Append one line at the end of `docs/context/decisions.md`, in the same format as the 1008 line just above it (`- 2026-11-07 | [backup] ... | owner | ...`; check with `tail -3 docs/context/decisions.md | cut -c1-120`):
 
 ```
-- 2026-11-07 | [backup] WAL-G approved (rule 4): WAL archiving + PITR to S3 | owner | [0997](../tasks/0997-walg-continuous-archiving.md)
+- 2026-11-07 | [backup] WAL-G approved (rule 4): WAL archiving + PITR to S3 | owner | [1009](../tasks/1009-walg-continuous-archiving.md)
 ```
 
 Command: `tail -1 docs/context/decisions.md | cut -c1-60 | tail -30`. Expected: `- 2026-11-07 | [backup] WAL-G approved (rule 4)`.
@@ -388,7 +388,7 @@ Command: `tail -1 docs/context/decisions.md | cut -c1-60 | tail -30`. Expected: 
 
 ## 5. Do not touch
 
-`deploy/lightsail/scripts/*` (0998 owns the new ones; `backup.sh`, `pg-restore.sh`, `deploy.sh`, `preflight.sh` stay as they are), `docs/OPERATIONS.md`, `docs/privacy/RETENTION.md`, `docs/ENVIRONMENT.md`, `docs/LIGHTSAIL.md` (0998), `.env*` files, `.gitignore`, `App/app/`, the other tests. Rules 3 (no secrets, no real bucket name, account id or key), 4 (done by the decision line) and 5 apply. Do not change the postgres `image:` line, `network_mode: none`, `environment:` or the healthcheck. Do not run docker.
+`deploy/lightsail/scripts/*` (1010 owns the new ones; `backup.sh`, `pg-restore.sh`, `deploy.sh`, `preflight.sh` stay as they are), `docs/OPERATIONS.md`, `docs/privacy/RETENTION.md`, `docs/ENVIRONMENT.md`, `docs/LIGHTSAIL.md` (1010), `.env*` files, `.gitignore`, `App/app/`, the other tests. Rules 3 (no secrets, no real bucket name, account id or key), 4 (done by the decision line) and 5 apply. Do not change the postgres `image:` line, `network_mode: none`, `environment:` or the healthcheck. Do not run docker.
 
 ## 6. Commands
 
@@ -420,14 +420,14 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/0997-report.md` (600 tokens at most) and set `Status: review`. The report has:
+Write `docs/tasks/1009-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
 1. The files changed (`git diff --stat`).
 2. Each command, with the last 5 lines of its output.
 3. Section 7 ticked.
 4. Deviations.
 5. Questions.
-6. Owner steps left: "deploy only after 0998 is merged, with the 0998 rollout".
+6. Owner steps left: "deploy only after 1010 is merged, with the 1010 rollout".
 
 PR text must say, for rule 2: the new outbound requests are the `walg` container writing to the owner's dedicated S3 bucket (eu-central-1), and the build-time downloads of the WAL-G release from github.com and of `ca-certificates`/`curl` from the Debian mirror; reason: point-in-time recovery; data sent: WAL and base backups encrypted on the server with libsodium before upload, nothing readable by AWS.
 

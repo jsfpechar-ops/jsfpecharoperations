@@ -1,54 +1,45 @@
-# 0997 report (executor)
+# 0997 report: same patterns elsewhere (executor: Haiku 5.5)
 
-Status: done after 0997-fix-1 (asset-name test corrected)
+Status: review
+Branch: claude/project-thread-d67hsx (no push, no PR, per owner deviation)
 
-## 1. Files changed (git diff --cached --stat)
+## Files changed
 
-- deploy/lightsail/walg/Dockerfile (new, 21 lines)
-- deploy/lightsail/walg/walg-ship.sh (new, 39 lines)
-- deploy/lightsail/docker-compose.yml (61 lines changed: postgres archive flags and spool volume, walg service, walspool volume)
-- App/tests/test_pg_backup_scripts.py (118 lines appended, `import re` added)
+- `App/app/host_i18n.py`: 12 strings changed, en `/` to ` of `, cs `/` to ` z ` (commit c50b584, step 1).
+- `App/tests/test_notification_copy.py`: 3 expectations changed to `0 of 2` / `0 z 2` (commit de0d2d7, step 2).
+- `docs/tasks/0997-report.md`: this file.
 
-Not changed yet: docs/context/decisions.md (step 7).
+## Commands (last 5 lines)
 
-## 2. Commands and last 5 lines
+- `.venv/bin/python -m pytest tests/test_*_i18n.py tests/test_no_em_dashes.py tests/test_copy_cleanup.py tests/test_notification_copy.py tests/test_flash_literals.py -q --tb=short -x`: `57 passed, 1 warning in 2.86s`
+- `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_host_*.py tests/test_host_geometry.py -q -rs --tb=short -x`: `245 passed, 1 warning in 685.88s`, 0 skipped.
+- `python3 scripts/context_lint.py`: `context lint: OK` (WARN lines only, not failures).
 
-- Step 1 `grep -c '^[A-Z_0-9]*=PENDING' docs/tasks/0997-walg-continuous-archiving.md`: `0`. PASS.
-- Step 2 anchor grep: 5 hits (command, pgdata volume, `ubyhost:`, `name: ubyhost-pgsock`, image). PASS.
-- Step 3 Dockerfile grep: `2`. PASS.
-- Step 4 `sh -n` on walg-ship.sh: `ok`. PASS.
-- Step 5 compose edits and YAML check: volumes list includes `ubyhost-walspool`; `['walg'] postgres:16-alpine@sha256:0c`. PASS.
-- Step 6 pytest (`tests/test_pg_backup_scripts.py tests/test_pg_cutover_script.py tests/test_wp32_container_sizing.py -x`): 13 passed, 1 failed:
-  `test_walg_dockerfile_pins_debian_postgres_and_verifies_checksum`, assertion on `^ARG WALG_ASSET=wal-g-pg-ubuntu-(20|22)\.04-amd64\.tar\.gz$`. FAIL (see Questions).
-- Step 8 `python3 scripts/context_lint.py`: `context lint: OK` (warnings are pre-existing). PASS.
-- Step 8 `shellcheck`: not installed, not attempted.
+## Section 7 acceptance
 
-## 3. Section 7 acceptance
+- [x] Step 1 grep: no `notification.reason.*` or `dashboard.focus.*` line with `/%(expected`.
+- [x] Section 6 commands pass, 0 skipped.
+- [x] Steps 3 and 4 answered below.
 
-- [x] postgres image pin and `network_mode: none` unchanged (checked by grep and test)
-- [ ] Dockerfile FROM/checksum: FROM and sha256sum pass; the asset-name assertion fails
-- [x] postgres archive command, archive_mode, archive_timeout
-- [x] walg service: profile, user 70:70, `.env.walg` required false, read-only data mount, no ports
-- [ ] grep for AKIA / LIBSODIUM_KEY= / s3:// not run (the test's forbidden-string check passed)
-- [ ] pytest line: fails on one test
-- [ ] decision line: not done (step 7 not reached)
+## Step 3: stale-alert check (no edit)
 
-## 4. Deviations
+Yes, it resolves, but keyed on check-in date, not `date_to`. `claim.py` (reminder sweep, about lines 812-816) resolves `guest_incomplete_checkin:<id>` once forms are complete or `date_from < today`. Gap not verified: the sweep only visits `status = 'active'` reservations, so an alert on a stay that leaves `active` first may stay open.
 
-Done: steps 1 to 6 (step 6 partly: tests appended, one fails). Left: step 6 fix decision, step 7 (decision line), step 8 shellcheck (not installed), section 9 PR text.
+## Step 4: tooltips (no edit)
 
-## 5. Questions
+Present: `App/app/templates/dashboard.html` line 99 has `title="{{ bar.title }}"` on `a.bar`.
 
-1. Owner value `WALG_ASSET=wal-g-pg-22.04-amd64.tar.gz` (section 2) does not match the test regex or owner step 6, which both say `wal-g-pg-ubuntu-22.04-amd64.tar.gz`. The file name with `ubuntu-` is the one WAL-G releases use. Please confirm the exact asset name. I did not change the value or the test. If it is the `ubuntu-` name, the value in section 2 and the Dockerfile `ARG WALG_ASSET` must change, and the checksum must be checked against that file (I did not change `WALG_SHA256`).
+## Deviations
 
-## 6. Owner steps left
+- Step 1 leaves 5 matching lines untouched, not 6 as the brief says: `mail.reminder_host.subject` (en, cs), `hint.missing_guests` (en, cs), `flash.guests.saved` (cs). The brief's list is correct; the count was off by one. No en `flash.guests.saved` exists.
+- `test_send_controls.py` asserts `Guest forms: 1/3.` (`hint.missing_guests`, not in scope): left as is.
+- `test_static_versions.py --write` not run: no static file changed.
+- No template, CSS or guest-page change, so no screenshots (UX gate not applicable).
 
-Nothing deployed. Deploy only after 0998 is merged, with the 0998 rollout.
+## Questions
 
-## 7. Fix-1 results (brief 0997-fix-1)
+- Step 3 gap above: should the sweep also resolve alerts for stays that are no longer `active`?
 
-- Owner confirmed the asset is `wal-g-pg-22.04-amd64.tar.gz`. Question 1 above is resolved: the test regex (line 202), the 0997 test excerpt (line 281) and owner step 6 now use the `wal-g-pg-` name. Dockerfile, compose and walg-ship.sh untouched; checksums untouched.
-- `grep -c 'pg-ubuntu' docs/tasks/0997-walg-continuous-archiving.md` prints `0`; the test file has no `ubuntu` in its `wal-g-pg-` lines.
-- Step 3 `pytest tests/test_pg_backup_scripts.py -q --tb=short -x -rs`: last line `21 passed in 0.44s` (0 skipped).
-- Step 5 `python3 scripts/context_lint.py`: last line `context lint: OK` (WARN lines are pre-existing).
-- Step 7 decision line appended to `docs/context/decisions.md` (the 0997 approval line).
+## Owner steps left
+
+- Push `claude/project-thread-d67hsx` and open the PR when ready (not done here).

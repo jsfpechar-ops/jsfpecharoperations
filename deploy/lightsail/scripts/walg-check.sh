@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 0998: monitor for WAL-G archiving. Exits 1 (and does NOT ping the dead-man URL)
+# 1010: monitor for WAL-G archiving. Exits 1 (and does NOT ping the dead-man URL)
 # when the walg container is down, archiving is late or failing, a file is stuck
 # in the spool, or pg_wal or the spool is large (the disk would fill up).
 # Cron every 10 minutes: docs/LIGHTSAIL.md. Runbook: docs/OPERATIONS.md.

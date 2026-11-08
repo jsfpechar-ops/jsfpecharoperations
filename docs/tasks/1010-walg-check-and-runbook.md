@@ -1,7 +1,7 @@
-# 0998: WAL-G monitor, daily base backup, restore drills, runbook, owner rollout
+# 1010: WAL-G monitor, daily base backup, restore drills, runbook, owner rollout
 
 Status: review
-Depends on: 0997 | Base commit: bab714e | Branch: claude/eloquent-mendel-vd8mfi
+Depends on: 1009 | Base commit: bab714e | Branch: claude/eloquent-mendel-vd8mfi
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -12,9 +12,9 @@ Add the daily WAL-G base backup with 7-day retention, a monitor that fails loudl
 
 Rules: AGENTS.md rule 1 (data correctness first), rule 2 (privacy: backups must expire), rule 3 (no secrets, bucket name or account id in the repo), rule 9 (one explanation in one place: the runbook lives only in OPERATIONS.md; other files link to it).
 
-Built by 0997 (must be merged; STOP if not): the production postgres service keeps its pinned Alpine image and `network_mode: none`; `archive_mode=${UBYHOST_PG_ARCHIVE:-off}`, `archive_timeout=300` and an `archive_command` that copies each WAL file durably into the spool volume `ubyhost-walspool` (mounted at `/walspool` in postgres and walg). The `walg` sidecar (profile `walg`, image `ubyhost-walg:local`, Debian Postgres 16 + WAL-G, uid 70, `.env.walg`, read-only data mount, socket volume) ships the spool with `walg-ship.sh` and deletes a file only after `wal-g wal-push` succeeded.
+Built by 1009 (must be merged; STOP if not): the production postgres service keeps its pinned Alpine image and `network_mode: none`; `archive_mode=${UBYHOST_PG_ARCHIVE:-off}`, `archive_timeout=300` and an `archive_command` that copies each WAL file durably into the spool volume `ubyhost-walspool` (mounted at `/walspool` in postgres and walg). The `walg` sidecar (profile `walg`, image `ubyhost-walg:local`, Debian Postgres 16 + WAL-G, uid 70, `.env.walg`, read-only data mount, socket volume) ships the spool with `walg-ship.sh` and deletes a file only after `wal-g wal-push` succeeded.
 
-**Why there is no Postgres restore drill today.** Brief 0996 deletes `restore_test.sh` and `.github/workflows/restore-drill.yml` (they drilled the Litestream replica). Nothing tests that the daily `ubyhost-pg.dump.age` can be decrypted and restored. This brief adds that drill (owner-run, with the offline age identity) as well as the WAL-G drill.
+**Why there is no Postgres restore drill today.** Brief 1008 deletes `restore_test.sh` and `.github/workflows/restore-drill.yml` (they drilled the Litestream replica). Nothing tests that the daily `ubyhost-pg.dump.age` can be decrypted and restored. This brief adds that drill (owner-run, with the offline age identity) as well as the WAL-G drill.
 
 **What `pg_stat_archiver` means here.** `archive_command` only copies into the spool, so `last_archived_time` proves the copy, not the upload. The monitor also checks the age of the oldest file in the spool (read from the postgres container, so it still works when `walg` is down) and that `walg` is running.
 
@@ -24,9 +24,9 @@ Built by 0997 (must be merged; STOP if not): the production postgres service kee
 
 **Cost:** about USD 0.05 a month in PUT requests plus a few cents of storage and LIST. The monitor must not call S3 at all (no `wal-g wal-verify`, `backup-list` or `backup-fetch`).
 
-**Cron times** (after 0995: local backup 03:00, S3 copy 03:30, Drive Sunday 04:00 UTC): WAL-G base backup daily 04:30 UTC, check every 10 minutes.
+**Cron times** (after 1007: local backup 03:00, S3 copy 03:30, Drive Sunday 04:00 UTC): WAL-G base backup daily 04:30 UTC, check every 10 minutes.
 
-**Anchor A, `deploy/lightsail/scripts/backup.sh`, the dead-man style to follow (unchanged by 0995):**
+**Anchor A, `deploy/lightsail/scripts/backup.sh`, the dead-man style to follow (unchanged by 1007):**
 
 ```
 if [ -n "${UBYHOST_BACKUP_PING_URL:-}" ]; then
@@ -35,31 +35,31 @@ if [ -n "${UBYHOST_BACKUP_PING_URL:-}" ]; then
 fi
 ```
 
-**Anchor B, `docs/OPERATIONS.md`, the line to insert before (still there after 0995 and 0996, which only edit bullets above it):**
+**Anchor B, `docs/OPERATIONS.md`, the line to insert before (still there after 1007 and 1008, which only edit bullets above it):**
 
 ```
 ### Purging pre-OPS-1 plaintext backups (operator, one-time)
 ```
 
-**Anchor C, `docs/privacy/RETENTION.md`, the row to put the new row after (0995 and 0996 do not change RETENTION.md):**
+**Anchor C, `docs/privacy/RETENTION.md`, the row to put the new row after (1007 and 1008 do not change RETENTION.md):**
 
 ```
 | Encrypted backups | `/data/backups`, Drive, S3 | snapshot age | 30 days local/off-site (G-D3) | `backup_data.sh` `UBYHOST_BACKUP_RETENTION_DAYS`; S3 lifecycle | Disaster recovery |
 ```
 
-**Anchor D, `deploy/lightsail/docker-compose.yml` (from 0997):**
+**Anchor D, `deploy/lightsail/docker-compose.yml` (from 1009):**
 
 ```
     command: ["/usr/local/bin/walg-ship.sh"]
 ```
 
-**Anchor E, `docs/ENVIRONMENT.md`, the row to put the new rows after (0995 and 0996 do not change this row):**
+**Anchor E, `docs/ENVIRONMENT.md`, the row to put the new rows after (1007 and 1008 do not change this row):**
 
 ```
 | `UBYHOST_BACKUP_PING_URL` | unset | `deploy/lightsail/scripts/backup.sh` — pinged after each successful daily backup. Required in production: `preflight.sh` refuses to deploy while it is empty. |
 ```
 
-**Anchor F, `docs/LIGHTSAIL.md`, the heading to insert before (0995 adds text above it, 0996 edits text below it; the heading itself stays):**
+**Anchor F, `docs/LIGHTSAIL.md`, the heading to insert before (1007 adds text above it, 1008 edits text below it; the heading itself stays):**
 
 ```
 ## Restore runbook (same instance)
@@ -83,13 +83,13 @@ No other file may change.
 
 ## 4. Steps
 
-1. Confirm 0997 is merged and the anchors exist. Command: `grep -c 'walg-ship.sh' deploy/lightsail/docker-compose.yml; grep -c 'Purging pre-OPS-1' docs/OPERATIONS.md; grep -c '^| Encrypted backups' docs/privacy/RETENTION.md; grep -c '^| `UBYHOST_BACKUP_PING_URL` | unset |' docs/ENVIRONMENT.md; grep -c '^## Restore runbook (same instance)' docs/LIGHTSAIL.md; grep -c 'UBYHOST_BACKUP_PING_URL}" >/dev/null' deploy/lightsail/scripts/backup.sh` (one command line, `; ` between). Expected: six numbers, each `1` or more. Any `0`: STOP.
+1. Confirm 1009 is merged and the anchors exist. Command: `grep -c 'walg-ship.sh' deploy/lightsail/docker-compose.yml; grep -c 'Purging pre-OPS-1' docs/OPERATIONS.md; grep -c '^| Encrypted backups' docs/privacy/RETENTION.md; grep -c '^| `UBYHOST_BACKUP_PING_URL` | unset |' docs/ENVIRONMENT.md; grep -c '^## Restore runbook (same instance)' docs/LIGHTSAIL.md; grep -c 'UBYHOST_BACKUP_PING_URL}" >/dev/null' deploy/lightsail/scripts/backup.sh` (one command line, `; ` between). Expected: six numbers, each `1` or more. Any `0`: STOP.
 
 2. Create `deploy/lightsail/scripts/walg-check.sh` with this content:
 
 ```bash
 #!/usr/bin/env bash
-# 0998: monitor for WAL-G archiving. Exits 1 (and does NOT ping the dead-man URL)
+# 1010: monitor for WAL-G archiving. Exits 1 (and does NOT ping the dead-man URL)
 # when the walg container is down, archiving is late or failing, a file is stuck
 # in the spool, or pg_wal or the spool is large (the disk would fill up).
 # Cron every 10 minutes: docs/LIGHTSAIL.md. Runbook: docs/OPERATIONS.md.
@@ -175,7 +175,7 @@ Command: `chmod +x deploy/lightsail/scripts/walg-check.sh && bash -n deploy/ligh
 
 ```bash
 #!/usr/bin/env bash
-# 0998: daily WAL-G base backup, then keep the newest 7 (7 days). Cron 04:30 UTC,
+# 1010: daily WAL-G base backup, then keep the newest 7 (7 days). Cron 04:30 UTC,
 # after backup.sh and the S3 copy (docs/LIGHTSAIL.md). The pg_dump backup stays
 # the primary copy; this is the point-in-time path. Runbook: docs/OPERATIONS.md.
 # A failed backup-push stops here: nothing is deleted and no ping is sent.
@@ -330,7 +330,7 @@ WAL-G point-in-time recovery (production only, after the rollout in [OPERATIONS]
 `````markdown
 ### WAL-G continuous archiving and point-in-time recovery
 
-The daily age-encrypted `pg_dump` (above) stays the primary backup. WAL-G adds point-in-time recovery for the last 7 days; at most about 5 minutes of writes can be lost (`archive_timeout=300`). Downtime is acceptable here; losing data is not. Postgres keeps its pinned Alpine image and has no network: `archive_command` copies each finished WAL file durably into the `ubyhost-walspool` volume, and the `walg` container (profile `walg`, Debian Postgres 16 image with WAL-G) uploads it to S3 and deletes the local copy only after the upload succeeded (briefs 0997, 0998). The daily base backup runs in `walg` through the Postgres socket and a read-only data mount.
+The daily age-encrypted `pg_dump` (above) stays the primary backup. WAL-G adds point-in-time recovery for the last 7 days; at most about 5 minutes of writes can be lost (`archive_timeout=300`). Downtime is acceptable here; losing data is not. Postgres keeps its pinned Alpine image and has no network: `archive_command` copies each finished WAL file durably into the `ubyhost-walspool` volume, and the `walg` container (profile `walg`, Debian Postgres 16 image with WAL-G) uploads it to S3 and deletes the local copy only after the upload succeeded (briefs 1009, 1010). The daily base backup runs in `walg` through the Postgres socket and a read-only data mount.
 
 - **Cost.** About USD 0.05 a month in PUT requests plus a few cents of storage. WAL-G does not read back in normal running and `walg-check.sh` never calls S3. Check Cost Explorer after 7 days; expect under USD 1 a month.
 - **Retention.** 7 days: `wal-g delete retain FULL 7 --confirm` after each daily base backup, plus an S3 lifecycle rule at 10 days (see the RETENTION table row).
@@ -384,7 +384,7 @@ Key and dead-man checks (about 5 minutes):
 
 Server, before the deploy (about 15 minutes; `cd /opt/ubyhost/deploy/lightsail` first):
 
-8. Make sure 0997 and 0998 are merged and pulled: `git log --oneline -3`.
+8. Make sure 1009 and 1010 are merged and pulled: `git log --oneline -3`.
 9. Create the secrets file: `sudo install -m 600 -o root -g root /dev/null .env.walg && sudo nano .env.walg`, paste this, fill in the four values, save (Ctrl+O, Enter, Ctrl+X):
 
 ```
@@ -538,7 +538,7 @@ Command: `grep -n '^### WAL-G continuous archiving\|^#### ' docs/OPERATIONS.md |
 
 ## 5. Do not touch
 
-`backup.sh`, `pg-restore.sh`, `deploy.sh`, `preflight.sh`, `docker-compose.yml`, `deploy/lightsail/walg/*` (0997), all `.env*` files, `.gitignore`, `App/app/`. Rules 3 (no real bucket name, keys, account id or key value anywhere; placeholders only) and 9 apply. Do not run docker, aws or wal-g.
+`backup.sh`, `pg-restore.sh`, `deploy.sh`, `preflight.sh`, `docker-compose.yml`, `deploy/lightsail/walg/*` (1009), all `.env*` files, `.gitignore`, `App/app/`. Rules 3 (no real bucket name, keys, account id or key value anywhere; placeholders only) and 9 apply. Do not run docker, aws or wal-g.
 
 ## 6. Commands
 
@@ -557,7 +557,7 @@ The pytest line, `shellcheck -S error deploy/lightsail/scripts/*.sh 2>&1 | tail 
 
 Stop, and write the report, if:
 
-- an anchor (A to F) is not found, or 0997 is not merged;
+- an anchor (A to F) is not found, or 1009 is not merged;
 - a test fails twice;
 - you reach 25 tool calls or about 50k tokens (write the report as `blocked`, see executor.md);
 - a new dependency seems needed;
@@ -568,7 +568,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/0998-report.md` (600 tokens at most) and set `Status: review`. The report has:
+Write `docs/tasks/1010-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
 1. The files changed (`git diff --stat`).
 2. Each command, with the last 5 lines of its output.

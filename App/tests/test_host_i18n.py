@@ -202,3 +202,5 @@ def test_language_endpoint_accepts_vietnamese():
 def test_ukrainian_plural_forms_follow_the_three_form_rule():
     assert host_i18n.plural_key("night", 21, "uk") == "night.one"
     assert host_i18n.plural_key("night", 12, "uk") == "night"
+
+
