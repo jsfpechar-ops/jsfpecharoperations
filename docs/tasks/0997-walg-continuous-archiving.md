@@ -1,6 +1,6 @@
 # 0997: WAL-G continuous archiving, sidecar image, compose, shipper, tests, decision
 
-Status: todo
+Status: review
 Depends on: 0995, 0996 (run after both) | Base commit: 47640cf | Branch: task/0997-walg-archiving
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
@@ -278,7 +278,7 @@ def test_walg_dockerfile_pins_debian_postgres_and_verifies_checksum():
     assert "sha256sum -c" in text
     assert re.search(r"^ARG WALG_SHA256=[0-9a-f]{64}$", text, re.M), "never PENDING"
     assert re.search(r"^ARG WALG_VERSION=v\d+\.\d+\.\d+$", text, re.M)
-    assert re.search(r"^ARG WALG_ASSET=wal-g-pg-ubuntu-(20|22)\.04-amd64\.tar\.gz$", text, re.M)
+    assert re.search(r"^ARG WALG_ASSET=wal-g-pg-(20|22)\.04-amd64\.tar\.gz$", text, re.M)
 
 
 def test_postgres_keeps_its_image_and_no_network_and_archives_to_the_spool():
@@ -444,7 +444,7 @@ In plain words. You need SSH to the server; about 15 minutes.
 3. `docker compose version`. It must be `v2.24.0` or newer (the `required: false` setting needs it). Do the same on the staging server. If older, stop and tell the orchestrator.
 4. `docker pull postgres:16.N-bookworm` (your number from step 1), then `docker image inspect --format '{{index .RepoDigests 0}}' postgres:16.N-bookworm`. It prints `postgres@sha256:` and 64 characters. Your `PG_DEBIAN_IMAGE` is `postgres:16.N-bookworm@sha256:<those 64 characters>`.
 5. In your browser open https://github.com/wal-g/wal-g/releases. Take the newest release that is **not** marked "Pre-release". Its tag (like `v3.0.5`) is `WALG_VERSION`.
-6. In that release, click **Assets**. Find the file whose name is `wal-g-pg-ubuntu-22.04-amd64.tar.gz` (if there is no 22.04 one, take `wal-g-pg-ubuntu-20.04-amd64.tar.gz`). Never take a `24.04` file: it needs a newer system library than Debian 12 has. That name is `WALG_ASSET`.
+6. In that release, click **Assets**. Find the file whose name is `wal-g-pg-22.04-amd64.tar.gz` (if there is no 22.04 one, take `wal-g-pg-20.04-amd64.tar.gz`). Never take a `24.04` file: it needs a newer system library than Debian 12 has. That name is `WALG_ASSET`.
 7. On the server: `cd /tmp && curl -fsSLO https://github.com/wal-g/wal-g/releases/download/<TAG>/<ASSET> && sha256sum <ASSET>`. Then compare the 64 characters with the "sha256:" value GitHub shows next to the asset on the release page, or, if the release has a file `<ASSET>.sha256`, with `curl -fsSL https://github.com/wal-g/wal-g/releases/download/<TAG>/<ASSET>.sha256`. They must be identical. That is `WALG_SHA256`. If they differ, stop and tell the orchestrator.
 8. Check that the binary runs on the Debian image: `docker run --rm -v /tmp/<ASSET>:/w.tgz:ro postgres:16.N-bookworm sh -c 'mkdir /x && tar -xzf /w.tgz -C /x && "$(find /x -type f | head -1)" --version'`. It must print a WAL-G version. If it says `GLIBC_2.xx not found` or a missing `.so` library, try the 20.04 asset from step 6; if that fails too, stop and tell the orchestrator. Then `rm /tmp/<ASSET>`.
 9. Send the four values (`PG_DEBIAN_IMAGE`, `WALG_VERSION`, `WALG_ASSET`, `WALG_SHA256`) to the orchestrator, who pastes them into section 2. None of them is a secret.

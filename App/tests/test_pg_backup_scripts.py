@@ -199,7 +199,7 @@ def test_walg_dockerfile_pins_debian_postgres_and_verifies_checksum():
     assert "sha256sum -c" in text
     assert re.search(r"^ARG WALG_SHA256=[0-9a-f]{64}$", text, re.M), "never PENDING"
     assert re.search(r"^ARG WALG_VERSION=v\d+\.\d+\.\d+$", text, re.M)
-    assert re.search(r"^ARG WALG_ASSET=wal-g-pg-ubuntu-(20|22)\.04-amd64\.tar\.gz$", text, re.M)
+    assert re.search(r"^ARG WALG_ASSET=wal-g-pg-(20|22)\.04-amd64\.tar\.gz$", text, re.M)
 
 
 def test_postgres_keeps_its_image_and_no_network_and_archives_to_the_spool():
