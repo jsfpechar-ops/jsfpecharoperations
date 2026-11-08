@@ -1,43 +1,48 @@
-# 1027 report (executor, Haiku 5.5)
+# 1027 report
 
-Status: blocked. Done: steps 1 to 3, and 5 (read only). Left: step 4 (PDF rows split), 6 to 9.
+Status: review. Steps 1 to 3 by Haiku 5.5 (blocked at step 4). An Opus executor finished steps 4, 6, 7 and 8 on branch `claude/fee-rate-dates`.
 
-## Files changed
-- App/app/migrations/0038_stay_fee_rate_history.sql (new, step 1)
-- App/migrations_pg/00009_stay_fee_rate_history.sql (new, step 1)
-- App/app/stay_fee_rate.py (new, step 2)
-- App/app/stay_fee.py (step 3: per-night amounts, scope-boundary zeroing, property_period, charge_for_reservation, _rate_segments, _apply_adjustments)
-- Step 4 (hlaseni split) was committed, failed, and reverted (commits ac00bbef, a4c935bd). Net: no change.
+## What changed, in plain words
 
-## Commands and last lines
-- Step 3: `.venv/bin/python -m pytest tests/test_stay_fee.py tests/test_stay_fee_adjustment.py -q --tb=short -x` -> `54 passed in 2.97s`
-- Step 4 attempt: `tests/test_stay_fee_downloads.py tests/test_stay_fee_finalize.py` -> `10 failed, 3 passed`. Every failure is a save or PDF that returns HTML instead of a PDF. `stay_fee_filing.save` calls `hlaseni` then `render`, and `validate()` raises ValueError. I did not find the cause in budget.
-- After revert: downloads + finalize + test_stay_fee + test_stay_fee_adjustment -> `67 passed in 2.88s`
-- Not run: step 1 init_db check, step 7 tests (file not written), test-map row, context_lint.
+- Each counted night is now charged at the rate that applied on that night. Example: 30 CZK until 12 March and 40 CZK from 13 March. A guest staying 10 to 14 March pays 30 + 30 + 40 + 40 = 140 CZK.
+- The council PDF shows one line per rate for a period that has a rate change (2 nights x 30 = 60, 2 nights x 40 = 80). Each line still passes the check that nights x rate = amount.
+- A sealed period stores its per-rate split. A rate added later never changes a sealed period.
+- `stay_fee_filing.correction_rate`: a corrected flat period keeps its sealed rate. A corrected period with a rate change is priced per night again.
 
-## Acceptance (section 7)
-- [x] Migration files 0038 / 00009 with 2000-01-01 backfill (not yet exercised by a test).
-- [x] Totals unchanged for existing stay-fee tests (54 and 67 green).
-- [ ] Mixed period split per rate in PDF (step 4 reverted).
-- [ ] Sealed period not re-priced (step 6 not done).
-- [ ] Over-60-night stay still 0: amounts zeroed in `_apply_scope_boundary`, not yet tested.
-- [x] No new dependency; SQL through db.
+## Money impact
 
-## Stopped on (section 8)
-1. Step 4 check failed twice (the 10-failure run, then the revert). Stopped per executor rule.
-2. Section 8 trigger: code multiplies nights x rate for a period that may be mixed. Not touched (routes are out of scope):
-   - App/app/routes/guest.py:2198 `persons` amount = `liable_nights * rate` from `charge`.
-   - App/app/routes/guest.py:2301 fee summary = `days * rate` with the flat column rate.
-   Both are wrong once 1028 writes history rows. Behaviour is unchanged in 1027 because no history is written yet.
+- If an apartment has no history rows, or only the 2000-01-01 backfill row, every total is the same as before. The existing stay-fee and invoice tests pass unchanged.
+- Totals change only when a dated row exists, and from 1028 on only a rate change made after that date adds one.
+- A stay of more than 60 nights still owes 0.
 
-## Deviations
-- Step 0: brief names branch `claude/dated-rates-1027` and `checkout -B origin/main`. Work stayed on `claude/fee-rate-dates` in the given worktree, with `origin/main` merged (already up to date, no conflict).
-- Step 2 `record()`: when an apartment has no history rows, I insert a baseline row at 2000-01-01 with the current column rate, then the requested row. The brief literally says the first row is stored at 2000-01-01. That would apply the new rate to earlier nights. Please confirm.
+## Root cause of the step 4 failure
+
+`rate_segments` holds `[rate, nights]` pairs, but the reverted code read them as `(nights, rate)`. Each PDF line's amount was still right, because nights x rate gives the same product either way. The line's night count, though, was the rate, so `validate()` rejected the document with "Report totals do not match facility rows". `save()` then failed, and the pages returned HTML instead of a PDF. Fix: unpack as `rate, nights`. Validation is unchanged.
+
+## Other fixes beyond the brief
+
+- When bed-days removed exceed the last-day-rate nights, the extra comes off the other rates, highest first. `total_czk` is now the sum of the per-rate lines, so the PDF and the total always agree. The old code dropped the negative line, and the PDF total would not have matched.
+- `record()` reads only the history rows; it no longer adds the column fallback. Before, a second identical call inserted again. The baseline row for an apartment without history now uses `previous`, the rate before the save. If that is 0 (fee not set up), the first rate applies from the beginning, as before. With no rate at all it writes nothing.
+- `charge_for_reservation` takes the stay dates from its own query. Callers pass only `{"id": ...}`, so the earlier code raised KeyError (4 tests in test_stay_fee_obec_0898 failed).
+- `schedule_for` returns the flat rate for an apartment without an id (an unsaved apartment, or test dicts).
+
+## Commands (last lines)
+
+- `pytest tests/test_stay_fee_rate_dates_1027.py`: 11 passed
+- `pytest tests/test_stay_fee*.py tests/test_invoice_*.py tests/test_guest_pay*.py tests/test_property_form_save.py tests/test_static_versions.py -rs`: 428 passed, 2 skipped. Both skips are in invoice_autofill and run only when UBYHOST_SHOTS_DIR is set for screenshots; they are not stay-fee tests.
+- `python3 scripts/context_lint.py`: OK
+
+## Acceptance
+
+- [x] Migrations 0038 / 00009, 2000-01-01 backfill
+- [x] Totals unchanged with no history or the backfill only
+- [x] Mixed period priced per night, PDF split per rate, sealed segments kept
+- [x] A later rate row never changes a sealed period
+- [x] More than 60 nights owes 0
+- [x] No new dependency; SQL only through `db`
 
 ## Questions for the owner
-1. Bed-day adjustments priced at the period's last-day rate: acceptable?
-2. One PDF facility row per rate for a period that spans a rate change: acceptable to the office?
-3. Confirm the baseline-row reading of `record()` (deviation above).
 
-## Owner steps left
-- Decide the routes/guest.py items (2198, 2301) before 1028, or reopen 1027 to fix them.
+1. Bed-day adjustments are priced at the rate on the period's last day. Removals larger than those nights come off the other rates, highest first. Is that acceptable?
+2. A period that spans a rate change gets one PDF line per rate. Will the office accept that?
+3. A host who turns the fee off (rate 0) and on again later: the nights in between are priced at 0. Is that acceptable?
