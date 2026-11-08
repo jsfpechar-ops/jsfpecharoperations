@@ -563,7 +563,7 @@ tell you:
 
 ### WAL-G continuous archiving and point-in-time recovery
 
-The daily age-encrypted `pg_dump` (above) stays the primary backup. WAL-G adds point-in-time recovery for the last 7 days; at most about 5 minutes of writes can be lost (`archive_timeout=300`). Downtime is acceptable here; losing data is not. Postgres keeps its pinned Alpine image and has no network: `archive_command` copies each finished WAL file durably into the `ubyhost-walspool` volume, and the `walg` container (profile `walg`, Debian Postgres 16 image with WAL-G) uploads it to S3 and deletes the local copy only after the upload succeeded (briefs 1009, 1010). The daily base backup runs in `walg` through the Postgres socket and a read-only data mount.
+The daily age-encrypted `pg_dump` (above) stays the primary backup. WAL-G adds point-in-time recovery for the last 7 days; at most about 5 minutes of writes can be lost (`archive_timeout=300`). Downtime is acceptable here; losing data is not. Postgres keeps its pinned Alpine image and has no network: `archive_command` copies each finished WAL file durably into the `ubyhost-walspool` volume, and the `walg` container (profile `walg`, Debian Postgres 16 image with WAL-G) uploads it to S3 and deletes the local copy only after the upload succeeded (briefs 1022, 1023). The daily base backup runs in `walg` through the Postgres socket and a read-only data mount.
 
 - **Cost.** About USD 0.05 a month in PUT requests plus a few cents of storage. WAL-G does not read back in normal running and `walg-check.sh` never calls S3. Check Cost Explorer after 7 days; expect under USD 1 a month.
 - **Retention.** 7 days: `wal-g delete retain FULL 7 --confirm` after each daily base backup, plus an S3 lifecycle rule at 10 days (see the RETENTION table row).
@@ -617,7 +617,7 @@ Key and dead-man checks (about 5 minutes):
 
 Server, before the deploy (about 15 minutes; `cd /opt/ubyhost/deploy/lightsail` first):
 
-8. Make sure 1009 and 1010 are merged and pulled: `git log --oneline -3`.
+8. Make sure 1022 and 1023 are merged and pulled: `git log --oneline -3`.
 9. Create the secrets file: `sudo install -m 600 -o root -g root /dev/null .env.walg && sudo nano .env.walg`, paste this, fill in the four values, save (Ctrl+O, Enter, Ctrl+X):
 
 ```

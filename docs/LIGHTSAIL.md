@@ -261,7 +261,7 @@ Passport photos are **not** in the DB backup. After restore, unverified uploads 
 
 | Layer | How often | Kept | Used for |
 |---|---|---|---|
-| `backup.sh` pg_dump on the S3 copy | daily (brief 1007) | see `backup-s3.sh` | off-site copy; Litestream was retired on 2026-11-07 |
+| `backup.sh` pg_dump on the S3 copy | daily (brief 1020) | see `backup-s3.sh` | off-site copy; Litestream was retired on 2026-11-07 |
 | `backup.sh` on the volume | daily 03:00 UTC | `UBYHOST_BACKUP_RETENTION_DAYS` (set `7` in production `.env`) | quick restore on the same server |
 | `backup-s3.sh` | daily 03:30 UTC | 30 days (bucket lifecycle rule) | main off-site copy, including a new instance |
 | `backup-gdrive.sh` | weekly | 30 days | second copy outside AWS |

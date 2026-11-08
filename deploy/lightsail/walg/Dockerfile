@@ -1,4 +1,4 @@
-# 1009: image for the walg sidecar only (compose profile "walg"). The production
+# 1022: image for the walg sidecar only (compose profile "walg"). The production
 # postgres service keeps its pinned Alpine image and never runs wal-g. Debian
 # (glibc) because the WAL-G release binaries are built for glibc. The Postgres 16
 # binaries here are used only by the restore drill (docs/OPERATIONS.md).

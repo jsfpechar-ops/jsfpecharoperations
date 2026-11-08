@@ -1,7 +1,7 @@
-# 1008: Retire Litestream
+# 1021: Retire Litestream
 
 Status: review (lint cap fixed by orchestrator in a follow-up commit)
-Depends on: 1007 | Base commit: 661f5e5 | Branch: claude/eloquent-mendel-vd8mfi
+Depends on: 1020 | Base commit: 661f5e5 | Branch: claude/eloquent-mendel-vd8mfi
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -10,7 +10,7 @@ Remove the Litestream service, its config, its scripts, its env variables and it
 
 ## 2. Context
 
-- Real protection today: `backup.sh` pg_dump (daily and before each deploy), weekly Google Drive, daily S3 (brief 1007). This brief must land after 1007.
+- Real protection today: `backup.sh` pg_dump (daily and before each deploy), weekly Google Drive, daily S3 (brief 1020). This brief must land after 1020.
 - The old S3 replica (bucket in `LITESTREAM_S3_BUCKET`, prefix `LITESTREAM_S3_PATH`) stays untouched as an archive. No step here deletes, lists or writes S3 data. The owner decides about deleting it after 30 days.
 - `restore.sh` is the SQLite snapshot restore. Keep it working for old SQLite snapshots; only its Litestream messages go.
 - `restore_test.sh` and `.github/workflows/restore-drill.yml` exist only to drill the Litestream replica, so both are deleted. The PostgreSQL restore path is `pg-restore.sh` (brief 0464).
@@ -157,7 +157,7 @@ Command: `bash -n deploy/lightsail/scripts/restore.sh && grep -ci litestream dep
 16. `test_wp32_container_sizing.py`. Read `grep -n -i litestream App/tests/test_wp32_container_sizing.py` (6 hits). Delete the line `    "litestream": "${UBYHOST_LITESTREAM_MEM:-256m}",`. Change `for name in ("ubyhost", "worker", "litestream", "caddy", "mock-ubyport"):` to `for name in ("ubyhost", "worker", "caddy", "mock-ubyport"):`. Delete the line `        "litestream": "256m",`, the line `        "UBYHOST_LITESTREAM_MEM": "128m",` and the line `        "litestream": "128m",`. In the tuple `for var in ("UBYHOST_WEB_MEM", "UBYHOST_WORKER_MEM", "UBYHOST_LITESTREAM_MEM", "UBYHOST_CADDY_MEM"):` remove `"UBYHOST_LITESTREAM_MEM", `. Read the three edited test bodies (about 60 lines) and check no dict is left with a trailing syntax error. Command: `cd App && .venv/bin/python -m pytest tests/test_wp32_container_sizing.py -q --tb=short -x 2>&1 | tail -30`. Expected: all passed, 0 skipped. If a test asserts a total that included 256m, STOP and report (section 8).
 
 17. `deploy/lightsail/README.md`. Run `grep -n -i litestream deploy/lightsail/README.md` (31 hits).
- a. Nothing to change: brief 1007 already rewrote this sentence (README lines 44-45, `Production uses **7**: the daily S3 copy ...`). Check: `grep -n 'Once Litestream replicates' deploy/lightsail/README.md | tail -3` prints nothing.
+ a. Nothing to change: brief 1020 already rewrote this sentence (README lines 44-45, `Production uses **7**: the daily S3 copy ...`). Check: `grep -n 'Once Litestream replicates' deploy/lightsail/README.md | tail -3` prints nothing.
  b. Delete the whole section from `## Litestream: continuous S3 replica (WP05)` up to, not including, `## Staging server (Step 0)`. This includes its replica restore steps and the closing paragraph that starts `If the replica is unusable, fall back to the newest age-encrypted snapshot`. In its place put exactly:
 ```
 ## Backups and recovery (Litestream retired 2026-11-07)
@@ -171,7 +171,7 @@ Litestream is gone. The app runs on PostgreSQL, so recovery is the age-encrypted
  Command: `grep -ci litestream deploy/lightsail/README.md | tail -30`. Expected: `2` (only the new heading and the sentence `Litestream is gone.`).
 
 18. `docs/LIGHTSAIL.md`. Run `grep -n -i litestream docs/LIGHTSAIL.md` (8 hits).
- a. Delete the table row starting `| Litestream → S3 (being retired, brief 1008;`. Replace it with `| `backup.sh` pg_dump on the S3 copy | daily (brief 1007) | see `backup-s3.sh` | off-site copy; Litestream was retired on 2026-11-07 |`.
+ a. Delete the table row starting `| Litestream → S3 (being retired, brief 1021;`. Replace it with `| `backup.sh` pg_dump on the S3 copy | daily (brief 1020) | see `backup-s3.sh` | off-site copy; Litestream was retired on 2026-11-07 |`.
  b. Rebuild step 5: replace the text from `5. Restore the database. **From Litestream (preferred, newest data):**` through the closing triple backtick of the following `docker compose run ... litestream restore ...` code block and the line `   Then go to step 7. **From a Drive copy instead:**` with `5. Restore the database from the newest dump (S3 or Drive copy): run `./scripts/pg-restore.sh <stamp>` as in the backup section. **For an old SQLite snapshot instead:**`. Keep the Drive-copy code block that follows unchanged.
  c. Delete the table row starting `| Litestream `mem_limit` | `UBYHOST_LITESTREAM_MEM``.
  d. In the row starting `| Local snapshots kept | `UBYHOST_BACKUP_RETENTION_DAYS`` replace `` `7` once Litestream replicates (default `30`) `` with `` `7` (default `30`) ``.
@@ -190,7 +190,7 @@ Litestream is gone. The app runs on PostgreSQL, so recovery is the age-encrypted
  Command: `grep -n -i litestream docs/OBSERVABILITY.md docs/context/architecture.md docs/runbook.md README.md | tail -30`. Expected: no output.
 
 22. `docs/context/decisions.md`. Append as the last line (check `tail -3 docs/context/decisions.md` first and match its format):
-`- 2026-11-07 | [backup] Litestream retired: it replicated only the stale SQLite file after the PostgreSQL cutover and pulled about 0.35 GB/hour from S3. Recovery is pg_dump in the encrypted snapshot (daily and pre-deploy), weekly Drive, daily S3. Old S3 replica kept as archive; owner deletes it after 30 days | owner | [1008](../tasks/1008-remove-litestream.md)`
+`- 2026-11-07 | [backup] Litestream retired: it replicated only the stale SQLite file after the PostgreSQL cutover and pulled about 0.35 GB/hour from S3. Recovery is pg_dump in the encrypted snapshot (daily and pre-deploy), weekly Drive, daily S3. Old S3 replica kept as archive; owner deletes it after 30 days | owner | [1021](../tasks/1021-remove-litestream.md)`
 
 23. Final grep. Run `grep -rnIil litestream --exclude-dir=.git --exclude-dir=archive --exclude-dir=tasks . | tail -30`. Expected: only the historical files listed in section 3, `deploy/lightsail/README.md`, `docs/LIGHTSAIL.md`, `docs/OPERATIONS.md`, `docs/context/decisions.md`, `docs/context/architecture.md` is gone from the list. Anything else: STOP and report.
 
@@ -236,7 +236,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1008-report.md` (600 tokens at most) and set `Status: review`. The report has:
+Write `docs/tasks/1021-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
 1. The files changed (`git diff --stat`).
 2. Each command, with the last 5 lines of its output.
@@ -255,7 +255,7 @@ Write `docs/tasks/1008-report.md` (600 tokens at most) and set `Status: review`.
 
 ## Owner steps
 
-Do these after the PR is merged and you have run the normal deploy (1007 must already be deployed).
+Do these after the PR is merged and you have run the normal deploy (1020 must already be deployed).
 
 1. Open a terminal and connect to the server as usual: `ssh ubuntu@<your server>`.
 2. Go to the stack folder: `cd /opt/ubyhost/deploy/lightsail`

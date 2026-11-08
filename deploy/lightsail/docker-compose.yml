@@ -29,7 +29,7 @@ services:
       - max_connections=50
       - -c
       - log_min_duration_statement=1000
-      # 1009: WAL archiving, on only when .env sets UBYHOST_PG_ARCHIVE=on
+      # 1022: WAL archiving, on only when .env sets UBYHOST_PG_ARCHIVE=on
       # (production). No network here: archive_command only copies each WAL file
       # durably into the spool (tmp, sync, rename, sync dir; identical re-copy is
       # ok, a different file fails); the walg service ships it to S3.
@@ -57,9 +57,9 @@ services:
         max-size: "10m"
         max-file: "5"
 
-  # 1009: WAL-G sidecar, started only with COMPOSE_PROFILES containing walg
+  # 1022: WAL-G sidecar, started only with COMPOSE_PROFILES containing walg
   # (production). Ships the WAL spool to S3 and runs the daily base backup
-  # (1010). Default project network (not web), no port. Reaches Postgres only
+  # (1023). Default project network (not web), no port. Reaches Postgres only
   # through the socket volume (trust auth, like the app) and a read-only data
   # mount, as uid 70 = postgres in the Alpine image. Keys come from .env.walg
   # (root-only on the server, never in git); without it the shipper only logs

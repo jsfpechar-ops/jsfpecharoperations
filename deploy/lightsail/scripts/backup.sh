@@ -15,7 +15,7 @@ set -a
 source .env
 set +a
 
-# Brief 1007: in production on PostgreSQL, never take or prune a snapshot while postgres is down.
+# Brief 1020: in production on PostgreSQL, never take or prune a snapshot while postgres is down.
 # A run without the dump would age out the last good dumps. Exits before backup_data.sh and before the ping.
 if [ "${UBYHOST_DEPLOYMENT:-}" = "production" ] && [ -n "${UBYHOST_DATABASE_URL:-}" ] \
   && [ -z "$(docker compose ps -q --status running postgres 2>/dev/null)" ]; then
@@ -27,7 +27,7 @@ docker compose exec -T ubyhost bash /app/scripts/backup_data.sh
 
 # PostgreSQL dump (brief 0464): into the newest snapshot folder, age-encrypted, never plaintext.
 # Runs only once the app runs on PostgreSQL (UBYHOST_DATABASE_URL set), not before the cutover.
-# Brief 1007: production must never finish without a PostgreSQL dump. The snapshot above is kept; no ping is sent.
+# Brief 1020: production must never finish without a PostgreSQL dump. The snapshot above is kept; no ping is sent.
 if [ "${UBYHOST_DEPLOYMENT:-}" = "production" ]; then
   if [ -z "${UBYHOST_DATABASE_URL:-}" ]; then
     echo "Refusing to finish: UBYHOST_DATABASE_URL is unset in production, so no PostgreSQL dump was taken." >&2

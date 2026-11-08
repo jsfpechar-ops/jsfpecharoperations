@@ -1,9 +1,9 @@
 #!/bin/sh
-# 1009: ship finished WAL files from the spool to S3 with wal-g, oldest first.
+# 1022: ship finished WAL files from the spool to S3 with wal-g, oldest first.
 # The postgres container (no network) copies each finished file into the spool
 # (archive_command); this container has the network. A spool file is deleted
 # only after `wal-g wal-push` exited 0 (upload confirmed). A failure keeps it and
-# retries; 1010's walg-check.sh alerts when a file stays too long.
+# retries; 1023's walg-check.sh alerts when a file stays too long.
 set -u
 SPOOL="${WALG_SPOOL:-/walspool}"
 INTERVAL="${WALG_SHIP_INTERVAL:-15}"

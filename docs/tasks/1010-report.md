@@ -1,51 +1,32 @@
-# 1010 report: WAL-G monitor, daily base backup, runbook
+# 1010 report: required stars
 
 Status: review
+Branch: claude/required-stars (local only, not pushed)
+Done: steps 1 to 6 (steps 5 and 6 partly: see Deviations).
 
-## 1. Files changed
+## Commits
+- 9a6dea7c step 1: editor police fields (IDUB, login, facility abbreviation, facility name; password only when none stored)
+- e4487e0e step 2: calendar platform and URL, wizard ICO, wizard password, stay-fee fields (when fee_required), legend on wizard calendar step
+- 6e5ead39 step 3: stars on permalink PIN (_property_editor.html) and reveal reason (guest_form_admin.html), keep HTML required; App/tests/test_required_stars.py (5 passed)
+- c4047b77 earlier blocked report (superseded by this file)
 
-- `deploy/lightsail/scripts/walg-check.sh` (new, monitor)
-- `deploy/lightsail/scripts/walg-backup.sh` (new, daily base backup, keep 7)
-- `App/tests/test_pg_backup_scripts.py` (stub tests appended)
-- `docs/OPERATIONS.md` (one subsection, before "Purging pre-OPS-1")
-- `docs/privacy/RETENTION.md` (one WAL-G row)
-- `docs/ENVIRONMENT.md` (three rows)
-- `docs/LIGHTSAIL.md` (two cron lines and a link)
-- `docs/tasks/1010-report.md` (this file), brief Status set to review
+## Tests (from App/, UBYHOST_REQUIRE_BROWSER=1 where marked)
+- test_required_stars.py: 5 passed
+- Non-browser set (wizard_old_look_0953, 0952_lock, property_address_required, calendar_platform_required, times_required_0210, stay_fee, onboarding*): 166 passed, 57 skipped. The skips are browser-only tests in test_onboarding_wizard_browser.py run without UBYHOST_REQUIRE_BROWSER.
+- Browser set with UBYHOST_REQUIRE_BROWSER=1 -rs (property_navigation, 0833 editor, ttlock_0954, wizard_0884 geometry, design_setup_wizard, onboarding_wizard_browser, host_geometry, design_guardrails, onboarding_followup): 165 passed, 0 skipped.
+- test_layout_lint_browser.py (UBYHOST_REQUIRE_BROWSER=1): 4 passed, 0 skipped.
+- scripts/context_lint.py: OK (warnings are pre-existing).
+- Test map row `test_wizard_old_look_0953_browser.py` does not exist; dropped from list.
 
-Commits: step 2 `7aa830f`, step 3 `ef7542f`, step 4 `8df0d65`, step 5 `3f22727`, step 6 `b596231`, step 7 `b471155`, step 8 `56f87b7`.
+## Screenshots (390 px, /mnt/project-files/ux-shots/stars/)
+- wizard-police-390.png: red stars on IDUB, Web-service login, Web-service password (no password stored), Facility abbreviation, Facility name. Legend "Fields marked * are required." shown once. Labels do not wrap. Optional fields not starred.
+- wizard-calendar-390.png: red stars on Platform and iCal export URL. "Your name for it (optional)" unstarred. Legend shown once. Labels do not wrap.
+- property-editor-390.png: the full-page capture is downscaled to about 390x9400, so the stars in the police section are too small to verify by eye. The wizard police page shows the same star markup. Needs a crop check by the owner or a follow-up.
 
-## 2. Commands (last lines)
+## Deviations
+- Step 5 editor crop could not be verified at this scale (see above).
+- Step 6 PR not opened: this run is local only, no push.
 
-- Step 1 anchor grep: six counts, all `1`.
-- Step 4: `cd App && .venv/bin/python -m pytest tests/test_pg_backup_scripts.py -q --tb=short -x` gave `33 passed in 0.63s`.
-- Step 5: `grep -c 'WAL-G' docs/privacy/RETENTION.md` gave `1`.
-- Step 6: `grep -c 'UBYHOST_PG_ARCHIVE\|UBYHOST_WALG_PING_URL\|UBYHOST_WALG_BACKUP_PING_URL' docs/ENVIRONMENT.md` gave `3`.
-- Step 7: the cron grep gave `2`.
-- Step 8: headings present (`###` at line 564, six `####`), all above `### Purging pre-OPS-1`.
-- Step 9: `python3 scripts/context_lint.py` gave `context lint: OK` (warnings only, none new from this brief).
-- Step 9: `shellcheck` gave `command not found`.
-- Step 9: pytest as above, `33 passed`.
-
-## 3. Section 7 acceptance
-
-- [x] walg-check exit-code tests pass (in the 33).
-- [x] walg-backup order and failure tests pass.
-- [x] OPERATIONS subsection has all listed parts.
-- [x] RETENTION, ENVIRONMENT, LIGHTSAIL rows and cron lines present.
-- [ ] Secret grep: no match in files this brief added. `docs/SES.md` lines 110 and 189 match `AKIA` (pre-existing placeholder text, not this brief). Not changed.
-- [ ] shellcheck not run (not installed here).
-
-## 4. Deviations
-
-- Done: steps 1 to 9. Left: none. Went past the 25-call checkpoint in executor.md to finish the current step and the lint, then wrote this report.
-- Step 9 shellcheck not run: tool missing.
-
-## 5. Questions
-
-- None.
-
-## 6. Owner steps left
-
-- `docs/OPERATIONS.md`, "WAL-G continuous archiving and point-in-time recovery", "Owner rollout" steps 1 to 17, including drill 1 and drill 2. Do not rely on WAL-G until drill 2 passes.
-- Not done by the executor: no push to main, no deploy, no secrets, no AWS.
+## Owner questions
+1. Street stays unstarred (server and test 0953 treat it as optional). Make it required in a separate validation brief?
+2. Door-code time stars show while door codes are off (kept, pinned by test_ttlock_setup_0954_browser.py). Hide them while off?

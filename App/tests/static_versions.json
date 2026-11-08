@@ -24,12 +24,12 @@
     "v": "20261104-0916"
   },
   "app.js": {
-    "sha256": "aebdebbc48401a966242a130dfaf5c73835e9d5b2741b5ed9458dfa7b3bf4dbd",
-    "v": "20261106-pr790-ux-js"
+    "sha256": "1aefde0086c9cf39ae10ed906423a671a7c32ab6ae1ccb0df0f8352548316440",
+    "v": "20261107-1203"
   },
   "app2.css": {
-    "sha256": "b19572d4ba393ad92460ebe5f31eb634a9662363cff74a10aa0e205c65873287",
-    "v": "20261107-2238"
+    "sha256": "df724b54e85d81cd594ee3a63d0261b1b54b7636c70ae2ee1ef74d417b9708e3",
+    "v": "20261108-1014"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -64,8 +64,8 @@
     "v": "20260915a"
   },
   "dashboard-calendar.css": {
-    "sha256": "3bf64c8c14580a981a5d5b87d871cb2ce5d4689cd4d4f87b55dd14d9644f2356",
-    "v": "20261107-0998"
+    "sha256": "80dbd3b1c9eec71fc03550607703ca489c09547201e5e16a22b5e56553ba088b",
+    "v": "20261107-1207"
   },
   "dashboard-calendar.js": {
     "sha256": "6673d3df8f4bc7449e356e716e83b81270515d188375e5e2b68aea333a3327e2",
