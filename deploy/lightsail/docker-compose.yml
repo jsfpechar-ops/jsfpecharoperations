@@ -19,7 +19,28 @@ services:
       POSTGRES_DB: ubyhost
       POSTGRES_HOST_AUTH_METHOD: trust
     network_mode: none
-    command: ["postgres", "-c", "listen_addresses=", "-c", "shared_buffers=256MB", "-c", "max_connections=50", "-c", "log_min_duration_statement=1000"]
+    command:
+      - postgres
+      - -c
+      - listen_addresses=
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - max_connections=50
+      - -c
+      - log_min_duration_statement=1000
+      # 0997: WAL archiving, on only when .env sets UBYHOST_PG_ARCHIVE=on
+      # (production). No network here: archive_command only copies each WAL file
+      # durably into the spool (tmp, sync, rename, sync dir; identical re-copy is
+      # ok, a different file fails); the walg service ships it to S3.
+      # archive_timeout=300: a segment at least every 5 minutes when there is
+      # activity (about USD 0.05 a month in PUT requests).
+      - -c
+      - archive_mode=${UBYHOST_PG_ARCHIVE:-off}
+      - -c
+      - archive_timeout=300
+      - -c
+      - 'archive_command=if [ -f /walspool/%f ]; then cmp -s %p /walspool/%f; else cp %p /walspool/%f.tmp && sync /walspool/%f.tmp && mv /walspool/%f.tmp /walspool/%f && sync /walspool; fi'
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "ubyhost", "-d", "ubyhost"]
       interval: 10s
@@ -28,7 +49,43 @@ services:
     volumes:
       - ubyhost-pgdata:/var/lib/postgresql/data
       - ubyhost-pgsock:/var/run/postgresql
+      - ubyhost-walspool:/walspool
     mem_limit: 1g
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # 0997: WAL-G sidecar, started only with COMPOSE_PROFILES containing walg
+  # (production). Ships the WAL spool to S3 and runs the daily base backup
+  # (0998). Default project network (not web), no port. Reaches Postgres only
+  # through the socket volume (trust auth, like the app) and a read-only data
+  # mount, as uid 70 = postgres in the Alpine image. Keys come from .env.walg
+  # (root-only on the server, never in git); without it the shipper only logs
+  # errors and the WAL waits in the spool.
+  walg:
+    profiles: ["walg"]
+    build:
+      context: ./walg
+    image: ubyhost-walg:local
+    restart: unless-stopped
+    init: true
+    user: "70:70"
+    env_file:
+      - path: .env.walg
+        required: false
+    command: ["/usr/local/bin/walg-ship.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ubyhost-pgdata:/var/lib/postgresql/data:ro
+      - ubyhost-pgsock:/var/run/postgresql
+      - ubyhost-walspool:/walspool
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 512m
     logging:
       driver: json-file
       options:
@@ -317,6 +374,8 @@ volumes:
     name: ubyhost-pgdata
   ubyhost-pgsock:
     name: ubyhost-pgsock
+  ubyhost-walspool:
+    name: ubyhost-walspool
   caddy-data:
     name: ubyhost-caddy-data
   caddy-config:
