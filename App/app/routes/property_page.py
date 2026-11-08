@@ -353,14 +353,8 @@ async def property_page_checkout(request: Request, slug: str):
         if sent.get("error"):
             return _book_error(slug, sent["error"], lang, form)
         booking = sent["booking"]
-        response = render(request, "property_page_requested.html", {
-            "page": _page_context(apartment_id) or {}, "show_nav": False, "lang": lang,
-            "booking": booking, "rails": booking_rails.guest_view(apartment_id, booking),
-            "dates": f"{q['date_from']} – {q['date_to']}", "total": q["total_czk"],
-        })
-        response.headers["Cache-Control"] = "no-store"
-        response.headers["X-Robots-Tag"] = "noindex"
-        return response
+        from urllib.parse import urlsplit
+        return RedirectResponse(urlsplit(booking_site.manage_url(booking)).path, status_code=303)
     result = booking_checkout.start(apartment_id, slug, q, guest_name=name,
                                     guest_email=email, lang=lang)
     if result.get("error"):
