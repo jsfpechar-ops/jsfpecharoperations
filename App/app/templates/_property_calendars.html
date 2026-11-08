@@ -73,7 +73,7 @@
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <h2>{{ t('apartment.form.calendars.connect_title') }}</h2>
     <div class="field">
-      <label for="label">{{ t('calendar.platform_label') }}</label>
+      <label for="label">{{ t('calendar.platform_label') }}<span class="req-star" aria-hidden="true">*</span></label>
       <select id="label" name="label" required{% if feed_errors.label %} aria-invalid="true" aria-describedby="label-error"{% endif %}{% if first_feed_error == 'label' %} autofocus{% endif %}>
         <option value="" disabled {% if feed_draft.label not in calendar_platforms | map('first') | list %}selected{% endif %}>{{ t('calendar.choose_platform') }}</option>
         {% for key, name in calendar_platforms %}
@@ -88,7 +88,7 @@
       {% if feed_errors.label_other %}<p class="err-text" id="label-other-error" role="alert">{{ feed_errors.label_other }}</p>{% endif %}
     </div>
     <div class="field">
-      {{ field_label('url', t('apartment.form.calendars.url_label'), t('apartment.form.calendars.url_hint'), false, '/guide#stays') }}
+      {{ field_label('url', t('apartment.form.calendars.url_label'), t('apartment.form.calendars.url_hint'), false, '/guide#stays', true) }}
       <input type="url" id="url" name="url" required value="{{ feed_draft.url or '' }}"
              placeholder="{{ t('apartment.form.calendars.url_ph') }}" aria-describedby="url-help{% if feed_errors.url %} url-error{% endif %}"{% if feed_errors.url %} aria-invalid="true"{% endif %}{% if first_feed_error == 'url' %} autofocus{% endif %}>
       {% if feed_errors.url %}<p class="err-text" id="url-error" role="alert">{{ feed_errors.url }}</p>{% endif %}
