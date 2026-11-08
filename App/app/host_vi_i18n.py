@@ -600,7 +600,7 @@ STRINGS: Dict[str, str] = {
     "onboarding.demo_body": "Tải hai chỗ ở mẫu an toàn và thử xác nhận đặt phòng, hộ chiếu, bên kiểm soát dữ liệu, khai báo và sổ khách lưu trú.",
     "onboarding.demo_hint": "Chỉ có trong môi trường thử nghiệm/demo. Xóa đi khi bạn dùng xong.",
     "setup.banner.aria": "Thiết lập căn hộ đầu tiên",
-    "setup.banner.line": "Tiếp tục thiết lập",
+    "setup.banner.line": "Thiết lập %(step)s trong %(total)s · Tiếp tục",
     "demo.load": "Khám phá với dữ liệu mẫu",
     "demo.load_detail": "Hai chỗ ở mẫu. Không gửi gì cho cảnh sát.",
     "demo.clear": "Xóa dữ liệu mẫu",
