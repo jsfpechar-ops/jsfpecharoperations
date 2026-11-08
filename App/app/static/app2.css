@@ -3084,6 +3084,8 @@ body.v2 .prop-wide-only{display:none}
   body.v2 .prop-sec>summary::marker{content:""}
   body.v2 .prop-layout.is-tabbed .prop-sec:not(.is-current){display:none}
   body.v2 .prop-layout.is-tabbed .prop-nav a.is-current{background:var(--accs)}
+  /* 1030 step 5: the fix line replaces the per-section missing lists at wide widths (DOM kept for the fix line) */
+  body.v2 .prop-sec-missing .readiness-list{display:none}
 }
 
 /* 1030: one slim fix line, wide only */
