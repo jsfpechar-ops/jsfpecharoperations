@@ -3106,6 +3106,9 @@ body.v2 .prop-wide-only{display:none}
 /* 1030: one slim fix line, wide only */
 body.v2 .prop-fixline{margin:0 0 12px;color:var(--bad);font-size:14px;line-height:1.45}
 body.v2 .prop-fixline a{color:var(--bad);font-weight:600}
+/* 1030: the names wrap as a row with 12 px between neighbours (tap spacing); the comma is drawn, not part of the link text */
+body.v2 .prop-fixline:not([hidden]){display:flex;flex-wrap:wrap;align-items:baseline;gap:12px}
+body.v2 .prop-fixline a:not(:last-child)::after{content:",";color:var(--bad)}
 
 /* 1030 fix: the required-legend note is redundant at >=768 (the * marks stay). */
 @media (min-width:768px){

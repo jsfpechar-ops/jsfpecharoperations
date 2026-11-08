@@ -2608,9 +2608,10 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         return;
       }
       var lead = items.length === 1 ? fix.getAttribute("data-text-one") : fix.getAttribute("data-text-many");
-      fix.appendChild(document.createTextNode((lead || "").replace("{n}", String(items.length)) + " "));
-      items.forEach(function (item, i) {
-        if (i) fix.appendChild(document.createTextNode(", "));
+      var leadEl = document.createElement("span");
+      leadEl.textContent = (lead || "").replace("{n}", String(items.length));
+      fix.appendChild(leadEl);
+      items.forEach(function (item) {
         var link = document.createElement("a");
         link.href = "#" + item.id;
         link.textContent = item.name;
@@ -2626,7 +2627,11 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       layout.classList.toggle("is-tabbed", mq.matches);
       if (mq.matches) {
         var hashEl = location.hash.length > 1 ? document.getElementById(location.hash.slice(1)) : null;
-        var start = sectionFor(hashEl) || layout.querySelector("details.prop-sec[open]") || layout.querySelector("details.prop-sec");
+        // a failed save starts on the first error; then the server's start section; then the first open one
+        var summary = document.querySelector("[data-save-summary][data-first-error]");
+        var errorEl = summary ? document.getElementById(summary.getAttribute("data-first-error")) : null;
+        var startId = layout.getAttribute("data-start-section");
+        var start = sectionFor(hashEl) || sectionFor(errorEl) || (startId && document.getElementById(startId)) || layout.querySelector("details.prop-sec[open]") || layout.querySelector("details.prop-sec");
         showSection(start);
         // A load without a hash keeps the page at the top (a written hash made openTarget scroll past the title).
         if (start && hashEl && location.hash !== "#" + start.id) history.replaceState(null, "", "#" + start.id);
@@ -2637,6 +2642,10 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     // the stay-fee stars are set by a later init, so the line is built once more after it
     window.setTimeout(fixLine, 0);
     if (mq.addEventListener) mq.addEventListener("change", apply);
+    // at >=768 px the card title is a heading, not a toggle (a click must not fold the one visible section)
+    layout.addEventListener("click", function (e) {
+      if (mq.matches && e.target.closest("details.prop-sec > summary")) e.preventDefault();
+    });
     [nav, strip].forEach(function (list) {
       if (!list) return;
       list.addEventListener("click", function (e) {

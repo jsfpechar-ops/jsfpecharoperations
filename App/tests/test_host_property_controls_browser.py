@@ -495,7 +495,8 @@ def test_guest_links_and_message_settings_geometry(host, base):
         for width in (390, 768, 1280):
             page.set_viewport_size({"width": width, "height": 1000})
             page.goto(f"{base}/apartments/{apartment}?lang=en")
-            page.evaluate("() => { document.getElementById('sec-messages').open = true; }")
+            # Owner decision 2026-11-08: 6 pills as switcher (brief 1030).
+            _toggle_section(page, "messages", width) if width >= 768 else page.evaluate("() => { document.getElementById('sec-messages').open = true; }")
 
             def box(sel):
                 return page.locator(sel).first.bounding_box()
@@ -528,8 +529,10 @@ def test_guest_links_and_message_settings_geometry(host, base):
                 assert abs(cells[0][0] - cells[2][0]) <= 1 and abs(cells[1][0] - cells[3][0]) <= 1, cells
                 gaps = page.evaluate(
                     "() => [...document.querySelectorAll('.guest-link-actions button[formaction]')].map(b => {"
-                    " const t = b.parentElement.querySelector('.help-tip-btn'); return t ? t.getBoundingClientRect().left - b.getBoundingClientRect().right : 999; })")
-                assert all(-1 <= g <= 24 for g in gaps), gaps
+                    " const t = b.parentElement.querySelector('.help-tip-btn'); if (t && !t.getClientRects().length) return null;"
+                    " return t ? t.getBoundingClientRect().left - b.getBoundingClientRect().right : 999; })")
+                # Owner decision 2026-11-08 (brief 1030): at >=768 px the regenerate "?" icons are pruned (null here).
+                assert all((g is None and width >= 768) or (g is not None and -1 <= g <= 24) for g in gaps), gaps
             # Number fields: side by side from 768 px, stacked on phone.
             days, reach = box("#permalink_window_days"), box("#permalink_reachback_days")
             if width == 390:
@@ -541,7 +544,8 @@ def test_guest_links_and_message_settings_geometry(host, base):
             assert page.evaluate("() => { const s = document.getElementById('passport_photo_policy'); return s.scrollWidth <= s.clientWidth; }"), width
             assert select["width"] >= 0.9 * grid["width"], width
             tips = page.evaluate(_TIP_JS, "passport_photo_policy")
-            assert tips is None or abs(tips[0] - tips[1]) <= 6, (width, tips)
+            # Owner decision 2026-11-08 (brief 1030): at >=768 px the passport "?" is pruned (its text repeats the label).
+            assert tips is None or (width >= 768 and tips[0] == 0) or abs(tips[0] - tips[1]) <= 6, (width, tips)
             # OCR checkbox: 24 px box, centred on its label, ? on the same row, below the select.
             cb = box("#ocr_scan")
             assert 20 <= cb["width"] <= 26 and 20 <= cb["height"] <= 26, (width, cb)
@@ -577,6 +581,19 @@ def _open_page_0983(browser, base, host, path, width):
     return context, page
 
 
+def _toggle_section(page, key, width):
+    """Owner decision 2026-11-08: 6 pills as switcher (brief 1030). Phones toggle the accordion; at >=768 px a pill shows
+    the section and its title is not a toggle, so a "close" is a no-op there."""
+    sec = page.locator(f"#sec-{key}")
+    if width < 768:
+        sec.locator("> summary").click()
+    elif not sec.evaluate("e => e.classList.contains('is-current') && e.open"):
+        page.locator(f'nav.prop-strip a[href="#sec-{key}"]').first.click()
+    else:
+        return True
+    return sec.evaluate("e => e.open")
+
+
 def test_0983_fee_and_police_headings_and_archive_button(host, base):
     apartment = host["apartment"]
     with sync_api.sync_playwright() as playwright:
@@ -592,19 +609,16 @@ def test_0983_fee_and_police_headings_and_archive_button(host, base):
                         label = (lang, width)
                         # Stay fee: the accordion title once, no inner duplicate; opens and closes.
                         fee = page.locator("#sec-fee")
-                        fee.locator("> summary").click()
-                        assert fee.evaluate("e => e.open") is True, label
+                        assert _toggle_section(page, "fee", width) is True, label
                         assert fee_title in fee.locator("> summary b").inner_text(), label
                         inner = [" ".join(h.split()).lower() for h in fee.locator("h2, h3").all_text_contents()]
                         assert not any(h.startswith(fee_title.lower()) for h in inner), (label, inner)
                         assert fee.locator("h2.property-section-title").count() == 0, label
                         assert fee.locator("#stay-fee-settings").count() == 1, label
-                        fee.locator("> summary").click()
-                        assert fee.evaluate("e => e.open") is False, label
+                        assert _toggle_section(page, "fee", width) is (width >= 768), label
                         # Police: one title, three meaningful subsections, no synonym heading.
                         police = page.locator("#sec-police")
-                        police.locator("> summary").click()
-                        assert police.evaluate("e => e.open") is True, label
+                        assert _toggle_section(page, "police", width) is True, label
                         assert police_title in police.locator("> summary b").inner_text(), label
                         heads = [" ".join(h.split()) for h in police.locator("h2.property-section-title").all_text_contents()]
                         assert len(heads) == 3, (label, heads)
@@ -613,8 +627,7 @@ def test_0983_fee_and_police_headings_and_archive_button(host, base):
                         assert police.locator("#police-sample-link").count() == 1, label
                         if width == 390:
                             _shot_0983(page, f"police-open-{lang}-390")
-                        police.locator("> summary").click()
-                        assert police.evaluate("e => e.open") is False, label
+                        assert _toggle_section(page, "police", width) is (width >= 768), label
                         # Archive: a direct secondary button, no accordion, not clipped.
                         assert page.locator("details#sec-archive").count() == 0, label
                         button = page.locator("#archive button[formaction$='/archive']")

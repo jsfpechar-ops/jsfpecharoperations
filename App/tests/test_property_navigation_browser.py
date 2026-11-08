@@ -454,6 +454,8 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
         assert "sec-police" in page.evaluate(_STATE_JS)["open"]
         assert db.query_one("SELECT automation_mode FROM apartment WHERE id = ?", (host["apartment"],))["automation_mode"] == "manual"
         page.goto(f"{url}?view=settings&section=reporting&lang=en")
+        # Owner decision 2026-11-08 (brief 1030): a hash-less "Reporting & fees" link starts on Stay fee; the police pill opens police.
+        page.locator('nav.prop-strip a[href="#sec-police"]').click()
         page.locator('button[formaction$="/test-connection"]').click()
         page.wait_for_load_state()
         assert "sec-police" in page.evaluate(_STATE_JS)["open"], page.url

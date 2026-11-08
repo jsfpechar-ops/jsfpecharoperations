@@ -125,7 +125,8 @@
 </div>
 <div class="form prop-form-single property-detail">
 <div class="form-main">
-<div class="prop-layout">
+{#- 1030: at >=768 one section shows at a time; a hash-less "Reporting & fees" link means the Stay fee (police links carry #ubyport). -#}
+<div class="prop-layout"{% if settings_section == 'reporting' %} data-start-section="sec-fee"{% endif %}>
 <nav class="prop-nav prop-wide-only" aria-label="{{ t('nav.settings') }}">
 <a href="#sec-basics"><span class="dot {{ 'g' if address_text else 'r' }}" aria-hidden="true"></span>{{ t('property_page.sec.basics.title') }}</a>
 <a href="#sec-police"><span class="dot {{ 'g' if police_ok else 'r' }}" aria-hidden="true"></span>{{ t('property_page.sec.police.title') }}</a>
