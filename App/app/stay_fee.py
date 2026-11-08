@@ -642,14 +642,14 @@ def hlaseni(group, issued_on: date) -> Dict[str, Any]:
         # adjustment (bed-days added or removed without naming guests) is part
         # of that number, not a line of its own: the office receives what is
         # due, and the adjustment history stays in UbyHost (owner, 2026-10-06).
-        for nights, rate in period.get("rate_segments") or [[period["rate_czk"], period["liable_nights"]]]:
-            rows.append({
-                "property_name": period["apartment"]["internal_name"],
-                "property_address": property_address(period["apartment"]),
-                "liable_nights": nights,
-                "rate_czk": rate,
-                "amount_czk": nights * rate,
-            })
+        liable = period["liable_nights"]
+        rows.append({
+            "property_name": period["apartment"]["internal_name"],
+            "property_address": property_address(period["apartment"]),
+            "liable_nights": liable,
+            "rate_czk": period["rate_czk"],
+            "amount_czk": liable * period["rate_czk"],
+        })
         for line in period["lines"]:
             if line["exempt_nights"]:
                 # A guest who turns 18 inside the period is "liable" overall
