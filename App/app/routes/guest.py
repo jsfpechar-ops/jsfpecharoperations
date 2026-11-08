@@ -1586,6 +1586,7 @@ def _form_context(
             ),
             "fee_estimate": _fee_box(apartment, reservation, values or {}, guest),
             "fee_obec_rule": _fee_obec_rule(apartment),
+            "fee_obec_unknown": not _fee_obec_rule(apartment),
             "fee_panel": (
                 _fee_pay_panel(apartment, reservation, context["t"], _qr_offered(request, reservation))
                 if remaining is not None and remaining <= 0
