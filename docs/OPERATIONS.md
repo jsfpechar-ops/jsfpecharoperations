@@ -532,11 +532,12 @@ tell you:
 - **Back up `data/secret_key` (or the `.env` holding `UBYHOST_SECRET_KEY`)
   together with the database.** A database restored without its key needs every
   UbyPort password re-entered and every TOTP secret re-enrolled — see above.
-- **Retention is by time, not count.** `UBYHOST_BACKUP_RETENTION_DAYS` (default
-  30) is the window; snapshots older than it are removed on each run, and the
-  newest snapshot is always kept even if it is older than the window. The
-  off-site copies must expire on the same window — OPS-2 adds that to the
-  Drive/S3 jobs.
+- **Retention is by time, not count.** `UBYHOST_BACKUP_RETENTION_DAYS` is the
+  local window (code default 30; **production sets 7**); snapshots older than it
+  are removed on each run, and the newest snapshot is always kept even if it is
+  older than the window. Off-site copies are kept 30 days: an S3 bucket
+  lifecycle rule expires them (`backup-s3.sh` never deletes), and
+  `backup-gdrive.sh` deletes Drive copies older than 30 days.
 - **`restore.sh` reads encrypted snapshots with the host identity.** Pass
   `AGE_IDENTITY_FILE=/path/on/host/to/ubyhost-backup.agekey` (never inside the
   volume); the script pulls the `.age` file out of the container, decrypts on

@@ -130,3 +130,48 @@ def test_backup_refuses_plaintext_dump_in_production(tmp_path):
     result = run_script("backup.sh", root, bindir, log, extra_env={"PG_RUNNING": "1"})
     assert result.returncode == 1
     assert "pg_dump" not in calls(log)
+
+
+PROD_ENV = "UBYHOST_DEPLOYMENT=production\nUBYHOST_BACKUP_AGE_RECIPIENT=age1testrecipient\n" \
+    "UBYHOST_BACKUP_PING_URL=https://ping.invalid/x\n"
+
+
+def add_curl_stub(bindir):
+    """A curl stub on PATH that records the ping instead of sending it."""
+    curl = bindir / "curl"
+    curl.write_text('#!/usr/bin/env bash\necho "curl $*" >> "$STUB_LOG"\n')
+    curl.chmod(0o755)
+
+
+def test_backup_fails_in_production_without_database_url_but_keeps_snapshot(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PROD_ENV)
+    add_curl_stub(bindir)
+    result = run_script("backup.sh", root, bindir, log, extra_env={"PG_RUNNING": "1"})
+    assert result.returncode == 1
+    assert "UBYHOST_DATABASE_URL is unset" in result.stderr
+    recorded = calls(log)
+    assert "backup_data.sh" in recorded
+    assert "pg_dump" not in recorded
+    assert "curl" not in recorded
+
+
+def test_backup_fails_in_production_when_postgres_not_running_before_any_snapshot(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PROD_ENV + PG_ENV)
+    add_curl_stub(bindir)
+    result = run_script("backup.sh", root, bindir, log, extra_env={"PG_RUNNING": "0"})
+    assert result.returncode == 1
+    assert "postgres container is not running" in result.stderr
+    recorded = calls(log)
+    assert "backup_data.sh" not in recorded
+    assert "pg_dump" not in recorded
+    assert "curl" not in recorded
+
+
+def test_backup_production_with_running_postgres_dumps_and_pings(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PROD_ENV + PG_ENV)
+    add_curl_stub(bindir)
+    result = run_script("backup.sh", root, bindir, log, extra_env={"PG_RUNNING": "1"})
+    assert result.returncode == 0, result.stderr
+    recorded = calls(log)
+    assert "pg_dump -U ubyhost -Fc ubyhost" in recorded
+    assert "curl -fsS -m 10 --retry 3 https://ping.invalid/x" in recorded

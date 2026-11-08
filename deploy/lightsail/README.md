@@ -41,8 +41,8 @@ Before the first production backup:
    backup **fails closed** without it, so no unencrypted copy is ever written.
 3. Optionally set `UBYHOST_BACKUP_RETENTION_DAYS` (default **30**). Snapshots
    older than the window are removed on each run; the newest is always kept.
-   Once Litestream replicates to S3, set **7**: Litestream plus S3 versioning
-   is the long-term copy, and 30 local full copies only fill the disk.
+   Production uses **7**: the daily S3 copy (30 days, bucket lifecycle rule) is
+   the long-term copy, and 30 local full copies only fill the disk.
 
 The snapshot folder then holds a single `ubyhost-backup.tar.age`. Restore it
 with the private identity on the host:
@@ -105,9 +105,10 @@ Uses **rclone** with an **IAM access key** (no browser login).
 
 1. **S3** → Create bucket (e.g. `ubyhost-backups-yourname`) in **eu-central-1**
    (Frankfurt). Block public access: **on**. Default encryption: **SSE-S3**.
-   Add a **lifecycle rule** that expires objects after
-   `UBYHOST_BACKUP_RETENTION_DAYS` days (default 30) — the bucket, not the
-   script, bounds off-site retention.
+   Add a **lifecycle rule** on the `UbyHost-backups/` prefix that expires
+   objects after 30 days (the off-site window in `docs/privacy/RETENTION.md`;
+   the local `UBYHOST_BACKUP_RETENTION_DAYS` is 7 in production) — the bucket,
+   not the script, bounds off-site retention.
 2. **IAM** → User → programmatic access → attach a policy limited to that
    bucket: `s3:PutObject`, `s3:ListBucket`, `s3:GetObject` on
    `arn:aws:s3:::bucket-name` and `arn:aws:s3:::bucket-name/*`
@@ -145,10 +146,10 @@ export UBYHOST_CONTAINER="$(docker compose ps --format '{{.Names}}' ubyhost | he
 UBYHOST_S3_BUCKET=your-bucket-name ./scripts/backup-s3.sh
 ```
 
-Weekly cron (example; set your bucket name):
+Daily cron (03:30 UTC, after the 03:00 local backup; example, set your bucket name):
 
 ```bash
-(crontab -l 2>/dev/null; echo "0 4 * * 0 cd /opt/ubyhost/deploy/lightsail && UBYHOST_S3_BUCKET=your-bucket-name ./scripts/backup-s3.sh >> /var/log/ubyhost-s3.log 2>&1") | crontab -
+(crontab -l 2>/dev/null; echo "30 3 * * * cd /opt/ubyhost/deploy/lightsail && UBYHOST_S3_BUCKET=your-bucket-name ./scripts/backup-s3.sh >> /var/log/ubyhost-s3.log 2>&1") | crontab -
 ```
 
 You can use **both** Drive and S3 (two cron lines). Pick one off-site copy if you want bare minimum.

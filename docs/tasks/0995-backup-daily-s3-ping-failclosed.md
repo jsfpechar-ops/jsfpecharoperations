@@ -1,6 +1,7 @@
 # 0995: Daily off-site S3 backup, fail-closed Postgres dump, dead-man ping docs
 
-Status: todo
+Status: review
+Note: step 10 (the K-BKP-S3-403 known-issues line) and its grep in step 11 were NOT applied (known-issues cap); see 0995-fix-1. Skip them.
 Depends on: none | Base commit: 47640cf | Branch: task/0995-backup-daily-s3
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
