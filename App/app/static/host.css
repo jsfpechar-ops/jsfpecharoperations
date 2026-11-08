@@ -1564,3 +1564,7 @@ body.host-workspace {
 .host-workspace .bsite-bookings > div { padding-block: var(--space-3); }
 .host-workspace .bsite-bookings dd .ui-btn-group { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: var(--space-3); }
 .host-workspace .bsite-bookings dd .ui-btn-group > form { margin: 0; }
+@media (max-width: 639px) {
+  .host-workspace .bsite-bookings dd .ui-btn-group { display: grid; grid-template-columns: repeat(2, max-content); justify-items: start; }
+  .host-workspace .bsite-bookings dd .ui-btn-group > .ui-badge { grid-column: 1 / -1; }
+}

@@ -2,7 +2,7 @@
 {% block title %}{{ t('pp.book.req_title') }}{% endblock %}
 {% block content %}
 {% include "_pp_booking_css.html" %}
-<main class="pp"><section class="pp-bk">
+<div class="pp-bk pp-bk-page pp-bk-req">
   <h1>{{ t('pp.book.req_title') }} · {{ page.name }}</h1>
   <p>{{ t('pp.book.req_lead', dates=dates, total=total) }}</p>
   {% for r in rails %}
@@ -22,5 +22,5 @@
   </section>
   {% endfor %}
   <p class="ui-sub">{{ t('pp.book.req_expired') if expired else t('pp.book.req_hold') }}</p>
-</section></main>
+</div>
 {% endblock %}
