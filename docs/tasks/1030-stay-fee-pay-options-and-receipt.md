@@ -52,3 +52,6 @@ Screenshots: the guest hub with the pay box at 390, 768, 1280 into `docs/tasks/s
 - [ ] Report written to `docs/tasks/1030-report.md`
 
 ## 8. Stop and ask if an anchor is not found, or a key is already defined elsewhere.
+
+## 9. Report
+See [1030-report](1030-report.md).
