@@ -2982,3 +2982,22 @@ body.v2 .csv-export-dialog input:focus-visible,body.v2 .csv-export-dialog select
 body.v2 .csv-export-dialog .ui-btn:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 /* 1003 fix: field "?" card on phones, same width as app.js place() */
 @media (max-width:599px){body.v2 .help-tip .help-tip-body{width:min(360px,calc(100vw - 32px));max-width:calc(100vw - 32px)}}
+/* 1006: Wolt-style section cards. One card per section, quiet label/value rows, no nested boxes. */
+body.v2 .ui-page-narrow{max-width:720px;margin-left:auto;margin-right:auto;width:100%;box-sizing:border-box}
+body.v2 .ui-section-card,body.v2 .ui-page-narrow > .ui-section{display:block;min-width:0;margin:0 0 16px;padding:16px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:none;box-sizing:border-box}
+body.v2 .ui-section-head,body.v2 .ui-section-card > .ui-section-h,body.v2 .ui-page-narrow > .ui-section > .ui-section-h{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin:0 0 12px}
+body.v2 .ui-section-head > h2,body.v2 .ui-section-card > .ui-section-h > h2,body.v2 .ui-page-narrow > .ui-section > .ui-section-h > h2{margin:0;font-size:16px;font-weight:700;line-height:1.3;min-width:0}
+body.v2 .ui-kv,body.v2 .ui-page-narrow dl.ui-facts{display:grid;gap:0;margin:0}
+body.v2 .ui-kv-row,body.v2 .ui-page-narrow dl.ui-facts > div{display:grid;grid-template-columns:minmax(0,40%) minmax(0,1fr);gap:4px 16px;align-items:baseline;padding:12px 0;border-top:1px solid var(--line)}
+body.v2 .ui-kv-row:first-child,body.v2 .ui-page-narrow dl.ui-facts > div:first-child{border-top:0;padding-top:0}
+body.v2 .ui-kv-row:last-child,body.v2 .ui-page-narrow dl.ui-facts > div:last-child{padding-bottom:0}
+body.v2 .ui-kv-row > :first-child,body.v2 .ui-page-narrow dl.ui-facts dt{margin:0;font-size:14px;color:var(--ink3)}
+body.v2 .ui-kv-row > :last-child,body.v2 .ui-page-narrow dl.ui-facts dd{margin:0;min-width:0;font-size:15px;line-height:1.5;color:var(--ink);overflow-wrap:anywhere}
+body.v2 .ui-note-strip{margin:12px 0 0;padding:10px 12px;background:var(--bg);border:0;border-radius:8px;font-size:14px;line-height:1.45;color:var(--ink3)}
+body.v2 .ui-section-card .ui-form-actions,body.v2 .ui-page-narrow > .ui-section .ui-form-actions{justify-content:flex-end;margin-top:12px}
+body.v2 details.ui-section-card{padding:0;overflow:visible}
+body.v2 details.ui-section-card > summary{padding:14px 16px;min-height:44px;box-sizing:border-box}
+@media (max-width:599px){body.v2 .ui-kv-row,body.v2 .ui-page-narrow dl.ui-facts > div{grid-template-columns:minmax(0,1fr)}}
+body.v2 .billing-change-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-start;align-items:flex-start}
+body.v2 .billing-change-row > form{margin:0}
+body.v2 .billing-change-row .ui-form-actions{justify-content:flex-start;margin-top:0}

@@ -2,6 +2,12 @@
   "master_version": "2.0.0",
   "classes": [
     "ui-details-box",
+    "ui-section-card",
+    "ui-section-head",
+    "ui-kv",
+    "ui-kv-row",
+    "ui-note-strip",
+    "ui-page-narrow",
     "form",
     "crumb",
     "fields",
