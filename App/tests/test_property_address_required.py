@@ -11,7 +11,7 @@ from app.main import app
 from tests.conftest import login_as
 
 FIELDS = ("addr_obec", "addr_house_no", "addr_zip")
-OPTIONAL_FIELDS = ("addr_okres", "addr_obec_cast", "addr_street", "addr_orient_no")
+OPTIONAL_FIELDS = ("addr_okres", "addr_obec_cast", "addr_orient_no")
 
 
 def setup_module():
@@ -38,6 +38,7 @@ def _form(host, **overrides):
         "addr_obec": "Praha",
         "addr_house_no": "12",
         "addr_zip": "11000",
+        "addr_street": "Synthetic Street",
     }
     data.update(overrides)
     return data
@@ -194,3 +195,8 @@ def test_create_page_marks_the_three_parts_required_and_the_rest_optional():
             assert " required" not in tag, (lang, field)
             label = re.search(rf'<label for="{field}">(.*?)</label>', page, re.S).group(1)
             assert optional not in label, (lang, field)  # 0204: the asterisk marks required fields instead
+        # Owner decision 2026-11-08: the street is mandatory, starred like house number.
+        tag = re.search(r'<input[^>]*id="addr_street"[^>]*>', page).group(0)
+        assert " required" in tag and 'aria-required="true"' in tag, (lang, "addr_street")
+        label = re.search(r'<label for="addr_street">(.*?)</label>', page, re.S).group(1)
+        assert optional not in label, (lang, "addr_street")
