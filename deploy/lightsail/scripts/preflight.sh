@@ -60,10 +60,6 @@ esac
 if [ "${UBYHOST_WEB_WORKERS:-2}" -gt 16 ]; then
   die "UBYHOST_WEB_WORKERS must be a whole number from 1 to 16"
 fi
-
-case "${LITESTREAM_S3_PATH:-ubyhost/production}" in
-    *production*) die "staging must replicate to its own LITESTREAM_S3_PATH, not ${LITESTREAM_S3_PATH:-ubyhost/production}" ;;
-  esac
 elif [ "${DEPLOYMENT}" != "production" ]; then
   warn "UBYHOST_DEPLOYMENT=${DEPLOYMENT} — this Lightsail stack is meant to be production or staging"
 fi
@@ -120,8 +116,8 @@ if [ "${DEPLOYMENT}" = "production" ] && [ -z "${UBYHOST_BACKUP_PING_URL:-}" ]; 
   die "UBYHOST_BACKUP_PING_URL is empty — a failing nightly backup would go unnoticed"
 fi
 
-# WP06: web + scheduler worker + litestream + Caddy need at least the 2 GB
-# bundle. WP32: the compose defaults (web 2g, worker 1g, litestream 256m,
+# WP06: web + scheduler worker + Caddy need at least the 2 GB
+# bundle. WP32: the compose defaults (web 2g, worker 1g,
 # caddy 256m) are sized for the 8 GB production server; a smaller server sets
 # lower UBYHOST_*_MEM values in .env (see docs/LIGHTSAIL.md, Sizing).
 mem_kb="$(awk '/^MemTotal:/ {print $2}' /proc/meminfo 2>/dev/null || echo 0)"
@@ -131,32 +127,6 @@ if [ "${mem_kb:-0}" -gt 0 ] && [ "${mem_kb}" -lt 1700000 ]; then
   else
     die "only $((mem_kb / 1024)) MB RAM — move to the 2 GB Lightsail bundle first (or set UBYHOST_ALLOW_SMALL_HOST=1)"
   fi
-fi
-
-# WP05: the litestream service replicates the database to S3 continuously.
-# Set UBYHOST_LITESTREAM_ENABLED=0 to deploy without S3 (nightly backup only).
-# shellcheck disable=SC1091
-source "$(dirname "$0")/litestream_env.sh"
-if [ "${litestream_enabled}" = "0" ]; then
-  if [ "${litestream_auto_disabled}" = "1" ] && [ "${DEPLOYMENT}" = "production" ]; then
-    warn "Litestream S3 variables are empty — deploying without continuous replica (nightly backup only). Set LITESTREAM_* and UBYHOST_LITESTREAM_ENABLED=1 when S3 is ready."
-  elif [ "${DEPLOYMENT}" = "production" ]; then
-    warn "UBYHOST_LITESTREAM_ENABLED=0 — no continuous S3 replica; rely on nightly backup until Litestream is configured"
-  fi
-elif [ "${DEPLOYMENT}" = "production" ]; then
-  for var in LITESTREAM_S3_BUCKET LITESTREAM_ACCESS_KEY_ID LITESTREAM_SECRET_ACCESS_KEY; do
-    if [ -z "${!var:-}" ]; then
-      die "${var} is empty — Litestream cannot replicate the database to S3 (see README.md, Litestream), or set UBYHOST_LITESTREAM_ENABLED=0"
-    fi
-  done
-  if [ -z "${LITESTREAM_HEARTBEAT_URL:-}" ]; then
-    warn "LITESTREAM_HEARTBEAT_URL is empty — stalled replication would go unnoticed"
-  fi
-fi
-if [ "${litestream_enabled}" = "1" ]; then
-  case "${LITESTREAM_S3_PATH:-ubyhost/production}" in
-    /*|*/) die "LITESTREAM_S3_PATH must not start or end with a slash" ;;
-  esac
 fi
 
 if [ -n "${UBYHOST_SECRET_KEY:-}" ] && [ "${#UBYHOST_SECRET_KEY}" -lt 32 ]; then

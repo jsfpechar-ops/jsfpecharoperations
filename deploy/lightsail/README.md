@@ -23,7 +23,7 @@ chmod +x scripts/*.sh
 ./scripts/deploy.sh
 ```
 
-Useful later: `./scripts/status.sh`, `./scripts/backup.sh`, `./scripts/restore.sh`, `./scripts/restore_test.sh`, `./scripts/smoke-remote.sh`.
+Useful later: `./scripts/status.sh`, `./scripts/backup.sh`, `./scripts/restore.sh`, `./scripts/smoke-remote.sh`.
 PostgreSQL cutover (0463, owner runs it once): `./scripts/pg-cutover.sh rehearse`, then `cutover`; `rollback` returns `.env` to SQLite.
 After cutover, `AGE_IDENTITY_FILE=/root/ubyhost-backup.agekey ./scripts/pg-restore.sh <stamp>` restores the PostgreSQL dump (`ubyhost-pg.dump.age`) that each snapshot folder carries; it refuses while `.env` still has `UBYHOST_DB`.
 
@@ -41,8 +41,8 @@ Before the first production backup:
    backup **fails closed** without it, so no unencrypted copy is ever written.
 3. Optionally set `UBYHOST_BACKUP_RETENTION_DAYS` (default **30**). Snapshots
    older than the window are removed on each run; the newest is always kept.
-   Once Litestream replicates to S3, set **7**: Litestream plus S3 versioning
-   is the long-term copy, and 30 local full copies only fill the disk.
+   Production uses **7**: the daily S3 copy (30 days, bucket lifecycle rule) is
+   the long-term copy, and 30 local full copies only fill the disk.
 
 The snapshot folder then holds a single `ubyhost-backup.tar.age`. Restore it
 with the private identity on the host:
@@ -105,9 +105,10 @@ Uses **rclone** with an **IAM access key** (no browser login).
 
 1. **S3** → Create bucket (e.g. `ubyhost-backups-yourname`) in **eu-central-1**
    (Frankfurt). Block public access: **on**. Default encryption: **SSE-S3**.
-   Add a **lifecycle rule** that expires objects after
-   `UBYHOST_BACKUP_RETENTION_DAYS` days (default 30) — the bucket, not the
-   script, bounds off-site retention.
+   Add a **lifecycle rule** on the `UbyHost-backups/` prefix that expires
+   objects after 30 days (the off-site window in `docs/privacy/RETENTION.md`;
+   the local `UBYHOST_BACKUP_RETENTION_DAYS` is 7 in production) — the bucket,
+   not the script, bounds off-site retention.
 2. **IAM** → User → programmatic access → attach a policy limited to that
    bucket: `s3:PutObject`, `s3:ListBucket`, `s3:GetObject` on
    `arn:aws:s3:::bucket-name` and `arn:aws:s3:::bucket-name/*`
@@ -145,140 +146,19 @@ export UBYHOST_CONTAINER="$(docker compose ps --format '{{.Names}}' ubyhost | he
 UBYHOST_S3_BUCKET=your-bucket-name ./scripts/backup-s3.sh
 ```
 
-Weekly cron (example; set your bucket name):
+Daily cron (03:30 UTC, after the 03:00 local backup; example, set your bucket name):
 
 ```bash
-(crontab -l 2>/dev/null; echo "0 4 * * 0 cd /opt/ubyhost/deploy/lightsail && UBYHOST_S3_BUCKET=your-bucket-name ./scripts/backup-s3.sh >> /var/log/ubyhost-s3.log 2>&1") | crontab -
+(crontab -l 2>/dev/null; echo "30 3 * * * cd /opt/ubyhost/deploy/lightsail && UBYHOST_S3_BUCKET=your-bucket-name ./scripts/backup-s3.sh >> /var/log/ubyhost-s3.log 2>&1") | crontab -
 ```
 
 You can use **both** Drive and S3 (two cron lines). Pick one off-site copy if you want bare minimum.
 
 </details>
 
-## Litestream: continuous S3 replica (WP05)
+## Backups and recovery (Litestream retired 2026-11-07)
 
-The `litestream` service (image `litestream/litestream:0.5.17`, config
-`litestream.yml`) streams every change of `/data/ubyhost.db` to
-`s3://$LITESTREAM_S3_BUCKET/$LITESTREAM_S3_PATH` in `eu-central-1`, about
-every 60 seconds by default (`LITESTREAM_SYNC_INTERVAL`; set 120s or 300s in
-`.env` to cut S3 request cost further). That is the data-loss window if the VM is lost. The nightly
-age-encrypted backup above stays as a second, independent copy.
-
-What the replica does **not** hold:
-
-- the secret key (`UBYHOST_SECRET_KEY` in `.env` or `/data/secret_key`). It
-  decrypts document numbers, signatures, TOTP secrets and UbyPort passwords.
-  Keep a copy in the owner's password manager. Without it a restored database
-  opens but every encrypted field is unreadable;
-- passport photos under `/data/passport_photos` (short-lived by design);
-- client-side encryption. Litestream 0.5 has none. The bucket's default
-  encryption (SSE-S3), Block Public Access and the dedicated IAM user protect
-  it. Guest names and stay dates are in it in the clear, like in the live file.
-
-### One-time AWS setup
-
-1. S3 → Create bucket, for example `ubyhost-litestream-<suffix>`, region
-   **eu-central-1**. Block all public access: **on**. Bucket versioning:
-   **enable**. Default encryption: **SSE-S3**.
-2. Bucket → Management → Lifecycle rule `expire-noncurrent`, whole bucket:
-   "Permanently delete noncurrent versions of objects" after **30** days, and
-   "Delete expired object delete markers". Do not add a rule that expires
-   current versions: Litestream removes old files itself (7-day window).
-3. IAM → Users → Create user `ubyhost-litestream` (no console access). Attach
-   an inline policy (replace the bucket name; the prefix must match
-   `LITESTREAM_S3_PATH`; `ubyhost/*` also covers the new prefix you switch to
-   after a restore):
-
-   ```json
-   {
-     "Version": "2012-10-17",
-     "Statement": [
-       {
-         "Sid": "ListReplicaPrefix",
-         "Effect": "Allow",
-         "Action": "s3:ListBucket",
-         "Resource": "arn:aws:s3:::ubyhost-litestream-SUFFIX",
-         "Condition": {"StringLike": {"s3:prefix": ["ubyhost/*", "ubyhost"]}}
-       },
-       {
-         "Sid": "ReadWriteReplicaObjects",
-         "Effect": "Allow",
-         "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
-         "Resource": "arn:aws:s3:::ubyhost-litestream-SUFFIX/ubyhost/*"
-       }
-     ]
-   }
-   ```
-
-4. Create an access key for that user ("Application running outside AWS").
-   Put it in the server `.env` as `LITESTREAM_ACCESS_KEY_ID` and
-   `LITESTREAM_SECRET_ACCESS_KEY`, and the bucket as `LITESTREAM_S3_BUCKET`.
-5. Optional: a healthchecks.io check with period 5 min and grace 10 min; put
-   its ping URL in `LITESTREAM_HEARTBEAT_URL`.
-
-Then `./scripts/deploy.sh` (preflight refuses a production deploy while the
-bucket or keys are empty), and:
-
-```bash
-docker compose logs --tail=30 litestream   # expect "snapshot complete"
-./scripts/restore_test.sh                  # must end with "Restore drill passed"
-```
-
-Run `./scripts/restore_test.sh` again once per quarter. It restores the
-newest replica into a temporary file inside a throwaway container, checks
-`PRAGMA integrity_check`, compares row counts of the main tables with the live
-database and deletes the copy. Non-zero exit on any mismatch.
-
-### S3 request cost (Pro tuning)
-
-Litestream bill is almost always **PUT/LIST requests**, not stored GB. Defaults:
-`LITESTREAM_SYNC_INTERVAL=60s` and `LITESTREAM_VALIDATION_INTERVAL=168h` (weekly check).
-To cut cost further, set in production `.env` before `./scripts/deploy.sh`:
-
-```bash
-LITESTREAM_SYNC_INTERVAL=120s
-# or LITESTREAM_SYNC_INTERVAL=300s
-LITESTREAM_VALIDATION_INTERVAL=168h
-```
-
-Tradeoff: if the VM dies without warning, you can lose up to that many seconds of
-database changes off-site (local daily backup still covers longer gaps).
-
-### Runbook: the VM is lost
-
-1. Create a new Lightsail instance (Frankfurt, same bundle) and follow
-   [docs/LIGHTSAIL.md](../../docs/LIGHTSAIL.md) up to, but not including,
-   `./scripts/deploy.sh`. Restore `.env` from the password manager, including
-   `UBYHOST_SECRET_KEY`. If production kept the key only in
-   `/data/secret_key`, set `UBYHOST_SECRET_KEY` in `.env` to the saved copy.
-2. Build the image and create the data volume with the app's ownership,
-   without starting the app (an app start would create an empty database):
-
-   ```bash
-   cd /opt/ubyhost/deploy/lightsail
-   docker compose build
-   docker compose run --rm --no-deps --entrypoint true ubyhost
-   ```
-
-3. Restore the newest replica into the volume:
-
-   ```bash
-   docker compose run --rm --no-deps litestream \
-     restore -config /etc/litestream.yml -integrity-check full /data/ubyhost.db
-   ```
-
-   For a point in time, add `-timestamp 2026-10-01T12:00:00Z`.
-4. In `.env`, set `LITESTREAM_S3_PATH` to a new prefix, for example
-   `ubyhost/production-YYYYMMDD`. The new server must never replicate into
-   the old prefix: two histories under one path can make it unrestorable.
-5. `./scripts/deploy.sh`, sign in, open one stay, then
-   `./scripts/restore_test.sh`.
-6. Move the static IP (or DNS) to the new instance.
-
-If the replica is unusable, fall back to the newest age-encrypted snapshot
-(`restore.sh`, or the S3/Drive off-site copy). `restore.sh` stops Litestream
-and leaves it stopped; set a new `LITESTREAM_S3_PATH`, then
-`docker compose up -d litestream`.
+Litestream is gone. The app runs on PostgreSQL, so recovery is the age-encrypted `backup.sh` pg_dump (daily and before each deploy), the weekly Google Drive copy and the daily S3 copy. Restore with `./scripts/pg-restore.sh <stamp>`; `./scripts/restore.sh` remains only for old SQLite snapshots. The pre-cutover S3 replica stays untouched as an archive.
 
 ## Staging server (Step 0)
 
@@ -296,13 +176,11 @@ COMPOSE_PROFILES=staging                 # starts the mock-ubyport service
 UBYHOST_MOCK_URL=http://mock-ubyport:8081/ws_uby/ws_uby.svc
 UBYHOST_DOMAIN=staging.example.com        # its own domain
 UBYHOST_PUBLIC_BASE_URL=https://staging.example.com
-LITESTREAM_S3_PATH=staging/ubyhost        # its own prefix, its own IAM user
 UBYHOST_MAIL_BACKEND=console              # claim links appear in Settings
 UBYHOST_ALLOW_SMALL_HOST=1                # 1 GB bundle; limits are caps, traffic is tiny
 UBYHOST_WEB_WORKERS=2                     # WP32: smaller than production
 UBYHOST_WEB_MEM=896m
 UBYHOST_WORKER_MEM=448m
-UBYHOST_LITESTREAM_MEM=128m
 UBYHOST_CADDY_MEM=128m
 ```
 
@@ -329,8 +207,7 @@ a PR: this repository is public. If the password leaks, ask the police for a new
 one (ŘSCP, Oddělení CIS).
 
 `preflight.sh` refuses a staging `.env` whose UbyPort is neither `mock` nor
-`test`, a `mock` staging without the profile or the mock URL, or a Litestream
-prefix containing `production`, and refuses `COMPOSE_PROFILES=staging` on
+`test`, a `mock` staging without the profile or the mock URL, and refuses `COMPOSE_PROFILES=staging` on
 production.
 
 Deploy from GitHub: Actions → **Deploy staging** → Run workflow → pick the

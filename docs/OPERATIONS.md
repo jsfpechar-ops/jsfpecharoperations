@@ -532,11 +532,12 @@ tell you:
 - **Back up `data/secret_key` (or the `.env` holding `UBYHOST_SECRET_KEY`)
   together with the database.** A database restored without its key needs every
   UbyPort password re-entered and every TOTP secret re-enrolled — see above.
-- **Retention is by time, not count.** `UBYHOST_BACKUP_RETENTION_DAYS` (default
-  30) is the window; snapshots older than it are removed on each run, and the
-  newest snapshot is always kept even if it is older than the window. The
-  off-site copies must expire on the same window — OPS-2 adds that to the
-  Drive/S3 jobs.
+- **Retention is by time, not count.** `UBYHOST_BACKUP_RETENTION_DAYS` is the
+  local window (code default 30; **production sets 7**); snapshots older than it
+  are removed on each run, and the newest snapshot is always kept even if it is
+  older than the window. Off-site copies are kept 30 days: an S3 bucket
+  lifecycle rule expires them (`backup-s3.sh` never deletes), and
+  `backup-gdrive.sh` deletes Drive copies older than 30 days.
 - **`restore.sh` reads encrypted snapshots with the host identity.** Pass
   `AGE_IDENTITY_FILE=/path/on/host/to/ubyhost-backup.agekey` (never inside the
   volume); the script pulls the `.age` file out of the container, decrypts on
@@ -556,8 +557,212 @@ tell you:
 - **The last run is recorded** in `$BACKUP_ROOT/.last_success.json` (mode 0600):
   `at`, `encrypted`, `bytes`, `retention_days`. Nothing in the app reads it yet
   (GDPR plan FE-3); monitor backups with `UBYHOST_BACKUP_PING_URL`.
+- **Litestream is retired (2026-11-07).** The database is PostgreSQL; recovery is the pg_dump in the age-encrypted snapshot (daily and before each deploy), the weekly Drive copy and the daily S3 copy. The old SQLite replica in S3 is kept untouched as an archive until the owner deletes it.
 
 - **PostgreSQL dump (0464).** `backup.sh` writes `ubyhost-pg.dump.age` (`pg_dump -Fc`, age-encrypted, never plaintext) into the newest snapshot folder when the `postgres` service runs. Restore with `pg-restore.sh <stamp>`; the rehearsal (`pg-cutover.sh rehearse`) dumps, restores into `ubyhost_restoretest` and verifies it against SQLite.
+
+### WAL-G continuous archiving and point-in-time recovery
+
+The daily age-encrypted `pg_dump` (above) stays the primary backup. WAL-G adds point-in-time recovery for the last 7 days; at most about 5 minutes of writes can be lost (`archive_timeout=300`). Downtime is acceptable here; losing data is not. Postgres keeps its pinned Alpine image and has no network: `archive_command` copies each finished WAL file durably into the `ubyhost-walspool` volume, and the `walg` container (profile `walg`, Debian Postgres 16 image with WAL-G) uploads it to S3 and deletes the local copy only after the upload succeeded (briefs 1022, 1023). The daily base backup runs in `walg` through the Postgres socket and a read-only data mount.
+
+- **Cost.** About USD 0.05 a month in PUT requests plus a few cents of storage. WAL-G does not read back in normal running and `walg-check.sh` never calls S3. Check Cost Explorer after 7 days; expect under USD 1 a month.
+- **Retention.** 7 days: `wal-g delete retain FULL 7 --confirm` after each daily base backup, plus an S3 lifecycle rule at 10 days (see the RETENTION table row).
+- **Encryption and key custody.** WAL-G encrypts on the server before upload with `WALG_LIBSODIUM_KEY` (32 random bytes as 64 hex characters, `openssl rand -hex 32`). It is a different key from the age identity. Keep it in the password manager plus one offline copy; it is also in `.env.walg` on the server (mode 600, root). Never in the repo or a chat. Whoever holds it and the S3 keys can read the archives; if it is lost, every archive is unreadable and only the pg_dump backups remain.
+- **Alarms.** `walg-check.sh` (cron every 10 minutes) fails when `walg` is not running, the last archive is older than 30 minutes, `failed_count` rises, a file sits in the spool longer than 30 minutes, the spool is over 2 GB or `pg_wal` is over 5 GB. It pings `UBYHOST_WALG_PING_URL` only when healthy; `walg-backup.sh` pings `UBYHOST_WALG_BACKUP_PING_URL` only after a good base backup. A missing ping is the alarm. On an alarm: `./scripts/walg-check.sh`, then `docker compose logs --tail 50 walg` and `docker compose logs --tail 50 postgres`. With no database writes for 30 minutes no WAL is archived: a false alarm; raise `WALG_MAX_ARCHIVE_AGE_S` in `.env` if it repeats. **Never delete files from `pg_wal` by hand.**
+
+#### Owner rollout (once; in a quiet hour; about 60 minutes)
+
+Order matters: AWS, key and `.env.walg` come before the deploy; the drills come before you rely on it.
+
+AWS (about 15 minutes):
+
+1. Sign in to the AWS console. Top right, choose region **Europe (Frankfurt) eu-central-1**.
+2. Open **S3**, click **Create bucket**. Name: `ubyhost-wal-` plus 8 random lowercase letters (no account id in the name). Keep **Block all public access** ticked, **Versioning** off, default encryption SSE-S3. Click **Create bucket**. Use a separate bucket from the pg_dump copies, so the rule below cannot touch them. Write the name in the password manager, not in the repo.
+3. Open the new bucket, tab **Management**, **Create lifecycle rule**. Name `expire-wal`. Scope: **Apply to all objects in the bucket**, tick the confirmation box. Actions: tick **Expire current versions of objects** with **Days after object creation: 10**, and tick **Delete expired object delete markers or incomplete multipart uploads**, then **Delete incomplete multipart uploads**, **Number of days: 1**. Click **Create rule**.
+4. Open **IAM**, **Policies**, **Create policy**, tab **JSON**, paste this (replace both `BUCKET` with your bucket name), click **Next**, name it `ubyhost-walg`, click **Create policy**:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ListOnlyThePrefix",
+      "Effect": "Allow",
+      "Action": ["s3:ListBucket"],
+      "Resource": "arn:aws:s3:::BUCKET",
+      "Condition": {"StringLike": {"s3:prefix": ["postgres-wal", "postgres-wal/*"]}}
+    },
+    {
+      "Sid": "ObjectsUnderThePrefix",
+      "Effect": "Allow",
+      "Action": ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"],
+      "Resource": "arn:aws:s3:::BUCKET/postgres-wal/*"
+    },
+    {
+      "Sid": "Location",
+      "Effect": "Allow",
+      "Action": ["s3:GetBucketLocation"],
+      "Resource": "arn:aws:s3:::BUCKET"
+    }
+  ]
+}
+```
+
+5. **IAM**, **Users**, **Create user**, name `ubyhost-walg`, no console access, **Attach policies directly**: tick `ubyhost-walg`, **Create user**. Open the user, tab **Security credentials**, **Create access key**, choose **Application running outside AWS**, copy both values into the password manager (the secret is shown once).
+
+Key and dead-man checks (about 5 minutes):
+
+6. On your laptop: `openssl rand -hex 32`. Save the 64 characters in the password manager and in your offline copy now.
+7. In your dead-man service (healthchecks.io) create two new checks: `ubyhost-walg-check` (period 10 minutes, grace 30 minutes) and `ubyhost-walg-backup` (period 1 day, grace 2 hours). Copy both ping URLs.
+
+Server, before the deploy (about 15 minutes; `cd /opt/ubyhost/deploy/lightsail` first):
+
+8. Make sure 1022 and 1023 are merged and pulled: `git log --oneline -3`.
+9. Create the secrets file: `sudo install -m 600 -o root -g root /dev/null .env.walg && sudo nano .env.walg`, paste this, fill in the four values, save (Ctrl+O, Enter, Ctrl+X):
+
+```
+WALG_S3_PREFIX=s3://BUCKET/postgres-wal
+AWS_REGION=eu-central-1
+AWS_ACCESS_KEY_ID=<from step 5>
+AWS_SECRET_ACCESS_KEY=<from step 5>
+WALG_COMPRESSION_METHOD=zstd
+WALG_LIBSODIUM_KEY=<from step 6>
+WALG_LIBSODIUM_KEY_TRANSFORM=hex
+WALG_UPLOAD_CONCURRENCY=2
+PGHOST=/var/run/postgresql
+PGUSER=ubyhost
+PGDATABASE=ubyhost
+```
+
+   `.env.*` is git-ignored. Check: `ls -l .env.walg` shows `-rw------- 1 root root`.
+10. Create the spool volume owned by the postgres user (uid 70) of the production image: `docker volume create ubyhost-walspool && docker run --rm --network none --user root -v ubyhost-walspool:/walspool postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab sh -c 'chown 70:70 /walspool && chmod 700 /walspool && sync /walspool && ls -ldn /walspool'`. Expected: a line starting `drwx------` with `70 70`. Compose later warns that this volume "already exists but was not created by Docker Compose": harmless. (If `sync /walspool` errors here, stop and tell the orchestrator: the `archive_command` needs it.)
+11. Edit `.env` (`sudo nano .env`): add `UBYHOST_PG_ARCHIVE=on`, `UBYHOST_WALG_PING_URL=<check URL>` and `UBYHOST_WALG_BACKUP_PING_URL=<backup URL>` from step 7. If a `COMPOSE_PROFILES=` line exists, add `,walg` to its end (for example `COMPOSE_PROFILES=monitoring,walg`); if not, add `COMPOSE_PROFILES=walg`. Save.
+12. Build the sidecar and test the S3 keys before anything changes in Postgres: `docker compose build walg 2>&1 | tail -5`, then `docker compose run --rm --no-deps walg wal-g backup-list 2>&1 | tail -5`. Expected: no error, a message that no backups were found. An `AccessDenied` or `NoSuchBucket` error: fix `.env.walg` and repeat; do not deploy.
+13. Deploy: `./scripts/deploy.sh 2>&1 | tail -30`. It takes the mandatory pre-deploy pg_dump first (the output shows "Mandatory pre-deploy backup" and a stamp: write the stamp down). Postgres restarts once, because `archive_mode` only changes on restart; the app is unavailable for well under a minute.
+
+Verify (about 10 minutes):
+
+14. Wait 10 minutes, then `docker compose exec -T postgres psql -U ubyhost -d ubyhost -c "SELECT archived_count, failed_count, last_archived_time FROM pg_stat_archiver;"`. Expected: `archived_count` above 0 and `failed_count` 0. Then `docker compose logs --tail 20 walg` (no errors; an error with "read-only file system" or "libsodium": run the rollback below and tell the orchestrator) and `docker compose exec -T postgres ls /walspool` (empty or one or two files).
+15. First base backup by hand: `./scripts/walg-backup.sh 2>&1 | tail -10`, then `docker compose exec -T walg wal-g backup-list`. Expected: one backup.
+16. Add the two cron lines from [LIGHTSAIL](LIGHTSAIL.md) (WAL-G point-in-time recovery), then `./scripts/walg-check.sh`. Expected: `walg-check ok`, and the healthchecks.io check turns green.
+17. Do drill 1 and, at least 20 minutes after step 15, drill 2 below. **Do not rely on WAL-G until drill 2 has passed once.** Write the date and result of each drill in the password manager note.
+
+#### Shared step: the row-count query (both drills)
+
+Run once per drill session, from `/opt/ubyhost/deploy/lightsail`. It writes a query file and the production counts, one line per table: `table rows`.
+
+```
+cat > /dev/shm/counts.sql <<'SQL'
+SELECT c.relname, (xpath('/row/n/text()', query_to_xml(format('SELECT count(*) AS n FROM %I.%I', n.nspname, c.relname), false, true, '')))[1]::text
+FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE c.relkind = 'r' AND n.nspname = 'public' ORDER BY 1;
+SQL
+docker compose exec -T postgres psql -U ubyhost -d ubyhost -At -F ' ' < /dev/shm/counts.sql | LC_ALL=C sort > /dev/shm/counts-prod.txt
+wc -l /dev/shm/counts-prod.txt
+```
+
+Compare a drill's counts file (`/dev/shm/counts-drill.txt`) with production:
+
+```
+LC_ALL=C join -v 1 /dev/shm/counts-prod.txt /dev/shm/counts-drill.txt
+LC_ALL=C join /dev/shm/counts-prod.txt /dev/shm/counts-drill.txt > /dev/shm/counts-both.txt
+awk '$2 > 0 && $3 == 0 {print "EMPTY IN RESTORE:", $1; bad=1} END {exit bad}' /dev/shm/counts-both.txt && echo "counts ok"
+cat /dev/shm/counts-both.txt
+```
+
+Pass: the first command prints nothing (no table is missing), the third prints `counts ok`, and each line (`table production restored`) shows close numbers, in particular for `user_account`, `legal_entity`, `apartment`, `reservation`, `guest` and `submission` (the tables `deploy.sh` counts). Differences are only the writes and retention deletions since the restore point.
+
+#### Drill 1: restore the daily pg_dump (mandatory; quarterly, and after any backup change)
+
+This is the only test of the primary backup. Production is not touched: the dump is restored into a throwaway container with the production image and no network. The age identity is needed for this drill only; it stays in memory (`/dev/shm`) and is shredded at the end.
+
+```
+cd /opt/ubyhost/deploy/lightsail
+STAMP="$(docker compose exec -T ubyhost sh -c 'ls -1 /data/backups | sort -r | sed -n 1p' | tr -d '\r')"; echo "$STAMP"
+docker cp "$(docker compose ps -q ubyhost)":/data/backups/"$STAMP"/ubyhost-pg.dump.age /dev/shm/drill.dump.age
+ls -l /dev/shm/drill.dump.age
+(umask 077; cat > /dev/shm/drill.agekey)
+```
+
+After the last line, paste the private age identity from the password manager (the `AGE-SECRET-KEY-1...` line), press Enter, then Ctrl+D. Then:
+
+```
+docker run -d --name pgdump-drill --network none -e POSTGRES_USER=ubyhost -e POSTGRES_DB=ubyhost -e POSTGRES_HOST_AUTH_METHOD=trust postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
+until docker logs pgdump-drill 2>&1 | grep -q 'PostgreSQL init process complete'; do sleep 2; done; sleep 5
+docker exec pgdump-drill pg_isready -U ubyhost -d ubyhost
+set -o pipefail; age -d -i /dev/shm/drill.agekey /dev/shm/drill.dump.age | docker exec -i pgdump-drill pg_restore -U ubyhost -d ubyhost --no-owner --exit-on-error --single-transaction && echo "restore ok"
+docker exec -i pgdump-drill psql -U ubyhost -d ubyhost -At -F ' ' < /dev/shm/counts.sql | LC_ALL=C sort > /dev/shm/counts-drill.txt
+```
+
+Pass: `pg_isready` says "accepting connections", the restore prints `restore ok` and the row-count comparison above passes (the dump is from the night, so production may have a few more rows). Clean up, always, also after a failure:
+
+```
+docker rm -f pgdump-drill; shred -u /dev/shm/drill.agekey; rm -f /dev/shm/drill.dump.age /dev/shm/counts-drill.txt /dev/shm/counts-both.txt
+```
+
+If decryption fails, the identity does not match `UBYHOST_BACKUP_AGE_RECIPIENT`: stop and treat every encrypted backup as unreadable until fixed (OPERATIONS, key custody above).
+
+#### Drill 2: point-in-time restore from WAL-G (mandatory once; then quarterly with drill 1)
+
+Restores into a scratch volume with the `walg` image, which has network and WAL-G; production is not touched. The target is 15 minutes ago, so a base backup must have finished before that (`docker compose exec -T walg wal-g backup-list --detail`).
+
+```
+cd /opt/ubyhost/deploy/lightsail
+TARGET="$(date -u -d '15 minutes ago' '+%Y-%m-%d %H:%M:%S+00')"; echo "$TARGET"
+docker volume create walg-drill
+docker run --rm --user root --env-file .env.walg -v walg-drill:/restore ubyhost-walg:local wal-g backup-fetch /restore LATEST
+cat > /dev/shm/walg-recovery.conf <<EOF
+restore_command = 'wal-g wal-fetch %f %p'
+recovery_target_time = '${TARGET}'
+recovery_target_action = 'promote'
+EOF
+docker run --rm --user root -v walg-drill:/restore -v /dev/shm/walg-recovery.conf:/r.conf:ro ubyhost-walg:local \
+  sh -c 'cat /r.conf >> /restore/postgresql.auto.conf && touch /restore/recovery.signal && chown -R postgres:postgres /restore && chmod 700 /restore'
+docker run -d --name walg-drill-pg --env-file .env.walg -v walg-drill:/var/lib/postgresql/data ubyhost-walg:local \
+  postgres -c listen_addresses= -c archive_mode=off
+for i in $(seq 1 60); do docker exec walg-drill-pg psql -U ubyhost -d ubyhost -Atc 'SELECT pg_is_in_recovery()' 2>/dev/null | grep -qx f && break; sleep 10; done
+docker logs walg-drill-pg 2>&1 | grep -E 'recovery stopping|database system is ready|FATAL' | tail -5
+docker exec walg-drill-pg psql -U ubyhost -d ubyhost -Atc "SELECT pg_is_in_recovery(), pg_last_xact_replay_timestamp(), datcollate FROM pg_database WHERE datname = 'ubyhost';"
+docker exec -i walg-drill-pg psql -U ubyhost -d ubyhost -At -F ' ' < /dev/shm/counts.sql | LC_ALL=C sort > /dev/shm/counts-drill.txt
+```
+
+Pass: the log shows `recovery stopping before commit ... time ...` and `database system is ready to accept connections`; the query shows `f`, a replay time just before `TARGET` (within a few minutes), and the database locale; the row-count comparison above passes (counts as of 15 minutes ago). A `FATAL` such as "recovery ended before configured recovery target was reached" means WAL is missing in S3: WAL-G is not usable; tell the orchestrator. "database locale is incompatible with operating system" also goes to the orchestrator. Clean up, always:
+
+```
+docker rm -f walg-drill-pg; docker volume rm walg-drill; rm -f /dev/shm/walg-recovery.conf /dev/shm/counts-*.txt /dev/shm/counts.sql
+```
+
+#### Real point-in-time restore (only with the owner's decision)
+
+The production data directory is never replaced by hand. Recover in the scratch container, then load the result into production as a pg_dump through the tested `pg-restore.sh` path. The app is down for a few minutes during `pg-restore.sh`.
+
+1. Choose `TARGET` in UTC, a minute before the bad change. `./scripts/backup.sh` first: it saves today's state, so this restore can be undone with `pg-restore.sh <that stamp>`.
+2. Run drill 2 with `TARGET="YYYY-MM-DD HH:MM:SS+00"` (your time) instead of "15 minutes ago", and stop before its clean-up. Check its pass conditions.
+3. Put the age identity into `/dev/shm/drill.agekey` as in drill 1. Then:
+
+```
+set -o pipefail
+RECIPIENT="$(grep '^UBYHOST_BACKUP_AGE_RECIPIENT=' .env | cut -d= -f2-)"
+PITR_STAMP="$(date -u +%Y%m%dT%H%M%SZ)-9"; echo "$PITR_STAMP"
+docker exec walg-drill-pg pg_dump -U ubyhost -Fc ubyhost | age -r "$RECIPIENT" \
+  | docker compose exec -T ubyhost sh -c "mkdir -p /data/backups/$PITR_STAMP && cat > /data/backups/$PITR_STAMP/ubyhost-pg.dump.age" && echo "export ok"
+AGE_IDENTITY_FILE=/dev/shm/drill.agekey ./scripts/pg-restore.sh "$PITR_STAMP"
+```
+
+4. Sign in, open one stay. Then run the retention job once before guests use the site, because the restore brought back data erased after `TARGET` (see "Retention and what is actually deleted").
+5. Clean up as in drill 2, and `shred -u /dev/shm/drill.agekey`.
+
+#### Rollback (if the deploy or archiving misbehaves)
+
+The production Postgres image and data directory are unchanged by WAL-G, so rollback is configuration only:
+
+1. `cd /opt/ubyhost/deploy/lightsail && docker compose stop walg && docker compose rm -f walg`.
+2. In `.env` set `UBYHOST_PG_ARCHIVE=off` and remove `walg` from `COMPOSE_PROFILES` (`sudo nano .env`).
+3. `docker compose up -d postgres` (one short restart, archiving off). Check `docker compose ps`: postgres `healthy`, app up.
+4. Remove the two WAL-G cron lines: `crontab -e`, delete the lines with `walg-`, save. Pause the two healthchecks.io checks.
+5. If Postgres does not come up: `docker compose logs --tail 50 postgres`, then put the age identity into `/dev/shm/drill.agekey` as in drill 1 and restore the pre-deploy dump: `AGE_IDENTITY_FILE=/dev/shm/drill.agekey ./scripts/pg-restore.sh <stamp from step 13>`.
+6. Files left in the spool are copies; after the rollback they may be deleted with `docker volume rm ubyhost-walspool` (only once `UBYHOST_PG_ARCHIVE=off` is live). Never delete files from `pg_wal` by hand.
+7. If you stop using WAL-G: delete the IAM access key in the console. The S3 objects expire by lifecycle within 10 days.
 
 ### Purging pre-OPS-1 plaintext backups (operator, one-time)
 

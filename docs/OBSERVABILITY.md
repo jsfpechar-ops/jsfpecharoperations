@@ -24,7 +24,7 @@ subprocessor.
 2. Connections → copy the Prometheus URL/username/token and the Loki
    URL/username/token.
 3. deploy/lightsail/.env: fill the GRAFANA_* values, keep
-   COMPOSE_PROFILES=litestream,monitoring.
+   COMPOSE_PROFILES=monitoring.
 4. Run ./scripts/deploy.sh.
 5. Grafana → Explore → Loki: {container="ubyhost"} must show lines;
    Prometheus: up must be 1 for the node and cadvisor jobs.
