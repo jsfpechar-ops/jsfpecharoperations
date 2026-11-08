@@ -2520,6 +2520,97 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     t.focus({ preventScroll: true });
   }
 
+  // 1030: at >=768 px the editor shows one section at a time, a section list and one fix line. Phone unchanged.
+  function initPropertyTabs() {
+    var layout = document.querySelector(".prop-layout");
+    if (!layout || !claimNode(layout, "initPropertyTabs")) return;
+    var nav = layout.querySelector(".prop-nav");
+    var fix = layout.querySelector("[data-prop-fixline]");
+    var mq = window.matchMedia("(min-width:768px)");
+    function sectionFor(el) {
+      return el ? el.closest("details.prop-sec") : null;
+    }
+    function fieldIn(el) {
+      if (el.matches("input,select,textarea,button")) return el;
+      return el.querySelector("input,select,textarea,button");
+    }
+    function showSection(sec) {
+      if (!sec) return;
+      layout.querySelectorAll("details.prop-sec").forEach(function (d) {
+        d.classList.toggle("is-current", d === sec);
+      });
+      sec.open = true;
+      if (nav) {
+        nav.querySelectorAll("a").forEach(function (a) {
+          a.classList.toggle("is-current", a.getAttribute("href") === "#" + sec.id);
+        });
+      }
+    }
+    function goTo(id) {
+      var target = document.getElementById(id);
+      if (!target) return;
+      if (mq.matches) showSection(sectionFor(target));
+      var f = fieldIn(target);
+      if (f) f.focus({ preventScroll: true });
+      target.scrollIntoView({ block: "center" });
+    }
+    function fixLine() {
+      if (!fix) return;
+      var seen = {};
+      var items = [];
+      layout.querySelectorAll(".prop-sec-missing a[href^='#']").forEach(function (a) {
+        var id = a.getAttribute("href").slice(1);
+        if (!id || seen[id]) return;
+        seen[id] = true;
+        items.push(id);
+      });
+      fix.textContent = "";
+      if (!items.length || !mq.matches) {
+        fix.hidden = true;
+        return;
+      }
+      var lead = items.length === 1 ? fix.getAttribute("data-text-one") : fix.getAttribute("data-text-many");
+      fix.appendChild(document.createTextNode((lead || "").replace("{n}", String(items.length)) + " "));
+      items.forEach(function (id, i) {
+        if (i) fix.appendChild(document.createTextNode(", "));
+        var target = document.getElementById(id);
+        var label = target && target.querySelector("label");
+        var link = document.createElement("a");
+        link.href = "#" + id;
+        link.textContent = (label ? label.textContent : id).replace(/\s+/g, " ").trim();
+        link.addEventListener("click", function (e) {
+          e.preventDefault();
+          goTo(id);
+        });
+        fix.appendChild(link);
+      });
+      fix.hidden = false;
+    }
+    function apply() {
+      layout.classList.toggle("is-tabbed", mq.matches);
+      if (mq.matches) {
+        var hashEl = location.hash.length > 1 ? document.getElementById(location.hash.slice(1)) : null;
+        var start = sectionFor(hashEl) || layout.querySelector("details.prop-sec");
+        showSection(start);
+        if (start && location.hash !== "#" + start.id) history.replaceState(null, "", "#" + start.id);
+      }
+      fixLine();
+    }
+    apply();
+    if (mq.addEventListener) mq.addEventListener("change", apply);
+    if (nav) {
+      nav.addEventListener("click", function (e) {
+        var a = e.target.closest("a");
+        if (!a || !mq.matches || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+        var sec = sectionFor(document.getElementById(a.getAttribute("href").slice(1)));
+        if (!sec) return;
+        e.preventDefault();
+        showSection(sec);
+        history.replaceState(null, "", "#" + sec.id);
+      });
+    }
+  }
+
   // 1024: in the editor the stay-fee boxes the app needs get a star and aria-required while the rate is above 0.
   function initStayFeeStars() {
     var rate = document.getElementById("stay_fee_rate_czk");
@@ -2590,6 +2681,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     initUnsavedDialog();
     initSectionNotice();
     initSaveSummary();
+    initPropertyTabs();
     initStayFeeStars();
     initSuccessNotices();
     initHelpTips();

@@ -376,7 +376,8 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
         # Every section opens from its summary and shows its target.
         for key in SECTIONS:
             page.goto(f"{url}?lang=en")
-            _open(page, key)
+            # Owner decision 2026-11-08: property editor redesigned at >=768px (brief 1030); phone unchanged. At wide widths a section is chosen from the section list.
+            page.locator(f'.prop-nav a[href="#sec-{key}"]').click()
             assert f"sec-{key}" in page.evaluate(_STATE_JS)["open"], key
             assert page.locator(f"#sec-{key}").first.is_visible(), key
         page.goto(f"{url}?lang=en&x=1#no-such-section")  # a new URL, so no same-document hash jump
@@ -395,6 +396,8 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
         page.goto(f"{url}?lang=en")
         page.evaluate("() => { window.__navMarker = 'same-document'; }")
         page.fill("#internal_name", "Draft Name Kept")
+        # Owner decision 2026-11-08: property editor redesigned at >=768px (brief 1030); phone unchanged. The section is chosen from the section list.
+        page.locator('.prop-nav a[href="#sec-messages"]').click()
         _open(page, "messages")
         page.fill("#guest_message", "Draft message kept")
         page.locator('a.airbnb-back').click()
@@ -406,7 +409,7 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
         assert page.locator("#internal_name").input_value() == "Draft Name Kept"
         assert page.evaluate(_STATE_JS)["marker"] == "same-document"
 
-        page.locator('nav.prop-strip a.sc[data-strip="police"][href="#sec-police"]').click()
+        page.locator('.prop-nav a[href="#sec-police"]').click()
         assert not page.evaluate("() => document.getElementById('unsaved-dialog').open")
         assert "sec-police" in page.evaluate(_STATE_JS)["open"]
         assert page.evaluate(_STATE_JS)["marker"] == "same-document", "the aside row reloaded the page"
@@ -423,7 +426,7 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
           window.addEventListener('click', e => window.__modClicks.push([e.ctrlKey, e.defaultPrevented]));
         }""")
         page.context.on("page", lambda popup: popup.close())
-        page.locator('nav.prop-strip a.sc[data-strip="fee"][href="#sec-fee"]').click(modifiers=["Control"])
+        page.locator('.prop-nav a[href="#sec-fee"]').click(modifiers=["Control"])
         assert page.evaluate("() => window.__modClicks") == [[True, False]]
         assert page.evaluate(_STATE_JS)["marker"] == "m2", "the ctrl-click navigated this tab"
 
@@ -434,7 +437,8 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
         page.wait_for_timeout(100)
         assert "sec-messages" in page.evaluate(_STATE_JS)["open"]
         assert page.evaluate("() => document.getElementById('permalink_pin').matches(':invalid')")
-        assert page.url.endswith("lang=en"), "not submitted"
+        # Owner decision 2026-11-08: the wide editor writes the open section into the hash (brief 1030).
+        assert "lang=en" in page.url and "method" not in page.url, "not submitted"
         # 0544 finding: the section opens, but focus does not move to the field inside it.
         # Not asserted here; see the 0544 report.
 

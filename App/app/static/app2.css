@@ -3085,3 +3085,7 @@ body.v2 .prop-wide-only{display:none}
   body.v2 .prop-layout.is-tabbed .prop-sec:not(.is-current){display:none}
   body.v2 .prop-layout.is-tabbed .prop-nav a.is-current{background:var(--accs)}
 }
+
+/* 1030: one slim fix line, wide only */
+body.v2 .prop-fixline{margin:0 0 24px;color:var(--bad);font-size:14px}
+body.v2 .prop-fixline a{color:var(--bad);font-weight:600}
