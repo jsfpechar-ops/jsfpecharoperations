@@ -33,6 +33,7 @@ def _property_data(entity_id: int, **overrides):
         "internal_name": "Guest Pay Flat",
         "addr_city": "Praha",
         "addr_obec": "Praha",
+        "addr_street": "Synthetic",
         "addr_house_no": "12",
         "addr_zip": "120 00",
         "uby_idub": "123456789012",

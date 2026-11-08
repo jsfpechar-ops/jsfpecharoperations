@@ -78,9 +78,12 @@ def test_editor_police_fields_are_starred_and_aria_required():
     assert "uby_ws_password', t('automation.password')" in text and "not has_password" in text
 
 
-def test_street_and_other_optional_address_fields_stay_unstarred():
+def test_street_is_starred_and_other_optional_address_fields_stay_unstarred():
+    # Owner decision 2026-11-08: the street is mandatory (Airbnb listings are rarely in street-less villages).
     text = _text("_property_address_fields.html")
-    for fid in ("addr_street", "addr_orient_no", "addr_obec_cast", "addr_okres"):
+    street = next(ln for ln in text.splitlines() if "address_input('addr_street'" in ln)
+    assert "'', true," in street
+    for fid in ("addr_orient_no", "addr_obec_cast", "addr_okres"):
         line = next(ln for ln in text.splitlines() if f"address_input('{fid}'" in ln)
         assert "required" not in line and not line.rstrip().endswith("true) }}"), fid
 

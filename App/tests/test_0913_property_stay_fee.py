@@ -110,6 +110,7 @@ def property_session(base):
     data = {
         "internal_name": "0913 Test Flat with a long internal name",
         "addr_obec": "Praha",
+        "addr_street": "Synthetic",
         "addr_house_no": "12",
         "addr_zip": "11000",
         "legal_entity_id": str(entity_id),

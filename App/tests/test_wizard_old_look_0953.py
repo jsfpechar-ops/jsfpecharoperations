@@ -50,10 +50,11 @@ def test_headings_differ_and_sit_on_the_right_pages(host):  # noqa: F811
 def test_required_fields_carry_a_star_and_optional_do_not(host):  # noqa: F811
     flat = _open_apartment(host)
     prop = host["client"].get(f"/apartments/{flat['id']}/setup/property?lang=en").text
-    for field_id in ("internal_name", "legal_entity_id", "addr_house_no", "addr_zip", "addr_obec",
+    for field_id in ("internal_name", "legal_entity_id", "addr_house_no", "addr_zip", "addr_obec", "addr_street",
                      "checkin_hour", "checkout_hour"):
         assert _starred(prop, field_id), field_id
-    for field_id in ("addr_street", "addr_orient_no", "addr_obec_cast", "addr_okres"):
+    # Owner decision 2026-11-08: the street is mandatory (Airbnb listings are rarely in street-less villages).
+    for field_id in ("addr_orient_no", "addr_obec_cast", "addr_okres"):
         assert not _starred(prop, field_id), field_id
     entities = host["client"].get("/entities?lang=en").text
     assert _starred(entities, "new_name")

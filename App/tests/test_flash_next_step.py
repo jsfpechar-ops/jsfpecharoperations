@@ -45,6 +45,7 @@ REPORT_FIELD_KEYS = (
 COMPLETE_PROPERTY = {
     "internal_name": "Flash Flat",
     "addr_obec": "Praha",
+    "addr_street": "Synthetic",
     "addr_house_no": "12",
     "addr_zip": "110 00",
     "uby_idub": "123456789012",
@@ -137,6 +138,7 @@ def _create_property(client, **overrides) -> int:
         "internal_name": "Flash Flat",
         "legal_entity_id": _operator_id(),
         "addr_obec": "Praha",
+        "addr_street": "Synthetic",
         "addr_house_no": "12",
         "addr_zip": "11000",
     }
