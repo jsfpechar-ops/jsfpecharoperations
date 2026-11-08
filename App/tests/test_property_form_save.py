@@ -253,3 +253,107 @@ def test_the_scan_switch_is_saved_on_with_the_upload(host):
     )
     assert saved.status_code == 303, saved.text
     assert _apartment()["ocr_scan"] == 1
+
+
+# ---- 1024: stay-fee stars, failed-save summary, Saved confirmation ----------
+
+GOOD_FEE = dict(
+    stay_fee_rate_czk="50",
+    stay_fee_vs="1342900493",
+    stay_fee_council_account="19-2000145399/0800",
+    stay_fee_authority_name="Mesto Test",
+)
+
+
+def _fee_section(page: str) -> str:
+    start = page.index('id="sec-fee"')
+    return page[start : page.index("</details>", start)]
+
+
+def _save_good_fee(host):
+    apartment = _apartment()
+    response = host.post(
+        f"/apartments/{apartment['id']}", data=_payload(**GOOD_FEE), follow_redirects=False
+    )
+    assert response.status_code == 303, response.text
+    return apartment["id"], response
+
+
+def test_editor_stars_the_fee_fields_only_with_a_rate(host):
+    apartment_id, _ = _save_good_fee(host)
+    url = f"/apartments/{apartment_id}?lang=en&view=settings&section=reporting"
+    stars = _fee_section(host.get(url).text).count('class="req-star"')
+    assert stars == 3
+    for fid in ("stay_fee_vs", "stay_fee_council_account", "stay_fee_authority_name"):
+        tag = re.search(rf'<input[^>]*id="{fid}"[^>]*>', _fee_section(host.get(url).text)).group(0)
+        assert 'aria-required="true"' in tag, fid
+    db.execute("UPDATE apartment SET stay_fee_rate_czk = 0 WHERE id = ?", (apartment_id,))
+    off = _fee_section(host.get(url).text)
+    assert 'class="req-star"' not in off
+    assert 'aria-required="true"' not in off
+
+
+def test_a_valid_stay_fee_save_is_stored_and_confirmed(host):
+    apartment_id, response = _save_good_fee(host)
+    assert "msg=" in response.headers["location"]
+    row = _apartment()
+    assert row["stay_fee_vs"] == "1342900493"
+    assert row["stay_fee_council_account"]
+    page = host.get(response.headers["location"] + "&lang=en").text
+    assert 'class="banner ok save-summary"' in page and "data-save-summary" in page
+    assert 'class="banner err save-summary"' not in page
+    assert page.count("Saved") >= 1
+
+
+def _refused_account_post(host, apartment_id):
+    return host.post(
+        f"/apartments/{apartment_id}?lang=en",
+        data=_payload(
+            **{**GOOD_FEE, "stay_fee_council_account": "123", "stay_fee_vs": "9999999999",
+               "internal_name": "Changed Flat"}
+        ),
+        follow_redirects=False,
+    )
+
+
+def test_an_invalid_account_is_refused_and_nothing_is_stored(host):
+    apartment_id, _ = _save_good_fee(host)
+    before = _apartment()
+    response = _refused_account_post(host, apartment_id)
+    assert response.status_code == 400
+    after = _apartment()
+    for column in ("internal_name", "stay_fee_vs", "stay_fee_council_account"):
+        assert after[column] == before[column], column
+    body = response.text
+    assert "data-save-summary" in body
+    assert 'data-first-error="stay_fee_council_account"' in body
+    assert "This account number does not add up" in body
+    assert "Not saved: fix 1 field." in body
+    assert re.search(r'<details[^>]*id="sec-fee"[^>]*\bopen\b', body)
+    assert "banner ok" not in body
+    input_at = body.index('id="stay_fee_council_account"')
+    error_at = body.index('<p class="err-text small" id="stay-fee-account-error"')
+    assert body.index('for="stay_fee_council_account"') < input_at < error_at
+    assert error_at < body.index('id="stay_fee_authority_name"')
+
+
+def test_the_same_refusal_never_redirects_with_a_success_message(host):
+    apartment_id, _ = _save_good_fee(host)
+    response = _refused_account_post(host, apartment_id)
+    assert response.status_code == 400
+    assert "location" not in response.headers
+
+
+def test_an_address_error_opens_basics_and_counts_fields(host):
+    apartment = _apartment()
+    response = host.post(
+        f"/apartments/{apartment['id']}?lang=en",
+        data=_payload(addr_zip="12", internal_name="Changed Flat"),
+        follow_redirects=False,
+    )
+    assert response.status_code == 400
+    body = response.text
+    assert "Not saved: fix 1 field." in body
+    assert 'data-first-error="addr_zip"' in body
+    assert re.search(r'<details[^>]*id="sec-basics"[^>]*\bopen\b', body)
+    assert _apartment()["internal_name"] == "Form Flat"
