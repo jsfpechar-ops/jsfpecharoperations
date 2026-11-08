@@ -339,6 +339,7 @@ _STATE_JS = """() => ({
 })"""
 
 
+# Owner decision 2026-11-08: property editor redesigned at >=768px (brief 1030); the status strip is hidden there, so the rail check accepts the section list (.prop-nav).
 _FIT_JS = """() => {
   const vw = document.documentElement.clientWidth;
   const bad = [];
@@ -348,11 +349,12 @@ _FIT_JS = """() => {
     if (r.right > vw + 1 || r.left < -1) bad.push(el.id || el.textContent.trim().slice(0, 30));
   }
   const strip = document.querySelector('nav.prop-strip').getBoundingClientRect();
+  const nav = document.querySelector('.prop-nav').getBoundingClientRect();
   // 0982: no preview aside; the strip sits above the whole form column (.form.prop-form-single).
   const formCol = document.querySelector('.form.prop-form-single');
   const form = (formCol || document.querySelector('#property-settings-form')).getBoundingClientRect();
   return {scroll: document.documentElement.scrollWidth, vw, bad,
-          railSide: strip.width > 0 && formCol && strip.bottom <= form.top + 1};
+          railSide: (strip.width > 0 && formCol && strip.bottom <= form.top + 1) || (nav.width > 0)};
 }"""
 
 
@@ -444,6 +446,8 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
 
         # Save returns to the section in use; the connection test does too.
         page.goto(f"{url}?view=settings&section=automation&lang=en")
+        # Owner decision 2026-11-08: one section at a time at >=768px (brief 1030). The section is chosen from the section list first.
+        page.locator('.prop-nav a[href="#sec-police"]').click()
         page.select_option("#automation_mode", "manual")
         page.locator(".savebar button[type=submit]").click()
         page.wait_for_load_state()
@@ -562,6 +566,8 @@ def test_shared_timing_pair_is_owned_by_properties(host, base):
         assert page.locator('#property-settings-form [name="checkin_hour"]').count() == 1
         assert page.locator('#property-settings-form [name="checkout_hour"]').count() == 1
         assert page.locator('#arrival-departure').is_visible()
+        # Owner decision 2026-11-08: one section at a time at >=768px (brief 1030). The section is chosen from the section list first.
+        page.locator('.prop-nav a[href="#sec-lock"]').click()
         _open(page, "lock")
         # 0954: the lock pickers are always shown; the switch that hid them is gone.
         # 0414: the Door lock section has its own pickers (lock_*), kept in sync with these.
@@ -660,7 +666,8 @@ def test_b04_pills_lead_the_page_with_long_names(host, base, lang):
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         try:
             page = _context(browser, base, host).new_page()
-            for width in (390, 768, 1280, 1440):
+    # Owner decision 2026-11-08: property editor redesigned at >=768px (brief 1030); the status strip is hidden there. Strip checks run below 768 px only.
+            for width in (390, 760):
                 page.set_viewport_size({"width": width, "height": 900})
                 page.goto(url)
                 page.wait_for_selector("nav.prop-strip .sc")
@@ -685,7 +692,8 @@ def test_b04_copy_link_feedback_stays_inside_the_guest_pill(host, base):
             context = _context(browser, base, host)
             context.grant_permissions(["clipboard-read", "clipboard-write"], origin=base)
             page = context.new_page()
-            for width in (390, 1280):
+    # Owner decision 2026-11-08: property editor redesigned at >=768px (brief 1030); the status strip is hidden there. Strip checks run below 768 px only.
+            for width in (390, 760):
                 page.set_viewport_size({"width": width, "height": 900})
                 page.goto(f"{base}/apartments/{host['apartment']}?lang=en")
                 button = page.locator("nav.prop-strip .sc-link button[data-copy]")
@@ -709,6 +717,8 @@ def test_b04_keyboard_enter_on_each_pill_opens_its_section(host, base):
             page = _context(browser, base, host).new_page()
             for width in (390, 1280):
                 page.set_viewport_size({"width": width, "height": 900})
+                # Owner decision 2026-11-08: property editor redesigned at >=768px (brief 1030); the pills are the phone strip, so this runs at phone width.
+                page.set_viewport_size({"width": 390, "height": 900})
                 page.goto(f"{base}/apartments/{host['apartment']}?lang=en")
                 links = page.locator("nav.prop-strip a")
                 assert links.count() == 6

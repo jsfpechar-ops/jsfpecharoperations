@@ -2590,7 +2590,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       layout.classList.toggle("is-tabbed", mq.matches);
       if (mq.matches) {
         var hashEl = location.hash.length > 1 ? document.getElementById(location.hash.slice(1)) : null;
-        var start = sectionFor(hashEl) || layout.querySelector("details.prop-sec");
+        var start = sectionFor(hashEl) || layout.querySelector("details.prop-sec[open]") || layout.querySelector("details.prop-sec");
         showSection(start);
         if (start && location.hash !== "#" + start.id) history.replaceState(null, "", "#" + start.id);
       }
