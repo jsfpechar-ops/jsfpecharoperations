@@ -368,7 +368,90 @@ function initSignature() {
       return rows;
     }
 
+    /* 0898/1025: the estimate is drawn when the page loads, before the guest has
+       typed a birth date or a home address. Recompute it as they type, by the
+       rules of stay_fee.guest_period: counted days are (arrival, departure];
+       a day is exempt while the guest is under 18 on it (an unknown day or
+       month counts as the 1st, as conservative_birth does); a resident of the
+       property's municipality pays nothing (same folding as stay_fee._obec_key). */
+    function feeBirth(text) {
+      var value = String(text || "").trim();
+      var m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value);
+      var year;
+      if (m) {
+        year = parseInt(m[3], 10);
+      } else {
+        // validation.normalise_birth_date: a two-digit year takes the century closest to today.
+        m = /^(\d{2})\.(\d{2})\.(\d{2})$/.exec(value);
+        if (!m) return null;
+        var n = parseInt(m[3], 10);
+        year = 2000 + n <= new Date().getFullYear() ? 2000 + n : 1900 + n;
+      }
+      if (year === 0) return null;
+      var month = parseInt(m[2], 10) || 1;
+      var day = parseInt(m[1], 10) || 1;
+      var date = new Date(Date.UTC(year, month - 1, day));
+      if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return null;
+      return { y: year, m: month, d: day };
+    }
+
+    function feeIso(text) {
+      var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(text || ""));
+      return m ? Date.UTC(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10)) : null;
+    }
+
+    function feeLiableDays(live, birth) {
+      var start = feeIso(live.from), end = feeIso(live.to), day = 86400000, count = 0;
+      if (start === null || end === null) return -1;
+      for (var t = start + day; t <= end; t += day) {
+        var when = new Date(t);
+        var y = when.getUTCFullYear(), mo = when.getUTCMonth() + 1, d = when.getUTCDate();
+        var age = birth ? y - birth.y - ((mo < birth.m || (mo === birth.m && d < birth.d)) ? 1 : 0) : 99;
+        if (age >= 18) count += 1;
+      }
+      return count;
+    }
+
+    function feeObecResident(box) {
+      var raw = box.getAttribute("data-obec-rule");
+      if (!raw) return false;
+      var rule;
+      try { rule = JSON.parse(raw); } catch (e) { return false; }
+      function fold(text) {
+        var plain = String(text || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+        return plain.toUpperCase().replace(/\s+/g, " ").trim();
+      }
+      function key(text) {
+        var t = fold(text);
+        var m = /^(.+?)(?:\s+\d+|-.+)$/.exec(t);
+        if (m && rule.bases.indexOf(m[1].trim()) !== -1) t = m[1].trim();
+        return rule.aliases[t] || t;
+      }
+      var country = document.getElementById("res_country");
+      var city = document.getElementById("res_city");
+      return !!(country && city && country.value === rule.country &&
+                key(city.value) === rule.obec);
+    }
+
+    function syncFeeBox() {
+      var box = document.getElementById("fee-estimate");
+      var raw = box && box.getAttribute("data-fee-live");
+      if (!raw) return;
+      var live;
+      try { live = JSON.parse(raw); } catch (e) { return; }
+      var input = document.getElementById("birth_date");
+      var days = feeObecResident(box) ? 0 : feeLiableDays(live, feeBirth(input ? input.value : ""));
+      if (days < 0) return;
+      if (days === 0) { box.hidden = true; return; }
+      var amount = box.querySelector(".g-fee-amt");
+      var calc = box.querySelector(".g-fee-calc");
+      if (amount) amount.textContent = String(box.getAttribute("data-fee-amount") || "").replace("{amount}", String(days * live.rate));
+      if (calc) calc.textContent = String(box.getAttribute("data-fee-calc") || "").replace("{days}", String(days));
+      box.hidden = false;
+    }
+
     function build() {
+      syncFeeBox();
       var rows = collect();
       list.textContent = "";
       if (!rows.length) { card.hidden = true; return; }

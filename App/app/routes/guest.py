@@ -31,7 +31,6 @@ from .. import ruian as ruian_lookup  # 0911: guest RUIAN suggestions
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
 from .admin_helpers import kept_signature as _kept_signature
-from .admin_helpers import stay_dates_from_form as _stay_dates_from_form
 
 router = APIRouter(dependencies=[Depends(security.protect_guest_post)])
 
@@ -1585,7 +1584,8 @@ def _form_context(
                 if guest and validation.is_valid_signature(guest["signature_png"])
                 else ""
             ),
-            "fee_estimate": _fee_estimate(apartment, reservation, values or {}),
+            "fee_estimate": _fee_box(apartment, reservation, values or {}, guest),
+            "fee_obec_rule": _fee_obec_rule(apartment),
             "fee_panel": (
                 _fee_pay_panel(apartment, reservation, context["t"], _qr_offered(request, reservation))
                 if remaining is not None and remaining <= 0
@@ -1709,6 +1709,14 @@ def guest_form_edit(token: str, reservation_id: int, guest_id: int, request: Req
     )
 
 
+def _locked_stay_dates(reservation, existing):
+    """1026: guest-submitted stay dates are locked. The posted stay_from/stay_to are
+    ignored: the stored stay (host or earlier save) or else the booking's own dates."""
+    if existing is not None and existing["stay_from"] and existing["stay_to"]:
+        return existing["stay_from"], existing["stay_to"]
+    return reservation["date_from"], reservation["date_to"]
+
+
 @router.post("/l/{token}/{reservation_id}/relang")
 async def guest_form_relang(token: str, reservation_id: int, request: Request):
     """0979: draw the open form again in another language, keeping the answers.
@@ -1752,9 +1760,7 @@ async def guest_form_relang(token: str, reservation_id: int, request: Request):
 
     raw = _guest_form_raw(form, apartment)
     values = validation.normalise_guest(raw, clamp=False)
-    stay_from, stay_to = _stay_dates_from_form(
-        form, (reservation["date_from"], reservation["date_to"])
-    )
+    stay_from, stay_to = _locked_stay_dates(reservation, existing)
     context = _form_context(
         request,
         apartment,
@@ -1842,9 +1848,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     # Un-clamped so an over-long name is reported back to the guest instead of
     # being cut mid-word and filed against a passport it no longer matches.
     values = validation.normalise_guest(raw, clamp=False)
-    stay_from, stay_to = _stay_dates_from_form(
-        form, (reservation["date_from"], reservation["date_to"])
-    )
+    stay_from, stay_to = _locked_stay_dates(reservation, existing)
     signature = _kept_signature(form.get("signature"), existing["signature_png"] if existing else None)
 
     party_raw = (form.get("party_size") or "").strip()
@@ -2221,24 +2225,95 @@ def _fee_pay_panel(apartment, reservation, t, qr_ok=True):
             "vs": vs, "payee": payee}
 
 
-def _fee_estimate(apartment, reservation, values):
-    """Form-end estimate for the guest being typed in (un-saved values), or None when it is zero."""
+def _fee_obec_rule(apartment) -> str:
+    """JSON for signature.js: the same-obec key and folding tables (0898), so the Check step
+    hides the estimate for a resident of the property's municipality while the guest types."""
+    import json
+    from .. import stay_fee
+    obec = stay_fee._obec_key(apartment["addr_obec"])
+    if not obec:
+        return ""
+    return json.dumps({"obec": obec, "country": validation.CZECH_CODE,
+                       "bases": list(stay_fee.STATUTORY_DISTRICT_BASES),
+                       "aliases": stay_fee.OBEC_ALIASES})
+
+
+def _fee_typed_guest(reservation, values, guest=None):
+    """The guest being typed in, as stay_fee.guest_period reads it.
+
+    A typed value wins; with none (the edit page opens with empty values) the
+    stored record is used, so the estimate matches what the pay step will charge:
+    the guest's own stay dates, birth date, residence and the host's decision.
+    """
+    def pick(key):
+        if key in values and values.get(key) is not None:
+            return values.get(key) or None
+        if guest is not None and key in guest.keys():
+            return guest[key] or None
+        return None
+
+    decision = guest["fee_host_decision"] if guest is not None and "fee_host_decision" in guest.keys() else None
+    return {
+        "id": guest["id"] if guest is not None else 0,
+        "stay_from": pick("stay_from"), "stay_to": pick("stay_to"),
+        "birth_date": pick("birth_date"),
+        "fee_host_decision": decision, "fee_host_reason": None, "fee_host_reason_enc": None,
+        "res_country": pick("res_country") or "", "res_city": pick("res_city") or "",
+    }
+
+
+def _fee_liable_days(apartment, reservation, typed) -> int:
     from datetime import date as _date
+    from .. import stay_fee
+    share = stay_fee.guest_period(typed, reservation, _date.min, _date.max, apartment=apartment)
+    if share is None:
+        return 0
+    stay_fee._apply_scope_boundary(share, apartment)
+    return int(share["liable_nights"])
+
+
+def _fee_estimate(apartment, reservation, values, guest=None):
+    """Form-end estimate for the guest being typed in (un-saved values), or None when it is zero.
+
+    ``live`` carries the stay window for signature.js, which recomputes the amount
+    as the guest types a birth date or a home address (under-18 days and the
+    same-obec rule, 0898/1025). It is None when the host has decided for this
+    guest: the decision wins and the page cannot know it any better.
+    """
     from .. import config, stay_fee
     if not (apartment["stay_fee_collect"] and config.STAY_FEE_GUEST_PAY and stay_fee.is_active(apartment)):
         return None
-    guest = {
-        "id": 0, "stay_from": None, "stay_to": None,
-        "birth_date": values.get("birth_date") or None,
-        "fee_host_decision": None, "fee_host_reason": None, "fee_host_reason_enc": None,
-        "res_country": values.get("res_country") or "", "res_city": values.get("res_city") or "",
-    }
-    share = stay_fee.guest_period(guest, reservation, _date.min, _date.max, apartment=apartment)
-    if share is None:
-        return None
-    stay_fee._apply_scope_boundary(share, apartment)
-    days = int(share["liable_nights"])
+    try:
+        source = reservation["source"]
+    except (KeyError, IndexError):
+        source = None
+    if source == "demo":
+        return None  # 0100: the demo stay owes no fee, and the pay step never asks for one
+    typed = _fee_typed_guest(reservation, values or {}, guest)
+    rate = int(apartment["stay_fee_rate_czk"])
+    days = _fee_liable_days(apartment, reservation, typed)
+    live = None
+    if typed["fee_host_decision"] not in stay_fee.DECISIONS:
+        live = {"from": typed["stay_from"] or reservation["date_from"],
+                "to": typed["stay_to"] or reservation["date_to"], "rate": rate}
     if days <= 0:
         return None
-    rate = int(apartment["stay_fee_rate_czk"])
-    return {"amount": days * rate, "days": days, "rate": rate}
+    return {"amount": days * rate, "days": days, "rate": rate, "live": live, "hidden": False}
+
+
+def _fee_box(apartment, reservation, values, guest=None):
+    """The Check-step box: the estimate, or a hidden box when the typed values owe
+    nothing but an adult from elsewhere would, so signature.js can show it again
+    if the guest corrects a birth date or a home address. None: no box at all."""
+    estimate = _fee_estimate(apartment, reservation, values, guest)
+    if estimate is not None:
+        return estimate
+    if guest is not None and guest["fee_host_decision"] in ("exempt", "charge"):
+        return None
+    base = dict(values or {}, birth_date="", res_country="", res_city="")
+    fallback = _fee_estimate(apartment, reservation, base, None if guest is None else
+                             {key: guest[key] for key in guest.keys()
+                              if key not in ("birth_date", "res_country", "res_city")})
+    if fallback is None or fallback["live"] is None:
+        return None
+    return dict(fallback, hidden=True)

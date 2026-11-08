@@ -824,6 +824,57 @@ def test_form_estimate_line_shows_when_the_estimate_is_above_zero(live_server, b
         page.close()
 
 
+def test_1025_form_estimate_follows_the_typed_birth_date(live_server, browser, monkeypatch):
+    """1025: the Check-step estimate is drawn before a birth date is typed. The script
+    recomputes it by the engine's rules: a child pays nothing (box hidden), a guest who
+    turns 18 during the stay pays only from the birthday, an adult pays every counted day."""
+    from datetime import date as _date, timedelta as _td
+    from app import config, mail
+    from app.routes import guest as guest_routes
+
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    monkeypatch.setattr(config, "GUEST_PIN_REQUIRED", False)
+    monkeypatch.setattr(mail, "mail_enabled", lambda: False)
+    token = f"browser-fee-minor-{secrets.token_hex(4)}"
+    stay = _fee_seed(token, signed=False)
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (stay,))
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],))
+    arrival = _date.fromisoformat(reservation["date_from"])
+    turning = arrival + _td(days=2)
+    turning_birth = turning.replace(year=turning.year - 18).strftime("%d.%m.%Y")
+    page = browser.new_page(viewport={"width": 390, "height": 800})
+    try:
+        page.goto(f"{live_server}/l/{token}/{stay}/new?lang=en")
+        assert page.locator("#fee-estimate").count() == 1
+
+        def typed(birth):
+            page.evaluate("""(birth) => {
+                const input = document.querySelector('#birth_date');
+                input.value = birth;
+                input.dispatchEvent(new Event('input', {bubbles: true}));
+                const form = document.querySelector('form[action*="/save"]');
+                form.dispatchEvent(new CustomEvent('guest-wizard:shown'));
+            }""", birth)
+            # The box sits in the Check step, so read its own hidden flag, not visibility.
+            return page.evaluate("""() => {
+                const box = document.getElementById('fee-estimate');
+                return [box.hidden, box.querySelector('.g-fee-amt').textContent.trim()];
+            }""")
+
+        for birth in ("01.01.1980", "01.01.2015", turning_birth):
+            want = guest_routes._fee_estimate(apartment, reservation, {"birth_date": birth})
+            hidden, amount = typed(birth)
+            amount = "" if hidden else amount
+            if want is None:
+                assert hidden, birth
+            else:
+                assert not hidden and amount == f"{want['amount']} CZK", (birth, amount, want)
+        assert guest_routes._fee_estimate(apartment, reservation, {"birth_date": turning_birth})["days"] \
+            < guest_routes._fee_estimate(apartment, reservation, {"birth_date": "01.01.1980"})["days"]
+    finally:
+        page.close()
+
+
 def test_0979_changing_language_keeps_the_draft_the_step_and_leaves_no_trace(
     live_server, browser, monkeypatch
 ):

@@ -167,18 +167,22 @@ def test_confirm_double_win_with_stale_read(monkeypatch):
 
 import pytest as _pytest
 @_pytest.mark.parametrize("bad", ["garbage", "2026-02-30", "31.12.2099"])
-def test_unparseable_stay_date_is_refused(bad):
-    from app import validation
+def test_unreadable_posted_stay_date_is_ignored_and_booking_dates_kept(bad):
+    # 1026: stay dates are locked. A guest post with an unreadable stay_from is no
+    # longer refused (no 422); the posted value is ignored and the booking dates are kept.
     from tests import test_host_guest_form as hg
     _o, stay_id = hg._host_stay()
     try:
         client = hg._claimed_guest(stay_id)
         r = hg._save(client, stay_id, stay_from=bad, **hg._complete_guest())
         g = db.query_one("SELECT stay_from, stay_to FROM guest WHERE reservation_id=?", (stay_id,))
+        res = db.query_one("SELECT date_from, date_to FROM reservation WHERE id=?", (stay_id,))
         print(bad, r.status_code, dict(g) if g else None)
-        assert r.status_code == 422
-        assert validation.STAY_DATE_UNREADABLE_MESSAGE in r.text
-        assert g is None or g["stay_from"] != bad, "an unreadable date reached the row"
+        assert r.status_code == 303
+        assert g is not None
+        assert g["stay_from"] == res["date_from"]
+        assert g["stay_to"] == res["date_to"]
+        assert g["stay_from"] != bad, "an unreadable posted date reached the row"
     finally:
         hg._cleanup()
 
