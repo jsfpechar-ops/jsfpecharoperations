@@ -3001,3 +3001,15 @@ body.v2 details.ui-section-card > summary{padding:14px 16px;min-height:44px;box-
 body.v2 .billing-change-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-start;align-items:flex-start}
 body.v2 .billing-change-row > form{margin:0}
 body.v2 .billing-change-row .ui-form-actions{justify-content:flex-start;margin-top:0}
+/* 1007: billing upgrade card, yearly strip, add-on row. */
+body.v2 .ui-upgrade-card{display:grid;gap:8px;margin:0 0 12px;padding:16px;background:var(--accs);border:1.5px solid var(--acc);border-radius:12px;box-sizing:border-box}
+body.v2 .ui-upgrade-card .ui-upgrade-name{margin:0;font-size:18px;font-weight:700;line-height:1.3;color:var(--acc-text)}
+body.v2 .ui-upgrade-card .ui-upgrade-price{margin:0;font-size:20px;font-weight:700;line-height:1.3;color:var(--ink)}
+body.v2 .ui-upgrade-card .ui-sub{margin:0}
+body.v2 .ui-upgrade-card form{margin:4px 0 0}
+body.v2 .ui-upgrade-card .ui-btn{width:100%;min-height:44px;justify-content:center}
+body.v2 .ui-upgrade-strip{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin:0 0 12px;padding:10px 12px;background:var(--accs);border-radius:8px;font-size:14px;font-weight:600;color:var(--acc-text)}
+body.v2 .ui-addon-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin:0 0 12px;padding:12px;background:#fff;border:1px solid var(--line);border-radius:12px;box-sizing:border-box}
+body.v2 .ui-addon-text{display:grid;gap:2px;min-width:0;flex:1 1 200px;font-size:15px}
+body.v2 .ui-addon-row .ui-btn,body.v2 .ui-upgrade-strip .ui-btn{min-height:44px}
+@media (max-width:599px){body.v2 .ui-upgrade-strip .ui-btn,body.v2 .ui-addon-row .ui-btn{width:100%;justify-content:center}}
