@@ -36,6 +36,7 @@ def _page(request: Request, owner: int, values: Dict[str, Any], *, errors=None, 
           preview: Optional[Dict[str, Any]] = None, status_code: int = 200):
     acc = billing.account(owner)
     ok = values.get("plan") in billing.PLANS and values.get("billing_interval") in billing.INTERVALS
+    quote = billing_order.quote(owner, values) if ok else None
     upgrade = None
     if acc and acc.get("plan") in billing.PLANS and acc.get("billing_interval") in billing.INTERVALS:
         n = billing_order.apartments(owner)
