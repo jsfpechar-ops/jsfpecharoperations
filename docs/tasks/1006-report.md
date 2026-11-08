@@ -1,35 +1,63 @@
-# 1006 report: direct bookings host states
+# 1006 report
 
 Status: review
 
-## Files changed
+## Files changed (local commits, not pushed, no PR)
 
-`App/app/booking_direct.py` (decline under `db.immediate()` + `lock_key("booking_site_dates", apartment)` with a CAS `UPDATE ... WHERE status IN ('requested','expired')`, `rowcount != 1` -> `not_confirmable`; new `_mail_declined`, kind `site_booking_refunded`, key `site_booking:<id>:declined`), `App/app/booking_manage.py` (`can_retry` only for card rows, `status_key`), `App/app/templates/booking_site_setup.html` (badge uses `status_key`), `App/app/routes/payments.py` (direct flash on host cancel), `App/app/booking_webhook.py` (host confirm text `host_text_direct` for direct), `App/app/host_i18n.py` (5 keys EN + CS), `App/tests/test_booking_direct_0998.py` (4 tests).
+- App/app/routes/admin.py: placeholder pill shows platform name, `· N`, or empty with title (step 1)
+- App/app/templates/dashboard.html: legend line removed (step 2)
+- App/app/static/dashboard-calendar.js: placeholder never shown in sheet (step 3)
+- App/app/templates/_dashboard_calendar.html: `blocked` label removed, js key 20261107-1006 (step 4)
+- App/app/host_i18n.py: 8 keys removed, en and cs (step 5)
+- App/tests/test_host_i18n.py: 2 asserts removed, emptied test function removed (step 6)
+- App/app/static/app2.css: copy-link always visible, legend rules removed, calm focus rules (steps 7 to 9)
+- App/app/templates/base.html: app2.css key 20261107-1011 (step 10)
+- App/app/templates/reservation_detail.html: guest name links to guest page (step 11)
+- App/tests/static_versions.json: regenerated with `--write`
 
-## Commands
+## Commands (last 5 lines)
 
-- Brief §6 (8 files): `144 passed, 2 warnings in 5.64s`.
-- `UBYHOST_REQUIRE_BROWSER=1 pytest tests/test_layout_lint_browser.py tests/test_booking_site_host_browser.py tests/test_booking_manage_browser.py -rs`: `13 passed in 244.04s`, 0 skipped.
-- One-off seeded browser run (not committed): requested, expired, confirmed (paid) and declined direct rows; layout guard, no side scroll, no small targets at 390; then host cancel of the paid direct row shows the new flash and the row is `cancelled`.
+- Mapped pytest, UBYHOST_REQUIRE_BROWSER=1: `162 passed, 1 warning in 303.33s`, no skips.
+- Layout lint: `4 passed in 235.96s`, zero findings, no skips.
+- `python3 scripts/context_lint.py`: see the commit output below.
 
-## §7
+## Section 7
 
-- [x] Decline after confirm returns `not_confirmable`, booking stays `paid` (`test_decline_after_confirm_keeps_paid`).
-- [x] Declined direct row shows "Zrušeno", no "Retry refund" (screenshots `/mnt/project-files/pr803-review/after1006/booking-site-{390,768,1280}.png`).
-- [x] Host cancel of a direct booking flashes the new text (asserted in the seeded browser run).
-- [x] Declined guest gets one mail (`test_decline_mails_guest`).
-- [x] Each new key appears twice in `host_i18n.py`.
+- [x] Pill copy removed; tests pass (visual check of pills not done, see below).
+- [ ] Copy link visible at 1280 without hover: NOT verified. The properties shot shows no copy-link button; the test targets /apartments.
+- [ ] No heavy outline on mouse use: NOT verified visually. Covered by the focus CSS and a passing controls test.
+- [x] Guest name is a link to the same URL as "Edit details"; menu markup unchanged.
+- [x] Layout lint zero findings, 0 skipped.
+- [ ] Design-system checklist: not ticked (no PR opened).
+
+## Screenshots reviewed
+
+- properties-1280: list rows, no copy-link button visible, no focus ring visible.
+- dashboard-390: top section fine, no legend line visible in crop.
+- stay-detail-390: guest name shown in the guest row, cut off by the bottom nav in the shot.
+- Not opened: 768 and 1280 for dashboard, calendar and stay detail; 390 for properties.
 
 ## Deviations
 
-- `test_direct_confirm_host_mail_not_paid` monkeypatches `booking_webhook._host_email` (the fixture apartment has no legal entity, so no host mail was sent and the test would pass vacuously).
-- Running the browser tests rewrote committed screenshots in `docs/tasks/screenshots-0819/0821/0822`; reverted, not committed.
-- The after-cancel 390 screenshot caught a page transition mid-fade; the flash text was asserted in the DOM.
+- base.html key is 1011, not 1010: app2.css changed again (row focus fix).
+- Added `.clickable-row:focus-visible` ring. Brief rules alone failed test_host_controls_browser.py:226 (row.focus() must show an outline).
+- Legend comment `/* 0993 */` kept: a `.cd small` rule still sits under it.
+- Done: steps 1 to 11. Left: owner review, PR and merge, check copy-link at 1280 on /apartments.
 
-## Questions
+## Owner steps left
 
-None.
+- Review the screenshots, then open the PR and merge via `scripts/merge-pr-on-green.sh`.
 
-## Owner steps
+## CI fixes
 
-None.
+- design lint: added `stay-noname`, `stay-noname-action`, `havel-chip-ico`, `havel-chip-text`, `havel-close` (and `guest-name-link`, see below) to `docs/design/catalog.json` with a `class_notes` line each. `python3 scripts/design_lint.py` prints `design lint: OK`.
+- `App/app/static/app2.css`: `.cd small` font-size 10px to 12px (layout-lint text 10px, partB-overview 1920 px, `7.11.` day hint).
+- `App/app/static/app2.css`: `.ov-cal-more` top margin 0 to 16px, so "Full calendar" is 16px below the paragraph above (partB-overview at all widths).
+- `App/app/templates/reservation_detail.html` + `app2.css`: the guest name link in the stay guests table got class `guest-name-link` (`inline-block`, min-height 24px). It was 19px tall (tap target min 24, partD-stay-detail at 1024 to 1920 px). Catalog entry added.
+- Cache key: `base.html` app2.css `?v=20261107-1102`; `tests/static_versions.json` regenerated.
+- Browser tests: `test_0830_airbnb_pages_browser.py` partB-overview and partD-stay-detail, 14 of 14 pass after the fixes. The other 92 tests in the three named files passed before the fixes.
+
+a11y fix: Copy link button (tbody .btn.sm.ghost.copy-btn) was opacity 0 until row hover, so keyboard focus was invisible. Added `body.v2 tbody tr .btn.sm.ghost.copy-btn:focus-visible` (opacity 1, 2px #d0452d outline, offset 2px) in app2.css; cache key bumped to 20261107-1103. Row focus rule from 1006 untouched.
+
+
+Hover-only buttons removed: app2.css line 80 (`tbody tr .btn.sm.ghost` opacity 0 and its `tr:hover` reveal) deleted, so Copy link is always visible. Line 1054 (`copy-btn:focus-visible` opacity override) deleted; the standard ring at line 191 still gives the 2px accent ring. The media-query hover rule at ~311 did not exist (only its 1006 comment remained, left in place). Other row-hover reveals not changed: components.css:62 (`tbody tr:hover .row-actions>*` opacity 1, row-actions only). Cache key 20261107-2238; static_versions.json regenerated. Tests: a11y_guard, host_property_controls, layout_lint, host_geometry: 20 passed, 0 skipped (layout_lint re-run alone for fresh shots; test_calendar_platform_controls not needed). Screenshots /tmp/shots/layout-lint/properties-1280.png shows Copy link visible on both rows; stays-1280.png no regression.
