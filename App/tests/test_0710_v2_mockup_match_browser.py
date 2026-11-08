@@ -24,6 +24,7 @@ from tests.v2_mockup import (
     WIDTHS,
     box_diffs,
     computed,
+    WIDE_OVERRIDES,
     expected_value,
     geometry_findings,
     mockup_url,
@@ -127,6 +128,8 @@ def test_v2_page_matches_mockup_styles(spec, width, base, dashboard_rich_host):
             for prop in STYLE_PROPS:
                 app_value = app_styles[prop]
                 mock_value = expected_value(selector, prop, mock_styles[prop], spec["name"])
+                if width >= 768:  # owner decision 2026-11-08 (Josef's laptop screenshots): section titles need an inset
+                    mock_value = WIDE_OVERRIDES.get(f"{spec['name']}:{selector}", {}).get(prop, mock_value)
                 if not same_value(prop, app_value, mock_value):
                     diffs.append(f"{selector} {prop}: app={app_value} mockup={mock_value}")
             if phone and width in PHONE_WIDTHS:
