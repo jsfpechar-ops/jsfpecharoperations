@@ -90,19 +90,38 @@
 {% call ui_section(t('billing.change.title'), tip=ui_tip('tip-billing-change', t('billing.change.apartments_note'))) %}
 {% set other_plan = 'standard' if acc.plan == 'max' else 'max' %}
 {% set other_interval = 'month' if acc.billing_interval == 'year' else 'year' %}
-{% set options = [('plan', other_plan, t('billing.change.to_plan', plan=t('billing.plan.name.' ~ other_plan))),
-                  ('billing_interval', other_interval, t('billing.change.to_interval_' ~ other_interval))] %}
-{% if acc.addon_whitelabel %}{% set _ = options.append(('addon_whitelabel', '0', t('billing.change.whitelabel_off'))) %}{% endif %}
-{% if acc.plan != 'max' %}{% set _ = options.append(('addon_ttlock', '0' if acc.addon_ttlock else '1', t('billing.change.ttlock_' ~ ('off' if acc.addon_ttlock else 'on')))) %}{% endif %}
-<div class="billing-change-row">
-{% for field, value, label in options %}
+{% macro change_form(field, value) -%}
 <form method="post" action="/predplatne/zmena">
 <input type="hidden" name="_csrf" value="{{ csrf_token }}">
 <input type="hidden" name="field" value="{{ field }}"><input type="hidden" name="value" value="{{ value }}">
-<div class="ui-form-actions">{{ ui_button(label, 'secondary', type='submit') }}</div>
+{{ caller() }}
 </form>
-{% endfor %}
+{%- endmacro %}
+{% if acc.plan != 'max' %}
+<div class="ui-upgrade-card">
+  <h3 class="ui-upgrade-name">{{ t('billing.plan.name.max') }}</h3>
+  <p class="ui-upgrade-price">{{ t('billing.change.upgrade_per_' ~ acc.billing_interval, price=upgrade.price) }}</p>
+  <p class="ui-sub">{{ t('billing.order.plan_max') }}</p>
+  {% call change_form('plan', 'max') %}{{ ui_button(t('billing.change.to_plan', plan=t('billing.plan.name.max')), 'primary', type='submit') }}{% endcall %}
 </div>
+{% else %}
+{% call change_form('plan', 'standard') %}<div class="ui-form-actions">{{ ui_button(t('billing.change.to_plan', plan=t('billing.plan.name.standard')), 'secondary', type='submit') }}</div>{% endcall %}
+{% endif %}
+{% if acc.billing_interval == 'month' %}
+{% call change_form('billing_interval', 'year') %}
+<div class="ui-upgrade-strip">{% if upgrade.save_pct > 0 %}<span>{{ t('billing.change.yearly_save', pct=upgrade.save_pct) }}</span>{% endif %}{{ ui_button(t('billing.change.yearly_cta'), 'secondary', type='submit') }}</div>
+{% endcall %}
+{% else %}
+{% call change_form('billing_interval', 'month') %}<div class="ui-form-actions">{{ ui_button(t('billing.change.to_interval_month'), 'secondary', type='submit') }}</div>{% endcall %}
+{% endif %}
+{% if acc.addon_whitelabel %}
+{% call change_form('addon_whitelabel', '0') %}<div class="ui-form-actions">{{ ui_button(t('billing.change.whitelabel_off'), 'secondary', type='submit') }}</div>{% endcall %}
+{% endif %}
+{% if acc.plan != 'max' %}
+{% call change_form('addon_ttlock', '0' if acc.addon_ttlock else '1') %}
+<div class="ui-addon-row"><div class="ui-addon-text"><strong>{{ t('billing.change.ttlock_title') }}</strong><span class="ui-sub">{{ t('billing.change.ttlock_line', price=upgrade.ttlock_price) }}</span></div>{{ ui_button(t('billing.change.remove' if acc.addon_ttlock else 'billing.change.add'), 'secondary', type='submit', attrs='aria-label="' ~ t('billing.change.ttlock_' ~ ('off' if acc.addon_ttlock else 'on')) ~ '"') }}</div>
+{% endcall %}
+{% endif %}
 {% endcall %}
 {% endif %}
 {% call ui_section(t('billing.cancel.title'), tip=ui_tip('tip-billing-cancel', t('billing.cancel.body', date=period_end))) %}
