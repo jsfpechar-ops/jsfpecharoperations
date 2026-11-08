@@ -2320,12 +2320,19 @@ def _fee_estimate(apartment, reservation, values, guest=None):
         rate = stay_fee_rate.rate_on(schedule, last_night)
     days, amount = _fee_liable_amount(apartment, reservation, typed, schedule)
     live = None
-    # signature.js multiplies by one rate: across a rate change it would be
-    # wrong, so the page keeps the server amount instead (1028).
+    # One rate: signature.js multiplies; across a rate change it adds the per-night rates (1031).
     uniform = (first_night is None or last_night is None
                or stay_fee_rate.is_uniform(schedule, first_night + _timedelta(days=1), last_night))
-    if typed["fee_host_decision"] not in stay_fee.DECISIONS and uniform:
+    if typed["fee_host_decision"] not in stay_fee.DECISIONS:
         live = {"from": stay_from, "to": stay_to, "rate": rate}
+        if not uniform:
+            # 1031: across a rate change send each counted night's rate, so the script can
+            # still drop a child's or a resident's nights instead of freezing the box.
+            live["nights"] = {
+                (first_night + _timedelta(days=k)).isoformat():
+                    stay_fee_rate.rate_on(schedule, first_night + _timedelta(days=k))
+                for k in range(1, (last_night - first_night).days + 1)
+            }
     if days <= 0:
         return None
     return {"amount": amount, "days": days, "rate": rate, "live": live, "hidden": False}

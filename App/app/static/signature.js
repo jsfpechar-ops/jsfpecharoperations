@@ -412,6 +412,21 @@ function initSignature() {
       return count;
     }
 
+    function feeLiableAmount(live, birth) {
+      // 1031: the amount for the liable nights; per-night rates when the stay crosses a rate change.
+      var start = feeIso(live.from), end = feeIso(live.to), day = 86400000, amount = 0;
+      if (start === null || end === null) return -1;
+      for (var t = start + day; t <= end; t += day) {
+        var when = new Date(t);
+        var y = when.getUTCFullYear(), mo = when.getUTCMonth() + 1, d = when.getUTCDate();
+        var age = birth ? y - birth.y - ((mo < birth.m || (mo === birth.m && d < birth.d)) ? 1 : 0) : 99;
+        if (age < 18) continue;
+        var iso = when.toISOString().slice(0, 10);
+        amount += (live.nights && live.nights[iso] !== undefined) ? live.nights[iso] : live.rate;
+      }
+      return amount;
+    }
+
     function feeObecResident(box) {
       var raw = box.getAttribute("data-obec-rule");
       if (!raw) return false;
@@ -452,17 +467,20 @@ function initSignature() {
 
     function syncFeeBox() {
       var box = document.getElementById("fee-estimate");
-      var raw = box && box.getAttribute("data-fee-live");
-      if (!raw) return;
+      if (!box) return;
+      // 1031: the same-town rule first; it needs no stay window.
+      if (feeObecResident(box)) { box.hidden = true; return; }
+      var raw = box.getAttribute("data-fee-live");
+      if (!raw) { box.hidden = false; return; }
       var live;
       try { live = JSON.parse(raw); } catch (e) { return; }
       var input = document.getElementById("birth_date");
-      var days = feeObecResident(box) ? 0 : feeLiableDays(live, feeBirth(input ? input.value : ""));
+      var days = feeLiableDays(live, feeBirth(input ? input.value : ""));
       if (days < 0) return;
       if (days === 0) { box.hidden = true; return; }
       var amount = box.querySelector(".g-fee-amt");
       var calc = box.querySelector(".g-fee-calc");
-      if (amount) amount.textContent = String(box.getAttribute("data-fee-amount") || "").replace("{amount}", String(days * live.rate));
+      if (amount) amount.textContent = String(box.getAttribute("data-fee-amount") || "").replace("{amount}", String(feeLiableAmount(live, feeBirth(input ? input.value : ""))));
       if (calc) calc.textContent = String(box.getAttribute("data-fee-calc") || "").replace("{days}", String(days));
       box.hidden = false;
     }
@@ -504,6 +522,14 @@ function initSignature() {
     }
 
     form.addEventListener("guest-wizard:shown", build);
+    // 1031: re-count on every edit and when the browser restores the page from its cache.
+    ["birth_date", "res_city", "res_country"].forEach(function (id) {
+      var field = document.getElementById(id);
+      if (!field) return;
+      field.addEventListener("input", syncFeeBox);
+      field.addEventListener("change", syncFeeBox);
+    });
+    window.addEventListener("pageshow", build);
     build();
   }
 
