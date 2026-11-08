@@ -3100,7 +3100,7 @@ body.v2 .prop-wide-only{display:none}
 }
 
 /* 1030 fix: the phone-only "Settings" eyebrow is stray text beside the section list */
-@media (min-width:768px){body.v2 .prop-phone-only{display:none}}
+@media (min-width:768px){body.v2 .prop-phone-only,body.v2 #property-settings-form>h2.sec.prop-phone-only{display:none}}
 
 /* 1030: one slim fix line, wide only */
 body.v2 .prop-fixline{margin:0 0 12px;color:var(--bad);font-size:14px;line-height:1.45}
@@ -3127,5 +3127,6 @@ body.v2 .prop-fixline a{color:var(--bad);font-weight:600}
 @media (min-width:1280px){
   body.v2 .prop-layout{grid-template-columns:220px minmax(0,1fr);max-width:1000px;margin-left:0;margin-right:auto;row-gap:0}
   /* the editor column starts under the page title (no centred 776 px column beside the section list) */
-  body.v2 .form.prop-form-single,body.v2 .ui-page[data-body-kind="detail"]:has(#property-settings-form) > .ui-body-detail > .form.prop-form-single.property-detail{max-width:1000px;margin-left:0;margin-right:auto}
+  body.v2 .form.prop-form-single,body.v2 .ui-page[data-body-kind="detail"]:has(#property-settings-form) > .ui-body-detail > .form.prop-form-single.property-detail{max-width:min(1000px,calc(100% - 64px));margin-left:0;margin-right:auto}
+  /* (the 64 px keep the sticky Save clear of the fixed help bubble at the right edge) */
 }

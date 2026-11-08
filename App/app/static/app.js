@@ -2554,17 +2554,39 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       if (f) f.focus({ preventScroll: true });
       target.scrollIntoView({ block: "center" });
     }
+    // 1030: after a failed save the line names every field to fix: fields the server marked invalid and empty required fields,
+    // then the server's missing items that no named field already covers. Names are the clean label text (no help, no star).
+    function cleanText(el) {
+      var c = el.cloneNode(true);
+      c.querySelectorAll(".help-tip,.req-star").forEach(function (n) { n.remove(); });
+      return c.textContent.replace(/\s+/g, " ").trim();
+    }
     function fixLine() {
       if (!fix) return;
-      var seen = {};
+      var form = layout.querySelector("form");
+      var failed = !!document.querySelector("[data-save-summary][data-first-error]");
       var items = [];
-      var names = {};
+      var fields = [];
+      if (form) {
+        form.querySelectorAll("input,select,textarea").forEach(function (f) {
+          if (!f.id || f.disabled || f.type === "hidden" || !sectionFor(f)) return;
+          var bad = f.getAttribute("aria-invalid") === "true";
+          var empty = failed && (f.required || f.getAttribute("aria-required") === "true") && !String(f.value || "").trim();
+          if (!bad && !empty) return;
+          var label = document.querySelector("label[for='" + f.id + "']");
+          fields.push(f);
+          items.push({ id: f.id, name: label ? cleanText(label) : f.id });
+        });
+      }
+      var seen = {};
       layout.querySelectorAll(".prop-sec-missing a[href^='#']").forEach(function (a) {
         var id = a.getAttribute("href").slice(1);
-        if (!id || seen[id]) return;
-        seen[id] = true;
-        names[id] = a.getAttribute("data-fix-label") || "";
-        items.push(id);
+        var name = a.getAttribute("data-fix-label") || id;
+        var target = id && document.getElementById(id);
+        if (!target || seen[id + "|" + name]) return;
+        seen[id + "|" + name] = true;
+        if (fields.some(function (f) { return target === f || target.contains(f); })) return;
+        items.push({ id: id, name: name });
       });
       fix.textContent = "";
       if (!items.length || !mq.matches) {
@@ -2573,18 +2595,14 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       }
       var lead = items.length === 1 ? fix.getAttribute("data-text-one") : fix.getAttribute("data-text-many");
       fix.appendChild(document.createTextNode((lead || "").replace("{n}", String(items.length)) + " "));
-      items.forEach(function (id, i) {
+      items.forEach(function (item, i) {
         if (i) fix.appendChild(document.createTextNode(", "));
-        var target = document.getElementById(id);
-        var label = target && target.querySelector("label");
         var link = document.createElement("a");
-        link.href = "#" + id;
-        var text = label ? label.cloneNode(true) : null;
-        if (text) text.querySelectorAll(".help-tip,.req-star").forEach(function (n) { n.remove(); });
-        link.textContent = (names[id] || (text ? text.textContent : id)).replace(/\s+/g, " ").trim();
+        link.href = "#" + item.id;
+        link.textContent = item.name;
         link.addEventListener("click", function (e) {
           e.preventDefault();
-          goTo(id);
+          goTo(item.id);
         });
         fix.appendChild(link);
       });
@@ -2602,6 +2620,8 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       fixLine();
     }
     apply();
+    // the stay-fee stars are set by a later init, so the line is built once more after it
+    window.setTimeout(fixLine, 0);
     if (mq.addEventListener) mq.addEventListener("change", apply);
     if (nav) {
       nav.addEventListener("click", function (e) {
