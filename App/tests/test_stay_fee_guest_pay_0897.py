@@ -311,6 +311,76 @@ def test_guest_pay_unchanged_operator_account_saves_on_a_stale_session(host, mon
     assert _stored(apartment_id)["stay_fee_collect"] == 1
 
 
+def test_switching_operator_saves_typed_account_on_the_new_entity(host, monkeypatch):
+    """Same Save must not write the typed payout account onto the old operator."""
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    apt = db.query_one(
+        "SELECT owner_user_id, legal_entity_id FROM apartment WHERE id = ?",
+        (apartment_id,),
+    )
+    old_id = apt["legal_entity_id"]
+    new_id = db.insert("legal_entity", {
+        "name": "Other Operator s.r.o.",
+        "owner_user_id": apt["owner_user_id"],
+        "created_at": db.utcnow(),
+    })
+    account = "19-2000781379/0800"
+    response = _save(
+        client,
+        apartment_id,
+        guest={
+            "stay_fee_collect": "1",
+            "stay_fee_guest_rails": ["iban"],
+            "stay_fee_guest_operator_account": account,
+            "legal_entity_id": str(new_id),
+        },
+    )
+    assert response.status_code == 303, response.text
+    old = db.query_one("SELECT bank_account FROM legal_entity WHERE id = ?", (old_id,))
+    new = db.query_one("SELECT bank_account, iban FROM legal_entity WHERE id = ?", (new_id,))
+    saved = db.query_one("SELECT legal_entity_id FROM apartment WHERE id = ?", (apartment_id,))
+    assert old["bank_account"] == "19-2000145399/0800"
+    assert new["bank_account"] == account
+    assert (new["iban"] or "").startswith("CZ")
+    assert saved["legal_entity_id"] == new_id
+
+
+def test_switching_operator_does_not_copy_the_previous_payout_account(host, monkeypatch):
+    """The account box is prefilled from the old operator; switching must not overwrite the new one."""
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    apt = db.query_one(
+        "SELECT owner_user_id, legal_entity_id FROM apartment WHERE id = ?",
+        (apartment_id,),
+    )
+    old_id = apt["legal_entity_id"]
+    new_id = db.insert("legal_entity", {
+        "name": "Other Operator s.r.o.",
+        "owner_user_id": apt["owner_user_id"],
+        "created_at": db.utcnow(),
+        "iban": "CZ6508000000192000781379",
+        "bank_account": "19-2000781379/0800",
+    })
+    response = _save(
+        client,
+        apartment_id,
+        guest={
+            "stay_fee_collect": "1",
+            "stay_fee_guest_rails": ["iban"],
+            "stay_fee_guest_operator_account": "19-2000145399/0800",
+            "legal_entity_id": str(new_id),
+        },
+    )
+    assert response.status_code == 303, response.text
+    old = db.query_one("SELECT bank_account FROM legal_entity WHERE id = ?", (old_id,))
+    new = db.query_one("SELECT bank_account FROM legal_entity WHERE id = ?", (new_id,))
+    saved = db.query_one("SELECT legal_entity_id FROM apartment WHERE id = ?", (apartment_id,))
+    assert old["bank_account"] == "19-2000145399/0800"
+    assert new["bank_account"] == "19-2000781379/0800"
+    assert saved["legal_entity_id"] == new_id
+
+
 def test_qr_rail_shows_preview_when_operator_has_iban(host, monkeypatch):
     client, apartment_id = host
     monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)

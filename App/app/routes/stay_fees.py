@@ -401,6 +401,61 @@ def _entity_payment_account(entity) -> str:
     return ""
 
 
+def _as_entity_id(value):
+    try:
+        if value is None or value == "":
+            return None
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _operator_id_after_save(apartment, values: dict):
+    """The legal entity this save will leave on the property."""
+    return _as_entity_id(values.get("legal_entity_id")) or _as_entity_id(
+        apartment.get("legal_entity_id")
+    )
+
+
+def _operator_row(entity_id):
+    entity_id = _as_entity_id(entity_id)
+    if not entity_id:
+        return None
+    row = db.query_one(
+        "SELECT id, bank_account, iban FROM legal_entity WHERE id = ?",
+        (entity_id,),
+    )
+    if row is not None and not hasattr(row, "get"):
+        row = dict(row)
+    return row
+
+
+def _account_iban(account: str) -> str:
+    if not (account or "").strip():
+        return ""
+    try:
+        return payments.normalise_account(account.strip())[1]
+    except ValueError:
+        return ""
+
+
+def _posted_account_is_previous_prefill(apartment, values: dict, posted: str) -> bool:
+    """True when the field still holds the previous operator's account.
+
+    The property form always posts the box, prefilled from the operator that
+    was on the property when the page rendered. Switching operator in the
+    same save must not copy that value onto the new operator.
+    """
+    target_id = _operator_id_after_save(apartment, values)
+    source_id = _as_entity_id(apartment.get("legal_entity_id"))
+    if not posted or not source_id or source_id == target_id:
+        return False
+    posted_iban = _account_iban(posted)
+    if not posted_iban:
+        return False
+    return posted_iban == _account_iban(_entity_payment_account(_operator_row(source_id)))
+
+
 def _resolved_operator_account(entity, draft_account: str = "") -> tuple[str, str]:
     """Return (display account, iban-or-account for SPAYD) or empty strings when unknown."""
     from .. import payments
@@ -486,16 +541,14 @@ GUEST_SETUP_FLASH = {
 
 
 def _operator_account_on_file(apartment, values: dict) -> bool:
-    """A posted account, or the one already stored on the legal entity."""
-    if (values.get(GUEST_OPERATOR_ACCOUNT_RAW) or "").strip():
+    """A posted account for the operator this save will use, or one already stored."""
+    posted = (values.get(GUEST_OPERATOR_ACCOUNT_RAW) or "").strip()
+    if posted and not _posted_account_is_previous_prefill(apartment, values, posted):
         return True
-    entity_id = apartment.get("legal_entity_id")
+    entity_id = _operator_id_after_save(apartment, values)
     if not entity_id:
         return False
-    from .. import db
-
-    entity = db.query_one("SELECT id, bank_account, iban FROM legal_entity WHERE id = ?", (entity_id,))
-    return bool(entity and _entity_payment_account(entity))
+    return bool(_entity_payment_account(_operator_row(entity_id)))
 
 
 def check_guest_pay_setup(apartment, values: dict) -> None:
@@ -524,9 +577,11 @@ def check_guest_pay_setup(apartment, values: dict) -> None:
 def apply_guest_operator_account(apartment, form, values: dict, request) -> None:
     """Persist the operator bank account when QR or bank transfer is enabled.
 
-    A change of payout destination needs a fresh login (same rule as
-    POST /entities/{id}/invoice). Re-posting the account already on file does
-    not; the property form always sends the field.
+    Writes the account onto the operator this save will leave on the property
+    (``values['legal_entity_id']`` when posted), not the operator still on the
+    apartment row. A change of payout destination needs a fresh login (same
+    rule as POST /entities/{id}/invoice). Re-posting the account already on
+    file does not; the property form always sends the field.
     """
     from .. import db
 
@@ -543,17 +598,12 @@ def apply_guest_operator_account(apartment, form, values: dict, request) -> None
         values.pop(GUEST_OPERATOR_ACCOUNT_RAW, None)
         return
     raw = values.pop(GUEST_OPERATOR_ACCOUNT_RAW, None)
-    entity_id = apartment.get("legal_entity_id")
+    entity_id = _operator_id_after_save(apartment, values)
     if not entity_id:
         raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
-    entity = db.query_one(
-        "SELECT id, bank_account, iban FROM legal_entity WHERE id = ?",
-        (entity_id,),
-    )
+    entity = _operator_row(entity_id)
     if not entity:
         raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
-    if not hasattr(entity, "get"):
-        entity = dict(entity)
     if raw is None:
         if not _entity_payment_account(entity):
             raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
@@ -562,6 +612,12 @@ def apply_guest_operator_account(apartment, form, values: dict, request) -> None
         if _entity_payment_account(entity):
             return
         raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
+    if _posted_account_is_previous_prefill(apartment, values, raw):
+        # Leave the new operator's stored account alone; the typed box is
+        # still the previous operator's prefill from page load.
+        if not _entity_payment_account(entity):
+            raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
+        return
     from .invoices import apply_account_payload
 
     detail = {"bank_account": raw.strip()}
