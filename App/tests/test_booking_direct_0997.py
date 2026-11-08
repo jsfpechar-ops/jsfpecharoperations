@@ -239,3 +239,45 @@ def test_real_page_offers_both_modes(owner, monkeypatch):
     client = _client()
     html = client.get(f"/p/{_slug(owner)}", params=_page_query()).text
     assert html.count('type="radio" name="pay_mode"') == 2
+
+
+def test_direct_checkout_redirects_to_booking_page(owner, monkeypatch):
+    monkeypatch.setattr(config, "STRIPE_MODE", "off")
+    db.update("apartment", owner, {"stay_fee_guest_rails": "cash"})
+    client = _client()
+    response = client.post(f"/p/{_slug(owner)}/checkout", data=_checkout_payload(), follow_redirects=False)
+    assert response.status_code == 303
+    location = response.headers["location"]
+    assert location.startswith("/p/") and "/b/" in location
+    page = client.get(location)
+    assert page.status_code == 200
+    assert "cash" in page.text.lower() or "hotov" in page.text.lower()
+
+
+def test_request_page_get_twice_same(owner, monkeypatch):
+    monkeypatch.setattr(config, "STRIPE_MODE", "off")
+    db.update("apartment", owner, {"stay_fee_guest_rails": "cash"})
+    client = _client()
+    location = client.post(f"/p/{_slug(owner)}/checkout", data=_checkout_payload(),
+                           follow_redirects=False).headers["location"]
+    first = client.get(location)
+    second = client.get(location)
+    assert first.status_code == 200 and second.status_code == 200
+    assert "book=taken" not in second.text
+    assert "already taken" not in second.text
+
+
+def test_paid_direct_booking_page_has_no_refund_promise(owner, monkeypatch):
+    monkeypatch.setattr(config, "STRIPE_MODE", "off")
+    db.update("apartment", owner, {"stay_fee_guest_rails": "cash"})
+    client = _client()
+    location = client.post(f"/p/{_slug(owner)}/checkout", data=_checkout_payload(),
+                           follow_redirects=False).headers["location"]
+    from app import booking_direct
+    row = db.query_one("SELECT id FROM site_booking WHERE apartment_id = ?", (owner,))
+    oid = db.query_one("SELECT owner_user_id FROM apartment WHERE id = ?", (owner,))["owner_user_id"]
+    booking_direct.confirm(int(row["id"]), int(oid))
+    html = client.get(location).text
+    assert '<span>Total</span>' in html
+    assert "You paid the host directly" in html
+    assert 'pp-bk-total"><span>Paid</span>' not in html
