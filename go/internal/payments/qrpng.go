@@ -9,6 +9,7 @@ package payments
 import (
 	"context"
 	"errors"
+	"io"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -234,6 +235,16 @@ func qrPNGBytes(payload string) ([]byte, error) {
 		return nil, err
 	}
 	return code.PNG(-6)
+}
+
+// qrNoAccountBody is payment_request.NO_ACCOUNT_BODY in Python.
+const qrNoAccountBody = "No bank account is set up for this payment request.\n"
+
+// qrNoAccount answers the QR PNG routes when the host has no bank account.
+func qrNoAccount(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusNotFound)
+	_, _ = io.WriteString(w, qrNoAccountBody)
 }
 
 // QRPNGHandler serves GET /payments/qr/{file} for <digits>.png. Every
