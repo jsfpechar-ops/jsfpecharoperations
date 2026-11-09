@@ -41,7 +41,7 @@ def test_a_native_invalid_save_shows_the_fix_line_at_390(host, base):  # noqa: F
         page.evaluate("""() => {
           for (const n of ['addr_house_no', 'addr_zip']) document.querySelector('[name=' + n + ']').value = '';
         }""")
-        page.locator("#property-settings-form button[type=submit]").first.click()
+        page.locator("#property-settings-form button[type=submit]:visible").first.click()
         page.wait_for_function("() => !document.querySelector('[data-prop-fixline]').hidden")
         line = page.locator("[data-prop-fixline]")
         links = line.locator("a")
