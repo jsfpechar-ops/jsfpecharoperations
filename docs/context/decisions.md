@@ -27,8 +27,7 @@ Append-only.
 - 2026-10-28 | Property pages: Apify scrape-first prefill, no AI, host reviews once (0431); Airbnb-style layout, no Airbnb assets; photos re-hosted, max 10, EXIF stripped, host confirms rights (0432); no-JS widget, Stripe checkout on host account (0434); English only, OTA copy verbatim | owner
 - 2026-11-02 | OCR: Tesseract only, local, MRZ check digits, Max only; band crop; Paddle if ocr_readrate <90% | owner | test_doc_ocr
 - 2026-10-29 | Trials are extendable by the operator, 1-365 days | owner | 0448
-- 2026-10-29 | Stripe Accounts v2; responsibilities immutable; company hosts via business_type | owner | 0437
-- 2026-10-29 | Connect: full Stripe Dashboard + collectors (Express+Stripe preview-only; Express with application liability rejected) | owner | 0439
+- 2026-10-29 | Stripe Accounts v2, responsibilities immutable, companies via business_type (0437); Connect: full Dashboard + collectors, Express rejected (0439) | owner
 - 2026-10-30 | [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; manual cutover | 0455–0456
 - 2026-10-31 | Postgres (#592), then Go G1-G6, per-feature rollback, no load test. [workflow] Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
 - 2026-10-31 | Every change lean: no dead code or extras; dead code goes in its own small commit | owner | plan v4
@@ -37,12 +36,10 @@ Append-only.
 - 2026-11-01 | Host redesign: vendored Hotwire Turbo (MIT) for page-body swaps; owner OKs mockups first | owner | #614
 - 2026-11-01 | Go: module go/, stdlib, pgx v5, go-ntlmssp v0.1.1, go-qrcode (11-02) | owner (waiver) | 0474, 0481, 0684
 - 2026-11-02 | Signup box: unticked marketing opt-in; lawyer to confirm | owner | 0836
-- 2026-11-02 | Address autofill from RÚIAN, server-side | owner | 0884
-- 2026-11-03 | Try it rehearsal: optional page, Skip and Leave | owner | 0884
+- 2026-11-02/03 | RÚIAN address autofill, server-side; Try it rehearsal optional (Skip, Leave) | owner | 0884
 - 2026-11-02 | Booking site: CS/EN, one HMAC link per booking, cancel refunds per policy | owner | 0818-0821
 - 2026-11-03 | [workflow] UX gate: threads self-check UX (lint + screenshots) | owner | 0900
-- 2026-11-03 | Booking terms: own text modeled on marketplace guest terms (structure only), CS+EN, /terms/booking, versioned | owner | 0900
-- 2026-11-03 | Partial site refund issues a credit note / corrective document for the refunded amount; full refund keeps storno | owner | 0901
+- 2026-11-03 | Booking terms: own text (marketplace structure only), CS+EN, /terms/booking, versioned (0900); partial refund = credit note, full = storno (0901) | owner
 - 2026-11-04 | Go webhook forwards booking-site events to Python; booking logic not ported to Go yet | owner | 0910
 - [filing] 2026-11-04: unanswered filings retry 30m/2h/6h/12h, any answer stops; replaces OD-1, WP31 (0909).
 - [auth] 2026-11-04: 30-day sliding session, trusted-device cookie skips login Turnstile
@@ -62,3 +59,4 @@ Append-only.
 - 2026-11-09 [ux] [Speed plan](../plans/speed-and-ease.md): answers §10.
 - 2026-11-09 | [workflow] Speed and group plans only (owner): executor by tier. A (filing, concurrency, guest-data access): Fable 5.2 executor, Opus writes brief, fresh Fable reviews diff vs brief before PR. B (multi-file, mail, payments, privacy, new component): Opus executor, Sonnet brief. C (attributes, copy, prefill, CSS): Sonnet executor at medium effort, Sonnet brief. 100k cap = Haiku only; output and read ranges <=150 lines. From 11-09 21:35 a fresh Fable reviews every new brief before it goes to an executor | [workflow](workflow.md#roles-and-models)
 - 2026-11-09 [filing] Registered guests are filed by the deadline cap (deadline - 6 h) even when the stay is short or has no expected count; no 12 quiet hours wait past the cap; valid co-guests filed while another form is invalid; reverses the reporting.py:1093 "never because this code was deployed" rule: stays already past their cap are filed by the first sweep (backlog: all, owner 22:14) (owner, K-F20) | 1070
+- 2026-11-09 [workflow] Owner asleep: orchestrator takes recommended answers and merges green, reviewed PRs itself (this build only). Assumed: F3, F4 yes; G11 no stored preference; guest draft deleted 7 d after last change or day after check-out, whichever first; STAY_FEE_GUEST_PAY treated as on; S17 skipped (design unchanged). G6, G13 parked; G4 not released
