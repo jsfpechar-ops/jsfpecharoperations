@@ -1,4 +1,5 @@
 {% from "_ui_layout.html" import ui_skeleton with context %}
+{% from "_icons.html" import icon with context %}
 <!doctype html>
 <html lang="{{ lang | default('en') }}">
 <head>
@@ -19,7 +20,7 @@
   <link rel="preload" href="/static/fonts/Manrope-latin.woff2?v=20261101-0495" as="font" type="font/woff2" crossorigin>
   {% if v2 | default(false) %}
   <link rel="stylesheet" data-turbo-track="reload" href="/static/tokens.css?v=20261103-0920">
-  <link rel="stylesheet" data-turbo-track="reload" href="/static/app2.css?v=20261109-1100j">
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/app2.css?v=20261109-1130k">
   {% if show_nav | default(true) %}<link rel="stylesheet" data-turbo-track="reload" href="/static/command.css?v=20261103-0935">{% endif %}
   <link rel="stylesheet" data-turbo-track="reload" href="/static/list-filter-compact.css?v=20261109-1052a">
   {% else %}
@@ -95,13 +96,13 @@
         {% if flash and not inline_flash_section and not editor_saved %}
           <div class="toast" data-toast data-toast-kind="{{ flash_kind | default('info') }}"{% if flash_sticky | default(false) %} data-toast-sticky{% endif %}>
             <span class="grow">{{ flash }}</span>
-            <button type="button" data-toast-close aria-label="{{ t('a11y.dismiss_notification') }}">&times;</button>
+            <button type="button" data-toast-close aria-label="{{ t('a11y.dismiss_notification') }}">{{ icon('x', 16) }}</button>
           </div>
         {% endif %}
         {% if flash_error and not inline_flash_section %}
           <div class="toast err" data-toast data-toast-kind="error" data-toast-sticky>
             <span class="grow">{{ flash_error }}</span>
-            <button type="button" data-toast-close aria-label="{{ t('a11y.dismiss_notification') }}">&times;</button>
+            <button type="button" data-toast-close aria-label="{{ t('a11y.dismiss_notification') }}">{{ icon('x', 16) }}</button>
           </div>
         {% endif %}
         {% if undo_stay and undo_stay.isdigit() %}
@@ -111,7 +112,7 @@
               <input type="hidden" name="return_to" value="{{ undo_return }}">
               <button class="toast-undo" type="submit">{{ t('common.undo') }}</button>
             </form>
-            <button type="button" data-toast-close aria-label="{{ t('a11y.dismiss_notification') }}">&times;</button>
+            <button type="button" data-toast-close aria-label="{{ t('a11y.dismiss_notification') }}">{{ icon('x', 16) }}</button>
           </div>
         {% endif %}
         {% if celebration_milestone %}
@@ -130,7 +131,7 @@
         <strong>{{ t('copy.failure') }}</strong>
         <p>{{ t('copy.manual') }}</p>
         <div data-copy-recovery-source></div>
-        <button type="button" data-copy-recovery-close aria-label="{{ t('a11y.dismiss_notification') }}">&times;</button>
+        <button type="button" data-copy-recovery-close aria-label="{{ t('a11y.dismiss_notification') }}">{{ icon('x', 16) }}</button>
       </div>
       <div class="sr-only" data-feedback-live aria-live="polite" aria-atomic="true"></div>
       <div class="sr-only" data-feedback-alert role="alert" aria-live="assertive" aria-atomic="true"></div>
@@ -216,9 +217,9 @@
   <div class="command-shell">
     <h2 id="command-title" class="sr-only">{{ t('command.open') }}</h2>
     <div class="command-search">
-      <span aria-hidden="true">⌕</span>
+      <span aria-hidden="true">{{ icon('search', 18) }}</span>
       <input type="search" data-command-input aria-label="{{ t('command.open') }}" placeholder="{{ t('command.placeholder') }}" autocomplete="off">
-      <button class="command-close" type="button" data-command-close aria-label="{{ t('shortcuts.close') }}">&times;</button>
+      <button class="command-close" type="button" data-command-close aria-label="{{ t('shortcuts.close') }}">{{ icon('x', 16) }}</button>
     </div>
     <div class="command-results" data-command-results role="listbox" aria-live="polite"
          data-empty="{{ t('command.empty') }}" data-copied="{{ t('command.copied') }}"></div>
@@ -229,7 +230,7 @@
   <div class="shortcuts-shell">
     <div class="section-heading">
       <h2 id="shortcuts-title">{{ t('shortcuts.title') }}</h2>
-      <button class="btn-icon" type="button" data-shortcuts-close aria-label="{{ t('shortcuts.close') }}">&times;</button>
+      <button class="btn-icon" type="button" data-shortcuts-close aria-label="{{ t('shortcuts.close') }}">{{ icon('x', 16) }}</button>
     </div>
     <dl class="shortcut-list">
       <div><dt><kbd>g</kbd> <kbd>d</kbd></dt><dd>{{ t('shortcuts.dashboard') }}</dd></div>

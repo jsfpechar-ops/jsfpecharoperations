@@ -13,6 +13,7 @@ MASTER_ICONS = [
     "arrow-left", "chevron-left", "chevron-right", "chevron-down", "sliders-horizontal", "copy",
     "download", "send", "refresh-cw", "pencil", "trash-2", "circle-help", "triangle-alert", "check",
     "external-link", "info", "menu", "panel-left", "log-out", "languages", "archive", "file-lock", "users", "credit-card",
+    "arrow-up", "arrow-down", "arrow-right",
 ]
 
 

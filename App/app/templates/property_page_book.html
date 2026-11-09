@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon with context %}
 {% block title %}{{ t('pp.book.title') }} · {{ page.name }}{% endblock %}
 {% block content %}
 <main class="pp" style="max-width:520px;margin:2rem auto;padding:0 1rem;">
@@ -6,7 +7,7 @@
   <p class="pp-location">{{ page.district }}</p>
   <table class="ui-table">
     <tbody>
-      <tr><td>{{ t('pp.book.dates') }}</td><td>{{ q.date_from }} → {{ q.date_to }} ({{ q.nights }} {{ t('pp.book.nights') }})</td></tr>
+      <tr><td>{{ t('pp.book.dates') }}</td><td>{{ q.date_from }} <span aria-hidden="true">{{ icon('arrow-right', 14) }}</span><span class="sr-only"> – </span> {{ q.date_to }} ({{ q.nights }} {{ t('pp.book.nights') }})</td></tr>
       <tr><td>{{ t('pp.book.guests') }}</td><td>{{ q.guests }}</td></tr>
       <tr><td>{{ q.nightly_czk }} {{ t('payments.czk') }} × {{ q.nights }} {{ t('pp.book.nights') }}</td><td>{{ q.accommodation_czk }} {{ t('payments.czk') }}</td></tr>
       {% if q.cleaning_fee_czk %}<tr><td>{{ t('pp.book.cleaning') }}</td><td>{{ q.cleaning_fee_czk }} {{ t('payments.czk') }}</td></tr>{% endif %}
