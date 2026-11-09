@@ -116,13 +116,13 @@
       <div class="g-field">
         <label for="first_name">{{ t('first_name') }}</label>
         <input class="{{ bad('first_name') }}" {{ invalid('first_name') }} type="text" id="first_name" name="first_name" maxlength="24"
-               autocomplete="given-name" required value="{{ val('first_name') }}">
+               autocomplete="given-name" autocapitalize="words" required value="{{ val('first_name') }}">
         {{ err_for('first_name') }}
       </div>
       <div class="g-field">
         <label for="surname">{{ t('surname') }}</label>
         <input class="{{ bad('surname') }}" {{ invalid('surname') }} type="text" id="surname" name="surname" maxlength="50" required
-               autocomplete="family-name" value="{{ val('surname') }}">
+               autocomplete="family-name" autocapitalize="words" value="{{ val('surname') }}">
         {{ err_for('surname') }}
       </div>
     </div>
