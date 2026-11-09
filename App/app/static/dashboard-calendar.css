@@ -869,10 +869,11 @@ body.v2 #calendar.dashboard-calendar[data-readonly="false"] .cal-pill[data-cal-c
 @media (min-width:768px) {
   body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-week.is-dots { --cal-num-band:52px; --cal-lane:56px; }
   body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-pills { align-content:start; padding-top:var(--cal-num-band); padding-bottom:0; }
-  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-tile-chips { margin-top:calc(var(--cal-num-band) + var(--pl,1) * var(--cal-lane) - 12px + 8px - 47px); }
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-tile-chips { margin-top:calc(var(--cal-num-band) + var(--pl,1) * var(--cal-lane) - 12px + 12px - 47px); }
 }
+/* 1054: --cal-lane is one stay lane = pill height + 12 px row gap (44 + 12 below 1024 px, 32 + 12 from 1024 px). It was 56 everywhere with a flat -24 px fudge at 1024 px+, which only fitted weeks with 2 lanes: 1 lane let the pill cover the chip, 3 lanes left a 20 px hole. The 47 is the chip's natural top inside the tile; the chip now starts 12 px under the last pill. */
 @media (min-width:1024px) {
-  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-tile-chips { margin-top:calc(var(--cal-num-band) + var(--pl,1) * var(--cal-lane) - 12px + 8px - 47px - 24px); }
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-week.is-dots { --cal-lane:44px; }
 }
 /* 0956: a 768-1023 px tile is ~94 px wide, so the "Cleaning" chip drops its icon and shrinks to fit; long labels end in an ellipsis */
 @media (min-width:768px) and (max-width:1023px) {
