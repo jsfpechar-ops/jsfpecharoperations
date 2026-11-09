@@ -27,10 +27,5 @@
     </label>
     <button class="auth-submit" type="submit">{{ t('account.accept.continue') }}</button>
   </form>
-
-  <form method="post" action="/logout" class="auth-secondary">
-    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-    <button type="submit">{{ t('account.accept.sign_out') }}</button>
-  </form>
 </section>
 {% endblock %}
