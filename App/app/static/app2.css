@@ -2933,6 +2933,10 @@ body.v2 :is(.success-notice-close, .toast-stack .toast[data-toast-kind="success"
 }
 body.v2 :is(.success-notice-close, .toast-stack .toast[data-toast-kind="success"] > [data-toast-close]):hover { background: var(--surface-hover, #f1f0ec); color: var(--ink); }
 body.v2 :is(.success-notice-close, .toast-stack .toast[data-toast-kind="success"] > [data-toast-close]):focus-visible { outline: 2px solid #d0452d; outline-offset: 2px; }
+/* 1062: toast close is an icon-only control: no border, transparent, 32 px square (44 px tap target on phones), icon 16 px centred */
+body.v2 .toast-stack .toast[data-toast-kind] > [data-toast-close] { flex: 0 0 32px; display: inline-grid; place-items: center; width: 32px; height: 32px; min-width: 32px; min-height: 32px; margin: 0 0 0 auto; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--ink-secondary, #5b5a55); font-size: 16px; line-height: 1; cursor: pointer; }
+body.v2 .toast-stack .toast[data-toast-kind] > [data-toast-close]:hover { background: var(--surface-hover, #f1f0ec); color: var(--ink); }
+@media (max-width:767px){body.v2 .toast-stack .toast[data-toast-kind] > [data-toast-close]{flex-basis:44px;width:44px;height:44px;min-width:44px;min-height:44px}}
 body.v2 .toast-stack .toast .toast-pill { min-height: 44px; padding: 8px 18px; border: 0; border-radius: 999px; background: var(--s); color: var(--ink); font-size: 14px; font-weight: 700; text-decoration: none; }
 body.v2 .toast-stack .toast .toast-pill:hover { color: var(--ink); }
 body.v2 .toast-stack .toast .toast-pill:focus-visible { outline: 2px solid #d0452d; outline-offset: 2px; }
