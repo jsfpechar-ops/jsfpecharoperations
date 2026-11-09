@@ -7,7 +7,7 @@
     the one dashboard line. On /reservations?apartment=N an alert of another
     property is a compact line labelled as a workspace alert. A filing alert is
     never folded or hidden. -#}
-{% if open_alerts %}
+{% if open_alerts or (open_alerts_more | default(0)) %}
 {% set path = request.url.path if request is defined and request else '' %}
 {% set scope = (request.query_params.get('apartment', '') if path == '/reservations' else '') | string %}
 {% set compact_page = not (alerts_expanded | default(false)) and path != '/' and path != '/reservations' and not path.startswith('/reservations/') and not path.startswith('/apartments/') %}
@@ -20,7 +20,7 @@
 {% set red = held.shown | selectattr('level', 'equalto', 'critical') | list %}
 {% set rest = held.shown | rejectattr('level', 'equalto', 'critical') | list %}
 {% set rest_pin = rest | selectattr('kind', 'equalto', 'guest_pin_rotated') | list %}
-{% set rest_count = (rest | rejectattr('kind', 'equalto', 'guest_pin_rotated') | list | length) + (1 if rest_pin else 0) + (held.folded | length) %}
+{% set rest_count = (rest | rejectattr('kind', 'equalto', 'guest_pin_rotated') | list | length) + (1 if rest_pin else 0) + (held.folded | length) + (open_alerts_more | default(0)) %}
 {% set rest_inline = alerts_expanded | default(false) or (rest_count == 1 and not held.folded) %}
 {% set lines = red + (rest if rest_inline else []) %}
 <aside class="notification-stack{{ ' ph-hide' if ph_hide_pin | default(false) and (lines | rejectattr('kind', 'equalto', 'guest_pin_rotated') | list | length == 0) else '' }}" data-host-alerts aria-label="{{ t('a11y.notifications') }}" aria-live="polite">
@@ -43,7 +43,7 @@
     </article>
   {% endfor %}
   {% if rest_count > 0 and not rest_inline %}
-    <article class="notification-bubble {{ (held.folded + rest)[0].level }}" data-notification-summary>
+    <article class="notification-bubble {{ (held.folded + rest)[0].level if (held.folded or rest) else 'warning' }}" data-notification-summary>
       <a class="notification-link" href="/#needs-action">
         <span class="notification-icon" aria-hidden="true">!</span>
         <span class="grow">
