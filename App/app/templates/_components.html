@@ -8,7 +8,9 @@
 {#- 0093 help: one contextual "?" tip beside a field label. Place it OUTSIDE the <label> tag.
     id must be unique on the page; text is escaped; guide_href optional ("/guide#anchor"). -#}
 {#- 1052: svg=true draws the Lucide circle-help icon instead of the "?" text glyph (Stay fee card first). -#}
+{#- A page may also set help_svg = true before an include (the property editor does for the Stay fee card). -#}
 {%- macro help_tip(id, text, guide_href='', label='', svg=false) -%}
+{%- set svg = svg or (help_svg is defined and help_svg) -%}
 <span class="help-tip{{ ' help-tip-svg' if svg }}" data-help-tip>
     <button type="button" class="help-tip-btn" aria-label="{{ t('help.tip.label_for', topic=label) if label else t('help.tip.label') }}" aria-expanded="false" aria-controls="{{ id }}">{% if svg %}{{ icon('circle-help', 18) }}{% else %}?{% endif %}</button>
     <span class="help-tip-body" id="{{ id }}" role="tooltip">{{ text }}{% if guide_href %} <a href="{{ guide_href }}" aria-label="{{ t('help.tip.more') }}: {{ text | striptags | truncate(50) }}">{{ t('help.tip.more') }}</a>{% endif %}</span>

@@ -27,7 +27,7 @@ The card is `section#stay-fee-settings` inside `details#sec-fee`; its fields com
   - Step 1 from 768 px: two columns; each field is a 2-row subgrid, labels align to the row bottom, inputs share one line.
   - "?": wrapper margin `--space-2`; >=1024 a 24 px borderless button holding the 18 px icon, 44 px invisible hit area; <1024 a 44 px box (0833 test) with the icon at its left edge, negative margins keep the label line short.
   - Editor column (>=1024): `.ui-body-detail` of the editor page `max-width:min(var(--lane), 100% - 128px)`, `margin-inline:auto`; children full width. 64 px each side keeps the sticky Save clear of the help bubble. <1024 unchanged.
-- `_components.html`: `help_tip(..., svg=false)` and `field_label(..., svg=false)`; `svg=true` renders `icon('circle-help', 18)` in the button instead of "?". Used for every help mark in the Stay fee card (and its copy row and signature legend, `prefix == 'fee_'`); other pages unchanged. More details summary gets `icon('chevron-down', 16)`, turned 180 degrees when open.
+- `_components.html`: `help_tip(..., svg=false)` and `field_label(..., svg=false)`; `svg=true` renders `icon('circle-help', 18)` in the button instead of "?". The editor sets `help_svg = true` before the stay-fee include, so every help mark in the card (and the copy row and signature legend) uses the icon; other pages and the wizard unchanged. More details summary gets `icon('chevron-down', 16)`, turned 180 degrees when open.
 - Cache key `app2.css?v=20261109-1052b` in `base.html` and `tests/static_versions.json`.
 
 ## 5. Do not touch

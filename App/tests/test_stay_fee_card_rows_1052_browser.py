@@ -40,7 +40,8 @@ _FACTS = """() => {
   }
   const main = document.querySelector('main').getBoundingClientRect();
   const col = document.getElementById('property-settings-form').closest('.ui-body-detail').getBoundingClientRect();
-  return {gapLeft: Math.round(col.left - main.left), gapRight: Math.round(main.right - col.right), rate: top(document.getElementById('stay_fee_rate_czk')), period: top(document.getElementById('stay_fee_cadence')),
+  const glyphs = [...document.querySelectorAll('#stay-fee-settings .help-tip-btn')].filter(b => !b.querySelector('svg')).map(b => b.getAttribute('aria-controls'));
+  return {glyphs, gapLeft: Math.round(col.left - main.left), gapRight: Math.round(main.right - col.right), rate: top(document.getElementById('stay_fee_rate_czk')), period: top(document.getElementById('stay_fee_cadence')),
           from: top(document.getElementById('stay_fee_rate_from')), gaps};
 }"""
 
@@ -73,6 +74,8 @@ def test_stay_fee_rows_align_and_help_sits_after_label(host, base, monkeypatch):
                 page.evaluate("() => { for (const c of document.querySelectorAll('#sec-fee input[name=stay_fee_guest_rails]')) c.checked = false;"
                               " document.querySelector('#sec-fee details.fee-more').open = false; }")
                 page.set_viewport_size({"width": width, "height": 1000})
+            if facts["glyphs"]:
+                problems.append((width, "help mark without the SVG icon", facts["glyphs"]))
             if width == 390:
                 continue
             if width >= 1440 and abs(facts["gapLeft"] - facts["gapRight"]) > 24:
