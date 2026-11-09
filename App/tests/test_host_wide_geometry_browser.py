@@ -941,16 +941,19 @@ new MutationObserver(() => {
   if (document.body && document.body.classList.contains('sidebar-animating')) window.__railAnimated = (window.__railAnimated || 0) + 1;
 }).observe(document.documentElement, {attributes: true, subtree: true, attributeFilter: ['class']});
 """
-CLICK_AND_SAMPLE = """() => {
+CLICK_AND_SAMPLE = """() => new Promise(resolve => {
   document.querySelector('[data-sidebar-collapse]').click();
   const side = document.getElementById('app-sidebar');
-  getComputedStyle(side).width;
-  return {
+  const main = document.querySelector('.wrap.with-sidebar');
+  const read = () => ({
     animating: document.body.classList.contains('sidebar-animating'),
     transitions: side.getAnimations().filter(a => a.transitionProperty).map(a => a.transitionProperty),
-    mainTransitions: document.querySelector('.wrap.with-sidebar').getAnimations().map(a => a.transitionProperty),
-  };
-}"""
+    mainTransitions: main.getAnimations().map(a => a.transitionProperty),
+  });
+  // The animating class is set in the click turn. CSS transitions show up in
+  // getAnimations() on a later frame, so a same-turn read is empty in CI.
+  requestAnimationFrame(() => requestAnimationFrame(() => resolve(read())));
+})"""
 
 
 def _rail_context(browser, wide_host, wide_base, width, collapsed, **options):

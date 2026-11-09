@@ -282,8 +282,15 @@ def normalise_name(value: Optional[str]) -> str:
     return collapse_spaces(fold_to_allowed(text, NAME_ALLOWED))
 
 
+# Word/macOS dashes. UbyPort only accepts ASCII "-"; stay_fee._obec_key already
+# treats these as a hyphen, but fold_to_allowed would otherwise drop them and
+# turn "Praha–Řepy" into "PrahaŘepy" (charged after save, exempt on the form).
+_RESIDENCE_DASH = re.compile(r"[\u2010-\u2015\u2212]")
+
+
 def normalise_residence_part(value: Optional[str]) -> str:
     text = collapse_spaces(strip_forbidden(value))
+    text = _RESIDENCE_DASH.sub("-", text)
     return collapse_spaces(fold_to_allowed(text, RESIDENCE_ALLOWED))
 
 
