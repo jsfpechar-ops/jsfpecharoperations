@@ -80,7 +80,7 @@ def test_hosts_cannot_read_or_mutate_another_workspace():
 
         assert first.get(
             f"/apartments/{second_apartment}", follow_redirects=False
-        ).status_code == 303
+        ).status_code == 404  # foreign id looks the same as an unknown id
         response = first.post(
             f"/apartments/{second_apartment}",
             data={"internal_name": "Stolen", "active": "1"},
@@ -131,14 +131,14 @@ def test_hosts_cannot_read_or_mutate_another_workspace():
                 "request_xml": "<private>other workspace</private>",
             },
         )
-        assert first.get(f"/guests/{guest_id}", follow_redirects=False).status_code == 303
+        assert first.get(f"/guests/{guest_id}", follow_redirects=False).status_code == 404
         assert first.get(
             f"/submissions/{submission_id}", follow_redirects=False
         ).status_code == 303
         assert first.get(f"/submissions/{submission_id}/receipt.pdf").status_code == 404
         assert first.get(f"/submissions/{submission_id}/request.xml").status_code == 404
         assert first.get(f"/guests/{guest_id}/passport-photo").status_code == 404
-        assert first.get(f"/reservations/{reservation_id}", follow_redirects=False).status_code == 303
+        assert first.get(f"/reservations/{reservation_id}", follow_redirects=False).status_code == 404
         assert first.get(f"/apartments/{first_apartment}").status_code == 200
 
         tainted_submission = db.insert(
