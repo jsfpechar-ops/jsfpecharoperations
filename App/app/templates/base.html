@@ -19,11 +19,11 @@
   <link rel="preload" href="/static/fonts/Manrope-latin.woff2?v=20261101-0495" as="font" type="font/woff2" crossorigin>
   {% if v2 | default(false) %}
   <link rel="stylesheet" data-turbo-track="reload" href="/static/tokens.css?v=20261103-0920">
-  <link rel="stylesheet" data-turbo-track="reload" href="/static/app2.css?v=20261109-1036">
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/app2.css?v=20261109-1037">
   {% if show_nav | default(true) %}<link rel="stylesheet" data-turbo-track="reload" href="/static/command.css?v=20261103-0935">{% endif %}
   {% else %}
   <link rel="stylesheet" data-turbo-track="reload" href="/static/tokens.css?v=20261103-0920">
-  <link rel="stylesheet" data-turbo-track="reload" href="/static/app.css?v=20261104-0916">
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/app.css?v=20261108-1031">
   <link rel="stylesheet" data-turbo-track="reload" href="/static/components.css?v=20261103-0930">
   {% if show_nav | default(true) %}<link rel="stylesheet" data-turbo-track="reload" href="/static/command.css?v=20261103-0935">{% endif %}
   {% if show_nav | default(true) %}
@@ -246,26 +246,34 @@
 {# Task 0004: shown once, to an account with no passkey and no authenticator
    app. Without JavaScript it is an open box on the page; with it, a modal. #}
 <dialog id="security-prompt" class="admin-dialog security-prompt" open aria-labelledby="security-prompt-title">
-  <div class="admin-dialog-form">
-    <h2 id="security-prompt-title" style="margin-top:0">{{ t('security_prompt.title') }}</h2>
-    <p class="small muted">{{ t('security_prompt.lede') }}</p>
+  <div class="security-prompt-body">
+    <h2 id="security-prompt-title" class="security-prompt-title">{{ t('security_prompt.title') }}</h2>
+    <p class="security-prompt-lede">{{ t('security_prompt.lede') }}</p>
     <div class="security-prompt-options">
       {% if prompt.passkeys %}
-        <div class="security-prompt-option" data-passkey-supported hidden>
-          <button class="btn primary" type="button" data-passkey-add data-passkey-return="{{ request.url.path }}">{{ t('security_prompt.passkey') }}</button>
-          <small>{{ t('security_prompt.passkey_help') }}</small>
+        <div class="security-prompt-option-wrap" data-passkey-supported hidden>
+          <button class="security-prompt-option" type="button" data-passkey-add data-passkey-return="{{ request.url.path }}">
+            <span class="security-prompt-option-text">
+              <span class="security-prompt-option-title">{{ t('security_prompt.passkey') }}</span>
+              <span class="security-prompt-option-help">{{ t('security_prompt.passkey_help') }}</span>
+            </span>
+            <span class="security-prompt-chevron" aria-hidden="true">&rsaquo;</span>
+          </button>
           <p class="small err-text" data-passkey-error data-generic="{{ t('passkeys.error.failed') }}" role="alert" hidden></p>
         </div>
       {% endif %}
-      <div class="security-prompt-option">
-        <a class="btn" href="/account/2fa/setup">{{ t('security_prompt.totp') }}</a>
-        <small>{{ t('security_prompt.totp_help') }}</small>
-      </div>
+      <a class="security-prompt-option" href="/account/2fa/setup">
+        <span class="security-prompt-option-text">
+          <span class="security-prompt-option-title">{{ t('security_prompt.totp') }}</span>
+          <span class="security-prompt-option-help">{{ t('security_prompt.totp_help') }}</span>
+        </span>
+        <span class="security-prompt-chevron" aria-hidden="true">&rsaquo;</span>
+      </a>
     </div>
-    <form method="dialog" class="actions">
-      <button class="btn" type="submit" value="later" data-security-prompt-later>{{ t('security_prompt.later') }}</button>
+    <form method="dialog" class="security-prompt-later">
+      <button class="security-prompt-later-btn" type="submit" value="later" data-security-prompt-later>{{ t('security_prompt.later') }}</button>
     </form>
-    <p class="small muted">{{ t('security_prompt.footnote') }}</p>
+    <p class="security-prompt-footnote">{{ t('security_prompt.footnote') }}</p>
   </div>
 </dialog>
 {% endif %}

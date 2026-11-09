@@ -678,24 +678,26 @@ def test_fee_card_shows_with_qr_rail_open_and_enabled_rails(live_server, browser
         card = page.locator("#fee-pay")
         assert card.count() == 1, page.inner_text("body")[:400]
         assert card.is_visible()
-        assert card.locator("details.g-summary").filter(has=page.locator(".g-fee-rail")).count() == 3
+        assert card.locator("div.g-fee-opt").filter(has=page.locator(".g-fee-rail")).count() == 3
         assert card.get_by_text("Please pay now.").is_visible()
         assert card.locator("details.g-fee-fold").count() == 2
         if width == 390:
             _shot_0958(page, "guest-hub-fee-card-390.png")
         if width == 768:
             _shot_0958(page, "guest-hub-fee-card-768.png")
-        assert card.locator("details[open] .g-fee-qr-img").count() == 1
+        if width == 1280:
+            _shot_0958(page, "guest-hub-fee-card-1280.png")
+        assert card.locator(".g-fee-opt .g-fee-qr-img").count() == 1
         assert card.locator(".g-fee-qr-img").is_visible()
-        qr_rail = card.locator("details.g-summary").filter(has=page.locator(".g-fee-qr-img"))
+        qr_rail = card.locator("div.g-fee-opt").filter(has=page.locator(".g-fee-qr-img"))
         assert "Browser Test s.r.o." in qr_rail.locator(".g-fee-rail").inner_text()  # QR and who gets the money; nothing to type
-        iban_rail = card.locator("details.g-summary").filter(has_text="Bank transfer")
+        iban_rail = card.locator("div.g-fee-opt").filter(has_text="Bank transfer")
         iban_text = iban_rail.locator(".g-fee-rail").inner_text()
         assert "Variable symbol" in iban_text and str(int(stay)) in iban_text
         assert "Browser Test s.r.o." in iban_text
         assert "Message" not in iban_text
         assert f"{int(stay):010d}" not in card.inner_text()
-        card.locator("summary.g-summary-fold", has_text="Revolut").click()
+        assert card.locator(".g-fee-opt-h", has_text="Revolut").is_visible()
         assert "Open your host" not in card.inner_text()
         assert card.get_by_role("link", name="Revolut", exact=False).count() == 1
         assert "0000000" not in card.inner_text()
@@ -718,7 +720,7 @@ def test_fee_card_hides_the_qr_for_guests_who_are_not_czech_or_slovak(live_serve
         card = page.locator("#fee-pay")
         assert card.count() == 1, page.inner_text("body")[:400]
         assert card.locator(".g-fee-qr-img").count() == 0
-        assert card.locator("details.g-summary").filter(has=page.locator(".g-fee-rail")).count() == 3
+        assert card.locator("div.g-fee-opt").filter(has=page.locator(".g-fee-rail")).count() == 3
     finally:
         page.close()
 
@@ -753,9 +755,9 @@ def test_fee_card_opens_the_hosts_default_rail_first(live_server, browser, monke
     page = browser.new_page(viewport={"width": 390, "height": 800})
     try:
         page.goto(f"{live_server}/l/{token}/{stay}?lang=en")
-        first = page.locator("#fee-pay details.g-summary").filter(has=page.locator(".g-fee-rail")).first
-        assert "Revolut" in first.locator("summary").inner_text()
-        assert first.get_attribute("open") is not None
+        first = page.locator("#fee-pay div.g-fee-opt").filter(has=page.locator(".g-fee-rail")).first
+        assert "Revolut" in first.locator(".g-fee-opt-h").inner_text()
+        assert first.locator(".g-fee-rail").is_visible()
     finally:
         page.close()
 
