@@ -800,9 +800,9 @@ async def smart_locks_refresh(request: Request):
     # No usable lock now means the page shows the sharing steps again.
     share = _smart_locks_url(request, return_to, "share")
     if not locks and plain_keys:
-        return _back(share, err=_flash(request, "flash.error.smart_locks_plain_key"))
+        return _back(share, err=_flash(request, "flash.error.smart_locks_plain_key"), fix="lock_guide")
     if not locks:
-        return _back(share, msg=_flash(request, "flash.ok.smart_locks_none_yet"))
+        return _back(share, msg=_flash(request, "flash.ok.smart_locks_none_yet"), fix="lock_guide")
     count = len(locks)
     if count == 1:
         _default_on_first_lock(owner_id, locks[0]["lock_id"])

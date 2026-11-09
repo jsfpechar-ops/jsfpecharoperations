@@ -286,7 +286,7 @@
       </div>
     </details>
     <p class="ui-sub warn-text" data-bank-warning data-has-iban="{{ 1 if entity.iban else 0 }}" hidden>
-      {{ t('invoice.warn_no_iban') }}
+      {{ t('invoice.warn_no_iban') }} <a href="/entities">{{ t('payments.fix.bank') }}</a>
     </p>
   </div>
 
