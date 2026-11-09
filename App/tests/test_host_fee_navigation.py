@@ -23,7 +23,7 @@ from fastapi.testclient import TestClient
 from app import auth, db
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0082-evidence"
 MONTH = "2026-08"
@@ -36,7 +36,7 @@ SIGNATURE = "data:image/png;base64,AAAA"
 def fee_host():
     db.init_db()
     username = f"fee-nav-{secrets.token_hex(4)}"
-    owner_id = auth.create_account(f"{username}@example.test", "Fee Nav QA", role="host", username=username)
+    owner_id = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Fee Nav QA", role="host", username=username))
     now = db.utcnow()
     entity_id = db.insert("legal_entity", {
         "name": "Fee Nav QA s.r.o.", "owner_user_id": owner_id, "created_at": now,

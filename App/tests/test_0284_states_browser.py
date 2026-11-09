@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, config, db, demo
 from app.main import app
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 from tests.test_property_navigation_browser import base, chromium_launch_kwargs, sync_api  # noqa: F401
 
 @pytest.fixture(autouse=True)
@@ -42,7 +42,7 @@ def _hover_changed(before, after):
 def _session(base):
     db.init_db()
     user = f"states-{secrets.token_hex(3)}"
-    owner = auth.create_account(f"{user}@example.test", "States Host", role="host", username=user)
+    owner = mark_security_prompt_seen(auth.create_account(f"{user}@example.test", "States Host", role="host", username=user))
     demo.seed(owner)
     client = TestClient(app)
     login_as(client, user, url="/login?lang=en")

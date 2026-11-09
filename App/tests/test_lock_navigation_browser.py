@@ -26,7 +26,7 @@ else:
 from app import auth, config, db, ttlock
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0090-evidence"
 LONG_TITLE = "Apartmán Vinohrady s výhledem na Žižkovskou věž a zahradou u parku"
@@ -85,7 +85,7 @@ def world():
     patch.setattr(ttlock, "_call", fake.forbidden)
     patch.setattr(ttlock, "_post", fake.forbidden)
     username = f"locknav-{secrets.token_hex(4)}"
-    owner_id = auth.create_account(f"{username}@example.test", "Lock Nav", role="host", username=username)
+    owner_id = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Lock Nav", role="host", username=username))
     entity_id = db.insert("legal_entity", {"name": "Lock Operator", "owner_user_id": owner_id, "created_at": db.utcnow()})
     apartment_id = db.insert("apartment", {
         "internal_name": LONG_TITLE, "owner_user_id": owner_id, "legal_entity_id": entity_id,
@@ -93,7 +93,7 @@ def world():
         "checkin_hour": 15, "checkout_hour": 10, "active": 1, "created_at": db.utcnow(),
         "addr_obec": "Praha", "addr_house_no": "12", "addr_zip": "11000",
     })
-    other = auth.create_account(f"other-{username}@example.test", "Other", role="host", username=f"other-{username}")
+    other = mark_security_prompt_seen(auth.create_account(f"other-{username}@example.test", "Other", role="host", username=f"other-{username}"))
     foreign_id = db.insert("apartment", {
         "internal_name": "Foreign flat", "owner_user_id": other,
         "permalink_token": f"locknavf{secrets.token_hex(4)}", "permalink_pin": "123456",

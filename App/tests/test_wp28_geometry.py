@@ -25,7 +25,7 @@ from fastapi.testclient import TestClient
 from app import auth, db, demo, reporting
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 
 NO_SIDEWAYS_SCROLL = "() => document.documentElement.scrollWidth - document.documentElement.clientWidth"
@@ -58,7 +58,7 @@ def base():
 def world():
     db.init_db()
     username = f"sweepgeo{secrets.token_hex(4)}"
-    owner = auth.create_account(f"{username}@example.test", "Sweep Geometry", role="host", username=username)
+    owner = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Sweep Geometry", role="host", username=username))
     studio = demo.seed(owner)
     assert studio, "the demo seed needs UBYHOST_UBYPORT_ENV=mock"
     client = TestClient(app)

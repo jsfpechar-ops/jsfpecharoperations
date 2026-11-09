@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 from app import auth, db
+from tests.conftest import mark_security_prompt_seen
 from tests.test_host_stay_actions_browser import (  # noqa: F401  (fixtures)
     _browser, stay_actions_base, stay_actions_host,
 )
@@ -124,7 +125,7 @@ def test_the_payment_link_preselects_the_stay(host_with_property):
 def test_another_owners_stay_preselects_nothing(host_with_property):
     _clean_other_owner()
     try:
-        other_id = auth.create_account(f"{_OTHER}@example.test", "Other Host", role="host", username=_OTHER)
+        other_id = mark_security_prompt_seen(auth.create_account(f"{_OTHER}@example.test", "Other Host", role="host", username=_OTHER))
         entity = db.insert(
             "legal_entity",
             {"name": "Other entity", "owner_user_id": other_id, "created_at": db.utcnow()},

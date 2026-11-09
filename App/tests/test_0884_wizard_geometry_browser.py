@@ -13,6 +13,7 @@ else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
 from app import auth, db, demo
+from tests.conftest import mark_security_prompt_seen
 from tests.browser_support import chromium_launch_kwargs
 from tests.test_host_geometry import _browser_session_cookie, base  # noqa: F401
 
@@ -80,7 +81,7 @@ CHECK = r"""() => {
 
 def _flat(with_business: bool):
     username = f"g884{secrets.token_hex(3)}"
-    owner = auth.create_account(f"{username}@example.test", "Geometry", role="host", username=username)
+    owner = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Geometry", role="host", username=username))
     entity = None
     if with_business:
         entity = db.insert("legal_entity", {"name": "Geometry s.r.o.", "owner_user_id": owner, "created_at": db.utcnow()})

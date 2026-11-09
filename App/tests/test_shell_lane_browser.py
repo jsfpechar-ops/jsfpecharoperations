@@ -12,6 +12,7 @@ else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
 from app import auth, db
+from tests.conftest import mark_security_prompt_seen
 from tests.browser_support import chromium_launch_kwargs
 from tests.test_host_geometry import _browser_session_cookie, base  # noqa: F401
 
@@ -39,7 +40,7 @@ GEOMETRY = """(() => {
 
 def _account():
     username = f"lane{secrets.token_hex(3)}"
-    owner = auth.create_account(f"{username}@example.test", "Lane", role="host", username=username)
+    owner = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Lane", role="host", username=username))
     entity = db.insert("legal_entity", {"name": "Lane s.r.o.", "owner_user_id": owner, "created_at": db.utcnow()})
     apartment_id = db.insert("apartment", {"internal_name": "Lane flat", "owner_user_id": owner, "legal_entity_id": entity,
                             "permalink_token": f"ln{secrets.token_hex(4)}", "active": 1, "created_at": db.utcnow()})

@@ -27,7 +27,7 @@ from fastapi.testclient import TestClient
 from app import auth, claim, db, stay_fee, stay_fee_filing
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 from tests.invoice_stay_helper import UID_PREFIX, drop_stays, make_stay, stay_form
 from tests.v2_mockup import geometry_findings
 
@@ -187,7 +187,7 @@ def speed_host():
     _cleanup()
     tag = secrets.token_hex(4)
     username = f"{PREFIX}{tag}"
-    owner_id = auth.create_account(f"{username}@example.test", "Speed Host", role="host", username=username)
+    owner_id = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Speed Host", role="host", username=username))
     entity_id = db.insert("legal_entity", {
         "name": "Speed 0890 s.r.o.",
         "seat": "Praha 1",

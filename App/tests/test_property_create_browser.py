@@ -23,7 +23,7 @@ else:
 from app import auth, db, host_i18n
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0092-evidence"
 SHARED_IDS = (
@@ -45,7 +45,7 @@ def setup_module():
 
 def _host(entities: int = 1, prefix: str = "create"):
     username = f"{prefix}-{secrets.token_hex(4)}"
-    owner_id = auth.create_account(f"{username}@example.test", "Create Host", role="host", username=username)
+    owner_id = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Create Host", role="host", username=username))
     entity_ids = [
         db.insert("legal_entity", {
             "name": "Synthetic Operator s.r.o." if index == 0 else f"Second Operator {index}",

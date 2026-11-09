@@ -17,7 +17,7 @@ else:
 from app import auth, db, property_setup
 from app.main import app
 from fastapi.testclient import TestClient
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 from tests.browser_support import chromium_launch_kwargs
 from test_host_wide_geometry_browser import (  # noqa: F401  (fixtures are re-created here)
     CAPTURE_ROUTES,
@@ -139,7 +139,7 @@ def test_entities_list_fits_at_supported_lanes_and_languages(wide_host, wide_bas
 
 def test_admin_pages_pass_the_layout_guard(wide_host, wide_base):
     username = f"guard-admin-{secrets.token_hex(4)}"
-    admin_id = auth.create_account(f"{username}@example.test", "Guard Admin", role="admin", username=username)
+    admin_id = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Guard Admin", role="admin", username=username))
     client = TestClient(app)
     login_as(client, username, url="/login?lang=en", follow_redirects=False)
     cookie = client.cookies.get(auth.SESSION_COOKIE)
@@ -213,7 +213,7 @@ def test_admin_pages_pass_the_layout_guard(wide_host, wide_base):
 def test_admin_customer_account_input_stays_narrow(wide_host, wide_base):
     """0490: the account forms moved from the Users page to the customer page."""
     username = f"guard-admin-{secrets.token_hex(4)}"
-    admin_id = auth.create_account(f"{username}@example.test", "Guard Admin", role="admin", username=username)
+    admin_id = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Guard Admin", role="admin", username=username))
     client = TestClient(app)
     login_as(client, username, url="/login?lang=en", follow_redirects=False)
     cookie = client.cookies.get(auth.SESSION_COOKIE)
