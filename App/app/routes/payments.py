@@ -12,7 +12,7 @@ from typing import Any, Dict, List
 
 import json
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import RedirectResponse, Response
 
 from .. import access, auth, config, db, host_i18n, i18n, mail, payment_links, payment_request, payment_services, payments_consent, security, stripe_connect
@@ -759,11 +759,11 @@ def _guest_qr_row(request_id: int, token: str):
 def guest_qr_png(request_id: int, token: str):
     row = _guest_qr_row(request_id, token)
     if row is None:
-        return Response(status_code=404)
+        raise HTTPException(status_code=404)
     try:
         _, png = payment_request.qr_payload(row)
     except ValueError:
-        return Response(status_code=404)
+        raise HTTPException(status_code=404)
     return Response(content=png, media_type="image/png", headers={"Cache-Control": "private, max-age=300"})
 
 
@@ -772,11 +772,11 @@ def guest_qr_page(request: Request, request_id: int, token: str):
     """0763: the guest's bank-transfer page; no login, token-checked."""
     row = _guest_qr_row(request_id, token)
     if row is None:
-        return Response(status_code=404)
+        raise HTTPException(status_code=404)
     try:
         payload, _ = payment_request.qr_payload(row)
     except ValueError:
-        return Response(status_code=404)
+        raise HTTPException(status_code=404)
     response = render(
         request,
         "payments_qr.html",
