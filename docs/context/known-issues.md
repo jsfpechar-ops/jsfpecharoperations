@@ -90,7 +90,7 @@
 | K-T01 | Low open | Tests | Order-dependent tests (also 3 in test_host_i18n.py) | [0080](../tasks/0080-report.md) |
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
 | K-PG04 | Low open | scripts/reencrypt_data_key.py | Refuses on PG (no verified backup source); fix before first PG key rotation | 0462 |
-| K-U17 | Low open | Property page, #sec-messages | #sec-messages deep link lands on calendars after late layout shifts; needs a re-scroll. | 0995 |
+| K-U17 | Low open | Property page | #sec-messages deep link lands on calendars after late layout shifts; re-scroll. | 0995 |
 
 - K-UI-CACHE: bump `?v=` on edits; 1y cache (0172).
 - K-NAV-418: 3 host_i18n tests fail. K-CHECKIN #435, K-MORE #436 undeployed.
@@ -99,3 +99,4 @@
 - K-PG-ORDER: goose tests fail after icalsync locally; CI OK.
 
 - 0897 guest pay gaps: Slovak QR, PG migration 00007 unrun, no mark-as-paid, no e-mail link, copy, legal sign-off.
+- K-SE: plans/speed-and-ease.md end

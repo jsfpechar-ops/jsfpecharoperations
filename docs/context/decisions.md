@@ -9,7 +9,7 @@ Append-only.
 - 2026-10-08 | Door codes: one 1-min job; no PIN/list/unlock polling; weekly `queryDate`; taken type-3 period: `add` only, host warned (0037) | [plan §7](../plans/ttlock-door-codes.md)
 - 2026-10-08 | Invoices per stay only, replaces 09-26 | scope | [plan](../plans/stay-only-invoices.md)
 - 2026-10-08 | Staging: `UBYHOST_STAGING_NO_LOGIN=1` skips login; door-code alert after 10 min | test-only | [ENVIRONMENT](../ENVIRONMENT.md)
-- 2026-10-09 | [workflow] One brief per copy text; replaced brief marked in commit; executors skip non-todo; lint warns on overlap | brief collisions | [workflow](workflow.md)
+- 2026-10-09 | [workflow] One brief per copy text; replaced brief marked in commit; executors skip non-todo; lint warns on overlap | [workflow](workflow.md)
 - 2026-10-09 | [workflow] Status `replaced`: newer brief took over | `blocked` reads as waiting
 - 2026-10-09 | #331: no ID-check step (host checks ID); guest link default 1 day ahead | K-F12
 - 2026-10-10 | PostHog replaces Umami; privacy settings in the snippet | owner | [plan](../plans/posthog-analytics.md), [0039](../tasks/0039-posthog-hardening.md)
@@ -25,7 +25,7 @@ Append-only.
 - 2026-10-25 | Invoice "Fill from register" also asks MFČR VAT register; DIČ digits only; 24 h cache | owner | 0394
 - 2026-10-26 | Billing phase 1: invoices only, no gateway yet | owner | 0411
 - 2026-10-26 | Unpaid = read-only, filing never blocked | owner | 0415
-- Grafana Cloud (EU free tier) is subprocessor for ops logs and metrics (PII-free, OPS-3); monitoring behind compose profile "monitoring" (owner, 2026-10-27).
+- 2026-10-27 Grafana Cloud (EU free tier): subprocessor for ops logs/metrics (PII-free, OPS-3); compose profile "monitoring" (owner).
 - 2026-10-28 | [deps] `stripe` 16.0.1 pinned+hashed in requirements.lock (owner); calls via `App/app/stripe_connect.py`; shared monthly cap `UBYHOST_STRIPE_MONTHLY_API_CALLS` | 0428
 - 2026-10-28 | Property pages: Apify scrape-first prefill (page + Leon guide, 1 fetch), deterministic, no AI step; host reviews once | owner | 0431
 - 2026-10-28 | Property page: Airbnb-style layout only; no Airbnb assets or CSS | owner | 0431
@@ -58,7 +58,7 @@ Append-only.
 - [dashboard] 2026-11-04: the per-property "No guest has used the link" needs-you card (0233) is removed, not collapsed; the property-page health row stays (brief 0949).
 - [dashboard] 2026-11-04: the "You are ready" card shows only with exactly one property (brief 0949).
 - [ui] 0948: six-card status strip replaces the aside basics and connections cards; standalone guest card removed, its copy button lives in the strip (owner 2026-11-04).
-- [ui] 2026-11-04: Smart lock is one accordion (#sec-lock) outside the property form; its controls use form="property-settings-form" and the unsaved guard counts them. Source: brief 0952.
+- [ui] 2026-11-04: Smart lock = one accordion (#sec-lock) outside the property form; controls use form="property-settings-form"; unsaved guard counts them (0952).
 - [wizard] 2026-11-04: wizard shows the old look on the current 4-step flow; red star marks mandatory fields; operator e-mail has no purpose text. Source: brief 0953.
 - [ui] 2026-11-04: TTLock step one says eAdmin; Smart lock shows a status block with Turn on/off (door_code.state is the one source). Source: brief 0954.
 - [ui] 2026-11-05: property notices are inline banners in their section; the Save row closes the form and sticks; Preview sticks from 1024 px. Source: brief 0957.
@@ -71,3 +71,4 @@ Append-only.
 - 2026-11-09 [stay-fee] 1031b: a bare Prague/Brno district ("Řepy") stays liable; guest writes the town (owner). Any Unicode dash folds like "-".
 - 2026-11-09 [guest] Guest edits/removes own added people until filed (SENT, incl. by hand); then locked, "Message host" (owner)
 - 2026-11-09 | [ux] Stay fees: current month default, pick navigates | owner | 1051
+- 2026-11-09 [ux] [Speed plan](../plans/speed-and-ease.md): answers §10.
