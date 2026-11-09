@@ -1,8 +1,9 @@
 # 1071: Host alert when stay-fee collection is on and no pay way works
 
 Status: todo
-Depends on: none | Base commit: 0d851ca4 | Branch: task/1071-host-alert-no-pay-way
-Executor: Sonnet 5.5 at medium effort (owner override) | Fits one session: 40 tool calls, 70k tokens. Queue item 2.4, Tier C. Plan: docs/plans/guest-group-registration.md section 8 (P6) and section 9 (F5).
+Depends on: 1068a (merged first) | Base commit: 0d851ca4 | Branch: task/1071-host-alert-no-pay-way
+Executor: Sonnet 5.5 at medium effort (owner override: `[workflow]` decision 2026-11-09 in docs/context/decisions.md and workflow.md#roles-and-models, added in PR #854; the 30-call cap is Haiku only) | Limits: 40 tool calls, checkpoint at 60k tokens.
+Re-copy anchors in `host_i18n.py`, `host_vi_i18n.py` and `routes/admin.py` from main after 1068a merges. Queue item 2.4, Tier C. Plan: docs/plans/guest-group-registration.md section 8 (P6) and section 9 (F5).
 
 ## 1. Objective
 
@@ -12,7 +13,7 @@ Guest side is out of scope. One alert kind, no schema change, no mail (a new `wa
 
 ## 2. Context
 
-**Which goes first.** Open brief 1068a (`claude/1068-errors-link-fix`, status blocked) edits `App/app/host_i18n.py`, `App/app/host_vi_i18n.py` and `App/app/routes/admin.py` too. **1068a goes first.** This brief's anchors are single lines 1068a does not touch (the `notification.action.business` lines, the `_resolve_controller_alerts` function, the `apartment_updated` audit line), so it can also run first: if an anchor is missing, STOP. Briefs 1066 and 1067 (guest form, `base.html`, `app2.css`, `static_versions.json`) share no file with this one; order does not matter.
+**Which goes first.** Open brief 1068a (`claude/1068-errors-link-fix`, status blocked) edits `App/app/host_i18n.py`, `App/app/host_vi_i18n.py` and `App/app/routes/admin.py` too. **1068a goes first (merged before this brief runs).** This brief's anchors are single lines 1068a does not touch (the `notification.action.business` lines, the `_resolve_controller_alerts` function, the `apartment_updated` audit line), if an anchor is missing, STOP. Briefs 1066 and 1067 (guest form, `base.html`, `app2.css`, `static_versions.json`) share no file with this one; order does not matter.
 
 **The pay-way rule today is inline.** There is no function that says "this property has a working pay way". The guest pay box builds its list inside `_fee_pay_panel` in `App/app/routes/guest.py` (about lines 2412-2468). A way works when it is enabled in `apartment.stay_fee_guest_rails` (a stored `qr` counts as `iban`) and: `iban` needs an account on the property's operator (`legal_entity.iban`, else `legal_entity.bank_account`); `revolut` needs `apartment.stay_fee_guest_revolut_link`; `cash` always works. Stripe is not part of the guest stay-fee ways, so "Stripe not ready" never matters here. Step 1 moves exactly this rule into `App/app/stay_fee.py` and makes `_fee_pay_panel` call it, so the alert and the guest box can never disagree. Do not write the rule a third time.
 
@@ -26,7 +27,7 @@ The guest hub shows "Your host has not finished setting up payment yet" (`fee_no
 - Mail and push: `raise_alert` sends nothing. Push is only the four urgent events of brief 0228 (`push.py:455`). So level `warning` mails nobody. Step 8 checks this by command.
 - Precedent for raise-then-resolve in one function: `apartment_setup` in `reporting.py:2155-2170`.
 
-**Hook points (when the state can change).** Property save (`routes/admin.py`, the `apartment_updated` audit in the save function), operator edit (`routes/admin.py`, `_resolve_controller_alerts` is called after `db.update("legal_entity", ...)`), and the daily 07:00 job `_job_stay_fee_mail` in `scheduler.py`, which catches everything else (for example the deployment switch). A host who dismisses the card sees it again at the next 07:00 run while the fault remains; that is intended.
+**Hook points (when the state can change).** Property save (`routes/admin.py`, the `apartment_updated` audit in the save function), operator edit (`routes/admin.py`, `_resolve_controller_alerts` is called after `db.update("legal_entity", ...)`), and the daily 07:00 job `_job_stay_fee_mail` in `scheduler.py`, which catches everything else (for example the deployment switch). Two more writers change the inputs but get **no hook** and are sweep-only, cleared by the 07:00 job: the operator account edit in `routes/invoices.py` (near line 519, `db.update("legal_entity", entity["id"], detail)`) and the rails form `booking_rails.parse_form`. Do not add hooks for them. A host who dismisses the card sees it again at the next 07:00 run while the fault remains; that is intended.
 
 **Copy (rule 9).** One explanation, in the `detail` key only; the title says what is wrong, the button says where to go. Never the word "paid" (or its translation) (the app does not record guest payments). No em dash. Host languages are en, cs, vi: all three get the keys. `test_english_and_czech_carry_the_same_keys` and the vi check in `test_host_i18n.py` enforce it.
 
@@ -124,9 +125,10 @@ def usable_rail_keys(apartment) -> List[str]:
 
 
 def no_pay_way(apartment) -> bool:
-    """Collection is on, the deployment asks guests to pay, and no way works."""
+    """Collection is on, the fee is active, the deployment asks guests to pay, and no way works."""
     return (
         bool(apartment["stay_fee_collect"])
+        and is_active(apartment)
         and bool(config.STAY_FEE_GUEST_PAY)
         and not apartment["archived_at"]
         and not usable_rail_keys(apartment)
@@ -260,7 +262,16 @@ with the same three lines plus `    _reconcile_pay_way_alerts(entity_id)` insert
 with `    db.audit("apartment_updated", f"id={apartment_id}")`, then `    stay_fee.reconcile_no_pay_way_alert(apartment_id)`, then the original `if "lock_provider"...` line.
 Command: `.venv/bin/python -c "import app.routes.admin" 2>&1 | tail -30`. Expected: no output.
 
-6. **Daily sweep.** In `App/app/scheduler.py`, in the import block replace `    signup,\n    stay_fee_auto,\n)` with `    signup,\n    stay_fee,\n    stay_fee_auto,\n)`. In `_job_stay_fee_mail`, directly after `        counts = stay_fee_auto.run()` add `        stay_fee.reconcile_all_no_pay_way()` (inside the same `try`, same indentation).
+6. **Daily sweep.** In `App/app/scheduler.py`, in the import block replace `    signup,\n    stay_fee_auto,\n)` with `    signup,\n    stay_fee,\n    stay_fee_auto,\n)`. In `_job_stay_fee_mail`, directly after `        counts = stay_fee_auto.run()` add its own guarded call, so a sweep failure never marks `stay_fee_mail` failed:
+
+```python
+        try:
+            stay_fee.reconcile_all_no_pay_way()
+        except Exception:
+            log.exception("stay-fee no-pay-way sweep failed")
+```
+
+(inside the existing `try`, same indentation as the line above; the inner `try/except Exception` swallows the error so the outer handler is not reached).
 Command: `.venv/bin/python -m pytest tests/test_scheduler.py -q --tb=short -x 2>&1 | tail -30`. Expected: pass.
 
 7. **Tests.**
@@ -380,6 +391,13 @@ def test_the_guest_box_and_the_alert_share_one_rule(flat):
     assert stay_fee.usable_rail_keys(apartment) == ["iban"]
 
 
+def test_collection_on_with_rate_zero_raises_no_alert(flat):
+    aid = flat["apartment"]
+    _update(aid, stay_fee_collect=1, stay_fee_rate_czk=0)
+    stay_fee.reconcile_no_pay_way_alert(aid)
+    assert alerts.open_alert(_key(aid)) is None
+
+
 def test_the_deployment_switch_off_means_no_alert(flat, monkeypatch):
     aid = flat["apartment"]
     monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", False)
@@ -432,9 +450,17 @@ with the same lines preceded by (so the new card is in the screenshots):
 ```
 
    If that exact five-line anchor appears more than once or not at all, STOP.
-Command: `.venv/bin/python -m pytest tests/test_stay_fee_no_pay_way_1071.py tests/test_alert_language.py -q --tb=short -x 2>&1 | tail -30`. Expected: all pass (about 16 tests).
+Command: `.venv/bin/python -m pytest tests/test_stay_fee_no_pay_way_1071.py tests/test_alert_language.py -q --tb=short -x 2>&1 | tail -30`. Expected: all pass, 0 failed (about 17 tests).
 
-8. **No mail, no push.** Command: `grep -n "stay_fee_no_pay_way\|NO_PAY_WAY" app/mail_notify.py app/push.py app/scheduler.py app/mail.py | tail -30`. Expected: one hit, the `stay_fee.reconcile_all_no_pay_way()` call in `scheduler.py`; none in `mail_notify.py`, `push.py` or `mail.py`. Then `grep -n "raise_alert" app/push.py app/mail_notify.py | tail -30`: expected no output. If any of them handles the new kind, STOP.
+8. **No mail, no push.** Command: `grep -n "stay_fee_no_pay_way\|NO_PAY_WAY" app/mail_notify.py app/push.py app/scheduler.py app/mail.py | tail -30`. Expected: one hit, the `stay_fee.reconcile_all_no_pay_way()` call in `scheduler.py`; none in `mail_notify.py`, `push.py` or `mail.py`. Then `grep -n "raise_alert" app/push.py app/mail_notify.py | tail -30`. Expected: no output. If any of them handles the new kind, STOP.
+
+9. **Test-map row.** In `docs/context/test-map.md` (from the repo root), directly after the line starting `| Cleaning |` add exactly:
+
+```
+| Alerts, notification cards | `test_alert*.py test_needs_you*.py test_host_alert_stack_browser.py test_design_alerts_phone.py` (browser files 0 skipped) |
+```
+
+Command: `grep -n "Alerts, notification cards" docs/context/test-map.md | tail -30`. Expected: one line. The files exist (checked: `test_alert_language.py`, `test_alert_stack.py`, `test_needs_you_0240.py`, `test_needs_you_dashboard_0241.py`, `test_host_alert_stack_browser.py`, `test_design_alerts_phone.py`).
 
 10. **Run the map rows** (from `App/`, each `2>&1 | tail -30`, stop at the first failure):
    - `.venv/bin/python -m pytest tests/test_stay_fee*.py tests/test_invoice_*.py -q --tb=short -x`
@@ -443,7 +469,7 @@ Command: `.venv/bin/python -m pytest tests/test_stay_fee_no_pay_way_1071.py test
    - `.venv/bin/python -m pytest tests/test_*_i18n.py tests/test_no_em_dashes.py tests/test_copy_cleanup.py tests/test_flash_literals.py -q --tb=short -x`
    - `.venv/bin/python -m pytest tests/test_scheduler.py tests/test_design_guardrails_browser.py -q --tb=short -x` (0 skipped)
 
-11. **UX gate.** From `App/`: `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/shots .venv/bin/python -m pytest tests/test_layout_lint_browser.py -q -x 2>&1 | tail -30`. Expected: 1 passed, 0 skipped, zero findings. Open `/tmp/shots/layout-lint/<page>-{390,768,1280}.png` for the pages that show the card (the dashboard `/` page and the property page of the configured apartment; take the names from the `ROUTES` map in the test) and write per page in the report: "390: ...; 768: ...; 1280: ...", saying what you saw of the card: title on one to three lines without clipping, the "Fix stay fee payment" action line under it, the dismiss cross reachable, no overlap with the next card, no sideways scroll. A finding is fixed, never silenced. Copy the 390 px screenshots of those pages to `docs/tasks/screenshots-1071/` only if the report asks for them; otherwise name their `/tmp/shots` path.
+11. **UX gate.** From `App/`: `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/shots .venv/bin/python -m pytest tests/test_layout_lint_browser.py -q -x 2>&1 | tail -30`. Expected: 1 passed, 0 skipped, zero findings. Open `/tmp/shots/layout-lint/<page>-{390,768,1280}.png` for the pages that show the card (the dashboard `/` page and the property page of the configured apartment; take the names from the `ROUTES` map in the test) and write per page in the report: "390: ...; 768: ...; 1280: ...", saying what you saw of the card: title on one to three lines without clipping, the "Fix stay fee payment" action line under it, the dismiss cross reachable, no overlap with the next card, no sideways scroll. A finding is fixed, never silenced. Owner rule: every touched host page gets 390, 768 and 1280 px screenshots saved, and a reviewer looks at them by eye (the layout lint and geometry tests passing is not enough). Both must pass with 0 skipped, and the PR says per page what was seen. Copy the 390 px screenshots of those pages to `docs/tasks/screenshots-1071/` only if the report asks for them; otherwise name their `/tmp/shots` path.
 
 ## 5. Do not touch
 
@@ -451,7 +477,7 @@ Command: `.venv/bin/python -m pytest tests/test_stay_fee_no_pay_way_1071.py test
 
 ## 6. Commands
 
-All from `App/` unless marked; each ends `2>&1 | tail -30`. The commands are in §4 (steps 1-11). Final check from the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30` (only status.md over its cap is acceptable).
+All from `App/` unless marked; each ends `2>&1 | tail -30`. The commands are in §4 (steps 1-11; step 9 runs from the repo root). Final check from the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30` (only status.md over its cap is acceptable).
 
 ## 7. Acceptance
 
@@ -462,7 +488,7 @@ All from `App/` unless marked; each ends `2>&1 | tail -30`. The commands are in 
 - [ ] The card reads in en, cs and vi, contains no "paid", and links to `#stay-fee-settings` (parametrised test green).
 - [ ] No mail or push code mentions the new kind (step 8 greps print no hit).
 - [ ] No schema change: `git diff --stat` shows no `migrations/` file.
-- [ ] Layout lint green, 0 skipped; 390/768/1280 described per touched page; design-system checklist (docs/design/design-system.md section 5) ticked in the report.
+- [ ] Layout lint and geometry tests green, 0 skipped; 390/768/1280 screenshots saved and looked at by eye per touched page, and described per page; design-system checklist (docs/design/design-system.md section 5) ticked in the report.
 - [ ] `python3 scripts/context_lint.py`: OK apart from the known status.md cap.
 
 ## 8. Stop and ask
@@ -472,7 +498,7 @@ Stop, and write the report, if:
 - an excerpt or anchor is not found verbatim (1068a may have changed the i18n or admin files; say which anchor);
 - a test fails twice;
 - the work seems to need a second alert kind or a schema change (the owner said stop and say so);
-- you reach 35 tool calls or about 60k tokens (report as `blocked`, see executor.md);
+- you reach 40 tool calls or the checkpoint at 60k tokens (report as `blocked`, see executor.md; the 30-call cap is Haiku only, under the owner override);
 - a new dependency seems needed;
 - a file outside §3 needs a change;
 - §5 would be touched;
