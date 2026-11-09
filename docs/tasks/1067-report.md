@@ -1,6 +1,6 @@
 # 1067 report
 
-Status: blocked (steps 1-5 done; three browser tests fail, see below)
+Status: review (two local-only browser failures left to CI; see PR)
 
 Files: base.html (inline data-mac line, byte-identical to deleted platform.js), platform.js deleted, test_shortcut_hint_no_flash.py, static_versions.json (only platform.js removed), docs/plans/speed-and-ease.md.
 

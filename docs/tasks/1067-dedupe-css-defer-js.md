@@ -1,6 +1,6 @@
 # 1067: Host pages, Q6: stylesheet duplicates (none to remove) and the blocking `platform.js`
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 0d851ca4 | Branch: task/1067-dedupe-css-defer-js
 Executor: Sonnet 5.5 at medium effort (owner override; the template says Haiku) | Fits one session: 30 tool calls, 60k tokens
 Tier: C (queue item 1.6, plan [speed-and-ease](../plans/speed-and-ease.md) section 5 row Q6)
