@@ -3237,6 +3237,8 @@ STRINGS: Dict[str, str] = {
     "property_page.guest_link.title": "Liên kết cho khách",
     "property_page.guest_link.copy_pin": "Sao chép mã PIN",
     "property_page.sec.basics.title": "Thông tin cơ bản",
+    "property_page.fix_fields": "Cần sửa {n} mục:",
+    "property_page.fix_fields_one": "Cần sửa 1 mục:",
     "property_page.sec.basics.sub": "Tên và địa chỉ chỗ ở",
     "property_page.sec.police.title": "Cảnh sát người nước ngoài",
     "property_page.sec.police.sub": "Cơ sở lưu trú và khai báo",

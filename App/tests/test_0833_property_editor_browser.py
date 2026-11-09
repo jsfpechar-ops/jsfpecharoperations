@@ -166,8 +166,18 @@ def _shot(page, name, width):
         page.screenshot(path=str(Path(SHOTS_1024) / f"{name}-{width}.png"))
 
 
+def _show(page, key):
+    """Owner decision 2026-11-08: 6 pills as switcher (brief 1030). At >=768 px a pill shows one section; phones open the accordion."""
+    pill = page.locator(f'nav.prop-strip a[href="#sec-{key}"]')
+    if page.evaluate("innerWidth >= 768") and pill.count():
+        pill.first.click()
+    else:
+        page.evaluate("k => { document.getElementById('sec-' + k).open = true; }", key)
+
+
 def _fill_address(page):
     """The seeded property has no address yet; the browser would refuse the save."""
+    _show(page, "basics")
     for name, value in (("addr_street", "Synthetic"), ("addr_house_no", "12"), ("addr_zip", "12000"), ("addr_obec", "Praha")):
         page.fill(f"#{name}", value)
 
@@ -189,13 +199,14 @@ def test_1024_save_error_opens_scrolls_and_focuses(base, dashboard_rich_host, se
         for width in WIDTHS_0833:
             context, page = _open_settings(browser, base, cookie, apartment_id, width)
             page.set_viewport_size({"width": width, "height": 844 if width == 390 else 1000})
-            page.evaluate("() => { const d = document.getElementById('sec-fee'); d.open = true; }")
+            _show(page, "fee")
             page.fill("#stay_fee_rate_czk", "50")
             assert page.locator('label[for="stay_fee_vs"] .req-star').count() == 1
             assert page.get_attribute("#stay_fee_council_account", "aria-required") == "true"
             page.evaluate("() => { document.getElementById('sec-fee').open = false; }")
             page.evaluate("() => { document.getElementById('sec-fee').open = true; }")
             _fill_address(page)
+            _show(page, "fee")
             page.fill("#stay_fee_council_account", "123")
             page.evaluate("() => { document.getElementById('sec-fee').open = false; }")
             page.locator(".savebar button[type=submit]").click()
@@ -222,8 +233,8 @@ def test_1024_saved_banner_is_visible_after_a_valid_save(base, dashboard_rich_ho
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         for width in WIDTHS_0833:
             context, page = _open_settings(browser, base, cookie, apartment_id, width)
-            page.evaluate("() => { document.getElementById('sec-fee').open = true; }")
             _fill_address(page)
+            _show(page, "fee")
             page.fill("#stay_fee_rate_czk", "50")
             page.fill("#stay_fee_vs", "1342900493")
             page.fill("#stay_fee_council_account", "19-2000145399/0800")

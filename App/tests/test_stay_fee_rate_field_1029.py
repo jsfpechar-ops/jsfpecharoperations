@@ -83,7 +83,8 @@ def test_1029_date_field_shows_at_each_width(base, dashboard_rich_host, seeded):
             page.goto(f"{base}/apartments/{apartment_id}?view=settings&lang=en")
             page.wait_for_load_state("networkidle")
             settle_motion(page)
-            page.evaluate("() => { const d = document.getElementById('sec-fee'); if (d) d.open = true; }")
+            # owner decision 2026-11-08 (brief 1030, 6 pills as switcher): at >=768 px one section shows at a time; its pill selects it.
+            page.evaluate("() => { const a = document.querySelector('nav.prop-strip a[href=\"#sec-fee\"]'); if (a && innerWidth >= 768) a.click(); const d = document.getElementById('sec-fee'); if (d) d.open = true; }")
             field = page.locator("#stay_fee_rate_from")
             if field.count() == 0:
                 problems.append(f"{width}: no date field in the property editor")

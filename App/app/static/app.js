@@ -2259,6 +2259,12 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       /* Keyboard: activate opens the section like click (B04 Enter key from Playwright; hash sync can race in CI). */
       link.addEventListener("keydown", function (e) {
         if (e.key !== "Enter" && e.key !== " ") return;
+        // 1030: at >=768 px a pill is the section switcher, so the key does what a click does.
+        if (link.closest("nav.prop-strip,.prop-nav") && window.matchMedia("(min-width:768px)").matches) {
+          e.preventDefault();
+          link.click();
+          return;
+        }
         var h = link.getAttribute("href");
         if (!h || h.charAt(0) !== "#") return;
         e.preventDefault();
@@ -2520,6 +2526,139 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     t.focus({ preventScroll: true });
   }
 
+  // 1030: at >=768 px the editor shows one section at a time, a section list and one fix line. Phone unchanged.
+  function initPropertyTabs() {
+    var layout = document.querySelector(".prop-layout");
+    if (!layout || !claimNode(layout, "initPropertyTabs")) return;
+    var nav = layout.querySelector(".prop-nav");
+    // owner decision 2026-11-08: the six status pills are the section switcher at >=768 px.
+    var strip = document.querySelector("nav.prop-strip");
+    var fix = layout.querySelector("[data-prop-fixline]");
+    var mq = window.matchMedia("(min-width:768px)");
+    function sectionFor(el) {
+      return el ? el.closest("details.prop-sec") : null;
+    }
+    function fieldIn(el) {
+      if (el.matches("input,select,textarea,button")) return el;
+      return el.querySelector("input,select,textarea,button");
+    }
+    function showSection(sec) {
+      if (!sec) return;
+      layout.querySelectorAll("details.prop-sec").forEach(function (d) {
+        d.classList.toggle("is-current", d === sec);
+      });
+      sec.open = true;
+      [nav, strip].forEach(function (list) {
+        if (!list) return;
+        list.querySelectorAll("a[href^='#sec-']").forEach(function (a) {
+          var on = a.getAttribute("href") === "#" + sec.id;
+          a.classList.toggle("is-current", on);
+          if (on) a.setAttribute("aria-current", "true");
+          else a.removeAttribute("aria-current");
+          var card = a.closest(".sc");
+          if (card) card.classList.toggle("is-current", on);
+        });
+      });
+    }
+    function goTo(id) {
+      var target = document.getElementById(id);
+      if (!target) return;
+      if (mq.matches) showSection(sectionFor(target));
+      var f = fieldIn(target);
+      if (f) f.focus({ preventScroll: true });
+      target.scrollIntoView({ block: "center" });
+    }
+    // 1030: after a failed save the line names every field to fix: fields the server marked invalid and empty required fields,
+    // then the server's missing items that no named field already covers. Names are the clean label text (no help, no star).
+    function cleanText(el) {
+      var c = el.cloneNode(true);
+      c.querySelectorAll(".help-tip,.req-star").forEach(function (n) { n.remove(); });
+      return c.textContent.replace(/\s+/g, " ").trim();
+    }
+    function fixLine() {
+      if (!fix) return;
+      var form = layout.querySelector("form");
+      var failed = !!document.querySelector("[data-save-summary][data-first-error]");
+      var items = [];
+      var fields = [];
+      if (form) {
+        form.querySelectorAll("input,select,textarea").forEach(function (f) {
+          if (!f.id || f.disabled || f.type === "hidden" || !sectionFor(f)) return;
+          var bad = f.getAttribute("aria-invalid") === "true";
+          var empty = failed && (f.required || f.getAttribute("aria-required") === "true") && !String(f.value || "").trim();
+          if (!bad && !empty) return;
+          var label = document.querySelector("label[for='" + f.id + "']");
+          fields.push(f);
+          items.push({ id: f.id, name: label ? cleanText(label) : f.id });
+        });
+      }
+      var seen = {};
+      layout.querySelectorAll(".prop-sec-missing a[href^='#']").forEach(function (a) {
+        var id = a.getAttribute("href").slice(1);
+        var name = a.getAttribute("data-fix-label") || id;
+        var target = id && document.getElementById(id);
+        if (!target || seen[id + "|" + name]) return;
+        seen[id + "|" + name] = true;
+        if (fields.some(function (f) { return target === f || target.contains(f); })) return;
+        items.push({ id: id, name: name });
+      });
+      fix.textContent = "";
+      if (!items.length || !mq.matches) {
+        fix.hidden = true;
+        return;
+      }
+      var lead = items.length === 1 ? fix.getAttribute("data-text-one") : fix.getAttribute("data-text-many");
+      var leadEl = document.createElement("span");
+      leadEl.textContent = (lead || "").replace("{n}", String(items.length));
+      fix.appendChild(leadEl);
+      items.forEach(function (item) {
+        var link = document.createElement("a");
+        link.href = "#" + item.id;
+        link.textContent = item.name;
+        link.addEventListener("click", function (e) {
+          e.preventDefault();
+          goTo(item.id);
+        });
+        fix.appendChild(link);
+      });
+      fix.hidden = false;
+    }
+    function apply() {
+      layout.classList.toggle("is-tabbed", mq.matches);
+      if (mq.matches) {
+        var hashEl = location.hash.length > 1 ? document.getElementById(location.hash.slice(1)) : null;
+        // a failed save starts on the first error; then the server's start section; then the first open one
+        var summary = document.querySelector("[data-save-summary][data-first-error]");
+        var errorEl = summary ? document.getElementById(summary.getAttribute("data-first-error")) : null;
+        var startId = layout.getAttribute("data-start-section");
+        var start = sectionFor(hashEl) || sectionFor(errorEl) || (startId && document.getElementById(startId)) || layout.querySelector("details.prop-sec[open]") || layout.querySelector("details.prop-sec");
+        showSection(start);
+        // The hash is left as it is: a deep link (#stay-fee-settings, #ubyport) must survive, and a load without one stays at the top.
+      }
+      fixLine();
+    }
+    apply();
+    // the stay-fee stars are set by a later init, so the line is built once more after it
+    window.setTimeout(fixLine, 0);
+    if (mq.addEventListener) mq.addEventListener("change", apply);
+    // at >=768 px the card title is a heading, not a toggle (a click must not fold the one visible section)
+    layout.addEventListener("click", function (e) {
+      if (mq.matches && e.target.closest("details.prop-sec > summary")) e.preventDefault();
+    });
+    [nav, strip].forEach(function (list) {
+      if (!list) return;
+      list.addEventListener("click", function (e) {
+        var a = e.target.closest("a[href^='#sec-']");
+        if (!a || !mq.matches || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+        var sec = sectionFor(document.getElementById(a.getAttribute("href").slice(1)));
+        if (!sec) return;
+        e.preventDefault();
+        showSection(sec);
+        history.replaceState(null, "", "#" + sec.id);
+      });
+    });
+  }
+
   // 1024: in the editor the stay-fee boxes the app needs get a star and aria-required while the rate is above 0.
   function initStayFeeStars() {
     var rate = document.getElementById("stay_fee_rate_czk");
@@ -2590,6 +2729,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     initUnsavedDialog();
     initSectionNotice();
     initSaveSummary();
+    initPropertyTabs();
     initStayFeeStars();
     initSuccessNotices();
     initHelpTips();

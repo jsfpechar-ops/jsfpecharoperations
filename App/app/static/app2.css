@@ -3078,8 +3078,104 @@ body.v2 .ui-upgrade-card .ui-upgrade-price{font-weight:700}
 body.v2 .ui-upgrade-card .ui-btn,body.v2 .ui-upgrade-strip .ui-btn,body.v2 .ui-addon-row .ui-btn{width:100%;justify-content:center}
 }
 
+/* 1030: section list is wide-only */
+body.v2 .prop-wide-only{display:none}
+@media (min-width:768px){body.v2 .prop-wide-only{display:block}}
+
+/* 1030: at >=768 the status strip and the Continue setup box are replaced by the section list */
+@media (min-width:768px){
+  /* owner decision 2026-11-08: 6 pills as switcher, so only the Continue setup box is hidden */
+  body.v2 section.setup-continue-card{display:none}
+}
+
+/* 1030: wide editor = section list + one visible section (phone unchanged) */
+@media (min-width:768px){
+  body.v2 .prop-layout{display:grid;grid-template-columns:220px minmax(0,640px);gap:32px;align-items:start}
+  body.v2 .prop-nav{position:sticky;top:24px;display:grid;gap:8px}
+  body.v2 .prop-nav a{display:flex;align-items:center;gap:10px;min-height:48px;padding:0 16px;border-radius:12px;color:var(--ink);text-decoration:none}
+  body.v2 .prop-nav a:hover{background:var(--line)}
+  body.v2 .prop-nav .dot{display:inline-block;width:10px;height:10px;border-radius:50%;flex:none}
+  body.v2 .prop-sec{margin:0 0 32px;padding:0;border:0;box-shadow:none;background:transparent}
+  body.v2 .prop-sec>summary{display:block;list-style:none;padding:0 0 16px;cursor:default}
+  body.v2 .prop-sec>summary::-webkit-details-marker{display:none}
+  body.v2 .prop-sec>summary::marker{content:""}
+  body.v2 .prop-layout.is-tabbed .prop-sec:not(.is-current){display:none}
+  body.v2 .prop-layout.is-tabbed .prop-nav a.is-current{background:var(--accs)}
+  /* 1030: 768 to 1279 px: section list above the form as chips, one column (the form needs the width) */
+  @media (max-width:1279px){
+    body.v2 .prop-layout{grid-template-columns:minmax(0,1fr);gap:16px;padding-inline:0}
+    body.v2 .prop-nav{position:static;display:flex;flex-wrap:wrap;gap:8px}
+    body.v2 .prop-nav a{flex:0 0 auto;justify-content:flex-start;background:#fff;border:1px solid var(--line)}
+    body.v2 .prop-sec .guest-link-action + .guest-link-action{margin-left:12px}
+  }
+  /* 1030 step 5: the fix line replaces the per-section missing lists at wide widths (DOM kept for the fix line) */
+  body.v2 .prop-sec-missing .readiness-list{display:none}
+  /* 1030 fix: the emptied missing box would leave a grey band, so the whole box goes (the fix line carries it) */
+  body.v2 .form.prop-form-single .prop-sec-missing{display:none}
+  /* 1030 step 5: at wide widths only the help icons with information stay (basics 1, guest links 2, UbyPort/police 3, stay fee 1, smart lock 1). Phone unchanged. */
+  body.v2 .help-tip:has(#archive-help),body.v2 .help-tip:has(#regenerate-pin-help),body.v2 .help-tip:has(#regenerate-link-help),body.v2 .help-tip:has(#guest_message-help),body.v2 .help-tip:has(#permalink_window_days-help),body.v2 .help-tip:has(#permalink_reachback_days-help),body.v2 .help-tip:has(#passport_photo_policy-help),body.v2 .help-tip:has(#legal_entity_id-help){display:none}
+}
+
+/* 1030 fix: the phone-only "Settings" eyebrow is stray text beside the section list */
+@media (min-width:768px){body.v2 .prop-phone-only{display:none}
+  /* the "Settings" h2 stays for screen readers and the heading order (h1, h2, then the section's h3), only out of sight */
+  body.v2 #property-settings-form>h2.sec.prop-phone-only{display:block;position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}}
+
+/* 1030: one slim fix line, wide only */
+body.v2 .prop-fixline{margin:0 0 12px;color:var(--bad);font-size:14px;line-height:1.45}
+body.v2 .prop-fixline a{color:var(--bad);font-weight:600}
+/* 1030: the names wrap as a row with 12 px between neighbours (tap spacing); the comma is drawn, not part of the link text */
+body.v2 .prop-fixline:not([hidden]){display:flex;flex-wrap:wrap;align-items:baseline;gap:12px}
+body.v2 .prop-fixline a:not(:last-child)::after{content:",";color:var(--bad)}
+
+/* 1030 fix: the required-legend note is redundant at >=768 (the * marks stay). */
+@media (min-width:768px){
+  body.v2 .required-legend{display:none}
+}
+/* 1030 fix: at >=768 the section card header is the title only (the sub-line and the state dot repeat the list). */
+@media (min-width:768px){
+  body.v2 .prop-sec>summary .sec-state,body.v2 .prop-sec>summary .dot{display:none}
+}
+/* 1030 fix: the flat card has no chevron at >=768 (a stray glyph rendered under the title). */
+@media (min-width:768px){
+  body.v2 details.prop-sec>summary::after{display:none}
+}
+/* 1030 fix (owner decision 2026-11-08: 6 pills as switcher): at >=768 the editor is title, pills, fix line, one card; the section list never shows. */
+body.v2 .prop-layout>nav.prop-nav{display:none}
+@media (min-width:768px){
+  body.v2 .prop-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;max-width:none;padding-inline:0}
+  body.v2 .prop-fixline{margin-bottom:0}
+  body.v2 nav.prop-strip{margin-bottom:24px}
+  body.v2 nav.prop-strip .sc.is-current{background:var(--accs);border-color:var(--acc)}
+}
+/* 1030 fix: at >=1024 pills and editor start under the page title; 64 px keep the sticky Save clear of the fixed help bubble. */
+@media (min-width:1024px){
+  body.v2 nav.prop-strip,body.v2 .prop-after-strip{max-width:min(1000px,calc(100% - 64px));margin-left:0;margin-right:auto}
+  /* the editor column starts under the page title (no centred 776 px column beside the section list) */
+  body.v2 .form.prop-form-single,body.v2 .ui-page[data-body-kind="detail"]:has(#property-settings-form) > .ui-body-detail > .form.prop-form-single.property-detail{max-width:min(1000px,calc(100% - 64px));margin-left:0;margin-right:auto}
+}
+
 /* 1029: the rate and "Applies from" inputs share one line when their labels wrap differently (768 px and up). */
 @media (min-width:768px){.fee-setup-section .grid.two{align-items:end}}
+
+/* 1032: Stay fee at >=1024 px: tracks may shrink (long council values and a wide saved signature pushed the fields past the card),
+   and More details and Signature are plain blocks on the field left edge (no inner card, no extra inset). 390/768 unchanged. */
+@media (min-width:1024px){
+  body.v2 section#stay-fee-settings{grid-template-columns:repeat(2,minmax(0,1fr))}
+  body.v2 section#stay-fee-settings>*,body.v2 #stay-fee-settings .fee-setup-section{min-width:0}
+  body.v2 #stay-fee-settings :is(input:not([type=checkbox]):not([type=radio]),select,textarea){width:100%;max-width:100%;box-sizing:border-box}
+  /* the signature keeps its bordered block (wp28); it only may not grow past the card */
+  body.v2 #stay-fee-settings fieldset.signature-block{min-width:0;max-width:100%;margin:0;box-sizing:border-box}
+  body.v2 #stay-fee-settings fieldset.signature-block>.action-group{margin-top:12px}
+  body.v2 #stay-fee-settings .signature-locked img{display:block;max-width:100%;height:auto;box-sizing:border-box}
+  body.v2 #stay-fee-settings details.fee-more{border:0;border-radius:0;background:transparent;padding:0;overflow:visible}
+  body.v2 #stay-fee-settings details.fee-more>summary{padding:8px 0;min-height:44px}
+  body.v2 #stay-fee-settings details.fee-more>:not(summary){margin:0 0 16px;max-width:100%}
+}
+
+/* 1032: a saved signature is shown whole at every width: scaled into its box, aspect ratio kept, never cropped. */
+body.v2 .signature-block .signature-locked{display:block;max-width:100%;overflow:visible}
+body.v2 .signature-block .signature-locked-img{display:block;width:auto;height:auto;max-width:100%;max-height:160px;object-fit:contain;object-position:left center}
 
 /* 1031 first-run: calmer welcome card. One column, one primary step action,
    quiet skip link at the foot, banner as one quiet line. Selectors mirror the
@@ -3256,3 +3352,10 @@ body.v2 .security-prompt-later-btn {
 body.v2 .security-prompt-later-btn:hover { color: var(--ink); }
 body.v2 .security-prompt-later-btn:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 body.v2 .security-prompt-footnote { margin: 4px 0 0; text-align: center; font-size: 13px; line-height: 1.4; color: var(--ink2); }
+
+/* 1030: at >=768 px the one visible section is not an accordion, so it does not animate open (a running block-size
+   transition left the card shorter than its content while a pill switched or the page settled). */
+@media (min-width:768px){
+  body.v2 .prop-layout.is-tabbed details.prop-sec::details-content{transition:none}
+  body.v2 .prop-layout.is-tabbed details.prop-sec[open]::details-content{block-size:auto;overflow:visible}
+}

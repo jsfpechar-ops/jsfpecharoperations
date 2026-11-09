@@ -24,6 +24,7 @@ from tests.v2_mockup import (
     WIDTHS,
     box_diffs,
     computed,
+    WIDE_MISSING_OK,
     WIDE_OVERRIDES,
     expected_value,
     geometry_findings,
@@ -122,7 +123,7 @@ def test_v2_page_matches_mockup_styles(spec, width, base, dashboard_rich_host):
                 continue
             app_styles = computed(app_page, selector)
             if app_styles is None:
-                if selector not in spec["missing_ok"]:
+                if selector not in spec["missing_ok"] and not (width >= 768 and f"{spec['name']}:{selector}" in WIDE_MISSING_OK):
                     diffs.append(f"{selector}: missing in app")
                 continue
             for prop in STYLE_PROPS:
