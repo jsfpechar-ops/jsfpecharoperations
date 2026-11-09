@@ -107,6 +107,8 @@ _SQL = (
     "JOIN apartment a ON a.id = r.apartment_id "
     "WHERE a.owner_user_id = u.id AND r.registration_completed_at IS NOT NULL "
     "AND COALESCE(r.source, '') != 'demo') AS first_guest_at, "
+    "(SELECT MIN(a.ubyport_verified_at) FROM apartment a "
+    "WHERE a.owner_user_id = u.id) AS first_police_at, "
     "fs.first_filing_at, fs.last_filing_at, "
     "COALESCE(fs.filings_previous, 0) AS filings_previous, "
     "COALESCE(fs.filings_current, 0) AS filings_current "
