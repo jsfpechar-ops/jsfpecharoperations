@@ -7,7 +7,7 @@ import zipfile
 from datetime import date
 from urllib.parse import parse_qsl, quote, urlencode, urlsplit
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 
 from .. import (
@@ -789,6 +789,8 @@ def stay_fee_detail(apartment_id: int, request: Request):
         )
 
     apartment = access.apartment(request, apartment_id)
+    if not apartment:
+        raise HTTPException(status_code=404)
     if not apartment or (
         not stay_fee.is_active(apartment)
         and not stay_fee_filing.covering(apartment["id"], selected_month)

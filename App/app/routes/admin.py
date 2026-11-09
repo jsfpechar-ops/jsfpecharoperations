@@ -18,7 +18,7 @@ from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
 from urllib.parse import parse_qsl, unquote, urlencode, urlparse, urlsplit, urlunsplit
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from starlette.background import BackgroundTask
 from starlette.concurrency import run_in_threadpool
@@ -1874,7 +1874,7 @@ def apartment_detail(apartment_id: int, request: Request):
         access.apartment(request, apartment_id)
     )
     if not apartment:
-        return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
+        raise HTTPException(status_code=404)
     not_found, copy_ctx = _property_copy_form_context(
         request, apartment=apartment, apartment_id=apartment_id
     )
@@ -3782,7 +3782,7 @@ def reservation_detail(reservation_id: int, request: Request):
         "r.*, a.internal_name, a.permalink_token, a.automation_mode, a.submit_after_hours",
     )
     if not reservation:
-        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
+        raise HTTPException(status_code=404)
     progress = reporting.reservation_progress(reservation)
     apartment = access.apartment(request, reservation["apartment_id"])
     send_controls = reporting.send_controls(reservation, apartment, progress) if apartment else {}
@@ -4369,7 +4369,7 @@ def guest_edit(guest_id: int, request: Request):
         return guard
     guest = access.guest(request, guest_id)
     if not guest:
-        return _back("/reservations", err=_flash(request, "flash.error.no_such_guest"))
+        raise HTTPException(status_code=404)
     reservation = db.query_one(
         "SELECT r.*, a.default_purpose, a.internal_name FROM reservation r "
         "JOIN apartment a ON a.id = r.apartment_id WHERE r.id = ?",
