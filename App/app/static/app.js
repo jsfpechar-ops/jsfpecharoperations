@@ -2633,8 +2633,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         var startId = layout.getAttribute("data-start-section");
         var start = sectionFor(hashEl) || sectionFor(errorEl) || (startId && document.getElementById(startId)) || layout.querySelector("details.prop-sec[open]") || layout.querySelector("details.prop-sec");
         showSection(start);
-        // A load without a hash keeps the page at the top (a written hash made openTarget scroll past the title).
-        if (start && hashEl && location.hash !== "#" + start.id) history.replaceState(null, "", "#" + start.id);
+        // The hash is left as it is: a deep link (#stay-fee-settings, #ubyport) must survive, and a load without one stays at the top.
       }
       fixLine();
     }

@@ -73,7 +73,8 @@ def test_stay_fee_section_fits_its_card_and_nested_blocks_align(host, base):  # 
             facts = page.evaluate(_FACTS)
             if facts["over"]:
                 problems.append((width, "overflow", facts["over"]))
-            aligned = {k: facts[k] for k in ("field", "label", "title", "more", "moreTitle", "moreLabel", "moreInput", "sig", "sigTitle")}
+            # the Signature block keeps its border (wp28), so its box, not its legend, sits on the field edge
+            aligned = {k: facts[k] for k in ("field", "label", "title", "more", "moreTitle", "moreLabel", "moreInput", "sig")}
             if len({v for v in aligned.values() if v is not None}) != 1:
                 problems.append((width, "left edges differ", aligned))
             if page.evaluate("document.documentElement.scrollWidth > window.innerWidth"):

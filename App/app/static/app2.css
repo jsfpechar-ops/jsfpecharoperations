@@ -3146,8 +3146,8 @@ body.v2 .prop-layout>nav.prop-nav{display:none}
   body.v2 section#stay-fee-settings{grid-template-columns:repeat(2,minmax(0,1fr))}
   body.v2 section#stay-fee-settings>*,body.v2 #stay-fee-settings .fee-setup-section{min-width:0}
   body.v2 #stay-fee-settings :is(input:not([type=checkbox]):not([type=radio]),select,textarea){width:100%;max-width:100%;box-sizing:border-box}
-  body.v2 #stay-fee-settings fieldset.signature-block{min-width:0;margin:0;padding:0;border:0;border-radius:0}
-  body.v2 #stay-fee-settings fieldset.signature-block>legend{padding:0;margin:0 0 8px}
+  /* the signature keeps its bordered block (wp28); it only may not grow past the card */
+  body.v2 #stay-fee-settings fieldset.signature-block{min-width:0;max-width:100%;margin:0;box-sizing:border-box}
   body.v2 #stay-fee-settings fieldset.signature-block>.action-group{margin-top:12px}
   body.v2 #stay-fee-settings .signature-locked img{display:block;max-width:100%;height:auto;box-sizing:border-box}
   body.v2 #stay-fee-settings details.fee-more{border:0;border-radius:0;background:transparent;padding:0;overflow:visible}
