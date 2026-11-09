@@ -35,6 +35,7 @@ type Flash struct {
 	Text  string
 	Key   string
 	Count int
+	Fix   string
 }
 
 // successFlashKeys is _SUCCESS_FLASH_KEYS in admin_helpers.py.
