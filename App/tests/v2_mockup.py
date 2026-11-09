@@ -103,9 +103,11 @@ BOX_OVERRIDES = {
     "housebook:.mh .big, .head h1@390": {"width": "167.469px"},
     "housebook:.stay .in b@320": {"width": "119.422px"},
     "housebook:.stay .in b@390": {"width": "119.422px"},
-    "housebook:.card.stay@320": {"height": "135.984px"},
+    # text-dependent on the date digits (1073): the row's date line wraps over 3 lines or 2 lines (e.g. 11.11.2026 fits in 2)
+    # depending on today, so the 320 px height accepts exactly these two wraps. 390 px is stable.
+    "housebook:.card.stay@320": {"height": ["135.984px", "116.984px"]},
     "housebook:.card.stay@390": {"height": "116.984px"},
-    "housebook:.stay .in small@320": {"height": "57px"},
+    "housebook:.stay .in small@320": {"height": ["57px", "38px"]},
     "housebook:.stay .in small@390": {"width": "208px", "height": "38px"},  # PR #725: the housebook row text wraps
     # text-dependent: app copy vs phone v2 mockup demo copy (0740)
     ".prop .in b@320": {"width": "93.0469px"},
