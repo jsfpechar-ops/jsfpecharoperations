@@ -305,6 +305,9 @@ func TestRequestSendDatabase(t *testing.T) {
 		if !strings.HasPrefix(rec.Header().Get("Location"), "/payments?err=") || requestStatus(t, pool, 11) != "draft" {
 			t.Errorf("got %q", rec.Header().Get("Location"))
 		}
+		if strings.Contains(rec.Header().Get("Location"), "fix=") {
+			t.Error("stripe off carries a fix link")
+		}
 		if outbox("payment_request:11:sent:v1") != 0 {
 			t.Error("mail queued with stripe off")
 		}
@@ -313,8 +316,9 @@ func TestRequestSendDatabase(t *testing.T) {
 	t.Run("card not ready flashes", func(t *testing.T) {
 		links.err, links.url = nil, ""
 		rec := send(11, 1)
-		if !strings.HasPrefix(rec.Header().Get("Location"), "/payments?err=") || requestStatus(t, pool, 11) != "draft" {
-			t.Errorf("got %q", rec.Header().Get("Location"))
+		loc := rec.Header().Get("Location")
+		if !strings.HasPrefix(loc, "/payments?err=") || !strings.HasSuffix(loc, "&fix=stripe") || requestStatus(t, pool, 11) != "draft" {
+			t.Errorf("got %q", loc)
 		}
 	})
 
