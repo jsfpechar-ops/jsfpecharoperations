@@ -59,3 +59,31 @@ def test_a_bad_id_for_scripts_keeps_the_422_json():
     api = TestClient(app).get("/apartments/abc")
     assert api.status_code == 422
     assert api.headers["content-type"].startswith("application/json")
+
+
+def test_guest_link_bad_reservation_id_is_a_calm_html_page():
+    db.init_db()
+    client = TestClient(app)
+    page = client.get("/l/example-token/not-a-number?lang=en", headers={"accept": "text/html"})
+    assert page.status_code == 404
+    assert "text/html" in page.headers["content-type"]
+    assert "int_parsing" not in page.text
+
+
+def test_guest_link_bad_reservation_id_stays_json_without_html_accept():
+    db.init_db()
+    api = TestClient(app).get("/l/example-token/not-a-number")
+    assert api.status_code == 422
+    assert api.headers["content-type"].startswith("application/json")
+
+
+def test_guest_edit_bad_person_id_is_html_not_validation_json():
+    db.init_db()
+    client = TestClient(app)
+    page = client.get(
+        "/l/example-token/1/edit/not-a-number?lang=en",
+        headers={"accept": "text/html"},
+    )
+    assert page.status_code == 404
+    assert "text/html" in page.headers["content-type"]
+    assert "int_parsing" not in page.text

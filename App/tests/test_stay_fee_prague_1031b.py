@@ -9,7 +9,7 @@ import subprocess
 
 import pytest
 
-from app import stay_fee
+from app import stay_fee, validation
 from app.routes import guest as guest_routes
 
 PRAGUE_TYPED = (
@@ -54,6 +54,25 @@ def test_prague_flat_from_city_en_when_addr_obec_is_empty():
 def test_prague_forms_not_exempt_without_czech_residence():
     guest = {"res_country": "SVK", "res_city": "Praha 17 - Řepy"}
     assert not stay_fee.same_obec_resident(guest, {"addr_obec": "Praha", "city_en": None})
+
+
+@pytest.mark.parametrize("typed", ["Praha–Řepy", "Praha—Řepy", "Praha‑Řepy", "Praha−Řepy"])
+def test_unicode_dash_prague_form_stays_exempt_after_save(typed):
+    """The Check step folds an en/em dash to PRAHA; save must keep a hyphen so pay agrees."""
+    saved = validation.normalise_residence_part(typed)
+    assert "-" in saved
+    assert stay_fee.same_obec_resident(
+        {"res_country": "CZE", "res_city": saved},
+        {"addr_obec": "Praha", "city_en": None},
+    )
+
+
+def test_unicode_dash_okres_stays_liable_after_save():
+    saved = validation.normalise_residence_part("Praha–východ")
+    assert not stay_fee.same_obec_resident(
+        {"res_country": "CZE", "res_city": saved},
+        {"addr_obec": "Praha", "city_en": None},
+    )
 
 
 def test_form_script_folds_prague_like_python():

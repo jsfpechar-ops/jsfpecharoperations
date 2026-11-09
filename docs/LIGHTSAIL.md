@@ -267,7 +267,7 @@ Passport photos are **not** in the DB backup. After restore, unverified uploads 
 | `backup-gdrive.sh` | weekly | 30 days | second copy outside AWS |
 | Lightsail automatic snapshots | daily | 7 | keep on: the only copy of the whole server (`.env`, origin certs, cron, photos) and the fastest full restore; billed per GB, so a 7-day local retention keeps them small |
 
-WAL-G point-in-time recovery (production only, after the rollout in [OPERATIONS](OPERATIONS.md#wal-g-continuous-archiving-and-point-in-time-recovery)): daily base backup 04:30 UTC and a check every 10 minutes:
+WAL-G point-in-time recovery (production only, after the rollout in [OPERATIONS](OPERATIONS.md#wal-g-continuous-archiving-and-point-in-time-recovery)): daily base backup 04:30 UTC and a check every 10 minutes. Create the log files first, or cron silently skips both commands: `sudo touch /var/log/ubyhost-walg-backup.log /var/log/ubyhost-walg-check.log && sudo chown ubuntu:ubuntu /var/log/ubyhost-walg-backup.log /var/log/ubyhost-walg-check.log`.
 
 ```bash
 (crontab -l 2>/dev/null; echo "30 4 * * * cd /opt/ubyhost/deploy/lightsail && ./scripts/walg-backup.sh >> /var/log/ubyhost-walg-backup.log 2>&1") | crontab -
