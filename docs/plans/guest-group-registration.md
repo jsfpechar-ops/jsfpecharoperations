@@ -56,7 +56,7 @@ Both ways stay: "Add a person" (on this phone) is the primary button, "Send to t
 | Duplicates | On save, compare with every person in the booking. Same document number, same name and same birth date: do not save again; say "This person is already registered." A child on a parent's passport is not a duplicate (different name and birth date) | Stops a double filing |
 | Address sharing | Only if the lead ticks the box. Copies street, town and country, not the surname. The member can change it. The tick is stored on the invite, not on any guest | Consent; matches today's same-phone copy |
 | Signature and legal tick | Each adult signs on their own phone. A parent's phone enters the children | Better than one person signing for all |
-| Stay fee | One bill per booking, one payer, one reference. See section 8 | The app cannot know who paid; avoids paying twice |
+| Stay fee | One bill per booking, one payer, one reference. See sections 8 and 9 | The app cannot know who paid; avoids paying twice |
 | Door code | Shown on every joined phone once everyone is registered, and mailed to the lead's e-mail as today | Everyone needs to get in |
 | Lost phone or cookie | The lead can remove a person entered on another phone (without seeing their data) so the place can be filled again | Today this needs the host |
 | Invite end | Stops working when the filing is sent, at check-out, or when the lead taps "Stop sharing". A new invite replaces the old one | Limits a forwarded link |
@@ -104,26 +104,100 @@ Two phones at capacity; lead not locked out by a join; member page and count end
 | 4 | An exact duplicate is not saved a second time | Yes |
 | 5 | A place left untouched for 30 minutes is freed | Yes |
 
-## 8. Stay fee in a group (owner request)
+## 8. Stay fee in a group (owner decisions 2026-11-09)
 
-Today: the fee is one total per booking, the payment reference (VS) is the booking id, and the pay box appears once everyone is registered (`stay_fee.py:486`, `routes/guest.py:1403,2415`). The guest pages never read a "paid" state, although the columns exist (`reservation.stay_fee_paid_at`, `stay_fee_paid_amount_czk`, `db.py:1111`). Task 1032 (draft PR) adds the total and calculation to the receipt mail. Known gaps (0897): no mark-as-paid, no pay link in the mail.
+Owner: one payer, the person who booked: **yes**. Host "mark as paid": **no**; the app does not record guest payments, that is the host's business. So nothing on any page or mail ever says "paid".
 
-| Rule | Detail |
+### How the stay fee works today (read from code)
+
+| Fact | Where |
 |---|---|
-| One payer | The person who booked (the lead, who holds the e-mail). Nobody else gets pay buttons |
-| One moment | The amount depends on the number of people and their ages, so it is final only when everyone is registered. Before that every phone shows "The stay fee is worked out when everyone is registered" |
-| Two places | The lead's finish card, and the mails to the lead's e-mail. The mail matters most: it arrives when the last person finishes, even if the lead's phone is in a pocket |
-| In the mails | The confirmation mail and the door-code mail both carry the same block: amount, how it was worked out, QR code, Revolut link, cash if the host accepts it, payment reference, and one button "Open payment page". Only the ways the host turned on are shown. No QR code when the host has no bank account |
-| QR in a mail | Sent inside the mail as an attached image, because many mail apps block remote images; the button is the fallback |
-| Other phones | One line, no buttons: "Stay fee for the group: 400 Kč. The payment details were sent to the person who booked." The lead can forward the mail if someone else pays |
-| Same reference | Every copy shows the same amount and reference. If two people pay anyway, the host sees two payments with one reference and returns one |
-| Paid state | The lasting fix. Step 1: the host taps "Mark as paid" on the stay (uses the existing columns). Then every phone and every later mail shows "Stay fee paid. Thank you." and the pay details disappear. Step 2, later and optional: match bank statement lines by reference (`bank_import.py` exists; scope unverified). Until a payment is marked, nothing ever says "paid" |
-| Group changes after the fee was sent | The hub and one follow-up mail show "Stay fee is now 500 Kč (was 400 Kč)" |
-| Not proposed | Holding the door code until the fee is paid. The app cannot know, and a guest locked out is worse than a late fee |
+| One switch per property, `stay_fee_collect` (on or off), plus the deployment switch `UBYHOST_STAY_FEE_GUEST_PAY` (off by default). There is no "manual" mode by that name; "on" means the guest is asked to pay by bank transfer or QR, Revolut link, or cash | `db.py:1054-1070`, `config.py:350`, `routes/stay_fees.py:277-302` |
+| The guest pays the host's account, never the town's. Reference (VS) = booking id | `routes/guest.py:2430-2443`, `booking_rails.py:28-38` |
+| The amount is worked out live each time: rate per night per liable person. Under 18, same-town residents and stays over 60 nights are exempt; the host can override per guest | `stay_fee.py:294,486-509` |
+| The pay box shows only when everyone is registered, with "You only pay once for the whole group" | `routes/guest.py:1403,2415-2468`, `guest/_fee_pay.html` |
+| Before that, each person sees "Local stay fee for you ... You do not pay now. When everyone in your group has registered, you choose how to pay." | `guest/_fee_estimate.html`, `i18n.py:365-366` |
+| The QR code is offered only if a guest entered on this phone is Czech or Slovak | `routes/guest.py:2403` |
+| One completion mail per booking, to the lead's e-mail with the host in copy, sent when the registered count reaches the head count. It includes the door code if ready, and a fee block with total, calculation, the names of the pay ways and the reference | `claim.py:372-402,757-806`, `mail_notify.py:1685-1712` |
+| A separate door-code mail goes out only if the completion mail was already sent | `door_codes.py:285-336` |
+| Mails can already carry a QR image inside them (used by the host's stay-fee mail) | `mail.py:364-402`, `mail_notify.py:1017` |
+| There is no stay-fee pay page reachable from a mail link. The hub needs the phone that registered | `routes/guest.py:1354` |
 
-| Extra brief | Content | Risk |
+### What is wrong today, even without groups
+
+| # | Problem | Where |
 |---|---|---|
-| 7 | Stay-fee block in the confirmation and door-code mails (extends 1032 and 0897) | legal: mail copy; privacy: none new, the mail goes to the same address as today |
-| 8 | Host "Mark as paid" and the paid state on guest pages and mails | none for filing; host page passes the UX gate |
+| P1 | The mail says "You're registered: nothing else to do" and "There is nothing else you need to do", then asks for money lower down | `i18n.py:654`, `claim.py:372-402` |
+| P2 | The mail has no account number, no QR code, no Revolut link and no cash note. It says "payment details are on your stay page", which only opens on the phone that registered | `mail_notify.py:1685-1712` |
+| P3 | The mail is sent once. If a person is added, removed or edited afterwards, the amount changes on screen and the mailed amount is stale | `claim.py:757-806` |
+| P4 | If one person never registers, the booking is treated as complete after 12 quiet hours and the door code is made, but no completion mail and no fee request are sent, and the pay box stays hidden. Must be re-checked before build | `reporting.py:110,958-1006` |
+| P5 | Screen and mail can disagree about the QR code, because the screen decides by the people on that phone and the mail lists all pay ways | `routes/guest.py:2403` vs `claim.py:372-402` |
+| P6 | If the host's bank account is removed after collection was turned on, the guest reads "Your host has not finished setting up payment yet" and the host is not told | `guest/_fee_pay.html`, `routes/stay_fees.py:582-602` |
 
-Owner decisions: (a) one payer, the person who booked: recommended yes. (b) "Mark as paid" by the host as the first paid state: recommended yes.
+## 9. The moment everyone is registered
+
+The rule: **the mail is the bill.** It reaches the lead wherever they are, it needs no login, and the host gets the same copy, so both sides see the same amount and reference.
+
+### What each person is told, and when
+
+| Moment | Lead (the person who booked) | Other travellers |
+|---|---|---|
+| Sharing the link | On the "Send to the others" screen: "When everyone has registered, we e-mail you the door code and the stay fee to pay once for the group (up to 400 CZK)." | |
+| Filling in the form | Per-person estimate as today | "Local stay fee for you: 100 CZK. The person who booked pays once for the whole group." |
+| While waiting | Hub: "3 of 4 registered. We will e-mail you when everyone is done." | "You are registered. 3 of 4 done." |
+| Everyone registered | Hub turns into the finish card by itself: stay fee with all pay details, then door code, then guide. The mail arrives at the same time | Finish card: door code and guide, plus one line: "Stay fee for the group: 400 CZK. The person who booked received the payment details by e-mail." No pay buttons |
+| Door code made later | The door-code mail repeats the same fee block | Door code appears on their page |
+| Amount changes later | One update mail (below) and the hub shows the new total | The line shows the new total |
+
+### The mail
+
+| Part | Content |
+|---|---|
+| Subject, fee owed | "Everyone is registered for {property}. Stay fee to pay: 400 CZK" |
+| Subject, no fee | "You're registered for {property}: nothing else to do" (today's text, now only when true) |
+| Top | Door code, if ready |
+| Stay fee block | Amount; "for 4 guests, 4 nights"; calculation per guest; "Pay once for the whole group, in any one way:" then each way the host turned on, complete: bank transfer with recipient, account, amount, reference and the QR code inside the mail; "Pay 400 CZK with Revolut" button; cash note. Last line: "Already paid? Then there is nothing more to do." |
+| Why that last line | With no paid state, a second mail (door code, or an update) must never look like a second bill |
+| Host copy | The host stays in copy, as today. That copy is the host's record of what the guest was asked to pay and under which reference |
+
+### Edge cases
+
+| Case | What happens |
+|---|---|
+| A traveller, not the lead, finishes last | The lead's open hub updates by itself; the mail is the notice either way |
+| Lead reads the mail on another device | Works: the mail holds every pay detail. No page is needed to pay |
+| Someone added after the bill | The new person registers; then one update mail: "The stay fee for your group is now 500 CZK (was 400 CZK). If you already paid 400 CZK, pay the remaining 100 CZK with the same reference." |
+| Someone removed, or an edit makes a person exempt | Update mail: "... is now 300 CZK (was 400 CZK). If you already paid 400 CZK, ask your host about the difference." |
+| Several changes in a row | Changes are gathered for 10 minutes and sent as one mail |
+| One person never registers (P4) | Proposed: when the booking is treated as complete after 12 quiet hours, send the same mail for the people who did register ("3 of 4 registered"), with the fee for those 3 and a link for the missing person. Owner decides |
+| Everyone exempt, or fee is 0 | No fee block anywhere; "nothing else to do" is true |
+| Collection off for the property | No fee on any page or mail; the host collects outside the app, as today |
+| Collection on but no pay way works (P6) | Host gets an alert at once ("Guests cannot pay the stay fee: add a bank account"); the guest sees the ways that still work; the mail never lists a way that does not work |
+| QR code (P5) | One rule for screen and mail: offered when any guest in the booking is Czech or Slovak. Bank details are shown to everyone |
+| Two people pay anyway | Same reference on both payments; the host sees it in their bank and returns one. The app stays out of it |
+| Mail is off for the deployment | No lead e-mail exists. The pay box then shows on the phone that shared the link; other phones say "ask the person who shared the link" |
+
+### Data, privacy, rules
+
+| Item | Detail |
+|---|---|
+| New stored values | The last mailed total and when it was sent, per booking, to detect a change. An amount, not personal data; listed in retention with the claim row |
+| Outbound | No new request. Same mail provider, same recipients as today |
+| Mail rule | Door code keeps the existing secret-marker pattern so the outbox never stores it (`docs/context/rules.md`, Mail) |
+| Copy | New mail and guest texts in every guest language; legal wording of the fee explanation unchanged |
+
+### Briefs (replace brief 7 in section 5)
+
+| # | Brief | Needs the group feature? | Risk |
+|---|---|---|---|
+| F0 | Read-only check of P4: what a lead receives today when a booking completes after 12 quiet hours | No | none |
+| F1 | The mail is the bill: subject and heading by state, full pay details, QR inside the mail, "Already paid?" line; door-code mail repeats the block (fixes P1, P2) | No | legal: mail copy |
+| F2 | One rule for pay ways and QR on screen and in mail (P5) | No | none |
+| F3 | Update mail when the total changes; stores the last mailed total (P3) | No | privacy: one retention line |
+| F4 | Bill at quiet completion for the people registered (P4) | No | Owner decision first |
+| F5 | Host alert when collection is on and no pay way works (P6) | No | host page: UX gate |
+| F6 | Group texts: share screen promise, member estimate text, member finish line, pay box on the lead's phone only | Yes | none |
+
+F1, F2, F3 and F5 fix today's single-phone flow as well, so they can ship before the group feature.
+
+Open for the owner: (1) F4, bill the registered people when one person never registers: recommended yes. (2) Update mail on a changed total (F3): recommended yes. (3) Is `UBYHOST_STAY_FEE_GUEST_PAY` on in production? The plan assumes it will be.
