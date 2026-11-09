@@ -10,13 +10,13 @@ Updated: 2026-11-09.
 - AI: `havel,leon,guide_import` (`guide_translate` off). Stripe test. Guest QR 404 on both when the owner has no IBAN.
 
 ## Now
-- 11-09: [Speed](../plans/speed-and-ease.md) + [group](../plans/guest-group-registration.md) build: model tiers (#854); 1064, 1065 briefs (Wave 0).
+- 11-09: [Speed](../plans/speed-and-ease.md)/[group](../plans/guest-group-registration.md) build, tiers in #854. Drafts: #855, #856, #857 (F0), #858 (1.6), #859 K-F20 late-filing fix (**Owner:** server count, then merge), #860 (1.1, after #858).
 - 11-09: 1051 stay-fee month filter (cache `20261109-1051a`), 1053 stay-fee rows + centred editor (`20261109-1053a`): draft PRs.
 - 11-06: #790: OCR `tip_label` + inline-flex `help-tip` (layout-lint `help-stranded` @320); cache `20261106-pr790-ocr-tip2`. Full browser glob open. [handoff](../tasks/ux-remediation-handoff.md).
-- 11-06: #791 merged. 11-07: 0990-0992 (settings throttle, PG indexes 00008, edge cache) in review. **Owner:** deploy, `pg_schema.py apply`, CF rule, Grafana.
+- 11-07: 0990-0992 (throttle, PG indexes 00008, edge cache) in review. **Owner:** deploy, `pg_schema.py apply`, CF rule, Grafana.
 - UX gate live (layout lint + AGENTS rule 10). Stripe onboarding live; extras merged. **Owner:** deploy; booking site v1 next.
 - 11-09: backups live (daily pg_dump, WAL-G 7-day PITR); restore drills passed, repeat every 3 months.
-- 11-08: 1032 stay-fee pay box (no radios, all ways visible) + receipt mail with total and calculation, draft PR. Method used is never claimed (app cannot know). **Owner:** review, deploy.
+- 11-08: 1032 stay-fee pay box (all ways visible) + receipt mail, draft PR; method never claimed. **Owner:** review, deploy.
 
 ## Next
 - Door codes 0037–0038 on main → owner staging steps.
