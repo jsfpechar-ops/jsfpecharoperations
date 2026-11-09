@@ -8,7 +8,7 @@
 {% block page_title %}{{ apartment.internal_name }} ({{ ui_period }}){% endblock %}
 {% block back_url %}/stay-fees?month={{ month_key }}{% endblock %}
 {% block back_label %}{{ t('stay_fees.back') }}{% endblock %}
-{% block toolbar %}{% include "_list_filter.html" %}{% endblock %}
+{% block toolbar %}{% set filter_compact = true %}{% include "_list_filter.html" %}{% endblock %}
 {% macro decision_form(line, review) %}
   <form method="post" action="/stay-fees/guest-decision" class="fee-decision">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
