@@ -1,6 +1,6 @@
 # 1073: housebook mockup test date flake
 
-Status: todo
+Status: review
 Tier: C | Depends on: none | Base commit: c8767121 | Branch: task/1073-housebook-mockup-date-flake
 Executor: Sonnet medium (owner override, [workflow] decision 2026-11-09) | Fits one session: 30 tool calls, 60k tokens
 
