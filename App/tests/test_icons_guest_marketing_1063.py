@@ -13,3 +13,10 @@ def test_no_glyph_icons_in_guest_and_marketing_files():
         assert not [g for g in "✓↗‹›▾▴▸−" if g in text], rel
     js = (APP / "static/guest-enhancements.js").read_text(encoding="utf-8")
     assert '"−"' not in js
+
+
+def test_summary_fold_saved_has_no_check_glyph_in_translations():
+    for rel in ("i18n.py", "guest_uk_i18n.py"):
+        for line in (APP / rel).read_text(encoding="utf-8").splitlines():
+            if '"summary_fold_saved"' in line:
+                assert "✓" not in line, (rel, line)

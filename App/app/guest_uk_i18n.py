@@ -264,7 +264,7 @@ STRINGS: Dict[str, str] = {
     "reported_title": "Дані надіслано й передано",
     "reported_body": "Дякуємо. Господар уже передав цей запис. Якщо щось нижче потрібно виправити, зверніться до господаря.",
     "summary_title": "Ваші надіслані дані",
-    "summary_fold_saved": "збережено ✓",
+    "summary_fold_saved": "збережено",
     "your_details": "Ваші дані",
     "person": "Особа",
     "you": "ви",
