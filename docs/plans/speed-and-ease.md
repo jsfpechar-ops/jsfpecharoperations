@@ -175,7 +175,7 @@ Required by the filing code (`validation.py:560-676`), never removed: surname, g
 
 | Kind | Spot | Problem or saving |
 |---|---|---|
-| Waste | `claim.html:45` | E-mail is required before the guest sees any benefit; its visible use is the door-code mail. |
+| Confusion | `claim.html:45` | E-mail is asked first with no reason given. It secures the booking and receives the claim link, door code, receipt and reminder (`claim.py:226-323,765`, `door_codes.py:297`). It cannot move to the end. |
 | Waste | `claim.html:34` and `form.html:103` | Party size can be asked twice. |
 | Waste | `form.html:144`, `routes/guest.py:196-236` | Extra travellers get surname and address prefilled (same device only), not nationality. |
 | Waste | `_ocr_scan.html` vs `form.html:274` | Some guests photograph the passport twice: once for the scan ("not saved"), once for the stored photo. |
@@ -229,7 +229,7 @@ All "reuse what exists". Any item touching a host page passes the UX gate; guest
 | Q13 | "More options" fold for expert fields: operator signature modes, invoice numbering, registry entry, stay-fee pay options | Operator, invoice, stay fee | S | none | hygiene |
 | Q14 | Lock: turn on automatically when exactly one lock is found; remove the second pair of hour selects; reorder the share text (steps first, warnings after) | TTLock | S | none | hygiene |
 | Q15 | Dropped by the owner (no nationality prefill for extra travellers) | Guest | n/a | n/a | n/a |
-| Q16 | Guest claim: ask for the e-mail after the form ("Where should we send your door code?"), or make it optional when no door code is set | Guest | S-M | none; check door-code mail flow | wow |
+| Q16 | Changed after a code check: the e-mail ties the booking to this guest's phone (`claim.py:226`), so it stays first. Add one line saying why: "We send your door code and receipt here, and it keeps this booking yours" | Guest | S | none | hygiene |
 | Q17 | Split the guest last step: review, then signature and legal tick with one fixed button text | Guest | M | legal: wording unchanged | hygiene |
 | Q18 | Batch the dashboard queries (K-O03) | Dashboard | M | none | hygiene |
 
@@ -238,12 +238,12 @@ All "reuse what exists". Any item touching a host page passes the UX gate; guest
 | ID | Change | Effort | Risk | Components | Kind |
 |---|---|---|---|---|---|
 | G1 | Guest-ready in 90 seconds | L | filing: Owner | New: question page, check-answers page, task list with time per item, progress ring | wow |
-| G2 | Scan-first guest check-in | M-L | filing, privacy: Owner | New: camera-first card, review card | wow |
+| G2 | Scan made obvious, still optional | M | filing: guest confirms | Reuses the scan button and read-back chip | wow |
 | G3 | Remember once (section 7) | M | privacy: low | Reuses `legal_entity`; new: "from your profile" chip | wow |
 | G4 | Payments that never block | M | privacy: Owner (data sent to Stripe) | New: background-task chip | wow |
 | G5 | Live preview beside the form | M | none | New: preview pane | wow |
 | G6 | Police details from the letter | M | filing HIGH: Owner | New: find-it card; reuses check-answers | wow |
-| G7 | Everyone registers at once | M | privacy: Owner | Reuses `guest_handoff.py` (*unverified* scope) | wow |
+| G7 | Everyone registers at once ([design](guest-group-registration.md)) | L | filing HIGH, privacy | New: invite screen with QR code, join screen, place rows on the hub; new invite and draft tables | wow |
 | G8 | Instant editor: autosave and undo | M-L | filing: excluded fields | New: saved chip, undo toast | wow |
 | G9 | Magic start from a link | L | legal, privacy: Owner | New: single-input start | wow |
 | G10 | Town defaults for stay fee | M | legal: Owner | Reuses copy-settings | hygiene |
@@ -252,7 +252,7 @@ All "reuse what exists". Any item touching a host page passes the UX gate; guest
 
 **G1. Guest-ready in 90 seconds.** After the mail link the host sees "Who runs the accommodation?" (IČO lookup, or name and address; owner: operator first), then "What do you call your place?", then "Where is it?" (one address search), then "Paste your booking calendar link (or skip)", then a done screen with the guest link, a QR code and "Try it as a guest". Each screen is a plain form that works without JavaScript and shows "Step 2 of 4". Police details, stay fee, lock, invoices and payments become a "Finish later" task list on the dashboard with a time per item and plain status ("Needed before the first guest arrives: police details, 2 min"). **Replaces** the 5-step checklist, the 4-step wizard and `_property_create.html` as the first-property path; the full editor stays for later edits. Conflict: a property needs an operator today (`routes/admin.py:1815-1860`), and a guest could register before police details exist, which starts the legal filing deadline with nothing to file through. Both need the owner.
 
-**G2. Scan-first guest check-in.** The guest's first screen is the camera: "Take a photo of your passport or ID". The result comes back as a review card ("Is this right?") with a Change link per line, then address, then signature. Typing stays one tap away ("Type it instead"). The scan photo is never saved (owner decision); a required passport photo stays its own step. The look of the form does not change (section 11). **Replaces** steps 1 and 3 of today's wizard and the separate scan button. Conflict: today's promise is "The photo is not saved"; reusing it changes that promise and needs the owner and the lawyer. Scan errors must never be filed unseen: the review card is mandatory.
+**G2. Scan made obvious, still optional (owner).** The scan stays a button the guest chooses to press; nothing forces the camera, and the fields are always there to type in. The button becomes the primary action of step 1 and the result comes back as filled fields marked "Please check". The scan photo is never saved (owner decision); a required passport photo stays its own step. The look of the form does not change (section 11). **Replaces** nothing. Conflict: today's promise is "The photo is not saved"; reusing it changes that promise and needs the owner and the lawyer. Scan errors must never be filed unseen: the review card is mandatory.
 
 **G3. Remember once.** See section 7. Every form reads known facts first and shows a small "from your profile" chip with Change. The host never types a company name, address, bank account, e-mail, phone or check-in hour twice.
 
@@ -331,7 +331,7 @@ Capture the baseline for one week before Wave 1 ships.
 | 4c | Pasted police letter fills IDUB and short name | Open: owner asked how (answered in chat) | G6 waits for yes or no |
 | 5 | Reuse the scan photo as the stored passport photo | No. The scan photo is never saved | G2 keeps scan-first, no reuse |
 | 6 | Send operator details to Stripe | Yes, and say so in the legal documents | G4 goes ahead with a copy task for privacy policy, DPA and subprocessor text (K-L) before release |
-| 7a | Guests pass their address to their group | Open: owner asked how (answered in chat) | G7 waits for yes or no |
+| 7a | Guests pass their address to their group | Yes, "done properly" | [Group design](guest-group-registration.md): address shared only with a tick; built in 7 HIGH RISK briefs behind a switch |
 | 7b | Server draft of an unfinished guest form | Yes | Proposed rule: draft deleted when the form is sent; otherwise 7 days after the last change or the day after check-out, whichever comes first. Needs a retention line. Owner confirms the numbers |
 | 8 | Fetch a listing page from a pasted link | Yes | G9 allowed, built last. The booking sites' own terms remain a legal risk |
 | 9 | Who keeps a town stay-fee table | Nobody | G10 only reuses the host's own earlier property |
@@ -353,7 +353,7 @@ The owner wants the guest form's design kept: same cards, colours, type, step st
 
 | ID | Change | What the guest notices | Effort | Risk |
 |---|---|---|---|---|
-| S1 | The scan button gets the primary style on step 1 (Q2) | The fastest way is the obvious one | S | none |
+| S1 | The scan button gets the primary style on step 1 (Q2). It stays optional: the guest presses it, or types | The fastest way is the obvious one | S | none |
 | S2 | Scan feedback: spinner and "Reading your document, about 10 seconds"; filled fields are marked "Filled from your document. Please check." using the existing read-back chip | Waiting feels short; the guest checks, not types | S | filing: the guest confirms; validation unchanged |
 | S3 | The photo is made smaller on the phone before it is sent | Scan is quicker on mobile data | S | none (less data leaves the phone) |
 | S4 | Right keyboard, capitals and autofill hints per field (Q1) | Fewer typos, less typing | S | none |
@@ -361,14 +361,14 @@ The owner wants the guest form's design kept: same cards, colours, type, step st
 | S6 | Step changes: soft slide (CSS only, off for reduced motion), focus on the first field, page at the top | Steps feel instant and never disorienting | S | none |
 | S7 | On an error, jump to the first problem and say how to fix it ("Add the year, for example 14.03.1961") | No hunting for what went wrong | S | none |
 | S8 | When the scan cannot read the nationality, say so and open the picker | No silent empty field | S | filing: guest picks, as today |
-| S9 | E-mail asked at the end, with its reason (Q16) | Starts with the form, not a gate | S-M | none |
+| S9 | E-mail stays first because it secures the booking; the screen says why in one line (Q16). The door code is shown on the finish card and mailed, as today | The question makes sense | S | none |
 | S10 | Last step split into "Check your details" and "Sign" (Q17) | One job per step, one fixed button text | M | legal: wording unchanged |
-| S11 | A real finish: "All done" card with the door code and "Add another person" | A clear end | S | none |
+| S11 | A real finish: "All done" card with, in this order, the stay fee to pay if the host turned it on (never shown as "paid"; the app cannot know), the door code, the guide, and "Add another person" | A clear end, nothing forgotten | S | none |
 | S12 | Help dots at least 44 px | Easier to tap | S | none |
 | S13 | Poor signal: "No connection. Your answers are kept. Try again." (needs S5) | No lost work on bad Wi-Fi | S | none |
 | S14 | Under-15s skip the signature (G13) | Families finish sooner | S | legal: only after confirmation |
-| S15 | The "child travelling on a parent's passport" box appears only when the birth date says under 18 | Adults never see a grey block that cannot apply to them | S | filing: Owner. No data lost: an adult cannot be a child on a parent's passport |
-| S16 | The visa number field appears only for nationalities outside the EU and Schengen | Most European guests see one field fewer | S | filing: Owner. No data lost: EU and Schengen citizens have no visa |
+| S15 | The "child travelling on a parent's passport" box appears only when the birth date says under 18 | Adults never see a grey block that cannot apply to them | S | filing: owner agreed. No data lost: an adult cannot be a child on a parent's passport |
+| S16 | The visa number field appears only for nationalities outside the EU and Schengen | Most European guests see one field fewer | S | filing: owner agreed. No data lost: EU and Schengen citizens have no visa |
 | S17 | Optional, the only layout touch: the page title fits on one line on a phone, so the first field is visible without scrolling | The form starts at once | S | none; skip if the owner wants zero visual change |
 
 Not changed: layout, colours, fonts, the order of fields, any police field, the adult signature, the legal tick.
@@ -383,6 +383,10 @@ Not changed: layout, colours, fonts, the order of fields, any police field, the 
 | Bank QR request can be created without a bank account; QR then 404s | `routes/payments.py:200-210,359-370` |
 | Hour selects rendered twice on the property page | `_property_editor.html:179,468` |
 | Scan worst case about 45 s with only a text line | `doc_ocr.py:292,307` |
+| Head-count check is read-then-insert: two saves at once can exceed the count | `routes/guest.py:2292-2297` |
+| Two guests can both become the lead guest | `routes/guest.py:2299` |
+| "Add another person" loses an update when tapped twice at once | `routes/guest.py:1640` |
+| Asking for the claim link again from a second phone locks the first phone out | `claim.py:279` |
 
 ## Self-check
 
