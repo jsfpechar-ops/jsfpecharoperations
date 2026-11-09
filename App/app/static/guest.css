@@ -1103,13 +1103,8 @@ details.g-why .g-details {
 /* The legal fold on the signature step: a quiet one-liner, the full notice
    opens under it. The acknowledgement below stays visible either way. */
 .g-legal-text > summary::before {
-  content: "\25B8";
-  display: inline-block;
-  width: 18px;
   color: var(--g-muted);
-  font-size: 12px;
 }
-.g-legal-text[open] > summary::before { content: "\25BE"; }
 .g-legal-text > summary {
   border-top: 1px solid var(--g-line);
   margin-top: 16px;
@@ -1343,17 +1338,6 @@ details.g-summary > summary.g-summary-fold {
   color: var(--g-ink);
 }
 details.g-summary > summary.g-summary-fold::-webkit-details-marker { display: none; }
-details.g-summary > summary.g-summary-fold::after {
-  content: "";
-  float: right;
-  width: 20px;
-  height: 20px;
-  margin-top: 2px;
-  background-color: var(--g-muted);
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat;
-}
-details.g-summary[open] > summary.g-summary-fold::after { transform: rotate(180deg); }
 .g-btn + details.g-summary { margin-top: 14px; }
 details.g-summary > .g-summary-body > .g-intro + .g-btn { margin-top: 12px; }
 details.g-summary[open] > summary.g-summary-fold {
@@ -1531,11 +1515,9 @@ details.g-summary > .g-summary-body { padding: 16px 20px 18px; }
 .g-guide-video a { color: var(--g-accent); font-weight: 600; }
 .g-guide-card h2 { font-size: 19px; }
 .g-guide-link { display: block; padding: 16px 20px; text-decoration: none; font-size: 16.5px; font-weight: 600; color: var(--g-accent); }
-.g-guide-link::after { content: " \2192"; }
 
 /* 0352: Leon (AI), the chat at the end of the guest guide. Light mode only. */
 .g-leon-jump { display: inline-block; margin: 0 0 16px; color: var(--g-accent); font-size: 15px; font-weight: 600; text-decoration: none; }
-.g-leon-jump::after { content: " \2193"; }
 .g-leon [hidden], .g-leon-jump[hidden] { display: none; }
 .g-leon-nojs { margin: 0; font-size: 14.5px; color: var(--g-muted); }
 .g-leon-log { display: flex; flex-direction: column; gap: 10px; margin: 0 0 14px; }
@@ -1644,3 +1626,31 @@ details.g-fee-fold a { color: var(--g-ink); font-weight: 700; text-underline-off
 .g-fee-qr-img { display: block; width: 176px; max-width: 100%; height: auto; border: 1px solid var(--g-line); }
 .g-fee-qr .g-summary-list { flex: 1 1 180px; min-width: 0; }
 .g-fee-payee { margin: 8px 0 0; }
+
+/* 1063: Lucide icons as CSS masks on guest and marketing pages (paths as in _icons.html). */
+:root {
+  --g-ico-chev-right: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m9 18 6-6-6-6'/></svg>");
+  --g-ico-chev-down: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  --g-ico-chev-up: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m18 15-6-6-6 6'/></svg>");
+  --g-ico-arrow-right: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 12h14'/><path d='m12 5 7 7-7 7'/></svg>");
+  --g-ico-arrow-down: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 5v14'/><path d='m19 12-7 7-7-7'/></svg>");
+}
+.g-legal-text > summary::before,
+details.g-summary > summary.g-summary-fold::after,
+.g-guide-link::after,
+.g-leon-jump::after {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  vertical-align: -3px;
+  background-color: currentColor;
+  -webkit-mask: var(--g-mask) center / contain no-repeat;
+  mask: var(--g-mask) center / contain no-repeat;
+}
+.g-legal-text > summary::before { --g-mask: var(--g-ico-chev-right); }
+.g-legal-text[open] > summary::before { --g-mask: var(--g-ico-chev-down); }
+details.g-summary > summary.g-summary-fold::after { --g-mask: var(--g-ico-chev-down); color: var(--g-muted); float: right; margin-top: 2px; }
+details.g-summary[open] > summary.g-summary-fold::after { --g-mask: var(--g-ico-chev-up); }
+.g-guide-link::after { --g-mask: var(--g-ico-arrow-right); margin-left: 6px; }
+.g-leon-jump::after { --g-mask: var(--g-ico-arrow-down); margin-left: 6px; }

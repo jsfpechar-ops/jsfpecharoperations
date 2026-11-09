@@ -1,3 +1,4 @@
+{% from "_icons.html" import icon with context -%}
 <!doctype html>
 <html lang="{{ lang }}">
 <head>
@@ -21,7 +22,7 @@
   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
   <link rel="stylesheet" href="/static/tokens.css?v=20261022-0284">
-  <link rel="stylesheet" href="/static/landing.css?v=20261102-0814">
+  <link rel="stylesheet" href="/static/landing.css?v=20261109-1063a">
   <script type="application/ld+json">
   {{ {
     "@context": "https://schema.org",
@@ -71,7 +72,7 @@
           <p class="landing-eyebrow">{{ t('guide.checklist') }}</p>
           <ul>
             {% for item in guide.checklist %}
-              <li><span aria-hidden="true">✓</span>{{ item }}</li>
+              <li><span aria-hidden="true">{{ icon('check', 14) }}</span>{{ item }}</li>
             {% endfor %}
           </ul>
           <a href="/login?lang={{ lang }}" class="landing-button primary" data-analytics-event="login_click">{{ t('landing.cta') }}</a>
@@ -84,7 +85,7 @@
           <strong>{{ t('guide.official_title') }}</strong>
           <p>{{ t('landing.disclaimer') }}</p>
         </div>
-        <a href="{{ guide.official_url }}" rel="noopener noreferrer" target="_blank">ipc.gov.cz ↗</a>
+        <a href="{{ guide.official_url }}" rel="noopener noreferrer" target="_blank">ipc.gov.cz <span aria-hidden="true">{{ icon('external-link', 14) }}</span></a>
       </aside>
 
       <nav class="guide-more" aria-label="{{ t('guide.more_nav') }}">
