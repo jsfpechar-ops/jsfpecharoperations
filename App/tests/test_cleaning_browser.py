@@ -1101,7 +1101,7 @@ def test_0971_success_notices_share_one_pattern_and_dismiss(workspace, origin, w
                   close: [Math.round(b.width), Math.round(b.height)] }; };
               return { macro: pick(document.querySelector('[data-success-notice]')), section: pick(document.querySelector('#fx-section')),
                 cleaning: pick(document.querySelector('#fx-cleaning')),
-                toast: (() => { const i = document.querySelector('#fx-toast .feedback-card-icon'); return i ? [i.textContent, Math.round(i.getBoundingClientRect().width)] : null; })(),
+                toast: (() => { const i = document.querySelector('#fx-toast .feedback-card-icon'); return i ? [i.querySelector('svg') ? 'svg' : i.textContent, Math.round(i.getBoundingClientRect().width)] : null; })(),
                 overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
                 live: document.querySelectorAll('[data-feedback-live]').length };
             }""")
@@ -1110,7 +1110,7 @@ def test_0971_success_notices_share_one_pattern_and_dismiss(workspace, origin, w
                     assert look[key][field] == look["macro"][field], (key, field, look)
             for key in ("macro", "section", "cleaning"):
                 assert look[key]["inside"] and look[key]["close"] == [44, 44], (key, look)
-            assert look["toast"] == ["✓", 24], look
+            assert look["toast"] == ["svg", 24], look
             assert not look["overflow"] and look["live"] == 1, look
             assert page.locator("[role=status][data-success-notice]").count() == 1
             shot(page, f"0971-notices-{lang}-{width}")

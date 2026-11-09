@@ -1,3 +1,4 @@
+{% from "_icons.html" import icon with context %}
 {% from "_section_notice.html" import section_notice with context %}
 {#- 0094: Settings tab. The one full property form (POST /apartments/<id>), moved
     here once and grouped under visible sub-headers: Property information, Guest
@@ -94,7 +95,7 @@
     <ul class="readiness-list">
       {% for item in readiness.invite %}
       <li class="readiness-line{% if item.done %} is-done{% endif %}">
-        <span class="readiness-mark" aria-hidden="true">{{ '✓' if item.done else '✗' }}</span>
+        <span class="readiness-mark" aria-hidden="true">{{ icon('check' if item.done else 'x', 14) }}</span>
         {% if item.done %}{{ t('apartment.form.readiness.item.' ~ item.key) }}
         {% else %}<a href="#{{ item.anchor }}">{{ t('apartment.form.readiness.missing') }} {{ t('apartment.form.readiness.item.' ~ item.key) }}</a>{% endif %}
       </li>
@@ -110,7 +111,7 @@
     <ul class="readiness-list">
       {% for item in readiness.report %}
       <li class="readiness-line{% if item.done %} is-done{% endif %}">
-        <span class="readiness-mark" aria-hidden="true">{{ '✓' if item.done else '✗' }}</span>
+        <span class="readiness-mark" aria-hidden="true">{{ icon('check' if item.done else 'x', 14) }}</span>
         {% if item.done %}{{ t('apartment.form.readiness.item.' ~ item.key) }}
         {% else %}<a href="#{{ item.anchor }}">{{ t('apartment.form.readiness.missing') }} {{ t('apartment.form.readiness.item.' ~ item.key) }}</a>
           {% if item.message %}<span class="readiness-why">{{ validation_message(item.message) }}</span>{% endif %}

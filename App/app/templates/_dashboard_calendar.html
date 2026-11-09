@@ -1,3 +1,4 @@
+{% from "_icons.html" import icon with context %}
 {# Calendar data is fetched from an owner-scoped endpoint, never embedded in browser storage. #}
 <link rel="stylesheet" href="/static/dashboard-calendar.css?v=20261107-1207">
 <section id="calendar" class="dashboard-calendar" data-calendar data-today="{{ today.isoformat() }}" data-source="{{ calendar_source | default('/dashboard/calendar') }}" data-cleaning="{{ 'true' if calendar_cleaning | default(false) else 'false' }}" data-readonly="{{ 'true' if calendar_readonly | default(false) else 'false' }}" data-calendar-date="{{ calendar_date | default('') }}" data-range-from="{{ calendar_from | default('') }}" data-range-to="{{ calendar_to | default('') }}" data-lang="{{ lang }}" aria-labelledby="calendar-title">
@@ -40,7 +41,7 @@
     <form action="{{ '/cleaning/read-only' if calendar_readonly | default(false) else '/reservations' }}" method="post" data-cal-form>
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
       <input type="hidden" name="calendar" value="1">
-      <div class="cal-dialog-heading"><h2 id="cal-create-title" data-cal-create-title>{{ t('calendar.add') }}</h2><button type="button" class="btn soft cal-close" data-cal-close aria-label="{{ t('calendar.close') }}">×</button></div>
+      <div class="cal-dialog-heading"><h2 id="cal-create-title" data-cal-create-title>{{ t('calendar.add') }}</h2><button type="button" class="btn soft cal-close" data-cal-close aria-label="{{ t('calendar.close') }}">{{ icon('x', 16) }}</button></div>
       {% if not calendar_readonly | default(false) %}<div class="cal-create-types" role="group" aria-label="{{ t('calendar.create_type') }}"><button type="button" class="btn" data-cal-type-choice="stay">{{ t('calendar.kind_stay') }}</button><button type="button" class="btn" data-cal-type-choice="cleaning">{{ t('calendar.kind_cleaning') }}</button></div>{% endif %}
       <div class="field"><label for="cal-property">{{ t('calendar.property') }}</label><select id="cal-property" name="apartment_id" required></select><p class="cal-field-error" data-cal-error-for="apartment_id"></p></div>
       <div data-cal-stay-fields>
@@ -65,19 +66,19 @@
   </dialog>
 
   <dialog class="cal-dialog" data-cal-details aria-labelledby="cal-details-title">
-    <div class="cal-dialog-heading"><h2 id="cal-details-title">{{ t('calendar.details') }}</h2><button type="button" class="btn soft cal-close" data-cal-close aria-label="{{ t('calendar.close') }}">×</button></div>
+    <div class="cal-dialog-heading"><h2 id="cal-details-title">{{ t('calendar.details') }}</h2><button type="button" class="btn soft cal-close" data-cal-close aria-label="{{ t('calendar.close') }}">{{ icon('x', 16) }}</button></div>
     <div data-cal-detail-content></div>
     <div class="cal-dialog-actions"><a class="btn primary" data-cal-open href="/reservations">{{ t('calendar.open') }}</a></div>
   </dialog>
 
   <dialog class="cal-dialog" data-cal-day-dialog aria-labelledby="cal-day-title">
-    <div class="cal-dialog-heading"><h2 id="cal-day-title"></h2><button type="button" class="btn soft cal-close" data-cal-close aria-label="{{ t('calendar.close') }}">×</button></div>
+    <div class="cal-dialog-heading"><h2 id="cal-day-title"></h2><button type="button" class="btn soft cal-close" data-cal-close aria-label="{{ t('calendar.close') }}">{{ icon('x', 16) }}</button></div>
     <div data-cal-day-list></div>
     <div class="cal-dialog-actions"><button type="button" class="btn" data-cal-day-add>{{ t('calendar.add') }}</button></div>
   </dialog>
 
   <dialog class="cal-dialog" data-cal-settings-dialog aria-labelledby="cal-settings-title">
-    <div class="cal-dialog-heading"><h2 id="cal-settings-title">{{ t('calendar.settings') }}</h2><button type="button" class="btn soft cal-close" data-cal-close aria-label="{{ t('calendar.close') }}">×</button></div>
+    <div class="cal-dialog-heading"><h2 id="cal-settings-title">{{ t('calendar.settings') }}</h2><button type="button" class="btn soft cal-close" data-cal-close aria-label="{{ t('calendar.close') }}">{{ icon('x', 16) }}</button></div>
     <label class="cal-setting"><span>{{ t('calendar.automatic') }}</span><input type="checkbox" data-cal-auto checked></label>
     <p class="cal-setting-help">{{ t('calendar.automatic_help') }}</p>
     {% for value in ('property', 'label', 'guests') %}<label class="cal-setting"><span>{{ t('calendar.show_' ~ value) }}</span><input type="checkbox" data-cal-display="{{ value }}" checked></label>{% endfor %}
