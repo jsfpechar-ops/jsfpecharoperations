@@ -8,7 +8,8 @@ import time
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, Request, Response
-from fastapi.exception_handlers import http_exception_handler
+from fastapi.exception_handlers import http_exception_handler, request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -271,6 +272,21 @@ async def http_error_handler(request: Request, exc: StarletteHTTPException):
     if exc.headers:
         response.headers.update(exc.headers)  # keeps Allow on a 405
     return response
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(request: Request, exc: RequestValidationError):
+    """A bad id in a page URL (``/apartments/abc``) is a missing page, not raw JSON.
+
+    Only path-parameter errors on HTML requests; forms, queries and the API
+    keep the 422 JSON body.
+    """
+    path_only = all(err.get("loc", ("",))[0] == "path" for err in exc.errors())
+    if not path_only or not _wants_html(request):
+        return await request_validation_exception_handler(request, exc)
+    if _is_guest_path(request):
+        return guest.error_page(request, "not_found", 404)
+    return templating.render(request, "error.html", {"error_kind": "not_found"}, status_code=404)
 
 
 @app.exception_handler(Exception)
