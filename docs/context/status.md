@@ -10,6 +10,7 @@ Updated: 2026-11-09.
 - AI: `havel,leon,guide_import` (`guide_translate` off). Stripe test. Guest QR 404 on both when the owner has no IBAN.
 
 ## Now
+- 11-09: [Speed plan](../plans/speed-and-ease.md) written; owner picks.
 - 11-09: 1051 stay fees compact month filter (no Apply, default = current month), draft PR on `claude/stayfees-month-filter`; cache `20261109-1051a`.
 - 11-09: 1053 Stay fee card rows + centred property editor column (>=1024); cache `20261109-1053a`. PR draft, CI watched.
 - 11-06: #790: OCR `tip_label` + inline-flex `help-tip` (layout-lint `help-stranded` @320); cache `20261106-pr790-ocr-tip2`. Full browser glob open. [handoff](../tasks/ux-remediation-handoff.md).
