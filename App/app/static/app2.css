@@ -3213,8 +3213,9 @@ body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step details > :not(summ
   .onboarding-welcome .onboarding-demo form .btn { width: 100%; justify-content: center; min-height: 44px; }
 }
 .onboarding-welcome .onboarding-demo { padding: 0; border: 0; background: none; }
-.onboarding-welcome .onboarding-demo form .btn {
+body.v2 .onboarding-welcome .onboarding-demo form .btn:not(.line):not(.soft):not(.ghost) {
   background: var(--surface); color: var(--ink); border: 1px solid var(--line); box-shadow: none;
+  min-height: 44px; font-size: 14px;
 }
 /* 1031: the security prompt card on v2 pages (app2.css loads without app.css here). */
 body.v2 dialog.security-prompt {

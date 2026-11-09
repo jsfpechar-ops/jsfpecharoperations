@@ -457,7 +457,7 @@
     <div class="onboarding-bottom single">
       <div class="onboarding-demo">
         <div>
-          <strong>{% set _title = t('onboarding.demo_title').rsplit(' ', 1) %}{% if _title | length > 1 %}{{ _title[0] }} {% endif %}<span class="tip-tail">{{ _title[-1] }}{{ help_tip('onboarding-demo-help', t('onboarding.demo_body') ~ ' ' ~ t('onboarding.demo_hint')) }}</span></strong>
+          <strong>{{ t('onboarding.demo_title') }}{{ help_tip('onboarding-demo-help', t('onboarding.demo_body') ~ ' ' ~ t('onboarding.demo_hint')) }}</strong>
         </div>
         <form method="post" action="/demo">
           <button class="btn" type="submit">{{ t('demo.load') }}</button>
