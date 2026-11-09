@@ -1,6 +1,6 @@
 # 1065: baseline numbers: first-run stage times and per-route query counts
 
-Status: todo
+Status: blocked
 Depends on: none | Base commit: 0d851ca4 | Branch: task/1065-baseline-funnel-metrics
 Executor: Opus (owner override for this brief; written to Haiku standard) | Fits one session: 30 tool calls, 60k tokens
 Queue item 0.2 (Tier B). Plan: [speed-and-ease](../plans/speed-and-ease.md) section 9 (how we measure "2x faster") and section 10 row 10 ("Use /metrics only; the access log stays off").
