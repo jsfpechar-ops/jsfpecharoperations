@@ -25,6 +25,7 @@ Run only the row for the area you changed, from `App/`, always ending `-q --tb=s
 | Guest guide | `test_guest_guide*.py` |
 | Onboarding, properties | `test_onboarding*.py test_property_*.py test_first_*.py` |
 | Analytics | `test_posthog_*.py test_umami_guard.py test_meta_capi.py` |
+| Funnel stage times, `/metrics` | `test_admin_funnel.py test_metrics_0427.py test_posthog_*.py` |
 | Design system, catalog page, design lint | `test_design_*.py test_dev_ui*.py` |
 | Static files under App/app/static (any), cache keys | `test_static_versions.py test_wp07_cache_heartbeats.py` plus the row of the page the file styles |
 | Any host template, host CSS or host JS | test_design_guardrails_browser.py (0 skipped; the rules are in MASTER 11.0) |
