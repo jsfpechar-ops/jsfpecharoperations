@@ -592,25 +592,28 @@ def _overview_calendar_rows(owner_user_id, apartments, today, lang) -> list:
             if col_end <= col_start:
                 continue
             tone = event["tone"]
-            if tone == "done":
-                css = "b-ok"
-            elif tone in ("action", "ready", "overdue"):
+            if tone in ("action", "ready", "overdue"):
                 css = "b-warn"
+            elif start <= today < stop:
+                css = "b-now"
             else:
                 css = "b-grey"
             overdue = tone == "overdue"
             source = str(event["source"] or "").lower()
+            source_label = _OVERVIEW_SOURCE_NAMES.get(source, "")
             raw_label = (event["label"] or "").strip()
-            blocked = bool(re.match(r"^(?:[!⚠]\s*)?(?:closed(?:\s*[-–]\s*not available)?|not available|airbnb\s*\(not available\)|blocked|unavailable)$", raw_label, re.IGNORECASE))
+            blocked = bool(re.match(r"^(?:[!⚠]\s*)?(?:closed(?:\s*[-–]\s*not available)?|not available|airbnb\s*\(not available\)|blocked|unavailable|reserved|booked|reservation|rezervováno|rezervace)$", raw_label, re.IGNORECASE))
             if blocked:
-                css = "b-grey"  # one colour for every placeholder block, whatever the stay tone
-                label = _OVERVIEW_SOURCE_NAMES.get(source, "")  # a placeholder has no name: platform if known, else an empty pill
+                if re.search(r"closed|not available|blocked|unavailable", raw_label, re.IGNORECASE):
+                    css = "b-grey"  # a host block is never "in house"; a reserved placeholder is a real stay and keeps its tone
+                label = host_i18n.translate(lang, "calendar.booked")  # one neutral label for every placeholder; the source shows as the logo
             else:
-                label = raw_label or _OVERVIEW_SOURCE_NAMES.get(source) or host_i18n.translate(lang, "calendar.kind_stay")
+                label = raw_label or host_i18n.translate(lang, "calendar.kind_stay")
             guests = int(event.get("guests") or 0)
             if guests > 0:
                 label = f"{label} · {guests}" if label else f"· {guests}"
-            placed.append((col_start, col_end, {"css": css, "col_start": col_start, "col_end": col_end, "overdue": overdue, "label": label, "title": label or host_i18n.translate(lang, "calendar.kind_stay"), "url": event["url"]}))
+            title = f"{source_label} · {label}" if source_label else (label or host_i18n.translate(lang, "calendar.kind_stay"))
+            placed.append((col_start, col_end, {"css": css, "col_start": col_start, "col_end": col_end, "overdue": overdue, "label": label, "title": title, "url": event["url"], "source": source, "source_label": source_label}))
         # 0707: greedy lanes, so stays that overlap in one property row do not overlap visually.
         lane_ends: list[int] = []
         for col_start, col_end, bar in sorted(placed, key=lambda item: item[0]):
