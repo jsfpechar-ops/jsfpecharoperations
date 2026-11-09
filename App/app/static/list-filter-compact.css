@@ -21,7 +21,7 @@ body form.list-filter.list-filter--compact .list-filter-more{display:block;width
 body form.list-filter.list-filter--compact .list-filter-more:not([open])>.list-filter-more-fields{display:none}
 body form.list-filter.list-filter--compact .list-filter-more-toggle{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 var(--space-4);color:var(--ink-secondary);font-size:14px;list-style:none;cursor:pointer}
 body form.list-filter.list-filter--compact .list-filter-more-toggle::-webkit-details-marker{display:none}
-body form.list-filter.list-filter--compact .list-filter-more-fields{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:var(--space-3);width:100%;margin-top:var(--space-2)}
+body form.list-filter.list-filter--compact .list-filter-more-fields{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:var(--space-4);width:100%;margin-top:var(--space-2)}
 body form.list-filter.list-filter--compact .list-filter-more-fields>.ui-field{flex:0 1 240px;min-width:min(12rem,100%);margin:0;text-align:left}
 body form.list-filter.list-filter--compact .list-filter-more-fields>.list-filter-reset{display:inline-flex;align-items:center;min-height:44px}
 @media (max-width:767px){body form.list-filter.list-filter--compact .list-filter-more-fields>.ui-field{flex:1 1 100%}body form.list-filter.list-filter--compact .month-trigger{min-width:0}}

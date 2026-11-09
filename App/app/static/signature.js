@@ -438,7 +438,7 @@ function initSignature() {
       }
       function key(text) {
         // 1031: same steps as stay_fee._obec_key; the tables and the pattern come from the server.
-        var t = fold(text).replace(/\s*-\s*/g, "-");
+        var t = fold(text).replace(/\s*[-\u2010-\u2015\u2212]\s*/g, "-");
         var after = new RegExp("^(?:" + rule.after + ")");
         function base(s) {
           for (var i = 0; i < rule.bases.length; i++) {

@@ -136,7 +136,7 @@
     "v": "20261027-ai-usage"
   },
   "list-filter-compact.css": {
-    "sha256": "189bcc274d7c72927acc5466311a9927891c2367cb9e00bd35a72029a00d261b",
+    "sha256": "442587fd8e2d20672a06756e7b3159f3d797498b7c55b48e2fc4d7803aa0a4cf",
     "v": "20261109-1051a"
   },
   "passkeys.js": {
@@ -164,8 +164,8 @@
     "v": "20261025-0373"
   },
   "signature.js": {
-    "sha256": "002f49de89fbf4b8262b911a7c747ee9c15357855e54ebca8281ff4af9a49a6b",
-    "v": "20261108-1031"
+    "sha256": "5ab2b5e7ab4dec2e8d8d5cdb7393d7475672fc52177d85c7f50d948b98883327",
+    "v": "20261109-1031b"
   },
   "skeleton.css": {
     "sha256": "4685a64e9b7d3fc56680e55c6772d6d8b6c9dcaf8c9b1655ec0d17cebe70d46f",

@@ -253,7 +253,8 @@ def _suffix_base(text: str) -> Optional[str]:
 
 def _obec_key(value) -> str:
     """The town a typed name means, folded (1031 rules; signature.js key() mirrors this)."""
-    text = re.sub(r"\s*-\s*", "-", fold_text(value))
+    # Any dash (en, em, minus) counts as "-": "Praha – Řepy" = "Praha-Řepy" (1031b).
+    text = re.sub(r"\s*[-\u2010-\u2015\u2212]\s*", "-", fold_text(value))
     for prefix in OFFICIAL_PREFIXES:
         rest = text[len(prefix):].strip()
         if text.startswith(prefix) and _suffix_base(rest):
