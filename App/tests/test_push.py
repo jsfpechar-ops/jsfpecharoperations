@@ -12,6 +12,7 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from app import auth, config, db, host_vi_i18n, push, retention, scheduler, webpush
+from tests.conftest import mark_security_prompt_seen
 
 FCM = "https://fcm.googleapis.com/fcm/send/"
 
@@ -25,7 +26,7 @@ def push_on(monkeypatch):
 
 def _new_account() -> int:
     username = f"push{secrets.token_hex(4)}"
-    return auth.create_account(f"{username}@example.test", "Push Host", role="host", username=username)
+    return mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Push Host", role="host", username=username))
 
 
 def _forget(owner: int) -> None:

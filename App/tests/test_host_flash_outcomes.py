@@ -15,7 +15,7 @@ from app import auth, db, host_i18n
 from app.main import app
 from app.routes.admin_helpers import FlashMessage, back, flash, flash_plural
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 REQUIRE_BROWSER = os.environ.get("UBYHOST_REQUIRE_BROWSER") == "1"
 if REQUIRE_BROWSER:
@@ -46,7 +46,7 @@ def _cleanup():
 def host():
     db.init_db()
     _cleanup()
-    owner_id = auth.create_account(f"{USERNAME}@example.test", "Flash Host", username=USERNAME)
+    owner_id = mark_security_prompt_seen(auth.create_account(f"{USERNAME}@example.test", "Flash Host", username=USERNAME))
     operator = db.insert(
         "legal_entity", {"name": "Flash Operator", "owner_user_id": owner_id, "created_at": db.utcnow()}
     )

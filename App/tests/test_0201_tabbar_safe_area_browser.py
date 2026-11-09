@@ -12,6 +12,7 @@ else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
 from app import auth, db
+from tests.conftest import mark_security_prompt_seen
 from tests.browser_support import chromium_launch_kwargs
 from tests.test_host_geometry import _browser_session_cookie, base  # noqa: F401
 
@@ -20,7 +21,7 @@ SHOT_DIR = os.path.join(os.environ.get("UBYHOST_SHOTS_DIR", tempfile.gettempdir(
 
 def _open(playwright, base, width, height, target):
     username = f"tabbar{secrets.token_hex(3)}"
-    owner = auth.create_account(f"{username}@example.test", "Tabbar", role="host", username=username)
+    owner = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Tabbar", role="host", username=username))
     db.insert("apartment", {"internal_name": "Tabbar flat", "owner_user_id": owner, "permalink_token": f"tb{secrets.token_hex(4)}", "active": 1, "created_at": db.utcnow()})
     try:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())

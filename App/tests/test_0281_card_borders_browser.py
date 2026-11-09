@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, demo
 from app.main import app
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 from tests.test_property_navigation_browser import base, chromium_launch_kwargs, sync_api  # noqa: F401
 
 PHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
@@ -37,7 +37,7 @@ OVERLAP_PROBE = r"""() => {
 def test_phone_rows_have_full_border_and_buttons_do_not_cover_names(base):
     db.init_db()
     user = f"cards-{secrets.token_hex(3)}"
-    owner = auth.create_account(f"{user}@example.test", "Card Host", role="host", username=user)
+    owner = mark_security_prompt_seen(auth.create_account(f"{user}@example.test", "Card Host", role="host", username=user))
     demo.seed(owner)
     client = TestClient(app)
     login_as(client, user, url="/login?lang=en")

@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 from app import auth, db
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 
 REQUIRE_BROWSER = os.environ.get("UBYHOST_REQUIRE_BROWSER") == "1"
@@ -57,7 +57,7 @@ def _session_cookie(username):
 
 def test_host_copy_feedback_truth_and_geometry(base):
     username = f"feedback{secrets.token_hex(4)}"
-    auth.create_account(f"{username}@example.test", "Feedback QA", role="host", username=username)
+    mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Feedback QA", role="host", username=username))
     session = _session_cookie(username)
     shots = Path("/tmp/0032-host-feedback")
     shots.mkdir(parents=True, exist_ok=True)
@@ -341,7 +341,7 @@ def test_host_copy_feedback_truth_and_geometry(base):
 
 def test_0971_repeated_copy_has_no_badge_and_no_stacked_feedback(base):
     username = f"feedback{secrets.token_hex(4)}"
-    auth.create_account(f"{username}@example.test", "Feedback QA", role="host", username=username)
+    mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Feedback QA", role="host", username=username))
     session = _session_cookie(username)
     fixture = """
       Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.resolve() } });

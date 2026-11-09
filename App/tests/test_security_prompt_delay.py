@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, config, db, mail
 from app.main import app
-from tests.conftest import login_as
+from tests.conftest import csrf_token_for, login_as
 
 BASE = "https://ubyhost.test"
 EMAIL = "security-delay@example.test"
@@ -66,4 +66,23 @@ def test_security_pop_up_appears_after_seven_days():
     account = _account_signed_up(days_ago=8)
     html = _home_html(account)
     assert 'id="security-prompt"' in html and "security-prompt-title" in html
+    # Rendering alone does not mark it: the page may never be seen (no JavaScript, a prefetch).
+    assert _prompted_at(account) is None
+
+
+def test_the_prompt_is_marked_only_when_app_js_says_it_was_seen():
+    account = _account_signed_up(days_ago=8)
+    client = TestClient(app, base_url="https://testserver")
+    login_as(client, account["username"], follow_redirects=False)
+    assert 'id="security-prompt"' in client.get("/").text
+    assert _prompted_at(account) is None
+    response = client.post("/account/security-prompt/seen", headers={"x-csrf-token": csrf_token_for(client)})
+    assert response.status_code == 204
     assert _prompted_at(account)
+    assert 'id="security-prompt"' not in client.get("/").text
+
+
+def test_seen_endpoint_needs_a_signed_in_account():
+    client = TestClient(app, base_url="https://testserver")
+    response = client.post("/account/security-prompt/seen", headers={"x-csrf-token": csrf_token_for(client)})
+    assert response.status_code in (401, 403)

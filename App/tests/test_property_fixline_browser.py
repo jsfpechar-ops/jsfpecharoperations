@@ -29,3 +29,28 @@ def test_a_failed_save_names_every_blank_required_field(host, base):  # noqa: F8
         links.nth(hrefs.index("#addr_zip")).click()
         assert page.evaluate("document.activeElement.id") == "addr_zip"
         browser.close()
+
+
+def test_a_native_invalid_save_shows_the_fix_line_at_390(host, base):  # noqa: F811
+    url = f"{base}/apartments/{host['apartment']}?view=settings&lang=en"
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        page = _context(browser, base, host).new_page()
+        page.set_viewport_size({"width": 390, "height": 844})
+        page.goto(url)
+        page.evaluate("""() => {
+          for (const n of ['addr_house_no', 'addr_zip']) {
+            const f = document.querySelector('[name=' + n + ']');
+            f.value = '';
+            f.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        }""")
+        # The save bar only shows once the form is dirty; click the real Save button, not the first visible submit (Archive).
+        page.locator(".savebar button[type=submit]").click()
+        page.wait_for_function("() => !document.querySelector('[data-prop-fixline]').hidden")
+        line = page.locator("[data-prop-fixline]")
+        links = line.locator("a")
+        names = links.all_inner_texts()
+        assert any(n.startswith("House number") for n in names), names
+        assert any(n.startswith("Postcode") for n in names), names
+        browser.close()

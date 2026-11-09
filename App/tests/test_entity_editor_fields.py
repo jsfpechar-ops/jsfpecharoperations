@@ -25,7 +25,7 @@ from fastapi.testclient import TestClient
 
 from app import ares, auth, db, host_i18n, invoices, payments
 from app.main import app
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 USERNAME = "entity-fields-0075-host"
 ICO = "04656679"
@@ -76,7 +76,7 @@ def host():
     db.init_db()
     _cleanup()
     ares._CACHE.clear()
-    auth.create_account(f"{USERNAME}@example.test", "Fields Host", username=USERNAME)
+    mark_security_prompt_seen(auth.create_account(f"{USERNAME}@example.test", "Fields Host", username=USERNAME))
     client = TestClient(app)
     response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
@@ -605,7 +605,7 @@ BROWSER_USER = "fields0075"
 def browser_host():
     db.init_db()
     username = f"{BROWSER_USER}-{secrets.token_hex(3)}"
-    owner_id = auth.create_account(f"{username}@example.test", "Pole Host", username=username)
+    owner_id = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Pole Host", username=username))
     entity_id = db.insert("legal_entity", {
         "name": "Ukázka Pole s.r.o.", "seat": "Václavské náměstí 1, 110 00 Praha 1",
         "ico": ICO, "dic": "CZ04656679", "contact_email": "pole@example.test",

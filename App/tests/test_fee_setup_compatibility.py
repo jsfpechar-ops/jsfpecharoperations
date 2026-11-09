@@ -24,7 +24,7 @@ from app import auth, db
 from app.main import app
 from app.routes import stay_fees as stay_fee_routes
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 USERNAME = "fee-setup-compat-host"
 OTHER = "fee-setup-compat-other"
@@ -92,8 +92,8 @@ def _property(owner_id: int, entity_id, **fee) -> int:
 def host():
     db.init_db()
     _cleanup()
-    auth.create_account(f"{USERNAME}@example.test", "Fee compat host", username=USERNAME)
-    auth.create_account(f"{OTHER}@example.test", "Other host", username=OTHER)
+    mark_security_prompt_seen(auth.create_account(f"{USERNAME}@example.test", "Fee compat host", username=USERNAME))
+    mark_security_prompt_seen(auth.create_account(f"{OTHER}@example.test", "Other host", username=OTHER))
     client = TestClient(app)
     login = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert login.status_code == 303, login.text

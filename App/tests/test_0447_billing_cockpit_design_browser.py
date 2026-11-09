@@ -23,7 +23,7 @@ from fastapi.testclient import TestClient
 from app import auth, billing, billing_analytics, billing_invoices, config, db
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs, settle_motion
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 from tests.test_design_guardrails_browser import GUARD
 from tests.test_host_wide_geometry_browser import (  # noqa: F401  (fixtures)
     _dismiss_optional_security_prompt,
@@ -91,8 +91,8 @@ def test_the_cockpit_and_customer_pages_pass_the_layout_guard(wide_host, wide_ba
     owner = wide_host["owner"]
     _seed_rich_billing(owner)
     username = f"guard-admin-{os.urandom(4).hex()}"
-    admin_id = auth.create_account(f"{username}@example.test", "Guard Admin", role="admin",
-                                   username=username)
+    admin_id = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Guard Admin", role="admin",
+                                   username=username))
     client = TestClient(app)
     login_as(client, username, url="/login?lang=cs", follow_redirects=False)
     cookie = client.cookies.get(auth.SESSION_COOKIE)
@@ -155,7 +155,7 @@ def test_every_cockpit_section_is_present_with_rich_data(wide_host, wide_base, m
     owner = wide_host["owner"]
     _seed_rich_billing(owner)
     username = f"guard-admin-{os.urandom(4).hex()}"
-    auth.create_account(f"{username}@example.test", "Guard Admin", role="admin", username=username)
+    mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Guard Admin", role="admin", username=username))
     client = TestClient(app)
     login_as(client, username, url="/login?lang=cs", follow_redirects=False)
     cookie = client.cookies.get(auth.SESSION_COOKIE)
@@ -194,7 +194,7 @@ def test_the_operator_forms_work_without_javascript(wide_host, monkeypatch):
     monkeypatch.setattr(config, "BILLING_IBAN", "CZ6503000000000123456789")
     owner = wide_host["owner"]
     username = f"nojs-admin-{os.urandom(4).hex()}"
-    auth.create_account(f"{username}@example.test", "No-JS Admin", role="admin", username=username)
+    mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "No-JS Admin", role="admin", username=username))
     billing.ensure_account(owner)
     db.execute(
         "UPDATE billing_account SET status = 'active', plan = 'standard', billing_interval = 'month', "

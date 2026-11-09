@@ -22,7 +22,6 @@ from . import (
     auth,
     config,
     contact_phone,
-    db,
     deadlines,
     guest_uk_i18n,
     havel_topics,
@@ -632,9 +631,9 @@ def _security_prompt(request: Request, account, workspace):
     """The one-time "secure your account" pop-up (task 0004), as a callable.
 
     Shown once, on the first app page after logging in, to an account with no
-    passkey and no authenticator app. ``base.html`` calls it, so the account
-    is only marked as prompted when the page that shows it actually renders;
-    an account that has been prompted costs no query at all.
+    passkey and no authenticator app. ``base.html`` calls it; the account
+    is marked as prompted by POST /account/security-prompt/seen, sent by app.js
+    when the dialog opens. An account that has been prompted costs no query at all.
     """
     def prompt():
         if not account or account["two_factor_prompted_at"] or account["totp_enabled"]:
@@ -650,11 +649,6 @@ def _security_prompt(request: Request, account, workspace):
                 started = started.replace(tzinfo=timezone.utc)
             if datetime.now(timezone.utc) - started < timedelta(days=SECURITY_PROMPT_DELAY_DAYS):
                 return None
-        if not db.update_if(
-            "user_account", int(account["id"]), {"two_factor_prompted_at": db.utcnow()},
-            {"two_factor_prompted_at": None},
-        ):
-            return None
         from . import passkeys  # local: passkeys pulls in webauthn
 
         return {"passkeys": passkeys.available()}

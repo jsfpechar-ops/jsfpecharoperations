@@ -2577,6 +2577,20 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
   }
 
   // 1030: at >=768 px the editor shows one section at a time, a section list and one fix line. Phone unchanged.
+  // The one-time "second way in" prompt: a real modal in view, marked as shown only once it is open.
+  function initSecurityPrompt() {
+    var dialog = document.getElementById("security-prompt");
+    if (!dialog || typeof dialog.showModal !== "function" || !claimNode(dialog, "initSecurityPrompt")) return;
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    if (!dialog.open) dialog.showModal();
+    window.scrollTo(0, 0);
+    fetch("/account/security-prompt/seen", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "X-CSRF-Token": meta ? meta.getAttribute("content") || "" : "" }
+    }).catch(function () {});
+  }
+
   function initPropertyTabs() {
     var layout = document.querySelector(".prop-layout");
     if (!layout || !claimNode(layout, "initPropertyTabs")) return;
@@ -2584,6 +2598,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     // owner decision 2026-11-08: the six status pills are the section switcher at >=768 px.
     var strip = document.querySelector("nav.prop-strip");
     var fix = layout.querySelector("[data-prop-fixline]");
+    var clientFailed = false;
     var mq = window.matchMedia("(min-width:768px)");
     function sectionFor(el) {
       return el ? el.closest("details.prop-sec") : null;
@@ -2628,7 +2643,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     function fixLine() {
       if (!fix) return;
       var form = layout.querySelector("form");
-      var failed = !!document.querySelector("[data-save-summary][data-first-error]");
+      var failed = clientFailed || !!document.querySelector("[data-save-summary][data-first-error]");
       var items = [];
       var fields = [];
       if (form) {
@@ -2653,7 +2668,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         items.push({ id: id, name: name });
       });
       fix.textContent = "";
-      if (!items.length || !mq.matches) {
+      if (!items.length || (!mq.matches && !failed)) {
         fix.hidden = true;
         return;
       }
@@ -2690,6 +2705,18 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     apply();
     // the stay-fee stars are set by a later init, so the line is built once more after it
     window.setTimeout(fixLine, 0);
+    // 1030 fix: a native-invalid submit never reaches the server. Open the section of every bad field and build the line once.
+    var invalidForm = layout.querySelector("form");
+    if (invalidForm) {
+      var invalidTimer = null;
+      invalidForm.addEventListener("invalid", function (e) {
+        var sec = sectionFor(e.target);
+        if (sec) sec.open = true;
+        clientFailed = true;
+        window.clearTimeout(invalidTimer);
+        invalidTimer = window.setTimeout(fixLine, 0);
+      }, true);
+    }
     if (mq.addEventListener) mq.addEventListener("change", apply);
     // at >=768 px the card title is a heading, not a toggle (a click must not fold the one visible section)
     layout.addEventListener("click", function (e) {
@@ -2780,6 +2807,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     initSectionNotice();
     initSaveSummary();
     initPropertyTabs();
+    initSecurityPrompt();
     initStayFeeStars();
     initSuccessNotices();
     initHelpTips();

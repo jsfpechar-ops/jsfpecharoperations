@@ -19,7 +19,7 @@ from fastapi.testclient import TestClient
 from app import auth, config, db
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 sync_api = pytest.importorskip("playwright.sync_api")
 
@@ -144,7 +144,7 @@ LONG_TEXT_JS = """
 def host():
     db.init_db()
     username = f"geometry-0786-{secrets.token_hex(4)}"
-    owner_id = auth.create_account(f"{username}@example.test", "Geometry 0786", role="host", username=username)
+    owner_id = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Geometry 0786", role="host", username=username))
     entity = db.insert("legal_entity", {
         "name": "Geometry s.r.o.", "seat": "Praha 1", "ico": "04656679",
         "vat_status": "non_payer", "invoice_due_days": 14,
@@ -482,7 +482,7 @@ TIP_STATE_JS_0972 = """
 def admin_0972():
     db.init_db()
     username = f"b14-0972-{secrets.token_hex(4)}"
-    owner_id = auth.create_account(f"{username}@example.test", "B14 0972", role="admin", username=username)
+    owner_id = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "B14 0972", role="admin", username=username))
     apartment_id = int(db.insert("apartment", {
         "owner_user_id": owner_id, "internal_name": "B14 Flat", "created_at": db.utcnow(),
     }))

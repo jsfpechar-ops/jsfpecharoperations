@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, demo
 from app.main import app
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 from tests.test_property_navigation_browser import base, chromium_launch_kwargs, sync_api  # noqa: F401
 
 ROW = """sel => { const tr = document.querySelector(sel); const tds = [...tr.children];
@@ -20,7 +20,7 @@ ROW = """sel => { const tr = document.querySelector(sel); const tds = [...tr.chi
 def _client():
     db.init_db()
     user = f"rows-{secrets.token_hex(3)}"
-    owner = auth.create_account(f"{user}@example.test", "Rows Host", role="host", username=user)
+    owner = mark_security_prompt_seen(auth.create_account(f"{user}@example.test", "Rows Host", role="host", username=user))
     demo.seed(owner)
     client = TestClient(app)
     login_as(client, user, url="/login?lang=en")

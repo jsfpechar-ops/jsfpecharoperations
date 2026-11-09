@@ -23,7 +23,7 @@ from fastapi.testclient import TestClient
 from app import auth, db
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 
 
@@ -52,6 +52,10 @@ def base():
 
 def _browser_session_cookie(username: str) -> str:
     """Log in through the ASGI app so CSRF and acceptance gates match other tests."""
+    # The one-time "second way in" modal would cover every click in a browser test.
+    row = db.query_one("SELECT id FROM user_account WHERE username = ?", (username,))
+    if row:
+        mark_security_prompt_seen(row["id"])
     client = TestClient(app)
     response = login_as(client, username, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
@@ -62,7 +66,7 @@ def _browser_session_cookie(username: str) -> str:
 
 def test_dashboard_actions_share_height_and_gap(base):
     username = f"geometry{secrets.token_hex(4)}"
-    owner = auth.create_account(f"{username}@example.test", "Geometry", role="host", username=username)
+    owner = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Geometry", role="host", username=username))
     entity = db.insert("legal_entity", {"name": "Geometry s.r.o.", "owner_user_id": owner, "created_at": db.utcnow()})
     apartment = db.insert("apartment", {
         "internal_name": "Geometry loft", "owner_user_id": owner, "legal_entity_id": entity,
@@ -129,7 +133,7 @@ def test_the_month_filter_shares_its_page_edges(base):
     opposite problem by stranding Previous/Next at the east edge.
     """
     username = f"geomfilter{secrets.token_hex(4)}"
-    owner = auth.create_account(f"{username}@example.test", "Geometry", role="host", username=username)
+    owner = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Geometry", role="host", username=username))
     entity = db.insert("legal_entity", {"name": "Geometry s.r.o.", "owner_user_id": owner, "created_at": db.utcnow()})
     db.insert("apartment", {
         "internal_name": "Geometry loft", "owner_user_id": owner, "legal_entity_id": entity,

@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from app import alerts, auth, db
+from tests.conftest import mark_security_prompt_seen
 from tests.browser_support import chromium_launch_kwargs
 from tests.test_0705_v2_shell_browser import _sync_playwright
 from tests.test_host_geometry import _browser_session_cookie, base  # noqa: F401
@@ -17,7 +18,7 @@ WIDTHS = [320, 390, 768, 1024, 1280, 1440, 1920]
 
 def _account(admin=False):
     username = f"ux{secrets.token_hex(3)}"
-    owner = auth.create_account(f"{username}@example.test", "Ux", role="admin" if admin else "host", username=username)
+    owner = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Ux", role="admin" if admin else "host", username=username))
     entity = db.insert("legal_entity", {"name": "Ux s.r.o.", "owner_user_id": owner, "created_at": db.utcnow()})
     db.insert("apartment", {"internal_name": "Ux flat", "owner_user_id": owner, "legal_entity_id": entity,
                             "permalink_token": f"ux{secrets.token_hex(4)}", "active": 1, "created_at": db.utcnow()})

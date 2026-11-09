@@ -24,7 +24,7 @@ from fastapi.testclient import TestClient
 from app import auth, db
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 sync_api = pytest.importorskip("playwright.sync_api")
 
@@ -180,12 +180,12 @@ def shoot(page, name, width):
 def host():
     db.init_db()
     username = f"admin-0893-{secrets.token_hex(4)}"
-    owner_id = auth.create_account(f"{username}@example.test", "Admin 0893", role="host", username=username)
+    owner_id = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Admin 0893", role="host", username=username))
     db.execute("UPDATE user_account SET role = 'admin' WHERE id = ?", (owner_id,))
     # the one-time security prompt (base.html) is not part of the admin look: mark it as already shown
     db.execute("UPDATE user_account SET two_factor_prompted_at = ? WHERE id = ?", (db.utcnow(), owner_id))
     customer_name = f"{username}-customer"
-    customer = auth.create_account(f"{customer_name}@example.test", "Customer 0893", role="host", username=customer_name)
+    customer = mark_security_prompt_seen(auth.create_account(f"{customer_name}@example.test", "Customer 0893", role="host", username=customer_name))
     client = TestClient(app)
     response = login_as(client, username, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text

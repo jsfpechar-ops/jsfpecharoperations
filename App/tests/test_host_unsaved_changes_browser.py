@@ -31,7 +31,7 @@ else:
 from app import auth, config, db
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0084-evidence"
 LOCK = {"lock_id": "70840001", "alias": "Synthetic O1 Door", "battery": 90, "tz_offset_ms": 3600000}
@@ -54,7 +54,7 @@ def host():
     patch.setattr(config, "TTLOCK_CLIENT_ID", "cid")
     patch.setattr(config, "TTLOCK_CLIENT_SECRET", "csecret")
     username = f"o1-{secrets.token_hex(4)}"
-    owner = auth.create_account(f"{username}@example.test", "O1 Host", role="host", username=username)
+    owner = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "O1 Host", role="host", username=username))
     now = db.utcnow()
     entity = db.insert("legal_entity", {
         "name": "Synthetic O1 s.r.o.", "seat": "Synthetická 1, 110 00 Praha 1", "ico": "04656679",

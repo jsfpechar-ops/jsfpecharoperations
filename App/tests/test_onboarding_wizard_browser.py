@@ -24,7 +24,7 @@ from datetime import date, datetime, timedelta, timezone
 from app import auth, config, db, feed_url, host_i18n, icalsync, property_setup, reporting
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 from tests.wizard_walk import walk_to
 
 EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0102-evidence"
@@ -72,7 +72,7 @@ def host(monkeypatch):
         },
     )
     username = f"wizard-{secrets.token_hex(4)}"
-    owner = auth.create_account(f"{username}@example.test", "Wizard Host", role="host", username=username)
+    owner = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Wizard Host", role="host", username=username))
     entity = db.insert(
         "legal_entity",
         {
@@ -1317,7 +1317,7 @@ def test_demo_preview_pin_is_private_and_validated(host, monkeypatch):
     refused = stranger.get(preview)
     assert refused.status_code == 404
     other_username = f"preview-other-{secrets.token_hex(4)}"
-    auth.create_account(f"{other_username}@example.test", "Other host", role="host", username=other_username)
+    mark_security_prompt_seen(auth.create_account(f"{other_username}@example.test", "Other host", role="host", username=other_username))
     other = TestClient(app)
     assert login_as(other, other_username, url="/login?lang=en", follow_redirects=False).status_code == 303
     assert other.get(preview).status_code == 404

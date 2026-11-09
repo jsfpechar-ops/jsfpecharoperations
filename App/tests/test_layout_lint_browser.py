@@ -29,7 +29,7 @@ from app.main import app
 from datetime import date, timedelta
 import secrets
 from fastapi.testclient import TestClient
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 from tests.browser_support import chromium_launch_kwargs
 from test_design_guardrails_browser import ROUTES
 from test_host_wide_geometry_browser import (  # noqa: F401  (fixtures re-created here)
@@ -349,9 +349,9 @@ def _fresh_finish_host(wide_base):
     db.init_db()
     suffix = secrets.token_hex(4)
     username = f"finish-card-{suffix}"
-    owner_id = auth.create_account(
+    owner_id = mark_security_prompt_seen(auth.create_account(
         f"{username}@example.test", "Finish Card Fixture", role="host", username=username
-    )
+    ))
     now = db.utcnow()
     entity_id = db.insert("legal_entity", {
         "name": "Finish s.r.o.", "seat": "Praha", "ico": "12345678",

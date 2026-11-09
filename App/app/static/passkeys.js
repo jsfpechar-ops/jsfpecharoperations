@@ -285,12 +285,6 @@
   function init() {
     toggleSupport();
 
-    var prompt = document.getElementById("security-prompt");
-    if (prompt && prompt.hasAttribute("open") && typeof prompt.showModal === "function") {
-      prompt.close();
-      prompt.showModal();
-    }
-
     if (!supported) return;
 
     document.querySelectorAll("[data-passkey-add]").forEach(function (button) {

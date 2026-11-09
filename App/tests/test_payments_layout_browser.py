@@ -21,7 +21,7 @@ from fastapi.testclient import TestClient
 from app import auth, config, db, payment_request, payment_services, payments_consent
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 from test_payments_dashboard import _set_state
 
 SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0946"
@@ -75,7 +75,7 @@ def _cleanup(username):
 def _make_owner(state):
     username = f"paylay{secrets.token_hex(3)}"
     db.init_db()
-    auth.create_account(f"{username}@example.test", "Layout Host", username=username)
+    mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Layout Host", username=username))
     oid = db.query_one("SELECT id FROM user_account WHERE username = ?", (username,))["id"]
     db.insert("legal_entity", {"owner_user_id": oid, "name": "Layout s.r.o.",
                                "contact_email": f"{username}@example.test",

@@ -24,7 +24,7 @@ from app import auth, db
 from app.host_i18n import STRINGS
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0083-evidence"
 GROUPS = ("account", "security", "data", "privacy", "technical", "help")
@@ -39,7 +39,7 @@ FORM_ACTIONS = (
 def _account(role: str):
     db.init_db()
     username = f"acct-nav-{role}-{secrets.token_hex(3)}"
-    uid = auth.create_account(f"{username}@example.test", "Account Nav", role=role, username=username)
+    uid = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Account Nav", role=role, username=username))
     db.execute("UPDATE user_account SET must_change_password = 0 WHERE id = ?", (uid,))
     client = TestClient(app)
     response = login_as(client, username, url="/login?lang=en", follow_redirects=False)

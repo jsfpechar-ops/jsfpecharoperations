@@ -19,6 +19,7 @@ else:
 import uvicorn
 
 from app import auth, booking_site, config, db, property_page
+from tests.conftest import mark_security_prompt_seen
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
 
@@ -57,7 +58,7 @@ def seeded():
     mp.setattr(config, "STRIPE_MODE", "test")
     mp.setattr(config, "STRIPE_SECRET_KEY", "sk_test_local")
     mp.setattr(config, "STRIPE_MONTHLY_API_CALLS", 100)
-    auth.create_account(f"{OWNER}@example.test", "Browser Host", username=OWNER)
+    mark_security_prompt_seen(auth.create_account(f"{OWNER}@example.test", "Browser Host", username=OWNER))
     oid = int(db.query_one("SELECT id FROM user_account WHERE username = ?", (OWNER,))["id"])
     aid = int(db.insert("apartment", {"owner_user_id": oid, "internal_name": "Browser Flat",
                                       "created_at": db.utcnow()}))

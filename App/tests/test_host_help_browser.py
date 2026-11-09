@@ -22,7 +22,7 @@ else:
 from app import auth, db
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 # Owner decision 2026-11-08 (brief 1030): at >=768 px the window-days "?" is pruned, so the PIN help (kept everywhere) is the sample.
 TIP = "#permalink_pin-help"
@@ -34,9 +34,9 @@ EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0093-eviden
 def host():
     db.init_db()
     username = f"help-tip-{secrets.token_hex(4)}"
-    owner_id = auth.create_account(
+    owner_id = mark_security_prompt_seen(auth.create_account(
         f"{username}@example.test", "Help Tip", role="host", username=username
-    )
+    ))
     apartment_id = db.insert("apartment", {
         "internal_name": "Sample Property",
         "owner_user_id": owner_id,

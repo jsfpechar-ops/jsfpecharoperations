@@ -22,16 +22,16 @@ from fastapi.testclient import TestClient
 from app import auth, claim, cleaning, db, demo, onboarding
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 
 @pytest.fixture(scope="module")
 def dashboard_host():
     db.init_db()
     username = f"quiet-dashboard-{secrets.token_hex(4)}"
-    owner_id = auth.create_account(
+    owner_id = mark_security_prompt_seen(auth.create_account(
         f"{username}@example.test", "Quiet Dashboard", role="host", username=username
-    )
+    ))
     entity_id = db.insert("legal_entity", {
         "name": "Quiet Dashboard s.r.o.", "seat": "Praha", "ico": "12345678",
         "contact_email": "quiet@example.test", "owner_user_id": owner_id,
@@ -69,9 +69,9 @@ def dashboard_rich_host():
     """A real queue with every positive count and more actions than fit."""
     db.init_db()
     username = f"quiet-dashboard-rich-{secrets.token_hex(4)}"
-    owner_id = auth.create_account(
+    owner_id = mark_security_prompt_seen(auth.create_account(
         f"{username}@example.test", "Quiet Dashboard Review", role="host", username=username
-    )
+    ))
     now = db.utcnow()
     entity_id = db.insert("legal_entity", {
         "name": "Quiet Dashboard Review s.r.o.", "seat": "Praha", "ico": "87654321",

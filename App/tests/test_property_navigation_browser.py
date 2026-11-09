@@ -20,6 +20,7 @@ else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
 from app import auth, db
+from tests.conftest import mark_security_prompt_seen
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
 from tests.property_host_fixture import LOCK, host  # noqa: F401
@@ -225,7 +226,7 @@ def test_unrelated_save_keeps_every_stored_value(host):
 
 
 def test_refused_save_and_refused_calendar_render_their_own_view(host, monkeypatch):
-    other = auth.create_account(f"nav-other-{secrets.token_hex(3)}@example.test", "Other", role="host")
+    other = mark_security_prompt_seen(auth.create_account(f"nav-other-{secrets.token_hex(3)}@example.test", "Other", role="host"))
     foreign = db.insert("legal_entity", {"name": "Foreign Op", "owner_user_id": other, "created_at": db.utcnow()})
     refused = host["client"].post(
         f"/apartments/{host['apartment']}",

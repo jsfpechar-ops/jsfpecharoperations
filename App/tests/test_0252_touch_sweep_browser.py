@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, demo
 from app.main import app
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 from tests.test_property_navigation_browser import base, chromium_launch_kwargs, sync_api  # noqa: F401
 
 IPAD = "Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
@@ -62,7 +62,7 @@ PROBE = r"""() => {
 def test_every_host_page_on_phone_ipad_and_desktop(base):
     db.init_db()
     user = f"sweep-{secrets.token_hex(3)}"
-    owner = auth.create_account(f"{user}@example.test", "Sweep Host", role="host", username=user)
+    owner = mark_security_prompt_seen(auth.create_account(f"{user}@example.test", "Sweep Host", role="host", username=user))
     demo.seed(owner)
     client = TestClient(app)
     login_as(client, user, url="/login?lang=en")

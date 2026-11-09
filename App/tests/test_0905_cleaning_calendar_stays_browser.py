@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from app import auth, db
+from tests.conftest import mark_security_prompt_seen
 from tests.browser_support import chromium_launch_kwargs
 from tests.test_0705_v2_shell_browser import _sync_playwright
 from tests.test_host_geometry import _browser_session_cookie, base  # noqa: F401
@@ -16,7 +17,7 @@ SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-09
 
 def _seed():
     username = f"cs{secrets.token_hex(3)}"
-    owner = auth.create_account(f"{username}@example.test", "Cs", role="host", username=username)
+    owner = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Cs", role="host", username=username))
     entity = db.insert("legal_entity", {"name": "Cs s.r.o.", "owner_user_id": owner, "created_at": db.utcnow()})
     now = db.utcnow()
     flats = []

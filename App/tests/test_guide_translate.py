@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 from app import ai, auth, config, db, guest_guide, guide_token, guide_translate, mail
 from app.main import app
 from tests.ai_fake import FakeClient, reply
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 
 @pytest.fixture
@@ -22,7 +22,7 @@ def ws(monkeypatch, tmp_path):
     monkeypatch.setattr(config, "AI_FEATURES", frozenset({"guide_translate"}))
     monkeypatch.setattr(config, "ANTHROPIC_API_KEY", "test-key")
     db.init_db()
-    owner = auth.create_account("tr-owner@example.test", "Translate owner", username="tr-owner", role="host")
+    owner = mark_security_prompt_seen(auth.create_account("tr-owner@example.test", "Translate owner", username="tr-owner", role="host"))
     home = db.insert("apartment", {
         "owner_user_id": owner, "internal_name": "Translate flat", "active": 1, "created_at": db.utcnow(),
         "automation_mode": "manual", "permalink_token": "translatetok0353", "permalink_window_days": 14,
