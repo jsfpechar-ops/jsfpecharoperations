@@ -395,6 +395,8 @@ def test_guest_qr_page_opens_without_login(owner):
     anonymous = TestClient(app)
     page = anonymous.get(f"/pay/{rid}/{token}")
     assert page.status_code == 200
+    row = payment_request.get(rid)
+    assert str(row["variable_symbol"]) in page.text and str(row["amount_czk"]) in page.text
     assert f"/pay/{rid}/{token}.png" in page.text
     png = anonymous.get(f"/pay/{rid}/{token}.png")
     assert png.status_code == 200 and png.headers["content-type"] == "image/png"
