@@ -77,6 +77,13 @@ def _connect_stripe(oid: int) -> None:
     })
 
 
+def _fill_page(aid: int) -> None:
+    """Photos plus a description: the page step publishing now needs."""
+    property_page.page_for(aid)
+    db.execute("UPDATE property_page SET photos_json = ?, description = ? WHERE apartment_id = ?",
+               ('["/p/a.jpg"]', "A quiet flat.", aid))
+
+
 def _form(**extra):
     data = {
         "nightly_price_czk": "1800", "cleaning_fee_czk": "600", "min_nights": "2",
@@ -91,15 +98,19 @@ def test_steps_start_open_and_advance(owner, stripe_mode):
     rows = booking_setup.steps(aid, owner)
     assert len(rows) == 6
     assert [r["current"] for r in rows].count(True) == 1
-    assert next(r for r in rows if r["current"])["key"] == "stripe"
+    assert next(r for r in rows if r["current"])["key"] == "pay"
     assert not booking_setup.can_publish(rows)
 
     _connect_stripe(owner)
     booking_site.save_settings(aid, {"nightly_price_czk": 1800})
     rows = booking_setup.steps(aid, owner)
     done = {r["key"]: r["done"] for r in rows}
-    assert done["stripe"] and done["price"] and done["policy"]
+    assert done["pay"] and done["price"] and done["policy"]
     assert next(r for r in rows if r["current"])["key"] == "page"
+    assert not booking_setup.can_publish(rows)
+
+    _fill_page(aid)
+    rows = booking_setup.steps(aid, owner)
     assert booking_setup.can_publish(rows)
 
 
@@ -183,6 +194,11 @@ def test_publish_needs_stripe_and_price(owner, client, stripe_mode):
 
     _connect_stripe(owner)
     booking_site.save_settings(aid, {"nightly_price_czk": 1800})
+    client.post(f"/apartments/{aid}/booking-site", data={"publish": "1"},
+                follow_redirects=False)
+    assert not property_page.page_for(aid)["published"]
+
+    _fill_page(aid)
     client.post(f"/apartments/{aid}/booking-site", data={"publish": "1"},
                 follow_redirects=False)
     assert property_page.page_for(aid)["published"]

@@ -101,6 +101,7 @@ CS_MESSAGES: Dict[str, str] = {
         "Název zařízení může mít nejvýše 35 znaků."
     ),
     "House number is required.": "Vyplňte číslo popisné.",
+    "Street is required.": "Vyplňte ulici.",
     "House number is up to 4 digits, optionally with E for an evidence number.": (
         "Číslo popisné má nejvýše 4 číslice, případně s E pro číslo evidenční."
     ),

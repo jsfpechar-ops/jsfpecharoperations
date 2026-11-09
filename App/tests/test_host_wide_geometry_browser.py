@@ -24,7 +24,7 @@ else:
 from app import alerts, auth, claim, db
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs, settle_motion
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 WIDE_WIDTHS = (1024, 1280, 1440, 1680, 1920, 2048)
 MOBILE_WIDTHS = (360, 390, 760)
@@ -80,9 +80,9 @@ def wide_host():
     db.init_db()
     suffix = secrets.token_hex(4)
     username = f"wide-geometry-{suffix}"
-    owner_id = auth.create_account(
+    owner_id = mark_security_prompt_seen(auth.create_account(
         f"{username}@example.test", "Wide Geometry Fixture", role="host", username=username
-    )
+    ))
     now = db.utcnow()
     entity_id = db.insert("legal_entity", {
         "name": "Wide Geometry Fixture s.r.o.", "seat": "Praha", "ico": "12345678",
@@ -941,16 +941,19 @@ new MutationObserver(() => {
   if (document.body && document.body.classList.contains('sidebar-animating')) window.__railAnimated = (window.__railAnimated || 0) + 1;
 }).observe(document.documentElement, {attributes: true, subtree: true, attributeFilter: ['class']});
 """
-CLICK_AND_SAMPLE = """() => {
+CLICK_AND_SAMPLE = """() => new Promise(resolve => {
   document.querySelector('[data-sidebar-collapse]').click();
   const side = document.getElementById('app-sidebar');
-  getComputedStyle(side).width;
-  return {
+  const main = document.querySelector('.wrap.with-sidebar');
+  const read = () => ({
     animating: document.body.classList.contains('sidebar-animating'),
     transitions: side.getAnimations().filter(a => a.transitionProperty).map(a => a.transitionProperty),
-    mainTransitions: document.querySelector('.wrap.with-sidebar').getAnimations().map(a => a.transitionProperty),
-  };
-}"""
+    mainTransitions: main.getAnimations().map(a => a.transitionProperty),
+  });
+  // The animating class is set in the click turn. CSS transitions show up in
+  // getAnimations() on a later frame, so a same-turn read is empty in CI.
+  requestAnimationFrame(() => requestAnimationFrame(() => resolve(read())));
+})"""
 
 
 def _rail_context(browser, wide_host, wide_base, width, collapsed, **options):

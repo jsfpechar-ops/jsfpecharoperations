@@ -90,7 +90,7 @@ def test_the_records_fold_to_a_name_and_a_state():
         _cleanup()
     assert '<details class="g-card g-summary">' in page
     assert (
-        '<summary class="g-summary-fold">JOHN PAUL SMITH &middot; saved ✓</summary>'
+        '<summary class="g-summary-fold">JOHN PAUL SMITH &middot; saved <span aria-hidden="true"><svg class="ui-icon"'
         in page
     )
     assert 'class="g-summary-name"' not in page
@@ -102,6 +102,6 @@ def test_the_records_fold_to_a_czech_name_and_state():
     finally:
         _cleanup()
     assert (
-        '<summary class="g-summary-fold">JOHN PAUL SMITH &middot; uloženo ✓</summary>'
+        '<summary class="g-summary-fold">JOHN PAUL SMITH &middot; uloženo <span aria-hidden="true"><svg class="ui-icon"'
         in page
     )

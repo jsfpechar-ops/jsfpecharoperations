@@ -42,6 +42,7 @@ under the GDPR storage-limitation principle, also a ceiling.
 | TTLock connection (UbyHost-made TTLock user, its encrypted password and tokens, cached lock list) | `lock_account` | host removes it, or the account is deleted | until then | Smart locks page Remove; cascade from user_account | Contract |
 | Container logs | Docker `json-file` | rotation | 5 × 10 MB per service | `docker-compose.yml` `logging:`; uvicorn access log off (OPS-3) | Security |
 | Encrypted backups | `/data/backups`, Drive, S3 | snapshot age | 30 days local/off-site (G-D3) | `backup_data.sh` `UBYHOST_BACKUP_RETENTION_DAYS`; S3 lifecycle | Disaster recovery |
+| WAL archives and base backups (WAL-G) | S3 eu-central-1, a dedicated bucket, encrypted on the server before upload; local spool volume `ubyhost-walspool` until uploaded | base backup age | 7 days (`wal-g delete retain FULL 7`); S3 lifecycle deletes objects older than 10 days as a safety net; spool files are deleted right after a confirmed upload | `deploy/lightsail/scripts/walg-backup.sh`; `deploy/lightsail/walg/walg-ship.sh`; S3 lifecycle rule | Disaster recovery |
 | PostHog person profile | PostHog Cloud EU | host account deleted | until the host account is deleted; the operator deletes the person in PostHog by hand within 30 days — **LAWYER REVIEW** | manual deletion in PostHog (**People**, search the e-mail, **Delete person**) | Legitimate interest — **LAWYER REVIEW** |
 
 ## Cleaning operational data

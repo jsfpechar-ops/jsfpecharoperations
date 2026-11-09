@@ -18,7 +18,7 @@ from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
 from urllib.parse import parse_qsl, unquote, urlencode, urlparse, urlsplit, urlunsplit
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from starlette.background import BackgroundTask
 from starlette.concurrency import run_in_threadpool
@@ -592,19 +592,28 @@ def _overview_calendar_rows(owner_user_id, apartments, today, lang) -> list:
             if col_end <= col_start:
                 continue
             tone = event["tone"]
-            if tone == "done":
-                css = "b-ok"
-            elif tone in ("action", "ready", "overdue"):
+            if tone in ("action", "ready", "overdue"):
                 css = "b-warn"
+            elif start <= today < stop:
+                css = "b-now"
             else:
                 css = "b-grey"
             overdue = tone == "overdue"
             source = str(event["source"] or "").lower()
-            label = event["label"] or _OVERVIEW_SOURCE_NAMES.get(source) or host_i18n.translate(lang, "calendar.kind_stay")
+            source_label = _OVERVIEW_SOURCE_NAMES.get(source, "")
+            raw_label = (event["label"] or "").strip()
+            blocked = bool(re.match(r"^(?:[!⚠]\s*)?(?:closed(?:\s*[-–]\s*not available)?|not available|airbnb\s*\(not available\)|blocked|unavailable|reserved|booked|reservation|rezervováno|rezervace)$", raw_label, re.IGNORECASE))
+            if blocked:
+                if re.search(r"closed|not available|blocked|unavailable", raw_label, re.IGNORECASE):
+                    css = "b-grey"  # a host block is never "in house"; a reserved placeholder is a real stay and keeps its tone
+                label = host_i18n.translate(lang, "calendar.booked")  # one neutral label for every placeholder; the source shows as the logo
+            else:
+                label = raw_label or host_i18n.translate(lang, "calendar.kind_stay")
             guests = int(event.get("guests") or 0)
             if guests > 0:
-                label += f" · {guests}"
-            placed.append((col_start, col_end, {"css": css, "col_start": col_start, "col_end": col_end, "overdue": overdue, "label": label, "url": event["url"]}))
+                label = f"{label} · {guests}" if label else f"· {guests}"
+            title = f"{source_label} · {label}" if source_label else (label or host_i18n.translate(lang, "calendar.kind_stay"))
+            placed.append((col_start, col_end, {"css": css, "col_start": col_start, "col_end": col_end, "overdue": overdue, "label": label, "title": title, "url": event["url"], "source": source, "source_label": source_label}))
         # 0707: greedy lanes, so stays that overlap in one property row do not overlap visually.
         lane_ends: list[int] = []
         for col_start, col_end, bar in sorted(placed, key=lambda item: item[0]):
@@ -1493,6 +1502,7 @@ def _render_apartment_new(
         request,
         "apartment_form.html",
         {
+            "rate_from_default": stay_fee_routes.rate_from_default(),
             "apartment": None,
             "entities": entities,
             "selected_entity_id": selected_entity_id,
@@ -1554,13 +1564,18 @@ def _refuse_apartment_create(
 
 def _create_address_errors(payload: Dict[str, Any]) -> Dict[str, str]:
     """The police address is required: at create and on every Settings save
-    (owner, 2026-10-13). Municipality, house number and postcode must be
+    (owner, 2026-10-13). Municipality, house number, postcode and street must be
     present and every typed component must pass the per-field check before
     anything is written. Saved exactly as typed."""
     errors: Dict[str, str] = {}
     for issue in validation.errors_only(validation.validate_apartment(dict(payload))):
         if issue.field in _ADDRESS_ONLY_FIELDS:
             errors.setdefault(issue.field, issue.message)
+    # Owner decision 2026-11-08: the street is mandatory on the forms. Deliberately NOT in
+    # validation.validate_apartment, which is the UbyPort submit gate: existing apartments
+    # without a street must keep filing (reporting.py sends uStr as optional).
+    if not (payload.get("addr_street") or "").strip():
+        errors.setdefault("addr_street", "Street is required.")
     return errors
 
 
@@ -1840,6 +1855,9 @@ async def apartment_create(request: Request):
     password = _form_str(form, "uby_ws_password")
     payload["uby_ws_password_enc"] = db.encrypt_secret(password) if password else None
     apartment_id = db.insert("apartment", payload)
+    if "stay_fee_rate_czk" in payload:
+        # 1028: the first rate applies from the beginning (dated history row).
+        stay_fee_routes.record_rate_change(apartment_id, payload["stay_fee_rate_czk"], form, previous=0)
     guest_slug.ensure(db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,)))
     db.audit("apartment_created", f"id={apartment_id}")
     # 0096: a new property starts its guided setup at the calendar.
@@ -1859,7 +1877,7 @@ def apartment_detail(apartment_id: int, request: Request):
         access.apartment(request, apartment_id)
     )
     if not apartment:
-        return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
+        raise HTTPException(status_code=404)
     not_found, copy_ctx = _property_copy_form_context(
         request, apartment=apartment, apartment_id=apartment_id
     )
@@ -2121,6 +2139,7 @@ def _render_apartment_detail(
         request,
         "apartment_form.html",
         {
+            "rate_from_default": stay_fee_routes.rate_from_default(),
             "apartment": apartment,
             "fee_signature": _fee_signature_context(request, apartment),
             "door_code": door_code,
@@ -2204,6 +2223,11 @@ def _render_property_detail(
     )
 
 
+def _save_error(section: str, target: str) -> Dict[str, str]:
+    """1024: one failed field: the accordion that holds it and the input to focus."""
+    return {"section": section, "target": target}
+
+
 def _refuse_apartment_save(
     request: Request,
     apartment: Dict[str, Any],
@@ -2251,6 +2275,21 @@ def _refuse_apartment_save(
         "address_errors": address_errors or {},
         "shared_time_error": shared_time_error,
     }
+    save_errors = [_save_error("basics", name) for name in (address_errors or {})]
+    if operator_error:
+        save_errors.append(
+            _save_error(
+                "basics",
+                "data_controller_entity_id"
+                if operator_error == "flash.error.no_such_controller"
+                else "legal_entity_id",
+            )
+        )
+    if shared_time_error:
+        save_errors.append(_save_error("basics", "checkin_hour"))
+    if lock_times_error:
+        save_errors.append(_save_error("lock", "lock_checkin_hour"))
+    extra["save_errors"] = save_errors
     if lock_times_error:
         # 0397: door codes need both times; stay on the Door lock tab with
         # the switch and the lock the host chose.
@@ -2272,6 +2311,22 @@ def _refuse_apartment_save(
         if (operator_error or address_errors or shared_time_error or lock_times_error)
         else 200,
     )
+
+
+def _fee_save_errors(link_error: bool, operator_account_error: bool, rate_error: bool, setup_flash: Optional[str]):
+    """1024: the failed stay-fee fields, in page order, for the summary above the Save bar."""
+    if setup_flash:
+        return []
+    errors = []
+    if not (link_error or operator_account_error or rate_error):
+        errors.append(_save_error("fee", "stay_fee_council_account"))
+    if operator_account_error:
+        errors.append(_save_error("fee", "stay_fee_guest_operator_account"))
+    if link_error:
+        errors.append(_save_error("fee", "stay_fee_guest_revolut_link"))
+    if rate_error:
+        errors.append(_save_error("fee", "stay_fee_collect"))
+    return errors
 
 
 def refuse_fee_save(request: Request, apartment: Dict[str, Any], form, *, link_error: bool = False, operator_account_error: bool = False, rate_error: bool = False, setup_flash: Optional[str] = None):
@@ -2344,6 +2399,7 @@ def refuse_fee_save(request: Request, apartment: Dict[str, Any], form, *, link_e
             "property_view": "settings",
             "settings_section": "reporting",
             "account": account_draft,
+            "save_errors": _fee_save_errors(link_error, operator_account_error, rate_error, setup_flash),
             "fee_account_error": not link_error and not operator_account_error and not rate_error and not setup_flash,
             "fee_link_error": link_error,
             "fee_rate_error": rate_error,
@@ -2450,7 +2506,10 @@ async def apartment_update(apartment_id: int, request: Request):
     )
     if wizard_response is not None:
         return wizard_response
-    return _back(return_to, msg=msg)
+    # 1024: ?saved=1 lets the page show "Saved" beside the Save bar instead of a toast.
+    path, hash_, fragment = return_to.partition("#")
+    path += ("&" if "?" in path else "?") + "saved=1"
+    return _back(path + hash_ + fragment, msg=msg)
 
 
 def _lock_section_refusal(request: Request, apartment_id: int, form, error_key: str):
@@ -2885,6 +2944,10 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
             if _form_str(form, "lock_id"):
                 payload["lock_id"] = _form_str(form, "lock_id")
     db.update("apartment", apartment_id, payload)
+    if "stay_fee_rate_czk" in payload:
+        # 1028: a changed rate gets a dated row; earlier nights keep the old rate.
+        stay_fee_routes.record_rate_change(apartment_id, payload["stay_fee_rate_czk"], form,
+                                           previous=apartment["stay_fee_rate_czk"])
     if credentials_changed:
         alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
     if (payload.get("internal_name") or "") != (apartment["internal_name"] or ""):
@@ -3722,7 +3785,7 @@ def reservation_detail(reservation_id: int, request: Request):
         "r.*, a.internal_name, a.permalink_token, a.automation_mode, a.submit_after_hours",
     )
     if not reservation:
-        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
+        raise HTTPException(status_code=404)
     progress = reporting.reservation_progress(reservation)
     apartment = access.apartment(request, reservation["apartment_id"])
     send_controls = reporting.send_controls(reservation, apartment, progress) if apartment else {}
@@ -4309,7 +4372,7 @@ def guest_edit(guest_id: int, request: Request):
         return guard
     guest = access.guest(request, guest_id)
     if not guest:
-        return _back("/reservations", err=_flash(request, "flash.error.no_such_guest"))
+        raise HTTPException(status_code=404)
     reservation = db.query_one(
         "SELECT r.*, a.default_purpose, a.internal_name FROM reservation r "
         "JOIN apartment a ON a.id = r.apartment_id WHERE r.id = ?",

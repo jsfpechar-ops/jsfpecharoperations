@@ -678,20 +678,26 @@ def test_fee_card_shows_with_qr_rail_open_and_enabled_rails(live_server, browser
         card = page.locator("#fee-pay")
         assert card.count() == 1, page.inner_text("body")[:400]
         assert card.is_visible()
-        assert card.locator("details.g-summary").filter(has=page.locator(".g-fee-rail")).count() == 3
+        assert card.locator("div.g-fee-opt").filter(has=page.locator(".g-fee-rail")).count() == 3
+        assert card.get_by_text("Please pay now.").is_visible()
+        assert card.locator("details.g-fee-fold").count() == 2
         if width == 390:
             _shot_0958(page, "guest-hub-fee-card-390.png")
-        assert card.locator("details[open] .g-fee-qr-img").count() == 1
+        if width == 768:
+            _shot_0958(page, "guest-hub-fee-card-768.png")
+        if width == 1280:
+            _shot_0958(page, "guest-hub-fee-card-1280.png")
+        assert card.locator(".g-fee-opt .g-fee-qr-img").count() == 1
         assert card.locator(".g-fee-qr-img").is_visible()
-        qr_rail = card.locator("details.g-summary").filter(has=page.locator(".g-fee-qr-img"))
+        qr_rail = card.locator("div.g-fee-opt").filter(has=page.locator(".g-fee-qr-img"))
         assert "Browser Test s.r.o." in qr_rail.locator(".g-fee-rail").inner_text()  # QR and who gets the money; nothing to type
-        iban_rail = card.locator("details.g-summary").filter(has_text="Bank transfer")
+        iban_rail = card.locator("div.g-fee-opt").filter(has_text="Bank transfer")
         iban_text = iban_rail.locator(".g-fee-rail").inner_text()
         assert "Variable symbol" in iban_text and str(int(stay)) in iban_text
         assert "Browser Test s.r.o." in iban_text
         assert "Message" not in iban_text
         assert f"{int(stay):010d}" not in card.inner_text()
-        card.locator("summary.g-summary-fold", has_text="Revolut").click()
+        assert card.locator(".g-fee-opt-h", has_text="Revolut").is_visible()
         assert "Open your host" not in card.inner_text()
         assert card.get_by_role("link", name="Revolut", exact=False).count() == 1
         assert "0000000" not in card.inner_text()
@@ -714,7 +720,7 @@ def test_fee_card_hides_the_qr_for_guests_who_are_not_czech_or_slovak(live_serve
         card = page.locator("#fee-pay")
         assert card.count() == 1, page.inner_text("body")[:400]
         assert card.locator(".g-fee-qr-img").count() == 0
-        assert card.locator("details.g-summary").filter(has=page.locator(".g-fee-rail")).count() == 3
+        assert card.locator("div.g-fee-opt").filter(has=page.locator(".g-fee-rail")).count() == 3
     finally:
         page.close()
 
@@ -749,9 +755,9 @@ def test_fee_card_opens_the_hosts_default_rail_first(live_server, browser, monke
     page = browser.new_page(viewport={"width": 390, "height": 800})
     try:
         page.goto(f"{live_server}/l/{token}/{stay}?lang=en")
-        first = page.locator("#fee-pay details.g-summary").filter(has=page.locator(".g-fee-rail")).first
-        assert "Revolut" in first.locator("summary").inner_text()
-        assert first.get_attribute("open") is not None
+        first = page.locator("#fee-pay div.g-fee-opt").filter(has=page.locator(".g-fee-rail")).first
+        assert "Revolut" in first.locator(".g-fee-opt-h").inner_text()
+        assert first.locator(".g-fee-rail").is_visible()
     finally:
         page.close()
 
@@ -779,7 +785,8 @@ def test_fee_card_absent_when_the_fee_is_zero(live_server, browser, monkeypatch)
         page.close()
 
 
-def test_form_estimate_line_shows_when_the_estimate_is_above_zero(live_server, browser, monkeypatch):
+@pytest.mark.parametrize("width", [390, 768])
+def test_form_estimate_line_shows_when_the_estimate_is_above_zero(live_server, browser, monkeypatch, width):
     """The estimate is computed from the entered values, so the form is posted with them
     (noValidate skips the browser's required checks; the server re-renders with the values)."""
     from app import config
@@ -793,7 +800,7 @@ def test_form_estimate_line_shows_when_the_estimate_is_above_zero(live_server, b
     monkeypatch.setattr(mail, "mail_enabled", lambda: False)
     token = f"browser-fee-estimate-{secrets.token_hex(4)}"
     stay = _fee_seed(token, signed=False)
-    page = browser.new_page(viewport={"width": 390, "height": 800})
+    page = browser.new_page(viewport={"width": width, "height": 800})
     try:
         page.goto(f"{live_server}/l/{token}/{stay}/new?lang=en")
         page.evaluate("""() => {
@@ -806,9 +813,66 @@ def test_form_estimate_line_shows_when_the_estimate_is_above_zero(live_server, b
         # (noValidate above keeps the browser's required checks out of the way).
         with page.expect_navigation():
             page.evaluate("() => document.querySelector('form[action*=\"/save\"]').requestSubmit()")
+        assert page.locator("#legal-notice #fee-estimate").count() == 0
+        assert page.evaluate("""() => document.getElementById('fee-estimate').compareDocumentPosition(document.getElementById('legal-notice')) & Node.DOCUMENT_POSITION_FOLLOWING""")
+        assert page.get_by_text("You do not pay now.").is_visible()
         assert page.locator("#fee-estimate").count() == 1
         assert page.locator("#fee-estimate").is_visible()
-        _shot_0958(page, "form-estimate-390.png")
+        if width == 390:
+            _shot_0958(page, "form-estimate-390.png")
+        if width == 768:
+            _shot_0958(page, "form-estimate-768.png")
+    finally:
+        page.close()
+
+
+def test_1025_form_estimate_follows_the_typed_birth_date(live_server, browser, monkeypatch):
+    """1025: the Check-step estimate is drawn before a birth date is typed. The script
+    recomputes it by the engine's rules: a child pays nothing (box hidden), a guest who
+    turns 18 during the stay pays only from the birthday, an adult pays every counted day."""
+    from datetime import date as _date, timedelta as _td
+    from app import config, mail
+    from app.routes import guest as guest_routes
+
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    monkeypatch.setattr(config, "GUEST_PIN_REQUIRED", False)
+    monkeypatch.setattr(mail, "mail_enabled", lambda: False)
+    token = f"browser-fee-minor-{secrets.token_hex(4)}"
+    stay = _fee_seed(token, signed=False)
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (stay,))
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],))
+    arrival = _date.fromisoformat(reservation["date_from"])
+    turning = arrival + _td(days=2)
+    turning_birth = turning.replace(year=turning.year - 18).strftime("%d.%m.%Y")
+    page = browser.new_page(viewport={"width": 390, "height": 800})
+    try:
+        page.goto(f"{live_server}/l/{token}/{stay}/new?lang=en")
+        assert page.locator("#fee-estimate").count() == 1
+
+        def typed(birth):
+            page.evaluate("""(birth) => {
+                const input = document.querySelector('#birth_date');
+                input.value = birth;
+                input.dispatchEvent(new Event('input', {bubbles: true}));
+                const form = document.querySelector('form[action*="/save"]');
+                form.dispatchEvent(new CustomEvent('guest-wizard:shown'));
+            }""", birth)
+            # The box sits in the Check step, so read its own hidden flag, not visibility.
+            return page.evaluate("""() => {
+                const box = document.getElementById('fee-estimate');
+                return [box.hidden, box.querySelector('.g-fee-amt').textContent.trim()];
+            }""")
+
+        for birth in ("01.01.1980", "01.01.2015", turning_birth):
+            want = guest_routes._fee_estimate(apartment, reservation, {"birth_date": birth})
+            hidden, amount = typed(birth)
+            amount = "" if hidden else amount
+            if want is None:
+                assert hidden, birth
+            else:
+                assert not hidden and amount == f"{want['amount']} CZK", (birth, amount, want)
+        assert guest_routes._fee_estimate(apartment, reservation, {"birth_date": turning_birth})["days"] \
+            < guest_routes._fee_estimate(apartment, reservation, {"birth_date": "01.01.1980"})["days"]
     finally:
         page.close()
 
@@ -1389,3 +1453,173 @@ def test_0965_shortened_save_action_exists_in_all_six_guest_languages():
         assert label and label != previous, lang
         assert len(label) <= 26, (lang, label)
     assert len({i18n.STRINGS[lang]["save_continue_next"] for lang in old}) == 6
+
+# --- 1031: the Check box follows every edit (minor, same town, other town) -----------------
+
+SHOTS_1031 = Path("/mnt/project-files/ux-shots/stayfee-sametown")
+_ADULT_1031, _MINOR_1031 = "15062001", "15062010"
+
+
+def _open_1031(live_server, browser, monkeypatch, token, addr_obec, city, city_en=None):
+    """A Czech guest on the Check step (signature step, signed), property in ``addr_obec``."""
+    from app import config
+
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    monkeypatch.setattr(config, "GUEST_PIN_REQUIRED", False)
+    monkeypatch.setattr(mail, "mail_enabled", lambda: False)
+    stay = _fee_seed(token, signed=False)
+    row = db.query_one("SELECT apartment_id FROM reservation WHERE id = ?", (stay,))
+    db.update("apartment", row["apartment_id"], {"addr_obec": addr_obec, "city_en": city_en})
+    page = browser.new_page(viewport={"width": 390, "height": 812})
+    guest = Guest(page, 390, "en")
+    page.goto(f"{live_server}/l/{token}/{stay}/new?lang=en")
+    page.fill("#first_name", "Test")
+    page.fill("#surname", "Sametown")
+    page.click("#birth_date")
+    page.keyboard.type(_ADULT_1031)
+    guest.pick_country("nationality", "CZE")
+    page.fill("#doc_number", "123456789")
+    guest.next()
+    page.fill("#res_street", "Testovaci 1")
+    page.fill("#res_city", city)
+    if page.input_value("#res_country") != "CZE":
+        guest.pick_country("res_country", "CZE")
+    guest.next()
+    assert guest.step() == i18n.translator("en")("signature")
+    guest.sign()
+    return page, guest, stay
+
+
+def _box_1031(page):
+    """[hidden, amount text, data-fee-live, data-obec-rule] of the Check box."""
+    page.wait_for_timeout(300)
+    return page.evaluate("""() => {
+        const b = document.getElementById('fee-estimate');
+        if (!b) return [true, '', null, null];
+        return [b.hidden, b.querySelector('.g-fee-amt').textContent.trim(),
+                b.getAttribute('data-fee-live'), b.getAttribute('data-obec-rule')];
+    }""")
+
+
+def _change_1031(page, guest, row, field, value):
+    """Change on Check row ``row`` (1 = birth date, 4 = home address), type, go back to Check."""
+    sign = i18n.translator("en")("signature")
+    page.locator(".g-review-change").nth(row).scroll_into_view_if_needed()
+    page.locator(".g-review-change").nth(row).click()
+    page.wait_for_timeout(900)
+    page.fill(field, "")
+    if field == "#birth_date":
+        page.click(field)
+        page.keyboard.type(value)
+    else:
+        page.fill(field, value)
+    while guest.step() != sign:
+        guest.next()
+
+
+def test_1031_check_box_follows_every_change(live_server, browser, monkeypatch):
+    """Owner's case: Prague flat, 3 nights x 50. Same town -> hidden; other town -> 150;
+    minor -> hidden; every Change re-counts. Saved charge = last box."""
+    from app import stay_fee
+
+    token = f"browser-1031-{secrets.token_hex(4)}"
+    page, guest, stay = _open_1031(live_server, browser, monkeypatch, token, "Praha", "Prague")
+    try:
+        steps = [
+            (None, None, None, True),                      # adult, Prague: same town
+            (4, "#res_city", "Brno", False),               # adult, other town: 150
+            (1, "#birth_date", _MINOR_1031, True),         # minor, Brno
+            (1, "#birth_date", _ADULT_1031, False),        # adult again, Brno: 150
+            (4, "#res_city", "Praha 3 - Žižkov", True),    # district form of the same town
+            (4, "#res_city", "Brno", False),
+            (4, "#res_city", "Prague", True),              # back to the owner's case
+        ]
+        for row, field, value, want_hidden in steps:
+            if row is not None:
+                _change_1031(page, guest, row, field, value)
+            hidden, amount, live, rule = _box_1031(page)
+            seen = (row, value, hidden, amount, live, rule)
+            assert hidden == want_hidden, seen
+            if not want_hidden:
+                assert amount == "150 CZK", seen
+            if value == "Brno" and row == 4:
+                SHOTS_1031.mkdir(parents=True, exist_ok=True)
+                page.screenshot(path=str(SHOTS_1031 / "check-othertown-390.png"), full_page=True)
+        SHOTS_1031.mkdir(parents=True, exist_ok=True)
+        page.screenshot(path=str(SHOTS_1031 / "check-sametown-390.png"), full_page=True)
+        # Save with the last values (adult, Prague) and check the stored charge equals the box: 0.
+        page.check("#legal_ack")
+        page.locator("form[action*='/save'] button[type=submit]").last.click()
+        page.wait_for_load_state("networkidle")
+        res = db.query_one("SELECT * FROM reservation WHERE id = ?", (stay,))
+        apt = db.query_one("SELECT * FROM apartment WHERE id = ?", (res["apartment_id"],))
+        assert db.query_one("SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ?", (stay,))["n"] == 1
+        assert stay_fee.charge_for_reservation(apt, res)["total_czk"] == 0
+    finally:
+        page.close()
+    row = db.query_one("SELECT * FROM reservation WHERE id = ?", (stay,))
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (row["apartment_id"],))
+    assert stay_fee.same_obec_resident({"res_country": "CZE", "res_city": "Prague"}, apartment)
+
+
+def test_1031_official_name_and_district_form_hide_the_box(live_server, browser, monkeypatch):
+    token = f"browser-1031b-{secrets.token_hex(4)}"
+    page, _guest, _stay = _open_1031(live_server, browser, monkeypatch, token,
+                                     "Hlavní město Praha", "Praha 1 - Staré Město")
+    try:
+        assert _box_1031(page)[0] is True, _box_1031(page)
+    finally:
+        page.close()
+
+
+def test_1031_unknown_property_town_shows_the_amount_and_says_why(live_server, browser, monkeypatch):
+    token = f"browser-1031c-{secrets.token_hex(4)}"
+    page, _guest, _stay = _open_1031(live_server, browser, monkeypatch, token, "", "Prague", city_en=None)
+    try:
+        hidden, amount, _live, rule = _box_1031(page)
+        assert (hidden, amount, rule) == (False, "150 CZK", None)
+        assert page.locator("#fee-obec-unknown").count() == 1
+        page.locator("#fee-estimate").scroll_into_view_if_needed()
+        SHOTS_1031.mkdir(parents=True, exist_ok=True)
+        page.screenshot(path=str(SHOTS_1031 / "check-unknown-town-390.png"), full_page=True)
+    finally:
+        page.close()
+
+
+# --- 1031b: every Prague spelling hides the Check box for a Prague flat; a minor too -------
+
+_PRAGUE_1031B = [
+    ("Praha", True), ("Prague", True), ("praha 1", True), ("Praha 22", True), ("PRAHA 17", True),
+    ("Praha 17 - Řepy", True), ("praha 17 - repy", True), ("Praha-Řepy", True),
+    ("praha 6 – Dejvice", True), ("Praha – Řepy", True), ("Hlavní město Praha", True),
+    ("hl. m. praha", True), ("Hl. m. Praha", True),
+    ("Řepy", False),   # owner 2026-11-09: a bare district name stays liable
+    ("Brno", False),
+]
+
+
+@pytest.mark.parametrize("addr_obec, city_en", [("Praha", None), ("", "Prague")])
+def test_1031b_prague_spellings_and_minor(live_server, browser, monkeypatch, addr_obec, city_en):
+    """Prague flat (addr_obec Praha, or only city_en Prague), 3 nights x 50, Czech adult guest."""
+    token = f"browser-1031d-{secrets.token_hex(4)}"
+    page, guest, _stay = _open_1031(live_server, browser, monkeypatch, token, addr_obec,
+                                    "Praha 17 - Řepy", city_en=city_en)
+    seen = []
+    try:
+        hidden, amount, _live, _rule = _box_1031(page)
+        seen.append(("Praha 17 - Řepy", hidden, amount))
+        for city, want_hidden in _PRAGUE_1031B:
+            _change_1031(page, guest, 4, "#res_city", city)
+            hidden, amount, _live, _rule = _box_1031(page)
+            seen.append((city, hidden, amount))
+        # Minor path: Brno resident (liable as adult), born 2010 -> exempt, back to adult -> 150.
+        for birth in (_MINOR_1031, _ADULT_1031, _MINOR_1031):
+            _change_1031(page, guest, 1, "#birth_date", birth)
+            hidden, amount, _live, _rule = _box_1031(page)
+            seen.append((f"Brno born {birth[-4:]}", hidden, amount))
+        print("1031b", addr_obec or city_en, seen)
+        want = ([True] + [w for _c, w in _PRAGUE_1031B] + [True, False, True])
+        assert [s[1] for s in seen] == want, seen
+        assert all(s[2] == "150 CZK" for s, w in zip(seen, want) if not w), seen
+    finally:
+        page.close()

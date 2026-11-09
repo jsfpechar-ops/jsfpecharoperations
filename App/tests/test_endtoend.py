@@ -176,7 +176,7 @@ def test_03_apartment_is_created_with_encrypted_credentials(host):
 
 
 def test_04_connection_test_reaches_the_service(host):
-    apartment = db.query_one("SELECT * FROM apartment")
+    apartment = db.query_one("SELECT * FROM apartment ORDER BY id DESC LIMIT 1")
     response = host.post(
         f"/apartments/{apartment['id']}/test-connection", follow_redirects=False
     )
@@ -186,7 +186,7 @@ def test_04_connection_test_reaches_the_service(host):
 
 
 def test_05_codelists_are_fetched_and_cached(host):
-    apartment = db.query_one("SELECT * FROM apartment")
+    apartment = db.query_one("SELECT * FROM apartment ORDER BY id DESC LIMIT 1")
     host.post(f"/apartments/{apartment['id']}/refresh-codelists", follow_redirects=False)
     cached = db.query("SELECT * FROM codelist")
     assert cached, "no code list was cached"
@@ -198,7 +198,7 @@ def test_05_codelists_are_fetched_and_cached(host):
 
 def test_06_calendar_import_creates_the_stay_and_skips_the_block(host, feed_url):
     url, check_in = feed_url
-    apartment = db.query_one("SELECT * FROM apartment")
+    apartment = db.query_one("SELECT * FROM apartment ORDER BY id DESC LIMIT 1")
     response = host.post(
         f"/apartments/{apartment['id']}/feeds",
         data={"url": url, "label": "airbnb", "own_name": "Airbnb"},
@@ -232,13 +232,13 @@ def test_08_dashboard_shows_the_stay_as_awaiting_the_guest(host):
 
 
 def permalink(reservation=None):
-    apartment = db.query_one("SELECT * FROM apartment")
+    apartment = db.query_one("SELECT * FROM apartment ORDER BY id DESC LIMIT 1")
     stay = reservation or db.query_one("SELECT * FROM reservation")
     return f"/l/{apartment['permalink_token']}/{stay['id']}"
 
 
 def test_09_guest_opens_the_link_and_declares_the_party(client):
-    apartment = db.query_one("SELECT * FROM apartment")
+    apartment = db.query_one("SELECT * FROM apartment ORDER BY id DESC LIMIT 1")
     stay = db.query_one("SELECT * FROM reservation")
 
     guest_browser = TestClient(app)
@@ -285,7 +285,7 @@ def passport_files(nationality: str = "GBR"):
 
 
 def save_guest_form(browser, stay, host=None, verify: bool = True, **overrides):
-    apartment = db.query_one("SELECT * FROM apartment")
+    apartment = db.query_one("SELECT * FROM apartment ORDER BY id DESC LIMIT 1")
     party = stay["declared_guests"] or 2
     if overrides.get("party_size"):
         party = int(overrides["party_size"])
@@ -322,7 +322,7 @@ def host_verifies_guest(host, guest_id: int) -> None:
 
 def test_12_incomplete_form_is_refused_before_it_reaches_the_police(client):
     stay = db.query_one("SELECT * FROM reservation")
-    apartment = db.query_one("SELECT * FROM apartment")
+    apartment = db.query_one("SELECT * FROM apartment ORDER BY id DESC LIMIT 1")
     complete_guest_claim(client, apartment["permalink_token"], stay["id"], party_size=2)
     response = client.post(
         permalink(stay) + "/save", data=guest_form_data(doc_number="", signature="")
@@ -386,7 +386,7 @@ def test_15_the_sent_envelope_is_kept_for_evidence(host):
 
 def test_16_an_accepted_record_is_never_resent_automatically(host):
     """Duplicates are refused by the police and count against the host."""
-    apartment = db.query_one("SELECT * FROM apartment")
+    apartment = db.query_one("SELECT * FROM apartment ORDER BY id DESC LIMIT 1")
     assert reporting.collect_sendable(apartment["id"]) == []
     before = db.query_one("SELECT COUNT(*) AS n FROM submission")["n"]
     reporting.sweep()
@@ -582,7 +582,7 @@ def test_23_deadline_watch_raises_nothing_once_everyone_is_reported(host):
 
 def create_manual_stay(host, start: date, nights: int, expected_guests: int) -> int:
     """A direct booking entered by hand, the way a phone reservation arrives."""
-    apartment = db.query_one("SELECT * FROM apartment")
+    apartment = db.query_one("SELECT * FROM apartment ORDER BY id DESC LIMIT 1")
     response = host.post(
         "/reservations",
         data={
@@ -613,7 +613,7 @@ def test_24_an_incomplete_stay_past_the_deadline_raises_an_alert(host):
 
 def test_25_manual_mode_waits_for_the_host(host, mock_ubyport):
     """Automation degree 3: nothing leaves without a click."""
-    apartment = db.query_one("SELECT * FROM apartment")
+    apartment = db.query_one("SELECT * FROM apartment ORDER BY id DESC LIMIT 1")
     db.update("apartment", apartment["id"], {"automation_mode": "manual"})
     requests.post(mock_ubyport + "/reset", timeout=5)
 
@@ -687,7 +687,7 @@ def host_adds_guest(host, reservation_id: int, **overrides) -> int:
 
 def test_26_a_field_error_is_reported_back_as_correctable(host, mock_ubyport):
     """Rule 10.4: an obstacle must reach the host, and the record must be fixable."""
-    apartment = db.query_one("SELECT * FROM apartment")
+    apartment = db.query_one("SELECT * FROM apartment ORDER BY id DESC LIMIT 1")
     guest_id = host_adds_guest(host, MANUAL_STAY["id"], surname="Bounced")
     # Plant a document number the police refuse. The app's own checks would
     # normally stop this, so the batch is handed straight to the transport to
@@ -743,7 +743,7 @@ def test_27_transport_failure_keeps_the_record_queued(host, monkeypatch):
     """Rule 10.2(e): a network problem must not lose the queue."""
     from app.ubyport.client import UbyportTransportError
 
-    apartment = db.query_one("SELECT * FROM apartment")
+    apartment = db.query_one("SELECT * FROM apartment ORDER BY id DESC LIMIT 1")
     guest_id = host_adds_guest(
         host, MANUAL_STAY["id"], surname="Offline", doc_number="P1100220"
     )
@@ -807,7 +807,7 @@ def test_29_host_accounts_log_in_only_through_their_email_link(host):
         assert stored["password_hash"] == ""
 
         # Guest links do not require a host account.
-        apartment = db.query_one("SELECT * FROM apartment")
+        apartment = db.query_one("SELECT * FROM apartment ORDER BY id DESC LIMIT 1")
         assert TestClient(app).get(
             f"/l/{apartment['permalink_token']}", follow_redirects=True
         ).status_code == 200

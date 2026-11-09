@@ -12,7 +12,6 @@
 - Lightsail 8 GB, Docker Compose (`deploy/lightsail/docker-compose.yml`) running:
   - `ubyhost`: web, uvicorn, 2 workers, port 8080.
   - `worker`: scheduler.
-  - `litestream`: continuous SQLite replication to S3.
   - `caddy`.
   - `mock-ubyport`.
 - Cloudflare proxy in front, with origin certs.

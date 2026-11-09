@@ -21,16 +21,16 @@ else:
 from app import auth, db, property_setup
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 
 @pytest.fixture(scope="module")
 def host():
     db.init_db()
     username = f"property-controls-{secrets.token_hex(4)}"
-    owner_id = auth.create_account(
+    owner_id = mark_security_prompt_seen(auth.create_account(
         f"{username}@example.test", "Property Controls", role="host", username=username
-    )
+    ))
     linked_id = db.insert("legal_entity", {
         "name": "Linked Operator",
         "seat": "Praha",
@@ -283,7 +283,7 @@ def _sidebar(page, collapsed):
 
 def _extra_host(entities):
     username = f"property-controls-{secrets.token_hex(4)}"
-    owner_id = auth.create_account(f"{username}@example.test", "Operator Evidence", role="host", username=username)
+    owner_id = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Operator Evidence", role="host", username=username))
     for index in range(entities):
         db.insert("legal_entity", {
             "name": "Sole Operator s.r.o." if index == 0 else f"Operator {index}",
@@ -360,6 +360,7 @@ def test_required_operator_controls_in_browser(host, base):
             many.fill("#internal_name", "Browser Operator Flat")
             many.fill("#addr_obec", "Praha")
             many.fill("#addr_house_no", "12")
+            many.fill("#addr_street", "Synthetic")
             many.fill("#addr_zip", "11000")
             assert not many.locator("#legal_entity_id").evaluate("el => el.checkValidity()")
             # A forged blank operator (validation bypassed) comes back with the draft and an error.
@@ -440,13 +441,13 @@ def test_calendar_platform_controls_in_browser(host, base):
                     page.goto(f"{base}/apartments/{apartment}?lang={lang}#calendar-connect")
                     form = page.locator("#calendar-add")
                     platform = form.locator("#label")
-                    assert platform.is_visible()
+                    platform.wait_for(state="visible", timeout=5000)
                     assert form.locator("details").count() == 0
                     top_platform = platform.bounding_box()["y"]
                     assert top_platform < form.locator("#url").bounding_box()["y"]
                     assert platform.evaluate("el => el.required && el.value === ''")
                     assert not form.locator("#label_other").is_visible()
-                    assert form.locator("#own_name").is_visible()
+                    form.locator("#own_name").wait_for(state="visible", timeout=5000)
                     table = page.locator(".feed-table")
                     assert "Booking.com" in table.inner_text()
                     assert "—" not in table.inner_text()
@@ -494,7 +495,8 @@ def test_guest_links_and_message_settings_geometry(host, base):
         for width in (390, 768, 1280):
             page.set_viewport_size({"width": width, "height": 1000})
             page.goto(f"{base}/apartments/{apartment}?lang=en")
-            page.evaluate("() => { document.getElementById('sec-messages').open = true; }")
+            # Owner decision 2026-11-08: 6 pills as switcher (brief 1030).
+            _toggle_section(page, "messages", width) if width >= 768 else page.evaluate("() => { document.getElementById('sec-messages').open = true; }")
 
             def box(sel):
                 return page.locator(sel).first.bounding_box()
@@ -527,8 +529,10 @@ def test_guest_links_and_message_settings_geometry(host, base):
                 assert abs(cells[0][0] - cells[2][0]) <= 1 and abs(cells[1][0] - cells[3][0]) <= 1, cells
                 gaps = page.evaluate(
                     "() => [...document.querySelectorAll('.guest-link-actions button[formaction]')].map(b => {"
-                    " const t = b.parentElement.querySelector('.help-tip-btn'); return t ? t.getBoundingClientRect().left - b.getBoundingClientRect().right : 999; })")
-                assert all(-1 <= g <= 24 for g in gaps), gaps
+                    " const t = b.parentElement.querySelector('.help-tip-btn'); if (t && !t.getClientRects().length) return null;"
+                    " return t ? t.getBoundingClientRect().left - b.getBoundingClientRect().right : 999; })")
+                # Owner decision 2026-11-08 (brief 1030): at >=768 px the regenerate "?" icons are pruned (null here).
+                assert all((g is None and width >= 768) or (g is not None and -1 <= g <= 24) for g in gaps), gaps
             # Number fields: side by side from 768 px, stacked on phone.
             days, reach = box("#permalink_window_days"), box("#permalink_reachback_days")
             if width == 390:
@@ -540,7 +544,8 @@ def test_guest_links_and_message_settings_geometry(host, base):
             assert page.evaluate("() => { const s = document.getElementById('passport_photo_policy'); return s.scrollWidth <= s.clientWidth; }"), width
             assert select["width"] >= 0.9 * grid["width"], width
             tips = page.evaluate(_TIP_JS, "passport_photo_policy")
-            assert tips is None or abs(tips[0] - tips[1]) <= 6, (width, tips)
+            # Owner decision 2026-11-08 (brief 1030): at >=768 px the passport "?" is pruned (its text repeats the label).
+            assert tips is None or (width >= 768 and tips[0] == 0) or abs(tips[0] - tips[1]) <= 6, (width, tips)
             # OCR checkbox: 24 px box, centred on its label, ? on the same row, below the select.
             cb = box("#ocr_scan")
             assert 20 <= cb["width"] <= 26 and 20 <= cb["height"] <= 26, (width, cb)
@@ -576,6 +581,19 @@ def _open_page_0983(browser, base, host, path, width):
     return context, page
 
 
+def _toggle_section(page, key, width):
+    """Owner decision 2026-11-08: 6 pills as switcher (brief 1030). Phones toggle the accordion; at >=768 px a pill shows
+    the section and its title is not a toggle, so a "close" is a no-op there."""
+    sec = page.locator(f"#sec-{key}")
+    if width < 768:
+        sec.locator("> summary").click()
+    elif not sec.evaluate("e => e.classList.contains('is-current') && e.open"):
+        page.locator(f'nav.prop-strip a[href="#sec-{key}"]').first.click()
+    else:
+        return True
+    return sec.evaluate("e => e.open")
+
+
 def test_0983_fee_and_police_headings_and_archive_button(host, base):
     apartment = host["apartment"]
     with sync_api.sync_playwright() as playwright:
@@ -591,19 +609,16 @@ def test_0983_fee_and_police_headings_and_archive_button(host, base):
                         label = (lang, width)
                         # Stay fee: the accordion title once, no inner duplicate; opens and closes.
                         fee = page.locator("#sec-fee")
-                        fee.locator("> summary").click()
-                        assert fee.evaluate("e => e.open") is True, label
+                        assert _toggle_section(page, "fee", width) is True, label
                         assert fee_title in fee.locator("> summary b").inner_text(), label
                         inner = [" ".join(h.split()).lower() for h in fee.locator("h2, h3").all_text_contents()]
                         assert not any(h.startswith(fee_title.lower()) for h in inner), (label, inner)
                         assert fee.locator("h2.property-section-title").count() == 0, label
                         assert fee.locator("#stay-fee-settings").count() == 1, label
-                        fee.locator("> summary").click()
-                        assert fee.evaluate("e => e.open") is False, label
+                        assert _toggle_section(page, "fee", width) is (width >= 768), label
                         # Police: one title, three meaningful subsections, no synonym heading.
                         police = page.locator("#sec-police")
-                        police.locator("> summary").click()
-                        assert police.evaluate("e => e.open") is True, label
+                        assert _toggle_section(page, "police", width) is True, label
                         assert police_title in police.locator("> summary b").inner_text(), label
                         heads = [" ".join(h.split()) for h in police.locator("h2.property-section-title").all_text_contents()]
                         assert len(heads) == 3, (label, heads)
@@ -612,8 +627,7 @@ def test_0983_fee_and_police_headings_and_archive_button(host, base):
                         assert police.locator("#police-sample-link").count() == 1, label
                         if width == 390:
                             _shot_0983(page, f"police-open-{lang}-390")
-                        police.locator("> summary").click()
-                        assert police.evaluate("e => e.open") is False, label
+                        assert _toggle_section(page, "police", width) is (width >= 768), label
                         # Archive: a direct secondary button, no accordion, not clipped.
                         assert page.locator("details#sec-archive").count() == 0, label
                         button = page.locator("#archive button[formaction$='/archive']")
@@ -746,10 +760,10 @@ def test_0984_lock_off_explains_and_offers_one_action(host, base, monkeypatch):
                 block = _assert_lock_state_matches_pill_0984(page, "#lock-setup-state", "off")
                 assert "Turned off" in block.inner_text()
                 assert "TTLock" in block.inner_text()
-                action = block.locator("a.ui-btn[href='#door-code']")
-                assert action.count() == 1 and action.is_visible()
-                assert block.locator("form, input, button").count() == 0  # no lock command, no credential edit here
-                fit = page.evaluate(_IN_VIEW_0984, "#lock-setup-state, #lock-setup-state a.ui-btn")
+                assert block.locator("form, input, button, a.ui-btn").count() == 0  # status only; setup lives below
+                setup = page.locator("#smart-locks-setup button.ui-btn-primary")
+                assert setup.count() == 1 and setup.is_visible()
+                fit = page.evaluate(_IN_VIEW_0984, "#lock-setup-state, #smart-locks-setup button.ui-btn-primary")
                 assert fit["count"] == 2 and not fit["bad"], fit
                 assert page.evaluate(_NO_SIDEWAYS_0984) <= 1, width
                 _shot_0984(page, f"lock-off-{width}")
@@ -827,19 +841,17 @@ def test_0984_calendar_rows_keep_state_and_actions_with_a_long_url(host, base):
                 assert page.locator(".feed-table td[data-label='Last sync'] [data-tone='red']").is_visible()
                 assert page.locator(".feed-table td[data-label='Last sync'] [data-tone='green']").is_visible()
                 assert "Synthetic feed unreachable" in page.locator(".feed-table").inner_text()
-                # Name, state, URL control, copy and Remove are all in view while the URL is collapsed.
+                # Name, state, URL, copy and Remove are all in view.
                 fit = page.evaluate(_IN_VIEW_0984, ".feed-table td strong, .feed-table [data-tone], .feed-table summary, .feed-table .copy-btn, .feed-table .row-actions .ui-btn")
-                assert fit["count"] >= 10 and not fit["bad"], (width, fit)
-                assert page.locator(".feed-url-details[open]").count() == 0
-                assert not page.locator(f"#feed-url-{healthy}").is_visible()
+                assert fit["count"] >= 8 and not fit["bad"], (width, fit)
+                assert page.locator(f"#feed-url-{healthy}").is_visible()
                 assert page.get_attribute(f".feed-table .copy-btn[data-copy='feed-url-{healthy}']", "data-copy")
                 assert page.evaluate(_NO_SIDEWAYS_0984) <= 1, width
                 _shot_0984(page, f"calendars-collapsed-{width}")
-                # Opening the long URL wraps it inside its cell and never pushes an action out of view.
-                page.locator(".feed-table summary").first.click()
+                # The long URL is clipped inside its cell and never pushes an action out of view.
                 page.wait_for_selector(f"#feed-url-{healthy}", state="visible", timeout=5000)
                 assert page.locator(f"#feed-url-{healthy}").is_visible()
-                fit = page.evaluate(_IN_VIEW_0984, ".feed-table .row-actions .ui-btn, .feed-table .copy-btn, .feed-url-details[open] .feed-url-value")
+                fit = page.evaluate(_IN_VIEW_0984, ".feed-table .row-actions .ui-btn, .feed-table .copy-btn, .feed-url-value")
                 assert not fit["bad"], (width, fit)
                 assert page.evaluate(_NO_SIDEWAYS_0984) <= 1, width
                 wrap = page.evaluate("() => { const w = document.querySelector('.feed-table').closest('.scroll-x'); return w.scrollWidth - w.clientWidth; }")

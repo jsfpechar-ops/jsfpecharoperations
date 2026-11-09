@@ -43,7 +43,7 @@
 .cal-day-number { display:block; min-height:26px; height:26px; width:100%; border:0; background:transparent; padding:4px 6px; text-align:right; font:inherit; font-size:11px; line-height:18px; color:var(--ink-secondary); cursor:pointer; }
 .cal-day.is-today .cal-day-number { color:var(--teal); font-weight:750; }
 .cal-day.is-outside .cal-day-number { color:var(--ink-muted); opacity:.65; }
-.cal-week-events { position:absolute; left:1px; right:1px; top:28px; display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); grid-auto-rows:var(--event-height); row-gap:2px; pointer-events:none; }
+.cal-week-events { position:absolute; left:1px; right:1px; top:40px; display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); grid-auto-rows:var(--event-height); row-gap:2px; pointer-events:none; }
 .cal-week-events { grid-template-rows:var(--desktop-event-rows); }
 [data-cal-color="teal"] { --cal-ink:var(--teal); --cal-fill:var(--teal-bg); }
 [data-cal-color="blue"] { --cal-ink:var(--blue); --cal-fill:var(--blue-bg); }
@@ -337,7 +337,7 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
 .cleaning-page .dashboard-calendar .cal-event.is-cleaning-marker {
   box-sizing:border-box; display:flex; align-items:center; gap:4px;
   height:var(--event-height,22px); min-height:0; max-height:none; margin:0 1px; padding:0 7px 0 5px;
-  border:1px solid var(--status-action-border); border-left:3px solid var(--amber); border-radius:6px;
+  border:1px solid var(--status-action-border); border-radius:6px;
   background:var(--amber-bg); color:var(--status-action-ink);
   font-size:11px; font-weight:600; line-height:1; box-shadow:none; overflow:hidden;
 }
@@ -684,6 +684,7 @@ body.v2 .cal-create-types .btn:not(.line):not(.soft):not(.ghost)[aria-pressed="f
 }
 @media (min-width:1024px) {
   .dashboard-calendar[data-readonly="false"] .cal-week-days .cal-day { min-height:112px; }
+  .dashboard-calendar[data-readonly="false"] dialog[data-cal-day-dialog] { z-index:20; box-shadow:-12px 0 32px rgba(32,32,30,.14); }
 }
 @media (min-width:768px) {
   .dashboard-calendar[data-readonly="false"] [data-cal-day-add] { display:block; width:100%; min-height:48px; margin:0; border-radius:12px; }
@@ -698,8 +699,11 @@ body.v2 .cal-create-types .btn:not(.line):not(.soft):not(.ghost)[aria-pressed="f
   .dashboard-calendar[data-readonly="false"] .cal-toolbar .cal-navigation { grid-column:2; grid-row:1; gap:12px; }
   .dashboard-calendar[data-readonly="false"] .cal-toolbar h3 { grid-column:1; grid-row:1; min-width:0; margin:0; text-align:left; font-size:24px; line-height:32px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .dashboard-calendar[data-readonly="false"] .cal-toolbar-options { grid-column:3; grid-row:1; gap:12px; }
-  .dashboard-calendar[data-readonly="false"].has-panel { margin-right:calc(360px + 16px - 36px); } /* 0818: desktop wrap gutter measured 36 px */
+  .dashboard-calendar[data-readonly="false"].has-panel { margin-right:0; } /* 1004: at 1024 px and up the day panel overlays the grid; the grid keeps its full width */
   .dashboard-calendar[data-readonly="false"].has-panel .cal-body { padding-right:0; }
+}
+@media (min-width:1024px) {
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"].has-panel .cal-head { margin-right:376px; } /* 1004 panel fix: heading and toolbar stop 16 px before the 360 px day panel; the grid keeps its full width */
 }
 @media (min-width:768px) and (max-width:1023px) {
   .dashboard-calendar[data-readonly="false"].has-panel { margin-right:calc(320px + 16px - 20px); } /* 0818: tablet wrap gutter measured 20 px */
@@ -712,7 +716,6 @@ body:has(.dashboard-calendar.has-panel) .havel-fab { display:none !important; }
 .cal-hide { display:none !important; }
 @media (min-width:768px) {
   /* 0891: the 0832 two-row grid head moved to the .cal-head flex row in the 0891 block. */
-  .dashboard-calendar[data-readonly="false"]:has([data-cal-view="calendar"][aria-pressed="true"]):has([data-cal-scale="month"][aria-pressed="true"]) :is([data-cal-month],[data-cal-year]) { display:none; }
   .dashboard-calendar[data-readonly="false"] .cal-heading-actions .cal-settings.btn.soft { background:#f2f2f0; color:var(--ink); height:40px; min-height:40px; }
   .dashboard-calendar[data-readonly="false"] :is(.cal-heading-actions, .cal-toolbar-options) select { height:40px; min-height:40px; }
 }
@@ -866,10 +869,11 @@ body.v2 #calendar.dashboard-calendar[data-readonly="false"] .cal-pill[data-cal-c
 @media (min-width:768px) {
   body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-week.is-dots { --cal-num-band:52px; --cal-lane:56px; }
   body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-pills { align-content:start; padding-top:var(--cal-num-band); padding-bottom:0; }
-  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-tile-chips { margin-top:calc(var(--cal-num-band) + var(--pl,1) * var(--cal-lane) - 12px + 8px - 47px); }
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-tile-chips { margin-top:calc(var(--cal-num-band) + var(--pl,1) * var(--cal-lane) - 12px + 12px - 47px); }
 }
+/* 1054: --cal-lane is one stay lane = pill height + 12 px row gap (44 + 12 below 1024 px, 32 + 12 from 1024 px). It was 56 everywhere with a flat -24 px fudge at 1024 px+, which only fitted weeks with 2 lanes: 1 lane let the pill cover the chip, 3 lanes left a 20 px hole. The 47 is the chip's natural top inside the tile; the chip now starts 12 px under the last pill. */
 @media (min-width:1024px) {
-  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-tile-chips { margin-top:calc(var(--cal-num-band) + var(--pl,1) * var(--cal-lane) - 12px + 8px - 47px - 24px); }
+  body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="true"] .cal-week.is-dots { --cal-lane:44px; }
 }
 /* 0956: a 768-1023 px tile is ~94 px wide, so the "Cleaning" chip drops its icon and shrinks to fit; long labels end in an ellipsis */
 @media (min-width:768px) and (max-width:1023px) {
@@ -906,3 +910,8 @@ body.v2 #calendar.dashboard-calendar[data-readonly="false"] .cal-pill[data-cal-c
   /* A keyboard ring that shows on the dark bars and badges and on the white and dark tiles. */
   body.v2 #calendar.dashboard-calendar[data-readonly="false"][data-cleaning="false"] :is(.cal-pill, .cal-pill-more):focus-visible { outline:2px solid #fff; outline-offset:0; box-shadow:0 0 0 4px #222; }
 }
+/* 0998: mobile polish. No UA focus box on the scripted-focus body, calm close-button focus, room under the last row for the floating buttons. */
+.dashboard-calendar .cal-body:focus{outline:0}
+.dashboard-calendar .cal-dialog button.cal-close:focus:not(:focus-visible){outline:0;box-shadow:none}
+.dashboard-calendar .cal-dialog button.cal-close:focus-visible{outline:0;box-shadow:var(--focus-ring-2)}
+@media (max-width:767px){.dashboard-calendar .cal-body{padding-bottom:140px}}

@@ -50,7 +50,7 @@
   {% elif progress.status == 'reported' and submissions %}
     {% set receipt_report = submissions | selectattr('has_receipt') | first %}
     {% if receipt_report %}
-      <a data-turbo="false" class="btn" href="/submissions/{{ receipt_report.id }}/receipt.pdf">{{ t('reports.detail.download_receipt') }}</a>
+      <a data-turbo="false" class="btn" href="/reservations/{{ reservation.id }}/dorucenka.zip">{{ t('reports.detail.download_receipt') }}</a>
       <a class="btn ghost" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
     {% else %}
       <a class="btn" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
@@ -58,7 +58,7 @@
   {% endif %}
 {% endmacro %}
 <div class="head" id="now"><div>
-  <div class="crumb"><a href="{{ return_to }}">{{ t('stays.title') }}</a> › {{ lead_name or reservation.internal_name }}</div>
+  <div class="crumb"><a href="{{ return_to }}">{{ t('stays.title') }}</a> {{ icon('chevron-right', 14) }} {{ lead_name or reservation.internal_name }}</div>
   
   <p class="sub">{% if stay_inactive %}<span class="pill">{{ t('stays.filter.state.' ~ reservation.status) if reservation.status != 'active' else t('archive.col.when') }}</span>{% else %}{{ v2_status_pill(cell, progress, reservation) }}{% endif %}<span class="stay-sep"><a href="/apartments/{{ reservation.apartment_id }}">{{ reservation.internal_name }}</a> · {{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</span></p>
 </div>
@@ -200,7 +200,7 @@
     {% set guest = row.guest %}
     <tr>
       <td>
-        <b>{{ guest.first_name or '' }} {{ guest.surname or '—' }}</b>{% if guest.is_lead %} <span class="pill">{{ t('stay.detail.guests.lead') }}</span>{% endif %}
+        <b><a class="guest-name-link" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">{{ guest.first_name or '' }} {{ guest.surname or '—' }}</a></b>{% if guest.is_lead %} <span class="pill">{{ t('stay.detail.guests.lead') }}</span>{% endif %}
         {% set id_parts = [] %}
         {% if guest.birth_date and identity_visible(guest.id) %}{% set _ = id_parts.append(t('stay.detail.guests.born') ~ ' ' ~ display_birth_date(guest.birth_date)) %}{% endif %}
         {% if guest.nationality %}{% set _ = id_parts.append(country_name(guest.nationality, lang) or guest.nationality) %}{% endif %}

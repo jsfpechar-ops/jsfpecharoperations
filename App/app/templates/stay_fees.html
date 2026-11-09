@@ -25,7 +25,7 @@
   </div>
 </details>
 </div><div class="stays-head-actions">{% for href, key, current in page_tabs() %}{% if not current %}<a class="btn ghost" href="{{ href }}">{{ t(key) }}</a>{% endif %}{% endfor %}<a class="btn ghost" href="/settings#settings-stay-fee-emails">{{ t('stay_fees.list.email_change') }}</a></div></div>
-<div class="stay-fees-toolbar">{% include "_list_filter.html" %}</div>
+<div class="stay-fees-toolbar">{% set filter_compact = true %}{% include "_list_filter.html" %}</div>
 {% if periods %}
 {% set pay_rows = periods | rejectattr('unset') | list %}
 {% set fee_bulk = namespace(ready=[], saved=0) %}
@@ -59,7 +59,7 @@
   <ol class="fee-stepper" aria-label="{{ t('stay_fees.pay.step', n=period.step) }}">
     {% for n in (1, 2) %}
     <li class="fee-stepper-item" data-state="{{ 'done' if n < period.step else ('current' if n == period.step else 'todo') }}"{% if n == period.step %} aria-current="step"{% endif %}>
-      <span class="fee-stepper-dot" aria-hidden="true">{% if n < period.step %}✓{% else %}{{ n }}{% endif %}</span>
+      <span class="fee-stepper-dot" aria-hidden="true">{% if n < period.step %}{{ icon('check', 14) }}{% else %}{{ n }}{% endif %}</span>
       <span class="fee-stepper-label">{{ t('stay_fees.pay.short' ~ n) }}</span>
     </li>
     {% endfor %}
@@ -232,7 +232,7 @@
             <span class="pill p-warn">{{ t('stay_fees.status.ready') }}</span>
           {% endif %}
         </td>
-        <td class="nowrap row-actions" data-label="">{{ row_open('/stay-fees/' ~ apartment.id ~ '?month=' ~ selected_month.strftime('%Y-%m')) }}{{ row_menu_begin() }}<a class="row-menu-item" href="/stay-fees/{{ apartment.id }}?month={{ selected_month.strftime('%Y-%m') }}" role="menuitem">{{ t('stay_fees.open_report') }}</a>{{ row_menu_end() }}</td>
+        <td class="nowrap row-actions" data-label="">{{ row_menu_begin() }}<a class="row-menu-item" href="/stay-fees/{{ apartment.id }}?month={{ selected_month.strftime('%Y-%m') }}" role="menuitem">{{ t('stay_fees.open_report') }}</a>{{ row_menu_end() }}</td>
       </tr>
       {% endif %}
     {% endfor %}

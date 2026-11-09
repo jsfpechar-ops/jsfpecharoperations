@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, guest_guide, guide_facts
 from app.main import app
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 from tests.test_property_navigation_browser import base, chromium_launch_kwargs, sync_api  # noqa: F401
 
 SHOTS = Path(os.environ.get("UBYHOST_SHOTS_DIR") or Path(__file__).resolve().parents[1] / ".screenshots")
@@ -27,7 +27,7 @@ PROBE = r"""() => {
 def test_the_chips_are_big_full_width_and_show_their_state(base):  # noqa: F811
     db.init_db()
     user = f"quick-{secrets.token_hex(3)}"
-    owner = auth.create_account(f"{user}@example.test", "Quick Host", role="host", username=user)
+    owner = mark_security_prompt_seen(auth.create_account(f"{user}@example.test", "Quick Host", role="host", username=user))
     apt_id = db.insert("apartment", {
         "owner_user_id": owner, "internal_name": "Quick flat", "active": 1, "created_at": db.utcnow(),
         "automation_mode": "manual",
@@ -88,7 +88,7 @@ OVERFLOW = r"""() => {
 def _host(prefix):
     db.init_db()
     user = f"{prefix}-{secrets.token_hex(3)}"
-    owner = auth.create_account(f"{user}@example.test", "Truth Host", role="host", username=user)
+    owner = mark_security_prompt_seen(auth.create_account(f"{user}@example.test", "Truth Host", role="host", username=user))
     apt_id = db.insert("apartment", {
         "owner_user_id": owner, "internal_name": "Truth flat", "active": 1, "created_at": db.utcnow(),
         "automation_mode": "manual",

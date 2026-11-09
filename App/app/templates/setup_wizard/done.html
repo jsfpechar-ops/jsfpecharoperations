@@ -1,30 +1,34 @@
 {% extends "setup_wizard/_layout.html" %}
 {% from "_components.html" import nav_icon with context %}
 {% from "_workflow.html" import workflow_strip with context %}
+{% from "_icons.html" import icon with context %}
 {% set missing_row = checklist | selectattr('status', 'in', ['waiting', 'todo']) | first %}
 {% set link_next = next_stay_window(apartment) %}
 {% block wizard_content %}
 <div class="ui-banner setup-wizard-celebrate{{ ' is-partial' if missing_row }}" role="status" data-setup-celebrate="{{ 'partial' if missing_row else 'done' }}">
   {% if celebrate and not missing_row %}<span class="setup-wizard-confetti" aria-hidden="true">{% for n in range(12) %}<i></i>{% endfor %}</span>{% endif %}
-  <span class="setup-wizard-celebrate-mark" aria-hidden="true">{{ '!' if missing_row else '✓' }}</span>
+  <span class="setup-wizard-celebrate-mark" aria-hidden="true">{{ icon('triangle-alert' if missing_row else 'check', 20) }}</span>
   <div class="grow setup-wizard-celebrate-copy">
     <strong class="setup-wizard-celebrate-title">{{ t('wizard.done.almost') if missing_row else t('wizard.done.all_set') }}</strong>
-    <span>{{ (t('wizard.done.left.police') if missing_row.key == 'police' else t('wizard.done.left.step')) if missing_row else t('wizard.done.all_set_text') }}</span>
+    {% if missing_row %}<span>{{ t('wizard.done.left.police') if missing_row.key == 'police' else t('wizard.done.left.step') }}</span>{% endif %}
   </div>
 </div>
-{{ workflow_strip(apartment) }}
+<details class="setup-done-workflow">
+  <summary>{{ t('workflow.title') }}</summary>
+  {{ workflow_strip(apartment, heading=false) }}
+</details>
 <h2 class="setup-wizard-section-title">{{ t('wizard.done.title') }}</h2>
 {% set icons = {'property': 'property', 'calendar': 'calendar', 'guest_link': 'link', 'try_it': 'users', 'police': 'report', 'stay_fee': 'coins', 'door_lock': 'lock', 'automation': 'automation'} %}
-<ul class="setup-wizard-checklist host-property-grid">
+<ul class="setup-wizard-checklist setup-done-list">
   {% for row in checklist %}
   {% set status = row.status if row.status in ['done', 'skipped', 'waiting', 'not_needed'] else 'todo' %}
   <li class="is-{{ row.status }}" data-setup-summary-step="{{ row.key }}">
-    <div class="host-property-card host-property-card-static setup-summary-card">
+    <div class="setup-summary-card">
       <span class="setup-summary-icon">{{ nav_icon(icons[row.key]) }}</span>
       <div class="setup-summary-copy">
         <strong>{{ t('wizard.summary.' ~ row.key) if row.key in ['calendar', 'try_it'] else t('wizard.step.' ~ row.key) }}</strong>
         <span class="ui-badge ui-badge-{{ 'done' if status == 'done' else 'attention' if status == 'waiting' else 'neutral' }}" data-tone="{{ 'green' if status == 'done' else 'amber' if status == 'waiting' else 'grey' }}">
-          {% if status == 'done' %}<span aria-hidden="true">✓</span>{% endif %}
+          {% if status == 'done' %}<span aria-hidden="true">{{ icon('check', 14) }}</span>{% endif %}
           {{ t('wizard.summary.status.' ~ status) }}
         </span>
         {% if row.status == 'waiting' %}
@@ -36,25 +40,28 @@
   {% endfor %}
 </ul>
 <h2 class="setup-wizard-section-title">{{ t('wizard.done.next_title') }}</h2>
-<ul class="setup-wizard-checklist host-property-grid setup-wizard-next" data-setup-next>
+<ul class="setup-wizard-checklist setup-done-list setup-wizard-next" data-setup-next>
   <li data-setup-next-step="stay_fee">
-    <a class="host-property-card setup-summary-card setup-next-card" href="/apartments/{{ apartment.id }}?view=settings&amp;section=reporting#stay-fee-settings">
+    <a class="setup-summary-card setup-next-card" href="/apartments/{{ apartment.id }}?view=settings&amp;section=reporting#stay-fee-settings">
       <span class="setup-summary-icon">{{ nav_icon('coins') }}</span>
       <span class="setup-summary-copy"><strong>{{ t('wizard.step.stay_fee') }}</strong></span>
+      <span class="setup-done-chevron" aria-hidden="true">{{ icon('chevron-right', 16) }}</span>
     </a>
   </li>
   {% if lock_available %}
   <li data-setup-next-step="door_lock">
-    <a class="host-property-card setup-summary-card setup-next-card" href="/apartments/{{ apartment.id }}?view=settings&amp;section=lock#door-code">
+    <a class="setup-summary-card setup-next-card" href="/apartments/{{ apartment.id }}?view=settings&amp;section=lock#door-code">
       <span class="setup-summary-icon">{{ nav_icon('lock') }}</span>
       <span class="setup-summary-copy"><strong>{{ t('wizard.step.door_lock') }}</strong></span>
+      <span class="setup-done-chevron" aria-hidden="true">{{ icon('chevron-right', 16) }}</span>
     </a>
   </li>
   {% endif %}
   <li data-setup-next-step="try_it">
-    <a class="host-property-card setup-summary-card setup-next-card" href="/apartments/{{ apartment.id }}/setup/try_it">
+    <a class="setup-summary-card setup-next-card" href="/apartments/{{ apartment.id }}/setup/try_it">
       <span class="setup-summary-icon">{{ nav_icon('users') }}</span>
       <span class="setup-summary-copy"><strong>{{ t('wizard.step.try_it') }}</strong></span>
+      <span class="setup-done-chevron" aria-hidden="true">{{ icon('chevron-right', 16) }}</span>
     </a>
   </li>
 </ul>
@@ -63,7 +70,6 @@
 {% endif %}
 {% endblock %}
 {% block wizard_actions %}
-<span></span>
 {% if missing_row %}
 {% set go_href = '/apartments/' ~ apartment.id ~ '/setup/' ~ missing_row.key %}
 {% set go_label = t('wizard.done.fix.police') if missing_row.key == 'police' else t('wizard.done.fix.step') %}

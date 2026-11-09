@@ -13,6 +13,7 @@ else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
 from app import auth
+from tests.conftest import mark_security_prompt_seen
 from tests.browser_support import chromium_launch_kwargs
 from tests.test_host_geometry import _browser_session_cookie, base  # noqa: F401
 
@@ -29,7 +30,7 @@ _OFFLINE_CACHED = """async (lang) => {
 
 def _open(playwright, base, width, height, target):
     username = f"pwa{secrets.token_hex(3)}"
-    auth.create_account(f"{username}@example.test", "Pwa", role="host", username=username)
+    mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Pwa", role="host", username=username))
     try:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
     except Exception as exc:

@@ -368,7 +368,125 @@ function initSignature() {
       return rows;
     }
 
+    /* 0898/1025: the estimate is drawn when the page loads, before the guest has
+       typed a birth date or a home address. Recompute it as they type, by the
+       rules of stay_fee.guest_period: counted days are (arrival, departure];
+       a day is exempt while the guest is under 18 on it (an unknown day or
+       month counts as the 1st, as conservative_birth does); a resident of the
+       property's municipality pays nothing (same folding as stay_fee._obec_key). */
+    function feeBirth(text) {
+      var value = String(text || "").trim();
+      var m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value);
+      var year;
+      if (m) {
+        year = parseInt(m[3], 10);
+      } else {
+        // validation.normalise_birth_date: a two-digit year takes the century closest to today.
+        m = /^(\d{2})\.(\d{2})\.(\d{2})$/.exec(value);
+        if (!m) return null;
+        var n = parseInt(m[3], 10);
+        year = 2000 + n <= new Date().getFullYear() ? 2000 + n : 1900 + n;
+      }
+      if (year === 0) return null;
+      var month = parseInt(m[2], 10) || 1;
+      var day = parseInt(m[1], 10) || 1;
+      var date = new Date(Date.UTC(year, month - 1, day));
+      if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return null;
+      return { y: year, m: month, d: day };
+    }
+
+    function feeIso(text) {
+      var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(text || ""));
+      return m ? Date.UTC(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10)) : null;
+    }
+
+    function feeLiableDays(live, birth) {
+      var start = feeIso(live.from), end = feeIso(live.to), day = 86400000, count = 0;
+      if (start === null || end === null) return -1;
+      for (var t = start + day; t <= end; t += day) {
+        var when = new Date(t);
+        var y = when.getUTCFullYear(), mo = when.getUTCMonth() + 1, d = when.getUTCDate();
+        var age = birth ? y - birth.y - ((mo < birth.m || (mo === birth.m && d < birth.d)) ? 1 : 0) : 99;
+        if (age >= 18) count += 1;
+      }
+      return count;
+    }
+
+    function feeLiableAmount(live, birth) {
+      // 1031: the amount for the liable nights; per-night rates when the stay crosses a rate change.
+      var start = feeIso(live.from), end = feeIso(live.to), day = 86400000, amount = 0;
+      if (start === null || end === null) return -1;
+      for (var t = start + day; t <= end; t += day) {
+        var when = new Date(t);
+        var y = when.getUTCFullYear(), mo = when.getUTCMonth() + 1, d = when.getUTCDate();
+        var age = birth ? y - birth.y - ((mo < birth.m || (mo === birth.m && d < birth.d)) ? 1 : 0) : 99;
+        if (age < 18) continue;
+        var iso = when.toISOString().slice(0, 10);
+        amount += (live.nights && live.nights[iso] !== undefined) ? live.nights[iso] : live.rate;
+      }
+      return amount;
+    }
+
+    function feeObecResident(box) {
+      var raw = box.getAttribute("data-obec-rule");
+      if (!raw) return false;
+      var rule;
+      try { rule = JSON.parse(raw); } catch (e) { return false; }
+      function fold(text) {
+        var plain = String(text || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+        return plain.toUpperCase().replace(/\s+/g, " ").trim();
+      }
+      function key(text) {
+        // 1031: same steps as stay_fee._obec_key; the tables and the pattern come from the server.
+        var t = fold(text).replace(/\s*[-\u2010-\u2015\u2212]\s*/g, "-");
+        var after = new RegExp("^(?:" + rule.after + ")");
+        function base(s) {
+          for (var i = 0; i < rule.bases.length; i++) {
+            var b = rule.bases[i];
+            if (s.indexOf(b) === 0 && after.test(s.slice(b.length))) return b;
+          }
+          return null;
+        }
+        for (var p = 0; p < rule.prefixes.length; p++) {
+          var rest = t.slice(rule.prefixes[p].length).trim();
+          if (t.indexOf(rule.prefixes[p]) === 0 && base(rest)) { t = rest; break; }
+        }
+        for (var k = 0; k < rule.okres.length; k++) {
+          var n = rule.okres[k];
+          if (t.indexOf(n) === 0 && !/[A-Z]/.test(t.charAt(n.length))) return t;
+        }
+        var found = base(t);
+        if (found) t = found;
+        return Object.prototype.hasOwnProperty.call(rule.aliases, t) ? rule.aliases[t] : t;
+      }
+      var country = document.getElementById("res_country");
+      var city = document.getElementById("res_city");
+      return !!(country && city && country.value === rule.country &&
+                key(city.value) === rule.obec);
+    }
+
+    function syncFeeBox() {
+      var box = document.getElementById("fee-estimate");
+      if (!box) return;
+      // 1031: the same-town rule first; it needs no stay window.
+      if (feeObecResident(box)) { box.hidden = true; return; }
+      var raw = box.getAttribute("data-fee-live");
+      if (!raw) { box.hidden = false; return; }
+      var live;
+      try { live = JSON.parse(raw); } catch (e) { return; }
+      var input = document.getElementById("birth_date");
+      var days = feeLiableDays(live, feeBirth(input ? input.value : ""));
+      if (days < 0) return;
+      if (days === 0) { box.hidden = true; return; }
+      var amount = box.querySelector(".g-fee-amt");
+      var calc = box.querySelector(".g-fee-calc");
+      if (amount) amount.textContent = String(box.getAttribute("data-fee-amount") || "").replace("{amount}", String(feeLiableAmount(live, feeBirth(input ? input.value : ""))));
+      if (calc) calc.textContent = String(box.getAttribute("data-fee-calc") || "").replace("{days}", String(days));
+      box.hidden = false;
+    }
+
     function build() {
+      syncFeeBox();
       var rows = collect();
       list.textContent = "";
       if (!rows.length) { card.hidden = true; return; }
@@ -404,6 +522,14 @@ function initSignature() {
     }
 
     form.addEventListener("guest-wizard:shown", build);
+    // 1031: re-count on every edit and when the browser restores the page from its cache.
+    ["birth_date", "res_city", "res_country"].forEach(function (id) {
+      var field = document.getElementById(id);
+      if (!field) return;
+      field.addEventListener("input", syncFeeBox);
+      field.addEventListener("change", syncFeeBox);
+    });
+    window.addEventListener("pageshow", build);
     build();
   }
 
@@ -628,6 +754,32 @@ function initSignature() {
       if (nav.childNodes.length) step.appendChild(nav);
     });
 
+    // Enter in a field used to press the first submit button in the page, which
+    // was a language button. Now it presses the button of the step on screen:
+    // Continue (which checks that step first) or, on the last step, Save. A
+    // plain submit from an earlier step could not work anyway, because the
+    // later steps' required fields are hidden and a browser cannot show a
+    // validation bubble on them.
+    form.addEventListener("keydown", function (event) {
+      if (event.key !== "Enter" || event.defaultPrevented || event.isComposing) return;
+      var target = event.target;
+      if (!target || target.tagName !== "INPUT") return;
+      if (/^(button|submit|reset|file|image)$/.test(target.type)) return;
+      var step = target.closest("[data-guest-step]");
+      if (!step) return;
+      event.preventDefault();
+      var list = stepsFor();
+      var at = list.indexOf(step);
+      if (at !== -1 && at < list.length - 1) {
+        var next = step.querySelector(".g-wizard-nav .g-btn:not(.secondary)");
+        if (next) next.click();
+      } else {
+        var save = form.querySelector("[data-guest-save]");
+        if (save && form.requestSubmit) form.requestSubmit(save);
+        else if (save) save.click();
+      }
+    });
+
     // The nationality field lives on the first step, so a Czech guest is on it
     // when the passport step drops out: re-count the bar under their feet.
     if (nationality) {
@@ -673,6 +825,29 @@ function initSignature() {
         if (step) step.value = form.getAttribute("data-active-step") || "0";
       });
     });
+  }
+
+  /* A save sent with no connection used to drop the guest on the browser's own
+     error page, with the form gone. While the browser reports it is offline
+     the submit is held back instead: nothing is sent, the form stays exactly
+     as it is, and a plain sentence above Save says to try again once back
+     online. The submit itself stays an ordinary form post (not fetch), so a
+     save that does go out behaves as it always has: no second request, no
+     page rewriting. A connection that drops while a request is already in
+     flight is still the browser's own page. */
+  function initSaveRetry() {
+    var form = document.getElementById("guest-form");
+    var note = document.getElementById("save-net-error");
+    if (!form || !note) return;
+    form.addEventListener("submit", function (event) {
+      if (event.defaultPrevented) return;
+      if (event.submitter && event.submitter.hasAttribute("data-lang-draft")) return;
+      if (navigator.onLine !== false) return;
+      event.preventDefault();
+      note.hidden = false;
+      if (note.scrollIntoView) note.scrollIntoView({ block: "center" });
+    });
+    window.addEventListener("online", function () { note.hidden = true; });
   }
 
   /* The wide check-in layout shows the stay summary and the step list beside
@@ -741,6 +916,7 @@ function initSignature() {
     initPinReturn();
     initGuestWizard();
     initLanguageDraft();
+    initSaveRetry();
     initCheckinRail();
     initErrorSummary();
     initGuestReview();

@@ -19,6 +19,7 @@ else:
 import uvicorn
 
 from app import auth, booking_checkout, booking_site, booking_webhook, config, db, property_page
+from tests.conftest import mark_security_prompt_seen
 from app import stripe_connect
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
@@ -87,7 +88,7 @@ def seeded():
     client.v1 = v1
     mp.setattr(stripe_connect, "_api", lambda: client)
     mp.setattr(stripe_connect, "_client", lambda: client)
-    auth.create_account(f"{OWNER}@example.test", "Manage Host", username=OWNER)
+    mark_security_prompt_seen(auth.create_account(f"{OWNER}@example.test", "Manage Host", username=OWNER))
     oid = int(db.query_one("SELECT id FROM user_account WHERE username = ?", (OWNER,))["id"])
     entity = db.insert("legal_entity", {"owner_user_id": oid, "name": "Manage Host",
                                         "seat": "Praha 1", "ico": "04656679",

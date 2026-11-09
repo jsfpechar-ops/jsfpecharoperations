@@ -20,6 +20,7 @@ else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
 from app import auth, config, push
+from tests.conftest import mark_security_prompt_seen
 from tests.browser_support import chromium_launch_kwargs
 from tests.test_host_geometry import _browser_session_cookie, base  # noqa: F401
 from tests.test_push import Browser, PushService
@@ -56,7 +57,7 @@ def push_on(monkeypatch):
 
 def _host():
     username = f"ps{secrets.token_hex(3)}"
-    owner = auth.create_account(f"{username}@example.test", "Push", role="host", username=username)
+    owner = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Push", role="host", username=username))
     return username, owner
 
 

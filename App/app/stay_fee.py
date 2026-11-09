@@ -18,7 +18,9 @@ The rules, in one place (zákon č. 565/1990 Sb.):
 * Exempt: under 18 on the arrival day (§3b(1)(b)), or the host chose
   ``exempt`` (with a reason). ``charge`` forces liable - the correction for a
   wrong birth date, never a way to charge a real minor.
-* Counted guests: a signed form, on an active stay, not archived.
+* Counted guests: on an active stay, not archived. A missing signature does not
+  drop a guest from the fee (the fee follows the stay); it only raises the
+  ``unsigned`` flag.
 """
 from __future__ import annotations
 
@@ -29,7 +31,7 @@ import unicodedata
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
-from . import config, db, payments, reporting, validation
+from . import config, db, payments, reporting, stay_fee_rate, validation
 from .csv_safety import csv_safe
 
 MAX_RATE_CZK = 50        # §3d
@@ -198,12 +200,41 @@ def format_czk(amount: int) -> str:
 # included, is not exempt: the form is the guest's own declaration.
 
 STATUTORY_DISTRICT_BASES = (
-    "PRAHA", "PRAGUE", "BRNO", "OSTRAVA", "PLZEN", "OLOMOUC", "LIBEREC",
-    "CESKE BUDEJOVICE", "HRADEC KRALOVE", "USTI NAD LABEM", "PARDUBICE",
-    "ZLIN", "JIHLAVA", "KARLOVY VARY", "OPAVA",
+    "PRAHA", "BRNO", "CESKE BUDEJOVICE", "DECIN", "FRYDEK-MISTEK", "HAVIROV",
+    "HRADEC KRALOVE", "CHOMUTOV", "JABLONEC NAD NISOU", "JIHLAVA", "KARLOVY VARY",
+    "KARVINA", "KLADNO", "LIBEREC", "MLADA BOLESLAV", "MOST", "OLOMOUC", "OPAVA",
+    "OSTRAVA", "PARDUBICE", "PLZEN", "PROSTEJOV", "PREROV", "TEPLICE", "TRINEC",
+    "USTI NAD LABEM", "ZLIN",
 )
-OBEC_ALIASES = {"PRAGUE": "PRAHA"}
-_DISTRICT_SUFFIX = re.compile(r"^(.+?)(?:\s+\d+|-.+)$")
+# Names guests type for Czech towns -> the Czech name, folded (1031, owner list).
+OBEC_ALIASES = {
+    "PRAGUE": "PRAHA", "PRAG": "PRAHA",
+    "BRUNN": "BRNO", "PILSEN": "PLZEN", "BUDWEIS": "CESKE BUDEJOVICE",
+    "OSTRAU": "OSTRAVA", "MAHRISCH OSTRAU": "OSTRAVA", "MAHRISCH-OSTRAU": "OSTRAVA",
+    "MORAVIAN OSTRAVA": "OSTRAVA", "MORAVSKA OSTRAVA": "OSTRAVA",
+    "KARLSBAD": "KARLOVY VARY", "CARLSBAD": "KARLOVY VARY",
+    "MARIENBAD": "MARIANSKE LAZNE", "FRANZENSBAD": "FRANTISKOVY LAZNE",
+    "OLMUTZ": "OLOMOUC", "REICHENBERG": "LIBEREC", "AUSSIG": "USTI NAD LABEM",
+    "KONIGGRATZ": "HRADEC KRALOVE", "PARDUBITZ": "PARDUBICE", "IGLAU": "JIHLAVA",
+    "TROPPAU": "OPAVA", "TEPLITZ": "TEPLICE", "KOMOTAU": "CHOMUTOV", "TETSCHEN": "DECIN",
+    "JUNGBUNZLAU": "MLADA BOLESLAV", "GABLONZ": "JABLONEC NAD NISOU",
+    "PROSSNITZ": "PROSTEJOV", "PRERAU": "PREROV", "BRUX": "MOST",
+    "KRUMAU": "CESKY KRUMLOV", "KUTTENBERG": "KUTNA HORA", "ZNAIM": "ZNOJMO",
+}
+# The official long name of a statutory city; dropped only when such a city follows.
+# Never "MESTO " or "OBEC " alone: "Město Albrechtice" is its own town.
+OFFICIAL_PREFIXES = ("HLAVNI MESTO ", "HL. M. ", "HL.M. ", "HL M ", "STATUTARNI MESTO ")
+# Okres (district) names that start with a city name but are not that city.
+OKRES_NOT_OBEC = ("PRAHA-VYCHOD", "PRAHA-ZAPAD", "BRNO-VENKOV", "PLZEN-JIH", "PLZEN-SEVER")
+# What may follow a city name in a city-part form. signature.js uses this same text.
+OBEC_AFTER_BASE = r"$|\s*\d|-|\s*,|\s*\(| (?!(?:NAD|POD|U|NA|PRI)(?: |$))[A-Z]"
+_AFTER_BASE = re.compile("(?:" + OBEC_AFTER_BASE + ")")
+OBEC_SUFFIX_BASES = tuple(sorted(
+    set(STATUTORY_DISTRICT_BASES)
+    | {name for name, target in OBEC_ALIASES.items() if target in STATUTORY_DISTRICT_BASES},
+    key=lambda name: (-len(name), name),
+))
+_OKRES_NEXT_LETTER = re.compile(r"[A-Z]")
 
 
 def fold_text(value) -> str:
@@ -213,26 +244,55 @@ def fold_text(value) -> str:
     return re.sub(r"\s+", " ", plain).strip()
 
 
+def _suffix_base(text: str) -> Optional[str]:
+    for base in OBEC_SUFFIX_BASES:
+        if text.startswith(base) and _AFTER_BASE.match(text, len(base)):
+            return base
+    return None
+
+
 def _obec_key(value) -> str:
-    text = fold_text(value)
-    match = _DISTRICT_SUFFIX.match(text)
-    if match and match.group(1).strip() in STATUTORY_DISTRICT_BASES:
-        text = match.group(1).strip()
+    """The town a typed name means, folded (1031 rules; signature.js key() mirrors this)."""
+    # Any dash (en, em, minus) counts as "-": "Praha – Řepy" = "Praha-Řepy" (1031b).
+    text = re.sub(r"\s*[-\u2010-\u2015\u2212]\s*", "-", fold_text(value))
+    for prefix in OFFICIAL_PREFIXES:
+        rest = text[len(prefix):].strip()
+        if text.startswith(prefix) and _suffix_base(rest):
+            text = rest
+            break
+    for name in OKRES_NOT_OBEC:
+        if text.startswith(name) and not _OKRES_NEXT_LETTER.match(text[len(name):]):
+            return text
+    base = _suffix_base(text)
+    if base:
+        text = base
     return OBEC_ALIASES.get(text, text)
 
 
+def property_obec(apartment) -> str:
+    """The property's town: addr_obec, else the town the host typed in city_en (1031)."""
+    for key in ("addr_obec", "city_en"):
+        try:
+            value = apartment[key]
+        except (KeyError, IndexError):
+            value = None
+        if value and str(value).strip():
+            return str(value)
+    return ""
+
+
 def same_obec_resident(guest, apartment) -> bool:
-    """True only for a CZ resident whose city matches the property's obec exactly."""
+    """True only for a CZ resident whose city is the property's town (1031 folding rules)."""
     if guest["res_country"] != validation.CZECH_CODE:
         return False
-    obec = _obec_key(apartment["addr_obec"])
+    obec = _obec_key(property_obec(apartment))
     return bool(obec) and _obec_key(guest["res_city"]) == obec
 
 
 # --- per guest --------------------------------------------------------------
 
 def guest_period(guest, reservation, first: date, last: date,
-                 apartment=None) -> Optional[Dict[str, Any]]:
+                 apartment=None, schedule=None) -> Optional[Dict[str, Any]]:
     """One guest's share of one period, or None when no counted day falls in it.
 
     With ``apartment`` the same-obec rule applies (0898); without it the output is unchanged.
@@ -248,6 +308,8 @@ def guest_period(guest, reservation, first: date, last: date,
     else:
         status = "liable"
     liable = exempt = 0
+    amount = 0
+    by_rate: Dict[int, int] = {}
     auto_minor = False
     birth = conservative_birth(guest["birth_date"]) if decision is None else None
     # 0898: the host's decision always wins; the same-obec rule applies only with no decision.
@@ -262,6 +324,10 @@ def guest_period(guest, reservation, first: date, last: date,
             day_status = "exempt" if obec_auto else _day_liability(guest, decision, d, birth)
             if day_status == "liable":
                 liable += 1
+                if schedule is not None:
+                    night_rate = stay_fee_rate.rate_on(schedule, d)
+                    amount += night_rate
+                    by_rate[night_rate] = by_rate.get(night_rate, 0) + 1
             else:
                 exempt += 1
                 if decision is None and birth and validation.age_on(birth, d) < ADULT_AGE:
@@ -295,6 +361,9 @@ def guest_period(guest, reservation, first: date, last: date,
         "reason": reason,
         "threshold_nights": stay_nights == THRESHOLD_NIGHTS,
     }
+    if schedule is not None:
+        share["amount_czk"] = amount
+        share["rate_nights"] = sorted([r, n] for r, n in by_rate.items())
     if apartment is not None:
         share["auto_obec_resident"] = obec_auto and status == "exempt"
     return share
@@ -330,6 +399,10 @@ def _apply_scope_boundary(share: Dict[str, Any], apartment) -> None:
     share["liable_nights"] = 0
     share["exempt_nights"] = 0
     share["auto_minor"] = False
+    if "amount_czk" in share:
+        share["amount_czk"] = 0
+    if "rate_nights" in share:
+        share["rate_nights"] = []
     if "auto_obec_resident" in share:
         share["auto_obec_resident"] = False
 
@@ -357,7 +430,8 @@ def property_period(
     if not is_active(apartment):
         return None
     first, last = period_bounds(chosen, month)
-    rate = int(apartment["stay_fee_rate_czk"]) if rate is None else int(rate)
+    schedule = stay_fee_rate.flat(rate) if rate is not None else stay_fee_rate.schedule_for(apartment)
+    rate = stay_fee_rate.rate_on(schedule, last)
     lines: List[Dict[str, Any]] = []
     # Counted in the same pass so the pages need not read (and decrypt) the
     # period's guests a second time for unsigned_stays().
@@ -365,9 +439,8 @@ def property_period(
     for row in db.query(_GUESTS_SQL, (apartment["id"], last.isoformat(), first.isoformat())):
         if not reporting.guest_has_signature(row):
             unsigned += 1
-            continue
         share = guest_period(row, {"date_from": row["res_from"], "date_to": row["res_to"]},
-                             first, last, apartment=apartment)
+                             first, last, apartment=apartment, schedule=schedule)
         if share is None:
             continue
         _apply_scope_boundary(share, apartment)
@@ -375,7 +448,6 @@ def property_period(
             "reservation_id": row["res_id"],
             "name": f"{row['first_name'] or ''} {row['surname'] or ''}".strip(),
             "restricted": bool(row["restricted_at"]),
-            "amount_czk": share["liable_nights"] * rate,
             "res_country": row["res_country"] or "",
             "res_city": row["res_city"] or "",
         })
@@ -408,27 +480,53 @@ _GUESTS_FOR_RES_SQL = (
     "ORDER BY COALESCE(g.stay_from, r.date_from), g.id"
 )
 _CHARGE_KEYS = ("guest_id", "liable_nights", "exempt_nights", "status", "auto_minor",
-                "auto_obec_resident")
+                "auto_obec_resident", "amount_czk")
 
 
 def charge_for_reservation(apartment, reservation) -> Optional[Dict[str, Any]]:
     """Live amount for one reservation over its whole stay (guest panel and register share this)."""
     if not is_active(apartment) or not config.STAY_FEE_GUEST_PAY:
         return None
-    rate = int(apartment["stay_fee_rate_czk"])
+    schedule = stay_fee_rate.schedule_for(apartment)
     lines: List[Dict[str, Any]] = []
+    stay = None
     for row in db.query(_GUESTS_FOR_RES_SQL, (apartment["id"], reservation["id"])):
-        if not reporting.guest_has_signature(row):
-            continue
+        stay = stay or (row["res_from"], row["res_to"])
         share = guest_period(row, {"date_from": row["res_from"], "date_to": row["res_to"]},
-                             date.min, date.max, apartment=apartment)
+                             date.min, date.max, apartment=apartment, schedule=schedule)
         if share is None:
             continue
         _apply_scope_boundary(share, apartment)
         lines.append({key: share[key] for key in _CHARGE_KEYS})
     liable = sum(line["liable_nights"] for line in lines)
-    return {"total_czk": liable * rate, "liable_nights": liable,
-            "rate_czk": rate, "lines": lines}
+    total = sum(line["amount_czk"] for line in lines)
+    # Callers may pass only {"id": ...}: the stay dates come from the query.
+    res_from, res_to = stay or (None, None)
+    last_night = validation.parse_iso_date(res_to) or date.today()
+    first_night = (validation.parse_iso_date(res_from) or date.today()) + timedelta(days=1)
+    return {"total_czk": total, "liable_nights": liable,
+            "rate_czk": stay_fee_rate.rate_on(schedule, last_night), "lines": lines,
+            "mixed": not stay_fee_rate.is_uniform(schedule, first_night, last_night)}
+
+
+def _rate_segments(period: Dict[str, Any]) -> List[List[int]]:
+    """Nights per rate for the period: guest nights plus bed-days at the last-day rate."""
+    nights: Dict[int, int] = {}
+    for line in period["lines"]:
+        for rate, count in line.get("rate_nights", []):
+            nights[rate] = nights.get(rate, 0) + count
+    base = int(period["rate_czk"])
+    nights[base] = nights.get(base, 0) + period["adjustment_bed_days"]
+    # A removal larger than the last-day-rate nights takes the rest off the
+    # other rates, highest first (liable_nights is clamped at 0, so it fits).
+    deficit = -nights[base] if nights[base] < 0 else 0
+    if deficit:
+        nights[base] = 0
+        for rate in sorted(nights, reverse=True):
+            take = min(deficit, nights[rate])
+            nights[rate] -= take
+            deficit -= take
+    return sorted([r, n] for r, n in nights.items() if n > 0) or [[base, 0]]
 
 
 def _apply_adjustments(period: Dict[str, Any], month: date) -> Dict[str, Any]:
@@ -444,7 +542,10 @@ def _apply_adjustments(period: Dict[str, Any], month: date) -> Dict[str, Any]:
     period["adjustment_bed_days"] = liable - guest_nights
     period["adjustments"] = rows
     period["liable_nights"] = liable
-    period["total_czk"] = liable * period["rate_czk"]
+    period["rate_segments"] = _rate_segments(period)
+    # Sum of the segments: guest nights at their own rates plus bed-days at the
+    # last-day rate. With one rate this is liable * rate, as before.
+    period["total_czk"] = sum(rate * nights for rate, nights in period["rate_segments"])
     period["period_key"] = key
     return period
 
@@ -545,7 +646,7 @@ def _period_line_issues(apartment, period) -> List[str]:
 def unsigned_stays(
     apartment_id: int, first: date, last: date, period: Optional[Dict[str, Any]] = None
 ) -> int:
-    """Guests in the period with no signature yet (they are left out of the fee).
+    """Guests in the period with no signature yet (they are still in the fee; this only flags them).
 
     ``period`` is the live ``property_period`` for the same property and dates
     when the caller has it; its count comes from the same rows, so no second
@@ -613,14 +714,17 @@ def hlaseni(group, issued_on: date) -> Dict[str, Any]:
         # adjustment (bed-days added or removed without naming guests) is part
         # of that number, not a line of its own: the office receives what is
         # due, and the adjustment history stays in UbyHost (owner, 2026-10-06).
-        liable = period["liable_nights"]
-        rows.append({
-            "property_name": period["apartment"]["internal_name"],
-            "property_address": property_address(period["apartment"]),
-            "liable_nights": liable,
-            "rate_czk": period["rate_czk"],
-            "amount_czk": liable * period["rate_czk"],
-        })
+        # A period that spans a rate change gets one row per rate (1027), so
+        # nights x rate == amount holds on every row. Pairs are [rate, nights].
+        segments = period.get("rate_segments") or [[period["rate_czk"], period["liable_nights"]]]
+        for rate, nights in segments:
+            rows.append({
+                "property_name": period["apartment"]["internal_name"],
+                "property_address": property_address(period["apartment"]),
+                "liable_nights": nights,
+                "rate_czk": rate,
+                "amount_czk": nights * rate,
+            })
         for line in period["lines"]:
             if line["exempt_nights"]:
                 # A guest who turns 18 inside the period is "liable" overall

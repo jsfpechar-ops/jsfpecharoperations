@@ -23,7 +23,7 @@ else:
 from app import auth, db, host_i18n
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 USERNAME = "copy-corrections-host"
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -86,7 +86,7 @@ def _cleanup():
 def host():
     db.init_db()
     _cleanup()
-    owner_id = auth.create_account(f"{USERNAME}@example.test", "Copy Host", role="host", username=USERNAME)
+    owner_id = mark_security_prompt_seen(auth.create_account(f"{USERNAME}@example.test", "Copy Host", role="host", username=USERNAME))
     entity_id = db.insert(
         "legal_entity",
         {

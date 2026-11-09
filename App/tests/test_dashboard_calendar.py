@@ -10,15 +10,15 @@ from fastapi.testclient import TestClient
 from app import auth, cleaning, db, onboarding
 from app.main import app
 from app.routes import dashboard_calendar
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 
 @pytest.fixture(scope="module")
 def calendar_workspace():
     db.init_db()
     suffix = secrets.token_hex(5)
-    owner = auth.create_account(f"calendar-{suffix}@example.test", "Calendar Review",
-                                role="host", username=f"calendar-{suffix}")
+    owner = mark_security_prompt_seen(auth.create_account(f"calendar-{suffix}@example.test", "Calendar Review",
+                                                          role="host", username=f"calendar-{suffix}"))
     other = auth.create_account(f"calendar-other-{suffix}@example.test", "Other Review",
                                 role="host", username=f"calendar-other-{suffix}")
     now = db.utcnow()

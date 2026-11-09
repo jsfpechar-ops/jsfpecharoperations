@@ -15,7 +15,7 @@ from app import auth, db, host_i18n
 from app.main import app
 from app.routes.admin_helpers import FlashMessage, back, flash, flash_plural
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 REQUIRE_BROWSER = os.environ.get("UBYHOST_REQUIRE_BROWSER") == "1"
 if REQUIRE_BROWSER:
@@ -46,7 +46,7 @@ def _cleanup():
 def host():
     db.init_db()
     _cleanup()
-    owner_id = auth.create_account(f"{USERNAME}@example.test", "Flash Host", username=USERNAME)
+    owner_id = mark_security_prompt_seen(auth.create_account(f"{USERNAME}@example.test", "Flash Host", username=USERNAME))
     operator = db.insert(
         "legal_entity", {"name": "Flash Operator", "owner_user_id": owner_id, "created_at": db.utcnow()}
     )
@@ -176,7 +176,7 @@ def test_typed_neutral_flash_preserves_legacy_redirect_and_renders_info(host):
 
 def test_real_property_creation_renders_green_and_plain_query_stays_info(host):
     response = host.post(
-        "/apartments", data={"internal_name": "Flash property", "legal_entity_id": host.operator_id, "addr_obec": "Praha", "addr_house_no": "12", "addr_zip": "11000"}, follow_redirects=False
+        "/apartments", data={"internal_name": "Flash property", "legal_entity_id": host.operator_id, "addr_street": "Synthetic", "addr_obec": "Praha", "addr_house_no": "12", "addr_zip": "11000"}, follow_redirects=False
     )
     assert response.status_code == 303
     values = _attrs(response.headers["location"])
@@ -196,14 +196,14 @@ def test_real_property_creation_renders_green_and_plain_query_stays_info(host):
 def test_browser_renders_saved_warning_as_sticky_amber(host, browser_base):
     created = host.post(
         "/apartments",
-        data={"internal_name": "Warning property", "legal_entity_id": host.operator_id, "addr_obec": "Praha", "addr_house_no": "12", "addr_zip": "11000"},
+        data={"internal_name": "Warning property", "legal_entity_id": host.operator_id, "addr_street": "Synthetic", "addr_obec": "Praha", "addr_house_no": "12", "addr_zip": "11000"},
         follow_redirects=False,
     )
     created_path = urlparse(created.headers["location"]).path
     apartment_id = int(created_path.split("/")[2])
     saved = host.post(
         f"/apartments/{apartment_id}",
-        data={"internal_name": "Warning property", "legal_entity_id": host.operator_id, "addr_obec": "Praha", "addr_house_no": "12", "addr_zip": "11000"},
+        data={"internal_name": "Warning property", "legal_entity_id": host.operator_id, "addr_street": "Synthetic", "addr_obec": "Praha", "addr_house_no": "12", "addr_zip": "11000"},
         follow_redirects=False,
     )
     assert saved.status_code == 303

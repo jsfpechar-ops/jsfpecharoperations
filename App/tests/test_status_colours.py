@@ -16,7 +16,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, host_i18n, property_setup, reporting
 from app.main import app
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 USERNAME = "status-colour-host"
 TOKEN = "statuscolourtoken"
@@ -65,7 +65,7 @@ def _seed(*, rejected: bool = False) -> tuple[TestClient, int, int]:
     user_id = (
         existing["id"]
         if existing
-        else auth.create_account(f"{USERNAME}@example.test", "Status Host", username=USERNAME)
+        else mark_security_prompt_seen(auth.create_account(f"{USERNAME}@example.test", "Status Host", username=USERNAME))
     )
     entity_id = db.insert(
         "legal_entity",

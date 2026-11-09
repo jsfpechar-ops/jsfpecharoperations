@@ -1,4 +1,5 @@
 {% extends "host_page.html" %}
+{% from "_icons.html" import icon with context %}
 {% set v2 = true %}
 {% set body_kind = 'form' %}
 {% block title %}{{ t('wizard.title', name=apartment.internal_name) }}{% endblock %}
@@ -19,7 +20,7 @@
         <li class="is-{{ item.state }}"></li>
         {% endfor %}
       </ol>
-      <p class="setup-wizard-done-count">{% if guide.done_count %}<span class="setup-wizard-tick" aria-hidden="true">✓</span> {% endif %}{{ t('wizard.done_count', n=guide.done_count, total=guide.total) }}</p>
+      <p class="setup-wizard-done-count">{% if guide.done_count %}<span class="setup-wizard-tick" aria-hidden="true">{{ icon('check', 14) }}</span> {% endif %}{{ t('wizard.done_count', n=guide.done_count, total=guide.total) }}</p>
     </div>
     {% endif %}
     <h1 class="big">{{ t('wizard.title', name=apartment.internal_name) }}</h1>
@@ -40,7 +41,7 @@
       <h2 class="setup-wizard-question">{{ t('wizard.question.' ~ wizard_step) }}{% block wizard_help %}{% endblock %}</h2>
     </div>
     {% endif %}
-    {% if wizard_step in ('property', 'police', 'stay_fee') %}<p class="required-legend">{{ t('common.required_legend') }}</p>{% endif %}
+    {% if wizard_step in ('property', 'calendar', 'police', 'stay_fee') %}<p class="required-legend">{{ t('common.required_legend') }}</p>{% endif %}
     {% if setup_notice %}<p class="err-text" role="alert">{{ setup_notice }}</p>{% endif %}
     {% block wizard_content %}{% endblock %}
   </div>

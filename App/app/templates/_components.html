@@ -7,9 +7,12 @@
 {% set UI_DEADLINE_KINDS = {'overdue': 'action', 'urgent': 'attention', 'soon': 'attention', 'done': 'done', 'late': 'neutral'} %}
 {#- 0093 help: one contextual "?" tip beside a field label. Place it OUTSIDE the <label> tag.
     id must be unique on the page; text is escaped; guide_href optional ("/guide#anchor"). -#}
-{%- macro help_tip(id, text, guide_href='', label='') -%}
-<span class="help-tip" data-help-tip>
-    <button type="button" class="help-tip-btn" aria-label="{{ t('help.tip.label_for', topic=label) if label else t('help.tip.label') }}" aria-expanded="false" aria-controls="{{ id }}">?</button>
+{#- 1053: svg=true draws the Lucide circle-help icon instead of the "?" text glyph (Stay fee card first). -#}
+{#- A page may also set help_svg = true before an include (the property editor does for the Stay fee card). -#}
+{%- macro help_tip(id, text, guide_href='', label='', svg=false) -%}
+{%- set svg = svg or (help_svg is defined and help_svg) -%}
+<span class="help-tip{{ ' help-tip-svg' if svg }}" data-help-tip>
+    <button type="button" class="help-tip-btn" aria-label="{{ t('help.tip.label_for', topic=label) if label else t('help.tip.label') }}" aria-expanded="false" aria-controls="{{ id }}">{% if svg %}{{ icon('circle-help', 18) }}{% else %}?{% endif %}</button>
     <span class="help-tip-body" id="{{ id }}" role="tooltip">{{ text }}{% if guide_href %} <a href="{{ guide_href }}" aria-label="{{ t('help.tip.more') }}: {{ text | striptags | truncate(50) }}">{{ t('help.tip.more') }}</a>{% endif %}</span>
   </span>
 {% endmacro %}
@@ -36,9 +39,9 @@
 </div>
 {% endmacro %}
 
-{% macro field_label(for, text, help_text='', optional=false, guide_href='', required=false) %}
+{% macro field_label(for, text, help_text='', optional=false, guide_href='', required=false, svg=false) %}
   <div class="field-label-row">
-    <label for="{{ for }}">{{ text }}{% if required %}<span class="req-star" aria-hidden="true">*</span>{% endif %}{% if help_text %}{{ help_tip(for ~ '-help', help_text, guide_href) }}{% endif %}</label>
+    <label for="{{ for }}">{{ text }}{% if required %}<span class="req-star" aria-hidden="true">*</span>{% endif %}{% if help_text %}{{ help_tip(for ~ '-help', help_text, guide_href, '', svg) }}{% endif %}</label>
   </div>
 {% endmacro %}
 
@@ -140,7 +143,7 @@
     <span class="guest-count" title="{{ t('stays.table.guests') }}">
       {{ icon('users', 16) }}
       <span class="sr-only">{{ t('stays.table.guests') }}:</span>
-      {% if progress.expected is not none %}{{ progress.filled }} / {{ progress.expected }}{% else %}{{ progress.guests | length }}{% endif %}
+      {% if progress.expected is not none %}{{ t('stays.table.guests_of', filled=progress.filled, expected=progress.expected) }}{% else %}{{ progress.guests | length }}{% endif %}
     </span>
   {% elif placeholder %}
     <span class="muted" aria-hidden="true">–</span><span class="sr-only">{{ t('common.guests_unknown') }}</span>
@@ -306,7 +309,7 @@
 <div class="success-notice" role="status" data-success-notice>
   <span class="success-notice-text">{{ text }}</span>
   {% if next_href and next_label %}<a class="success-notice-next" href="{{ next_href }}">{{ next_label }}</a>{% endif %}
-  <button type="button" class="success-notice-close" data-success-dismiss aria-label="{{ t('a11y.dismiss_notification') }}">&times;</button>
+  <button type="button" class="success-notice-close" data-success-dismiss aria-label="{{ t('a11y.dismiss_notification') }}">{{ icon('x', 16) }}</button>
 </div>
 {% endmacro %}
 
@@ -395,9 +398,7 @@
 {% macro onboarding_banner(onboarding) %}
   {% if onboarding and not onboarding.wizard_complete and not onboarding.dismissed %}
     <aside class="onboarding-banner onboarding-banner-setup" aria-label="{{ t('setup.banner.aria') }}">
-      <a class="ui-btn ui-btn-primary ui-btn-compact onboarding-banner-setup-link" href="{{ onboarding.setup_url }}">
-        {{ t('setup.banner.line', step=onboarding.wizard_step_number, total=onboarding.wizard_total_steps) }}
-      </a>
+      <a class="onboarding-banner-setup-link" href="{{ onboarding.setup_url }}">{{ t('setup.banner.line') }}</a>
       <form method="post" action="/onboarding/dismiss">
         <input type="hidden" name="return_to" value="{{ request.url.path }}">
         <button class="onboarding-skip-link" type="submit">{{ t('onboarding.skip') }}</button>
@@ -407,60 +408,16 @@
 {% endmacro %}
 
 {% macro onboarding_welcome(onboarding, compact=False, v2=False) %}
-  {# On the Overview the "Do this now" block already carries the current step's
-     detail and "Have ready" text, so the list below it collapses to one line per
-     step and the full checklist stays one click away at /onboarding. #}
-  {% set compact_list = compact and onboarding.current and not onboarding.finished %}
   <section class="onboarding-welcome"{% if v2 %} data-layout="v2"{% endif %}>
     <header class="onboarding-intro">
-      {% if not v2 %}<img class="onboarding-logo" src="/static/ubyhost-mark.png?v=20261004a" alt="">{% endif %}
       <div>
-        {% if not v2 %}<p class="onboarding-kicker">{{ t('onboarding.kicker') }}</p>{% endif %}
         {% if compact %}<h2>{{ t('onboarding.welcome_title') }}</h2>{% else %}<h1>{{ t('onboarding.welcome_title') }}</h1>{% endif %}
-        {% if v2 %}<p class="sub">{{ t('onboarding.progress', done=onboarding.completed, total=onboarding.total) }}</p>{% endif %}
-      </div>
-      <div class="onboarding-meter" aria-label="{{ t('onboarding.progress', done=onboarding.completed, total=onboarding.total) }}">
-        <strong>{{ onboarding.percent }}%</strong>
-        <span>{{ t('onboarding.progress', done=onboarding.completed, total=onboarding.total) }}</span>
-        <div aria-hidden="true"><i style="width:{{ onboarding.percent }}%"></i></div>
-        {% if onboarding.dismissed %}
-          <form method="post" action="/onboarding/resume">
-            <input type="hidden" name="return_to" value="{{ request.url.path }}">
-            <button class="onboarding-skip-link" type="submit">{{ t('onboarding.resume') }}</button>
-          </form>
-        {% else %}
-          <form method="post" action="/onboarding/dismiss">
-            <input type="hidden" name="return_to" value="/">
-            <button class="onboarding-skip-link" type="submit">{{ t('onboarding.skip') }}</button>
-          </form>
-          {{ help_tip('onboarding-skip-help', t('onboarding.skip_hint')) }}
-        {% endif %}
+        <p class="sub">{{ t('onboarding.progress', done=onboarding.completed, total=onboarding.total) }}</p>
       </div>
     </header>
 
     {% if onboarding.finished %}
       {{ onboarding_finish(onboarding, show_toggle=False) }}
-    {% elif onboarding.current and not v2 %}
-      <div class="onboarding-now">
-        <div class="onboarding-now-label">
-          <span>{{ onboarding.completed + 1 }}</span>
-          <small>{{ t('onboarding.current_title') }}</small>
-        </div>
-        <div class="onboarding-now-copy">
-          <h2>{{ t('onboarding.' ~ onboarding.current.id ~ '.title') }}</h2>
-          <p>{{ t('onboarding.' ~ onboarding.current.id ~ '.detail') }}</p>
-          <p class="onboarding-prepare">{{ t('onboarding.' ~ onboarding.current.id ~ '.prepare') }}</p>
-        </div>
-        <div class="onboarding-now-actions">
-          <a class="btn primary" href="{{ onboarding.current.url }}">
-            {{ t('onboarding.' ~ onboarding.current.id ~ '.action') }}</a>
-          {% if onboarding.current.manual_url %}
-            <a class="small" href="{{ onboarding.current.manual_url }}">
-              {{ t('onboarding.' ~ onboarding.current.id ~ '.manual') }}</a>
-          {% endif %}
-          <a class="small" href="{{ onboarding.current.learn_url }}">{{ t('onboarding.learn') }} </a>
-        </div>
-      </div>
     {% endif %}
 
     <p class="onboarding-finish-line">
@@ -472,20 +429,21 @@
     </p>
     <div class="onboarding-steps" aria-label="{{ t('onboarding.welcome_title') }}">
       {% for step in onboarding.steps %}
+        {% set is_current = onboarding.current and step.id == onboarding.current.id and not step.done %}
         <article class="onboarding-step {{ 'is-done' if step.done else '' }} {{ 'is-current' if onboarding.current and step.id == onboarding.current.id else '' }}">
-          <div class="onboarding-step-index" aria-hidden="true">{% if step.done %}✓{% else %}{{ loop.index }}{% endif %}</div>
+          <div class="onboarding-step-index" aria-hidden="true">{% if step.done %}{{ icon('check', 16) }}{% else %}{{ loop.index }}{% endif %}</div>
           <div class="onboarding-step-copy">
             <h3>{{ t('onboarding.' ~ step.id ~ '.title') }}</h3>
           </div>
           {% if v2 %}<div class="onboarding-step-group">{% endif %}
           {% if step.done %}
             <span class="pill green">{{ t('onboarding.step_done') }}</span>
-          {% elif onboarding.current and step.id == onboarding.current.id %}
+          {% elif is_current %}
             <span class="onboarding-current-dot" aria-hidden="true"></span>
+            <a class="btn primary small onboarding-step-action" href="{{ onboarding.current.url }}">{{ t('onboarding.' ~ step.id ~ '.action') }}</a>
+            {% if step.manual_url %}<a class="small onboarding-step-manual" href="{{ step.manual_url }}">{{ t('onboarding.' ~ step.id ~ '.manual') }}</a>{% endif %}
           {% endif %}
-          {% set step_url = step.url or (onboarding.current.url if onboarding.current and onboarding.current.id == step.id else none) %}{% if v2 and not step.done and step_url %}<a class="btn small onboarding-step-action" href="{{ step_url }}">{{ t('onboarding.' ~ step.id ~ '.action') }}</a>{% endif %}
-          {% if v2 and not step.done and step.manual_url %}<a class="small onboarding-step-manual" href="{{ step.manual_url }}">{{ t('onboarding.' ~ step.id ~ '.manual') }}</a>{% endif %}
-          {% if not compact_list %}
+          {% if v2 %}
             <details>
               <summary>{{ t('onboarding.learn') }}</summary>
               <p>{{ t('onboarding.' ~ step.id ~ '.detail') }} {{ t('onboarding.' ~ step.id ~ '.prepare') }}</p>
@@ -497,18 +455,12 @@
         </article>
       {% endfor %}
     </div>
-    {% if compact_list %}
-      <p class="small muted onb-more">
-        <a href="/onboarding">{{ t('onboarding.all_steps') }}</a>
-      </p>
-    {% endif %}
 
     {% if demo_available %}
     <div class="onboarding-bottom single">
       <div class="onboarding-demo">
         <div>
-          <strong>{{ t('onboarding.demo_title') }}</strong>
-          {{ help_tip('onboarding-demo-help', t('onboarding.demo_body') ~ ' ' ~ t('onboarding.demo_hint')) }}
+          <strong>{{ t('onboarding.demo_title') }}{{ help_tip('onboarding-demo-help', t('onboarding.demo_body') ~ ' ' ~ t('onboarding.demo_hint')) }}</strong>
         </div>
         <form method="post" action="/demo">
           <button class="btn" type="submit">{{ t('demo.load') }}</button>
@@ -516,6 +468,20 @@
       </div>
     </div>
     {% endif %}
+
+    <div class="onboarding-foot">
+      {% if onboarding.dismissed %}
+        <form method="post" action="/onboarding/resume">
+          <input type="hidden" name="return_to" value="{{ request.url.path }}">
+          <button class="onboarding-skip-link" type="submit">{{ t('onboarding.resume') }}</button>
+        </form>
+      {% else %}
+        <form method="post" action="/onboarding/dismiss">
+          <input type="hidden" name="return_to" value="/">
+          <button class="onboarding-skip-link" type="submit">{{ t('onboarding.skip') }}</button>
+        </form>
+      {% endif %}
+    </div>
   </section>
 {% endmacro %}
 

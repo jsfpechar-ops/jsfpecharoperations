@@ -14,7 +14,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, claim, db, validation
 from app.main import app
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 REQUIRE_BROWSER = os.environ.get("UBYHOST_REQUIRE_BROWSER") == "1"
 if REQUIRE_BROWSER:
@@ -60,12 +60,12 @@ def host(monkeypatch):
     db.init_db()
     _cleanup()
     monkeypatch.setattr(claim, "prague_today", lambda: date(2026, 9, 30))
-    owner_id = auth.create_account(
+    owner_id = mark_security_prompt_seen(auth.create_account(
         "stay-fee-send-owner@example.test",
         "Send Demo",
         role="host",
         username="stay-fee-send-owner",
-    )
+    ))
     entity_id = db.insert("legal_entity", {
         "name": "Send Demo s.r.o.",
         "ico": "12345678",

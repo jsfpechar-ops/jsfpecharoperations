@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 from app import auth, db
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 
 REQUIRE_BROWSER = os.environ.get("UBYHOST_REQUIRE_BROWSER") == "1"
@@ -56,7 +56,7 @@ def _session_cookie(username):
 
 def test_sidebar_link_still_navigates_with_prefetch_rules(base):
     username = f"prefetch{secrets.token_hex(4)}"
-    auth.create_account(f"{username}@example.test", "Prefetch QA", role="host", username=username)
+    mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Prefetch QA", role="host", username=username))
     session = _session_cookie(username)
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())

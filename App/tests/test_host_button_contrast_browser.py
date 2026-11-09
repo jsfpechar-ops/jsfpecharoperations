@@ -22,7 +22,7 @@ from fastapi.testclient import TestClient
 from app import auth, db
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 USERNAME = "button-contrast-host"
 WIDTHS = (1280, 360)
@@ -86,9 +86,9 @@ def fee_host():
     """A host with two properties that have no stay fee rate yet ("Not set up")."""
     db.init_db()
     _cleanup()
-    owner_id = auth.create_account(
+    owner_id = mark_security_prompt_seen(auth.create_account(
         f"{USERNAME}@example.test", "Button Contrast QA", role="host", username=USERNAME
-    )
+    ))
     entity_id = db.insert("legal_entity", {
         "name": "Button Contrast QA s.r.o.", "owner_user_id": owner_id, "created_at": db.utcnow(),
     })

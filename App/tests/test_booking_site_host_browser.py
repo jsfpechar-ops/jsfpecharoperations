@@ -25,6 +25,8 @@ GUARD = (Path(__file__).parent / "design_guard.js").read_text()
 SHOT_DIR = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0819"
 
 SMALL_TARGETS_JS = """() => Array.from(document.querySelectorAll('button, a.ui-btn, input:not([type=hidden]), select'))
+  // A help-tip button is 24px drawn; its 44px hit area is the ::after overlay (host.css).
+  .filter(el => !el.matches('.help-tip-btn'))
   .filter(el => el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden')
   .map(el => {
     // A radio or checkbox is hit through its wrapping label, so measure that.
@@ -92,12 +94,35 @@ def test_host_bookings_section_fits(paid_booking, wide_host, wide_base, width):
         browser.close()
 
 
-def _open(browser, wide_host, wide_base, width: int):
+@pytest.mark.parametrize("lang", ("en", "cs"))
+@pytest.mark.parametrize("width", (390, 768, 1280))
+def test_host_bookings_list_wraps_a_300_char_name(paid_booking, wide_host, wide_base, width, lang):
+    db.execute("UPDATE site_booking SET guest_name = ? WHERE apartment_id = ?", ("W" * 300, paid_booking))
+    with sync_api.sync_playwright() as playwright:
+        try:
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        except Exception:
+            if REQUIRE_BROWSER:
+                raise
+            pytest.skip("Chromium is required for the booking site browser test")
+        context, page = _open(browser, wide_host, wide_base, width, lang)
+        assert "W" * 300 in page.inner_text(".bsite-bookings"), "long name missing from the list"
+        assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), \
+            f"page scrolls sideways at {width}px ({lang})"
+        shots = os.environ.get("BSITE_SHOT_DIR")
+        if shots:
+            Path(shots).mkdir(parents=True, exist_ok=True)
+            page.screenshot(path=str(Path(shots) / f"host-list-{lang}-{width}.png"), full_page=True)
+        context.close()
+        browser.close()
+
+
+def _open(browser, wide_host, wide_base, width: int, lang: str = "cs"):
     context = browser.new_context(viewport={"width": width, "height": 1000})
     context.add_cookies([{"name": auth.SESSION_COOKIE, "value": wide_host["cookie"],
                           "url": wide_base + "/"}])
     page = context.new_page()
-    path = f"/apartments/{wide_host['apartments'][0]}/booking-site?lang=cs"
+    path = f"/apartments/{wide_host['apartments'][0]}/booking-site?lang={lang}"
     response = page.goto(f"{wide_base}{path}")
     assert response and response.status < 400, f"booking-site/{width}: HTTP {response.status if response else 'none'}"
     _wait_for_host_layout(page)

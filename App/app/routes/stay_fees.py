@@ -7,7 +7,7 @@ import zipfile
 from datetime import date
 from urllib.parse import parse_qsl, quote, urlencode, urlsplit
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 
 from .. import (
@@ -23,6 +23,7 @@ from .. import (
     stay_fee_adjustment,
     stay_fee_auto,
     stay_fee_filing,
+    stay_fee_rate,
     validation,
 )
 from ..templating import render, templates
@@ -74,7 +75,9 @@ def fee_copy_source(apartment, candidates):
 
 
 def _default_month(today: date) -> date:
-    return stay_fee.previous_month(today)
+    # 1051, owner decision 2026-11-09: open on the current month, not the previous one.
+    # Future months stay refused by every route (max = current month).
+    return today.replace(day=1)
 
 
 def _ui_period_label(request: Request, cadence: str, month: date) -> str:
@@ -307,6 +310,31 @@ def guest_pay_values(form) -> dict:
     return values
 
 
+def rate_from_default() -> str:
+    """Today in Prague, ISO: the default and the minimum of the "applies from" field."""
+    return claim.prague_today().isoformat()
+
+
+def record_rate_change(apartment_id: int, new_rate, form, *, previous=None) -> None:
+    """Store a dated rate row after a save that wrote stay_fee_rate_czk (1028).
+
+    ``stay_fee_rate_from`` (ISO date) picks the first night of the new rate;
+    empty, invalid or in the past means today: a rate never applies backwards.
+    ``previous`` is the column before the save, kept for the earlier nights.
+    An unchanged rate writes nothing.
+    """
+    today = claim.prague_today()
+    new_rate = int(new_rate or 0)
+    if previous is not None and int(previous or 0) == new_rate:
+        return
+    try:
+        effective_from = date.fromisoformat(_form_str(form, "stay_fee_rate_from"))
+    except ValueError:
+        effective_from = today
+    stay_fee_rate.record(apartment_id, new_rate, max(effective_from, today),
+                         previous=previous, today=today)
+
+
 def fee_form_values(form) -> dict:
     """Normalised fee fields. The account is left raw under FEE_ACCOUNT_RAW.
 
@@ -401,6 +429,61 @@ def _entity_payment_account(entity) -> str:
     return ""
 
 
+def _as_entity_id(value):
+    try:
+        if value is None or value == "":
+            return None
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _operator_id_after_save(apartment, values: dict):
+    """The legal entity this save will leave on the property."""
+    return _as_entity_id(values.get("legal_entity_id")) or _as_entity_id(
+        apartment.get("legal_entity_id")
+    )
+
+
+def _operator_row(entity_id):
+    entity_id = _as_entity_id(entity_id)
+    if not entity_id:
+        return None
+    row = db.query_one(
+        "SELECT id, bank_account, iban FROM legal_entity WHERE id = ?",
+        (entity_id,),
+    )
+    if row is not None and not hasattr(row, "get"):
+        row = dict(row)
+    return row
+
+
+def _account_iban(account: str) -> str:
+    if not (account or "").strip():
+        return ""
+    try:
+        return payments.normalise_account(account.strip())[1]
+    except ValueError:
+        return ""
+
+
+def _posted_account_is_previous_prefill(apartment, values: dict, posted: str) -> bool:
+    """True when the field still holds the previous operator's account.
+
+    The property form always posts the box, prefilled from the operator that
+    was on the property when the page rendered. Switching operator in the
+    same save must not copy that value onto the new operator.
+    """
+    target_id = _operator_id_after_save(apartment, values)
+    source_id = _as_entity_id(apartment.get("legal_entity_id"))
+    if not posted or not source_id or source_id == target_id:
+        return False
+    posted_iban = _account_iban(posted)
+    if not posted_iban:
+        return False
+    return posted_iban == _account_iban(_entity_payment_account(_operator_row(source_id)))
+
+
 def _resolved_operator_account(entity, draft_account: str = "") -> tuple[str, str]:
     """Return (display account, iban-or-account for SPAYD) or empty strings when unknown."""
     from .. import payments
@@ -486,16 +569,14 @@ GUEST_SETUP_FLASH = {
 
 
 def _operator_account_on_file(apartment, values: dict) -> bool:
-    """A posted account, or the one already stored on the legal entity."""
-    if (values.get(GUEST_OPERATOR_ACCOUNT_RAW) or "").strip():
+    """A posted account for the operator this save will use, or one already stored."""
+    posted = (values.get(GUEST_OPERATOR_ACCOUNT_RAW) or "").strip()
+    if posted and not _posted_account_is_previous_prefill(apartment, values, posted):
         return True
-    entity_id = apartment.get("legal_entity_id")
+    entity_id = _operator_id_after_save(apartment, values)
     if not entity_id:
         return False
-    from .. import db
-
-    entity = db.query_one("SELECT id, bank_account, iban FROM legal_entity WHERE id = ?", (entity_id,))
-    return bool(entity and _entity_payment_account(entity))
+    return bool(_entity_payment_account(_operator_row(entity_id)))
 
 
 def check_guest_pay_setup(apartment, values: dict) -> None:
@@ -524,9 +605,11 @@ def check_guest_pay_setup(apartment, values: dict) -> None:
 def apply_guest_operator_account(apartment, form, values: dict, request) -> None:
     """Persist the operator bank account when QR or bank transfer is enabled.
 
-    A change of payout destination needs a fresh login (same rule as
-    POST /entities/{id}/invoice). Re-posting the account already on file does
-    not; the property form always sends the field.
+    Writes the account onto the operator this save will leave on the property
+    (``values['legal_entity_id']`` when posted), not the operator still on the
+    apartment row. A change of payout destination needs a fresh login (same
+    rule as POST /entities/{id}/invoice). Re-posting the account already on
+    file does not; the property form always sends the field.
     """
     from .. import db
 
@@ -543,17 +626,12 @@ def apply_guest_operator_account(apartment, form, values: dict, request) -> None
         values.pop(GUEST_OPERATOR_ACCOUNT_RAW, None)
         return
     raw = values.pop(GUEST_OPERATOR_ACCOUNT_RAW, None)
-    entity_id = apartment.get("legal_entity_id")
+    entity_id = _operator_id_after_save(apartment, values)
     if not entity_id:
         raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
-    entity = db.query_one(
-        "SELECT id, bank_account, iban FROM legal_entity WHERE id = ?",
-        (entity_id,),
-    )
+    entity = _operator_row(entity_id)
     if not entity:
         raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
-    if not hasattr(entity, "get"):
-        entity = dict(entity)
     if raw is None:
         if not _entity_payment_account(entity):
             raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
@@ -562,6 +640,12 @@ def apply_guest_operator_account(apartment, form, values: dict, request) -> None
         if _entity_payment_account(entity):
             return
         raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
+    if _posted_account_is_previous_prefill(apartment, values, raw):
+        # Leave the new operator's stored account alone; the typed box is
+        # still the previous operator's prefill from page load.
+        if not _entity_payment_account(entity):
+            raise ValueError(GUEST_OPERATOR_ACCOUNT_INVALID)
+        return
     from .invoices import apply_account_payload
 
     detail = {"bank_account": raw.strip()}
@@ -707,6 +791,8 @@ def stay_fee_detail(apartment_id: int, request: Request):
         )
 
     apartment = access.apartment(request, apartment_id)
+    if not apartment:
+        raise HTTPException(status_code=404)
     if not apartment or (
         not stay_fee.is_active(apartment)
         and not stay_fee_filing.covering(apartment["id"], selected_month)
@@ -721,7 +807,7 @@ def stay_fee_detail(apartment_id: int, request: Request):
             stay_fee_filing.period_anchor(sealed),
             live_only=True,
             cadence=sealed["cadence"],
-            rate=sealed["rate_czk"],
+            rate=stay_fee_filing.correction_rate(apartment, sealed),
         )
     else:
         period = stay_fee.property_period(apartment, selected_month, live_only=correcting)
@@ -832,8 +918,9 @@ def _guest_lines(apartment, period):
             status_key = "stay_fees.status.exempt"
         else:
             status_key = "stay_fees.status.not_subject"
-        rate = period.get("rate_czk", 0)
-        amount = line.get("amount_czk", line.get("liable_nights", 0) * rate)
+        # 1031: the amount guest_period/property_period computed for this guest (per night
+        # rates across a rate change); no second flat-rate calculation here.
+        amount = line["amount_czk"]
         lines.append({
             **line,
             **facts.get(line["guest_id"], {"birth_display": "", "age_at_check_in": None, "nationality": ""}),
@@ -971,7 +1058,8 @@ async def stay_fee_adjustment_add(apartment_id: int, request: Request):
         cadence = sealed["cadence"]
         calc_month = stay_fee_filing.period_anchor(sealed)
         period = stay_fee.property_period(
-            apartment, calc_month, live_only=True, cadence=cadence, rate=sealed["rate_czk"],
+            apartment, calc_month, live_only=True, cadence=cadence,
+            rate=stay_fee_filing.correction_rate(apartment, sealed),
         )
         key = stay_fee_filing.period_key(cadence, calc_month)
     else:
@@ -1195,7 +1283,7 @@ async def stay_fee_finalize(apartment_id: int, request: Request):
         calc_month = month
     checked = stay_fee_auto.check(
         apartment, calc_month, today, cadence=cadence,
-        rate=sealed["rate_czk"] if correcting else None,
+        rate=stay_fee_filing.correction_rate(apartment, sealed) if correcting else None,
     )
     period, group, issues = checked["period"], checked["group"], checked["issues"]
     if issues:
@@ -1203,8 +1291,9 @@ async def stay_fee_finalize(apartment_id: int, request: Request):
     key = stay_fee_filing.period_key(group["cadence"], group["first"])
     if stay_fee_filing.latest(apartment["id"], key) and not correcting:
         return _back(back_path, err=_flash(request, "flash.stay_fees.already_saved"))
-    # The stored rate must be the one the total was calculated with.
-    rate = period["rate_czk"] if period else stay_fee.clamp_rate(apartment["stay_fee_rate_czk"])
+    # The total must be calculated the same way it was checked: per night at
+    # the dated rates, or a legacy flat period at its sealed rate (1028).
+    rate = stay_fee_filing.correction_rate(apartment, sealed) if correcting else None
     collected: dict[int, int] = {}
     if period:
         for line in period["lines"]:

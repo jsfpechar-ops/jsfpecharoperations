@@ -239,11 +239,21 @@ Weekly off-site (Sunday 04:00 UTC) after `rclone config` remote **`gdrive`**:
 (crontab -l 2>/dev/null; echo "0 4 * * 0 cd /opt/ubyhost/deploy/lightsail && ./scripts/backup-gdrive.sh >> /var/log/ubyhost-gdrive.log 2>&1") | crontab -
 ```
 
+Daily off-site to S3 (03:30 UTC, after the 03:00 local backup) after `rclone config` remote **`s3`**. `backup-s3.sh` first runs `backup.sh` itself (a fresh snapshot), so a failed backup also stops the upload:
+
+```bash
+(crontab -l 2>/dev/null; echo "30 3 * * * cd /opt/ubyhost/deploy/lightsail && UBYHOST_S3_BUCKET=your-bucket-name ./scripts/backup-s3.sh >> /var/log/ubyhost-s3.log 2>&1") | crontab -
+```
+
+`backup-s3.sh` never deletes old copies: an S3 lifecycle rule on the `UbyHost-backups/` prefix expires them after 30 days (the off-site window in `docs/privacy/RETENTION.md`). Check a run with `tail -30 /var/log/ubyhost-s3.log`; a good run ends with `Uploaded to`.
+
+In production `backup.sh` exits 1 and sends no ping when no PostgreSQL dump can be taken: with postgres stopped it takes and prunes no snapshot; with `UBYHOST_DATABASE_URL` unset it keeps the snapshot but still fails. A failed pre-deploy backup stops `deploy.sh`. Dead-man ping: `UBYHOST_BACKUP_PING_URL` in `.env` holds the ping URL of a healthchecks.io check (period 1 day, grace 2 hours); `backup.sh` calls it only after a complete backup, so a missed or failed night raises an alert.
+
 `backup.sh` runs `sqlite3 … '.backup'` **inside the running container**, so a concurrent write is snapshotted consistently (SQLite hot backup). A raw `cp ubyhost.db` while the app is up can capture a torn file — do not do that.
 
 **PostgreSQL:** the nightly dump (`ubyhost-pg.dump.age`) is written into the same daily snapshot folder, so the S3/Drive copies and the Lightsail snapshots cover it.
 
-**Retention:** snapshots are age-encrypted (`ubyhost-backup.tar.age`) with time-based retention; see `deploy/lightsail/README.md`. Older points exist only if you copied them off-site (Drive/S3) **before** they aged out. Drive uploads do not prune.
+**Retention:** snapshots are age-encrypted (`ubyhost-backup.tar.age`) with time-based retention; see `deploy/lightsail/README.md`. Older points exist only if you copied them off-site (Drive/S3) **before** they aged out. `backup-gdrive.sh` deletes Drive copies older than 30 days; the S3 lifecycle rule expires S3 copies after 30 days.
 
 Passport photos are **not** in the DB backup. After restore, unverified uploads may be missing; hosts re-check IDs if needed.
 
@@ -251,10 +261,18 @@ Passport photos are **not** in the DB backup. After restore, unverified uploads 
 
 | Layer | How often | Kept | Used for |
 |---|---|---|---|
-| Litestream → S3 | continuous (default 60 s sync), full snapshot daily, check weekly | 7 days | main recovery, including a new instance |
+| `backup.sh` pg_dump on the S3 copy | daily (brief 1020) | see `backup-s3.sh` | off-site copy; Litestream was retired on 2026-11-07 |
 | `backup.sh` on the volume | daily 03:00 UTC | `UBYHOST_BACKUP_RETENTION_DAYS` (set `7` in production `.env`) | quick restore on the same server |
-| `backup-gdrive.sh` | weekly | 30 days | copy outside AWS |
+| `backup-s3.sh` | daily 03:30 UTC | 30 days (bucket lifecycle rule) | main off-site copy, including a new instance |
+| `backup-gdrive.sh` | weekly | 30 days | second copy outside AWS |
 | Lightsail automatic snapshots | daily | 7 | keep on: the only copy of the whole server (`.env`, origin certs, cron, photos) and the fastest full restore; billed per GB, so a 7-day local retention keeps them small |
+
+WAL-G point-in-time recovery (production only, after the rollout in [OPERATIONS](OPERATIONS.md#wal-g-continuous-archiving-and-point-in-time-recovery)): daily base backup 04:30 UTC and a check every 10 minutes. Create the log files first, or cron silently skips both commands: `sudo touch /var/log/ubyhost-walg-backup.log /var/log/ubyhost-walg-check.log && sudo chown ubuntu:ubuntu /var/log/ubyhost-walg-backup.log /var/log/ubyhost-walg-check.log`.
+
+```bash
+(crontab -l 2>/dev/null; echo "30 4 * * * cd /opt/ubyhost/deploy/lightsail && ./scripts/walg-backup.sh >> /var/log/ubyhost-walg-backup.log 2>&1") | crontab -
+(crontab -l 2>/dev/null; echo "*/10 * * * * cd /opt/ubyhost/deploy/lightsail && ./scripts/walg-check.sh >> /var/log/ubyhost-walg-check.log 2>&1") | crontab -
+```
 
 ## Restore runbook (same instance)
 
@@ -271,16 +289,7 @@ Passport photos are **not** in the DB backup. After restore, unverified uploads 
 2. Copy `.env` (do not commit it) and `caddy/certs/origin*.pem` from the old host or a secrets store. **Before the first deploy**, set `UBYHOST_SECRET_KEY` in `.env` to the production key from the password manager: with it empty, `deploy.sh` generates a new key and the restored guest data and UBY-WS passwords cannot be decrypted.
 3. `./scripts/deploy.sh` once so volume `ubyhost-data` exists.
 4. `docker compose stop ubyhost`
-5. Restore the database. **From Litestream (preferred, newest data):** `.env` must have the `LITESTREAM_*` values and `COMPOSE_PROFILES=litestream`. Then:
-
-```bash
-docker compose stop worker litestream
-docker compose run --rm --no-deps -T --entrypoint sh litestream -c \
-  'rm -rf /data/ubyhost.db /data/ubyhost.db-wal /data/ubyhost.db-shm /data/.ubyhost.db-litestream &&
-   litestream restore -config /etc/litestream.yml -o /data/ubyhost.db "$LITESTREAM_DB_PATH"'
-```
-
-   Then go to step 7. **From a Drive copy instead:** place `ubyhost.db` and `secret_key` on the host and run:
+5. Restore the database from the newest dump (S3 or Drive copy): run `./scripts/pg-restore.sh <stamp>` as in the backup section. **For an old SQLite snapshot instead:** place `ubyhost.db` and `secret_key` on the host and run:
 
 ```bash
 docker run --rm -v ubyhost-data:/data -v "$PWD/restore-in":/backup alpine \
@@ -294,7 +303,7 @@ docker run --rm -v ubyhost-data:/data -v "$PWD/restore-in":/backup alpine \
 7. `./scripts/deploy.sh` then `./scripts/status.sh` and a login test.
 8. Point Cloudflare A record at the **new** static IP. Keep Full (strict).
 
-**Rebuild drill (once a quarter).** Run steps 1 to 7 on a throwaway instance, skip step 8, sign in through `curl --resolve` or a hosts-file entry, and note how long it took in [status](context/status.md). Delete the instance afterwards. The drill proves the replica, the `.env` copy and the password-manager key together; `restore_test.sh` only proves the replica.
+**Rebuild drill (once a quarter).** Run steps 1 to 7 on a throwaway instance, skip step 8, sign in through `curl --resolve` or a hosts-file entry, and note how long it took in [status](context/status.md). Delete the instance afterwards. The drill proves the dump, the `.env` copy and the password-manager key together.
 
 ## Scheduler
 
@@ -315,9 +324,9 @@ Production: Lightsail **8 GB RAM, 2 vCPUs, 160 GB SSD**. Every value is set in
 | Web workers (uvicorn) | `UBYHOST_WEB_WORKERS` | `4` (image default `2`) | `2` |
 | Web `mem_limit` | `UBYHOST_WEB_MEM` | `2g` (default) | `896m` |
 | Worker `mem_limit` | `UBYHOST_WORKER_MEM` | `1g` (default) | `448m` |
-| Litestream `mem_limit` | `UBYHOST_LITESTREAM_MEM` | `256m` (default) | `128m` |
+
 | Caddy `mem_limit` | `UBYHOST_CADDY_MEM` | `256m` (default) | `128m` |
-| Local snapshots kept | `UBYHOST_BACKUP_RETENTION_DAYS` | `7` once Litestream replicates (default `30`) | `7` |
+| Local snapshots kept | `UBYHOST_BACKUP_RETENTION_DAYS` | `7` (default `30`) | `7` |
 
 - Four workers on two vCPUs: requests mostly wait on SQLite, UbyPort or mail,
   so two per core keeps the CPUs busy. SQLite still has one writer at a time.

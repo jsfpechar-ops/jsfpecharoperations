@@ -107,7 +107,9 @@ def test_overview_cards_and_tablet_menu_on_touch(host, base):
 
             # 2. Tapping the guest card opens the guests group; police reporting
             #    opens the reporting group.
-            if desktop:
+            # Owner decision 2026-11-08: 6 pills as switcher (brief 1030); at >=768 px a pill opens the section, the accordion is phone only.
+            pills = width >= 768
+            if pills:
                 page.locator('nav.prop-strip a.sc[data-strip="door"][href="#sec-lock"]').tap(position={"x": 8, "y": 8})
                 page.wait_for_url("**#sec-lock**")
             else:
@@ -116,7 +118,7 @@ def test_overview_cards_and_tablet_menu_on_touch(host, base):
 
             page.goto(url)
             page.wait_for_timeout(50)
-            if desktop:
+            if pills:
                 page.locator('nav.prop-strip a.sc[data-strip="police"][href="#sec-police"]').tap(position={"x": 8, "y": 8})
                 page.wait_for_url("**#sec-police**")
             else:

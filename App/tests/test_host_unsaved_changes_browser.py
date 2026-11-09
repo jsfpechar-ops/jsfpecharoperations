@@ -31,7 +31,7 @@ else:
 from app import auth, config, db
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0084-evidence"
 LOCK = {"lock_id": "70840001", "alias": "Synthetic O1 Door", "battery": 90, "tz_offset_ms": 3600000}
@@ -54,7 +54,7 @@ def host():
     patch.setattr(config, "TTLOCK_CLIENT_ID", "cid")
     patch.setattr(config, "TTLOCK_CLIENT_SECRET", "csecret")
     username = f"o1-{secrets.token_hex(4)}"
-    owner = auth.create_account(f"{username}@example.test", "O1 Host", role="host", username=username)
+    owner = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "O1 Host", role="host", username=username))
     now = db.utcnow()
     entity = db.insert("legal_entity", {
         "name": "Synthetic O1 s.r.o.", "seat": "Synthetická 1, 110 00 Praha 1", "ico": "04656679",
@@ -127,6 +127,13 @@ def _shot(page, name):
         page.screenshot(path=str(EVIDENCE / f"o1-{name}.png"), full_page=False)
 
 
+def _section_opener(page, key):
+    """Owner decision 2026-11-08: 6 pills as switcher (brief 1030). At >=768 px the pill opens a section; phones tap the title."""
+    if page.viewport_size["width"] >= 768:
+        return page.locator(f'nav.prop-strip a[href="#sec-{key}"]').first
+    return page.locator(f"#sec-{key} > summary")
+
+
 def _open(page):
     return page.evaluate("() => document.getElementById('unsaved-dialog').open")
 
@@ -179,7 +186,7 @@ def test_property_settings_save_discard_stay(browser, base, host, lang, width, h
     reset = page.locator(".savebar[data-for='property-settings-form'] [data-unsaved-reset]")
     leave = 'a.airbnb-back'
     crumb = page.locator(leave)
-    calendars = page.locator("#sec-calendars > summary")
+    calendars = _section_opener(page, "calendars")
 
     # Clean form: no dialog, the in-page link just opens its section.
     assert not page.locator(".savebar[data-for='property-settings-form']").is_visible()
@@ -187,9 +194,11 @@ def test_property_settings_save_discard_stay(browser, base, host, lang, width, h
     assert not _open(page) and "sec-calendars" in _open_sections(page)
 
     # Dirty: the save bar offers Discard changes; in-page links keep the draft.
+    if width >= 768:  # owner decision 2026-11-08 (brief 1030): one section at a time, so go back to Basic details
+        _section_opener(page, "basics").click()
     page.fill("#internal_name", "Typed O1 draft")
     assert page.locator(".savebar[data-for='property-settings-form']").is_visible() and reset.inner_text() == TEXT[lang]["reset"]
-    page.locator("#sec-lock > summary").click()
+    _section_opener(page, "lock").click()
     assert not _open(page)
     assert page.input_value("#internal_name") == "Typed O1 draft"
 
@@ -246,7 +255,7 @@ def test_property_rail_and_back_links_ask_and_cards_into_settings_do_not(browser
     page.locator("#unsaved-dialog [data-unsaved-stay]").click()
     assert "/apartments/" in page.url and page.input_value("#internal_name") == "Rail O1 draft"
     # An in-page aside link into Police keeps the draft and does not ask.
-    page.locator("#sec-police > summary").click()
+    _section_opener(page, "police").click()
     assert not _open(page) and "sec-police" in _open_sections(page)
     assert page.input_value("#internal_name") == "Rail O1 draft"
     # Discard via the rail leaves the page without the native prompt.
@@ -282,7 +291,7 @@ def test_save_bar_discard_changes_button(browser, base, host, lang, width, heigh
     reset.click()
     assert page.input_value("#guest_message") == loaded_message
     assert not page.locator(".savebar[data-for='property-settings-form']").is_visible()
-    page.locator("#sec-calendars > summary").click()
+    _section_opener(page, "calendars").click()
     assert not _open(page) and "sec-calendars" in _open_sections(page)
     page.context.close()
 

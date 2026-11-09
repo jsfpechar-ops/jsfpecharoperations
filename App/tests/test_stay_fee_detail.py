@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, claim, db
 from app.main import app
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 SIGNATURE = "data:image/png;base64,AAAA"
 IBAN = "CZ3008000000192000781379"
@@ -50,7 +50,7 @@ def host(monkeypatch):
     db.init_db()
     _cleanup()
     monkeypatch.setattr(claim, "prague_today", lambda: date(2026, 9, 30))
-    owner_id = auth.create_account("stay-fee-detail-owner@example.test", "Detail Demo", role="host", username="stay-fee-detail-owner")
+    owner_id = mark_security_prompt_seen(auth.create_account("stay-fee-detail-owner@example.test", "Detail Demo", role="host", username="stay-fee-detail-owner"))
     entity_id = db.insert("legal_entity", {
         "name": "Detail Demo s.r.o.",
         "owner_user_id": owner_id,
@@ -146,7 +146,7 @@ def _decide(
 def test_login_is_required():
     db.init_db()
     _cleanup()
-    auth.create_account("stay-fee-detail-owner@example.test", "Detail Demo", role="host", username="stay-fee-detail-owner")
+    mark_security_prompt_seen(auth.create_account("stay-fee-detail-owner@example.test", "Detail Demo", role="host", username="stay-fee-detail-owner"))
     try:
         response = TestClient(app).get("/stay-fees/1", follow_redirects=False)
         assert response.status_code == 303
@@ -157,7 +157,7 @@ def test_login_is_required():
 
 def test_another_owners_property_redirects_with_an_error(host):
     client, _owner_id, _entity_id = host
-    other_id = auth.create_account("stay-fee-detail-other@example.test", "Other Demo", role="host", username="stay-fee-detail-other")
+    other_id = mark_security_prompt_seen(auth.create_account("stay-fee-detail-other@example.test", "Other Demo", role="host", username="stay-fee-detail-other"))
     other_entity_id = db.insert("legal_entity", {
         "name": "Other Demo s.r.o.",
         "owner_user_id": other_id,
@@ -167,10 +167,7 @@ def test_another_owners_property_redirects_with_an_error(host):
 
     response = client.get(f"/stay-fees/{private_id}", follow_redirects=False)
 
-    assert response.status_code == 303
-    assert response.headers["location"].startswith("/stay-fees")
-    assert "This property no longer exists." in unquote(response.headers["location"])
-
+    assert response.status_code == 404
 
 def test_a_property_without_a_rate_is_not_a_stay_fee_property(host):
     client, owner_id, entity_id = host
@@ -446,7 +443,7 @@ def test_a_guest_of_another_owner_cannot_be_decided(host):
     client, owner_id, entity_id = host
     apartment_id = _property(owner_id, entity_id, "Detail Demo")
     _stay(apartment_id, "2026-08-10", "2026-08-14", [{}])
-    other_id = auth.create_account("stay-fee-detail-other@example.test", "Other Demo", role="host", username="stay-fee-detail-other")
+    other_id = mark_security_prompt_seen(auth.create_account("stay-fee-detail-other@example.test", "Other Demo", role="host", username="stay-fee-detail-other"))
     other_entity_id = db.insert("legal_entity", {
         "name": "Other Demo s.r.o.",
         "owner_user_id": other_id,
@@ -616,7 +613,7 @@ def test_filing_paid_sets_paid_at_and_sent_at(host):
 def test_another_hosts_filing_cannot_be_marked(host):
     client, owner_id, entity_id = host
     own_apt = _property(owner_id, entity_id, "Own Demo")
-    other_id = auth.create_account("stay-fee-detail-other@example.test", "Other Demo", role="host", username="stay-fee-detail-other")
+    other_id = mark_security_prompt_seen(auth.create_account("stay-fee-detail-other@example.test", "Other Demo", role="host", username="stay-fee-detail-other"))
     other_entity_id = db.insert("legal_entity", {
         "name": "Other Demo s.r.o.",
         "owner_user_id": other_id,

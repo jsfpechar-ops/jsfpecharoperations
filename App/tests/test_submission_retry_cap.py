@@ -28,7 +28,7 @@ from fastapi.testclient import TestClient
 
 from app import alerts, auth, db, reporting
 from app.ubyport.client import SubmissionResult, UbyportAuthError, UbyportOutcomeUnknownError, UbyportTransportError
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
     bytes.fromhex(
@@ -491,7 +491,9 @@ def host(mock_ubyport):  # noqa: ARG001
     db.init_db()
     account = db.query_one("SELECT * FROM user_account WHERE username = ?", (USERNAME,))
     if not account:
-        auth.create_account(f"{USERNAME}@example.test", "Retry cap admin", role="admin", username=USERNAME)
+        account = {"id": auth.create_account(f"{USERNAME}@example.test", "Retry cap admin", role="admin", username=USERNAME)}
+    # Browser tests import this fixture: the "second way in" modal would cover their clicks.
+    mark_security_prompt_seen(account["id"])
     with TestClient(app) as test_client:
         response = login_as(test_client, USERNAME, follow_redirects=False)
         assert response.status_code == 303

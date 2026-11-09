@@ -2,6 +2,30 @@
 if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches && document.startViewTransition) { document.startViewTransition = undefined; }
 (function () {
   "use strict";
+  var ICON_MARKUP = {
+    check: '<path d="M20 6 9 17l-5-5"/>',
+    x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    "triangle-alert": '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+    info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>'
+  };
+  function iconSvg(name, size) {
+    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "ui-icon");
+    svg.setAttribute("width", String(size));
+    svg.setAttribute("height", String(size));
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("aria-hidden", "true");
+    svg.innerHTML = ICON_MARKUP[name];
+    return svg;
+  }
+  function feedbackIconName(kind) {
+    return kind === "success" ? "check" : kind === "error" || kind === "warning" || kind === "partial" ? "triangle-alert" : "info";
+  }
 
   var SIDEBAR_KEY = "ubyhost-sidebar-collapsed";
   var NAV_BREAKPOINT = 960;
@@ -217,7 +241,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     var icon = document.createElement("span");
     icon.className = "feedback-card-icon";
     icon.setAttribute("aria-hidden", "true");
-    icon.textContent = kind === "success" ? "✓" : kind === "error" || kind === "warning" || kind === "partial" ? "!" : "i";
+    icon.appendChild(iconSvg(feedbackIconName(kind), 16));
     var body = document.createElement("div");
     body.className = "grow feedback-card-body";
     var heading = document.createElement("strong");
@@ -232,7 +256,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     close.type = "button";
     close.setAttribute("data-toast-close", "");
     close.setAttribute("aria-label", root.getAttribute("data-dismiss-label") || "Dismiss notification");
-    close.textContent = "×";
+    close.appendChild(iconSvg("x", 16));
     toast.appendChild(icon);
     toast.appendChild(body);
     toast.appendChild(close);
@@ -1030,7 +1054,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         var icon = document.createElement("span");
         icon.className = "feedback-card-icon";
         icon.setAttribute("aria-hidden", "true");
-        icon.textContent = kind === "success" ? "✓" : kind === "error" || kind === "warning" || kind === "partial" ? "!" : "i";
+        icon.appendChild(iconSvg(feedbackIconName(kind), 16));
         toast.insertBefore(icon, toast.firstChild);
       }
       if (index >= 3) {
@@ -1046,6 +1070,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
   function initFilterPanels() {
     document.querySelectorAll("[data-filter-panel]").forEach(function (form) {
       if (!claimNode(form, "initFilterPanels")) return;
+      if (form.hasAttribute("data-filter-compact")) { initCompactFilter(form); return; }
       var toggle = form.id ? document.querySelector('[data-filter-toggle][aria-controls="' + form.id + '"]') : null;
       var controls = Array.prototype.slice.call(form.querySelectorAll("input, select, textarea"));
       var initial = controls.map(function (control) { return control.value; });
@@ -1242,6 +1267,29 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     });
   }
 
+  /* 1051: compact month filter (stay fees). Any pick navigates at once; no Apply. */
+  function navigateFilter(form) {
+    var params = new URLSearchParams();
+    new FormData(form).forEach(function (value, key) { if (value !== "") params.append(key, value); });
+    var query = params.toString();
+    var url = (form.getAttribute("action") || window.location.pathname) + (query ? "?" + query : "");
+    if (window.Turbo && typeof window.Turbo.visit === "function") window.Turbo.visit(url);
+    else window.location.assign(url);
+  }
+
+  function initCompactFilter(form) {
+    form.classList.add("is-enhanced");
+    var month = form.querySelector("[data-month-native]");
+    var initialMonth = month ? month.value : "";
+    if (month) month.addEventListener("change", function () {
+      if (month.value && month.value !== initialMonth) { initialMonth = month.value; navigateFilter(form); }
+    });
+    form.querySelectorAll("select").forEach(function (select) {
+      select.addEventListener("change", function () { navigateFilter(form); });
+    });
+    initMonthPickers(form);
+  }
+
   function initMonthPickers(form) {
     if (claimNode(document, "initMonthPickers")) {
       document.addEventListener("pointerdown", function (event) {
@@ -1310,6 +1358,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
           var candidate = date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0");
           if (candidate < min || candidate > max) return;
           selected = candidate; nativeInput.value = candidate; setCaption(); render();
+          nativeInput.dispatchEvent(new Event("change", { bubbles: true }));
         });
       });
       var close = function (restore) { panel.hidden = true; trigger.setAttribute("aria-expanded", "false"); if (restore) selected = nativeInput.value; setCaption(); trigger.focus(); };
@@ -1318,7 +1367,8 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         panel.hidden = false; trigger.setAttribute("aria-expanded", "true"); render();
         var bounds = trigger.getBoundingClientRect();
         var width = Math.min(360, window.innerWidth - 8);
-        panel.style.left = Math.max(4, Math.min(bounds.left, window.innerWidth - width - 4)) + "px";
+        var panelLeft = picker.closest("[data-filter-compact]") ? bounds.left + bounds.width / 2 - width / 2 : bounds.left;
+        panel.style.left = Math.max(4, Math.min(panelLeft, window.innerWidth - width - 4)) + "px";
         panel.style.top = Math.min(bounds.bottom + 8, window.innerHeight - panel.offsetHeight - 8) + "px";
         var focused = grid.querySelector(".selected:not([disabled])") || grid.querySelector("[data-month-choice]:not([disabled])"); if (focused) focused.focus();
       });
@@ -1967,7 +2017,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       var vw = document.documentElement.clientWidth;
       var vh = window.innerHeight;
       var wide = vw >= 1024;
-      var width = Math.min(wide ? 320 : 360, vw - 2 * margin);
+      var width = vw < 600 ? Math.min(360, vw - 2 * margin) : Math.min(320, vw - 2 * margin); /* 1003 fix: 390 px phone gets 358 px, lint needs >= 356 */
       body.style.width = width + "px";
       body.style.maxWidth = width + "px";
       if (!wide) {
@@ -2077,6 +2127,94 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     }
   }
 
+  /* 1003: the page "?" (details.page-help). Mouse: hover or keyboard focus opens it under the dot (above if no room),
+     leaving closes after 150 ms, click pins it. Touch: tap toggles, tap outside closes. Esc closes. No JS: native details. */
+  var pageHelpState = { current: null, timer: null };
+  function initPageHelp() {
+    var items = Array.prototype.slice.call(document.querySelectorAll("details.page-help"));
+    if (!items.length) return;
+    var hoverOk = window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)");
+    function place(d) {
+      var body = d.querySelector(".page-help-body");
+      var wrap = d.closest(".page-help-wrap") || d;
+      if (!body || !d.open) return;
+      var m = 8;
+      var vw = document.documentElement.clientWidth;
+      var vh = window.innerHeight;
+      var w = Math.min(320, vw - 2 * m);
+      body.style.position = "absolute"; /* CSS: .page-help-wrap is the containing block, so the box moves with its ? */
+      body.style.width = w + "px";
+      body.style.maxWidth = w + "px";
+      body.style.right = "auto";
+      body.style.margin = "0";
+      body.style.transform = "none";
+      body.style.top = "calc(100% + 8px)";
+      body.style.left = "0px";
+      var wr = wrap.getBoundingClientRect();
+      var h = body.offsetHeight;
+      body.style.left = Math.max(m - wr.left, Math.min(0, vw - m - w - wr.left)) + "px"; /* keep inside the viewport */
+      if (wr.bottom + 8 + h > vh - m && wr.top - 8 - h >= m) body.style.top = (-(h + 8)) + "px"; /* flip above if no room below */
+    }
+    function close(d) {
+      d.open = false;
+      d.removeAttribute("data-pinned");
+      if (pageHelpState.current === d) pageHelpState.current = null;
+    }
+    function show(d, pinned) {
+      if (pageHelpState.current && pageHelpState.current !== d) close(pageHelpState.current);
+      window.clearTimeout(pageHelpState.timer);
+      pageHelpState.current = d;
+      d.open = true;
+      if (pinned) d.setAttribute("data-pinned", "1");
+      place(d);
+    }
+    function closeSoon(d) {
+      window.clearTimeout(pageHelpState.timer);
+      pageHelpState.timer = window.setTimeout(function () {
+        if (!d.hasAttribute("data-pinned") && !d.contains(document.activeElement)) close(d);
+      }, 150);
+    }
+    items.forEach(function (d) {
+      if (!claimNode(d, "initPageHelp")) return;
+      var summary = d.querySelector("summary");
+      d.addEventListener("toggle", function () { if (d.open) place(d); });
+      if (summary) {
+        summary.addEventListener("click", function (e) {
+          e.preventDefault(); /* we own open/close, so hover and click never fight over the native toggle */
+          if (d.open && d.hasAttribute("data-pinned")) close(d);
+          else show(d, true);
+        });
+        summary.addEventListener("focus", function () {
+          if (hoverOk && hoverOk.matches && summary.matches(":focus-visible")) show(d, false);
+        });
+      }
+      d.addEventListener("pointerenter", function (e) {
+        if (e.pointerType === "mouse" && hoverOk && hoverOk.matches) show(d, false);
+      });
+      d.addEventListener("pointerleave", function (e) {
+        if (e.pointerType === "mouse" && hoverOk && hoverOk.matches) closeSoon(d);
+      });
+      d.addEventListener("focusout", function (e) {
+        if (!d.contains(e.relatedTarget) && !d.hasAttribute("data-pinned")) close(d);
+      });
+    });
+    if (claimNode(document, "initPageHelp")) {
+      document.addEventListener("keydown", function (e) {
+        if (e.key !== "Escape" || !pageHelpState.current) return;
+        var d = pageHelpState.current;
+        close(d);
+        var s = d.querySelector("summary");
+        if (s) s.focus();
+      });
+      document.addEventListener("click", function (e) {
+        if (pageHelpState.current && !pageHelpState.current.contains(e.target)) close(pageHelpState.current);
+      });
+      function reflow() { if (pageHelpState.current) place(pageHelpState.current); }
+      window.addEventListener("resize", reflow);
+      window.addEventListener("scroll", reflow, { capture: true, passive: true });
+    }
+  }
+
 
   /* 0076: a page with several independent forms (the business editor's
      Business details and Invoice details). Saving one form, or leaving the
@@ -2171,6 +2309,12 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       /* Keyboard: activate opens the section like click (B04 Enter key from Playwright; hash sync can race in CI). */
       link.addEventListener("keydown", function (e) {
         if (e.key !== "Enter" && e.key !== " ") return;
+        // 1030: at >=768 px a pill is the section switcher, so the key does what a click does.
+        if (link.closest("nav.prop-strip,.prop-nav") && window.matchMedia("(min-width:768px)").matches) {
+          e.preventDefault();
+          link.click();
+          return;
+        }
         var h = link.getAttribute("href");
         if (!h || h.charAt(0) !== "#") return;
         e.preventDefault();
@@ -2411,6 +2555,216 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     n.focus({ preventScroll: true });
   }
 
+  // 1024: a failed property save opens the section with the first error, scrolls to it and focuses it; a saved page keeps the banner in view.
+  function initSaveSummary() {
+    var s = document.querySelector("[data-save-summary]");
+    if (!s || !claimNode(s, "initSaveSummary")) return;
+    var id = s.getAttribute("data-first-error");
+    if (!id) {
+      s.scrollIntoView({ block: "nearest" });
+      return;
+    }
+    var t = document.getElementById(id);
+    if (!t) {
+      s.scrollIntoView({ block: "center" });
+      s.focus({ preventScroll: true });
+      return;
+    }
+    var sec = t.closest("details");
+    if (sec) sec.open = true;
+    t.scrollIntoView({ block: "center" });
+    t.focus({ preventScroll: true });
+  }
+
+  // 1030: at >=768 px the editor shows one section at a time, a section list and one fix line. Phone unchanged.
+  // The one-time "second way in" prompt: a real modal in view, marked as shown only once it is open.
+  function initSecurityPrompt() {
+    var dialog = document.getElementById("security-prompt");
+    if (!dialog || typeof dialog.showModal !== "function" || !claimNode(dialog, "initSecurityPrompt")) return;
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    if (!dialog.open) dialog.showModal();
+    window.scrollTo(0, 0);
+    fetch("/account/security-prompt/seen", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "X-CSRF-Token": meta ? meta.getAttribute("content") || "" : "" }
+    }).catch(function () {});
+  }
+
+  function initPropertyTabs() {
+    var layout = document.querySelector(".prop-layout");
+    if (!layout || !claimNode(layout, "initPropertyTabs")) return;
+    var nav = layout.querySelector(".prop-nav");
+    // owner decision 2026-11-08: the six status pills are the section switcher at >=768 px.
+    var strip = document.querySelector("nav.prop-strip");
+    var fix = layout.querySelector("[data-prop-fixline]");
+    var clientFailed = false;
+    var mq = window.matchMedia("(min-width:768px)");
+    function sectionFor(el) {
+      return el ? el.closest("details.prop-sec") : null;
+    }
+    function fieldIn(el) {
+      if (el.matches("input,select,textarea,button")) return el;
+      return el.querySelector("input,select,textarea,button");
+    }
+    function showSection(sec) {
+      if (!sec) return;
+      layout.querySelectorAll("details.prop-sec").forEach(function (d) {
+        d.classList.toggle("is-current", d === sec);
+      });
+      sec.open = true;
+      [nav, strip].forEach(function (list) {
+        if (!list) return;
+        list.querySelectorAll("a[href^='#sec-']").forEach(function (a) {
+          var on = a.getAttribute("href") === "#" + sec.id;
+          a.classList.toggle("is-current", on);
+          if (on) a.setAttribute("aria-current", "true");
+          else a.removeAttribute("aria-current");
+          var card = a.closest(".sc");
+          if (card) card.classList.toggle("is-current", on);
+        });
+      });
+    }
+    function goTo(id) {
+      var target = document.getElementById(id);
+      if (!target) return;
+      if (mq.matches) showSection(sectionFor(target));
+      var f = fieldIn(target);
+      if (f) f.focus({ preventScroll: true });
+      target.scrollIntoView({ block: "center" });
+    }
+    // 1030: after a failed save the line names every field to fix: fields the server marked invalid and empty required fields,
+    // then the server's missing items that no named field already covers. Names are the clean label text (no help, no star).
+    function cleanText(el) {
+      var c = el.cloneNode(true);
+      c.querySelectorAll(".help-tip,.req-star").forEach(function (n) { n.remove(); });
+      return c.textContent.replace(/\s+/g, " ").trim();
+    }
+    function fixLine() {
+      if (!fix) return;
+      var form = layout.querySelector("form");
+      var failed = clientFailed || !!document.querySelector("[data-save-summary][data-first-error]");
+      var items = [];
+      var fields = [];
+      if (form) {
+        form.querySelectorAll("input,select,textarea").forEach(function (f) {
+          if (!f.id || f.disabled || f.type === "hidden" || !sectionFor(f)) return;
+          var bad = f.getAttribute("aria-invalid") === "true";
+          var empty = failed && (f.required || f.getAttribute("aria-required") === "true") && !String(f.value || "").trim();
+          if (!bad && !empty) return;
+          var label = document.querySelector("label[for='" + f.id + "']");
+          fields.push(f);
+          items.push({ id: f.id, name: label ? cleanText(label) : f.id });
+        });
+      }
+      var seen = {};
+      layout.querySelectorAll(".prop-sec-missing a[href^='#']").forEach(function (a) {
+        var id = a.getAttribute("href").slice(1);
+        var name = a.getAttribute("data-fix-label") || id;
+        var target = id && document.getElementById(id);
+        if (!target || seen[id + "|" + name]) return;
+        seen[id + "|" + name] = true;
+        if (fields.some(function (f) { return target === f || target.contains(f); })) return;
+        items.push({ id: id, name: name });
+      });
+      fix.textContent = "";
+      if (!items.length || (!mq.matches && !failed)) {
+        fix.hidden = true;
+        return;
+      }
+      var lead = items.length === 1 ? fix.getAttribute("data-text-one") : fix.getAttribute("data-text-many");
+      var leadEl = document.createElement("span");
+      leadEl.textContent = (lead || "").replace("{n}", String(items.length));
+      fix.appendChild(leadEl);
+      items.forEach(function (item) {
+        var link = document.createElement("a");
+        link.href = "#" + item.id;
+        link.textContent = item.name;
+        link.addEventListener("click", function (e) {
+          e.preventDefault();
+          goTo(item.id);
+        });
+        fix.appendChild(link);
+      });
+      fix.hidden = false;
+    }
+    function apply() {
+      layout.classList.toggle("is-tabbed", mq.matches);
+      if (mq.matches) {
+        var hashEl = location.hash.length > 1 ? document.getElementById(location.hash.slice(1)) : null;
+        // a failed save starts on the first error; then the server's start section; then the first open one
+        var summary = document.querySelector("[data-save-summary][data-first-error]");
+        var errorEl = summary ? document.getElementById(summary.getAttribute("data-first-error")) : null;
+        var startId = layout.getAttribute("data-start-section");
+        var start = sectionFor(hashEl) || sectionFor(errorEl) || (startId && document.getElementById(startId)) || layout.querySelector("details.prop-sec[open]") || layout.querySelector("details.prop-sec");
+        showSection(start);
+        // The hash is left as it is: a deep link (#stay-fee-settings, #ubyport) must survive, and a load without one stays at the top.
+      }
+      fixLine();
+    }
+    apply();
+    // the stay-fee stars are set by a later init, so the line is built once more after it
+    window.setTimeout(fixLine, 0);
+    // 1030 fix: a native-invalid submit never reaches the server. Open the section of every bad field and build the line once.
+    var invalidForm = layout.querySelector("form");
+    if (invalidForm) {
+      var invalidTimer = null;
+      invalidForm.addEventListener("invalid", function (e) {
+        var sec = sectionFor(e.target);
+        if (sec) sec.open = true;
+        clientFailed = true;
+        window.clearTimeout(invalidTimer);
+        invalidTimer = window.setTimeout(fixLine, 0);
+      }, true);
+    }
+    if (mq.addEventListener) mq.addEventListener("change", apply);
+    // at >=768 px the card title is a heading, not a toggle (a click must not fold the one visible section)
+    layout.addEventListener("click", function (e) {
+      if (mq.matches && e.target.closest("details.prop-sec > summary")) e.preventDefault();
+    });
+    [nav, strip].forEach(function (list) {
+      if (!list) return;
+      list.addEventListener("click", function (e) {
+        var a = e.target.closest("a[href^='#sec-']");
+        if (!a || !mq.matches || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+        var sec = sectionFor(document.getElementById(a.getAttribute("href").slice(1)));
+        if (!sec) return;
+        e.preventDefault();
+        showSection(sec);
+        history.replaceState(null, "", "#" + sec.id);
+      });
+    });
+  }
+
+  // 1024: in the editor the stay-fee boxes the app needs get a star and aria-required while the rate is above 0.
+  function initStayFeeStars() {
+    var rate = document.getElementById("stay_fee_rate_czk");
+    if (!rate || !document.getElementById("property-settings-form") || !document.getElementById("sec-fee")) return;
+    if (!claimNode(rate, "initStayFeeStars")) return;
+    function sync() {
+      var needed = parseFloat(rate.value) > 0;
+      ["stay_fee_vs", "stay_fee_council_account", "stay_fee_authority_name"].forEach(function (id) {
+        var input = document.getElementById(id);
+        var label = document.querySelector('label[for="' + id + '"]');
+        if (!input || !label) return;
+        input.setAttribute("aria-required", needed ? "true" : "false");
+        var star = label.querySelector(".req-star");
+        if (needed && !star) {
+          star = document.createElement("span");
+          star.className = "req-star";
+          star.setAttribute("aria-hidden", "true");
+          star.textContent = "*";
+          var tip = label.querySelector(".help-tip, button");
+          if (tip && tip.parentNode) tip.parentNode.insertBefore(star, tip);
+          else label.appendChild(star);
+        } else if (!needed && star) {
+          star.remove();
+        }
+      });
+    }
+    rate.addEventListener("input", sync);
+  }
+
   // 0971: one dismiss control on every inline success notice (success_notice macro, section notice, cleaning notice).
   function initSuccessNotices() {
     if (!document.body.classList.contains("host-workspace")) return;
@@ -2451,8 +2805,13 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     initUnsavedForms();
     initUnsavedDialog();
     initSectionNotice();
+    initSaveSummary();
+    initPropertyTabs();
+    initSecurityPrompt();
+    initStayFeeStars();
     initSuccessNotices();
     initHelpTips();
+    initPageHelp();
     initBirthDateInputs();
     initRowMenus();
     initClickableRows();

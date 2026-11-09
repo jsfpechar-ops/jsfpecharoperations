@@ -20,16 +20,16 @@
     "v": "20261104-1210"
   },
   "app.css": {
-    "sha256": "ff299f8017315f62d1f7c307e8750efb5a9d57d00a9537fe1d6e97e55bd407ae",
-    "v": "20261104-0916"
+    "sha256": "8e7fe524aa8afbc20d5b6383812eaad6d7b84a6a152aa58c9f8a7dedfe9bdbdc",
+    "v": "20261109-1200"
   },
   "app.js": {
-    "sha256": "aebdebbc48401a966242a130dfaf5c73835e9d5b2741b5ed9458dfa7b3bf4dbd",
-    "v": "20261106-pr790-ux-js"
+    "sha256": "945463dc481eb2538036d669f40a0f9bf3716a66747fd9169799545c6ef43793",
+    "v": "20261109-qa3"
   },
   "app2.css": {
-    "sha256": "079ae1ffc3e7b9fbe2d7c5c8d501730d7519c4eed32b32cee1902e5ada1ae729",
-    "v": "20261106-pr790-ocr-tip2"
+    "sha256": "7d0601651f8dca74a61f72607f4ff5e9cc6d3345efb005d1dba1c443b094cb90",
+    "v": "20261109-1130k"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -64,12 +64,12 @@
     "v": "20260915a"
   },
   "dashboard-calendar.css": {
-    "sha256": "868577164cf853b4a24bfa37040ff4501a1844215a2a47bb6fc1b8c9534727bd",
-    "v": "20261106-0977"
+    "sha256": "7996d8ef5e586a0f44cdbd3a6c40a918bcb5be11520df223edcd57bc4d0184de",
+    "v": "20261109-1054a"
   },
   "dashboard-calendar.js": {
-    "sha256": "ccbd5e5517f4da1f648fa5d933fab46f1f22df2bf747c7e1451d487245ce6d54",
-    "v": "20261106-0977"
+    "sha256": "6673d3df8f4bc7449e356e716e83b81270515d188375e5e2b68aea333a3327e2",
+    "v": "20261107-1001"
   },
   "docs/ubyport-ws-credential-sample.pdf": {
     "sha256": "0c147cf9c5dd5326612bc4668c5bce853cf300171ca62e3a0bab688c09b75fe6",
@@ -84,16 +84,16 @@
     "v": "20261101-0495"
   },
   "guest-enhancements.js": {
-    "sha256": "3a916b6481143037c7df5b9bb0bd1d125d29d7a95754d73a5d9f28d2744ec7ee",
-    "v": "20261003a"
+    "sha256": "1b46b16bfd8d843c97d53b4000b61af8ce8699dd630a2cead916e0d26cbfd1ad",
+    "v": "20261109-1063a"
   },
   "guest-leon.js": {
     "sha256": "21852bc6e10f79fbe7db61806fdb9ce17ca5bf604ca3f383fa0cce1fe3a1c0cf",
     "v": "20261025-0393b"
   },
   "guest.css": {
-    "sha256": "70eb4a8e8d52087c9f5672501e8aa59cbdd3da6fdc58bfc103892847b0fceb46",
-    "v": "20261106-0977"
+    "sha256": "afc2330f7b0f198405eb86d3fcef026d71f08664750c87405b142dc789bdfdc2",
+    "v": "20261109-1063a"
   },
   "guide.js": {
     "sha256": "7bc163abd236d8032c1f7a094aadf4993774920b24b4a0817768dd27fa0cefab",
@@ -112,20 +112,20 @@
     "v": "20261025-0380"
   },
   "host.css": {
-    "sha256": "eaf4f9bb507bfc456a7dabf96e55ac1e40ca685d1c2f8bab7ed5ce317c33d613",
-    "v": "20261104-0951i"
+    "sha256": "eba67c24ee7a9462edaec24988feedbdee040448cc1499a99a685c207996cea2",
+    "v": "20261108-1010a"
   },
   "host.js": {
-    "sha256": "d40a8a60dd73d86313e0e40d3b41a8cd9c18922e05a03cbbec62b7954cb8d66f",
-    "v": "20261102-0507"
+    "sha256": "767e5184d9aa8ac9ab37b496a16c1dba1c466007cc93d9449d000b182473bc4f",
+    "v": "20261109-1032c"
   },
   "host2.css": {
-    "sha256": "5985f9669852976fdf4745cbbc0aabbc7626d5c4ab67b3f434b1abe4c128e18f",
-    "v": "20261106-pr790-phfit-h2"
+    "sha256": "aa19382fe0e404b57180a2e76a1a538a780b2a2407163dc2a1b713a08a599ded",
+    "v": "20261109-bsite-wrap-h2"
   },
   "landing.css": {
-    "sha256": "a9218c2d33c3d07d955b0c630d194ef81801834baaed1cb3615387222ce50ba5",
-    "v": "20261102-0814"
+    "sha256": "685f758bdce94c6412c12ac893e27728df7dbde2aebb9b7f9aec38deffa9716b",
+    "v": "20261109-1063a"
   },
   "landing.js": {
     "sha256": "0e8f2e973a4c2797dfe018fd1ce477669641ee7baa1fdd06c263702c01d972bf",
@@ -135,9 +135,13 @@
     "sha256": "2216365fed2b45ea19a081566f94a668209853064ef311edc44c945a49b981a1",
     "v": "20261027-ai-usage"
   },
+  "list-filter-compact.css": {
+    "sha256": "0c30d5b52ec1e6a98f5e1a1a834175cc82db4b174c4da879bd4af6912f0c762b",
+    "v": "20261109-1052a"
+  },
   "passkeys.js": {
-    "sha256": "4e75d63ea5de86912252b34a8b22fc5d91ed7b7190ad7d623947295e1725c7cd",
-    "v": "20261102-0789a"
+    "sha256": "8df04fc4ed79f1a59b307d189d5bd69015a03ee90771b3b8ecb87dbf89ed9035",
+    "v": "20261109-qa1"
   },
   "platform.js": {
     "sha256": "6bf1c6472dcb2c7427f6a1d269c56945bb9641fcb207c6461a05870555aec782",
@@ -160,8 +164,8 @@
     "v": "20261025-0373"
   },
   "signature.js": {
-    "sha256": "6bd9881a563e83234768c096eb9e49ac31ff684b97a75f332946d100f11b3467",
-    "v": "20261106-0977"
+    "sha256": "3df281bae26a798dc29705fd0a2d7b4d1c49468834d1bace26a812462e55495a",
+    "v": "20261109-qa2"
   },
   "skeleton.css": {
     "sha256": "4685a64e9b7d3fc56680e55c6772d6d8b6c9dcaf8c9b1655ec0d17cebe70d46f",

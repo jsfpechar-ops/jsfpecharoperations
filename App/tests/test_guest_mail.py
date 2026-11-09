@@ -1060,3 +1060,49 @@ def test_no_guest_footer_is_just_the_brand_name():
         content = _claim_content(lang)
         assert "\nUbyHost\n" not in content["text"], lang
         assert "<div>UbyHost</div>" not in content["html"], lang
+
+
+def _completion_with_fee(fee):
+    return mail_notify.build_completion(
+        lang="en",
+        property_name="Guest Mail Flat",
+        dates="2026-01-05 – 2026-01-08",
+        stay_url=f"{config.PUBLIC_BASE_URL}/l/{TOKEN}/1",
+        host=_host(),
+        host_url=f"{config.PUBLIC_BASE_URL}/reservations/1",
+        fee=fee,
+    )
+
+
+def test_the_receipt_shows_the_fee_and_its_calculation_without_naming_a_method():
+    fee = {
+        "total": 600,
+        "lines": [(2, 600)],
+        "rate": 300,
+        "rails": ["iban", "revolut", "cash"],
+        "vs": "1234",
+    }
+    content = _completion_with_fee(fee)
+    text = content["text"]
+    assert "Local stay fee" in text
+    assert "600 CZK" in text
+    assert "Guest 1: 2 nights" in text
+    assert "Bank transfer: use variable symbol 1234." in text
+    assert "payment details are on your stay page" in text
+    assert "paid by" not in text.lower()
+    assert "used" not in text.lower()
+    assert "Local stay fee" in html.unescape(content["html"])
+
+
+def test_the_receipt_without_a_fee_has_no_fee_heading():
+    content = _completion_content("en")
+    assert "Local stay fee" not in content["text"]
+    assert "Pay by:" not in content["text"]
+
+
+def test_the_receipt_without_bank_transfer_has_no_variable_symbol_line():
+    fee = {"total": 600, "lines": [(2, 600)], "rate": 300, "rails": ["cash"], "vs": "1234"}
+    text = _completion_with_fee(fee)["text"]
+    assert "Pay by: Cash." in text
+    assert "payment details are on your stay page" in text
+    assert "variable symbol" not in text

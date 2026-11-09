@@ -24,7 +24,7 @@ from fastapi.testclient import TestClient
 from app import auth, claim, db
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 
 def _free_port():
@@ -39,12 +39,12 @@ def host():
     suffix = secrets.token_hex(4)
     username = f"host-controls-{suffix}"
     empty_username = f"host-controls-empty-{suffix}"
-    owner_id = auth.create_account(
+    owner_id = mark_security_prompt_seen(auth.create_account(
         f"{username}@example.test", "Controls Test", role="host", username=username
-    )
-    empty_owner_id = auth.create_account(
+    ))
+    empty_owner_id = mark_security_prompt_seen(auth.create_account(
         f"{empty_username}@example.test", "Empty Controls Test", role="host", username=empty_username
-    )
+    ))
     entity_id = db.insert("legal_entity", {
         "name": "Controls Example s.r.o.", "seat": "Praha", "ico": "13572468",
         "contact_email": "controls@example.test", "owner_user_id": owner_id,

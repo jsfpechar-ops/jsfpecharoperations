@@ -14,7 +14,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, db
 from app.main import app
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 APP_ROOT = Path(__file__).resolve().parents[1]
 USERNAME = "0913-stay-fee-host"
@@ -98,7 +98,7 @@ def _cleanup() -> None:
 def property_session(base):
     db.init_db()
     _cleanup()
-    auth.create_account(f"{USERNAME}@example.test", "0913 stay fee host", username=USERNAME)
+    mark_security_prompt_seen(auth.create_account(f"{USERNAME}@example.test", "0913 stay fee host", username=USERNAME))
     client = TestClient(app)
     login = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert login.status_code == 303, login.text
@@ -110,6 +110,7 @@ def property_session(base):
     data = {
         "internal_name": "0913 Test Flat with a long internal name",
         "addr_obec": "Praha",
+        "addr_street": "Synthetic",
         "addr_house_no": "12",
         "addr_zip": "11000",
         "legal_entity_id": str(entity_id),

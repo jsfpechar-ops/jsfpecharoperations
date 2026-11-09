@@ -13,12 +13,15 @@
       var box = document.createElement("div");
       box.className = "g-stepper";
 
+      var STEP_ICON = '<svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+      var STEP_MINUS = STEP_ICON + '<path d="M5 12h14"/></svg>';
+      var STEP_PLUS = STEP_ICON + '<path d="M5 12h14"/><path d="M12 5v14"/></svg>';
       function button(label, delta, text) {
         var b = document.createElement("button");
         b.type = "button";
         b.className = "g-step-btn";
         b.setAttribute("aria-label", label);
-        b.textContent = text;
+        b.innerHTML = delta < 0 ? STEP_MINUS : STEP_PLUS;
         b.addEventListener("click", function () {
           var now = parseInt(input.value, 10);
           if (isNaN(now)) now = delta > 0 ? min - 1 : min + 1;
@@ -31,9 +34,9 @@
       }
 
       input.parentNode.insertBefore(box, input);
-      box.appendChild(button(wrap.getAttribute("data-less-label") || "-", -1, "−"));
+      box.appendChild(button(wrap.getAttribute("data-less-label") || "-", -1, ""));
       box.appendChild(input);
-      box.appendChild(button(wrap.getAttribute("data-more-label") || "+", 1, "+"));
+      box.appendChild(button(wrap.getAttribute("data-more-label") || "+", 1, ""));
     });
   }
 

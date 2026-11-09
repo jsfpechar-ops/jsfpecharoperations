@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, cleaning, cleaning_codes, cleaning_i18n, config, db, ttlock
 from app.main import app
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 
 @pytest.fixture
@@ -18,8 +18,8 @@ def workspace(monkeypatch, tmp_path):
     monkeypatch.setattr(cleaning, "today", lambda: date(2026, 10, 16))
     monkeypatch.setattr(auth, "staging_no_login", lambda: False)
     db.init_db()
-    owner = auth.create_account("cleaner-owner@example.test", "Schedule owner", username="cleaner-owner", role="host")
-    other = auth.create_account("cleaner-other@example.test", "Other owner", username="cleaner-other", role="host")
+    owner = mark_security_prompt_seen(auth.create_account("cleaner-owner@example.test", "Schedule owner", username="cleaner-owner", role="host"))
+    other = mark_security_prompt_seen(auth.create_account("cleaner-other@example.test", "Other owner", username="cleaner-other", role="host"))
     now = db.utcnow()
 
     def home(name, user):

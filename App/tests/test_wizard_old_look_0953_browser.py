@@ -12,6 +12,7 @@ else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
 from app import auth, db, property_setup
+from tests.conftest import mark_security_prompt_seen
 from tests.browser_support import chromium_launch_kwargs
 from tests.test_host_geometry import _browser_session_cookie, base  # noqa: F401
 
@@ -75,7 +76,7 @@ CHECK = r"""(page) => {
 
 def _owner(with_apartment: bool):
     username = f"o953{secrets.token_hex(3)}"
-    owner = auth.create_account(f"{username}@example.test", "Old look", role="host", username=username)
+    owner = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Old look", role="host", username=username))
     if not with_apartment:
         return username, None
     entity = db.insert("legal_entity", {"name": "Old look s.r.o.", "owner_user_id": owner, "created_at": db.utcnow()})

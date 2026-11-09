@@ -31,7 +31,6 @@ from .. import ruian as ruian_lookup  # 0911: guest RUIAN suggestions
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
 from .admin_helpers import kept_signature as _kept_signature
-from .admin_helpers import stay_dates_from_form as _stay_dates_from_form
 
 router = APIRouter(dependencies=[Depends(security.protect_guest_post)])
 
@@ -385,6 +384,52 @@ def _guest_issue(issue, lang: str):
     return validation.Issue(field, message, issue.severity)
 
 
+# Field to the i18n key of the label the guest sees next to it.
+_LATIN_FIELD_LABELS = {
+    "surname": "surname",
+    "first_name": "first_name",
+    "res_street": "res_street",
+    "res_city": "res_city",
+}
+
+
+def _name_latin_issues(issues, lang: str):
+    """Say which field holds text in another alphabet, and why it is refused.
+
+    The validator uses one sentence for every such field, so a guest who typed
+    a Chinese name and city saw the same line twice with no field named. The
+    summary line now starts with the field's own label. Validation is not
+    relaxed: the same fields fail for the same input.
+    """
+    translate = i18n.translator(lang)
+    out = []
+    for issue in issues:
+        label_key = _LATIN_FIELD_LABELS.get(issue.field)
+        if label_key and issue.message == validation.NON_LATIN_MESSAGE:
+            issue = validation.Issue(
+                issue.field,
+                translate("latin_only_error", field=translate(label_key)),
+                issue.severity,
+            )
+        out.append(issue)
+    return out
+
+
+def _keep_unreadable_text(values: dict, raw: dict) -> None:
+    """Hand back what the guest typed when cleaning it left nothing.
+
+    A name or address in Cyrillic, Chinese or Arabic cleans to an empty string.
+    Re-drawing the form from the cleaned values wiped it, and the guest had to
+    retype everything. Only an emptied field gets its raw text back (capped),
+    so what the page shows still never differs from what is validated, except
+    that the guest can see and correct what they typed.
+    """
+    for field in ("surname", "first_name", "res_street", "res_city"):
+        typed = (raw.get(field) or "").strip()
+        if typed and not values.get(field):
+            values[field] = typed[:100]
+
+
 def _localize_issues(issues, lang: str):
     return [
         _guest_issue(issue, lang)
@@ -625,7 +670,27 @@ def _reservation_for_guest(apartment, reservation_id: int, request: Optional[Req
         return reservation
     if request and _device_holds_claim(request, reservation_id, row):
         return reservation
+    if request and _device_saved_guest_in(request, reservation_id):
+        # Finding guest-form-b-05: with mail off there is no claim cookie, so a
+        # finished stay outside the lead window answered 404 right after the
+        # last person was saved. The device that saved a person here keeps the
+        # stay page (the signed owned-guest cookie), so it sees the confirmation.
+        return reservation
     return None
+
+
+def _device_saved_guest_in(request: Request, reservation_id: int) -> bool:
+    """True when this device saved a person into this very stay."""
+    owned = _owned_ids(request)
+    if not owned:
+        return False
+    marks = ",".join("?" for _ in owned)
+    return bool(
+        db.query_one(
+            f"SELECT 1 AS x FROM guest WHERE reservation_id = ? AND id IN ({marks})",
+            (reservation_id, *owned),
+        )
+    )
 
 
 def _claimable_reservation(apartment, reservation_id: int):
@@ -665,6 +730,7 @@ def _unavailable(
     status_code: int = 404,
     token: Optional[str] = None,
     host_note: Optional[str] = None,
+    reservation_id: Optional[int] = None,
 ):
     """The one page a guest lands on when there is nothing to fill in.
 
@@ -712,6 +778,14 @@ def _unavailable(
             # form screens. Wired off until that feature ships.
             "show_invoice_link": False,
             "host_note": host_note,
+            # A locked or wrong-device form is a dead end unless the page says
+            # where to go next: back to the stay, and to the host card below.
+            "stay_url": (
+                _guest_link(token, reservation_id) + _lang_q(lang)
+                if token and reservation_id and reason in _NO_RESTART_REASONS
+                else None
+            ),
+            "offer_message_host": reason in ("already_filed", "form_locked", "not_yours"),
             "privacy_url": _guest_link(token) + "/privacy" + _lang_q(lang) if token else None,
         }
     )
@@ -817,6 +891,7 @@ def _shared(request: Request, token: str, lang: str, apartment=None) -> Dict[str
         "facility_tone": int(apartment["id"]) % 10 if apartment else 0,
         "controller": _controller(apartment) if apartment else {},
         "host": _host_contact(apartment) if apartment else {},
+        "host_message_url": _host_message_url(apartment),
         "mail_enabled": mail.mail_enabled(),
         "notice_version": config.GUEST_NOTICE_VERSION,
         "cookie_inventory": cookie_inventory.COOKIE_INVENTORY,
@@ -841,6 +916,22 @@ def _entity_details(entity_id) -> Dict[str, str]:
 def _host_contact(apartment) -> Dict[str, str]:
     """The property manager / operating entity guests contact about a stay."""
     return _entity_details(apartment["legal_entity_id"] if apartment else None)
+
+
+def _host_message_url(apartment) -> str:
+    """Link for the "Message host" button, from the contact the guest already sees.
+
+    No new request and nothing stored: a mailto: with only the property name as
+    subject, else the host's phone, else "" (the page then points to the contact
+    in the message the guest got the link in).
+    """
+    host = _host_contact(apartment) if apartment else {}
+    if host.get("email"):
+        subject = _display_name(apartment) or ""
+        return "mailto:" + host["email"] + (f"?subject={quote(subject)}" if subject else "")
+    if host.get("phone"):
+        return "tel:" + host["phone"].replace(" ", "")
+    return ""
 
 
 def _controller(apartment) -> Dict[str, str]:
@@ -900,6 +991,8 @@ def _person_row(index: int, guest, owned: set, reservation, lang: str) -> Dict[s
         "complete": complete,
         "locked": reporting.guest_form_locked(guest, reservation),
         "sent": guest["submit_state"] == reporting.SENT,
+        # 2026-11-09 owner decision: an owned person can be removed until filed.
+        "removable": is_mine and guest["submit_state"] != reporting.SENT and not guest["restricted_at"],
     }
     if is_mine:
         doc = guest["doc_number"] or ""
@@ -917,6 +1010,55 @@ def _person_row(index: int, guest, owned: set, reservation, lang: str) -> Dict[s
             ),
         }
     return row
+
+
+def _doc_key(value) -> str:
+    text = re.sub(r"[^A-Z0-9]", "", (value or "").upper())
+    return "" if text in ("", validation.INPASS) else text
+
+
+def _person_key(guest) -> str:
+    parts = [
+        " ".join((guest["first_name"] or "").upper().split()),
+        " ".join((guest["surname"] or "").upper().split()),
+        (guest["birth_date"] or "").strip(),
+    ]
+    return "|".join(parts) if all(parts) else ""
+
+
+def _duplicate_warnings(guests, owned: set, translate) -> List[Dict[str, str]]:
+    """Soft warnings for this device's people that match someone else in the stay.
+
+    Same document number, or same name and birth date (finding guest-form-b-01,
+    -02). It only says so: nothing is rejected or changed, a child can share a
+    parent's number, and the other person's details are never shown. Only the
+    people this device saved get a line, so a guest learns nothing about a
+    stranger's entry beyond "someone has the same number".
+    """
+    docs: Dict[str, List[int]] = {}
+    people: Dict[str, List[int]] = {}
+    for guest in guests:
+        if _doc_key(guest["doc_number"]):
+            docs.setdefault(_doc_key(guest["doc_number"]), []).append(guest["id"])
+        if _person_key(guest):
+            people.setdefault(_person_key(guest), []).append(guest["id"])
+    out: List[Dict[str, str]] = []
+    for guest in guests:
+        if guest["id"] not in owned:
+            continue
+        what = []
+        if len(docs.get(_doc_key(guest["doc_number"]), [])) > 1:
+            what.append(translate("dup_what_doc"))
+        if len(people.get(_person_key(guest), [])) > 1:
+            what.append(translate("dup_what_person"))
+        if what:
+            out.append(
+                {
+                    "name": _guest_display_name(guest["first_name"], guest["surname"]),
+                    "what": ", ".join(what),
+                }
+            )
+    return out
 
 
 def _form_back_url(token: str, apartment, reservation_id: int, lang: str, editing: bool) -> Optional[str]:
@@ -1242,7 +1384,11 @@ def stay_overview(token: str, reservation_id: int, request: Request):
             "can_pick_other": _can_pick_other_stays(apartment),
             "party_error": request.query_params.get("party_error") == "1",
             "claim_email_masked": claim_row["email_masked"] or "",
+            "dup_warnings": _duplicate_warnings(
+                progress["guests"], owned, i18n.translator(lang)
+            ),
             "just_saved": request.query_params.get("saved") == "1",
+            "just_removed": request.query_params.get("removed") == "1",
             # "Reported" is a claim about the police, so it may only be made
             # when a form actually went out. ``locked`` is true for any signed,
             # complete form, which made the saved copy unreachable and told a
@@ -1585,7 +1731,9 @@ def _form_context(
                 if guest and validation.is_valid_signature(guest["signature_png"])
                 else ""
             ),
-            "fee_estimate": _fee_estimate(apartment, reservation, values or {}),
+            "fee_estimate": _fee_box(apartment, reservation, values or {}, guest),
+            "fee_obec_rule": _fee_obec_rule(apartment),
+            "fee_obec_unknown": not _fee_obec_rule(apartment),
             "fee_panel": (
                 _fee_pay_panel(apartment, reservation, context["t"], _qr_offered(request, reservation))
                 if remaining is not None and remaining <= 0
@@ -1645,24 +1793,21 @@ def guest_form_new(token: str, reservation_id: int, request: Request):
             lang,
         )
     prefill, copied_from = _residence_prefill(request, reservation)
-    return _with_lang(
-        render_guest(
-            request,
-            "guest/form.html",
-            _form_context(
-                request,
-                apartment,
-                reservation,
-                None,
-                lang,
-                values=prefill,
-                residence_copied_from=copied_from,
-                token=token,
-                back_url=_form_back_url(token, apartment, reservation_id, lang, editing=False),
-            ),
-        ),
+    new_context = _form_context(
+        request,
+        apartment,
+        reservation,
+        None,
         lang,
+        values=prefill,
+        residence_copied_from=copied_from,
+        token=token,
+        back_url=_form_back_url(token, apartment, reservation_id, lang, editing=False),
     )
+    new_context["dup_warnings"] = _duplicate_warnings(
+        progress["guests"], set(_owned_ids(request)), i18n.translator(lang)
+    )
+    return _with_lang(render_guest(request, "guest/form.html", new_context), lang)
 
 
 @router.get("/l/{token}/{reservation_id}/edit/{guest_id}")
@@ -1681,16 +1826,16 @@ def guest_form_edit(token: str, reservation_id: int, guest_id: int, request: Req
     if claim_guard:
         return _with_lang(claim_guard, lang)
     if guest_id not in _owned_ids(request):
-        return _unavailable(request, lang, "not_yours", 403, token)
+        return _unavailable(request, lang, "not_yours", 403, token, reservation_id=reservation_id)
     guest = db.query_one(
         "SELECT * FROM guest WHERE id = ? AND reservation_id = ?", (guest_id, reservation_id)
     )
     if not guest:
         return _unavailable(request, lang, "stay_gone", 404, token)
     if guest["submit_state"] == reporting.SENT:
-        return _unavailable(request, lang, "already_filed", 403, token)
+        return _unavailable(request, lang, "already_filed", 403, token, reservation_id=reservation_id)
     if reporting.guest_form_locked(guest, reservation):
-        return _unavailable(request, lang, "form_locked", 403, token)
+        return _unavailable(request, lang, "form_locked", 403, token, reservation_id=reservation_id)
     return _with_lang(
         render_guest(
             request,
@@ -1707,6 +1852,111 @@ def guest_form_edit(token: str, reservation_id: int, guest_id: int, request: Req
         ),
         lang,
     )
+
+
+def _removal_guard(request: Request, token: str, reservation_id: int, guest_id: int, lang: str, post: bool):
+    """Shared checks for the remove page and the remove action.
+
+    Returns ``(apartment, token, reservation, guest, early_response)``; a
+    non-None early response is the page to send. Same device-ownership rule as
+    editing: only the device that added the person can remove them.
+    """
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return None, token, None, None, early
+    pin_guard = _require_pin(request, token, lang)
+    if pin_guard:
+        return None, token, None, None, pin_guard
+    reservation = _reservation_for_guest(apartment, reservation_id, request)
+    if not reservation:
+        return None, token, None, None, _unavailable(request, lang, "stay_gone", 404, token)
+    if post:
+        throttle = _throttle_guest_post(request, token, "guest_remove", lang)
+        if throttle:
+            return None, token, None, None, throttle
+    claim_guard = _require_claim_session(request, reservation, token, lang)
+    if claim_guard:
+        return None, token, None, None, _with_lang(claim_guard, lang)
+    if guest_id not in _owned_ids(request):
+        return None, token, None, None, _unavailable(request, lang, "not_yours", 403, token)
+    guest = db.query_one(
+        "SELECT * FROM guest WHERE id = ? AND reservation_id = ? AND archived_at IS NULL",
+        (guest_id, reservation_id),
+    )
+    if not guest:
+        return None, token, None, None, _unavailable(request, lang, "stay_gone", 404, token)
+    if guest["submit_state"] == reporting.SENT:
+        return None, token, None, None, _unavailable(request, lang, "already_filed", 403, token)
+    if guest["restricted_at"]:
+        return None, token, None, None, _unavailable(request, lang, "form_locked", 403, token)
+    return apartment, token, reservation, guest, None
+
+
+@router.get("/l/{token}/{reservation_id}/remove/{guest_id}")
+def guest_remove_confirm(token: str, reservation_id: int, guest_id: int, request: Request):
+    """The confirmation step. A plain page with a POST form, so it needs no script."""
+    lang = _language(request)
+    apartment, token, reservation, guest, early = _removal_guard(
+        request, token, reservation_id, guest_id, lang, post=False
+    )
+    if early:
+        return early
+    context = _shared(request, token, lang, apartment)
+    context.update(
+        {
+            "reservation": reservation,
+            "person_id": guest["id"],
+            "person_name": f"{guest['first_name']} {guest['surname']}".strip(),
+            "back_url": _guest_link(token, reservation_id) + _lang_q(lang),
+        }
+    )
+    return _with_lang(render_guest(request, "guest/remove.html", context), lang)
+
+
+@router.post("/l/{token}/{reservation_id}/remove/{guest_id}")
+async def guest_remove(token: str, reservation_id: int, guest_id: int, request: Request):
+    """Delete a person the guest added, as long as the record is not filed.
+
+    The same delete the host has (``guest_delete``): the row and the passport
+    scan go, and nothing is reported for them. The delete is compare-and-set on
+    the filing state, so a record that was filed, or is being filed right now,
+    after the confirmation page loaded is kept and the guest is told so.
+    """
+    lang = _language(request)
+    apartment, token, reservation, guest, early = _removal_guard(
+        request, token, reservation_id, guest_id, lang, post=True
+    )
+    if early:
+        return early
+    removed = db.execute(
+        "DELETE FROM guest WHERE id = ? AND reservation_id = ? "
+        "AND COALESCE(submit_state, '') != ? AND restricted_at IS NULL "
+        "AND NOT EXISTS (SELECT 1 FROM submission_claim WHERE guest_id = ? AND claimed_at >= ?)",
+        (guest_id, reservation_id, reporting.SENT, guest_id, time.time() - reporting.SUBMISSION_CLAIM_TTL_SECONDS),
+    )
+    if not removed:
+        return _unavailable(request, lang, "already_filed", 403, token)
+    passport_photos.delete_photo(guest_id)
+    db.audit(
+        "guest_removed_by_guest",
+        f"guest={guest_id} reservation={reservation_id}",
+        actor="guest",
+        owner_user_id=apartment["owner_user_id"],
+    )
+    await run_in_threadpool(reporting.submit_stay_if_complete, apartment["id"], reservation_id)
+    response = RedirectResponse(
+        _guest_link(token, reservation_id) + _lang_q(lang, "&removed=1"), status_code=303
+    )
+    _remember_owned(response, [i for i in _owned_ids(request) if i != guest_id])
+    return _with_lang(response, lang)
+
+
+def _locked_stay_dates(reservation, existing):
+    """1026: guest-submitted stay dates are locked. The posted stay_from/stay_to are
+    ignored: the stored stay (host or earlier save) or else the booking's own dates."""
+    if existing is not None and existing["stay_from"] and existing["stay_to"]:
+        return existing["stay_from"], existing["stay_to"]
+    return reservation["date_from"], reservation["date_to"]
 
 
 @router.post("/l/{token}/{reservation_id}/relang")
@@ -1746,15 +1996,13 @@ async def guest_form_relang(token: str, reservation_id: int, request: Request):
         )
     if existing:
         if existing["submit_state"] == reporting.SENT:
-            return _unavailable(request, lang, "already_filed", 403, token)
+            return _unavailable(request, lang, "already_filed", 403, token, reservation_id=reservation_id)
         if existing["restricted_at"] or reporting.guest_form_locked(existing, reservation):
-            return _unavailable(request, lang, "form_locked", 403, token)
+            return _unavailable(request, lang, "form_locked", 403, token, reservation_id=reservation_id)
 
     raw = _guest_form_raw(form, apartment)
     values = validation.normalise_guest(raw, clamp=False)
-    stay_from, stay_to = _stay_dates_from_form(
-        form, (reservation["date_from"], reservation["date_to"])
-    )
+    stay_from, stay_to = _locked_stay_dates(reservation, existing)
     context = _form_context(
         request,
         apartment,
@@ -1821,7 +2069,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             "SELECT * FROM guest WHERE id = ? AND reservation_id = ?", (guest_id, reservation_id)
         )
         if existing and existing["submit_state"] == reporting.SENT:
-            return _unavailable(request, lang, "already_filed", 403, token)
+            return _unavailable(request, lang, "already_filed", 403, token, reservation_id=reservation_id)
         if existing and existing["restricted_at"]:
             # BE-9: a restricted record is read-only until the host lifts it.
             return _with_lang(
@@ -1831,7 +2079,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
                 lang,
             )
         if existing and reporting.guest_form_locked(existing, reservation):
-            return _unavailable(request, lang, "form_locked", 403, token)
+            return _unavailable(request, lang, "form_locked", 403, token, reservation_id=reservation_id)
 
     child_in_passport = bool(form.get("child_in_passport"))
     # One extractor for the host entry form and this one: the fields are the
@@ -1842,9 +2090,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     # Un-clamped so an over-long name is reported back to the guest instead of
     # being cut mid-word and filed against a passport it no longer matches.
     values = validation.normalise_guest(raw, clamp=False)
-    stay_from, stay_to = _stay_dates_from_form(
-        form, (reservation["date_from"], reservation["date_to"])
-    )
+    stay_from, stay_to = _locked_stay_dates(reservation, existing)
     signature = _kept_signature(form.get("signature"), existing["signature_png"] if existing else None)
 
     party_raw = (form.get("party_size") or "").strip()
@@ -1929,7 +2175,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         elif not has_existing_photo:
             issues.append(validation.Issue("passport_photo", translate("passport_photo_missing")))
 
-    issues = _localize_issues(issues, lang)
+    issues = _localize_issues(_name_latin_issues(issues, lang), lang)
 
     if validation.errors_only(issues):
         context = _form_context(
@@ -1956,6 +2202,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
                 "legal_ack": form.get("legal_ack") or "",
             }
         )
+        _keep_unreadable_text(context["values"], raw)
         return _with_lang(render_guest(request, "guest/form.html", context, status_code=422), lang)
 
     if reporting.expected_guest_count(reservation) is None and not existing:
@@ -2006,7 +2253,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             ),
             extra_params=(existing["id"], time.time() - reporting.SUBMISSION_CLAIM_TTL_SECONDS),
         ):
-            return _unavailable(request, lang, "already_filed", 403, token)
+            return _unavailable(request, lang, "already_filed", 403, token, reservation_id=reservation_id)
         saved_id = existing["id"]
     else:
         # Two phones can each open /new while one slot is free. /new checks
@@ -2191,7 +2438,7 @@ def _fee_pay_panel(apartment, reservation, t, qr_ok=True):
                 account = payments.normalise_account(entity["bank_account"])[1]
     # Exempt guests (zero counted nights) are left out: the guest never sees who is exempt.
     persons = [
-        {"days": int(line["liable_nights"]), "amount": int(line["liable_nights"]) * rate}
+        {"days": int(line["liable_nights"]), "amount": int(line["amount_czk"])}
         for line in charge["lines"] if line["liable_nights"] > 0
     ]
     rails = []
@@ -2221,24 +2468,132 @@ def _fee_pay_panel(apartment, reservation, t, qr_ok=True):
             "vs": vs, "payee": payee}
 
 
-def _fee_estimate(apartment, reservation, values):
-    """Form-end estimate for the guest being typed in (un-saved values), or None when it is zero."""
+def _fee_obec_rule(apartment) -> str:
+    """JSON for signature.js: the same-obec key and folding tables (0898), so the Check step
+    hides the estimate for a resident of the property's municipality while the guest types."""
+    import json
+    from .. import stay_fee
+    obec = stay_fee._obec_key(stay_fee.property_obec(apartment))
+    if not obec:
+        return ""
+    return json.dumps({"obec": obec, "country": validation.CZECH_CODE,
+                       "bases": list(stay_fee.OBEC_SUFFIX_BASES),
+                       "aliases": stay_fee.OBEC_ALIASES,
+                       "prefixes": list(stay_fee.OFFICIAL_PREFIXES),
+                       "okres": list(stay_fee.OKRES_NOT_OBEC),
+                       "after": stay_fee.OBEC_AFTER_BASE})
+
+
+def _fee_typed_guest(reservation, values, guest=None):
+    """The guest being typed in, as stay_fee.guest_period reads it.
+
+    A typed value wins; with none (the edit page opens with empty values) the
+    stored record is used, so the estimate matches what the pay step will charge:
+    the guest's own stay dates, birth date, residence and the host's decision.
+    """
+    def pick(key):
+        if key in values and values.get(key) is not None:
+            return values.get(key) or None
+        if guest is not None and key in guest.keys():
+            return guest[key] or None
+        return None
+
+    decision = guest["fee_host_decision"] if guest is not None and "fee_host_decision" in guest.keys() else None
+    return {
+        "id": guest["id"] if guest is not None else 0,
+        "stay_from": pick("stay_from"), "stay_to": pick("stay_to"),
+        "birth_date": pick("birth_date"),
+        "fee_host_decision": decision, "fee_host_reason": None, "fee_host_reason_enc": None,
+        "res_country": pick("res_country") or "", "res_city": pick("res_city") or "",
+    }
+
+
+def _fee_liable_days(apartment, reservation, typed) -> int:
     from datetime import date as _date
-    from .. import config, stay_fee
+    from .. import stay_fee
+    share = stay_fee.guest_period(typed, reservation, _date.min, _date.max, apartment=apartment)
+    if share is None:
+        return 0
+    stay_fee._apply_scope_boundary(share, apartment)
+    return int(share["liable_nights"])
+
+
+def _fee_liable_amount(apartment, reservation, typed, schedule=None):
+    """(counted nights, amount): each night priced at the dated rate in force (1028)."""
+    from datetime import date as _date
+    from .. import stay_fee, stay_fee_rate
+    if schedule is None:
+        schedule = stay_fee_rate.schedule_for(apartment)
+    share = stay_fee.guest_period(typed, reservation, _date.min, _date.max,
+                                  apartment=apartment, schedule=schedule)
+    if share is None:
+        return 0, 0
+    stay_fee._apply_scope_boundary(share, apartment)
+    return int(share["liable_nights"]), int(share["amount_czk"])
+
+
+def _fee_estimate(apartment, reservation, values, guest=None):
+    """Form-end estimate for the guest being typed in (un-saved values), or None when it is zero.
+
+    ``live`` carries the stay window for signature.js, which recomputes the amount
+    as the guest types a birth date or a home address (under-18 days and the
+    same-obec rule, 0898/1025). It is None when the host has decided for this
+    guest: the decision wins and the page cannot know it any better.
+    """
+    from datetime import timedelta as _timedelta
+    from .. import config, stay_fee, stay_fee_rate
     if not (apartment["stay_fee_collect"] and config.STAY_FEE_GUEST_PAY and stay_fee.is_active(apartment)):
         return None
-    guest = {
-        "id": 0, "stay_from": None, "stay_to": None,
-        "birth_date": values.get("birth_date") or None,
-        "fee_host_decision": None, "fee_host_reason": None, "fee_host_reason_enc": None,
-        "res_country": values.get("res_country") or "", "res_city": values.get("res_city") or "",
-    }
-    share = stay_fee.guest_period(guest, reservation, _date.min, _date.max, apartment=apartment)
-    if share is None:
-        return None
-    stay_fee._apply_scope_boundary(share, apartment)
-    days = int(share["liable_nights"])
+    try:
+        source = reservation["source"]
+    except (KeyError, IndexError):
+        source = None
+    if source == "demo":
+        return None  # 0100: the demo stay owes no fee, and the pay step never asks for one
+    typed = _fee_typed_guest(reservation, values or {}, guest)
+    rate = int(apartment["stay_fee_rate_czk"])
+    schedule = stay_fee_rate.schedule_for(apartment)
+    stay_from = typed["stay_from"] or reservation["date_from"]
+    stay_to = typed["stay_to"] or reservation["date_to"]
+    first_night = validation.parse_iso_date(stay_from)
+    last_night = validation.parse_iso_date(stay_to)
+    # The rate shown is the one on the last night, as on the pay panel; it is
+    # the column rate unless a dated rate row says otherwise.
+    if last_night is not None:
+        rate = stay_fee_rate.rate_on(schedule, last_night)
+    days, amount = _fee_liable_amount(apartment, reservation, typed, schedule)
+    live = None
+    # One rate: signature.js multiplies; across a rate change it adds the per-night rates (1031).
+    uniform = (first_night is None or last_night is None
+               or stay_fee_rate.is_uniform(schedule, first_night + _timedelta(days=1), last_night))
+    if typed["fee_host_decision"] not in stay_fee.DECISIONS:
+        live = {"from": stay_from, "to": stay_to, "rate": rate}
+        if not uniform:
+            # 1031: across a rate change send each counted night's rate, so the script can
+            # still drop a child's or a resident's nights instead of freezing the box.
+            live["nights"] = {
+                (first_night + _timedelta(days=k)).isoformat():
+                    stay_fee_rate.rate_on(schedule, first_night + _timedelta(days=k))
+                for k in range(1, (last_night - first_night).days + 1)
+            }
     if days <= 0:
         return None
-    rate = int(apartment["stay_fee_rate_czk"])
-    return {"amount": days * rate, "days": days, "rate": rate}
+    return {"amount": amount, "days": days, "rate": rate, "live": live, "hidden": False}
+
+
+def _fee_box(apartment, reservation, values, guest=None):
+    """The Check-step box: the estimate, or a hidden box when the typed values owe
+    nothing but an adult from elsewhere would, so signature.js can show it again
+    if the guest corrects a birth date or a home address. None: no box at all."""
+    estimate = _fee_estimate(apartment, reservation, values, guest)
+    if estimate is not None:
+        return estimate
+    if guest is not None and guest["fee_host_decision"] in ("exempt", "charge"):
+        return None
+    base = dict(values or {}, birth_date="", res_country="", res_city="")
+    fallback = _fee_estimate(apartment, reservation, base, None if guest is None else
+                             {key: guest[key] for key in guest.keys()
+                              if key not in ("birth_date", "res_country", "res_city")})
+    if fallback is None or fallback["live"] is None:
+        return None
+    return dict(fallback, hidden=True)

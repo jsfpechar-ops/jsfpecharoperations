@@ -12,7 +12,7 @@ from typing import Any, Dict, List
 
 import json
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import RedirectResponse, Response
 
 from .. import access, auth, config, db, host_i18n, i18n, mail, payment_links, payment_request, payment_services, payments_consent, security, stripe_connect
@@ -388,7 +388,7 @@ def payment_request_qr(request: Request, request_id: int):
     return render(
         request,
         "payments_qr.html",
-        {"nav": "payments", "request": row, "qr_payload": payload, "show_nav": False, "png_url": f"/payments/qr/{row['id']}.png"},
+        {"nav": "payments", "pay_request": row, "qr_payload": payload, "show_nav": False, "png_url": f"/payments/qr/{row['id']}.png"},
     )
 
 
@@ -455,6 +455,7 @@ async def property_page_save(request: Request, apartment_id: int):
     pp.save_page(
         apartment_id,
         description=str(form.get("description") or "").strip(),
+        house_rules=str(form.get("house_rules") or "").strip()[:4000],
         amenities=[
             ln.strip()
             for ln in str(form.get("amenities") or "").splitlines()
@@ -462,6 +463,25 @@ async def property_page_save(request: Request, apartment_id: int):
         ],
     )
     return _back(f"/apartments/{apartment_id}/page", msg=_flash(request, "payments.page.saved"))
+
+
+@router.post("/apartments/{apartment_id}/page/photo-move")
+async def property_page_photo_move(request: Request, apartment_id: int):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    owner_id = access.owner_id(request)
+    apartment = db.query_one(
+        "SELECT id FROM apartment WHERE id = ? AND owner_user_id = ?",
+        (apartment_id, owner_id),
+    )
+    if apartment is None:
+        return Response(status_code=404)
+    form = await request.form()
+    from .. import property_page as pp
+
+    pp.move_photo(apartment_id, str(form.get("path") or ""), str(form.get("dir") or ""))
+    return _back(f"/apartments/{apartment_id}/page")
 
 
 @router.post("/apartments/{apartment_id}/page/photo-delete")
@@ -495,6 +515,30 @@ def _bsite_apartment(request: Request, apartment_id: int):
     return row, owner_id
 
 
+@router.get("/booking-sites")
+def booking_sites(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    owner_id = access.owner_id(request)
+    from .. import booking_site
+
+    rows = db.query(
+        "SELECT a.id, a.internal_name, COALESCE(p.published, 0) AS published "
+        "FROM apartment a LEFT JOIN property_page p ON p.apartment_id = a.id "
+        f"WHERE {db.null_safe_eq('a.owner_user_id')} AND a.archived_at IS NULL AND a.active = 1 "
+        "ORDER BY a.internal_name, a.id",
+        (owner_id,),
+    )
+    if len(rows) == 1:
+        return RedirectResponse(f"/apartments/{rows[0]['id']}/booking-site", status_code=303)
+    return render(
+        request,
+        "booking_sites.html",
+        {"nav": "booking_sites", "rows": rows, "allowed": booking_site.site_allowed(owner_id)},
+    )
+
+
 @router.get("/apartments/{apartment_id}/booking-site")
 def booking_site_setup(request: Request, apartment_id: int):
     guard = auth.require_login(request)
@@ -503,11 +547,11 @@ def booking_site_setup(request: Request, apartment_id: int):
     apartment, owner_id = _bsite_apartment(request, apartment_id)
     if apartment is None:
         return Response(status_code=404)
-    from .. import booking_manage, booking_setup, booking_site, property_page as pp
+    from .. import booking_manage, booking_rails, booking_setup, booking_site, property_page as pp
     from .. import payments as payments_mod
 
     context: Dict[str, Any] = {
-        "nav": "properties", "apartment": apartment,
+        "nav": "booking_sites", "apartment": apartment,
         "allowed": booking_site.site_allowed(owner_id),
     }
     if context["allowed"]:
@@ -531,6 +575,7 @@ def booking_site_setup(request: Request, apartment_id: int):
                 for value in booking_setup.NOTICE_OPTIONS
             ],
             policies=booking_site.POLICIES,
+            pay=booking_rails.setup_view(apartment_id),
             bookings=booking_manage.host_rows(apartment_id),
         )
     return render(request, "booking_site_setup.html", context)
@@ -554,18 +599,88 @@ async def booking_site_save(request: Request, apartment_id: int):
         booking_setup.mark_calendar_done(apartment_id)
         return _back(here, msg=_flash(request, "bsite.flash.ical_done"))
     if "publish" in form or "unpublish" in form:
-        if "publish" in form and not booking_setup.can_publish(booking_setup.steps(apartment_id, owner_id)):
-            return _back(here, err=_flash(request, "bsite.err.publish_not_ready"))
+        if "publish" in form:
+            rows = booking_setup.steps(apartment_id, owner_id)
+            if not booking_setup.can_publish(rows):
+                done = {r["key"]: r["done"] for r in rows}
+                key = "bsite.err.publish_not_ready" if done["page"] else "bsite.err.publish_need_page"
+                return _back(here, err=_flash(request, key))
         pp.publish_page(apartment_id, published="publish" in form)
         key = "bsite.flash.published" if "publish" in form else "bsite.flash.unpublished"
         return _back(here, msg=_flash(request, key))
     try:
         booking_site.save_settings(apartment_id, booking_setup.parse_form(form))
     except ValueError as exc:
-        err_key = "bsite.err." + booking_setup.error_field(exc)
-        return _back(here + "#rules", err=_flash(request, err_key))
+        return _back(
+            here + "#rules",
+            err=_flash(request, f"bsite.err.{booking_setup.error_field(exc)}"),
+        )
     return _back(here, msg=_flash(request, "payments.page.saved"))
 
+
+
+
+@router.post("/apartments/{apartment_id}/booking-site/pay")
+async def booking_site_pay(request: Request, apartment_id: int):
+    """0996: save the direct payment rails of the booking site."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment, owner_id = _bsite_apartment(request, apartment_id)
+    if apartment is None:
+        return Response(status_code=404)
+    from .. import booking_rails, booking_site
+
+    here = f"/apartments/{apartment_id}/booking-site"
+    if not booking_site.site_allowed(owner_id):
+        return _back(here, err=_flash(request, "bsite.err.not_max"))
+    form = await request.form()
+    try:
+        values = booking_rails.parse_form(form, apartment_id)
+    except ValueError as exc:
+        return _back(here + "#pay", err=_flash(request, f"bsite.err.{exc}"))
+    db.update("apartment", apartment_id, values)
+    return _back(here, msg=_flash(request, "payments.page.saved"))
+
+
+
+async def _direct_action(request: Request, apartment_id: int, action: str):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment, owner_id = _bsite_apartment(request, apartment_id)
+    if apartment is None:
+        return Response(status_code=404)
+    from .. import booking_direct, booking_site
+
+    here = f"/apartments/{apartment_id}/booking-site"
+    form = await request.form()
+    raw = str(form.get("booking_id") or "")
+    booking = booking_site.get(int(raw)) if raw.isdigit() else None
+    if booking is None or int(booking["apartment_id"]) != apartment_id:
+        return Response(status_code=404)
+    result = getattr(booking_direct, action)(int(booking["id"]), owner_id)
+    if result["error"] == "not_found":
+        return Response(status_code=404)
+    if result["error"] == "taken":
+        return _back(here, err=_flash(request, "bsite.err.direct_taken"))
+    if result["error"]:
+        return _back(here, err=_flash(request, "bsite.err.not_cancellable"))
+    flash_key = {
+        "confirm": "bsite.flash.direct_confirm",
+        "decline": "bsite.flash.direct_decline",
+    }[action]
+    return _back(here, msg=_flash(request, flash_key))
+
+
+@router.post("/apartments/{apartment_id}/booking-site/confirm")
+async def booking_site_confirm(request: Request, apartment_id: int):
+    return await _direct_action(request, apartment_id, "confirm")
+
+
+@router.post("/apartments/{apartment_id}/booking-site/decline")
+async def booking_site_decline(request: Request, apartment_id: int):
+    return await _direct_action(request, apartment_id, "decline")
 
 @router.post("/apartments/{apartment_id}/booking-site/cancel")
 async def booking_site_cancel(request: Request, apartment_id: int):
@@ -589,7 +704,8 @@ async def booking_site_cancel(request: Request, apartment_id: int):
         return _back(here, err=_flash(request, "bsite.err.cancel_failed"))
     if result["error"]:
         return _back(here, err=_flash(request, "bsite.err.not_cancellable"))
-    return _back(here, msg=_flash(request, "bsite.flash.cancelled"))
+    flash_key = "bsite.flash.cancelled_direct" if booking.get("pay_method") == "direct" else "bsite.flash.cancelled"
+    return _back(here, msg=_flash(request, flash_key))
 
 
 # --- one-time payments consent (0624) ------------------------------------------
@@ -643,11 +759,11 @@ def _guest_qr_row(request_id: int, token: str):
 def guest_qr_png(request_id: int, token: str):
     row = _guest_qr_row(request_id, token)
     if row is None:
-        return Response(status_code=404)
+        raise HTTPException(status_code=404)
     try:
         _, png = payment_request.qr_payload(row)
     except ValueError:
-        return Response(status_code=404)
+        raise HTTPException(status_code=404)
     return Response(content=png, media_type="image/png", headers={"Cache-Control": "private, max-age=300"})
 
 
@@ -656,16 +772,16 @@ def guest_qr_page(request: Request, request_id: int, token: str):
     """0763: the guest's bank-transfer page; no login, token-checked."""
     row = _guest_qr_row(request_id, token)
     if row is None:
-        return Response(status_code=404)
+        raise HTTPException(status_code=404)
     try:
         payload, _ = payment_request.qr_payload(row)
     except ValueError:
-        return Response(status_code=404)
+        raise HTTPException(status_code=404)
     response = render(
         request,
         "payments_qr.html",
         {
-            "request": row,
+            "pay_request": row,
             "qr_payload": payload,
             "show_nav": False,
             "png_url": f"/pay/{request_id}/{token}.png",

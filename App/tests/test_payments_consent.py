@@ -14,7 +14,7 @@ from fastapi.testclient import TestClient
 from app import auth, config, db, payments_consent
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 OWNER = "payconsent"
 SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0624"
@@ -34,7 +34,7 @@ def _cleanup():
 def owner():
     db.init_db()
     _cleanup()
-    auth.create_account(f"{OWNER}@example.test", "Consent Host", username=OWNER)
+    mark_security_prompt_seen(auth.create_account(f"{OWNER}@example.test", "Consent Host", username=OWNER))
     oid = db.query_one("SELECT id FROM user_account WHERE username = ?", (OWNER,))["id"]
     db.insert("legal_entity", {"owner_user_id": oid, "name": "Consent s.r.o.",
                                "contact_email": f"{OWNER}@example.test",

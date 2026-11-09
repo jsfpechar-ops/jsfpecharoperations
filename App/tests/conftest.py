@@ -152,6 +152,17 @@ def csrf_token_for(client) -> str:
     return client._ubyhost_csrf_token
 
 
+def mark_security_prompt_seen(user_id):
+    """Browser fixtures: the one-time "second way in" dialog is a modal now and would cover every click.
+
+    Tests of the dialog itself (test_passkeys, test_security_prompt_delay, the ones that click "Later") do not call this.
+    """
+    from app import db
+
+    db.execute("UPDATE user_account SET two_factor_prompted_at = ? WHERE id = ?", (db.utcnow(), user_id))
+    return user_id
+
+
 def login_as(client, username, *, url="/login", remember=False, follow_redirects=True):
     """Log ``client`` in as ``username`` through the real e-mail link (task 0003).
 

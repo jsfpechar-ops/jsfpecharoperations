@@ -1,4 +1,5 @@
 {% extends "guest/base.html" %}
+{% from "_icons.html" import icon with context %}
 {% block content %}
 
 {% if can_pick_other %}
@@ -17,6 +18,12 @@
    footer. #}
 {% if party_error %}
   <div class="g-err">{{ t('error_party_size') }}</div>
+{% endif %}
+
+{% if just_removed %}
+  <div class="g-card g-saved" role="status">
+    <p class="g-intro" style="margin-bottom:0">{{ t('removed_ok') }}</p>
+  </div>
 {% endif %}
 
 {% if fee_panel %}
@@ -96,9 +103,18 @@
   {% endif %}
 {% endif %}
 
+{% if dup_warnings %}
+  <div class="g-host-note" role="note" data-dup-warning style="margin:16px 0">
+    <strong>{{ t('dup_warning_title') }}</strong>
+    {% for item in dup_warnings %}
+      <p style="margin:6px 0 0">{{ item.name }}: {{ t('dup_warning_body', what=item.what) }}</p>
+    {% endfor %}
+  </div>
+{% endif %}
+
 {% for person in people if person.mine %}
   <details class="g-card g-summary">
-    <summary class="g-summary-fold">{% if person.name %}{{ person.name }}{% else %}{{ t('person') }} {{ person.index }}{% endif %} &middot; {{ t('summary_fold_saved') if person.complete else t('not_filled') }}</summary>
+    <summary class="g-summary-fold">{% if person.name %}{{ person.name }}{% else %}{{ t('person') }} {{ person.index }}{% endif %} &middot; {% if person.complete %}{{ t('summary_fold_saved') }} <span aria-hidden="true">{{ icon('check', 14) }}</span>{% else %}{{ t('not_filled') }}{% endif %}</summary>
     <div class="g-summary-body">
       <h2>{{ t('summary_title') }}</h2>
       {% if person.summary %}
@@ -120,8 +136,16 @@
         <a class="g-btn ghost slim" href="/l/{{ token }}/{{ reservation.id }}/edit/{{ person.id }}?lang={{ lang }}">
           {{ t('continue_filling') if not person.complete else t('edit') }}
         </a>
-      {% elif person.complete %}
-        <p class="g-intro" style="margin:12px 0 0">{{ t('form_locked_short') }}</p>
+        {% if person.removable %}
+          <p class="g-quiet-action-row">
+            <a class="g-quiet-action" href="/l/{{ token }}/{{ reservation.id }}/remove/{{ person.id }}?lang={{ lang }}" data-remove-person>{{ t('remove_person') }}</a>
+          </p>
+        {% endif %}
+      {% else %}
+        <p class="g-intro" style="margin:12px 0 0">{{ t('filed_short') if person.sent else t('form_locked_short') }}</p>
+        {% if host_message_url %}
+          <a class="g-btn ghost slim" href="{{ host_message_url }}" data-message-host>{{ t('message_host') }}</a>
+        {% endif %}
       {% endif %}
     </div>
   </details>
@@ -131,7 +155,7 @@
   <div class="g-card">
     {% for person in people if not person.mine %}
       <div class="g-person">
-        <span class="g-tick {{ 'done' if person.complete else 'todo' }}">{{ '✓' if person.complete else person.index }}</span>
+        <span class="g-tick {{ 'done' if person.complete else 'todo' }}">{% if person.complete %}{{ icon('check', 14) }}{% else %}{{ person.index }}{% endif %}</span>
         <div class="who">
           {{ t('person') }} {{ person.index }}
           <small>{{ t('completed') if person.complete else t('not_filled') }}</small>

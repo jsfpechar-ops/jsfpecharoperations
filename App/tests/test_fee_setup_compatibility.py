@@ -24,7 +24,7 @@ from app import auth, db
 from app.main import app
 from app.routes import stay_fees as stay_fee_routes
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 USERNAME = "fee-setup-compat-host"
 OTHER = "fee-setup-compat-other"
@@ -54,6 +54,7 @@ NON_FEE = {
     "automation_mode": "manual",
     "default_purpose": "10",
     "addr_obec": "Praha",
+    "addr_street": "Synthetic",
     "addr_house_no": "12",
     "addr_zip": "11000",
 }
@@ -91,8 +92,8 @@ def _property(owner_id: int, entity_id, **fee) -> int:
 def host():
     db.init_db()
     _cleanup()
-    auth.create_account(f"{USERNAME}@example.test", "Fee compat host", username=USERNAME)
-    auth.create_account(f"{OTHER}@example.test", "Other host", username=OTHER)
+    mark_security_prompt_seen(auth.create_account(f"{USERNAME}@example.test", "Fee compat host", username=USERNAME))
+    mark_security_prompt_seen(auth.create_account(f"{OTHER}@example.test", "Other host", username=OTHER))
     client = TestClient(app)
     login = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert login.status_code == 303, login.text
@@ -299,7 +300,7 @@ def test_fee_editor_is_the_only_one_and_shows_the_council_block(host):
     apartment_id = _property(owner_id, entity_id, stay_fee_rate_czk=20)
     page = client.get(f"/apartments/{apartment_id}?view=settings&section=reporting&lang=en").text
     section = page.split('id="stay-fee-settings"', 1)[1].split("</section>", 1)[0]
-    assert section.count('<details class="fee-more"') == 1  # 0239: print-only office details fold
+    assert section.count('<details class="fee-more') == 1  # 0239: print-only office details fold
     assert 'id="stay-fee-council"' in section
     assert section.count('name="stay_fee_rate_czk"') == 1
     assert page.count('name="stay_fee_authority_name"') == 1

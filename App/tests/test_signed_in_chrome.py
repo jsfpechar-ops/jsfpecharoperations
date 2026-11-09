@@ -17,7 +17,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, claim, config, db, host_i18n
 from app.main import app
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 USERNAME = "signed-in-chrome-host"
 
@@ -49,7 +49,7 @@ def empty_host():
     """A brand-new host: an account and nothing else, so Overview is the zero state."""
     db.init_db()
     _cleanup()
-    auth.create_account(f"{USERNAME}@example.test", "Chrome Host", username=USERNAME)
+    mark_security_prompt_seen(auth.create_account(f"{USERNAME}@example.test", "Chrome Host", username=USERNAME))
     client = TestClient(app)
     _login(client)
     try:
@@ -69,7 +69,7 @@ def host_with_property():
     """A host with one property, so Overview is not the zero state."""
     db.init_db()
     _cleanup()
-    auth.create_account(f"{USERNAME}@example.test", "Chrome Host", username=USERNAME)
+    mark_security_prompt_seen(auth.create_account(f"{USERNAME}@example.test", "Chrome Host", username=USERNAME))
     entity_id = db.insert(
         "legal_entity",
         {
@@ -203,7 +203,9 @@ def test_the_zero_state_overview_still_renders_the_welcome_card(empty_host):
     page = empty_host.get("/?lang=en").text
 
     assert 'class="onboarding-welcome"' in page
-    assert host_i18n.STRINGS["en"]["onboarding.kicker"] in page
+    assert host_i18n.STRINGS["en"]["onboarding.welcome_title"] in page
+    assert 'class="onboarding-steps"' in page
+    assert 'class="btn primary small onboarding-step-action"' in page
 
 
 def test_a_workspace_with_a_property_keeps_the_page_header(host_with_property):

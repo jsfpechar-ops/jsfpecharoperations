@@ -43,7 +43,7 @@ else:
 from app import auth, claim, config, db
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0084-evidence"
 CAPTURE = os.environ.get("UBYHOST_CAPTURE_0084") == "1"
@@ -122,7 +122,7 @@ def _free_port():
 
 def _account(prefix, role="host"):
     username = f"{prefix}-{secrets.token_hex(4)}"
-    user_id = auth.create_account(f"{username}@example.test", f"{prefix.title()} Fixture", role=role, username=username)
+    user_id = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", f"{prefix.title()} Fixture", role=role, username=username))
     return username, user_id
 
 

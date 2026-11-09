@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, payments
 from app.main import app
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 from datetime import timedelta
 
 from app import claim
@@ -67,9 +67,9 @@ def host():
     db.init_db()
     _cleanup()
     if not db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,)):
-        auth.create_account(f"{USERNAME}@example.test", "Autofill Host", username=USERNAME)
+        mark_security_prompt_seen(auth.create_account(f"{USERNAME}@example.test", "Autofill Host", username=USERNAME))
     if not db.query_one("SELECT id FROM user_account WHERE username = ?", (OTHER,)):
-        auth.create_account(f"{OTHER}@example.test", "Other Host", username=OTHER)
+        mark_security_prompt_seen(auth.create_account(f"{OTHER}@example.test", "Other Host", username=OTHER))
     client = TestClient(app)
     response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
@@ -384,7 +384,7 @@ def test_invoice_fill_screenshots_at_required_widths():
 
     db.init_db()
     username = f"invfill{secrets.token_hex(4)}"
-    owner = auth.create_account(f"{username}@example.test", "Fill Shots", username=username)
+    owner = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Fill Shots", username=username))
     entity = db.insert(
         "legal_entity",
         {
@@ -453,7 +453,7 @@ def test_invoice_buyer_kind_screenshots():
 
     db.init_db()
     username = f"invkind{secrets.token_hex(4)}"
-    owner = auth.create_account(f"{username}@example.test", "Kind Shots", username=username)
+    owner = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Kind Shots", username=username))
     entity = db.insert(
         "legal_entity",
         {
@@ -553,7 +553,7 @@ def test_invoice_buyer_block_spacing_0896():
     shots = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0896"
     db.init_db()
     username = f"inv0896{secrets.token_hex(4)}"
-    owner = auth.create_account(f"{username}@example.test", "Spacing 0896", username=username)
+    owner = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Spacing 0896", username=username))
     entity = db.insert(
         "legal_entity",
         {

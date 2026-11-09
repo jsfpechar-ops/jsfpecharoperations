@@ -85,6 +85,9 @@ def stay_line(row: Dict[str, Any], lang: str, today: date) -> Optional[Dict[str,
             return None
         return _line("stay", "amber", subject, t("needs_you.short.ready"), t("needs_you.action.send"), base + "#now", stay_id=stay_id)
     arrival = validation.parse_iso_date(_get(reservation, "date_from", ""))
+    departure = validation.parse_iso_date(_get(reservation, "date_to", ""))
+    if departure is not None and departure <= today:
+        return None  # the guests have left or leave today: asking them to register is stale
     if status in _GUEST and arrival is not None and arrival <= today + timedelta(days=1):
         if arrival < today:
             when = t("needs_you.when.arrived")

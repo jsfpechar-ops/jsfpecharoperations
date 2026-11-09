@@ -23,7 +23,7 @@ else:
 from app import auth, db, host_i18n
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0092-evidence"
 SHARED_IDS = (
@@ -45,7 +45,7 @@ def setup_module():
 
 def _host(entities: int = 1, prefix: str = "create"):
     username = f"{prefix}-{secrets.token_hex(4)}"
-    owner_id = auth.create_account(f"{username}@example.test", "Create Host", role="host", username=username)
+    owner_id = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Create Host", role="host", username=username))
     entity_ids = [
         db.insert("legal_entity", {
             "name": "Synthetic Operator s.r.o." if index == 0 else f"Second Operator {index}",
@@ -71,6 +71,7 @@ def _form(**overrides):
         "addr_obec": "Praha",
         "addr_house_no": "12",
         "addr_zip": "11000",
+        "addr_street": "Synthetic",
     }
     data.update(overrides)
     return data
@@ -268,7 +269,7 @@ def test_copy_is_an_explicit_choice_and_survives_a_refusal():
     assert '<input type="hidden" name="automation_mode" value="scheduled">' in refused.text
     created = host["client"].post(
         "/apartments", data={**hidden, "internal_name": "Copied Loft", "legal_entity_id": str(host["entities"][0]),
-              "addr_obec": "Praha", "addr_house_no": "12", "addr_zip": "11000"},
+              "addr_obec": "Praha", "addr_house_no": "12", "addr_zip": "11000", "addr_street": "Synthetic"},
         follow_redirects=False,
     )
     assert created.status_code == 303
@@ -296,7 +297,7 @@ def test_create_needs_login_and_admin_preview_creates_for_the_previewed_host():
     assert anonymous.post("/apartments", data=_form(), follow_redirects=False).status_code in (302, 303)
     host = _host(1, "create-previewed")
     admin_name = f"create-admin-{secrets.token_hex(3)}"
-    auth.create_account(f"{admin_name}@example.test", "Create Admin", role="admin", username=admin_name)
+    mark_security_prompt_seen(auth.create_account(f"{admin_name}@example.test", "Create Admin", role="admin", username=admin_name))
     admin = TestClient(app)
     assert login_as(admin, admin_name, url="/login?lang=en", follow_redirects=False).status_code == 303
     assert admin.post(f"/admin/users/{host['owner']}/impersonate", data={"reason": "support"},
@@ -429,6 +430,7 @@ def test_create_page_fits_and_follow_ups_move_below_when_narrow(base):
         page.locator("#addr_zip").fill("11000")
         page.locator("#addr_obec").fill("Praha")
         page.locator("#addr_house_no").fill("12")
+        page.locator("#addr_street").fill("Synthetic")
         page.locator(".property-create-actions .ui-btn-primary").click()
         page.wait_for_load_state()
         assert "/setup/calendar" in page.url
@@ -453,6 +455,7 @@ def test_create_page_works_without_javascript(base):
         page.locator("#internal_name").fill("Synthetic No-JS Flat")
         page.locator("#addr_obec").fill("Praha")
         page.locator("#addr_house_no").fill("12")
+        page.locator("#addr_street").fill("Synthetic")
         page.locator("#addr_zip").fill("11000")
         page.locator(".property-create-actions .ui-btn-primary").click()
         page.wait_for_load_state()

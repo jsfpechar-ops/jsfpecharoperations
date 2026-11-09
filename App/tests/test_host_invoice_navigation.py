@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, db
 from app.main import app
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 from tests.invoice_stay_helper import drop_stays, make_stay, stay_form
 from tests.test_invoice_stay_browser import (  # noqa: F401 (fixtures and helpers)
     WIDTHS,
@@ -47,7 +47,7 @@ def _cleanup():
 def world():
     db.init_db()
     _cleanup()
-    auth.create_account(f"{USERNAME}@example.test", "Invoice Nav Host", username=USERNAME)
+    mark_security_prompt_seen(auth.create_account(f"{USERNAME}@example.test", "Invoice Nav Host", username=USERNAME))
     owner = db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))["id"]
     entity = db.insert("legal_entity", {
         "name": "Nav s.r.o.", "seat": "Praha 1", "ico": "04656679",
@@ -127,7 +127,7 @@ def test_detail_links_stay_settings_and_payment_fact(world):
 
 def test_navigation_pages_fit_and_capture(base):
     username = "invnav" + os.urandom(3).hex()
-    owner = auth.create_account(f"{username}@example.test", "Nav", role="host", username=username)
+    owner = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Nav", role="host", username=username))
     entity = db.insert("legal_entity", {
         "name": "Demo Hospitality s.r.o.", "seat": "Praha 1", "ico": "04656679",
         "registry_entry": "Fyzická osoba zapsaná v živnostenském rejstříku",

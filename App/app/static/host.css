@@ -1554,3 +1554,17 @@ body.host-workspace {
 .host-workspace .property-savebar{position:sticky;bottom:0;display:flex;justify-content:flex-end;gap:8px;padding:12px 0;background:var(--surface-page, #f6f6f4);border-top:1px solid var(--border, #ebebe7);z-index:5}
 @media (max-width: 640px){.host-workspace .property-savebar > *{flex:1}}
 .host-workspace .property-section.ui-section{border-radius:12px}
+
+.host-workspace .pp-photo-moves { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-2); }
+.host-workspace .pp-photo-grid { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.host-workspace .pp-photo-tile { position: relative; width: 120px; }
+.host-workspace .pp-photo-tile img { object-fit: cover; border-radius: var(--radius-2, 8px); }
+.host-workspace .pp-photo-del { position: absolute; top: var(--space-1); right: var(--space-1); }
+.host-workspace .pp-photo-main { margin: var(--space-1) 0 0; }
+.host-workspace .bsite-bookings > div { padding-block: var(--space-3); }
+.host-workspace .bsite-bookings dd .ui-btn-group { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: var(--space-3); }
+.host-workspace .bsite-bookings dd .ui-btn-group > form { margin: 0; }
+@media (max-width: 639px) {
+  .host-workspace .bsite-bookings dd .ui-btn-group { display: grid; grid-template-columns: repeat(2, max-content); justify-items: start; }
+  .host-workspace .bsite-bookings dd .ui-btn-group > .ui-badge { grid-column: 1 / -1; }
+}

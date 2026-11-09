@@ -1,22 +1,61 @@
-{# Stay-fee money card (brief 0910), position 3 on the hub. Read-only: no form, no
-   state. Included only when the route found a live total above zero (fee_panel). #}
+{# Stay-fee box on the hub (brief 0993). Read-only: no form, no state. #}
 {% set fee_total = t('fee_amount', amount=fee_panel.total) %}
-<div class="g-card g-fee" id="fee-pay">
-  <h2>{{ t('fee_title') }}</h2>
-  <p class="g-intro">{{ t('fee_intro') }}</p>
-  <p class="g-intro">{{ t('fee_rate_line', rate=fee_panel.rate) }}</p>
-  <p class="g-fee-amount"><strong>{{ fee_total }}</strong></p>
-  <details class="g-fee-what">
-    <summary class="g-fee-what-toggle" aria-label="{{ t('fee_what_is_this') }}">?</summary>
-    <div class="g-fee-what-body">
-      <p class="g-intro">{{ t('legal_notice_fee_body') }}</p>
-      <p><a href="https://www.e-sbirka.cz/sb/1990/565" rel="noopener" target="_blank">{{ t('legal_notice_fee_link') }}</a></p>
-    </div>
-  </details>
+{% set nights = fee_panel.persons|map(attribute='days')|unique|list %}
+<section class="g-fee-box" id="fee-pay" aria-labelledby="fee-pay-h">
+  <h3 id="fee-pay-h">{{ t('fee_box_group') }}</h3>
+  <p class="g-fee-amt">{{ fee_total }}</p>
+  <p class="g-fee-calc">
+    {% if fee_panel.persons|length > 1 and nights|length == 1 %}
+      {{ t('fee_calc_group', guests=fee_panel.persons|length, days=nights[0], rate=fee_panel.rate) }}
+    {% else %}
+      {{ t('fee_rate_line', rate=fee_panel.rate) }}
+    {% endif %}
+  </p>
 
-  <details class="g-summary">
-    <summary class="g-summary-fold">{{ t('fee_per_person') }}</summary>
-    <div class="g-summary-body">
+  <div class="g-fee-panel g-fee-panel--pay">
+    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#20201e"/><path d="M12 6.5v6.5M12 16.6v.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>
+    <span><b>{{ t('fee_now_title') }}</b> {{ t('fee_now_body') }}</span>
+  </div>
+
+  {% if fee_panel.rails %}
+    {% for rail in fee_panel.rails %}
+      <div class="g-fee-opt">
+        {% if rail.key == 'iban' %}
+          <h4 class="g-fee-opt-h">{{ t('fee_rail_iban') }}</h4>
+          <div class="g-summary-body g-fee-rail">
+            {% if rail.qr %}
+            <div class="g-fee-qr">
+              <img class="g-fee-qr-img" src="{{ rail.qr }}" width="176" height="176" alt="{{ t('fee_qr_alt') }}">
+            </div>
+            {% endif %}
+            <dl class="g-summary-list">
+              {% if fee_panel.payee %}<dt>{{ t('fee_payee') }}</dt><dd>{{ fee_panel.payee }}</dd>{% endif %}
+              <dt>{{ t('fee_iban') }}</dt>
+              <dd class="g-fee-iban">{% if ' ' in (rail.iban or '') %}{% for g in rail.iban.split() %}<span>{{ g }}</span> {% endfor %}{% else %}{% set iban_clean = rail.iban.replace(' ', '') %}{% for i in range(0, iban_clean|length, 4) %}<span>{{ iban_clean[i:i+4] }}</span> {% endfor %}{% endif %}</dd>
+              <dt>{{ t('fee_amount_label') }}</dt><dd>{{ fee_total }}</dd>
+              <dt>{{ t('fee_vs_label') }}</dt><dd>{{ fee_panel.vs }}</dd>
+            </dl>
+          </div>
+        {% elif rail.key == 'revolut' %}
+          <h4 class="g-fee-opt-h">{{ t('fee_rail_revolut') }}</h4>
+          <div class="g-summary-body g-fee-rail">
+            <a class="g-btn secondary" href="{{ rail.link }}" rel="noopener">{{ t('fee_revolut_button', amount=fee_total) }}</a>
+          </div>
+        {% else %}
+          <h4 class="g-fee-opt-h">{{ t('fee_rail_cash') }}</h4>
+          <div class="g-summary-body g-fee-rail">
+            <p class="g-intro">{{ rail.note }}</p>
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% else %}
+    <p class="g-intro g-fee-no-rails">{{ t('fee_no_rails') }}</p>
+  {% endif %}
+
+  <details class="g-fee-fold">
+    <summary>{{ t('fee_per_person') }}</summary>
+    <div>
       <dl class="g-summary-list">
         {% for person in fee_panel.persons %}
           <dt>{{ t('fee_guest_n', n=loop.index) }}</dt>
@@ -26,40 +65,5 @@
     </div>
   </details>
 
-  {% if fee_panel.rails %}
-    <p class="g-intro g-fee-choose">{{ t('fee_choose') }}</p>
-    {% for rail in fee_panel.rails %}
-      <details class="g-summary"{% if loop.first %} open{% endif %}>
-        {% if rail.key == 'iban' %}
-          <summary class="g-summary-fold">{{ t('fee_rail_iban') }}</summary>
-          <div class="g-summary-body g-fee-rail">
-            {% if rail.qr %}
-            <div class="g-fee-qr">
-              <img class="g-fee-qr-img" src="{{ rail.qr }}" width="176" height="176" alt="{{ t('fee_qr_alt') }}">
-            </div>
-            {% endif %}
-            <dl class="g-summary-list">
-              {% if fee_panel.payee %}<dt>{{ t('fee_payee') }}</dt><dd>{{ fee_panel.payee }}</dd>{% endif %}
-              <dt>{{ t('fee_iban') }}</dt><dd>{{ rail.iban }}</dd>
-              <dt>{{ t('fee_amount_label') }}</dt><dd>{{ fee_total }}</dd>
-              <dt>{{ t('fee_vs_label') }}</dt><dd>{{ fee_panel.vs }}</dd>
-            </dl>
-          </div>
-        {% elif rail.key == 'revolut' %}
-          <summary class="g-summary-fold">{{ t('fee_rail_revolut') }}</summary>
-          <div class="g-summary-body g-fee-rail">
-            <a class="g-btn" href="{{ rail.link }}" rel="noopener">{{ t('fee_revolut_button', amount=fee_total) }}</a>
-          </div>
-        {% else %}
-          <summary class="g-summary-fold">{{ t('fee_rail_cash') }}</summary>
-          <div class="g-summary-body g-fee-rail">
-            <p class="g-intro">{{ rail.note }}</p>
-          </div>
-        {% endif %}
-      </details>
-    {% endfor %}
-  {% else %}
-    <p class="g-intro g-fee-no-rails">{{ t('fee_no_rails') }}</p>
-  {% endif %}
-
-</div>
+  {% include "guest/_fee_why.html" %}
+</section>

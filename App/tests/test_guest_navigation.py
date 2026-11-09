@@ -309,7 +309,10 @@ def test_the_last_step_offers_a_review_list_with_a_way_back():
         page = browser.get(f"/l/{token}/{wrong}", follow_redirects=True)
         assert page.status_code == 200
         assert "Check before you send" in page.text
-        assert "these details are locked and only your host can change them" in page.text
+        # 2026-11-09 owner decision: the old "locked once you send" line is gone; a
+        # guest can change their details until the host files them.
+        assert "You can change these details from this link until your host reports them" in page.text
+        assert "these details are locked and only your host can change them" not in page.text
         assert "data-wizard-review" in page.text
         assert 'data-edit-label="Change"' in page.text
         # Rows are read off the form's own labels and values, so the list ships
@@ -321,7 +324,8 @@ def test_the_last_step_offers_a_review_list_with_a_way_back():
         cs_page = browser.get(f"/l/{token}/{wrong}?lang=cs", follow_redirects=True)
         assert cs_page.status_code == 200
         assert "Před odesláním zkontrolujte" in cs_page.text
-        assert "změnit je může už jen hostitel" in cs_page.text
+        # 2026-11-09 owner decision: editable until the host files the stay.
+        assert "měnit, dokud je hostitel neoznámí úřadům" in cs_page.text
         assert 'data-edit-label="Změnit"' in cs_page.text
     finally:
         _cleanup()
@@ -940,7 +944,7 @@ def test_a_short_party_is_flagged_once_the_stay_has_started():
         assert "Waiting for guest forms" in row["detail"]
         card = alerts.present(row, "cs")
         assert "Čeká se na formuláře hostů" in card["display_detail"]
-        assert "1/60" in card["display_detail"]
+        assert "1 z 60" in card["display_detail"]
 
         # The host fixes the declared party; the warning is stale at once.
         db.execute("UPDATE reservation SET declared_guests = 1 WHERE id = ?", (stay,))
@@ -1180,9 +1184,8 @@ def test_an_edit_says_save_changes_and_returns_to_the_summary():
         )
         assert saved.status_code == 303
         row = db.query_one("SELECT * FROM guest WHERE reservation_id = ?", (wrong,))
-        # A signed complete form is locked; make the saved guest eligible for
-        # editing the way an incomplete/imported row is, then reopen it.
-        db.update("guest", row["id"], {"signature_png": ""})
+        # 2026-11-09 owner decision: a signed complete form stays editable until
+        # it is filed, so it is reopened as saved (no signature wipe needed).
         edit = browser.get(f"/l/{token}/{wrong}/edit/{row['id']}?lang=en")
         assert edit.status_code == 200
         assert i18n.STRINGS["en"]["guest_save_changes"] in edit.text

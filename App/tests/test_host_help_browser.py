@@ -22,10 +22,11 @@ else:
 from app import auth, db
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
-TIP = "#permalink_window_days-help"
-BTN = "[aria-controls='permalink_window_days-help']"
+# Owner decision 2026-11-08 (brief 1030): at >=768 px the window-days "?" is pruned, so the PIN help (kept everywhere) is the sample.
+TIP = "#permalink_pin-help"
+BTN = "[aria-controls='permalink_pin-help']"
 EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0093-evidence"
 
 
@@ -33,9 +34,9 @@ EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0093-eviden
 def host():
     db.init_db()
     username = f"help-tip-{secrets.token_hex(4)}"
-    owner_id = auth.create_account(
+    owner_id = mark_security_prompt_seen(auth.create_account(
         f"{username}@example.test", "Help Tip", role="host", username=username
-    )
+    ))
     apartment_id = db.insert("apartment", {
         "internal_name": "Sample Property",
         "owner_user_id": owner_id,
@@ -85,7 +86,7 @@ def _open_page(context, base, host, lang):
     page = context.new_page()
     page.goto(f"{base}/apartments/{host['apartment']}?view=settings&section=guests&lang={lang}")  # 0094
     page.evaluate(
-        "(() => { let d = document.querySelector('#permalink_window_days').closest('details');"
+        "(() => { let d = document.querySelector('#permalink_pin').closest('details');"
         " while (d) { d.open = true; d = d.parentElement.closest('details'); } })()"
     )
     page.locator(BTN).scroll_into_view_if_needed()  # PR #725: the hint sits behind the ? button again
@@ -126,7 +127,7 @@ def test_help_tip_interactions_aria_and_fit(host, base):
             assert tip.get_attribute("role") == "tooltip"
             ids = page.evaluate("[...document.querySelectorAll('[id]')].map(e => e.id)")
             assert len(ids) == len(set(ids))
-            assert page.locator("label[for='permalink_window_days']").count() == 1
+            assert page.locator("label[for='permalink_pin']").count() == 1
 
             # the hint opens from its ? button and stays inside the viewport
             button.click()
@@ -135,7 +136,7 @@ def test_help_tip_interactions_aria_and_fit(host, base):
             # 0543: the hint sits in the field's label row (above the input), not under it
             in_row = tip.evaluate(
                 "(el) => { const row = el.closest('.field-label-row');"
-                " return !!row && row.contains(document.querySelector(\"label[for='permalink_window_days']\")); }"
+                " return !!row && row.contains(document.querySelector(\"label[for='permalink_pin']\")); }"
             )
             assert in_row, "hint is not in its field's label row"
             assert _inside_viewport(page)
@@ -170,7 +171,7 @@ def test_help_tip_target_size_and_no_js_reachability(host, base):
         page.locator(BTN).focus()  # PR #725: without JS the hint shows on focus/hover of its ? button
         tip = page.locator(TIP)
         assert tip.count() == 1 and tip.is_visible()
-        assert "stay-specific link" in tip.inner_text()
+        assert "Six digits guests enter" in tip.inner_text()
         no_js.close()
         browser.close()
 
@@ -271,3 +272,32 @@ def test_converted_hints_are_tips_not_always_visible_text(host):
         assert 'id="property-create-address-help"' in cs
     finally:
         _drop_host_pages(host, entity)
+
+
+def test_1003_help_tip_opens_under_its_button_on_hover_and_focus(host, base):
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        for width in (390, 1280):
+            context = _context(browser, host, base, width)
+            page = _open_page(context, base, host, "en")
+            button = page.locator(BTN)
+            tip = page.locator(TIP)
+            if width == 1280:
+                button.hover()
+                tip.wait_for(state="visible")
+                assert button.get_attribute("aria-expanded") == "true"
+                page.mouse.move(2, 2)
+                tip.wait_for(state="hidden", timeout=2000)
+            button.click()
+            tip.wait_for(state="visible")
+            b, t = button.bounding_box(), tip.bounding_box()
+            below = 0 <= t["y"] - (b["y"] + b["height"]) <= 16
+            above = 0 <= b["y"] - (t["y"] + t["height"]) <= 16
+            assert below or above, (width, b, t)
+            assert 0 <= t["x"] and t["x"] + t["width"] <= width - 8 + 0.5, (width, t)
+            max_w = 360.5 if width < 600 else 320.5  # 1003 fix: phones 356 to 360 px, wider 320 px
+            assert t["width"] <= max_w, (width, t)
+            page.keyboard.press("Escape")
+            tip.wait_for(state="hidden")
+            context.close()
+        browser.close()

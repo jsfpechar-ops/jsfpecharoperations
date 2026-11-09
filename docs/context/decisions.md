@@ -9,7 +9,7 @@ Append-only.
 - 2026-10-08 | Door codes: one 1-min job; no PIN/list/unlock polling; weekly `queryDate`; taken type-3 period: `add` only, host warned (0037) | [plan §7](../plans/ttlock-door-codes.md)
 - 2026-10-08 | Invoices per stay only, replaces 09-26 | scope | [plan](../plans/stay-only-invoices.md)
 - 2026-10-08 | Staging: `UBYHOST_STAGING_NO_LOGIN=1` skips login; door-code alert after 10 min | test-only | [ENVIRONMENT](../ENVIRONMENT.md)
-- 2026-10-09 | [workflow] One brief per copy text; replaced brief marked in commit; executors skip non-todo; lint warns on overlap | brief collisions | [workflow](workflow.md)
+- 2026-10-09 | [workflow] One brief per copy text; replaced brief marked in commit; executors skip non-todo; lint warns on overlap | [workflow](workflow.md)
 - 2026-10-09 | [workflow] Status `replaced`: newer brief took over | `blocked` reads as waiting
 - 2026-10-09 | #331: no ID-check step (host checks ID); guest link default 1 day ahead | K-F12
 - 2026-10-10 | PostHog replaces Umami; privacy settings in the snippet | owner | [plan](../plans/posthog-analytics.md), [0039](../tasks/0039-posthog-hardening.md)
@@ -25,11 +25,11 @@ Append-only.
 - 2026-10-25 | Invoice "Fill from register" also asks MFČR VAT register; DIČ digits only; 24 h cache | owner | 0394
 - 2026-10-26 | Billing phase 1: invoices only, no gateway yet | owner | 0411
 - 2026-10-26 | Unpaid = read-only, filing never blocked | owner | 0415
-- Grafana Cloud (EU free tier) is subprocessor for ops logs and metrics (PII-free, OPS-3); monitoring behind compose profile "monitoring" (owner, 2026-10-27).
+- 2026-10-27 Grafana Cloud (EU free tier): subprocessor for ops logs/metrics (PII-free, OPS-3); compose profile "monitoring" (owner).
 - 2026-10-28 | [deps] `stripe` 16.0.1 pinned+hashed in requirements.lock (owner); calls via `App/app/stripe_connect.py`; shared monthly cap `UBYHOST_STRIPE_MONTHLY_API_CALLS` | 0428
 - 2026-10-28 | Property pages: Apify scrape-first prefill (page + Leon guide, 1 fetch), deterministic, no AI step; host reviews once | owner | 0431
-- 2026-10-28 | Property page: Airbnb-style layout patterns only; no Airbnb brand assets or CSS | owner | 0431
-- 2026-10-28 | Page photos: download + re-host from the import run (max 10, EXIF stripped), never hotlink; host confirms rights | owner | 0432
+- 2026-10-28 | Property page: Airbnb-style layout only; no Airbnb assets or CSS | owner | 0431
+- 2026-10-28 | Page photos: re-host from the import run (max 10, EXIF stripped), never hotlink; host confirms rights | owner | 0432
 - 2026-10-28 | Booking widget: Airbnb-style on our calendar/fee logic, no-JS, Stripe checkout on host account | owner | 0434
 - 2026-10-28 | Listing pages English-only; no per-listing or per-language translation (OTA copy verbatim) | owner | 0431/0433
 - 2026-11-02 | OCR: Tesseract only, local, MRZ check digits, Max only; band crop; Paddle if ocr_readrate <90% | owner | test_doc_ocr
@@ -39,7 +39,7 @@ Append-only.
 - 2026-10-30 | [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; manual cutover | 0455–0456
 - 2026-10-31 | Postgres (#592), then Go G1-G6, per-feature rollback, no load test. [workflow] Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
 - 2026-10-31 | Every change lean: no dead code or extras; dead code goes in its own small commit | owner | plan v4
-- 2026-10-31 | Approval gates waived for the Postgres/Go migration; bar stays (verified backup, prod-copy rehearsal, per-table hashes, suite green on both DBs, auto rollback); D1 Postgres in Compose, socket only, 1 GB cap, nightly `pg_dump`; D2 `production` reviewer; D3 goose v3.29.0 (SHA-256 pinned, 0465b); D4 job table, `SKIP LOCKED`; no password, `network_mode: none`. [workflow] Pre-merge: `git diff --stat origin/main <branch>` vs brief Files; one worktree per Haiku | owner, orchestrator | 0463, 0464, #606
+- 2026-10-31 | Postgres/Go migration gates waived; bar unchanged (backup, rehearsal, hashes, both DBs green, rollback); D1-D4 = 0463-0465. [workflow] Pre-merge diff vs brief Files | owner | 0463, #606
 - 2026-10-31 | [workflow] `test-postgres-full` (app suite on PG 17) gates every merge; SQLite-file tests carry `sqlite_only` | orchestrator | 0462
 - 2026-11-01 | Host redesign: vendored Hotwire Turbo (MIT) for page-body swaps; owner OKs mockups first | owner | #614
 - 2026-11-01 | Go: module go/, stdlib, pgx v5, go-ntlmssp v0.1.1, go-qrcode (11-02) | owner (waiver) | 0474, 0481, 0684
@@ -58,11 +58,17 @@ Append-only.
 - [dashboard] 2026-11-04: the per-property "No guest has used the link" needs-you card (0233) is removed, not collapsed; the property-page health row stays (brief 0949).
 - [dashboard] 2026-11-04: the "You are ready" card shows only with exactly one property (brief 0949).
 - [ui] 0948: six-card status strip replaces the aside basics and connections cards; standalone guest card removed, its copy button lives in the strip (owner 2026-11-04).
-- [ui] 2026-11-04: Smart lock is one accordion (#sec-lock) outside the property form; its controls use form="property-settings-form" and the unsaved guard counts them. Source: brief 0952.
+- [ui] 2026-11-04: Smart lock = one accordion (#sec-lock) outside the property form; controls use form="property-settings-form"; unsaved guard counts them (0952).
 - [wizard] 2026-11-04: wizard shows the old look on the current 4-step flow; red star marks mandatory fields; operator e-mail has no purpose text. Source: brief 0953.
 - [ui] 2026-11-04: TTLock step one says eAdmin; Smart lock shows a status block with Turn on/off (door_code.state is the one source). Source: brief 0954.
 - [ui] 2026-11-05: property notices are inline banners in their section; the Save row closes the form and sticks; Preview sticks from 1024 px. Source: brief 0957.
-- [ui] 2026-11-05: PR #786 owner confirms no check-in/out times on stay detail, four wizard steps, accepted/listed TTLock connection sufficient for Lock online; Stays filters wrap on phones so all options are visible (0950-fix-1).
-- [ui] 2026-11-06 [owner]: property page keeps main's header and tile grid; the setup progress card sits full width below the grid (0986).
+- [ui] 2026-11-05: PR #786: no stay check-in/out times, four wizard steps, listed TTLock = Lock online; Stays filters wrap on phones (0950-fix-1).
 - [ui] 2026-11-06 [owner]: property page keeps main's header and tile grid; the setup progress card sits full width below the grid (0986).
 - 2026-11-06 [owner] lock connected but codes off shows main's "Turn on" row; "Connect my lock" only for first-time setup (0987).
+- 2026-11-07 [owner] request-to-book: direct rails (IBAN/Revolut/cash) vs or beside Stripe; 24h hold; host confirms (0996-0998).
+- 2026-11-07 | [backup] Litestream retired; S3 replica kept | owner | [1021](../tasks/1021-remove-litestream.md)
+- 2026-11-07 | [backup] WAL-G: WAL archive + PITR to S3 | owner | [1022](../tasks/1022-walg-continuous-archiving.md)
+- 2026-11-09 [stay-fee] 1031b: a bare Prague/Brno district ("Řepy") stays liable; guest writes the town (owner). Any Unicode dash folds like "-".
+- 2026-11-09 [guest] Guest edits/removes own added people until filed (SENT, incl. by hand); then locked, "Message host" (owner)
+- 2026-11-09 | [ux] Stay fees: current month default, pick navigates | owner | 1051
+- 2026-11-09 [ux] [Speed plan](../plans/speed-and-ease.md): answers §10.

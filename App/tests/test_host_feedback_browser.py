@@ -1,4 +1,5 @@
 """Real Chromium checks for host copy results and transient feedback."""
+import json
 import os
 import secrets
 import socket
@@ -12,7 +13,7 @@ from fastapi.testclient import TestClient
 from app import auth, db
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 
 REQUIRE_BROWSER = os.environ.get("UBYHOST_REQUIRE_BROWSER") == "1"
@@ -56,7 +57,7 @@ def _session_cookie(username):
 
 def test_host_copy_feedback_truth_and_geometry(base):
     username = f"feedback{secrets.token_hex(4)}"
-    auth.create_account(f"{username}@example.test", "Feedback QA", role="host", username=username)
+    mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Feedback QA", role="host", username=username))
     session = _session_cookie(username)
     shots = Path("/tmp/0032-host-feedback")
     shots.mkdir(parents=True, exist_ok=True)
@@ -230,7 +231,14 @@ def test_host_copy_feedback_truth_and_geometry(base):
         page.evaluate("sessionStorage.removeItem('__fullFeedbackRail')")
         page.reload()
 
-        page.route("**/api/command-palette", lambda route: route.fulfill(json={"items": [{"label": "Copy guest link", "copy": "https://example.test/guest-secret", "group": "Actions"}]}))
+        page.route(
+            "**/api/command-palette",
+            lambda route: route.fulfill(
+                status=200,
+                content_type="application/json",
+                body=json.dumps({"items": [{"label": "Copy guest link", "copy": "https://example.test/guest-secret", "group": "Actions"}]}),
+            ),
+        )
         page.evaluate("window.__copyMode = 'reject'")
         for command_width in (360, 1280):
             page.set_viewport_size({"width": command_width, "height": 900})
@@ -333,7 +341,7 @@ def test_host_copy_feedback_truth_and_geometry(base):
 
 def test_0971_repeated_copy_has_no_badge_and_no_stacked_feedback(base):
     username = f"feedback{secrets.token_hex(4)}"
-    auth.create_account(f"{username}@example.test", "Feedback QA", role="host", username=username)
+    mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Feedback QA", role="host", username=username))
     session = _session_cookie(username)
     fixture = """
       Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.resolve() } });

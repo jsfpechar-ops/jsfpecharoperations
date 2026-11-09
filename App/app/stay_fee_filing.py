@@ -5,7 +5,7 @@ import json
 from datetime import date
 from typing import Any, Dict, Optional
 
-from . import db, stay_fee, stay_fee_remittance_pdf
+from . import db, stay_fee, stay_fee_rate, stay_fee_remittance_pdf
 
 
 def period_key(cadence: str, month: date) -> str:
@@ -91,13 +91,16 @@ def save(
     apartment,
     month: date,
     *,
-    rate_czk: int,
+    rate_czk: Optional[int],
     collected: Dict[int, int],
     issued_on: date,
     cadence: Optional[str] = None,
     replacing_id: Optional[int] = None,
 ) -> int:
     """Seal a period; returns the new filing row id.
+
+    ``rate_czk`` is a flat override (a correction of a legacy flat period);
+    None prices each night at the dated rate in force (brief 1027).
 
     The previous version is marked superseded in the same transaction as the
     insert. A failure leaves the earlier file downloadable.
@@ -118,6 +121,7 @@ def save(
     payload_obj = {
         "collected": {str(gid): int(collected.get(gid, 0)) for gid in collected},
         "lines": period["lines"],
+        "rate_segments": period["rate_segments"],
         "adjustments": [
             {"id": row["id"], "delta": row["delta"], "mode": row["mode"], "reason": row["reason"]}
             for row in period.get("adjustments") or []
@@ -157,7 +161,7 @@ def save(
             "total_due_czk, total_collected_czk, pdf_enc, csv_enc, payload_enc, created_at, "
             "superseded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL) RETURNING id",
             (
-                apartment["id"], key, version, group["cadence"], rate_czk,
+                apartment["id"], key, version, group["cadence"], period["rate_czk"],
                 group["liable_nights"], group["exempt_nights"], due, collected_total,
                 db.encrypt_blob(pdf), db.encrypt_blob(csv), payload_enc, now,
             ),
@@ -172,10 +176,26 @@ def save(
         return filing_id
 
 
+def correction_rate(apartment, row: Dict[str, Any]) -> Optional[int]:
+    """Rate for re-sealing (correcting) a sealed period; used by the 1028 callers.
+
+    A period whose nights all fall under one dated rate keeps its sealed flat
+    rate, as before. A period that spans a rate change returns None: it is
+    priced per night again, which is stable because rate rows are never added
+    with a past effective date.
+    """
+    schedule = stay_fee_rate.schedule_for(apartment)
+    first, last = stay_fee.period_bounds(row["cadence"], period_anchor(row))
+    if not stay_fee_rate.is_uniform(schedule, first, last):
+        return None
+    return int(row["rate_czk"])
+
+
 def frozen_summary(row: Dict[str, Any], apartment) -> Dict[str, Any]:
     """Shape compatible with property_period for a sealed row."""
     anchor = period_anchor(row)
     first, last = stay_fee.period_bounds(row["cadence"], anchor)
+    sealed = payload(row)
     return {
         "apartment": apartment,
         "cadence": row["cadence"],
@@ -184,7 +204,8 @@ def frozen_summary(row: Dict[str, Any], apartment) -> Dict[str, Any]:
         "label": stay_fee.period_label_cs(row["cadence"], anchor),
         "period_key": row["period_key"],
         "rate_czk": row["rate_czk"],
-        "lines": payload(row).get("lines", []),
+        "lines": sealed.get("lines", []),
+        "rate_segments": sealed.get("rate_segments") or [[row["rate_czk"], row["liable_days"]]],
         "liable_nights": row["liable_days"],
         "exempt_nights": row["exempt_days"],
         "total_czk": row["total_due_czk"],

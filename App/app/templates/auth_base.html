@@ -1,3 +1,4 @@
+{% from "_icons.html" import icon with context %}
 <!doctype html>
 <html lang="{{ lang | default('en') }}">
 <head>
@@ -77,15 +78,15 @@
             </div>
             <div class="auth-flow-line"></div>
             <div class="auth-flow-step is-yellow">
-              <span>02</span><strong>{{ t('landing.demo.scene.form') }}</strong><em>✓</em>
+              <span>02</span><strong>{{ t('landing.demo.scene.form') }}</strong><em>{{ icon('check', 14) }}</em>
             </div>
             <div class="auth-flow-line"></div>
             <div class="auth-flow-step is-green">
-              <span>03</span><strong>{{ t('landing.demo.scene.receipt') }}</strong><em>UbyPort ✓</em>
+              <span>03</span><strong>{{ t('landing.demo.scene.receipt') }}</strong><em>UbyPort {{ icon('check', 14) }}</em>
             </div>
           </div>
         </div>
-        <span class="auth-float auth-float-ready">{{ t('landing.demo.queue.ready') }} ✓</span>
+        <span class="auth-float auth-float-ready">{{ t('landing.demo.queue.ready') }} {{ icon('check', 14) }}</span>
       </div>
     </aside>
   </div>

@@ -86,7 +86,7 @@ def test_same_obec_matching_rules():
     matches = ["Praha", "PRAHA", "praha", "Praha 5", "Praha-Smíchov", "praha 1", "Prague", "Praha 5 "]
     for city in matches:
         assert stay_fee.same_obec_resident(_guest(res_city=city), apt), city
-    refusals = ["Brno", "Prha", "Olomuc", "", "Kladno", "Praha 5 Brno"]
+    refusals = ["Brno", "Prha", "Olomuc", "", "Kladno", "Brno 5 Praha"]
     for city in refusals:
         assert not stay_fee.same_obec_resident(_guest(res_city=city), apt), city
     assert not stay_fee.same_obec_resident(_guest(res_city="Praha", res_country="DEU"), apt)
@@ -129,14 +129,14 @@ def test_charge_for_reservation_more_than_60_nights_is_not_subject(owner, monkey
     assert charge["total_czk"] == 0 and charge["lines"][0]["status"] == "not_subject"
 
 
-def test_charge_excludes_demo_unsigned_and_respects_the_kill_switch(owner, monkeypatch):
+def test_charge_counts_unsigned_excludes_demo_and_respects_the_kill_switch(owner, monkeypatch):
     aid = _charge_setup(owner)
     rid = _stay(aid, "2026-08-10", "2026-08-14", [{}])
     monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", False)
     assert stay_fee.charge_for_reservation(_apt(aid), {"id": rid}) is None
     monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
     unsigned = _stay(aid, "2026-08-10", "2026-08-14", [{"signature_png": None}])
-    assert stay_fee.charge_for_reservation(_apt(aid), {"id": unsigned})["lines"] == []
+    assert len(stay_fee.charge_for_reservation(_apt(aid), {"id": unsigned})["lines"]) == 1
     demo = _stay(aid, "2026-08-10", "2026-08-14", [{}])
     db.update("reservation", demo, {"source": "demo"})
     assert stay_fee.charge_for_reservation(_apt(aid), {"id": demo})["lines"] == []

@@ -248,7 +248,7 @@ def test_the_guest_form_has_no_nested_form_and_no_verify_form():
 
         # Counting alone cannot see the bug: the nesting swaps a close tag for
         # an open one and the totals still match. Look inside the main form.
-        main_open = html.index(f'<form method="post" action="/guests/{guest_id}"')
+        main_open = html.index(f'<form method="post" class="guest-admin-form" action="/guests/{guest_id}"')
         main_close = html.index("</form>", main_open)
         nested = html[main_open + 1 : main_close]
         assert "<form" not in nested, "no form may open inside the main guest form"
@@ -263,20 +263,19 @@ def test_the_guest_form_has_no_nested_form_and_no_verify_form():
         _cleanup()
 
 
-def test_guest_save_refuses_a_stay_outside_the_booking():
-    """stay_from/stay_to are hidden fields, so they arrive by hand or stale."""
+def test_guest_save_ignores_posted_stay_dates():
+    """1026: guest stay dates are locked. A posted stay_from/stay_to is ignored
+    (not refused), so no date error is shown for it."""
     _owner_id, stay_id = _host_stay()
     try:
         client = _claimed_guest(stay_id)
         year_ago = claim.prague_today() - timedelta(days=365)
         response = _save(client, stay_id, stay_from=year_ago.isoformat())
-        assert response.status_code == 422
-        assert "do not match your booking" in response.text
+        assert "do not match your booking" not in response.text
 
         far_ahead = claim.prague_today() + timedelta(days=365)
         response = _save(client, stay_id, stay_to=far_ahead.isoformat())
-        assert response.status_code == 422
-        assert "do not match your booking" in response.text
+        assert "do not match your booking" not in response.text
     finally:
         _cleanup()
 
@@ -300,8 +299,8 @@ def test_the_stay_refusal_is_translated():
         client = _claimed_guest(stay_id)
         year_ago = claim.prague_today() - timedelta(days=365)
         response = _save(client, stay_id, lang="cs", stay_from=year_ago.isoformat())
-        assert response.status_code == 422
-        assert "neodpovídají vaší rezervaci" in response.text
+        # 1026: the posted date is ignored, so no date refusal is shown in any language.
+        assert "neodpovídají vaší rezervaci" not in response.text
         assert "do not match your booking" not in response.text
     finally:
         _cleanup()

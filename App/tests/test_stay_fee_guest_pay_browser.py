@@ -22,7 +22,10 @@ SHOTS = Path("/opt/cursor/artifacts")
 
 def _open_fee(page, url):
     page.goto(url)
-    if not page.evaluate("() => document.getElementById('sec-fee').open"):
+    # Owner decision 2026-11-08: 6 pills as switcher (brief 1030); at >=768 px the Stay fee pill shows the section.
+    if page.viewport_size["width"] >= 768:
+        page.locator('nav.prop-strip a[href="#sec-fee"]').first.click()
+    elif not page.evaluate("() => document.getElementById('sec-fee').open"):
         page.locator("#sec-fee > summary").first.click()
     page.locator("#stay-fee-guest-pay").scroll_into_view_if_needed()
 

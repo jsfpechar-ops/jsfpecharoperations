@@ -1637,6 +1637,7 @@ def build_completion(
     checkin: str = "",
     checkout: str = "",
     host_url: str = "",
+    fee: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, str]:
     """The receipt. It points at the stay, not at a new claim link.
 
@@ -1680,6 +1681,35 @@ def build_completion(
     if rows:
         blocks.append(_block_panel(_guest_text(lang, "mail_completion_panel_title"), rows))
         text_lines.extend(["", *(f"{label}: {value}" for label, value in rows)])
+
+    if fee:
+        fee_heading = _guest_text(lang, "mail_completion_fee_heading")
+        fee_total = _guest_text(lang, "mail_completion_fee_total", total=fee["total"])
+        blocks.extend([_block_heading(fee_heading), _block_paragraph(fee_total)])
+        text_lines.extend(["", fee_heading, fee_total])
+        fee_rows: List[Tuple[str, str]] = [
+            (
+                _guest_text(lang, "fee_guest_n", n=index),
+                _guest_text(
+                    lang, "fee_person_line", days=days, rate=fee["rate"], amount=amount
+                ),
+            )
+            for index, (days, amount) in enumerate(fee["lines"], start=1)
+        ]
+        calc_title = _guest_text(lang, "mail_completion_fee_calc_title")
+        blocks.append(_block_panel(calc_title, fee_rows))
+        text_lines.extend(["", calc_title, *(f"{label}: {value}" for label, value in fee_rows)])
+        # The app cannot see how the guest pays, so this lists the enabled
+        # ways only and never names the one that was used.
+        ways = [_guest_text(lang, f"fee_rail_{key}") for key in fee["rails"]]
+        if ways:
+            ways_line = _guest_text(lang, "mail_completion_fee_ways", ways=", ".join(ways))
+            blocks.append(_block_paragraph(ways_line))
+            text_lines.append(ways_line)
+        if "iban" in fee["rails"]:
+            vs_line = _guest_text(lang, "mail_completion_fee_vs", vs=fee["vs"])
+            blocks.append(_block_paragraph(vs_line))
+            text_lines.append(vs_line)
 
     if door_code:
         code_title = _guest_text(lang, "door_code_title")

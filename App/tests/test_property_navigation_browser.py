@@ -20,6 +20,7 @@ else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
 from app import auth, db
+from tests.conftest import mark_security_prompt_seen
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
 from tests.property_host_fixture import LOCK, host  # noqa: F401
@@ -41,7 +42,7 @@ SETTINGS_NAMES = {
     "notes", "permalink_pin", "guest_message", "permalink_window_days",
     "permalink_reachback_days", "passport_photo_policy", "door_code_section",
     "lock_id", "checkin_hour", "checkout_hour", "lock_checkin_hour", "lock_checkout_hour", "uby_idub", "uby_ws_user", "uby_ws_password", "uby_mark",
-    "uby_name", "uby_contact", "stay_fee_rate_czk", "stay_fee_cadence", "stay_fee_vs", "stay_fee_council_account",
+    "uby_name", "uby_contact", "stay_fee_rate_czk", "stay_fee_rate_from", "stay_fee_cadence", "stay_fee_vs", "stay_fee_council_account",
     "_stay_fee_account_existing", "stay_fee_authority_name",
     "stay_fee_authority_address", "stay_fee_authority_contact", "stay_fee_authority_databox",
     "automation_mode", "submit_after_hours", "default_purpose",
@@ -225,7 +226,7 @@ def test_unrelated_save_keeps_every_stored_value(host):
 
 
 def test_refused_save_and_refused_calendar_render_their_own_view(host, monkeypatch):
-    other = auth.create_account(f"nav-other-{secrets.token_hex(3)}@example.test", "Other", role="host")
+    other = mark_security_prompt_seen(auth.create_account(f"nav-other-{secrets.token_hex(3)}@example.test", "Other", role="host"))
     foreign = db.insert("legal_entity", {"name": "Foreign Op", "owner_user_id": other, "created_at": db.utcnow()})
     refused = host["client"].post(
         f"/apartments/{host['apartment']}",
@@ -376,7 +377,8 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
         # Every section opens from its summary and shows its target.
         for key in SECTIONS:
             page.goto(f"{url}?lang=en")
-            _open(page, key)
+            # Owner decision 2026-11-08: Owner decision 2026-11-08: 6 pills as switcher (brief 1030); at wide widths a pill opens one section.
+            page.locator(f'nav.prop-strip a[href="#sec-{key}"]').click()
             assert f"sec-{key}" in page.evaluate(_STATE_JS)["open"], key
             assert page.locator(f"#sec-{key}").first.is_visible(), key
         page.goto(f"{url}?lang=en&x=1#no-such-section")  # a new URL, so no same-document hash jump
@@ -395,6 +397,8 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
         page.goto(f"{url}?lang=en")
         page.evaluate("() => { window.__navMarker = 'same-document'; }")
         page.fill("#internal_name", "Draft Name Kept")
+        # Owner decision 2026-11-08: Owner decision 2026-11-08: 6 pills as switcher (brief 1030); a pill opens the section.
+        page.locator('nav.prop-strip a[href="#sec-messages"]').click()
         _open(page, "messages")
         page.fill("#guest_message", "Draft message kept")
         page.locator('a.airbnb-back').click()
@@ -406,7 +410,7 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
         assert page.locator("#internal_name").input_value() == "Draft Name Kept"
         assert page.evaluate(_STATE_JS)["marker"] == "same-document"
 
-        page.locator('nav.prop-strip a.sc[data-strip="police"][href="#sec-police"]').click()
+        page.locator('nav.prop-strip a[href="#sec-police"]').click()
         assert not page.evaluate("() => document.getElementById('unsaved-dialog').open")
         assert "sec-police" in page.evaluate(_STATE_JS)["open"]
         assert page.evaluate(_STATE_JS)["marker"] == "same-document", "the aside row reloaded the page"
@@ -423,7 +427,7 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
           window.addEventListener('click', e => window.__modClicks.push([e.ctrlKey, e.defaultPrevented]));
         }""")
         page.context.on("page", lambda popup: popup.close())
-        page.locator('nav.prop-strip a.sc[data-strip="fee"][href="#sec-fee"]').click(modifiers=["Control"])
+        page.locator('nav.prop-strip a[href="#sec-fee"]').click(modifiers=["Control"])
         assert page.evaluate("() => window.__modClicks") == [[True, False]]
         assert page.evaluate(_STATE_JS)["marker"] == "m2", "the ctrl-click navigated this tab"
 
@@ -434,12 +438,15 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
         page.wait_for_timeout(100)
         assert "sec-messages" in page.evaluate(_STATE_JS)["open"]
         assert page.evaluate("() => document.getElementById('permalink_pin').matches(':invalid')")
-        assert page.url.endswith("lang=en"), "not submitted"
+        # Owner decision 2026-11-08: the wide editor writes the open section into the hash (brief 1030).
+        assert "lang=en" in page.url and "method" not in page.url, "not submitted"
         # 0544 finding: the section opens, but focus does not move to the field inside it.
         # Not asserted here; see the 0544 report.
 
         # Save returns to the section in use; the connection test does too.
         page.goto(f"{url}?view=settings&section=automation&lang=en")
+        # Owner decision 2026-11-08: one section at a time at >=768px; Owner decision 2026-11-08: 6 pills as switcher (brief 1030). The pill opens the section first.
+        page.locator('nav.prop-strip a[href="#sec-police"]').click()
         page.select_option("#automation_mode", "manual")
         page.locator(".savebar button[type=submit]").click()
         page.wait_for_load_state()
@@ -448,6 +455,8 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
         assert "sec-police" in page.evaluate(_STATE_JS)["open"]
         assert db.query_one("SELECT automation_mode FROM apartment WHERE id = ?", (host["apartment"],))["automation_mode"] == "manual"
         page.goto(f"{url}?view=settings&section=reporting&lang=en")
+        # Owner decision 2026-11-08 (brief 1030): a hash-less "Reporting & fees" link starts on Stay fee; the police pill opens police.
+        page.locator('nav.prop-strip a[href="#sec-police"]').click()
         page.locator('button[formaction$="/test-connection"]').click()
         page.wait_for_load_state()
         assert "sec-police" in page.evaluate(_STATE_JS)["open"], page.url
@@ -467,6 +476,7 @@ def test_create_offers_the_calendar_first_and_works_without_js(host, base):
         page.fill("#internal_name", "Synthetic Early Calendar Flat")
         page.fill("#addr_obec", "Praha")
         page.fill("#addr_house_no", "12")
+        page.fill("#addr_street", "Synthetic")
         page.fill("#addr_zip", "11000")
         page.select_option("#legal_entity_id", str(host["entities"][0]))
         for field, value in (("addr_obec", "Brno"), ("addr_house_no", "12"), ("addr_zip", "602 00")):
@@ -557,6 +567,8 @@ def test_shared_timing_pair_is_owned_by_properties(host, base):
         assert page.locator('#property-settings-form [name="checkin_hour"]').count() == 1
         assert page.locator('#property-settings-form [name="checkout_hour"]').count() == 1
         assert page.locator('#arrival-departure').is_visible()
+        # Owner decision 2026-11-08: one section at a time at >=768px; Owner decision 2026-11-08: 6 pills as switcher (brief 1030). The pill opens the section first.
+        page.locator('nav.prop-strip a[href="#sec-lock"]').click()
         _open(page, "lock")
         # 0954: the lock pickers are always shown; the switch that hid them is gone.
         # 0414: the Door lock section has its own pickers (lock_*), kept in sync with these.

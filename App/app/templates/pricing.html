@@ -22,7 +22,7 @@
   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
   <link rel="stylesheet" href="/static/tokens.css?v=20261022-0284">
-  <link rel="stylesheet" href="/static/landing.css?v=20261102-0814">
+  <link rel="stylesheet" href="/static/landing.css?v=20261109-1063a">
   <script type="application/ld+json">
   {{ {
     "@context": "https://schema.org",
@@ -85,9 +85,9 @@
         </div>
         <div class="pricing-stepper">
           <span id="pricing-count-label">{{ t('pricing.count.label') }}</span>
-          <button type="button" data-step="-1" aria-label="{{ t('pricing.count.dec') }}">−</button>
+          <button type="button" data-step="-1" aria-label="{{ t('pricing.count.dec') }}"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
           <output aria-labelledby="pricing-count-label" aria-live="polite" data-count>1</output>
-          <button type="button" data-step="1" aria-label="{{ t('pricing.count.inc') }}">+</button>
+          <button type="button" data-step="1" aria-label="{{ t('pricing.count.inc') }}"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
         </div>
       </div>
 

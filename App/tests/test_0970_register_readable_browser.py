@@ -28,7 +28,7 @@ from fastapi.testclient import TestClient
 from app import auth, db, validation
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 from tests.v2_mockup import geometry_findings
 
 PREFIX = "reg-0970-"
@@ -68,7 +68,7 @@ def reg():
     _cleanup()
     tag = secrets.token_hex(4)
     username = f"{PREFIX}{tag}"
-    owner_id = auth.create_account(f"{username}@example.test", "Register Host", role="host", username=username)
+    owner_id = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Register Host", role="host", username=username))
     now = db.utcnow()
     apartment_id = db.insert("apartment", {
         "internal_name": LONG_PROPERTY, "owner_user_id": owner_id, "permalink_token": f"reg0970-{tag}",

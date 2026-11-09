@@ -34,6 +34,7 @@ def _property_data(entity_id: int, **overrides):
         "internal_name": "Guest Pay Flat",
         "addr_city": "Praha",
         "addr_obec": "Praha",
+        "addr_street": "Synthetic",
         "addr_house_no": "12",
         "addr_zip": "120 00",
         "uby_idub": "123456789012",
@@ -310,6 +311,76 @@ def test_guest_pay_unchanged_operator_account_saves_on_a_stale_session(host, mon
     assert response.status_code == 303, response.text
     assert not response.headers["location"].startswith("/settings/security")
     assert _stored(apartment_id)["stay_fee_collect"] == 1
+
+
+def test_switching_operator_saves_typed_account_on_the_new_entity(host, monkeypatch):
+    """Same Save must not write the typed payout account onto the old operator."""
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    apt = db.query_one(
+        "SELECT owner_user_id, legal_entity_id FROM apartment WHERE id = ?",
+        (apartment_id,),
+    )
+    old_id = apt["legal_entity_id"]
+    new_id = db.insert("legal_entity", {
+        "name": "Other Operator s.r.o.",
+        "owner_user_id": apt["owner_user_id"],
+        "created_at": db.utcnow(),
+    })
+    account = "19-2000781379/0800"
+    response = _save(
+        client,
+        apartment_id,
+        guest={
+            "stay_fee_collect": "1",
+            "stay_fee_guest_rails": ["iban"],
+            "stay_fee_guest_operator_account": account,
+            "legal_entity_id": str(new_id),
+        },
+    )
+    assert response.status_code == 303, response.text
+    old = db.query_one("SELECT bank_account FROM legal_entity WHERE id = ?", (old_id,))
+    new = db.query_one("SELECT bank_account, iban FROM legal_entity WHERE id = ?", (new_id,))
+    saved = db.query_one("SELECT legal_entity_id FROM apartment WHERE id = ?", (apartment_id,))
+    assert old["bank_account"] == "19-2000145399/0800"
+    assert new["bank_account"] == account
+    assert (new["iban"] or "").startswith("CZ")
+    assert saved["legal_entity_id"] == new_id
+
+
+def test_switching_operator_does_not_copy_the_previous_payout_account(host, monkeypatch):
+    """The account box is prefilled from the old operator; switching must not overwrite the new one."""
+    client, apartment_id = host
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    apt = db.query_one(
+        "SELECT owner_user_id, legal_entity_id FROM apartment WHERE id = ?",
+        (apartment_id,),
+    )
+    old_id = apt["legal_entity_id"]
+    new_id = db.insert("legal_entity", {
+        "name": "Other Operator s.r.o.",
+        "owner_user_id": apt["owner_user_id"],
+        "created_at": db.utcnow(),
+        "iban": "CZ6508000000192000781379",
+        "bank_account": "19-2000781379/0800",
+    })
+    response = _save(
+        client,
+        apartment_id,
+        guest={
+            "stay_fee_collect": "1",
+            "stay_fee_guest_rails": ["iban"],
+            "stay_fee_guest_operator_account": "19-2000145399/0800",
+            "legal_entity_id": str(new_id),
+        },
+    )
+    assert response.status_code == 303, response.text
+    old = db.query_one("SELECT bank_account FROM legal_entity WHERE id = ?", (old_id,))
+    new = db.query_one("SELECT bank_account FROM legal_entity WHERE id = ?", (new_id,))
+    saved = db.query_one("SELECT legal_entity_id FROM apartment WHERE id = ?", (apartment_id,))
+    assert old["bank_account"] == "19-2000145399/0800"
+    assert new["bank_account"] == "19-2000781379/0800"
+    assert saved["legal_entity_id"] == new_id
 
 
 def test_qr_rail_shows_preview_when_operator_has_iban(host, monkeypatch):
@@ -608,11 +679,13 @@ def test_0960_fee_card_says_why_and_asks_to_pay_in_plain_text(host, monkeypatch)
     complete_guest_claim(guest, token, stay, party_size=1)
     assert _guest_saves(guest, token, stay).status_code == 303
     en = guest.get(f"/l/{token}/{stay}?lang=en").text
-    assert "This is a local stay fee required by Czech law (Act No. 565/1990 Coll.)" in en
-    assert en.index("This is a local stay fee") < en.index('class="g-fee-amount"')
+    assert "Please pay now." in en
+    assert "Czech towns charge a small fee for each night you stay." in en
+    assert en.index('class="g-fee-amt"') < en.index("Please pay now.")
     assert "Why this fee applies" not in en
     cs = guest.get(f"/l/{token}/{stay}?lang=cs").text
-    assert "místní poplatek z pobytu, který ukládá zákon č. 565/1990 Sb." in cs
+    assert "Zaplaťte prosím teď." in cs
+    assert "Česká města vybírají malý poplatek za každou noc pobytu." in cs
     assert "Proč tento poplatek platíte" not in cs
 
 

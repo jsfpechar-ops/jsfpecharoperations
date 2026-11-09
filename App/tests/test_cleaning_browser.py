@@ -77,15 +77,32 @@ def _client_geometry_box(locator):
     """Geometry for an element that may sit in a scroll container (gantt track).
 
     Playwright's bounding_box() can return None when the node is not considered
-    layout-visible even though getBoundingClientRect() has size (CI flake).
+    layout-visible even though getBoundingClientRect() has size. The gantt
+    also replaces those nodes while a scroll is in progress, so a detached
+    read is retried instead of failing the test.
     """
-    locator.scroll_into_view_if_needed()
-    return locator.evaluate(
-        """node => {
-          const r = node.getBoundingClientRect();
-          return {x: r.x, y: r.y, width: r.width, height: r.height};
-        }"""
-    )
+    last = {"x": 0, "y": 0, "width": 0, "height": 0}
+    for _ in range(8):
+        try:
+            box = locator.evaluate(
+                """node => {
+                  if (!node.isConnected) return null;
+                  const r = node.getBoundingClientRect();
+                  return {x: r.x, y: r.y, width: r.width, height: r.height};
+                }"""
+            )
+        except sync_api.Error:
+            box = None
+        if box and box["width"] > 0 and box["height"] > 0:
+            return box
+        if box:
+            last = box
+        try:
+            locator.scroll_into_view_if_needed(timeout=1000)
+        except sync_api.Error:
+            pass
+        locator.page.wait_for_timeout(50)
+    return last
 
 
 @pytest.mark.parametrize("width", [768, 1024, 1280])
@@ -1084,7 +1101,7 @@ def test_0971_success_notices_share_one_pattern_and_dismiss(workspace, origin, w
                   close: [Math.round(b.width), Math.round(b.height)] }; };
               return { macro: pick(document.querySelector('[data-success-notice]')), section: pick(document.querySelector('#fx-section')),
                 cleaning: pick(document.querySelector('#fx-cleaning')),
-                toast: (() => { const i = document.querySelector('#fx-toast .feedback-card-icon'); return i ? [i.textContent, Math.round(i.getBoundingClientRect().width)] : null; })(),
+                toast: (() => { const i = document.querySelector('#fx-toast .feedback-card-icon'); return i ? [i.querySelector('svg') ? 'svg' : i.textContent, Math.round(i.getBoundingClientRect().width)] : null; })(),
                 overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
                 live: document.querySelectorAll('[data-feedback-live]').length };
             }""")
@@ -1093,7 +1110,7 @@ def test_0971_success_notices_share_one_pattern_and_dismiss(workspace, origin, w
                     assert look[key][field] == look["macro"][field], (key, field, look)
             for key in ("macro", "section", "cleaning"):
                 assert look[key]["inside"] and look[key]["close"] == [44, 44], (key, look)
-            assert look["toast"] == ["✓", 24], look
+            assert look["toast"] == ["svg", 24], look
             assert not look["overflow"] and look["live"] == 1, look
             assert page.locator("[role=status][data-success-notice]").count() == 1
             shot(page, f"0971-notices-{lang}-{width}")

@@ -4,6 +4,7 @@
 {% set v2 = true %}
 {% from "_components.html" import choice_card with context %}
 {% from "_ui.html" import ui_tip with context %}
+{% from "_ui.html" import ui_badge with context %}
 {% set nav = 'settings' %}
 {% set body_kind = 'settings' %}
 {#- The v2 shell reads `apartments` as a list (its length); the route passes a count, so keep the count and give the shell a list. -#}
@@ -13,8 +14,8 @@
 {% block back_url %}/settings{% endblock %}
 {% block back_label %}{{ t('nav.settings') }}{% endblock %}
 {% block body %}
+<div class="settings-lane ui-page-narrow">
 {% with href='/settings', title=t('billing.plan.title') %}{% include "partials/settings_back_header.html" %}{% endwith %}
-<div class="settings-lane">
 {% if note %}{{ ui_banner('neutral', note) }}{% endif %}
 
 {% if not acc %}
@@ -72,7 +73,7 @@
   (t('billing.plan.fact.apartments'), acc.apartments_billed | string),
   (t('billing.plan.fact.addons'), addons | join(', ') or '—'),
   (t('billing.plan.fact.period_end'), period_end),
-  (t('billing.plan.fact.status'), t('billing.plan.state.' ~ acc.status)),
+  (t('billing.plan.fact.status'), ui_badge('done' if acc.status == 'active' else 'action' if acc.status in ('overdue', 'canceling') else 'neutral', t('billing.plan.state.' ~ acc.status))),
 ]) }}
 {% endcall %}
 {% if preview %}
@@ -86,29 +87,48 @@
 {% endcall %}
 {% endif %}
 {% if acc.status in ('active', 'overdue') %}
-{% call ui_section(t('billing.change.title')) %}
+{% call ui_section(t('billing.change.title'), tip=ui_tip('tip-billing-change', t('billing.change.apartments_note'))) %}
 {% set other_plan = 'standard' if acc.plan == 'max' else 'max' %}
 {% set other_interval = 'month' if acc.billing_interval == 'year' else 'year' %}
-{% set options = [('plan', other_plan, t('billing.change.to_plan', plan=t('billing.plan.name.' ~ other_plan))),
-                  ('billing_interval', other_interval, t('billing.change.to_interval_' ~ other_interval))] %}
-{% if acc.addon_whitelabel %}{% set _ = options.append(('addon_whitelabel', '0', t('billing.change.whitelabel_off'))) %}{% endif %}
-{% if acc.plan != 'max' %}{% set _ = options.append(('addon_ttlock', '0' if acc.addon_ttlock else '1', t('billing.change.ttlock_' ~ ('off' if acc.addon_ttlock else 'on')))) %}{% endif %}
-{% for field, value, label in options %}
+{% macro change_form(field, value) -%}
 <form method="post" action="/predplatne/zmena">
 <input type="hidden" name="_csrf" value="{{ csrf_token }}">
 <input type="hidden" name="field" value="{{ field }}"><input type="hidden" name="value" value="{{ value }}">
-<div class="ui-form-actions">{{ ui_button(label, 'secondary', type='submit') }}</div>
+{{ caller() }}
 </form>
-{% endfor %}
-{{ ui_tip('tip-billing-change', t('billing.change.apartments_note')) }}
+{%- endmacro %}
+{% if acc.plan != 'max' %}
+<div class="ui-upgrade-card">
+  <h3 class="ui-upgrade-name">{{ t('billing.plan.name.max') }}</h3>
+  <p class="ui-upgrade-price">{{ t('billing.change.upgrade_per_' ~ acc.billing_interval, price=upgrade.price) }}</p>
+  <p class="ui-sub">{{ t('billing.order.plan_max') }}</p>
+  {% call change_form('plan', 'max') %}{{ ui_button(t('billing.change.to_plan', plan=t('billing.plan.name.max')), 'primary', type='submit') }}{% endcall %}
+</div>
+{% else %}
+{% call change_form('plan', 'standard') %}<div class="ui-form-actions">{{ ui_button(t('billing.change.to_plan', plan=t('billing.plan.name.standard')), 'secondary', type='submit') }}</div>{% endcall %}
+{% endif %}
+{% if acc.billing_interval == 'month' %}
+{% call change_form('billing_interval', 'year') %}
+<div class="ui-upgrade-strip">{% if upgrade.save_pct > 0 %}<span>{{ t('billing.change.yearly_save', pct=upgrade.save_pct) }}</span>{% endif %}{{ ui_button(t('billing.change.yearly_cta'), 'secondary', type='submit') }}</div>
+{% endcall %}
+{% else %}
+{% call change_form('billing_interval', 'month') %}<div class="ui-form-actions">{{ ui_button(t('billing.change.to_interval_month'), 'secondary', type='submit') }}</div>{% endcall %}
+{% endif %}
+{% if acc.addon_whitelabel %}
+{% call change_form('addon_whitelabel', '0') %}<div class="ui-form-actions">{{ ui_button(t('billing.change.whitelabel_off'), 'secondary', type='submit') }}</div>{% endcall %}
+{% endif %}
+{% if acc.plan != 'max' %}
+{% call change_form('addon_ttlock', '0' if acc.addon_ttlock else '1') %}
+<div class="ui-addon-row"><div class="ui-addon-text"><strong>{{ t('billing.change.ttlock_title') }}</strong><span class="ui-sub">{{ t('billing.change.ttlock_line', price=upgrade.ttlock_price) }}</span></div>{{ ui_button(t('billing.change.remove' if acc.addon_ttlock else 'billing.change.add'), 'secondary', type='submit', attrs='aria-label="' ~ t('billing.change.ttlock_' ~ ('off' if acc.addon_ttlock else 'on')) ~ '"') }}</div>
 {% endcall %}
 {% endif %}
-{% call ui_section(t('billing.cancel.title')) %}
+{% endcall %}
+{% endif %}
+{% call ui_section(t('billing.cancel.title'), tip=ui_tip('tip-billing-cancel', t('billing.cancel.body', date=period_end))) %}
 {% if acc.status == 'canceling' %}
 <form method="post" action="/predplatne/obnovit"><input type="hidden" name="_csrf" value="{{ csrf_token }}">
 <div class="ui-form-actions">{{ ui_button(t('billing.resume.submit'), 'primary', type='submit') }}</div></form>
 {% else %}
-{{ ui_tip('tip-billing-cancel', t('billing.cancel.body', date=period_end)) }}
 <form method="post" action="/predplatne/zrusit" data-confirm data-confirm-message="{{ t('billing.cancel.confirm', date=period_end) }}"><input type="hidden" name="_csrf" value="{{ csrf_token }}">
 <div class="ui-form-actions">{{ ui_button(t('billing.cancel.submit'), 'danger', type='submit') }}</div></form>
 {% endif %}
@@ -116,7 +136,9 @@
 {% endif %}
 
 {% if invoices %}
-{% call ui_section(t('billing.invoices.title')) %}
+{% set inv_title = t('billing.invoices.title') %}{% set inv_parts = inv_title.rsplit(' ', 1) %}
+<section class="ui-section ui-section-card">
+<div class="ui-section-h"><h2>{% if inv_parts | length == 2 %}{{ inv_parts[0] }} {% endif %}<span class="tip-nowrap">{{ inv_parts[-1] }}</span>{{ ui_tip('tip-billing-invoices', t('billing.invoices.pay_hint')) }}</h2></div>
 {{ ui_table_begin([(t('billing.invoices.col.number'), ''), (t('billing.invoices.col.amount'), 'r'), (t('billing.invoices.col.state'), 'r')], label=t('billing.invoices.title')) }}
 {% for inv in invoices %}
 <tr class="ui-row">
@@ -126,8 +148,7 @@
 </tr>
 {% endfor %}
 {{ ui_table_end() }}
-{{ ui_tip('tip-billing-invoices', t('billing.invoices.pay_hint')) }}
-{% endcall %}
+</section>
 {% endif %}
 </div>
 {% endblock %}

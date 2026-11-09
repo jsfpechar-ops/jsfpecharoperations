@@ -1,3 +1,4 @@
+{% from "_icons.html" import icon with context %}
 {#- 0232: the five-step story (A) and one stay's place in it (B). Real ordered
     lists; the current step is named for screen readers; colour is never the
     only signal. Words come from workflow.* (0230), the same on every page. -#}
@@ -29,7 +30,7 @@
   <ol class="journey-steps">
     {% for step in journey.steps %}
     <li class="is-{{ step.state }}"{% if step.state == 'current' %} aria-current="step"{% endif %}>
-      <span class="workflow-num" aria-hidden="true">{% if step.state == 'done' %}✓{% else %}{{ step.n }}{% endif %}</span>
+      <span class="workflow-num" aria-hidden="true">{% if step.state == 'done' %}{{ icon('check', 14) }}{% else %}{{ step.n }}{% endif %}</span>
       <span>{{ t('workflow.step.' ~ step.key) }}{% if step.state != 'todo' %} <span class="sr-only">({{ t('workflow.journey.state.' ~ step.state) }})</span>{% endif %}</span>
     </li>
     {% endfor %}

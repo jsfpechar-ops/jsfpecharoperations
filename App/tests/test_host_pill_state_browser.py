@@ -20,7 +20,7 @@ from fastapi.testclient import TestClient
 from app import auth, db
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 RGB = re.compile(r"rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.%]+)\s*)?\)")
 WIDTHS = (390, 768, 1280)
@@ -58,9 +58,9 @@ def contrast_ratio(foreground: list[float], background: list[float]) -> float:
 def host():
     db.init_db()
     username = f"pillstate-{secrets.token_hex(4)}"
-    owner = auth.create_account(
+    owner = mark_security_prompt_seen(auth.create_account(
         f"{username}@example.test", "Pill State Test", role="host", username=username
-    )
+    ))
     entity = db.insert("legal_entity", {
         "name": "Pill State Test s.r.o.", "owner_user_id": owner, "created_at": db.utcnow(),
     })

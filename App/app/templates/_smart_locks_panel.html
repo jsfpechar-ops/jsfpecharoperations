@@ -1,3 +1,4 @@
+{% from "_icons.html" import icon with context %}
 {% set cta = 'ui-btn ui-btn-primary' %}
 {% from "_components.html" import help_tip, copy_button with context %}
 
@@ -11,7 +12,7 @@
   <ol class="guide-steps">{% for n in range(1, 4) %}<li>{{ t('smart_locks.how' ~ n) }}</li>{% endfor %}</ol>
 </section>
 <section class="ui-section" id="smart-locks-setup">
-  <h2>{{ t('smart_locks.setup_title') }}</h2>
+  <h2 class="sr-only">{{ t('smart_locks.setup_title') }}</h2>
   <form method="post" action="/smart-locks/setup">
     <input type="hidden" name="return_to" value="{{ return_to }}">
     <label class="checkline" for="terms"><input type="checkbox" id="terms" name="terms" value="1" required>
@@ -35,7 +36,7 @@
   <div class="smart-lock-row ui-section ui-section-row">
     <p><strong>{{ lock.alias }}</strong> · {{ t('smart_locks.lock_id', id=lock.lock_id) }}
       {% if lock.battery is not none %} · {{ t('smart_locks.battery', percent=lock.battery) }}{% endif %}</p>
-    <p class="ui-sub">✓ {{ t('smart_locks.connected') }}</p>
+    <p class="ui-sub">{{ icon('check', 14) }} {{ t('smart_locks.connected') }}</p>
     <p class="ui-sub">{% set used = properties_using.get(lock.lock_id, []) %}
       {% if used %}{{ used | join(', ') }}{% else %}{{ t('smart_locks.unused') }}{% endif %}</p>
     {% if used | length > 1 %}<p class="ui-sub"><strong>{{ t('smart_locks.shared_warning') }}</strong></p>{% endif %}

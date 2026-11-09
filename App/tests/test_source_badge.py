@@ -4,6 +4,7 @@ from __future__ import annotations
 from markupsafe import Markup
 
 from app import templating
+from tests.conftest import mark_security_prompt_seen
 
 
 def test_source_mark_renders_img_for_known_platform():
@@ -91,7 +92,7 @@ def test_stays_list_platform_badge_screenshots():
 
     db.init_db()
     username = f"badges{secrets.token_hex(4)}"
-    owner = auth.create_account(f"{username}@example.test", "Badge Shots", username=username)
+    owner = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Badge Shots", username=username))
     today = claim.prague_today()
     now = db.utcnow()
     for source, tag in (("airbnb", "a"), ("booking", "b"), ("echalupy", "e")):

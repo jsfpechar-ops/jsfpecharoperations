@@ -144,9 +144,6 @@ def test_second_guest_cannot_take_held_dates(apartment, fake_sessions):
 
 
 @pytest.mark.parametrize("extra,code", [
-    ({"terms": ""}, "terms"),
-    ({"guest_email": "nope"}, "bad_email"),
-    ({"guest_name": "J"}, "bad_name"),
     ({"guests": "0"}, "guests"),
 ])
 def test_checkout_validation(apartment, fake_sessions, extra, code):
@@ -154,6 +151,21 @@ def test_checkout_validation(apartment, fake_sessions, extra, code):
                               follow_redirects=False)
     assert response.status_code == 303
     assert f"book={code}" in response.headers["location"]
+    assert fake_sessions.created == []
+
+
+@pytest.mark.parametrize("extra,code", [
+    ({"terms": ""}, "terms"),
+    ({"guest_email": "nope"}, "bad_email"),
+    ({"guest_name": "J"}, "bad_name"),
+])
+def test_checkout_field_errors_rerender_the_page(apartment, fake_sessions, extra, code):
+    """Name, e-mail and terms errors re-render the page (200) so the typed values survive."""
+    response = _client().post(f"/p/{_slug(apartment)}/checkout", data=_form(**extra),
+                              follow_redirects=False)
+    assert response.status_code == 200
+    assert 'role="alert"' in response.text
+    assert response.headers["Cache-Control"] == "no-store"
     assert fake_sessions.created == []
 
 

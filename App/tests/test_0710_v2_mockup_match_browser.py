@@ -24,6 +24,8 @@ from tests.v2_mockup import (
     WIDTHS,
     box_diffs,
     computed,
+    WIDE_MISSING_OK,
+    WIDE_OVERRIDES,
     expected_value,
     geometry_findings,
     mockup_url,
@@ -69,7 +71,10 @@ def _open_app(browser, base_url, cookie, path, width):
     context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": base_url + "/"}])
     context.add_init_script("try { localStorage.setItem('ubyhost-sidebar-collapsed', '0'); } catch (e) {}")
     page = context.new_page()
-    page.goto(f"{base_url}{path}?lang=en")
+    # 1051: a query path without lang= (stay fee ?month=) used to become "?month=X?lang=en", hiding the month.
+    # Paths that carry their own lang= keep the old concatenation the mockup comparisons were calibrated on.
+    sep = "&" if "?" in path and "lang=" not in path else "?"
+    page.goto(f"{base_url}{path}{sep}lang=en")
     page.wait_for_load_state("networkidle")
     later = page.locator("#security-prompt [data-security-prompt-later]")
     if later.is_visible():
@@ -121,12 +126,14 @@ def test_v2_page_matches_mockup_styles(spec, width, base, dashboard_rich_host):
                 continue
             app_styles = computed(app_page, selector)
             if app_styles is None:
-                if selector not in spec["missing_ok"]:
+                if selector not in spec["missing_ok"] and not (width >= 768 and f"{spec['name']}:{selector}" in WIDE_MISSING_OK):
                     diffs.append(f"{selector}: missing in app")
                 continue
             for prop in STYLE_PROPS:
                 app_value = app_styles[prop]
                 mock_value = expected_value(selector, prop, mock_styles[prop], spec["name"])
+                if width >= 768:  # owner decision 2026-11-08 (Josef's laptop screenshots): section titles need an inset
+                    mock_value = WIDE_OVERRIDES.get(f"{spec['name']}:{selector}", {}).get(prop, mock_value)
                 if not same_value(prop, app_value, mock_value):
                     diffs.append(f"{selector} {prop}: app={app_value} mockup={mock_value}")
             if phone and width in PHONE_WIDTHS:

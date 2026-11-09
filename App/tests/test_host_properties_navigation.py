@@ -23,7 +23,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, db
 from app.main import app
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 USERNAME = "properties-nav-0078-host"
 EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0078-evidence"
@@ -53,7 +53,7 @@ def _cleanup(username=USERNAME):
 def host():
     db.init_db()
     _cleanup()
-    auth.create_account(f"{USERNAME}@example.test", "Props Host", username=USERNAME)
+    mark_security_prompt_seen(auth.create_account(f"{USERNAME}@example.test", "Props Host", username=USERNAME))
     client = TestClient(app)
     response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
@@ -210,7 +210,7 @@ BROWSER_USER = "propsnav0078"
 def browser_host():
     db.init_db()
     username = f"{BROWSER_USER}-{secrets.token_hex(3)}"
-    owner_id = auth.create_account(f"{username}@example.test", "Pole Host", username=username)
+    owner_id = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Pole Host", username=username))
     entity_id = _entity(owner=owner_id)
     _property("Byt Alfa", entity_id, owner=owner_id, addr_obec="Praha")
     _property("Chata Beta u lesa s dlouhým názvem", entity_id, owner=owner_id,

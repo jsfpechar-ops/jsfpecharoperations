@@ -69,10 +69,9 @@ def confirm(apartment, month, today, *, audit_event: str = "stay_fee_auto_finali
     if checked["issues"] or stay_fee_filing.latest(apartment["id"], checked["key"]):
         return None
     period, group = checked["period"], checked["group"]
-    rate = period["rate_czk"] if period else stay_fee.clamp_rate(apartment["stay_fee_rate_czk"])
     collected = {line["guest_id"]: line["amount_czk"] for line in (period or {}).get("lines") or []}
     try:
-        filing_id = stay_fee_filing.save(apartment, group["first"], rate_czk=rate,
+        filing_id = stay_fee_filing.save(apartment, group["first"], rate_czk=None,
                                          collected=collected, issued_on=today,
                                          cadence=group["cadence"])
     except ValueError:

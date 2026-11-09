@@ -1103,13 +1103,8 @@ details.g-why .g-details {
 /* The legal fold on the signature step: a quiet one-liner, the full notice
    opens under it. The acknowledgement below stays visible either way. */
 .g-legal-text > summary::before {
-  content: "\25B8";
-  display: inline-block;
-  width: 18px;
   color: var(--g-muted);
-  font-size: 12px;
 }
-.g-legal-text[open] > summary::before { content: "\25BE"; }
 .g-legal-text > summary {
   border-top: 1px solid var(--g-line);
   margin-top: 16px;
@@ -1320,6 +1315,7 @@ details.g-head-help > .g-intro { margin: 10px 0 0; }
   font-size: 31px;
   margin: 0 auto 16px;
 }
+.g-big-ok .mark svg { width: 30px; height: 30px; }
 .g-big-ok .mark.neutral { background: var(--g-surface-2); color: var(--g-muted); }
 .g-big-ok h2 { font-size: 21px; }
 .g-big-ok .g-btn { max-width: 280px; margin: 6px auto 0; }
@@ -1342,13 +1338,8 @@ details.g-summary > summary.g-summary-fold {
   color: var(--g-ink);
 }
 details.g-summary > summary.g-summary-fold::-webkit-details-marker { display: none; }
-details.g-summary > summary.g-summary-fold::after {
-  content: "▾";
-  float: right;
-  color: var(--g-muted);
-  font-weight: 400;
-}
-details.g-summary[open] > summary.g-summary-fold::after { content: "▴"; }
+.g-btn + details.g-summary { margin-top: 14px; }
+details.g-summary > .g-summary-body > .g-intro + .g-btn { margin-top: 12px; }
 details.g-summary[open] > summary.g-summary-fold {
   padding-bottom: 14px;
   border-bottom: 1px solid var(--g-line);
@@ -1524,11 +1515,9 @@ details.g-summary > .g-summary-body { padding: 16px 20px 18px; }
 .g-guide-video a { color: var(--g-accent); font-weight: 600; }
 .g-guide-card h2 { font-size: 19px; }
 .g-guide-link { display: block; padding: 16px 20px; text-decoration: none; font-size: 16.5px; font-weight: 600; color: var(--g-accent); }
-.g-guide-link::after { content: " \2192"; }
 
 /* 0352: Leon (AI), the chat at the end of the guest guide. Light mode only. */
 .g-leon-jump { display: inline-block; margin: 0 0 16px; color: var(--g-accent); font-size: 15px; font-weight: 600; text-decoration: none; }
-.g-leon-jump::after { content: " \2193"; }
 .g-leon [hidden], .g-leon-jump[hidden] { display: none; }
 .g-leon-nojs { margin: 0; font-size: 14.5px; color: var(--g-muted); }
 .g-leon-log { display: flex; flex-direction: column; gap: 10px; margin: 0 0 14px; }
@@ -1594,12 +1583,74 @@ details.g-summary > .g-summary-body { padding: 16px 20px 18px; }
 .g-leon-chip:focus-visible { outline: 2px solid var(--g-accent); outline-offset: 2px; }
 .g-leon-see { display: inline-block; margin-top: 8px; color: var(--g-accent); font-size: 14.5px; font-weight: 600; }
 
-/* Stay-fee money card on the hub and the form estimate (brief 0910). Tokens only. */
-.g-fee-amount { font-size: 1.9rem; letter-spacing: -0.02em; margin: 0.1rem 0 0.5rem; }
-.g-fee dd, .g-fee-estimate dd { overflow-wrap: break-word; }
+/* Stay-fee hub + form estimate (brief 0993). */
+.g-fee-box {
+  --fee-bg: #f3f4f8;
+  --fee-line: #d9dbe5;
+  background: var(--fee-bg);
+  border: 1px solid var(--fee-line);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.g-fee-box h3 { margin: 0; font-size: 19px; line-height: 1.3; }
+.g-fee-amt { font-size: 34px; font-weight: 800; line-height: 1.1; margin: 10px 0 4px; color: var(--g-ink); }
+.g-fee-calc { margin: 0 0 16px; font-size: 17px; color: var(--g-ink); }
+.g-fee-panel { display: flex; gap: 12px; align-items: flex-start; background: var(--g-surface); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+.g-fee-panel svg { flex: none; margin-top: 2px; }
+.g-fee-panel b { display: block; }
+.g-fee-panel--pay { border: 2px solid var(--g-ink); }
+details.g-fee-fold { border-top: 1px solid var(--fee-line); }
+details.g-fee-fold > summary { list-style: none; min-height: 48px; display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 17px; cursor: pointer; }
+details.g-fee-fold > summary::-webkit-details-marker { display: none; }
+details.g-fee-fold > summary::before {
+  content: "";
+  width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--g-ink); flex: none;
+  background: linear-gradient(var(--g-ink), var(--g-ink)) center/11px 2px no-repeat,
+    linear-gradient(var(--g-ink), var(--g-ink)) center/2px 11px no-repeat;
+}
+details.g-fee-fold[open] > summary::before {
+  background: linear-gradient(var(--g-ink), var(--g-ink)) center/11px 2px no-repeat;
+}
+details.g-fee-fold p { margin: 0 0 12px; font-size: 17px; }
+details.g-fee-fold a { color: var(--g-ink); font-weight: 700; text-underline-offset: 3px; }
+.g-fee-opt { background: var(--g-surface); border: 2px solid var(--g-line); border-radius: 14px; margin-top: 12px; padding: 16px; }
+.g-fee-opt-h { margin: 0 0 12px; font-weight: 800; font-size: 18px; }
+.g-fee-opt .g-fee-rail { padding: 0; }
+.g-fee-iban span { white-space: nowrap; }
+.g-fee-copy { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border: 2px solid var(--g-ink); border-radius: 10px; font-weight: 800; font-size: 16px; margin-top: 6px; background: var(--g-surface); }
+.g-fee-box dd { overflow-wrap: break-word; }
 .g-fee-rail { padding: 4px 20px 18px; }
 .g-fee-choose, .g-fee-legal { margin: 16px 0 0; }
 .g-fee-qr { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
 .g-fee-qr-img { display: block; width: 176px; max-width: 100%; height: auto; border: 1px solid var(--g-line); }
 .g-fee-qr .g-summary-list { flex: 1 1 180px; min-width: 0; }
 .g-fee-payee { margin: 8px 0 0; }
+
+/* 1063: Lucide icons as CSS masks on guest and marketing pages (paths as in _icons.html). */
+:root {
+  --g-ico-chev-right: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m9 18 6-6-6-6'/></svg>");
+  --g-ico-chev-down: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  --g-ico-chev-up: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m18 15-6-6-6 6'/></svg>");
+  --g-ico-arrow-right: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 12h14'/><path d='m12 5 7 7-7 7'/></svg>");
+  --g-ico-arrow-down: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 5v14'/><path d='m19 12-7 7-7-7'/></svg>");
+}
+.g-legal-text > summary::before,
+details.g-summary > summary.g-summary-fold::after,
+.g-guide-link::after,
+.g-leon-jump::after {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  vertical-align: -3px;
+  background-color: currentColor;
+  -webkit-mask: var(--g-mask) center / contain no-repeat;
+  mask: var(--g-mask) center / contain no-repeat;
+}
+.g-legal-text > summary::before { --g-mask: var(--g-ico-chev-right); }
+.g-legal-text[open] > summary::before { --g-mask: var(--g-ico-chev-down); }
+details.g-summary > summary.g-summary-fold::after { --g-mask: var(--g-ico-chev-down); color: var(--g-muted); float: right; margin-top: 2px; }
+details.g-summary[open] > summary.g-summary-fold::after { --g-mask: var(--g-ico-chev-up); }
+.g-guide-link::after { --g-mask: var(--g-ico-arrow-right); margin-left: 6px; }
+.g-leon-jump::after { --g-mask: var(--g-ico-arrow-down); margin-left: 6px; }

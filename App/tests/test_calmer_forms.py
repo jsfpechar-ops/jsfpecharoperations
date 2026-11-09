@@ -49,6 +49,7 @@ def _new_payload(**overrides):
     data = {
         "internal_name": "Calmer Flat",
         "addr_obec": "Praha",
+        "addr_street": "Synthetic",
         "addr_house_no": "12",
         "addr_zip": "12000",
         "active": "on",

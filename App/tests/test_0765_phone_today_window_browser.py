@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, claim, db, onboarding
 from app.main import app
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 from tests.test_0710_v2_mockup_match_browser import _open_app
 from tests.test_host_quiet_dashboard_browser import (  # the quiet overview's fixtures and helpers
     _launch,
@@ -28,7 +28,7 @@ def _make_host(offsets):
     """A host with one manual stay per offset (days from today), each lasting two nights."""
     db.init_db()
     username = f"phone-window-{secrets.token_hex(4)}"
-    owner_id = auth.create_account(f"{username}@example.test", "Phone Window", role="host", username=username)
+    owner_id = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Phone Window", role="host", username=username))
     now = db.utcnow()
     entity_id = db.insert("legal_entity", {
         "name": "Phone Window s.r.o.", "seat": "Praha", "ico": "11223344",

@@ -9,7 +9,7 @@ CLAIM = (APP / "templates" / "guest" / "claim.html").read_text(encoding="utf-8")
 
 
 def test_the_live_shell_loads_guest_enhancements():
-    assert "guest-enhancements.js?v=20261003a" in BASE
+    assert "guest-enhancements.js?v=20261109-1063a" in BASE
     assert "ticket.js" not in BASE
 
 
