@@ -695,7 +695,12 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
                 [] if auth.accounts_exist() else alerts.open_alerts()
             )
         )
+        # 1072: only the dashboard lists every alert; elsewhere the extras are a count.
+        more = 0
+        if request.url.path != "/":
+            raw_alerts, more = alerts.shell_slice(raw_alerts)
         data["open_alerts"] = alerts.present_many(raw_alerts, data["lang"])
+        data["open_alerts_more"] = more
     # Navigation must use the workspace's complete, owner-scoped property set,
     # never a filtered route list (which may omit the enabled property).
     data["host_has_stay_fees"] = False
