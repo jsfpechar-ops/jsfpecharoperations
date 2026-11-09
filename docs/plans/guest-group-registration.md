@@ -56,7 +56,7 @@ Both ways stay: "Add a person" (on this phone) is the primary button, "Send to t
 | Duplicates | On save, compare with every person in the booking. Same document number, same name and same birth date: do not save again; say "This person is already registered." A child on a parent's passport is not a duplicate (different name and birth date) | Stops a double filing |
 | Address sharing | Only if the lead ticks the box. Copies street, town and country, not the surname. The member can change it. The tick is stored on the invite, not on any guest | Consent; matches today's same-phone copy |
 | Signature and legal tick | Each adult signs on their own phone. A parent's phone enters the children | Better than one person signing for all |
-| Stay fee | One total for the booking, shown on the lead's phone only, with "Pay once for the whole group". Members see "The stay fee is paid on the first phone." The app never says "paid" | The app cannot know who paid; avoids paying twice |
+| Stay fee | One bill per booking, one payer, one reference. See section 8 | The app cannot know who paid; avoids paying twice |
 | Door code | Shown on every joined phone once everyone is registered, and mailed to the lead's e-mail as today | Everyone needs to get in |
 | Lost phone or cookie | The lead can remove a person entered on another phone (without seeing their data) so the place can be filled again | Today this needs the host |
 | Invite end | Stops working when the filing is sent, at check-out, or when the lead taps "Stop sharing". A new invite replaces the old one | Limits a forwarded link |
@@ -94,10 +94,36 @@ Shipped behind a switch that is off by default: staging first, then one property
 
 Two phones at capacity; lead not locked out by a join; member page and count endpoint contain no other person's data; duplicate not saved; child on a parent's passport is saved; invite expired, revoked and replaced; mail-off path; person added after filing; draft retention; no JavaScript path; guest browser tests at 390 px for the invite screen, join screen and each hub state, 0 skipped.
 
-## 7. Owner decisions (recommended answer first)
+## 7. Owner decisions (answered 2026-11-09)
 
-1. Members see the door code once everyone is registered: yes (same as today for any phone on the hub).
-2. Stay-fee pay panel on the lead's phone only: yes.
-3. The lead may remove a person entered on another phone: yes.
-4. An exact duplicate (document number, name and birth date) is not saved a second time: yes.
-5. A place left untouched is freed after 30 minutes: yes.
+| # | Decision | Answer |
+|---|---|---|
+| 1 | Members see the door code once everyone is registered | Yes |
+| 2 | Stay-fee pay details on the lead's phone only | Owner worried about a mess: designed in section 8, awaiting yes |
+| 3 | The lead may remove a person entered on another phone | Yes |
+| 4 | An exact duplicate is not saved a second time | Yes |
+| 5 | A place left untouched for 30 minutes is freed | Yes |
+
+## 8. Stay fee in a group (owner request)
+
+Today: the fee is one total per booking, the payment reference (VS) is the booking id, and the pay box appears once everyone is registered (`stay_fee.py:486`, `routes/guest.py:1403,2415`). The guest pages never read a "paid" state, although the columns exist (`reservation.stay_fee_paid_at`, `stay_fee_paid_amount_czk`, `db.py:1111`). Task 1032 (draft PR) adds the total and calculation to the receipt mail. Known gaps (0897): no mark-as-paid, no pay link in the mail.
+
+| Rule | Detail |
+|---|---|
+| One payer | The person who booked (the lead, who holds the e-mail). Nobody else gets pay buttons |
+| One moment | The amount depends on the number of people and their ages, so it is final only when everyone is registered. Before that every phone shows "The stay fee is worked out when everyone is registered" |
+| Two places | The lead's finish card, and the mails to the lead's e-mail. The mail matters most: it arrives when the last person finishes, even if the lead's phone is in a pocket |
+| In the mails | The confirmation mail and the door-code mail both carry the same block: amount, how it was worked out, QR code, Revolut link, cash if the host accepts it, payment reference, and one button "Open payment page". Only the ways the host turned on are shown. No QR code when the host has no bank account |
+| QR in a mail | Sent inside the mail as an attached image, because many mail apps block remote images; the button is the fallback |
+| Other phones | One line, no buttons: "Stay fee for the group: 400 Kč. The payment details were sent to the person who booked." The lead can forward the mail if someone else pays |
+| Same reference | Every copy shows the same amount and reference. If two people pay anyway, the host sees two payments with one reference and returns one |
+| Paid state | The lasting fix. Step 1: the host taps "Mark as paid" on the stay (uses the existing columns). Then every phone and every later mail shows "Stay fee paid. Thank you." and the pay details disappear. Step 2, later and optional: match bank statement lines by reference (`bank_import.py` exists; scope unverified). Until a payment is marked, nothing ever says "paid" |
+| Group changes after the fee was sent | The hub and one follow-up mail show "Stay fee is now 500 Kč (was 400 Kč)" |
+| Not proposed | Holding the door code until the fee is paid. The app cannot know, and a guest locked out is worse than a late fee |
+
+| Extra brief | Content | Risk |
+|---|---|---|
+| 7 | Stay-fee block in the confirmation and door-code mails (extends 1032 and 0897) | legal: mail copy; privacy: none new, the mail goes to the same address as today |
+| 8 | Host "Mark as paid" and the paid state on guest pages and mails | none for filing; host page passes the UX gate |
+
+Owner decisions: (a) one payer, the person who booked: recommended yes. (b) "Mark as paid" by the host as the first paid state: recommended yes.
