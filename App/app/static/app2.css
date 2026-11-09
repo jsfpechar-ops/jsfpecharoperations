@@ -3203,8 +3203,10 @@ body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step details > :not(summ
 }
 .onboarding-welcome .onboarding-demo { padding: 16px; gap: 12px; }
 .onboarding-welcome .onboarding-demo > div:first-child {
-  display: flex; align-items: center; flex-wrap: nowrap; gap: 6px; min-width: 0;
+  display: block; min-width: 0;
 }
+.onboarding-welcome .onboarding-demo > div:first-child > strong { display: inline; }
+.onboarding-welcome .onboarding-demo > div:first-child .help-tip { vertical-align: middle; margin-left: 6px; }
 .onboarding-welcome .onboarding-demo > div:first-child strong { min-width: 0; overflow-wrap: anywhere; }
 @media (max-width: 639px) {
   .onboarding-welcome .onboarding-demo { flex-direction: column; align-items: stretch; }
