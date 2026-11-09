@@ -247,6 +247,20 @@ func qrNoAccount(w http.ResponseWriter) {
 	_, _ = io.WriteString(w, qrNoAccountBody)
 }
 
+// hasBankAccount is payment_request.has_bank_account: the owner's legal
+// entity carries an IBAN or a Czech account.
+func hasBankAccount(ctx context.Context, pool *pgxpool.Pool, owner int64) (bool, error) {
+	var iban, bank *string
+	err := pool.QueryRow(ctx, qrEntitySQL, owner).Scan(&iban, &bank)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return (iban != nil && *iban != "") || (bank != nil && *bank != ""), nil
+}
+
 // QRPNGHandler serves GET /payments/qr/{file} for <digits>.png. Every
 // refusal is a 404 with an empty body, as in Python.
 func QRPNGHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time) http.HandlerFunc {
