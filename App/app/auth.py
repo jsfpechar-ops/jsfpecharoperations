@@ -330,6 +330,9 @@ def current_user(request: Request):
 
 
 def workspace_user(request: Request):
+    cached = getattr(request.state, "workspace_account", None)
+    if cached is not None:
+        return cached
     account = current_user(request)
     if not account:
         return None
