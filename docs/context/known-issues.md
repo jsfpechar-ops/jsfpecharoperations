@@ -26,6 +26,7 @@
 | K-F17 | Low unverified | reporting.py claim TTL; :1683 recover_stale_submissions | Lease may expire in slow batches | P A16, A30 |
 | K-F19 | Low open | codelists.py error_severities | Before a successful Refresh only 1/112/150 known | police A1-A2 |
 | K-F18 | High decision HR | reporting.py:859 signature_dates_stale | Stale signed dates: keep safety net or restore re-signing (T48–T50)? | P Q6 |
+| K-F20 | High open HR | reporting.py:1099 due_for_automatic_send | Shortfall or no expected count: deadline cap waits for 12 quiet h, so a late write files after the deadline | [1069](../tasks/1069-report.md) bug 9 |
 | K-L01 | High decision | retention.py:218,237 | Deletion 30+30 days; Terms s19 export wording: lawyer needed | P Q9, G G-D11 |
 | K-L02 | High decision | retention.py ~306 | Termination deletes legal_acceptance rows; G-D7 says keep 3 yrs | F BE-10 |
 | K-L03 | High decision | retention.py, housebook.py expired_guest_ids | Retention anchor per guest vs 6 years from the last entry | G G-D4 |

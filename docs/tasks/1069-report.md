@@ -1,13 +1,13 @@
 # 1069 report: F0, what the lead gets after quiet completion
 
-Status: review. Revised by 1069-cont-1 after review. Read-only; no code changed, no test run (one throwaway date calculation outside the repo). All paths are under `App/app/`, lines from base 0d851ca4. "Shortfall" = fewer complete forms than the expected count.
+Status: review
 
 ## 1. Summary
 
 1. Lead: no completion mail and no fee request by mail; the pay box on the stay page stays hidden.
 2. Lead: a separate `door_code` mail IS sent (host contact in cc) when door codes are on, and the code shows on the stay page. Plan P4 is wrong here.
 3. The registered people are filed with UbyPort in the sweep that notices the quiet completion: at once in `immediate` mode, after `submit_after_hours` (default 24) otherwise, capped 6 h before the deadline.
-3a. HIGH RISK (filing): with a shortfall nothing is filed before 12 quiet hours have passed, and the deadline cap cannot act before that. A guest-row write later than about 12 h 10 min before the legal deadline means the registered people are filed AFTER the deadline (bug 9).
+3a. HIGH RISK (filing): with a shortfall, or with no expected count (host-entered stays), nothing is filed before 12 quiet hours have passed, and the deadline cap cannot act before that. A guest-row write later than about 12 h 10 min before the legal deadline means the registered people are filed AFTER the deadline (bug 9).
 4. Host: no mail about the shortfall. Dashboard status stays `incomplete`; a `headcount_mismatch` alert appears once the arrival day has passed and stays until the count matches.
 5. Quiet completion is only noticed by the sweep, which skips `manual` properties: there the stay is not completed and no code is made.
 
@@ -99,7 +99,7 @@ Confidence: high for `enqueue` and for `console` enabled/logged/warning; medium 
 6. `claim.py:801-810`: stamps set although `enqueue` returned None (mail disabled, or an empty address).
 7. `reporting.py:1453`: the sweep's own `NOT_REQUIRED` write restarts the quiet clock once.
 8. `reporting.py:2556-2580`: critical "Overdue" alert for a stay whose registered people are all filed.
-9. HIGH RISK (filing). `reporting.py:1099-1101,977-985,2219-2225`: with a shortfall the deadline cap (`:1110-1117`) cannot act until quiet completion, which needs 12 h without any guest-row write plus a sweep. A write later than deadline minus 12 h minus one sweep interval gets the registered people filed after the legal deadline (timeline in Q5: 2 h late, 11 h after a late edit). `manual` properties and an open `ubyport_auth_failed` never complete quietly at all (bug 2).
+9. HIGH RISK (filing). `reporting.py:1099-1101,977-985,2219-2225`: with a shortfall, or with no expected count (`declared_filled` needs `expected is not None`, `reporting.py:970-972`; the host insert sets no count, `routes/admin.py:4358-4363`), the deadline cap (`:1110-1117`) cannot act until quiet completion, which needs 12 h without any guest-row write plus a sweep. A write later than deadline minus 12 h minus one sweep interval gets the registered people filed after the legal deadline (timeline in Q5: 2 h late, 11 h after a late edit). `manual` properties and an open `ubyport_auth_failed` never complete quietly at all (bug 2).
 
 Checked and not bugs: the mismatch alert is not resolved by filing; the idempotency key's `filled` is guarded by `completion_notified_at`.
 
@@ -116,8 +116,17 @@ Checked and not bugs: the mismatch alert is not resolved by filing; the idempote
 
 1. Should the door code go out before the fee is asked for (bug 4)?
 2. Should `manual` properties complete quietly (bug 2)?
-3. Should the registered people of a shortfall stay be filed at the deadline cap (6 h before the deadline) without waiting for 12 quiet hours (bug 9)? Today they can be filed late.
+3. Should the registered people of a shortfall stay, or of a stay with no expected count, be filed at the deadline cap (6 h before the deadline) without waiting for 12 quiet hours (bug 9)? Today they can be filed late.
 4. Should one stored row that later fails validation (moved dates, new rule) hold back the others' filing (bug 1)?
 5. Should a lead or host who lowers the count get the completion mail with the fee request (bug 5)?
 6. Is "end of the third working day, arrival day counted, holidays counted as working days" the deadline to rely on? It is in `deadlines.py` only, not in `docs/UBYPORT_CORE.md`.
 7. Is `UBYHOST_STAY_FEE_GUEST_PAY` on in production?
+
+## 7. Review notes (fresh Fable review, second pass)
+
+Diff: docs only. Every answer and bug confirmed against the code, with these corrections (applied above where they change a conclusion):
+- Bug 9 and owner question 3 also cover stays with no expected count, not only a shortfall.
+- Q1: quiet completion at save time can also be fired by a guest removal (`routes/guest.py:1934-1946`) and a lead count change (`:1098`), not only host actions. Writes that restart the quiet clock also include the send-result write (`reporting.py:1737`), the filed-by-hand marks (`:2362`, `:2402`) and the calendar-move rewrite (`icalsync.py:445`).
+- Q2: `reminder_host` also goes at 18:00 the day before for unclaimed stays (`claim.py:895-903`).
+- Q6: the cited line is `routes/guest.py:2417`, not 2418.
+- Not read by the reviewer: `claim_sendable` internals, host send routes (`routes/admin.py:3748, 4176, 4782`), `validation.py:413,665`.
