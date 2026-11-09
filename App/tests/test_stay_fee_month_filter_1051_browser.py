@@ -106,6 +106,12 @@ def test_compact_month_filter_navigates_without_apply(acc, base):
                     failures.append((name, width, "touch target under 44 px", state))
                 if state["applyVisible"]:
                     failures.append((name, width, "Apply visible with JS"))
+                if width == 390:
+                    page.click("form.list-filter--compact [data-month-trigger]")
+                    panel = page.locator("form.list-filter--compact [data-month-grid-panel]").bounding_box()
+                    if not panel or panel["x"] < 0 or panel["x"] + panel["width"] > 390 or panel["y"] + panel["height"] > 900:
+                        failures.append((name, width, "month grid outside the viewport", panel))
+                    page.keyboard.press("Escape")
                 if CAPTURE:
                     page.screenshot(path=str(OUT / f"stayfees-{name}-{width}.png"), full_page=True)
                     if name == "list" and width == 390:

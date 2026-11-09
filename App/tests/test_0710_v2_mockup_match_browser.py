@@ -71,7 +71,8 @@ def _open_app(browser, base_url, cookie, path, width):
     context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": base_url + "/"}])
     context.add_init_script("try { localStorage.setItem('ubyhost-sidebar-collapsed', '0'); } catch (e) {}")
     page = context.new_page()
-    page.goto(f"{base_url}{path}?lang=en")
+    # 1051: paths with a query (stay fee ?month=) got "?month=X?lang=en", which hid the month behind the default.
+    page.goto(f"{base_url}{path}{'&' if '?' in path else '?'}lang=en")
     page.wait_for_load_state("networkidle")
     later = page.locator("#security-prompt [data-security-prompt-later]")
     if later.is_visible():
