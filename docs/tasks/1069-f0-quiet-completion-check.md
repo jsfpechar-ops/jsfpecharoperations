@@ -1,6 +1,6 @@
 # 1069: F0, read-only check of quiet completion (what the lead gets when not everyone registered)
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 0d851ca4 | Branch: claude/1069-f0-quiet-completion-check
 Executor: Fable 5.2 (owner override, Tier A, read-only) | Fits one session: 30 tool calls, 60k tokens
 
