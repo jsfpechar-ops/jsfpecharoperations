@@ -1046,6 +1046,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
   function initFilterPanels() {
     document.querySelectorAll("[data-filter-panel]").forEach(function (form) {
       if (!claimNode(form, "initFilterPanels")) return;
+      if (form.hasAttribute("data-filter-compact")) { initCompactFilter(form); return; }
       var toggle = form.id ? document.querySelector('[data-filter-toggle][aria-controls="' + form.id + '"]') : null;
       var controls = Array.prototype.slice.call(form.querySelectorAll("input, select, textarea"));
       var initial = controls.map(function (control) { return control.value; });
@@ -1242,6 +1243,29 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     });
   }
 
+  /* 1051: compact month filter (stay fees). Any pick navigates at once; no Apply. */
+  function navigateFilter(form) {
+    var params = new URLSearchParams();
+    new FormData(form).forEach(function (value, key) { if (value !== "") params.append(key, value); });
+    var query = params.toString();
+    var url = (form.getAttribute("action") || window.location.pathname) + (query ? "?" + query : "");
+    if (window.Turbo && typeof window.Turbo.visit === "function") window.Turbo.visit(url);
+    else window.location.assign(url);
+  }
+
+  function initCompactFilter(form) {
+    form.classList.add("is-enhanced");
+    var month = form.querySelector("[data-month-native]");
+    var initialMonth = month ? month.value : "";
+    if (month) month.addEventListener("change", function () {
+      if (month.value && month.value !== initialMonth) { initialMonth = month.value; navigateFilter(form); }
+    });
+    form.querySelectorAll("select").forEach(function (select) {
+      select.addEventListener("change", function () { navigateFilter(form); });
+    });
+    initMonthPickers(form);
+  }
+
   function initMonthPickers(form) {
     if (claimNode(document, "initMonthPickers")) {
       document.addEventListener("pointerdown", function (event) {
@@ -1310,6 +1334,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
           var candidate = date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0");
           if (candidate < min || candidate > max) return;
           selected = candidate; nativeInput.value = candidate; setCaption(); render();
+          nativeInput.dispatchEvent(new Event("change", { bubbles: true }));
         });
       });
       var close = function (restore) { panel.hidden = true; trigger.setAttribute("aria-expanded", "false"); if (restore) selected = nativeInput.value; setCaption(); trigger.focus(); };
@@ -1318,7 +1343,8 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         panel.hidden = false; trigger.setAttribute("aria-expanded", "true"); render();
         var bounds = trigger.getBoundingClientRect();
         var width = Math.min(360, window.innerWidth - 8);
-        panel.style.left = Math.max(4, Math.min(bounds.left, window.innerWidth - width - 4)) + "px";
+        var panelLeft = picker.closest("[data-filter-compact]") ? bounds.left + bounds.width / 2 - width / 2 : bounds.left;
+        panel.style.left = Math.max(4, Math.min(panelLeft, window.innerWidth - width - 4)) + "px";
         panel.style.top = Math.min(bounds.bottom + 8, window.innerHeight - panel.offsetHeight - 8) + "px";
         var focused = grid.querySelector(".selected:not([disabled])") || grid.querySelector("[data-month-choice]:not([disabled])"); if (focused) focused.focus();
       });

@@ -68,3 +68,4 @@ Append-only.
 - 2026-11-07 [owner] request-to-book: direct rails (IBAN/Revolut/cash) vs or beside Stripe; 24h hold; host confirms (0996-0998).
 - 2026-11-07 | [backup] Litestream retired; S3 replica kept | owner | [1021](../tasks/1021-remove-litestream.md)
 - 2026-11-07 | [backup] WAL-G: WAL archive + PITR to S3 | owner | [1022](../tasks/1022-walg-continuous-archiving.md)
+- 2026-11-09 | [ux] Stay fees open on the current month (was previous); compact month filter navigates on pick, no Apply; opt-in `filter_compact`, invoices unchanged; `list-filter-compact.css` on both shells (fee detail is not v2) | owner | [1051](../tasks/1051-stayfees-month-filter.md)

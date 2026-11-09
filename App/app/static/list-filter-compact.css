@@ -1,0 +1,32 @@
+/* 1051: compact month filter for Stay fees list (v2) and fee detail (v1). Loaded on both shells; tokens only. */
+/* 1051 compact month filter, stay fees (start; not v2-gated: the fee detail is not a v2 page): one centred control, no card, no Apply with JS */
+body form.list-filter.list-filter--compact{align-items:center;gap:var(--space-3);margin:0 0 var(--space-6);padding:var(--space-2) 0;background:transparent;border:0;border-radius:0}
+body form.list-filter.list-filter--compact .filter-fields{flex-direction:column;align-items:center;justify-content:center;gap:var(--space-3);width:100%}
+body form.list-filter.list-filter--compact .filter-fields>.list-filter-period{flex:0 0 auto;width:auto;max-width:100%}
+body form.list-filter.list-filter--compact .month-row{justify-content:center;gap:var(--space-4)}
+body form.list-filter.list-filter--compact .month-control{flex:0 1 auto;min-width:0}
+body .stay-fees-toolbar form.list-filter.list-filter--compact .month-control{min-width:0}
+body form.list-filter.list-filter--compact .month-step{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border:0;border-radius:var(--radius-pill);background:transparent;color:var(--ink);font-size:22px;line-height:1}
+body form.list-filter.list-filter--compact .month-step[hidden]{display:none}
+body form.list-filter.list-filter--compact .month-step:hover:not(:disabled){background:var(--surface-2)}
+body form.list-filter.list-filter--compact .month-step:disabled{color:var(--ink-muted);opacity:.45}
+body form.list-filter.list-filter--compact .month-trigger{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);width:auto;min-width:12rem;height:44px;min-height:44px;padding:0 var(--space-5);border:1px solid var(--line);border-radius:var(--radius-pill);background:var(--surface);color:var(--ink);font-size:17px;font-weight:700;white-space:nowrap}
+body form.list-filter.list-filter--compact .month-trigger[hidden]{display:none}
+body form.list-filter.list-filter--compact .month-trigger:hover{background:var(--surface-2)}
+body form.list-filter.list-filter--compact .month-trigger>[aria-hidden]{color:var(--ink-secondary);font-size:13px}
+body form.list-filter.list-filter--compact .month-control input[data-month-native]{width:auto;min-width:11rem;height:44px;text-align:center}
+.has-js body form.list-filter.list-filter--compact .list-filter-nojs{display:none}
+body form.list-filter.list-filter--compact .list-filter-nojs{justify-content:center}
+body form.list-filter.list-filter--compact .list-filter-more{display:flex;flex-direction:column;align-items:center;width:100%}
+body form.list-filter.list-filter--compact .list-filter-more-toggle{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 var(--space-4);color:var(--ink-secondary);font-size:14px;list-style:none;cursor:pointer}
+body form.list-filter.list-filter--compact .list-filter-more-toggle::-webkit-details-marker{display:none}
+body form.list-filter.list-filter--compact .list-filter-more-fields{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:var(--space-3);width:100%;margin-top:var(--space-2)}
+body form.list-filter.list-filter--compact .list-filter-more-fields>.ui-field{flex:0 1 240px;min-width:0;margin:0}
+body form.list-filter.list-filter--compact .list-filter-more-fields>.list-filter-reset{display:inline-flex;align-items:center;min-height:44px}
+@media (max-width:767px){body form.list-filter.list-filter--compact .list-filter-more-fields>.ui-field{flex:1 1 100%}body form.list-filter.list-filter--compact .month-trigger{min-width:0}}
+.has-js body form.list-filter.list-filter--compact input[data-month-native]{position:absolute;width:1px;height:1px;min-width:0;opacity:0;pointer-events:none}
+/* 1051 compact month filter (end) */
+body form.list-filter.list-filter--compact .month-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-2)}
+body form.list-filter.list-filter--compact details.list-filter-more{margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+body form.list-filter.list-filter--compact .list-filter-more-toggle{width:auto;border:0;background:transparent;text-decoration:none}
+body form.list-filter.list-filter--compact .list-filter-more-toggle::after{content:none}

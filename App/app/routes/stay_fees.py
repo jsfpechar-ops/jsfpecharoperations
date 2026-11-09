@@ -75,7 +75,9 @@ def fee_copy_source(apartment, candidates):
 
 
 def _default_month(today: date) -> date:
-    return stay_fee.previous_month(today)
+    # 1051, owner decision 2026-11-09: open on the current month, not the previous one.
+    # Future months stay refused by every route (max = current month).
+    return today.replace(day=1)
 
 
 def _ui_period_label(request: Request, cadence: str, month: date) -> str:
