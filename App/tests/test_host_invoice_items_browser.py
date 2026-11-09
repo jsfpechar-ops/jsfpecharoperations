@@ -18,7 +18,7 @@ from fastapi.testclient import TestClient
 from app import auth, db
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 from tests.invoice_stay_helper import make_stay
 
 
@@ -43,7 +43,7 @@ def base():
 
 def _host():
     username = f"invitems{secrets.token_hex(4)}"
-    owner = auth.create_account(f"{username}@example.test", "Invoice items", role="host", username=username)
+    owner = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Invoice items", role="host", username=username))
     entity = db.insert("legal_entity", {
         "name": "Items s.r.o.", "seat": "Praha 1", "ico": "04656679",
         "registry_entry": "Fyzická osoba zapsaná v živnostenském rejstříku",

@@ -22,16 +22,16 @@ from fastapi.testclient import TestClient
 from app import auth, db
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs, settle_motion
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 
 @pytest.fixture(scope="module")
 def host():
     db.init_db()
     username = f"filters-{secrets.token_hex(4)}"
-    owner = auth.create_account(
+    owner = mark_security_prompt_seen(auth.create_account(
         f"{username}@example.test", "Filter Test", role="host", username=username
-    )
+    ))
     entity = db.insert("legal_entity", {
         "name": "Filter Test s.r.o.", "owner_user_id": owner, "created_at": db.utcnow(),
     })
@@ -541,9 +541,9 @@ def _shots_dir() -> Path:
 def scope_host():
     db.init_db()
     username = f"scope-{secrets.token_hex(4)}"
-    owner = auth.create_account(
+    owner = mark_security_prompt_seen(auth.create_account(
         f"{username}@example.test", "Scope Test", role="host", username=username
-    )
+    ))
     entity = db.insert("legal_entity", {
         "name": "Scope Test s.r.o.", "owner_user_id": owner, "created_at": db.utcnow(),
     })

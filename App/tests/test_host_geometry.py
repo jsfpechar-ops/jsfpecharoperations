@@ -23,7 +23,7 @@ from fastapi.testclient import TestClient
 from app import auth, db
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 
 
@@ -62,7 +62,7 @@ def _browser_session_cookie(username: str) -> str:
 
 def test_dashboard_actions_share_height_and_gap(base):
     username = f"geometry{secrets.token_hex(4)}"
-    owner = auth.create_account(f"{username}@example.test", "Geometry", role="host", username=username)
+    owner = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Geometry", role="host", username=username))
     entity = db.insert("legal_entity", {"name": "Geometry s.r.o.", "owner_user_id": owner, "created_at": db.utcnow()})
     apartment = db.insert("apartment", {
         "internal_name": "Geometry loft", "owner_user_id": owner, "legal_entity_id": entity,
@@ -129,7 +129,7 @@ def test_the_month_filter_shares_its_page_edges(base):
     opposite problem by stranding Previous/Next at the east edge.
     """
     username = f"geomfilter{secrets.token_hex(4)}"
-    owner = auth.create_account(f"{username}@example.test", "Geometry", role="host", username=username)
+    owner = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Geometry", role="host", username=username))
     entity = db.insert("legal_entity", {"name": "Geometry s.r.o.", "owner_user_id": owner, "created_at": db.utcnow()})
     db.insert("apartment", {
         "internal_name": "Geometry loft", "owner_user_id": owner, "legal_entity_id": entity,

@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, config, db, property_setup
 from app.main import app
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 
 LOCK = {"lock_id": "70940001", "alias": "Synthetic Door", "battery": 90, "tz_offset_ms": 3600000}
@@ -22,7 +22,7 @@ def host(monkeypatch):
     monkeypatch.setattr(config, "TTLOCK_CLIENT_ID", "cid")
     monkeypatch.setattr(config, "TTLOCK_CLIENT_SECRET", "csecret")
     username = f"nav-{secrets.token_hex(4)}"
-    owner = auth.create_account(f"{username}@example.test", "Nav Host", role="host", username=username)
+    owner = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Nav Host", role="host", username=username))
     now = db.utcnow()
     entities = [
         db.insert("legal_entity", {"name": name, "seat": "Praha", "ico": "12345678",
