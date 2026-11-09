@@ -65,7 +65,7 @@ No other file may change.
 
 ## 4. Steps
 
-0. **Orchestrator adds the decision line.** Placeholder: before this brief runs, the orchestrator appends the owner's yes to owner question 3 (1069 report) to `docs/context/decisions.md` and replaces this step with the line it added. The line must state both parts of what the owner accepted: (1) registered, valid guests are filed at the deadline cap without waiting for 12 quiet hours; (2) this reverses the rule written in the comment at `reporting.py:1093` ("never from the fact that this code was deployed"), which `test_send_controls.py::test_legacy_completed_reservation_is_not_auto_eligible_on_deploy` (line 368) still passes only because its seed checks in today: every stay already past its cap at deploy is filed by the first sweep, under the backlog rule in §2 (default: all). If this step still reads "Placeholder", STOP (§8): there is no decision line.
+0. **Decision line (added by the orchestrator in PR #854, `docs/context/decisions.md`):** `2026-11-09 [filing] Registered guests are filed by the deadline cap (deadline - 6 h) even when the stay is short or has no expected count; no 12 quiet hours wait past the cap; valid co-guests filed while another form is invalid; reverses the reporting.py:1093 "never because this code was deployed" rule: stays already past their cap are filed by the first sweep (backlog rule: all, unless the owner picks another) (owner, K-F20) | 1070`. Owner yes: decision card in the project thread, 2026-11-09 21:56.
 
 1. Branch from main.
    ```bash
