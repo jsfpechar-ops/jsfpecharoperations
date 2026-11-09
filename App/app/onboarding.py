@@ -231,7 +231,7 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
             ),
             "property_url": f"/apartments/{first_apartment['id']}",
         }
-    wstep = wizard_step(owner_user_id)
+    wstep = wizard_step(owner_user_id, first_apartment)
     return {
         "steps": steps,
         "current": current,
