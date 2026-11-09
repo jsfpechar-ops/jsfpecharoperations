@@ -48,4 +48,4 @@ Before reporting, grep docs/context/known-issues.md for the file. Skip listed ID
 
 ## Scoped Luna prompt for PRs #581–583
 
-For the owner-authorized 2026-10-30 task only, substitute Luna for Haiku in the executor prompt. Follow one verified brief and all normal safeguards. Return local diffs and evidence; do not merge or deploy. See [workflow](workflow.md#task-specific-luna-execution-2026-10-30).
+For the owner-authorized 2026-10-30 task only, substitute Luna for Haiku in the executor prompt. Follow one verified brief and all normal safeguards. Return local diffs and evidence; do not merge or deploy. See [workflow](workflow.md#retired-executor-exceptions).
