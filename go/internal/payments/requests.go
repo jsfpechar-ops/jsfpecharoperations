@@ -99,7 +99,7 @@ func RequestNewHandler(pool *pgxpool.Pool, getenv func(string) string, now func(
 		owner := h.Workspace.ID
 		lang := hostweb.Lang(r)
 		invalid := func() {
-			hostweb.Back(w, r, "/payments", hostweb.Flash{}, requestFlash(lang, "payments.err.invalid"))
+			hostweb.Back(w, r, "/payments/new", hostweb.Flash{}, requestFlash(lang, "payments.err.invalid"))
 		}
 
 		reason := strings.TrimSpace(r.PostFormValue("reason"))
@@ -109,7 +109,7 @@ func RequestNewHandler(pool *pgxpool.Pool, getenv func(string) string, now func(
 		}
 		amount, ok := paymentAmount(strings.TrimSpace(r.PostFormValue("amount_czk")))
 		if !ok {
-			hostweb.Back(w, r, "/payments", hostweb.Flash{}, requestFlash(lang, "payments.err.amount"))
+			hostweb.Back(w, r, "/payments/new", hostweb.Flash{}, requestFlash(lang, "payments.err.amount"))
 			return
 		}
 		var reservationID *int64

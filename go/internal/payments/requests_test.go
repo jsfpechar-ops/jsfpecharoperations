@@ -141,7 +141,7 @@ func TestRequestNewDatabase(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			rec := requestCall(t, mux, path, 1, tc.form)
 			loc := rec.Header().Get("Location")
-			if rec.Code != http.StatusSeeOther || !strings.HasPrefix(loc, "/payments?err=") {
+			if rec.Code != http.StatusSeeOther || !strings.HasPrefix(loc, "/payments/new?err=") {
 				t.Errorf("got %d %q, want an err flash", rec.Code, loc)
 			}
 			if total() != before {
