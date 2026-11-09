@@ -7,7 +7,7 @@ import zipfile
 from datetime import date
 from urllib.parse import parse_qsl, quote, urlencode, urlsplit
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 
 from .. import (
@@ -75,7 +75,9 @@ def fee_copy_source(apartment, candidates):
 
 
 def _default_month(today: date) -> date:
-    return stay_fee.previous_month(today)
+    # 1051, owner decision 2026-11-09: open on the current month, not the previous one.
+    # Future months stay refused by every route (max = current month).
+    return today.replace(day=1)
 
 
 def _ui_period_label(request: Request, cadence: str, month: date) -> str:
@@ -789,6 +791,8 @@ def stay_fee_detail(apartment_id: int, request: Request):
         )
 
     apartment = access.apartment(request, apartment_id)
+    if not apartment:
+        raise HTTPException(status_code=404)
     if not apartment or (
         not stay_fee.is_active(apartment)
         and not stay_fee_filing.covering(apartment["id"], selected_month)

@@ -282,8 +282,15 @@ def normalise_name(value: Optional[str]) -> str:
     return collapse_spaces(fold_to_allowed(text, NAME_ALLOWED))
 
 
+# Word/macOS dashes. UbyPort only accepts ASCII "-"; stay_fee._obec_key already
+# treats these as a hyphen, but fold_to_allowed would otherwise drop them and
+# turn "Praha–Řepy" into "PrahaŘepy" (charged after save, exempt on the form).
+_RESIDENCE_DASH = re.compile(r"[\u2010-\u2015\u2212]")
+
+
 def normalise_residence_part(value: Optional[str]) -> str:
     text = collapse_spaces(strip_forbidden(value))
+    text = _RESIDENCE_DASH.sub("-", text)
     return collapse_spaces(fold_to_allowed(text, RESIDENCE_ALLOWED))
 
 
@@ -445,12 +452,31 @@ def display_residence(street: str, city: str, country_code: str, lang: str = "cs
     return ", ".join(parts)[:MAX_RESIDENCE]
 
 
-def validate_residence(street: str, city: str, country_code: str) -> List[Issue]:
+def validate_residence(
+    street: str,
+    city: str,
+    country_code: str,
+    raw_street: str = "",
+    raw_city: str = "",
+) -> List[Issue]:
+    """Home-address problems.
+
+    ``raw_street`` and ``raw_city`` are what the guest typed before cleaning.
+    Text in another alphabet cleans to nothing, and "City is required" would
+    then be false: the guest did fill it in, in a script UbyPort cannot take.
+    """
     issues: List[Issue] = []
     if not street:
-        issues.append(Issue("res_street", "Street and number are required."))
+        issues.append(
+            Issue(
+                "res_street",
+                NON_LATIN_MESSAGE if (raw_street or "").strip() else "Street and number are required.",
+            )
+        )
     if not city:
-        issues.append(Issue("res_city", "City is required."))
+        issues.append(
+            Issue("res_city", NON_LATIN_MESSAGE if (raw_city or "").strip() else "City is required.")
+        )
     if not country_code:
         issues.append(Issue("res_country", "Country is required."))
     for field, value, label in (("res_street", street, "Street"), ("res_city", city, "City")):
@@ -605,6 +631,8 @@ def validate_guest(
             guest.get("res_street") or "",
             guest.get("res_city") or "",
             (guest.get("res_country") or "").upper(),
+            raw_street=(raw or {}).get("res_street") or "",
+            raw_city=(raw or {}).get("res_city") or "",
         )
     )
     if len(compose_residence(

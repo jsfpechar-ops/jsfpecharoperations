@@ -174,3 +174,33 @@ def test_calendar_works_without_javascript(base, seeded):
             context.close()
         finally:
             browser.close()
+
+
+@pytest.mark.parametrize("lang", ["en", "cs"])
+@pytest.mark.parametrize("width", [390, 768, 1280])
+def test_failed_checkout_keeps_typed_values_and_fits(base, seeded, width, lang):
+    url = (f"{base}/p/{seeded}?lang={lang}&month=2027-03&date_from=2027-03-10"
+           f"&date_to=2027-03-13&guests=2")
+    with sync_api.sync_playwright() as playwright:
+        browser = _launch(playwright)
+        try:
+            page = browser.new_context(viewport={"width": width, "height": 900}).new_page()
+            page.goto(url)
+            form = page.locator("form.pp-bk-card")
+            form.locator("[name=guest_name]").fill("Jana Nova")
+            form.locator("[name=guest_email]").fill("not-an-email")
+            form.locator("[name=terms]").check()
+            form.evaluate("f => { f.noValidate = true; }")
+            form.locator("button[type=submit]").first.click()
+            page.wait_for_load_state("load")
+            assert page.locator("[name=guest_name]").input_value() == "Jana Nova"
+            assert page.locator("[name=guest_email]").input_value() == "not-an-email"
+            assert page.locator("[name=terms]").is_checked() is False
+            assert "not-an-email" not in page.url
+            assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+            shots = os.environ.get("BSITE_SHOT_DIR")
+            if shots:
+                Path(shots).mkdir(parents=True, exist_ok=True)
+                page.screenshot(path=str(Path(shots) / f"guest-error-{lang}-{width}.png"), full_page=True)
+        finally:
+            browser.close()

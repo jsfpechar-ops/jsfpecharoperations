@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-11-08.
+Updated: 2026-11-09.
 
 ## Production
 - Magic-link 1–2 done; checked; access log off.
@@ -8,6 +8,8 @@ Updated: 2026-11-08.
 - PostgreSQL since 2026-10-31; SQLite at `/data/ubyhost.db`. Billing ON. Go off until `COMPOSE_PROFILES` + `UBYHOST_GO_JOB_KINDS`.
 
 ## Now
+- 11-09: 1051 stay fees compact month filter (no Apply, default = current month), draft PR on `claude/stayfees-month-filter`; cache `20261109-1051a`.
+- 11-09: 1053 Stay fee card rows + centred property editor column (>=1024); cache `20261109-1053a`. PR draft, CI watched.
 - 11-06: #790: OCR `tip_label` + inline-flex `help-tip` (layout-lint `help-stranded` @320); cache `20261106-pr790-ocr-tip2`. Full browser glob open. [handoff](../tasks/ux-remediation-handoff.md).
 - 11-06: #791 merged. 11-07: 0990-0992 (settings throttle, PG indexes 00008, edge cache) in review. **Owner:** deploy, `pg_schema.py apply`, CF rule, Grafana.
 - UX gate live (layout lint + AGENTS rule 10). Stripe onboarding live; extras merged. **Owner:** deploy; booking site v1 next.

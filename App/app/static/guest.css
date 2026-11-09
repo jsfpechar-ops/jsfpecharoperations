@@ -1320,6 +1320,7 @@ details.g-head-help > .g-intro { margin: 10px 0 0; }
   font-size: 31px;
   margin: 0 auto 16px;
 }
+.g-big-ok .mark svg { width: 30px; height: 30px; }
 .g-big-ok .mark.neutral { background: var(--g-surface-2); color: var(--g-muted); }
 .g-big-ok h2 { font-size: 21px; }
 .g-big-ok .g-btn { max-width: 280px; margin: 6px auto 0; }
@@ -1343,12 +1344,18 @@ details.g-summary > summary.g-summary-fold {
 }
 details.g-summary > summary.g-summary-fold::-webkit-details-marker { display: none; }
 details.g-summary > summary.g-summary-fold::after {
-  content: "▾";
+  content: "";
   float: right;
-  color: var(--g-muted);
-  font-weight: 400;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  background-color: var(--g-muted);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat;
 }
-details.g-summary[open] > summary.g-summary-fold::after { content: "▴"; }
+details.g-summary[open] > summary.g-summary-fold::after { transform: rotate(180deg); }
+.g-btn + details.g-summary { margin-top: 14px; }
+details.g-summary > .g-summary-body > .g-intro + .g-btn { margin-top: 12px; }
 details.g-summary[open] > summary.g-summary-fold {
   padding-bottom: 14px;
   border-bottom: 1px solid var(--g-line);
