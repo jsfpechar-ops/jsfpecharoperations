@@ -47,7 +47,7 @@ def _cleanup():
 def world():
     db.init_db()
     _cleanup()
-    auth.create_account(f"{USERNAME}@example.test", "Invoice Nav Host", username=USERNAME)
+    mark_security_prompt_seen(auth.create_account(f"{USERNAME}@example.test", "Invoice Nav Host", username=USERNAME))
     owner = db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))["id"]
     entity = db.insert("legal_entity", {
         "name": "Nav s.r.o.", "seat": "Praha 1", "ico": "04656679",

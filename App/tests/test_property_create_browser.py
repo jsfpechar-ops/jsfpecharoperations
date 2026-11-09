@@ -297,7 +297,7 @@ def test_create_needs_login_and_admin_preview_creates_for_the_previewed_host():
     assert anonymous.post("/apartments", data=_form(), follow_redirects=False).status_code in (302, 303)
     host = _host(1, "create-previewed")
     admin_name = f"create-admin-{secrets.token_hex(3)}"
-    auth.create_account(f"{admin_name}@example.test", "Create Admin", role="admin", username=admin_name)
+    mark_security_prompt_seen(auth.create_account(f"{admin_name}@example.test", "Create Admin", role="admin", username=admin_name))
     admin = TestClient(app)
     assert login_as(admin, admin_name, url="/login?lang=en", follow_redirects=False).status_code == 303
     assert admin.post(f"/admin/users/{host['owner']}/impersonate", data={"reason": "support"},

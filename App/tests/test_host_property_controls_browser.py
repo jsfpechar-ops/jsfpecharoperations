@@ -28,9 +28,9 @@ from tests.conftest import login_as, mark_security_prompt_seen
 def host():
     db.init_db()
     username = f"property-controls-{secrets.token_hex(4)}"
-    owner_id = auth.create_account(
+    owner_id = mark_security_prompt_seen(auth.create_account(
         f"{username}@example.test", "Property Controls", role="host", username=username
-    )
+    ))
     linked_id = db.insert("legal_entity", {
         "name": "Linked Operator",
         "seat": "Praha",

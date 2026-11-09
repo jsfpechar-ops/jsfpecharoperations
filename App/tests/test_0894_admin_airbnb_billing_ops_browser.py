@@ -8,6 +8,7 @@ import pytest
 sync_api = pytest.importorskip("playwright.sync_api")
 
 from app import auth
+from tests.conftest import mark_security_prompt_seen
 from tests.test_0893_admin_airbnb_browser import (  # noqa: F401
     GEOMETRY_JS,
     base,
@@ -134,7 +135,7 @@ def b16_long_customer(host):
     """One synthetic customer with a very long name (rows stay: other tests share the test DB)."""
     username = f"b16-long-{host['owner']}"
     if not db.query_one("SELECT id FROM user_account WHERE username = ?", (username,)):
-        auth.create_account(f"{username}@example.test", B16_LONG, role="host", username=username)
+        mark_security_prompt_seen(auth.create_account(f"{username}@example.test", B16_LONG, role="host", username=username))
     return username
 
 

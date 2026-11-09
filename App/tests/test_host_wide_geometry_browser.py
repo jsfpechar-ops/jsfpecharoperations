@@ -24,7 +24,7 @@ else:
 from app import alerts, auth, claim, db
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs, settle_motion
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 WIDE_WIDTHS = (1024, 1280, 1440, 1680, 1920, 2048)
 MOBILE_WIDTHS = (360, 390, 760)
@@ -80,9 +80,9 @@ def wide_host():
     db.init_db()
     suffix = secrets.token_hex(4)
     username = f"wide-geometry-{suffix}"
-    owner_id = auth.create_account(
+    owner_id = mark_security_prompt_seen(auth.create_account(
         f"{username}@example.test", "Wide Geometry Fixture", role="host", username=username
-    )
+    ))
     now = db.utcnow()
     entity_id = db.insert("legal_entity", {
         "name": "Wide Geometry Fixture s.r.o.", "seat": "Praha", "ico": "12345678",

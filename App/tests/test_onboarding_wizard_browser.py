@@ -1317,7 +1317,7 @@ def test_demo_preview_pin_is_private_and_validated(host, monkeypatch):
     refused = stranger.get(preview)
     assert refused.status_code == 404
     other_username = f"preview-other-{secrets.token_hex(4)}"
-    auth.create_account(f"{other_username}@example.test", "Other host", role="host", username=other_username)
+    mark_security_prompt_seen(auth.create_account(f"{other_username}@example.test", "Other host", role="host", username=other_username))
     other = TestClient(app)
     assert login_as(other, other_username, url="/login?lang=en", follow_redirects=False).status_code == 303
     assert other.get(preview).status_code == 404

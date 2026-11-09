@@ -19,6 +19,7 @@ else:
 from PIL import Image
 
 from app import auth
+from tests.conftest import mark_security_prompt_seen
 from tests.browser_support import chromium_launch_kwargs
 from tests.test_host_geometry import _browser_session_cookie, base  # noqa: F401  (fixture reuse)
 
@@ -42,7 +43,7 @@ def _shares(png_bytes):
 @pytest.mark.parametrize("width", [390, 1280])
 def test_catalog_page_fits_the_viewport_and_the_coral_budget(base, width):
     username = f"devuiadmin{secrets.token_hex(3)}"
-    auth.create_account(f"{username}@example.test", "Catalog", role="admin", username=username)
+    mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Catalog", role="admin", username=username))
     session = _browser_session_cookie(username)
     with sync_api.sync_playwright() as playwright:
         try:

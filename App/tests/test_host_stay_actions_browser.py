@@ -22,16 +22,16 @@ from fastapi.testclient import TestClient
 from app import auth, claim, db, demo, reporting
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 
 @pytest.fixture(scope="module")
 def stay_actions_host():
     db.init_db()
     username = f"stay-actions-{secrets.token_hex(4)}"
-    owner_id = auth.create_account(
+    owner_id = mark_security_prompt_seen(auth.create_account(
         f"{username}@example.test", "Stay Actions QA", role="host", username=username
-    )
+    ))
     now = db.utcnow()
     entity_id = db.insert("legal_entity", {
         "name": "Stay Actions QA s.r.o.", "seat": "Praha", "ico": "12345678",

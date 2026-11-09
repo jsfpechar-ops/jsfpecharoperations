@@ -28,7 +28,7 @@ from fastapi.testclient import TestClient
 from app import alerts, auth, claim, db, onboarding
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 SHOTS = Path(os.environ.get("UBYHOST_SHOTS_DIR") or "/tmp/ubyhost-b11")
 WIDTHS = (390, 768, 1280)
@@ -96,9 +96,9 @@ def workspace():
 
     def build(tag, karlin=2, vinohrady=1, foldable=True):
         username = f"b11-{tag}-{secrets.token_hex(4)}"
-        owner_id = auth.create_account(
+        owner_id = mark_security_prompt_seen(auth.create_account(
             f"{username}@example.test", "B11 Alerts", role="host", username=username
-        )
+        ))
         now = db.utcnow()
         entity_id = db.insert("legal_entity", {
             "name": "B11 Alerts s.r.o.", "seat": "Praha", "ico": "11223344",

@@ -67,9 +67,9 @@ def host():
     db.init_db()
     _cleanup()
     if not db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,)):
-        auth.create_account(f"{USERNAME}@example.test", "Autofill Host", username=USERNAME)
+        mark_security_prompt_seen(auth.create_account(f"{USERNAME}@example.test", "Autofill Host", username=USERNAME))
     if not db.query_one("SELECT id FROM user_account WHERE username = ?", (OTHER,)):
-        auth.create_account(f"{OTHER}@example.test", "Other Host", username=OTHER)
+        mark_security_prompt_seen(auth.create_account(f"{OTHER}@example.test", "Other Host", username=OTHER))
     client = TestClient(app)
     response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text

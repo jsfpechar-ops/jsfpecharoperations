@@ -24,7 +24,7 @@ from fastapi.testclient import TestClient
 from app import auth, config, db
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 
 def _free_port():
@@ -64,7 +64,7 @@ def _browser_session_cookie(username: str) -> str:
 
 def test_funnel_ads_export_geometry(base):
     username = f"funnelgeom{secrets.token_hex(4)}"
-    auth.create_account(f"{username}@example.test", "Funnel Geometry", role="admin", username=username)
+    mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Funnel Geometry", role="admin", username=username))
     session = _browser_session_cookie(username)
     with sync_api.sync_playwright() as playwright:
         try:
@@ -118,7 +118,7 @@ def test_funnel_ads_export_geometry(base):
 def test_funnel_ads_export_fits_the_phone(base):
     """No horizontal scroll, no clipped label, at the phone width."""
     username = f"funnelphone{secrets.token_hex(4)}"
-    auth.create_account(f"{username}@example.test", "Funnel Phone", role="admin", username=username)
+    mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Funnel Phone", role="admin", username=username))
     session = _browser_session_cookie(username)
     with sync_api.sync_playwright() as playwright:
         try:
