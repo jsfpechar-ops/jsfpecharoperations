@@ -77,15 +77,32 @@ def _client_geometry_box(locator):
     """Geometry for an element that may sit in a scroll container (gantt track).
 
     Playwright's bounding_box() can return None when the node is not considered
-    layout-visible even though getBoundingClientRect() has size (CI flake).
+    layout-visible even though getBoundingClientRect() has size. The gantt
+    also replaces those nodes while a scroll is in progress, so a detached
+    read is retried instead of failing the test.
     """
-    locator.scroll_into_view_if_needed()
-    return locator.evaluate(
-        """node => {
-          const r = node.getBoundingClientRect();
-          return {x: r.x, y: r.y, width: r.width, height: r.height};
-        }"""
-    )
+    last = {"x": 0, "y": 0, "width": 0, "height": 0}
+    for _ in range(8):
+        try:
+            box = locator.evaluate(
+                """node => {
+                  if (!node.isConnected) return null;
+                  const r = node.getBoundingClientRect();
+                  return {x: r.x, y: r.y, width: r.width, height: r.height};
+                }"""
+            )
+        except sync_api.Error:
+            box = None
+        if box and box["width"] > 0 and box["height"] > 0:
+            return box
+        if box:
+            last = box
+        try:
+            locator.scroll_into_view_if_needed(timeout=1000)
+        except sync_api.Error:
+            pass
+        locator.page.wait_for_timeout(50)
+    return last
 
 
 @pytest.mark.parametrize("width", [768, 1024, 1280])
