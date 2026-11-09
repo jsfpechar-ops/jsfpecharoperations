@@ -42,7 +42,11 @@ def schedule_for(apartment: Any, today: Optional[date] = None) -> Schedule:
     ]
     if schedule[-1][1] != column:
         # The column moved without a history row (a save path forgot to record).
+        # Keep date order: a future history row can already be last, and
+        # rate_on stops at the first date after the night being priced, so an
+        # unsorted tail would replace that later rate.
         schedule.append((today or date.today(), column))
+        schedule.sort(key=lambda item: item[0])
     return schedule
 
 

@@ -82,6 +82,22 @@ def test_editor_rate_change_writes_a_dated_row(host, monkeypatch):  # noqa: F811
     assert _rates(apartment_id)[-1] == ("2026-04-01", 40)
 
 
+def test_editor_current_rate_save_does_not_wipe_a_future_rate(host, monkeypatch):  # noqa: F811
+    """Applies-from January, then today's rate again: January stays 50 Kč."""
+    monkeypatch.setattr(claim, "prague_today", lambda: date(2026, 3, 12))
+    apartment_id = form_save._apartment()["id"]
+    _save_rate(host, apartment_id, 30)
+    _save_rate(host, apartment_id, 50, stay_fee_rate_from="2027-01-01")
+    restored = _save_rate(host, apartment_id, 30, stay_fee_rate_from="2026-03-12")
+    schedule = stay_fee_rate.schedule_for(restored, today=date(2026, 3, 12))
+    assert stay_fee_rate.rate_on(schedule, date(2026, 3, 12)) == 30
+    assert stay_fee_rate.rate_on(schedule, date(2027, 1, 1)) == 50
+    changed = _save_rate(host, apartment_id, 40, stay_fee_rate_from="2026-03-12")
+    mixed = stay_fee_rate.schedule_for(changed, today=date(2026, 3, 12))
+    assert stay_fee_rate.rate_on(mixed, date(2026, 3, 12)) == 40
+    assert stay_fee_rate.rate_on(mixed, date(2027, 6, 1)) == 50
+
+
 def _guest_apartment(apartment):
     db.update("apartment", apartment["id"], {"stay_fee_collect": 1})
     return db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment["id"],))
