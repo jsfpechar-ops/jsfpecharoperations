@@ -16,7 +16,7 @@ Updated: 2026-11-09.
 - 11-06: #790: OCR `tip_label` + inline-flex `help-tip` (layout-lint `help-stranded` @320); cache `20261106-pr790-ocr-tip2`. Full browser glob open. [handoff](../tasks/ux-remediation-handoff.md).
 - 11-06: #791 merged. 11-07: 0990-0992 (settings throttle, PG indexes 00008, edge cache) in review. **Owner:** deploy, `pg_schema.py apply`, CF rule, Grafana.
 - UX gate live (layout lint + AGENTS rule 10). Stripe onboarding live; extras merged. **Owner:** deploy; booking site v1 next.
-- WAL-G sidecar is up (`walg` profile; #805 on main).
+- 11-09: backups live (daily pg_dump, WAL-G 7-day PITR); restore drills passed, repeat every 3 months.
 
 - 11-08: 1032 stay-fee pay box (no radios, all ways visible) + receipt mail with total and calculation, draft PR. Method used is never claimed (app cannot know). **Owner:** review, deploy.
 
