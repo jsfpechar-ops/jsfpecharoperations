@@ -1,4 +1,5 @@
 {% extends "guest/base.html" %}
+{% from "_icons.html" import icon with context %}
 {% block content %}
 
 {% if can_pick_other %}
@@ -154,7 +155,7 @@
   <div class="g-card">
     {% for person in people if not person.mine %}
       <div class="g-person">
-        <span class="g-tick {{ 'done' if person.complete else 'todo' }}">{{ '✓' if person.complete else person.index }}</span>
+        <span class="g-tick {{ 'done' if person.complete else 'todo' }}">{% if person.complete %}{{ icon('check', 14) }}{% else %}{{ person.index }}{% endif %}</span>
         <div class="who">
           {{ t('person') }} {{ person.index }}
           <small>{{ t('completed') if person.complete else t('not_filled') }}</small>
