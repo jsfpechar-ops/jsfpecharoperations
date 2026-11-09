@@ -6,6 +6,10 @@
     <h2>{{ t(title_key) }}</h2>
     <p class="g-intro">{{ t(body_key) }}</p>
     {% if host_note %}<p class="g-host-note" role="note" data-host-note>{{ host_note }}</p>{% endif %}
+    {% if stay_url %}
+      <a class="g-btn" href="{{ stay_url }}" data-back-to-stay>{{ t('back_to_stay') }}</a>
+      <a class="g-btn ghost" href="#host-contact" data-contact-host>{{ t('contact_host_jump') }}</a>
+    {% endif %}
     {% if restart_url %}
       <a class="g-btn ghost" href="{{ restart_url }}">{{ t('start_over') }}</a>
     {% endif %}

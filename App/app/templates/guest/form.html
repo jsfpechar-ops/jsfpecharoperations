@@ -16,6 +16,14 @@
 {% block wrap_class %}g-checkin-page{% endblock %}
 
 {% block content %}
+{% if dup_warnings %}
+  <div class="g-host-note" role="note" data-dup-warning style="margin:16px 0">
+    <strong>{{ t('dup_warning_title') }}</strong>
+    {% for item in dup_warnings %}
+      <p style="margin:6px 0 0">{{ item.name }}: {{ t('dup_warning_body', what=item.what) }}</p>
+    {% endfor %}
+  </div>
+{% endif %}
 <aside class="g-checkin-rail" aria-label="{{ t('stay_label') }}">
   <div class="g-checkin-stay">
     {% if facility %}<span class="g-property-mark property-tone-{{ facility_tone }}" aria-hidden="true">{{ facility[:1] }}</span>{% endif %}
