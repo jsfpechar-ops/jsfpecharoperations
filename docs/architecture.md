@@ -124,6 +124,7 @@ Job lifecycle detail and the admin Operations page: `docs/OPERATIONS.md`.
 | Flow | Trigger | Sync or async | Where |
 |---|---|---|---|
 | Guest registration / claim | guest opens link; claim holds expire after 30 min | Sync (HTTP) for form and claim; e-mail reminders async | `App/app/claim.py:14-20` (claim holds — **not** UbyPort) |
+| Guest edit / remove (until filed) | guest on stay hub edits or removes people they added | Sync (HTTP) | `App/app/routes/guest.py` (`…/edit/{id}`, `…/remove/{id}`); blocked when `reporting.guest_form_locked` (`submit_state` `SENT` or `restricted_at`) |
 | iCal sync | `ical` job, hourly by default; also a scoped sync from the host UI | Async | `App/app/icalsync.py`, `App/app/feed_fetch.py` (5 MB limit, 3 redirects: `feed_fetch.py:27-30`) |
 | PDF generation | Invoice or remittance requested by host/admin | Sync in request (reportlab) | `App/app/invoice_pdf.py`, `App/app/stay_fee_remittance_pdf.py` |
 | Police submission | `submit` sweep every 10 min, or a host/admin action | Async (sweep); `⚠️ UNKNOWN` whether any manual submit route bypasses the sweep | `App/app/reporting.py`, `App/app/ubyport/client.py` |

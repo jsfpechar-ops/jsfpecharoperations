@@ -10,8 +10,9 @@
 - **Host**: the accommodation provider using UbyHost. **Workspace**: a host's account data.
 - **Property / apartment**: a place the host rents.
 - **Stay / reservation**: one booking, usually imported from an iCal feed (Airbnb, Booking).
-- **Guest link + PIN**: how a guest opens the check-in form. **Claim**: a guest picks their stay and gives email and party size.
-- **Poplatek z pobytu (stay fee)**: the municipal tourist fee (§ 3g zákon 565/1990 Sb.). Host-only remittance tool; optional.
+- **Guest link + PIN**: `/l/{token}`; hub `…/{reservation_id}`; people at `…/new`, `…/edit/{id}`, `…/remove/{id}`. **Claim**: pick stay, e-mail, party size.
+- **Guest form lock** (`guest_form_locked`): edit/remove until `submit_state` is `SENT` (incl. by hand); signing does not lock. `restricted_at` (BE-9) blocks until the host lifts. [decisions](decisions.md) 2026-11-09.
+- **Poplatek z pobytu (stay fee)**: municipal tourist fee (§ 3g). Host remittance only. Local exemption: `stay_fee.town_key()` (1031b: any dash → `-`).
 - **Plátce / neplátce**: VAT payer or not (affects invoices).
 - **IČO / DIČ**: Czech company id / VAT id. The operator's own values live only in the server `.env`.
 - **Operator**: the company running UbyHost (`UBYHOST_OPERATOR_*`). **Controller**: the GDPR data controller, i.e. the host's legal entity.

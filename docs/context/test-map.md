@@ -1,10 +1,11 @@
 # Test map
 
-Run only the row for the area you changed, from `App/`, always ending `-q --tb=short -x 2>&1 | tail -30`. CI runs the full suite; the full suite locally only when the owner asks in the current chat. Globs are under `tests/`. Add the test file you wrote or changed.
+Run the row for your change from `App/` with `-q --tb=short -x 2>&1 | tail -30`. CI runs the full suite. Globs are under `tests/`. Add files you write or change.
 
 | Changed | Run |
 |---|---|
 | Guest pages, guest templates | `test_guest_*.py` and `test_guest_browser_e2e.py` (0 skipped) |
+| Error pages (`main.py`) | `test_error_pages.py test_host_unknown_ids.py` |
 | Host pages, host templates, host CSS | `test_host_*.py` and `test_host_geometry.py` (0 skipped) |
 | Login, 2FA, passkeys, sessions | `test_login_*.py test_auth_*.py test_two_factor_*.py test_passkeys.py test_remember_me_reissue.py test_security*.py` |
 | Filing, UbyPort, worker, claim | `test_ubyport_*.py test_soap.py test_worker.py test_submission_*.py test_stale_submission.py test_filed_by_hand.py test_filing_watchdog.py test_police_*.py test_deadline*.py test_claim_*.py test_endtoend.py` |
@@ -41,4 +42,4 @@ Run only the row for the area you changed, from `App/`, always ending `-q --tb=s
 | A module with no row | `tests/test_<module name>*.py`; none exists: `-k <module name>` |
 | Read guard hook (`scripts/hooks/`, `.claude/settings.json`) | `tests/test_read_guard_hook.py` |
 
-A row missing or wrong: the orchestrator fixes this table in the same brief.
+Wrong row: fix in the same brief.

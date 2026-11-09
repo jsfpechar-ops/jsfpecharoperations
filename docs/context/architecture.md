@@ -40,13 +40,15 @@
 
 **Dashboard calendar:** `routes/dashboard_calendar.py` provides bounded, owner-scoped booking data; `_dashboard_calendar.html` and `dashboard-calendar.js`/CSS implement views, selection and dialogs. Manual creation remains in `routes/admin.py`.
 
-**Host Turbo (#709):** With `show_nav`, `base.html` loads Turbo 8; host links swap `<body>`. `app.js` runs `UbyHost.initPage` on `turbo:load`, keeps forms as full loads, and uses `claimNode` / `UbyHost.onPage` so bindings are safe after a swap; mark downloads with `data-turbo="false"`. Details: briefs `0501`–`0508`; tests `test_050*_browser.py`, `test_navigation_prefetch.py`.
+**Host Turbo (#709):** With `show_nav`, `base.html` loads Turbo 8; host links swap `<body>`. `app.js` runs `UbyHost.initPage` on `turbo:load`; forms stay full loads. Briefs `0501`–`0508`.
 
 **Host property hub:** `apartment_form.html` uses `?view=overview|bookings|settings`; settings select `section=property|guests|reporting|automation|lock`. Guest links and timing are per property; `/apartments#property-summaries` is the cross-property summary.
 
 **Property setup:** `routes/onboarding_wizard.py` serves the eight-step `/apartments/{id}/setup` wizard (0102). Brief 0101 removed the older `/setup*`, `routes/setup_wizard.py`, `/automation` and old settings adapters; `/guest-links` remains for sent lifecycle e-mails.
 
-**Tests:** `App/tests/` (about 240 files). Key guards:
+**HTML errors:** `main.py` — branded 404/405/500 when `Accept: text/html` (not `/api/`); `/l/` → `guest.error_page`.
+
+**Tests:** `App/tests/` (~515 files). Key guards:
 
 - `App/tests/test_privacy_first.py` (cookies)
 - `App/tests/test_no_tracking.py` (CSP)
