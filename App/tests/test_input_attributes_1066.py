@@ -65,11 +65,13 @@ def test_operator_fields_use_standard_tokens():
     assert 'autocapitalize="characters"' in _tag(invoice, "bic")
 
 
-def test_help_dot_tap_targets_stay_44px():
+def test_help_dot_tap_targets():
     css = (APP / "static" / "app2.css").read_text(encoding="utf-8")
-    assert re.search(
-        r"@media \(min-width:1024px\)\{body\.v2 \.help-tip-btn::before\{[^}]*width:44px;height:44px", css
+    # Desktop (>=1024) stays 24 px (WCAG 2.5.8). A 44 px ::before there overflowed #settings-group-phone.
+    assert not re.search(
+        r"@media \(min-width:1024px\)\{body\.v2 \.help-tip-btn::before\{[^}]*width:44px", css
     )
+    assert re.search(r"@media \(max-width:1023px\)\{body\.v2 \.help-tip-btn\{width:44px;height:44px", css)
     guest = (APP / "static" / "guest.css").read_text(encoding="utf-8")
     block = guest.split("details.g-head-help > summary {", 1)[1].split("}", 1)[0]
     assert "width: 44px" in block and "height: 44px" in block
