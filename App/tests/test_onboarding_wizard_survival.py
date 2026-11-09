@@ -386,10 +386,12 @@ def test_calendar_sync_failure_stays_in_wizard(host, monkeypatch):
 
 def test_refuse_setup_save_ignores_posted_id(host):
     flat = _full_apartment(host)
+    # Sentinel far above any row id, so a sequence that reaches it cannot echo it by chance.
+    posted_id = "987654321"
     response = host["client"].post(
         f"/apartments/{flat['id']}",
         data={
-            "id": "999",
+            "id": posted_id,
             "internal_name": flat["internal_name"],
             "legal_entity_id": str(host["entity"]),
             "city_en": flat["city_en"],
@@ -404,7 +406,7 @@ def test_refuse_setup_save_ignores_posted_id(host):
     )
     assert response.status_code == 400
     assert 'name="id"' not in response.text
-    assert 'value="999"' not in response.text
+    assert f'value="{posted_id}"' not in response.text
 
 
 def test_form_return_to_drops_fragment_by_default(host):
