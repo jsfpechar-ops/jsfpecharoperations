@@ -4,7 +4,7 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, booking_rails, booking_setup, booking_site, db
+from app import auth, booking_rails, booking_setup, booking_site, db, property_page
 from app.main import app
 from tests.conftest import login_as
 
@@ -123,6 +123,11 @@ def test_can_publish_without_stripe(owner):
     aid = _apartment(owner)
     db.update("apartment", aid, {"stay_fee_guest_rails": "cash"})
     booking_site.save_settings(aid, {"nightly_price_czk": 1800})
+    rows = booking_setup.steps(aid, owner)
+    assert booking_setup.can_publish(rows) is False  # photos and description still missing
+    property_page.page_for(aid)
+    db.execute("UPDATE property_page SET photos_json = ?, description = ? WHERE apartment_id = ?",
+               ('["/p/a.jpg"]', "A quiet flat.", aid))
     rows = booking_setup.steps(aid, owner)
     assert booking_setup.can_publish(rows) is True
     db.update("apartment", aid, {"stay_fee_guest_rails": ""})
