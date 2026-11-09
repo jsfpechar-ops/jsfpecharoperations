@@ -1,6 +1,6 @@
 # 1068b: No Bank QR without a bank account, same on the Go path
 
-Status: todo
+Status: review
 Depends on: 1068a and 1068a-cont-1 (copy keys, `fix` codes and the PNG body text are defined in 1068a) | Base commit: branch head after 1068a-cont-1 | Branch: `claude/1068-errors-link-fix` (same branch, after 1068a)
 Executor: Opus (owner override) | Fits one session: 11 steps (several edits may share a tool call; commit per step). Queue item 1.4, Tier B.
 
