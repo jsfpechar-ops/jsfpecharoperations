@@ -1,3 +1,4 @@
+{% from "_icons.html" import icon with context -%}
 <!doctype html>
 <html lang="{{ lang }}">
 <head>
@@ -99,7 +100,7 @@
             <article class="reel-scene scene-calendar is-active" data-scene="0">
               <p class="scene-kicker">01 · {{ t('landing.demo.scene.calendar') }}</p>
               <div class="demo-calendar">
-                <header><strong>{{ t('landing.demo.calendar.month') }}</strong><span>‹ &nbsp; ›</span></header>
+                <header><strong>{{ t('landing.demo.calendar.month') }}</strong><span class="demo-cal-nav" aria-hidden="true">{{ icon('chevron-left', 16) }}{{ icon('chevron-right', 16) }}</span></header>
                 <div class="calendar-days" aria-hidden="true">
                   {% for day in t('landing.demo.weekdays').split(',') %}<b>{{ day }}</b>{% endfor %}
                   {% for day in range(1, 22) %}<i>{{ day }}</i>{% endfor %}
@@ -115,7 +116,7 @@
                 <label><small>{{ t('landing.mock.guest_form') }}</small><span>{{ t('landing.demo.form.name') }}</span></label>
                 <label><small>{{ t('landing.demo.form.document') }}</small><span class="typed-line"></span></label>
                 <div class="signature"><svg viewBox="0 0 180 54" aria-hidden="true"><path d="M8 37c17-28 17 19 33-7s11 22 29 1 15 19 31 0 18 9 34-5 17 5 34-3"/></svg></div>
-                <div class="signed-pill">✓ {{ t('landing.demo.form.signed') }}</div>
+                <div class="signed-pill">{{ icon('check', 14) }} {{ t('landing.demo.form.signed') }}</div>
               </div>
             </article>
             <article class="reel-scene scene-queue" data-scene="2">
@@ -134,14 +135,14 @@
             <article class="reel-scene scene-receipt" data-scene="3">
               <p class="scene-kicker">04 · {{ t('landing.demo.scene.receipt') }}</p>
               <div class="receipt-card">
-                <div class="receipt-mark">✓</div>
+                <div class="receipt-mark">{{ icon('check', 32) }}</div>
                 <small>UBYPORT · 2026-09-19</small>
                 <small class="receipt-example">{{ t('landing.demo.example') }}</small>
                 <strong>{{ t('landing.demo.receipt.accepted') }}</strong>
                 <p>{{ t('landing.demo.receipt.saved') }}</p>
                 <span class="receipt-code">DEMO-000000</span>
               </div>
-              <div class="accepted-toast"><span>✓</span>{{ t('landing.demo.receipt.accepted') }}</div>
+              <div class="accepted-toast"><span>{{ icon('check', 14) }}</span>{{ t('landing.demo.receipt.accepted') }}</div>
             </article>
           </div>
         </div>
