@@ -384,6 +384,52 @@ def _guest_issue(issue, lang: str):
     return validation.Issue(field, message, issue.severity)
 
 
+# Field to the i18n key of the label the guest sees next to it.
+_LATIN_FIELD_LABELS = {
+    "surname": "surname",
+    "first_name": "first_name",
+    "res_street": "res_street",
+    "res_city": "res_city",
+}
+
+
+def _name_latin_issues(issues, lang: str):
+    """Say which field holds text in another alphabet, and why it is refused.
+
+    The validator uses one sentence for every such field, so a guest who typed
+    a Chinese name and city saw the same line twice with no field named. The
+    summary line now starts with the field's own label. Validation is not
+    relaxed: the same fields fail for the same input.
+    """
+    translate = i18n.translator(lang)
+    out = []
+    for issue in issues:
+        label_key = _LATIN_FIELD_LABELS.get(issue.field)
+        if label_key and issue.message == validation.NON_LATIN_MESSAGE:
+            issue = validation.Issue(
+                issue.field,
+                translate("latin_only_error", field=translate(label_key)),
+                issue.severity,
+            )
+        out.append(issue)
+    return out
+
+
+def _keep_unreadable_text(values: dict, raw: dict) -> None:
+    """Hand back what the guest typed when cleaning it left nothing.
+
+    A name or address in Cyrillic, Chinese or Arabic cleans to an empty string.
+    Re-drawing the form from the cleaned values wiped it, and the guest had to
+    retype everything. Only an emptied field gets its raw text back (capped),
+    so what the page shows still never differs from what is validated, except
+    that the guest can see and correct what they typed.
+    """
+    for field in ("surname", "first_name", "res_street", "res_city"):
+        typed = (raw.get(field) or "").strip()
+        if typed and not values.get(field):
+            values[field] = typed[:100]
+
+
 def _localize_issues(issues, lang: str):
     return [
         _guest_issue(issue, lang)
@@ -2129,7 +2175,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         elif not has_existing_photo:
             issues.append(validation.Issue("passport_photo", translate("passport_photo_missing")))
 
-    issues = _localize_issues(issues, lang)
+    issues = _localize_issues(_name_latin_issues(issues, lang), lang)
 
     if validation.errors_only(issues):
         context = _form_context(
@@ -2156,6 +2202,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
                 "legal_ack": form.get("legal_ack") or "",
             }
         )
+        _keep_unreadable_text(context["values"], raw)
         return _with_lang(render_guest(request, "guest/form.html", context, status_code=422), lang)
 
     if reporting.expected_guest_count(reservation) is None and not existing:
