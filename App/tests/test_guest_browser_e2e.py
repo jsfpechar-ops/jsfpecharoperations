@@ -1584,3 +1584,42 @@ def test_1031_unknown_property_town_shows_the_amount_and_says_why(live_server, b
         page.screenshot(path=str(SHOTS_1031 / "check-unknown-town-390.png"), full_page=True)
     finally:
         page.close()
+
+
+# --- 1031b: every Prague spelling hides the Check box for a Prague flat; a minor too -------
+
+_PRAGUE_1031B = [
+    ("Praha", True), ("Prague", True), ("praha 1", True), ("Praha 22", True), ("PRAHA 17", True),
+    ("Praha 17 - Řepy", True), ("praha 17 - repy", True), ("Praha-Řepy", True),
+    ("praha 6 – Dejvice", True), ("Praha – Řepy", True), ("Hlavní město Praha", True),
+    ("hl. m. praha", True), ("Hl. m. Praha", True),
+    ("Řepy", False),   # owner 2026-11-09: a bare district name stays liable
+    ("Brno", False),
+]
+
+
+@pytest.mark.parametrize("addr_obec, city_en", [("Praha", None), ("", "Prague")])
+def test_1031b_prague_spellings_and_minor(live_server, browser, monkeypatch, addr_obec, city_en):
+    """Prague flat (addr_obec Praha, or only city_en Prague), 3 nights x 50, Czech adult guest."""
+    token = f"browser-1031d-{secrets.token_hex(4)}"
+    page, guest, _stay = _open_1031(live_server, browser, monkeypatch, token, addr_obec,
+                                    "Praha 17 - Řepy", city_en=city_en)
+    seen = []
+    try:
+        hidden, amount, _live, _rule = _box_1031(page)
+        seen.append(("Praha 17 - Řepy", hidden, amount))
+        for city, want_hidden in _PRAGUE_1031B:
+            _change_1031(page, guest, 4, "#res_city", city)
+            hidden, amount, _live, _rule = _box_1031(page)
+            seen.append((city, hidden, amount))
+        # Minor path: Brno resident (liable as adult), born 2010 -> exempt, back to adult -> 150.
+        for birth in (_MINOR_1031, _ADULT_1031, _MINOR_1031):
+            _change_1031(page, guest, 1, "#birth_date", birth)
+            hidden, amount, _live, _rule = _box_1031(page)
+            seen.append((f"Brno born {birth[-4:]}", hidden, amount))
+        print("1031b", addr_obec or city_en, seen)
+        want = ([True] + [w for _c, w in _PRAGUE_1031B] + [True, False, True])
+        assert [s[1] for s in seen] == want, seen
+        assert all(s[2] == "150 CZK" for s, w in zip(seen, want) if not w), seen
+    finally:
+        page.close()

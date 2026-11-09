@@ -68,3 +68,4 @@ Append-only.
 - 2026-11-07 [owner] request-to-book: direct rails (IBAN/Revolut/cash) vs or beside Stripe; 24h hold; host confirms (0996-0998).
 - 2026-11-07 | [backup] Litestream retired; S3 replica kept | owner | [1021](../tasks/1021-remove-litestream.md)
 - 2026-11-07 | [backup] WAL-G: WAL archive + PITR to S3 | owner | [1022](../tasks/1022-walg-continuous-archiving.md)
+- 2026-11-09 [stay-fee] 1031b: a bare Prague/Brno district name ("Řepy") stays liable; the guest must write the town (owner). Any Unicode dash folds like "-" in the obec key.
