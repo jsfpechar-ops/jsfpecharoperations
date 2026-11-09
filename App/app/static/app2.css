@@ -3352,3 +3352,10 @@ body.v2 .security-prompt-later-btn {
 body.v2 .security-prompt-later-btn:hover { color: var(--ink); }
 body.v2 .security-prompt-later-btn:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 body.v2 .security-prompt-footnote { margin: 4px 0 0; text-align: center; font-size: 13px; line-height: 1.4; color: var(--ink2); }
+
+/* 1030: at >=768 px the one visible section is not an accordion, so it does not animate open (a running block-size
+   transition left the card shorter than its content while a pill switched or the page settled). */
+@media (min-width:768px){
+  body.v2 .prop-layout.is-tabbed details.prop-sec::details-content{transition:none}
+  body.v2 .prop-layout.is-tabbed details.prop-sec[open]::details-content{block-size:auto;overflow:visible}
+}
