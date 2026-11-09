@@ -1374,6 +1374,19 @@ body.v2 .wiz-page .setup-summary-copy .ui-badge{height:26px;display:inline-flex;
 body.v2 .wiz-page .setup-summary-action{font-size:14px;color:var(--acc-text)}
 body.v2 .wiz-page .setup-next-card{text-decoration:none;color:inherit;flex-wrap:wrap;row-gap:12px}
 body.v2 .wiz-page .setup-next-card .ui-btn{margin-left:auto}
+body.v2 .wiz-page .setup-wizard-celebrate{min-height:0;padding:16px;margin-bottom:16px}
+body.v2 .wiz-page .setup-done-list{margin:12px 0 0;padding:0;list-style:none;display:block;border:1px solid var(--line);border-radius:16px;background:var(--s);overflow:hidden}
+body.v2 .wiz-page .setup-done-list>li+li{border-top:1px solid var(--line)}
+body.v2 .wiz-page .setup-done-list .setup-summary-card{border:0;border-radius:0;background:transparent;height:auto;min-height:56px;padding:16px;box-sizing:border-box;align-items:center}
+body.v2 .wiz-page .setup-done-list .setup-summary-icon{margin-top:0}
+body.v2 .wiz-page .setup-done-list .setup-summary-copy{flex:1}
+body.v2 .wiz-page .setup-done-list .setup-summary-copy strong{font-size:15px}
+body.v2 .wiz-page .setup-done-chevron{display:inline-flex;margin-left:auto;color:var(--ink2);flex:none}
+body.v2 .wiz-page .setup-done-workflow{margin:0 0 20px}
+body.v2 .wiz-page .setup-done-workflow>summary{display:flex;align-items:center;min-height:44px;font-size:15px;font-weight:700;cursor:pointer;color:var(--ink)}
+body.v2 .wiz-page :is(.setup-wizard-foot,.setup-wizard-actions):has([data-finish-go]){justify-content:center;margin-left:0}
+body.v2 .wiz-page [data-finish-go]{margin-left:auto;margin-right:auto;justify-content:center;text-align:center}
+body.v2 .wiz-page .setup-wizard-foot:has([data-finish-go])>span:first-child:empty{flex:0 0 0;width:0}
 body.v2 .wiz-page .wizard-ares{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;padding:16px;margin:0 0 20px;border:1px solid var(--line);border-radius:16px}
 body.v2 .wiz-page .wizard-ares .field{flex:1 1 180px;margin:0}
 body.v2 .wiz-page .setup-wizard-note-box{margin:16px 0 0;padding:16px;border-radius:12px;background:var(--side2)}
