@@ -385,7 +385,7 @@
       {% endif %}
       {% if fee_template_peers %}
       <div class="field">
-        {{ field_label('fee-copy-source', t('apartment.form.stay_fee.copy_label'), t('apartment.form.stay_fee.copy_hint')) }}
+        {{ field_label('fee-copy-source', t('apartment.form.stay_fee.copy_label'), t('apartment.form.stay_fee.copy_hint'), svg=true) }}
         <div class="copyrow">
           <select id="fee-copy-source" aria-describedby="fee-copy-source-help">
             {% for peer in fee_template_peers %}
@@ -408,7 +408,8 @@
       </div>
       {% endif %}
       {% set fee_heading = 'h3' %}
-      {% include "_stay_fee_fields.html" %}
+      {#- 1052: one grid for the four steps and the signature, so the columns stack on their own (no void under a short step). -#}
+      <div class="fee-grid">{% include "_stay_fee_fields.html" %}</div>
       {% if apartment.stay_fee_rate_czk > 0 %}
         {% if not (apartment.stay_fee_vs or '').strip()
               or not (apartment.stay_fee_council_account or '').strip()
