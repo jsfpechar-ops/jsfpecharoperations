@@ -24,15 +24,13 @@ Run only the row for the area you changed, from `App/`, always ending `-q --tb=s
 | Copy, translations | `test_*_i18n.py test_no_em_dashes.py test_copy_cleanup.py test_flash_literals.py` |
 | Guest guide | `test_guest_guide*.py` |
 | Onboarding, properties | `test_onboarding*.py test_property_*.py test_first_*.py` |
-| Analytics | `test_posthog_*.py test_umami_guard.py test_meta_capi.py` |
-| Funnel stage times, `/metrics` | `test_admin_funnel.py test_metrics_0427.py test_posthog_*.py` |
+| Analytics, funnel, `/metrics` | `test_posthog_*.py test_umami_guard.py test_meta_capi.py test_admin_funnel.py test_metrics_0427.py` |
 | Design system, catalog page, design lint | `test_design_*.py test_dev_ui*.py` |
 | Static files under App/app/static (any), cache keys | `test_static_versions.py test_wp07_cache_heartbeats.py` plus the row of the page the file styles |
 | Any host template, host CSS or host JS | test_design_guardrails_browser.py (0 skipped; the rules are in MASTER 11.0) |
 | Public/app domain configuration | `test_app_domain.py test_env_guard.py test_passkeys.py test_pwa.py`, login/auth/security row, relevant mail tests; Caddy validation in both TLS modes |
 | Operator customer dashboard | `test_admin_customers.py test_host_*.py test_design_guardrails_browser.py` (browser checks 0 skipped) |
-| Direct payments, Stripe Connect | `test_payment_request_model.py test_stripe_connect.py` |
-| Payments dashboard + rails | `test_payments_dashboard.py test_payment_request_model.py test_stripe_connect.py test_payment_links.py test_payment_qr.py test_payment_services.py` |
+| Direct payments, Stripe Connect, payments dashboard + rails | `test_payments_dashboard.py test_payment_request_model.py test_stripe_connect.py test_payment_links.py test_payment_qr.py test_payment_services.py` |
 | Public property pages | `test_property_slug.py test_property_page.py test_property_page_photos.py test_property_page_meta.py test_property_page_rules.py` |
 | v2 pages (`{% set v2 = true %}`) | `tests/test_0710_v2_mockup_match_browser.py` (browser, 0 skipped; geometry 320-1440 px) |
 | Page booking widget | `test_booking_widget.py test_property_page.py test_stripe_connect.py test_payment_request_model.py` |

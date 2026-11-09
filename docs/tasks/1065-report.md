@@ -1,6 +1,6 @@
 # 1065 report: baseline funnel stage times and per-route query counts
 
-Status: blocked (code done; context lint over cap on `docs/context/test-map.md`)
+Status: review
 
 ## 1. Files changed (`git diff --stat 0d851ca4 HEAD`, without the brief)
 
