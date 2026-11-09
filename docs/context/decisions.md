@@ -71,4 +71,4 @@ Append-only.
 - 2026-11-09 [stay-fee] 1031b: a bare Prague/Brno district ("Řepy") stays liable; guest writes the town (owner). Any Unicode dash folds like "-".
 - 2026-11-09 [guest] Guest edits/removes own added people until filed (SENT, incl. by hand); then locked, "Message host" (owner)
 - 2026-11-09 | [ux] Stay fees: current month default, pick navigates | owner | 1051
-- 2026-11-09 [ux] [Speed plan](../plans/speed-and-ease.md): plan only.
+- 2026-11-09 [ux] [Speed plan](../plans/speed-and-ease.md): answers §10.

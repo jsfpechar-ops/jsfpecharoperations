@@ -7,7 +7,7 @@ Risk labels: **filing** (near UbyPort), **privacy**, **legal**, **none**. "Owner
 
 ## 1. Headline findings
 
-1. A new host types about 25 fields over about 7 minutes before the first property is fully set up; about 5 fields and 90 seconds are enough to get a working guest link, because the rest (operator, police details, stay fee, lock) can come later.
+1. A new host types about 25 fields over about 7 minutes before the first property is fully set up; about 6 fields and 2 minutes are enough to get a working guest link, because the rest (police details, stay fee, lock) can come later.
 2. Two onboarding systems run side by side and disagree: a 5-step dashboard checklist that starts with "operator" and a 4-step wizard that starts with the property name (`App/app/onboarding.py:27,156-195`).
 3. The "remember once" store already exists (`legal_entity`), but screens still ask again: seat vs property address, account e-mail vs operator e-mail, property name vs police facility name, guest e-mail in payment requests, check-in hours twice on one page.
 4. The guest path takes about 150 s with the scan and about 240 s by hand. The form is sound; the time goes to the e-mail gate, a weak scan button, a 15 to 45 s scan wait with one line of text, and a last step that does five jobs.
@@ -43,7 +43,7 @@ Web platform, no new dependency: `<dialog>` (all browsers); `autocomplete="one-t
 
 | Flow | Today: screens / typed / clicks / time | Target | What cannot shrink |
 |---|---|---|---|
-| Sign-up to guest-ready property | about 7 screens / about 25 fields / about 20 clicks / about 7 min (sign-up 70 s, operator 60-90 s, property 90 s, calendar 45 s, police 120 s) | 4 screens / at most 5 fields (e-mail, property name, address pick, optional calendar link) / 90 s after the mail link is opened | The e-mail confirm round trip (about 30 s). It is the login. |
+| Sign-up to guest-ready property | about 7 screens / about 25 fields / about 20 clicks / about 7 min (sign-up 70 s, operator 60-90 s, property 90 s, calendar 45 s, police 120 s) | 5 screens / 5 to 6 fields (e-mail, IČO or name and address, property name, address pick or "same address", optional calendar link) / about 2 min after the mail link is opened (owner: operator first) | The e-mail confirm round trip (about 30 s). It is the login. |
 | Filing-ready (police details) | 1 section / 5 required fields / 120 s | 1 guided screen / 5 fields or 1 paste / 60 s | IDUB, login, password and short name are issued by the police. We cannot look them up. |
 | TTLock | about 4 states / 2 selects / 9-10 clicks / 3-4 min | 0 typed / 5 clicks / about 2 min | The 3 taps inside the TTLock app. |
 | Operator and first invoice | 3 screens / 8-12 fields / 3.5-4.5 min | 3 fields (IČO, bank account, price) / 60 s; later invoices 1 field | The price. Issue stays a confirmed, final step. |
@@ -228,7 +228,7 @@ All "reuse what exists". Any item touching a host page passes the UX gate; guest
 | Q12 | Welcome moment after the mail link instead of a silent redirect; one clear done moment per flow ("Your guest page is ready", "Lock connected", guest "All done") | First run, lock, guest | S | none | wow |
 | Q13 | "More options" fold for expert fields: operator signature modes, invoice numbering, registry entry, stay-fee pay options | Operator, invoice, stay fee | S | none | hygiene |
 | Q14 | Lock: turn on automatically when exactly one lock is found; remove the second pair of hour selects; reorder the share text (steps first, warnings after) | TTLock | S | none | hygiene |
-| Q15 | Extra traveller: preselect the first traveller's nationality, shown with the read-back chip | Guest | S | filing: Owner | hygiene |
+| Q15 | Dropped by the owner (no nationality prefill for extra travellers) | Guest | n/a | n/a | n/a |
 | Q16 | Guest claim: ask for the e-mail after the form ("Where should we send your door code?"), or make it optional when no door code is set | Guest | S-M | none; check door-code mail flow | wow |
 | Q17 | Split the guest last step: review, then signature and legal tick with one fixed button text | Guest | M | legal: wording unchanged | hygiene |
 | Q18 | Batch the dashboard queries (K-O03) | Dashboard | M | none | hygiene |
@@ -250,9 +250,9 @@ All "reuse what exists". Any item touching a host page passes the UX gate; guest
 | G11 | Guided mode and fast mode | M | none | Reuses G1 pages and the command palette | hygiene |
 | G12 | Help at the moment of confusion | S-M | none | New: find-it card; reuses Havel | hygiene |
 
-**G1. Guest-ready in 90 seconds.** After the mail link the host sees "What do you call your place?", then "Where is it?" (one address search), then "Paste your booking calendar link (or skip)", then a done screen with the guest link, a QR code and "Try it as a guest". Each screen is a plain form that works without JavaScript and shows "Step 2 of 4". Operator, police details, stay fee, lock, invoices and payments become a "Finish later" task list on the dashboard with a time per item and plain status ("Needed before the first guest arrives: police details, 2 min"). **Replaces** the 5-step checklist, the 4-step wizard and `_property_create.html` as the first-property path; the full editor stays for later edits. Conflict: a property needs an operator today (`routes/admin.py:1815-1860`), and a guest could register before police details exist, which starts the legal filing deadline with nothing to file through. Both need the owner.
+**G1. Guest-ready in 90 seconds.** After the mail link the host sees "Who runs the accommodation?" (IČO lookup, or name and address; owner: operator first), then "What do you call your place?", then "Where is it?" (one address search), then "Paste your booking calendar link (or skip)", then a done screen with the guest link, a QR code and "Try it as a guest". Each screen is a plain form that works without JavaScript and shows "Step 2 of 4". Police details, stay fee, lock, invoices and payments become a "Finish later" task list on the dashboard with a time per item and plain status ("Needed before the first guest arrives: police details, 2 min"). **Replaces** the 5-step checklist, the 4-step wizard and `_property_create.html` as the first-property path; the full editor stays for later edits. Conflict: a property needs an operator today (`routes/admin.py:1815-1860`), and a guest could register before police details exist, which starts the legal filing deadline with nothing to file through. Both need the owner.
 
-**G2. Scan-first guest check-in.** The guest's first screen is the camera: "Take a photo of your passport or ID". The result comes back as a review card ("Is this right?") with a Change link per line, then address, then signature. Typing stays one tap away ("Type it instead"). Where the host requires a stored passport photo, the same photo is offered for it with a clear consent line. **Replaces** steps 1 and 3 of today's wizard and the separate scan button. Conflict: today's promise is "The photo is not saved"; reusing it changes that promise and needs the owner and the lawyer. Scan errors must never be filed unseen: the review card is mandatory.
+**G2. Scan-first guest check-in.** The guest's first screen is the camera: "Take a photo of your passport or ID". The result comes back as a review card ("Is this right?") with a Change link per line, then address, then signature. Typing stays one tap away ("Type it instead"). The scan photo is never saved (owner decision); a required passport photo stays its own step. The look of the form does not change (section 11). **Replaces** steps 1 and 3 of today's wizard and the separate scan button. Conflict: today's promise is "The photo is not saved"; reusing it changes that promise and needs the owner and the lawyer. Scan errors must never be filed unseen: the review card is mandatory.
 
 **G3. Remember once.** See section 7. Every form reads known facts first and shows a small "from your profile" chip with Change. The host never types a company name, address, bank account, e-mail, phone or check-in hour twice.
 
@@ -319,20 +319,56 @@ Only first-party, server-side numbers. No cookies, no new script, nothing on hos
 
 Capture the baseline for one week before Wave 1 ships.
 
-## 10. Open owner decisions
+## 10. Owner decisions (answered 2026-11-09)
 
-1. Read sections 5 and 6 and reply with the IDs you want (for example "Q1-Q14, G1, G3").
-2. Decide: may a guest register before the property's police details are entered? If yes, the app must warn you loudly, because the legal filing deadline starts running. If no, "guest-ready" needs the 5 police fields and the 90-second target becomes about 3.5 minutes.
-3. Decide: may the first property be created without an operator, with the operator asked for later (before the first invoice or filing, whichever needs it)?
-4. Decide each prefill near filing, yes or no: (a) address search fills all address fields; (b) extra traveller starts with the first traveller's nationality; (c) pasted police letter fills IDUB and short name. Each shows the value for confirmation.
-5. Ask the lawyer: may the scan photo be reused as the stored passport photo when you require one, with a consent line? Today's text says the photo is not saved.
-6. Decide: may the app send the operator's name, address, e-mail and phone to Stripe at setup so Stripe does not ask again?
-7. Decide: may guests pass their address to others in their group, and may an unfinished guest form be kept on the server as a draft (and for how long, for example 24 hours)?
-8. Ask the lawyer: may the app fetch a public listing page from a link the host pastes? This is a new outbound request.
-9. Decide who would keep a table of town stay-fee rates correct. If nobody, we only reuse the host's own earlier property.
-10. Decide: turn the access log on in production for one week to capture the baseline, or use `/metrics` only.
-11. Decide: store a "guided or fast mode" preference per account (needs one retention line).
-12. Confirm with the lawyer that every guest, including children, must sign. The code requires it today; this plan does not change it.
+| # | Question | Owner answer | Effect |
+|---|---|---|---|
+| 1 | Which IDs | All of sections 5 and 6, as long as the app keeps working | Everything is in scope except what rows below drop or change |
+| 2 | Guest registers before police details exist | Yes; the filing is sent once the details are entered | G1 stands. Must build: filings wait in a queue, the host gets a loud warning, and the 3-working-day deadline (§ 102) is shown. Late filing stays the host's risk; the brief is HIGH RISK |
+| 3 | Property without an operator | No. Operator first, then property | First run: operator (IČO lookup fills it), property, calendar, done. Target about 2 min, 5 to 6 fields. Q11 uses this order |
+| 4a | Address search fills all address fields | Yes, Czech addresses only | True by design: the register (RÚIAN) is Czech. Every property is Czech, so it covers all properties. On the guest's home address it helps Czech residents only |
+| 4b | Extra traveller starts with first traveller's nationality | No | Q15 dropped |
+| 4c | Pasted police letter fills IDUB and short name | Open: owner asked how (answered in chat) | G6 waits for yes or no |
+| 5 | Reuse the scan photo as the stored passport photo | No. The scan photo is never saved | G2 keeps scan-first, no reuse |
+| 6 | Send operator details to Stripe | Yes, and say so in the legal documents | G4 goes ahead with a copy task for privacy policy, DPA and subprocessor text (K-L) before release |
+| 7a | Guests pass their address to their group | Open: owner asked how (answered in chat) | G7 waits for yes or no |
+| 7b | Server draft of an unfinished guest form | Yes | Proposed rule: draft deleted when the form is sent; otherwise 7 days after the last change or the day after check-out, whichever comes first. Needs a retention line. Owner confirms the numbers |
+| 8 | Fetch a listing page from a pasted link | Yes | G9 allowed, built last. The booking sites' own terms remain a legal risk |
+| 9 | Who keeps a town stay-fee table | Nobody | G10 only reuses the host's own earlier property |
+| 10 | Baseline measurement | "Do recommended" | Use `/metrics` only; the access log stays off. Q7 adds query counts per route to `/metrics` |
+| 11 | Guided or fast mode preference | Open: owner asked what it is (answered in chat) | Recommended: no stored preference. First property is guided; later pages show the full editor with a "Walk me through it" link. No new column |
+| 12 | Must every guest sign, children too | Owner asked for a reading of the law | See below |
+
+**Reading of the law on signatures (not legal advice; read from summaries of the statute, not the full text).** Act 326/1999 Coll. § 103 b): the foreigner must personally fill in and sign the registration form, or sign a paper document. The same provision is reported not to apply to foreigners under 15. The police guidance says the form can be signed on a tablet. So: adults and 15 to 17 year olds sign; under-15s appear to be exempt. The code today demands a signature from every guest (`reporting.py:254-260`), which is stricter than this reading. A new residence act passed the lower house in September 2026 and is not in force.
+
+| ID | Candidate | Effort | Risk | Kind |
+|---|---|---|---|---|
+| G13 | No signature step for guests under 15 | S | filing, legal: the lawyer or the foreign police confirm the under-15 exemption and whether a parent must confirm instead (K-L). No code change before that | wow for families |
+
+Still unconfirmed: whether any signature is needed when the house book is electronic; whether a finger signature on a phone counts the same as on a tablet.
+
+## 11. Guest form: same look, smoother (owner request)
+
+The owner wants the guest form's design kept: same cards, colours, type, step strip and field order. These changes alter behaviour only. Reviewed from the templates, not on a live phone; each brief carries 390 px before and after screenshots.
+
+| ID | Change | What the guest notices | Effort | Risk |
+|---|---|---|---|---|
+| S1 | The scan button gets the primary style on step 1 (Q2) | The fastest way is the obvious one | S | none |
+| S2 | Scan feedback: spinner and "Reading your document, about 10 seconds"; filled fields are marked "Filled from your document. Please check." using the existing read-back chip | Waiting feels short; the guest checks, not types | S | filing: the guest confirms; validation unchanged |
+| S3 | The photo is made smaller on the phone before it is sent | Scan is quicker on mobile data | S | none (less data leaves the phone) |
+| S4 | Right keyboard, capitals and autofill hints per field (Q1) | Fewer typos, less typing | S | none |
+| S5 | Server draft (decision 7b): "Welcome back. Continue where you left off." | Closing the tab loses nothing | M | privacy: retention line |
+| S6 | Step changes: soft slide (CSS only, off for reduced motion), focus on the first field, page at the top | Steps feel instant and never disorienting | S | none |
+| S7 | On an error, jump to the first problem and say how to fix it ("Add the year, for example 14.03.1961") | No hunting for what went wrong | S | none |
+| S8 | When the scan cannot read the nationality, say so and open the picker | No silent empty field | S | filing: guest picks, as today |
+| S9 | E-mail asked at the end, with its reason (Q16) | Starts with the form, not a gate | S-M | none |
+| S10 | Last step split into "Check your details" and "Sign" (Q17) | One job per step, one fixed button text | M | legal: wording unchanged |
+| S11 | A real finish: "All done" card with the door code and "Add another person" | A clear end | S | none |
+| S12 | Help dots at least 44 px | Easier to tap | S | none |
+| S13 | Poor signal: "No connection. Your answers are kept. Try again." (needs S5) | No lost work on bad Wi-Fi | S | none |
+| S14 | Under-15s skip the signature (G13) | Families finish sooner | S | legal: only after confirmation |
+
+Not changed: layout, colours, fonts, the order of fields, any police field, the adult signature, the legal tick.
 
 ## Bugs and oddities noted (not fixed)
 
