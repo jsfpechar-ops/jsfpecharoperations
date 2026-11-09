@@ -69,6 +69,19 @@ func TestGuestQRPNGDatabase(t *testing.T) {
 			t.Errorf("%s: %d with %d body bytes, want empty 404", name, rec.Code, rec.Body.Len())
 		}
 	}
+	if _, err := pool.Exec(t.Context(), `UPDATE legal_entity SET iban = NULL, bank_account = NULL WHERE owner_user_id = 1`); err != nil {
+		t.Fatal(err)
+	}
+	rec = get(fmt.Sprintf("/pay/10/%s.png", good))
+	if rec.Code != http.StatusNotFound || rec.Header().Get("Content-Type") != "text/plain; charset=utf-8" || rec.Body.String() != qrNoAccountBody {
+		t.Errorf("no bank account: %d %q %q, want the plain 404 body", rec.Code, rec.Header().Get("Content-Type"), rec.Body.String())
+	}
+	if rec := get("/pay/10/" + strings.Repeat("0", 32) + ".png"); rec.Code != http.StatusNotFound || rec.Body.Len() != 0 {
+		t.Errorf("wrong token without account: %d with %d body bytes, want empty 404", rec.Code, rec.Body.Len())
+	}
+	if _, err := pool.Exec(t.Context(), `UPDATE legal_entity SET iban = 'CZ6508000000192000145399' WHERE owner_user_id = 1`); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := pool.Exec(t.Context(), `UPDATE payment_request SET status = 'cancelled' WHERE id = 10`); err != nil {
 		t.Fatal(err)
 	}

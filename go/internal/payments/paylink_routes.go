@@ -74,7 +74,7 @@ func GuestQRPNGHandler(pool *pgxpool.Pool, getenv func(string) string) http.Hand
 		}
 		payload, err := qrPayload(r.Context(), pool, owner, amount, vs)
 		if errors.Is(err, errQRAccount) {
-			w.WriteHeader(http.StatusNotFound)
+			qrNoAccount(w)
 			return
 		}
 		if err != nil {
