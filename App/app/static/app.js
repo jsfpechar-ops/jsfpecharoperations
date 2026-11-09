@@ -2,6 +2,30 @@
 if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches && document.startViewTransition) { document.startViewTransition = undefined; }
 (function () {
   "use strict";
+  var ICON_MARKUP = {
+    check: '<path d="M20 6 9 17l-5-5"/>',
+    x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    "triangle-alert": '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+    info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>'
+  };
+  function iconSvg(name, size) {
+    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "ui-icon");
+    svg.setAttribute("width", String(size));
+    svg.setAttribute("height", String(size));
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("aria-hidden", "true");
+    svg.innerHTML = ICON_MARKUP[name];
+    return svg;
+  }
+  function feedbackIconName(kind) {
+    return kind === "success" ? "check" : kind === "error" || kind === "warning" || kind === "partial" ? "triangle-alert" : "info";
+  }
 
   var SIDEBAR_KEY = "ubyhost-sidebar-collapsed";
   var NAV_BREAKPOINT = 960;
@@ -217,7 +241,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     var icon = document.createElement("span");
     icon.className = "feedback-card-icon";
     icon.setAttribute("aria-hidden", "true");
-    icon.textContent = kind === "success" ? "✓" : kind === "error" || kind === "warning" || kind === "partial" ? "!" : "i";
+    icon.appendChild(iconSvg(feedbackIconName(kind), 16));
     var body = document.createElement("div");
     body.className = "grow feedback-card-body";
     var heading = document.createElement("strong");
@@ -232,7 +256,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     close.type = "button";
     close.setAttribute("data-toast-close", "");
     close.setAttribute("aria-label", root.getAttribute("data-dismiss-label") || "Dismiss notification");
-    close.textContent = "×";
+    close.appendChild(iconSvg("x", 16));
     toast.appendChild(icon);
     toast.appendChild(body);
     toast.appendChild(close);
@@ -1030,7 +1054,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         var icon = document.createElement("span");
         icon.className = "feedback-card-icon";
         icon.setAttribute("aria-hidden", "true");
-        icon.textContent = kind === "success" ? "✓" : kind === "error" || kind === "warning" || kind === "partial" ? "!" : "i";
+        icon.appendChild(iconSvg(feedbackIconName(kind), 16));
         toast.insertBefore(icon, toast.firstChild);
       }
       if (index >= 3) {
