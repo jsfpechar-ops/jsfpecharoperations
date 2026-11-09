@@ -74,6 +74,9 @@ Web platform, no new dependency: `<dialog>` (all browsers); `autocomplete="one-t
 | Confusion | `host_i18n.py:296` | "Skip setup guidance" sits next to the primary button. |
 | Confusion | `account_accept.html:18` | Error for the unticked box is a top banner, not next to the box. |
 | Good | `signup.html`, `login.html:25-31` | No password at sign-up; autocomplete set. Keep. |
+| Confusion | Dashboard checklist at 390 px (`docs/tasks/screenshots-0800/onboarding-390.png`, may be older than today's build) | The first thing a new host reads is a yellow warning, "Nothing is being reported to the police", above the welcome. |
+| Confusion | Same screenshot | Three primary buttons on one screen ("Choose reporting mode", "Preview and copy guest link", "Explore with demo data"); two progress numbers ("3 of 5 ready" and "60%"); "Learn why" on steps already done. |
+| Confusion | Same screenshot | Step 4 button says "Choose reporting mode" (jargon). The guest link is step 5, after police details; with owner decision 2 it moves before them. |
 
 ### 4.2 Operator, property, calendar
 
