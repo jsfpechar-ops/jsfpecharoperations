@@ -599,8 +599,12 @@ async def booking_site_save(request: Request, apartment_id: int):
         booking_setup.mark_calendar_done(apartment_id)
         return _back(here, msg=_flash(request, "bsite.flash.ical_done"))
     if "publish" in form or "unpublish" in form:
-        if "publish" in form and not booking_setup.can_publish(booking_setup.steps(apartment_id, owner_id)):
-            return _back(here, err=_flash(request, "bsite.err.publish_not_ready"))
+        if "publish" in form:
+            rows = booking_setup.steps(apartment_id, owner_id)
+            if not booking_setup.can_publish(rows):
+                done = {r["key"]: r["done"] for r in rows}
+                key = "bsite.err.publish_not_ready" if done["page"] else "bsite.err.publish_need_page"
+                return _back(here, err=_flash(request, key))
         pp.publish_page(apartment_id, published="publish" in form)
         key = "bsite.flash.published" if "publish" in form else "bsite.flash.unpublished"
         return _back(here, msg=_flash(request, key))
