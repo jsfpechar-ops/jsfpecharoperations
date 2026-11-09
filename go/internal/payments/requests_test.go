@@ -150,6 +150,18 @@ func TestRequestNewDatabase(t *testing.T) {
 		})
 	}
 
+	t.Run("qr without a bank account flashes, links the fix and saves nothing", func(t *testing.T) {
+		n := total()
+		rec := requestCall(t, mux, path, 1, url.Values{"reason": {"repair"}, "amount_czk": {"110"}, "rail": {"qr"}})
+		loc := rec.Header().Get("Location")
+		if rec.Code != http.StatusSeeOther || !strings.HasPrefix(loc, "/payments/new?err=") || !strings.HasSuffix(loc, "&fix=bank") {
+			t.Errorf("got %d %q, want /payments/new?err=...&fix=bank", rec.Code, loc)
+		}
+		if total() != n {
+			t.Error("a row was saved")
+		}
+	})
+
 	t.Run("card draft is saved with every column", func(t *testing.T) {
 		rec := requestCall(t, mux, path, 1, url.Values{
 			"reason": {"cleaning"}, "amount_czk": {"90"}, "reservation_id": {"1"},
@@ -187,6 +199,9 @@ func TestRequestNewDatabase(t *testing.T) {
 	})
 
 	t.Run("qr draft gets the variable symbol", func(t *testing.T) {
+		if _, err := pool.Exec(context.Background(), `UPDATE legal_entity SET iban = 'CZ6508000000192000145399' WHERE owner_user_id = 1`); err != nil {
+			t.Fatal(err)
+		}
 		rec := requestCall(t, mux, path, 1, url.Values{"reason": {"repair"}, "amount_czk": {"120"}, "rail": {"qr"}})
 		if rec.Code != http.StatusSeeOther {
 			t.Fatalf("code %d", rec.Code)

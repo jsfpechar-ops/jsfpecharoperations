@@ -142,6 +142,19 @@ func RequestNewHandler(pool *pgxpool.Pool, getenv func(string) string, now func(
 			invalid()
 			return
 		}
+		if rail == "qr" {
+			has, err := hasBankAccount(ctx, pool, owner)
+			if err != nil {
+				requestFail(w, err)
+				return
+			}
+			if !has {
+				f := requestFlash(lang, "payments.err.no_iban")
+				f.Fix = "bank"
+				hostweb.Back(w, r, "/payments/new", hostweb.Flash{}, f)
+				return
+			}
+		}
 		stamp := stampAt(at)
 
 		tx, err := pool.Begin(ctx)
