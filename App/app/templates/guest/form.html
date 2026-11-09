@@ -143,7 +143,7 @@
         <label for="nationality">{{ t('nationality') }}</label>
         <select class="{{ bad('nationality') }}" {{ invalid('nationality') }} id="nationality" name="nationality"
                 data-guest-placeholder="{{ t('tw_country_search') }}" data-guest-none="{{ t('tw_country_none') }}"
-                data-guest-required="{{ t('tw_country_required') }}" required>
+                data-guest-required="{{ t('tw_country_required') }}" autocomplete="off" required>
           <option value="">—</option>
           {% for group in country_groups %}
             <optgroup label="{{ t(group.key) }}">
@@ -195,7 +195,7 @@
 
     <div class="g-field">
       <label for="purpose">{{ t('purpose') }}</label>
-      <select id="purpose" name="purpose">
+      <select id="purpose" name="purpose" autocomplete="off">
         {% for purpose in purposes %}
           <option value="{{ purpose.code }}"
             {% if (val('purpose') or default_purpose) == purpose.code %}selected{% endif %}>
