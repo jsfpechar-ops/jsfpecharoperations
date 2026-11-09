@@ -275,7 +275,6 @@ def main(url=None):
         "/reservations?from=2020-01-01&to=2035-12-31",
         "/reservations?apartment=not-a-number&status=bogus&from=nonsense",
         f"/reservations/{stay_a}",
-        "/reservations/999999",
         "/apartments",
         "/guest-links",
         "/apartments/new",
@@ -288,6 +287,8 @@ def main(url=None):
         f"/apartments/{apartment_id}?view=settings&section=automation",
     ):
         check(host, path)
+    # An unknown id in a host page URL is a 404 page, not a redirect.
+    check(host, "/reservations/999999", expect=(404,), label="/reservations/999999 (unknown id)")
     # 0101: the old adapters are removed, not redirected.
     for path in (
         "/automation",

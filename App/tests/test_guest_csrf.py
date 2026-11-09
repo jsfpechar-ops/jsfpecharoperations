@@ -32,6 +32,8 @@ GUEST_POST_FORMS = [
     ("confirm.html", "/l/{{ token }}/{{ reservation.id }}/claim/confirm?lang={{ lang }}"),
     ("form.html", "/l/{{ token }}/{{ reservation.id }}/save?lang={{ lang }}"),
     ("pin.html", "/l/{{ token }}/pin?lang={{ lang }}"),
+    # 2026-11-09 owner decision: a guest can remove a person until the stay is filed.
+    ("remove.html", "/l/{{ token }}/{{ reservation.id }}/remove/{{ person_id }}?lang={{ lang }}"),
     ("stay.html", "/l/{{ token }}/{{ reservation.id }}/party?lang={{ lang }}"),
     ("stay.html", "/l/{{ token }}/{{ reservation.id }}/another?lang={{ lang }}"),
 ]

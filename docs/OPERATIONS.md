@@ -528,7 +528,7 @@ tell you:
   ubyhost-backup.agekey`). Put the public `age1...` recipient in `.env` and keep
   the private identity in the owner's password manager plus one offline copy —
   never on the server and never inside a snapshot. Whoever holds the identity
-  can read every backup; if it is lost, every encrypted backup is unreadable.
+  can read every backup; if it is lost, every encrypted backup is unreadable. The private identity (`AGE-SECRET-KEY-1...`) lives in the owner's password manager plus one offline copy, never in `.env` and never on the server; the restore drill proves it works.
 - **Back up `data/secret_key` (or the `.env` holding `UBYHOST_SECRET_KEY`)
   together with the database.** A database restored without its key needs every
   UbyPort password re-entered and every TOTP secret re-enrolled — see above.
@@ -567,7 +567,7 @@ The daily age-encrypted `pg_dump` (above) stays the primary backup. WAL-G adds p
 
 - **Cost.** About USD 0.05 a month in PUT requests plus a few cents of storage. WAL-G does not read back in normal running and `walg-check.sh` never calls S3. Check Cost Explorer after 7 days; expect under USD 1 a month.
 - **Retention.** 7 days: `wal-g delete retain FULL 7 --confirm` after each daily base backup, plus an S3 lifecycle rule at 10 days (see the RETENTION table row).
-- **Encryption and key custody.** WAL-G encrypts on the server before upload with `WALG_LIBSODIUM_KEY` (32 random bytes as 64 hex characters, `openssl rand -hex 32`). It is a different key from the age identity. Keep it in the password manager plus one offline copy; it is also in `.env.walg` on the server (mode 600, root). Never in the repo or a chat. Whoever holds it and the S3 keys can read the archives; if it is lost, every archive is unreadable and only the pg_dump backups remain.
+- **Encryption and key custody.** WAL-G encrypts on the server before upload with `WALG_LIBSODIUM_KEY` (32 random bytes as 64 hex characters, `openssl rand -hex 32`). It is a different key from the age identity. Keep it in the password manager plus one offline copy; it is also in `.env.walg` on the server (mode 600, owner ubuntu). Never in the repo or a chat. Whoever holds it and the S3 keys can read the archives; if it is lost, every archive is unreadable and only the pg_dump backups remain.
 - **Alarms.** `walg-check.sh` (cron every 10 minutes) fails when `walg` is not running, the last archive is older than 30 minutes, `failed_count` rises, a file sits in the spool longer than 30 minutes, the spool is over 2 GB or `pg_wal` is over 5 GB. It pings `UBYHOST_WALG_PING_URL` only when healthy; `walg-backup.sh` pings `UBYHOST_WALG_BACKUP_PING_URL` only after a good base backup. A missing ping is the alarm. On an alarm: `./scripts/walg-check.sh`, then `docker compose logs --tail 50 walg` and `docker compose logs --tail 50 postgres`. With no database writes for 30 minutes no WAL is archived: a false alarm; raise `WALG_MAX_ARCHIVE_AGE_S` in `.env` if it repeats. **Never delete files from `pg_wal` by hand.**
 
 #### Owner rollout (once; in a quiet hour; about 60 minutes)
@@ -579,7 +579,7 @@ AWS (about 15 minutes):
 1. Sign in to the AWS console. Top right, choose region **Europe (Frankfurt) eu-central-1**.
 2. Open **S3**, click **Create bucket**. Name: `ubyhost-wal-` plus 8 random lowercase letters (no account id in the name). Keep **Block all public access** ticked, **Versioning** off, default encryption SSE-S3. Click **Create bucket**. Use a separate bucket from the pg_dump copies, so the rule below cannot touch them. Write the name in the password manager, not in the repo.
 3. Open the new bucket, tab **Management**, **Create lifecycle rule**. Name `expire-wal`. Scope: **Apply to all objects in the bucket**, tick the confirmation box. Actions: tick **Expire current versions of objects** with **Days after object creation: 10**, and tick **Delete expired object delete markers or incomplete multipart uploads**, then **Delete incomplete multipart uploads**, **Number of days: 1**. Click **Create rule**.
-4. Open **IAM**, **Policies**, **Create policy**, tab **JSON**, paste this (replace both `BUCKET` with your bucket name), click **Next**, name it `ubyhost-walg`, click **Create policy**:
+4. Open **IAM**, **Policies**, **Create policy**, tab **JSON**, paste this (replace every `BUCKET` in the JSON, three places, with your bucket name; a missed one makes AWS answer AccessDenied on ListBucket), click **Next**, name it `ubyhost-walg`, click **Create policy**:
 
 ```json
 {
@@ -618,7 +618,7 @@ Key and dead-man checks (about 5 minutes):
 Server, before the deploy (about 15 minutes; `cd /opt/ubyhost/deploy/lightsail` first):
 
 8. Make sure 1022 and 1023 are merged and pulled: `git log --oneline -3`.
-9. Create the secrets file: `sudo install -m 600 -o root -g root /dev/null .env.walg && sudo nano .env.walg`, paste this, fill in the four values, save (Ctrl+O, Enter, Ctrl+X):
+9. Create the secrets file: `sudo touch .env.walg && sudo chown ubuntu:ubuntu .env.walg && sudo chmod 600 .env.walg && sudo nano .env.walg`, paste this, fill in the four values, save (Ctrl+O, Enter, Ctrl+X):
 
 ```
 WALG_S3_PREFIX=s3://BUCKET/postgres-wal
@@ -628,15 +628,15 @@ AWS_SECRET_ACCESS_KEY=<from step 5>
 WALG_COMPRESSION_METHOD=zstd
 WALG_LIBSODIUM_KEY=<from step 6>
 WALG_LIBSODIUM_KEY_TRANSFORM=hex
-WALG_UPLOAD_CONCURRENCY=2
+WALG_UPLOAD_CONCURRENCY=1
 PGHOST=/var/run/postgresql
 PGUSER=ubyhost
 PGDATABASE=ubyhost
 ```
 
-   `.env.*` is git-ignored. Check: `ls -l .env.walg` shows `-rw------- 1 root root`.
+   `.env.*` is git-ignored. The owner must be `ubuntu`: Docker Compose runs as that user and fails with `open .env.walg: permission denied` on a root-owned file. Check: `ls -l .env.walg` shows `-rw------- 1 ubuntu ubuntu`. `WALG_S3_PREFIX` is the full URL `s3://BUCKET/postgres-wal` with your real bucket name; the bucket name alone fails with `missing url scheme`.
 10. Create the spool volume owned by the postgres user (uid 70) of the production image: `docker volume create ubyhost-walspool && docker run --rm --network none --user root -v ubyhost-walspool:/walspool postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab sh -c 'chown 70:70 /walspool && chmod 700 /walspool && sync /walspool && ls -ldn /walspool'`. Expected: a line starting `drwx------` with `70 70`. Compose later warns that this volume "already exists but was not created by Docker Compose": harmless. (If `sync /walspool` errors here, stop and tell the orchestrator: the `archive_command` needs it.)
-11. Edit `.env` (`sudo nano .env`): add `UBYHOST_PG_ARCHIVE=on`, `UBYHOST_WALG_PING_URL=<check URL>` and `UBYHOST_WALG_BACKUP_PING_URL=<backup URL>` from step 7. If a `COMPOSE_PROFILES=` line exists, add `,walg` to its end (for example `COMPOSE_PROFILES=monitoring,walg`); if not, add `COMPOSE_PROFILES=walg`. Save.
+11. Edit `.env` (`sudo nano .env`): add `UBYHOST_PG_ARCHIVE=on`, `UBYHOST_WALG_PING_URL=<check URL>` and `UBYHOST_WALG_BACKUP_PING_URL=<backup URL>` from step 7. If a `COMPOSE_PROFILES=` line exists, replace the word `litestream` with `walg` and keep every other profile (for example `litestream,monitoring,go` becomes `monitoring,go,walg`; dropping `go` would switch off a service); if there is no such line, add `COMPOSE_PROFILES=walg`. Save.
 12. Build the sidecar and test the S3 keys before anything changes in Postgres: `docker compose build walg 2>&1 | tail -5`, then `docker compose run --rm --no-deps walg wal-g backup-list 2>&1 | tail -5`. Expected: no error, a message that no backups were found. An `AccessDenied` or `NoSuchBucket` error: fix `.env.walg` and repeat; do not deploy.
 13. Deploy: `./scripts/deploy.sh 2>&1 | tail -30`. It takes the mandatory pre-deploy pg_dump first (the output shows "Mandatory pre-deploy backup" and a stamp: write the stamp down). Postgres restarts once, because `archive_mode` only changes on restart; the app is unavailable for well under a minute.
 
@@ -644,7 +644,7 @@ Verify (about 10 minutes):
 
 14. Wait 10 minutes, then `docker compose exec -T postgres psql -U ubyhost -d ubyhost -c "SELECT archived_count, failed_count, last_archived_time FROM pg_stat_archiver;"`. Expected: `archived_count` above 0 and `failed_count` 0. Then `docker compose logs --tail 20 walg` (no errors; an error with "read-only file system" or "libsodium": run the rollback below and tell the orchestrator) and `docker compose exec -T postgres ls /walspool` (empty or one or two files).
 15. First base backup by hand: `./scripts/walg-backup.sh 2>&1 | tail -10`, then `docker compose exec -T walg wal-g backup-list`. Expected: one backup.
-16. Add the two cron lines from [LIGHTSAIL](LIGHTSAIL.md) (WAL-G point-in-time recovery), then `./scripts/walg-check.sh`. Expected: `walg-check ok`, and the healthchecks.io check turns green.
+16. First create the two log files, or cron silently skips the commands because it cannot open the redirect file: `sudo touch /var/log/ubyhost-walg-backup.log /var/log/ubyhost-walg-check.log && sudo chown ubuntu:ubuntu /var/log/ubyhost-walg-backup.log /var/log/ubyhost-walg-check.log`. Then add the two cron lines from [LIGHTSAIL](LIGHTSAIL.md) (WAL-G point-in-time recovery), then `./scripts/walg-check.sh`. Expected: `walg-check ok`, and the healthchecks.io check turns green.
 17. Do drill 1 and, at least 20 minutes after step 15, drill 2 below. **Do not rely on WAL-G until drill 2 has passed once.** Write the date and result of each drill in the password manager note.
 
 #### Shared step: the row-count query (both drills)
@@ -709,6 +709,7 @@ Restores into a scratch volume with the `walg` image, which has network and WAL-
 ```
 cd /opt/ubyhost/deploy/lightsail
 TARGET="$(date -u -d '15 minutes ago' '+%Y-%m-%d %H:%M:%S+00')"; echo "$TARGET"
+docker rm -f walg-drill-pg 2>/dev/null; docker volume rm walg-drill 2>/dev/null
 docker volume create walg-drill
 docker run --rm --user root --env-file .env.walg -v walg-drill:/restore ubyhost-walg:local wal-g backup-fetch /restore LATEST
 cat > /dev/shm/walg-recovery.conf <<EOF

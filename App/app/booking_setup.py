@@ -41,9 +41,9 @@ def steps(apartment_id: int, owner_user_id: int) -> List[Dict[str, Any]]:
 
 
 def can_publish(rows: List[Dict[str, Any]]) -> bool:
-    """Stripe connected or one direct rail set, and a price set; the other steps are advice."""
+    """Stripe connected or one direct rail set, a price set, and photos plus a description; the other steps are advice."""
     done = {row["key"]: row["done"] for row in rows}
-    return bool(done["pay"] and done["price"])
+    return bool(done["pay"] and done["price"] and done["page"])
 
 
 def notice_value(s: Dict[str, Any]) -> str:
