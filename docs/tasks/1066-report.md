@@ -2,9 +2,13 @@
 
 Status: review
 
-1. Files changed: the 6 templates and app2.css, base.html, static_versions.json from brief §3, test_input_attributes_1066.py, screenshots-1066/ (guest-form-390.png, guest-claim-390.png). Venv: created App/.venv (python3.12, requirements + requirements-dev, plus playwright==1.63.0 as in CI).
-2. Commands: step tests pass (3, 14, 7). Cmd 1 (guest + geometry + new test): 647 passed, 0 skipped. Cmd 3: test_design_guardrails_browser fails on guest-new 390 "Cancel" tap-target 43 px; identical failure on the base commit (pre-existing, not 1066). Cmd 4 layout lint: 4 passed, 0 skipped. Cmd 2 not run (tail-only budget; templates only gained attributes).
-3. Host pages (1280/768/390 opened): operator-edit: placeholders show, help dots unchanged, no overlap. property-new: example placeholders show, layout unchanged. setup-property shot is the police step, not the IČO step, so the wizard IČO was not seen.
-4. Deviations: cmd 2 skipped; test file docstring added by hand; local branch was held by another worktree, so work was done detached.
-5. Questions: bday vs dd.mm.yyyy unchanged; #stay-fee-settings left at its own size.
-6. Owner: open PR.
+First session: 6 templates, app2.css, base.html, static_versions.json, test_input_attributes_1066.py, guest shots; cmd 1 (647 passed), cmd 4 (4 passed). Details in git history.
+
+## Continuation 1
+
+- Cmd 2 (host row, fresh venv py3.13, Playwright 1.63.0, Chromium 153): first run `-x` stopped at `test_host_flash_outcomes.py::test_browser_renders_saved_warning_as_sticky_amber` (fails twice; same failure on base 0d851ca4). Rest rerun with that test deselected: 728 passed, 1 failed, 2 skipped (not identified), 1 deselected. The 1 failed is `test_host_ux_acceptance.py::test_every_page_family_fits_every_width_language_and_rail_state` (guide, cs, 390: help-tip-btn "past right edge"); same on base.
+- Guardrails (CI env, no -x): branch and base both `1 failed, 10 passed`, same id: `guest-new 390 open: tap-target-small a.ui-btn.ui-btn-quiet "Cancel" 43 vs 44`. Identical on 0d851ca4, so 1066 does not cause it. File is #73 in CI list, shard 1; CI run 42699276863 on main 0d85: shard 1 372 passed, 0 failed, 0 skipped. Local: Playwright 1.63.0, Chromium 153.0.8010.12, 119 fonts; CI uses the playwright:v1.63.0-noble image. So it is local-environment (probably fonts); exact cause unproven. No code change.
+- Cmd 3 rest: test_static_versions + test_host_i18n 17 passed, 0 skipped.
+- Wizard IČO (docs/tasks/screenshots-1066/wizard-ico-390.png, no-entity host): "Company ID (IČO) *" label with red star, full-width field with grey 12345678, "Fill from register" button below; no overflow. The bottom tab bar is drawn mid-image (full-page capture artefact) and covers the button's lower edge.
+- Screenshot dirs 0402, 0451, 0410, 0957, 0896 and 0102-evidence restored, not committed.
+- Owner: open PR; guardrails and flash/ux failures are environment, CI is the judge.
