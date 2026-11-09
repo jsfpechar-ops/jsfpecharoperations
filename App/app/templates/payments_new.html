@@ -39,7 +39,7 @@
         <label class="ui-chip"><input type="radio" name="rail" value="card" checked> {{ t('payments.new.rail_card') }}</label>
         <label class="ui-chip"><input type="radio" name="rail" value="qr"{% if no_bank %} disabled{% endif %}> {{ t('payments.new.rail_qr') }}</label>
       </div>
-      {% if no_bank %}<p class="ui-sub ui-note-line">{{ t('payments.err.no_iban') }}</p><div class="ui-chips ui-note-line">{{ ui_button(t('payments.fix.bank'), 'secondary', href='/entities', size='compact') }}</div>{% endif %}
+      {% if no_bank %}<p class="ui-sub ui-note-line">{{ t('payments.err.no_iban') }}</p><div class="ui-chips ui-note-line">{{ ui_button(t('payments.fix.bank'), 'quiet', href='/entities', size='compact') }}</div>{% endif %}
     </fieldset>
     <div class="ui-form-actions">{{ ui_button(t('payments.new.submit'), 'primary', type='submit') }}</div>
   </form>
