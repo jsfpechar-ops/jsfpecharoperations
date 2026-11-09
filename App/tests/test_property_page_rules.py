@@ -1,6 +1,7 @@
 """Brief 0999: house rules on public property page and map link."""
 from __future__ import annotations
 
+import re
 import json
 
 import pytest
@@ -76,7 +77,8 @@ def test_public_page_shows_rules_and_map_not_street(owner):
     assert "No pets" in body
     assert "mapy.cz" in body
     assert "Tajna" not in body
-    assert "42" not in response.text  # street number not in page HTML
+    # Street number as its own word; a bare "42" can sit inside the random CSRF token.
+    assert not re.search(r"\b42\b", body)
     assert "<iframe" not in body.lower()
     assert 'script src="http' not in body.lower()
 

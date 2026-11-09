@@ -1374,6 +1374,19 @@ body.v2 .wiz-page .setup-summary-copy .ui-badge{height:26px;display:inline-flex;
 body.v2 .wiz-page .setup-summary-action{font-size:14px;color:var(--acc-text)}
 body.v2 .wiz-page .setup-next-card{text-decoration:none;color:inherit;flex-wrap:wrap;row-gap:12px}
 body.v2 .wiz-page .setup-next-card .ui-btn{margin-left:auto}
+body.v2 .wiz-page .setup-wizard-celebrate{min-height:0;padding:16px;margin-bottom:16px}
+body.v2 .wiz-page .setup-done-list{margin:12px 0 0;padding:0;list-style:none;display:block;border:1px solid var(--line);border-radius:16px;background:var(--s);overflow:hidden}
+body.v2 .wiz-page .setup-done-list>li+li{border-top:1px solid var(--line)}
+body.v2 .wiz-page .setup-done-list .setup-summary-card{border:0;border-radius:0;background:transparent;height:auto;min-height:56px;padding:16px;box-sizing:border-box;align-items:center}
+body.v2 .wiz-page .setup-done-list .setup-summary-icon{margin-top:0}
+body.v2 .wiz-page .setup-done-list .setup-summary-copy{flex:1}
+body.v2 .wiz-page .setup-done-list .setup-summary-copy strong{font-size:15px}
+body.v2 .wiz-page .setup-done-chevron{display:inline-flex;margin-left:auto;color:var(--ink2);flex:none}
+body.v2 .wiz-page .setup-done-workflow{margin:0 0 20px}
+body.v2 .wiz-page .setup-done-workflow>summary{display:flex;align-items:center;min-height:44px;font-size:15px;font-weight:700;cursor:pointer;color:var(--ink)}
+body.v2 .wiz-page :is(.setup-wizard-foot,.setup-wizard-actions):has([data-finish-go]){justify-content:center;margin-left:0}
+body.v2 .wiz-page [data-finish-go]{margin-left:auto;margin-right:auto;justify-content:center;text-align:center}
+body.v2 .wiz-page .setup-wizard-foot:has([data-finish-go])>span:first-child:empty{flex:0 0 0;width:0}
 body.v2 .wiz-page .wizard-ares{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;padding:16px;margin:0 0 20px;border:1px solid var(--line);border-radius:16px}
 body.v2 .wiz-page .wizard-ares .field{flex:1 1 180px;margin:0}
 body.v2 .wiz-page .setup-wizard-note-box{margin:16px 0 0;padding:16px;border-radius:12px;background:var(--side2)}
@@ -2595,16 +2608,16 @@ body.v2 .onboarding-finish .onboarding-kicker{font-size:12px;font-weight:600;col
 body.v2 .onboarding-finish-title{display:flex;align-items:center;gap:8px}
 body.v2 .onboarding-finish h2{font-size:18px;font-weight:700;margin:0}
 body.v2 .onboarding-finish .lede{font-size:14px;color:var(--ink2);margin:0}
-body.v2 .onboarding-finish-share{display:grid;gap:12px}
-body.v2 .onboarding-finish-field{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px;border:1px solid var(--line);border-radius:12px}
+body.v2 .onboarding-finish-share{display:grid;gap:16px;min-width:0}body.v2 .onboarding-finish-share > *,body.v2 .onboarding-finish-field > *{min-width:0}
+body.v2 .onboarding-finish-field{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:0;border:0;border-radius:0;background:none;min-width:0}
 body.v2 .onboarding-finish-label{font-size:13px;color:var(--ink3);flex:0 0 64px}
-body.v2 .onboarding-finish-field code{flex:1 1 200px;min-width:0;overflow-wrap:anywhere;font-size:14px}
+body.v2 .onboarding-finish-field code{flex:1 1 200px;min-width:0;overflow-wrap:anywhere;word-break:break-word;font-size:14px}
 body.v2 .onboarding-finish-pin{font-size:18px;font-weight:700;letter-spacing:.08em;flex:1 1 auto}
 body.v2 .onboarding-finish-field .copy-btn{flex:none;margin-left:auto}
-body.v2 .onboarding-finish-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+body.v2 .onboarding-finish-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px}body.v2 .onboarding-finish-actions .ui-btn{min-height:44px;padding:0 18px;display:inline-flex;align-items:center;justify-content:center;text-align:center;box-sizing:border-box}
 body.v2 .onboarding-finish-actions .ui-btn,body.v2 .onboarding-finish-actions form{white-space:nowrap;flex:none}
 body.v2 .onboarding-finish-actions form{margin:0}
-@media (max-width:767px){body.v2 .onboarding-finish-actions{flex-direction:column;align-items:stretch}body.v2 .onboarding-finish-actions .ui-btn,body.v2 .onboarding-finish-actions form,body.v2 .onboarding-finish-actions form button{width:100%;justify-content:center;min-height:44px}body.v2 .onboarding-finish-actions form button{text-align:center}}
+@media (max-width:639px){body.v2 .onboarding-finish-actions{flex-direction:column;align-items:stretch}body.v2 .onboarding-finish-actions .ui-btn,body.v2 .onboarding-finish-actions form,body.v2 .onboarding-finish-actions form button{width:100%;justify-content:center;min-height:44px}body.v2 .onboarding-finish-actions form button{text-align:center}}
 body.v2 .onboarding-finish-strip{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:12px 16px;border:1px solid var(--line);border-radius:12px;background:var(--s);font-size:14px;margin:12px 0}
 @media (max-width:1023px){body.v2 .onboarding-finish-strip a{white-space:nowrap;min-height:44px;display:inline-flex;align-items:center}}
 
@@ -2915,6 +2928,9 @@ body.v2 :is(.success-notice-close, .toast-stack .toast[data-toast-kind="success"
 }
 body.v2 :is(.success-notice-close, .toast-stack .toast[data-toast-kind="success"] > [data-toast-close]):hover { background: var(--surface-hover, #f1f0ec); color: var(--ink); }
 body.v2 :is(.success-notice-close, .toast-stack .toast[data-toast-kind="success"] > [data-toast-close]):focus-visible { outline: 2px solid #d0452d; outline-offset: 2px; }
+body.v2 .toast-stack .toast .toast-pill { min-height: 44px; padding: 8px 18px; border: 0; border-radius: 999px; background: var(--s); color: var(--ink); font-size: 14px; font-weight: 700; text-decoration: none; }
+body.v2 .toast-stack .toast .toast-pill:hover { color: var(--ink); }
+body.v2 .toast-stack .toast .toast-pill:focus-visible { outline: 2px solid #d0452d; outline-offset: 2px; }
 /* 0897: the property Save bar floats as a pill over the content, always within reach. */
 body.v2 .savebar[data-for="property-settings-form"]{bottom:var(--space-4);padding:10px 16px;border:1px solid var(--line);border-radius:20px;box-shadow:0 8px 24px rgba(20,20,20,.14)}
 @media (max-width:1023px){body.v2 .savebar[data-for="property-settings-form"]{bottom:calc(var(--tabbar-h) + var(--tabbar-safe) + var(--space-2));padding-bottom:10px}}
@@ -3160,3 +3176,179 @@ body.v2 .prop-layout>nav.prop-nav{display:none}
 /* 1032: a saved signature is shown whole at every width: scaled into its box, aspect ratio kept, never cropped. */
 body.v2 .signature-block .signature-locked{display:block;max-width:100%;overflow:visible}
 body.v2 .signature-block .signature-locked-img{display:block;width:auto;height:auto;max-width:100%;max-height:160px;object-fit:contain;object-position:left center}
+
+/* 1031 first-run: calmer welcome card. One column, one primary step action,
+   quiet skip link at the foot, banner as one quiet line. Selectors mirror the
+   v2 and compact variants above so these rules win on the same specificity. */
+body.v2 .onboarding-welcome:not([data-layout=v2]),
+body.v2 .onboarding-welcome[data-layout=v2] {
+  display: grid; gap: 16px; max-width: none; margin-inline: 0; margin-block: 0;
+  padding: 24px; border: 1px solid var(--line); border-radius: 16px; background: var(--s);
+  box-sizing: border-box;
+}
+@media (max-width: 639px) {
+  body.v2 .onboarding-welcome:not([data-layout=v2]),
+  body.v2 .onboarding-welcome[data-layout=v2] { padding: 16px; }
+}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-intro,
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-intro {
+  display: block; margin: 0; padding: 0; border: 0; background: none;
+}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-intro h1,
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-intro h2,
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-intro h1,
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-intro h2 {
+  font-size: 22px; font-weight: 800; line-height: 1.2; letter-spacing: -.01em; margin: 0;
+}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-intro .sub,
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-intro .sub {
+  margin: 4px 0 0; font-size: 13px; color: var(--ink2);
+}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-finish-line,
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-finish-line {
+  font-size: 13px; color: var(--ink2); margin: 0;
+}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-steps,
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-steps {
+  display: grid; gap: 0; margin: 0;
+}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-step,
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 0;
+  padding: 12px 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: none;
+}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-step.is-current,
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step.is-current {
+  background: var(--accs); border: 1px solid var(--accs); border-radius: 12px; padding: 12px; margin-block: 4px;
+}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-step-index,
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-index {
+  width: 28px; height: 28px; border-radius: 50%; background: var(--accs); color: var(--acc);
+  display: grid; place-items: center; font-weight: 700; font-size: 13px; flex: none;
+}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-step.is-done .onboarding-step-index,
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step.is-done .onboarding-step-index {
+  background: var(--oks); color: var(--ok);
+}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-step-copy,
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-copy {
+  flex: 1 1 0; min-width: 0;
+}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-step-copy h3,
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-copy h3 {
+  font-size: 15px; font-weight: 600; margin: 0;
+}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-step-action,
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-action {
+  flex: none; margin-inline-start: auto; white-space: nowrap;
+}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-step-manual,
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-manual {
+  font-size: 13px; flex: 0 0 100%; padding-inline-start: 40px; box-sizing: border-box;
+}
+@media (max-width: 639px) {
+  body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-step-action,
+  body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-action {
+    flex: 1 1 100%; margin-inline-start: 0; min-height: 44px; display: flex; align-items: center; justify-content: center;
+  }
+}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-bottom,
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-bottom {
+  margin-top: 24px;
+}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-foot,
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-foot {
+  margin-top: 16px; text-align: left;
+}
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-foot form,
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-foot form { margin: 0; }
+body.v2 .onboarding-banner-setup {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px;
+  margin: 0 0 16px; padding: 4px 0; border: 0; border-bottom: 1px solid var(--line); background: none; box-shadow: none;
+}
+body.v2 .onboarding-banner-setup form { margin: 0; margin-inline-start: auto; }
+body.v2 .onboarding-banner-setup .onboarding-banner-setup-link {
+  display: inline-flex; align-items: center; background: none; color: var(--ink);
+  font-weight: 600; font-size: 13px; padding: 0; border-radius: 0; text-decoration: underline;
+}
+@media (max-width: 1023px) {
+  body.v2 .onboarding-banner-setup .onboarding-banner-setup-link,
+  body.v2 .onboarding-banner-setup .onboarding-skip-link { min-height: 44px; }
+}
+
+/* First-run welcome card polish (1031 fixes 1-4) */
+body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-finish-line,
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-finish-line {
+  text-align: left;
+}
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step.is-current .onboarding-step-index {
+  background: var(--surface); color: var(--acc); box-shadow: inset 0 0 0 1px var(--acc);
+}
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-current-dot { display: none; }
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-group { margin: 4px 0 0 4px; }
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step details {
+  flex: 0 0 100%; box-sizing: border-box; margin: 0; padding: 0 0 0 40px; border: 0; background: none; box-shadow: none;
+}
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step details summary {
+  display: inline-flex; align-items: center; width: auto; min-height: 44px; margin: 0; padding: 0 12px; border: 0; background: none; box-shadow: none;
+  color: var(--ink2); font-size: 13px; font-weight: 600; text-decoration: underline; cursor: pointer; list-style: none;
+}
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step details summary::-webkit-details-marker { display: none; }
+body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step details > :not(summary) {
+  margin: 6px 0 0; font-size: 13px; color: var(--ink2);
+}
+.onboarding-welcome .onboarding-demo { padding: 16px; gap: 12px; }
+.onboarding-welcome .onboarding-demo > div:first-child {
+  display: block; min-width: 0;
+}
+.onboarding-welcome .onboarding-demo > div:first-child > strong { display: inline; }
+.onboarding-welcome .onboarding-demo > div:first-child .help-tip { vertical-align: middle; margin-left: 6px; }
+.onboarding-welcome .onboarding-demo > div:first-child strong { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 639px) {
+  .onboarding-welcome .onboarding-demo { flex-direction: column; align-items: stretch; }
+  .onboarding-welcome .onboarding-demo form .btn { width: 100%; justify-content: center; min-height: 44px; }
+}
+.onboarding-welcome .onboarding-demo { padding: 0; border: 0; background: none; }
+body.v2 .onboarding-welcome .onboarding-demo form .btn:not(.line):not(.soft):not(.ghost) {
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line); box-shadow: none;
+  min-height: 44px; font-size: 14px;
+}
+/* 1031: the security prompt card on v2 pages (app2.css loads without app.css here). */
+body.v2 dialog.security-prompt {
+  width: min(calc(100% - 32px), 440px);
+  max-width: 440px;
+  border: 0;
+  border-radius: 20px;
+  padding: 0;
+  background: var(--s);
+  box-shadow: 0 20px 60px rgba(20,20,18,.2);
+  color: var(--ink);
+}
+body.v2 .security-prompt-body { padding: 28px 24px 20px; display: grid; gap: 0; }
+body.v2 .security-prompt-title { margin: 0 0 8px; font-size: 22px; line-height: 1.25; letter-spacing: -0.01em; color: var(--ink); }
+body.v2 .security-prompt-lede { margin: 0 0 20px; font-size: 15px; line-height: 1.5; color: var(--ink2); }
+body.v2 .security-prompt-options { display: grid; gap: 12px; margin: 0 0 8px; }
+body.v2 .security-prompt-option-wrap { display: grid; gap: 8px; }
+body.v2 .security-prompt-option-wrap[hidden] { display: none; }
+body.v2 .security-prompt-option {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px;
+  padding: 14px 16px; box-sizing: border-box; border: 1px solid var(--line); border-radius: 14px;
+  background: var(--s); color: var(--ink); font: inherit; text-align: left; text-decoration: none;
+  cursor: pointer; box-shadow: none;
+}
+body.v2 .security-prompt-option:hover { border-color: #c9c9c2; background: #faf9f7; }
+body.v2 .security-prompt-option:focus-visible { outline: 2px solid var(--acc); outline-offset: 0; }
+body.v2 .security-prompt-option:disabled { opacity: .6; cursor: default; }
+body.v2 .security-prompt-option-text { display: grid; gap: 2px; flex: 1 1 auto; min-width: 0; }
+body.v2 .security-prompt-option-title { font-size: 16px; font-weight: 600; line-height: 1.3; }
+body.v2 .security-prompt-option-help { font-size: 14px; line-height: 1.4; color: var(--ink2); }
+body.v2 .security-prompt-chevron { flex: 0 0 auto; font-size: 24px; line-height: 1; color: var(--ink2); }
+body.v2 .security-prompt-later { margin: 8px 0 0; text-align: center; }
+body.v2 .security-prompt-later-btn {
+  min-height: 44px; padding: 8px 16px; border: 0; border-radius: 999px; background: transparent;
+  color: var(--ink2); font: inherit; font-size: 15px; font-weight: 600;
+  text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+}
+body.v2 .security-prompt-later-btn:hover { color: var(--ink); }
+body.v2 .security-prompt-later-btn:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+body.v2 .security-prompt-footnote { margin: 4px 0 0; text-align: center; font-size: 13px; line-height: 1.4; color: var(--ink2); }

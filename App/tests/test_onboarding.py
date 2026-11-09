@@ -82,11 +82,9 @@ def test_first_dashboard_is_a_guided_setup_journey():
 
     assert page.status_code == 200
     assert 'class="onboarding-welcome"' in page.text
-    assert 'class="onboarding-now"' in page.text
+    assert 'class="onboarding-now"' not in page.text
     assert HOST_STRINGS["en"]["onboarding.welcome_title"] in page.text
-    assert "Have ready: name, IČO" in page.text
     assert 'href="/entities"' in page.text
-    assert 'href="/guide#setup"' in page.text
 
 
 def test_the_welcome_copy_names_the_task_and_the_finish():
@@ -135,11 +133,12 @@ def test_the_first_dashboard_list_is_one_line_per_step():
     for step in onboarding.progress(owner_id)["steps"]:
         assert HOST_STRINGS["en"][f"onboarding.{step['id']}.title"] in steps.group(1)
 
-    # "Do this now" keeps the detail and the "Have ready" line, exactly once each.
+    # The "Do this now" block and the "See all setup steps" link were removed (1031):
+    # the current step's detail and "Have ready" line no longer appear on the Overview.
     current = onboarding.progress(owner_id)["current"]["id"]
-    assert page.text.count(HOST_STRINGS["en"][f"onboarding.{current}.detail"]) == 1
-    assert page.text.count(HOST_STRINGS["en"][f"onboarding.{current}.prepare"]) == 1
-    assert '<a href="/onboarding">' in page.text
+    assert page.text.count(HOST_STRINGS["en"][f"onboarding.{current}.detail"]) == 0
+    assert page.text.count(HOST_STRINGS["en"][f"onboarding.{current}.prepare"]) == 0
+    assert '<a href="/onboarding">' not in page.text
 
 
 def test_the_full_checklist_keeps_the_detail_and_the_why():

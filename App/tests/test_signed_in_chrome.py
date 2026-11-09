@@ -203,7 +203,9 @@ def test_the_zero_state_overview_still_renders_the_welcome_card(empty_host):
     page = empty_host.get("/?lang=en").text
 
     assert 'class="onboarding-welcome"' in page
-    assert host_i18n.STRINGS["en"]["onboarding.kicker"] in page
+    assert host_i18n.STRINGS["en"]["onboarding.welcome_title"] in page
+    assert 'class="onboarding-steps"' in page
+    assert 'class="btn primary small onboarding-step-action"' in page
 
 
 def test_a_workspace_with_a_property_keeps_the_page_header(host_with_property):
