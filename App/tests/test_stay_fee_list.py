@@ -215,7 +215,8 @@ def test_future_or_crafted_month_falls_back_to_default(host):
         response = client.get(f"/stay-fees?month={month}", follow_redirects=False)
 
         assert response.status_code == 200
-        assert 'value="2026-08"' in response.text
+        # 1051, owner decision 2026-11-09: the default is the current month (was the previous one).
+        assert 'value="2026-09"' in response.text
 
 
 def test_sidebar_has_a_stay_fees_item(host):
