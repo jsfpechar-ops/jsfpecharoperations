@@ -24,12 +24,12 @@
     "v": "20261109-1200"
   },
   "app.js": {
-    "sha256": "004cd48ce20a1a633fe1f11705ecd08889d69cda4a629c0496730697ac0691d1",
-    "v": "20261109-1032f"
+    "sha256": "b10e1285868eba94c656715226c67709dbb08a7a853fd9877515ab7573808e3a",
+    "v": "20261109-1051a"
   },
   "app2.css": {
-    "sha256": "73dbe899c678454c0dcffb298d5022a755c1118f4e4a3f1ed4b03e0cadedd9b5",
-    "v": "20261109-1032i"
+    "sha256": "0b9c5f73a82b6bfcab0289ce0834009fffd0b15bfe6abb6de61968b2cf818302",
+    "v": "20261109-1052a"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -92,8 +92,8 @@
     "v": "20261025-0393b"
   },
   "guest.css": {
-    "sha256": "b7d6682577a81f3c541c5c12a181717c2525cfc0bd5a5fe076a609237ae6078e",
-    "v": "20261108-1032"
+    "sha256": "573fa4b10af772e86b827cf607db0965585578ea5e2700bb24f33e62f00a4011",
+    "v": "20261109-1052b"
   },
   "guide.js": {
     "sha256": "7bc163abd236d8032c1f7a094aadf4993774920b24b4a0817768dd27fa0cefab",
@@ -120,8 +120,8 @@
     "v": "20261109-1032c"
   },
   "host2.css": {
-    "sha256": "5985f9669852976fdf4745cbbc0aabbc7626d5c4ab67b3f434b1abe4c128e18f",
-    "v": "20261106-pr790-phfit-h2"
+    "sha256": "aa19382fe0e404b57180a2e76a1a538a780b2a2407163dc2a1b713a08a599ded",
+    "v": "20261109-bsite-wrap-h2"
   },
   "landing.css": {
     "sha256": "a9218c2d33c3d07d955b0c630d194ef81801834baaed1cb3615387222ce50ba5",
@@ -134,6 +134,10 @@
   "leon-setup.js": {
     "sha256": "2216365fed2b45ea19a081566f94a668209853064ef311edc44c945a49b981a1",
     "v": "20261027-ai-usage"
+  },
+  "list-filter-compact.css": {
+    "sha256": "0c30d5b52ec1e6a98f5e1a1a834175cc82db4b174c4da879bd4af6912f0c762b",
+    "v": "20261109-1052a"
   },
   "passkeys.js": {
     "sha256": "4e75d63ea5de86912252b34a8b22fc5d91ed7b7190ad7d623947295e1725c7cd",

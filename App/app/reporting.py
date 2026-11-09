@@ -335,16 +335,16 @@ def guest_is_complete(guest, reservation) -> bool:
 
 
 def guest_form_locked(guest, reservation) -> bool:
-    """Guests may not reopen a form once it is complete and signed.
+    """Whether the guest link may no longer change this person.
 
-    After police reporting the record is final; before that, a completed and
-    signed form is still locked so another person cannot change it from the
-    guest link.
+    Owner decision 2026-11-09: a guest may edit or remove the people they added
+    until the record is filed with UbyPort (``SENT``, which also covers a record
+    the host filed by hand). A complete and signed form no longer locks it. A
+    restricted record (BE-9) stays read-only until the host lifts it.
     """
-    if guest["submit_state"] == SENT:
+    if _field(guest, "submit_state") == SENT:
         return True
-    signature = (guest["signature_png"] or "").strip()
-    return signature.startswith("data:image/") and guest_is_complete(guest, reservation)
+    return bool(_field(guest, "restricted_at"))
 
 
 def expected_guest_count(reservation) -> Optional[int]:

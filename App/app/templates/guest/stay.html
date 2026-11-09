@@ -19,6 +19,12 @@
   <div class="g-err">{{ t('error_party_size') }}</div>
 {% endif %}
 
+{% if just_removed %}
+  <div class="g-card g-saved" role="status">
+    <p class="g-intro" style="margin-bottom:0">{{ t('removed_ok') }}</p>
+  </div>
+{% endif %}
+
 {% if fee_panel %}
   {% include "guest/_fee_pay.html" %}
 {% endif %}
@@ -129,8 +135,16 @@
         <a class="g-btn ghost slim" href="/l/{{ token }}/{{ reservation.id }}/edit/{{ person.id }}?lang={{ lang }}">
           {{ t('continue_filling') if not person.complete else t('edit') }}
         </a>
-      {% elif person.complete %}
-        <p class="g-intro" style="margin:12px 0 0">{{ t('form_locked_short') }}</p>
+        {% if person.removable %}
+          <p class="g-quiet-action-row">
+            <a class="g-quiet-action" href="/l/{{ token }}/{{ reservation.id }}/remove/{{ person.id }}?lang={{ lang }}" data-remove-person>{{ t('remove_person') }}</a>
+          </p>
+        {% endif %}
+      {% else %}
+        <p class="g-intro" style="margin:12px 0 0">{{ t('filed_short') if person.sent else t('form_locked_short') }}</p>
+        {% if host_message_url %}
+          <a class="g-btn ghost slim" href="{{ host_message_url }}" data-message-host>{{ t('message_host') }}</a>
+        {% endif %}
       {% endif %}
     </div>
   </details>

@@ -576,6 +576,9 @@ body.v2 .month-control input[data-month-native]{width:100%;min-width:0;height:va
 .has-js body.v2 input[data-month-native]{position:absolute;width:1px;height:1px;min-width:0;opacity:0;pointer-events:none}
 .has-js body.v2 .month-control-face{display:none}
 body.v2 .month-trigger{width:100%}
+/* 1052: SVG chevrons (icon macro) replace the text glyphs in the shared month picker */
+body.v2 .month-trigger{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2)}
+body.v2 .month-step,body.v2 .year-step{display:inline-flex;align-items:center;justify-content:center}
 /* 0527: 44px day and date targets on phone; the popover stays inside a 360 px viewport */
 @media (max-width:1023px){
   body.v2 .range-day{min-width:44px;min-height:44px}

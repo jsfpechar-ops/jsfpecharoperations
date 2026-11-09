@@ -123,9 +123,9 @@
         <input type="hidden" name="lang" value="{{ lang }}">
         <input type="hidden" name="terms_version" value="{{ b.terms_version }}">
         <label class="ui-field"><span>{{ t('pp.book.name') }}</span>
-          <input class="ui-input" type="text" name="guest_name" autocomplete="name" minlength="3" maxlength="120" required></label>
+          <input class="ui-input" type="text" name="guest_name" value="{{ page.form_values.name if page.form_values else '' }}" autocomplete="name" minlength="3" maxlength="120" required></label>
         <label class="ui-field"><span>{{ t('pp.book.email') }}</span>
-          <input class="ui-input" type="email" name="guest_email" autocomplete="email" required></label>
+          <input class="ui-input" type="email" name="guest_email" value="{{ page.form_values.email if page.form_values else '' }}" autocomplete="email" required></label>
         <label class="ui-check"><input type="checkbox" name="terms" value="1" required><span>{{ t('pp.book.terms') }}</span></label>
         <p class="pp-bk-note"><a href="/terms/booking?lang={{ lang }}" target="_blank" rel="noopener">{{ t('pp.book.terms_read') }}</a></p>
         {% set modes = page.pay_modes or ['stripe'] %}
