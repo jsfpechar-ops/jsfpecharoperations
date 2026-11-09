@@ -14,8 +14,7 @@ flowchart LR
   Worker[ubyhost worker<br/>UBYHOST_ROLE=worker<br/>python -m app.worker<br/>APScheduler]
   Web --- DB[(SQLite ubyhost.db<br/>WAL, DATA_DIR volume)]
   Worker --- DB
-  Litestream[litestream<br/>replicate] -->|reads WAL| DB
-  Litestream -->|S3| S3[(S3 bucket)]
+  WalG[walg<br/>ship WAL files] -->|S3| S3[(S3 bucket)]
   Worker -->|SOAP/NTLM HTTPS| UbyPort[(UbyPort ubyport.pcr.cz<br/>ws_uby / ws_uby_test)]
   Worker -->|iCal HTTPS| Feeds[(Airbnb / Booking / other feed URLs)]
   Web -->|SMTP-less SES API via boto3| SES[(Amazon SES eu-central-1)]
@@ -28,7 +27,7 @@ flowchart LR
 
 Sources: services and roles — `deploy/lightsail/docker-compose.yml` (`ubyhost`
 line ~14–24 `UBYHOST_ROLE: web`; `worker` line ~60–70 `UBYHOST_ROLE: worker`,
-`command: python -m app.worker`; `litestream` ~line 108; `caddy` ~line 168);
+`command: python -m app.worker`; `walg` (profile `walg`); `caddy` ~line 168);
 UbyPort URLs — `App/app/config.py:135-136`; SES region — `App/app/config.py:315`;
 TTLock — `App/app/config.py:169`; Stripe — `App/app/stripe_connect.py` (imports
 `stripe`); AI — `App/app/ai.py:129-131`, `App/app/config.py:352-355`.
@@ -47,7 +46,7 @@ object-storage upload path in application code (`boto3` is used only in
 | web | `uvicorn app.main:app --workers $UBYHOST_WEB_WORKERS --no-access-log` | `UBYHOST_ROLE=web` | No | `Dockerfile` CMD; `App/app/main.py:158-159` |
 | worker | `python -m app.worker` | `UBYHOST_ROLE=worker` | Yes (takes `DATA_DIR/scheduler.lock`) | `App/app/worker.py:1-30`, `:77` |
 | all (local dev) | `App/run.sh` | `UBYHOST_ROLE=all` | Yes, in the web process | `App/run.sh:31-40`, `App/app/main.py:156-157` |
-| litestream | `replicate -config /etc/litestream.yml` | — | n/a | `deploy/lightsail/docker-compose.yml` |
+| walg (profile `walg`) | uploads archived WAL files to S3 (WAL-G) | — | n/a | `deploy/lightsail/docker-compose.yml` |
 
 `UBYHOST_WEB_WORKERS` defaults to 2 (`Dockerfile`); the Dockerfile comment
 says 4 on the 8 GB server (`Dockerfile` header comment). `docker-entrypoint.sh`

@@ -91,6 +91,13 @@ def test_s3_upload_copies_only_age_archives(tmp_path: Path):
     assert "--include *.age" in log
 
 
+def test_s3_upload_skips_the_bucket_check(tmp_path: Path):
+    result = _run(tmp_path, has_age=True)
+    assert result.returncode == 0, result.stderr
+    log = (tmp_path / "rclone.log").read_text(encoding="utf-8")
+    assert "--s3-no-check-bucket" in log
+
+
 def test_s3_upload_refuses_a_plaintext_snapshot(tmp_path: Path):
     result = _run(tmp_path, has_age=False)
     assert result.returncode != 0
