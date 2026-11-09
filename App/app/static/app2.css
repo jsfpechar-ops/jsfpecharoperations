@@ -3123,7 +3123,7 @@ body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step {
 }
 body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-step.is-current,
 body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step.is-current {
-  background: var(--accs); border: 0; border-radius: 12px; padding: 12px; margin-block: 4px;
+  background: var(--accs); border: 1px solid var(--accs); border-radius: 12px; padding: 12px; margin-block: 4px;
 }
 body.v2 .onboarding-welcome:not([data-layout=v2]) .onboarding-step-index,
 body.v2 .onboarding-welcome[data-layout=v2] .onboarding-step-index {
