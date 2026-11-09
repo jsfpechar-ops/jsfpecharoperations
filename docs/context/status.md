@@ -5,7 +5,10 @@ Updated: 2026-11-09.
 ## Production
 - Magic-link 1–2 done; checked; access log off.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
-- PostgreSQL since 2026-10-31; SQLite at `/data/ubyhost.db`. Billing ON. Go off until `COMPOSE_PROFILES` + `UBYHOST_GO_JOB_KINDS`.
+- Postgres cutover done (since 2026-10-31). Billing ON. SQLite file remains; rollback only through the existing pg-cutover scripts.
+- Go is up (`COMPOSE_PROFILES` includes go). Go jobs: billing_snapshot, stripe_sweep, ical, push, submit. Python worker: mail, door_codes, posthog, meta_capi, deadlines.
+- HTTP on Go via `UBYHOST_GO_PATHS` (6a–8). Rollback: remove those paths, `./scripts/caddy-validate.sh`, `docker compose up -d caddy`. Cutover began at `9a643d9d` (#785). No further Go route or job cutover until that code is on main. Server HEAD after later deploys was not read from this chat.
+- AI on: havel, leon, guide_translate. Stripe mode test. Guest QR: Python and Go both 404 when the owner has no IBAN; no live bank-account QR checked yet.
 
 ## Now
 - 11-09: 1051 stay fees compact month filter (no Apply, default = current month), draft PR on `claude/stayfees-month-filter`; cache `20261109-1051a`.
