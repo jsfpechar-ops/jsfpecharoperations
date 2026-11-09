@@ -224,7 +224,7 @@ def test_the_operators_page_is_named_and_explained(host):
         "Who runs the accommodation: a company or a self-employed person."
         in page.text
     )
-    assert "No operators yet. Add the first one here." in page.text
+    assert "No operators yet. Add the first one here." not in page.text  # 1031: duplicate empty card removed
     assert "Add an operator" in _text(page.text)
     assert "Legal entities" not in page.text
 
@@ -252,10 +252,9 @@ def test_the_onboarding_banner_asks_for_an_operator(host):
     page = host.get("/?lang=en")
     assert page.status_code == 200, page.text
     assert "Operator" in page.text
-    assert (
-        "Who runs the accommodation: a company or a self-employed person."
-        in page.text
-    )
+    # 1031: the welcome card shows the step once; the explanation lives in its Learn details on /onboarding.
+    onboarding_page = host.get("/onboarding?lang=en").text
+    assert "Who runs the accommodation: a company or a self-employed person." in onboarding_page
     assert "Add operator" in page.text
     assert "Legal entity" not in page.text
 
@@ -263,7 +262,8 @@ def test_the_onboarding_banner_asks_for_an_operator(host):
 def test_the_onboarding_banner_asks_for_an_operator_in_czech(host):
     page = host.get("/?lang=cs")
     assert "Provozovatel" in page.text
-    assert "Kdo ubytování provozuje: firma nebo podnikající fyzická osoba." in page.text
+    onboarding_page = host.get("/onboarding?lang=cs").text
+    assert "Kdo ubytování provozuje: firma nebo podnikající fyzická osoba." in onboarding_page
     assert "Přidat provozovatele" in page.text
 
 

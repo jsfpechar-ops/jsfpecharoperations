@@ -56,8 +56,8 @@ def test_onboarding_no_longer_counts_wizard_steps():
     assert progress["wizard_step"] == "address"
     assert progress["wizard_total_steps"] == len(onboarding.WIZARD_STEPS)
     assert progress["setup_url"] == f"/apartments/{apartment_id}?view=settings&section=property#address"
-    assert host_i18n.translate("en", "setup.banner.line", step=1, total=5) == "Setup 1 of 5 · Continue"
-    assert host_i18n.translate("cs", "setup.banner.line", step=1, total=5) == "Nastavení 1 z 5 · Pokračovat"
+    assert host_i18n.translate("en", "setup.banner.line") == "Continue setup"
+    assert host_i18n.translate("cs", "setup.banner.line") == "Pokračovat v nastavení"
 
 
 def test_wizard_step_progress_and_banner_target():
