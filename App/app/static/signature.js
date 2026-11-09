@@ -754,6 +754,32 @@ function initSignature() {
       if (nav.childNodes.length) step.appendChild(nav);
     });
 
+    // Enter in a field used to press the first submit button in the page, which
+    // was a language button. Now it presses the button of the step on screen:
+    // Continue (which checks that step first) or, on the last step, Save. A
+    // plain submit from an earlier step could not work anyway, because the
+    // later steps' required fields are hidden and a browser cannot show a
+    // validation bubble on them.
+    form.addEventListener("keydown", function (event) {
+      if (event.key !== "Enter" || event.defaultPrevented || event.isComposing) return;
+      var target = event.target;
+      if (!target || target.tagName !== "INPUT") return;
+      if (/^(button|submit|reset|file|image)$/.test(target.type)) return;
+      var step = target.closest("[data-guest-step]");
+      if (!step) return;
+      event.preventDefault();
+      var list = stepsFor();
+      var at = list.indexOf(step);
+      if (at !== -1 && at < list.length - 1) {
+        var next = step.querySelector(".g-wizard-nav .g-btn:not(.secondary)");
+        if (next) next.click();
+      } else {
+        var save = form.querySelector("[data-guest-save]");
+        if (save && form.requestSubmit) form.requestSubmit(save);
+        else if (save) save.click();
+      }
+    });
+
     // The nationality field lives on the first step, so a Czech guest is on it
     // when the passport step drops out: re-count the bar under their feet.
     if (nationality) {
@@ -799,6 +825,29 @@ function initSignature() {
         if (step) step.value = form.getAttribute("data-active-step") || "0";
       });
     });
+  }
+
+  /* A save sent with no connection used to drop the guest on the browser's own
+     error page, with the form gone. While the browser reports it is offline
+     the submit is held back instead: nothing is sent, the form stays exactly
+     as it is, and a plain sentence above Save says to try again once back
+     online. The submit itself stays an ordinary form post (not fetch), so a
+     save that does go out behaves as it always has: no second request, no
+     page rewriting. A connection that drops while a request is already in
+     flight is still the browser's own page. */
+  function initSaveRetry() {
+    var form = document.getElementById("guest-form");
+    var note = document.getElementById("save-net-error");
+    if (!form || !note) return;
+    form.addEventListener("submit", function (event) {
+      if (event.defaultPrevented) return;
+      if (event.submitter && event.submitter.hasAttribute("data-lang-draft")) return;
+      if (navigator.onLine !== false) return;
+      event.preventDefault();
+      note.hidden = false;
+      if (note.scrollIntoView) note.scrollIntoView({ block: "center" });
+    });
+    window.addEventListener("online", function () { note.hidden = true; });
   }
 
   /* The wide check-in layout shows the stay summary and the step list beside
@@ -867,6 +916,7 @@ function initSignature() {
     initPinReturn();
     initGuestWizard();
     initLanguageDraft();
+    initSaveRetry();
     initCheckinRail();
     initErrorSummary();
     initGuestReview();
