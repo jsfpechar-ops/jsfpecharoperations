@@ -96,7 +96,7 @@
   <div class="card cal ov-section">
     <div class="cgrid"><div></div>{% for d in cal_days %}<div class="cd{{ ' today' if loop.first }}">{{ wd[d.weekday()] }} {{ d.day }}{% if loop.first or d.day == 1 %}<small>{{ d.day }}.{{ d.month }}.</small>{% endif %}</div>{% endfor %}</div>
     {% for row in cal_rows %}
-    <div class="cgrid crow"><div class="cn" title="{{ row.name }}">{{ row.name }}</div>{% for bar in row.bars %}<a class="bar {{ bar.css }}" data-c1="{{ bar.col_start }}" data-c2="{{ bar.col_end }}" data-row="{{ bar.row }}" title="{{ bar.title }}"{% if bar.overdue %} data-overdue{% endif %} href="{{ bar.url }}">{{ bar.label }}</a>{% endfor %}</div>
+    <div class="cgrid crow"><div class="cn" title="{{ row.name }}">{{ row.name }}</div>{% for bar in row.bars %}<a class="bar {{ bar.css }}" data-c1="{{ bar.col_start }}" data-c2="{{ bar.col_end }}" data-row="{{ bar.row }}" title="{{ bar.title }}" aria-label="{{ bar.title }}"{% if bar.overdue %} data-overdue{% endif %} href="{{ bar.url }}">{{ source_mark(bar.source) }}<span class="bar-label">{{ bar.label }}</span></a>{% endfor %}</div>
     {% endfor %}
   </div>
   </div>
