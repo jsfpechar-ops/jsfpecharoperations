@@ -388,7 +388,7 @@ def payment_request_qr(request: Request, request_id: int):
     return render(
         request,
         "payments_qr.html",
-        {"nav": "payments", "request": row, "qr_payload": payload, "show_nav": False, "png_url": f"/payments/qr/{row['id']}.png"},
+        {"nav": "payments", "pay_request": row, "qr_payload": payload, "show_nav": False, "png_url": f"/payments/qr/{row['id']}.png"},
     )
 
 
@@ -777,7 +777,7 @@ def guest_qr_page(request: Request, request_id: int, token: str):
         request,
         "payments_qr.html",
         {
-            "request": row,
+            "pay_request": row,
             "qr_payload": payload,
             "show_nav": False,
             "png_url": f"/pay/{request_id}/{token}.png",
