@@ -3101,7 +3101,9 @@ body.v2 .prop-wide-only{display:none}
 }
 
 /* 1030 fix: the phone-only "Settings" eyebrow is stray text beside the section list */
-@media (min-width:768px){body.v2 .prop-phone-only,body.v2 #property-settings-form>h2.sec.prop-phone-only{display:none}}
+@media (min-width:768px){body.v2 .prop-phone-only{display:none}
+  /* the "Settings" h2 stays for screen readers and the heading order (h1, h2, then the section's h3), only out of sight */
+  body.v2 #property-settings-form>h2.sec.prop-phone-only{display:block;position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}}
 
 /* 1030: one slim fix line, wide only */
 body.v2 .prop-fixline{margin:0 0 12px;color:var(--bad);font-size:14px;line-height:1.45}
