@@ -198,7 +198,7 @@ def test_name_over_120_chars_is_refused(apartment, fake_sessions):
     response = TestClient(app).post(f"/p/{_slug(apartment)}/checkout",
                                     data=_form(guest_name="A" * 121))
     assert response.status_code == 200
-    assert "That name is too long" in response.text
+    assert "příliš dlouhé" in response.text
     assert not fake_sessions.created
 
 
