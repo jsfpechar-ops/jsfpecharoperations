@@ -69,3 +69,4 @@ Append-only.
 - 2026-11-07 | [backup] Litestream retired; S3 replica kept | owner | [1021](../tasks/1021-remove-litestream.md)
 - 2026-11-07 | [backup] WAL-G: WAL archive + PITR to S3 | owner | [1022](../tasks/1022-walg-continuous-archiving.md)
 - 2026-11-09 [stay-fee] 1031b: a bare Prague/Brno district name ("Řepy") stays liable; the guest must write the town (owner). Any Unicode dash folds like "-" in the obec key.
+- 2026-11-09 [guest] Owner (Josef): a guest edits or removes the people they added until the stay is filed with UbyPort (guest.submit_state == SENT, incl. filed by hand); after that the page locks and shows "Message host" (mailto/tel of the contact the guest already sees). A complete signed form no longer locks. Restricted records stay read-only. Removal deletes the row and passport scan like the host delete, compare-and-set against SENT and an active filing claim.

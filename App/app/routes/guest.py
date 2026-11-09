@@ -711,6 +711,7 @@ def _unavailable(
             # form screens. Wired off until that feature ships.
             "show_invoice_link": False,
             "host_note": host_note,
+            "offer_message_host": reason in ("already_filed", "form_locked", "not_yours"),
             "privacy_url": _guest_link(token) + "/privacy" + _lang_q(lang) if token else None,
         }
     )
@@ -816,6 +817,7 @@ def _shared(request: Request, token: str, lang: str, apartment=None) -> Dict[str
         "facility_tone": int(apartment["id"]) % 10 if apartment else 0,
         "controller": _controller(apartment) if apartment else {},
         "host": _host_contact(apartment) if apartment else {},
+        "host_message_url": _host_message_url(apartment),
         "mail_enabled": mail.mail_enabled(),
         "notice_version": config.GUEST_NOTICE_VERSION,
         "cookie_inventory": cookie_inventory.COOKIE_INVENTORY,
@@ -840,6 +842,22 @@ def _entity_details(entity_id) -> Dict[str, str]:
 def _host_contact(apartment) -> Dict[str, str]:
     """The property manager / operating entity guests contact about a stay."""
     return _entity_details(apartment["legal_entity_id"] if apartment else None)
+
+
+def _host_message_url(apartment) -> str:
+    """Link for the "Message host" button, from the contact the guest already sees.
+
+    No new request and nothing stored: a mailto: with only the property name as
+    subject, else the host's phone, else "" (the page then points to the contact
+    in the message the guest got the link in).
+    """
+    host = _host_contact(apartment) if apartment else {}
+    if host.get("email"):
+        subject = _display_name(apartment) or ""
+        return "mailto:" + host["email"] + (f"?subject={quote(subject)}" if subject else "")
+    if host.get("phone"):
+        return "tel:" + host["phone"].replace(" ", "")
+    return ""
 
 
 def _controller(apartment) -> Dict[str, str]:
@@ -899,6 +917,8 @@ def _person_row(index: int, guest, owned: set, reservation, lang: str) -> Dict[s
         "complete": complete,
         "locked": reporting.guest_form_locked(guest, reservation),
         "sent": guest["submit_state"] == reporting.SENT,
+        # 2026-11-09 owner decision: an owned person can be removed until filed.
+        "removable": is_mine and guest["submit_state"] != reporting.SENT and not guest["restricted_at"],
     }
     if is_mine:
         doc = guest["doc_number"] or ""
@@ -1242,6 +1262,7 @@ def stay_overview(token: str, reservation_id: int, request: Request):
             "party_error": request.query_params.get("party_error") == "1",
             "claim_email_masked": claim_row["email_masked"] or "",
             "just_saved": request.query_params.get("saved") == "1",
+            "just_removed": request.query_params.get("removed") == "1",
             # "Reported" is a claim about the police, so it may only be made
             # when a form actually went out. ``locked`` is true for any signed,
             # complete form, which made the saved copy unreachable and told a
@@ -1708,6 +1729,103 @@ def guest_form_edit(token: str, reservation_id: int, guest_id: int, request: Req
         ),
         lang,
     )
+
+
+def _removal_guard(request: Request, token: str, reservation_id: int, guest_id: int, lang: str, post: bool):
+    """Shared checks for the remove page and the remove action.
+
+    Returns ``(apartment, token, reservation, guest, early_response)``; a
+    non-None early response is the page to send. Same device-ownership rule as
+    editing: only the device that added the person can remove them.
+    """
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return None, token, None, None, early
+    pin_guard = _require_pin(request, token, lang)
+    if pin_guard:
+        return None, token, None, None, pin_guard
+    reservation = _reservation_for_guest(apartment, reservation_id, request)
+    if not reservation:
+        return None, token, None, None, _unavailable(request, lang, "stay_gone", 404, token)
+    if post:
+        throttle = _throttle_guest_post(request, token, "guest_remove", lang)
+        if throttle:
+            return None, token, None, None, throttle
+    claim_guard = _require_claim_session(request, reservation, token, lang)
+    if claim_guard:
+        return None, token, None, None, _with_lang(claim_guard, lang)
+    if guest_id not in _owned_ids(request):
+        return None, token, None, None, _unavailable(request, lang, "not_yours", 403, token)
+    guest = db.query_one(
+        "SELECT * FROM guest WHERE id = ? AND reservation_id = ? AND archived_at IS NULL",
+        (guest_id, reservation_id),
+    )
+    if not guest:
+        return None, token, None, None, _unavailable(request, lang, "stay_gone", 404, token)
+    if guest["submit_state"] == reporting.SENT:
+        return None, token, None, None, _unavailable(request, lang, "already_filed", 403, token)
+    if guest["restricted_at"]:
+        return None, token, None, None, _unavailable(request, lang, "form_locked", 403, token)
+    return apartment, token, reservation, guest, None
+
+
+@router.get("/l/{token}/{reservation_id}/remove/{guest_id}")
+def guest_remove_confirm(token: str, reservation_id: int, guest_id: int, request: Request):
+    """The confirmation step. A plain page with a POST form, so it needs no script."""
+    lang = _language(request)
+    apartment, token, reservation, guest, early = _removal_guard(
+        request, token, reservation_id, guest_id, lang, post=False
+    )
+    if early:
+        return early
+    context = _shared(request, token, lang, apartment)
+    context.update(
+        {
+            "reservation": reservation,
+            "person_id": guest["id"],
+            "person_name": f"{guest['first_name']} {guest['surname']}".strip(),
+            "back_url": _guest_link(token, reservation_id) + _lang_q(lang),
+        }
+    )
+    return _with_lang(render_guest(request, "guest/remove.html", context), lang)
+
+
+@router.post("/l/{token}/{reservation_id}/remove/{guest_id}")
+async def guest_remove(token: str, reservation_id: int, guest_id: int, request: Request):
+    """Delete a person the guest added, as long as the record is not filed.
+
+    The same delete the host has (``guest_delete``): the row and the passport
+    scan go, and nothing is reported for them. The delete is compare-and-set on
+    the filing state, so a record that was filed, or is being filed right now,
+    after the confirmation page loaded is kept and the guest is told so.
+    """
+    lang = _language(request)
+    apartment, token, reservation, guest, early = _removal_guard(
+        request, token, reservation_id, guest_id, lang, post=True
+    )
+    if early:
+        return early
+    removed = db.execute(
+        "DELETE FROM guest WHERE id = ? AND reservation_id = ? "
+        "AND COALESCE(submit_state, '') != ? AND restricted_at IS NULL "
+        "AND NOT EXISTS (SELECT 1 FROM submission_claim WHERE guest_id = ? AND claimed_at >= ?)",
+        (guest_id, reservation_id, reporting.SENT, guest_id, time.time() - reporting.SUBMISSION_CLAIM_TTL_SECONDS),
+    )
+    if not removed:
+        return _unavailable(request, lang, "already_filed", 403, token)
+    passport_photos.delete_photo(guest_id)
+    db.audit(
+        "guest_removed_by_guest",
+        f"guest={guest_id} reservation={reservation_id}",
+        actor="guest",
+        owner_user_id=apartment["owner_user_id"],
+    )
+    await run_in_threadpool(reporting.submit_stay_if_complete, apartment["id"], reservation_id)
+    response = RedirectResponse(
+        _guest_link(token, reservation_id) + _lang_q(lang, "&removed=1"), status_code=303
+    )
+    _remember_owned(response, [i for i in _owned_ids(request) if i != guest_id])
+    return _with_lang(response, lang)
 
 
 def _locked_stay_dates(reservation, existing):
