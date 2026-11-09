@@ -85,10 +85,10 @@ changes still need the guest browser e2e when templates change.
   behaviour are verified on the same code revision.
 - Assuming a past Doručenka on old rows means new filings work — **verify after
   every change** to SOAP, worker, or automation.
-- Optional infrastructure (e.g. **Litestream off**, shorter backup retention)
+- Optional infrastructure (e.g. **WAL-G archiving off**, shorter backup retention)
   is acceptable for a deploy window; **incorrect or missing UbyPort traffic is not**.
 
-Backups and Litestream protect the database; they do **not** replace correct
+Backups and WAL-G protect the database; they do **not** replace correct
 real-time filing or stored Doručenka PDFs.
 
 ## Verification (owner and CI)
