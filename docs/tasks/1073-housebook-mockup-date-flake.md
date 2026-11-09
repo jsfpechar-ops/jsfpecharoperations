@@ -87,7 +87,7 @@ with
 ```
 Keep the two `@390` lines unchanged.
 
-4. Edit `box_diffs`: replace the five lines quoted in section 2 with:
+4. Edit `box_diffs`: replace the six lines quoted in section 2 with:
 
 ```
         raw = override.get(prop, mock[prop])
@@ -112,11 +112,11 @@ Expected: four lines, each `14 passed` (no `failed`, no `skipped`).
 6. Real date, whole housebook set, and the neighbours that share the helper:
 
 ```
-cd App && PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers .venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py -q -k housebook -rs 2>&1 | tail -5
+cd App && PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers .venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py -q -rs 2>&1 | tail -5
 ```
-Expected: `14 passed`, no `skipped`. The set includes housebook-320 and housebook-390 (style and geometry).
+Expected: `183 passed`, no `skipped` (timeout 600 s). The set includes housebook-320 and housebook-390.
 
-7. Confirm the check is still strict: temporarily change `"38px"` in the small@320 list to `"20px"`, run the step 6 command with `FAKE_DAY=2026-11-10 PYTHONPATH=/tmp/fakeday ... -p fakeday`; expected `1 failed` naming `.stay .in small height at 320 px`. Revert the temporary change (`git diff App/tests/v2_mockup.py` must show `"38px"`).
+7. Confirm the check is still strict: temporarily change `"38px"` in the small@320 list to `"20px"`, run `cd App && FAKE_DAY=2026-11-10 PYTHONPATH=/tmp/fakeday PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers .venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py -p fakeday -q -k housebook --tb=line 2>&1 | grep -E "height|passed|failed" | head -6`; expected `1 failed` naming `.stay .in small height at 320 px`. Revert with `cd App && sed -i 's/"57px", "20px"/"57px", "38px"/' tests/v2_mockup.py` (`git diff App/tests/v2_mockup.py` must show `"38px"`).
 
 ## 5. Do not touch
 
@@ -125,12 +125,12 @@ Expected: `14 passed`, no `skipped`. The set includes housebook-320 and houseboo
 
 ## 6. Commands
 
-Steps 2, 5, 6, 7 above, each as written. Test-map row: v2 pages, `tests/test_0710_v2_mockup_match_browser.py`; CI runs the full file, run only `-k housebook` locally. Then `python3 scripts/context_lint.py | tail -3` from the repo root (expected: ok / no errors).
+Steps 2, 5, 6, 7 above, each as written. Test-map row: v2 pages, `tests/test_0710_v2_mockup_match_browser.py`; CI runs the full file; step 6 runs the whole file locally (about 225 s, owner correction). Then `python3 scripts/context_lint.py | tail -3` from the repo root (expected: ok / no errors).
 
 ## 7. Acceptance
 
 - [ ] Step 5 prints `14 passed` for fake days 2026-11-09, 2026-11-10, 2026-11-20 and 2026-12-01 (0 skipped).
-- [ ] Step 6: housebook-320 and housebook-390 pass on the real date, 0 skipped.
+- [ ] Step 6: whole file 183 passed, 0 skipped, on the real date.
 - [ ] Step 7: a wrong height in the list still fails.
 - [ ] `git diff --stat` shows only `App/tests/v2_mockup.py` (plus the report).
 - [ ] No UI change, so no screenshot is needed (test-only edit).
