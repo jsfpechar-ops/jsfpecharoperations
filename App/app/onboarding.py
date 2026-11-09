@@ -65,9 +65,17 @@ def _bookings_complete(owner_user_id: int, apartment) -> bool:
     return manual > 0
 
 
-def wizard_step(owner_user_id: int) -> str:
-    """First unfinished setup-wizard screen after welcome."""
-    apartment = first_apartment(owner_user_id)
+_LOAD = object()
+
+
+def wizard_step(owner_user_id: int, apartment: Any = _LOAD) -> str:
+    """First unfinished setup-wizard screen after welcome.
+
+    ``progress`` passes the first property it already read (1072); a caller that
+    passes none gets the old read. ``None`` means "this host has no property".
+    """
+    if apartment is _LOAD:
+        apartment = first_apartment(owner_user_id)
     if not apartment:
         return "name"
     if not _address_complete(apartment):
