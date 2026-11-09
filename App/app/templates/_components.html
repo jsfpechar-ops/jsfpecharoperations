@@ -7,7 +7,7 @@
 {% set UI_DEADLINE_KINDS = {'overdue': 'action', 'urgent': 'attention', 'soon': 'attention', 'done': 'done', 'late': 'neutral'} %}
 {#- 0093 help: one contextual "?" tip beside a field label. Place it OUTSIDE the <label> tag.
     id must be unique on the page; text is escaped; guide_href optional ("/guide#anchor"). -#}
-{#- 1052: svg=true draws the Lucide circle-help icon instead of the "?" text glyph (Stay fee card first). -#}
+{#- 1053: svg=true draws the Lucide circle-help icon instead of the "?" text glyph (Stay fee card first). -#}
 {#- A page may also set help_svg = true before an include (the property editor does for the Stay fee card). -#}
 {%- macro help_tip(id, text, guide_href='', label='', svg=false) -%}
 {%- set svg = svg or (help_svg is defined and help_svg) -%}

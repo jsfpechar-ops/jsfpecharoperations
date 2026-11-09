@@ -1,4 +1,4 @@
-"""1052: Stay fee card rows: the rate input and the period select share one top line,
+"""1053: Stay fee card rows: the rate input and the period select share one top line,
 and every help "?" sits tight after its label text (1280 and 768 px); on wide screens the
 whole property editor is one column centred beside the sidebar (1440 and 1800 px)."""
 from __future__ import annotations
@@ -10,7 +10,7 @@ from app import config
 from tests.property_host_fixture import host  # noqa: F401
 from tests.test_property_navigation_browser import _context, base, chromium_launch_kwargs, sync_api  # noqa: F401
 
-SHOTS = os.environ.get("UBYHOST_SHOTS_1052")
+SHOTS = os.environ.get("UBYHOST_SHOTS_1053")
 
 _FACTS = """() => {
   const sec = document.getElementById('sec-fee');

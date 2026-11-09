@@ -13,7 +13,7 @@ body form.list-filter.list-filter--compact .month-step:disabled{color:var(--ink-
 body form.list-filter.list-filter--compact .month-trigger{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);width:auto;min-width:12rem;height:44px;min-height:44px;padding:0 var(--space-5);border:1px solid var(--line);border-radius:var(--radius-pill);background:var(--surface);color:var(--ink);font-size:17px;font-weight:700;white-space:nowrap}
 body form.list-filter.list-filter--compact .month-trigger[hidden]{display:none}
 body form.list-filter.list-filter--compact .month-trigger:hover{background:var(--surface-2)}
-body form.list-filter.list-filter--compact .month-trigger>[aria-hidden]{color:var(--ink-secondary);font-size:13px}
+body form.list-filter.list-filter--compact .month-trigger>.month-trigger-chev{color:var(--ink-secondary)}
 body form.list-filter.list-filter--compact .month-control input[data-month-native]{width:auto;min-width:11rem;height:44px;text-align:center}
 .has-js body form.list-filter.list-filter--compact .list-filter-nojs{display:none}
 body form.list-filter.list-filter--compact .list-filter-nojs{justify-content:center}
@@ -32,3 +32,5 @@ body form.list-filter.list-filter--compact .month-grid{display:grid;grid-templat
 body form.list-filter.list-filter--compact details.list-filter-more{margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
 body form.list-filter.list-filter--compact .list-filter-more-toggle{width:auto;border:0;background:transparent;text-decoration:none}
 body form.list-filter.list-filter--compact .list-filter-more-toggle::after{content:none}
+/* 1052: SVG chevrons from the icon macro (shared month picker; this file loads on both shells) */
+.month-chev,.month-trigger-chev{flex:0 0 auto;display:block}

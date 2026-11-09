@@ -14,6 +14,7 @@
   {% if view.status == value %}{% set status_ns.label = t(label_key) %}{% endif %}
 {% endfor %}
 {% from "_ui_layout.html" import ui_toolbar with context %}
+{% from "_icons.html" import icon with context %}
 {% set list_summary %}
     <span>{{ period_summary }}</span>
     {% if filter_properties or filter_statuses or view.q %}
@@ -35,23 +36,23 @@
          data-current-month="{{ view.month_key or filter_max_month }}" data-min-month="2000-01" data-max-month="{{ filter_max_month }}">
       <label for="filter-month"{% if compact %} class="sr-only"{% endif %}>{{ t(filter_period_label_key) }}</label>
       <div class="month-row">
-        <button class="ui-btn ui-btn-secondary month-step" type="button" data-month-prev hidden {% if view.month_key == '2000-01' %}disabled{% endif %} aria-label="{{ t('host.filter.prev_month') }}">‹</button>
+        <button class="ui-btn ui-btn-secondary month-step" type="button" data-month-prev hidden {% if view.month_key == '2000-01' %}disabled{% endif %} aria-label="{{ t('host.filter.prev_month') }}">{{ icon('chevron-left', 20, 'month-chev') }}</button>
         <div class="month-control{% if not view.month %} is-empty{% endif %}">
           <button class="ui-btn ui-btn-secondary month-trigger" type="button" data-month-trigger hidden aria-expanded="false" aria-haspopup="dialog">
-            <span data-month-caption>{{ period_summary }}</span><span aria-hidden="true">▾</span>
+            <span data-month-caption>{{ period_summary }}</span>{{ icon('chevron-down', 16, 'month-trigger-chev') }}
           </button>
           {% if not view.month %}<span class="month-control-face" data-month-all aria-hidden="true">{{ t('host.filter.all_dates') }}</span>{% endif %}
           <input type="month" id="filter-month" name="month" value="{{ view.month_key }}" min="2000-01" max="{{ filter_max_month }}"
                  {% if not filter_month_optional %}required{% endif %} data-month-native>
         </div>
         <button class="ui-btn ui-btn-secondary month-step" type="button" data-month-next hidden {% if not filter_next_href %}disabled{% endif %}
-                aria-label="{{ t('host.filter.next_month') }}">›</button>
+                aria-label="{{ t('host.filter.next_month') }}">{{ icon('chevron-right', 20, 'month-chev') }}</button>
       </div>
       <div class="month-grid-panel" data-month-grid-panel role="dialog" aria-label="{{ t('host.filter.months') }}" hidden>
         <div class="month-year-row">
-          <button class="ui-btn ui-btn-secondary year-step" type="button" data-year-prev aria-label="{{ t('host.filter.previous_year') }}">‹</button>
+          <button class="ui-btn ui-btn-secondary year-step" type="button" data-year-prev aria-label="{{ t('host.filter.previous_year') }}">{{ icon('chevron-left', 18, 'month-chev') }}</button>
           <strong data-month-year>{{ month_grid_year }}</strong>
-          <button class="ui-btn ui-btn-secondary year-step" type="button" data-year-next aria-label="{{ t('host.filter.next_year') }}">›</button>
+          <button class="ui-btn ui-btn-secondary year-step" type="button" data-year-next aria-label="{{ t('host.filter.next_year') }}">{{ icon('chevron-right', 18, 'month-chev') }}</button>
         </div>
         <div class="month-grid" data-month-grid role="group" aria-label="{{ t('host.filter.months') }}">
           {% for month_no in range(1, 13) %}

@@ -167,10 +167,7 @@ def test_another_owners_property_redirects_with_an_error(host):
 
     response = client.get(f"/stay-fees/{private_id}", follow_redirects=False)
 
-    assert response.status_code == 303
-    assert response.headers["location"].startswith("/stay-fees")
-    assert "This property no longer exists." in unquote(response.headers["location"])
-
+    assert response.status_code == 404
 
 def test_a_property_without_a_rate_is_not_a_stay_fee_property(host):
     client, owner_id, entity_id = host

@@ -42,3 +42,20 @@ def test_a_405_page_keeps_the_allow_header():
     page = client.put("/login", headers={"accept": "text/html"})
     assert page.status_code == 405
     assert "allow" in {key.lower() for key in page.headers}
+
+
+def test_a_bad_id_in_a_page_url_is_the_404_page_not_json():
+    db.init_db()
+    client = TestClient(app)
+    page = client.get("/apartments/abc?lang=en", headers={"accept": "text/html"})
+    assert page.status_code == 404
+    assert "text/html" in page.headers["content-type"]
+    assert "Page not found" in page.text or "Stránka nenalezena" in page.text
+    assert "int_parsing" not in page.text
+
+
+def test_a_bad_id_for_scripts_keeps_the_422_json():
+    db.init_db()
+    api = TestClient(app).get("/apartments/abc")
+    assert api.status_code == 422
+    assert api.headers["content-type"].startswith("application/json")

@@ -576,6 +576,9 @@ body.v2 .month-control input[data-month-native]{width:100%;min-width:0;height:va
 .has-js body.v2 input[data-month-native]{position:absolute;width:1px;height:1px;min-width:0;opacity:0;pointer-events:none}
 .has-js body.v2 .month-control-face{display:none}
 body.v2 .month-trigger{width:100%}
+/* 1052: SVG chevrons (icon macro) replace the text glyphs in the shared month picker */
+body.v2 .month-trigger{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2)}
+body.v2 .month-step,body.v2 .year-step{display:inline-flex;align-items:center;justify-content:center}
 /* 0527: 44px day and date targets on phone; the popover stays inside a 360 px viewport */
 @media (max-width:1023px){
   body.v2 .range-day{min-width:44px;min-height:44px}
@@ -3360,7 +3363,7 @@ body.v2 .security-prompt-footnote { margin: 4px 0 0; text-align: center; font-si
   body.v2 .prop-layout.is-tabbed details.prop-sec[open]::details-content{block-size:auto;overflow:visible}
 }
 
-/* 1052: Stay fee card rows. One grid for the four steps and the signature; even gaps between steps; labels of a row share one
+/* 1053: Stay fee card rows. One grid for the four steps and the signature; even gaps between steps; labels of a row share one
    label line and their inputs one input line (subgrid); one "?" rule (8 px after the label text, centred on it) at every width. */
 body.v2 #stay-fee-settings .fee-grid{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr);row-gap:var(--space-6);min-width:0}
 body.v2 #stay-fee-settings .fee-grid>.fee-setup-section{margin:0;padding:0;border:0;min-width:0}
@@ -3405,7 +3408,7 @@ body.v2 #stay-fee-settings details.fee-more[open]>summary{margin-bottom:var(--sp
   body.v2 #stay-fee-settings .fee-grid:has(>#stay-fee-guest-pay)>#stay-fee-guest-pay{grid-column:2;grid-row:1/5}
   body.v2 #stay-fee-settings .fee-grid:has(>#stay-fee-guest-pay)>fieldset.signature-block{grid-row:5;margin-top:var(--space-8)}
 }
-/* 1052: on wide screens the whole property editor (header row, pills, notices, section card) is ONE column centred beside the
+/* 1053: on wide screens the whole property editor (header row, pills, notices, section card) is ONE column centred beside the
    sidebar: at most the lane width, and 64 px clear on each side so the sticky Save never meets the fixed help bubble. */
 @media (min-width:1024px){
   body.v2 .ui-page[data-body-kind="detail"]:has(#property-settings-form)>.ui-body-detail{max-width:min(var(--lane),calc(100% - 128px));margin-left:auto;margin-right:auto;box-sizing:border-box}
