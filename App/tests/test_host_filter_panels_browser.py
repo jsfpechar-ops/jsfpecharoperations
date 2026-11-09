@@ -366,15 +366,18 @@ def test_filter_draft_calendar_and_month_grid_commit_once(host, base):
         page.locator("[data-month-trigger]").click()
         _capture(page, "invoices-en-desktop-month-grid")
 
+        # 1051, owner decision 2026-11-09: stay fees use the compact month control (no Filters
+        # toggle, no summary line, no Apply); the month grid opens straight from the trigger.
         page.goto(base + "/stay-fees?lang=en")
-        page.locator("[data-filter-toggle]").click()
+        assert page.locator("[data-filter-toggle]").count() == 0
+        assert page.locator("form.list-filter--compact").is_visible()
         assert page.locator("#filter-month").get_attribute("required") is not None
         page.locator("[data-month-trigger]").click()
         assert page.locator("[data-month-all-choice]").count() == 0
-        assert page.locator("[data-filter-summary]").inner_text().strip()
+        assert page.locator("[data-filter-summary]").count() == 0
         _capture(page, "stay-fees-en-desktop-required-month-grid")
         page.goto(base + f"/stay-fees/{host['apartments'][0]}?month=2026-09&lang=en")
-        page.locator("[data-filter-toggle]").click()
+        assert page.locator("[data-filter-toggle]").count() == 0
         assert page.locator("#filter-month").get_attribute("required") is not None
         page.locator("[data-month-trigger]").click()
         _capture(page, "stay-fees-detail-en-desktop-month-grid")
@@ -382,7 +385,9 @@ def test_filter_draft_calendar_and_month_grid_commit_once(host, base):
 
 
 def test_filter_geometry_and_popovers_stay_inside_the_viewport_in_english_and_czech(host, base):
-    routes = ("/reservations", "/invoices", "/stay-fees", "/housebook")
+    # 1051, owner decision 2026-11-09: /stay-fees has no filter toolbar any more (compact month
+    # control); its geometry and popover fit are covered by test_stay_fee_month_filter_1051_browser.py.
+    routes = ("/reservations", "/invoices", "/housebook")
     widths = (360, 390, 471, 760, 850, 1280)
     with sync_api.sync_playwright() as playwright:
         browser, _context, page = _browser_context(playwright, host, base, width=1280)
@@ -486,9 +491,8 @@ def test_filter_geometry_and_popovers_stay_inside_the_viewport_in_english_and_cz
             for lang in ("en", "cs"):
                 page.goto(base + f"/stay-fees/{host['apartments'][0]}?month=2026-10&lang={lang}")
                 _capture(page, f"stay-fee-detail-{lang}-{width}-collapsed")
-                page.locator("[data-filter-toggle]").click()
-                settle_motion(page)  # 0401: the panel fades in before the month grid measures its room
-                _capture(page, f"stay-fee-detail-{lang}-{width}-expanded")
+                # 1051, owner decision 2026-11-09: no Filters toggle; the compact month control is always shown.
+                assert page.locator("[data-filter-toggle]").count() == 0
                 assert page.locator("#filter-month").get_attribute("required") is not None
                 page.locator("[data-month-trigger]").click()
                 bounds = page.locator("[data-month-grid-panel]").bounding_box()

@@ -7,13 +7,13 @@ Master version: 2.0.0. Adds only. Calculations and legal data belong to the fee 
 - primary action: none (the period selector is the toolbar; set-up happens per property)
 - secondary actions: none
 - tabs: none
-- toolbar: search = none; chips = none; filters = month select and year select inline on desktop, sheet on phone; actions = none
+- toolbar (1051): one centred compact month control under the header (`‹ November 2026 ▾ ›`, `_list_filter.html` with `filter_compact`); the trigger opens the 3x4 month grid; any pick navigates at once, no Apply with JS (no-JS keeps the native month input and a small submit). Default = current month. Property and status selects sit in a quiet "Filters" disclosure. Fee detail uses the same control.
 - columns: Property (`property_dot`); Period; Liable nights (right); Exempt nights (right); Total (right, `Kč`); Status (badge); menu
 - when every property is unset the table shrinks to Property, Status, actions
 - phone card: line 1 property + badge; line 2 period; line 3 liable, exempt, total
 - badges: `action` = "Report not ready" with the blocker named in the detail; `attention` = period open, nights still changing; `done` = "Finalised" snapshot; `neutral` = "Not set up"
 - row menu: Open, Download PDF, Download CSV, Set up fee (-> property settings)
-- pay steps (0203): above the table, one `ui-section` per set-up property with an `ol` of three steps (confirm figures, Download PDF, QR Platba). Before the period is saved, steps 2 and 3 show a dashed `fee-step-locked` placeholder ("appears after step 1"). Step buttons are secondary (the filter Apply is the page's primary). No paid button.
+- pay steps (0203): above the table, one `ui-section` per set-up property with an `ol` of three steps (confirm figures, Download PDF, QR Platba). Before the period is saved, steps 2 and 3 show a dashed `fee-step-locked` placeholder ("appears after step 1"). Step buttons are secondary (the list has no primary; the filter has no Apply since 1051). No paid button.
 
 ## Fee detail
 - body_kind: `detail`; title: property name and period; back link: `stay_fees.title`
