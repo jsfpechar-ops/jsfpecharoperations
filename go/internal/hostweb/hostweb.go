@@ -104,6 +104,9 @@ func Back(w http.ResponseWriter, r *http.Request, path string, msg, err Flash) {
 	if err.Text != "" {
 		query = append(query, "err="+pyQuote(err.Text))
 	}
+	if err.Fix != "" {
+		query = append(query, "fix="+pyQuote(err.Fix))
+	}
 	if len(query) == 0 {
 		http.Redirect(w, r, path, http.StatusSeeOther)
 		return
