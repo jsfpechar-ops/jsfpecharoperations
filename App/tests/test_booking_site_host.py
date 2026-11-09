@@ -130,3 +130,10 @@ def test_phone_more_menu_links_booking_sites():
     client, _, _ = _host("A")
     html = client.get("/?lang=en").text
     assert 'class="ui-menu-item" href="/booking-sites"' in html
+
+
+def test_publish_needs_photo_and_description():
+    client, _, ids = _host("PUB")
+    response = client.post(f"/apartments/{ids[0]}/booking-site", data={"publish": "1"},
+                           follow_redirects=True)
+    assert "Add at least one photo and a description" in response.text
