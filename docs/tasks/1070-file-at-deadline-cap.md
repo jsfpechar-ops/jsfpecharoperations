@@ -1,6 +1,6 @@
 # 1070: File registered guests at the deadline cap
 
-Status: todo
+Status: review
 Depends on: owner yes to owner question 3 in docs/tasks/1069-report.md (given 2026-11-09; decision line: step 0) | Base commit: 0d851ca4ae25776e1e4ddcf3b2fa4b4e25f126da | Branch: task/1070-file-at-deadline-cap
 Executor: Fable 5.2, Tier A (filing), under the owner override in [workflow](../context/workflow.md#roles-and-models) ("Override, speed-and-ease and group plans only", owner 2026-11-09). The token and tool-call caps there are Haiku only and do not apply here; command output and file reads stay at 150 lines or fewer. Commit after each step that changes a file (steps 3, 4 and 8).
 Review: a fresh Fable reviews this brief before it runs, and the full diff afterwards.
