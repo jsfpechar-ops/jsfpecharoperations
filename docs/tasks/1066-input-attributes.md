@@ -1,6 +1,6 @@
 # 1066: Input attributes (keyboard, autofill, capitals, examples) and help-dot tap size
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 0d851ca4 | Branch: task/1066-input-attributes
 Executor: Sonnet 5.5 at medium effort (owner override; the template says Haiku) | Fits one session: 30 tool calls, 60k tokens
 
