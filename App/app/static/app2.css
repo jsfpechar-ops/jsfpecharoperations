@@ -2322,8 +2322,6 @@ body.v2 .props-card thead,body.v2 .props-card thead th{background:transparent}
 body.v2 .ui-section-h{flex-wrap:wrap;gap:6px 12px}
 body.v2 dl.ui-facts>div{flex-wrap:wrap}
 body.v2 dl.ui-facts>div>dt{min-width:min(100%,9rem)}
-body.v2 .bsite-bookings dt,body.v2 .bsite-bookings dd{min-width:0;overflow-wrap:anywhere}
-body.v2 .bsite-bookings>div{max-width:100%}
 @media (max-width:359px){body.v2 .stay-metrics,body.v2 .detail-hero,body.v2 .report-metrics{grid-template-columns:1fr}}
 @media (min-width:1024px){body.v2 .stays-desk td.col-name{width:18%;max-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
 /* 0896: notification bubbles (old style back): X sits in the top-right corner, text never runs under it, bubbles never overlap. */
