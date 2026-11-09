@@ -1,6 +1,6 @@
 # 1068a: Errors that link to the fix, and no Bank QR without a bank account (Python)
 
-Status: blocked
+Status: blocked at step 12, continued in 1068a-cont-1
 Depends on: none (1066 and 1067 go first, see §2) | Base commit: origin/main at brief time | Branch: `claude/1068-errors-link-fix` (same branch as 1068b; 1068a goes first)
 Executor: Opus (owner override) | Fits one session: 12 steps. Queue item 1.4, Tier B. Plan: docs/plans/speed-and-ease.md section 4.5 and Q8, Q9.
 
@@ -228,7 +228,7 @@ As in the steps. Never the full suite.
 
 ## 7. Acceptance
 
-- [ ] `grep -rn 'fix="' app/routes` shows `bank` x3, `stripe` x3, `lock_guide` x2.
+- [ ] `grep -rn 'fix="' app/routes` shows `bank` x2 (create, preview), `stripe` x3, `lock_guide` x2. The invoice link is a template `href`, not a `fix=`.
 - [ ] POST `/payments/requests/new` rail `qr` with no bank account creates no row and redirects with `fix=bank`.
 - [ ] `/payments/new` with no account: Bank QR radio disabled, one sentence plus one "Add bank account (1 min)" button, nothing else added.
 - [ ] Host and guest QR PNG with no account: 404 `text/plain`, body `NO_ACCOUNT_BODY`; guest page 200 with `pay_no_account` in en, cs, de, es, fr, uk.
