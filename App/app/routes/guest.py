@@ -624,7 +624,27 @@ def _reservation_for_guest(apartment, reservation_id: int, request: Optional[Req
         return reservation
     if request and _device_holds_claim(request, reservation_id, row):
         return reservation
+    if request and _device_saved_guest_in(request, reservation_id):
+        # Finding guest-form-b-05: with mail off there is no claim cookie, so a
+        # finished stay outside the lead window answered 404 right after the
+        # last person was saved. The device that saved a person here keeps the
+        # stay page (the signed owned-guest cookie), so it sees the confirmation.
+        return reservation
     return None
+
+
+def _device_saved_guest_in(request: Request, reservation_id: int) -> bool:
+    """True when this device saved a person into this very stay."""
+    owned = _owned_ids(request)
+    if not owned:
+        return False
+    marks = ",".join("?" for _ in owned)
+    return bool(
+        db.query_one(
+            f"SELECT 1 AS x FROM guest WHERE reservation_id = ? AND id IN ({marks})",
+            (reservation_id, *owned),
+        )
+    )
 
 
 def _claimable_reservation(apartment, reservation_id: int):
@@ -664,6 +684,7 @@ def _unavailable(
     status_code: int = 404,
     token: Optional[str] = None,
     host_note: Optional[str] = None,
+    reservation_id: Optional[int] = None,
 ):
     """The one page a guest lands on when there is nothing to fill in.
 
@@ -711,6 +732,13 @@ def _unavailable(
             # form screens. Wired off until that feature ships.
             "show_invoice_link": False,
             "host_note": host_note,
+            # A locked or wrong-device form is a dead end unless the page says
+            # where to go next: back to the stay, and to the host card below.
+            "stay_url": (
+                _guest_link(token, reservation_id) + _lang_q(lang)
+                if token and reservation_id and reason in _NO_RESTART_REASONS
+                else None
+            ),
             "offer_message_host": reason in ("already_filed", "form_locked", "not_yours"),
             "privacy_url": _guest_link(token) + "/privacy" + _lang_q(lang) if token else None,
         }
@@ -936,6 +964,55 @@ def _person_row(index: int, guest, owned: set, reservation, lang: str) -> Dict[s
             ),
         }
     return row
+
+
+def _doc_key(value) -> str:
+    text = re.sub(r"[^A-Z0-9]", "", (value or "").upper())
+    return "" if text in ("", validation.INPASS) else text
+
+
+def _person_key(guest) -> str:
+    parts = [
+        " ".join((guest["first_name"] or "").upper().split()),
+        " ".join((guest["surname"] or "").upper().split()),
+        (guest["birth_date"] or "").strip(),
+    ]
+    return "|".join(parts) if all(parts) else ""
+
+
+def _duplicate_warnings(guests, owned: set, translate) -> List[Dict[str, str]]:
+    """Soft warnings for this device's people that match someone else in the stay.
+
+    Same document number, or same name and birth date (finding guest-form-b-01,
+    -02). It only says so: nothing is rejected or changed, a child can share a
+    parent's number, and the other person's details are never shown. Only the
+    people this device saved get a line, so a guest learns nothing about a
+    stranger's entry beyond "someone has the same number".
+    """
+    docs: Dict[str, List[int]] = {}
+    people: Dict[str, List[int]] = {}
+    for guest in guests:
+        if _doc_key(guest["doc_number"]):
+            docs.setdefault(_doc_key(guest["doc_number"]), []).append(guest["id"])
+        if _person_key(guest):
+            people.setdefault(_person_key(guest), []).append(guest["id"])
+    out: List[Dict[str, str]] = []
+    for guest in guests:
+        if guest["id"] not in owned:
+            continue
+        what = []
+        if len(docs.get(_doc_key(guest["doc_number"]), [])) > 1:
+            what.append(translate("dup_what_doc"))
+        if len(people.get(_person_key(guest), [])) > 1:
+            what.append(translate("dup_what_person"))
+        if what:
+            out.append(
+                {
+                    "name": _guest_display_name(guest["first_name"], guest["surname"]),
+                    "what": ", ".join(what),
+                }
+            )
+    return out
 
 
 def _form_back_url(token: str, apartment, reservation_id: int, lang: str, editing: bool) -> Optional[str]:
@@ -1261,6 +1338,9 @@ def stay_overview(token: str, reservation_id: int, request: Request):
             "can_pick_other": _can_pick_other_stays(apartment),
             "party_error": request.query_params.get("party_error") == "1",
             "claim_email_masked": claim_row["email_masked"] or "",
+            "dup_warnings": _duplicate_warnings(
+                progress["guests"], owned, i18n.translator(lang)
+            ),
             "just_saved": request.query_params.get("saved") == "1",
             "just_removed": request.query_params.get("removed") == "1",
             # "Reported" is a claim about the police, so it may only be made
@@ -1667,24 +1747,21 @@ def guest_form_new(token: str, reservation_id: int, request: Request):
             lang,
         )
     prefill, copied_from = _residence_prefill(request, reservation)
-    return _with_lang(
-        render_guest(
-            request,
-            "guest/form.html",
-            _form_context(
-                request,
-                apartment,
-                reservation,
-                None,
-                lang,
-                values=prefill,
-                residence_copied_from=copied_from,
-                token=token,
-                back_url=_form_back_url(token, apartment, reservation_id, lang, editing=False),
-            ),
-        ),
+    new_context = _form_context(
+        request,
+        apartment,
+        reservation,
+        None,
         lang,
+        values=prefill,
+        residence_copied_from=copied_from,
+        token=token,
+        back_url=_form_back_url(token, apartment, reservation_id, lang, editing=False),
     )
+    new_context["dup_warnings"] = _duplicate_warnings(
+        progress["guests"], set(_owned_ids(request)), i18n.translator(lang)
+    )
+    return _with_lang(render_guest(request, "guest/form.html", new_context), lang)
 
 
 @router.get("/l/{token}/{reservation_id}/edit/{guest_id}")
@@ -1703,16 +1780,16 @@ def guest_form_edit(token: str, reservation_id: int, guest_id: int, request: Req
     if claim_guard:
         return _with_lang(claim_guard, lang)
     if guest_id not in _owned_ids(request):
-        return _unavailable(request, lang, "not_yours", 403, token)
+        return _unavailable(request, lang, "not_yours", 403, token, reservation_id=reservation_id)
     guest = db.query_one(
         "SELECT * FROM guest WHERE id = ? AND reservation_id = ?", (guest_id, reservation_id)
     )
     if not guest:
         return _unavailable(request, lang, "stay_gone", 404, token)
     if guest["submit_state"] == reporting.SENT:
-        return _unavailable(request, lang, "already_filed", 403, token)
+        return _unavailable(request, lang, "already_filed", 403, token, reservation_id=reservation_id)
     if reporting.guest_form_locked(guest, reservation):
-        return _unavailable(request, lang, "form_locked", 403, token)
+        return _unavailable(request, lang, "form_locked", 403, token, reservation_id=reservation_id)
     return _with_lang(
         render_guest(
             request,
@@ -1873,9 +1950,9 @@ async def guest_form_relang(token: str, reservation_id: int, request: Request):
         )
     if existing:
         if existing["submit_state"] == reporting.SENT:
-            return _unavailable(request, lang, "already_filed", 403, token)
+            return _unavailable(request, lang, "already_filed", 403, token, reservation_id=reservation_id)
         if existing["restricted_at"] or reporting.guest_form_locked(existing, reservation):
-            return _unavailable(request, lang, "form_locked", 403, token)
+            return _unavailable(request, lang, "form_locked", 403, token, reservation_id=reservation_id)
 
     raw = _guest_form_raw(form, apartment)
     values = validation.normalise_guest(raw, clamp=False)
@@ -1946,7 +2023,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             "SELECT * FROM guest WHERE id = ? AND reservation_id = ?", (guest_id, reservation_id)
         )
         if existing and existing["submit_state"] == reporting.SENT:
-            return _unavailable(request, lang, "already_filed", 403, token)
+            return _unavailable(request, lang, "already_filed", 403, token, reservation_id=reservation_id)
         if existing and existing["restricted_at"]:
             # BE-9: a restricted record is read-only until the host lifts it.
             return _with_lang(
@@ -1956,7 +2033,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
                 lang,
             )
         if existing and reporting.guest_form_locked(existing, reservation):
-            return _unavailable(request, lang, "form_locked", 403, token)
+            return _unavailable(request, lang, "form_locked", 403, token, reservation_id=reservation_id)
 
     child_in_passport = bool(form.get("child_in_passport"))
     # One extractor for the host entry form and this one: the fields are the
@@ -2129,7 +2206,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             ),
             extra_params=(existing["id"], time.time() - reporting.SUBMISSION_CLAIM_TTL_SECONDS),
         ):
-            return _unavailable(request, lang, "already_filed", 403, token)
+            return _unavailable(request, lang, "already_filed", 403, token, reservation_id=reservation_id)
         saved_id = existing["id"]
     else:
         # Two phones can each open /new while one slot is free. /new checks
