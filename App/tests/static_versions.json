@@ -84,16 +84,16 @@
     "v": "20261101-0495"
   },
   "guest-enhancements.js": {
-    "sha256": "3a916b6481143037c7df5b9bb0bd1d125d29d7a95754d73a5d9f28d2744ec7ee",
-    "v": "20261003a"
+    "sha256": "1b46b16bfd8d843c97d53b4000b61af8ce8699dd630a2cead916e0d26cbfd1ad",
+    "v": "20261109-1063a"
   },
   "guest-leon.js": {
     "sha256": "21852bc6e10f79fbe7db61806fdb9ce17ca5bf604ca3f383fa0cce1fe3a1c0cf",
     "v": "20261025-0393b"
   },
   "guest.css": {
-    "sha256": "573fa4b10af772e86b827cf607db0965585578ea5e2700bb24f33e62f00a4011",
-    "v": "20261109-1052b"
+    "sha256": "afc2330f7b0f198405eb86d3fcef026d71f08664750c87405b142dc789bdfdc2",
+    "v": "20261109-1063a"
   },
   "guide.js": {
     "sha256": "7bc163abd236d8032c1f7a094aadf4993774920b24b4a0817768dd27fa0cefab",
@@ -124,8 +124,8 @@
     "v": "20261109-bsite-wrap-h2"
   },
   "landing.css": {
-    "sha256": "a9218c2d33c3d07d955b0c630d194ef81801834baaed1cb3615387222ce50ba5",
-    "v": "20261102-0814"
+    "sha256": "685f758bdce94c6412c12ac893e27728df7dbde2aebb9b7f9aec38deffa9716b",
+    "v": "20261109-1063a"
   },
   "landing.js": {
     "sha256": "0e8f2e973a4c2797dfe018fd1ce477669641ee7baa1fdd06c263702c01d972bf",
