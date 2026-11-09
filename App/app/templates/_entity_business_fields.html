@@ -77,7 +77,7 @@
   {%- set typed = (entity.signature_name or '') if entity else '' -%}
   <fieldset class="signature-block" data-host-signature>
     {#- 0240: the why sits behind "?", not in a paragraph. -#}
-    <legend>{{ t('entity.signature.heading') }} {{ help_tip(prefix ~ 'signature-help', t('entity.signature.scope')) }}</legend>
+    <legend>{{ t('entity.signature.heading') }} {{ help_tip(prefix ~ 'signature-help', t('entity.signature.scope'), svg=(prefix == 'fee_')) }}</legend>
     {#- 0282: locked until Edit, so a scrolling thumb never scratches it. -#}
     <div class="signature-locked">
       <img class="signature-locked-img" data-signature-preview alt="{{ t('entity.signature.locked_alt') }}"{% if preview %} src="{{ preview }}"{% else %} hidden{% endif %}>
