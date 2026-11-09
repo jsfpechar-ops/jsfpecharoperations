@@ -10,7 +10,7 @@ is implemented by Luna on `task/host-design-staging`; local validation passed
 Added 2026-10-10.
 Codex is the orchestrator/reviewer. The owner's later explicit authorization
 assigns implementation and application checks to Luna executors for this task,
-as recorded in [workflow](../context/workflow.md#owner-authorized-host-design-execution).
+as recorded in [workflow](../context/workflow.md#retired-executor-exceptions).
 The numbered briefs below own execution; this plan is the design contract.
 
 ## 1. Scope
@@ -335,7 +335,7 @@ keys; do not authorize an unscoped global string replacement.
 
 The owner has superseded the original Cursor-only execution assignment for
 this staging task with multiple Luna 6.0 executors. Codex remains reviewer;
-see the [scoped workflow exception](../context/workflow.md#owner-authorized-host-design-execution).
+see the [scoped workflow exception](../context/workflow.md#retired-executor-exceptions).
 The actual implementation briefs are:
 
 | Brief | Scope |

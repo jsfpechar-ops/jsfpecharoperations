@@ -5,16 +5,13 @@ Append-only.
 - 2026-10-06 | Sweep: one send per refused record, then host fix | OPERATIONS
 - 2026-10-06 | Staging may use the police test env; creds only in staging | LIGHTSAIL
 - 2026-10-06 | Abbreviation check: 5-6 alphanumerics; facility suffix after UBY-WS_ | police, owner | validation.py, 0043
-- 2026-10-08 | Door codes (TTLock pilot): timed codes, test mode until live | owner | [ttlock-door-codes](../plans/ttlock-door-codes.md)
-- 2026-10-08 | Door codes: one 1-min job; no PIN/list/unlock polling; weekly `queryDate`; taken type-3 period: `add` only, host warned (0037) | [plan §7](../plans/ttlock-door-codes.md)
+- 2026-10-08/12 | Door codes (TTLock pilot): timed codes, test mode until live; one 1-min job, no polling, weekly `queryDate`; taken type-3 period: `add` only, host warned (0037); -1026 = created/deleted; host provider, no SCCs; retry deletion (0067-69) | owner | [plan](../plans/ttlock-door-codes.md), [legal](../privacy/DOOR_CODES_LEGAL.md)
 - 2026-10-08 | Invoices per stay only, replaces 09-26 | scope | [plan](../plans/stay-only-invoices.md)
 - 2026-10-08 | Staging: `UBYHOST_STAGING_NO_LOGIN=1` skips login; door-code alert after 10 min | test-only | [ENVIRONMENT](../ENVIRONMENT.md)
-- 2026-10-09 | [workflow] One brief per copy text; replaced brief marked in commit; executors skip non-todo; lint warns on overlap | [workflow](workflow.md)
-- 2026-10-09 | [workflow] Status `replaced`: newer brief took over | `blocked` reads as waiting
+- 2026-10-09 | [workflow] One brief per copy text; executors skip non-todo; lint warns on overlap; status `replaced` = newer brief took over | [workflow](workflow.md)
 - 2026-10-09 | #331: no ID-check step (host checks ID); guest link default 1 day ahead | K-F12
 - 2026-10-10 | PostHog replaces Umami; privacy settings in the snippet | owner | [plan](../plans/posthog-analytics.md), [0039](../tasks/0039-posthog-hardening.md)
 - 2026-10-11 | ARES lookup on host click; sends only the IČO; 24 h cache; 20/h per user | owner | 0055
-- 2026-10-12 | TTLock: -1026 = created/deleted; host provider, no SCCs; same-period reuse needs custom PIN/mail; retry deletion (0067–69) | [legal](../privacy/DOOR_CODES_LEGAL.md)
 - 2026-10-15 | Watchdog digest every 72 h (server 10-15, repo 10-20) | owner | [OPERATIONS](../OPERATIONS.md)
 - 2026-10-16 | #397: white workspace; Property hours; fractional stays; Dashboard stays only; Cleaning markers; in-page creation | PR #397
 - 2026-10-17 | [workflow] Haiku 5.5 only executor; 100k cap per chat; scoped tests, no audits unless asked | owner | [workflow](workflow.md#when-haiku-reaches-the-cap)
@@ -27,11 +24,7 @@ Append-only.
 - 2026-10-26 | Unpaid = read-only, filing never blocked | owner | 0415
 - 2026-10-27 Grafana Cloud (EU free tier): subprocessor for ops logs/metrics (PII-free, OPS-3); compose profile "monitoring" (owner).
 - 2026-10-28 | [deps] `stripe` 16.0.1 pinned+hashed in requirements.lock (owner); calls via `App/app/stripe_connect.py`; shared monthly cap `UBYHOST_STRIPE_MONTHLY_API_CALLS` | 0428
-- 2026-10-28 | Property pages: Apify scrape-first prefill (page + Leon guide, 1 fetch), deterministic, no AI step; host reviews once | owner | 0431
-- 2026-10-28 | Property page: Airbnb-style layout only; no Airbnb assets or CSS | owner | 0431
-- 2026-10-28 | Page photos: re-host from the import run (max 10, EXIF stripped), never hotlink; host confirms rights | owner | 0432
-- 2026-10-28 | Booking widget: Airbnb-style on our calendar/fee logic, no-JS, Stripe checkout on host account | owner | 0434
-- 2026-10-28 | Listing pages English-only; no per-listing or per-language translation (OTA copy verbatim) | owner | 0431/0433
+- 2026-10-28 | Property pages: Apify scrape-first prefill, no AI, host reviews once (0431); Airbnb-style layout, no Airbnb assets; photos re-hosted, max 10, EXIF stripped, host confirms rights (0432); no-JS widget, Stripe checkout on host account (0434); English only, OTA copy verbatim | owner
 - 2026-11-02 | OCR: Tesseract only, local, MRZ check digits, Max only; band crop; Paddle if ocr_readrate <90% | owner | test_doc_ocr
 - 2026-10-29 | Trials are extendable by the operator, 1-365 days | owner | 0448
 - 2026-10-29 | Stripe Accounts v2; responsibilities immutable; company hosts via business_type | owner | 0437
@@ -55,14 +48,9 @@ Append-only.
 - [auth] 2026-11-04: 30-day sliding session, trusted-device cookie skips login Turnstile
 - [auth] 2026-11-04: log out is per device; "all devices" is separate (0947).
 - 11-04: stay fee pay v4; [workflow] Sonnet briefs, Haiku executes (owner)
-- [dashboard] 2026-11-04: the per-property "No guest has used the link" needs-you card (0233) is removed, not collapsed; the property-page health row stays (brief 0949).
-- [dashboard] 2026-11-04: the "You are ready" card shows only with exactly one property (brief 0949).
-- [ui] 0948: six-card status strip replaces the aside basics and connections cards; standalone guest card removed, its copy button lives in the strip (owner 2026-11-04).
-- [ui] 2026-11-04: Smart lock = one accordion (#sec-lock) outside the property form; controls use form="property-settings-form"; unsaved guard counts them (0952).
+- 2026-11-04 [dashboard] no per-property "No guest has used the link" card; "You are ready" only with one property (0949); six-card status strip replaces aside cards, guest copy button in the strip (0948) | owner
+- 2026-11-04/05 [ui] Smart lock: one accordion #sec-lock, controls use form="property-settings-form" (0952); step one says eAdmin, door_code.state drives the status block (0954). Notices inline; Save row sticks; Preview sticks >=1024 (0957). #786: no stay times, 4 wizard steps, Stays filters wrap (0950-fix-1)
 - [wizard] 2026-11-04: wizard shows the old look on the current 4-step flow; red star marks mandatory fields; operator e-mail has no purpose text. Source: brief 0953.
-- [ui] 2026-11-04: TTLock step one says eAdmin; Smart lock shows a status block with Turn on/off (door_code.state is the one source). Source: brief 0954.
-- [ui] 2026-11-05: property notices are inline banners in their section; the Save row closes the form and sticks; Preview sticks from 1024 px. Source: brief 0957.
-- [ui] 2026-11-05: PR #786: no stay check-in/out times, four wizard steps, listed TTLock = Lock online; Stays filters wrap on phones (0950-fix-1).
 - [ui] 2026-11-06 [owner]: property page keeps main's header and tile grid; the setup progress card sits full width below the grid (0986).
 - 2026-11-06 [owner] lock connected but codes off shows main's "Turn on" row; "Connect my lock" only for first-time setup (0987).
 - 2026-11-07 [owner] request-to-book: direct rails (IBAN/Revolut/cash) vs or beside Stripe; 24h hold; host confirms (0996-0998).
@@ -72,3 +60,4 @@ Append-only.
 - 2026-11-09 [guest] Guest edits/removes own added people until filed (SENT, incl. by hand); then locked, "Message host" (owner)
 - 2026-11-09 | [ux] Stay fees: current month default, pick navigates | owner | 1051
 - 2026-11-09 [ux] [Speed plan](../plans/speed-and-ease.md): answers §10.
+- 2026-11-09 | [workflow] Speed and group plans only (owner): executor by tier. A (filing, concurrency, guest-data access): Fable 5.2 executor, Opus writes brief, fresh Fable reviews diff vs brief before PR. B (multi-file, mail, payments, privacy, new component): Opus executor, Sonnet brief. C (attributes, copy, prefill, CSS): Sonnet executor at medium effort, Sonnet brief. 100k cap = Haiku only; output and read ranges <=150 lines | [workflow](workflow.md#roles-and-models)

@@ -15,14 +15,11 @@ This file is the single source of truth for how work is done. When the process c
 - Any **other** AI (ChatGPT, Gemini, Copilot) ends with the [executor prompt](prompts.md#executor) filled in; the owner pastes it into a Haiku 5.5 session.
 - Only the owner's exact words "implement it yourself" let an orchestrator implement.
 - HIGH RISK areas (filing, migrations, auth, legal copy, deletion) are still Haiku's work, but the brief is an exact diff only, and the review reads the full diff of those files.
+- **Override, speed-and-ease and group plans only** (owner, 2026-11-09): executor by tier. **A** (filing, concurrency, guest-data access): Fable 5.2 executor, Opus brief, a fresh Fable reviews the diff vs the brief before the PR. **B** (multi-file, mail, payments, privacy, new component): Opus executor, Sonnet brief. **C** (attributes, copy, prefill, CSS): Sonnet executor, effort medium, Sonnet brief. The 100k cap applies to Haiku only; output and read ranges stay <=150 lines.
 
-## Owner-authorized host design execution
+## Retired executor exceptions
 
-Closed 2026-10-17. The Luna 6.0 and Cursor-executor exception is retired; Haiku 5.5 is the only executor. Never push main, bypass CI, merge for preview or deploy production. See [decision](ui-decisions.md).
-
-## Task-specific Luna execution (2026-10-30)
-
-Closed by the latest owner-supplied AGENTS.md: Haiku 5.5 is the only executor. Existing Luna work is preserved for review; further implementation follows the Haiku handoff.
+Luna 6.0 / Cursor (closed 2026-10-17) and task-specific Luna (closed 2026-10-30) are retired; Luna work stays for review.
 
 ## Token budget (every AI, every session)
 
@@ -70,7 +67,7 @@ Statuses: `todo → in-progress → review → done`, plus `blocked` (with the r
 - Give the full code or exact diffs, never "implement X". Name every file. Number every step. One step changes one place in one file.
 - Every step ends with its command, written out, and the expected result.
 - Acceptance must be checkable by a command or a visible fact. Tests come from the [test-map](test-map.md), never the full suite. UI work: the browser and geometry tests plus the screenshots.
-- Touch or Safari reports: add iPad sizes (820, 1024, 1180) with touch, and run them in WebKit too (`playwright install-deps webkit`, then `install webkit`; recreate the Chromium shim afterwards).
+- Touch or Safari reports: iPad sizes (820, 1024, 1180) with touch, also in WebKit (`playwright install-deps webkit`, `install webkit`, then recreate the Chromium shim).
 - Haiku can't push to `main`, merge, set secrets, SSH or deploy, and its `gh` is often read-only. The brief says what to hand to the owner, with exact commands.
 - Owner steps are numbered and click-by-click, in plain words.
 - One brief owns each piece of copy. When a new brief replaces an old one, mark the old one `Status: replaced by NNNN` in the same commit that adds the new brief.

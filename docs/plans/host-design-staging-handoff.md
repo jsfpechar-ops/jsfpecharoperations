@@ -11,7 +11,7 @@ by the owner-authorized Luna executors, with Codex reviewing. The final
 links the reports. The older standalone prototype is historical evidence;
 application browser checks and screenshots establish the current result.
 
-The scoped [workflow exception](../context/workflow.md#owner-authorized-host-design-execution)
+The scoped [workflow exception](../context/workflow.md#retired-executor-exceptions)
 permits feature-branch push/PR and staging deployment for this task. Main push,
 production merge and production deployment remain outside its scope.
 
