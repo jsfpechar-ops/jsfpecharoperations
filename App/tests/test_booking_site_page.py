@@ -192,3 +192,42 @@ def test_thanks_page_czech_default(apartment):
     response = TestClient(app).get(f"/p/{_slug(apartment)}/thanks")
     assert response.status_code == 200
     assert host_i18n.translate("cs", "pp.book.done") in response.text
+
+
+def test_name_over_120_chars_is_refused(apartment, fake_sessions):
+    response = TestClient(app).post(f"/p/{_slug(apartment)}/checkout",
+                                    data=_form(guest_name="A" * 121), follow_redirects=False)
+    assert response.status_code == 303
+    assert "book=name_too_long" in response.headers["location"]
+    assert not fake_sessions.created
+
+
+def test_120_char_name_passes_name_check(apartment, fake_sessions):
+    response = TestClient(app).post(f"/p/{_slug(apartment)}/checkout",
+                                    data=_form(guest_name="A" * 120), follow_redirects=False)
+    assert "book=name_too_long" not in response.headers.get("location", "")
+
+
+def test_failed_checkout_keeps_name_and_email(apartment, fake_sessions):
+    response = TestClient(app).post(f"/p/{_slug(apartment)}/checkout",
+                                    data=_form(guest_email="not-an-email"))
+    assert response.status_code == 200
+    assert "Jana Nová" in response.text
+    assert 'value="not-an-email"' in response.text
+    assert response.headers["cache-control"] == "no-store"
+    assert not fake_sessions.created
+
+
+def test_unticked_terms_keeps_name(apartment, fake_sessions):
+    data = _form()
+    data.pop("terms")
+    response = TestClient(app).post(f"/p/{_slug(apartment)}/checkout", data=data)
+    assert response.status_code == 200
+    assert "Jana Nová" in response.text
+
+
+def test_typed_name_is_escaped(apartment, fake_sessions):
+    response = TestClient(app).post(f"/p/{_slug(apartment)}/checkout",
+                                    data=_form(guest_name='"><b>x', guest_email="bad"))
+    assert "<b>x" not in response.text
+    assert "&gt;" in response.text
