@@ -1,6 +1,6 @@
 # 1064 report
 
-Status: blocked
+Status: review (lint fails only on main's status.md cap; fixed by #854)
 
 Files changed: `scripts/count_required_inputs.py` (new), this report, brief status.
 
