@@ -1,8 +1,8 @@
 # 1070: File registered guests at the deadline cap
 
 Status: todo
-Depends on: owner yes (owner question 3 in docs/tasks/1069-report.md) | Base commit: 0d851ca4ae25776e1e4ddcf3b2fa4b4e25f126da | Branch: task/1070-file-at-deadline-cap
-Executor: Fable 5.2 (Tier A) | Fits one session: 30 tool calls, 60k tokens
+Depends on: owner yes to owner question 3 in docs/tasks/1069-report.md (given 2026-11-09; decision line: step 0) | Base commit: 0d851ca4ae25776e1e4ddcf3b2fa4b4e25f126da | Branch: task/1070-file-at-deadline-cap
+Executor: Fable 5.2, Tier A (filing), under the owner override in [workflow](../context/workflow.md#roles-and-models) ("Override, speed-and-ease and group plans only", owner 2026-11-09). The token and tool-call caps there are Haiku only and do not apply here; command output and file reads stay at 150 lines or fewer. Commit after each step that changes a file (steps 3, 4 and 8).
 Review: a fresh Fable reviews this brief before it runs, and the full diff afterwards.
 
 **HIGH RISK (filing).** Exact diff only. Apply the diff and the test file below as written; do not redesign.
@@ -43,6 +43,14 @@ The only caller that asks this function is `collect_sendable` (`reporting.py` ab
 
 Dates (computed with `deadlines.reporting_deadline`): check-in Mon 2026-11-09, deadline Wed 2026-11-11 23:59:59 Prague (CET) = 22:59:59 UTC, cap 17:59:59 Prague = 16:59:59 UTC.
 
+**Backlog rule (OWNER DECISION PENDING; default in the diff: all are filed).** Stays already past their cap at deploy, with registered, unsent, valid guests and no completion stamp, are all filed by the first sweep, however old the check-in. If the owner chooses "only check-ins within N days", the orchestrator replaces this paragraph and the diff before the brief runs: the check goes in `due_for_automatic_send` on the `if completed is None:` line (for example `and (current.date() - anchor).days <= N`), with one more test. The executor never adds it on its own.
+
+Accepted by the orchestrator (2026-11-09), so not findings:
+
+- Valid co-guests are filed at the cap while another form of the same stay is invalid or unsigned; that form waits (test `valid_co_guests`).
+- Past the cap, each newly saved person is filed by the next sweep (within `SUBMIT_SWEEP_MINUTES`, default 10), so after the cap the guest link can edit a person for minutes only; `SENT` locks the form (`guest_form_locked`).
+- A stored stamp that does not parse counts as no stamp, so the stay is filed at the cap (before: never automatically).
+
 Time pattern: the existing filing tests freeze time by passing `now=` to `due_for_automatic_send` (`App/tests/test_deadlines.py::test_scheduled_send_is_pulled_forward_to_the_deadline_margin`) and drive the sweep on the real clock with timestamps relative to `datetime.now` (`App/tests/test_send_controls.py`). The new tests do the same: unit tests with `now=`, sweep tests with a stay anchored ten days in the past and guest rows written one hour ago.
 
 ## 3. Files
@@ -50,14 +58,14 @@ Time pattern: the existing filing tests freeze time by passing `now=` to `due_fo
 | Path | Action | What |
 |---|---|---|
 | `App/app/reporting.py` | edit | `due_for_automatic_send`: when no completion stamp, return True once the cap time has passed |
-| `App/tests/test_deadline_cap_filing.py` | create | 11 tests, (a) to (f) below |
+| `App/tests/test_deadline_cap_filing.py` | create | 12 tests: (a) to (f), plus a valid guest next to an unsigned one |
 | `docs/tasks/1070-report.md` | create | the report |
 
 No other file may change.
 
 ## 4. Steps
 
-0. **Orchestrator adds the decision line.** Placeholder: before this brief runs, the orchestrator appends the owner's yes to owner question 3 (1069 report) to `docs/context/decisions.md` and replaces this step with the line it added. If this step still reads "Placeholder", STOP (§8): there is no owner yes.
+0. **Orchestrator adds the decision line.** Placeholder: before this brief runs, the orchestrator appends the owner's yes to owner question 3 (1069 report) to `docs/context/decisions.md` and replaces this step with the line it added. The line must state both parts of what the owner accepted: (1) registered, valid guests are filed at the deadline cap without waiting for 12 quiet hours; (2) this reverses the rule written in the comment at `reporting.py:1093` ("never from the fact that this code was deployed"), which `test_send_controls.py::test_legacy_completed_reservation_is_not_auto_eligible_on_deploy` (line 368) still passes only because its seed checks in today: every stay already past its cap at deploy is filed by the first sweep, under the backlog rule in §2 (default: all). If this step still reads "Placeholder", STOP (§8): there is no decision line.
 
 1. Branch from main.
    ```bash
@@ -78,7 +86,7 @@ cat > /tmp/1070.diff <<'EOF'
 diff --git a/App/app/reporting.py b/App/app/reporting.py
 --- a/App/app/reporting.py
 +++ b/App/app/reporting.py
-@@ -1090,29 +1090,33 @@ def due_for_automatic_send(
+@@ -1090,29 +1090,36 @@ def due_for_automatic_send(
      mode = apartment["automation_mode"]
      if mode == "manual":
          return False
@@ -109,12 +117,15 @@ diff --git a/App/app/reporting.py b/App/app/reporting.py
          latest = deadline_local.replace(tzinfo=ZoneInfo(config.TIMEZONE)).astimezone(timezone.utc)
 +    # Before the deadline margin: no completion, no send. The sweep refreshes
 +    # the quiet-window completion before it asks, so a stay that has gone
-+    # quiet is not held open for ever. From the margin on (brief 1070), the
-+    # people already registered are filed even when the stay is short of its
-+    # declared count or has none: waiting for the quiet window could file them
-+    # after the legal deadline. Each guest is still checked for a complete form
-+    # by the caller, SENT rows are never collected, and anyone who registers
-+    # later is filed by the next sweep.
++    # quiet is not held open for ever. From the margin on (brief 1070, owner
++    # decision 2026-11-09), the people already registered are filed even when
++    # the stay is short of its declared count or has none: waiting for the
++    # quiet window could file them after the legal deadline. This ends the old
++    # rule that a deploy alone never makes a stay eligible: every stay already
++    # past its margin when this ships is filed by the first sweep (backlog
++    # rule: all of them). Each guest is still checked for a complete form by
++    # the caller, SENT rows are never collected, and anyone who registers later
++    # is filed by the next sweep.
 +    completed_at = reservation["registration_completed_at"]
 +    completed = _as_utc(completed_at) if completed_at else None
 +    if completed is None:
@@ -129,9 +140,9 @@ diff --git a/App/app/reporting.py b/App/app/reporting.py
 EOF
 git apply --check /tmp/1070.diff && git apply /tmp/1070.diff && git diff --stat | tail -3
 ```
-   Copy the block exactly (no indent). Expected: `App/app/reporting.py | 32 ++++++++++++----------` and `1 file changed, 18 insertions(+), 14 deletions(-)`. `git apply --check` fails: STOP (do not hand-edit).
+   Copy the block exactly (no indent). Expected: `1 file changed, 21 insertions(+), 14 deletions(-)`. `git apply --check` fails: STOP (do not hand-edit). Then commit: `git commit -am "1070: file registered guests at the deadline cap" 2>&1 | tail -3`.
 
-   What the diff does: the cap time (`latest`) is computed first. With a completion stamp, nothing changes (`min(completed + delay, latest)`). Without one (or with a stamp that does not parse), the stay is due once `latest` has passed; with no deadline anchor it stays not due, as today. `manual` still returns False on the first line.
+   What the diff does: the comment that said a deploy never makes a stay eligible is replaced by one that says the opposite past the cap. The cap time (`latest`) is computed first. With a completion stamp, nothing changes (`min(completed + delay, latest)`). Without one (or with a stamp that does not parse), the stay is due once `latest` has passed; with no deadline anchor it stays not due, as today. `manual` still returns False on the first line.
 
 4. Create `App/tests/test_deadline_cap_filing.py` with exactly this content (Write tool):
 
@@ -466,29 +477,57 @@ def test_a_person_who_registers_after_the_cap_filing_is_filed(monkeypatch, tmp_p
 
     assert client.batches == [2, 1]
     assert _states(guest_ids + [late_id]) == [reporting.SENT] * 3
+
+
+def test_valid_co_guests_are_filed_at_the_cap_while_one_form_is_unsigned(monkeypatch, tmp_path):
+    """The main new behaviour: the valid person goes, the unsigned one waits."""
+    _fresh_db(monkeypatch, tmp_path, "sweep-mixed.db")
+    client = _fake_register(monkeypatch)
+    _apartment_id, reservation_id, (valid_id, unsigned_id) = _stay(
+        "immediate", date_from=_past_check_in(), expected=2, guests=2,
+        updated_at=_an_hour_ago(),
+    )
+    db.update("guest", unsigned_id, {"signature_png": None, "signed_at": None})
+
+    reporting.sweep()
+
+    assert client.batches == [1]
+    assert _states([valid_id, unsigned_id]) == [reporting.SENT, reporting.PENDING]
+    assert not _reservation(reservation_id)["registration_completed_at"]
+
+    reporting.sweep()
+
+    assert client.batches == [1]
+    assert _states([valid_id, unsigned_id]) == [reporting.SENT, reporting.PENDING]
 ```
 
    Command: `cd App && .venv/bin/python -m pytest tests/test_deadline_cap_filing.py -q --tb=short 2>&1 | tail -30`
-   Expected: `11 passed`.
+   Expected: `12 passed`. Then commit: `git add App/tests/test_deadline_cap_filing.py && git commit -m "1070: tests for filing at the deadline cap" 2>&1 | tail -3`.
 
-5. Prove the tests test the change: run them on the old code, then put the change back.
+5. Prove the tests test the change: run them on the old code, then restore the committed code.
    ```bash
-   git diff App/app/reporting.py > /tmp/1070-applied.diff
-   git checkout -- App/app/reporting.py
+   git show origin/main:App/app/reporting.py > App/app/reporting.py
    (cd App && .venv/bin/python -m pytest tests/test_deadline_cap_filing.py -q --tb=no 2>&1 | tail -3)
-   git apply /tmp/1070-applied.diff && git diff --stat | tail -2
+   git checkout HEAD -- App/app/reporting.py && git status --short | tail -3
    ```
-   Expected on the old code: `6 failed, 5 passed` (the two `due_at_the_cap` tests, the two `sweep_files` tests, `later_completion`, `registers_after`). After `git apply`: `App/app/reporting.py` changed again, 18 insertions, 14 deletions.
+   Expected on the old code: `7 failed, 5 passed` (the two `due_at_the_cap` tests, the two `sweep_files` tests, `later_completion`, `registers_after`, `valid_co_guests`). After the last line: no output (the tree is clean again).
 
-6. Filing row of the test-map, plus the existing send-control tests (they hold the other `due_for_automatic_send` cases).
+6. Filing row of the test-map, plus the existing send-control tests (they hold the other `due_for_automatic_send` cases). `test_endtoend.py` runs as its own command: in one process after `test_submission_*.py` / `test_stale_submission.py` it fails (13 to 17 failures; `test_06` sees 19 reservations where it expects 1) with or without this diff, and alone it passes.
    ```bash
-   cd App && .venv/bin/python -m pytest tests/test_ubyport_*.py tests/test_soap.py tests/test_worker.py tests/test_submission_*.py tests/test_stale_submission.py tests/test_filed_by_hand.py tests/test_filing_watchdog.py tests/test_police_*.py tests/test_deadline*.py tests/test_claim_*.py tests/test_endtoend.py tests/test_send_controls.py -q --tb=short -x 2>&1 | tail -30
+   cd App && .venv/bin/python -m pytest tests/test_ubyport_*.py tests/test_soap.py tests/test_worker.py tests/test_submission_*.py tests/test_stale_submission.py tests/test_filed_by_hand.py tests/test_filing_watchdog.py tests/test_police_*.py tests/test_deadline*.py tests/test_claim_*.py tests/test_send_controls.py -q --tb=short 2>&1 | tail -30
+   cd App && .venv/bin/python -m pytest tests/test_endtoend.py -q --tb=short 2>&1 | tail -30
    ```
-   Expected: all passed, 0 failed (the brief writer saw 430 passed plus the 4 `test_ubyport_sample_pdf.py` tests, which need `pypdf`/`pdfplumber` from `requirements-dev.txt`). `test_send_controls.py::test_legacy_completed_reservation_is_not_auto_eligible_on_deploy` must still pass unchanged.
+   Expected: 0 failed in both (the second: `28 passed`). The 4 `test_ubyport_sample_pdf.py` tests need `pypdf` and `pdfplumber` from `requirements-dev.txt`. `test_send_controls.py::test_legacy_completed_reservation_is_not_auto_eligible_on_deploy` must still pass unchanged. A failure you want to call pre-existing: run the same command on clean main in a separate worktree first (from the repo root), and paste both tails in the report:
+   ```bash
+   git worktree add /tmp/1070-main origin/main 2>&1 | tail -2
+   ln -s "$PWD/App/.venv" /tmp/1070-main/App/.venv
+   cd /tmp/1070-main/App && .venv/bin/python -m pytest <the same files> -q --tb=no 2>&1 | tail -5
+   ```
+   The same failures on clean main: pre-existing, note them and go on. Different: STOP (§8).
 
 7. Lint, from the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`. Expected: `OK` (a `status.md` over-cap line or a "named by open briefs" warning for `App/app/reporting.py` is acceptable; note it in the report).
 
-8. Write `docs/tasks/1070-report.md` (§9), set this brief to `Status: review`, commit the three files of §3 and this brief, push the branch, open the PR (base `main`). If `gh` is read-only, hand the owner `gh pr create --base main --head task/1070-file-at-deadline-cap --fill`. Do not merge.
+8. Write `docs/tasks/1070-report.md` (§9), set this brief to `Status: review`, commit the report and this brief, push the branch, open the PR (base `main`). If `gh` is read-only, hand the owner `gh pr create --base main --head task/1070-file-at-deadline-cap --fill`. Do not merge.
 
 ## 5. Do not touch
 
@@ -503,14 +542,14 @@ Listed in steps 3-7 with expected results. Never the full suite.
 ## 7. Acceptance
 
 - [ ] Step 0 holds the owner's decision line (not the placeholder).
-- [ ] `git diff --stat origin/main` shows only the §3 files plus this brief; `App/app/reporting.py` is 18 insertions, 14 deletions.
-- [ ] `tests/test_deadline_cap_filing.py`: 11 passed on the new code; 6 failed, 5 passed on the old code (step 5).
-- [ ] Step 6: 0 failed.
+- [ ] `git diff --stat origin/main` shows only the §3 files plus this brief; `App/app/reporting.py` is 21 insertions, 14 deletions.
+- [ ] `tests/test_deadline_cap_filing.py`: 12 passed on the new code; 7 failed, 5 passed on the old code (step 5).
+- [ ] Step 6: 0 failed in both commands, or the same failures shown on clean main.
 - [ ] `python3 scripts/context_lint.py`: OK.
 
 ## 8. Stop and ask
 
-Stop, and write the report, if: step 0 still says "Placeholder"; the step 2 anchor is not found exactly once; `git apply --check` fails; a test fails twice; step 5 does not give `6 failed, 5 passed`; a file outside §3 needs a change; you reach 25 tool calls or about 50k tokens; you need merge, secrets, SSH or deploy.
+Stop, and write the report, if: step 0 still says "Placeholder"; the step 2 anchor is not found exactly once; `git apply --check` fails; a test fails twice; step 5 does not give `7 failed, 5 passed`; a step 6 failure is not the same on clean main; a file outside §3 needs a change; you need merge, secrets, SSH or deploy.
 
 ## 9. Report
 
@@ -522,16 +561,59 @@ Read the full diff of `App/app/reporting.py` and the whole new test file. Check:
 
 1. With a stamp, the result is identical to before (`min(completed + delay, latest)`; no anchor, no cap).
 2. Without a stamp: due only when an anchor exists and `now >= latest`; `manual` still False first.
-3. Edge cases the change brings, for the review to accept or refuse:
-   - A stay with one started-but-invalid form: its valid co-guests are now filed at the cap; the invalid one is still skipped by `guest_is_complete` (this also ends 1069 bug 1's "co-guests wait" at the cap).
-   - A stored stamp that does not parse is now treated as no stamp (filed at the cap), where it used to block automatic filing for ever.
-   - First sweep after deploy: every active stay already past its cap with registered, unsent, non-manual guests and no stamp is filed in that sweep (late; UbyPort answers 112, which is accepted). That is the point of the change, but it can be a burst. The owner can count them first (step 1 below).
-   - People filed at the cap are `SENT`, so the guest link can no longer edit or remove them (`guest_form_locked`); same as after any filing today.
+3. Edge cases beyond the accepted ones in §2:
+   - First sweep after deploy: every active stay already past its cap with registered, unsent, non-manual guests and no stamp is filed in that sweep (late; UbyPort answers 112, which is accepted). That is the point of the change, but it can be a burst. The owner counts them first (owner step 1, required).
    - Push/celebration hooks that react to `SENT` fire at the cap filing, through the existing `submit_batch` path; no new mail.
 4. The new tests use the real clock only with stays ten days in the past or today, so they do not depend on the run date.
 
 ## Owner steps
 
-1. Before merging, optional: ask the orchestrator for the read-only production count of active, non-manual stays past their cap with unsent complete guests and no `registration_completed_at`, to know how many will be filed (late) on the first sweep after deploy.
+1. **Required, before you merge: count the stays the first sweep will file.** It only reads; it sends nothing, changes nothing and prints no names.
+   1. Open a terminal and connect to the server: `ssh ubuntu@<your Lightsail address>`.
+   2. Type `cd /opt/ubyhost/deploy/lightsail` and press Enter.
+   3. Paste this whole block and press Enter:
+```bash
+docker compose exec -T ubyhost python - <<'EOF'
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
+from app import alerts, config, db, deadlines, demo, reporting, validation
+
+now = datetime.now(timezone.utc)
+buckets = {"0-7": [0, 0], "8-30": [0, 0], "31-90": [0, 0], "91+": [0, 0]}
+for ap in db.query("SELECT * FROM apartment WHERE active = 1 AND automation_mode != 'manual'"):
+    if alerts.open_alert(f"ubyport_auth_failed:{ap['id']}"):
+        continue
+    for r in db.query(
+        "SELECT * FROM reservation WHERE apartment_id = ? AND status = 'active' "
+        "AND archived_at IS NULL AND registration_completed_at IS NULL", (ap["id"],)
+    ):
+        if demo.is_demo_stay(r):
+            continue
+        anchor = reporting.reservation_deadline_anchor(r)
+        if anchor is None:
+            continue
+        cap = deadlines.reporting_deadline(anchor) - timedelta(
+            hours=reporting.AUTOMATIC_SEND_DEADLINE_MARGIN_HOURS)
+        if now < cap.replace(tzinfo=ZoneInfo(config.TIMEZONE)):
+            continue
+        n = sum(
+            1 for g in db.query(
+                "SELECT * FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
+                "AND submit_state NOT IN ('sent', 'not_required')", (r["id"],))
+            if validation.guest_is_reportable(g["nationality"]) and reporting.guest_is_complete(g, r)
+        )
+        if not n:
+            continue
+        age = (now.date() - anchor).days
+        key = "0-7" if age <= 7 else "8-30" if age <= 30 else "31-90" if age <= 90 else "91+"
+        buckets[key][0] += 1
+        buckets[key][1] += n
+for key, (stays, guests) in buckets.items():
+    print(f"check-in {key} days ago: {stays} stays, {guests} guests")
+print("total:", sum(b[0] for b in buckets.values()), "stays,", sum(b[1] for b in buckets.values()), "guests")
+EOF
+```
+   4. How to read it: five lines, for example `check-in 8-30 days ago: 2 stays, 3 guests` and `total: 2 stays, 3 guests`. The total is how many stays (and people) the first sweep after deploy will file, all of them late (UbyPort answers 112, "reported late", which counts as accepted). It is an upper bound: a guest the sweep has already given up on after a refusal is counted but not sent. `total: 0 stays` means no burst. Old check-ins (31-90, 91+) are the ones the backlog rule in §2 is about.
+   5. Send the five lines to the orchestrator. If you want only recent check-ins filed, say "only within N days" and the orchestrator changes the brief before it runs.
 2. Review the PR, then merge it with `scripts/merge-pr-on-green.sh` as usual.
-3. Deploy as usual. Then open the dashboard after the next sweep (10 minutes) and check that the stays shown "Due now" or "Overdue" with registered people now show those people as filed.
+3. Deploy as usual. After the next sweep (10 minutes), open the dashboard: the stays that were "Due now" or "Overdue" with registered people show those people as filed.
