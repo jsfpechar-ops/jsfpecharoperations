@@ -54,3 +54,7 @@ def test_long_unbroken_words_cannot_widen_the_public_page(owner):
     body = response.text
     assert "overflow-wrap: anywhere" in body
     assert "A" * 3000 in body
+    # The template shows the first 400 characters of the description, then the rest inside <details>,
+    # so the 3000 characters are present as two runs, not one.
+    assert "B" * 400 in body and "B" * 2600 in body
+    assert "<li>" + "C" * 3000 + "</li>" in body
