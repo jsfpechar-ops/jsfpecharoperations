@@ -1,6 +1,7 @@
 {#- The one set of stay-fee fields (0077). Rendered only inside property
     Settings -> Reporting & fees -> Stay fee and in the setup wizard (fee_required). 0239: the wizard asks rate, symbol, account and council name; the office's print-only details fold away in Settings. -#}
 {%- from "_components.html" import field_label, help_tip with context -%}
+{%- from "_icons.html" import icon with context -%}
 {#- 1024: the editor stars VS, account and office name only while a rate above 0 is set; the wizard always requires them. -#}
 {%- set fee_needed = fee_required or ((apartment.stay_fee_rate_czk or 0) > 0) -%}
 <input type="hidden" name="_stay_fee_account_existing" value="{{ apartment.stay_fee_council_account or apartment.stay_fee_council_iban or '' }}">
@@ -12,17 +13,18 @@
       <input type="number" id="stay_fee_rate_czk" name="stay_fee_rate_czk" aria-describedby="stay_fee_rate_czk-help" min="0" max="50" step="1"
              value="{{ apartment.stay_fee_rate_czk or 0 }}"{% if fee_required %} required{% endif %}>
     </div>
-    {#- 1029: the date the new rate starts; the server clamps a past date to today. Editor only, and only when a rate is set. -#}
-    {% if not fee_required and (apartment.stay_fee_rate_czk or 0) > 0 %}<div class="field">
-      {{ field_label('stay_fee_rate_from', t('apartment.form.stay_fee.rate_from_label'), t('apartment.form.stay_fee.rate_from_help'), false) }}
-      <input type="date" id="stay_fee_rate_from" name="stay_fee_rate_from" aria-describedby="stay_fee_rate_from-help" min="{{ rate_from_default }}" value="{{ rate_from_default }}">
-    </div>{% endif %}
+    {#- 1053: rate and period share the first row; "Applies from" follows. -#}
     {% if not fee_required %}<div class="field">
       {{ field_label('stay_fee_cadence', t('apartment.form.stay_fee.cadence_label'), t('apartment.form.stay_fee.cadence_help')) }}
       <select id="stay_fee_cadence" name="stay_fee_cadence" aria-describedby="stay_fee_cadence-help">
         <option value="monthly" {% if apartment.stay_fee_cadence != 'quarterly' %}selected{% endif %}>{{ t('apartment.form.stay_fee.cadence.monthly') }}</option>
         <option value="quarterly" {% if apartment.stay_fee_cadence == 'quarterly' %}selected{% endif %}>{{ t('apartment.form.stay_fee.cadence.quarterly') }}</option>
       </select>
+    </div>{% endif %}
+    {#- 1029: the date the new rate starts; the server clamps a past date to today. Editor only, and only when a rate is set. -#}
+    {% if not fee_required and (apartment.stay_fee_rate_czk or 0) > 0 %}<div class="field">
+      {{ field_label('stay_fee_rate_from', t('apartment.form.stay_fee.rate_from_label'), t('apartment.form.stay_fee.rate_from_help'), false) }}
+      <input type="date" id="stay_fee_rate_from" name="stay_fee_rate_from" aria-describedby="stay_fee_rate_from-help" min="{{ rate_from_default }}" value="{{ rate_from_default }}">
     </div>{% endif %}
   </div>
 </div>
@@ -50,7 +52,7 @@
   </div>
   {% if not fee_required %}
   <details class="fee-more ui-details-box"{% if apartment.stay_fee_authority_address or apartment.stay_fee_authority_contact or apartment.stay_fee_authority_databox %} open{% endif %}>
-    <summary>{{ t('stay_fees.setup.more_details') }}</summary>
+    <summary><span>{{ t('stay_fees.setup.more_details') }}</span>{{ icon('chevron-down', 16, 'fee-more-chev') }}</summary>
     <div class="field">
       {{ field_label('stay_fee_authority_address', t('apartment.form.stay_fee.authority_address_label'), t('apartment.form.stay_fee.authority_address_help')) }}
       <input type="text" id="stay_fee_authority_address" name="stay_fee_authority_address" aria-describedby="stay_fee_authority_address-help" maxlength="200" value="{{ apartment.stay_fee_authority_address or '' }}">
@@ -81,7 +83,7 @@
   <div class="stay-fee-guest-fields gp">
     <label class="gp-switch checkline" for="stay_fee_collect">
       <input type="checkbox" id="stay_fee_collect" name="stay_fee_collect" value="1" {% if apartment.stay_fee_collect %}checked{% endif %} aria-describedby="stay_fee_collect-help">
-      <span>{{ t('stay_fees.guest_pay.collect_label') }}{{ help_tip('stay_fee_collect-help', t('stay_fees.guest_pay.collect_hint')) }}</span>
+      <span>{{ t('stay_fees.guest_pay.collect_label') }}{{ help_tip('stay_fee_collect-help', t('stay_fees.guest_pay.collect_hint'), svg=true) }}</span>
     </label>
     <div class="gp-body">
       <p class="err-text small gp-warning" id="stay-fee-rate-warning" role="alert" data-rate-warning{% if not rate_err %} hidden{% else %} data-field-error{% endif %}>{{ t('stay_fees.guest_pay.rate_warning') }}</p>

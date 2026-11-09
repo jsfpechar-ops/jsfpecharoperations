@@ -172,3 +172,17 @@ def test_unpublished_page_404_even_with_content(owner):
     slug = property_page.account_row(aid)["slug"]
     public = TestClient(app)
     assert public.get(f"/p/{slug}").status_code == 404
+
+
+def test_unknown_property_page_is_html_404():
+    response = TestClient(app).get("/p/no-such-page-xyz", headers={"Accept": "text/html"})
+    assert response.status_code == 404
+    assert response.headers["content-type"].startswith("text/html")
+    assert response.text.strip()
+
+
+def test_unknown_pay_page_is_html_404():
+    response = TestClient(app).get("/pay/999/xxxx", headers={"Accept": "text/html"})
+    assert response.status_code == 404
+    assert response.headers["content-type"].startswith("text/html")
+    assert response.text.strip()

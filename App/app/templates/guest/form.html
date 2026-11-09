@@ -16,6 +16,14 @@
 {% block wrap_class %}g-checkin-page{% endblock %}
 
 {% block content %}
+{% if dup_warnings %}
+  <div class="g-host-note" role="note" data-dup-warning style="margin:16px 0">
+    <strong>{{ t('dup_warning_title') }}</strong>
+    {% for item in dup_warnings %}
+      <p style="margin:6px 0 0">{{ item.name }}: {{ t('dup_warning_body', what=item.what) }}</p>
+    {% endfor %}
+  </div>
+{% endif %}
 <aside class="g-checkin-rail" aria-label="{{ t('stay_label') }}">
   <div class="g-checkin-stay">
     {% if facility %}<span class="g-property-mark property-tone-{{ facility_tone }}" aria-hidden="true">{{ facility[:1] }}</span>{% endif %}
@@ -63,6 +71,9 @@
   <input type="hidden" name="stay_to"
          value="{{ values.get('stay_to') or (guest.stay_to if guest and guest.stay_to else reservation.date_to) }}">
 
+  {# Signature and passport photo need JavaScript. Without it the form can
+     never be completed, so say so up front instead of failing at Save. #}
+  <noscript><p class="g-err g-nojs-note" role="alert">{{ t('nojs_needed') }}</p></noscript>
   <p class="g-form-line">
     <span>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</span>
     <span>{{ nights_label(reservation.date_from, reservation.date_to) }}</span>
@@ -315,7 +326,8 @@
     {% if person_number and expected_people %}
       <p class="g-save-note">{{ t('person_progress', current=person_number, total=expected_people) }}</p>
     {% endif %}
-    <button class="g-btn" type="submit">
+    <p class="g-err" id="save-net-error" role="alert" hidden>{{ t('save_network_error') }}</p>
+    <button class="g-btn" type="submit" data-guest-save>
       {{ t(save_action_key) }}
     </button>
   </div>

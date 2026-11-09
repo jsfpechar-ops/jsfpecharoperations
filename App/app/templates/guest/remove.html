@@ -1,0 +1,12 @@
+{% extends "guest/base.html" %}
+{% block content %}
+<div class="g-card">
+  <h2>{{ t('remove_title', name=person_name or (t('person'))) }}</h2>
+  <p class="g-intro">{{ t('remove_help') }}</p>
+  <form method="post" action="/l/{{ token }}/{{ reservation.id }}/remove/{{ person_id }}?lang={{ lang }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <button class="g-btn" type="submit" data-confirm-remove>{{ t('remove_yes') }}</button>
+  </form>
+  <p class="g-quiet-action-row"><a class="g-quiet-action" href="{{ back_url }}">{{ t('remove_keep') }}</a></p>
+</div>
+{% endblock %}
