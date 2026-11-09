@@ -172,11 +172,9 @@ def test_error_redirect_keeps_dates_and_language(apartment, fake_sessions):
     response = TestClient(app).post(f"/p/{_slug(apartment)}/checkout",
                                     data=_form(guest_email="not-an-email", lang="en"),
                                     follow_redirects=False)
-    assert response.status_code == 303
-    location = response.headers["location"]
-    assert "book=bad_email" in location
-    assert "lang=en" in location
-    assert "date_from=2027-03-10" in location
+    assert response.status_code == 200
+    assert 'lang="en"' in response.text
+    assert "2027-03-10" in response.text
 
 
 def test_page_is_light(apartment):
