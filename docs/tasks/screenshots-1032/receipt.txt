@@ -1,0 +1,20 @@
+Everyone for Example Flat is registered. There is nothing else you need to do.
+
+Local stay fee
+600 CZK to pay for your group. It is paid once, to your host.
+
+How it is calculated
+Guest 1: 2 nights × 300 CZK = 600 CZK
+Pay by: Bank transfer, Revolut, Cash. The payment details are on your stay page.
+Bank transfer: use variable symbol 1234.
+
+See your stay page (host only): https://example.test/reservations/1
+
+Your host takes care of the official registration with the authorities. This e-mail is your receipt, not an official confirmation.
+
+--
+UbyHost is the guest-registration service your host uses.
+You received this e-mail because your stay at Example Flat is registered with this address.
+Your host: Host Example
+host@example.test · +420 000 000 000
+Reply to this e-mail to reach your host.

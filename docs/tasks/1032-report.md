@@ -2,43 +2,44 @@
 
 Status: review
 
-## Files changed
-- `App/app/templates/base.html`: security prompt markup (step 1, `ad8c99a9`); cache-bust bumped to `20261108-1032` on the app2.css and app.css links (step 2b, `000f2ad3`).
-- `App/app/static/app.css`: the brief's `.security-prompt*` block for non-v2 pages (step 2, `01c676ba`); focus outline offset 0 (step 3, `9e1e43d1`).
-- `App/app/static/app2.css`: v2 copy at the end, selectors prefixed `body.v2`, box rules on `body.v2 dialog.security-prompt`; focus outline offset 0 (steps 2b and 3). Existing z-index rules untouched.
-- `docs/tasks/screenshots-1032/`: 7 PNGs (committed in step 3).
+## Files changed (local commits on claude/project-thread-73qjig, not pushed)
+- `df4b8a2b` step 1: `App/app/templates/guest/_fee_pay.html`
+- `6ece6348` step 2: `App/app/static/guest.css`
+- `064ed194` step 3: `App/app/i18n.py`, `App/app/guest_uk_i18n.py` (fee_now_body)
+- `0a71eb3b` step 4: `App/app/mail_notify.py`, `App/app/claim.py`, receipt keys in `App/app/i18n.py`, `App/app/guest_uk_i18n.py`
+- `fbd75572` step 5: `App/tests/test_guest_mail.py` (3 receipt tests); `App/app/i18n.py`, `App/app/guest_uk_i18n.py` (payment-details sentence moved into `mail_completion_fee_ways`, 6 languages)
+- step 6: `docs/tasks/screenshots-1032/receipt.txt`, `docs/tasks/screenshots-1032/receipt.html`
+- step 7: this report
 
-## Tests
-`App/.venv/bin/python -m pytest tests/test_security_prompt_delay.py tests/test_passkeys.py tests/test_passkeys_client_browser.py tests/test_host_quiet_dashboard_browser.py tests/test_layout_lint_browser.py -q --tb=short -x -rs` with `UBYHOST_REQUIRE_BROWSER=1` added:
-```
-142 passed in 272.30s (0:04:32)
-```
-No skips.
+## Commands
+- `App/.venv/bin/python -m pytest tests/test_guest_mail.py tests/test_guest_languages.py tests/test_mail_label_case.py tests/test_mail_side_padding.py -q --tb=short -x 2>&1 | tail -30`
+  Last line: `113 passed in 2.01s`
+- `App/.venv/bin/python -m pytest tests/test_guest_*.py tests/test_guest_browser_e2e.py -q -rs --tb=short 2>&1 | tail -30` (test-map guest row)
+  Last lines: `516 passed, 6 skipped in 30.20s`
+  Skipped: `test_guest_browser_e2e.py:40` (4), `test_guest_guide_table_browser.py:13` (1), `test_guest_ocr_geometry_browser.py:20` (1), all `could not import 'playwright.sync_api': No module named 'playwright'`.
+- Not run: `tests/test_0896_fee_pay_geometry_browser.py` (host stay-fees pay step, same playwright reason).
 
-`python3 scripts/context_lint.py`: FAIL on one item, which is not in this change: `ERROR docs/tasks/1032-security-prompt-redesign.md: needs a 'Status: ...' line`. The brief is the orchestrator's file, so I did not edit it. The other WARN lines are pre-existing.
-
-## Screenshots (modal, centred; each viewed)
-- `prompt-en-390.png`: centred card, title one line, two equal rows, "Not now" centred, footnote wraps cleanly, no overflow. The first row has the focus ring on its border.
-- `prompt-en-768.png`: same card at 440 px wide, centred over the dashboard, rows equal.
-- `prompt-en-1280.png`: same card, centred, rows equal, no horizontal scroll.
-- `prompt-cs-390.png`: Czech title wraps to two lines, rows and footnote fit, nothing clipped.
-- `prompt-cs-768.png`: Czech card centred, rows equal.
-- `prompt-cs-1280.png`: Czech card centred, rows equal.
-- `prompt-en-390-nojs.png` (full page, no JS): card readable below the dashboard, passkey row correctly hidden, TOTP row and "Not now" usable. The sticky bottom nav overlays the page in the full-page capture only.
-
-## Findings and changes
-- The v2 dashboard loads `app2.css`, not `app.css`, so the first pass (step 2) had no effect there. Fixed in step 2b as the coordinator asked.
-- The modal did not open in the first step 3 run: `passkeys.js` only loads when `passkeys.available()` is true, which needs a `localhost` base URL. The script now sets `config.PUBLIC_BASE_URL` to `http://localhost:<port>`.
-- Defect fixed once: the 2px focus outline with 2px offset read as a double outline on the autofocused passkey row. The outline offset is now 0, so the ring sits on the border.
+## Done vs brief section 7
+- [x] No radio marks; all enabled options visible at once (code only, not viewed in a browser)
+- [x] Receipt shows total, per-guest calc, ways, VS; no method claim (tests and receipt.txt)
+- [ ] Tests pass with 0 skipped: NOT MET, 6 browser tests skipped
+- [ ] Screenshots of the guest hub pay box at 390/768/1280: NOT PRODUCED
+- [x] receipt.txt and receipt.html written
+- [x] Report written (this file)
 
 ## Deviations
-- I ran past the executor's 30-call cap while doing the coordinator's revised steps. Those calls ran after the earlier blocked handback.
-- Throwaway screenshot script is in the scratchpad (`/tmp/claude-0/-home-user-jsfpecharoperations/0405aa71-b521-5826-8d1b-19327d272a26/scratchpad/shot_1032.py`), not committed. It accepts legal docs and clears the prompt flag on a throwaway test account in the test DB.
-- `App/.venv` was created locally and is git-ignored (`requirements.txt`, `requirements-dev.txt`, `playwright==1.63.0`, Chromium).
-- Step 2 tokens: `--s`, `--ink2`, `--acc` are used in the v2 copy as instructed; I did not separately verify each is defined in `app2.css` or `tokens.css`. The screenshots show the intended colours.
+- `playwright` is not installed in `App/.venv` and is not in `requirements*.txt`. Adding it is a new dependency (rule 4, needs an owner line in decisions.md), so I did not install it. Browser and geometry tests cannot run here: "browser tests could not run, playwright is not installed".
+- Screenshots were not taken for the same reason. Google Chrome exists at `/usr/bin/google-chrome`, but no capture script was written.
+- Owner answer applied without a code change in `mail_notify`: the "payment details are on your stay page" sentence now sits in `mail_completion_fee_ways` ("Pay by: %(ways)s. The payment details are on your stay page."), so it shows whenever at least one way is listed. `mail_completion_fee_vs` keeps only the VS sentence. Still 5 keys.
+- Receipt files were rendered from a fake stay and host (example.test), not guest data.
 
 ## Questions
-None.
+- None open. Both earlier questions were answered by the owner.
 
 ## Owner steps left
-- None for this change. Pushing, merging and deploy are the orchestrator's or owner's.
+1. Decide whether `playwright` may be added to the dev requirements (needs a decisions.md line).
+2. If yes: `cd App && .venv/bin/pip install playwright && .venv/bin/python -m playwright install chromium`, then the browser run and screenshots (or let CI run them).
+3. Push the branch and open the PR after the browser run is green.
+
+## Follow-up by orchestrator
+Browser tests ran with UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium and a local-only playwright in the venv (no requirements change). Updated test_guest_browser_e2e.py selectors (details to div.g-fee-opt). Fee tests 8 passed; pay-box screenshots in screenshots-1032/.

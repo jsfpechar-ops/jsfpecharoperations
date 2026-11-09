@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional, Tuple
 from zoneinfo import ZoneInfo
 
-from . import config, db, deadlines, i18n, mail, mail_notify, reporting, validation
+from . import config, db, deadlines, i18n, mail, mail_notify, reporting, stay_fee, validation
 
 log = logging.getLogger("ubyhost.claim")
 
@@ -369,6 +369,39 @@ def _declared_count(reservation, row) -> int:
     return int(expected or row["declared_guests"] or 1)
 
 
+def _completion_fee(apartment, reservation) -> Optional[Dict]:
+    """The stay fee the receipt states, or None when the guest pays no fee here.
+
+    Read-only: the amount is the same live charge the guest pay box uses.
+    Any failure drops the fee block, never the receipt.
+    """
+    try:
+        if not (apartment["stay_fee_collect"] and config.STAY_FEE_GUEST_PAY):
+            return None
+        charge = stay_fee.charge_for_reservation(apartment, reservation)
+        if not charge or int(charge["total_czk"]) <= 0:
+            return None
+        lines = [
+            (int(line["liable_nights"]), int(line["amount_czk"]))
+            for line in charge["lines"]
+            if int(line["liable_nights"]) > 0
+        ]
+        keys = {
+            "iban" if part == "qr" else part
+            for part in (apartment["stay_fee_guest_rails"] or "").split(",")
+            if part
+        }
+        return {
+            "total": int(charge["total_czk"]),
+            "lines": lines,
+            "rate": int(charge["rate_czk"]),
+            "rails": [key for key in ("iban", "revolut", "cash") if key in keys],
+            "vs": str(int(reservation["id"])),
+        }
+    except Exception:  # the receipt must never fail because of the fee block
+        return None
+
+
 def _completion_facts(apartment, reservation, lang: str) -> Dict[str, str]:
     """Check-in and check-out for the receipt's stay panel.
 
@@ -487,6 +520,7 @@ def _guest_mail_content(
                 filled=filled,
                 expected=expected,
                 host_url=f"{config.app_base_url()}/reservations/{reservation['id']}",
+                fee=_completion_fee(apartment, reservation),
                 **_completion_facts(apartment, reservation, lang),
             )
         if kind == "reminder_guest":
