@@ -631,7 +631,7 @@ def show_phone_screen(page, key: str) -> None:
 def box_diffs(selector: str, app: dict, mock: dict, width: int, skip=None, page: str = "") -> list[str]:
     """Phone box metrics: width within 2 px, height and margins within 1 px. Values that are not px are skipped.
     skip: optional (["width"] or ["height"] or both, reason) from PAGES phone_box_skip; only width and height may be skipped.
-    BOX_OVERRIDES keys are "selector", "selector@width" or, for one page only, "page:selector[@width]"."""
+    BOX_OVERRIDES keys are "selector", "selector@width" or, for one page only, "page:selector[@width]". A value may be a list of accepted px values (text that wraps differently from day to day)."""
     out = []
     skipped, reason = skip if skip else ([], "")
     if set(skipped) - {"width", "height"}:
@@ -643,12 +643,14 @@ def box_diffs(selector: str, app: dict, mock: dict, width: int, skip=None, page:
         if prop in skipped:
             print(f"phone_box_skip {selector} {prop} at {width} px: {reason}")
             continue
-        a, m = _num(app[prop]), _num(override.get(prop, mock[prop]))
-        if a is None or m is None:
+        raw = override.get(prop, mock[prop])
+        accepted = [_num(v) for v in (raw if isinstance(raw, (list, tuple)) else [raw])]  # a list = every listed value is allowed (1073)
+        a = _num(app[prop])
+        if a is None or None in accepted:
             continue
         tol = 2 if prop == "width" else 1
-        if abs(a - m) > tol:
-            out.append(f"{selector} {prop} at {width} px: app={app[prop]} mockup={mock[prop]}")
+        if all(abs(a - m) > tol for m in accepted):
+            out.append(f"{selector} {prop} at {width} px: app={app[prop]} mockup={raw}")
     return out
 
 
