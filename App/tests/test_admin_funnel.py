@@ -247,3 +247,64 @@ def test_funnel_template_has_no_script():
     assert "<script" not in template.lower()
     czech = _login("admin").get("/admin/fakturace?lang=cs").text
     assert "Údaje o hostitelích a kampaních jsou v PostHogu." in czech
+
+
+def test_first_run_times_read_existing_timestamps_only():
+    uid = _account("times")
+    created = NOW - timedelta(days=30)
+    db.execute("UPDATE user_account SET created_at = ? WHERE id = ?", (_iso(created), uid))
+    apartment_id = db.insert(
+        "apartment",
+        {
+            "internal_name": "Flat times", "owner_user_id": uid,
+            "created_at": _iso(created + timedelta(seconds=600)),
+            "ubyport_verified_at": _iso(created + timedelta(seconds=1200)),
+        },
+    )
+    db.insert(
+        "ical_feed",
+        {"apartment_id": apartment_id, "url": "https://example.test/t.ics", "last_status": "ok",
+         "created_at": _iso(created + timedelta(seconds=1800))},
+    )
+    db.insert(
+        "reservation",
+        {"apartment_id": apartment_id, "uid": f"{PREFIX}times", "date_from": "2026-08-01",
+         "date_to": "2026-08-03", "registration_completed_at": _iso(created + timedelta(seconds=3600)),
+         "created_at": _iso(created), "updated_at": _iso(created)},
+    )
+    row = _mine(admin_funnel.rows(now=NOW))[f"{PREFIX}times"]
+    assert row["first_police_at"] == _iso(created + timedelta(seconds=1200))
+    assert admin_funnel._seconds_between(row["created_at"], row["first_property_at"]) == 600
+    assert admin_funnel._seconds_between(row["created_at"], row["first_calendar_at"]) == 1800
+    assert admin_funnel._seconds_between(row["created_at"], row["first_police_at"]) == 1200
+    assert admin_funnel._seconds_between(row["created_at"], row["first_guest_at"]) == 3600
+
+
+def test_first_run_times_median_p75_and_gaps():
+    guest = "2026-01-01T00:00:00+00:00"
+
+    def r(created, at):
+        return {"created_at": created, "first_property_at": at, "first_calendar_at": None,
+                "first_police_at": None, "first_guest_at": guest}
+
+    start = "2026-01-01T00:00:00+00:00"
+    data = {"rows": [
+        r(start, "2026-01-01T00:01:00+00:00"),
+        r(start, "2026-01-01T00:03:00+00:00"),
+        r(start, "2026-01-01T00:02:00+00:00"),
+        r(start, "2026-01-01T00:10:00+00:00"),
+        # created after its first guest: negative, dropped; no property: dropped
+        r("2026-01-02T00:00:00+00:00", None),
+    ]}
+    out = admin_funnel.first_run_times(data)
+    assert out["first_property"] == {"accounts": 4, "median_seconds": 150, "p75_seconds": 180}
+    assert out["first_calendar"] == {"accounts": 0, "median_seconds": None, "p75_seconds": None}
+    assert out["first_guest"]["accounts"] == 4
+    assert set(out) == {"first_property", "first_calendar", "first_police", "first_guest"}
+
+
+def test_first_run_times_do_not_change_stages_or_csv():
+    keys = [key for key, _column in admin_funnel.stages()]
+    assert "first_police" not in keys
+    headers = [h for h, _k in admin_funnel.csv_columns("2026-09", "2026-10")]
+    assert "first_police" not in headers and "first_police_at" not in headers
