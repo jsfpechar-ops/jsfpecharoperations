@@ -2527,6 +2527,20 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
   }
 
   // 1030: at >=768 px the editor shows one section at a time, a section list and one fix line. Phone unchanged.
+  // The one-time "second way in" prompt: a real modal in view, marked as shown only once it is open.
+  function initSecurityPrompt() {
+    var dialog = document.getElementById("security-prompt");
+    if (!dialog || typeof dialog.showModal !== "function" || !claimNode(dialog, "initSecurityPrompt")) return;
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    if (!dialog.open) dialog.showModal();
+    window.scrollTo(0, 0);
+    fetch("/account/security-prompt/seen", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "X-CSRF-Token": meta ? meta.getAttribute("content") || "" : "" }
+    }).catch(function () {});
+  }
+
   function initPropertyTabs() {
     var layout = document.querySelector(".prop-layout");
     if (!layout || !claimNode(layout, "initPropertyTabs")) return;
@@ -2743,6 +2757,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     initSectionNotice();
     initSaveSummary();
     initPropertyTabs();
+    initSecurityPrompt();
     initStayFeeStars();
     initSuccessNotices();
     initHelpTips();

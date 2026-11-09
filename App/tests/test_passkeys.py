@@ -374,6 +374,11 @@ def test_the_prompt_shows_once_after_the_first_login():
     first = client.get("/")
     assert 'id="security-prompt"' in first.text
     assert first.text.index("data-passkey-supported") < first.text.index("/account/2fa/setup")
+    # Rendering does not mark it; app.js reports it was seen once the dialog is open.
+    assert 'id="security-prompt"' in client.get("/").text
+    assert client.post(
+        "/account/security-prompt/seen", headers={"X-CSRF-Token": csrf_token_for(client)}
+    ).status_code == 204
     assert 'id="security-prompt"' not in client.get("/").text
     login_as(client, account["username"], follow_redirects=False)
     assert 'id="security-prompt"' not in client.get("/").text

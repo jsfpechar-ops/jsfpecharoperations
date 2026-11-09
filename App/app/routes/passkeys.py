@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import re
 
-from fastapi import APIRouter, BackgroundTasks, Request
+from fastapi import APIRouter, BackgroundTasks, Request, Response
 from fastapi.responses import JSONResponse, RedirectResponse
 
 from .. import auth, db, host_i18n, mail, mail_notify, passkeys, rate_limit, security
@@ -107,6 +107,19 @@ async def passkey_register_options(request: Request):
         return _error(request, "passkeys.error.rate_limited", 429)
     passkeys.record_options(ip_key)
     return _json(passkeys.registration_options(account))
+
+
+@router.post("/account/security-prompt/seen")
+async def security_prompt_seen(request: Request):
+    """app.js sends this when the one-time "second way in" dialog is open on screen."""
+    account = _owner(request)
+    if not account:
+        return Response(status_code=401)
+    db.execute(
+        "UPDATE user_account SET two_factor_prompted_at = ? WHERE id = ? AND two_factor_prompted_at IS NULL",
+        (db.utcnow(), account["id"]),
+    )
+    return Response(status_code=204)
 
 
 @router.post("/account/passkeys")

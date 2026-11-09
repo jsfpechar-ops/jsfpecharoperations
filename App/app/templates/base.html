@@ -41,12 +41,12 @@
   {% if show_nav | default(true) %}<script src="/static/vendor/turbo-8.0.13.js?v=8.0.13" defer data-turbo-track="reload"></script><meta name="turbo-cache-control" content="no-cache"><meta name="view-transition" content="same-origin"><meta name="turbo-prefetch" content="true">{% endif %}
   <script src="/static/csrf.js?v=20260915a" defer data-turbo-track="reload"></script>
   <script src="/static/skeleton.js?v=20261102-0509" defer data-turbo-track="reload"></script>
-  <script src="/static/app.js?v=20261109-1032f" defer data-turbo-track="reload"></script>
+  <script src="/static/app.js?v=20261109-qa1" defer data-turbo-track="reload"></script>
   {% if show_nav | default(true) %}<script src="/static/host.js?v=20261109-1032c" defer data-turbo-track="reload"></script>{% endif %}
   <noscript><link rel="stylesheet" href="/static/app-nojs.css?v=20261104-1210"></noscript>
   {% if show_nav | default(true) %}<script src="/static/guide.js?v=20261104-0916" defer data-turbo-track="reload"></script>{% endif %}
   {% if show_nav | default(true) %}<script src="/static/pwa.js?v=20261102-0511" defer data-turbo-track="reload"></script>{% endif %}
-  {% if (show_nav | default(true)) and passkeys_enabled() %}<script src="/static/passkeys.js?v=20261102-0789a" defer data-turbo-track="reload"></script>{% endif %}
+  {% if (show_nav | default(true)) and passkeys_enabled() %}<script src="/static/passkeys.js?v=20261109-qa1" defer data-turbo-track="reload"></script>{% endif %}
   {% if show_nav | default(true) %}<script src="/static/shell.js?v=20261025-0373" defer data-turbo-track="reload"></script>{% endif %}
   {% if (show_nav | default(true)) and current_user %}<script src="/static/havel.js?v=20261102-0507" defer data-turbo-track="reload"></script>{% endif %}
 </head>
@@ -243,9 +243,8 @@
 
 {% set prompt = security_prompt() if (show_nav | default(true)) and security_prompt is defined and security_prompt else None %}
 {% if prompt %}
-{# Task 0004: shown once, to an account with no passkey and no authenticator
-   app. Without JavaScript it is an open box on the page; with it, a modal. #}
-<dialog id="security-prompt" class="admin-dialog security-prompt" open aria-labelledby="security-prompt-title">
+{# Task 0004: shown once. app.js opens it as a modal and tells the server it was seen; without JavaScript it stays closed and unmarked. #}
+<dialog id="security-prompt" class="admin-dialog security-prompt" aria-labelledby="security-prompt-title">
   <div class="security-prompt-body">
     <h2 id="security-prompt-title" class="security-prompt-title">{{ t('security_prompt.title') }}</h2>
     <p class="security-prompt-lede">{{ t('security_prompt.lede') }}</p>
