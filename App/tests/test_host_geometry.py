@@ -52,6 +52,10 @@ def base():
 
 def _browser_session_cookie(username: str) -> str:
     """Log in through the ASGI app so CSRF and acceptance gates match other tests."""
+    # The one-time "second way in" modal would cover every click in a browser test.
+    row = db.query_one("SELECT id FROM user_account WHERE username = ?", (username,))
+    if row:
+        mark_security_prompt_seen(row["id"])
     client = TestClient(app)
     response = login_as(client, username, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
