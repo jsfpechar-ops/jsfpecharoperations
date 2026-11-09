@@ -237,13 +237,13 @@
     <div class="g-field">
       <label for="res_city">{{ t('res_city') }}</label>
       <input class="{{ bad('res_city') }}" {{ invalid('res_city') }} type="text" id="res_city" name="res_city" maxlength="42"
-             autocomplete="address-level2" required value="{{ val('res_city') }}">
+             autocomplete="address-level2" autocapitalize="words" required value="{{ val('res_city') }}">
       {{ err_for('res_city') }}
     </div>
     <div class="g-field">
       <label for="res_street">{{ t('res_street') }}</label>
       <input class="{{ bad('res_street') }}" {{ invalid('res_street') }} type="text" id="res_street" name="res_street" maxlength="42"
-             autocomplete="address-line1" required value="{{ val('res_street') }}">
+             autocomplete="address-line1" autocapitalize="words" required value="{{ val('res_street') }}">
       {{ err_for('res_street') }}
     </div>
     {% if ruian_suggest_url %}
