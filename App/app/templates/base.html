@@ -95,13 +95,13 @@
       <div class="toast-stack" data-feedback-rail aria-live="off">
         {% if flash and not inline_flash_section and not editor_saved %}
           <div class="toast" data-toast data-toast-kind="{{ flash_kind | default('info') }}"{% if flash_sticky | default(false) %} data-toast-sticky{% endif %}>
-            <span class="grow">{{ flash }}</span>
+            <span class="grow">{{ flash }}{% if flash_fix %} <a href="{{ flash_fix[0] }}">{{ t(flash_fix[1]) }}</a>{% endif %}</span>
             <button type="button" data-toast-close aria-label="{{ t('a11y.dismiss_notification') }}">{{ icon('x', 16) }}</button>
           </div>
         {% endif %}
         {% if flash_error and not inline_flash_section %}
           <div class="toast err" data-toast data-toast-kind="error" data-toast-sticky>
-            <span class="grow">{{ flash_error }}</span>
+            <span class="grow">{{ flash_error }}{% if flash_fix %} <a href="{{ flash_fix[0] }}">{{ t(flash_fix[1]) }}</a>{% endif %}</span>
             <button type="button" data-toast-close aria-label="{{ t('a11y.dismiss_notification') }}">{{ icon('x', 16) }}</button>
           </div>
         {% endif %}
