@@ -127,7 +127,7 @@ func TestRequestLinkDatabase(t *testing.T) {
 
 	links.url = ""
 	rec = post("/payments/requests/11/link", 1)
-	if !strings.HasPrefix(rec.Header().Get("Location"), "/payments?err=") {
-		t.Errorf("not ready: %q", rec.Header().Get("Location"))
+	if loc := rec.Header().Get("Location"); !strings.HasPrefix(loc, "/payments?err=") || !strings.HasSuffix(loc, "&fix=stripe") {
+		t.Errorf("not ready: %q", loc)
 	}
 }

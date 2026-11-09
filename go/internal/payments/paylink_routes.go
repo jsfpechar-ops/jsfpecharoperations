@@ -157,7 +157,9 @@ func RequestLinkHandler(pool *pgxpool.Pool, getenv func(string) string, now func
 			return
 		}
 		if link == "" {
-			flashErr("payments.err.not_ready")
+			f := requestFlash(lang, "payments.err.not_ready")
+			f.Fix = "stripe"
+			hostweb.Back(w, r, "/payments", hostweb.Flash{}, f)
 			return
 		}
 		if status == "draft" {
