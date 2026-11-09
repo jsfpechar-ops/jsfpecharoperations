@@ -15,7 +15,7 @@ from fastapi.testclient import TestClient
 
 from app import alerts, auth, db
 from app.main import app
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 USERNAME = "property-form-host"
 
@@ -78,7 +78,7 @@ def _payload(**overrides):
 def host():
     db.init_db()
     _cleanup()
-    auth.create_account(f"{USERNAME}@example.test", "Form Host", username=USERNAME)
+    mark_security_prompt_seen(auth.create_account(f"{USERNAME}@example.test", "Form Host", username=USERNAME))
     client = TestClient(app)
     response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
