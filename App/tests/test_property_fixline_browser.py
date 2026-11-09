@@ -39,9 +39,14 @@ def test_a_native_invalid_save_shows_the_fix_line_at_390(host, base):  # noqa: F
         page.set_viewport_size({"width": 390, "height": 844})
         page.goto(url)
         page.evaluate("""() => {
-          for (const n of ['addr_house_no', 'addr_zip']) document.querySelector('[name=' + n + ']').value = '';
+          for (const n of ['addr_house_no', 'addr_zip']) {
+            const f = document.querySelector('[name=' + n + ']');
+            f.value = '';
+            f.dispatchEvent(new Event('input', { bubbles: true }));
+          }
         }""")
-        page.locator("#property-settings-form button[type=submit]:visible").first.click()
+        # The save bar only shows once the form is dirty; click the real Save button, not the first visible submit (Archive).
+        page.locator(".savebar button[type=submit]").click()
         page.wait_for_function("() => !document.querySelector('[data-prop-fixline]').hidden")
         line = page.locator("[data-prop-fixline]")
         links = line.locator("a")
