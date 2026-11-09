@@ -59,7 +59,7 @@
   <ol class="fee-stepper" aria-label="{{ t('stay_fees.pay.step', n=period.step) }}">
     {% for n in (1, 2) %}
     <li class="fee-stepper-item" data-state="{{ 'done' if n < period.step else ('current' if n == period.step else 'todo') }}"{% if n == period.step %} aria-current="step"{% endif %}>
-      <span class="fee-stepper-dot" aria-hidden="true">{% if n < period.step %}✓{% else %}{{ n }}{% endif %}</span>
+      <span class="fee-stepper-dot" aria-hidden="true">{% if n < period.step %}{{ icon('check', 14) }}{% else %}{{ n }}{% endif %}</span>
       <span class="fee-stepper-label">{{ t('stay_fees.pay.short' ~ n) }}</span>
     </li>
     {% endfor %}

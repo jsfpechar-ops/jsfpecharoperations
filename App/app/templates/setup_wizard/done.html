@@ -7,7 +7,7 @@
 {% block wizard_content %}
 <div class="ui-banner setup-wizard-celebrate{{ ' is-partial' if missing_row }}" role="status" data-setup-celebrate="{{ 'partial' if missing_row else 'done' }}">
   {% if celebrate and not missing_row %}<span class="setup-wizard-confetti" aria-hidden="true">{% for n in range(12) %}<i></i>{% endfor %}</span>{% endif %}
-  <span class="setup-wizard-celebrate-mark" aria-hidden="true">{{ '!' if missing_row else '✓' }}</span>
+  <span class="setup-wizard-celebrate-mark" aria-hidden="true">{{ icon('triangle-alert' if missing_row else 'check', 20) }}</span>
   <div class="grow setup-wizard-celebrate-copy">
     <strong class="setup-wizard-celebrate-title">{{ t('wizard.done.almost') if missing_row else t('wizard.done.all_set') }}</strong>
     {% if missing_row %}<span>{{ t('wizard.done.left.police') if missing_row.key == 'police' else t('wizard.done.left.step') }}</span>{% endif %}
@@ -28,7 +28,7 @@
       <div class="setup-summary-copy">
         <strong>{{ t('wizard.summary.' ~ row.key) if row.key in ['calendar', 'try_it'] else t('wizard.step.' ~ row.key) }}</strong>
         <span class="ui-badge ui-badge-{{ 'done' if status == 'done' else 'attention' if status == 'waiting' else 'neutral' }}" data-tone="{{ 'green' if status == 'done' else 'amber' if status == 'waiting' else 'grey' }}">
-          {% if status == 'done' %}<span aria-hidden="true">✓</span>{% endif %}
+          {% if status == 'done' %}<span aria-hidden="true">{{ icon('check', 14) }}</span>{% endif %}
           {{ t('wizard.summary.status.' ~ status) }}
         </span>
         {% if row.status == 'waiting' %}

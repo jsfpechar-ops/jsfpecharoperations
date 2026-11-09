@@ -309,7 +309,7 @@
 <div class="success-notice" role="status" data-success-notice>
   <span class="success-notice-text">{{ text }}</span>
   {% if next_href and next_label %}<a class="success-notice-next" href="{{ next_href }}">{{ next_label }}</a>{% endif %}
-  <button type="button" class="success-notice-close" data-success-dismiss aria-label="{{ t('a11y.dismiss_notification') }}">&times;</button>
+  <button type="button" class="success-notice-close" data-success-dismiss aria-label="{{ t('a11y.dismiss_notification') }}">{{ icon('x', 16) }}</button>
 </div>
 {% endmacro %}
 
@@ -431,7 +431,7 @@
       {% for step in onboarding.steps %}
         {% set is_current = onboarding.current and step.id == onboarding.current.id and not step.done %}
         <article class="onboarding-step {{ 'is-done' if step.done else '' }} {{ 'is-current' if onboarding.current and step.id == onboarding.current.id else '' }}">
-          <div class="onboarding-step-index" aria-hidden="true">{% if step.done %}✓{% else %}{{ loop.index }}{% endif %}</div>
+          <div class="onboarding-step-index" aria-hidden="true">{% if step.done %}{{ icon('check', 16) }}{% else %}{{ loop.index }}{% endif %}</div>
           <div class="onboarding-step-copy">
             <h3>{{ t('onboarding.' ~ step.id ~ '.title') }}</h3>
           </div>
