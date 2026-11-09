@@ -1,6 +1,6 @@
 # 1068a: Errors that link to the fix, and no Bank QR without a bank account (Python)
 
-Status: todo
+Status: blocked
 Depends on: none (1066 and 1067 go first, see §2) | Base commit: origin/main at brief time | Branch: `claude/1068-errors-link-fix` (same branch as 1068b; 1068a goes first)
 Executor: Opus (owner override) | Fits one session: 12 steps. Queue item 1.4, Tier B. Plan: docs/plans/speed-and-ease.md section 4.5 and Q8, Q9.
 
