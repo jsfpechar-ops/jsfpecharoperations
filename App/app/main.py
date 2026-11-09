@@ -359,7 +359,29 @@ async def cloudflare_connecting_ip(request: Request, call_next):
             time.perf_counter() - started,
             db_queries=stats.queries, db_seconds=stats.db_seconds,
         )
+    if _signed_in_page(request):
+        response.headers["Server-Timing"] = _server_timing(stats, started)
     return response
+
+
+def _signed_in_page(request: Request) -> bool:
+    """Server-Timing goes only to a signed-in host (1072): the numbers describe
+    that host's own page and are not worth showing a visitor or a guest. Guest
+    links and the shared cleaning schedule never get it, even for a host."""
+    path = request.url.path
+    if path.startswith("/static/") or path in ("/metrics", "/healthz"):
+        return False
+    if _is_guest_path(request) or path.startswith("/cleaning/shared/"):
+        return False
+    return getattr(request.state, "user_account", None) is not None
+
+
+def _server_timing(stats: "db.RequestStats", started: float) -> str:
+    """``db;dur=<ms>;desc="<n> queries", app;dur=<ms>``: counts and milliseconds only."""
+    return (
+        f'db;dur={stats.db_seconds * 1000:.1f};desc="{stats.queries} queries", '
+        f"app;dur={(time.perf_counter() - started) * 1000:.1f}"
+    )
 
 
 # WP07: every /static URL in the templates carries ?v=<key>, and the key is
