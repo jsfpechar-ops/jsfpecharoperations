@@ -202,3 +202,33 @@ def test_record_baseline_uses_previous_rate_or_first_rate():
     assert not stay_fee_rate.record(first["id"], 25, date(2026, 3, 13), previous=0,
                                     today=date(2026, 3, 13))
     assert stay_fee_rate.schedule_for(first) == [(date(2000, 1, 1), 25)]
+
+
+def test_schedule_for_column_fallback_keeps_later_dated_rates():
+    """A current-rate column must not wipe a future history row.
+
+    After a future-dated save the editor still shows that future amount. The
+    host then puts today's rate back; record() is a no-op (today already has
+    the old rate) so the column drifts from the last history row. schedule_for
+    appends (today, column) as a safety net. That tail must stay in date
+    order, or rate_on stops too late and January nights take today's rate.
+    """
+    apartment = _apartment(50)
+    _rate_row(apartment["id"], 30, "2000-01-01")
+    _rate_row(apartment["id"], 50, "2027-01-01")
+    drifted = dict(apartment)
+    drifted["stay_fee_rate_czk"] = 30
+    today = date(2026, 3, 12)
+    schedule = stay_fee_rate.schedule_for(drifted, today=today)
+    assert stay_fee_rate.rate_on(schedule, today) == 30
+    assert stay_fee_rate.rate_on(schedule, date(2026, 12, 31)) == 30
+    assert stay_fee_rate.rate_on(schedule, date(2027, 1, 1)) == 50
+    assert stay_fee_rate.rate_on(schedule, date(2027, 6, 15)) == 50
+    # A later current-rate row in history, with the column matching it, still
+    # leaves the scheduled January rate in force.
+    _rate_row(apartment["id"], 40, "2026-03-12")
+    current = dict(apartment)
+    current["stay_fee_rate_czk"] = 40
+    mixed = stay_fee_rate.schedule_for(current, today=today)
+    assert stay_fee_rate.rate_on(mixed, today) == 40
+    assert stay_fee_rate.rate_on(mixed, date(2027, 1, 1)) == 50
