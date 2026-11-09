@@ -20,7 +20,7 @@ from app import auth, claim, db, invoices, passport_photos
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
 from starlette.datastructures import FormData
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 
 PNG_BYTES = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGMAAQAABQAB"
@@ -110,7 +110,7 @@ def host_world(monkeypatch):
     for row in db.query("SELECT id FROM user_account WHERE username LIKE 'dl-sk%'"):
         _purge_download_owner(int(row["id"]))
     username = f"dl-sk{secrets.token_hex(4)}"
-    owner = auth.create_account(f"{username}@example.test", "DL", role="host", username=username)
+    owner = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "DL", role="host", username=username))
     entity = db.insert(
         "legal_entity",
         {"name": "DL s.r.o.", "owner_user_id": owner, "created_at": db.utcnow()},

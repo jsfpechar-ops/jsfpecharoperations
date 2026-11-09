@@ -14,7 +14,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, claim, config, db, guest_guide, guide_token, mail
 from app.main import app
-from tests.conftest import login_as
+from tests.conftest import login_as, mark_security_prompt_seen
 from tests.test_guest_browser_e2e import LAYOUT_JS, browser, live_server  # noqa: F401
 
 SHOTS = Path(os.environ.get("UBYHOST_SHOTS_DIR") or "/tmp/ubyhost-b18")
@@ -35,7 +35,7 @@ def _seed(username: str):
     """A fresh host property, every must-have card filled, plus a stay that starts today."""
     _cleanup()
     now = db.utcnow()
-    owner = auth.create_account(f"{username}@example.test", "Audience 0976", role="host", username=username)
+    owner = mark_security_prompt_seen(auth.create_account(f"{username}@example.test", "Audience 0976", role="host", username=username))
     apartment_id = db.insert("apartment", {
         "internal_name": APT_NAME, "uby_name": APT_NAME, "owner_user_id": owner,
         "permalink_token": PERMALINK, "permalink_window_days": 14,
