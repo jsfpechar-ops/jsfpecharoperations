@@ -2,8 +2,9 @@
 
 Status: todo
 Depends on: 1065 (merged, PR #856) | Base commit: 1194e109 | Branch: claude/1072-shared-queries-server-timing
-Executor: Opus (Tier B owner override, [workflow] decision 2026-11-09 in decisions.md) | Fits one session: 40 tool calls, 70k tokens
-Queue item 1.7 (Tier B). Plan: [speed-and-ease](../plans/speed-and-ease.md) item Q7, section 3 (speed budget, "Any host page"), section 4.7 (server findings) and section 9 (measuring).
+Executor: Fable 5.2 (**Tier A**: `workspace_user` feeds `access.owner_id` for every guest-data lookup; [workflow] decision 2026-11-09 in [decisions](../context/decisions.md)) | Fits one session: 40 tool calls, 70k tokens
+After execution a fresh Fable reviews the full diff of auth.py and access.py line by line vs this brief before the PR.
+Queue item 1.7 (Tier A). Plan: [speed-and-ease](../plans/speed-and-ease.md) item Q7, section 3 (speed budget, "Any host page"), section 4.7 (server findings) and section 9 (measuring).
 
 ## 1. Objective
 
@@ -36,20 +37,23 @@ Per page, in `render()` and `require_login`: `user_account LIMIT 1`, `user_accou
 
 `templating.render` loads every open alert (`alerts.open_alerts`, `alerts.py:555-568`: one SELECT, no decrypt) and `alerts.present_many` (`alerts.py:397`) turns each into a card, and `_preload_stays` (`alerts.py:185-215`) reads and decrypts the stays and guests behind them. That presenting is the cost. In `_host_alerts.html` (path `App/app/templates/_host_alerts.html`) every `critical` alert is a card of its own on every page, and the non-critical ones become one summary line ("N alerts need you") unless there is exactly one. The dashboard (`/`) is the only page that lists everything (`needs_you_build(rows, needs_you_queue, open_alerts, ...)` in `dashboard.html:40`, and `alerts_expanded`).
 
-Design: off the dashboard keep **all critical rows plus the first 12 others** (rows arrive sorted by level), present only those, and pass the number left out as `open_alerts_more`; the template adds it to `rest_count`. The SELECT stays one query for all rows because it has no decrypt and the critical rows must never be cut. A filing deadline alert is `critical` (see `reporting.py`), so it is never hidden. The cap is `SHELL_ALERT_LIMIT = 12`; typical hosts have fewer, so their page is identical. Known approximation: the pin-rotated merge in the count (several `guest_pin_rotated` count as one) is not applied to rows beyond the 12th. Beyond 12 non-critical alerts the line says a number that may be slightly higher than the dashboard's; accepted.
+Design: off the dashboard keep **all critical rows plus the first 12 others** (rows arrive sorted by level), present only those, and pass the number left out as `open_alerts_more`; the template adds it to `rest_count`. The SELECT stays one query for all rows because it has no decrypt and the critical rows must never be cut. A filing deadline alert is `critical` (see `reporting.py`), so it is never hidden. The cap is `SHELL_ALERT_LIMIT = 12`; typical hosts have fewer, so their page is identical. Known approximation: rows beyond the 12th are counted raw. Two merges that shrink the count for presented rows are not applied to them: the pin-rotated merge in the template (several `guest_pin_rotated` count as one) and the per-stay merge in `present_many` (`alerts.py:397-436`: rows of one reservation become one card, and a `guest_incomplete_checkin` whose forms are complete is dropped). Both inflate the "more" count. Beyond 12 non-critical alerts the line says a number that may be higher than the dashboard's; accepted.
+
+Because `present_many` can drop or merge every kept non-critical row, the template may reach the summary line with `held.folded` and `rest` both empty while `open_alerts_more > 0`. The summary's level then must not index that empty list (Step 9).
 
 ### 2.5 Per-request cache design (no leak between requests or users)
 
 Both caches live on `request.state`. Starlette creates a new `request.state` for every request, so nothing survives the request and nothing is shared between users. No module global, no contextvar, no new dependency, and no SQL outside `db.py` helpers (the memo wraps `db.query`).
 
 - `request.state.workspace_account`: the account `workspace_user` returned. Same pattern as `current_user`.
-- `request.state.apartments_memo`: `{(owner_id, include_archived, columns): rows}`. **GET and HEAD only**: a POST may write and read the list in one request, so it always reads the database. A narrower column list (plain column names only) is served from an earlier `*` read of the same request. Rows are immutable row objects; callers get a new list each time.
+- `request.state.apartments_memo`: `{(owner_id, include_archived, columns): rows}`. **GET and HEAD only**: a POST may write and read the list in one request, so it always reads the database. A narrower column list (plain column names only) is served from an earlier `*` read of the same request. Rows are `db._HydratedRow` objects (`db.py:1872`, a `dict` subclass), so they are **not** immutable: the memo hands the same row objects to every caller in the request, and only the list is new each time. **Callers must not mutate cached rows** (no `row[...] = ...`, no `row.update(...)`); copy with `dict(row)` first. The method is read with `getattr(request, "method", "")`, the same pattern as `auth.py:546`, so a request object without `method` never uses the memo.
+- Writes: the only property insert is `POST /apartments` (`routes/admin.py:1815`, insert at `admin.py:1857`), which runs without the memo and ends in a 303, so the next page is a new request with an empty memo. No invalidation is needed; a test proves it (Step 11, chunk F). If you find a GET route that inserts, archives or renames a property, STOP (section 8).
 
 ### 2.6 Server-Timing: who gets it, and why
 
 Header: `Server-Timing: db;dur=<ms>;desc="<n> queries", app;dur=<ms>`, built from the 1065 `RequestStats` (`stats.queries`, `stats.db_seconds`, `db.py:31-67`) and the middleware's `started` clock (`main.py:318-362`).
 
-Decision: **sent only when the request already identified a signed-in account** (`request.state.user_account` is set by `auth.current_user`), never for `/static/`, `/metrics`, `/healthz`, signed-out pages or guest pages. Why: the numbers describe the host's own page and only the host or the owner reads them; a visitor gains nothing, and on `/login` or a guest link a query count could leak whether an account or stay exists. It carries two numbers and the word "queries", no route, id, name or e-mail, and there is no `Timing-Allow-Origin`, so scripts on other origins cannot read it. No new personal data (no line in `App/app/retention.py`), no outbound request, no cookie.
+Decision: **sent only when the request already identified a signed-in account** (`request.state.user_account` is set by `auth.current_user`), never for `/static/`, `/metrics`, `/healthz`, signed-out pages, guest pages (`_is_guest_path(request)`, `main.py:256`: `/l` and `/l/...`) or the shared cleaning schedule (paths starting `/cleaning/shared/`), **even when a signed-in host opens them**. Why: the numbers describe the host's own page and only the host or the owner reads them; a visitor gains nothing, and on `/login` or a guest link a query count could leak whether an account or stay exists. It carries two numbers and the word "queries", no route, id, name or e-mail, and there is no `Timing-Allow-Origin`, so scripts on other origins cannot read it. No new personal data (no line in `App/app/retention.py`), no outbound request, no cookie.
 
 Reach: Python-served pages only. Paths served by Go (`UBYHOST_GO_PATHS` in status.md) do not pass this middleware and get no header. The middleware already reads `request.state.session_payload` after the route (`auth.refresh_session_cookie`), so `request.state` is visible there.
 
@@ -229,10 +233,11 @@ _PLAIN_COLUMNS = re.compile(r"[a-z_][a-z_0-9]*(\s*,\s*[a-z_][a-z_0-9]*)*")
 
 def apartments(request: Request, columns: str = "*", include_archived: bool = False):
     """The host's properties. On a GET the rows are read once per request (1072):
-    a narrower column list is served from an earlier ``*`` read of the same request."""
+    a narrower column list is served from an earlier ``*`` read of the same request.
+    The rows are shared within the request: callers must not mutate cached rows."""
     owner = owner_id(request)
     memo = None
-    if request.method in ("GET", "HEAD"):
+    if getattr(request, "method", "") in ("GET", "HEAD"):
         memo = getattr(request.state, "apartments_memo", None)
         if memo is None:
             memo = request.state.apartments_memo = {}
@@ -311,9 +316,25 @@ Replace with:
 Command: `.venv/bin/python -c "import app.templating" 2>&1 | tail -30`
 Expected: no output.
 
-### Step 9: `_host_alerts.html`, count the ones left out
+### Step 9: `_host_alerts.html`, count the ones left out, and never index an empty list
 
-Anchor (exactly once, one line):
+Three edits in `App/app/templates/_host_alerts.html`. `present_many` can drop or merge every kept non-critical row (section 2.4), so the summary line must render with `held.folded` and `rest` both empty.
+
+Edit 9a. Anchor (exactly once, line 10):
+
+```jinja
+{% if open_alerts %}
+{% set path = request.url.path if request is defined and request else '' %}
+```
+
+Replace with (the count of left-out rows still shows when no kept row survived):
+
+```jinja
+{% if open_alerts or (open_alerts_more | default(0)) %}
+{% set path = request.url.path if request is defined and request else '' %}
+```
+
+Edit 9b. Anchor (exactly once, one line):
 
 ```jinja
 {% set rest_count = (rest | rejectattr('kind', 'equalto', 'guest_pin_rotated') | list | length) + (1 if rest_pin else 0) + (held.folded | length) %}
@@ -324,6 +345,23 @@ Replace with:
 ```jinja
 {% set rest_count = (rest | rejectattr('kind', 'equalto', 'guest_pin_rotated') | list | length) + (1 if rest_pin else 0) + (held.folded | length) + (open_alerts_more | default(0)) %}
 ```
+
+Edit 9c. Anchor (exactly once, one line):
+
+```jinja
+    <article class="notification-bubble {{ (held.folded + rest)[0].level }}" data-notification-summary>
+```
+
+Replace with:
+
+```jinja
+    <article class="notification-bubble {{ (held.folded + rest)[0].level if (held.folded or rest) else 'warning' }}" data-notification-summary>
+```
+
+Without 9c, `(held.folded + rest)[0]` is Jinja `Undefined` and `.level` raises `UndefinedError`: a 500 on every page but `/` for that host.
+
+Command: `grep -c "open_alerts_more\|else 'warning'" app/templates/_host_alerts.html | tail -30`
+Expected: `3`.
 
 Command: `.venv/bin/python -m pytest tests/test_alert_stack.py tests/test_alert_language.py -q --tb=short -x 2>&1 | tail -30`
 Expected: `passed`, no failures.
@@ -353,9 +391,12 @@ Replace with:
 
 def _signed_in_page(request: Request) -> bool:
     """Server-Timing goes only to a signed-in host (1072): the numbers describe
-    that host's own page and are not worth showing a visitor or a guest."""
+    that host's own page and are not worth showing a visitor or a guest. Guest
+    links and the shared cleaning schedule never get it, even for a host."""
     path = request.url.path
     if path.startswith("/static/") or path in ("/metrics", "/healthz"):
+        return False
+    if _is_guest_path(request) or path.startswith("/cleaning/shared/"):
         return False
     return getattr(request.state, "user_account", None) is not None
 
@@ -371,12 +412,12 @@ def _server_timing(stats: "db.RequestStats", started: float) -> str:
 # WP07: every /static URL in the templates carries ?v=<key>, and the key is
 ```
 
-Command: `.venv/bin/python -c "import app.main" 2>&1 | tail -30`
-Expected: no output.
+Command: `.venv/bin/python -c "import app.main as m; print(m._is_guest_path is not None)" 2>&1 | tail -30`
+Expected: `True` (`_is_guest_path` is defined at `main.py:256`, above the middleware; no import needed).
 
-### Step 11: create `App/tests/test_shared_queries_1072.py` (5 chunks)
+### Step 11: create `App/tests/test_shared_queries_1072.py` (6 chunks)
 
-Create the file with chunk A, then append chunks B, C, D, E in order, each as the next lines of the same file (use `cat >> tests/test_shared_queries_1072.py <<'EOF'` for B to E; chunk A with `cat >`). The file must be exactly the five chunks joined, with no extra blank lines between chunk ends and starts beyond what each chunk shows.
+Create the file with chunk A, then append chunks B, C, D, E, F in order, each as the next lines of the same file (use `cat >> tests/test_shared_queries_1072.py <<'EOF'` for B to F; chunk A with `cat >`). The file must be exactly the six chunks joined, with no extra blank lines between chunk ends and starts beyond what each chunk shows.
 
 Chunk A (imports, constants, cleanup, account helper):
 
@@ -551,15 +592,101 @@ def test_critical_alerts_are_never_left_out():
     assert alerts.shell_slice(rows[:3]) == (rows[:3], 0)
 ```
 
+Chunk F (review findings: empty summary, guest paths, preview, cache edges):
+
+```python
+def test_the_summary_line_survives_when_every_kept_row_vanishes(hosts, monkeypatch):
+    _alert(hosts.a["id"], "critical", 99)
+    for n in range(15):
+        _alert(hosts.a["id"], "warning", n)
+    real = alerts.present_many
+    monkeypatch.setattr(alerts, "present_many",
+                        lambda rows, lang: [c for c in real(rows, lang) if c["level"] == "critical"])
+    page = hosts.ca.get("/settings?lang=en")
+    assert page.status_code == 200
+    assert "data-notification-summary" in page.text
+    monkeypatch.setattr(alerts, "present_many", lambda rows, lang: [])
+    page = hosts.ca.get("/settings?lang=en")
+    assert page.status_code == 200
+    assert "3 alerts need you" in page.text
+
+
+def test_server_timing_is_never_sent_on_guest_or_shared_cleaning_pages(hosts):
+    assert "server-timing" in hosts.ca.get("/apartments?lang=en").headers
+    for path in ("/l/tok-alpha-1072", "/cleaning/shared/not-a-token-1072"):
+        response = hosts.ca.get(path, follow_redirects=False)
+        assert "server-timing" not in response.headers, path
+
+
+def test_an_admin_preview_shows_the_host_property_and_the_own_view_does_not():
+    db.init_db()
+    _cleanup()
+    admin, host = _account(ADMIN, "admin"), _account(HOST_A)
+    _property(host["id"], "Alpha 1072")
+    try:
+        preview = TestClient(app)
+        preview.cookies.set(auth.SESSION_COOKIE, auth.issue_session(
+            admin["id"], admin["session_version"], workspace_user_id=host["id"]))
+        page = preview.get("/apartments?lang=en")
+        assert page.status_code == 200 and "Alpha 1072" in page.text
+        own = TestClient(app)
+        own.cookies.set(auth.SESSION_COOKIE, auth.issue_session(admin["id"], admin["session_version"]))
+        assert "Alpha 1072" not in own.get("/apartments?lang=en").text
+    finally:
+        _cleanup()
+
+
+def test_an_expired_preview_is_not_cached(monkeypatch):
+    admin = {"id": 7, "role": "admin"}
+    monkeypatch.setattr(auth, "current_user", lambda request: admin)
+    monkeypatch.setattr(auth, "impersonation_expired", lambda payload: True)
+    request = SimpleNamespace(method="GET", state=SimpleNamespace(session_payload={"as": 8, "ast": 0}))
+    assert auth.workspace_user(request) is admin
+    assert getattr(request.state, "workspace_account", None) is None
+    assert request.state.impersonation_expired_for == 8
+
+
+def test_a_narrow_read_then_a_star_read_returns_full_rows(hosts, monkeypatch):
+    monkeypatch.setattr(access.auth, "workspace_user", lambda request: hosts.a)
+    get = SimpleNamespace(method="GET", state=SimpleNamespace())
+    narrow = access.apartments(get, "id, internal_name")
+    wide = access.apartments(get, "*")
+    assert set(narrow[0].keys()) == {"id", "internal_name"}
+    assert wide[0]["internal_name"] == "Alpha 1072"
+    assert wide[0]["permalink_token"] == "tok-alpha-1072"
+
+
+def test_one_browser_switching_users_gets_each_users_data(hosts):
+    client = TestClient(app)
+    for name, mine, theirs in ((HOST_A, "Alpha 1072", "Bravo 1072"), (HOST_B, "Bravo 1072", "Alpha 1072")):
+        client.cookies.clear()
+        login_as(client, name, url="/login?lang=en", follow_redirects=False)
+        page = client.get("/apartments?lang=en").text
+        assert mine in page and theirs not in page
+
+
+def test_a_property_created_in_the_request_is_listed(hosts, monkeypatch):
+    assert "Alpha 1072 new" not in hosts.ca.get("/apartments?lang=en").text
+    monkeypatch.setattr(access.auth, "workspace_user", lambda request: hosts.a)
+    post = SimpleNamespace(method="POST", state=SimpleNamespace())
+    assert [r["internal_name"] for r in access.apartments(post, "id, internal_name")] == ["Alpha 1072"]
+    _property(hosts.a["id"], "Alpha 1072 new")
+    assert len(access.apartments(post, "id, internal_name")) == 2
+    monkeypatch.undo()
+    assert "Alpha 1072 new" in hosts.ca.get("/apartments?lang=en").text
+```
+
+The last test needs no cache invalidation: a property is created only by `POST /apartments`, which never uses the memo, and the next page is a new request. If it fails, do not add invalidation on your own: STOP (section 8).
+
 Command: `.venv/bin/python -m pytest tests/test_shared_queries_1072.py -q --tb=short -x 2>&1 | tail -30`
-Expected: `9 passed`.
+Expected: `16 passed`.
 
 The two budgets (`BUDGET_DASHBOARD = 19`, `BUDGET_PREVIEW = 15`) are the numbers measured on the finished change; the "before" numbers are in the comments (21 and 24). If a budget fails by 1 or 2 on your machine, do not raise it: STOP and report the measured number (section 8). Query counts here are SQLite counts of the 1065 `RequestStats`.
 
 ### Step 12: prove the new tests fail without the change (once)
 
 Command: `git stash push -q -- app/ && .venv/bin/python -m pytest tests/test_shared_queries_1072.py -q --tb=line 2>&1 | tail -30; git stash pop -q && git status --short | tail -30`
-Expected: the pytest output shows failures (`server-timing` KeyError, budgets exceeded, `shell_slice` missing), and after `stash pop` `git status` lists the seven `App/app` files again plus the new test file. If the tests pass without the change, STOP.
+Expected: the pytest output shows failures (`server-timing` KeyError, budgets exceeded, `shell_slice` missing, no `data-notification-summary` in the vanish test; the cache-edge tests of chunk F may pass on the base, which is fine), and after `stash pop` `git status` lists the seven `App/app` files again plus the new test file. If the tests pass without the change, STOP.
 
 ## 5. Do not touch
 
@@ -567,24 +694,26 @@ Expected: the pytest output shows failures (`server-timing` KeyError, budgets ex
 - Any migration, any new dependency, any new outbound request, any cookie or script (hard rules 2, 4, 5).
 - The alert wording, levels, dedupe or dismissal behaviour, and the dashboard's "What needs you" logic. `/` keeps loading every alert.
 - `docs/context/test-map.md` and `docs/context/status.md` (the orchestrator updates status; test-map is at its size cap).
-- Hard rule 7 and 10 apply: step 13 is not optional.
+- Hard rule 7 and 10 apply: section 10 (UX gate) is not optional.
 
 ## 6. Commands
 
 From `App/`, in this order. Only the [test-map](../context/test-map.md) rows for what changed, plus the new file:
 
-1. New and nearest tests: `.venv/bin/python -m pytest tests/test_shared_queries_1072.py tests/test_alert_stack.py tests/test_alert_language.py tests/test_onboarding.py tests/test_metrics_0427.py tests/test_access_audit.py tests/test_accounts.py tests/test_privacy_first.py -q --tb=short -x 2>&1 | tail -30` Expected: `112 passed` (the 9 new tests included; on the prototype this exact set gave 112).
-2. Host pages row (non-browser files): `.venv/bin/python -m pytest tests/test_host_*.py tests/test_property_*.py tests/test_first_*.py tests/test_dashboard_calendar*.py -q --tb=short -x 2>&1 | tail -30` Expected: no failures. Skips here are the browser files; they run in step 13.
-3. Browser and geometry (step 13).
+1. New and nearest tests: `.venv/bin/python -m pytest tests/test_shared_queries_1072.py tests/test_alert_stack.py tests/test_alert_language.py tests/test_onboarding.py tests/test_metrics_0427.py tests/test_access_audit.py tests/test_accounts.py tests/test_privacy_first.py -q --tb=short -x 2>&1 | tail -30` Expected: `119 passed` (the 16 new tests included; on the prototype this set gave 112 with the 9 tests of chunks A to E, plus the 7 of chunk F).
+2. Host pages row (non-browser files): `.venv/bin/python -m pytest tests/test_host_*.py tests/test_property_*.py tests/test_first_*.py tests/test_dashboard_calendar*.py -q --tb=short -x 2>&1 | tail -30` Expected: no failures. Skips here are the browser files; they run in section 10.
+3. Browser and geometry (section 10).
 
 ## 7. Acceptance
 
-- [ ] `tests/test_shared_queries_1072.py`: 9 passed, and step 12 shows they fail without the change.
+- [ ] `tests/test_shared_queries_1072.py`: 16 passed, and step 12 shows they fail without the change.
 - [ ] Section 6 commands 1 and 2: no failures.
-- [ ] `_signed_in_page` is false for `/static/`, `/metrics`, `/healthz` and a signed-out request; the header regex in the test matches a signed-in `/apartments`.
+- [ ] `_signed_in_page` is false for `/static/`, `/metrics`, `/healthz`, a signed-out request, `/l/...` and `/cleaning/shared/...` (the last two even for a signed-in host); the header regex in the test matches a signed-in `/apartments`.
 - [ ] No `App/app` file outside section 3 changed (`git diff --stat`), and `base.html` is untouched.
 - [ ] Two hosts alternating on `/apartments` and `/` never see each other's property names (`test_two_hosts_in_turn_each_get_only_their_own_data`).
-- [ ] UX gate (step 13) done, with the per-page lines in the report.
+- [ ] `/settings` renders 200 with the summary line when `present_many` keeps none of the non-critical rows (`test_the_summary_line_survives_when_every_kept_row_vanishes`).
+- [ ] After the executor: a fresh Fable reviewed the full diff of `auth.py` and `access.py` line by line against this brief, before the PR (Tier A).
+- [ ] UX gate (section 10) done, with the per-page lines in the report.
 
 ## 8. Stop and ask
 
@@ -612,7 +741,7 @@ Write `docs/tasks/1072-report.md` (600 tokens at most) and set `Status: review`.
 
 ## 10. UX gate (hard rules 7 and 10)
 
-Nothing is meant to look different: the one template line changes only a number, and only for a host with more than 12 non-critical alerts. The gate still runs because a host template changed.
+Nothing is meant to look different: the template edits change only a number and guard an empty list, and only for a host with more than 12 non-critical alerts. The gate still runs because a host template changed.
 
 From `App/`, with `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/shots` set (install Chromium first if missing, as `App/run.sh` and the 1066 report describe):
 
@@ -627,8 +756,9 @@ Read these diffs line by line:
 
 - `App/app/auth.py` `workspace_user`: the cache must never hold a different user's account. It is per `request.state`; the expired-impersonation branch still returns early without caching.
 - `App/app/access.py` `apartments`: GET/HEAD only; key includes the owner id; wide `*` serves narrow lists only for plain column names that exist on the row.
-- `App/app/main.py` `_signed_in_page`: the header must never reach signed-out or guest requests.
-- `App/app/templating.py` and `_host_alerts.html`: `/` must still present every alert; critical rows never cut.
+- `App/app/main.py` `_signed_in_page`: the header must never reach signed-out requests, guest links (`_is_guest_path`) or `/cleaning/shared/`, even with a host cookie.
+- `App/app/templating.py` and `_host_alerts.html`: `/` must still present every alert; critical rows never cut; the summary's level never indexes an empty list.
+- `App/app/access.py`: cached rows are shared `dict` objects; no caller in the diff may mutate one.
 - Left alone on purpose: routes that read narrower property columns before `render()` (for example `routes/admin.py:3588`, `id, internal_name`) still cost one extra read for the nav; the billing banner and `accounts_exist` are single reads.
 
 ## Owner steps
