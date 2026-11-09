@@ -28,8 +28,8 @@ Append-only.
 - Grafana Cloud (EU free tier) is subprocessor for ops logs and metrics (PII-free, OPS-3); monitoring behind compose profile "monitoring" (owner, 2026-10-27).
 - 2026-10-28 | [deps] `stripe` 16.0.1 pinned+hashed in requirements.lock (owner); calls via `App/app/stripe_connect.py`; shared monthly cap `UBYHOST_STRIPE_MONTHLY_API_CALLS` | 0428
 - 2026-10-28 | Property pages: Apify scrape-first prefill (page + Leon guide, 1 fetch), deterministic, no AI step; host reviews once | owner | 0431
-- 2026-10-28 | Property page: Airbnb-style layout patterns only; no Airbnb brand assets or CSS | owner | 0431
-- 2026-10-28 | Page photos: download + re-host from the import run (max 10, EXIF stripped), never hotlink; host confirms rights | owner | 0432
+- 2026-10-28 | Property page: Airbnb-style layout only; no Airbnb assets or CSS | owner | 0431
+- 2026-10-28 | Page photos: re-host from the import run (max 10, EXIF stripped), never hotlink; host confirms rights | owner | 0432
 - 2026-10-28 | Booking widget: Airbnb-style on our calendar/fee logic, no-JS, Stripe checkout on host account | owner | 0434
 - 2026-10-28 | Listing pages English-only; no per-listing or per-language translation (OTA copy verbatim) | owner | 0431/0433
 - 2026-11-02 | OCR: Tesseract only, local, MRZ check digits, Max only; band crop; Paddle if ocr_readrate <90% | owner | test_doc_ocr
@@ -39,7 +39,7 @@ Append-only.
 - 2026-10-30 | [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; manual cutover | 0455–0456
 - 2026-10-31 | Postgres (#592), then Go G1-G6, per-feature rollback, no load test. [workflow] Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
 - 2026-10-31 | Every change lean: no dead code or extras; dead code goes in its own small commit | owner | plan v4
-- 2026-10-31 | Postgres/Go migration gates waived; bar unchanged (backup, rehearsal, hashes, both DBs green, rollback); D1-D4 as 0463-0465. [workflow] Pre-merge diff vs brief Files; one worktree per Haiku | owner | 0463, #606
+- 2026-10-31 | Postgres/Go migration gates waived; bar unchanged (backup, rehearsal, hashes, both DBs green, rollback); D1-D4 = 0463-0465. [workflow] Pre-merge diff vs brief Files | owner | 0463, #606
 - 2026-10-31 | [workflow] `test-postgres-full` (app suite on PG 17) gates every merge; SQLite-file tests carry `sqlite_only` | orchestrator | 0462
 - 2026-11-01 | Host redesign: vendored Hotwire Turbo (MIT) for page-body swaps; owner OKs mockups first | owner | #614
 - 2026-11-01 | Go: module go/, stdlib, pgx v5, go-ntlmssp v0.1.1, go-qrcode (11-02) | owner (waiver) | 0474, 0481, 0684
@@ -68,5 +68,6 @@ Append-only.
 - 2026-11-07 [owner] request-to-book: direct rails (IBAN/Revolut/cash) vs or beside Stripe; 24h hold; host confirms (0996-0998).
 - 2026-11-07 | [backup] Litestream retired; S3 replica kept | owner | [1021](../tasks/1021-remove-litestream.md)
 - 2026-11-07 | [backup] WAL-G: WAL archive + PITR to S3 | owner | [1022](../tasks/1022-walg-continuous-archiving.md)
-- 2026-11-09 [stay-fee] 1031b: a bare Prague/Brno district name ("Řepy") stays liable; the guest must write the town (owner). Any Unicode dash folds like "-" in the obec key.
+- 2026-11-09 [stay-fee] 1031b: a bare Prague/Brno district ("Řepy") stays liable; guest writes the town (owner). Any Unicode dash folds like "-".
+- 2026-11-09 [guest] Guest edits/removes own added people until filed (SENT, incl. by hand); then locked, "Message host" (owner)
 - 2026-11-09 | [ux] Stay fees: current month default, pick navigates | owner | 1051
