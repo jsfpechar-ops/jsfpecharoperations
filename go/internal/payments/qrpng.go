@@ -262,7 +262,7 @@ func hasBankAccount(ctx context.Context, pool *pgxpool.Pool, owner int64) (bool,
 }
 
 // QRPNGHandler serves GET /payments/qr/{file} for <digits>.png. Every
-// refusal is a 404 with an empty body, as in Python.
+// refusal is a 404 with an empty body, as in Python, except a missing bank account (qrNoAccount).
 func QRPNGHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, ok := qrPNGID(r.PathValue("file"))
@@ -302,7 +302,7 @@ func QRPNGHandler(pool *pgxpool.Pool, getenv func(string) string, now func() tim
 		}
 		payload, err := qrPayload(ctx, pool, rowOwner, amount, vs)
 		if errors.Is(err, errQRAccount) {
-			w.WriteHeader(http.StatusNotFound)
+			qrNoAccount(w)
 			return
 		}
 		if err != nil {
