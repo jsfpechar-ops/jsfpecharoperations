@@ -440,7 +440,7 @@
 <details class="prop-sec" id="sec-lock"{% if inline_flash_section == 'lock' %} open{% endif %}{% if (settings_section == 'lock') or (save_errors and save_errors|selectattr('section','equalto','lock')|list) %} open{% endif %}><summary><span class="dot {{ 'g' if door_code and door_code.state == 'on' else 'n' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.lock.title') }}</b></div><small class="sec-state">{{ t('property_nav.switch_enabled') if door_code and door_code.state == 'on' else t('property_nav.switch_off') }}</small></summary>
   <div class="fields-wrap">
   {{ section_notice('lock') }}
-  {% if door_code and door_code.state in ['offline', 'times'] %}<div class="prop-sec-missing" data-missing="lock" role="note"><p>{% if door_code.state == 'offline' %}{{ t('health.door.offline') }} {{ t('smart_locks.offline_fix') }} <a href="/guide#door-codes">{{ t('smart_locks.guide_link') }}</a>{% else %}{{ t('health.door.times') }}{% endif %}</p></div>{% endif %}
+  {% if door_code and door_code.state in ['offline', 'times'] %}<div class="prop-sec-missing" data-missing="lock" role="note"><p>{% if door_code.state == 'offline' %}{{ t('health.door.offline') }} {{ t('smart_locks.offline_fix') }} <a class="ui-btn ui-btn-quiet ui-btn-compact" href="/guide#door-codes">{{ t('smart_locks.guide_link') }}</a>{% else %}{{ t('health.door.times') }}{% endif %}</p></div>{% endif %}
     <p class="property-group-intro">{{ t('why.door_lock') }}</p>
     {% if door_code and door_code.account and door_code.locks %}
     <div class="lock-state" id="lock-connected-off" data-state="{{ door_code.state }}" role="status">
