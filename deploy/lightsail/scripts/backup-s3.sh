@@ -3,7 +3,7 @@
 #
 # One-time setup (AWS) is documented in deploy/lightsail/README.md: a bucket in
 # eu-central-1 with Block Public Access on, SSE-S3 default encryption, a
-# lifecycle rule expiring objects after UBYHOST_BACKUP_RETENTION_DAYS, and an
+# lifecycle rule expiring objects after a fixed 30 days (prefix UbyHost-backups/, see docs/OPERATIONS.md Backup and restore), and an
 # IAM user limited to this bucket.
 #
 # One-time: rclone config → Amazon S3 → remote name "s3" (or set RCLONE_REMOTE).
@@ -52,7 +52,7 @@ mkdir -p "${TMP}"
 docker cp "${CONTAINER}:/data/backups/${LATEST}" "${TMP}/${LATEST}"
 
 DEST="${REMOTE}:${BUCKET}/${PREFIX}/${LATEST}"
-rclone copy "${TMP}/${LATEST}" "${DEST}" --include "*.age" --stats-one-line
+rclone copy "${TMP}/${LATEST}" "${DEST}" --include "*.age" --stats-one-line --s3-no-check-bucket
 rm -rf "${TMP}"
 
 echo "Uploaded to ${DEST}"
