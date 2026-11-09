@@ -250,7 +250,7 @@ def property_photo_file(request: Request, name: str):
 
 
 BOOK_ERRORS = ("bad_dates", "min_nights", "too_soon", "guests", "no_price", "taken",
-               "bad_email", "bad_name", "terms", "unavailable", "cancelled")
+               "bad_email", "bad_name", "name_too_long", "terms", "unavailable", "cancelled")
 _EMAIL = __import__("re").compile(r"[^@\s]{1,64}@[^@\s]{1,200}\.[^@\s]{2,30}")
 _CHECKOUT_MAX = 20
 _CHECKOUT_WINDOW = 3600
@@ -336,6 +336,8 @@ async def property_page_checkout(request: Request, slug: str):
     email = str(form.get("guest_email") or "").strip()
     if len(name) < 3:
         return _book_error(slug, "bad_name", lang, form)
+    if len(name) > 120:
+        return _book_error(slug, "name_too_long", lang, form)
     if not _EMAIL.fullmatch(email):
         return _book_error(slug, "bad_email", lang, form)
     if str(form.get("terms") or "") != "1":
