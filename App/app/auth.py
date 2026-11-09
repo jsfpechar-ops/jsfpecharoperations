@@ -348,7 +348,9 @@ def workspace_user(request: Request):
             "SELECT * FROM user_account WHERE id = ? AND active = 1", (target_id,)
         )
         if target:
+            request.state.workspace_account = target
             return target
+    request.state.workspace_account = account
     return account
 
 
