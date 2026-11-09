@@ -54,7 +54,7 @@ def test_public_surfaces_use_horizontal_lockup_and_mark_accents():
 
 def test_onboarding_uses_mark_only():
     html = _read("_components.html")
-    assert 'class="onboarding-logo" src="/static/ubyhost-mark.png?v=' in html
+    assert 'class="onboarding-logo"' not in html  # 1031: the welcome card has no logo
 
 
 def test_favicons_point_at_png_not_retired_svg():

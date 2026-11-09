@@ -589,6 +589,19 @@ input.sr-only { width: 1px !important; height: 1px !important; padding: 0 !impor
 }
 .toast button:hover { color: var(--canvas); }
 .toast form { margin: 0; }
+.toast button.toast-pill,
+.toast button.toast-pill:hover {
+  min-height: 44px;
+  padding: 8px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--canvas);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.toast button.toast-pill:focus-visible { outline: 2px solid #d0452d; outline-offset: 2px; }
 .toast button.toast-undo {
   padding: 2px 4px;
   color: var(--canvas);
@@ -2024,7 +2037,7 @@ details.raw pre {
 
 .onboarding-finish-share {
   display: grid;
-  gap: 10px;
+  gap: 16px;
   grid-template-columns: 1fr auto;
 }
 
@@ -2033,10 +2046,11 @@ details.raw pre {
   grid-template-columns: 1fr auto;
   gap: 8px 12px;
   align-items: center;
-  padding: 12px 14px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  background: var(--surface);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
 }
 
 .onboarding-finish-field:first-child { grid-column: 1 / -1; }

@@ -79,6 +79,7 @@
 {% endfor %}
 </div>
 {% else %}
+  <div class="head props-head"><div class="props-title-row"><h1>{{ t('apartments.title') }}</h1>{{ page_help('properties') }}</div></div>
   {% if has_operator %}
     {{ empty_state('', t('apartments.empty.lede_ready'), '/apartments/new', t('apartments.empty.add')) }}
   {% else %}

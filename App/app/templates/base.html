@@ -19,11 +19,11 @@
   <link rel="preload" href="/static/fonts/Manrope-latin.woff2?v=20261101-0495" as="font" type="font/woff2" crossorigin>
   {% if v2 | default(false) %}
   <link rel="stylesheet" data-turbo-track="reload" href="/static/tokens.css?v=20261103-0920">
-  <link rel="stylesheet" data-turbo-track="reload" href="/static/app2.css?v=20261108-1031">
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/app2.css?v=20261109-1400">
   {% if show_nav | default(true) %}<link rel="stylesheet" data-turbo-track="reload" href="/static/command.css?v=20261103-0935">{% endif %}
   {% else %}
   <link rel="stylesheet" data-turbo-track="reload" href="/static/tokens.css?v=20261103-0920">
-  <link rel="stylesheet" data-turbo-track="reload" href="/static/app.css?v=20261108-1031">
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/app.css?v=20261109-1200">
   <link rel="stylesheet" data-turbo-track="reload" href="/static/components.css?v=20261103-0930">
   {% if show_nav | default(true) %}<link rel="stylesheet" data-turbo-track="reload" href="/static/command.css?v=20261103-0935">{% endif %}
   {% if show_nav | default(true) %}
@@ -119,7 +119,7 @@
             <form method="post" action="/celebrations/dismiss">
               <input type="hidden" name="milestone" value="{{ celebration_milestone }}">
               <input type="hidden" name="return_to" value="{{ request.url.path }}">
-              <button class="toast-undo" type="submit">{{ t('celebration.dismiss') }}</button>
+              <button class="toast-pill" type="submit">{{ t('celebration.dismiss') }}</button>
             </form>
           </div>
         {% endif %}
