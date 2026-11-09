@@ -22,13 +22,18 @@
       {% if view.q %}<span aria-hidden="true"> · </span><span>{{ view.q }}</span>{% endif %}
     {% endif %}
 {% endset %}
+{# 1051: filter_compact (stay fees) = one centred month control that navigates on pick; invoices keep the panel. #}
+{% set compact = filter_compact | default(false) %}
+{% set secondary_active = view.apartment_id or (filter_statuses and view.status) or view.q %}
+{% if not compact %}
 {{ ui_toolbar(filters_id='list-filter-panel', filters_count=filter_active | default(0), actions=list_filter_actions | default('')) }}
 <p class="ui-sub" data-filter-summary>{{ list_summary }}</p>
-<form id="list-filter-panel" method="get" action="{{ filter_action }}" class="filters ui-section list-filter host-filter-panel" data-filter-panel data-filter-route="month" role="search">
+{% endif %}
+<form id="list-filter-panel" method="get" action="{{ filter_action }}" class="filters list-filter{% if compact %} list-filter--compact{% else %} ui-section host-filter-panel{% endif %}" data-filter-panel{% if compact %} data-filter-compact{% endif %} data-filter-route="month" role="search">
   <div class="filter-fields">
     <div class="ui-field list-filter-period" data-month-picker data-month-optional="{{ 'true' if filter_month_optional else 'false' }}"
          data-current-month="{{ view.month_key or filter_max_month }}" data-min-month="2000-01" data-max-month="{{ filter_max_month }}">
-      <label for="filter-month">{{ t(filter_period_label_key) }}</label>
+      <label for="filter-month"{% if compact %} class="sr-only"{% endif %}>{{ t(filter_period_label_key) }}</label>
       <div class="month-row">
         <button class="ui-btn ui-btn-secondary month-step" type="button" data-month-prev hidden {% if view.month_key == '2000-01' %}disabled{% endif %} aria-label="{{ t('host.filter.prev_month') }}">‹</button>
         <div class="month-control{% if not view.month %} is-empty{% endif %}">
@@ -59,6 +64,11 @@
         {% if filter_month_optional %}<button class="ui-btn ui-btn-quiet month-all-dates" type="button" data-month-all-choice>{{ t('host.filter.all_dates') }}</button>{% endif %}
       </div>
     </div>
+    {% if compact and (filter_properties | length > 1 or filter_statuses or filter_search) %}
+    <details class="list-filter-more"{% if secondary_active %} open{% endif %}>
+      <summary class="ui-btn ui-btn-quiet list-filter-more-toggle">{{ t('host.filter.filters') }}</summary>
+      <div class="list-filter-more-fields">
+    {% endif %}
     {% if filter_properties | length > 1 %}
     <div class="ui-field">
       <label for="filter-apartment">{{ t('stays.filter.apartment') }}</label>
@@ -87,10 +97,21 @@
       <input type="search" id="filter-q" name="q" value="{{ view.q }}" maxlength="60" placeholder="{{ t('invoices.filter.search_placeholder') }}">
     </div>
     {% endif %}
+    {% if compact and (filter_properties | length > 1 or filter_statuses or filter_search) %}
+        {% if secondary_active %}<a class="ui-btn ui-btn-quiet list-filter-reset" href="{{ filter_action }}?month={{ view.month_key }}">{{ t('host.filter.reset') }}</a>{% endif %}
+      </div>
+    </details>
+    {% endif %}
   </div>
+  {% if compact %}
+  <div class="filter-panel-actions list-filter-nojs">
+    <button class="ui-btn ui-btn-secondary filter-apply" type="submit">{{ t('host.filter.apply_filters') }}</button>
+  </div>
+  {% else %}
   <div class="filter-panel-actions">
     <button class="ui-btn ui-btn-primary filter-apply" type="submit">{{ t('host.filter.apply_filters') }}</button>
     <button class="ui-btn ui-btn-quiet" type="button" data-filter-cancel hidden>{{ t('confirm.cancel') }}</button>
     {% if filter_active %}<a class="ui-btn ui-btn-quiet list-filter-reset" href="{{ filter_reset_href }}">{{ t('host.filter.reset') }} <span class="list-filter-count" aria-label="{{ t('filter.active', count=filter_active) }}">{{ filter_active }}</span></a>{% endif %}
   </div>
+  {% endif %}
 </form>

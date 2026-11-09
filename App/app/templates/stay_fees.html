@@ -25,7 +25,7 @@
   </div>
 </details>
 </div><div class="stays-head-actions">{% for href, key, current in page_tabs() %}{% if not current %}<a class="btn ghost" href="{{ href }}">{{ t(key) }}</a>{% endif %}{% endfor %}<a class="btn ghost" href="/settings#settings-stay-fee-emails">{{ t('stay_fees.list.email_change') }}</a></div></div>
-<div class="stay-fees-toolbar">{% include "_list_filter.html" %}</div>
+<div class="stay-fees-toolbar">{% set filter_compact = true %}{% include "_list_filter.html" %}</div>
 {% if periods %}
 {% set pay_rows = periods | rejectattr('unset') | list %}
 {% set fee_bulk = namespace(ready=[], saved=0) %}

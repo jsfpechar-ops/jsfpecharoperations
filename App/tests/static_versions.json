@@ -24,8 +24,8 @@
     "v": "20261109-1200"
   },
   "app.js": {
-    "sha256": "004cd48ce20a1a633fe1f11705ecd08889d69cda4a629c0496730697ac0691d1",
-    "v": "20261109-1032f"
+    "sha256": "b10e1285868eba94c656715226c67709dbb08a7a853fd9877515ab7573808e3a",
+    "v": "20261109-1051a"
   },
   "app2.css": {
     "sha256": "3deb3c4e28dbe8e2324006278058d5d7fe6700da56ec5ebd07572db34b76ac8c",
@@ -134,6 +134,10 @@
   "leon-setup.js": {
     "sha256": "2216365fed2b45ea19a081566f94a668209853064ef311edc44c945a49b981a1",
     "v": "20261027-ai-usage"
+  },
+  "list-filter-compact.css": {
+    "sha256": "442587fd8e2d20672a06756e7b3159f3d797498b7c55b48e2fc4d7803aa0a4cf",
+    "v": "20261109-1051a"
   },
   "passkeys.js": {
     "sha256": "4e75d63ea5de86912252b34a8b22fc5d91ed7b7190ad7d623947295e1725c7cd",
