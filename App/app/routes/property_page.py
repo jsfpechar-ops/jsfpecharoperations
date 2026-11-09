@@ -50,23 +50,41 @@ def property_page_view(request: Request, slug: str):
     if resolved.get("missing"):
         return Response(status_code=404)
     apartment_id = int(resolved["apartment_id"])
+    return _render_page(request, slug, apartment_id, request.query_params)
+
+
+def _render_page(request: Request, slug: str, apartment_id: int, params, book_error: str = "", values=None):
     page = _page_context(apartment_id)
     if page is None:
         return Response(status_code=404)
     page["noindex"] = _noindex(apartment_id)
     page["og"] = _og(apartment_id, page)
     lang = _page_lang(request)
+    if str(params.get("lang") or "") in ("cs", "en"):
+        lang = str(params.get("lang"))
     page["bookable"] = property_page.widget_ready(apartment_id)
-    page["book_error"] = request.query_params.get("book", "")
+    page["book_error"] = book_error or params.get("book", "")
     if page["book_error"] not in BOOK_ERRORS:
         page["book_error"] = ""
+    page["form_values"] = values or {}
     if page["bookable"]:
-        page["booking"] = _booking_view(slug, apartment_id, lang, request.query_params)
+        page["booking"] = _booking_view(slug, apartment_id, lang, params)
         page["pay_modes"] = booking_rails.pay_modes(apartment_id, _owner_of(apartment_id))
     # Only the page's own words are translated (owner decision 2 Nov 2026,
     # booking site v1); the host's listing copy stays verbatim.
     return render(request, "property_page.html",
                   {"page": page, "show_nav": False, "lang": lang})
+
+
+def _field_error(request: Request, slug: str, apartment_id: int, form, kind: str, lang: str, values: dict) -> Response:
+    """Re-render the page with the typed name and e-mail (never in the URL)."""
+    params = {"lang": lang}
+    for name in ("date_from", "date_to", "guests"):
+        params[name] = str(form.get(name) or "")[:10]
+    response = _render_page(request, slug, apartment_id, params, book_error=kind, values=values)
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Robots-Tag"] = "noindex"
+    return response
 
 
 def _page_lang(request: Request) -> str:
@@ -334,14 +352,15 @@ async def property_page_checkout(request: Request, slug: str):
         return _book_error(slug, q["error"], lang, form)
     name = " ".join(str(form.get("guest_name") or "").split())
     email = str(form.get("guest_email") or "").strip()
+    values = {"name": name[:120], "email": email[:254]}
     if len(name) < 3:
-        return _book_error(slug, "bad_name", lang, form)
+        return _field_error(request, slug, apartment_id, form, "bad_name", lang, values)
     if len(name) > 120:
-        return _book_error(slug, "name_too_long", lang, form)
+        return _field_error(request, slug, apartment_id, form, "name_too_long", lang, values)
     if not _EMAIL.fullmatch(email):
-        return _book_error(slug, "bad_email", lang, form)
+        return _field_error(request, slug, apartment_id, form, "bad_email", lang, values)
     if str(form.get("terms") or "") != "1":
-        return _book_error(slug, "terms", lang, form)
+        return _field_error(request, slug, apartment_id, form, "terms", lang, values)
     # A page opened before the terms text changed must not be accepted.
     if str(form.get("terms_version") or booking_site.TERMS_VERSION) != booking_site.TERMS_VERSION:
         return _book_error(slug, "terms", lang, form)
