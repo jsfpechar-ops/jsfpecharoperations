@@ -1,6 +1,6 @@
 # 1064: Script that counts required inputs per flow
 
-Status: todo
+Status: blocked
 Depends on: none | Base commit: 0d851ca4 | Branch: task/1064-required-inputs-count
 Executor: Haiku 5.5 (owner override: Sonnet at medium effort) | Fits one session: 30 tool calls, 60k tokens
 
