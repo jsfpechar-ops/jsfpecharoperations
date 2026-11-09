@@ -349,7 +349,7 @@ Still unconfirmed: whether any signature is needed when the house book is electr
 
 ## 11. Guest form: same look, smoother (owner request)
 
-The owner wants the guest form's design kept: same cards, colours, type, step strip and field order. These changes alter behaviour only. Reviewed from the templates, not on a live phone; each brief carries 390 px before and after screenshots.
+The owner wants the guest form's design kept: same cards, colours, type, step strip and field order. These changes alter behaviour only. Reviewed from the templates and two existing 390 px screenshots (`docs/tasks/screenshots-guest-edit/`), not on a live phone; each brief carries 390 px before and after screenshots.
 
 | ID | Change | What the guest notices | Effort | Risk |
 |---|---|---|---|---|
@@ -367,6 +367,9 @@ The owner wants the guest form's design kept: same cards, colours, type, step st
 | S12 | Help dots at least 44 px | Easier to tap | S | none |
 | S13 | Poor signal: "No connection. Your answers are kept. Try again." (needs S5) | No lost work on bad Wi-Fi | S | none |
 | S14 | Under-15s skip the signature (G13) | Families finish sooner | S | legal: only after confirmation |
+| S15 | The "child travelling on a parent's passport" box appears only when the birth date says under 18 | Adults never see a grey block that cannot apply to them | S | filing: Owner. No data lost: an adult cannot be a child on a parent's passport |
+| S16 | The visa number field appears only for nationalities outside the EU and Schengen | Most European guests see one field fewer | S | filing: Owner. No data lost: EU and Schengen citizens have no visa |
+| S17 | Optional, the only layout touch: the page title fits on one line on a phone, so the first field is visible without scrolling | The form starts at once | S | none; skip if the owner wants zero visual change |
 
 Not changed: layout, colours, fonts, the order of fields, any police field, the adult signature, the legal tick.
 
