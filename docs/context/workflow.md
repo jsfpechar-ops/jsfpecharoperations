@@ -12,10 +12,10 @@ This file is the single source of truth for how work is done. When the process c
 | Owner | Josef | Decides, merges, deploys, secrets, servers | |
 
 - **Sonnet 5.5 writes the briefs, Haiku 5.5 executes them** (owner, 2026-11-04). A **Claude** orchestrator spawns a Sonnet 5.5 subagent (Agent tool, `model: sonnet`) to write each brief from the plan, reviews it, then implements only by spawning a Haiku 5.5 subagent (Agent tool, `model: haiku`) with one brief. It reads the report, not the transcript. Briefs run one after another; in parallel only when their §3 file lists do not overlap.
-- Any **other** AI (ChatGPT, Gemini, Copilot) ends with the [executor prompt](prompts.md#executor) filled in; the owner pastes it into a Haiku 5.5 session.
+- Any **other** AI (ChatGPT, Gemini, Copilot) ends with the filled [executor prompt](prompts.md#executor) for the owner to paste into Haiku 5.5.
 - Only the owner's exact words "implement it yourself" let an orchestrator implement.
-- HIGH RISK areas (filing, migrations, auth, legal copy, deletion) are still Haiku's work, but the brief is an exact diff only, and the review reads the full diff of those files.
-- **Override, speed-and-ease and group plans only** (owner, 2026-11-09): executor by tier. **A** (filing, concurrency, guest-data access): Fable 5.2 executor, Opus brief, a fresh Fable reviews the diff vs the brief before the PR. **B** (multi-file, mail, payments, privacy, new component): Opus executor, Sonnet brief. **C** (attributes, copy, prefill, CSS): Sonnet executor, effort medium, Sonnet brief. The 100k cap applies to Haiku only; output and read ranges stay <=150 lines.
+- HIGH RISK areas (filing, migrations, auth, legal copy, deletion) are still Haiku's work; the brief is an exact diff only and the review reads those files' full diff.
+- **Override, speed-and-ease and group plans only** (owner, 11-09): executor by tier. **A** (filing, concurrency, guest-data access): Fable 5.2 executor, Opus brief, a fresh Fable reviews the diff vs the brief before the PR. **B** (multi-file, mail, payments, privacy, new component): Opus executor, Sonnet brief. **C** (attributes, copy, prefill, CSS): Sonnet executor, effort medium, Sonnet brief. Every brief written after 2026-11-09 21:35 gets a fresh Fable review before an executor runs it. The 100k cap is Haiku only; output and reads stay <=150 lines.
 
 ## Retired executor exceptions
 
@@ -25,10 +25,10 @@ Luna 6.0 / Cursor (closed 2026-10-17) and task-specific Luna (closed 2026-10-30)
 
 - **Every chat, orchestrator or Haiku:** checkpoint at 60k tokens, hard stop at 100k. Agents cannot count tokens exactly, so also count calls: an orchestrator stops after 25 tool calls and 5 file reads, Haiku after 30 tool calls. At the checkpoint, stop new work and hand over (see below). Orchestrators aim for 40k.
 - **No audit and no full test suite** unless the owner asks in the current message. Run only the [test-map](test-map.md) row for the changed area. CI runs the rest.
-- **Cap every command's output:** `| tail -30`, `grep -m 20`, `head -50`. Never print a full traceback, log or diff.
-- Enforced by hook: `scripts/hooks/read_guard.py` blocks a Read of more than 350 lines without a `limit` (0810). Questions about a large file go to a Haiku subagent that returns only the answer.
+- **Cap every command's output:** `| tail -30`, `grep -m 20`, `head -50`; never a full log or diff.
+- Enforced by hook: `scripts/hooks/read_guard.py` blocks a Read of more than 350 lines without a `limit` (0810). Large-file questions go to a Haiku subagent that returns only the answer.
 - The orchestrator's deliverable is a brief and, for non-Claude AIs, the executor prompt with the brief between `<<<BRIEF` and `BRIEF>>>`.
-- Read AGENTS.md, then status, then one routing row. Grep before you read; ranges of 150 lines or less. Fetch single files, never the whole repo.
+- Read AGENTS.md, status, one routing row. Grep first; ranges of 150 lines or less; never fetch the whole repo.
 - Bugs: confirm the root cause with at most 5 greps and 2 range reads. Fixes of 40 lines or fewer go into the brief as an exact diff; bigger ones as files, change and test to add.
 - No council or review swarm unless the owner names it in the current message and the change is HIGH RISK. Then 3 Haiku advisors, no peer-review round.
 - Role files stay separate: orchestrators never open [executor](executor.md); Haiku never opens this file. Keep AGENTS.md free of dates and status so its start never changes.
