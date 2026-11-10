@@ -64,3 +64,7 @@ None until the strict review. Then one draft PR (body per brief section 9); 1086
 ## Attempt 3 (contrast)
 
 The legend note and the "Saved now" line were `small muted` (4.40:1). Both now use `police-letter-note` with `--ink-secondary`; the global muted token is untouched. Key `app2.css?v=20261110-1085f`. With `UBYHOST_REQUIRE_BROWSER=1`: `test_a11y_guard_browser.py test_layout_lint_browser.py test_police_letter_flow.py test_property_navigation_browser.py test_required_stars.py test_static_versions.py`: `79 passed`, 0 skipped. `ruff check app tests tools --select E9,F63,F7,F82,F401,F841`: `All checks passed!`
+
+## Attempt 4 (phone landing, tick alignment)
+
+`origin/main` merged again (clean). N1: after "Read the letter" `initPoliceLetterForm` scrolls `#police-letter-check` (start) or `#letter_text-error` (centre) into view; without JavaScript the first unticked box, or the textarea in the error case, has `autofocus`. A refused save keeps its own summary and focus. N2: `margin:0` on the tick label, at the specificity of the `prop-form-single` label rule. Keys `app.js?v=20261110-1085b`, `app2.css?v=20261110-1085h`. The browser test now asserts the landing (result and error in the viewport) and box/text centred within 2 px at 390/768/1280. With `UBYHOST_REQUIRE_BROWSER=1`: flow, layout lint, a11y guard, navigation, required stars, static versions: `79 passed`, 0 skipped. Ruff: `All checks passed!`. Shots: `/mnt/project-files/reviews/1085/v3/landing-{390,768,1280}.png` and `landing-error-*.png`.

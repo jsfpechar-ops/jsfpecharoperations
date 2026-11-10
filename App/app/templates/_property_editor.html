@@ -317,7 +317,7 @@
         <summary>{{ t('police_letter.paste_title') }}</summary>
         <div class="field">
           <div class="field-label-row"><label for="letter_text">{{ t('police_letter.paste_label') }}{{ help_tip('police-letter-help', t('police_letter.paste_help')) }}</label></div>
-          <textarea id="letter_text" name="letter_text" form="police-letter-form" rows="6" maxlength="20000" autocomplete="off" spellcheck="false"{% if letter_status in ['empty', 'too_long', 'failed'] %} aria-invalid="true" aria-describedby="letter_text-error"{% endif %}></textarea>
+          <textarea id="letter_text" name="letter_text" form="police-letter-form" rows="6" maxlength="20000" autocomplete="off" spellcheck="false"{% if letter_status in ['empty', 'too_long', 'failed'] %} aria-invalid="true" aria-describedby="letter_text-error" autofocus{% endif %}></textarea>
           {% if letter_status in ['empty', 'too_long', 'failed'] %}<p class="err-text" id="letter_text-error" role="alert">{{ t('police_letter.' ~ letter_status) }}</p>{% endif %}
         </div>
         <div class="actions">
@@ -328,6 +328,7 @@
       <div class="police-letter-check" id="police-letter-check">
         <h3 class="police-letter-check-title">{{ t('police_letter.check_title') }}</h3>
         <input type="hidden" name="letter_fields" value="{{ letter_rows | selectattr('filled') | map(attribute='name') | join(',') }}">
+        {%- set letter_focus = namespace(done=false) %}
         {% for row in letter_rows %}
         <div class="police-letter-row" data-letter-row="{{ row.name }}">
           <span class="police-letter-name">{{ letter_names[row.name] }}</span>
@@ -339,7 +340,7 @@
             {%- for src in row.source %}<code>{{ src }}</code><input type="hidden" name="letter_src_{{ row.name }}_{{ loop.index }}" value="{{ src }}">{% endfor %}</p>
           {% endif %}
           {% if row.saved %}<p class="police-letter-note">{{ t('police_letter.saved_now', value=row.saved) }}</p>{% endif %}
-          <div class="checkline"><input type="checkbox" id="letter_ok_{{ row.name }}" name="letter_ok_{{ row.name }}" value="1" required{% if row.ticked %} checked{% endif %}{% if row.error %} aria-invalid="true" aria-describedby="letter_ok_{{ row.name }}-error"{% endif %}><label for="letter_ok_{{ row.name }}">{{ t('police_letter.confirm') }}<span class="req-star" aria-hidden="true">*</span></label></div>
+          <div class="checkline"><input type="checkbox" id="letter_ok_{{ row.name }}" name="letter_ok_{{ row.name }}" value="1" required{% if row.ticked %} checked{% elif not letter_focus.done %} autofocus{% set letter_focus.done = true %}{% endif %}{% if row.error %} aria-invalid="true" aria-describedby="letter_ok_{{ row.name }}-error"{% endif %}><label for="letter_ok_{{ row.name }}">{{ t('police_letter.confirm') }}<span class="req-star" aria-hidden="true">*</span></label></div>
           {% if row.error %}<p class="err-text" id="letter_ok_{{ row.name }}-error" role="alert" data-field-error>{{ t('police_letter.confirm_missing') }}</p>{% endif %}
           {% else %}
           <p class="small">{{ t('police_letter.' ~ row.state) }}</p>

@@ -2285,6 +2285,14 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
   function initPoliceLetterForm() {
     var letterForm = document.getElementById("police-letter-form");
     if (!letterForm || !claimNode(letterForm, "initPoliceLetterForm")) return;
+    // The reply to "Read the letter" lands at the page top: bring the result (or the error) into view.
+    // A refused save has its own summary and focus, so it is left alone.
+    var landed = document.getElementById("police-letter-check") || document.getElementById("letter_text-error");
+    if (landed && !document.querySelector("[data-save-summary]")) {
+      window.setTimeout(function () {
+        landed.scrollIntoView({ block: landed.id === "police-letter-check" ? "start" : "center" });
+      }, 0);
+    }
     letterForm.addEventListener("submit", function (event) {
       var settings = document.getElementById("property-settings-form");
       var password = document.getElementById("uby_ws_password");

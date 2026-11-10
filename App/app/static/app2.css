@@ -3461,7 +3461,9 @@ body.v2 .police-letter-name{display:block;font-size:var(--text-base);font-weight
 body.v2 .police-letter-value{display:block;font-family:var(--font-mono);font-size:var(--text-md);overflow-wrap:anywhere}
 body.v2 .police-letter-src code{display:block;margin-top:var(--space-1);padding:var(--space-1) var(--space-2);border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--canvas-subtle);font-family:var(--font-mono);font-size:var(--text-xs);white-space:pre-wrap;overflow-wrap:anywhere}
 body.v2 .police-letter-row .checkline{display:flex;align-items:center;gap:var(--space-2);min-height:max(44px,var(--action-height,44px));margin:var(--space-2) 0 0;font-size:var(--text-base)}
-body.v2 .police-letter-row .checkline label{display:flex;flex:1 1 auto;align-items:center;gap:var(--space-1);min-height:max(44px,var(--action-height,44px));min-width:0;font-size:var(--text-base)}
+body.v2 .police-letter-check{scroll-margin-top:var(--space-12)}
+body.v2 .police-letter-row .checkline label{margin:0;display:flex;flex:1 1 auto;align-items:center;gap:var(--space-1);min-height:max(44px,var(--action-height,44px));min-width:0;font-size:var(--text-base)}
 body.v2 .police-letter-row .checkline input[type=checkbox]{flex:0 0 20px;width:20px;height:20px;min-height:20px;margin:0}
 body.v2 details.police-letter-find:not([open])>summary:after,body.v2 details.police-letter-paste:not([open])>summary:after{transform:none}
 body.v2 .police-letter-note{color:var(--ink-secondary)}
+body.v2 .form.prop-form-single details.prop-sec .police-letter-row .checkline label{margin:0}

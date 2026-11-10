@@ -275,6 +275,8 @@ def test_paste_shows_the_values_to_check_and_saves_nothing(host, no_client):
     assert boxes == ["letter_ok_uby_idub", "letter_ok_uby_ws_user", "letter_ok_uby_mark"]
     for box in re.findall(r'<input type="checkbox" id="letter_ok_[^>]*>', page):
         assert " required" in box and " checked" not in box
+    assert page.count(" autofocus") == 1, "no-JS: only the first unticked box takes the focus"
+    assert re.search(r'id="letter_ok_uby_idub"[^>]* autofocus', page)
     assert 'name="letter_fields" value="uby_idub,uby_ws_user,uby_mark"' in page
     assert 'data-letter-row="uby_ws_password"' not in page
 
@@ -376,6 +378,7 @@ def test_empty_and_too_long_say_so(host, text, key):
     assert response.headers["cache-control"] == "no-store"
     assert _en(key) in response.text
     assert 'id="police-letter-paste" open' in response.text
+    assert re.search(r'<textarea id="letter_text"[^>]* autofocus', response.text)
     assert "police-letter-check" not in response.text
     assert 'data-dirty-start="1"' not in response.text
     assert dict(_apartment()) == dict(apartment)
@@ -1016,6 +1019,25 @@ def test_the_letter_helper_is_styled_in_the_browser(host, no_client):
                     }"""
                 )
                 assert check["nameDisplay"] == "block"
+                # N1: the result is in view, not 2,000 px below a page that looks unchanged.
+                page.wait_for_timeout(300)
+                landing = page.evaluate(
+                    """() => {
+                      const r = (sel) => document.querySelector(sel).getBoundingClientRect();
+                      const box = r('#letter_ok_uby_idub');
+                      const text = r('label[for=letter_ok_uby_idub]');
+                      return {
+                        top: r('#police-letter-check').top,
+                        height: window.innerHeight,
+                        boxMid: box.top + box.height / 2,
+                        textMid: text.top + text.height / 2,
+                      };
+                    }"""
+                )
+                assert 0 <= landing["top"] < landing["height"] / 2, landing
+                assert abs(landing["boxMid"] - landing["textMid"]) <= 2, landing
+                if shot_dir:
+                    page.screenshot(path=str(Path(shot_dir) / f"landing-{width}.png"))
                 assert check["labelDisplay"] == "flex" and check["labelHeight"] >= 44
                 assert (check["boxWidth"], check["boxHeight"]) == (20, 20)
                 assert check["value"] == SAMPLE_IDUB
@@ -1033,6 +1055,22 @@ def test_the_letter_helper_is_styled_in_the_browser(host, no_client):
                 assert page.locator("#letter_ok_uby_ws_user").is_checked()
                 assert fits(page)
                 shot(page, "refused-save", width)
+
+                # N1: an empty paste lands on its error, too.
+                page.goto(url)
+                page.locator("details.police-letter-paste > summary").click()
+                with page.expect_response(lambda r: r.url.endswith("/police-letter")) as empty:
+                    page.locator("details.police-letter-paste .actions button").click()
+                assert empty.value.status == 422
+                page.wait_for_selector("#letter_text-error")
+                page.wait_for_timeout(300)
+                error_top = page.evaluate(
+                    "() => [document.querySelector('#letter_text-error').getBoundingClientRect().top,"
+                    " document.querySelector('#letter_text-error').getBoundingClientRect().bottom, window.innerHeight]"
+                )
+                assert 0 <= error_top[0] and error_top[1] <= error_top[2], error_top
+                if shot_dir:
+                    page.screenshot(path=str(Path(shot_dir) / f"landing-error-{width}.png"))
                 context.close()
             browser.close()
     finally:
