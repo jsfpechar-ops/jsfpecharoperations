@@ -1,6 +1,6 @@
 # 1086: G6 police letter, part 3 of 3: browser tests, the discard warning, screenshots and the UX gate
 
-Status: todo
+Status: review
 Tier: A | Depends on: 1085 (merged to main as PR #882, `a166812a`; merge `origin/main` into this branch first) | Base commit: a166812a | Branch: claude/1086-police-letter-ux
 Executor: Fable 5.2 (owner tier override in decisions.md) | Attempts: 3 at most | Fits one session: stop at 60 tool calls or 60k tokens (section 8); reads stay at 150 lines or fewer
 Review: an extremely strict fresh Fable diff review (owner's words) before the PR opens, on UX, the no-JavaScript flow and filing safety in the browser.
