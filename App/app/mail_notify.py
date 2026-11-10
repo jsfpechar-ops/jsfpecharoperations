@@ -1768,8 +1768,9 @@ def build_fee_update(
     """Brief 1078: the stay-fee total changed after the completion mail.
 
     Amounts and the variable symbol only. The pay details stay in the earlier
-    mail, so this is never a second bill: no link, button, QR or image. The app
-    cannot see a payment, so no line says the fee was paid.
+    mail, so this is never a second bill: no added image, QR or pay link. The
+    app cannot see a payment, so no line says the fee was paid. The variable
+    symbol is repeated only when there is more to send.
     """
     old = _guest_text(lang, "fee_amount", amount=old_total)
     new = _guest_text(lang, "fee_amount", amount=new_total)
@@ -1784,7 +1785,7 @@ def build_fee_update(
 
     blocks = [_block_heading(heading), _block_paragraph(body)]
     text_lines = [body]
-    if vs:
+    if vs and new_total > old_total:
         vs_line = _guest_text(lang, "mail_completion_fee_vs", vs=vs)
         blocks.append(_block_paragraph(vs_line))
         text_lines.append(vs_line)

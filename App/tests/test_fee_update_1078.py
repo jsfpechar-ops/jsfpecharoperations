@@ -5,14 +5,22 @@ import json
 import pathlib
 from datetime import datetime, timedelta, timezone
 
+import threading
+
 import pytest
 from fastapi.testclient import TestClient
 
+# Import first: test_db_postgres copies UBYHOST_TEST_DATABASE_URL into the
+# application setting, which app.config reads once at import time.
+from test_db_postgres import _PG_URL
 from app import claim, config, db, fee_update, i18n, mail, mail_notify, reporting
 from app.main import app
 from app.routes import guest
 from tests.conftest import complete_guest_claim
-from tests.test_claim_mail import TOKEN, _cleanup, _seed
+from tests.test_claim_mail import TOKEN, _age_claim, _cleanup, _seed
+
+if _PG_URL:
+    from test_db_postgres import pg_runtime  # noqa: F401
 
 FEE_COLUMNS = ("fee_mailed_total", "fee_mailed_at", "fee_pending_total", "fee_pending_since")
 NEW_KEYS = (
@@ -155,12 +163,35 @@ def test_a_changed_total_mails_once_after_ten_quiet_minutes(stay, monkeypatch):
 
     monkeypatch.setattr(reporting, "submit_stay_if_complete", boom)
     stay.complete()
+    now = db.utcnow()
+    db.insert(
+        "guest",
+        {
+            "reservation_id": stay.id,
+            "surname": "Guest",
+            "first_name": "Lead",
+            "birth_date": "01011990",
+            "nationality": "DEU",
+            "doc_number": "C1234567",
+            "res_street": "Street 1",
+            "res_city": "Berlin",
+            "res_country": "DEU",
+            "purpose": "10",
+            "is_lead": 1,
+            "entered_by": "guest",
+            "submit_state": reporting.PENDING,
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
     reservation_before = dict(stay.reservation())
     guests_before = [
         dict(row)
         for row in db.query("SELECT * FROM guest WHERE reservation_id = ? ORDER BY id", (stay.id,))
     ]
     baseline_at = stay.fee_columns()[1]
+    assert len(guests_before) == 1
+    assert guests_before[0]["submit_state"] == reporting.PENDING
 
     stay.total = 550
     assert fee_update.sweep_fee_updates(now=_at(1)) == {"queued": 0, "pending": 1}
@@ -223,7 +254,7 @@ def test_two_changes_inside_the_window_restart_the_wait(stay):
 
 
 def test_a_lower_total_gets_the_less_line(stay):
-    db.update("apartment", stay.apartment_id, {"stay_fee_guest_rails": "cash"})
+    # The iban rail is on, and still nothing more is owed: no variable symbol.
     stay.complete()
     stay.total = 250
     fee_update.sweep_fee_updates(now=_at(1))
@@ -233,8 +264,18 @@ def test_a_lower_total_gets_the_less_line(stay):
     assert "is now 250 CZK. It was 400 CZK." in text
     assert "ask your host about the difference" in text
     assert "remaining difference" not in text
-    # No iban rail, so no variable symbol line.
     assert "variable symbol" not in text
+
+
+def test_a_higher_total_without_the_iban_rail_has_no_variable_symbol(stay):
+    db.update("apartment", stay.apartment_id, {"stay_fee_guest_rails": "cash"})
+    stay.complete()
+    stay.total = 550
+    fee_update.sweep_fee_updates(now=_at(1))
+    assert fee_update.sweep_fee_updates(now=_at(12))["queued"] == 1
+    (row,) = stay.updates()
+    assert "remaining difference is 150 CZK" in stay.text(row)
+    assert "variable symbol" not in stay.text(row)
 
 
 def test_a_fee_that_becomes_none_sends_nothing_and_keeps_the_baseline(stay):
@@ -449,7 +490,12 @@ def test_update_mail_copy_in_six_languages(lang):
         assert "%(" not in local(key, **values)
         if lang != "en":
             assert local(key, **values) != english(key, **values), key
-    for old_total, new_total, vs in ((400, 550, "77"), (400, 250, ""), (400, 550, "")):
+    for old_total, new_total, vs in (
+        (400, 550, "77"),
+        (400, 250, "77"),
+        (400, 250, ""),
+        (400, 550, ""),
+    ):
         content = mail_notify.build_fee_update(
             lang=lang,
             property_name="Claim flat",
@@ -474,7 +520,7 @@ def test_update_mail_copy_in_six_languages(lang):
         assert amount in content["subject"] and amount in content["text"]
         assert local("fee_amount", amount=old_total) in content["text"]
         vs_line = local("mail_completion_fee_vs", vs="77")
-        assert (vs_line in content["text"]) == bool(vs)
+        assert (vs_line in content["text"]) == (bool(vs) and new_total > old_total)
         more = local("mail_fee_update_more", diff=local("fee_amount", amount=150))
         less = local("mail_fee_update_less")
         assert (more in content["text"]) == (new_total > old_total)
@@ -486,3 +532,139 @@ def test_update_mail_copy_in_six_languages(lang):
             lowered = (content["subject"] + body).lower()
             for word in ("paid", "received", "settled"):
                 assert word not in lowered
+
+
+# Review round 2 --------------------------------------------------------------
+
+
+def test_a_lost_record_followed_by_a_return_to_the_old_total_is_corrected(stay, monkeypatch):
+    """Enqueue A to B, crash before the record, then the total goes back to A.
+
+    The guest holds a mail that says B, so B becomes the baseline and the
+    return to A is mailed as a change of its own.
+    """
+    stay.complete()
+    stay.total = 550
+    fee_update.sweep_fee_updates(now=_at(1))
+
+    def crash(*_args):
+        raise RuntimeError("process died after the enqueue")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(fee_update, "_record_sent", crash)
+        assert fee_update.sweep_fee_updates(now=_at(12)) == {"queued": 0, "pending": 0}
+    assert len(stay.updates()) == 1
+    assert stay.fee_columns()[0] == 400
+
+    stay.total = 400
+    assert fee_update.sweep_fee_updates(now=_at(13)) == {"queued": 0, "pending": 0}
+    assert stay.fee_columns() == (550, _at(13).isoformat(), None, None)
+    assert fee_update.sweep_fee_updates(now=_at(14)) == {"queued": 0, "pending": 1}
+    assert len(stay.updates()) == 1
+    assert fee_update.sweep_fee_updates(now=_at(25)) == {"queued": 1, "pending": 0}
+    first, second = stay.updates()
+    assert "is now 550 CZK. It was 400 CZK." in stay.text(first)
+    assert "is now 400 CZK. It was 550 CZK." in stay.text(second)
+    assert stay.fee_columns() == (400, _at(25).isoformat(), None, None)
+    assert fee_update.sweep_fee_updates(now=_at(50)) == {"queued": 0, "pending": 0}
+    assert len(stay.updates()) == 2
+
+
+def test_fee_writes_do_not_restart_the_claim_link_resend_cooldown(stay):
+    def updated_at():
+        return db.query_one(
+            "SELECT updated_at FROM reservation_claim WHERE reservation_id = ?", (stay.id,)
+        )["updated_at"]
+
+    _age_claim(stay.id, 600)
+    aged = updated_at()
+    stay.complete()  # completion itself stamps the row, as on main
+    _age_claim(stay.id, 600)
+    aged = updated_at()
+    fee_update.record_baseline(stay.id, 400)
+    stay.total = 550
+    assert fee_update.sweep_fee_updates(now=_at(1))["pending"] == 1  # pending set
+    stay.total = 400
+    fee_update.sweep_fee_updates(now=_at(2))  # pending cleared
+    stay.total = 550
+    fee_update.sweep_fee_updates(now=_at(3))
+    assert fee_update.sweep_fee_updates(now=_at(14))["queued"] == 1  # send recorded
+    assert updated_at() == aged
+    assert not claim._resend_too_soon(claim._row(stay.id))
+    ok, err, _secret = claim.start_claim(
+        stay.reservation(),
+        stay.apartment(),
+        email="lead@claim.test",
+        party_size=1,
+        lang="en",
+        resend=True,
+    )
+    assert ok, err
+
+
+def test_an_unchanged_total_opens_no_transaction(stay, monkeypatch):
+    stay.complete()
+
+    def no_transaction(*_args, **_kwargs):
+        raise AssertionError("nothing changed: the sweep must not take the write lock")
+
+    monkeypatch.setattr(fee_update, "_decide", no_transaction)
+    assert fee_update.sweep_fee_updates(now=_at(1)) == {"queued": 0, "pending": 0}
+    db.update("apartment", stay.apartment_id, {"stay_fee_collect": 0})
+    assert fee_update.sweep_fee_updates(now=_at(2)) == {"queued": 0, "pending": 0}
+
+
+needs_postgres = pytest.mark.skipif(
+    not _PG_URL,
+    reason=(
+        "the two-connection fee sweep test needs UBYHOST_DATABASE_URL (or "
+        "UBYHOST_TEST_DATABASE_URL) for a disposable PostgreSQL target; this "
+        "pytest process runs the SQLite row"
+    ),
+)
+
+
+@needs_postgres
+def test_two_workers_on_two_connections_mail_exactly_once(stay, monkeypatch):
+    """Both workers find the change due at the same moment; one row leaves."""
+    assert config.DB_BACKEND == "postgresql"
+    stay.complete()
+    stay.total = 550
+    assert fee_update.sweep_fee_updates(now=_at(1))["pending"] == 1
+
+    both_due = threading.Barrier(2)
+    real_build = mail_notify.build_fee_update
+    composed = []
+    backends = []
+
+    def build_when_both_are_due(**kwargs):
+        # Called after the locked decision and before the enqueue: holding
+        # both workers here means neither has recorded its send yet.
+        both_due.wait(timeout=20)
+        composed.append(kwargs["new_total"])
+        return real_build(**kwargs)
+
+    monkeypatch.setattr(mail_notify, "build_fee_update", build_when_both_are_due)
+    results = []
+
+    def worker():
+        try:
+            backends.append(db.query_one("SELECT pg_backend_pid() AS pid")["pid"])
+            results.append(fee_update.sweep_fee_updates(now=_at(12)))
+        finally:
+            db.close_connections()
+
+    threads = [threading.Thread(target=worker) for _ in range(2)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=30)
+    assert not any(thread.is_alive() for thread in threads)
+
+    assert len(set(backends)) == 2, "the workers must use two connections"
+    assert composed == [550, 550], "both workers must have found the change due"
+    assert len(results) == 2
+    assert len(stay.updates()) == 1
+    assert stay.fee_columns() == (550, _at(12).isoformat(), None, None)
+    assert fee_update.sweep_fee_updates(now=_at(30)) == {"queued": 0, "pending": 0}
+    assert len(stay.updates()) == 1

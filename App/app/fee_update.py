@@ -20,12 +20,13 @@ QUIET_MINUTES = 10
 
 def record_baseline(reservation_id: int, total: int) -> None:
     """Remember the total the completion mail just stated."""
-    now = db.utcnow()
+    # ``updated_at`` is left alone in every write of this module: it is the
+    # clock of the claim-link resend cooldown (``claim._resend_too_soon``).
     db.execute(
         "UPDATE reservation_claim SET fee_mailed_total = ?, fee_mailed_at = ?, "
-        "fee_pending_total = NULL, fee_pending_since = NULL, updated_at = ? "
+        "fee_pending_total = NULL, fee_pending_since = NULL "
         "WHERE reservation_id = ?",
-        (int(total), now, now, reservation_id),
+        (int(total), db.utcnow(), reservation_id),
     )
 
 
@@ -33,9 +34,9 @@ def _record_sent(reservation_id: int, live: int, mailed_at: str, now_iso: str) -
     """Move the baseline, but only if no other worker moved it first."""
     db.execute(
         "UPDATE reservation_claim SET fee_mailed_total = ?, fee_mailed_at = ?, "
-        "fee_pending_total = NULL, fee_pending_since = NULL, updated_at = ? "
+        "fee_pending_total = NULL, fee_pending_since = NULL "
         "WHERE reservation_id = ? AND fee_mailed_at = ?",
-        (live, now_iso, now_iso, reservation_id, mailed_at),
+        (live, now_iso, reservation_id, mailed_at),
     )
 
 
@@ -74,19 +75,47 @@ def _decide(reservation_id: int, live: Optional[int], now: datetime, now_iso: st
         mailed_total = int(row["fee_mailed_total"])
         pending_total = row["fee_pending_total"]
         if live is None or live == mailed_total:
-            if pending_total is not None or row["fee_pending_since"] is not None:
+            if pending_total is None and row["fee_pending_since"] is None:
+                return "none", None
+            # A mail queued under this baseline means its record was lost (the
+            # process died after the enqueue). The guest was told that mail's
+            # total, so it becomes the baseline; the next sweep then sees the
+            # live total differ from it and mails the correction.
+            prefix = f"completion_update:{reservation_id}:{row['fee_mailed_at']}:"
+            cur.execute(
+                "SELECT idempotency_key FROM email_outbox "
+                "WHERE reservation_id = ? AND kind = 'completion_update' "
+                "ORDER BY id DESC",
+                (reservation_id,),
+            )
+            lost = next(
+                (
+                    found["idempotency_key"][len(prefix):]
+                    for found in cur.fetchall()
+                    if found["idempotency_key"].startswith(prefix)
+                ),
+                None,
+            )
+            if lost is not None and lost.isdigit() and int(lost) != mailed_total:
                 cur.execute(
-                    "UPDATE reservation_claim SET fee_pending_total = NULL, "
-                    "fee_pending_since = NULL, updated_at = ? WHERE reservation_id = ?",
-                    (now_iso, reservation_id),
+                    "UPDATE reservation_claim SET fee_mailed_total = ?, "
+                    "fee_mailed_at = ?, fee_pending_total = NULL, "
+                    "fee_pending_since = NULL WHERE reservation_id = ?",
+                    (int(lost), now_iso, reservation_id),
                 )
+                return "none", None
+            cur.execute(
+                "UPDATE reservation_claim SET fee_pending_total = NULL, "
+                "fee_pending_since = NULL WHERE reservation_id = ?",
+                (reservation_id,),
+            )
             return "none", None
         if pending_total is None or int(pending_total) != live:
             # The wait restarts on every further change.
             cur.execute(
                 "UPDATE reservation_claim SET fee_pending_total = ?, "
-                "fee_pending_since = ?, updated_at = ? WHERE reservation_id = ?",
-                (live, now_iso, now_iso, reservation_id),
+                "fee_pending_since = ? WHERE reservation_id = ?",
+                (live, now_iso, reservation_id),
             )
             return "pending", None
         if not _quiet_long_enough(row["fee_pending_since"], now):
@@ -107,7 +136,7 @@ def sweep_fee_updates(now: Optional[datetime] = None) -> Dict[str, int]:
     now_iso = now.isoformat()
     summary = {"queued": 0, "pending": 0}
     rows = db.query(
-        "SELECT r.* FROM reservation r "
+        "SELECT r.*, c.fee_mailed_total, c.fee_pending_total FROM reservation r "
         "JOIN apartment a ON a.id = r.apartment_id "
         "JOIN reservation_claim c ON c.reservation_id = r.id "
         "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 "
@@ -125,6 +154,11 @@ def sweep_fee_updates(now: Optional[datetime] = None) -> Dict[str, int]:
             )
             fee = claim._completion_fee(apartment, reservation)
             live = fee["total"] if fee else None
+            if reservation["fee_pending_total"] is None and (
+                live is None or live == reservation["fee_mailed_total"]
+            ):
+                # Nothing changed and nothing is waiting: no transaction.
+                continue
             outcome, due = _decide(reservation_id, live, now, now_iso)
             if outcome == "pending":
                 summary["pending"] += 1
