@@ -204,8 +204,8 @@ Required by the filing code (`validation.py:560-676`), never removed: surname, g
 | Property list: per-property extra queries (*unverified*) | `routes/admin.py:1392-1407` | Batch |
 | Property editor may call the TTLock API while rendering (*unverified*) | `routes/admin.py:681-701` | Load the lock panel as a fragment |
 | Reservation list counts all rows on every page | `routes/admin.py:3539-3560` | Skip the count when the page is not full |
-| Up to 14 stylesheets, about 1.28 MB raw; `tokens.css`, `command.css`, `list-filter-compact.css` linked twice | `templates/base.html:21-40` | Remove duplicates now; bundle per shell later |
-| `platform.js` is the only blocking script | `base.html:9` | Defer or inline |
+| Up to 14 stylesheets, about 1.28 MB raw. The three "duplicate" links in `base.html:21-40` sit in the v2 and classic branches, so none loads twice (1067 checked) | `templates/base.html:21-40` | Bundle per shell later |
+| `platform.js` was the only blocking script; 1067 inlines it in `<head>` (defer would flash the Ctrl K hint on Mac) | `base.html:9` | Done |
 | Many `async def` routes call the database directly (*unverified* impact) | `routes/*.py` | Measure first |
 | Already good | `main.py:350-352,405-430`, `metrics.py`, `db.py:60` | Static files cached for a year; zstd and gzip; Turbo prefetch; per-request `ms`, `q`, `db_ms` logging and `/metrics` exist |
 
@@ -222,7 +222,7 @@ All "reuse what exists". Any item touching a host page passes the UX gate; guest
 | Q3 | Prefill what we hold: operator e-mail from the account; guest e-mail in payment requests from the stay; the only operator preselected on invoices; BIC from bank code; hours default 15:00 and 10:00, asked once | Operator, invoice, payments, lock | S | none | hygiene |
 | Q4 | Property address: "Same as the operator's address" tick, and one address search that fills all fields with "Edit by hand" below | Property | S-M | filing (address is filed): show the filled fields for confirmation | wow |
 | Q5 | Company lookup by IČO wherever an operator is created, including the wizard | Operator | S | none (lookup exists, cached 24 h) | hygiene |
-| Q6 | Remove the 3 duplicate stylesheet links; defer `platform.js` | All host pages | S | none | hygiene |
+| Q6 | Inline the 1-line `platform.js` (no duplicate stylesheets exist, see 4.7); done by 1067 | All host pages | S | none | hygiene |
 | Q7 | Shared queries once per request (sidebar properties, billing banner); alerts top N plus count; add a `Server-Timing` header from existing stats | All host pages | S-M | none | hygiene |
 | Q8 | Every error says how to fix it and links there: no bank account (invoice, QR), Stripe not ready, lock offline, TTLock shared lock not found | Payments, invoice, lock | S | none | hygiene |
 | Q9 | Block a Bank QR request when no bank account exists, with "Add bank account (1 min)" in place; replace the bare QR 404 with a plain message | Payments, guest pay | S | none | hygiene |
