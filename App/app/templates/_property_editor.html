@@ -309,6 +309,7 @@
       <p class="ui-sub"><a href="{{ base_url }}?view=settings&amp;section=automation#automation">{{ t('automation.timing_title') }} </a></p>
       {%- set letter_fill = letter_prefill or {} -%}
       {%- set letter_names = {'uby_idub': t('apartment.form.ubyport.idub_label'), 'uby_ws_user': t('automation.login'), 'uby_mark': t('apartment.form.ubyport.mark_label')} -%}
+      <div class="police-letter-helpers">
       <details class="police-letter-find">
         <summary>{{ t('police_letter.find_title') }}</summary>
         {% include "_police_letter_figure.html" %}
@@ -324,6 +325,7 @@
           <button class="ui-btn ui-btn-secondary" type="submit" form="police-letter-form">{{ t('police_letter.read_button') }}</button>
         </div>
       </details>
+      </div>
       {% if letter_rows %}
       <div class="police-letter-check" id="police-letter-check">
         <h3 class="police-letter-check-title">{{ t('police_letter.check_title') }}</h3>
