@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import pytest
 from fastapi.testclient import TestClient
 
-from app import access, alerts, auth, db
+from app import access, alerts, analytics, auth, db
 from app import main
 from app.main import app
 from tests.conftest import login_as
@@ -233,3 +233,58 @@ def test_a_property_created_in_the_request_is_listed(hosts, monkeypatch):
     assert len(access.apartments(post, "id, internal_name")) == 2
     monkeypatch.undo()
     assert "Alpha 1072 new" in hosts.ca.get("/apartments?lang=en").text
+
+
+def test_a_thirteenth_alert_never_vanishes_when_the_kept_rows_do(hosts, monkeypatch):
+    # 1072-cont-1: 12 kept rows all dropped by present_many, 1 left out; the "1" must show.
+    for n in range(13):
+        _alert(hosts.a["id"], "warning", n)
+    monkeypatch.setattr(alerts, "present_many", lambda rows, lang: [])
+    page = hosts.ca.get("/settings?lang=en")
+    assert page.status_code == 200
+    assert "data-notification-summary" in page.text
+    assert re.search(r"(?<!\d)1 alerts need you", page.text)
+
+
+def test_a_filing_alert_left_out_of_the_top_rows_is_still_counted(hosts, monkeypatch):
+    for n in range(12):
+        _alert(hosts.a["id"], "warning", n)
+    key = f"s1072:{hosts.a['id']}"
+    alerts.raise_alert("warning", "submission_stuck", "stuck 1072", reservation_id=9100,
+                       owner_user_id=hosts.a["id"], dedupe_key=key)
+    # Oldest, so it sorts last among the warnings and is the row shell_slice leaves out.
+    db.execute("UPDATE alert SET created_at = ? WHERE dedupe_key = ?", ("2000-01-01T00:00:00+00:00", key))
+    seen = []
+    monkeypatch.setattr(alerts, "present_many", lambda rows, lang: seen.extend(r["kind"] for r in rows) or [])
+    page = hosts.ca.get("/settings?lang=en")
+    assert page.status_code == 200
+    assert len(seen) == alerts.SHELL_ALERT_LIMIT and "submission_stuck" not in seen
+    assert 'href="/#needs-action"' in page.text
+    assert re.search(r"(?<!\d)1 alerts need you", page.text)
+    # Review: counted is not enough, the left-out alert must also be reachable on the dashboard.
+    monkeypatch.undo()
+    assert "submission_stuck" in [a["kind"] for a in alerts.present_many(alerts.open_alerts(hosts.a["id"]), "en")]
+    stuck = db.query_one("SELECT id FROM alert WHERE dedupe_key = ?", (key,))
+    # The dashboard lists alerts as needs-you cards (no data-alert-id there): its own card and dismiss form.
+    home = hosts.ca.get("/?lang=en").text
+    assert 'data-needs-you-stay="9100"' in home and "stuck 1072" in home
+    assert f'action="/alerts/{stuck["id"]}/dismiss"' in home
+
+
+def test_server_timing_is_never_sent_on_public_token_or_legal_pages(hosts):
+    def request(path, **flags):
+        state = SimpleNamespace(user_account=hosts.a, **flags)
+        return SimpleNamespace(url=SimpleNamespace(path=path), state=state)
+
+    for path in ("/g/not-a-token-1072", "/g/not-a-token-1072/leon", "/p/not-a-slug-1072",
+                 "/pay/1/not-a-token-1072", "/invoice/d/not-a-token-1072",
+                 "/photos/property/none-1072.jpg", "/pruvodce/none-1072", "/mail/unsubscribe/not-a-token-1072",
+                 "/terms", "/terms/booking",
+                 "/privacy", "/legal", "/dpa", "/subprocessors", "/cenik", "/jak-to-funguje"):
+        assert main._signed_in_page(request(path)) is False, path
+    assert main._signed_in_page(request("/", **{analytics.STATE_FLAG: True})) is False
+    for path in ("/apartments", "/payments", "/predplatne", "/privacy-requests", "/guests"):
+        assert main._signed_in_page(request(path)) is True, path
+    for path in ("/terms", "/privacy", "/legal", "/g/not-a-token-1072", "/p/not-a-slug-1072"):
+        assert "server-timing" not in hosts.ca.get(path, follow_redirects=False).headers, path
+    assert "server-timing" in hosts.ca.get("/apartments?lang=en").headers
