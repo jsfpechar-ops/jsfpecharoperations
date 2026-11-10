@@ -1,6 +1,6 @@
 # 1092: demo dataset covers every current host feature (stay fee, guest pay, payments, door codes, cleaning, property page) — and never double-books a property
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 66528654 | Branch: vibe/demo-coverage-9320c3
 Executor: tier B per [decisions 2026-11-09](../context/decisions.md) (multi-file + payments): Opus executes; a fresh Fable reviews this brief before the executor runs | Fits one session
 
@@ -142,6 +142,8 @@ Anything outside §3 — especially `App/app/reporting.py` exclusion SQL, the mo
 
 ## 6. Commands
 
+CI runs on every PR (`.github/workflows/ci.yml`): ruff `--select E9,F63,F7,F82,F401,F841`, `scripts/design_lint.py`, pip-audit, node passkeys test, the **full** pytest suite with `--cov-fail-under=86` under `UBYHOST_UBYPORT_ENV=mock UBYHOST_DEPLOYMENT=staging UBYHOST_ENABLE_SCHEDULER=0`, PostgreSQL jobs (goose baseline + PG tests, and they **fail if PG tests are skipped**), a Go job, an app smoke job, browser shards, shellcheck, Caddyfile validation. First-try-green rules for this brief: run the ruff select-rules locally before pushing; keep all SQL Postgres-portable through `db.py` helpers (rule 5) so the PG jobs stay green; and cover **every new seed branch with a test** — CI's coverage gate is `--cov-fail-under=86`, and uncovered demo code is the most likely first-try failure.
+
 From `App/` (each ending `2>&1 | tail -30`):
 
 - `.venv/bin/python -m pytest tests/test_demo_seed.py tests/test_demo_stay_exclusion.py tests/test_sample_calendar.py -q --tb=short -x`
@@ -152,6 +154,7 @@ From `App/` (each ending `2>&1 | tail -30`):
 - `.venv/bin/python -m pytest tests/test_property_slug.py tests/test_property_page*.py tests/test_booking_site.py tests/test_booking_widget.py -q --tb=short -x`
 - `.venv/bin/python -m pytest tests/test_icalsync.py tests/test_sample_calendar.py -q --tb=short -x`
 - `.venv/bin/python -m pytest tests/test_no_em_dashes.py tests/test_copy_cleanup.py tests/test_flash_literals.py -q --tb=short -x`
+- `.venv/bin/ruff check app tests tools --select E9,F63,F7,F82,F401,F841`
 
 From the repo root: `python3 scripts/context_lint.py | tail -30`
 
@@ -161,7 +164,7 @@ From the repo root: `python3 scripts/context_lint.py | tail -30`
 - [ ] `seed()` under `UBYPORT_ENV=mock` creates the two properties plus stay-fee config, one filing + adjustment (+ invoice if the flow makes one), ≥2 payment_request rows (paid + awaiting), a guest fee decision, a door-code row, cleaning rows, a published property page (+1 booking); the `POST /demo` flow is unchanged.
 - [ ] `demo.clear()` removes all of it (tests assert the tables are empty).
 - [ ] No demo row is reachable from the submission/reporting paths (exclusion tests green).
-- [ ] All §6 commands green; `context_lint.py` clean.
+- [ ] All §6 commands green; `context_lint.py` and the ruff select-rules clean; every new seed branch covered by a test (CI `--cov-fail-under=86`); SQL Postgres-portable (PG CI jobs fail if PG tests skip).
 - [ ] README counts updated to the new verified numbers.
 
 ## 8. Stop and ask

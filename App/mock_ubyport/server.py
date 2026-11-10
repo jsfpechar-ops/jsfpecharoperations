@@ -511,43 +511,14 @@ def healthz():
 
 @app.get("/sample-airbnb.ics")
 def sample_calendar():
-    """An Airbnb-shaped calendar, so the host can try the app before they have
-    a real export link. The dates move with today so it never goes stale."""
-    from datetime import timedelta
+    """The one shared sample calendar, so the host can try the app before they
+    have a real export link. Served from app.sample_calendar (dates move with
+    today, stays never overlap), exactly what the app serves on /sample-airbnb.ics."""
+    from app.sample_calendar import sample_airbnb_ics
 
-    today = date.today()
-    lines = [
-        "BEGIN:VCALENDAR",
-        "PRODID;X-RICAL-TZSOURCE=TZINFO:-//Airbnb Inc//Hosting Calendar 0.8.8//EN",
-        "CALSCALE:GREGORIAN",
-        "VERSION:2.0",
-        "X-WR-CALNAME:UbyHost sample calendar",
-    ]
-    stays = [
-        ("arriving-today", today, 4, "Reserved", "0431"),
-        ("arrived-yesterday", today - timedelta(days=1), 3, "Reserved", "7788"),
-        ("next-week", today + timedelta(days=7), 5, "Reserved", "1290"),
-        ("blocked", today + timedelta(days=3), 2, "Airbnb (Not available)", None),
-    ]
-    for name, start, nights, summary, phone in stays:
-        lines += [
-            "BEGIN:VEVENT",
-            f"DTSTART;VALUE=DATE:{start:%Y%m%d}",
-            f"DTEND;VALUE=DATE:{start + timedelta(days=nights):%Y%m%d}",
-            f"UID:sample-{name}@airbnb.com",
-            f"SUMMARY:{summary}",
-        ]
-        if phone:
-            lines.append(
-                "DESCRIPTION:Reservation URL: https://www.airbnb.com/hosting/reservations/"
-                f"details/HMSAMPLE{phone}\\nPhone Number (Last 4 Digits): {phone}"
-            )
-        lines.append("END:VEVENT")
-    lines.append("END:VCALENDAR")
     return Response(
-        content="\r\n".join(lines) + "\r\n", media_type="text/calendar; charset=utf-8"
+        content=sample_airbnb_ics(), media_type="text/calendar; charset=utf-8"
     )
-
 
 @app.post("/reset")
 def reset():
