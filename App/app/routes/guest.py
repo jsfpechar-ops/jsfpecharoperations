@@ -1933,6 +1933,52 @@ def _form_context(
             "just_saved": request.query_params.get("saved") == "1",
         }
     )
+    # Brief 1090: a guest under 15 does not sign; an adult this phone saved
+    # confirms for them. The lists hold only people this device saved.
+    vals = values or {}
+    birth = vals.get("birth_date") or (guest["birth_date"] if guest else "")
+    arrival = validation.parse_iso_date(
+        vals.get("stay_from") or (guest["stay_from"] if guest else "") or reservation["date_from"]
+    )
+    owned = set(_owned_ids(request))
+    child_signers: List[Dict[str, Any]] = []
+    pending_children: List[Dict[str, Any]] = []
+    if owned:
+        rows = db.query("SELECT * FROM guest WHERE reservation_id = ?", (reservation["id"],))
+        for row in rows:
+            if row["id"] not in owned or (guest is not None and row["id"] == guest["id"]):
+                continue
+            # 1089: an archived adult is no signer; an archived child needs none.
+            if row["archived_at"]:
+                continue
+            entry = {"id": row["id"], "name": f"{row['first_name']} {row['surname']}".strip()}
+            if validation.is_valid_signature(
+                row["signature_png"]
+            ) and validation.certainly_at_least_age(
+                row["birth_date"], reporting._stay_dates(row, reservation)[0],
+                reporting.ADULT_SIGNER_AGE,
+            ):
+                child_signers.append(entry)
+            elif reporting.guest_under_15(row, reservation) and not row["signed_for_guest_id"]:
+                pending_children.append(entry)
+    context.update(
+        {
+            "under15": (
+                validation.certainly_under_age(birth, arrival, reporting.UNDER_SIGN_AGE)
+                if birth else None
+            ),
+            "adult_signer": (
+                validation.certainly_at_least_age(birth, arrival, reporting.ADULT_SIGNER_AGE)
+                if birth else None
+            ),
+            "child_signers": child_signers,
+            "pending_children": pending_children,
+            "pending_children_names": ", ".join(c["name"] for c in pending_children),
+            "selected_signer": vals.get("signed_by", ""),
+            "selected_child_role": vals.get("child_sign_role", ""),
+            "selected_sign_for_role": vals.get("sign_for_role", ""),
+        }
+    )
     return context
 
 
@@ -2381,6 +2427,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             back_url=_form_back_url(token, apartment, reservation_id, lang, editing=bool(existing)),
             token=token,
         )
+        signed_by_echo = str(form.get("signed_by") or "")
         context["values"].update(
             {
                 "stay_from": stay_from,
@@ -2392,8 +2439,15 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
                 "signature": signature if validation.is_valid_signature(signature) else "",
                 "party_size": party_raw,
                 "legal_ack": form.get("legal_ack") or "",
+                # Brief 1090: echo only a whitelisted signer id and role.
+                "signed_by": signed_by_echo if signed_by_echo.isascii() and signed_by_echo.isdigit() else "",
+                "child_sign_role": form.get("child_sign_role") if form.get("child_sign_role") in reporting.SIGN_FOR_ROLES else "",
+                "sign_for_role": form.get("sign_for_role") if form.get("sign_for_role") in reporting.SIGN_FOR_ROLES else "",
             }
         )
+        context["selected_signer"] = context["values"]["signed_by"]
+        context["selected_child_role"] = context["values"]["child_sign_role"]
+        context["selected_sign_for_role"] = context["values"]["sign_for_role"]
         _keep_unreadable_text(context["values"], raw)
         _add_draft_keys(context, request, apartment, existing, token, reservation_id, lang)
         return _with_lang(render_guest(request, "guest/form.html", context, status_code=422), lang)
