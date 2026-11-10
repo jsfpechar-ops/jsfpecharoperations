@@ -20,6 +20,7 @@ from . import (
     db,
     door_codes,
     dsr,
+    fee_update,
     filing_watchdog,
     guest_guide_import,
     guest_guide_merge,
@@ -283,6 +284,7 @@ def _job_mail() -> None:
         ("expire_requests", booking_checkout.expire_requests),
         ("drain", mail.drain),
         ("reminders", claim.sweep_reminders),
+        ("fee_updates", fee_update.sweep_fee_updates),
         # Once a day and only with UBYHOST_LIFECYCLE_MAIL=1 (WP12).
         ("lifecycle", lifecycle_mail.run_daily),
         ("purge", mail.purge_old),

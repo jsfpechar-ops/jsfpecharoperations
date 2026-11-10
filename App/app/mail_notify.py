@@ -1829,6 +1829,65 @@ def build_completion(
     return content
 
 
+def build_fee_update(
+    *,
+    lang: str,
+    property_name: str,
+    dates: str,
+    host: Optional[Dict[str, str]] = None,
+    old_total: int,
+    new_total: int,
+    vs: str = "",
+) -> Dict[str, str]:
+    """Brief 1078: the stay-fee total changed after the completion mail.
+
+    Amounts and the variable symbol only. The pay details stay in the earlier
+    mail, so this is never a second bill: no added image, QR or pay link. The
+    app cannot see a payment, so no line says the fee was paid. The variable
+    symbol is repeated only when there is more to send.
+    """
+    old = _guest_text(lang, "fee_amount", amount=old_total)
+    new = _guest_text(lang, "fee_amount", amount=new_total)
+    subject = _guest_text(
+        lang, "mail_fee_update_subject", property=property_name, total=new
+    )
+    heading = _guest_text(lang, "mail_fee_update_heading")
+    body = _guest_text(
+        lang, "mail_fee_update_body", property=property_name, dates=dates, old=old, new=new
+    )
+    footer_lines = _guest_footer_lines(lang, property_name, host)
+
+    blocks = [_block_heading(heading), _block_paragraph(body)]
+    text_lines = [body]
+    if vs and new_total > old_total:
+        vs_line = _guest_text(lang, "mail_fee_update_vs", vs=vs)
+        blocks.append(_block_paragraph(vs_line))
+        text_lines.append(vs_line)
+    if new_total > old_total:
+        difference = _guest_text(
+            lang,
+            "mail_fee_update_more",
+            diff=_guest_text(lang, "fee_amount", amount=new_total - old_total),
+        )
+    else:
+        difference = _guest_text(lang, "mail_fee_update_less")
+    blocks.append(_block_paragraph(difference))
+    text_lines.extend(["", difference])
+
+    text = "\n".join([*text_lines, "", "--", *_footer_text(footer_lines)])
+    return {
+        "subject": subject,
+        "text": text,
+        "html": _shell(
+            lang=lang,
+            title=property_name,
+            preheader=heading,
+            blocks=blocks,
+            footer_lines=footer_lines,
+        ),
+    }
+
+
 def build_invoice_issued(
     *,
     lang: str,

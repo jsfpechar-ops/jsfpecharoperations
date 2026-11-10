@@ -1815,6 +1815,8 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
         "site_booking_request_host",
         "site_booking_request_guest",
         "completion",
+        # 1078: the changed stay-fee total, after the completion mail.
+        "completion_update",
         "submission_problem",
         "invoice_issued",
         "workspace_deletion",

@@ -786,7 +786,7 @@ def maybe_notify_completion(reservation, apartment, *, force: bool = False) -> N
         payload[mail.QR_SPAYD_KEY] = content["qr_spayd"]
     if code_row is not None:
         payload[mail.DOOR_CODE_KEY] = code_row["pin_enc"]
-    mail.enqueue(
+    outbox_id = mail.enqueue(
         kind="completion",
         idempotency_key=f"completion:{reservation['id']}:{progress['filled']}",
         to_email=claim["email"],
@@ -809,6 +809,15 @@ def maybe_notify_completion(reservation, apartment, *, force: bool = False) -> N
             "UPDATE door_code SET notified_at = ?, updated_at = ? WHERE id = ?",
             (db.utcnow(), db.utcnow(), code_row["id"]),
         )
+    if outbox_id:
+        try:
+            fee = _completion_fee(apartment, reservation)
+            if fee:
+                from . import fee_update
+
+                fee_update.record_baseline(reservation["id"], fee["total"])
+        except Exception:
+            log.exception("fee baseline not recorded reservation_id=%s", reservation["id"])
     mail.drain(limit=4)
 
 
