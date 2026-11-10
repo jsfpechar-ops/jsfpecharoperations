@@ -38,6 +38,12 @@ AUDIT_COPY = {
         "We send your private link here. No marketing.",
         "Pošleme sem váš soukromý odkaz. Žádný marketing.",
     ),
+    "claim_email_why": (
+        "We send your private link and receipt here, and it keeps this "
+        "booking yours. No marketing.",
+        "Pošleme sem soukromý odkaz a potvrzení a díky e-mailu zůstane tato "
+        "rezervace vaše. Žádný marketing.",
+    ),
     "claim_email_help": (
         "Also one reminder the day before arrival if forms are missing, and a "
         "receipt (your host gets a copy). Shown masked elsewhere.",
@@ -54,7 +60,7 @@ AUDIT_COPY = {
 }
 
 # Every hint line the claim card renders, in the order the guest reads them.
-CLAIM_HINT_KEYS = ("claim_help", "tw_email_short", "claim_email_help", "claim_cookie_help")
+CLAIM_HINT_KEYS = ("claim_help", "claim_email_why", "claim_email_help", "claim_cookie_help")
 
 # The guest pages that render the shared "why we collect this" fold.
 # UX-118 (audit A-31) dropped it from unavailable.html: a dead-end page has no
