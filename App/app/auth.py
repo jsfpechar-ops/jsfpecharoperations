@@ -651,6 +651,35 @@ def trusted_device(request, email: str) -> bool:
     )
 
 
+def device_cookie_valid(request) -> bool:
+    """True when the device cookie is signed, fresh and matches a live account.
+
+    Used only to decide whether /login shows the widget. The submit still
+    checks the cookie against the typed e-mail (trusted_device).
+    """
+    token = request.cookies.get(DEVICE_COOKIE)
+    if not token:
+        return False
+    try:
+        payload = _device_serializer().loads(token, max_age=DEVICE_MAX_AGE)
+    except Exception:
+        return False
+    if not isinstance(payload, dict):
+        return False
+    try:
+        account = db.query_one(
+            "SELECT * FROM user_account WHERE id = ? AND active = 1",
+            (int(payload.get("uid", -1)),),
+        )
+    except (TypeError, ValueError):
+        return False
+    return bool(
+        account
+        and int(account["active"]) == 1
+        and int(payload.get("sv", -1)) == int(account["session_version"])
+    )
+
+
 def create_account(
     email: str,
     display_name: str = "",
