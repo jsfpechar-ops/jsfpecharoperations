@@ -306,14 +306,22 @@ def _send_code_mail(door_code_id: int) -> None:
     if not shown or shown.get("state") != "issued":
         return
     lang = claim["lang"] or "en"
+    # The fee block rides along only when the completion mail (the bill) has gone.
+    fee = None
+    if claim["completion_notified_at"]:
+        from . import claim as claim_module  # `claim` is the row here; the modules import each other
+        fee = claim_module._completion_fee(apartment, reservation)
     content = mail_notify.build_door_code(
         lang=lang,
         property_name=apartment["internal_name"] or "",
         checkin=shown["checkin"],
         checkout=shown["checkout"],
         first_use_by=shown["first_use_by"],
+        fee=fee,
     )
     payload = mail_notify.guest_payload(apartment, content, lang)
+    if content.get("qr_spayd"):
+        payload[mail.QR_SPAYD_KEY] = content["qr_spayd"]
     payload[mail.DOOR_CODE_KEY] = row["pin_enc"]
     outbox_id = mail.enqueue(
         kind="door_code",
