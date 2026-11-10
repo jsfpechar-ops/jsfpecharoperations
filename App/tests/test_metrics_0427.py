@@ -50,6 +50,8 @@ def _reset():
         m._durations.clear()
         m._duration_sums.clear()
         m._duration_counts.clear()
+        m._db_queries.clear()
+        m._db_seconds.clear()
 
 
 def test_counter_and_histogram_rendering():
@@ -95,3 +97,32 @@ def test_metrics_labels_never_carry_real_paths(client):
     out = m.render()
     assert "/l/not-a-real-token" not in out
     assert "route=\"/l/{token}\"" in out
+
+
+def test_db_counters_sum_per_route_and_method():
+    from app import metrics as m
+
+    _reset()
+    m.observe_request("GET", "/guide/{item_id}", 200, 0.04, db_queries=7, db_seconds=0.25)
+    m.observe_request("GET", "/guide/{item_id}", 200, 0.04, db_queries=5, db_seconds=0.25)
+    m.observe_request("POST", "/guide/{item_id}", 200, 0.04)
+    out = m.render()
+    assert 'ubyhost_request_db_queries_total{method="GET",route="/guide/{item_id}"} 12' in out
+    assert 'ubyhost_request_db_seconds_total{method="GET",route="/guide/{item_id}"} 0.5' in out
+    assert 'ubyhost_request_db_queries_total{method="POST",route="/guide/{item_id}"} 0' in out
+
+
+def test_db_counters_use_templates_and_only_two_labels(client):
+    """OPS-3: no raw path, no extra label; the middleware feeds the real stats."""
+    import re
+
+    _reset()
+    client.get("/l/not-a-real-token")
+    from app import metrics as m
+
+    out = m.render()
+    assert "/l/not-a-real-token" not in out
+    lines = [l for l in out.splitlines() if l.startswith("ubyhost_request_db_queries_total{")]
+    assert any('route="/l/{token}"' in l for l in lines)
+    for line in lines:
+        assert re.fullmatch(r'ubyhost_request_db_queries_total\{method="[A-Z]+",route="[^"]+"\} \d+', line), line

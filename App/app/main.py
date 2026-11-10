@@ -357,6 +357,7 @@ async def cloudflare_connecting_ip(request: Request, call_next):
         metrics.observe_request(
             request.method, _access_route(request), response.status_code,
             time.perf_counter() - started,
+            db_queries=stats.queries, db_seconds=stats.db_seconds,
         )
     return response
 
