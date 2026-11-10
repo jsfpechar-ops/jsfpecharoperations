@@ -1,6 +1,6 @@
 # 1094: head-count change, H0 read-only check (written answers, no code)
 
-Status: todo
+Status: review
 Tier: C | Depends on: 1092 (merged in #884; `App/app/headcount.py` is in main) | Base: origin/main | Branch: claude/1094-headcount-h0
 Executor: Sonnet (Tier C), effort medium | Attempts: 1 | Fits one session: stop at 30 tool calls or 60k tokens (section 8); reads stay at 150 lines or fewer
 Review: orchestrator reads the answers file before it writes H1.
