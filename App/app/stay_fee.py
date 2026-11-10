@@ -31,7 +31,7 @@ import unicodedata
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
-from . import config, db, payments, reporting, stay_fee_rate, validation
+from . import alerts, config, db, payments, reporting, stay_fee_rate, validation
 from .csv_safety import csv_safe
 
 MAX_RATE_CZK = 50        # §3d
@@ -67,6 +67,102 @@ DOC_TYPE_LABELS_CS = {
 
 def is_active(apartment) -> bool:
     return bool(apartment) and int(apartment["stay_fee_rate_czk"] or 0) > 0
+
+
+RAIL_ORDER = ("iban", "revolut", "cash")
+NO_PAY_WAY_KIND = "stay_fee_no_pay_way"
+
+
+def payout_account(apartment) -> Tuple[str, str]:
+    """(account, payee) of the operator guests pay, or ("", "") when none is on file."""
+    account = ""
+    payee = ""
+    if apartment["legal_entity_id"]:
+        entity = db.query_one(
+            "SELECT iban, bank_account, name FROM legal_entity WHERE id = ?",
+            (apartment["legal_entity_id"],),
+        )
+        if entity is not None:
+            payee = (entity["name"] or "").strip()
+            if entity["iban"]:
+                account = entity["iban"]
+            elif entity["bank_account"]:
+                account = payments.normalise_account(entity["bank_account"])[1]
+    return account, payee
+
+
+def usable_rail_keys(apartment) -> List[str]:
+    """The guest pay ways that work for this property, in the order the guest sees them.
+
+    The one rule for the guest pay box and for the host alert (brief 1071).
+    A stored "qr" is the bank rail. A way works when it is enabled and has what it needs:
+    bank transfer an account, Revolut a link; cash needs nothing.
+    """
+    enabled = {part for part in (apartment["stay_fee_guest_rails"] or "").split(",") if part}
+    if "qr" in enabled:
+        enabled.add("iban")
+    first = apartment["stay_fee_guest_default_rail"] or ""
+    if first == "qr":
+        first = "iban"
+    order = ([first] if first in RAIL_ORDER else []) + [key for key in RAIL_ORDER if key != first]
+    account, _payee = payout_account(apartment)
+    usable = []
+    for key in order:
+        if key not in enabled:
+            continue
+        if key == "iban" and not account:
+            continue
+        if key == "revolut" and not apartment["stay_fee_guest_revolut_link"]:
+            continue
+        usable.append(key)
+    return usable
+
+
+def no_pay_way(apartment) -> bool:
+    """Collection is on, the fee is active, the deployment asks guests to pay, and no way works."""
+    return (
+        bool(apartment["stay_fee_collect"])
+        and is_active(apartment)
+        and bool(config.STAY_FEE_GUEST_PAY)
+        and not apartment["archived_at"]
+        and not usable_rail_keys(apartment)
+    )
+
+
+def reconcile_no_pay_way_alert(apartment_id: int) -> None:
+    """Raise the host alert while no pay way works; resolve it as soon as one does or collection is off."""
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    key = f"{NO_PAY_WAY_KIND}:{apartment_id}"
+    if apartment is None or not no_pay_way(apartment):
+        alerts.resolve(key)
+        return
+    alerts.raise_alert(
+        "warning",
+        NO_PAY_WAY_KIND,
+        "Guests cannot pay the stay fee: add a bank account",
+        "",
+        dedupe_key=key,
+        apartment_id=apartment_id,
+        params={"property": apartment["internal_name"]},
+    )
+
+
+def reconcile_all_no_pay_way() -> int:
+    """Daily sweep: re-check every property that collects, and every open alert of this kind."""
+    ids = {
+        row["id"]
+        for row in db.query("SELECT id FROM apartment WHERE stay_fee_collect = 1 AND archived_at IS NULL")
+    }
+    ids |= {
+        row["apartment_id"]
+        for row in db.query(
+            "SELECT apartment_id FROM alert WHERE kind = ? AND resolved_at IS NULL AND apartment_id IS NOT NULL",
+            (NO_PAY_WAY_KIND,),
+        )
+    }
+    for apartment_id in ids:
+        reconcile_no_pay_way_alert(apartment_id)
+    return len(ids)
 
 
 def parse_czk_int(raw) -> Optional[int]:
