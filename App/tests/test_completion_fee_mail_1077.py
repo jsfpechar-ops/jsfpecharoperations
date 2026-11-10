@@ -7,6 +7,7 @@ repeats the block once the completion mail has gone.
 """
 from __future__ import annotations
 
+import hashlib
 import html
 import json
 import re
@@ -167,6 +168,21 @@ def entity():
     db.execute("DELETE FROM legal_entity WHERE id IN (?, ?)", (with_iban, without))
 
 
+def test_a_malformed_bank_account_drops_the_bank_way_only():
+    now = db.utcnow()
+    bad = db.insert("legal_entity", {"name": "Fee Ways 1077", "bank_account": "12-ab/0800",
+                                     "created_at": now})
+    try:
+        ways = stay_fee.guest_pay_ways(
+            _apartment(legal_entity_id=bad, stay_fee_guest_rails="iban,revolut,cash",
+                       stay_fee_guest_revolut_link="https://revolut.me/host"),
+            RESERVATION, CHARGE, True,
+        )
+        assert [way["key"] for way in ways] == ["revolut", "cash"]
+    finally:
+        db.execute("DELETE FROM legal_entity WHERE id = ?", (bad,))
+
+
 def test_bank_without_an_account_is_left_out(entity):
     ways = stay_fee.guest_pay_ways(
         _apartment(legal_entity_id=entity["none"], stay_fee_guest_rails="iban,cash"),
@@ -283,6 +299,26 @@ def test_completion_fee_is_none_with_the_flag_or_collect_off(monkeypatch):
     monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
     assert claim._completion_fee({"stay_fee_collect": 0}, {"id": 1}) is None
     assert called == []
+
+
+# sha256 of subject, text and HTML of each no-fee mail, as built by the builders
+# on the base commit 14ba49ce (before 1077), with the base URLs pinned below.
+PINNED_NO_FEE = {
+    "completion": "e08f9311d7e4676a86f9bf78f3f58ec5da84bf07e284a667537278b37282e2a6",
+    "door_code": "56000ed4c6a8b0f6bb60f8f83c3c89f81f18dabcd4de87ec6cf5b2ed8b2ae2e6",
+}
+
+
+def _digest(content):
+    raw = "\x00".join([content["subject"], content["text"], content["html"]])
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def test_without_a_fee_both_mails_are_byte_for_byte_as_before(monkeypatch):
+    monkeypatch.setattr(config, "PUBLIC_BASE_URL", "https://pin.example.test")
+    monkeypatch.setattr(config, "APP_BASE_URL", "https://pin.example.test")
+    assert _digest(_completion(None)) == PINNED_NO_FEE["completion"]
+    assert _digest(_door()) == PINNED_NO_FEE["door_code"]
 
 
 def test_without_a_fee_both_mails_are_unchanged():
@@ -441,3 +477,65 @@ def test_the_door_code_mail_has_no_bill_before_the_completion_mail(fee_stay, mon
     assert _t("en", "mail_completion_fee_heading") not in text
     assert _t("en", "mail_completion_fee_already") not in text
     assert _rows(stay, "completion") == []
+
+
+def test_a_failing_fee_block_never_holds_the_code_mail(fee_stay, monkeypatch):
+    _works(monkeypatch)
+
+    def broken(*args, **kwargs):
+        raise RuntimeError("fee block broke")
+
+    monkeypatch.setattr(mail_notify, "_fee_block", broken)
+    _, stay = fee_stay
+    _claim(stay, completion_sent=True)
+    door_codes.reconcile()
+    rows = _rows(stay, "door_code")
+    assert len(rows) == 1
+    payload = json.loads(rows[0]["payload"])
+    assert mail.QR_SPAYD_KEY not in payload
+    text = mail.delivery_body(payload)
+    assert f"{PIN}#" in text
+    assert _t("en", "mail_completion_fee_heading") not in text
+
+
+def test_a_group_that_became_partial_gets_no_bill_on_a_reissued_code(fee_stay, monkeypatch):
+    """The completion mail went for the whole group; then a guest dropped out and the code is reissued."""
+    _works(monkeypatch)
+    _, stay = fee_stay
+    _claim(stay, completion_sent=True)
+    door_codes.reconcile()
+    first = _rows(stay, "door_code")
+    assert len(first) == 1
+    assert _t("en", "mail_completion_fee_heading") in mail.delivery_body(json.loads(first[0]["payload"]))
+    monkeypatch.setattr(
+        claim.reporting, "reservation_progress",
+        lambda _r: {"expected": 2, "filled": 1, "incomplete": True, "status": "partial"},
+    )
+    # A reissued code: a new provider code on the row, not mailed yet.
+    db.execute("UPDATE door_code SET notified_at = NULL, provider_code_id = '100' "
+               "WHERE reservation_id = ?", (stay,))
+    code = db.query_one("SELECT id FROM door_code WHERE reservation_id = ?", (stay,))
+    door_codes._send_code_mail(int(code["id"]))
+    rows = _rows(stay, "door_code")
+    assert len(rows) == 2
+    payload = json.loads(rows[-1]["payload"])
+    assert mail.QR_SPAYD_KEY not in payload
+    text = mail.delivery_body(payload)
+    assert _t("en", "mail_completion_fee_heading") not in text
+    assert _t("en", "mail_completion_fee_already") not in text
+
+
+def test_with_the_flag_off_the_outbox_has_the_old_completion_mail(fee_stay, monkeypatch):
+    _works(monkeypatch)
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", False)
+    apartment, stay = fee_stay
+    _claim(stay)
+    door_codes.on_registration_complete(stay)
+    claim.maybe_notify_completion(*_rows_of(stay))
+    rows = _rows(stay, "completion")
+    assert len(rows) == 1
+    name = db.query_one("SELECT internal_name FROM apartment WHERE id = ?", (apartment,))["internal_name"]
+    assert rows[0]["subject"] == _t("en", "mail_completion_subject", property=name)
+    payload = json.loads(rows[0]["payload"])
+    assert mail.QR_SPAYD_KEY not in payload
+    assert _t("en", "mail_completion_fee_heading") not in mail.delivery_body(payload)

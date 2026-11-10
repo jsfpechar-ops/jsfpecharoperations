@@ -542,7 +542,11 @@ def guest_pay_ways(apartment, reservation, charge, qr_ok) -> List[Dict[str, Any]
             if entity["iban"]:
                 account = entity["iban"]
             elif entity["bank_account"]:
-                account = payments.normalise_account(entity["bank_account"])[1]
+                try:
+                    account = payments.normalise_account(entity["bank_account"])[1]
+                except ValueError:
+                    # A malformed stored account drops the bank way only, not the fee.
+                    account = ""
     enabled = {part for part in (apartment["stay_fee_guest_rails"] or "").split(",") if part}
     # A stored "qr" is the bank rail: it becomes one "iban" rail, with the QR on it.
     if "qr" in enabled:

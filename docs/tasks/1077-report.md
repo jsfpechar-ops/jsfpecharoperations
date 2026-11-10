@@ -9,6 +9,14 @@ Executor: Opus 5.5 | Branch: claude/1077-f1-f2 | Base: 14ba49ce
 
 No template, CSS, JS, migration, `retention.py`, `mail.py` or dependency change. No new `mail.enqueue`; idempotency keys and kinds unchanged. No browser test or screenshot: no page changed.
 
+## Attempt 2 (review fixes)
+
+- `door_codes._send_code_mail`: the fee read and the fee build sit in one try/except. On any error it logs and rebuilds the code mail with no fee, so the code mail is always queued. The fee also needs the group to be whole now (`reporting.reservation_progress`: `filled >= expected`), not only `completion_notified_at`.
+- `stay_fee.guest_pay_ways`: a malformed `bank_account` (`ValueError` from `payments.normalise_account`) drops the bank way only. The other ways and the fee stay.
+- New tests: a failing `_fee_block` still gives exactly one `door_code` row; a group that became partial gets no bill on a reissued code; a malformed account drops only the bank way; both no-fee mails are pinned by sha256 of subject, text and HTML, a hash I took from the base commit 14ba49ce's builders (identical before and after); a flag-off flow has the old subject and no `qr_spayd` in the outbox.
+- Fixture note: the `fee_stay` flow fixture stubs `stay_fee.charge_for_reservation` (fixed 600 CZK) and `reporting.reservation_progress` (whole or partial group). The pay-way and QR logic run for real.
+- Attempt 2 results: command 1 `140 passed`; mail `283 passed`; door codes `170 passed`; invoices and stay fee `994 passed, 2 skipped`; claim `106 passed`; privacy `5 passed`; lint OK. I left out `test_door_code_window_browser.py`: the glob names it explicitly, so `--ignore` has no effect, and webkit is not installed in this sandbox.
+
 ## Commands (last lines)
 
 1. `pytest tests/test_completion_fee_mail_1077.py tests/test_guest_mail.py tests/test_guest_languages.py`: `135 passed in 2.18s`
@@ -43,7 +51,7 @@ No template, CSS, JS, migration, `retention.py`, `mail.py` or dependency change.
 
 ## Owner steps
 
-1. Read "Copy for owner review" below. 2. Say "copy ok" or name the lines to change. 3. After the merge, deploy by hand.
+1. Read "Copy for owner review" below. 2. Say "copy ok" or name the lines to change. 3. Before the deploy, confirm that production has sent at least one SESv2 Raw guest mail. Guest QR mails now take the raw path (inline attachment), and an IAM gap there would hold billed completion and door-code mails. 4. After the merge, deploy by hand.
 
 ## Copy for owner review
 
