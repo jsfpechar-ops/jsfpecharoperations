@@ -37,6 +37,18 @@ from . import (
     validation_i18n,
 )
 
+# 1068: ?fix=<code> on a flash redirect shows one link to the page that fixes the error.
+FIX_TARGETS = {
+    "bank": ("/entities", "payments.fix.bank"),
+    "stripe": ("/payments#stripe-setup", "payments.fix.stripe"),
+    "lock_guide": ("/guide#door-codes", "smart_locks.guide_link"),
+}
+
+
+def _flash_fix(request):
+    return FIX_TARGETS.get(request.query_params.get("fix", ""))
+
+
 templates = Jinja2Templates(directory=str(config.BASE_DIR / "templates"))
 
 
@@ -712,6 +724,7 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
         )
     data.setdefault("flash", request.query_params.get("msg"))
     data.setdefault("flash_error", request.query_params.get("err"))
+    data.setdefault("flash_fix", _flash_fix(request))
     # 0955: the section that shows its action result inline (?sec=), property page only.
     inline_section = request.query_params.get("sec", "")
     data["inline_flash_section"] = (
@@ -769,4 +782,5 @@ def render_guest(request: Request, name: str, context: Optional[Dict[str, Any]] 
     data["analytics_tag"] = None  # permanent rule: guest pages are never measured
     data.setdefault("flash", request.query_params.get("msg"))
     data.setdefault("flash_error", request.query_params.get("err"))
+    data.setdefault("flash_fix", _flash_fix(request))
     return templates.TemplateResponse(request, name, data, status_code=status_code)

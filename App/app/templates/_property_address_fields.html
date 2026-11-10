@@ -5,13 +5,15 @@
 {%- from "_components.html" import field_label with context -%}
 {%- set pv = property_values or {} -%}
 {%- set address_errors = address_errors or {} -%}
-{% macro address_input(name, label, help='', optional=false, maxlength=none, inputmode='', required=false, extra='') %}
+{% macro address_input(name, label, help='', optional=false, maxlength=none, inputmode='', required=false, extra='', autocapitalize='', placeholder='') %}
   <div class="field">
     {{ field_label(name, label, help, optional, '', required) }}
     {%- set described = ([name ~ '-help'] if help else []) + ([name ~ '-error'] if address_errors.get(name) else []) %}
-    <input type="text" id="{{ name }}" name="{{ name }}" value="{{ pv[name] or '' }}"
+    <input type="text" id="{{ name }}" name="{{ name }}" autocomplete="off" value="{{ pv[name] or '' }}"
            {%- if maxlength %} maxlength="{{ maxlength }}"{% endif %}
            {%- if inputmode %} inputmode="{{ inputmode }}"{% endif %}
+           {%- if autocapitalize %} autocapitalize="{{ autocapitalize }}"{% endif %}
+           {%- if placeholder %} placeholder="{{ placeholder }}"{% endif %}
            {%- if required %} required aria-required="true"{% endif %}
            {%- if described %} aria-describedby="{{ described | join(' ') }}"{% endif %}
            {%- if address_errors.get(name) %} aria-invalid="true"{% endif %}
@@ -20,14 +22,14 @@
   </div>
 {% endmacro %}
 <div class="grid property-address-grid">
-  {{ address_input('addr_street', t('apartment.form.addr.street'), t('apartment.form.addr.street_hint'), false, 48, '', true, extra='data-ruian-suggest') }}
-  {{ address_input('addr_house_no', t('apartment.form.addr.house_no'), t('apartment.form.addr.house_no_hint'), false, 5, '', true) }}
-  {{ address_input('addr_orient_no', t('apartment.form.addr.orient_no'), t('apartment.form.addr.orient_no_hint'), true, 4) }}
-  {{ address_input('addr_zip', t('apartment.form.addr.zip'), t('apartment.form.addr.zip_hint'), false, 6, 'numeric', true) }}
+  {{ address_input('addr_street', t('apartment.form.addr.street'), t('apartment.form.addr.street_hint'), false, 48, '', true, extra='data-ruian-suggest', autocapitalize='words', placeholder='Vinohradská') }}
+  {{ address_input('addr_house_no', t('apartment.form.addr.house_no'), t('apartment.form.addr.house_no_hint'), false, 5, '', true, placeholder='12') }}
+  {{ address_input('addr_orient_no', t('apartment.form.addr.orient_no'), t('apartment.form.addr.orient_no_hint'), true, 4, placeholder='5') }}
+  {{ address_input('addr_zip', t('apartment.form.addr.zip'), t('apartment.form.addr.zip_hint'), false, 6, 'numeric', true, placeholder='12000') }}
 </div>
 <div class="grid property-address-grid">
-  {{ address_input('addr_obec', t('apartment.form.addr.obec'), '', false, 48, '', true) }}
-  {{ address_input('addr_obec_cast', t('apartment.form.addr.obec_cast'), '', true, 48) }}
-  {{ address_input('addr_okres', t('apartment.form.addr.okres'), t('apartment.form.addr.okres_hint'), true, 32) }}
+  {{ address_input('addr_obec', t('apartment.form.addr.obec'), '', false, 48, '', true, autocapitalize='words', placeholder='Praha') }}
+  {{ address_input('addr_obec_cast', t('apartment.form.addr.obec_cast'), '', true, 48, autocapitalize='words', placeholder='Vinohrady') }}
+  {{ address_input('addr_okres', t('apartment.form.addr.okres'), t('apartment.form.addr.okres_hint'), true, 32, autocapitalize='words', placeholder='Praha') }}
 </div>
 {% include "_ruian_suggest.html" %}
