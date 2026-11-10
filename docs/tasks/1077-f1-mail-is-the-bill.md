@@ -1,6 +1,6 @@
 # 1077: F1, the completion mail is the bill (state-based subject and heading, full pay details, QR inside, "Already paid?" line)
 
-Status: todo
+Status: review
 Tier: B | Depends on: 1068 (merged), F0 report (merged) | Base commit: a10d994c | Branch: claude/1077-f1-f2
 Executor: Opus 5.5 | Attempts: 3 at most | Fits one session: stop at 25 tool calls or 60k tokens (section 8); reads stay at 150 lines or fewer
 
