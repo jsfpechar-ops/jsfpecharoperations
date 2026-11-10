@@ -89,6 +89,7 @@ def test_working_text_spinner_then_chips_that_go_when_edited(base, world, browse
         status = page.locator("#ocr-scan-status")
         assert "10 seconds" in status.inner_text()
         assert page.locator("#ocr-scan-file").is_disabled()
+        page.screenshot(path=str(OUT / f"{LABEL}-busy-{width}.png"))
         held[0].fulfill(status=200, content_type=JSON,
                         body=json.dumps({"kind": "values", "values": VALUES}))
         page.wait_for_selector(".g-scan-chip")
@@ -117,8 +118,10 @@ def test_working_text_spinner_then_chips_that_go_when_edited(base, world, browse
         context.close()
 
 
-def test_unreadable_nationality_says_so_and_opens_the_picker(base, world, browser):
-    context, page = _page(browser, base, world, 390)
+@pytest.mark.parametrize("width", [390, 768, 1280])
+def test_unreadable_nationality_says_so_and_opens_the_picker(base, world, browser, width):
+    OUT.mkdir(parents=True, exist_ok=True)
+    context, page = _page(browser, base, world, width)
     try:
         _goto_form(page, base, world)
         values = {k: v for k, v in VALUES.items() if k != "nationality"}
@@ -128,7 +131,7 @@ def test_unreadable_nationality_says_so_and_opens_the_picker(base, world, browse
             "() => document.activeElement && document.activeElement.id === 'nationality_search'"
         )
         assert page.locator("#nationality_list").is_visible()
-        assert "choose it from the list" in page.locator("#ocr-scan-status").inner_text()
+        assert "choose it from the list" not in page.locator("#ocr-scan-status").inner_text()
         assert page.locator("#nationality_error").is_visible()
         assert "choose it from the list" in page.locator("#nationality_error").inner_text()
         assert page.locator("#nationality").input_value() == ""
@@ -136,6 +139,8 @@ def test_unreadable_nationality_says_so_and_opens_the_picker(base, world, browse
             "xpath=ancestor::div[contains(@class,'g-field')][1]//span[contains(@class,'g-scan-chip')]"
         ).count() == 0
         assert page.locator(".g-scan-chip").count() == 4
+        assert page.evaluate(NO_SIDEWAYS) <= 1
+        page.screenshot(path=str(OUT / f"{LABEL}-natmissing-{width}.png"))
     finally:
         context.close()
 
@@ -152,8 +157,9 @@ def test_unread_nationality_is_said_even_when_an_earlier_scan_filled_it(base, wo
         page.locator("#surname").focus()
         page.set_input_files("#ocr-scan-file", TINY)
         page.wait_for_function(
-            "() => document.querySelector('#ocr-scan-status').textContent.includes('choose it from the list')"
+            "() => document.querySelector('#nationality_error').textContent.includes('choose it from the list')"
         )
+        assert "choose it from the list" not in page.locator("#ocr-scan-status").inner_text()
         assert page.locator("#nationality").input_value() == "DEU"
         assert page.locator("#nationality_error").is_visible()
         assert "choose it from the list" in page.locator("#nationality_error").inner_text()

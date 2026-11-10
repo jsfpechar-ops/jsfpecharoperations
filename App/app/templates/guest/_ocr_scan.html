@@ -113,15 +113,17 @@
         var nat = document.getElementById('nationality');
         var natError = document.getElementById('nationality_error');
         if (!data.values.nationality) {
-          // The scan could not read the nationality: say so, also under the picker
+          // The scan could not read the nationality: say so once, under the picker,
           // so it stays in view, and open the picker when it is empty (a value from
           // an earlier scan is kept). The guest chooses it; nothing is filled for them.
           var missing = {{ t('ocr_nationality_missing') | tojson }};
-          showStatus({{ t('ocr_scan_done') | tojson }} + ' ' + missing);
           if (natError) {
+            showStatus({{ t('ocr_scan_done') | tojson }});
             natError.textContent = missing;
             natError.setAttribute('data-ocr', '1');
             natError.hidden = false;
+          } else {
+            showStatus({{ t('ocr_scan_done') | tojson }} + ' ' + missing);
           }
           if (nat && !nat.value) (document.getElementById('nationality_search') || nat).focus();
         } else {

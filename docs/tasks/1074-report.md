@@ -36,6 +36,13 @@ Scanned state (stubbed values):
 - 768: chips under each field in both columns, inside the card; row heights grow by the chip only.
 - 1280: same as 768; no overlap, no sideways scroll.
 
+## Review fixes
+
+The nationality sentence now shows once, under the picker (`#nationality_error`). The status line shows only `ocr_scan_done`; it falls back to both sentences only when the picker has no error slot. Tests assert the status line does not repeat it. After the fix, the new test file passed 25 and the guest test-map row passed 663, with 0 skipped. The new viewport screenshots are `after-busy-{390,768,1280}.png` and `after-natmissing-{390,768,1280}.png`.
+
+- Busy: 390: grey spinner ring plus "Reading your document. This takes about 10 seconds." under the scan hint; it wraps to two lines and stays inside the card; fields are empty and nothing else moves; 768: same on one line; 1280: same on one line, sidebar unchanged.
+- Nationality missing: 390: the page scrolls to the picker, whose search box has a red focus border; the sentence sits under it as a grey hint over two lines (the text is grey, not red); the country list opens below it and covers the child box; other fields show chips; 768: same in the right column, list over the lower fields; 1280: same, no overlap with the left column or sidebar.
+
 ## Deviations
 
 - Step 0 applied the six review corrections to the brief (chip text "Please check" translated; smoothing quality; three-width scanned test; nationality prompt on stale value, also in `#nationality_error`, focus only when empty, cleared on a later scan that reads it; new stale-value test; line refs).
