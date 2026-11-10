@@ -57,7 +57,7 @@
 {% endif %}
 
 <form id="guest-form" method="post" action="/l/{{ token }}/{{ reservation.id }}/save?lang={{ lang }}"
-      enctype="multipart/form-data" data-guest-wizard
+      enctype="multipart/form-data" data-guest-wizard{% if draft_url %} data-draft-url="{{ draft_url }}" data-draft-fields="{{ draft_fields }}" data-draft-owned="{{ draft_owned }}"{% endif %}
       data-start-step="{{ start_step | default(0) }}"
       data-lang-warning="{{ t('lang_draft_warning') }}"
       data-next-label="{{ t('next_step') }}" data-back-label="{{ t('previous_step') }}"
@@ -74,6 +74,7 @@
   {# Signature and passport photo need JavaScript. Without it the form can
      never be completed, so say so up front instead of failing at Save. #}
   <noscript><p class="g-err g-nojs-note" role="alert">{{ t('nojs_needed') }}</p></noscript>
+  {% if draft_restored %}<p class="g-ok" id="draft-welcome" role="status">{{ t('draft_welcome') }}</p>{% endif %}
   <p class="g-form-line">
     <span>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</span>
     <span>{{ nights_label(reservation.date_from, reservation.date_to) }}</span>
