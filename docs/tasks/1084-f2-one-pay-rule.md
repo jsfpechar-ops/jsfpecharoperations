@@ -1,9 +1,9 @@
-# 1081: F2, one rule for the pay ways and the QR code, used by the stay page and the completion mail (P5)
+# 1084: F2, one rule for the pay ways and the QR code, used by the stay page and the completion mail (P5)
 
 Status: todo
-Tier: B | Depends on: nothing (main alone; 1077 is merged) | Base commit: f1ca4288 | Branch: claude/1081-f2-one-pay-rule
+Tier: B | Depends on: nothing (main alone; 1077 is merged) | Base commit: f1ca4288 | Branch: claude/1084-f2-one-pay-rule
 Executor: Opus 5.5 | Attempts: 3 at most | Fits one session: stop at 25 tool calls or 60k tokens (section 8); reads stay at 150 lines or fewer
-Report: docs/tasks/1081-f2-report.md (`docs/tasks/1081-report.md` already belongs to the unrelated brief 1081-login-turnstile-skip; do not touch it)
+Report: docs/tasks/1084-report.md (`docs/tasks/1084-report.md` already belongs to the unrelated brief 1084-login-turnstile-skip; do not touch it)
 
 ## 1. Objective
 
@@ -53,17 +53,17 @@ Plan [guest-group-registration](../plans/guest-group-registration.md) section 9,
 | `App/app/stay_fee.py` | edit | `guest_pay_ways` only (step 1); remove `GUEST_RAIL_ORDER` |
 | `App/app/routes/guest.py` | edit | `_fee_pay_panel` builds on `guest_pay_ways`; delete `_qr_offered` and `QR_NATIONALITIES`; three callers (step 2) |
 | `App/app/claim.py` | edit | `_completion_fee`: drop the explicit QR argument (step 3) |
-| `App/tests/test_pay_rule_1081.py` | create | One-rule tests (step 4) |
-| `App/tests/test_pay_rule_1081_browser.py` | create | Stay page: QR follows the stay, not the phone (step 5) |
-| `docs/tasks/screenshots-1081/` | create | One 390 px PNG (step 5) |
-| `docs/tasks/1081-f2-report.md` | create | Report, plus `Status: review` here |
+| `App/tests/test_pay_rule_1084.py` | create | One-rule tests (step 4) |
+| `App/tests/test_pay_rule_1084_browser.py` | create | Stay page: QR follows the stay, not the phone (step 5) |
+| `docs/tasks/screenshots-1084/` | create | One 390 px PNG (step 5) |
+| `docs/tasks/1084-report.md` | create | Report, plus `Status: review` here |
 
-## 4. Steps (commit after each: `1081 step k`)
+## 4. Steps (commit after each: `1084 step k`)
 
 1. Confirm anchors 1 to 8 with `grep -nF`; any missing: STOP. In `stay_fee.py` rewrite `guest_pay_ways` as below and delete `GUEST_RAIL_ORDER`. Keep `qr_offered_for_reservation` untouched.
    ```python
    def guest_pay_ways(apartment, reservation, charge, qr_ok=None) -> List[Dict[str, Any]]:
-       """The one rule for the guest pay ways and the QR code (brief 1081).
+       """The one rule for the guest pay ways and the QR code (brief 1084).
 
        Screen and mail both call this. Ways: usable_rail_keys (enabled, default
        first, a way without what it needs is left out); bank details go to
@@ -106,7 +106,7 @@ Plan [guest-group-registration](../plans/guest-group-registration.md) section 9,
    ```
    `message` (`Stay fee {vs}`) is now built inside `guest_pay_ways`, the same text; drop the unused `message` variable. Then remove the second argument from the three callers (anchor 6): `_fee_pay_panel(apartment, reservation, context["t"])` and `_fee_pay_panel(apartment, fresh_reservation, i18n.translator(lang))`. Run `.venv/bin/python -m pytest tests/test_stay_fee_audit_1025.py tests/test_stay_fee_sametown_1031.py tests/test_stay_fee_rate_dates_1028.py tests/test_stay_fee_guest_pay_0897.py -q --tb=short -x 2>&1 | tail -30`.
 3. In `claim.py` `_completion_fee` (anchor 7) replace the call by `ways = stay_fee.guest_pay_ways(apartment, reservation, charge)`. Nothing else in `claim.py` changes.
-4. `test_pay_rule_1081.py` (no browser; reuse helpers from anchor 8, reading lines 143-260 only; make a stay with `_stay`, guests with `_guest`, clean up in `finally`). Each test builds one apartment (legal entity with the 1077 `IBAN`, rails `iban,revolut,cash`, a Revolut link, a cash note) and one stay, then compares the screen panel `routes.guest._fee_pay_panel(apartment, reservation, t)` with `claim._completion_fee(apartment, reservation)["ways"]` (the apartment must have `stay_fee_collect` 1 and `config.STAY_FEE_GUEST_PAY` true; use `monkeypatch`, as `test_stay_fee_audit_1025.py` does at its panel tests):
+4. `test_pay_rule_1084.py` (no browser; reuse helpers from anchor 8, reading lines 143-260 only; make a stay with `_stay`, guests with `_guest`, clean up in `finally`). Each test builds one apartment (legal entity with the 1077 `IBAN`, rails `iban,revolut,cash`, a Revolut link, a cash note) and one stay, then compares the screen panel `routes.guest._fee_pay_panel(apartment, reservation, t)` with `claim._completion_fee(apartment, reservation)["ways"]` (the apartment must have `stay_fee_collect` 1 and `config.STAY_FEE_GUEST_PAY` true; use `monkeypatch`, as `test_stay_fee_audit_1025.py` does at its panel tests):
    a. Same stay, same ways: `[rail["key"] for rail in panel["rails"]] == [way["key"] for way in fee["ways"]]`, and the bank account string and payee are equal.
    b. Stay with one Czech and one German guest: both the panel's bank rail `qr` is non-empty and the mail's bank way `spayd` is non-empty. Same stay with only `DEU` and `FRA` guests: both empty. An archived `CZE` guest does not count.
    c. The device does not matter: the Czech guest is not the one owned by the requesting phone. Assert `_fee_pay_panel` has no request argument any more (`inspect.signature` has no `request`), and that a source grep finds neither `_qr_offered` nor `QR_NATIONALITIES` in `routes/guest.py`.
@@ -114,7 +114,7 @@ Plan [guest-group-registration](../plans/guest-group-registration.md) section 9,
    e. Default way first: `stay_fee_guest_default_rail` `cash` puts cash first on both; `qr` is read as the bank way on both.
    f. Cash without a note: panel note equals `t("fee_cash_default")`, mail way note is `""` and the rendered mail text contains the same default sentence (1077's helper `_completion(_fee(ways))`).
    g. Idempotency: calling `guest_pay_ways` twice for the same stay returns equal lists; no write to any table (row counts of `guest` and `reservation` unchanged).
-5. `test_pay_rule_1081_browser.py`, modelled on `test_stay_fee_guest_pay_browser.py` (host/base fixtures) and `test_guest_browser_e2e.py` (guest flow helpers): seed a stay that is complete with a German guest registered on this browser and a Czech guest registered elsewhere (a guest row with no cookie ownership), collection on, bank account set. Open the guest stay page (`guest/stay.html`, the `#fee-pay` block). At 390, 768 and 1280: the bank way and the QR image are shown (`.g-fee-qr-img` visible, 176 px), no horizontal scroll (`scrollWidth <= innerWidth`), no overlap between the QR and the next row. A second stay with only a German guest: bank details shown, no `.g-fee-qr-img`. Run with `UBYHOST_REQUIRE_BROWSER=1`: 0 skipped. Save `docs/tasks/screenshots-1081/stay-qr-390.png` (full page, first stay), look at it once, write one line on what you saw in the report.
+5. `test_pay_rule_1084_browser.py`, modelled on `test_stay_fee_guest_pay_browser.py` (host/base fixtures) and `test_guest_browser_e2e.py` (guest flow helpers): seed a stay that is complete with a German guest registered on this browser and a Czech guest registered elsewhere (a guest row with no cookie ownership), collection on, bank account set. Open the guest stay page (`guest/stay.html`, the `#fee-pay` block). At 390, 768 and 1280: the bank way and the QR image are shown (`.g-fee-qr-img` visible, 176 px), no horizontal scroll (`scrollWidth <= innerWidth`), no overlap between the QR and the next row. A second stay with only a German guest: bank details shown, no `.g-fee-qr-img`. Run with `UBYHOST_REQUIRE_BROWSER=1`: 0 skipped. Save `docs/tasks/screenshots-1084/stay-qr-390.png` (full page, first stay), look at it once, write one line on what you saw in the report.
 6. Run section 6, then write the report.
 
 ## 5. Do not touch
@@ -123,14 +123,14 @@ Plan [guest-group-registration](../plans/guest-group-registration.md) section 9,
 
 ## 6. Commands (each ends `2>&1 | tail -30`)
 
-From `App/`: `.venv/bin/python -m pytest tests/test_pay_rule_1081.py tests/test_completion_fee_mail_1077.py tests/test_stay_fee_no_pay_way_1071.py tests/test_stay_fee_audit_1025.py tests/test_stay_fee_sametown_1031.py tests/test_stay_fee_rate_dates_1028.py tests/test_stay_fee_guest_pay_0897.py tests/test_privacy_first.py -q --tb=short -x`. Test-map stay fee row: `.venv/bin/python -m pytest tests/test_stay_fee*.py tests/test_invoice_*.py -q --tb=short -x`. Test-map guest row, 0 skipped: `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_guest_*.py tests/test_guest_browser_e2e.py -q --tb=short -x -rs`. Browser, 0 skipped: `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_pay_rule_1081_browser.py tests/test_stay_fee_guest_pay_browser.py tests/test_0896_fee_pay_geometry_browser.py tests/test_layout_lint_browser.py -q --tb=short -rs`. Repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`.
+From `App/`: `.venv/bin/python -m pytest tests/test_pay_rule_1084.py tests/test_completion_fee_mail_1077.py tests/test_stay_fee_no_pay_way_1071.py tests/test_stay_fee_audit_1025.py tests/test_stay_fee_sametown_1031.py tests/test_stay_fee_rate_dates_1028.py tests/test_stay_fee_guest_pay_0897.py tests/test_privacy_first.py -q --tb=short -x`. Test-map stay fee row: `.venv/bin/python -m pytest tests/test_stay_fee*.py tests/test_invoice_*.py -q --tb=short -x`. Test-map guest row, 0 skipped: `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_guest_*.py tests/test_guest_browser_e2e.py -q --tb=short -x -rs`. Browser, 0 skipped: `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_pay_rule_1084_browser.py tests/test_stay_fee_guest_pay_browser.py tests/test_0896_fee_pay_geometry_browser.py tests/test_layout_lint_browser.py -q --tb=short -rs`. Repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`.
 
 ## 7. Acceptance
 
 - [ ] One place: `stay_fee.guest_pay_ways` decides ways and QR; `_fee_pay_panel` and `_completion_fee` both call it; `_qr_offered`, `QR_NATIONALITIES` and `GUEST_RAIL_ORDER` are gone; no copy of the account, enabled-set or order logic remains outside `payout_account` and `usable_rail_keys`.
 - [ ] For the same stay, the screen and the mail list the same ways in the same order, and both carry the QR or both do not (test 4b).
 - [ ] The mail output is byte-identical to main for the same inputs (1077 tests green, unedited); the bank way needs a valid IBAN or bank account, as in 1077.
-- [ ] Stay page browser and geometry tests 0 skipped at 390, 768, 1280; layout lint run (guest pages report-only, findings copied to the report); one 390 px screenshot in `docs/tasks/screenshots-1081/`.
+- [ ] Stay page browser and geometry tests 0 skipped at 390, 768, 1280; layout lint run (guest pages report-only, findings copied to the report); one 390 px screenshot in `docs/tasks/screenshots-1084/`.
 - [ ] `git diff --stat origin/main` touches only section 3 files; no template, CSS, i18n or migration change.
 
 ## 8. Stop and ask
@@ -139,9 +139,9 @@ STOP and report `blocked` if: an anchor is missing; a 1077, 1071 or 1025 test ne
 
 ## 9. Report
 
-`docs/tasks/1081-f2-report.md`, 600 tokens at most: files changed, each command with its last 5 lines, section 7 ticked, one line on the screenshot, layout-lint findings for the stay page, deviations, questions. Set this brief `Status: review`. Tier B: open one PR (body: one rule in `stay_fee.py`, screen now follows the stay like the mail, mail unchanged, no new field or request; end with the attribution lines). Merge only with `scripts/merge-pr-on-green.sh`. Owner steps: none.
+`docs/tasks/1084-report.md`, 600 tokens at most: files changed, each command with its last 5 lines, section 7 ticked, one line on the screenshot, layout-lint findings for the stay page, deviations, questions. Set this brief `Status: review`. Tier B: open one PR (body: one rule in `stay_fee.py`, screen now follows the stay like the mail, mail unchanged, no new field or request; end with the attribution lines). Merge only with `scripts/merge-pr-on-green.sh`. Owner steps: none.
 
 ## 10. Open questions (not blocking)
 
-- **Q1:** numbering. `docs/tasks/1081-login-turnstile-skip.md` (Status: todo) and `1081-report.md` already exist on main. This brief keeps the number and branch the orchestrator named, and uses `1081-f2-report.md` to avoid the clash. The orchestrator may renumber one of the two before an executor runs.
+- **Q1:** numbering. `docs/tasks/1084-login-turnstile-skip.md` (Status: todo) and `1084-report.md` already exist on main. This brief keeps the number and branch the orchestrator named, and uses `1084-report.md` to avoid the clash. The orchestrator may renumber one of the two before an executor runs.
 - **Q2:** `_fee_pay_panel` still takes an optional `qr_ok` override only because 1025's tests pass it; remove it with those tests later.
