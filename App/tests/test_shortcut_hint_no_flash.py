@@ -6,9 +6,10 @@ APP = Path(__file__).resolve().parents[1] / "app"
 
 def test_hint_markup_has_both_labels_and_head_sets_platform():
     base = (APP / "templates/base.html").read_text()
-    assert "/static/platform.js" in base
-    assert base.index("/static/platform.js") < base.index("/static/app.js")
-    assert 'setAttribute("data-mac"' in (APP / "static/platform.js").read_text()
+    head = base[: base.index("</head>")]
+    assert 'setAttribute("data-mac"' in head, "the data-mac line must be inline in <head>"
+    assert "/static/platform.js" not in base
+    assert head.index('setAttribute("data-mac"') < head.index("/static/app.js")
     for name in ("_shell_v2.html", "_shell_sidebar.html"):
         html = (APP / "templates" / name).read_text()
         assert 'class="kbd-pc">Ctrl K' in html and 'class="kbd-mac">⌘ K' in html

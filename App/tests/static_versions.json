@@ -143,10 +143,6 @@
     "sha256": "8df04fc4ed79f1a59b307d189d5bd69015a03ee90771b3b8ecb87dbf89ed9035",
     "v": "20261109-qa1"
   },
-  "platform.js": {
-    "sha256": "6bf1c6472dcb2c7427f6a1d269c56945bb9641fcb207c6461a05870555aec782",
-    "v": "20261103-0920"
-  },
   "pricing.js": {
     "sha256": "4ebb282d09e55fcd782087dfd47c494c78f542f6c26648ddb55fc4390fe50b09",
     "v": "20261028-ttlock-month"
