@@ -3422,3 +3422,6 @@ body.v2 #stay-fee-settings details.fee-more[open]>summary{margin-bottom:var(--sp
   body.v2 .ui-page[data-body-kind="detail"]:has(#property-settings-form)>.ui-body-detail{max-width:min(var(--lane),calc(100% - 128px));margin-left:auto;margin-right:auto;box-sizing:border-box}
   body.v2 .ui-page[data-body-kind="detail"]:has(#property-settings-form)>.ui-body-detail>:is(nav.prop-strip,.prop-after-strip,.form.prop-form-single.property-detail){max-width:none;margin-left:0;margin-right:0}
 }
+/* 1071: a stored-alert row (dismiss X) keeps its action clear of the dismiss X (12 px gap to the 44 px hit box) */
+body.v2 .needs-you-item[data-needs-you="alert"][data-notification] .needs-you-actions{margin-top:22px}
+@media (min-width:1024px){body.v2 #needs-action .needs-you-item[data-needs-you="alert"][data-notification]{padding-right:72px}body.v2 .needs-you-item[data-needs-you="alert"][data-notification] .needs-you-actions{margin-top:0}}
