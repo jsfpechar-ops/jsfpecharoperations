@@ -74,7 +74,7 @@ func GuestQRPNGHandler(pool *pgxpool.Pool, getenv func(string) string) http.Hand
 		}
 		payload, err := qrPayload(r.Context(), pool, owner, amount, vs)
 		if errors.Is(err, errQRAccount) {
-			w.WriteHeader(http.StatusNotFound)
+			qrNoAccount(w)
 			return
 		}
 		if err != nil {
@@ -157,7 +157,9 @@ func RequestLinkHandler(pool *pgxpool.Pool, getenv func(string) string, now func
 			return
 		}
 		if link == "" {
-			flashErr("payments.err.not_ready")
+			f := requestFlash(lang, "payments.err.not_ready")
+			f.Fix = "stripe"
+			hostweb.Back(w, r, "/payments", hostweb.Flash{}, f)
 			return
 		}
 		if status == "draft" {

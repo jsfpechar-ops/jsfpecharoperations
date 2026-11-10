@@ -141,7 +141,7 @@ func TestRequestNewDatabase(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			rec := requestCall(t, mux, path, 1, tc.form)
 			loc := rec.Header().Get("Location")
-			if rec.Code != http.StatusSeeOther || !strings.HasPrefix(loc, "/payments?err=") {
+			if rec.Code != http.StatusSeeOther || !strings.HasPrefix(loc, "/payments/new?err=") {
 				t.Errorf("got %d %q, want an err flash", rec.Code, loc)
 			}
 			if total() != before {
@@ -149,6 +149,18 @@ func TestRequestNewDatabase(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("qr without a bank account flashes, links the fix and saves nothing", func(t *testing.T) {
+		n := total()
+		rec := requestCall(t, mux, path, 1, url.Values{"reason": {"repair"}, "amount_czk": {"110"}, "rail": {"qr"}})
+		loc := rec.Header().Get("Location")
+		if rec.Code != http.StatusSeeOther || !strings.HasPrefix(loc, "/payments/new?err=") || !strings.HasSuffix(loc, "&fix=bank") {
+			t.Errorf("got %d %q, want /payments/new?err=...&fix=bank", rec.Code, loc)
+		}
+		if total() != n {
+			t.Error("a row was saved")
+		}
+	})
 
 	t.Run("card draft is saved with every column", func(t *testing.T) {
 		rec := requestCall(t, mux, path, 1, url.Values{
@@ -187,6 +199,9 @@ func TestRequestNewDatabase(t *testing.T) {
 	})
 
 	t.Run("qr draft gets the variable symbol", func(t *testing.T) {
+		if _, err := pool.Exec(context.Background(), `UPDATE legal_entity SET iban = 'CZ6508000000192000145399' WHERE owner_user_id = 1`); err != nil {
+			t.Fatal(err)
+		}
 		rec := requestCall(t, mux, path, 1, url.Values{"reason": {"repair"}, "amount_czk": {"120"}, "rail": {"qr"}})
 		if rec.Code != http.StatusSeeOther {
 			t.Fatalf("code %d", rec.Code)
@@ -290,6 +305,9 @@ func TestRequestSendDatabase(t *testing.T) {
 		if !strings.HasPrefix(rec.Header().Get("Location"), "/payments?err=") || requestStatus(t, pool, 11) != "draft" {
 			t.Errorf("got %q", rec.Header().Get("Location"))
 		}
+		if strings.Contains(rec.Header().Get("Location"), "fix=") {
+			t.Error("stripe off carries a fix link")
+		}
 		if outbox("payment_request:11:sent:v1") != 0 {
 			t.Error("mail queued with stripe off")
 		}
@@ -298,8 +316,9 @@ func TestRequestSendDatabase(t *testing.T) {
 	t.Run("card not ready flashes", func(t *testing.T) {
 		links.err, links.url = nil, ""
 		rec := send(11, 1)
-		if !strings.HasPrefix(rec.Header().Get("Location"), "/payments?err=") || requestStatus(t, pool, 11) != "draft" {
-			t.Errorf("got %q", rec.Header().Get("Location"))
+		loc := rec.Header().Get("Location")
+		if !strings.HasPrefix(loc, "/payments?err=") || !strings.HasSuffix(loc, "&fix=stripe") || requestStatus(t, pool, 11) != "draft" {
+			t.Errorf("got %q", loc)
 		}
 	})
 
