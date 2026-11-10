@@ -9101,7 +9101,7 @@ _PLAIN_FIXES_0239_STRINGS = {
         "notification.action.police_setup": "Dokončit nastavení pro policii",
         "notification.action.calendar": "Zkontrolovat kalendář",
         "notification.action.business": "Doplnit údaje o firmě",
-        "notification.stay_fee_no_pay_way.title": "%(property)s: hosté nemohou zaplatit pobytový poplatek. Přidejte bankovní účet.",
+        "notification.stay_fee_no_pay_way.title": "%(property)s: hosté nemohou zaplatit poplatek. Přidejte bankovní účet.",
         "notification.stay_fee_no_pay_way.detail": "Žádáte hosty o úhradu pobytového poplatku, ale žádný z nabízených způsobů nefunguje, takže vidí, že jste nedokončili nastavení plateb. Přidejte bankovní účet nebo zapněte hotovost.",
         "notification.action.stay_fee_pay": "Opravit platbu poplatku",
         "notification.action.guest_link": "Otevřít nastavení odkazu",

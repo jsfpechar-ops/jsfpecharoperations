@@ -3863,7 +3863,7 @@ STRINGS.update({
     "notification.action.police_setup": "Hoàn tất thiết lập cảnh sát",
     "notification.action.calendar": "Kiểm tra lịch",
     "notification.action.business": "Thêm thông tin doanh nghiệp",
-    "notification.stay_fee_no_pay_way.title": "%(property)s: khách không thể thanh toán phí lưu trú. Hãy thêm tài khoản ngân hàng.",
+    "notification.stay_fee_no_pay_way.title": "%(property)s: khách không thể trả phí lưu trú. Thêm tài khoản ngân hàng.",
     "notification.stay_fee_no_pay_way.detail": "Bạn yêu cầu khách thanh toán phí lưu trú, nhưng không cách nào bạn đưa ra hoạt động, nên khách thấy bạn chưa hoàn tất cài đặt thanh toán. Hãy thêm tài khoản ngân hàng hoặc bật tiền mặt.",
     "notification.action.stay_fee_pay": "Sửa cách thanh toán phí",
     "notification.action.guest_link": "Mở cài đặt liên kết cho khách",
