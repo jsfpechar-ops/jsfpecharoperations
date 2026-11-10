@@ -1,6 +1,6 @@
 # 1093: guest form title in cs, es, fr short enough for one line at 390 px
 
-Status: todo
+Status: review
 Tier: C | Depends on: 1091 (merged in #883; its test file and `font-size: 24px` rule are in main) | Base: origin/main | Branch: claude/1093-guest-title-short-copy
 Executor: Sonnet (Tier C) | Attempts: 3 at most | Fits one session: stop at 50 tool calls or 60k tokens (section 8); reads stay at 150 lines or fewer
 Review: orchestrator checks the diff and the 6 screenshots before the PR opens. Brief reviewed 2026-11-10 by a fresh Fable (widths measured, strings settled).
