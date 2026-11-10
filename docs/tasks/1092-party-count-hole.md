@@ -1,6 +1,6 @@
 # 1092: close the party count hole (one count writer, floor, lock, full-group check in /save)
 
-Status: todo
+Status: review
 Tier: A | Depends on: none | Base commit: 39962ad7 | Branch: claude/1092-party-count-hole
 Executor: Fable 5.2 (owner tier override in decisions.md) | Attempts: 3 at most | Fits one session: stop at 60 tool calls or 60k tokens (section 8); reads stay at 150 lines or fewer
 Review: a strict fresh Fable diff review before the PR opens, on filing safety and the lock.

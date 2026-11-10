@@ -119,8 +119,12 @@ def test_party_and_another_posts_require_pin(pin_required):
             follow_redirects=False,
         )
         assert allowed.status_code == 303
+        # 1092: the typed count waits on the claim until the e-mail is confirmed.
         assert db.query_one(
             "SELECT declared_guests FROM reservation WHERE id = ?", (stay_id,)
+        )["declared_guests"] is None
+        assert db.query_one(
+            "SELECT declared_guests FROM reservation_claim WHERE reservation_id = ?", (stay_id,)
         )["declared_guests"] == 4
     finally:
         _cleanup()
