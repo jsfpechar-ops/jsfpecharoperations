@@ -13,6 +13,7 @@ Run only the row for the area you changed, from `App/`, always ending `-q --tb=s
 | Door-code access disclosure | `test_door_code_window.py test_door_code_window_browser.py`; CI `door-code-access-review` requires Chromium/WebKit, zero skips, 390 px screenshots |
 | Door codes, TTLock | `test_door_code*.py test_ttlock*.py test_smart_locks_page.py` |
 | Cleaning | `test_cleaning*.py` |
+| Alerts, notification cards | `test_alert*.py test_needs_you*.py test_host_alert_stack_browser.py test_design_alerts_phone.py` (browser files 0 skipped) |
 | Havel (AI), AI calls, Help & guide | `test_ai*.py test_havel*.py test_guide*.py` (browser files 0 skipped); UI parts also the host pages row |
 | Calendar, iCal feeds | `test_icalsync.py test_ical_skip_unchanged.py test_feed_*.py test_dashboard_calendar*.py test_calendar_*.py test_sample_calendar.py` |
 | Mail, SES | `test_ses_mail.py test_mail_*.py test_*_mail.py test_lifecycle_mail.py test_notification_copy.py` |
