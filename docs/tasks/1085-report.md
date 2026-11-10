@@ -60,3 +60,7 @@ None.
 ## Owner steps left
 
 None until the strict review. Then one draft PR (body per brief section 9); 1086 adds the browser tests and the UX gate.
+
+## Attempt 3 (contrast)
+
+The legend note and the "Saved now" line were `small muted` (4.40:1). Both now use `police-letter-note` with `--ink-secondary`; the global muted token is untouched. Key `app2.css?v=20261110-1085f`. With `UBYHOST_REQUIRE_BROWSER=1`: `test_a11y_guard_browser.py test_layout_lint_browser.py test_police_letter_flow.py test_property_navigation_browser.py test_required_stars.py test_static_versions.py`: `79 passed`, 0 skipped. `ruff check app tests tools --select E9,F63,F7,F82,F401,F841`: `All checks passed!`

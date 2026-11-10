@@ -338,7 +338,7 @@
           <p class="police-letter-src small">{{ t('police_letter.source_login' if row.name == 'uby_mark' else 'police_letter.source', line=row.line) }}
             {%- for src in row.source %}<code>{{ src }}</code><input type="hidden" name="letter_src_{{ row.name }}_{{ loop.index }}" value="{{ src }}">{% endfor %}</p>
           {% endif %}
-          {% if row.saved %}<p class="small muted">{{ t('police_letter.saved_now', value=row.saved) }}</p>{% endif %}
+          {% if row.saved %}<p class="police-letter-note">{{ t('police_letter.saved_now', value=row.saved) }}</p>{% endif %}
           <div class="checkline"><input type="checkbox" id="letter_ok_{{ row.name }}" name="letter_ok_{{ row.name }}" value="1" required{% if row.ticked %} checked{% endif %}{% if row.error %} aria-invalid="true" aria-describedby="letter_ok_{{ row.name }}-error"{% endif %}><label for="letter_ok_{{ row.name }}">{{ t('police_letter.confirm') }}<span class="req-star" aria-hidden="true">*</span></label></div>
           {% if row.error %}<p class="err-text" id="letter_ok_{{ row.name }}-error" role="alert" data-field-error>{{ t('police_letter.confirm_missing') }}</p>{% endif %}
           {% else %}
