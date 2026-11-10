@@ -101,3 +101,4 @@
 
 - 0897 guest pay gaps: Slovak QR, PG migration 00007 unrun, no mark-as-paid, no e-mail link, copy, legal sign-off.
 - K-SE: plans/speed-and-ease.md end
+- K-PICK: guest-enhancements.js:207 blur timer never cleared; refocus <120 ms closes list. Fix: clearTimeout on focus (1079).

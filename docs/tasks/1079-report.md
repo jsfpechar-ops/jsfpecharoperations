@@ -8,7 +8,7 @@ Status: review. Executor: Fable 5.2. Steps 1 to 5 done.
 - `App/app/static/signature.js`: `initChildToggle` only (helpers `childBirth`, `mayBeChild`, `typing`, `showBox`; wiring as in step 2).
 - `App/app/templates/guest/base.html`, `App/app/templates/_signature_script.html`: cache key `20261110-1079`.
 - `App/tests/static_versions.json`: regenerated with `--write` (only the `signature.js` entry).
-- New: `App/tests/test_guest_child_visa_1079.py` (7 tests), `App/tests/test_guest_child_visa_1079_browser.py` (12 tests), `docs/tasks/screenshots-1079/` (6 PNGs).
+- New: `App/tests/test_guest_child_visa_1079.py` (7 tests), `App/tests/test_guest_child_visa_1079_browser.py` (14 tests), `docs/tasks/screenshots-1079/` (6 PNGs).
 
 ## Commands (from `App/`, Chromium only)
 
@@ -16,7 +16,7 @@ Status: review. Executor: Fable 5.2. Steps 1 to 5 done.
 - Section 6 browser command, `-rs`: `91 passed, 9 warnings in 675.17s`, 0 skipped, 0 failed.
 - Test-map guest row `tests/test_guest_*.py -x -rs`: `682 passed, 9 warnings in 487.73s`, 0 skipped.
 - `python3 scripts/context_lint.py`: `context lint: OK` (three WARN lines, none about 1079).
-- New browser file alone: 10 runs in a row, `12 passed` each.
+- Attempt 2 (review): S16 test 10 runs in a row, `1 passed` each; whole new browser file `14 passed`, 0 skipped.
 - Webkit is not installed in the sandbox. No test in these commands asked for it (0 skipped).
 
 ## Acceptance (section 7)
@@ -46,6 +46,9 @@ Host pages 0 findings. Report-only: 0 findings for `guest-form`. The 6 report-on
 - 4d: the two clients share one claim (cookies copied). A second claim from a new client ends the first client's claim, so its edit is redirected and not saved.
 - Browser tests leave the birth date with `blur()`, not Tab, except the one Tab case in 3a: Tab opens the nationality list over the fields below.
 - The sandbox venv also needed `requirements.txt` (not only `requirements-dev.txt`).
+
+- Attempt 2 (review): every page installs the browser clock at noon of the Python `TODAY`; the S16 pick drains the picker's 120 ms close timer with `page.clock.run_for(200)` (no retry, no blur); a 29 February birthday case at 28.02.2026 and 01.03.2026; K-PICK line in known-issues.
+- `context_lint.py` now FAILS: known-issues.md is about 2530 tokens against a cap of 2500 (it was about 2499 before the K-PICK line). Orchestrator: compact about 30 tokens there.
 
 ## Questions
 

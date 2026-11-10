@@ -9,7 +9,7 @@ Screenshots: UBYHOST_SHOTS_DIR=<dir> writes adult-<width>.png and child-<width>.
 from __future__ import annotations
 
 import os
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -97,8 +97,12 @@ def _state(page):
     return page.evaluate(STATE_JS)
 
 
-def _page(browser, width=390):
-    return browser.new_page(viewport={"width": width, "height": 812})
+def _page(browser, width=390, today=TODAY):
+    """A page whose clock starts at noon on ``today``, so the script's "today"
+    is the day these tests compute with, whatever the real time is."""
+    page = browser.new_page(viewport={"width": width, "height": 812})
+    page.clock.install(time=datetime(today.year, today.month, today.day, 12))
+    return page
 
 
 def _retype(page, digits):
@@ -266,6 +270,25 @@ def test_1079_the_reference_day_is_the_earlier_of_arrival_and_today(live_server,
         page.close()
 
 
+@pytest.mark.parametrize(("today", "shown"), [(date(2026, 2, 28), True), (date(2026, 3, 1), False)])
+def test_1079_a_29_february_birthday_turns_18_on_1_march(live_server, browser, monkeypatch, today, shown):
+    """Born 29.02.2008: 2026 has no 29 February, so the guest is still under 18
+    on 28 February and 18 on 1 March. The arrival day is later than both."""
+    url = _open_url(live_server, monkeypatch, f"1079leap{today.day}")
+    page = _page(browser, today=today)
+    try:
+        page.goto(url)
+        assert page.evaluate("() => [new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()]") == [
+            today.year, today.month, today.day]
+        page.evaluate(SET_STAY_FROM_JS, "2026-06-01")
+        _retype(page, "29022008")
+        _leave(page)
+        state = _state(page)
+        assert state["birth"] == "29.02.2008" and state["box"] is shown, state
+    finally:
+        page.close()
+
+
 def test_1079_a_scanned_or_pasted_birth_date_moves_the_box(live_server, browser, monkeypatch):
     url = _open_url(live_server, monkeypatch, "1079scan")
     page = _page(browser)
@@ -304,20 +327,13 @@ def test_1079_s16_the_visa_field_follows_the_nationality(live_server, browser, m
         page.goto(url)
 
         def pick(code):
-            # Picking a second country: the list sometimes stays shut on the
-            # first try in headless Chromium, so try again rather than wait 30 s.
-            option = page.locator("#nationality_list [role=option]").first
-            for attempt in range(4):
-                page.locator("#nationality_search").blur()
-                page.click("#nationality_search")
-                page.keyboard.press("Control+A")
-                page.keyboard.type(code)
-                try:
-                    option.click(timeout=2500)
-                    break
-                except Exception:
-                    if attempt == 3:
-                        raise
+            # The picker closes its list 120 ms after any blur and never cancels
+            # that timer (known-issues), so let it run out before opening again.
+            page.clock.run_for(200)
+            page.click("#nationality_search")
+            page.keyboard.press("Control+A")
+            page.keyboard.type(code)
+            page.locator("#nationality_list [role=option]").first.click()
             assert page.input_value("#nationality") == code
 
         pick("USA")
