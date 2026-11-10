@@ -41,7 +41,7 @@ Today's behaviour, checked by running the parser on 71448224:
 
 ### Rules (rule 12 of 1083 stays; where these differ, these win)
 
-1. **The label starts its line.** Before a label, the label's line may hold only spaces and the noise characters `|`, `_`, `>`, `•`, `*` and `-`. Any other text before the label makes that label `unreadable`. "Unreadable wins" (rule 4) then empties the field. For a next-line value, the value line must also hold nothing before the value (this is true today through `_GAP_NEXT`; keep it).
+1. **The label starts its line.** Before a label, the label's line may hold only spaces and the noise characters `|`, `_`, `>`, `•`, `*` and `-`. Any other text before the label makes that label `unreadable`. "Unreadable wins" (rule 4) then empties the field. The prose skip (`_PROSE_RE`) runs first, so `V dotazu uveďte IDUB.` stays `missing` (the existing `prose_idub_*` rows keep passing). For a next-line value, the value line must also hold nothing before the value (this is true today through `_GAP_NEXT`; keep it).
 2. **`source`:** add `source: tuple[str, ...] = ()` as the **last** field of `FieldResult`. For a `found` value it holds exact slices of the normalised text, never whole lines:
    - same-line layout: one string, from the label's first character to the value's last character (for example `IDUB: 209988776655`)
    - next-line layout: two strings, the label slice up to and including its colon, and the value itself
@@ -54,6 +54,7 @@ Today's behaviour, checked by running the parser on 71448224:
    - **Candidate:** a chain whose digits, joined, number 12 to 14. A chain of one unbroken group is today's digit run.
    - **Not a candidate:**
      - a chain right after a `+` (only spaces between): a phone number such as `+420 777 000 111`
+     - an unbroken digit run right after a `+` (for example `+420777000111`) is excluded the same way; step 2 adds a row for it
      - a chain of exactly the shape `[0-9]{3}\.[0-9]{4}\.[0-9]{7}`: the data-box barcode (`SAMPLE_DS_BARCODE = "380.0000.0000001"`, `ubyport_sample_pdf.py:37`), printed at the foot of every letter
    - Only an unbroken group right after a label can be the value. The rest of rule 12A (exactly one distinct candidate) is unchanged.
    - Replace `_SPACED_DIGITS_RE` with the chain pattern. Keep `_DIGIT_RUN_RE` if it is still used.
