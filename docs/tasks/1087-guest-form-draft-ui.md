@@ -1,6 +1,6 @@
 # 1087: S5 guest form draft: autosave script and "Welcome back" line
 
-Status: todo (ready for the executor once 1082 is on main; the lint has no "ready" status)
+Status: review
 Tier: A | Depends on: [1082](1082-guest-form-draft.md) (server half, PR #876, merged first) | Base: claude/1082-guest-form-draft plus origin/main (step 0) | Branch: claude/1087-guest-form-draft-ui
 Executor: Fable 5.2 (owner tier override in decisions.md) | Attempts: 3 at most | Fits one session: stop at 60 tool calls or 60k tokens (section 8; the Fable executor's cap under the owner's tier override); reads stay at 150 lines or fewer
 Review: a fresh Fable reviews the diff against this brief before the PR opens.
