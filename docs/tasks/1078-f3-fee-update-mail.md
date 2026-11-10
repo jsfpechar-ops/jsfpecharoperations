@@ -107,16 +107,16 @@ From `App/`: `.venv/bin/python -m pytest tests/test_fee_update_1078.py tests/tes
 
 STOP and report `blocked` if: an anchor is missing; a filing file or template would change; `retention.py` or the lint rejects the line shape; a test fails twice on the same cause (attempt 3 of 3); 25 tool calls or 60k tokens (finish the step, commit, `Done: steps 1 to k. Left: steps k+1 to n.`). Never guess a production setting.
 
-## 9. Open questions for the owner, and what is safe meanwhile
+## 9. Report
+
+`docs/tasks/1078-report.md`, 600 tokens at most apart from the copy section: files changed, each command with its last 5 lines, section 7 ticked, deviations, questions, owner steps. Set this brief `Status: review`, open one PR, do not merge it. PR body: new retention line, no new outbound request, filing untouched.
+
+## 10. Open questions for the owner, and what is safe meanwhile
 
 - **Q1 (copy and "paid"):** the plan's text says "If you already paid 400 CZK". This brief words it as "If you already sent the earlier amount", which avoids saying the fee is paid. Owner reads the copy in the report. Safe now: everything; only wording may change.
 - **Q2 (backfill):** bookings completed before this ships have no baseline and get no update mail. Option: a one-time backfill of `fee_mailed_total` from the live total at deploy. Not built; safe: leave NULL (no mail is sent, never a wrong mail).
 - **Q3 (door-code mail, F1):** once F1 lands, the door-code mail repeats the fee block with the live total, which can differ from the last update mail's total for up to 10 minutes. Not handled here; decide when F1 is reviewed.
 - **Q4 (F4 interplay):** F4 (bill at quiet completion) is separate; F3 already mails updates for a forced completion, which F4's mail should not duplicate.
-
-## 10. Report
-
-`docs/tasks/1078-report.md`, 600 tokens at most apart from the copy section: files changed, each command with its last 5 lines, section 7 ticked, deviations, questions, owner steps. Set this brief `Status: review`, open one PR, do not merge it. PR body: new retention line, no new outbound request, filing untouched.
 
 ## Owner steps
 
