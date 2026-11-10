@@ -297,6 +297,10 @@
         <p class="g-intro">{{ t('signature_purpose_help') }}</p>
       </details>
     </div>
+    {# Brief 1090: a guest under 15 does not sign. The server hides the block
+       it knows is wrong; with no birth date yet both render and the script
+       hides one, so a child's form still sends without JavaScript. #}
+    <div id="sig-block"{% if under15 %} hidden{% endif %}>
     <p class="g-intro" id="sig-help">{{ t('signature_help') }}</p>
     <div class="g-sign">
       <canvas id="sig-canvas" tabindex="0" role="img" aria-label="{{ t('signature') }}"
@@ -311,6 +315,54 @@
     <input type="hidden" id="signature" name="signature"
            value="{{ values.get('signature') or stored_signature }}">
     {{ err_for('signature') }}
+    {% if pending_children %}
+    <div class="g-field" id="sign-for-children" role="radiogroup" aria-labelledby="sign-for-children-text"{% if adult_signer == false %} hidden{% endif %}>
+      <p class="g-intro" id="sign-for-children-text">{{ t('sign_for_child', names=pending_children_names) }}</p>
+      {% for c in pending_children %}<input type="hidden" name="sign_for_ids" value="{{ c.id }}">
+      {% endfor %}
+      <label class="checkline">
+        <input type="radio" name="sign_for_role" value="parent"{% if selected_sign_for_role == 'parent' %} checked{% endif %}>
+        <span>{{ t('sign_role_parent') }}</span>
+      </label>
+      <label class="checkline">
+        <input type="radio" name="sign_for_role" value="responsible_adult"{% if selected_sign_for_role == 'responsible_adult' %} checked{% endif %}>
+        <span>{{ t('sign_role_responsible') }}</span>
+      </label>
+    </div>
+    {% endif %}
+    </div>
+    <div id="u15-block"{% if under15 == false %} hidden{% endif %}>
+      <p class="g-intro" id="u15-note">{{ t('u15_note') }}</p>
+      {% if child_signers %}
+      <div class="g-field" id="sign-for-child">
+        <p class="g-intro" id="sign-for-child-text" data-template="{{ t('sign_for_child', names='{names}') }}">{{ t('sign_for_child', names=(val('first_name') ~ ' ' ~ val('surname')).strip()) }}</p>
+        {% if child_signers|length > 1 %}
+        <div id="sign-for-who" role="radiogroup" aria-labelledby="sign-for-who-text" {{ invalid('signed_by') }}>
+          <p class="g-intro" id="sign-for-who-text">{{ t('sign_for_who') }}</p>
+          {% for a in child_signers %}
+          <label class="checkline">
+            <input type="radio" name="signed_by" value="{{ a.id }}"{% if loop.first %} id="signed_by"{% endif %}{% if selected_signer == a.id|string %} checked{% endif %}>
+            <span>{{ a.name }}</span>
+          </label>
+          {% endfor %}
+          {{ err_for('signed_by') }}
+        </div>
+        {% else %}
+        <input type="hidden" name="signed_by" value="{{ child_signers[0].id }}">
+        {% endif %}
+        <div id="sign-for-role" role="radiogroup" aria-labelledby="sign-for-child-text">
+          <label class="checkline">
+            <input type="radio" name="child_sign_role" value="parent"{% if selected_child_role == 'parent' %} checked{% endif %}>
+            <span>{{ t('sign_role_parent') }}</span>
+          </label>
+          <label class="checkline">
+            <input type="radio" name="child_sign_role" value="responsible_adult"{% if selected_child_role == 'responsible_adult' %} checked{% endif %}>
+            <span>{{ t('sign_role_responsible') }}</span>
+          </label>
+        </div>
+      </div>
+      {% endif %}
+    </div>
 
     <div class="g-review" data-wizard-review
          data-edit-label="{{ t('review_edit') }}" hidden>

@@ -92,8 +92,8 @@
     "v": "20261025-0393b"
   },
   "guest.css": {
-    "sha256": "ff8f1f00ac72944ea525dac0957799fdfc2593cc98e26647e6d3ca19a747e6fd",
-    "v": "20261110-1091a"
+    "sha256": "49bbd972f1e9d2dfe6904d59c0aa16d86a33f6c859646e20bba557706daa3a52",
+    "v": "20261111-1090b"
   },
   "guide.js": {
     "sha256": "7bc163abd236d8032c1f7a094aadf4993774920b24b4a0817768dd27fa0cefab",
@@ -160,8 +160,8 @@
     "v": "20261025-0373"
   },
   "signature.js": {
-    "sha256": "5de0d076617e10ccc6504eba626f8059e66fed1f6e6753cf5c83a239bada2da3",
-    "v": "20261110-1087"
+    "sha256": "d4f2c7b498e56853e68042aa62ecd6652dc2fb1370a33fb888cec5ba4caf8005",
+    "v": "20261111-1090b"
   },
   "skeleton.css": {
     "sha256": "4685a64e9b7d3fc56680e55c6772d6d8b6c9dcaf8c9b1655ec0d17cebe70d46f",
