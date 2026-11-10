@@ -75,7 +75,7 @@ PINNED = [
     ("archive.chip.entities_count",
      "Operators (%(count)s)", "Provozovatelé (%(count)s)"),
     ("apartment.form.entity.label",
-     "Property manager / operator", "Správce objektu / provozovatel"),
+     "Who runs the accommodation", "Kdo ubytování provozuje"),
     ("apartment.form.controller.choose",
      "Choose an operator", "Vyberte provozovatele"),
     ("apartment.form.controller.manage_entities",
@@ -242,7 +242,7 @@ def test_the_saved_operator_is_named_in_the_property_form(host):
     page = host.get("/apartments/new?lang=en")
     assert page.status_code == 200, page.text
     assert f">{ENTITY_NAME}</option>" in page.text
-    assert "Property manager / operator" in page.text
+    assert "Who runs the accommodation" in page.text
     # 0088: the sole operator is chosen; its business details stay one link away.
     assert f'selected>{ENTITY_NAME}</option>' in page.text
     assert 'href="/entities"' in page.text

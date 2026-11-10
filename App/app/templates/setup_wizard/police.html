@@ -30,7 +30,7 @@
   <input type="hidden" name="city_en" value="{{ values.city_en or '' }}">
   <input type="hidden" name="default_purpose" value="{{ values.default_purpose or '10' }}">
   <input type="hidden" name="step" value="police">
-  <div class="grid">{{ text_field('uby_idub', 'IDUB', values.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14, true) }}
+  <div class="grid">{{ text_field('uby_idub', t('apartment.form.ubyport.idub_label'), values.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14, true) }}
   </div>
   <div class="grid two">
     {{ text_field('uby_ws_user', t('automation.login'), values.uby_ws_user, t('apartment.form.ubyport.login_hint'), false, none, true) }}
