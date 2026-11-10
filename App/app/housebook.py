@@ -20,7 +20,7 @@ from typing import Any, Dict, Iterator, List, Optional
 
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
-from reportlab.lib.utils import ImageReader
+from reportlab.lib.utils import ImageReader, simpleSplit
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas as pdfcanvas
@@ -160,7 +160,15 @@ def _housebook_export_row(row: Dict[str, Any]) -> Dict[str, Any]:
         ),
         "purpose": validation.purpose_label(row["purpose"] or "", "cs"),
         "note": row["note"] or "",
-        "signed": "yes" if reporting.guest_has_signature(row) else "no",
+        # 1089: a guest under 15 does not sign; an adult may have signed for them.
+        "signed": {
+            "own": "yes", "imported": "yes", "signed_for": "by adult", "exempt": "not required",
+        }.get(
+            reporting.signature_record(
+                row, {"date_from": row["res_from"], "date_to": row["res_to"]}
+            )["kind"],
+            "no",
+        ),
         "reported": reported,
         "reported_at": (row["manual_filed_at"] if by_hand else row["submitted_at"]) or "",
         "stamp": stamp,
@@ -377,7 +385,17 @@ def registration_form_pdf(guest_id: int) -> bytes:
     y -= 30 * mm
     pdf.setFont(FONT_BOLD, 10)
     pdf.drawString(left, y + 24 * mm, "Podpis cizince / Signature of the foreigner")
-    if guest["signature_png"]:
+    # 1089: who signed for a guest under 15, or that no signature is required.
+    record = reporting.signature_record(
+        guest, {"date_from": guest["res_from"], "date_to": guest["res_to"]}
+    )
+    if record["kind"] in ("signed_for", "exempt"):
+        # The "Signed by ..." sentence is wider than the page: wrap it, last line at y + 8.
+        pdf.setFont(FONT_REGULAR, 9)
+        record_lines = simpleSplit(record["text"], FONT_REGULAR, 9, width - 2 * left)
+        for index, text_line in enumerate(reversed(record_lines)):
+            pdf.drawString(left, y + 8 + 11 * index, text_line)
+    elif guest["signature_png"]:
         try:
             raw = guest["signature_png"].split(",", 1)[-1]
             image = ImageReader(io.BytesIO(base64.b64decode(raw)))
@@ -391,7 +409,13 @@ def registration_form_pdf(guest_id: int) -> bytes:
     pdf.setFont(FONT_REGULAR, 8)
     pdf.setFillGray(0.4)
     signed = guest["signed_at"] or guest["filled_at"] or ""
-    pdf.drawString(left, y - 7 * mm, f"Signed electronically: {signed}")
+    if record["kind"] in ("signed_for", "exempt"):
+        # The reporting status is right-aligned on this baseline, so only a
+        # sentence as short as the rule above repeats here.
+        if pdfmetrics.stringWidth(record["text"], FONT_REGULAR, 8) <= 80 * mm:
+            pdf.drawString(left, y - 7 * mm, record["text"])
+    else:
+        pdf.drawString(left, y - 7 * mm, f"Signed electronically: {signed}")
 
     # Reporting status, as required by rule 10.5(3).
     status_map = {
