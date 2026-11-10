@@ -35,6 +35,24 @@ Status: review
 - On a refused save only the listed rows and the password row are rebuilt; the plain lines of unfilled fields are not posted, so they are not shown again.
 - The `/test-connection` lockout guard applies only when that post also saved (it carried credentials).
 
+## Attempt 2 (UX gate and CI fixes)
+
+- B1/B2/S6: every helper rule moved to `app2.css` under `body.v2` (the editor is a v2 page; `host.css` is back to main's bytes and key). Type tokens for HTML text; the SVG keeps 8/9 user units, with a comment. Key `app2.css?v=20261110-1085e`.
+- B3/B5/S5: the two `details` are plain disclosure rows (no border box, same left edge as their content, full grid width at 768+), figure margin 0, legend `ol` padding `--space-5`; 16 px under "Read the letter".
+- B4 and required star: the tick is `div.checkline > input + label` with the `req-star`; label is flex, 44 px high, box 20 x 20.
+- S1: `police_letter.check_against` deleted (template and three languages). S2: password row dropped. S3: one save error per unticked value.
+- S4: the brief says a refused unconfirmed save answers **400** (422 is the paste route). Kept 400; pinned in `test_two_missing_ticks_are_two_errors` and in the browser test.
+- New: after a paste the page starts on `sec-police` at 768+ (`data-start-section`); before, the desktop editor showed the fee section and hid the check block.
+- `test_property_navigation_browser.py`: its form parser now skips a control whose `form=` names another form (as a browser does), so `letter_text` is not counted in the settings form. `letter_text` is never sent with Save.
+- Browser test `test_the_letter_helper_is_styled_in_the_browser` (in `test_police_letter_flow.py`): `.pl-sheet` fill, `.police-letter-name` display, sizes, no sideways scroll, 422 and 400 at 390/768/1280.
+- Screenshots: `/mnt/project-files/reviews/1085/v2/{helpers-open,check-block,refused-save}-{390,768,1280}.png`. Seen: figure readable with no overlap, 360 px wide at most; rows flush with their summaries; ticks and errors clear. The crops show the fixed bottom nav across the middle (an element-screenshot artefact).
+
+Attempt 2 runs (`UBYHOST_REQUIRE_BROWSER=1`, Chromium, 0 skipped):
+
+- `test_layout_lint_browser.py test_police_letter_flow.py test_required_stars.py test_static_versions.py test_host_i18n.py`: `69 passed`.
+- `test_host_geometry.py test_host_property_controls_browser.py test_host_ux_acceptance.py test_host_fit_browser.py test_host_help_browser.py test_property_navigation_browser.py` plus the section 6 list: `2 failed, 428 passed`. The two: `test_host_ux_acceptance` (the known guide, `cs`, 390 px `help-tip-btn`; same on clean main a3806a2a) and `test_reporting_help_0097.py::test_reporting_and_fee_list_geometry_and_tips_in_the_browser` (a fee help button not visible; fails the same on clean main 39962ad7). Neither is from this branch.
+- `scripts/design_lint.py`: `design lint: OK`. `origin/main` (39962ad7) merged again, clean.
+
 ## Questions
 
 None.
