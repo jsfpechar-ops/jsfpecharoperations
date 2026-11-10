@@ -36,6 +36,7 @@ from . import (
     reporting,
     retention,
     signup,
+    stay_fee,
     stay_fee_auto,
 )
 
@@ -490,6 +491,10 @@ def _job_stay_fee_mail() -> None:
     started = time.perf_counter()
     try:
         counts = stay_fee_auto.run()
+        try:
+            stay_fee.reconcile_all_no_pay_way()
+        except Exception:
+            log.exception("stay-fee no-pay-way sweep failed")
     except Exception:
         log.exception("stay-fee mail run failed")
         _job_failed("stay_fee_mail")

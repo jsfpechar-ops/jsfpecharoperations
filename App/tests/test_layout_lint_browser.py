@@ -96,6 +96,12 @@ def test_every_host_page_passes_the_layout_lint(wide_host, wide_base):
         ):
             db.insert("ical_feed", {"apartment_id": apartment_id, "url": url, "label": label,
                                     "last_sync_at": now, "last_status": "ok", "active": 1, "created_at": now})
+    from app import alerts as _alerts
+    _alerts.raise_alert(
+        "warning", "stay_fee_no_pay_way", "Guests cannot pay the stay fee: add a bank account",
+        dedupe_key=f"stay_fee_no_pay_way:{wide_host['configured_apartment']}",
+        apartment_id=wide_host["configured_apartment"], params={"property": "Layout flat"},
+    )
     out = _out_dir()
     out.mkdir(parents=True, exist_ok=True)
     findings: list[dict] = []
