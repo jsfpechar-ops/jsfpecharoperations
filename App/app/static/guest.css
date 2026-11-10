@@ -660,6 +660,13 @@ select {
   accent-color: var(--g-accent);
   cursor: pointer;
 }
+/* 1090: the under-15 confirmation. Its rows and groups keep 12 px or more
+   from each other and from the pad. */
+#sign-for-children { margin-top: 16px; }
+#sign-for-children .checkline + .checkline,
+#sign-for-child .checkline + .checkline { margin-top: 12px; }
+#sign-for-who + #sign-for-role { margin-top: 16px; }
+#sign-for-who .err { margin-top: 12px; }
 .checkline > span { flex: 1; min-width: 0; }
 .checkline small {
   display: block;

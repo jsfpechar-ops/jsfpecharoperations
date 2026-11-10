@@ -307,7 +307,7 @@ function initSignature() {
       if (!sentence) return;
       var template = sentence.getAttribute("data-template") || "";
       var name = ((firstName ? firstName.value : "") + " " + (surname ? surname.value : "")).trim();
-      sentence.textContent = template.replace("{names}", name);
+      sentence.textContent = template.replace("{names}", function () { return name; });
     }
 
     function apply() {

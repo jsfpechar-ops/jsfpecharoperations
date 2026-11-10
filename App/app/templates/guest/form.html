@@ -334,27 +334,32 @@
     <div id="u15-block"{% if under15 == false %} hidden{% endif %}>
       <p class="g-intro" id="u15-note">{{ t('u15_note') }}</p>
       {% if child_signers %}
-      <div class="g-field" id="sign-for-child" role="radiogroup" aria-labelledby="sign-for-child-text">
+      <div class="g-field" id="sign-for-child">
         <p class="g-intro" id="sign-for-child-text" data-template="{{ t('sign_for_child', names='{names}') }}">{{ t('sign_for_child', names=(val('first_name') ~ ' ' ~ val('surname')).strip()) }}</p>
         {% if child_signers|length > 1 %}
-        <p class="g-intro">{{ t('sign_for_who') }}</p>
-        {% for a in child_signers %}
-        <label class="checkline">
-          <input type="radio" name="signed_by" value="{{ a.id }}"{% if selected_signer == a.id|string %} checked{% endif %}>
-          <span>{{ a.name }}</span>
-        </label>
-        {% endfor %}
+        <div id="sign-for-who" role="radiogroup" aria-labelledby="sign-for-who-text">
+          <p class="g-intro" id="sign-for-who-text">{{ t('sign_for_who') }}</p>
+          {% for a in child_signers %}
+          <label class="checkline">
+            <input type="radio" name="signed_by" value="{{ a.id }}"{% if selected_signer == a.id|string %} checked{% endif %}>
+            <span>{{ a.name }}</span>
+          </label>
+          {% endfor %}
+          {{ err_for('signed_by') }}
+        </div>
         {% else %}
         <input type="hidden" name="signed_by" value="{{ child_signers[0].id }}">
         {% endif %}
-        <label class="checkline">
-          <input type="radio" name="child_sign_role" value="parent"{% if selected_child_role == 'parent' %} checked{% endif %}>
-          <span>{{ t('sign_role_parent') }}</span>
-        </label>
-        <label class="checkline">
-          <input type="radio" name="child_sign_role" value="responsible_adult"{% if selected_child_role == 'responsible_adult' %} checked{% endif %}>
-          <span>{{ t('sign_role_responsible') }}</span>
-        </label>
+        <div id="sign-for-role" role="radiogroup" aria-labelledby="sign-for-child-text">
+          <label class="checkline">
+            <input type="radio" name="child_sign_role" value="parent"{% if selected_child_role == 'parent' %} checked{% endif %}>
+            <span>{{ t('sign_role_parent') }}</span>
+          </label>
+          <label class="checkline">
+            <input type="radio" name="child_sign_role" value="responsible_adult"{% if selected_child_role == 'responsible_adult' %} checked{% endif %}>
+            <span>{{ t('sign_role_responsible') }}</span>
+          </label>
+        </div>
       </div>
       {% endif %}
     </div>

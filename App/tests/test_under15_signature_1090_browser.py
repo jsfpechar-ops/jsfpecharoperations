@@ -63,6 +63,25 @@ BLOCK_STYLE_JS = """() => {
           'borderLeftWidth'].map(k => s[k]);
 }"""
 
+GAPS_JS = """() => {
+  const vis = e => e.getClientRects().length > 0;
+  const rect = e => e.getBoundingClientRect();
+  const out = { rows: [] };
+  for (const id of ['sign-for-children', 'sign-for-child']) {
+    const box = document.getElementById(id);
+    if (!box || !vis(box)) continue;
+    const rows = Array.from(box.querySelectorAll('.checkline')).filter(vis);
+    for (let i = 1; i < rows.length; i += 1) out.rows.push(rect(rows[i]).top - rect(rows[i - 1]).bottom);
+  }
+  const text = document.getElementById('sign-for-children-text');
+  const pad = document.querySelector('.g-sign');
+  if (text && vis(text) && pad && vis(pad)) out.underPad = rect(text).top - rect(pad).bottom;
+  const who = document.getElementById('sign-for-who');
+  const role = document.getElementById('sign-for-role');
+  if (who && role && vis(who)) out.groups = rect(role).top - rect(who).bottom;
+  return out;
+}"""
+
 UNWRAP_JS = """() => {
   const block = document.getElementById('sig-block');
   while (block.firstChild) block.parentNode.insertBefore(block.firstChild, block);
@@ -379,6 +398,8 @@ def test_the_design_is_unchanged(live_server, browser, monkeypatch, width):
         page.get_by_label(EN("sign_role_parent")).check()
         guest.check_layout(f"child note {width}")
         assert _state(page)["scroll"] <= 0
+        gaps = page.evaluate(GAPS_JS)
+        assert gaps["rows"] and min(gaps["rows"]) >= 12, gaps
         _shot(page, f"child-note-{width}.png")
 
         # Unwrap #sig-block on a fresh adult form: nothing may move.
@@ -409,7 +430,60 @@ def test_the_design_is_unchanged(live_server, browser, monkeypatch, width):
         page.get_by_label(EN("sign_role_responsible")).check()
         guest.check_layout(f"adult signs for {width}")
         assert _state(page)["scroll"] <= 0
+        gaps = page.evaluate(GAPS_JS)
+        assert gaps["rows"] and min(gaps["rows"]) >= 12, gaps
+        assert gaps["underPad"] >= 12, gaps
         _shot(page, f"adult-signs-for-{width}.png")
         assert not guest.problems, guest.problems
+    finally:
+        page.close()
+
+
+def test_two_adults_are_two_named_groups(live_server, browser, monkeypatch):
+    token, stay = _stay(monkeypatch, "two")
+    page, guest = _open(browser, live_server, token, stay)
+    try:
+        saved = {}
+        for first in ("Grownup", "Auntie"):
+            _to_signature_step(page, guest, first, ADULT)
+            guest.sign()
+            saved[first] = _send(page, stay, first)
+            page.goto(_new_url(live_server, token, stay))
+        _to_signature_step(page, guest, "Kid", CHILD)
+        groups = page.evaluate(
+            """() => Array.from(document.querySelectorAll('#u15-block [role=radiogroup]')).map(g => ({
+                 id: g.id, name: document.getElementById(g.getAttribute('aria-labelledby')).textContent,
+                 radios: Array.from(g.querySelectorAll('input[type=radio]')).map(r => r.name) }))"""
+        )
+        assert [g["id"] for g in groups] == ["sign-for-who", "sign-for-role"], groups
+        assert groups[0]["name"] == EN("sign_for_who") and groups[0]["radios"] == ["signed_by"] * 2
+        assert groups[1]["name"] == EN("sign_for_child", names="Kid Testovic")
+        assert groups[1]["radios"] == ["child_sign_role"] * 2
+        gaps = page.evaluate(GAPS_JS)
+        assert len(gaps["rows"]) == 3 and min(gaps["rows"]) >= 12, gaps
+        assert gaps["groups"] >= 12, gaps
+        guest.check_layout("two adults")
+        assert not guest.problems, guest.problems
+        assert _state(page)["scroll"] <= 0
+
+        # A role with no adult chosen: the form comes back and asks, on this step.
+        page.get_by_label(EN("sign_role_parent")).check()
+        page.check("#legal_ack")
+        with page.expect_navigation():
+            page.locator("[data-guest-save]").click()
+        assert _row(stay, "Kid") is None
+        error = page.locator("#signed_by-error")
+        assert error.is_visible() and error.inner_text() == EN("sign_for_who_missing")
+        assert _state(page)["childRole"] == ["parent"]
+        gaps = page.evaluate(GAPS_JS)
+        assert min(gaps["rows"]) >= 12 and gaps["groups"] >= 12, gaps
+        _shot(page, "child-two-adults-390.png")
+
+        page.locator('#sign-for-who input[type=radio]').nth(1).check()
+        chosen = int(page.locator('#sign-for-who input[type=radio]').nth(1).get_attribute("value"))
+        assert chosen in {saved["Grownup"]["id"], saved["Auntie"]["id"]}
+        child = _send(page, stay, "Kid")
+        assert child["signed_for_guest_id"] == chosen
+        assert child["signed_for_role"] == "parent"
     finally:
         page.close()

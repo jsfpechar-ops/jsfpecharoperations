@@ -83,6 +83,9 @@ def test_the_template_has_one_block_each_and_the_pad_stays_inside():
 def test_the_radio_shares_the_tick_box_rule():
     css = (APP / "static" / "guest.css").read_text(encoding="utf-8")
     assert ".checkline input[type=checkbox],\n.checkline input[type=radio] {" in css
+    assert 'template.replace("{names}", function () { return name; })' in (
+        APP / "static" / "signature.js"
+    ).read_text(encoding="utf-8")
 
 
 # --- b. render ----------------------------------------------------------------
@@ -141,6 +144,60 @@ def test_several_adults_become_radios(stay):
         assert f'<input type="radio" name="signed_by" value="{row["id"]}">' in html
     assert i18n.translator("en")("sign_for_who") in html
     assert '<input type="hidden" name="signed_by"' not in html
+    # Two groups, each named: the adults by their heading, the roles by the sentence.
+    assert _tag(html, "sign-for-who") == (
+        '<div id="sign-for-who" role="radiogroup" aria-labelledby="sign-for-who-text">'
+    )
+    assert _tag(html, "sign-for-role") == (
+        '<div id="sign-for-role" role="radiogroup" aria-labelledby="sign-for-child-text">'
+    )
+    assert "radiogroup" not in _tag(html, "sign-for-child")
+    who = html.index('id="sign-for-who"')
+    role = html.index('id="sign-for-role"')
+    assert who < html.index('name="signed_by"') < role < html.index('name="child_sign_role"')
+
+
+def test_a_role_with_several_adults_and_none_chosen_is_asked_for(stay):
+    browser = _client(stay)
+    first = _save(browser, stay, "Grownup", "1.1.1990")
+    _save(browser, stay, "Auntie", "1.1.1985")
+    response = _post(browser, stay, "Kid", _child_birth(stay), signature="", child_sign_role="parent")
+    assert response.status_code == 422
+    message = i18n.translator("en")("sign_for_who_missing")
+    assert f'id="signed_by-error">{message}</div>' in response.text
+    assert 'name="child_sign_role" value="parent" checked' in response.text
+    rows = db.query("SELECT * FROM guest WHERE reservation_id = ?", (stay["reservation_id"],))
+    assert not [r for r in rows if r["first_name"].upper() == "KID"]
+
+    # No role: nothing to ask, the child saves with no link.
+    kid = _save(browser, stay, "Kid", _child_birth(stay), signature="")
+    assert kid["signed_for_guest_id"] is None
+    # The adult chosen: saved and linked.
+    other = _save(
+        browser, stay, "Sis", _child_birth(stay), signature="",
+        child_sign_role="parent", signed_by=str(first["id"]),
+    )
+    assert other["signed_for_guest_id"] == first["id"]
+
+
+def test_one_adult_needs_no_choice_and_an_adult_is_never_asked(stay):
+    browser = _client(stay)
+    _save(browser, stay, "Grownup", "1.1.1990")
+    # One candidate: the form's hidden input carries it; a bare role is not an error.
+    kid = _save(browser, stay, "Kid", _child_birth(stay), signature="", child_sign_role="parent")
+    assert kid["signed_for_guest_id"] is None
+    _save(browser, stay, "Auntie", "1.1.1985")
+    # Two candidates now, but a 16-year-old signs for themselves.
+    teen = _save(browser, stay, "Teen", _child_birth(stay, 16), child_sign_role="parent")
+    assert teen["signature_png"]
+
+
+@pytest.mark.parametrize("lang", LANGS)
+def test_the_choice_message_exists_in_each_language(lang):
+    text = i18n.translator(lang)("sign_for_who_missing")
+    assert text and text != "sign_for_who_missing"
+    if lang != "en":
+        assert text != i18n.translator("en")("sign_for_who_missing")
 
 
 def test_an_archived_or_unsigned_adult_is_not_offered(stay):

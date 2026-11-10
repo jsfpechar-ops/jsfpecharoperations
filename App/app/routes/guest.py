@@ -1851,6 +1851,34 @@ async def add_another_person(token: str, reservation_id: int, request: Request):
 
 # --- guest form ----------------------------------------------------------
 
+def _under15_lists(request, reservation, guest_id):
+    """Brief 1090: (adults who may sign for a child, children nobody signed for).
+
+    Only people this device saved on this reservation, never ``guest_id``
+    itself. 1089: an archived adult is no signer; an archived child needs none.
+    """
+    child_signers: List[Dict[str, Any]] = []
+    pending_children: List[Dict[str, Any]] = []
+    owned = set(_owned_ids(request))
+    if not owned:
+        return child_signers, pending_children
+    rows = db.query("SELECT * FROM guest WHERE reservation_id = ?", (reservation["id"],))
+    for row in rows:
+        if row["id"] not in owned or row["id"] == guest_id or row["archived_at"]:
+            continue
+        entry = {"id": row["id"], "name": f"{row['first_name']} {row['surname']}".strip()}
+        if validation.is_valid_signature(
+            row["signature_png"]
+        ) and validation.certainly_at_least_age(
+            row["birth_date"], reporting._stay_dates(row, reservation)[0],
+            reporting.ADULT_SIGNER_AGE,
+        ):
+            child_signers.append(entry)
+        elif reporting.guest_under_15(row, reservation) and not row["signed_for_guest_id"]:
+            pending_children.append(entry)
+    return child_signers, pending_children
+
+
 def _form_context(
     request: Request,
     apartment,
@@ -1973,27 +2001,9 @@ def _form_context(
     arrival = validation.parse_iso_date(
         vals.get("stay_from") or (guest["stay_from"] if guest else "") or reservation["date_from"]
     )
-    owned = set(_owned_ids(request))
-    child_signers: List[Dict[str, Any]] = []
-    pending_children: List[Dict[str, Any]] = []
-    if owned:
-        rows = db.query("SELECT * FROM guest WHERE reservation_id = ?", (reservation["id"],))
-        for row in rows:
-            if row["id"] not in owned or (guest is not None and row["id"] == guest["id"]):
-                continue
-            # 1089: an archived adult is no signer; an archived child needs none.
-            if row["archived_at"]:
-                continue
-            entry = {"id": row["id"], "name": f"{row['first_name']} {row['surname']}".strip()}
-            if validation.is_valid_signature(
-                row["signature_png"]
-            ) and validation.certainly_at_least_age(
-                row["birth_date"], reporting._stay_dates(row, reservation)[0],
-                reporting.ADULT_SIGNER_AGE,
-            ):
-                child_signers.append(entry)
-            elif reporting.guest_under_15(row, reservation) and not row["signed_for_guest_id"]:
-                pending_children.append(entry)
+    child_signers, pending_children = _under15_lists(
+        request, reservation, guest["id"] if guest is not None else None
+    )
     context.update(
         {
             "under15": (
@@ -2408,6 +2418,15 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     )
     if signature_issue:
         issues.append(signature_issue)
+    # Brief 1090: a role ticked with several adults to choose from and none
+    # chosen would be dropped without a word; ask instead.
+    if (
+        child
+        and (form.get("child_sign_role") or "").strip() in reporting.SIGN_FOR_ROLES
+        and not str(form.get("signed_by") or "").strip()
+        and len(_under15_lists(request, reservation, existing["id"] if existing else None)[0]) > 1
+    ):
+        issues.append(validation.Issue("signed_by", translate("sign_for_who_missing")))
     if not form.get("legal_ack"):
         issues.append(validation.Issue("legal_ack", translate("legal_ack_missing")))
 
