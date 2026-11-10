@@ -472,6 +472,13 @@ def test_19_a_czech_national_is_house_book_only(client):
         email="guest@example.test",
         party_size=3,
     )
+    # 1092: a new link for a claimed stay no longer changes the count; the
+    # third person is declared the way a claimed guest does it.
+    raised = guest_browser.post(
+        permalink(stay) + "/party", data={"party_size": "3"}, follow_redirects=False
+    )
+    assert raised.status_code == 303, raised.text
+    assert db.query_one("SELECT * FROM reservation")["declared_guests"] == 3
     response = guest_browser.post(
         permalink(stay) + "/save",
         data=guest_form_data(
