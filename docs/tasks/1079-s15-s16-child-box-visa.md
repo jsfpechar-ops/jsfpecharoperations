@@ -1,6 +1,6 @@
 # 1079: S15 child-on-parent's-passport box only for under-18s; S16 visa field check (already on main)
 
-Status: todo
+Status: review
 Tier: A | Depends on: nothing (main alone) | Base commit: 951fda6c | Branch: claude/1079-s15-s16
 Executor: Fable 5.2 | Attempts: 3 at most | Fits one session: stop at 25 tool calls or 60k tokens (section 8); reads stay at 150 lines or fewer
 Review: a fresh Fable reviews the diff against this brief before the PR opens.
