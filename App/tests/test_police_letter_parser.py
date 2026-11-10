@@ -194,7 +194,14 @@ ROWS = [
         OFFICIAL + f"{L_MARK} ABCDE\n{L_MARK} VWXYZ\n",
         exp(found(SAMPLE_IDUB), found(SAMPLE_WS_USER), AMBIGUOUS),
     ),
-    ("mark_bare_label", OFFICIAL + "Zkratka: ABCDE\n", OK_ALL),
+    (
+        "mark_bare_label_differs",
+        OFFICIAL + "Zkratka: ABCDE\n",
+        exp(found(SAMPLE_IDUB), CONFLICT, CONFLICT),
+    ),
+    ("mark_bare_label_equal", OFFICIAL + f"Zkratka: {SAMPLE_ZKRATKA.lower()}\n", OK_ALL),
+    ("mark_bare_label_prose", OFFICIAL + "Zkratka často odpovídá části za UBY-WS_.\n", OK_ALL),
+    ("mark_bare_label_no_login", "Zkratka: ABCDE\n", exp()),
     (
         "mark_with_test_login",
         user_only("uby-tws1ab45") + f"{L_MARK} ABCDE\n",
@@ -239,7 +246,7 @@ ROWS = [
     # --- size ---
     ("size_empty", "", exp()),
     ("size_spaces_only", " \n\t   ", exp()),
-    ("size_exactly_max", OFFICIAL + "x" * (MAX_LETTER_CHARS - len(OFFICIAL)), OK_ALL),
+    ("size_exactly_max", OFFICIAL + "\n" + "x" * (MAX_LETTER_CHARS - len(OFFICIAL) - 1), OK_ALL),
     ("size_over_max", OFFICIAL + "x" * (MAX_LETTER_CHARS - len(OFFICIAL) + 1), exp()),
     # --- never raises ---
     ("raise_none", None, exp()),
@@ -253,6 +260,72 @@ ROWS = [
     ("lookalike_long_s_mark", f"{L_MARK} abcdſ\n", exp(mark=UNREADABLE)),
     ("lookalike_kelvin_mark", f"{L_MARK} ABCDK\n", exp(mark=UNREADABLE)),
     ("lookalike_arabic_indic_idub", idub_only(ARABIC_INDIC), exp(idub=UNREADABLE)),
+    # --- attempt 2: review findings (rule 11) ---
+    ("wrap_idub_digits", f"IDUB: {SAMPLE_IDUB}\n66", exp(idub=UNREADABLE)),
+    ("wrap_idub_digits_next_line", f"IDUB:\n{SAMPLE_IDUB}\n66\n", exp(idub=UNREADABLE)),
+    ("wrap_idub_word", f"IDUB: {SAMPLE_IDUB}\nPraha\n", exp(idub=UNREADABLE)),
+    ("wrap_idub_noise_fragment", f"IDUB: {SAMPLE_IDUB}\n| 66\n", exp(idub=UNREADABLE)),
+    ("wrap_login_letter", f"{L_USER} UBY-WS_ABCDE\nF", exp(user=UNREADABLE)),
+    ("wrap_login_three_chars", f"{L_USER} UBY-WS_ABCDE\nF12\n", exp(user=UNREADABLE)),
+    ("wrap_login_next_line", f"{L_USER}\nUBY-WS_ABCDE\nF\n", exp(user=UNREADABLE)),
+    (
+        "wrap_not_when_label_follows",
+        f"{L_USER} UBY-WS_ABCDE\nTelefon: 420777000111\n",
+        exp(user=found("UBY-WS_ABCDE"), mark=derived("ABCDE")),
+    ),
+    ("mark_next_line_adresa", "Zkratka ubytovacího zařízení\nAdresa\n", exp(mark=UNREADABLE)),
+    ("mark_next_line_praha", "Zkratka ubytovacího zařízení\nPraha\n", exp(mark=UNREADABLE)),
+    ("mark_next_line_hotel", "Zkratka ubytovacího zařízení:\nHotel\n", exp(mark=UNREADABLE)),
+    ("mark_next_line_valid_shape", f"{L_MARK}\nABCDE\n", exp(mark=UNREADABLE)),
+    (
+        "mark_next_line_blocks_derivation",
+        OFFICIAL + "Zkratka ubytovacího zařízení\nAdresa\n",
+        exp(found(SAMPLE_IDUB), found(SAMPLE_WS_USER), UNREADABLE),
+    ),
+    (
+        "mark_bare_differs_from_login",
+        user_only("UBY-WS_ABCDE") + "Zkratka: XYZWV\n",
+        exp(user=CONFLICT, mark=CONFLICT),
+    ),
+    ("prose_idub_period", "V dotazu uveďte IDUB.\n420974841356", exp()),
+    ("prose_idub_period_newline", "V dotazu uveďte IDUB.\n420974841356\n", exp()),
+    ("prose_idub_comma", "Sdělte IDUB, 420974841356\n", exp()),
+    ("prose_idub_question", "Znáte IDUB?\n420974841356\n", exp()),
+    ("prose_idub_no_colon_next_line", "V dotazu uveďte IDUB\n420974841356\n", exp(idub=UNREADABLE)),
+    (
+        "prose_idub_then_real",
+        f"V dotazu uveďte IDUB.\n\nIDUB: {FAKE_IDUB}\n",
+        exp(idub=found(FAKE_IDUB)),
+    ),
+    ("prose_login_period", f"Použijte {L_USER[:-1]}.\nUBY-WS_ABCDE\n", exp()),
+    (
+        "password_becomes_idub",
+        f"{L_PW}\nIDUB:\n934857203948\n{SAMPLE_IDUB}",
+        exp(idub=UNREADABLE),
+    ),
+    (
+        "password_label_two_above_then_label",
+        f"{L_PW}\n{L_USER}\nIDUB:\n934857203948\n",
+        exp(idub=UNREADABLE, user=UNREADABLE),
+    ),
+    (
+        "password_label_two_above_blank",
+        f"{L_PW}\n\nIDUB:\n934857203948\n",
+        exp(idub=UNREADABLE),
+    ),
+    (
+        "password_label_above_login",
+        f"{L_PW}\n{L_USER}\nUBY-WS_ZZZZZ\nUBY-WS_ABCDE\n",
+        exp(user=UNREADABLE),
+    ),
+    ("idub_two_number_lines", f"IDUB:\n934857203948\n{SAMPLE_IDUB}\n", exp(idub=AMBIGUOUS)),
+    (
+        "guard_inflection_heslem",
+        f"Heslem je {L_USER} UBY-WS_ZZZZZ\n",
+        exp(user=AMBIGUOUS),
+    ),
+    ("guard_inflection_hesla", f"Zadání hesla a IDUB: {FAKE_IDUB}\n", exp(idub=AMBIGUOUS)),
+    ("guard_capitals_no_diacritics", f"HESLEM je {L_USER} UBY-WS_ZZZZZ\n", exp(user=AMBIGUOUS)),
 ]
 
 STATUS = {
@@ -271,7 +344,9 @@ def test_table_size_and_ids():
     assert len(ids) == len(set(ids))
     assert set(STATUS) <= set(ids)
     assert len("IDUB:" * 4000) == MAX_LETTER_CHARS
-    assert len(OFFICIAL + "x" * (MAX_LETTER_CHARS - len(OFFICIAL))) == MAX_LETTER_CHARS
+    by_id = {row[0]: row[1] for row in ROWS}
+    assert len(by_id["size_exactly_max"]) == MAX_LETTER_CHARS
+    assert len(by_id["size_over_max"]) == MAX_LETTER_CHARS + 1
 
 
 @pytest.mark.parametrize("row_id,text,expected", ROWS, ids=[row[0] for row in ROWS])
