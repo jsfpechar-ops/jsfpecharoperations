@@ -20,6 +20,7 @@ from . import (
     db,
     door_codes,
     dsr,
+    fee_update,
     filing_watchdog,
     guest_guide_import,
     guest_guide_merge,
@@ -36,6 +37,7 @@ from . import (
     reporting,
     retention,
     signup,
+    stay_fee,
     stay_fee_auto,
 )
 
@@ -282,6 +284,7 @@ def _job_mail() -> None:
         ("expire_requests", booking_checkout.expire_requests),
         ("drain", mail.drain),
         ("reminders", claim.sweep_reminders),
+        ("fee_updates", fee_update.sweep_fee_updates),
         # Once a day and only with UBYHOST_LIFECYCLE_MAIL=1 (WP12).
         ("lifecycle", lifecycle_mail.run_daily),
         ("purge", mail.purge_old),
@@ -490,6 +493,10 @@ def _job_stay_fee_mail() -> None:
     started = time.perf_counter()
     try:
         counts = stay_fee_auto.run()
+        try:
+            stay_fee.reconcile_all_no_pay_way()
+        except Exception:
+            log.exception("stay-fee no-pay-way sweep failed")
     except Exception:
         log.exception("stay-fee mail run failed")
         _job_failed("stay_fee_mail")

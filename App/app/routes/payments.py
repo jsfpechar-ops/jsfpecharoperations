@@ -126,6 +126,14 @@ def payments_new_page(request: Request):
     raw_stay = str(request.query_params.get("reservation_id") or "")
     selected_reservation_id = int(raw_stay) if raw_stay.isdigit() else None
     prefill = payment_services.get(owner_id, str(request.query_params.get("service") or ""))
+    guest_email_prefill = ""
+    if selected_reservation_id:
+        stay_row = db.query_one(
+            "SELECT r.guest_email FROM reservation r JOIN apartment a ON a.id = r.apartment_id"
+            " WHERE r.id = ? AND a.owner_user_id = ?",
+            (selected_reservation_id, owner_id),
+        )
+        guest_email_prefill = ((stay_row["guest_email"] if stay_row else "") or "").strip()
     return render(
         request,
         "payments_new.html",
@@ -137,7 +145,9 @@ def payments_new_page(request: Request):
                 {"id": s["id"], "label": _stay_label(s)} for s in _stays(owner_id)
             ],
             "selected_reservation_id": selected_reservation_id,
+            "guest_email_prefill": guest_email_prefill,
             "prefill": prefill,
+            "no_bank": not payment_request.has_bank_account(owner_id),
         },
     )
 
@@ -199,6 +209,8 @@ async def payment_request_new(request: Request):
     rail = str(form.get("rail") or "card").strip()
     if rail not in payment_request.RAILS:
         return back
+    if rail == "qr" and not payment_request.has_bank_account(owner_id):
+        return _back("/payments/new", err=_flash(request, "payments.err.no_iban"), fix="bank")
     payment_request.create(
         owner_id,
         reservation_id=reservation_id,
@@ -258,7 +270,7 @@ async def payment_request_link(request: Request, request_id: int):
     except stripe_connect.StripeOff:
         return _back("/payments", err=_flash(request, "payments.err.stripe_off"))
     if not link:
-        return _back("/payments", err=_flash(request, "payments.err.not_ready"))
+        return _back("/payments", err=_flash(request, "payments.err.not_ready"), fix="stripe")
     if row["status"] == "draft":
         from datetime import date
 
@@ -280,7 +292,7 @@ def payment_request_share(request: Request, request_id: int):
     except stripe_connect.StripeOff:
         return _back("/payments", err=_flash(request, "payments.err.stripe_off"))
     if not link:
-        return _back("/payments", err=_flash(request, "payments.err.not_ready"))
+        return _back("/payments", err=_flash(request, "payments.err.not_ready"), fix="stripe")
     from urllib.parse import quote
 
     lang = host_i18n.lang_from_request(request)
@@ -328,7 +340,7 @@ async def payment_request_send(request: Request, request_id: int):
         except stripe_connect.StripeOff:
             return _back("/payments", err=_flash(request, "payments.err.stripe_off"))
         if not link:
-            return _back("/payments", err=_flash(request, "payments.err.not_ready"))
+            return _back("/payments", err=_flash(request, "payments.err.not_ready"), fix="stripe")
     else:
         link = f"{config.app_base_url()}/pay/{request_id}/{payment_request.guest_token(row)}"
     if not resend:
@@ -367,7 +379,7 @@ def payment_request_qr_png(request: Request, request_id: int):
     try:
         _, png = payment_request.qr_payload(row)
     except ValueError:
-        return Response(status_code=404)
+        return Response(payment_request.NO_ACCOUNT_BODY, status_code=404, media_type="text/plain; charset=utf-8")
     return Response(content=png, media_type="image/png")
 
 
@@ -384,7 +396,7 @@ def payment_request_qr(request: Request, request_id: int):
     try:
         payload, png = payment_request.qr_payload(row)
     except ValueError:
-        return _back("/payments", err=_flash(request, "payments.err.no_iban"))
+        return _back("/payments", err=_flash(request, "payments.err.no_iban"), fix="bank")
     return render(
         request,
         "payments_qr.html",
@@ -763,7 +775,7 @@ def guest_qr_png(request_id: int, token: str):
     try:
         _, png = payment_request.qr_payload(row)
     except ValueError:
-        raise HTTPException(status_code=404)
+        return Response(payment_request.NO_ACCOUNT_BODY, status_code=404, media_type="text/plain; charset=utf-8")
     return Response(content=png, media_type="image/png", headers={"Cache-Control": "private, max-age=300"})
 
 
@@ -773,10 +785,14 @@ def guest_qr_page(request: Request, request_id: int, token: str):
     row = _guest_qr_row(request_id, token)
     if row is None:
         raise HTTPException(status_code=404)
+    no_account_text = ""
+    payload = ""
     try:
         payload, _ = payment_request.qr_payload(row)
     except ValueError:
-        raise HTTPException(status_code=404)
+        from .guest import _language
+
+        no_account_text = i18n.translator(_language(request))("pay_no_account")
     response = render(
         request,
         "payments_qr.html",
@@ -785,6 +801,7 @@ def guest_qr_page(request: Request, request_id: int, token: str):
             "qr_payload": payload,
             "show_nav": False,
             "png_url": f"/pay/{request_id}/{token}.png",
+            "no_account_text": no_account_text,
         },
     )
     response.headers["X-Robots-Tag"] = "noindex"

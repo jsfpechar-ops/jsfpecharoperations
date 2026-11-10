@@ -38,6 +38,12 @@ AUDIT_COPY = {
         "We send your private link here. No marketing.",
         "Pošleme sem váš soukromý odkaz. Žádný marketing.",
     ),
+    "claim_email_why": (
+        "We send your private link and receipt here. This keeps the booking "
+        "yours. No marketing.",
+        "Pošleme sem soukromý odkaz a potvrzení a díky e-mailu zůstane tato "
+        "rezervace vaše. Žádný marketing.",
+    ),
     "claim_email_help": (
         "Also one reminder the day before arrival if forms are missing, and a "
         "receipt (your host gets a copy). Shown masked elsewhere.",
@@ -54,7 +60,7 @@ AUDIT_COPY = {
 }
 
 # Every hint line the claim card renders, in the order the guest reads them.
-CLAIM_HINT_KEYS = ("claim_help", "tw_email_short", "claim_email_help", "claim_cookie_help")
+CLAIM_HINT_KEYS = ("claim_help", "claim_email_why", "claim_email_help", "claim_cookie_help")
 
 # The guest pages that render the shared "why we collect this" fold.
 # UX-118 (audit A-31) dropped it from unavailable.html: a dead-end page has no
@@ -81,7 +87,8 @@ def test_the_claim_hints_are_the_audits_condensed_wording():
 def test_the_claim_hints_stay_under_the_word_budget():
     # "two hint paragraphs of ~100 words" was the finding; UX-13 got it to
     # 58/48 for three keys. WP17 counts all four rendered lines and is lower.
-    for lang, budget in (("en", 55), ("cs", 50)):
+    # 1076: the e-mail line now says why (Q16)
+    for lang, budget in (("en", 58), ("cs", 54)):
         total = sum(
             len(i18n.STRINGS[lang][key].split())
             for key in CLAIM_HINT_KEYS

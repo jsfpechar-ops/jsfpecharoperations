@@ -2113,6 +2113,11 @@ body.v2 .invoice-more > summary{color:var(--brand);font-size:13.5px;font-weight:
 body.v2 .invoice-more > summary::-webkit-details-marker{display:none}
 body.v2 .invoice-more > summary::marker{content:""}
 body.v2 .invoice-more-body{display:grid;gap:8px;max-width:700px;padding-top:10px}
+/* 1075-cont-1: in this fold the hint is plain text (0543): the label wraps as normal text and the hint is its own block under it */
+body.v2 details.invoice-more .field-label-row .tip-tail{display:inline;white-space:normal}
+body.v2 details.invoice-more .field-label-row .help-tip{display:block;margin-left:0}
+/* 1075 CI: the fold summary on the entity form must reach 4.5:1; brand-ink keeps the link tone */
+body.v2 details.ui-details-box.invoice-more > summary{color:var(--brand-ink)}
 body.v2 .invoice-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 18px;margin-top:18px;box-shadow:0 1px 2px rgba(32,32,30,.06);position:static;bottom:auto;z-index:1}
 body.v2 .wrap.with-sidebar .invoice-workspace{max-width:1050px;margin-left:auto;margin-right:auto}
 @media (max-width:767px){
@@ -2579,6 +2584,7 @@ body.v2 .payments-new legend,body.v2 .payments-new .ui-field>label{display:block
 body.v2 .payments-amount input::-webkit-inner-spin-button,body.v2 .payments-amount input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}body.v2 .payments-new .payments-amount input[type=number][name=amount_czk][id]:focus{outline:0;border-bottom-color:var(--acc);box-shadow:0 2px 0 0 var(--acc)}
 body.v2 .payments-new .ui-chip{position:relative;border:0;background:#f4f3ef;padding:0 18px;box-shadow:none}body.v2 .payments-new .ui-chip input{position:absolute;left:0;top:0;width:1px;height:1px;margin:0;opacity:0}
 body.v2 .payments-new .ui-chip:has(input:checked){background:var(--ink);color:#fff;box-shadow:none}body.v2 .payments-new .ui-chip:has(input:focus-visible){outline:2px solid var(--acc);outline-offset:2px}
+body.v2 .payments-new .ui-chip:has(input:disabled){opacity:.5;cursor:not-allowed}
 body.v2 .payments-seg{display:grid;grid-template-columns:1fr 1fr}body.v2 .payments-seg .ui-chip{justify-content:center}
 body.v2 .payments-new .ui-form-actions{display:block;margin-top:8px}body.v2 .payments-new .ui-form-actions .ui-btn{width:100%;min-height:50px;justify-content:center}
 @media (min-width:1024px){body.v2 .payments-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}}
@@ -2937,6 +2943,7 @@ body.v2 :is(.success-notice-close, .toast-stack .toast[data-toast-kind="success"
 body.v2 .toast-stack .toast[data-toast-kind] > [data-toast-close] { flex: 0 0 32px; display: inline-grid; place-items: center; width: 32px; height: 32px; min-width: 32px; min-height: 32px; margin: 0 0 0 auto; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--ink-secondary, #5b5a55); font-size: 16px; line-height: 1; cursor: pointer; }
 body.v2 .toast-stack .toast[data-toast-kind] > [data-toast-close]:hover { background: var(--surface-hover, #f1f0ec); color: var(--ink); }
 @media (max-width:767px){body.v2 .toast-stack .toast[data-toast-kind] > [data-toast-close]{flex-basis:44px;width:44px;height:44px;min-width:44px;min-height:44px}}
+body.v2 .toast-stack .toast[data-toast-kind] > a.ui-btn{margin-right:8px}
 body.v2 .toast-stack .toast .toast-pill { min-height: 44px; padding: 8px 18px; border: 0; border-radius: 999px; background: var(--s); color: var(--ink); font-size: 14px; font-weight: 700; text-decoration: none; }
 body.v2 .toast-stack .toast .toast-pill:hover { color: var(--ink); }
 body.v2 .toast-stack .toast .toast-pill:focus-visible { outline: 2px solid #d0452d; outline-offset: 2px; }
@@ -3420,3 +3427,6 @@ body.v2 #stay-fee-settings details.fee-more[open]>summary{margin-bottom:var(--sp
   body.v2 .ui-page[data-body-kind="detail"]:has(#property-settings-form)>.ui-body-detail{max-width:min(var(--lane),calc(100% - 128px));margin-left:auto;margin-right:auto;box-sizing:border-box}
   body.v2 .ui-page[data-body-kind="detail"]:has(#property-settings-form)>.ui-body-detail>:is(nav.prop-strip,.prop-after-strip,.form.prop-form-single.property-detail){max-width:none;margin-left:0;margin-right:0}
 }
+/* 1071: a stored-alert row (dismiss X) keeps its action clear of the dismiss X (12 px gap to the 44 px hit box) */
+body.v2 .needs-you-item[data-needs-you="alert"][data-notification] .needs-you-actions{margin-top:22px}
+@media (min-width:1024px){body.v2 #needs-action .needs-you-item[data-needs-you="alert"][data-notification]{padding-right:72px}body.v2 .needs-you-item[data-needs-you="alert"][data-notification] .needs-you-actions{margin-top:0}}

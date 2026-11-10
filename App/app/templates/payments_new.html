@@ -32,13 +32,14 @@
         {% for s in stays %}<option value="{{ s.id }}"{% if selected_reservation_id == s.id %} selected{% endif %}>{{ s.label }}</option>{% endfor %}
       </select></div>
     <div class="ui-field"><label for="pay-new-guest_email">{{ t('payments.field.guest_email') }}</label>
-      <input id="pay-new-guest_email" type="email" name="guest_email"></div>
+      <input id="pay-new-guest_email" type="email" name="guest_email" autocomplete="off" autocapitalize="none" spellcheck="false"{% if guest_email_prefill %} value="{{ guest_email_prefill }}"{% endif %}></div>
     <fieldset class="ui-field">
       <legend>{{ t('payments.field.rail') }}</legend>
       <div class="ui-chips payments-seg">
         <label class="ui-chip"><input type="radio" name="rail" value="card" checked> {{ t('payments.new.rail_card') }}</label>
-        <label class="ui-chip"><input type="radio" name="rail" value="qr"> {{ t('payments.new.rail_qr') }}</label>
+        <label class="ui-chip"><input type="radio" name="rail" value="qr"{% if no_bank %} disabled{% endif %}> {{ t('payments.new.rail_qr') }}</label>
       </div>
+      {% if no_bank %}<p class="ui-sub ui-note-line">{{ t('payments.err.no_iban') }}</p><div class="ui-chips ui-note-line">{{ ui_button(t('payments.fix.bank'), 'quiet', href='/entities', size='compact') }}</div>{% endif %}
     </fieldset>
     <div class="ui-form-actions">{{ ui_button(t('payments.new.submit'), 'primary', type='submit') }}</div>
   </form>

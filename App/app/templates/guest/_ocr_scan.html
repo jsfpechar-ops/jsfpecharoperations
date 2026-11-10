@@ -1,5 +1,5 @@
 <div class="g-field" id="ocr-scan">
-  <label class="g-btn secondary" for="ocr-scan-file">{{ t('ocr_scan_button') }}</label>
+  <label class="g-btn" for="ocr-scan-file">{{ t('ocr_scan_button') }}</label>
   <input type="file" id="ocr-scan-file" accept="image/jpeg,image/png,image/webp"
          style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0 0 0 0)">
   <p class="hint" id="ocr-scan-hint" style="margin-top:12px">{{ t('ocr_scan_hint') }}</p>
@@ -12,9 +12,30 @@
   if (!fileInput) return;
   var form = fileInput.form;
 
+  var chipText = {{ t('ocr_filled_chip') | tojson }};
+
+  function clearChips() {
+    Array.prototype.forEach.call(document.querySelectorAll('.g-scan-chip'), function (chip) {
+      chip.parentNode.removeChild(chip);
+    });
+  }
+
+  function addChip(el) {
+    var box = el.closest('.g-field');
+    if (!box) return;
+    var chip = document.createElement('span');
+    chip.className = 'g-chip g-scan-chip';
+    chip.textContent = chipText;
+    box.appendChild(chip);
+    function drop() { if (chip.parentNode) chip.parentNode.removeChild(chip); }
+    el.addEventListener('input', drop, { once: true });
+    el.addEventListener('change', drop, { once: true });
+  }
+
   function fillFields(values) {
     var map = { surname: 'surname', first_name: 'first_name', birth_date: 'birth_date',
                 nationality: 'nationality', doc_number: 'doc_number' };
+    clearChips();
     Object.keys(map).forEach(function (k) {
       var el = document.getElementById(map[k]);
       if (!el || !values[k]) return;
@@ -23,31 +44,95 @@
         : values[k];
       el.dispatchEvent(new Event('input', { bubbles: true }));
       el.dispatchEvent(new Event('change', { bubbles: true }));
+      addChip(el);
     });
   }
 
-  function showStatus(text) {
+  function showStatus(text, busy) {
     if (!scanStatus) return;
-    scanStatus.textContent = text;
+    scanStatus.textContent = '';
+    if (busy) {
+      var spin = document.createElement('span');
+      spin.className = 'g-spin';
+      spin.setAttribute('aria-hidden', 'true');
+      scanStatus.appendChild(spin);
+    }
+    scanStatus.appendChild(document.createTextNode(text));
     scanStatus.hidden = false;
+  }
+
+  // The server shrinks to 1568 px on the long edge anyway (doc_ocr.MAX_EDGE), so
+  // doing it here sends less data. The image is resampled here by the browser
+  // instead of by the server, plus one JPEG pass (unconfirmed for OCR, see the
+  // 1074 report). Any failure (old browser, odd file) falls back to the original.
+  var MAX_EDGE = 1568;
+  function shrink(file) {
+    if (!window.createImageBitmap || !/^image\/(jpeg|png|webp)$/.test(file.type)) {
+      return Promise.resolve(file);
+    }
+    return createImageBitmap(file, { imageOrientation: 'from-image' }).then(function (bmp) {
+      var longest = Math.max(bmp.width, bmp.height);
+      if (longest <= MAX_EDGE && file.size <= 1500000) { bmp.close(); return file; }
+      var scale = Math.min(1, MAX_EDGE / longest);
+      var canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bmp.width * scale));
+      canvas.height = Math.max(1, Math.round(bmp.height * scale));
+      var ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+      bmp.close();
+      return new Promise(function (resolve) {
+        canvas.toBlob(function (blob) {
+          resolve(blob && blob.size < file.size
+            ? new File([blob], 'scan.jpg', { type: 'image/jpeg' }) : file);
+        }, 'image/jpeg', 0.9);
+      });
+    }).catch(function () { return file; });
   }
 
   fileInput.addEventListener('change', function () {
     var file = fileInput.files && fileInput.files[0];
     if (!file || !form) return;
-    var body = new FormData();
-    body.append('passport_photo', file);
-    body.append('_csrf', form.elements._csrf.value);
+    var csrf = form.elements._csrf.value;
     fileInput.disabled = true;
-    showStatus({{ t('ocr_scan_working') | tojson }});
-    fetch(form.getAttribute('action').replace(/\/save\?/, '/scan?'), {
-      method: 'POST',
-      body: body,
-      headers: { Accept: 'application/json' }
+    showStatus({{ t('ocr_scan_working') | tojson }}, true);
+    shrink(file).then(function (photo) {
+      var body = new FormData();
+      body.append('passport_photo', photo, photo.name || file.name);
+      body.append('_csrf', csrf);
+      return fetch(form.getAttribute('action').replace(/\/save\?/, '/scan?'), {
+        method: 'POST',
+        body: body,
+        headers: { Accept: 'application/json' }
+      });
     }).then(function (res) { return res.json(); }).then(function (data) {
       if (data.kind === 'values') {
         fillFields(data.values);
-        showStatus({{ t('ocr_scan_done') | tojson }});
+        var nat = document.getElementById('nationality');
+        var natError = document.getElementById('nationality_error');
+        if (!data.values.nationality) {
+          // The scan could not read the nationality: say so once, under the picker,
+          // so it stays in view, and open the picker when it is empty (a value from
+          // an earlier scan is kept). The guest chooses it; nothing is filled for them.
+          var missing = {{ t('ocr_nationality_missing') | tojson }};
+          if (natError) {
+            showStatus({{ t('ocr_scan_done') | tojson }});
+            natError.textContent = missing;
+            natError.setAttribute('data-ocr', '1');
+            natError.hidden = false;
+          } else {
+            showStatus({{ t('ocr_scan_done') | tojson }} + ' ' + missing);
+          }
+          if (nat && !nat.value) (document.getElementById('nationality_search') || nat).focus();
+        } else {
+          if (natError && natError.hasAttribute('data-ocr')) {
+            natError.removeAttribute('data-ocr');
+            natError.hidden = true;
+          }
+          showStatus({{ t('ocr_scan_done') | tojson }});
+        }
       } else {
         showStatus(data.message || {{ t('ocr_unavailable') | tojson }});
       }

@@ -17,6 +17,8 @@ from __future__ import annotations
 
 import csv
 import io
+import json
+import math
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 from zoneinfo import ZoneInfo
@@ -107,6 +109,8 @@ _SQL = (
     "JOIN apartment a ON a.id = r.apartment_id "
     "WHERE a.owner_user_id = u.id AND r.registration_completed_at IS NOT NULL "
     "AND COALESCE(r.source, '') != 'demo') AS first_guest_at, "
+    "(SELECT MIN(a.ubyport_verified_at) FROM apartment a "
+    "WHERE a.owner_user_id = u.id) AS first_police_at, "
     "fs.first_filing_at, fs.last_filing_at, "
     "COALESCE(fs.filings_previous, 0) AS filings_previous, "
     "COALESCE(fs.filings_current, 0) AS filings_current "
@@ -287,3 +291,63 @@ def weekly(now: Optional[datetime] = None) -> Dict[str, List[Dict[str, Any]]]:
             (*FILED_STATES, since),
         ),
     }
+
+
+# Brief 1065: first-run stage times, the baseline for the speed plan (section 9).
+# Not part of stages(): the PostHog sync, the counts and the CSV read stages().
+FIRST_RUN_TIMES: Tuple[Tuple[str, str], ...] = (
+    ("first_property", "first_property_at"),
+    ("first_calendar", "first_calendar_at"),
+    ("first_police", "first_police_at"),
+    ("first_guest", "first_guest_at"),
+)
+
+
+def _seconds_between(start: Any, end: Any) -> Optional[int]:
+    """Whole seconds from start to end (ISO strings), or None if missing, unparsable or negative."""
+    try:
+        first = datetime.fromisoformat(str(start))
+        last = datetime.fromisoformat(str(end))
+    except (TypeError, ValueError):
+        return None
+    if first.tzinfo is None:
+        first = first.replace(tzinfo=timezone.utc)
+    if last.tzinfo is None:
+        last = last.replace(tzinfo=timezone.utc)
+    seconds = int((last - first).total_seconds())
+    return seconds if seconds >= 0 else None
+
+
+def first_run_times(data: Optional[Dict[str, Any]] = None) -> Dict[str, Dict[str, Optional[int]]]:
+    """Per stage: accounts that reached it, median and 75th percentile seconds since account created.
+
+    Aggregates only; no account id, name or e-mail leaves this function.
+    """
+    data = data if data is not None else rows()
+    result: Dict[str, Dict[str, Optional[int]]] = {}
+    for key, column in FIRST_RUN_TIMES:
+        values = sorted(
+            s
+            for s in (_seconds_between(r.get("created_at"), r.get(column)) for r in data["rows"])
+            if s is not None
+        )
+        if not values:
+            result[key] = {"accounts": 0, "median_seconds": None, "p75_seconds": None}
+            continue
+        mid = len(values) // 2
+        median = values[mid] if len(values) % 2 else (values[mid - 1] + values[mid]) // 2
+        result[key] = {
+            "accounts": len(values),
+            "median_seconds": median,
+            "p75_seconds": values[max(0, math.ceil(0.75 * len(values)) - 1)],
+        }
+    return result
+
+
+def main() -> None:
+    """``python -m app.admin_funnel``: print the first-run stage times as JSON."""
+    print(json.dumps(first_run_times(), indent=2))
+
+
+if __name__ == "__main__":
+    main()

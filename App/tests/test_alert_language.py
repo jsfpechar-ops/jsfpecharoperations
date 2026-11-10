@@ -31,6 +31,7 @@ STORED_KINDS = {
     "turnstile_unavailable": {},
     "guest_pin_rotated": {},
     "guest_pin_abuse": {},
+    "stay_fee_no_pay_way": {"property": "Loft"},
 }
 
 ENGLISH_MARKER = "english log copy"

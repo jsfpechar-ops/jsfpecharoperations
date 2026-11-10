@@ -43,8 +43,9 @@
     <div class="g-field">
       <label for="guest_email">{{ t('claim_email') }}</label>
       <input type="email" id="guest_email" name="guest_email" required autocomplete="email"
+             autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="email"
              maxlength="254">
-      <div class="hint">{{ t('tw_email_short') }}</div>
+      <div class="hint">{{ t('claim_email_why') }}</div>
       <details class="g-claim-help">
         <summary aria-label="{{ t('email_help_label') }}">?</summary>
         <div class="hint">{{ t('claim_email_help') }}</div>

@@ -800,9 +800,9 @@ async def smart_locks_refresh(request: Request):
     # No usable lock now means the page shows the sharing steps again.
     share = _smart_locks_url(request, return_to, "share")
     if not locks and plain_keys:
-        return _back(share, err=_flash(request, "flash.error.smart_locks_plain_key"))
+        return _back(share, err=_flash(request, "flash.error.smart_locks_plain_key"), fix="lock_guide")
     if not locks:
-        return _back(share, msg=_flash(request, "flash.ok.smart_locks_none_yet"))
+        return _back(share, msg=_flash(request, "flash.ok.smart_locks_none_yet"), fix="lock_guide")
     count = len(locks)
     if count == 1:
         _default_on_first_lock(owner_id, locks[0]["lock_id"])
@@ -928,8 +928,10 @@ def _entities_page(
             "entity": edit_entity,
             **invoice_routes.invoice_bank_view(edit_entity),
         }
+    account_user = auth.current_user(request)
     context.update(
         {
+            "account_email": (account_user["email"] or "") if account_user else "",
             "edit_entity": edit_entity,
             "new_entity": new_entity,
             "signature_preview": signature_preview,
@@ -1207,6 +1209,12 @@ def _resolve_controller_alerts(entity_id: int) -> None:
             alerts.resolve(f"controller_missing:{apartment['id']}")
 
 
+def _reconcile_pay_way_alerts(entity_id: int) -> None:
+    """1071: an operator's bank account may have changed; re-check the properties that use it."""
+    for apartment in db.query("SELECT id FROM apartment WHERE legal_entity_id = ?", (entity_id,)):
+        stay_fee.reconcile_no_pay_way_alert(apartment["id"])
+
+
 @router.post("/entities")
 async def create_entity(request: Request):
     guard = auth.require_login(request)
@@ -1267,6 +1275,7 @@ async def update_entity(entity_id: int, request: Request):
     payload.update(signature)
     db.update("legal_entity", entity_id, payload)
     _resolve_controller_alerts(entity_id)
+    _reconcile_pay_way_alerts(entity_id)
     # 0076: back to where the editor was opened from (property, invoice), if any.
     next_path = _entity_next(_form_str(form, "next"))
     return _back(next_path or "/entities", msg=_flash(request, "flash.entities.saved"))
@@ -2955,6 +2964,7 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
         # earlier link keeps redirecting to the current one.
         guest_slug.follow_name(db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,)))
     db.audit("apartment_updated", f"id={apartment_id}")
+    stay_fee.reconcile_no_pay_way_alert(apartment_id)
     if "lock_provider" in payload and payload["lock_provider"] != prior_lock_provider:
         if payload["lock_provider"] == "ttlock":
             db.audit("door_codes_on", f"apartment={apartment_id}")

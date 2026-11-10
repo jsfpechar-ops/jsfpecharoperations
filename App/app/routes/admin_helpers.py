@@ -72,7 +72,7 @@ def _flash_message(text: str, key: str, *, count: Optional[int] = None) -> Flash
     return FlashMessage(text, key)
 
 
-def back(path: str, msg: str = "", err: str = "") -> RedirectResponse:
+def back(path: str, msg: str = "", err: str = "", fix: str = "") -> RedirectResponse:
     query = []
     if msg:
         query.append(f"msg={quote(msg)}")
@@ -86,6 +86,11 @@ def back(path: str, msg: str = "", err: str = "") -> RedirectResponse:
                 query.append("toast_sticky=1")
     if err:
         query.append(f"err={quote(err)}")
+    if fix:
+        from ..templating import FIX_TARGETS
+
+        if fix in FIX_TARGETS:
+            query.append(f"fix={quote(fix)}")
     if not query:
         return RedirectResponse(path, status_code=303)
     qs = "&".join(query)

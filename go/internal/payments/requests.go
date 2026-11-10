@@ -99,7 +99,7 @@ func RequestNewHandler(pool *pgxpool.Pool, getenv func(string) string, now func(
 		owner := h.Workspace.ID
 		lang := hostweb.Lang(r)
 		invalid := func() {
-			hostweb.Back(w, r, "/payments", hostweb.Flash{}, requestFlash(lang, "payments.err.invalid"))
+			hostweb.Back(w, r, "/payments/new", hostweb.Flash{}, requestFlash(lang, "payments.err.invalid"))
 		}
 
 		reason := strings.TrimSpace(r.PostFormValue("reason"))
@@ -109,7 +109,7 @@ func RequestNewHandler(pool *pgxpool.Pool, getenv func(string) string, now func(
 		}
 		amount, ok := paymentAmount(strings.TrimSpace(r.PostFormValue("amount_czk")))
 		if !ok {
-			hostweb.Back(w, r, "/payments", hostweb.Flash{}, requestFlash(lang, "payments.err.amount"))
+			hostweb.Back(w, r, "/payments/new", hostweb.Flash{}, requestFlash(lang, "payments.err.amount"))
 			return
 		}
 		var reservationID *int64
@@ -141,6 +141,19 @@ func RequestNewHandler(pool *pgxpool.Pool, getenv func(string) string, now func(
 		if !requestRails[rail] {
 			invalid()
 			return
+		}
+		if rail == "qr" {
+			has, err := hasBankAccount(ctx, pool, owner)
+			if err != nil {
+				requestFail(w, err)
+				return
+			}
+			if !has {
+				f := requestFlash(lang, "payments.err.no_iban")
+				f.Fix = "bank"
+				hostweb.Back(w, r, "/payments/new", hostweb.Flash{}, f)
+				return
+			}
 		}
 		stamp := stampAt(at)
 
@@ -250,7 +263,9 @@ func RequestSendHandler(pool *pgxpool.Pool, getenv func(string) string, now func
 				return
 			}
 			if link == "" {
-				flashErr("payments.err.not_ready")
+				f := requestFlash(lang, "payments.err.not_ready")
+				f.Fix = "stripe"
+				hostweb.Back(w, r, "/payments", hostweb.Flash{}, f)
 				return
 			}
 		} else {

@@ -292,7 +292,7 @@
         const cr = rectOf(c);
         const hOverlap = Math.min(lr.right, cr.right) - Math.max(lr.left, cr.left);
         const gap = lr.top - cr.bottom;
-        if (hOverlap > 8 && gap >= -1 && gap < 12 && getComputedStyle(c).position !== 'fixed') add('tight-stack', lab, 'label only ' + Math.max(0, Math.round(gap)) + 'px below button "' + (c.innerText || '').trim().slice(0, 20) + '"', 'at y=' + Math.round(lr.top + scrollY) + ' button ' + (c.className || c.tagName));
+        if (hOverlap > 8 && gap >= -1 && gap < 12 && !(() => { for (let n = c; n && n !== document.documentElement; n = n.parentElement) if (getComputedStyle(n).position === 'fixed') return true; return false; })()) add('tight-stack', lab, 'label only ' + Math.max(0, Math.round(gap)) + 'px below button "' + (c.innerText || '').trim().slice(0, 20) + '"', 'at y=' + Math.round(lr.top + scrollY) + ' button ' + (c.className || c.tagName));
       }
     }
     // 10c. Half-width inputs on a phone: a field that could fill its column but stops short.

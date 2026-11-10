@@ -4,9 +4,11 @@
 <div class="ui-section" style="max-width:480px;margin:2rem auto;padding:1.5rem;">
   <h1>{{ t('payments.qr.title') }}</h1>
   {% if pay_request.status == 'paid' %}<p><span class="ui-badge ui-badge-done" data-tone="green">{{ t('payments.status.paid') }}</span></p>{% endif %}
+  {% if no_account_text %}<p>{{ no_account_text }}</p>{% else %}
   <p>{{ t('payments.qr.amount') }}: <strong>{{ pay_request.amount_czk }} {{ t('payments.czk') }}</strong></p>
   <p>{{ t('payments.qr.vs') }}: <strong class="ui-mono">{{ pay_request.variable_symbol }}</strong></p>
   <img src="{{ png_url }}" alt="{{ t('payments.qr.alt') }}" width="260" height="260" style="display:block;margin:1rem auto;">
   <p class="ui-sub">{{ t('payments.qr.disclosure') }}</p>
+  {% endif %}
 </div>
 {% endblock %}

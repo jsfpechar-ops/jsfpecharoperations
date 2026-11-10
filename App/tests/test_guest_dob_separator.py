@@ -44,10 +44,10 @@ def test_the_guest_dob_messages_ask_for_dotted_dates():
         "Zadejte celé datum ve formátu DD.MM.RRRR."
     )
     assert validation_i18n.GUEST_EN_MESSAGES[DATE_MESSAGE] == (
-        "Date of birth: enter the full date as DD.MM.YYYY."
+        "Date of birth: enter the full date as DD.MM.YYYY, for example 14.03.1961."
     )
     assert validation_i18n.GUEST_CS_MESSAGES[DATE_MESSAGE] == (
-        "Datum narození: zadejte celé datum ve formátu DD.MM.RRRR."
+        "Datum narození: zadejte celé datum ve formátu DD.MM.RRRR, například 14.03.1961."
     )
 
 

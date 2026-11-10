@@ -116,13 +116,13 @@
       <div class="g-field">
         <label for="first_name">{{ t('first_name') }}</label>
         <input class="{{ bad('first_name') }}" {{ invalid('first_name') }} type="text" id="first_name" name="first_name" maxlength="24"
-               autocomplete="given-name" required value="{{ val('first_name') }}">
+               autocomplete="given-name" autocapitalize="words" required value="{{ val('first_name') }}">
         {{ err_for('first_name') }}
       </div>
       <div class="g-field">
         <label for="surname">{{ t('surname') }}</label>
         <input class="{{ bad('surname') }}" {{ invalid('surname') }} type="text" id="surname" name="surname" maxlength="50" required
-               autocomplete="family-name" value="{{ val('surname') }}">
+               autocomplete="family-name" autocapitalize="words" value="{{ val('surname') }}">
         {{ err_for('surname') }}
       </div>
     </div>
@@ -143,7 +143,7 @@
         <label for="nationality">{{ t('nationality') }}</label>
         <select class="{{ bad('nationality') }}" {{ invalid('nationality') }} id="nationality" name="nationality"
                 data-guest-placeholder="{{ t('tw_country_search') }}" data-guest-none="{{ t('tw_country_none') }}"
-                data-guest-required="{{ t('tw_country_required') }}" required>
+                data-guest-required="{{ t('tw_country_required') }}" autocomplete="off" required>
           <option value="">—</option>
           {% for group in country_groups %}
             <optgroup label="{{ t(group.key) }}">
@@ -161,13 +161,13 @@
     <div class="g-field" id="doc-wrap">
       <label for="doc_number">{{ t('doc_number') }}</label>
       <input class="{{ bad('doc_number') }}" {{ invalid('doc_number') }} type="text" id="doc_number" name="doc_number" maxlength="30"
-             autocapitalize="characters" spellcheck="false" autocorrect="off"
+             autocapitalize="characters" autocomplete="off" spellcheck="false" autocorrect="off"
              value="{{ val('doc_number') if val('doc_number') != inpass else '' }}">
       <div class="hint">{{ t('doc_number_help') }}</div>
       {{ err_for('doc_number') }}
     </div>
 
-    <div class="g-field">
+    <div class="g-field" id="child-wrap">
       <label class="checkline" for="child_in_passport">
         <input type="checkbox" id="child_in_passport" name="child_in_passport" value="1"
                {% if values.get('child_in_passport') or (guest and guest.doc_number == inpass) %}checked{% endif %}>
@@ -181,21 +181,21 @@
     <div class="g-field" id="parent-doc-wrap" style="display:none">
       <label for="parent_doc_number">{{ t('parent_doc') }}</label>
       <input class="{{ bad('parent_doc_number') }}" {{ invalid('parent_doc_number') }} type="text" id="parent_doc_number" name="parent_doc_number" maxlength="30"
-             autocapitalize="characters" value="{{ values.get('parent_doc_number', '') }}">
+             autocapitalize="characters" autocomplete="off" spellcheck="false" autocorrect="off" value="{{ values.get('parent_doc_number', '') }}">
       {{ err_for('parent_doc_number') }}
     </div>
 
     <div class="g-field">
       <label for="visa_number">{{ t('visa_number') }} <span class="opt">({{ t('optional') }})</span></label>
       <input class="{{ bad('visa_number') }}" {{ invalid('visa_number') }} type="text" id="visa_number" name="visa_number" maxlength="15"
-             autocapitalize="characters" spellcheck="false" autocorrect="off" value="{{ val('visa_number') }}">
+             autocapitalize="characters" autocomplete="off" spellcheck="false" autocorrect="off" value="{{ val('visa_number') }}">
       <div class="hint">{{ t('visa_help') }}</div>
       {{ err_for('visa_number') }}
     </div>
 
     <div class="g-field">
       <label for="purpose">{{ t('purpose') }}</label>
-      <select id="purpose" name="purpose">
+      <select id="purpose" name="purpose" autocomplete="off">
         {% for purpose in purposes %}
           <option value="{{ purpose.code }}"
             {% if (val('purpose') or default_purpose) == purpose.code %}selected{% endif %}>
@@ -237,13 +237,13 @@
     <div class="g-field">
       <label for="res_city">{{ t('res_city') }}</label>
       <input class="{{ bad('res_city') }}" {{ invalid('res_city') }} type="text" id="res_city" name="res_city" maxlength="42"
-             autocomplete="address-level2" required value="{{ val('res_city') }}">
+             autocomplete="address-level2" autocapitalize="words" required value="{{ val('res_city') }}">
       {{ err_for('res_city') }}
     </div>
     <div class="g-field">
       <label for="res_street">{{ t('res_street') }}</label>
       <input class="{{ bad('res_street') }}" {{ invalid('res_street') }} type="text" id="res_street" name="res_street" maxlength="42"
-             autocomplete="address-line1" required value="{{ val('res_street') }}">
+             autocomplete="address-line1" autocapitalize="words" required value="{{ val('res_street') }}">
       {{ err_for('res_street') }}
     </div>
     {% if ruian_suggest_url %}

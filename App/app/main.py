@@ -357,8 +357,45 @@ async def cloudflare_connecting_ip(request: Request, call_next):
         metrics.observe_request(
             request.method, _access_route(request), response.status_code,
             time.perf_counter() - started,
+            db_queries=stats.queries, db_seconds=stats.db_seconds,
         )
+    if _signed_in_page(request):
+        response.headers["Server-Timing"] = _server_timing(stats, started)
     return response
+
+
+# 1072-cont-1: pages a visitor, guest or e-mail recipient opens by link or token.
+# Prefixes end in "/" so host pages such as /payments or /privacy-requests keep the header.
+_PUBLIC_PREFIXES = (
+    "/cleaning/shared/", "/g/", "/p/", "/pay/", "/invoice/d/", "/photos/property/",
+    "/pruvodce/", "/terms/", "/mail/unsubscribe/",
+)
+_PUBLIC_PAGES = frozenset(
+    {"/terms", "/privacy", "/legal", "/dpa", "/subprocessors", "/cenik", "/jak-to-funguje"}
+)
+
+
+def _signed_in_page(request: Request) -> bool:
+    """Server-Timing goes only to a signed-in host (1072): the numbers describe
+    that host's own page and are not worth showing a visitor or a guest. Guest
+    links, token links, legal pages and the shared cleaning schedule never get
+    it, even for a host."""
+    path = request.url.path
+    if path.startswith("/static/") or path in ("/metrics", "/healthz"):
+        return False
+    if _is_guest_path(request) or path in _PUBLIC_PAGES or path.startswith(_PUBLIC_PREFIXES):
+        return False
+    if analytics.is_public_page(request):
+        return False
+    return getattr(request.state, "user_account", None) is not None
+
+
+def _server_timing(stats: "db.RequestStats", started: float) -> str:
+    """``db;dur=<ms>;desc="<n> queries", app;dur=<ms>``: counts and milliseconds only."""
+    return (
+        f'db;dur={stats.db_seconds * 1000:.1f};desc="{stats.queries} queries", '
+        f"app;dur={(time.perf_counter() - started) * 1000:.1f}"
+    )
 
 
 # WP07: every /static URL in the templates carries ?v=<key>, and the key is

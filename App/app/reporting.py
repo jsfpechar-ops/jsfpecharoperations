@@ -1090,30 +1090,37 @@ def due_for_automatic_send(
     mode = apartment["automation_mode"]
     if mode == "manual":
         return False
-    # No completion, no send. The sweep refreshes the quiet-window completion
-    # before it asks, so a stay that has gone quiet is not held open for ever;
-    # eligibility still comes from the guests' own forms, never from the fact
-    # that this code was deployed.
-    completed_at = reservation["registration_completed_at"]
-    if not completed_at:
-        return False
-    completed = _as_utc(completed_at)
-    if completed is None:
-        return False
     current = now or datetime.now(timezone.utc)
     if current.tzinfo is None:
         current = current.replace(tzinfo=timezone.utc)
-    delay = timedelta(
-        hours=0 if mode == "immediate" else (apartment["submit_after_hours"] or 24)
-    )
-    send_at = completed.astimezone(timezone.utc) + delay
     if anchor is _ANCHOR_UNSET:
         anchor = reservation_deadline_anchor(reservation)
+    latest = None
     if anchor is not None:
         deadline_local = deadlines.reporting_deadline(anchor) - timedelta(
             hours=AUTOMATIC_SEND_DEADLINE_MARGIN_HOURS
         )
         latest = deadline_local.replace(tzinfo=ZoneInfo(config.TIMEZONE)).astimezone(timezone.utc)
+    # Before the deadline margin: no completion, no send. The sweep refreshes
+    # the quiet-window completion before it asks, so a stay that has gone
+    # quiet is not held open for ever. From the margin on (brief 1070, owner
+    # decision 2026-11-09), the people already registered are filed even when
+    # the stay is short of its declared count or has none: waiting for the
+    # quiet window could file them after the legal deadline. This ends the old
+    # rule that a deploy alone never makes a stay eligible: every stay already
+    # past its margin when this ships is filed by the first sweep (backlog
+    # rule: all of them). Each guest is still checked for a complete form by
+    # the caller, SENT rows are never collected, and anyone who registers later
+    # is filed by the next sweep.
+    completed_at = reservation["registration_completed_at"]
+    completed = _as_utc(completed_at) if completed_at else None
+    if completed is None:
+        return latest is not None and current.astimezone(timezone.utc) >= latest
+    delay = timedelta(
+        hours=0 if mode == "immediate" else (apartment["submit_after_hours"] or 24)
+    )
+    send_at = completed.astimezone(timezone.utc) + delay
+    if latest is not None:
         send_at = min(send_at, latest)
     return current.astimezone(timezone.utc) >= send_at
 
