@@ -9,7 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 from starlette.responses import Response
 
-from app import auth, config, db, mail, turnstile
+from app import auth, config, db, mail, templating, turnstile
 from app import signup as signup_app
 from app.main import app
 from tests.conftest import login_as
@@ -173,3 +173,62 @@ def test_signup_still_requires_turnstile(monkeypatch):
     )
     assert "host_signup" in asked
     assert response.status_code == 403
+
+
+def test_login_page_hides_the_widget_with_a_valid_device_cookie(monkeypatch):
+    monkeypatch.setattr(config, "TURNSTILE_SITE_KEY", "test-site-key")
+    monkeypatch.setitem(templating.templates.env.globals, "turnstile_site_key", "test-site-key")
+    account, email, username = _host()
+    signed_in = TestClient(app, base_url=BASE)
+    login_as(signed_in, username, url="/login?lang=en")
+    device = signed_in.cookies.get(auth.DEVICE_COOKIE)
+    assert device, "login should set the device cookie"
+
+    new_browser = TestClient(app, base_url=BASE)
+    new_browser.cookies.set(auth.DEVICE_COOKIE, device)
+    body = new_browser.get("/login?lang=en").text
+    assert "cf-turnstile" not in body
+    assert "challenges.cloudflare.com" not in body
+
+
+def test_login_page_shows_the_widget_without_a_device_cookie(monkeypatch):
+    monkeypatch.setitem(templating.templates.env.globals, "turnstile_site_key", "test-site-key")
+    body = TestClient(app, base_url=BASE).get("/login?lang=en").text
+    assert "cf-turnstile" in body
+    assert "challenges.cloudflare.com" in body
+
+
+def test_login_page_shows_the_widget_with_a_forged_or_stale_device_cookie(monkeypatch):
+    monkeypatch.setattr(config, "TURNSTILE_SITE_KEY", "test-site-key")
+    monkeypatch.setitem(templating.templates.env.globals, "turnstile_site_key", "test-site-key")
+    garbage = TestClient(app, base_url=BASE)
+    garbage.cookies.set(auth.DEVICE_COOKIE, "garbage")
+    assert "cf-turnstile" in garbage.get("/login?lang=en").text
+
+    account, email, username = _host()
+    signed_in = TestClient(app, base_url=BASE)
+    login_as(signed_in, username, url="/login?lang=en")
+    device = signed_in.cookies.get(auth.DEVICE_COOKIE)
+    db.execute(
+        "UPDATE user_account SET session_version = session_version + 1 WHERE id = ?",
+        (account["id"],),
+    )
+    stale = TestClient(app, base_url=BASE)
+    stale.cookies.set(auth.DEVICE_COOKIE, device)
+    assert "cf-turnstile" in stale.get("/login?lang=en").text
+
+
+def test_turnstile_failure_rerenders_the_form_with_the_widget(monkeypatch):
+    monkeypatch.setattr(config, "TURNSTILE_SITE_KEY", "test-site-key")
+    monkeypatch.setitem(templating.templates.env.globals, "turnstile_site_key", "test-site-key")
+    account, email, username = _host()
+    other, other_email, _ = _host("Other Host")
+    signed_in = TestClient(app, base_url=BASE)
+    login_as(signed_in, username, url="/login?lang=en")
+    device = signed_in.cookies.get(auth.DEVICE_COOKIE)
+
+    new_browser = TestClient(app, base_url=BASE)
+    new_browser.cookies.set(auth.DEVICE_COOKIE, device)
+    response = new_browser.post("/login", data={"email": other_email})
+    assert response.status_code == 403
+    assert "cf-turnstile" in response.text

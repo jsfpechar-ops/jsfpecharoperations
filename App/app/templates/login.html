@@ -66,7 +66,7 @@
                autocomplete="{{ 'email webauthn' if passkeys_enabled() else 'email' }}" autocapitalize="none" spellcheck="false"
                placeholder="{{ t('login.email_ph') }}">
       </div>
-      {% if turnstile_site_key %}
+      {% if turnstile_site_key and not skip_turnstile %}
         <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}"
              data-action="host_login" data-language="{{ lang }}"></div>
       {% endif %}
@@ -86,7 +86,7 @@
     <p>{{ t('login.footnote', email=operator().email) }}</p>
   </div>
 </section>
-{% if turnstile_site_key %}
+{% if turnstile_site_key and (staging_password_enabled or not skip_turnstile) %}
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 {% endif %}
 {% if passkeys_enabled() and not staging_password_enabled %}
