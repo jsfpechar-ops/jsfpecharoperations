@@ -386,16 +386,15 @@ def _completion_fee(apartment, reservation) -> Optional[Dict]:
             for line in charge["lines"]
             if int(line["liable_nights"]) > 0
         ]
-        keys = {
-            "iban" if part == "qr" else part
-            for part in (apartment["stay_fee_guest_rails"] or "").split(",")
-            if part
-        }
+        ways = stay_fee.guest_pay_ways(
+            apartment, reservation, charge, stay_fee.qr_offered_for_reservation(reservation)
+        )
         return {
             "total": int(charge["total_czk"]),
             "lines": lines,
             "rate": int(charge["rate_czk"]),
-            "rails": [key for key in ("iban", "revolut", "cash") if key in keys],
+            "rails": [way["key"] for way in ways],
+            "ways": ways,
             "vs": str(int(reservation["id"])),
         }
     except Exception:  # the receipt must never fail because of the fee block
@@ -783,9 +782,11 @@ def maybe_notify_completion(reservation, apartment, *, force: bool = False) -> N
         expected=expected,
     )
     payload = mail_notify.guest_payload(apartment, content, lang)
+    if content.get("qr_spayd"):
+        payload[mail.QR_SPAYD_KEY] = content["qr_spayd"]
     if code_row is not None:
         payload[mail.DOOR_CODE_KEY] = code_row["pin_enc"]
-    mail.enqueue(
+    outbox_id = mail.enqueue(
         kind="completion",
         idempotency_key=f"completion:{reservation['id']}:{progress['filled']}",
         to_email=claim["email"],
@@ -808,6 +809,15 @@ def maybe_notify_completion(reservation, apartment, *, force: bool = False) -> N
             "UPDATE door_code SET notified_at = ?, updated_at = ? WHERE id = ?",
             (db.utcnow(), db.utcnow(), code_row["id"]),
         )
+    if outbox_id:
+        try:
+            fee = _completion_fee(apartment, reservation)
+            if fee:
+                from . import fee_update
+
+                fee_update.record_baseline(reservation["id"], fee["total"])
+        except Exception:
+            log.exception("fee baseline not recorded reservation_id=%s", reservation["id"])
     mail.drain(limit=4)
 
 

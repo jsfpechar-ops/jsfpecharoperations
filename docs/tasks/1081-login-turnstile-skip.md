@@ -1,7 +1,7 @@
-# 1080: Skip the login Turnstile for a known browser
+# 1081: Skip the login Turnstile for a known browser
 
 Status: todo
-Depends on: none | Base commit: main | Branch: task/1080-login-turnstile-skip
+Depends on: none | Base commit: main | Branch: task/1081-login-turnstile-skip
 Executor: Haiku 5.5 | Fits one session
 
 ## 1. Objective
@@ -25,7 +25,7 @@ Owner goal: a host faces Cloudflare Turnstile about once a month. Today the serv
 | `App/app/templates/login.html` | edit | hide widget and script when `skip_turnstile` |
 | `App/tests/test_login_session_persistence.py` | edit | 4 new tests (step 4) |
 | `docs/context/decisions.md` | edit | append one line (step 5) |
-| `docs/tasks/1080-report.md` | create | §9 |
+| `docs/tasks/1081-report.md` | create | §9 |
 
 No other file may change.
 
@@ -76,8 +76,8 @@ def device_cookie_valid(request) -> bool:
    - `test_login_page_shows_the_widget_with_a_forged_or_stale_device_cookie`: cookie `ubyhost_device=garbage` and a cookie whose account `session_version` was bumped: widget present.
    - `test_turnstile_failure_rerenders_the_form_with_the_widget`: valid device cookie, POST `/login` with another e-mail and no token: status 403, body contains `cf-turnstile`.
    Existing tests at ~120 and ~133 must stay unchanged and green.
-5. `docs/context/decisions.md`: append at the end: `- 2026-11-10 [auth] Login hides the Turnstile widget when the browser has a valid signed device cookie (30 days, renewed on each login); the server still checks it against the typed e-mail, and a failed check or a blocked link request re-renders the form with the widget. Edge Managed Challenge and Challenge Passage stay in the Cloudflare dashboard (docs/CLOUDFLARE.md). | owner | 1080`
-6. Commit each step as `1080 step k`.
+5. `docs/context/decisions.md`: append at the end: `- 2026-11-10 [auth] Login hides the Turnstile widget when the browser has a valid signed device cookie (30 days, renewed on each login); the server still checks it against the typed e-mail, and a failed check or a blocked link request re-renders the form with the widget. Edge Managed Challenge and Challenge Passage stay in the Cloudflare dashboard (docs/CLOUDFLARE.md). | owner | 1081`
+6. Commit each step as `1081 step k`.
 
 ## 5. Do not touch
 
@@ -106,7 +106,7 @@ An anchor is not found verbatim; a test fails twice; a file outside §3 needs a 
 
 ## 9. Report
 
-`docs/tasks/1080-report.md` (600 tokens at most): files changed, each command with its last 5 lines, §7 ticked, deviations, questions. Set `Status: review` and open one PR. Merge only with `scripts/merge-pr-on-green.sh` (owner or orchestrator).
+`docs/tasks/1081-report.md` (600 tokens at most): files changed, each command with its last 5 lines, §7 ticked, deviations, questions. Set `Status: review` and open one PR. Merge only with `scripts/merge-pr-on-green.sh` (owner or orchestrator).
 
 ## Risk list (for the reviewer)
 

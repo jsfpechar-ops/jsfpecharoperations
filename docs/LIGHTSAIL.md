@@ -188,7 +188,7 @@ Caddy :443 → ubyhost:8080
 | No git at `/opt/ubyhost` | CI bootstraps if the lightsail layout exists; otherwise aborts | Clone as in setup, or let CI bootstrap |
 | Wrong branch / stale tree | `git reset --hard origin/main` **discards local edits** | Keep `.env` and `caddy/certs/` outside git (already gitignored) |
 | Stale image | Compose builds `ubyhost:local` each deploy with `--pull` of base images | If a layer looks cached wrongly: `docker compose build --no-cache` |
-| Automatic deploy after every green CI | Not offered — deploys never run on their own | Production deploys are manual: Actions → Deploy production → Run workflow, type DEPLOY |
+| Automatic deploy after every green CI | On: every green CI run on `main` deploys (so merging deploys) | Hold a PR as draft until it may go live; re-run by hand: Actions → Deploy production → Run workflow, type DEPLOY |
 | App starts but public HTTPS fails | Internal healthz OK; `smoke-remote.sh` warns | Cloudflare Full (strict), origin certs, Lightsail :443 |
 
 Rollback **code** (data stays):
@@ -377,7 +377,7 @@ The database volume is **not** replaced on deploy — only application code upda
 
 ### Deploy from GitHub Actions
 
-Production deploys are manual: Actions → Deploy production → Run workflow, type DEPLOY.
+Production deploys automatically when CI on `main` finishes green, so every merge deploys. To re-run by hand: Actions → Deploy production → Run workflow, type DEPLOY.
 
 Workflow **Deploy production** pins the run to the current `main` revision, verifies CI is green for it, then SSHs and runs `git reset --hard` + `./scripts/deploy.sh`.
 

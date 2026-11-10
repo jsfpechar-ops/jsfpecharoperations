@@ -87,7 +87,13 @@ def payout_account(apartment) -> Tuple[str, str]:
             if entity["iban"]:
                 account = entity["iban"]
             elif entity["bank_account"]:
-                account = payments.normalise_account(entity["bank_account"])[1]
+                try:
+                    account = payments.normalise_account(entity["bank_account"])[1]
+                except ValueError:
+                    # Same as guest_pay_ways: a malformed stored account is
+                    # not a pay way. Raising here 500s the guest hub and the
+                    # host save that reconciles the no-pay-way alert.
+                    account = ""
     return account, payee
 
 
@@ -603,6 +609,69 @@ def charge_for_reservation(apartment, reservation) -> Optional[Dict[str, Any]]:
     return {"total_czk": total, "liable_nights": liable,
             "rate_czk": stay_fee_rate.rate_on(schedule, last_night), "lines": lines,
             "mixed": not stay_fee_rate.is_uniform(schedule, first_night, last_night)}
+
+
+GUEST_RAIL_ORDER = ("iban", "revolut", "cash")
+
+
+def qr_offered_for_reservation(reservation) -> bool:
+    """True when the stay has a Czech or Slovak guest: their banks read the QR."""
+    rows = db.query(
+        "SELECT nationality FROM guest WHERE reservation_id = ? AND archived_at IS NULL",
+        (reservation["id"],),
+    )
+    return any((row["nationality"] or "").upper() in ("CZE", "SVK") for row in rows)
+
+
+def guest_pay_ways(apartment, reservation, charge, qr_ok) -> List[Dict[str, Any]]:
+    """The guest pay ways that really work, default first.
+
+    Same account, payee, enabled-set and order rules as the guest pay panel.
+    A rail that cannot work (bank without an account, Revolut without a link)
+    is left out.
+    """
+    total = int(charge["total_czk"])
+    vs = str(int(reservation["id"]))
+    account = ""
+    payee = ""
+    if apartment["legal_entity_id"]:
+        entity = db.query_one(
+            "SELECT iban, bank_account, name FROM legal_entity WHERE id = ?",
+            (apartment["legal_entity_id"],),
+        )
+        if entity is not None:
+            payee = (entity["name"] or "").strip()
+            if entity["iban"]:
+                account = entity["iban"]
+            elif entity["bank_account"]:
+                try:
+                    account = payments.normalise_account(entity["bank_account"])[1]
+                except ValueError:
+                    # A malformed stored account drops the bank way only, not the fee.
+                    account = ""
+    enabled = {part for part in (apartment["stay_fee_guest_rails"] or "").split(",") if part}
+    # A stored "qr" is the bank rail: it becomes one "iban" rail, with the QR on it.
+    if "qr" in enabled:
+        enabled.add("iban")
+    first = apartment["stay_fee_guest_default_rail"] or ""
+    if first == "qr":
+        first = "iban"
+    order = ([first] if first in GUEST_RAIL_ORDER else []) + [
+        key for key in GUEST_RAIL_ORDER if key != first
+    ]
+    ways: List[Dict[str, Any]] = []
+    for key in order:
+        if key not in enabled:
+            continue
+        if key == "iban" and account:
+            spayd = payments.spayd(account, total, vs, f"Stay fee {vs}") if qr_ok else ""
+            ways.append({"key": "iban", "payee": payee,
+                         "account": payments.format_iban(account), "spayd": spayd})
+        elif key == "revolut" and apartment["stay_fee_guest_revolut_link"]:
+            ways.append({"key": "revolut", "link": apartment["stay_fee_guest_revolut_link"]})
+        elif key == "cash":
+            ways.append({"key": "cash", "note": apartment["stay_fee_guest_cash_note"] or ""})
+    return ways
 
 
 def _rate_segments(period: Dict[str, Any]) -> List[List[int]]:
