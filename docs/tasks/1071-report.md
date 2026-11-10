@@ -1,6 +1,6 @@
 # 1071 report
 
-Status: blocked (UX gate; §8: fix needs CSS, outside §3/§5)
+Status: review
 
 Steps 1-9 done and committed. Targeted tests pass: stay-fee/invoice 1007 pass, alerts 65 pass, new 1071 tests + alert_language 44 pass, scheduler/i18n/copy 72 pass.
 
@@ -10,3 +10,5 @@ Blocking: test_layout_lint_browser, new card findings: button-overlap "Fix stay 
 
 Screenshots (dashboard only; the card shows only on the dashboard needs-you stack): docs/tasks/screenshots-1071/dashboard-{390,768,1280}.png. Seen: 390 title on 2 lines, full-width action under it, cross top right, no overlap. 768 same, clean. 1280 single line, action and cross in a row, gap visually small.
 Owner/orchestrator decision: allow a CSS gap fix in the alert stack, or accept.
+
+Update (attempt 2): lint now green (4 passed). Scoped CSS added at end of app2.css (alert rows with dismiss X: 12 px+ gap; owner-approved override of §5), app2.css ?v= bumped, static_versions regenerated. stay-detail@320 tight-stack was caused by the seeded card adding height (sticky "Send to UbyPort" bar lands flush above h2 Guests); passes on merge base and without the seed. The test now seeds the card for the dashboard pass only. Latent sticky-bar/height fragility on stay-detail@320 is not fixed.

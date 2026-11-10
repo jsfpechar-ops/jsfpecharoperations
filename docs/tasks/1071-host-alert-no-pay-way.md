@@ -1,6 +1,6 @@
 # 1071: Host alert when stay-fee collection is on and no pay way works
 
-Status: blocked
+Status: review
 Depends on: 1068a (merged first) | Base commit: 0d851ca4 | Branch: task/1071-host-alert-no-pay-way
 Executor: Sonnet 5.5 at medium effort (owner override: `[workflow]` decision 2026-11-09 in docs/context/decisions.md and workflow.md#roles-and-models, added in PR #854; the 30-call cap is Haiku only) | Limits: 40 tool calls, checkpoint at 60k tokens.
 Re-copy anchors in `host_i18n.py`, `host_vi_i18n.py` and `routes/admin.py` from main after 1068a merges. Queue item 2.4, Tier C. Plan: docs/plans/guest-group-registration.md section 8 (P6) and section 9 (F5).
