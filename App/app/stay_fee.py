@@ -611,9 +611,6 @@ def charge_for_reservation(apartment, reservation) -> Optional[Dict[str, Any]]:
             "mixed": not stay_fee_rate.is_uniform(schedule, first_night, last_night)}
 
 
-GUEST_RAIL_ORDER = ("iban", "revolut", "cash")
-
-
 def qr_offered_for_reservation(reservation) -> bool:
     """True when the stay has a Czech or Slovak guest: their banks read the QR."""
     rows = db.query(
@@ -623,53 +620,28 @@ def qr_offered_for_reservation(reservation) -> bool:
     return any((row["nationality"] or "").upper() in ("CZE", "SVK") for row in rows)
 
 
-def guest_pay_ways(apartment, reservation, charge, qr_ok) -> List[Dict[str, Any]]:
-    """The guest pay ways that really work, default first.
+def guest_pay_ways(apartment, reservation, charge, qr_ok=None) -> List[Dict[str, Any]]:
+    """The one rule for the guest pay ways and the QR code (brief 1084).
 
-    Same account, payee, enabled-set and order rules as the guest pay panel.
-    A rail that cannot work (bank without an account, Revolut without a link)
-    is left out.
+    Screen and mail both call this. Ways: usable_rail_keys (enabled, default
+    first, a way without what it needs is left out); bank details go to
+    everyone. The QR (spayd) rides on the bank way only, and only when the
+    stay has a Czech or Slovak guest. qr_ok overrides that for tests only.
     """
+    if qr_ok is None:
+        qr_ok = qr_offered_for_reservation(reservation)
     total = int(charge["total_czk"])
     vs = str(int(reservation["id"]))
-    account = ""
-    payee = ""
-    if apartment["legal_entity_id"]:
-        entity = db.query_one(
-            "SELECT iban, bank_account, name FROM legal_entity WHERE id = ?",
-            (apartment["legal_entity_id"],),
-        )
-        if entity is not None:
-            payee = (entity["name"] or "").strip()
-            if entity["iban"]:
-                account = entity["iban"]
-            elif entity["bank_account"]:
-                try:
-                    account = payments.normalise_account(entity["bank_account"])[1]
-                except ValueError:
-                    # A malformed stored account drops the bank way only, not the fee.
-                    account = ""
-    enabled = {part for part in (apartment["stay_fee_guest_rails"] or "").split(",") if part}
-    # A stored "qr" is the bank rail: it becomes one "iban" rail, with the QR on it.
-    if "qr" in enabled:
-        enabled.add("iban")
-    first = apartment["stay_fee_guest_default_rail"] or ""
-    if first == "qr":
-        first = "iban"
-    order = ([first] if first in GUEST_RAIL_ORDER else []) + [
-        key for key in GUEST_RAIL_ORDER if key != first
-    ]
+    account, payee = payout_account(apartment)
     ways: List[Dict[str, Any]] = []
-    for key in order:
-        if key not in enabled:
-            continue
-        if key == "iban" and account:
+    for key in usable_rail_keys(apartment):
+        if key == "iban":
             spayd = payments.spayd(account, total, vs, f"Stay fee {vs}") if qr_ok else ""
             ways.append({"key": "iban", "payee": payee,
                          "account": payments.format_iban(account), "spayd": spayd})
-        elif key == "revolut" and apartment["stay_fee_guest_revolut_link"]:
+        elif key == "revolut":
             ways.append({"key": "revolut", "link": apartment["stay_fee_guest_revolut_link"]})
-        elif key == "cash":
+        else:
             ways.append({"key": "cash", "note": apartment["stay_fee_guest_cash_note"] or ""})
     return ways
 
