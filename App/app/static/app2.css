@@ -3433,6 +3433,10 @@ body.v2 .needs-you-item[data-needs-you="alert"][data-notification] .needs-you-ac
 @media (min-width:1024px){body.v2 #needs-action .needs-you-item,body.v2 #needs-action .needs-you-item:has(.needs-you-dismiss){padding-right:72px}body.v2 .needs-you-item[data-needs-you="alert"][data-notification] .needs-you-actions{margin-top:0}}
 /* 1085: the police letter helper inside #ubyport. Plain disclosure rows, no box in the section card (design-system 5b). */
 body.v2 details.police-letter-find,body.v2 details.police-letter-paste,body.v2 .police-letter-check{grid-column:1/-1}
+/* 1086: one grid item for both rows, so the section's row gap cannot part them at 768 px and up. */
+body.v2 .police-letter-helpers{grid-column:1/-1;min-width:0}
+/* 1086: a closed row holds no boxes, so its hidden button cannot line up with a field below (design guard 4b). */
+body.v2 details.police-letter-find:not([open])>:not(summary),body.v2 details.police-letter-paste:not([open])>:not(summary){display:none}
 body.v2 details.police-letter-find,body.v2 details.police-letter-paste{background:none;border:0;border-top:1px solid var(--line);border-radius:0;margin:0;min-width:0}
 body.v2 details.police-letter-find{margin-top:var(--space-3)}
 body.v2 details.police-letter-paste{border-bottom:1px solid var(--line);margin-bottom:var(--space-4)}
