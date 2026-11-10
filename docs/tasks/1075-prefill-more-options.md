@@ -1,6 +1,6 @@
 # 1075: Prefill what we hold, invoice "More options", share-text order
 
-Status: todo
+Status: blocked
 Depends on: 1068 (merged first: same lines in payments.py, payments_new.html, admin.py, i18n) | Base commit: origin/main 2d265364 | Branch: claude/1075-prefill-more-options
 Executor: Opus 5.5 (Tier B: step 1 is a payments route with new guest-data SQL; review 2026-11-10). Limits (owner override; the Haiku-only cap does not apply): 40 tool calls, checkpoint at 60k tokens
 
