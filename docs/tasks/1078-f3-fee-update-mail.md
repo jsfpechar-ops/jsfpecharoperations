@@ -1,6 +1,6 @@
 # 1078: F3, one update mail when the stay-fee total changes after the bill (stores the last mailed total)
 
-Status: todo
+Status: review
 Tier: A | Depends on: nothing (main alone) | Base commit: 11dcfb6c | Branch: claude/1078-f3
 Executor: Fable 5.2 | Attempts: 3 at most | Fits one session: stop at 25 tool calls or 60k tokens (section 8); reads stay at 150 lines or fewer
 Review: a fresh Fable reviews the diff against this brief before the PR opens. The PR is then held for the owner's copy review, as F1 was.
