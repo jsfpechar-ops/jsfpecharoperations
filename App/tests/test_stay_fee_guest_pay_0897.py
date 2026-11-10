@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import pytest
 from fastapi.testclient import TestClient
+from starlette.datastructures import FormData
 
 from app import auth, config, db
 from app.main import app
@@ -686,3 +687,74 @@ def test_0960_fee_card_says_why_and_asks_to_pay_in_plain_text(host, monkeypatch)
     assert "Zaplaťte prosím teď." in cs
     assert "Česká města vybírají malý poplatek za každou noc pobytu." in cs
     assert "Proč tento poplatek platíte" not in cs
+
+
+
+def test_guest_pay_rails_need_account_true_for_iban_or_qr_csv():
+    assert stay_fee_routes.guest_pay_rails_need_account("iban,cash") is True
+    assert stay_fee_routes.guest_pay_rails_need_account("qr") is True
+    assert stay_fee_routes.guest_pay_rails_need_account("iban") is True
+
+
+def test_guest_pay_rails_need_account_false_for_revolut_cash_only():
+    assert stay_fee_routes.guest_pay_rails_need_account("revolut,cash") is False
+    assert stay_fee_routes.guest_pay_rails_need_account("") is False
+    assert stay_fee_routes.guest_pay_rails_need_account(None) is False
+
+
+def test_guest_pay_values_maps_legacy_qr_checkbox_to_iban_and_sorts_rails():
+    values = stay_fee_routes.guest_pay_values(FormData([
+        ("stay_fee_guest_rails", "qr"),
+        ("stay_fee_guest_rails", "cash"),
+        ("stay_fee_guest_revolut_link", ""),
+        ("stay_fee_guest_cash_note", ""),
+        ("stay_fee_guest_default_rail", ""),
+    ]))
+    assert values["stay_fee_guest_rails"] == "cash,iban"
+
+
+def test_guest_pay_values_default_rail_qr_alias_maps_to_iban():
+    values = stay_fee_routes.guest_pay_values(FormData([
+        ("stay_fee_guest_rails", "qr"),
+        ("stay_fee_guest_revolut_link", ""),
+        ("stay_fee_guest_cash_note", ""),
+        ("stay_fee_guest_default_rail", "qr"),
+    ]))
+    assert values["stay_fee_guest_default_rail"] == "iban"
+
+
+def test_guest_pay_values_unknown_default_rail_falls_back_to_first_enabled_rail():
+    values = stay_fee_routes.guest_pay_values(FormData([
+        ("stay_fee_guest_rails", "revolut"),
+        ("stay_fee_guest_revolut_link", GOOD_LINK),
+        ("stay_fee_guest_cash_note", ""),
+        ("stay_fee_guest_default_rail", "nope"),
+    ]))
+    assert values["stay_fee_guest_default_rail"] == "revolut"
+
+
+def test_guest_pay_operator_context_empty_when_account_invalid(monkeypatch):
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    apartment = {"stay_fee_rate_czk": 30, "legal_entity_id": 1}
+    entity = {"iban": None, "bank_account": None}
+    ctx = stay_fee_routes.guest_pay_operator_context(
+        apartment, entity, draft_account="not-a-valid-account",
+    )
+    assert ctx["has_account"] is False
+    assert ctx["preview_qr"] == ""
+    assert ctx["needs_account"] is True
+
+
+def test_guest_pay_operator_context_uses_clamped_sample_amount(monkeypatch):
+    monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
+    apartment = {"stay_fee_rate_czk": 0, "legal_entity_id": 1}
+    entity = {"iban": "CZ6508000000192000145399", "bank_account": None}
+    low = stay_fee_routes.guest_pay_operator_context(
+        apartment, entity, draft_account="", sample_rate=5,
+    )
+    high = stay_fee_routes.guest_pay_operator_context(
+        apartment, entity, draft_account="", sample_rate=30,
+    )
+    assert low["preview_qr"].startswith("data:image/png;base64,")
+    assert high["preview_qr"].startswith("data:image/png;base64,")
+    assert low["preview_qr"] != high["preview_qr"]
