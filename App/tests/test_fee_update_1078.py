@@ -29,6 +29,7 @@ NEW_KEYS = (
     "mail_fee_update_body",
     "mail_fee_update_more",
     "mail_fee_update_less",
+    "mail_fee_update_vs",
 )
 T0 = datetime.now(timezone.utc).replace(microsecond=0)
 
@@ -83,6 +84,12 @@ def stay(monkeypatch):
     db.update(
         "apartment", apartment_id, {"stay_fee_collect": 1, "stay_fee_guest_rails": "qr,cash"}
     )
+    # Since #868 the bank way needs an account on the legal entity.
+    entity_id = db.query_one("SELECT legal_entity_id FROM apartment WHERE id = ?", (apartment_id,))[
+        "legal_entity_id"
+    ]
+    old_iban = db.query_one("SELECT iban FROM legal_entity WHERE id = ?", (entity_id,))["iban"]
+    db.update("legal_entity", entity_id, {"iban": "CZ6508000000192000145399"})
     monkeypatch.setattr(mail, "backend_name", lambda: "console")
     monkeypatch.setattr(mail, "mail_enabled", lambda: True)
     monkeypatch.setattr(config, "STAY_FEE_GUEST_PAY", True)
@@ -114,6 +121,7 @@ def stay(monkeypatch):
         db.execute("DELETE FROM email_outbox WHERE reservation_id = ?", (current,))
         db.execute("DELETE FROM reservation_claim WHERE reservation_id = ?", (current,))
         db.execute("DELETE FROM alert WHERE reservation_id = ?", (current,))
+        db.update("legal_entity", entity_id, {"iban": old_iban})
         _cleanup()
 
 
@@ -486,7 +494,7 @@ def test_update_mail_copy_in_six_languages(lang):
     english = i18n.translator("en")
     local = i18n.translator(lang)
     for key in NEW_KEYS:
-        values = dict(property="P", total="T", dates="D", old="O", new="N", diff="X")
+        values = dict(property="P", total="T", dates="D", old="O", new="N", diff="X", vs="V")
         assert "%(" not in local(key, **values)
         if lang != "en":
             assert local(key, **values) != english(key, **values), key
@@ -519,7 +527,7 @@ def test_update_mail_copy_in_six_languages(lang):
         amount = local("fee_amount", amount=new_total)
         assert amount in content["subject"] and amount in content["text"]
         assert local("fee_amount", amount=old_total) in content["text"]
-        vs_line = local("mail_completion_fee_vs", vs="77")
+        vs_line = local("mail_fee_update_vs", vs="77")
         assert (vs_line in content["text"]) == (bool(vs) and new_total > old_total)
         more = local("mail_fee_update_more", diff=local("fee_amount", amount=150))
         less = local("mail_fee_update_less")

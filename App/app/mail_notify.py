@@ -1860,7 +1860,7 @@ def build_fee_update(
     blocks = [_block_heading(heading), _block_paragraph(body)]
     text_lines = [body]
     if vs and new_total > old_total:
-        vs_line = _guest_text(lang, "mail_completion_fee_vs", vs=vs)
+        vs_line = _guest_text(lang, "mail_fee_update_vs", vs=vs)
         blocks.append(_block_paragraph(vs_line))
         text_lines.append(vs_line)
     if new_total > old_total:
