@@ -70,6 +70,7 @@ Reach: Python-served pages only. Paths served by Go (`UBYHOST_GO_PATHS` in statu
 | `App/app/main.py` | edit | `Server-Timing` header and two helpers |
 | `App/tests/test_shared_queries_1072.py` | create | the new tests |
 | `docs/tasks/1072-report.md` | create | the report (section 9) |
+| `docs/tasks/screenshots-1072/` | create | the 390/768/1280 screenshots of section 10 (6 PNG) |
 
 No other file may change. `docs/context/test-map.md` is deliberately not edited: it is at the lint size cap, and the new test file is named in section 6 instead.
 
