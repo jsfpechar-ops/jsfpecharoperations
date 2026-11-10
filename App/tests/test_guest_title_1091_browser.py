@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from app import db, i18n, mail
+from app import i18n, mail
 from tests.test_guest_browser_e2e import _fee_seed, browser, live_server  # noqa: F401
 
 __all__ = ["browser", "live_server"]
