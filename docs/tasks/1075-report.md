@@ -1,6 +1,6 @@
 # 1075 report
 
-Status: blocked (step 7 UX finding; tool-call cap reached)
+Status: review (unblocked by 1075-cont-1)
 
 ## Files
 payments.py, payments_new.html, admin.py, _entity_business_fields.html, setup_wizard/property.html, _entity_invoice_fields.html, host_i18n.py, host_vi_i18n.py, _smart_lock_share.html, tests/test_1075_prefill_more_options.py (new). The brief was updated in step 0 (review) and in step 6.
