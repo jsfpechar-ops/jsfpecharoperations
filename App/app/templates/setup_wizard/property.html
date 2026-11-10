@@ -33,7 +33,8 @@
     {% for name, label in [('checkin_hour', 'apartment.form.door_code.checkin'), ('checkout_hour', 'apartment.form.door_code.checkout')] %}
     <div class="field"><label for="{{ name }}">{{ t(label) }}<span class="req-star" aria-hidden="true">*</span></label>
       <select id="{{ name }}" name="{{ name }}" required><option value="">{{ t('apartment.form.door_code.choose') }}</option>
-        {% for h in range(24) %}<option value="{{ h }}" {% if apartment[name]|string == h|string %}selected{% endif %}>{{ '%02d:00' % h }}</option>{% endfor %}
+        {% set hour_now = apartment[name] if (apartment[name] is not none and apartment[name]|string != '') else (15 if name == 'checkin_hour' else 10) %}
+        {% for h in range(24) %}<option value="{{ h }}" {% if hour_now|string == h|string %}selected{% endif %}>{{ '%02d:00' % h }}</option>{% endfor %}
       </select></div>
     {% endfor %}
   </div>

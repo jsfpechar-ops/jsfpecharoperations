@@ -361,6 +361,7 @@ STRINGS: Dict[str, str] = {
     "stay_fees.setup.payment": "Thanh toán",
     "stay_fees.setup.council": "Chính quyền và cách gửi",
     "stay_fees.setup.more_details": "Thêm thông tin (không bắt buộc)",
+    "entities.invoice_more": "Thêm tùy chọn hóa đơn",
     "stay_fees.status.not_setup": "Chưa thiết lập",
     "stay_fees.status.ready": "Sẵn sàng",
     "stay_fees.status.in_progress": "Đang thực hiện",
