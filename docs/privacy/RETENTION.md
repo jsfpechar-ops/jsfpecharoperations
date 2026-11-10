@@ -15,6 +15,7 @@ under the GDPR storage-limitation principle, also a ceiling.
 | Travel document / visa number | `guest.doc_number_enc` / `visa_number_enc` | stay end | same as guest record | same step | § 101 |
 | Optional passport/ID image | `DATA_DIR/passport_photos/…` | verification, archive, or stay end + 30 d | 30 days after stay end | `passport_photos.purge_stale` (12 h sweep); delete on verify/archive | Proportionality (Art 5(1)(e)) |
 | Claim e-mail | `reservation_claim.email` | stay end | 30 days (G-D5) | `retention.py` claim-email step | Storage limitation |
+| Unfinished guest form (draft) | `guest_form_draft` (encrypted) | last change, check-out | sent: at once; else 7 days after the last change or the day after check-out, whichever is first | `guest_draft.purge` in the 12-hour photo sweep, on read, on send, workspace deletion | Storage limitation |
 | Last mailed stay-fee total and pending change | `reservation_claim.fee_*` | stay end | with the claim row | none needed: amount and timestamps only | Storage limitation |
 | Reservation e-mail / phone fragment | `reservation.guest_email`, `phone_last4` | stay end | 30 days (G-D5) | `retention.py` reservation-contact step | Storage limitation |
 | Submitter IP | `guest.filled_ip` | stay end | 90 days (G-D6, counsel) | `retention.py` submitter-IP step | Dispute evidence window |

@@ -94,6 +94,18 @@ COOKIE_INVENTORY: Tuple[Dict[str, object], ...] = (
         "lifetime": {"en": "60 days", "cs": "60 dn\u00ed"},
     },
     {
+        "name": "ubyhost_draft",
+        "set_by": "routes/guest.py:remember_draft_key",
+        "party": "first",
+        "kind": "cookie",
+        "surface": "guest",
+        "purpose": {
+            "en": "Keeps your unfinished form on this device so you can continue it",
+            "cs": "Uchov\u00e1 rozpracovan\u00fd formul\u00e1\u0159 na tomto za\u0159\u00edzen\u00ed, abyste mohli pokra\u010dovat",
+        },
+        "lifetime": {"en": "7 days", "cs": "7 dn\u00ed"},
+    },
+    {
         "name": "ubyhost_guest_lang",
         "set_by": "routes/guest.py:remember_guest_language",
         "party": "first",
@@ -353,6 +365,18 @@ _GUEST_LANGUAGE_TEXT: Dict[str, Dict[str, Dict[str, str]]] = {
             "de": "60 Tage",
             "es": "60 días",
             "fr": "60 jours",
+        },
+    },
+    "ubyhost_draft": {
+        "purpose": {
+            "de": "Bewahrt Ihr nicht fertiges Formular auf diesem Gerät auf, damit Sie weitermachen können",
+            "es": "Guarda su formulario sin terminar en este dispositivo para que pueda continuarlo",
+            "fr": "Conserve votre formulaire inachevé sur cet appareil pour que vous puissiez le reprendre",
+        },
+        "lifetime": {
+            "de": "7 Tage",
+            "es": "7 días",
+            "fr": "7 jours",
         },
     },
     "ubyhost_guest_lang": {

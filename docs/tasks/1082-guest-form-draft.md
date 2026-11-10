@@ -1,6 +1,6 @@
 # 1082: S5 server draft of an unfinished guest form: storage, route, purge (ships dark)
 
-Status: todo (ready for the executor; the lint has no "ready" status)
+Status: review
 Tier: A | Depends on: nothing (main alone) | Base commit: f1ca4288 | Branch: claude/1082-guest-form-draft
 Executor: Fable 5.2 (owner tier override in decisions.md) | Attempts: 3 at most | Fits one session: stop at 25 tool calls or 60k tokens (section 8); reads stay at 150 lines or fewer
 Review: a fresh Fable reviews the diff against this brief before the PR opens.
