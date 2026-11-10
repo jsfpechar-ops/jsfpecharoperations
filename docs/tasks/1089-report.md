@@ -52,3 +52,8 @@ Section 3 files only, plus `App/app/host_vi_i18n.py` (see Deviations). New: migr
 ## Owner steps left
 
 - None (deploy.sh applies goose 00014 automatically). No PR opened yet (fresh review first).
+
+## Review attempt 3 (CI browser shards)
+
+- `test_guest_browser_e2e.py`: the group fixture's third person (born 2015) is under 15, so no signature is kept; the assertion now states the rule per guest (15+ drawn PNG and `own`; under 15 NULL and `exempt`/`signed_for`).
+- `test_0970_register_readable_browser.py`: a real regression. `signature_record` used the strict validator for `own`, so a stored drawing it refuses turned CSV "yes" into "no". `own` now follows `guest_has_signature` (any stored `data:image/`); the CSV baseline is unchanged and not re-recorded.

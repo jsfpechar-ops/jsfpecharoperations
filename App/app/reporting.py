@@ -246,7 +246,9 @@ def signature_record(guest, reservation) -> Dict[str, str]:
     value = (guest["signature_png"] or "").strip()
     if value == IMPORTED_SIGNATURE:
         return {"kind": "imported", "text": "Signature on paper (host)"}
-    if validation.is_valid_signature(value):
+    # Any stored drawing counts, as guest_has_signature reads it: the statutory
+    # CSV said "yes" for these rows before brief 1089 and must keep saying so.
+    if value.startswith("data:image/"):
         return {"kind": "own", "text": ""}
     if guest_under_15(guest, reservation):
         signer_id = _field(guest, "signed_for_guest_id")

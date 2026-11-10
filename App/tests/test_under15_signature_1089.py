@@ -640,6 +640,12 @@ def test_the_signature_record(stay):
         ),
     }
     assert record(adult_id) == {"kind": "own", "text": ""}
+    # A stored drawing the strict validator would refuse still reads as signed (CSV "yes" as before).
+    legacy = _insert(stay, "Legacy", "01011990", signature="data:image/png;base64,AAAA")
+    assert record(legacy) == {"kind": "own", "text": ""}
+    assert housebook._housebook_export_row(
+        next(r for r in db.query(*housebook._housebook_sql(None, None, None, stay["owner"])) if r["id"] == legacy)
+    )["signed"] == "yes"
     exempt = {"kind": "exempt", "text": EXEMPT_TEXT}
     assert record(_insert(stay, "Free", _born(stay, 10), signature="")) == exempt
     assert record(_insert(stay, "Paper", "01011990", signature="imported")) == {
