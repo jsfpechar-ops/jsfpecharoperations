@@ -308,7 +308,7 @@
       <p class="ui-sub">{{ t('why.police') }}</p>
       <p class="ui-sub"><a href="{{ base_url }}?view=settings&amp;section=automation#automation">{{ t('automation.timing_title') }} </a></p>
       <div class="grid">
-        {{ text_field('uby_idub', 'IDUB', apartment.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14, required=true) }}
+        {{ text_field('uby_idub', t('apartment.form.ubyport.idub_label'), apartment.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14, required=true) }}
       </div>
       <div class="grid two">
         {{ text_field('uby_ws_user', t('automation.login'), apartment.uby_ws_user, t('apartment.form.ubyport.login_hint'), required=true) }}
