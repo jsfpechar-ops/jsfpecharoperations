@@ -97,7 +97,11 @@ def test_every_host_page_passes_the_layout_lint(wide_host, wide_base):
             db.insert("ical_feed", {"apartment_id": apartment_id, "url": url, "label": label,
                                     "last_sync_at": now, "last_status": "ok", "active": 1, "created_at": now})
     from app import alerts as _alerts
-    pay_key = f"stay_fee_no_pay_way:{wide_host['configured_apartment']}"
+    _alerts.raise_alert(
+        "warning", "stay_fee_no_pay_way", "Guests cannot pay the stay fee: add a bank account",
+        dedupe_key=f"stay_fee_no_pay_way:{wide_host['configured_apartment']}",
+        apartment_id=wide_host["configured_apartment"], params={"property": "Layout flat"},
+    )
     out = _out_dir()
     out.mkdir(parents=True, exist_ok=True)
     findings: list[dict] = []
@@ -114,16 +118,6 @@ def test_every_host_page_passes_the_layout_lint(wide_host, wide_base):
             context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": wide_base + "/"}])
             page = context.new_page()
             for name, path in routes.items():
-                # 1071: the no-pay-way card is seeded for the dashboard pass only, so its
-                # extra height does not shift the sticky bar on the other pages.
-                if name == "dashboard":
-                    _alerts.raise_alert(
-                        "warning", "stay_fee_no_pay_way", "Guests cannot pay the stay fee: add a bank account",
-                        dedupe_key=pay_key, apartment_id=wide_host["configured_apartment"],
-                        params={"property": "Layout flat"},
-                    )
-                else:
-                    _alerts.resolve(pay_key)
                 sep = "&" if "?" in path else "?"
                 response = page.goto(f"{wide_base}{path}{sep}lang=en")
                 assert response and response.status < 400, f"{name}/{width}: HTTP {response.status if response else 'none'}"
