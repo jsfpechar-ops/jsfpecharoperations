@@ -10,6 +10,7 @@ submission, rather than discovering it after the legal deadline has passed.
 from __future__ import annotations
 
 import base64
+import calendar
 import io
 import json
 import re
@@ -167,6 +168,42 @@ def age_on(birth: date, when: date) -> int:
     if (when.month, when.day) < (birth.month, birth.day):
         years -= 1
     return years
+
+
+def _birth_bounds(raw: Optional[str], latest: bool) -> Optional[date]:
+    """The earliest (or latest) birthday a partial ``DDMMYYYY`` allows, or None."""
+    digits = normalise_birth_date(raw)
+    if len(digits) != 8 or not digits.isdigit():
+        return None
+    day, month, year = int(digits[:2]), int(digits[2:4]), int(digits[4:])
+    if year == 0:
+        return None
+    try:
+        if latest:
+            month = month or 12
+            day = day or calendar.monthrange(year, month)[1]
+        return date(year, month or 1, day or 1)
+    except ValueError:
+        return None
+
+
+def certainly_under_age(raw: Optional[str], when: Optional[date], years: int) -> bool:
+    """True only when the guest is under ``years`` on ``when`` whatever a 00 day or month hides.
+
+    Brief 1089: the earliest possible birthday (00 read as 1) is the oldest the guest can be.
+    """
+    if when is None:
+        return False
+    birth = _birth_bounds(raw, latest=False)
+    return birth is not None and age_on(birth, when) < years
+
+
+def certainly_at_least_age(raw: Optional[str], when: Optional[date], years: int) -> bool:
+    """True only when the guest is at least ``years`` on ``when`` (00 month read as 12, 00 day as the month's last day)."""
+    if when is None:
+        return False
+    birth = _birth_bounds(raw, latest=True)
+    return birth is not None and age_on(birth, when) >= years
 
 _COUNTRIES_CACHE: Optional[List[Dict[str, str]]] = None
 

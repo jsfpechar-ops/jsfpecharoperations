@@ -195,6 +195,7 @@ def _days_ago_iso(days: int) -> str:
 
 # 0947: ubyhost_device (cookie: account id and random id, 30 days, nothing stored server-side) needs no purge; it expires with the cookie and "log out of all devices" clears it.
 # 1082: guest_form_draft (an unfinished guest form, encrypted) goes when the form is sent, else 7 days after its last change or the day after check-out, whichever comes first (guest_draft.purge in the 12-hour photo sweep, never a dry run; workspace deletion below).
+# 1089: guest.signed_for_guest_id / signed_for_role / signed_for_at / signed_for_wording (the adult who signed for a guest under 15, their role and the wording version) are kept with the guest row and go with it (guest step, workspace deletion); removing the adult on the guest link clears them.
 # 0396: apartment.leon_terms_* (the host's Leon terms acceptance) are kept while the property exists.
 def _audit_retention_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
     """Delete audit rows past the window, but never the acceptance evidence.
