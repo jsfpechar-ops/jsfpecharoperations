@@ -6,6 +6,8 @@ prevents numeric IDs from becoming cross-account access.
 """
 from __future__ import annotations
 
+import re
+
 from fastapi import Request
 
 from . import auth, db
@@ -138,12 +140,35 @@ def alert(request: Request, alert_id: int):
     )
 
 
+_PLAIN_COLUMNS = re.compile(r"[a-z_][a-z_0-9]*(\s*,\s*[a-z_][a-z_0-9]*)*")
+
+
 def apartments(request: Request, columns: str = "*", include_archived: bool = False):
+    """The host's properties. On a GET the rows are read once per request (1072):
+    a narrower column list is served from an earlier ``*`` read of the same request.
+    The rows are shared within the request: callers must not mutate cached rows."""
+    owner = owner_id(request)
+    memo = None
+    if getattr(request, "method", "") in ("GET", "HEAD"):
+        memo = getattr(request.state, "apartments_memo", None)
+        if memo is None:
+            memo = request.state.apartments_memo = {}
+        key = (owner, include_archived, columns)
+        if key in memo:
+            return list(memo[key])
+        wide = memo.get((owner, include_archived, "*"))
+        if wide is not None and _PLAIN_COLUMNS.fullmatch(columns):
+            names = [name.strip() for name in columns.split(",")]
+            if all(not wide or name in wide[0].keys() for name in names):
+                return list(wide)
     sql = f"SELECT {columns} FROM apartment WHERE {db.null_safe_eq('owner_user_id')}"
     if not include_archived:
         sql += " AND archived_at IS NULL"
     sql += " ORDER BY internal_name"
-    return db.query(sql, (owner_id(request),))
+    rows = db.query(sql, (owner,))
+    if memo is not None:
+        memo[(owner, include_archived, columns)] = rows
+    return list(rows)
 
 
 def entities(request: Request, include_archived: bool = False):
