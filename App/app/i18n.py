@@ -136,7 +136,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "tw_more": "One person more",
         "tw_document_title": "Travel document",
         "tw_email_short": "We send your private link here. No marketing.",
-        "claim_email_why": "We send your private link and receipt here, and it keeps this booking yours. No marketing.",
+        "claim_email_why": "We send your private link and receipt here. This keeps the booking yours. No marketing.",
         "tw_email_more": "What we use your e-mail for",
         "tw_step_details": "Details",
         "tw_step_document": "Document",
