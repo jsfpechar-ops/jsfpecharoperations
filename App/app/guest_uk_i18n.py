@@ -50,7 +50,7 @@ PASSPORT_UPLOAD: Dict[str, str] = {
 # Keyed by the English sentence validation.py writes, like GUEST_MESSAGES.
 VALIDATION: Dict[str, str] = {
     "Date of birth is required.": "Дата народження обов’язкова.",
-    "Enter the full date as DD.MM.YYYY.": "Дата народження: введіть повну дату у форматі ДД.ММ.РРРР.",
+    "Enter the full date as DD.MM.YYYY.": "Дата народження: введіть повну дату у форматі ДД.ММ.РРРР, наприклад 14.03.1961.",
     "Year must be 1900 or later.": "Дата народження: рік має бути 1900 або пізніший.",
     "Month must be between 01 and 12.": "Дата народження: місяць має бути від 01 до 12.",
     "Day must be between 01 and 31.": "Дата народження: день має бути від 01 до 31.",
