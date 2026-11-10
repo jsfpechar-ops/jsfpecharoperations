@@ -20,7 +20,20 @@ from app.police_letter import (
     parse_letter,
 )
 from app.ubyport_sample_pdf import (
+    SAMPLE_CASE_REF,
+    SAMPLE_CONTACT,
+    SAMPLE_DS_BARCODE,
+    SAMPLE_EXTRACT_DATE,
+    SAMPLE_FACILITY_LINE1,
+    SAMPLE_FACILITY_LINE2,
     SAMPLE_IDUB,
+    SAMPLE_JID,
+    SAMPLE_LETTER_DATE,
+    SAMPLE_PROCESSOR,
+    SAMPLE_RECIPIENT_ISDS,
+    SAMPLE_RECIPIENT_NAME,
+    SAMPLE_SIGNATORY,
+    SAMPLE_SIGNATORY_ROLE,
     SAMPLE_WS_PASSWORD,
     SAMPLE_WS_USER,
     SAMPLE_ZKRATKA,
@@ -76,6 +89,95 @@ def user_only(login):
     return f"{L_USER} {login}\n"
 
 
+# 1088 rule 7: the strings the sample letter draws, one per line, in drawing
+# order, without UbyHost's own annotations.
+FULL_LETTER = "\n".join(
+    [
+        f"JID: {SAMPLE_JID}",
+        "ŘEDITELSTVÍ SLUŽBY CIZINECKÉ POLICIE",
+        "Informační odbor",
+        f"Č. j. {SAMPLE_CASE_REF}",
+        f"Praha {SAMPLE_LETTER_DATE}",
+        "Počet stran: 1",
+        "Přílohy: 1 el.soubor",
+        SAMPLE_RECIPIENT_NAME,
+        f"ISDS: {SAMPLE_RECIPIENT_ISDS}",
+        "Ubyport- Webová služba - přiděleno",
+        (
+            "V příloze Vám zasílám požadované přihlašovací údaje pro systém Ubyport - Webová "
+            "služba."
+        ),
+        (
+            "Pro implementaci webové služby do Vašeho hotelového programu kontaktujte výrobce "
+            "Vašeho hotelového programu."
+        ),
+        (
+            "Přidělením těchto přihlašovacích údajů nejsou nijak dotčeny (zůstávají plně funkční) "
+            "přihlašovací údaje do Internetové aplikace Ubyport, která tak zůstává zálohou pro "
+            "oznamování ubytovaných cizinců v případě, že by měl systém Ubyport - webová služba "
+            "poruchu a nešlo by dočasně prostřednictvím něj oznamovat ubytované cizince."
+        ),
+        "DŮLEŽITÉ:",
+        (
+            "Aby se přiložený PDF dokument otevřel a zobrazil správně, doporučujeme jej otevřít "
+            "v programu Adobe Acrobat Reader (prohlížeč PDF) nebo v internetovém prohlížeči MS "
+            "Edge (prohlížeč WWW a PDF), nejlépe v nejnovějších verzích. V programu Adobe "
+            "Acrobat a jiných editorech PDF dokumentů, se obsah nemusí zobrazit správně, nebo může "
+            "zcela chybět."
+        ),
+        "Zpracoval:",
+        SAMPLE_PROCESSOR,
+        SAMPLE_SIGNATORY,
+        SAMPLE_SIGNATORY_ROLE,
+        "Olšanská 2",
+        "130 51 Praha",
+        "Tel.: +420 725 798 600",
+        "E-mail: podatelna@policie.gov.cz",
+        "ID DS: demo0000",
+        SAMPLE_DS_BARCODE,
+        "VÝPIS Z DATABÁZE PŘIHLAŠOVACÍCH ÚDAJŮ",
+        TITLE,
+        L_USER,
+        SAMPLE_WS_USER,
+        L_PW,
+        SAMPLE_WS_PASSWORD,
+        "IDUB:",
+        SAMPLE_IDUB,
+        "Ubytovací zařízení:",
+        SAMPLE_FACILITY_LINE1,
+        SAMPLE_FACILITY_LINE2,
+        "Poučení:",
+        "1.",
+        (
+            "Tento účet slouží pro robotické vkládání dat prostřednictvím webové služby a "
+            "nemůže být použit k jiným účelům."
+        ),
+        "2.",
+        (
+            "Ztratí-li nebo zapomene-li uživatel heslo, může požádat Ředitelství služby "
+            "cizinecké policie o vygenerování nového hesla."
+        ),
+        "3.",
+        "Uživatel se řídí provozním řádem Internetové aplikace Ubyport.",
+        "4.",
+        (
+            "Při podezření na porušení provozního řádu Internetové aplikace Ubyport nebo "
+            "jiné činnosti ohrožující kybernetickou"
+        ),
+        "bezpečnost může být uživatel zablokován.",
+        f"V Praze dne {SAMPLE_EXTRACT_DATE}",
+        "Vystavilo: Ředitelství služby cizinecké policie",
+        "",
+    ]
+)
+PW_SEPARATED = (
+    "2099-8877-6655",
+    "2099.8877.6655",
+    "2099  8877  6655",
+    "2099/8877/6655",
+)
+SOFT = "\u00ad"
+
 FULLWIDTH = "".join(chr(0xFF10 + int(d)) for d in SAMPLE_IDUB)
 ARABIC_INDIC = "١" * 12
 
@@ -126,7 +228,7 @@ ROWS = [
         exp(idub=UNREADABLE),
     ),
     ("idub_two_lines_down", f"IDUB:\n\n{FAKE_IDUB}\n", exp(idub=UNREADABLE)),
-    ("idub_on_password_line", f"Heslo a IDUB: {FAKE_IDUB}\n", exp(idub=AMBIGUOUS)),
+    ("idub_on_password_line", f"Heslo a IDUB: {FAKE_IDUB}\n", exp(idub=UNREADABLE)),
     # --- extra numbers ignored ---
     (
         "extra_numbers",
@@ -172,11 +274,15 @@ ROWS = [
         user_only("UBY-WS_ABCDE") + user_only("uby-ws_abcde"),
         exp(user=found("UBY-WS_ABCDE"), mark=derived("ABCDE")),
     ),
-    ("login_on_password_line", f"Heslo a {L_USER} UBY-WS_ABCDE\n", exp(user=AMBIGUOUS)),
+    (
+        "login_on_password_line",
+        f"Heslo a {L_USER} UBY-WS_ABCDE\n",
+        exp(user=UNREADABLE),
+    ),
     (
         "login_password_word_en",
         f"Password / {L_USER} UBY-WS_ABCDE\n",
-        exp(user=AMBIGUOUS),
+        exp(user=UNREADABLE),
     ),
     (
         "login_words_after",
@@ -367,17 +473,17 @@ ROWS = [
     (
         "guard_inflection_heslem",
         f"Heslem je {L_USER} UBY-WS_ZZZZZ\n",
-        exp(user=AMBIGUOUS),
+        exp(user=UNREADABLE),
     ),
     (
         "guard_inflection_hesla",
         f"Zadání hesla a IDUB: {FAKE_IDUB}\n",
-        exp(idub=AMBIGUOUS),
+        exp(idub=UNREADABLE),
     ),
     (
         "guard_capitals_no_diacritics",
         f"HESLEM je {L_USER} UBY-WS_ZZZZZ\n",
-        exp(user=AMBIGUOUS),
+        exp(user=UNREADABLE),
     ),
     # --- attempt 3: global rules (rule 12) and the second review ---
     (
@@ -473,7 +579,7 @@ ROWS = [
     (
         "a3_spaced_phone_number",
         OFFICIAL + "Telefon: +420 777 000 111\n",
-        exp(UNREADABLE, found(SAMPLE_WS_USER), derived(SAMPLE_ZKRATKA)),
+        OK_ALL,
     ),
     (
         "a3_spaced_idub_and_other_number",
@@ -489,6 +595,150 @@ ROWS = [
         "a3_login_prefix_mention",
         user_only("UBY-WS_ABCDE") + "Login začíná UBY-WS_\n",
         exp(user=UNREADABLE),
+    ),
+    # --- 1088: separated IDUB candidates (a numeric password) ---
+    (
+        "h_pw_chain_dash",
+        f"IDUB: {SAMPLE_IDUB}\n{L_PW} 2099-8877-6655\n",
+        exp(idub=UNREADABLE),
+    ),
+    (
+        "h_pw_chain_dot",
+        f"IDUB: {SAMPLE_IDUB}\n{L_PW} 2099.8877.6655\n",
+        exp(idub=UNREADABLE),
+    ),
+    (
+        "h_pw_chain_double_space",
+        f"IDUB: {SAMPLE_IDUB}\n{L_PW} 2099  8877  6655\n",
+        exp(idub=UNREADABLE),
+    ),
+    (
+        "h_pw_chain_slash",
+        f"IDUB: {SAMPLE_IDUB}\n{L_PW} 2099/8877/6655\n",
+        exp(idub=UNREADABLE),
+    ),
+    ("h_idub_chain_alone", "IDUB: 2099-8877-6655\n", exp(idub=UNREADABLE)),
+    # --- 1088: chains that are not candidates (placed before the letter: a
+    # digit line right after the IDUB is the wrap guard, kept from 1083) ---
+    ("h_plus_phone", "+420 777 000 111\n" + OFFICIAL, OK_ALL),
+    (
+        "h_plus_phone_unbroken",
+        "+420777000111\n" + OFFICIAL,
+        exp(UNREADABLE, found(SAMPLE_WS_USER), derived(SAMPLE_ZKRATKA)),
+    ),
+    ("h_plus_phone_callout", FULL_LETTER + f"{SAMPLE_CONTACT}\n", OK_ALL),
+    ("h_ds_barcode", "380.0000.0000001\n" + OFFICIAL, OK_ALL),
+    (
+        "h_phone_without_plus",
+        "420 777 000 111\n" + OFFICIAL,
+        exp(UNREADABLE, found(SAMPLE_WS_USER), derived(SAMPLE_ZKRATKA)),
+    ),
+    (
+        "h_barcode_other_shape",
+        "380.0000.000001.1\n" + OFFICIAL,
+        exp(UNREADABLE, found(SAMPLE_WS_USER), derived(SAMPLE_ZKRATKA)),
+    ),
+    # --- 1088: the full sample letter ---
+    ("h_full_sample_letter", FULL_LETTER, OK_ALL),
+    # --- 1088: dash and space logins ---
+    (
+        "h_login_en_dash",
+        OFFICIAL + "UBY\u2013WS_DEMO1\n",
+        exp(idub=found(SAMPLE_IDUB), user=UNREADABLE),
+    ),
+    (
+        "h_login_spaced_dash",
+        OFFICIAL + "UBY - WS_DEMO1\n",
+        exp(idub=found(SAMPLE_IDUB), user=UNREADABLE),
+    ),
+    (
+        "h_login_em_dash_lower",
+        OFFICIAL + "uby\u2014ws_demo2\n",
+        exp(idub=found(SAMPLE_IDUB), user=UNREADABLE),
+    ),
+    # --- 1088: mark conflict, 4 to 7 characters and soft hyphens ---
+    (
+        "h_mark_4",
+        OFFICIAL + f"{L_MARK} DEMO\n",
+        exp(found(SAMPLE_IDUB), CONFLICT, CONFLICT),
+    ),
+    (
+        "h_mark_7",
+        OFFICIAL + f"{L_MARK} DEMO1XY\n",
+        exp(found(SAMPLE_IDUB), CONFLICT, CONFLICT),
+    ),
+    (
+        "h_mark_soft_hyphen",
+        OFFICIAL + f"{L_MARK} DE{SOFT}MO1\n",
+        exp(found(SAMPLE_IDUB), CONFLICT, CONFLICT),
+    ),
+    (
+        "h_mark_soft_hyphen_next_line",
+        OFFICIAL + f"{L_MARK}\nDE{SOFT}MO1\n",
+        exp(found(SAMPLE_IDUB), CONFLICT, CONFLICT),
+    ),
+    (
+        "h_mark_unicode_5",
+        OFFICIAL + f"{L_MARK} DĚMO1\n",
+        exp(found(SAMPLE_IDUB), CONFLICT, CONFLICT),
+    ),
+    ("h_mark_same", OFFICIAL + f"{L_MARK} DEMO1\n", OK_ALL),
+    ("h_mark_label_only", OFFICIAL + f"{L_MARK}\n", OK_ALL),
+    # --- 1088: wrap guard ---
+    (
+        "h_login_wrapped_then_text",
+        f"{L_USER} UBY-WS_ABCDE\nF    {L_PW} xx\n",
+        exp(user=UNREADABLE),
+    ),
+    # --- 1088: text before a label ---
+    (
+        "h_text_before_label",
+        f"{L_PW}\nXy7kLm9 IDUB: {SAMPLE_IDUB}\n",
+        exp(idub=UNREADABLE),
+    ),
+    (
+        "h_bullet_before_label",
+        f"\u2022 IDUB: {SAMPLE_IDUB}\n",
+        exp(idub=found(SAMPLE_IDUB)),
+    ),
+    ("h_pipe_before_label", f"| IDUB: {SAMPLE_IDUB}\n", exp(idub=found(SAMPLE_IDUB))),
+    # --- 1088 attempt 2: runs inside chains, "+" runs, more separators ---
+    (
+        "h2_run_in_longer_chain",
+        "IDUB: 934857203948\n\nevid. 209988776655/2026\n",
+        exp(idub=UNREADABLE),
+    ),
+    (
+        "h2_numeric_password_in_chain",
+        f"{L_PW}\nIDUB: 934857203948\n\nDEMO1 209988776655 15 3\n",
+        exp(idub=UNREADABLE),
+    ),
+    ("h2_plus_run", "IDUB: 934857203948\n\n+209988776655\n", exp(idub=UNREADABLE)),
+    (
+        "h2_plus_long_run",
+        "IDUB: 934857203948\n\n+2099887766551234\n",
+        exp(idub=UNREADABLE),
+    ),
+    (
+        "h2_en_dash_chain",
+        "IDUB: 934857203948\n\n1111\u20132222\u20133333\n",
+        exp(idub=UNREADABLE),
+    ),
+    (
+        "h2_spaced_hyphen_chain",
+        "IDUB: 934857203948\n\n1111 - 2222 - 3333\n",
+        exp(idub=UNREADABLE),
+    ),
+    ("h2_comma_chain", "IDUB: 934857203948\n\n1111,2222,3333\n", exp(idub=UNREADABLE)),
+    (
+        "h2_underscore_chain",
+        "IDUB: 934857203948\n\n1111_2222_3333\n",
+        exp(idub=UNREADABLE),
+    ),
+    (
+        "h2_mark_soft_hyphen_in_label",
+        OFFICIAL + f"Zkrat{SOFT}ka: XYZ12\n",
+        exp(found(SAMPLE_IDUB), CONFLICT, CONFLICT),
     ),
 ]
 
@@ -532,6 +782,15 @@ def test_parse_letter_table(row_id, text, expected):
         assert (item.value != "") == (item.state in FILLED_STATES)
         assert item.value.isascii()
     shown = repr(result)
+    assert "Xy7kLm9" not in shown
+    for name in FIELDS:
+        item = result.fields[name]
+        assert bool(item.source) == (item.state in FILLED_STATES)
+        for part in item.source:
+            assert len(part) <= 120
+            assert SAMPLE_WS_PASSWORD not in part
+            assert FAKE_PW not in part
+            assert not any(pw in part for pw in PW_SEPARATED)
     assert SAMPLE_WS_PASSWORD not in shown
     assert FAKE_PW not in shown
     assert "UBY-WS_ZZZZZ" not in shown
@@ -561,6 +820,40 @@ def test_lines_and_labels():
 
     bad = parse_letter("x\n" + idub_only("1234")).fields["uby_idub"]
     assert (bad.state, bad.line, bad.label) == ("unreadable", 2, "IDUB")
+
+
+def test_source_slices():
+    same = parse_letter(OFFICIAL).fields
+    assert same["uby_idub"].source == (f"IDUB: {SAMPLE_IDUB}",)
+    assert same["uby_ws_user"].source == (f"{L_USER} {SAMPLE_WS_USER}",)
+    assert same["uby_mark"].source == same["uby_ws_user"].source
+
+    below = parse_letter(OFFICIAL_NEXT_LINE).fields
+    assert below["uby_idub"].source == ("IDUB:", SAMPLE_IDUB)
+    assert below["uby_ws_user"].source == (L_USER, SAMPLE_WS_USER)
+    assert below["uby_mark"].source == below["uby_ws_user"].source
+
+    # Noise before the label is not part of the slice.
+    noisy = parse_letter(f"| IDUB: {SAMPLE_IDUB}\n").fields["uby_idub"]
+    assert noisy.source == (f"IDUB: {SAMPLE_IDUB}",)
+
+    # A 200-character label line is cut to 120.
+    long_line = "IDUB" + " " * 182 + f": {SAMPLE_IDUB}"
+    assert len(long_line) == 200
+    cut = parse_letter(long_line + "\n").fields["uby_idub"]
+    assert (cut.state, cut.value) == ("found", SAMPLE_IDUB)
+    assert cut.source == (long_line[:120],)
+
+    # Every state that is not filled has no source.
+    for text in (
+        "x\n" + idub_only("1234"),
+        OFFICIAL + f"{L_MARK} XYZ12\n",
+        f"{L_PW}\nXy7kLm9 IDUB: {SAMPLE_IDUB}\n",
+        f"Heslo IDUB:\n{SAMPLE_IDUB}\n",
+    ):
+        for item in parse_letter(text).fields.values():
+            if item.state not in FILLED_STATES:
+                assert item.source == ()
 
 
 def test_results_are_frozen():
