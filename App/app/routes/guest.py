@@ -14,23 +14,27 @@ guest's personal data.
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
 from datetime import timedelta
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote, urlsplit, urlunsplit
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 from starlette.concurrency import run_in_threadpool
 from itsdangerous import BadSignature, URLSafeSerializer
 
 import posixpath
 import re
-from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, doc_ocr, door_codes, guest_slug, guest_uk_i18n, host_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n, workflow
+import secrets
+from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, doc_ocr, door_codes, guest_slug, guest_uk_i18n, guest_draft, headcount, host_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n, workflow
 from .. import ruian as ruian_lookup  # 0911: guest RUIAN suggestions
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
 from .admin_helpers import kept_signature as _kept_signature
+
+_log = logging.getLogger("ubyhost.guest")
 
 router = APIRouter(dependencies=[Depends(security.protect_guest_post)])
 
@@ -40,12 +44,15 @@ router = APIRouter(dependencies=[Depends(security.protect_guest_post)])
 LANG_COOKIE = "ubyhost_guest_lang"
 OWNED_COOKIE = "ubyhost_owned"
 CLAIM_COOKIE = "ubyhost_claim"
+DRAFT_COOKIE = "ubyhost_draft"
+DRAFT_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 
 # Per-(address, link) budget for the guest POSTs that write something. Deliberately
 # loose: a guest fixing validation errors saves repeatedly, so this bounds
 # hammering rather than pacing a careful person. The PIN and the claim cookie are
 # the controls on *who* may post; this only bounds how often.
 GUEST_POST_MAX_ATTEMPTS = 30
+GUEST_DRAFT_MAX_WRITES = 120
 
 CS_PASSPORT_UPLOAD_MESSAGES = {
     "Upload a JPEG, PNG, or WebP photo of your passport ID page, or a PDF "
@@ -298,6 +305,170 @@ def _remember_claim(response, reservation_id: int, request: Optional[Request] = 
         secure=auth.secure_cookies(),
         path="/",
     )
+
+
+def _draft_key(request: Request) -> Optional[str]:
+    """Brief 1082: the device key of the draft cookie, or None."""
+    value = request.cookies.get(DRAFT_COOKIE) or ""
+    if re.fullmatch(r"[A-Za-z0-9_-]{32,64}", value):
+        return value
+    return None
+
+
+def _remember_draft_key(response, key: str) -> None:
+    response.set_cookie(
+        DRAFT_COOKIE,
+        key,
+        max_age=DRAFT_COOKIE_MAX_AGE,
+        httponly=True,
+        samesite="lax",
+        secure=auth.secure_cookies(),
+        path="/",
+    )
+
+
+def _draft_generation(reservation) -> int:
+    if not mail.mail_enabled():
+        return 0
+    row = claim.ensure_row(reservation["id"])
+    return int(row["token_version"] or 0) if row else 0
+
+
+def _draft_owned(request: Request, reservation_id: int) -> int:
+    """How many guests of this stay this device has already sent."""
+    ids = _owned_ids(request)
+    if not ids:
+        return 0
+    marks = ", ".join("?" for _ in ids)
+    row = db.query_one(
+        f"SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ? AND id IN ({marks})",
+        (int(reservation_id), *ids),
+    )
+    return guest_draft.clamp_owned(row["n"] if row else 0)
+
+
+def _draft_is_sent_guest(values, guests) -> bool:
+    """Brief 1082: the draft is a guest already on the stay (same document
+    number, or same first name, surname and birth date)."""
+
+    def fold(value) -> str:
+        return str(value or "").strip().casefold()
+
+    def birth(value) -> str:
+        # The guest row holds the normalised date; the draft holds what was typed.
+        return validation.normalise_birth_date(str(value or "")) or fold(value)
+
+    def who(source) -> tuple:
+        return (fold(source["first_name"]), fold(source["surname"]), birth(source["birth_date"]))
+
+    doc = str(values.get("doc_number") or "").strip().upper()
+    person = who({name: values.get(name) for name in ("first_name", "surname", "birth_date")})
+    for guest in guests:
+        guest_doc = str(guest["doc_number"] or "").strip().upper()
+        guest_person = who(guest)
+        if (doc and doc == guest_doc) or (all(person) and person == guest_person):
+            return True
+    return False
+
+
+def _load_draft(request: Request, reservation, guests) -> Optional[dict]:
+    """Brief 1082: this device's draft for the stay, unless it is a guest
+    already on the stay (then it is deleted)."""
+    key = _draft_key(request)
+    if not key:
+        return None
+    device_hash = guest_draft.key_hash(key)
+    values = guest_draft.load(
+        reservation["id"], device_hash, _draft_generation(reservation), _draft_owned(request, reservation["id"])
+    )
+    if not values:
+        return None
+    if _draft_is_sent_guest(values, guests):
+        guest_draft.delete(reservation["id"], device_hash)
+        return None
+    return values
+
+
+def _add_draft_keys(context, request: Request, apartment, existing, token: str, reservation_id: int, lang: str) -> None:
+    """Brief 1087: keep autosave on after a language switch or a validation error.
+
+    New guests only, never the host preview, and never the welcome line.
+    """
+    if existing or _host_owns_apartment(request, apartment):
+        return
+    context["draft_url"] = f"/l/{token}/{reservation_id}/draft" + _lang_q(lang)
+    context["draft_fields"] = " ".join(guest_draft.DRAFT_FIELDS)
+    context["draft_owned"] = _draft_owned(request, reservation_id)
+
+
+def _as_int(raw) -> Optional[int]:
+    try:
+        return int(str(raw).strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _sign_for_fields(request, reservation, signer_raw, role_raw, now) -> Dict[str, Any]:
+    """Brief 1089, § 103(u): the four ``signed_for_*`` columns for a child's form, or ``{}``.
+
+    The signer must be a guest this device saved, on this reservation, 18 or
+    over on arrival and holding their own valid drawn signature; the role must
+    be one of ``reporting.SIGN_FOR_ROLES``.
+    """
+    signer_id = _as_int(signer_raw)
+    role = (role_raw or "").strip()
+    if signer_id is None or role not in reporting.SIGN_FOR_ROLES:
+        return {}
+    if signer_id not in _owned_ids(request):
+        return {}
+    row = db.query_one(
+        "SELECT * FROM guest WHERE id = ? AND reservation_id = ? AND archived_at IS NULL",
+        (signer_id, reservation["id"]),
+    )
+    if not row or not validation.is_valid_signature(row["signature_png"]):
+        return {}
+    arrival = reporting._stay_dates(row, reservation)[0]
+    if not validation.certainly_at_least_age(
+        row["birth_date"], arrival, reporting.ADULT_SIGNER_AGE
+    ):
+        return {}
+    return {
+        "signed_for_guest_id": signer_id,
+        "signed_for_role": role,
+        "signed_for_at": now,
+        "signed_for_wording": reporting.SIGN_FOR_WORDING_VERSION,
+    }
+
+
+def _link_signed_children(request, reservation, adult_id, ids_raw, role_raw, now) -> None:
+    """Brief 1089, § 103(u): record that the adult just saved signs for these children.
+
+    Only children this device saved, on this reservation, under 15 on arrival
+    and not yet linked (the first adult wins). Writes the four ``signed_for_*``
+    columns only, so a filed child gets the house-book line without being refiled.
+    """
+    role = (role_raw or "").strip()
+    if role not in reporting.SIGN_FOR_ROLES:
+        return
+    owned = _owned_ids(request)
+    seen = set()
+    for raw in ids_raw or []:
+        child_id = _as_int(raw)
+        if child_id is None or child_id in seen or child_id == adult_id or child_id not in owned:
+            continue
+        seen.add(child_id)
+        row = db.query_one(
+            "SELECT * FROM guest WHERE id = ? AND reservation_id = ?",
+            (child_id, reservation["id"]),
+        )
+        if not row or not reporting.guest_under_15(row, reservation):
+            continue
+        db.execute(
+            "UPDATE guest SET signed_for_guest_id = ?, signed_for_role = ?, "
+            "signed_for_at = ?, signed_for_wording = ? "
+            "WHERE id = ? AND reservation_id = ? AND signed_for_guest_id IS NULL",
+            (adult_id, role, now, reporting.SIGN_FOR_WORDING_VERSION, child_id, reservation["id"]),
+        )
 
 
 def _with_lang(response, lang: str):
@@ -1085,18 +1256,10 @@ def _require_claim_session(request: Request, reservation, token: str, lang: str)
     return None
 
 
-def _set_declared_guests(reservation, count: int) -> None:
-    if reservation["expected_guests_override"]:
-        return
-    if count < 1 or count > 60:
-        return
-    db.update(
-        "reservation",
-        reservation["id"],
-        {"declared_guests": count, "updated_at": db.utcnow()},
-    )
-    reporting.submit_stay_if_complete(
-        reservation["apartment_id"], reservation["id"]
+def _set_declared_guests(reservation, count: int, *, source: str, owner_user_id) -> str:
+    """1092: the guest's count goes through headcount (lock, floor, ceiling, audit)."""
+    return headcount.set_declared_guests(
+        int(reservation["id"]), count, source=source, owner_user_id=owner_user_id
     )
 
 
@@ -1325,11 +1488,17 @@ def stay_overview(token: str, reservation_id: int, request: Request):
     if not claim.guest_access_open(reservation, claim_row):
         return _unavailable(request, lang, "stay_gone", 404, token)
     context = _shared(request, token, lang, apartment)
+    # 1092: confirm() clears the count held on the claim row, so after a host
+    # release that row holds none. The claim form's prefill must then be the
+    # stay's own count: a default of 1 confirmed unread would lower it.
+    claim_view = {key: claim_row[key] for key in claim_row.keys()}
+    if claim_view.get("declared_guests") is None:
+        claim_view["declared_guests"] = reservation["declared_guests"]
     context.update(
         {
             "apartment": apartment,
             "reservation": reservation,
-            "claim": claim_row,
+            "claim": claim_view,
             "can_pick_other": _can_pick_other_stays(apartment),
             "mail_enabled": mail.mail_enabled(),
             "claim_error": request.query_params.get("claim_error") or "",
@@ -1401,7 +1570,7 @@ def stay_overview(token: str, reservation_id: int, request: Request):
         }
     )
     context["fee_panel"] = (
-        _fee_pay_panel(apartment, reservation, context["t"], _qr_offered(request, reservation))
+        _fee_pay_panel(apartment, reservation, context["t"])
         if remaining is not None and remaining <= 0
         else None
     )
@@ -1496,6 +1665,17 @@ async def claim_confirm(token: str, reservation_id: int, request: Request):
             ),
             lang,
         )
+    # 1092: confirm applied the count the guest typed with the claim. A stay
+    # whose people the host already entered may be complete now; file it here,
+    # after confirm's transaction has committed.
+    # The link is spent by now: a failure here must not cost the guest the
+    # claim cookie and the redirect. The sweep files the stay later.
+    try:
+        await run_in_threadpool(
+            reporting.submit_stay_if_complete, apartment["id"], reservation_id
+        )
+    except Exception:
+        _log.exception("submit after claim confirm failed reservation=%s", reservation_id)
     response = RedirectResponse(
         _guest_link(token, reservation_id) + _lang_q(lang), status_code=303
     )
@@ -1534,10 +1714,15 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
                 ),
                 lang,
             )
-        await run_in_threadpool(_set_declared_guests, reservation, count)
+        code = await run_in_threadpool(
+            lambda: _set_declared_guests(
+                reservation, count, source="party", owner_user_id=apartment["owner_user_id"]
+            )
+        )
         return _with_lang(
             RedirectResponse(
-                _guest_link(token, reservation_id) + _lang_q(lang),
+                _guest_link(token, reservation_id)
+                + _lang_q(lang, "" if code in headcount.ACCEPTED else "&party_error=1"),
                 status_code=303,
             ),
             lang,
@@ -1609,9 +1794,18 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
             ),
             lang,
         )
-    await run_in_threadpool(_set_declared_guests, reservation, count)
+    code = await run_in_threadpool(
+        lambda: _set_declared_guests(
+            reservation, count, source="party", owner_user_id=apartment["owner_user_id"]
+        )
+    )
     return _with_lang(
-        RedirectResponse(_guest_link(token, reservation_id) + _lang_q(lang), status_code=303), lang
+        RedirectResponse(
+            _guest_link(token, reservation_id)
+            + _lang_q(lang, "" if code in headcount.ACCEPTED else "&party_error=1"),
+            status_code=303,
+        ),
+        lang,
     )
 
 
@@ -1641,7 +1835,14 @@ async def add_another_person(token: str, reservation_id: int, request: Request):
         )
     progress = reporting.reservation_progress(reservation)
     current = progress["expected"] or progress["filled"] or 1
-    _set_declared_guests(reservation, min(current + 1, 60))
+    await run_in_threadpool(
+        lambda: _set_declared_guests(
+            reservation,
+            min(current + 1, headcount.MAX_GUESTS),
+            source="another",
+            owner_user_id=apartment["owner_user_id"],
+        )
+    )
     return _with_lang(
         RedirectResponse(_guest_link(token, reservation_id) + "/new" + _lang_q(lang), status_code=303),
         lang,
@@ -1649,6 +1850,34 @@ async def add_another_person(token: str, reservation_id: int, request: Request):
 
 
 # --- guest form ----------------------------------------------------------
+
+def _under15_lists(request, reservation, guest_id):
+    """Brief 1090: (adults who may sign for a child, children nobody signed for).
+
+    Only people this device saved on this reservation, never ``guest_id``
+    itself. 1089: an archived adult is no signer; an archived child needs none.
+    """
+    child_signers: List[Dict[str, Any]] = []
+    pending_children: List[Dict[str, Any]] = []
+    owned = set(_owned_ids(request))
+    if not owned:
+        return child_signers, pending_children
+    rows = db.query("SELECT * FROM guest WHERE reservation_id = ?", (reservation["id"],))
+    for row in rows:
+        if row["id"] not in owned or row["id"] == guest_id or row["archived_at"]:
+            continue
+        entry = {"id": row["id"], "name": f"{row['first_name']} {row['surname']}".strip()}
+        if validation.is_valid_signature(
+            row["signature_png"]
+        ) and validation.certainly_at_least_age(
+            row["birth_date"], reporting._stay_dates(row, reservation)[0],
+            reporting.ADULT_SIGNER_AGE,
+        ):
+            child_signers.append(entry)
+        elif reporting.guest_under_15(row, reservation) and not row["signed_for_guest_id"]:
+            pending_children.append(entry)
+    return child_signers, pending_children
+
 
 def _form_context(
     request: Request,
@@ -1735,7 +1964,7 @@ def _form_context(
             "fee_obec_rule": _fee_obec_rule(apartment),
             "fee_obec_unknown": not _fee_obec_rule(apartment),
             "fee_panel": (
-                _fee_pay_panel(apartment, reservation, context["t"], _qr_offered(request, reservation))
+                _fee_pay_panel(apartment, reservation, context["t"])
                 if remaining is not None and remaining <= 0
                 else None
             ),
@@ -1763,6 +1992,34 @@ def _form_context(
             "save_action_key": save_action_key,
             # The previous guest's save sent us here; say so without a hub stop.
             "just_saved": request.query_params.get("saved") == "1",
+        }
+    )
+    # Brief 1090: a guest under 15 does not sign; an adult this phone saved
+    # confirms for them. The lists hold only people this device saved.
+    vals = values or {}
+    birth = vals.get("birth_date") or (guest["birth_date"] if guest else "")
+    arrival = validation.parse_iso_date(
+        vals.get("stay_from") or (guest["stay_from"] if guest else "") or reservation["date_from"]
+    )
+    child_signers, pending_children = _under15_lists(
+        request, reservation, guest["id"] if guest is not None else None
+    )
+    context.update(
+        {
+            "under15": (
+                validation.certainly_under_age(birth, arrival, reporting.UNDER_SIGN_AGE)
+                if birth else None
+            ),
+            "adult_signer": (
+                validation.certainly_at_least_age(birth, arrival, reporting.ADULT_SIGNER_AGE)
+                if birth else None
+            ),
+            "child_signers": child_signers,
+            "pending_children": pending_children,
+            "pending_children_names": ", ".join(c["name"] for c in pending_children),
+            "selected_signer": vals.get("signed_by", ""),
+            "selected_child_role": vals.get("child_sign_role", ""),
+            "selected_sign_for_role": vals.get("sign_for_role", ""),
         }
     )
     return context
@@ -1793,6 +2050,10 @@ def guest_form_new(token: str, reservation_id: int, request: Request):
             lang,
         )
     prefill, copied_from = _residence_prefill(request, reservation)
+    draft_on = not _host_owns_apartment(request, apartment)
+    draft_values = _load_draft(request, reservation, progress["guests"]) if draft_on else None
+    if draft_values:
+        prefill = {**dict(prefill or {}), **draft_values}
     new_context = _form_context(
         request,
         apartment,
@@ -1807,6 +2068,11 @@ def guest_form_new(token: str, reservation_id: int, request: Request):
     new_context["dup_warnings"] = _duplicate_warnings(
         progress["guests"], set(_owned_ids(request)), i18n.translator(lang)
     )
+    new_context["draft_restored"] = bool(draft_values)
+    if draft_on:
+        new_context["draft_url"] = f"/l/{token}/{reservation_id}/draft" + _lang_q(lang)
+        new_context["draft_fields"] = " ".join(guest_draft.DRAFT_FIELDS)
+        new_context["draft_owned"] = _draft_owned(request, reservation_id)
     return _with_lang(render_guest(request, "guest/form.html", new_context), lang)
 
 
@@ -1936,6 +2202,13 @@ async def guest_remove(token: str, reservation_id: int, guest_id: int, request: 
     )
     if not removed:
         return _unavailable(request, lang, "already_filed", 403, token)
+    # 1089: a removed adult no longer stands behind the children they signed for.
+    db.execute(
+        "UPDATE guest SET signed_for_guest_id = NULL, signed_for_role = NULL, "
+        "signed_for_at = NULL, signed_for_wording = NULL "
+        "WHERE signed_for_guest_id = ? AND reservation_id = ?",
+        (guest_id, reservation_id),
+    )
     passport_photos.delete_photo(guest_id)
     db.audit(
         "guest_removed_by_guest",
@@ -2031,6 +2304,7 @@ async def guest_form_relang(token: str, reservation_id: int, request: Request):
     context["values"].update({field: raw.get(field) or "" for field in typed_fields})
     step = (form.get("_step") or "").strip()
     context["start_step"] = int(step) if step.isdigit() and len(step) <= 2 else 0
+    _add_draft_keys(context, request, apartment, existing, token, reservation_id, lang)
     return _with_lang(render_guest(request, "guest/form.html", context), lang)
 
 
@@ -2092,6 +2366,13 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     values = validation.normalise_guest(raw, clamp=False)
     stay_from, stay_to = _locked_stay_dates(reservation, existing)
     signature = _kept_signature(form.get("signature"), existing["signature_png"] if existing else None)
+    child = validation.certainly_under_age(
+        values["birth_date"], validation.parse_iso_date(stay_from), reporting.UNDER_SIGN_AGE
+    )
+    if child:
+        # 1089, § 103(b): a child's signature is neither asked for nor kept,
+        # even one posted or stored before.
+        signature = ""
 
     party_raw = (form.get("party_size") or "").strip()
     try:
@@ -2133,10 +2414,19 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     # A guest may not declare their own paper import: that marker is the host's
     # attestation, and accepting it here stored an unsigned record as signed.
     signature_issue = reporting.guest_signature_issue(
-        signature, translate, allow_imported=False
+        signature, translate, allow_imported=False, under_15=child
     )
     if signature_issue:
         issues.append(signature_issue)
+    # Brief 1090: a role ticked with several adults to choose from and none
+    # chosen would be dropped without a word; ask instead.
+    if (
+        child
+        and (form.get("child_sign_role") or "").strip() in reporting.SIGN_FOR_ROLES
+        and not str(form.get("signed_by") or "").strip()
+        and len(_under15_lists(request, reservation, existing["id"] if existing else None)[0]) > 1
+    ):
+        issues.append(validation.Issue("signed_by", translate("sign_for_who_missing")))
     if not form.get("legal_ack"):
         issues.append(validation.Issue("legal_ack", translate("legal_ack_missing")))
 
@@ -2189,6 +2479,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             back_url=_form_back_url(token, apartment, reservation_id, lang, editing=bool(existing)),
             token=token,
         )
+        signed_by_echo = str(form.get("signed_by") or "")
         context["values"].update(
             {
                 "stay_from": stay_from,
@@ -2200,13 +2491,18 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
                 "signature": signature if validation.is_valid_signature(signature) else "",
                 "party_size": party_raw,
                 "legal_ack": form.get("legal_ack") or "",
+                # Brief 1090: echo only a whitelisted signer id and role.
+                "signed_by": signed_by_echo if signed_by_echo.isascii() and signed_by_echo.isdigit() else "",
+                "child_sign_role": form.get("child_sign_role") if form.get("child_sign_role") in reporting.SIGN_FOR_ROLES else "",
+                "sign_for_role": form.get("sign_for_role") if form.get("sign_for_role") in reporting.SIGN_FOR_ROLES else "",
             }
         )
+        context["selected_signer"] = context["values"]["signed_by"]
+        context["selected_child_role"] = context["values"]["child_sign_role"]
+        context["selected_sign_for_role"] = context["values"]["sign_for_role"]
         _keep_unreadable_text(context["values"], raw)
+        _add_draft_keys(context, request, apartment, existing, token, reservation_id, lang)
         return _with_lang(render_guest(request, "guest/form.html", context, status_code=422), lang)
-
-    if reporting.expected_guest_count(reservation) is None and not existing:
-        _set_declared_guests(reservation, party_size)
 
     now = db.utcnow()
     payload = dict(values)
@@ -2215,7 +2511,8 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             "stay_from": stay_from,
             "stay_to": stay_to,
             "signature_png": signature,
-            "signed_at": now,
+            # 1089: nobody signed a child's form; filled_at keeps the time.
+            "signed_at": None if child else now,
             "notice_version": config.GUEST_NOTICE_VERSION,
             "notice_lang": lang,
             "notice_ack_at": now,
@@ -2231,6 +2528,24 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             "last_errors": None,
         }
     )
+    if child:
+        # 1089: an empty result adds nothing, so an edit without a posted
+        # signer keeps an earlier link.
+        payload.update(
+            _sign_for_fields(
+                request, reservation, form.get("signed_by"), form.get("child_sign_role"), now
+            )
+        )
+    else:
+        # A guest corrected to 15 or over loses the link and must sign.
+        payload.update(
+            {
+                "signed_for_guest_id": None,
+                "signed_for_role": None,
+                "signed_for_at": None,
+                "signed_for_wording": None,
+            }
+        )
     if reporting.guest_correction_resets_attempts(existing):
         # Rule 10.4(5): a correction makes the record sendable again, and a
         # guest fixing their own form is a correction like any other. Without
@@ -2259,21 +2574,73 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         # Two phones can each open /new while one slot is free. /new checks
         # capacity on GET; re-check here so the party cannot overshoot the
         # declared headcount and report a guest nobody expected.
-        fresh = reporting.reservation_progress(reservation)
-        if fresh["expected"] is not None and fresh["filled"] >= fresh["expected"]:
+        #
+        # 1092: the check, the first form's count and the insert are one
+        # transaction under the reservation key, on rows read fresh inside it,
+        # so two phones cannot both pass. Everything in the block uses ``cur``;
+        # the audit row, the submit and the mails run after it has committed.
+        saved_id = None
+        count_code, count_old = "", None
+
+        def _fresh_reservation(cur):
+            cur.execute("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+            found = cur.fetchall()
+            return db._hydrate(found[0]) if found else None
+
+        with db.immediate() as cur:
+            db.lock_key(cur, "reservation", reservation_id)
+            fresh_row = _fresh_reservation(cur)
+            refused = fresh_row is None
+            if not refused and reporting.expected_guest_count(fresh_row) is None:
+                count_code, count_old = headcount.apply_declared_in(
+                    cur, reservation_id, party_size
+                )
+                refused = count_code != headcount.SAVED
+                fresh_row = _fresh_reservation(cur)
+            if not refused:
+                cur.execute(
+                    "SELECT * FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
+                    "ORDER BY is_lead DESC, id",
+                    (reservation_id,),
+                )
+                live = [db._hydrate(g) for g in cur.fetchall()]
+                fresh = reporting.reservation_progress(fresh_row, guests=live)
+                refused = fresh["expected"] is not None and fresh["filled"] >= fresh["expected"]
+            if not refused:
+                cur.execute(
+                    "SELECT 1 AS x FROM guest WHERE reservation_id = ?", (reservation_id,)
+                )
+                is_first = not cur.fetchall()
+                payload.update(
+                    {
+                        "reservation_id": reservation_id,
+                        "is_lead": 1 if is_first else 0,
+                        "created_at": now,
+                    }
+                )
+                saved_id = db.insert_in(cur, "guest", payload)
+        if count_code:
+            headcount.record(
+                reservation_id,
+                count_code,
+                count_old,
+                party_size,
+                source="first_form",
+                owner_user_id=apartment["owner_user_id"],
+            )
+        if saved_id is None:
+            if count_code == headcount.SAVED:
+                # The count was saved but the group is already full: the stay
+                # may be complete now, so try to file it, as before 1092.
+                await run_in_threadpool(
+                    reporting.submit_stay_if_complete, apartment["id"], reservation_id
+                )
             return _with_lang(
                 RedirectResponse(
                     _guest_link(token, reservation_id) + _lang_q(lang), status_code=303
                 ),
                 lang,
             )
-        is_first = not db.query_one(
-            "SELECT 1 AS x FROM guest WHERE reservation_id = ?", (reservation_id,)
-        )
-        payload.update(
-            {"reservation_id": reservation_id, "is_lead": 1 if is_first else 0, "created_at": now}
-        )
-        saved_id = db.insert("guest", payload)
 
     if passport_bytes and passport_type:
         passport_photos.save_photo(saved_id, passport_bytes, passport_type, prepared=True)
@@ -2281,6 +2648,15 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             "guest",
             saved_id,
             {"passport_photo_at": now, "updated_at": now},
+        )
+
+    if not child and validation.certainly_at_least_age(
+        values["birth_date"], validation.parse_iso_date(stay_from), reporting.ADULT_SIGNER_AGE
+    ):
+        # 1089: the adult's own signature was validated above.
+        _link_signed_children(
+            request, reservation, saved_id, form.getlist("sign_for_ids"),
+            form.get("sign_for_role"), now,
         )
 
     db.audit(
@@ -2324,21 +2700,86 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     if continue_to_next:
         destination += "/new"
     elif missing == 0:
-        panel = _fee_pay_panel(
-            apartment, fresh_reservation, i18n.translator(lang),
-            _qr_offered(request, fresh_reservation),
-        )
+        panel = _fee_pay_panel(apartment, fresh_reservation, i18n.translator(lang))
         if panel and panel.get("rails"):
             fragment = "#fee-pay"
 
     response = RedirectResponse(
         destination + _lang_q(lang, "&saved=1") + fragment, status_code=303
     )
+    if not guest_id:
+        draft_key = _draft_key(request)
+        if draft_key:
+            guest_draft.delete(reservation_id, guest_draft.key_hash(draft_key))
     _remember_owned(response, _owned_ids(request) + [saved_id])
     return _with_lang(response, lang)
 
 
 # --- document scanning (OCR, Max plan) ------------------------------------
+
+@router.post("/l/{token}/{reservation_id}/draft")
+async def guest_form_draft(token: str, reservation_id: int, request: Request):
+    """Brief 1082: autosave of the unfinished new-guest form. Never filed."""
+    lang = _language(request)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
+    pin_guard = _require_pin(request, token, lang)
+    if pin_guard:
+        return pin_guard
+    reservation = _reservation_for_guest(apartment, reservation_id, request)
+    if not reservation:
+        return Response(status_code=404)
+    key = rate_limit.client_key(request, f"guest_draft:{_lock_token(token)}")
+    if rate_limit.blocked("guest_draft", key, GUEST_DRAFT_MAX_WRITES):
+        return Response(status_code=429)
+    rate_limit.record("guest_draft", key)
+    if _require_claim_session(request, reservation, token, lang):
+        return Response(status_code=403)
+    if _host_owns_apartment(request, apartment):
+        return Response(status_code=204)
+    try:
+        content_length = int(request.headers.get("content-length") or 0)
+    except ValueError:
+        content_length = 0
+    if content_length > 16384:
+        return Response(status_code=413)
+    if str(reservation["date_to"])[:10] < claim.prague_today().isoformat():
+        # Past check-out: the purge would delete it at once, so store nothing.
+        return Response(status_code=204)
+    form = await request.form()
+    raw_guest_id = form.get("guest_id")
+    if isinstance(raw_guest_id, str) and raw_guest_id.strip():
+        return Response(status_code=204)
+    device_key = _draft_key(request)
+    new_key = device_key is None
+    if new_key:
+        device_key = secrets.token_urlsafe(32)
+    fields = {
+        name: form.get(name)
+        for name in guest_draft.DRAFT_FIELDS
+        if isinstance(form.get(name), str)
+    }
+    if _draft_is_sent_guest(fields, reporting.reservation_progress(reservation)["guests"]):
+        # An autosave that lands after /save: the person is already on the
+        # stay, so nothing is stored (and an older row of this device goes).
+        if not new_key:
+            guest_draft.delete(reservation_id, guest_draft.key_hash(device_key))
+        return Response(status_code=204)
+    stored = guest_draft.save(
+        reservation_id,
+        guest_draft.key_hash(device_key),
+        _draft_generation(reservation),
+        form.get("draft_owned") or 0,
+        fields,
+    )
+    response = Response(status_code=204)
+    if stored:
+        # Every save renews the cookie: it lives 7 days after the last change,
+        # like the row. Nothing stored: no cookie.
+        _remember_draft_key(response, device_key)
+    return response
+
 
 @router.post("/l/{token}/{reservation_id}/scan")
 async def guest_document_scan(token: str, reservation_id: int, request: Request):
@@ -2396,22 +2837,7 @@ async def guest_document_scan(token: str, reservation_id: int, request: Request)
 
 # --- stay-fee money card and form estimate (brief 0910) -----------------------
 
-QR_NATIONALITIES = ("CZE", "SVK")
-
-
-def _qr_offered(request, reservation) -> bool:
-    """The Czech payment QR is for Czech and Slovak guests. It follows the people
-    registered on this device, or the whole stay when none are."""
-    rows = db.query(
-        "SELECT id, nationality FROM guest WHERE reservation_id = ? AND archived_at IS NULL",
-        (reservation["id"],),
-    )
-    owned = set(_owned_ids(request))
-    pool = [row for row in rows if row["id"] in owned] or list(rows)
-    return any((row["nationality"] or "").upper() in QR_NATIONALITIES for row in pool)
-
-
-def _fee_pay_panel(apartment, reservation, t, qr_ok=True):
+def _fee_pay_panel(apartment, reservation, t, qr_ok=None):
     """Hub money card data, or None. None unless the property collects, the live total is above zero."""
     from .. import config, payments, stay_fee
     if not (apartment["stay_fee_collect"] and config.STAY_FEE_GUEST_PAY):
@@ -2421,26 +2847,22 @@ def _fee_pay_panel(apartment, reservation, t, qr_ok=True):
         return None
     total, rate = int(charge["total_czk"]), int(charge["rate_czk"])
     vs = str(int(reservation["id"]))  # plain id, no zero padding; the bank VS field takes up to 10 digits
-    message = f"Stay fee {vs}"  # goes only into the SPAYD payload; never shown
-    account, payee = stay_fee.payout_account(apartment)
     # Exempt guests (zero counted nights) are left out: the guest never sees who is exempt.
     persons = [
         {"days": int(line["liable_nights"]), "amount": int(line["amount_czk"])}
         for line in charge["lines"] if line["liable_nights"] > 0
     ]
+    _account, payee = stay_fee.payout_account(apartment)
+    ways = stay_fee.guest_pay_ways(apartment, reservation, charge, qr_ok)
     rails = []
-    for key in stay_fee.usable_rail_keys(apartment):
-        if key == "iban":
-            qr = ""
-            if qr_ok:
-                payload = payments.spayd(account, total, vs, message)
-                qr = payments.qr_data_uri(payload)
-            rails.append({"key": "iban", "iban": payments.format_iban(account), "qr": qr})
-        elif key == "revolut":
-            rails.append({"key": "revolut", "link": apartment["stay_fee_guest_revolut_link"]})
+    for way in ways:
+        if way["key"] == "iban":
+            qr = payments.qr_data_uri(way["spayd"]) if way["spayd"] else ""
+            rails.append({"key": "iban", "iban": way["account"], "qr": qr})
+        elif way["key"] == "revolut":
+            rails.append({"key": "revolut", "link": way["link"]})
         else:
-            rails.append({"key": "cash",
-                          "note": apartment["stay_fee_guest_cash_note"] or t("fee_cash_default")})
+            rails.append({"key": "cash", "note": way["note"] or t("fee_cash_default")})
     return {"total": total, "rate": rate, "persons": persons, "rails": rails,
             "vs": vs, "payee": payee}
 

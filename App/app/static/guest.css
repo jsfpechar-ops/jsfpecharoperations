@@ -87,6 +87,9 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
   color: var(--g-ink);
 }
 .g-checkin-page .g-head h1 { font-size: 28px; letter-spacing: -0.025em; }
+@media (max-width: 480px) {
+  .g-checkin-page .g-head h1 { font-size: 24px; }
+}
 .g-facility { font-size: 14px; color: var(--g-muted); margin: 5px 0 0; }
 
 /* Language menu (WP26). Five guest languages do not fit as pills beside the
@@ -648,7 +651,8 @@ select {
   transition: border-color 0.14s var(--g-ease), background 0.14s var(--g-ease);
 }
 .checkline:hover { border-color: var(--g-line-2); }
-.checkline input[type=checkbox] {
+.checkline input[type=checkbox],
+.checkline input[type=radio] {
   width: 19px;
   height: 19px;
   margin: 1px 0 0;
@@ -656,6 +660,13 @@ select {
   accent-color: var(--g-accent);
   cursor: pointer;
 }
+/* 1090: the under-15 confirmation. Its rows and groups keep 12 px or more
+   from each other and from the pad. */
+#sign-for-children { margin-top: 16px; }
+#sign-for-children .checkline + .checkline,
+#sign-for-child .checkline + .checkline { margin-top: 12px; }
+#sign-for-who + #sign-for-role { margin-top: 16px; }
+#sign-for-who .err { margin-top: 12px; }
 .checkline > span { flex: 1; min-width: 0; }
 .checkline small {
   display: block;

@@ -15,6 +15,9 @@ function setSignatureStatus(text, kind) {
   status.setAttribute("role", hint ? "status" : "alert");
 }
 
+// Brief 1090: a guest under 15 has no pad to fill.
+function signatureWaived() { var block = document.getElementById("sig-block"); return !!(block && block.hidden); }
+
 function initSignature() {
     var canvas = document.getElementById("sig-canvas");
     if (!canvas) return;
@@ -128,7 +131,7 @@ function initSignature() {
         // 0979: the language buttons (data-lang-draft) post the open form to
         // /relang. They need no signature, so they must not hit this guard.
         if (event.submitter && event.submitter.hasAttribute("data-lang-draft")) return;
-        if (!hidden.value) {
+        if (!hidden.value && !signatureWaived()) {
           event.preventDefault();
           // The signature step is not always the one on screen, and its
           // message would be invisible there. Ask the wizard to reveal the
@@ -231,6 +234,104 @@ function initSignature() {
       apply(text);
     });
     apply(input.value);
+  }
+
+  /* Brief 1090: a guest under 15 on the arrival day does not sign. This only
+     shows and hides: the pad, the note, and the adult's role radios. Nothing
+     posted is set here; the server decides again on save. */
+  function initUnder15() {
+    var sigBlock = document.getElementById("sig-block");
+    if (!sigBlock) return;
+    var u15Block = document.getElementById("u15-block");
+    var forChildren = document.getElementById("sign-for-children");
+    var sentence = document.getElementById("sign-for-child-text");
+    var birth = document.getElementById("birth_date");
+    var firstName = document.getElementById("first_name");
+    var surname = document.getElementById("surname");
+    var stayFrom = document.querySelector('input[name="stay_from"]');
+
+    // A copy of initChildToggle's childBirth parse; d and m stay 0 when unknown.
+    function childBirth(text) {
+      var value = String(text || "").trim();
+      var m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value);
+      var year;
+      if (m) {
+        year = parseInt(m[3], 10);
+      } else {
+        m = /^(\d{2})\.(\d{2})\.(\d{2})$/.exec(value);
+        if (!m) return null;
+        var n = parseInt(m[3], 10);
+        year = 2000 + n <= new Date().getFullYear() ? 2000 + n : 1900 + n;
+      }
+      if (year === 0) return null;
+      var month = parseInt(m[2], 10) || 1;
+      var day = parseInt(m[1], 10) || 1;
+      var date = new Date(Date.UTC(year, month - 1, day));
+      if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return null;
+      return { y: year, m: parseInt(m[2], 10), d: parseInt(m[1], 10) };
+    }
+
+    // The rule is the arrival day, never today.
+    function arrival() {
+      var s = /^(\d{4})-(\d{2})-(\d{2})$/.exec(stayFrom ? String(stayFrom.value || "").trim() : "");
+      if (!s) return null;
+      return { y: parseInt(s[1], 10), m: parseInt(s[2], 10), d: parseInt(s[3], 10) };
+    }
+
+    function age(y, m, d, when) {
+      var years = when.y - y;
+      if (when.m < m || (when.m === m && when.d < d)) years -= 1;
+      return years;
+    }
+
+    // Under 15 for certain: the earliest birthday (00 read as 1) is the oldest
+    // the guest can be. 18 for certain: the latest birthday (00 month as 12,
+    // 00 day as the month's last day). An unparsed date is neither.
+    function ages() {
+      var born = childBirth(birth ? birth.value : "");
+      var when = arrival();
+      if (!born || !when) return { under15: false, adult: false };
+      var lateMonth = born.m || 12;
+      var lateDay = born.d || new Date(Date.UTC(born.y, lateMonth, 0)).getUTCDate();
+      return {
+        under15: age(born.y, born.m || 1, born.d || 1, when) < 15,
+        adult: age(born.y, lateMonth, lateDay, when) >= 18
+      };
+    }
+
+    function typing() {
+      return birth && document.activeElement === birth && !/^\d{2}\.\d{2}\.\d{4}$/.test(birth.value);
+    }
+
+    function fillName() {
+      if (!sentence) return;
+      var template = sentence.getAttribute("data-template") || "";
+      var name = ((firstName ? firstName.value : "") + " " + (surname ? surname.value : "")).trim();
+      sentence.textContent = template.replace("{names}", function () { return name; });
+    }
+
+    function apply() {
+      fillName();
+      if (typing()) return;
+      // No birth date yet and no script decision to make: a new form shows
+      // the pad, as today.
+      var now = ages();
+      sigBlock.hidden = now.under15;
+      if (u15Block) u15Block.hidden = !now.under15;
+      if (forChildren) forChildren.hidden = !now.adult;
+    }
+
+    apply();
+    if (birth) {
+      birth.addEventListener("input", apply);
+      birth.addEventListener("change", apply);
+      birth.addEventListener("blur", apply);
+      // initBirthDate's paste handler sets the value without an input event.
+      birth.addEventListener("paste", function () { setTimeout(apply, 0); });
+    }
+    if (firstName) firstName.addEventListener("input", fillName);
+    if (surname) surname.addEventListener("input", fillName);
+    window.addEventListener("pageshow", apply);
   }
 
   function initChildToggle() {
@@ -705,7 +806,7 @@ function initSignature() {
       // an empty signature and only finds out at Submit.
       var canvas = step.querySelector("#sig-canvas");
       var signature = document.getElementById("signature");
-      if (canvas && signature && !signature.value) {
+      if (canvas && signature && !signature.value && !signatureWaived()) {
         var status = document.getElementById("sig-status");
         setSignatureStatus(
           status ? status.getAttribute("data-missing") || "" : "", "err"
@@ -923,6 +1024,78 @@ function initSignature() {
     window.addEventListener("online", function () { note.hidden = true; });
   }
 
+  /* Brief 1087: the unfinished new-guest form is saved as a draft while the
+     guest types, so closing the page and opening it again on the same device
+     brings the typed answers back. It only posts the fields the server lists
+     in data-draft-fields, and it only reads the form. Without JavaScript
+     there is no draft. The document picture and the drawn name are never
+     part of it. */
+  function initGuestDraft() {
+    var form = document.getElementById("guest-form");
+    if (!form || !form.hasAttribute("data-draft-url") || !window.fetch || !window.FormData) return;
+    var url = form.getAttribute("data-draft-url");
+    var names = (form.getAttribute("data-draft-fields") || "").split(" ").filter(function (name) { return name; });
+    var DEBOUNCE_MS = 2000;
+    var MIN_GAP_MS = 15000;
+    var timer = null;
+    var last = 0;
+    var dirty = false;
+    var stopped = false;
+
+    function body() {
+      var data = new FormData();
+      data.append("_csrf", form.elements._csrf.value);
+      data.append("draft_owned", form.getAttribute("data-draft-owned") || "0");
+      names.forEach(function (name) {
+        var el = form.elements[name];
+        if (!el) return;
+        if (el.type === "checkbox") {
+          if (el.checked) data.append(name, "1");
+          return;
+        }
+        data.append(name, el.value);
+      });
+      return data;
+    }
+
+    function send(keepalive) {
+      if (stopped || !dirty) return;
+      dirty = false;
+      last = Date.now();
+      fetch(url, { method: "POST", body: body(), credentials: "same-origin", keepalive: !!keepalive })
+        .catch(function () { dirty = true; });
+    }
+
+    function schedule(event) {
+      if (stopped) return;
+      if (!event.target || names.indexOf(event.target.name) < 0) return;
+      dirty = true;
+      clearTimeout(timer);
+      timer = setTimeout(function () { send(false); }, Math.max(DEBOUNCE_MS, MIN_GAP_MS - (Date.now() - last)));
+    }
+
+    function flush() {
+      clearTimeout(timer);
+      send(true);
+    }
+
+    form.addEventListener("input", schedule);
+    form.addEventListener("change", schedule);
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "hidden") flush();
+    });
+    form.addEventListener("submit", function (event) {
+      if (event.defaultPrevented) return;
+      if (event.submitter && event.submitter.hasAttribute("data-lang-draft")) {
+        flush();
+        return;
+      }
+      stopped = true;
+      clearTimeout(timer);
+    });
+  }
+
   /* The wide check-in layout shows the stay summary and the step list beside
      the active form. The list is built from the same data-step-title elements
      the wizard walks, so it can never disagree with the bar, and each visited
@@ -984,6 +1157,7 @@ function initSignature() {
     initCopy();
     initBirthDate();
     initChildToggle();
+    initUnder15();
     initResidenceCountry();
     initVisaVisibility();
     initPinReturn();
@@ -994,6 +1168,7 @@ function initSignature() {
     initErrorSummary();
     initGuestReview();
     initLegalAck();
+    initGuestDraft();
     focusFirstError();
   });
 })();

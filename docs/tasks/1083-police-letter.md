@@ -1,6 +1,6 @@
 # 1083: G6 police letter, part 1 of 3: the parser and its test table
 
-Status: todo
+Status: review
 Tier: A | Depends on: nothing (main alone) | Base commit: f1ca4288 | Branch: claude/1083-police-letter
 Executor: Fable 5.2 (owner tier override in decisions.md) | Attempts: 3 at most | Fits one session: stop at 25 tool calls or 60k tokens (section 8); reads stay at 150 lines or fewer
 Review: an extremely strict fresh Fable diff review (owner's words) before the PR opens, on filing safety and the parser.
@@ -61,6 +61,23 @@ The title line `Přihlašovací údaje pro robotické vkládání Ubyport Webov�
 8. **Result types (frozen dataclasses):** `LetterResult(status, fields)`, where `fields` is a dict keyed `uby_idub`, `uby_ws_user`, `uby_mark`. Each value is `FieldResult(state, value, line, label, lines)`. `state` is one of `found derived missing ambiguous unreadable conflict`. `value` is `""` unless `found` or `derived`. `line` is an int or `None`, `label` is the matched label text or `""`, and `lines` is a tuple of ints. Constants: `FIELDS = ("uby_idub", "uby_ws_user", "uby_mark")`, `FILLED_STATES = frozenset({"found", "derived"})`.
 9. **`confirmed_fields(form) -> tuple[list[str], list[str]]`** returns (listed, unconfirmed). `form` is any mapping with `.get`. It reads the hidden `letter_fields` (a comma list; keeps only names in `FIELDS`, in `FIELDS` order, without duplicates) and counts a field confirmed only if `letter_ok_<name> == "1"`. Never raises: a missing form, or a value that is not a `str` (a list, bytes, `None`), counts as empty or unconfirmed.
 10. **`line_from_form(form, name) -> int | None`:** `letter_line_<name>` read as an int from 1 to 100000 only, and only if the value is a `str` with `isascii()` and `isdigit()` and at most 6 characters (`"²".isdigit()` is True and `int("²")` raises), else `None`. It never raises. 1085 uses it so a forged value can never crash the re-render.
+
+11. **Added at attempt 2 (strict review). Where these differ from rules 2 to 7 or from step 2, these win.**
+    - **NFC keeps three characters:** U+212A, U+037E and U+1FEF are left as written, because NFC would turn them into ASCII (`K`, `;`, `` ` ``).
+    - **Prose is not a label:** a label followed by `.`, `,`, `;`, `!`, `?` or `…` is skipped (the field can stay `missing`). `GAP` no longer takes a `.`.
+    - **Next-line value:** only for the IDUB and the login, and only after `LABEL:` (the colon is required). The printed mark is read on the label's own line only, and must also pass `_MARK_RE`; a label with nothing valid on its line is `unreadable`.
+    - **Wrapped value:** if the line after the value (leading spaces, `|` and `_` ignored) starts with a letter or a digit and is not a label line, the field is `unreadable`. A label line starts with a letter and has a `:` after 3 or more characters, or holds a field label, a bare `Zkratka` or a password word.
+    - **Two value lines:** a next-line value followed by a line that is itself a full value makes the field `ambiguous`.
+    - **Password label above:** a next-line value is `unreadable` when a password word sits on the line above the label, or two lines above it. The one exception is the official next-line layout: the line two above is an open password label (nothing after it) and the line between is its value (not blank, not a label line).
+    - **Password words:** the stem `hesl`, `password` and `passwort`, searched in the lower-cased line without diacritics. The guard checks every line from the label to the value.
+    - **Bare `Zkratka`:** still not a label and never fills the mark. But a bare `Zkratka: XXXXX` (same line, mark format) that differs from `mark_from_ws_user(login)` makes the login `conflict`, and the mark too unless it is already `unreadable` or `ambiguous`. The same holds for a printed mark that differs.
+
+12. **Added at attempt 3 (second strict review): global rules. They replace the password-label-above rule, the two-value-lines rule and the label-line test of rule 11, and every rule above that takes a printed mark as the value. Where they differ from rules 3 to 7, rule 11 or step 2, these win.**
+    - **A. IDUB, one number in the whole text:** every run of 12 to 14 ASCII digits anywhere in the text is a candidate, and so is a group of digits split by single spaces that adds up to 12 to 14 digits (a spaced phone number counts). With an IDUB label in the text, the IDUB is `found` only when there is exactly one distinct candidate and it follows a label as in rule 3 (same line, or the next line after `IDUB:`). Zero or several candidates: `unreadable`. No label: `missing`. So unlabelled extra numbers are no longer ignored: a numeric password, a bank account or a timestamp makes the IDUB `unreadable`. A single number right after the label is `found` even under a password label; the connection test and the host's tick are the guard there.
+    - **B. Login, one token in the whole text:** every `uby-ws…` or `uby-tws…` token anywhere is a candidate (compared without case; a bare `UBY-WS_` counts). With a login label, the login is `found` only when there is exactly one distinct candidate and it follows a label as in rule 3. Otherwise `unreadable`. No label: `missing`. Two different values are `unreadable`, not `ambiguous`.
+    - **C. Mark, derived only:** a printed mark is never the value. The mark is `derived` from a `found` login, or `missing`. If a line holds any form of `zkratk…` (any case, diacritics optional) and a word of 5 or 6 letters or digits that differs from the derived mark, the login and the mark are both `conflict`. When the zkratka line has no such word, the next line that is not blank is checked instead.
+    - **D. Wrap guard:** the line after any candidate's line, with leading characters that are not letters or digits removed (`>`, `•`, `-`, `*`, spaces). IDUB: `unreadable` if it starts with a digit or is a fragment of 1 to 3 letters or digits. Login: `unreadable` if it is a fragment of 1 to 3 letters or digits.
+    - **E. Kept:** never raises; ASCII-only values; the line rules; "unreadable wins" (rule 4); the prose rule and the next-line colon (rule 11); the password-word guard on the lines from the label to the value (`ambiguous`).
 
 ### Anchors (verified on f1ca4288; re-check each with `grep -nF`)
 

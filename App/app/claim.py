@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional, Tuple
 from zoneinfo import ZoneInfo
 
-from . import config, db, deadlines, i18n, mail, mail_notify, reporting, stay_fee, validation
+from . import config, db, deadlines, headcount, i18n, mail, mail_notify, reporting, stay_fee, validation
 
 log = logging.getLogger("ubyhost.claim")
 
@@ -288,17 +288,14 @@ def start_claim(
             token_hash(secret),
             version,
             until if claim["state"] != CLAIMED else claim["provisional_until"],
-            party_size,
+            # 1092: the typed count waits here and reaches the reservation only
+            # when confirm() spends this link. A resend on a claimed stay holds
+            # no count, so its link can never change the headcount.
+            party_size if claim["state"] != CLAIMED else None,
             now,
             reservation["id"],
         ),
     )
-    if not reservation["expected_guests_override"]:
-        db.update(
-            "reservation",
-            reservation["id"],
-            {"declared_guests": party_size, "updated_at": now},
-        )
     link = (
         f"{config_public(apartment)}/l/{apartment['permalink_token']}/"
         f"{reservation['id']}/claim#c={mail.CLAIM_SECRET_MARKER}"
@@ -386,9 +383,7 @@ def _completion_fee(apartment, reservation) -> Optional[Dict]:
             for line in charge["lines"]
             if int(line["liable_nights"]) > 0
         ]
-        ways = stay_fee.guest_pay_ways(
-            apartment, reservation, charge, stay_fee.qr_offered_for_reservation(reservation)
-        )
+        ways = stay_fee.guest_pay_ways(apartment, reservation, charge)
         return {
             "total": int(charge["total_czk"]),
             "lines": lines,
@@ -679,7 +674,21 @@ def confirm(reservation, secret: str) -> bool:
     # The result is the UPDATE's own row count, not the state read back after it:
     # two confirms racing on the same secret both used to see the winner's CLAIMED
     # row and both returned True, even though only one of them spent the link.
-    with db.cursor() as cur:
+    #
+    # 1092: spending the link and applying the count the guest typed with it
+    # are one transaction under the reservation key. Only a first claim
+    # (PROVISIONAL) carries a count; headcount applies it with the floor, so a
+    # count below the people already registered keeps the old number. Every
+    # read and write in the block uses ``cur``; nothing is filed in here.
+    reservation_id = int(reservation["id"])
+    code, old, pending = "", None, None
+    with db.immediate() as cur:
+        db.lock_key(cur, "reservation", reservation_id)
+        cur.execute(
+            "SELECT state, declared_guests FROM reservation_claim WHERE reservation_id = ?",
+            (reservation_id,),
+        )
+        held = cur.fetchall()
         cur.execute(
             "UPDATE reservation_claim SET state = ?, claimed_at = ?, token_hash = NULL, "
             "provisional_until = NULL, updated_at = ? "
@@ -696,7 +705,28 @@ def confirm(reservation, secret: str) -> bool:
                 CLAIMED,
             ),
         )
-        return cur.rowcount == 1
+        if cur.rowcount != 1:
+            return False
+        if held and held[0]["state"] == PROVISIONAL and held[0]["declared_guests"] is not None:
+            pending = int(held[0]["declared_guests"])
+            code, old = headcount.apply_declared_in(cur, reservation_id, pending)
+        cur.execute(
+            "UPDATE reservation_claim SET declared_guests = NULL WHERE reservation_id = ?",
+            (reservation_id,),
+        )
+    if code:
+        owner = db.query_one(
+            "SELECT owner_user_id FROM apartment WHERE id = ?", (reservation["apartment_id"],)
+        )
+        headcount.record(
+            reservation_id,
+            code,
+            old,
+            pending,
+            source="claim_confirm",
+            owner_user_id=owner["owner_user_id"] if owner else None,
+        )
+    return True
 
 
 def release(reservation_id: int) -> None:

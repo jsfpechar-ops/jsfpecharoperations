@@ -127,7 +127,7 @@ def test_pay_panel_register_and_qr_agree_across_a_rate_change(monkeypatch):
     db.update("apartment", apartment["id"], {"stay_fee_guest_rails": "iban"})
     db.update("legal_entity", apartment["legal_entity_id"], {"iban": "CZ6508000000192000145399"})
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment["id"],))
-    panel = guest_routes._fee_pay_panel(apartment, reservation, lambda key, **kw: key)
+    panel = guest_routes._fee_pay_panel(apartment, reservation, lambda key, **kw: key, qr_ok=True)
     assert panel["total"] == 140
     assert [p["amount"] for p in panel["persons"]] == [140]
     assert panel["rails"][0]["qr"]

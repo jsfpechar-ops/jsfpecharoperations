@@ -17,12 +17,13 @@ entity, or an alternate controller configured per property
 | Controller | Each host's legal entity or its configured alternate controller |
 | Processor | The UbyHost operator (`config.OPERATOR_*`) |
 | Categories of data subjects | Guests staying at the controller's property |
-| Categories of personal data | Name, birth date, nationality, permanent residence; travel document and visa numbers (Fernet-encrypted at rest); drawn signature; optional passport/ID image or PDF (default **off**); stay dates; submitter IP; the e-mail/phone used to claim the stay; police submission envelopes; Doručenka/error PDFs; when the host uses door codes, the door code and its validity times (encrypted, deleted a day after expiry) |
+| Categories of personal data | Name, birth date, nationality, permanent residence; travel document and visa numbers (Fernet-encrypted at rest); drawn signature; for a guest under 15: which adult guest signed for them and in which role (parent or guardian / responsible adult); optional passport/ID image or PDF (default **off**); stay dates; submitter IP; the e-mail/phone used to claim the stay; police submission envelopes; Doručenka/error PDFs; when the host uses door codes, the door code and its validity times (encrypted, deleted a day after expiry) |
 | Processing operations | Guest registration form, house book, police reporting via UbyPort, claim/reminder e-mail delivery, storage, backup; on the host's button press, check-in name and address may be copied into that stay's invoice buyer fields |
 | Recipients | Police of the Czech Republic (UbyPort) as a statutory recipient; the subprocessors in the `/subprocessors` register; TTLock (Hangzhou Sciener Intelligent Control Technology Co., Ltd.), the host's own lock provider and not a subprocessor, only for properties with door codes on: lock ID, code, validity times, reference number; stored in Germany, company in China ([DOOR_CODES_LEGAL](DOOR_CODES_LEGAL.md)) |
 | Transfers | Cloudflare is a global edge network; AWS production is `eu-central-1`; see the register and LD-9 |
 | Security measures | `docs/SECURITY.md`; the code-enforced vs operator-configured split is `TOMS.md` (LD-7) |
 | Retention | `RETENTION.md` (LD-3); the six-year house-book duty dominates |
+| Unfinished form drafts | The fields a guest typed into an unsent check-in form (no photo, no signature), encrypted, keyed to the guest's device by the `ubyhost_draft` cookie; never sent to the police; deleted when the form is sent, else after 7 days or the day after check-out (RETENTION) |
 
 ## B. Controller record — the operator's own processing (Art 30(1))
 
