@@ -253,7 +253,8 @@ def signature_record(guest, reservation) -> Dict[str, str]:
         adult = None
         if signer_id:
             adult = db.query_one(
-                "SELECT * FROM guest WHERE id = ? AND reservation_id = ?",
+                "SELECT * FROM guest WHERE id = ? AND reservation_id = ? "
+                "AND archived_at IS NULL",
                 (signer_id, guest["reservation_id"]),
             )
         # A host edit or delete of the adult must never leave "Signed by"

@@ -5183,7 +5183,7 @@ _INTERFACE_STRINGS = {
         "housebook.purpose": "Účel",
         "housebook.signed": "Podepsáno",
         "housebook.signed_by_adult": "Dospělým",
-        "housebook.signed_not_required": "Není třeba (do 15 let)",
+        "housebook.signed_not_required": "Není třeba (mladší 15 let)",
         "housebook.reported": "Nahlášeno",
         "housebook.visa": "vízum %(number)s",
         "housebook.details": "Podrobnosti",

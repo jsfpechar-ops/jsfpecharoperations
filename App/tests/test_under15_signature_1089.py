@@ -34,6 +34,8 @@ EXEMPT_TEXT = "Under 15, no signature required (§ 103(b))"
 
 def _cleanup():
     for token in (TOKEN, OTHER_TOKEN):
+        # The guest form limits saves per device and link; start every test from zero.
+        db.execute("DELETE FROM rate_limit_event WHERE key LIKE ?", (f"%{token}%",))
         apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (token,))
         if not apartment:
             continue
@@ -493,6 +495,15 @@ def test_no_link_for_a_signer_who_may_not_sign(stay):
         )
         assert _link(child["id"]) == (None, None, None, None), name
 
+    # An adult this device saved whose row the host has since archived.
+    db.update("guest", own_adult["id"], {"archived_at": db.utcnow()})
+    child = _save(
+        browser, stay, "Kseven", f"1.1.{stay['today'].year - 10}", signature="",
+        signed_by=str(own_adult["id"]), child_sign_role="parent",
+    )
+    assert _link(child["id"]) == (None, None, None, None)
+    db.update("guest", own_adult["id"], {"archived_at": None})
+
     # An adult this device saved whose signature is the host's paper marker.
     db.update("guest", own_adult["id"], {"signature_png": reporting.IMPORTED_SIGNATURE})
     child = _save(
@@ -644,6 +655,11 @@ def test_the_signature_record(stay):
     db.update("guest", adult_id, {"signature_png": SIGNATURE, "birth_date": _born(stay, 17)})
     assert record(child_id) == exempt
     db.update("guest", adult_id, {"birth_date": "01011990"})
+    assert record(child_id)["kind"] == "signed_for"
+    # The adult row is archived.
+    db.update("guest", adult_id, {"archived_at": db.utcnow()})
+    assert record(child_id) == exempt
+    db.update("guest", adult_id, {"archived_at": None})
     assert record(child_id)["kind"] == "signed_for"
     # The adult row moved to another reservation, then is gone.
     _other_apartment, other_reservation = _seed_stay(OTHER_TOKEN, stay["owner"])

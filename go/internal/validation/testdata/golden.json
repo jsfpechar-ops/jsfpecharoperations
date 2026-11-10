@@ -3547,6 +3547,84 @@
    "raw": null
   },
   {
+   "complete": true,
+   "date_from": "2026-10-20",
+   "date_to": "2026-10-25",
+   "guest": {
+    "birth_date": "29022012",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "99",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstrasse 5",
+    "signature_png": "",
+    "stay_from": "2027-02-28",
+    "stay_to": "2027-03-03",
+    "surname": "NOVAK",
+    "visa_number": ""
+   },
+   "issues": [],
+   "name": "u15_leap_birthday_28_feb",
+   "raw": null
+  },
+  {
+   "complete": false,
+   "date_from": "2026-10-20",
+   "date_to": "2026-10-25",
+   "guest": {
+    "birth_date": "29022012",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "99",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstrasse 5",
+    "signature_png": "",
+    "stay_from": "2027-03-01",
+    "stay_to": "2027-03-03",
+    "surname": "NOVAK",
+    "visa_number": ""
+   },
+   "issues": [
+    [
+     "signature",
+     "A guest signature is required. Use the guest link or sign on the host form.",
+     "error"
+    ]
+   ],
+   "name": "u15_leap_birthday_1_mar",
+   "raw": null
+  },
+  {
+   "complete": true,
+   "date_from": "2026-10-20",
+   "date_to": "2026-10-25",
+   "guest": {
+    "birth_date": "00112011",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "99",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstrasse 5",
+    "signature_png": "",
+    "stay_from": "",
+    "stay_to": "",
+    "surname": "NOVAK",
+    "visa_number": ""
+   },
+   "issues": [],
+   "name": "u15_day_unknown_certain",
+   "raw": null
+  },
+  {
    "complete": false,
    "date_from": "2026-10-20",
    "date_to": "2026-10-25",

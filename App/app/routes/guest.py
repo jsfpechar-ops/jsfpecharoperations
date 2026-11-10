@@ -419,7 +419,7 @@ def _sign_for_fields(request, reservation, signer_raw, role_raw, now) -> Dict[st
     if signer_id not in _owned_ids(request):
         return {}
     row = db.query_one(
-        "SELECT * FROM guest WHERE id = ? AND reservation_id = ?",
+        "SELECT * FROM guest WHERE id = ? AND reservation_id = ? AND archived_at IS NULL",
         (signer_id, reservation["id"]),
     )
     if not row or not validation.is_valid_signature(row["signature_png"]):
