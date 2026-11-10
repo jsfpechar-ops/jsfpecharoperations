@@ -8,12 +8,12 @@ Status: review
 - `App/app/db.py`: `insert_in`.
 - `App/app/claim.py`: `start_claim` no longer writes `reservation`; `confirm` spends the link and applies the pending count in one `db.immediate()` block.
 - `App/app/routes/guest.py`: `_set_declared_guests` wrapper, `/party` (both branches), `/another`, `claim_confirm` submit call, `/save` locked new-row path.
-- `App/tests/test_party_count_1092.py` (new, 19 tests).
+- `App/tests/test_party_count_1092.py` (new, 22 tests).
 - Old tests changed, both for this brief's rule: `test_guest_pin.py::test_party_and_another_posts_require_pin` (count now waits on the claim row before confirm); `test_endtoend.py::test_19` (a new link on a claimed stay no longer raises the count; the test now posts `/party`).
 
 ## Commands (from `App/`)
 
-- `pytest tests/test_party_count_1092.py`: 19 passed.
+- `pytest tests/test_party_count_1092.py`: 22 passed.
 - Filing row without `test_endtoend.py`: 593 passed.
 - `pytest tests/test_endtoend.py` alone: 28 passed.
 - Database row: 25 passed, 55 skipped (no Postgres here).
@@ -39,6 +39,9 @@ Status: review
 4. `/save` also refuses when the reservation row is gone inside the lock.
 5. No threaded Postgres race test: the Postgres environment is absent here.
 
-## Questions
+## Attempt 2 (review fixes)
 
-- `guest/claim.html` and `guest/assigned.html` prefill `party_size` from `reservation_claim.declared_guests`, which is NULL after confirm, so they fall back to 1. Harmless now (a claimed resend ignores the number), but the later head-count feature should read the reservation.
+- B1: the stay page passes the templates a copy of the claim row whose `declared_guests` falls back to the reservation's count, so after a host release the claim form no longer prefills 1. No template change.
+- N1: `/save` calls `submit_stay_if_complete` (threadpool, after commit) when the first form's count was saved but the insert was refused as full.
+- N2: the submit call after `claim.confirm` is wrapped in `try/except` with `log.exception`; the cookie and redirect still happen. `guest.py` gained a module logger.
+- Three tests added, one per fix. Rerun: `test_claim_*` 106 passed; `test_guest_pin.py` 10 passed; `test_endtoend.py` alone 28 passed; filing row without `test_endtoend.py` 593 passed; guest row 596 passed, 10 skipped.

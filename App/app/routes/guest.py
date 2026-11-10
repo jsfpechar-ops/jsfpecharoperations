@@ -14,6 +14,7 @@ guest's personal data.
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
 from datetime import timedelta
 from typing import Any, Dict, List, Optional
@@ -32,6 +33,8 @@ from .. import ruian as ruian_lookup  # 0911: guest RUIAN suggestions
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
 from .admin_helpers import kept_signature as _kept_signature
+
+_log = logging.getLogger("ubyhost.guest")
 
 router = APIRouter(dependencies=[Depends(security.protect_guest_post)])
 
@@ -1415,11 +1418,17 @@ def stay_overview(token: str, reservation_id: int, request: Request):
     if not claim.guest_access_open(reservation, claim_row):
         return _unavailable(request, lang, "stay_gone", 404, token)
     context = _shared(request, token, lang, apartment)
+    # 1092: confirm() clears the count held on the claim row, so after a host
+    # release that row holds none. The claim form's prefill must then be the
+    # stay's own count: a default of 1 confirmed unread would lower it.
+    claim_view = {key: claim_row[key] for key in claim_row.keys()}
+    if claim_view.get("declared_guests") is None:
+        claim_view["declared_guests"] = reservation["declared_guests"]
     context.update(
         {
             "apartment": apartment,
             "reservation": reservation,
-            "claim": claim_row,
+            "claim": claim_view,
             "can_pick_other": _can_pick_other_stays(apartment),
             "mail_enabled": mail.mail_enabled(),
             "claim_error": request.query_params.get("claim_error") or "",
@@ -1589,7 +1598,14 @@ async def claim_confirm(token: str, reservation_id: int, request: Request):
     # 1092: confirm applied the count the guest typed with the claim. A stay
     # whose people the host already entered may be complete now; file it here,
     # after confirm's transaction has committed.
-    await run_in_threadpool(reporting.submit_stay_if_complete, apartment["id"], reservation_id)
+    # The link is spent by now: a failure here must not cost the guest the
+    # claim cookie and the redirect. The sweep files the stay later.
+    try:
+        await run_in_threadpool(
+            reporting.submit_stay_if_complete, apartment["id"], reservation_id
+        )
+    except Exception:
+        _log.exception("submit after claim confirm failed reservation=%s", reservation_id)
     response = RedirectResponse(
         _guest_link(token, reservation_id) + _lang_q(lang), status_code=303
     )
@@ -2437,6 +2453,12 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
                 owner_user_id=apartment["owner_user_id"],
             )
         if saved_id is None:
+            if count_code == headcount.SAVED:
+                # The count was saved but the group is already full: the stay
+                # may be complete now, so try to file it, as before 1092.
+                await run_in_threadpool(
+                    reporting.submit_stay_if_complete, apartment["id"], reservation_id
+                )
             return _with_lang(
                 RedirectResponse(
                     _guest_link(token, reservation_id) + _lang_q(lang), status_code=303

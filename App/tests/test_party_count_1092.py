@@ -474,3 +474,74 @@ def test_every_writer_takes_the_reservation_key(stay, monkeypatch):
         assert call().status_code == 303
         assert key in taken, label
     assert _count(stay_id) == 5
+
+
+# --- review fixes (attempt 2) --------------------------------------------------------
+
+
+def test_after_a_host_release_the_claim_form_prefills_the_stays_own_count(stay):
+    token, stay_id = stay
+    browser = _browser(token, stay_id, party_size=3)
+    assert _save(browser, token, stay_id, 0).status_code == 303
+    claim.release(stay_id)
+    held = db.query_one(
+        "SELECT declared_guests FROM reservation_claim WHERE reservation_id = ?", (stay_id,)
+    )
+    assert held["declared_guests"] is None
+    db.execute("DELETE FROM audit WHERE action LIKE 'reservation_declared_guests%'")
+
+    newcomer = TestClient(app)
+    newcomer.cookies.set(guest.LANG_COOKIE, "en")
+    page = newcomer.get(f"/l/{token}/{stay_id}?lang=en", follow_redirects=True)
+    assert page.status_code == 200
+    field = re.search(r'<input[^>]*name="party_size"[^>]*>', page.text, re.S)
+    assert field, "the claim form has no party_size field"
+    assert re.search(r'value="3"', field.group(0)), field.group(0)
+
+    # Confirming that default changes nothing and files nothing early.
+    secret = _start(token, stay_id, 3, email="second@example.test")
+    confirmed = newcomer.post(
+        f"/l/{token}/{stay_id}/claim/confirm", data={"secret": secret}, follow_redirects=False
+    )
+    assert confirmed.status_code == 303
+    assert _count(stay_id) == 3
+    assert not _audit(stay_id, "set") and not _audit(stay_id, "refused")
+
+
+def test_a_first_form_whose_count_fills_the_group_still_tries_to_file(stay, monkeypatch):
+    token, stay_id = stay
+    monkeypatch.setattr(mail, "mail_enabled", lambda: False)
+    browser = TestClient(app)
+    browser.cookies.set(guest.LANG_COOKIE, "en")
+    assert _save(browser, token, stay_id, 0, party_size="2").status_code == 303
+    db.update("reservation", stay_id, {"declared_guests": None})
+
+    calls = []
+    monkeypatch.setattr(
+        reporting, "submit_stay_if_complete", lambda a, r: calls.append((a, r))
+    )
+    late = _save(browser, token, stay_id, 1, party_size="1")
+    assert late.status_code == 303
+    assert _count(stay_id) == 1
+    assert _live(stay_id) == 1
+    assert calls == [(_apartment(token)["id"], stay_id)]
+
+
+def test_a_filing_error_after_confirm_still_gives_the_guest_the_claim_cookie(stay, monkeypatch):
+    token, stay_id = stay
+    secret = _start(token, stay_id, 2)
+
+    def _boom(_apartment_id, _reservation_id):
+        raise RuntimeError("ubyport down")
+
+    monkeypatch.setattr(reporting, "submit_stay_if_complete", _boom)
+    lead = TestClient(app, raise_server_exceptions=False)
+    lead.cookies.set(guest.LANG_COOKIE, "en")
+    response = lead.post(
+        f"/l/{token}/{stay_id}/claim/confirm", data={"secret": secret}, follow_redirects=False
+    )
+    assert response.status_code == 303
+    assert "claim_error" not in response.headers["location"]
+    assert "ubyhost_claim" in response.headers.get("set-cookie", "")
+    assert _count(stay_id) == 2
+    assert claim.is_claimed(claim.ensure_row(stay_id))
