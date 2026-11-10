@@ -1401,7 +1401,7 @@ def stay_overview(token: str, reservation_id: int, request: Request):
         }
     )
     context["fee_panel"] = (
-        _fee_pay_panel(apartment, reservation, context["t"], _qr_offered(request, reservation))
+        _fee_pay_panel(apartment, reservation, context["t"])
         if remaining is not None and remaining <= 0
         else None
     )
@@ -1735,7 +1735,7 @@ def _form_context(
             "fee_obec_rule": _fee_obec_rule(apartment),
             "fee_obec_unknown": not _fee_obec_rule(apartment),
             "fee_panel": (
-                _fee_pay_panel(apartment, reservation, context["t"], _qr_offered(request, reservation))
+                _fee_pay_panel(apartment, reservation, context["t"])
                 if remaining is not None and remaining <= 0
                 else None
             ),
@@ -2324,10 +2324,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     if continue_to_next:
         destination += "/new"
     elif missing == 0:
-        panel = _fee_pay_panel(
-            apartment, fresh_reservation, i18n.translator(lang),
-            _qr_offered(request, fresh_reservation),
-        )
+        panel = _fee_pay_panel(apartment, fresh_reservation, i18n.translator(lang))
         if panel and panel.get("rails"):
             fragment = "#fee-pay"
 
@@ -2396,22 +2393,7 @@ async def guest_document_scan(token: str, reservation_id: int, request: Request)
 
 # --- stay-fee money card and form estimate (brief 0910) -----------------------
 
-QR_NATIONALITIES = ("CZE", "SVK")
-
-
-def _qr_offered(request, reservation) -> bool:
-    """The Czech payment QR is for Czech and Slovak guests. It follows the people
-    registered on this device, or the whole stay when none are."""
-    rows = db.query(
-        "SELECT id, nationality FROM guest WHERE reservation_id = ? AND archived_at IS NULL",
-        (reservation["id"],),
-    )
-    owned = set(_owned_ids(request))
-    pool = [row for row in rows if row["id"] in owned] or list(rows)
-    return any((row["nationality"] or "").upper() in QR_NATIONALITIES for row in pool)
-
-
-def _fee_pay_panel(apartment, reservation, t, qr_ok=True):
+def _fee_pay_panel(apartment, reservation, t, qr_ok=None):
     """Hub money card data, or None. None unless the property collects, the live total is above zero."""
     from .. import config, payments, stay_fee
     if not (apartment["stay_fee_collect"] and config.STAY_FEE_GUEST_PAY):
@@ -2421,26 +2403,22 @@ def _fee_pay_panel(apartment, reservation, t, qr_ok=True):
         return None
     total, rate = int(charge["total_czk"]), int(charge["rate_czk"])
     vs = str(int(reservation["id"]))  # plain id, no zero padding; the bank VS field takes up to 10 digits
-    message = f"Stay fee {vs}"  # goes only into the SPAYD payload; never shown
-    account, payee = stay_fee.payout_account(apartment)
     # Exempt guests (zero counted nights) are left out: the guest never sees who is exempt.
     persons = [
         {"days": int(line["liable_nights"]), "amount": int(line["amount_czk"])}
         for line in charge["lines"] if line["liable_nights"] > 0
     ]
+    _account, payee = stay_fee.payout_account(apartment)
+    ways = stay_fee.guest_pay_ways(apartment, reservation, charge, qr_ok)
     rails = []
-    for key in stay_fee.usable_rail_keys(apartment):
-        if key == "iban":
-            qr = ""
-            if qr_ok:
-                payload = payments.spayd(account, total, vs, message)
-                qr = payments.qr_data_uri(payload)
-            rails.append({"key": "iban", "iban": payments.format_iban(account), "qr": qr})
-        elif key == "revolut":
-            rails.append({"key": "revolut", "link": apartment["stay_fee_guest_revolut_link"]})
+    for way in ways:
+        if way["key"] == "iban":
+            qr = payments.qr_data_uri(way["spayd"]) if way["spayd"] else ""
+            rails.append({"key": "iban", "iban": way["account"], "qr": qr})
+        elif way["key"] == "revolut":
+            rails.append({"key": "revolut", "link": way["link"]})
         else:
-            rails.append({"key": "cash",
-                          "note": apartment["stay_fee_guest_cash_note"] or t("fee_cash_default")})
+            rails.append({"key": "cash", "note": way["note"] or t("fee_cash_default")})
     return {"total": total, "rate": rate, "persons": persons, "rails": rails,
             "vs": vs, "payee": payee}
 
