@@ -225,6 +225,68 @@ def guest_dict(guest) -> Dict[str, Optional[str]]:
     }
 
 
+# Brief 1089: Act 326/1999 § 103(b) (under 15 does not sign) and § 103(u) (an adult may sign for the child).
+UNDER_SIGN_AGE = 15
+ADULT_SIGNER_AGE = 18
+SIGN_FOR_WORDING_VERSION = "u15-2026-11-10"
+SIGN_FOR_ROLES = {
+    "parent": "parent or legal guardian",
+    "responsible_adult": "adult responsible for the child during this stay",
+}
+
+
+def guest_under_15(guest, reservation) -> bool:
+    """True when the guest is certainly under 15 on the arrival date (brief 1089)."""
+    start, _end = _stay_dates(guest, reservation)
+    return validation.certainly_under_age(guest["birth_date"], start, UNDER_SIGN_AGE)
+
+
+def signature_record(guest, reservation) -> Dict[str, str]:
+    """How this guest's signature stands, for the house book: ``kind`` and ``text`` (brief 1089)."""
+    value = (guest["signature_png"] or "").strip()
+    if value == IMPORTED_SIGNATURE:
+        return {"kind": "imported", "text": "Signature on paper (host)"}
+    # Any stored drawing counts, as guest_has_signature reads it: the statutory
+    # CSV said "yes" for these rows before brief 1089 and must keep saying so.
+    if value.startswith("data:image/"):
+        return {"kind": "own", "text": ""}
+    if guest_under_15(guest, reservation):
+        signer_id = _field(guest, "signed_for_guest_id")
+        adult = None
+        if signer_id:
+            adult = db.query_one(
+                "SELECT * FROM guest WHERE id = ? AND reservation_id = ? "
+                "AND archived_at IS NULL",
+                (signer_id, guest["reservation_id"]),
+            )
+        # A host edit or delete of the adult must never leave "Signed by"
+        # standing without a signature behind it.
+        if (
+            adult
+            and validation.is_valid_signature(adult["signature_png"])
+            and validation.certainly_at_least_age(
+                adult["birth_date"], _stay_dates(adult, reservation)[0], ADULT_SIGNER_AGE
+            )
+        ):
+            role = _field(guest, "signed_for_role")
+            return {
+                "kind": "signed_for",
+                "text": (
+                    f"Signed by {adult['first_name']} {adult['surname']} for "
+                    f"{guest['first_name']} {guest['surname']}, as "
+                    f"{SIGN_FOR_ROLES.get(role, role)}, {_field(guest, 'signed_for_at')}, "
+                    f"wording {_field(guest, 'signed_for_wording')}"
+                ),
+            }
+        return {"kind": "exempt", "text": "Under 15, no signature required (§ 103(b))"}
+    return {"kind": "missing", "text": ""}
+
+
+def guest_signature_settled(guest, reservation) -> bool:
+    """Signed, or under 15 on arrival and so not asked to sign (brief 1089)."""
+    return guest_has_signature(guest) or guest_under_15(guest, reservation)
+
+
 def guest_has_signature(guest) -> bool:
     """True when the record has a drawn signature or a declared paper import."""
     signature = (guest["signature_png"] or "").strip()
@@ -234,7 +296,8 @@ def guest_has_signature(guest) -> bool:
 
 
 def guest_signature_issue(value: Optional[str], translate=None, *,
-                          allow_imported: bool = True) -> Optional[validation.Issue]:
+                          allow_imported: bool = True,
+                          under_15: bool = False) -> Optional[validation.Issue]:
     """The one ``signature`` issue a value raises, or ``None`` when it is fine.
 
     Both the stored-record check and the two save paths read this, so a value
@@ -250,8 +313,13 @@ def guest_signature_issue(value: Optional[str], translate=None, *,
     on paper. A guest submission passes False: a guest posting
     ``signature=imported`` used to be accepted and stored as signed, which made
     an unsigned record sendable.
+
+    ``under_15`` (brief 1089): a guest under 15 on arrival does not sign, so an
+    empty value raises nothing; any other value is judged as for everyone else.
     """
     text = (value or "").strip()
+    if under_15 and not text:
+        return None
     if text == IMPORTED_SIGNATURE:
         if allow_imported:
             return None
@@ -324,7 +392,9 @@ def guest_issues(guest, reservation, translate=None) -> List[validation.Issue]:
     """
     start, end = _stay_dates(guest, reservation)
     issues = validation.validate_guest(guest_dict(guest), start, end)
-    signature = guest_signature_issue(guest["signature_png"], translate)
+    signature = guest_signature_issue(
+        guest["signature_png"], translate, under_15=guest_under_15(guest, reservation)
+    )
     if signature is not None:
         issues.append(signature)
     return issues
@@ -531,13 +601,16 @@ def queue_counts(
     }
 
 
-def pending_reportable(guests: List[Any]) -> List[Any]:
+def pending_reportable(guests: List[Any], reservation=None) -> List[Any]:
     """Reportable guests that have not yet been accepted by UbyPort."""
     return [
         guest
         for guest in guests
         if validation.guest_is_reportable(guest["nationality"])
-        and guest_has_signature(guest)
+        and (
+            guest_has_signature(guest)
+            or (reservation is not None and guest_under_15(guest, reservation))
+        )
         and guest["submit_state"] not in (SENT, BLOCKED)
     ]
 
@@ -645,7 +718,7 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
     from . import demo
 
     mode = apartment["automation_mode"]
-    pending = pending_reportable(progress["reportable"])
+    pending = pending_reportable(progress["reportable"], reservation)
     has_pending = bool(pending)
     sendable_statuses = ("ready", "failed", "awaiting_verification")
     can_send = progress["status"] in sendable_statuses and has_pending
@@ -691,7 +764,7 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
             guest
             for guest in progress.get("guests", [])
             if validation.guest_is_reportable(guest["nationality"])
-            and not guest_has_signature(guest)
+            and not guest_signature_settled(guest, reservation)
         ]
         if unsigned_foreign:
             send_hint_key = "hint.need_signature"

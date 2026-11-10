@@ -220,6 +220,37 @@ func parseBirthDate(s string) (time.Time, bool) {
 	return t, ok
 }
 
+// certainlyUnderAge is validation.certainly_under_age (brief 1089): true only
+// when the guest is under years on when whatever a 00 day or month hides. The
+// earliest possible birthday (00 read as 1) is the oldest the guest can be.
+func certainlyUnderAge(raw string, when time.Time, years int) bool {
+	if len(raw) != 8 || !isASCIIDigits(raw) {
+		return false
+	}
+	day, _ := strconv.Atoi(raw[0:2])
+	month, _ := strconv.Atoi(raw[2:4])
+	year, _ := strconv.Atoi(raw[4:8])
+	if year == 0 {
+		return false
+	}
+	if month == 0 {
+		month = 1
+	}
+	if day == 0 {
+		day = 1
+	}
+	birth, ok := roundTrip(year, month, day)
+	if !ok {
+		return false
+	}
+	// validation.age_on: whole years between birth and when.
+	age := when.Year() - birth.Year()
+	if when.Month() < birth.Month() || (when.Month() == birth.Month() && when.Day() < birth.Day()) {
+		age--
+	}
+	return age < years
+}
+
 // validateBirthDate is validation.validate_birth_date. today is Python date.today().
 func validateBirthDate(s string, stayFrom *time.Time, today time.Time) []Issue {
 	const field = "birth_date"
@@ -419,9 +450,13 @@ func parseSignatureDataURL(value string) ([]byte, error) {
 }
 
 // guestSignatureIssue is reporting.guest_signature_issue with translate=None
-// and allow_imported=True.
-func guestSignatureIssue(value string) *Issue {
+// and allow_imported=True. under15 (brief 1089): a guest under 15 on arrival
+// does not sign, so an empty value raises nothing.
+func guestSignatureIssue(value string, under15 bool) *Issue {
 	text := pyStrip(value)
+	if under15 && text == "" {
+		return nil
+	}
 	if text == importedSignature {
 		return nil
 	}
@@ -440,7 +475,8 @@ func guestSignatureIssue(value string) *Issue {
 func GuestIssues(g GuestRow, dateFrom, dateTo string, today time.Time) []Issue {
 	from, to := stayDates(g, dateFrom, dateTo)
 	issues := validateGuest(g, from, to, today, nil)
-	if sig := guestSignatureIssue(g.SignaturePNG); sig != nil {
+	under15 := from != nil && certainlyUnderAge(g.BirthDate, *from, 15)
+	if sig := guestSignatureIssue(g.SignaturePNG, under15); sig != nil {
 		issues = append(issues, *sig)
 	}
 	return issues

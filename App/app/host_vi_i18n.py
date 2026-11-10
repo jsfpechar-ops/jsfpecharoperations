@@ -1705,6 +1705,8 @@ STRINGS: Dict[str, str] = {
     "housebook.residence": "Nơi thường trú ở nước ngoài",
     "housebook.purpose": "Mục đích",
     "housebook.signed": "Đã ký",
+    "housebook.signed_by_adult": "Do người lớn ký",
+    "housebook.signed_not_required": "Không bắt buộc (dưới 15 tuổi)",
     "housebook.reported": "Đã khai báo",
     "housebook.visa": "thị thực %(number)s",
     "housebook.details": "Chi tiết",
