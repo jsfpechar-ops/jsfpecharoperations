@@ -1,6 +1,6 @@
 # Test map
 
-Run only the row for the area you changed, from `App/`, always ending `-q --tb=short -x 2>&1 | tail -30`. CI runs the full suite; the full suite locally only when the owner asks in the current chat. Globs are under `tests/`. Add the test file you wrote or changed.
+Run only the row for the area you changed, from `App/`, always ending `-q --tb=short -x 2>&1 | tail -30`. Full suite: CI, or locally only if the owner asks. Globs are under `tests/`. Add the test file you wrote or changed.
 
 | Changed | Run |
 |---|---|
@@ -10,9 +10,10 @@ Run only the row for the area you changed, from `App/`, always ending `-q --tb=s
 | Filing, UbyPort, worker, claim | `test_ubyport_*.py test_soap.py test_worker.py test_submission_*.py test_stale_submission.py test_filed_by_hand.py test_filing_watchdog.py test_police_*.py test_deadline*.py test_claim_*.py test_endtoend.py` |
 | Platform billing, subscription, trial | `test_billing_*.py` |
 | Invoices, stay fee | `test_invoice_*.py test_stay_fee*.py` |
-| Door-code access disclosure | `test_door_code_window.py test_door_code_window_browser.py`; CI `door-code-access-review` requires Chromium/WebKit, zero skips, 390 px screenshots |
+| Door-code access disclosure | `test_door_code_window*.py`; CI `door-code-access-review`: Chromium/WebKit, 0 skips, 390 px shots |
 | Door codes, TTLock | `test_door_code*.py test_ttlock*.py test_smart_locks_page.py` |
 | Cleaning | `test_cleaning*.py` |
+| Alerts | `test_alert*.py test_needs_you*.py test_host_alert_stack_browser.py test_design_alerts_phone.py` |
 | Havel (AI), AI calls, Help & guide | `test_ai*.py test_havel*.py test_guide*.py` (browser files 0 skipped); UI parts also the host pages row |
 | Calendar, iCal feeds | `test_icalsync.py test_ical_skip_unchanged.py test_feed_*.py test_dashboard_calendar*.py test_calendar_*.py test_sample_calendar.py` |
 | Mail, SES | `test_ses_mail.py test_mail_*.py test_*_mail.py test_lifecycle_mail.py test_notification_copy.py` |
