@@ -187,6 +187,11 @@ def test_a_full_crawl_sets_exactly_the_strictly_necessary_cookies(guest_pin_on):
         assert pinned.status_code == 303, pinned.text
         guest.get(f"/l/{TOKEN}/{stay_id}?lang=en", follow_redirects=True)
         complete_guest_claim(guest, TOKEN, stay_id, party_size=1)
+        drafted = guest.post(
+            f"/l/{TOKEN}/{stay_id}/draft?lang=en",
+            data={"surname": "Novak", "first_name": "Demo", "doc_number": "123456789", "draft_owned": "0"},
+        )
+        assert drafted.status_code == 204, drafted.text
         saved = guest.post(
             f"/l/{TOKEN}/{stay_id}/save?lang=en",
             data={
@@ -240,6 +245,7 @@ def test_the_strictly_necessary_set_is_the_first_party_cookie_inventory():
         "ubyhost_claim",
         "ubyhost_guest_lang",
         "ubyhost_leon",
+        "ubyhost_draft",
     }
 
 
