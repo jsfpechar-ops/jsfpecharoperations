@@ -1,6 +1,6 @@
 # 1084: F2, one rule for the pay ways and the QR code, used by the stay page and the completion mail (P5)
 
-Status: todo
+Status: review
 Tier: B | Depends on: nothing (main alone; 1077 is merged) | Base commit: f1ca4288 | Branch: claude/1084-f2-one-pay-rule
 Executor: Opus 5.5 (owner tier override 2026-11-09, decisions.md) | Attempts: 3 at most | Fits one session: stop at 60 tool calls (section 8); reads stay at 150 lines or fewer
 Report: docs/tasks/1084-report.md (create it)
