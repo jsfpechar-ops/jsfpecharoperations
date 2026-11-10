@@ -87,6 +87,9 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
   color: var(--g-ink);
 }
 .g-checkin-page .g-head h1 { font-size: 28px; letter-spacing: -0.025em; }
+@media (max-width: 480px) {
+  .g-checkin-page .g-head h1 { font-size: 24px; }
+}
 .g-facility { font-size: 14px; color: var(--g-muted); margin: 5px 0 0; }
 
 /* Language menu (WP26). Five guest languages do not fit as pills beside the
