@@ -1,6 +1,6 @@
 # 1072: shared queries once per request, alerts top N, Server-Timing header
 
-Status: todo
+Status: review
 Depends on: 1065 (merged, PR #856) | Base commit: 1194e109 | Branch: claude/1072-shared-queries-server-timing
 Executor: Fable 5.2 (**Tier A**: `workspace_user` feeds `access.owner_id` for every guest-data lookup; [workflow] decision 2026-11-09 in [decisions](../context/decisions.md)) | Fits one session: 40 tool calls, 70k tokens
 After execution a fresh Fable reviews the full diff of auth.py and access.py line by line vs this brief before the PR.
