@@ -344,6 +344,30 @@ def _draft_owned(request: Request, reservation_id: int) -> int:
     return guest_draft.clamp_owned(row["n"] if row else 0)
 
 
+def _draft_is_sent_guest(values, guests) -> bool:
+    """Brief 1082: the draft is a guest already on the stay (same document
+    number, or same first name, surname and birth date)."""
+
+    def fold(value) -> str:
+        return str(value or "").strip().casefold()
+
+    def birth(value) -> str:
+        # The guest row holds the normalised date; the draft holds what was typed.
+        return validation.normalise_birth_date(str(value or "")) or fold(value)
+
+    def who(source) -> tuple:
+        return (fold(source["first_name"]), fold(source["surname"]), birth(source["birth_date"]))
+
+    doc = str(values.get("doc_number") or "").strip().upper()
+    person = who({name: values.get(name) for name in ("first_name", "surname", "birth_date")})
+    for guest in guests:
+        guest_doc = str(guest["doc_number"] or "").strip().upper()
+        guest_person = who(guest)
+        if (doc and doc == guest_doc) or (all(person) and person == guest_person):
+            return True
+    return False
+
+
 def _load_draft(request: Request, reservation, guests) -> Optional[dict]:
     """Brief 1082: this device's draft for the stay, unless it is a guest
     already on the stay (then it is deleted)."""
@@ -356,18 +380,9 @@ def _load_draft(request: Request, reservation, guests) -> Optional[dict]:
     )
     if not values:
         return None
-
-    def fold(value) -> str:
-        return str(value or "").strip().casefold()
-
-    doc = str(values.get("doc_number") or "").strip().upper()
-    person = tuple(fold(values.get(name)) for name in ("first_name", "surname", "birth_date"))
-    for guest in guests:
-        guest_doc = str(guest["doc_number"] or "").strip().upper()
-        guest_person = tuple(fold(guest[name]) for name in ("first_name", "surname", "birth_date"))
-        if (doc and doc == guest_doc) or (all(person) and person == guest_person):
-            guest_draft.delete(reservation["id"], device_hash)
-            return None
+    if _draft_is_sent_guest(values, guests):
+        guest_draft.delete(reservation["id"], device_hash)
+        return None
     return values
 
 
@@ -2467,6 +2482,12 @@ async def guest_form_draft(token: str, reservation_id: int, request: Request):
         for name in guest_draft.DRAFT_FIELDS
         if isinstance(form.get(name), str)
     }
+    if _draft_is_sent_guest(fields, reporting.reservation_progress(reservation)["guests"]):
+        # An autosave that lands after /save: the person is already on the
+        # stay, so nothing is stored (and an older row of this device goes).
+        if not new_key:
+            guest_draft.delete(reservation_id, guest_draft.key_hash(device_key))
+        return Response(status_code=204)
     stored = guest_draft.save(
         reservation_id,
         guest_draft.key_hash(device_key),

@@ -342,6 +342,12 @@ def test_sending_the_form_deletes_the_draft(stay, contexts):
 
     # A draft written after the save that is the sent guest again: dropped.
     assert _draft(device, rid, surname="Zzagain", doc_number="syn1082p1", draft_owned="1").status_code == 204
+    assert _count(rid) == 0
+    # The read guard still holds for a row that got in some other way.
+    guest_draft.save(
+        rid, guest_draft.key_hash(device.cookies.get(guest.DRAFT_COOKIE)), 0, 1,
+        {"surname": "Zzagain", "doc_number": "syn1082p1"},
+    )
     assert _count(rid) == 1
     page = _new(device, rid)
     assert "Zzagain" not in page.text
@@ -614,3 +620,57 @@ def test_the_owned_count_has_no_limit_of_forty(stay):
     guest_draft.save(rid, DEVICE_A, 0, 41, {"surname": "Zzdraft"})
     assert guest_draft.load(rid, DEVICE_A, 0, 41) == {"surname": "Zzdraft"}
     assert guest_draft.clamp_owned("9" * 40) == 2**31 - 1
+
+
+# --- review, attempt 3 ------------------------------------------------------
+
+def test_an_autosave_landing_after_the_save_stores_nothing(stay):
+    _apartment_id, rid = stay
+    device = TestClient(app)
+    person = {name: value for name, value in _payload().items() if name in guest_draft.DRAFT_FIELDS}
+    assert _draft(device, rid, **person).status_code == 204
+    assert _count(rid) == 1
+    assert _save(device, rid).status_code == 303
+    assert _count(rid) == 0
+    # The late autosave of the sent page: same person, old count.
+    late = _draft(device, rid, **person)
+    assert late.status_code == 204
+    assert "ubyhost_draft" not in late.headers.get("set-cookie", "")
+    assert _count(rid) == 0
+    # Same name and birth date without the document number: also nothing.
+    partial = {name: person[name] for name in ("first_name", "surname", "birth_date")}
+    assert _draft(device, rid, **partial).status_code == 204
+    assert _count(rid) == 0
+    # A device without the cookie cannot store the sent person either.
+    assert _draft(TestClient(app), rid, doc_number=person["doc_number"].lower()).status_code == 204
+    assert _count(rid) == 0
+    # The next person on the same phone is still saved.
+    assert _draft(device, rid, surname="Zznextsur", draft_owned="1").status_code == 204
+    assert _stored(rid) == {"surname": "Zznextsur"}
+    # ... and a match replaces nothing: the older row of this device goes.
+    assert _draft(device, rid, **person).status_code == 204
+    assert _count(rid) == 0
+
+
+def test_the_cap_evicts_the_oldest_row_but_never_the_current_device(stay):
+    _apartment_id, rid = stay
+    cap = guest_draft.MAX_PER_RESERVATION
+    others = [guest_draft.key_hash(f"other-{n:02d}" + "y" * 40) for n in range(cap)]
+    future = datetime.now(timezone.utc) + timedelta(hours=1)
+    for n, device_hash in enumerate(others):
+        guest_draft.save(rid, device_hash, 0, 0, {"surname": f"Zz{n}"})
+        stamp = (future + timedelta(minutes=n)).replace(microsecond=0).isoformat()
+        db.execute("UPDATE guest_form_draft SET updated_at = ? WHERE device_key_hash = ?", (stamp, device_hash))
+    assert _count(rid) == cap
+    # The current device's row is now the oldest by updated_at, and it stays.
+    guest_draft.save(rid, DEVICE_A, 0, 0, {"surname": "Zzcurrent"})
+    assert _count(rid) == cap
+    assert guest_draft.load(rid, DEVICE_A, 0, 0) == {"surname": "Zzcurrent"}
+    # The row that went is the oldest of the others.
+    assert db.query_one(
+        "SELECT id FROM guest_form_draft WHERE reservation_id = ? AND device_key_hash = ?", (rid, others[0])
+    ) is None
+    for kept in others[1:]:
+        assert db.query_one(
+            "SELECT id FROM guest_form_draft WHERE reservation_id = ? AND device_key_hash = ?", (rid, kept)
+        ) is not None

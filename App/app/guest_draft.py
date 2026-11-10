@@ -100,9 +100,9 @@ def save(reservation_id: int, device_hash: str, generation: int, owned_count: in
     # makes a row no device can reach again, so the oldest go first.
     db.execute_rowcount(
         "DELETE FROM guest_form_draft WHERE reservation_id = ? AND device_key_hash <> ? AND id NOT IN "
-        "(SELECT id FROM guest_form_draft WHERE reservation_id = ? "
-        f"ORDER BY updated_at DESC, id DESC LIMIT {MAX_PER_RESERVATION})",
-        (reservation_id, device_hash, reservation_id),
+        "(SELECT id FROM guest_form_draft WHERE reservation_id = ? AND device_key_hash <> ? "
+        f"ORDER BY updated_at DESC, id DESC LIMIT {MAX_PER_RESERVATION - 1})",
+        (reservation_id, device_hash, reservation_id, device_hash),
     )
     return True
 

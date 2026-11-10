@@ -46,6 +46,14 @@ Edited: `App/app/scheduler.py`, `App/app/retention.py`, `App/app/routes/guest.py
 
 Commands after attempt 2: A `40 passed, 55 skipped`; B `102 passed in 6.72s`; C `118 passed in 12.01s`; the draft tests on local PostgreSQL `31 passed in 8.48s`.
 
+## Attempt 3 (review fixes, tests in the same file)
+
+1. Race: `guest_form_draft` runs the sent-guest match (`_draft_is_sent_guest`, shared with `_load_draft`) before `guest_draft.save`. On a match it stores nothing, deletes this device's older row, sets no cookie and answers 204. Test: draft, save, late draft: no row.
+2. The match now compares birth dates through `validation.normalise_birth_date` (call only; `validation.py` untouched): the guest row holds DDMMYYYY while the draft holds what was typed, so the name-and-birth-date rule never matched before.
+3. Eviction: the server cannot tell a row with a live cookie from one without, so the cap evicts the oldest rows by `updated_at` among the other devices and never the current device's row, also when that row is the oldest (it was 21 rows in that case). Test added.
+
+Commands after attempt 3: A `40 passed, 55 skipped`; B `104 passed`; C `118 passed`; the draft tests on local PostgreSQL `33 passed`.
+
 ## Questions
 
 None.
