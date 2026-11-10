@@ -194,8 +194,8 @@ def test_missing_reporting_items_link_to_their_own_section(host):
     page = client.get(f"/apartments/{apartment_id}?lang=en")
     checklist = _checklist(page.text)
 
-    assert "Missing: IDUB" in checklist
-    assert "Missing: Facility abbreviation" in checklist
+    assert "Missing: Police accommodation number (IDUB)" in checklist
+    assert "Missing: Short name from the police" in checklist
     assert "Missing: Facility name" in checklist
     assert "Missing: Postcode" in checklist
     # The three UbyPort fields sit in #ubyport; the postcode sits in #address.
@@ -231,7 +231,7 @@ def test_the_validation_reason_survives_from_the_old_banner(host):
     page = client.get(f"/apartments/{apartment_id}?lang=en")
     checklist = _checklist(page.text)
 
-    assert "Missing: IDUB" in checklist
+    assert "Missing: Police accommodation number (IDUB)" in checklist
     assert "IDUB must be 12-14 letters or digits." in checklist
 
 
@@ -258,7 +258,7 @@ def test_the_eight_reporting_fields_keep_localized_labels_and_controls_without_b
     client, apartment_id = host
 
     fields = (
-        ("uby_idub", None, "text"),
+        ("uby_idub", "apartment.form.ubyport.idub_label", "text"),
         ("uby_mark", "apartment.form.ubyport.mark_label", "text"),
         ("uby_name", "automation.facility_name", "text"),
         ("addr_house_no", "apartment.form.addr.house_no", "text"),

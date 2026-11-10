@@ -213,7 +213,7 @@ def test_claim_form_and_privacy_notice_disclose_email_and_cookies(monkeypatch):
         browser = TestClient(app)
         browser.cookies.set(guest.LANG_COOKIE, "en")
         claim_page = browser.get(f"/l/{TOKEN}/{current}")
-        assert "We send your private link here." in claim_page.text
+        assert "We send your private link and receipt here" in claim_page.text
         assert "Only your group can open the forms." in claim_page.text
         assert "one reminder the day before arrival if forms are missing" in claim_page.text
         assert "a receipt (your host gets a copy)" in claim_page.text

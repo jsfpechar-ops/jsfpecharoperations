@@ -651,7 +651,7 @@ def test_b04_missing_items_are_explained_inside_their_section(host):
     db.update("apartment", host["apartment"], {"uby_idub": "", "addr_zip": ""})
     html = _page(host, "?lang=en")
     police = _section(html, "sec-police")
-    assert 'data-missing="police"' in police and "Missing: IDUB" in police
+    assert 'data-missing="police"' in police and "Missing: Police accommodation number (IDUB)" in police
     basics = _section(html, "sec-basics")
     assert 'data-missing="basics"' in basics and "Missing: Postcode" in basics
     # one source: the same readiness items, no second list in the strip
@@ -775,7 +775,7 @@ def test_b04_pill_opens_incomplete_section_with_its_missing_note(host, base):
             page.locator('nav.prop-strip a[data-strip="police"]').click()
             note = page.locator('#sec-police [data-missing="police"]')
             note.wait_for(state="visible", timeout=3000)
-            assert "Missing: IDUB" in note.inner_text()
+            assert "Missing: Police accommodation number (IDUB)" in note.inner_text()
             page.screenshot(path=str(_B04_SHOTS / "b04-incomplete-police-390.png"), full_page=False)
         finally:
             browser.close()
