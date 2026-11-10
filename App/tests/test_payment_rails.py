@@ -415,3 +415,92 @@ def test_host_preview_still_needs_login(owner):
     rid = _draft(owner, rail="qr")
     response = TestClient(app).get(f"/payments/qr/{rid}", follow_redirects=False)
     assert response.status_code == 303
+
+
+# --- 1068a: no Bank QR without a bank account; errors link to the fix ---------
+
+
+def _drop_account(oid: int) -> None:
+    db.execute("UPDATE legal_entity SET iban = NULL, bank_account = NULL WHERE owner_user_id = ?", (oid,))
+
+
+def _post_qr(client):
+    return client.post(
+        "/payments/requests/new",
+        data={"reason": "repair", "amount_czk": "1500", "rail": "qr"},
+        follow_redirects=False,
+    )
+
+
+def test_qr_create_refused_without_bank_account(owner, client):
+    _drop_account(owner)
+    response = _post_qr(client)
+    assert response.status_code == 303
+    location = response.headers["location"]
+    assert location.startswith("/payments/new?") and "fix=bank" in location
+    assert payment_request.for_owner(owner) == []
+
+
+def test_qr_create_allowed_with_bank_account(owner, client):
+    response = _post_qr(client)
+    assert response.status_code == 303
+    assert "fix=" not in response.headers["location"]
+    rows = payment_request.for_owner(owner)
+    assert len(rows) == 1 and rows[0]["rail"] == "qr"
+
+
+def test_new_form_disables_qr_without_bank_account(owner, client):
+    _drop_account(owner)
+    page = client.get("/payments/new")
+    assert page.status_code == 200
+    assert 'value="qr" disabled' in page.text
+    assert "Add bank account (1 min)" in page.text
+    assert 'href="/entities"' in page.text
+
+
+def test_new_form_keeps_qr_with_bank_account(owner, client):
+    page = client.get("/payments/new")
+    assert page.status_code == 200
+    assert 'value="qr" disabled' not in page.text
+    assert "Add bank account (1 min)" not in page.text
+
+
+def test_qr_pngs_say_no_account_in_plain_text(owner, client):
+    rid = _draft(owner, rail="qr")
+    token = payment_request.guest_token(payment_request.get(rid))
+    _drop_account(owner)
+    for response in (client.get(f"/payments/qr/{rid}.png"), TestClient(app).get(f"/pay/{rid}/{token}.png")):
+        assert response.status_code == 404
+        assert response.headers["content-type"].startswith("text/plain")
+        assert response.text == payment_request.NO_ACCOUNT_BODY
+
+
+def test_qr_png_wrong_rail_stays_empty_404(owner, client):
+    card = _draft(owner, rail="card")
+    response = client.get(f"/payments/qr/{card}.png")
+    assert response.status_code == 404
+    assert response.content == b""
+
+
+def test_guest_qr_page_without_account_explains_in_language(owner):
+    from app import i18n
+
+    rid = _draft(owner, rail="qr")
+    token = payment_request.guest_token(payment_request.get(rid))
+    _drop_account(owner)
+    for lang in ("en", "cs", "de", "es", "fr", "uk"):
+        page = TestClient(app).get(f"/pay/{rid}/{token}?lang={lang}")
+        assert page.status_code == 200
+        text = i18n.translator(lang)("pay_no_account")
+        assert text and text in page.text.replace("&#39;", "'"), lang
+        assert "<img" not in page.text
+        assert "paid" not in page.text.lower()
+
+
+def test_flash_fix_link_allowlisted(owner, client):
+    plain = client.get("/payments?err=x").text.count('href="/entities"')
+    fixed = client.get("/payments?err=x&fix=bank").text
+    assert fixed.count('href="/entities"') == plain + 1
+    assert "Add bank account (1 min)" in fixed
+    evil = client.get("/payments?err=x&fix=evil").text
+    assert evil.count('href="/entities"') == plain

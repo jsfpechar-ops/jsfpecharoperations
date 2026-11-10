@@ -59,7 +59,7 @@
 {% if not stripe_off and connect_state.onboarding_state == 'complete' %}
 <section class="card payments-state"><span class="payments-state-ic" aria-hidden="true">{{ icon('check', 22) }}</span><span class="t"><b>{{ t('payments.overview.on') }}</b><small>{{ t('payments.overview.on_sub') }}</small></span>{{ help_tip('pay-help-on', t('payments.help.stripe_role')) }}</section>
 {% else %}
-<section class="card payments-box">
+<section class="card payments-box" id="stripe-setup">
   <h2>{{ t('payments.connect.title') }}</h2>
   {% if stripe_off %}
   <p>{{ t('payments.connect.off') }}</p>
