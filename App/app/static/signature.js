@@ -15,6 +15,9 @@ function setSignatureStatus(text, kind) {
   status.setAttribute("role", hint ? "status" : "alert");
 }
 
+// Brief 1090: a guest under 15 has no pad to fill.
+function signatureWaived() { var block = document.getElementById("sig-block"); return !!(block && block.hidden); }
+
 function initSignature() {
     var canvas = document.getElementById("sig-canvas");
     if (!canvas) return;
@@ -128,7 +131,7 @@ function initSignature() {
         // 0979: the language buttons (data-lang-draft) post the open form to
         // /relang. They need no signature, so they must not hit this guard.
         if (event.submitter && event.submitter.hasAttribute("data-lang-draft")) return;
-        if (!hidden.value) {
+        if (!hidden.value && !signatureWaived()) {
           event.preventDefault();
           // The signature step is not always the one on screen, and its
           // message would be invisible there. Ask the wizard to reveal the
@@ -231,6 +234,104 @@ function initSignature() {
       apply(text);
     });
     apply(input.value);
+  }
+
+  /* Brief 1090: a guest under 15 on the arrival day does not sign. This only
+     shows and hides: the pad, the note, and the adult's role radios. Nothing
+     posted is set here; the server decides again on save. */
+  function initUnder15() {
+    var sigBlock = document.getElementById("sig-block");
+    if (!sigBlock) return;
+    var u15Block = document.getElementById("u15-block");
+    var forChildren = document.getElementById("sign-for-children");
+    var sentence = document.getElementById("sign-for-child-text");
+    var birth = document.getElementById("birth_date");
+    var firstName = document.getElementById("first_name");
+    var surname = document.getElementById("surname");
+    var stayFrom = document.querySelector('input[name="stay_from"]');
+
+    // A copy of initChildToggle's childBirth parse; d and m stay 0 when unknown.
+    function childBirth(text) {
+      var value = String(text || "").trim();
+      var m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value);
+      var year;
+      if (m) {
+        year = parseInt(m[3], 10);
+      } else {
+        m = /^(\d{2})\.(\d{2})\.(\d{2})$/.exec(value);
+        if (!m) return null;
+        var n = parseInt(m[3], 10);
+        year = 2000 + n <= new Date().getFullYear() ? 2000 + n : 1900 + n;
+      }
+      if (year === 0) return null;
+      var month = parseInt(m[2], 10) || 1;
+      var day = parseInt(m[1], 10) || 1;
+      var date = new Date(Date.UTC(year, month - 1, day));
+      if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return null;
+      return { y: year, m: parseInt(m[2], 10), d: parseInt(m[1], 10) };
+    }
+
+    // The rule is the arrival day, never today.
+    function arrival() {
+      var s = /^(\d{4})-(\d{2})-(\d{2})$/.exec(stayFrom ? String(stayFrom.value || "").trim() : "");
+      if (!s) return null;
+      return { y: parseInt(s[1], 10), m: parseInt(s[2], 10), d: parseInt(s[3], 10) };
+    }
+
+    function age(y, m, d, when) {
+      var years = when.y - y;
+      if (when.m < m || (when.m === m && when.d < d)) years -= 1;
+      return years;
+    }
+
+    // Under 15 for certain: the earliest birthday (00 read as 1) is the oldest
+    // the guest can be. 18 for certain: the latest birthday (00 month as 12,
+    // 00 day as the month's last day). An unparsed date is neither.
+    function ages() {
+      var born = childBirth(birth ? birth.value : "");
+      var when = arrival();
+      if (!born || !when) return { under15: false, adult: false };
+      var lateMonth = born.m || 12;
+      var lateDay = born.d || new Date(Date.UTC(born.y, lateMonth, 0)).getUTCDate();
+      return {
+        under15: age(born.y, born.m || 1, born.d || 1, when) < 15,
+        adult: age(born.y, lateMonth, lateDay, when) >= 18
+      };
+    }
+
+    function typing() {
+      return birth && document.activeElement === birth && !/^\d{2}\.\d{2}\.\d{4}$/.test(birth.value);
+    }
+
+    function fillName() {
+      if (!sentence) return;
+      var template = sentence.getAttribute("data-template") || "";
+      var name = ((firstName ? firstName.value : "") + " " + (surname ? surname.value : "")).trim();
+      sentence.textContent = template.replace("{names}", name);
+    }
+
+    function apply() {
+      fillName();
+      if (typing()) return;
+      // No birth date yet and no script decision to make: a new form shows
+      // the pad, as today.
+      var now = ages();
+      sigBlock.hidden = now.under15;
+      if (u15Block) u15Block.hidden = !now.under15;
+      if (forChildren) forChildren.hidden = !now.adult;
+    }
+
+    apply();
+    if (birth) {
+      birth.addEventListener("input", apply);
+      birth.addEventListener("change", apply);
+      birth.addEventListener("blur", apply);
+      // initBirthDate's paste handler sets the value without an input event.
+      birth.addEventListener("paste", function () { setTimeout(apply, 0); });
+    }
+    if (firstName) firstName.addEventListener("input", fillName);
+    if (surname) surname.addEventListener("input", fillName);
+    window.addEventListener("pageshow", apply);
   }
 
   function initChildToggle() {
@@ -705,7 +806,7 @@ function initSignature() {
       // an empty signature and only finds out at Submit.
       var canvas = step.querySelector("#sig-canvas");
       var signature = document.getElementById("signature");
-      if (canvas && signature && !signature.value) {
+      if (canvas && signature && !signature.value && !signatureWaived()) {
         var status = document.getElementById("sig-status");
         setSignatureStatus(
           status ? status.getAttribute("data-missing") || "" : "", "err"
@@ -1056,6 +1157,7 @@ function initSignature() {
     initCopy();
     initBirthDate();
     initChildToggle();
+    initUnder15();
     initResidenceCountry();
     initVisaVisibility();
     initPinReturn();

@@ -648,7 +648,8 @@ select {
   transition: border-color 0.14s var(--g-ease), background 0.14s var(--g-ease);
 }
 .checkline:hover { border-color: var(--g-line-2); }
-.checkline input[type=checkbox] {
+.checkline input[type=checkbox],
+.checkline input[type=radio] {
   width: 19px;
   height: 19px;
   margin: 1px 0 0;
