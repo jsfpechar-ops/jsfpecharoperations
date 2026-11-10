@@ -21,7 +21,7 @@
 {% set rest = held.shown | rejectattr('level', 'equalto', 'critical') | list %}
 {% set rest_pin = rest | selectattr('kind', 'equalto', 'guest_pin_rotated') | list %}
 {% set rest_count = (rest | rejectattr('kind', 'equalto', 'guest_pin_rotated') | list | length) + (1 if rest_pin else 0) + (held.folded | length) + (open_alerts_more | default(0)) %}
-{% set rest_inline = alerts_expanded | default(false) or (rest_count == 1 and not held.folded) %}
+{% set rest_inline = alerts_expanded | default(false) or (rest_count == 1 and not held.folded and not (open_alerts_more | default(0))) %}
 {% set lines = red + (rest if rest_inline else []) %}
 <aside class="notification-stack{{ ' ph-hide' if ph_hide_pin | default(false) and (lines | rejectattr('kind', 'equalto', 'guest_pin_rotated') | list | length == 0) else '' }}" data-host-alerts aria-label="{{ t('a11y.notifications') }}" aria-live="polite">
   {% for alert in lines if alert.kind != 'guest_pin_rotated' or alert.id == (rest_pin[0].id if rest_pin else alert.id) %}
