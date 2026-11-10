@@ -1,6 +1,6 @@
 # 1083: G6 police letter, part 1 of 3: the parser and its test table
 
-Status: todo
+Status: review
 Tier: A | Depends on: nothing (main alone) | Base commit: f1ca4288 | Branch: claude/1083-police-letter
 Executor: Fable 5.2 (owner tier override in decisions.md) | Attempts: 3 at most | Fits one session: stop at 25 tool calls or 60k tokens (section 8); reads stay at 150 lines or fewer
 Review: an extremely strict fresh Fable diff review (owner's words) before the PR opens, on filing safety and the parser.
