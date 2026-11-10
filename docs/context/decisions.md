@@ -5,7 +5,7 @@ Append-only.
 - 2026-10-06 | Sweep: one send per refused record, then host fix | OPERATIONS
 - 2026-10-06 | Staging may use the police test env; creds only in staging | LIGHTSAIL
 - 2026-10-06 | Abbreviation check: 5-6 alphanumerics; facility suffix after UBY-WS_ | police, owner | validation.py, 0043
-- 2026-10-08/12 | Door codes (TTLock pilot): timed codes, test mode until live; one 1-min job, no polling, weekly `queryDate`; taken type-3 period: `add` only, host warned (0037); -1026 = created/deleted; host provider, no SCCs; retry deletion (0067-69) | owner | [plan](../plans/ttlock-door-codes.md), [legal](../privacy/DOOR_CODES_LEGAL.md)
+- 2026-10-08/12 | Door codes (TTLock pilot): timed codes, test mode until live; one 1-min job, no polling, details 0037, 0067-69 | owner | [plan](../plans/ttlock-door-codes.md), [legal](../privacy/DOOR_CODES_LEGAL.md)
 - 2026-10-08 | Invoices per stay only, replaces 09-26 | scope | [plan](../plans/stay-only-invoices.md)
 - 2026-10-08 | Staging: `UBYHOST_STAGING_NO_LOGIN=1` skips login; door-code alert after 10 min | test-only | [ENVIRONMENT](../ENVIRONMENT.md)
 - 2026-10-09 | [workflow] One brief per copy text; executors skip non-todo; lint warns on overlap; status `replaced` = newer brief took over | [workflow](workflow.md)
@@ -60,3 +60,4 @@ Append-only.
 - 2026-11-09 | [workflow] Speed and group plans only (owner): executor by tier. A (filing, concurrency, guest-data access): Fable 5.2 executor, Opus writes brief, fresh Fable reviews diff vs brief before PR. B (multi-file, mail, payments, privacy, new component): Opus executor, Sonnet brief. C (attributes, copy, prefill, CSS): Sonnet executor at medium effort, Sonnet brief. 100k cap = Haiku only; output and read ranges <=150 lines. From 11-09 21:35 a fresh Fable reviews every new brief before it goes to an executor | [workflow](workflow.md#roles-and-models)
 - 2026-11-09 [filing] Registered guests are filed by the deadline cap (deadline - 6 h) even when the stay is short or has no expected count; no 12 quiet hours wait past the cap; valid co-guests filed while another form is invalid; reverses the reporting.py:1093 "never because this code was deployed" rule: stays already past their cap are filed by the first sweep (backlog: all, owner 22:14) (owner, K-F20) | 1070
 - 2026-11-09 [workflow] Owner asleep: orchestrator takes recommended answers and merges green, reviewed PRs itself (this build only). Assumed: F3, F4 yes; G11 no stored preference; guest draft deleted 7 d after last change or day after check-out, whichever first; STAY_FEE_GUEST_PAY treated as on; S17 skipped (design unchanged). G6, G13 parked; G4 not released
+- 2026-11-10 | [demo] Demo seed covers all current features; mock-only, cleared by Clear demo | owner | 1092

@@ -10,6 +10,7 @@ Updated: 2026-11-10.
 - AI: `havel,leon,guide_import` (`guide_translate` off). Stripe test. Guest QR 404 on both when the owner has no IBAN.
 
 ## Now
+- 11-10: demo full-coverage brief [1092](../tasks/1092-demo-data-full-coverage.md) (stay fee + guest pay 0897, payments, door codes, cleaning, property page; also fixes A60 mock_state tracking and the demo mark/login mismatch) — draft PR carries the brief; tier-B executor next.
 - 11-10: [Speed](../plans/speed-and-ease.md)/[group](../plans/guest-group-registration.md) overnight build: merged and auto-deployed #854-#867, #871; late-filing count was 0. Held drafts for copy review: #868 (F1 bill mail), #869 (F3 fee update mail).
 - 11-09: 1051 stay-fee month filter (cache `20261109-1051a`), 1053 stay-fee rows + centred editor (`20261109-1053a`): draft PRs.
 - 11-06: #790 OCR tip + inline-flex help-tip. [handoff](../tasks/ux-remediation-handoff.md).
