@@ -1,6 +1,6 @@
 # 1075: Prefill what we hold, invoice "More options", share-text order
 
-Status: blocked
+Status: review
 Depends on: 1068 (merged first: same lines in payments.py, payments_new.html, admin.py, i18n) | Base commit: origin/main 2d265364 | Branch: claude/1075-prefill-more-options
 Executor: Opus 5.5 (Tier B: step 1 is a payments route with new guest-data SQL; review 2026-11-10). Limits (owner override; the Haiku-only cap does not apply): 40 tool calls, checkpoint at 60k tokens
 
@@ -389,8 +389,6 @@ def test_1075_shots(monkeypatch):
     client = TestClient(app)
     assert login_as(client, name, url="/login?lang=en", follow_redirects=False).status_code == 303
     cookie = client.cookies.get(auth.SESSION_COOKIE)
-    wizard_lock = client.get(f"/apartments/{flat}/setup/door_lock", follow_redirects=False)
-    print("wizard door_lock step:", wizard_lock.status_code, wizard_lock.headers.get("location"))
     pages = {
         "payments-new-stay": f"/payments/new?reservation_id={stay}",
         "operator-add": "/entities?new=1",
@@ -444,7 +442,7 @@ def test_1075_shots(monkeypatch):
         db.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner,))
         db.execute("DELETE FROM user_account WHERE id = ?", (owner,))
 ```
-Run from `App/`: `UBYHOST_SHOTS_DIR=/tmp/shots PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers .venv/bin/python -m pytest -p tests.conftest <scratchpad>/shots_1075.py -q -s --rootdir=. 2>&1 | grep -E 'scroll|fold|tip|door_lock|passed|failed|Error' | tail -40`. Shots land in `/tmp/shots/1075/<page>-{390,768,1280}.png` plus `operator-edit-tip-1280.png`. The wizard door-lock step is retired since 0884 (`/setup/door_lock` redirects; the script prints status and target); its `share_block` is the same macro the Door lock tab and `/smart-locks` render, so those two pages cover it. Say so in the report.
+Run from `App/`: `UBYHOST_SHOTS_DIR=/tmp/shots PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers .venv/bin/python -m pytest -p tests.conftest <scratchpad>/shots_1075.py -q -s --rootdir=. 2>&1 | grep -E 'scroll|fold|tip|passed|failed|Error' | tail -40`. Shots land in `/tmp/shots/1075/<page>-{390,768,1280}.png` plus `operator-edit-tip-1280.png`. The share block is covered by the Door lock tab and `/smart-locks` (the wizard door-lock step is retired since 0884).
 **Help tip inside the fold:** the fold has `overflow:hidden` (app2.css `details.ui-details-box`) and holds the `invoice-next-number-help` tip, which is `position:absolute` at 1024 px and up. The script opens it at 1280 and prints `clipped`. If it is clipped (check `operator-edit-tip-1280.png` by eye too), STOP: the only allowed fix is dropping `overflow:hidden` from the fold, and only if `docs/design/design-system.md` says so; otherwise set Status: blocked. Open each PNG and look with your own eyes: the fold summary is 44 px high with one chevron and no clipped label; fold fields do not touch the box edge (16 px inset); nothing wraps under a neighbour; no sideways scroll. Write per page in the report and the PR "390: ...; 768: ...; 1280: ..." for every touched page (all three widths each). A shot you could not take is a finding, not a skip.
 Also run: `cd App && UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_host_*.py tests/test_host_geometry.py tests/test_design_guardrails_browser.py -q --tb=short -x 2>&1 | tail -30` (0 skipped). From the repo root: `python3 scripts/context_lint.py | tail -3`. Expected: `context lint: OK`.
 
