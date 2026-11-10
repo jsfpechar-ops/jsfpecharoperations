@@ -111,6 +111,27 @@ def test_the_guest_box_and_the_alert_share_one_rule(flat):
     assert stay_fee.usable_rail_keys(apartment) == ["iban"]
 
 
+def test_a_malformed_bank_account_is_treated_as_missing(flat):
+    """#868 hardened guest_pay_ways; payout_account / the 1071 alert still raised."""
+    aid = flat["apartment"]
+    db.update("legal_entity", flat["entity"], {"bank_account": "12-ab/0800"})
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (aid,))
+    assert stay_fee.payout_account(apartment) == ("", "NoPayWay s.r.o.")
+    assert stay_fee.usable_rail_keys(apartment) == []
+    stay_fee.reconcile_no_pay_way_alert(aid)
+    assert alerts.open_alert(_key(aid)) is not None
+
+
+def test_cash_still_works_when_the_stored_bank_account_is_malformed(flat):
+    aid = flat["apartment"]
+    db.update("legal_entity", flat["entity"], {"bank_account": "12-ab/0800"})
+    _update(aid, stay_fee_guest_rails="iban,cash")
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (aid,))
+    assert stay_fee.usable_rail_keys(apartment) == ["cash"]
+    stay_fee.reconcile_no_pay_way_alert(aid)
+    assert alerts.open_alert(_key(aid)) is None
+
+
 def test_collection_on_with_rate_zero_raises_no_alert(flat):
     aid = flat["apartment"]
     _update(aid, stay_fee_collect=1, stay_fee_rate_czk=0)
