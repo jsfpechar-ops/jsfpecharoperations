@@ -36,7 +36,7 @@ Current code, verbatim:
   <label class="g-btn secondary" for="ocr-scan-file">{{ t('ocr_scan_button') }}</label>
 ```
 
-`App/app/templates/guest/_ocr_scan.html`, lines 9-12 and 14-22 (start of the script and `fillFields`):
+`App/app/templates/guest/_ocr_scan.html`, lines 9-13 and 15-27 (start of the script and `fillFields`):
 ```js
 (function () {
   var fileInput = document.getElementById('ocr-scan-file');
@@ -59,7 +59,7 @@ Current code, verbatim:
   }
 ```
 
-`App/app/templates/guest/_ocr_scan.html`, lines 29-61 (`showStatus` through the end of the change handler):
+`App/app/templates/guest/_ocr_scan.html`, lines 29-60 (`showStatus` through the end of the change handler; the handler is lines 35-60):
 ```js
   function showStatus(text) {
     if (!scanStatus) return;
@@ -211,22 +211,22 @@ from pathlib import Path
 APP = Path("app")
 NEW = {
     "en": ("Reading the document…", "Reading your document. This takes about 10 seconds.",
-           "Filled from your document. Please check.",
+           "Please check",
            "We could not read your nationality. Please choose it from the list."),
     "cs": ("Čteme doklad…", "Čteme váš doklad. Trvá to asi 10 sekund.",
-           "Vyplněno z dokladu. Zkontrolujte to, prosím.",
+           "Zkontrolujte, prosím",
            "Státní občanství jsme nepřečetli. Vyberte ho, prosím, ze seznamu."),
     "de": ("Dokument wird gelesen…", "Ihr Dokument wird gelesen. Das dauert etwa 10 Sekunden.",
-           "Aus Ihrem Dokument ausgefüllt. Bitte prüfen.",
+           "Bitte prüfen",
            "Ihre Staatsangehörigkeit konnten wir nicht lesen. Bitte wählen Sie sie aus der Liste."),
     "es": ("Leyendo el documento…", "Leyendo su documento. Tarda unos 10 segundos.",
-           "Rellenado desde su documento. Compruébelo, por favor.",
+           "Compruébelo, por favor",
            "No pudimos leer su nacionalidad. Elíjala de la lista, por favor."),
     "fr": ("Lecture du document…", "Lecture de votre document. Cela prend environ 10 secondes.",
-           "Rempli depuis votre document. Merci de vérifier.",
+           "À vérifier",
            "Nous n'avons pas pu lire votre nationalité. Choisissez-la dans la liste."),
     "uk": ("Читаємо документ…", "Читаємо ваш документ. Це триває близько 10 секунд.",
-           "Заповнено з вашого документа. Перевірте, будь ласка.",
+           "Перевірте, будь ласка",
            "Ми не змогли прочитати ваше громадянство. Виберіть його зі списку."),
 }
 DONE = {  # the existing ocr_scan_done line each new pair goes under
@@ -330,7 +330,7 @@ Expected: shows `?v=20261110-1074a`.
 
 **Step 7: the script in `_ocr_scan.html`.** Four edits, in this order, to `App/app/templates/guest/_ocr_scan.html`.
 
-7a. Replace the whole `fillFields` function (lines 14-27 shown in section 2) with this version, which keeps the same field map and events, drops old chips first and adds a chip per filled field (the chip goes away when the guest edits that field):
+7a. Replace the whole `fillFields` function (lines 15-27 shown in section 2) with this version, which keeps the same field map and events, drops old chips first and adds a chip per filled field (the chip goes away when the guest edits that field):
 ```js
   var chipText = {{ t('ocr_filled_chip') | tojson }};
 
@@ -384,8 +384,9 @@ Expected: shows `?v=20261110-1074a`.
   }
 
   // The server shrinks to 1568 px on the long edge anyway (doc_ocr.MAX_EDGE), so
-  // doing it here sends less data and changes nothing it reads. Any failure
-  // (old browser, odd file) falls back to sending the original.
+  // doing it here sends less data. The image is resampled here by the browser
+  // instead of by the server, plus one JPEG pass (unconfirmed for OCR, see the
+  // 1074 report). Any failure (old browser, odd file) falls back to the original.
   var MAX_EDGE = 1568;
   function shrink(file) {
     if (!window.createImageBitmap || !/^image\/(jpeg|png|webp)$/.test(file.type)) {
@@ -401,6 +402,7 @@ Expected: shows `?v=20261110-1074a`.
       var ctx = canvas.getContext('2d');
       ctx.fillStyle = '#fff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
       bmp.close();
       return new Promise(function (resolve) {
@@ -412,7 +414,7 @@ Expected: shows `?v=20261110-1074a`.
     }).catch(function () { return file; });
   }
 ```
-7c. Replace the change handler (from `fileInput.addEventListener('change', function () {` to its closing `});`, lines 35-61 shown in section 2) with:
+7c. Replace the change handler (from `fileInput.addEventListener('change', function () {` to its closing `});`, lines 35-60 shown in section 2) with:
 ```js
   fileInput.addEventListener('change', function () {
     var file = fileInput.files && fileInput.files[0];
@@ -433,12 +435,24 @@ Expected: shows `?v=20261110-1074a`.
       if (data.kind === 'values') {
         fillFields(data.values);
         var nat = document.getElementById('nationality');
-        if (!data.values.nationality && nat && !nat.value) {
-          // The scan could not read the nationality: say so and open the picker.
-          // The guest chooses it, exactly as before; nothing is filled for them.
-          showStatus({{ t('ocr_scan_done') | tojson }} + ' ' + {{ t('ocr_nationality_missing') | tojson }});
-          (document.getElementById('nationality_search') || nat).focus();
+        var natError = document.getElementById('nationality_error');
+        if (!data.values.nationality) {
+          // The scan could not read the nationality: say so, also under the picker
+          // so it stays in view, and open the picker when it is empty (a value from
+          // an earlier scan is kept). The guest chooses it; nothing is filled for them.
+          var missing = {{ t('ocr_nationality_missing') | tojson }};
+          showStatus({{ t('ocr_scan_done') | tojson }} + ' ' + missing);
+          if (natError) {
+            natError.textContent = missing;
+            natError.setAttribute('data-ocr', '1');
+            natError.hidden = false;
+          }
+          if (nat && !nat.value) (document.getElementById('nationality_search') || nat).focus();
         } else {
+          if (natError && natError.hasAttribute('data-ocr')) {
+            natError.removeAttribute('data-ocr');
+            natError.hidden = true;
+          }
           showStatus({{ t('ocr_scan_done') | tojson }});
         }
       } else {
@@ -479,9 +493,10 @@ def test_scan_button_is_primary_like_next(base, world, browser):
         context.close()
 
 
-def test_working_text_spinner_then_chips_that_go_when_edited(base, world, browser):
+@pytest.mark.parametrize("width", [390, 768, 1280])
+def test_working_text_spinner_then_chips_that_go_when_edited(base, world, browser, width):
     OUT.mkdir(parents=True, exist_ok=True)
-    context, page = _page(browser, base, world, 390)
+    context, page = _page(browser, base, world, width)
     try:
         _goto_form(page, base, world)
         held = []
@@ -499,7 +514,8 @@ def test_working_text_spinner_then_chips_that_go_when_edited(base, world, browse
         assert page.locator("#surname").input_value() == "MUSTERMANN"
         assert page.locator("#birth_date").input_value() == "12.08.1964"
         chips = page.locator(".g-scan-chip")
-        assert chips.first.inner_text() == "Filled from your document. Please check."
+        assert chips.first.inner_text() == "Please check"
+        assert "Please check" not in i18n.STRINGS["en"]["ocr_scan_done"]
         card = page.locator("[data-guest-step]").first.bounding_box()
         for i in range(chips.count()):
             if chips.nth(i).is_visible():
@@ -511,7 +527,7 @@ def test_working_text_spinner_then_chips_that_go_when_edited(base, world, browse
         page.wait_for_timeout(300)
         assert page.locator(".g-scan-chip").count() == 5, "a chip must stay until the guest edits"
         settle_motion(page)
-        page.screenshot(path=str(OUT / f"{LABEL}-scanned-390.png"), full_page=True)
+        page.screenshot(path=str(OUT / f"{LABEL}-scanned-{width}.png"), full_page=True)
         page.fill("#surname", "MUSTERMANN2")
         assert page.locator(".g-scan-chip").count() == 4
     finally:
@@ -530,11 +546,38 @@ def test_unreadable_nationality_says_so_and_opens_the_picker(base, world, browse
         )
         assert page.locator("#nationality_list").is_visible()
         assert "choose it from the list" in page.locator("#ocr-scan-status").inner_text()
+        assert page.locator("#nationality_error").is_visible()
+        assert "choose it from the list" in page.locator("#nationality_error").inner_text()
         assert page.locator("#nationality").input_value() == ""
         assert page.locator("#nationality").locator(
             "xpath=ancestor::div[contains(@class,'g-field')][1]//span[contains(@class,'g-scan-chip')]"
         ).count() == 0
         assert page.locator(".g-scan-chip").count() == 4
+    finally:
+        context.close()
+
+
+def test_unread_nationality_is_said_even_when_an_earlier_scan_filled_it(base, world, browser):
+    context, page = _page(browser, base, world, 390)
+    try:
+        _goto_form(page, base, world)
+        answers = [VALUES, {k: v for k, v in VALUES.items() if k != "nationality"}]
+        page.route(SCAN, lambda route: _answer(route, {"kind": "values", "values": answers.pop(0)}))
+        page.set_input_files("#ocr-scan-file", TINY)
+        page.wait_for_selector(".g-scan-chip")
+        page.wait_for_function("!document.querySelector('#ocr-scan-file').disabled")
+        page.locator("#surname").focus()
+        page.set_input_files("#ocr-scan-file", TINY)
+        page.wait_for_function(
+            "document.querySelector('#ocr-scan-status').textContent.includes('choose it from the list')"
+        )
+        assert page.locator("#nationality").input_value() == "DEU"
+        assert page.locator("#nationality_error").is_visible()
+        assert "choose it from the list" in page.locator("#nationality_error").inner_text()
+        assert page.evaluate("document.activeElement && document.activeElement.id") != "nationality_search"
+        assert page.locator(".g-scan-chip").count() == 4
+        page.wait_for_function("!document.querySelector('#ocr-scan-file').disabled")
+        assert page.locator("#nationality_error").is_visible(), "clearing chips must keep the prompt"
     finally:
         context.close()
 
@@ -611,13 +654,13 @@ def test_scan_texts_exist_in_every_guest_language(lang):
     assert "10" in table["ocr_scan_working"]
 ```
 Command: `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/shots1074 SHOT_LABEL=after .venv/bin/python -m pytest tests/test_guest_scan_feedback_browser.py -q --tb=short -x -rs 2>&1 | tail -30`
-Expected: `20 passed` (3 screenshots, 5 browser behaviours, 6 error-example, 6 language checks) and no "skipped". Files `after-form-{390,768,1280}.png` and `after-scanned-390.png` exist.
+Expected: `23 passed` (3 screenshots, 8 browser behaviours of which the chip test runs at 390, 768 and 1280, 6 error-example, 6 language checks) and no "skipped". Files `after-form-{390,768,1280}.png` and `after-scanned-{390,768,1280}.png` exist.
 If the shrink test fails on orientation (landscape comes out), do not weaken it: this means `imageOrientation: 'from-image'` is not honoured; STOP and report. If the nationality test fails because the list is not visible, check `#nationality_list` has `hidden` after focus; STOP and report instead of changing `guest-enhancements.js`.
 
 **Step 9: regenerate the version manifest.** Command: `.venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -5` then `.venv/bin/python -m pytest tests/test_static_versions.py -q --tb=short -x 2>&1 | tail -30`
 Expected: the json changes only the `guest.css` entry (`git diff --stat tests/static_versions.json | tail -3` shows 1 file, 2 changed lines); the test passes. Never hand-edit the json.
 
-**Step 10: screenshots, by eye.** Open and compare, against the `before-` set: `after-form-390.png`, `after-form-768.png`, `after-form-1280.png`, plus `after-scanned-390.png`. Copy all eight PNGs and the `before-` ones into `docs/tasks/screenshots-1074/` (`mkdir -p` first; names kept). For each page size write down what you saw. The look is unchanged if: same card, same title, same field order and sizes, same spacing, same Next button; the only difference is the scan button now filled in the brand colour with white text (the Next button below keeps its own fill). If anything else moved (heights, wrapping, field positions), STOP (section 8). Commit.
+**Step 10: screenshots, by eye.** Open and compare, against the `before-` set: `after-form-390.png`, `after-form-768.png`, `after-form-1280.png`, plus `after-scanned-390.png`, `after-scanned-768.png`, `after-scanned-1280.png` (chips inside the card at each width). Copy all nine PNGs and the `before-` ones into `docs/tasks/screenshots-1074/` (`mkdir -p` first; names kept). For each page size write down what you saw. The look is unchanged if: same card, same title, same field order and sizes, same spacing, same Next button; the only difference is the scan button now filled in the brand colour with white text (the Next button below keeps its own fill). If anything else moved (heights, wrapping, field positions), STOP (section 8). Commit.
 
 **Step 11: the full check for this area.** Commands, each ending as shown:
 1. `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_guest_*.py tests/test_guest_browser_e2e.py -q --tb=short -x -rs 2>&1 | tail -30` (the test-map row for guest pages). Expected: all pass and the last lines show no `SKIPPED`.
@@ -639,7 +682,7 @@ All are in section 4. Tests: the guest row of the [test-map](../context/test-map
 - [ ] The new test file passes with 0 skipped under `UBYHOST_REQUIRE_BROWSER=1`, and the guest row of the test-map passes with 0 skipped.
 - [ ] `git diff --stat origin/main | tail -20` shows only the files in section 3 (plus the screenshots and report).
 - [ ] `git diff origin/main -- App/app/routes App/app/doc_ocr.py App/app/validation.py | wc -l` prints `0`.
-- [ ] Screenshots of the guest form step 1 at 390, 768 and 1280 px, before and after, are in `docs/tasks/screenshots-1074/`, each checked by eye; the PR text says, per width, what was seen ("390: ...; 768: ...; 1280: ...") and names the scan button as the only resting-state change. A 390 px screenshot of the scanned state (chips) is included.
+- [ ] Screenshots of the guest form step 1 at 390, 768 and 1280 px, before and after, are in `docs/tasks/screenshots-1074/`, each checked by eye; the PR text says, per width, what was seen ("390: ...; 768: ...; 1280: ...") and names the scan button as the only resting-state change. Screenshots of the scanned state (chips) at 390, 768 and 1280 px are included, and the chip-inside-card check runs at each width.
 - [ ] No sideways scroll at any of the three widths (asserted in the tests).
 - [ ] The chip, spinner and nationality texts exist in en, cs, de, es, fr, uk (asserted).
 - [ ] Context lint clean for this brief.
@@ -671,7 +714,7 @@ Write `docs/tasks/1074-report.md` (600 tokens at most) and set `Status: review`.
 6. Owner steps left.
 7. For the PR text: per width, "390: ...; 768: ...; 1280: ..." as seen, and the unconfirmed list below.
 
-**Unconfirmed, to say plainly in the report:** (a) whether the one extra JPEG pass at quality 0.9 changes the OCR hit rate on real phone photos; only stub and synthetic images were tested, and the guest checks every filled field; (b) behaviour in iOS Safari and WebKit was not run (`createImageBitmap` options need Safari 15 or later; older versions fall back to the original file); (c) how long a real scan takes ("about 10 seconds" is the plan's wording; the worst case with only a text line is about 45 s, noted in the plan under "Bugs and oddities").
+**Unconfirmed, to say plainly in the report:** (a) whether the browser's resampling (canvas, `imageSmoothingQuality = 'high'`) and the one extra JPEG pass at quality 0.9 change the OCR hit rate on real phone photos; only stub and synthetic images were tested, and the guest checks every filled field; (b) behaviour in iOS Safari and WebKit was not run (`createImageBitmap` options need Safari 15 or later; older versions fall back to the original file); (c) how long a real scan takes ("about 10 seconds" is the plan's wording; the worst case with only a text line is about 45 s, noted in the plan under "Bugs and oddities").
 
 ## Risk list (for the reviewer)
 
@@ -680,6 +723,6 @@ Read the diff of: `App/app/templates/guest/_ocr_scan.html` (the whole script), `
 ## Owner steps
 
 1. Open the pull request when the report says `review`. Read the per-width screenshot notes in its text.
-2. On a real phone (an iPhone and an Android if you can), open a guest link of a Max property, tap "Scan your passport or ID" with a real passport photo, and check three things: the spinner and the "about 10 seconds" line show, the filled fields show "Filled from your document. Please check.", and nothing looks different before the tap except the scan button now being filled in.
+2. On a real phone (an iPhone and an Android if you can), open a guest link of a Max property, tap "Scan your passport or ID" with a real passport photo, and check three things: the spinner and the "about 10 seconds" line show, the filled fields show "Please check", and nothing looks different before the tap except the scan button now being filled in.
 3. Merge with `scripts/merge-pr-on-green.sh` when the checks are green.
 4. Deploy by hand as usual.
