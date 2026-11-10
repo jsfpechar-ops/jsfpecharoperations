@@ -1,6 +1,6 @@
 # 1096: a form that starts dirty shows the Save row and the leave warning at load
 
-Status: todo
+Status: review
 Tier: C | Depends on: 1086 (merged in #892, `30a2ef45`) | Base: origin/main | Branch: claude/1096-dirty-start
 Executor: Sonnet (Tier C, effort medium) | Attempts: 3 at most | Fits one session: stop at 30 tool calls (section 8); reads stay at 150 lines or fewer
 Review: the orchestrator checks the diff and the screenshots before the PR opens.
