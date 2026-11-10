@@ -49,3 +49,9 @@ body.v2 details.invoice-more .field-label-row .help-tip{display:block;margin-lef
 ## Questions
 
 None.
+
+## CI fix (PR #865, head 7b9f2b42)
+
+- a11y contrast: the fold summary inherited `.invoice-more > summary{color:var(--brand)}` (#c85a52, 4.17:1). Added `body.v2 details.ui-details-box.invoice-more > summary{color:var(--brand-ink)}` (the invoice page fold is unchanged). `?v=20261110-1075d`.
+- 0786 controls gap: the ghost inputs were the `invoice_prefix`/`invoice_next_number` fields inside the closed fold (`checkVisibility()` false, but Chrome keeps a stale box). The cs "Uložit" 9/11.8 px finding was against the same ghost input; the real gap from payment term to Save is 16 px, so no CSS change. Fixed in the test helper: content of a closed `details` (not its summary) is skipped. A markup fix is not possible: the fields belong inside the fold.
+- `test_a11y_guard_browser.py test_1075_fold_tip_browser.py test_layout_lint_browser.py`: 11 passed. `test_0786_settings_geometry_browser.py test_dev_ui_browser.py`: 50 passed. dev_ui:37 passes on main and on the branch; in CI it is only a Pillow DeprecationWarning, not a failure.
